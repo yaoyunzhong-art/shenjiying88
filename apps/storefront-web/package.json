@@ -1,0 +1,28 @@
+{
+  "name": "@m5/storefront-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint app next.config.mjs --ext .ts,.tsx,.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test app/*.test.ts"
+  },
+  "dependencies": {
+    "@m5/domain": "workspace:*",
+    "@m5/sdk": "workspace:*",
+    "@m5/types": "workspace:*",
+    "@m5/ui": "workspace:*",
+    "next": "^15.3.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.16.5",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "typescript": "^5.8.3"
+  }
+}
