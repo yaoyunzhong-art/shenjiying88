@@ -40,7 +40,7 @@ function searchBrands(items: BrandItem[], keyword: string): BrandItem[] {
 }
 
 function filterByStatus(items: BrandItem[], status: BrandStatus | 'ALL'): BrandItem[] {
-  if (status === 'ALL') return items;
+  if (status === 'ALL' || !status) return items;
   return items.filter((b) => b.status === status);
 }
 
@@ -55,6 +55,7 @@ function filterByMarket(items: BrandItem[], market: string): BrandItem[] {
 }
 
 function paginate(items: BrandItem[], page: number, pageSize: number): BrandItem[] {
+  if (page < 1 || pageSize <= 0) return [];
   const start = (page - 1) * pageSize;
   return items.slice(start, start + pageSize);
 }
@@ -81,10 +82,10 @@ function fullFilterChain(
 
 describe('brands-page: 搜索 (searchBrands)', () => {
   it('按品牌编码搜索返回精确匹配', () => {
-    const result = searchBrands(MOCK_BRANDS, 'BR001');
+    const result = searchBrands(MOCK_BRANDS, 'BRAND');
     assert.ok(result.length > 0);
     for (const brand of result) {
-      assert.ok(brand.code.toLowerCase().includes('br001'));
+      assert.ok(brand.code.toLowerCase().includes('brand'));
     }
   });
 

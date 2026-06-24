@@ -173,10 +173,10 @@ describe('customer spend analysis', () => {
     }
 
     // Platinum should have highest average
-    assert.ok(avgSpend.platinum > 0, 'platinum average spend should be > 0');
+    assert.ok(avgSpend.platinum! > 0, 'platinum average spend should be > 0');
     if (avgSpend.gold !== undefined) {
-      assert.ok(avgSpend.platinum >= avgSpend.gold,
-        `platinum avg ${avgSpend.platinum.toFixed(0)} < gold avg ${avgSpend.gold.toFixed(0)}`);
+      assert.ok(avgSpend.platinum! >= avgSpend.gold,
+        `platinum avg ${avgSpend.platinum!.toFixed(0)} < gold avg ${avgSpend.gold!.toFixed(0)}`);
     }
   });
 
