@@ -1,45 +1,54 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import type {
-  GovernanceApprovalOutcomeEvent,
-  GovernanceApprovalOutcomeHook,
-  GovernanceApprovalService
-} from '../foundation/governance-approval/governance-approval.service'
+import { Injectable } from '@nestjs/common'
+import { GovernanceApprovalService } from '../foundation/governance-approval/governance-approval.service'
 import { PrismaService } from '../../prisma/prisma.service'
 
 const RESOURCE_TYPE = 'member-profile'
 
+interface ApprovalOutcomeEvent {
+  resourceType: string
+  resourceKey: string
+  stage: string
+  approval: {
+    approvalId?: string
+    operation?: string
+    resourceType: string
+    resourceKey: string
+    required?: boolean
+    version?: number
+    requestedBy?: string | null
+    ticket?: string | null
+    status: string
+    submitted?: boolean
+    persisted?: boolean
+    decidedBy?: string | null
+    decidedAt?: string | null
+    updatedAt?: string | null
+    summary?: unknown
+  }
+  tenantId?: string | null
+  brandId?: string | null
+  storeId?: string | null
+  decisionNote?: string | null
+  failureReason?: string | null
+  previousStatus?: string | null
+}
+
+export type { ApprovalOutcomeEvent }
+
 /**
- * 会员审批结果回写器：把 governance approval service 的 outcome 事件
+ * 会员审批结果回写器：把 governance approval 的 outcome 事件
  * 落进 member-profile 专属 AuditLog，作为真实持久化的审批历史主链。
  *
- * 由 MemberModule 在 onModuleInit 时挂到 governance approval service 的钩子表，
- * 不在业务调用方手动触发，避免漏写。
+ * 由 MemberModule 初始化，不依赖已移除的 outcome hook 机制。
  */
 @Injectable()
-export class MemberApprovalOutcomeRecorder implements OnModuleInit, OnModuleDestroy {
-  private disconnect?: () => void
-
+export class MemberApprovalOutcomeRecorder {
   constructor(
     private readonly prisma: PrismaService,
     private readonly governanceApprovalService: GovernanceApprovalService
   ) {}
 
-  onModuleInit(): void {
-    this.disconnect = this.governanceApprovalService.registerApprovalOutcomeHook(
-      RESOURCE_TYPE,
-      (event) => this.recordOutcome(event)
-    )
-  }
-
-  onModuleDestroy(): void {
-    this.disconnect?.()
-    this.disconnect = undefined
-  }
-
-  /**
-   * 暴露成方法以便单测和外部调用能直接验证，不依赖钩子触发链。
-   */
-  async recordOutcome(event: GovernanceApprovalOutcomeEvent): Promise<void> {
+  async recordOutcome(event: ApprovalOutcomeEvent): Promise<void> {
     if (event.resourceType !== RESOURCE_TYPE) {
       return
     }
@@ -89,7 +98,7 @@ export class MemberApprovalOutcomeRecorder implements OnModuleInit, OnModuleDest
     return fallback ?? null
   }
 
-  private buildOutcomeSummary(event: GovernanceApprovalOutcomeEvent): string {
+  private buildOutcomeSummary(event: ApprovalOutcomeEvent): string {
     const op = String(event.approval.operation ?? 'member.action')
     switch (event.stage) {
       case 'APPROVED':
@@ -111,7 +120,7 @@ export class MemberApprovalOutcomeRecorder implements OnModuleInit, OnModuleDest
     }
   }
 
-  private resolveOperatorId(event: GovernanceApprovalOutcomeEvent): string {
+  private resolveOperatorId(event: ApprovalOutcomeEvent): string {
     if (event.stage === 'APPROVED' || event.stage === 'REJECTED') {
       return event.approval.decidedBy ?? event.approval.requestedBy ?? 'governance-approval'
     }
@@ -124,7 +133,7 @@ export class MemberApprovalOutcomeRecorder implements OnModuleInit, OnModuleDest
     return event.approval.requestedBy ?? 'governance-approval'
   }
 
-  private buildPayload(event: GovernanceApprovalOutcomeEvent): Record<string, unknown> {
+  private buildPayload(event: ApprovalOutcomeEvent): Record<string, unknown> {
     return {
       stage: event.stage,
       approvalTicket: event.approval.ticket ?? null,
@@ -139,7 +148,7 @@ export class MemberApprovalOutcomeRecorder implements OnModuleInit, OnModuleDest
     }
   }
 
-  private buildBeforeValue(event: GovernanceApprovalOutcomeEvent): Record<string, unknown> | undefined {
+  private buildBeforeValue(event: ApprovalOutcomeEvent): Record<string, unknown> | undefined {
     if (!event.previousStatus) {
       return undefined
     }
@@ -148,7 +157,7 @@ export class MemberApprovalOutcomeRecorder implements OnModuleInit, OnModuleDest
     }
   }
 
-  private buildAfterValue(event: GovernanceApprovalOutcomeEvent): Record<string, unknown> {
+  private buildAfterValue(event: ApprovalOutcomeEvent): Record<string, unknown> {
     return {
       approvalStatus: event.approval.status,
       stage: event.stage
@@ -157,4 +166,3 @@ export class MemberApprovalOutcomeRecorder implements OnModuleInit, OnModuleDest
 }
 
 export const MEMBER_APPROVAL_OUTCOME_RESOURCE_TYPE = RESOURCE_TYPE
-export type MemberApprovalOutcomeHook = GovernanceApprovalOutcomeHook

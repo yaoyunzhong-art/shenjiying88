@@ -4,7 +4,7 @@ import {
   MemberApprovalOutcomeRecorder,
   MEMBER_APPROVAL_OUTCOME_RESOURCE_TYPE
 } from './member-approval-recorder'
-import type { GovernanceApprovalOutcomeEvent } from '../foundation/governance-approval/governance-approval.service'
+import type { ApprovalOutcomeEvent } from './member-approval-recorder'
 
 function createRecorderHarness() {
   const auditEntries: Array<Record<string, unknown>> = []
@@ -16,9 +16,7 @@ function createRecorderHarness() {
       }
     }
   }
-  const governanceApprovalService = {
-    registerApprovalOutcomeHook: () => () => undefined
-  }
+  const governanceApprovalService: Record<string, unknown> = {}
   const recorder = new MemberApprovalOutcomeRecorder(
     prisma as never,
     governanceApprovalService as never
@@ -26,7 +24,7 @@ function createRecorderHarness() {
   return { recorder, auditEntries }
 }
 
-function buildEvent(overrides: Partial<GovernanceApprovalOutcomeEvent> = {}): GovernanceApprovalOutcomeEvent {
+function buildEvent(overrides: Partial<ApprovalOutcomeEvent> = {}): ApprovalOutcomeEvent {
   return {
     resourceType: MEMBER_APPROVAL_OUTCOME_RESOURCE_TYPE,
     resourceKey: 'member-001',
@@ -143,27 +141,9 @@ test('member-approval recorder skips entries without tenantId', async () => {
 test('member-approval recorder handles missing auditLog model gracefully', async () => {
   const recorder = new MemberApprovalOutcomeRecorder(
     {} as never,
-    { registerApprovalOutcomeHook: () => () => undefined } as never
+    {} as never
   )
   await recorder.recordOutcome(buildEvent())
   // 没有 auditLog 模型时 recordOutcome 应直接 no-op，不抛错。
   assert.ok(true)
-})
-
-test('member-approval recorder onModuleInit registers member-profile hook', () => {
-  const registerCalls: Array<{ resourceType: string }> = []
-  const governanceApprovalService = {
-    registerApprovalOutcomeHook: (resourceType: string) => {
-      registerCalls.push({ resourceType })
-      return () => undefined
-    }
-  }
-  const recorder = new MemberApprovalOutcomeRecorder(
-    { auditLog: { create: async () => ({}) } } as never,
-    governanceApprovalService as never
-  )
-  recorder.onModuleInit()
-  assert.equal(registerCalls.length, 1)
-  assert.equal(registerCalls[0]?.resourceType, 'member-profile')
-  recorder.onModuleDestroy()
 })

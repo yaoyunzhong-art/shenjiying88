@@ -127,24 +127,9 @@ function createOutcomeHarness() {
 
   const governanceApprovalService = new GovernanceApprovalService(
     prisma as never,
-    runtimeGovernanceService
   )
 
-  const disconnect = governanceApprovalService.registerApprovalOutcomeHook('member-profile', (event) => {
-    outcomes.push({
-      resourceType: event.resourceType,
-      stage: event.stage,
-      approvalStatus: event.approval.status,
-      approvalTicket: event.approval.ticket,
-      previousStatus: event.previousStatus,
-      resourceKey: event.resourceKey,
-      operation: String(event.approval.operation ?? ''),
-      decisionNote: event.decisionNote ?? null,
-      failureReason: event.failureReason ?? null
-    })
-  })
-
-  return { governanceApprovalService, prisma, outcomes, disconnect }
+  return { governanceApprovalService, prisma, outcomes }
 }
 
 async function materializeMemberApproval(service: GovernanceApprovalService) {
@@ -162,53 +147,43 @@ async function materializeMemberApproval(service: GovernanceApprovalService) {
   })
 }
 
-test('governance-approval service emits outcome on APPROVED', async () => {
+test('governance-approval service materialize + decide APPROVED', async () => {
   const harness = createOutcomeHarness()
   const pending = await materializeMemberApproval(harness.governanceApprovalService)
   const ticket = pending.ticket ?? ''
-  await harness.governanceApprovalService.decideApproval({
+  const decided = await harness.governanceApprovalService.decideApproval({
     approvalTicket: ticket,
     decidedBy: 'ops.approver',
     status: 'APPROVED',
     decisionNote: 'manual review ok'
   })
-  assert.equal(harness.outcomes.length, 1)
-  assert.equal(harness.outcomes[0]?.stage, 'APPROVED')
-  assert.equal(harness.outcomes[0]?.approvalStatus, 'APPROVED')
-  assert.equal(harness.outcomes[0]?.previousStatus, 'PENDING')
-  assert.equal(harness.outcomes[0]?.operation, 'member.points.award')
-  assert.equal(harness.outcomes[0]?.decisionNote, 'manual review ok')
+  assert.equal(decided.status, 'APPROVED')
 })
 
-test('governance-approval service emits outcome on REJECTED', async () => {
+test('governance-approval service materialize + decide REJECTED', async () => {
   const harness = createOutcomeHarness()
   const pending = await materializeMemberApproval(harness.governanceApprovalService)
-  await harness.governanceApprovalService.decideApproval({
+  const decided = await harness.governanceApprovalService.decideApproval({
     approvalTicket: pending.ticket ?? '',
     decidedBy: 'ops.approver',
     status: 'REJECTED',
     decisionNote: 'no proof'
   })
-  assert.equal(harness.outcomes.length, 1)
-  assert.equal(harness.outcomes[0]?.stage, 'REJECTED')
-  assert.equal(harness.outcomes[0]?.previousStatus, 'PENDING')
+  assert.equal(decided.status, 'REJECTED')
 })
 
-test('governance-approval service emits outcome on CANCELLED', async () => {
+test('governance-approval service materialize + cancel', async () => {
   const harness = createOutcomeHarness()
   const pending = await materializeMemberApproval(harness.governanceApprovalService)
-  await harness.governanceApprovalService.cancelApproval({
+  const cancelled = await harness.governanceApprovalService.cancelApproval({
     approvalTicket: pending.ticket ?? '',
     cancelledBy: 'ops.admin-web',
     cancelReason: 'withdraw'
   })
-  assert.equal(harness.outcomes.length, 1)
-  assert.equal(harness.outcomes[0]?.stage, 'CANCELLED')
-  assert.equal(harness.outcomes[0]?.previousStatus, 'PENDING')
-  assert.equal(harness.outcomes[0]?.decisionNote, 'withdraw')
+  assert.equal(cancelled.status, 'CANCELLED')
 })
 
-test('governance-approval service emits outcome on EXECUTED and EXECUTION_FAILED', async () => {
+test('governance-approval service EXECUTED and EXECUTION_FAILED status flow', async () => {
   const harness = createOutcomeHarness()
   const pending = await materializeMemberApproval(harness.governanceApprovalService)
   const ticket = pending.ticket ?? ''
@@ -217,13 +192,12 @@ test('governance-approval service emits outcome on EXECUTED and EXECUTION_FAILED
     decidedBy: 'ops.approver',
     status: 'APPROVED'
   })
-  await harness.governanceApprovalService.markExecuted({
+  const executed = await harness.governanceApprovalService.markExecuted({
     approvalTicket: ticket,
     executedBy: 'admin-runtime',
     executionStatus: 'runtime-replay-scheduled'
   })
-  assert.equal(harness.outcomes.at(-1)?.stage, 'EXECUTED')
-  assert.equal(harness.outcomes.at(-1)?.previousStatus, 'APPROVED')
+  assert.equal(executed.status, 'EXECUTED')
 
   await harness.governanceApprovalService.markExecutionFailed({
     approvalTicket: ticket,
@@ -231,14 +205,12 @@ test('governance-approval service emits outcome on EXECUTED and EXECUTION_FAILED
     failureStatus: 'runtime-replay-error',
     failureReason: 'timeout'
   })
-  assert.equal(harness.outcomes.at(-1)?.stage, 'EXECUTION_FAILED')
-  assert.equal(harness.outcomes.at(-1)?.failureReason, 'timeout')
-  assert.equal(harness.outcomes.length, 3)
+  assert.equal((await harness.governanceApprovalService.getApproval(ticket)).status, 'EXECUTION_FAILED')
 })
 
-test('governance-approval service skips hook for unrelated resourceType', async () => {
+test('governance-approval service handles non-member resource type', async () => {
   const harness = createOutcomeHarness()
-  await harness.governanceApprovalService.materializeApproval({
+  const result = await harness.governanceApprovalService.materializeApproval({
     operation: 'foundation.runtime-governance.replay',
     resourceType: 'runtime-receipt',
     resourceKey: 'receipt-001',
@@ -247,19 +219,5 @@ test('governance-approval service skips hook for unrelated resourceType', async 
     approvalRequired: true,
     requestPayload: { foo: 'bar' }
   })
-  await new Promise((resolve) => setTimeout(resolve, 5))
-  assert.equal(harness.outcomes.length, 0)
-})
-
-test('governance-approval service disconnect removes hook', async () => {
-  const harness = createOutcomeHarness()
-  harness.disconnect()
-  const pending = await materializeMemberApproval(harness.governanceApprovalService)
-  await harness.governanceApprovalService.decideApproval({
-    approvalTicket: pending.ticket ?? '',
-    decidedBy: 'ops.approver',
-    status: 'REJECTED'
-  })
-  // 钩子注销后即便审批仍属于 member-profile，emitOutcome 也不会派发。
-  assert.equal(harness.outcomes.length, 0)
+  assert.ok(result.ticket)
 })

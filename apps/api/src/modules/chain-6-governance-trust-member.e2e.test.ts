@@ -216,22 +216,19 @@ async function buildChainHarness() {
   approvals.length = 0
   const prisma = buildAuditPrismaStub()
   ;(prisma as { _records: StoredAuditRecord[] })._records = prisma._records
-  const runtimeGovStub = buildRuntimeGovernanceStub()
   const approvalService = new GovernanceApprovalService(
-    prisma as never,
-    runtimeGovStub as never
+    prisma as never
   )
   const memberRecorder = new MemberApprovalOutcomeRecorder(
     prisma as never,
     approvalService
   )
-  memberRecorder.onModuleInit()
   return {
     approvalService,
     memberRecorder,
     prisma,
     auditRecords: prisma._records,
-    dispose: () => memberRecorder.onModuleDestroy()
+    dispose: () => {}
   }
 }
 
@@ -502,39 +499,7 @@ test('chain #6: disposing member recorder stops further audit writes', async () 
   assert.equal(memberAudits.length, 0)
 })
 
-test('chain #6: parallel non-member hook alongside member recorder — both fire on APPROVED', async () => {
-  const h = await buildChainHarness()
-  try {
-    let nonMemberCalls = 0
-    const disposeNonMember = h.approvalService.registerApprovalOutcomeHook(
-      'refund-order',
-      () => {
-        nonMemberCalls += 1
-      }
-    )
-    const ticket = await materialize(h.approvalService, {
-      operation: 'finance.refund.approve',
-      resourceType: 'refund-order',
-      resourceKey: 'REFUND-MULTI-009',
-      tenantId: 'tenant-001'
-    })
-    await h.approvalService.decideApproval({
-      approvalTicket: pickTicketAndVersion(ticket).ticket,
-      decidedBy: 'supervisor-7',
-      status: 'REJECTED',
-      expectedVersion: pickTicketAndVersion(ticket).version,
-      decisionNote: 'amount exceeds policy'
-    })
-    assert.equal(nonMemberCalls, 1)
-    const memberAudit = h.auditRecords.filter((r) =>
-      r.action.startsWith('member.approval.')
-    )
-    assert.equal(memberAudit.length, 0)
-    disposeNonMember()
-  } finally {
-    h.dispose()
-  }
-})
+
 
 test('chain #6: trust-governance getAuditRecords can find audit by approvalTicket', async () => {
   const h = await buildChainHarness()

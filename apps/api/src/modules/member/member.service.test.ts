@@ -50,18 +50,14 @@ function createTestMemberService(prisma?: TestPrisma, runtimeGovernanceService?:
 }
 
 function createApprovalClosureHarness(prisma: TestPrisma) {
-  const runtimeGovernanceService = createRuntimeGovernanceStub()
-
   const governanceApprovalService = new GovernanceApprovalService(
-    asPrismaService(prisma),
-    runtimeGovernanceService
+    asPrismaService(prisma)
   )
 
   const recorder = new MemberApprovalOutcomeRecorder(
     asPrismaService(prisma),
     governanceApprovalService
   )
-  recorder.onModuleInit()
 
   return { governanceApprovalService, recorder }
 }

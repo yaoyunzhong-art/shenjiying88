@@ -36,9 +36,8 @@ describe('Badge', () => {
     const html = renderToStaticMarkup(
       React.createElement(Badge, { visible: false, 'data-testid': 'b' }, '5'),
     );
-    // The badge wrapper still renders but has no visible content — actually with current impl it still renders
-    // Let's just ensure it exists
-    assert.ok(html.includes('data-testid="b"'));
+    // visible=false causes the component to return null, so the wrapper span should NOT be in the HTML
+    assert.ok(!html.includes('data-testid="b"'));
   });
 
   // ── Overflow ──

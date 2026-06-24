@@ -1,0 +1,26881 @@
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/index.tsx
+var index_exports = {};
+__export(index_exports, {
+  AIDecisionPanel: () => AIDecisionPanel,
+  AISummaryCard: () => AISummaryCard,
+  Accordion: () => Accordion,
+  Alert: () => Alert,
+  AnomalyAlertPanel: () => AnomalyAlertPanel,
+  Avatar: () => Avatar,
+  AvatarGroup: () => AvatarGroup,
+  Badge: () => Badge,
+  BatchSelectionBar: () => BatchSelectionBar,
+  BranchSelector: () => BranchSelector,
+  Breadcrumb: () => Breadcrumb,
+  Calendar: () => Calendar,
+  Card: () => Card,
+  Carousel: () => Carousel,
+  Chart: () => Chart,
+  Checkbox: () => Checkbox,
+  CombinedDetailPage: () => CombinedDetailPage,
+  Combobox: () => Combobox,
+  CommandPalette: () => CommandPalette,
+  ConciergePanel: () => ConciergePanel,
+  ConfigurationPosturePanel: () => ConfigurationPosturePanel,
+  ConfirmDialog: () => ConfirmDialog,
+  ContentSwitcher: () => ContentSwitcher,
+  ContextMenu: () => ContextMenu,
+  CopyToClipboard: () => CopyToClipboard,
+  DataTable: () => DataTable,
+  DateRangePicker: () => DateRangePicker_default,
+  DateTimePicker: () => DateTimePicker,
+  DecisionAuditTrail: () => DecisionAuditTrail,
+  DescriptionList: () => DescriptionList,
+  DetailActionBar: () => DetailActionBar,
+  DetailClosureBar: () => DetailClosureBar,
+  DetailShell: () => DetailShell,
+  DeviceInspectionPanel: () => DeviceInspectionPanel,
+  DeviceStatusPanel: () => DeviceStatusPanel,
+  Drawer: () => Drawer,
+  Dropdown: () => Dropdown,
+  EmptyState: () => EmptyState,
+  ErrorBoundary: () => ErrorBoundary,
+  FileUpload: () => FileUpload,
+  FilterBar: () => FilterBar,
+  FilterChips: () => FilterChips,
+  FormField: () => FormField,
+  FormPageScaffold: () => FormPageScaffold,
+  FormSubmitFeedback: () => FormSubmitFeedback,
+  FoundationAlertAcknowledgeActionButton: () => FoundationAlertAcknowledgeActionButton,
+  FoundationAlertDemoListPage: () => FoundationAlertDemoListPage,
+  FoundationAlertDetailView: () => FoundationAlertDetailView,
+  FoundationAlertDetailsReadout: () => FoundationAlertDetailsReadout,
+  FoundationAlertLinkedAlertGridReadout: () => FoundationAlertLinkedAlertGridReadout,
+  FoundationAlertLinkedFocusBarReadout: () => FoundationAlertLinkedFocusBarReadout,
+  FoundationAlertLinkedOverviewSection: () => FoundationAlertLinkedOverviewSection,
+  FoundationAlertLinkedOverviewStatsReadout: () => FoundationAlertLinkedOverviewStatsReadout,
+  FoundationAlertLinkedOverviewSurface: () => FoundationAlertLinkedOverviewSurface,
+  FoundationAlertListPageSection: () => FoundationAlertListPageSection,
+  FoundationAlertOverviewReadout: () => FoundationAlertOverviewReadout,
+  FoundationAlertPanelFrame: () => FoundationAlertPanelFrame,
+  FoundationAlertPanelOwnerSummaryReadout: () => FoundationAlertPanelOwnerSummaryReadout,
+  FoundationAlertPanelSelectedAlertReadout: () => FoundationAlertPanelSelectedAlertReadout,
+  FoundationAlertPanelSourceSummaryReadout: () => FoundationAlertPanelSourceSummaryReadout,
+  FoundationAlertPanelSummaryDigestReadout: () => FoundationAlertPanelSummaryDigestReadout,
+  FoundationAlertPanelSurface: () => FoundationAlertPanelSurface,
+  FoundationAlertPanelTimelineReadout: () => FoundationAlertPanelTimelineReadout,
+  FoundationAlertPresetDetailRoute: () => FoundationAlertPresetDetailRoute,
+  FoundationAlertRuntimeCallbackStalledReadout: () => FoundationAlertRuntimeCallbackStalledReadout,
+  FoundationAlertTableCard: () => FoundationAlertTableCard,
+  FoundationConsumerWiringSection: () => FoundationConsumerWiringSection,
+  FrontDeskPanel: () => FrontDeskPanel,
+  GaugeChart: () => GaugeChart,
+  GovernanceQuickViewSection: () => GovernanceQuickViewSection,
+  HeatmapChart: () => HeatmapChart,
+  ImagePreview: () => ImagePreview,
+  InfoRow: () => InfoRow,
+  Input: () => Input,
+  InputNumber: () => InputNumber,
+  ListToolbar: () => ListToolbar,
+  LoadingSkeleton: () => LoadingSkeleton,
+  MemberLevelDistribution: () => MemberLevelDistribution,
+  MemberTierDistribution: () => MemberTierDistribution,
+  Modal: () => Modal,
+  MultiSelect: () => MultiSelect,
+  NotificationCenter: () => NotificationCenter,
+  OperationsManagerDashboard: () => OperationsManagerDashboard,
+  PageShell: () => PageShell,
+  PaginatedDataTableCard: () => PaginatedDataTableCard,
+  Pagination: () => Pagination,
+  PasswordInput: () => PasswordInput,
+  Popover: () => Popover,
+  PortalConsumerGovernanceSection: () => PortalConsumerGovernanceSection,
+  PortalList: () => PortalList,
+  Progress: () => Progress,
+  QuickStats: () => QuickStats,
+  RadioGroup: () => RadioGroup,
+  Rating: () => Rating,
+  RuntimeGovernancePanelTemplate: () => RuntimeGovernancePanelTemplate,
+  RuntimeOperationDateTimeReadout: () => RuntimeOperationDateTimeReadout,
+  RuntimeOperationDemoListPage: () => RuntimeOperationDemoListPage,
+  RuntimeOperationDetailView: () => RuntimeOperationDetailView,
+  RuntimeOperationIdReadout: () => RuntimeOperationIdReadout,
+  RuntimeOperationOverviewReadout: () => RuntimeOperationOverviewReadout,
+  RuntimeOperationPresetDetailRoute: () => RuntimeOperationPresetDetailRoute,
+  RuntimeOperationReceiptListReadout: () => RuntimeOperationReceiptListReadout,
+  RuntimeOperationStatusReadout: () => RuntimeOperationStatusReadout,
+  RuntimeOperationTargetReadout: () => RuntimeOperationTargetReadout,
+  RuntimeOperationTimelineReadout: () => RuntimeOperationTimelineReadout,
+  RuntimeOperationToolbar: () => RuntimeOperationToolbar,
+  RuntimeOperationTypeReadout: () => RuntimeOperationTypeReadout,
+  RuntimeOperationsListPageSection: () => RuntimeOperationsListPageSection,
+  RuntimeOperationsTableCard: () => RuntimeOperationsTableCard,
+  RuntimePanelFeedback: () => RuntimePanelFeedback,
+  RuntimePanelFrame: () => RuntimePanelFrame,
+  RuntimePanelGrid: () => RuntimePanelGrid,
+  RuntimePresetCard: () => RuntimePresetCard,
+  RuntimePresetSelector: () => RuntimePresetSelector,
+  RuntimeReceiptEvents: () => RuntimeReceiptEvents,
+  RuntimeReceiptStatusCard: () => RuntimeReceiptStatusCard,
+  SalesClerkTool: () => SalesClerkTool,
+  ScrollArea: () => ScrollArea,
+  SearchFilterInput: () => SearchFilterInput,
+  Select: () => Select,
+  Slider: () => Slider,
+  SmartTrendChart: () => SmartTrendChart,
+  StatCard: () => StatCard,
+  StatusBadge: () => StatusBadge,
+  StatusBadgeGroup: () => StatusBadgeGroup,
+  Stepper: () => Stepper,
+  StoreManagerDashboard: () => StoreManagerDashboard,
+  SubmitButton: () => SubmitButton,
+  Switch: () => Switch,
+  Table: () => Table,
+  Tabs: () => Tabs,
+  Tag: () => Tag,
+  TagGroup: () => TagGroup,
+  TimePicker: () => TimePicker,
+  Timeline: () => Timeline,
+  ToastContainer: () => ToastContainer,
+  Tooltip: () => Tooltip,
+  Tree: () => Tree,
+  VirtualizedList: () => VirtualizedList,
+  WorkspaceBreadcrumb: () => WorkspaceBreadcrumb,
+  buildFoundationAlertDrilldownSections: () => buildFoundationAlertDrilldownSections,
+  buildFoundationAlertLytConnectionGovernanceSections: () => buildFoundationAlertLytConnectionGovernanceSections,
+  buildFoundationAlertRecordFromDrilldown: () => buildFoundationAlertRecordFromDrilldown,
+  canReplayRuntimePanelAction: () => canReplayRuntimePanelAction,
+  canReplayRuntimePanelReceipt: () => canReplayRuntimePanelReceipt,
+  collectLeafIds: () => collectLeafIds,
+  computeDeviceSummary: () => computeDeviceSummary,
+  createFoundationAdminGovernanceStatsCopy: () => createFoundationAdminGovernanceStatsCopy,
+  createFoundationAlertDetailMockMap: () => createFoundationAlertDetailMockMap,
+  createFoundationAlertLinkedOverviewStats: () => createFoundationAlertLinkedOverviewStats,
+  createFoundationAlertMockRecords: () => createFoundationAlertMockRecords,
+  createFoundationAlertNextNavigationBindings: () => createFoundationAlertNextNavigationBindings,
+  createFoundationAlertPanelActionButtonStyle: () => createFoundationAlertPanelActionButtonStyle,
+  createFoundationAlertPanelFeedbackStyle: () => createFoundationAlertPanelFeedbackStyle,
+  createFoundationAlertPanelFilterButtonStyle: () => createFoundationAlertPanelFilterButtonStyle,
+  createFoundationAlertPanelFilterChipStyle: () => createFoundationAlertPanelFilterChipStyle,
+  createFoundationAlertPanelSectionStyle: () => createFoundationAlertPanelSectionStyle,
+  createFoundationAlertPanelSelectionButtonStyle: () => createFoundationAlertPanelSelectionButtonStyle,
+  createFoundationAlertPanelShortcutCardStyle: () => createFoundationAlertPanelShortcutCardStyle,
+  createFoundationAlertPanelSummaryCardStyle: () => createFoundationAlertPanelSummaryCardStyle,
+  createFoundationAlertTableColumns: () => createFoundationAlertTableColumns,
+  createRuntimeOperationDetailMockMap: () => createRuntimeOperationDetailMockMap,
+  createRuntimeOperationMockRecords: () => createRuntimeOperationMockRecords,
+  createRuntimeOperationTableColumns: () => createRuntimeOperationTableColumns,
+  createRuntimeOperationToolbarProps: () => createRuntimeOperationToolbarProps,
+  createRuntimeReceiptStatusCard: () => createRuntimeReceiptStatusCard,
+  createRuntimeReceiptStatusCardProps: () => createRuntimeReceiptStatusCardProps,
+  describeRuntimeCallbackStalledEscalation: () => describeRuntimeCallbackStalledEscalation,
+  executeRuntimePanelOperation: () => executeRuntimePanelOperation,
+  findNodeById: () => findNodeById,
+  formatFoundationAlertActionLabel: () => formatFoundationAlertActionLabel,
+  formatFoundationAlertDrilldownDateTime: () => formatFoundationAlertDrilldownDateTime,
+  formatRuntimeCallbackStalledDuration: () => formatRuntimeCallbackStalledDuration,
+  foundationAdminGovernanceListPreset: () => foundationAdminGovernanceListPreset,
+  foundationAdminGovernanceSourceLabels: () => foundationAdminGovernanceSourceLabels,
+  foundationAlertDetailDemoPresets: () => foundationAlertDetailDemoPresets,
+  foundationAlertListDemoPresets: () => foundationAlertListDemoPresets,
+  foundationAlertPanelThemePresets: () => foundationAlertPanelThemePresets,
+  foundationAlertSeverityLabels: () => foundationAlertSeverityLabels,
+  foundationAlertStatusLabels: () => foundationAlertStatusLabels,
+  getRuntimePanelTenantId: () => getRuntimePanelTenantId,
+  hasRuntimePanelReceiptCode: () => hasRuntimePanelReceiptCode,
+  joinRuntimeScopeSummary: () => joinRuntimeScopeSummary,
+  listPageStatCardStyle: () => listPageStatCardStyle,
+  mapFoundationGovernanceAlertsToRecords: () => mapFoundationGovernanceAlertsToRecords,
+  refreshFoundationAlertSelection: () => refreshFoundationAlertSelection,
+  runtimeOperationDetailDemoPresets: () => runtimeOperationDetailDemoPresets,
+  runtimeOperationListDemoPresets: () => runtimeOperationListDemoPresets,
+  runtimeOperationStatusLabels: () => runtimeOperationStatusLabels,
+  runtimeOperationStatusVariants: () => runtimeOperationStatusVariants,
+  summarizeRuntimePanelReceipt: () => summarizeRuntimePanelReceipt,
+  useAlert: () => useAlert,
+  useFormSubmit: () => useFormSubmit,
+  useFoundationAlertDemoAcknowledge: () => useFoundationAlertDemoAcknowledge,
+  useFoundationAlertDrilldownQuery: () => useFoundationAlertDrilldownQuery,
+  useFoundationAlertFocusSync: () => useFoundationAlertFocusSync,
+  useFoundationAlertGovernanceState: () => useFoundationAlertGovernanceState,
+  useFoundationAlertLinkedFocusQuery: () => useFoundationAlertLinkedFocusQuery,
+  useFoundationAlertMutationController: () => useFoundationAlertMutationController,
+  useFoundationAlertTimelineQueryState: () => useFoundationAlertTimelineQueryState,
+  useFoundationAlertViewLinkController: () => useFoundationAlertViewLinkController,
+  useFoundationAsyncLoader: () => useFoundationAsyncLoader,
+  useListPageSectionState: () => useListPageSectionState,
+  useNotificationSummary: () => useNotificationSummary,
+  usePagination: () => usePagination,
+  useRuntimePanelState: () => useRuntimePanelState,
+  useRuntimePresetSelection: () => useRuntimePresetSelection,
+  useSearchFilter: () => useSearchFilter2,
+  useSortedItems: () => useSortedItems,
+  useToast: () => useToast,
+  validateFormFields: () => validateFormFields
+});
+module.exports = __toCommonJS(index_exports);
+
+// src/components/Badge.tsx
+var import_react = __toESM(require("react"));
+var import_jsx_runtime = require("react/jsx-runtime");
+var VARIANT_STYLES = {
+  default: { bg: "#94a3b8", text: "#ffffff", border: "#ffffff" },
+  primary: { bg: "#3b82f6", text: "#ffffff", border: "#ffffff" },
+  success: { bg: "#22c55e", text: "#ffffff", border: "#ffffff" },
+  warning: { bg: "#f59e0b", text: "#ffffff", border: "#ffffff" },
+  error: { bg: "#ef4444", text: "#ffffff", border: "#ffffff" },
+  info: { bg: "#06b6d4", text: "#ffffff", border: "#ffffff" },
+  purple: { bg: "#a855f7", text: "#ffffff", border: "#ffffff" }
+};
+var SIZE_MAP = {
+  sm: { dotSize: 8, badgeMinW: 16, fontSize: 10, padding: "0 4px" },
+  md: { dotSize: 10, badgeMinW: 20, fontSize: 11, padding: "0 5px" },
+  lg: { dotSize: 12, badgeMinW: 24, fontSize: 12, padding: "0 6px" }
+};
+var PLACEMENT_STYLES = {
+  "top-right": { top: 0, right: 0, transform: "translate(50%, -50%)" },
+  "top-left": { top: 0, left: 0, transform: "translate(-50%, -50%)" },
+  "bottom-right": { bottom: 0, right: 0, transform: "translate(50%, 50%)" },
+  "bottom-left": { bottom: 0, left: 0, transform: "translate(-50%, 50%)" }
+};
+function Badge({
+  children,
+  variant = "error",
+  size = "md",
+  placement = "top-right",
+  dot = false,
+  overflowCount = 99,
+  visible = true,
+  offset,
+  standalone = false,
+  className,
+  "data-testid": dataTestId
+}) {
+  if (!visible) return null;
+  const colors = VARIANT_STYLES[variant] ?? VARIANT_STYLES.default;
+  const dims = SIZE_MAP[size] ?? SIZE_MAP.md;
+  const displayContent = import_react.default.useMemo(() => {
+    if (dot || !children) return null;
+    const num = Number(children);
+    if (!Number.isNaN(num) && num > overflowCount) {
+      return `${overflowCount}+`;
+    }
+    return children;
+  }, [children, dot, overflowCount]);
+  const badgeElement = /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+    "span",
+    {
+      "data-testid": dataTestId ?? "badge",
+      className,
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minWidth: dot ? dims.dotSize : dims.badgeMinW,
+        height: dot ? dims.dotSize : dims.badgeMinW,
+        padding: dot ? 0 : dims.padding,
+        fontSize: dims.fontSize,
+        fontWeight: 600,
+        lineHeight: 1,
+        color: colors.text,
+        background: colors.bg,
+        border: `2px solid ${colors.border}`,
+        borderRadius: Math.max(dims.badgeMinW, dims.dotSize) / 2,
+        boxSizing: "content-box",
+        pointerEvents: "none",
+        userSelect: "none",
+        ...standalone ? {} : {
+          position: "absolute",
+          ...PLACEMENT_STYLES[placement],
+          ...offset ? {
+            transform: `translate(calc(50% + ${offset.x ?? 0}px), calc(-50% + ${offset.y ?? 0}px))`
+          } : {}
+        }
+      },
+      children: !dot && displayContent
+    }
+  );
+  if (standalone) return badgeElement;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+    "span",
+    {
+      style: {
+        position: "relative",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center"
+      },
+      children: badgeElement
+    }
+  );
+}
+
+// src/components/DescriptionList.tsx
+var import_react2 = __toESM(require("react"));
+var import_jsx_runtime2 = require("react/jsx-runtime");
+var columnGridMap = {
+  1: "1fr",
+  2: "1fr 1fr",
+  3: "1fr 1fr 1fr",
+  4: "1fr 1fr 1fr 1fr"
+};
+function DescriptionList({
+  items,
+  columns = 2,
+  layout = "horizontal",
+  size = "default",
+  title,
+  className
+}) {
+  const compact = size === "compact";
+  const vertical = layout === "vertical";
+  const gridTemplateColumns = columnGridMap[columns] || columnGridMap[2];
+  const wrapperStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: compact ? 12 : 16,
+    ...className ? {} : {}
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className, style: wrapperStyle, children: [
+    title && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+      "h3",
+      {
+        style: {
+          fontSize: compact ? 14 : 16,
+          fontWeight: 600,
+          color: "#1e293b",
+          margin: 0,
+          paddingBottom: compact ? 4 : 8,
+          borderBottom: "1px solid #e2e8f0"
+        },
+        children: title
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+      "div",
+      {
+        style: {
+          display: "grid",
+          gridTemplateColumns,
+          gap: compact ? "8px 16px" : "12px 24px"
+        },
+        children: items.map((item, idx) => {
+          const span = item.span || 1;
+          const clampedSpan = Math.min(Math.max(span, 1), columns);
+          const cellStyle = {
+            display: "flex",
+            flexDirection: vertical ? "column" : "row",
+            gap: vertical ? compact ? 2 : 4 : compact ? 4 : 8,
+            alignItems: vertical ? "flex-start" : "center",
+            padding: compact ? "4px 0" : "8px 0",
+            borderBottom: "1px solid #f1f5f9",
+            gridColumn: clampedSpan > 1 ? `span ${clampedSpan}` : void 0
+          };
+          const labelStyle = {
+            fontSize: compact ? 12 : 13,
+            fontWeight: 500,
+            color: "#64748b",
+            whiteSpace: "nowrap",
+            minWidth: vertical ? void 0 : compact ? 80 : 100,
+            flexShrink: 0
+          };
+          const valueStyle = {
+            fontSize: compact ? 13 : 14,
+            color: "#1e293b",
+            wordBreak: "break-word"
+          };
+          const content = item.render ? item.render() : item.value !== void 0 && item.value !== null ? item.value : import_react2.default.createElement("span", {
+            style: { color: "#94a3b8", fontStyle: "italic", fontSize: compact ? 12 : 13 }
+          }, "-");
+          return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: cellStyle, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: labelStyle, children: item.label }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: valueStyle, children: content })
+          ] }, idx);
+        })
+      }
+    )
+  ] });
+}
+
+// src/components/Avatar.tsx
+var import_react3 = __toESM(require("react"));
+var import_jsx_runtime3 = require("react/jsx-runtime");
+var SIZE_MAP2 = {
+  xs: { px: 24, fontSize: 10 },
+  sm: { px: 32, fontSize: 12 },
+  md: { px: 40, fontSize: 14 },
+  lg: { px: 48, fontSize: 16 },
+  xl: { px: 64, fontSize: 22 }
+};
+var STATUS_COLORS = {
+  online: "#22c55e",
+  offline: "#94a3b8",
+  busy: "#ef4444",
+  away: "#f59e0b"
+};
+var STATUS_RING = "2px solid rgba(15,23,42,0.95)";
+function statusDotSize(size) {
+  const dim = SIZE_MAP2[size].px;
+  if (dim <= 24) return 6;
+  if (dim <= 32) return 8;
+  if (dim <= 40) return 10;
+  if (dim <= 48) return 11;
+  return 13;
+}
+function statusOffset(size) {
+  const dim = SIZE_MAP2[size].px;
+  return Math.max(0, dim * 0.08);
+}
+function Avatar({
+  src,
+  initials,
+  alt = "",
+  size = "md",
+  status = "none",
+  bgColor = "rgba(59,130,246,0.18)",
+  textColor = "#93c5fd",
+  onClick,
+  className,
+  style
+}) {
+  const dim = SIZE_MAP2[size];
+  const [imgFailed, setImgFailed] = import_react3.default.useState(false);
+  const showImage = src && !imgFailed;
+  const displayInitials = import_react3.default.useMemo(() => {
+    if (!initials) return "";
+    return initials.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+  }, [initials]);
+  const containerStyle = {
+    position: "relative",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: dim.px,
+    height: dim.px,
+    borderRadius: "50%",
+    flexShrink: 0,
+    overflow: "hidden",
+    cursor: onClick ? "pointer" : void 0,
+    ...style
+  };
+  const fallbackStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    height: "100%",
+    borderRadius: "50%",
+    background: bgColor,
+    color: textColor,
+    fontSize: dim.fontSize,
+    fontWeight: 600,
+    lineHeight: 1,
+    userSelect: "none"
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
+    "div",
+    {
+      className,
+      style: containerStyle,
+      onClick,
+      role: onClick ? "button" : void 0,
+      tabIndex: onClick ? 0 : void 0,
+      "aria-label": alt || initials || "avatar",
+      children: [
+        status !== "none" && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          "span",
+          {
+            style: {
+              position: "absolute",
+              bottom: statusOffset(size),
+              right: statusOffset(size),
+              width: statusDotSize(size),
+              height: statusDotSize(size),
+              borderRadius: "50%",
+              background: STATUS_COLORS[status],
+              border: STATUS_RING,
+              zIndex: 2
+            },
+            "aria-hidden": true
+          }
+        ),
+        showImage ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          "img",
+          {
+            src,
+            alt: alt || "",
+            onError: () => setImgFailed(true),
+            style: {
+              width: "100%",
+              height: "100%",
+              borderRadius: "50%",
+              objectFit: "cover"
+            }
+          }
+        ) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: fallbackStyle, children: displayInitials || "?" })
+      ]
+    }
+  );
+}
+function AvatarGroup({ children, max = 4, spacing = -10 }) {
+  const childArray = import_react3.default.Children.toArray(children).filter(Boolean);
+  const visible = childArray.slice(0, max);
+  const overflow = childArray.length - max;
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", alignItems: "center" }, children: [
+    visible.map((child, i) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { marginRight: i < visible.length - 1 || overflow > 0 ? spacing : 0, zIndex: visible.length - i }, children: child }, i)),
+    overflow > 0 && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
+      "span",
+      {
+        style: {
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: SIZE_MAP2.md.px,
+          height: SIZE_MAP2.md.px,
+          borderRadius: "50%",
+          background: "rgba(148,163,184,0.15)",
+          color: "#94a3b8",
+          fontSize: 12,
+          fontWeight: 600,
+          marginLeft: spacing
+        },
+        children: [
+          "+",
+          overflow
+        ]
+      }
+    )
+  ] });
+}
+
+// src/components/BatchSelectionBar.tsx
+var import_jsx_runtime4 = require("react/jsx-runtime");
+var variantStyles = {
+  primary: {
+    background: "#2563eb",
+    color: "#fff",
+    border: "1px solid #2563eb"
+  },
+  danger: {
+    background: "#dc2626",
+    color: "#fff",
+    border: "1px solid #dc2626"
+  },
+  default: {
+    background: "#f1f5f9",
+    color: "#1e293b",
+    border: "1px solid #cbd5e1"
+  },
+  outline: {
+    background: "transparent",
+    color: "#475569",
+    border: "1px solid #cbd5e1"
+  }
+};
+function BatchSelectionBar({
+  selectedCount,
+  totalCount,
+  itemLabel = "items",
+  actions,
+  onAction,
+  onClearSelection,
+  "data-testid": testId
+}) {
+  if (selectedCount === 0) {
+    return null;
+  }
+  const countLabel = totalCount && selectedCount === totalCount ? `All ${selectedCount} ${itemLabel} selected` : `${selectedCount} ${itemLabel} selected`;
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+    "div",
+    {
+      "data-testid": testId ?? "batch-selection-bar",
+      role: "toolbar",
+      "aria-label": "Batch selection actions",
+      style: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 8,
+        padding: "10px 16px",
+        background: "#eff6ff",
+        border: "1px solid #bfdbfe",
+        borderRadius: 8,
+        marginBottom: 12
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                "span",
+                {
+                  "data-testid": "batch-selection-count",
+                  style: {
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "#1e40af"
+                  },
+                  children: countLabel
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                "button",
+                {
+                  "data-testid": "batch-selection-clear",
+                  type: "button",
+                  onClick: onClearSelection,
+                  style: {
+                    fontSize: 13,
+                    background: "none",
+                    border: "none",
+                    color: "#6b7280",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    padding: 0
+                  },
+                  children: "Clear selection"
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap"
+            },
+            children: actions.map((action) => {
+              const style = variantStyles[action.variant ?? "default"];
+              return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+                "button",
+                {
+                  "data-testid": `batch-action-${action.key}`,
+                  type: "button",
+                  disabled: action.disabled,
+                  title: action.description,
+                  "aria-label": action.description ?? action.label,
+                  onClick: () => onAction(action.key),
+                  style: {
+                    fontSize: 13,
+                    fontWeight: 500,
+                    padding: "6px 14px",
+                    borderRadius: 6,
+                    cursor: action.disabled ? "not-allowed" : "pointer",
+                    opacity: action.disabled ? 0.5 : 1,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    ...style
+                  },
+                  children: [
+                    action.icon,
+                    action.requireConfirm ? `${action.label}...` : action.label
+                  ]
+                },
+                action.key
+              );
+            })
+          }
+        )
+      ]
+    }
+  );
+}
+
+// src/components/Accordion.tsx
+var import_react4 = require("react");
+var import_jsx_runtime5 = require("react/jsx-runtime");
+function Accordion({
+  items,
+  multiple = false,
+  defaultExpanded = [],
+  expanded: controlledExpanded,
+  onExpandedChange,
+  variant = "default",
+  size = "md"
+}) {
+  const [internalExpanded, setInternalExpanded] = (0, import_react4.useState)(defaultExpanded);
+  const isControlled = controlledExpanded !== void 0;
+  const expandedKeys = isControlled ? controlledExpanded : internalExpanded;
+  const handleToggle = (0, import_react4.useCallback)(
+    (key) => {
+      const current = expandedKeys;
+      let next;
+      if (current.includes(key)) {
+        next = current.filter((k) => k !== key);
+      } else if (multiple) {
+        next = [...current, key];
+      } else {
+        next = [key];
+      }
+      if (!isControlled) {
+        setInternalExpanded(next);
+      }
+      onExpandedChange?.(next);
+    },
+    [expandedKeys, multiple, isControlled, onExpandedChange]
+  );
+  if (items.length === 0) return null;
+  const fontSize = size === "sm" ? 13 : 14;
+  const titlePaddingV = size === "sm" ? 8 : 12;
+  const titlePaddingH = size === "sm" ? 12 : 16;
+  const contentPadding = size === "sm" ? 12 : 16;
+  const iconSize = size === "sm" ? 14 : 16;
+  const containerStyle = {
+    display: "flex",
+    flexDirection: "column",
+    ...variant === "bordered" ? {
+      border: "1px solid rgba(148,163,184,0.14)",
+      borderRadius: 12,
+      overflow: "hidden"
+    } : {}
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: containerStyle, role: "region", "aria-label": "Accordion", children: items.map((item, idx) => {
+    const isExpanded = expandedKeys.includes(item.key);
+    const isDisabled = item.disabled === true;
+    const isFirst = idx === 0;
+    const isLast = idx === items.length - 1;
+    const itemContainerStyle = {
+      borderBottom: variant !== "bordered" && !isLast ? "1px solid rgba(148,163,184,0.10)" : variant === "bordered" && !isLast ? "1px solid rgba(148,163,184,0.10)" : "none",
+      ...variant === "minimal" && isExpanded ? { background: "rgba(37,99,235,0.04)" } : {}
+    };
+    const headerStyle = {
+      display: "flex",
+      alignItems: "center",
+      width: "100%",
+      background: "none",
+      border: "none",
+      cursor: isDisabled ? "not-allowed" : "pointer",
+      padding: `${titlePaddingV}px ${titlePaddingH}px`,
+      fontSize,
+      fontWeight: 500,
+      color: isDisabled ? "#64748b" : "#e2e8f0",
+      textAlign: "left",
+      gap: 10,
+      transition: "background 0.15s ease",
+      opacity: isDisabled ? 0.5 : 1,
+      ...variant === "default" && isExpanded ? { background: "rgba(37,99,235,0.06)" } : {},
+      ...variant === "bordered" && isExpanded ? { background: "rgba(37,99,235,0.08)" } : {}
+    };
+    const chevronStyle = {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: iconSize,
+      height: iconSize,
+      transition: "transform 0.2s ease",
+      transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+      flexShrink: 0
+    };
+    const titleAreaStyle = {
+      flex: 1,
+      minWidth: 0
+    };
+    const subtitleStyle2 = {
+      fontSize: fontSize - 2,
+      color: "#64748b",
+      marginTop: 2,
+      fontWeight: 400
+    };
+    const contentStyle = {
+      maxHeight: isExpanded ? "2000px" : "0px",
+      overflow: "hidden",
+      transition: "max-height 0.3s ease, padding 0.3s ease",
+      padding: isExpanded ? `0 ${contentPadding}px ${contentPadding}px ${contentPadding}px` : `0 ${contentPadding}px`,
+      color: "#cbd5e1",
+      fontSize: fontSize - 1,
+      lineHeight: 1.6
+    };
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: itemContainerStyle, "data-testid": `accordion-item-${item.key}`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+        "button",
+        {
+          type: "button",
+          role: "button",
+          "aria-expanded": isExpanded,
+          "aria-disabled": isDisabled,
+          disabled: isDisabled,
+          onClick: () => {
+            if (!isDisabled) handleToggle(item.key);
+          },
+          style: headerStyle,
+          "data-testid": `accordion-header-${item.key}`,
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: titleAreaStyle, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { children: item.title }),
+              item.subtitle && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: subtitleStyle2, children: item.subtitle })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { style: chevronStyle, "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+              "svg",
+              {
+                width: iconSize,
+                height: iconSize,
+                viewBox: "0 0 16 16",
+                fill: "none",
+                stroke: "currentColor",
+                strokeWidth: 2,
+                strokeLinecap: "round",
+                children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M4 6l4 4 4-4" })
+              }
+            ) })
+          ]
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "div",
+        {
+          role: "region",
+          "aria-hidden": !isExpanded,
+          style: contentStyle,
+          "data-testid": `accordion-content-${item.key}`,
+          children: item.content
+        }
+      )
+    ] }, item.key);
+  }) });
+}
+
+// src/components/Breadcrumb.tsx
+var import_jsx_runtime6 = require("react/jsx-runtime");
+function Breadcrumb({
+  items,
+  separator = "/",
+  maxItems = 0,
+  "data-testid": testId
+}) {
+  if (!items || items.length === 0) {
+    return null;
+  }
+  let visible = items;
+  if (maxItems > 0 && items.length > maxItems) {
+    const breakpoint = Math.max(1, maxItems - 2);
+    const head = items.slice(0, breakpoint);
+    const tail = items.slice(-1);
+    visible = [
+      ...head,
+      { label: "\u2026" },
+      ...tail
+    ];
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("nav", { "aria-label": "Breadcrumb", "data-testid": testId ?? "breadcrumb", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+    "ol",
+    {
+      style: {
+        listStyle: "none",
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        padding: 0,
+        margin: 0,
+        gap: 4
+      },
+      children: visible.map((item, idx) => {
+        const isLast = idx === visible.length - 1;
+        const isEllipsis = item.label === "\u2026";
+        return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+          "li",
+          {
+            "data-testid": isEllipsis ? "breadcrumb-ellipsis" : `breadcrumb-item-${idx}`,
+            style: { display: "flex", alignItems: "center", gap: 4 },
+            children: [
+              isEllipsis ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { "aria-hidden": "true", style: { color: "#6b7280" }, children: item.label }) : isLast ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+                "span",
+                {
+                  "aria-current": "page",
+                  style: {
+                    fontWeight: 600,
+                    color: "#111827"
+                  },
+                  children: item.label
+                }
+              ) : item.href ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+                "a",
+                {
+                  href: item.href,
+                  onClick: item.onClick,
+                  style: {
+                    color: "#4f46e5",
+                    textDecoration: "none"
+                  },
+                  children: item.label
+                }
+              ) : /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+                "button",
+                {
+                  type: "button",
+                  onClick: item.onClick,
+                  style: {
+                    background: "none",
+                    border: "none",
+                    color: "#4f46e5",
+                    cursor: "pointer",
+                    padding: 0,
+                    font: "inherit"
+                  },
+                  children: item.label
+                }
+              ),
+              !isLast && /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+                "span",
+                {
+                  "aria-hidden": "true",
+                  "data-testid": `breadcrumb-sep-${idx}`,
+                  style: { color: "#9ca3af", marginLeft: 4, marginRight: 4 },
+                  children: separator
+                }
+              )
+            ]
+          },
+          `${item.label}-${idx}`
+        );
+      })
+    }
+  ) });
+}
+
+// src/components/Calendar.tsx
+var import_react5 = require("react");
+var import_jsx_runtime7 = require("react/jsx-runtime");
+var DEFAULT_WEEK_DAYS = ["\u65E5", "\u4E00", "\u4E8C", "\u4E09", "\u56DB", "\u4E94", "\u516D"];
+var DEFAULT_MONTH_LABELS = [
+  "\u4E00\u6708",
+  "\u4E8C\u6708",
+  "\u4E09\u6708",
+  "\u56DB\u6708",
+  "\u4E94\u6708",
+  "\u516D\u6708",
+  "\u4E03\u6708",
+  "\u516B\u6708",
+  "\u4E5D\u6708",
+  "\u5341\u6708",
+  "\u5341\u4E00\u6708",
+  "\u5341\u4E8C\u6708"
+];
+var MARKER_COLORS = {
+  dot: "#60a5fa",
+  badge: "#f59e0b",
+  highlight: "rgba(59,130,246,0.15)"
+};
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+function isWeekend(date) {
+  const day = date.getDay();
+  return day === 0 || day === 6;
+}
+function toDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+function isToday(date) {
+  const now = /* @__PURE__ */ new Date();
+  return isSameDay(date, now);
+}
+function getDaysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+function getFirstDayOfWeek(year, month) {
+  return new Date(year, month, 1).getDay();
+}
+var STYLES = {
+  container: {
+    display: "inline-flex",
+    flexDirection: "column",
+    borderRadius: 16,
+    background: "rgba(15, 23, 42, 0.45)",
+    border: "1px solid rgba(148, 163, 184, 0.16)",
+    padding: 16,
+    userSelect: "none",
+    minWidth: 280
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    padding: "0 4px"
+  },
+  navButton: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    border: "none",
+    background: "rgba(148, 163, 184, 0.08)",
+    color: "#94a3b8",
+    cursor: "pointer",
+    fontSize: 16,
+    transition: "background 0.15s"
+  },
+  monthLabel: {
+    fontSize: 15,
+    fontWeight: 600,
+    color: "#f1f5f9",
+    minWidth: 140,
+    textAlign: "center"
+  },
+  weekDayRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(7, 1fr)",
+    marginBottom: 8
+  },
+  weekDayCell: {
+    textAlign: "center",
+    fontSize: 11,
+    fontWeight: 600,
+    color: "#64748b",
+    padding: "4px 0"
+  },
+  dayGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(7, 1fr)",
+    gap: 2
+  },
+  dayCell: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    border: "none",
+    background: "transparent",
+    color: "#cbd5e1",
+    cursor: "pointer",
+    fontSize: 13,
+    position: "relative",
+    transition: "background 0.12s, color 0.12s",
+    margin: "0 auto"
+  },
+  todayIndicator: {
+    position: "absolute",
+    bottom: 2,
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: 4,
+    height: 4,
+    borderRadius: "50%",
+    background: "#60a5fa"
+  }
+};
+function markerDotStyle(color) {
+  return {
+    width: 4,
+    height: 4,
+    borderRadius: "50%",
+    background: color,
+    marginTop: 2
+  };
+}
+function markerBadgeStyle(color) {
+  return {
+    fontSize: 9,
+    fontWeight: 600,
+    color,
+    background: `${color}1a`,
+    borderRadius: 3,
+    padding: "0 3px",
+    marginTop: 1,
+    maxWidth: 32,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap"
+  };
+}
+function ChevronLeft() {
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: "M15 18l-6-6 6-6" }) });
+}
+function ChevronRight() {
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: "M9 18l6-6-6-6" }) });
+}
+function Calendar({
+  value,
+  defaultValue,
+  onChange,
+  onMonthChange,
+  markers = [],
+  minDate,
+  maxDate,
+  className,
+  weekDayLabels = DEFAULT_WEEK_DAYS,
+  monthLabels = DEFAULT_MONTH_LABELS,
+  disableWeekends = false,
+  isDateDisabled: isDateDisabled2,
+  renderDate
+}) {
+  const [internalValue, setInternalValue] = (0, import_react5.useState)(defaultValue ?? null);
+  const selectedDate = value !== void 0 ? value : internalValue;
+  const todayDate = /* @__PURE__ */ new Date();
+  const [viewYear, setViewYear] = (0, import_react5.useState)(
+    () => selectedDate ? selectedDate.getFullYear() : todayDate.getFullYear()
+  );
+  const [viewMonth, setViewMonth] = (0, import_react5.useState)(
+    () => selectedDate ? selectedDate.getMonth() : todayDate.getMonth()
+  );
+  const [hoverDate, setHoverDate] = (0, import_react5.useState)(null);
+  const markerMap = (0, import_react5.useMemo)(() => {
+    const map = /* @__PURE__ */ new Map();
+    for (const m of markers) {
+      map.set(m.date, m);
+    }
+    return map;
+  }, [markers]);
+  const goToPrevMonth = (0, import_react5.useCallback)(() => {
+    setViewMonth((prev) => {
+      if (prev === 0) {
+        setViewYear((y) => y - 1);
+        return 11;
+      }
+      return prev - 1;
+    });
+    setTimeout(() => {
+      const y = viewMonth === 0 ? viewYear - 1 : viewYear;
+      const m = viewMonth === 0 ? 11 : viewMonth - 1;
+      onMonthChange?.(y, m);
+    }, 0);
+  }, [viewYear, viewMonth, onMonthChange]);
+  const goToNextMonth = (0, import_react5.useCallback)(() => {
+    setViewMonth((prev) => {
+      if (prev === 11) {
+        setViewYear((y) => y + 1);
+        return 0;
+      }
+      return prev + 1;
+    });
+    setTimeout(() => {
+      const y = viewMonth === 11 ? viewYear + 1 : viewYear;
+      const m = viewMonth === 11 ? 0 : viewMonth + 1;
+      onMonthChange?.(y, m);
+    }, 0);
+  }, [viewYear, viewMonth, onMonthChange]);
+  const selectDate = (0, import_react5.useCallback)(
+    (date) => {
+      if (value === void 0) {
+        setInternalValue(date);
+      }
+      onChange?.(date);
+    },
+    [value, onChange]
+  );
+  const isSelectable = (0, import_react5.useCallback)(
+    (date) => {
+      if (minDate && date < new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate())) {
+        return false;
+      }
+      if (maxDate && date > new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate())) {
+        return false;
+      }
+      if (disableWeekends && isWeekend(date)) {
+        return false;
+      }
+      if (isDateDisabled2?.(date)) {
+        return false;
+      }
+      return true;
+    },
+    [minDate, maxDate, disableWeekends, isDateDisabled2]
+  );
+  const daysInMonth = getDaysInMonth(viewYear, viewMonth);
+  const firstDay = getFirstDayOfWeek(viewYear, viewMonth);
+  const cells = [];
+  const prevMonthDays = getDaysInMonth(viewYear, viewMonth - 1 < 0 ? 11 : viewMonth - 1);
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const day = prevMonthDays - i;
+    const date = new Date(viewYear, viewMonth - 1, day);
+    cells.push(
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        "button",
+        {
+          style: { ...STYLES.dayCell, color: "#334155", cursor: "default" },
+          disabled: true,
+          "aria-label": `${viewMonth === 0 ? viewYear - 1 : viewYear}\u5E74${viewMonth === 0 ? 12 : viewMonth}\u6708${day}\u65E5`,
+          children: day
+        },
+        `prev-${day}`
+      )
+    );
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(viewYear, viewMonth, day);
+    const dateKey = toDateKey(date);
+    const selected = selectedDate ? isSameDay(date, selectedDate) : false;
+    const today2 = isToday(date);
+    const selectable = isSelectable(date);
+    const marker = markerMap.get(dateKey);
+    const hovered = hoverDate ? isSameDay(date, hoverDate) : false;
+    const cellStyle = {
+      ...STYLES.dayCell,
+      color: selectable ? "#e2e8f0" : "#4b5563",
+      cursor: selectable ? "pointer" : "not-allowed",
+      background: "transparent",
+      fontWeight: today2 ? 700 : 400
+    };
+    if (selected) {
+      cellStyle.background = "#3b82f6";
+      cellStyle.color = "#fff";
+      cellStyle.fontWeight = 700;
+    } else if (hovered && selectable) {
+      cellStyle.background = "rgba(59, 130, 246, 0.18)";
+    } else if (marker?.type === "highlight") {
+      cellStyle.background = marker.color ?? MARKER_COLORS.highlight;
+    }
+    const dotColor = marker?.color ?? MARKER_COLORS.dot;
+    const badgeColor = marker?.color ?? MARKER_COLORS.badge;
+    const markerEl = marker?.type === "dot" ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: markerDotStyle(dotColor) }) : marker?.type === "badge" ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: markerBadgeStyle(badgeColor), title: marker.label, children: marker.label }) : null;
+    cells.push(
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+        "button",
+        {
+          style: cellStyle,
+          disabled: !selectable,
+          onClick: () => selectable && selectDate(date),
+          onMouseEnter: () => selectable && setHoverDate(date),
+          onMouseLeave: () => setHoverDate(null),
+          "aria-label": `${viewYear}\u5E74${viewMonth + 1}\u6708${day}\u65E5${selected ? " (\u5DF2\u9009\u4E2D)" : ""}${today2 ? " (\u4ECA\u5929)" : ""}`,
+          "aria-selected": selected,
+          children: [
+            renderDate ? renderDate(date, selected, today2) : day,
+            markerEl,
+            today2 && !selected && /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: STYLES.todayIndicator })
+          ]
+        },
+        `day-${day}`
+      )
+    );
+  }
+  const remainingCells = 7 - cells.length % 7;
+  if (remainingCells < 7) {
+    for (let day = 1; day <= remainingCells; day++) {
+      cells.push(
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+          "button",
+          {
+            style: { ...STYLES.dayCell, color: "#334155", cursor: "default" },
+            disabled: true,
+            "aria-label": `${viewMonth === 11 ? viewYear + 1 : viewYear}\u5E74${viewMonth === 11 ? 1 : viewMonth + 2}\u6708${day}\u65E5`,
+            children: day
+          },
+          `next-${day}`
+        )
+      );
+    }
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className, style: STYLES.container, role: "grid", "aria-label": "\u65E5\u5386", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: STYLES.header, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        "button",
+        {
+          style: STYLES.navButton,
+          onClick: goToPrevMonth,
+          "aria-label": "\u4E0A\u4E2A\u6708",
+          onMouseEnter: (e) => {
+            e.currentTarget.style.background = "rgba(148, 163, 184, 0.18)";
+          },
+          onMouseLeave: (e) => {
+            e.currentTarget.style.background = "rgba(148, 163, 184, 0.08)";
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(ChevronLeft, {})
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { style: STYLES.monthLabel, children: [
+        viewYear,
+        "\u5E74 ",
+        monthLabels[viewMonth]
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        "button",
+        {
+          style: STYLES.navButton,
+          onClick: goToNextMonth,
+          "aria-label": "\u4E0B\u4E2A\u6708",
+          onMouseEnter: (e) => {
+            e.currentTarget.style.background = "rgba(148, 163, 184, 0.18)";
+          },
+          onMouseLeave: (e) => {
+            e.currentTarget.style.background = "rgba(148, 163, 184, 0.08)";
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(ChevronRight, {})
+        }
+      )
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: STYLES.weekDayRow, role: "row", children: weekDayLabels.map((label) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: STYLES.weekDayCell, role: "columnheader", children: label }, label)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: STYLES.dayGrid, role: "rowgroup", children: cells })
+  ] });
+}
+
+// src/components/Carousel.tsx
+var import_react6 = require("react");
+var import_jsx_runtime8 = require("react/jsx-runtime");
+function resolveAspectRatioPadding(ratio) {
+  const parts = ratio.split("/");
+  if (parts.length !== 2) return "56.25%";
+  const w = Number(parts[0]);
+  const h = Number(parts[1]);
+  if (!w || !h) return "56.25%";
+  return `${h / w * 100}%`;
+}
+function Carousel({
+  slides,
+  autoPlay = 0,
+  showArrows = true,
+  showDots = true,
+  loop = true,
+  slidesPerView = 1,
+  gap = 0,
+  aspectRatio = "16/9",
+  variant = "default",
+  height,
+  ariaLabel = "Carousel"
+}) {
+  const [currentIndex, setCurrentIndex] = (0, import_react6.useState)(0);
+  const [isTransitioning, setIsTransitioning] = (0, import_react6.useState)(false);
+  const autoPlayRef = (0, import_react6.useRef)(null);
+  const containerRef = (0, import_react6.useRef)(null);
+  const totalSlides = slides.length;
+  if (totalSlides === 0) return null;
+  const maxIndex = Math.max(0, Math.ceil(totalSlides / slidesPerView) - 1);
+  const goTo = (0, import_react6.useCallback)(
+    (index) => {
+      if (isTransitioning) return;
+      let target = index;
+      if (loop) {
+        if (target < 0) target = maxIndex;
+        if (target > maxIndex) target = 0;
+      } else {
+        target = Math.max(0, Math.min(target, maxIndex));
+      }
+      if (target === currentIndex) return;
+      setIsTransitioning(true);
+      setCurrentIndex(target);
+    },
+    [currentIndex, maxIndex, loop, isTransitioning]
+  );
+  const goNext = (0, import_react6.useCallback)(() => {
+    goTo(currentIndex + 1);
+  }, [currentIndex, goTo]);
+  const goPrev = (0, import_react6.useCallback)(() => {
+    goTo(currentIndex - 1);
+  }, [currentIndex, goTo]);
+  (0, import_react6.useEffect)(() => {
+    if (autoPlay > 0 && totalSlides > 1) {
+      autoPlayRef.current = setInterval(() => {
+        goNext();
+      }, autoPlay);
+    }
+    return () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+        autoPlayRef.current = null;
+      }
+    };
+  }, [autoPlay, goNext, totalSlides]);
+  (0, import_react6.useEffect)(() => {
+    if (isTransitioning) {
+      const timer = setTimeout(() => setIsTransitioning(false), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [isTransitioning]);
+  const aspectPadding = resolveAspectRatioPadding(aspectRatio);
+  const wrapperStyle = {
+    position: "relative",
+    overflow: "hidden",
+    borderRadius: 12,
+    width: "100%",
+    height: height !== void 0 ? height : void 0
+  };
+  if (height === void 0) {
+    wrapperStyle.position = "relative";
+    wrapperStyle.paddingTop = aspectPadding;
+  }
+  const trackStyle = {
+    display: "flex",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    transition: "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+    transform: `translateX(-${currentIndex * 100}%)`
+  };
+  const slideOuterStyle = {
+    flex: `0 0 ${100 / slidesPerView}%`,
+    paddingRight: gap,
+    boxSizing: "border-box"
+  };
+  const slideInnerStyle = {
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    borderRadius: variant === "card" ? 8 : 0,
+    background: variant === "card" ? "linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(99,102,241,0.04) 100%)" : "transparent",
+    ...variant === "card" ? {
+      border: "1px solid rgba(148,163,184,0.12)",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+    } : {},
+    ...variant === "fade" ? {
+      transition: "opacity 0.35s ease"
+    } : {}
+  };
+  const arrowBtnBase = {
+    position: "absolute",
+    top: "50%",
+    transform: "translateY(-50%)",
+    zIndex: 10,
+    width: 36,
+    height: 36,
+    borderRadius: "50%",
+    border: "none",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "rgba(15,23,42,0.75)",
+    color: "#e2e8f0",
+    backdropFilter: "blur(8px)",
+    transition: "background 0.2s ease, opacity 0.2s ease",
+    padding: 0
+  };
+  const dotsWrapperStyle = {
+    position: "absolute",
+    bottom: 12,
+    left: "50%",
+    transform: "translateX(-50%)",
+    display: "flex",
+    gap: 8,
+    zIndex: 10
+  };
+  const dotBase = {
+    width: 8,
+    height: 8,
+    borderRadius: "50%",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
+    transition: "background 0.2s ease, transform 0.2s ease"
+  };
+  const activeDotIndex = Math.floor(currentIndex);
+  const dotsCount = maxIndex + 1;
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
+    "div",
+    {
+      ref: containerRef,
+      style: wrapperStyle,
+      role: "region",
+      "aria-label": ariaLabel,
+      "aria-roledescription": "carousel",
+      "data-testid": "carousel",
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: trackStyle, "data-testid": "carousel-track", children: slides.map((slide, idx) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+          "div",
+          {
+            style: slideOuterStyle,
+            role: "group",
+            "aria-roledescription": "slide",
+            "aria-label": slide.label || `Slide ${idx + 1} of ${totalSlides}`,
+            "data-testid": `carousel-slide-${slide.key}`,
+            children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: slideInnerStyle, children: slide.content })
+          },
+          slide.key
+        )) }),
+        showArrows && totalSlides > slidesPerView && /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+            "button",
+            {
+              type: "button",
+              style: { ...arrowBtnBase, left: 12 },
+              onClick: goPrev,
+              "aria-label": "Previous slide",
+              "data-testid": "carousel-prev",
+              children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("svg", { width: 18, height: 18, viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: "M10 4L6 8l4 4" }) })
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+            "button",
+            {
+              type: "button",
+              style: { ...arrowBtnBase, right: 12 },
+              onClick: goNext,
+              "aria-label": "Next slide",
+              "data-testid": "carousel-next",
+              children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("svg", { width: 18, height: 18, viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { d: "M6 4l4 4-4 4" }) })
+            }
+          )
+        ] }),
+        showDots && dotsCount > 1 && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: dotsWrapperStyle, "data-testid": "carousel-dots", children: Array.from({ length: dotsCount }, (_, i) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+          "button",
+          {
+            type: "button",
+            style: {
+              ...dotBase,
+              background: i === activeDotIndex ? "#e2e8f0" : "rgba(148,163,184,0.4)",
+              transform: i === activeDotIndex ? "scale(1.3)" : "scale(1)"
+            },
+            onClick: () => goTo(i),
+            "aria-label": `Go to slide ${i + 1}`,
+            "aria-current": i === activeDotIndex ? "true" : void 0,
+            "data-testid": `carousel-dot-${i}`
+          },
+          i
+        )) })
+      ]
+    }
+  );
+}
+
+// src/components/WorkspaceBreadcrumb.tsx
+var import_jsx_runtime9 = require("react/jsx-runtime");
+function WorkspaceBreadcrumb({
+  homeLabel = "\u603B\u89C8",
+  homeHref = "/",
+  workspaceLabel,
+  workspaceHref,
+  intermediateLabel = "\u8BE6\u60C5",
+  detailLabel,
+  extraSegments = []
+}) {
+  const items = [];
+  if (homeHref) {
+    items.push({ label: homeLabel, href: homeHref });
+  } else {
+    items.push({ label: homeLabel });
+  }
+  items.push({ label: workspaceLabel, href: workspaceHref });
+  if (intermediateLabel) {
+    items.push({ label: intermediateLabel });
+  }
+  for (const segment of extraSegments) {
+    items.push({ label: segment.label, href: segment.href });
+  }
+  items.push({ label: detailLabel });
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+    "div",
+    {
+      "data-testid": "workspace-breadcrumb",
+      style: {
+        marginBottom: 16,
+        fontSize: 13,
+        color: "#94a3b8"
+      },
+      children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(Breadcrumb, { items })
+    }
+  );
+}
+
+// src/components/DetailClosureBar.tsx
+var import_jsx_runtime10 = require("react/jsx-runtime");
+function DetailClosureBar({
+  links,
+  heading = "\u4E0A\u4E0B\u6587\u95ED\u73AF",
+  caption = "\u4ECE\u8BE6\u60C5\u9875\u4E00\u952E\u56DE\u5230\u5DE5\u4F5C\u53F0\u3001\u5BA1\u8BA1\u3001\u6CBB\u7406\u5BA1\u6279\u6216 Foundation \u6A21\u5757",
+  "data-testid": testId
+}) {
+  if (links.length === 0) {
+    return null;
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+    "section",
+    {
+      "data-testid": testId ?? "detail-closure-bar",
+      "aria-label": "Detail closure bar",
+      style: sectionStyle,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("header", { style: { marginBottom: 12 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("h3", { style: headingStyle, children: heading }),
+          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { style: { margin: 0, fontSize: 12, color: "#94a3b8" }, children: caption })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: gridStyle, "data-testid": "detail-closure-grid", children: links.map((link) => /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+          "a",
+          {
+            href: link.href,
+            "aria-label": link.ariaLabel ?? link.title,
+            "data-testid": `detail-closure-link-${link.key}`,
+            style: {
+              ...cardStyle,
+              ...link.variant === "warning" ? warningCardStyle : null,
+              ...link.variant === "danger" ? dangerCardStyle : null
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: titleStyle, children: link.title }),
+              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: subtitleStyle, children: link.subtitle }),
+              link.context ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: contextStyle, children: link.context }) : null
+            ]
+          },
+          link.key
+        )) })
+      ]
+    }
+  );
+}
+var sectionStyle = {
+  border: "1px solid rgba(148,163,184,0.18)",
+  borderRadius: 12,
+  padding: 16,
+  background: "rgba(15,23,42,0.55)",
+  marginTop: 8
+};
+var headingStyle = {
+  fontSize: 13,
+  color: "#94a3b8",
+  margin: "0 0 4px",
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: 0.4
+};
+var gridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+  gap: 12
+};
+var cardStyle = {
+  display: "block",
+  border: "1px solid rgba(59,130,246,0.18)",
+  borderRadius: 12,
+  padding: 16,
+  background: "rgba(15,23,42,0.55)",
+  textDecoration: "none"
+};
+var warningCardStyle = {
+  border: "1px solid rgba(245,158,11,0.25)",
+  background: "rgba(245,158,11,0.06)"
+};
+var dangerCardStyle = {
+  border: "1px solid rgba(239,68,68,0.25)",
+  background: "rgba(239,68,68,0.06)"
+};
+var titleStyle = {
+  fontSize: 14,
+  fontWeight: 600,
+  color: "#bfdbfe",
+  marginBottom: 4
+};
+var subtitleStyle = {
+  fontSize: 12,
+  color: "#94a3b8"
+};
+var contextStyle = {
+  fontSize: 11,
+  color: "#64748b",
+  marginTop: 6,
+  fontFamily: "monospace"
+};
+
+// src/components/DetailActionBar.tsx
+var import_react8 = require("react");
+
+// src/components/Toast.tsx
+var import_react7 = require("react");
+var import_jsx_runtime11 = require("react/jsx-runtime");
+var TOAST_ICONS = {
+  success: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+    "path",
+    {
+      d: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
+      stroke: "#4ade80",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }
+  ) }),
+  error: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+    "path",
+    {
+      d: "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z",
+      stroke: "#f87171",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }
+  ) }),
+  warning: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+    "path",
+    {
+      d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z",
+      stroke: "#fbbf24",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }
+  ) }),
+  info: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+    "path",
+    {
+      d: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+      stroke: "#60a5fa",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }
+  ) })
+};
+var TOAST_STYLES = {
+  success: {
+    bg: "rgba(22, 101, 52, 0.65)",
+    border: "rgba(74, 222, 128, 0.35)",
+    text: "#bbf7d0"
+  },
+  error: {
+    bg: "rgba(127, 29, 29, 0.65)",
+    border: "rgba(248, 113, 113, 0.35)",
+    text: "#fecaca"
+  },
+  warning: {
+    bg: "rgba(113, 63, 18, 0.65)",
+    border: "rgba(251, 191, 36, 0.35)",
+    text: "#fde68a"
+  },
+  info: {
+    bg: "rgba(30, 64, 175, 0.65)",
+    border: "rgba(96, 165, 250, 0.35)",
+    text: "#bfdbfe"
+  }
+};
+var PROGRESS_COLORS = {
+  success: "#4ade80",
+  error: "#f87171",
+  warning: "#fbbf24",
+  info: "#60a5fa"
+};
+function ToastItem({ entry, onDismiss }) {
+  const colors = TOAST_STYLES[entry.variant];
+  const progressColor = PROGRESS_COLORS[entry.variant];
+  const progressBarRef = (0, import_react7.useRef)(null);
+  (0, import_react7.useEffect)(() => {
+    if (entry.durationMs <= 0) return;
+    const bar = progressBarRef.current;
+    if (!bar) return;
+    const raf = requestAnimationFrame(() => {
+      bar.style.transition = `width ${entry.durationMs}ms linear`;
+      bar.style.width = "0%";
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [entry.durationMs]);
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+    "div",
+    {
+      style: {
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 12,
+        background: colors.bg,
+        border: `1px solid ${colors.border}`,
+        color: colors.text,
+        fontSize: 13,
+        padding: "12px 16px",
+        minWidth: 280,
+        maxWidth: 420,
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 10,
+        boxShadow: "0 4px 24px rgba(0, 0, 0, 0.45)",
+        backdropFilter: "blur(12px)",
+        animation: "toast-slide-in 0.25s ease-out",
+        pointerEvents: "auto"
+      },
+      role: "alert",
+      "aria-live": "polite",
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: { flexShrink: 0, marginTop: 1 }, children: TOAST_ICONS[entry.variant] }),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { style: { flex: 1, lineHeight: 1.5, wordBreak: "break-word" }, children: entry.message }),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: () => onDismiss(entry.id),
+            "aria-label": "\u5173\u95ED\u901A\u77E5",
+            style: {
+              flexShrink: 0,
+              background: "none",
+              border: "none",
+              color: colors.text,
+              cursor: "pointer",
+              fontSize: 16,
+              lineHeight: 1,
+              padding: "0 0 0 4px",
+              opacity: 0.7
+            },
+            children: "\xD7"
+          }
+        ),
+        entry.durationMs > 0 && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+          "div",
+          {
+            ref: progressBarRef,
+            style: {
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              height: 3,
+              width: "100%",
+              background: progressColor,
+              borderRadius: "0 0 0 12px"
+            }
+          }
+        )
+      ]
+    }
+  );
+}
+var POSITION_STYLES = {
+  "top-right": { top: 20, right: 20 },
+  "top-left": { top: 20, left: 20 },
+  "bottom-right": { bottom: 20, right: 20 },
+  "bottom-left": { bottom: 20, left: 20 }
+};
+function ToastContainer({
+  toasts,
+  onDismiss,
+  position = "top-right",
+  maxVisible = 5
+}) {
+  const visible = toasts.slice(0, maxVisible);
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+    "div",
+    {
+      style: {
+        position: "fixed",
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        pointerEvents: "none",
+        maxHeight: "calc(100vh - 40px)",
+        overflow: "hidden",
+        ...POSITION_STYLES[position]
+      },
+      "aria-label": "\u901A\u77E5\u5217\u8868",
+      children: [
+        visible.map((toast) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(ToastItem, { entry: toast, onDismiss }, toast.id)),
+        toasts.length > maxVisible && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+          "div",
+          {
+            style: {
+              fontSize: 12,
+              color: "#94a3b8",
+              textAlign: "center",
+              padding: "6px 12px",
+              background: "rgba(15, 23, 42, 0.7)",
+              borderRadius: 8,
+              pointerEvents: "auto"
+            },
+            children: [
+              "\u8FD8\u6709 ",
+              toasts.length - maxVisible,
+              " \u6761\u901A\u77E5"
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("style", { children: `
+        @keyframes toast-slide-in {
+          from {
+            opacity: 0;
+            transform: translateX(${position?.includes("right") ? "40px" : position?.includes("left") ? "-40px" : "0"});
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+      ` })
+      ]
+    }
+  );
+}
+var toastCounter = 0;
+function useToast() {
+  const [toasts, setToasts] = (0, import_react7.useState)([]);
+  const addToast = (0, import_react7.useCallback)((message, options) => {
+    const variant = options?.variant ?? "info";
+    const durationMs = options?.durationMs ?? 4e3;
+    const entry = {
+      id: `toast-${++toastCounter}-${Date.now()}`,
+      message,
+      variant,
+      durationMs,
+      createdAt: Date.now()
+    };
+    setToasts((prev) => [...prev, entry]);
+    if (durationMs > 0) {
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== entry.id));
+      }, durationMs);
+    }
+  }, []);
+  const dismiss = (0, import_react7.useCallback)((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+  const dismissAll = (0, import_react7.useCallback)(() => {
+    setToasts([]);
+  }, []);
+  const toast = (0, import_react7.useCallback)(
+    (message, options) => addToast(message, options),
+    [addToast]
+  );
+  const success = (0, import_react7.useCallback)(
+    (message, options) => addToast(message, { ...options, variant: "success" }),
+    [addToast]
+  );
+  const error = (0, import_react7.useCallback)(
+    (message, options) => addToast(message, { ...options, variant: "error" }),
+    [addToast]
+  );
+  const warning = (0, import_react7.useCallback)(
+    (message, options) => addToast(message, { ...options, variant: "warning" }),
+    [addToast]
+  );
+  const info = (0, import_react7.useCallback)(
+    (message, options) => addToast(message, { ...options, variant: "info" }),
+    [addToast]
+  );
+  return { toasts, success, error, warning, info, toast, dismiss, dismissAll };
+}
+
+// src/components/DetailActionBar.tsx
+var import_jsx_runtime12 = require("react/jsx-runtime");
+var DEFAULT_SUCCESS_MESSAGES = {
+  copy: "\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
+  link: "\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
+  export: "\u5DF2\u4E0B\u8F7D JSON",
+  download: "\u5DF2\u4E0B\u8F7D",
+  share: "\u5DF2\u5206\u4EAB",
+  print: "\u5DF2\u53D1\u9001\u6253\u5370\u4EFB\u52A1",
+  other: "\u64CD\u4F5C\u5B8C\u6210"
+};
+var DEFAULT_ERROR_MESSAGES = {
+  copy: "\u590D\u5236\u5931\u8D25",
+  link: "\u590D\u5236\u5931\u8D25",
+  export: "\u5BFC\u51FA\u5931\u8D25",
+  download: "\u4E0B\u8F7D\u5931\u8D25",
+  share: "\u5206\u4EAB\u5931\u8D25",
+  print: "\u6253\u5370\u5931\u8D25",
+  other: "\u64CD\u4F5C\u5931\u8D25"
+};
+function DetailActionBar({
+  actions,
+  heading = "\u8BE6\u60C5\u6536\u53E3\u52A8\u4F5C",
+  caption = "\u590D\u5236\u6DF1\u94FE / \u5BFC\u51FA JSON / \u5206\u4EAB \u2014 \u95ED\u73AF\u5230\u672C\u9875\u7684\u5E38\u7528\u52A8\u4F5C",
+  "data-testid": testId,
+  showToast = true
+}) {
+  if (!actions || actions.length === 0) {
+    return null;
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+    ActionBarWithToast,
+    {
+      actions,
+      heading,
+      caption,
+      "data-testid": testId,
+      showToast
+    }
+  );
+}
+function ActionBarWithToast({
+  actions,
+  heading,
+  caption,
+  "data-testid": testId,
+  showToast
+}) {
+  const { success: toastSuccess, error: toastError } = useToast();
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+    "section",
+    {
+      "data-testid": testId ?? "detail-action-bar",
+      "aria-label": "Detail action bar",
+      style: sectionStyle2,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("header", { style: { marginBottom: 12 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h3", { style: headingStyle2, children: heading }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { style: { margin: 0, fontSize: 12, color: "#94a3b8" }, children: caption })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { style: gridStyle2, "data-testid": "detail-action-grid", children: actions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+          ActionButton,
+          {
+            action,
+            onSuccess: showToast ? toastSuccess : void 0,
+            onError: showToast ? toastError : void 0
+          },
+          action.key
+        )) })
+      ]
+    }
+  );
+}
+function ActionButton({
+  action,
+  onSuccess,
+  onError
+}) {
+  const [busy, setBusy] = (0, import_react8.useState)(false);
+  const handleClick = async () => {
+    if (busy || action.disabled) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await action.onClick();
+      if (onSuccess) {
+        const message = action.successToast?.message ?? DEFAULT_SUCCESS_MESSAGES[action.icon ?? "other"];
+        onSuccess(message, action.successToast);
+      }
+    } catch (err) {
+      if (onError) {
+        const fallback = err instanceof Error ? err.message : DEFAULT_ERROR_MESSAGES[action.icon ?? "other"];
+        const message = action.errorToast?.message ?? fallback;
+        onError(message, action.errorToast);
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+  const variant = action.variant ?? "default";
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+    "button",
+    {
+      type: "button",
+      onClick: handleClick,
+      disabled: busy || action.disabled,
+      "aria-label": action.description ?? action.label,
+      title: action.description ?? action.label,
+      "data-testid": `detail-action-${action.key}`,
+      style: {
+        ...buttonStyle,
+        ...variant === "primary" ? primaryButtonStyle : null,
+        ...variant === "danger" ? dangerButtonStyle : null,
+        ...busy || action.disabled ? disabledButtonStyle : null
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(ActionIcon, { name: action.icon }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { children: action.label })
+      ]
+    }
+  );
+}
+function ActionIcon({ name }) {
+  if (!name) {
+    return null;
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+    "svg",
+    {
+      width: 14,
+      height: 14,
+      viewBox: "0 0 16 16",
+      fill: "none",
+      "aria-hidden": "true",
+      "data-testid": "detail-action-icon",
+      children: [
+        name === "copy" || name === "link" ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("rect", { x: "5", y: "5", width: "9", height: "9", rx: "1.5", stroke: "currentColor", strokeWidth: "1.2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: "M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2", stroke: "currentColor", strokeWidth: "1.2" })
+        ] }) : null,
+        name === "export" || name === "download" ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: "M8 2v8", stroke: "currentColor", strokeWidth: "1.2", strokeLinecap: "round" }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: "M5 7l3 3 3-3", stroke: "currentColor", strokeWidth: "1.2", strokeLinecap: "round", strokeLinejoin: "round" }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: "M2 13h12", stroke: "currentColor", strokeWidth: "1.2", strokeLinecap: "round" })
+        ] }) : null,
+        name === "share" ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("circle", { cx: "4", cy: "8", r: "1.6", stroke: "currentColor", strokeWidth: "1.2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("circle", { cx: "12", cy: "3.5", r: "1.6", stroke: "currentColor", strokeWidth: "1.2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("circle", { cx: "12", cy: "12.5", r: "1.6", stroke: "currentColor", strokeWidth: "1.2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: "M5.4 7.2L10.6 4.3", stroke: "currentColor", strokeWidth: "1.2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: "M5.4 8.8L10.6 11.7", stroke: "currentColor", strokeWidth: "1.2" })
+        ] }) : null,
+        name === "print" ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("path", { d: "M4 6V2h8v4", stroke: "currentColor", strokeWidth: "1.2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("rect", { x: "2", y: "6", width: "12", height: "6", rx: "1", stroke: "currentColor", strokeWidth: "1.2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("rect", { x: "5", y: "10", width: "6", height: "3", stroke: "currentColor", strokeWidth: "1.2" })
+        ] }) : null
+      ]
+    }
+  );
+}
+var sectionStyle2 = {
+  border: "1px solid rgba(148,163,184,0.18)",
+  borderRadius: 12,
+  padding: 16,
+  background: "rgba(15,23,42,0.55)",
+  marginTop: 8
+};
+var headingStyle2 = {
+  fontSize: 13,
+  color: "#94a3b8",
+  margin: "0 0 4px",
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: 0.4
+};
+var gridStyle2 = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 10
+};
+var buttonStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 7,
+  padding: "7px 14px",
+  fontSize: 13,
+  fontWeight: 500,
+  borderRadius: 8,
+  border: "1px solid rgba(148,163,184,0.14)",
+  background: "rgba(15,23,42,0.45)",
+  color: "#cbd5f5",
+  cursor: "pointer",
+  transition: "all 0.15s"
+};
+var primaryButtonStyle = {
+  border: "1px solid rgba(96,165,250,0.4)",
+  background: "rgba(59,130,246,0.16)",
+  color: "#bfdbfe"
+};
+var dangerButtonStyle = {
+  border: "1px solid rgba(239,68,68,0.4)",
+  background: "rgba(239,68,68,0.12)",
+  color: "#fecaca"
+};
+var disabledButtonStyle = {
+  cursor: "not-allowed",
+  opacity: 0.55
+};
+
+// src/components/Chart.tsx
+var import_jsx_runtime13 = require("react/jsx-runtime");
+var DEFAULT_PALETTE = [
+  "#3b82f6",
+  // blue
+  "#22c55e",
+  // green
+  "#f59e0b",
+  // amber
+  "#ef4444",
+  // red
+  "#8b5cf6",
+  // violet
+  "#06b6d4",
+  // cyan
+  "#f97316",
+  // orange
+  "#ec4899"
+  // pink
+];
+function getColor(index, palette, point) {
+  if (point?.color != null) return point.color;
+  return palette[index % palette.length];
+}
+function BarChart({
+  data,
+  width,
+  height,
+  showValues,
+  palette
+}) {
+  const max = Math.max(...data.map((d) => d.value), 1);
+  const padding = { top: 20, bottom: 40, left: 10, right: 10 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const barGap = chartWidth * 0.1;
+  const totalGap = barGap * (data.length + 1);
+  const barWidth = Math.max((chartWidth - totalGap) / data.length, 8);
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("svg", { width, height, viewBox: `0 0 ${width} ${height}`, children: [
+    data.map((point, i) => {
+      const barH = point.value / max * chartHeight;
+      const x = padding.left + barGap + i * (barWidth + barGap);
+      const y = padding.top + chartHeight - barH;
+      const color = getColor(i, palette, point);
+      return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("g", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+          "rect",
+          {
+            x,
+            y,
+            width: barWidth,
+            height: barH,
+            rx: 4,
+            ry: 4,
+            fill: color,
+            opacity: 0.88,
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                "animate",
+                {
+                  attributeName: "height",
+                  from: "0",
+                  to: barH,
+                  dur: "0.4s",
+                  fill: "freeze"
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                "animate",
+                {
+                  attributeName: "y",
+                  from: padding.top + chartHeight,
+                  to: y,
+                  dur: "0.4s",
+                  fill: "freeze"
+                }
+              )
+            ]
+          }
+        ),
+        showValues && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+          "text",
+          {
+            x: x + barWidth / 2,
+            y: y - 6,
+            textAnchor: "middle",
+            fontSize: 11,
+            fill: "#cbd5e1",
+            fontWeight: 600,
+            children: point.value
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+          "text",
+          {
+            x: x + barWidth / 2,
+            y: height - 10,
+            textAnchor: "middle",
+            fontSize: 11,
+            fill: "#94a3b8",
+            children: point.label
+          }
+        )
+      ] }, i);
+    }),
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+      "line",
+      {
+        x1: padding.left,
+        y1: padding.top + chartHeight,
+        x2: width - padding.right,
+        y2: padding.top + chartHeight,
+        stroke: "rgba(148,163,184,0.2)",
+        strokeWidth: 1
+      }
+    )
+  ] });
+}
+function LineChart({
+  data,
+  width,
+  height,
+  showValues,
+  palette
+}) {
+  const max = Math.max(...data.map((d) => d.value), 1);
+  const padding = { top: 24, bottom: 40, right: 20, left: 20 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  if (data.length < 2) {
+    return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+      BarChart,
+      {
+        data,
+        width,
+        height,
+        showValues,
+        palette
+      }
+    );
+  }
+  const stepX = chartWidth / (data.length - 1);
+  const lineColor = palette[0];
+  const pointsStr = data.map((point, i) => {
+    const x = padding.left + i * stepX;
+    const y = padding.top + chartHeight - point.value / max * chartHeight;
+    return `${x},${y}`;
+  }).join(" ");
+  const areaStr = `${padding.left},${padding.top + chartHeight} ${pointsStr} ${padding.left + (data.length - 1) * stepX},${padding.top + chartHeight}`;
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("svg", { width, height, viewBox: `0 0 ${width} ${height}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+      "polygon",
+      {
+        points: areaStr,
+        fill: lineColor,
+        opacity: 0.08
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+      "polyline",
+      {
+        points: pointsStr,
+        fill: "none",
+        stroke: lineColor,
+        strokeWidth: 2.2,
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+          "animate",
+          {
+            attributeName: "stroke-dasharray",
+            from: `0 ${chartWidth * 2}`,
+            to: `${chartWidth * 2} 0`,
+            dur: "0.6s",
+            fill: "freeze"
+          }
+        )
+      }
+    ),
+    data.map((point, i) => {
+      const cx = padding.left + i * stepX;
+      const cy = padding.top + chartHeight - point.value / max * chartHeight;
+      return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("g", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+          "circle",
+          {
+            cx,
+            cy,
+            r: 4,
+            fill: lineColor,
+            stroke: "#0f172a",
+            strokeWidth: 2
+          }
+        ),
+        showValues && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+          "text",
+          {
+            x: cx,
+            y: cy - 12,
+            textAnchor: "middle",
+            fontSize: 11,
+            fill: "#cbd5e1",
+            fontWeight: 600,
+            children: point.value
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+          "text",
+          {
+            x: cx,
+            y: height - 12,
+            textAnchor: "middle",
+            fontSize: 11,
+            fill: "#94a3b8",
+            children: point.label
+          }
+        )
+      ] }, i);
+    }),
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+      "line",
+      {
+        x1: padding.left,
+        y1: padding.top + chartHeight,
+        x2: width - padding.right,
+        y2: padding.top + chartHeight,
+        stroke: "rgba(148,163,184,0.2)",
+        strokeWidth: 1
+      }
+    )
+  ] });
+}
+function DonutChart({
+  data,
+  width,
+  height,
+  showValues,
+  palette
+}) {
+  void showValues;
+  const total = data.reduce((sum, d) => sum + d.value, 0) || 1;
+  const cx = width / 2;
+  const cy = height / 2;
+  const outerR = Math.min(cx, cy) - 8;
+  const innerR = outerR * 0.62;
+  let cumulativeAngle = -90;
+  const describeArc2 = (startAngle, endAngle, r) => {
+    const startRad = startAngle * Math.PI / 180;
+    const endRad = endAngle * Math.PI / 180;
+    const x1 = cx + r * Math.cos(startRad);
+    const y1 = cy + r * Math.sin(startRad);
+    const x2 = cx + r * Math.cos(endRad);
+    const y2 = cy + r * Math.sin(endRad);
+    const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("svg", { width, height, viewBox: `0 0 ${width} ${height}`, children: data.map((point, i) => {
+    const sliceAngle = point.value / total * 360;
+    const startAngle = cumulativeAngle;
+    const endAngle = cumulativeAngle + sliceAngle;
+    cumulativeAngle = endAngle;
+    const color = getColor(i, palette, point);
+    const outerStart = describeArc2(startAngle, endAngle, outerR);
+    const innerStart = describeArc2(endAngle, startAngle, innerR);
+    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("g", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+        "path",
+        {
+          d: `${outerStart} L ${innerStart.split(" ").slice(-2).join(" ")} Z`,
+          fill: color,
+          opacity: 0.88,
+          stroke: "rgba(15,23,42,0.8)",
+          strokeWidth: 1.5,
+          children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            "animate",
+            {
+              attributeName: "opacity",
+              from: "0.3",
+              to: "0.88",
+              dur: "0.5s",
+              fill: "freeze"
+            }
+          )
+        }
+      ),
+      i === 0 && total > 0 && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+        "text",
+        {
+          x: cx,
+          y: cy - 4,
+          textAnchor: "middle",
+          fontSize: 22,
+          fontWeight: 700,
+          fill: "#f8fafc",
+          children: total
+        }
+      ),
+      i === 0 && total > 0 && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+        "text",
+        {
+          x: cx,
+          y: cy + 16,
+          textAnchor: "middle",
+          fontSize: 11,
+          fill: "#94a3b8",
+          children: "\u603B\u8BA1"
+        }
+      )
+    ] }, i);
+  }) });
+}
+function ChartLegend({
+  data,
+  palette
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+    "div",
+    {
+      style: {
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "10px 18px",
+        justifyContent: "center",
+        marginTop: 10
+      },
+      children: data.map((point, i) => /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+        "div",
+        {
+          style: { display: "flex", alignItems: "center", gap: 6, fontSize: 12 },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+              "span",
+              {
+                style: {
+                  width: 10,
+                  height: 10,
+                  borderRadius: 2,
+                  background: getColor(i, palette, point),
+                  flexShrink: 0
+                }
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { style: { color: "#cbd5e1" }, children: point.label }),
+            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { style: { color: "#94a3b8", fontWeight: 500 }, children: point.value })
+          ]
+        },
+        i
+      ))
+    }
+  );
+}
+function Chart({
+  type,
+  data,
+  width = 400,
+  height = 260,
+  title,
+  showValues = false,
+  palette = DEFAULT_PALETTE,
+  className,
+  emptyText = "\u6682\u65E0\u6570\u636E"
+}) {
+  if (!data || data.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+      "div",
+      {
+        className,
+        style: {
+          width,
+          borderRadius: 16,
+          background: "rgba(15, 23, 42, 0.38)",
+          border: "1px solid rgba(148, 163, 184, 0.16)",
+          padding: 24,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: 8
+        },
+        children: [
+          title && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { style: { fontSize: 14, fontWeight: 600, color: "#cbd5e1" }, children: title }),
+          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { style: { fontSize: 13, color: "#64748b" }, children: emptyText })
+        ]
+      }
+    );
+  }
+  const renderChart = () => {
+    switch (type) {
+      case "bar":
+        return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+          BarChart,
+          {
+            data,
+            width,
+            height,
+            showValues,
+            palette
+          }
+        );
+      case "line":
+        return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+          LineChart,
+          {
+            data,
+            width,
+            height,
+            showValues,
+            palette
+          }
+        );
+      case "donut":
+        return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+          DonutChart,
+          {
+            data,
+            width,
+            height,
+            showValues,
+            palette
+          }
+        );
+    }
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+    "div",
+    {
+      className,
+      style: {
+        borderRadius: 16,
+        background: "rgba(15, 23, 42, 0.38)",
+        border: "1px solid rgba(148, 163, 184, 0.16)",
+        padding: "20px 16px 16px",
+        display: "inline-block"
+      },
+      children: [
+        title && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+          "div",
+          {
+            style: {
+              fontSize: 14,
+              fontWeight: 600,
+              color: "#cbd5e1",
+              marginBottom: 12,
+              paddingLeft: 4
+            },
+            children: title
+          }
+        ),
+        renderChart(),
+        type !== "donut" && data.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(ChartLegend, { data, palette })
+      ]
+    }
+  );
+}
+
+// src/components/GaugeChart.tsx
+var import_react9 = require("react");
+var import_jsx_runtime14 = require("react/jsx-runtime");
+var DEFAULT_SEGMENTS = [
+  { from: 0, to: 60, color: "#4ade80", label: "\u6B63\u5E38" },
+  { from: 60, to: 85, color: "#fbbf24", label: "\u6CE8\u610F" },
+  { from: 85, to: 100, color: "#f87171", label: "\u544A\u8B66" }
+];
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+function polarToCartesian(cx, cy, r, angleDeg) {
+  const rad = (angleDeg - 90) * Math.PI / 180;
+  return {
+    x: cx + r * Math.cos(rad),
+    y: cy + r * Math.sin(rad)
+  };
+}
+function describeArc(cx, cy, r, startAngle, endAngle) {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+  return [
+    "M",
+    start.x,
+    start.y,
+    "A",
+    r,
+    r,
+    0,
+    largeArcFlag,
+    0,
+    end.x,
+    end.y
+  ].join(" ");
+}
+function GaugeChart({
+  value,
+  min = 0,
+  max = 100,
+  label,
+  suffix = "%",
+  segments = DEFAULT_SEGMENTS,
+  size: _size = 160,
+  width: _width,
+  height: _height,
+  arcWidth = 18,
+  showTicks = true,
+  className,
+  style
+}) {
+  const size = _width ?? _size;
+  const normalizedValue = (0, import_react9.useMemo)(() => {
+    const percentage = (clamp(value, min, max) - min) / (max - min) * 100;
+    return clamp(percentage, 0, 100);
+  }, [value, min, max]);
+  const startAngle = 135;
+  const endAngle = 405;
+  const arcSpan = endAngle - startAngle;
+  const cx = size / 2;
+  const cy = size * 0.62;
+  const radius = size / 2 - arcWidth;
+  const valueAngle = startAngle + normalizedValue / 100 * arcSpan;
+  const activeColor = (0, import_react9.useMemo)(() => {
+    const seg = segments.find((s) => normalizedValue >= s.from && normalizedValue <= s.to) ?? segments[segments.length - 1];
+    return seg?.color ?? "#94a3b8";
+  }, [normalizedValue, segments]);
+  const needleTip = polarToCartesian(cx, cy, radius - arcWidth / 2, valueAngle);
+  const ticks = (0, import_react9.useMemo)(() => {
+    if (!showTicks) return [];
+    const count = 5;
+    return Array.from({ length: count + 1 }, (_, i) => {
+      const val = Math.round(i / count * 100);
+      const angle = startAngle + i / count * arcSpan;
+      const pos = polarToCartesian(cx, cy, radius + arcWidth + 12, angle);
+      return { val, x: pos.x, y: pos.y };
+    });
+  }, [showTicks, cx, cy, radius, arcWidth, startAngle, arcSpan]);
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+    "div",
+    {
+      className,
+      style: {
+        display: "inline-flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 8,
+        ...style
+      },
+      role: "meter",
+      "aria-valuenow": Math.round(normalizedValue),
+      "aria-valuemin": 0,
+      "aria-valuemax": 100,
+      "aria-label": label ?? "\u4EEA\u8868\u76D8",
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+          "svg",
+          {
+            width: size,
+            height: size * 0.82,
+            viewBox: `0 0 ${size} ${size * 0.82}`,
+            style: { overflow: "visible" },
+            children: [
+              segments.map((seg, i) => {
+                const segStart = startAngle + seg.from / 100 * arcSpan;
+                const segEnd = startAngle + seg.to / 100 * arcSpan;
+                return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                  "path",
+                  {
+                    d: describeArc(cx, cy, radius, segStart, segEnd),
+                    fill: "none",
+                    stroke: seg.color,
+                    strokeWidth: arcWidth,
+                    strokeLinecap: "round",
+                    opacity: 0.35
+                  },
+                  `seg-${i}`
+                );
+              }),
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                "path",
+                {
+                  d: describeArc(cx, cy, radius, startAngle, valueAngle),
+                  fill: "none",
+                  stroke: activeColor,
+                  strokeWidth: arcWidth,
+                  strokeLinecap: "round",
+                  opacity: 1,
+                  style: { transition: "stroke-dasharray 0.5s ease" }
+                }
+              ),
+              ticks.map((t) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                "text",
+                {
+                  x: t.x,
+                  y: t.y,
+                  textAnchor: "middle",
+                  dominantBaseline: "middle",
+                  fontSize: 11,
+                  fill: "#94a3b8",
+                  fontFamily: "ui-monospace, monospace",
+                  children: t.val
+                },
+                `tick-${t.val}`
+              )),
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                "line",
+                {
+                  x1: cx,
+                  y1: cy,
+                  x2: needleTip.x,
+                  y2: needleTip.y,
+                  stroke: activeColor,
+                  strokeWidth: 3,
+                  strokeLinecap: "round",
+                  style: { transition: "x2 0.5s ease, y2 0.5s ease" }
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("circle", { cx, cy, r: arcWidth * 0.55, fill: activeColor }),
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("circle", { cx, cy, r: arcWidth * 0.3, fill: "#0f172a" })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+          "div",
+          {
+            style: {
+              textAlign: "center",
+              marginTop: -size * 0.08
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+                "div",
+                {
+                  style: {
+                    fontSize: 28,
+                    fontWeight: 800,
+                    color: activeColor,
+                    fontVariantNumeric: "tabular-nums",
+                    lineHeight: 1.1
+                  },
+                  children: [
+                    Math.round(normalizedValue),
+                    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { style: { fontSize: 16, fontWeight: 600 }, children: suffix })
+                  ]
+                }
+              ),
+              label && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                "div",
+                {
+                  style: {
+                    fontSize: 13,
+                    color: "#94a3b8",
+                    marginTop: 2,
+                    fontWeight: 500
+                  },
+                  children: label
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { style: { display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }, children: segments.map((seg, i) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+          "div",
+          {
+            style: { display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#94a3b8" },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                "span",
+                {
+                  style: {
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    backgroundColor: seg.color,
+                    display: "inline-block"
+                  }
+                }
+              ),
+              seg.label ?? `${seg.from}-${seg.to}`
+            ]
+          },
+          `legend-${i}`
+        )) })
+      ]
+    }
+  );
+}
+
+// src/components/AIDecisionPanel.tsx
+var import_jsx_runtime15 = require("react/jsx-runtime");
+var STATUS_CONFIG = {
+  passed: {
+    label: "\u901A\u8FC7",
+    color: "#22c55e",
+    bg: "rgba(34,197,94,0.12)",
+    icon: "\u2713"
+  },
+  failed: {
+    label: "\u672A\u901A\u8FC7",
+    color: "#ef4444",
+    bg: "rgba(239,68,68,0.12)",
+    icon: "\u2717"
+  },
+  warning: {
+    label: "\u8B66\u544A",
+    color: "#f59e0b",
+    bg: "rgba(245,158,11,0.12)",
+    icon: "\u26A0"
+  },
+  pending: {
+    label: "\u5F85\u6267\u884C",
+    color: "#64748b",
+    bg: "rgba(100,116,139,0.12)",
+    icon: "\u22EF"
+  }
+};
+function SummaryBar({ summary }) {
+  const items = [
+    { label: "\u603B\u8BA1", value: summary.total, color: "#cbd5e1" },
+    { label: "\u901A\u8FC7", value: summary.passed, color: "#22c55e" },
+    { label: "\u672A\u901A\u8FC7", value: summary.failed, color: "#ef4444" },
+    { label: "\u8B66\u544A", value: summary.warning, color: "#f59e0b" },
+    { label: "\u5F85\u6267\u884C", value: summary.pending, color: "#64748b" }
+  ];
+  const passRate = summary.total > 0 ? Math.round(summary.passed / summary.total * 100) : 0;
+  const segments = [
+    { value: summary.passed, color: "#22c55e" },
+    { value: summary.failed, color: "#ef4444" },
+    { value: summary.warning, color: "#f59e0b" },
+    { value: summary.pending, color: "#64748b" }
+  ];
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { marginBottom: 16 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+      "div",
+      {
+        style: {
+          display: "flex",
+          height: 6,
+          borderRadius: 3,
+          overflow: "hidden",
+          background: "rgba(148,163,184,0.12)",
+          marginBottom: 12
+        },
+        children: segments.map(
+          (seg, i) => seg.value > 0 ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+            "div",
+            {
+              style: {
+                width: summary.total > 0 ? `${seg.value / summary.total * 100}%` : "0%",
+                background: seg.color,
+                transition: "width 0.4s ease"
+              }
+            },
+            i
+          ) : null
+        )
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+      "div",
+      {
+        style: {
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "10px 20px",
+          alignItems: "center"
+        },
+        children: [
+          items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+            "div",
+            {
+              style: { display: "flex", alignItems: "center", gap: 6 },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+                  "span",
+                  {
+                    style: {
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: item.color,
+                      flexShrink: 0
+                    }
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: item.label }),
+                /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+                  "span",
+                  {
+                    style: {
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: item.color,
+                      fontVariantNumeric: "tabular-nums"
+                    },
+                    children: item.value
+                  }
+                )
+              ]
+            },
+            item.label
+          )),
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { marginLeft: "auto" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: "\u901A\u8FC7\u7387 " }),
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+              "span",
+              {
+                style: {
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: passRate >= 90 ? "#22c55e" : passRate >= 70 ? "#f59e0b" : "#ef4444"
+                },
+                children: [
+                  passRate,
+                  "%"
+                ]
+              }
+            )
+          ] })
+        ]
+      }
+    ),
+    summary.coveragePercent != null && /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+      "div",
+      {
+        style: {
+          marginTop: 8,
+          fontSize: 12,
+          color: "#94a3b8",
+          display: "flex",
+          gap: 16
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { children: [
+            "\u6570\u636E\u8986\u76D6\u7387\uFF1A",
+            summary.coveragePercent,
+            "%"
+          ] }),
+          summary.delta != null && /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+            "span",
+            {
+              style: {
+                color: summary.delta >= 0 ? "#22c55e" : "#ef4444"
+              },
+              children: [
+                summary.delta >= 0 ? "\u2191" : "\u2193",
+                " ",
+                Math.abs(summary.delta),
+                "% vs \u4E0A\u8F6E"
+              ]
+            }
+          )
+        ]
+      }
+    )
+  ] });
+}
+function RuleRow({
+  rule,
+  compact,
+  onClick
+}) {
+  const config = STATUS_CONFIG[rule.status];
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+    "div",
+    {
+      onClick: () => onClick?.(rule),
+      style: {
+        display: "flex",
+        alignItems: compact ? "center" : "flex-start",
+        gap: 10,
+        padding: compact ? "6px 10px" : "10px 12px",
+        borderRadius: 10,
+        background: rule.status === "failed" ? "rgba(239,68,68,0.06)" : "rgba(148,163,184,0.04)",
+        borderLeft: `3px solid ${config.color}`,
+        cursor: onClick ? "pointer" : "default",
+        transition: "background 0.15s"
+      },
+      onMouseEnter: (e) => {
+        if (onClick)
+          e.currentTarget.style.background = "rgba(148,163,184,0.08)";
+      },
+      onMouseLeave: (e) => {
+        if (onClick)
+          e.currentTarget.style.background = rule.status === "failed" ? "rgba(239,68,68,0.06)" : "rgba(148,163,184,0.04)";
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+          "span",
+          {
+            style: {
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 22,
+              height: 22,
+              borderRadius: 6,
+              background: config.bg,
+              color: config.color,
+              fontSize: 13,
+              fontWeight: 700,
+              flexShrink: 0
+            },
+            children: config.icon
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+            "div",
+            {
+              style: {
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                flexWrap: "wrap"
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+                  "span",
+                  {
+                    style: {
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#e2e8f0",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis"
+                    },
+                    children: rule.name
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+                  "span",
+                  {
+                    style: {
+                      fontSize: 11,
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      background: config.bg,
+                      color: config.color,
+                      fontWeight: 600
+                    },
+                    children: config.label
+                  }
+                ),
+                rule.matchedCount != null && /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { style: { fontSize: 11, color: "#64748b" }, children: [
+                  "\u5339\u914D ",
+                  rule.matchedCount,
+                  " \u6761"
+                ] }),
+                rule.durationMs != null && /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { style: { fontSize: 11, color: "#64748b" }, children: [
+                  rule.durationMs,
+                  "ms"
+                ] })
+              ]
+            }
+          ),
+          !compact && rule.description && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+            "div",
+            {
+              style: {
+                marginTop: 4,
+                fontSize: 12,
+                color: "#94a3b8",
+                lineHeight: 1.5
+              },
+              children: rule.description
+            }
+          ),
+          !compact && rule.suggestion && rule.status === "failed" && /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+            "div",
+            {
+              style: {
+                marginTop: 6,
+                fontSize: 12,
+                color: "#fca5a5",
+                padding: "4px 8px",
+                borderRadius: 6,
+                background: "rgba(239,68,68,0.08)",
+                lineHeight: 1.5
+              },
+              children: [
+                "\u{1F4A1} ",
+                rule.suggestion
+              ]
+            }
+          )
+        ] }),
+        !compact && rule.executedAt && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+          "span",
+          {
+            style: {
+              fontSize: 11,
+              color: "#475569",
+              whiteSpace: "nowrap",
+              flexShrink: 0
+            },
+            children: rule.executedAt
+          }
+        )
+      ]
+    }
+  );
+}
+function AIDecisionPanel({
+  rules,
+  summary,
+  title = "AI \u51B3\u7B56\u9762\u677F",
+  subtitle,
+  expandable = false,
+  className,
+  emptyText = "\u6682\u65E0\u89C4\u5219\u6267\u884C\u7ED3\u679C",
+  onRuleClick,
+  compact = false
+}) {
+  void expandable;
+  const computedSummary = summary ?? {
+    total: rules.length,
+    passed: rules.filter((r) => r.status === "passed").length,
+    failed: rules.filter((r) => r.status === "failed").length,
+    warning: rules.filter((r) => r.status === "warning").length,
+    pending: rules.filter((r) => r.status === "pending").length
+  };
+  const isEmpty = rules.length === 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+    "div",
+    {
+      className,
+      style: {
+        borderRadius: 16,
+        background: "rgba(15, 23, 42, 0.38)",
+        border: "1px solid rgba(148, 163, 184, 0.16)",
+        padding: "20px 18px"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "baseline",
+              gap: 10,
+              marginBottom: 16
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+                "span",
+                {
+                  style: {
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: "#f8fafc"
+                  },
+                  children: [
+                    "\u{1F916} ",
+                    title
+                  ]
+                }
+              ),
+              subtitle && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: { fontSize: 12, color: "#64748b" }, children: subtitle })
+            ]
+          }
+        ),
+        isEmpty ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+          "div",
+          {
+            style: {
+              padding: "32px 16px",
+              textAlign: "center",
+              color: "#64748b",
+              fontSize: 13
+            },
+            children: emptyText
+          }
+        ) : /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_jsx_runtime15.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(SummaryBar, { summary: computedSummary }),
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: rules.map((rule) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+            RuleRow,
+            {
+              rule,
+              compact,
+              onClick: onRuleClick
+            },
+            rule.id
+          )) })
+        ] })
+      ]
+    }
+  );
+}
+
+// src/components/HeatmapChart.tsx
+var import_jsx_runtime16 = require("react/jsx-runtime");
+var COLOR_SCHEMES = {
+  red: {
+    light: "rgba(254,202,202,0.35)",
+    mid: "rgba(248,113,113,0.7)",
+    heavy: "rgba(220,38,38,0.9)",
+    bg: "rgba(239,68,68,0.08)"
+  },
+  blue: {
+    light: "rgba(191,219,254,0.35)",
+    mid: "rgba(96,165,250,0.7)",
+    heavy: "rgba(37,99,235,0.9)",
+    bg: "rgba(59,130,246,0.08)"
+  },
+  green: {
+    light: "rgba(187,247,208,0.35)",
+    mid: "rgba(74,222,128,0.7)",
+    heavy: "rgba(22,163,74,0.9)",
+    bg: "rgba(34,197,94,0.08)"
+  },
+  amber: {
+    light: "rgba(253,230,138,0.35)",
+    mid: "rgba(251,191,36,0.7)",
+    heavy: "rgba(217,119,6,0.9)",
+    bg: "rgba(245,158,11,0.08)"
+  },
+  purple: {
+    light: "rgba(221,214,254,0.35)",
+    mid: "rgba(167,139,250,0.7)",
+    heavy: "rgba(124,58,237,0.9)",
+    bg: "rgba(139,92,246,0.08)"
+  },
+  cool: {
+    light: "rgba(165,243,252,0.35)",
+    mid: "rgba(34,211,238,0.7)",
+    heavy: "rgba(8,145,178,0.9)",
+    bg: "rgba(6,182,212,0.08)"
+  }
+};
+function getCellColor(value, min, max, scheme) {
+  if (max === min) return COLOR_SCHEMES[scheme].mid;
+  const ratio = Math.max(0, Math.min(1, (value - min) / max));
+  if (ratio <= 0.25) return COLOR_SCHEMES[scheme].light;
+  if (ratio <= 0.7) return COLOR_SCHEMES[scheme].mid;
+  return COLOR_SCHEMES[scheme].heavy;
+}
+function getTextColor(value, min, max) {
+  if (max === min) return "#e2e8f0";
+  const ratio = (value - min) / max;
+  return ratio > 0.55 ? "#fff" : "#cbd5e1";
+}
+function HeatmapLegend({ scheme }) {
+  const colors = COLOR_SCHEMES[scheme];
+  const steps = [
+    { label: "\u4F4E", color: colors.light },
+    { label: "\u4E2D", color: colors.mid },
+    { label: "\u9AD8", color: colors.heavy }
+  ];
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+    "div",
+    {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        justifyContent: "flex-end",
+        marginTop: 12
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: { fontSize: 11, color: "#64748b" }, children: "\u5BC6\u5EA6" }),
+        steps.map((step) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+          "div",
+          {
+            style: { display: "flex", alignItems: "center", gap: 4 },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+                "span",
+                {
+                  style: {
+                    width: 16,
+                    height: 12,
+                    borderRadius: 3,
+                    background: step.color,
+                    border: "1px solid rgba(148,163,184,0.12)"
+                  }
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: { fontSize: 11, color: "#94a3b8" }, children: step.label })
+            ]
+          },
+          step.label
+        ))
+      ]
+    }
+  );
+}
+function HeatmapGrid({
+  data,
+  rowLabels,
+  colLabels,
+  width,
+  height,
+  showValues,
+  colorScheme,
+  onCellClick
+}) {
+  const padding = { top: 10, bottom: 10, left: 80, right: 16 };
+  const cellPad = 2;
+  const rows = rowLabels.length;
+  const cols = colLabels.length;
+  const gridWidth = width - padding.left - padding.right;
+  const gridHeight = height - padding.top - padding.bottom;
+  const cellW = Math.max(8, (gridWidth - cellPad * (cols - 1)) / cols);
+  const cellH = Math.max(8, (gridHeight - cellPad * (rows - 1)) / rows);
+  const values = data.map((d) => d.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values, 1);
+  const lookup = /* @__PURE__ */ new Map();
+  for (const cell of data) {
+    lookup.set(`${cell.rowLabel}|${cell.colLabel}`, cell);
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("svg", { width, height, viewBox: `0 0 ${width} ${height}`, children: [
+    rowLabels.map(
+      (rowLabel, ri) => colLabels.map((colLabel, ci) => {
+        const cell = lookup.get(`${rowLabel}|${colLabel}`);
+        const x = padding.left + ci * (cellW + cellPad);
+        const y = padding.top + ri * (cellH + cellPad);
+        const cellColor = cell ? cell.color ?? getCellColor(cell.value, min, max, colorScheme) : "rgba(148,163,184,0.06)";
+        const textColor = cell ? getTextColor(cell.value, min, max) : "#475569";
+        return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+          "g",
+          {
+            onClick: () => cell && onCellClick?.(cell),
+            style: { cursor: cell && onCellClick ? "pointer" : "default" },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+                "rect",
+                {
+                  x,
+                  y,
+                  width: cellW,
+                  height: cellH,
+                  rx: 4,
+                  ry: 4,
+                  fill: cellColor,
+                  stroke: "rgba(148,163,184,0.08)",
+                  strokeWidth: 0.5,
+                  children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+                    "animate",
+                    {
+                      attributeName: "opacity",
+                      from: "0.3",
+                      to: "1",
+                      dur: "0.4s",
+                      fill: "freeze"
+                    }
+                  )
+                }
+              ),
+              showValues && cell && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+                "text",
+                {
+                  x: x + cellW / 2,
+                  y: y + cellH / 2 + 4,
+                  textAnchor: "middle",
+                  fontSize: Math.max(9, Math.min(12, cellW / 4)),
+                  fontWeight: 600,
+                  fill: textColor,
+                  children: cell.value
+                }
+              )
+            ]
+          },
+          `${ri}-${ci}`
+        );
+      })
+    ),
+    colLabels.map((label, ci) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+      "text",
+      {
+        x: padding.left + ci * (cellW + cellPad) + cellW / 2,
+        y: padding.top - 4,
+        textAnchor: "middle",
+        fontSize: 10,
+        fill: "#94a3b8",
+        children: label
+      },
+      `col-${ci}`
+    )),
+    rowLabels.map((label, ri) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+      "text",
+      {
+        x: padding.left - 8,
+        y: padding.top + ri * (cellH + cellPad) + cellH / 2 + 4,
+        textAnchor: "end",
+        fontSize: 10,
+        fill: "#94a3b8",
+        children: label.length > 8 ? label.slice(0, 7) + "\u2026" : label
+      },
+      `row-${ri}`
+    ))
+  ] });
+}
+function HeatmapChart({
+  data,
+  rowLabels,
+  colLabels,
+  width = 500,
+  height = 240,
+  title,
+  colorScheme = "blue",
+  showValues = true,
+  showLegend = true,
+  className,
+  emptyText = "\u6682\u65E0\u6570\u636E",
+  onCellClick
+}) {
+  const computedRowLabels = rowLabels ?? [...new Set(data.map((d) => d.rowLabel))].sort();
+  const computedColLabels = colLabels ?? [...new Set(data.map((d) => d.colLabel))].sort();
+  const isEmpty = data.length === 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+    "div",
+    {
+      className,
+      style: {
+        borderRadius: 16,
+        background: "rgba(15, 23, 42, 0.38)",
+        border: "1px solid rgba(148, 163, 184, 0.16)",
+        padding: "20px 16px 16px",
+        display: "inline-block"
+      },
+      children: [
+        title && /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+          "div",
+          {
+            style: {
+              fontSize: 14,
+              fontWeight: 600,
+              color: "#cbd5e1",
+              marginBottom: 12,
+              paddingLeft: 4
+            },
+            children: [
+              "\u{1F4CA} ",
+              title
+            ]
+          }
+        ),
+        isEmpty ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+          "div",
+          {
+            style: {
+              padding: "32px 16px",
+              textAlign: "center",
+              color: "#64748b",
+              fontSize: 13
+            },
+            children: emptyText
+          }
+        ) : /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_jsx_runtime16.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+            HeatmapGrid,
+            {
+              data,
+              rowLabels: computedRowLabels,
+              colLabels: computedColLabels,
+              width,
+              height,
+              showValues,
+              colorScheme,
+              onCellClick
+            }
+          ),
+          showLegend && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(HeatmapLegend, { scheme: colorScheme })
+        ] })
+      ]
+    }
+  );
+}
+
+// src/components/AnomalyAlertPanel.tsx
+var import_react10 = require("react");
+var import_jsx_runtime17 = require("react/jsx-runtime");
+var SEVERITY_CONFIG = {
+  critical: {
+    label: "\u4E25\u91CD",
+    color: "#fecaca",
+    bg: "rgba(239,68,68,0.12)",
+    border: "rgba(248,113,113,0.3)",
+    dot: "#ef4444",
+    order: 0
+  },
+  high: {
+    label: "\u9AD8",
+    color: "#fed7aa",
+    bg: "rgba(249,115,22,0.12)",
+    border: "rgba(251,146,60,0.3)",
+    dot: "#f97316",
+    order: 1
+  },
+  medium: {
+    label: "\u4E2D",
+    color: "#fde68a",
+    bg: "rgba(234,179,8,0.12)",
+    border: "rgba(250,204,21,0.3)",
+    dot: "#eab308",
+    order: 2
+  },
+  low: {
+    label: "\u4F4E",
+    color: "#bbf7d0",
+    bg: "rgba(34,197,94,0.08)",
+    border: "rgba(74,222,128,0.25)",
+    dot: "#22c55e",
+    order: 3
+  }
+};
+var SOURCE_CONFIG = {
+  device: { label: "\u8BBE\u5907", icon: "\u{1F5A5}\uFE0F" },
+  member: { label: "\u4F1A\u5458", icon: "\u{1F464}" },
+  transaction: { label: "\u4EA4\u6613", icon: "\u{1F4B3}" },
+  system: { label: "\u7CFB\u7EDF", icon: "\u2699\uFE0F" },
+  network: { label: "\u7F51\u7EDC", icon: "\u{1F310}" }
+};
+function SummaryBar2({ summary }) {
+  const items = [
+    { label: "\u4E25\u91CD", value: summary.critical, color: SEVERITY_CONFIG.critical.dot },
+    { label: "\u9AD8", value: summary.high, color: SEVERITY_CONFIG.high.dot },
+    { label: "\u4E2D", value: summary.medium, color: SEVERITY_CONFIG.medium.dot },
+    { label: "\u4F4E", value: summary.low, color: SEVERITY_CONFIG.low.dot }
+  ];
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+    "div",
+    {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 16,
+        padding: "10px 16px",
+        borderRadius: 12,
+        background: "rgba(15,23,42,0.5)",
+        border: "1px solid rgba(148,163,184,0.1)",
+        flexWrap: "wrap"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { fontSize: 24 }, children: "\u{1F514}" }),
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { fontSize: 13, color: "#94a3b8" }, children: "\u544A\u8B66\u603B\u6570" }),
+            /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { fontSize: 22, fontWeight: 700, color: "#e2e8f0" }, children: summary.total })
+          ] }),
+          summary.unacknowledged > 0 && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+            "span",
+            {
+              style: {
+                fontSize: 11,
+                fontWeight: 600,
+                color: "#f87171",
+                background: "rgba(239,68,68,0.15)",
+                padding: "2px 8px",
+                borderRadius: 10
+              },
+              children: [
+                summary.unacknowledged,
+                " \u672A\u786E\u8BA4"
+              ]
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { flex: 1, minWidth: 0 } }),
+        items.filter((i) => i.value > 0).map((item) => /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 6
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                "span",
+                {
+                  style: {
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: item.color,
+                    boxShadow: `0 0 6px ${item.color}`
+                  }
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: item.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { fontSize: 16, fontWeight: 700, color: "#e2e8f0" }, children: item.value })
+            ]
+          },
+          item.label
+        ))
+      ]
+    }
+  );
+}
+function AlertRow({
+  alert,
+  onAcknowledge,
+  onViewDetail
+}) {
+  const severity = SEVERITY_CONFIG[alert.severity];
+  const source = SOURCE_CONFIG[alert.source];
+  const [expanded, setExpanded] = (0, import_react10.useState)(false);
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+    "div",
+    {
+      style: {
+        borderRadius: 10,
+        background: severity.bg,
+        border: `1px solid ${severity.border}`,
+        padding: "12px 14px",
+        transition: "all 0.2s"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+              cursor: "pointer"
+            },
+            onClick: () => setExpanded(!expanded),
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                "span",
+                {
+                  style: {
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: severity.dot,
+                    boxShadow: `0 0 8px ${severity.dot}`,
+                    flexShrink: 0,
+                    marginTop: 4
+                  }
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { fontSize: 14, flexShrink: 0 }, children: source.icon }),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { fontSize: 13, fontWeight: 600, color: "#e2e8f0" }, children: alert.title }),
+                  /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                    "span",
+                    {
+                      style: {
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: severity.color,
+                        background: severity.border,
+                        padding: "1px 6px",
+                        borderRadius: 4
+                      },
+                      children: severity.label
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                    "span",
+                    {
+                      style: {
+                        fontSize: 10,
+                        color: "#64748b",
+                        background: "rgba(148,163,184,0.08)",
+                        padding: "1px 6px",
+                        borderRadius: 4
+                      },
+                      children: source.label
+                    }
+                  ),
+                  alert.acknowledged && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                    "span",
+                    {
+                      style: {
+                        fontSize: 10,
+                        color: "#22c55e",
+                        background: "rgba(34,197,94,0.1)",
+                        padding: "1px 6px",
+                        borderRadius: 4
+                      },
+                      children: "\u5DF2\u786E\u8BA4"
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                  "div",
+                  {
+                    style: {
+                      fontSize: 12,
+                      color: "#94a3b8",
+                      marginTop: 4,
+                      lineHeight: 1.5,
+                      display: "-webkit-box",
+                      WebkitLineClamp: expanded ? "unset" : 1,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden"
+                    },
+                    children: alert.description
+                  }
+                ),
+                alert.metricValue !== void 0 && alert.metricThreshold !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+                  "div",
+                  {
+                    style: {
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      marginTop: 6,
+                      fontSize: 11
+                    },
+                    children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { color: "#64748b" }, children: "\u5F53\u524D\u503C" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+                        "span",
+                        {
+                          style: {
+                            fontWeight: 700,
+                            color: alert.metricValue > alert.metricThreshold ? "#f87171" : "#4ade80"
+                          },
+                          children: [
+                            alert.metricValue,
+                            alert.metricUnit ?? ""
+                          ]
+                        }
+                      ),
+                      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { color: "#475569" }, children: "/" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { color: "#64748b" }, children: "\u9608\u503C" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { style: { color: "#94a3b8" }, children: [
+                        alert.metricThreshold,
+                        alert.metricUnit ?? ""
+                      ] })
+                    ]
+                  }
+                )
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { fontSize: 10, color: "#475569", whiteSpace: "nowrap", flexShrink: 0 }, children: formatTimeAgo(alert.timestamp) }),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                "span",
+                {
+                  style: {
+                    fontSize: 10,
+                    color: "#475569",
+                    flexShrink: 0,
+                    transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s"
+                  },
+                  children: "\u25BC"
+                }
+              )
+            ]
+          }
+        ),
+        expanded && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+          "div",
+          {
+            style: {
+              marginTop: 10,
+              paddingTop: 10,
+              borderTop: "1px solid rgba(148,163,184,0.08)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8
+            },
+            children: [
+              alert.impact && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+                "span",
+                {
+                  style: {
+                    fontSize: 11,
+                    color: "#f87171",
+                    background: "rgba(239,68,68,0.08)",
+                    padding: "3px 8px",
+                    borderRadius: 6
+                  },
+                  children: [
+                    "\u26A1 \u5F71\u54CD: ",
+                    alert.impact
+                  ]
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { flex: 1 } }),
+              onViewDetail && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                "button",
+                {
+                  type: "button",
+                  onClick: (e) => {
+                    e.stopPropagation();
+                    onViewDetail(alert);
+                  },
+                  style: {
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: "#60a5fa",
+                    background: "rgba(96,165,250,0.1)",
+                    border: "1px solid rgba(96,165,250,0.2)",
+                    borderRadius: 6,
+                    padding: "4px 10px",
+                    cursor: "pointer"
+                  },
+                  children: "\u67E5\u770B\u8BE6\u60C5"
+                }
+              ),
+              !alert.acknowledged && onAcknowledge && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                "button",
+                {
+                  type: "button",
+                  onClick: (e) => {
+                    e.stopPropagation();
+                    onAcknowledge(alert.id);
+                  },
+                  style: {
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: "#4ade80",
+                    background: "rgba(34,197,94,0.1)",
+                    border: "1px solid rgba(34,197,94,0.2)",
+                    borderRadius: 6,
+                    padding: "4px 10px",
+                    cursor: "pointer"
+                  },
+                  children: "\u786E\u8BA4\u544A\u8B66"
+                }
+              )
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
+function formatTimeAgo(timestamp) {
+  const now = Date.now();
+  const ts = new Date(timestamp).getTime();
+  const diffMs = now - ts;
+  if (isNaN(ts)) return timestamp;
+  const seconds = Math.floor(diffMs / 1e3);
+  if (seconds < 60) return `${seconds}\u79D2\u524D`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}\u5206\u949F\u524D`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}\u5C0F\u65F6\u524D`;
+  const days = Math.floor(hours / 24);
+  return `${days}\u5929\u524D`;
+}
+function AnomalyAlertPanel({
+  alerts,
+  title = "\u5F02\u5E38\u544A\u8B66",
+  maxDisplay = 50,
+  showSummary = true,
+  showFilters = true,
+  onAcknowledge,
+  onAcknowledgeAll,
+  onViewDetail,
+  className,
+  emptyText = "\u6682\u65E0\u5F02\u5E38\u544A\u8B66"
+}) {
+  const [severityFilter, setSeverityFilter] = (0, import_react10.useState)("all");
+  const [sourceFilter, setSourceFilter] = (0, import_react10.useState)("all");
+  const summary = (0, import_react10.useMemo)(() => {
+    const s = { total: 0, unacknowledged: 0, critical: 0, high: 0, medium: 0, low: 0 };
+    for (const a of alerts) {
+      s.total++;
+      if (!a.acknowledged) s.unacknowledged++;
+      s[a.severity]++;
+    }
+    return s;
+  }, [alerts]);
+  const filtered = (0, import_react10.useMemo)(() => {
+    let list = [...alerts];
+    if (severityFilter !== "all") {
+      list = list.filter((a) => a.severity === severityFilter);
+    }
+    if (sourceFilter !== "all") {
+      list = list.filter((a) => a.source === sourceFilter);
+    }
+    list.sort((a, b) => {
+      const sevDiff = SEVERITY_CONFIG[a.severity].order - SEVERITY_CONFIG[b.severity].order;
+      if (sevDiff !== 0) return sevDiff;
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+    });
+    return list.slice(0, maxDisplay);
+  }, [alerts, severityFilter, sourceFilter, maxDisplay]);
+  const unacknowledgedCount = filtered.filter((a) => !a.acknowledged).length;
+  const availableSeverities = (0, import_react10.useMemo)(() => {
+    const set = new Set(alerts.map((a) => a.severity));
+    return Array.from(set);
+  }, [alerts]);
+  const availableSources = (0, import_react10.useMemo)(() => {
+    const set = new Set(alerts.map((a) => a.source));
+    return Array.from(set);
+  }, [alerts]);
+  const isEmpty = alerts.length === 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+    "div",
+    {
+      className,
+      style: {
+        borderRadius: 16,
+        background: "rgba(15,23,42,0.35)",
+        border: "1px solid rgba(148,163,184,0.14)",
+        padding: "20px 18px 18px"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 14
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+                "h3",
+                {
+                  style: {
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: "#e2e8f0",
+                    margin: 0
+                  },
+                  children: [
+                    "\u{1F6A8} ",
+                    title
+                  ]
+                }
+              ),
+              !isEmpty && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+                "span",
+                {
+                  style: {
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#f87171",
+                    background: "rgba(239,68,68,0.15)",
+                    padding: "2px 8px",
+                    borderRadius: 10
+                  },
+                  children: [
+                    summary.total,
+                    " \u6761\u544A\u8B66"
+                  ]
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { flex: 1 } }),
+              unacknowledgedCount > 0 && onAcknowledgeAll && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+                "button",
+                {
+                  type: "button",
+                  onClick: onAcknowledgeAll,
+                  style: {
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: "#4ade80",
+                    background: "rgba(34,197,94,0.08)",
+                    border: "1px solid rgba(34,197,94,0.2)",
+                    borderRadius: 6,
+                    padding: "4px 12px",
+                    cursor: "pointer"
+                  },
+                  children: [
+                    "\u786E\u8BA4\u5168\u90E8 (",
+                    unacknowledgedCount,
+                    ")"
+                  ]
+                }
+              )
+            ]
+          }
+        ),
+        showSummary && !isEmpty && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SummaryBar2, { summary }),
+        showFilters && !isEmpty && /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginTop: 12,
+              marginBottom: 12,
+              flexWrap: "wrap"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { fontSize: 11, color: "#64748b", marginRight: 2 }, children: "\u4E25\u91CD\u7A0B\u5EA6:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                FilterChip,
+                {
+                  label: "\u5168\u90E8",
+                  active: severityFilter === "all",
+                  onClick: () => setSeverityFilter("all")
+                }
+              ),
+              ["critical", "high", "medium", "low"].map(
+                (sev) => availableSeverities.includes(sev) ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                  FilterChip,
+                  {
+                    label: SEVERITY_CONFIG[sev].label,
+                    active: severityFilter === sev,
+                    onClick: () => setSeverityFilter(sev),
+                    dotColor: SEVERITY_CONFIG[sev].dot
+                  },
+                  sev
+                ) : null
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { width: 16 } }),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { style: { fontSize: 11, color: "#64748b", marginRight: 2 }, children: "\u6765\u6E90:" }),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                FilterChip,
+                {
+                  label: "\u5168\u90E8",
+                  active: sourceFilter === "all",
+                  onClick: () => setSourceFilter("all")
+                }
+              ),
+              availableSources.map((src) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                FilterChip,
+                {
+                  label: `${SOURCE_CONFIG[src].icon} ${SOURCE_CONFIG[src].label}`,
+                  active: sourceFilter === src,
+                  onClick: () => setSourceFilter(src)
+                },
+                src
+              ))
+            ]
+          }
+        ),
+        isEmpty ? /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+          "div",
+          {
+            style: {
+              padding: "48px 16px",
+              textAlign: "center",
+              color: "#64748b",
+              fontSize: 13
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: { fontSize: 32, marginBottom: 8 }, children: "\u2705" }),
+              emptyText
+            ]
+          }
+        ) : filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+          "div",
+          {
+            style: {
+              padding: "32px 16px",
+              textAlign: "center",
+              color: "#64748b",
+              fontSize: 13
+            },
+            children: "\u5F53\u524D\u7B5B\u9009\u6761\u4EF6\u4E0B\u65E0\u544A\u8B66"
+          }
+        ) : (
+          /* 告警列表 */
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+            "div",
+            {
+              style: {
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                marginTop: showFilters || showSummary ? 0 : 12
+              },
+              children: filtered.map((alert) => /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+                AlertRow,
+                {
+                  alert,
+                  onAcknowledge,
+                  onViewDetail
+                },
+                alert.id
+              ))
+            }
+          )
+        )
+      ]
+    }
+  );
+}
+function FilterChip({
+  label,
+  active,
+  onClick,
+  dotColor
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+    "button",
+    {
+      type: "button",
+      onClick,
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        fontSize: 11,
+        fontWeight: active ? 600 : 400,
+        color: active ? "#e2e8f0" : "#64748b",
+        background: active ? "rgba(96,165,250,0.15)" : "rgba(148,163,184,0.06)",
+        border: `1px solid ${active ? "rgba(96,165,250,0.3)" : "rgba(148,163,184,0.1)"}`,
+        borderRadius: 6,
+        padding: "3px 10px",
+        cursor: "pointer",
+        transition: "all 0.15s"
+      },
+      children: [
+        dotColor && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+          "span",
+          {
+            style: {
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: dotColor
+            }
+          }
+        ),
+        label
+      ]
+    }
+  );
+}
+
+// src/components/QuickStats.tsx
+var import_jsx_runtime18 = require("react/jsx-runtime");
+var DEFAULT_STYLES = {
+  grid: {
+    display: "grid",
+    gap: 14,
+    marginBottom: 20
+  },
+  card: {
+    borderRadius: 16,
+    padding: 18,
+    background: "rgba(15, 23, 42, 0.38)",
+    border: "1px solid rgba(148, 163, 184, 0.18)"
+  },
+  label: {
+    fontSize: 13,
+    color: "#cbd5e1"
+  },
+  value: {
+    marginTop: 6,
+    fontSize: 24,
+    fontWeight: 700
+  },
+  helper: {
+    marginTop: 4,
+    fontSize: 12,
+    color: "#94a3b8"
+  }
+};
+function QuickStats({
+  items,
+  columns = 4,
+  gap = 14,
+  padding = 18
+}) {
+  if (items.length === 0) return null;
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+    "div",
+    {
+      style: {
+        ...DEFAULT_STYLES.grid,
+        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+        gap,
+        marginBottom: 20
+      },
+      children: items.map((item, idx) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+        "article",
+        {
+          style: {
+            ...DEFAULT_STYLES.card,
+            padding
+          },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: DEFAULT_STYLES.label, children: item.label }),
+            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+              "div",
+              {
+                style: {
+                  ...DEFAULT_STYLES.value,
+                  ...item.valueColor ? { color: item.valueColor } : {}
+                },
+                children: item.value
+              }
+            ),
+            item.helper ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: DEFAULT_STYLES.helper, children: item.helper }) : null
+          ]
+        },
+        `stat-${idx}`
+      ))
+    }
+  );
+}
+
+// src/components/StatusBadge.tsx
+var import_jsx_runtime19 = require("react/jsx-runtime");
+var COLORS = {
+  info: { bg: "rgba(59,130,246,0.15)", text: "#93c5fd" },
+  warning: { bg: "rgba(245,158,11,0.15)", text: "#fcd34d" },
+  error: { bg: "rgba(239,68,68,0.15)", text: "#fca5a5" },
+  success: { bg: "rgba(34,197,94,0.15)", text: "#86efac" },
+  neutral: { bg: "rgba(148,163,184,0.10)", text: "#94a3b8" },
+  default: { bg: "rgba(148,163,184,0.10)", text: "#cbd5e1" },
+  pending: { bg: "rgba(168,85,247,0.12)", text: "#c4b5fd" },
+  danger: { bg: "rgba(239,68,68,0.15)", text: "#fca5a5" }
+};
+function StatusBadge({ label, variant = "default", size = "md", dot = true }) {
+  const colors = COLORS[variant] ?? COLORS.default;
+  const padding = size === "sm" ? "2px 8px" : "4px 12px";
+  const fontSize = size === "sm" ? 11 : 12;
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
+    "span",
+    {
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding,
+        fontSize,
+        fontWeight: 500,
+        borderRadius: 999,
+        background: colors.bg,
+        color: colors.text,
+        whiteSpace: "nowrap"
+      },
+      children: [
+        dot ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+          "span",
+          {
+            style: {
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: colors.text,
+              flexShrink: 0
+            }
+          }
+        ) : null,
+        label
+      ]
+    }
+  );
+}
+function StatusBadgeGroup({ items, children, size = "md" }) {
+  if (children) {
+    const childArray = Array.isArray(children) ? children : [children];
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: childArray });
+  }
+  if (!items || items.length === 0) return null;
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: items.map((item, i) => /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(StatusBadge, { label: item.label, variant: item.variant, size }, i)) });
+}
+
+// src/components/DataTable.tsx
+var import_jsx_runtime20 = require("react/jsx-runtime");
+function DataTable({
+  columns,
+  rows,
+  items,
+  rowKey,
+  loading = false,
+  emptyText = "No data",
+  onRowClick,
+  title,
+  striped = false,
+  compact = false
+}) {
+  const resolvedRows = rows ?? items ?? [];
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { padding: 40, textAlign: "center", color: "#94a3b8", fontSize: 14 }, children: "Loading..." });
+  }
+  if (resolvedRows.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { padding: 40, textAlign: "center", color: "#64748b", fontSize: 14 }, children: emptyText });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { style: { overflowX: "auto" }, children: [
+    title ? /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: { padding: "0 0 12px", color: "#e2e8f0", fontWeight: 600, fontSize: 14 }, children: title }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 14 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+        "tr",
+        {
+          style: {
+            borderBottom: "1px solid rgba(148,163,184,0.12)"
+          },
+          children: columns.map((col) => /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+            "th",
+            {
+              style: {
+                padding: "10px 16px",
+                textAlign: col.align ?? "left",
+                color: "#94a3b8",
+                fontWeight: 600,
+                fontSize: 12,
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                width: col.width,
+                whiteSpace: "nowrap"
+              },
+              children: col.header ?? col.title ?? col.key
+            },
+            col.key
+          ))
+        }
+      ) }),
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("tbody", { children: resolvedRows.map((row, idx) => /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+        "tr",
+        {
+          onClick: () => onRowClick?.(row),
+          style: {
+            borderBottom: "1px solid rgba(148,163,184,0.06)",
+            cursor: onRowClick ? "pointer" : void 0,
+            transition: "background 0.15s",
+            background: striped && idx % 2 === 1 ? "rgba(148,163,184,0.02)" : void 0
+          },
+          onMouseEnter: (e) => {
+            e.currentTarget.style.background = "rgba(148,163,184,0.04)";
+          },
+          onMouseLeave: (e) => {
+            e.currentTarget.style.background = "";
+          },
+          children: columns.map((col) => /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+            "td",
+            {
+              style: {
+                padding: "10px 16px",
+                ...compact ? { paddingTop: 8, paddingBottom: 8 } : {},
+                textAlign: col.align ?? "left",
+                color: "#e2e8f0"
+              },
+              children: col.render ? col.render(row, idx) : col.dataKey ? String(row[col.dataKey] ?? "") : null
+            },
+            col.key
+          ))
+        },
+        rowKey(row)
+      )) })
+    ] })
+  ] });
+}
+
+// src/components/StoreManagerDashboard.tsx
+var import_jsx_runtime21 = require("react/jsx-runtime");
+var SECTION_STYLE = {
+  marginBottom: 24
+};
+var SECTION_HEADER_STYLE = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 14
+};
+var SECTION_TITLE_STYLE = {
+  fontSize: 16,
+  fontWeight: 600,
+  color: "#f1f5f9"
+};
+var SECTION_SUBTITLE_STYLE = {
+  fontSize: 12,
+  color: "#64748b"
+};
+var ACTION_BAR_STYLE = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 10,
+  marginBottom: 20
+};
+var ACTION_BUTTON_STYLE = {
+  padding: "10px 18px",
+  borderRadius: 10,
+  border: "1px solid rgba(148,163,184,0.18)",
+  background: "rgba(15,23,42,0.38)",
+  color: "#cbd5e1",
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: "pointer",
+  transition: "all 0.15s ease",
+  whiteSpace: "nowrap"
+};
+var PRIMARY_ACTION_STYLE = {
+  ...ACTION_BUTTON_STYLE,
+  background: "rgba(59,130,246,0.18)",
+  borderColor: "rgba(59,130,246,0.35)",
+  color: "#93c5fd"
+};
+var TASK_CARD_STYLE = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "12px 16px",
+  borderRadius: 10,
+  background: "rgba(15,23,42,0.28)",
+  border: "1px solid rgba(148,163,184,0.10)",
+  marginBottom: 8
+};
+var DEVICE_BAR_STYLE = {
+  display: "flex",
+  alignItems: "center",
+  gap: 16,
+  padding: "14px 18px",
+  borderRadius: 10,
+  background: "rgba(15,23,42,0.28)",
+  border: "1px solid rgba(148,163,184,0.10)",
+  marginBottom: 20
+};
+var HEADER_WRAPPER_STYLE = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  marginBottom: 18,
+  flexWrap: "wrap",
+  gap: 10
+};
+function priorityMeta(priority) {
+  switch (priority) {
+    case "high":
+      return { label: "\u9AD8", variant: "error" };
+    case "medium":
+      return { label: "\u4E2D", variant: "warning" };
+    case "low":
+      return { label: "\u4F4E", variant: "neutral" };
+  }
+}
+function taskTypeLabel(type) {
+  const map = {
+    inventory: "\u5E93\u5B58",
+    member: "\u4F1A\u5458",
+    order: "\u8BA2\u5355",
+    device: "\u8BBE\u5907",
+    alert: "\u544A\u8B66"
+  };
+  return map[type] ?? type;
+}
+function fmtCurrency(value) {
+  if (Math.abs(value) >= 1e4) {
+    return (value / 1e4).toFixed(1) + "\u4E07";
+  }
+  return value.toLocaleString("zh-CN");
+}
+function fmtTrend(delta) {
+  const sign = delta > 0 ? "+" : "";
+  return `${sign}${delta.toFixed(1)}%`;
+}
+var TASK_COLUMNS = [
+  {
+    key: "type",
+    header: "\u7C7B\u578B",
+    width: "60px",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: taskTypeLabel(row.type) })
+  },
+  {
+    key: "title",
+    header: "\u4EFB\u52A1",
+    width: "200px",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: row.title })
+  },
+  {
+    key: "priority",
+    header: "\u4F18\u5148\u7EA7",
+    width: "70px",
+    render: (row) => {
+      const m = priorityMeta(row.priority);
+      return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(StatusBadge, { label: m.label, variant: m.variant, size: "sm" });
+    }
+  },
+  {
+    key: "createdAt",
+    header: "\u65F6\u95F4",
+    width: "80px",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { fontSize: 11, color: "#64748b" }, children: row.createdAt })
+  }
+];
+function StoreManagerDashboard({
+  dailyMetrics,
+  pendingTasks,
+  deviceStatus,
+  quickActions,
+  storeName,
+  lastSyncAt,
+  loading = false,
+  compact = false,
+  className
+}) {
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { className, style: { padding: 24 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+        "div",
+        {
+          style: {
+            display: "grid",
+            gridTemplateColumns: compact ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+            gap: 14,
+            marginBottom: 24
+          },
+          children: Array.from({ length: compact ? 2 : 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+            "div",
+            {
+              style: {
+                height: 88,
+                borderRadius: 12,
+                background: "rgba(15,23,42,0.3)",
+                border: "1px solid rgba(148,163,184,0.08)",
+                animation: "pulse 1.5s ease-in-out infinite"
+              }
+            },
+            i
+          ))
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: { textAlign: "center", color: "#64748b", fontSize: 13 }, children: "\u6B63\u5728\u52A0\u8F7D\u95E8\u5E97\u6570\u636E..." })
+    ] });
+  }
+  const metricItems = dailyMetrics ? [
+    {
+      label: "\u4ECA\u65E5\u8425\u6536",
+      value: `\xA5${fmtCurrency(dailyMetrics.revenue)}`,
+      helper: `\u540C\u6BD4 ${fmtTrend(dailyMetrics.revenueTrend)}`,
+      valueColor: dailyMetrics.revenueTrend >= 0 ? "#4ade80" : "#f87171"
+    },
+    {
+      label: "\u8BA2\u5355\u6570",
+      value: dailyMetrics.orderCount,
+      helper: `\u540C\u6BD4 ${fmtTrend(dailyMetrics.orderTrend)}`,
+      valueColor: dailyMetrics.orderTrend >= 0 ? "#4ade80" : "#f87171"
+    },
+    {
+      label: "\u5BA2\u5355\u4EF7",
+      value: `\xA5${dailyMetrics.avgOrderValue.toFixed(1)}`,
+      helper: `\u540C\u6BD4 ${fmtTrend(dailyMetrics.avgValueTrend)}`,
+      valueColor: dailyMetrics.avgValueTrend >= 0 ? "#4ade80" : "#f87171"
+    },
+    {
+      label: "\u65B0\u589E\u4F1A\u5458",
+      value: dailyMetrics.newMembers,
+      helper: `\u540C\u6BD4 ${fmtTrend(dailyMetrics.memberTrend)}`,
+      valueColor: dailyMetrics.memberTrend >= 0 ? "#4ade80" : "#f87171"
+    }
+  ] : [
+    { label: "\u8425\u6536", value: "--" },
+    { label: "\u8BA2\u5355", value: "--" },
+    { label: "\u5BA2\u5355\u4EF7", value: "--" },
+    { label: "\u65B0\u4F1A\u5458", value: "--" }
+  ];
+  const renderDeviceBar = () => {
+    if (!deviceStatus) return null;
+    const onlinePct = deviceStatus.total > 0 ? (deviceStatus.online / deviceStatus.total * 100).toFixed(0) : "0";
+    return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: DEVICE_BAR_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { fontSize: 13, color: "#94a3b8", fontWeight: 500 }, children: "\u8BBE\u5907\u72B6\u6001" }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: [
+        "\u603B\u8BA1 ",
+        deviceStatus.total
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+        StatusBadge,
+        {
+          label: `\u5728\u7EBF ${deviceStatus.online}`,
+          variant: "success",
+          size: "sm"
+        }
+      ),
+      deviceStatus.offline > 0 && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+        StatusBadge,
+        {
+          label: `\u79BB\u7EBF ${deviceStatus.offline}`,
+          variant: "error",
+          size: "sm"
+        }
+      ),
+      deviceStatus.warning > 0 && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+        StatusBadge,
+        {
+          label: `\u544A\u8B66 ${deviceStatus.warning}`,
+          variant: "warning",
+          size: "sm"
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: { fontSize: 12, color: "#475569", marginLeft: "auto" }, children: [
+        "\u5728\u7EBF\u7387 ",
+        onlinePct,
+        "%"
+      ] }),
+      deviceStatus.lastCheckAt && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: { fontSize: 11, color: "#475569" }, children: [
+        "\xB7 ",
+        deviceStatus.lastCheckAt
+      ] })
+    ] });
+  };
+  const renderQuickActions = () => {
+    if (!quickActions || quickActions.length === 0) return null;
+    return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: ACTION_BAR_STYLE, children: quickActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
+      "button",
+      {
+        type: "button",
+        style: action.primary ? PRIMARY_ACTION_STYLE : ACTION_BUTTON_STYLE,
+        onClick: action.onClick,
+        children: [
+          action.icon && /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { marginRight: 6 }, children: action.icon }),
+          action.label
+        ]
+      },
+      action.key
+    )) });
+  };
+  const renderTasks = () => {
+    if (!pendingTasks || pendingTasks.length === 0) {
+      return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+        "div",
+        {
+          style: {
+            padding: "24px 0",
+            textAlign: "center",
+            color: "#64748b",
+            fontSize: 13
+          },
+          children: "\u6682\u65E0\u5F85\u529E\u4EFB\u52A1"
+        }
+      );
+    }
+    if (compact) {
+      return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
+        pendingTasks.slice(0, 5).map((task) => {
+          const pm = priorityMeta(task.priority);
+          return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: TASK_CARD_STYLE, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+                "[",
+                taskTypeLabel(task.type),
+                "]"
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: task.title })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+                StatusBadge,
+                {
+                  label: pm.label,
+                  variant: pm.variant,
+                  size: "sm"
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { style: { fontSize: 11, color: "#475569" }, children: task.createdAt })
+            ] })
+          ] }, task.id);
+        }),
+        pendingTasks.length > 5 && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: { textAlign: "center", color: "#64748b", fontSize: 12, paddingTop: 8 }, children: [
+          "... \u8FD8\u6709 ",
+          pendingTasks.length - 5,
+          " \u6761\u5F85\u529E"
+        ] })
+      ] });
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+      DataTable,
+      {
+        columns: TASK_COLUMNS,
+        rows: pendingTasks,
+        rowKey: (task) => task.id,
+        compact: true,
+        emptyText: "\u6682\u65E0\u5F85\u529E\u4EFB\u52A1"
+      }
+    );
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
+    "div",
+    {
+      className,
+      style: {
+        padding: compact ? 16 : 24,
+        color: "#f8fafc"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: HEADER_WRAPPER_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("h2", { style: { margin: 0, fontSize: 20, fontWeight: 700, color: "#f8fafc" }, children: storeName ?? "\u5E97\u957F\u5DE5\u4F5C\u53F0" }),
+          lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: { fontSize: 11, color: "#475569", marginTop: 4, display: "inline-block" }, children: [
+            "\u6570\u636E\u540C\u6B65: ",
+            lastSyncAt
+          ] })
+        ] }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: SECTION_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(
+          QuickStats,
+          {
+            items: metricItems,
+            columns: compact ? 2 : 4,
+            gap: compact ? 10 : 14,
+            padding: compact ? 14 : 18
+          }
+        ) }),
+        renderQuickActions(),
+        renderDeviceBar(),
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("div", { style: SECTION_STYLE, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { style: SECTION_HEADER_STYLE, children: /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: SECTION_TITLE_STYLE, children: [
+            "\u5F85\u529E\u4EFB\u52A1",
+            pendingTasks && pendingTasks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("span", { style: { ...SECTION_SUBTITLE_STYLE, marginLeft: 8 }, children: [
+              "(",
+              pendingTasks.length,
+              ")"
+            ] })
+          ] }) }),
+          renderTasks()
+        ] })
+      ]
+    }
+  );
+}
+
+// src/components/FrontDeskPanel.tsx
+var import_jsx_runtime22 = require("react/jsx-runtime");
+var PAYMENT_LABELS = {
+  wechat: "\u5FAE\u4FE1\u652F\u4ED8",
+  alipay: "\u652F\u4ED8\u5B9D",
+  cash: "\u73B0\u91D1",
+  card: "\u94F6\u884C\u5361",
+  member_card: "\u4F1A\u5458\u5361"
+};
+var PANEL_STYLE = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 16,
+  padding: 20,
+  borderRadius: 16,
+  background: "rgba(15, 23, 42, 0.45)",
+  border: "1px solid rgba(148, 163, 184, 0.12)",
+  color: "#f8fafc"
+};
+var HEADER_STYLE = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  paddingBottom: 12,
+  borderBottom: "1px solid rgba(148, 163, 184, 0.08)"
+};
+var TITLE_STYLE = {
+  fontSize: 18,
+  fontWeight: 700,
+  color: "#f1f5f9"
+};
+var SECTION_STYLE2 = {
+  borderRadius: 12,
+  background: "rgba(15, 23, 42, 0.28)",
+  border: "1px solid rgba(148, 163, 184, 0.08)",
+  padding: 14
+};
+var SECTION_TITLE_STYLE2 = {
+  fontSize: 14,
+  fontWeight: 600,
+  color: "#cbd5e1",
+  marginBottom: 10
+};
+var PAYMENT_BTN_BASE = {
+  padding: "8px 14px",
+  borderRadius: 8,
+  border: "1px solid rgba(148,163,184,0.15)",
+  background: "rgba(15,23,42,0.3)",
+  color: "#94a3b8",
+  fontSize: 12,
+  fontWeight: 500,
+  cursor: "pointer",
+  transition: "all 0.15s ease"
+};
+var PAYMENT_BTN_SELECTED = {
+  ...PAYMENT_BTN_BASE,
+  background: "rgba(59,130,246,0.2)",
+  borderColor: "rgba(59,130,246,0.4)",
+  color: "#93c5fd"
+};
+var CHECKOUT_BTN_STYLE = {
+  width: "100%",
+  padding: "14px 0",
+  borderRadius: 12,
+  border: "none",
+  background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
+  color: "#ffffff",
+  fontSize: 15,
+  fontWeight: 700,
+  cursor: "pointer",
+  transition: "all 0.2s ease"
+};
+var CHECKOUT_DISABLED_STYLE = {
+  ...CHECKOUT_BTN_STYLE,
+  background: "rgba(71,85,105,0.4)",
+  color: "#64748b",
+  cursor: "not-allowed"
+};
+var QUEUE_ITEM_STYLE = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "8px 10px",
+  borderRadius: 8,
+  background: "rgba(15,23,42,0.2)",
+  marginBottom: 6,
+  fontSize: 12
+};
+var BASKET_ROW_STYLE = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "6px 0",
+  borderBottom: "1px solid rgba(148,163,184,0.06)",
+  fontSize: 12
+};
+var QUICK_ACTION_GRID = {
+  display: "grid",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gap: 8
+};
+var QUICK_BTN_STYLE = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: 4,
+  padding: "12px 6px",
+  borderRadius: 10,
+  border: "1px solid rgba(148,163,184,0.1)",
+  background: "rgba(15,23,42,0.25)",
+  color: "#cbd5e1",
+  fontSize: 11,
+  fontWeight: 500,
+  cursor: "pointer",
+  transition: "all 0.15s ease",
+  position: "relative"
+};
+var HIGHLIGHT_BTN_STYLE = {
+  ...QUICK_BTN_STYLE,
+  background: "rgba(59,130,246,0.15)",
+  borderColor: "rgba(59,130,246,0.3)",
+  color: "#93c5fd"
+};
+function fmtCurrency2(value) {
+  return `\xA5${value.toFixed(2)}`;
+}
+function queueTypeLabel(type) {
+  const map = {
+    service: "\u670D\u52A1",
+    pickup: "\u53D6\u8D27",
+    return: "\u9000\u8D27",
+    consult: "\u54A8\u8BE2"
+  };
+  return map[type];
+}
+function FrontDeskPanel({
+  title = "\u524D\u53F0\u64CD\u4F5C\u53F0",
+  cashierName,
+  shiftInfo,
+  basketItems = [],
+  checkoutStatus = "idle",
+  checkoutError,
+  paymentMethods = ["wechat", "alipay", "cash"],
+  selectedPayment = "wechat",
+  queue = [],
+  quickActions = [],
+  todayStats,
+  loading = false,
+  compact = false,
+  onCheckout,
+  onPaymentChange,
+  onRemoveItem,
+  onClearBasket,
+  className
+}) {
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className, style: PANEL_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { textAlign: "center", padding: 40, color: "#64748b" }, children: "\u6B63\u5728\u52A0\u8F7D\u6536\u94F6\u53F0..." }),
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }, children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+        "div",
+        {
+          style: {
+            height: 60,
+            borderRadius: 8,
+            background: "rgba(15,23,42,0.2)",
+            animation: "pulse 1.5s ease-in-out infinite"
+          }
+        },
+        i
+      )) })
+    ] });
+  }
+  const totalQuantity = basketItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalAmount = basketItems.reduce((sum, item) => sum + item.subtotal, 0);
+  const canCheckout = basketItems.length > 0 && checkoutStatus !== "processing" && checkoutStatus !== "success";
+  const statItems = todayStats ? [
+    { label: "\u4ECA\u65E5\u8BA2\u5355", value: todayStats.totalOrders },
+    {
+      label: "\u4ECA\u65E5\u8425\u6536",
+      value: fmtCurrency2(todayStats.totalRevenue),
+      valueColor: "#4ade80"
+    },
+    {
+      label: "\u5E73\u5747\u7ED3\u8D26",
+      value: `${todayStats.avgCheckoutSec}s`,
+      helper: "\u6BCF\u5355\u8017\u65F6"
+    },
+    {
+      label: "\u5F85\u53D6\u8D27",
+      value: todayStats.pendingPickups,
+      valueColor: todayStats.pendingPickups > 5 ? "#f87171" : "#fbbf24"
+    }
+  ] : [];
+  const renderHeader = () => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: HEADER_STYLE, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: TITLE_STYLE, children: title }),
+      cashierName && /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 12 }, children: [
+        "\u6536\u94F6\u5458: ",
+        cashierName
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12 }, children: [
+      shiftInfo && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(StatusBadge, { label: shiftInfo, variant: "info", size: "sm" }),
+      checkoutStatus === "processing" && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(StatusBadge, { label: "\u7ED3\u7B97\u4E2D...", variant: "warning", size: "sm", dot: true }),
+      checkoutStatus === "success" && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(StatusBadge, { label: "\u7ED3\u7B97\u6210\u529F", variant: "success", size: "sm" }),
+      checkoutStatus === "failed" && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(StatusBadge, { label: "\u7ED3\u7B97\u5931\u8D25", variant: "error", size: "sm" })
+    ] })
+  ] });
+  const renderQuickActions = () => {
+    if (quickActions.length === 0) return null;
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: SECTION_STYLE2, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: SECTION_TITLE_STYLE2, children: "\u5FEB\u6377\u64CD\u4F5C" }),
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: QUICK_ACTION_GRID, children: quickActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+        "button",
+        {
+          type: "button",
+          style: action.highlight ? HIGHLIGHT_BTN_STYLE : QUICK_BTN_STYLE,
+          onClick: action.onClick,
+          children: [
+            action.icon && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: { fontSize: 16 }, children: action.icon }),
+            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { children: action.label }),
+            action.badge !== void 0 && action.badge > 0 && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+              "span",
+              {
+                style: {
+                  position: "absolute",
+                  top: 2,
+                  right: 4,
+                  minWidth: 16,
+                  height: 16,
+                  borderRadius: 8,
+                  background: "#ef4444",
+                  color: "#fff",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 4px"
+                },
+                children: action.badge > 99 ? "99+" : action.badge
+              }
+            )
+          ]
+        },
+        action.key
+      )) })
+    ] });
+  };
+  const renderQueue = () => {
+    if (queue.length === 0) return null;
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: SECTION_STYLE2, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: SECTION_TITLE_STYLE2, children: [
+        "\u6392\u961F\u53EB\u53F7",
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: { fontSize: 11, color: "#64748b", marginLeft: 8 }, children: [
+          queue.length,
+          " \u4F4D"
+        ] })
+      ] }),
+      queue.slice(0, compact ? 3 : 5).map((item) => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: QUEUE_ITEM_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("strong", { style: { fontSize: 14, color: "#f8fafc", minWidth: 24 }, children: item.number }),
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: { color: "#94a3b8" }, children: queueTypeLabel(item.type) }),
+          item.customerName && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: { color: "#cbd5e1" }, children: item.customerName })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: { fontSize: 11, color: "#64748b" }, children: [
+            item.waitingMinutes,
+            "\u5206\u949F"
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+            StatusBadge,
+            {
+              label: item.status === "calling" ? "\u53EB\u53F7\u4E2D" : item.status === "serving" ? "\u670D\u52A1\u4E2D" : "\u7B49\u5F85",
+              variant: item.status === "calling" ? "warning" : item.status === "serving" ? "info" : "neutral",
+              size: "sm",
+              dot: item.status === "calling"
+            }
+          )
+        ] })
+      ] }, item.id)),
+      queue.length > (compact ? 3 : 5) && /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { textAlign: "center", color: "#64748b", fontSize: 11, paddingTop: 4 }, children: [
+        "... \u8FD8\u6709 ",
+        queue.length - (compact ? 3 : 5),
+        " \u4F4D"
+      ] })
+    ] });
+  };
+  const renderBasket = () => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: SECTION_STYLE2, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+      "div",
+      {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 8
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: SECTION_TITLE_STYLE2, children: [
+            "\u8D2D\u7269\u7BEE",
+            basketItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: { fontSize: 11, color: "#64748b", marginLeft: 8 }, children: [
+              totalQuantity,
+              " \u4EF6"
+            ] })
+          ] }),
+          basketItems.length > 0 && onClearBasket && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+            "button",
+            {
+              type: "button",
+              onClick: onClearBasket,
+              style: {
+                background: "none",
+                border: "none",
+                color: "#64748b",
+                fontSize: 11,
+                cursor: "pointer"
+              },
+              children: "\u6E05\u7A7A"
+            }
+          )
+        ]
+      }
+    ),
+    basketItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      "div",
+      {
+        style: {
+          textAlign: "center",
+          padding: "20px 0",
+          color: "#475569",
+          fontSize: 12
+        },
+        children: "\u8D2D\u7269\u7BEE\u4E3A\u7A7A\uFF0C\u626B\u63CF\u5546\u54C1\u6761\u7801\u6DFB\u52A0"
+      }
+    ) : /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { maxHeight: compact ? 120 : 200, overflowY: "auto" }, children: basketItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: BASKET_ROW_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { color: "#e2e8f0", fontWeight: 500 }, children: item.name }),
+          /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { color: "#64748b", fontSize: 10 }, children: [
+            item.sku,
+            " \xD7 ",
+            item.quantity
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { textAlign: "right", marginRight: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { color: "#e2e8f0" }, children: fmtCurrency2(item.unitPrice) }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { textAlign: "right", minWidth: 60 }, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { color: "#f8fafc", fontWeight: 600 }, children: fmtCurrency2(item.subtotal) }) }),
+        onRemoveItem && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: () => onRemoveItem(item.id),
+            style: {
+              background: "none",
+              border: "none",
+              color: "#ef4444",
+              cursor: "pointer",
+              fontSize: 14,
+              marginLeft: 4
+            },
+            title: "\u79FB\u9664",
+            children: "\xD7"
+          }
+        )
+      ] }, item.id)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+        "div",
+        {
+          style: {
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingTop: 10,
+            borderTop: "1px solid rgba(148,163,184,0.1)",
+            marginTop: 8
+          },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: { fontSize: 13, color: "#94a3b8", fontWeight: 500 }, children: [
+              "\u5408\u8BA1 (",
+              totalQuantity,
+              " \u4EF6)"
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+              "span",
+              {
+                style: {
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: "#4ade80"
+                },
+                children: fmtCurrency2(totalAmount)
+              }
+            )
+          ]
+        }
+      )
+    ] })
+  ] });
+  const renderPayment = () => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: SECTION_STYLE2, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: SECTION_TITLE_STYLE2, children: "\u652F\u4ED8\u65B9\u5F0F" }),
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }, children: paymentMethods.map((method) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      "button",
+      {
+        type: "button",
+        style: selectedPayment === method ? PAYMENT_BTN_SELECTED : PAYMENT_BTN_BASE,
+        onClick: () => onPaymentChange?.(method),
+        disabled: checkoutStatus === "processing",
+        children: PAYMENT_LABELS[method] ?? method
+      },
+      method
+    )) }),
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      "button",
+      {
+        type: "button",
+        style: canCheckout ? CHECKOUT_BTN_STYLE : CHECKOUT_DISABLED_STYLE,
+        onClick: () => canCheckout && onCheckout?.(selectedPayment),
+        disabled: !canCheckout,
+        children: checkoutStatus === "processing" ? "\u7ED3\u7B97\u4E2D..." : checkoutStatus === "success" ? "\u2713 \u7ED3\u7B97\u6210\u529F" : `\u6536\u6B3E ${fmtCurrency2(totalAmount)}`
+      }
+    ),
+    checkoutStatus === "failed" && checkoutError && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+      "div",
+      {
+        style: {
+          marginTop: 8,
+          padding: "8px 12px",
+          borderRadius: 8,
+          background: "rgba(239,68,68,0.1)",
+          border: "1px solid rgba(239,68,68,0.2)",
+          color: "#f87171",
+          fontSize: 12
+        },
+        children: checkoutError
+      }
+    )
+  ] });
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className, style: PANEL_STYLE, children: [
+    renderHeader(),
+    statItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(QuickStats, { items: statItems, columns: compact ? 2 : 4 }),
+    renderQuickActions(),
+    renderQueue(),
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+      "div",
+      {
+        style: {
+          display: "grid",
+          gridTemplateColumns: compact ? "1fr" : "1fr 1fr",
+          gap: 12
+        },
+        children: [
+          renderBasket(),
+          renderPayment()
+        ]
+      }
+    )
+  ] });
+}
+
+// src/components/SalesClerkTool.tsx
+var import_react12 = require("react");
+
+// src/components/SearchFilterInput.tsx
+var import_react11 = __toESM(require("react"));
+var import_jsx_runtime23 = require("react/jsx-runtime");
+function useSearchFilter(initialValue = "", debounceMs = 300) {
+  const [rawValue, setRawValue] = (0, import_react11.useState)(initialValue);
+  const [debouncedValue, setDebouncedValue] = (0, import_react11.useState)(initialValue);
+  const timerRef = import_react11.default.useRef();
+  const setValue = (0, import_react11.useCallback)(
+    (value) => {
+      setRawValue(value);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setDebouncedValue(value), debounceMs);
+    },
+    [debounceMs]
+  );
+  import_react11.default.useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+  return { value: rawValue, debouncedValue, setValue };
+}
+function SearchFilterInput({
+  value,
+  onChange,
+  onKeyDown,
+  placeholder = "Search...",
+  debounceMs = 300,
+  clearable = true,
+  width = 260,
+  disabled = false
+}) {
+  const { value: localValue, setValue } = useSearchFilter(value, debounceMs);
+  const inputRef = import_react11.default.useRef(null);
+  const hasValue = localValue.length > 0;
+  import_react11.default.useEffect(() => {
+    onChange(localValue);
+  }, [localValue, onChange]);
+  const handleClear = (0, import_react11.useCallback)(() => {
+    setValue("");
+    inputRef.current?.focus();
+  }, [setValue]);
+  const handleKeyDown = (0, import_react11.useCallback)(
+    (e) => {
+      if (e.key === "Escape" && hasValue) {
+        e.preventDefault();
+        handleClear();
+      }
+      onKeyDown?.(e);
+    },
+    [hasValue, handleClear, onKeyDown]
+  );
+  const inputPaddingRight = clearable && hasValue ? 36 : 12;
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { position: "relative", display: "inline-flex", alignItems: "center" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      "svg",
+      {
+        width: "16",
+        height: "16",
+        viewBox: "0 0 16 16",
+        fill: "none",
+        style: { position: "absolute", left: 12, pointerEvents: "none" },
+        "aria-hidden": "true",
+        children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+          "path",
+          {
+            d: "M7 1a6 6 0 1 0 3.47 10.88l3.32 3.33a.75.75 0 1 0 1.06-1.06l-3.32-3.33A6 6 0 0 0 7 1Zm-4.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0Z",
+            fill: "#64748b"
+          }
+        )
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      "input",
+      {
+        ref: inputRef,
+        type: "text",
+        value: localValue,
+        onChange: (e) => setValue(e.target.value),
+        onKeyDown: handleKeyDown,
+        placeholder,
+        disabled,
+        style: {
+          padding: `8px ${inputPaddingRight}px 8px 36px`,
+          fontSize: 14,
+          borderRadius: 8,
+          border: "1px solid rgba(148,163,184,0.18)",
+          background: disabled ? "rgba(15,23,42,0.2)" : "rgba(15,23,42,0.4)",
+          color: disabled ? "#64748b" : "#e2e8f0",
+          outline: "none",
+          width,
+          transition: "border-color 0.15s",
+          cursor: disabled ? "not-allowed" : "text"
+        },
+        onFocus: (e) => {
+          if (!disabled) e.target.style.borderColor = "rgba(96,165,250,0.4)";
+        },
+        onBlur: (e) => {
+          e.target.style.borderColor = "rgba(148,163,184,0.18)";
+        }
+      }
+    ),
+    clearable && hasValue && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      "button",
+      {
+        type: "button",
+        onClick: handleClear,
+        "aria-label": "\u6E05\u7A7A\u641C\u7D22",
+        title: "\u6E05\u7A7A (Esc)",
+        style: {
+          position: "absolute",
+          right: 6,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 24,
+          height: 24,
+          borderRadius: 6,
+          border: "none",
+          background: "transparent",
+          color: "#64748b",
+          cursor: "pointer",
+          padding: 0,
+          transition: "background 0.15s, color 0.15s"
+        },
+        onMouseEnter: (e) => {
+          e.currentTarget.style.background = "rgba(148,163,184,0.12)";
+          e.currentTarget.style.color = "#e2e8f0";
+        },
+        onMouseLeave: (e) => {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.color = "#64748b";
+        },
+        children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 14 14", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+          "path",
+          {
+            d: "M10.03 3.97a.75.75 0 0 1 0 1.06L8.06 7l1.97 1.97a.75.75 0 1 1-1.06 1.06L7 8.06l-1.97 1.97a.75.75 0 0 1-1.06-1.06L5.94 7 3.97 5.03a.75.75 0 0 1 1.06-1.06L7 5.94l1.97-1.97a.75.75 0 0 1 1.06 0Z",
+            fill: "currentColor"
+          }
+        ) })
+      }
+    )
+  ] });
+}
+
+// src/components/SalesClerkTool.tsx
+var import_jsx_runtime24 = require("react/jsx-runtime");
+var TIER_LABELS = {
+  VIP: "VIP\u4F1A\u5458",
+  GOLD: "\u91D1\u5361\u4F1A\u5458",
+  SILVER: "\u94F6\u5361\u4F1A\u5458",
+  REGULAR: "\u666E\u901A\u4F1A\u5458"
+};
+var TIER_VARIANTS = {
+  VIP: "success",
+  GOLD: "warning",
+  SILVER: "info",
+  REGULAR: "neutral"
+};
+var PRIORITY_LABELS = {
+  high: "\u9AD8",
+  medium: "\u4E2D",
+  low: "\u4F4E"
+};
+var PRIORITY_VARIANTS = {
+  high: "error",
+  medium: "warning",
+  low: "info"
+};
+function MemberSearchPanel({
+  onSearch
+}) {
+  const [query, setQuery] = (0, import_react12.useState)("");
+  const [results, setResults] = (0, import_react12.useState)([]);
+  const [searching, setSearching] = (0, import_react12.useState)(false);
+  const [searched, setSearched] = (0, import_react12.useState)(false);
+  const handleSearch = (0, import_react12.useCallback)(async () => {
+    if (!query.trim() || !onSearch) return;
+    setSearching(true);
+    setSearched(true);
+    try {
+      const data = await onSearch(query.trim());
+      setResults(data);
+    } finally {
+      setSearching(false);
+    }
+  }, [query, onSearch]);
+  const handleKeyDown = (0, import_react12.useCallback)(
+    (e) => {
+      if (e.key === "Enter") handleSearch();
+    },
+    [handleSearch]
+  );
+  return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { marginBottom: 24 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { fontSize: 16, fontWeight: 600, color: "#f8fafc", marginBottom: 8 }, children: "\u4F1A\u5458\u901F\u67E5" }),
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { flex: 1 }, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+        SearchFilterInput,
+        {
+          value: query,
+          onChange: setQuery,
+          onKeyDown: handleKeyDown,
+          placeholder: "\u8F93\u5165\u624B\u673A\u53F7\u6216\u59D3\u540D\u67E5\u8BE2\u4F1A\u5458\u2026"
+        }
+      ) }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+        "button",
+        {
+          onClick: handleSearch,
+          disabled: searching || !query.trim(),
+          style: {
+            padding: "8px 20px",
+            borderRadius: 10,
+            border: "none",
+            background: searching || !query.trim() ? "#334155" : "#3b82f6",
+            color: "#fff",
+            fontWeight: 600,
+            cursor: searching || !query.trim() ? "not-allowed" : "pointer",
+            fontSize: 14
+          },
+          children: searching ? "\u67E5\u8BE2\u4E2D..." : "\u67E5\u8BE2"
+        }
+      )
+    ] }),
+    searched && results.length === 0 && !searching && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { marginTop: 12, padding: 16, borderRadius: 12, background: "#1e293b", color: "#94a3b8", fontSize: 14 }, children: "\u672A\u627E\u5230\u5339\u914D\u4F1A\u5458" }),
+    results.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { marginTop: 12, display: "grid", gap: 10 }, children: results.map((m) => /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+      "div",
+      {
+        style: {
+          borderRadius: 12,
+          padding: 14,
+          background: "#1e293b",
+          border: "1px solid #334155"
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { style: { fontWeight: 700, color: "#f8fafc", fontSize: 15 }, children: m.name }),
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(StatusBadge, { label: TIER_LABELS[m.tier], variant: TIER_VARIANTS[m.tier] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", gap: 20, fontSize: 13, color: "#94a3b8" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("span", { children: [
+              "\u{1F4F1} ",
+              m.phone
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("span", { children: [
+              "\u2B50 ",
+              m.points,
+              " \u79EF\u5206"
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("span", { children: [
+              "\u{1F4B0} \xA5",
+              m.totalSpent.toLocaleString()
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("span", { children: [
+              "\u{1F3EA} ",
+              m.visitCount,
+              " \u6B21\u5230\u5E97"
+            ] })
+          ] }),
+          m.tags.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }, children: m.tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+            "span",
+            {
+              style: {
+                fontSize: 12,
+                padding: "2px 8px",
+                borderRadius: 6,
+                background: "#0f172a",
+                color: "#93c5fd"
+              },
+              children: tag
+            },
+            tag
+          )) })
+        ]
+      },
+      m.id
+    )) })
+  ] });
+}
+function FollowUpList({
+  clients,
+  onFollowUp
+}) {
+  const columns = (0, import_react12.useMemo)(
+    () => [
+      { key: "name", label: "\u5BA2\u6237", render: (row) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { style: { fontWeight: 600 }, children: row.name }) },
+      {
+        key: "tier",
+        label: "\u7B49\u7EA7",
+        render: (row) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(StatusBadge, { label: TIER_LABELS[row.tier], variant: TIER_VARIANTS[row.tier] })
+      },
+      { key: "lastVisit", label: "\u6700\u8FD1\u5230\u5E97" },
+      { key: "reason", label: "\u8DDF\u8FDB\u539F\u56E0" },
+      {
+        key: "priority",
+        label: "\u4F18\u5148\u7EA7",
+        render: (row) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(StatusBadge, { label: PRIORITY_LABELS[row.priority], variant: PRIORITY_VARIANTS[row.priority] })
+      },
+      {
+        key: "action",
+        label: "\u64CD\u4F5C",
+        render: (row) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+          "button",
+          {
+            onClick: () => onFollowUp?.(row.id),
+            style: {
+              padding: "4px 14px",
+              borderRadius: 8,
+              border: "none",
+              background: "#3b82f6",
+              color: "#fff",
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 600
+            },
+            children: "\u8DDF\u8FDB"
+          }
+        )
+      }
+    ],
+    [onFollowUp]
+  );
+  if (clients.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { padding: 24, textAlign: "center", color: "#64748b", fontSize: 14 }, children: "\u6682\u65E0\u5F85\u8DDF\u8FDB\u5BA2\u6237 \u{1F389}" });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(DataTable, { columns, rows: clients, rowKey: (row) => row.id });
+}
+function ScriptCards({
+  scripts,
+  onCopy
+}) {
+  const [copiedId, setCopiedId] = (0, import_react12.useState)(null);
+  const handleCopy = (0, import_react12.useCallback)(
+    (script) => {
+      navigator.clipboard?.writeText(script.text).catch(() => {
+      });
+      setCopiedId(script.id);
+      onCopy?.(script.id);
+      setTimeout(() => setCopiedId(null), 2e3);
+    },
+    [onCopy]
+  );
+  if (scripts.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { padding: 24, textAlign: "center", color: "#64748b", fontSize: 14 }, children: "\u6682\u65E0\u53EF\u9009\u8BDD\u672F" });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { display: "grid", gap: 10 }, children: scripts.map((script) => /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+    "div",
+    {
+      style: {
+        borderRadius: 12,
+        padding: 14,
+        background: "#1e293b",
+        border: "1px solid #334155"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { fontSize: 14, fontWeight: 600, color: "#f8fafc", marginBottom: 6 }, children: script.scenario }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1", marginBottom: 10, lineHeight: 1.6 }, children: script.text }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" }, children: script.tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+            "span",
+            {
+              style: {
+                fontSize: 11,
+                padding: "2px 8px",
+                borderRadius: 6,
+                background: "#0f172a",
+                color: "#93c5fd"
+              },
+              children: tag
+            },
+            tag
+          )) }),
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+            "button",
+            {
+              onClick: () => handleCopy(script),
+              style: {
+                padding: "4px 14px",
+                borderRadius: 8,
+                border: "none",
+                background: copiedId === script.id ? "#16a34a" : "#334155",
+                color: "#fff",
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: 600
+              },
+              children: copiedId === script.id ? "\u2713 \u5DF2\u590D\u5236" : "\u590D\u5236"
+            }
+          )
+        ] })
+      ]
+    },
+    script.id
+  )) });
+}
+function SalesClerkTool({
+  stats,
+  followUpClients,
+  scripts,
+  clerkName,
+  storeName,
+  onMemberSearch,
+  onFollowUp,
+  onScriptCopy
+}) {
+  const [activeTab, setActiveTab] = (0, import_react12.useState)("search");
+  const statItems = (0, import_react12.useMemo)(
+    () => [
+      { label: "\u4ECA\u65E5\u63A5\u5F85", value: String(stats.totalReceptions), helper: "\u4EBA\u6B21" },
+      { label: "\u65B0\u589E\u7EBF\u7D22", value: String(stats.newLeads), helper: "\u6761" },
+      { label: "\u8F6C\u5316", value: String(stats.conversions), helper: "\u7B14" },
+      { label: "\u8F6C\u5316\u7387", value: `${stats.conversionRate}%`, helper: "\u8F83\u6628\u65E5" },
+      { label: "\u5E73\u5747\u54CD\u5E94", value: `${stats.avgResponseMin}min`, helper: "\u5206\u949F" }
+    ],
+    [stats]
+  );
+  const tabs = [
+    { key: "search", label: "\u4F1A\u5458\u901F\u67E5" },
+    { key: "followup", label: `\u5F85\u8DDF\u8FDB (${followUpClients.length})` },
+    { key: "scripts", label: `\u63A8\u8350\u8BDD\u672F (${scripts.length})` }
+  ];
+  return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+    "div",
+    {
+      style: {
+        borderRadius: 20,
+        padding: 24,
+        background: "#0f172a",
+        border: "1px solid #1e293b"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { fontSize: 20, fontWeight: 700, color: "#f8fafc" }, children: "\u5BFC\u8D2D\u5DE5\u4F5C\u53F0" }),
+            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { fontSize: 13, color: "#64748b", marginTop: 4 }, children: [clerkName, storeName].filter(Boolean).join(" \xB7 ") || "\u5BA2\u6237\u63A5\u5F85\u4E0E\u8F6C\u5316\u5DE5\u5177" })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(StatusBadge, { label: "\u25CF \u5728\u7EBF", variant: "success" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(QuickStats, { items: statItems }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { display: "flex", gap: 4, marginTop: 20, marginBottom: 16 }, children: tabs.map((tab) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+          "button",
+          {
+            onClick: () => setActiveTab(tab.key),
+            style: {
+              padding: "8px 18px",
+              borderRadius: 10,
+              border: "none",
+              background: activeTab === tab.key ? "#1e293b" : "transparent",
+              color: activeTab === tab.key ? "#f8fafc" : "#64748b",
+              fontWeight: activeTab === tab.key ? 600 : 400,
+              cursor: "pointer",
+              fontSize: 14,
+              transition: "all 0.15s"
+            },
+            children: tab.label
+          },
+          tab.key
+        )) }),
+        /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { minHeight: 200 }, children: [
+          activeTab === "search" && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(MemberSearchPanel, { onSearch: onMemberSearch }),
+          activeTab === "followup" && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(FollowUpList, { clients: followUpClients, onFollowUp }),
+          activeTab === "scripts" && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ScriptCards, { scripts, onCopy: onScriptCopy })
+        ] })
+      ]
+    }
+  );
+}
+
+// src/components/OperationsManagerDashboard.tsx
+var import_jsx_runtime25 = require("react/jsx-runtime");
+var SECTION_STYLE3 = {
+  marginBottom: 24
+};
+var SECTION_HEADER_STYLE2 = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 12
+};
+var SECTION_TITLE_STYLE3 = {
+  fontSize: 16,
+  fontWeight: 600,
+  color: "#f1f5f9"
+};
+var ACTION_BAR_STYLE2 = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 10,
+  marginBottom: 20
+};
+var ACTION_BUTTON_STYLE2 = {
+  padding: "10px 18px",
+  borderRadius: 10,
+  border: "1px solid rgba(148,163,184,0.18)",
+  background: "rgba(15,23,42,0.38)",
+  color: "#cbd5e1",
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: "pointer",
+  transition: "all 0.15s ease",
+  whiteSpace: "nowrap"
+};
+var PRIMARY_ACTION_STYLE2 = {
+  ...ACTION_BUTTON_STYLE2,
+  background: "rgba(59,130,246,0.18)",
+  borderColor: "rgba(59,130,246,0.35)",
+  color: "#93c5fd"
+};
+var HEADER_WRAPPER_STYLE2 = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  marginBottom: 18,
+  flexWrap: "wrap",
+  gap: 10
+};
+function fmtCurrency3(value) {
+  if (Math.abs(value) >= 1e4) {
+    return (value / 1e4).toFixed(1) + "\u4E07";
+  }
+  return value.toLocaleString("zh-CN");
+}
+function fmtTrend2(delta) {
+  const sign = delta > 0 ? "+" : "";
+  return `${sign}${delta.toFixed(1)}%`;
+}
+function fmtRate(rate) {
+  return rate.toFixed(1) + "%";
+}
+function storeStatusMeta(status) {
+  switch (status) {
+    case "operating":
+      return { label: "\u8425\u4E1A\u4E2D", variant: "success" };
+    case "closed_today":
+      return { label: "\u4ECA\u65E5\u4F11", variant: "neutral" };
+    case "paused":
+      return { label: "\u6682\u505C", variant: "warning" };
+    case "offline":
+      return { label: "\u79BB\u7EBF", variant: "error" };
+  }
+}
+function inspectionStatusMeta(status) {
+  switch (status) {
+    case "pending":
+      return { label: "\u5F85\u5904\u7406", variant: "neutral" };
+    case "assigned":
+      return { label: "\u5DF2\u6307\u6D3E", variant: "info" };
+    case "in_progress":
+      return { label: "\u5DE1\u68C0\u4E2D", variant: "info" };
+    case "completed":
+      return { label: "\u5DF2\u5B8C\u6210", variant: "success" };
+    case "overdue":
+      return { label: "\u5DF2\u8D85\u671F", variant: "error" };
+  }
+}
+function inspectionTypeLabel(type) {
+  const map = {
+    routine: "\u5E38\u89C4\u5DE1\u5E97",
+    spot_check: "\u7A81\u51FB\u68C0\u67E5",
+    compliance: "\u5408\u89C4\u5BA1\u67E5",
+    hygiene: "\u536B\u751F\u68C0\u67E5",
+    device: "\u8BBE\u5907\u5DE1\u68C0"
+  };
+  return map[type] ?? type;
+}
+function priorityMeta2(priority) {
+  switch (priority) {
+    case "critical":
+      return { label: "\u7D27\u6025", variant: "error" };
+    case "high":
+      return { label: "\u9AD8", variant: "error" };
+    case "medium":
+      return { label: "\u4E2D", variant: "warning" };
+    case "low":
+      return { label: "\u4F4E", variant: "neutral" };
+  }
+}
+var STORE_COLUMNS = [
+  {
+    key: "name",
+    header: "\u95E8\u5E97",
+    width: "130px",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { fontSize: 13, color: "#e2e8f0", fontWeight: 500 }, children: row.name }),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { fontSize: 11, color: "#64748b" }, children: row.region })
+    ] })
+  },
+  {
+    key: "status",
+    header: "\u72B6\u6001",
+    width: "72px",
+    render: (row) => {
+      const m = storeStatusMeta(row.status);
+      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatusBadge, { label: m.label, variant: m.variant, size: "sm" });
+    }
+  },
+  {
+    key: "todayRevenue",
+    header: "\u4ECA\u65E5\u8425\u6536",
+    width: "100px",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { fontSize: 13, color: "#e2e8f0" }, children: [
+        "\xA5",
+        fmtCurrency3(row.todayRevenue)
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { fontSize: 11, color: row.revenueRate >= 80 ? "#4ade80" : "#f87171" }, children: [
+        "\u8FBE\u6807\u7387 ",
+        fmtRate(row.revenueRate)
+      ] })
+    ] }),
+    sortable: true
+  },
+  {
+    key: "monthlyKpiRate",
+    header: "KPI",
+    width: "80px",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: {
+      fontSize: 13,
+      color: row.monthlyKpiRate >= 80 ? "#4ade80" : row.monthlyKpiRate >= 60 ? "#facc15" : "#f87171",
+      fontWeight: 600
+    }, children: fmtRate(row.monthlyKpiRate) }),
+    sortable: true
+  },
+  {
+    key: "alertCount",
+    header: "\u544A\u8B66",
+    width: "60px",
+    render: (row) => row.alertCount > 0 ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatusBadge, { label: `${row.alertCount}`, variant: "error", size: "sm", dot: true }) : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontSize: 12, color: "#475569" }, children: "0" })
+  },
+  {
+    key: "staffOnDuty",
+    header: "\u5728\u5C97",
+    width: "54px",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontSize: 13, color: "#94a3b8" }, children: row.staffOnDuty })
+  }
+];
+var INSPECTION_COLUMNS = [
+  {
+    key: "type",
+    header: "\u7C7B\u578B",
+    width: "80px",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: inspectionTypeLabel(row.type) })
+  },
+  {
+    key: "storeName",
+    header: "\u95E8\u5E97",
+    width: "110px",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: row.storeName })
+  },
+  {
+    key: "priority",
+    header: "\u4F18\u5148\u7EA7",
+    width: "60px",
+    render: (row) => {
+      const m = priorityMeta2(row.priority);
+      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatusBadge, { label: m.label, variant: m.variant, size: "sm" });
+    }
+  },
+  {
+    key: "status",
+    header: "\u72B6\u6001",
+    width: "72px",
+    render: (row) => {
+      const m = inspectionStatusMeta(row.status);
+      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatusBadge, { label: m.label, variant: m.variant, size: "sm" });
+    }
+  },
+  {
+    key: "deadline",
+    header: "\u622A\u6B62",
+    width: "80px",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: row.deadline })
+  },
+  {
+    key: "assignee",
+    header: "\u8D1F\u8D23\u4EBA",
+    width: "74px",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontSize: 12, color: row.assignee ? "#e2e8f0" : "#475569" }, children: row.assignee ?? "\u2014" })
+  }
+];
+function OperationsManagerDashboard({
+  districtSummary,
+  stores,
+  inspectionTasks,
+  quickActions,
+  managerName,
+  districtName,
+  lastSyncAt,
+  loading = false,
+  compact = false,
+  className
+}) {
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className, style: { padding: 24 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+        "div",
+        {
+          style: {
+            display: "grid",
+            gridTemplateColumns: compact ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+            gap: 14,
+            marginBottom: 24
+          },
+          children: Array.from({ length: compact ? 2 : 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+            "div",
+            {
+              style: {
+                height: 88,
+                borderRadius: 12,
+                background: "rgba(15,23,42,0.3)",
+                border: "1px solid rgba(148,163,184,0.08)",
+                animation: "pulse 1.5s ease-in-out infinite"
+              }
+            },
+            i
+          ))
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { textAlign: "center", color: "#64748b", fontSize: 13 }, children: "\u6B63\u5728\u52A0\u8F7D\u8FD0\u8425\u6570\u636E..." })
+    ] });
+  }
+  const metricItems = districtSummary ? [
+    {
+      label: "\u7BA1\u8F96\u95E8\u5E97",
+      value: `${districtSummary.operatingStores}/${districtSummary.totalStores}`,
+      helper: "\u8425\u4E1A\u4E2D / \u603B\u8BA1",
+      valueColor: "#4ade80"
+    },
+    {
+      label: "\u4ECA\u65E5\u603B\u8425\u6536",
+      value: `\xA5${fmtCurrency3(districtSummary.totalRevenue)}`,
+      helper: `\u73AF\u6BD4 ${fmtTrend2(districtSummary.revenueQoQ)}`,
+      valueColor: districtSummary.revenueQoQ >= 0 ? "#4ade80" : "#f87171"
+    },
+    {
+      label: "\u603B\u5BA2\u6D41\u91CF",
+      value: districtSummary.totalVisitors.toLocaleString("zh-CN"),
+      helper: `\u73AF\u6BD4 ${fmtTrend2(districtSummary.visitorsQoQ)}`,
+      valueColor: districtSummary.visitorsQoQ >= 0 ? "#4ade80" : "#f87171"
+    },
+    {
+      label: "\u5E73\u5747KPI\u8FBE\u6210",
+      value: fmtRate(districtSummary.avgKpiRate),
+      helper: `\u73AF\u6BD4 ${fmtTrend2(districtSummary.kpiRateQoQ)}`,
+      valueColor: districtSummary.avgKpiRate >= 80 ? "#4ade80" : districtSummary.avgKpiRate >= 60 ? "#facc15" : "#f87171"
+    },
+    {
+      label: "\u5F85\u5904\u7406\u544A\u8B66",
+      value: districtSummary.pendingAlerts,
+      helper: `\u73AF\u6BD4 ${fmtTrend2(districtSummary.alertsQoQ)}`,
+      valueColor: districtSummary.pendingAlerts === 0 ? "#4ade80" : districtSummary.alertsQoQ <= 0 ? "#facc15" : "#f87171"
+    }
+  ] : [
+    { label: "\u7BA1\u8F96\u95E8\u5E97", value: "--" },
+    { label: "\u603B\u8425\u6536", value: "--" },
+    { label: "\u5BA2\u6D41\u91CF", value: "--" },
+    { label: "KPI\u8FBE\u6210", value: "--" },
+    { label: "\u5F85\u5904\u7406\u544A\u8B66", value: "--" }
+  ];
+  const renderQuickActions = () => {
+    if (!quickActions || quickActions.length === 0) return null;
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: ACTION_BAR_STYLE2, children: quickActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
+      "button",
+      {
+        type: "button",
+        style: action.primary ? PRIMARY_ACTION_STYLE2 : ACTION_BUTTON_STYLE2,
+        onClick: action.onClick,
+        children: [
+          action.icon && /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { marginRight: 6 }, children: action.icon }),
+          action.label
+        ]
+      },
+      action.key
+    )) });
+  };
+  const renderStoresTable = () => {
+    if (!stores || stores.length === 0) {
+      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+        "div",
+        {
+          style: {
+            padding: "24px 0",
+            textAlign: "center",
+            color: "#64748b",
+            fontSize: 13
+          },
+          children: "\u6682\u65E0\u95E8\u5E97\u6570\u636E"
+        }
+      );
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+      DataTable,
+      {
+        columns: STORE_COLUMNS,
+        rows: stores,
+        rowKey: (s) => s.id,
+        compact: true,
+        emptyText: "\u6682\u65E0\u95E8\u5E97\u6570\u636E"
+      }
+    );
+  };
+  const renderInspectionTable = () => {
+    if (!inspectionTasks || inspectionTasks.length === 0) {
+      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+        "div",
+        {
+          style: {
+            padding: "24px 0",
+            textAlign: "center",
+            color: "#64748b",
+            fontSize: 13
+          },
+          children: "\u6682\u65E0\u5DE1\u5E97\u4EFB\u52A1"
+        }
+      );
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+      DataTable,
+      {
+        columns: INSPECTION_COLUMNS,
+        rows: inspectionTasks,
+        rowKey: (t) => t.id,
+        compact: true,
+        emptyText: "\u6682\u65E0\u5DE1\u5E97\u4EFB\u52A1"
+      }
+    );
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
+    "div",
+    {
+      className,
+      style: {
+        padding: compact ? 16 : 24,
+        color: "#f8fafc"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: HEADER_WRAPPER_STYLE2, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("h2", { style: { margin: 0, fontSize: 20, fontWeight: 700, color: "#f8fafc" }, children: [
+            districtName ? `${districtName} \xB7 ` : "",
+            "\u8FD0\u8425\u4E3B\u7BA1\u5DE5\u4F5C\u53F0"
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { display: "flex", gap: 16, marginTop: 6, flexWrap: "wrap" }, children: [
+            managerName && /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: [
+              "\u4E3B\u7BA1: ",
+              managerName
+            ] }),
+            lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: { fontSize: 11, color: "#475569" }, children: [
+              "\u6570\u636E\u540C\u6B65: ",
+              lastSyncAt
+            ] })
+          ] })
+        ] }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: SECTION_STYLE3, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+          QuickStats,
+          {
+            items: metricItems,
+            columns: compact ? 2 : 5,
+            gap: compact ? 10 : 12,
+            padding: compact ? 14 : 16
+          }
+        ) }),
+        renderQuickActions(),
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: SECTION_STYLE3, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: SECTION_HEADER_STYLE2, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: SECTION_TITLE_STYLE3, children: [
+            "\u8F96\u533A\u95E8\u5E97\u6982\u89C8",
+            stores && stores.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 8, fontWeight: 400 }, children: [
+              "(",
+              stores.length,
+              ")"
+            ] })
+          ] }) }),
+          renderStoresTable()
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: SECTION_STYLE3, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: SECTION_HEADER_STYLE2, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: SECTION_TITLE_STYLE3, children: [
+            "\u5DE1\u5E97\u4EFB\u52A1",
+            inspectionTasks && inspectionTasks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 8, fontWeight: 400 }, children: [
+              "(",
+              inspectionTasks.length,
+              ")"
+            ] })
+          ] }) }),
+          renderInspectionTable()
+        ] })
+      ]
+    }
+  );
+}
+
+// src/components/Tag.tsx
+var import_react13 = __toESM(require("react"));
+var import_jsx_runtime26 = require("react/jsx-runtime");
+var VARIANT_STYLES2 = {
+  default: { bg: "rgba(148,163,184,0.10)", text: "#94a3b8", border: "rgba(148,163,184,0.25)" },
+  primary: { bg: "rgba(59,130,246,0.12)", text: "#93c5fd", border: "rgba(59,130,246,0.30)" },
+  success: { bg: "rgba(34,197,94,0.12)", text: "#86efac", border: "rgba(34,197,94,0.30)" },
+  warning: { bg: "rgba(245,158,11,0.12)", text: "#fcd34d", border: "rgba(245,158,11,0.30)" },
+  error: { bg: "rgba(239,68,68,0.12)", text: "#fca5a5", border: "rgba(239,68,68,0.30)" },
+  info: { bg: "rgba(6,182,212,0.12)", text: "#67e8f9", border: "rgba(6,182,212,0.30)" },
+  purple: { bg: "rgba(168,85,247,0.12)", text: "#c4b5fd", border: "rgba(168,85,247,0.30)" }
+};
+var CLOSE_ICON = /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("svg", { viewBox: "0 0 12 12", fill: "none", width: "10", height: "10", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("path", { d: "M1 1l5 5m0 0l5 5m-5-5L1 11m5-5l5-5", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }) });
+function Tag({
+  children,
+  variant = "default",
+  size = "md",
+  closable = false,
+  onClose,
+  bordered = false,
+  className
+}) {
+  const colors = VARIANT_STYLES2[variant] ?? VARIANT_STYLES2.default;
+  const padding = size === "sm" ? "1px 6px" : "2px 10px";
+  const fontSize = size === "sm" ? 11 : 12;
+  const handleClose = (e) => {
+    e.stopPropagation();
+    onClose?.();
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(
+    "span",
+    {
+      className,
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        padding,
+        fontSize,
+        fontWeight: 500,
+        borderRadius: 6,
+        background: colors.bg,
+        color: colors.text,
+        border: bordered ? `1px solid ${colors.border}` : "1px solid transparent",
+        whiteSpace: "nowrap",
+        lineHeight: "20px"
+      },
+      children: [
+        children,
+        closable && /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: handleClose,
+            "aria-label": "Remove tag",
+            style: {
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+              border: "none",
+              background: "transparent",
+              color: "inherit",
+              cursor: "pointer",
+              opacity: 0.6,
+              flexShrink: 0
+            },
+            children: CLOSE_ICON
+          }
+        )
+      ]
+    }
+  );
+}
+function TagGroup({
+  children,
+  gap = 6
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap }, role: "list", children: import_react13.default.Children.map(children, (child, i) => /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { role: "listitem", children: child }, i)) });
+}
+
+// src/components/ConciergePanel.tsx
+var import_jsx_runtime27 = require("react/jsx-runtime");
+var PANEL_STYLE2 = {
+  color: "#e2e8f0",
+  fontFamily: "system-ui, -apple-system, sans-serif"
+};
+var HEADER_STYLE2 = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  marginBottom: 20,
+  flexWrap: "wrap",
+  gap: 10
+};
+var HEADER_TITLE_STYLE = {
+  fontSize: 20,
+  fontWeight: 700,
+  color: "#f1f5f9",
+  margin: 0
+};
+var HEADER_SUBTITLE_STYLE = {
+  fontSize: 12,
+  color: "#64748b",
+  marginTop: 4
+};
+var SECTION_STYLE4 = {
+  marginBottom: 24
+};
+var SECTION_HEADER_STYLE3 = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 14
+};
+var SECTION_TITLE_STYLE4 = {
+  fontSize: 15,
+  fontWeight: 600,
+  color: "#cbd5e1",
+  margin: 0
+};
+var ACTIONS_BAR_STYLE = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 10,
+  marginBottom: 20
+};
+var ACTION_BTN_BASE = {
+  padding: "10px 18px",
+  borderRadius: 10,
+  border: "1px solid rgba(148,163,184,0.18)",
+  background: "rgba(15,23,42,0.38)",
+  color: "#cbd5e1",
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: "pointer",
+  transition: "all 0.15s ease",
+  whiteSpace: "nowrap"
+};
+var ACTION_BTN_PRIMARY = {
+  ...ACTION_BTN_BASE,
+  background: "rgba(168,85,247,0.18)",
+  borderColor: "rgba(168,85,247,0.35)",
+  color: "#c4b5fd"
+};
+var RECOMMENDATION_CARD_STYLE = {
+  padding: "14px 16px",
+  borderRadius: 10,
+  background: "rgba(15,23,42,0.28)",
+  border: "1px solid rgba(148,163,184,0.10)",
+  marginBottom: 8,
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  flexWrap: "wrap",
+  gap: 8
+};
+var COMPACT_GRID_STYLE = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+  gap: 16
+};
+var EMPTY_STYLE = {
+  textAlign: "center",
+  padding: "28px 16px",
+  color: "#64748b",
+  fontSize: 13
+};
+var SYNC_TEXT_STYLE = {
+  fontSize: 11,
+  color: "#475569",
+  marginTop: 2
+};
+var LEVEL_COLORS = {
+  bronze: "#cd7f32",
+  silver: "#c0c0c0",
+  gold: "#ffd700",
+  platinum: "#e5e4e2",
+  diamond: "#b9f2ff"
+};
+function confidenceTagVariant(c) {
+  switch (c) {
+    case "high":
+      return { label: "\u9AD8\u7F6E\u4FE1", variant: "success" };
+    case "medium":
+      return { label: "\u4E2D\u7F6E\u4FE1", variant: "warning" };
+    case "low":
+      return { label: "\u4F4E\u7F6E\u4FE1", variant: "default" };
+  }
+}
+function levelLabel(level) {
+  const map = {
+    bronze: "\u9752\u94DC",
+    silver: "\u767D\u94F6",
+    gold: "\u9EC4\u91D1",
+    platinum: "\u94C2\u91D1",
+    diamond: "\u94BB\u77F3"
+  };
+  return map[level] ?? level;
+}
+function txTypeLabel(type) {
+  const map = {
+    earn: "\u83B7\u53D6",
+    redeem: "\u5151\u6362",
+    adjust: "\u8C03\u6574",
+    expire: "\u8FC7\u671F"
+  };
+  return map[type] ?? type;
+}
+function txTypeVariant(type) {
+  switch (type) {
+    case "earn":
+      return "success";
+    case "redeem":
+      return "warning";
+    case "adjust":
+      return "neutral";
+    case "expire":
+      return "error";
+  }
+}
+function fmtTime(isoString) {
+  const d = new Date(isoString);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${mm}-${dd} ${hh}:${mi}`;
+}
+function fmtCurrency4(v) {
+  if (v >= 1e4) return (v / 1e4).toFixed(1) + "\u4E07";
+  return v.toLocaleString("zh-CN");
+}
+function fmtPoints(p) {
+  if (p >= 1e4) return (p / 1e4).toFixed(1) + "\u4E07";
+  return p.toLocaleString("zh-CN");
+}
+var TX_COLUMNS = [
+  {
+    key: "memberName",
+    header: "\u4F1A\u5458",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontWeight: 500, color: "#e2e8f0" }, children: row.memberName }),
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontSize: 11, color: "#64748b" }, children: row.memberId })
+    ] })
+  },
+  {
+    key: "memberLevel",
+    header: "\u7B49\u7EA7",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { color: LEVEL_COLORS[row.memberLevel] ?? "#94a3b8", fontSize: 12, fontWeight: 600 }, children: levelLabel(row.memberLevel) })
+  },
+  {
+    key: "type",
+    header: "\u7C7B\u578B",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(StatusBadge, { label: txTypeLabel(row.type), variant: txTypeVariant(row.type) })
+  },
+  {
+    key: "points",
+    header: "\u79EF\u5206",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(
+      "span",
+      {
+        style: {
+          fontWeight: 600,
+          color: row.type === "earn" ? "#4ade80" : row.type === "expire" ? "#f87171" : "#f59e0b"
+        },
+        children: [
+          row.type === "earn" ? "+" : row.type === "expire" ? "-" : "",
+          fmtPoints(row.points)
+        ]
+      }
+    )
+  },
+  { key: "reason", header: "\u539F\u56E0", render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 12 }, children: row.reason }) },
+  {
+    key: "operatedBy",
+    header: "\u64CD\u4F5C\u4EBA",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 12 }, children: row.operatedBy })
+  },
+  {
+    key: "operatedAt",
+    header: "\u65F6\u95F4",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 11, color: "#64748b" }, children: fmtTime(row.operatedAt) })
+  }
+];
+var VISIT_COLUMNS = [
+  {
+    key: "memberName",
+    header: "\u4F1A\u5458",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontWeight: 500, color: "#e2e8f0" }, children: row.memberName }),
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontSize: 11, color: "#64748b" }, children: row.memberId })
+    ] })
+  },
+  {
+    key: "memberLevel",
+    header: "\u7B49\u7EA7",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { color: LEVEL_COLORS[row.memberLevel] ?? "#94a3b8", fontSize: 12, fontWeight: 600 }, children: levelLabel(row.memberLevel) })
+  },
+  {
+    key: "visitTime",
+    header: "\u5230\u8BBF\u65F6\u95F4",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 12 }, children: fmtTime(row.visitTime) })
+  },
+  {
+    key: "purpose",
+    header: "\u76EE\u7684",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 12 }, children: row.purpose })
+  },
+  {
+    key: "durationMin",
+    header: "\u65F6\u957F",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: { fontSize: 12 }, children: [
+      row.durationMin,
+      "\u5206\u949F"
+    ] })
+  },
+  {
+    key: "staffName",
+    header: "\u63A5\u5F85\u4EBA",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 12 }, children: row.staffName })
+  },
+  {
+    key: "notes",
+    header: "\u5907\u6CE8",
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 11, color: "#64748b" }, children: row.notes || "\u2014" })
+  }
+];
+function buildOverviewStats(overview) {
+  if (!overview) return [];
+  return [
+    {
+      label: "\u670D\u52A1\u4EBA\u6B21",
+      value: overview.totalServices.toLocaleString("zh-CN"),
+      helper: void 0
+    },
+    {
+      label: "\u65B0\u589EVIP",
+      value: overview.newVipCount.toString(),
+      helper: overview.newVipCount > 0 ? `+${overview.newVipCount}` : void 0
+    },
+    {
+      label: "\u5F85\u5904\u7406\u54A8\u8BE2",
+      value: overview.pendingInquiries.toString(),
+      helper: overview.pendingInquiries > 0 ? `${overview.pendingInquiries}\u6761` : "\u65E0"
+    },
+    {
+      label: "\u6EE1\u610F\u5EA6",
+      value: overview.satisfactionScore + "%",
+      helper: `${overview.satisfactionTrend >= 0 ? "+" : ""}${overview.satisfactionTrend.toFixed(1)}%`
+    }
+  ];
+}
+var ConciergePanel = ({
+  overview,
+  pointsTransactions = [],
+  visitRecords = [],
+  recommendations = [],
+  actions = [],
+  conciergeName = "\u7BA1\u5BB6",
+  lastSyncAt,
+  loading = false,
+  compact = false,
+  className
+}) => {
+  const overviewStats = buildOverviewStats(overview);
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className, style: PANEL_STYLE2, "data-testid": "concierge-panel-loading", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { padding: "40px", textAlign: "center", color: "#64748b" }, children: "\u52A0\u8F7D\u4E2D..." }) });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className, style: PANEL_STYLE2, "data-testid": "concierge-panel", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: HEADER_STYLE2, children: /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("h2", { style: HEADER_TITLE_STYLE, children: [
+        "\u{1F3A9} ",
+        conciergeName,
+        "\u5DE5\u4F5C\u53F0"
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: HEADER_SUBTITLE_STYLE, children: [
+        "\u793C\u5BBE\u7BA1\u5BB6 \xB7 \u4F1A\u5458\u670D\u52A1\u9762\u677F",
+        lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: SYNC_TEXT_STYLE, children: [
+          " \xB7 \u540C\u6B65\u4E8E ",
+          fmtTime(lastSyncAt)
+        ] })
+      ] })
+    ] }) }),
+    actions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: ACTIONS_BAR_STYLE, "data-testid": "concierge-actions", children: actions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(
+      "button",
+      {
+        style: action.primary ? ACTION_BTN_PRIMARY : ACTION_BTN_BASE,
+        onClick: action.onClick,
+        "data-testid": `concierge-action-${action.key}`,
+        type: "button",
+        children: [
+          action.icon && /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { marginRight: 6 }, children: action.icon }),
+          action.label
+        ]
+      },
+      action.key
+    )) }),
+    overviewStats.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: SECTION_STYLE4, "data-testid": "concierge-overview", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(QuickStats, { items: overviewStats }) }),
+    recommendations.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_STYLE4, "data-testid": "concierge-recommendations", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_HEADER_STYLE3, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("h3", { style: SECTION_TITLE_STYLE4, children: "\u{1F4A1} \u4E2A\u6027\u5316\u63A8\u8350" }),
+        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+          recommendations.length,
+          " \u6761"
+        ] })
+      ] }),
+      compact ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: COMPACT_GRID_STYLE, children: recommendations.map((rec) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: RECOMMENDATION_CARD_STYLE, "data-testid": `recommendation-${rec.id}`, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: { flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontWeight: 600, color: "#f1f5f9", fontSize: 13, marginBottom: 2 }, children: rec.productName }),
+          /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: { fontSize: 11, color: "#64748b" }, children: [
+            rec.memberName,
+            " \xB7 ",
+            rec.productCategory,
+            rec.price != null && /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: { marginLeft: 6 }, children: [
+              "\xA5",
+              fmtCurrency4(rec.price)
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 2 }, children: rec.reason })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(Tag, { variant: confidenceTagVariant(rec.confidence).variant, children: confidenceTagVariant(rec.confidence).label })
+      ] }, rec.id)) }) : recommendations.map((rec) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: RECOMMENDATION_CARD_STYLE, "data-testid": `recommendation-${rec.id}`, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: { flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontWeight: 600, color: "#f1f5f9", fontSize: 14, marginBottom: 3 }, children: rec.productName }),
+          /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: { fontSize: 12, color: "#94a3b8" }, children: [
+            "\u63A8\u8350\u7ED9 ",
+            /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { color: "#cbd5e1" }, children: rec.memberName }),
+            " \xB7 ",
+            rec.productCategory,
+            rec.price != null && /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: { marginLeft: 8 }, children: [
+              "\xA5",
+              fmtCurrency4(rec.price)
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontSize: 11, color: "#64748b", marginTop: 3 }, children: rec.reason })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(Tag, { variant: confidenceTagVariant(rec.confidence).variant, children: confidenceTagVariant(rec.confidence).label })
+      ] }, rec.id))
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_STYLE4, "data-testid": "concierge-member-search", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: SECTION_HEADER_STYLE3, children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("h3", { style: SECTION_TITLE_STYLE4, children: "\u{1F50D} \u4F1A\u5458\u67E5\u8BE2" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(148,163,184,0.18)", background: "rgba(15,23,42,0.28)", color: "#94a3b8", fontSize: 13 }, children: "\u8F93\u5165\u4F1A\u5458\u59D3\u540D / \u624B\u673A\u53F7 / \u4F1A\u5458ID..." })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_STYLE4, "data-testid": "concierge-visits", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_HEADER_STYLE3, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("h3", { style: SECTION_TITLE_STYLE4, children: "\u{1F4CB} \u4ECA\u65E5\u6765\u8BBF" }),
+        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+          visitRecords.length,
+          " \u6761"
+        ] })
+      ] }),
+      visitRecords.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(DataTable, { columns: VISIT_COLUMNS, rows: visitRecords, rowKey: (r) => r.id, emptyText: "\u6682\u65E0\u6765\u8BBF\u8BB0\u5F55" }) : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: EMPTY_STYLE, children: "\u6682\u65E0\u6765\u8BBF\u8BB0\u5F55" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_STYLE4, "data-testid": "concierge-points", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_HEADER_STYLE3, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("h3", { style: SECTION_TITLE_STYLE4, children: "\u{1F4B0} \u79EF\u5206\u6D41\u6C34" }),
+        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+          pointsTransactions.length,
+          " \u6761"
+        ] })
+      ] }),
+      pointsTransactions.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(DataTable, { columns: TX_COLUMNS, rows: pointsTransactions, rowKey: (r) => r.id, emptyText: "\u6682\u65E0\u79EF\u5206\u53D8\u52A8\u8BB0\u5F55" }) : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: EMPTY_STYLE, children: "\u6682\u65E0\u79EF\u5206\u53D8\u52A8\u8BB0\u5F55" })
+    ] })
+  ] });
+};
+ConciergePanel.displayName = "ConciergePanel";
+
+// src/components/DateTimePicker.tsx
+var import_react14 = __toESM(require("react"));
+var import_jsx_runtime28 = require("react/jsx-runtime");
+var DAY_NAMES = ["\u65E5", "\u4E00", "\u4E8C", "\u4E09", "\u56DB", "\u4E94", "\u516D"];
+var MONTH_NAMES = ["1\u6708", "2\u6708", "3\u6708", "4\u6708", "5\u6708", "6\u6708", "7\u6708", "8\u6708", "9\u6708", "10\u6708", "11\u6708", "12\u6708"];
+function getDaysInMonth2(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+function getFirstDayOfMonth(year, month) {
+  const d = new Date(year, month, 1);
+  return d.getDay();
+}
+function pad(n) {
+  return String(n).padStart(2, "0");
+}
+function formatDateValue(y, m, d) {
+  return `${y}-${pad(m + 1)}-${pad(d)}`;
+}
+function formatTimeValue(h, min, s) {
+  return `${pad(h)}:${pad(min)}:${pad(s)}`;
+}
+function parseDateParts(dateStr) {
+  if (!dateStr) return null;
+  const parts = dateStr.split("-");
+  if (parts.length !== 3) return null;
+  const p0 = parts[0];
+  const p1 = parts[1];
+  const p2 = parts[2];
+  if (!p0 || !p1 || !p2) return null;
+  const y = parseInt(p0, 10);
+  const m = parseInt(p1, 10) - 1;
+  const d = parseInt(p2, 10);
+  if (isNaN(y) || isNaN(m) || isNaN(d)) return null;
+  return { y, m, d };
+}
+function parseTimeParts(dateStr) {
+  if (!dateStr) return null;
+  const afterT = dateStr.includes("T") ? dateStr.split("T")[1] : void 0;
+  const timePart = afterT ? afterT.split(".")[0] : dateStr;
+  if (!timePart) return null;
+  const parts = timePart.split(":");
+  if (parts.length < 2) return null;
+  const p0 = parts[0];
+  const p1 = parts[1];
+  if (!p0 || !p1) return null;
+  const h = parseInt(p0, 10);
+  const m = parseInt(p1, 10);
+  const p2 = parts.length >= 3 ? parts[2] : void 0;
+  const s = p2 ? parseInt(p2, 10) : 0;
+  if (isNaN(h) || isNaN(m) || isNaN(s)) return null;
+  return { h, m, s };
+}
+function isDateDisabled(dateStr, min, max) {
+  if (!dateStr) return false;
+  if (min && dateStr < min) return true;
+  if (max && dateStr > max) return true;
+  return false;
+}
+var POPOVER_BG = "rgba(15, 23, 42, 0.97)";
+var BORDER_COLOR = "rgba(148, 163, 184, 0.15)";
+var TEXT_COLOR = "#e2e8f0";
+var MUTED_COLOR = "#64748b";
+var ACCENT_COLOR = "#3b82f6";
+var ACCENT_BG = "rgba(59, 130, 246, 0.15)";
+var inputBaseStyle = {
+  width: "100%",
+  padding: "8px 12px",
+  fontSize: 13,
+  lineHeight: 1.5,
+  color: TEXT_COLOR,
+  background: "rgba(15, 23, 42, 0.4)",
+  border: `1px solid ${BORDER_COLOR}`,
+  borderRadius: 8,
+  outline: "none",
+  cursor: "pointer",
+  transition: "border-color 0.15s",
+  boxSizing: "border-box"
+};
+function CalendarPopover({
+  year,
+  month,
+  selectedDate,
+  onChange,
+  onClose,
+  min,
+  max,
+  anchorRect
+}) {
+  const [viewYear, setViewYear] = (0, import_react14.useState)(year);
+  const [viewMonth, setViewMonth] = (0, import_react14.useState)(month);
+  const popoverRef = (0, import_react14.useRef)(null);
+  (0, import_react14.useEffect)(() => {
+    function handleClick(e) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+        onClose();
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [onClose]);
+  (0, import_react14.useEffect)(() => {
+    function handleKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+  const today2 = /* @__PURE__ */ new Date();
+  const todayStr = formatDateValue(today2.getFullYear(), today2.getMonth(), today2.getDate());
+  const daysInMonth = getDaysInMonth2(viewYear, viewMonth);
+  const firstDay = getFirstDayOfMonth(viewYear, viewMonth);
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  const handlePrevMonth = () => {
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
+  };
+  const handleNextMonth = () => {
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(viewYear + 1);
+    } else {
+      setViewMonth(viewMonth + 1);
+    }
+  };
+  const handleSelect = (day) => {
+    const dateStr = formatDateValue(viewYear, viewMonth, day);
+    if (isDateDisabled(dateStr, min, max)) return;
+    onChange(dateStr);
+    onClose();
+  };
+  const popStyle = {
+    position: "fixed",
+    zIndex: 9998,
+    top: anchorRect.bottom + 4,
+    left: anchorRect.left,
+    minWidth: 280
+  };
+  if (anchorRect.right - 280 < 0) {
+    popStyle.left = 8;
+  }
+  const btnStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    border: "none",
+    background: "transparent",
+    color: TEXT_COLOR,
+    cursor: "pointer",
+    fontSize: 11
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { ref: popoverRef, style: popStyle, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)(
+    "div",
+    {
+      style: {
+        background: POPOVER_BG,
+        border: `1px solid ${BORDER_COLOR}`,
+        borderRadius: 12,
+        padding: 12,
+        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        backdropFilter: "blur(16px)"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("button", { type: "button", onClick: handlePrevMonth, style: btnStyle, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("path", { d: "M10 12L6 8l4-4", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("span", { style: { fontSize: 13, fontWeight: 600, color: TEXT_COLOR }, children: [
+            viewYear,
+            "\u5E74 ",
+            MONTH_NAMES[viewMonth]
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("button", { type: "button", onClick: handleNextMonth, style: btnStyle, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("path", { d: "M6 4l4 4-4 4", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }) }) })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }, children: DAY_NAMES.map((name) => /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+          "div",
+          {
+            style: {
+              fontSize: 11,
+              color: MUTED_COLOR,
+              textAlign: "center",
+              padding: "4px 0"
+            },
+            children: name
+          },
+          name
+        )) }),
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }, children: Array.from({ length: totalCells }, (_, i) => {
+          const day = i - firstDay + 1;
+          const isEmpty = day < 1 || day > daysInMonth;
+          if (isEmpty) {
+            return /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", {}, i);
+          }
+          const dateStr = formatDateValue(viewYear, viewMonth, day);
+          const selected = dateStr === selectedDate;
+          const isToday2 = dateStr === todayStr;
+          const disabled = isDateDisabled(dateStr, min, max);
+          let dayBg = "transparent";
+          let dayColor = TEXT_COLOR;
+          let dayWeight = 400;
+          if (selected) {
+            dayBg = ACCENT_BG;
+            dayColor = ACCENT_COLOR;
+            dayWeight = 600;
+          } else if (isToday2) {
+            dayColor = ACCENT_COLOR;
+            dayWeight = 600;
+          }
+          if (disabled) {
+            dayColor = MUTED_COLOR;
+          }
+          return /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+            "button",
+            {
+              type: "button",
+              disabled,
+              onClick: () => handleSelect(day),
+              style: {
+                width: 32,
+                height: 32,
+                borderRadius: 6,
+                border: selected ? `1px solid ${ACCENT_COLOR}` : "1px solid transparent",
+                background: dayBg,
+                color: dayColor,
+                fontWeight: dayWeight,
+                fontSize: 12,
+                cursor: disabled ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: disabled ? 0.4 : 1,
+                margin: "0 auto"
+              },
+              children: day
+            },
+            i
+          );
+        }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { marginTop: 8, borderTop: `1px solid ${BORDER_COLOR}`, paddingTop: 8, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: () => {
+              onChange(todayStr);
+              onClose();
+            },
+            style: {
+              background: "none",
+              border: "none",
+              color: ACCENT_COLOR,
+              fontSize: 12,
+              cursor: "pointer",
+              padding: "4px 12px",
+              borderRadius: 4
+            },
+            children: "\u4ECA\u5929"
+          }
+        ) })
+      ]
+    }
+  ) });
+}
+function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
+  const parts = parseTimeParts(selectedTime ?? "00:00:00");
+  const [hour, setHour] = (0, import_react14.useState)(parts?.h ?? 0);
+  const [minute, setMinute] = (0, import_react14.useState)(parts?.m ?? 0);
+  const [second, setSecond] = (0, import_react14.useState)(parts?.s ?? 0);
+  const popoverRef = (0, import_react14.useRef)(null);
+  (0, import_react14.useEffect)(() => {
+    function handleClick(e) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+        onClose();
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [onClose]);
+  (0, import_react14.useEffect)(() => {
+    function handleKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+  const handleApply = () => {
+    onChange(formatTimeValue(hour, minute, second));
+    onClose();
+  };
+  const spinBtnStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    border: "none",
+    background: "transparent",
+    color: MUTED_COLOR,
+    cursor: "pointer",
+    fontSize: 14,
+    lineHeight: 1
+  };
+  const numberStyle = {
+    fontSize: 18,
+    fontWeight: 600,
+    color: TEXT_COLOR,
+    fontVariantNumeric: "tabular-nums",
+    textAlign: "center",
+    minWidth: 36
+  };
+  const popStyle = {
+    position: "fixed",
+    zIndex: 9998,
+    top: anchorRect.bottom + 4,
+    left: anchorRect.left
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { ref: popoverRef, style: popStyle, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)(
+    "div",
+    {
+      style: {
+        background: POPOVER_BG,
+        border: `1px solid ${BORDER_COLOR}`,
+        borderRadius: 12,
+        padding: 16,
+        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        backdropFilter: "blur(16px)",
+        minWidth: 200
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+              "button",
+              {
+                type: "button",
+                style: spinBtnStyle,
+                onClick: () => setHour((h) => (h + 1) % 24),
+                children: "\u25B2"
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: numberStyle, children: pad(hour) }),
+            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+              "button",
+              {
+                type: "button",
+                style: spinBtnStyle,
+                onClick: () => setHour((h) => (h - 1 + 24) % 24),
+                children: "\u25BC"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 18, color: MUTED_COLOR, fontWeight: 600 }, children: ":" }),
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+              "button",
+              {
+                type: "button",
+                style: spinBtnStyle,
+                onClick: () => setMinute((m) => (m + 1) % 60),
+                children: "\u25B2"
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: numberStyle, children: pad(minute) }),
+            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+              "button",
+              {
+                type: "button",
+                style: spinBtnStyle,
+                onClick: () => setMinute((m) => (m - 1 + 60) % 60),
+                children: "\u25BC"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 18, color: MUTED_COLOR, fontWeight: 600 }, children: ":" }),
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+              "button",
+              {
+                type: "button",
+                style: spinBtnStyle,
+                onClick: () => setSecond((s) => (s + 1) % 60),
+                children: "\u25B2"
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: numberStyle, children: pad(second) }),
+            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+              "button",
+              {
+                type: "button",
+                style: spinBtnStyle,
+                onClick: () => setSecond((s) => (s - 1 + 60) % 60),
+                children: "\u25BC"
+              }
+            )
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { marginTop: 12, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: handleApply,
+            style: {
+              background: ACCENT_COLOR,
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              padding: "6px 20px",
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: "pointer"
+            },
+            children: "\u786E\u5B9A"
+          }
+        ) })
+      ]
+    }
+  ) });
+}
+var DateTimePicker = import_react14.default.memo(function DateTimePicker2({
+  value,
+  onChange,
+  mode = "date",
+  placeholder,
+  min,
+  max,
+  disabled = false,
+  required = false,
+  label,
+  error,
+  helpText,
+  style,
+  className
+}) {
+  const [isCalendarOpen, setCalendarOpen] = (0, import_react14.useState)(false);
+  const [isTimeOpen, setTimeOpen] = (0, import_react14.useState)(false);
+  const [internalValue, setInternalValue] = (0, import_react14.useState)(value ?? "");
+  const inputRef = (0, import_react14.useRef)(null);
+  const containerRef = (0, import_react14.useRef)(null);
+  (0, import_react14.useEffect)(() => {
+    if (value !== void 0) {
+      setInternalValue(value);
+    }
+  }, [value]);
+  const handleDateSelect = (0, import_react14.useCallback)(
+    (dateStr) => {
+      let newValue;
+      if (mode === "datetime") {
+        const timeParts = parseTimeParts(internalValue);
+        if (timeParts) {
+          newValue = `${dateStr}T${formatTimeValue(timeParts.h, timeParts.m, timeParts.s)}`;
+        } else {
+          newValue = `${dateStr}T00:00:00`;
+        }
+      } else if (mode === "date") {
+        newValue = dateStr;
+      } else {
+        newValue = dateStr;
+      }
+      setInternalValue(newValue);
+      onChange?.(newValue);
+      setCalendarOpen(false);
+    },
+    [internalValue, mode, onChange]
+  );
+  const handleTimeSelect = (0, import_react14.useCallback)(
+    (timeStr) => {
+      let newValue;
+      if (mode === "datetime") {
+        const dateParts = parseDateParts(internalValue);
+        if (dateParts) {
+          newValue = `${formatDateValue(dateParts.y, dateParts.m, dateParts.d)}T${timeStr}`;
+        } else {
+          const today2 = /* @__PURE__ */ new Date();
+          newValue = `${formatDateValue(today2.getFullYear(), today2.getMonth(), today2.getDate())}T${timeStr}`;
+        }
+      } else if (mode === "time") {
+        newValue = timeStr;
+      } else {
+        newValue = timeStr;
+      }
+      setInternalValue(newValue);
+      onChange?.(newValue);
+      setTimeOpen(false);
+    },
+    [internalValue, mode, onChange]
+  );
+  const handleInputClick = (0, import_react14.useCallback)(() => {
+    if (disabled) return;
+    if (mode === "time") {
+      setTimeOpen(true);
+    } else {
+      setCalendarOpen(true);
+    }
+  }, [disabled, mode]);
+  const getDisplayValue = () => {
+    if (!internalValue) return "";
+    if (mode === "date") return internalValue;
+    if (mode === "time") return internalValue;
+    if (mode === "datetime") {
+      return internalValue.replace("T", " ");
+    }
+    if (mode === "month") {
+      const parts = internalValue.split("-");
+      if (parts.length >= 2) {
+        const p0 = parts[0];
+        const p1 = parts[1];
+        if (!p0 || !p1) return internalValue;
+        const y = parseInt(p0, 10);
+        const m = parseInt(p1, 10);
+        return `${y}\u5E74${m}\u6708`;
+      }
+    }
+    return internalValue;
+  };
+  const getPlaceholder = () => {
+    if (placeholder) return placeholder;
+    switch (mode) {
+      case "date":
+        return "\u9009\u62E9\u65E5\u671F";
+      case "datetime":
+        return "\u9009\u62E9\u65E5\u671F\u548C\u65F6\u95F4";
+      case "time":
+        return "\u9009\u62E9\u65F6\u95F4";
+      case "month":
+        return "\u9009\u62E9\u6708\u4EFD";
+      default:
+        return "\u9009\u62E9\u65E5\u671F";
+    }
+  };
+  const defaultDate = parseDateParts(internalValue);
+  const now = /* @__PURE__ */ new Date();
+  const showTimeIcon = mode === "datetime";
+  let inputBorderColor = BORDER_COLOR;
+  if (error) inputBorderColor = "rgba(248, 113, 113, 0.4)";
+  return /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { ref: containerRef, style: { display: "flex", flexDirection: "column", gap: 6, ...style }, className, children: [
+    label && /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)(
+      "label",
+      {
+        style: {
+          fontSize: 12,
+          fontWeight: 500,
+          color: error ? "#f87171" : "#94a3b8"
+        },
+        children: [
+          label,
+          required && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { color: "#f87171", marginLeft: 2 }, children: "*" })
+        ]
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { position: "relative" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { display: "flex", gap: 4 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { position: "relative", flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)(
+            "svg",
+            {
+              width: "16",
+              height: "16",
+              viewBox: "0 0 16 16",
+              fill: "none",
+              style: {
+                position: "absolute",
+                left: 12,
+                top: "50%",
+                transform: "translateY(-50%)",
+                pointerEvents: "none",
+                color: MUTED_COLOR
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("rect", { x: "2", y: "3", width: "12", height: "11", rx: "1.5", stroke: "currentColor", strokeWidth: "1.2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("path", { d: "M11 2v2M5 2v2M2 6h12", stroke: "currentColor", strokeWidth: "1.2", strokeLinecap: "round" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+            "input",
+            {
+              ref: inputRef,
+              type: "text",
+              readOnly: true,
+              value: getDisplayValue(),
+              placeholder: getPlaceholder(),
+              disabled,
+              onClick: handleInputClick,
+              style: {
+                ...inputBaseStyle,
+                paddingLeft: 36,
+                borderColor: inputBorderColor,
+                cursor: disabled ? "not-allowed" : "pointer",
+                opacity: disabled ? 0.5 : 1
+              }
+            }
+          )
+        ] }),
+        showTimeIcon && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: () => {
+              if (!disabled) {
+                setTimeOpen(true);
+                setCalendarOpen(false);
+              }
+            },
+            disabled,
+            style: {
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              border: `1px solid ${BORDER_COLOR}`,
+              background: "rgba(15, 23, 42, 0.4)",
+              color: MUTED_COLOR,
+              cursor: disabled ? "not-allowed" : "pointer",
+              flexShrink: 0
+            },
+            title: "\u9009\u62E9\u65F6\u95F4",
+            children: /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("circle", { cx: "8", cy: "8", r: "6", stroke: "currentColor", strokeWidth: "1.2" }),
+              /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("path", { d: "M8 5v3l2 2", stroke: "currentColor", strokeWidth: "1.2", strokeLinecap: "round", strokeLinejoin: "round" })
+            ] })
+          }
+        )
+      ] }),
+      isCalendarOpen && inputRef.current && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+        CalendarPopover,
+        {
+          year: defaultDate?.y ?? now.getFullYear(),
+          month: defaultDate?.m ?? now.getMonth(),
+          selectedDate: parseDateParts(internalValue) ? formatDateValue(
+            defaultDate.y,
+            defaultDate.m,
+            defaultDate.d
+          ) : null,
+          onChange: handleDateSelect,
+          onClose: () => setCalendarOpen(false),
+          min,
+          max,
+          anchorRect: inputRef.current.getBoundingClientRect()
+        }
+      ),
+      isTimeOpen && inputRef.current && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+        TimePopover,
+        {
+          selectedTime: parseTimeParts(internalValue) ? formatTimeValue(
+            parseTimeParts(internalValue).h,
+            parseTimeParts(internalValue).m,
+            parseTimeParts(internalValue).s
+          ) : null,
+          onChange: handleTimeSelect,
+          onClose: () => setTimeOpen(false),
+          anchorRect: inputRef.current.getBoundingClientRect()
+        }
+      )
+    ] }),
+    error && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 11, color: "#f87171" }, children: error }),
+    helpText && !error && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 11, color: MUTED_COLOR }, children: helpText })
+  ] });
+});
+
+// src/components/TimePicker.tsx
+var import_react15 = __toESM(require("react"));
+var import_jsx_runtime29 = require("react/jsx-runtime");
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+function parseTime(value) {
+  if (!value) return null;
+  const parts = value.split(":");
+  if (parts.length < 2 || parts.length > 3) return null;
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  const s = parts[2] !== void 0 ? parseInt(parts[2], 10) : 0;
+  if (isNaN(h) || isNaN(m) || isNaN(s)) return null;
+  if (h < 0 || h > 23 || m < 0 || m > 59 || s < 0 || s > 59) return null;
+  return { h, m, s };
+}
+function formatTime(h, m, s, showSeconds) {
+  if (showSeconds) return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+  return `${pad2(h)}:${pad2(m)}`;
+}
+var styles = {
+  wrapper: {
+    display: "inline-flex",
+    flexDirection: "column",
+    gap: 4,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: 500,
+    color: "#374151"
+  },
+  inputRow: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 2,
+    border: "1px solid #d1d5db",
+    borderRadius: 6,
+    padding: "2px 8px",
+    background: "#fff",
+    transition: "border-color 0.15s, box-shadow 0.15s"
+  },
+  inputRowFocus: {
+    borderColor: "#6366f1",
+    boxShadow: "0 0 0 2px rgba(99,102,241,0.2)"
+  },
+  inputRowError: {
+    borderColor: "#ef4444",
+    boxShadow: "0 0 0 1px #ef4444"
+  },
+  inputRowDisabled: {
+    background: "#f3f4f6",
+    opacity: 0.6,
+    cursor: "not-allowed"
+  },
+  segment: {
+    width: 32,
+    textAlign: "center",
+    border: "none",
+    outline: "none",
+    background: "transparent",
+    fontSize: 14,
+    color: "#111827",
+    padding: "4px 0"
+  },
+  segmentDisabled: {
+    cursor: "not-allowed"
+  },
+  separator: {
+    fontSize: 14,
+    color: "#9ca3af",
+    userSelect: "none",
+    padding: "0 1px"
+  },
+  periodButton: {
+    fontSize: 12,
+    padding: "2px 6px",
+    border: "1px solid #e5e7eb",
+    borderRadius: 4,
+    background: "#f9fafb",
+    cursor: "pointer",
+    color: "#374151",
+    marginLeft: 4
+  },
+  periodButtonDisabled: {
+    cursor: "not-allowed",
+    opacity: 0.5
+  },
+  errorText: {
+    fontSize: 12,
+    color: "#ef4444"
+  },
+  helpText: {
+    fontSize: 12,
+    color: "#6b7280"
+  }
+};
+var TimePicker = ({
+  value,
+  onChange,
+  placeholder: _placeholder = "--:--",
+  showSeconds = false,
+  minHour = 0,
+  maxHour = 23,
+  minuteStep = 1,
+  use12Hour = false,
+  disabled = false,
+  required = false,
+  label,
+  error,
+  helpText,
+  style,
+  className,
+  id,
+  readOnly = false
+}) => {
+  const parsed = (0, import_react15.useMemo)(() => parseTime(value), [value]);
+  const [focused, setFocused] = (0, import_react15.useState)(false);
+  const [localH, setLocalH] = (0, import_react15.useState)(parsed?.h ?? 0);
+  const [localM, setLocalM] = (0, import_react15.useState)(parsed?.m ?? 0);
+  const [localS, setLocalS] = (0, import_react15.useState)(parsed?.s ?? 0);
+  const inputRef = (0, import_react15.useRef)(null);
+  const segmentRefs = (0, import_react15.useRef)([]);
+  (0, import_react15.useEffect)(() => {
+    if (parsed) {
+      setLocalH(parsed.h);
+      setLocalM(parsed.m);
+      setLocalS(parsed.s);
+    }
+  }, [value, parsed]);
+  const clampHour = (h) => Math.max(minHour, Math.min(maxHour, h));
+  const clampMinute = (m) => Math.max(0, Math.min(59, Math.round(m / minuteStep) * minuteStep));
+  const clampSecond = (s) => Math.max(0, Math.min(59, s));
+  const emit = (0, import_react15.useCallback)(
+    (h, m, s) => {
+      const hh = clampHour(h);
+      const mm = clampMinute(m);
+      const ss = clampSecond(s);
+      onChange?.(formatTime(hh, mm, ss, showSeconds));
+    },
+    [onChange, showSeconds, clampHour, clampMinute, clampSecond]
+  );
+  const focusSegment = (index) => {
+    const el = segmentRefs.current[index];
+    if (el) {
+      el.focus();
+      el.select();
+    }
+  };
+  const handleSegmentChange = (index, raw, max, setter) => {
+    if (readOnly) return;
+    const digits = raw.replace(/\D/g, "");
+    const num = digits ? parseInt(digits, 10) : 0;
+    const clamped = Math.min(num, max);
+    setter(clamped);
+  };
+  const handleSegmentBlur = (_index, current, clamp3, setter) => {
+    const clamped = clamp3(current);
+    setter(clamped);
+    emit(
+      _index === 0 ? clamped : localH,
+      _index === 1 ? clamped : localM,
+      _index === 2 ? clamped : localS
+    );
+  };
+  const handleSegmentKeyDown = (index, e) => {
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const delta = index === 0 ? 1 : minuteStep;
+      const newVal = index === 0 ? clampHour(localH + 1) : index === 1 ? clampMinute(localM + delta) : clampSecond(localS + 1);
+      if (index === 0) setLocalH(newVal);
+      else if (index === 1) setLocalM(newVal);
+      else setLocalS(newVal);
+      emit(
+        index === 0 ? newVal : localH,
+        index === 1 ? newVal : localM,
+        index === 2 ? newVal : localS
+      );
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const delta = index === 0 ? 1 : minuteStep;
+      const newVal = index === 0 ? clampHour(localH - 1) : index === 1 ? clampMinute(localM - delta) : clampSecond(localS - 1);
+      if (index === 0) setLocalH(newVal);
+      else if (index === 1) setLocalM(newVal);
+      else setLocalS(newVal);
+      emit(
+        index === 0 ? newVal : localH,
+        index === 1 ? newVal : localM,
+        index === 2 ? newVal : localS
+      );
+    } else if (e.key === "Tab" || e.key === "Enter") {
+      const next = e.key === "Tab" && !e.shiftKey ? index + 1 : e.key === "Tab" && e.shiftKey ? index - 1 : -1;
+      const totalSegments = showSeconds ? 3 : 2;
+      if (next >= 0 && next < totalSegments) {
+        e.preventDefault();
+        focusSegment(next);
+      }
+    } else if (e.key === "ArrowLeft" && e.target.selectionStart === 0) {
+      e.preventDefault();
+      focusSegment(Math.max(0, index - 1));
+    } else if (e.key === "ArrowRight") {
+      const el = e.target;
+      if (el.selectionStart === el.value.length) {
+        e.preventDefault();
+        const totalSegments = showSeconds ? 3 : 2;
+        focusSegment(Math.min(totalSegments - 1, index + 1));
+      }
+    }
+  };
+  const _displayValue = parsed ? formatTime(localH, localM, localS, showSeconds) : "";
+  const isPM = localH >= 12;
+  const displayH12 = use12Hour ? localH % 12 || 12 : localH;
+  const togglePeriod = () => {
+    if (disabled || readOnly) return;
+    const newH = isPM ? localH - 12 : localH + 12;
+    setLocalH(clampHour(newH));
+    emit(clampHour(newH), localM, localS);
+  };
+  const inputRowStyle = {
+    ...styles.inputRow,
+    ...focused ? styles.inputRowFocus : {},
+    ...error ? styles.inputRowError : {},
+    ...disabled ? styles.inputRowDisabled : {}
+  };
+  const segStyle = {
+    ...styles.segment,
+    ...disabled ? styles.segmentDisabled : {}
+  };
+  const segments = showSeconds ? [
+    { value: pad2(displayH12), max: use12Hour ? 12 : maxHour, index: 0 },
+    { value: pad2(localM), max: 59, index: 1 },
+    { value: pad2(localS), max: 59, index: 2 }
+  ] : [
+    { value: pad2(displayH12), max: use12Hour ? 12 : maxHour, index: 0 },
+    { value: pad2(localM), max: 59, index: 1 }
+  ];
+  return /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { style: { ...styles.wrapper, ...style }, className, children: [
+    label && /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("label", { style: styles.label, htmlFor: id ? `${id}-h` : void 0, children: [
+      label,
+      required && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { ref: inputRef, style: inputRowStyle, children: [
+      segments.map((seg, idx) => /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)(import_react15.default.Fragment, { children: [
+        idx > 0 && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: styles.separator, children: ":" }),
+        /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
+          "input",
+          {
+            id: idx === 0 && id ? `${id}-h` : idx === 1 && id ? `${id}-m` : void 0,
+            ref: (el) => {
+              segmentRefs.current[idx] = el;
+            },
+            style: segStyle,
+            value: seg.value,
+            onChange: (e) => handleSegmentChange(
+              seg.index,
+              e.target.value,
+              seg.max,
+              seg.index === 0 ? setLocalH : seg.index === 1 ? setLocalM : setLocalS
+            ),
+            onFocus: (e) => {
+              setFocused(true);
+              e.target.select();
+            },
+            onBlur: () => {
+              setFocused(false);
+              handleSegmentBlur(
+                seg.index,
+                seg.index === 0 ? localH : seg.index === 1 ? localM : localS,
+                seg.index === 0 ? clampHour : seg.index === 1 ? clampMinute : clampSecond,
+                seg.index === 0 ? setLocalH : seg.index === 1 ? setLocalM : setLocalS
+              );
+            },
+            onKeyDown: (e) => handleSegmentKeyDown(seg.index, e),
+            disabled,
+            readOnly,
+            "aria-label": seg.index === 0 ? "\u5C0F\u65F6" : seg.index === 1 ? "\u5206\u949F" : "\u79D2",
+            autoComplete: "off"
+          }
+        )
+      ] }, idx)),
+      use12Hour && !disabled && !readOnly && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
+        "button",
+        {
+          type: "button",
+          style: styles.periodButton,
+          onClick: togglePeriod,
+          "aria-label": "\u5207\u6362\u4E0A\u5348/\u4E0B\u5348",
+          children: isPM ? "PM" : "AM"
+        }
+      )
+    ] }),
+    error && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: styles.errorText, children: error }),
+    helpText && !error && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: styles.helpText, children: helpText })
+  ] });
+};
+
+// src/components/Card.tsx
+var import_jsx_runtime30 = require("react/jsx-runtime");
+var VARIANT_STYLES3 = {
+  default: {
+    background: "rgba(15, 23, 42, 0.35)",
+    border: "1px solid rgba(148, 163, 184, 0.18)"
+  },
+  elevated: {
+    background: "rgba(15, 23, 42, 0.5)",
+    border: "1px solid rgba(148, 163, 184, 0.16)",
+    boxShadow: "0 4px 24px rgba(0, 0, 0, 0.25)"
+  },
+  outlined: {
+    background: "transparent",
+    border: "1px solid rgba(148, 163, 184, 0.2)"
+  },
+  ghost: {
+    background: "transparent",
+    border: "none"
+  }
+};
+function Card({
+  title,
+  subtitle,
+  headerActions,
+  children,
+  variant = "default",
+  padding = 20,
+  style,
+  footer,
+  "data-testid": dataTestId
+}) {
+  const variantStyle = VARIANT_STYLES3[variant] ?? VARIANT_STYLES3.default;
+  return /* @__PURE__ */ (0, import_jsx_runtime30.jsxs)(
+    "div",
+    {
+      "data-testid": dataTestId,
+      style: {
+        borderRadius: 16,
+        padding,
+        ...variantStyle,
+        ...style
+      },
+      children: [
+        title || subtitle || headerActions ? /* @__PURE__ */ (0, import_jsx_runtime30.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: subtitle ? "flex-start" : "center",
+              gap: 12,
+              marginBottom: children || footer ? 16 : 0
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime30.jsxs)("div", { children: [
+                title ? /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(
+                  "h2",
+                  {
+                    style: {
+                      margin: 0,
+                      fontSize: 18,
+                      fontWeight: 700,
+                      color: "#f8fafc"
+                    },
+                    children: title
+                  }
+                ) : null,
+                subtitle ? /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(
+                  "div",
+                  {
+                    style: {
+                      marginTop: title ? 6 : 0,
+                      fontSize: 13,
+                      color: "#94a3b8"
+                    },
+                    children: subtitle
+                  }
+                ) : null
+              ] }),
+              headerActions ? /* @__PURE__ */ (0, import_jsx_runtime30.jsx)("div", { style: { flexShrink: 0 }, children: headerActions }) : null
+            ]
+          }
+        ) : null,
+        children,
+        footer ? /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(
+          "div",
+          {
+            style: {
+              marginTop: children ? 16 : 0,
+              paddingTop: 16,
+              borderTop: "1px solid rgba(148, 163, 184, 0.1)"
+            },
+            children: footer
+          }
+        ) : null
+      ]
+    }
+  );
+}
+
+// src/components/StatCard.tsx
+var import_jsx_runtime31 = require("react/jsx-runtime");
+var ACCENTS = {
+  default: "#3b82f6",
+  info: "#3b82f6",
+  warning: "#f59e0b",
+  error: "#ef4444",
+  success: "#22c55e"
+};
+function StatCard({ label, value, trend, icon, variant = "default", helper }) {
+  const accent = ACCENTS[variant] ?? ACCENTS.default;
+  return /* @__PURE__ */ (0, import_jsx_runtime31.jsxs)(
+    "div",
+    {
+      style: {
+        background: "rgba(15,23,42,0.5)",
+        border: "1px solid rgba(148,163,184,0.12)",
+        borderRadius: 12,
+        padding: "16px 20px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 8
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime31.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime31.jsx)("span", { style: { fontSize: 13, color: "#94a3b8", fontWeight: 500 }, children: label }),
+          icon && /* @__PURE__ */ (0, import_jsx_runtime31.jsx)("span", { style: { color: accent }, children: icon })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime31.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 10 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime31.jsx)("span", { style: { fontSize: 28, fontWeight: 700, color: "#f8fafc" }, children: value }),
+          trend && /* @__PURE__ */ (0, import_jsx_runtime31.jsxs)(
+            "span",
+            {
+              style: {
+                fontSize: 13,
+                fontWeight: 500,
+                color: trend.positive ? "#22c55e" : "#ef4444"
+              },
+              children: [
+                trend.positive ? "\u2191" : "\u2193",
+                " ",
+                trend.value
+              ]
+            }
+          )
+        ] }),
+        helper ? /* @__PURE__ */ (0, import_jsx_runtime31.jsx)("div", { style: { fontSize: 12, color: "#94a3b8" }, children: helper }) : null
+      ]
+    }
+  );
+}
+
+// src/components/Table.tsx
+var import_react16 = require("react");
+var import_jsx_runtime32 = require("react/jsx-runtime");
+var SORT_ARROW = {
+  asc: " \u25B2",
+  desc: " \u25BC"
+};
+function Table({
+  columns,
+  rows,
+  rowKey,
+  selectable = false,
+  selectedKeys,
+  onSelectionChange,
+  sort,
+  onSortChange,
+  pagination,
+  onPaginationChange,
+  striped = false,
+  compact = false,
+  bordered = false,
+  hoverable = true,
+  loading = false,
+  emptyText = "No data",
+  onRowClick,
+  title,
+  toolbar
+}) {
+  const [internalSelected, setInternalSelected] = (0, import_react16.useState)([]);
+  const resolvedSelected = selectedKeys ?? internalSelected;
+  const handleSelectAll = (0, import_react16.useCallback)(
+    (checked) => {
+      const all = checked ? rows.map((r) => rowKey(r)) : [];
+      if (!selectedKeys) setInternalSelected(all);
+      onSelectionChange?.(all);
+    },
+    [rows, rowKey, selectedKeys, onSelectionChange]
+  );
+  const handleSelectOne = (0, import_react16.useCallback)(
+    (key, checked) => {
+      const next = checked ? [...resolvedSelected, key] : resolvedSelected.filter((k) => k !== key);
+      if (!selectedKeys) setInternalSelected(next);
+      onSelectionChange?.(next);
+    },
+    [resolvedSelected, selectedKeys, onSelectionChange]
+  );
+  const allKeys = (0, import_react16.useMemo)(() => rows.map((r) => rowKey(r)), [rows, rowKey]);
+  const allSelected = allKeys.length > 0 && allKeys.every((k) => resolvedSelected.includes(k));
+  const someSelected = resolvedSelected.length > 0 && !allSelected;
+  const handleSortClick = (0, import_react16.useCallback)(
+    (col) => {
+      if (!col.sortable || !onSortChange) return;
+      if (sort?.key === col.key) {
+        if (sort.direction === "asc") {
+          onSortChange({ key: col.key, direction: "desc" });
+        } else {
+          onSortChange(null);
+        }
+      } else {
+        onSortChange({ key: col.key, direction: "asc" });
+      }
+    },
+    [sort, onSortChange]
+  );
+  const headerCellStyle = (0, import_react16.useMemo)(
+    () => ({
+      padding: compact ? "8px 12px" : "10px 16px",
+      textAlign: "left",
+      color: "#94a3b8",
+      fontWeight: 600,
+      fontSize: 12,
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
+      whiteSpace: "nowrap",
+      borderBottom: bordered ? "1px solid rgba(148,163,184,0.18)" : "1px solid rgba(148,163,184,0.12)"
+    }),
+    [compact, bordered]
+  );
+  const cellStyle = (0, import_react16.useMemo)(
+    () => ({
+      padding: compact ? "8px 12px" : "10px 16px",
+      color: "#e2e8f0",
+      borderBottom: bordered ? "1px solid rgba(148,163,184,0.08)" : "1px solid rgba(148,163,184,0.06)"
+    }),
+    [compact, bordered]
+  );
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("div", { style: { padding: 40, textAlign: "center", color: "#94a3b8", fontSize: 14 }, children: "Loading..." });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("div", { style: { overflowX: "auto" }, children: [
+    title || toolbar ? /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 0 12px", gap: 12 }, children: [
+      title ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("div", { style: { color: "#e2e8f0", fontWeight: 600, fontSize: 14 }, children: title }) : /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("div", {}),
+      toolbar ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("div", { style: { display: "flex", gap: 8 }, children: toolbar }) : null
+    ] }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 14 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("tr", { children: [
+        selectable ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("th", { style: { ...headerCellStyle, width: 40, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(
+          "input",
+          {
+            type: "checkbox",
+            checked: allSelected,
+            ref: (el) => {
+              if (el) el.indeterminate = someSelected;
+            },
+            onChange: (e) => handleSelectAll(e.target.checked),
+            "aria-label": "Select all rows"
+          }
+        ) }) : null,
+        columns.map((col) => {
+          const isSortCol = sort?.key === col.key;
+          const sortArrow = isSortCol ? SORT_ARROW[sort.direction] : "";
+          return /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)(
+            "th",
+            {
+              style: {
+                ...headerCellStyle,
+                textAlign: col.align ?? "left",
+                width: col.width,
+                cursor: col.sortable && onSortChange ? "pointer" : void 0,
+                userSelect: col.sortable && onSortChange ? "none" : void 0
+              },
+              onClick: () => handleSortClick(col),
+              children: [
+                col.header ?? col.title ?? col.key,
+                col.sortable && onSortChange ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("span", { style: { color: isSortCol ? "#38bdf8" : "#475569", marginLeft: 2 }, children: sortArrow || " \u2195" }) : null
+              ]
+            },
+            col.key
+          );
+        })
+      ] }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("tbody", { children: rows.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("tr", { children: /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(
+        "td",
+        {
+          colSpan: columns.length + (selectable ? 1 : 0),
+          style: { padding: 40, textAlign: "center", color: "#64748b", fontSize: 14 },
+          children: emptyText
+        }
+      ) }) : rows.map((row, idx) => {
+        const key = rowKey(row);
+        const isSelected = resolvedSelected.includes(key);
+        return /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)(
+          "tr",
+          {
+            onClick: () => onRowClick?.(row),
+            style: {
+              cursor: onRowClick ? "pointer" : void 0,
+              background: isSelected ? "rgba(56,189,248,0.08)" : striped && idx % 2 === 1 ? "rgba(148,163,184,0.02)" : void 0,
+              transition: "background 0.15s"
+            },
+            onMouseEnter: hoverable ? (e) => {
+              if (!isSelected) {
+                e.currentTarget.style.background = "rgba(148,163,184,0.04)";
+              }
+            } : void 0,
+            onMouseLeave: hoverable ? (e) => {
+              if (!isSelected) {
+                e.currentTarget.style.background = "";
+              }
+            } : void 0,
+            children: [
+              selectable ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("td", { style: { ...cellStyle, width: 40, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(
+                "input",
+                {
+                  type: "checkbox",
+                  checked: isSelected,
+                  onChange: (e) => handleSelectOne(key, e.target.checked),
+                  "aria-label": `Select row ${key}`
+                }
+              ) }) : null,
+              columns.map((col) => /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(
+                "td",
+                {
+                  style: { ...cellStyle, textAlign: col.align ?? "left" },
+                  children: col.render ? col.render(row, idx) : String(row[col.key] ?? "")
+                },
+                col.key
+              ))
+            ]
+          },
+          key
+        );
+      }) })
+    ] }),
+    pagination && onPaginationChange ? /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)(
+      "div",
+      {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "12px 0",
+          color: "#94a3b8",
+          fontSize: 13
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("span", { children: pagination.total > 0 ? `Showing ${pagination.page * pagination.pageSize + 1}\u2013${Math.min(
+            (pagination.page + 1) * pagination.pageSize,
+            pagination.total
+          )} of ${pagination.total}` : "No results" }),
+          /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("div", { style: { display: "flex", gap: 6 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(
+              "button",
+              {
+                disabled: pagination.page <= 0,
+                onClick: () => onPaginationChange(pagination.page - 1),
+                style: {
+                  padding: "4px 10px",
+                  border: "1px solid rgba(148,163,184,0.2)",
+                  borderRadius: 4,
+                  background: "transparent",
+                  color: pagination.page <= 0 ? "#475569" : "#e2e8f0",
+                  cursor: pagination.page <= 0 ? "not-allowed" : "pointer",
+                  fontSize: 13
+                },
+                children: "\u2190 Prev"
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("span", { style: { padding: "4px 8px" }, children: [
+              "Page ",
+              pagination.page + 1,
+              " / ",
+              Math.max(1, Math.ceil(pagination.total / pagination.pageSize))
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(
+              "button",
+              {
+                disabled: (pagination.page + 1) * pagination.pageSize >= pagination.total,
+                onClick: () => onPaginationChange(pagination.page + 1),
+                style: {
+                  padding: "4px 10px",
+                  border: "1px solid rgba(148,163,184,0.2)",
+                  borderRadius: 4,
+                  background: "transparent",
+                  color: (pagination.page + 1) * pagination.pageSize >= pagination.total ? "#475569" : "#e2e8f0",
+                  cursor: (pagination.page + 1) * pagination.pageSize >= pagination.total ? "not-allowed" : "pointer",
+                  fontSize: 13
+                },
+                children: "Next \u2192"
+              }
+            )
+          ] })
+        ]
+      }
+    ) : null
+  ] });
+}
+
+// src/components/EmptyState.tsx
+var import_jsx_runtime33 = require("react/jsx-runtime");
+function EmptyState({ title = "\u6682\u65E0\u6570\u636E", description, action, icon, variant = "default" }) {
+  const compact = variant === "compact";
+  return /* @__PURE__ */ (0, import_jsx_runtime33.jsxs)(
+    "div",
+    {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: compact ? 24 : 48,
+        textAlign: "center"
+      },
+      children: [
+        icon && /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("div", { style: { marginBottom: 16, color: "#475569" }, children: icon }),
+        /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("h3", { style: { fontSize: 16, fontWeight: 600, color: "#94a3b8", margin: 0 }, children: title }),
+        description && /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("p", { style: { fontSize: 13, color: "#64748b", margin: "4px 0 16px", maxWidth: 320 }, children: description }),
+        action && /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("div", { children: action })
+      ]
+    }
+  );
+}
+
+// src/components/LoadingSkeleton.tsx
+var import_jsx_runtime34 = require("react/jsx-runtime");
+function LoadingSkeleton({
+  lines,
+  rows,
+  label,
+  variant = "default"
+}) {
+  const resolvedLines = lines ?? (variant === "card" ? 2 : 3);
+  const resolvedRows = rows ?? (variant === "card" ? 2 : 5);
+  return /* @__PURE__ */ (0, import_jsx_runtime34.jsxs)("div", { style: { padding: 24, display: "flex", flexDirection: "column", gap: 16 }, children: [
+    label ? /* @__PURE__ */ (0, import_jsx_runtime34.jsx)("div", { style: { fontSize: 13, color: "#94a3b8" }, children: label }) : null,
+    Array.from({ length: resolvedLines }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime34.jsx)(
+      "div",
+      {
+        style: {
+          height: 16,
+          borderRadius: 4,
+          background: "rgba(148,163,184,0.08)",
+          width: `${100 - i * 15}%`,
+          animation: "pulse 1.5s ease-in-out infinite",
+          animationDelay: `${i * 0.1}s`
+        }
+      },
+      `line-${i}`
+    )),
+    /* @__PURE__ */ (0, import_jsx_runtime34.jsx)("div", { style: { marginTop: 16 }, children: Array.from({ length: resolvedRows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime34.jsx)(
+      "div",
+      {
+        style: {
+          height: 40,
+          borderRadius: 6,
+          background: "rgba(148,163,184,0.05)",
+          marginBottom: 8,
+          animation: "pulse 1.5s ease-in-out infinite",
+          animationDelay: `${i * 0.08}s`
+        }
+      },
+      `row-${i}`
+    )) }),
+    /* @__PURE__ */ (0, import_jsx_runtime34.jsx)("style", { children: `
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      ` })
+  ] });
+}
+
+// src/components/Pagination.tsx
+var import_react17 = __toESM(require("react"));
+var import_jsx_runtime35 = require("react/jsx-runtime");
+function usePagination(totalOrOptions, pageSizeArg, initialPageArg = 1) {
+  const isLegacyConfig = typeof totalOrOptions === "object";
+  const total = typeof totalOrOptions === "number" ? totalOrOptions : 0;
+  const initialPage = isLegacyConfig ? totalOrOptions.initialPage ?? 1 : initialPageArg;
+  const initialPageSize = isLegacyConfig ? totalOrOptions.initialPageSize ?? 10 : pageSizeArg ?? 10;
+  const [page, setPage] = import_react17.default.useState(initialPage);
+  const [pageSize, setPageSize] = import_react17.default.useState(initialPageSize);
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(pageSize, 1)));
+  const resetPage = import_react17.default.useCallback(() => setPage(1), []);
+  const paginate = import_react17.default.useCallback(
+    (items) => items.slice((page - 1) * pageSize, page * pageSize),
+    [page, pageSize]
+  );
+  return { page, pageSize, totalPages, setPage, setPageSize, total, resetPage, paginate };
+}
+function Pagination({
+  page,
+  total,
+  totalPages,
+  onPageChange,
+  pageSize,
+  onPageSizeChange,
+  pageSizeOptions = [10, 20, 50],
+  size = "md"
+}) {
+  const resolvedTotalPages = totalPages ?? Math.max(1, Math.ceil(total / Math.max(pageSize ?? pageSizeOptions[0] ?? 10, 1)));
+  const pages = (0, import_react17.useMemo)(() => {
+    const result = [];
+    if (resolvedTotalPages <= 7) {
+      for (let i = 1; i <= resolvedTotalPages; i++) result.push(i);
+    } else {
+      result.push(1);
+      if (page > 3) result.push("...");
+      for (let i = Math.max(2, page - 1); i <= Math.min(resolvedTotalPages - 1, page + 1); i++) {
+        result.push(i);
+      }
+      if (page < resolvedTotalPages - 2) result.push("...");
+      result.push(resolvedTotalPages);
+    }
+    return result;
+  }, [page, resolvedTotalPages]);
+  const btnBase = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: size === "sm" ? 30 : 36,
+    height: size === "sm" ? 30 : 36,
+    fontSize: size === "sm" ? 12 : 13,
+    fontWeight: 500,
+    borderRadius: 8,
+    border: "1px solid rgba(148,163,184,0.12)",
+    background: "transparent",
+    color: "#94a3b8",
+    cursor: "pointer",
+    transition: "all 0.15s"
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime35.jsxs)(
+    "div",
+    {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 12,
+        padding: "12px 0"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime35.jsxs)("span", { style: { fontSize: 13, color: "#64748b" }, children: [
+          "Total ",
+          total,
+          " items"
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime35.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }, children: [
+          pageSize && onPageSizeChange ? /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(
+            "select",
+            {
+              value: pageSize,
+              onChange: (e) => onPageSizeChange(Number(e.target.value)),
+              style: {
+                borderRadius: 8,
+                border: "1px solid rgba(148,163,184,0.12)",
+                background: "rgba(15,23,42,0.5)",
+                color: "#cbd5e1",
+                padding: "8px 10px",
+                fontSize: size === "sm" ? 12 : 13
+              },
+              children: pageSizeOptions.map((option) => /* @__PURE__ */ (0, import_jsx_runtime35.jsxs)("option", { value: option, children: [
+                option,
+                " / page"
+              ] }, option))
+            }
+          ) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime35.jsxs)("div", { style: { display: "flex", gap: 4 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(
+              "button",
+              {
+                type: "button",
+                disabled: page <= 1,
+                onClick: () => onPageChange(page - 1),
+                style: { ...btnBase, opacity: page <= 1 ? 0.4 : 1 },
+                children: "\u2039"
+              }
+            ),
+            pages.map(
+              (p, i) => p === "..." ? /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(
+                "span",
+                {
+                  style: { display: "inline-flex", alignItems: "center", padding: "0 4px", color: "#64748b" },
+                  children: "\u2026"
+                },
+                `dots-${i}`
+              ) : /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(
+                "button",
+                {
+                  type: "button",
+                  onClick: () => onPageChange(p),
+                  style: {
+                    ...btnBase,
+                    background: p === page ? "rgba(59,130,246,0.18)" : void 0,
+                    color: p === page ? "#93c5fd" : void 0,
+                    borderColor: p === page ? "rgba(96,165,250,0.3)" : void 0
+                  },
+                  children: p
+                },
+                p
+              )
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(
+              "button",
+              {
+                type: "button",
+                disabled: page >= resolvedTotalPages,
+                onClick: () => onPageChange(page + 1),
+                style: { ...btnBase, opacity: page >= resolvedTotalPages ? 0.4 : 1 },
+                children: "\u203A"
+              }
+            )
+          ] })
+        ] })
+      ]
+    }
+  );
+}
+
+// src/components/PaginatedDataTableCard.tsx
+var import_jsx_runtime36 = require("react/jsx-runtime");
+function PaginatedDataTableCard({
+  title,
+  columns,
+  rows,
+  rowKey,
+  loading = false,
+  sort,
+  onSortChange,
+  striped = false,
+  compact = false,
+  emptyTitle,
+  emptyDescription,
+  pagination
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(
+    "div",
+    {
+      style: {
+        background: "rgba(15,23,42,0.5)",
+        border: "1px solid rgba(148,163,184,0.12)",
+        borderRadius: 12,
+        overflow: "hidden"
+      },
+      children: loading ? /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(LoadingSkeleton, { lines: 2, rows: 5 }) : rows.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(EmptyState, { title: emptyTitle, description: emptyDescription }) : /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)(import_jsx_runtime36.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(
+          DataTable,
+          {
+            title,
+            columns,
+            rows,
+            rowKey,
+            sort,
+            onSortChange,
+            striped,
+            compact
+          }
+        ),
+        pagination ? /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("div", { style: { padding: "0 16px" }, children: /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(
+          Pagination,
+          {
+            page: pagination.page,
+            totalPages: pagination.totalPages,
+            total: pagination.total,
+            onPageChange: pagination.onPageChange
+          }
+        ) }) : null
+      ] })
+    }
+  );
+}
+
+// src/components/Progress.tsx
+var import_jsx_runtime37 = require("react/jsx-runtime");
+var VARIANT_COLORS = {
+  default: "#38bdf8",
+  success: "#22c55e",
+  warning: "#f59e0b",
+  danger: "#ef4444",
+  info: "#818cf8"
+};
+var VARIANT_BG = {
+  default: "rgba(56, 189, 248, 0.12)",
+  success: "rgba(34, 197, 94, 0.12)",
+  warning: "rgba(245, 158, 11, 0.12)",
+  danger: "rgba(239, 68, 68, 0.12)",
+  info: "rgba(129, 140, 248, 0.12)"
+};
+var STYLESHEET_ID = "m5-progress-indeterminate";
+function ensureIndeterminateKeyframes() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(STYLESHEET_ID)) return;
+  const style = document.createElement("style");
+  style.id = STYLESHEET_ID;
+  style.textContent = `
+    @keyframes m5-progress-indeterminate-slide {
+      0%   { left: -40%; width: 40%; }
+      50%  { left: 30%;  width: 40%; }
+      100% { left: 100%; width: 40%; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+function Progress({
+  value,
+  max = 100,
+  variant = "default",
+  showLabel = true,
+  formatLabel,
+  height = 8,
+  animated = true,
+  indeterminate = false,
+  "aria-label": ariaLabel,
+  "data-testid": dataTestId,
+  className,
+  style
+}) {
+  if (typeof window !== "undefined") {
+    ensureIndeterminateKeyframes();
+  }
+  const clampedValue = Math.max(0, Math.min(value, max));
+  const percentage = max > 0 ? Math.round(clampedValue / max * 100) : 0;
+  const color = VARIANT_COLORS[variant] ?? VARIANT_COLORS.default;
+  const bg = VARIANT_BG[variant] ?? VARIANT_BG.default;
+  const label = formatLabel ? formatLabel(percentage) : `${percentage}%`;
+  return /* @__PURE__ */ (0, import_jsx_runtime37.jsxs)(
+    "div",
+    {
+      "data-testid": dataTestId,
+      className,
+      role: "progressbar",
+      "aria-valuenow": indeterminate ? void 0 : clampedValue,
+      "aria-valuemin": 0,
+      "aria-valuemax": max,
+      "aria-valuetext": indeterminate ? void 0 : label,
+      "aria-label": ariaLabel ?? `Progress: ${indeterminate ? "loading" : label}`,
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: showLabel ? 6 : 0,
+        width: "100%",
+        ...style
+      },
+      children: [
+        showLabel ? /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
+          "div",
+          {
+            "data-testid": dataTestId ? `${dataTestId}-label` : void 0,
+            style: {
+              display: "flex",
+              justifyContent: "flex-end",
+              fontSize: 13,
+              fontWeight: 600,
+              color
+            },
+            children: label
+          }
+        ) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
+          "div",
+          {
+            "data-testid": dataTestId ? `${dataTestId}-track` : void 0,
+            style: {
+              width: "100%",
+              height,
+              borderRadius: height / 2,
+              background: bg,
+              overflow: "hidden",
+              position: "relative"
+            },
+            children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
+              "div",
+              {
+                "data-testid": dataTestId ? `${dataTestId}-fill` : void 0,
+                style: {
+                  height: "100%",
+                  borderRadius: height / 2,
+                  background: indeterminate ? `linear-gradient(90deg, transparent 0%, ${color} 50%, transparent 100%)` : color,
+                  width: indeterminate ? "40%" : `${percentage}%`,
+                  transition: animated && !indeterminate ? "width 0.3s ease" : void 0,
+                  position: indeterminate ? "absolute" : "relative",
+                  top: 0,
+                  left: 0,
+                  ...indeterminate ? { animation: "m5-progress-indeterminate-slide 1.5s ease-in-out infinite" } : {}
+                }
+              }
+            )
+          }
+        )
+      ]
+    }
+  );
+}
+
+// src/components/ScrollArea.tsx
+var import_react18 = require("react");
+var import_jsx_runtime38 = require("react/jsx-runtime");
+function ScrollArea({
+  children,
+  maxHeight,
+  height,
+  maxWidth,
+  thumbColor = "#94a3b8",
+  trackColor = "transparent",
+  scrollbarWidth = 8,
+  alwaysVisible = false,
+  showShadowEdges = false,
+  "aria-label": ariaLabel,
+  "data-testid": dataTestId,
+  className,
+  style,
+  onScroll,
+  autoScrollToBottom = false
+}) {
+  const viewportRef = (0, import_react18.useRef)(null);
+  const contentRef = (0, import_react18.useRef)(null);
+  const [scrollState, setScrollState] = (0, import_react18.useState)({
+    scrollTop: 0,
+    scrollHeight: 0,
+    clientHeight: 0,
+    thumbHeight: 0,
+    thumbTop: 0,
+    isHovered: false,
+    isScrolling: false,
+    thumbDragging: false,
+    showTopShadow: false,
+    showBottomShadow: false
+  });
+  const recalc = (0, import_react18.useCallback)(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    const { scrollTop, scrollHeight, clientHeight } = vp;
+    const thumbH = Math.max(clientHeight / scrollHeight * clientHeight, 24);
+    const thumbT = scrollHeight > clientHeight ? scrollTop / (scrollHeight - clientHeight) * (clientHeight - thumbH) : 0;
+    setScrollState((prev) => ({
+      ...prev,
+      scrollTop,
+      scrollHeight,
+      clientHeight,
+      thumbHeight: thumbH,
+      thumbTop: thumbT,
+      showTopShadow: showShadowEdges ? scrollTop > 0 : false,
+      showBottomShadow: showShadowEdges ? scrollTop + clientHeight < scrollHeight - 1 : false
+    }));
+    onScroll?.(scrollTop, scrollHeight, clientHeight);
+  }, [onScroll, showShadowEdges]);
+  (0, import_react18.useEffect)(() => {
+    if (!autoScrollToBottom || !viewportRef.current) return;
+    const vp = viewportRef.current;
+    vp.scrollTop = vp.scrollHeight;
+    recalc();
+  }, [children, autoScrollToBottom, recalc]);
+  (0, import_react18.useEffect)(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    recalc();
+    const ro = new ResizeObserver(() => recalc());
+    ro.observe(vp);
+    if (contentRef.current) ro.observe(contentRef.current);
+    return () => ro.disconnect();
+  }, [recalc]);
+  const handleScroll = (0, import_react18.useCallback)(() => {
+    recalc();
+  }, [recalc]);
+  const handleMouseEnter = (0, import_react18.useCallback)(() => {
+    if (!alwaysVisible) setScrollState((prev) => ({ ...prev, isHovered: true }));
+  }, [alwaysVisible]);
+  const handleMouseLeave = (0, import_react18.useCallback)(() => {
+    if (!alwaysVisible)
+      setScrollState((prev) => ({ ...prev, isHovered: false, isScrolling: false }));
+  }, [alwaysVisible]);
+  const handleThumbMouseDown = (0, import_react18.useCallback)(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const vp = viewportRef.current;
+      if (!vp) return;
+      const startY = e.clientY;
+      const startScrollTop = vp.scrollTop;
+      const ratio = (vp.scrollHeight - vp.clientHeight) / (vp.clientHeight - scrollState.thumbHeight);
+      setScrollState((prev) => ({ ...prev, thumbDragging: true }));
+      const onMouseMove = (ev) => {
+        const dy = ev.clientY - startY;
+        vp.scrollTop = startScrollTop + dy * ratio;
+      };
+      const onMouseUp = () => {
+        setScrollState((prev) => ({ ...prev, thumbDragging: false }));
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+      };
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
+    },
+    [scrollState.thumbHeight]
+  );
+  const hasScrollbar = scrollState.scrollHeight > scrollState.clientHeight;
+  const showScrollbar = alwaysVisible || scrollState.isHovered || scrollState.isScrolling || scrollState.thumbDragging;
+  const wrapperStyle = {
+    position: "relative",
+    width: "100%",
+    maxWidth: maxWidth ?? void 0,
+    height: height ?? void 0,
+    maxHeight: height ? void 0 : maxHeight ?? void 0,
+    ...style
+  };
+  const viewportStyle = {
+    width: "100%",
+    height: "100%",
+    overflowY: "auto",
+    overflowX: "hidden",
+    scrollbarWidth: "none",
+    // Firefox
+    msOverflowStyle: "none",
+    // IE/Edge
+    // Hide native scrollbar in WebKit
+    ...{},
+    position: "relative"
+  };
+  const trackStyle = {
+    position: "absolute",
+    top: 2,
+    right: 2,
+    bottom: 2,
+    width: scrollbarWidth,
+    borderRadius: scrollbarWidth / 2,
+    background: trackColor,
+    opacity: showScrollbar ? 1 : 0,
+    transition: "opacity 0.2s ease",
+    pointerEvents: showScrollbar ? "auto" : "none",
+    zIndex: 10
+  };
+  const thumbStyle = {
+    position: "absolute",
+    top: scrollState.thumbTop,
+    right: 0,
+    width: scrollbarWidth,
+    height: scrollState.thumbHeight,
+    borderRadius: scrollbarWidth / 2,
+    background: thumbColor,
+    cursor: "pointer",
+    transition: scrollState.thumbDragging ? "none" : "opacity 0.15s ease, background 0.15s ease",
+    opacity: showScrollbar ? 0.8 : 0
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime38.jsxs)(
+    "div",
+    {
+      "data-testid": dataTestId,
+      className,
+      style: wrapperStyle,
+      onMouseEnter: handleMouseEnter,
+      onMouseLeave: handleMouseLeave,
+      children: [
+        showShadowEdges && scrollState.showTopShadow ? /* @__PURE__ */ (0, import_jsx_runtime38.jsx)(
+          "div",
+          {
+            "data-testid": dataTestId ? `${dataTestId}-top-shadow` : void 0,
+            style: {
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: scrollbarWidth + 4,
+              height: 20,
+              background: "linear-gradient(to bottom, rgba(0,0,0,0.08), transparent)",
+              pointerEvents: "none",
+              zIndex: 5
+            }
+          }
+        ) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime38.jsxs)(
+          "div",
+          {
+            ref: viewportRef,
+            "data-testid": dataTestId ? `${dataTestId}-viewport` : void 0,
+            role: "region",
+            "aria-label": ariaLabel ?? "Scrollable content",
+            tabIndex: 0,
+            style: viewportStyle,
+            onScroll: handleScroll,
+            onFocus: () => {
+              if (!alwaysVisible) setScrollState((prev) => ({ ...prev, isScrolling: true }));
+            },
+            onBlur: () => {
+              if (!alwaysVisible)
+                setScrollState((prev) => ({ ...prev, isScrolling: false }));
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime38.jsx)("style", { children: `
+          [data-testid="${dataTestId ? `${dataTestId}-viewport` : ""}"]::-webkit-scrollbar {
+            display: none;
+          }
+          [data-testid="${dataTestId ? `${dataTestId}-viewport` : ""}"] {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        ` }),
+              /* @__PURE__ */ (0, import_jsx_runtime38.jsx)("div", { ref: contentRef, "data-testid": dataTestId ? `${dataTestId}-content` : void 0, children })
+            ]
+          }
+        ),
+        hasScrollbar ? /* @__PURE__ */ (0, import_jsx_runtime38.jsx)(
+          "div",
+          {
+            "data-testid": dataTestId ? `${dataTestId}-track` : void 0,
+            style: trackStyle,
+            children: /* @__PURE__ */ (0, import_jsx_runtime38.jsx)(
+              "div",
+              {
+                "data-testid": dataTestId ? `${dataTestId}-thumb` : void 0,
+                style: thumbStyle,
+                onMouseDown: handleThumbMouseDown,
+                role: "scrollbar",
+                "aria-controls": dataTestId ? `${dataTestId}-viewport` : void 0,
+                "aria-orientation": "vertical",
+                "aria-valuenow": Math.round(
+                  scrollState.clientHeight > 0 ? scrollState.scrollTop / (scrollState.scrollHeight - scrollState.clientHeight) * 100 : 0
+                ),
+                "aria-valuemin": 0,
+                "aria-valuemax": 100
+              }
+            )
+          }
+        ) : null,
+        showShadowEdges && scrollState.showBottomShadow ? /* @__PURE__ */ (0, import_jsx_runtime38.jsx)(
+          "div",
+          {
+            "data-testid": dataTestId ? `${dataTestId}-bottom-shadow` : void 0,
+            style: {
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: scrollbarWidth + 4,
+              height: 20,
+              background: "linear-gradient(to top, rgba(0,0,0,0.08), transparent)",
+              pointerEvents: "none",
+              zIndex: 5
+            }
+          }
+        ) : null
+      ]
+    }
+  );
+}
+
+// src/components/PageShell.tsx
+var import_jsx_runtime39 = require("react/jsx-runtime");
+function PageShell({ title, description, subtitle, actions, children }) {
+  const resolvedDescription = description ?? subtitle;
+  return /* @__PURE__ */ (0, import_jsx_runtime39.jsxs)("div", { style: { padding: "24px 32px", maxWidth: 1280, margin: "0 auto" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime39.jsxs)(
+      "div",
+      {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: 24,
+          flexWrap: "wrap",
+          gap: 12
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime39.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("h1", { style: { fontSize: 24, fontWeight: 700, color: "#f8fafc", margin: 0 }, children: title }),
+            resolvedDescription && /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("p", { style: { fontSize: 14, color: "#94a3b8", margin: "4px 0 0" }, children: resolvedDescription })
+          ] }),
+          actions && /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("div", { style: { display: "flex", gap: 8 }, children: actions })
+        ]
+      }
+    ),
+    children
+  ] });
+}
+
+// src/components/DetailShell.tsx
+var import_react19 = __toESM(require("react"));
+var import_jsx_runtime40 = require("react/jsx-runtime");
+function DetailShell({
+  title,
+  backHref,
+  backLabel = "Back to list",
+  sections,
+  subtitle,
+  children,
+  breadcrumbs,
+  backLink,
+  actions,
+  loading = false,
+  error,
+  onBack
+}) {
+  const resolvedBackHref = backLink?.href ?? backHref;
+  const resolvedBackLabel = backLink?.label ?? backLabel;
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("div", { style: { padding: 40, textAlign: "center", color: "#94a3b8" }, children: "Loading..." });
+  }
+  if (error) {
+    return /* @__PURE__ */ (0, import_jsx_runtime40.jsx)(
+      "div",
+      {
+        style: {
+          padding: 40,
+          textAlign: "center",
+          color: "#fca5a5",
+          background: "rgba(239,68,68,0.08)",
+          borderRadius: 12,
+          margin: 24
+        },
+        children: error
+      }
+    );
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)("div", { style: { padding: "24px 32px", maxWidth: 960, margin: "0 auto" }, children: [
+    breadcrumbs?.length ? /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12, fontSize: 13, color: "#94a3b8" }, children: breadcrumbs.map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)(import_react19.default.Fragment, { children: [
+      item.href ? /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("a", { href: item.href, style: { color: "#93c5fd", textDecoration: "none" }, children: item.label }) : /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("span", { children: item.label }),
+      index < breadcrumbs.length - 1 ? /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("span", { children: "/" }) : null
+    ] }, `${item.label}-${index}`)) }) : null,
+    (resolvedBackHref || onBack) && /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)(
+      "a",
+      {
+        href: resolvedBackHref,
+        onClick: (e) => {
+          if (onBack) {
+            e.preventDefault();
+            onBack();
+          }
+        },
+        style: {
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          fontSize: 14,
+          color: "#93c5fd",
+          textDecoration: "none",
+          marginBottom: 20
+        },
+        children: [
+          "\u2190 ",
+          resolvedBackLabel
+        ]
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", marginBottom: 24 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("h1", { style: { fontSize: 22, fontWeight: 700, color: "#f8fafc", margin: 0 }, children: title }),
+        subtitle ? /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("div", { style: { marginTop: 6, color: "#94a3b8", fontSize: 14 }, children: subtitle }) : null
+      ] }),
+      actions?.length ? /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }, children: actions.map((action) => {
+        const palette = action.variant === "secondary" ? { background: "transparent", border: "1px solid rgba(148,163,184,0.18)", color: "#cbd5e1" } : action.variant === "danger" ? { background: "rgba(239,68,68,0.14)", border: "1px solid rgba(239,68,68,0.25)", color: "#fecaca" } : { background: "rgba(59,130,246,0.16)", border: "1px solid rgba(96,165,250,0.3)", color: "#dbeafe" };
+        return /* @__PURE__ */ (0, import_jsx_runtime40.jsx)(
+          "button",
+          {
+            type: "button",
+            disabled: action.disabled || action.loading,
+            onClick: () => void action.onClick?.(),
+            style: {
+              borderRadius: 10,
+              padding: "10px 14px",
+              cursor: action.disabled || action.loading ? "not-allowed" : "pointer",
+              opacity: action.disabled || action.loading ? 0.6 : 1,
+              ...palette
+            },
+            children: action.loading ? `${action.label}...` : action.label
+          },
+          action.key
+        );
+      }) }) : null
+    ] }),
+    children ?? /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 20 }, children: (sections ?? []).map((section, i) => /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)(
+      "div",
+      {
+        style: {
+          background: "rgba(15,23,42,0.5)",
+          border: "1px solid rgba(148,163,184,0.12)",
+          borderRadius: 12,
+          padding: 20
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime40.jsx)(
+            "h3",
+            {
+              style: {
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#94a3b8",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                margin: "0 0 12px"
+              },
+              children: section.title
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("div", { children: section.content })
+        ]
+      },
+      i
+    )) })
+  ] });
+}
+
+// src/components/Tabs.tsx
+var import_jsx_runtime41 = require("react/jsx-runtime");
+function Tabs({
+  items,
+  activeKey,
+  onChange,
+  variant = "underline",
+  size = "md",
+  fill = false
+}) {
+  if (items.length === 0) return null;
+  const containerGap = size === "sm" ? 4 : 8;
+  const containerStyle = {
+    display: "flex",
+    gap: containerGap,
+    flexWrap: "wrap",
+    ...fill ? { width: "100%" } : {},
+    ...variant === "segment" ? {
+      borderRadius: 12,
+      padding: 4,
+      background: "rgba(15,23,42,0.35)",
+      border: "1px solid rgba(148,163,184,0.14)"
+    } : variant === "underline" ? {
+      borderBottom: "1px solid rgba(148,163,184,0.14)",
+      paddingBottom: 0
+    } : {}
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime41.jsx)("div", { style: containerStyle, role: "tablist", children: items.map((item) => {
+    const active = item.key === activeKey;
+    const fontSize = size === "sm" ? 13 : 14;
+    const paddingV = size === "sm" ? 6 : 10;
+    const paddingH = size === "sm" ? 12 : 18;
+    const style = {
+      fontSize,
+      fontWeight: active ? 600 : 400,
+      color: active ? "#93c5fd" : "#94a3b8",
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      padding: `${paddingV}px ${paddingH}px`,
+      borderRadius: variant === "pills" ? 999 : variant === "segment" ? 8 : 0,
+      whiteSpace: "nowrap",
+      flex: fill ? 1 : void 0,
+      textAlign: fill ? "center" : void 0,
+      transition: "color 0.15s ease, background 0.15s ease",
+      ...active && variant === "pills" ? { background: "rgba(37,99,235,0.22)", color: "#93c5fd" } : {},
+      ...active && variant === "segment" ? {
+        background: "rgba(37,99,235,0.30)",
+        color: "#f8fafc",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
+      } : {},
+      ...variant === "underline" ? {
+        borderBottom: active ? "2px solid #60a5fa" : "2px solid transparent",
+        marginBottom: -1
+      } : {}
+    };
+    return /* @__PURE__ */ (0, import_jsx_runtime41.jsxs)(
+      "button",
+      {
+        type: "button",
+        role: "tab",
+        "aria-selected": active,
+        onClick: () => onChange(item.key),
+        style,
+        children: [
+          item.label,
+          item.count !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime41.jsx)(
+            "span",
+            {
+              style: {
+                marginLeft: 6,
+                fontSize: fontSize - 2,
+                padding: "1px 6px",
+                borderRadius: 999,
+                background: active ? "rgba(96,165,250,0.25)" : "rgba(148,163,184,0.12)",
+                color: active ? "#bfdbfe" : "#94a3b8"
+              },
+              children: item.count
+            }
+          )
+        ]
+      },
+      item.key
+    );
+  }) });
+}
+
+// src/components/FilterBar.tsx
+var import_jsx_runtime42 = require("react/jsx-runtime");
+function FilterBar({ chips, onClearAll, activeCount }) {
+  const count = activeCount ?? chips.filter((c) => c.active).length;
+  return /* @__PURE__ */ (0, import_jsx_runtime42.jsxs)(
+    "div",
+    {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        flexWrap: "wrap",
+        padding: "8px 0"
+      },
+      children: [
+        chips.map((chip) => /* @__PURE__ */ (0, import_jsx_runtime42.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: chip.onClick,
+            style: {
+              padding: "6px 14px",
+              fontSize: 13,
+              fontWeight: 500,
+              borderRadius: 8,
+              border: chip.active ? "1px solid rgba(96,165,250,0.3)" : "1px solid rgba(148,163,184,0.12)",
+              background: chip.active ? "rgba(59,130,246,0.15)" : "transparent",
+              color: chip.active ? "#93c5fd" : "#94a3b8",
+              cursor: "pointer",
+              transition: "all 0.15s"
+            },
+            children: chip.label
+          },
+          chip.key
+        )),
+        count > 0 && onClearAll && /* @__PURE__ */ (0, import_jsx_runtime42.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: onClearAll,
+            style: {
+              padding: "6px 14px",
+              fontSize: 12,
+              fontWeight: 500,
+              borderRadius: 8,
+              border: "none",
+              background: "transparent",
+              color: "#64748b",
+              cursor: "pointer",
+              marginLeft: 4
+            },
+            children: "Clear all"
+          }
+        )
+      ]
+    }
+  );
+}
+
+// src/components/ListToolbar.tsx
+var import_react20 = require("react");
+var import_jsx_runtime43 = require("react/jsx-runtime");
+var VIEW_MODE_ICONS = {
+  table: "\u2630",
+  grid: "\u229E",
+  card: "\u25A3"
+};
+function ListToolbar({
+  searchPlaceholder = "\u641C\u7D22...",
+  searchValue: controlledSearchValue,
+  onSearchChange,
+  onSearch,
+  searchDebounceMs = 300,
+  sortOptions,
+  activeSortKey,
+  onSortChange,
+  sortDirection = "asc",
+  onSortDirectionChange,
+  filterOptions: filterOptions2,
+  onFilterToggle,
+  onClearFilters,
+  viewModes,
+  activeViewMode = "table",
+  onViewModeChange,
+  batchActions,
+  selectedCount = 0,
+  onBatchAction,
+  createLabel,
+  onCreate,
+  totalCount,
+  totalLabel = "\u6761\u8BB0\u5F55",
+  children,
+  disabled = false,
+  "data-testid": testId
+}) {
+  const [internalSearchValue, setInternalSearchValue] = (0, import_react20.useState)(controlledSearchValue ?? "");
+  const debounceRef = (0, import_react20.useRef)(null);
+  const searchValue = controlledSearchValue !== void 0 ? controlledSearchValue : internalSearchValue;
+  (0, import_react20.useEffect)(() => {
+    if (controlledSearchValue !== void 0) {
+      setInternalSearchValue(controlledSearchValue);
+    }
+  }, [controlledSearchValue]);
+  const handleSearchInputChange = (0, import_react20.useCallback)(
+    (e) => {
+      const value = e.target.value;
+      if (controlledSearchValue === void 0) {
+        setInternalSearchValue(value);
+      }
+      onSearchChange?.(value);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        onSearch?.(value);
+      }, searchDebounceMs);
+    },
+    [controlledSearchValue, onSearchChange, onSearch, searchDebounceMs]
+  );
+  const handleSearchKeyDown = (0, import_react20.useCallback)(
+    (e) => {
+      if (e.key === "Enter") {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        onSearch?.(searchValue);
+      }
+    },
+    [onSearch, searchValue]
+  );
+  const handleClearSearch = (0, import_react20.useCallback)(() => {
+    if (controlledSearchValue === void 0) {
+      setInternalSearchValue("");
+    }
+    onSearchChange?.("");
+    onSearch?.("");
+  }, [controlledSearchValue, onSearchChange, onSearch]);
+  const activeFilterCount = filterOptions2?.filter((f) => f.active).length ?? 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+    "div",
+    {
+      "data-testid": testId,
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        padding: "12px 0",
+        opacity: disabled ? 0.5 : 1,
+        pointerEvents: disabled ? "none" : "auto"
+      },
+      children: [
+        selectedCount > 0 && batchActions && batchActions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+          "div",
+          {
+            "data-testid": "list-toolbar-batch-bar",
+            style: {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
+              padding: "10px 14px",
+              borderRadius: 10,
+              border: "1px solid rgba(96, 165, 250, 0.3)",
+              background: "rgba(59, 130, 246, 0.12)",
+              flexWrap: "wrap"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)("span", { style: { fontSize: 13, fontWeight: 600, color: "#93c5fd" }, children: [
+                "\u5DF2\u9009\u62E9 ",
+                selectedCount,
+                " \u9879"
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime43.jsx)("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" }, children: batchActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                "button",
+                {
+                  type: "button",
+                  "data-testid": `batch-action-${action.key}`,
+                  disabled: action.disabled,
+                  onClick: () => onBatchAction?.(action.key),
+                  style: {
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    borderRadius: 8,
+                    border: action.variant === "danger" ? "1px solid rgba(248, 113, 113, 0.3)" : action.variant === "primary" ? "1px solid rgba(96, 165, 250, 0.4)" : "1px solid rgba(148, 163, 184, 0.2)",
+                    background: action.variant === "danger" ? "rgba(248, 113, 113, 0.12)" : action.variant === "primary" ? "rgba(59, 130, 246, 0.18)" : "rgba(148, 163, 184, 0.08)",
+                    color: action.variant === "danger" ? "#fca5a5" : action.variant === "primary" ? "#93c5fd" : "#cbd5e1",
+                    cursor: action.disabled ? "not-allowed" : "pointer",
+                    opacity: action.disabled ? 0.5 : 1
+                  },
+                  children: action.label
+                },
+                action.key
+              )) })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+                "div",
+                {
+                  "data-testid": "list-toolbar-search",
+                  style: {
+                    position: "relative",
+                    flex: "1 1 240px",
+                    minWidth: 160,
+                    maxWidth: 400
+                  },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                      "span",
+                      {
+                        style: {
+                          position: "absolute",
+                          left: 10,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          fontSize: 14,
+                          color: "#64748b",
+                          pointerEvents: "none"
+                        },
+                        children: "\u{1F50D}"
+                      }
+                    ),
+                    /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                      "input",
+                      {
+                        type: "text",
+                        "data-testid": "list-toolbar-search-input",
+                        value: searchValue,
+                        onChange: handleSearchInputChange,
+                        onKeyDown: handleSearchKeyDown,
+                        placeholder: searchPlaceholder,
+                        disabled,
+                        style: {
+                          width: "100%",
+                          padding: "8px 32px 8px 32px",
+                          fontSize: 13,
+                          borderRadius: 8,
+                          border: "1px solid rgba(148, 163, 184, 0.2)",
+                          background: "rgba(15, 23, 42, 0.5)",
+                          color: "#e2e8f0",
+                          outline: "none",
+                          boxSizing: "border-box"
+                        }
+                      }
+                    ),
+                    searchValue && /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                      "button",
+                      {
+                        type: "button",
+                        "data-testid": "list-toolbar-search-clear",
+                        onClick: handleClearSearch,
+                        style: {
+                          position: "absolute",
+                          right: 8,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          background: "none",
+                          border: "none",
+                          color: "#94a3b8",
+                          cursor: "pointer",
+                          fontSize: 14,
+                          padding: 0,
+                          lineHeight: 1
+                        },
+                        "aria-label": "\u6E05\u9664\u641C\u7D22",
+                        children: "\u2715"
+                      }
+                    )
+                  ]
+                }
+              ),
+              sortOptions && sortOptions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                  "select",
+                  {
+                    "data-testid": "list-toolbar-sort-select",
+                    value: activeSortKey ?? "",
+                    onChange: (e) => onSortChange?.(e.target.value),
+                    disabled,
+                    style: {
+                      padding: "8px 10px",
+                      fontSize: 13,
+                      borderRadius: 8,
+                      border: "1px solid rgba(148, 163, 184, 0.2)",
+                      background: "rgba(15, 23, 42, 0.5)",
+                      color: "#e2e8f0",
+                      outline: "none",
+                      cursor: "pointer"
+                    },
+                    children: sortOptions.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime43.jsx)("option", { value: opt.key, children: opt.label }, opt.key))
+                  }
+                ),
+                activeSortKey && onSortDirectionChange && /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    "data-testid": "list-toolbar-sort-direction",
+                    onClick: () => onSortDirectionChange(sortDirection === "asc" ? "desc" : "asc"),
+                    disabled,
+                    title: sortDirection === "asc" ? "\u5347\u5E8F" : "\u964D\u5E8F",
+                    style: {
+                      padding: "6px 8px",
+                      fontSize: 14,
+                      borderRadius: 8,
+                      border: "1px solid rgba(148, 163, 184, 0.2)",
+                      background: "rgba(15, 23, 42, 0.4)",
+                      color: "#94a3b8",
+                      cursor: "pointer",
+                      lineHeight: 1
+                    },
+                    children: sortDirection === "asc" ? "\u2191" : "\u2193"
+                  }
+                )
+              ] }),
+              filterOptions2 && filterOptions2.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+                "div",
+                {
+                  "data-testid": "list-toolbar-filters",
+                  style: { display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" },
+                  children: [
+                    filterOptions2.map((filter) => /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                      "button",
+                      {
+                        type: "button",
+                        "data-testid": `filter-chip-${filter.key}`,
+                        onClick: () => onFilterToggle?.(filter.key),
+                        disabled,
+                        style: {
+                          padding: "6px 12px",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          borderRadius: 8,
+                          border: filter.active ? "1px solid rgba(96, 165, 250, 0.4)" : "1px solid rgba(148, 163, 184, 0.15)",
+                          background: filter.active ? "rgba(59, 130, 246, 0.18)" : "rgba(148, 163, 184, 0.06)",
+                          color: filter.active ? "#93c5fd" : "#94a3b8",
+                          cursor: "pointer",
+                          whiteSpace: "nowrap"
+                        },
+                        children: filter.label
+                      },
+                      filter.key
+                    )),
+                    activeFilterCount > 0 && onClearFilters && /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+                      "button",
+                      {
+                        type: "button",
+                        "data-testid": "list-toolbar-clear-filters",
+                        onClick: onClearFilters,
+                        disabled,
+                        style: {
+                          padding: "6px 10px",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          borderRadius: 8,
+                          border: "1px solid rgba(248, 113, 113, 0.2)",
+                          background: "transparent",
+                          color: "#fca5a5",
+                          cursor: "pointer"
+                        },
+                        children: [
+                          "\u6E05\u9664 (",
+                          activeFilterCount,
+                          ")"
+                        ]
+                      }
+                    )
+                  ]
+                }
+              ),
+              viewModes && viewModes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                "div",
+                {
+                  "data-testid": "list-toolbar-view-modes",
+                  style: {
+                    display: "flex",
+                    gap: 2,
+                    borderRadius: 8,
+                    border: "1px solid rgba(148, 163, 184, 0.15)",
+                    overflow: "hidden",
+                    marginLeft: "auto"
+                  },
+                  children: viewModes.map((mode) => /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                    "button",
+                    {
+                      type: "button",
+                      "data-testid": `view-mode-${mode.key}`,
+                      onClick: () => onViewModeChange?.(mode.key),
+                      disabled,
+                      title: mode.label,
+                      style: {
+                        padding: "6px 10px",
+                        fontSize: 14,
+                        border: "none",
+                        background: activeViewMode === mode.key ? "rgba(59, 130, 246, 0.18)" : "transparent",
+                        color: activeViewMode === mode.key ? "#93c5fd" : "#64748b",
+                        cursor: "pointer",
+                        lineHeight: 1
+                      },
+                      children: mode.icon ?? VIEW_MODE_ICONS[mode.key] ?? mode.label
+                    },
+                    mode.key
+                  ))
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
+              flexWrap: "wrap"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }, children: [
+                createLabel && onCreate && /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+                  "button",
+                  {
+                    type: "button",
+                    "data-testid": "list-toolbar-create",
+                    onClick: onCreate,
+                    disabled,
+                    style: {
+                      padding: "8px 16px",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      borderRadius: 8,
+                      border: "1px solid rgba(59, 130, 246, 0.4)",
+                      background: "rgba(59, 130, 246, 0.2)",
+                      color: "#93c5fd",
+                      cursor: "pointer"
+                    },
+                    children: [
+                      "+ ",
+                      createLabel
+                    ]
+                  }
+                ),
+                totalCount !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+                  "span",
+                  {
+                    "data-testid": "list-toolbar-total",
+                    style: { fontSize: 12, color: "#64748b" },
+                    children: [
+                      "\u5171 ",
+                      totalCount,
+                      " ",
+                      totalLabel
+                    ]
+                  }
+                )
+              ] }),
+              children && /* @__PURE__ */ (0, import_jsx_runtime43.jsx)("div", { "data-testid": "list-toolbar-children", children })
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
+
+// src/components/FilterChips.tsx
+var import_jsx_runtime44 = require("react/jsx-runtime");
+var TONE_MAP = {
+  neutral: { bg: "rgba(71, 85, 105, 0.2)", border: "rgba(100, 116, 139, 0.3)", color: "#cbd5e1", hoverBg: "rgba(71, 85, 105, 0.35)" },
+  warning: { bg: "rgba(245, 158, 11, 0.12)", border: "rgba(251, 191, 36, 0.3)", color: "#fbbf24", hoverBg: "rgba(245, 158, 11, 0.22)" },
+  danger: { bg: "rgba(239, 68, 68, 0.12)", border: "rgba(248, 113, 113, 0.3)", color: "#f87171", hoverBg: "rgba(239, 68, 68, 0.22)" },
+  success: { bg: "rgba(34, 197, 94, 0.12)", border: "rgba(74, 222, 128, 0.3)", color: "#4ade80", hoverBg: "rgba(34, 197, 94, 0.22)" }
+};
+var X_ICON = /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 10 10", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("path", { d: "M1 1l8 8M9 1l-8 8", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }) });
+var CLEAR_ICON = /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 10 10", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("path", { d: "M2 2l6 6M8 2l-6 6", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }) });
+function FilterChips({
+  hint,
+  chips,
+  onRemove,
+  onClearAll,
+  size = "sm",
+  style
+}) {
+  if (chips.length === 0) return null;
+  const isSm = size === "sm";
+  const fontSize = isSm ? 12 : 13;
+  const paddingY = isSm ? 3 : 5;
+  const paddingX = isSm ? 8 : 10;
+  return /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
+    "div",
+    {
+      style: {
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: 6,
+        ...style
+      },
+      children: [
+        hint ? /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("span", { style: { fontSize: 11, color: "#64748b", marginRight: 2, userSelect: "none" }, children: hint }) : null,
+        chips.map((chip) => {
+          const tone = TONE_MAP[chip.tone ?? "neutral"];
+          return /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
+            "span",
+            {
+              style: {
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                fontSize,
+                color: tone.color,
+                background: tone.bg,
+                border: `1px solid ${tone.border}`,
+                borderRadius: 999,
+                padding: `${paddingY}px ${paddingX}px`,
+                cursor: "default",
+                userSelect: "none",
+                lineHeight: 1.4,
+                transition: "background 0.15s"
+              },
+              onMouseEnter: (e) => {
+                e.currentTarget.style.background = tone.hoverBg;
+              },
+              onMouseLeave: (e) => {
+                e.currentTarget.style.background = tone.bg;
+              },
+              role: "status",
+              "aria-label": `\u7B5B\u9009: ${chip.label}${chip.count !== void 0 ? ` (${chip.count})` : ""}`,
+              children: [
+                chip.label,
+                chip.count !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)("span", { style: { fontSize: fontSize - 1, opacity: 0.75, fontWeight: 500 }, children: [
+                  "(",
+                  chip.count,
+                  ")"
+                ] }) : null,
+                /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => onRemove(chip.key),
+                    style: {
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 16,
+                      height: 16,
+                      padding: 0,
+                      border: "none",
+                      background: "transparent",
+                      color: "inherit",
+                      cursor: "pointer",
+                      borderRadius: "50%",
+                      opacity: 0.6,
+                      transition: "opacity 0.15s"
+                    },
+                    onMouseEnter: (e) => {
+                      e.currentTarget.style.opacity = "1";
+                    },
+                    onMouseLeave: (e) => {
+                      e.currentTarget.style.opacity = "0.6";
+                    },
+                    "aria-label": `\u79FB\u9664\u7B5B\u9009: ${chip.label}`,
+                    children: X_ICON
+                  }
+                )
+              ]
+            },
+            chip.key
+          );
+        }),
+        onClearAll && chips.length > 1 ? /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
+          "button",
+          {
+            type: "button",
+            onClick: onClearAll,
+            style: {
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 3,
+              fontSize,
+              color: "#94a3b8",
+              background: "transparent",
+              border: "1px solid rgba(148, 163, 184, 0.18)",
+              borderRadius: 999,
+              padding: `${paddingY}px ${paddingX}px`,
+              cursor: "pointer",
+              lineHeight: 1.4,
+              transition: "color 0.15s, border-color 0.15s"
+            },
+            onMouseEnter: (e) => {
+              const el = e.currentTarget;
+              el.style.color = "#e2e8f0";
+              el.style.borderColor = "rgba(148, 163, 184, 0.35)";
+            },
+            onMouseLeave: (e) => {
+              const el = e.currentTarget;
+              el.style.color = "#94a3b8";
+              el.style.borderColor = "rgba(148, 163, 184, 0.18)";
+            },
+            "aria-label": "\u6E05\u9664\u5168\u90E8\u7B5B\u9009",
+            children: [
+              CLEAR_ICON,
+              /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("span", { children: "\u6E05\u9664\u5168\u90E8" })
+            ]
+          }
+        ) : null
+      ]
+    }
+  );
+}
+
+// src/components/ListPageScaffold.tsx
+var import_react22 = require("react");
+
+// src/components/LinkedOverviewStubs.tsx
+var import_react21 = __toESM(require("react"));
+var import_types = require("@m5/types");
+var import_jsx_runtime45 = require("react/jsx-runtime");
+function useSearchFilter2(...args) {
+  if (Array.isArray(args[0])) {
+    const items = args[0];
+    const [searchTerm, setSearchTerm] = import_react21.default.useState("");
+    const filteredItems = import_react21.default.useMemo(() => {
+      if (!searchTerm.trim()) return items;
+      const term = searchTerm.toLowerCase();
+      return items.filter((item) => {
+        const fields = args[1] ?? Object.keys(item);
+        return fields.some((f) => String(item[f] ?? "").toLowerCase().includes(term));
+      });
+    }, [items, searchTerm, args]);
+    return {
+      searchTerm,
+      setSearchTerm,
+      filteredItems,
+      matchedCount: filteredItems.length,
+      totalCount: items.length
+    };
+  }
+  const initialValue = args[0] ?? "";
+  const debounceMs = args[1] ?? 300;
+  return useSearchFilter(initialValue, debounceMs);
+}
+function SearchFilterInput2(props) {
+  return import_react21.default.createElement(SearchFilterInput, { width: "100%", ...props });
+}
+var DEFAULT_FILTERS = {
+  action: "ALL",
+  source: "ALL",
+  owner: "ALL"
+};
+function toSearchParams(value) {
+  if (value instanceof URLSearchParams) {
+    return new URLSearchParams(value.toString());
+  }
+  if (typeof value === "string") {
+    return new URLSearchParams(value);
+  }
+  if (value && typeof value === "object" && "toString" in value && typeof value.toString === "function") {
+    return new URLSearchParams(value.toString());
+  }
+  return new URLSearchParams();
+}
+function buildFocusQueryKeys(focusQueryKey = "alert") {
+  return {
+    focus: focusQueryKey,
+    timeline: {
+      action: `${focusQueryKey}Action`,
+      source: `${focusQueryKey}Source`,
+      owner: `${focusQueryKey}Owner`
+    }
+  };
+}
+async function writeTextToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+function renderMetaLine(line, index) {
+  return import_react21.default.createElement(
+    "div",
+    {
+      key: `${line}-${index}`,
+      style: { fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }
+    },
+    line
+  );
+}
+function FoundationAlertLinkedAlertGridReadout(props) {
+  const { palette, title, emptyText, items = [], variant = "catalog", onSelect } = props;
+  const accentBorder = variant === "risk" ? palette?.riskCardBorder ?? "rgba(96,165,250,0.2)" : palette?.catalogActiveBorder ?? "rgba(96,165,250,0.2)";
+  const accentBackground = variant === "risk" ? palette?.riskCardBackground ?? "rgba(59,130,246,0.12)" : "rgba(15,23,42,0.28)";
+  return import_react21.default.createElement(
+    "section",
+    { style: { marginTop: 16 } },
+    title ? import_react21.default.createElement(
+      "div",
+      { style: { fontSize: 14, fontWeight: 700, color: "#e2e8f0", marginBottom: 10 } },
+      title
+    ) : null,
+    items.length === 0 ? import_react21.default.createElement(
+      "div",
+      {
+        style: {
+          borderRadius: 14,
+          padding: 18,
+          border: `1px dashed ${accentBorder}`,
+          color: "#94a3b8",
+          background: "rgba(15,23,42,0.18)",
+          fontSize: 13
+        }
+      },
+      emptyText ?? "\u6682\u65E0\u53EF\u5C55\u793A\u7684\u544A\u8B66"
+    ) : import_react21.default.createElement(
+      "div",
+      {
+        style: {
+          display: "grid",
+          gap: 12,
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))"
+        }
+      },
+      ...items.map(
+        (item) => import_react21.default.createElement(
+          "button",
+          {
+            key: item.key,
+            type: "button",
+            onClick: () => onSelect?.(item.key),
+            style: {
+              textAlign: "left",
+              borderRadius: 14,
+              padding: 16,
+              border: item.isActive ? `1px solid ${variant === "risk" ? palette?.riskActiveBorder ?? "rgba(147,197,253,0.82)" : palette?.catalogActiveBorder ?? "rgba(96,165,250,0.82)"}` : `1px solid ${accentBorder}`,
+              background: item.isActive ? variant === "risk" ? palette?.riskActiveBackground ?? "rgba(37,99,235,0.2)" : palette?.catalogActiveBackground ?? "rgba(30,64,175,0.16)" : accentBackground,
+              color: "#e2e8f0",
+              cursor: "pointer"
+            }
+          },
+          import_react21.default.createElement(
+            "div",
+            { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 } },
+            import_react21.default.createElement(
+              "div",
+              null,
+              import_react21.default.createElement(
+                "div",
+                { style: { fontWeight: 700, fontSize: 14, color: palette?.accentText ?? "#93c5fd" } },
+                item.code ?? item.key
+              ),
+              import_react21.default.createElement(
+                "div",
+                { style: { marginTop: 6, fontSize: 13, color: "#cbd5e1", lineHeight: 1.5 } },
+                item.summary ?? item.accent ?? ""
+              )
+            ),
+            item.isActive ? import_react21.default.createElement(
+              "span",
+              {
+                style: {
+                  fontSize: 11,
+                  padding: "3px 8px",
+                  borderRadius: 999,
+                  background: "rgba(96,165,250,0.16)",
+                  color: "#dbeafe",
+                  whiteSpace: "nowrap"
+                }
+              },
+              "\u5DF2\u805A\u7126"
+            ) : null
+          ),
+          item.accent ? import_react21.default.createElement(
+            "div",
+            { style: { marginTop: 10, fontSize: 12, color: "#94a3b8", lineHeight: 1.5 } },
+            item.accent
+          ) : null,
+          item.metaLines?.length ? import_react21.default.createElement(
+            "div",
+            { style: { marginTop: 10, display: "grid", gap: 4 } },
+            ...item.metaLines.map(renderMetaLine)
+          ) : null
+        )
+      )
+    )
+  );
+}
+function FoundationAlertLinkedFocusBarReadout(props) {
+  const {
+    palette,
+    focusQueryLabel,
+    linkedFilterSummary,
+    linkedFilterQueryPreview,
+    shareStatus,
+    hasLinkedFilters,
+    onCopyFocusLink,
+    onClearLinkedTriage,
+    emptyShareStatus
+  } = props;
+  const buttonStyle2 = {
+    borderRadius: 8,
+    border: `1px solid ${palette?.actionButtonBorder ?? "rgba(96,165,250,0.28)"}`,
+    background: palette?.actionButtonBackground ?? "rgba(37,99,235,0.18)",
+    color: palette?.actionButtonText ?? "#dbeafe",
+    padding: "6px 12px",
+    fontSize: 12,
+    cursor: "pointer"
+  };
+  return import_react21.default.createElement(
+    "section",
+    {
+      style: {
+        borderRadius: 14,
+        padding: 16,
+        background: palette?.focusBannerBackground ?? "rgba(30,41,59,0.5)",
+        border: `1px solid ${palette?.focusBannerBorder ?? "rgba(96,165,250,0.18)"}`
+      }
+    },
+    import_react21.default.createElement(
+      "div",
+      { style: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" } },
+      import_react21.default.createElement(
+        "div",
+        null,
+        import_react21.default.createElement(
+          "div",
+          { style: { fontSize: 13, fontWeight: 700, color: "#e2e8f0" } },
+          `\u5F53\u524D\u805A\u7126 ${focusQueryLabel ?? "?alert=none"}`
+        ),
+        import_react21.default.createElement(
+          "div",
+          { style: { marginTop: 6, fontSize: 12, color: palette?.accentText ?? "#93c5fd" } },
+          hasLinkedFilters ? linkedFilterSummary ?? "\u5DF2\u6302\u8F7D\u8054\u52A8\u7B5B\u9009" : "\u5168\u90E8 timeline"
+        ),
+        import_react21.default.createElement(
+          "div",
+          { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" } },
+          linkedFilterQueryPreview ?? "(default)"
+        )
+      ),
+      import_react21.default.createElement(
+        "div",
+        { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
+        import_react21.default.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: () => void onCopyFocusLink?.(),
+            style: buttonStyle2
+          },
+          "\u590D\u5236\u8054\u52A8\u94FE\u63A5"
+        ),
+        hasLinkedFilters ? import_react21.default.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: () => onClearLinkedTriage?.(),
+            style: {
+              ...buttonStyle2,
+              background: "rgba(15,23,42,0.2)",
+              color: "#cbd5e1"
+            }
+          },
+          "\u6E05\u7A7A\u8054\u52A8"
+        ) : null
+      )
+    ),
+    import_react21.default.createElement(
+      "div",
+      {
+        style: {
+          marginTop: 10,
+          fontSize: 12,
+          color: shareStatus ? "#4ade80" : "#94a3b8"
+        }
+      },
+      shareStatus ?? emptyShareStatus ?? "\u590D\u5236\u94FE\u63A5\u540E\u53EF\u5728\u5176\u4ED6\u9875\u9762\u8FD8\u539F\u5F53\u524D\u805A\u7126\u72B6\u6001"
+    )
+  );
+}
+function FoundationAlertLinkedOverviewStatsReadout(props) {
+  const { palette, items = [], onSelect } = props;
+  return import_react21.default.createElement(
+    "div",
+    {
+      style: {
+        marginTop: 16,
+        display: "grid",
+        gap: 12,
+        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))"
+      }
+    },
+    ...items.map(
+      (item) => import_react21.default.createElement(
+        "button",
+        {
+          key: item.key,
+          type: "button",
+          onClick: () => onSelect?.(item.key),
+          style: {
+            textAlign: "left",
+            borderRadius: 14,
+            padding: 16,
+            border: item.isActive ? `1px solid ${palette?.overviewActiveBorder ?? "rgba(147,197,253,0.8)"}` : "1px solid rgba(148,163,184,0.14)",
+            background: item.isActive ? palette?.overviewActiveBackground ?? "rgba(30,41,59,0.72)" : "rgba(15,23,42,0.24)",
+            cursor: "pointer",
+            color: "#e2e8f0"
+          }
+        },
+        import_react21.default.createElement("div", { style: { fontSize: 12, color: "#94a3b8" } }, item.label),
+        import_react21.default.createElement("div", { style: { marginTop: 8, fontSize: 26, fontWeight: 700 } }, item.value),
+        import_react21.default.createElement(
+          "div",
+          { style: { marginTop: 8, fontSize: 12, color: palette?.accentText ?? "#93c5fd", lineHeight: 1.5 } },
+          item.helper
+        )
+      )
+    )
+  );
+}
+function createFoundationAlertNextNavigationBindings(opts) {
+  return {
+    router: opts?.router ?? { push: () => {
+    }, replace: () => {
+    } },
+    pathname: opts?.pathname ?? "/",
+    searchParams: toSearchParams(opts?.searchParams),
+    push: (...args) => opts?.push?.(...args) ?? opts?.router?.push?.(...args),
+    replace: (...args) => opts?.replace?.(...args) ?? opts?.router?.replace?.(...args)
+  };
+}
+function useFoundationAlertLinkedFocusQuery(opts) {
+  const focusQueryKey = opts?.focusQueryKey ?? "alert";
+  const queryKeys = import_react21.default.useMemo(() => buildFocusQueryKeys(focusQueryKey), [focusQueryKey]);
+  const searchParams = import_react21.default.useMemo(() => toSearchParams(opts?.searchParams), [opts?.searchParams]);
+  const searchSnapshot = searchParams.toString();
+  const resolveStateFromSearch = import_react21.default.useCallback(() => {
+    const params = toSearchParams(opts?.searchParams);
+    const filters = (0, import_types.buildFoundationAlertTimelineFilterStateFromQuery)({
+      action: params.get(queryKeys.timeline.action),
+      source: params.get(queryKeys.timeline.source),
+      owner: params.get(queryKeys.timeline.owner)
+    });
+    const resolvedFocus = (0, import_types.resolveFoundationAlertFocusCode)(params.get(queryKeys.focus), opts?.candidateGroups ?? []) ?? opts?.defaultFocusCode ?? "";
+    return {
+      filters,
+      focusCode: resolvedFocus,
+      fromQuery: params.has(queryKeys.focus)
+    };
+  }, [opts?.candidateGroups, opts?.defaultFocusCode, opts?.searchParams, queryKeys]);
+  const initialState = import_react21.default.useMemo(() => resolveStateFromSearch(), [resolveStateFromSearch]);
+  const [focusAlertCode, setFocusAlertCode] = import_react21.default.useState(initialState.focusCode);
+  const [linkedFilters, setLinkedFilters] = import_react21.default.useState(initialState.filters);
+  const [focusContext, setFocusContext] = import_react21.default.useState(
+    () => initialState.fromQuery ? (0, import_types.buildFoundationAlertLinkedFocusContext)(`URL \u805A\u7126 / ${initialState.focusCode || "none"}`, initialState.filters) : opts?.defaultFocusContext ?? ""
+  );
+  const [shareStatus, setShareStatus] = import_react21.default.useState();
+  const replaceUrl = import_react21.default.useCallback(
+    (nextFocusCode, nextFilters) => {
+      const nextParams = (0, import_types.buildFoundationAlertLinkedFocusSearchParams)({
+        search: opts?.searchParams,
+        queryKeys,
+        focusCode: nextFocusCode || null,
+        filters: nextFilters
+      });
+      const query = nextParams.toString();
+      const nextUrl = query ? `${opts?.pathname ?? "/"}?${query}` : opts?.pathname ?? "/";
+      opts?.replace?.(nextUrl);
+    },
+    [opts?.pathname, opts?.replace, opts?.searchParams, queryKeys]
+  );
+  import_react21.default.useEffect(() => {
+    const nextState = resolveStateFromSearch();
+    if (nextState.focusCode !== focusAlertCode) {
+      setFocusAlertCode(nextState.focusCode);
+    }
+    if (!(0, import_types.isFoundationAlertTimelineFilterStateEqual)(nextState.filters, linkedFilters)) {
+      setLinkedFilters(nextState.filters);
+    }
+    setFocusContext(
+      nextState.fromQuery ? (0, import_types.buildFoundationAlertLinkedFocusContext)(`URL \u805A\u7126 / ${nextState.focusCode || "none"}`, nextState.filters) : opts?.defaultFocusContext ?? ""
+    );
+    if (nextState.fromQuery && opts?.panelRef?.current) {
+      opts.panelRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [focusAlertCode, linkedFilters, opts?.defaultFocusContext, opts?.panelRef, resolveStateFromSearch, searchSnapshot]);
+  const activateFocus = import_react21.default.useCallback(
+    (code, ctx, filters) => {
+      const nextFilters = filters ?? DEFAULT_FILTERS;
+      setFocusAlertCode(code);
+      setLinkedFilters(nextFilters);
+      setFocusContext((0, import_types.buildFoundationAlertLinkedFocusContext)(ctx, nextFilters));
+      setShareStatus(void 0);
+      replaceUrl(code, nextFilters);
+    },
+    [replaceUrl]
+  );
+  const clearLinkedTriage = import_react21.default.useCallback(() => {
+    setLinkedFilters(DEFAULT_FILTERS);
+    setFocusContext((0, import_types.buildFoundationAlertLinkedFocusContext)(`\u8054\u52A8\u5DF2\u6E05\u7A7A / ${focusAlertCode || "none"}`, DEFAULT_FILTERS));
+    setShareStatus(void 0);
+    replaceUrl(focusAlertCode, DEFAULT_FILTERS);
+  }, [focusAlertCode, replaceUrl]);
+  const copyFocusLink = import_react21.default.useCallback(async () => {
+    const params = (0, import_types.buildFoundationAlertLinkedFocusSearchParams)({
+      search: opts?.searchParams,
+      queryKeys,
+      focusCode: focusAlertCode || null,
+      filters: linkedFilters
+    });
+    const query = params.toString();
+    const path = query ? `${opts?.pathname ?? "/"}?${query}` : opts?.pathname ?? "/";
+    const target = typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
+    const copied = typeof navigator !== "undefined" && typeof document !== "undefined" ? await writeTextToClipboard(target) : false;
+    setShareStatus(copied ? "\u5DF2\u590D\u5236\u8054\u52A8\u94FE\u63A5" : "\u590D\u5236\u5931\u8D25\uFF0C\u8BF7\u624B\u52A8\u590D\u5236\u5F53\u524D\u5730\u5740");
+  }, [focusAlertCode, linkedFilters, opts?.pathname, opts?.searchParams, queryKeys]);
+  const handlePanelFocusChange = import_react21.default.useCallback(
+    (code, ctx) => {
+      setFocusAlertCode(code);
+      setFocusContext((0, import_types.buildFoundationAlertLinkedFocusContext)(ctx, linkedFilters));
+      setShareStatus(void 0);
+      replaceUrl(code, linkedFilters);
+    },
+    [linkedFilters, replaceUrl]
+  );
+  const linkedFilterSummary = import_react21.default.useMemo(
+    () => (0, import_types.summarizeFoundationAlertTimelineFilters)(linkedFilters),
+    [linkedFilters]
+  );
+  const hasLinkedFilters = linkedFilterSummary !== "\u5168\u90E8 timeline";
+  const linkedFilterQueryPreview = import_react21.default.useMemo(
+    () => (0, import_types.buildFoundationAlertTimelineFilterQueryPreview)(queryKeys.timeline, linkedFilters),
+    [linkedFilters, queryKeys]
+  );
+  return {
+    activateFocus,
+    clearLinkedTriage,
+    copyFocusLink,
+    focusAlertCode,
+    focusContext,
+    handlePanelFocusChange,
+    hasLinkedFilters,
+    linkedFilterQueryPreview,
+    linkedFilterSummary,
+    shareStatus
+  };
+}
+function canReplayRuntimePanelAction(_receipt, _extraCheck) {
+  const base = _receipt?.ledger?.replayable ?? false;
+  if (base && _extraCheck) return _extraCheck(_receipt);
+  return base;
+}
+function createRuntimeReceiptStatusCardProps(_opts) {
+  const receipt = _opts?.receipt ?? null;
+  return {
+    receipt,
+    summary: receipt ? _opts?.summarize?.(receipt) ?? "" : "\u6682\u65E0 receipt\uFF0C\u53EF\u5148\u6267\u884C submit \u83B7\u53D6\u771F\u5B9E\u95ED\u73AF\u72B6\u6001\u3002",
+    scopeLabel: _opts?.scopeLabel ?? "",
+    metaLabel: _opts?.metaLabel,
+    eventCount: Array.isArray(receipt?.events) ? receipt.events.length : 0
+  };
+}
+function createRuntimeOperationToolbarProps(_opts) {
+  const canReplay = typeof _opts?.canReplay === "function" ? _opts.canReplay(_opts?.receipt) : Boolean(_opts?.canReplay);
+  return {
+    onSubmit: _opts?.onSubmit ?? (() => {
+    }),
+    onQuery: _opts?.onQuery ?? (() => {
+    }),
+    onReplay: _opts?.onReplay ?? (() => {
+    }),
+    disableSubmit: _opts?.disableSubmit ?? Boolean(_opts?.pendingOperation),
+    disableQuery: _opts?.disableQuery ?? (!_opts?.receipt || Boolean(_opts?.pendingOperation)),
+    disableReplay: _opts?.disableReplay ?? (!canReplay || Boolean(_opts?.pendingOperation)),
+    canReplay,
+    pendingOperation: _opts?.pendingOperation ?? null,
+    receipt: _opts?.receipt ?? null
+  };
+}
+function hasRuntimePanelReceiptCode(_receipt) {
+  return !!(_receipt && typeof _receipt === "object" && "receiptCode" in _receipt);
+}
+function RuntimeOperationToolbar(props) {
+  const { onSubmit, onQuery, onReplay, pendingOperation, disableSubmit, disableQuery, disableReplay, canReplay } = props;
+  const buttonStyle2 = (tone) => ({
+    padding: "8px 14px",
+    borderRadius: 8,
+    border: tone === "primary" ? "none" : "1px solid rgba(148,163,184,0.16)",
+    background: tone === "primary" ? "rgba(37,99,235,0.9)" : tone === "warn" ? "rgba(245,158,11,0.15)" : "rgba(15,23,42,0.32)",
+    color: tone === "primary" ? "#f8fafc" : tone === "warn" ? "#fcd34d" : "#cbd5e1",
+    fontSize: 12,
+    cursor: "pointer"
+  });
+  return import_react21.default.createElement(
+    "div",
+    {
+      "data-testid": "runtime-operation-toolbar",
+      style: {
+        marginTop: 16,
+        display: "flex",
+        gap: 8,
+        flexWrap: "wrap",
+        alignItems: "center"
+      }
+    },
+    import_react21.default.createElement(
+      "button",
+      { onClick: onSubmit, disabled: disableSubmit, style: buttonStyle2("primary") },
+      pendingOperation === "submit" ? "\u63D0\u4EA4\u4E2D..." : "\u63D0\u4EA4 Runtime"
+    ),
+    import_react21.default.createElement(
+      "button",
+      { onClick: onQuery, disabled: disableQuery, style: buttonStyle2("secondary") },
+      pendingOperation === "query" ? "\u67E5\u8BE2\u4E2D..." : "\u67E5\u8BE2"
+    ),
+    canReplay ? import_react21.default.createElement(
+      "button",
+      { onClick: onReplay, disabled: disableReplay, style: buttonStyle2("warn") },
+      pendingOperation === "replay" ? "\u91CD\u653E\u4E2D..." : "\u91CD\u653E"
+    ) : null
+  );
+}
+function RuntimePanelFeedback(props) {
+  const { message, receipt, actionError } = props;
+  return import_react21.default.createElement(
+    "div",
+    {
+      "data-testid": "runtime-panel-feedback",
+      style: {
+        marginTop: 16,
+        borderRadius: 14,
+        padding: 14,
+        background: actionError ? "rgba(127,29,29,0.22)" : "rgba(15,23,42,0.24)",
+        border: actionError ? "1px solid rgba(248,113,113,0.24)" : "1px solid rgba(148,163,184,0.14)"
+      }
+    },
+    message ? import_react21.default.createElement("p", { className: "feedback-message", style: { margin: 0, fontSize: 13, color: "#e2e8f0" } }, message) : null,
+    receipt ? import_react21.default.createElement(
+      "p",
+      { className: "feedback-receipt", style: { margin: "8px 0 0", fontSize: 12, color: "#93c5fd" } },
+      `\u6700\u8FD1 receipt\uFF1A${String(receipt.receiptCode ?? "")} / ${String(receipt.state ?? "unknown")}`
+    ) : null,
+    actionError ? import_react21.default.createElement("p", { className: "feedback-error", style: { margin: "8px 0 0", fontSize: 12, color: "#fca5a5" } }, actionError) : null
+  );
+}
+function RuntimePanelFrame(props) {
+  const { scopeSummary, children } = props;
+  return import_react21.default.createElement(
+    "section",
+    {
+      "data-testid": "runtime-panel-frame",
+      style: {
+        borderRadius: 18,
+        padding: 20,
+        background: "rgba(15,23,42,0.34)",
+        border: "1px solid rgba(148,163,184,0.16)",
+        color: "#f8fafc"
+      }
+    },
+    import_react21.default.createElement("h2", { style: { margin: 0, fontSize: 18, fontWeight: 700 } }, "\u771F\u5B9E Runtime \u95ED\u73AF"),
+    import_react21.default.createElement("p", { className: "scope-summary", style: { margin: "8px 0 0", fontSize: 13, color: "#94a3b8" } }, scopeSummary ?? ""),
+    ...import_react21.default.Children.toArray(children ?? [])
+  );
+}
+function RuntimePanelGrid(_props) {
+  return import_react21.default.createElement(
+    "div",
+    {
+      style: {
+        display: "grid",
+        gap: 16,
+        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+        marginTop: 16
+      }
+    },
+    ...import_react21.default.Children.toArray(_props?.children ?? [])
+  );
+}
+function joinRuntimeScopeSummary(parts, _opts) {
+  const summary = parts.filter(Boolean).join(" / ");
+  return _opts?.prefix ? `${_opts.prefix}${summary}` : summary;
+}
+function useRuntimePresetSelection(presets, defaultKey) {
+  const [selectedAction, setSelectedAction] = import_react21.default.useState(defaultKey ?? "");
+  const activePreset = import_react21.default.useMemo(() => {
+    if (!presets || !Array.isArray(presets)) return presets ?? null;
+    return presets.find((p) => p?.key === selectedAction) ?? presets?.[0] ?? null;
+  }, [presets, selectedAction]);
+  return {
+    selectedAction,
+    setSelectedAction,
+    activePreset
+  };
+}
+function useRuntimePanelState(defaultMessage) {
+  const [receipt, setReceipt] = import_react21.default.useState(null);
+  const [pendingOperation, setPendingOperation] = import_react21.default.useState(null);
+  const [actionError, setActionError] = import_react21.default.useState(null);
+  const [message, setMessage] = import_react21.default.useState(defaultMessage ?? null);
+  const runOperation = import_react21.default.useCallback(async (operation, fn) => {
+    setPendingOperation(operation);
+    setActionError(null);
+    try {
+      const result = await fn();
+      setReceipt(result);
+      setMessage(`\u64CD\u4F5C ${operation} \u5B8C\u6210`);
+    } catch (err) {
+      setActionError(err?.message ?? String(err));
+      setMessage(`\u64CD\u4F5C ${operation} \u5931\u8D25`);
+    } finally {
+      setPendingOperation(null);
+    }
+  }, []);
+  return {
+    receipt,
+    setReceipt,
+    pendingOperation,
+    setPendingOperation,
+    actionError,
+    setActionError,
+    message,
+    setMessage,
+    runOperation
+  };
+}
+function RuntimePresetCard(props) {
+  const { preset } = props;
+  return import_react21.default.createElement(
+    "div",
+    {
+      "data-testid": "runtime-preset-card",
+      style: {
+        borderRadius: 14,
+        padding: 16,
+        background: "rgba(30,41,59,0.5)",
+        border: "1px solid rgba(96,165,250,0.14)"
+      }
+    },
+    preset ? [
+      import_react21.default.createElement("div", { key: "label", style: { fontSize: 16, fontWeight: 700, color: "#e2e8f0" } }, preset.label ?? preset.scenario ?? ""),
+      import_react21.default.createElement("div", { key: "scenario", style: { marginTop: 8, fontSize: 13, color: "#cbd5e1", lineHeight: 1.5 } }, preset.scenario ?? ""),
+      import_react21.default.createElement("div", { key: "risk", style: { marginTop: 10, fontSize: 12, color: "#fcd34d" } }, `\u98CE\u9669\u7EA7\u522B\uFF1A${preset.riskLevel ?? "unknown"}`),
+      import_react21.default.createElement("div", { key: "next-step", style: { marginTop: 4, fontSize: 12, color: "#94a3b8" } }, `\u4E0B\u4E00\u6B65\uFF1A${preset.nextStep ?? "-"}`),
+      import_react21.default.createElement("div", { key: "recommend", style: { marginTop: 4, fontSize: 12, color: "#94a3b8" } }, `\u5EFA\u8BAE\u52A8\u4F5C\uFF1A${preset.recommendedAction ?? "-"}`),
+      preset.requestEndpoint ? import_react21.default.createElement("div", { key: "endpoint", style: { marginTop: 8, fontSize: 12, color: "#93c5fd", wordBreak: "break-all" } }, preset.requestEndpoint) : null
+    ] : null
+  );
+}
+function RuntimePresetSelector(props) {
+  const { options, selectedKey, onSelect } = props;
+  return import_react21.default.createElement(
+    "div",
+    {
+      "data-testid": "runtime-preset-selector",
+      style: {
+        marginTop: 16,
+        display: "flex",
+        gap: 8,
+        flexWrap: "wrap"
+      }
+    },
+    ...(options ?? []).map(
+      (opt, idx) => import_react21.default.createElement(
+        "button",
+        {
+          type: "button",
+          key: opt.key ?? idx,
+          className: opt.key === selectedKey ? "selected" : "",
+          onClick: () => onSelect?.(opt.key),
+          style: {
+            padding: "8px 12px",
+            borderRadius: 999,
+            border: opt.key === selectedKey ? "1px solid rgba(147,197,253,0.8)" : "1px solid rgba(148,163,184,0.14)",
+            background: opt.key === selectedKey ? "rgba(30,64,175,0.22)" : "rgba(15,23,42,0.22)",
+            color: opt.key === selectedKey ? "#dbeafe" : "#cbd5e1",
+            fontSize: 12,
+            cursor: "pointer"
+          }
+        },
+        opt.label ?? opt.key
+      )
+    )
+  );
+}
+function RuntimeReceiptStatusCard(props) {
+  const { receipt, summary, scopeLabel, eventCount } = props;
+  return import_react21.default.createElement(
+    "div",
+    {
+      "data-testid": "runtime-receipt-status-card",
+      style: {
+        borderRadius: 14,
+        padding: 16,
+        background: "rgba(30,41,59,0.42)",
+        border: "1px solid rgba(148,163,184,0.14)"
+      }
+    },
+    import_react21.default.createElement("h3", { style: { margin: 0, fontSize: 15, fontWeight: 700, color: "#e2e8f0" } }, "\u6700\u8FD1 Receipt"),
+    import_react21.default.createElement("p", { className: "receipt-summary", style: { margin: "10px 0 0", fontSize: 13, color: "#cbd5e1", lineHeight: 1.6 } }, summary ?? "\u6682\u65E0"),
+    import_react21.default.createElement("p", { className: "receipt-scope", style: { margin: "8px 0 0", fontSize: 12, color: "#94a3b8" } }, scopeLabel ?? ""),
+    receipt ? import_react21.default.createElement(
+      "div",
+      { style: { marginTop: 10, display: "grid", gap: 4, fontSize: 12, color: "#93c5fd" } },
+      import_react21.default.createElement("div", { key: "code" }, `receiptCode: ${receipt.receiptCode ?? "-"}`),
+      import_react21.default.createElement("div", { key: "state" }, `state: ${receipt.state ?? "-"}`),
+      import_react21.default.createElement("div", { key: "ticket" }, `ticket: ${receipt.ticket?.status ?? "-"}`),
+      import_react21.default.createElement("div", { key: "callback" }, `callback: ${receipt.callback?.callbackStatus ?? "-"}`),
+      import_react21.default.createElement("div", { key: "events" }, `events: ${eventCount ?? 0}`)
+    ) : null
+  );
+}
+async function executeRuntimePanelOperation(_opts) {
+  try {
+    return await _opts?.run?.();
+  } catch (error) {
+    if (_opts?.errorMessage) {
+      throw new Error(`${_opts.errorMessage}${error?.message ? ` (${error.message})` : ""}`);
+    }
+    throw error;
+  }
+}
+function useSortedItems(items, _columns, sortConfig) {
+  return import_react21.default.useMemo(() => {
+    if (!items || !items.length) return items ?? [];
+    if (!sortConfig) return items;
+    const sorted = [...items].sort((a, b) => {
+      const aVal = a[sortConfig.key] ?? "";
+      const bVal = b[sortConfig.key] ?? "";
+      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }, [items, sortConfig]);
+}
+function PortalList({
+  portals,
+  searchPlaceholder = "\u641C\u7D22\u95E8\u6237...",
+  emptyTitle = "\u6682\u65E0\u95E8\u6237",
+  emptyDescription = "\u6CA1\u6709\u53EF\u7528\u7684\u95E8\u6237\u6570\u636E\u3002"
+}) {
+  const [searchTerm, setSearchTerm] = import_react21.default.useState("");
+  const filtered = import_react21.default.useMemo(() => {
+    if (!searchTerm.trim()) return portals;
+    const term = searchTerm.toLowerCase();
+    return portals.filter(
+      (p) => p.label.toLowerCase().includes(term) || (p.subtitle ?? "").toLowerCase().includes(term) || (p.meta ?? "").toLowerCase().includes(term)
+    );
+  }, [portals, searchTerm]);
+  if (portals.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)(
+      "div",
+      {
+        style: {
+          borderRadius: 16,
+          padding: 48,
+          textAlign: "center",
+          background: "rgba(15, 23, 42, 0.3)",
+          border: "1px solid rgba(148, 163, 184, 0.12)"
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { fontSize: 20, fontWeight: 700, color: "#cbd5e1", marginBottom: 8 }, children: emptyTitle }),
+          /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { fontSize: 14, color: "#64748b" }, children: emptyDescription })
+        ]
+      }
+    );
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { marginBottom: 16 }, children: /* @__PURE__ */ (0, import_jsx_runtime45.jsx)(
+      "input",
+      {
+        type: "text",
+        value: searchTerm,
+        onChange: (e) => setSearchTerm(e.target.value),
+        placeholder: searchPlaceholder,
+        style: searchInputStyle
+      }
+    ) }),
+    searchTerm.trim() && /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)(
+      "div",
+      {
+        style: {
+          fontSize: 13,
+          color: "#94a3b8",
+          marginBottom: 12,
+          display: "flex",
+          alignItems: "center",
+          gap: 8
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)("span", { children: [
+            '\u641C\u7D22 "',
+            searchTerm,
+            '" \u5339\u914D ',
+            filtered.length,
+            " \u6761\u7ED3\u679C"
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime45.jsx)(
+            "button",
+            {
+              type: "button",
+              onClick: () => setSearchTerm(""),
+              style: {
+                fontSize: 12,
+                color: "#93c5fd",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 0
+              },
+              children: "\u6E05\u9664"
+            }
+          )
+        ]
+      }
+    ),
+    filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)(
+      "div",
+      {
+        style: {
+          borderRadius: 16,
+          padding: 48,
+          textAlign: "center",
+          background: "rgba(15, 23, 42, 0.3)",
+          border: "1px solid rgba(148, 163, 184, 0.12)"
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { fontSize: 18, fontWeight: 600, color: "#94a3b8" }, children: "\u65E0\u5339\u914D\u7ED3\u679C" }),
+          /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { fontSize: 13, color: "#64748b", marginTop: 6 }, children: "\u5C1D\u8BD5\u5176\u4ED6\u5173\u952E\u8BCD" })
+        ]
+      }
+    ) : (
+      /* 门户卡片网格 */
+      /* @__PURE__ */ (0, import_jsx_runtime45.jsx)(
+        "div",
+        {
+          style: {
+            display: "grid",
+            gap: 14,
+            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))"
+          },
+          children: filtered.map((portal) => /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)(
+            "article",
+            {
+              style: cardStyle2,
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { fontWeight: 700, fontSize: 16, color: "#f1f5f9" }, children: portal.label }),
+                  portal.status ? /* @__PURE__ */ (0, import_jsx_runtime45.jsx)(
+                    "span",
+                    {
+                      style: {
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: "3px 10px",
+                        borderRadius: 6,
+                        background: "rgba(74, 222, 128, 0.12)",
+                        color: "#4ade80"
+                      },
+                      children: portal.status
+                    }
+                  ) : null
+                ] }),
+                portal.subtitle ? /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { marginTop: 6, fontSize: 13, color: "#94a3b8" }, children: portal.subtitle }) : null,
+                portal.meta ? /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { marginTop: 8, fontSize: 12, color: "#64748b" }, children: portal.meta }) : null
+              ]
+            },
+            portal.id
+          ))
+        }
+      )
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)(
+      "div",
+      {
+        style: {
+          marginTop: 16,
+          padding: "10px 0",
+          fontSize: 12,
+          color: "#64748b",
+          textAlign: "right",
+          borderTop: "1px solid rgba(148, 163, 184, 0.08)"
+        },
+        children: [
+          "\u5171 ",
+          portals.length,
+          " \u4E2A\u95E8\u6237",
+          searchTerm.trim() ? ` \xB7 \u663E\u793A ${filtered.length} \u4E2A` : ""
+        ]
+      }
+    )
+  ] });
+}
+var searchInputStyle = {
+  width: "100%",
+  borderRadius: 12,
+  padding: "12px 16px",
+  border: "1px solid rgba(148, 163, 184, 0.16)",
+  background: "rgba(15, 23, 42, 0.4)",
+  color: "#f1f5f9",
+  fontSize: 14,
+  outline: "none",
+  boxSizing: "border-box",
+  transition: "border-color 0.15s"
+};
+var cardStyle2 = {
+  borderRadius: 14,
+  padding: 20,
+  background: "rgba(15, 23, 42, 0.38)",
+  border: "1px solid rgba(148, 163, 184, 0.14)",
+  transition: "border-color 0.15s, background 0.15s"
+};
+function formatRuntimeCallbackStalledDuration(ms) {
+  if (ms < 6e4) return `${Math.round(ms / 1e3)}s`;
+  return `${Math.round(ms / 6e4)}m`;
+}
+function describeRuntimeCallbackStalledEscalation(action) {
+  const map = {
+    SCHEDULE_REPLAY: "\u8FDB\u5165 replay",
+    OPEN_MANUAL_REVIEW: "\u8F6C\u4EBA\u5DE5\u590D\u6838",
+    WAIT_CALLBACK: "\u7EE7\u7EED\u7B49\u5F85 callback"
+  };
+  return map[action] ?? action;
+}
+function FoundationAlertRuntimeCallbackStalledReadout(_props) {
+  return import_react21.default.createElement("div", null);
+}
+function summarizeRuntimePanelReceipt(receipt) {
+  return `${receipt?.action ?? "unknown"} -> ${receipt?.state ?? "unknown"} / ticket ${receipt?.ticket?.status ?? "unknown"} / callback ${receipt?.callback?.callbackStatus ?? "unknown"} / replay ${receipt?.ledger?.replayable ? "ready" : "not-ready"}`;
+}
+function canReplayRuntimePanelReceipt(receipt) {
+  return receipt?.ledger?.replayable ?? false;
+}
+function getRuntimePanelTenantId(receipt) {
+  return receipt?.rateLimit?.scopeKey?.split(":").slice(-1)[0] ?? "unknown";
+}
+function createRuntimeReceiptStatusCard(_opts) {
+  return import_react21.default.createElement(RuntimeReceiptStatusCard, createRuntimeReceiptStatusCardProps(_opts));
+}
+function RuntimeReceiptEvents(_props) {
+  const events = _props?.events ?? _props?.receipt?.events ?? [];
+  return import_react21.default.createElement(
+    "div",
+    {
+      style: {
+        marginTop: 12,
+        display: "grid",
+        gap: 6
+      }
+    },
+    events.length === 0 ? import_react21.default.createElement("div", { style: { fontSize: 12, color: "#64748b" } }, "\u6682\u65E0 receipt events") : events.map(
+      (event, index) => import_react21.default.createElement(
+        "div",
+        {
+          key: `${event.type ?? "event"}-${index}`,
+          style: {
+            borderRadius: 10,
+            padding: "8px 10px",
+            background: "rgba(15,23,42,0.24)",
+            border: "1px solid rgba(148,163,184,0.12)",
+            fontSize: 12,
+            color: "#cbd5e1"
+          }
+        },
+        `${event.type ?? "unknown"} @ ${event.createdAt ?? "-"}`
+      )
+    )
+  );
+}
+function refreshFoundationAlertSelection(_opts) {
+  if (_opts?.alerts?.some((a) => a.code === _opts?.nextSelectedCode)) {
+    return _opts?.nextSelectedCode;
+  }
+  return _opts?.currentSelectedCode ?? "";
+}
+
+// src/components/ListPageScaffold.tsx
+var listPageStatCardStyle = {
+  borderRadius: 16,
+  padding: 18,
+  background: "rgba(15, 23, 42, 0.38)",
+  border: "1px solid rgba(148, 163, 184, 0.18)"
+};
+function useListPageSectionState({
+  items,
+  searchFields,
+  facets,
+  defaultPageSize = 10,
+  pageSizeOptions = [5, 10, 20, 50]
+}) {
+  const { searchTerm, setSearchTerm, filteredItems: searchFilteredItems } = useSearchFilter2(items, searchFields);
+  const [facetValues, setFacetValues] = (0, import_react22.useState)(
+    () => Object.fromEntries(facets.map((facet) => [facet.key, "ALL"]))
+  );
+  const facetValueSignature = (0, import_react22.useMemo)(
+    () => facets.map((facet) => `${facet.key}:${facetValues[facet.key] ?? "ALL"}`).join("|"),
+    [facetValues, facets]
+  );
+  const resolvedFacets = (0, import_react22.useMemo)(() => {
+    let currentItems = searchFilteredItems;
+    return facets.map((facet) => {
+      const enabled = facet.enabled ?? true;
+      const order = facet.order && facet.order.length > 0 ? [...facet.order] : Array.from(new Set(items.map((item) => facet.getValue(item))));
+      const value = facetValues[facet.key] ?? "ALL";
+      const baseItems = currentItems;
+      const filteredItems2 = !enabled || value === "ALL" ? baseItems : baseItems.filter((item) => facet.getValue(item) === value);
+      currentItems = filteredItems2;
+      return {
+        key: facet.key,
+        order,
+        enabled,
+        value,
+        baseItems,
+        filteredItems: filteredItems2
+      };
+    });
+  }, [facetValues, facets, items, searchFilteredItems]);
+  const filteredItems = resolvedFacets.at(-1)?.filteredItems ?? searchFilteredItems;
+  const [sortConfig, setSortConfig] = (0, import_react22.useState)(null);
+  const sortedItems = useSortedItems(filteredItems, [], sortConfig);
+  const pagination = usePagination({ initialPageSize: defaultPageSize, pageSizeOptions });
+  (0, import_react22.useEffect)(() => {
+    pagination.resetPage();
+  }, [facetValueSignature, pagination, searchTerm]);
+  return {
+    searchTerm,
+    setSearchTerm,
+    searchFilteredItems,
+    facets: resolvedFacets,
+    filteredItems,
+    sortConfig,
+    setSortConfig,
+    sortedItems,
+    pagedItems: pagination.paginate(sortedItems),
+    pagination,
+    totalPages: Math.max(1, Math.ceil(sortedItems.length / Math.max(pagination.pageSize, 1))),
+    setFacetValue: (key, value) => {
+      setFacetValues((current) => ({
+        ...current,
+        [key]: value
+      }));
+    }
+  };
+}
+
+// src/components/Modal.tsx
+var import_react23 = require("react");
+var import_jsx_runtime46 = require("react/jsx-runtime");
+function Modal({
+  open,
+  onClose,
+  title,
+  showClose = true,
+  width = 480,
+  maskClosable = true,
+  keyboardClosable = true,
+  children,
+  footer
+}) {
+  const handleKeyDown = (0, import_react23.useCallback)(
+    (e) => {
+      if (e.key === "Escape" && keyboardClosable) {
+        onClose();
+      }
+    },
+    [onClose, keyboardClosable]
+  );
+  (0, import_react23.useEffect)(() => {
+    if (open) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [open, handleKeyDown]);
+  (0, import_react23.useEffect)(() => {
+    if (open) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = original;
+      };
+    }
+  }, [open]);
+  if (!open) return null;
+  return /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(
+    "div",
+    {
+      style: {
+        position: "fixed",
+        inset: 0,
+        zIndex: 1e3,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0, 0, 0, 0.55)",
+        backdropFilter: "blur(4px)",
+        animation: "modal-fade-in 0.15s ease-out"
+      },
+      onClick: (e) => {
+        if (maskClosable && e.target === e.currentTarget) onClose();
+      },
+      role: "dialog",
+      "aria-modal": "true",
+      "aria-label": title,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(
+          "div",
+          {
+            style: {
+              background: "#1e293b",
+              border: "1px solid rgba(148, 163, 184, 0.16)",
+              borderRadius: 16,
+              width,
+              maxWidth: "calc(100vw - 48px)",
+              maxHeight: "calc(100vh - 80px)",
+              overflowY: "auto",
+              boxShadow: "0 24px 80px rgba(0, 0, 0, 0.5)",
+              animation: "modal-slide-up 0.2s ease-out"
+            },
+            children: [
+              (title || showClose) && /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: title ? "20px 24px 0" : "12px 16px"
+                  },
+                  children: [
+                    title ? /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("h2", { style: { margin: 0, fontSize: 18, fontWeight: 700, color: "#f8fafc" }, children: title }) : /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("span", {}),
+                    showClose && /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(
+                      "button",
+                      {
+                        type: "button",
+                        onClick: onClose,
+                        "aria-label": "\u5173\u95ED",
+                        style: {
+                          background: "none",
+                          border: "none",
+                          color: "#94a3b8",
+                          fontSize: 20,
+                          cursor: "pointer",
+                          padding: "0 0 0 12px",
+                          lineHeight: 1,
+                          transition: "color 0.15s"
+                        },
+                        onMouseEnter: (e) => {
+                          e.target.style.color = "#e2e8f0";
+                        },
+                        onMouseLeave: (e) => {
+                          e.target.style.color = "#94a3b8";
+                        },
+                        children: "\xD7"
+                      }
+                    )
+                  ]
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("div", { style: { padding: title ? "16px 24px 24px" : "24px" }, children }),
+              footer && /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(
+                "div",
+                {
+                  style: {
+                    padding: "0 24px 20px",
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 10
+                  },
+                  children: footer
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("style", { children: `
+        @keyframes modal-fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes modal-slide-up {
+          from { opacity: 0; transform: translateY(16px) scale(0.97); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      ` })
+      ]
+    }
+  );
+}
+
+// src/components/Drawer.tsx
+var import_react24 = require("react");
+var import_jsx_runtime47 = require("react/jsx-runtime");
+function Drawer({
+  open,
+  onClose,
+  title,
+  placement = "right",
+  size,
+  showClose = true,
+  maskClosable = true,
+  keyboardClosable = true,
+  children,
+  footer,
+  zIndex = 1e3
+}) {
+  const panelRef = (0, import_react24.useRef)(null);
+  const isHorizontal = placement === "left" || placement === "right";
+  const resolvedSize = size ?? (isHorizontal ? 448 : 320);
+  const handleKeyDown = (0, import_react24.useCallback)(
+    (e) => {
+      if (e.key === "Escape" && keyboardClosable) {
+        onClose();
+      }
+    },
+    [onClose, keyboardClosable]
+  );
+  (0, import_react24.useEffect)(() => {
+    if (open) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [open, handleKeyDown]);
+  (0, import_react24.useEffect)(() => {
+    if (open) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = original;
+      };
+    }
+  }, [open]);
+  (0, import_react24.useEffect)(() => {
+    if (open && panelRef.current) {
+      panelRef.current.focus();
+    }
+  }, [open]);
+  if (!open) return null;
+  const positionStyles = {
+    left: {
+      top: 0,
+      left: 0,
+      bottom: 0,
+      width: resolvedSize,
+      borderRight: "1px solid rgba(148, 163, 184, 0.16)",
+      animation: "drawer-slide-in-left 0.25s cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    right: {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      width: resolvedSize,
+      borderLeft: "1px solid rgba(148, 163, 184, 0.16)",
+      animation: "drawer-slide-in-right 0.25s cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    top: {
+      top: 0,
+      left: 0,
+      right: 0,
+      height: resolvedSize,
+      borderBottom: "1px solid rgba(148, 163, 184, 0.16)",
+      animation: "drawer-slide-in-top 0.25s cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    bottom: {
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: resolvedSize,
+      borderTop: "1px solid rgba(148, 163, 184, 0.16)",
+      animation: "drawer-slide-in-bottom 0.25s cubic-bezier(0.16, 1, 0.3, 1)"
+    }
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime47.jsxs)(
+    "div",
+    {
+      style: {
+        position: "fixed",
+        inset: 0,
+        zIndex,
+        background: "rgba(0, 0, 0, 0.45)",
+        backdropFilter: "blur(4px)",
+        animation: "drawer-mask-fade-in 0.2s ease-out"
+      },
+      onClick: (e) => {
+        if (maskClosable && e.target === e.currentTarget) onClose();
+      },
+      role: "dialog",
+      "aria-modal": "true",
+      "aria-label": title ?? "Drawer",
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime47.jsxs)(
+          "div",
+          {
+            ref: panelRef,
+            tabIndex: -1,
+            style: {
+              position: "fixed",
+              background: "#1e293b",
+              boxShadow: placement === "right" ? "-8px 0 40px rgba(0, 0, 0, 0.4)" : placement === "left" ? "8px 0 40px rgba(0, 0, 0, 0.4)" : placement === "top" ? "0 8px 40px rgba(0, 0, 0, 0.4)" : "0 -8px 40px rgba(0, 0, 0, 0.4)",
+              display: "flex",
+              flexDirection: "column",
+              maxWidth: isHorizontal ? "calc(100vw - 48px)" : void 0,
+              maxHeight: !isHorizontal ? "calc(100vh - 48px)" : void 0,
+              ...positionStyles[placement]
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime47.jsxs)(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "20px 24px",
+                    borderBottom: "1px solid rgba(148, 163, 184, 0.1)",
+                    flexShrink: 0
+                  },
+                  children: [
+                    title ? /* @__PURE__ */ (0, import_jsx_runtime47.jsx)("h2", { style: { margin: 0, fontSize: 18, fontWeight: 700, color: "#f8fafc" }, children: title }) : /* @__PURE__ */ (0, import_jsx_runtime47.jsx)("span", {}),
+                    showClose && /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(
+                      "button",
+                      {
+                        type: "button",
+                        onClick: onClose,
+                        "aria-label": "\u5173\u95ED",
+                        style: {
+                          background: "none",
+                          border: "none",
+                          color: "#94a3b8",
+                          fontSize: 22,
+                          cursor: "pointer",
+                          padding: "0 0 0 12px",
+                          lineHeight: 1,
+                          transition: "color 0.15s"
+                        },
+                        onMouseEnter: (e) => {
+                          e.target.style.color = "#e2e8f0";
+                        },
+                        onMouseLeave: (e) => {
+                          e.target.style.color = "#94a3b8";
+                        },
+                        children: "\xD7"
+                      }
+                    )
+                  ]
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(
+                "div",
+                {
+                  style: {
+                    flex: 1,
+                    overflowY: "auto",
+                    padding: 24,
+                    overscrollBehavior: "contain"
+                  },
+                  children
+                }
+              ),
+              footer && /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(
+                "div",
+                {
+                  style: {
+                    padding: "16px 24px",
+                    borderTop: "1px solid rgba(148, 163, 184, 0.1)",
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 10,
+                    flexShrink: 0
+                  },
+                  children: footer
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime47.jsx)("style", { children: `
+        @keyframes drawer-mask-fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes drawer-slide-in-left {
+          from { transform: translateX(-100%); }
+          to { transform: translateX(0); }
+        }
+        @keyframes drawer-slide-in-right {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        @keyframes drawer-slide-in-top {
+          from { transform: translateY(-100%); }
+          to { transform: translateY(0); }
+        }
+        @keyframes drawer-slide-in-bottom {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+      ` })
+      ]
+    }
+  );
+}
+
+// src/components/Dropdown.tsx
+var import_react25 = require("react");
+var import_jsx_runtime48 = require("react/jsx-runtime");
+function Dropdown({
+  trigger,
+  items,
+  align = "left",
+  triggerMode = "click",
+  minWidth = 160,
+  disabled = false,
+  className,
+  style
+}) {
+  const [open, setOpen] = (0, import_react25.useState)(false);
+  const containerRef = (0, import_react25.useRef)(null);
+  const menuRef = (0, import_react25.useRef)(null);
+  const close = (0, import_react25.useCallback)(() => setOpen(false), []);
+  (0, import_react25.useEffect)(() => {
+    if (!open) return;
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        close();
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") close();
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, close]);
+  const handleTriggerClick = (0, import_react25.useCallback)(() => {
+    if (disabled) return;
+    setOpen((prev) => !prev);
+  }, [disabled]);
+  const handleTriggerMouseEnter = (0, import_react25.useCallback)(() => {
+    if (disabled || triggerMode !== "hover") return;
+    setOpen(true);
+  }, [disabled, triggerMode]);
+  const handleContainerMouseLeave = (0, import_react25.useCallback)(() => {
+    if (triggerMode !== "hover") return;
+    setOpen(false);
+  }, [triggerMode]);
+  const handleItemClick = (0, import_react25.useCallback)(
+    (item) => {
+      if (item.disabled) return;
+      item.onClick?.();
+      close();
+    },
+    [close]
+  );
+  return /* @__PURE__ */ (0, import_jsx_runtime48.jsxs)(
+    "div",
+    {
+      ref: containerRef,
+      className,
+      style: { position: "relative", display: "inline-block", ...style },
+      onMouseLeave: handleContainerMouseLeave,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime48.jsx)(
+          "div",
+          {
+            onClick: handleTriggerClick,
+            onMouseEnter: handleTriggerMouseEnter,
+            style: {
+              cursor: disabled ? "not-allowed" : "pointer",
+              opacity: disabled ? 0.5 : 1,
+              display: "inline-flex"
+            },
+            role: "button",
+            tabIndex: 0,
+            onKeyDown: (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleTriggerClick();
+              }
+            },
+            "aria-expanded": open,
+            "aria-haspopup": "menu",
+            children: trigger
+          }
+        ),
+        open && /* @__PURE__ */ (0, import_jsx_runtime48.jsx)(
+          "div",
+          {
+            ref: menuRef,
+            role: "menu",
+            style: {
+              position: "absolute",
+              top: "calc(100% + 4px)",
+              [align === "right" ? "right" : "left"]: 0,
+              minWidth,
+              zIndex: 1001,
+              borderRadius: 12,
+              background: "#1e293b",
+              border: "1px solid rgba(148, 163, 184, 0.16)",
+              boxShadow: "0 12px 40px rgba(0, 0, 0, 0.45)",
+              padding: "6px 0",
+              animation: "dropdown-slide-in 0.12s ease-out"
+            },
+            children: items.map((item, index) => {
+              if (item.divider) {
+                return /* @__PURE__ */ (0, import_jsx_runtime48.jsx)(
+                  "div",
+                  {
+                    style: {
+                      height: 1,
+                      margin: "4px 8px",
+                      background: "rgba(148, 163, 184, 0.12)"
+                    },
+                    role: "separator"
+                  },
+                  item.key || `divider-${index}`
+                );
+              }
+              return /* @__PURE__ */ (0, import_jsx_runtime48.jsxs)(
+                "button",
+                {
+                  type: "button",
+                  role: "menuitem",
+                  disabled: item.disabled,
+                  onClick: () => handleItemClick(item),
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    width: "100%",
+                    padding: "8px 14px",
+                    border: "none",
+                    background: "transparent",
+                    color: item.danger ? "#fca5a5" : item.disabled ? "#64748b" : "#e2e8f0",
+                    fontSize: 13,
+                    cursor: item.disabled ? "not-allowed" : "pointer",
+                    textAlign: "left",
+                    opacity: item.disabled ? 0.5 : 1,
+                    transition: "background 0.12s"
+                  },
+                  onMouseEnter: (e) => {
+                    if (!item.disabled) {
+                      e.target.style.background = "rgba(148, 163, 184, 0.08)";
+                    }
+                  },
+                  onMouseLeave: (e) => {
+                    e.target.style.background = "transparent";
+                  },
+                  children: [
+                    item.icon ? /* @__PURE__ */ (0, import_jsx_runtime48.jsx)("span", { style: { display: "inline-flex", alignItems: "center", flexShrink: 0 }, children: item.icon }) : null,
+                    /* @__PURE__ */ (0, import_jsx_runtime48.jsx)("span", { children: item.label })
+                  ]
+                },
+                item.key
+              );
+            })
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime48.jsx)("style", { children: `
+        @keyframes dropdown-slide-in {
+          from {
+            opacity: 0;
+            transform: translateY(-6px) scale(0.97);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+      ` })
+      ]
+    }
+  );
+}
+
+// src/components/Select.tsx
+var import_react26 = require("react");
+var import_jsx_runtime49 = require("react/jsx-runtime");
+function Select({
+  value,
+  onChange,
+  options,
+  placeholder = "\u8BF7\u9009\u62E9",
+  disabled = false,
+  allowClear = false,
+  showSearch = false,
+  searchPlaceholder = "\u641C\u7D22...",
+  notFoundContent = "\u65E0\u5339\u914D\u7ED3\u679C",
+  minWidth = 160,
+  className,
+  style,
+  dropdownClassName,
+  name,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledby
+}) {
+  const [open, setOpen] = (0, import_react26.useState)(false);
+  const [searchText, setSearchText] = (0, import_react26.useState)("");
+  const [highlightIndex, setHighlightIndex] = (0, import_react26.useState)(-1);
+  const containerRef = (0, import_react26.useRef)(null);
+  const dropdownRef = (0, import_react26.useRef)(null);
+  const searchInputRef = (0, import_react26.useRef)(null);
+  const selectedOption = (0, import_react26.useMemo)(
+    () => options.find((o) => o.value === value),
+    [options, value]
+  );
+  const filteredOptions = (0, import_react26.useMemo)(() => {
+    if (!showSearch || !searchText.trim()) return options;
+    const lower = searchText.toLowerCase();
+    return options.filter(
+      (o) => o.label.toLowerCase().includes(lower) || o.value.toLowerCase().includes(lower)
+    );
+  }, [options, searchText, showSearch]);
+  const handleClickOutside = (0, import_react26.useCallback)((e) => {
+    if (containerRef.current && !containerRef.current.contains(e.target)) {
+      setOpen(false);
+      setSearchText("");
+    }
+  }, []);
+  const handleKeyDown = (0, import_react26.useCallback)(
+    (e) => {
+      if (!open && (e.key === "Enter" || e.key === " " || e.key === "ArrowDown")) {
+        e.preventDefault();
+        setOpen(true);
+        setHighlightIndex(0);
+        return;
+      }
+      if (!open) return;
+      switch (e.key) {
+        case "Escape":
+          e.preventDefault();
+          setOpen(false);
+          setSearchText("");
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          setHighlightIndex(
+            (prev) => prev < filteredOptions.length - 1 ? prev + 1 : 0
+          );
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setHighlightIndex(
+            (prev) => prev > 0 ? prev - 1 : filteredOptions.length - 1
+          );
+          break;
+        case "Enter":
+          e.preventDefault();
+          if (highlightIndex >= 0 && filteredOptions[highlightIndex]) {
+            handleSelect(filteredOptions[highlightIndex].value);
+          }
+          break;
+      }
+    },
+    [open, filteredOptions, highlightIndex]
+  );
+  (0, import_react26.useEffect)(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [handleClickOutside]);
+  (0, import_react26.useEffect)(() => {
+    if (open && showSearch && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [open, showSearch]);
+  (0, import_react26.useEffect)(() => {
+    if (!open) setHighlightIndex(-1);
+  }, [open]);
+  const handleSelect = (0, import_react26.useCallback)(
+    (val) => {
+      const opt = options.find((o) => o.value === val);
+      if (opt?.disabled) return;
+      onChange?.(val);
+      setOpen(false);
+      setSearchText("");
+    },
+    [onChange, options]
+  );
+  const handleClear = (0, import_react26.useCallback)(
+    (e) => {
+      e.stopPropagation();
+      onChange?.("");
+      setSearchText("");
+    },
+    [onChange]
+  );
+  const handleToggle = (0, import_react26.useCallback)(() => {
+    if (disabled) return;
+    setOpen((prev) => !prev);
+    setSearchText("");
+  }, [disabled]);
+  const containerStyle = {
+    position: "relative",
+    display: "inline-block",
+    minWidth,
+    ...style
+  };
+  const selectorStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "6px 12px",
+    border: "1px solid #d9d9d9",
+    borderRadius: 6,
+    backgroundColor: disabled ? "#f5f5f5" : "#fff",
+    cursor: disabled ? "not-allowed" : "pointer",
+    minHeight: 32,
+    boxSizing: "border-box",
+    transition: "border-color 0.2s",
+    opacity: disabled ? 0.6 : 1
+  };
+  const placeholderStyle = {
+    color: "#bfbfbf",
+    flex: 1,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap"
+  };
+  const valueStyle = {
+    flex: 1,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap"
+  };
+  const arrowStyle = {
+    marginLeft: 8,
+    fontSize: 10,
+    color: "#999",
+    transition: "transform 0.2s",
+    transform: open ? "rotate(180deg)" : "rotate(0deg)",
+    flexShrink: 0
+  };
+  const clearStyle = {
+    marginLeft: 4,
+    cursor: "pointer",
+    color: "#999",
+    fontSize: 14,
+    lineHeight: 1,
+    flexShrink: 0
+  };
+  const dropdownStyle = {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    right: 0,
+    marginTop: 4,
+    backgroundColor: "#fff",
+    border: "1px solid #d9d9d9",
+    borderRadius: 6,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+    zIndex: 1050,
+    maxHeight: 256,
+    overflow: "auto"
+  };
+  const searchInputStyle2 = {
+    width: "100%",
+    padding: "6px 12px",
+    border: "none",
+    borderBottom: "1px solid #f0f0f0",
+    outline: "none",
+    fontSize: 14,
+    boxSizing: "border-box"
+  };
+  const optionStyle = (opt, index) => ({
+    padding: "6px 12px",
+    cursor: opt.disabled ? "not-allowed" : "pointer",
+    backgroundColor: opt.value === value ? "#e6f7ff" : index === highlightIndex ? "#f5f5f5" : "transparent",
+    color: opt.disabled ? "#ccc" : "#333",
+    fontSize: 14,
+    transition: "background-color 0.15s"
+  });
+  const notFoundStyle = {
+    padding: "8px 12px",
+    color: "#999",
+    textAlign: "center",
+    fontSize: 14
+  };
+  const hiddenInputStyle = {
+    position: "absolute",
+    width: 0,
+    height: 0,
+    opacity: 0,
+    pointerEvents: "none"
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)(
+    "div",
+    {
+      ref: containerRef,
+      className,
+      style: containerStyle,
+      onKeyDown: handleKeyDown,
+      role: "combobox",
+      "aria-expanded": open,
+      "aria-haspopup": "listbox",
+      "aria-label": ariaLabel,
+      "aria-labelledby": ariaLabelledby,
+      tabIndex: disabled ? -1 : 0,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("input", { type: "hidden", name, value: value ?? "", style: hiddenInputStyle }),
+        /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)(
+          "div",
+          {
+            style: selectorStyle,
+            onClick: handleToggle,
+            role: "button",
+            "aria-disabled": disabled,
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("span", { style: selectedOption ? valueStyle : placeholderStyle, children: selectedOption ? selectedOption.label : placeholder }),
+              /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)("span", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [
+                allowClear && value && /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("span", { style: clearStyle, onClick: handleClear, role: "button", "aria-label": "\u6E05\u9664\u9009\u62E9", children: "\u2715" }),
+                /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("span", { style: arrowStyle, children: "\u25BC" })
+              ] })
+            ]
+          }
+        ),
+        open && /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)(
+          "div",
+          {
+            ref: dropdownRef,
+            className: dropdownClassName,
+            style: dropdownStyle,
+            role: "listbox",
+            "aria-label": ariaLabel ? `${ariaLabel} \u9009\u9879` : "\u9009\u9879\u5217\u8868",
+            children: [
+              showSearch && /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(
+                "input",
+                {
+                  ref: searchInputRef,
+                  type: "text",
+                  style: searchInputStyle2,
+                  placeholder: searchPlaceholder,
+                  value: searchText,
+                  onChange: (e) => {
+                    setSearchText(e.target.value);
+                    setHighlightIndex(0);
+                  },
+                  onClick: (e) => e.stopPropagation(),
+                  "aria-label": "\u641C\u7D22\u9009\u9879"
+                }
+              ),
+              filteredOptions.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("div", { style: notFoundStyle, children: notFoundContent }) : filteredOptions.map((opt, index) => /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(
+                "div",
+                {
+                  style: optionStyle(opt, index),
+                  onClick: () => handleSelect(opt.value),
+                  role: "option",
+                  "aria-selected": opt.value === value,
+                  "aria-disabled": opt.disabled,
+                  children: opt.label
+                },
+                opt.value
+              ))
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
+
+// src/components/MultiSelect.tsx
+var import_react27 = require("react");
+var import_jsx_runtime50 = require("react/jsx-runtime");
+function MultiSelect({
+  value = [],
+  onChange,
+  options,
+  placeholder = "\u8BF7\u9009\u62E9",
+  disabled = false,
+  showSearch = false,
+  searchPlaceholder = "\u641C\u7D22...",
+  notFoundContent = "\u65E0\u5339\u914D\u7ED3\u679C",
+  selectAllText = "\u5168\u9009",
+  clearAllText = "\u6E05\u9664",
+  maxTagCount,
+  minWidth = 220,
+  className,
+  style,
+  dropdownClassName,
+  name,
+  "aria-label": ariaLabel
+}) {
+  const [open, setOpen] = (0, import_react27.useState)(false);
+  const [searchText, setSearchText] = (0, import_react27.useState)("");
+  const [highlightIndex, setHighlightIndex] = (0, import_react27.useState)(-1);
+  const containerRef = (0, import_react27.useRef)(null);
+  const searchInputRef = (0, import_react27.useRef)(null);
+  const valueSet = (0, import_react27.useMemo)(() => new Set(value), [value]);
+  const selectedOptions = (0, import_react27.useMemo)(
+    () => options.filter((o) => valueSet.has(o.value)),
+    [options, valueSet]
+  );
+  const filteredOptions = (0, import_react27.useMemo)(() => {
+    if (!showSearch || !searchText.trim()) return options;
+    const lower = searchText.toLowerCase();
+    return options.filter(
+      (o) => o.label.toLowerCase().includes(lower) || o.value.toLowerCase().includes(lower)
+    );
+  }, [options, searchText, showSearch]);
+  const allFilteredSelected = (0, import_react27.useMemo)(() => {
+    if (filteredOptions.length === 0) return false;
+    return filteredOptions.every((o) => o.disabled || valueSet.has(o.value));
+  }, [filteredOptions, valueSet]);
+  const visibleTags = (0, import_react27.useMemo)(() => {
+    if (maxTagCount === void 0 || selectedOptions.length <= maxTagCount) {
+      return selectedOptions;
+    }
+    return selectedOptions.slice(0, maxTagCount);
+  }, [selectedOptions, maxTagCount]);
+  const remainingCount = (0, import_react27.useMemo)(() => {
+    if (maxTagCount === void 0 || selectedOptions.length <= maxTagCount) return 0;
+    return selectedOptions.length - maxTagCount;
+  }, [selectedOptions.length, maxTagCount]);
+  const handleClickOutside = (0, import_react27.useCallback)((e) => {
+    if (containerRef.current && !containerRef.current.contains(e.target)) {
+      setOpen(false);
+      setSearchText("");
+    }
+  }, []);
+  const handleKeyDown = (0, import_react27.useCallback)(
+    (e) => {
+      if (!open && (e.key === "Enter" || e.key === " " || e.key === "ArrowDown")) {
+        e.preventDefault();
+        setOpen(true);
+        setHighlightIndex(0);
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setOpen(false);
+        setSearchText("");
+        return;
+      }
+      if (!open) return;
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setHighlightIndex(
+            (prev) => prev < filteredOptions.length - 1 ? prev + 1 : 0
+          );
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setHighlightIndex(
+            (prev) => prev > 0 ? prev - 1 : filteredOptions.length - 1
+          );
+          break;
+        case "Enter":
+          e.preventDefault();
+          if (highlightIndex >= 0 && filteredOptions[highlightIndex]) {
+            handleToggleOption(filteredOptions[highlightIndex].value);
+          }
+          break;
+      }
+    },
+    [open, filteredOptions, highlightIndex]
+  );
+  (0, import_react27.useEffect)(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [handleClickOutside]);
+  (0, import_react27.useEffect)(() => {
+    if (open && showSearch && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [open, showSearch]);
+  (0, import_react27.useEffect)(() => {
+    if (!open) setHighlightIndex(-1);
+  }, [open]);
+  const handleToggleOption = (0, import_react27.useCallback)(
+    (val) => {
+      const opt = options.find((o) => o.value === val);
+      if (opt?.disabled) return;
+      const newValues = valueSet.has(val) ? value.filter((v) => v !== val) : [...value, val];
+      onChange?.(newValues);
+    },
+    [onChange, options, value, valueSet]
+  );
+  const handleSelectAll = (0, import_react27.useCallback)(() => {
+    const selectableValues = filteredOptions.filter((o) => !o.disabled).map((o) => o.value);
+    const newValues = [.../* @__PURE__ */ new Set([...value, ...selectableValues])];
+    onChange?.(newValues);
+  }, [filteredOptions, value, onChange]);
+  const handleClearAll = (0, import_react27.useCallback)(() => {
+    onChange?.([]);
+  }, [onChange]);
+  const handleRemoveTag = (0, import_react27.useCallback)(
+    (val, e) => {
+      e.stopPropagation();
+      onChange?.(value.filter((v) => v !== val));
+    },
+    [onChange, value]
+  );
+  const handleToggle = (0, import_react27.useCallback)(() => {
+    if (disabled) return;
+    setOpen((prev) => !prev);
+    setSearchText("");
+  }, [disabled]);
+  const containerStyle = {
+    position: "relative",
+    display: "inline-block",
+    minWidth,
+    ...style
+  };
+  const selectorStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "4px 8px",
+    border: "1px solid #d9d9d9",
+    borderRadius: 6,
+    backgroundColor: disabled ? "#f5f5f5" : "#fff",
+    cursor: disabled ? "not-allowed" : "pointer",
+    minHeight: 32,
+    boxSizing: "border-box",
+    transition: "border-color 0.2s",
+    opacity: disabled ? 0.6 : 1,
+    flexWrap: "wrap",
+    gap: 4
+  };
+  const placeholderStyle = {
+    color: "#bfbfbf",
+    flex: 1,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    minHeight: 24,
+    display: "flex",
+    alignItems: "center"
+  };
+  const tagStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    backgroundColor: "#e6f7ff",
+    border: "1px solid #91d5ff",
+    borderRadius: 4,
+    padding: "0 6px",
+    fontSize: 12,
+    color: "#1890ff",
+    gap: 4,
+    height: 22,
+    lineHeight: "22px",
+    flexShrink: 0
+  };
+  const tagRemoveStyle = {
+    cursor: "pointer",
+    fontSize: 12,
+    lineHeight: 1,
+    opacity: 0.7,
+    padding: "0 1px"
+  };
+  const countBadgeStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 4,
+    padding: "0 6px",
+    fontSize: 12,
+    color: "#666",
+    height: 22,
+    flexShrink: 0
+  };
+  const arrowStyle = {
+    marginLeft: "auto",
+    fontSize: 10,
+    color: "#999",
+    transition: "transform 0.2s",
+    transform: open ? "rotate(180deg)" : "rotate(0deg)",
+    flexShrink: 0,
+    alignSelf: "center"
+  };
+  const dropdownStyle = {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    right: 0,
+    marginTop: 4,
+    backgroundColor: "#fff",
+    border: "1px solid #d9d9d9",
+    borderRadius: 6,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+    zIndex: 1050,
+    maxHeight: 280,
+    overflow: "auto"
+  };
+  const searchInputStyle2 = {
+    width: "100%",
+    padding: "6px 12px",
+    border: "none",
+    borderBottom: "1px solid #f0f0f0",
+    outline: "none",
+    fontSize: 14,
+    boxSizing: "border-box"
+  };
+  const actionBarStyle = {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "6px 12px",
+    borderBottom: "1px solid #f0f0f0",
+    fontSize: 13,
+    gap: 8
+  };
+  const actionLinkStyle = {
+    color: "#1890ff",
+    cursor: "pointer",
+    background: "none",
+    border: "none",
+    padding: 0,
+    fontSize: 13
+  };
+  const optionStyle = (opt, index) => ({
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "6px 12px",
+    cursor: opt.disabled ? "not-allowed" : "pointer",
+    backgroundColor: index === highlightIndex ? "#f5f5f5" : "transparent",
+    color: opt.disabled ? "#ccc" : "#333",
+    fontSize: 14,
+    transition: "background-color 0.15s"
+  });
+  const checkboxStyle = (checked) => ({
+    width: 16,
+    height: 16,
+    borderRadius: 3,
+    border: checked ? "2px solid #1890ff" : "2px solid #d9d9d9",
+    backgroundColor: checked ? "#1890ff" : "#fff",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    boxSizing: "border-box"
+  });
+  const checkmarkStyle = {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "bold",
+    lineHeight: 1
+  };
+  const notFoundStyle = {
+    padding: "8px 12px",
+    color: "#999",
+    textAlign: "center",
+    fontSize: 14
+  };
+  const hiddenInputStyle = {
+    position: "absolute",
+    width: 0,
+    height: 0,
+    opacity: 0,
+    pointerEvents: "none"
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)(
+    "div",
+    {
+      ref: containerRef,
+      className,
+      style: containerStyle,
+      onKeyDown: handleKeyDown,
+      role: "combobox",
+      "aria-expanded": open,
+      "aria-haspopup": "listbox",
+      "aria-label": ariaLabel,
+      tabIndex: disabled ? -1 : 0,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("input", { type: "hidden", name, value: value.join(","), style: hiddenInputStyle }),
+        /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)(
+          "div",
+          {
+            style: selectorStyle,
+            onClick: handleToggle,
+            role: "button",
+            "aria-disabled": disabled,
+            children: [
+              selectedOptions.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("span", { style: placeholderStyle, children: placeholder }) : /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)(import_jsx_runtime50.Fragment, { children: [
+                visibleTags.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)("span", { style: tagStyle, children: [
+                  opt.label,
+                  /* @__PURE__ */ (0, import_jsx_runtime50.jsx)(
+                    "span",
+                    {
+                      style: tagRemoveStyle,
+                      onClick: (e) => handleRemoveTag(opt.value, e),
+                      role: "button",
+                      "aria-label": `\u79FB\u9664 ${opt.label}`,
+                      children: "\u2715"
+                    }
+                  )
+                ] }, opt.value)),
+                remainingCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)("span", { style: countBadgeStyle, children: [
+                  "+",
+                  remainingCount
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("span", { style: { flex: 1, minWidth: 4 } })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("span", { style: arrowStyle, children: "\u25BC" })
+            ]
+          }
+        ),
+        open && /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)(
+          "div",
+          {
+            className: dropdownClassName,
+            style: dropdownStyle,
+            role: "listbox",
+            "aria-multiselectable": "true",
+            "aria-label": ariaLabel ? `${ariaLabel} \u9009\u9879` : "\u9009\u9879\u5217\u8868",
+            children: [
+              showSearch && /* @__PURE__ */ (0, import_jsx_runtime50.jsx)(
+                "input",
+                {
+                  ref: searchInputRef,
+                  type: "text",
+                  style: searchInputStyle2,
+                  placeholder: searchPlaceholder,
+                  value: searchText,
+                  onChange: (e) => {
+                    setSearchText(e.target.value);
+                    setHighlightIndex(0);
+                  },
+                  onClick: (e) => e.stopPropagation(),
+                  "aria-label": "\u641C\u7D22\u9009\u9879"
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)("div", { style: actionBarStyle, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime50.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    style: actionLinkStyle,
+                    onClick: (e) => {
+                      e.stopPropagation();
+                      handleSelectAll();
+                    },
+                    "aria-label": selectAllText,
+                    children: selectAllText
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime50.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    style: actionLinkStyle,
+                    onClick: (e) => {
+                      e.stopPropagation();
+                      handleClearAll();
+                    },
+                    "aria-label": clearAllText,
+                    children: clearAllText
+                  }
+                )
+              ] }),
+              filteredOptions.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("div", { style: notFoundStyle, children: notFoundContent }) : filteredOptions.map((opt, index) => {
+                const isSelected = valueSet.has(opt.value);
+                return /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)(
+                  "div",
+                  {
+                    style: optionStyle(opt, index),
+                    onClick: () => handleToggleOption(opt.value),
+                    role: "option",
+                    "aria-selected": isSelected,
+                    "aria-disabled": opt.disabled,
+                    children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("span", { style: checkboxStyle(isSelected), children: isSelected && /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("span", { style: checkmarkStyle, children: "\u2713" }) }),
+                      opt.label
+                    ]
+                  },
+                  opt.value
+                );
+              })
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
+
+// src/components/RuntimeGovernancePanel.tsx
+var import_react28 = __toESM(require("react"));
+var import_jsx_runtime51 = require("react/jsx-runtime");
+function RuntimeGovernancePanelTemplate({
+  presets,
+  defaultAction,
+  initialMessage,
+  scopeSummary,
+  summarizeReceipt,
+  canReplayReceipt,
+  submitPreset,
+  queryReceipt,
+  replayReceipt,
+  getReceiptScopeLabel,
+  submitSuccessLabel = "submit \u5DF2\u5B8C\u6210",
+  querySuccessLabel = "query \u5DF2\u5237\u65B0",
+  replaySuccessLabel = "replay \u5DF2\u8C03\u5EA6",
+  submitErrorMessage,
+  queryErrorMessage,
+  replayErrorMessage
+}) {
+  const [selectedAction, setSelectedAction] = import_react28.default.useState(defaultAction);
+  const activePreset = import_react28.default.useMemo(
+    () => presets.find((item) => item.action === selectedAction) ?? presets[0],
+    [presets, selectedAction]
+  );
+  const { receipt, pendingOperation, message, actionError, runOperation } = useRuntimePanelState(initialMessage);
+  const scopeLabel = getReceiptScopeLabel?.(receipt) ?? scopeSummary;
+  const submitSelectedAction = import_react28.default.useCallback(async () => {
+    if (!activePreset) {
+      return;
+    }
+    await runOperation(
+      "submit",
+      () => executeRuntimePanelOperation({
+        run: () => submitPreset(activePreset, String(Date.now())),
+        summarize: summarizeReceipt,
+        successLabel: submitSuccessLabel,
+        errorMessage: submitErrorMessage
+      })
+    );
+  }, [activePreset, runOperation, submitErrorMessage, submitPreset, submitSuccessLabel, summarizeReceipt]);
+  const queryLatestReceipt = import_react28.default.useCallback(async () => {
+    const latestReceipt = receipt;
+    if (!hasRuntimePanelReceiptCode(latestReceipt)) {
+      return;
+    }
+    const resolvableReceipt = latestReceipt;
+    await runOperation(
+      "query",
+      () => executeRuntimePanelOperation({
+        run: () => queryReceipt(resolvableReceipt),
+        summarize: summarizeReceipt,
+        successLabel: querySuccessLabel,
+        errorMessage: queryErrorMessage
+      })
+    );
+  }, [queryErrorMessage, queryReceipt, querySuccessLabel, receipt, runOperation, summarizeReceipt]);
+  const replayLatestReceipt = import_react28.default.useCallback(async () => {
+    const latestReceipt = receipt;
+    if (!canReplayRuntimePanelAction(latestReceipt, canReplayReceipt)) {
+      return;
+    }
+    const replayableReceipt = latestReceipt;
+    await runOperation(
+      "replay",
+      () => executeRuntimePanelOperation({
+        run: () => replayReceipt(replayableReceipt, String(Date.now())),
+        summarize: summarizeReceipt,
+        successLabel: replaySuccessLabel,
+        errorMessage: replayErrorMessage
+      })
+    );
+  }, [canReplayReceipt, receipt, replayErrorMessage, replayReceipt, replaySuccessLabel, runOperation, summarizeReceipt]);
+  return /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)(RuntimePanelFrame, { scopeSummary, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
+      RuntimePresetSelector,
+      {
+        options: presets.map((item) => ({ key: item.action, label: item.label })),
+        selectedKey: selectedAction,
+        onSelect: (key) => setSelectedAction(key)
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)(RuntimePanelGrid, { children: [
+      activePreset ? /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
+        RuntimePresetCard,
+        {
+          preset: {
+            label: activePreset.label,
+            scenario: activePreset.scenario,
+            nextStep: activePreset.nextStep,
+            riskLevel: activePreset.riskLevel,
+            recommendedAction: activePreset.recommendedAction,
+            requestEndpoint: activePreset.requestEndpoint,
+            handlerName: activePreset.handlerName,
+            payload: activePreset.payload
+          }
+        }
+      ) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
+        RuntimeReceiptStatusCard,
+        {
+          ...createRuntimeReceiptStatusCardProps({
+            receipt,
+            summarize: summarizeReceipt,
+            scopeLabel
+          })
+        }
+      )
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
+      RuntimeOperationToolbar,
+      {
+        ...createRuntimeOperationToolbarProps({
+          pendingOperation,
+          receipt,
+          canReplay: canReplayReceipt,
+          onSubmit: () => void submitSelectedAction(),
+          onQuery: () => void queryLatestReceipt(),
+          onReplay: () => void replayLatestReceipt()
+        })
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(RuntimePanelFeedback, { message, receipt, actionError })
+  ] });
+}
+
+// src/components/FoundationConsumerSections.tsx
+var import_jsx_runtime52 = require("react/jsx-runtime");
+function GovernanceQuickViewSection({
+  title = "\u6CBB\u7406\u544A\u8B66\u5FEB\u901F\u89C6\u56FE",
+  titleColor = "#93c5fd",
+  primaryTextColor = "#cbd5e1",
+  secondaryTextColor = titleColor,
+  panelStyle,
+  summaryLine,
+  triageLine,
+  children
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime52.jsxs)(
+    "div",
+    {
+      style: {
+        marginTop: 20,
+        borderRadius: 18,
+        padding: 18,
+        background: "rgba(15, 23, 42, 0.42)",
+        border: "1px solid rgba(148, 163, 184, 0.16)",
+        ...panelStyle
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { color: titleColor, fontSize: 13 }, children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: summaryLine }),
+        triageLine ? /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { marginTop: 8, color: secondaryTextColor }, children: triageLine }) : null,
+        children
+      ]
+    }
+  );
+}
+function FoundationConsumerWiringSection({
+  title = "\u5E95\u5EA7\u63A5\u7EBF\u8BF4\u660E",
+  titleColor = "#93c5fd",
+  primaryTextColor = "#cbd5e1",
+  secondaryTextColor = titleColor,
+  panelStyle,
+  responsibility,
+  sequenceLine,
+  highRiskLine,
+  touchpointsLine
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime52.jsxs)(
+    "div",
+    {
+      style: {
+        marginTop: 20,
+        borderRadius: 18,
+        padding: 18,
+        background: "rgba(15, 23, 42, 0.42)",
+        border: "1px solid rgba(148, 163, 184, 0.16)",
+        ...panelStyle
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { color: titleColor, fontSize: 13 }, children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: responsibility }),
+        sequenceLine ? /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { marginTop: 10, color: secondaryTextColor }, children: sequenceLine }) : null,
+        highRiskLine ? /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: highRiskLine }) : null,
+        touchpointsLine ? /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: touchpointsLine }) : null
+      ]
+    }
+  );
+}
+
+// src/components/PortalConsumerGovernanceSection.tsx
+var import_jsx_runtime53 = require("react/jsx-runtime");
+function PortalConsumerGovernanceSection({
+  title = "Contract Consumer",
+  titleColor = "#93c5fd",
+  primaryTextColor = "#e2e8f0",
+  secondaryTextColor = "#cbd5e1",
+  summaryTextColor = titleColor,
+  panelStyle,
+  deliverySummary,
+  responsibility,
+  detailLines = [],
+  governanceCodes,
+  governanceSummary,
+  linkedOverview,
+  runtimePanel
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)(
+    "div",
+    {
+      style: {
+        marginTop: 20,
+        borderRadius: 16,
+        padding: 18,
+        background: "rgba(15, 23, 42, 0.35)",
+        ...panelStyle
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { color: titleColor, fontSize: 12 }, children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: deliverySummary }),
+        /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 6, color: titleColor }, children: responsibility }),
+        detailLines.map((line) => /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 6, color: secondaryTextColor }, children: line }, line)),
+        /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { style: { marginTop: 6, color: titleColor }, children: [
+          "Governance\uFF1A",
+          governanceCodes.join(" / ")
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 10, color: summaryTextColor }, children: governanceSummary }),
+        linkedOverview,
+        runtimePanel
+      ]
+    }
+  );
+}
+
+// src/components/FoundationAlertLinkedOverview.tsx
+var import_react29 = require("react");
+var import_types2 = require("@m5/types");
+var import_jsx_runtime54 = require("react/jsx-runtime");
+function renderSectionShell(hasShell, title, description, titleStyle2, descriptionStyle, sectionStyle3, children) {
+  if (!hasShell) {
+    return /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_jsx_runtime54.Fragment, { children });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("section", { style: sectionStyle3, children: [
+    title ? /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { style: titleStyle2, children: title }) : null,
+    description ? /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { style: descriptionStyle, children: description }) : null,
+    children
+  ] });
+}
+function FoundationAlertLinkedOverviewSection({
+  governance,
+  navigationBindings,
+  palette,
+  overviewStats,
+  focusQueryKey = "alert",
+  title,
+  description,
+  sectionStyle: sectionStyle3,
+  titleStyle: titleStyle2,
+  descriptionStyle,
+  defaultFocusContextPrefix,
+  search,
+  topRisksTitle = "Top Risks",
+  catalogTitle = "Catalog Triage",
+  topRisksEmptyText = "\u6682\u65E0\u5339\u914D\u7684 Top Risk",
+  catalogEmptyText = "\u6682\u65E0\u5339\u914D\u7684 Catalog Alert",
+  emptyShareStatus = "\u6309 URL \u6253\u5F00\u65F6\u4F1A\u81EA\u52A8\u6EDA\u5230\u5F53\u524D\u6CBB\u7406\u9762\u677F",
+  buildTopRiskMetaLines,
+  buildCatalogMetaLines,
+  renderPanel
+}) {
+  const panelRef = (0, import_react29.useRef)(null);
+  const searchEnabled = search?.enabled ?? false;
+  const topRisks = governance.topRisks.slice(0, 3);
+  const defaultFocusCode = (0, import_react29.useMemo)(
+    () => topRisks[0]?.code ?? governance.overviewAlerts[0]?.code ?? governance.alerts[0]?.code ?? "",
+    [governance.alerts, governance.overviewAlerts, topRisks]
+  );
+  const timelineQueryKey = `${focusQueryKey}Action`;
+  const ownerQueryKey = `${focusQueryKey}Owner`;
+  const defaultFocusContext = defaultFocusContextPrefix ? `${defaultFocusContextPrefix} / \u9ED8\u8BA4\u805A\u7126 / ${defaultFocusCode || "none"}` : `\u9ED8\u8BA4\u805A\u7126 / ${defaultFocusCode || "none"}`;
+  const searchableAlerts = (0, import_react29.useMemo)(
+    () => [
+      ...governance.topRisks.map((item) => ({
+        code: item.code,
+        summary: item.summary,
+        triageSummary: item.triageSummary,
+        triageState: item.triageState
+      })),
+      ...governance.overviewAlerts.map((item) => ({
+        code: item.code,
+        summary: item.defaultSummary,
+        triageSummary: item.triageSummary,
+        triageState: item.triageState
+      })),
+      ...governance.alerts.map((item) => ({
+        code: item.code,
+        triageSummary: item.triageSummary,
+        triageState: item.triageState,
+        summary: item.defaultSummary
+      }))
+    ],
+    [governance.alerts, governance.overviewAlerts, governance.topRisks]
+  );
+  const searchResult = useSearchFilter2(searchableAlerts, ["code", "summary", "triageSummary", "triageState"]);
+  const searchTerm = searchEnabled ? searchResult.searchTerm : "";
+  const setSearchTerm = searchEnabled ? searchResult.setSearchTerm : () => {
+  };
+  const filteredSearchableAlerts = searchEnabled ? searchResult.filteredItems : searchableAlerts;
+  const matchedCount = searchEnabled ? searchResult.matchedCount : searchableAlerts.length;
+  const totalCount = searchEnabled ? searchResult.totalCount : searchableAlerts.length;
+  const matchedCodes = (0, import_react29.useMemo)(
+    () => new Set((filteredSearchableAlerts ?? []).map((item) => item.code)),
+    [filteredSearchableAlerts]
+  );
+  const displayTopRisks = (0, import_react29.useMemo)(
+    () => searchTerm.trim() ? governance.topRisks.filter((item) => matchedCodes.has(item.code)).slice(0, 3) : governance.topRisks.slice(0, 3),
+    [governance.topRisks, matchedCodes, searchTerm]
+  );
+  const displayCatalogAlerts = (0, import_react29.useMemo)(
+    () => searchTerm.trim() ? governance.alerts.filter((item) => matchedCodes.has(item.code)).slice(0, 3) : governance.alerts.slice(0, 3),
+    [governance.alerts, matchedCodes, searchTerm]
+  );
+  const {
+    activateFocus,
+    clearLinkedTriage,
+    copyFocusLink,
+    focusAlertCode,
+    focusContext,
+    handlePanelFocusChange,
+    hasLinkedFilters,
+    linkedFilterQueryPreview,
+    linkedFilterSummary,
+    shareStatus
+  } = useFoundationAlertLinkedFocusQuery({
+    searchParams: navigationBindings.searchParams,
+    pathname: navigationBindings.pathname,
+    replace: navigationBindings.replace,
+    focusQueryKey,
+    defaultFocusCode,
+    defaultFocusContext,
+    candidateGroups: [governance.topRisks, governance.overviewAlerts, governance.alerts],
+    panelRef
+  });
+  function pickPreferredAlert(preferredCodes) {
+    for (const code of preferredCodes) {
+      const topRisk = displayTopRisks.find((item) => item.code === code);
+      if (topRisk) {
+        return topRisk;
+      }
+      const overviewAlert = governance.overviewAlerts.find((item) => item.code === code);
+      if (overviewAlert) {
+        return overviewAlert;
+      }
+      const alert = governance.alerts.find((item) => item.code === code);
+      if (alert) {
+        return alert;
+      }
+    }
+    return governance.alerts.find((item) => item.code === defaultFocusCode) ?? governance.overviewAlerts[0] ?? displayTopRisks[0] ?? null;
+  }
+  const overviewStatItems = (0, import_react29.useMemo)(
+    () => overviewStats.map((item) => {
+      const preferredAlert = pickPreferredAlert(item.preferredCodes);
+      const preferredCode = preferredAlert?.code ?? "";
+      return {
+        key: item.label,
+        label: item.label,
+        value: item.value,
+        helper: item.helper,
+        focusCode: preferredCode,
+        isActive: preferredCode !== "" && preferredCode === focusAlertCode,
+        recentOperation: preferredAlert?.recentOperation
+      };
+    }),
+    [focusAlertCode, overviewStats]
+  );
+  const topRiskItems = (0, import_react29.useMemo)(
+    () => displayTopRisks.map((item) => ({
+      key: title ? `${title}-${item.code}-risk` : `${item.code}-risk`,
+      code: item.code,
+      summary: `${item.triageState ?? "needs-triage"} / ${item.count} \u4EF6`,
+      accent: item.triageSummary ?? item.summary,
+      metaLines: buildTopRiskMetaLines?.(item) ?? [
+        `\u8D23\u4EFB\u4EBA\uFF1A${item.recentOperation?.actorId ?? item.acknowledgement?.actorId ?? "\u7CFB\u7EDF"}`,
+        `\u6700\u8FD1\u52A8\u4F5C\uFF1A${item.recentOperation ? `${item.recentOperation.action} @ ${item.recentOperation.createdAt}` : "none"}`
+      ],
+      isActive: item.code === focusAlertCode,
+      recentOperation: item.recentOperation
+    })),
+    [buildTopRiskMetaLines, displayTopRisks, focusAlertCode, title]
+  );
+  const catalogAlertItems = (0, import_react29.useMemo)(
+    () => displayCatalogAlerts.map((item) => ({
+      key: title ? `${title}-${item.code}` : item.code,
+      code: item.code,
+      summary: `${item.triageState ?? "needs-triage"} / ${item.defaultSummary ?? ""}`,
+      accent: item.triageSummary ?? "\u5F85\u5904\u7406\uFF0C\u5C1A\u65E0\u6700\u8FD1\u8FD0\u7EF4\u52A8\u4F5C",
+      metaLines: buildCatalogMetaLines?.(item) ?? [
+        `\u6700\u8FD1\u52A8\u4F5C\uFF1A${item.recentOperation ? `${item.recentOperation.action} @ ${item.recentOperation.createdAt}` : "none"}`
+      ],
+      isActive: item.code === focusAlertCode,
+      recentOperation: item.recentOperation
+    })),
+    [buildCatalogMetaLines, displayCatalogAlerts, focusAlertCode, title]
+  );
+  const content = /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)(import_jsx_runtime54.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
+      FoundationAlertLinkedFocusBarReadout,
+      {
+        palette,
+        focusQueryLabel: `?${focusQueryKey}=${focusAlertCode || "none"}`,
+        linkedFilterSummary,
+        linkedFilterQueryPreview,
+        shareStatus,
+        hasLinkedFilters,
+        onCopyFocusLink: copyFocusLink,
+        onClearLinkedTriage: clearLinkedTriage,
+        emptyShareStatus
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
+      FoundationAlertLinkedOverviewStatsReadout,
+      {
+        palette,
+        items: overviewStatItems,
+        onSelect: (key) => {
+          const item = overviewStatItems.find((entry) => entry.key === key);
+          if (!item) {
+            return;
+          }
+          activateFocus(
+            item.focusCode,
+            `\u6982\u89C8\u5361 / ${item.label}`,
+            (0, import_types2.buildFoundationAlertRecentOperationFilterState)(
+              item.recentOperation
+            )
+          );
+        }
+      }
+    ),
+    searchEnabled ? /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)(import_jsx_runtime54.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { style: { marginTop: 14 }, children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
+        SearchFilterInput2,
+        {
+          value: searchTerm,
+          onChange: setSearchTerm,
+          placeholder: search?.placeholder ?? "\u641C\u7D22\u544A\u8B66\u4EE3\u7801\u3001\u6458\u8981\u6216 triage \u72B6\u6001..."
+        }
+      ) }),
+      searchTerm.trim() ? /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { style: { marginTop: 8, color: search?.statusColor ?? palette.accentText, fontSize: 12 }, children: [
+        "\u641C\u7D22\u544A\u8B66\uFF1A\u5339\u914D ",
+        matchedCount,
+        "/",
+        totalCount,
+        " \u6761"
+      ] }) : null
+    ] }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
+      FoundationAlertLinkedAlertGridReadout,
+      {
+        palette,
+        title: topRisksTitle,
+        emptyText: topRisksEmptyText,
+        items: topRiskItems,
+        variant: "risk",
+        onSelect: (key) => {
+          const item = topRiskItems.find((entry) => entry.key === key);
+          if (!item) {
+            return;
+          }
+          activateFocus(
+            item.code,
+            `Top risk / ${item.code}`,
+            (0, import_types2.buildFoundationAlertRecentOperationFilterState)(item.recentOperation)
+          );
+        }
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
+      FoundationAlertLinkedAlertGridReadout,
+      {
+        palette,
+        title: catalogTitle,
+        emptyText: catalogEmptyText,
+        items: catalogAlertItems,
+        variant: "catalog",
+        onSelect: (key) => {
+          const item = catalogAlertItems.find((entry) => entry.key === key);
+          if (!item) {
+            return;
+          }
+          activateFocus(
+            item.code,
+            `Catalog triage / ${item.code}`,
+            (0, import_types2.buildFoundationAlertRecentOperationFilterState)(item.recentOperation)
+          );
+        }
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { ref: panelRef, children: renderPanel({
+      focusAlertCode,
+      focusContext,
+      timelineQueryKey,
+      ownerQueryKey,
+      onFocusChange: handlePanelFocusChange
+    }) })
+  ] });
+  return renderSectionShell(
+    Boolean(title || description || sectionStyle3),
+    title,
+    description,
+    titleStyle2,
+    descriptionStyle,
+    sectionStyle3,
+    content
+  );
+}
+function FoundationAlertLinkedOverviewSurface({
+  router,
+  pathname,
+  searchParams,
+  ...props
+}) {
+  const navigationBindings = createFoundationAlertNextNavigationBindings({
+    router,
+    pathname,
+    searchParams
+  });
+  return /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(FoundationAlertLinkedOverviewSection, { ...props, navigationBindings });
+}
+function createFoundationAlertLinkedOverviewStats(preset, summary, topRiskCount = 0) {
+  switch (preset) {
+    case "admin":
+      return [
+        {
+          label: "\u5F85\u5904\u7406\u5BA1\u6279",
+          value: String(summary.approvalsPending),
+          helper: `\u6267\u884C\u5931\u8D25 ${summary.approvalsWithFailures}`,
+          preferredCodes: ["approvals-pending", "approval-execution-failures"]
+        },
+        {
+          label: "\u9AD8\u98CE\u9669\u5BA1\u8BA1",
+          value: String(summary.highRiskAudits),
+          helper: `\u9650\u6D41\u5C01\u7981 ${summary.blockedLedgers}`,
+          preferredCodes: ["high-risk-audits", "blocked-rate-limit-ledgers"]
+        },
+        {
+          label: "\u5BC6\u94A5\u4E0E\u8BC1\u4E66",
+          value: String(
+            summary.rotationDueSecrets + summary.expiredSecrets + summary.expiringCertificates + summary.expiredCertificates
+          ),
+          helper: `\u4FE1\u53F7\u5F02\u5E38 ${summary.degradedSignals}`,
+          preferredCodes: ["secret-rotation-attention", "observability-degradation"]
+        }
+      ];
+    case "tob":
+      return [
+        {
+          label: "\u5F85\u5904\u7406\u5BA1\u6279",
+          value: String(summary.approvalsPending),
+          helper: `\u6267\u884C\u5931\u8D25 ${summary.approvalsWithFailures}`,
+          preferredCodes: ["approvals-pending", "approval-execution-failures"]
+        },
+        {
+          label: "\u9AD8\u98CE\u9669\u5BA1\u8BA1",
+          value: String(summary.highRiskAudits),
+          helper: `\u5BC6\u94A5\u8F6E\u6362 ${summary.rotationDueSecrets}`,
+          preferredCodes: ["high-risk-audits", "secret-rotation-attention"]
+        },
+        {
+          label: "\u97E7\u6027\u5173\u6CE8\u9879",
+          value: String(summary.degradedSignals + summary.attentionRecoveryPlans + summary.staleDrills),
+          helper: `top risks ${topRiskCount}`,
+          preferredCodes: ["observability-degradation", "recovery-drill-attention"]
+        }
+      ];
+    case "storefront":
+      return [
+        {
+          label: "\u5F85\u5904\u7406\u5BA1\u6279",
+          value: String(summary.approvalsPending),
+          helper: `\u6267\u884C\u5931\u8D25 ${summary.approvalsWithFailures}`,
+          preferredCodes: ["approvals-pending", "approval-execution-failures"]
+        },
+        {
+          label: "\u5BC6\u94A5/\u8BC1\u4E66",
+          value: String(
+            summary.rotationDueSecrets + summary.expiredSecrets + summary.expiringCertificates + summary.expiredCertificates
+          ),
+          helper: `\u9AD8\u98CE\u9669\u5BA1\u8BA1 ${summary.highRiskAudits}`,
+          preferredCodes: ["secret-rotation-attention", "high-risk-audits"]
+        },
+        {
+          label: "\u97E7\u6027\u98CE\u9669",
+          value: String(summary.degradedSignals + summary.attentionRecoveryPlans + summary.staleDrills),
+          helper: `top risks ${topRiskCount}`,
+          preferredCodes: ["observability-degradation", "recovery-drill-attention"]
+        }
+      ];
+  }
+}
+
+// src/components/FoundationAlertViews.tsx
+var import_react31 = require("react");
+
+// src/components/FormSubmitFeedback.tsx
+var import_react30 = require("react");
+var import_jsx_runtime55 = require("react/jsx-runtime");
+function FormSubmitFeedback({
+  state,
+  submitting,
+  error,
+  success,
+  onRetry,
+  onDismissError,
+  onDismissSuccess,
+  renderSuccess,
+  renderError
+}) {
+  const resolvedSubmitting = submitting ?? state?.isSubmitting ?? false;
+  const resolvedError = error ?? state?.errorMessage ?? void 0;
+  const resolvedSuccess = success ?? state?.successMessage ?? void 0;
+  if (resolvedSubmitting) {
+    return /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)(
+      "div",
+      {
+        style: {
+          padding: "10px 16px",
+          borderRadius: 8,
+          background: "rgba(59,130,246,0.10)",
+          color: "#93c5fd",
+          fontSize: 13,
+          display: "flex",
+          alignItems: "center",
+          gap: 8
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(
+            "div",
+            {
+              style: {
+                width: 14,
+                height: 14,
+                borderRadius: "50%",
+                border: "2px solid rgba(96,165,250,0.3)",
+                borderTopColor: "#60a5fa",
+                animation: "spin 0.6s linear infinite"
+              }
+            }
+          ),
+          "Submitting...",
+          /* @__PURE__ */ (0, import_jsx_runtime55.jsx)("style", { children: `@keyframes spin { to { transform: rotate(360deg); } }` })
+        ]
+      }
+    );
+  }
+  const hasContent = !!resolvedSuccess || !!resolvedError;
+  if (!hasContent) return null;
+  return /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)(import_jsx_runtime55.Fragment, { children: [
+    resolvedSuccess && (renderSuccess ? renderSuccess(resolvedSuccess) : /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)(
+      "div",
+      {
+        style: {
+          padding: "10px 16px",
+          borderRadius: 8,
+          background: "rgba(34,197,94,0.10)",
+          color: "#86efac",
+          fontSize: 13,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)("span", { children: [
+            "\u2713 ",
+            resolvedSuccess
+          ] }),
+          onDismissSuccess && /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(
+            "button",
+            {
+              type: "button",
+              onClick: onDismissSuccess,
+              style: {
+                background: "none",
+                border: "none",
+                color: "#86efac",
+                cursor: "pointer",
+                fontSize: 16,
+                padding: 0,
+                lineHeight: 1
+              },
+              children: "\xD7"
+            }
+          )
+        ]
+      }
+    )),
+    resolvedError && (renderError ? renderError(resolvedError) : /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)(
+      "div",
+      {
+        style: {
+          padding: "10px 16px",
+          borderRadius: 8,
+          background: "rgba(239,68,68,0.10)",
+          color: "#fca5a5",
+          fontSize: 13,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)("span", { children: [
+            "\u26A0 ",
+            resolvedError
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+            onRetry ? /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(
+              "button",
+              {
+                type: "button",
+                onClick: () => void onRetry(),
+                style: {
+                  background: "none",
+                  border: "1px solid rgba(252, 165, 165, 0.35)",
+                  color: "#fca5a5",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  padding: "4px 8px",
+                  borderRadius: 999
+                },
+                children: "\u91CD\u8BD5"
+              }
+            ) : null,
+            onDismissError && /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(
+              "button",
+              {
+                type: "button",
+                onClick: onDismissError,
+                style: {
+                  background: "none",
+                  border: "none",
+                  color: "#fca5a5",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  padding: 0,
+                  lineHeight: 1
+                },
+                children: "\xD7"
+              }
+            )
+          ] })
+        ]
+      }
+    ))
+  ] });
+}
+function useFormSubmit({
+  onSubmit,
+  successMessage,
+  defaultErrorMessage
+}) {
+  const [state, setState] = (0, import_react30.useState)({ isSubmitting: false });
+  const submit = (0, import_react30.useCallback)(async () => {
+    setState({ isSubmitting: true });
+    try {
+      const result = await onSubmit();
+      const resolvedSuccessMessage = typeof successMessage === "function" ? successMessage(result) : successMessage ?? "Saved successfully";
+      setState({
+        isSubmitting: false,
+        result,
+        successMessage: resolvedSuccessMessage
+      });
+      return result;
+    } catch (e) {
+      setState({
+        isSubmitting: false,
+        errorMessage: e instanceof Error ? e.message : defaultErrorMessage ?? "An error occurred"
+      });
+      return void 0;
+    }
+  }, [defaultErrorMessage, onSubmit, successMessage]);
+  const clearError = (0, import_react30.useCallback)(() => {
+    setState((s) => ({ ...s, errorMessage: void 0 }));
+  }, []);
+  const clearSuccess = (0, import_react30.useCallback)(() => {
+    setState((s) => ({ ...s, successMessage: void 0 }));
+  }, []);
+  const reset = (0, import_react30.useCallback)(() => {
+    setState({ isSubmitting: false });
+  }, []);
+  return {
+    state,
+    submit,
+    reset,
+    clearError,
+    clearSuccess,
+    submitting: state.isSubmitting,
+    error: state.errorMessage,
+    success: state.successMessage
+  };
+}
+
+// src/components/InfoRow.tsx
+var import_jsx_runtime56 = require("react/jsx-runtime");
+function InfoRow({
+  label,
+  value,
+  labelColor = "#94a3b8",
+  valueColor = "#f8fafc",
+  labelFontSize = 13,
+  valueFontSize = 14,
+  gap = 4
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime56.jsx)("div", { style: { fontSize: labelFontSize, color: labelColor, marginBottom: gap }, children: label }),
+    /* @__PURE__ */ (0, import_jsx_runtime56.jsx)("div", { style: { fontSize: valueFontSize, color: valueColor }, children: value })
+  ] });
+}
+function ConfirmDialog({
+  open,
+  title,
+  message,
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  variant = "default",
+  onConfirm,
+  onCancel,
+  loading = false
+}) {
+  if (!open) return null;
+  const confirmColor = variant === "danger" ? "#ef4444" : "#3b82f6";
+  return /* @__PURE__ */ (0, import_jsx_runtime56.jsx)(
+    "div",
+    {
+      style: {
+        position: "fixed",
+        inset: 0,
+        zIndex: 1e3,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.5)"
+      },
+      onClick: (e) => {
+        if (e.target === e.currentTarget) onCancel();
+      },
+      children: /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)(
+        "div",
+        {
+          style: {
+            background: "#1e293b",
+            border: "1px solid rgba(148,163,184,0.16)",
+            borderRadius: 16,
+            padding: 24,
+            minWidth: 360,
+            maxWidth: 480,
+            boxShadow: "0 20px 60px rgba(0,0,0,0.4)"
+          },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime56.jsx)("h3", { style: { fontSize: 16, fontWeight: 600, color: "#f8fafc", margin: "0 0 8px" }, children: title }),
+            /* @__PURE__ */ (0, import_jsx_runtime56.jsx)("p", { style: { fontSize: 14, color: "#94a3b8", margin: "0 0 20px", lineHeight: 1.5 }, children: message }),
+            /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime56.jsx)(
+                "button",
+                {
+                  type: "button",
+                  onClick: onCancel,
+                  disabled: loading,
+                  style: {
+                    padding: "8px 18px",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    borderRadius: 8,
+                    border: "1px solid rgba(148,163,184,0.16)",
+                    background: "transparent",
+                    color: "#94a3b8",
+                    cursor: "pointer"
+                  },
+                  children: cancelLabel
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime56.jsx)(
+                "button",
+                {
+                  type: "button",
+                  onClick: onConfirm,
+                  disabled: loading,
+                  style: {
+                    padding: "8px 18px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    borderRadius: 8,
+                    border: "none",
+                    background: confirmColor,
+                    color: "#fff",
+                    cursor: "pointer",
+                    opacity: loading ? 0.6 : 1
+                  },
+                  children: loading ? "Loading..." : confirmLabel
+                }
+              )
+            ] })
+          ]
+        }
+      )
+    }
+  );
+}
+
+// src/components/FoundationAlertViews.tsx
+var import_jsx_runtime57 = require("react/jsx-runtime");
+var defaultFoundationAlertDetailLabels = {
+  overviewTitle: "Overview",
+  detailsTitle: "Details",
+  severity: "Severity",
+  status: "Status",
+  source: "Source",
+  owner: "Owner",
+  description: "Description",
+  createdAt: "Created At",
+  updatedAt: "Updated At",
+  unassignedOwner: "Unassigned",
+  noDescription: "No description"
+};
+var foundationAlertSeverityLabels = {
+  info: { label: "Info", variant: "info" },
+  warning: { label: "Warning", variant: "warning" },
+  error: { label: "Error", variant: "error" },
+  success: { label: "Success", variant: "success" }
+};
+var foundationAlertStatusLabels = {
+  open: { label: "Open", variant: "default" },
+  acknowledged: { label: "Acknowledged", variant: "warning" },
+  resolved: { label: "Resolved", variant: "success" }
+};
+function createFoundationAlertDemoId(index, idPrefix = "alert") {
+  return `${idPrefix}-${String(index).padStart(4, "0")}`;
+}
+function createFoundationAlertMockRecords({
+  count = 50,
+  idPrefix = "alert",
+  titles,
+  severityOrder,
+  statusOrder,
+  sourceOrder,
+  createdAtStepMs = 36e5,
+  acknowledgedAtStepMs = 18e5,
+  resolvedAtStepMs = 9e5
+}) {
+  return Array.from({ length: count }, (_, index) => {
+    const severity = severityOrder[index % severityOrder.length];
+    const status = statusOrder[index % statusOrder.length];
+    const source = sourceOrder[index % sourceOrder.length];
+    const createdAt = new Date(Date.now() - index * createdAtStepMs).toISOString();
+    return {
+      id: createFoundationAlertDemoId(index + 1, idPrefix),
+      title: titles[index % titles.length],
+      severity,
+      source,
+      status,
+      createdAt,
+      updatedAt: status === "resolved" ? new Date(Date.now() - index * resolvedAtStepMs).toISOString() : status !== "open" ? new Date(Date.now() - index * acknowledgedAtStepMs).toISOString() : void 0
+    };
+  });
+}
+function FoundationAlertDemoListPage({
+  title,
+  description,
+  preset,
+  count = 50,
+  detailHrefBase = "/alerts",
+  recordOptions,
+  mapRecords,
+  acknowledgeOptions
+}) {
+  const [alerts] = (0, import_react31.useState)(() => {
+    const records = createFoundationAlertMockRecords({
+      count,
+      titles: preset.titles,
+      severityOrder: preset.severityOrder,
+      statusOrder: preset.statusOrder,
+      sourceOrder: preset.sourceOrder,
+      ...recordOptions
+    });
+    return mapRecords ? mapRecords(records) : records;
+  });
+  const acknowledgeAction = useFoundationAlertDemoAcknowledge(acknowledgeOptions);
+  return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+    FoundationAlertListPageSection,
+    {
+      title,
+      description,
+      alerts,
+      preset,
+      detailHrefBase,
+      feedback: acknowledgeAction.feedback,
+      onDismissFeedback: acknowledgeAction.dismissFeedback,
+      renderAction: (row) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+        FoundationAlertAcknowledgeActionButton,
+        {
+          alert: row,
+          loading: acknowledgeAction.loading,
+          onAcknowledge: acknowledgeAction.acknowledge,
+          label: acknowledgeAction.actionLabel
+        }
+      )
+    }
+  );
+}
+function createFoundationAlertDetailMockMap(alerts) {
+  return Object.fromEntries(alerts.map((alert) => [alert.id, alert]));
+}
+var foundationAlertDetailDemoPresets = {
+  admin: createFoundationAlertDetailMockMap([
+    {
+      id: createFoundationAlertDemoId(1),
+      title: "\u5F85\u5904\u7406\u5BA1\u6279\u79EF\u538B",
+      description: "\u5BA1\u6279\u6267\u884C\u961F\u5217\u4E2D\u5B58\u5728 18 \u6761\u5F85\u5904\u7406\u8BB0\u5F55\uFF0C\u5DF2\u8D85\u8FC7 15 \u5206\u949F\u672A\u88AB\u8FD0\u8425\u5DE5\u4F5C\u53F0\u786E\u8BA4\u3002",
+      severity: "critical",
+      source: "approval",
+      status: "open",
+      owner: "ops-oncall",
+      createdAt: new Date(Date.now() - 27e5).toISOString(),
+      updatedAt: new Date(Date.now() - 9e5).toISOString()
+    },
+    {
+      id: createFoundationAlertDemoId(2),
+      title: "\u9AD8\u98CE\u9669\u5BA1\u8BA1\u5F85\u590D\u6838",
+      description: "\u5BA1\u8BA1\u98CE\u63A7\u547D\u4E2D 4 \u6761\u9AD8\u98CE\u9669\u64CD\u4F5C\uFF0C\u4ECD\u7F3A\u5C11\u4E8C\u6B21\u590D\u6838\u4E0E\u5904\u7F6E\u7ED3\u8BBA\u3002",
+      severity: "error",
+      source: "audit",
+      status: "acknowledged",
+      owner: "risk-reviewer",
+      createdAt: new Date(Date.now() - 72e5).toISOString(),
+      updatedAt: new Date(Date.now() - 24e5).toISOString()
+    },
+    {
+      id: createFoundationAlertDemoId(3),
+      title: "Runtime callback \u8D85\u65F6\u5F85\u5347\u7EA7",
+      description: "3 \u6761 runtime callback \u5728\u8D85\u65F6\u9608\u503C\u540E\u4ECD\u672A\u56DE\u5199 receipt\uFF0C\u5EFA\u8BAE\u7ACB\u5373\u5347\u7EA7\u5904\u7406\u3002",
+      severity: "warning",
+      source: "runtime",
+      status: "open",
+      owner: "platform-runtime",
+      createdAt: new Date(Date.now() - 54e5).toISOString(),
+      updatedAt: new Date(Date.now() - 18e5).toISOString()
+    }
+  ]),
+  storefront: createFoundationAlertDetailMockMap([
+    {
+      id: createFoundationAlertDemoId(1),
+      title: "CPU \u4F7F\u7528\u7387\u5CF0\u503C\u8D85\u8FC7 90%",
+      description: "\u751F\u4EA7\u73AF\u5883 CPU \u4F7F\u7528\u7387\u8FDE\u7EED 5 \u5206\u949F\u8D85\u8FC7 90%\u3002",
+      severity: "error",
+      source: "monitoring",
+      status: "open",
+      owner: "user-1",
+      createdAt: new Date(Date.now() - 36e5).toISOString(),
+      updatedAt: new Date(Date.now() - 18e5).toISOString()
+    },
+    {
+      id: createFoundationAlertDemoId(2),
+      title: "\u5185\u5B58\u4F7F\u7528\u8D85\u8FC7\u9608\u503C 85%",
+      description: "\u5185\u5B58\u4F7F\u7528\u7387\u8FBE\u5230 85%\uFF0C\u4E14\u4EA4\u6362\u5206\u533A\u5360\u7528\u6301\u7EED\u4E0A\u5347\u3002",
+      severity: "warning",
+      source: "logging",
+      status: "acknowledged",
+      owner: "user-2",
+      createdAt: new Date(Date.now() - 72e5).toISOString(),
+      updatedAt: new Date(Date.now() - 36e5).toISOString()
+    },
+    {
+      id: createFoundationAlertDemoId(3),
+      title: "\u78C1\u76D8\u7A7A\u95F4\u4E0D\u8DB3 10% \u5269\u4F59",
+      description: "\u6839\u5206\u533A\u53EF\u7528\u7A7A\u95F4\u4F4E\u4E8E 10%\uFF0C\u9700\u8981\u5C3D\u5FEB\u6E05\u7406\u6216\u6269\u5BB9\u3002",
+      severity: "error",
+      source: "monitoring",
+      status: "open",
+      createdAt: new Date(Date.now() - 108e5).toISOString(),
+      updatedAt: new Date(Date.now() - 54e5).toISOString()
+    }
+  ]),
+  tob: createFoundationAlertDetailMockMap([
+    {
+      id: createFoundationAlertDemoId(1),
+      title: "CPU \u4F7F\u7528\u7387\u5CF0\u503C\u8D85\u8FC7 90%",
+      description: "CPU \u4F7F\u7528\u7387\u8FDE\u7EED 5 \u5206\u949F\u8D85\u8FC7 90%\u3002",
+      severity: "error",
+      source: "monitoring",
+      status: "open",
+      owner: "user-1",
+      createdAt: new Date(Date.now() - 36e5).toISOString(),
+      updatedAt: new Date(Date.now() - 18e5).toISOString()
+    },
+    {
+      id: createFoundationAlertDemoId(2),
+      title: "\u5185\u5B58\u4F7F\u7528\u8D85\u8FC7\u9608\u503C 85%",
+      description: "\u5185\u5B58\u4F7F\u7528\u7387\u5DF2\u8FBE\u5230 85%\u3002",
+      severity: "warning",
+      source: "logging",
+      status: "acknowledged",
+      owner: "user-2",
+      createdAt: new Date(Date.now() - 72e5).toISOString(),
+      updatedAt: new Date(Date.now() - 36e5).toISOString()
+    }
+  ])
+};
+var foundationAdminGovernanceSourceLabels = {
+  approval: "\u5BA1\u6279",
+  audit: "\u5BA1\u8BA1",
+  security: "\u5B89\u5168",
+  runtime: "\u8FD0\u884C\u65F6",
+  recovery: "\u6062\u590D\u6F14\u7EC3",
+  observability: "\u53EF\u89C2\u6D4B\u6027",
+  resilience: "\u97E7\u6027",
+  identity: "\u8EAB\u4EFD",
+  integration: "\u96C6\u6210",
+  trust: "\u4FE1\u4EFB",
+  configuration: "\u914D\u7F6E"
+};
+var foundationAdminGovernanceSourceMap = {
+  "governance-approval": "approval",
+  "trust-governance": "trust",
+  "resilience-operations": "recovery",
+  "identity-access": "identity",
+  "configuration-governance": "configuration",
+  "integration-orchestration": "integration",
+  "runtime-governance": "runtime"
+};
+function mapFoundationGovernanceAlertsToRecords(governance, options = {}) {
+  const {
+    sourceMap = foundationAdminGovernanceSourceMap,
+    sourceFallback = "foundation",
+    defaultSeverity = "low",
+    mutedStatus = "muted"
+  } = options;
+  const overviewByCode = new Map(governance.overviewAlerts.map((item) => [item.code, item]));
+  return governance.alerts.map((item) => {
+    const source = item.sourceModules[0] ? sourceMap[item.sourceModules[0]] ?? item.sourceModules[0] : sourceFallback;
+    const updatedAt = item.acknowledgement?.updatedAt ?? item.recentOperation?.createdAt ?? governance.generatedAt;
+    const status = item.acknowledgement?.status === "MUTED" ? mutedStatus : item.acknowledgement?.status === "ACKED" ? "acknowledged" : "open";
+    return {
+      id: item.code,
+      title: item.defaultSummary,
+      description: item.severityPolicy,
+      severity: overviewByCode.get(item.code)?.severity ?? defaultSeverity,
+      source,
+      status,
+      owner: item.acknowledgement?.actorId ?? item.recentOperation?.actorId ?? void 0,
+      createdAt: governance.generatedAt,
+      updatedAt
+    };
+  });
+}
+var foundationAlertListDemoPresets = {
+  admin: {
+    titles: [
+      "\u5F85\u5904\u7406\u5BA1\u6279\u79EF\u538B",
+      "\u9AD8\u98CE\u9669\u5BA1\u8BA1\u5F85\u590D\u6838",
+      "\u5BC6\u94A5\u8F6E\u6362\u5DF2\u903E\u671F",
+      "\u8BC1\u4E66 7 \u5929\u5185\u5230\u671F",
+      "\u6062\u590D\u6F14\u7EC3\u8D85\u8FC7 30 \u5929\u672A\u6267\u884C",
+      "Runtime callback \u8D85\u65F6\u5F85\u5347\u7EA7",
+      "\u9650\u6D41\u8D26\u672C\u89E6\u53D1\u5C01\u7981",
+      "\u89C2\u6D4B\u4FE1\u53F7\u964D\u7EA7\u5F85\u786E\u8BA4"
+    ],
+    severityOrder: ["critical", "error", "warning", "info"],
+    statusOrder: ["open", "acknowledged", "resolved"],
+    sourceOrder: ["approval", "audit", "security", "runtime", "recovery", "observability"],
+    searchFields: ["id", "title", "source"],
+    severityMetaByCode: {
+      critical: { label: "\u4E25\u91CD", variant: "error" },
+      error: { label: "\u9519\u8BEF", variant: "error" },
+      warning: { label: "\u8B66\u544A", variant: "warning" },
+      info: { label: "\u4FE1\u606F", variant: "info" }
+    },
+    statusMetaByCode: {
+      open: { label: "\u5F85\u5904\u7406", variant: "default" },
+      acknowledged: { label: "\u5DF2\u786E\u8BA4", variant: "warning" },
+      resolved: { label: "\u5DF2\u89E3\u51B3", variant: "success" }
+    },
+    sourceLabels: {
+      approval: "\u5BA1\u6279",
+      audit: "\u5BA1\u8BA1",
+      security: "\u5B89\u5168",
+      runtime: "\u8FD0\u884C\u65F6",
+      recovery: "\u6062\u590D\u6F14\u7EC3",
+      observability: "\u53EF\u89C2\u6D4B\u6027"
+    },
+    labels: {
+      all: "\u5168\u90E8",
+      searchPlaceholder: "\u641C\u7D22\u544A\u8B66 ID / \u6807\u9898 / \u6765\u6E90...",
+      statusSectionTitle: "\u5904\u7406\u72B6\u6001",
+      sourceSectionTitle: "\u6CBB\u7406\u6765\u6E90",
+      tableTitle: (matched) => `\u6307\u6325\u53F0\u544A\u8B66\uFF08\u5339\u914D ${matched} \u6761\uFF09`
+    },
+    statsCopy: {
+      totalLabel: "\u544A\u8B66\u603B\u6570",
+      totalHint: (matched) => `\u5F53\u524D\u5339\u914D ${matched} \u6761`,
+      openLabel: "\u5F85\u5904\u7406",
+      openHint: "\u9700\u8981\u8FD0\u8425\u53F0\u7ACB\u5373\u8DDF\u8FDB",
+      criticalLabel: "\u4E25\u91CD / \u9519\u8BEF",
+      criticalHint: "\u4F18\u5148\u5347\u7EA7\u5904\u7F6E",
+      sourceLabel: "\u6CBB\u7406\u6765\u6E90",
+      sourceHint: "\u5BA1\u6279 / \u5BA1\u8BA1 / \u5B89\u5168 / \u8FD0\u884C\u65F6 / \u6F14\u7EC3 / \u53EF\u89C2\u6D4B\u6027"
+    },
+    emptyTitle: "\u6682\u65E0\u5F85\u5173\u6CE8\u544A\u8B66",
+    emptyDescription: "\u5F53\u524D\u7B5B\u9009\u6761\u4EF6\u4E0B\u6CA1\u6709\u9700\u8981\u6307\u6325\u53F0\u5904\u7406\u7684\u6CBB\u7406\u544A\u8B66\u3002",
+    columnLabels: {
+      severity: "\u4E25\u91CD\u7A0B\u5EA6",
+      title: "\u544A\u8B66\u6807\u9898",
+      source: "\u6765\u6E90",
+      status: "\u72B6\u6001",
+      createdAt: "\u89E6\u53D1\u65F6\u95F4",
+      actions: "\u64CD\u4F5C"
+    },
+    showSourceFilter: true,
+    defaultPageSize: 10,
+    pageSizeOptions: [5, 10, 20, 50],
+    detailLabels: {
+      overviewTitle: "\u6982\u89C8",
+      detailsTitle: "\u8BE6\u60C5",
+      severity: "\u4E25\u91CD\u7A0B\u5EA6",
+      status: "\u72B6\u6001",
+      source: "\u6765\u6E90",
+      owner: "\u8D1F\u8D23\u4EBA",
+      description: "\u63CF\u8FF0",
+      createdAt: "\u89E6\u53D1\u65F6\u95F4",
+      updatedAt: "\u66F4\u65B0\u65F6\u95F4",
+      unassignedOwner: "\u672A\u5206\u914D",
+      noDescription: "\u6682\u65E0\u63CF\u8FF0"
+    }
+  },
+  storefront: {
+    titles: [
+      "CPU \u4F7F\u7528\u7387\u5CF0\u503C\u8D85\u8FC7 90%",
+      "\u5185\u5B58\u4F7F\u7528\u8D85\u8FC7\u9608\u503C 85%",
+      "\u78C1\u76D8\u7A7A\u95F4\u4E0D\u8DB3 10% \u5269\u4F59",
+      "\u670D\u52A1\u54CD\u5E94\u8D85\u65F6 30 \u79D2",
+      "\u6570\u636E\u5E93\u8FDE\u63A5\u88AB\u62D2\u7EDD"
+    ],
+    severityOrder: ["error", "warning", "info"],
+    statusOrder: ["open", "acknowledged", "resolved"],
+    sourceOrder: ["monitoring", "logging", "tracing", "security", "infrastructure"],
+    searchFields: ["id", "title", "source"],
+    severityMetaByCode: {
+      error: { label: "\u9519\u8BEF", variant: "error" },
+      warning: { label: "\u8B66\u544A", variant: "warning" },
+      info: { label: "\u4FE1\u606F", variant: "info" }
+    },
+    statusMetaByCode: {
+      open: { label: "\u5F85\u5904\u7406", variant: "default" },
+      acknowledged: { label: "\u5DF2\u786E\u8BA4", variant: "warning" },
+      resolved: { label: "\u5DF2\u89E3\u51B3", variant: "success" }
+    },
+    sourceLabels: {
+      monitoring: "\u76D1\u63A7",
+      logging: "\u65E5\u5FD7",
+      tracing: "\u94FE\u8DEF\u8FFD\u8E2A",
+      security: "\u5B89\u5168",
+      infrastructure: "\u57FA\u7840\u8BBE\u65BD"
+    },
+    labels: {
+      all: "\u5168\u90E8",
+      searchPlaceholder: "\u641C\u7D22\u95E8\u5E97\u544A\u8B66...",
+      statusSectionTitle: "\u5904\u7406\u72B6\u6001",
+      tableTitle: (matched) => `\u95E8\u5E97\u544A\u8B66\u5217\u8868\uFF08\u5339\u914D ${matched} \u6761\uFF09`
+    },
+    statsCopy: {
+      totalLabel: "\u544A\u8B66\u603B\u6570",
+      totalHint: (matched) => `\u5F53\u524D\u5339\u914D ${matched} \u6761`,
+      openLabel: "\u5F85\u5904\u7406",
+      openHint: "\u9700\u8981\u95E8\u5E97\u7ACB\u5373\u8DDF\u8FDB",
+      criticalLabel: "\u9519\u8BEF / \u9AD8\u4F18\u5148\u7EA7",
+      criticalHint: "\u4F18\u5148\u5347\u7EA7\u5904\u7406",
+      sourceLabel: "\u544A\u8B66\u6765\u6E90",
+      sourceHint: "\u76D1\u63A7 / \u65E5\u5FD7 / \u94FE\u8DEF\u8FFD\u8E2A / \u5B89\u5168 / \u57FA\u7840\u8BBE\u65BD"
+    },
+    emptyTitle: "\u6682\u65E0\u95E8\u5E97\u544A\u8B66",
+    emptyDescription: "\u5F53\u524D\u7B5B\u9009\u6761\u4EF6\u4E0B\u6CA1\u6709\u9700\u8981\u5173\u6CE8\u7684\u95E8\u5E97\u8FD0\u884C\u544A\u8B66\u3002",
+    columnLabels: {
+      severity: "\u4E25\u91CD\u7A0B\u5EA6",
+      title: "\u544A\u8B66\u6807\u9898",
+      source: "\u6765\u6E90",
+      status: "\u72B6\u6001",
+      createdAt: "\u89E6\u53D1\u65F6\u95F4",
+      actions: "\u64CD\u4F5C"
+    },
+    showSourceFilter: false,
+    defaultPageSize: 5,
+    pageSizeOptions: [5, 10, 20],
+    includeColumns: ["severity", "title", "status", "createdAt"],
+    detailLabels: {
+      overviewTitle: "\u6982\u89C8",
+      detailsTitle: "\u8BE6\u60C5",
+      severity: "\u4E25\u91CD\u7A0B\u5EA6",
+      status: "\u72B6\u6001",
+      source: "\u6765\u6E90",
+      owner: "\u8D1F\u8D23\u4EBA",
+      description: "\u63CF\u8FF0",
+      createdAt: "\u89E6\u53D1\u65F6\u95F4",
+      updatedAt: "\u66F4\u65B0\u65F6\u95F4",
+      unassignedOwner: "\u672A\u5206\u914D",
+      noDescription: "\u6682\u65E0\u63CF\u8FF0"
+    }
+  },
+  tob: {
+    titles: [
+      "CPU \u4F7F\u7528\u7387\u5CF0\u503C\u8D85\u8FC7 90%",
+      "\u5185\u5B58\u4F7F\u7528\u8D85\u8FC7\u9608\u503C 85%",
+      "\u78C1\u76D8\u7A7A\u95F4\u4E0D\u8DB3 10% \u5269\u4F59",
+      "\u670D\u52A1\u54CD\u5E94\u8D85\u65F6 30s",
+      "\u6570\u636E\u5E93\u8FDE\u63A5\u88AB\u62D2\u7EDD",
+      "API \u9519\u8BEF\u7387\u8D85\u8FC7 5%",
+      "TLS \u8BC1\u4E66\u5373\u5C06\u8FC7\u671F",
+      "\u5BB9\u5668\u91CD\u542F\u6B21\u6570\u5F02\u5E38"
+    ],
+    severityOrder: ["critical", "error", "warning", "info"],
+    statusOrder: ["open", "acknowledged", "resolved"],
+    sourceOrder: ["monitoring", "logging", "tracing", "security", "infrastructure"],
+    searchFields: ["id", "title", "source"],
+    severityMetaByCode: {
+      critical: { label: "\u4E25\u91CD", variant: "error" },
+      error: { label: "\u9519\u8BEF", variant: "error" },
+      warning: { label: "\u8B66\u544A", variant: "warning" },
+      info: { label: "\u4FE1\u606F", variant: "info" }
+    },
+    statusMetaByCode: {
+      open: { label: "\u672A\u5904\u7406", variant: "default" },
+      acknowledged: { label: "\u5DF2\u786E\u8BA4", variant: "warning" },
+      resolved: { label: "\u5DF2\u89E3\u51B3", variant: "success" }
+    },
+    sourceLabels: {
+      monitoring: "\u76D1\u63A7",
+      logging: "\u65E5\u5FD7",
+      tracing: "\u94FE\u8DEF\u8FFD\u8E2A",
+      security: "\u5B89\u5168",
+      infrastructure: "\u57FA\u7840\u8BBE\u65BD"
+    },
+    labels: {
+      all: "\u5168\u90E8",
+      searchPlaceholder: "\u641C\u7D22\u544A\u8B66 ID / \u6807\u9898 / \u6765\u6E90...",
+      statusSectionTitle: "\u5904\u7406\u72B6\u6001",
+      sourceSectionTitle: "\u544A\u8B66\u6765\u6E90",
+      tableTitle: (matched) => `\u544A\u8B66\u5217\u8868\uFF08\u5339\u914D ${matched} \u6761\uFF09`
+    },
+    statsCopy: {
+      totalLabel: "\u544A\u8B66\u603B\u6570",
+      totalHint: (matched) => `\u5339\u914D ${matched} \u6761`,
+      openLabel: "\u672A\u5904\u7406",
+      openHint: "\u9700\u8981\u54CD\u5E94",
+      criticalLabel: "\u4E25\u91CD / \u9519\u8BEF",
+      criticalHint: "\u9AD8\u4F18\u5148\u7EA7",
+      sourceLabel: "\u544A\u8B66\u6765\u6E90",
+      sourceHint: "\u76D1\u63A7 / \u65E5\u5FD7 / \u94FE\u8DEF / \u5B89\u5168 / \u57FA\u7840\u8BBE\u65BD"
+    },
+    emptyTitle: "\u6682\u65E0\u544A\u8B66",
+    emptyDescription: "\u5F53\u524D\u7B5B\u9009\u6761\u4EF6\u4E0B\u6CA1\u6709\u5339\u914D\u7684\u544A\u8B66\u3002",
+    columnLabels: {
+      severity: "\u4E25\u91CD\u7A0B\u5EA6",
+      title: "\u6807\u9898",
+      source: "\u6765\u6E90",
+      status: "\u72B6\u6001",
+      createdAt: "\u521B\u5EFA\u65F6\u95F4"
+    },
+    showSourceFilter: true,
+    defaultPageSize: 10,
+    pageSizeOptions: [5, 10, 20, 50],
+    detailLabels: {
+      overviewTitle: "\u6982\u89C8",
+      detailsTitle: "\u8BE6\u60C5",
+      severity: "\u4E25\u91CD\u7A0B\u5EA6",
+      status: "\u72B6\u6001",
+      source: "\u6765\u6E90",
+      owner: "\u8D1F\u8D23\u4EBA",
+      description: "\u63CF\u8FF0",
+      createdAt: "\u521B\u5EFA\u65F6\u95F4",
+      updatedAt: "\u66F4\u65B0\u65F6\u95F4",
+      unassignedOwner: "\u672A\u5206\u914D",
+      noDescription: "\u6682\u65E0\u63CF\u8FF0"
+    }
+  }
+};
+function createFoundationAdminGovernanceStatsCopy(deliveryMode) {
+  return {
+    totalLabel: "\u544A\u8B66\u603B\u6570",
+    totalHint: (matched) => `\u5F53\u524D\u5339\u914D ${matched} \u6761`,
+    openLabel: "\u5F85\u5904\u7406",
+    openHint: deliveryMode === "api" ? "\u5B9E\u65F6\u6CBB\u7406\u56DE\u8BFB" : "fallback \u6CBB\u7406\u5FEB\u7167",
+    criticalLabel: "\u9AD8\u4F18\u5148\u7EA7",
+    criticalHint: "high severity / top risks",
+    sourceLabel: "\u6CBB\u7406\u6765\u6E90",
+    sourceHint: "\u5BA1\u6279 / \u5BA1\u8BA1 / \u8FD0\u884C\u65F6 / \u5B89\u5168 / \u6F14\u7EC3"
+  };
+}
+var foundationAdminGovernanceListPreset = {
+  titles: foundationAlertListDemoPresets.admin.titles,
+  severityOrder: ["high", "medium", "low"],
+  statusOrder: ["open", "acknowledged", "muted"],
+  sourceOrder: Object.keys(foundationAdminGovernanceSourceLabels),
+  searchFields: ["id", "title", "description", "source", "owner"],
+  severityMetaByCode: {
+    high: { label: "\u9AD8", variant: "error" },
+    medium: { label: "\u4E2D", variant: "warning" },
+    low: { label: "\u4F4E", variant: "info" }
+  },
+  statusMetaByCode: {
+    open: { label: "\u5F85\u5904\u7406", variant: "default" },
+    acknowledged: { label: "\u5DF2\u786E\u8BA4", variant: "warning" },
+    muted: { label: "\u5DF2\u9759\u97F3", variant: "success" }
+  },
+  sourceLabels: foundationAdminGovernanceSourceLabels,
+  labels: {
+    all: "\u5168\u90E8",
+    searchPlaceholder: "\u641C\u7D22\u544A\u8B66\u4EE3\u7801 / \u6458\u8981 / \u6765\u6E90 / \u8D23\u4EFB\u4EBA...",
+    statusSectionTitle: "\u5904\u7406\u72B6\u6001",
+    sourceSectionTitle: "\u6CBB\u7406\u6765\u6E90",
+    tableTitle: (matched) => `\u6307\u6325\u53F0\u544A\u8B66\uFF08\u5339\u914D ${matched} \u6761\uFF09`
+  },
+  emptyTitle: "\u6682\u65E0\u5F85\u5173\u6CE8\u544A\u8B66",
+  emptyDescription: "\u5F53\u524D\u7B5B\u9009\u6761\u4EF6\u4E0B\u6CA1\u6709\u9700\u8981\u6307\u6325\u53F0\u5904\u7406\u7684\u6CBB\u7406\u544A\u8B66\u3002",
+  columnLabels: {
+    severity: "\u4E25\u91CD\u7A0B\u5EA6",
+    title: "\u544A\u8B66\u6807\u9898",
+    source: "\u6765\u6E90",
+    status: "\u72B6\u6001",
+    createdAt: "\u751F\u6210\u65F6\u95F4",
+    actions: "\u64CD\u4F5C"
+  },
+  showSourceFilter: true,
+  defaultPageSize: 10,
+  pageSizeOptions: [5, 10, 20, 50],
+  detailLabels: foundationAlertListDemoPresets.admin.detailLabels
+};
+function resolveFoundationAlertSeverityMeta(severity, severityMetaByCode = foundationAlertSeverityLabels) {
+  return severityMetaByCode[severity] ?? foundationAlertSeverityLabels.info;
+}
+function resolveFoundationAlertStatusMeta(status, statusMetaByCode = foundationAlertStatusLabels) {
+  return statusMetaByCode[status] ?? foundationAlertStatusLabels.open;
+}
+function FoundationAlertTableCard({
+  alerts,
+  detailHrefBase = "/alerts",
+  loading = false,
+  title,
+  sort,
+  onSortChange,
+  striped = false,
+  compact = false,
+  renderAction,
+  emptyTitle = "No alerts found",
+  emptyDescription = "All clear! No alerts match your current filters.",
+  severityMetaByCode = foundationAlertSeverityLabels,
+  statusMetaByCode = foundationAlertStatusLabels,
+  sourceLabels,
+  columnLabels,
+  includeColumns,
+  omitColumns,
+  pagination
+}) {
+  const columns = (0, import_react31.useMemo)(
+    () => createFoundationAlertTableColumns({
+      detailHrefBase,
+      renderAction,
+      severityMetaByCode,
+      statusMetaByCode,
+      sourceLabels,
+      columnLabels,
+      includeColumns,
+      omitColumns
+    }),
+    [
+      columnLabels,
+      detailHrefBase,
+      includeColumns,
+      omitColumns,
+      renderAction,
+      severityMetaByCode,
+      sourceLabels,
+      statusMetaByCode
+    ]
+  );
+  return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+    PaginatedDataTableCard,
+    {
+      title,
+      columns,
+      rows: alerts,
+      rowKey: (row) => row.id,
+      loading,
+      sort,
+      onSortChange,
+      striped,
+      compact,
+      emptyTitle,
+      emptyDescription,
+      pagination
+    }
+  );
+}
+function createFoundationAlertTableColumns({
+  detailHrefBase = "/alerts",
+  renderAction,
+  severityMetaByCode = foundationAlertSeverityLabels,
+  statusMetaByCode = foundationAlertStatusLabels,
+  sourceLabels,
+  columnLabels,
+  includeColumns,
+  omitColumns = []
+} = {}) {
+  const columns = [
+    {
+      key: "severity",
+      header: columnLabels?.severity ?? "Severity",
+      width: "100px",
+      sortable: true,
+      render: (row) => {
+        const severity = resolveFoundationAlertSeverityMeta(row.severity, severityMetaByCode);
+        return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(StatusBadge, { label: severity.label, variant: severity.variant, size: "sm" });
+      }
+    },
+    {
+      key: "title",
+      header: columnLabels?.title ?? "Title",
+      sortable: true,
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("a", { href: `${detailHrefBase}/${row.id}`, style: { color: "#e2e8f0", textDecoration: "none", fontWeight: 500 }, children: row.title })
+    },
+    {
+      key: "source",
+      header: columnLabels?.source ?? "Source",
+      width: "120px",
+      sortable: true,
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("span", { style: { color: "#94a3b8", fontSize: 13 }, children: sourceLabels?.[row.source] ?? row.source })
+    },
+    {
+      key: "status",
+      header: columnLabels?.status ?? "Status",
+      width: "140px",
+      sortable: true,
+      render: (row) => {
+        const status = resolveFoundationAlertStatusMeta(row.status, statusMetaByCode);
+        return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(StatusBadge, { label: status.label, variant: status.variant, size: "sm" });
+      }
+    },
+    {
+      key: "createdAt",
+      header: columnLabels?.createdAt ?? "Created",
+      width: "160px",
+      sortable: true,
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("span", { style: { color: "#94a3b8", fontSize: 13 }, children: new Date(row.createdAt).toLocaleString() })
+    }
+  ];
+  if (renderAction) {
+    columns.push({
+      key: "actions",
+      header: columnLabels?.actions ?? "Actions",
+      width: "100px",
+      align: "right",
+      render: (row) => renderAction(row)
+    });
+  }
+  const allowedKeys = includeColumns ?? columns.map((column) => column.key);
+  return columns.filter((column) => allowedKeys.includes(column.key) && !omitColumns.includes(column.key));
+}
+var defaultFoundationAlertDrilldownSectionLabels = {
+  governanceTitle: "\u6CBB\u7406\u72B6\u6001",
+  timelineTitle: "\u5904\u7F6E\u65F6\u95F4\u7EBF",
+  overviewVisibility: "\u603B\u89C8\u53EF\u89C1\u6027",
+  overviewVisible: "\u4ECD\u5728 overview \u5C55\u793A",
+  overviewHidden: "\u5DF2\u4ECE overview \u9690\u85CF",
+  acknowledgementStatus: "\u5F53\u524D\u786E\u8BA4\u72B6\u6001",
+  acknowledgementPending: "\u5F85\u5904\u7406",
+  acknowledgementAcked: "\u5DF2\u786E\u8BA4",
+  acknowledgementMuted: "\u9759\u9ED8\u4E2D",
+  recentActor: "\u6700\u8FD1\u5904\u7F6E\u4EBA",
+  recentUpdatedAt: "\u6700\u8FD1\u5904\u7F6E\u65F6\u95F4",
+  availableActions: "\u53EF\u7528\u52A8\u4F5C",
+  noAvailableActions: "\u5F53\u524D drilldown \u672A\u8FD4\u56DE\u53EF\u6267\u884C\u52A8\u4F5C\u3002",
+  actionDrilldown: "\u67E5\u770B\u8BE6\u60C5",
+  actionAcknowledge: "\u786E\u8BA4",
+  actionMute: "\u9759\u9ED8",
+  actionUnmute: "\u53D6\u6D88\u9759\u9ED8",
+  systemActor: "\u7CFB\u7EDF",
+  timelineNoHistory: "\u5F53\u524D\u544A\u8B66\u8FD8\u6CA1\u6709\u4EFB\u4F55 ACK / MUTE / UNMUTE \u7684\u5386\u53F2\u8BB0\u5F55\u3002",
+  actor: "\u6267\u884C\u4EBA",
+  source: "\u6765\u6E90",
+  mutedUntil: "\u9759\u9ED8\u622A\u6B62",
+  note: "\u5907\u6CE8",
+  noNote: "\u65E0\u5907\u6CE8",
+  noTimestamp: "\u672A\u8BB0\u5F55"
+};
+function formatFoundationAlertDrilldownDateTime(value) {
+  return value ? new Date(value).toLocaleString() : defaultFoundationAlertDrilldownSectionLabels.noTimestamp;
+}
+function formatFoundationAlertActionLabel(action, labels = defaultFoundationAlertDrilldownSectionLabels) {
+  switch (action) {
+    case "DRILLDOWN":
+      return labels.actionDrilldown ?? defaultFoundationAlertDrilldownSectionLabels.actionDrilldown;
+    case "ACK":
+      return labels.actionAcknowledge ?? defaultFoundationAlertDrilldownSectionLabels.actionAcknowledge;
+    case "MUTE":
+      return labels.actionMute ?? defaultFoundationAlertDrilldownSectionLabels.actionMute;
+    case "UNMUTE":
+      return labels.actionUnmute ?? defaultFoundationAlertDrilldownSectionLabels.actionUnmute;
+    default:
+      return action;
+  }
+}
+function renderFoundationAlertDetailTag(label, palette = "default") {
+  const colors = palette === "success" ? {
+    background: "rgba(34,197,94,0.14)",
+    border: "1px solid rgba(74,222,128,0.26)",
+    color: "#bbf7d0"
+  } : palette === "warning" ? {
+    background: "rgba(245,158,11,0.14)",
+    border: "1px solid rgba(251,191,36,0.28)",
+    color: "#fde68a"
+  } : {
+    background: "rgba(59,130,246,0.14)",
+    border: "1px solid rgba(96,165,250,0.24)",
+    color: "#dbeafe"
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+    "span",
+    {
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "4px 10px",
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 600,
+        whiteSpace: "nowrap",
+        ...colors
+      },
+      children: label
+    }
+  );
+}
+function buildFoundationAlertRecordFromDrilldown(drilldown) {
+  const status = drilldown.acknowledgement?.status === "MUTED" ? "resolved" : drilldown.acknowledgement?.status === "ACKED" ? "acknowledged" : "open";
+  return {
+    id: String(drilldown.code),
+    title: drilldown.catalog?.defaultSummary ?? drilldown.alert?.summary ?? String(drilldown.code),
+    description: drilldown.catalog?.severityPolicy ?? drilldown.alert?.triageSummary ?? `\u53EF\u7528\u52A8\u4F5C\uFF1A${drilldown.availableActions?.join(" / ") ?? "\u65E0"}`,
+    severity: drilldown.alert?.severity ?? "info",
+    source: drilldown.catalog?.sourceModules?.join(", ") ?? "foundation",
+    status,
+    owner: drilldown.acknowledgement?.actorId ?? drilldown.history?.[0]?.actorId ?? void 0,
+    createdAt: drilldown.generatedAt,
+    updatedAt: drilldown.acknowledgement?.updatedAt ?? drilldown.history?.[0]?.createdAt ?? drilldown.generatedAt
+  };
+}
+function buildFoundationAlertDrilldownSections(drilldown, options = {}) {
+  const labels = { ...defaultFoundationAlertDrilldownSectionLabels, ...options.labels };
+  const formatDateTime2 = options.formatDateTime ?? formatFoundationAlertDrilldownDateTime;
+  const availableActions = drilldown.availableActions ?? [];
+  const history = drilldown.history ?? [];
+  return [
+    {
+      title: labels.governanceTitle ?? defaultFoundationAlertDrilldownSectionLabels.governanceTitle,
+      content: /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 16 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: labels.overviewVisibility ?? defaultFoundationAlertDrilldownSectionLabels.overviewVisibility }),
+            renderFoundationAlertDetailTag(
+              drilldown.visibleInOverview === false ? labels.overviewHidden ?? defaultFoundationAlertDrilldownSectionLabels.overviewHidden : labels.overviewVisible ?? defaultFoundationAlertDrilldownSectionLabels.overviewVisible,
+              drilldown.visibleInOverview === false ? "warning" : "success"
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: labels.acknowledgementStatus ?? defaultFoundationAlertDrilldownSectionLabels.acknowledgementStatus }),
+            renderFoundationAlertDetailTag(
+              drilldown.acknowledgement?.status === "MUTED" ? labels.acknowledgementMuted ?? defaultFoundationAlertDrilldownSectionLabels.acknowledgementMuted : drilldown.acknowledgement?.status === "ACKED" ? labels.acknowledgementAcked ?? defaultFoundationAlertDrilldownSectionLabels.acknowledgementAcked : labels.acknowledgementPending ?? defaultFoundationAlertDrilldownSectionLabels.acknowledgementPending,
+              drilldown.acknowledgement?.status ? "success" : "default"
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: labels.recentActor ?? defaultFoundationAlertDrilldownSectionLabels.recentActor }),
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: drilldown.acknowledgement?.actorId ?? history[0]?.actorId ?? labels.systemActor ?? defaultFoundationAlertDrilldownSectionLabels.systemActor })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: labels.recentUpdatedAt ?? defaultFoundationAlertDrilldownSectionLabels.recentUpdatedAt }),
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: formatDateTime2(drilldown.acknowledgement?.updatedAt ?? history[0]?.createdAt ?? drilldown.generatedAt) })
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 8 }, children: labels.availableActions ?? defaultFoundationAlertDrilldownSectionLabels.availableActions }),
+          availableActions.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: availableActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("span", { children: renderFoundationAlertDetailTag(
+            formatFoundationAlertActionLabel(action, labels),
+            action === "MUTE" ? "warning" : "default"
+          ) }, action)) }) : /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: labels.noAvailableActions ?? defaultFoundationAlertDrilldownSectionLabels.noAvailableActions })
+        ] })
+      ] })
+    },
+    {
+      title: labels.timelineTitle ?? defaultFoundationAlertDrilldownSectionLabels.timelineTitle,
+      content: history.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: history.map((entry, index) => /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)(
+        "div",
+        {
+          style: {
+            borderRadius: 12,
+            border: "1px solid rgba(148,163,184,0.12)",
+            background: "rgba(15,23,42,0.38)",
+            padding: 16
+          },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 10 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }, children: [
+                renderFoundationAlertDetailTag(
+                  formatFoundationAlertActionLabel(entry.action, labels),
+                  entry.action === "MUTE" ? "warning" : "default"
+                ),
+                renderFoundationAlertDetailTag(
+                  entry.visibleInOverview ? labels.overviewVisible ?? defaultFoundationAlertDrilldownSectionLabels.overviewVisible : labels.overviewHidden ?? defaultFoundationAlertDrilldownSectionLabels.overviewHidden,
+                  entry.visibleInOverview ? "success" : "warning"
+                )
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 12 }, children: formatDateTime2(entry.createdAt) })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 4 }, children: labels.actor ?? defaultFoundationAlertDrilldownSectionLabels.actor }),
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: entry.actorId ?? labels.systemActor ?? defaultFoundationAlertDrilldownSectionLabels.systemActor })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 4 }, children: labels.source ?? defaultFoundationAlertDrilldownSectionLabels.source }),
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: entry.source ?? "foundation" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 4 }, children: labels.mutedUntil ?? defaultFoundationAlertDrilldownSectionLabels.mutedUntil }),
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: formatDateTime2(entry.mutedUntil) })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 4 }, children: labels.note ?? defaultFoundationAlertDrilldownSectionLabels.note }),
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: entry.note ?? labels.noNote ?? defaultFoundationAlertDrilldownSectionLabels.noNote })
+              ] })
+            ] })
+          ]
+        },
+        `${entry.action}-${entry.createdAt}-${index}`
+      )) }) : /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: labels.timelineNoHistory ?? defaultFoundationAlertDrilldownSectionLabels.timelineNoHistory })
+    }
+  ];
+}
+function buildFoundationAlertLytConnectionGovernanceSections(drilldown) {
+  const detail = getFoundationAlertLytConnectionGovernanceRiskDetail(drilldown);
+  if (!detail) {
+    return [];
+  }
+  return [
+    {
+      title: "\u8FDE\u63A5\u6CBB\u7406\u8303\u56F4",
+      content: /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(InfoRow, { label: "\u79DF\u6237", value: detail.scope.tenantId ?? "\u672A\u6307\u5B9A" }),
+        /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(InfoRow, { label: "\u54C1\u724C", value: detail.scope.brandId ?? "\u672A\u6307\u5B9A" }),
+        /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(InfoRow, { label: "\u53D7\u5F71\u54CD\u95E8\u5E97\u6570", value: String(detail.affectedStoreIds.length) }),
+        /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(InfoRow, { label: "\u98CE\u9669\u5206\u7EC4\u6570", value: String(detail.alerts.length) })
+      ] })
+    },
+    {
+      title: "\u5F71\u54CD\u6982\u89C8",
+      content: /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 16 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 8 }, children: "\u53D7\u5F71\u54CD\u95E8\u5E97" }),
+          detail.affectedStoreIds.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: detail.affectedStoreIds.map((storeId) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("span", { children: renderFoundationAlertDetailTag(storeId, "warning") }, storeId)) }) : /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: "\u6682\u65E0\u53D7\u5F71\u54CD\u95E8\u5E97" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 8 }, children: "\u53D7\u5F71\u54CD\u80FD\u529B" }),
+          detail.affectedCapabilities.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: detail.affectedCapabilities.map((capability) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("span", { children: renderFoundationAlertDetailTag(capability, "default") }, capability)) }) : /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: "\u6682\u65E0\u80FD\u529B\u5F71\u54CD\u660E\u7EC6" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 8 }, children: "\u5EFA\u8BAE\u52A8\u4F5C" }),
+          detail.recommendedNextActions.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("ul", { style: { margin: 0, paddingLeft: 18, color: "#e2e8f0", display: "grid", gap: 8 }, children: detail.recommendedNextActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("li", { children: action }, action)) }) : /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: "\u6682\u65E0\u5EFA\u8BAE\u52A8\u4F5C" })
+        ] })
+      ] })
+    },
+    {
+      title: "\u98CE\u9669\u5206\u7EC4",
+      content: detail.alerts.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: detail.alerts.map((alert) => /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)(
+        "div",
+        {
+          style: {
+            borderRadius: 12,
+            border: "1px solid rgba(148,163,184,0.12)",
+            background: "rgba(15,23,42,0.38)",
+            padding: 16
+          },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: [
+                renderFoundationAlertDetailTag(alert.code, alert.severity === "high" ? "warning" : "default"),
+                renderFoundationAlertDetailTag(`\u5F71\u54CD ${alert.count}`, "default")
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 12 }, children: alert.severity.toUpperCase() })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14, marginBottom: 8 }, children: alert.summary }),
+            alert.recommendedNextActions.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("ul", { style: { margin: 0, paddingLeft: 18, color: "#cbd5e1", display: "grid", gap: 6 }, children: alert.recommendedNextActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("li", { children: action }, action)) }) : null
+          ]
+        },
+        `${alert.code}-${alert.severity}`
+      )) }) : /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: "\u6682\u65E0\u98CE\u9669\u5206\u7EC4" })
+    }
+  ];
+}
+function getFoundationAlertLytConnectionGovernanceRiskDetail(drilldown) {
+  if (!drilldown || drilldown.code !== "lyt-connection-governance-risk" || !drilldown.detail || typeof drilldown.detail !== "object") {
+    return null;
+  }
+  const detailRecord = drilldown.detail;
+  if (typeof detailRecord.total !== "number" || !detailRecord.scope || typeof detailRecord.scope !== "object" || !Array.isArray(detailRecord.alerts) || !Array.isArray(detailRecord.topAlertCodes) || !Array.isArray(detailRecord.affectedStoreIds) || !Array.isArray(detailRecord.affectedCapabilities) || !Array.isArray(detailRecord.recommendedNextActions)) {
+    return null;
+  }
+  return detailRecord;
+}
+function FoundationAlertOverviewReadout({
+  alert,
+  detailLabels,
+  severityMetaByCode = foundationAlertSeverityLabels,
+  statusMetaByCode = foundationAlertStatusLabels,
+  sourceLabels
+}) {
+  const resolvedDetailLabels = detailLabels ?? defaultFoundationAlertDetailLabels;
+  const severity = resolveFoundationAlertSeverityMeta(alert.severity, severityMetaByCode);
+  const status = resolveFoundationAlertStatusMeta(alert.status, statusMetaByCode);
+  return /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+      InfoRow,
+      {
+        label: resolvedDetailLabels.severity ?? defaultFoundationAlertDetailLabels.severity,
+        value: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(StatusBadge, { label: severity.label, variant: severity.variant, size: "sm" })
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+      InfoRow,
+      {
+        label: resolvedDetailLabels.status ?? defaultFoundationAlertDetailLabels.status,
+        value: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(StatusBadge, { label: status.label, variant: status.variant, size: "sm" })
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+      InfoRow,
+      {
+        label: resolvedDetailLabels.source ?? defaultFoundationAlertDetailLabels.source,
+        value: sourceLabels?.[alert.source] ?? alert.source
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+      InfoRow,
+      {
+        label: resolvedDetailLabels.owner ?? defaultFoundationAlertDetailLabels.owner,
+        value: alert.owner ?? resolvedDetailLabels.unassignedOwner ?? defaultFoundationAlertDetailLabels.unassignedOwner
+      }
+    )
+  ] });
+}
+function FoundationAlertDetailsReadout({
+  alert,
+  detailLabels,
+  formatDateTime: formatDateTime2 = (value) => new Date(value).toLocaleString()
+}) {
+  const resolvedDetailLabels = detailLabels ?? defaultFoundationAlertDetailLabels;
+  return /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+      InfoRow,
+      {
+        label: resolvedDetailLabels.description ?? defaultFoundationAlertDetailLabels.description,
+        value: alert.description ?? resolvedDetailLabels.noDescription ?? defaultFoundationAlertDetailLabels.noDescription
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+      InfoRow,
+      {
+        label: resolvedDetailLabels.createdAt ?? defaultFoundationAlertDetailLabels.createdAt,
+        value: formatDateTime2(alert.createdAt)
+      }
+    ),
+    alert.updatedAt ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+      InfoRow,
+      {
+        label: resolvedDetailLabels.updatedAt ?? defaultFoundationAlertDetailLabels.updatedAt,
+        value: formatDateTime2(alert.updatedAt)
+      }
+    ) : null
+  ] });
+}
+function FoundationAlertDetailView({
+  alert,
+  preset,
+  backHref = "/alerts",
+  backLabel,
+  notFoundTitle = "Not Found",
+  notFoundMessage,
+  subtitle,
+  extraSections,
+  severityMetaByCode,
+  statusMetaByCode,
+  sourceLabels,
+  detailLabels,
+  formatDateTime: formatDateTime2
+}) {
+  const resolvedSeverityMetaByCode = severityMetaByCode ?? preset?.severityMetaByCode ?? foundationAlertSeverityLabels;
+  const resolvedStatusMetaByCode = statusMetaByCode ?? preset?.statusMetaByCode ?? foundationAlertStatusLabels;
+  const resolvedSourceLabels = sourceLabels ?? preset?.sourceLabels;
+  const resolvedDetailLabels = detailLabels ?? preset?.detailLabels ?? defaultFoundationAlertDetailLabels;
+  const resolvedFormatDateTime = formatDateTime2 ?? ((value) => new Date(value).toLocaleString());
+  if (!alert) {
+    return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+      DetailShell,
+      {
+        title: notFoundTitle,
+        backHref,
+        backLabel,
+        sections: [],
+        error: notFoundMessage ?? "Alert not found"
+      }
+    );
+  }
+  const sections = [
+    {
+      title: resolvedDetailLabels.overviewTitle ?? defaultFoundationAlertDetailLabels.overviewTitle,
+      content: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+        FoundationAlertOverviewReadout,
+        {
+          alert,
+          detailLabels: resolvedDetailLabels,
+          severityMetaByCode: resolvedSeverityMetaByCode,
+          statusMetaByCode: resolvedStatusMetaByCode,
+          sourceLabels: resolvedSourceLabels
+        }
+      )
+    },
+    {
+      title: resolvedDetailLabels.detailsTitle ?? defaultFoundationAlertDetailLabels.detailsTitle,
+      content: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+        FoundationAlertDetailsReadout,
+        {
+          alert,
+          detailLabels: resolvedDetailLabels,
+          formatDateTime: resolvedFormatDateTime
+        }
+      )
+    },
+    ...extraSections ?? []
+  ];
+  return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+    DetailShell,
+    {
+      title: alert.title,
+      backHref,
+      backLabel,
+      subtitle,
+      sections
+    }
+  );
+}
+function FoundationAlertPresetDetailRoute({
+  alertId,
+  alerts,
+  preset,
+  backHref = "/alerts",
+  backLabel,
+  notFoundTitle = "Not Found",
+  notFoundMessage,
+  severityMetaByCode,
+  statusMetaByCode,
+  sourceLabels,
+  detailLabels,
+  formatDateTime: formatDateTime2
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+    FoundationAlertDetailView,
+    {
+      alert: alerts[alertId],
+      preset,
+      backHref,
+      backLabel,
+      notFoundTitle,
+      severityMetaByCode,
+      statusMetaByCode,
+      sourceLabels,
+      detailLabels,
+      formatDateTime: formatDateTime2,
+      notFoundMessage: typeof notFoundMessage === "function" ? notFoundMessage(alertId) : notFoundMessage ?? `Alert ${alertId} not found`
+    }
+  );
+}
+function useFoundationAlertDemoAcknowledge({
+  delayMs = 300,
+  copy
+} = {}) {
+  const [loading, setLoading] = (0, import_react31.useState)(false);
+  const [feedback, setFeedback] = (0, import_react31.useState)(null);
+  const acknowledge = (0, import_react31.useCallback)(
+    async (alertId) => {
+      setLoading(true);
+      try {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        setFeedback({
+          type: "success",
+          message: copy?.successMessage?.(alertId) ?? `Alert ${alertId} acknowledged`
+        });
+      } catch {
+        setFeedback({
+          type: "error",
+          message: copy?.errorMessage?.(alertId) ?? `Failed to acknowledge alert ${alertId}`
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [copy, delayMs]
+  );
+  const dismissFeedback = (0, import_react31.useCallback)(() => {
+    setFeedback(null);
+  }, []);
+  return {
+    loading,
+    feedback,
+    acknowledge,
+    dismissFeedback,
+    actionLabel: copy?.actionLabel ?? "Ack"
+  };
+}
+function FoundationAlertAcknowledgeActionButton({
+  alert,
+  loading = false,
+  onAcknowledge,
+  label = "Ack"
+}) {
+  if (alert.status === "resolved") {
+    return null;
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+    "button",
+    {
+      type: "button",
+      onClick: () => void onAcknowledge(alert.id),
+      disabled: loading,
+      style: {
+        padding: "4px 10px",
+        fontSize: 12,
+        borderRadius: 6,
+        border: "1px solid rgba(245,158,11,0.3)",
+        background: "transparent",
+        color: "#fcd34d",
+        cursor: loading ? "not-allowed" : "pointer",
+        opacity: loading ? 0.72 : 1
+      },
+      children: label
+    }
+  );
+}
+function FoundationAlertListPageSection({
+  title,
+  description,
+  alerts,
+  preset,
+  detailHrefBase = "/alerts",
+  searchFields,
+  severityOrder,
+  statusOrder,
+  sourceOrder,
+  severityMetaByCode,
+  statusMetaByCode,
+  sourceLabels,
+  labels,
+  statsCopy,
+  showSourceFilter,
+  renderAction,
+  feedback,
+  onDismissFeedback,
+  emptyTitle,
+  emptyDescription,
+  defaultPageSize,
+  pageSizeOptions,
+  columnLabels,
+  includeColumns,
+  omitColumns
+}) {
+  const resolvedSeverityOrder = severityOrder ?? [...preset?.severityOrder ?? []];
+  const resolvedStatusOrder = statusOrder ?? [...preset?.statusOrder ?? []];
+  const resolvedSourceOrder = sourceOrder ?? [...preset?.sourceOrder ?? []];
+  const resolvedSeverityMetaByCode = severityMetaByCode ?? preset?.severityMetaByCode ?? foundationAlertSeverityLabels;
+  const resolvedStatusMetaByCode = statusMetaByCode ?? preset?.statusMetaByCode ?? foundationAlertStatusLabels;
+  const resolvedSourceLabels = sourceLabels ?? preset?.sourceLabels;
+  const resolvedLabels = labels ?? preset?.labels;
+  const resolvedStatsCopy = statsCopy ?? preset?.statsCopy;
+  const resolvedShowSourceFilter = showSourceFilter ?? preset?.showSourceFilter ?? true;
+  const resolvedEmptyTitle = emptyTitle ?? preset?.emptyTitle;
+  const resolvedEmptyDescription = emptyDescription ?? preset?.emptyDescription;
+  const resolvedColumnLabels = columnLabels ?? preset?.columnLabels;
+  const resolvedSearchFields = searchFields ?? preset?.searchFields ?? ["id", "title", "source"];
+  const resolvedDefaultPageSize = defaultPageSize ?? preset?.defaultPageSize ?? 10;
+  const resolvedPageSizeOptions = pageSizeOptions ?? preset?.pageSizeOptions ?? [5, 10, 20, 50];
+  const resolvedIncludeColumns = includeColumns ?? preset?.includeColumns;
+  const resolvedOmitColumns = omitColumns ?? preset?.omitColumns;
+  const listState = useListPageSectionState({
+    items: alerts,
+    searchFields: resolvedSearchFields,
+    defaultPageSize: resolvedDefaultPageSize,
+    pageSizeOptions: resolvedPageSizeOptions,
+    facets: [
+      {
+        key: "severity",
+        order: resolvedSeverityOrder,
+        getValue: (alert) => alert.severity
+      },
+      {
+        key: "status",
+        order: resolvedStatusOrder,
+        getValue: (alert) => alert.status
+      },
+      {
+        key: "source",
+        order: resolvedSourceOrder,
+        enabled: resolvedShowSourceFilter,
+        getValue: (alert) => alert.source
+      }
+    ]
+  });
+  const severityFacet = listState.facets[0];
+  const statusFacet = listState.facets[1];
+  const sourceFacet = listState.facets[2];
+  const stats = (0, import_react31.useMemo)(
+    () => ({
+      total: alerts.length,
+      open: alerts.filter((alert) => alert.status === "open").length,
+      critical: alerts.filter((alert) => ["critical", "error"].includes(alert.severity)).length,
+      matched: listState.sortedItems.length,
+      sources: sourceFacet?.order.length ?? 0
+    }),
+    [alerts, listState.sortedItems.length, sourceFacet?.order.length]
+  );
+  return /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)(
+    PageShell,
+    {
+      title,
+      description,
+      actions: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+        SearchFilterInput2,
+        {
+          value: listState.searchTerm,
+          onChange: listState.setSearchTerm,
+          placeholder: resolvedLabels?.searchPlaceholder ?? "Search alerts..."
+        }
+      ),
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)(
+          "div",
+          {
+            style: {
+              display: "grid",
+              gap: 14,
+              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+              marginBottom: 20
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("article", { style: listPageStatCardStyle, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.totalLabel ?? "Total Alerts" }),
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700 }, children: stats.total }),
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.totalHint?.(stats.matched) ?? `${stats.matched} matched` })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("article", { style: listPageStatCardStyle, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.openLabel ?? "Open" }),
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#f87171" }, children: stats.open }),
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.openHint ?? "Needs response" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("article", { style: listPageStatCardStyle, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.criticalLabel ?? "Critical / Error" }),
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#facc15" }, children: stats.critical }),
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.criticalHint ?? "High priority" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("article", { style: listPageStatCardStyle, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.sourceLabel ?? "Sources" }),
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#93c5fd" }, children: stats.sources }),
+                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.sourceHint ?? "Monitoring / logging / tracing" })
+              ] })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+          Tabs,
+          {
+            items: [
+              { key: "ALL", label: resolvedLabels?.all ?? "All", count: listState.searchFilteredItems.length },
+              ...(severityFacet?.order ?? []).map((severity) => ({
+                key: severity,
+                label: resolvedSeverityMetaByCode[severity]?.label ?? severity,
+                count: severityFacet?.baseItems.filter((alert) => alert.severity === severity).length ?? 0
+              }))
+            ],
+            activeKey: severityFacet?.value ?? "ALL",
+            onChange: (value) => listState.setFacetValue("severity", value),
+            variant: "pills",
+            size: "sm"
+          }
+        ) }),
+        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { marginBottom: 16, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: resolvedLabels?.statusSectionTitle ?? "Status" }),
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+              Tabs,
+              {
+                items: [
+                  { key: "ALL", label: resolvedLabels?.all ?? "All", count: statusFacet?.baseItems.length ?? 0 },
+                  ...(statusFacet?.order ?? []).map((status) => ({
+                    key: status,
+                    label: resolvedStatusMetaByCode[status]?.label ?? status,
+                    count: statusFacet?.baseItems.filter((alert) => alert.status === status).length ?? 0
+                  }))
+                ],
+                activeKey: statusFacet?.value ?? "ALL",
+                onChange: (value) => listState.setFacetValue("status", value),
+                variant: "pills",
+                size: "sm"
+              }
+            )
+          ] }),
+          resolvedShowSourceFilter ? /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: resolvedLabels?.sourceSectionTitle ?? "Source" }),
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+              Tabs,
+              {
+                items: [
+                  { key: "ALL", label: resolvedLabels?.all ?? "All", count: sourceFacet?.baseItems.length ?? 0 },
+                  ...(sourceFacet?.order ?? []).map((source) => ({
+                    key: source,
+                    label: resolvedSourceLabels?.[source] ?? source,
+                    count: sourceFacet?.baseItems.filter((alert) => alert.source === source).length ?? 0
+                  }))
+                ],
+                activeKey: sourceFacet?.value ?? "ALL",
+                onChange: (value) => listState.setFacetValue("source", value),
+                variant: "pills",
+                size: "sm"
+              }
+            )
+          ] }) : null
+        ] }),
+        feedback ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+          FormSubmitFeedback,
+          {
+            submitting: false,
+            error: feedback.type === "error" ? feedback.message : void 0,
+            success: feedback.type === "success" ? feedback.message : void 0,
+            onDismissError: onDismissFeedback,
+            onDismissSuccess: onDismissFeedback
+          }
+        ) }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+          FoundationAlertTableCard,
+          {
+            alerts: listState.pagedItems,
+            detailHrefBase,
+            title: resolvedLabels?.tableTitle?.(listState.sortedItems.length),
+            sort: listState.sortConfig,
+            onSortChange: listState.setSortConfig,
+            striped: true,
+            compact: true,
+            renderAction,
+            emptyTitle: resolvedEmptyTitle,
+            emptyDescription: resolvedEmptyDescription,
+            severityMetaByCode: resolvedSeverityMetaByCode,
+            statusMetaByCode: resolvedStatusMetaByCode,
+            sourceLabels: resolvedSourceLabels,
+            columnLabels: resolvedColumnLabels,
+            includeColumns: resolvedIncludeColumns,
+            omitColumns: resolvedOmitColumns,
+            pagination: {
+              page: listState.pagination.page,
+              totalPages: listState.totalPages,
+              total: listState.sortedItems.length,
+              onPageChange: listState.pagination.setPage
+            }
+          }
+        )
+      ]
+    }
+  );
+}
+
+// src/components/RuntimeOperationViews.tsx
+var import_react32 = require("react");
+var import_jsx_runtime58 = require("react/jsx-runtime");
+var runtimeOperationStatusVariants = {
+  pending: "default",
+  running: "warning",
+  completed: "success",
+  failed: "error"
+};
+var runtimeOperationStatusLabels = {
+  pending: "Pending",
+  running: "Running",
+  completed: "Completed",
+  failed: "Failed"
+};
+function createRuntimeOperationMockRecords({
+  count = 50,
+  idPrefix = "op",
+  typeOrder,
+  statusOrder,
+  targetPrefix = "service",
+  targetModulo = 5,
+  createdAtStepMs = 18e5,
+  finishedAtStepMs = 9e5
+}) {
+  return Array.from({ length: count }, (_, index) => {
+    const type = typeOrder[index % typeOrder.length];
+    const status = statusOrder[index % statusOrder.length];
+    return {
+      id: `${idPrefix}-${String(index + 1).padStart(4, "0")}`,
+      type,
+      targetId: `${targetPrefix}-${index % targetModulo + 1}`,
+      status,
+      createdAt: new Date(Date.now() - index * createdAtStepMs).toISOString(),
+      finishedAt: status === "pending" || status === "running" ? void 0 : new Date(Date.now() - index * finishedAtStepMs).toISOString()
+    };
+  });
+}
+function createRuntimeOperationDetailMockMap(entries) {
+  return Object.fromEntries(
+    entries.map((entry) => [
+      entry.operation.id,
+      {
+        op: entry.operation,
+        receipts: entry.receipts ?? []
+      }
+    ])
+  );
+}
+var runtimeOperationDetailDemoPresets = {
+  storefront: createRuntimeOperationDetailMockMap(
+    ["op-1", "op-2", "op-3"].map((id, index) => ({
+      operation: {
+        id,
+        type: ["deploy", "rollback", "scale"][index],
+        targetId: `service-${index + 1}`,
+        status: ["completed", "running", "failed"][index],
+        createdAt: new Date(Date.now() - (index + 1) * 18e5).toISOString(),
+        finishedAt: index === 1 ? void 0 : new Date(Date.now() - index * 9e5).toISOString()
+      },
+      receipts: [
+        {
+          code: "STARTED",
+          message: "Operation started",
+          status: "ok",
+          timestamp: new Date(Date.now() - 18e5).toISOString()
+        },
+        {
+          code: index === 2 ? "ERROR" : "COMPLETED",
+          message: index === 2 ? "Connection timeout" : "Completed successfully",
+          status: index === 2 ? "error" : "ok",
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        }
+      ]
+    }))
+  ),
+  tob: createRuntimeOperationDetailMockMap(
+    ["op-1", "op-2", "op-3"].map((id, index) => ({
+      operation: {
+        id,
+        type: ["deploy", "rollback", "scale"][index],
+        targetId: `service-${index + 1}`,
+        status: ["completed", "running", "failed"][index],
+        createdAt: new Date(Date.now() - (index + 1) * 18e5).toISOString(),
+        finishedAt: index === 1 ? void 0 : new Date(Date.now() - index * 9e5).toISOString()
+      },
+      receipts: [
+        {
+          code: "STARTED",
+          message: "Operation started",
+          status: "ok",
+          timestamp: new Date(Date.now() - 18e5).toISOString()
+        },
+        {
+          code: index === 2 ? "ERROR" : "COMPLETED",
+          message: index === 2 ? "Connection timeout" : "Completed",
+          status: index === 2 ? "error" : "ok",
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        }
+      ]
+    }))
+  ),
+  admin: createRuntimeOperationDetailMockMap(
+    ["op-1", "op-2", "op-3"].map((id, index) => ({
+      operation: {
+        id,
+        type: ["runtime-replay", "secret-rotation", "approval-execution"][index],
+        targetId: ["runtime-governance", "vault-tenant-demo", "approval-pipeline"][index],
+        status: ["running", "completed", "failed"][index],
+        createdAt: new Date(Date.now() - (index + 1) * 12e5).toISOString(),
+        finishedAt: index === 0 ? void 0 : new Date(Date.now() - index * 6e5).toISOString()
+      },
+      receipts: [
+        {
+          code: "SUBMITTED",
+          message: "High-risk action submitted to governance runtime",
+          status: "ok",
+          timestamp: new Date(Date.now() - 15e5).toISOString()
+        },
+        {
+          code: index === 2 ? "BLOCKED" : "SYNCED",
+          message: index === 2 ? "Callback blocked pending manual escalation" : "Handler sync acknowledged",
+          status: index === 2 ? "error" : "ok",
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        }
+      ]
+    }))
+  )
+};
+var runtimeOperationListDemoPresets = {
+  storefront: {
+    typeOrder: ["deploy", "rollback", "scale", "restart", "config-update"],
+    statusOrder: ["pending", "running", "completed", "failed"],
+    searchFields: ["id", "type", "targetId"],
+    typeLabels: {
+      deploy: "Deploy",
+      rollback: "Rollback",
+      scale: "Scale",
+      restart: "Restart",
+      "config-update": "Config"
+    },
+    statusLabels: {
+      pending: "Pending",
+      running: "Running",
+      completed: "Completed",
+      failed: "Failed"
+    },
+    labels: {
+      all: "All",
+      searchPlaceholder: "Search by ID / type / target...",
+      statusSectionTitle: "Status",
+      typeSectionTitle: "Type",
+      tableTitle: (matched) => `Operations (${matched} matched)`
+    },
+    statsCopy: {
+      totalLabel: "Total Ops",
+      totalHint: (matched) => `${matched} matched`,
+      runningLabel: "Running",
+      runningHint: "In progress",
+      failedLabel: "Failed",
+      failedHint: "Needs attention",
+      typeLabel: "Op Types",
+      typeHint: "Deploy / Rollback / Scale / etc."
+    },
+    emptyTitle: "No operations found",
+    emptyDescription: "No runtime operations match your current filters.",
+    columnLabels: {
+      id: "ID",
+      type: "Type",
+      targetId: "Target",
+      status: "Status",
+      createdAt: "Created",
+      finishedAt: "Finished"
+    },
+    includeColumns: ["id", "type", "status", "createdAt"],
+    defaultPageSize: 5,
+    pageSizeOptions: [5, 10, 20],
+    detailLabels: {
+      titlePrefix: "Operation",
+      overviewTitle: "Overview",
+      timelineTitle: "Timeline",
+      receiptsTitle: "Receipts",
+      id: "ID",
+      type: "Type",
+      status: "Status",
+      target: "Target",
+      createdAt: "Created",
+      finishedAt: "Finished",
+      inProgress: "In progress...",
+      noReceipts: "No receipts",
+      receiptOk: "OK",
+      receiptError: "ERROR"
+    }
+  },
+  tob: {
+    typeOrder: ["deploy", "rollback", "scale", "restart", "config-update"],
+    statusOrder: ["pending", "running", "completed", "failed"],
+    searchFields: ["id", "type", "targetId"],
+    typeLabels: {
+      deploy: "\u90E8\u7F72",
+      rollback: "\u56DE\u6EDA",
+      scale: "\u6269\u7F29\u5BB9",
+      restart: "\u91CD\u542F",
+      "config-update": "\u914D\u7F6E\u66F4\u65B0"
+    },
+    statusLabels: {
+      pending: "\u7B49\u5F85\u4E2D",
+      running: "\u6267\u884C\u4E2D",
+      completed: "\u5DF2\u5B8C\u6210",
+      failed: "\u5DF2\u5931\u8D25"
+    },
+    labels: {
+      all: "\u5168\u90E8",
+      searchPlaceholder: "\u641C\u7D22\u64CD\u4F5C ID / \u7C7B\u578B / \u76EE\u6807...",
+      statusSectionTitle: "\u6267\u884C\u72B6\u6001",
+      typeSectionTitle: "\u64CD\u4F5C\u7C7B\u578B",
+      tableTitle: (matched) => `\u64CD\u4F5C\u5217\u8868\uFF08\u5339\u914D ${matched} \u6761\uFF09`
+    },
+    statsCopy: {
+      totalLabel: "\u64CD\u4F5C\u603B\u6570",
+      totalHint: (matched) => `\u5339\u914D ${matched} \u6761`,
+      runningLabel: "\u6267\u884C\u4E2D",
+      runningHint: "\u6B63\u5728\u8FD0\u884C",
+      failedLabel: "\u5931\u8D25",
+      failedHint: "\u9700\u5173\u6CE8",
+      typeLabel: "\u64CD\u4F5C\u7C7B\u578B",
+      typeHint: "\u90E8\u7F72 / \u56DE\u6EDA / \u6269\u7F29\u5BB9 \u7B49"
+    },
+    emptyTitle: "\u6682\u65E0\u64CD\u4F5C\u8BB0\u5F55",
+    emptyDescription: "\u5F53\u524D\u7B5B\u9009\u6761\u4EF6\u4E0B\u6CA1\u6709\u5339\u914D\u7684\u8FD0\u7EF4\u64CD\u4F5C\u3002",
+    columnLabels: {
+      id: "ID",
+      type: "\u7C7B\u578B",
+      targetId: "\u76EE\u6807",
+      status: "\u72B6\u6001",
+      createdAt: "\u521B\u5EFA\u65F6\u95F4",
+      finishedAt: "\u5B8C\u6210\u65F6\u95F4"
+    },
+    detailLabels: {
+      titlePrefix: "\u64CD\u4F5C",
+      overviewTitle: "\u6982\u89C8",
+      timelineTitle: "\u65F6\u95F4\u7EBF",
+      receiptsTitle: "\u56DE\u6267",
+      id: "ID",
+      type: "\u7C7B\u578B",
+      status: "\u72B6\u6001",
+      target: "\u76EE\u6807",
+      createdAt: "\u521B\u5EFA\u65F6\u95F4",
+      finishedAt: "\u5B8C\u6210\u65F6\u95F4",
+      inProgress: "\u6267\u884C\u4E2D...",
+      noReceipts: "\u6682\u65E0\u56DE\u6267",
+      receiptOk: "\u6210\u529F",
+      receiptError: "\u5931\u8D25"
+    }
+  },
+  admin: {
+    typeOrder: ["runtime-replay", "secret-rotation", "approval-execution", "deploy", "rollback"],
+    statusOrder: ["running", "pending", "failed", "completed"],
+    searchFields: ["id", "type", "targetId", "status"],
+    typeLabels: {
+      "runtime-replay": "\u8FD0\u884C\u65F6\u91CD\u653E",
+      "secret-rotation": "\u5BC6\u94A5\u8F6E\u6362",
+      "approval-execution": "\u5BA1\u6279\u6267\u884C",
+      deploy: "\u90E8\u7F72",
+      rollback: "\u56DE\u6EDA"
+    },
+    statusLabels: {
+      pending: "\u7B49\u5F85\u4E2D",
+      running: "\u6267\u884C\u4E2D",
+      completed: "\u5DF2\u5B8C\u6210",
+      failed: "\u5DF2\u5931\u8D25"
+    },
+    labels: {
+      all: "\u5168\u90E8",
+      searchPlaceholder: "\u641C\u7D22\u64CD\u4F5C ID / \u7C7B\u578B / \u76EE\u6807 / \u72B6\u6001...",
+      statusSectionTitle: "\u6CBB\u7406\u72B6\u6001",
+      typeSectionTitle: "\u9AD8\u98CE\u9669\u52A8\u4F5C",
+      tableTitle: (matched) => `\u6CBB\u7406\u64CD\u4F5C\uFF08\u5339\u914D ${matched} \u6761\uFF09`
+    },
+    statsCopy: {
+      totalLabel: "\u6CBB\u7406\u64CD\u4F5C\u603B\u6570",
+      totalHint: (matched) => `\u5339\u914D ${matched} \u6761`,
+      runningLabel: "\u5904\u7406\u4E2D",
+      runningHint: "\u7B49\u5F85 callback / replay",
+      failedLabel: "\u963B\u585E",
+      failedHint: "\u9700\u4EBA\u5DE5\u4ECB\u5165",
+      typeLabel: "\u52A8\u4F5C\u7C7B\u578B",
+      typeHint: "\u5BA1\u6279 / \u5BC6\u94A5 / \u8FD0\u884C\u65F6"
+    },
+    emptyTitle: "\u6682\u65E0\u6CBB\u7406\u64CD\u4F5C",
+    emptyDescription: "\u5F53\u524D\u7B5B\u9009\u6761\u4EF6\u4E0B\u6CA1\u6709\u5339\u914D\u7684\u9AD8\u98CE\u9669\u6CBB\u7406\u52A8\u4F5C\u3002",
+    columnLabels: {
+      id: "\u56DE\u6267\u7F16\u53F7",
+      type: "\u52A8\u4F5C\u7C7B\u578B",
+      targetId: "\u6CBB\u7406\u76EE\u6807",
+      status: "\u6CBB\u7406\u72B6\u6001",
+      createdAt: "\u63D0\u4EA4\u65F6\u95F4",
+      finishedAt: "\u5B8C\u6210\u65F6\u95F4"
+    },
+    includeColumns: ["id", "type", "targetId", "status", "createdAt"],
+    defaultPageSize: 10,
+    pageSizeOptions: [5, 10, 20, 50],
+    detailLabels: {
+      titlePrefix: "\u6CBB\u7406\u64CD\u4F5C",
+      overviewTitle: "\u64CD\u4F5C\u6982\u89C8",
+      timelineTitle: "\u6CBB\u7406\u65F6\u95F4\u7EBF",
+      receiptsTitle: "\u6CBB\u7406\u56DE\u6267",
+      id: "\u56DE\u6267\u7F16\u53F7",
+      type: "\u52A8\u4F5C\u7C7B\u578B",
+      status: "\u6CBB\u7406\u72B6\u6001",
+      target: "\u6CBB\u7406\u76EE\u6807",
+      createdAt: "\u63D0\u4EA4\u65F6\u95F4",
+      finishedAt: "\u5B8C\u6210\u65F6\u95F4",
+      inProgress: "\u7B49\u5F85\u5B8C\u6210...",
+      noReceipts: "\u6682\u65E0\u6CBB\u7406\u56DE\u6267",
+      receiptOk: "\u6210\u529F",
+      receiptError: "\u963B\u585E"
+    }
+  }
+};
+function RuntimeOperationDemoListPage({
+  title,
+  description,
+  preset,
+  count = 50,
+  detailHrefBase = "/operations",
+  recordOptions,
+  mapRecords
+}) {
+  const [operations] = (0, import_react32.useState)(() => {
+    const records = createRuntimeOperationMockRecords({
+      count,
+      typeOrder: preset.typeOrder,
+      statusOrder: preset.statusOrder,
+      ...recordOptions
+    });
+    return mapRecords ? mapRecords(records) : records;
+  });
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    RuntimeOperationsListPageSection,
+    {
+      title,
+      description,
+      operations,
+      preset,
+      detailHrefBase
+    }
+  );
+}
+function RuntimeOperationsTableCard({
+  operations,
+  detailHrefBase = "/operations",
+  detailHrefBuilder,
+  title,
+  sort,
+  onSortChange,
+  striped = false,
+  compact = false,
+  emptyTitle = "No operations",
+  emptyDescription = "No runtime operations recorded yet.",
+  typeLabels,
+  statusLabels = runtimeOperationStatusLabels,
+  statusVariants = runtimeOperationStatusVariants,
+  columnLabels,
+  includeColumns,
+  omitColumns,
+  pagination
+}) {
+  const columns = (0, import_react32.useMemo)(
+    () => createRuntimeOperationTableColumns({
+      detailHrefBase,
+      detailHrefBuilder,
+      typeLabels,
+      statusLabels,
+      statusVariants,
+      columnLabels,
+      includeColumns,
+      omitColumns
+    }),
+    [columnLabels, detailHrefBase, detailHrefBuilder, includeColumns, omitColumns, statusLabels, statusVariants, typeLabels]
+  );
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    PaginatedDataTableCard,
+    {
+      title,
+      columns,
+      rows: operations,
+      rowKey: (row) => row.id,
+      sort,
+      onSortChange,
+      striped,
+      compact,
+      emptyTitle,
+      emptyDescription,
+      pagination
+    }
+  );
+}
+var defaultRuntimeOperationDetailLabels = {
+  titlePrefix: "Operation",
+  overviewTitle: "Overview",
+  timelineTitle: "Timeline",
+  receiptsTitle: "Receipts",
+  id: "ID",
+  type: "Type",
+  status: "Status",
+  target: "Target",
+  createdAt: "Created",
+  finishedAt: "Finished",
+  inProgress: "In progress...",
+  noReceipts: "No receipts",
+  receiptOk: "OK",
+  receiptError: "ERROR"
+};
+var defaultRuntimeOperationFormatDateTime = (value) => new Date(value).toLocaleString();
+function RuntimeOperationTypeReadout({ type, typeLabels }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    "span",
+    {
+      style: {
+        padding: "2px 8px",
+        borderRadius: 4,
+        fontSize: 12,
+        fontWeight: 500,
+        background: "rgba(59,130,246,0.12)",
+        color: "#93c5fd",
+        textTransform: "capitalize"
+      },
+      children: typeLabels?.[type] ?? type
+    }
+  );
+}
+function RuntimeOperationIdReadout({ id, href }) {
+  if (!href) {
+    return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("span", { style: { color: "#e2e8f0", fontSize: 13, fontFamily: "monospace" }, children: id });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("a", { href, style: { color: "#93c5fd", textDecoration: "none", fontSize: 13, fontFamily: "monospace" }, children: id });
+}
+function RuntimeOperationTargetReadout({ targetId }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("span", { style: { color: "#94a3b8", fontSize: 13 }, children: targetId });
+}
+function RuntimeOperationStatusReadout({
+  status,
+  statusLabels,
+  statusVariants,
+  size = "sm"
+}) {
+  const resolvedStatusLabels = statusLabels ?? runtimeOperationStatusLabels;
+  const resolvedStatusVariants = statusVariants ?? runtimeOperationStatusVariants;
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    StatusBadge,
+    {
+      label: resolvedStatusLabels[status] ?? status,
+      variant: resolvedStatusVariants[status] ?? "default",
+      size
+    }
+  );
+}
+function RuntimeOperationDateTimeReadout({
+  value,
+  fallback = "\u2014",
+  color = "#94a3b8",
+  fontSize = 13,
+  formatDateTime: formatDateTime2
+}) {
+  const resolvedFormatDateTime = formatDateTime2 ?? defaultRuntimeOperationFormatDateTime;
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("span", { style: { color, fontSize }, children: value ? resolvedFormatDateTime(value) : fallback });
+}
+function createRuntimeOperationTableColumns({
+  detailHrefBase = "/operations",
+  detailHrefBuilder,
+  typeLabels,
+  statusLabels = runtimeOperationStatusLabels,
+  statusVariants = runtimeOperationStatusVariants,
+  columnLabels,
+  includeColumns,
+  omitColumns = []
+} = {}) {
+  const columns = [
+    {
+      key: "id",
+      header: columnLabels?.id ?? "ID",
+      width: "120px",
+      sortable: true,
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+        RuntimeOperationIdReadout,
+        {
+          id: row.id,
+          href: detailHrefBuilder ? detailHrefBuilder(row) : `${detailHrefBase}/${row.id}`
+        }
+      )
+    },
+    {
+      key: "type",
+      header: columnLabels?.type ?? "Type",
+      width: "140px",
+      sortable: true,
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationTypeReadout, { type: row.type, typeLabels })
+    },
+    {
+      key: "targetId",
+      header: columnLabels?.targetId ?? "Target",
+      width: "140px",
+      sortable: true,
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationTargetReadout, { targetId: row.targetId })
+    },
+    {
+      key: "status",
+      header: columnLabels?.status ?? "Status",
+      width: "140px",
+      sortable: true,
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+        RuntimeOperationStatusReadout,
+        {
+          status: row.status,
+          statusLabels,
+          statusVariants
+        }
+      )
+    },
+    {
+      key: "createdAt",
+      header: columnLabels?.createdAt ?? "Created",
+      width: "160px",
+      sortable: true,
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationDateTimeReadout, { value: row.createdAt })
+    },
+    {
+      key: "finishedAt",
+      header: columnLabels?.finishedAt ?? "Finished",
+      width: "160px",
+      sortable: true,
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationDateTimeReadout, { value: row.finishedAt, color: "#64748b" })
+    }
+  ];
+  const allowedKeys = includeColumns ?? columns.map((column) => column.key);
+  return columns.filter((column) => allowedKeys.includes(column.key) && !omitColumns.includes(column.key));
+}
+function RuntimeOperationReceiptListReadout({
+  receipts = [],
+  detailLabels,
+  formatDateTime: formatDateTime2
+}) {
+  const resolvedDetailLabels = detailLabels ?? defaultRuntimeOperationDetailLabels;
+  const resolvedFormatDateTime = formatDateTime2 ?? defaultRuntimeOperationFormatDateTime;
+  if (receipts.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(EmptyState, { title: resolvedDetailLabels.noReceipts ?? defaultRuntimeOperationDetailLabels.noReceipts });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: receipts.map((receipt, index) => /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)(
+    "div",
+    {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "10px 14px",
+        borderRadius: 8,
+        background: receipt.status === "error" ? "rgba(239,68,68,0.06)" : "rgba(15,23,42,0.3)",
+        border: receipt.status === "error" ? "1px solid rgba(239,68,68,0.15)" : "1px solid rgba(148,163,184,0.06)"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+          StatusBadge,
+          {
+            label: receipt.status === "ok" ? resolvedDetailLabels.receiptOk ?? defaultRuntimeOperationDetailLabels.receiptOk : resolvedDetailLabels.receiptError ?? defaultRuntimeOperationDetailLabels.receiptError,
+            variant: receipt.status === "ok" ? "success" : "error",
+            size: "sm"
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, fontWeight: 500, color: "#e2e8f0", fontFamily: "monospace" }, children: receipt.code }),
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginTop: 2 }, children: receipt.message })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+          RuntimeOperationDateTimeReadout,
+          {
+            value: receipt.timestamp,
+            color: "#64748b",
+            fontSize: 11,
+            formatDateTime: resolvedFormatDateTime
+          }
+        )
+      ]
+    },
+    `${receipt.code}-${index}`
+  )) });
+}
+function RuntimeOperationOverviewReadout({
+  operation,
+  detailLabels,
+  typeLabels,
+  statusLabels
+}) {
+  const resolvedDetailLabels = detailLabels ?? defaultRuntimeOperationDetailLabels;
+  const resolvedTypeLabels = typeLabels;
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+      InfoRow,
+      {
+        label: resolvedDetailLabels.id ?? defaultRuntimeOperationDetailLabels.id,
+        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationIdReadout, { id: `#${operation.id}` })
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+      InfoRow,
+      {
+        label: resolvedDetailLabels.type ?? defaultRuntimeOperationDetailLabels.type,
+        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationTypeReadout, { type: operation.type, typeLabels: resolvedTypeLabels })
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+      InfoRow,
+      {
+        label: resolvedDetailLabels.status ?? defaultRuntimeOperationDetailLabels.status,
+        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+          RuntimeOperationStatusReadout,
+          {
+            status: operation.status,
+            statusLabels,
+            statusVariants: runtimeOperationStatusVariants
+          }
+        )
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+      InfoRow,
+      {
+        label: resolvedDetailLabels.target ?? defaultRuntimeOperationDetailLabels.target,
+        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationTargetReadout, { targetId: operation.targetId })
+      }
+    )
+  ] });
+}
+function RuntimeOperationTimelineReadout({
+  operation,
+  detailLabels,
+  formatDateTime: formatDateTime2
+}) {
+  const resolvedDetailLabels = detailLabels ?? defaultRuntimeOperationDetailLabels;
+  const resolvedFormatDateTime = formatDateTime2 ?? defaultRuntimeOperationFormatDateTime;
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+      InfoRow,
+      {
+        label: resolvedDetailLabels.createdAt ?? defaultRuntimeOperationDetailLabels.createdAt,
+        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationDateTimeReadout, { value: operation.createdAt, formatDateTime: resolvedFormatDateTime })
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+      InfoRow,
+      {
+        label: resolvedDetailLabels.finishedAt ?? defaultRuntimeOperationDetailLabels.finishedAt,
+        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+          RuntimeOperationDateTimeReadout,
+          {
+            value: operation.finishedAt,
+            fallback: resolvedDetailLabels.inProgress ?? defaultRuntimeOperationDetailLabels.inProgress,
+            color: operation.finishedAt ? "#94a3b8" : "#fcd34d",
+            formatDateTime: resolvedFormatDateTime
+          }
+        )
+      }
+    )
+  ] });
+}
+function RuntimeOperationDetailView({
+  operation,
+  receipts = [],
+  preset,
+  backHref = "/operations",
+  backLabel,
+  notFoundTitle = "Not Found",
+  notFoundMessage,
+  typeLabels,
+  statusLabels,
+  formatDateTime: formatDateTime2
+}) {
+  const resolvedTypeLabels = typeLabels ?? preset?.typeLabels;
+  const resolvedStatusLabels = statusLabels ?? preset?.statusLabels ?? runtimeOperationStatusLabels;
+  const resolvedDetailLabels = preset?.detailLabels ?? defaultRuntimeOperationDetailLabels;
+  const resolvedFormatDateTime = formatDateTime2 ?? defaultRuntimeOperationFormatDateTime;
+  if (!operation) {
+    return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+      DetailShell,
+      {
+        title: notFoundTitle,
+        backHref,
+        backLabel,
+        sections: [],
+        error: notFoundMessage ?? "Operation not found"
+      }
+    );
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    DetailShell,
+    {
+      title: `${resolvedDetailLabels.titlePrefix ?? defaultRuntimeOperationDetailLabels.titlePrefix}: ${resolvedTypeLabels?.[operation.type] ?? operation.type}`,
+      backHref,
+      backLabel,
+      sections: [
+        {
+          title: resolvedDetailLabels.overviewTitle ?? defaultRuntimeOperationDetailLabels.overviewTitle,
+          content: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+            RuntimeOperationOverviewReadout,
+            {
+              operation,
+              detailLabels: resolvedDetailLabels,
+              typeLabels: resolvedTypeLabels,
+              statusLabels: resolvedStatusLabels
+            }
+          )
+        },
+        {
+          title: resolvedDetailLabels.timelineTitle ?? defaultRuntimeOperationDetailLabels.timelineTitle,
+          content: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+            RuntimeOperationTimelineReadout,
+            {
+              operation,
+              detailLabels: resolvedDetailLabels,
+              formatDateTime: resolvedFormatDateTime
+            }
+          )
+        },
+        {
+          title: `${resolvedDetailLabels.receiptsTitle ?? defaultRuntimeOperationDetailLabels.receiptsTitle} (${receipts.length})`,
+          content: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+            RuntimeOperationReceiptListReadout,
+            {
+              receipts,
+              detailLabels: resolvedDetailLabels,
+              formatDateTime: resolvedFormatDateTime
+            }
+          )
+        }
+      ]
+    }
+  );
+}
+function RuntimeOperationPresetDetailRoute({
+  operationId,
+  operations,
+  preset,
+  backHref = "/operations",
+  backLabel,
+  notFoundTitle = "Not Found",
+  notFoundMessage,
+  typeLabels,
+  statusLabels,
+  formatDateTime: formatDateTime2
+}) {
+  const data = operations[operationId];
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    RuntimeOperationDetailView,
+    {
+      operation: data?.op,
+      receipts: data?.receipts ?? [],
+      preset,
+      backHref,
+      backLabel,
+      typeLabels,
+      statusLabels,
+      formatDateTime: formatDateTime2,
+      notFoundTitle,
+      notFoundMessage: typeof notFoundMessage === "function" ? notFoundMessage(operationId) : notFoundMessage ?? `Operation ${operationId} not found`
+    }
+  );
+}
+function RuntimeOperationsListPageSection({
+  title,
+  description,
+  operations,
+  preset,
+  detailHrefBase = "/operations",
+  detailHrefBuilder,
+  searchFields,
+  statusOrder,
+  typeOrder,
+  typeLabels,
+  statusLabels,
+  statusVariants = runtimeOperationStatusVariants,
+  labels,
+  statsCopy,
+  emptyTitle,
+  emptyDescription,
+  defaultPageSize,
+  pageSizeOptions,
+  columnLabels,
+  includeColumns,
+  omitColumns
+}) {
+  const resolvedStatusOrder = statusOrder ?? [...preset?.statusOrder ?? []];
+  const resolvedTypeOrder = typeOrder ?? [...preset?.typeOrder ?? []];
+  const resolvedTypeLabels = typeLabels ?? preset?.typeLabels;
+  const resolvedStatusLabels = statusLabels ?? preset?.statusLabels ?? runtimeOperationStatusLabels;
+  const resolvedLabels = labels ?? preset?.labels;
+  const resolvedStatsCopy = statsCopy ?? preset?.statsCopy;
+  const resolvedEmptyTitle = emptyTitle ?? preset?.emptyTitle;
+  const resolvedEmptyDescription = emptyDescription ?? preset?.emptyDescription;
+  const resolvedColumnLabels = columnLabels ?? preset?.columnLabels;
+  const resolvedIncludeColumns = includeColumns ?? preset?.includeColumns;
+  const resolvedOmitColumns = omitColumns ?? preset?.omitColumns;
+  const resolvedSearchFields = searchFields ?? preset?.searchFields ?? ["id", "type", "targetId"];
+  const resolvedDefaultPageSize = defaultPageSize ?? preset?.defaultPageSize ?? 10;
+  const resolvedPageSizeOptions = pageSizeOptions ?? preset?.pageSizeOptions ?? [5, 10, 20, 50];
+  const listState = useListPageSectionState({
+    items: operations,
+    searchFields: resolvedSearchFields,
+    defaultPageSize: resolvedDefaultPageSize,
+    pageSizeOptions: resolvedPageSizeOptions,
+    facets: [
+      {
+        key: "status",
+        order: resolvedStatusOrder,
+        getValue: (operation) => operation.status
+      },
+      {
+        key: "type",
+        order: resolvedTypeOrder,
+        getValue: (operation) => operation.type
+      }
+    ]
+  });
+  const statusFacet = listState.facets[0];
+  const typeFacet = listState.facets[1];
+  const stats = (0, import_react32.useMemo)(
+    () => ({
+      total: operations.length,
+      running: operations.filter((operation) => operation.status === "running").length,
+      failed: operations.filter((operation) => operation.status === "failed").length,
+      matched: listState.sortedItems.length,
+      types: typeFacet?.order.length ?? 0
+    }),
+    [listState.sortedItems.length, operations, typeFacet?.order.length]
+  );
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)(PageShell, { title, description, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)(
+      "div",
+      {
+        style: {
+          display: "grid",
+          gap: 14,
+          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+          marginBottom: 20
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("article", { style: listPageStatCardStyle, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.totalLabel ?? "Total Ops" }),
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700 }, children: stats.total }),
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.totalHint?.(stats.matched) ?? `${stats.matched} matched` })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("article", { style: listPageStatCardStyle, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.runningLabel ?? "Running" }),
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#facc15" }, children: stats.running }),
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.runningHint ?? "In progress" })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("article", { style: listPageStatCardStyle, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.failedLabel ?? "Failed" }),
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#f87171" }, children: stats.failed }),
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.failedHint ?? "Needs attention" })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("article", { style: listPageStatCardStyle, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.typeLabel ?? "Op Types" }),
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#93c5fd" }, children: stats.types }),
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.typeHint ?? "Deploy / rollback / scale" })
+          ] })
+        ]
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+      SearchFilterInput2,
+      {
+        value: listState.searchTerm,
+        onChange: listState.setSearchTerm,
+        placeholder: resolvedLabels?.searchPlaceholder ?? "Search by ID / type / target..."
+      }
+    ) }),
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { marginBottom: 12 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: resolvedLabels?.statusSectionTitle ?? "Status" }),
+      /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+        Tabs,
+        {
+          items: [
+            { key: "ALL", label: resolvedLabels?.all ?? "All", count: listState.searchFilteredItems.length },
+            ...(statusFacet?.order ?? []).map((status) => ({
+              key: status,
+              label: resolvedStatusLabels[status] ?? status,
+              count: statusFacet?.baseItems.filter((operation) => operation.status === status).length ?? 0
+            }))
+          ],
+          activeKey: statusFacet?.value ?? "ALL",
+          onChange: (value) => listState.setFacetValue("status", value),
+          variant: "pills",
+          size: "sm"
+        }
+      )
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { marginBottom: 16 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: resolvedLabels?.typeSectionTitle ?? "Type" }),
+      /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+        Tabs,
+        {
+          items: [
+            { key: "ALL", label: resolvedLabels?.all ?? "All", count: typeFacet?.baseItems.length ?? 0 },
+            ...(typeFacet?.order ?? []).map((type) => ({
+              key: type,
+              label: resolvedTypeLabels?.[type] ?? type,
+              count: typeFacet?.baseItems.filter((operation) => operation.type === type).length ?? 0
+            }))
+          ],
+          activeKey: typeFacet?.value ?? "ALL",
+          onChange: (value) => listState.setFacetValue("type", value),
+          variant: "pills",
+          size: "sm"
+        }
+      )
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+      RuntimeOperationsTableCard,
+      {
+        operations: listState.pagedItems,
+        detailHrefBase,
+        detailHrefBuilder,
+        title: resolvedLabels?.tableTitle?.(listState.sortedItems.length),
+        sort: listState.sortConfig,
+        onSortChange: listState.setSortConfig,
+        striped: true,
+        compact: true,
+        emptyTitle: resolvedEmptyTitle,
+        emptyDescription: resolvedEmptyDescription,
+        typeLabels: resolvedTypeLabels,
+        statusLabels: resolvedStatusLabels,
+        statusVariants,
+        columnLabels: resolvedColumnLabels,
+        includeColumns: resolvedIncludeColumns,
+        omitColumns: resolvedOmitColumns,
+        pagination: {
+          page: listState.pagination.page,
+          totalPages: listState.totalPages,
+          total: listState.sortedItems.length,
+          onPageChange: listState.pagination.setPage
+        }
+      }
+    )
+  ] });
+}
+
+// src/components/FormField.tsx
+var import_jsx_runtime59 = require("react/jsx-runtime");
+function FormField({
+  label,
+  htmlFor,
+  error,
+  required,
+  hint,
+  helper,
+  disabled,
+  compact,
+  children
+}) {
+  const helperText = helper ?? hint;
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)("div", { style: { marginBottom: compact ? 8 : 16 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)(
+      "label",
+      {
+        htmlFor,
+        style: {
+          display: "block",
+          fontSize: 13,
+          fontWeight: 500,
+          color: disabled ? "#64748b" : "#cbd5e1",
+          marginBottom: 6
+        },
+        children: [
+          label,
+          required && /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
+        ]
+      }
+    ),
+    children,
+    helperText && !error && /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("p", { style: { fontSize: 12, color: "#64748b", margin: "4px 0 0" }, children: helperText }),
+    error && /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("p", { style: { fontSize: 12, color: "#fca5a5", margin: "4px 0 0" }, children: error })
+  ] });
+}
+
+// src/components/SubmitButton.tsx
+var import_react33 = __toESM(require("react"));
+var import_jsx_runtime60 = require("react/jsx-runtime");
+var VARIANT_STYLES4 = {
+  primary: {
+    background: "#1d4ed8",
+    border: "1px solid rgba(96, 165, 250, 0.28)"
+  },
+  brand: {
+    background: "#7c3aed",
+    border: "1px solid rgba(167, 139, 250, 0.28)"
+  },
+  secondary: {
+    background: "rgba(71, 85, 105, 0.55)",
+    border: "1px solid rgba(148, 163, 184, 0.22)"
+  },
+  danger: {
+    background: "#dc2626",
+    border: "1px solid rgba(252, 165, 165, 0.28)"
+  }
+};
+var SubmitButton = import_react33.default.forwardRef(
+  function SubmitButton2({
+    loading = false,
+    label = "\u63D0\u4EA4",
+    loadingLabel = "\u63D0\u4EA4\u4E2D...",
+    disabled = false,
+    variant = "primary",
+    onClick,
+    type = "submit",
+    style,
+    className,
+    children
+  }, ref) {
+    const variantStyle = VARIANT_STYLES4[variant];
+    const isDisabled = disabled || loading;
+    return /* @__PURE__ */ (0, import_jsx_runtime60.jsxs)(
+      "button",
+      {
+        ref,
+        type,
+        disabled: isDisabled,
+        onClick: loading ? void 0 : onClick,
+        className,
+        style: {
+          marginTop: 4,
+          borderRadius: 10,
+          padding: "12px 16px",
+          color: "#f8fafc",
+          fontSize: 15,
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          opacity: isDisabled ? 0.7 : 1,
+          cursor: isDisabled ? "wait" : "pointer",
+          ...variantStyle,
+          ...style
+        },
+        children: [
+          children ? children : loading ? /* @__PURE__ */ (0, import_jsx_runtime60.jsxs)(import_jsx_runtime60.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime60.jsx)(
+              "span",
+              {
+                style: {
+                  display: "inline-block",
+                  width: 14,
+                  height: 14,
+                  border: "2px solid rgba(248, 250, 252, 0.3)",
+                  borderTopColor: "#f8fafc",
+                  borderRadius: "50%",
+                  animation: "m5-spin 0.6s linear infinite"
+                }
+              }
+            ),
+            loadingLabel
+          ] }) : label,
+          /* @__PURE__ */ (0, import_jsx_runtime60.jsx)("style", { children: `@keyframes m5-spin { to { transform: rotate(360deg); } }` })
+        ]
+      }
+    );
+  }
+);
+
+// src/components/Alert.tsx
+var import_react34 = require("react");
+var import_jsx_runtime61 = require("react/jsx-runtime");
+var VARIANT_PALETTE = {
+  info: {
+    bg: "rgba(59, 130, 246, 0.08)",
+    border: "rgba(96, 165, 250, 0.25)",
+    title: "#bfdbfe",
+    text: "#93c5fd",
+    icon: "#60a5fa"
+  },
+  success: {
+    bg: "rgba(34, 197, 94, 0.08)",
+    border: "rgba(74, 222, 128, 0.25)",
+    title: "#bbf7d0",
+    text: "#86efac",
+    icon: "#4ade80"
+  },
+  warning: {
+    bg: "rgba(251, 191, 36, 0.08)",
+    border: "rgba(250, 204, 21, 0.25)",
+    title: "#fde68a",
+    text: "#fcd34d",
+    icon: "#facc15"
+  },
+  danger: {
+    bg: "rgba(239, 68, 68, 0.08)",
+    border: "rgba(248, 113, 113, 0.25)",
+    title: "#fecaca",
+    text: "#fca5a5",
+    icon: "#f87171"
+  }
+};
+function AlertIcon({ variant }) {
+  const color = VARIANT_PALETTE[variant].icon;
+  switch (variant) {
+    case "info":
+      return /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(
+        "path",
+        {
+          d: "M10 1.25a8.75 8.75 0 1 0 0 17.5 8.75 8.75 0 0 0 0-17.5Zm-.625 4.375h1.25v5h-1.25v-5Zm1.25 7.5h-1.25v-1.25h1.25v1.25Z",
+          fill: color
+        }
+      ) });
+    case "success":
+      return /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(
+        "path",
+        {
+          d: "M10 1.25a8.75 8.75 0 1 0 0 17.5 8.75 8.75 0 0 0 0-17.5Zm4.358 7.108-4.846 4.846a.625.625 0 0 1-.884 0l-2.346-2.346a.625.625 0 1 1 .884-.884l1.904 1.904 4.404-4.404a.625.625 0 1 1 .884.884Z",
+          fill: color
+        }
+      ) });
+    case "warning":
+      return /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(
+        "path",
+        {
+          d: "M8.947 2.709a1.25 1.25 0 0 1 2.106 0l7.417 11.8a1.25 1.25 0 0 1-1.053 1.866H2.583a1.25 1.25 0 0 1-1.053-1.866l7.417-11.8Zm1.053.625v6.25h-1.25v-6.25h1.25Zm0 8.75h-1.25v-1.25h1.25v1.25Z",
+          fill: color
+        }
+      ) });
+    case "danger":
+      return /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(
+        "path",
+        {
+          d: "M10 1.25a8.75 8.75 0 1 0 0 17.5 8.75 8.75 0 0 0 0-17.5ZM6.576 6.576a.625.625 0 0 1 .884 0L10 9.116l2.54-2.54a.625.625 0 1 1 .884.884L10.884 10l2.54 2.54a.625.625 0 1 1-.884.884L10 10.884l-2.54 2.54a.625.625 0 1 1-.884-.884L9.116 10l-2.54-2.54a.625.625 0 0 1 0-.884Z",
+          fill: color
+        }
+      ) });
+  }
+}
+function Alert({
+  variant = "info",
+  title,
+  children,
+  dismissible = false,
+  onDismiss,
+  icon = true,
+  className,
+  style
+}) {
+  const [dismissed, setDismissed] = (0, import_react34.useState)(false);
+  const palette = VARIANT_PALETTE[variant];
+  if (dismissed) return null;
+  return /* @__PURE__ */ (0, import_jsx_runtime61.jsxs)(
+    "div",
+    {
+      className,
+      style: {
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 12,
+        borderRadius: 12,
+        padding: "14px 16px",
+        background: palette.bg,
+        border: `1px solid ${palette.border}`,
+        ...style
+      },
+      children: [
+        icon && /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("div", { style: { flexShrink: 0, marginTop: 1 }, children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(AlertIcon, { variant }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime61.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+          title ? /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("div", { style: { fontWeight: 600, fontSize: 14, color: palette.title, marginBottom: 4 }, children: title }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("div", { style: { fontSize: 13, lineHeight: 1.55, color: palette.text }, children })
+        ] }),
+        dismissible && /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: () => {
+              setDismissed(true);
+              onDismiss?.();
+            },
+            style: {
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 2,
+              color: palette.icon,
+              flexShrink: 0,
+              opacity: 0.7
+            },
+            "aria-label": "Dismiss alert",
+            children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 14 14", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(
+              "path",
+              {
+                d: "M1.232 1.232a.525.525 0 0 1 .743 0L7 6.257l5.025-5.025a.525.525 0 1 1 .743.743L7.743 7l5.025 5.025a.525.525 0 1 1-.743.743L7 7.743l-5.025 5.025a.525.525 0 1 1-.743-.743L6.257 7 1.232 1.975a.525.525 0 0 1 0-.743Z",
+                fill: "currentColor"
+              }
+            ) })
+          }
+        )
+      ]
+    }
+  );
+}
+function useAlert(defaultOptions) {
+  const [alert, setAlert] = (0, import_react34.useState)(null);
+  const show = (title, message, variant) => {
+    const resolvedVariant = variant ?? defaultOptions?.variant ?? "info";
+    setAlert({ visible: true, variant: resolvedVariant, title, message });
+    const dismissAfter = defaultOptions?.dismissAfterMs;
+    if (dismissAfter && dismissAfter > 0) {
+      setTimeout(() => setAlert(null), dismissAfter);
+    }
+  };
+  const info = (title, message) => show(title, message, "info");
+  const success = (title, message) => show(title, message, "success");
+  const warning = (title, message) => show(title, message, "warning");
+  const danger = (title, message) => show(title, message, "danger");
+  const dismiss = () => setAlert(null);
+  return { alert, show, info, success, warning, danger, dismiss };
+}
+
+// src/components/CopyToClipboard.tsx
+var import_react35 = require("react");
+var import_jsx_runtime62 = require("react/jsx-runtime");
+function CopyToClipboard({
+  text,
+  label,
+  successLabel = "Copied",
+  style,
+  size = "md",
+  iconOnly = false
+}) {
+  const [copied, setCopied] = (0, import_react35.useState)(false);
+  const handleCopy = (0, import_react35.useCallback)(async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2e3);
+    } catch {
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2e3);
+      } catch {
+      }
+    }
+  }, [text]);
+  const isSmall = size === "sm";
+  const buttonSize = isSmall ? 28 : 34;
+  const iconSize = isSmall ? 14 : 16;
+  if (iconOnly) {
+    return /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+      "button",
+      {
+        type: "button",
+        onClick: handleCopy,
+        title: copied ? successLabel : "Copy to clipboard",
+        "aria-label": copied ? successLabel : "Copy to clipboard",
+        style: {
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: buttonSize,
+          height: buttonSize,
+          borderRadius: 6,
+          border: copied ? "1px solid rgba(74,222,128,0.3)" : "1px solid rgba(148,163,184,0.12)",
+          background: copied ? "rgba(74,222,128,0.1)" : "rgba(15,23,42,0.3)",
+          color: copied ? "#4ade80" : "#64748b",
+          cursor: "pointer",
+          padding: 0,
+          transition: "all 0.15s",
+          ...style
+        },
+        children: copied ? /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+          "svg",
+          {
+            width: iconSize,
+            height: iconSize,
+            viewBox: "0 0 16 16",
+            fill: "none",
+            children: /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+              "path",
+              {
+                d: "M13.3 3.3L6 10.6L2.7 7.3",
+                stroke: "currentColor",
+                strokeWidth: "1.5",
+                strokeLinecap: "round",
+                strokeLinejoin: "round"
+              }
+            )
+          }
+        ) : /* @__PURE__ */ (0, import_jsx_runtime62.jsxs)(
+          "svg",
+          {
+            width: iconSize,
+            height: iconSize,
+            viewBox: "0 0 16 16",
+            fill: "none",
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+                "rect",
+                {
+                  x: "5",
+                  y: "5",
+                  width: "9",
+                  height: "9",
+                  rx: "1.5",
+                  stroke: "currentColor",
+                  strokeWidth: "1.2"
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+                "path",
+                {
+                  d: "M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2",
+                  stroke: "currentColor",
+                  strokeWidth: "1.2"
+                }
+              )
+            ]
+          }
+        )
+      }
+    );
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+    "button",
+    {
+      type: "button",
+      onClick: handleCopy,
+      disabled: copied,
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: isSmall ? 5 : 7,
+        padding: isSmall ? "5px 11px" : "7px 15px",
+        fontSize: isSmall ? 12 : 13,
+        fontWeight: 500,
+        borderRadius: 8,
+        border: copied ? "1px solid rgba(74,222,128,0.25)" : "1px solid rgba(148,163,184,0.14)",
+        background: copied ? "rgba(74,222,128,0.08)" : "rgba(15,23,42,0.3)",
+        color: copied ? "#4ade80" : "#94a3b8",
+        cursor: copied ? "default" : "pointer",
+        transition: "all 0.15s",
+        ...style
+      },
+      children: copied ? /* @__PURE__ */ (0, import_jsx_runtime62.jsxs)(import_jsx_runtime62.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+          "svg",
+          {
+            width: iconSize,
+            height: iconSize,
+            viewBox: "0 0 16 16",
+            fill: "none",
+            children: /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+              "path",
+              {
+                d: "M13.3 3.3L6 10.6L2.7 7.3",
+                stroke: "currentColor",
+                strokeWidth: "1.5",
+                strokeLinecap: "round",
+                strokeLinejoin: "round"
+              }
+            )
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("span", { children: successLabel })
+      ] }) : /* @__PURE__ */ (0, import_jsx_runtime62.jsxs)(import_jsx_runtime62.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime62.jsxs)(
+          "svg",
+          {
+            width: iconSize,
+            height: iconSize,
+            viewBox: "0 0 16 16",
+            fill: "none",
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+                "rect",
+                {
+                  x: "5",
+                  y: "5",
+                  width: "9",
+                  height: "9",
+                  rx: "1.5",
+                  stroke: "currentColor",
+                  strokeWidth: "1.2"
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+                "path",
+                {
+                  d: "M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2",
+                  stroke: "currentColor",
+                  strokeWidth: "1.2"
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("span", { children: label ?? "Copy" })
+      ] })
+    }
+  );
+}
+
+// src/components/VirtualizedList.tsx
+var import_react36 = require("react");
+var import_jsx_runtime63 = require("react/jsx-runtime");
+function VirtualizedList({
+  rows,
+  renderRow,
+  rowHeight = 48,
+  rowHeightFn,
+  height: heightProp,
+  width = "100%",
+  overscan = 3,
+  className,
+  style,
+  emptyText = "\u6682\u65E0\u6570\u636E",
+  onRowClick,
+  onScroll,
+  disabled = false
+}) {
+  const containerRef = (0, import_react36.useRef)(null);
+  const [containerHeight, setContainerHeight] = (0, import_react36.useState)(heightProp ?? 0);
+  const [scrollTop, setScrollTop] = (0, import_react36.useState)(0);
+  (0, import_react36.useEffect)(() => {
+    const calcHeight = () => {
+      if (heightProp) {
+        setContainerHeight(heightProp);
+        return;
+      }
+      if (containerRef.current?.parentElement) {
+        const parentHeight = containerRef.current.parentElement.clientHeight;
+        setContainerHeight(parentHeight > 0 ? parentHeight : 400);
+      }
+    };
+    calcHeight();
+    if (!heightProp) {
+      const observer = new ResizeObserver(() => calcHeight());
+      if (containerRef.current?.parentElement) {
+        observer.observe(containerRef.current.parentElement);
+      }
+      return () => observer.disconnect();
+    }
+  }, [heightProp]);
+  const rowHeights = (0, import_react36.useMemo)(() => {
+    if (!rowHeightFn) return void 0;
+    return rows.map((row, idx) => rowHeightFn(row, idx));
+  }, [rows, rowHeightFn]);
+  const { totalHeight, rowOffsets } = (0, import_react36.useMemo)(() => {
+    const offsets = [0];
+    let total = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const h = rowHeights ? rowHeights[i] ?? rowHeight : rowHeight;
+      total += h;
+      offsets.push(total);
+    }
+    return { totalHeight: total, rowOffsets: offsets };
+  }, [rows, rowHeights, rowHeight]);
+  const visibleRange = (0, import_react36.useMemo)(() => {
+    const startIdx = binarySearchStart(rowOffsets, scrollTop, rows.length);
+    const endIdx = binarySearchEnd(
+      rowOffsets,
+      scrollTop + containerHeight,
+      rows.length
+    );
+    const start = Math.max(0, startIdx - overscan);
+    const end = Math.min(rows.length, endIdx + overscan);
+    return { start, end };
+  }, [rowOffsets, scrollTop, containerHeight, rows.length, overscan]);
+  const handleScroll = (0, import_react36.useCallback)(
+    (e) => {
+      const top = e.target.scrollTop;
+      setScrollTop(top);
+      onScroll?.(top);
+    },
+    [onScroll]
+  );
+  if (rows.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
+      "div",
+      {
+        ref: containerRef,
+        className,
+        style: {
+          width,
+          height: containerHeight > 0 ? containerHeight : 400,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#999",
+          fontSize: 14,
+          ...style
+        },
+        children: emptyText
+      }
+    );
+  }
+  const visibleRows = rows.slice(visibleRange.start, visibleRange.end);
+  return /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
+    "div",
+    {
+      ref: containerRef,
+      className,
+      style: {
+        width,
+        height: containerHeight > 0 ? containerHeight : 400,
+        overflow: "auto",
+        position: "relative",
+        ...disabled ? { pointerEvents: "none", opacity: 0.6 } : {},
+        ...style
+      },
+      onScroll: handleScroll,
+      role: "list",
+      children: /* @__PURE__ */ (0, import_jsx_runtime63.jsx)("div", { style: { height: totalHeight, position: "relative" }, children: visibleRows.map((row, i) => {
+        const actualIndex = visibleRange.start + i;
+        const top = rowOffsets[actualIndex];
+        const h = rowHeights ? rowHeights[actualIndex] : rowHeight;
+        return /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
+          "div",
+          {
+            role: "listitem",
+            style: {
+              position: "absolute",
+              top,
+              left: 0,
+              right: 0,
+              height: h,
+              display: "flex",
+              alignItems: "center",
+              boxSizing: "border-box"
+            },
+            onClick: () => onRowClick?.(row, actualIndex),
+            children: renderRow(row, actualIndex)
+          },
+          row.key
+        );
+      }) })
+    }
+  );
+}
+function binarySearchStart(offsets, target, maxIdx) {
+  let low = 0;
+  let high = maxIdx;
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (offsets[mid + 1] <= target) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  return low;
+}
+function binarySearchEnd(offsets, target, maxIdx) {
+  let low = 0;
+  let high = maxIdx;
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (offsets[mid] < target) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  return high;
+}
+
+// src/components/FileUpload.tsx
+var import_react37 = require("react");
+var import_jsx_runtime64 = require("react/jsx-runtime");
+var STYLES2 = {
+  dropZone: {
+    default: {
+      border: "2px dashed rgba(148, 163, 184, 0.3)",
+      borderRadius: 12,
+      padding: "28px 24px",
+      textAlign: "center",
+      cursor: "pointer",
+      background: "rgba(15, 23, 42, 0.2)",
+      transition: "border-color 0.2s, background 0.2s",
+      minHeight: 100,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8
+    },
+    compact: {
+      border: "1px dashed rgba(148, 163, 184, 0.25)",
+      borderRadius: 8,
+      padding: "12px 16px",
+      textAlign: "center",
+      cursor: "pointer",
+      background: "rgba(15, 23, 42, 0.15)",
+      transition: "border-color 0.2s, background 0.2s",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6
+    }
+  },
+  dropZoneDragOver: {
+    borderColor: "rgba(56, 189, 248, 0.6)",
+    background: "rgba(56, 189, 248, 0.08)"
+  },
+  dropZoneDisabled: {
+    opacity: 0.5,
+    cursor: "not-allowed"
+  },
+  fileItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "10px 14px",
+    borderRadius: 8,
+    background: "rgba(15, 23, 42, 0.3)",
+    border: "1px solid rgba(148, 163, 184, 0.15)",
+    marginTop: 8
+  },
+  fileInfo: {
+    flex: 1,
+    minWidth: 0
+  },
+  fileName: {
+    fontSize: 14,
+    fontWeight: 500,
+    color: "#f8fafc",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: "100%"
+  },
+  fileSize: {
+    fontSize: 12,
+    color: "#94a3b8",
+    marginTop: 2
+  },
+  progressBar: {
+    height: 4,
+    borderRadius: 2,
+    background: "rgba(148, 163, 184, 0.15)",
+    marginTop: 6,
+    overflow: "hidden"
+  },
+  progressFill: (pct, error) => ({
+    height: "100%",
+    borderRadius: 2,
+    width: `${pct}%`,
+    background: error ? "linear-gradient(90deg, #f87171, #ef4444)" : "linear-gradient(90deg, #38bdf8, #818cf8)",
+    transition: "width 0.3s ease"
+  }),
+  removeBtn: {
+    background: "none",
+    border: "none",
+    color: "#94a3b8",
+    cursor: "pointer",
+    padding: "4px 8px",
+    borderRadius: 6,
+    fontSize: 18,
+    lineHeight: 1,
+    transition: "color 0.15s, background 0.15s"
+  },
+  errorText: {
+    fontSize: 12,
+    color: "#f87171",
+    marginTop: 4
+  },
+  preview: {
+    width: 40,
+    height: 40,
+    borderRadius: 6,
+    objectFit: "cover",
+    flexShrink: 0
+  },
+  icon: {
+    width: 40,
+    height: 40,
+    borderRadius: 6,
+    background: "rgba(148, 163, 184, 0.1)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 20,
+    flexShrink: 0,
+    color: "#94a3b8"
+  }
+};
+var _fileIdCounter = 0;
+function nextFileId() {
+  _fileIdCounter += 1;
+  return `file-${Date.now()}-${_fileIdCounter}`;
+}
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+var DEFAULT_MAX_SIZE = 10 * 1024 * 1024;
+function FileUpload({
+  accept,
+  maxFiles = 1,
+  maxSize = DEFAULT_MAX_SIZE,
+  multiple = false,
+  showPreview = true,
+  onFilesAdded,
+  onFileRemoved,
+  files: controlledFiles,
+  disabled = false,
+  placeholder = "\u62D6\u62FD\u6587\u4EF6\u5230\u6B64\u5904\uFF0C\u6216\u70B9\u51FB\u4E0A\u4F20",
+  "data-testid": dataTestId,
+  variant = "default"
+}) {
+  const inputRef = (0, import_react37.useRef)(null);
+  const [internalFiles, setInternalFiles] = (0, import_react37.useState)([]);
+  const [dragOver, setDragOver] = (0, import_react37.useState)(false);
+  const [error, setError] = (0, import_react37.useState)(null);
+  const isControlled = controlledFiles !== void 0;
+  const files = isControlled ? controlledFiles : internalFiles;
+  const setFiles = (0, import_react37.useCallback)(
+    (updater) => {
+      if (isControlled) return;
+      setInternalFiles(updater);
+    },
+    [isControlled]
+  );
+  const processFiles = (0, import_react37.useCallback)(
+    (rawFiles) => {
+      const fileArr = Array.from(rawFiles);
+      setError(null);
+      const currentCount = files.length;
+      const available = (maxFiles ?? 1) - currentCount;
+      if (available <= 0) {
+        setError(`\u6700\u591A\u53EA\u80FD\u4E0A\u4F20 ${maxFiles} \u4E2A\u6587\u4EF6`);
+        return;
+      }
+      const toAdd = fileArr.slice(0, available);
+      if (onFilesAdded) {
+        const shouldProceed = onFilesAdded(toAdd);
+        if (shouldProceed === false) return;
+      }
+      const newFiles = toAdd.map((file) => {
+        if (file.size > maxSize) {
+          return {
+            id: nextFileId(),
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            progress: -1,
+            error: `\u6587\u4EF6\u5927\u5C0F ${formatBytes(file.size)} \u8D85\u8FC7\u9650\u5236 ${formatBytes(maxSize)}`
+          };
+        }
+        let preview;
+        if (showPreview && file.type.startsWith("image/")) {
+          preview = URL.createObjectURL(file);
+        }
+        return {
+          id: nextFileId(),
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          progress: 100,
+          preview
+        };
+      });
+      setFiles((prev) => [...prev, ...newFiles]);
+    },
+    [files.length, maxFiles, maxSize, onFilesAdded, showPreview, setFiles]
+  );
+  const handleDrop = (0, import_react37.useCallback)(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragOver(false);
+      if (disabled) return;
+      const dt = e.dataTransfer;
+      if (dt?.files && dt.files.length > 0) {
+        processFiles(dt.files);
+      }
+    },
+    [disabled, processFiles]
+  );
+  const handleDragOver = (0, import_react37.useCallback)(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!disabled) setDragOver(true);
+    },
+    [disabled]
+  );
+  const handleDragLeave = (0, import_react37.useCallback)(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragOver(false);
+    },
+    []
+  );
+  const handleInputChange = (0, import_react37.useCallback)(
+    (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        processFiles(e.target.files);
+        e.target.value = "";
+      }
+    },
+    [processFiles]
+  );
+  const handleRemove = (0, import_react37.useCallback)(
+    (id) => {
+      setFiles((prev) => {
+        const removed = prev.find((f) => f.id === id);
+        if (removed && onFileRemoved) {
+          onFileRemoved(removed);
+        }
+        if (removed?.preview) {
+          URL.revokeObjectURL(removed.preview);
+        }
+        return prev.filter((f) => f.id !== id);
+      });
+    },
+    [onFileRemoved, setFiles]
+  );
+  const handleClick = (0, import_react37.useCallback)(() => {
+    if (disabled) return;
+    inputRef.current?.click();
+  }, [disabled]);
+  const zoneStyle = variant === "compact" ? STYLES2.dropZone.compact : STYLES2.dropZone.default;
+  return /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("div", { "data-testid": dataTestId, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)(
+      "div",
+      {
+        "data-testid": "fileupload-dropzone",
+        style: {
+          ...zoneStyle,
+          ...dragOver ? STYLES2.dropZoneDragOver : {},
+          ...disabled ? STYLES2.dropZoneDisabled : {}
+        },
+        onDrop: handleDrop,
+        onDragOver: handleDragOver,
+        onDragLeave: handleDragLeave,
+        onClick: handleClick,
+        role: "button",
+        tabIndex: disabled ? -1 : 0,
+        "aria-disabled": disabled,
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)(
+            "svg",
+            {
+              width: "28",
+              height: "28",
+              viewBox: "0 0 24 24",
+              fill: "none",
+              stroke: "#94a3b8",
+              strokeWidth: "1.5",
+              strokeLinecap: "round",
+              strokeLinejoin: "round",
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }),
+                /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("polyline", { points: "17 8 12 3 7 8" }),
+                /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("line", { x1: "12", y1: "3", x2: "12", y2: "15" })
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime64.jsx)(
+            "span",
+            {
+              style: {
+                fontSize: variant === "compact" ? 13 : 14,
+                color: dragOver ? "#38bdf8" : "#94a3b8"
+              },
+              children: dragOver ? "\u91CA\u653E\u6587\u4EF6\u4EE5\u4E0A\u4F20" : placeholder
+            }
+          ),
+          accept ? /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+            "\u652F\u6301: ",
+            accept
+          ] }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime64.jsx)(
+            "input",
+            {
+              ref: inputRef,
+              type: "file",
+              style: { display: "none" },
+              accept,
+              multiple,
+              onChange: handleInputChange,
+              disabled,
+              "data-testid": "fileupload-input"
+            }
+          )
+        ]
+      }
+    ),
+    error ? /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { style: { ...STYLES2.errorText, marginTop: 8, textAlign: "center" }, "data-testid": "fileupload-error", children: error }) : null,
+    files.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { "data-testid": "fileupload-list", children: files.map((file) => /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("div", { style: STYLES2.fileItem, "data-testid": `fileupload-item-${file.id}`, children: [
+      file.preview ? /* @__PURE__ */ (0, import_jsx_runtime64.jsx)(
+        "img",
+        {
+          src: file.preview,
+          alt: file.name,
+          style: STYLES2.preview,
+          "data-testid": `fileupload-preview-${file.id}`
+        }
+      ) : /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { style: STYLES2.icon, "data-testid": `fileupload-icon-${file.id}`, children: "\u{1F4C4}" }),
+      /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("div", { style: STYLES2.fileInfo, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { style: STYLES2.fileName, title: file.name, children: file.name }),
+        /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("div", { style: STYLES2.fileSize, children: [
+          formatBytes(file.size),
+          file.progress >= 0 && file.progress < 100 ? ` \xB7 \u4E0A\u4F20\u4E2D ${file.progress}%` : ""
+        ] }),
+        file.progress >= 0 && file.progress < 100 ? /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { style: STYLES2.progressBar, children: /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { style: STYLES2.progressFill(file.progress, false) }) }) : null,
+        file.error ? /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { style: STYLES2.errorText, "data-testid": `fileupload-error-${file.id}`, children: file.error }) : null
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime64.jsx)(
+        "button",
+        {
+          type: "button",
+          style: STYLES2.removeBtn,
+          onClick: (e) => {
+            e.stopPropagation();
+            handleRemove(file.id);
+          },
+          disabled,
+          "aria-label": `\u79FB\u9664 ${file.name}`,
+          "data-testid": `fileupload-remove-${file.id}`,
+          onMouseEnter: (e) => {
+            e.currentTarget.style.color = "#f87171";
+            e.currentTarget.style.background = "rgba(248, 113, 113, 0.1)";
+          },
+          onMouseLeave: (e) => {
+            e.currentTarget.style.color = "#94a3b8";
+            e.currentTarget.style.background = "none";
+          },
+          children: "\u2715"
+        }
+      )
+    ] }, file.id)) }) : null
+  ] });
+}
+
+// src/components/Switch.tsx
+var import_react38 = __toESM(require("react"));
+var import_jsx_runtime65 = require("react/jsx-runtime");
+var SIZE_MAP3 = {
+  sm: { width: 34, height: 20, thumb: 14, gap: 3 },
+  md: { width: 44, height: 24, thumb: 18, gap: 3 },
+  lg: { width: 56, height: 30, thumb: 24, gap: 4 }
+};
+var DEFAULT_CHECKED_COLOR = "#3b82f6";
+var DEFAULT_UNCHECKED_COLOR = "#d1d5db";
+var DEFAULT_THUMB_COLOR = "#ffffff";
+var FOCUS_RING_COLOR = "rgba(59, 130, 246, 0.35)";
+function Switch({
+  checked,
+  defaultChecked = false,
+  onChange,
+  disabled = false,
+  size = "md",
+  label,
+  labelPosition = "right",
+  checkedColor = DEFAULT_CHECKED_COLOR,
+  uncheckedColor = DEFAULT_UNCHECKED_COLOR,
+  thumbColor = DEFAULT_THUMB_COLOR,
+  "aria-label": ariaLabel,
+  "data-testid": dataTestId,
+  className,
+  style
+}) {
+  const id = (0, import_react38.useId)();
+  const [internalChecked, setInternalChecked] = import_react38.default.useState(defaultChecked);
+  const isControlled = checked !== void 0;
+  const isChecked = isControlled ? checked : internalChecked;
+  const handleToggle = () => {
+    if (disabled) return;
+    const next = !isChecked;
+    if (!isControlled) setInternalChecked(next);
+    onChange?.(next);
+  };
+  const handleKeyDown = (e) => {
+    if (disabled) return;
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      handleToggle();
+    }
+  };
+  const dims = SIZE_MAP3[size];
+  const trackBg = isChecked ? checkedColor : uncheckedColor;
+  const thumbOffset = isChecked ? dims.width - dims.thumb - dims.gap : dims.gap;
+  const labelElement = label ? /* @__PURE__ */ (0, import_jsx_runtime65.jsx)(
+    "label",
+    {
+      htmlFor: id,
+      "data-testid": dataTestId ? `${dataTestId}-label` : void 0,
+      style: {
+        fontSize: size === "sm" ? 13 : size === "lg" ? 15 : 14,
+        fontWeight: 500,
+        color: disabled ? "#9ca3af" : "#1f2937",
+        cursor: disabled ? "not-allowed" : "pointer",
+        userSelect: "none",
+        lineHeight: `${dims.height}px`
+      },
+      children: label
+    }
+  ) : null;
+  return /* @__PURE__ */ (0, import_jsx_runtime65.jsxs)(
+    "div",
+    {
+      "data-testid": dataTestId,
+      className,
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        opacity: disabled ? 0.6 : 1,
+        cursor: disabled ? "not-allowed" : "pointer",
+        ...style
+      },
+      onClick: handleToggle,
+      children: [
+        label && labelPosition === "left" ? labelElement : null,
+        /* @__PURE__ */ (0, import_jsx_runtime65.jsx)(
+          "div",
+          {
+            role: "switch",
+            "aria-checked": isChecked,
+            "aria-disabled": disabled,
+            "aria-label": ariaLabel ?? label ?? "Switch",
+            tabIndex: disabled ? -1 : 0,
+            onKeyDown: handleKeyDown,
+            "data-testid": dataTestId ? `${dataTestId}-track` : void 0,
+            style: {
+              position: "relative",
+              width: dims.width,
+              height: dims.height,
+              borderRadius: dims.height / 2,
+              background: trackBg,
+              transition: "background 0.2s ease",
+              outline: "none",
+              flexShrink: 0
+            },
+            onFocus: (e) => {
+              e.currentTarget.style.boxShadow = `0 0 0 2px ${FOCUS_RING_COLOR}`;
+            },
+            onBlur: (e) => {
+              e.currentTarget.style.boxShadow = "";
+            },
+            children: /* @__PURE__ */ (0, import_jsx_runtime65.jsx)(
+              "div",
+              {
+                "data-testid": dataTestId ? `${dataTestId}-thumb` : void 0,
+                style: {
+                  position: "absolute",
+                  top: dims.gap,
+                  left: thumbOffset,
+                  width: dims.thumb,
+                  height: dims.thumb,
+                  borderRadius: "50%",
+                  background: thumbColor,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                  transition: "left 0.2s ease"
+                }
+              }
+            )
+          }
+        ),
+        label && labelPosition === "right" ? labelElement : null
+      ]
+    }
+  );
+}
+
+// src/components/RadioGroup.tsx
+var import_react39 = __toESM(require("react"));
+var import_jsx_runtime66 = require("react/jsx-runtime");
+var DOT_SIZE_MAP = { sm: 8, md: 10, lg: 12 };
+var RING_SIZE_MAP = { sm: 16, md: 20, lg: 24 };
+var FONT_SIZE_MAP = { sm: 13, md: 14, lg: 15 };
+var GAP_MAP = { sm: 8, md: 12, lg: 16 };
+var CHECKED_COLOR = "#3b82f6";
+var UNCHECKED_BORDER = "#475569";
+var DISABLED_BORDER = "#334155";
+var DISABLED_BG = "rgba(30, 41, 59, 0.5)";
+var HOVER_BG = "rgba(59, 130, 246, 0.06)";
+var ERROR_COLOR = "#ef4444";
+function RadioGroup({
+  options,
+  value: controlledValue,
+  defaultValue,
+  onChange,
+  name,
+  direction = "vertical",
+  size = "md",
+  disabled = false,
+  required = false,
+  label: groupLabel,
+  error,
+  hint,
+  "data-testid": dataTestId,
+  className,
+  style,
+  optionStyle
+}) {
+  const generatedName = (0, import_react39.useId)();
+  const resolvedName = name ?? generatedName;
+  const [internalValue, setInternalValue] = import_react39.default.useState(defaultValue);
+  const isControlled = controlledValue !== void 0;
+  const selectedValue = isControlled ? controlledValue : internalValue;
+  const handleChange = import_react39.default.useCallback(
+    (optionValue) => {
+      if (disabled) return;
+      if (!isControlled) {
+        setInternalValue(optionValue);
+      }
+      onChange?.(optionValue);
+    },
+    [disabled, isControlled, onChange]
+  );
+  const ringSize = RING_SIZE_MAP[size];
+  const dotSize = DOT_SIZE_MAP[size];
+  const fontSize = FONT_SIZE_MAP[size];
+  const itemGap = GAP_MAP[size];
+  const directionStyle = direction === "horizontal" ? { display: "flex", flexWrap: "wrap", gap: itemGap } : { display: "flex", flexDirection: "column", gap: itemGap };
+  return /* @__PURE__ */ (0, import_jsx_runtime66.jsxs)(
+    "fieldset",
+    {
+      className,
+      style: {
+        border: "none",
+        padding: 0,
+        margin: 0,
+        ...style
+      },
+      "data-testid": dataTestId,
+      "aria-invalid": !!error,
+      disabled,
+      children: [
+        groupLabel && /* @__PURE__ */ (0, import_jsx_runtime66.jsxs)(
+          "legend",
+          {
+            style: {
+              fontSize: 13,
+              fontWeight: 500,
+              color: disabled ? "#64748b" : "#cbd5e1",
+              marginBottom: 8,
+              padding: 0
+            },
+            children: [
+              groupLabel,
+              required && /* @__PURE__ */ (0, import_jsx_runtime66.jsx)("span", { style: { color: ERROR_COLOR, marginLeft: 2 }, children: "*" })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime66.jsx)("div", { style: directionStyle, role: "radiogroup", "aria-label": groupLabel, children: options.map((option) => {
+          const isSelected = selectedValue === option.value;
+          const isDisabled = disabled || option.disabled;
+          const optionId = `${resolvedName}-${option.value}`;
+          return /* @__PURE__ */ (0, import_jsx_runtime66.jsxs)(
+            "label",
+            {
+              htmlFor: optionId,
+              style: {
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 10,
+                cursor: isDisabled ? "not-allowed" : "pointer",
+                opacity: isDisabled ? 0.45 : 1,
+                padding: "6px 10px",
+                borderRadius: 8,
+                background: isSelected ? HOVER_BG : "transparent",
+                border: isSelected ? `1px solid ${isDisabled ? DISABLED_BORDER : CHECKED_COLOR}` : `1px solid transparent`,
+                transition: "background 0.15s, border-color 0.15s",
+                userSelect: "none",
+                ...optionStyle
+              },
+              onMouseEnter: (e) => {
+                if (!isDisabled && !isSelected) {
+                  e.currentTarget.style.background = HOVER_BG;
+                }
+              },
+              onMouseLeave: (e) => {
+                if (!isSelected) {
+                  e.currentTarget.style.background = "transparent";
+                }
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime66.jsxs)("div", { style: { position: "relative", flexShrink: 0, marginTop: 2 }, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime66.jsx)(
+                    "input",
+                    {
+                      type: "radio",
+                      id: optionId,
+                      name: resolvedName,
+                      value: option.value,
+                      checked: isSelected,
+                      disabled: isDisabled,
+                      onChange: () => handleChange(option.value),
+                      "data-testid": dataTestId ? `${dataTestId}-input-${option.value}` : void 0,
+                      style: {
+                        position: "absolute",
+                        opacity: 0,
+                        width: ringSize,
+                        height: ringSize,
+                        cursor: isDisabled ? "not-allowed" : "pointer",
+                        margin: 0
+                      },
+                      "aria-label": option.label,
+                      "aria-describedby": option.description ? `${optionId}-desc` : void 0
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime66.jsx)(
+                    "div",
+                    {
+                      style: {
+                        width: ringSize,
+                        height: ringSize,
+                        borderRadius: "50%",
+                        border: `2px solid ${isDisabled ? DISABLED_BORDER : isSelected ? CHECKED_COLOR : UNCHECKED_BORDER}`,
+                        background: isDisabled ? DISABLED_BG : "transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "border-color 0.15s, background 0.15s"
+                      },
+                      children: isSelected && /* @__PURE__ */ (0, import_jsx_runtime66.jsx)(
+                        "div",
+                        {
+                          style: {
+                            width: dotSize,
+                            height: dotSize,
+                            borderRadius: "50%",
+                            background: isDisabled ? "#64748b" : CHECKED_COLOR,
+                            transition: "transform 0.12s ease-out",
+                            transform: "scale(1)"
+                          }
+                        }
+                      )
+                    }
+                  )
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime66.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime66.jsx)("div", { style: { fontSize, color: isDisabled ? "#64748b" : "#e2e8f0", lineHeight: 1.4 }, children: option.label }),
+                  option.description && /* @__PURE__ */ (0, import_jsx_runtime66.jsx)(
+                    "div",
+                    {
+                      id: `${optionId}-desc`,
+                      style: { fontSize: 12, color: "#64748b", marginTop: 2, lineHeight: 1.4 },
+                      children: option.description
+                    }
+                  )
+                ] })
+              ]
+            },
+            option.value
+          );
+        }) }),
+        hint && !error && /* @__PURE__ */ (0, import_jsx_runtime66.jsx)("p", { style: { fontSize: 12, color: "#64748b", margin: "4px 0 0" }, children: hint }),
+        error && /* @__PURE__ */ (0, import_jsx_runtime66.jsx)("p", { style: { fontSize: 12, color: "#fca5a5", margin: "4px 0 0" }, children: error })
+      ]
+    }
+  );
+}
+
+// src/components/Tooltip.tsx
+var import_react40 = __toESM(require("react"));
+var import_jsx_runtime67 = require("react/jsx-runtime");
+var PLACEMENT_STYLES2 = {
+  top: (rect, tt) => ({
+    top: rect.top - tt.height - 8,
+    left: rect.left + rect.width / 2 - tt.width / 2
+  }),
+  bottom: (rect, tt) => ({
+    top: rect.bottom + 8,
+    left: rect.left + rect.width / 2 - tt.width / 2
+  }),
+  left: (rect, tt) => ({
+    top: rect.top + rect.height / 2 - tt.height / 2,
+    left: rect.left - tt.width - 8
+  }),
+  right: (rect, tt) => ({
+    top: rect.top + rect.height / 2 - tt.height / 2,
+    left: rect.right + 8
+  })
+};
+var ARROW_STYLES = {
+  top: {
+    bottom: -4,
+    left: "50%",
+    transform: "translateX(-50%) rotate(45deg)",
+    borderRight: "1px solid rgba(148, 163, 184, 0.18)",
+    borderBottom: "1px solid rgba(148, 163, 184, 0.18)"
+  },
+  bottom: {
+    top: -4,
+    left: "50%",
+    transform: "translateX(-50%) rotate(45deg)",
+    borderLeft: "1px solid rgba(148, 163, 184, 0.18)",
+    borderTop: "1px solid rgba(148, 163, 184, 0.18)"
+  },
+  left: {
+    right: -4,
+    top: "50%",
+    transform: "translateY(-50%) rotate(45deg)",
+    borderRight: "1px solid rgba(148, 163, 184, 0.18)",
+    borderTop: "1px solid rgba(148, 163, 184, 0.18)"
+  },
+  right: {
+    left: -4,
+    top: "50%",
+    transform: "translateY(-50%) rotate(45deg)",
+    borderLeft: "1px solid rgba(148, 163, 184, 0.18)",
+    borderBottom: "1px solid rgba(148, 163, 184, 0.18)"
+  }
+};
+var Tooltip = import_react40.default.memo(function Tooltip2({
+  content,
+  children,
+  placement = "top",
+  delayMs = 300,
+  maxWidth = 280,
+  style,
+  className
+}) {
+  const [visible, setVisible] = (0, import_react40.useState)(false);
+  const [position, setPosition] = (0, import_react40.useState)({});
+  const triggerRef = (0, import_react40.useRef)(null);
+  const tooltipRef = (0, import_react40.useRef)(null);
+  const timerRef = (0, import_react40.useRef)(null);
+  const show = (0, import_react40.useCallback)(() => {
+    timerRef.current = setTimeout(() => setVisible(true), delayMs);
+  }, [delayMs]);
+  const hide = (0, import_react40.useCallback)(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setVisible(false);
+  }, []);
+  (0, import_react40.useEffect)(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+  (0, import_react40.useEffect)(() => {
+    if (!visible || !triggerRef.current || !tooltipRef.current) return;
+    const triggerRect = triggerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const posStyle = PLACEMENT_STYLES2[placement](triggerRect, tooltipRect);
+    const margin = 8;
+    if (typeof posStyle.left === "number") {
+      if (posStyle.left < margin) posStyle.left = margin;
+      if (posStyle.left + tooltipRect.width > window.innerWidth - margin) {
+        posStyle.left = window.innerWidth - tooltipRect.width - margin;
+      }
+    }
+    if (typeof posStyle.top === "number") {
+      if (posStyle.top < margin) posStyle.top = margin;
+      if (posStyle.top + tooltipRect.height > window.innerHeight - margin) {
+        posStyle.top = window.innerHeight - tooltipRect.height - margin;
+      }
+    }
+    setPosition(posStyle);
+  }, [visible, placement]);
+  return /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)(
+    "span",
+    {
+      ref: triggerRef,
+      onMouseEnter: show,
+      onMouseLeave: hide,
+      onFocus: show,
+      onBlur: hide,
+      style: { display: "inline-flex", position: "relative", cursor: "pointer" },
+      children: [
+        children,
+        visible && /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)(
+          "div",
+          {
+            ref: tooltipRef,
+            role: "tooltip",
+            className,
+            style: {
+              position: "fixed",
+              zIndex: 9999,
+              maxWidth,
+              padding: "8px 12px",
+              fontSize: 12,
+              lineHeight: 1.5,
+              color: "#e2e8f0",
+              background: "rgba(15, 23, 42, 0.95)",
+              border: "1px solid rgba(148, 163, 184, 0.18)",
+              borderRadius: 8,
+              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
+              backdropFilter: "blur(8px)",
+              pointerEvents: "none",
+              ...position,
+              ...style
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime67.jsx)(
+                "span",
+                {
+                  style: {
+                    position: "absolute",
+                    width: 8,
+                    height: 8,
+                    background: "rgba(15, 23, 42, 0.95)",
+                    ...ARROW_STYLES[placement]
+                  }
+                }
+              ),
+              content
+            ]
+          }
+        )
+      ]
+    }
+  );
+});
+
+// src/components/Popover.tsx
+var import_react41 = __toESM(require("react"));
+var import_jsx_runtime68 = require("react/jsx-runtime");
+function resolvePlacement(p) {
+  const parts = p.split("-");
+  const side = parts[0];
+  const align = parts[1];
+  return { side, align: align ?? "center" };
+}
+function computePosition(popoverRect, triggerRect, placement) {
+  const { side, align } = resolvePlacement(placement);
+  const gap = 8;
+  const popW = popoverRect.width;
+  const popH = popoverRect.height;
+  const trigW = triggerRect.width;
+  const trigH = triggerRect.height;
+  let top = 0;
+  let left = 0;
+  switch (side) {
+    case "top":
+      top = triggerRect.top - popH - gap;
+      break;
+    case "bottom":
+      top = triggerRect.bottom + gap;
+      break;
+    case "left":
+      left = triggerRect.left - popW - gap;
+      break;
+    case "right":
+      left = triggerRect.right + gap;
+      break;
+  }
+  if (side === "top" || side === "bottom") {
+    switch (align) {
+      case "start":
+        left = triggerRect.left;
+        break;
+      case "center":
+        left = triggerRect.left + trigW / 2 - popW / 2;
+        break;
+      case "end":
+        left = triggerRect.right - popW;
+        break;
+    }
+  } else {
+    switch (align) {
+      case "start":
+        top = triggerRect.top;
+        break;
+      case "center":
+        top = triggerRect.top + trigH / 2 - popH / 2;
+        break;
+      case "end":
+        top = triggerRect.bottom - popH;
+        break;
+    }
+  }
+  const margin = 8;
+  if (left < margin) left = margin;
+  if (left + popW > window.innerWidth - margin) {
+    left = window.innerWidth - popW - margin;
+  }
+  if (top < margin) top = margin;
+  if (top + popH > window.innerHeight - margin) {
+    top = window.innerHeight - popH - margin;
+  }
+  return { top, left };
+}
+function arrowStyles(side) {
+  const base = {
+    position: "absolute",
+    width: 10,
+    height: 10,
+    background: "#1e293b",
+    border: "1px solid rgba(148, 163, 184, 0.16)"
+  };
+  switch (side) {
+    case "top":
+      return { ...base, bottom: -5, left: "50%", transform: "translateX(-50%) rotate(45deg)", borderTop: "none", borderLeft: "none" };
+    case "bottom":
+      return { ...base, top: -5, left: "50%", transform: "translateX(-50%) rotate(45deg)", borderBottom: "none", borderRight: "none" };
+    case "left":
+      return { ...base, right: -5, top: "50%", transform: "translateY(-50%) rotate(45deg)", borderLeft: "none", borderBottom: "none" };
+    case "right":
+      return { ...base, left: -5, top: "50%", transform: "translateY(-50%) rotate(45deg)", borderRight: "none", borderTop: "none" };
+  }
+}
+var Popover = import_react41.default.memo(function Popover2({
+  trigger,
+  children,
+  title,
+  placement = "bottom",
+  triggerMode = "click",
+  showClose = false,
+  maxWidth = 360,
+  minWidth = 200,
+  disabled = false,
+  className,
+  style,
+  onOpenChange
+}) {
+  const [open, setOpen] = (0, import_react41.useState)(false);
+  const [position, setPosition] = (0, import_react41.useState)({});
+  const containerRef = (0, import_react41.useRef)(null);
+  const popoverRef = (0, import_react41.useRef)(null);
+  const { side } = resolvePlacement(placement);
+  const close = (0, import_react41.useCallback)(() => {
+    setOpen(false);
+    onOpenChange?.(false);
+  }, [onOpenChange]);
+  const toggle = (0, import_react41.useCallback)(() => {
+    if (disabled) return;
+    setOpen((prev) => {
+      const next = !prev;
+      onOpenChange?.(next);
+      return next;
+    });
+  }, [disabled, onOpenChange]);
+  (0, import_react41.useEffect)(() => {
+    if (!open) return;
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        close();
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") close();
+    };
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, close]);
+  (0, import_react41.useEffect)(() => {
+    if (!open || !containerRef.current || !popoverRef.current) return;
+    const triggerEl = containerRef.current.firstElementChild;
+    if (!triggerEl) return;
+    const triggerRect = triggerEl.getBoundingClientRect();
+    const popoverRect = popoverRef.current.getBoundingClientRect();
+    setPosition(computePosition(popoverRect, triggerRect, placement));
+  }, [open, placement]);
+  const handleTriggerClick = (0, import_react41.useCallback)(() => {
+    if (triggerMode === "click") toggle();
+  }, [triggerMode, toggle]);
+  const handleMouseEnter = (0, import_react41.useCallback)(() => {
+    if (triggerMode === "hover" && !disabled) {
+      setOpen(true);
+      onOpenChange?.(true);
+    }
+  }, [triggerMode, disabled, onOpenChange]);
+  const handleMouseLeave = (0, import_react41.useCallback)(() => {
+    if (triggerMode === "hover") {
+      setOpen(false);
+      onOpenChange?.(false);
+    }
+  }, [triggerMode, onOpenChange]);
+  return /* @__PURE__ */ (0, import_jsx_runtime68.jsxs)(
+    "div",
+    {
+      ref: containerRef,
+      className,
+      style: { position: "relative", display: "inline-flex", ...style },
+      onMouseLeave: handleMouseLeave,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime68.jsx)(
+          "div",
+          {
+            onClick: handleTriggerClick,
+            onMouseEnter: handleMouseEnter,
+            role: "button",
+            tabIndex: 0,
+            "aria-expanded": open,
+            "aria-haspopup": "dialog",
+            onKeyDown: (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleTriggerClick();
+              }
+            },
+            style: {
+              cursor: disabled ? "not-allowed" : "pointer",
+              opacity: disabled ? 0.5 : 1,
+              display: "inline-flex"
+            },
+            children: trigger
+          }
+        ),
+        open && /* @__PURE__ */ (0, import_jsx_runtime68.jsxs)(
+          "div",
+          {
+            ref: popoverRef,
+            role: "dialog",
+            style: {
+              position: "fixed",
+              zIndex: 1e3,
+              minWidth,
+              maxWidth,
+              borderRadius: 12,
+              background: "#1e293b",
+              border: "1px solid rgba(148, 163, 184, 0.16)",
+              boxShadow: "0 12px 40px rgba(0, 0, 0, 0.45)",
+              animation: "popover-slide-in 0.15s ease-out",
+              ...position
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime68.jsx)("span", { style: arrowStyles(side) }),
+              (title || showClose) && /* @__PURE__ */ (0, import_jsx_runtime68.jsxs)(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "12px 16px 8px",
+                    borderBottom: title ? "1px solid rgba(148, 163, 184, 0.10)" : "none"
+                  },
+                  children: [
+                    title && /* @__PURE__ */ (0, import_jsx_runtime68.jsx)(
+                      "span",
+                      {
+                        style: {
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: "#f1f5f9"
+                        },
+                        children: title
+                      }
+                    ),
+                    showClose && /* @__PURE__ */ (0, import_jsx_runtime68.jsx)(
+                      "button",
+                      {
+                        type: "button",
+                        onClick: close,
+                        "aria-label": "\u5173\u95ED",
+                        style: {
+                          marginLeft: "auto",
+                          background: "none",
+                          border: "none",
+                          color: "#94a3b8",
+                          fontSize: 16,
+                          cursor: "pointer",
+                          padding: "0 4px",
+                          lineHeight: 1
+                        },
+                        children: "\u2715"
+                      }
+                    )
+                  ]
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime68.jsx)("div", { style: { padding: "12px 16px" }, children })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime68.jsx)("style", { children: `
+        @keyframes popover-slide-in {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-4px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+      ` })
+      ]
+    }
+  );
+});
+
+// src/components/Timeline.tsx
+var import_jsx_runtime69 = require("react/jsx-runtime");
+var VARIANT_STYLES5 = {
+  default: {
+    dot: "rgba(148,163,184,0.6)",
+    line: "1px solid rgba(148,163,184,0.18)",
+    heading: "#e2e8f0"
+  },
+  success: {
+    dot: "#34d399",
+    line: "1px solid rgba(52,211,153,0.25)",
+    heading: "#a7f3d0"
+  },
+  warning: {
+    dot: "#fbbf24",
+    line: "1px solid rgba(251,191,36,0.25)",
+    heading: "#fde68a"
+  },
+  error: {
+    dot: "#f87171",
+    line: "1px solid rgba(248,113,113,0.25)",
+    heading: "#fca5a5"
+  },
+  info: {
+    dot: "#60a5fa",
+    line: "1px solid rgba(96,165,250,0.25)",
+    heading: "#93c5fd"
+  }
+};
+var Timeline = ({ items, "data-testid": testId }) => {
+  if (items.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+      "div",
+      {
+        "data-testid": testId,
+        style: { color: "#64748b", fontSize: 14, padding: "16px 0" },
+        children: "No timeline events."
+      }
+    );
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+    "div",
+    {
+      "data-testid": testId,
+      style: { display: "flex", flexDirection: "column" },
+      children: items.map((item, idx) => {
+        const isLast = idx === items.length - 1;
+        const variant = item.pending ? "default" : item.variant ?? "default";
+        const styles2 = VARIANT_STYLES5[variant];
+        return /* @__PURE__ */ (0, import_jsx_runtime69.jsxs)(
+          "div",
+          {
+            "data-testid": `timeline-item-${item.key}`,
+            style: { display: "flex", gap: 14, minHeight: 48 },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime69.jsxs)(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    flexShrink: 0,
+                    width: 16
+                  },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+                      "div",
+                      {
+                        "data-testid": `timeline-dot-${item.key}`,
+                        style: {
+                          width: item.pending ? 10 : 12,
+                          height: item.pending ? 10 : 12,
+                          borderRadius: "50%",
+                          backgroundColor: item.pending ? "transparent" : styles2.dot,
+                          border: item.pending ? `2px dashed ${styles2.dot}` : "none",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          marginTop: 4
+                        },
+                        children: item.icon && !item.pending && /* @__PURE__ */ (0, import_jsx_runtime69.jsx)("span", { style: { fontSize: 8, lineHeight: 1 }, children: item.icon })
+                      }
+                    ),
+                    !isLast && /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+                      "div",
+                      {
+                        style: {
+                          width: 0,
+                          flex: 1,
+                          borderLeft: styles2.line,
+                          minHeight: 12
+                        }
+                      }
+                    )
+                  ]
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime69.jsxs)(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    paddingBottom: isLast ? 0 : 16,
+                    flex: 1,
+                    minWidth: 0
+                  },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+                      "div",
+                      {
+                        "data-testid": `timeline-heading-${item.key}`,
+                        style: {
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: item.pending ? "#64748b" : styles2.heading,
+                          opacity: item.pending ? 0.6 : 1
+                        },
+                        children: item.heading
+                      }
+                    ),
+                    item.subtitle && /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+                      "div",
+                      {
+                        "data-testid": `timeline-subtitle-${item.key}`,
+                        style: {
+                          fontSize: 11,
+                          color: "#64748b",
+                          opacity: item.pending ? 0.5 : 1
+                        },
+                        children: item.subtitle
+                      }
+                    ),
+                    item.content && /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+                      "div",
+                      {
+                        "data-testid": `timeline-content-${item.key}`,
+                        style: {
+                          fontSize: 13,
+                          color: "#94a3b8",
+                          lineHeight: 1.5,
+                          marginTop: 4,
+                          opacity: item.pending ? 0.5 : 1
+                        },
+                        children: item.content
+                      }
+                    )
+                  ]
+                }
+              )
+            ]
+          },
+          item.key
+        );
+      })
+    }
+  );
+};
+
+// src/components/FoundationAlertPanel.tsx
+var import_react42 = require("react");
+var import_jsx_runtime70 = require("react/jsx-runtime");
+var adminPalette = {
+  background: "rgba(15, 23, 42, 0.6)",
+  border: "1px solid rgba(96, 165, 250, 0.18)",
+  text: "#f8fafc",
+  accentText: "#93c5fd",
+  mutedText: "#94a3b8",
+  cardBackground: "rgba(30, 41, 59, 0.55)",
+  cardBorder: "1px solid rgba(96, 165, 250, 0.12)",
+  toolbarBackground: "rgba(30, 41, 59, 0.85)",
+  toolbarBorder: "1px solid rgba(96, 165, 250, 0.2)",
+  badgeBackground: "rgba(59, 130, 246, 0.15)",
+  badgeText: "#60a5fa",
+  badgeBorder: "1px solid rgba(96, 165, 250, 0.25)"
+};
+var adminToolbarPalette = {
+  ackBackground: "#1d4ed8",
+  ackText: "#f8fafc",
+  muteBackground: "rgba(239, 68, 68, 0.15)",
+  muteText: "#fca5a5",
+  unmuteBackground: "rgba(34, 197, 94, 0.15)",
+  unmuteText: "#86efac",
+  dropdownBackground: "rgba(30, 41, 59, 0.95)",
+  dropdownBorder: "1px solid rgba(96, 165, 250, 0.25)",
+  dropdownText: "#f8fafc"
+};
+var tobPalette = {
+  background: "rgba(15, 23, 42, 0.55)",
+  border: "1px solid rgba(6, 182, 212, 0.18)",
+  text: "#f8fafc",
+  accentText: "#67e8f9",
+  mutedText: "#94a3b8",
+  cardBackground: "rgba(30, 41, 59, 0.5)",
+  cardBorder: "1px solid rgba(6, 182, 212, 0.12)",
+  toolbarBackground: "rgba(30, 41, 59, 0.85)",
+  toolbarBorder: "1px solid rgba(6, 182, 212, 0.2)",
+  badgeBackground: "rgba(6, 182, 212, 0.15)",
+  badgeText: "#22d3ee",
+  badgeBorder: "1px solid rgba(6, 182, 212, 0.25)"
+};
+var tobToolbarPalette = {
+  ackBackground: "#0891b2",
+  ackText: "#f8fafc",
+  muteBackground: "rgba(239, 68, 68, 0.15)",
+  muteText: "#fca5a5",
+  unmuteBackground: "rgba(34, 197, 94, 0.15)",
+  unmuteText: "#86efac",
+  dropdownBackground: "rgba(30, 41, 59, 0.95)",
+  dropdownBorder: "1px solid rgba(6, 182, 212, 0.25)",
+  dropdownText: "#f8fafc"
+};
+var storefrontPalette = {
+  background: "rgba(15, 23, 42, 0.5)",
+  border: "1px solid rgba(59, 130, 246, 0.16)",
+  text: "#f8fafc",
+  accentText: "#93c5fd",
+  mutedText: "#94a3b8",
+  cardBackground: "rgba(30, 41, 59, 0.48)",
+  cardBorder: "1px solid rgba(59, 130, 246, 0.1)",
+  toolbarBackground: "rgba(30, 41, 59, 0.85)",
+  toolbarBorder: "1px solid rgba(59, 130, 246, 0.18)",
+  badgeBackground: "rgba(59, 130, 246, 0.12)",
+  badgeText: "#60a5fa",
+  badgeBorder: "1px solid rgba(59, 130, 246, 0.2)"
+};
+var storefrontToolbarPalette = {
+  ackBackground: "#1d4ed8",
+  ackText: "#f8fafc",
+  muteBackground: "rgba(239, 68, 68, 0.12)",
+  muteText: "#fca5a5",
+  unmuteBackground: "rgba(34, 197, 94, 0.12)",
+  unmuteText: "#86efac",
+  dropdownBackground: "rgba(30, 41, 59, 0.95)",
+  dropdownBorder: "1px solid rgba(59, 130, 246, 0.22)",
+  dropdownText: "#f8fafc"
+};
+var foundationAlertPanelThemePresets = {
+  admin: {
+    palette: adminPalette,
+    toolbarPalette: adminToolbarPalette
+  },
+  tob: {
+    palette: tobPalette,
+    toolbarPalette: tobToolbarPalette,
+    runtimeCallbackAccentColor: "#67e8f9",
+    runtimeCallbackBorderColor: "rgba(6, 182, 212, 0.25)"
+  },
+  storefront: {
+    palette: storefrontPalette,
+    toolbarPalette: storefrontToolbarPalette
+  }
+};
+function useFoundationAsyncLoader(loader) {
+  return (0, import_react42.useCallback)(() => loader(), [loader]);
+}
+async function runPanelMutation(panelAccess, action, alertCode) {
+  if (action === "ACK" && panelAccess.ackAlert) {
+    await panelAccess.ackAlert(alertCode);
+    return;
+  }
+  if (action === "MUTE" && panelAccess.muteAlert) {
+    await panelAccess.muteAlert(alertCode);
+    return;
+  }
+  if (action === "UNMUTE" && panelAccess.unmuteAlert) {
+    await panelAccess.unmuteAlert(alertCode);
+    return;
+  }
+  await panelAccess.executeMutation?.(action, alertCode);
+}
+function FoundationAlertPanelFrame({
+  panelAccess,
+  palette,
+  focusContext,
+  initialGovernance,
+  focusAlertCode,
+  onFocusChange,
+  loadGovernance,
+  timelineQueryKey,
+  ownerQueryKey,
+  sourceQueryKey,
+  toolbarPalette,
+  runtimeCallbackAccentColor,
+  runtimeCallbackBorderColor
+}) {
+  const [governance, setGovernance] = (0, import_react42.useState)(initialGovernance);
+  const [selectedAlertCode, setSelectedAlertCode] = (0, import_react42.useState)(focusAlertCode);
+  const [actionLoading, setActionLoading] = (0, import_react42.useState)(null);
+  const handleFocusAlert = (0, import_react42.useCallback)(
+    (code) => {
+      setSelectedAlertCode(code);
+      onFocusChange?.(code, focusContext ?? "panel");
+    },
+    [focusContext, onFocusChange]
+  );
+  const handleAck = (0, import_react42.useCallback)(
+    async (alertCode) => {
+      setActionLoading(alertCode);
+      try {
+        await runPanelMutation(panelAccess, "ACK", alertCode);
+        const refreshed = await loadGovernance();
+        setGovernance(refreshed);
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [loadGovernance, panelAccess]
+  );
+  const handleMute = (0, import_react42.useCallback)(
+    async (alertCode) => {
+      setActionLoading(alertCode);
+      try {
+        await runPanelMutation(panelAccess, "MUTE", alertCode);
+        const refreshed = await loadGovernance();
+        setGovernance(refreshed);
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [loadGovernance, panelAccess]
+  );
+  const handleUnmute = (0, import_react42.useCallback)(
+    async (alertCode) => {
+      setActionLoading(alertCode);
+      try {
+        await runPanelMutation(panelAccess, "UNMUTE", alertCode);
+        const refreshed = await loadGovernance();
+        setGovernance(refreshed);
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [loadGovernance, panelAccess]
+  );
+  const summary = governance.summary;
+  const filteredAlerts = governance.alerts.filter((a) => {
+    if (selectedAlertCode) return a.code === selectedAlertCode;
+    return true;
+  });
+  return /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)(
+    "div",
+    {
+      "data-component": "foundation-alert-panel",
+      style: {
+        borderRadius: 12,
+        background: palette.background,
+        border: palette.border,
+        padding: 16,
+        color: palette.text,
+        fontSize: 13
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              gap: 16,
+              marginBottom: 16,
+              flexWrap: "wrap",
+              padding: "8px 12px",
+              borderRadius: 8,
+              background: palette.cardBackground,
+              border: palette.cardBorder
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(SummaryBadge, { label: "\u603B\u8BA1", value: summary.total, palette }),
+              /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(SummaryBadge, { label: "\u4E25\u91CD", value: summary.critical, color: "#ef4444", palette }),
+              /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(SummaryBadge, { label: "\u8B66\u544A", value: summary.warning, color: "#f59e0b", palette }),
+              /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(SummaryBadge, { label: "\u4FE1\u606F", value: summary.info, color: "#3b82f6", palette }),
+              /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(SummaryBadge, { label: "\u5DF2\u786E\u8BA4", value: summary.acknowledged, color: "#22c55e", palette }),
+              /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(SummaryBadge, { label: "\u5DF2\u9759\u97F3", value: summary.muted, color: "#6b7280", palette })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("div", { style: { display: "flex", gap: 8, marginBottom: 12, fontSize: 11, color: palette.mutedText }, children: [
+          timelineQueryKey && /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("span", { children: [
+            "\u23F1 timeline: ",
+            timelineQueryKey
+          ] }),
+          ownerQueryKey && /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("span", { children: [
+            "\u{1F464} owner: ",
+            ownerQueryKey
+          ] }),
+          sourceQueryKey && /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("span", { children: [
+            "\u{1F4E1} source: ",
+            sourceQueryKey
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("div", { style: { display: "grid", gap: 10 }, children: [
+          filteredAlerts.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("div", { style: { padding: 24, textAlign: "center", color: palette.mutedText }, children: selectedAlertCode ? "\u672A\u627E\u5230\u6307\u5B9A\u544A\u8B66" : "\u6682\u65E0\u544A\u8B66" }),
+          filteredAlerts.map((alert) => /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+            AlertCard,
+            {
+              alert,
+              isSelected: selectedAlertCode === alert.code,
+              isActionLoading: actionLoading === alert.code,
+              onFocus: handleFocusAlert,
+              onAck: handleAck,
+              onMute: handleMute,
+              onUnmute: handleUnmute,
+              palette,
+              toolbarPalette,
+              runtimeCallbackAccentColor,
+              runtimeCallbackBorderColor
+            },
+            alert.code
+          ))
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("div", { style: { marginTop: 12, textAlign: "right" }, children: /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: async () => {
+              const refreshed = await loadGovernance();
+              setGovernance(refreshed);
+            },
+            style: {
+              background: toolbarPalette.ackBackground,
+              color: toolbarPalette.ackText,
+              border: "none",
+              borderRadius: 6,
+              padding: "6px 14px",
+              fontSize: 12,
+              cursor: "pointer"
+            },
+            children: "\u{1F504} \u5237\u65B0"
+          }
+        ) })
+      ]
+    }
+  );
+}
+function FoundationAlertPanelSurface({
+  router,
+  pathname,
+  searchParams,
+  panelAccess,
+  themePreset,
+  initialGovernance,
+  loadGovernance,
+  focusAlertCode,
+  focusContext,
+  timelineQueryKey = "alertAction",
+  ownerQueryKey = "alertOwner",
+  sourceQueryKey,
+  onFocusChange
+}) {
+  const theme = foundationAlertPanelThemePresets[themePreset];
+  const asyncGovernanceLoader = useFoundationAsyncLoader(loadGovernance);
+  return /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+    FoundationAlertPanelFrame,
+    {
+      router,
+      pathname,
+      searchParams,
+      panelAccess,
+      palette: theme.palette,
+      focusContext,
+      initialGovernance,
+      focusAlertCode,
+      onFocusChange,
+      loadGovernance: asyncGovernanceLoader,
+      timelineQueryKey,
+      ownerQueryKey,
+      sourceQueryKey,
+      toolbarPalette: theme.toolbarPalette,
+      runtimeCallbackAccentColor: theme.runtimeCallbackAccentColor,
+      runtimeCallbackBorderColor: theme.runtimeCallbackBorderColor
+    }
+  );
+}
+function SummaryBadge({
+  label,
+  value,
+  color,
+  palette
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)(
+    "span",
+    {
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "2px 8px",
+        borderRadius: 6,
+        background: palette.badgeBackground,
+        border: palette.badgeBorder
+      },
+      children: [
+        color && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+          "span",
+          {
+            style: {
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: color,
+              display: "inline-block"
+            }
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("span", { style: { color: palette.mutedText }, children: label }),
+        /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("span", { style: { color: palette.badgeText, fontWeight: 700 }, children: value })
+      ]
+    }
+  );
+}
+function AlertCard({
+  alert,
+  isSelected,
+  isActionLoading,
+  onFocus,
+  onAck,
+  onMute,
+  onUnmute,
+  palette,
+  toolbarPalette,
+  runtimeCallbackAccentColor,
+  runtimeCallbackBorderColor
+}) {
+  const severityColor = alert.severity === "critical" ? "#ef4444" : alert.severity === "warning" ? "#f59e0b" : "#3b82f6";
+  return /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)(
+    "div",
+    {
+      role: "button",
+      tabIndex: 0,
+      onClick: () => onFocus(alert.code),
+      onKeyDown: (e) => {
+        if (e.key === "Enter" || e.key === " ") onFocus(alert.code);
+      },
+      style: {
+        padding: "10px 14px",
+        borderRadius: 8,
+        background: isSelected ? runtimeCallbackAccentColor ? `rgba(6, 182, 212, 0.12)` : "rgba(59, 130, 246, 0.12)" : palette.cardBackground,
+        border: isSelected ? runtimeCallbackBorderColor ?? "1px solid rgba(59, 130, 246, 0.35)" : palette.cardBorder,
+        cursor: "pointer",
+        transition: "all 0.15s ease",
+        display: "grid",
+        gap: 6
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+            "span",
+            {
+              style: {
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: severityColor,
+                flexShrink: 0
+              }
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("span", { style: { fontWeight: 600, color: palette.accentText }, children: alert.code }),
+          alert.acknowledged && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("span", { style: { fontSize: 11, color: "#22c55e" }, children: "\u2713 \u5DF2\u786E\u8BA4" }),
+          alert.muted && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("span", { style: { fontSize: 11, color: "#6b7280" }, children: "\u{1F507} \u5DF2\u9759\u97F3" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("div", { style: { color: palette.text, fontSize: 13 }, children: alert.message }),
+        /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("div", { style: { display: "flex", gap: 4, flexWrap: "wrap", fontSize: 11, color: palette.mutedText }, children: [
+          alert.source && /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("span", { children: [
+            "\u{1F4E1} ",
+            alert.source
+          ] }),
+          alert.owner && /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("span", { children: [
+            "\u{1F464} ",
+            alert.owner
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("div", { style: { display: "flex", gap: 6, marginTop: 4 }, children: [
+          !alert.acknowledged && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+            ActionButton2,
+            {
+              label: isActionLoading ? "\u786E\u8BA4\u4E2D..." : "\u786E\u8BA4",
+              onClick: () => onAck(alert.code),
+              disabled: isActionLoading,
+              bg: toolbarPalette.ackBackground,
+              color: toolbarPalette.ackText
+            }
+          ),
+          alert.muted ? /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+            ActionButton2,
+            {
+              label: isActionLoading ? "\u53D6\u6D88\u9759\u97F3..." : "\u53D6\u6D88\u9759\u97F3",
+              onClick: () => onUnmute(alert.code),
+              disabled: isActionLoading,
+              bg: toolbarPalette.unmuteBackground,
+              color: toolbarPalette.unmuteText
+            }
+          ) : /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+            ActionButton2,
+            {
+              label: isActionLoading ? "\u9759\u97F3\u4E2D..." : "\u9759\u97F3",
+              onClick: () => onMute(alert.code),
+              disabled: isActionLoading,
+              bg: toolbarPalette.muteBackground,
+              color: toolbarPalette.muteText
+            }
+          )
+        ] })
+      ]
+    }
+  );
+}
+function ActionButton2({
+  label,
+  onClick,
+  disabled,
+  bg,
+  color
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+    "button",
+    {
+      type: "button",
+      onClick: (e) => {
+        e.stopPropagation();
+        onClick();
+      },
+      disabled,
+      style: {
+        padding: "4px 10px",
+        borderRadius: 4,
+        border: "none",
+        background: bg ?? "rgba(59, 130, 246, 0.15)",
+        color: color ?? "#60a5fa",
+        fontSize: 11,
+        cursor: disabled ? "wait" : "pointer",
+        opacity: disabled ? 0.7 : 1
+      },
+      children: label
+    }
+  );
+}
+
+// src/components/FoundationAlertPanelReadouts.tsx
+var import_react43 = require("react");
+var import_jsx_runtime71 = require("react/jsx-runtime");
+var defaultPalette = {
+  surface: "#1e293b",
+  border: "#334155",
+  text: "#f1f5f9",
+  muted: "#94a3b8",
+  accent: "#38bdf8",
+  row: "rgba(148,163,184,0.06)",
+  rowAlt: "rgba(148,163,184,0.12)"
+};
+function resolvePalette(palette = defaultPalette) {
+  const accent = palette.accent ?? palette.accentText ?? defaultPalette.accent;
+  const border = palette.border ?? palette.sectionBorder ?? defaultPalette.border;
+  const text = palette.text ?? defaultPalette.text;
+  const muted = palette.muted ?? defaultPalette.muted;
+  const row = palette.row ?? defaultPalette.row;
+  const rowAlt = palette.rowAlt ?? defaultPalette.rowAlt;
+  return {
+    surface: palette.surface ?? palette.sectionBackground ?? defaultPalette.surface,
+    border,
+    text,
+    muted,
+    accent,
+    row,
+    rowAlt,
+    feedbackBackground: palette.feedbackBackground ?? row,
+    feedbackText: palette.feedbackText ?? muted,
+    chipBorder: palette.chipBorder ?? `${accent}33`,
+    chipBackground: palette.chipBackground ?? `${accent}1a`,
+    chipText: palette.chipText ?? accent,
+    selectedButtonBorder: palette.selectedButtonBorder ?? accent,
+    selectedButtonBackground: palette.selectedButtonBackground ?? `${accent}20`,
+    filterActiveBorder: palette.filterActiveBorder ?? accent,
+    filterActiveBackground: palette.filterActiveBackground ?? `${accent}20`,
+    shortcutActiveBorder: palette.shortcutActiveBorder ?? accent,
+    shortcutActiveBackground: palette.shortcutActiveBackground ?? `${accent}20`
+  };
+}
+function toSentenceCase(value) {
+  return value.split(/[-_]/g).filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+}
+function formatDateTime(value) {
+  return value ? new Date(value).toLocaleString() : null;
+}
+function summarizeTimelineDigest(digest) {
+  if (!digest) {
+    return null;
+  }
+  if (typeof digest === "string") {
+    return digest;
+  }
+  const parts = [
+    digest.dominantAction ? `dominant ${digest.dominantAction}` : null,
+    digest.latestActorId ? `latest actor ${digest.latestActorId}` : null,
+    digest.dominantSource ? `source ${digest.dominantSource}` : null,
+    digest.latestSource ? `latest ${digest.latestSource}` : null
+  ].filter(Boolean);
+  return parts.length ? parts.join(" / ") : null;
+}
+function summarizeRuntimeCallbackDrilldown(detail) {
+  if (!detail || typeof detail !== "object") {
+    return null;
+  }
+  const record = detail;
+  return typeof record.total === "number" ? `Callback stalled: ${record.total}` : null;
+}
+function createFoundationAlertPanelSectionStyle(palette = defaultPalette) {
+  const resolved = resolvePalette(palette);
+  return {
+    background: resolved.surface,
+    border: `1px solid ${resolved.border}`,
+    borderRadius: 12,
+    padding: 20,
+    color: resolved.text,
+    display: "flex",
+    flexDirection: "column",
+    gap: 16
+  };
+}
+function createFoundationAlertPanelSelectionButtonStyle(palette = defaultPalette, selected = false, _variant = "default") {
+  const resolved = resolvePalette(palette);
+  return {
+    padding: "6px 14px",
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: selected ? 600 : 400,
+    border: `1px solid ${selected ? resolved.selectedButtonBorder : resolved.border}`,
+    background: selected ? resolved.selectedButtonBackground : "transparent",
+    color: selected ? resolved.accent : resolved.text,
+    cursor: "pointer",
+    transition: "all 0.15s ease"
+  };
+}
+function createFoundationAlertPanelActionButtonStyle(bg) {
+  return {
+    padding: "6px 14px",
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 500,
+    border: "none",
+    background: bg,
+    color: "#ffffff",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    transition: "opacity 0.15s ease"
+  };
+}
+function createFoundationAlertPanelFeedbackStyle(palette = defaultPalette) {
+  const resolved = resolvePalette(palette);
+  return {
+    padding: "10px 14px",
+    borderRadius: 8,
+    fontSize: 13,
+    background: resolved.feedbackBackground,
+    border: `1px solid ${resolved.border}`,
+    color: resolved.feedbackText
+  };
+}
+function createFoundationAlertPanelFilterButtonStyle(palette = defaultPalette, selected = false) {
+  const resolved = resolvePalette(palette);
+  return {
+    padding: "4px 10px",
+    borderRadius: 6,
+    fontSize: 12,
+    fontWeight: selected ? 600 : 400,
+    border: `1px solid ${selected ? resolved.filterActiveBorder : resolved.border}`,
+    background: selected ? resolved.filterActiveBackground : "transparent",
+    color: selected ? resolved.accent : resolved.muted,
+    cursor: "pointer",
+    transition: "all 0.15s ease"
+  };
+}
+function createFoundationAlertPanelFilterChipStyle(palette = defaultPalette) {
+  const resolved = resolvePalette(palette);
+  return {
+    padding: "2px 8px",
+    borderRadius: 4,
+    fontSize: 12,
+    background: resolved.chipBackground,
+    border: `1px solid ${resolved.chipBorder}`,
+    color: resolved.chipText,
+    whiteSpace: "nowrap"
+  };
+}
+function createFoundationAlertPanelSummaryCardStyle(palette = defaultPalette) {
+  const resolved = resolvePalette(palette);
+  return {
+    padding: "10px 14px",
+    borderRadius: 8,
+    fontSize: 13,
+    background: resolved.row,
+    border: `1px solid ${resolved.border}`,
+    color: resolved.text,
+    display: "flex",
+    flexDirection: "column",
+    gap: 6
+  };
+}
+function createFoundationAlertPanelShortcutCardStyle(palette = defaultPalette, baseStyle, active = false) {
+  const resolved = resolvePalette(palette);
+  return {
+    ...baseStyle,
+    borderColor: active ? resolved.shortcutActiveBorder : baseStyle.borderColor,
+    background: active ? resolved.shortcutActiveBackground : baseStyle.background,
+    cursor: "pointer",
+    transition: "all 0.15s ease"
+  };
+}
+function getAlertTitle(alert) {
+  return alert.title ?? alert.defaultSummary ?? alert.code;
+}
+function getAlertSource(alert) {
+  return alert.source ?? alert.sourceModules?.join(", ") ?? null;
+}
+function getTimelineItems(items) {
+  return (items ?? []).map((item, index) => {
+    const entry = item;
+    return {
+      id: entry.id ?? `${entry.action ?? "timeline"}-${index}`,
+      source: entry.source ?? null,
+      status: entry.status,
+      severity: entry.severity,
+      timestamp: entry.timestamp ?? entry.createdAt,
+      createdAt: entry.createdAt ?? entry.timestamp,
+      message: entry.message ?? entry.note ?? void 0,
+      note: entry.note ?? null,
+      actorId: entry.actorId ?? null,
+      action: entry.action,
+      visibleInOverview: entry.visibleInOverview
+    };
+  });
+}
+function FoundationAlertPanelSelectedAlertReadout({
+  palette = defaultPalette,
+  selectedAlert,
+  currentOwner,
+  optimisticOverviewVisibility,
+  currentNote,
+  recentTimeline,
+  runtimeCallbackDrilldown
+}) {
+  const resolved = resolvePalette(palette);
+  const visibility = typeof optimisticOverviewVisibility === "string" ? optimisticOverviewVisibility : optimisticOverviewVisibility === true ? "visible" : optimisticOverviewVisibility === false ? "hidden" : null;
+  const source = getAlertSource(selectedAlert);
+  const timeline = getTimelineItems(recentTimeline);
+  const runtimeSummary = summarizeRuntimeCallbackDrilldown(runtimeCallbackDrilldown);
+  return /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
+    "div",
+    {
+      "data-testid": "foundation-alert-panel-selected-alert-readout",
+      style: {
+        padding: "12px 16px",
+        borderRadius: 8,
+        background: `${resolved.accent}12`,
+        border: `1px solid ${resolved.accent}33`,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 15, fontWeight: 600, color: resolved.accent }, children: getAlertTitle(selectedAlert) }),
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { display: "flex", gap: 12, flexWrap: "wrap", fontSize: 12, color: resolved.muted }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+            "Code: ",
+            selectedAlert.code
+          ] }),
+          selectedAlert.severity ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+            "Severity: ",
+            selectedAlert.severity
+          ] }) : null,
+          source ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+            "Source: ",
+            source
+          ] }) : null,
+          currentOwner ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+            "Owner: ",
+            currentOwner
+          ] }) : null,
+          visibility ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+            "Overview: ",
+            visibility
+          ] }) : null
+        ] }),
+        currentNote ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 12, color: resolved.muted, fontStyle: "italic" }, children: currentNote }) : null,
+        runtimeSummary ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 12, color: resolved.muted }, children: runtimeSummary }) : null,
+        timeline.length ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { fontSize: 12, color: resolved.muted }, children: [
+          "Recent events: ",
+          timeline.length
+        ] }) : null
+      ]
+    }
+  );
+}
+function FoundationAlertPanelSourceSummaryReadout({
+  palette = defaultPalette,
+  items = []
+}) {
+  const resolved = resolvePalette(palette);
+  return /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { "data-testid": "foundation-alert-panel-source-summary-readout", style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 13, fontWeight: 600, color: resolved.text }, children: "Source Summary" }),
+    items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 12, color: resolved.muted }, children: "No source data" }) : /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
+      "div",
+      {
+        style: {
+          padding: "6px 12px",
+          borderRadius: 6,
+          background: resolved.row,
+          border: `1px solid ${resolved.border}`,
+          fontSize: 12,
+          color: resolved.text
+        },
+        children: [
+          item.source,
+          ": ",
+          /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("strong", { children: item.count })
+        ]
+      },
+      item.source
+    )) })
+  ] });
+}
+function FoundationAlertPanelOwnerSummaryReadout({
+  palette = defaultPalette,
+  items = []
+}) {
+  const resolved = resolvePalette(palette);
+  return /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { "data-testid": "foundation-alert-panel-owner-summary-readout", style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 13, fontWeight: 600, color: resolved.text }, children: "Owner Summary" }),
+    items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 12, color: resolved.muted }, children: "No owner data" }) : /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
+      "div",
+      {
+        style: {
+          padding: "6px 12px",
+          borderRadius: 6,
+          background: resolved.row,
+          border: `1px solid ${resolved.border}`,
+          fontSize: 12,
+          color: resolved.text
+        },
+        children: [
+          item.actorId,
+          ": ",
+          /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("strong", { children: item.count })
+        ]
+      },
+      item.actorId
+    )) })
+  ] });
+}
+function FoundationAlertPanelSummaryDigestReadout({
+  palette = defaultPalette,
+  filterSummary,
+  filterDeepLinkPreview,
+  activeFilterCount,
+  timelineMetrics,
+  latestMatchedTimeline,
+  defaultLatestSource,
+  timelineDigest
+}) {
+  const resolved = resolvePalette(palette);
+  const metrics = timelineMetrics;
+  const filteredCount = metrics?.filtered ?? metrics?.total;
+  const latestTimeline = latestMatchedTimeline ? getTimelineItems([latestMatchedTimeline])[0] : null;
+  const digestSummary = summarizeTimelineDigest(timelineDigest);
+  const latestAt = formatDateTime(metrics?.latestTimestamp ?? metrics?.latestMatchedAt ?? latestTimeline?.timestamp ?? null);
+  const filterGroupCount = Array.isArray(filterSummary) ? filterSummary.length : filterSummary ? 1 : 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
+    "div",
+    {
+      "data-testid": "foundation-alert-panel-summary-digest-readout",
+      style: {
+        padding: "12px 16px",
+        borderRadius: 8,
+        background: resolved.row,
+        border: `1px solid ${resolved.border}`,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 13, fontWeight: 600, color: resolved.text }, children: "Summary Digest" }),
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", fontSize: 12, color: resolved.muted }, children: [
+          activeFilterCount !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+            "Active filters: ",
+            /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("strong", { style: { color: resolved.accent }, children: activeFilterCount })
+          ] }) : null,
+          metrics ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+            "Timeline: ",
+            /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("strong", { style: { color: resolved.text }, children: filteredCount }),
+            " / ",
+            metrics.total
+          ] }) : null,
+          defaultLatestSource ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+            "Latest source: ",
+            defaultLatestSource
+          ] }) : null,
+          filterSummary ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+            "Filter groups: ",
+            filterGroupCount
+          ] }) : null,
+          latestAt ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+            "Latest event: ",
+            latestAt
+          ] }) : null
+        ] }),
+        filterDeepLinkPreview ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { fontSize: 12, color: resolved.muted }, children: [
+          "Deep link: ",
+          filterDeepLinkPreview
+        ] }) : null,
+        digestSummary ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 12, color: resolved.muted, fontStyle: "italic" }, children: digestSummary }) : null
+      ]
+    }
+  );
+}
+function FoundationAlertPanelTimelineReadout({
+  palette = defaultPalette,
+  recentTimeline = [],
+  filteredTimeline,
+  filterEmptyState = false
+}) {
+  const resolved = resolvePalette(palette);
+  const displayItems = getTimelineItems(filteredTimeline ?? recentTimeline);
+  const emptyMessage = typeof filterEmptyState === "string" ? filterEmptyState : filterEmptyState ? "No timeline events match current filters" : "No timeline events";
+  return /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { "data-testid": "foundation-alert-panel-timeline-readout", style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { fontSize: 13, fontWeight: 600, color: resolved.text }, children: [
+      "Timeline (",
+      displayItems.length,
+      " items)"
+    ] }),
+    displayItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 12, color: resolved.muted, padding: "8px 0" }, children: emptyMessage }) : /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: displayItems.slice(0, 10).map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
+      "div",
+      {
+        style: {
+          padding: "6px 10px",
+          borderRadius: 6,
+          background: index % 2 === 0 ? resolved.row : resolved.rowAlt,
+          fontSize: 12,
+          color: resolved.text,
+          display: "flex",
+          gap: 12,
+          alignItems: "center"
+        },
+        children: [
+          item.source ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("span", { style: { color: resolved.accent, minWidth: 80 }, children: item.source }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("span", { style: { flex: 1 }, children: item.message ?? item.note ?? item.action ?? "-" }),
+          item.timestamp ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("span", { style: { color: resolved.muted, fontSize: 11 }, children: new Date(item.timestamp).toLocaleTimeString() }) : null
+        ]
+      },
+      item.id ?? index
+    )) })
+  ] });
+}
+function useFoundationAlertGovernanceState({
+  initialGovernance,
+  focusAlertCode,
+  loadGovernance
+}) {
+  const [governance, setGovernance] = (0, import_react43.useState)(
+    initialGovernance ?? { alerts: [], topRisks: [] }
+  );
+  const [selectedAlertCode, setSelectedAlertCode] = (0, import_react43.useState)(focusAlertCode);
+  const refreshGovernance = (0, import_react43.useCallback)(async () => {
+    if (!loadGovernance) {
+      return;
+    }
+    try {
+      const fresh = await loadGovernance();
+      setGovernance(fresh);
+    } catch {
+    }
+  }, [loadGovernance]);
+  return { governance, refreshGovernance, selectedAlertCode, setSelectedAlertCode };
+}
+function useFoundationAlertDrilldownQuery({
+  selectedAlertCode,
+  loadDrilldown,
+  setActionError
+}) {
+  const [drilldown, setDrilldown] = (0, import_react43.useState)(null);
+  (0, import_react43.useEffect)(() => {
+    if (!selectedAlertCode || !loadDrilldown) {
+      return;
+    }
+    let cancelled = false;
+    loadDrilldown(selectedAlertCode).then((data) => {
+      if (!cancelled) {
+        setDrilldown(data);
+      }
+    }).catch((err) => {
+      if (!cancelled) {
+        setActionError?.(err.message);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAlertCode, loadDrilldown, setActionError]);
+  return drilldown;
+}
+function useFoundationAlertMutationController({
+  selectedAlertCode,
+  setActionError,
+  applyMutation,
+  refreshGovernance,
+  refreshView,
+  executeMutation
+}) {
+  const [pendingMutationAction, setPendingMutationAction] = (0, import_react43.useState)(null);
+  const runMutation = (0, import_react43.useCallback)(
+    async (action, code) => {
+      const resolvedCode = code ?? selectedAlertCode;
+      if (!resolvedCode) {
+        setActionError?.("\u8BF7\u5148\u9009\u62E9\u8981\u64CD\u4F5C\u7684\u544A\u8B66");
+        return;
+      }
+      setPendingMutationAction(action);
+      try {
+        if (executeMutation) {
+          await executeMutation(action, resolvedCode);
+        }
+        applyMutation(null);
+        await refreshGovernance?.();
+        refreshView?.();
+      } catch (err) {
+        setActionError?.(err?.message ?? String(err));
+      } finally {
+        setPendingMutationAction(null);
+      }
+    },
+    [applyMutation, executeMutation, refreshGovernance, refreshView, selectedAlertCode, setActionError]
+  );
+  return { pendingMutationAction, runMutation };
+}
+function withAllValue(current, key, value) {
+  return {
+    ...current,
+    [key]: value
+  };
+}
+function useFoundationAlertTimelineQueryState({
+  pathname,
+  timelineQueryKey = "action",
+  ownerQueryKey = "owner",
+  sourceQueryKey = "source",
+  filterState,
+  setFilterState
+}) {
+  const activeFilterChips = (0, import_react43.useMemo)(
+    () => Object.entries(filterState).filter(([, value]) => value && value !== "ALL").map(([kind, value]) => ({
+      kind,
+      label: toSentenceCase(kind),
+      value: String(value)
+    })),
+    [filterState]
+  );
+  const hasActiveFilters = activeFilterChips.length > 0;
+  const filterEmptyState = hasActiveFilters;
+  const filterSummary = activeFilterChips.map((chip) => ({
+    label: chip.label,
+    value: chip.value,
+    count: 0
+  }));
+  const shortcutPresets = [];
+  const applyShortcut = (0, import_react43.useCallback)(
+    (filters) => setFilterState(filters),
+    [setFilterState]
+  );
+  const clearAllFilters = (0, import_react43.useCallback)(
+    () => setFilterState((current) => {
+      const next = { ...current };
+      for (const key of Object.keys(next)) {
+        next[key] = "ALL";
+      }
+      return next;
+    }),
+    [setFilterState]
+  );
+  const clearFilter = (0, import_react43.useCallback)(
+    (key) => setFilterState((current) => withAllValue(current, key, "ALL")),
+    [setFilterState]
+  );
+  const handleOwnerFilterChange = (0, import_react43.useCallback)(
+    (owner) => setFilterState((current) => withAllValue(current, "owner", owner)),
+    [setFilterState]
+  );
+  const handleSourceFilterChange = (0, import_react43.useCallback)(
+    (source) => setFilterState((current) => withAllValue(current, "source", source)),
+    [setFilterState]
+  );
+  const handleTimelineFilterChange = (0, import_react43.useCallback)(
+    (filter) => setFilterState((current) => withAllValue(current, "action", filter)),
+    [setFilterState]
+  );
+  const filterDeepLinkPreview = (0, import_react43.useMemo)(() => {
+    const params = new URLSearchParams();
+    if (filterState.action && filterState.action !== "ALL") {
+      params.set(timelineQueryKey, filterState.action);
+    }
+    if (filterState.owner && filterState.owner !== "ALL") {
+      params.set(ownerQueryKey, filterState.owner);
+    }
+    if (filterState.source && filterState.source !== "ALL") {
+      params.set(sourceQueryKey, filterState.source);
+    }
+    const query = params.toString();
+    return query ? `${pathname ?? ""}?${query}` : pathname ?? null;
+  }, [filterState.action, filterState.owner, filterState.source, ownerQueryKey, pathname, sourceQueryKey, timelineQueryKey]);
+  return {
+    applyShortcut,
+    clearAllFilters,
+    clearFilter,
+    filterDeepLinkPreview,
+    handleOwnerFilterChange,
+    handleSourceFilterChange,
+    handleTimelineFilterChange,
+    activeFilterChips,
+    filterEmptyState,
+    filterSummary,
+    hasActiveFilters,
+    shortcutPresets
+  };
+}
+function useFoundationAlertViewLinkController() {
+  const [copiedViewMessage, setCopiedViewMessage] = (0, import_react43.useState)(null);
+  const copyCurrentViewLink = (0, import_react43.useCallback)(async () => {
+    try {
+      const url = typeof window !== "undefined" ? window.location.href : "";
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      }
+      setCopiedViewMessage("View link copied");
+      setTimeout(() => setCopiedViewMessage(null), 2e3);
+    } catch {
+      setCopiedViewMessage("Failed to copy");
+      setTimeout(() => setCopiedViewMessage(null), 2e3);
+    }
+  }, []);
+  return { copiedViewMessage, copyCurrentViewLink };
+}
+function useFoundationAlertFocusSync({
+  selectedAlertCode,
+  focusAlertCode,
+  focusContext,
+  onFocusChange
+}) {
+  (0, import_react43.useEffect)(() => {
+    if (selectedAlertCode && selectedAlertCode !== focusAlertCode) {
+      onFocusChange?.(selectedAlertCode, focusContext ?? "");
+    }
+  }, [focusAlertCode, focusContext, onFocusChange, selectedAlertCode]);
+}
+
+// src/components/FormPageScaffold.tsx
+var import_react44 = require("react");
+var import_jsx_runtime72 = require("react/jsx-runtime");
+function validateFormFields(fields, values) {
+  const errors = {};
+  for (const field of fields) {
+    const val = values[field.key];
+    if (field.required) {
+      if (val === void 0 || val === null || val === "") {
+        errors[field.key] = `${field.label} \u4E0D\u80FD\u4E3A\u7A7A`;
+        continue;
+      }
+      if (Array.isArray(val) && val.length === 0) {
+        errors[field.key] = `${field.label} \u4E0D\u80FD\u4E3A\u7A7A`;
+        continue;
+      }
+    }
+    if (field.rules && val !== void 0 && val !== null && val !== "") {
+      for (const rule of field.rules) {
+        const ruleError = rule.validate(val);
+        if (ruleError) {
+          errors[field.key] = ruleError;
+          break;
+        }
+      }
+    }
+  }
+  return errors;
+}
+function FieldInput({
+  field,
+  value,
+  onChange,
+  disabled
+}) {
+  const baseStyle = {
+    width: "100%",
+    padding: "10px 14px",
+    borderRadius: 10,
+    border: "1px solid rgba(148, 163, 184, 0.22)",
+    background: "rgba(15, 23, 42, 0.40)",
+    color: "#e2e8f0",
+    fontSize: 14,
+    transition: "border-color 0.2s",
+    outline: "none",
+    boxSizing: "border-box"
+  };
+  if (field.type === "textarea") {
+    return /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+      "textarea",
+      {
+        value: value ?? "",
+        onChange: (e) => onChange(e.target.value),
+        placeholder: field.placeholder,
+        disabled,
+        rows: 4,
+        style: { ...baseStyle, resize: "vertical", minHeight: 96 }
+      }
+    );
+  }
+  if (field.type === "select" && field.options) {
+    return /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
+      "select",
+      {
+        value: value ?? "",
+        onChange: (e) => onChange(e.target.value),
+        disabled,
+        style: baseStyle,
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("option", { value: "", children: "-- \u8BF7\u9009\u62E9 --" }),
+          field.options.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("option", { value: opt.value, children: opt.label }, opt.value))
+        ]
+      }
+    );
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+    "input",
+    {
+      type: field.type ?? "text",
+      value: value ?? "",
+      onChange: (e) => onChange(field.type === "number" ? Number(e.target.value) : e.target.value),
+      placeholder: field.placeholder,
+      disabled,
+      style: baseStyle
+    }
+  );
+}
+function FormPageScaffold({
+  meta,
+  fields,
+  onSubmit,
+  onChange,
+  topActions,
+  submitLabel = "\u4FDD\u5B58",
+  submitVariant = "brand",
+  backUrl,
+  maxWidth = 720,
+  className,
+  footer,
+  onSuccess,
+  disabled = false
+}) {
+  const [values, setValues] = (0, import_react44.useState)(() => {
+    const init = {};
+    for (const f of fields) {
+      init[f.key] = f.initialValue ?? "";
+    }
+    return init;
+  });
+  const [errors, setErrors] = (0, import_react44.useState)({});
+  const [_submitted, setSubmitted] = (0, import_react44.useState)(false);
+  const { state, submit, clearError, clearSuccess } = useFormSubmit({
+    onSubmit: async () => {
+      const validationErrors = validateFormFields(fields, values);
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        throw new Error("\u8BF7\u4FEE\u6B63\u8868\u5355\u4E2D\u7684\u9519\u8BEF\u540E\u91CD\u65B0\u63D0\u4EA4");
+      }
+      const result = await onSubmit(values);
+      if (!result) {
+        throw new Error("\u63D0\u4EA4\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
+      }
+      setErrors({});
+      setSubmitted(true);
+      onSuccess?.(result);
+      return result;
+    },
+    successMessage: (result) => result.message ?? "\u4FDD\u5B58\u6210\u529F",
+    defaultErrorMessage: "\u63D0\u4EA4\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5"
+  });
+  const handleFieldChange = (key, value) => {
+    setValues((prev) => ({ ...prev, [key]: value }));
+    onChange?.(key, value);
+    if (errors[key]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    void submit();
+  };
+  const fieldLabelMap = {};
+  for (const f of fields) {
+    fieldLabelMap[f.key] = f.label;
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
+    PageShell,
+    {
+      title: meta.title,
+      description: meta.description,
+      actions: topActions,
+      children: [
+        backUrl && /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+          "a",
+          {
+            href: backUrl,
+            style: {
+              fontSize: 13,
+              color: "#94a3b8",
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4
+            },
+            children: "\u2190 \u8FD4\u56DE"
+          }
+        ) }),
+        /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
+          "form",
+          {
+            onSubmit: handleSubmit,
+            className,
+            style: { maxWidth, margin: "0 auto" },
+            noValidate: true,
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: fields.map((field) => /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
+                "div",
+                {
+                  style: {
+                    marginBottom: 16,
+                    opacity: disabled ? 0.6 : 1,
+                    pointerEvents: disabled ? "none" : "auto"
+                  },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
+                      "label",
+                      {
+                        htmlFor: `form-field-${field.key}`,
+                        style: {
+                          display: "block",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          color: disabled ? "#64748b" : "#cbd5e1",
+                          marginBottom: 6
+                        },
+                        children: [
+                          field.label,
+                          field.required && /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
+                        ]
+                      }
+                    ),
+                    /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+                      FieldInput,
+                      {
+                        field,
+                        value: values[field.key],
+                        onChange: (v) => handleFieldChange(field.key, v),
+                        disabled
+                      }
+                    ),
+                    field.helper && !errors[field.key] && /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("p", { style: { fontSize: 12, color: "#64748b", margin: "4px 0 0" }, children: field.helper }),
+                    errors[field.key] && /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("p", { style: { fontSize: 12, color: "#fca5a5", margin: "4px 0 0" }, children: errors[field.key] })
+                  ]
+                },
+                field.key
+              )) }),
+              /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+                FormSubmitFeedback,
+                {
+                  state,
+                  onRetry: () => {
+                    clearError();
+                    clearSuccess();
+                    void submit();
+                  },
+                  onDismissError: clearError,
+                  onDismissSuccess: clearSuccess
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    marginTop: 24,
+                    paddingTop: 20,
+                    borderTop: "1px solid rgba(148, 163, 184, 0.10)"
+                  },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+                        SubmitButton,
+                        {
+                          loading: state.isSubmitting,
+                          label: submitLabel,
+                          variant: submitVariant,
+                          type: "submit"
+                        }
+                      ),
+                      backUrl && /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+                        "a",
+                        {
+                          href: backUrl,
+                          style: {
+                            padding: "10px 14px",
+                            borderRadius: 10,
+                            color: "#94a3b8",
+                            fontSize: 14,
+                            fontWeight: 500,
+                            textDecoration: "none",
+                            border: "1px solid transparent",
+                            transition: "all 0.15s"
+                          },
+                          children: "\u53D6\u6D88"
+                        }
+                      )
+                    ] }),
+                    meta.deleteAction && /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+                      DeleteButton,
+                      {
+                        label: meta.deleteAction.label,
+                        confirmText: meta.deleteAction.confirmText ?? `\u786E\u5B9A\u8981${meta.deleteAction.label}\u5417\uFF1F`,
+                        onDelete: meta.deleteAction.onDelete,
+                        disabled: disabled || state.isSubmitting
+                      }
+                    )
+                  ]
+                }
+              ),
+              footer
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
+function DeleteButton({
+  label,
+  confirmText,
+  onDelete,
+  disabled
+}) {
+  const [showConfirm, setShowConfirm] = (0, import_react44.useState)(false);
+  const [deleting, setDeleting] = (0, import_react44.useState)(false);
+  if (!showConfirm) {
+    return /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+      "button",
+      {
+        type: "button",
+        disabled,
+        onClick: () => setShowConfirm(true),
+        style: {
+          background: "none",
+          border: "1px solid rgba(248, 113, 113, 0.20)",
+          color: "#fca5a5",
+          borderRadius: 10,
+          padding: "10px 16px",
+          fontSize: 13,
+          fontWeight: 500,
+          cursor: disabled ? "not-allowed" : "pointer",
+          transition: "all 0.15s",
+          opacity: disabled ? 0.5 : 1
+        },
+        children: label
+      }
+    );
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("span", { style: { fontSize: 12, color: "#f87171" }, children: confirmText }),
+    /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+      "button",
+      {
+        type: "button",
+        disabled: deleting,
+        onClick: async () => {
+          setDeleting(true);
+          try {
+            await onDelete();
+          } catch {
+            setDeleting(false);
+          }
+        },
+        style: {
+          background: "#dc2626",
+          border: "1px solid rgba(248, 113, 113, 0.20)",
+          color: "#fff",
+          borderRadius: 10,
+          padding: "8px 16px",
+          fontSize: 13,
+          fontWeight: 600,
+          cursor: deleting ? "wait" : "pointer",
+          opacity: deleting ? 0.7 : 1
+        },
+        children: deleting ? "\u5220\u9664\u4E2D..." : "\u786E\u8BA4"
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+      "button",
+      {
+        type: "button",
+        disabled: deleting,
+        onClick: () => setShowConfirm(false),
+        style: {
+          background: "none",
+          border: "1px solid rgba(148, 163, 184, 0.16)",
+          color: "#94a3b8",
+          borderRadius: 10,
+          padding: "8px 16px",
+          fontSize: 13,
+          cursor: deleting ? "not-allowed" : "pointer"
+        },
+        children: "\u53D6\u6D88"
+      }
+    )
+  ] });
+}
+
+// src/components/CombinedDetailPage.tsx
+var import_react45 = require("react");
+var import_jsx_runtime73 = require("react/jsx-runtime");
+function CombinedDetailPage({
+  title,
+  subtitle,
+  backHref,
+  backLabel = "Back to list",
+  onBack,
+  status,
+  infoRows,
+  tabs,
+  defaultTab,
+  onEdit,
+  editLabel = "Edit",
+  onDelete,
+  deleteLabel = "Delete",
+  deleteConfirm = { title: "Confirm Delete", message: "Are you sure you want to delete this item? This action cannot be undone." },
+  transitions,
+  closureLinks,
+  actionBarActions,
+  loading = false,
+  error,
+  "data-testid": testId
+}) {
+  const { success, error: toastError } = useToast();
+  const [activeTab, setActiveTab] = (0, import_react45.useState)(defaultTab ?? tabs?.[0]?.key ?? "");
+  const [deleteDialogOpen, setDeleteDialogOpen] = (0, import_react45.useState)(false);
+  const [deleting, setDeleting] = (0, import_react45.useState)(false);
+  const [pendingTransition, setPendingTransition] = (0, import_react45.useState)(null);
+  const [transitioning, setTransitioning] = (0, import_react45.useState)(false);
+  const handleDelete = (0, import_react45.useCallback)(async () => {
+    if (!onDelete) return;
+    setDeleting(true);
+    try {
+      await onDelete();
+      success("Successfully deleted");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Delete failed";
+      toastError(msg);
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  }, [onDelete, success, toastError]);
+  const handleTransition = (0, import_react45.useCallback)(async (action) => {
+    if (action.confirm) {
+      setPendingTransition(action);
+      return;
+    }
+    await executeTransition(action);
+  }, []);
+  const executeTransition = (0, import_react45.useCallback)(async (action) => {
+    setTransitioning(true);
+    try {
+      await action.onTransition();
+      success(`Status changed to ${action.targetStatus}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Transition failed";
+      toastError(msg);
+    } finally {
+      setTransitioning(false);
+      setPendingTransition(null);
+    }
+  }, [success, toastError]);
+  const shellActions = [];
+  if (onEdit) {
+    shellActions.push({ key: "edit", label: editLabel, variant: "primary", onClick: onEdit });
+  }
+  if (onDelete) {
+    shellActions.push({ key: "delete", label: deleteLabel, variant: "danger", onClick: () => setDeleteDialogOpen(true) });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)("div", { "data-testid": testId ?? "combined-detail-page", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+      DetailShell,
+      {
+        title,
+        subtitle,
+        backHref,
+        backLabel,
+        onBack,
+        actions: shellActions.length > 0 ? shellActions : void 0,
+        loading,
+        error,
+        children: /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 20 }, children: [
+          status && /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("span", { style: { fontSize: 13, color: "#94a3b8", fontWeight: 500 }, children: "Status:" }),
+            /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(StatusBadge, { label: status.label, variant: status.variant ?? "neutral" })
+          ] }),
+          infoRows && infoRows.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(InfoRowsSection, { infoRows }),
+          transitions && transitions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)(
+            "div",
+            {
+              "data-testid": "combined-detail-transitions",
+              style: {
+                border: "1px solid rgba(148,163,184,0.12)",
+                borderRadius: 12,
+                padding: 16,
+                background: "rgba(15,23,42,0.38)"
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+                  "h4",
+                  {
+                    style: {
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#94a3b8",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      margin: "0 0 12px"
+                    },
+                    children: "State Transitions"
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 8 }, children: transitions.map((t) => /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)(
+                  "button",
+                  {
+                    type: "button",
+                    "data-testid": `transition-${t.key}`,
+                    disabled: transitioning,
+                    onClick: () => handleTransition(t),
+                    style: {
+                      ...transitionButtonStyle,
+                      ...t.variant === "primary" ? transitionPrimaryStyle : null,
+                      ...t.variant === "danger" ? transitionDangerStyle : null,
+                      ...transitioning ? disabledButtonStyle2 : null
+                    },
+                    children: [
+                      t.label,
+                      " \u2192 ",
+                      t.targetStatus
+                    ]
+                  },
+                  t.key
+                )) })
+              ]
+            }
+          ),
+          tabs && tabs.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+              Tabs,
+              {
+                items: tabs.map((t) => ({ key: t.key, label: t.label })),
+                activeKey: activeTab,
+                onChange: setActiveTab
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+              "div",
+              {
+                style: {
+                  background: "rgba(15,23,42,0.5)",
+                  border: "1px solid rgba(148,163,184,0.12)",
+                  borderRadius: 12,
+                  padding: 20,
+                  marginTop: 12
+                },
+                children: tabs.find((t) => t.key === activeTab)?.content
+              }
+            )
+          ] })
+        ] })
+      }
+    ),
+    actionBarActions && actionBarActions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("div", { style: { padding: "0 32px", maxWidth: 960, margin: "0 auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(DetailActionBar, { actions: actionBarActions }) }),
+    closureLinks && closureLinks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("div", { style: { padding: "0 32px", maxWidth: 960, margin: "0 auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(DetailClosureBar, { links: closureLinks }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+      ConfirmDialog,
+      {
+        open: deleteDialogOpen,
+        title: deleteConfirm.title,
+        message: deleteConfirm.message,
+        confirmLabel: deleting ? "Deleting..." : "Delete",
+        variant: "danger",
+        onConfirm: handleDelete,
+        onCancel: () => setDeleteDialogOpen(false)
+      }
+    ),
+    pendingTransition && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+      ConfirmDialog,
+      {
+        open: true,
+        title: pendingTransition.confirm.title,
+        message: pendingTransition.confirm.message,
+        confirmLabel: transitioning ? "Processing..." : "Confirm",
+        variant: pendingTransition.variant === "danger" ? "danger" : "default",
+        onConfirm: () => executeTransition(pendingTransition),
+        onCancel: () => setPendingTransition(null)
+      }
+    )
+  ] });
+}
+function InfoRowsSection({ infoRows }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+    "div",
+    {
+      "data-testid": "combined-detail-info-rows",
+      style: {
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+        gap: 16,
+        background: "rgba(15,23,42,0.5)",
+        border: "1px solid rgba(148,163,184,0.12)",
+        borderRadius: 12,
+        padding: 20
+      },
+      children: infoRows.map((row) => /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)("div", { "data-testid": `info-row-${row.key}`, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(InfoRow, { label: row.label, value: row.value }),
+        row.statusBadge && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("div", { style: { marginTop: 6 }, children: /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+          StatusBadge,
+          {
+            label: row.statusBadge.label,
+            variant: row.statusBadge.variant ?? "neutral"
+          }
+        ) })
+      ] }, row.key))
+    }
+  );
+}
+var transitionButtonStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "8px 16px",
+  fontSize: 13,
+  fontWeight: 500,
+  borderRadius: 8,
+  border: "1px solid rgba(148,163,184,0.14)",
+  background: "rgba(59,130,246,0.08)",
+  color: "#93c5fd",
+  cursor: "pointer",
+  transition: "all 0.15s"
+};
+var transitionPrimaryStyle = {
+  border: "1px solid rgba(96,165,250,0.35)",
+  background: "rgba(59,130,246,0.16)",
+  color: "#bfdbfe"
+};
+var transitionDangerStyle = {
+  border: "1px solid rgba(239,68,68,0.35)",
+  background: "rgba(239,68,68,0.1)",
+  color: "#fecaca"
+};
+var disabledButtonStyle2 = {
+  cursor: "not-allowed",
+  opacity: 0.55
+};
+
+// src/components/Stepper.tsx
+var import_react46 = __toESM(require("react"));
+var import_jsx_runtime74 = require("react/jsx-runtime");
+var SIZE_MAP4 = {
+  sm: { circle: 24, font: 12, gap: 6 },
+  md: { circle: 32, font: 14, gap: 8 },
+  lg: { circle: 40, font: 16, gap: 10 }
+};
+var COLOR_COMPLETED = "#22c55e";
+var COLOR_ACTIVE = "#38bdf8";
+var COLOR_ERROR = "#ef4444";
+var COLOR_PENDING = "rgba(148, 163, 184, 0.4)";
+var COLOR_TEXT = "#e2e8f0";
+var COLOR_TEXT_MUTED = "#94a3b8";
+function stepIndicator(step, index, isActive, isCompleted, hasError, disabled, s) {
+  let bg = COLOR_PENDING;
+  let fg = COLOR_TEXT;
+  if (hasError) {
+    bg = COLOR_ERROR;
+    fg = "#fff";
+  } else if (isCompleted) {
+    bg = COLOR_COMPLETED;
+    fg = "#fff";
+  } else if (isActive) {
+    bg = COLOR_ACTIVE;
+    fg = "#0f172a";
+  }
+  if (step.icon) {
+    return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+      "div",
+      {
+        style: {
+          width: s.circle,
+          height: s.circle,
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: bg,
+          color: fg,
+          fontSize: s.font,
+          fontWeight: 700,
+          flexShrink: 0,
+          opacity: disabled ? 0.45 : 1,
+          transition: "background 0.2s"
+        },
+        children: step.icon
+      }
+    );
+  }
+  if (isCompleted) {
+    return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+      "div",
+      {
+        style: {
+          width: s.circle,
+          height: s.circle,
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: bg,
+          color: fg,
+          fontSize: s.font,
+          fontWeight: 700,
+          flexShrink: 0,
+          opacity: disabled ? 0.45 : 1,
+          transition: "background 0.2s"
+        },
+        children: "\u2713"
+      }
+    );
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+    "div",
+    {
+      style: {
+        width: s.circle,
+        height: s.circle,
+        borderRadius: "50%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: bg,
+        color: fg,
+        fontSize: s.font,
+        fontWeight: 700,
+        flexShrink: 0,
+        border: !isActive && !hasError ? "2px solid rgba(148, 163, 184, 0.35)" : void 0,
+        opacity: disabled ? 0.45 : 1,
+        transition: "background 0.2s"
+      },
+      children: index + 1
+    }
+  );
+}
+function getSize(size) {
+  return SIZE_MAP4[size ?? "md"];
+}
+function Stepper({
+  steps,
+  activeStep,
+  onStepClick,
+  orientation = "horizontal",
+  variant = "default",
+  size = "md",
+  "data-testid": dataTestId,
+  className,
+  style
+}) {
+  const s = getSize(size);
+  if (variant === "dots") {
+    return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+      "div",
+      {
+        "data-testid": dataTestId,
+        className,
+        role: "navigation",
+        "aria-label": "Stepper",
+        style: {
+          display: "flex",
+          flexDirection: orientation === "vertical" ? "column" : "row",
+          alignItems: "center",
+          gap: s.gap,
+          ...style
+        },
+        children: steps.map((step, i) => {
+          const isActive = i === activeStep;
+          const isCompleted = step.completed ?? i < activeStep;
+          const hasError = step.error ?? false;
+          const disabled = step.disabled ?? false;
+          return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+            "button",
+            {
+              type: "button",
+              "data-testid": dataTestId ? `${dataTestId}-dot-${i}` : void 0,
+              "data-active": isActive ? "true" : void 0,
+              "data-completed": isCompleted ? "true" : void 0,
+              disabled,
+              "aria-current": isActive ? "step" : void 0,
+              "aria-label": `Step ${i + 1}: ${step.label}${isCompleted ? " (completed)" : ""}${hasError ? " (error)" : ""}`,
+              onClick: () => {
+                if (!disabled && onStepClick) onStepClick(i);
+              },
+              style: {
+                width: s.circle * 0.5,
+                height: s.circle * 0.5,
+                borderRadius: "50%",
+                border: "none",
+                padding: 0,
+                cursor: disabled ? "not-allowed" : "pointer",
+                background: hasError ? COLOR_ERROR : isCompleted ? COLOR_COMPLETED : isActive ? COLOR_ACTIVE : COLOR_PENDING,
+                opacity: disabled ? 0.45 : 1,
+                transition: "background 0.2s"
+              }
+            },
+            i
+          );
+        })
+      }
+    );
+  }
+  if (variant === "progress") {
+    const pct = steps.length > 0 ? Math.round((activeStep + 1) / steps.length * 100) : 0;
+    return /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)(
+      "div",
+      {
+        "data-testid": dataTestId,
+        className,
+        role: "navigation",
+        "aria-label": "Stepper",
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: s.gap,
+          width: "100%",
+          ...style
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+            "div",
+            {
+              "data-testid": dataTestId ? `${dataTestId}-progress-track` : void 0,
+              style: {
+                width: "100%",
+                height: s.circle * 0.25,
+                borderRadius: s.circle * 0.125,
+                background: "rgba(148, 163, 184, 0.15)",
+                overflow: "hidden"
+              },
+              children: /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+                "div",
+                {
+                  "data-testid": dataTestId ? `${dataTestId}-progress-fill` : void 0,
+                  style: {
+                    height: "100%",
+                    width: `${pct}%`,
+                    borderRadius: s.circle * 0.125,
+                    background: COLOR_ACTIVE,
+                    transition: "width 0.3s ease"
+                  }
+                }
+              )
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)(
+            "div",
+            {
+              style: {
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: s.font,
+                color: COLOR_TEXT_MUTED
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime74.jsx)("span", { "data-testid": dataTestId ? `${dataTestId}-progress-label` : void 0, children: steps[activeStep]?.label ?? "" }),
+                /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)("span", { children: [
+                  activeStep + 1,
+                  " / ",
+                  steps.length
+                ] })
+              ]
+            }
+          )
+        ]
+      }
+    );
+  }
+  const isVertical = orientation === "vertical";
+  return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+    "div",
+    {
+      "data-testid": dataTestId,
+      className,
+      role: "navigation",
+      "aria-label": "Stepper",
+      style: {
+        display: "flex",
+        flexDirection: isVertical ? "column" : "row",
+        alignItems: isVertical ? "flex-start" : "center",
+        gap: 0,
+        ...style
+      },
+      children: steps.map((step, i) => {
+        const isActive = i === activeStep;
+        const isCompleted = step.completed ?? i < activeStep;
+        const hasError = step.error ?? false;
+        const disabled = step.disabled ?? false;
+        const isLast = i === steps.length - 1;
+        return /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)(import_react46.default.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)(
+            "div",
+            {
+              style: {
+                display: "flex",
+                flexDirection: isVertical ? "row" : "column",
+                alignItems: "center",
+                gap: s.gap,
+                flex: isVertical ? void 0 : "0 0 auto"
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    "data-testid": dataTestId ? `${dataTestId}-step-${i}` : void 0,
+                    "data-active": isActive ? "true" : void 0,
+                    "data-completed": isCompleted ? "true" : void 0,
+                    "data-error": hasError ? "true" : void 0,
+                    disabled,
+                    "aria-current": isActive ? "step" : void 0,
+                    "aria-label": `Step ${i + 1}: ${step.label}${isCompleted ? " (completed)" : ""}${hasError ? " (error)" : ""}`,
+                    onClick: () => {
+                      if (!disabled && onStepClick) onStepClick(i);
+                    },
+                    style: {
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      cursor: disabled ? "not-allowed" : "pointer",
+                      lineHeight: 1
+                    },
+                    children: stepIndicator(step, i, isActive, isCompleted, hasError, disabled, s)
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)(
+                  "div",
+                  {
+                    style: {
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: isVertical ? "flex-start" : "center",
+                      minWidth: 0,
+                      textAlign: isVertical ? "left" : "center"
+                    },
+                    children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+                        "span",
+                        {
+                          "data-testid": dataTestId ? `${dataTestId}-label-${i}` : void 0,
+                          style: {
+                            fontSize: s.font,
+                            fontWeight: isActive ? 700 : 500,
+                            color: hasError ? COLOR_ERROR : isActive ? COLOR_ACTIVE : isCompleted ? COLOR_COMPLETED : COLOR_TEXT_MUTED,
+                            lineHeight: 1.3,
+                            transition: "color 0.2s"
+                          },
+                          children: step.label
+                        }
+                      ),
+                      step.description ? /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+                        "span",
+                        {
+                          "data-testid": dataTestId ? `${dataTestId}-desc-${i}` : void 0,
+                          style: {
+                            fontSize: s.font * 0.85,
+                            color: COLOR_TEXT_MUTED,
+                            marginTop: 2,
+                            lineHeight: 1.3
+                          },
+                          children: step.description
+                        }
+                      ) : null
+                    ]
+                  }
+                )
+              ]
+            }
+          ),
+          !isLast ? /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+            "div",
+            {
+              "data-testid": dataTestId ? `${dataTestId}-connector-${i}` : void 0,
+              style: {
+                flex: isVertical ? `0 0 ${s.circle + s.gap * 2}px` : "1 1 0",
+                [isVertical ? "height" : "width"]: isVertical ? void 0 : "100%",
+                [isVertical ? "width" : "height"]: 2,
+                minWidth: isVertical ? 2 : s.circle,
+                minHeight: isVertical ? s.circle : 2,
+                margin: isVertical ? `0 0 0 ${s.circle / 2 - 1}px` : void 0,
+                background: i < activeStep ? COLOR_COMPLETED : "rgba(148, 163, 184, 0.2)",
+                transition: "background 0.3s"
+              }
+            }
+          ) : null
+        ] }, i);
+      })
+    }
+  );
+}
+
+// src/components/Input.tsx
+var import_react47 = __toESM(require("react"));
+var import_jsx_runtime75 = require("react/jsx-runtime");
+var SIZE_MAP5 = {
+  sm: { fontSize: 13, paddingY: 4, paddingX: 8 },
+  md: { fontSize: 14, paddingY: 6, paddingX: 10 },
+  lg: { fontSize: 16, paddingY: 8, paddingX: 12 }
+};
+var VARIANT_STYLES6 = {
+  outline: (focused, hasError, disabled) => ({
+    border: `1px solid ${disabled ? "#d1d5db" : hasError ? "#ef4444" : focused ? "#3b82f6" : "#d1d5db"}`,
+    background: disabled ? "#f9fafb" : "#ffffff",
+    borderRadius: 6,
+    boxShadow: focused && !hasError && !disabled ? "0 0 0 3px rgba(59,130,246,0.12)" : void 0
+  }),
+  filled: (focused, hasError, disabled) => ({
+    border: `1px solid ${disabled ? "#e5e7eb" : hasError ? "#ef4444" : focused ? "#3b82f6" : "transparent"}`,
+    background: disabled ? "#f3f4f6" : focused ? "#ffffff" : "#f3f4f6",
+    borderRadius: 6
+  }),
+  underline: (focused, hasError, disabled) => ({
+    border: "none",
+    borderBottom: `2px solid ${disabled ? "#d1d5db" : hasError ? "#ef4444" : focused ? "#3b82f6" : "#d1d5db"}`,
+    background: "transparent",
+    borderRadius: 0
+  })
+};
+var Input = import_react47.default.memo(function Input2({
+  size = "md",
+  variant = "outline",
+  label,
+  helperText,
+  error,
+  loading = false,
+  prefix,
+  suffix,
+  allowClear = false,
+  onClear,
+  showCount = false,
+  block = false,
+  disabled = false,
+  readOnly = false,
+  value: valueProp,
+  defaultValue,
+  onChange,
+  maxLength,
+  id: idProp,
+  className,
+  style,
+  placeholder,
+  type = "text",
+  name,
+  required,
+  autoFocus,
+  autoComplete,
+  min,
+  max,
+  step,
+  pattern,
+  inputMode,
+  "data-testid": dataTestId,
+  "aria-label": ariaLabel,
+  ...rest
+}) {
+  const generatedId = (0, import_react47.useId)();
+  const id = idProp ?? generatedId;
+  const [focused, setFocused] = (0, import_react47.useState)(false);
+  const [internalValue, setInternalValue] = (0, import_react47.useState)(defaultValue ?? "");
+  const isControlled = valueProp !== void 0;
+  const value = isControlled ? valueProp : internalValue;
+  const handleChange = (0, import_react47.useCallback)(
+    (e) => {
+      if (!isControlled) setInternalValue(e.target.value);
+      onChange?.(e);
+    },
+    [isControlled, onChange]
+  );
+  const handleClear = (0, import_react47.useCallback)(() => {
+    if (disabled || readOnly) return;
+    if (!isControlled) setInternalValue("");
+    onClear?.();
+    onChange?.({
+      target: { value: "", name: name ?? "", type: "text" }
+    });
+  }, [disabled, readOnly, isControlled, onClear, onChange, name]);
+  const hasError = Boolean(error);
+  const hasValue = value !== void 0 && value !== "";
+  const showClearBtn = allowClear && hasValue && !disabled && !readOnly;
+  const charCount = maxLength !== void 0 ? String(value ?? "").length : 0;
+  const dims = SIZE_MAP5[size];
+  const variantStyle = VARIANT_STYLES6[variant](focused, hasError, disabled);
+  const inputStyle = {
+    fontSize: dims.fontSize,
+    padding: `${dims.paddingY}px ${dims.paddingX}px`,
+    paddingLeft: prefix ? dims.paddingX + 20 : dims.paddingX,
+    paddingRight: suffix || showClearBtn ? dims.paddingX + 20 : dims.paddingX,
+    width: "100%",
+    outline: "none",
+    border: "none",
+    background: "transparent",
+    color: disabled ? "#9ca3af" : "#111827",
+    lineHeight: 1.5,
+    ...variantStyle
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)(
+    "div",
+    {
+      "data-testid": dataTestId,
+      className,
+      style: {
+        display: block ? "block" : "inline-block",
+        width: block ? "100%" : void 0,
+        ...style
+      },
+      children: [
+        label && /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)(
+          "label",
+          {
+            htmlFor: id,
+            "data-testid": dataTestId ? `${dataTestId}-label` : void 0,
+            style: {
+              display: "block",
+              fontSize: 13,
+              fontWeight: 500,
+              color: disabled ? "#9ca3af" : hasError ? "#ef4444" : "#374151",
+              marginBottom: 4
+            },
+            children: [
+              label,
+              required && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)("div", { style: { position: "relative", display: "inline-flex", width: "100%" }, children: [
+          prefix && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+            "span",
+            {
+              "data-testid": dataTestId ? `${dataTestId}-prefix` : void 0,
+              style: {
+                position: "absolute",
+                left: dims.paddingX,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: disabled ? "#d1d5db" : "#9ca3af",
+                fontSize: dims.fontSize,
+                lineHeight: 1,
+                display: "flex",
+                alignItems: "center",
+                pointerEvents: "none"
+              },
+              children: prefix
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+            "input",
+            {
+              id,
+              ref: void 0,
+              type,
+              name,
+              ...isControlled ? { value: valueProp ?? "" } : { defaultValue },
+              onChange: handleChange,
+              onFocus: (e) => {
+                setFocused(true);
+                rest.onFocus?.(e);
+              },
+              onBlur: (e) => {
+                setFocused(false);
+                rest.onBlur?.(e);
+              },
+              disabled,
+              readOnly,
+              placeholder,
+              required,
+              autoFocus,
+              autoComplete,
+              min,
+              max,
+              step,
+              pattern,
+              inputMode,
+              maxLength,
+              "aria-label": ariaLabel ?? label ?? "Input",
+              "aria-invalid": hasError,
+              "aria-describedby": [helperText && `${id}-helper`, error && `${id}-error`].filter(Boolean).join(" ") || void 0,
+              "data-testid": dataTestId ? `${dataTestId}-input` : void 0,
+              ...rest,
+              style: inputStyle
+            }
+          ),
+          showClearBtn && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+            "button",
+            {
+              type: "button",
+              "aria-label": "Clear input",
+              "data-testid": dataTestId ? `${dataTestId}-clear` : void 0,
+              onClick: handleClear,
+              style: {
+                position: "absolute",
+                right: suffix ? dims.paddingX + 18 : dims.paddingX,
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 2,
+                fontSize: 14,
+                color: "#9ca3af",
+                lineHeight: 1,
+                display: "flex",
+                alignItems: "center"
+              },
+              children: "\u2715"
+            }
+          ),
+          suffix && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+            "span",
+            {
+              "data-testid": dataTestId ? `${dataTestId}-suffix` : void 0,
+              style: {
+                position: "absolute",
+                right: showClearBtn ? dims.paddingX + 22 : dims.paddingX,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: disabled ? "#d1d5db" : "#9ca3af",
+                fontSize: dims.fontSize,
+                lineHeight: 1,
+                display: "flex",
+                alignItems: "center",
+                pointerEvents: "none"
+              },
+              children: suffix
+            }
+          ),
+          loading && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+            "span",
+            {
+              "data-testid": dataTestId ? `${dataTestId}-loading` : void 0,
+              style: {
+                position: "absolute",
+                right: dims.paddingX,
+                top: "50%",
+                transform: "translateY(-50%)"
+              },
+              children: "\u27F3"
+            }
+          )
+        ] }),
+        showCount && maxLength !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)(
+          "div",
+          {
+            "data-testid": dataTestId ? `${dataTestId}-count` : void 0,
+            style: {
+              textAlign: "right",
+              fontSize: 12,
+              color: charCount > maxLength * 0.9 ? "#ef4444" : "#9ca3af",
+              marginTop: 2
+            },
+            children: [
+              charCount,
+              "/",
+              maxLength
+            ]
+          }
+        ),
+        helperText && !error && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+          "div",
+          {
+            id: `${id}-helper`,
+            "data-testid": dataTestId ? `${dataTestId}-helper` : void 0,
+            style: { fontSize: 12, color: "#6b7280", marginTop: 4 },
+            children: helperText
+          }
+        ),
+        error && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+          "div",
+          {
+            id: `${id}-error`,
+            role: "alert",
+            "data-testid": dataTestId ? `${dataTestId}-error` : void 0,
+            style: { fontSize: 12, color: "#ef4444", marginTop: 4 },
+            children: error
+          }
+        )
+      ]
+    }
+  );
+});
+
+// src/components/Checkbox.tsx
+var import_react48 = require("react");
+var import_jsx_runtime76 = require("react/jsx-runtime");
+var SIZE_MAP6 = { sm: 14, md: 18, lg: 22 };
+var CHECK_MARK_SCALE = { sm: 0.7, md: 0.75, lg: 0.78 };
+function Checkbox({
+  checked,
+  defaultChecked = false,
+  onChange,
+  disabled = false,
+  indeterminate = false,
+  size = "md",
+  label,
+  labelPosition = "right",
+  error,
+  value,
+  name,
+  required = false,
+  "aria-label": ariaLabel,
+  "data-testid": dataTestId,
+  className,
+  style
+}) {
+  const id = (0, import_react48.useId)();
+  const [internalChecked, setInternalChecked] = (0, import_react48.useState)(defaultChecked);
+  const isControlled = checked !== void 0;
+  const isChecked = isControlled ? checked : internalChecked;
+  const hasError = Boolean(error);
+  const boxSize = SIZE_MAP6[size];
+  const checkSize = Math.round(boxSize * CHECK_MARK_SCALE[size]);
+  const handleToggle = (0, import_react48.useCallback)(() => {
+    if (disabled) return;
+    const next = !isChecked;
+    if (!isControlled) setInternalChecked(next);
+    onChange?.(next);
+  }, [disabled, isChecked, isControlled, onChange]);
+  const handleKeyDown = (0, import_react48.useCallback)(
+    (e) => {
+      if (disabled) return;
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        handleToggle();
+      }
+    },
+    [disabled, handleToggle]
+  );
+  const borderColor = disabled ? "#d1d5db" : hasError ? "#ef4444" : isChecked || indeterminate ? "#3b82f6" : "#d1d5db";
+  const bgColor = disabled ? "#f3f4f6" : isChecked || indeterminate ? "#3b82f6" : "#ffffff";
+  const dashWidth = Math.round(boxSize * 0.5);
+  const dashHeight = 2;
+  const labelElement = label ? /* @__PURE__ */ (0, import_jsx_runtime76.jsxs)(
+    "label",
+    {
+      htmlFor: id,
+      "data-testid": dataTestId ? `${dataTestId}-label` : void 0,
+      style: {
+        fontSize: size === "sm" ? 13 : size === "lg" ? 15 : 14,
+        color: disabled ? "#9ca3af" : "#1f2937",
+        cursor: disabled ? "not-allowed" : "pointer",
+        userSelect: "none",
+        lineHeight: `${boxSize}px`
+      },
+      onClick: (e) => {
+        if (disabled) e.preventDefault();
+      },
+      children: [
+        label,
+        required && /* @__PURE__ */ (0, import_jsx_runtime76.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
+      ]
+    }
+  ) : null;
+  const checkMark = indeterminate ? (
+    // Dash for indeterminate
+    /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
+      "div",
+      {
+        style: {
+          width: dashWidth,
+          height: dashHeight,
+          borderRadius: 1,
+          backgroundColor: disabled ? "#d1d5db" : "#ffffff"
+        }
+      }
+    )
+  ) : isChecked ? (
+    // Check mark SVG
+    /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
+      "svg",
+      {
+        width: checkSize,
+        height: checkSize,
+        viewBox: "0 0 12 10",
+        fill: "none",
+        style: { display: "block" },
+        children: /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
+          "path",
+          {
+            d: "M1 5l3 3 7-7",
+            stroke: disabled ? "#d1d5db" : "#ffffff",
+            strokeWidth: 1.8,
+            strokeLinecap: "round",
+            strokeLinejoin: "round"
+          }
+        )
+      }
+    )
+  ) : null;
+  return /* @__PURE__ */ (0, import_jsx_runtime76.jsxs)(
+    "div",
+    {
+      "data-testid": dataTestId,
+      className,
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        opacity: disabled ? 0.6 : 1,
+        cursor: disabled ? "not-allowed" : "pointer",
+        ...style
+      },
+      onClick: handleToggle,
+      children: [
+        label && labelPosition === "left" ? labelElement : null,
+        /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
+          "input",
+          {
+            type: "checkbox",
+            id,
+            name,
+            value,
+            checked: isChecked,
+            disabled,
+            required,
+            onChange: handleToggle,
+            style: {
+              position: "absolute",
+              opacity: 0,
+              width: 0,
+              height: 0,
+              pointerEvents: "none"
+            },
+            "aria-hidden": "true",
+            tabIndex: -1
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
+          "div",
+          {
+            role: "checkbox",
+            "aria-checked": indeterminate ? "mixed" : isChecked,
+            "aria-disabled": disabled,
+            "aria-label": ariaLabel ?? label ?? "Checkbox",
+            tabIndex: disabled ? -1 : 0,
+            "data-testid": dataTestId ? `${dataTestId}-box` : void 0,
+            onKeyDown: handleKeyDown,
+            style: {
+              width: boxSize,
+              height: boxSize,
+              borderRadius: 3,
+              border: `1.5px solid ${borderColor}`,
+              backgroundColor: bgColor,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "background-color 0.15s ease, border-color 0.15s ease",
+              flexShrink: 0,
+              outline: "none"
+            },
+            onFocus: (e) => {
+              e.currentTarget.style.boxShadow = `0 0 0 2px rgba(59,130,246,0.25)`;
+            },
+            onBlur: (e) => {
+              e.currentTarget.style.boxShadow = "";
+            },
+            children: checkMark
+          }
+        ),
+        label && labelPosition === "right" ? labelElement : null,
+        error && /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
+          "div",
+          {
+            role: "alert",
+            "data-testid": dataTestId ? `${dataTestId}-error` : void 0,
+            style: {
+              fontSize: 12,
+              color: "#ef4444",
+              marginTop: 4
+            },
+            children: error
+          }
+        )
+      ]
+    }
+  );
+}
+
+// src/components/Combobox.tsx
+var import_react49 = __toESM(require("react"));
+var import_jsx_runtime77 = require("react/jsx-runtime");
+var BG = "rgba(15, 23, 42, 0.97)";
+var BORDER = "rgba(148, 163, 184, 0.15)";
+var TEXT = "#e2e8f0";
+var MUTED = "#64748b";
+var ACCENT = "#3b82f6";
+var ACCENT_BG2 = "rgba(59, 130, 246, 0.12)";
+var ERROR = "rgba(248, 113, 113, 0.4)";
+var OPTION_HEIGHT = 40;
+function filterOptions(options, query) {
+  const lower = query.toLowerCase().trim();
+  if (!lower) return options;
+  return options.filter((opt) => {
+    if (opt.disabled) return false;
+    return opt.label.toLowerCase().includes(lower) || opt.value.toLowerCase().includes(lower) || (opt.description?.toLowerCase().includes(lower) ?? false);
+  });
+}
+function groupOptions(options) {
+  const groups = {};
+  const ungrouped = [];
+  for (const opt of options) {
+    if (opt.group) {
+      if (!groups[opt.group]) groups[opt.group] = [];
+      groups[opt.group].push(opt);
+    } else {
+      ungrouped.push(opt);
+    }
+  }
+  const result = [];
+  if (ungrouped.length > 0) result.push({ options: ungrouped });
+  for (const [label, opts] of Object.entries(groups)) {
+    result.push({ label, options: opts });
+  }
+  return result;
+}
+var Combobox = import_react49.default.memo(function Combobox2({
+  value,
+  options,
+  onChange,
+  placeholder = "\u641C\u7D22\u9009\u62E9...",
+  label,
+  allowCustom = false,
+  error,
+  helpText,
+  disabled = false,
+  required = false,
+  emptyMessage = "\u65E0\u5339\u914D\u9009\u9879",
+  loading = false,
+  maxVisible = 8,
+  style,
+  className,
+  "data-testid": dataTestId
+}) {
+  const [open, setOpen] = (0, import_react49.useState)(false);
+  const [query, setQuery] = (0, import_react49.useState)("");
+  const [highlightIndex, setHighlightIndex] = (0, import_react49.useState)(0);
+  const [internalValue, setInternalValue] = (0, import_react49.useState)(value ?? "");
+  const inputRef = (0, import_react49.useRef)(null);
+  const listRef = (0, import_react49.useRef)(null);
+  const containerRef = (0, import_react49.useRef)(null);
+  (0, import_react49.useEffect)(() => {
+    if (value !== void 0) {
+      setInternalValue(value);
+    }
+  }, [value]);
+  const filteredOptions = (0, import_react49.useMemo)(() => filterOptions(options, query), [options, query]);
+  const grouped = (0, import_react49.useMemo)(() => groupOptions(filteredOptions), [filteredOptions]);
+  const totalAvailable = (0, import_react49.useMemo)(
+    () => grouped.reduce((sum, g) => sum + g.options.length, 0),
+    [grouped]
+  );
+  const selectedLabel = (0, import_react49.useMemo)(() => {
+    if (!internalValue) return "";
+    const opt = options.find((o) => o.value === internalValue);
+    return opt?.label ?? internalValue;
+  }, [internalValue, options]);
+  (0, import_react49.useEffect)(() => {
+    setHighlightIndex(0);
+  }, [filteredOptions.length]);
+  (0, import_react49.useEffect)(() => {
+    if (open && listRef.current) {
+      const el = listRef.current.querySelector(`[data-combobox-option-index="${highlightIndex}"]`);
+      if (el) {
+        el.scrollIntoView({ block: "nearest" });
+      }
+    }
+  }, [highlightIndex, open]);
+  (0, import_react49.useEffect)(() => {
+    if (!open) return;
+    function handleClick(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+  (0, import_react49.useEffect)(() => {
+    if (!open) return;
+    function handleKey(e) {
+      if (e.key === "Escape") {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [open]);
+  const handleSelect = (0, import_react49.useCallback)(
+    (opt) => {
+      if (opt.disabled) return;
+      setInternalValue(opt.value);
+      onChange?.(opt.value);
+      setOpen(false);
+      setQuery("");
+      setHighlightIndex(0);
+    },
+    [onChange]
+  );
+  const handleInputChange = (0, import_react49.useCallback)((e) => {
+    const v = e.target.value;
+    setQuery(v);
+    if (!open) setOpen(true);
+    setHighlightIndex(0);
+  }, [open]);
+  const handleFocus = (0, import_react49.useCallback)(() => {
+    if (disabled) return;
+    setOpen(true);
+    if (!query) setQuery("");
+  }, [disabled, query]);
+  const handleKeyDown = (0, import_react49.useCallback)(
+    (e) => {
+      if (!open) {
+        if (e.key === "ArrowDown" || e.key === "Enter") {
+          setOpen(true);
+          e.preventDefault();
+        }
+        return;
+      }
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setHighlightIndex((i) => (i + 1) % Math.max(totalAvailable, 1));
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setHighlightIndex((i) => (i - 1 + totalAvailable) % Math.max(totalAvailable, 1));
+          break;
+        case "Enter":
+          e.preventDefault();
+          if (totalAvailable > 0) {
+            let idx = 0;
+            for (const group of grouped) {
+              for (const opt of group.options) {
+                if (idx === highlightIndex) {
+                  handleSelect(opt);
+                  return;
+                }
+                idx++;
+              }
+            }
+          } else if (allowCustom && query.trim()) {
+            const newValue = query.trim();
+            setInternalValue(newValue);
+            onChange?.(newValue);
+            setOpen(false);
+            setQuery("");
+          }
+          break;
+        case "Tab":
+          setOpen(false);
+          setQuery("");
+          break;
+        default:
+          break;
+      }
+    },
+    [open, totalAvailable, highlightIndex, grouped, handleSelect, allowCustom, query, onChange]
+  );
+  const handleClear = (0, import_react49.useCallback)(() => {
+    setInternalValue("");
+    onChange?.("");
+    setQuery("");
+    inputRef.current?.focus();
+  }, [onChange]);
+  const inputBorderColor = error ? ERROR : BORDER;
+  return /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(
+    "div",
+    {
+      ref: containerRef,
+      style: { display: "flex", flexDirection: "column", gap: 6, ...style },
+      className,
+      "data-testid": dataTestId,
+      children: [
+        label && /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(
+          "label",
+          {
+            style: { fontSize: 12, fontWeight: 500, color: error ? "#f87171" : "#94a3b8" },
+            children: [
+              label,
+              required && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("span", { style: { color: "#f87171", marginLeft: 2 }, children: "*" })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)("div", { style: { position: "relative" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)("div", { style: { position: "relative" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+              "input",
+              {
+                ref: inputRef,
+                type: "text",
+                value: open ? query : selectedLabel || query,
+                placeholder,
+                disabled,
+                onChange: handleInputChange,
+                onFocus: handleFocus,
+                onKeyDown: handleKeyDown,
+                "aria-expanded": open,
+                "aria-haspopup": "listbox",
+                "aria-autocomplete": "list",
+                autoComplete: "off",
+                role: "combobox",
+                "data-combobox-input": "true",
+                style: {
+                  width: "100%",
+                  padding: "8px 32px 8px 12px",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  color: TEXT,
+                  background: "rgba(15, 23, 42, 0.4)",
+                  border: `1px solid ${inputBorderColor}`,
+                  borderRadius: 8,
+                  outline: "none",
+                  cursor: disabled ? "not-allowed" : "text",
+                  opacity: disabled ? 0.5 : 1,
+                  transition: "border-color 0.15s",
+                  boxSizing: "border-box"
+                }
+              }
+            ),
+            internalValue && !disabled && !open ? /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+              "button",
+              {
+                type: "button",
+                onClick: handleClear,
+                "data-combobox-clear": "true",
+                "aria-label": "Clear selection",
+                style: {
+                  position: "absolute",
+                  right: 8,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  color: MUTED,
+                  cursor: "pointer",
+                  padding: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 4
+                },
+                children: /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("path", { d: "M4 4l8 8M12 4l-8 8", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }) })
+              }
+            ) : /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+              "svg",
+              {
+                width: "14",
+                height: "14",
+                viewBox: "0 0 16 16",
+                fill: "none",
+                style: {
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: `translateY(-50%) ${open ? "rotate(180deg)" : "rotate(0deg)"}`,
+                  pointerEvents: "none",
+                  color: MUTED,
+                  transition: "transform 0.2s"
+                },
+                children: /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("path", { d: "M4 6l4 4 4-4", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" })
+              }
+            ),
+            loading && /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(
+              "div",
+              {
+                style: {
+                  position: "absolute",
+                  right: 32,
+                  top: "50%",
+                  transform: "translateY(-50%)"
+                },
+                "data-combobox-loading": "true",
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", style: { animation: "combobox-spin 0.6s linear infinite" }, children: /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("circle", { cx: "8", cy: "8", r: "6", stroke: MUTED, strokeWidth: "2", strokeDasharray: "28", strokeLinecap: "round" }) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("style", { children: `@keyframes combobox-spin { to { transform: rotate(360deg); } }` })
+                ]
+              }
+            )
+          ] }),
+          open && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+            "div",
+            {
+              ref: listRef,
+              role: "listbox",
+              "data-combobox-list": "true",
+              style: {
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                right: 0,
+                marginTop: 4,
+                maxHeight: maxVisible * OPTION_HEIGHT,
+                overflowY: "auto",
+                background: BG,
+                border: `1px solid ${BORDER}`,
+                borderRadius: 10,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                backdropFilter: "blur(16px)",
+                zIndex: 9997,
+                padding: 4
+              },
+              children: totalAvailable === 0 ? /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+                "div",
+                {
+                  style: {
+                    padding: "12px 10px",
+                    textAlign: "center",
+                    fontSize: 12,
+                    color: MUTED
+                  },
+                  children: emptyMessage
+                }
+              ) : grouped.map((group, groupIdx) => /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)("div", { "data-combobox-group": group.label, children: [
+                group.label && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+                  "div",
+                  {
+                    style: {
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: MUTED,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      padding: "6px 10px 2px"
+                    },
+                    children: group.label
+                  }
+                ),
+                group.options.map((opt) => {
+                  let flatIdx = 0;
+                  for (let gi = 0; gi < groupIdx; gi++) {
+                    flatIdx += grouped[gi].options.length;
+                  }
+                  const idxInGroup = group.options.indexOf(opt);
+                  const flatIndex = flatIdx + idxInGroup;
+                  const isHighlighted = flatIndex === highlightIndex;
+                  const isSelected = opt.value === internalValue;
+                  return /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(
+                    "div",
+                    {
+                      role: "option",
+                      "aria-selected": isSelected,
+                      "aria-disabled": opt.disabled,
+                      "data-combobox-option-index": flatIndex,
+                      "data-combobox-option-value": opt.value,
+                      onClick: () => handleSelect(opt),
+                      onMouseEnter: () => setHighlightIndex(flatIndex),
+                      style: {
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "8px 10px",
+                        borderRadius: 6,
+                        cursor: opt.disabled ? "not-allowed" : "pointer",
+                        opacity: opt.disabled ? 0.4 : 1,
+                        background: isHighlighted ? ACCENT_BG2 : "transparent",
+                        color: isSelected && !isHighlighted ? ACCENT : TEXT,
+                        fontWeight: isSelected ? 600 : 400,
+                        transition: "background 0.1s",
+                        height: OPTION_HEIGHT,
+                        boxSizing: "border-box"
+                      },
+                      children: [
+                        opt.icon && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("span", { style: { flexShrink: 0, display: "flex", alignItems: "center" }, children: opt.icon }),
+                        /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                          /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+                            "div",
+                            {
+                              style: {
+                                fontSize: 13,
+                                lineHeight: 1.3,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap"
+                              },
+                              children: opt.label
+                            }
+                          ),
+                          opt.description && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+                            "div",
+                            {
+                              style: {
+                                fontSize: 11,
+                                color: MUTED,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap"
+                              },
+                              children: opt.description
+                            }
+                          )
+                        ] }),
+                        isSelected && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", style: { flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("path", { d: "M3 8l3.5 3.5L13 5", stroke: ACCENT, strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }) })
+                      ]
+                    },
+                    opt.value
+                  );
+                })
+              ] }, group.label ?? `__ungrouped_${groupIdx}`))
+            }
+          )
+        ] }),
+        error && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("span", { style: { fontSize: 11, color: "#f87171" }, children: error }),
+        helpText && !error && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("span", { style: { fontSize: 11, color: MUTED }, children: helpText })
+      ]
+    }
+  );
+});
+
+// src/components/ContentSwitcher.tsx
+var import_react50 = require("react");
+var import_jsx_runtime78 = require("react/jsx-runtime");
+var SIZE_STYLES = {
+  sm: { height: 32, fontSize: 13, paddingX: 12, gap: 2 },
+  md: { height: 40, fontSize: 14, paddingX: 16, gap: 4 }
+};
+function ContentSwitcher({
+  segments,
+  selected: controlledSelected,
+  defaultSelected,
+  onSelect,
+  variant = "bar",
+  size = "md",
+  fullWidth = false,
+  "data-testid": dataTestId
+}) {
+  const [internalSelected, setInternalSelected] = (0, import_react50.useState)(
+    defaultSelected ?? segments[0]?.key ?? ""
+  );
+  const selected = controlledSelected ?? internalSelected;
+  const handleSelect = (0, import_react50.useCallback)(
+    (key) => {
+      if (controlledSelected === void 0) {
+        setInternalSelected(key);
+      }
+      onSelect?.(key);
+    },
+    [controlledSelected, onSelect]
+  );
+  const sizeStyle = SIZE_STYLES[size];
+  const containerStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: sizeStyle.gap,
+    width: fullWidth ? "100%" : void 0,
+    ...variant === "pills" ? {
+      background: "rgba(148, 163, 184, 0.08)",
+      borderRadius: 12,
+      padding: 3
+    } : {}
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("div", { "data-testid": dataTestId, style: containerStyle, role: "tablist", children: segments.map((seg) => {
+    const isSelected = selected === seg.key;
+    const isDisabled = seg.disabled ?? false;
+    const segmentStyle = {
+      ...variant === "bar" ? barSegmentStyle(isSelected, isDisabled, sizeStyle) : pillSegmentStyle(isSelected, isDisabled, sizeStyle),
+      flex: fullWidth ? 1 : void 0
+    };
+    return /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)(
+      "button",
+      {
+        role: "tab",
+        "aria-selected": isSelected,
+        "aria-disabled": isDisabled,
+        "data-segment-key": seg.key,
+        "data-selected": isSelected ? "true" : "false",
+        disabled: isDisabled,
+        onClick: () => {
+          if (!isDisabled) handleSelect(seg.key);
+        },
+        style: segmentStyle,
+        children: [
+          seg.icon ? /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("span", { style: { display: "flex", alignItems: "center", marginRight: 6 }, children: seg.icon }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("span", { children: seg.label }),
+          seg.badge !== void 0 && seg.badge > 0 ? /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("span", { style: badgeStyle, children: seg.badge > 99 ? "99+" : seg.badge }) : null
+        ]
+      },
+      seg.key
+    );
+  }) });
+}
+function barSegmentStyle(isSelected, disabled, size) {
+  return {
+    position: "relative",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    height: size.height,
+    padding: `0 ${size.paddingX}px`,
+    fontSize: size.fontSize,
+    fontWeight: isSelected ? 600 : 400,
+    color: disabled ? "rgba(148, 163, 184, 0.2)" : isSelected ? "#f8fafc" : "#94a3b8",
+    background: "transparent",
+    border: "none",
+    borderBottom: `2px solid ${isSelected ? "#38bdf8" : "transparent"}`,
+    borderRadius: 0,
+    cursor: disabled ? "not-allowed" : "pointer",
+    transition: "color 0.15s, border-color 0.15s",
+    opacity: disabled ? 0.4 : 1
+  };
+}
+function pillSegmentStyle(isSelected, disabled, size) {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    height: size.height,
+    padding: `0 ${size.paddingX}px`,
+    fontSize: size.fontSize,
+    fontWeight: isSelected ? 600 : 400,
+    color: disabled ? "rgba(148, 163, 184, 0.2)" : isSelected ? "#f8fafc" : "#94a3b8",
+    background: isSelected ? "rgba(56, 189, 248, 0.18)" : "transparent",
+    border: "none",
+    borderRadius: 10,
+    cursor: disabled ? "not-allowed" : "pointer",
+    transition: "background 0.15s, color 0.15s",
+    opacity: disabled ? 0.4 : 1
+  };
+}
+var badgeStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: 18,
+  height: 18,
+  padding: "0 5px",
+  fontSize: 11,
+  fontWeight: 700,
+  color: "#0f172a",
+  background: "#38bdf8",
+  borderRadius: 9,
+  marginLeft: 4
+};
+
+// src/components/ContextMenu.tsx
+var import_react51 = require("react");
+var import_jsx_runtime79 = require("react/jsx-runtime");
+var MENU_STYLE = {
+  position: "fixed",
+  zIndex: 9999,
+  minWidth: 180,
+  maxWidth: 280,
+  background: "#1e293b",
+  border: "1px solid rgba(148, 163, 184, 0.25)",
+  borderRadius: 12,
+  padding: "6px 0",
+  boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
+  backdropFilter: "blur(8px)"
+};
+var ITEM_STYLE = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "8px 16px",
+  cursor: "pointer",
+  color: "#e2e8f0",
+  fontSize: 14,
+  lineHeight: "20px",
+  transition: "background 0.12s",
+  userSelect: "none"
+};
+var SEPARATOR_STYLE = {
+  height: 1,
+  margin: "4px 12px",
+  background: "rgba(148, 163, 184, 0.18)"
+};
+var SHORTCUT_STYLE = {
+  fontSize: 12,
+  color: "#64748b",
+  marginLeft: 24,
+  fontFamily: "monospace"
+};
+function useClickOutside(ref, handler, enabled) {
+  (0, import_react51.useEffect)(() => {
+    if (!enabled) return;
+    const listener = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        handler();
+      }
+    };
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", listener);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", listener);
+    };
+  }, [ref, handler, enabled]);
+}
+function ContextMenu({
+  items,
+  open,
+  x,
+  y,
+  onClose,
+  width = 200
+}) {
+  const menuRef = (0, import_react51.useRef)(null);
+  const [adjustedPos, setAdjustedPos] = (0, import_react51.useState)({ x, y });
+  (0, import_react51.useEffect)(() => {
+    if (!open) return;
+    const menuEl = menuRef.current;
+    if (!menuEl) {
+      setAdjustedPos({ x, y });
+      return;
+    }
+    const rect = menuEl.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let adjustedX = x;
+    let adjustedY = y;
+    if (x + rect.width > vw) {
+      adjustedX = vw - rect.width - 8;
+    }
+    if (y + rect.height > vh) {
+      adjustedY = vh - rect.height - 8;
+    }
+    if (adjustedX < 0) adjustedX = 8;
+    if (adjustedY < 0) adjustedY = 8;
+    setAdjustedPos({ x: adjustedX, y: adjustedY });
+  }, [open, x, y]);
+  useClickOutside(menuRef, onClose, open);
+  (0, import_react51.useEffect)(() => {
+    if (!open) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+  (0, import_react51.useEffect)(() => {
+    if (!open) return;
+    const handleScroll = () => onClose();
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [open, onClose]);
+  if (!open) return null;
+  return /* @__PURE__ */ (0, import_jsx_runtime79.jsx)(
+    "div",
+    {
+      ref: menuRef,
+      role: "menu",
+      style: {
+        ...MENU_STYLE,
+        left: adjustedPos.x,
+        top: adjustedPos.y,
+        width
+      },
+      onContextMenu: (e) => e.preventDefault(),
+      children: items.map((entry) => {
+        if ("kind" in entry && entry.kind === "separator") {
+          return /* @__PURE__ */ (0, import_jsx_runtime79.jsx)("div", { style: SEPARATOR_STYLE }, `sep-${Math.random()}`);
+        }
+        const item = entry;
+        const isDisabled = item.disabled ?? false;
+        return /* @__PURE__ */ (0, import_jsx_runtime79.jsxs)(
+          "div",
+          {
+            role: "menuitem",
+            "aria-disabled": isDisabled,
+            style: {
+              ...ITEM_STYLE,
+              color: item.danger ? "#fca5a5" : isDisabled ? "#475569" : "#e2e8f0",
+              cursor: isDisabled ? "not-allowed" : "pointer",
+              opacity: isDisabled ? 0.5 : 1
+            },
+            onClick: () => {
+              if (!isDisabled) {
+                item.onSelect();
+                onClose();
+              }
+            },
+            onMouseEnter: (e) => {
+              if (!isDisabled) {
+                e.currentTarget.style.background = "rgba(59, 130, 246, 0.15)";
+              }
+            },
+            onMouseLeave: (e) => {
+              e.currentTarget.style.background = "transparent";
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime79.jsxs)("span", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [
+                item.icon && /* @__PURE__ */ (0, import_jsx_runtime79.jsx)("span", { style: { display: "flex", fontSize: 16 }, children: item.icon }),
+                item.label
+              ] }),
+              item.shortcut && /* @__PURE__ */ (0, import_jsx_runtime79.jsx)("span", { style: SHORTCUT_STYLE, children: item.shortcut })
+            ]
+          },
+          item.key
+        );
+      })
+    }
+  );
+}
+
+// src/components/DateRangePicker.tsx
+var import_react52 = require("react");
+var import_jsx_runtime80 = require("react/jsx-runtime");
+var DAY_NAMES2 = ["\u65E5", "\u4E00", "\u4E8C", "\u4E09", "\u56DB", "\u4E94", "\u516D"];
+var MONTH_NAMES2 = [
+  "1\u6708",
+  "2\u6708",
+  "3\u6708",
+  "4\u6708",
+  "5\u6708",
+  "6\u6708",
+  "7\u6708",
+  "8\u6708",
+  "9\u6708",
+  "10\u6708",
+  "11\u6708",
+  "12\u6708"
+];
+function formatDate(year, month, day) {
+  const m = String(month + 1).padStart(2, "0");
+  const d = String(day).padStart(2, "0");
+  return `${year}-${m}-${d}`;
+}
+function parseDate(str) {
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const [, year, month, day] = match;
+  return {
+    year: parseInt(year, 10),
+    month: parseInt(month, 10) - 1,
+    day: parseInt(day, 10)
+  };
+}
+function getDaysInMonth3(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+function getFirstDayOfMonth2(year, month) {
+  return new Date(year, month, 1).getDay();
+}
+function isBefore(ymd, target) {
+  const d1 = new Date(ymd.year, ymd.month, ymd.day);
+  const parsed = parseDate(target);
+  if (!parsed) return false;
+  const d2 = new Date(parsed.year, parsed.month, parsed.day);
+  return d1 < d2;
+}
+function isAfter(ymd, target) {
+  const d1 = new Date(ymd.year, ymd.month, ymd.day);
+  const parsed = parseDate(target);
+  if (!parsed) return false;
+  const d2 = new Date(parsed.year, parsed.month, parsed.day);
+  return d1 > d2;
+}
+function isSameDay2(a, b) {
+  return a.year === b.year && a.month === b.month && a.day === b.day;
+}
+function isInRange(ymd, range) {
+  const d = new Date(ymd.year, ymd.month, ymd.day);
+  const s = new Date(range.start.year, range.start.month, range.start.day);
+  const e = new Date(range.end.year, range.end.month, range.end.day);
+  return d >= s && d <= e;
+}
+function today() {
+  const d = /* @__PURE__ */ new Date();
+  return formatDate(d.getFullYear(), d.getMonth(), d.getDate());
+}
+function daysAgo(n) {
+  const d = /* @__PURE__ */ new Date();
+  d.setDate(d.getDate() - n);
+  return formatDate(d.getFullYear(), d.getMonth(), d.getDate());
+}
+var DEFAULT_PRESETS = [
+  {
+    label: "\u4ECA\u5929",
+    getValue: () => ({ start: today(), end: today() })
+  },
+  {
+    label: "\u6700\u8FD17\u5929",
+    getValue: () => ({ start: daysAgo(6), end: today() })
+  },
+  {
+    label: "\u6700\u8FD130\u5929",
+    getValue: () => ({ start: daysAgo(29), end: today() })
+  },
+  {
+    label: "\u6700\u8FD190\u5929",
+    getValue: () => ({ start: daysAgo(89), end: today() })
+  }
+];
+var DateRangePicker = ({
+  value,
+  onChange,
+  min,
+  max,
+  disabled = false,
+  required = false,
+  label,
+  error,
+  helpText,
+  placeholder = ["\u5F00\u59CB\u65E5\u671F", "\u7ED3\u675F\u65E5\u671F"],
+  presets = DEFAULT_PRESETS,
+  style,
+  className
+}) => {
+  const [open, setOpen] = (0, import_react52.useState)(false);
+  const containerRef = (0, import_react52.useRef)(null);
+  const todayDate = /* @__PURE__ */ new Date();
+  const [leftYear, setLeftYear] = (0, import_react52.useState)(todayDate.getFullYear());
+  const [leftMonth, setLeftMonth] = (0, import_react52.useState)(todayDate.getMonth());
+  const [rightYear, setRightYear] = (0, import_react52.useState)(
+    todayDate.getMonth() === 11 ? todayDate.getFullYear() + 1 : todayDate.getFullYear()
+  );
+  const [rightMonth, setRightMonth] = (0, import_react52.useState)(
+    todayDate.getMonth() === 11 ? 0 : todayDate.getMonth() + 1
+  );
+  const [selecting, setSelecting] = (0, import_react52.useState)("start");
+  const [hoverDate, setHoverDate] = (0, import_react52.useState)(null);
+  const startParsed = value?.start ? parseDate(value.start) : null;
+  const endParsed = value?.end ? parseDate(value.end) : null;
+  (0, import_react52.useEffect)(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+  const handleDayClick = (0, import_react52.useCallback)(
+    (year, month, day) => {
+      if (disabled) return;
+      const clickedDate = formatDate(year, month, day);
+      if (min && isBefore({ year, month, day }, min)) return;
+      if (max && isAfter({ year, month, day }, max)) return;
+      if (selecting === "start") {
+        const newValue = {
+          start: clickedDate,
+          end: clickedDate
+        };
+        onChange?.(newValue);
+        setSelecting("end");
+      } else {
+        const currentStart = value?.start || clickedDate;
+        const s = parseDate(currentStart);
+        if (s) {
+          const startDt = new Date(s.year, s.month, s.day);
+          const clickedDt = new Date(year, month, day);
+          if (clickedDt < startDt) {
+            const newValue = {
+              start: clickedDate,
+              end: clickedDate
+            };
+            onChange?.(newValue);
+            setSelecting("end");
+          } else {
+            const newValue = {
+              start: currentStart,
+              end: clickedDate
+            };
+            onChange?.(newValue);
+            setSelecting("start");
+            setOpen(false);
+          }
+        }
+      }
+    },
+    [disabled, min, max, onChange, selecting, value]
+  );
+  const handlePresetClick = (0, import_react52.useCallback)(
+    (preset) => {
+      const range = preset.getValue();
+      onChange?.(range);
+      setSelecting("start");
+      setOpen(false);
+    },
+    [onChange]
+  );
+  const handleClear = (0, import_react52.useCallback)(() => {
+    onChange?.({ start: "", end: "" });
+    setSelecting("start");
+  }, [onChange]);
+  const renderCalendar = (year, month, onPrev, onNext) => {
+    const daysInMonth = getDaysInMonth3(year, month);
+    const firstDay = getFirstDayOfMonth2(year, month);
+    const cells = [];
+    for (let i = 0; i < firstDay; i++) {
+      cells.push(/* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-day drp-day--empty" }, `empty-${i}`));
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      const ymd = { year, month, day };
+      const isDisabled = !!(min && isBefore(ymd, min) || max && isAfter(ymd, max));
+      const isToday2 = isSameDay2(ymd, {
+        year: todayDate.getFullYear(),
+        month: todayDate.getMonth(),
+        day: todayDate.getDate()
+      });
+      const isStart = startParsed && isSameDay2(ymd, startParsed);
+      const isEnd = endParsed && isSameDay2(ymd, endParsed);
+      const inRange = startParsed && endParsed && startParsed.year !== void 0 && endParsed.year !== void 0 && isInRange(ymd, { start: startParsed, end: endParsed });
+      const inHoverRange = selecting === "end" && startParsed && hoverDate && isInRange(ymd, {
+        start: { year: startParsed.year, month: startParsed.month, day: startParsed.day },
+        end: hoverDate
+      });
+      const classes = ["drp-day"];
+      if (isDisabled) classes.push("drp-day--disabled");
+      if (isToday2) classes.push("drp-day--today");
+      if (isStart) classes.push("drp-day--start");
+      if (isEnd) classes.push("drp-day--end");
+      if ((inRange || inHoverRange) && !isStart && !isEnd)
+        classes.push("drp-day--in-range");
+      cells.push(
+        /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
+          "button",
+          {
+            type: "button",
+            className: classes.join(" "),
+            disabled: isDisabled,
+            onClick: () => handleDayClick(year, month, day),
+            onMouseEnter: () => setHoverDate(ymd),
+            onMouseLeave: () => setHoverDate(null),
+            "aria-label": `${year}\u5E74${month + 1}\u6708${day}\u65E5`,
+            children: day
+          },
+          `${year}-${month}-${day}`
+        )
+      );
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("div", { className: "drp-calendar", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("div", { className: "drp-calendar-header", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
+          "button",
+          {
+            type: "button",
+            className: "drp-nav-btn",
+            onClick: onPrev,
+            "aria-label": "\u4E0A\u4E00\u6708",
+            children: "\u2039"
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("span", { className: "drp-month-label", children: [
+          year,
+          "\u5E74 ",
+          MONTH_NAMES2[month]
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
+          "button",
+          {
+            type: "button",
+            className: "drp-nav-btn",
+            onClick: onNext,
+            "aria-label": "\u4E0B\u4E00\u6708",
+            children: "\u203A"
+          }
+        )
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-day-header", children: DAY_NAMES2.map((n) => /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-day-name", children: n }, n)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-day-grid", children: cells })
+    ] });
+  };
+  const displayText = value?.start && value?.end ? `${value.start} ~ ${value.end}` : value?.start ? `${value.start} ~ ` : "";
+  const hasValue = value?.start || value?.end;
+  return /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)(
+    "div",
+    {
+      ref: containerRef,
+      className: `drp-root${className ? ` ${className}` : ""}`,
+      style,
+      children: [
+        label && /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("label", { className: "drp-label", children: [
+          label,
+          required && /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("span", { className: "drp-required", children: "*" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("div", { className: "drp-trigger-wrapper", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
+            "input",
+            {
+              type: "text",
+              readOnly: true,
+              className: `drp-trigger${error ? " drp-trigger--error" : ""}${disabled ? " drp-trigger--disabled" : ""}`,
+              value: displayText,
+              placeholder: placeholder[0] + " ~ " + placeholder[1],
+              disabled,
+              onClick: () => !disabled && setOpen(!open),
+              onFocus: () => !disabled && setOpen(true),
+              "aria-expanded": open,
+              role: "combobox"
+            }
+          ),
+          hasValue && !disabled && /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
+            "button",
+            {
+              type: "button",
+              className: "drp-clear-btn",
+              onClick: (e) => {
+                e.stopPropagation();
+                handleClear();
+              },
+              "aria-label": "\u6E05\u9664",
+              children: "\u2715"
+            }
+          )
+        ] }),
+        open && /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("div", { className: "drp-panel", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-presets", children: presets.map((p) => /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
+            "button",
+            {
+              type: "button",
+              className: "drp-preset-btn",
+              onClick: () => handlePresetClick(p),
+              children: p.label
+            },
+            p.label
+          )) }),
+          /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("div", { className: "drp-calendars", children: [
+            renderCalendar(leftYear, leftMonth, () => {
+              if (leftMonth === 0) {
+                setLeftYear(leftYear - 1);
+                setLeftMonth(11);
+              } else {
+                setLeftMonth(leftMonth - 1);
+              }
+            }, () => {
+              if (leftMonth === 11) {
+                setLeftYear(leftYear + 1);
+                setLeftMonth(0);
+              } else {
+                setLeftMonth(leftMonth + 1);
+              }
+              const newLeftMonth = leftMonth === 11 ? 0 : leftMonth + 1;
+              const newLeftYear = leftMonth === 11 ? leftYear + 1 : leftYear;
+              if (newLeftYear === rightYear && newLeftMonth >= rightMonth) {
+                if (rightMonth === 11) {
+                  setRightYear(rightYear + 1);
+                  setRightMonth(0);
+                } else {
+                  setRightMonth(rightMonth + 1);
+                }
+              }
+            }),
+            renderCalendar(rightYear, rightMonth, () => {
+              if (rightMonth === 0) {
+                setRightYear(rightYear - 1);
+                setRightMonth(11);
+              } else {
+                setRightMonth(rightMonth - 1);
+              }
+              if (leftYear === rightYear && leftMonth >= rightMonth - 1) {
+                if (leftMonth === 0) {
+                  setLeftYear(leftYear - 1);
+                  setLeftMonth(11);
+                } else {
+                  setLeftMonth(leftMonth - 1);
+                }
+              }
+            }, () => {
+              if (rightMonth === 11) {
+                setRightYear(rightYear + 1);
+                setRightMonth(0);
+              } else {
+                setRightMonth(rightMonth + 1);
+              }
+            })
+          ] })
+        ] }),
+        error && /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-error", children: error }),
+        helpText && !error && /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-help", children: helpText }),
+        /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("style", { children: `
+        .drp-root {
+          position: relative;
+          display: inline-flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 280px;
+        }
+        .drp-label {
+          font-size: 14px;
+          font-weight: 500;
+          color: #374151;
+        }
+        .drp-required {
+          color: #ef4444;
+          margin-left: 2px;
+        }
+        .drp-trigger-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        .drp-trigger {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 14px;
+          cursor: pointer;
+          background: #fff;
+          outline: none;
+          box-sizing: border-box;
+          color: #111827;
+        }
+        .drp-trigger::placeholder {
+          color: #9ca3af;
+        }
+        .drp-trigger:focus {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .drp-trigger--error {
+          border-color: #ef4444;
+        }
+        .drp-trigger--error:focus {
+          box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+        }
+        .drp-trigger--disabled {
+          background: #f3f4f6;
+          color: #9ca3af;
+          cursor: not-allowed;
+        }
+        .drp-clear-btn {
+          position: absolute;
+          right: 8px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 12px;
+          color: #9ca3af;
+          padding: 2px 4px;
+          line-height: 1;
+        }
+        .drp-clear-btn:hover {
+          color: #6b7280;
+        }
+        .drp-panel {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          z-index: 1000;
+          margin-top: 4px;
+          background: #fff;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+          padding: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .drp-presets {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #f3f4f6;
+        }
+        .drp-preset-btn {
+          padding: 4px 10px;
+          font-size: 12px;
+          color: #3b82f6;
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
+          border-radius: 4px;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .drp-preset-btn:hover {
+          background: #dbeafe;
+        }
+        .drp-calendars {
+          display: flex;
+          gap: 16px;
+        }
+        .drp-calendar {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .drp-calendar-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 4px 0;
+        }
+        .drp-nav-btn {
+          background: none;
+          border: 1px solid #e5e7eb;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 16px;
+          color: #374151;
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+        }
+        .drp-nav-btn:hover {
+          background: #f3f4f6;
+        }
+        .drp-month-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: #111827;
+        }
+        .drp-day-header {
+          display: grid;
+          grid-template-columns: repeat(7, 32px);
+          gap: 2px;
+          text-align: center;
+          margin-bottom: 2px;
+        }
+        .drp-day-name {
+          font-size: 12px;
+          color: #6b7280;
+          width: 32px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .drp-day-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 32px);
+          gap: 2px;
+        }
+        .drp-day {
+          width: 32px;
+          height: 32px;
+          border: none;
+          background: none;
+          border-radius: 4px;
+          font-size: 13px;
+          color: #111827;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+        }
+        .drp-day:hover:not(:disabled):not(.drp-day--empty) {
+          background: #f3f4f6;
+        }
+        .drp-day--empty {
+          cursor: default;
+        }
+        .drp-day--disabled {
+          color: #d1d5db;
+          cursor: not-allowed;
+        }
+        .drp-day--today {
+          font-weight: 700;
+          color: #3b82f6;
+        }
+        .drp-day--start,
+        .drp-day--end {
+          background: #3b82f6 !important;
+          color: #fff !important;
+          border-radius: 4px;
+        }
+        .drp-day--in-range {
+          background: #dbeafe;
+          color: #1d4ed8;
+          border-radius: 0;
+        }
+        .drp-error {
+          font-size: 12px;
+          color: #ef4444;
+        }
+        .drp-help {
+          font-size: 12px;
+          color: #6b7280;
+        }
+      ` })
+      ]
+    }
+  );
+};
+var DateRangePicker_default = DateRangePicker;
+
+// src/components/MemberTierDistribution.tsx
+var import_jsx_runtime81 = require("react/jsx-runtime");
+var TIER_PALETTE = {
+  diamond: "#7c3aed",
+  // 钻石 - 紫
+  gold: "#f59e0b",
+  // 黄金 - 琥珀
+  silver: "#94a3b8",
+  // 白银 - 灰
+  bronze: "#d97706",
+  // 青铜 - 褐
+  platinum: "#06b6d4",
+  // 铂金 - 青
+  regular: "#64748b",
+  // 普通 - 石板
+  vip: "#ef4444",
+  // VIP - 红
+  svip: "#8b5cf6"
+  // SVIP - 紫罗兰
+};
+var FALLBACK_PALETTE = [
+  "#7c3aed",
+  "#f59e0b",
+  "#94a3b8",
+  "#d97706",
+  "#06b6d4",
+  "#ef4444",
+  "#22c55e",
+  "#ec4899"
+];
+var TIER_ICONS = {
+  diamond: "\u{1F48E}",
+  gold: "\u{1F947}",
+  silver: "\u{1F948}",
+  bronze: "\u{1F949}",
+  platinum: "\u{1F4A0}",
+  regular: "\u{1F464}",
+  vip: "\u2B50",
+  svip: "\u{1F451}"
+};
+function GrowthArrow({ growth }) {
+  if (growth == null) return null;
+  const isUp = growth > 0;
+  const isDown = growth < 0;
+  const absPct = (Math.abs(growth) * 100).toFixed(1);
+  if (!isUp && !isDown) {
+    return /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("span", { style: { fontSize: 11, color: "#64748b", fontWeight: 500 }, children: "\u2192 \u6301\u5E73" });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+    "span",
+    {
+      style: {
+        fontSize: 11,
+        color: isUp ? "#22c55e" : "#ef4444",
+        fontWeight: 600
+      },
+      children: [
+        isUp ? "\u2191" : "\u2193",
+        " ",
+        absPct,
+        "%"
+      ]
+    }
+  );
+}
+function TierListItem({
+  tier,
+  total,
+  index,
+  showTrends,
+  onTierClick
+}) {
+  const pct = total > 0 ? (tier.count / total * 100).toFixed(1) : "0.0";
+  const icon = tier.icon ?? TIER_ICONS[tier.key] ?? "\u{1F4CC}";
+  const color = tier.color ?? TIER_PALETTE[tier.key] ?? FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
+  return /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+    "div",
+    {
+      onClick: () => onTierClick?.(tier),
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "8px 12px",
+        borderRadius: 10,
+        background: "rgba(148, 163, 184, 0.04)",
+        cursor: onTierClick ? "pointer" : "default",
+        transition: "background 0.2s"
+      },
+      onMouseEnter: (e) => {
+        if (onTierClick) {
+          e.currentTarget.style.background = "rgba(148, 163, 184, 0.10)";
+        }
+      },
+      onMouseLeave: (e) => {
+        if (onTierClick) {
+          e.currentTarget.style.background = "rgba(148, 163, 184, 0.04)";
+        }
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
+          "span",
+          {
+            style: {
+              width: 4,
+              height: 28,
+              borderRadius: 2,
+              background: color,
+              flexShrink: 0
+            }
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("span", { style: { fontSize: 16 }, children: icon }),
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
+          "span",
+          {
+            style: {
+              flex: 1,
+              fontSize: 13,
+              fontWeight: 500,
+              color: "#e2e8f0"
+            },
+            children: tier.tier
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+          "span",
+          {
+            style: {
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#94a3b8",
+              minWidth: 42,
+              textAlign: "right"
+            },
+            children: [
+              pct,
+              "%"
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
+          "span",
+          {
+            style: {
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#cbd5e1",
+              minWidth: 48,
+              textAlign: "right"
+            },
+            children: tier.count.toLocaleString()
+          }
+        ),
+        showTrends && /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("span", { style: { minWidth: 56, textAlign: "right" }, children: /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(GrowthArrow, { growth: tier.growth }) })
+      ]
+    }
+  );
+}
+function MemberTierDistribution({
+  tiers,
+  width = 420,
+  height = 260,
+  title = "\u4F1A\u5458\u7B49\u7EA7\u5206\u5E03",
+  showTotal = true,
+  showTrends = true,
+  className,
+  emptyText = "\u6682\u65E0\u4F1A\u5458\u6570\u636E",
+  onTierClick
+}) {
+  void height;
+  if (!tiers || tiers.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+      "div",
+      {
+        className,
+        style: {
+          borderRadius: 16,
+          background: "rgba(15, 23, 42, 0.38)",
+          border: "1px solid rgba(148, 163, 184, 0.16)",
+          padding: 28,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: 8,
+          maxWidth: width
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("span", { style: { fontSize: 32 }, children: "\u{1F465}" }),
+          /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("span", { style: { fontSize: 14, color: "#64748b" }, children: emptyText })
+        ]
+      }
+    );
+  }
+  const total = tiers.reduce((sum, t) => sum + t.count, 0);
+  const chartData = tiers.map((t, i) => ({
+    label: t.tier,
+    value: t.count,
+    color: t.color ?? TIER_PALETTE[t.key] ?? FALLBACK_PALETTE[i % FALLBACK_PALETTE.length]
+  }));
+  const chartPalette = chartData.map((d) => d.color ?? "#64748b");
+  return /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+    "div",
+    {
+      className,
+      style: {
+        borderRadius: 16,
+        background: "rgba(15, 23, 42, 0.38)",
+        border: "1px solid rgba(148, 163, 184, 0.16)",
+        padding: "20px 20px 16px",
+        maxWidth: width
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 14
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)("span", { style: { fontSize: 14, fontWeight: 600, color: "#cbd5e1" }, children: [
+                "\u{1F465} ",
+                title
+              ] }),
+              showTotal && total > 0 && /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+                "span",
+                {
+                  style: {
+                    fontSize: 12,
+                    color: "#64748b",
+                    background: "rgba(148, 163, 184, 0.08)",
+                    padding: "3px 10px",
+                    borderRadius: 20
+                  },
+                  children: [
+                    "\u603B\u8BA1 ",
+                    total.toLocaleString(),
+                    " \u4EBA"
+                  ]
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("div", { style: { display: "flex", justifyContent: "center", marginBottom: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
+          Chart,
+          {
+            type: "donut",
+            data: chartData,
+            width: 240,
+            height: 240,
+            palette: chartPalette,
+            showValues: false
+          }
+        ) }),
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: tiers.map((tier, index) => /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
+          TierListItem,
+          {
+            tier,
+            total,
+            index,
+            showTrends,
+            onTierClick
+          },
+          tier.key
+        )) })
+      ]
+    }
+  );
+}
+
+// src/components/NotificationCenter.tsx
+var import_react53 = require("react");
+var import_jsx_runtime82 = require("react/jsx-runtime");
+var SEVERITY_ICONS = {
+  info: /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("circle", { cx: "12", cy: "12", r: "10", stroke: "#60a5fa", strokeWidth: "2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M12 8v4m0 4h.01", stroke: "#60a5fa", strokeWidth: "2", strokeLinecap: "round" })
+  ] }),
+  warning: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+    "path",
+    {
+      d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z",
+      stroke: "#fbbf24",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }
+  ) }),
+  error: /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("circle", { cx: "12", cy: "12", r: "10", stroke: "#f87171", strokeWidth: "2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M15 9l-6 6m0-6l6 6", stroke: "#f87171", strokeWidth: "2", strokeLinecap: "round" })
+  ] }),
+  success: /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("circle", { cx: "12", cy: "12", r: "10", stroke: "#4ade80", strokeWidth: "2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M9 12l2 2 4-4", stroke: "#4ade80", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" })
+  ] })
+};
+var CATEGORY_LABELS = {
+  system: "\u7CFB\u7EDF",
+  member: "\u4F1A\u5458",
+  device: "\u8BBE\u5907",
+  order: "\u8BA2\u5355",
+  alert: "\u544A\u8B66"
+};
+var SEVERITY_DOT_COLORS = {
+  info: "#60a5fa",
+  warning: "#fbbf24",
+  error: "#f87171",
+  success: "#4ade80"
+};
+var CATEGORY_COLORS = {
+  system: "#6366f1",
+  member: "#8b5cf6",
+  device: "#06b6d4",
+  order: "#f59e0b",
+  alert: "#ef4444"
+};
+function formatTime2(ts) {
+  const diff = Date.now() - ts;
+  if (diff < 6e4) return "\u521A\u521A";
+  if (diff < 36e5) return `${Math.floor(diff / 6e4)}\u5206\u949F\u524D`;
+  if (diff < 864e5) return `${Math.floor(diff / 36e5)}\u5C0F\u65F6\u524D`;
+  const d = new Date(ts);
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+function NotificationSummaryBar({
+  summary,
+  activeCategory,
+  onCategoryChange,
+  onMarkAllAsRead,
+  onClearRead
+}) {
+  const categories = ["all", ...Object.keys(CATEGORY_LABELS)];
+  return /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("div", { style: { borderBottom: "1px solid rgba(148, 163, 184, 0.15)" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+      "div",
+      {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "12px 16px",
+          fontSize: 13
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("span", { style: { fontWeight: 600, color: "#f1f5f9" }, children: "\u901A\u77E5" }),
+            summary.unread > 0 && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+              "span",
+              {
+                style: {
+                  background: "#ef4444",
+                  color: "#fff",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "1px 7px",
+                  borderRadius: 10,
+                  lineHeight: "18px"
+                },
+                children: summary.unread
+              }
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
+            onMarkAllAsRead && summary.unread > 0 && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+              "button",
+              {
+                type: "button",
+                onClick: onMarkAllAsRead,
+                style: {
+                  background: "none",
+                  border: "none",
+                  color: "#94a3b8",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  padding: "2px 6px"
+                },
+                children: "\u5168\u90E8\u5DF2\u8BFB"
+              }
+            ),
+            onClearRead && summary.total - summary.unread > 0 && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+              "button",
+              {
+                type: "button",
+                onClick: onClearRead,
+                style: {
+                  background: "none",
+                  border: "none",
+                  color: "#94a3b8",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  padding: "2px 6px"
+                },
+                children: "\u6E05\u7A7A\u5DF2\u8BFB"
+              }
+            )
+          ] })
+        ]
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+      "div",
+      {
+        style: {
+          display: "flex",
+          gap: 2,
+          padding: "0 12px 8px",
+          overflowX: "auto"
+        },
+        children: categories.map((cat) => {
+          const isActive = cat === activeCategory;
+          const count = cat === "all" ? summary.total : summary.byCategory[cat] ?? 0;
+          const color = cat === "all" ? "#94a3b8" : CATEGORY_COLORS[cat];
+          return /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+            "button",
+            {
+              type: "button",
+              onClick: () => onCategoryChange(cat),
+              style: {
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "4px 10px",
+                borderRadius: 6,
+                border: isActive ? `1px solid ${color}` : "1px solid transparent",
+                background: isActive ? `${color}15` : "transparent",
+                color: isActive ? color : "#94a3b8",
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: isActive ? 600 : 400,
+                whiteSpace: "nowrap",
+                transition: "all 0.15s"
+              },
+              children: [
+                cat === "all" ? "\u5168\u90E8" : CATEGORY_LABELS[cat],
+                count > 0 && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("span", { style: { opacity: 0.7 }, children: count })
+              ]
+            },
+            cat
+          );
+        })
+      }
+    )
+  ] });
+}
+function NotificationItemRow({ item, onClick, onMarkAsRead, onDelete }) {
+  const [actionsVisible, setActionsVisible] = (0, import_react53.useState)(false);
+  return /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+    "div",
+    {
+      style: {
+        display: "flex",
+        gap: 10,
+        padding: "12px 16px",
+        cursor: onClick ? "pointer" : "default",
+        background: item.read ? "transparent" : "rgba(99, 102, 241, 0.04)",
+        borderBottom: "1px solid rgba(148, 163, 184, 0.08)",
+        transition: "background 0.15s",
+        position: "relative"
+      },
+      role: "listitem",
+      onMouseEnter: () => setActionsVisible(true),
+      onMouseLeave: () => setActionsVisible(false),
+      onClick: () => {
+        if (!item.read && onMarkAsRead) onMarkAsRead(item.id);
+        if (onClick) onClick(item);
+      },
+      children: [
+        !item.read && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+          "div",
+          {
+            style: {
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: SEVERITY_DOT_COLORS[item.severity],
+              flexShrink: 0,
+              marginTop: 5
+            }
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("div", { style: { flexShrink: 0, marginTop: 1, opacity: item.read ? 0.5 : 1 }, children: SEVERITY_ICONS[item.severity] }),
+        /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+            "div",
+            {
+              style: {
+                fontWeight: item.read ? 400 : 600,
+                fontSize: 13,
+                color: item.read ? "#94a3b8" : "#f1f5f9",
+                lineHeight: 1.4,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap"
+              },
+              children: item.title
+            }
+          ),
+          item.description && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+            "div",
+            {
+              style: {
+                fontSize: 12,
+                color: "#64748b",
+                marginTop: 2,
+                lineHeight: 1.4,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical"
+              },
+              children: item.description
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+            "div",
+            {
+              style: {
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginTop: 4,
+                fontSize: 11,
+                color: "#475569"
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+                  "span",
+                  {
+                    style: {
+                      padding: "1px 5px",
+                      borderRadius: 4,
+                      fontSize: 10,
+                      background: `${CATEGORY_COLORS[item.category]}20`,
+                      color: CATEGORY_COLORS[item.category],
+                      fontWeight: 500
+                    },
+                    children: CATEGORY_LABELS[item.category]
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("span", { children: formatTime2(item.timestamp) })
+              ]
+            }
+          ),
+          item.actions && item.actions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("div", { style: { display: "flex", gap: 6, marginTop: 6 }, children: item.actions.map((action, i) => {
+            const btnColors = {
+              primary: { bg: "#3b82f6", color: "#fff" },
+              secondary: { bg: "rgba(148, 163, 184, 0.15)", color: "#cbd5e1" },
+              danger: { bg: "#ef4444", color: "#fff" }
+            };
+            const c = btnColors[action.variant ?? "secondary"] ?? btnColors.secondary;
+            return /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+              "button",
+              {
+                type: "button",
+                onClick: (e) => {
+                  e.stopPropagation();
+                  action.onClick();
+                },
+                style: {
+                  padding: "3px 10px",
+                  borderRadius: 4,
+                  border: "none",
+                  background: c.bg,
+                  color: c.color,
+                  cursor: "pointer",
+                  fontSize: 11,
+                  fontWeight: 500
+                },
+                children: action.label
+              },
+              i
+            );
+          }) })
+        ] }),
+        actionsVisible && /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              position: "absolute",
+              right: 12,
+              top: 12,
+              background: "rgba(15, 23, 42, 0.9)",
+              borderRadius: 6,
+              padding: 2
+            },
+            children: [
+              !item.read && onMarkAsRead && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+                "button",
+                {
+                  type: "button",
+                  title: "\u6807\u8BB0\u5DF2\u8BFB",
+                  onClick: (e) => {
+                    e.stopPropagation();
+                    onMarkAsRead(item.id);
+                  },
+                  style: iconBtnStyle,
+                  children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "#4ade80", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M5 13l4 4L19 7", strokeLinecap: "round", strokeLinejoin: "round" }) })
+                }
+              ),
+              onDelete && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+                "button",
+                {
+                  type: "button",
+                  title: "\u5220\u9664",
+                  onClick: (e) => {
+                    e.stopPropagation();
+                    onDelete(item.id);
+                  },
+                  style: iconBtnStyle,
+                  children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "#f87171", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M6 18L18 6M6 6l12 12", strokeLinecap: "round", strokeLinejoin: "round" }) })
+                }
+              )
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
+var iconBtnStyle = {
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  padding: "4px",
+  display: "flex",
+  borderRadius: 4,
+  color: "#94a3b8"
+};
+function NotificationCenter({
+  notifications,
+  onNotificationClick,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onDelete,
+  onClearRead,
+  emptyText = "\u6682\u65E0\u901A\u77E5",
+  maxHeight = 480
+}) {
+  const [activeCategory, setActiveCategory] = (0, import_react53.useState)("all");
+  const summary = (0, import_react53.useMemo)(() => {
+    const total = notifications.length;
+    const unread = notifications.filter((n) => !n.read).length;
+    const byCategory = {};
+    for (const cat of Object.keys(CATEGORY_LABELS)) {
+      byCategory[cat] = notifications.filter((n) => n.category === cat && !n.read).length;
+    }
+    return { total, unread, byCategory };
+  }, [notifications]);
+  const filtered = (0, import_react53.useMemo)(() => {
+    if (activeCategory === "all") return notifications;
+    return notifications.filter((n) => n.category === activeCategory);
+  }, [notifications, activeCategory]);
+  return /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+    "div",
+    {
+      style: {
+        background: "rgba(15, 23, 42, 0.95)",
+        border: "1px solid rgba(148, 163, 184, 0.2)",
+        borderRadius: 12,
+        overflow: "hidden",
+        width: 400,
+        maxWidth: "100%",
+        display: "flex",
+        flexDirection: "column",
+        backdropFilter: "blur(16px)"
+      },
+      role: "region",
+      "aria-label": "\u901A\u77E5\u4E2D\u5FC3",
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+          NotificationSummaryBar,
+          {
+            summary,
+            activeCategory,
+            onCategoryChange: setActiveCategory,
+            onMarkAllAsRead,
+            onClearRead
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+          "div",
+          {
+            style: {
+              flex: 1,
+              maxHeight,
+              overflowY: "auto"
+            },
+            role: "list",
+            children: filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+              "div",
+              {
+                style: {
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "40px 16px",
+                  color: "#475569",
+                  fontSize: 13,
+                  gap: 8
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("svg", { width: "40", height: "40", viewBox: "0 0 24 24", fill: "none", stroke: "#334155", strokeWidth: "1.5", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M13.73 21a2 2 0 01-3.46 0M18 8A6 6 0 106 8c0 7-3 9-3 9h18s-3-2-3-9", strokeLinecap: "round", strokeLinejoin: "round" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M18 8A6 6 0 106 8", opacity: "0" })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("span", { children: emptyText })
+                ]
+              }
+            ) : filtered.map((item) => /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+              NotificationItemRow,
+              {
+                item,
+                onClick: onNotificationClick,
+                onMarkAsRead,
+                onDelete
+              },
+              item.id
+            ))
+          }
+        )
+      ]
+    }
+  );
+}
+function useNotificationSummary(notifications) {
+  return (0, import_react53.useMemo)(() => {
+    const total = notifications.length;
+    const unread = notifications.filter((n) => !n.read).length;
+    const byCategory = {};
+    for (const cat of Object.keys(CATEGORY_LABELS)) {
+      byCategory[cat] = notifications.filter((n) => n.category === cat && !n.read).length;
+    }
+    return { total, unread, byCategory };
+  }, [notifications]);
+}
+
+// src/components/ConfigurationPosturePanel.tsx
+var import_jsx_runtime83 = require("react/jsx-runtime");
+var STYLES3 = {
+  container: {
+    display: "grid",
+    gap: 16
+  },
+  grid: {
+    display: "grid",
+    gap: 14,
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))"
+  },
+  card: {
+    borderRadius: 16,
+    padding: 18,
+    background: "rgba(15, 23, 42, 0.38)",
+    border: "1px solid rgba(148, 163, 184, 0.18)"
+  },
+  headerRow: {
+    display: "flex",
+    gap: 12,
+    alignItems: "center"
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: 700,
+    color: "#f8fafc",
+    margin: 0
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#94a3b8",
+    marginBottom: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.4
+  },
+  row: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+    fontSize: 13,
+    color: "#cbd5f5"
+  },
+  rowLabel: {
+    color: "#94a3b8"
+  },
+  rowValue: {
+    fontFamily: "monospace",
+    fontWeight: 600,
+    color: "#e2e8f0"
+  },
+  progressBar: {
+    marginBottom: 14,
+    marginTop: 4
+  },
+  healthLine: {
+    fontSize: 12,
+    color: "#64748b",
+    marginTop: 4,
+    lineHeight: 1.6
+  },
+  badgeWrap: {
+    display: "inline-flex",
+    marginLeft: 6,
+    verticalAlign: "middle"
+  }
+};
+function ConfigurationPosturePanel({
+  secrets,
+  certificates,
+  title = "\u914D\u7F6E\u6CBB\u7406\u6001\u52BF"
+}) {
+  const secretHealthy = secrets.total - secrets.rotationDue - secrets.expired;
+  const certHealthy = certificates.total - certificates.expiringSoon - certificates.expired;
+  const secretRiskPct = secrets.total > 0 ? Math.round((secrets.rotationDue + secrets.expired) / secrets.total * 100) : 0;
+  const certRiskPct = certificates.total > 0 ? Math.round((certificates.expiringSoon + certificates.expired) / certificates.total * 100) : 0;
+  const overallStatus = secrets.expired > 0 || certificates.expired > 0 ? "danger" : secrets.rotationDue > 0 || certificates.expiringSoon > 0 ? "warning" : "success";
+  const overallLabel = overallStatus === "danger" ? "\u6709\u98CE\u9669" : overallStatus === "warning" ? "\u9700\u5173\u6CE8" : "\u5065\u5EB7";
+  const progressVariant = overallStatus === "danger" ? "danger" : overallStatus === "warning" ? "warning" : "success";
+  return /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.container, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.headerRow, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("h2", { style: STYLES3.title, children: title }),
+      /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(StatusBadge, { label: overallLabel, variant: overallStatus, dot: true, size: "sm" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.grid, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.card, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: STYLES3.sectionTitle, children: "\u5BC6\u94A5" }),
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.rowLabel, children: "\u603B\u6570" }),
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.rowValue, children: secrets.total })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.rowLabel, children: "\u6B63\u5E38" }),
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { ...STYLES3.rowValue, color: "#4ade80" }, children: secretHealthy })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("span", { style: STYLES3.rowLabel, children: [
+            "\u5F85\u8F6E\u6362",
+            secrets.rotationDue > 0 ? /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.badgeWrap, children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(StatusBadge, { label: String(secrets.rotationDue), variant: "warning", size: "sm" }) }) : null
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { ...STYLES3.rowValue, color: secrets.rotationDue > 0 ? "#f59e0b" : "#e2e8f0" }, children: secrets.rotationDue })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("span", { style: STYLES3.rowLabel, children: [
+            "\u5DF2\u8FC7\u671F",
+            secrets.expired > 0 ? /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.badgeWrap, children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(StatusBadge, { label: String(secrets.expired), variant: "danger", size: "sm" }) }) : null
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { ...STYLES3.rowValue, color: secrets.expired > 0 ? "#ef4444" : "#e2e8f0" }, children: secrets.expired })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: STYLES3.progressBar, children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
+          Progress,
+          {
+            value: secrets.total > 0 ? secretHealthy / secrets.total * 100 : 100,
+            variant: progressVariant,
+            height: 6
+          }
+        ) }),
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: STYLES3.healthLine, children: secretRiskPct > 0 ? `${secretRiskPct}% \u5BC6\u94A5\u5B58\u5728\u8F6E\u6362\u6216\u8FC7\u671F\u98CE\u9669` : "\u5168\u90E8\u5BC6\u94A5\u5904\u4E8E\u5065\u5EB7\u72B6\u6001" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.card, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: STYLES3.sectionTitle, children: "\u8BC1\u4E66" }),
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.rowLabel, children: "\u603B\u6570" }),
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.rowValue, children: certificates.total })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.rowLabel, children: "\u6709\u6548" }),
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { ...STYLES3.rowValue, color: "#4ade80" }, children: certHealthy })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("span", { style: STYLES3.rowLabel, children: [
+            "\u5373\u5C06\u5230\u671F",
+            certificates.expiringSoon > 0 ? /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.badgeWrap, children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(StatusBadge, { label: String(certificates.expiringSoon), variant: "warning", size: "sm" }) }) : null
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { ...STYLES3.rowValue, color: certificates.expiringSoon > 0 ? "#f59e0b" : "#e2e8f0" }, children: certificates.expiringSoon })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("span", { style: STYLES3.rowLabel, children: [
+            "\u5DF2\u8FC7\u671F",
+            certificates.expired > 0 ? /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.badgeWrap, children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(StatusBadge, { label: String(certificates.expired), variant: "danger", size: "sm" }) }) : null
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { ...STYLES3.rowValue, color: certificates.expired > 0 ? "#ef4444" : "#e2e8f0" }, children: certificates.expired })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: STYLES3.progressBar, children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
+          Progress,
+          {
+            value: certificates.total > 0 ? certHealthy / certificates.total * 100 : 100,
+            variant: progressVariant,
+            height: 6
+          }
+        ) }),
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: STYLES3.healthLine, children: certRiskPct > 0 ? `${certRiskPct}% \u8BC1\u4E66\u5B58\u5728\u5230\u671F\u6216\u5373\u5C06\u5230\u671F\u98CE\u9669` : "\u5168\u90E8\u8BC1\u4E66\u5904\u4E8E\u6709\u6548\u72B6\u6001" })
+      ] })
+    ] })
+  ] });
+}
+
+// src/components/DecisionAuditTrail.tsx
+var import_react54 = require("react");
+var import_jsx_runtime84 = require("react/jsx-runtime");
+var ACTION_LABELS = {
+  rule_evaluated: "\u89C4\u5219\u8BC4\u4F30",
+  decision_applied: "\u51B3\u7B56\u6267\u884C",
+  decision_overridden: "\u51B3\u7B56\u8986\u76D6",
+  decision_reverted: "\u51B3\u7B56\u56DE\u6EDA",
+  alert_triggered: "\u544A\u8B66\u89E6\u53D1",
+  notification_sent: "\u901A\u77E5\u53D1\u9001",
+  manual_review: "\u4EBA\u5DE5\u5BA1\u6838",
+  auto_resolved: "\u81EA\u52A8\u89E3\u51B3"
+};
+var ACTION_ICONS = {
+  rule_evaluated: "\u2699\uFE0F",
+  decision_applied: "\u2705",
+  decision_overridden: "\u270F\uFE0F",
+  decision_reverted: "\u21A9\uFE0F",
+  alert_triggered: "\u{1F6A8}",
+  notification_sent: "\u{1F4E8}",
+  manual_review: "\u{1F464}",
+  auto_resolved: "\u{1F916}"
+};
+var SEVERITY_COLORS = {
+  info: "#3b82f6",
+  warning: "#f59e0b",
+  critical: "#ef4444",
+  success: "#22c55e"
+};
+function DecisionAuditTrail({
+  entries,
+  summary,
+  filter,
+  onFilterChange,
+  onEntryClick,
+  onRevert,
+  loading = false,
+  pageSize = 20,
+  className,
+  compact = false,
+  emptyText = "\u6682\u65E0\u5BA1\u8BA1\u8BB0\u5F55"
+}) {
+  const [currentPage, setCurrentPage] = (0, import_react54.useState)(1);
+  const [expandedId, setExpandedId] = (0, import_react54.useState)(null);
+  const filteredEntries = (0, import_react54.useMemo)(() => {
+    if (!filter) return entries;
+    return entries.filter((e) => {
+      if (filter.action && e.action !== filter.action) return false;
+      if (filter.severity && e.severity !== filter.severity) return false;
+      if (filter.ruleId && e.ruleId !== filter.ruleId) return false;
+      if (filter.actor && !e.actor.includes(filter.actor)) return false;
+      if (filter.dateFrom && e.timestamp < filter.dateFrom) return false;
+      if (filter.dateTo && e.timestamp > filter.dateTo) return false;
+      return true;
+    });
+  }, [entries, filter]);
+  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / pageSize));
+  const paginatedEntries = filteredEntries.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+  const handleFilterChange = (newFilter) => {
+    setCurrentPage(1);
+    onFilterChange?.(newFilter);
+  };
+  const formatTime3 = (ts) => {
+    try {
+      const d = new Date(ts);
+      return d.toLocaleString("zh-CN", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    } catch {
+      return ts;
+    }
+  };
+  const renderSummaryBar = () => {
+    if (!summary) return null;
+    const items = [
+      { label: "\u603B\u8BA1", value: summary.total, color: "#6b7280" },
+      { label: "\u4FE1\u606F", value: summary.info, color: SEVERITY_COLORS.info },
+      { label: "\u8B66\u544A", value: summary.warning, color: SEVERITY_COLORS.warning },
+      { label: "\u4E25\u91CD", value: summary.critical, color: SEVERITY_COLORS.critical },
+      { label: "\u6210\u529F", value: summary.success, color: SEVERITY_COLORS.success }
+    ];
+    return /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+      "div",
+      {
+        style: {
+          display: "flex",
+          gap: compact ? 8 : 16,
+          padding: compact ? "8px 12px" : "12px 16px",
+          background: "#f8fafc",
+          borderRadius: 8,
+          marginBottom: compact ? 8 : 12,
+          flexWrap: "wrap",
+          alignItems: "center",
+          fontSize: compact ? 12 : 13
+        },
+        children: [
+          items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+            "div",
+            {
+              style: {
+                display: "flex",
+                alignItems: "center",
+                gap: 4
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                  "span",
+                  {
+                    style: {
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      backgroundColor: item.color,
+                      display: "inline-block"
+                    }
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { color: "#6b7280" }, children: item.label }),
+                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { fontWeight: 600, color: "#1f2937" }, children: item.value })
+              ]
+            },
+            item.label
+          )),
+          summary.last24h > 0 && /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+            "div",
+            {
+              style: {
+                marginLeft: "auto",
+                color: "#6b7280",
+                fontSize: compact ? 11 : 12
+              },
+              children: [
+                "\u8FD124h: +",
+                summary.last24h
+              ]
+            }
+          )
+        ]
+      }
+    );
+  };
+  const renderFilterBar = () => {
+    if (!onFilterChange) return null;
+    const currentFilter = filter ?? {};
+    return /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+      "div",
+      {
+        style: {
+          display: "flex",
+          gap: 8,
+          padding: compact ? "4px 0" : "8px 0",
+          marginBottom: compact ? 8 : 12,
+          flexWrap: "wrap",
+          alignItems: "center"
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+            "select",
+            {
+              value: currentFilter.action ?? "",
+              onChange: (e) => handleFilterChange({
+                ...currentFilter,
+                action: e.target.value || void 0
+              }),
+              style: {
+                padding: "4px 8px",
+                fontSize: compact ? 11 : 12,
+                borderRadius: 6,
+                border: "1px solid #d1d5db",
+                background: "#fff",
+                color: "#374151"
+              },
+              "aria-label": "\u6309\u64CD\u4F5C\u7C7B\u578B\u8FC7\u6EE4",
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: "", children: "\u5168\u90E8\u64CD\u4F5C" }),
+                Object.entries(ACTION_LABELS).map(([k, v]) => /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: k, children: v }, k))
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+            "select",
+            {
+              value: currentFilter.severity ?? "",
+              onChange: (e) => handleFilterChange({
+                ...currentFilter,
+                severity: e.target.value || void 0
+              }),
+              style: {
+                padding: "4px 8px",
+                fontSize: compact ? 11 : 12,
+                borderRadius: 6,
+                border: "1px solid #d1d5db",
+                background: "#fff",
+                color: "#374151"
+              },
+              "aria-label": "\u6309\u4E25\u91CD\u7A0B\u5EA6\u8FC7\u6EE4",
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: "", children: "\u5168\u90E8\u7EA7\u522B" }),
+                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: "info", children: "\u4FE1\u606F" }),
+                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: "warning", children: "\u8B66\u544A" }),
+                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: "critical", children: "\u4E25\u91CD" }),
+                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: "success", children: "\u6210\u529F" })
+              ]
+            }
+          ),
+          filteredEntries.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("span", { style: { fontSize: 12, color: "#9ca3af", marginLeft: "auto" }, children: [
+            filteredEntries.length,
+            " \u6761\u8BB0\u5F55"
+          ] })
+        ]
+      }
+    );
+  };
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className, style: { padding: 16 }, children: [
+      renderSummaryBar(),
+      [1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+        "div",
+        {
+          style: {
+            height: compact ? 40 : 52,
+            background: "#f3f4f6",
+            borderRadius: 6,
+            marginBottom: 6,
+            animation: "pulse 1.5s infinite"
+          }
+        },
+        i
+      ))
+    ] });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className, style: { position: "relative" }, children: [
+    renderSummaryBar(),
+    renderFilterBar(),
+    filteredEntries.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+      "div",
+      {
+        style: {
+          textAlign: "center",
+          padding: compact ? 24 : 40,
+          color: "#9ca3af",
+          fontSize: compact ? 13 : 14
+        },
+        children: emptyText
+      }
+    ) : /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(import_jsx_runtime84.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+        "div",
+        {
+          style: {
+            display: "flex",
+            flexDirection: "column",
+            gap: compact ? 2 : 4
+          },
+          role: "list",
+          "aria-label": "\u5BA1\u8BA1\u8BB0\u5F55\u5217\u8868",
+          children: paginatedEntries.map((entry) => {
+            const isExpanded = expandedId === entry.id;
+            const severityColor = SEVERITY_COLORS[entry.severity];
+            return /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+              "div",
+              {
+                role: "listitem",
+                style: {
+                  border: `1px solid ${isExpanded ? severityColor : "#e5e7eb"}`,
+                  borderRadius: 8,
+                  background: isExpanded ? "#f9fafb" : "#fff",
+                  transition: "all 0.15s ease",
+                  cursor: onEntryClick ? "pointer" : "default"
+                },
+                onClick: () => {
+                  onEntryClick?.(entry);
+                  setExpandedId(isExpanded ? null : entry.id);
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+                    "div",
+                    {
+                      style: {
+                        display: "flex",
+                        alignItems: "center",
+                        gap: compact ? 6 : 10,
+                        padding: compact ? "8px 12px" : "10px 16px"
+                      },
+                      children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                          "div",
+                          {
+                            style: {
+                              width: 3,
+                              height: compact ? 20 : 28,
+                              borderRadius: 2,
+                              backgroundColor: severityColor,
+                              flexShrink: 0
+                            }
+                          }
+                        ),
+                        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { fontSize: compact ? 14 : 16, flexShrink: 0 }, children: ACTION_ICONS[entry.action] ?? "\u{1F4CB}" }),
+                        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                          StatusBadge,
+                          {
+                            variant: entry.severity === "critical" ? "error" : entry.severity === "warning" ? "warning" : entry.severity === "success" ? "success" : "default",
+                            label: ACTION_LABELS[entry.action] ?? entry.action,
+                            size: "sm"
+                          }
+                        ),
+                        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                          "span",
+                          {
+                            style: {
+                              flex: 1,
+                              fontSize: compact ? 12 : 13,
+                              color: "#374151",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap"
+                            },
+                            children: entry.message
+                          }
+                        ),
+                        entry.ruleName && /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                          "span",
+                          {
+                            style: {
+                              fontSize: compact ? 10 : 11,
+                              color: "#6b7280",
+                              background: "#f3f4f6",
+                              padding: "1px 6px",
+                              borderRadius: 4,
+                              maxWidth: 120,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              flexShrink: 1
+                            },
+                            title: entry.ruleName,
+                            children: entry.ruleName
+                          }
+                        ),
+                        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                          "span",
+                          {
+                            style: {
+                              fontSize: compact ? 11 : 12,
+                              color: "#6b7280",
+                              minWidth: compact ? 50 : 60,
+                              textAlign: "right",
+                              flexShrink: 0
+                            },
+                            children: entry.actor
+                          }
+                        ),
+                        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                          "span",
+                          {
+                            style: {
+                              fontSize: compact ? 10 : 11,
+                              color: "#9ca3af",
+                              minWidth: compact ? 100 : 120,
+                              textAlign: "right",
+                              flexShrink: 0
+                            },
+                            children: formatTime3(entry.timestamp)
+                          }
+                        ),
+                        (entry.changes || entry.revertible || entry.entityId) && /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                          "span",
+                          {
+                            style: {
+                              fontSize: 10,
+                              color: "#9ca3af",
+                              transform: isExpanded ? "rotate(90deg)" : "none",
+                              transition: "transform 0.15s",
+                              flexShrink: 0
+                            },
+                            children: "\u25B6"
+                          }
+                        )
+                      ]
+                    }
+                  ),
+                  isExpanded && /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+                    "div",
+                    {
+                      style: {
+                        padding: compact ? "4px 12px 10px" : "6px 16px 12px",
+                        borderTop: "1px solid #e5e7eb",
+                        fontSize: compact ? 11 : 12,
+                        color: "#6b7280",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 6
+                      },
+                      children: [
+                        entry.changes && /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { children: [
+                          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { fontWeight: 500, marginRight: 4 }, children: "\u53D8\u66F4\u8BE6\u60C5:" }),
+                          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                            "code",
+                            {
+                              style: {
+                                background: "#f3f4f6",
+                                padding: "2px 6px",
+                                borderRadius: 4,
+                                fontSize: compact ? 10 : 11,
+                                wordBreak: "break-all"
+                              },
+                              children: entry.changes
+                            }
+                          )
+                        ] }),
+                        entry.entityType && entry.entityId && /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { children: [
+                          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { fontWeight: 500, marginRight: 4 }, children: "\u5173\u8054\u5B9E\u4F53:" }),
+                          /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("span", { children: [
+                            entry.entityType,
+                            " / ",
+                            entry.entityId
+                          ] })
+                        ] }),
+                        entry.revertible && onRevert && /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                          "button",
+                          {
+                            onClick: (e) => {
+                              e.stopPropagation();
+                              onRevert(entry);
+                            },
+                            style: {
+                              alignSelf: "flex-start",
+                              padding: "3px 10px",
+                              fontSize: compact ? 10 : 11,
+                              borderRadius: 4,
+                              border: "1px solid #d1d5db",
+                              background: "#fff",
+                              color: "#ef4444",
+                              cursor: "pointer"
+                            },
+                            children: "\u56DE\u6EDA\u6B64\u64CD\u4F5C"
+                          }
+                        )
+                      ]
+                    }
+                  )
+                ]
+              },
+              entry.id
+            );
+          })
+        }
+      ),
+      filteredEntries.length > pageSize && /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { style: { marginTop: compact ? 8 : 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+        Pagination,
+        {
+          page: currentPage,
+          total: filteredEntries.length,
+          pageSize,
+          onPageChange: setCurrentPage
+        }
+      ) })
+    ] })
+  ] });
+}
+
+// src/components/ImagePreview.tsx
+var import_react55 = require("react");
+var import_jsx_runtime85 = require("react/jsx-runtime");
+var BACKDROP_STYLE = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 9999,
+  background: "rgba(0,0,0,0.85)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  animation: "imagePreviewFadeIn 0.2s ease"
+};
+var COUNTER_STYLE = {
+  position: "absolute",
+  top: 16,
+  left: "50%",
+  transform: "translateX(-50%)",
+  color: "#fff",
+  fontSize: 14,
+  fontWeight: 500,
+  background: "rgba(0,0,0,0.5)",
+  padding: "4px 12px",
+  borderRadius: 999,
+  zIndex: 2,
+  userSelect: "none"
+};
+var NAV_BUTTON_BASE = {
+  position: "absolute",
+  top: "50%",
+  transform: "translateY(-50%)",
+  zIndex: 2,
+  background: "rgba(255,255,255,0.15)",
+  border: "none",
+  color: "#fff",
+  width: 44,
+  height: 44,
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  fontSize: 20,
+  transition: "background 0.15s",
+  backdropFilter: "blur(4px)"
+};
+var CLOSE_BUTTON_STYLE = {
+  position: "absolute",
+  top: 16,
+  right: 16,
+  zIndex: 2,
+  background: "rgba(255,255,255,0.15)",
+  border: "none",
+  color: "#fff",
+  width: 40,
+  height: 40,
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  fontSize: 22,
+  transition: "background 0.15s",
+  backdropFilter: "blur(4px)"
+};
+function ChevronLeft2() {
+  return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("path", { d: "M12.5 15L7.5 10L12.5 5", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }) });
+}
+function ChevronRight2() {
+  return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("path", { d: "M7.5 15L12.5 10L7.5 5", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }) });
+}
+function CloseIcon() {
+  return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 18 18", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("path", { d: "M4.5 4.5L13.5 13.5M13.5 4.5L4.5 13.5", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round" }) });
+}
+function ImagePreview({
+  images,
+  initialIndex = 0,
+  thumbSize = 64,
+  thumbGap = 8,
+  previewWidth = 900,
+  previewMaxHeight = 600,
+  showArrows = true,
+  showThumbnails = true,
+  showCounter = true,
+  closeOnBackdrop = true,
+  closeOnEscape = true,
+  onOpen,
+  onClose,
+  onChange,
+  className,
+  style,
+  mode = "strip",
+  gridCols = 4,
+  fit = "contain",
+  borderRadius = 8,
+  placeholder,
+  errorFallback
+}) {
+  const safeIndex = Math.max(0, Math.min(initialIndex, images.length - 1));
+  const [lightboxIndex, setLightboxIndex] = (0, import_react55.useState)(null);
+  const currentIndex = lightboxIndex ?? safeIndex;
+  const isOpen = lightboxIndex !== null;
+  const openLightbox = (0, import_react55.useCallback)(
+    (idx) => {
+      setLightboxIndex(idx);
+      onOpen?.(idx);
+    },
+    [onOpen]
+  );
+  const closeLightbox = (0, import_react55.useCallback)(() => {
+    setLightboxIndex(null);
+    onClose?.();
+  }, [onClose]);
+  const goNext = (0, import_react55.useCallback)(() => {
+    const next = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
+    setLightboxIndex(next);
+    onChange?.(next);
+  }, [currentIndex, images.length, onChange]);
+  const goPrev = (0, import_react55.useCallback)(() => {
+    const prev = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
+    setLightboxIndex(prev);
+    onChange?.(prev);
+  }, [currentIndex, images.length, onChange]);
+  (0, import_react55.useEffect)(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => {
+      if (e.key === "ArrowRight") goNext();
+      else if (e.key === "ArrowLeft") goPrev();
+      else if (e.key === "Escape" && closeOnEscape) closeLightbox();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [isOpen, goNext, goPrev, closeLightbox, closeOnEscape]);
+  if (images.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+      "div",
+      {
+        className,
+        style: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+          color: "#94a3b8",
+          fontSize: 14,
+          ...style
+        },
+        children: "No images"
+      }
+    );
+  }
+  const currentImage = images[currentIndex];
+  const ThumbImage = ({
+    item,
+    index,
+    size
+  }) => {
+    const [failed, setFailed] = (0, import_react55.useState)(false);
+    const isActive = index === currentIndex && isOpen;
+    const src = item.thumb || item.src;
+    return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+      "div",
+      {
+        role: "button",
+        tabIndex: 0,
+        "aria-label": item.alt || `Image ${index + 1}`,
+        onClick: () => openLightbox(index),
+        onKeyDown: (e) => {
+          if (e.key === "Enter" || e.key === " ") openLightbox(index);
+        },
+        style: {
+          flexShrink: 0,
+          width: size,
+          height: size,
+          borderRadius,
+          overflow: "hidden",
+          cursor: "pointer",
+          border: isActive ? "2px solid #3b82f6" : "2px solid transparent",
+          opacity: isActive ? 1 : 0.75,
+          transition: "opacity 0.15s, border-color 0.15s",
+          position: "relative"
+        },
+        onMouseEnter: (e) => {
+          e.currentTarget.style.opacity = "1";
+        },
+        onMouseLeave: (e) => {
+          if (!isActive) e.currentTarget.style.opacity = "0.75";
+        },
+        children: failed ? errorFallback || /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+          "div",
+          {
+            style: {
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(148,163,184,0.15)",
+              color: "#94a3b8",
+              fontSize: Math.max(10, size * 0.18)
+            },
+            children: "\u{1F5BC}"
+          }
+        ) : /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(import_jsx_runtime85.Fragment, { children: [
+          placeholder && /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+            "div",
+            {
+              style: {
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(148,163,184,0.1)"
+              },
+              children: placeholder
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+            "img",
+            {
+              src,
+              alt: item.alt || "",
+              loading: "lazy",
+              onError: () => setFailed(true),
+              style: {
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block"
+              }
+            }
+          )
+        ] })
+      }
+    );
+  };
+  const renderThumbnails = () => {
+    if (mode === "grid") {
+      return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+        "div",
+        {
+          style: {
+            display: "grid",
+            gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+            gap: thumbGap
+          },
+          children: images.map((item, idx) => /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("div", { style: { aspectRatio: "1" }, children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(ThumbImage, { item, index: idx, size: thumbSize }) }, idx))
+        }
+      );
+    }
+    if (mode === "single") {
+      if (images.length === 0) return null;
+      return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(ThumbImage, { item: images[0], index: 0, size: thumbSize });
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+      "div",
+      {
+        style: {
+          display: "flex",
+          gap: thumbGap,
+          overflowX: "auto",
+          paddingBottom: 4
+        },
+        children: images.map((item, idx) => /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(ThumbImage, { item, index: idx, size: thumbSize }, idx))
+      }
+    );
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)("div", { className, style, children: [
+    showThumbnails && renderThumbnails(),
+    isOpen && /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(
+      "div",
+      {
+        style: BACKDROP_STYLE,
+        onClick: (e) => {
+          if (closeOnBackdrop && e.target === e.currentTarget) closeLightbox();
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+            "button",
+            {
+              style: CLOSE_BUTTON_STYLE,
+              onClick: closeLightbox,
+              "aria-label": "Close preview",
+              onMouseEnter: (e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.25)";
+              },
+              onMouseLeave: (e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.15)";
+              },
+              children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(CloseIcon, {})
+            }
+          ),
+          showCounter && images.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)("div", { style: COUNTER_STYLE, children: [
+            currentIndex + 1,
+            " / ",
+            images.length
+          ] }),
+          showArrows && images.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+            "button",
+            {
+              style: { ...NAV_BUTTON_BASE, left: 20 },
+              onClick: (e) => {
+                e.stopPropagation();
+                goPrev();
+              },
+              "aria-label": "Previous image",
+              onMouseEnter: (e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.3)";
+              },
+              onMouseLeave: (e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.15)";
+              },
+              children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(ChevronLeft2, {})
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+            "div",
+            {
+              style: {
+                maxWidth: previewWidth,
+                maxHeight: previewMaxHeight,
+                width: "90vw",
+                height: "80vh",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              },
+              children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+                "img",
+                {
+                  src: currentImage.src,
+                  alt: currentImage.alt || "",
+                  style: {
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    objectFit: fit,
+                    borderRadius
+                  },
+                  draggable: false
+                }
+              )
+            }
+          ),
+          showArrows && images.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+            "button",
+            {
+              style: { ...NAV_BUTTON_BASE, right: 20 },
+              onClick: (e) => {
+                e.stopPropagation();
+                goNext();
+              },
+              "aria-label": "Next image",
+              onMouseEnter: (e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.3)";
+              },
+              onMouseLeave: (e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.15)";
+              },
+              children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(ChevronRight2, {})
+            }
+          ),
+          currentImage.caption && /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+            "div",
+            {
+              style: {
+                position: "absolute",
+                bottom: 24,
+                left: "50%",
+                transform: "translateX(-50%)",
+                color: "#fff",
+                fontSize: 14,
+                background: "rgba(0,0,0,0.5)",
+                padding: "4px 12px",
+                borderRadius: 8,
+                maxWidth: "80%",
+                textAlign: "center"
+              },
+              children: currentImage.caption
+            }
+          )
+        ]
+      }
+    )
+  ] });
+}
+
+// src/components/Slider.tsx
+var import_react56 = require("react");
+var import_jsx_runtime86 = require("react/jsx-runtime");
+var VARIANT_COLORS2 = {
+  default: "#3b82f6",
+  success: "#22c55e",
+  warning: "#f59e0b",
+  danger: "#ef4444",
+  info: "#818cf8"
+};
+var VARIANT_TRACK_BG = {
+  default: "rgba(59, 130, 246, 0.15)",
+  success: "rgba(34, 197, 94, 0.15)",
+  warning: "rgba(245, 158, 11, 0.15)",
+  danger: "rgba(239, 68, 68, 0.15)",
+  info: "rgba(129, 140, 248, 0.15)"
+};
+function clamp2(v, lo, hi) {
+  return Math.max(lo, Math.min(hi, v));
+}
+function snapToStep(v, min, step) {
+  return Math.round((v - min) / step) * step + min;
+}
+function Slider({
+  value: valueProp,
+  defaultValue,
+  defaultRangeValue,
+  min = 0,
+  max = 100,
+  step = 1,
+  range = false,
+  showValue = true,
+  formatValue: formatValue2,
+  showTicks = false,
+  ticks: ticksProp,
+  formatTick,
+  disabled = false,
+  variant = "default",
+  trackHeight = 4,
+  thumbSize = 16,
+  onChange,
+  onRangeChange,
+  onChangeCommitted,
+  "aria-label": ariaLabel,
+  "aria-labels": ariaLabels,
+  "data-testid": dataTestId,
+  className,
+  style,
+  showInput = false,
+  orientation = "horizontal",
+  verticalHeight = 200
+}) {
+  const isControlledSingle = valueProp !== void 0 && !Array.isArray(valueProp);
+  const isControlledRange = valueProp !== void 0 && Array.isArray(valueProp);
+  const [internalSingle, setInternalSingle] = (0, import_react56.useState)(
+    clamp2(defaultValue ?? min, min, max)
+  );
+  const [internalRange, setInternalRange] = (0, import_react56.useState)(
+    defaultRangeValue ? [clamp2(defaultRangeValue[0], min, max), clamp2(defaultRangeValue[1], min, max)] : [min, max]
+  );
+  const singleVal = isControlledSingle ? valueProp : internalSingle;
+  const rangeVal = isControlledRange ? valueProp : internalRange;
+  const trackRef = (0, import_react56.useRef)(null);
+  const [dragging, setDragging] = (0, import_react56.useState)(null);
+  const idBase = (0, import_react56.useId)();
+  const isVertical = orientation === "vertical";
+  const color = VARIANT_COLORS2[variant] ?? VARIANT_COLORS2.default;
+  const trackBg = VARIANT_TRACK_BG[variant] ?? VARIANT_TRACK_BG.default;
+  const getRatio = (0, import_react56.useCallback)(
+    (v) => max - min > 0 ? (v - min) / (max - min) : 0,
+    [min, max]
+  );
+  const getValueFromPosition = (0, import_react56.useCallback)(
+    (clientPos) => {
+      const el = trackRef.current;
+      if (!el) return min;
+      const rect = el.getBoundingClientRect();
+      const size = isVertical ? rect.height : rect.width;
+      const offset = isVertical ? rect.bottom - clientPos : clientPos - rect.left;
+      const ratio = clamp2(offset / size, 0, 1);
+      return snapToStep(min + ratio * (max - min), min, step);
+    },
+    [min, max, step, isVertical]
+  );
+  const commitValue = (0, import_react56.useCallback)(
+    (val) => {
+      onChangeCommitted?.(val);
+    },
+    [onChangeCommitted]
+  );
+  const setSingle = (0, import_react56.useCallback)(
+    (v, commit = false) => {
+      const clamped = clamp2(v, min, max);
+      if (!isControlledSingle) setInternalSingle(clamped);
+      onChange?.(clamped);
+      if (commit) commitValue(clamped);
+    },
+    [isControlledSingle, onChange, commitValue, min, max]
+  );
+  const setRange = (0, import_react56.useCallback)(
+    (vals, commit = false) => {
+      const lower = clamp2(vals[0], min, vals[1]);
+      const upper = clamp2(vals[1], lower, max);
+      if (!isControlledRange) setInternalRange([lower, upper]);
+      onRangeChange?.([lower, upper]);
+      if (commit) commitValue([lower, upper]);
+    },
+    [isControlledRange, onRangeChange, commitValue, min, max]
+  );
+  const handleStart = (0, import_react56.useCallback)(
+    (thumb) => (e) => {
+      if (disabled) return;
+      e.preventDefault();
+      setDragging(thumb);
+    },
+    [disabled]
+  );
+  (0, import_react56.useEffect)(() => {
+    if (!dragging) return;
+    const onMove = (e) => {
+      const pos = "touches" in e ? e.touches[0]?.[isVertical ? "clientY" : "clientX"] : e[isVertical ? "clientY" : "clientX"];
+      if (pos === void 0) return;
+      const val = getValueFromPosition(pos);
+      if (dragging === "single") {
+        setSingle(val);
+      } else if (dragging === "lower") {
+        setRange([val, rangeVal[1]]);
+      } else if (dragging === "upper") {
+        setRange([rangeVal[0], val]);
+      }
+    };
+    const onEnd = () => {
+      if (dragging === "single") {
+        setSingle(singleVal, true);
+      } else {
+        setRange(rangeVal, true);
+      }
+      setDragging(null);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onEnd);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onEnd);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onEnd);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onEnd);
+    };
+  }, [dragging, getValueFromPosition, singleVal, rangeVal, setSingle, setRange, isVertical]);
+  const handleKeySingle = (0, import_react56.useCallback)(
+    (e) => {
+      if (disabled) return;
+      let val = singleVal;
+      const bigStep = step * 10;
+      if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+        e.preventDefault();
+        val = clamp2(singleVal + step, min, max);
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+        e.preventDefault();
+        val = clamp2(singleVal - step, min, max);
+      } else if (e.key === "PageUp") {
+        e.preventDefault();
+        val = clamp2(singleVal + bigStep, min, max);
+      } else if (e.key === "PageDown") {
+        e.preventDefault();
+        val = clamp2(singleVal - bigStep, min, max);
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        val = min;
+      } else if (e.key === "End") {
+        e.preventDefault();
+        val = max;
+      }
+      if (val !== singleVal) {
+        setSingle(val, e.type === "keyup");
+      }
+    },
+    [disabled, singleVal, min, max, step, setSingle]
+  );
+  const makeRangeKeyHandler = (0, import_react56.useCallback)(
+    (which) => (e) => {
+      if (disabled) return;
+      const vals = [...rangeVal];
+      const idx = which === "lower" ? 0 : 1;
+      const bigStep = step * 10;
+      let changed = false;
+      if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+        e.preventDefault();
+        vals[idx] = clamp2(vals[idx] + step, min, max);
+        changed = true;
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+        e.preventDefault();
+        vals[idx] = clamp2(vals[idx] - step, min, max);
+        changed = true;
+      } else if (e.key === "PageUp") {
+        e.preventDefault();
+        vals[idx] = clamp2(vals[idx] + bigStep, min, max);
+        changed = true;
+      } else if (e.key === "PageDown") {
+        e.preventDefault();
+        vals[idx] = clamp2(vals[idx] - bigStep, min, max);
+        changed = true;
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        vals[idx] = min;
+        changed = true;
+      } else if (e.key === "End") {
+        e.preventDefault();
+        vals[idx] = max;
+        changed = true;
+      }
+      if (changed) {
+        setRange(vals, e.type === "keyup");
+      }
+    },
+    [disabled, rangeVal, min, max, step, setRange]
+  );
+  const resolveTicks = (0, import_react56.useCallback)(() => {
+    if (ticksProp) return ticksProp;
+    const arr = [];
+    for (let v = min; v <= max; v += step) arr.push(v);
+    return arr;
+  }, [min, max, step, ticksProp]);
+  const tickValues = showTicks || ticksProp ? resolveTicks() : [];
+  const displayValue = range ? formatValue2 ? formatValue2(rangeVal) : `${rangeVal[0]} \u2013 ${rangeVal[1]}` : formatValue2 ? formatValue2(singleVal) : `${singleVal}`;
+  const thumbStyle = (v) => {
+    const ratio = getRatio(v);
+    const half = thumbSize / 2;
+    if (isVertical) {
+      return {
+        position: "absolute",
+        left: `calc(50% - ${half}px)`,
+        bottom: `calc(${ratio * 100}% - ${half}px)`,
+        width: thumbSize,
+        height: thumbSize
+      };
+    }
+    return {
+      position: "absolute",
+      top: `calc(50% - ${half}px)`,
+      left: `calc(${ratio * 100}% - ${half}px)`,
+      width: thumbSize,
+      height: thumbSize
+    };
+  };
+  const filledTrackStyle = () => {
+    if (range) {
+      const lo = getRatio(rangeVal[0]);
+      const hi = getRatio(rangeVal[1]);
+      if (isVertical) {
+        return {
+          position: "absolute",
+          left: 0,
+          bottom: `${lo * 100}%`,
+          width: "100%",
+          height: `${(hi - lo) * 100}%`,
+          background: color,
+          borderRadius: trackHeight / 2
+        };
+      }
+      return {
+        position: "absolute",
+        top: 0,
+        left: `${lo * 100}%`,
+        width: `${(hi - lo) * 100}%`,
+        height: "100%",
+        background: color,
+        borderRadius: trackHeight / 2
+      };
+    }
+    const ratio = getRatio(singleVal);
+    if (isVertical) {
+      return {
+        position: "absolute",
+        left: 0,
+        bottom: 0,
+        width: "100%",
+        height: `${ratio * 100}%`,
+        background: color,
+        borderRadius: trackHeight / 2
+      };
+    }
+    return {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: `${ratio * 100}%`,
+      height: "100%",
+      background: color,
+      borderRadius: trackHeight / 2
+    };
+  };
+  const renderThumb = (which, value, idx) => {
+    const isRangePart = range && which !== "single";
+    const ariaLabelVal = isRangePart ? ariaLabels?.[which === "lower" ? 0 : 1] ?? (which === "lower" ? "Lower value" : "Upper value") : ariaLabel ?? "Slider value";
+    return /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+      "div",
+      {
+        "data-testid": dataTestId ? `${dataTestId}-thumb-${which}` : void 0,
+        role: "slider",
+        tabIndex: disabled ? -1 : 0,
+        "aria-label": ariaLabelVal,
+        "aria-valuenow": value,
+        "aria-valuemin": min,
+        "aria-valuemax": max,
+        "aria-disabled": disabled,
+        "aria-orientation": orientation,
+        onMouseDown: !disabled ? handleStart(isRangePart ? which : "single") : void 0,
+        onTouchStart: !disabled ? handleStart(isRangePart ? which : "single") : void 0,
+        onKeyDown: isRangePart ? makeRangeKeyHandler(which) : handleKeySingle,
+        style: {
+          ...thumbStyle(value),
+          cursor: disabled ? "not-allowed" : dragging ? "grabbing" : "grab",
+          borderRadius: "50%",
+          background: disabled ? "#d1d5db" : color,
+          border: `2px solid ${disabled ? "#9ca3af" : "#ffffff"}`,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+          zIndex: 2,
+          transition: dragging ? "none" : "box-shadow 0.15s ease",
+          outline: "none",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }
+      },
+      which
+    );
+  };
+  const containerSize = isVertical ? { height: verticalHeight, width: thumbSize + 8, position: "relative", display: "flex", flexDirection: "column", alignItems: "center" } : { width: "100%", position: "relative" };
+  return /* @__PURE__ */ (0, import_jsx_runtime86.jsxs)(
+    "div",
+    {
+      "data-testid": dataTestId,
+      className,
+      style: {
+        display: "flex",
+        flexDirection: isVertical ? "row" : "column",
+        gap: 8,
+        opacity: disabled ? 0.5 : 1,
+        ...style
+      },
+      children: [
+        showValue || showInput ? /* @__PURE__ */ (0, import_jsx_runtime86.jsxs)(
+          "div",
+          {
+            "data-testid": dataTestId ? `${dataTestId}-header` : void 0,
+            style: {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8
+            },
+            children: [
+              showValue && !showInput ? /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+                "span",
+                {
+                  "data-testid": dataTestId ? `${dataTestId}-value` : void 0,
+                  style: { fontSize: 13, fontWeight: 600, color, minWidth: 40 },
+                  children: displayValue
+                }
+              ) : null,
+              showInput ? /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("div", { style: { display: "flex", alignItems: "center", gap: 4 }, children: range ? /* @__PURE__ */ (0, import_jsx_runtime86.jsxs)(import_jsx_runtime86.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+                  "input",
+                  {
+                    "data-testid": dataTestId ? `${dataTestId}-input-lower` : void 0,
+                    type: "number",
+                    value: rangeVal[0],
+                    min,
+                    max: rangeVal[1],
+                    step,
+                    disabled,
+                    onChange: (e) => {
+                      const v = Number(e.target.value);
+                      if (!isNaN(v)) setRange([v, rangeVal[1]]);
+                    },
+                    onBlur: () => commitValue(rangeVal),
+                    style: {
+                      width: 60,
+                      fontSize: 13,
+                      padding: "2px 6px",
+                      border: `1px solid #d1d5db`,
+                      borderRadius: 4
+                    }
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("span", { style: { fontSize: 13, color: "#6b7280" }, children: "\u2013" }),
+                /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+                  "input",
+                  {
+                    "data-testid": dataTestId ? `${dataTestId}-input-upper` : void 0,
+                    type: "number",
+                    value: rangeVal[1],
+                    min: rangeVal[0],
+                    max,
+                    step,
+                    disabled,
+                    onChange: (e) => {
+                      const v = Number(e.target.value);
+                      if (!isNaN(v)) setRange([rangeVal[0], v]);
+                    },
+                    onBlur: () => commitValue(rangeVal),
+                    style: {
+                      width: 60,
+                      fontSize: 13,
+                      padding: "2px 6px",
+                      border: `1px solid #d1d5db`,
+                      borderRadius: 4
+                    }
+                  }
+                )
+              ] }) : /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+                "input",
+                {
+                  "data-testid": dataTestId ? `${dataTestId}-input` : void 0,
+                  type: "number",
+                  value: singleVal,
+                  min,
+                  max,
+                  step,
+                  disabled,
+                  onChange: (e) => {
+                    const v = Number(e.target.value);
+                    if (!isNaN(v)) setSingle(v);
+                  },
+                  onBlur: () => commitValue(singleVal),
+                  style: {
+                    width: 60,
+                    fontSize: 13,
+                    padding: "2px 6px",
+                    border: `1px solid #d1d5db`,
+                    borderRadius: 4
+                  }
+                }
+              ) }) : null
+            ]
+          }
+        ) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("div", { style: containerSize, ref: trackRef, children: /* @__PURE__ */ (0, import_jsx_runtime86.jsxs)(
+          "div",
+          {
+            "data-testid": dataTestId ? `${dataTestId}-track` : void 0,
+            style: {
+              position: "relative",
+              width: isVertical ? trackHeight : "100%",
+              height: isVertical ? verticalHeight - (thumbSize + 2) : trackHeight,
+              background: trackBg,
+              borderRadius: trackHeight / 2,
+              cursor: disabled ? "not-allowed" : "pointer",
+              flexGrow: isVertical ? 1 : void 0,
+              marginTop: isVertical ? thumbSize / 2 + 1 : void 0,
+              marginBottom: isVertical ? thumbSize / 2 + 1 : void 0
+            },
+            onClick: (e) => {
+              if (disabled) return;
+              const pos = isVertical ? e.clientY : e.clientX;
+              const val = getValueFromPosition(pos);
+              if (range) {
+                const distLow = Math.abs(val - rangeVal[0]);
+                const distHigh = Math.abs(val - rangeVal[1]);
+                if (distLow <= distHigh) setRange([val, rangeVal[1]], true);
+                else setRange([rangeVal[0], val], true);
+              } else {
+                setSingle(val, true);
+              }
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+                "div",
+                {
+                  "data-testid": dataTestId ? `${dataTestId}-fill` : void 0,
+                  style: filledTrackStyle()
+                }
+              ),
+              tickValues.map((tv) => {
+                const ratio = getRatio(tv);
+                const tickStyle = isVertical ? {
+                  position: "absolute",
+                  left: "100%",
+                  bottom: `calc(${ratio * 100}% - 1px)`,
+                  width: 8,
+                  height: 2,
+                  background: "#d1d5db",
+                  marginLeft: 4
+                } : {
+                  position: "absolute",
+                  top: "100%",
+                  left: `calc(${ratio * 100}% - 1px)`,
+                  width: 2,
+                  height: 6,
+                  background: "#d1d5db",
+                  marginTop: 4
+                };
+                return /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("div", { style: tickStyle, children: formatTick ? /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+                  "span",
+                  {
+                    style: {
+                      position: "absolute",
+                      [isVertical ? "left" : "top"]: "100%",
+                      [isVertical ? "marginLeft" : "marginTop"]: 2,
+                      fontSize: 10,
+                      color: "#9ca3af",
+                      whiteSpace: "nowrap",
+                      transform: isVertical ? void 0 : "translateX(-50%)",
+                      left: isVertical ? 12 : void 0
+                    },
+                    children: formatTick(tv)
+                  }
+                ) : null }, tv);
+              }),
+              range ? [
+                renderThumb("lower", rangeVal[0], 0),
+                renderThumb("upper", rangeVal[1], 1)
+              ] : renderThumb("single", singleVal, 0)
+            ]
+          }
+        ) })
+      ]
+    }
+  );
+}
+
+// src/components/InputNumber.tsx
+var import_react57 = __toESM(require("react"));
+var import_jsx_runtime87 = require("react/jsx-runtime");
+var SIZE_MAP7 = {
+  sm: { fontSize: 13, padding: 4, height: 28 },
+  md: { fontSize: 14, padding: 6, height: 34 },
+  lg: { fontSize: 16, padding: 8, height: 42 }
+};
+function clampValue(value, min, max) {
+  let clamped = value;
+  if (min !== void 0 && clamped < min) clamped = min;
+  if (max !== void 0 && clamped > max) clamped = max;
+  return clamped;
+}
+function formatValue(value, precision) {
+  if (precision !== void 0 && precision >= 0) {
+    return value.toFixed(precision);
+  }
+  return String(value);
+}
+function parseValue(str, precision) {
+  const parsed = precision !== void 0 && precision > 0 ? parseFloat(str) : parseInt(str, 10);
+  return isNaN(parsed) ? 0 : parsed;
+}
+function InputNumber({
+  value: valueProp,
+  defaultValue,
+  onChange,
+  min,
+  max,
+  step = 1,
+  precision,
+  size = "md",
+  disabled = false,
+  readOnly = false,
+  label,
+  helperText,
+  error,
+  placeholder,
+  unit,
+  prefix: prefixText,
+  showStepper = true,
+  allowEmpty = false,
+  width = 160,
+  "data-testid": dataTestId,
+  name,
+  autoFocus = false,
+  required = false,
+  "aria-label": ariaLabel
+}) {
+  const generatedId = (() => {
+    try {
+      return (0, import_react57.useId)();
+    } catch {
+      return "input-fallback";
+    }
+  })();
+  const id = `input-number-${generatedId}`;
+  const initialValue = valueProp !== void 0 ? valueProp : defaultValue ?? (allowEmpty ? NaN : 0);
+  const isControlled = valueProp !== void 0;
+  const [internalValue, setInternalValue] = (0, import_react57.useState)(initialValue);
+  const [focused, setFocused] = (0, import_react57.useState)(false);
+  const [displayValue, setDisplayValue] = (0, import_react57.useState)(
+    isNaN(initialValue) && allowEmpty ? "" : formatValue(initialValue, precision)
+  );
+  const currentValue = isControlled ? valueProp : internalValue;
+  const hasError = Boolean(error);
+  const emitValue = (0, import_react57.useCallback)(
+    (next) => {
+      const clamped = clampValue(next, min, max);
+      if (!isControlled) setInternalValue(clamped);
+      setDisplayValue(isNaN(clamped) && allowEmpty ? "" : formatValue(clamped, precision));
+      onChange?.(clamped);
+    },
+    [isControlled, min, max, precision, allowEmpty, onChange]
+  );
+  import_react57.default.useEffect(() => {
+    if (isControlled) {
+      const v = valueProp;
+      setDisplayValue(isNaN(v) && allowEmpty ? "" : formatValue(v, precision));
+    }
+  }, [isControlled, valueProp, precision, allowEmpty]);
+  const handleIncrement = (0, import_react57.useCallback)(() => {
+    if (disabled || readOnly) return;
+    const base = currentValue ?? 0;
+    emitValue(base + step);
+  }, [disabled, readOnly, currentValue, step, emitValue]);
+  const handleDecrement = (0, import_react57.useCallback)(() => {
+    if (disabled || readOnly) return;
+    const base = currentValue ?? 0;
+    emitValue(base - step);
+  }, [disabled, readOnly, currentValue, step, emitValue]);
+  const handleInputChange = (0, import_react57.useCallback)(
+    (e) => {
+      const raw = e.target.value;
+      if (raw === "" && allowEmpty) {
+        setDisplayValue("");
+        return;
+      }
+      if (raw === "-" || raw === "." || raw === "-.") {
+        setDisplayValue(raw);
+        return;
+      }
+      const parsed = parseValue(raw, precision);
+      if (!isNaN(parsed)) {
+        setDisplayValue(raw);
+      }
+    },
+    [allowEmpty, precision]
+  );
+  const handleBlur = (0, import_react57.useCallback)(() => {
+    setFocused(false);
+    if (displayValue === "" && allowEmpty) {
+      return;
+    }
+    const parsed = parseValue(displayValue, precision);
+    if (!isNaN(parsed)) {
+      const clamped = clampValue(parsed, min, max);
+      if (!isControlled) setInternalValue(clamped);
+      setDisplayValue(formatValue(clamped, precision));
+      onChange?.(clamped);
+    } else {
+      setDisplayValue(formatValue(currentValue, precision));
+    }
+  }, [displayValue, allowEmpty, precision, currentValue, isControlled, min, max, onChange]);
+  const handleKeyDown = (0, import_react57.useCallback)(
+    (e) => {
+      if (disabled || readOnly) return;
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        handleIncrement();
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        handleDecrement();
+      }
+    },
+    [disabled, readOnly, handleIncrement, handleDecrement]
+  );
+  const canIncrement = max === void 0 || (currentValue ?? 0) < max;
+  const canDecrement = min === void 0 || (currentValue ?? 0) > min;
+  const dims = SIZE_MAP7[size];
+  return /* @__PURE__ */ (0, import_jsx_runtime87.jsxs)(
+    "div",
+    {
+      "data-testid": dataTestId,
+      style: { display: "inline-flex", flexDirection: "column", width },
+      children: [
+        label && /* @__PURE__ */ (0, import_jsx_runtime87.jsxs)(
+          "label",
+          {
+            htmlFor: id,
+            "data-testid": dataTestId ? `${dataTestId}-label` : void 0,
+            style: {
+              fontSize: 13,
+              fontWeight: 500,
+              color: disabled ? "#9ca3af" : hasError ? "#ef4444" : "#374151",
+              marginBottom: 4
+            },
+            children: [
+              label,
+              required && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime87.jsxs)("div", { style: { display: "flex", alignItems: "stretch", height: dims.height }, children: [
+          showStepper && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+            "button",
+            {
+              type: "button",
+              "aria-label": "Decrease value",
+              "data-testid": dataTestId ? `${dataTestId}-decrement` : void 0,
+              onClick: handleDecrement,
+              disabled: disabled || readOnly || !canDecrement,
+              style: {
+                width: dims.height,
+                border: `1px solid ${hasError ? "#ef4444" : "#d1d5db"}`,
+                borderRight: "none",
+                borderRadius: "6px 0 0 6px",
+                background: disabled ? "#f3f4f6" : "#ffffff",
+                cursor: disabled || readOnly || !canDecrement ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: dims.fontSize + 2,
+                color: disabled || !canDecrement ? "#d1d5db" : "#374151",
+                padding: 0,
+                userSelect: "none",
+                flexShrink: 0
+              },
+              children: "\u2212"
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime87.jsxs)(
+            "div",
+            {
+              style: {
+                position: "relative",
+                flex: 1,
+                border: `1px solid ${hasError ? "#ef4444" : "#d1d5db"}`,
+                borderLeft: showStepper ? "none" : `1px solid ${hasError ? "#ef4444" : "#d1d5db"}`,
+                borderRight: showStepper ? "none" : `1px solid ${hasError ? "#ef4444" : "#d1d5db"}`,
+                background: disabled ? "#f9fafb" : focused ? "#ffffff" : "#ffffff",
+                boxShadow: focused && !hasError && !disabled ? "0 0 0 2px rgba(59,130,246,0.12)" : void 0
+              },
+              children: [
+                prefixText && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+                  "span",
+                  {
+                    "data-testid": dataTestId ? `${dataTestId}-prefix` : void 0,
+                    style: {
+                      position: "absolute",
+                      left: dims.padding + 2,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      fontSize: dims.fontSize,
+                      color: disabled ? "#d1d5db" : "#6b7280",
+                      pointerEvents: "none"
+                    },
+                    children: prefixText
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+                  "input",
+                  {
+                    id,
+                    name,
+                    type: "text",
+                    inputMode: "numeric",
+                    pattern: "[0-9]*",
+                    value: displayValue,
+                    onChange: handleInputChange,
+                    onFocus: () => setFocused(true),
+                    onBlur: handleBlur,
+                    onKeyDown: handleKeyDown,
+                    disabled,
+                    readOnly,
+                    placeholder,
+                    autoFocus,
+                    "aria-label": ariaLabel ?? label ?? "Number input",
+                    "aria-invalid": hasError,
+                    "aria-valuemin": min,
+                    "aria-valuemax": max,
+                    "aria-valuenow": currentValue,
+                    "data-testid": dataTestId ? `${dataTestId}-input` : void 0,
+                    style: {
+                      width: "100%",
+                      height: "100%",
+                      border: "none",
+                      outline: "none",
+                      background: "transparent",
+                      fontSize: dims.fontSize,
+                      padding: `0 ${dims.padding}px`,
+                      paddingLeft: prefixText ? dims.padding + 22 : dims.padding + 2,
+                      paddingRight: unit ? 26 : dims.padding + 2,
+                      color: disabled ? "#9ca3af" : "#111827",
+                      textAlign: "center",
+                      lineHeight: `${dims.height}px`,
+                      fontVariantNumeric: "tabular-nums"
+                    }
+                  }
+                ),
+                unit && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+                  "span",
+                  {
+                    "data-testid": dataTestId ? `${dataTestId}-unit` : void 0,
+                    style: {
+                      position: "absolute",
+                      right: dims.padding + 2,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      fontSize: dims.fontSize - 1,
+                      color: disabled ? "#d1d5db" : "#6b7280",
+                      pointerEvents: "none"
+                    },
+                    children: unit
+                  }
+                )
+              ]
+            }
+          ),
+          showStepper && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+            "button",
+            {
+              type: "button",
+              "aria-label": "Increase value",
+              "data-testid": dataTestId ? `${dataTestId}-increment` : void 0,
+              onClick: handleIncrement,
+              disabled: disabled || readOnly || !canIncrement,
+              style: {
+                width: dims.height,
+                border: `1px solid ${hasError ? "#ef4444" : "#d1d5db"}`,
+                borderLeft: "none",
+                borderRadius: "0 6px 0 6px",
+                background: disabled ? "#f3f4f6" : "#ffffff",
+                cursor: disabled || readOnly || !canIncrement ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: dims.fontSize + 2,
+                color: disabled || !canIncrement ? "#d1d5db" : "#374151",
+                padding: 0,
+                userSelect: "none",
+                flexShrink: 0
+              },
+              children: "+"
+            }
+          )
+        ] }),
+        helperText && !error && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+          "div",
+          {
+            "data-testid": dataTestId ? `${dataTestId}-helper` : void 0,
+            style: { fontSize: 12, color: "#6b7280", marginTop: 4 },
+            children: helperText
+          }
+        ),
+        error && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+          "div",
+          {
+            role: "alert",
+            "data-testid": dataTestId ? `${dataTestId}-error` : void 0,
+            style: { fontSize: 12, color: "#ef4444", marginTop: 4 },
+            children: error
+          }
+        )
+      ]
+    }
+  );
+}
+
+// src/components/PasswordInput.tsx
+var import_react58 = require("react");
+var import_jsx_runtime88 = require("react/jsx-runtime");
+var TOGGLE_BUTTON_STYLE = {
+  position: "absolute",
+  right: 8,
+  top: "50%",
+  transform: "translateY(-50%)",
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  padding: "4px 6px",
+  fontSize: 16,
+  lineHeight: 1,
+  color: "#94a3b8",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: 4,
+  transition: "color 0.15s"
+};
+function EyeIcon({ visible }) {
+  if (visible) {
+    return /* @__PURE__ */ (0, import_jsx_runtime88.jsxs)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("path", { d: "M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" }),
+      /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("path", { d: "M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" }),
+      /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("line", { x1: "1", y1: "1", x2: "23", y2: "23" })
+    ] });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime88.jsxs)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("path", { d: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" }),
+    /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("circle", { cx: "12", cy: "12", r: "3" })
+  ] });
+}
+function PasswordInput({
+  defaultVisible = false,
+  toggleLabel,
+  ...inputProps
+}) {
+  const [visible, setVisible] = (0, import_react58.useState)(defaultVisible);
+  const handleToggle = (0, import_react58.useCallback)(() => {
+    setVisible((prev) => !prev);
+  }, []);
+  const toggleAriaLabel = toggleLabel ?? (visible ? "\u9690\u85CF\u5BC6\u7801" : "\u663E\u793A\u5BC6\u7801");
+  return /* @__PURE__ */ (0, import_jsx_runtime88.jsxs)("div", { style: { position: "relative", width: "100%" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(
+      Input,
+      {
+        ...inputProps,
+        type: visible ? "text" : "password",
+        style: {
+          ...inputProps.style,
+          paddingRight: 40
+        }
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(
+      "button",
+      {
+        type: "button",
+        "aria-label": toggleAriaLabel,
+        title: toggleAriaLabel,
+        style: TOGGLE_BUTTON_STYLE,
+        onClick: handleToggle,
+        tabIndex: -1,
+        children: /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(EyeIcon, { visible })
+      }
+    )
+  ] });
+}
+
+// src/components/ErrorBoundary.tsx
+var import_react59 = __toESM(require("react"));
+var import_jsx_runtime89 = require("react/jsx-runtime");
+var DEFAULT_RETRY_LABEL = "\u91CD\u8BD5";
+var DEFAULT_FALLBACK_MESSAGE = "\u7EC4\u4EF6\u52A0\u8F7D\u5F02\u5E38";
+var BLOCK_STYLE = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 12,
+  padding: 24,
+  borderRadius: 8,
+  border: "1px solid #fecaca",
+  background: "#fef2f2",
+  textAlign: "center",
+  minHeight: 80
+};
+var INLINE_STYLE = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  padding: "4px 12px",
+  borderRadius: 6,
+  border: "1px solid #fecaca",
+  background: "#fef2f2",
+  fontSize: 13,
+  color: "#b91c1c"
+};
+var RETRY_BUTTON_STYLE = {
+  padding: "6px 14px",
+  borderRadius: 6,
+  border: "1px solid #f87171",
+  background: "#fff",
+  color: "#b91c1c",
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: "pointer"
+};
+var ICON_STYLE = {
+  width: 20,
+  height: 20,
+  flexShrink: 0
+};
+var ErrorBoundary = class extends import_react59.default.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  componentDidCatch(error, errorInfo) {
+    this.props.onError?.(error, errorInfo);
+  }
+  resetError = () => {
+    this.props.onReset?.();
+    this.state = { error: null };
+  };
+  render() {
+    if (!this.state.error) {
+      return this.props.children ?? null;
+    }
+    const {
+      name = "ErrorBoundary",
+      severity = "block",
+      fallback,
+      retryLabel = DEFAULT_RETRY_LABEL,
+      description,
+      "data-testid": dataTestId,
+      className,
+      style
+    } = this.props;
+    if (fallback) {
+      return fallback({ error: this.state.error, resetError: this.resetError });
+    }
+    if (severity === "toast") {
+      return null;
+    }
+    if (severity === "inline") {
+      return /* @__PURE__ */ (0, import_jsx_runtime89.jsxs)(
+        "div",
+        {
+          role: "alert",
+          "aria-label": name,
+          "data-testid": dataTestId,
+          className,
+          style: { ...INLINE_STYLE, ...style },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+              "svg",
+              {
+                viewBox: "0 0 20 20",
+                fill: "currentColor",
+                style: ICON_STYLE,
+                "aria-hidden": "true",
+                children: /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+                  "path",
+                  {
+                    fillRule: "evenodd",
+                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z",
+                    clipRule: "evenodd"
+                  }
+                )
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime89.jsx)("span", { children: this.state.error.message || DEFAULT_FALLBACK_MESSAGE }),
+            /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+              "button",
+              {
+                type: "button",
+                onClick: this.resetError,
+                "data-testid": dataTestId ? `${dataTestId}-retry` : void 0,
+                style: RETRY_BUTTON_STYLE,
+                children: retryLabel
+              }
+            )
+          ]
+        }
+      );
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime89.jsxs)(
+      "div",
+      {
+        role: "alert",
+        "aria-label": name,
+        "data-testid": dataTestId,
+        className,
+        style: { ...BLOCK_STYLE, ...style },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+            "svg",
+            {
+              viewBox: "0 0 24 24",
+              fill: "currentColor",
+              style: { width: 28, height: 28, color: "#ef4444", flexShrink: 0 },
+              "aria-hidden": "true",
+              children: /* @__PURE__ */ (0, import_jsx_runtime89.jsx)("path", { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" })
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+            "div",
+            {
+              style: { fontSize: 15, fontWeight: 600, color: "#b91c1c" },
+              children: this.state.error.message || DEFAULT_FALLBACK_MESSAGE
+            }
+          ),
+          description ? /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+            "div",
+            {
+              style: { fontSize: 13, color: "#dc2626", maxWidth: 360 },
+              children: description
+            }
+          ) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+            "button",
+            {
+              type: "button",
+              onClick: this.resetError,
+              "data-testid": dataTestId ? `${dataTestId}-retry` : void 0,
+              style: RETRY_BUTTON_STYLE,
+              children: retryLabel
+            }
+          )
+        ]
+      }
+    );
+  }
+};
+
+// src/components/Tree.tsx
+var import_react60 = __toESM(require("react"));
+var import_jsx_runtime90 = require("react/jsx-runtime");
+var INDENT = 20;
+var NODE_HEIGHT = { sm: 28, md: 34 };
+var FONT_SIZE = { sm: 13, md: 14 };
+var CHEVRON_SIZE = { sm: 8, md: 10 };
+function ChevronIcon({ expanded, size = "md" }) {
+  const s = CHEVRON_SIZE[size];
+  return /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+    "svg",
+    {
+      width: s,
+      height: s,
+      viewBox: "0 0 10 10",
+      style: {
+        transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
+        transition: "transform 0.18s ease",
+        flexShrink: 0,
+        marginRight: 4
+      },
+      children: /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+        "path",
+        {
+          d: "M3.5 1.5L7 5L3.5 8.5",
+          fill: "none",
+          stroke: "currentColor",
+          strokeWidth: 1.4,
+          strokeLinecap: "round",
+          strokeLinejoin: "round"
+        }
+      )
+    }
+  );
+}
+function CheckIcon() {
+  return /* @__PURE__ */ (0, import_jsx_runtime90.jsx)("svg", { width: 10, height: 8, viewBox: "0 0 10 8", style: { flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+    "path",
+    {
+      d: "M1 4L3.5 6.5L9 1",
+      fill: "none",
+      stroke: "white",
+      strokeWidth: 1.8,
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }
+  ) });
+}
+function HalfCheckIcon() {
+  return /* @__PURE__ */ (0, import_jsx_runtime90.jsx)("svg", { width: 8, height: 2, viewBox: "0 0 8 2", style: { flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime90.jsx)("rect", { x: 1, y: 0, width: 6, height: 2, rx: 1, fill: "white" }) });
+}
+function FolderIcon({ open }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+    "svg",
+    {
+      width: 14,
+      height: 14,
+      viewBox: "0 0 14 14",
+      style: { flexShrink: 0, marginRight: 5, opacity: 0.6 },
+      children: open ? /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+        "path",
+        {
+          d: "M1.5 2.5H5L6.5 4H12.5V11.5H1.5V2.5Z",
+          fill: "none",
+          stroke: "currentColor",
+          strokeWidth: 1,
+          strokeLinejoin: "round"
+        }
+      ) : /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+        "path",
+        {
+          d: "M1.5 2.5H5L6.5 4H12.5V11.5H1.5V2.5Z",
+          fill: "rgba(148,163,184,0.15)",
+          stroke: "currentColor",
+          strokeWidth: 1,
+          strokeLinejoin: "round"
+        }
+      )
+    }
+  );
+}
+function FileIcon() {
+  return /* @__PURE__ */ (0, import_jsx_runtime90.jsxs)(
+    "svg",
+    {
+      width: 12,
+      height: 14,
+      viewBox: "0 0 12 14",
+      style: { flexShrink: 0, marginRight: 5, opacity: 0.5 },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+          "path",
+          {
+            d: "M7 1H2.5C1.95 1 1.5 1.45 1.5 2V12C1.5 12.55 1.95 13 2.5 13H9.5C10.05 13 10.5 12.55 10.5 12V4.5L7 1Z",
+            fill: "none",
+            stroke: "currentColor",
+            strokeWidth: 1,
+            strokeLinejoin: "round"
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+          "path",
+          {
+            d: "M7 1V4.5H10.5",
+            fill: "none",
+            stroke: "currentColor",
+            strokeWidth: 1,
+            strokeLinejoin: "round"
+          }
+        )
+      ]
+    }
+  );
+}
+function getAllKeys(nodes) {
+  const keys = [];
+  const walk = (list) => {
+    for (const n of list) {
+      keys.push(n.key);
+      if (n.children) walk(n.children);
+    }
+  };
+  walk(nodes);
+  return keys;
+}
+function getDescendantKeys(node) {
+  const keys = [];
+  if (!node.children) return keys;
+  const walk = (list) => {
+    for (const n of list) {
+      keys.push(n.key);
+      if (n.children) walk(n.children);
+    }
+  };
+  walk(node.children);
+  return keys;
+}
+function getParentKeys(treeData, targetKey) {
+  const parents = [];
+  const walk = (nodes, path) => {
+    for (const n of nodes) {
+      if (n.key === targetKey) {
+        parents.push(...path);
+        return true;
+      }
+      if (n.children && walk(n.children, [...path, n.key])) {
+        return true;
+      }
+    }
+    return false;
+  };
+  walk(treeData, []);
+  return parents;
+}
+function findNode(nodes, key) {
+  for (const n of nodes) {
+    if (n.key === key) return n;
+    if (n.children) {
+      const found = findNode(n.children, key);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+var TreeNodeRow = import_react60.default.memo(function TreeNodeRow2({
+  node,
+  depth,
+  expanded,
+  hasChildren,
+  selected,
+  checked,
+  variant,
+  selectable,
+  checkable,
+  size,
+  renderNode,
+  onToggle,
+  onSelect,
+  onCheck,
+  onClick
+}) {
+  const nodeH = NODE_HEIGHT[size];
+  const fontSize = FONT_SIZE[size];
+  const handleClick = (0, import_react60.useCallback)(
+    (e) => {
+      onClick(node, e);
+      if (hasChildren) onToggle(node.key);
+      if (selectable) onSelect(node.key);
+    },
+    [node, hasChildren, selectable, onToggle, onSelect, onClick]
+  );
+  const handleCheckClick = (0, import_react60.useCallback)(
+    (e) => {
+      e.stopPropagation();
+      if (!node.disabled) onCheck(node.key);
+    },
+    [node.disabled, node.key, onCheck]
+  );
+  const isDirectory = variant === "directory" && hasChildren;
+  const rowStyle = {
+    display: "flex",
+    alignItems: "center",
+    height: nodeH,
+    paddingLeft: depth * INDENT + 8,
+    paddingRight: 8,
+    cursor: node.disabled ? "not-allowed" : "pointer",
+    fontSize,
+    color: node.disabled ? "rgba(148,163,184,0.45)" : selected ? "#0f172a" : "#334155",
+    fontWeight: selected ? 600 : 400,
+    backgroundColor: selected ? "rgba(59,130,246,0.08)" : "transparent",
+    borderRadius: 6,
+    marginInline: 4,
+    marginBlock: 1,
+    userSelect: "none",
+    opacity: node.disabled ? 0.5 : 1,
+    transition: "background-color 0.12s ease"
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime90.jsxs)(
+    "div",
+    {
+      style: rowStyle,
+      role: "treeitem",
+      "aria-expanded": hasChildren ? expanded : void 0,
+      "aria-selected": selected,
+      "aria-disabled": node.disabled,
+      onClick: handleClick,
+      "data-tree-key": node.key,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime90.jsx)("span", { style: { width: (CHEVRON_SIZE[size] ?? 10) + 4, display: "inline-flex", alignItems: "center" }, children: hasChildren && /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(ChevronIcon, { expanded, size }) }),
+        checkable && /* @__PURE__ */ (0, import_jsx_runtime90.jsxs)(
+          "span",
+          {
+            style: {
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: size === "sm" ? 14 : 16,
+              height: size === "sm" ? 14 : 16,
+              borderRadius: 4,
+              border: checked === true ? "1.5px solid #3b82f6" : checked === "half" ? "1.5px solid #3b82f6" : "1.5px solid rgba(148,163,184,0.5)",
+              backgroundColor: checked === true || checked === "half" ? "#3b82f6" : "transparent",
+              marginRight: 6,
+              flexShrink: 0,
+              cursor: node.disabled ? "not-allowed" : "pointer",
+              transition: "all 0.12s ease"
+            },
+            onClick: handleCheckClick,
+            "data-tree-check": node.key,
+            children: [
+              checked === true && /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(CheckIcon, {}),
+              checked === "half" && /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(HalfCheckIcon, {})
+            ]
+          }
+        ),
+        variant === "directory" ? isDirectory ? /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(FolderIcon, { open: expanded }) : /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(FileIcon, {}) : node.icon ? /* @__PURE__ */ (0, import_jsx_runtime90.jsx)("span", { style: { marginRight: 5, display: "inline-flex", opacity: 0.65 }, children: node.icon }) : null,
+        renderNode ? renderNode(node, expanded, selected) : /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+          "span",
+          {
+            style: {
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              flex: 1
+            },
+            children: node.label
+          }
+        )
+      ]
+    }
+  );
+});
+function Tree({
+  treeData,
+  variant = "default",
+  selectable = false,
+  checkable = false,
+  defaultExpandedKeys,
+  expandedKeys: controlledExpandedKeys,
+  onExpand,
+  defaultSelectedKeys,
+  selectedKeys: controlledSelectedKeys,
+  onSelect,
+  defaultCheckedKeys,
+  checkedKeys: controlledCheckedKeys,
+  onCheck,
+  onNodeClick,
+  renderNode,
+  multiple = false,
+  autoExpandParent = true,
+  size = "md",
+  maxHeight,
+  "data-testid": testId,
+  className,
+  style
+}) {
+  const [internalExpanded, setInternalExpanded] = (0, import_react60.useState)(defaultExpandedKeys ?? []);
+  const isExpandedControlled = controlledExpandedKeys !== void 0;
+  const expandedSet = new Set(isExpandedControlled ? controlledExpandedKeys : internalExpanded);
+  const handleExpandToggle = (0, import_react60.useCallback)(
+    (key) => {
+      const current = isExpandedControlled ? controlledExpandedKeys : internalExpanded;
+      let next;
+      if (current.includes(key)) {
+        next = current.filter((k) => k !== key);
+      } else {
+        next = [...current, key];
+      }
+      if (!isExpandedControlled) setInternalExpanded(next);
+      onExpand?.(next);
+    },
+    [isExpandedControlled, controlledExpandedKeys, internalExpanded, onExpand]
+  );
+  const [internalSelected, setInternalSelected] = (0, import_react60.useState)(defaultSelectedKeys ?? []);
+  const isSelectedControlled = controlledSelectedKeys !== void 0;
+  const selectedSet = (0, import_react60.useMemo)(
+    () => new Set(isSelectedControlled ? controlledSelectedKeys : internalSelected),
+    [isSelectedControlled, controlledSelectedKeys, internalSelected]
+  );
+  const handleSelect = (0, import_react60.useCallback)(
+    (key) => {
+      if (!selectable) return;
+      const current = isSelectedControlled ? controlledSelectedKeys : internalSelected;
+      let next;
+      if (multiple) {
+        next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
+      } else {
+        next = current.includes(key) ? [] : [key];
+      }
+      if (!isSelectedControlled) setInternalSelected(next);
+      onSelect?.(next);
+    },
+    [selectable, multiple, isSelectedControlled, controlledSelectedKeys, internalSelected, onSelect]
+  );
+  const [internalChecked, setInternalChecked] = (0, import_react60.useState)(defaultCheckedKeys ?? []);
+  const isCheckedControlled = controlledCheckedKeys !== void 0;
+  const checkedSet = (0, import_react60.useMemo)(
+    () => new Set(isCheckedControlled ? controlledCheckedKeys : internalChecked),
+    [isCheckedControlled, controlledCheckedKeys, internalChecked]
+  );
+  const handleCheck = (0, import_react60.useCallback)(
+    (key) => {
+      if (!checkable) return;
+      const current = new Set(isCheckedControlled ? controlledCheckedKeys : internalChecked);
+      let next;
+      const node = findNode(treeData, key);
+      if (!node) return;
+      const descKeys = getDescendantKeys(node);
+      const allChildKeys = [key, ...descKeys];
+      if (current.has(key)) {
+        for (const k of allChildKeys) current.delete(k);
+        const parentKeys = getParentKeys(treeData, key);
+      } else {
+        for (const k of allChildKeys) current.add(k);
+      }
+      const allKeys = getAllKeys(treeData);
+      const finalSet = new Set(current);
+      for (const k of allKeys) {
+        const n = findNode(treeData, k);
+        if (n?.children && n.children.length > 0) {
+          const allChildrenChecked = n.children.every((c) => finalSet.has(c.key));
+          if (allChildrenChecked) {
+            finalSet.add(k);
+          } else {
+            finalSet.delete(k);
+          }
+        }
+      }
+      next = [...finalSet];
+      if (!isCheckedControlled) setInternalChecked(next);
+      onCheck?.(next);
+    },
+    [checkable, treeData, isCheckedControlled, controlledCheckedKeys, internalChecked, onCheck]
+  );
+  const getCheckedStatus = (0, import_react60.useCallback)(
+    (node) => {
+      if (!checkable) return false;
+      if (checkedSet.has(node.key)) {
+        if (node.children && node.children.length > 0) {
+          const allDescChecked = getDescendantKeys(node).every((k) => checkedSet.has(k));
+          return allDescChecked ? true : "half";
+        }
+        return true;
+      }
+      if (node.children && node.children.length > 0) {
+        const someDescChecked = getDescendantKeys(node).some((k) => checkedSet.has(k));
+        return someDescChecked ? "half" : false;
+      }
+      return false;
+    },
+    [checkable, checkedSet]
+  );
+  const handleNodeClick = (0, import_react60.useCallback)(
+    (node, event) => {
+      onNodeClick?.(node, event);
+    },
+    [onNodeClick]
+  );
+  const effectiveExpanded = (0, import_react60.useMemo)(() => {
+    if (!autoExpandParent) return expandedSet;
+    const set = new Set(expandedSet);
+    const selectedKeysArr = isSelectedControlled ? controlledSelectedKeys : internalSelected;
+    for (const sk of selectedKeysArr) {
+      const parents = getParentKeys(treeData, sk);
+      for (const p of parents) set.add(p);
+    }
+    return set;
+  }, [autoExpandParent, expandedSet, isSelectedControlled, controlledSelectedKeys, internalSelected, treeData]);
+  const containerStyle = {
+    maxHeight: maxHeight ?? void 0,
+    overflowY: maxHeight ? "auto" : "visible",
+    padding: "4px 0",
+    ...variant === "default" ? { border: "1px solid rgba(148,163,184,0.14)", borderRadius: 12 } : {},
+    ...style
+  };
+  const renderTree = (nodes, depth = 0) => {
+    return nodes.map((node) => {
+      const hasChildren = !!node.children && node.children.length > 0 && !node.isLeaf;
+      const isExpanded = effectiveExpanded.has(node.key);
+      const isSelected = selectedSet.has(node.key);
+      const checkedStatus = getCheckedStatus(node);
+      const children = hasChildren && isExpanded ? renderTree(node.children, depth + 1) : null;
+      return /* @__PURE__ */ (0, import_jsx_runtime90.jsxs)(import_react60.default.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+          TreeNodeRow,
+          {
+            node,
+            depth,
+            expanded: isExpanded,
+            hasChildren,
+            selected: isSelected,
+            checked: checkedStatus,
+            variant,
+            selectable,
+            checkable,
+            size,
+            renderNode,
+            onToggle: handleExpandToggle,
+            onSelect: handleSelect,
+            onCheck: handleCheck,
+            onClick: handleNodeClick
+          }
+        ),
+        children
+      ] }, node.key);
+    });
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+    "div",
+    {
+      role: "tree",
+      "data-testid": testId,
+      className,
+      style: containerStyle,
+      children: renderTree(treeData)
+    }
+  );
+}
+
+// src/components/CommandPalette.tsx
+var import_react61 = __toESM(require("react"));
+var import_jsx_runtime91 = require("react/jsx-runtime");
+function groupCommands(commands) {
+  const map = /* @__PURE__ */ new Map();
+  for (const cmd of commands) {
+    const key = cmd.group ?? "";
+    const list = map.get(key);
+    if (list) {
+      list.push(cmd);
+    } else {
+      map.set(key, [cmd]);
+    }
+  }
+  const result = [];
+  const ungrouped = map.get("");
+  if (ungrouped) {
+    result.push({ group: "", items: ungrouped });
+    map.delete("");
+  }
+  for (const [group, items] of map) {
+    result.push({ group, items });
+  }
+  return result;
+}
+function fuzzyMatch(text, query) {
+  if (!query) return true;
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  let qi = 0;
+  for (let ti = 0; ti < lowerText.length && qi < lowerQuery.length; ti++) {
+    if (lowerText[ti] === lowerQuery[qi]) {
+      qi++;
+    }
+  }
+  return qi === lowerQuery.length;
+}
+function ShortcutBadge({ shortcut }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+    "kbd",
+    {
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        fontSize: "0.7rem",
+        fontFamily: "ui-monospace, SFMono-Regular, monospace",
+        padding: "1px 5px",
+        borderRadius: 4,
+        backgroundColor: "var(--m5-surface-raised, #f3f4f6)",
+        border: "1px solid var(--m5-border-subtle, #e5e7eb)",
+        color: "var(--m5-text-tertiary, #6b7280)",
+        lineHeight: 1.4
+      },
+      children: shortcut
+    }
+  );
+}
+function HighlightedLabel({ label, query }) {
+  if (!query) return /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(import_jsx_runtime91.Fragment, { children: label });
+  const lowerLabel = label.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const parts = [];
+  let qi = 0;
+  let currentNonHighlight = "";
+  for (let ti = 0; ti < label.length; ti++) {
+    const labelChar = label[ti];
+    if (qi < lowerQuery.length && lowerLabel[ti] === lowerQuery[qi]) {
+      if (currentNonHighlight) {
+        parts.push({ text: currentNonHighlight, highlight: false });
+        currentNonHighlight = "";
+      }
+      parts.push({ text: labelChar, highlight: true });
+      qi++;
+    } else {
+      currentNonHighlight += labelChar;
+    }
+  }
+  if (currentNonHighlight) {
+    parts.push({ text: currentNonHighlight, highlight: false });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(import_jsx_runtime91.Fragment, { children: parts.map(
+    (p, i) => p.highlight ? /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+      "mark",
+      {
+        style: {
+          backgroundColor: "var(--m5-accent-subtle, #dbeafe)",
+          color: "var(--m5-accent, #2563eb)",
+          borderRadius: 2
+        },
+        children: p.text
+      },
+      i
+    ) : /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("span", { children: p.text }, i)
+  ) });
+}
+function CommandPalette({
+  commands,
+  open,
+  onClose,
+  onSelect,
+  placeholder = "Type a command or search\u2026",
+  emptyMessage = "No matching commands.",
+  maxHeight = 400,
+  autoFocus = true,
+  className
+}) {
+  const [query, setQuery] = (0, import_react61.useState)("");
+  const [activeIndex, setActiveIndex] = (0, import_react61.useState)(0);
+  const inputRef = (0, import_react61.useRef)(null);
+  const listRef = (0, import_react61.useRef)(null);
+  const itemRefs = (0, import_react61.useRef)(/* @__PURE__ */ new Map());
+  const filtered = (0, import_react61.useMemo)(() => {
+    if (!query.trim()) return commands;
+    return commands.filter(
+      (cmd) => fuzzyMatch(cmd.label, query) || fuzzyMatch(cmd.description ?? "", query) || fuzzyMatch(cmd.group ?? "", query) || fuzzyMatch(cmd.shortcut ?? "", query)
+    );
+  }, [commands, query]);
+  const grouped = (0, import_react61.useMemo)(() => groupCommands(filtered), [filtered]);
+  const flatItems = (0, import_react61.useMemo)(() => {
+    const result = [];
+    for (const g of grouped) {
+      result.push(...g.items);
+    }
+    return result;
+  }, [grouped]);
+  (0, import_react61.useEffect)(() => {
+    if (open) {
+      setQuery("");
+      setActiveIndex(0);
+      if (autoFocus) {
+        requestAnimationFrame(() => inputRef.current?.focus());
+      }
+    }
+  }, [open, autoFocus]);
+  const safeActiveIndex = flatItems.length === 0 ? -1 : Math.min(activeIndex, flatItems.length - 1);
+  (0, import_react61.useEffect)(() => {
+    const el = itemRefs.current.get(safeActiveIndex);
+    if (el) {
+      el.scrollIntoView({ block: "nearest" });
+    }
+  }, [safeActiveIndex]);
+  const selectItem = (0, import_react61.useCallback)(
+    (item) => {
+      if (item.disabled) return;
+      onSelect(item);
+      onClose();
+    },
+    [onSelect, onClose]
+  );
+  const handleKeyDown = (0, import_react61.useCallback)(
+    (e) => {
+      switch (e.key) {
+        case "ArrowDown": {
+          e.preventDefault();
+          setActiveIndex((prev) => {
+            let next = prev + 1;
+            while (next < flatItems.length && flatItems[next]?.disabled) next++;
+            return next >= flatItems.length ? 0 : next;
+          });
+          break;
+        }
+        case "ArrowUp": {
+          e.preventDefault();
+          setActiveIndex((prev) => {
+            let next = prev - 1;
+            while (next >= 0 && flatItems[next]?.disabled) next--;
+            return next < 0 ? flatItems.length - 1 : next;
+          });
+          break;
+        }
+        case "Enter": {
+          e.preventDefault();
+          const item = flatItems[safeActiveIndex];
+          if (item) {
+            selectItem(item);
+          }
+          break;
+        }
+        case "Escape": {
+          e.preventDefault();
+          onClose();
+          break;
+        }
+        default:
+          break;
+      }
+    },
+    [flatItems, safeActiveIndex, selectItem, onClose]
+  );
+  const handleItemMouseEnter = (0, import_react61.useCallback)(
+    (index) => {
+      setActiveIndex(index);
+    },
+    []
+  );
+  const handleOverlayClick = (0, import_react61.useCallback)(
+    (e) => {
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    },
+    [onClose]
+  );
+  const handleItemClick = (0, import_react61.useCallback)(
+    (item) => {
+      selectItem(item);
+    },
+    [selectItem]
+  );
+  if (!open) return null;
+  let flatIndex = 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+    "div",
+    {
+      role: "dialog",
+      "aria-modal": "true",
+      "aria-label": "Command palette",
+      style: {
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        paddingTop: "15vh",
+        backgroundColor: "rgba(0,0,0,0.35)"
+      },
+      className,
+      onClick: handleOverlayClick,
+      onKeyDown: handleKeyDown,
+      children: /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
+        "div",
+        {
+          style: {
+            width: "100%",
+            maxWidth: 560,
+            backgroundColor: "var(--m5-surface, #fff)",
+            borderRadius: 12,
+            boxShadow: "0 20px 60px rgba(0,0,0,0.18), 0 0 0 1px var(--m5-border, #e5e7eb)",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column"
+          },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
+              "div",
+              {
+                style: {
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "12px 16px",
+                  borderBottom: "1px solid var(--m5-border-subtle, #e5e7eb)"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
+                    "svg",
+                    {
+                      width: "18",
+                      height: "18",
+                      viewBox: "0 0 24 24",
+                      fill: "none",
+                      stroke: "var(--m5-text-tertiary, #9ca3af)",
+                      strokeWidth: "2",
+                      children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("circle", { cx: "11", cy: "11", r: "8" }),
+                        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("path", { d: "m21 21-4.35-4.35" })
+                      ]
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                    "input",
+                    {
+                      ref: inputRef,
+                      type: "text",
+                      value: query,
+                      onChange: (e) => {
+                        setQuery(e.target.value);
+                        setActiveIndex(0);
+                      },
+                      placeholder,
+                      "aria-label": "Search commands",
+                      style: {
+                        flex: 1,
+                        border: "none",
+                        outline: "none",
+                        fontSize: "0.95rem",
+                        backgroundColor: "transparent",
+                        color: "var(--m5-text, #111827)",
+                        fontFamily: "inherit"
+                      }
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                    "button",
+                    {
+                      type: "button",
+                      "aria-label": "Close",
+                      onClick: onClose,
+                      style: {
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 4,
+                        borderRadius: 6,
+                        color: "var(--m5-text-tertiary, #9ca3af)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      },
+                      children: /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("path", { d: "M18 6 6 18M6 6l12 12" }) })
+                    }
+                  )
+                ]
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+              "div",
+              {
+                ref: listRef,
+                role: "listbox",
+                style: {
+                  maxHeight,
+                  overflowY: "auto",
+                  padding: "8px"
+                },
+                children: flatItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                  "div",
+                  {
+                    style: {
+                      padding: "24px 16px",
+                      textAlign: "center",
+                      color: "var(--m5-text-tertiary, #9ca3af)",
+                      fontSize: "0.9rem"
+                    },
+                    children: emptyMessage
+                  }
+                ) : grouped.map((group) => {
+                  const groupStartIndex = flatIndex;
+                  const groupHeader = group.group ? /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                    "div",
+                    {
+                      style: {
+                        padding: "8px 12px 4px",
+                        fontSize: "0.7rem",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        color: "var(--m5-text-tertiary, #9ca3af)",
+                        marginTop: groupStartIndex > 0 ? 4 : 0
+                      },
+                      children: group.group
+                    },
+                    `group-${group.group}`
+                  ) : null;
+                  const items = group.items.map((item) => {
+                    const idx = flatIndex++;
+                    const isActive = idx === safeActiveIndex;
+                    return /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
+                      "div",
+                      {
+                        ref: (el) => {
+                          if (el) itemRefs.current.set(idx, el);
+                          else itemRefs.current.delete(idx);
+                        },
+                        role: "option",
+                        "aria-selected": isActive,
+                        "aria-disabled": item.disabled,
+                        onClick: () => !item.disabled && handleItemClick(item),
+                        onMouseEnter: () => handleItemMouseEnter(idx),
+                        style: {
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          padding: "10px 12px",
+                          borderRadius: 8,
+                          cursor: item.disabled ? "not-allowed" : "pointer",
+                          opacity: item.disabled ? 0.4 : 1,
+                          backgroundColor: isActive ? "var(--m5-accent-subtle, #eff6ff)" : "transparent",
+                          color: isActive ? "var(--m5-accent, #2563eb)" : "var(--m5-text, #111827)",
+                          transition: "background-color 0.1s"
+                        },
+                        children: [
+                          item.icon && /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                            "span",
+                            {
+                              style: {
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: 28,
+                                height: 28,
+                                flexShrink: 0,
+                                borderRadius: 6,
+                                backgroundColor: isActive ? "var(--m5-accent, #2563eb)" : "var(--m5-surface-raised, #f3f4f6)",
+                                color: isActive ? "#fff" : "var(--m5-text-secondary, #6b7280)"
+                              },
+                              children: item.icon
+                            }
+                          ),
+                          /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                              "div",
+                              {
+                                style: {
+                                  fontSize: "0.9rem",
+                                  fontWeight: 500,
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis"
+                                },
+                                children: /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(HighlightedLabel, { label: item.label, query })
+                              }
+                            ),
+                            item.description && /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                              "div",
+                              {
+                                style: {
+                                  fontSize: "0.78rem",
+                                  color: "var(--m5-text-tertiary, #9ca3af)",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  marginTop: 1
+                                },
+                                children: item.description
+                              }
+                            )
+                          ] }),
+                          item.shortcut && /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(ShortcutBadge, { shortcut: item.shortcut })
+                        ]
+                      },
+                      item.id
+                    );
+                  });
+                  return /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(import_react61.default.Fragment, { children: [
+                    groupHeader,
+                    items
+                  ] }, group.group || "ungrouped");
+                })
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
+              "div",
+              {
+                style: {
+                  display: "flex",
+                  gap: 12,
+                  padding: "8px 16px",
+                  borderTop: "1px solid var(--m5-border-subtle, #e5e7eb)",
+                  fontSize: "0.72rem",
+                  color: "var(--m5-text-tertiary, #9ca3af)"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)("span", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                      "kbd",
+                      {
+                        style: {
+                          fontFamily: "ui-monospace, monospace",
+                          padding: "1px 4px",
+                          border: "1px solid var(--m5-border-subtle, #e5e7eb)",
+                          borderRadius: 3,
+                          fontSize: "inherit"
+                        },
+                        children: "\u2191\u2193"
+                      }
+                    ),
+                    " ",
+                    "Navigate"
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)("span", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                      "kbd",
+                      {
+                        style: {
+                          fontFamily: "ui-monospace, monospace",
+                          padding: "1px 4px",
+                          border: "1px solid var(--m5-border-subtle, #e5e7eb)",
+                          borderRadius: 3,
+                          fontSize: "inherit"
+                        },
+                        children: "\u21B5"
+                      }
+                    ),
+                    " ",
+                    "Select"
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)("span", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                      "kbd",
+                      {
+                        style: {
+                          fontFamily: "ui-monospace, monospace",
+                          padding: "1px 4px",
+                          border: "1px solid var(--m5-border-subtle, #e5e7eb)",
+                          borderRadius: 3,
+                          fontSize: "inherit"
+                        },
+                        children: "esc"
+                      }
+                    ),
+                    " ",
+                    "Close"
+                  ] })
+                ]
+              }
+            )
+          ]
+        }
+      )
+    }
+  );
+}
+
+// src/components/DeviceStatusPanel.tsx
+var import_react62 = require("react");
+var import_jsx_runtime92 = require("react/jsx-runtime");
+var DEVICE_TYPE_LABELS = {
+  pos: "POS\u673A",
+  printer: "\u6253\u5370\u673A",
+  scanner: "\u626B\u63CF\u67AA",
+  display: "\u663E\u793A\u5C4F",
+  network: "\u7F51\u7EDC\u8BBE\u5907",
+  camera: "\u6444\u50CF\u5934",
+  sensor: "\u4F20\u611F\u5668",
+  other: "\u5176\u4ED6\u8BBE\u5907"
+};
+var DEVICE_TYPE_ICONS = {
+  pos: "\u{1F5A5}\uFE0F",
+  printer: "\u{1F5A8}\uFE0F",
+  scanner: "\u{1F4E1}",
+  display: "\u{1F5A5}\uFE0F",
+  network: "\u{1F310}",
+  camera: "\u{1F4F7}",
+  sensor: "\u{1F321}\uFE0F",
+  other: "\u2699\uFE0F"
+};
+var STATUS_CONFIG2 = {
+  online: {
+    label: "\u5728\u7EBF",
+    color: "#22c55e",
+    bg: "rgba(34,197,94,0.1)",
+    icon: "\u2713",
+    border: "rgba(34,197,94,0.3)"
+  },
+  offline: {
+    label: "\u79BB\u7EBF",
+    color: "#6b7280",
+    bg: "rgba(107,114,128,0.1)",
+    icon: "\u2717",
+    border: "rgba(107,114,128,0.3)"
+  },
+  warning: {
+    label: "\u544A\u8B66",
+    color: "#f59e0b",
+    bg: "rgba(245,158,11,0.1)",
+    icon: "!",
+    border: "rgba(245,158,11,0.3)"
+  },
+  maintenance: {
+    label: "\u7EF4\u62A4\u4E2D",
+    color: "#3b82f6",
+    bg: "rgba(59,130,246,0.1)",
+    icon: "\u27F3",
+    border: "rgba(59,130,246,0.3)"
+  },
+  error: {
+    label: "\u6545\u969C",
+    color: "#ef4444",
+    bg: "rgba(239,68,68,0.1)",
+    icon: "\u2715",
+    border: "rgba(239,68,68,0.3)"
+  }
+};
+function computeDeviceSummary(devices) {
+  const summary = {
+    total: devices.length,
+    online: 0,
+    offline: 0,
+    warning: 0,
+    maintenance: 0,
+    error: 0
+  };
+  for (const d of devices) {
+    const key = d.status;
+    if (key in summary && typeof summary[key] === "number") {
+      summary[key]++;
+    }
+  }
+  return summary;
+}
+function formatLastSeen(isoStr) {
+  try {
+    const now = Date.now();
+    const then = new Date(isoStr).getTime();
+    const diffMs = now - then;
+    const diffMin = Math.floor(diffMs / 6e4);
+    if (diffMin < 1) return "\u521A\u521A";
+    if (diffMin < 60) return `${diffMin}\u5206\u949F\u524D`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}\u5C0F\u65F6\u524D`;
+    const diffDay = Math.floor(diffHr / 24);
+    return `${diffDay}\u5929\u524D`;
+  } catch {
+    return "\u672A\u77E5";
+  }
+}
+function formatUptime(hours) {
+  if (hours < 1) return `${Math.round(hours * 60)}\u5206\u949F`;
+  if (hours < 24) return `${Math.round(hours)}\u5C0F\u65F6`;
+  const days = Math.floor(hours / 24);
+  const remainHr = Math.round(hours % 24);
+  return remainHr > 0 ? `${days}\u5929${remainHr}\u5C0F\u65F6` : `${days}\u5929`;
+}
+function SummaryCard({ summary }) {
+  const items = [
+    { label: "\u5728\u7EBF", count: summary.online, color: "#22c55e", bg: "rgba(34,197,94,0.08)" },
+    { label: "\u79BB\u7EBF", count: summary.offline, color: "#6b7280", bg: "rgba(107,114,128,0.08)" },
+    { label: "\u544A\u8B66", count: summary.warning, color: "#f59e0b", bg: "rgba(245,158,11,0.08)" },
+    { label: "\u7EF4\u62A4", count: summary.maintenance, color: "#3b82f6", bg: "rgba(59,130,246,0.08)" },
+    { label: "\u6545\u969C", count: summary.error, color: "#ef4444", bg: "rgba(239,68,68,0.08)" }
+  ];
+  return /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+    "div",
+    {
+      className: "device-status-panel__summary",
+      style: {
+        display: "flex",
+        gap: 10,
+        flexWrap: "wrap",
+        marginBottom: 16
+      },
+      children: [
+        items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+          "div",
+          {
+            className: "device-status-panel__summary-item",
+            style: {
+              flex: "1 1 0",
+              minWidth: 80,
+              background: item.bg,
+              borderRadius: 10,
+              padding: "10px 12px",
+              border: `1px solid ${item.color}22`,
+              textAlign: "center"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { style: { fontSize: 22, fontWeight: 700, color: item.color }, children: item.count }),
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 2 }, children: item.label })
+            ]
+          },
+          item.label
+        )),
+        /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+          "div",
+          {
+            className: "device-status-panel__summary-item device-status-panel__summary-total",
+            style: {
+              flex: "1 1 0",
+              minWidth: 80,
+              background: "rgba(139,92,246,0.08)",
+              borderRadius: 10,
+              padding: "10px 12px",
+              border: "1px solid rgba(139,92,246,0.22)",
+              textAlign: "center"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { style: { fontSize: 22, fontWeight: 700, color: "#8b5cf6" }, children: summary.total }),
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 2 }, children: "\u603B\u8BA1" })
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
+function StatusIndicator({ status }) {
+  const cfg = STATUS_CONFIG2[status];
+  return /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+    "span",
+    {
+      className: "device-status-panel__status-indicator",
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        padding: "2px 10px",
+        borderRadius: 20,
+        fontSize: 12,
+        fontWeight: 600,
+        color: cfg.color,
+        background: cfg.bg,
+        border: `1px solid ${cfg.border}`
+      },
+      title: cfg.label,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+          "span",
+          {
+            className: "device-status-panel__status-dot",
+            style: {
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: cfg.color,
+              display: "inline-block",
+              boxShadow: `0 0 6px ${cfg.color}88`,
+              animation: status === "error" || status === "warning" ? "deviceStatusPulse 1.5s ease-in-out infinite" : "none"
+            }
+          }
+        ),
+        cfg.label
+      ]
+    }
+  );
+}
+function UsageBar({ value, color, label }) {
+  if (value === void 0 || value === null) return null;
+  const pct = Math.max(0, Math.min(100, value));
+  const barColor = pct > 90 ? "#ef4444" : pct > 70 ? "#f59e0b" : color;
+  return /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6, marginTop: 3 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("span", { style: { fontSize: 10, color: "#64748b", minWidth: 36 }, children: label }),
+    /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+      "div",
+      {
+        style: {
+          flex: 1,
+          height: 5,
+          borderRadius: 3,
+          background: "rgba(148,163,184,0.12)",
+          overflow: "hidden"
+        },
+        children: /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+          "div",
+          {
+            style: {
+              width: `${pct}%`,
+              height: "100%",
+              borderRadius: 3,
+              background: barColor,
+              transition: "width 0.4s ease"
+            }
+          }
+        )
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { style: { fontSize: 10, color: "#94a3b8", minWidth: 32, textAlign: "right" }, children: [
+      pct.toFixed(0),
+      "%"
+    ] })
+  ] });
+}
+function DeviceRow({
+  device,
+  showDetails,
+  onClick
+}) {
+  const typeIcon = DEVICE_TYPE_ICONS[device.type];
+  const typeLabel = DEVICE_TYPE_LABELS[device.type];
+  return /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+    "div",
+    {
+      className: "device-status-panel__row",
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        padding: "10px 14px",
+        borderRadius: 10,
+        background: "rgba(15,23,42,0.2)",
+        border: "1px solid rgba(148,163,184,0.08)",
+        marginBottom: 6,
+        cursor: onClick ? "pointer" : "default",
+        transition: "background 0.2s, border-color 0.2s"
+      },
+      onClick: () => onClick?.(device),
+      onMouseEnter: (e) => {
+        e.currentTarget.style.background = "rgba(15,23,42,0.4)";
+        e.currentTarget.style.borderColor = "rgba(148,163,184,0.16)";
+      },
+      onMouseLeave: (e) => {
+        e.currentTarget.style.background = "rgba(15,23,42,0.2)";
+        e.currentTarget.style.borderColor = "rgba(148,163,184,0.08)";
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+          "div",
+          {
+            className: "device-status-panel__row-main",
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 10
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("span", { style: { fontSize: 18 }, children: typeIcon }),
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+                  "div",
+                  {
+                    className: "device-status-panel__device-name",
+                    style: { fontSize: 13, fontWeight: 600, color: "#e2e8f0" },
+                    children: device.name
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+                  "div",
+                  {
+                    className: "device-status-panel__device-meta",
+                    style: { fontSize: 11, color: "#64748b", marginTop: 1 },
+                    children: [
+                      typeLabel,
+                      device.location ? ` \xB7 ${device.location}` : "",
+                      device.ipAddress ? ` \xB7 ${device.ipAddress}` : ""
+                    ]
+                  }
+                )
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(StatusIndicator, { status: device.status }),
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+                "span",
+                {
+                  className: "device-status-panel__last-seen",
+                  style: { fontSize: 11, color: "#64748b", minWidth: 56, textAlign: "right" },
+                  children: formatLastSeen(device.lastSeen)
+                }
+              )
+            ]
+          }
+        ),
+        showDetails && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+          "div",
+          {
+            className: "device-status-panel__row-details",
+            style: {
+              marginTop: 8,
+              paddingTop: 8,
+              borderTop: "1px solid rgba(148,163,184,0.06)"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+                "div",
+                {
+                  className: "device-status-panel__usage",
+                  style: { display: "flex", gap: 16, flexWrap: "wrap" },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { style: { flex: "1 1 120px", minWidth: 100 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(UsageBar, { value: device.cpuUsage, color: "#3b82f6", label: "CPU" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(UsageBar, { value: device.memoryUsage, color: "#8b5cf6", label: "\u5185\u5B58" })
+                    ] }),
+                    device.temperature !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+                      "div",
+                      {
+                        className: "device-status-panel__temperature",
+                        style: {
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                          fontSize: 11,
+                          color: device.temperature > 75 ? "#ef4444" : device.temperature > 60 ? "#f59e0b" : "#22c55e"
+                        },
+                        children: [
+                          /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("span", { children: "\u{1F321}\uFE0F" }),
+                          /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { style: { fontWeight: 600 }, children: [
+                            device.temperature,
+                            "\xB0C"
+                          ] })
+                        ]
+                      }
+                    )
+                  ]
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+                "div",
+                {
+                  className: "device-status-panel__extra",
+                  style: {
+                    display: "flex",
+                    gap: 16,
+                    marginTop: 6,
+                    fontSize: 10,
+                    color: "#475569",
+                    flexWrap: "wrap"
+                  },
+                  children: [
+                    device.uptimeHours !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { children: [
+                      "\u23F1 \u8FD0\u884C ",
+                      formatUptime(device.uptimeHours)
+                    ] }),
+                    device.firmwareVersion && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { children: [
+                      "\u{1F4E6} v",
+                      device.firmwareVersion
+                    ] }),
+                    device.alertMessage && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+                      "span",
+                      {
+                        className: "device-status-panel__alert-message",
+                        style: { color: "#f59e0b", fontWeight: 500 },
+                        children: [
+                          "\u26A0 ",
+                          device.alertMessage
+                        ]
+                      }
+                    )
+                  ]
+                }
+              )
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
+var FILTER_OPTIONS = [
+  { key: "all", label: "\u5168\u90E8" },
+  { key: "online", label: "\u5728\u7EBF" },
+  { key: "offline", label: "\u79BB\u7EBF" },
+  { key: "warning", label: "\u544A\u8B66" },
+  { key: "error", label: "\u6545\u969C" },
+  { key: "maintenance", label: "\u7EF4\u62A4" }
+];
+var DeviceStatusPanel = ({
+  devices,
+  title = "\u8BBE\u5907\u72B6\u6001\u76D1\u63A7",
+  showSummary = true,
+  showDetails = true,
+  maxDisplay = 20,
+  showFilters = true,
+  showSort = false,
+  onRefresh,
+  onDeviceClick,
+  className = "",
+  emptyText = "\u6682\u65E0\u8BBE\u5907\u6570\u636E",
+  showSearch = true
+}) => {
+  const [statusFilter, setStatusFilter] = (0, import_react62.useState)("all");
+  const [searchQuery, setSearchQuery] = (0, import_react62.useState)("");
+  const [expanded, setExpanded] = (0, import_react62.useState)(true);
+  const summary = (0, import_react62.useMemo)(() => computeDeviceSummary(devices), [devices]);
+  const filteredDevices = (0, import_react62.useMemo)(() => {
+    let result = [...devices];
+    if (statusFilter !== "all") {
+      result = result.filter((d) => d.status === statusFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (d) => d.name.toLowerCase().includes(q) || d.id.toLowerCase().includes(q) || d.type.toLowerCase().includes(q) || d.location && d.location.toLowerCase().includes(q) || d.ipAddress && d.ipAddress.toLowerCase().includes(q) || d.alertMessage && d.alertMessage.toLowerCase().includes(q)
+      );
+    }
+    return result.slice(0, maxDisplay);
+  }, [devices, statusFilter, searchQuery, maxDisplay]);
+  const isEmpty = devices.length === 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+    "div",
+    {
+      className: `device-status-panel ${className}`,
+      style: {
+        borderRadius: 16,
+        background: "rgba(15,23,42,0.22)",
+        border: "1px solid rgba(148,163,184,0.1)",
+        padding: "20px 18px 16px",
+        maxWidth: 720
+      },
+      role: "region",
+      "aria-label": title,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+          "div",
+          {
+            className: "device-status-panel__header",
+            style: {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 16
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+                  "button",
+                  {
+                    className: "device-status-panel__collapse-btn",
+                    onClick: () => setExpanded(!expanded),
+                    style: {
+                      background: "none",
+                      border: "none",
+                      color: "#64748b",
+                      cursor: "pointer",
+                      fontSize: 14,
+                      padding: "2px 4px",
+                      lineHeight: 1
+                    },
+                    "aria-label": expanded ? "\u6536\u8D77" : "\u5C55\u5F00",
+                    children: expanded ? "\u25BC" : "\u25B6"
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+                  "h3",
+                  {
+                    className: "device-status-panel__title",
+                    style: {
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: "#e2e8f0",
+                      margin: 0
+                    },
+                    children: [
+                      "\u{1F4E1} ",
+                      title
+                    ]
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+                  "span",
+                  {
+                    className: "device-status-panel__count",
+                    style: {
+                      fontSize: 11,
+                      color: "#64748b",
+                      background: "rgba(148,163,184,0.1)",
+                      padding: "1px 8px",
+                      borderRadius: 10
+                    },
+                    children: [
+                      summary.total,
+                      "\u53F0"
+                    ]
+                  }
+                )
+              ] }),
+              onRefresh && /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+                "button",
+                {
+                  className: "device-status-panel__refresh-btn",
+                  onClick: onRefresh,
+                  style: {
+                    background: "rgba(59,130,246,0.1)",
+                    border: "1px solid rgba(59,130,246,0.2)",
+                    color: "#60a5fa",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    padding: "4px 12px",
+                    borderRadius: 8,
+                    fontWeight: 500
+                  },
+                  children: "\u27F3 \u5237\u65B0"
+                }
+              )
+            ]
+          }
+        ),
+        !expanded && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+          "div",
+          {
+            className: "device-status-panel__collapsed-summary",
+            style: {
+              display: "flex",
+              gap: 16,
+              fontSize: 12,
+              color: "#94a3b8"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { children: [
+                "\u{1F7E2} ",
+                summary.online,
+                " \u5728\u7EBF"
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { children: [
+                "\u{1F7E1} ",
+                summary.warning,
+                " \u544A\u8B66"
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { children: [
+                "\u{1F534} ",
+                summary.error,
+                " \u6545\u969C"
+              ] })
+            ]
+          }
+        ),
+        expanded && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(import_jsx_runtime92.Fragment, { children: [
+          showSummary && /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(SummaryCard, { summary }),
+          (showSearch || showFilters) && !isEmpty && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+            "div",
+            {
+              className: "device-status-panel__controls",
+              style: {
+                display: "flex",
+                gap: 8,
+                marginBottom: 12,
+                flexWrap: "wrap",
+                alignItems: "center"
+              },
+              children: [
+                showSearch && /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+                  "input",
+                  {
+                    className: "device-status-panel__search",
+                    type: "text",
+                    placeholder: "\u641C\u7D22\u8BBE\u5907\u540D\u79F0\u3001ID\u3001IP...",
+                    value: searchQuery,
+                    onChange: (e) => setSearchQuery(e.target.value),
+                    style: {
+                      flex: "1 1 160px",
+                      minWidth: 120,
+                      background: "rgba(15,23,42,0.4)",
+                      border: "1px solid rgba(148,163,184,0.14)",
+                      borderRadius: 8,
+                      padding: "5px 10px",
+                      fontSize: 12,
+                      color: "#cbd5e1",
+                      outline: "none"
+                    }
+                  }
+                ),
+                showFilters && /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+                  "div",
+                  {
+                    className: "device-status-panel__filters",
+                    style: { display: "flex", gap: 4, flexWrap: "wrap" },
+                    children: FILTER_OPTIONS.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+                      "button",
+                      {
+                        className: `device-status-panel__filter-btn ${statusFilter === opt.key ? "device-status-panel__filter-btn--active" : ""}`,
+                        onClick: () => setStatusFilter(opt.key),
+                        style: {
+                          border: "1px solid",
+                          borderColor: statusFilter === opt.key ? "rgba(99,102,241,0.4)" : "rgba(148,163,184,0.1)",
+                          background: statusFilter === opt.key ? "rgba(99,102,241,0.12)" : "rgba(15,23,42,0.3)",
+                          color: statusFilter === opt.key ? "#c7d2fe" : "#64748b",
+                          cursor: "pointer",
+                          fontSize: 11,
+                          padding: "3px 10px",
+                          borderRadius: 16,
+                          fontWeight: statusFilter === opt.key ? 600 : 400,
+                          transition: "all 0.2s"
+                        },
+                        children: opt.label
+                      },
+                      opt.key
+                    ))
+                  }
+                )
+              ]
+            }
+          ),
+          isEmpty ? /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+            "div",
+            {
+              className: "device-status-panel__empty",
+              style: {
+                padding: "40px 16px",
+                textAlign: "center",
+                color: "#64748b",
+                fontSize: 13
+              },
+              children: emptyText
+            }
+          ) : filteredDevices.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+            "div",
+            {
+              className: "device-status-panel__no-match",
+              style: {
+                padding: "32px 16px",
+                textAlign: "center",
+                color: "#64748b",
+                fontSize: 13
+              },
+              children: "\u6CA1\u6709\u5339\u914D\u7684\u8BBE\u5907"
+            }
+          ) : /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { className: "device-status-panel__list", children: [
+            filteredDevices.map((device) => /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+              DeviceRow,
+              {
+                device,
+                showDetails,
+                onClick: onDeviceClick
+              },
+              device.id
+            )),
+            devices.length > maxDisplay && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+              "div",
+              {
+                className: "device-status-panel__more",
+                style: {
+                  textAlign: "center",
+                  padding: "8px 0",
+                  fontSize: 11,
+                  color: "#64748b"
+                },
+                children: [
+                  "\u663E\u793A ",
+                  filteredDevices.length,
+                  "/",
+                  devices.length,
+                  " \u53F0\u8BBE\u5907"
+                ]
+              }
+            )
+          ] })
+        ] })
+      ]
+    }
+  );
+};
+if (typeof document !== "undefined") {
+  const styleId = "device-status-panel-keyframes";
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = `
+      @keyframes deviceStatusPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
+// src/components/DeviceInspectionPanel.tsx
+var import_jsx_runtime93 = require("react/jsx-runtime");
+var statusConfig = {
+  healthy: { label: "\u6B63\u5E38", color: "#16a34a", bg: "#dcfce7" },
+  warning: { label: "\u8B66\u544A", color: "#ca8a04", bg: "#fef9c3" },
+  critical: { label: "\u4E25\u91CD", color: "#dc2626", bg: "#fee2e2" },
+  offline: { label: "\u79BB\u7EBF", color: "#6b7280", bg: "#f3f4f6" }
+};
+var severityConfig = {
+  info: { color: "#2563eb", icon: "\u2139\uFE0F" },
+  warning: { color: "#ca8a04", icon: "\u26A0\uFE0F" },
+  critical: { color: "#dc2626", icon: "\u{1F534}" }
+};
+function formatUptime2(hours) {
+  if (hours < 1) return `${Math.round(hours * 60)}\u5206\u949F`;
+  if (hours < 24) return `${Math.round(hours)}\u5C0F\u65F6`;
+  const d = Math.floor(hours / 24);
+  const h = Math.round(hours % 24);
+  return `${d}\u5929${h > 0 ? ` ${h}\u5C0F\u65F6` : ""}`;
+}
+function formatMetric(value, unit, threshold) {
+  const color = value >= threshold ? "#dc2626" : value >= threshold * 0.7 ? "#ca8a04" : "#16a34a";
+  return { color, fontWeight: 600 };
+}
+var DeviceInspectionPanel = ({
+  devices,
+  summary,
+  onDeviceClick,
+  onAcknowledgeAlert,
+  onStartInspection,
+  onExportReport,
+  loading = false,
+  error = null,
+  className
+}) => {
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { "data-testid": "device-inspection-loading", className, style: { padding: 24 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { display: "grid", gap: 12, gridTemplateColumns: "repeat(4, 1fr)" }, children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { "data-testid": "skeleton-card", style: { height: 80, borderRadius: 12, background: "#f1f5f9", animation: "pulse 1.5s infinite" } }, i)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { marginTop: 24, height: 200, borderRadius: 12, background: "#f1f5f9", animation: "pulse 1.5s infinite" } })
+    ] });
+  }
+  if (error) {
+    return /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { "data-testid": "device-inspection-error", className, style: { padding: 24, textAlign: "center", color: "#dc2626" }, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("p", { children: [
+      "\u26A0\uFE0F ",
+      error
+    ] }) });
+  }
+  const pendingAlerts = devices.reduce((count, d) => count + d.alerts.filter((a) => !a.acknowledged).length, 0);
+  return /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { "data-testid": "device-inspection-panel", className, style: { fontFamily: "system-ui, sans-serif" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { "data-testid": "inspection-summary", style: { display: "grid", gap: 12, gridTemplateColumns: "repeat(5, 1fr)", marginBottom: 20 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(SummaryCard2, { label: "\u8BBE\u5907\u603B\u6570", value: summary.total, color: "#1e293b" }),
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(SummaryCard2, { label: "\u6B63\u5E38", value: summary.healthy, color: "#16a34a" }),
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(SummaryCard2, { label: "\u8B66\u544A", value: summary.warning, color: "#ca8a04" }),
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(SummaryCard2, { label: "\u4E25\u91CD", value: summary.critical, color: "#dc2626" }),
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(SummaryCard2, { label: "\u79BB\u7EBF", value: summary.offline, color: "#6b7280" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { "data-testid": "inspection-metrics", style: { display: "grid", gap: 12, gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 20 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(MetricGauge, { label: "\u5E73\u5747 CPU", value: summary.avgCpuUsage, unit: "%", max: 100 }),
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(MetricGauge, { label: "\u5E73\u5747\u5185\u5B58", value: summary.avgMemoryUsage, unit: "%", max: 100 }),
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(MetricGauge, { label: "\u5E73\u5747\u6E29\u5EA6", value: summary.avgTemperature, unit: "\xB0C", max: 100 })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { "data-testid": "inspection-actions", style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: { fontSize: 14, color: "#64748b" }, children: [
+        "\u5171 ",
+        devices.length,
+        " \u53F0\u8BBE\u5907 \xB7 ",
+        pendingAlerts > 0 ? `${pendingAlerts} \u6761\u672A\u5904\u7406\u544A\u8B66` : "\u65E0\u5F85\u5904\u7406\u544A\u8B66"
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
+          "button",
+          {
+            "data-testid": "start-inspection-btn",
+            onClick: onStartInspection,
+            style: {
+              padding: "8px 16px",
+              borderRadius: 8,
+              border: "1px solid #2563eb",
+              background: "#2563eb",
+              color: "#fff",
+              cursor: "pointer",
+              fontSize: 14,
+              fontWeight: 600
+            },
+            children: "\u5F00\u59CB\u5DE1\u68C0"
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
+          "button",
+          {
+            "data-testid": "export-report-btn",
+            onClick: onExportReport,
+            style: {
+              padding: "8px 16px",
+              borderRadius: 8,
+              border: "1px solid #d1d5db",
+              background: "#fff",
+              color: "#374151",
+              cursor: "pointer",
+              fontSize: 14
+            },
+            children: "\u5BFC\u51FA\u62A5\u544A"
+          }
+        )
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { "data-testid": "device-table", style: { borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("table", { style: { width: "100%", borderCollapse: "collapse" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("tr", { style: { background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u8BBE\u5907\u540D\u79F0" }),
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u7C7B\u578B" }),
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u4F4D\u7F6E" }),
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u72B6\u6001" }),
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "CPU" }),
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u5185\u5B58" }),
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u6E29\u5EA6" }),
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u8FD0\u884C\u65F6\u957F" }),
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u4E0A\u6B21\u5DE1\u68C0" }),
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u544A\u8B66" })
+      ] }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("tbody", { children: devices.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("tr", { children: /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { colSpan: 10, style: { padding: 32, textAlign: "center", color: "#94a3b8" }, children: "\u6682\u65E0\u8BBE\u5907\u6570\u636E" }) }) : devices.map((device) => {
+        const statusCfg = statusConfig[device.status];
+        return /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
+          "tr",
+          {
+            "data-testid": `device-row-${device.id}`,
+            onClick: () => onDeviceClick?.(device),
+            style: { borderBottom: "1px solid #f1f5f9", cursor: onDeviceClick ? "pointer" : "default" },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { fontWeight: 600 }, children: device.deviceName }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: device.deviceType }),
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: device.location }),
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
+                "span",
+                {
+                  "data-testid": `status-${device.id}`,
+                  style: {
+                    padding: "2px 8px",
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    background: statusCfg.bg,
+                    color: statusCfg.color
+                  },
+                  children: statusCfg.label
+                }
+              ) }),
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: formatMetric(device.metrics.cpuUsage, "%", 90), children: [
+                device.metrics.cpuUsage,
+                "%"
+              ] }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: formatMetric(device.metrics.memoryUsage, "%", 90), children: [
+                device.metrics.memoryUsage,
+                "%"
+              ] }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: formatMetric(device.metrics.temperature, "\xB0C", 80), children: [
+                device.metrics.temperature,
+                "\xB0C"
+              ] }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: formatUptime2(device.metrics.uptimeHours) }),
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: new Date(device.lastInspectedAt).toLocaleDateString("zh-CN") }),
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: device.alerts.filter((a) => !a.acknowledged).length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: [
+                device.alerts.filter((a) => !a.acknowledged).slice(0, 2).map((alert) => /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
+                  "div",
+                  {
+                    "data-testid": `alert-${alert.id}`,
+                    style: { display: "flex", alignItems: "center", gap: 4, fontSize: 12 },
+                    children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("span", { children: severityConfig[alert.severity].icon }),
+                      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("span", { style: { color: severityConfig[alert.severity].color }, children: alert.message }),
+                      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
+                        "button",
+                        {
+                          "data-testid": `acknowledge-${alert.id}`,
+                          onClick: (e) => {
+                            e.stopPropagation();
+                            onAcknowledgeAlert?.(device.id, alert.id);
+                          },
+                          style: {
+                            marginLeft: 4,
+                            padding: "1px 6px",
+                            fontSize: 11,
+                            borderRadius: 4,
+                            border: "1px solid #d1d5db",
+                            background: "#fff",
+                            cursor: "pointer",
+                            whiteSpace: "nowrap"
+                          },
+                          children: "\u786E\u8BA4"
+                        }
+                      )
+                    ]
+                  },
+                  alert.id
+                )),
+                device.alerts.filter((a) => !a.acknowledged).length > 2 && /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: { fontSize: 11, color: "#94a3b8" }, children: [
+                  "+",
+                  device.alerts.filter((a) => !a.acknowledged).length - 2,
+                  " \u6761\u66F4\u591A"
+                ] })
+              ] }) : /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("span", { style: { color: "#94a3b8", fontSize: 12 }, children: "\u65E0\u544A\u8B66" }) })
+            ]
+          },
+          device.id
+        );
+      }) })
+    ] }) })
+  ] });
+};
+var SummaryCard2 = ({ label, value, color }) => /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
+  "div",
+  {
+    "data-testid": `summary-card-${label}`,
+    style: {
+      padding: "16px 20px",
+      borderRadius: 12,
+      border: "1px solid #e2e8f0",
+      textAlign: "center",
+      background: "#fff"
+    },
+    children: [
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { fontSize: 13, color: "#64748b", marginBottom: 4 }, children: label }),
+      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { fontSize: 28, fontWeight: 700, color }, children: value })
+    ]
+  }
+);
+var MetricGauge = ({ label, value, unit, max }) => {
+  const pct = Math.min(value / max * 100, 100);
+  const color = value >= 90 ? "#dc2626" : value >= 70 ? "#ca8a04" : "#16a34a";
+  return /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
+    "div",
+    {
+      "data-testid": `metric-gauge-${label}`,
+      style: {
+        padding: "16px 20px",
+        borderRadius: 12,
+        border: "1px solid #e2e8f0",
+        background: "#fff"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("span", { style: { fontSize: 13, color: "#64748b" }, children: label }),
+          /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: { fontSize: 13, fontWeight: 700, color }, children: [
+            value,
+            unit
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { height: 6, borderRadius: 3, background: "#f1f5f9", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
+          "div",
+          {
+            "data-testid": `gauge-bar-${label}`,
+            style: { height: "100%", width: `${pct}%`, borderRadius: 3, background: color, transition: "width 0.3s ease" }
+          }
+        ) })
+      ]
+    }
+  );
+};
+var thStyle = {
+  padding: "10px 12px",
+  fontSize: 12,
+  fontWeight: 600,
+  color: "#64748b",
+  textAlign: "left",
+  whiteSpace: "nowrap"
+};
+var tdStyle = {
+  padding: "10px 12px",
+  fontSize: 13,
+  color: "#1e293b",
+  verticalAlign: "top"
+};
+
+// src/components/MemberLevelDistribution.tsx
+var import_jsx_runtime94 = require("react/jsx-runtime");
+var DEFAULT_LEVEL_COLORS = [
+  "#f59e0b",
+  // 黄金 - 黄金会员
+  "#8b5cf6",
+  // 紫色 - 钻石会员
+  "#3b82f6",
+  // 蓝色 - 铂金会员
+  "#22c55e",
+  // 绿色 - 金卡会员
+  "#6b7280",
+  // 灰色 - 银卡会员
+  "#ef4444",
+  // 红色 - 普通会员
+  "#06b6d4",
+  // 青色
+  "#ec4899"
+  // 粉色
+];
+var MemberLevelDistribution = ({
+  data,
+  width = 600,
+  height = 280,
+  title = "\u4F1A\u5458\u7B49\u7EA7\u5206\u5E03",
+  showValues = true,
+  showPercentage = true,
+  className = "",
+  emptyText = "\u6682\u65E0\u4F1A\u5458\u6570\u636E"
+}) => {
+  if (!data || data.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
+      "div",
+      {
+        className: `member-level-distribution member-level-distribution--empty ${className}`,
+        style: { width, height, display: "flex", alignItems: "center", justifyContent: "center" },
+        children: /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("span", { style: { color: "#9ca3af", fontSize: 14 }, children: emptyText })
+      }
+    );
+  }
+  const total = data.reduce((sum, d) => sum + d.count, 0);
+  const maxCount = Math.max(...data.map((d) => d.count));
+  const barAreaHeight = height - 60;
+  const barWidth = Math.max(20, Math.min(60, (width - 80) / data.length - 12));
+  const gap = (width - 60 - barWidth * data.length) / (data.length + 1);
+  return /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)(
+    "div",
+    {
+      className: `member-level-distribution ${className}`,
+      style: {
+        width,
+        height,
+        border: "1px solid #e5e7eb",
+        borderRadius: 8,
+        padding: "16px 20px",
+        background: "#fff",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column"
+      },
+      children: [
+        title && /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
+          "div",
+          {
+            className: "member-level-distribution__title",
+            style: {
+              fontSize: 15,
+              fontWeight: 600,
+              color: "#111827",
+              marginBottom: 12,
+              lineHeight: "20px"
+            },
+            children: title
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
+          "div",
+          {
+            className: "member-level-distribution__chart",
+            style: {
+              flex: 1,
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "center",
+              gap: `${gap}px`,
+              paddingBottom: 4,
+              position: "relative"
+            },
+            role: "img",
+            "aria-label": `${title}: ${data.map((d) => `${d.name} ${d.count}\u4EBA`).join(", ")}`,
+            children: data.map((item, index) => {
+              const barHeight = total > 0 ? item.count / maxCount * barAreaHeight : 0;
+              const percentage = total > 0 ? (item.count / total * 100).toFixed(1) : "0";
+              const color = item.color || DEFAULT_LEVEL_COLORS[index % DEFAULT_LEVEL_COLORS.length];
+              return /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)(
+                "div",
+                {
+                  className: "member-level-distribution__bar-group",
+                  style: {
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    width: barWidth
+                  },
+                  children: [
+                    showValues && /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
+                      "span",
+                      {
+                        className: "member-level-distribution__value",
+                        style: {
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "#374151",
+                          marginBottom: 4,
+                          whiteSpace: "nowrap"
+                        },
+                        children: item.count
+                      }
+                    ),
+                    /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
+                      "div",
+                      {
+                        className: "member-level-distribution__bar",
+                        style: {
+                          width: barWidth,
+                          height: Math.max(2, barHeight),
+                          background: color,
+                          borderRadius: "4px 4px 0 0",
+                          transition: "height 0.3s ease",
+                          minHeight: item.count > 0 ? 4 : 0
+                        },
+                        title: `${item.name}: ${item.count}\u4EBA${showPercentage ? ` (${percentage}%)` : ""}`
+                      }
+                    ),
+                    showPercentage && /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)(
+                      "span",
+                      {
+                        className: "member-level-distribution__percentage",
+                        style: {
+                          fontSize: 11,
+                          color: "#6b7280",
+                          marginTop: 4,
+                          whiteSpace: "nowrap"
+                        },
+                        children: [
+                          percentage,
+                          "%"
+                        ]
+                      }
+                    ),
+                    /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
+                      "span",
+                      {
+                        className: "member-level-distribution__label",
+                        style: {
+                          fontSize: 12,
+                          color: "#4b5563",
+                          marginTop: 2,
+                          whiteSpace: "nowrap",
+                          maxWidth: barWidth,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis"
+                        },
+                        children: item.name
+                      }
+                    )
+                  ]
+                },
+                item.name
+              );
+            })
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)(
+          "div",
+          {
+            className: "member-level-distribution__total",
+            style: {
+              fontSize: 12,
+              color: "#9ca3af",
+              textAlign: "right",
+              marginTop: 4
+            },
+            children: [
+              "\u603B\u8BA1: ",
+              total,
+              " \u4EBA"
+            ]
+          }
+        )
+      ]
+    }
+  );
+};
+
+// src/components/AISummaryCard.tsx
+var import_jsx_runtime95 = require("react/jsx-runtime");
+function getTrendSymbol(dir) {
+  switch (dir) {
+    case "up":
+      return "\u2191";
+    case "down":
+      return "\u2193";
+    case "flat":
+      return "\u2192";
+  }
+}
+function getTrendColor(isPositive, dir) {
+  if (!dir || dir === "flat") return "#94a3b8";
+  const isUp = dir === "up";
+  const good = isPositive ?? true;
+  return isUp && good || !isUp && !good ? "#22c55e" : "#ef4444";
+}
+function getInsightStyle(type) {
+  switch (type) {
+    case "positive":
+      return { icon: "\u{1F4C8}", color: "#22c55e", bg: "rgba(34,197,94,0.08)" };
+    case "negative":
+      return { icon: "\u26A0\uFE0F", color: "#ef4444", bg: "rgba(239,68,68,0.08)" };
+    case "info":
+      return { icon: "\u{1F4A1}", color: "#60a5fa", bg: "rgba(96,165,250,0.08)" };
+  }
+}
+function formatRelativeTime(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (isNaN(diff)) return iso;
+  const mins = Math.floor(diff / 6e4);
+  if (mins < 1) return "\u521A\u521A";
+  if (mins < 60) return `${mins}\u5206\u949F\u524D`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}\u5C0F\u65F6\u524D`;
+  return `${Math.floor(hours / 24)}\u5929\u524D`;
+}
+function MetricChip({ metric }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+    "div",
+    {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+        padding: "10px 14px",
+        borderRadius: 10,
+        background: "rgba(15,23,42,0.4)",
+        border: "1px solid rgba(148,163,184,0.08)",
+        flex: 1,
+        minWidth: 0
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: { fontSize: 11, color: "#64748b", fontWeight: 500 }, children: metric.label }),
+        /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 6 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+            "span",
+            {
+              style: {
+                fontSize: 20,
+                fontWeight: 700,
+                color: "#f8fafc",
+                fontVariantNumeric: "tabular-nums"
+              },
+              children: [
+                metric.value,
+                metric.unit && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: { fontSize: 12, fontWeight: 400, color: "#64748b", marginLeft: 2 }, children: metric.unit })
+              ]
+            }
+          ),
+          metric.trend && metric.trend !== "flat" && /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+            "span",
+            {
+              style: {
+                fontSize: 12,
+                fontWeight: 600,
+                color: getTrendColor(metric.isPositive, metric.trend)
+              },
+              children: [
+                getTrendSymbol(metric.trend),
+                metric.changePercent != null && ` ${Math.abs(metric.changePercent)}%`
+              ]
+            }
+          )
+        ] })
+      ]
+    }
+  );
+}
+function InsightRow({ insight }) {
+  const style = getInsightStyle(insight.type);
+  return /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+    "div",
+    {
+      style: {
+        display: "flex",
+        gap: 8,
+        padding: "6px 8px",
+        borderRadius: 8,
+        background: style.bg
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: { fontSize: 12, flexShrink: 0 }, children: style.icon }),
+        /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: { fontSize: 12, color: "#cbd5e1", lineHeight: 1.5 }, children: insight.text })
+      ]
+    }
+  );
+}
+function LoadingSkeletonBlock() {
+  return /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+      "div",
+      {
+        style: {
+          height: 14,
+          width: "60%",
+          borderRadius: 4,
+          background: "rgba(148,163,184,0.1)",
+          animation: "pulse 2s infinite"
+        }
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+      "div",
+      {
+        style: {
+          height: 12,
+          width: "90%",
+          borderRadius: 4,
+          background: "rgba(148,163,184,0.08)",
+          animation: "pulse 2s infinite"
+        }
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+      "div",
+      {
+        style: {
+          height: 12,
+          width: "75%",
+          borderRadius: 4,
+          background: "rgba(148,163,184,0.08)",
+          animation: "pulse 2s infinite"
+        }
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("div", { style: { display: "flex", gap: 8, marginTop: 4 }, children: [1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+      "div",
+      {
+        style: {
+          height: 48,
+          flex: 1,
+          borderRadius: 8,
+          background: "rgba(148,163,184,0.06)",
+          animation: "pulse 2s infinite"
+        }
+      },
+      i
+    )) })
+  ] });
+}
+function ErrorBlock({ message }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+    "div",
+    {
+      style: {
+        padding: "12px 16px",
+        borderRadius: 10,
+        background: "rgba(239,68,68,0.08)",
+        border: "1px solid rgba(239,68,68,0.15)",
+        fontSize: 13,
+        color: "#fca5a5",
+        lineHeight: 1.5
+      },
+      children: message
+    }
+  );
+}
+function AISummaryCard({
+  title = "AI \u6458\u8981",
+  summary,
+  metrics,
+  insights,
+  loading = false,
+  error,
+  updatedAt,
+  className,
+  onAIAnalyze,
+  analyzing = false
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+    "div",
+    {
+      className,
+      style: {
+        borderRadius: 16,
+        background: "linear-gradient(135deg, rgba(30,41,59,0.6) 0%, rgba(15,23,42,0.5) 100%)",
+        border: "1px solid rgba(148,163,184,0.12)",
+        padding: "18px 20px"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 14
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: { fontSize: 14 }, children: "\u{1F9E0}" }),
+              /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+                "span",
+                {
+                  style: {
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "#e2e8f0"
+                  },
+                  children: title
+                }
+              ),
+              analyzing && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+                "span",
+                {
+                  style: {
+                    fontSize: 11,
+                    color: "#60a5fa",
+                    background: "rgba(96,165,250,0.12)",
+                    padding: "2px 8px",
+                    borderRadius: 6,
+                    fontWeight: 500
+                  },
+                  children: "\u5206\u6790\u4E2D..."
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("div", { style: { flex: 1 } }),
+              onAIAnalyze && !loading && !error && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+                "button",
+                {
+                  type: "button",
+                  onClick: onAIAnalyze,
+                  disabled: analyzing,
+                  style: {
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: analyzing ? "#475569" : "#60a5fa",
+                    background: analyzing ? "rgba(71,85,105,0.15)" : "rgba(96,165,250,0.1)",
+                    border: `1px solid ${analyzing ? "rgba(71,85,105,0.2)" : "rgba(96,165,250,0.2)"}`,
+                    borderRadius: 6,
+                    padding: "4px 10px",
+                    cursor: analyzing ? "not-allowed" : "pointer",
+                    transition: "all 0.15s"
+                  },
+                  children: analyzing ? "\u5206\u6790\u4E2D..." : "\u{1F504} \u91CD\u65B0\u5206\u6790"
+                }
+              ),
+              updatedAt && !loading && !error && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: { fontSize: 10, color: "#475569" }, children: formatRelativeTime(updatedAt) })
+            ]
+          }
+        ),
+        loading && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(LoadingSkeletonBlock, {}),
+        error && !loading && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(ErrorBlock, { message: error }),
+        !loading && !error && /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(import_jsx_runtime95.Fragment, { children: [
+          summary ? /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+            "p",
+            {
+              style: {
+                fontSize: 13,
+                color: "#cbd5e1",
+                lineHeight: 1.7,
+                margin: 0
+              },
+              children: summary
+            }
+          ) : /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+            "div",
+            {
+              style: {
+                padding: "16px 0",
+                textAlign: "center",
+                color: "#475569",
+                fontSize: 13
+              },
+              children: "\u{1F914} \u6682\u65E0\u6458\u8981\u6570\u636E\uFF0C\u70B9\u51FB\u201C\u91CD\u65B0\u5206\u6790\u201D\u751F\u6210"
+            }
+          ),
+          metrics && metrics.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+            "div",
+            {
+              style: {
+                display: "flex",
+                gap: 8,
+                marginTop: 14,
+                flexWrap: "wrap"
+              },
+              children: metrics.map((m, i) => /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(MetricChip, { metric: m }, i))
+            }
+          ),
+          insights && insights.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+            "div",
+            {
+              style: {
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+                marginTop: 12,
+                padding: 10,
+                borderRadius: 10,
+                background: "rgba(15,23,42,0.3)"
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+                  "span",
+                  {
+                    style: {
+                      fontSize: 11,
+                      color: "#64748b",
+                      fontWeight: 500,
+                      marginBottom: 4
+                    },
+                    children: "\u5173\u952E\u6D1E\u5BDF"
+                  }
+                ),
+                insights.map((item, i) => /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(InsightRow, { insight: item }, i))
+              ]
+            }
+          )
+        ] })
+      ]
+    }
+  );
+}
+
+// src/components/Rating.tsx
+var import_react63 = require("react");
+var import_jsx_runtime96 = require("react/jsx-runtime");
+var DEFAULT_STAR_LABELS = ["\u5F88\u5DEE", "\u8F83\u5DEE", "\u4E00\u822C", "\u597D", "\u5F88\u597D"];
+function Rating({
+  value = 0,
+  max = 5,
+  size = 24,
+  activeColor = "#f59e0b",
+  inactiveColor = "#d4d4d8",
+  interactive = true,
+  onChange,
+  showValue = true,
+  formatLabel,
+  starLabels = DEFAULT_STAR_LABELS,
+  half = false,
+  "aria-label": ariaLabel,
+  "data-testid": dataTestId,
+  className,
+  style
+}) {
+  const [hoverValue, setHoverValue] = (0, import_react63.useState)(null);
+  const [internalValue, setInternalValue] = (0, import_react63.useState)(value);
+  const currentValue = interactive ? hoverValue ?? internalValue : value;
+  const safeValue = Math.max(0, Math.min(currentValue, max));
+  const handleClick = (0, import_react63.useCallback)(
+    (starIndex, event) => {
+      if (!interactive) return;
+      let newValue;
+      if (half) {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const isHalf = x < rect.width / 2;
+        newValue = isHalf ? starIndex + 0.5 : starIndex + 1;
+      } else {
+        newValue = starIndex + 1;
+      }
+      setInternalValue(newValue);
+      onChange?.(newValue);
+    },
+    [interactive, half, onChange]
+  );
+  const handleMouseEnter = (0, import_react63.useCallback)(
+    (starIndex, event) => {
+      if (!interactive || !half) {
+        setHoverValue(starIndex + 1);
+        return;
+      }
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const isHalf = x < rect.width / 2;
+      setHoverValue(isHalf ? starIndex + 0.5 : starIndex + 1);
+    },
+    [interactive, half]
+  );
+  const handleMouseLeave = (0, import_react63.useCallback)(() => {
+    setHoverValue(null);
+  }, []);
+  const displayValue = hoverValue ?? internalValue;
+  const renderStar = (starIndex) => {
+    const fillRatio = Math.min(1, Math.max(0, displayValue - starIndex));
+    const isHalfFilled = half && fillRatio > 0 && fillRatio < 1;
+    const isFilled = fillRatio >= 1;
+    const label2 = starLabels?.[starIndex] ?? `${starIndex + 1} star${starIndex > 0 ? "s" : ""}`;
+    return /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
+      "span",
+      {
+        role: "radio",
+        "aria-checked": isFilled,
+        "aria-label": label2,
+        tabIndex: interactive ? 0 : -1,
+        "data-testid": dataTestId ? `${dataTestId}-star-${starIndex}` : void 0,
+        "data-star-index": starIndex,
+        "data-filled": isFilled ? "true" : "false",
+        "data-half": isHalfFilled ? "true" : "false",
+        onClick: (e) => handleClick(starIndex, e),
+        onMouseMove: (e) => handleMouseEnter(starIndex, e),
+        onKeyDown: (e) => {
+          if (!interactive) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setInternalValue(starIndex + 1);
+            onChange?.(starIndex + 1);
+          }
+          if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+            e.preventDefault();
+            const next = Math.min(starIndex + 1, max - 1);
+            setHoverValue(next + 1);
+            setInternalValue(next + 1);
+            onChange?.(next + 1);
+          }
+          if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+            e.preventDefault();
+            const prev = Math.max(starIndex - 1, 0);
+            setHoverValue(prev + 1);
+            setInternalValue(prev + 1);
+            onChange?.(prev + 1);
+          }
+        },
+        style: {
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: size,
+          height: size,
+          cursor: interactive ? "pointer" : "default",
+          position: "relative",
+          outline: "none"
+        },
+        children: /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(
+          "svg",
+          {
+            viewBox: "0 0 24 24",
+            width: size,
+            height: size,
+            "aria-hidden": "true",
+            style: { display: "block" },
+            children: [
+              half ? /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(import_jsx_runtime96.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
+                  "path",
+                  {
+                    d: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
+                    fill: inactiveColor
+                  }
+                ),
+                fillRatio > 0 && /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
+                  "path",
+                  {
+                    d: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
+                    fill: activeColor,
+                    clipPath: `url(#rating-half-clip-${starIndex})`
+                  }
+                )
+              ] }) : /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
+                "path",
+                {
+                  d: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
+                  fill: isFilled ? activeColor : inactiveColor
+                }
+              ),
+              half && /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("clipPath", { id: `rating-half-clip-${starIndex}`, children: /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("rect", { x: "0", y: "0", width: fillRatio * 24, height: "24" }) }) })
+            ]
+          }
+        )
+      },
+      starIndex
+    );
+  };
+  const label = formatLabel ? formatLabel(safeValue, max) : `${safeValue} / ${max}`;
+  return /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(
+    "div",
+    {
+      "data-testid": dataTestId,
+      className,
+      role: "radiogroup",
+      "aria-label": ariaLabel ?? "\u8BC4\u5206",
+      onMouseLeave: handleMouseLeave,
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        ...style
+      },
+      children: [
+        Array.from({ length: max }, (_, i) => renderStar(i)),
+        showValue && /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
+          "span",
+          {
+            "data-testid": dataTestId ? `${dataTestId}-label` : void 0,
+            style: {
+              marginLeft: 8,
+              fontSize: 14,
+              fontWeight: 600,
+              color: activeColor,
+              minWidth: 50
+            },
+            children: label
+          }
+        )
+      ]
+    }
+  );
+}
+
+// src/components/BranchSelector.tsx
+var import_react64 = require("react");
+var import_jsx_runtime97 = require("react/jsx-runtime");
+function findNodeById(nodes, id) {
+  for (const n of nodes) {
+    if (n.id === id) return n;
+    if (n.children) {
+      const found = findNodeById(n.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+function collectLeafIds(nodes) {
+  const result = [];
+  for (const n of nodes) {
+    if (n.children && n.children.length > 0) {
+      result.push(...collectLeafIds(n.children));
+    } else {
+      result.push(n.id);
+    }
+  }
+  return result;
+}
+function BranchNode({
+  node,
+  depth,
+  selectedId,
+  expandedIds,
+  onToggle,
+  onSelect,
+  defaultExpandDepth
+}) {
+  const hasChildren = node.children && node.children.length > 0;
+  const isExpanded = expandedIds.has(node.id);
+  const isSelected = selectedId === node.id;
+  const [initialized] = (0, import_react64.useState)(() => {
+    if (defaultExpandDepth < 0 || depth < defaultExpandDepth) {
+      onToggle(node.id);
+    }
+    return true;
+  });
+  void initialized;
+  const typeIcon = (0, import_react64.useMemo)(() => {
+    switch (node.type) {
+      case "region":
+        return "\u{1F3E2}";
+      case "brand":
+        return "\u{1F3EC}";
+      case "store":
+        return "\u{1F3EA}";
+      default:
+        return "\u{1F4C1}";
+    }
+  }, [node.type]);
+  return /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)(
+      "button",
+      {
+        type: "button",
+        className: `branch-node-row${isSelected ? " branch-node-row--selected" : ""}${node.disabled ? " branch-node-row--disabled" : ""}`,
+        style: { paddingLeft: `${12 + depth * 20}px` },
+        disabled: node.disabled,
+        onClick: () => {
+          if (!node.disabled) {
+            if (hasChildren) onToggle(node.id);
+            onSelect(node.id);
+          }
+        },
+        "aria-selected": isSelected,
+        "aria-disabled": node.disabled,
+        children: [
+          hasChildren && /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("span", { className: "branch-node-chevron", "aria-hidden": true, children: isExpanded ? "\u25BE" : "\u25B8" }),
+          /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("span", { className: "branch-node-icon", "aria-hidden": true, children: typeIcon }),
+          /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("span", { className: "branch-node-label", children: node.label })
+        ]
+      }
+    ),
+    hasChildren && isExpanded && /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("div", { className: "branch-node-children", children: node.children.map((child) => /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(
+      BranchNode,
+      {
+        node: child,
+        depth: depth + 1,
+        selectedId,
+        expandedIds,
+        onToggle,
+        onSelect,
+        defaultExpandDepth
+      },
+      child.id
+    )) })
+  ] });
+}
+function BranchSelector({
+  nodes,
+  value,
+  onChange,
+  defaultExpandDepth = 0,
+  emptyLabel = "\u6682\u65E0\u6570\u636E",
+  disabled = false,
+  className = ""
+}) {
+  const [expandedIds, setExpandedIds] = (0, import_react64.useState)(() => /* @__PURE__ */ new Set());
+  const instanceId = (0, import_react64.useId)();
+  const selectedNode = (0, import_react64.useMemo)(
+    () => value ? findNodeById(nodes, value) : null,
+    [nodes, value]
+  );
+  const handleToggle = (0, import_react64.useCallback)((id) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+  const handleSelect = (0, import_react64.useCallback)(
+    (id) => {
+      if (!disabled && onChange) onChange(id);
+    },
+    [disabled, onChange]
+  );
+  if (nodes.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("div", { className: "branch-selector branch-selector--empty", children: emptyLabel });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(
+    "div",
+    {
+      className: `branch-selector${className ? ` ${className}` : ""}`,
+      role: "tree",
+      "aria-label": "\u7EC4\u7EC7\u67B6\u6784\u9009\u62E9\u5668",
+      "aria-multiselectable": "false",
+      "data-instance": instanceId,
+      children: nodes.map((node) => /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(
+        BranchNode,
+        {
+          node,
+          depth: 0,
+          selectedId: value ?? null,
+          expandedIds,
+          onToggle: handleToggle,
+          onSelect: handleSelect,
+          defaultExpandDepth
+        },
+        node.id
+      ))
+    }
+  );
+}
+BranchSelector.displayName = "BranchSelector";
+
+// src/SmartTrendChart/SmartTrendChart.tsx
+var import_react65 = require("react");
+var import_jsx_runtime98 = require("react/jsx-runtime");
+function SmartTrendChart({
+  data,
+  title,
+  yAxisLabel,
+  barColor = "#3b82f6",
+  targetColor = "#ef4444",
+  height = 240,
+  showValues = true,
+  showTarget = false,
+  loading = false,
+  emptyText = "\u6682\u65E0\u8D8B\u52BF\u6570\u636E",
+  className = "",
+  "data-testid": dataTestId = "smart-trend-chart"
+}) {
+  const maxValue = (0, import_react65.useMemo)(
+    () => Math.max(...data.map((d) => Math.max(d.value, d.target ?? 0)), 1),
+    [data]
+  );
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+      "div",
+      {
+        className: "smart-trend-chart smart-trend-chart--loading",
+        "data-testid": `${dataTestId}-loading`,
+        style: { height, display: "flex", alignItems: "center", justifyContent: "center" },
+        children: /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          "div",
+          {
+            className: "smart-trend-chart__skeleton",
+            style: { width: "80%", height: 16, background: "#e5e7eb", borderRadius: 4 }
+          }
+        )
+      }
+    );
+  }
+  if (!data || data.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+      "div",
+      {
+        className: "smart-trend-chart smart-trend-chart--empty",
+        "data-testid": `${dataTestId}-empty`,
+        style: {
+          height,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#9ca3af"
+        },
+        children: emptyText
+      }
+    );
+  }
+  const chartPadding = 20;
+  const chartBottom = 32;
+  const chartTop = 10;
+  const chartHeight = height - chartPadding - chartBottom;
+  const barWidth = Math.max(20, Math.min(60, 100 / data.length * 0.6));
+  const svgChildren = [];
+  if (showTarget) {
+    for (let i = 1; i < data.length; i++) {
+      const prev = data[i - 1];
+      const curr = data[i];
+      if (!prev || !curr) continue;
+      if (prev.target == null || curr.target == null) continue;
+      const x1 = chartPadding + (i - 1) / Math.max(data.length - 1, 1) * (100 - chartPadding * 2);
+      const y1 = chartTop + (1 - (prev.target ?? 0) / maxValue) * (chartHeight - chartTop);
+      const x2 = chartPadding + i / Math.max(data.length - 1, 1) * (100 - chartPadding * 2);
+      const y2 = chartTop + (1 - (curr.target ?? 0) / maxValue) * (chartHeight - chartTop);
+      svgChildren.push(
+        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          "line",
+          {
+            x1: `${x1}%`,
+            y1,
+            x2: `${x2}%`,
+            y2,
+            stroke: targetColor,
+            strokeWidth: 1.5,
+            strokeDasharray: "4 2",
+            "data-testid": `${dataTestId}-target-line-${i}`
+          },
+          `target-line-${i}`
+        )
+      );
+    }
+    for (let i = 0; i < data.length; i++) {
+      const point = data[i];
+      if (!point) continue;
+      if (point.target == null) continue;
+      const x = chartPadding + i / Math.max(data.length - 1, 1) * (100 - chartPadding * 2);
+      const y = chartTop + (1 - point.target / maxValue) * (chartHeight - chartTop);
+      svgChildren.push(
+        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          "circle",
+          {
+            cx: `${x}%`,
+            cy: y,
+            r: 3,
+            fill: targetColor,
+            "data-testid": `${dataTestId}-target-${i}`
+          },
+          `target-${i}`
+        )
+      );
+    }
+  }
+  for (let i = 0; i < data.length; i++) {
+    const point = data[i];
+    if (!point) continue;
+    const barH = point.value / maxValue * (chartHeight - chartTop);
+    const xPercent = chartPadding + i / Math.max(data.length - 1, 1) * (100 - chartPadding * 2);
+    const barElements = [
+      /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        "rect",
+        {
+          x: `calc(${xPercent}% - ${barWidth / 2}px)`,
+          y: chartHeight - barH,
+          width: barWidth,
+          height: barH,
+          rx: 4,
+          fill: point.color ?? barColor,
+          "data-testid": `${dataTestId}-bar-${i}`
+        },
+        `rect-${i}`
+      )
+    ];
+    if (showValues) {
+      barElements.push(
+        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          "text",
+          {
+            x: `${xPercent}%`,
+            y: chartHeight - barH - 4,
+            textAnchor: "middle",
+            fontSize: 11,
+            fill: "#6b7280",
+            "data-testid": `${dataTestId}-value-${i}`,
+            children: point.value
+          },
+          `val-${i}`
+        )
+      );
+    }
+    barElements.push(
+      /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        "text",
+        {
+          x: `${xPercent}%`,
+          y: height - 6,
+          textAnchor: "middle",
+          fontSize: 10,
+          fill: "#9ca3af",
+          "data-testid": `${dataTestId}-label-${i}`,
+          children: point.label
+        },
+        `label-${i}`
+      )
+    );
+    svgChildren.push(/* @__PURE__ */ (0, import_jsx_runtime98.jsx)("g", { children: barElements }, `bar-${i}`));
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)(
+    "div",
+    {
+      className: `smart-trend-chart ${className}`,
+      "data-testid": dataTestId,
+      style: { fontFamily: "system-ui, sans-serif" },
+      children: [
+        title && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          "div",
+          {
+            className: "smart-trend-chart__header",
+            "data-testid": `${dataTestId}-title`,
+            style: {
+              fontSize: 14,
+              fontWeight: 600,
+              color: "#374151",
+              marginBottom: 8,
+              padding: "0 4px"
+            },
+            children: title
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)(
+          "div",
+          {
+            className: "smart-trend-chart__canvas",
+            style: { position: "relative", height, width: "100%" },
+            children: [
+              yAxisLabel && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+                "div",
+                {
+                  style: {
+                    position: "absolute",
+                    left: 0,
+                    top: chartTop,
+                    fontSize: 10,
+                    color: "#9ca3af",
+                    transform: "rotate(-90deg) translateX(-50%)",
+                    transformOrigin: "left center",
+                    whiteSpace: "nowrap"
+                  },
+                  children: yAxisLabel
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+                "svg",
+                {
+                  width: "100%",
+                  height,
+                  "data-testid": `${dataTestId}-svg`,
+                  style: { display: "block", overflow: "visible" },
+                  children: svgChildren
+                }
+              )
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  AIDecisionPanel,
+  AISummaryCard,
+  Accordion,
+  Alert,
+  AnomalyAlertPanel,
+  Avatar,
+  AvatarGroup,
+  Badge,
+  BatchSelectionBar,
+  BranchSelector,
+  Breadcrumb,
+  Calendar,
+  Card,
+  Carousel,
+  Chart,
+  Checkbox,
+  CombinedDetailPage,
+  Combobox,
+  CommandPalette,
+  ConciergePanel,
+  ConfigurationPosturePanel,
+  ConfirmDialog,
+  ContentSwitcher,
+  ContextMenu,
+  CopyToClipboard,
+  DataTable,
+  DateRangePicker,
+  DateTimePicker,
+  DecisionAuditTrail,
+  DescriptionList,
+  DetailActionBar,
+  DetailClosureBar,
+  DetailShell,
+  DeviceInspectionPanel,
+  DeviceStatusPanel,
+  Drawer,
+  Dropdown,
+  EmptyState,
+  ErrorBoundary,
+  FileUpload,
+  FilterBar,
+  FilterChips,
+  FormField,
+  FormPageScaffold,
+  FormSubmitFeedback,
+  FoundationAlertAcknowledgeActionButton,
+  FoundationAlertDemoListPage,
+  FoundationAlertDetailView,
+  FoundationAlertDetailsReadout,
+  FoundationAlertLinkedAlertGridReadout,
+  FoundationAlertLinkedFocusBarReadout,
+  FoundationAlertLinkedOverviewSection,
+  FoundationAlertLinkedOverviewStatsReadout,
+  FoundationAlertLinkedOverviewSurface,
+  FoundationAlertListPageSection,
+  FoundationAlertOverviewReadout,
+  FoundationAlertPanelFrame,
+  FoundationAlertPanelOwnerSummaryReadout,
+  FoundationAlertPanelSelectedAlertReadout,
+  FoundationAlertPanelSourceSummaryReadout,
+  FoundationAlertPanelSummaryDigestReadout,
+  FoundationAlertPanelSurface,
+  FoundationAlertPanelTimelineReadout,
+  FoundationAlertPresetDetailRoute,
+  FoundationAlertRuntimeCallbackStalledReadout,
+  FoundationAlertTableCard,
+  FoundationConsumerWiringSection,
+  FrontDeskPanel,
+  GaugeChart,
+  GovernanceQuickViewSection,
+  HeatmapChart,
+  ImagePreview,
+  InfoRow,
+  Input,
+  InputNumber,
+  ListToolbar,
+  LoadingSkeleton,
+  MemberLevelDistribution,
+  MemberTierDistribution,
+  Modal,
+  MultiSelect,
+  NotificationCenter,
+  OperationsManagerDashboard,
+  PageShell,
+  PaginatedDataTableCard,
+  Pagination,
+  PasswordInput,
+  Popover,
+  PortalConsumerGovernanceSection,
+  PortalList,
+  Progress,
+  QuickStats,
+  RadioGroup,
+  Rating,
+  RuntimeGovernancePanelTemplate,
+  RuntimeOperationDateTimeReadout,
+  RuntimeOperationDemoListPage,
+  RuntimeOperationDetailView,
+  RuntimeOperationIdReadout,
+  RuntimeOperationOverviewReadout,
+  RuntimeOperationPresetDetailRoute,
+  RuntimeOperationReceiptListReadout,
+  RuntimeOperationStatusReadout,
+  RuntimeOperationTargetReadout,
+  RuntimeOperationTimelineReadout,
+  RuntimeOperationToolbar,
+  RuntimeOperationTypeReadout,
+  RuntimeOperationsListPageSection,
+  RuntimeOperationsTableCard,
+  RuntimePanelFeedback,
+  RuntimePanelFrame,
+  RuntimePanelGrid,
+  RuntimePresetCard,
+  RuntimePresetSelector,
+  RuntimeReceiptEvents,
+  RuntimeReceiptStatusCard,
+  SalesClerkTool,
+  ScrollArea,
+  SearchFilterInput,
+  Select,
+  Slider,
+  SmartTrendChart,
+  StatCard,
+  StatusBadge,
+  StatusBadgeGroup,
+  Stepper,
+  StoreManagerDashboard,
+  SubmitButton,
+  Switch,
+  Table,
+  Tabs,
+  Tag,
+  TagGroup,
+  TimePicker,
+  Timeline,
+  ToastContainer,
+  Tooltip,
+  Tree,
+  VirtualizedList,
+  WorkspaceBreadcrumb,
+  buildFoundationAlertDrilldownSections,
+  buildFoundationAlertLytConnectionGovernanceSections,
+  buildFoundationAlertRecordFromDrilldown,
+  canReplayRuntimePanelAction,
+  canReplayRuntimePanelReceipt,
+  collectLeafIds,
+  computeDeviceSummary,
+  createFoundationAdminGovernanceStatsCopy,
+  createFoundationAlertDetailMockMap,
+  createFoundationAlertLinkedOverviewStats,
+  createFoundationAlertMockRecords,
+  createFoundationAlertNextNavigationBindings,
+  createFoundationAlertPanelActionButtonStyle,
+  createFoundationAlertPanelFeedbackStyle,
+  createFoundationAlertPanelFilterButtonStyle,
+  createFoundationAlertPanelFilterChipStyle,
+  createFoundationAlertPanelSectionStyle,
+  createFoundationAlertPanelSelectionButtonStyle,
+  createFoundationAlertPanelShortcutCardStyle,
+  createFoundationAlertPanelSummaryCardStyle,
+  createFoundationAlertTableColumns,
+  createRuntimeOperationDetailMockMap,
+  createRuntimeOperationMockRecords,
+  createRuntimeOperationTableColumns,
+  createRuntimeOperationToolbarProps,
+  createRuntimeReceiptStatusCard,
+  createRuntimeReceiptStatusCardProps,
+  describeRuntimeCallbackStalledEscalation,
+  executeRuntimePanelOperation,
+  findNodeById,
+  formatFoundationAlertActionLabel,
+  formatFoundationAlertDrilldownDateTime,
+  formatRuntimeCallbackStalledDuration,
+  foundationAdminGovernanceListPreset,
+  foundationAdminGovernanceSourceLabels,
+  foundationAlertDetailDemoPresets,
+  foundationAlertListDemoPresets,
+  foundationAlertPanelThemePresets,
+  foundationAlertSeverityLabels,
+  foundationAlertStatusLabels,
+  getRuntimePanelTenantId,
+  hasRuntimePanelReceiptCode,
+  joinRuntimeScopeSummary,
+  listPageStatCardStyle,
+  mapFoundationGovernanceAlertsToRecords,
+  refreshFoundationAlertSelection,
+  runtimeOperationDetailDemoPresets,
+  runtimeOperationListDemoPresets,
+  runtimeOperationStatusLabels,
+  runtimeOperationStatusVariants,
+  summarizeRuntimePanelReceipt,
+  useAlert,
+  useFormSubmit,
+  useFoundationAlertDemoAcknowledge,
+  useFoundationAlertDrilldownQuery,
+  useFoundationAlertFocusSync,
+  useFoundationAlertGovernanceState,
+  useFoundationAlertLinkedFocusQuery,
+  useFoundationAlertMutationController,
+  useFoundationAlertTimelineQueryState,
+  useFoundationAlertViewLinkController,
+  useFoundationAsyncLoader,
+  useListPageSectionState,
+  useNotificationSummary,
+  usePagination,
+  useRuntimePanelState,
+  useRuntimePresetSelection,
+  useSearchFilter,
+  useSortedItems,
+  useToast,
+  validateFormFields
+});

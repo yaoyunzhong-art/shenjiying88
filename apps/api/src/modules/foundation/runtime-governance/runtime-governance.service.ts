@@ -43,6 +43,8 @@ type RuntimeGovernanceScopedSubmitRequest = RuntimeGovernanceSubmitRequest & {
 type RuntimeGovernanceScopedActionRequest<T> = T & {
   actorId?: string
   tenantId?: string
+  brandId?: string
+  storeId?: string
 }
 
 type RuntimeGovernanceOperationsOverview = {

@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import test, { describe } from 'node:test';
 import type { RequestTenantContext } from '../tenant/tenant.types';
-import { QueueType } from './queue.entity';
+import { QueueType, QueueStatus } from './queue.entity';
 import { toQueueEntryContract } from './queue.contract';
 
 // ── Mock NestJS decorators ──────────────────────────────────────────
@@ -116,7 +116,7 @@ function createMockQueueService(): MockQueueService {
       partySize: 1,
       resourceId: input.resourceId,
       resourceName: input.resourceName,
-      status: 'waiting' as const,
+      status: QueueStatus.Waiting,
       priority: input.priority ?? 0,
       estimatedWaitMin: 5,
       actualWaitMin: undefined,
@@ -138,7 +138,7 @@ function createMockQueueService(): MockQueueService {
       partySize: 1,
       resourceId: 'machine-1',
       resourceName: '游戏机1号',
-      status: 'cancelled' as const,
+      status: QueueStatus.Cancelled,
       priority: 0,
       estimatedWaitMin: 5,
       actualWaitMin: undefined,
@@ -160,7 +160,7 @@ function createMockQueueService(): MockQueueService {
       partySize: 1,
       resourceId,
       resourceName: '游戏机1号',
-      status: 'called' as const,
+      status: QueueStatus.Called,
       priority: 0,
       estimatedWaitMin: 5,
       actualWaitMin: 3,
@@ -182,7 +182,7 @@ function createMockQueueService(): MockQueueService {
       partySize: 2,
       resourceId: 'machine-1',
       resourceName: '游戏机1号',
-      status: 'serving' as const,
+      status: QueueStatus.Serving,
       priority: 0,
       estimatedWaitMin: 10,
       actualWaitMin: 5,
@@ -204,7 +204,7 @@ function createMockQueueService(): MockQueueService {
       partySize: 1,
       resourceId: 'machine-1',
       resourceName: '游戏机1号',
-      status: 'completed' as const,
+      status: QueueStatus.Completed,
       priority: 0,
       estimatedWaitMin: 5,
       actualWaitMin: 8,
@@ -226,7 +226,7 @@ function createMockQueueService(): MockQueueService {
       partySize: 1,
       resourceId: 'machine-1',
       resourceName: '游戏机1号',
-      status: 'no_show' as const,
+      status: QueueStatus.NoShow,
       priority: 0,
       estimatedWaitMin: 5,
       actualWaitMin: undefined,
@@ -263,7 +263,7 @@ function createMockQueueService(): MockQueueService {
             partySize: 1,
             resourceId,
             resourceName: '游戏机2号',
-            status: 'waiting' as const,
+            status: QueueStatus.Waiting,
             priority: 0,
             estimatedWaitMin: 10,
             actualWaitMin: undefined,

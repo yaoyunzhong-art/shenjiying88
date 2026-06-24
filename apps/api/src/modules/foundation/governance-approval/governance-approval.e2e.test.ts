@@ -196,10 +196,8 @@ class TestGovernanceApprovalController {
 
   constructor() {
     const prismaStub = buildPrismaStub()
-    const runtimeGovStub = buildRuntimeGovernanceStub()
     this.service = new GovernanceApprovalService(
-      prismaStub as never,
-      runtimeGovStub as never
+      prismaStub as never
     )
   }
 

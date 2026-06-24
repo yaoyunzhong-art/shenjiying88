@@ -454,5 +454,8 @@ export type {
 } from './components/AISummaryCard';
 export { Rating } from './components/Rating';
 export type { RatingProps } from './components/Rating';
+export { BranchSelector, findNodeById, collectLeafIds } from './components/BranchSelector';
+export type { BranchSelectorNode, BranchSelectorProps } from './components/BranchSelector';
+
 export { SmartTrendChart } from './SmartTrendChart';
 export type { SmartTrendChartProps, TrendDataPoint } from './SmartTrendChart';

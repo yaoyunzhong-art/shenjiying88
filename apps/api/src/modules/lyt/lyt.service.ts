@@ -184,9 +184,7 @@ export class LytService {
           : 'LYT webhook 已接收并挂入统一 runtime callback 治理链。',
       idempotencyKey: `lyt-webhook-callback:${input.aggregateId}`,
       actorId: 'lyt-webhook',
-      tenantId: input.standardizedEvent.tenantId,
-      brandId: input.standardizedEvent.brandId,
-      storeId: input.standardizedEvent.storeId
+      tenantId: input.standardizedEvent.tenantId
     })
   }
 

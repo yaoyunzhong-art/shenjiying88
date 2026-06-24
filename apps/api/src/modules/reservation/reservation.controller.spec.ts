@@ -133,7 +133,7 @@ describe('ReservationController', () => {
       createReservation(ctrl, TENANT_A, { type: ReservationType.Equipment });
       createReservation(ctrl, TENANT_B); // 不同租户
 
-      const result = ctrl.findAll(TENANT_A, {}) as Array<Record<string, unknown>>;
+      const result = ctrl.findAll(TENANT_A, {}) as unknown as Array<Record<string, unknown>>;
       assert.equal(result.length, 2, '只返回 tenant_a 的 2 条');
     });
 
@@ -147,7 +147,7 @@ describe('ReservationController', () => {
 
       const result = ctrl.findAll(TENANT_A, {
         type: ReservationType.Equipment,
-      }) as Array<Record<string, unknown>>;
+      }) as unknown as Array<Record<string, unknown>>;
       assert.equal(result.length, 2);
     });
 
@@ -296,9 +296,8 @@ describe('ReservationController', () => {
 
     test('反例: 缺少必填参数抛出 400', () => {
       const { ctrl } = createController();
-      // @ts-expect-error - 模拟缺失参数
       assert.throws(
-        () => ctrl.checkConflict(TENANT_A, null, null, null),
+        () => ctrl.checkConflict(TENANT_A, null as unknown as string, null as unknown as string, null as unknown as string),
         /resourceId, startTime, and endTime are required/,
       );
     });

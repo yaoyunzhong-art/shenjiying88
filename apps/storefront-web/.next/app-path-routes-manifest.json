@@ -1,0 +1,17 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/coupons/[id]/page": "/coupons/[id]",
+  "/alerts/[id]/page": "/alerts/[id]",
+  "/alerts/page": "/alerts",
+  "/members/[id]/page": "/members/[id]",
+  "/insights/page": "/insights",
+  "/members/new/page": "/members/new",
+  "/coupons/page": "/coupons",
+  "/members/page": "/members",
+  "/products/[id]/page": "/products/[id]",
+  "/operations/[id]/page": "/operations/[id]",
+  "/products/page": "/products",
+  "/operations/page": "/operations",
+  "/[...storeScope]/page": "/[...storeScope]",
+  "/page": "/"
+}

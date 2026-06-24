@@ -173,7 +173,7 @@ test('跨模块链#17 正例: 预约创建→确认→完成→通知→Metrics'
       .post('/reservation')
       .send({
         tenantId,
-        type: ReservationType.Coaching,
+        type: ReservationType.Service,
         resourceId: 'c1',
         resourceName: '金牌教练',
         userId: 'm1',
@@ -245,7 +245,7 @@ test('跨模块链#17 正例: 预约取消→通知', async () => {
       .post('/reservation')
       .send({
         tenantId,
-        type: ReservationType.Coaching,
+        type: ReservationType.Service,
         resourceId: 'c2',
         resourceName: '李教练',
         userId: 'm2',
@@ -286,7 +286,7 @@ test('跨模块链#17 反例: 已取消预约不能再次取消', async () => {
       .post('/reservation')
       .send({
         tenantId,
-        type: ReservationType.Coaching,
+        type: ReservationType.Service,
         resourceId: 'c3',
         resourceName: '王教练',
         userId: 'm3',
@@ -350,7 +350,7 @@ test('跨模块链#17 反例: 跨租户隔离', async () => {
       .post('/reservation')
       .send({
         tenantId: 'tA',
-        type: ReservationType.Coaching,
+        type: ReservationType.Service,
         resourceId: 'cA',
         resourceName: 'A教练',
         userId: 'mA',
