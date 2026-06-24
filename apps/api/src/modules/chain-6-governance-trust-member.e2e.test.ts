@@ -26,11 +26,12 @@ import test from 'node:test'
 import { randomUUID } from 'node:crypto'
 import { Test } from '@nestjs/testing'
 import { ApprovalStatus, FoundationScopeType } from '@prisma/client'
-import { GovernanceApprovalService } from './foundation/governance-approval/governance-approval.service'
+import { GovernanceApprovalService, type GovernanceApprovalOutcomeEvent } from './foundation/governance-approval/governance-approval.service'
 import type { GovernanceApprovalSnapshot } from './foundation/governance-approval/governance-approval'
 import {
   MemberApprovalOutcomeRecorder,
-  MEMBER_APPROVAL_OUTCOME_RESOURCE_TYPE
+  MEMBER_APPROVAL_OUTCOME_RESOURCE_TYPE,
+  type ApprovalOutcomeEvent
 } from './member/member-approval-recorder'
 
 // ── Audit Log 内存仓储 ───────────────────────────────────────────────────
@@ -227,7 +228,7 @@ async function buildChainHarness() {
   // recorder 写入 auditLog。这是 chain-6 跨模块链路的关键绑定。
   const dispose = approvalService.registerApprovalOutcomeHook(
     MEMBER_APPROVAL_OUTCOME_RESOURCE_TYPE,
-    (event) => memberRecorder.recordOutcome(event)
+    (event: GovernanceApprovalOutcomeEvent) => memberRecorder.recordOutcome(event as unknown as ApprovalOutcomeEvent)
   )
   return {
     approvalService,

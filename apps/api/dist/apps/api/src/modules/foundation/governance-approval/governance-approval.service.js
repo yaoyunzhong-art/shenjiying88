@@ -30,20 +30,105 @@ let GovernanceApprovalService = class GovernanceApprovalService {
     async materializeApproval(input) {
         return (0, governance_approval_1.materializeGovernanceApproval)(this.prisma, input);
     }
+    // 从原始数据库记录获取层级上下文
+    async getApprovalScope(approvalTicket) {
+        try {
+            const record = await this.prisma.governanceApproval?.findUnique({
+                where: { approvalTicket }
+            });
+            if (record && typeof record === 'object') {
+                return {
+                    tenantId: record.tenantId ?? undefined,
+                    brandId: record.brandId ?? undefined,
+                    storeId: record.storeId ?? undefined
+                };
+            }
+        }
+        catch {
+            // 不回退
+        }
+        return {};
+    }
     async decideApproval(input) {
-        return (0, governance_approval_1.decideGovernanceApproval)(this.prisma, input);
+        // 获取当前状态（emit 需要 previousStatus）
+        const before = await (0, governance_approval_1.getGovernanceApprovalByTicket)(this.prisma, input.approvalTicket);
+        const scope = await this.getApprovalScope(input.approvalTicket);
+        const result = await (0, governance_approval_1.decideGovernanceApproval)(this.prisma, input);
+        await this.emitOutcomeEvent({
+            resourceType: before.resourceType ?? 'unknown',
+            resourceKey: before.resourceKey ?? 'unknown',
+            ...scope,
+            stage: input.status,
+            previousStatus: before.status,
+            decisionNote: input.decisionNote ?? null,
+            approval: result
+        });
+        return result;
     }
     async cancelApproval(input) {
-        return (0, governance_approval_1.cancelGovernanceApproval)(this.prisma, input);
+        const before = await (0, governance_approval_1.getGovernanceApprovalByTicket)(this.prisma, input.approvalTicket);
+        const scope = await this.getApprovalScope(input.approvalTicket);
+        const result = await (0, governance_approval_1.cancelGovernanceApproval)(this.prisma, input);
+        await this.emitOutcomeEvent({
+            resourceType: before.resourceType ?? 'unknown',
+            resourceKey: before.resourceKey ?? 'unknown',
+            ...scope,
+            stage: 'CANCELLED',
+            previousStatus: before.status,
+            decisionNote: input.cancelReason ?? null,
+            approval: result
+        });
+        return result;
     }
     async resubmitApproval(input) {
-        return (0, governance_approval_1.resubmitGovernanceApproval)(this.prisma, input);
+        const before = await (0, governance_approval_1.getGovernanceApprovalByTicket)(this.prisma, input.approvalTicket);
+        const scope = await this.getApprovalScope(input.approvalTicket);
+        const result = await (0, governance_approval_1.resubmitGovernanceApproval)(this.prisma, input);
+        // 发出 SUPERSEDED 事件（原票据被替代）
+        await this.emitOutcomeEvent({
+            resourceType: before.resourceType ?? 'unknown',
+            resourceKey: before.resourceKey ?? 'unknown',
+            ...scope,
+            stage: 'SUPERSEDED',
+            previousStatus: before.status,
+            decisionNote: input.resubmitReason ?? null,
+            approval: {
+                ...before,
+                ticket: input.approvalTicket,
+                status: 'SUPERSEDED'
+            }
+        });
+        return result;
     }
     async markExecuted(input) {
-        return (0, governance_approval_1.markGovernanceApprovalExecuted)(this.prisma, input);
+        const before = await (0, governance_approval_1.getGovernanceApprovalByTicket)(this.prisma, input.approvalTicket);
+        const scope = await this.getApprovalScope(input.approvalTicket);
+        const result = await (0, governance_approval_1.markGovernanceApprovalExecuted)(this.prisma, input);
+        await this.emitOutcomeEvent({
+            resourceType: before.resourceType ?? 'unknown',
+            resourceKey: before.resourceKey ?? 'unknown',
+            ...scope,
+            stage: 'EXECUTED',
+            previousStatus: before.status,
+            approval: result
+        });
+        return result;
     }
     async markExecutionFailed(input) {
-        return (0, governance_approval_1.markGovernanceApprovalExecutionFailed)(this.prisma, input);
+        const before = await (0, governance_approval_1.getGovernanceApprovalByTicket)(this.prisma, input.approvalTicket);
+        const scope = await this.getApprovalScope(input.approvalTicket);
+        const result = await (0, governance_approval_1.markGovernanceApprovalExecutionFailed)(this.prisma, input);
+        await this.emitOutcomeEvent({
+            resourceType: before.resourceType ?? 'unknown',
+            resourceKey: before.resourceKey ?? 'unknown',
+            ...scope,
+            stage: 'EXECUTION_FAILED',
+            previousStatus: before.status,
+            decisionNote: null,
+            failureReason: input.failureReason ?? null,
+            approval: result
+        });
+        return result;
     }
     // --------------- outcome 钩子管理 ---------------
     outcomeHooks = new Map();
