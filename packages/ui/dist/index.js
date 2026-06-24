@@ -41,6 +41,7 @@ __export(index_exports, {
   BatchSelectionBar: () => BatchSelectionBar,
   BranchSelector: () => BranchSelector,
   Breadcrumb: () => Breadcrumb,
+  Button: () => Button,
   Calendar: () => Calendar,
   Card: () => Card,
   Carousel: () => Carousel,
@@ -26973,9 +26974,106 @@ function WorkbenchHeader({
   );
 }
 
-// src/SmartTrendChart/SmartTrendChart.tsx
-var import_react67 = require("react");
+// src/components/Button.tsx
+var import_react67 = __toESM(require("react"));
 var import_jsx_runtime100 = require("react/jsx-runtime");
+var VARIANT_STYLES7 = {
+  primary: {
+    background: "#1d4ed8",
+    color: "#f8fafc",
+    border: "1px solid rgba(96, 165, 250, 0.28)"
+  },
+  secondary: {
+    background: "rgba(71, 85, 105, 0.55)",
+    color: "#f8fafc",
+    border: "1px solid rgba(148, 163, 184, 0.22)"
+  },
+  danger: {
+    background: "#dc2626",
+    color: "#f8fafc",
+    border: "1px solid rgba(252, 165, 165, 0.28)"
+  },
+  ghost: {
+    background: "transparent",
+    color: "#94a3b8",
+    border: "1px solid transparent"
+  },
+  outline: {
+    background: "transparent",
+    color: "#94a3b8",
+    border: "1px solid rgba(148, 163, 184, 0.35)"
+  }
+};
+var SIZE_STYLES2 = {
+  sm: { padding: "6px 12px", fontSize: 12, borderRadius: 8 },
+  md: { padding: "10px 16px", fontSize: 14, borderRadius: 10 },
+  lg: { padding: "14px 20px", fontSize: 16, borderRadius: 12 }
+};
+var Button = import_react67.default.forwardRef(function Button2({
+  children,
+  variant = "primary",
+  size = "md",
+  loading = false,
+  disabled = false,
+  onClick,
+  type = "button",
+  block = false,
+  style,
+  className,
+  "data-testid": dataTestId
+}, ref) {
+  const isDisabled = disabled || loading;
+  return /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(
+    "button",
+    {
+      ref,
+      type,
+      disabled: isDisabled,
+      onClick: loading ? void 0 : onClick,
+      className,
+      "data-testid": dataTestId ?? "button",
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        fontWeight: 600,
+        lineHeight: 1.4,
+        opacity: isDisabled ? 0.6 : 1,
+        cursor: isDisabled ? "not-allowed" : "pointer",
+        transition: "opacity 0.15s, background 0.15s",
+        whiteSpace: "nowrap",
+        width: block ? "100%" : void 0,
+        ...VARIANT_STYLES7[variant],
+        ...SIZE_STYLES2[size],
+        ...style
+      },
+      children: [
+        loading && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+          "span",
+          {
+            style: {
+              display: "inline-block",
+              width: 14,
+              height: 14,
+              border: "2px solid currentColor",
+              borderTopColor: "transparent",
+              borderRadius: "50%",
+              animation: "m5-btn-spin 0.6s linear infinite",
+              opacity: 0.7
+            }
+          }
+        ),
+        children,
+        /* @__PURE__ */ (0, import_jsx_runtime100.jsx)("style", { children: `@keyframes m5-btn-spin { to { transform: rotate(360deg); } }` })
+      ]
+    }
+  );
+});
+
+// src/SmartTrendChart/SmartTrendChart.tsx
+var import_react68 = require("react");
+var import_jsx_runtime101 = require("react/jsx-runtime");
 function SmartTrendChart({
   data,
   title,
@@ -26990,18 +27088,18 @@ function SmartTrendChart({
   className = "",
   "data-testid": dataTestId = "smart-trend-chart"
 }) {
-  const maxValue = (0, import_react67.useMemo)(
+  const maxValue = (0, import_react68.useMemo)(
     () => Math.max(...data.map((d) => Math.max(d.value, d.target ?? 0)), 1),
     [data]
   );
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
       "div",
       {
         className: "smart-trend-chart smart-trend-chart--loading",
         "data-testid": `${dataTestId}-loading`,
         style: { height, display: "flex", alignItems: "center", justifyContent: "center" },
-        children: /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
           "div",
           {
             className: "smart-trend-chart__skeleton",
@@ -27012,7 +27110,7 @@ function SmartTrendChart({
     );
   }
   if (!data || data.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
       "div",
       {
         className: "smart-trend-chart smart-trend-chart--empty",
@@ -27045,7 +27143,7 @@ function SmartTrendChart({
       const x2 = chartPadding + i / Math.max(data.length - 1, 1) * (100 - chartPadding * 2);
       const y2 = chartTop + (1 - (curr.target ?? 0) / maxValue) * (chartHeight - chartTop);
       svgChildren.push(
-        /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
           "line",
           {
             x1: `${x1}%`,
@@ -27068,7 +27166,7 @@ function SmartTrendChart({
       const x = chartPadding + i / Math.max(data.length - 1, 1) * (100 - chartPadding * 2);
       const y = chartTop + (1 - point.target / maxValue) * (chartHeight - chartTop);
       svgChildren.push(
-        /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
           "circle",
           {
             cx: `${x}%`,
@@ -27088,7 +27186,7 @@ function SmartTrendChart({
     const barH = point.value / maxValue * (chartHeight - chartTop);
     const xPercent = chartPadding + i / Math.max(data.length - 1, 1) * (100 - chartPadding * 2);
     const barElements = [
-      /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
         "rect",
         {
           x: `calc(${xPercent}% - ${barWidth / 2}px)`,
@@ -27104,7 +27202,7 @@ function SmartTrendChart({
     ];
     if (showValues) {
       barElements.push(
-        /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
           "text",
           {
             x: `${xPercent}%`,
@@ -27120,7 +27218,7 @@ function SmartTrendChart({
       );
     }
     barElements.push(
-      /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
         "text",
         {
           x: `${xPercent}%`,
@@ -27134,16 +27232,16 @@ function SmartTrendChart({
         `label-${i}`
       )
     );
-    svgChildren.push(/* @__PURE__ */ (0, import_jsx_runtime100.jsx)("g", { children: barElements }, `bar-${i}`));
+    svgChildren.push(/* @__PURE__ */ (0, import_jsx_runtime101.jsx)("g", { children: barElements }, `bar-${i}`));
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)(
     "div",
     {
       className: `smart-trend-chart ${className}`,
       "data-testid": dataTestId,
       style: { fontFamily: "system-ui, sans-serif" },
       children: [
-        title && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+        title && /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
           "div",
           {
             className: "smart-trend-chart__header",
@@ -27158,13 +27256,13 @@ function SmartTrendChart({
             children: title
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)(
           "div",
           {
             className: "smart-trend-chart__canvas",
             style: { position: "relative", height, width: "100%" },
             children: [
-              yAxisLabel && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+              yAxisLabel && /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
                 "div",
                 {
                   style: {
@@ -27180,7 +27278,7 @@ function SmartTrendChart({
                   children: yAxisLabel
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
                 "svg",
                 {
                   width: "100%",
@@ -27199,8 +27297,8 @@ function SmartTrendChart({
 }
 
 // src/TierDistributionChart/TierDistributionChart.tsx
-var import_react68 = require("react");
-var import_jsx_runtime101 = require("react/jsx-runtime");
+var import_react69 = require("react");
+var import_jsx_runtime102 = require("react/jsx-runtime");
 var DEFAULT_SIZE = 240;
 var DEFAULT_EMPTY = "\u6682\u65E0\u7B49\u7EA7\u5206\u5E03\u6570\u636E";
 function TierDistributionChart({
@@ -27218,7 +27316,7 @@ function TierDistributionChart({
   const cy = size / 2;
   const outerRadius = size * 0.38;
   const innerRadius = size * 0.24;
-  const arcs = (0, import_react68.useMemo)(() => {
+  const arcs = (0, import_react69.useMemo)(() => {
     if (!tiers.length || !total) return [];
     let currentAngle = -Math.PI / 2;
     return tiers.map((tier) => {
@@ -27243,7 +27341,7 @@ function TierDistributionChart({
     });
   }, [tiers, total, cx, cy, outerRadius, innerRadius]);
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
       "div",
       {
         "data-testid": `${dataTestId}-loading`,
@@ -27254,7 +27352,7 @@ function TierDistributionChart({
           alignItems: "center",
           justifyContent: "center"
         },
-        children: /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
           "div",
           {
             style: {
@@ -27270,7 +27368,7 @@ function TierDistributionChart({
     );
   }
   if (!tiers.length || !total) {
-    return /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
       "div",
       {
         "data-testid": `${dataTestId}-empty`,
@@ -27287,14 +27385,14 @@ function TierDistributionChart({
       }
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime102.jsxs)(
     "div",
     {
       className,
       "data-testid": dataTestId,
       style: { fontFamily: "system-ui, sans-serif" },
       children: [
-        title && /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+        title && /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
           "div",
           {
             "data-testid": `${dataTestId}-title`,
@@ -27308,10 +27406,10 @@ function TierDistributionChart({
             children: title
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)("div", { style: { display: "flex", gap: 16, alignItems: "flex-start" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)("div", { style: { position: "relative", width: size, height: size, flexShrink: 0 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("svg", { width: size, height: size, "data-testid": `${dataTestId}-svg`, children: arcs.map(
-              (arc) => arc.path ? /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime102.jsxs)("div", { style: { display: "flex", gap: 16, alignItems: "flex-start" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime102.jsxs)("div", { style: { position: "relative", width: size, height: size, flexShrink: 0 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime102.jsx)("svg", { width: size, height: size, "data-testid": `${dataTestId}-svg`, children: arcs.map(
+              (arc) => arc.path ? /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
                 "path",
                 {
                   "data-testid": `${dataTestId}-segment-${arc.key}`,
@@ -27323,7 +27421,7 @@ function TierDistributionChart({
                 arc.key
               ) : null
             ) }),
-            showTotalInCenter && /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)(
+            showTotalInCenter && /* @__PURE__ */ (0, import_jsx_runtime102.jsxs)(
               "div",
               {
                 style: {
@@ -27339,7 +27437,7 @@ function TierDistributionChart({
                   pointerEvents: "none"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
                     "div",
                     {
                       "data-testid": `${dataTestId}-total`,
@@ -27347,7 +27445,7 @@ function TierDistributionChart({
                       children: total
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
                     "div",
                     {
                       "data-testid": `${dataTestId}-total-label`,
@@ -27359,9 +27457,9 @@ function TierDistributionChart({
               }
             )
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("div", { style: { flex: 1, minWidth: 0 }, children: arcs.map((arc) => {
+          /* @__PURE__ */ (0, import_jsx_runtime102.jsx)("div", { style: { flex: 1, minWidth: 0 }, children: arcs.map((arc) => {
             const pct = (arc.count / total * 100).toFixed(1);
-            return /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)(
+            return /* @__PURE__ */ (0, import_jsx_runtime102.jsxs)(
               "div",
               {
                 "data-testid": `${dataTestId}-legend-${arc.key}`,
@@ -27374,7 +27472,7 @@ function TierDistributionChart({
                   color: "#374151"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
                     "span",
                     {
                       style: {
@@ -27386,9 +27484,9 @@ function TierDistributionChart({
                       }
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("span", { style: { flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }, children: arc.label }),
-                  /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("span", { style: { color: "#6b7280", whiteSpace: "nowrap" }, children: arc.count }),
-                  /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)("span", { style: { color: "#9ca3af", whiteSpace: "nowrap", fontSize: 12 }, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime102.jsx)("span", { style: { flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }, children: arc.label }),
+                  /* @__PURE__ */ (0, import_jsx_runtime102.jsx)("span", { style: { color: "#6b7280", whiteSpace: "nowrap" }, children: arc.count }),
+                  /* @__PURE__ */ (0, import_jsx_runtime102.jsxs)("span", { style: { color: "#9ca3af", whiteSpace: "nowrap", fontSize: 12 }, children: [
                     "(",
                     pct,
                     "%)"
@@ -27416,6 +27514,7 @@ function TierDistributionChart({
   BatchSelectionBar,
   BranchSelector,
   Breadcrumb,
+  Button,
   Calendar,
   Card,
   Carousel,
