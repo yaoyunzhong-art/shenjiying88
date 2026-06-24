@@ -2,42 +2,48 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toDiagnosisContract = toDiagnosisContract;
 exports.toDiagnosisBatchContract = toDiagnosisBatchContract;
-exports.toRiskReportContract = toRiskReportContract;
-// ─── Mappers ─────────────────────────────────────────
-function toDiagnosisContract(d) {
+exports.toDiagnosisContracts = toDiagnosisContracts;
+/**
+ * Contract: 实体 -> 合约映射器
+ */
+function toDiagnosisContract(entity) {
     return {
-        diagnosisId: d.diagnosisId,
-        engineId: d.engineId,
-        scenarioId: d.scenarioId,
-        status: d.status,
-        riskLevel: d.riskLevel,
-        matchedRuleCount: d.matchedRuleIds.length,
-        matchedConditionCount: d.matchedConditionIds.length,
-        triggeredActionCount: d.triggeredActionIds.length,
-        recommendation: d.recommendation,
-        evaluationDurationMs: d.evaluationDurationMs,
-        createdAt: d.createdAt,
-        completedAt: d.completedAt,
-        tenantId: d.tenantId,
-        requestedBy: d.requestedBy,
+        diagnosisId: entity.diagnosisId,
+        engineId: entity.engineId,
+        scenarioId: entity.scenarioId,
+        status: entity.status,
+        riskLevel: entity.riskLevel,
+        recommendation: entity.recommendation,
+        matchedRuleIds: [...entity.matchedRuleIds],
+        matchedConditionIds: [...entity.matchedConditionIds],
+        triggeredActionIds: [...entity.triggeredActionIds],
+        evaluationDurationMs: entity.evaluationDurationMs,
+        createdAt: entity.createdAt,
+        completedAt: entity.completedAt,
+        tenantId: entity.tenantId,
+        requestedBy: entity.requestedBy
     };
 }
-function toDiagnosisBatchContract(batch) {
+/**
+ * Contract: 批量诊断 -> 合约映射器
+ */
+function toDiagnosisBatchContract(entity) {
     return {
-        batchId: batch.batchId,
-        engineId: batch.engineId,
-        totalDiagnoses: batch.totalDiagnoses,
-        matchedDiagnoses: batch.matchedDiagnoses,
-        matchRate: batch.matchRate,
-        riskDistribution: { ...batch.riskDistribution },
-        avgEvaluationDurationMs: batch.avgEvaluationDurationMs,
-        createdAt: batch.createdAt,
-        triggeredBy: batch.triggeredBy,
-        tenantId: batch.tenantId,
-        diagnoses: batch.diagnoses.map(toDiagnosisContract),
+        batchId: entity.batchId,
+        engineId: entity.engineId,
+        totalDiagnoses: entity.totalDiagnoses,
+        matchedDiagnoses: entity.matchedDiagnoses,
+        matchRate: entity.matchRate,
+        avgEvaluationDurationMs: entity.avgEvaluationDurationMs,
+        createdAt: entity.createdAt,
+        triggeredBy: entity.triggeredBy,
+        tenantId: entity.tenantId
     };
 }
-function toRiskReportContract(report) {
-    return { ...report };
+/**
+ * Contract: 实体 -> 合约映射器（批量）
+ */
+function toDiagnosisContracts(entities) {
+    return entities.map(toDiagnosisContract);
 }
 //# sourceMappingURL=ai-diagnosis.contract.js.map
