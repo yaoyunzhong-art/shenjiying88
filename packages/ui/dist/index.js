@@ -109,6 +109,7 @@ __export(index_exports, {
   ListToolbar: () => ListToolbar,
   LoadingSkeleton: () => LoadingSkeleton,
   MemberLevelDistribution: () => MemberLevelDistribution,
+  MemberMarketerDashboard: () => MemberMarketerDashboard,
   MemberTierDistribution: () => MemberTierDistribution,
   Modal: () => Modal,
   MultiSelect: () => MultiSelect,
@@ -4798,8 +4799,205 @@ function StoreManagerDashboard({
   );
 }
 
-// src/components/FrontDeskPanel.tsx
+// src/components/MemberMarketerDashboard.tsx
+var import_react11 = __toESM(require("react"));
 var import_jsx_runtime22 = require("react/jsx-runtime");
+var SECTION_TITLE_STYLE2 = {
+  fontSize: 15,
+  fontWeight: 600,
+  color: "#e2e8f0",
+  marginBottom: 14,
+  letterSpacing: 0.3
+};
+var SECTION_CARD_STYLE = {
+  background: "rgba(15,23,42,0.35)",
+  borderRadius: 12,
+  border: "1px solid rgba(148,163,184,0.12)",
+  padding: 20,
+  marginBottom: 20
+};
+var ACTIONS_WRAPPER_STYLE = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 10,
+  marginBottom: 20
+};
+var ACTION_BUTTON_STYLE2 = {
+  padding: "10px 18px",
+  borderRadius: 10,
+  border: "1px solid rgba(148,163,184,0.18)",
+  background: "rgba(15,23,42,0.38)",
+  color: "#cbd5e1",
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: "pointer",
+  transition: "all 0.15s ease",
+  whiteSpace: "nowrap"
+};
+var PRIMARY_ACTION_STYLE2 = {
+  ...ACTION_BUTTON_STYLE2,
+  background: "rgba(99,102,241,0.2)",
+  borderColor: "rgba(99,102,241,0.4)",
+  color: "#a5b4fc"
+};
+var METRIC_ROW_STYLE = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "10px 0",
+  borderBottom: "1px solid rgba(148,163,184,0.08)"
+};
+var METRIC_LABEL_STYLE = {
+  fontSize: 13,
+  color: "#94a3b8"
+};
+var METRIC_VALUE_STYLE = {
+  fontSize: 14,
+  fontWeight: 600,
+  color: "#e2e8f0",
+  fontVariantNumeric: "tabular-nums"
+};
+var POSITIVE_TREND = { color: "#34d399" };
+var NEGATIVE_TREND = { color: "#f87171" };
+function MemberMarketerDashboard({
+  growthMetrics,
+  marketingKpi,
+  recentCampaigns = [],
+  quickActions = [],
+  managerName
+}) {
+  const stats = import_react11.default.useMemo(() => {
+    const items = [];
+    if (marketingKpi) {
+      items.push(
+        { label: "\u8425\u9500\u82B1\u8D39", value: `\xA5${marketingKpi.totalSpend.toLocaleString()}` },
+        { label: "\u83B7\u5BA2\u6210\u672C", value: `\xA5${marketingKpi.cac}` },
+        { label: "LTV/CAC", value: marketingKpi.ltvCacRatio.toFixed(2) },
+        { label: "\u590D\u8D2D\u7387", value: `${marketingKpi.repurchaseRate.toFixed(1)}%` }
+      );
+    }
+    if (growthMetrics) {
+      items.push(
+        { label: "\u603B\u4F1A\u5458", value: growthMetrics.totalMembers.toLocaleString() },
+        { label: "\u6708\u65B0\u589E", value: `+${growthMetrics.newThisMonth}` },
+        { label: "\u6D3B\u8DC3\u7387", value: `${growthMetrics.activeRate.toFixed(1)}%` },
+        { label: "\u6D41\u5931\u7387", value: `${growthMetrics.churnRate.toFixed(1)}%` }
+      );
+    }
+    return items;
+  }, [growthMetrics, marketingKpi]);
+  const columns = [
+    { key: "name", header: "\u6D3B\u52A8\u540D\u79F0", render: (c) => c.name },
+    {
+      key: "channel",
+      header: "\u6E20\u9053",
+      render: (c) => channelLabel(c.channel)
+    },
+    {
+      key: "status",
+      header: "\u72B6\u6001",
+      render: (c) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(StatusBadge, { variant: statusVariant(c.status), label: statusLabel(c.status) })
+    },
+    { key: "reachCount", header: "\u89E6\u8FBE", render: (c) => c.reachCount.toLocaleString() },
+    { key: "conversionRate", header: "\u8F6C\u5316\u7387", render: (c) => `${c.conversionRate.toFixed(1)}%` },
+    { key: "roi", header: "ROI", render: (c) => c.roi.toFixed(2) }
+  ];
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { padding: 16 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { marginBottom: 20 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { fontSize: 20, fontWeight: 700, color: "#f1f5f9", marginBottom: 4 }, children: managerName ? `${managerName}\uFF0C\u6B22\u8FCE\u56DE\u6765` : "\u8425\u9500\u7ECF\u7406\u5DE5\u4F5C\u53F0" }),
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { fontSize: 13, color: "#64748b" }, children: "\u67E5\u770B\u4F1A\u5458\u589E\u957F\u8D8B\u52BF\u4E0E\u8425\u9500\u6D3B\u52A8\u6548\u679C" })
+    ] }),
+    quickActions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: ACTIONS_WRAPPER_STYLE, children: quickActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+      "button",
+      {
+        style: action.primary ? PRIMARY_ACTION_STYLE2 : ACTION_BUTTON_STYLE2,
+        onClick: action.onClick,
+        children: [
+          action.icon ? `${action.icon} ` : "",
+          action.label
+        ]
+      },
+      action.key
+    )) }),
+    stats.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { marginBottom: 20 }, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(QuickStats, { items: stats, columns: 4 }) }),
+    marketingKpi && /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: SECTION_CARD_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: SECTION_TITLE_STYLE2, children: "\u{1F4CA} \u8425\u9500\u6548\u7387\u6982\u89C8" }),
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }, children: [
+        { label: "\u603B\u82B1\u8D39 (\u5143)", value: marketingKpi.totalSpend.toLocaleString() },
+        { label: "\u5E73\u5747\u83B7\u5BA2\u6210\u672C (CAC)", value: `\xA5${marketingKpi.cac}` },
+        { label: "\u5BA2\u6237\u751F\u547D\u5468\u671F\u4EF7\u503C (LTV)", value: `\xA5${marketingKpi.ltv}` },
+        { label: "LTV / CAC", value: marketingKpi.ltvCacRatio.toFixed(2), highlight: marketingKpi.ltvCacRatio >= 3 ? "positive" : marketingKpi.ltvCacRatio < 1 ? "negative" : void 0 },
+        { label: "\u5E73\u5747\u590D\u8D2D\u7387", value: `${marketingKpi.repurchaseRate.toFixed(1)}%` },
+        { label: "\u672C\u6708\u76EE\u6807\u5B8C\u6210\u7387", value: `${marketingKpi.monthlyTargetRate.toFixed(1)}%` }
+      ].map((item) => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: METRIC_ROW_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: METRIC_LABEL_STYLE, children: item.label }),
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          "span",
+          {
+            style: {
+              ...METRIC_VALUE_STYLE,
+              ...item.highlight === "positive" ? POSITIVE_TREND : {},
+              ...item.highlight === "negative" ? NEGATIVE_TREND : {}
+            },
+            children: item.value
+          }
+        )
+      ] }, item.label)) })
+    ] }),
+    recentCampaigns.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: SECTION_CARD_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: SECTION_TITLE_STYLE2, children: "\u{1F4CB} \u8FD1\u671F\u8425\u9500\u6D3B\u52A8" }),
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+        DataTable,
+        {
+          items: recentCampaigns,
+          columns,
+          rowKey: (c) => c.id,
+          compact: true
+        }
+      )
+    ] })
+  ] });
+}
+function channelLabel(channel) {
+  const map = {
+    sms: "\u77ED\u4FE1",
+    email: "\u90AE\u4EF6",
+    wechat: "\u5FAE\u4FE1\u516C\u4F17\u53F7",
+    app_push: "App\u63A8\u9001",
+    in_store: "\u95E8\u5E97"
+  };
+  return map[channel] ?? channel;
+}
+function statusLabel(status) {
+  const map = {
+    draft: "\u8349\u7A3F",
+    scheduled: "\u5DF2\u6392\u671F",
+    running: "\u8FDB\u884C\u4E2D",
+    paused: "\u5DF2\u6682\u505C",
+    ended: "\u5DF2\u7ED3\u675F",
+    archived: "\u5DF2\u5F52\u6863"
+  };
+  return map[status] ?? status;
+}
+function statusVariant(status) {
+  switch (status) {
+    case "running":
+      return "success";
+    case "scheduled":
+      return "info";
+    case "paused":
+      return "warning";
+    case "ended":
+      return "neutral";
+    case "archived":
+      return "neutral";
+    case "draft":
+      return "warning";
+  }
+}
+
+// src/components/FrontDeskPanel.tsx
+var import_jsx_runtime23 = require("react/jsx-runtime");
 var PAYMENT_LABELS = {
   wechat: "\u5FAE\u4FE1\u652F\u4ED8",
   alipay: "\u652F\u4ED8\u5B9D",
@@ -4835,7 +5033,7 @@ var SECTION_STYLE2 = {
   border: "1px solid rgba(148, 163, 184, 0.08)",
   padding: 14
 };
-var SECTION_TITLE_STYLE2 = {
+var SECTION_TITLE_STYLE3 = {
   fontSize: 14,
   fontWeight: 600,
   color: "#cbd5e1",
@@ -4954,9 +5152,9 @@ function FrontDeskPanel({
   className
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className, style: PANEL_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { textAlign: "center", padding: 40, color: "#64748b" }, children: "\u6B63\u5728\u52A0\u8F7D\u6536\u94F6\u53F0..." }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }, children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className, style: PANEL_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { textAlign: "center", padding: 40, color: "#64748b" }, children: "\u6B63\u5728\u52A0\u8F7D\u6536\u94F6\u53F0..." }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }, children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
         "div",
         {
           style: {
@@ -4991,35 +5189,35 @@ function FrontDeskPanel({
       valueColor: todayStats.pendingPickups > 5 ? "#f87171" : "#fbbf24"
     }
   ] : [];
-  const renderHeader = () => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: HEADER_STYLE, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: TITLE_STYLE, children: title }),
-      cashierName && /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 12 }, children: [
+  const renderHeader = () => /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: HEADER_STYLE, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { style: TITLE_STYLE, children: title }),
+      cashierName && /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 12 }, children: [
         "\u6536\u94F6\u5458: ",
         cashierName
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12 }, children: [
-      shiftInfo && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(StatusBadge, { label: shiftInfo, variant: "info", size: "sm" }),
-      checkoutStatus === "processing" && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(StatusBadge, { label: "\u7ED3\u7B97\u4E2D...", variant: "warning", size: "sm", dot: true }),
-      checkoutStatus === "success" && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(StatusBadge, { label: "\u7ED3\u7B97\u6210\u529F", variant: "success", size: "sm" }),
-      checkoutStatus === "failed" && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(StatusBadge, { label: "\u7ED3\u7B97\u5931\u8D25", variant: "error", size: "sm" })
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12 }, children: [
+      shiftInfo && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(StatusBadge, { label: shiftInfo, variant: "info", size: "sm" }),
+      checkoutStatus === "processing" && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(StatusBadge, { label: "\u7ED3\u7B97\u4E2D...", variant: "warning", size: "sm", dot: true }),
+      checkoutStatus === "success" && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(StatusBadge, { label: "\u7ED3\u7B97\u6210\u529F", variant: "success", size: "sm" }),
+      checkoutStatus === "failed" && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(StatusBadge, { label: "\u7ED3\u7B97\u5931\u8D25", variant: "error", size: "sm" })
     ] })
   ] });
   const renderQuickActions = () => {
     if (quickActions.length === 0) return null;
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: SECTION_STYLE2, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: SECTION_TITLE_STYLE2, children: "\u5FEB\u6377\u64CD\u4F5C" }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: QUICK_ACTION_GRID, children: quickActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: SECTION_STYLE2, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: SECTION_TITLE_STYLE3, children: "\u5FEB\u6377\u64CD\u4F5C" }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: QUICK_ACTION_GRID, children: quickActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
         "button",
         {
           type: "button",
           style: action.highlight ? HIGHLIGHT_BTN_STYLE : QUICK_BTN_STYLE,
           onClick: action.onClick,
           children: [
-            action.icon && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: { fontSize: 16 }, children: action.icon }),
-            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { children: action.label }),
-            action.badge !== void 0 && action.badge > 0 && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+            action.icon && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { style: { fontSize: 16 }, children: action.icon }),
+            /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { children: action.label }),
+            action.badge !== void 0 && action.badge > 0 && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
               "span",
               {
                 style: {
@@ -5049,26 +5247,26 @@ function FrontDeskPanel({
   };
   const renderQueue = () => {
     if (queue.length === 0) return null;
-    return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: SECTION_STYLE2, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: SECTION_TITLE_STYLE2, children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: SECTION_STYLE2, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: SECTION_TITLE_STYLE3, children: [
         "\u6392\u961F\u53EB\u53F7",
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: { fontSize: 11, color: "#64748b", marginLeft: 8 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { style: { fontSize: 11, color: "#64748b", marginLeft: 8 }, children: [
           queue.length,
           " \u4F4D"
         ] })
       ] }),
-      queue.slice(0, compact ? 3 : 5).map((item) => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: QUEUE_ITEM_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("strong", { style: { fontSize: 14, color: "#f8fafc", minWidth: 24 }, children: item.number }),
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: { color: "#94a3b8" }, children: queueTypeLabel(item.type) }),
-          item.customerName && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { style: { color: "#cbd5e1" }, children: item.customerName })
+      queue.slice(0, compact ? 3 : 5).map((item) => /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: QUEUE_ITEM_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("strong", { style: { fontSize: 14, color: "#f8fafc", minWidth: 24 }, children: item.number }),
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { style: { color: "#94a3b8" }, children: queueTypeLabel(item.type) }),
+          item.customerName && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("span", { style: { color: "#cbd5e1" }, children: item.customerName })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: { fontSize: 11, color: "#64748b" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { style: { fontSize: 11, color: "#64748b" }, children: [
             item.waitingMinutes,
             "\u5206\u949F"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
             StatusBadge,
             {
               label: item.status === "calling" ? "\u53EB\u53F7\u4E2D" : item.status === "serving" ? "\u670D\u52A1\u4E2D" : "\u7B49\u5F85",
@@ -5079,15 +5277,15 @@ function FrontDeskPanel({
           )
         ] })
       ] }, item.id)),
-      queue.length > (compact ? 3 : 5) && /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { textAlign: "center", color: "#64748b", fontSize: 11, paddingTop: 4 }, children: [
+      queue.length > (compact ? 3 : 5) && /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { textAlign: "center", color: "#64748b", fontSize: 11, paddingTop: 4 }, children: [
         "... \u8FD8\u6709 ",
         queue.length - (compact ? 3 : 5),
         " \u4F4D"
       ] })
     ] });
   };
-  const renderBasket = () => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: SECTION_STYLE2, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+  const renderBasket = () => /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: SECTION_STYLE2, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
       "div",
       {
         style: {
@@ -5097,14 +5295,14 @@ function FrontDeskPanel({
           marginBottom: 8
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: SECTION_TITLE_STYLE2, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { style: SECTION_TITLE_STYLE3, children: [
             "\u8D2D\u7269\u7BEE",
-            basketItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: { fontSize: 11, color: "#64748b", marginLeft: 8 }, children: [
+            basketItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { style: { fontSize: 11, color: "#64748b", marginLeft: 8 }, children: [
               totalQuantity,
               " \u4EF6"
             ] })
           ] }),
-          basketItems.length > 0 && onClearBasket && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+          basketItems.length > 0 && onClearBasket && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
             "button",
             {
               type: "button",
@@ -5122,7 +5320,7 @@ function FrontDeskPanel({
         ]
       }
     ),
-    basketItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    basketItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
       "div",
       {
         style: {
@@ -5133,19 +5331,19 @@ function FrontDeskPanel({
         },
         children: "\u8D2D\u7269\u7BEE\u4E3A\u7A7A\uFF0C\u626B\u63CF\u5546\u54C1\u6761\u7801\u6DFB\u52A0"
       }
-    ) : /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_jsx_runtime22.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { maxHeight: compact ? 120 : 200, overflowY: "auto" }, children: basketItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: BASKET_ROW_STYLE, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { flex: 1 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { color: "#e2e8f0", fontWeight: 500 }, children: item.name }),
-          /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: { color: "#64748b", fontSize: 10 }, children: [
+    ) : /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_jsx_runtime23.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { maxHeight: compact ? 120 : 200, overflowY: "auto" }, children: basketItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: BASKET_ROW_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { color: "#e2e8f0", fontWeight: 500 }, children: item.name }),
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { color: "#64748b", fontSize: 10 }, children: [
             item.sku,
             " \xD7 ",
             item.quantity
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { textAlign: "right", marginRight: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { color: "#e2e8f0" }, children: fmtCurrency2(item.unitPrice) }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { textAlign: "right", minWidth: 60 }, children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { color: "#f8fafc", fontWeight: 600 }, children: fmtCurrency2(item.subtotal) }) }),
-        onRemoveItem && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { textAlign: "right", marginRight: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { color: "#e2e8f0" }, children: fmtCurrency2(item.unitPrice) }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { textAlign: "right", minWidth: 60 }, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { color: "#f8fafc", fontWeight: 600 }, children: fmtCurrency2(item.subtotal) }) }),
+        onRemoveItem && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
           "button",
           {
             type: "button",
@@ -5163,7 +5361,7 @@ function FrontDeskPanel({
           }
         )
       ] }, item.id)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
         "div",
         {
           style: {
@@ -5175,12 +5373,12 @@ function FrontDeskPanel({
             marginTop: 8
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("span", { style: { fontSize: 13, color: "#94a3b8", fontWeight: 500 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("span", { style: { fontSize: 13, color: "#94a3b8", fontWeight: 500 }, children: [
               "\u5408\u8BA1 (",
               totalQuantity,
               " \u4EF6)"
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
               "span",
               {
                 style: {
@@ -5196,9 +5394,9 @@ function FrontDeskPanel({
       )
     ] })
   ] });
-  const renderPayment = () => /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { style: SECTION_STYLE2, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: SECTION_TITLE_STYLE2, children: "\u652F\u4ED8\u65B9\u5F0F" }),
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }, children: paymentMethods.map((method) => /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+  const renderPayment = () => /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: SECTION_STYLE2, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: SECTION_TITLE_STYLE3, children: "\u652F\u4ED8\u65B9\u5F0F" }),
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }, children: paymentMethods.map((method) => /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
       "button",
       {
         type: "button",
@@ -5209,7 +5407,7 @@ function FrontDeskPanel({
       },
       method
     )) }),
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
       "button",
       {
         type: "button",
@@ -5219,7 +5417,7 @@ function FrontDeskPanel({
         children: checkoutStatus === "processing" ? "\u7ED3\u7B97\u4E2D..." : checkoutStatus === "success" ? "\u2713 \u7ED3\u7B97\u6210\u529F" : `\u6536\u6B3E ${fmtCurrency2(totalAmount)}`
       }
     ),
-    checkoutStatus === "failed" && checkoutError && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(
+    checkoutStatus === "failed" && checkoutError && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
       "div",
       {
         style: {
@@ -5235,12 +5433,12 @@ function FrontDeskPanel({
       }
     )
   ] });
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)("div", { className, style: PANEL_STYLE, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { className, style: PANEL_STYLE, children: [
     renderHeader(),
-    statItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(QuickStats, { items: statItems, columns: compact ? 2 : 4 }),
+    statItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(QuickStats, { items: statItems, columns: compact ? 2 : 4 }),
     renderQuickActions(),
     renderQueue(),
-    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
       "div",
       {
         style: {
@@ -5258,16 +5456,16 @@ function FrontDeskPanel({
 }
 
 // src/components/SalesClerkTool.tsx
-var import_react12 = require("react");
+var import_react13 = require("react");
 
 // src/components/SearchFilterInput.tsx
-var import_react11 = __toESM(require("react"));
-var import_jsx_runtime23 = require("react/jsx-runtime");
+var import_react12 = __toESM(require("react"));
+var import_jsx_runtime24 = require("react/jsx-runtime");
 function useSearchFilter(initialValue = "", debounceMs = 300) {
-  const [rawValue, setRawValue] = (0, import_react11.useState)(initialValue);
-  const [debouncedValue, setDebouncedValue] = (0, import_react11.useState)(initialValue);
-  const timerRef = import_react11.default.useRef();
-  const setValue = (0, import_react11.useCallback)(
+  const [rawValue, setRawValue] = (0, import_react12.useState)(initialValue);
+  const [debouncedValue, setDebouncedValue] = (0, import_react12.useState)(initialValue);
+  const timerRef = import_react12.default.useRef();
+  const setValue = (0, import_react12.useCallback)(
     (value) => {
       setRawValue(value);
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -5275,7 +5473,7 @@ function useSearchFilter(initialValue = "", debounceMs = 300) {
     },
     [debounceMs]
   );
-  import_react11.default.useEffect(() => {
+  import_react12.default.useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
@@ -5293,16 +5491,16 @@ function SearchFilterInput({
   disabled = false
 }) {
   const { value: localValue, setValue } = useSearchFilter(value, debounceMs);
-  const inputRef = import_react11.default.useRef(null);
+  const inputRef = import_react12.default.useRef(null);
   const hasValue = localValue.length > 0;
-  import_react11.default.useEffect(() => {
+  import_react12.default.useEffect(() => {
     onChange(localValue);
   }, [localValue, onChange]);
-  const handleClear = (0, import_react11.useCallback)(() => {
+  const handleClear = (0, import_react12.useCallback)(() => {
     setValue("");
     inputRef.current?.focus();
   }, [setValue]);
-  const handleKeyDown = (0, import_react11.useCallback)(
+  const handleKeyDown = (0, import_react12.useCallback)(
     (e) => {
       if (e.key === "Escape" && hasValue) {
         e.preventDefault();
@@ -5313,8 +5511,8 @@ function SearchFilterInput({
     [hasValue, handleClear, onKeyDown]
   );
   const inputPaddingRight = clearable && hasValue ? 36 : 12;
-  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)("div", { style: { position: "relative", display: "inline-flex", alignItems: "center" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { position: "relative", display: "inline-flex", alignItems: "center" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
       "svg",
       {
         width: "16",
@@ -5323,7 +5521,7 @@ function SearchFilterInput({
         fill: "none",
         style: { position: "absolute", left: 12, pointerEvents: "none" },
         "aria-hidden": "true",
-        children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
           "path",
           {
             d: "M7 1a6 6 0 1 0 3.47 10.88l3.32 3.33a.75.75 0 1 0 1.06-1.06l-3.32-3.33A6 6 0 0 0 7 1Zm-4.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0Z",
@@ -5332,7 +5530,7 @@ function SearchFilterInput({
         )
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
       "input",
       {
         ref: inputRef,
@@ -5362,7 +5560,7 @@ function SearchFilterInput({
         }
       }
     ),
-    clearable && hasValue && /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    clearable && hasValue && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
       "button",
       {
         type: "button",
@@ -5393,7 +5591,7 @@ function SearchFilterInput({
           e.currentTarget.style.background = "transparent";
           e.currentTarget.style.color = "#64748b";
         },
-        children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 14 14", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 14 14", fill: "none", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
           "path",
           {
             d: "M10.03 3.97a.75.75 0 0 1 0 1.06L8.06 7l1.97 1.97a.75.75 0 1 1-1.06 1.06L7 8.06l-1.97 1.97a.75.75 0 0 1-1.06-1.06L5.94 7 3.97 5.03a.75.75 0 0 1 1.06-1.06L7 5.94l1.97-1.97a.75.75 0 0 1 1.06 0Z",
@@ -5406,7 +5604,7 @@ function SearchFilterInput({
 }
 
 // src/components/SalesClerkTool.tsx
-var import_jsx_runtime24 = require("react/jsx-runtime");
+var import_jsx_runtime25 = require("react/jsx-runtime");
 var TIER_LABELS = {
   VIP: "VIP\u4F1A\u5458",
   GOLD: "\u91D1\u5361\u4F1A\u5458",
@@ -5432,11 +5630,11 @@ var PRIORITY_VARIANTS = {
 function MemberSearchPanel({
   onSearch
 }) {
-  const [query, setQuery] = (0, import_react12.useState)("");
-  const [results, setResults] = (0, import_react12.useState)([]);
-  const [searching, setSearching] = (0, import_react12.useState)(false);
-  const [searched, setSearched] = (0, import_react12.useState)(false);
-  const handleSearch = (0, import_react12.useCallback)(async () => {
+  const [query, setQuery] = (0, import_react13.useState)("");
+  const [results, setResults] = (0, import_react13.useState)([]);
+  const [searching, setSearching] = (0, import_react13.useState)(false);
+  const [searched, setSearched] = (0, import_react13.useState)(false);
+  const handleSearch = (0, import_react13.useCallback)(async () => {
     if (!query.trim() || !onSearch) return;
     setSearching(true);
     setSearched(true);
@@ -5447,16 +5645,16 @@ function MemberSearchPanel({
       setSearching(false);
     }
   }, [query, onSearch]);
-  const handleKeyDown = (0, import_react12.useCallback)(
+  const handleKeyDown = (0, import_react13.useCallback)(
     (e) => {
       if (e.key === "Enter") handleSearch();
     },
     [handleSearch]
   );
-  return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { marginBottom: 24 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { fontSize: 16, fontWeight: 600, color: "#f8fafc", marginBottom: 8 }, children: "\u4F1A\u5458\u901F\u67E5" }),
-    /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { flex: 1 }, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { marginBottom: 24 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { fontSize: 16, fontWeight: 600, color: "#f8fafc", marginBottom: 8 }, children: "\u4F1A\u5458\u901F\u67E5" }),
+    /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { flex: 1 }, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         SearchFilterInput,
         {
           value: query,
@@ -5465,7 +5663,7 @@ function MemberSearchPanel({
           placeholder: "\u8F93\u5165\u624B\u673A\u53F7\u6216\u59D3\u540D\u67E5\u8BE2\u4F1A\u5458\u2026"
         }
       ) }),
-      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         "button",
         {
           onClick: handleSearch,
@@ -5484,8 +5682,8 @@ function MemberSearchPanel({
         }
       )
     ] }),
-    searched && results.length === 0 && !searching && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { marginTop: 12, padding: 16, borderRadius: 12, background: "#1e293b", color: "#94a3b8", fontSize: 14 }, children: "\u672A\u627E\u5230\u5339\u914D\u4F1A\u5458" }),
-    results.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { marginTop: 12, display: "grid", gap: 10 }, children: results.map((m) => /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+    searched && results.length === 0 && !searching && /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { marginTop: 12, padding: 16, borderRadius: 12, background: "#1e293b", color: "#94a3b8", fontSize: 14 }, children: "\u672A\u627E\u5230\u5339\u914D\u4F1A\u5458" }),
+    results.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { marginTop: 12, display: "grid", gap: 10 }, children: results.map((m) => /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
       "div",
       {
         style: {
@@ -5495,31 +5693,31 @@ function MemberSearchPanel({
           border: "1px solid #334155"
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { style: { fontWeight: 700, color: "#f8fafc", fontSize: 15 }, children: m.name }),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(StatusBadge, { label: TIER_LABELS[m.tier], variant: TIER_VARIANTS[m.tier] })
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontWeight: 700, color: "#f8fafc", fontSize: 15 }, children: m.name }),
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatusBadge, { label: TIER_LABELS[m.tier], variant: TIER_VARIANTS[m.tier] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", gap: 20, fontSize: 13, color: "#94a3b8" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { display: "flex", gap: 20, fontSize: 13, color: "#94a3b8" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { children: [
               "\u{1F4F1} ",
               m.phone
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("span", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { children: [
               "\u2B50 ",
               m.points,
               " \u79EF\u5206"
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("span", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { children: [
               "\u{1F4B0} \xA5",
               m.totalSpent.toLocaleString()
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("span", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { children: [
               "\u{1F3EA} ",
               m.visitCount,
               " \u6B21\u5230\u5E97"
             ] })
           ] }),
-          m.tags.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }, children: m.tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+          m.tags.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }, children: m.tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
             "span",
             {
               style: {
@@ -5543,25 +5741,25 @@ function FollowUpList({
   clients,
   onFollowUp
 }) {
-  const columns = (0, import_react12.useMemo)(
+  const columns = (0, import_react13.useMemo)(
     () => [
-      { key: "name", label: "\u5BA2\u6237", render: (row) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("span", { style: { fontWeight: 600 }, children: row.name }) },
+      { key: "name", label: "\u5BA2\u6237", render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontWeight: 600 }, children: row.name }) },
       {
         key: "tier",
         label: "\u7B49\u7EA7",
-        render: (row) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(StatusBadge, { label: TIER_LABELS[row.tier], variant: TIER_VARIANTS[row.tier] })
+        render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatusBadge, { label: TIER_LABELS[row.tier], variant: TIER_VARIANTS[row.tier] })
       },
       { key: "lastVisit", label: "\u6700\u8FD1\u5230\u5E97" },
       { key: "reason", label: "\u8DDF\u8FDB\u539F\u56E0" },
       {
         key: "priority",
         label: "\u4F18\u5148\u7EA7",
-        render: (row) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(StatusBadge, { label: PRIORITY_LABELS[row.priority], variant: PRIORITY_VARIANTS[row.priority] })
+        render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatusBadge, { label: PRIORITY_LABELS[row.priority], variant: PRIORITY_VARIANTS[row.priority] })
       },
       {
         key: "action",
         label: "\u64CD\u4F5C",
-        render: (row) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+        render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
           "button",
           {
             onClick: () => onFollowUp?.(row.id),
@@ -5583,16 +5781,16 @@ function FollowUpList({
     [onFollowUp]
   );
   if (clients.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { padding: 24, textAlign: "center", color: "#64748b", fontSize: 14 }, children: "\u6682\u65E0\u5F85\u8DDF\u8FDB\u5BA2\u6237 \u{1F389}" });
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { padding: 24, textAlign: "center", color: "#64748b", fontSize: 14 }, children: "\u6682\u65E0\u5F85\u8DDF\u8FDB\u5BA2\u6237 \u{1F389}" });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(DataTable, { columns, rows: clients, rowKey: (row) => row.id });
+  return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(DataTable, { columns, rows: clients, rowKey: (row) => row.id });
 }
 function ScriptCards({
   scripts,
   onCopy
 }) {
-  const [copiedId, setCopiedId] = (0, import_react12.useState)(null);
-  const handleCopy = (0, import_react12.useCallback)(
+  const [copiedId, setCopiedId] = (0, import_react13.useState)(null);
+  const handleCopy = (0, import_react13.useCallback)(
     (script) => {
       navigator.clipboard?.writeText(script.text).catch(() => {
       });
@@ -5603,9 +5801,9 @@ function ScriptCards({
     [onCopy]
   );
   if (scripts.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { padding: 24, textAlign: "center", color: "#64748b", fontSize: 14 }, children: "\u6682\u65E0\u53EF\u9009\u8BDD\u672F" });
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { padding: 24, textAlign: "center", color: "#64748b", fontSize: 14 }, children: "\u6682\u65E0\u53EF\u9009\u8BDD\u672F" });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { display: "grid", gap: 10 }, children: scripts.map((script) => /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { display: "grid", gap: 10 }, children: scripts.map((script) => /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
     "div",
     {
       style: {
@@ -5615,10 +5813,10 @@ function ScriptCards({
         border: "1px solid #334155"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { fontSize: 14, fontWeight: 600, color: "#f8fafc", marginBottom: 6 }, children: script.scenario }),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1", marginBottom: 10, lineHeight: 1.6 }, children: script.text }),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" }, children: script.tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { fontSize: 14, fontWeight: 600, color: "#f8fafc", marginBottom: 6 }, children: script.scenario }),
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1", marginBottom: 10, lineHeight: 1.6 }, children: script.text }),
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" }, children: script.tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
             "span",
             {
               style: {
@@ -5632,7 +5830,7 @@ function ScriptCards({
             },
             tag
           )) }),
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
             "button",
             {
               onClick: () => handleCopy(script),
@@ -5665,8 +5863,8 @@ function SalesClerkTool({
   onFollowUp,
   onScriptCopy
 }) {
-  const [activeTab, setActiveTab] = (0, import_react12.useState)("search");
-  const statItems = (0, import_react12.useMemo)(
+  const [activeTab, setActiveTab] = (0, import_react13.useState)("search");
+  const statItems = (0, import_react13.useMemo)(
     () => [
       { label: "\u4ECA\u65E5\u63A5\u5F85", value: String(stats.totalReceptions), helper: "\u4EBA\u6B21" },
       { label: "\u65B0\u589E\u7EBF\u7D22", value: String(stats.newLeads), helper: "\u6761" },
@@ -5681,7 +5879,7 @@ function SalesClerkTool({
     { key: "followup", label: `\u5F85\u8DDF\u8FDB (${followUpClients.length})` },
     { key: "scripts", label: `\u63A8\u8350\u8BDD\u672F (${scripts.length})` }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
     "div",
     {
       style: {
@@ -5691,15 +5889,15 @@ function SalesClerkTool({
         border: "1px solid #1e293b"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { fontSize: 20, fontWeight: 700, color: "#f8fafc" }, children: "\u5BFC\u8D2D\u5DE5\u4F5C\u53F0" }),
-            /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { fontSize: 13, color: "#64748b", marginTop: 4 }, children: [clerkName, storeName].filter(Boolean).join(" \xB7 ") || "\u5BA2\u6237\u63A5\u5F85\u4E0E\u8F6C\u5316\u5DE5\u5177" })
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { fontSize: 20, fontWeight: 700, color: "#f8fafc" }, children: "\u5BFC\u8D2D\u5DE5\u4F5C\u53F0" }),
+            /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { fontSize: 13, color: "#64748b", marginTop: 4 }, children: [clerkName, storeName].filter(Boolean).join(" \xB7 ") || "\u5BA2\u6237\u63A5\u5F85\u4E0E\u8F6C\u5316\u5DE5\u5177" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(StatusBadge, { label: "\u25CF \u5728\u7EBF", variant: "success" })
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatusBadge, { label: "\u25CF \u5728\u7EBF", variant: "success" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(QuickStats, { items: statItems }),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsx)("div", { style: { display: "flex", gap: 4, marginTop: 20, marginBottom: 16 }, children: tabs.map((tab) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(QuickStats, { items: statItems }),
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { display: "flex", gap: 4, marginTop: 20, marginBottom: 16 }, children: tabs.map((tab) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
           "button",
           {
             onClick: () => setActiveTab(tab.key),
@@ -5718,10 +5916,10 @@ function SalesClerkTool({
           },
           tab.key
         )) }),
-        /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)("div", { style: { minHeight: 200 }, children: [
-          activeTab === "search" && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(MemberSearchPanel, { onSearch: onMemberSearch }),
-          activeTab === "followup" && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(FollowUpList, { clients: followUpClients, onFollowUp }),
-          activeTab === "scripts" && /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(ScriptCards, { scripts, onCopy: onScriptCopy })
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { minHeight: 200 }, children: [
+          activeTab === "search" && /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(MemberSearchPanel, { onSearch: onMemberSearch }),
+          activeTab === "followup" && /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(FollowUpList, { clients: followUpClients, onFollowUp }),
+          activeTab === "scripts" && /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(ScriptCards, { scripts, onCopy: onScriptCopy })
         ] })
       ]
     }
@@ -5729,7 +5927,7 @@ function SalesClerkTool({
 }
 
 // src/components/OperationsManagerDashboard.tsx
-var import_jsx_runtime25 = require("react/jsx-runtime");
+var import_jsx_runtime26 = require("react/jsx-runtime");
 var SECTION_STYLE3 = {
   marginBottom: 24
 };
@@ -5739,7 +5937,7 @@ var SECTION_HEADER_STYLE2 = {
   alignItems: "center",
   marginBottom: 12
 };
-var SECTION_TITLE_STYLE3 = {
+var SECTION_TITLE_STYLE4 = {
   fontSize: 16,
   fontWeight: 600,
   color: "#f1f5f9"
@@ -5750,7 +5948,7 @@ var ACTION_BAR_STYLE2 = {
   gap: 10,
   marginBottom: 20
 };
-var ACTION_BUTTON_STYLE2 = {
+var ACTION_BUTTON_STYLE3 = {
   padding: "10px 18px",
   borderRadius: 10,
   border: "1px solid rgba(148,163,184,0.18)",
@@ -5762,8 +5960,8 @@ var ACTION_BUTTON_STYLE2 = {
   transition: "all 0.15s ease",
   whiteSpace: "nowrap"
 };
-var PRIMARY_ACTION_STYLE2 = {
-  ...ACTION_BUTTON_STYLE2,
+var PRIMARY_ACTION_STYLE3 = {
+  ...ACTION_BUTTON_STYLE3,
   background: "rgba(59,130,246,0.18)",
   borderColor: "rgba(59,130,246,0.35)",
   color: "#93c5fd"
@@ -5842,9 +6040,9 @@ var STORE_COLUMNS = [
     key: "name",
     header: "\u95E8\u5E97",
     width: "130px",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { fontSize: 13, color: "#e2e8f0", fontWeight: 500 }, children: row.name }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { fontSize: 11, color: "#64748b" }, children: row.region })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { fontSize: 13, color: "#e2e8f0", fontWeight: 500 }, children: row.name }),
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { fontSize: 11, color: "#64748b" }, children: row.region })
     ] })
   },
   {
@@ -5853,19 +6051,19 @@ var STORE_COLUMNS = [
     width: "72px",
     render: (row) => {
       const m = storeStatusMeta(row.status);
-      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatusBadge, { label: m.label, variant: m.variant, size: "sm" });
+      return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(StatusBadge, { label: m.label, variant: m.variant, size: "sm" });
     }
   },
   {
     key: "todayRevenue",
     header: "\u4ECA\u65E5\u8425\u6536",
     width: "100px",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { fontSize: 13, color: "#e2e8f0" }, children: [
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { style: { fontSize: 13, color: "#e2e8f0" }, children: [
         "\xA5",
         fmtCurrency3(row.todayRevenue)
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { fontSize: 11, color: row.revenueRate >= 80 ? "#4ade80" : "#f87171" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { style: { fontSize: 11, color: row.revenueRate >= 80 ? "#4ade80" : "#f87171" }, children: [
         "\u8FBE\u6807\u7387 ",
         fmtRate(row.revenueRate)
       ] })
@@ -5876,7 +6074,7 @@ var STORE_COLUMNS = [
     key: "monthlyKpiRate",
     header: "KPI",
     width: "80px",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: {
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: {
       fontSize: 13,
       color: row.monthlyKpiRate >= 80 ? "#4ade80" : row.monthlyKpiRate >= 60 ? "#facc15" : "#f87171",
       fontWeight: 600
@@ -5887,13 +6085,13 @@ var STORE_COLUMNS = [
     key: "alertCount",
     header: "\u544A\u8B66",
     width: "60px",
-    render: (row) => row.alertCount > 0 ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatusBadge, { label: `${row.alertCount}`, variant: "error", size: "sm", dot: true }) : /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontSize: 12, color: "#475569" }, children: "0" })
+    render: (row) => row.alertCount > 0 ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(StatusBadge, { label: `${row.alertCount}`, variant: "error", size: "sm", dot: true }) : /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: { fontSize: 12, color: "#475569" }, children: "0" })
   },
   {
     key: "staffOnDuty",
     header: "\u5728\u5C97",
     width: "54px",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontSize: 13, color: "#94a3b8" }, children: row.staffOnDuty })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: { fontSize: 13, color: "#94a3b8" }, children: row.staffOnDuty })
   }
 ];
 var INSPECTION_COLUMNS = [
@@ -5901,13 +6099,13 @@ var INSPECTION_COLUMNS = [
     key: "type",
     header: "\u7C7B\u578B",
     width: "80px",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: inspectionTypeLabel(row.type) })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: inspectionTypeLabel(row.type) })
   },
   {
     key: "storeName",
     header: "\u95E8\u5E97",
     width: "110px",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: row.storeName })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: row.storeName })
   },
   {
     key: "priority",
@@ -5915,7 +6113,7 @@ var INSPECTION_COLUMNS = [
     width: "60px",
     render: (row) => {
       const m = priorityMeta2(row.priority);
-      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatusBadge, { label: m.label, variant: m.variant, size: "sm" });
+      return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(StatusBadge, { label: m.label, variant: m.variant, size: "sm" });
     }
   },
   {
@@ -5924,20 +6122,20 @@ var INSPECTION_COLUMNS = [
     width: "72px",
     render: (row) => {
       const m = inspectionStatusMeta(row.status);
-      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(StatusBadge, { label: m.label, variant: m.variant, size: "sm" });
+      return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(StatusBadge, { label: m.label, variant: m.variant, size: "sm" });
     }
   },
   {
     key: "deadline",
     header: "\u622A\u6B62",
     width: "80px",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: row.deadline })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: row.deadline })
   },
   {
     key: "assignee",
     header: "\u8D1F\u8D23\u4EBA",
     width: "74px",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { fontSize: 12, color: row.assignee ? "#e2e8f0" : "#475569" }, children: row.assignee ?? "\u2014" })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: { fontSize: 12, color: row.assignee ? "#e2e8f0" : "#475569" }, children: row.assignee ?? "\u2014" })
   }
 ];
 function OperationsManagerDashboard({
@@ -5953,8 +6151,8 @@ function OperationsManagerDashboard({
   className
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { className, style: { padding: 24 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { className, style: { padding: 24 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
         "div",
         {
           style: {
@@ -5963,7 +6161,7 @@ function OperationsManagerDashboard({
             gap: 14,
             marginBottom: 24
           },
-          children: Array.from({ length: compact ? 2 : 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+          children: Array.from({ length: compact ? 2 : 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
             "div",
             {
               style: {
@@ -5978,7 +6176,7 @@ function OperationsManagerDashboard({
           ))
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: { textAlign: "center", color: "#64748b", fontSize: 13 }, children: "\u6B63\u5728\u52A0\u8F7D\u8FD0\u8425\u6570\u636E..." })
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { textAlign: "center", color: "#64748b", fontSize: 13 }, children: "\u6B63\u5728\u52A0\u8F7D\u8FD0\u8425\u6570\u636E..." })
     ] });
   }
   const metricItems = districtSummary ? [
@@ -6021,14 +6219,14 @@ function OperationsManagerDashboard({
   ];
   const renderQuickActions = () => {
     if (!quickActions || quickActions.length === 0) return null;
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: ACTION_BAR_STYLE2, children: quickActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: ACTION_BAR_STYLE2, children: quickActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(
       "button",
       {
         type: "button",
-        style: action.primary ? PRIMARY_ACTION_STYLE2 : ACTION_BUTTON_STYLE2,
+        style: action.primary ? PRIMARY_ACTION_STYLE3 : ACTION_BUTTON_STYLE3,
         onClick: action.onClick,
         children: [
-          action.icon && /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("span", { style: { marginRight: 6 }, children: action.icon }),
+          action.icon && /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { style: { marginRight: 6 }, children: action.icon }),
           action.label
         ]
       },
@@ -6037,7 +6235,7 @@ function OperationsManagerDashboard({
   };
   const renderStoresTable = () => {
     if (!stores || stores.length === 0) {
-      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
         "div",
         {
           style: {
@@ -6050,7 +6248,7 @@ function OperationsManagerDashboard({
         }
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
       DataTable,
       {
         columns: STORE_COLUMNS,
@@ -6063,7 +6261,7 @@ function OperationsManagerDashboard({
   };
   const renderInspectionTable = () => {
     if (!inspectionTasks || inspectionTasks.length === 0) {
-      return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
         "div",
         {
           style: {
@@ -6076,7 +6274,7 @@ function OperationsManagerDashboard({
         }
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
       DataTable,
       {
         columns: INSPECTION_COLUMNS,
@@ -6087,7 +6285,7 @@ function OperationsManagerDashboard({
       }
     );
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(
     "div",
     {
       className,
@@ -6096,23 +6294,23 @@ function OperationsManagerDashboard({
         color: "#f8fafc"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: HEADER_WRAPPER_STYLE2, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("h2", { style: { margin: 0, fontSize: 20, fontWeight: 700, color: "#f8fafc" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: HEADER_WRAPPER_STYLE2, children: /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("h2", { style: { margin: 0, fontSize: 20, fontWeight: 700, color: "#f8fafc" }, children: [
             districtName ? `${districtName} \xB7 ` : "",
             "\u8FD0\u8425\u4E3B\u7BA1\u5DE5\u4F5C\u53F0"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: { display: "flex", gap: 16, marginTop: 6, flexWrap: "wrap" }, children: [
-            managerName && /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { style: { display: "flex", gap: 16, marginTop: 6, flexWrap: "wrap" }, children: [
+            managerName && /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: [
               "\u4E3B\u7BA1: ",
               managerName
             ] }),
-            lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: { fontSize: 11, color: "#475569" }, children: [
+            lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("span", { style: { fontSize: 11, color: "#475569" }, children: [
               "\u6570\u636E\u540C\u6B65: ",
               lastSyncAt
             ] })
           ] })
         ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: SECTION_STYLE3, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: SECTION_STYLE3, children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
           QuickStats,
           {
             items: metricItems,
@@ -6122,10 +6320,10 @@ function OperationsManagerDashboard({
           }
         ) }),
         renderQuickActions(),
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: SECTION_STYLE3, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: SECTION_HEADER_STYLE2, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: SECTION_TITLE_STYLE3, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { style: SECTION_STYLE3, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: SECTION_HEADER_STYLE2, children: /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("span", { style: SECTION_TITLE_STYLE4, children: [
             "\u8F96\u533A\u95E8\u5E97\u6982\u89C8",
-            stores && stores.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 8, fontWeight: 400 }, children: [
+            stores && stores.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 8, fontWeight: 400 }, children: [
               "(",
               stores.length,
               ")"
@@ -6133,10 +6331,10 @@ function OperationsManagerDashboard({
           ] }) }),
           renderStoresTable()
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("div", { style: SECTION_STYLE3, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("div", { style: SECTION_HEADER_STYLE2, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: SECTION_TITLE_STYLE3, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("div", { style: SECTION_STYLE3, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: SECTION_HEADER_STYLE2, children: /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("span", { style: SECTION_TITLE_STYLE4, children: [
             "\u5DE1\u5E97\u4EFB\u52A1",
-            inspectionTasks && inspectionTasks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 8, fontWeight: 400 }, children: [
+            inspectionTasks && inspectionTasks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 8, fontWeight: 400 }, children: [
               "(",
               inspectionTasks.length,
               ")"
@@ -6150,8 +6348,8 @@ function OperationsManagerDashboard({
 }
 
 // src/components/Tag.tsx
-var import_react13 = __toESM(require("react"));
-var import_jsx_runtime26 = require("react/jsx-runtime");
+var import_react14 = __toESM(require("react"));
+var import_jsx_runtime27 = require("react/jsx-runtime");
 var VARIANT_STYLES2 = {
   default: { bg: "rgba(148,163,184,0.10)", text: "#94a3b8", border: "rgba(148,163,184,0.25)" },
   primary: { bg: "rgba(59,130,246,0.12)", text: "#93c5fd", border: "rgba(59,130,246,0.30)" },
@@ -6161,7 +6359,7 @@ var VARIANT_STYLES2 = {
   info: { bg: "rgba(6,182,212,0.12)", text: "#67e8f9", border: "rgba(6,182,212,0.30)" },
   purple: { bg: "rgba(168,85,247,0.12)", text: "#c4b5fd", border: "rgba(168,85,247,0.30)" }
 };
-var CLOSE_ICON = /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("svg", { viewBox: "0 0 12 12", fill: "none", width: "10", height: "10", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("path", { d: "M1 1l5 5m0 0l5 5m-5-5L1 11m5-5l5-5", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }) });
+var CLOSE_ICON = /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("svg", { viewBox: "0 0 12 12", fill: "none", width: "10", height: "10", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("path", { d: "M1 1l5 5m0 0l5 5m-5-5L1 11m5-5l5-5", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }) });
 function Tag({
   children,
   variant = "default",
@@ -6178,7 +6376,7 @@ function Tag({
     e.stopPropagation();
     onClose?.();
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(
     "span",
     {
       className,
@@ -6198,7 +6396,7 @@ function Tag({
       },
       children: [
         children,
-        closable && /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(
+        closable && /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(
           "button",
           {
             type: "button",
@@ -6227,11 +6425,11 @@ function TagGroup({
   children,
   gap = 6
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap }, role: "list", children: import_react13.default.Children.map(children, (child, i) => /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("span", { role: "listitem", children: child }, i)) });
+  return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap }, role: "list", children: import_react14.default.Children.map(children, (child, i) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { role: "listitem", children: child }, i)) });
 }
 
 // src/components/ConciergePanel.tsx
-var import_jsx_runtime27 = require("react/jsx-runtime");
+var import_jsx_runtime28 = require("react/jsx-runtime");
 var PANEL_STYLE2 = {
   color: "#e2e8f0",
   fontFamily: "system-ui, -apple-system, sans-serif"
@@ -6264,7 +6462,7 @@ var SECTION_HEADER_STYLE3 = {
   alignItems: "center",
   marginBottom: 14
 };
-var SECTION_TITLE_STYLE4 = {
+var SECTION_TITLE_STYLE5 = {
   fontSize: 15,
   fontWeight: 600,
   color: "#cbd5e1",
@@ -6390,25 +6588,25 @@ var TX_COLUMNS = [
   {
     key: "memberName",
     header: "\u4F1A\u5458",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontWeight: 500, color: "#e2e8f0" }, children: row.memberName }),
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontSize: 11, color: "#64748b" }, children: row.memberId })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { fontWeight: 500, color: "#e2e8f0" }, children: row.memberName }),
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { fontSize: 11, color: "#64748b" }, children: row.memberId })
     ] })
   },
   {
     key: "memberLevel",
     header: "\u7B49\u7EA7",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { color: LEVEL_COLORS[row.memberLevel] ?? "#94a3b8", fontSize: 12, fontWeight: 600 }, children: levelLabel(row.memberLevel) })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { color: LEVEL_COLORS[row.memberLevel] ?? "#94a3b8", fontSize: 12, fontWeight: 600 }, children: levelLabel(row.memberLevel) })
   },
   {
     key: "type",
     header: "\u7C7B\u578B",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(StatusBadge, { label: txTypeLabel(row.type), variant: txTypeVariant(row.type) })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(StatusBadge, { label: txTypeLabel(row.type), variant: txTypeVariant(row.type) })
   },
   {
     key: "points",
     header: "\u79EF\u5206",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)(
       "span",
       {
         style: {
@@ -6422,46 +6620,46 @@ var TX_COLUMNS = [
       }
     )
   },
-  { key: "reason", header: "\u539F\u56E0", render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 12 }, children: row.reason }) },
+  { key: "reason", header: "\u539F\u56E0", render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 12 }, children: row.reason }) },
   {
     key: "operatedBy",
     header: "\u64CD\u4F5C\u4EBA",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 12 }, children: row.operatedBy })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 12 }, children: row.operatedBy })
   },
   {
     key: "operatedAt",
     header: "\u65F6\u95F4",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 11, color: "#64748b" }, children: fmtTime(row.operatedAt) })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 11, color: "#64748b" }, children: fmtTime(row.operatedAt) })
   }
 ];
 var VISIT_COLUMNS = [
   {
     key: "memberName",
     header: "\u4F1A\u5458",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontWeight: 500, color: "#e2e8f0" }, children: row.memberName }),
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontSize: 11, color: "#64748b" }, children: row.memberId })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { fontWeight: 500, color: "#e2e8f0" }, children: row.memberName }),
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { fontSize: 11, color: "#64748b" }, children: row.memberId })
     ] })
   },
   {
     key: "memberLevel",
     header: "\u7B49\u7EA7",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { color: LEVEL_COLORS[row.memberLevel] ?? "#94a3b8", fontSize: 12, fontWeight: 600 }, children: levelLabel(row.memberLevel) })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { color: LEVEL_COLORS[row.memberLevel] ?? "#94a3b8", fontSize: 12, fontWeight: 600 }, children: levelLabel(row.memberLevel) })
   },
   {
     key: "visitTime",
     header: "\u5230\u8BBF\u65F6\u95F4",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 12 }, children: fmtTime(row.visitTime) })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 12 }, children: fmtTime(row.visitTime) })
   },
   {
     key: "purpose",
     header: "\u76EE\u7684",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 12 }, children: row.purpose })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 12 }, children: row.purpose })
   },
   {
     key: "durationMin",
     header: "\u65F6\u957F",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: { fontSize: 12 }, children: [
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("span", { style: { fontSize: 12 }, children: [
       row.durationMin,
       "\u5206\u949F"
     ] })
@@ -6469,12 +6667,12 @@ var VISIT_COLUMNS = [
   {
     key: "staffName",
     header: "\u63A5\u5F85\u4EBA",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 12 }, children: row.staffName })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 12 }, children: row.staffName })
   },
   {
     key: "notes",
     header: "\u5907\u6CE8",
-    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { fontSize: 11, color: "#64748b" }, children: row.notes || "\u2014" })
+    render: (row) => /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 11, color: "#64748b" }, children: row.notes || "\u2014" })
   }
 ];
 function buildOverviewStats(overview) {
@@ -6516,24 +6714,24 @@ var ConciergePanel = ({
 }) => {
   const overviewStats = buildOverviewStats(overview);
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { className, style: PANEL_STYLE2, "data-testid": "concierge-panel-loading", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { padding: "40px", textAlign: "center", color: "#64748b" }, children: "\u52A0\u8F7D\u4E2D..." }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { className, style: PANEL_STYLE2, "data-testid": "concierge-panel-loading", children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { padding: "40px", textAlign: "center", color: "#64748b" }, children: "\u52A0\u8F7D\u4E2D..." }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { className, style: PANEL_STYLE2, "data-testid": "concierge-panel", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: HEADER_STYLE2, children: /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("h2", { style: HEADER_TITLE_STYLE, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { className, style: PANEL_STYLE2, "data-testid": "concierge-panel", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: HEADER_STYLE2, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("h2", { style: HEADER_TITLE_STYLE, children: [
         "\u{1F3A9} ",
         conciergeName,
         "\u5DE5\u4F5C\u53F0"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: HEADER_SUBTITLE_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: HEADER_SUBTITLE_STYLE, children: [
         "\u793C\u5BBE\u7BA1\u5BB6 \xB7 \u4F1A\u5458\u670D\u52A1\u9762\u677F",
-        lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: SYNC_TEXT_STYLE, children: [
+        lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("span", { style: SYNC_TEXT_STYLE, children: [
           " \xB7 \u540C\u6B65\u4E8E ",
           fmtTime(lastSyncAt)
         ] })
       ] })
     ] }) }),
-    actions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: ACTIONS_BAR_STYLE, "data-testid": "concierge-actions", children: actions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(
+    actions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: ACTIONS_BAR_STYLE, "data-testid": "concierge-actions", children: actions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)(
       "button",
       {
         style: action.primary ? ACTION_BTN_PRIMARY : ACTION_BTN_BASE,
@@ -6541,85 +6739,85 @@ var ConciergePanel = ({
         "data-testid": `concierge-action-${action.key}`,
         type: "button",
         children: [
-          action.icon && /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { marginRight: 6 }, children: action.icon }),
+          action.icon && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { marginRight: 6 }, children: action.icon }),
           action.label
         ]
       },
       action.key
     )) }),
-    overviewStats.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: SECTION_STYLE4, "data-testid": "concierge-overview", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(QuickStats, { items: overviewStats }) }),
-    recommendations.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_STYLE4, "data-testid": "concierge-recommendations", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_HEADER_STYLE3, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("h3", { style: SECTION_TITLE_STYLE4, children: "\u{1F4A1} \u4E2A\u6027\u5316\u63A8\u8350" }),
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+    overviewStats.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: SECTION_STYLE4, "data-testid": "concierge-overview", children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(QuickStats, { items: overviewStats }) }),
+    recommendations.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: SECTION_STYLE4, "data-testid": "concierge-recommendations", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: SECTION_HEADER_STYLE3, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("h3", { style: SECTION_TITLE_STYLE5, children: "\u{1F4A1} \u4E2A\u6027\u5316\u63A8\u8350" }),
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
           recommendations.length,
           " \u6761"
         ] })
       ] }),
-      compact ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: COMPACT_GRID_STYLE, children: recommendations.map((rec) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: RECOMMENDATION_CARD_STYLE, "data-testid": `recommendation-${rec.id}`, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: { flex: 1 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontWeight: 600, color: "#f1f5f9", fontSize: 13, marginBottom: 2 }, children: rec.productName }),
-          /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: { fontSize: 11, color: "#64748b" }, children: [
+      compact ? /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: COMPACT_GRID_STYLE, children: recommendations.map((rec) => /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: RECOMMENDATION_CARD_STYLE, "data-testid": `recommendation-${rec.id}`, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { fontWeight: 600, color: "#f1f5f9", fontSize: 13, marginBottom: 2 }, children: rec.productName }),
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { fontSize: 11, color: "#64748b" }, children: [
             rec.memberName,
             " \xB7 ",
             rec.productCategory,
-            rec.price != null && /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: { marginLeft: 6 }, children: [
+            rec.price != null && /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("span", { style: { marginLeft: 6 }, children: [
               "\xA5",
               fmtCurrency4(rec.price)
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 2 }, children: rec.reason })
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 2 }, children: rec.reason })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(Tag, { variant: confidenceTagVariant(rec.confidence).variant, children: confidenceTagVariant(rec.confidence).label })
-      ] }, rec.id)) }) : recommendations.map((rec) => /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: RECOMMENDATION_CARD_STYLE, "data-testid": `recommendation-${rec.id}`, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: { flex: 1 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontWeight: 600, color: "#f1f5f9", fontSize: 14, marginBottom: 3 }, children: rec.productName }),
-          /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: { fontSize: 12, color: "#94a3b8" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(Tag, { variant: confidenceTagVariant(rec.confidence).variant, children: confidenceTagVariant(rec.confidence).label })
+      ] }, rec.id)) }) : recommendations.map((rec) => /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: RECOMMENDATION_CARD_STYLE, "data-testid": `recommendation-${rec.id}`, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { fontWeight: 600, color: "#f1f5f9", fontSize: 14, marginBottom: 3 }, children: rec.productName }),
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { fontSize: 12, color: "#94a3b8" }, children: [
             "\u63A8\u8350\u7ED9 ",
-            /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("span", { style: { color: "#cbd5e1" }, children: rec.memberName }),
+            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { color: "#cbd5e1" }, children: rec.memberName }),
             " \xB7 ",
             rec.productCategory,
-            rec.price != null && /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: { marginLeft: 8 }, children: [
+            rec.price != null && /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("span", { style: { marginLeft: 8 }, children: [
               "\xA5",
               fmtCurrency4(rec.price)
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { fontSize: 11, color: "#64748b", marginTop: 3 }, children: rec.reason })
+          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { fontSize: 11, color: "#64748b", marginTop: 3 }, children: rec.reason })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(Tag, { variant: confidenceTagVariant(rec.confidence).variant, children: confidenceTagVariant(rec.confidence).label })
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(Tag, { variant: confidenceTagVariant(rec.confidence).variant, children: confidenceTagVariant(rec.confidence).label })
       ] }, rec.id))
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_STYLE4, "data-testid": "concierge-member-search", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: SECTION_HEADER_STYLE3, children: /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("h3", { style: SECTION_TITLE_STYLE4, children: "\u{1F50D} \u4F1A\u5458\u67E5\u8BE2" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: { padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(148,163,184,0.18)", background: "rgba(15,23,42,0.28)", color: "#94a3b8", fontSize: 13 }, children: "\u8F93\u5165\u4F1A\u5458\u59D3\u540D / \u624B\u673A\u53F7 / \u4F1A\u5458ID..." })
+    /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: SECTION_STYLE4, "data-testid": "concierge-member-search", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: SECTION_HEADER_STYLE3, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("h3", { style: SECTION_TITLE_STYLE5, children: "\u{1F50D} \u4F1A\u5458\u67E5\u8BE2" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(148,163,184,0.18)", background: "rgba(15,23,42,0.28)", color: "#94a3b8", fontSize: 13 }, children: "\u8F93\u5165\u4F1A\u5458\u59D3\u540D / \u624B\u673A\u53F7 / \u4F1A\u5458ID..." })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_STYLE4, "data-testid": "concierge-visits", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_HEADER_STYLE3, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("h3", { style: SECTION_TITLE_STYLE4, children: "\u{1F4CB} \u4ECA\u65E5\u6765\u8BBF" }),
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: SECTION_STYLE4, "data-testid": "concierge-visits", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: SECTION_HEADER_STYLE3, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("h3", { style: SECTION_TITLE_STYLE5, children: "\u{1F4CB} \u4ECA\u65E5\u6765\u8BBF" }),
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
           visitRecords.length,
           " \u6761"
         ] })
       ] }),
-      visitRecords.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(DataTable, { columns: VISIT_COLUMNS, rows: visitRecords, rowKey: (r) => r.id, emptyText: "\u6682\u65E0\u6765\u8BBF\u8BB0\u5F55" }) : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: EMPTY_STYLE, children: "\u6682\u65E0\u6765\u8BBF\u8BB0\u5F55" })
+      visitRecords.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(DataTable, { columns: VISIT_COLUMNS, rows: visitRecords, rowKey: (r) => r.id, emptyText: "\u6682\u65E0\u6765\u8BBF\u8BB0\u5F55" }) : /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: EMPTY_STYLE, children: "\u6682\u65E0\u6765\u8BBF\u8BB0\u5F55" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_STYLE4, "data-testid": "concierge-points", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("div", { style: SECTION_HEADER_STYLE3, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("h3", { style: SECTION_TITLE_STYLE4, children: "\u{1F4B0} \u79EF\u5206\u6D41\u6C34" }),
-        /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: SECTION_STYLE4, "data-testid": "concierge-points", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: SECTION_HEADER_STYLE3, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("h3", { style: SECTION_TITLE_STYLE5, children: "\u{1F4B0} \u79EF\u5206\u6D41\u6C34" }),
+        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
           pointsTransactions.length,
           " \u6761"
         ] })
       ] }),
-      pointsTransactions.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(DataTable, { columns: TX_COLUMNS, rows: pointsTransactions, rowKey: (r) => r.id, emptyText: "\u6682\u65E0\u79EF\u5206\u53D8\u52A8\u8BB0\u5F55" }) : /* @__PURE__ */ (0, import_jsx_runtime27.jsx)("div", { style: EMPTY_STYLE, children: "\u6682\u65E0\u79EF\u5206\u53D8\u52A8\u8BB0\u5F55" })
+      pointsTransactions.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(DataTable, { columns: TX_COLUMNS, rows: pointsTransactions, rowKey: (r) => r.id, emptyText: "\u6682\u65E0\u79EF\u5206\u53D8\u52A8\u8BB0\u5F55" }) : /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: EMPTY_STYLE, children: "\u6682\u65E0\u79EF\u5206\u53D8\u52A8\u8BB0\u5F55" })
     ] })
   ] });
 };
 ConciergePanel.displayName = "ConciergePanel";
 
 // src/components/DateTimePicker.tsx
-var import_react14 = __toESM(require("react"));
-var import_jsx_runtime28 = require("react/jsx-runtime");
+var import_react15 = __toESM(require("react"));
+var import_jsx_runtime29 = require("react/jsx-runtime");
 var DAY_NAMES = ["\u65E5", "\u4E00", "\u4E8C", "\u4E09", "\u56DB", "\u4E94", "\u516D"];
 var MONTH_NAMES = ["1\u6708", "2\u6708", "3\u6708", "4\u6708", "5\u6708", "6\u6708", "7\u6708", "8\u6708", "9\u6708", "10\u6708", "11\u6708", "12\u6708"];
 function getDaysInMonth2(year, month) {
@@ -6705,10 +6903,10 @@ function CalendarPopover({
   max,
   anchorRect
 }) {
-  const [viewYear, setViewYear] = (0, import_react14.useState)(year);
-  const [viewMonth, setViewMonth] = (0, import_react14.useState)(month);
-  const popoverRef = (0, import_react14.useRef)(null);
-  (0, import_react14.useEffect)(() => {
+  const [viewYear, setViewYear] = (0, import_react15.useState)(year);
+  const [viewMonth, setViewMonth] = (0, import_react15.useState)(month);
+  const popoverRef = (0, import_react15.useRef)(null);
+  (0, import_react15.useEffect)(() => {
     function handleClick(e) {
       if (popoverRef.current && !popoverRef.current.contains(e.target)) {
         onClose();
@@ -6717,7 +6915,7 @@ function CalendarPopover({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [onClose]);
-  (0, import_react14.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     function handleKey(e) {
       if (e.key === "Escape") onClose();
     }
@@ -6774,7 +6972,7 @@ function CalendarPopover({
     cursor: "pointer",
     fontSize: 11
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { ref: popoverRef, style: popStyle, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("div", { ref: popoverRef, style: popStyle, children: /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)(
     "div",
     {
       style: {
@@ -6786,16 +6984,16 @@ function CalendarPopover({
         backdropFilter: "blur(16px)"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("button", { type: "button", onClick: handlePrevMonth, style: btnStyle, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("path", { d: "M10 12L6 8l4-4", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("span", { style: { fontSize: 13, fontWeight: 600, color: TEXT_COLOR }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("button", { type: "button", onClick: handlePrevMonth, style: btnStyle, children: /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("path", { d: "M10 12L6 8l4-4", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("span", { style: { fontSize: 13, fontWeight: 600, color: TEXT_COLOR }, children: [
             viewYear,
             "\u5E74 ",
             MONTH_NAMES[viewMonth]
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("button", { type: "button", onClick: handleNextMonth, style: btnStyle, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("path", { d: "M6 4l4 4-4 4", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }) }) })
+          /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("button", { type: "button", onClick: handleNextMonth, style: btnStyle, children: /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("path", { d: "M6 4l4 4-4 4", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }) }) })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }, children: DAY_NAMES.map((name) => /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }, children: DAY_NAMES.map((name) => /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
           "div",
           {
             style: {
@@ -6808,11 +7006,11 @@ function CalendarPopover({
           },
           name
         )) }),
-        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }, children: Array.from({ length: totalCells }, (_, i) => {
+        /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }, children: Array.from({ length: totalCells }, (_, i) => {
           const day = i - firstDay + 1;
           const isEmpty = day < 1 || day > daysInMonth;
           if (isEmpty) {
-            return /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", {}, i);
+            return /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("div", {}, i);
           }
           const dateStr = formatDateValue(viewYear, viewMonth, day);
           const selected = dateStr === selectedDate;
@@ -6832,7 +7030,7 @@ function CalendarPopover({
           if (disabled) {
             dayColor = MUTED_COLOR;
           }
-          return /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+          return /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
             "button",
             {
               type: "button",
@@ -6859,7 +7057,7 @@ function CalendarPopover({
             i
           );
         }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { marginTop: 8, borderTop: `1px solid ${BORDER_COLOR}`, paddingTop: 8, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("div", { style: { marginTop: 8, borderTop: `1px solid ${BORDER_COLOR}`, paddingTop: 8, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
           "button",
           {
             type: "button",
@@ -6885,11 +7083,11 @@ function CalendarPopover({
 }
 function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
   const parts = parseTimeParts(selectedTime ?? "00:00:00");
-  const [hour, setHour] = (0, import_react14.useState)(parts?.h ?? 0);
-  const [minute, setMinute] = (0, import_react14.useState)(parts?.m ?? 0);
-  const [second, setSecond] = (0, import_react14.useState)(parts?.s ?? 0);
-  const popoverRef = (0, import_react14.useRef)(null);
-  (0, import_react14.useEffect)(() => {
+  const [hour, setHour] = (0, import_react15.useState)(parts?.h ?? 0);
+  const [minute, setMinute] = (0, import_react15.useState)(parts?.m ?? 0);
+  const [second, setSecond] = (0, import_react15.useState)(parts?.s ?? 0);
+  const popoverRef = (0, import_react15.useRef)(null);
+  (0, import_react15.useEffect)(() => {
     function handleClick(e) {
       if (popoverRef.current && !popoverRef.current.contains(e.target)) {
         onClose();
@@ -6898,7 +7096,7 @@ function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [onClose]);
-  (0, import_react14.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     function handleKey(e) {
       if (e.key === "Escape") onClose();
     }
@@ -6937,7 +7135,7 @@ function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
     top: anchorRect.bottom + 4,
     left: anchorRect.left
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { ref: popoverRef, style: popStyle, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("div", { ref: popoverRef, style: popStyle, children: /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)(
     "div",
     {
       style: {
@@ -6950,9 +7148,9 @@ function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
         minWidth: 200
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
               "button",
               {
                 type: "button",
@@ -6961,8 +7159,8 @@ function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
                 children: "\u25B2"
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: numberStyle, children: pad(hour) }),
-            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: numberStyle, children: pad(hour) }),
+            /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
               "button",
               {
                 type: "button",
@@ -6972,9 +7170,9 @@ function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
               }
             )
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 18, color: MUTED_COLOR, fontWeight: 600 }, children: ":" }),
-          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: { fontSize: 18, color: MUTED_COLOR, fontWeight: 600 }, children: ":" }),
+          /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
               "button",
               {
                 type: "button",
@@ -6983,8 +7181,8 @@ function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
                 children: "\u25B2"
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: numberStyle, children: pad(minute) }),
-            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: numberStyle, children: pad(minute) }),
+            /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
               "button",
               {
                 type: "button",
@@ -6994,9 +7192,9 @@ function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
               }
             )
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 18, color: MUTED_COLOR, fontWeight: 600 }, children: ":" }),
-          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: { fontSize: 18, color: MUTED_COLOR, fontWeight: 600 }, children: ":" }),
+          /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
               "button",
               {
                 type: "button",
@@ -7005,8 +7203,8 @@ function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
                 children: "\u25B2"
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: numberStyle, children: pad(second) }),
-            /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: numberStyle, children: pad(second) }),
+            /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
               "button",
               {
                 type: "button",
@@ -7017,7 +7215,7 @@ function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
             )
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("div", { style: { marginTop: 12, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("div", { style: { marginTop: 12, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
           "button",
           {
             type: "button",
@@ -7039,7 +7237,7 @@ function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
     }
   ) });
 }
-var DateTimePicker = import_react14.default.memo(function DateTimePicker2({
+var DateTimePicker = import_react15.default.memo(function DateTimePicker2({
   value,
   onChange,
   mode = "date",
@@ -7054,17 +7252,17 @@ var DateTimePicker = import_react14.default.memo(function DateTimePicker2({
   style,
   className
 }) {
-  const [isCalendarOpen, setCalendarOpen] = (0, import_react14.useState)(false);
-  const [isTimeOpen, setTimeOpen] = (0, import_react14.useState)(false);
-  const [internalValue, setInternalValue] = (0, import_react14.useState)(value ?? "");
-  const inputRef = (0, import_react14.useRef)(null);
-  const containerRef = (0, import_react14.useRef)(null);
-  (0, import_react14.useEffect)(() => {
+  const [isCalendarOpen, setCalendarOpen] = (0, import_react15.useState)(false);
+  const [isTimeOpen, setTimeOpen] = (0, import_react15.useState)(false);
+  const [internalValue, setInternalValue] = (0, import_react15.useState)(value ?? "");
+  const inputRef = (0, import_react15.useRef)(null);
+  const containerRef = (0, import_react15.useRef)(null);
+  (0, import_react15.useEffect)(() => {
     if (value !== void 0) {
       setInternalValue(value);
     }
   }, [value]);
-  const handleDateSelect = (0, import_react14.useCallback)(
+  const handleDateSelect = (0, import_react15.useCallback)(
     (dateStr) => {
       let newValue;
       if (mode === "datetime") {
@@ -7085,7 +7283,7 @@ var DateTimePicker = import_react14.default.memo(function DateTimePicker2({
     },
     [internalValue, mode, onChange]
   );
-  const handleTimeSelect = (0, import_react14.useCallback)(
+  const handleTimeSelect = (0, import_react15.useCallback)(
     (timeStr) => {
       let newValue;
       if (mode === "datetime") {
@@ -7107,7 +7305,7 @@ var DateTimePicker = import_react14.default.memo(function DateTimePicker2({
     },
     [internalValue, mode, onChange]
   );
-  const handleInputClick = (0, import_react14.useCallback)(() => {
+  const handleInputClick = (0, import_react15.useCallback)(() => {
     if (disabled) return;
     if (mode === "time") {
       setTimeOpen(true);
@@ -7155,8 +7353,8 @@ var DateTimePicker = import_react14.default.memo(function DateTimePicker2({
   const showTimeIcon = mode === "datetime";
   let inputBorderColor = BORDER_COLOR;
   if (error) inputBorderColor = "rgba(248, 113, 113, 0.4)";
-  return /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { ref: containerRef, style: { display: "flex", flexDirection: "column", gap: 6, ...style }, className, children: [
-    label && /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { ref: containerRef, style: { display: "flex", flexDirection: "column", gap: 6, ...style }, className, children: [
+    label && /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)(
       "label",
       {
         style: {
@@ -7166,14 +7364,14 @@ var DateTimePicker = import_react14.default.memo(function DateTimePicker2({
         },
         children: [
           label,
-          required && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { color: "#f87171", marginLeft: 2 }, children: "*" })
+          required && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: { color: "#f87171", marginLeft: 2 }, children: "*" })
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { position: "relative" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { display: "flex", gap: 4 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("div", { style: { position: "relative", flex: 1 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { style: { position: "relative" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { style: { display: "flex", gap: 4 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { style: { position: "relative", flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)(
             "svg",
             {
               width: "16",
@@ -7189,12 +7387,12 @@ var DateTimePicker = import_react14.default.memo(function DateTimePicker2({
                 color: MUTED_COLOR
               },
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("rect", { x: "2", y: "3", width: "12", height: "11", rx: "1.5", stroke: "currentColor", strokeWidth: "1.2" }),
-                /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("path", { d: "M11 2v2M5 2v2M2 6h12", stroke: "currentColor", strokeWidth: "1.2", strokeLinecap: "round" })
+                /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("rect", { x: "2", y: "3", width: "12", height: "11", rx: "1.5", stroke: "currentColor", strokeWidth: "1.2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("path", { d: "M11 2v2M5 2v2M2 6h12", stroke: "currentColor", strokeWidth: "1.2", strokeLinecap: "round" })
               ]
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
             "input",
             {
               ref: inputRef,
@@ -7214,7 +7412,7 @@ var DateTimePicker = import_react14.default.memo(function DateTimePicker2({
             }
           )
         ] }),
-        showTimeIcon && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+        showTimeIcon && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
           "button",
           {
             type: "button",
@@ -7239,14 +7437,14 @@ var DateTimePicker = import_react14.default.memo(function DateTimePicker2({
               flexShrink: 0
             },
             title: "\u9009\u62E9\u65F6\u95F4",
-            children: /* @__PURE__ */ (0, import_jsx_runtime28.jsxs)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("circle", { cx: "8", cy: "8", r: "6", stroke: "currentColor", strokeWidth: "1.2" }),
-              /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("path", { d: "M8 5v3l2 2", stroke: "currentColor", strokeWidth: "1.2", strokeLinecap: "round", strokeLinejoin: "round" })
+            children: /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("circle", { cx: "8", cy: "8", r: "6", stroke: "currentColor", strokeWidth: "1.2" }),
+              /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("path", { d: "M8 5v3l2 2", stroke: "currentColor", strokeWidth: "1.2", strokeLinecap: "round", strokeLinejoin: "round" })
             ] })
           }
         )
       ] }),
-      isCalendarOpen && inputRef.current && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+      isCalendarOpen && inputRef.current && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
         CalendarPopover,
         {
           year: defaultDate?.y ?? now.getFullYear(),
@@ -7263,7 +7461,7 @@ var DateTimePicker = import_react14.default.memo(function DateTimePicker2({
           anchorRect: inputRef.current.getBoundingClientRect()
         }
       ),
-      isTimeOpen && inputRef.current && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+      isTimeOpen && inputRef.current && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
         TimePopover,
         {
           selectedTime: parseTimeParts(internalValue) ? formatTimeValue(
@@ -7277,14 +7475,14 @@ var DateTimePicker = import_react14.default.memo(function DateTimePicker2({
         }
       )
     ] }),
-    error && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 11, color: "#f87171" }, children: error }),
-    helpText && !error && /* @__PURE__ */ (0, import_jsx_runtime28.jsx)("span", { style: { fontSize: 11, color: MUTED_COLOR }, children: helpText })
+    error && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: { fontSize: 11, color: "#f87171" }, children: error }),
+    helpText && !error && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: { fontSize: 11, color: MUTED_COLOR }, children: helpText })
   ] });
 });
 
 // src/components/TimePicker.tsx
-var import_react15 = __toESM(require("react"));
-var import_jsx_runtime29 = require("react/jsx-runtime");
+var import_react16 = __toESM(require("react"));
+var import_jsx_runtime30 = require("react/jsx-runtime");
 function pad2(n) {
   return String(n).padStart(2, "0");
 }
@@ -7399,14 +7597,14 @@ var TimePicker = ({
   id,
   readOnly = false
 }) => {
-  const parsed = (0, import_react15.useMemo)(() => parseTime(value), [value]);
-  const [focused, setFocused] = (0, import_react15.useState)(false);
-  const [localH, setLocalH] = (0, import_react15.useState)(parsed?.h ?? 0);
-  const [localM, setLocalM] = (0, import_react15.useState)(parsed?.m ?? 0);
-  const [localS, setLocalS] = (0, import_react15.useState)(parsed?.s ?? 0);
-  const inputRef = (0, import_react15.useRef)(null);
-  const segmentRefs = (0, import_react15.useRef)([]);
-  (0, import_react15.useEffect)(() => {
+  const parsed = (0, import_react16.useMemo)(() => parseTime(value), [value]);
+  const [focused, setFocused] = (0, import_react16.useState)(false);
+  const [localH, setLocalH] = (0, import_react16.useState)(parsed?.h ?? 0);
+  const [localM, setLocalM] = (0, import_react16.useState)(parsed?.m ?? 0);
+  const [localS, setLocalS] = (0, import_react16.useState)(parsed?.s ?? 0);
+  const inputRef = (0, import_react16.useRef)(null);
+  const segmentRefs = (0, import_react16.useRef)([]);
+  (0, import_react16.useEffect)(() => {
     if (parsed) {
       setLocalH(parsed.h);
       setLocalM(parsed.m);
@@ -7416,7 +7614,7 @@ var TimePicker = ({
   const clampHour = (h) => Math.max(minHour, Math.min(maxHour, h));
   const clampMinute = (m) => Math.max(0, Math.min(59, Math.round(m / minuteStep) * minuteStep));
   const clampSecond = (s) => Math.max(0, Math.min(59, s));
-  const emit = (0, import_react15.useCallback)(
+  const emit = (0, import_react16.useCallback)(
     (h, m, s) => {
       const hh = clampHour(h);
       const mm = clampMinute(m);
@@ -7519,15 +7717,15 @@ var TimePicker = ({
     { value: pad2(displayH12), max: use12Hour ? 12 : maxHour, index: 0 },
     { value: pad2(localM), max: 59, index: 1 }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { style: { ...styles.wrapper, ...style }, className, children: [
-    label && /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("label", { style: styles.label, htmlFor: id ? `${id}-h` : void 0, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime30.jsxs)("div", { style: { ...styles.wrapper, ...style }, className, children: [
+    label && /* @__PURE__ */ (0, import_jsx_runtime30.jsxs)("label", { style: styles.label, htmlFor: id ? `${id}-h` : void 0, children: [
       label,
-      required && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
+      required && /* @__PURE__ */ (0, import_jsx_runtime30.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)("div", { ref: inputRef, style: inputRowStyle, children: [
-      segments.map((seg, idx) => /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)(import_react15.default.Fragment, { children: [
-        idx > 0 && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: styles.separator, children: ":" }),
-        /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime30.jsxs)("div", { ref: inputRef, style: inputRowStyle, children: [
+      segments.map((seg, idx) => /* @__PURE__ */ (0, import_jsx_runtime30.jsxs)(import_react16.default.Fragment, { children: [
+        idx > 0 && /* @__PURE__ */ (0, import_jsx_runtime30.jsx)("span", { style: styles.separator, children: ":" }),
+        /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(
           "input",
           {
             id: idx === 0 && id ? `${id}-h` : idx === 1 && id ? `${id}-m` : void 0,
@@ -7563,7 +7761,7 @@ var TimePicker = ({
           }
         )
       ] }, idx)),
-      use12Hour && !disabled && !readOnly && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(
+      use12Hour && !disabled && !readOnly && /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(
         "button",
         {
           type: "button",
@@ -7574,13 +7772,13 @@ var TimePicker = ({
         }
       )
     ] }),
-    error && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: styles.errorText, children: error }),
-    helpText && !error && /* @__PURE__ */ (0, import_jsx_runtime29.jsx)("span", { style: styles.helpText, children: helpText })
+    error && /* @__PURE__ */ (0, import_jsx_runtime30.jsx)("span", { style: styles.errorText, children: error }),
+    helpText && !error && /* @__PURE__ */ (0, import_jsx_runtime30.jsx)("span", { style: styles.helpText, children: helpText })
   ] });
 };
 
 // src/components/Card.tsx
-var import_jsx_runtime30 = require("react/jsx-runtime");
+var import_jsx_runtime31 = require("react/jsx-runtime");
 var VARIANT_STYLES3 = {
   default: {
     background: "rgba(15, 23, 42, 0.35)",
@@ -7612,7 +7810,7 @@ function Card({
   "data-testid": dataTestId
 }) {
   const variantStyle = VARIANT_STYLES3[variant] ?? VARIANT_STYLES3.default;
-  return /* @__PURE__ */ (0, import_jsx_runtime30.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime31.jsxs)(
     "div",
     {
       "data-testid": dataTestId,
@@ -7623,7 +7821,7 @@ function Card({
         ...style
       },
       children: [
-        title || subtitle || headerActions ? /* @__PURE__ */ (0, import_jsx_runtime30.jsxs)(
+        title || subtitle || headerActions ? /* @__PURE__ */ (0, import_jsx_runtime31.jsxs)(
           "div",
           {
             style: {
@@ -7634,8 +7832,8 @@ function Card({
               marginBottom: children || footer ? 16 : 0
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime30.jsxs)("div", { children: [
-                title ? /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime31.jsxs)("div", { children: [
+                title ? /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
                   "h2",
                   {
                     style: {
@@ -7647,7 +7845,7 @@ function Card({
                     children: title
                   }
                 ) : null,
-                subtitle ? /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(
+                subtitle ? /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
                   "div",
                   {
                     style: {
@@ -7659,12 +7857,12 @@ function Card({
                   }
                 ) : null
               ] }),
-              headerActions ? /* @__PURE__ */ (0, import_jsx_runtime30.jsx)("div", { style: { flexShrink: 0 }, children: headerActions }) : null
+              headerActions ? /* @__PURE__ */ (0, import_jsx_runtime31.jsx)("div", { style: { flexShrink: 0 }, children: headerActions }) : null
             ]
           }
         ) : null,
         children,
-        footer ? /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(
+        footer ? /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
           "div",
           {
             style: {
@@ -7681,7 +7879,7 @@ function Card({
 }
 
 // src/components/StatCard.tsx
-var import_jsx_runtime31 = require("react/jsx-runtime");
+var import_jsx_runtime32 = require("react/jsx-runtime");
 var ACCENTS = {
   default: "#3b82f6",
   info: "#3b82f6",
@@ -7691,7 +7889,7 @@ var ACCENTS = {
 };
 function StatCard({ label, value, trend, icon, variant = "default", helper }) {
   const accent = ACCENTS[variant] ?? ACCENTS.default;
-  return /* @__PURE__ */ (0, import_jsx_runtime31.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)(
     "div",
     {
       style: {
@@ -7704,13 +7902,13 @@ function StatCard({ label, value, trend, icon, variant = "default", helper }) {
         gap: 8
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime31.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime31.jsx)("span", { style: { fontSize: 13, color: "#94a3b8", fontWeight: 500 }, children: label }),
-          icon && /* @__PURE__ */ (0, import_jsx_runtime31.jsx)("span", { style: { color: accent }, children: icon })
+        /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("span", { style: { fontSize: 13, color: "#94a3b8", fontWeight: 500 }, children: label }),
+          icon && /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("span", { style: { color: accent }, children: icon })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime31.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 10 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime31.jsx)("span", { style: { fontSize: 28, fontWeight: 700, color: "#f8fafc" }, children: value }),
-          trend && /* @__PURE__ */ (0, import_jsx_runtime31.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 10 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("span", { style: { fontSize: 28, fontWeight: 700, color: "#f8fafc" }, children: value }),
+          trend && /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)(
             "span",
             {
               style: {
@@ -7726,15 +7924,15 @@ function StatCard({ label, value, trend, icon, variant = "default", helper }) {
             }
           )
         ] }),
-        helper ? /* @__PURE__ */ (0, import_jsx_runtime31.jsx)("div", { style: { fontSize: 12, color: "#94a3b8" }, children: helper }) : null
+        helper ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("div", { style: { fontSize: 12, color: "#94a3b8" }, children: helper }) : null
       ]
     }
   );
 }
 
 // src/components/Table.tsx
-var import_react16 = require("react");
-var import_jsx_runtime32 = require("react/jsx-runtime");
+var import_react17 = require("react");
+var import_jsx_runtime33 = require("react/jsx-runtime");
 var SORT_ARROW = {
   asc: " \u25B2",
   desc: " \u25BC"
@@ -7760,9 +7958,9 @@ function Table({
   title,
   toolbar
 }) {
-  const [internalSelected, setInternalSelected] = (0, import_react16.useState)([]);
+  const [internalSelected, setInternalSelected] = (0, import_react17.useState)([]);
   const resolvedSelected = selectedKeys ?? internalSelected;
-  const handleSelectAll = (0, import_react16.useCallback)(
+  const handleSelectAll = (0, import_react17.useCallback)(
     (checked) => {
       const all = checked ? rows.map((r) => rowKey(r)) : [];
       if (!selectedKeys) setInternalSelected(all);
@@ -7770,7 +7968,7 @@ function Table({
     },
     [rows, rowKey, selectedKeys, onSelectionChange]
   );
-  const handleSelectOne = (0, import_react16.useCallback)(
+  const handleSelectOne = (0, import_react17.useCallback)(
     (key, checked) => {
       const next = checked ? [...resolvedSelected, key] : resolvedSelected.filter((k) => k !== key);
       if (!selectedKeys) setInternalSelected(next);
@@ -7778,10 +7976,10 @@ function Table({
     },
     [resolvedSelected, selectedKeys, onSelectionChange]
   );
-  const allKeys = (0, import_react16.useMemo)(() => rows.map((r) => rowKey(r)), [rows, rowKey]);
+  const allKeys = (0, import_react17.useMemo)(() => rows.map((r) => rowKey(r)), [rows, rowKey]);
   const allSelected = allKeys.length > 0 && allKeys.every((k) => resolvedSelected.includes(k));
   const someSelected = resolvedSelected.length > 0 && !allSelected;
-  const handleSortClick = (0, import_react16.useCallback)(
+  const handleSortClick = (0, import_react17.useCallback)(
     (col) => {
       if (!col.sortable || !onSortChange) return;
       if (sort?.key === col.key) {
@@ -7796,7 +7994,7 @@ function Table({
     },
     [sort, onSortChange]
   );
-  const headerCellStyle = (0, import_react16.useMemo)(
+  const headerCellStyle = (0, import_react17.useMemo)(
     () => ({
       padding: compact ? "8px 12px" : "10px 16px",
       textAlign: "left",
@@ -7810,7 +8008,7 @@ function Table({
     }),
     [compact, bordered]
   );
-  const cellStyle = (0, import_react16.useMemo)(
+  const cellStyle = (0, import_react17.useMemo)(
     () => ({
       padding: compact ? "8px 12px" : "10px 16px",
       color: "#e2e8f0",
@@ -7819,16 +8017,16 @@ function Table({
     [compact, bordered]
   );
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("div", { style: { padding: 40, textAlign: "center", color: "#94a3b8", fontSize: 14 }, children: "Loading..." });
+    return /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("div", { style: { padding: 40, textAlign: "center", color: "#94a3b8", fontSize: 14 }, children: "Loading..." });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("div", { style: { overflowX: "auto" }, children: [
-    title || toolbar ? /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 0 12px", gap: 12 }, children: [
-      title ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("div", { style: { color: "#e2e8f0", fontWeight: 600, fontSize: 14 }, children: title }) : /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("div", {}),
-      toolbar ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("div", { style: { display: "flex", gap: 8 }, children: toolbar }) : null
+  return /* @__PURE__ */ (0, import_jsx_runtime33.jsxs)("div", { style: { overflowX: "auto" }, children: [
+    title || toolbar ? /* @__PURE__ */ (0, import_jsx_runtime33.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 0 12px", gap: 12 }, children: [
+      title ? /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("div", { style: { color: "#e2e8f0", fontWeight: 600, fontSize: 14 }, children: title }) : /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("div", {}),
+      toolbar ? /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("div", { style: { display: "flex", gap: 8 }, children: toolbar }) : null
     ] }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 14 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("tr", { children: [
-        selectable ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("th", { style: { ...headerCellStyle, width: 40, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime33.jsxs)("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 14 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime33.jsxs)("tr", { children: [
+        selectable ? /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("th", { style: { ...headerCellStyle, width: 40, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(
           "input",
           {
             type: "checkbox",
@@ -7843,7 +8041,7 @@ function Table({
         columns.map((col) => {
           const isSortCol = sort?.key === col.key;
           const sortArrow = isSortCol ? SORT_ARROW[sort.direction] : "";
-          return /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)(
+          return /* @__PURE__ */ (0, import_jsx_runtime33.jsxs)(
             "th",
             {
               style: {
@@ -7856,14 +8054,14 @@ function Table({
               onClick: () => handleSortClick(col),
               children: [
                 col.header ?? col.title ?? col.key,
-                col.sortable && onSortChange ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("span", { style: { color: isSortCol ? "#38bdf8" : "#475569", marginLeft: 2 }, children: sortArrow || " \u2195" }) : null
+                col.sortable && onSortChange ? /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("span", { style: { color: isSortCol ? "#38bdf8" : "#475569", marginLeft: 2 }, children: sortArrow || " \u2195" }) : null
               ]
             },
             col.key
           );
         })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("tbody", { children: rows.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("tr", { children: /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("tbody", { children: rows.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("tr", { children: /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(
         "td",
         {
           colSpan: columns.length + (selectable ? 1 : 0),
@@ -7873,7 +8071,7 @@ function Table({
       ) }) : rows.map((row, idx) => {
         const key = rowKey(row);
         const isSelected = resolvedSelected.includes(key);
-        return /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)(
+        return /* @__PURE__ */ (0, import_jsx_runtime33.jsxs)(
           "tr",
           {
             onClick: () => onRowClick?.(row),
@@ -7893,7 +8091,7 @@ function Table({
               }
             } : void 0,
             children: [
-              selectable ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("td", { style: { ...cellStyle, width: 40, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(
+              selectable ? /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("td", { style: { ...cellStyle, width: 40, textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(
                 "input",
                 {
                   type: "checkbox",
@@ -7902,7 +8100,7 @@ function Table({
                   "aria-label": `Select row ${key}`
                 }
               ) }) : null,
-              columns.map((col) => /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(
+              columns.map((col) => /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(
                 "td",
                 {
                   style: { ...cellStyle, textAlign: col.align ?? "left" },
@@ -7916,7 +8114,7 @@ function Table({
         );
       }) })
     ] }),
-    pagination && onPaginationChange ? /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)(
+    pagination && onPaginationChange ? /* @__PURE__ */ (0, import_jsx_runtime33.jsxs)(
       "div",
       {
         style: {
@@ -7928,12 +8126,12 @@ function Table({
           fontSize: 13
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime32.jsx)("span", { children: pagination.total > 0 ? `Showing ${pagination.page * pagination.pageSize + 1}\u2013${Math.min(
+          /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("span", { children: pagination.total > 0 ? `Showing ${pagination.page * pagination.pageSize + 1}\u2013${Math.min(
             (pagination.page + 1) * pagination.pageSize,
             pagination.total
           )} of ${pagination.total}` : "No results" }),
-          /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("div", { style: { display: "flex", gap: 6 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime33.jsxs)("div", { style: { display: "flex", gap: 6 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(
               "button",
               {
                 disabled: pagination.page <= 0,
@@ -7950,13 +8148,13 @@ function Table({
                 children: "\u2190 Prev"
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)("span", { style: { padding: "4px 8px" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime33.jsxs)("span", { style: { padding: "4px 8px" }, children: [
               "Page ",
               pagination.page + 1,
               " / ",
               Math.max(1, Math.ceil(pagination.total / pagination.pageSize))
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(
               "button",
               {
                 disabled: (pagination.page + 1) * pagination.pageSize >= pagination.total,
@@ -7981,10 +8179,10 @@ function Table({
 }
 
 // src/components/EmptyState.tsx
-var import_jsx_runtime33 = require("react/jsx-runtime");
+var import_jsx_runtime34 = require("react/jsx-runtime");
 function EmptyState({ title = "\u6682\u65E0\u6570\u636E", description, action, icon, variant = "default" }) {
   const compact = variant === "compact";
-  return /* @__PURE__ */ (0, import_jsx_runtime33.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime34.jsxs)(
     "div",
     {
       style: {
@@ -7996,17 +8194,17 @@ function EmptyState({ title = "\u6682\u65E0\u6570\u636E", description, action, i
         textAlign: "center"
       },
       children: [
-        icon && /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("div", { style: { marginBottom: 16, color: "#475569" }, children: icon }),
-        /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("h3", { style: { fontSize: 16, fontWeight: 600, color: "#94a3b8", margin: 0 }, children: title }),
-        description && /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("p", { style: { fontSize: 13, color: "#64748b", margin: "4px 0 16px", maxWidth: 320 }, children: description }),
-        action && /* @__PURE__ */ (0, import_jsx_runtime33.jsx)("div", { children: action })
+        icon && /* @__PURE__ */ (0, import_jsx_runtime34.jsx)("div", { style: { marginBottom: 16, color: "#475569" }, children: icon }),
+        /* @__PURE__ */ (0, import_jsx_runtime34.jsx)("h3", { style: { fontSize: 16, fontWeight: 600, color: "#94a3b8", margin: 0 }, children: title }),
+        description && /* @__PURE__ */ (0, import_jsx_runtime34.jsx)("p", { style: { fontSize: 13, color: "#64748b", margin: "4px 0 16px", maxWidth: 320 }, children: description }),
+        action && /* @__PURE__ */ (0, import_jsx_runtime34.jsx)("div", { children: action })
       ]
     }
   );
 }
 
 // src/components/LoadingSkeleton.tsx
-var import_jsx_runtime34 = require("react/jsx-runtime");
+var import_jsx_runtime35 = require("react/jsx-runtime");
 function LoadingSkeleton({
   lines,
   rows,
@@ -8015,9 +8213,9 @@ function LoadingSkeleton({
 }) {
   const resolvedLines = lines ?? (variant === "card" ? 2 : 3);
   const resolvedRows = rows ?? (variant === "card" ? 2 : 5);
-  return /* @__PURE__ */ (0, import_jsx_runtime34.jsxs)("div", { style: { padding: 24, display: "flex", flexDirection: "column", gap: 16 }, children: [
-    label ? /* @__PURE__ */ (0, import_jsx_runtime34.jsx)("div", { style: { fontSize: 13, color: "#94a3b8" }, children: label }) : null,
-    Array.from({ length: resolvedLines }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime34.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime35.jsxs)("div", { style: { padding: 24, display: "flex", flexDirection: "column", gap: 16 }, children: [
+    label ? /* @__PURE__ */ (0, import_jsx_runtime35.jsx)("div", { style: { fontSize: 13, color: "#94a3b8" }, children: label }) : null,
+    Array.from({ length: resolvedLines }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(
       "div",
       {
         style: {
@@ -8031,7 +8229,7 @@ function LoadingSkeleton({
       },
       `line-${i}`
     )),
-    /* @__PURE__ */ (0, import_jsx_runtime34.jsx)("div", { style: { marginTop: 16 }, children: Array.from({ length: resolvedRows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime34.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime35.jsx)("div", { style: { marginTop: 16 }, children: Array.from({ length: resolvedRows }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(
       "div",
       {
         style: {
@@ -8045,7 +8243,7 @@ function LoadingSkeleton({
       },
       `row-${i}`
     )) }),
-    /* @__PURE__ */ (0, import_jsx_runtime34.jsx)("style", { children: `
+    /* @__PURE__ */ (0, import_jsx_runtime35.jsx)("style", { children: `
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
@@ -8055,18 +8253,18 @@ function LoadingSkeleton({
 }
 
 // src/components/Pagination.tsx
-var import_react17 = __toESM(require("react"));
-var import_jsx_runtime35 = require("react/jsx-runtime");
+var import_react18 = __toESM(require("react"));
+var import_jsx_runtime36 = require("react/jsx-runtime");
 function usePagination(totalOrOptions, pageSizeArg, initialPageArg = 1) {
   const isLegacyConfig = typeof totalOrOptions === "object";
   const total = typeof totalOrOptions === "number" ? totalOrOptions : 0;
   const initialPage = isLegacyConfig ? totalOrOptions.initialPage ?? 1 : initialPageArg;
   const initialPageSize = isLegacyConfig ? totalOrOptions.initialPageSize ?? 10 : pageSizeArg ?? 10;
-  const [page, setPage] = import_react17.default.useState(initialPage);
-  const [pageSize, setPageSize] = import_react17.default.useState(initialPageSize);
+  const [page, setPage] = import_react18.default.useState(initialPage);
+  const [pageSize, setPageSize] = import_react18.default.useState(initialPageSize);
   const totalPages = Math.max(1, Math.ceil(total / Math.max(pageSize, 1)));
-  const resetPage = import_react17.default.useCallback(() => setPage(1), []);
-  const paginate = import_react17.default.useCallback(
+  const resetPage = import_react18.default.useCallback(() => setPage(1), []);
+  const paginate = import_react18.default.useCallback(
     (items) => items.slice((page - 1) * pageSize, page * pageSize),
     [page, pageSize]
   );
@@ -8083,7 +8281,7 @@ function Pagination({
   size = "md"
 }) {
   const resolvedTotalPages = totalPages ?? Math.max(1, Math.ceil(total / Math.max(pageSize ?? pageSizeOptions[0] ?? 10, 1)));
-  const pages = (0, import_react17.useMemo)(() => {
+  const pages = (0, import_react18.useMemo)(() => {
     const result = [];
     if (resolvedTotalPages <= 7) {
       for (let i = 1; i <= resolvedTotalPages; i++) result.push(i);
@@ -8113,7 +8311,7 @@ function Pagination({
     cursor: "pointer",
     transition: "all 0.15s"
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime35.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)(
     "div",
     {
       style: {
@@ -8125,13 +8323,13 @@ function Pagination({
         padding: "12px 0"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime35.jsxs)("span", { style: { fontSize: 13, color: "#64748b" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)("span", { style: { fontSize: 13, color: "#64748b" }, children: [
           "Total ",
           total,
           " items"
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime35.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }, children: [
-          pageSize && onPageSizeChange ? /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }, children: [
+          pageSize && onPageSizeChange ? /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(
             "select",
             {
               value: pageSize,
@@ -8144,14 +8342,14 @@ function Pagination({
                 padding: "8px 10px",
                 fontSize: size === "sm" ? 12 : 13
               },
-              children: pageSizeOptions.map((option) => /* @__PURE__ */ (0, import_jsx_runtime35.jsxs)("option", { value: option, children: [
+              children: pageSizeOptions.map((option) => /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)("option", { value: option, children: [
                 option,
                 " / page"
               ] }, option))
             }
           ) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime35.jsxs)("div", { style: { display: "flex", gap: 4 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)("div", { style: { display: "flex", gap: 4 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(
               "button",
               {
                 type: "button",
@@ -8162,14 +8360,14 @@ function Pagination({
               }
             ),
             pages.map(
-              (p, i) => p === "..." ? /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(
+              (p, i) => p === "..." ? /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(
                 "span",
                 {
                   style: { display: "inline-flex", alignItems: "center", padding: "0 4px", color: "#64748b" },
                   children: "\u2026"
                 },
                 `dots-${i}`
-              ) : /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(
+              ) : /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(
                 "button",
                 {
                   type: "button",
@@ -8185,7 +8383,7 @@ function Pagination({
                 p
               )
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(
               "button",
               {
                 type: "button",
@@ -8203,7 +8401,7 @@ function Pagination({
 }
 
 // src/components/PaginatedDataTableCard.tsx
-var import_jsx_runtime36 = require("react/jsx-runtime");
+var import_jsx_runtime37 = require("react/jsx-runtime");
 function PaginatedDataTableCard({
   title,
   columns,
@@ -8218,7 +8416,7 @@ function PaginatedDataTableCard({
   emptyDescription,
   pagination
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
     "div",
     {
       style: {
@@ -8227,8 +8425,8 @@ function PaginatedDataTableCard({
         borderRadius: 12,
         overflow: "hidden"
       },
-      children: loading ? /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(LoadingSkeleton, { lines: 2, rows: 5 }) : rows.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(EmptyState, { title: emptyTitle, description: emptyDescription }) : /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)(import_jsx_runtime36.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(
+      children: loading ? /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(LoadingSkeleton, { lines: 2, rows: 5 }) : rows.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(EmptyState, { title: emptyTitle, description: emptyDescription }) : /* @__PURE__ */ (0, import_jsx_runtime37.jsxs)(import_jsx_runtime37.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
           DataTable,
           {
             title,
@@ -8241,7 +8439,7 @@ function PaginatedDataTableCard({
             compact
           }
         ),
-        pagination ? /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("div", { style: { padding: "0 16px" }, children: /* @__PURE__ */ (0, import_jsx_runtime36.jsx)(
+        pagination ? /* @__PURE__ */ (0, import_jsx_runtime37.jsx)("div", { style: { padding: "0 16px" }, children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
           Pagination,
           {
             page: pagination.page,
@@ -8256,7 +8454,7 @@ function PaginatedDataTableCard({
 }
 
 // src/components/Progress.tsx
-var import_jsx_runtime37 = require("react/jsx-runtime");
+var import_jsx_runtime38 = require("react/jsx-runtime");
 var VARIANT_COLORS = {
   default: "#38bdf8",
   success: "#22c55e",
@@ -8308,7 +8506,7 @@ function Progress({
   const color = VARIANT_COLORS[variant] ?? VARIANT_COLORS.default;
   const bg = VARIANT_BG[variant] ?? VARIANT_BG.default;
   const label = formatLabel ? formatLabel(percentage) : `${percentage}%`;
-  return /* @__PURE__ */ (0, import_jsx_runtime37.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime38.jsxs)(
     "div",
     {
       "data-testid": dataTestId,
@@ -8327,7 +8525,7 @@ function Progress({
         ...style
       },
       children: [
-        showLabel ? /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
+        showLabel ? /* @__PURE__ */ (0, import_jsx_runtime38.jsx)(
           "div",
           {
             "data-testid": dataTestId ? `${dataTestId}-label` : void 0,
@@ -8341,7 +8539,7 @@ function Progress({
             children: label
           }
         ) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime38.jsx)(
           "div",
           {
             "data-testid": dataTestId ? `${dataTestId}-track` : void 0,
@@ -8353,7 +8551,7 @@ function Progress({
               overflow: "hidden",
               position: "relative"
             },
-            children: /* @__PURE__ */ (0, import_jsx_runtime37.jsx)(
+            children: /* @__PURE__ */ (0, import_jsx_runtime38.jsx)(
               "div",
               {
                 "data-testid": dataTestId ? `${dataTestId}-fill` : void 0,
@@ -8378,8 +8576,8 @@ function Progress({
 }
 
 // src/components/ScrollArea.tsx
-var import_react18 = require("react");
-var import_jsx_runtime38 = require("react/jsx-runtime");
+var import_react19 = require("react");
+var import_jsx_runtime39 = require("react/jsx-runtime");
 function ScrollArea({
   children,
   maxHeight,
@@ -8397,9 +8595,9 @@ function ScrollArea({
   onScroll,
   autoScrollToBottom = false
 }) {
-  const viewportRef = (0, import_react18.useRef)(null);
-  const contentRef = (0, import_react18.useRef)(null);
-  const [scrollState, setScrollState] = (0, import_react18.useState)({
+  const viewportRef = (0, import_react19.useRef)(null);
+  const contentRef = (0, import_react19.useRef)(null);
+  const [scrollState, setScrollState] = (0, import_react19.useState)({
     scrollTop: 0,
     scrollHeight: 0,
     clientHeight: 0,
@@ -8411,7 +8609,7 @@ function ScrollArea({
     showTopShadow: false,
     showBottomShadow: false
   });
-  const recalc = (0, import_react18.useCallback)(() => {
+  const recalc = (0, import_react19.useCallback)(() => {
     const vp = viewportRef.current;
     if (!vp) return;
     const { scrollTop, scrollHeight, clientHeight } = vp;
@@ -8429,13 +8627,13 @@ function ScrollArea({
     }));
     onScroll?.(scrollTop, scrollHeight, clientHeight);
   }, [onScroll, showShadowEdges]);
-  (0, import_react18.useEffect)(() => {
+  (0, import_react19.useEffect)(() => {
     if (!autoScrollToBottom || !viewportRef.current) return;
     const vp = viewportRef.current;
     vp.scrollTop = vp.scrollHeight;
     recalc();
   }, [children, autoScrollToBottom, recalc]);
-  (0, import_react18.useEffect)(() => {
+  (0, import_react19.useEffect)(() => {
     const vp = viewportRef.current;
     if (!vp) return;
     recalc();
@@ -8444,17 +8642,17 @@ function ScrollArea({
     if (contentRef.current) ro.observe(contentRef.current);
     return () => ro.disconnect();
   }, [recalc]);
-  const handleScroll = (0, import_react18.useCallback)(() => {
+  const handleScroll = (0, import_react19.useCallback)(() => {
     recalc();
   }, [recalc]);
-  const handleMouseEnter = (0, import_react18.useCallback)(() => {
+  const handleMouseEnter = (0, import_react19.useCallback)(() => {
     if (!alwaysVisible) setScrollState((prev) => ({ ...prev, isHovered: true }));
   }, [alwaysVisible]);
-  const handleMouseLeave = (0, import_react18.useCallback)(() => {
+  const handleMouseLeave = (0, import_react19.useCallback)(() => {
     if (!alwaysVisible)
       setScrollState((prev) => ({ ...prev, isHovered: false, isScrolling: false }));
   }, [alwaysVisible]);
-  const handleThumbMouseDown = (0, import_react18.useCallback)(
+  const handleThumbMouseDown = (0, import_react19.useCallback)(
     (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -8526,7 +8724,7 @@ function ScrollArea({
     transition: scrollState.thumbDragging ? "none" : "opacity 0.15s ease, background 0.15s ease",
     opacity: showScrollbar ? 0.8 : 0
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime38.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime39.jsxs)(
     "div",
     {
       "data-testid": dataTestId,
@@ -8535,7 +8733,7 @@ function ScrollArea({
       onMouseEnter: handleMouseEnter,
       onMouseLeave: handleMouseLeave,
       children: [
-        showShadowEdges && scrollState.showTopShadow ? /* @__PURE__ */ (0, import_jsx_runtime38.jsx)(
+        showShadowEdges && scrollState.showTopShadow ? /* @__PURE__ */ (0, import_jsx_runtime39.jsx)(
           "div",
           {
             "data-testid": dataTestId ? `${dataTestId}-top-shadow` : void 0,
@@ -8551,7 +8749,7 @@ function ScrollArea({
             }
           }
         ) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime38.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime39.jsxs)(
           "div",
           {
             ref: viewportRef,
@@ -8569,7 +8767,7 @@ function ScrollArea({
                 setScrollState((prev) => ({ ...prev, isScrolling: false }));
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime38.jsx)("style", { children: `
+              /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("style", { children: `
           [data-testid="${dataTestId ? `${dataTestId}-viewport` : ""}"]::-webkit-scrollbar {
             display: none;
           }
@@ -8578,16 +8776,16 @@ function ScrollArea({
             scrollbar-width: none;
           }
         ` }),
-              /* @__PURE__ */ (0, import_jsx_runtime38.jsx)("div", { ref: contentRef, "data-testid": dataTestId ? `${dataTestId}-content` : void 0, children })
+              /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("div", { ref: contentRef, "data-testid": dataTestId ? `${dataTestId}-content` : void 0, children })
             ]
           }
         ),
-        hasScrollbar ? /* @__PURE__ */ (0, import_jsx_runtime38.jsx)(
+        hasScrollbar ? /* @__PURE__ */ (0, import_jsx_runtime39.jsx)(
           "div",
           {
             "data-testid": dataTestId ? `${dataTestId}-track` : void 0,
             style: trackStyle,
-            children: /* @__PURE__ */ (0, import_jsx_runtime38.jsx)(
+            children: /* @__PURE__ */ (0, import_jsx_runtime39.jsx)(
               "div",
               {
                 "data-testid": dataTestId ? `${dataTestId}-thumb` : void 0,
@@ -8605,7 +8803,7 @@ function ScrollArea({
             )
           }
         ) : null,
-        showShadowEdges && scrollState.showBottomShadow ? /* @__PURE__ */ (0, import_jsx_runtime38.jsx)(
+        showShadowEdges && scrollState.showBottomShadow ? /* @__PURE__ */ (0, import_jsx_runtime39.jsx)(
           "div",
           {
             "data-testid": dataTestId ? `${dataTestId}-bottom-shadow` : void 0,
@@ -8627,11 +8825,11 @@ function ScrollArea({
 }
 
 // src/components/PageShell.tsx
-var import_jsx_runtime39 = require("react/jsx-runtime");
+var import_jsx_runtime40 = require("react/jsx-runtime");
 function PageShell({ title, description, subtitle, actions, children }) {
   const resolvedDescription = description ?? subtitle;
-  return /* @__PURE__ */ (0, import_jsx_runtime39.jsxs)("div", { style: { padding: "24px 32px", maxWidth: 1280, margin: "0 auto" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime39.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)("div", { style: { padding: "24px 32px", maxWidth: 1280, margin: "0 auto" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)(
       "div",
       {
         style: {
@@ -8643,11 +8841,11 @@ function PageShell({ title, description, subtitle, actions, children }) {
           gap: 12
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime39.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("h1", { style: { fontSize: 24, fontWeight: 700, color: "#f8fafc", margin: 0 }, children: title }),
-            resolvedDescription && /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("p", { style: { fontSize: 14, color: "#94a3b8", margin: "4px 0 0" }, children: resolvedDescription })
+          /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("h1", { style: { fontSize: 24, fontWeight: 700, color: "#f8fafc", margin: 0 }, children: title }),
+            resolvedDescription && /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("p", { style: { fontSize: 14, color: "#94a3b8", margin: "4px 0 0" }, children: resolvedDescription })
           ] }),
-          actions && /* @__PURE__ */ (0, import_jsx_runtime39.jsx)("div", { style: { display: "flex", gap: 8 }, children: actions })
+          actions && /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("div", { style: { display: "flex", gap: 8 }, children: actions })
         ]
       }
     ),
@@ -8656,8 +8854,8 @@ function PageShell({ title, description, subtitle, actions, children }) {
 }
 
 // src/components/DetailShell.tsx
-var import_react19 = __toESM(require("react"));
-var import_jsx_runtime40 = require("react/jsx-runtime");
+var import_react20 = __toESM(require("react"));
+var import_jsx_runtime41 = require("react/jsx-runtime");
 function DetailShell({
   title,
   backHref,
@@ -8675,10 +8873,10 @@ function DetailShell({
   const resolvedBackHref = backLink?.href ?? backHref;
   const resolvedBackLabel = backLink?.label ?? backLabel;
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("div", { style: { padding: 40, textAlign: "center", color: "#94a3b8" }, children: "Loading..." });
+    return /* @__PURE__ */ (0, import_jsx_runtime41.jsx)("div", { style: { padding: 40, textAlign: "center", color: "#94a3b8" }, children: "Loading..." });
   }
   if (error) {
-    return /* @__PURE__ */ (0, import_jsx_runtime40.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime41.jsx)(
       "div",
       {
         style: {
@@ -8693,12 +8891,12 @@ function DetailShell({
       }
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)("div", { style: { padding: "24px 32px", maxWidth: 960, margin: "0 auto" }, children: [
-    breadcrumbs?.length ? /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12, fontSize: 13, color: "#94a3b8" }, children: breadcrumbs.map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)(import_react19.default.Fragment, { children: [
-      item.href ? /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("a", { href: item.href, style: { color: "#93c5fd", textDecoration: "none" }, children: item.label }) : /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("span", { children: item.label }),
-      index < breadcrumbs.length - 1 ? /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("span", { children: "/" }) : null
+  return /* @__PURE__ */ (0, import_jsx_runtime41.jsxs)("div", { style: { padding: "24px 32px", maxWidth: 960, margin: "0 auto" }, children: [
+    breadcrumbs?.length ? /* @__PURE__ */ (0, import_jsx_runtime41.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12, fontSize: 13, color: "#94a3b8" }, children: breadcrumbs.map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime41.jsxs)(import_react20.default.Fragment, { children: [
+      item.href ? /* @__PURE__ */ (0, import_jsx_runtime41.jsx)("a", { href: item.href, style: { color: "#93c5fd", textDecoration: "none" }, children: item.label }) : /* @__PURE__ */ (0, import_jsx_runtime41.jsx)("span", { children: item.label }),
+      index < breadcrumbs.length - 1 ? /* @__PURE__ */ (0, import_jsx_runtime41.jsx)("span", { children: "/" }) : null
     ] }, `${item.label}-${index}`)) }) : null,
-    (resolvedBackHref || onBack) && /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)(
+    (resolvedBackHref || onBack) && /* @__PURE__ */ (0, import_jsx_runtime41.jsxs)(
       "a",
       {
         href: resolvedBackHref,
@@ -8723,14 +8921,14 @@ function DetailShell({
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", marginBottom: 24 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("h1", { style: { fontSize: 22, fontWeight: 700, color: "#f8fafc", margin: 0 }, children: title }),
-        subtitle ? /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("div", { style: { marginTop: 6, color: "#94a3b8", fontSize: 14 }, children: subtitle }) : null
+    /* @__PURE__ */ (0, import_jsx_runtime41.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", marginBottom: 24 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime41.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime41.jsx)("h1", { style: { fontSize: 22, fontWeight: 700, color: "#f8fafc", margin: 0 }, children: title }),
+        subtitle ? /* @__PURE__ */ (0, import_jsx_runtime41.jsx)("div", { style: { marginTop: 6, color: "#94a3b8", fontSize: 14 }, children: subtitle }) : null
       ] }),
-      actions?.length ? /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }, children: actions.map((action) => {
+      actions?.length ? /* @__PURE__ */ (0, import_jsx_runtime41.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }, children: actions.map((action) => {
         const palette = action.variant === "secondary" ? { background: "transparent", border: "1px solid rgba(148,163,184,0.18)", color: "#cbd5e1" } : action.variant === "danger" ? { background: "rgba(239,68,68,0.14)", border: "1px solid rgba(239,68,68,0.25)", color: "#fecaca" } : { background: "rgba(59,130,246,0.16)", border: "1px solid rgba(96,165,250,0.3)", color: "#dbeafe" };
-        return /* @__PURE__ */ (0, import_jsx_runtime40.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime41.jsx)(
           "button",
           {
             type: "button",
@@ -8749,7 +8947,7 @@ function DetailShell({
         );
       }) }) : null
     ] }),
-    children ?? /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 20 }, children: (sections ?? []).map((section, i) => /* @__PURE__ */ (0, import_jsx_runtime40.jsxs)(
+    children ?? /* @__PURE__ */ (0, import_jsx_runtime41.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 20 }, children: (sections ?? []).map((section, i) => /* @__PURE__ */ (0, import_jsx_runtime41.jsxs)(
       "div",
       {
         style: {
@@ -8759,7 +8957,7 @@ function DetailShell({
           padding: 20
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime40.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime41.jsx)(
             "h3",
             {
               style: {
@@ -8773,7 +8971,7 @@ function DetailShell({
               children: section.title
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime40.jsx)("div", { children: section.content })
+          /* @__PURE__ */ (0, import_jsx_runtime41.jsx)("div", { children: section.content })
         ]
       },
       i
@@ -8782,7 +8980,7 @@ function DetailShell({
 }
 
 // src/components/Tabs.tsx
-var import_jsx_runtime41 = require("react/jsx-runtime");
+var import_jsx_runtime42 = require("react/jsx-runtime");
 function Tabs({
   items,
   activeKey,
@@ -8808,7 +9006,7 @@ function Tabs({
       paddingBottom: 0
     } : {}
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime41.jsx)("div", { style: containerStyle, role: "tablist", children: items.map((item) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime42.jsx)("div", { style: containerStyle, role: "tablist", children: items.map((item) => {
     const active = item.key === activeKey;
     const fontSize = size === "sm" ? 13 : 14;
     const paddingV = size === "sm" ? 6 : 10;
@@ -8837,7 +9035,7 @@ function Tabs({
         marginBottom: -1
       } : {}
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime41.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime42.jsxs)(
       "button",
       {
         type: "button",
@@ -8847,7 +9045,7 @@ function Tabs({
         style,
         children: [
           item.label,
-          item.count !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime41.jsx)(
+          item.count !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime42.jsx)(
             "span",
             {
               style: {
@@ -8869,10 +9067,10 @@ function Tabs({
 }
 
 // src/components/FilterBar.tsx
-var import_jsx_runtime42 = require("react/jsx-runtime");
+var import_jsx_runtime43 = require("react/jsx-runtime");
 function FilterBar({ chips, onClearAll, activeCount }) {
   const count = activeCount ?? chips.filter((c) => c.active).length;
-  return /* @__PURE__ */ (0, import_jsx_runtime42.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
     "div",
     {
       style: {
@@ -8883,7 +9081,7 @@ function FilterBar({ chips, onClearAll, activeCount }) {
         padding: "8px 0"
       },
       children: [
-        chips.map((chip) => /* @__PURE__ */ (0, import_jsx_runtime42.jsx)(
+        chips.map((chip) => /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
           "button",
           {
             type: "button",
@@ -8903,7 +9101,7 @@ function FilterBar({ chips, onClearAll, activeCount }) {
           },
           chip.key
         )),
-        count > 0 && onClearAll && /* @__PURE__ */ (0, import_jsx_runtime42.jsx)(
+        count > 0 && onClearAll && /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
           "button",
           {
             type: "button",
@@ -8928,8 +9126,8 @@ function FilterBar({ chips, onClearAll, activeCount }) {
 }
 
 // src/components/ListToolbar.tsx
-var import_react20 = require("react");
-var import_jsx_runtime43 = require("react/jsx-runtime");
+var import_react21 = require("react");
+var import_jsx_runtime44 = require("react/jsx-runtime");
 var VIEW_MODE_ICONS = {
   table: "\u2630",
   grid: "\u229E",
@@ -8963,15 +9161,15 @@ function ListToolbar({
   disabled = false,
   "data-testid": testId
 }) {
-  const [internalSearchValue, setInternalSearchValue] = (0, import_react20.useState)(controlledSearchValue ?? "");
-  const debounceRef = (0, import_react20.useRef)(null);
+  const [internalSearchValue, setInternalSearchValue] = (0, import_react21.useState)(controlledSearchValue ?? "");
+  const debounceRef = (0, import_react21.useRef)(null);
   const searchValue = controlledSearchValue !== void 0 ? controlledSearchValue : internalSearchValue;
-  (0, import_react20.useEffect)(() => {
+  (0, import_react21.useEffect)(() => {
     if (controlledSearchValue !== void 0) {
       setInternalSearchValue(controlledSearchValue);
     }
   }, [controlledSearchValue]);
-  const handleSearchInputChange = (0, import_react20.useCallback)(
+  const handleSearchInputChange = (0, import_react21.useCallback)(
     (e) => {
       const value = e.target.value;
       if (controlledSearchValue === void 0) {
@@ -8985,7 +9183,7 @@ function ListToolbar({
     },
     [controlledSearchValue, onSearchChange, onSearch, searchDebounceMs]
   );
-  const handleSearchKeyDown = (0, import_react20.useCallback)(
+  const handleSearchKeyDown = (0, import_react21.useCallback)(
     (e) => {
       if (e.key === "Enter") {
         if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -8994,7 +9192,7 @@ function ListToolbar({
     },
     [onSearch, searchValue]
   );
-  const handleClearSearch = (0, import_react20.useCallback)(() => {
+  const handleClearSearch = (0, import_react21.useCallback)(() => {
     if (controlledSearchValue === void 0) {
       setInternalSearchValue("");
     }
@@ -9002,7 +9200,7 @@ function ListToolbar({
     onSearch?.("");
   }, [controlledSearchValue, onSearchChange, onSearch]);
   const activeFilterCount = filterOptions2?.filter((f) => f.active).length ?? 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
     "div",
     {
       "data-testid": testId,
@@ -9015,7 +9213,7 @@ function ListToolbar({
         pointerEvents: disabled ? "none" : "auto"
       },
       children: [
-        selectedCount > 0 && batchActions && batchActions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+        selectedCount > 0 && batchActions && batchActions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
           "div",
           {
             "data-testid": "list-toolbar-batch-bar",
@@ -9031,12 +9229,12 @@ function ListToolbar({
               flexWrap: "wrap"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)("span", { style: { fontSize: 13, fontWeight: 600, color: "#93c5fd" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)("span", { style: { fontSize: 13, fontWeight: 600, color: "#93c5fd" }, children: [
                 "\u5DF2\u9009\u62E9 ",
                 selectedCount,
                 " \u9879"
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime43.jsx)("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" }, children: batchActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" }, children: batchActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(
                 "button",
                 {
                   type: "button",
@@ -9061,7 +9259,7 @@ function ListToolbar({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
           "div",
           {
             style: {
@@ -9071,7 +9269,7 @@ function ListToolbar({
               flexWrap: "wrap"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
                 "div",
                 {
                   "data-testid": "list-toolbar-search",
@@ -9082,7 +9280,7 @@ function ListToolbar({
                     maxWidth: 400
                   },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(
                       "span",
                       {
                         style: {
@@ -9097,7 +9295,7 @@ function ListToolbar({
                         children: "\u{1F50D}"
                       }
                     ),
-                    /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(
                       "input",
                       {
                         type: "text",
@@ -9120,7 +9318,7 @@ function ListToolbar({
                         }
                       }
                     ),
-                    searchValue && /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                    searchValue && /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(
                       "button",
                       {
                         type: "button",
@@ -9146,8 +9344,8 @@ function ListToolbar({
                   ]
                 }
               ),
-              sortOptions && sortOptions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+              sortOptions && sortOptions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(
                   "select",
                   {
                     "data-testid": "list-toolbar-sort-select",
@@ -9164,10 +9362,10 @@ function ListToolbar({
                       outline: "none",
                       cursor: "pointer"
                     },
-                    children: sortOptions.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime43.jsx)("option", { value: opt.key, children: opt.label }, opt.key))
+                    children: sortOptions.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("option", { value: opt.key, children: opt.label }, opt.key))
                   }
                 ),
-                activeSortKey && onSortDirectionChange && /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                activeSortKey && onSortDirectionChange && /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(
                   "button",
                   {
                     type: "button",
@@ -9189,13 +9387,13 @@ function ListToolbar({
                   }
                 )
               ] }),
-              filterOptions2 && filterOptions2.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+              filterOptions2 && filterOptions2.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
                 "div",
                 {
                   "data-testid": "list-toolbar-filters",
                   style: { display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" },
                   children: [
-                    filterOptions2.map((filter) => /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                    filterOptions2.map((filter) => /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(
                       "button",
                       {
                         type: "button",
@@ -9217,7 +9415,7 @@ function ListToolbar({
                       },
                       filter.key
                     )),
-                    activeFilterCount > 0 && onClearFilters && /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+                    activeFilterCount > 0 && onClearFilters && /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
                       "button",
                       {
                         type: "button",
@@ -9244,7 +9442,7 @@ function ListToolbar({
                   ]
                 }
               ),
-              viewModes && viewModes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+              viewModes && viewModes.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(
                 "div",
                 {
                   "data-testid": "list-toolbar-view-modes",
@@ -9256,7 +9454,7 @@ function ListToolbar({
                     overflow: "hidden",
                     marginLeft: "auto"
                   },
-                  children: viewModes.map((mode) => /* @__PURE__ */ (0, import_jsx_runtime43.jsx)(
+                  children: viewModes.map((mode) => /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(
                     "button",
                     {
                       type: "button",
@@ -9282,7 +9480,7 @@ function ListToolbar({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
           "div",
           {
             style: {
@@ -9293,8 +9491,8 @@ function ListToolbar({
               flexWrap: "wrap"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }, children: [
-                createLabel && onCreate && /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }, children: [
+                createLabel && onCreate && /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
                   "button",
                   {
                     type: "button",
@@ -9317,7 +9515,7 @@ function ListToolbar({
                     ]
                   }
                 ),
-                totalCount !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime43.jsxs)(
+                totalCount !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
                   "span",
                   {
                     "data-testid": "list-toolbar-total",
@@ -9331,7 +9529,7 @@ function ListToolbar({
                   }
                 )
               ] }),
-              children && /* @__PURE__ */ (0, import_jsx_runtime43.jsx)("div", { "data-testid": "list-toolbar-children", children })
+              children && /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("div", { "data-testid": "list-toolbar-children", children })
             ]
           }
         )
@@ -9341,15 +9539,15 @@ function ListToolbar({
 }
 
 // src/components/FilterChips.tsx
-var import_jsx_runtime44 = require("react/jsx-runtime");
+var import_jsx_runtime45 = require("react/jsx-runtime");
 var TONE_MAP = {
   neutral: { bg: "rgba(71, 85, 105, 0.2)", border: "rgba(100, 116, 139, 0.3)", color: "#cbd5e1", hoverBg: "rgba(71, 85, 105, 0.35)" },
   warning: { bg: "rgba(245, 158, 11, 0.12)", border: "rgba(251, 191, 36, 0.3)", color: "#fbbf24", hoverBg: "rgba(245, 158, 11, 0.22)" },
   danger: { bg: "rgba(239, 68, 68, 0.12)", border: "rgba(248, 113, 113, 0.3)", color: "#f87171", hoverBg: "rgba(239, 68, 68, 0.22)" },
   success: { bg: "rgba(34, 197, 94, 0.12)", border: "rgba(74, 222, 128, 0.3)", color: "#4ade80", hoverBg: "rgba(34, 197, 94, 0.22)" }
 };
-var X_ICON = /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 10 10", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("path", { d: "M1 1l8 8M9 1l-8 8", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }) });
-var CLEAR_ICON = /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 10 10", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("path", { d: "M2 2l6 6M8 2l-6 6", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }) });
+var X_ICON = /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 10 10", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("path", { d: "M1 1l8 8M9 1l-8 8", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }) });
+var CLEAR_ICON = /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 10 10", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("path", { d: "M2 2l6 6M8 2l-6 6", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }) });
 function FilterChips({
   hint,
   chips,
@@ -9363,7 +9561,7 @@ function FilterChips({
   const fontSize = isSm ? 12 : 13;
   const paddingY = isSm ? 3 : 5;
   const paddingX = isSm ? 8 : 10;
-  return /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)(
     "div",
     {
       style: {
@@ -9374,10 +9572,10 @@ function FilterChips({
         ...style
       },
       children: [
-        hint ? /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("span", { style: { fontSize: 11, color: "#64748b", marginRight: 2, userSelect: "none" }, children: hint }) : null,
+        hint ? /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("span", { style: { fontSize: 11, color: "#64748b", marginRight: 2, userSelect: "none" }, children: hint }) : null,
         chips.map((chip) => {
           const tone = TONE_MAP[chip.tone ?? "neutral"];
-          return /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
+          return /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)(
             "span",
             {
               style: {
@@ -9405,12 +9603,12 @@ function FilterChips({
               "aria-label": `\u7B5B\u9009: ${chip.label}${chip.count !== void 0 ? ` (${chip.count})` : ""}`,
               children: [
                 chip.label,
-                chip.count !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)("span", { style: { fontSize: fontSize - 1, opacity: 0.75, fontWeight: 500 }, children: [
+                chip.count !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)("span", { style: { fontSize: fontSize - 1, opacity: 0.75, fontWeight: 500 }, children: [
                   "(",
                   chip.count,
                   ")"
                 ] }) : null,
-                /* @__PURE__ */ (0, import_jsx_runtime44.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime45.jsx)(
                   "button",
                   {
                     type: "button",
@@ -9445,7 +9643,7 @@ function FilterChips({
             chip.key
           );
         }),
-        onClearAll && chips.length > 1 ? /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
+        onClearAll && chips.length > 1 ? /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)(
           "button",
           {
             type: "button",
@@ -9477,7 +9675,7 @@ function FilterChips({
             "aria-label": "\u6E05\u9664\u5168\u90E8\u7B5B\u9009",
             children: [
               CLEAR_ICON,
-              /* @__PURE__ */ (0, import_jsx_runtime44.jsx)("span", { children: "\u6E05\u9664\u5168\u90E8" })
+              /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("span", { children: "\u6E05\u9664\u5168\u90E8" })
             ]
           }
         ) : null
@@ -9487,17 +9685,17 @@ function FilterChips({
 }
 
 // src/components/ListPageScaffold.tsx
-var import_react22 = require("react");
+var import_react23 = require("react");
 
 // src/components/LinkedOverviewStubs.tsx
-var import_react21 = __toESM(require("react"));
+var import_react22 = __toESM(require("react"));
 var import_types = require("@m5/types");
-var import_jsx_runtime45 = require("react/jsx-runtime");
+var import_jsx_runtime46 = require("react/jsx-runtime");
 function useSearchFilter2(...args) {
   if (Array.isArray(args[0])) {
     const items = args[0];
-    const [searchTerm, setSearchTerm] = import_react21.default.useState("");
-    const filteredItems = import_react21.default.useMemo(() => {
+    const [searchTerm, setSearchTerm] = import_react22.default.useState("");
+    const filteredItems = import_react22.default.useMemo(() => {
       if (!searchTerm.trim()) return items;
       const term = searchTerm.toLowerCase();
       return items.filter((item) => {
@@ -9518,7 +9716,7 @@ function useSearchFilter2(...args) {
   return useSearchFilter(initialValue, debounceMs);
 }
 function SearchFilterInput2(props) {
-  return import_react21.default.createElement(SearchFilterInput, { width: "100%", ...props });
+  return import_react22.default.createElement(SearchFilterInput, { width: "100%", ...props });
 }
 var DEFAULT_FILTERS = {
   action: "ALL",
@@ -9568,7 +9766,7 @@ async function writeTextToClipboard(text) {
   }
 }
 function renderMetaLine(line, index) {
-  return import_react21.default.createElement(
+  return import_react22.default.createElement(
     "div",
     {
       key: `${line}-${index}`,
@@ -9581,15 +9779,15 @@ function FoundationAlertLinkedAlertGridReadout(props) {
   const { palette, title, emptyText, items = [], variant = "catalog", onSelect } = props;
   const accentBorder = variant === "risk" ? palette?.riskCardBorder ?? "rgba(96,165,250,0.2)" : palette?.catalogActiveBorder ?? "rgba(96,165,250,0.2)";
   const accentBackground = variant === "risk" ? palette?.riskCardBackground ?? "rgba(59,130,246,0.12)" : "rgba(15,23,42,0.28)";
-  return import_react21.default.createElement(
+  return import_react22.default.createElement(
     "section",
     { style: { marginTop: 16 } },
-    title ? import_react21.default.createElement(
+    title ? import_react22.default.createElement(
       "div",
       { style: { fontSize: 14, fontWeight: 700, color: "#e2e8f0", marginBottom: 10 } },
       title
     ) : null,
-    items.length === 0 ? import_react21.default.createElement(
+    items.length === 0 ? import_react22.default.createElement(
       "div",
       {
         style: {
@@ -9602,7 +9800,7 @@ function FoundationAlertLinkedAlertGridReadout(props) {
         }
       },
       emptyText ?? "\u6682\u65E0\u53EF\u5C55\u793A\u7684\u544A\u8B66"
-    ) : import_react21.default.createElement(
+    ) : import_react22.default.createElement(
       "div",
       {
         style: {
@@ -9612,7 +9810,7 @@ function FoundationAlertLinkedAlertGridReadout(props) {
         }
       },
       ...items.map(
-        (item) => import_react21.default.createElement(
+        (item) => import_react22.default.createElement(
           "button",
           {
             key: item.key,
@@ -9628,24 +9826,24 @@ function FoundationAlertLinkedAlertGridReadout(props) {
               cursor: "pointer"
             }
           },
-          import_react21.default.createElement(
+          import_react22.default.createElement(
             "div",
             { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 } },
-            import_react21.default.createElement(
+            import_react22.default.createElement(
               "div",
               null,
-              import_react21.default.createElement(
+              import_react22.default.createElement(
                 "div",
                 { style: { fontWeight: 700, fontSize: 14, color: palette?.accentText ?? "#93c5fd" } },
                 item.code ?? item.key
               ),
-              import_react21.default.createElement(
+              import_react22.default.createElement(
                 "div",
                 { style: { marginTop: 6, fontSize: 13, color: "#cbd5e1", lineHeight: 1.5 } },
                 item.summary ?? item.accent ?? ""
               )
             ),
-            item.isActive ? import_react21.default.createElement(
+            item.isActive ? import_react22.default.createElement(
               "span",
               {
                 style: {
@@ -9660,12 +9858,12 @@ function FoundationAlertLinkedAlertGridReadout(props) {
               "\u5DF2\u805A\u7126"
             ) : null
           ),
-          item.accent ? import_react21.default.createElement(
+          item.accent ? import_react22.default.createElement(
             "div",
             { style: { marginTop: 10, fontSize: 12, color: "#94a3b8", lineHeight: 1.5 } },
             item.accent
           ) : null,
-          item.metaLines?.length ? import_react21.default.createElement(
+          item.metaLines?.length ? import_react22.default.createElement(
             "div",
             { style: { marginTop: 10, display: "grid", gap: 4 } },
             ...item.metaLines.map(renderMetaLine)
@@ -9696,7 +9894,7 @@ function FoundationAlertLinkedFocusBarReadout(props) {
     fontSize: 12,
     cursor: "pointer"
   };
-  return import_react21.default.createElement(
+  return import_react22.default.createElement(
     "section",
     {
       style: {
@@ -9706,32 +9904,32 @@ function FoundationAlertLinkedFocusBarReadout(props) {
         border: `1px solid ${palette?.focusBannerBorder ?? "rgba(96,165,250,0.18)"}`
       }
     },
-    import_react21.default.createElement(
+    import_react22.default.createElement(
       "div",
       { style: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" } },
-      import_react21.default.createElement(
+      import_react22.default.createElement(
         "div",
         null,
-        import_react21.default.createElement(
+        import_react22.default.createElement(
           "div",
           { style: { fontSize: 13, fontWeight: 700, color: "#e2e8f0" } },
           `\u5F53\u524D\u805A\u7126 ${focusQueryLabel ?? "?alert=none"}`
         ),
-        import_react21.default.createElement(
+        import_react22.default.createElement(
           "div",
           { style: { marginTop: 6, fontSize: 12, color: palette?.accentText ?? "#93c5fd" } },
           hasLinkedFilters ? linkedFilterSummary ?? "\u5DF2\u6302\u8F7D\u8054\u52A8\u7B5B\u9009" : "\u5168\u90E8 timeline"
         ),
-        import_react21.default.createElement(
+        import_react22.default.createElement(
           "div",
           { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" } },
           linkedFilterQueryPreview ?? "(default)"
         )
       ),
-      import_react21.default.createElement(
+      import_react22.default.createElement(
         "div",
         { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
-        import_react21.default.createElement(
+        import_react22.default.createElement(
           "button",
           {
             type: "button",
@@ -9740,7 +9938,7 @@ function FoundationAlertLinkedFocusBarReadout(props) {
           },
           "\u590D\u5236\u8054\u52A8\u94FE\u63A5"
         ),
-        hasLinkedFilters ? import_react21.default.createElement(
+        hasLinkedFilters ? import_react22.default.createElement(
           "button",
           {
             type: "button",
@@ -9755,7 +9953,7 @@ function FoundationAlertLinkedFocusBarReadout(props) {
         ) : null
       )
     ),
-    import_react21.default.createElement(
+    import_react22.default.createElement(
       "div",
       {
         style: {
@@ -9770,7 +9968,7 @@ function FoundationAlertLinkedFocusBarReadout(props) {
 }
 function FoundationAlertLinkedOverviewStatsReadout(props) {
   const { palette, items = [], onSelect } = props;
-  return import_react21.default.createElement(
+  return import_react22.default.createElement(
     "div",
     {
       style: {
@@ -9781,7 +9979,7 @@ function FoundationAlertLinkedOverviewStatsReadout(props) {
       }
     },
     ...items.map(
-      (item) => import_react21.default.createElement(
+      (item) => import_react22.default.createElement(
         "button",
         {
           key: item.key,
@@ -9797,9 +9995,9 @@ function FoundationAlertLinkedOverviewStatsReadout(props) {
             color: "#e2e8f0"
           }
         },
-        import_react21.default.createElement("div", { style: { fontSize: 12, color: "#94a3b8" } }, item.label),
-        import_react21.default.createElement("div", { style: { marginTop: 8, fontSize: 26, fontWeight: 700 } }, item.value),
-        import_react21.default.createElement(
+        import_react22.default.createElement("div", { style: { fontSize: 12, color: "#94a3b8" } }, item.label),
+        import_react22.default.createElement("div", { style: { marginTop: 8, fontSize: 26, fontWeight: 700 } }, item.value),
+        import_react22.default.createElement(
           "div",
           { style: { marginTop: 8, fontSize: 12, color: palette?.accentText ?? "#93c5fd", lineHeight: 1.5 } },
           item.helper
@@ -9821,10 +10019,10 @@ function createFoundationAlertNextNavigationBindings(opts) {
 }
 function useFoundationAlertLinkedFocusQuery(opts) {
   const focusQueryKey = opts?.focusQueryKey ?? "alert";
-  const queryKeys = import_react21.default.useMemo(() => buildFocusQueryKeys(focusQueryKey), [focusQueryKey]);
-  const searchParams = import_react21.default.useMemo(() => toSearchParams(opts?.searchParams), [opts?.searchParams]);
+  const queryKeys = import_react22.default.useMemo(() => buildFocusQueryKeys(focusQueryKey), [focusQueryKey]);
+  const searchParams = import_react22.default.useMemo(() => toSearchParams(opts?.searchParams), [opts?.searchParams]);
   const searchSnapshot = searchParams.toString();
-  const resolveStateFromSearch = import_react21.default.useCallback(() => {
+  const resolveStateFromSearch = import_react22.default.useCallback(() => {
     const params = toSearchParams(opts?.searchParams);
     const filters = (0, import_types.buildFoundationAlertTimelineFilterStateFromQuery)({
       action: params.get(queryKeys.timeline.action),
@@ -9838,14 +10036,14 @@ function useFoundationAlertLinkedFocusQuery(opts) {
       fromQuery: params.has(queryKeys.focus)
     };
   }, [opts?.candidateGroups, opts?.defaultFocusCode, opts?.searchParams, queryKeys]);
-  const initialState = import_react21.default.useMemo(() => resolveStateFromSearch(), [resolveStateFromSearch]);
-  const [focusAlertCode, setFocusAlertCode] = import_react21.default.useState(initialState.focusCode);
-  const [linkedFilters, setLinkedFilters] = import_react21.default.useState(initialState.filters);
-  const [focusContext, setFocusContext] = import_react21.default.useState(
+  const initialState = import_react22.default.useMemo(() => resolveStateFromSearch(), [resolveStateFromSearch]);
+  const [focusAlertCode, setFocusAlertCode] = import_react22.default.useState(initialState.focusCode);
+  const [linkedFilters, setLinkedFilters] = import_react22.default.useState(initialState.filters);
+  const [focusContext, setFocusContext] = import_react22.default.useState(
     () => initialState.fromQuery ? (0, import_types.buildFoundationAlertLinkedFocusContext)(`URL \u805A\u7126 / ${initialState.focusCode || "none"}`, initialState.filters) : opts?.defaultFocusContext ?? ""
   );
-  const [shareStatus, setShareStatus] = import_react21.default.useState();
-  const replaceUrl = import_react21.default.useCallback(
+  const [shareStatus, setShareStatus] = import_react22.default.useState();
+  const replaceUrl = import_react22.default.useCallback(
     (nextFocusCode, nextFilters) => {
       const nextParams = (0, import_types.buildFoundationAlertLinkedFocusSearchParams)({
         search: opts?.searchParams,
@@ -9859,7 +10057,7 @@ function useFoundationAlertLinkedFocusQuery(opts) {
     },
     [opts?.pathname, opts?.replace, opts?.searchParams, queryKeys]
   );
-  import_react21.default.useEffect(() => {
+  import_react22.default.useEffect(() => {
     const nextState = resolveStateFromSearch();
     if (nextState.focusCode !== focusAlertCode) {
       setFocusAlertCode(nextState.focusCode);
@@ -9874,7 +10072,7 @@ function useFoundationAlertLinkedFocusQuery(opts) {
       opts.panelRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [focusAlertCode, linkedFilters, opts?.defaultFocusContext, opts?.panelRef, resolveStateFromSearch, searchSnapshot]);
-  const activateFocus = import_react21.default.useCallback(
+  const activateFocus = import_react22.default.useCallback(
     (code, ctx, filters) => {
       const nextFilters = filters ?? DEFAULT_FILTERS;
       setFocusAlertCode(code);
@@ -9885,13 +10083,13 @@ function useFoundationAlertLinkedFocusQuery(opts) {
     },
     [replaceUrl]
   );
-  const clearLinkedTriage = import_react21.default.useCallback(() => {
+  const clearLinkedTriage = import_react22.default.useCallback(() => {
     setLinkedFilters(DEFAULT_FILTERS);
     setFocusContext((0, import_types.buildFoundationAlertLinkedFocusContext)(`\u8054\u52A8\u5DF2\u6E05\u7A7A / ${focusAlertCode || "none"}`, DEFAULT_FILTERS));
     setShareStatus(void 0);
     replaceUrl(focusAlertCode, DEFAULT_FILTERS);
   }, [focusAlertCode, replaceUrl]);
-  const copyFocusLink = import_react21.default.useCallback(async () => {
+  const copyFocusLink = import_react22.default.useCallback(async () => {
     const params = (0, import_types.buildFoundationAlertLinkedFocusSearchParams)({
       search: opts?.searchParams,
       queryKeys,
@@ -9904,7 +10102,7 @@ function useFoundationAlertLinkedFocusQuery(opts) {
     const copied = typeof navigator !== "undefined" && typeof document !== "undefined" ? await writeTextToClipboard(target) : false;
     setShareStatus(copied ? "\u5DF2\u590D\u5236\u8054\u52A8\u94FE\u63A5" : "\u590D\u5236\u5931\u8D25\uFF0C\u8BF7\u624B\u52A8\u590D\u5236\u5F53\u524D\u5730\u5740");
   }, [focusAlertCode, linkedFilters, opts?.pathname, opts?.searchParams, queryKeys]);
-  const handlePanelFocusChange = import_react21.default.useCallback(
+  const handlePanelFocusChange = import_react22.default.useCallback(
     (code, ctx) => {
       setFocusAlertCode(code);
       setFocusContext((0, import_types.buildFoundationAlertLinkedFocusContext)(ctx, linkedFilters));
@@ -9913,12 +10111,12 @@ function useFoundationAlertLinkedFocusQuery(opts) {
     },
     [linkedFilters, replaceUrl]
   );
-  const linkedFilterSummary = import_react21.default.useMemo(
+  const linkedFilterSummary = import_react22.default.useMemo(
     () => (0, import_types.summarizeFoundationAlertTimelineFilters)(linkedFilters),
     [linkedFilters]
   );
   const hasLinkedFilters = linkedFilterSummary !== "\u5168\u90E8 timeline";
-  const linkedFilterQueryPreview = import_react21.default.useMemo(
+  const linkedFilterQueryPreview = import_react22.default.useMemo(
     () => (0, import_types.buildFoundationAlertTimelineFilterQueryPreview)(queryKeys.timeline, linkedFilters),
     [linkedFilters, queryKeys]
   );
@@ -9981,7 +10179,7 @@ function RuntimeOperationToolbar(props) {
     fontSize: 12,
     cursor: "pointer"
   });
-  return import_react21.default.createElement(
+  return import_react22.default.createElement(
     "div",
     {
       "data-testid": "runtime-operation-toolbar",
@@ -9993,17 +10191,17 @@ function RuntimeOperationToolbar(props) {
         alignItems: "center"
       }
     },
-    import_react21.default.createElement(
+    import_react22.default.createElement(
       "button",
       { onClick: onSubmit, disabled: disableSubmit, style: buttonStyle2("primary") },
       pendingOperation === "submit" ? "\u63D0\u4EA4\u4E2D..." : "\u63D0\u4EA4 Runtime"
     ),
-    import_react21.default.createElement(
+    import_react22.default.createElement(
       "button",
       { onClick: onQuery, disabled: disableQuery, style: buttonStyle2("secondary") },
       pendingOperation === "query" ? "\u67E5\u8BE2\u4E2D..." : "\u67E5\u8BE2"
     ),
-    canReplay ? import_react21.default.createElement(
+    canReplay ? import_react22.default.createElement(
       "button",
       { onClick: onReplay, disabled: disableReplay, style: buttonStyle2("warn") },
       pendingOperation === "replay" ? "\u91CD\u653E\u4E2D..." : "\u91CD\u653E"
@@ -10012,7 +10210,7 @@ function RuntimeOperationToolbar(props) {
 }
 function RuntimePanelFeedback(props) {
   const { message, receipt, actionError } = props;
-  return import_react21.default.createElement(
+  return import_react22.default.createElement(
     "div",
     {
       "data-testid": "runtime-panel-feedback",
@@ -10024,18 +10222,18 @@ function RuntimePanelFeedback(props) {
         border: actionError ? "1px solid rgba(248,113,113,0.24)" : "1px solid rgba(148,163,184,0.14)"
       }
     },
-    message ? import_react21.default.createElement("p", { className: "feedback-message", style: { margin: 0, fontSize: 13, color: "#e2e8f0" } }, message) : null,
-    receipt ? import_react21.default.createElement(
+    message ? import_react22.default.createElement("p", { className: "feedback-message", style: { margin: 0, fontSize: 13, color: "#e2e8f0" } }, message) : null,
+    receipt ? import_react22.default.createElement(
       "p",
       { className: "feedback-receipt", style: { margin: "8px 0 0", fontSize: 12, color: "#93c5fd" } },
       `\u6700\u8FD1 receipt\uFF1A${String(receipt.receiptCode ?? "")} / ${String(receipt.state ?? "unknown")}`
     ) : null,
-    actionError ? import_react21.default.createElement("p", { className: "feedback-error", style: { margin: "8px 0 0", fontSize: 12, color: "#fca5a5" } }, actionError) : null
+    actionError ? import_react22.default.createElement("p", { className: "feedback-error", style: { margin: "8px 0 0", fontSize: 12, color: "#fca5a5" } }, actionError) : null
   );
 }
 function RuntimePanelFrame(props) {
   const { scopeSummary, children } = props;
-  return import_react21.default.createElement(
+  return import_react22.default.createElement(
     "section",
     {
       "data-testid": "runtime-panel-frame",
@@ -10047,13 +10245,13 @@ function RuntimePanelFrame(props) {
         color: "#f8fafc"
       }
     },
-    import_react21.default.createElement("h2", { style: { margin: 0, fontSize: 18, fontWeight: 700 } }, "\u771F\u5B9E Runtime \u95ED\u73AF"),
-    import_react21.default.createElement("p", { className: "scope-summary", style: { margin: "8px 0 0", fontSize: 13, color: "#94a3b8" } }, scopeSummary ?? ""),
-    ...import_react21.default.Children.toArray(children ?? [])
+    import_react22.default.createElement("h2", { style: { margin: 0, fontSize: 18, fontWeight: 700 } }, "\u771F\u5B9E Runtime \u95ED\u73AF"),
+    import_react22.default.createElement("p", { className: "scope-summary", style: { margin: "8px 0 0", fontSize: 13, color: "#94a3b8" } }, scopeSummary ?? ""),
+    ...import_react22.default.Children.toArray(children ?? [])
   );
 }
 function RuntimePanelGrid(_props) {
-  return import_react21.default.createElement(
+  return import_react22.default.createElement(
     "div",
     {
       style: {
@@ -10063,7 +10261,7 @@ function RuntimePanelGrid(_props) {
         marginTop: 16
       }
     },
-    ...import_react21.default.Children.toArray(_props?.children ?? [])
+    ...import_react22.default.Children.toArray(_props?.children ?? [])
   );
 }
 function joinRuntimeScopeSummary(parts, _opts) {
@@ -10071,8 +10269,8 @@ function joinRuntimeScopeSummary(parts, _opts) {
   return _opts?.prefix ? `${_opts.prefix}${summary}` : summary;
 }
 function useRuntimePresetSelection(presets, defaultKey) {
-  const [selectedAction, setSelectedAction] = import_react21.default.useState(defaultKey ?? "");
-  const activePreset = import_react21.default.useMemo(() => {
+  const [selectedAction, setSelectedAction] = import_react22.default.useState(defaultKey ?? "");
+  const activePreset = import_react22.default.useMemo(() => {
     if (!presets || !Array.isArray(presets)) return presets ?? null;
     return presets.find((p) => p?.key === selectedAction) ?? presets?.[0] ?? null;
   }, [presets, selectedAction]);
@@ -10083,11 +10281,11 @@ function useRuntimePresetSelection(presets, defaultKey) {
   };
 }
 function useRuntimePanelState(defaultMessage) {
-  const [receipt, setReceipt] = import_react21.default.useState(null);
-  const [pendingOperation, setPendingOperation] = import_react21.default.useState(null);
-  const [actionError, setActionError] = import_react21.default.useState(null);
-  const [message, setMessage] = import_react21.default.useState(defaultMessage ?? null);
-  const runOperation = import_react21.default.useCallback(async (operation, fn) => {
+  const [receipt, setReceipt] = import_react22.default.useState(null);
+  const [pendingOperation, setPendingOperation] = import_react22.default.useState(null);
+  const [actionError, setActionError] = import_react22.default.useState(null);
+  const [message, setMessage] = import_react22.default.useState(defaultMessage ?? null);
+  const runOperation = import_react22.default.useCallback(async (operation, fn) => {
     setPendingOperation(operation);
     setActionError(null);
     try {
@@ -10115,7 +10313,7 @@ function useRuntimePanelState(defaultMessage) {
 }
 function RuntimePresetCard(props) {
   const { preset } = props;
-  return import_react21.default.createElement(
+  return import_react22.default.createElement(
     "div",
     {
       "data-testid": "runtime-preset-card",
@@ -10127,18 +10325,18 @@ function RuntimePresetCard(props) {
       }
     },
     preset ? [
-      import_react21.default.createElement("div", { key: "label", style: { fontSize: 16, fontWeight: 700, color: "#e2e8f0" } }, preset.label ?? preset.scenario ?? ""),
-      import_react21.default.createElement("div", { key: "scenario", style: { marginTop: 8, fontSize: 13, color: "#cbd5e1", lineHeight: 1.5 } }, preset.scenario ?? ""),
-      import_react21.default.createElement("div", { key: "risk", style: { marginTop: 10, fontSize: 12, color: "#fcd34d" } }, `\u98CE\u9669\u7EA7\u522B\uFF1A${preset.riskLevel ?? "unknown"}`),
-      import_react21.default.createElement("div", { key: "next-step", style: { marginTop: 4, fontSize: 12, color: "#94a3b8" } }, `\u4E0B\u4E00\u6B65\uFF1A${preset.nextStep ?? "-"}`),
-      import_react21.default.createElement("div", { key: "recommend", style: { marginTop: 4, fontSize: 12, color: "#94a3b8" } }, `\u5EFA\u8BAE\u52A8\u4F5C\uFF1A${preset.recommendedAction ?? "-"}`),
-      preset.requestEndpoint ? import_react21.default.createElement("div", { key: "endpoint", style: { marginTop: 8, fontSize: 12, color: "#93c5fd", wordBreak: "break-all" } }, preset.requestEndpoint) : null
+      import_react22.default.createElement("div", { key: "label", style: { fontSize: 16, fontWeight: 700, color: "#e2e8f0" } }, preset.label ?? preset.scenario ?? ""),
+      import_react22.default.createElement("div", { key: "scenario", style: { marginTop: 8, fontSize: 13, color: "#cbd5e1", lineHeight: 1.5 } }, preset.scenario ?? ""),
+      import_react22.default.createElement("div", { key: "risk", style: { marginTop: 10, fontSize: 12, color: "#fcd34d" } }, `\u98CE\u9669\u7EA7\u522B\uFF1A${preset.riskLevel ?? "unknown"}`),
+      import_react22.default.createElement("div", { key: "next-step", style: { marginTop: 4, fontSize: 12, color: "#94a3b8" } }, `\u4E0B\u4E00\u6B65\uFF1A${preset.nextStep ?? "-"}`),
+      import_react22.default.createElement("div", { key: "recommend", style: { marginTop: 4, fontSize: 12, color: "#94a3b8" } }, `\u5EFA\u8BAE\u52A8\u4F5C\uFF1A${preset.recommendedAction ?? "-"}`),
+      preset.requestEndpoint ? import_react22.default.createElement("div", { key: "endpoint", style: { marginTop: 8, fontSize: 12, color: "#93c5fd", wordBreak: "break-all" } }, preset.requestEndpoint) : null
     ] : null
   );
 }
 function RuntimePresetSelector(props) {
   const { options, selectedKey, onSelect } = props;
-  return import_react21.default.createElement(
+  return import_react22.default.createElement(
     "div",
     {
       "data-testid": "runtime-preset-selector",
@@ -10150,7 +10348,7 @@ function RuntimePresetSelector(props) {
       }
     },
     ...(options ?? []).map(
-      (opt, idx) => import_react21.default.createElement(
+      (opt, idx) => import_react22.default.createElement(
         "button",
         {
           type: "button",
@@ -10174,7 +10372,7 @@ function RuntimePresetSelector(props) {
 }
 function RuntimeReceiptStatusCard(props) {
   const { receipt, summary, scopeLabel, eventCount } = props;
-  return import_react21.default.createElement(
+  return import_react22.default.createElement(
     "div",
     {
       "data-testid": "runtime-receipt-status-card",
@@ -10185,17 +10383,17 @@ function RuntimeReceiptStatusCard(props) {
         border: "1px solid rgba(148,163,184,0.14)"
       }
     },
-    import_react21.default.createElement("h3", { style: { margin: 0, fontSize: 15, fontWeight: 700, color: "#e2e8f0" } }, "\u6700\u8FD1 Receipt"),
-    import_react21.default.createElement("p", { className: "receipt-summary", style: { margin: "10px 0 0", fontSize: 13, color: "#cbd5e1", lineHeight: 1.6 } }, summary ?? "\u6682\u65E0"),
-    import_react21.default.createElement("p", { className: "receipt-scope", style: { margin: "8px 0 0", fontSize: 12, color: "#94a3b8" } }, scopeLabel ?? ""),
-    receipt ? import_react21.default.createElement(
+    import_react22.default.createElement("h3", { style: { margin: 0, fontSize: 15, fontWeight: 700, color: "#e2e8f0" } }, "\u6700\u8FD1 Receipt"),
+    import_react22.default.createElement("p", { className: "receipt-summary", style: { margin: "10px 0 0", fontSize: 13, color: "#cbd5e1", lineHeight: 1.6 } }, summary ?? "\u6682\u65E0"),
+    import_react22.default.createElement("p", { className: "receipt-scope", style: { margin: "8px 0 0", fontSize: 12, color: "#94a3b8" } }, scopeLabel ?? ""),
+    receipt ? import_react22.default.createElement(
       "div",
       { style: { marginTop: 10, display: "grid", gap: 4, fontSize: 12, color: "#93c5fd" } },
-      import_react21.default.createElement("div", { key: "code" }, `receiptCode: ${receipt.receiptCode ?? "-"}`),
-      import_react21.default.createElement("div", { key: "state" }, `state: ${receipt.state ?? "-"}`),
-      import_react21.default.createElement("div", { key: "ticket" }, `ticket: ${receipt.ticket?.status ?? "-"}`),
-      import_react21.default.createElement("div", { key: "callback" }, `callback: ${receipt.callback?.callbackStatus ?? "-"}`),
-      import_react21.default.createElement("div", { key: "events" }, `events: ${eventCount ?? 0}`)
+      import_react22.default.createElement("div", { key: "code" }, `receiptCode: ${receipt.receiptCode ?? "-"}`),
+      import_react22.default.createElement("div", { key: "state" }, `state: ${receipt.state ?? "-"}`),
+      import_react22.default.createElement("div", { key: "ticket" }, `ticket: ${receipt.ticket?.status ?? "-"}`),
+      import_react22.default.createElement("div", { key: "callback" }, `callback: ${receipt.callback?.callbackStatus ?? "-"}`),
+      import_react22.default.createElement("div", { key: "events" }, `events: ${eventCount ?? 0}`)
     ) : null
   );
 }
@@ -10210,7 +10408,7 @@ async function executeRuntimePanelOperation(_opts) {
   }
 }
 function useSortedItems(items, _columns, sortConfig) {
-  return import_react21.default.useMemo(() => {
+  return import_react22.default.useMemo(() => {
     if (!items || !items.length) return items ?? [];
     if (!sortConfig) return items;
     const sorted = [...items].sort((a, b) => {
@@ -10229,8 +10427,8 @@ function PortalList({
   emptyTitle = "\u6682\u65E0\u95E8\u6237",
   emptyDescription = "\u6CA1\u6709\u53EF\u7528\u7684\u95E8\u6237\u6570\u636E\u3002"
 }) {
-  const [searchTerm, setSearchTerm] = import_react21.default.useState("");
-  const filtered = import_react21.default.useMemo(() => {
+  const [searchTerm, setSearchTerm] = import_react22.default.useState("");
+  const filtered = import_react22.default.useMemo(() => {
     if (!searchTerm.trim()) return portals;
     const term = searchTerm.toLowerCase();
     return portals.filter(
@@ -10238,7 +10436,7 @@ function PortalList({
     );
   }, [portals, searchTerm]);
   if (portals.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(
       "div",
       {
         style: {
@@ -10249,14 +10447,14 @@ function PortalList({
           border: "1px solid rgba(148, 163, 184, 0.12)"
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { fontSize: 20, fontWeight: 700, color: "#cbd5e1", marginBottom: 8 }, children: emptyTitle }),
-          /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { fontSize: 14, color: "#64748b" }, children: emptyDescription })
+          /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("div", { style: { fontSize: 20, fontWeight: 700, color: "#cbd5e1", marginBottom: 8 }, children: emptyTitle }),
+          /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("div", { style: { fontSize: 14, color: "#64748b" }, children: emptyDescription })
         ]
       }
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)("div", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { marginBottom: 16 }, children: /* @__PURE__ */ (0, import_jsx_runtime45.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("div", { style: { marginBottom: 16 }, children: /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(
       "input",
       {
         type: "text",
@@ -10266,7 +10464,7 @@ function PortalList({
         style: searchInputStyle
       }
     ) }),
-    searchTerm.trim() && /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)(
+    searchTerm.trim() && /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(
       "div",
       {
         style: {
@@ -10278,14 +10476,14 @@ function PortalList({
           gap: 8
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)("span", { children: [
             '\u641C\u7D22 "',
             searchTerm,
             '" \u5339\u914D ',
             filtered.length,
             " \u6761\u7ED3\u679C"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime45.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(
             "button",
             {
               type: "button",
@@ -10304,7 +10502,7 @@ function PortalList({
         ]
       }
     ),
-    filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)(
+    filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(
       "div",
       {
         style: {
@@ -10315,13 +10513,13 @@ function PortalList({
           border: "1px solid rgba(148, 163, 184, 0.12)"
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { fontSize: 18, fontWeight: 600, color: "#94a3b8" }, children: "\u65E0\u5339\u914D\u7ED3\u679C" }),
-          /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { fontSize: 13, color: "#64748b", marginTop: 6 }, children: "\u5C1D\u8BD5\u5176\u4ED6\u5173\u952E\u8BCD" })
+          /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("div", { style: { fontSize: 18, fontWeight: 600, color: "#94a3b8" }, children: "\u65E0\u5339\u914D\u7ED3\u679C" }),
+          /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("div", { style: { fontSize: 13, color: "#64748b", marginTop: 6 }, children: "\u5C1D\u8BD5\u5176\u4ED6\u5173\u952E\u8BCD" })
         ]
       }
     ) : (
       /* 门户卡片网格 */
-      /* @__PURE__ */ (0, import_jsx_runtime45.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(
         "div",
         {
           style: {
@@ -10329,14 +10527,14 @@ function PortalList({
             gap: 14,
             gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))"
           },
-          children: filtered.map((portal) => /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)(
+          children: filtered.map((portal) => /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(
             "article",
             {
               style: cardStyle2,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { fontWeight: 700, fontSize: 16, color: "#f1f5f9" }, children: portal.label }),
-                  portal.status ? /* @__PURE__ */ (0, import_jsx_runtime45.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" }, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("div", { style: { fontWeight: 700, fontSize: 16, color: "#f1f5f9" }, children: portal.label }),
+                  portal.status ? /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(
                     "span",
                     {
                       style: {
@@ -10351,8 +10549,8 @@ function PortalList({
                     }
                   ) : null
                 ] }),
-                portal.subtitle ? /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { marginTop: 6, fontSize: 13, color: "#94a3b8" }, children: portal.subtitle }) : null,
-                portal.meta ? /* @__PURE__ */ (0, import_jsx_runtime45.jsx)("div", { style: { marginTop: 8, fontSize: 12, color: "#64748b" }, children: portal.meta }) : null
+                portal.subtitle ? /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("div", { style: { marginTop: 6, fontSize: 13, color: "#94a3b8" }, children: portal.subtitle }) : null,
+                portal.meta ? /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("div", { style: { marginTop: 8, fontSize: 12, color: "#64748b" }, children: portal.meta }) : null
               ]
             },
             portal.id
@@ -10360,7 +10558,7 @@ function PortalList({
         }
       )
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime45.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(
       "div",
       {
         style: {
@@ -10413,7 +10611,7 @@ function describeRuntimeCallbackStalledEscalation(action) {
   return map[action] ?? action;
 }
 function FoundationAlertRuntimeCallbackStalledReadout(_props) {
-  return import_react21.default.createElement("div", null);
+  return import_react22.default.createElement("div", null);
 }
 function summarizeRuntimePanelReceipt(receipt) {
   return `${receipt?.action ?? "unknown"} -> ${receipt?.state ?? "unknown"} / ticket ${receipt?.ticket?.status ?? "unknown"} / callback ${receipt?.callback?.callbackStatus ?? "unknown"} / replay ${receipt?.ledger?.replayable ? "ready" : "not-ready"}`;
@@ -10425,11 +10623,11 @@ function getRuntimePanelTenantId(receipt) {
   return receipt?.rateLimit?.scopeKey?.split(":").slice(-1)[0] ?? "unknown";
 }
 function createRuntimeReceiptStatusCard(_opts) {
-  return import_react21.default.createElement(RuntimeReceiptStatusCard, createRuntimeReceiptStatusCardProps(_opts));
+  return import_react22.default.createElement(RuntimeReceiptStatusCard, createRuntimeReceiptStatusCardProps(_opts));
 }
 function RuntimeReceiptEvents(_props) {
   const events = _props?.events ?? _props?.receipt?.events ?? [];
-  return import_react21.default.createElement(
+  return import_react22.default.createElement(
     "div",
     {
       style: {
@@ -10438,8 +10636,8 @@ function RuntimeReceiptEvents(_props) {
         gap: 6
       }
     },
-    events.length === 0 ? import_react21.default.createElement("div", { style: { fontSize: 12, color: "#64748b" } }, "\u6682\u65E0 receipt events") : events.map(
-      (event, index) => import_react21.default.createElement(
+    events.length === 0 ? import_react22.default.createElement("div", { style: { fontSize: 12, color: "#64748b" } }, "\u6682\u65E0 receipt events") : events.map(
+      (event, index) => import_react22.default.createElement(
         "div",
         {
           key: `${event.type ?? "event"}-${index}`,
@@ -10479,14 +10677,14 @@ function useListPageSectionState({
   pageSizeOptions = [5, 10, 20, 50]
 }) {
   const { searchTerm, setSearchTerm, filteredItems: searchFilteredItems } = useSearchFilter2(items, searchFields);
-  const [facetValues, setFacetValues] = (0, import_react22.useState)(
+  const [facetValues, setFacetValues] = (0, import_react23.useState)(
     () => Object.fromEntries(facets.map((facet) => [facet.key, "ALL"]))
   );
-  const facetValueSignature = (0, import_react22.useMemo)(
+  const facetValueSignature = (0, import_react23.useMemo)(
     () => facets.map((facet) => `${facet.key}:${facetValues[facet.key] ?? "ALL"}`).join("|"),
     [facetValues, facets]
   );
-  const resolvedFacets = (0, import_react22.useMemo)(() => {
+  const resolvedFacets = (0, import_react23.useMemo)(() => {
     let currentItems = searchFilteredItems;
     return facets.map((facet) => {
       const enabled = facet.enabled ?? true;
@@ -10506,10 +10704,10 @@ function useListPageSectionState({
     });
   }, [facetValues, facets, items, searchFilteredItems]);
   const filteredItems = resolvedFacets.at(-1)?.filteredItems ?? searchFilteredItems;
-  const [sortConfig, setSortConfig] = (0, import_react22.useState)(null);
+  const [sortConfig, setSortConfig] = (0, import_react23.useState)(null);
   const sortedItems = useSortedItems(filteredItems, [], sortConfig);
   const pagination = usePagination({ initialPageSize: defaultPageSize, pageSizeOptions });
-  (0, import_react22.useEffect)(() => {
+  (0, import_react23.useEffect)(() => {
     pagination.resetPage();
   }, [facetValueSignature, pagination, searchTerm]);
   return {
@@ -10534,8 +10732,8 @@ function useListPageSectionState({
 }
 
 // src/components/Modal.tsx
-var import_react23 = require("react");
-var import_jsx_runtime46 = require("react/jsx-runtime");
+var import_react24 = require("react");
+var import_jsx_runtime47 = require("react/jsx-runtime");
 function Modal({
   open,
   onClose,
@@ -10547,7 +10745,7 @@ function Modal({
   children,
   footer
 }) {
-  const handleKeyDown = (0, import_react23.useCallback)(
+  const handleKeyDown = (0, import_react24.useCallback)(
     (e) => {
       if (e.key === "Escape" && keyboardClosable) {
         onClose();
@@ -10555,13 +10753,13 @@ function Modal({
     },
     [onClose, keyboardClosable]
   );
-  (0, import_react23.useEffect)(() => {
+  (0, import_react24.useEffect)(() => {
     if (open) {
       document.addEventListener("keydown", handleKeyDown);
       return () => document.removeEventListener("keydown", handleKeyDown);
     }
   }, [open, handleKeyDown]);
-  (0, import_react23.useEffect)(() => {
+  (0, import_react24.useEffect)(() => {
     if (open) {
       const original = document.body.style.overflow;
       document.body.style.overflow = "hidden";
@@ -10571,7 +10769,7 @@ function Modal({
     }
   }, [open]);
   if (!open) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime47.jsxs)(
     "div",
     {
       style: {
@@ -10592,7 +10790,7 @@ function Modal({
       "aria-modal": "true",
       "aria-label": title,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime47.jsxs)(
           "div",
           {
             style: {
@@ -10607,7 +10805,7 @@ function Modal({
               animation: "modal-slide-up 0.2s ease-out"
             },
             children: [
-              (title || showClose) && /* @__PURE__ */ (0, import_jsx_runtime46.jsxs)(
+              (title || showClose) && /* @__PURE__ */ (0, import_jsx_runtime47.jsxs)(
                 "div",
                 {
                   style: {
@@ -10617,8 +10815,8 @@ function Modal({
                     padding: title ? "20px 24px 0" : "12px 16px"
                   },
                   children: [
-                    title ? /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("h2", { style: { margin: 0, fontSize: 18, fontWeight: 700, color: "#f8fafc" }, children: title }) : /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("span", {}),
-                    showClose && /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(
+                    title ? /* @__PURE__ */ (0, import_jsx_runtime47.jsx)("h2", { style: { margin: 0, fontSize: 18, fontWeight: 700, color: "#f8fafc" }, children: title }) : /* @__PURE__ */ (0, import_jsx_runtime47.jsx)("span", {}),
+                    showClose && /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(
                       "button",
                       {
                         type: "button",
@@ -10646,8 +10844,8 @@ function Modal({
                   ]
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("div", { style: { padding: title ? "16px 24px 24px" : "24px" }, children }),
-              footer && /* @__PURE__ */ (0, import_jsx_runtime46.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime47.jsx)("div", { style: { padding: title ? "16px 24px 24px" : "24px" }, children }),
+              footer && /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(
                 "div",
                 {
                   style: {
@@ -10662,7 +10860,7 @@ function Modal({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime46.jsx)("style", { children: `
+        /* @__PURE__ */ (0, import_jsx_runtime47.jsx)("style", { children: `
         @keyframes modal-fade-in {
           from { opacity: 0; }
           to { opacity: 1; }
@@ -10678,8 +10876,8 @@ function Modal({
 }
 
 // src/components/Drawer.tsx
-var import_react24 = require("react");
-var import_jsx_runtime47 = require("react/jsx-runtime");
+var import_react25 = require("react");
+var import_jsx_runtime48 = require("react/jsx-runtime");
 function Drawer({
   open,
   onClose,
@@ -10693,10 +10891,10 @@ function Drawer({
   footer,
   zIndex = 1e3
 }) {
-  const panelRef = (0, import_react24.useRef)(null);
+  const panelRef = (0, import_react25.useRef)(null);
   const isHorizontal = placement === "left" || placement === "right";
   const resolvedSize = size ?? (isHorizontal ? 448 : 320);
-  const handleKeyDown = (0, import_react24.useCallback)(
+  const handleKeyDown = (0, import_react25.useCallback)(
     (e) => {
       if (e.key === "Escape" && keyboardClosable) {
         onClose();
@@ -10704,13 +10902,13 @@ function Drawer({
     },
     [onClose, keyboardClosable]
   );
-  (0, import_react24.useEffect)(() => {
+  (0, import_react25.useEffect)(() => {
     if (open) {
       document.addEventListener("keydown", handleKeyDown);
       return () => document.removeEventListener("keydown", handleKeyDown);
     }
   }, [open, handleKeyDown]);
-  (0, import_react24.useEffect)(() => {
+  (0, import_react25.useEffect)(() => {
     if (open) {
       const original = document.body.style.overflow;
       document.body.style.overflow = "hidden";
@@ -10719,7 +10917,7 @@ function Drawer({
       };
     }
   }, [open]);
-  (0, import_react24.useEffect)(() => {
+  (0, import_react25.useEffect)(() => {
     if (open && panelRef.current) {
       panelRef.current.focus();
     }
@@ -10759,7 +10957,7 @@ function Drawer({
       animation: "drawer-slide-in-bottom 0.25s cubic-bezier(0.16, 1, 0.3, 1)"
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime47.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime48.jsxs)(
     "div",
     {
       style: {
@@ -10777,7 +10975,7 @@ function Drawer({
       "aria-modal": "true",
       "aria-label": title ?? "Drawer",
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime47.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime48.jsxs)(
           "div",
           {
             ref: panelRef,
@@ -10793,7 +10991,7 @@ function Drawer({
               ...positionStyles[placement]
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime47.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime48.jsxs)(
                 "div",
                 {
                   style: {
@@ -10805,8 +11003,8 @@ function Drawer({
                     flexShrink: 0
                   },
                   children: [
-                    title ? /* @__PURE__ */ (0, import_jsx_runtime47.jsx)("h2", { style: { margin: 0, fontSize: 18, fontWeight: 700, color: "#f8fafc" }, children: title }) : /* @__PURE__ */ (0, import_jsx_runtime47.jsx)("span", {}),
-                    showClose && /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(
+                    title ? /* @__PURE__ */ (0, import_jsx_runtime48.jsx)("h2", { style: { margin: 0, fontSize: 18, fontWeight: 700, color: "#f8fafc" }, children: title }) : /* @__PURE__ */ (0, import_jsx_runtime48.jsx)("span", {}),
+                    showClose && /* @__PURE__ */ (0, import_jsx_runtime48.jsx)(
                       "button",
                       {
                         type: "button",
@@ -10834,7 +11032,7 @@ function Drawer({
                   ]
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime48.jsx)(
                 "div",
                 {
                   style: {
@@ -10846,7 +11044,7 @@ function Drawer({
                   children
                 }
               ),
-              footer && /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(
+              footer && /* @__PURE__ */ (0, import_jsx_runtime48.jsx)(
                 "div",
                 {
                   style: {
@@ -10863,7 +11061,7 @@ function Drawer({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime47.jsx)("style", { children: `
+        /* @__PURE__ */ (0, import_jsx_runtime48.jsx)("style", { children: `
         @keyframes drawer-mask-fade-in {
           from { opacity: 0; }
           to { opacity: 1; }
@@ -10891,8 +11089,8 @@ function Drawer({
 }
 
 // src/components/Dropdown.tsx
-var import_react25 = require("react");
-var import_jsx_runtime48 = require("react/jsx-runtime");
+var import_react26 = require("react");
+var import_jsx_runtime49 = require("react/jsx-runtime");
 function Dropdown({
   trigger,
   items,
@@ -10903,11 +11101,11 @@ function Dropdown({
   className,
   style
 }) {
-  const [open, setOpen] = (0, import_react25.useState)(false);
-  const containerRef = (0, import_react25.useRef)(null);
-  const menuRef = (0, import_react25.useRef)(null);
-  const close = (0, import_react25.useCallback)(() => setOpen(false), []);
-  (0, import_react25.useEffect)(() => {
+  const [open, setOpen] = (0, import_react26.useState)(false);
+  const containerRef = (0, import_react26.useRef)(null);
+  const menuRef = (0, import_react26.useRef)(null);
+  const close = (0, import_react26.useCallback)(() => setOpen(false), []);
+  (0, import_react26.useEffect)(() => {
     if (!open) return;
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -10924,19 +11122,19 @@ function Dropdown({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open, close]);
-  const handleTriggerClick = (0, import_react25.useCallback)(() => {
+  const handleTriggerClick = (0, import_react26.useCallback)(() => {
     if (disabled) return;
     setOpen((prev) => !prev);
   }, [disabled]);
-  const handleTriggerMouseEnter = (0, import_react25.useCallback)(() => {
+  const handleTriggerMouseEnter = (0, import_react26.useCallback)(() => {
     if (disabled || triggerMode !== "hover") return;
     setOpen(true);
   }, [disabled, triggerMode]);
-  const handleContainerMouseLeave = (0, import_react25.useCallback)(() => {
+  const handleContainerMouseLeave = (0, import_react26.useCallback)(() => {
     if (triggerMode !== "hover") return;
     setOpen(false);
   }, [triggerMode]);
-  const handleItemClick = (0, import_react25.useCallback)(
+  const handleItemClick = (0, import_react26.useCallback)(
     (item) => {
       if (item.disabled) return;
       item.onClick?.();
@@ -10944,7 +11142,7 @@ function Dropdown({
     },
     [close]
   );
-  return /* @__PURE__ */ (0, import_jsx_runtime48.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)(
     "div",
     {
       ref: containerRef,
@@ -10952,7 +11150,7 @@ function Dropdown({
       style: { position: "relative", display: "inline-block", ...style },
       onMouseLeave: handleContainerMouseLeave,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime48.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(
           "div",
           {
             onClick: handleTriggerClick,
@@ -10975,7 +11173,7 @@ function Dropdown({
             children: trigger
           }
         ),
-        open && /* @__PURE__ */ (0, import_jsx_runtime48.jsx)(
+        open && /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(
           "div",
           {
             ref: menuRef,
@@ -10995,7 +11193,7 @@ function Dropdown({
             },
             children: items.map((item, index) => {
               if (item.divider) {
-                return /* @__PURE__ */ (0, import_jsx_runtime48.jsx)(
+                return /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(
                   "div",
                   {
                     style: {
@@ -11008,7 +11206,7 @@ function Dropdown({
                   item.key || `divider-${index}`
                 );
               }
-              return /* @__PURE__ */ (0, import_jsx_runtime48.jsxs)(
+              return /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)(
                 "button",
                 {
                   type: "button",
@@ -11039,8 +11237,8 @@ function Dropdown({
                     e.target.style.background = "transparent";
                   },
                   children: [
-                    item.icon ? /* @__PURE__ */ (0, import_jsx_runtime48.jsx)("span", { style: { display: "inline-flex", alignItems: "center", flexShrink: 0 }, children: item.icon }) : null,
-                    /* @__PURE__ */ (0, import_jsx_runtime48.jsx)("span", { children: item.label })
+                    item.icon ? /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("span", { style: { display: "inline-flex", alignItems: "center", flexShrink: 0 }, children: item.icon }) : null,
+                    /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("span", { children: item.label })
                   ]
                 },
                 item.key
@@ -11048,7 +11246,7 @@ function Dropdown({
             })
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime48.jsx)("style", { children: `
+        /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("style", { children: `
         @keyframes dropdown-slide-in {
           from {
             opacity: 0;
@@ -11066,8 +11264,8 @@ function Dropdown({
 }
 
 // src/components/Select.tsx
-var import_react26 = require("react");
-var import_jsx_runtime49 = require("react/jsx-runtime");
+var import_react27 = require("react");
+var import_jsx_runtime50 = require("react/jsx-runtime");
 function Select({
   value,
   onChange,
@@ -11086,30 +11284,30 @@ function Select({
   "aria-label": ariaLabel,
   "aria-labelledby": ariaLabelledby
 }) {
-  const [open, setOpen] = (0, import_react26.useState)(false);
-  const [searchText, setSearchText] = (0, import_react26.useState)("");
-  const [highlightIndex, setHighlightIndex] = (0, import_react26.useState)(-1);
-  const containerRef = (0, import_react26.useRef)(null);
-  const dropdownRef = (0, import_react26.useRef)(null);
-  const searchInputRef = (0, import_react26.useRef)(null);
-  const selectedOption = (0, import_react26.useMemo)(
+  const [open, setOpen] = (0, import_react27.useState)(false);
+  const [searchText, setSearchText] = (0, import_react27.useState)("");
+  const [highlightIndex, setHighlightIndex] = (0, import_react27.useState)(-1);
+  const containerRef = (0, import_react27.useRef)(null);
+  const dropdownRef = (0, import_react27.useRef)(null);
+  const searchInputRef = (0, import_react27.useRef)(null);
+  const selectedOption = (0, import_react27.useMemo)(
     () => options.find((o) => o.value === value),
     [options, value]
   );
-  const filteredOptions = (0, import_react26.useMemo)(() => {
+  const filteredOptions = (0, import_react27.useMemo)(() => {
     if (!showSearch || !searchText.trim()) return options;
     const lower = searchText.toLowerCase();
     return options.filter(
       (o) => o.label.toLowerCase().includes(lower) || o.value.toLowerCase().includes(lower)
     );
   }, [options, searchText, showSearch]);
-  const handleClickOutside = (0, import_react26.useCallback)((e) => {
+  const handleClickOutside = (0, import_react27.useCallback)((e) => {
     if (containerRef.current && !containerRef.current.contains(e.target)) {
       setOpen(false);
       setSearchText("");
     }
   }, []);
-  const handleKeyDown = (0, import_react26.useCallback)(
+  const handleKeyDown = (0, import_react27.useCallback)(
     (e) => {
       if (!open && (e.key === "Enter" || e.key === " " || e.key === "ArrowDown")) {
         e.preventDefault();
@@ -11146,19 +11344,19 @@ function Select({
     },
     [open, filteredOptions, highlightIndex]
   );
-  (0, import_react26.useEffect)(() => {
+  (0, import_react27.useEffect)(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [handleClickOutside]);
-  (0, import_react26.useEffect)(() => {
+  (0, import_react27.useEffect)(() => {
     if (open && showSearch && searchInputRef.current) {
       searchInputRef.current.focus();
     }
   }, [open, showSearch]);
-  (0, import_react26.useEffect)(() => {
+  (0, import_react27.useEffect)(() => {
     if (!open) setHighlightIndex(-1);
   }, [open]);
-  const handleSelect = (0, import_react26.useCallback)(
+  const handleSelect = (0, import_react27.useCallback)(
     (val) => {
       const opt = options.find((o) => o.value === val);
       if (opt?.disabled) return;
@@ -11168,7 +11366,7 @@ function Select({
     },
     [onChange, options]
   );
-  const handleClear = (0, import_react26.useCallback)(
+  const handleClear = (0, import_react27.useCallback)(
     (e) => {
       e.stopPropagation();
       onChange?.("");
@@ -11176,7 +11374,7 @@ function Select({
     },
     [onChange]
   );
-  const handleToggle = (0, import_react26.useCallback)(() => {
+  const handleToggle = (0, import_react27.useCallback)(() => {
     if (disabled) return;
     setOpen((prev) => !prev);
     setSearchText("");
@@ -11274,7 +11472,7 @@ function Select({
     opacity: 0,
     pointerEvents: "none"
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)(
     "div",
     {
       ref: containerRef,
@@ -11288,8 +11486,8 @@ function Select({
       "aria-labelledby": ariaLabelledby,
       tabIndex: disabled ? -1 : 0,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("input", { type: "hidden", name, value: value ?? "", style: hiddenInputStyle }),
-        /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("input", { type: "hidden", name, value: value ?? "", style: hiddenInputStyle }),
+        /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)(
           "div",
           {
             style: selectorStyle,
@@ -11297,15 +11495,15 @@ function Select({
             role: "button",
             "aria-disabled": disabled,
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("span", { style: selectedOption ? valueStyle : placeholderStyle, children: selectedOption ? selectedOption.label : placeholder }),
-              /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)("span", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [
-                allowClear && value && /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("span", { style: clearStyle, onClick: handleClear, role: "button", "aria-label": "\u6E05\u9664\u9009\u62E9", children: "\u2715" }),
-                /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("span", { style: arrowStyle, children: "\u25BC" })
+              /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("span", { style: selectedOption ? valueStyle : placeholderStyle, children: selectedOption ? selectedOption.label : placeholder }),
+              /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)("span", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [
+                allowClear && value && /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("span", { style: clearStyle, onClick: handleClear, role: "button", "aria-label": "\u6E05\u9664\u9009\u62E9", children: "\u2715" }),
+                /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("span", { style: arrowStyle, children: "\u25BC" })
               ] })
             ]
           }
         ),
-        open && /* @__PURE__ */ (0, import_jsx_runtime49.jsxs)(
+        open && /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)(
           "div",
           {
             ref: dropdownRef,
@@ -11314,7 +11512,7 @@ function Select({
             role: "listbox",
             "aria-label": ariaLabel ? `${ariaLabel} \u9009\u9879` : "\u9009\u9879\u5217\u8868",
             children: [
-              showSearch && /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(
+              showSearch && /* @__PURE__ */ (0, import_jsx_runtime50.jsx)(
                 "input",
                 {
                   ref: searchInputRef,
@@ -11330,7 +11528,7 @@ function Select({
                   "aria-label": "\u641C\u7D22\u9009\u9879"
                 }
               ),
-              filteredOptions.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime49.jsx)("div", { style: notFoundStyle, children: notFoundContent }) : filteredOptions.map((opt, index) => /* @__PURE__ */ (0, import_jsx_runtime49.jsx)(
+              filteredOptions.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("div", { style: notFoundStyle, children: notFoundContent }) : filteredOptions.map((opt, index) => /* @__PURE__ */ (0, import_jsx_runtime50.jsx)(
                 "div",
                 {
                   style: optionStyle(opt, index),
@@ -11351,8 +11549,8 @@ function Select({
 }
 
 // src/components/MultiSelect.tsx
-var import_react27 = require("react");
-var import_jsx_runtime50 = require("react/jsx-runtime");
+var import_react28 = require("react");
+var import_jsx_runtime51 = require("react/jsx-runtime");
 function MultiSelect({
   value = [],
   onChange,
@@ -11372,44 +11570,44 @@ function MultiSelect({
   name,
   "aria-label": ariaLabel
 }) {
-  const [open, setOpen] = (0, import_react27.useState)(false);
-  const [searchText, setSearchText] = (0, import_react27.useState)("");
-  const [highlightIndex, setHighlightIndex] = (0, import_react27.useState)(-1);
-  const containerRef = (0, import_react27.useRef)(null);
-  const searchInputRef = (0, import_react27.useRef)(null);
-  const valueSet = (0, import_react27.useMemo)(() => new Set(value), [value]);
-  const selectedOptions = (0, import_react27.useMemo)(
+  const [open, setOpen] = (0, import_react28.useState)(false);
+  const [searchText, setSearchText] = (0, import_react28.useState)("");
+  const [highlightIndex, setHighlightIndex] = (0, import_react28.useState)(-1);
+  const containerRef = (0, import_react28.useRef)(null);
+  const searchInputRef = (0, import_react28.useRef)(null);
+  const valueSet = (0, import_react28.useMemo)(() => new Set(value), [value]);
+  const selectedOptions = (0, import_react28.useMemo)(
     () => options.filter((o) => valueSet.has(o.value)),
     [options, valueSet]
   );
-  const filteredOptions = (0, import_react27.useMemo)(() => {
+  const filteredOptions = (0, import_react28.useMemo)(() => {
     if (!showSearch || !searchText.trim()) return options;
     const lower = searchText.toLowerCase();
     return options.filter(
       (o) => o.label.toLowerCase().includes(lower) || o.value.toLowerCase().includes(lower)
     );
   }, [options, searchText, showSearch]);
-  const allFilteredSelected = (0, import_react27.useMemo)(() => {
+  const allFilteredSelected = (0, import_react28.useMemo)(() => {
     if (filteredOptions.length === 0) return false;
     return filteredOptions.every((o) => o.disabled || valueSet.has(o.value));
   }, [filteredOptions, valueSet]);
-  const visibleTags = (0, import_react27.useMemo)(() => {
+  const visibleTags = (0, import_react28.useMemo)(() => {
     if (maxTagCount === void 0 || selectedOptions.length <= maxTagCount) {
       return selectedOptions;
     }
     return selectedOptions.slice(0, maxTagCount);
   }, [selectedOptions, maxTagCount]);
-  const remainingCount = (0, import_react27.useMemo)(() => {
+  const remainingCount = (0, import_react28.useMemo)(() => {
     if (maxTagCount === void 0 || selectedOptions.length <= maxTagCount) return 0;
     return selectedOptions.length - maxTagCount;
   }, [selectedOptions.length, maxTagCount]);
-  const handleClickOutside = (0, import_react27.useCallback)((e) => {
+  const handleClickOutside = (0, import_react28.useCallback)((e) => {
     if (containerRef.current && !containerRef.current.contains(e.target)) {
       setOpen(false);
       setSearchText("");
     }
   }, []);
-  const handleKeyDown = (0, import_react27.useCallback)(
+  const handleKeyDown = (0, import_react28.useCallback)(
     (e) => {
       if (!open && (e.key === "Enter" || e.key === " " || e.key === "ArrowDown")) {
         e.preventDefault();
@@ -11447,19 +11645,19 @@ function MultiSelect({
     },
     [open, filteredOptions, highlightIndex]
   );
-  (0, import_react27.useEffect)(() => {
+  (0, import_react28.useEffect)(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [handleClickOutside]);
-  (0, import_react27.useEffect)(() => {
+  (0, import_react28.useEffect)(() => {
     if (open && showSearch && searchInputRef.current) {
       searchInputRef.current.focus();
     }
   }, [open, showSearch]);
-  (0, import_react27.useEffect)(() => {
+  (0, import_react28.useEffect)(() => {
     if (!open) setHighlightIndex(-1);
   }, [open]);
-  const handleToggleOption = (0, import_react27.useCallback)(
+  const handleToggleOption = (0, import_react28.useCallback)(
     (val) => {
       const opt = options.find((o) => o.value === val);
       if (opt?.disabled) return;
@@ -11468,22 +11666,22 @@ function MultiSelect({
     },
     [onChange, options, value, valueSet]
   );
-  const handleSelectAll = (0, import_react27.useCallback)(() => {
+  const handleSelectAll = (0, import_react28.useCallback)(() => {
     const selectableValues = filteredOptions.filter((o) => !o.disabled).map((o) => o.value);
     const newValues = [.../* @__PURE__ */ new Set([...value, ...selectableValues])];
     onChange?.(newValues);
   }, [filteredOptions, value, onChange]);
-  const handleClearAll = (0, import_react27.useCallback)(() => {
+  const handleClearAll = (0, import_react28.useCallback)(() => {
     onChange?.([]);
   }, [onChange]);
-  const handleRemoveTag = (0, import_react27.useCallback)(
+  const handleRemoveTag = (0, import_react28.useCallback)(
     (val, e) => {
       e.stopPropagation();
       onChange?.(value.filter((v) => v !== val));
     },
     [onChange, value]
   );
-  const handleToggle = (0, import_react27.useCallback)(() => {
+  const handleToggle = (0, import_react28.useCallback)(() => {
     if (disabled) return;
     setOpen((prev) => !prev);
     setSearchText("");
@@ -11642,7 +11840,7 @@ function MultiSelect({
     opacity: 0,
     pointerEvents: "none"
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)(
     "div",
     {
       ref: containerRef,
@@ -11655,8 +11853,8 @@ function MultiSelect({
       "aria-label": ariaLabel,
       tabIndex: disabled ? -1 : 0,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("input", { type: "hidden", name, value: value.join(","), style: hiddenInputStyle }),
-        /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("input", { type: "hidden", name, value: value.join(","), style: hiddenInputStyle }),
+        /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)(
           "div",
           {
             style: selectorStyle,
@@ -11664,10 +11862,10 @@ function MultiSelect({
             role: "button",
             "aria-disabled": disabled,
             children: [
-              selectedOptions.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("span", { style: placeholderStyle, children: placeholder }) : /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)(import_jsx_runtime50.Fragment, { children: [
-                visibleTags.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)("span", { style: tagStyle, children: [
+              selectedOptions.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("span", { style: placeholderStyle, children: placeholder }) : /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)(import_jsx_runtime51.Fragment, { children: [
+                visibleTags.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("span", { style: tagStyle, children: [
                   opt.label,
-                  /* @__PURE__ */ (0, import_jsx_runtime50.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
                     "span",
                     {
                       style: tagRemoveStyle,
@@ -11678,17 +11876,17 @@ function MultiSelect({
                     }
                   )
                 ] }, opt.value)),
-                remainingCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)("span", { style: countBadgeStyle, children: [
+                remainingCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("span", { style: countBadgeStyle, children: [
                   "+",
                   remainingCount
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("span", { style: { flex: 1, minWidth: 4 } })
+                /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("span", { style: { flex: 1, minWidth: 4 } })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("span", { style: arrowStyle, children: "\u25BC" })
+              /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("span", { style: arrowStyle, children: "\u25BC" })
             ]
           }
         ),
-        open && /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)(
+        open && /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)(
           "div",
           {
             className: dropdownClassName,
@@ -11697,7 +11895,7 @@ function MultiSelect({
             "aria-multiselectable": "true",
             "aria-label": ariaLabel ? `${ariaLabel} \u9009\u9879` : "\u9009\u9879\u5217\u8868",
             children: [
-              showSearch && /* @__PURE__ */ (0, import_jsx_runtime50.jsx)(
+              showSearch && /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
                 "input",
                 {
                   ref: searchInputRef,
@@ -11713,8 +11911,8 @@ function MultiSelect({
                   "aria-label": "\u641C\u7D22\u9009\u9879"
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)("div", { style: actionBarStyle, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime50.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("div", { style: actionBarStyle, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
                   "button",
                   {
                     type: "button",
@@ -11727,7 +11925,7 @@ function MultiSelect({
                     children: selectAllText
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime50.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
                   "button",
                   {
                     type: "button",
@@ -11741,9 +11939,9 @@ function MultiSelect({
                   }
                 )
               ] }),
-              filteredOptions.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("div", { style: notFoundStyle, children: notFoundContent }) : filteredOptions.map((opt, index) => {
+              filteredOptions.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("div", { style: notFoundStyle, children: notFoundContent }) : filteredOptions.map((opt, index) => {
                 const isSelected = valueSet.has(opt.value);
-                return /* @__PURE__ */ (0, import_jsx_runtime50.jsxs)(
+                return /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)(
                   "div",
                   {
                     style: optionStyle(opt, index),
@@ -11752,7 +11950,7 @@ function MultiSelect({
                     "aria-selected": isSelected,
                     "aria-disabled": opt.disabled,
                     children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("span", { style: checkboxStyle(isSelected), children: isSelected && /* @__PURE__ */ (0, import_jsx_runtime50.jsx)("span", { style: checkmarkStyle, children: "\u2713" }) }),
+                      /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("span", { style: checkboxStyle(isSelected), children: isSelected && /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("span", { style: checkmarkStyle, children: "\u2713" }) }),
                       opt.label
                     ]
                   },
@@ -11768,8 +11966,8 @@ function MultiSelect({
 }
 
 // src/components/RuntimeGovernancePanel.tsx
-var import_react28 = __toESM(require("react"));
-var import_jsx_runtime51 = require("react/jsx-runtime");
+var import_react29 = __toESM(require("react"));
+var import_jsx_runtime52 = require("react/jsx-runtime");
 function RuntimeGovernancePanelTemplate({
   presets,
   defaultAction,
@@ -11788,14 +11986,14 @@ function RuntimeGovernancePanelTemplate({
   queryErrorMessage,
   replayErrorMessage
 }) {
-  const [selectedAction, setSelectedAction] = import_react28.default.useState(defaultAction);
-  const activePreset = import_react28.default.useMemo(
+  const [selectedAction, setSelectedAction] = import_react29.default.useState(defaultAction);
+  const activePreset = import_react29.default.useMemo(
     () => presets.find((item) => item.action === selectedAction) ?? presets[0],
     [presets, selectedAction]
   );
   const { receipt, pendingOperation, message, actionError, runOperation } = useRuntimePanelState(initialMessage);
   const scopeLabel = getReceiptScopeLabel?.(receipt) ?? scopeSummary;
-  const submitSelectedAction = import_react28.default.useCallback(async () => {
+  const submitSelectedAction = import_react29.default.useCallback(async () => {
     if (!activePreset) {
       return;
     }
@@ -11809,7 +12007,7 @@ function RuntimeGovernancePanelTemplate({
       })
     );
   }, [activePreset, runOperation, submitErrorMessage, submitPreset, submitSuccessLabel, summarizeReceipt]);
-  const queryLatestReceipt = import_react28.default.useCallback(async () => {
+  const queryLatestReceipt = import_react29.default.useCallback(async () => {
     const latestReceipt = receipt;
     if (!hasRuntimePanelReceiptCode(latestReceipt)) {
       return;
@@ -11825,7 +12023,7 @@ function RuntimeGovernancePanelTemplate({
       })
     );
   }, [queryErrorMessage, queryReceipt, querySuccessLabel, receipt, runOperation, summarizeReceipt]);
-  const replayLatestReceipt = import_react28.default.useCallback(async () => {
+  const replayLatestReceipt = import_react29.default.useCallback(async () => {
     const latestReceipt = receipt;
     if (!canReplayRuntimePanelAction(latestReceipt, canReplayReceipt)) {
       return;
@@ -11841,8 +12039,8 @@ function RuntimeGovernancePanelTemplate({
       })
     );
   }, [canReplayReceipt, receipt, replayErrorMessage, replayReceipt, replaySuccessLabel, runOperation, summarizeReceipt]);
-  return /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)(RuntimePanelFrame, { scopeSummary, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime52.jsxs)(RuntimePanelFrame, { scopeSummary, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime52.jsx)(
       RuntimePresetSelector,
       {
         options: presets.map((item) => ({ key: item.action, label: item.label })),
@@ -11850,8 +12048,8 @@ function RuntimeGovernancePanelTemplate({
         onSelect: (key) => setSelectedAction(key)
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)(RuntimePanelGrid, { children: [
-      activePreset ? /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime52.jsxs)(RuntimePanelGrid, { children: [
+      activePreset ? /* @__PURE__ */ (0, import_jsx_runtime52.jsx)(
         RuntimePresetCard,
         {
           preset: {
@@ -11866,7 +12064,7 @@ function RuntimeGovernancePanelTemplate({
           }
         }
       ) : null,
-      /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime52.jsx)(
         RuntimeReceiptStatusCard,
         {
           ...createRuntimeReceiptStatusCardProps({
@@ -11877,7 +12075,7 @@ function RuntimeGovernancePanelTemplate({
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime52.jsx)(
       RuntimeOperationToolbar,
       {
         ...createRuntimeOperationToolbarProps({
@@ -11890,12 +12088,12 @@ function RuntimeGovernancePanelTemplate({
         })
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(RuntimePanelFeedback, { message, receipt, actionError })
+    /* @__PURE__ */ (0, import_jsx_runtime52.jsx)(RuntimePanelFeedback, { message, receipt, actionError })
   ] });
 }
 
 // src/components/FoundationConsumerSections.tsx
-var import_jsx_runtime52 = require("react/jsx-runtime");
+var import_jsx_runtime53 = require("react/jsx-runtime");
 function GovernanceQuickViewSection({
   title = "\u6CBB\u7406\u544A\u8B66\u5FEB\u901F\u89C6\u56FE",
   titleColor = "#93c5fd",
@@ -11906,7 +12104,7 @@ function GovernanceQuickViewSection({
   triageLine,
   children
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime52.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)(
     "div",
     {
       style: {
@@ -11918,9 +12116,9 @@ function GovernanceQuickViewSection({
         ...panelStyle
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { color: titleColor, fontSize: 13 }, children: title }),
-        /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: summaryLine }),
-        triageLine ? /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { marginTop: 8, color: secondaryTextColor }, children: triageLine }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { color: titleColor, fontSize: 13 }, children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: summaryLine }),
+        triageLine ? /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 8, color: secondaryTextColor }, children: triageLine }) : null,
         children
       ]
     }
@@ -11937,7 +12135,7 @@ function FoundationConsumerWiringSection({
   highRiskLine,
   touchpointsLine
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime52.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)(
     "div",
     {
       style: {
@@ -11949,18 +12147,18 @@ function FoundationConsumerWiringSection({
         ...panelStyle
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { color: titleColor, fontSize: 13 }, children: title }),
-        /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: responsibility }),
-        sequenceLine ? /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { marginTop: 10, color: secondaryTextColor }, children: sequenceLine }) : null,
-        highRiskLine ? /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: highRiskLine }) : null,
-        touchpointsLine ? /* @__PURE__ */ (0, import_jsx_runtime52.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: touchpointsLine }) : null
+        /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { color: titleColor, fontSize: 13 }, children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: responsibility }),
+        sequenceLine ? /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 10, color: secondaryTextColor }, children: sequenceLine }) : null,
+        highRiskLine ? /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: highRiskLine }) : null,
+        touchpointsLine ? /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: touchpointsLine }) : null
       ]
     }
   );
 }
 
 // src/components/PortalConsumerGovernanceSection.tsx
-var import_jsx_runtime53 = require("react/jsx-runtime");
+var import_jsx_runtime54 = require("react/jsx-runtime");
 function PortalConsumerGovernanceSection({
   title = "Contract Consumer",
   titleColor = "#93c5fd",
@@ -11976,7 +12174,7 @@ function PortalConsumerGovernanceSection({
   linkedOverview,
   runtimePanel
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)(
     "div",
     {
       style: {
@@ -11987,15 +12185,15 @@ function PortalConsumerGovernanceSection({
         ...panelStyle
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { color: titleColor, fontSize: 12 }, children: title }),
-        /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: deliverySummary }),
-        /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 6, color: titleColor }, children: responsibility }),
-        detailLines.map((line) => /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 6, color: secondaryTextColor }, children: line }, line)),
-        /* @__PURE__ */ (0, import_jsx_runtime53.jsxs)("div", { style: { marginTop: 6, color: titleColor }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { style: { color: titleColor, fontSize: 12 }, children: title }),
+        /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { style: { marginTop: 8, color: primaryTextColor }, children: deliverySummary }),
+        /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { style: { marginTop: 6, color: titleColor }, children: responsibility }),
+        detailLines.map((line) => /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { style: { marginTop: 6, color: secondaryTextColor }, children: line }, line)),
+        /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { style: { marginTop: 6, color: titleColor }, children: [
           "Governance\uFF1A",
           governanceCodes.join(" / ")
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime53.jsx)("div", { style: { marginTop: 10, color: summaryTextColor }, children: governanceSummary }),
+        /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { style: { marginTop: 10, color: summaryTextColor }, children: governanceSummary }),
         linkedOverview,
         runtimePanel
       ]
@@ -12004,16 +12202,16 @@ function PortalConsumerGovernanceSection({
 }
 
 // src/components/FoundationAlertLinkedOverview.tsx
-var import_react29 = require("react");
+var import_react30 = require("react");
 var import_types2 = require("@m5/types");
-var import_jsx_runtime54 = require("react/jsx-runtime");
+var import_jsx_runtime55 = require("react/jsx-runtime");
 function renderSectionShell(hasShell, title, description, titleStyle2, descriptionStyle, sectionStyle3, children) {
   if (!hasShell) {
-    return /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(import_jsx_runtime54.Fragment, { children });
+    return /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(import_jsx_runtime55.Fragment, { children });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("section", { style: sectionStyle3, children: [
-    title ? /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { style: titleStyle2, children: title }) : null,
-    description ? /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { style: descriptionStyle, children: description }) : null,
+  return /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)("section", { style: sectionStyle3, children: [
+    title ? /* @__PURE__ */ (0, import_jsx_runtime55.jsx)("div", { style: titleStyle2, children: title }) : null,
+    description ? /* @__PURE__ */ (0, import_jsx_runtime55.jsx)("div", { style: descriptionStyle, children: description }) : null,
     children
   ] });
 }
@@ -12039,17 +12237,17 @@ function FoundationAlertLinkedOverviewSection({
   buildCatalogMetaLines,
   renderPanel
 }) {
-  const panelRef = (0, import_react29.useRef)(null);
+  const panelRef = (0, import_react30.useRef)(null);
   const searchEnabled = search?.enabled ?? false;
   const topRisks = governance.topRisks.slice(0, 3);
-  const defaultFocusCode = (0, import_react29.useMemo)(
+  const defaultFocusCode = (0, import_react30.useMemo)(
     () => topRisks[0]?.code ?? governance.overviewAlerts[0]?.code ?? governance.alerts[0]?.code ?? "",
     [governance.alerts, governance.overviewAlerts, topRisks]
   );
   const timelineQueryKey = `${focusQueryKey}Action`;
   const ownerQueryKey = `${focusQueryKey}Owner`;
   const defaultFocusContext = defaultFocusContextPrefix ? `${defaultFocusContextPrefix} / \u9ED8\u8BA4\u805A\u7126 / ${defaultFocusCode || "none"}` : `\u9ED8\u8BA4\u805A\u7126 / ${defaultFocusCode || "none"}`;
-  const searchableAlerts = (0, import_react29.useMemo)(
+  const searchableAlerts = (0, import_react30.useMemo)(
     () => [
       ...governance.topRisks.map((item) => ({
         code: item.code,
@@ -12079,15 +12277,15 @@ function FoundationAlertLinkedOverviewSection({
   const filteredSearchableAlerts = searchEnabled ? searchResult.filteredItems : searchableAlerts;
   const matchedCount = searchEnabled ? searchResult.matchedCount : searchableAlerts.length;
   const totalCount = searchEnabled ? searchResult.totalCount : searchableAlerts.length;
-  const matchedCodes = (0, import_react29.useMemo)(
+  const matchedCodes = (0, import_react30.useMemo)(
     () => new Set((filteredSearchableAlerts ?? []).map((item) => item.code)),
     [filteredSearchableAlerts]
   );
-  const displayTopRisks = (0, import_react29.useMemo)(
+  const displayTopRisks = (0, import_react30.useMemo)(
     () => searchTerm.trim() ? governance.topRisks.filter((item) => matchedCodes.has(item.code)).slice(0, 3) : governance.topRisks.slice(0, 3),
     [governance.topRisks, matchedCodes, searchTerm]
   );
-  const displayCatalogAlerts = (0, import_react29.useMemo)(
+  const displayCatalogAlerts = (0, import_react30.useMemo)(
     () => searchTerm.trim() ? governance.alerts.filter((item) => matchedCodes.has(item.code)).slice(0, 3) : governance.alerts.slice(0, 3),
     [governance.alerts, matchedCodes, searchTerm]
   );
@@ -12129,7 +12327,7 @@ function FoundationAlertLinkedOverviewSection({
     }
     return governance.alerts.find((item) => item.code === defaultFocusCode) ?? governance.overviewAlerts[0] ?? displayTopRisks[0] ?? null;
   }
-  const overviewStatItems = (0, import_react29.useMemo)(
+  const overviewStatItems = (0, import_react30.useMemo)(
     () => overviewStats.map((item) => {
       const preferredAlert = pickPreferredAlert(item.preferredCodes);
       const preferredCode = preferredAlert?.code ?? "";
@@ -12145,7 +12343,7 @@ function FoundationAlertLinkedOverviewSection({
     }),
     [focusAlertCode, overviewStats]
   );
-  const topRiskItems = (0, import_react29.useMemo)(
+  const topRiskItems = (0, import_react30.useMemo)(
     () => displayTopRisks.map((item) => ({
       key: title ? `${title}-${item.code}-risk` : `${item.code}-risk`,
       code: item.code,
@@ -12160,7 +12358,7 @@ function FoundationAlertLinkedOverviewSection({
     })),
     [buildTopRiskMetaLines, displayTopRisks, focusAlertCode, title]
   );
-  const catalogAlertItems = (0, import_react29.useMemo)(
+  const catalogAlertItems = (0, import_react30.useMemo)(
     () => displayCatalogAlerts.map((item) => ({
       key: title ? `${title}-${item.code}` : item.code,
       code: item.code,
@@ -12174,8 +12372,8 @@ function FoundationAlertLinkedOverviewSection({
     })),
     [buildCatalogMetaLines, displayCatalogAlerts, focusAlertCode, title]
   );
-  const content = /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)(import_jsx_runtime54.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
+  const content = /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)(import_jsx_runtime55.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(
       FoundationAlertLinkedFocusBarReadout,
       {
         palette,
@@ -12189,7 +12387,7 @@ function FoundationAlertLinkedOverviewSection({
         emptyShareStatus
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(
       FoundationAlertLinkedOverviewStatsReadout,
       {
         palette,
@@ -12209,8 +12407,8 @@ function FoundationAlertLinkedOverviewSection({
         }
       }
     ),
-    searchEnabled ? /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)(import_jsx_runtime54.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { style: { marginTop: 14 }, children: /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
+    searchEnabled ? /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)(import_jsx_runtime55.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime55.jsx)("div", { style: { marginTop: 14 }, children: /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(
         SearchFilterInput2,
         {
           value: searchTerm,
@@ -12218,7 +12416,7 @@ function FoundationAlertLinkedOverviewSection({
           placeholder: search?.placeholder ?? "\u641C\u7D22\u544A\u8B66\u4EE3\u7801\u3001\u6458\u8981\u6216 triage \u72B6\u6001..."
         }
       ) }),
-      searchTerm.trim() ? /* @__PURE__ */ (0, import_jsx_runtime54.jsxs)("div", { style: { marginTop: 8, color: search?.statusColor ?? palette.accentText, fontSize: 12 }, children: [
+      searchTerm.trim() ? /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)("div", { style: { marginTop: 8, color: search?.statusColor ?? palette.accentText, fontSize: 12 }, children: [
         "\u641C\u7D22\u544A\u8B66\uFF1A\u5339\u914D ",
         matchedCount,
         "/",
@@ -12226,7 +12424,7 @@ function FoundationAlertLinkedOverviewSection({
         " \u6761"
       ] }) : null
     ] }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(
       FoundationAlertLinkedAlertGridReadout,
       {
         palette,
@@ -12247,7 +12445,7 @@ function FoundationAlertLinkedOverviewSection({
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(
       FoundationAlertLinkedAlertGridReadout,
       {
         palette,
@@ -12268,7 +12466,7 @@ function FoundationAlertLinkedOverviewSection({
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("div", { ref: panelRef, children: renderPanel({
+    /* @__PURE__ */ (0, import_jsx_runtime55.jsx)("div", { ref: panelRef, children: renderPanel({
       focusAlertCode,
       focusContext,
       timelineQueryKey,
@@ -12297,7 +12495,7 @@ function FoundationAlertLinkedOverviewSurface({
     pathname,
     searchParams
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime54.jsx)(FoundationAlertLinkedOverviewSection, { ...props, navigationBindings });
+  return /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(FoundationAlertLinkedOverviewSection, { ...props, navigationBindings });
 }
 function createFoundationAlertLinkedOverviewStats(preset, summary, topRiskCount = 0) {
   switch (preset) {
@@ -12372,11 +12570,11 @@ function createFoundationAlertLinkedOverviewStats(preset, summary, topRiskCount 
 }
 
 // src/components/FoundationAlertViews.tsx
-var import_react31 = require("react");
+var import_react32 = require("react");
 
 // src/components/FormSubmitFeedback.tsx
-var import_react30 = require("react");
-var import_jsx_runtime55 = require("react/jsx-runtime");
+var import_react31 = require("react");
+var import_jsx_runtime56 = require("react/jsx-runtime");
 function FormSubmitFeedback({
   state,
   submitting,
@@ -12392,7 +12590,7 @@ function FormSubmitFeedback({
   const resolvedError = error ?? state?.errorMessage ?? void 0;
   const resolvedSuccess = success ?? state?.successMessage ?? void 0;
   if (resolvedSubmitting) {
-    return /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)(
       "div",
       {
         style: {
@@ -12406,7 +12604,7 @@ function FormSubmitFeedback({
           gap: 8
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime56.jsx)(
             "div",
             {
               style: {
@@ -12420,15 +12618,15 @@ function FormSubmitFeedback({
             }
           ),
           "Submitting...",
-          /* @__PURE__ */ (0, import_jsx_runtime55.jsx)("style", { children: `@keyframes spin { to { transform: rotate(360deg); } }` })
+          /* @__PURE__ */ (0, import_jsx_runtime56.jsx)("style", { children: `@keyframes spin { to { transform: rotate(360deg); } }` })
         ]
       }
     );
   }
   const hasContent = !!resolvedSuccess || !!resolvedError;
   if (!hasContent) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)(import_jsx_runtime55.Fragment, { children: [
-    resolvedSuccess && (renderSuccess ? renderSuccess(resolvedSuccess) : /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)(import_jsx_runtime56.Fragment, { children: [
+    resolvedSuccess && (renderSuccess ? renderSuccess(resolvedSuccess) : /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)(
       "div",
       {
         style: {
@@ -12443,11 +12641,11 @@ function FormSubmitFeedback({
           gap: 8
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)("span", { children: [
             "\u2713 ",
             resolvedSuccess
           ] }),
-          onDismissSuccess && /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(
+          onDismissSuccess && /* @__PURE__ */ (0, import_jsx_runtime56.jsx)(
             "button",
             {
               type: "button",
@@ -12467,7 +12665,7 @@ function FormSubmitFeedback({
         ]
       }
     )),
-    resolvedError && (renderError ? renderError(resolvedError) : /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)(
+    resolvedError && (renderError ? renderError(resolvedError) : /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)(
       "div",
       {
         style: {
@@ -12482,12 +12680,12 @@ function FormSubmitFeedback({
           gap: 8
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)("span", { children: [
             "\u26A0 ",
             resolvedError
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime55.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
-            onRetry ? /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+            onRetry ? /* @__PURE__ */ (0, import_jsx_runtime56.jsx)(
               "button",
               {
                 type: "button",
@@ -12504,7 +12702,7 @@ function FormSubmitFeedback({
                 children: "\u91CD\u8BD5"
               }
             ) : null,
-            onDismissError && /* @__PURE__ */ (0, import_jsx_runtime55.jsx)(
+            onDismissError && /* @__PURE__ */ (0, import_jsx_runtime56.jsx)(
               "button",
               {
                 type: "button",
@@ -12532,8 +12730,8 @@ function useFormSubmit({
   successMessage,
   defaultErrorMessage
 }) {
-  const [state, setState] = (0, import_react30.useState)({ isSubmitting: false });
-  const submit = (0, import_react30.useCallback)(async () => {
+  const [state, setState] = (0, import_react31.useState)({ isSubmitting: false });
+  const submit = (0, import_react31.useCallback)(async () => {
     setState({ isSubmitting: true });
     try {
       const result = await onSubmit();
@@ -12552,13 +12750,13 @@ function useFormSubmit({
       return void 0;
     }
   }, [defaultErrorMessage, onSubmit, successMessage]);
-  const clearError = (0, import_react30.useCallback)(() => {
+  const clearError = (0, import_react31.useCallback)(() => {
     setState((s) => ({ ...s, errorMessage: void 0 }));
   }, []);
-  const clearSuccess = (0, import_react30.useCallback)(() => {
+  const clearSuccess = (0, import_react31.useCallback)(() => {
     setState((s) => ({ ...s, successMessage: void 0 }));
   }, []);
-  const reset = (0, import_react30.useCallback)(() => {
+  const reset = (0, import_react31.useCallback)(() => {
     setState({ isSubmitting: false });
   }, []);
   return {
@@ -12574,7 +12772,7 @@ function useFormSubmit({
 }
 
 // src/components/InfoRow.tsx
-var import_jsx_runtime56 = require("react/jsx-runtime");
+var import_jsx_runtime57 = require("react/jsx-runtime");
 function InfoRow({
   label,
   value,
@@ -12584,9 +12782,9 @@ function InfoRow({
   valueFontSize = 14,
   gap = 4
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)("div", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime56.jsx)("div", { style: { fontSize: labelFontSize, color: labelColor, marginBottom: gap }, children: label }),
-    /* @__PURE__ */ (0, import_jsx_runtime56.jsx)("div", { style: { fontSize: valueFontSize, color: valueColor }, children: value })
+  return /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: labelFontSize, color: labelColor, marginBottom: gap }, children: label }),
+    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: valueFontSize, color: valueColor }, children: value })
   ] });
 }
 function ConfirmDialog({
@@ -12602,7 +12800,7 @@ function ConfirmDialog({
 }) {
   if (!open) return null;
   const confirmColor = variant === "danger" ? "#ef4444" : "#3b82f6";
-  return /* @__PURE__ */ (0, import_jsx_runtime56.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
     "div",
     {
       style: {
@@ -12617,7 +12815,7 @@ function ConfirmDialog({
       onClick: (e) => {
         if (e.target === e.currentTarget) onCancel();
       },
-      children: /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)(
+      children: /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)(
         "div",
         {
           style: {
@@ -12630,10 +12828,10 @@ function ConfirmDialog({
             boxShadow: "0 20px 60px rgba(0,0,0,0.4)"
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime56.jsx)("h3", { style: { fontSize: 16, fontWeight: 600, color: "#f8fafc", margin: "0 0 8px" }, children: title }),
-            /* @__PURE__ */ (0, import_jsx_runtime56.jsx)("p", { style: { fontSize: 14, color: "#94a3b8", margin: "0 0 20px", lineHeight: 1.5 }, children: message }),
-            /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime56.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("h3", { style: { fontSize: 16, fontWeight: 600, color: "#f8fafc", margin: "0 0 8px" }, children: title }),
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("p", { style: { fontSize: 14, color: "#94a3b8", margin: "0 0 20px", lineHeight: 1.5 }, children: message }),
+            /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
                 "button",
                 {
                   type: "button",
@@ -12652,7 +12850,7 @@ function ConfirmDialog({
                   children: cancelLabel
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime56.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
                 "button",
                 {
                   type: "button",
@@ -12681,7 +12879,7 @@ function ConfirmDialog({
 }
 
 // src/components/FoundationAlertViews.tsx
-var import_jsx_runtime57 = require("react/jsx-runtime");
+var import_jsx_runtime58 = require("react/jsx-runtime");
 var defaultFoundationAlertDetailLabels = {
   overviewTitle: "Overview",
   detailsTitle: "Details",
@@ -12746,7 +12944,7 @@ function FoundationAlertDemoListPage({
   mapRecords,
   acknowledgeOptions
 }) {
-  const [alerts] = (0, import_react31.useState)(() => {
+  const [alerts] = (0, import_react32.useState)(() => {
     const records = createFoundationAlertMockRecords({
       count,
       titles: preset.titles,
@@ -12758,7 +12956,7 @@ function FoundationAlertDemoListPage({
     return mapRecords ? mapRecords(records) : records;
   });
   const acknowledgeAction = useFoundationAlertDemoAcknowledge(acknowledgeOptions);
-  return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
     FoundationAlertListPageSection,
     {
       title,
@@ -12768,7 +12966,7 @@ function FoundationAlertDemoListPage({
       detailHrefBase,
       feedback: acknowledgeAction.feedback,
       onDismissFeedback: acknowledgeAction.dismissFeedback,
-      renderAction: (row) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+      renderAction: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
         FoundationAlertAcknowledgeActionButton,
         {
           alert: row,
@@ -13231,7 +13429,7 @@ function FoundationAlertTableCard({
   omitColumns,
   pagination
 }) {
-  const columns = (0, import_react31.useMemo)(
+  const columns = (0, import_react32.useMemo)(
     () => createFoundationAlertTableColumns({
       detailHrefBase,
       renderAction,
@@ -13253,7 +13451,7 @@ function FoundationAlertTableCard({
       statusMetaByCode
     ]
   );
-  return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
     PaginatedDataTableCard,
     {
       title,
@@ -13289,21 +13487,21 @@ function createFoundationAlertTableColumns({
       sortable: true,
       render: (row) => {
         const severity = resolveFoundationAlertSeverityMeta(row.severity, severityMetaByCode);
-        return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(StatusBadge, { label: severity.label, variant: severity.variant, size: "sm" });
+        return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(StatusBadge, { label: severity.label, variant: severity.variant, size: "sm" });
       }
     },
     {
       key: "title",
       header: columnLabels?.title ?? "Title",
       sortable: true,
-      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("a", { href: `${detailHrefBase}/${row.id}`, style: { color: "#e2e8f0", textDecoration: "none", fontWeight: 500 }, children: row.title })
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("a", { href: `${detailHrefBase}/${row.id}`, style: { color: "#e2e8f0", textDecoration: "none", fontWeight: 500 }, children: row.title })
     },
     {
       key: "source",
       header: columnLabels?.source ?? "Source",
       width: "120px",
       sortable: true,
-      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("span", { style: { color: "#94a3b8", fontSize: 13 }, children: sourceLabels?.[row.source] ?? row.source })
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("span", { style: { color: "#94a3b8", fontSize: 13 }, children: sourceLabels?.[row.source] ?? row.source })
     },
     {
       key: "status",
@@ -13312,7 +13510,7 @@ function createFoundationAlertTableColumns({
       sortable: true,
       render: (row) => {
         const status = resolveFoundationAlertStatusMeta(row.status, statusMetaByCode);
-        return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(StatusBadge, { label: status.label, variant: status.variant, size: "sm" });
+        return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(StatusBadge, { label: status.label, variant: status.variant, size: "sm" });
       }
     },
     {
@@ -13320,7 +13518,7 @@ function createFoundationAlertTableColumns({
       header: columnLabels?.createdAt ?? "Created",
       width: "160px",
       sortable: true,
-      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("span", { style: { color: "#94a3b8", fontSize: 13 }, children: new Date(row.createdAt).toLocaleString() })
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("span", { style: { color: "#94a3b8", fontSize: 13 }, children: new Date(row.createdAt).toLocaleString() })
     }
   ];
   if (renderAction) {
@@ -13393,7 +13591,7 @@ function renderFoundationAlertDetailTag(label, palette = "default") {
     border: "1px solid rgba(96,165,250,0.24)",
     color: "#dbeafe"
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
     "span",
     {
       style: {
@@ -13432,43 +13630,43 @@ function buildFoundationAlertDrilldownSections(drilldown, options = {}) {
   return [
     {
       title: labels.governanceTitle ?? defaultFoundationAlertDrilldownSectionLabels.governanceTitle,
-      content: /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 16 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: labels.overviewVisibility ?? defaultFoundationAlertDrilldownSectionLabels.overviewVisibility }),
+      content: /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 16 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: labels.overviewVisibility ?? defaultFoundationAlertDrilldownSectionLabels.overviewVisibility }),
             renderFoundationAlertDetailTag(
               drilldown.visibleInOverview === false ? labels.overviewHidden ?? defaultFoundationAlertDrilldownSectionLabels.overviewHidden : labels.overviewVisible ?? defaultFoundationAlertDrilldownSectionLabels.overviewVisible,
               drilldown.visibleInOverview === false ? "warning" : "success"
             )
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: labels.acknowledgementStatus ?? defaultFoundationAlertDrilldownSectionLabels.acknowledgementStatus }),
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: labels.acknowledgementStatus ?? defaultFoundationAlertDrilldownSectionLabels.acknowledgementStatus }),
             renderFoundationAlertDetailTag(
               drilldown.acknowledgement?.status === "MUTED" ? labels.acknowledgementMuted ?? defaultFoundationAlertDrilldownSectionLabels.acknowledgementMuted : drilldown.acknowledgement?.status === "ACKED" ? labels.acknowledgementAcked ?? defaultFoundationAlertDrilldownSectionLabels.acknowledgementAcked : labels.acknowledgementPending ?? defaultFoundationAlertDrilldownSectionLabels.acknowledgementPending,
               drilldown.acknowledgement?.status ? "success" : "default"
             )
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: labels.recentActor ?? defaultFoundationAlertDrilldownSectionLabels.recentActor }),
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: drilldown.acknowledgement?.actorId ?? history[0]?.actorId ?? labels.systemActor ?? defaultFoundationAlertDrilldownSectionLabels.systemActor })
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: labels.recentActor ?? defaultFoundationAlertDrilldownSectionLabels.recentActor }),
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: drilldown.acknowledgement?.actorId ?? history[0]?.actorId ?? labels.systemActor ?? defaultFoundationAlertDrilldownSectionLabels.systemActor })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: labels.recentUpdatedAt ?? defaultFoundationAlertDrilldownSectionLabels.recentUpdatedAt }),
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: formatDateTime2(drilldown.acknowledgement?.updatedAt ?? history[0]?.createdAt ?? drilldown.generatedAt) })
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: labels.recentUpdatedAt ?? defaultFoundationAlertDrilldownSectionLabels.recentUpdatedAt }),
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: formatDateTime2(drilldown.acknowledgement?.updatedAt ?? history[0]?.createdAt ?? drilldown.generatedAt) })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 8 }, children: labels.availableActions ?? defaultFoundationAlertDrilldownSectionLabels.availableActions }),
-          availableActions.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: availableActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("span", { children: renderFoundationAlertDetailTag(
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 8 }, children: labels.availableActions ?? defaultFoundationAlertDrilldownSectionLabels.availableActions }),
+          availableActions.length ? /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: availableActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("span", { children: renderFoundationAlertDetailTag(
             formatFoundationAlertActionLabel(action, labels),
             action === "MUTE" ? "warning" : "default"
-          ) }, action)) }) : /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: labels.noAvailableActions ?? defaultFoundationAlertDrilldownSectionLabels.noAvailableActions })
+          ) }, action)) }) : /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: labels.noAvailableActions ?? defaultFoundationAlertDrilldownSectionLabels.noAvailableActions })
         ] })
       ] })
     },
     {
       title: labels.timelineTitle ?? defaultFoundationAlertDrilldownSectionLabels.timelineTitle,
-      content: history.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: history.map((entry, index) => /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)(
+      content: history.length ? /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: history.map((entry, index) => /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)(
         "div",
         {
           style: {
@@ -13478,8 +13676,8 @@ function buildFoundationAlertDrilldownSections(drilldown, options = {}) {
             padding: 16
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 10 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 10 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }, children: [
                 renderFoundationAlertDetailTag(
                   formatFoundationAlertActionLabel(entry.action, labels),
                   entry.action === "MUTE" ? "warning" : "default"
@@ -13489,30 +13687,30 @@ function buildFoundationAlertDrilldownSections(drilldown, options = {}) {
                   entry.visibleInOverview ? "success" : "warning"
                 )
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 12 }, children: formatDateTime2(entry.createdAt) })
+              /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#94a3b8", fontSize: 12 }, children: formatDateTime2(entry.createdAt) })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 4 }, children: labels.actor ?? defaultFoundationAlertDrilldownSectionLabels.actor }),
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: entry.actorId ?? labels.systemActor ?? defaultFoundationAlertDrilldownSectionLabels.systemActor })
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 4 }, children: labels.actor ?? defaultFoundationAlertDrilldownSectionLabels.actor }),
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: entry.actorId ?? labels.systemActor ?? defaultFoundationAlertDrilldownSectionLabels.systemActor })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 4 }, children: labels.source ?? defaultFoundationAlertDrilldownSectionLabels.source }),
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: entry.source ?? "foundation" })
+              /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 4 }, children: labels.source ?? defaultFoundationAlertDrilldownSectionLabels.source }),
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: entry.source ?? "foundation" })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 4 }, children: labels.mutedUntil ?? defaultFoundationAlertDrilldownSectionLabels.mutedUntil }),
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: formatDateTime2(entry.mutedUntil) })
+              /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 4 }, children: labels.mutedUntil ?? defaultFoundationAlertDrilldownSectionLabels.mutedUntil }),
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: formatDateTime2(entry.mutedUntil) })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 4 }, children: labels.note ?? defaultFoundationAlertDrilldownSectionLabels.note }),
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: entry.note ?? labels.noNote ?? defaultFoundationAlertDrilldownSectionLabels.noNote })
+              /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 4 }, children: labels.note ?? defaultFoundationAlertDrilldownSectionLabels.note }),
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14 }, children: entry.note ?? labels.noNote ?? defaultFoundationAlertDrilldownSectionLabels.noNote })
               ] })
             ] })
           ]
         },
         `${entry.action}-${entry.createdAt}-${index}`
-      )) }) : /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: labels.timelineNoHistory ?? defaultFoundationAlertDrilldownSectionLabels.timelineNoHistory })
+      )) }) : /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: labels.timelineNoHistory ?? defaultFoundationAlertDrilldownSectionLabels.timelineNoHistory })
     }
   ];
 }
@@ -13524,33 +13722,33 @@ function buildFoundationAlertLytConnectionGovernanceSections(drilldown) {
   return [
     {
       title: "\u8FDE\u63A5\u6CBB\u7406\u8303\u56F4",
-      content: /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(InfoRow, { label: "\u79DF\u6237", value: detail.scope.tenantId ?? "\u672A\u6307\u5B9A" }),
-        /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(InfoRow, { label: "\u54C1\u724C", value: detail.scope.brandId ?? "\u672A\u6307\u5B9A" }),
-        /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(InfoRow, { label: "\u53D7\u5F71\u54CD\u95E8\u5E97\u6570", value: String(detail.affectedStoreIds.length) }),
-        /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(InfoRow, { label: "\u98CE\u9669\u5206\u7EC4\u6570", value: String(detail.alerts.length) })
+      content: /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(InfoRow, { label: "\u79DF\u6237", value: detail.scope.tenantId ?? "\u672A\u6307\u5B9A" }),
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(InfoRow, { label: "\u54C1\u724C", value: detail.scope.brandId ?? "\u672A\u6307\u5B9A" }),
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(InfoRow, { label: "\u53D7\u5F71\u54CD\u95E8\u5E97\u6570", value: String(detail.affectedStoreIds.length) }),
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(InfoRow, { label: "\u98CE\u9669\u5206\u7EC4\u6570", value: String(detail.alerts.length) })
       ] })
     },
     {
       title: "\u5F71\u54CD\u6982\u89C8",
-      content: /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 16 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 8 }, children: "\u53D7\u5F71\u54CD\u95E8\u5E97" }),
-          detail.affectedStoreIds.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: detail.affectedStoreIds.map((storeId) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("span", { children: renderFoundationAlertDetailTag(storeId, "warning") }, storeId)) }) : /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: "\u6682\u65E0\u53D7\u5F71\u54CD\u95E8\u5E97" })
+      content: /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 16 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 8 }, children: "\u53D7\u5F71\u54CD\u95E8\u5E97" }),
+          detail.affectedStoreIds.length ? /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: detail.affectedStoreIds.map((storeId) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("span", { children: renderFoundationAlertDetailTag(storeId, "warning") }, storeId)) }) : /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: "\u6682\u65E0\u53D7\u5F71\u54CD\u95E8\u5E97" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 8 }, children: "\u53D7\u5F71\u54CD\u80FD\u529B" }),
-          detail.affectedCapabilities.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: detail.affectedCapabilities.map((capability) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("span", { children: renderFoundationAlertDetailTag(capability, "default") }, capability)) }) : /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: "\u6682\u65E0\u80FD\u529B\u5F71\u54CD\u660E\u7EC6" })
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 8 }, children: "\u53D7\u5F71\u54CD\u80FD\u529B" }),
+          detail.affectedCapabilities.length ? /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: detail.affectedCapabilities.map((capability) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("span", { children: renderFoundationAlertDetailTag(capability, "default") }, capability)) }) : /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: "\u6682\u65E0\u80FD\u529B\u5F71\u54CD\u660E\u7EC6" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 8 }, children: "\u5EFA\u8BAE\u52A8\u4F5C" }),
-          detail.recommendedNextActions.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("ul", { style: { margin: 0, paddingLeft: 18, color: "#e2e8f0", display: "grid", gap: 8 }, children: detail.recommendedNextActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("li", { children: action }, action)) }) : /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: "\u6682\u65E0\u5EFA\u8BAE\u52A8\u4F5C" })
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 8 }, children: "\u5EFA\u8BAE\u52A8\u4F5C" }),
+          detail.recommendedNextActions.length ? /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("ul", { style: { margin: 0, paddingLeft: 18, color: "#e2e8f0", display: "grid", gap: 8 }, children: detail.recommendedNextActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("li", { children: action }, action)) }) : /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: "\u6682\u65E0\u5EFA\u8BAE\u52A8\u4F5C" })
         ] })
       ] })
     },
     {
       title: "\u98CE\u9669\u5206\u7EC4",
-      content: detail.alerts.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: detail.alerts.map((alert) => /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)(
+      content: detail.alerts.length ? /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: detail.alerts.map((alert) => /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)(
         "div",
         {
           style: {
@@ -13560,19 +13758,19 @@ function buildFoundationAlertLytConnectionGovernanceSections(drilldown) {
             padding: 16
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: [
                 renderFoundationAlertDetailTag(alert.code, alert.severity === "high" ? "warning" : "default"),
                 renderFoundationAlertDetailTag(`\u5F71\u54CD ${alert.count}`, "default")
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 12 }, children: alert.severity.toUpperCase() })
+              /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#94a3b8", fontSize: 12 }, children: alert.severity.toUpperCase() })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14, marginBottom: 8 }, children: alert.summary }),
-            alert.recommendedNextActions.length ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("ul", { style: { margin: 0, paddingLeft: 18, color: "#cbd5e1", display: "grid", gap: 6 }, children: alert.recommendedNextActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("li", { children: action }, action)) }) : null
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#e2e8f0", fontSize: 14, marginBottom: 8 }, children: alert.summary }),
+            alert.recommendedNextActions.length ? /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("ul", { style: { margin: 0, paddingLeft: 18, color: "#cbd5e1", display: "grid", gap: 6 }, children: alert.recommendedNextActions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("li", { children: action }, action)) }) : null
           ]
         },
         `${alert.code}-${alert.severity}`
-      )) }) : /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: "\u6682\u65E0\u98CE\u9669\u5206\u7EC4" })
+      )) }) : /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { color: "#94a3b8", fontSize: 14 }, children: "\u6682\u65E0\u98CE\u9669\u5206\u7EC4" })
     }
   ];
 }
@@ -13596,29 +13794,29 @@ function FoundationAlertOverviewReadout({
   const resolvedDetailLabels = detailLabels ?? defaultFoundationAlertDetailLabels;
   const severity = resolveFoundationAlertSeverityMeta(alert.severity, severityMetaByCode);
   const status = resolveFoundationAlertStatusMeta(alert.status, statusMetaByCode);
-  return /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
       InfoRow,
       {
         label: resolvedDetailLabels.severity ?? defaultFoundationAlertDetailLabels.severity,
-        value: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(StatusBadge, { label: severity.label, variant: severity.variant, size: "sm" })
+        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(StatusBadge, { label: severity.label, variant: severity.variant, size: "sm" })
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
       InfoRow,
       {
         label: resolvedDetailLabels.status ?? defaultFoundationAlertDetailLabels.status,
-        value: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(StatusBadge, { label: status.label, variant: status.variant, size: "sm" })
+        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(StatusBadge, { label: status.label, variant: status.variant, size: "sm" })
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
       InfoRow,
       {
         label: resolvedDetailLabels.source ?? defaultFoundationAlertDetailLabels.source,
         value: sourceLabels?.[alert.source] ?? alert.source
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
       InfoRow,
       {
         label: resolvedDetailLabels.owner ?? defaultFoundationAlertDetailLabels.owner,
@@ -13633,22 +13831,22 @@ function FoundationAlertDetailsReadout({
   formatDateTime: formatDateTime2 = (value) => new Date(value).toLocaleString()
 }) {
   const resolvedDetailLabels = detailLabels ?? defaultFoundationAlertDetailLabels;
-  return /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
       InfoRow,
       {
         label: resolvedDetailLabels.description ?? defaultFoundationAlertDetailLabels.description,
         value: alert.description ?? resolvedDetailLabels.noDescription ?? defaultFoundationAlertDetailLabels.noDescription
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
       InfoRow,
       {
         label: resolvedDetailLabels.createdAt ?? defaultFoundationAlertDetailLabels.createdAt,
         value: formatDateTime2(alert.createdAt)
       }
     ),
-    alert.updatedAt ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+    alert.updatedAt ? /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
       InfoRow,
       {
         label: resolvedDetailLabels.updatedAt ?? defaultFoundationAlertDetailLabels.updatedAt,
@@ -13678,7 +13876,7 @@ function FoundationAlertDetailView({
   const resolvedDetailLabels = detailLabels ?? preset?.detailLabels ?? defaultFoundationAlertDetailLabels;
   const resolvedFormatDateTime = formatDateTime2 ?? ((value) => new Date(value).toLocaleString());
   if (!alert) {
-    return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
       DetailShell,
       {
         title: notFoundTitle,
@@ -13692,7 +13890,7 @@ function FoundationAlertDetailView({
   const sections = [
     {
       title: resolvedDetailLabels.overviewTitle ?? defaultFoundationAlertDetailLabels.overviewTitle,
-      content: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+      content: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
         FoundationAlertOverviewReadout,
         {
           alert,
@@ -13705,7 +13903,7 @@ function FoundationAlertDetailView({
     },
     {
       title: resolvedDetailLabels.detailsTitle ?? defaultFoundationAlertDetailLabels.detailsTitle,
-      content: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+      content: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
         FoundationAlertDetailsReadout,
         {
           alert,
@@ -13716,7 +13914,7 @@ function FoundationAlertDetailView({
     },
     ...extraSections ?? []
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
     DetailShell,
     {
       title: alert.title,
@@ -13741,7 +13939,7 @@ function FoundationAlertPresetDetailRoute({
   detailLabels,
   formatDateTime: formatDateTime2
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
     FoundationAlertDetailView,
     {
       alert: alerts[alertId],
@@ -13762,9 +13960,9 @@ function useFoundationAlertDemoAcknowledge({
   delayMs = 300,
   copy
 } = {}) {
-  const [loading, setLoading] = (0, import_react31.useState)(false);
-  const [feedback, setFeedback] = (0, import_react31.useState)(null);
-  const acknowledge = (0, import_react31.useCallback)(
+  const [loading, setLoading] = (0, import_react32.useState)(false);
+  const [feedback, setFeedback] = (0, import_react32.useState)(null);
+  const acknowledge = (0, import_react32.useCallback)(
     async (alertId) => {
       setLoading(true);
       try {
@@ -13784,7 +13982,7 @@ function useFoundationAlertDemoAcknowledge({
     },
     [copy, delayMs]
   );
-  const dismissFeedback = (0, import_react31.useCallback)(() => {
+  const dismissFeedback = (0, import_react32.useCallback)(() => {
     setFeedback(null);
   }, []);
   return {
@@ -13804,7 +14002,7 @@ function FoundationAlertAcknowledgeActionButton({
   if (alert.status === "resolved") {
     return null;
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
     "button",
     {
       type: "button",
@@ -13895,7 +14093,7 @@ function FoundationAlertListPageSection({
   const severityFacet = listState.facets[0];
   const statusFacet = listState.facets[1];
   const sourceFacet = listState.facets[2];
-  const stats = (0, import_react31.useMemo)(
+  const stats = (0, import_react32.useMemo)(
     () => ({
       total: alerts.length,
       open: alerts.filter((alert) => alert.status === "open").length,
@@ -13905,12 +14103,12 @@ function FoundationAlertListPageSection({
     }),
     [alerts, listState.sortedItems.length, sourceFacet?.order.length]
   );
-  return /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)(
     PageShell,
     {
       title,
       description,
-      actions: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+      actions: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
         SearchFilterInput2,
         {
           value: listState.searchTerm,
@@ -13919,7 +14117,7 @@ function FoundationAlertListPageSection({
         }
       ),
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)(
           "div",
           {
             style: {
@@ -13929,30 +14127,30 @@ function FoundationAlertListPageSection({
               marginBottom: 20
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("article", { style: listPageStatCardStyle, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.totalLabel ?? "Total Alerts" }),
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700 }, children: stats.total }),
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.totalHint?.(stats.matched) ?? `${stats.matched} matched` })
+              /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("article", { style: listPageStatCardStyle, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.totalLabel ?? "Total Alerts" }),
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700 }, children: stats.total }),
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.totalHint?.(stats.matched) ?? `${stats.matched} matched` })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("article", { style: listPageStatCardStyle, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.openLabel ?? "Open" }),
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#f87171" }, children: stats.open }),
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.openHint ?? "Needs response" })
+              /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("article", { style: listPageStatCardStyle, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.openLabel ?? "Open" }),
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#f87171" }, children: stats.open }),
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.openHint ?? "Needs response" })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("article", { style: listPageStatCardStyle, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.criticalLabel ?? "Critical / Error" }),
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#facc15" }, children: stats.critical }),
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.criticalHint ?? "High priority" })
+              /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("article", { style: listPageStatCardStyle, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.criticalLabel ?? "Critical / Error" }),
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#facc15" }, children: stats.critical }),
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.criticalHint ?? "High priority" })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("article", { style: listPageStatCardStyle, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.sourceLabel ?? "Sources" }),
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#93c5fd" }, children: stats.sources }),
-                /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.sourceHint ?? "Monitoring / logging / tracing" })
+              /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("article", { style: listPageStatCardStyle, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.sourceLabel ?? "Sources" }),
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#93c5fd" }, children: stats.sources }),
+                /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.sourceHint ?? "Monitoring / logging / tracing" })
               ] })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
           Tabs,
           {
             items: [
@@ -13969,10 +14167,10 @@ function FoundationAlertListPageSection({
             size: "sm"
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { style: { marginBottom: 16, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: resolvedLabels?.statusSectionTitle ?? "Status" }),
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { marginBottom: 16, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: resolvedLabels?.statusSectionTitle ?? "Status" }),
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
               Tabs,
               {
                 items: [
@@ -13990,9 +14188,9 @@ function FoundationAlertListPageSection({
               }
             )
           ] }),
-          resolvedShowSourceFilter ? /* @__PURE__ */ (0, import_jsx_runtime57.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: resolvedLabels?.sourceSectionTitle ?? "Source" }),
-            /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+          resolvedShowSourceFilter ? /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: resolvedLabels?.sourceSectionTitle ?? "Source" }),
+            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
               Tabs,
               {
                 items: [
@@ -14011,7 +14209,7 @@ function FoundationAlertListPageSection({
             )
           ] }) : null
         ] }),
-        feedback ? /* @__PURE__ */ (0, import_jsx_runtime57.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+        feedback ? /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
           FormSubmitFeedback,
           {
             submitting: false,
@@ -14021,7 +14219,7 @@ function FoundationAlertListPageSection({
             onDismissSuccess: onDismissFeedback
           }
         ) }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime57.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
           FoundationAlertTableCard,
           {
             alerts: listState.pagedItems,
@@ -14054,8 +14252,8 @@ function FoundationAlertListPageSection({
 }
 
 // src/components/RuntimeOperationViews.tsx
-var import_react32 = require("react");
-var import_jsx_runtime58 = require("react/jsx-runtime");
+var import_react33 = require("react");
+var import_jsx_runtime59 = require("react/jsx-runtime");
 var runtimeOperationStatusVariants = {
   pending: "default",
   running: "warning",
@@ -14382,7 +14580,7 @@ function RuntimeOperationDemoListPage({
   recordOptions,
   mapRecords
 }) {
-  const [operations] = (0, import_react32.useState)(() => {
+  const [operations] = (0, import_react33.useState)(() => {
     const records = createRuntimeOperationMockRecords({
       count,
       typeOrder: preset.typeOrder,
@@ -14391,7 +14589,7 @@ function RuntimeOperationDemoListPage({
     });
     return mapRecords ? mapRecords(records) : records;
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
     RuntimeOperationsListPageSection,
     {
       title,
@@ -14421,7 +14619,7 @@ function RuntimeOperationsTableCard({
   omitColumns,
   pagination
 }) {
-  const columns = (0, import_react32.useMemo)(
+  const columns = (0, import_react33.useMemo)(
     () => createRuntimeOperationTableColumns({
       detailHrefBase,
       detailHrefBuilder,
@@ -14434,7 +14632,7 @@ function RuntimeOperationsTableCard({
     }),
     [columnLabels, detailHrefBase, detailHrefBuilder, includeColumns, omitColumns, statusLabels, statusVariants, typeLabels]
   );
-  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
     PaginatedDataTableCard,
     {
       title,
@@ -14469,7 +14667,7 @@ var defaultRuntimeOperationDetailLabels = {
 };
 var defaultRuntimeOperationFormatDateTime = (value) => new Date(value).toLocaleString();
 function RuntimeOperationTypeReadout({ type, typeLabels }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
     "span",
     {
       style: {
@@ -14487,12 +14685,12 @@ function RuntimeOperationTypeReadout({ type, typeLabels }) {
 }
 function RuntimeOperationIdReadout({ id, href }) {
   if (!href) {
-    return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("span", { style: { color: "#e2e8f0", fontSize: 13, fontFamily: "monospace" }, children: id });
+    return /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("span", { style: { color: "#e2e8f0", fontSize: 13, fontFamily: "monospace" }, children: id });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("a", { href, style: { color: "#93c5fd", textDecoration: "none", fontSize: 13, fontFamily: "monospace" }, children: id });
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("a", { href, style: { color: "#93c5fd", textDecoration: "none", fontSize: 13, fontFamily: "monospace" }, children: id });
 }
 function RuntimeOperationTargetReadout({ targetId }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("span", { style: { color: "#94a3b8", fontSize: 13 }, children: targetId });
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("span", { style: { color: "#94a3b8", fontSize: 13 }, children: targetId });
 }
 function RuntimeOperationStatusReadout({
   status,
@@ -14502,7 +14700,7 @@ function RuntimeOperationStatusReadout({
 }) {
   const resolvedStatusLabels = statusLabels ?? runtimeOperationStatusLabels;
   const resolvedStatusVariants = statusVariants ?? runtimeOperationStatusVariants;
-  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
     StatusBadge,
     {
       label: resolvedStatusLabels[status] ?? status,
@@ -14519,7 +14717,7 @@ function RuntimeOperationDateTimeReadout({
   formatDateTime: formatDateTime2
 }) {
   const resolvedFormatDateTime = formatDateTime2 ?? defaultRuntimeOperationFormatDateTime;
-  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("span", { style: { color, fontSize }, children: value ? resolvedFormatDateTime(value) : fallback });
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("span", { style: { color, fontSize }, children: value ? resolvedFormatDateTime(value) : fallback });
 }
 function createRuntimeOperationTableColumns({
   detailHrefBase = "/operations",
@@ -14537,7 +14735,7 @@ function createRuntimeOperationTableColumns({
       header: columnLabels?.id ?? "ID",
       width: "120px",
       sortable: true,
-      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
         RuntimeOperationIdReadout,
         {
           id: row.id,
@@ -14550,21 +14748,21 @@ function createRuntimeOperationTableColumns({
       header: columnLabels?.type ?? "Type",
       width: "140px",
       sortable: true,
-      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationTypeReadout, { type: row.type, typeLabels })
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(RuntimeOperationTypeReadout, { type: row.type, typeLabels })
     },
     {
       key: "targetId",
       header: columnLabels?.targetId ?? "Target",
       width: "140px",
       sortable: true,
-      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationTargetReadout, { targetId: row.targetId })
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(RuntimeOperationTargetReadout, { targetId: row.targetId })
     },
     {
       key: "status",
       header: columnLabels?.status ?? "Status",
       width: "140px",
       sortable: true,
-      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
         RuntimeOperationStatusReadout,
         {
           status: row.status,
@@ -14578,14 +14776,14 @@ function createRuntimeOperationTableColumns({
       header: columnLabels?.createdAt ?? "Created",
       width: "160px",
       sortable: true,
-      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationDateTimeReadout, { value: row.createdAt })
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(RuntimeOperationDateTimeReadout, { value: row.createdAt })
     },
     {
       key: "finishedAt",
       header: columnLabels?.finishedAt ?? "Finished",
       width: "160px",
       sortable: true,
-      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationDateTimeReadout, { value: row.finishedAt, color: "#64748b" })
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(RuntimeOperationDateTimeReadout, { value: row.finishedAt, color: "#64748b" })
     }
   ];
   const allowedKeys = includeColumns ?? columns.map((column) => column.key);
@@ -14599,9 +14797,9 @@ function RuntimeOperationReceiptListReadout({
   const resolvedDetailLabels = detailLabels ?? defaultRuntimeOperationDetailLabels;
   const resolvedFormatDateTime = formatDateTime2 ?? defaultRuntimeOperationFormatDateTime;
   if (receipts.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(EmptyState, { title: resolvedDetailLabels.noReceipts ?? defaultRuntimeOperationDetailLabels.noReceipts });
+    return /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(EmptyState, { title: resolvedDetailLabels.noReceipts ?? defaultRuntimeOperationDetailLabels.noReceipts });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: receipts.map((receipt, index) => /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: receipts.map((receipt, index) => /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)(
     "div",
     {
       style: {
@@ -14614,7 +14812,7 @@ function RuntimeOperationReceiptListReadout({
         border: receipt.status === "error" ? "1px solid rgba(239,68,68,0.15)" : "1px solid rgba(148,163,184,0.06)"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
           StatusBadge,
           {
             label: receipt.status === "ok" ? resolvedDetailLabels.receiptOk ?? defaultRuntimeOperationDetailLabels.receiptOk : resolvedDetailLabels.receiptError ?? defaultRuntimeOperationDetailLabels.receiptError,
@@ -14622,11 +14820,11 @@ function RuntimeOperationReceiptListReadout({
             size: "sm"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { flex: 1 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, fontWeight: 500, color: "#e2e8f0", fontFamily: "monospace" }, children: receipt.code }),
-          /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginTop: 2 }, children: receipt.message })
+        /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)("div", { style: { flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { fontSize: 13, fontWeight: 500, color: "#e2e8f0", fontFamily: "monospace" }, children: receipt.code }),
+          /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginTop: 2 }, children: receipt.message })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
           RuntimeOperationDateTimeReadout,
           {
             value: receipt.timestamp,
@@ -14648,26 +14846,26 @@ function RuntimeOperationOverviewReadout({
 }) {
   const resolvedDetailLabels = detailLabels ?? defaultRuntimeOperationDetailLabels;
   const resolvedTypeLabels = typeLabels;
-  return /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
       InfoRow,
       {
         label: resolvedDetailLabels.id ?? defaultRuntimeOperationDetailLabels.id,
-        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationIdReadout, { id: `#${operation.id}` })
+        value: /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(RuntimeOperationIdReadout, { id: `#${operation.id}` })
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
       InfoRow,
       {
         label: resolvedDetailLabels.type ?? defaultRuntimeOperationDetailLabels.type,
-        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationTypeReadout, { type: operation.type, typeLabels: resolvedTypeLabels })
+        value: /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(RuntimeOperationTypeReadout, { type: operation.type, typeLabels: resolvedTypeLabels })
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
       InfoRow,
       {
         label: resolvedDetailLabels.status ?? defaultRuntimeOperationDetailLabels.status,
-        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+        value: /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
           RuntimeOperationStatusReadout,
           {
             status: operation.status,
@@ -14677,11 +14875,11 @@ function RuntimeOperationOverviewReadout({
         )
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
       InfoRow,
       {
         label: resolvedDetailLabels.target ?? defaultRuntimeOperationDetailLabels.target,
-        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationTargetReadout, { targetId: operation.targetId })
+        value: /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(RuntimeOperationTargetReadout, { targetId: operation.targetId })
       }
     )
   ] });
@@ -14693,19 +14891,19 @@ function RuntimeOperationTimelineReadout({
 }) {
   const resolvedDetailLabels = detailLabels ?? defaultRuntimeOperationDetailLabels;
   const resolvedFormatDateTime = formatDateTime2 ?? defaultRuntimeOperationFormatDateTime;
-  return /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
       InfoRow,
       {
         label: resolvedDetailLabels.createdAt ?? defaultRuntimeOperationDetailLabels.createdAt,
-        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(RuntimeOperationDateTimeReadout, { value: operation.createdAt, formatDateTime: resolvedFormatDateTime })
+        value: /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(RuntimeOperationDateTimeReadout, { value: operation.createdAt, formatDateTime: resolvedFormatDateTime })
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
       InfoRow,
       {
         label: resolvedDetailLabels.finishedAt ?? defaultRuntimeOperationDetailLabels.finishedAt,
-        value: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+        value: /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
           RuntimeOperationDateTimeReadout,
           {
             value: operation.finishedAt,
@@ -14735,7 +14933,7 @@ function RuntimeOperationDetailView({
   const resolvedDetailLabels = preset?.detailLabels ?? defaultRuntimeOperationDetailLabels;
   const resolvedFormatDateTime = formatDateTime2 ?? defaultRuntimeOperationFormatDateTime;
   if (!operation) {
-    return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
       DetailShell,
       {
         title: notFoundTitle,
@@ -14746,7 +14944,7 @@ function RuntimeOperationDetailView({
       }
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
     DetailShell,
     {
       title: `${resolvedDetailLabels.titlePrefix ?? defaultRuntimeOperationDetailLabels.titlePrefix}: ${resolvedTypeLabels?.[operation.type] ?? operation.type}`,
@@ -14755,7 +14953,7 @@ function RuntimeOperationDetailView({
       sections: [
         {
           title: resolvedDetailLabels.overviewTitle ?? defaultRuntimeOperationDetailLabels.overviewTitle,
-          content: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+          content: /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
             RuntimeOperationOverviewReadout,
             {
               operation,
@@ -14767,7 +14965,7 @@ function RuntimeOperationDetailView({
         },
         {
           title: resolvedDetailLabels.timelineTitle ?? defaultRuntimeOperationDetailLabels.timelineTitle,
-          content: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+          content: /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
             RuntimeOperationTimelineReadout,
             {
               operation,
@@ -14778,7 +14976,7 @@ function RuntimeOperationDetailView({
         },
         {
           title: `${resolvedDetailLabels.receiptsTitle ?? defaultRuntimeOperationDetailLabels.receiptsTitle} (${receipts.length})`,
-          content: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+          content: /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
             RuntimeOperationReceiptListReadout,
             {
               receipts,
@@ -14804,7 +15002,7 @@ function RuntimeOperationPresetDetailRoute({
   formatDateTime: formatDateTime2
 }) {
   const data = operations[operationId];
-  return /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
     RuntimeOperationDetailView,
     {
       operation: data?.op,
@@ -14877,7 +15075,7 @@ function RuntimeOperationsListPageSection({
   });
   const statusFacet = listState.facets[0];
   const typeFacet = listState.facets[1];
-  const stats = (0, import_react32.useMemo)(
+  const stats = (0, import_react33.useMemo)(
     () => ({
       total: operations.length,
       running: operations.filter((operation) => operation.status === "running").length,
@@ -14887,8 +15085,8 @@ function RuntimeOperationsListPageSection({
     }),
     [listState.sortedItems.length, operations, typeFacet?.order.length]
   );
-  return /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)(PageShell, { title, description, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)(PageShell, { title, description, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)(
       "div",
       {
         style: {
@@ -14898,30 +15096,30 @@ function RuntimeOperationsListPageSection({
           marginBottom: 20
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("article", { style: listPageStatCardStyle, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.totalLabel ?? "Total Ops" }),
-            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700 }, children: stats.total }),
-            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.totalHint?.(stats.matched) ?? `${stats.matched} matched` })
+          /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)("article", { style: listPageStatCardStyle, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.totalLabel ?? "Total Ops" }),
+            /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700 }, children: stats.total }),
+            /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.totalHint?.(stats.matched) ?? `${stats.matched} matched` })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("article", { style: listPageStatCardStyle, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.runningLabel ?? "Running" }),
-            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#facc15" }, children: stats.running }),
-            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.runningHint ?? "In progress" })
+          /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)("article", { style: listPageStatCardStyle, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.runningLabel ?? "Running" }),
+            /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#facc15" }, children: stats.running }),
+            /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.runningHint ?? "In progress" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("article", { style: listPageStatCardStyle, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.failedLabel ?? "Failed" }),
-            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#f87171" }, children: stats.failed }),
-            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.failedHint ?? "Needs attention" })
+          /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)("article", { style: listPageStatCardStyle, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.failedLabel ?? "Failed" }),
+            /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#f87171" }, children: stats.failed }),
+            /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.failedHint ?? "Needs attention" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("article", { style: listPageStatCardStyle, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.typeLabel ?? "Op Types" }),
-            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#93c5fd" }, children: stats.types }),
-            /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.typeHint ?? "Deploy / rollback / scale" })
+          /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)("article", { style: listPageStatCardStyle, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { fontSize: 13, color: "#cbd5e1" }, children: resolvedStatsCopy?.typeLabel ?? "Op Types" }),
+            /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { marginTop: 6, fontSize: 24, fontWeight: 700, color: "#93c5fd" }, children: stats.types }),
+            /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: resolvedStatsCopy?.typeHint ?? "Deploy / rollback / scale" })
           ] })
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
       SearchFilterInput2,
       {
         value: listState.searchTerm,
@@ -14929,9 +15127,9 @@ function RuntimeOperationsListPageSection({
         placeholder: resolvedLabels?.searchPlaceholder ?? "Search by ID / type / target..."
       }
     ) }),
-    /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { marginBottom: 12 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: resolvedLabels?.statusSectionTitle ?? "Status" }),
-      /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)("div", { style: { marginBottom: 12 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: resolvedLabels?.statusSectionTitle ?? "Status" }),
+      /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
         Tabs,
         {
           items: [
@@ -14949,9 +15147,9 @@ function RuntimeOperationsListPageSection({
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("div", { style: { marginBottom: 16 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime58.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: resolvedLabels?.typeSectionTitle ?? "Type" }),
-      /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)("div", { style: { marginBottom: 16 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 6 }, children: resolvedLabels?.typeSectionTitle ?? "Type" }),
+      /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
         Tabs,
         {
           items: [
@@ -14969,7 +15167,7 @@ function RuntimeOperationsListPageSection({
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime59.jsx)(
       RuntimeOperationsTableCard,
       {
         operations: listState.pagedItems,
@@ -15000,7 +15198,7 @@ function RuntimeOperationsListPageSection({
 }
 
 // src/components/FormField.tsx
-var import_jsx_runtime59 = require("react/jsx-runtime");
+var import_jsx_runtime60 = require("react/jsx-runtime");
 function FormField({
   label,
   htmlFor,
@@ -15013,8 +15211,8 @@ function FormField({
   children
 }) {
   const helperText = helper ?? hint;
-  return /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)("div", { style: { marginBottom: compact ? 8 : 16 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime59.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime60.jsxs)("div", { style: { marginBottom: compact ? 8 : 16 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime60.jsxs)(
       "label",
       {
         htmlFor,
@@ -15027,19 +15225,19 @@ function FormField({
         },
         children: [
           label,
-          required && /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
+          required && /* @__PURE__ */ (0, import_jsx_runtime60.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
         ]
       }
     ),
     children,
-    helperText && !error && /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("p", { style: { fontSize: 12, color: "#64748b", margin: "4px 0 0" }, children: helperText }),
-    error && /* @__PURE__ */ (0, import_jsx_runtime59.jsx)("p", { style: { fontSize: 12, color: "#fca5a5", margin: "4px 0 0" }, children: error })
+    helperText && !error && /* @__PURE__ */ (0, import_jsx_runtime60.jsx)("p", { style: { fontSize: 12, color: "#64748b", margin: "4px 0 0" }, children: helperText }),
+    error && /* @__PURE__ */ (0, import_jsx_runtime60.jsx)("p", { style: { fontSize: 12, color: "#fca5a5", margin: "4px 0 0" }, children: error })
   ] });
 }
 
 // src/components/SubmitButton.tsx
-var import_react33 = __toESM(require("react"));
-var import_jsx_runtime60 = require("react/jsx-runtime");
+var import_react34 = __toESM(require("react"));
+var import_jsx_runtime61 = require("react/jsx-runtime");
 var VARIANT_STYLES4 = {
   primary: {
     background: "#1d4ed8",
@@ -15058,7 +15256,7 @@ var VARIANT_STYLES4 = {
     border: "1px solid rgba(252, 165, 165, 0.28)"
   }
 };
-var SubmitButton = import_react33.default.forwardRef(
+var SubmitButton = import_react34.default.forwardRef(
   function SubmitButton2({
     loading = false,
     label = "\u63D0\u4EA4",
@@ -15073,7 +15271,7 @@ var SubmitButton = import_react33.default.forwardRef(
   }, ref) {
     const variantStyle = VARIANT_STYLES4[variant];
     const isDisabled = disabled || loading;
-    return /* @__PURE__ */ (0, import_jsx_runtime60.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime61.jsxs)(
       "button",
       {
         ref,
@@ -15098,8 +15296,8 @@ var SubmitButton = import_react33.default.forwardRef(
           ...style
         },
         children: [
-          children ? children : loading ? /* @__PURE__ */ (0, import_jsx_runtime60.jsxs)(import_jsx_runtime60.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime60.jsx)(
+          children ? children : loading ? /* @__PURE__ */ (0, import_jsx_runtime61.jsxs)(import_jsx_runtime61.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(
               "span",
               {
                 style: {
@@ -15115,7 +15313,7 @@ var SubmitButton = import_react33.default.forwardRef(
             ),
             loadingLabel
           ] }) : label,
-          /* @__PURE__ */ (0, import_jsx_runtime60.jsx)("style", { children: `@keyframes m5-spin { to { transform: rotate(360deg); } }` })
+          /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("style", { children: `@keyframes m5-spin { to { transform: rotate(360deg); } }` })
         ]
       }
     );
@@ -15123,8 +15321,8 @@ var SubmitButton = import_react33.default.forwardRef(
 );
 
 // src/components/Alert.tsx
-var import_react34 = require("react");
-var import_jsx_runtime61 = require("react/jsx-runtime");
+var import_react35 = require("react");
+var import_jsx_runtime62 = require("react/jsx-runtime");
 var VARIANT_PALETTE = {
   info: {
     bg: "rgba(59, 130, 246, 0.08)",
@@ -15159,7 +15357,7 @@ function AlertIcon({ variant }) {
   const color = VARIANT_PALETTE[variant].icon;
   switch (variant) {
     case "info":
-      return /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
         "path",
         {
           d: "M10 1.25a8.75 8.75 0 1 0 0 17.5 8.75 8.75 0 0 0 0-17.5Zm-.625 4.375h1.25v5h-1.25v-5Zm1.25 7.5h-1.25v-1.25h1.25v1.25Z",
@@ -15167,7 +15365,7 @@ function AlertIcon({ variant }) {
         }
       ) });
     case "success":
-      return /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
         "path",
         {
           d: "M10 1.25a8.75 8.75 0 1 0 0 17.5 8.75 8.75 0 0 0 0-17.5Zm4.358 7.108-4.846 4.846a.625.625 0 0 1-.884 0l-2.346-2.346a.625.625 0 1 1 .884-.884l1.904 1.904 4.404-4.404a.625.625 0 1 1 .884.884Z",
@@ -15175,7 +15373,7 @@ function AlertIcon({ variant }) {
         }
       ) });
     case "warning":
-      return /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
         "path",
         {
           d: "M8.947 2.709a1.25 1.25 0 0 1 2.106 0l7.417 11.8a1.25 1.25 0 0 1-1.053 1.866H2.583a1.25 1.25 0 0 1-1.053-1.866l7.417-11.8Zm1.053.625v6.25h-1.25v-6.25h1.25Zm0 8.75h-1.25v-1.25h1.25v1.25Z",
@@ -15183,7 +15381,7 @@ function AlertIcon({ variant }) {
         }
       ) });
     case "danger":
-      return /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
         "path",
         {
           d: "M10 1.25a8.75 8.75 0 1 0 0 17.5 8.75 8.75 0 0 0 0-17.5ZM6.576 6.576a.625.625 0 0 1 .884 0L10 9.116l2.54-2.54a.625.625 0 1 1 .884.884L10.884 10l2.54 2.54a.625.625 0 1 1-.884.884L10 10.884l-2.54 2.54a.625.625 0 1 1-.884-.884L9.116 10l-2.54-2.54a.625.625 0 0 1 0-.884Z",
@@ -15202,10 +15400,10 @@ function Alert({
   className,
   style
 }) {
-  const [dismissed, setDismissed] = (0, import_react34.useState)(false);
+  const [dismissed, setDismissed] = (0, import_react35.useState)(false);
   const palette = VARIANT_PALETTE[variant];
   if (dismissed) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime61.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime62.jsxs)(
     "div",
     {
       className,
@@ -15220,12 +15418,12 @@ function Alert({
         ...style
       },
       children: [
-        icon && /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("div", { style: { flexShrink: 0, marginTop: 1 }, children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(AlertIcon, { variant }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime61.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-          title ? /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("div", { style: { fontWeight: 600, fontSize: 14, color: palette.title, marginBottom: 4 }, children: title }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("div", { style: { fontSize: 13, lineHeight: 1.55, color: palette.text }, children })
+        icon && /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("div", { style: { flexShrink: 0, marginTop: 1 }, children: /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(AlertIcon, { variant }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime62.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+          title ? /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("div", { style: { fontWeight: 600, fontSize: 14, color: palette.title, marginBottom: 4 }, children: title }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("div", { style: { fontSize: 13, lineHeight: 1.55, color: palette.text }, children })
         ] }),
-        dismissible && /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(
+        dismissible && /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
           "button",
           {
             type: "button",
@@ -15243,7 +15441,7 @@ function Alert({
               opacity: 0.7
             },
             "aria-label": "Dismiss alert",
-            children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 14 14", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime61.jsx)(
+            children: /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 14 14", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
               "path",
               {
                 d: "M1.232 1.232a.525.525 0 0 1 .743 0L7 6.257l5.025-5.025a.525.525 0 1 1 .743.743L7.743 7l5.025 5.025a.525.525 0 1 1-.743.743L7 7.743l-5.025 5.025a.525.525 0 1 1-.743-.743L6.257 7 1.232 1.975a.525.525 0 0 1 0-.743Z",
@@ -15257,7 +15455,7 @@ function Alert({
   );
 }
 function useAlert(defaultOptions) {
-  const [alert, setAlert] = (0, import_react34.useState)(null);
+  const [alert, setAlert] = (0, import_react35.useState)(null);
   const show = (title, message, variant) => {
     const resolvedVariant = variant ?? defaultOptions?.variant ?? "info";
     setAlert({ visible: true, variant: resolvedVariant, title, message });
@@ -15275,8 +15473,8 @@ function useAlert(defaultOptions) {
 }
 
 // src/components/CopyToClipboard.tsx
-var import_react35 = require("react");
-var import_jsx_runtime62 = require("react/jsx-runtime");
+var import_react36 = require("react");
+var import_jsx_runtime63 = require("react/jsx-runtime");
 function CopyToClipboard({
   text,
   label,
@@ -15285,8 +15483,8 @@ function CopyToClipboard({
   size = "md",
   iconOnly = false
 }) {
-  const [copied, setCopied] = (0, import_react35.useState)(false);
-  const handleCopy = (0, import_react35.useCallback)(async () => {
+  const [copied, setCopied] = (0, import_react36.useState)(false);
+  const handleCopy = (0, import_react36.useCallback)(async () => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -15311,7 +15509,7 @@ function CopyToClipboard({
   const buttonSize = isSmall ? 28 : 34;
   const iconSize = isSmall ? 14 : 16;
   if (iconOnly) {
-    return /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
       "button",
       {
         type: "button",
@@ -15333,14 +15531,14 @@ function CopyToClipboard({
           transition: "all 0.15s",
           ...style
         },
-        children: copied ? /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+        children: copied ? /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
           "svg",
           {
             width: iconSize,
             height: iconSize,
             viewBox: "0 0 16 16",
             fill: "none",
-            children: /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+            children: /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
               "path",
               {
                 d: "M13.3 3.3L6 10.6L2.7 7.3",
@@ -15351,7 +15549,7 @@ function CopyToClipboard({
               }
             )
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime62.jsxs)(
+        ) : /* @__PURE__ */ (0, import_jsx_runtime63.jsxs)(
           "svg",
           {
             width: iconSize,
@@ -15359,7 +15557,7 @@ function CopyToClipboard({
             viewBox: "0 0 16 16",
             fill: "none",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
                 "rect",
                 {
                   x: "5",
@@ -15371,7 +15569,7 @@ function CopyToClipboard({
                   strokeWidth: "1.2"
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
                 "path",
                 {
                   d: "M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2",
@@ -15385,7 +15583,7 @@ function CopyToClipboard({
       }
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
     "button",
     {
       type: "button",
@@ -15406,15 +15604,15 @@ function CopyToClipboard({
         transition: "all 0.15s",
         ...style
       },
-      children: copied ? /* @__PURE__ */ (0, import_jsx_runtime62.jsxs)(import_jsx_runtime62.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+      children: copied ? /* @__PURE__ */ (0, import_jsx_runtime63.jsxs)(import_jsx_runtime63.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
           "svg",
           {
             width: iconSize,
             height: iconSize,
             viewBox: "0 0 16 16",
             fill: "none",
-            children: /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+            children: /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
               "path",
               {
                 d: "M13.3 3.3L6 10.6L2.7 7.3",
@@ -15426,9 +15624,9 @@ function CopyToClipboard({
             )
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("span", { children: successLabel })
-      ] }) : /* @__PURE__ */ (0, import_jsx_runtime62.jsxs)(import_jsx_runtime62.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime62.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime63.jsx)("span", { children: successLabel })
+      ] }) : /* @__PURE__ */ (0, import_jsx_runtime63.jsxs)(import_jsx_runtime63.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime63.jsxs)(
           "svg",
           {
             width: iconSize,
@@ -15436,7 +15634,7 @@ function CopyToClipboard({
             viewBox: "0 0 16 16",
             fill: "none",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
                 "rect",
                 {
                   x: "5",
@@ -15448,7 +15646,7 @@ function CopyToClipboard({
                   strokeWidth: "1.2"
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime62.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
                 "path",
                 {
                   d: "M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2",
@@ -15459,15 +15657,15 @@ function CopyToClipboard({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime62.jsx)("span", { children: label ?? "Copy" })
+        /* @__PURE__ */ (0, import_jsx_runtime63.jsx)("span", { children: label ?? "Copy" })
       ] })
     }
   );
 }
 
 // src/components/VirtualizedList.tsx
-var import_react36 = require("react");
-var import_jsx_runtime63 = require("react/jsx-runtime");
+var import_react37 = require("react");
+var import_jsx_runtime64 = require("react/jsx-runtime");
 function VirtualizedList({
   rows,
   renderRow,
@@ -15483,10 +15681,10 @@ function VirtualizedList({
   onScroll,
   disabled = false
 }) {
-  const containerRef = (0, import_react36.useRef)(null);
-  const [containerHeight, setContainerHeight] = (0, import_react36.useState)(heightProp ?? 0);
-  const [scrollTop, setScrollTop] = (0, import_react36.useState)(0);
-  (0, import_react36.useEffect)(() => {
+  const containerRef = (0, import_react37.useRef)(null);
+  const [containerHeight, setContainerHeight] = (0, import_react37.useState)(heightProp ?? 0);
+  const [scrollTop, setScrollTop] = (0, import_react37.useState)(0);
+  (0, import_react37.useEffect)(() => {
     const calcHeight = () => {
       if (heightProp) {
         setContainerHeight(heightProp);
@@ -15506,11 +15704,11 @@ function VirtualizedList({
       return () => observer.disconnect();
     }
   }, [heightProp]);
-  const rowHeights = (0, import_react36.useMemo)(() => {
+  const rowHeights = (0, import_react37.useMemo)(() => {
     if (!rowHeightFn) return void 0;
     return rows.map((row, idx) => rowHeightFn(row, idx));
   }, [rows, rowHeightFn]);
-  const { totalHeight, rowOffsets } = (0, import_react36.useMemo)(() => {
+  const { totalHeight, rowOffsets } = (0, import_react37.useMemo)(() => {
     const offsets = [0];
     let total = 0;
     for (let i = 0; i < rows.length; i++) {
@@ -15520,7 +15718,7 @@ function VirtualizedList({
     }
     return { totalHeight: total, rowOffsets: offsets };
   }, [rows, rowHeights, rowHeight]);
-  const visibleRange = (0, import_react36.useMemo)(() => {
+  const visibleRange = (0, import_react37.useMemo)(() => {
     const startIdx = binarySearchStart(rowOffsets, scrollTop, rows.length);
     const endIdx = binarySearchEnd(
       rowOffsets,
@@ -15531,7 +15729,7 @@ function VirtualizedList({
     const end = Math.min(rows.length, endIdx + overscan);
     return { start, end };
   }, [rowOffsets, scrollTop, containerHeight, rows.length, overscan]);
-  const handleScroll = (0, import_react36.useCallback)(
+  const handleScroll = (0, import_react37.useCallback)(
     (e) => {
       const top = e.target.scrollTop;
       setScrollTop(top);
@@ -15540,7 +15738,7 @@ function VirtualizedList({
     [onScroll]
   );
   if (rows.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime64.jsx)(
       "div",
       {
         ref: containerRef,
@@ -15560,7 +15758,7 @@ function VirtualizedList({
     );
   }
   const visibleRows = rows.slice(visibleRange.start, visibleRange.end);
-  return /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime64.jsx)(
     "div",
     {
       ref: containerRef,
@@ -15575,11 +15773,11 @@ function VirtualizedList({
       },
       onScroll: handleScroll,
       role: "list",
-      children: /* @__PURE__ */ (0, import_jsx_runtime63.jsx)("div", { style: { height: totalHeight, position: "relative" }, children: visibleRows.map((row, i) => {
+      children: /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { style: { height: totalHeight, position: "relative" }, children: visibleRows.map((row, i) => {
         const actualIndex = visibleRange.start + i;
         const top = rowOffsets[actualIndex];
         const h = rowHeights ? rowHeights[actualIndex] : rowHeight;
-        return /* @__PURE__ */ (0, import_jsx_runtime63.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime64.jsx)(
           "div",
           {
             role: "listitem",
@@ -15630,8 +15828,8 @@ function binarySearchEnd(offsets, target, maxIdx) {
 }
 
 // src/components/FileUpload.tsx
-var import_react37 = require("react");
-var import_jsx_runtime64 = require("react/jsx-runtime");
+var import_react38 = require("react");
+var import_jsx_runtime65 = require("react/jsx-runtime");
 var STYLES2 = {
   dropZone: {
     default: {
@@ -15775,20 +15973,20 @@ function FileUpload({
   "data-testid": dataTestId,
   variant = "default"
 }) {
-  const inputRef = (0, import_react37.useRef)(null);
-  const [internalFiles, setInternalFiles] = (0, import_react37.useState)([]);
-  const [dragOver, setDragOver] = (0, import_react37.useState)(false);
-  const [error, setError] = (0, import_react37.useState)(null);
+  const inputRef = (0, import_react38.useRef)(null);
+  const [internalFiles, setInternalFiles] = (0, import_react38.useState)([]);
+  const [dragOver, setDragOver] = (0, import_react38.useState)(false);
+  const [error, setError] = (0, import_react38.useState)(null);
   const isControlled = controlledFiles !== void 0;
   const files = isControlled ? controlledFiles : internalFiles;
-  const setFiles = (0, import_react37.useCallback)(
+  const setFiles = (0, import_react38.useCallback)(
     (updater) => {
       if (isControlled) return;
       setInternalFiles(updater);
     },
     [isControlled]
   );
-  const processFiles = (0, import_react37.useCallback)(
+  const processFiles = (0, import_react38.useCallback)(
     (rawFiles) => {
       const fileArr = Array.from(rawFiles);
       setError(null);
@@ -15831,7 +16029,7 @@ function FileUpload({
     },
     [files.length, maxFiles, maxSize, onFilesAdded, showPreview, setFiles]
   );
-  const handleDrop = (0, import_react37.useCallback)(
+  const handleDrop = (0, import_react38.useCallback)(
     (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -15844,7 +16042,7 @@ function FileUpload({
     },
     [disabled, processFiles]
   );
-  const handleDragOver = (0, import_react37.useCallback)(
+  const handleDragOver = (0, import_react38.useCallback)(
     (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -15852,7 +16050,7 @@ function FileUpload({
     },
     [disabled]
   );
-  const handleDragLeave = (0, import_react37.useCallback)(
+  const handleDragLeave = (0, import_react38.useCallback)(
     (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -15860,7 +16058,7 @@ function FileUpload({
     },
     []
   );
-  const handleInputChange = (0, import_react37.useCallback)(
+  const handleInputChange = (0, import_react38.useCallback)(
     (e) => {
       if (e.target.files && e.target.files.length > 0) {
         processFiles(e.target.files);
@@ -15869,7 +16067,7 @@ function FileUpload({
     },
     [processFiles]
   );
-  const handleRemove = (0, import_react37.useCallback)(
+  const handleRemove = (0, import_react38.useCallback)(
     (id) => {
       setFiles((prev) => {
         const removed = prev.find((f) => f.id === id);
@@ -15884,13 +16082,13 @@ function FileUpload({
     },
     [onFileRemoved, setFiles]
   );
-  const handleClick = (0, import_react37.useCallback)(() => {
+  const handleClick = (0, import_react38.useCallback)(() => {
     if (disabled) return;
     inputRef.current?.click();
   }, [disabled]);
   const zoneStyle = variant === "compact" ? STYLES2.dropZone.compact : STYLES2.dropZone.default;
-  return /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("div", { "data-testid": dataTestId, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime65.jsxs)("div", { "data-testid": dataTestId, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime65.jsxs)(
       "div",
       {
         "data-testid": "fileupload-dropzone",
@@ -15907,7 +16105,7 @@ function FileUpload({
         tabIndex: disabled ? -1 : 0,
         "aria-disabled": disabled,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime65.jsxs)(
             "svg",
             {
               width: "28",
@@ -15919,13 +16117,13 @@ function FileUpload({
               strokeLinecap: "round",
               strokeLinejoin: "round",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }),
-                /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("polyline", { points: "17 8 12 3 7 8" }),
-                /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("line", { x1: "12", y1: "3", x2: "12", y2: "15" })
+                /* @__PURE__ */ (0, import_jsx_runtime65.jsx)("path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }),
+                /* @__PURE__ */ (0, import_jsx_runtime65.jsx)("polyline", { points: "17 8 12 3 7 8" }),
+                /* @__PURE__ */ (0, import_jsx_runtime65.jsx)("line", { x1: "12", y1: "3", x2: "12", y2: "15" })
               ]
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime64.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime65.jsx)(
             "span",
             {
               style: {
@@ -15935,11 +16133,11 @@ function FileUpload({
               children: dragOver ? "\u91CA\u653E\u6587\u4EF6\u4EE5\u4E0A\u4F20" : placeholder
             }
           ),
-          accept ? /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+          accept ? /* @__PURE__ */ (0, import_jsx_runtime65.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
             "\u652F\u6301: ",
             accept
           ] }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime64.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime65.jsx)(
             "input",
             {
               ref: inputRef,
@@ -15955,9 +16153,9 @@ function FileUpload({
         ]
       }
     ),
-    error ? /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { style: { ...STYLES2.errorText, marginTop: 8, textAlign: "center" }, "data-testid": "fileupload-error", children: error }) : null,
-    files.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { "data-testid": "fileupload-list", children: files.map((file) => /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("div", { style: STYLES2.fileItem, "data-testid": `fileupload-item-${file.id}`, children: [
-      file.preview ? /* @__PURE__ */ (0, import_jsx_runtime64.jsx)(
+    error ? /* @__PURE__ */ (0, import_jsx_runtime65.jsx)("div", { style: { ...STYLES2.errorText, marginTop: 8, textAlign: "center" }, "data-testid": "fileupload-error", children: error }) : null,
+    files.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime65.jsx)("div", { "data-testid": "fileupload-list", children: files.map((file) => /* @__PURE__ */ (0, import_jsx_runtime65.jsxs)("div", { style: STYLES2.fileItem, "data-testid": `fileupload-item-${file.id}`, children: [
+      file.preview ? /* @__PURE__ */ (0, import_jsx_runtime65.jsx)(
         "img",
         {
           src: file.preview,
@@ -15965,17 +16163,17 @@ function FileUpload({
           style: STYLES2.preview,
           "data-testid": `fileupload-preview-${file.id}`
         }
-      ) : /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { style: STYLES2.icon, "data-testid": `fileupload-icon-${file.id}`, children: "\u{1F4C4}" }),
-      /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("div", { style: STYLES2.fileInfo, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { style: STYLES2.fileName, title: file.name, children: file.name }),
-        /* @__PURE__ */ (0, import_jsx_runtime64.jsxs)("div", { style: STYLES2.fileSize, children: [
+      ) : /* @__PURE__ */ (0, import_jsx_runtime65.jsx)("div", { style: STYLES2.icon, "data-testid": `fileupload-icon-${file.id}`, children: "\u{1F4C4}" }),
+      /* @__PURE__ */ (0, import_jsx_runtime65.jsxs)("div", { style: STYLES2.fileInfo, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime65.jsx)("div", { style: STYLES2.fileName, title: file.name, children: file.name }),
+        /* @__PURE__ */ (0, import_jsx_runtime65.jsxs)("div", { style: STYLES2.fileSize, children: [
           formatBytes(file.size),
           file.progress >= 0 && file.progress < 100 ? ` \xB7 \u4E0A\u4F20\u4E2D ${file.progress}%` : ""
         ] }),
-        file.progress >= 0 && file.progress < 100 ? /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { style: STYLES2.progressBar, children: /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { style: STYLES2.progressFill(file.progress, false) }) }) : null,
-        file.error ? /* @__PURE__ */ (0, import_jsx_runtime64.jsx)("div", { style: STYLES2.errorText, "data-testid": `fileupload-error-${file.id}`, children: file.error }) : null
+        file.progress >= 0 && file.progress < 100 ? /* @__PURE__ */ (0, import_jsx_runtime65.jsx)("div", { style: STYLES2.progressBar, children: /* @__PURE__ */ (0, import_jsx_runtime65.jsx)("div", { style: STYLES2.progressFill(file.progress, false) }) }) : null,
+        file.error ? /* @__PURE__ */ (0, import_jsx_runtime65.jsx)("div", { style: STYLES2.errorText, "data-testid": `fileupload-error-${file.id}`, children: file.error }) : null
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime64.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime65.jsx)(
         "button",
         {
           type: "button",
@@ -16003,8 +16201,8 @@ function FileUpload({
 }
 
 // src/components/Switch.tsx
-var import_react38 = __toESM(require("react"));
-var import_jsx_runtime65 = require("react/jsx-runtime");
+var import_react39 = __toESM(require("react"));
+var import_jsx_runtime66 = require("react/jsx-runtime");
 var SIZE_MAP3 = {
   sm: { width: 34, height: 20, thumb: 14, gap: 3 },
   md: { width: 44, height: 24, thumb: 18, gap: 3 },
@@ -16030,8 +16228,8 @@ function Switch({
   className,
   style
 }) {
-  const id = (0, import_react38.useId)();
-  const [internalChecked, setInternalChecked] = import_react38.default.useState(defaultChecked);
+  const id = (0, import_react39.useId)();
+  const [internalChecked, setInternalChecked] = import_react39.default.useState(defaultChecked);
   const isControlled = checked !== void 0;
   const isChecked = isControlled ? checked : internalChecked;
   const handleToggle = () => {
@@ -16050,7 +16248,7 @@ function Switch({
   const dims = SIZE_MAP3[size];
   const trackBg = isChecked ? checkedColor : uncheckedColor;
   const thumbOffset = isChecked ? dims.width - dims.thumb - dims.gap : dims.gap;
-  const labelElement = label ? /* @__PURE__ */ (0, import_jsx_runtime65.jsx)(
+  const labelElement = label ? /* @__PURE__ */ (0, import_jsx_runtime66.jsx)(
     "label",
     {
       htmlFor: id,
@@ -16066,7 +16264,7 @@ function Switch({
       children: label
     }
   ) : null;
-  return /* @__PURE__ */ (0, import_jsx_runtime65.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime66.jsxs)(
     "div",
     {
       "data-testid": dataTestId,
@@ -16082,7 +16280,7 @@ function Switch({
       onClick: handleToggle,
       children: [
         label && labelPosition === "left" ? labelElement : null,
-        /* @__PURE__ */ (0, import_jsx_runtime65.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime66.jsx)(
           "div",
           {
             role: "switch",
@@ -16108,7 +16306,7 @@ function Switch({
             onBlur: (e) => {
               e.currentTarget.style.boxShadow = "";
             },
-            children: /* @__PURE__ */ (0, import_jsx_runtime65.jsx)(
+            children: /* @__PURE__ */ (0, import_jsx_runtime66.jsx)(
               "div",
               {
                 "data-testid": dataTestId ? `${dataTestId}-thumb` : void 0,
@@ -16134,8 +16332,8 @@ function Switch({
 }
 
 // src/components/RadioGroup.tsx
-var import_react39 = __toESM(require("react"));
-var import_jsx_runtime66 = require("react/jsx-runtime");
+var import_react40 = __toESM(require("react"));
+var import_jsx_runtime67 = require("react/jsx-runtime");
 var DOT_SIZE_MAP = { sm: 8, md: 10, lg: 12 };
 var RING_SIZE_MAP = { sm: 16, md: 20, lg: 24 };
 var FONT_SIZE_MAP = { sm: 13, md: 14, lg: 15 };
@@ -16164,12 +16362,12 @@ function RadioGroup({
   style,
   optionStyle
 }) {
-  const generatedName = (0, import_react39.useId)();
+  const generatedName = (0, import_react40.useId)();
   const resolvedName = name ?? generatedName;
-  const [internalValue, setInternalValue] = import_react39.default.useState(defaultValue);
+  const [internalValue, setInternalValue] = import_react40.default.useState(defaultValue);
   const isControlled = controlledValue !== void 0;
   const selectedValue = isControlled ? controlledValue : internalValue;
-  const handleChange = import_react39.default.useCallback(
+  const handleChange = import_react40.default.useCallback(
     (optionValue) => {
       if (disabled) return;
       if (!isControlled) {
@@ -16184,7 +16382,7 @@ function RadioGroup({
   const fontSize = FONT_SIZE_MAP[size];
   const itemGap = GAP_MAP[size];
   const directionStyle = direction === "horizontal" ? { display: "flex", flexWrap: "wrap", gap: itemGap } : { display: "flex", flexDirection: "column", gap: itemGap };
-  return /* @__PURE__ */ (0, import_jsx_runtime66.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)(
     "fieldset",
     {
       className,
@@ -16198,7 +16396,7 @@ function RadioGroup({
       "aria-invalid": !!error,
       disabled,
       children: [
-        groupLabel && /* @__PURE__ */ (0, import_jsx_runtime66.jsxs)(
+        groupLabel && /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)(
           "legend",
           {
             style: {
@@ -16210,15 +16408,15 @@ function RadioGroup({
             },
             children: [
               groupLabel,
-              required && /* @__PURE__ */ (0, import_jsx_runtime66.jsx)("span", { style: { color: ERROR_COLOR, marginLeft: 2 }, children: "*" })
+              required && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("span", { style: { color: ERROR_COLOR, marginLeft: 2 }, children: "*" })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime66.jsx)("div", { style: directionStyle, role: "radiogroup", "aria-label": groupLabel, children: options.map((option) => {
+        /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("div", { style: directionStyle, role: "radiogroup", "aria-label": groupLabel, children: options.map((option) => {
           const isSelected = selectedValue === option.value;
           const isDisabled = disabled || option.disabled;
           const optionId = `${resolvedName}-${option.value}`;
-          return /* @__PURE__ */ (0, import_jsx_runtime66.jsxs)(
+          return /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)(
             "label",
             {
               htmlFor: optionId,
@@ -16247,8 +16445,8 @@ function RadioGroup({
                 }
               },
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime66.jsxs)("div", { style: { position: "relative", flexShrink: 0, marginTop: 2 }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime66.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)("div", { style: { position: "relative", flexShrink: 0, marginTop: 2 }, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime67.jsx)(
                     "input",
                     {
                       type: "radio",
@@ -16271,7 +16469,7 @@ function RadioGroup({
                       "aria-describedby": option.description ? `${optionId}-desc` : void 0
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime66.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime67.jsx)(
                     "div",
                     {
                       style: {
@@ -16285,7 +16483,7 @@ function RadioGroup({
                         justifyContent: "center",
                         transition: "border-color 0.15s, background 0.15s"
                       },
-                      children: isSelected && /* @__PURE__ */ (0, import_jsx_runtime66.jsx)(
+                      children: isSelected && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)(
                         "div",
                         {
                           style: {
@@ -16301,9 +16499,9 @@ function RadioGroup({
                     }
                   )
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime66.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime66.jsx)("div", { style: { fontSize, color: isDisabled ? "#64748b" : "#e2e8f0", lineHeight: 1.4 }, children: option.label }),
-                  option.description && /* @__PURE__ */ (0, import_jsx_runtime66.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("div", { style: { fontSize, color: isDisabled ? "#64748b" : "#e2e8f0", lineHeight: 1.4 }, children: option.label }),
+                  option.description && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)(
                     "div",
                     {
                       id: `${optionId}-desc`,
@@ -16317,16 +16515,16 @@ function RadioGroup({
             option.value
           );
         }) }),
-        hint && !error && /* @__PURE__ */ (0, import_jsx_runtime66.jsx)("p", { style: { fontSize: 12, color: "#64748b", margin: "4px 0 0" }, children: hint }),
-        error && /* @__PURE__ */ (0, import_jsx_runtime66.jsx)("p", { style: { fontSize: 12, color: "#fca5a5", margin: "4px 0 0" }, children: error })
+        hint && !error && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("p", { style: { fontSize: 12, color: "#64748b", margin: "4px 0 0" }, children: hint }),
+        error && /* @__PURE__ */ (0, import_jsx_runtime67.jsx)("p", { style: { fontSize: 12, color: "#fca5a5", margin: "4px 0 0" }, children: error })
       ]
     }
   );
 }
 
 // src/components/Tooltip.tsx
-var import_react40 = __toESM(require("react"));
-var import_jsx_runtime67 = require("react/jsx-runtime");
+var import_react41 = __toESM(require("react"));
+var import_jsx_runtime68 = require("react/jsx-runtime");
 var PLACEMENT_STYLES2 = {
   top: (rect, tt) => ({
     top: rect.top - tt.height - 8,
@@ -16375,7 +16573,7 @@ var ARROW_STYLES = {
     borderBottom: "1px solid rgba(148, 163, 184, 0.18)"
   }
 };
-var Tooltip = import_react40.default.memo(function Tooltip2({
+var Tooltip = import_react41.default.memo(function Tooltip2({
   content,
   children,
   placement = "top",
@@ -16384,27 +16582,27 @@ var Tooltip = import_react40.default.memo(function Tooltip2({
   style,
   className
 }) {
-  const [visible, setVisible] = (0, import_react40.useState)(false);
-  const [position, setPosition] = (0, import_react40.useState)({});
-  const triggerRef = (0, import_react40.useRef)(null);
-  const tooltipRef = (0, import_react40.useRef)(null);
-  const timerRef = (0, import_react40.useRef)(null);
-  const show = (0, import_react40.useCallback)(() => {
+  const [visible, setVisible] = (0, import_react41.useState)(false);
+  const [position, setPosition] = (0, import_react41.useState)({});
+  const triggerRef = (0, import_react41.useRef)(null);
+  const tooltipRef = (0, import_react41.useRef)(null);
+  const timerRef = (0, import_react41.useRef)(null);
+  const show = (0, import_react41.useCallback)(() => {
     timerRef.current = setTimeout(() => setVisible(true), delayMs);
   }, [delayMs]);
-  const hide = (0, import_react40.useCallback)(() => {
+  const hide = (0, import_react41.useCallback)(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
     setVisible(false);
   }, []);
-  (0, import_react40.useEffect)(() => {
+  (0, import_react41.useEffect)(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
-  (0, import_react40.useEffect)(() => {
+  (0, import_react41.useEffect)(() => {
     if (!visible || !triggerRef.current || !tooltipRef.current) return;
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const tooltipRect = tooltipRef.current.getBoundingClientRect();
@@ -16424,7 +16622,7 @@ var Tooltip = import_react40.default.memo(function Tooltip2({
     }
     setPosition(posStyle);
   }, [visible, placement]);
-  return /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime68.jsxs)(
     "span",
     {
       ref: triggerRef,
@@ -16435,7 +16633,7 @@ var Tooltip = import_react40.default.memo(function Tooltip2({
       style: { display: "inline-flex", position: "relative", cursor: "pointer" },
       children: [
         children,
-        visible && /* @__PURE__ */ (0, import_jsx_runtime67.jsxs)(
+        visible && /* @__PURE__ */ (0, import_jsx_runtime68.jsxs)(
           "div",
           {
             ref: tooltipRef,
@@ -16459,7 +16657,7 @@ var Tooltip = import_react40.default.memo(function Tooltip2({
               ...style
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime67.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime68.jsx)(
                 "span",
                 {
                   style: {
@@ -16481,8 +16679,8 @@ var Tooltip = import_react40.default.memo(function Tooltip2({
 });
 
 // src/components/Popover.tsx
-var import_react41 = __toESM(require("react"));
-var import_jsx_runtime68 = require("react/jsx-runtime");
+var import_react42 = __toESM(require("react"));
+var import_jsx_runtime69 = require("react/jsx-runtime");
 function resolvePlacement(p) {
   const parts = p.split("-");
   const side = parts[0];
@@ -16567,7 +16765,7 @@ function arrowStyles(side) {
       return { ...base, left: -5, top: "50%", transform: "translateY(-50%) rotate(45deg)", borderRight: "none", borderTop: "none" };
   }
 }
-var Popover = import_react41.default.memo(function Popover2({
+var Popover = import_react42.default.memo(function Popover2({
   trigger,
   children,
   title,
@@ -16581,16 +16779,16 @@ var Popover = import_react41.default.memo(function Popover2({
   style,
   onOpenChange
 }) {
-  const [open, setOpen] = (0, import_react41.useState)(false);
-  const [position, setPosition] = (0, import_react41.useState)({});
-  const containerRef = (0, import_react41.useRef)(null);
-  const popoverRef = (0, import_react41.useRef)(null);
+  const [open, setOpen] = (0, import_react42.useState)(false);
+  const [position, setPosition] = (0, import_react42.useState)({});
+  const containerRef = (0, import_react42.useRef)(null);
+  const popoverRef = (0, import_react42.useRef)(null);
   const { side } = resolvePlacement(placement);
-  const close = (0, import_react41.useCallback)(() => {
+  const close = (0, import_react42.useCallback)(() => {
     setOpen(false);
     onOpenChange?.(false);
   }, [onOpenChange]);
-  const toggle = (0, import_react41.useCallback)(() => {
+  const toggle = (0, import_react42.useCallback)(() => {
     if (disabled) return;
     setOpen((prev) => {
       const next = !prev;
@@ -16598,7 +16796,7 @@ var Popover = import_react41.default.memo(function Popover2({
       return next;
     });
   }, [disabled, onOpenChange]);
-  (0, import_react41.useEffect)(() => {
+  (0, import_react42.useEffect)(() => {
     if (!open) return;
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -16618,7 +16816,7 @@ var Popover = import_react41.default.memo(function Popover2({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open, close]);
-  (0, import_react41.useEffect)(() => {
+  (0, import_react42.useEffect)(() => {
     if (!open || !containerRef.current || !popoverRef.current) return;
     const triggerEl = containerRef.current.firstElementChild;
     if (!triggerEl) return;
@@ -16626,22 +16824,22 @@ var Popover = import_react41.default.memo(function Popover2({
     const popoverRect = popoverRef.current.getBoundingClientRect();
     setPosition(computePosition(popoverRect, triggerRect, placement));
   }, [open, placement]);
-  const handleTriggerClick = (0, import_react41.useCallback)(() => {
+  const handleTriggerClick = (0, import_react42.useCallback)(() => {
     if (triggerMode === "click") toggle();
   }, [triggerMode, toggle]);
-  const handleMouseEnter = (0, import_react41.useCallback)(() => {
+  const handleMouseEnter = (0, import_react42.useCallback)(() => {
     if (triggerMode === "hover" && !disabled) {
       setOpen(true);
       onOpenChange?.(true);
     }
   }, [triggerMode, disabled, onOpenChange]);
-  const handleMouseLeave = (0, import_react41.useCallback)(() => {
+  const handleMouseLeave = (0, import_react42.useCallback)(() => {
     if (triggerMode === "hover") {
       setOpen(false);
       onOpenChange?.(false);
     }
   }, [triggerMode, onOpenChange]);
-  return /* @__PURE__ */ (0, import_jsx_runtime68.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime69.jsxs)(
     "div",
     {
       ref: containerRef,
@@ -16649,7 +16847,7 @@ var Popover = import_react41.default.memo(function Popover2({
       style: { position: "relative", display: "inline-flex", ...style },
       onMouseLeave: handleMouseLeave,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime68.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
           "div",
           {
             onClick: handleTriggerClick,
@@ -16672,7 +16870,7 @@ var Popover = import_react41.default.memo(function Popover2({
             children: trigger
           }
         ),
-        open && /* @__PURE__ */ (0, import_jsx_runtime68.jsxs)(
+        open && /* @__PURE__ */ (0, import_jsx_runtime69.jsxs)(
           "div",
           {
             ref: popoverRef,
@@ -16690,8 +16888,8 @@ var Popover = import_react41.default.memo(function Popover2({
               ...position
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime68.jsx)("span", { style: arrowStyles(side) }),
-              (title || showClose) && /* @__PURE__ */ (0, import_jsx_runtime68.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime69.jsx)("span", { style: arrowStyles(side) }),
+              (title || showClose) && /* @__PURE__ */ (0, import_jsx_runtime69.jsxs)(
                 "div",
                 {
                   style: {
@@ -16702,7 +16900,7 @@ var Popover = import_react41.default.memo(function Popover2({
                     borderBottom: title ? "1px solid rgba(148, 163, 184, 0.10)" : "none"
                   },
                   children: [
-                    title && /* @__PURE__ */ (0, import_jsx_runtime68.jsx)(
+                    title && /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
                       "span",
                       {
                         style: {
@@ -16713,7 +16911,7 @@ var Popover = import_react41.default.memo(function Popover2({
                         children: title
                       }
                     ),
-                    showClose && /* @__PURE__ */ (0, import_jsx_runtime68.jsx)(
+                    showClose && /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
                       "button",
                       {
                         type: "button",
@@ -16735,11 +16933,11 @@ var Popover = import_react41.default.memo(function Popover2({
                   ]
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime68.jsx)("div", { style: { padding: "12px 16px" }, children })
+              /* @__PURE__ */ (0, import_jsx_runtime69.jsx)("div", { style: { padding: "12px 16px" }, children })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime68.jsx)("style", { children: `
+        /* @__PURE__ */ (0, import_jsx_runtime69.jsx)("style", { children: `
         @keyframes popover-slide-in {
           from {
             opacity: 0;
@@ -16757,7 +16955,7 @@ var Popover = import_react41.default.memo(function Popover2({
 });
 
 // src/components/Timeline.tsx
-var import_jsx_runtime69 = require("react/jsx-runtime");
+var import_jsx_runtime70 = require("react/jsx-runtime");
 var VARIANT_STYLES5 = {
   default: {
     dot: "rgba(148,163,184,0.6)",
@@ -16787,7 +16985,7 @@ var VARIANT_STYLES5 = {
 };
 var Timeline = ({ items, "data-testid": testId }) => {
   if (items.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
       "div",
       {
         "data-testid": testId,
@@ -16796,7 +16994,7 @@ var Timeline = ({ items, "data-testid": testId }) => {
       }
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
     "div",
     {
       "data-testid": testId,
@@ -16805,13 +17003,13 @@ var Timeline = ({ items, "data-testid": testId }) => {
         const isLast = idx === items.length - 1;
         const variant = item.pending ? "default" : item.variant ?? "default";
         const styles2 = VARIANT_STYLES5[variant];
-        return /* @__PURE__ */ (0, import_jsx_runtime69.jsxs)(
+        return /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)(
           "div",
           {
             "data-testid": `timeline-item-${item.key}`,
             style: { display: "flex", gap: 14, minHeight: 48 },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime69.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)(
                 "div",
                 {
                   style: {
@@ -16822,7 +17020,7 @@ var Timeline = ({ items, "data-testid": testId }) => {
                     width: 16
                   },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
                       "div",
                       {
                         "data-testid": `timeline-dot-${item.key}`,
@@ -16838,10 +17036,10 @@ var Timeline = ({ items, "data-testid": testId }) => {
                           flexShrink: 0,
                           marginTop: 4
                         },
-                        children: item.icon && !item.pending && /* @__PURE__ */ (0, import_jsx_runtime69.jsx)("span", { style: { fontSize: 8, lineHeight: 1 }, children: item.icon })
+                        children: item.icon && !item.pending && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("span", { style: { fontSize: 8, lineHeight: 1 }, children: item.icon })
                       }
                     ),
-                    !isLast && /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+                    !isLast && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
                       "div",
                       {
                         style: {
@@ -16855,7 +17053,7 @@ var Timeline = ({ items, "data-testid": testId }) => {
                   ]
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime69.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)(
                 "div",
                 {
                   style: {
@@ -16867,7 +17065,7 @@ var Timeline = ({ items, "data-testid": testId }) => {
                     minWidth: 0
                   },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
                       "div",
                       {
                         "data-testid": `timeline-heading-${item.key}`,
@@ -16880,7 +17078,7 @@ var Timeline = ({ items, "data-testid": testId }) => {
                         children: item.heading
                       }
                     ),
-                    item.subtitle && /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+                    item.subtitle && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
                       "div",
                       {
                         "data-testid": `timeline-subtitle-${item.key}`,
@@ -16892,7 +17090,7 @@ var Timeline = ({ items, "data-testid": testId }) => {
                         children: item.subtitle
                       }
                     ),
-                    item.content && /* @__PURE__ */ (0, import_jsx_runtime69.jsx)(
+                    item.content && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
                       "div",
                       {
                         "data-testid": `timeline-content-${item.key}`,
@@ -16919,8 +17117,8 @@ var Timeline = ({ items, "data-testid": testId }) => {
 };
 
 // src/components/FoundationAlertPanel.tsx
-var import_react42 = require("react");
-var import_jsx_runtime70 = require("react/jsx-runtime");
+var import_react43 = require("react");
+var import_jsx_runtime71 = require("react/jsx-runtime");
 var adminPalette = {
   background: "rgba(15, 23, 42, 0.6)",
   border: "1px solid rgba(96, 165, 250, 0.18)",
@@ -17013,7 +17211,7 @@ var foundationAlertPanelThemePresets = {
   }
 };
 function useFoundationAsyncLoader(loader) {
-  return (0, import_react42.useCallback)(() => loader(), [loader]);
+  return (0, import_react43.useCallback)(() => loader(), [loader]);
 }
 async function runPanelMutation(panelAccess, action, alertCode) {
   if (action === "ACK" && panelAccess.ackAlert) {
@@ -17045,17 +17243,17 @@ function FoundationAlertPanelFrame({
   runtimeCallbackAccentColor,
   runtimeCallbackBorderColor
 }) {
-  const [governance, setGovernance] = (0, import_react42.useState)(initialGovernance);
-  const [selectedAlertCode, setSelectedAlertCode] = (0, import_react42.useState)(focusAlertCode);
-  const [actionLoading, setActionLoading] = (0, import_react42.useState)(null);
-  const handleFocusAlert = (0, import_react42.useCallback)(
+  const [governance, setGovernance] = (0, import_react43.useState)(initialGovernance);
+  const [selectedAlertCode, setSelectedAlertCode] = (0, import_react43.useState)(focusAlertCode);
+  const [actionLoading, setActionLoading] = (0, import_react43.useState)(null);
+  const handleFocusAlert = (0, import_react43.useCallback)(
     (code) => {
       setSelectedAlertCode(code);
       onFocusChange?.(code, focusContext ?? "panel");
     },
     [focusContext, onFocusChange]
   );
-  const handleAck = (0, import_react42.useCallback)(
+  const handleAck = (0, import_react43.useCallback)(
     async (alertCode) => {
       setActionLoading(alertCode);
       try {
@@ -17068,7 +17266,7 @@ function FoundationAlertPanelFrame({
     },
     [loadGovernance, panelAccess]
   );
-  const handleMute = (0, import_react42.useCallback)(
+  const handleMute = (0, import_react43.useCallback)(
     async (alertCode) => {
       setActionLoading(alertCode);
       try {
@@ -17081,7 +17279,7 @@ function FoundationAlertPanelFrame({
     },
     [loadGovernance, panelAccess]
   );
-  const handleUnmute = (0, import_react42.useCallback)(
+  const handleUnmute = (0, import_react43.useCallback)(
     async (alertCode) => {
       setActionLoading(alertCode);
       try {
@@ -17099,7 +17297,7 @@ function FoundationAlertPanelFrame({
     if (selectedAlertCode) return a.code === selectedAlertCode;
     return true;
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
     "div",
     {
       "data-component": "foundation-alert-panel",
@@ -17112,7 +17310,7 @@ function FoundationAlertPanelFrame({
         fontSize: 13
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
           "div",
           {
             style: {
@@ -17126,32 +17324,32 @@ function FoundationAlertPanelFrame({
               border: palette.cardBorder
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(SummaryBadge, { label: "\u603B\u8BA1", value: summary.total, palette }),
-              /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(SummaryBadge, { label: "\u4E25\u91CD", value: summary.critical, color: "#ef4444", palette }),
-              /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(SummaryBadge, { label: "\u8B66\u544A", value: summary.warning, color: "#f59e0b", palette }),
-              /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(SummaryBadge, { label: "\u4FE1\u606F", value: summary.info, color: "#3b82f6", palette }),
-              /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(SummaryBadge, { label: "\u5DF2\u786E\u8BA4", value: summary.acknowledged, color: "#22c55e", palette }),
-              /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(SummaryBadge, { label: "\u5DF2\u9759\u97F3", value: summary.muted, color: "#6b7280", palette })
+              /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(SummaryBadge, { label: "\u603B\u8BA1", value: summary.total, palette }),
+              /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(SummaryBadge, { label: "\u4E25\u91CD", value: summary.critical, color: "#ef4444", palette }),
+              /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(SummaryBadge, { label: "\u8B66\u544A", value: summary.warning, color: "#f59e0b", palette }),
+              /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(SummaryBadge, { label: "\u4FE1\u606F", value: summary.info, color: "#3b82f6", palette }),
+              /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(SummaryBadge, { label: "\u5DF2\u786E\u8BA4", value: summary.acknowledged, color: "#22c55e", palette }),
+              /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(SummaryBadge, { label: "\u5DF2\u9759\u97F3", value: summary.muted, color: "#6b7280", palette })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("div", { style: { display: "flex", gap: 8, marginBottom: 12, fontSize: 11, color: palette.mutedText }, children: [
-          timelineQueryKey && /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { display: "flex", gap: 8, marginBottom: 12, fontSize: 11, color: palette.mutedText }, children: [
+          timelineQueryKey && /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
             "\u23F1 timeline: ",
             timelineQueryKey
           ] }),
-          ownerQueryKey && /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("span", { children: [
+          ownerQueryKey && /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
             "\u{1F464} owner: ",
             ownerQueryKey
           ] }),
-          sourceQueryKey && /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("span", { children: [
+          sourceQueryKey && /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
             "\u{1F4E1} source: ",
             sourceQueryKey
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("div", { style: { display: "grid", gap: 10 }, children: [
-          filteredAlerts.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("div", { style: { padding: 24, textAlign: "center", color: palette.mutedText }, children: selectedAlertCode ? "\u672A\u627E\u5230\u6307\u5B9A\u544A\u8B66" : "\u6682\u65E0\u544A\u8B66" }),
-          filteredAlerts.map((alert) => /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { display: "grid", gap: 10 }, children: [
+          filteredAlerts.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { padding: 24, textAlign: "center", color: palette.mutedText }, children: selectedAlertCode ? "\u672A\u627E\u5230\u6307\u5B9A\u544A\u8B66" : "\u6682\u65E0\u544A\u8B66" }),
+          filteredAlerts.map((alert) => /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(
             AlertCard,
             {
               alert,
@@ -17169,7 +17367,7 @@ function FoundationAlertPanelFrame({
             alert.code
           ))
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("div", { style: { marginTop: 12, textAlign: "right" }, children: /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { marginTop: 12, textAlign: "right" }, children: /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(
           "button",
           {
             type: "button",
@@ -17210,7 +17408,7 @@ function FoundationAlertPanelSurface({
 }) {
   const theme = foundationAlertPanelThemePresets[themePreset];
   const asyncGovernanceLoader = useFoundationAsyncLoader(loadGovernance);
-  return /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(
     FoundationAlertPanelFrame,
     {
       router,
@@ -17238,7 +17436,7 @@ function SummaryBadge({
   color,
   palette
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
     "span",
     {
       style: {
@@ -17251,7 +17449,7 @@ function SummaryBadge({
         border: palette.badgeBorder
       },
       children: [
-        color && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+        color && /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(
           "span",
           {
             style: {
@@ -17263,8 +17461,8 @@ function SummaryBadge({
             }
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("span", { style: { color: palette.mutedText }, children: label }),
-        /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("span", { style: { color: palette.badgeText, fontWeight: 700 }, children: value })
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("span", { style: { color: palette.mutedText }, children: label }),
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("span", { style: { color: palette.badgeText, fontWeight: 700 }, children: value })
       ]
     }
   );
@@ -17283,7 +17481,7 @@ function AlertCard({
   runtimeCallbackBorderColor
 }) {
   const severityColor = alert.severity === "critical" ? "#ef4444" : alert.severity === "warning" ? "#f59e0b" : "#3b82f6";
-  return /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
     "div",
     {
       role: "button",
@@ -17303,8 +17501,8 @@ function AlertCard({
         gap: 6
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(
             "span",
             {
               style: {
@@ -17316,23 +17514,23 @@ function AlertCard({
               }
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("span", { style: { fontWeight: 600, color: palette.accentText }, children: alert.code }),
-          alert.acknowledged && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("span", { style: { fontSize: 11, color: "#22c55e" }, children: "\u2713 \u5DF2\u786E\u8BA4" }),
-          alert.muted && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("span", { style: { fontSize: 11, color: "#6b7280" }, children: "\u{1F507} \u5DF2\u9759\u97F3" })
+          /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("span", { style: { fontWeight: 600, color: palette.accentText }, children: alert.code }),
+          alert.acknowledged && /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("span", { style: { fontSize: 11, color: "#22c55e" }, children: "\u2713 \u5DF2\u786E\u8BA4" }),
+          alert.muted && /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("span", { style: { fontSize: 11, color: "#6b7280" }, children: "\u{1F507} \u5DF2\u9759\u97F3" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime70.jsx)("div", { style: { color: palette.text, fontSize: 13 }, children: alert.message }),
-        /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("div", { style: { display: "flex", gap: 4, flexWrap: "wrap", fontSize: 11, color: palette.mutedText }, children: [
-          alert.source && /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { color: palette.text, fontSize: 13 }, children: alert.message }),
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { display: "flex", gap: 4, flexWrap: "wrap", fontSize: 11, color: palette.mutedText }, children: [
+          alert.source && /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
             "\u{1F4E1} ",
             alert.source
           ] }),
-          alert.owner && /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("span", { children: [
+          alert.owner && /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
             "\u{1F464} ",
             alert.owner
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime70.jsxs)("div", { style: { display: "flex", gap: 6, marginTop: 4 }, children: [
-          !alert.acknowledged && /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { display: "flex", gap: 6, marginTop: 4 }, children: [
+          !alert.acknowledged && /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(
             ActionButton2,
             {
               label: isActionLoading ? "\u786E\u8BA4\u4E2D..." : "\u786E\u8BA4",
@@ -17342,7 +17540,7 @@ function AlertCard({
               color: toolbarPalette.ackText
             }
           ),
-          alert.muted ? /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+          alert.muted ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(
             ActionButton2,
             {
               label: isActionLoading ? "\u53D6\u6D88\u9759\u97F3..." : "\u53D6\u6D88\u9759\u97F3",
@@ -17351,7 +17549,7 @@ function AlertCard({
               bg: toolbarPalette.unmuteBackground,
               color: toolbarPalette.unmuteText
             }
-          ) : /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+          ) : /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(
             ActionButton2,
             {
               label: isActionLoading ? "\u9759\u97F3\u4E2D..." : "\u9759\u97F3",
@@ -17373,7 +17571,7 @@ function ActionButton2({
   bg,
   color
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime70.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime71.jsx)(
     "button",
     {
       type: "button",
@@ -17398,8 +17596,8 @@ function ActionButton2({
 }
 
 // src/components/FoundationAlertPanelReadouts.tsx
-var import_react43 = require("react");
-var import_jsx_runtime71 = require("react/jsx-runtime");
+var import_react44 = require("react");
+var import_jsx_runtime72 = require("react/jsx-runtime");
 var defaultPalette = {
   surface: "#1e293b",
   border: "#334155",
@@ -17605,7 +17803,7 @@ function FoundationAlertPanelSelectedAlertReadout({
   const source = getAlertSource(selectedAlert);
   const timeline = getTimelineItems(recentTimeline);
   const runtimeSummary = summarizeRuntimeCallbackDrilldown(runtimeCallbackDrilldown);
-  return /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
     "div",
     {
       "data-testid": "foundation-alert-panel-selected-alert-readout",
@@ -17619,32 +17817,32 @@ function FoundationAlertPanelSelectedAlertReadout({
         gap: 8
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 15, fontWeight: 600, color: resolved.accent }, children: getAlertTitle(selectedAlert) }),
-        /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { display: "flex", gap: 12, flexWrap: "wrap", fontSize: 12, color: resolved.muted }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { fontSize: 15, fontWeight: 600, color: resolved.accent }, children: getAlertTitle(selectedAlert) }),
+        /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("div", { style: { display: "flex", gap: 12, flexWrap: "wrap", fontSize: 12, color: resolved.muted }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("span", { children: [
             "Code: ",
             selectedAlert.code
           ] }),
-          selectedAlert.severity ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+          selectedAlert.severity ? /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("span", { children: [
             "Severity: ",
             selectedAlert.severity
           ] }) : null,
-          source ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+          source ? /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("span", { children: [
             "Source: ",
             source
           ] }) : null,
-          currentOwner ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+          currentOwner ? /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("span", { children: [
             "Owner: ",
             currentOwner
           ] }) : null,
-          visibility ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+          visibility ? /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("span", { children: [
             "Overview: ",
             visibility
           ] }) : null
         ] }),
-        currentNote ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 12, color: resolved.muted, fontStyle: "italic" }, children: currentNote }) : null,
-        runtimeSummary ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 12, color: resolved.muted }, children: runtimeSummary }) : null,
-        timeline.length ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { fontSize: 12, color: resolved.muted }, children: [
+        currentNote ? /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { fontSize: 12, color: resolved.muted, fontStyle: "italic" }, children: currentNote }) : null,
+        runtimeSummary ? /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { fontSize: 12, color: resolved.muted }, children: runtimeSummary }) : null,
+        timeline.length ? /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("div", { style: { fontSize: 12, color: resolved.muted }, children: [
           "Recent events: ",
           timeline.length
         ] }) : null
@@ -17657,9 +17855,9 @@ function FoundationAlertPanelSourceSummaryReadout({
   items = []
 }) {
   const resolved = resolvePalette(palette);
-  return /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { "data-testid": "foundation-alert-panel-source-summary-readout", style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 13, fontWeight: 600, color: resolved.text }, children: "Source Summary" }),
-    items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 12, color: resolved.muted }, children: "No source data" }) : /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("div", { "data-testid": "foundation-alert-panel-source-summary-readout", style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { fontSize: 13, fontWeight: 600, color: resolved.text }, children: "Source Summary" }),
+    items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { fontSize: 12, color: resolved.muted }, children: "No source data" }) : /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
       "div",
       {
         style: {
@@ -17673,7 +17871,7 @@ function FoundationAlertPanelSourceSummaryReadout({
         children: [
           item.source,
           ": ",
-          /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("strong", { children: item.count })
+          /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("strong", { children: item.count })
         ]
       },
       item.source
@@ -17685,9 +17883,9 @@ function FoundationAlertPanelOwnerSummaryReadout({
   items = []
 }) {
   const resolved = resolvePalette(palette);
-  return /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { "data-testid": "foundation-alert-panel-owner-summary-readout", style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 13, fontWeight: 600, color: resolved.text }, children: "Owner Summary" }),
-    items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 12, color: resolved.muted }, children: "No owner data" }) : /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("div", { "data-testid": "foundation-alert-panel-owner-summary-readout", style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { fontSize: 13, fontWeight: 600, color: resolved.text }, children: "Owner Summary" }),
+    items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { fontSize: 12, color: resolved.muted }, children: "No owner data" }) : /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
       "div",
       {
         style: {
@@ -17701,7 +17899,7 @@ function FoundationAlertPanelOwnerSummaryReadout({
         children: [
           item.actorId,
           ": ",
-          /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("strong", { children: item.count })
+          /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("strong", { children: item.count })
         ]
       },
       item.actorId
@@ -17725,7 +17923,7 @@ function FoundationAlertPanelSummaryDigestReadout({
   const digestSummary = summarizeTimelineDigest(timelineDigest);
   const latestAt = formatDateTime(metrics?.latestTimestamp ?? metrics?.latestMatchedAt ?? latestTimeline?.timestamp ?? null);
   const filterGroupCount = Array.isArray(filterSummary) ? filterSummary.length : filterSummary ? 1 : 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
     "div",
     {
       "data-testid": "foundation-alert-panel-summary-digest-readout",
@@ -17739,36 +17937,36 @@ function FoundationAlertPanelSummaryDigestReadout({
         gap: 8
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 13, fontWeight: 600, color: resolved.text }, children: "Summary Digest" }),
-        /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", fontSize: 12, color: resolved.muted }, children: [
-          activeFilterCount !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { fontSize: 13, fontWeight: 600, color: resolved.text }, children: "Summary Digest" }),
+        /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", fontSize: 12, color: resolved.muted }, children: [
+          activeFilterCount !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("span", { children: [
             "Active filters: ",
-            /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("strong", { style: { color: resolved.accent }, children: activeFilterCount })
+            /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("strong", { style: { color: resolved.accent }, children: activeFilterCount })
           ] }) : null,
-          metrics ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+          metrics ? /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("span", { children: [
             "Timeline: ",
-            /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("strong", { style: { color: resolved.text }, children: filteredCount }),
+            /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("strong", { style: { color: resolved.text }, children: filteredCount }),
             " / ",
             metrics.total
           ] }) : null,
-          defaultLatestSource ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+          defaultLatestSource ? /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("span", { children: [
             "Latest source: ",
             defaultLatestSource
           ] }) : null,
-          filterSummary ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+          filterSummary ? /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("span", { children: [
             "Filter groups: ",
             filterGroupCount
           ] }) : null,
-          latestAt ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("span", { children: [
+          latestAt ? /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("span", { children: [
             "Latest event: ",
             latestAt
           ] }) : null
         ] }),
-        filterDeepLinkPreview ? /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { fontSize: 12, color: resolved.muted }, children: [
+        filterDeepLinkPreview ? /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("div", { style: { fontSize: 12, color: resolved.muted }, children: [
           "Deep link: ",
           filterDeepLinkPreview
         ] }) : null,
-        digestSummary ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 12, color: resolved.muted, fontStyle: "italic" }, children: digestSummary }) : null
+        digestSummary ? /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { fontSize: 12, color: resolved.muted, fontStyle: "italic" }, children: digestSummary }) : null
       ]
     }
   );
@@ -17782,13 +17980,13 @@ function FoundationAlertPanelTimelineReadout({
   const resolved = resolvePalette(palette);
   const displayItems = getTimelineItems(filteredTimeline ?? recentTimeline);
   const emptyMessage = typeof filterEmptyState === "string" ? filterEmptyState : filterEmptyState ? "No timeline events match current filters" : "No timeline events";
-  return /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { "data-testid": "foundation-alert-panel-timeline-readout", style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)("div", { style: { fontSize: 13, fontWeight: 600, color: resolved.text }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("div", { "data-testid": "foundation-alert-panel-timeline-readout", style: { display: "flex", flexDirection: "column", gap: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("div", { style: { fontSize: 13, fontWeight: 600, color: resolved.text }, children: [
       "Timeline (",
       displayItems.length,
       " items)"
     ] }),
-    displayItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { fontSize: 12, color: resolved.muted, padding: "8px 0" }, children: emptyMessage }) : /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: displayItems.slice(0, 10).map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime71.jsxs)(
+    displayItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { fontSize: 12, color: resolved.muted, padding: "8px 0" }, children: emptyMessage }) : /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: displayItems.slice(0, 10).map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
       "div",
       {
         style: {
@@ -17802,9 +18000,9 @@ function FoundationAlertPanelTimelineReadout({
           alignItems: "center"
         },
         children: [
-          item.source ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("span", { style: { color: resolved.accent, minWidth: 80 }, children: item.source }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("span", { style: { flex: 1 }, children: item.message ?? item.note ?? item.action ?? "-" }),
-          item.timestamp ? /* @__PURE__ */ (0, import_jsx_runtime71.jsx)("span", { style: { color: resolved.muted, fontSize: 11 }, children: new Date(item.timestamp).toLocaleTimeString() }) : null
+          item.source ? /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("span", { style: { color: resolved.accent, minWidth: 80 }, children: item.source }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("span", { style: { flex: 1 }, children: item.message ?? item.note ?? item.action ?? "-" }),
+          item.timestamp ? /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("span", { style: { color: resolved.muted, fontSize: 11 }, children: new Date(item.timestamp).toLocaleTimeString() }) : null
         ]
       },
       item.id ?? index
@@ -17816,11 +18014,11 @@ function useFoundationAlertGovernanceState({
   focusAlertCode,
   loadGovernance
 }) {
-  const [governance, setGovernance] = (0, import_react43.useState)(
+  const [governance, setGovernance] = (0, import_react44.useState)(
     initialGovernance ?? { alerts: [], topRisks: [] }
   );
-  const [selectedAlertCode, setSelectedAlertCode] = (0, import_react43.useState)(focusAlertCode);
-  const refreshGovernance = (0, import_react43.useCallback)(async () => {
+  const [selectedAlertCode, setSelectedAlertCode] = (0, import_react44.useState)(focusAlertCode);
+  const refreshGovernance = (0, import_react44.useCallback)(async () => {
     if (!loadGovernance) {
       return;
     }
@@ -17837,8 +18035,8 @@ function useFoundationAlertDrilldownQuery({
   loadDrilldown,
   setActionError
 }) {
-  const [drilldown, setDrilldown] = (0, import_react43.useState)(null);
-  (0, import_react43.useEffect)(() => {
+  const [drilldown, setDrilldown] = (0, import_react44.useState)(null);
+  (0, import_react44.useEffect)(() => {
     if (!selectedAlertCode || !loadDrilldown) {
       return;
     }
@@ -17866,8 +18064,8 @@ function useFoundationAlertMutationController({
   refreshView,
   executeMutation
 }) {
-  const [pendingMutationAction, setPendingMutationAction] = (0, import_react43.useState)(null);
-  const runMutation = (0, import_react43.useCallback)(
+  const [pendingMutationAction, setPendingMutationAction] = (0, import_react44.useState)(null);
+  const runMutation = (0, import_react44.useCallback)(
     async (action, code) => {
       const resolvedCode = code ?? selectedAlertCode;
       if (!resolvedCode) {
@@ -17906,7 +18104,7 @@ function useFoundationAlertTimelineQueryState({
   filterState,
   setFilterState
 }) {
-  const activeFilterChips = (0, import_react43.useMemo)(
+  const activeFilterChips = (0, import_react44.useMemo)(
     () => Object.entries(filterState).filter(([, value]) => value && value !== "ALL").map(([kind, value]) => ({
       kind,
       label: toSentenceCase(kind),
@@ -17922,11 +18120,11 @@ function useFoundationAlertTimelineQueryState({
     count: 0
   }));
   const shortcutPresets = [];
-  const applyShortcut = (0, import_react43.useCallback)(
+  const applyShortcut = (0, import_react44.useCallback)(
     (filters) => setFilterState(filters),
     [setFilterState]
   );
-  const clearAllFilters = (0, import_react43.useCallback)(
+  const clearAllFilters = (0, import_react44.useCallback)(
     () => setFilterState((current) => {
       const next = { ...current };
       for (const key of Object.keys(next)) {
@@ -17936,23 +18134,23 @@ function useFoundationAlertTimelineQueryState({
     }),
     [setFilterState]
   );
-  const clearFilter = (0, import_react43.useCallback)(
+  const clearFilter = (0, import_react44.useCallback)(
     (key) => setFilterState((current) => withAllValue(current, key, "ALL")),
     [setFilterState]
   );
-  const handleOwnerFilterChange = (0, import_react43.useCallback)(
+  const handleOwnerFilterChange = (0, import_react44.useCallback)(
     (owner) => setFilterState((current) => withAllValue(current, "owner", owner)),
     [setFilterState]
   );
-  const handleSourceFilterChange = (0, import_react43.useCallback)(
+  const handleSourceFilterChange = (0, import_react44.useCallback)(
     (source) => setFilterState((current) => withAllValue(current, "source", source)),
     [setFilterState]
   );
-  const handleTimelineFilterChange = (0, import_react43.useCallback)(
+  const handleTimelineFilterChange = (0, import_react44.useCallback)(
     (filter) => setFilterState((current) => withAllValue(current, "action", filter)),
     [setFilterState]
   );
-  const filterDeepLinkPreview = (0, import_react43.useMemo)(() => {
+  const filterDeepLinkPreview = (0, import_react44.useMemo)(() => {
     const params = new URLSearchParams();
     if (filterState.action && filterState.action !== "ALL") {
       params.set(timelineQueryKey, filterState.action);
@@ -17982,8 +18180,8 @@ function useFoundationAlertTimelineQueryState({
   };
 }
 function useFoundationAlertViewLinkController() {
-  const [copiedViewMessage, setCopiedViewMessage] = (0, import_react43.useState)(null);
-  const copyCurrentViewLink = (0, import_react43.useCallback)(async () => {
+  const [copiedViewMessage, setCopiedViewMessage] = (0, import_react44.useState)(null);
+  const copyCurrentViewLink = (0, import_react44.useCallback)(async () => {
     try {
       const url = typeof window !== "undefined" ? window.location.href : "";
       if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
@@ -18004,7 +18202,7 @@ function useFoundationAlertFocusSync({
   focusContext,
   onFocusChange
 }) {
-  (0, import_react43.useEffect)(() => {
+  (0, import_react44.useEffect)(() => {
     if (selectedAlertCode && selectedAlertCode !== focusAlertCode) {
       onFocusChange?.(selectedAlertCode, focusContext ?? "");
     }
@@ -18012,8 +18210,8 @@ function useFoundationAlertFocusSync({
 }
 
 // src/components/FormPageScaffold.tsx
-var import_react44 = require("react");
-var import_jsx_runtime72 = require("react/jsx-runtime");
+var import_react45 = require("react");
+var import_jsx_runtime73 = require("react/jsx-runtime");
 function validateFormFields(fields, values) {
   const errors = {};
   for (const field of fields) {
@@ -18059,7 +18257,7 @@ function FieldInput({
     boxSizing: "border-box"
   };
   if (field.type === "textarea") {
-    return /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
       "textarea",
       {
         value: value ?? "",
@@ -18072,7 +18270,7 @@ function FieldInput({
     );
   }
   if (field.type === "select" && field.options) {
-    return /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)(
       "select",
       {
         value: value ?? "",
@@ -18080,13 +18278,13 @@ function FieldInput({
         disabled,
         style: baseStyle,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("option", { value: "", children: "-- \u8BF7\u9009\u62E9 --" }),
-          field.options.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("option", { value: opt.value, children: opt.label }, opt.value))
+          /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("option", { value: "", children: "-- \u8BF7\u9009\u62E9 --" }),
+          field.options.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("option", { value: opt.value, children: opt.label }, opt.value))
         ]
       }
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
     "input",
     {
       type: field.type ?? "text",
@@ -18113,15 +18311,15 @@ function FormPageScaffold({
   onSuccess,
   disabled = false
 }) {
-  const [values, setValues] = (0, import_react44.useState)(() => {
+  const [values, setValues] = (0, import_react45.useState)(() => {
     const init = {};
     for (const f of fields) {
       init[f.key] = f.initialValue ?? "";
     }
     return init;
   });
-  const [errors, setErrors] = (0, import_react44.useState)({});
-  const [_submitted, setSubmitted] = (0, import_react44.useState)(false);
+  const [errors, setErrors] = (0, import_react45.useState)({});
+  const [_submitted, setSubmitted] = (0, import_react45.useState)(false);
   const { state, submit, clearError, clearSuccess } = useFormSubmit({
     onSubmit: async () => {
       const validationErrors = validateFormFields(fields, values);
@@ -18160,14 +18358,14 @@ function FormPageScaffold({
   for (const f of fields) {
     fieldLabelMap[f.key] = f.label;
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)(
     PageShell,
     {
       title: meta.title,
       description: meta.description,
       actions: topActions,
       children: [
-        backUrl && /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+        backUrl && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("div", { style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
           "a",
           {
             href: backUrl,
@@ -18182,7 +18380,7 @@ function FormPageScaffold({
             children: "\u2190 \u8FD4\u56DE"
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)(
           "form",
           {
             onSubmit: handleSubmit,
@@ -18190,7 +18388,7 @@ function FormPageScaffold({
             style: { maxWidth, margin: "0 auto" },
             noValidate: true,
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: fields.map((field) => /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: fields.map((field) => /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)(
                 "div",
                 {
                   style: {
@@ -18199,7 +18397,7 @@ function FormPageScaffold({
                     pointerEvents: disabled ? "none" : "auto"
                   },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
+                    /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)(
                       "label",
                       {
                         htmlFor: `form-field-${field.key}`,
@@ -18212,11 +18410,11 @@ function FormPageScaffold({
                         },
                         children: [
                           field.label,
-                          field.required && /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
+                          field.required && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
                         ]
                       }
                     ),
-                    /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
                       FieldInput,
                       {
                         field,
@@ -18225,13 +18423,13 @@ function FormPageScaffold({
                         disabled
                       }
                     ),
-                    field.helper && !errors[field.key] && /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("p", { style: { fontSize: 12, color: "#64748b", margin: "4px 0 0" }, children: field.helper }),
-                    errors[field.key] && /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("p", { style: { fontSize: 12, color: "#fca5a5", margin: "4px 0 0" }, children: errors[field.key] })
+                    field.helper && !errors[field.key] && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("p", { style: { fontSize: 12, color: "#64748b", margin: "4px 0 0" }, children: field.helper }),
+                    errors[field.key] && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("p", { style: { fontSize: 12, color: "#fca5a5", margin: "4px 0 0" }, children: errors[field.key] })
                   ]
                 },
                 field.key
               )) }),
-              /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
                 FormSubmitFeedback,
                 {
                   state,
@@ -18244,7 +18442,7 @@ function FormPageScaffold({
                   onDismissSuccess: clearSuccess
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)(
                 "div",
                 {
                   style: {
@@ -18257,8 +18455,8 @@ function FormPageScaffold({
                     borderTop: "1px solid rgba(148, 163, 184, 0.10)"
                   },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12 }, children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
                         SubmitButton,
                         {
                           loading: state.isSubmitting,
@@ -18267,7 +18465,7 @@ function FormPageScaffold({
                           type: "submit"
                         }
                       ),
-                      backUrl && /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+                      backUrl && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
                         "a",
                         {
                           href: backUrl,
@@ -18285,7 +18483,7 @@ function FormPageScaffold({
                         }
                       )
                     ] }),
-                    meta.deleteAction && /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+                    meta.deleteAction && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
                       DeleteButton,
                       {
                         label: meta.deleteAction.label,
@@ -18311,10 +18509,10 @@ function DeleteButton({
   onDelete,
   disabled
 }) {
-  const [showConfirm, setShowConfirm] = (0, import_react44.useState)(false);
-  const [deleting, setDeleting] = (0, import_react44.useState)(false);
+  const [showConfirm, setShowConfirm] = (0, import_react45.useState)(false);
+  const [deleting, setDeleting] = (0, import_react45.useState)(false);
   if (!showConfirm) {
-    return /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
       "button",
       {
         type: "button",
@@ -18336,9 +18534,9 @@ function DeleteButton({
       }
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime72.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime72.jsx)("span", { style: { fontSize: 12, color: "#f87171" }, children: confirmText }),
-    /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("span", { style: { fontSize: 12, color: "#f87171" }, children: confirmText }),
+    /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
       "button",
       {
         type: "button",
@@ -18365,7 +18563,7 @@ function DeleteButton({
         children: deleting ? "\u5220\u9664\u4E2D..." : "\u786E\u8BA4"
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime72.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
       "button",
       {
         type: "button",
@@ -18387,8 +18585,8 @@ function DeleteButton({
 }
 
 // src/components/CombinedDetailPage.tsx
-var import_react45 = require("react");
-var import_jsx_runtime73 = require("react/jsx-runtime");
+var import_react46 = require("react");
+var import_jsx_runtime74 = require("react/jsx-runtime");
 function CombinedDetailPage({
   title,
   subtitle,
@@ -18412,12 +18610,12 @@ function CombinedDetailPage({
   "data-testid": testId
 }) {
   const { success, error: toastError } = useToast();
-  const [activeTab, setActiveTab] = (0, import_react45.useState)(defaultTab ?? tabs?.[0]?.key ?? "");
-  const [deleteDialogOpen, setDeleteDialogOpen] = (0, import_react45.useState)(false);
-  const [deleting, setDeleting] = (0, import_react45.useState)(false);
-  const [pendingTransition, setPendingTransition] = (0, import_react45.useState)(null);
-  const [transitioning, setTransitioning] = (0, import_react45.useState)(false);
-  const handleDelete = (0, import_react45.useCallback)(async () => {
+  const [activeTab, setActiveTab] = (0, import_react46.useState)(defaultTab ?? tabs?.[0]?.key ?? "");
+  const [deleteDialogOpen, setDeleteDialogOpen] = (0, import_react46.useState)(false);
+  const [deleting, setDeleting] = (0, import_react46.useState)(false);
+  const [pendingTransition, setPendingTransition] = (0, import_react46.useState)(null);
+  const [transitioning, setTransitioning] = (0, import_react46.useState)(false);
+  const handleDelete = (0, import_react46.useCallback)(async () => {
     if (!onDelete) return;
     setDeleting(true);
     try {
@@ -18431,14 +18629,14 @@ function CombinedDetailPage({
       setDeleteDialogOpen(false);
     }
   }, [onDelete, success, toastError]);
-  const handleTransition = (0, import_react45.useCallback)(async (action) => {
+  const handleTransition = (0, import_react46.useCallback)(async (action) => {
     if (action.confirm) {
       setPendingTransition(action);
       return;
     }
     await executeTransition(action);
   }, []);
-  const executeTransition = (0, import_react45.useCallback)(async (action) => {
+  const executeTransition = (0, import_react46.useCallback)(async (action) => {
     setTransitioning(true);
     try {
       await action.onTransition();
@@ -18458,8 +18656,8 @@ function CombinedDetailPage({
   if (onDelete) {
     shellActions.push({ key: "delete", label: deleteLabel, variant: "danger", onClick: () => setDeleteDialogOpen(true) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)("div", { "data-testid": testId ?? "combined-detail-page", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)("div", { "data-testid": testId ?? "combined-detail-page", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
       DetailShell,
       {
         title,
@@ -18470,13 +18668,13 @@ function CombinedDetailPage({
         actions: shellActions.length > 0 ? shellActions : void 0,
         loading,
         error,
-        children: /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 20 }, children: [
-          status && /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("span", { style: { fontSize: 13, color: "#94a3b8", fontWeight: 500 }, children: "Status:" }),
-            /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(StatusBadge, { label: status.label, variant: status.variant ?? "neutral" })
+        children: /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 20 }, children: [
+          status && /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime74.jsx)("span", { style: { fontSize: 13, color: "#94a3b8", fontWeight: 500 }, children: "Status:" }),
+            /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(StatusBadge, { label: status.label, variant: status.variant ?? "neutral" })
           ] }),
-          infoRows && infoRows.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(InfoRowsSection, { infoRows }),
-          transitions && transitions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)(
+          infoRows && infoRows.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(InfoRowsSection, { infoRows }),
+          transitions && transitions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)(
             "div",
             {
               "data-testid": "combined-detail-transitions",
@@ -18487,7 +18685,7 @@ function CombinedDetailPage({
                 background: "rgba(15,23,42,0.38)"
               },
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
                   "h4",
                   {
                     style: {
@@ -18501,7 +18699,7 @@ function CombinedDetailPage({
                     children: "State Transitions"
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 8 }, children: transitions.map((t) => /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)(
+                /* @__PURE__ */ (0, import_jsx_runtime74.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 8 }, children: transitions.map((t) => /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)(
                   "button",
                   {
                     type: "button",
@@ -18525,8 +18723,8 @@ function CombinedDetailPage({
               ]
             }
           ),
-          tabs && tabs.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+          tabs && tabs.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
               Tabs,
               {
                 items: tabs.map((t) => ({ key: t.key, label: t.label })),
@@ -18534,7 +18732,7 @@ function CombinedDetailPage({
                 onChange: setActiveTab
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
               "div",
               {
                 style: {
@@ -18551,9 +18749,9 @@ function CombinedDetailPage({
         ] })
       }
     ),
-    actionBarActions && actionBarActions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("div", { style: { padding: "0 32px", maxWidth: 960, margin: "0 auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(DetailActionBar, { actions: actionBarActions }) }),
-    closureLinks && closureLinks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("div", { style: { padding: "0 32px", maxWidth: 960, margin: "0 auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(DetailClosureBar, { links: closureLinks }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+    actionBarActions && actionBarActions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime74.jsx)("div", { style: { padding: "0 32px", maxWidth: 960, margin: "0 auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(DetailActionBar, { actions: actionBarActions }) }),
+    closureLinks && closureLinks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime74.jsx)("div", { style: { padding: "0 32px", maxWidth: 960, margin: "0 auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(DetailClosureBar, { links: closureLinks }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
       ConfirmDialog,
       {
         open: deleteDialogOpen,
@@ -18565,7 +18763,7 @@ function CombinedDetailPage({
         onCancel: () => setDeleteDialogOpen(false)
       }
     ),
-    pendingTransition && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+    pendingTransition && /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
       ConfirmDialog,
       {
         open: true,
@@ -18580,7 +18778,7 @@ function CombinedDetailPage({
   ] });
 }
 function InfoRowsSection({ infoRows }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
     "div",
     {
       "data-testid": "combined-detail-info-rows",
@@ -18593,9 +18791,9 @@ function InfoRowsSection({ infoRows }) {
         borderRadius: 12,
         padding: 20
       },
-      children: infoRows.map((row) => /* @__PURE__ */ (0, import_jsx_runtime73.jsxs)("div", { "data-testid": `info-row-${row.key}`, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(InfoRow, { label: row.label, value: row.value }),
-        row.statusBadge && /* @__PURE__ */ (0, import_jsx_runtime73.jsx)("div", { style: { marginTop: 6 }, children: /* @__PURE__ */ (0, import_jsx_runtime73.jsx)(
+      children: infoRows.map((row) => /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)("div", { "data-testid": `info-row-${row.key}`, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(InfoRow, { label: row.label, value: row.value }),
+        row.statusBadge && /* @__PURE__ */ (0, import_jsx_runtime74.jsx)("div", { style: { marginTop: 6 }, children: /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
           StatusBadge,
           {
             label: row.statusBadge.label,
@@ -18636,8 +18834,8 @@ var disabledButtonStyle2 = {
 };
 
 // src/components/Stepper.tsx
-var import_react46 = __toESM(require("react"));
-var import_jsx_runtime74 = require("react/jsx-runtime");
+var import_react47 = __toESM(require("react"));
+var import_jsx_runtime75 = require("react/jsx-runtime");
 var SIZE_MAP4 = {
   sm: { circle: 24, font: 12, gap: 6 },
   md: { circle: 32, font: 14, gap: 8 },
@@ -18663,7 +18861,7 @@ function stepIndicator(step, index, isActive, isCompleted, hasError, disabled, s
     fg = "#0f172a";
   }
   if (step.icon) {
-    return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
       "div",
       {
         style: {
@@ -18686,7 +18884,7 @@ function stepIndicator(step, index, isActive, isCompleted, hasError, disabled, s
     );
   }
   if (isCompleted) {
-    return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
       "div",
       {
         style: {
@@ -18708,7 +18906,7 @@ function stepIndicator(step, index, isActive, isCompleted, hasError, disabled, s
       }
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
     "div",
     {
       style: {
@@ -18747,7 +18945,7 @@ function Stepper({
 }) {
   const s = getSize(size);
   if (variant === "dots") {
-    return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
       "div",
       {
         "data-testid": dataTestId,
@@ -18766,7 +18964,7 @@ function Stepper({
           const isCompleted = step.completed ?? i < activeStep;
           const hasError = step.error ?? false;
           const disabled = step.disabled ?? false;
-          return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+          return /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
             "button",
             {
               type: "button",
@@ -18799,7 +18997,7 @@ function Stepper({
   }
   if (variant === "progress") {
     const pct = steps.length > 0 ? Math.round((activeStep + 1) / steps.length * 100) : 0;
-    return /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)(
       "div",
       {
         "data-testid": dataTestId,
@@ -18814,7 +19012,7 @@ function Stepper({
           ...style
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
             "div",
             {
               "data-testid": dataTestId ? `${dataTestId}-progress-track` : void 0,
@@ -18825,7 +19023,7 @@ function Stepper({
                 background: "rgba(148, 163, 184, 0.15)",
                 overflow: "hidden"
               },
-              children: /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+              children: /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
                 "div",
                 {
                   "data-testid": dataTestId ? `${dataTestId}-progress-fill` : void 0,
@@ -18840,7 +19038,7 @@ function Stepper({
               )
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)(
             "div",
             {
               style: {
@@ -18850,8 +19048,8 @@ function Stepper({
                 color: COLOR_TEXT_MUTED
               },
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime74.jsx)("span", { "data-testid": dataTestId ? `${dataTestId}-progress-label` : void 0, children: steps[activeStep]?.label ?? "" }),
-                /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)("span", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime75.jsx)("span", { "data-testid": dataTestId ? `${dataTestId}-progress-label` : void 0, children: steps[activeStep]?.label ?? "" }),
+                /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)("span", { children: [
                   activeStep + 1,
                   " / ",
                   steps.length
@@ -18864,7 +19062,7 @@ function Stepper({
     );
   }
   const isVertical = orientation === "vertical";
-  return /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
     "div",
     {
       "data-testid": dataTestId,
@@ -18884,8 +19082,8 @@ function Stepper({
         const hasError = step.error ?? false;
         const disabled = step.disabled ?? false;
         const isLast = i === steps.length - 1;
-        return /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)(import_react46.default.Fragment, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)(
+        return /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)(import_react47.default.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)(
             "div",
             {
               style: {
@@ -18896,7 +19094,7 @@ function Stepper({
                 flex: isVertical ? void 0 : "0 0 auto"
               },
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
                   "button",
                   {
                     type: "button",
@@ -18923,7 +19121,7 @@ function Stepper({
                     children: stepIndicator(step, i, isActive, isCompleted, hasError, disabled, s)
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime74.jsxs)(
+                /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)(
                   "div",
                   {
                     style: {
@@ -18934,7 +19132,7 @@ function Stepper({
                       textAlign: isVertical ? "left" : "center"
                     },
                     children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+                      /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
                         "span",
                         {
                           "data-testid": dataTestId ? `${dataTestId}-label-${i}` : void 0,
@@ -18948,7 +19146,7 @@ function Stepper({
                           children: step.label
                         }
                       ),
-                      step.description ? /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+                      step.description ? /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
                         "span",
                         {
                           "data-testid": dataTestId ? `${dataTestId}-desc-${i}` : void 0,
@@ -18967,7 +19165,7 @@ function Stepper({
               ]
             }
           ),
-          !isLast ? /* @__PURE__ */ (0, import_jsx_runtime74.jsx)(
+          !isLast ? /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
             "div",
             {
               "data-testid": dataTestId ? `${dataTestId}-connector-${i}` : void 0,
@@ -18990,8 +19188,8 @@ function Stepper({
 }
 
 // src/components/Input.tsx
-var import_react47 = __toESM(require("react"));
-var import_jsx_runtime75 = require("react/jsx-runtime");
+var import_react48 = __toESM(require("react"));
+var import_jsx_runtime76 = require("react/jsx-runtime");
 var SIZE_MAP5 = {
   sm: { fontSize: 13, paddingY: 4, paddingX: 8 },
   md: { fontSize: 14, paddingY: 6, paddingX: 10 },
@@ -19016,7 +19214,7 @@ var VARIANT_STYLES6 = {
     borderRadius: 0
   })
 };
-var Input = import_react47.default.memo(function Input2({
+var Input = import_react48.default.memo(function Input2({
   size = "md",
   variant = "outline",
   label,
@@ -19053,20 +19251,20 @@ var Input = import_react47.default.memo(function Input2({
   "aria-label": ariaLabel,
   ...rest
 }) {
-  const generatedId = (0, import_react47.useId)();
+  const generatedId = (0, import_react48.useId)();
   const id = idProp ?? generatedId;
-  const [focused, setFocused] = (0, import_react47.useState)(false);
-  const [internalValue, setInternalValue] = (0, import_react47.useState)(defaultValue ?? "");
+  const [focused, setFocused] = (0, import_react48.useState)(false);
+  const [internalValue, setInternalValue] = (0, import_react48.useState)(defaultValue ?? "");
   const isControlled = valueProp !== void 0;
   const value = isControlled ? valueProp : internalValue;
-  const handleChange = (0, import_react47.useCallback)(
+  const handleChange = (0, import_react48.useCallback)(
     (e) => {
       if (!isControlled) setInternalValue(e.target.value);
       onChange?.(e);
     },
     [isControlled, onChange]
   );
-  const handleClear = (0, import_react47.useCallback)(() => {
+  const handleClear = (0, import_react48.useCallback)(() => {
     if (disabled || readOnly) return;
     if (!isControlled) setInternalValue("");
     onClear?.();
@@ -19093,7 +19291,7 @@ var Input = import_react47.default.memo(function Input2({
     lineHeight: 1.5,
     ...variantStyle
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime76.jsxs)(
     "div",
     {
       "data-testid": dataTestId,
@@ -19104,7 +19302,7 @@ var Input = import_react47.default.memo(function Input2({
         ...style
       },
       children: [
-        label && /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)(
+        label && /* @__PURE__ */ (0, import_jsx_runtime76.jsxs)(
           "label",
           {
             htmlFor: id,
@@ -19118,12 +19316,12 @@ var Input = import_react47.default.memo(function Input2({
             },
             children: [
               label,
-              required && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
+              required && /* @__PURE__ */ (0, import_jsx_runtime76.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)("div", { style: { position: "relative", display: "inline-flex", width: "100%" }, children: [
-          prefix && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime76.jsxs)("div", { style: { position: "relative", display: "inline-flex", width: "100%" }, children: [
+          prefix && /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
             "span",
             {
               "data-testid": dataTestId ? `${dataTestId}-prefix` : void 0,
@@ -19142,7 +19340,7 @@ var Input = import_react47.default.memo(function Input2({
               children: prefix
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
             "input",
             {
               id,
@@ -19179,7 +19377,7 @@ var Input = import_react47.default.memo(function Input2({
               style: inputStyle
             }
           ),
-          showClearBtn && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+          showClearBtn && /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
             "button",
             {
               type: "button",
@@ -19204,7 +19402,7 @@ var Input = import_react47.default.memo(function Input2({
               children: "\u2715"
             }
           ),
-          suffix && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+          suffix && /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
             "span",
             {
               "data-testid": dataTestId ? `${dataTestId}-suffix` : void 0,
@@ -19223,7 +19421,7 @@ var Input = import_react47.default.memo(function Input2({
               children: suffix
             }
           ),
-          loading && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+          loading && /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
             "span",
             {
               "data-testid": dataTestId ? `${dataTestId}-loading` : void 0,
@@ -19237,7 +19435,7 @@ var Input = import_react47.default.memo(function Input2({
             }
           )
         ] }),
-        showCount && maxLength !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime75.jsxs)(
+        showCount && maxLength !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime76.jsxs)(
           "div",
           {
             "data-testid": dataTestId ? `${dataTestId}-count` : void 0,
@@ -19254,7 +19452,7 @@ var Input = import_react47.default.memo(function Input2({
             ]
           }
         ),
-        helperText && !error && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+        helperText && !error && /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
           "div",
           {
             id: `${id}-helper`,
@@ -19263,7 +19461,7 @@ var Input = import_react47.default.memo(function Input2({
             children: helperText
           }
         ),
-        error && /* @__PURE__ */ (0, import_jsx_runtime75.jsx)(
+        error && /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
           "div",
           {
             id: `${id}-error`,
@@ -19279,8 +19477,8 @@ var Input = import_react47.default.memo(function Input2({
 });
 
 // src/components/Checkbox.tsx
-var import_react48 = require("react");
-var import_jsx_runtime76 = require("react/jsx-runtime");
+var import_react49 = require("react");
+var import_jsx_runtime77 = require("react/jsx-runtime");
 var SIZE_MAP6 = { sm: 14, md: 18, lg: 22 };
 var CHECK_MARK_SCALE = { sm: 0.7, md: 0.75, lg: 0.78 };
 function Checkbox({
@@ -19301,20 +19499,20 @@ function Checkbox({
   className,
   style
 }) {
-  const id = (0, import_react48.useId)();
-  const [internalChecked, setInternalChecked] = (0, import_react48.useState)(defaultChecked);
+  const id = (0, import_react49.useId)();
+  const [internalChecked, setInternalChecked] = (0, import_react49.useState)(defaultChecked);
   const isControlled = checked !== void 0;
   const isChecked = isControlled ? checked : internalChecked;
   const hasError = Boolean(error);
   const boxSize = SIZE_MAP6[size];
   const checkSize = Math.round(boxSize * CHECK_MARK_SCALE[size]);
-  const handleToggle = (0, import_react48.useCallback)(() => {
+  const handleToggle = (0, import_react49.useCallback)(() => {
     if (disabled) return;
     const next = !isChecked;
     if (!isControlled) setInternalChecked(next);
     onChange?.(next);
   }, [disabled, isChecked, isControlled, onChange]);
-  const handleKeyDown = (0, import_react48.useCallback)(
+  const handleKeyDown = (0, import_react49.useCallback)(
     (e) => {
       if (disabled) return;
       if (e.key === " " || e.key === "Enter") {
@@ -19328,7 +19526,7 @@ function Checkbox({
   const bgColor = disabled ? "#f3f4f6" : isChecked || indeterminate ? "#3b82f6" : "#ffffff";
   const dashWidth = Math.round(boxSize * 0.5);
   const dashHeight = 2;
-  const labelElement = label ? /* @__PURE__ */ (0, import_jsx_runtime76.jsxs)(
+  const labelElement = label ? /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(
     "label",
     {
       htmlFor: id,
@@ -19345,13 +19543,13 @@ function Checkbox({
       },
       children: [
         label,
-        required && /* @__PURE__ */ (0, import_jsx_runtime76.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
+        required && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
       ]
     }
   ) : null;
   const checkMark = indeterminate ? (
     // Dash for indeterminate
-    /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
       "div",
       {
         style: {
@@ -19364,7 +19562,7 @@ function Checkbox({
     )
   ) : isChecked ? (
     // Check mark SVG
-    /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
       "svg",
       {
         width: checkSize,
@@ -19372,7 +19570,7 @@ function Checkbox({
         viewBox: "0 0 12 10",
         fill: "none",
         style: { display: "block" },
-        children: /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
           "path",
           {
             d: "M1 5l3 3 7-7",
@@ -19385,7 +19583,7 @@ function Checkbox({
       }
     )
   ) : null;
-  return /* @__PURE__ */ (0, import_jsx_runtime76.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(
     "div",
     {
       "data-testid": dataTestId,
@@ -19401,7 +19599,7 @@ function Checkbox({
       onClick: handleToggle,
       children: [
         label && labelPosition === "left" ? labelElement : null,
-        /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
           "input",
           {
             type: "checkbox",
@@ -19423,7 +19621,7 @@ function Checkbox({
             tabIndex: -1
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
           "div",
           {
             role: "checkbox",
@@ -19456,7 +19654,7 @@ function Checkbox({
           }
         ),
         label && labelPosition === "right" ? labelElement : null,
-        error && /* @__PURE__ */ (0, import_jsx_runtime76.jsx)(
+        error && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
           "div",
           {
             role: "alert",
@@ -19475,8 +19673,8 @@ function Checkbox({
 }
 
 // src/components/Combobox.tsx
-var import_react49 = __toESM(require("react"));
-var import_jsx_runtime77 = require("react/jsx-runtime");
+var import_react50 = __toESM(require("react"));
+var import_jsx_runtime78 = require("react/jsx-runtime");
 var BG = "rgba(15, 23, 42, 0.97)";
 var BORDER = "rgba(148, 163, 184, 0.15)";
 var TEXT = "#e2e8f0";
@@ -19511,7 +19709,7 @@ function groupOptions(options) {
   }
   return result;
 }
-var Combobox = import_react49.default.memo(function Combobox2({
+var Combobox = import_react50.default.memo(function Combobox2({
   value,
   options,
   onChange,
@@ -19529,33 +19727,33 @@ var Combobox = import_react49.default.memo(function Combobox2({
   className,
   "data-testid": dataTestId
 }) {
-  const [open, setOpen] = (0, import_react49.useState)(false);
-  const [query, setQuery] = (0, import_react49.useState)("");
-  const [highlightIndex, setHighlightIndex] = (0, import_react49.useState)(0);
-  const [internalValue, setInternalValue] = (0, import_react49.useState)(value ?? "");
-  const inputRef = (0, import_react49.useRef)(null);
-  const listRef = (0, import_react49.useRef)(null);
-  const containerRef = (0, import_react49.useRef)(null);
-  (0, import_react49.useEffect)(() => {
+  const [open, setOpen] = (0, import_react50.useState)(false);
+  const [query, setQuery] = (0, import_react50.useState)("");
+  const [highlightIndex, setHighlightIndex] = (0, import_react50.useState)(0);
+  const [internalValue, setInternalValue] = (0, import_react50.useState)(value ?? "");
+  const inputRef = (0, import_react50.useRef)(null);
+  const listRef = (0, import_react50.useRef)(null);
+  const containerRef = (0, import_react50.useRef)(null);
+  (0, import_react50.useEffect)(() => {
     if (value !== void 0) {
       setInternalValue(value);
     }
   }, [value]);
-  const filteredOptions = (0, import_react49.useMemo)(() => filterOptions(options, query), [options, query]);
-  const grouped = (0, import_react49.useMemo)(() => groupOptions(filteredOptions), [filteredOptions]);
-  const totalAvailable = (0, import_react49.useMemo)(
+  const filteredOptions = (0, import_react50.useMemo)(() => filterOptions(options, query), [options, query]);
+  const grouped = (0, import_react50.useMemo)(() => groupOptions(filteredOptions), [filteredOptions]);
+  const totalAvailable = (0, import_react50.useMemo)(
     () => grouped.reduce((sum, g) => sum + g.options.length, 0),
     [grouped]
   );
-  const selectedLabel = (0, import_react49.useMemo)(() => {
+  const selectedLabel = (0, import_react50.useMemo)(() => {
     if (!internalValue) return "";
     const opt = options.find((o) => o.value === internalValue);
     return opt?.label ?? internalValue;
   }, [internalValue, options]);
-  (0, import_react49.useEffect)(() => {
+  (0, import_react50.useEffect)(() => {
     setHighlightIndex(0);
   }, [filteredOptions.length]);
-  (0, import_react49.useEffect)(() => {
+  (0, import_react50.useEffect)(() => {
     if (open && listRef.current) {
       const el = listRef.current.querySelector(`[data-combobox-option-index="${highlightIndex}"]`);
       if (el) {
@@ -19563,7 +19761,7 @@ var Combobox = import_react49.default.memo(function Combobox2({
       }
     }
   }, [highlightIndex, open]);
-  (0, import_react49.useEffect)(() => {
+  (0, import_react50.useEffect)(() => {
     if (!open) return;
     function handleClick(e) {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -19574,7 +19772,7 @@ var Combobox = import_react49.default.memo(function Combobox2({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
-  (0, import_react49.useEffect)(() => {
+  (0, import_react50.useEffect)(() => {
     if (!open) return;
     function handleKey(e) {
       if (e.key === "Escape") {
@@ -19585,7 +19783,7 @@ var Combobox = import_react49.default.memo(function Combobox2({
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [open]);
-  const handleSelect = (0, import_react49.useCallback)(
+  const handleSelect = (0, import_react50.useCallback)(
     (opt) => {
       if (opt.disabled) return;
       setInternalValue(opt.value);
@@ -19596,18 +19794,18 @@ var Combobox = import_react49.default.memo(function Combobox2({
     },
     [onChange]
   );
-  const handleInputChange = (0, import_react49.useCallback)((e) => {
+  const handleInputChange = (0, import_react50.useCallback)((e) => {
     const v = e.target.value;
     setQuery(v);
     if (!open) setOpen(true);
     setHighlightIndex(0);
   }, [open]);
-  const handleFocus = (0, import_react49.useCallback)(() => {
+  const handleFocus = (0, import_react50.useCallback)(() => {
     if (disabled) return;
     setOpen(true);
     if (!query) setQuery("");
   }, [disabled, query]);
-  const handleKeyDown = (0, import_react49.useCallback)(
+  const handleKeyDown = (0, import_react50.useCallback)(
     (e) => {
       if (!open) {
         if (e.key === "ArrowDown" || e.key === "Enter") {
@@ -19656,14 +19854,14 @@ var Combobox = import_react49.default.memo(function Combobox2({
     },
     [open, totalAvailable, highlightIndex, grouped, handleSelect, allowCustom, query, onChange]
   );
-  const handleClear = (0, import_react49.useCallback)(() => {
+  const handleClear = (0, import_react50.useCallback)(() => {
     setInternalValue("");
     onChange?.("");
     setQuery("");
     inputRef.current?.focus();
   }, [onChange]);
   const inputBorderColor = error ? ERROR : BORDER;
-  return /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)(
     "div",
     {
       ref: containerRef,
@@ -19671,19 +19869,19 @@ var Combobox = import_react49.default.memo(function Combobox2({
       className,
       "data-testid": dataTestId,
       children: [
-        label && /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(
+        label && /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)(
           "label",
           {
             style: { fontSize: 12, fontWeight: 500, color: error ? "#f87171" : "#94a3b8" },
             children: [
               label,
-              required && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("span", { style: { color: "#f87171", marginLeft: 2 }, children: "*" })
+              required && /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("span", { style: { color: "#f87171", marginLeft: 2 }, children: "*" })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)("div", { style: { position: "relative" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)("div", { style: { position: "relative" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)("div", { style: { position: "relative" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)("div", { style: { position: "relative" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime78.jsx)(
               "input",
               {
                 ref: inputRef,
@@ -19717,7 +19915,7 @@ var Combobox = import_react49.default.memo(function Combobox2({
                 }
               }
             ),
-            internalValue && !disabled && !open ? /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+            internalValue && !disabled && !open ? /* @__PURE__ */ (0, import_jsx_runtime78.jsx)(
               "button",
               {
                 type: "button",
@@ -19739,9 +19937,9 @@ var Combobox = import_react49.default.memo(function Combobox2({
                   justifyContent: "center",
                   borderRadius: 4
                 },
-                children: /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("path", { d: "M4 4l8 8M12 4l-8 8", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }) })
+                children: /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("path", { d: "M4 4l8 8M12 4l-8 8", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }) })
               }
-            ) : /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+            ) : /* @__PURE__ */ (0, import_jsx_runtime78.jsx)(
               "svg",
               {
                 width: "14",
@@ -19757,10 +19955,10 @@ var Combobox = import_react49.default.memo(function Combobox2({
                   color: MUTED,
                   transition: "transform 0.2s"
                 },
-                children: /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("path", { d: "M4 6l4 4 4-4", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" })
+                children: /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("path", { d: "M4 6l4 4 4-4", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" })
               }
             ),
-            loading && /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(
+            loading && /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)(
               "div",
               {
                 style: {
@@ -19771,13 +19969,13 @@ var Combobox = import_react49.default.memo(function Combobox2({
                 },
                 "data-combobox-loading": "true",
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", style: { animation: "combobox-spin 0.6s linear infinite" }, children: /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("circle", { cx: "8", cy: "8", r: "6", stroke: MUTED, strokeWidth: "2", strokeDasharray: "28", strokeLinecap: "round" }) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("style", { children: `@keyframes combobox-spin { to { transform: rotate(360deg); } }` })
+                  /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", style: { animation: "combobox-spin 0.6s linear infinite" }, children: /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("circle", { cx: "8", cy: "8", r: "6", stroke: MUTED, strokeWidth: "2", strokeDasharray: "28", strokeLinecap: "round" }) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("style", { children: `@keyframes combobox-spin { to { transform: rotate(360deg); } }` })
                 ]
               }
             )
           ] }),
-          open && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+          open && /* @__PURE__ */ (0, import_jsx_runtime78.jsx)(
             "div",
             {
               ref: listRef,
@@ -19799,7 +19997,7 @@ var Combobox = import_react49.default.memo(function Combobox2({
                 zIndex: 9997,
                 padding: 4
               },
-              children: totalAvailable === 0 ? /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+              children: totalAvailable === 0 ? /* @__PURE__ */ (0, import_jsx_runtime78.jsx)(
                 "div",
                 {
                   style: {
@@ -19810,8 +20008,8 @@ var Combobox = import_react49.default.memo(function Combobox2({
                   },
                   children: emptyMessage
                 }
-              ) : grouped.map((group, groupIdx) => /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)("div", { "data-combobox-group": group.label, children: [
-                group.label && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+              ) : grouped.map((group, groupIdx) => /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)("div", { "data-combobox-group": group.label, children: [
+                group.label && /* @__PURE__ */ (0, import_jsx_runtime78.jsx)(
                   "div",
                   {
                     style: {
@@ -19834,7 +20032,7 @@ var Combobox = import_react49.default.memo(function Combobox2({
                   const flatIndex = flatIdx + idxInGroup;
                   const isHighlighted = flatIndex === highlightIndex;
                   const isSelected = opt.value === internalValue;
-                  return /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)(
+                  return /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)(
                     "div",
                     {
                       role: "option",
@@ -19860,9 +20058,9 @@ var Combobox = import_react49.default.memo(function Combobox2({
                         boxSizing: "border-box"
                       },
                       children: [
-                        opt.icon && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("span", { style: { flexShrink: 0, display: "flex", alignItems: "center" }, children: opt.icon }),
-                        /* @__PURE__ */ (0, import_jsx_runtime77.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+                        opt.icon && /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("span", { style: { flexShrink: 0, display: "flex", alignItems: "center" }, children: opt.icon }),
+                        /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                          /* @__PURE__ */ (0, import_jsx_runtime78.jsx)(
                             "div",
                             {
                               style: {
@@ -19875,7 +20073,7 @@ var Combobox = import_react49.default.memo(function Combobox2({
                               children: opt.label
                             }
                           ),
-                          opt.description && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)(
+                          opt.description && /* @__PURE__ */ (0, import_jsx_runtime78.jsx)(
                             "div",
                             {
                               style: {
@@ -19889,7 +20087,7 @@ var Combobox = import_react49.default.memo(function Combobox2({
                             }
                           )
                         ] }),
-                        isSelected && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", style: { flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("path", { d: "M3 8l3.5 3.5L13 5", stroke: ACCENT, strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }) })
+                        isSelected && /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 16 16", fill: "none", style: { flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("path", { d: "M3 8l3.5 3.5L13 5", stroke: ACCENT, strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }) })
                       ]
                     },
                     opt.value
@@ -19899,16 +20097,16 @@ var Combobox = import_react49.default.memo(function Combobox2({
             }
           )
         ] }),
-        error && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("span", { style: { fontSize: 11, color: "#f87171" }, children: error }),
-        helpText && !error && /* @__PURE__ */ (0, import_jsx_runtime77.jsx)("span", { style: { fontSize: 11, color: MUTED }, children: helpText })
+        error && /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("span", { style: { fontSize: 11, color: "#f87171" }, children: error }),
+        helpText && !error && /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("span", { style: { fontSize: 11, color: MUTED }, children: helpText })
       ]
     }
   );
 });
 
 // src/components/ContentSwitcher.tsx
-var import_react50 = require("react");
-var import_jsx_runtime78 = require("react/jsx-runtime");
+var import_react51 = require("react");
+var import_jsx_runtime79 = require("react/jsx-runtime");
 var SIZE_STYLES = {
   sm: { height: 32, fontSize: 13, paddingX: 12, gap: 2 },
   md: { height: 40, fontSize: 14, paddingX: 16, gap: 4 }
@@ -19923,11 +20121,11 @@ function ContentSwitcher({
   fullWidth = false,
   "data-testid": dataTestId
 }) {
-  const [internalSelected, setInternalSelected] = (0, import_react50.useState)(
+  const [internalSelected, setInternalSelected] = (0, import_react51.useState)(
     defaultSelected ?? segments[0]?.key ?? ""
   );
   const selected = controlledSelected ?? internalSelected;
-  const handleSelect = (0, import_react50.useCallback)(
+  const handleSelect = (0, import_react51.useCallback)(
     (key) => {
       if (controlledSelected === void 0) {
         setInternalSelected(key);
@@ -19948,14 +20146,14 @@ function ContentSwitcher({
       padding: 3
     } : {}
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("div", { "data-testid": dataTestId, style: containerStyle, role: "tablist", children: segments.map((seg) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime79.jsx)("div", { "data-testid": dataTestId, style: containerStyle, role: "tablist", children: segments.map((seg) => {
     const isSelected = selected === seg.key;
     const isDisabled = seg.disabled ?? false;
     const segmentStyle = {
       ...variant === "bar" ? barSegmentStyle(isSelected, isDisabled, sizeStyle) : pillSegmentStyle(isSelected, isDisabled, sizeStyle),
       flex: fullWidth ? 1 : void 0
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime78.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime79.jsxs)(
       "button",
       {
         role: "tab",
@@ -19969,9 +20167,9 @@ function ContentSwitcher({
         },
         style: segmentStyle,
         children: [
-          seg.icon ? /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("span", { style: { display: "flex", alignItems: "center", marginRight: 6 }, children: seg.icon }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("span", { children: seg.label }),
-          seg.badge !== void 0 && seg.badge > 0 ? /* @__PURE__ */ (0, import_jsx_runtime78.jsx)("span", { style: badgeStyle, children: seg.badge > 99 ? "99+" : seg.badge }) : null
+          seg.icon ? /* @__PURE__ */ (0, import_jsx_runtime79.jsx)("span", { style: { display: "flex", alignItems: "center", marginRight: 6 }, children: seg.icon }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime79.jsx)("span", { children: seg.label }),
+          seg.badge !== void 0 && seg.badge > 0 ? /* @__PURE__ */ (0, import_jsx_runtime79.jsx)("span", { style: badgeStyle, children: seg.badge > 99 ? "99+" : seg.badge }) : null
         ]
       },
       seg.key
@@ -20034,8 +20232,8 @@ var badgeStyle = {
 };
 
 // src/components/ContextMenu.tsx
-var import_react51 = require("react");
-var import_jsx_runtime79 = require("react/jsx-runtime");
+var import_react52 = require("react");
+var import_jsx_runtime80 = require("react/jsx-runtime");
 var MENU_STYLE = {
   position: "fixed",
   zIndex: 9999,
@@ -20072,7 +20270,7 @@ var SHORTCUT_STYLE = {
   fontFamily: "monospace"
 };
 function useClickOutside(ref, handler, enabled) {
-  (0, import_react51.useEffect)(() => {
+  (0, import_react52.useEffect)(() => {
     if (!enabled) return;
     const listener = (e) => {
       if (ref.current && !ref.current.contains(e.target)) {
@@ -20096,9 +20294,9 @@ function ContextMenu({
   onClose,
   width = 200
 }) {
-  const menuRef = (0, import_react51.useRef)(null);
-  const [adjustedPos, setAdjustedPos] = (0, import_react51.useState)({ x, y });
-  (0, import_react51.useEffect)(() => {
+  const menuRef = (0, import_react52.useRef)(null);
+  const [adjustedPos, setAdjustedPos] = (0, import_react52.useState)({ x, y });
+  (0, import_react52.useEffect)(() => {
     if (!open) return;
     const menuEl = menuRef.current;
     if (!menuEl) {
@@ -20121,7 +20319,7 @@ function ContextMenu({
     setAdjustedPos({ x: adjustedX, y: adjustedY });
   }, [open, x, y]);
   useClickOutside(menuRef, onClose, open);
-  (0, import_react51.useEffect)(() => {
+  (0, import_react52.useEffect)(() => {
     if (!open) return;
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -20131,14 +20329,14 @@ function ContextMenu({
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, onClose]);
-  (0, import_react51.useEffect)(() => {
+  (0, import_react52.useEffect)(() => {
     if (!open) return;
     const handleScroll = () => onClose();
     window.addEventListener("scroll", handleScroll, true);
     return () => window.removeEventListener("scroll", handleScroll, true);
   }, [open, onClose]);
   if (!open) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime79.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
     "div",
     {
       ref: menuRef,
@@ -20152,11 +20350,11 @@ function ContextMenu({
       onContextMenu: (e) => e.preventDefault(),
       children: items.map((entry) => {
         if ("kind" in entry && entry.kind === "separator") {
-          return /* @__PURE__ */ (0, import_jsx_runtime79.jsx)("div", { style: SEPARATOR_STYLE }, `sep-${Math.random()}`);
+          return /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { style: SEPARATOR_STYLE }, `sep-${Math.random()}`);
         }
         const item = entry;
         const isDisabled = item.disabled ?? false;
-        return /* @__PURE__ */ (0, import_jsx_runtime79.jsxs)(
+        return /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)(
           "div",
           {
             role: "menuitem",
@@ -20182,11 +20380,11 @@ function ContextMenu({
               e.currentTarget.style.background = "transparent";
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime79.jsxs)("span", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [
-                item.icon && /* @__PURE__ */ (0, import_jsx_runtime79.jsx)("span", { style: { display: "flex", fontSize: 16 }, children: item.icon }),
+              /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("span", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [
+                item.icon && /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("span", { style: { display: "flex", fontSize: 16 }, children: item.icon }),
                 item.label
               ] }),
-              item.shortcut && /* @__PURE__ */ (0, import_jsx_runtime79.jsx)("span", { style: SHORTCUT_STYLE, children: item.shortcut })
+              item.shortcut && /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("span", { style: SHORTCUT_STYLE, children: item.shortcut })
             ]
           },
           item.key
@@ -20197,8 +20395,8 @@ function ContextMenu({
 }
 
 // src/components/DateRangePicker.tsx
-var import_react52 = require("react");
-var import_jsx_runtime80 = require("react/jsx-runtime");
+var import_react53 = require("react");
+var import_jsx_runtime81 = require("react/jsx-runtime");
 var DAY_NAMES2 = ["\u65E5", "\u4E00", "\u4E8C", "\u4E09", "\u56DB", "\u4E94", "\u516D"];
 var MONTH_NAMES2 = [
   "1\u6708",
@@ -20300,22 +20498,22 @@ var DateRangePicker = ({
   style,
   className
 }) => {
-  const [open, setOpen] = (0, import_react52.useState)(false);
-  const containerRef = (0, import_react52.useRef)(null);
+  const [open, setOpen] = (0, import_react53.useState)(false);
+  const containerRef = (0, import_react53.useRef)(null);
   const todayDate = /* @__PURE__ */ new Date();
-  const [leftYear, setLeftYear] = (0, import_react52.useState)(todayDate.getFullYear());
-  const [leftMonth, setLeftMonth] = (0, import_react52.useState)(todayDate.getMonth());
-  const [rightYear, setRightYear] = (0, import_react52.useState)(
+  const [leftYear, setLeftYear] = (0, import_react53.useState)(todayDate.getFullYear());
+  const [leftMonth, setLeftMonth] = (0, import_react53.useState)(todayDate.getMonth());
+  const [rightYear, setRightYear] = (0, import_react53.useState)(
     todayDate.getMonth() === 11 ? todayDate.getFullYear() + 1 : todayDate.getFullYear()
   );
-  const [rightMonth, setRightMonth] = (0, import_react52.useState)(
+  const [rightMonth, setRightMonth] = (0, import_react53.useState)(
     todayDate.getMonth() === 11 ? 0 : todayDate.getMonth() + 1
   );
-  const [selecting, setSelecting] = (0, import_react52.useState)("start");
-  const [hoverDate, setHoverDate] = (0, import_react52.useState)(null);
+  const [selecting, setSelecting] = (0, import_react53.useState)("start");
+  const [hoverDate, setHoverDate] = (0, import_react53.useState)(null);
   const startParsed = value?.start ? parseDate(value.start) : null;
   const endParsed = value?.end ? parseDate(value.end) : null;
-  (0, import_react52.useEffect)(() => {
+  (0, import_react53.useEffect)(() => {
     if (!open) return;
     const handler = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -20325,7 +20523,7 @@ var DateRangePicker = ({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
-  const handleDayClick = (0, import_react52.useCallback)(
+  const handleDayClick = (0, import_react53.useCallback)(
     (year, month, day) => {
       if (disabled) return;
       const clickedDate = formatDate(year, month, day);
@@ -20365,7 +20563,7 @@ var DateRangePicker = ({
     },
     [disabled, min, max, onChange, selecting, value]
   );
-  const handlePresetClick = (0, import_react52.useCallback)(
+  const handlePresetClick = (0, import_react53.useCallback)(
     (preset) => {
       const range = preset.getValue();
       onChange?.(range);
@@ -20374,7 +20572,7 @@ var DateRangePicker = ({
     },
     [onChange]
   );
-  const handleClear = (0, import_react52.useCallback)(() => {
+  const handleClear = (0, import_react53.useCallback)(() => {
     onChange?.({ start: "", end: "" });
     setSelecting("start");
   }, [onChange]);
@@ -20383,7 +20581,7 @@ var DateRangePicker = ({
     const firstDay = getFirstDayOfMonth2(year, month);
     const cells = [];
     for (let i = 0; i < firstDay; i++) {
-      cells.push(/* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-day drp-day--empty" }, `empty-${i}`));
+      cells.push(/* @__PURE__ */ (0, import_jsx_runtime81.jsx)("div", { className: "drp-day drp-day--empty" }, `empty-${i}`));
     }
     for (let day = 1; day <= daysInMonth; day++) {
       const ymd = { year, month, day };
@@ -20408,7 +20606,7 @@ var DateRangePicker = ({
       if ((inRange || inHoverRange) && !isStart && !isEnd)
         classes.push("drp-day--in-range");
       cells.push(
-        /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
           "button",
           {
             type: "button",
@@ -20424,9 +20622,9 @@ var DateRangePicker = ({
         )
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("div", { className: "drp-calendar", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("div", { className: "drp-calendar-header", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)("div", { className: "drp-calendar", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)("div", { className: "drp-calendar-header", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
           "button",
           {
             type: "button",
@@ -20436,12 +20634,12 @@ var DateRangePicker = ({
             children: "\u2039"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("span", { className: "drp-month-label", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)("span", { className: "drp-month-label", children: [
           year,
           "\u5E74 ",
           MONTH_NAMES2[month]
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
           "button",
           {
             type: "button",
@@ -20452,25 +20650,25 @@ var DateRangePicker = ({
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-day-header", children: DAY_NAMES2.map((n) => /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-day-name", children: n }, n)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-day-grid", children: cells })
+      /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("div", { className: "drp-day-header", children: DAY_NAMES2.map((n) => /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("div", { className: "drp-day-name", children: n }, n)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("div", { className: "drp-day-grid", children: cells })
     ] });
   };
   const displayText = value?.start && value?.end ? `${value.start} ~ ${value.end}` : value?.start ? `${value.start} ~ ` : "";
   const hasValue = value?.start || value?.end;
-  return /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
     "div",
     {
       ref: containerRef,
       className: `drp-root${className ? ` ${className}` : ""}`,
       style,
       children: [
-        label && /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("label", { className: "drp-label", children: [
+        label && /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)("label", { className: "drp-label", children: [
           label,
-          required && /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("span", { className: "drp-required", children: "*" })
+          required && /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("span", { className: "drp-required", children: "*" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("div", { className: "drp-trigger-wrapper", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)("div", { className: "drp-trigger-wrapper", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
             "input",
             {
               type: "text",
@@ -20485,7 +20683,7 @@ var DateRangePicker = ({
               role: "combobox"
             }
           ),
-          hasValue && !disabled && /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
+          hasValue && !disabled && /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
             "button",
             {
               type: "button",
@@ -20499,8 +20697,8 @@ var DateRangePicker = ({
             }
           )
         ] }),
-        open && /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("div", { className: "drp-panel", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-presets", children: presets.map((p) => /* @__PURE__ */ (0, import_jsx_runtime80.jsx)(
+        open && /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)("div", { className: "drp-panel", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("div", { className: "drp-presets", children: presets.map((p) => /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
             "button",
             {
               type: "button",
@@ -20510,7 +20708,7 @@ var DateRangePicker = ({
             },
             p.label
           )) }),
-          /* @__PURE__ */ (0, import_jsx_runtime80.jsxs)("div", { className: "drp-calendars", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)("div", { className: "drp-calendars", children: [
             renderCalendar(leftYear, leftMonth, () => {
               if (leftMonth === 0) {
                 setLeftYear(leftYear - 1);
@@ -20561,9 +20759,9 @@ var DateRangePicker = ({
             })
           ] })
         ] }),
-        error && /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-error", children: error }),
-        helpText && !error && /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("div", { className: "drp-help", children: helpText }),
-        /* @__PURE__ */ (0, import_jsx_runtime80.jsx)("style", { children: `
+        error && /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("div", { className: "drp-error", children: error }),
+        helpText && !error && /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("div", { className: "drp-help", children: helpText }),
+        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("style", { children: `
         .drp-root {
           position: relative;
           display: inline-flex;
@@ -20779,7 +20977,7 @@ var DateRangePicker = ({
 var DateRangePicker_default = DateRangePicker;
 
 // src/components/MemberTierDistribution.tsx
-var import_jsx_runtime81 = require("react/jsx-runtime");
+var import_jsx_runtime82 = require("react/jsx-runtime");
 var TIER_PALETTE = {
   diamond: "#7c3aed",
   // 钻石 - 紫
@@ -20824,9 +21022,9 @@ function GrowthArrow({ growth }) {
   const isDown = growth < 0;
   const absPct = (Math.abs(growth) * 100).toFixed(1);
   if (!isUp && !isDown) {
-    return /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("span", { style: { fontSize: 11, color: "#64748b", fontWeight: 500 }, children: "\u2192 \u6301\u5E73" });
+    return /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("span", { style: { fontSize: 11, color: "#64748b", fontWeight: 500 }, children: "\u2192 \u6301\u5E73" });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
     "span",
     {
       style: {
@@ -20853,7 +21051,7 @@ function TierListItem({
   const pct = total > 0 ? (tier.count / total * 100).toFixed(1) : "0.0";
   const icon = tier.icon ?? TIER_ICONS[tier.key] ?? "\u{1F4CC}";
   const color = tier.color ?? TIER_PALETTE[tier.key] ?? FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
-  return /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
     "div",
     {
       onClick: () => onTierClick?.(tier),
@@ -20878,7 +21076,7 @@ function TierListItem({
         }
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
           "span",
           {
             style: {
@@ -20890,8 +21088,8 @@ function TierListItem({
             }
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("span", { style: { fontSize: 16 }, children: icon }),
-        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("span", { style: { fontSize: 16 }, children: icon }),
+        /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
           "span",
           {
             style: {
@@ -20903,7 +21101,7 @@ function TierListItem({
             children: tier.tier
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
           "span",
           {
             style: {
@@ -20919,7 +21117,7 @@ function TierListItem({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
           "span",
           {
             style: {
@@ -20932,7 +21130,7 @@ function TierListItem({
             children: tier.count.toLocaleString()
           }
         ),
-        showTrends && /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("span", { style: { minWidth: 56, textAlign: "right" }, children: /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(GrowthArrow, { growth: tier.growth }) })
+        showTrends && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("span", { style: { minWidth: 56, textAlign: "right" }, children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(GrowthArrow, { growth: tier.growth }) })
       ]
     }
   );
@@ -20950,7 +21148,7 @@ function MemberTierDistribution({
 }) {
   void height;
   if (!tiers || tiers.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
       "div",
       {
         className,
@@ -20967,8 +21165,8 @@ function MemberTierDistribution({
           maxWidth: width
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("span", { style: { fontSize: 32 }, children: "\u{1F465}" }),
-          /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("span", { style: { fontSize: 14, color: "#64748b" }, children: emptyText })
+          /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("span", { style: { fontSize: 32 }, children: "\u{1F465}" }),
+          /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("span", { style: { fontSize: 14, color: "#64748b" }, children: emptyText })
         ]
       }
     );
@@ -20980,7 +21178,7 @@ function MemberTierDistribution({
     color: t.color ?? TIER_PALETTE[t.key] ?? FALLBACK_PALETTE[i % FALLBACK_PALETTE.length]
   }));
   const chartPalette = chartData.map((d) => d.color ?? "#64748b");
-  return /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
     "div",
     {
       className,
@@ -20992,7 +21190,7 @@ function MemberTierDistribution({
         maxWidth: width
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
           "div",
           {
             style: {
@@ -21002,11 +21200,11 @@ function MemberTierDistribution({
               marginBottom: 14
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)("span", { style: { fontSize: 14, fontWeight: 600, color: "#cbd5e1" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("span", { style: { fontSize: 14, fontWeight: 600, color: "#cbd5e1" }, children: [
                 "\u{1F465} ",
                 title
               ] }),
-              showTotal && total > 0 && /* @__PURE__ */ (0, import_jsx_runtime81.jsxs)(
+              showTotal && total > 0 && /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
                 "span",
                 {
                   style: {
@@ -21026,7 +21224,7 @@ function MemberTierDistribution({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("div", { style: { display: "flex", justifyContent: "center", marginBottom: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("div", { style: { display: "flex", justifyContent: "center", marginBottom: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
           Chart,
           {
             type: "donut",
@@ -21037,7 +21235,7 @@ function MemberTierDistribution({
             showValues: false
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime81.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: tiers.map((tier, index) => /* @__PURE__ */ (0, import_jsx_runtime81.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: tiers.map((tier, index) => /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
           TierListItem,
           {
             tier,
@@ -21054,14 +21252,14 @@ function MemberTierDistribution({
 }
 
 // src/components/NotificationCenter.tsx
-var import_react53 = require("react");
-var import_jsx_runtime82 = require("react/jsx-runtime");
+var import_react54 = require("react");
+var import_jsx_runtime83 = require("react/jsx-runtime");
 var SEVERITY_ICONS = {
-  info: /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("circle", { cx: "12", cy: "12", r: "10", stroke: "#60a5fa", strokeWidth: "2" }),
-    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M12 8v4m0 4h.01", stroke: "#60a5fa", strokeWidth: "2", strokeLinecap: "round" })
+  info: /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("circle", { cx: "12", cy: "12", r: "10", stroke: "#60a5fa", strokeWidth: "2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("path", { d: "M12 8v4m0 4h.01", stroke: "#60a5fa", strokeWidth: "2", strokeLinecap: "round" })
   ] }),
-  warning: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+  warning: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
     "path",
     {
       d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z",
@@ -21071,13 +21269,13 @@ var SEVERITY_ICONS = {
       strokeLinejoin: "round"
     }
   ) }),
-  error: /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("circle", { cx: "12", cy: "12", r: "10", stroke: "#f87171", strokeWidth: "2" }),
-    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M15 9l-6 6m0-6l6 6", stroke: "#f87171", strokeWidth: "2", strokeLinecap: "round" })
+  error: /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("circle", { cx: "12", cy: "12", r: "10", stroke: "#f87171", strokeWidth: "2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("path", { d: "M15 9l-6 6m0-6l6 6", stroke: "#f87171", strokeWidth: "2", strokeLinecap: "round" })
   ] }),
-  success: /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("circle", { cx: "12", cy: "12", r: "10", stroke: "#4ade80", strokeWidth: "2" }),
-    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M9 12l2 2 4-4", stroke: "#4ade80", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" })
+  success: /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("circle", { cx: "12", cy: "12", r: "10", stroke: "#4ade80", strokeWidth: "2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("path", { d: "M9 12l2 2 4-4", stroke: "#4ade80", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" })
   ] })
 };
 var CATEGORY_LABELS = {
@@ -21116,8 +21314,8 @@ function NotificationSummaryBar({
   onClearRead
 }) {
   const categories = ["all", ...Object.keys(CATEGORY_LABELS)];
-  return /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("div", { style: { borderBottom: "1px solid rgba(148, 163, 184, 0.15)" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: { borderBottom: "1px solid rgba(148, 163, 184, 0.15)" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)(
       "div",
       {
         style: {
@@ -21128,9 +21326,9 @@ function NotificationSummaryBar({
           fontSize: 13
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("span", { style: { fontWeight: 600, color: "#f1f5f9" }, children: "\u901A\u77E5" }),
-            summary.unread > 0 && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { fontWeight: 600, color: "#f1f5f9" }, children: "\u901A\u77E5" }),
+            summary.unread > 0 && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
               "span",
               {
                 style: {
@@ -21146,8 +21344,8 @@ function NotificationSummaryBar({
               }
             )
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
-            onMarkAllAsRead && summary.unread > 0 && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
+            onMarkAllAsRead && summary.unread > 0 && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
               "button",
               {
                 type: "button",
@@ -21163,7 +21361,7 @@ function NotificationSummaryBar({
                 children: "\u5168\u90E8\u5DF2\u8BFB"
               }
             ),
-            onClearRead && summary.total - summary.unread > 0 && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+            onClearRead && summary.total - summary.unread > 0 && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
               "button",
               {
                 type: "button",
@@ -21183,7 +21381,7 @@ function NotificationSummaryBar({
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
       "div",
       {
         style: {
@@ -21196,7 +21394,7 @@ function NotificationSummaryBar({
           const isActive = cat === activeCategory;
           const count = cat === "all" ? summary.total : summary.byCategory[cat] ?? 0;
           const color = cat === "all" ? "#94a3b8" : CATEGORY_COLORS[cat];
-          return /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+          return /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)(
             "button",
             {
               type: "button",
@@ -21218,7 +21416,7 @@ function NotificationSummaryBar({
               },
               children: [
                 cat === "all" ? "\u5168\u90E8" : CATEGORY_LABELS[cat],
-                count > 0 && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("span", { style: { opacity: 0.7 }, children: count })
+                count > 0 && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { opacity: 0.7 }, children: count })
               ]
             },
             cat
@@ -21229,8 +21427,8 @@ function NotificationSummaryBar({
   ] });
 }
 function NotificationItemRow({ item, onClick, onMarkAsRead, onDelete }) {
-  const [actionsVisible, setActionsVisible] = (0, import_react53.useState)(false);
-  return /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+  const [actionsVisible, setActionsVisible] = (0, import_react54.useState)(false);
+  return /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)(
     "div",
     {
       style: {
@@ -21251,7 +21449,7 @@ function NotificationItemRow({ item, onClick, onMarkAsRead, onDelete }) {
         if (onClick) onClick(item);
       },
       children: [
-        !item.read && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+        !item.read && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
           "div",
           {
             style: {
@@ -21264,9 +21462,9 @@ function NotificationItemRow({ item, onClick, onMarkAsRead, onDelete }) {
             }
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("div", { style: { flexShrink: 0, marginTop: 1, opacity: item.read ? 0.5 : 1 }, children: SEVERITY_ICONS[item.severity] }),
-        /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: { flexShrink: 0, marginTop: 1, opacity: item.read ? 0.5 : 1 }, children: SEVERITY_ICONS[item.severity] }),
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
             "div",
             {
               style: {
@@ -21281,7 +21479,7 @@ function NotificationItemRow({ item, onClick, onMarkAsRead, onDelete }) {
               children: item.title
             }
           ),
-          item.description && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+          item.description && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
             "div",
             {
               style: {
@@ -21298,7 +21496,7 @@ function NotificationItemRow({ item, onClick, onMarkAsRead, onDelete }) {
               children: item.description
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)(
             "div",
             {
               style: {
@@ -21310,7 +21508,7 @@ function NotificationItemRow({ item, onClick, onMarkAsRead, onDelete }) {
                 color: "#475569"
               },
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
                   "span",
                   {
                     style: {
@@ -21324,18 +21522,18 @@ function NotificationItemRow({ item, onClick, onMarkAsRead, onDelete }) {
                     children: CATEGORY_LABELS[item.category]
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("span", { children: formatTime2(item.timestamp) })
+                /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { children: formatTime2(item.timestamp) })
               ]
             }
           ),
-          item.actions && item.actions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("div", { style: { display: "flex", gap: 6, marginTop: 6 }, children: item.actions.map((action, i) => {
+          item.actions && item.actions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: { display: "flex", gap: 6, marginTop: 6 }, children: item.actions.map((action, i) => {
             const btnColors = {
               primary: { bg: "#3b82f6", color: "#fff" },
               secondary: { bg: "rgba(148, 163, 184, 0.15)", color: "#cbd5e1" },
               danger: { bg: "#ef4444", color: "#fff" }
             };
             const c = btnColors[action.variant ?? "secondary"] ?? btnColors.secondary;
-            return /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+            return /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
               "button",
               {
                 type: "button",
@@ -21359,7 +21557,7 @@ function NotificationItemRow({ item, onClick, onMarkAsRead, onDelete }) {
             );
           }) })
         ] }),
-        actionsVisible && /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+        actionsVisible && /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)(
           "div",
           {
             style: {
@@ -21374,7 +21572,7 @@ function NotificationItemRow({ item, onClick, onMarkAsRead, onDelete }) {
               padding: 2
             },
             children: [
-              !item.read && onMarkAsRead && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+              !item.read && onMarkAsRead && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
                 "button",
                 {
                   type: "button",
@@ -21384,10 +21582,10 @@ function NotificationItemRow({ item, onClick, onMarkAsRead, onDelete }) {
                     onMarkAsRead(item.id);
                   },
                   style: iconBtnStyle,
-                  children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "#4ade80", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M5 13l4 4L19 7", strokeLinecap: "round", strokeLinejoin: "round" }) })
+                  children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "#4ade80", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("path", { d: "M5 13l4 4L19 7", strokeLinecap: "round", strokeLinejoin: "round" }) })
                 }
               ),
-              onDelete && /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+              onDelete && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
                 "button",
                 {
                   type: "button",
@@ -21397,7 +21595,7 @@ function NotificationItemRow({ item, onClick, onMarkAsRead, onDelete }) {
                     onDelete(item.id);
                   },
                   style: iconBtnStyle,
-                  children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "#f87171", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M6 18L18 6M6 6l12 12", strokeLinecap: "round", strokeLinejoin: "round" }) })
+                  children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "#f87171", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("path", { d: "M6 18L18 6M6 6l12 12", strokeLinecap: "round", strokeLinejoin: "round" }) })
                 }
               )
             ]
@@ -21426,8 +21624,8 @@ function NotificationCenter({
   emptyText = "\u6682\u65E0\u901A\u77E5",
   maxHeight = 480
 }) {
-  const [activeCategory, setActiveCategory] = (0, import_react53.useState)("all");
-  const summary = (0, import_react53.useMemo)(() => {
+  const [activeCategory, setActiveCategory] = (0, import_react54.useState)("all");
+  const summary = (0, import_react54.useMemo)(() => {
     const total = notifications.length;
     const unread = notifications.filter((n) => !n.read).length;
     const byCategory = {};
@@ -21436,11 +21634,11 @@ function NotificationCenter({
     }
     return { total, unread, byCategory };
   }, [notifications]);
-  const filtered = (0, import_react53.useMemo)(() => {
+  const filtered = (0, import_react54.useMemo)(() => {
     if (activeCategory === "all") return notifications;
     return notifications.filter((n) => n.category === activeCategory);
   }, [notifications, activeCategory]);
-  return /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)(
     "div",
     {
       style: {
@@ -21457,7 +21655,7 @@ function NotificationCenter({
       role: "region",
       "aria-label": "\u901A\u77E5\u4E2D\u5FC3",
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
           NotificationSummaryBar,
           {
             summary,
@@ -21467,7 +21665,7 @@ function NotificationCenter({
             onClearRead
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
           "div",
           {
             style: {
@@ -21476,7 +21674,7 @@ function NotificationCenter({
               overflowY: "auto"
             },
             role: "list",
-            children: filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)(
+            children: filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)(
               "div",
               {
                 style: {
@@ -21490,14 +21688,14 @@ function NotificationCenter({
                   gap: 8
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime82.jsxs)("svg", { width: "40", height: "40", viewBox: "0 0 24 24", fill: "none", stroke: "#334155", strokeWidth: "1.5", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M13.73 21a2 2 0 01-3.46 0M18 8A6 6 0 106 8c0 7-3 9-3 9h18s-3-2-3-9", strokeLinecap: "round", strokeLinejoin: "round" }),
-                    /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("path", { d: "M18 8A6 6 0 106 8", opacity: "0" })
+                  /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("svg", { width: "40", height: "40", viewBox: "0 0 24 24", fill: "none", stroke: "#334155", strokeWidth: "1.5", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("path", { d: "M13.73 21a2 2 0 01-3.46 0M18 8A6 6 0 106 8c0 7-3 9-3 9h18s-3-2-3-9", strokeLinecap: "round", strokeLinejoin: "round" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("path", { d: "M18 8A6 6 0 106 8", opacity: "0" })
                   ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime82.jsx)("span", { children: emptyText })
+                  /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { children: emptyText })
                 ]
               }
-            ) : filtered.map((item) => /* @__PURE__ */ (0, import_jsx_runtime82.jsx)(
+            ) : filtered.map((item) => /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
               NotificationItemRow,
               {
                 item,
@@ -21514,7 +21712,7 @@ function NotificationCenter({
   );
 }
 function useNotificationSummary(notifications) {
-  return (0, import_react53.useMemo)(() => {
+  return (0, import_react54.useMemo)(() => {
     const total = notifications.length;
     const unread = notifications.filter((n) => !n.read).length;
     const byCategory = {};
@@ -21526,7 +21724,7 @@ function useNotificationSummary(notifications) {
 }
 
 // src/components/ConfigurationPosturePanel.tsx
-var import_jsx_runtime83 = require("react/jsx-runtime");
+var import_jsx_runtime84 = require("react/jsx-runtime");
 var STYLES3 = {
   container: {
     display: "grid",
@@ -21606,37 +21804,37 @@ function ConfigurationPosturePanel({
   const overallStatus = secrets.expired > 0 || certificates.expired > 0 ? "danger" : secrets.rotationDue > 0 || certificates.expiringSoon > 0 ? "warning" : "success";
   const overallLabel = overallStatus === "danger" ? "\u6709\u98CE\u9669" : overallStatus === "warning" ? "\u9700\u5173\u6CE8" : "\u5065\u5EB7";
   const progressVariant = overallStatus === "danger" ? "danger" : overallStatus === "warning" ? "warning" : "success";
-  return /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.container, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.headerRow, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("h2", { style: STYLES3.title, children: title }),
-      /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(StatusBadge, { label: overallLabel, variant: overallStatus, dot: true, size: "sm" })
+  return /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { style: STYLES3.container, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { style: STYLES3.headerRow, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("h2", { style: STYLES3.title, children: title }),
+      /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(StatusBadge, { label: overallLabel, variant: overallStatus, dot: true, size: "sm" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.grid, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.card, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: STYLES3.sectionTitle, children: "\u5BC6\u94A5" }),
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.rowLabel, children: "\u603B\u6570" }),
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.rowValue, children: secrets.total })
+    /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { style: STYLES3.grid, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { style: STYLES3.card, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { style: STYLES3.sectionTitle, children: "\u5BC6\u94A5" }),
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: STYLES3.rowLabel, children: "\u603B\u6570" }),
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: STYLES3.rowValue, children: secrets.total })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.rowLabel, children: "\u6B63\u5E38" }),
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { ...STYLES3.rowValue, color: "#4ade80" }, children: secretHealthy })
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: STYLES3.rowLabel, children: "\u6B63\u5E38" }),
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { ...STYLES3.rowValue, color: "#4ade80" }, children: secretHealthy })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("span", { style: STYLES3.rowLabel, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("span", { style: STYLES3.rowLabel, children: [
             "\u5F85\u8F6E\u6362",
-            secrets.rotationDue > 0 ? /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.badgeWrap, children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(StatusBadge, { label: String(secrets.rotationDue), variant: "warning", size: "sm" }) }) : null
+            secrets.rotationDue > 0 ? /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: STYLES3.badgeWrap, children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(StatusBadge, { label: String(secrets.rotationDue), variant: "warning", size: "sm" }) }) : null
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { ...STYLES3.rowValue, color: secrets.rotationDue > 0 ? "#f59e0b" : "#e2e8f0" }, children: secrets.rotationDue })
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { ...STYLES3.rowValue, color: secrets.rotationDue > 0 ? "#f59e0b" : "#e2e8f0" }, children: secrets.rotationDue })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("span", { style: STYLES3.rowLabel, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("span", { style: STYLES3.rowLabel, children: [
             "\u5DF2\u8FC7\u671F",
-            secrets.expired > 0 ? /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.badgeWrap, children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(StatusBadge, { label: String(secrets.expired), variant: "danger", size: "sm" }) }) : null
+            secrets.expired > 0 ? /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: STYLES3.badgeWrap, children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(StatusBadge, { label: String(secrets.expired), variant: "danger", size: "sm" }) }) : null
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { ...STYLES3.rowValue, color: secrets.expired > 0 ? "#ef4444" : "#e2e8f0" }, children: secrets.expired })
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { ...STYLES3.rowValue, color: secrets.expired > 0 ? "#ef4444" : "#e2e8f0" }, children: secrets.expired })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: STYLES3.progressBar, children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { style: STYLES3.progressBar, children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
           Progress,
           {
             value: secrets.total > 0 ? secretHealthy / secrets.total * 100 : 100,
@@ -21644,33 +21842,33 @@ function ConfigurationPosturePanel({
             height: 6
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: STYLES3.healthLine, children: secretRiskPct > 0 ? `${secretRiskPct}% \u5BC6\u94A5\u5B58\u5728\u8F6E\u6362\u6216\u8FC7\u671F\u98CE\u9669` : "\u5168\u90E8\u5BC6\u94A5\u5904\u4E8E\u5065\u5EB7\u72B6\u6001" })
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { style: STYLES3.healthLine, children: secretRiskPct > 0 ? `${secretRiskPct}% \u5BC6\u94A5\u5B58\u5728\u8F6E\u6362\u6216\u8FC7\u671F\u98CE\u9669` : "\u5168\u90E8\u5BC6\u94A5\u5904\u4E8E\u5065\u5EB7\u72B6\u6001" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.card, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: STYLES3.sectionTitle, children: "\u8BC1\u4E66" }),
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.rowLabel, children: "\u603B\u6570" }),
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.rowValue, children: certificates.total })
+      /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { style: STYLES3.card, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { style: STYLES3.sectionTitle, children: "\u8BC1\u4E66" }),
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: STYLES3.rowLabel, children: "\u603B\u6570" }),
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: STYLES3.rowValue, children: certificates.total })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.rowLabel, children: "\u6709\u6548" }),
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { ...STYLES3.rowValue, color: "#4ade80" }, children: certHealthy })
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: STYLES3.rowLabel, children: "\u6709\u6548" }),
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { ...STYLES3.rowValue, color: "#4ade80" }, children: certHealthy })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("span", { style: STYLES3.rowLabel, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("span", { style: STYLES3.rowLabel, children: [
             "\u5373\u5C06\u5230\u671F",
-            certificates.expiringSoon > 0 ? /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.badgeWrap, children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(StatusBadge, { label: String(certificates.expiringSoon), variant: "warning", size: "sm" }) }) : null
+            certificates.expiringSoon > 0 ? /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: STYLES3.badgeWrap, children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(StatusBadge, { label: String(certificates.expiringSoon), variant: "warning", size: "sm" }) }) : null
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { ...STYLES3.rowValue, color: certificates.expiringSoon > 0 ? "#f59e0b" : "#e2e8f0" }, children: certificates.expiringSoon })
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { ...STYLES3.rowValue, color: certificates.expiringSoon > 0 ? "#f59e0b" : "#e2e8f0" }, children: certificates.expiringSoon })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("div", { style: STYLES3.row, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)("span", { style: STYLES3.rowLabel, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { style: STYLES3.row, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("span", { style: STYLES3.rowLabel, children: [
             "\u5DF2\u8FC7\u671F",
-            certificates.expired > 0 ? /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: STYLES3.badgeWrap, children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(StatusBadge, { label: String(certificates.expired), variant: "danger", size: "sm" }) }) : null
+            certificates.expired > 0 ? /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: STYLES3.badgeWrap, children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(StatusBadge, { label: String(certificates.expired), variant: "danger", size: "sm" }) }) : null
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("span", { style: { ...STYLES3.rowValue, color: certificates.expired > 0 ? "#ef4444" : "#e2e8f0" }, children: certificates.expired })
+          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { ...STYLES3.rowValue, color: certificates.expired > 0 ? "#ef4444" : "#e2e8f0" }, children: certificates.expired })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: STYLES3.progressBar, children: /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { style: STYLES3.progressBar, children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
           Progress,
           {
             value: certificates.total > 0 ? certHealthy / certificates.total * 100 : 100,
@@ -21678,15 +21876,15 @@ function ConfigurationPosturePanel({
             height: 6
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: STYLES3.healthLine, children: certRiskPct > 0 ? `${certRiskPct}% \u8BC1\u4E66\u5B58\u5728\u5230\u671F\u6216\u5373\u5C06\u5230\u671F\u98CE\u9669` : "\u5168\u90E8\u8BC1\u4E66\u5904\u4E8E\u6709\u6548\u72B6\u6001" })
+        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { style: STYLES3.healthLine, children: certRiskPct > 0 ? `${certRiskPct}% \u8BC1\u4E66\u5B58\u5728\u5230\u671F\u6216\u5373\u5C06\u5230\u671F\u98CE\u9669` : "\u5168\u90E8\u8BC1\u4E66\u5904\u4E8E\u6709\u6548\u72B6\u6001" })
       ] })
     ] })
   ] });
 }
 
 // src/components/DecisionAuditTrail.tsx
-var import_react54 = require("react");
-var import_jsx_runtime84 = require("react/jsx-runtime");
+var import_react55 = require("react");
+var import_jsx_runtime85 = require("react/jsx-runtime");
 var ACTION_LABELS = {
   rule_evaluated: "\u89C4\u5219\u8BC4\u4F30",
   decision_applied: "\u51B3\u7B56\u6267\u884C",
@@ -21726,9 +21924,9 @@ function DecisionAuditTrail({
   compact = false,
   emptyText = "\u6682\u65E0\u5BA1\u8BA1\u8BB0\u5F55"
 }) {
-  const [currentPage, setCurrentPage] = (0, import_react54.useState)(1);
-  const [expandedId, setExpandedId] = (0, import_react54.useState)(null);
-  const filteredEntries = (0, import_react54.useMemo)(() => {
+  const [currentPage, setCurrentPage] = (0, import_react55.useState)(1);
+  const [expandedId, setExpandedId] = (0, import_react55.useState)(null);
+  const filteredEntries = (0, import_react55.useMemo)(() => {
     if (!filter) return entries;
     return entries.filter((e) => {
       if (filter.action && e.action !== filter.action) return false;
@@ -21772,7 +21970,7 @@ function DecisionAuditTrail({
       { label: "\u4E25\u91CD", value: summary.critical, color: SEVERITY_COLORS.critical },
       { label: "\u6210\u529F", value: summary.success, color: SEVERITY_COLORS.success }
     ];
-    return /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(
       "div",
       {
         style: {
@@ -21787,7 +21985,7 @@ function DecisionAuditTrail({
           fontSize: compact ? 12 : 13
         },
         children: [
-          items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+          items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(
             "div",
             {
               style: {
@@ -21796,7 +21994,7 @@ function DecisionAuditTrail({
                 gap: 4
               },
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
                   "span",
                   {
                     style: {
@@ -21808,13 +22006,13 @@ function DecisionAuditTrail({
                     }
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { color: "#6b7280" }, children: item.label }),
-                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { fontWeight: 600, color: "#1f2937" }, children: item.value })
+                /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("span", { style: { color: "#6b7280" }, children: item.label }),
+                /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("span", { style: { fontWeight: 600, color: "#1f2937" }, children: item.value })
               ]
             },
             item.label
           )),
-          summary.last24h > 0 && /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+          summary.last24h > 0 && /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(
             "div",
             {
               style: {
@@ -21835,7 +22033,7 @@ function DecisionAuditTrail({
   const renderFilterBar = () => {
     if (!onFilterChange) return null;
     const currentFilter = filter ?? {};
-    return /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(
       "div",
       {
         style: {
@@ -21847,7 +22045,7 @@ function DecisionAuditTrail({
           alignItems: "center"
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(
             "select",
             {
               value: currentFilter.action ?? "",
@@ -21865,12 +22063,12 @@ function DecisionAuditTrail({
               },
               "aria-label": "\u6309\u64CD\u4F5C\u7C7B\u578B\u8FC7\u6EE4",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: "", children: "\u5168\u90E8\u64CD\u4F5C" }),
-                Object.entries(ACTION_LABELS).map(([k, v]) => /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: k, children: v }, k))
+                /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("option", { value: "", children: "\u5168\u90E8\u64CD\u4F5C" }),
+                Object.entries(ACTION_LABELS).map(([k, v]) => /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("option", { value: k, children: v }, k))
               ]
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(
             "select",
             {
               value: currentFilter.severity ?? "",
@@ -21888,15 +22086,15 @@ function DecisionAuditTrail({
               },
               "aria-label": "\u6309\u4E25\u91CD\u7A0B\u5EA6\u8FC7\u6EE4",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: "", children: "\u5168\u90E8\u7EA7\u522B" }),
-                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: "info", children: "\u4FE1\u606F" }),
-                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: "warning", children: "\u8B66\u544A" }),
-                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: "critical", children: "\u4E25\u91CD" }),
-                /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("option", { value: "success", children: "\u6210\u529F" })
+                /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("option", { value: "", children: "\u5168\u90E8\u7EA7\u522B" }),
+                /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("option", { value: "info", children: "\u4FE1\u606F" }),
+                /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("option", { value: "warning", children: "\u8B66\u544A" }),
+                /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("option", { value: "critical", children: "\u4E25\u91CD" }),
+                /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("option", { value: "success", children: "\u6210\u529F" })
               ]
             }
           ),
-          filteredEntries.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("span", { style: { fontSize: 12, color: "#9ca3af", marginLeft: "auto" }, children: [
+          filteredEntries.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)("span", { style: { fontSize: 12, color: "#9ca3af", marginLeft: "auto" }, children: [
             filteredEntries.length,
             " \u6761\u8BB0\u5F55"
           ] })
@@ -21905,9 +22103,9 @@ function DecisionAuditTrail({
     );
   };
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className, style: { padding: 16 }, children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)("div", { className, style: { padding: 16 }, children: [
       renderSummaryBar(),
-      [1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+      [1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
         "div",
         {
           style: {
@@ -21922,10 +22120,10 @@ function DecisionAuditTrail({
       ))
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { className, style: { position: "relative" }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)("div", { className, style: { position: "relative" }, children: [
     renderSummaryBar(),
     renderFilterBar(),
-    filteredEntries.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+    filteredEntries.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
       "div",
       {
         style: {
@@ -21936,8 +22134,8 @@ function DecisionAuditTrail({
         },
         children: emptyText
       }
-    ) : /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(import_jsx_runtime84.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+    ) : /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(import_jsx_runtime85.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
         "div",
         {
           style: {
@@ -21950,7 +22148,7 @@ function DecisionAuditTrail({
           children: paginatedEntries.map((entry) => {
             const isExpanded = expandedId === entry.id;
             const severityColor = SEVERITY_COLORS[entry.severity];
-            return /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+            return /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(
               "div",
               {
                 role: "listitem",
@@ -21966,7 +22164,7 @@ function DecisionAuditTrail({
                   setExpandedId(isExpanded ? null : entry.id);
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+                  /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(
                     "div",
                     {
                       style: {
@@ -21976,7 +22174,7 @@ function DecisionAuditTrail({
                         padding: compact ? "8px 12px" : "10px 16px"
                       },
                       children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                        /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
                           "div",
                           {
                             style: {
@@ -21988,8 +22186,8 @@ function DecisionAuditTrail({
                             }
                           }
                         ),
-                        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { fontSize: compact ? 14 : 16, flexShrink: 0 }, children: ACTION_ICONS[entry.action] ?? "\u{1F4CB}" }),
-                        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                        /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("span", { style: { fontSize: compact ? 14 : 16, flexShrink: 0 }, children: ACTION_ICONS[entry.action] ?? "\u{1F4CB}" }),
+                        /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
                           StatusBadge,
                           {
                             variant: entry.severity === "critical" ? "error" : entry.severity === "warning" ? "warning" : entry.severity === "success" ? "success" : "default",
@@ -21997,7 +22195,7 @@ function DecisionAuditTrail({
                             size: "sm"
                           }
                         ),
-                        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                        /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
                           "span",
                           {
                             style: {
@@ -22011,7 +22209,7 @@ function DecisionAuditTrail({
                             children: entry.message
                           }
                         ),
-                        entry.ruleName && /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                        entry.ruleName && /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
                           "span",
                           {
                             style: {
@@ -22030,7 +22228,7 @@ function DecisionAuditTrail({
                             children: entry.ruleName
                           }
                         ),
-                        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                        /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
                           "span",
                           {
                             style: {
@@ -22043,7 +22241,7 @@ function DecisionAuditTrail({
                             children: entry.actor
                           }
                         ),
-                        /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                        /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
                           "span",
                           {
                             style: {
@@ -22056,7 +22254,7 @@ function DecisionAuditTrail({
                             children: formatTime3(entry.timestamp)
                           }
                         ),
-                        (entry.changes || entry.revertible || entry.entityId) && /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                        (entry.changes || entry.revertible || entry.entityId) && /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
                           "span",
                           {
                             style: {
@@ -22072,7 +22270,7 @@ function DecisionAuditTrail({
                       ]
                     }
                   ),
-                  isExpanded && /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)(
+                  isExpanded && /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(
                     "div",
                     {
                       style: {
@@ -22085,9 +22283,9 @@ function DecisionAuditTrail({
                         gap: 6
                       },
                       children: [
-                        entry.changes && /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { fontWeight: 500, marginRight: 4 }, children: "\u53D8\u66F4\u8BE6\u60C5:" }),
-                          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                        entry.changes && /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)("div", { children: [
+                          /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("span", { style: { fontWeight: 500, marginRight: 4 }, children: "\u53D8\u66F4\u8BE6\u60C5:" }),
+                          /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
                             "code",
                             {
                               style: {
@@ -22101,15 +22299,15 @@ function DecisionAuditTrail({
                             }
                           )
                         ] }),
-                        entry.entityType && entry.entityId && /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("div", { children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("span", { style: { fontWeight: 500, marginRight: 4 }, children: "\u5173\u8054\u5B9E\u4F53:" }),
-                          /* @__PURE__ */ (0, import_jsx_runtime84.jsxs)("span", { children: [
+                        entry.entityType && entry.entityId && /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)("div", { children: [
+                          /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("span", { style: { fontWeight: 500, marginRight: 4 }, children: "\u5173\u8054\u5B9E\u4F53:" }),
+                          /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)("span", { children: [
                             entry.entityType,
                             " / ",
                             entry.entityId
                           ] })
                         ] }),
-                        entry.revertible && onRevert && /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+                        entry.revertible && onRevert && /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
                           "button",
                           {
                             onClick: (e) => {
@@ -22139,7 +22337,7 @@ function DecisionAuditTrail({
           })
         }
       ),
-      filteredEntries.length > pageSize && /* @__PURE__ */ (0, import_jsx_runtime84.jsx)("div", { style: { marginTop: compact ? 8 : 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime84.jsx)(
+      filteredEntries.length > pageSize && /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("div", { style: { marginTop: compact ? 8 : 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
         Pagination,
         {
           page: currentPage,
@@ -22153,8 +22351,8 @@ function DecisionAuditTrail({
 }
 
 // src/components/ImagePreview.tsx
-var import_react55 = require("react");
-var import_jsx_runtime85 = require("react/jsx-runtime");
+var import_react56 = require("react");
+var import_jsx_runtime86 = require("react/jsx-runtime");
 var BACKDROP_STYLE = {
   position: "fixed",
   inset: 0,
@@ -22218,13 +22416,13 @@ var CLOSE_BUTTON_STYLE = {
   backdropFilter: "blur(4px)"
 };
 function ChevronLeft2() {
-  return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("path", { d: "M12.5 15L7.5 10L12.5 5", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("path", { d: "M12.5 15L7.5 10L12.5 5", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }) });
 }
 function ChevronRight2() {
-  return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("path", { d: "M7.5 15L12.5 10L7.5 5", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("svg", { width: "20", height: "20", viewBox: "0 0 20 20", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("path", { d: "M7.5 15L12.5 10L7.5 5", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }) });
 }
 function CloseIcon() {
-  return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 18 18", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("path", { d: "M4.5 4.5L13.5 13.5M13.5 4.5L4.5 13.5", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round" }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 18 18", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("path", { d: "M4.5 4.5L13.5 13.5M13.5 4.5L4.5 13.5", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round" }) });
 }
 function ImagePreview({
   images,
@@ -22251,31 +22449,31 @@ function ImagePreview({
   errorFallback
 }) {
   const safeIndex = Math.max(0, Math.min(initialIndex, images.length - 1));
-  const [lightboxIndex, setLightboxIndex] = (0, import_react55.useState)(null);
+  const [lightboxIndex, setLightboxIndex] = (0, import_react56.useState)(null);
   const currentIndex = lightboxIndex ?? safeIndex;
   const isOpen = lightboxIndex !== null;
-  const openLightbox = (0, import_react55.useCallback)(
+  const openLightbox = (0, import_react56.useCallback)(
     (idx) => {
       setLightboxIndex(idx);
       onOpen?.(idx);
     },
     [onOpen]
   );
-  const closeLightbox = (0, import_react55.useCallback)(() => {
+  const closeLightbox = (0, import_react56.useCallback)(() => {
     setLightboxIndex(null);
     onClose?.();
   }, [onClose]);
-  const goNext = (0, import_react55.useCallback)(() => {
+  const goNext = (0, import_react56.useCallback)(() => {
     const next = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
     setLightboxIndex(next);
     onChange?.(next);
   }, [currentIndex, images.length, onChange]);
-  const goPrev = (0, import_react55.useCallback)(() => {
+  const goPrev = (0, import_react56.useCallback)(() => {
     const prev = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
     setLightboxIndex(prev);
     onChange?.(prev);
   }, [currentIndex, images.length, onChange]);
-  (0, import_react55.useEffect)(() => {
+  (0, import_react56.useEffect)(() => {
     if (!isOpen) return;
     const handleKey = (e) => {
       if (e.key === "ArrowRight") goNext();
@@ -22286,7 +22484,7 @@ function ImagePreview({
     return () => window.removeEventListener("keydown", handleKey);
   }, [isOpen, goNext, goPrev, closeLightbox, closeOnEscape]);
   if (images.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
       "div",
       {
         className,
@@ -22309,10 +22507,10 @@ function ImagePreview({
     index,
     size
   }) => {
-    const [failed, setFailed] = (0, import_react55.useState)(false);
+    const [failed, setFailed] = (0, import_react56.useState)(false);
     const isActive = index === currentIndex && isOpen;
     const src = item.thumb || item.src;
-    return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
       "div",
       {
         role: "button",
@@ -22340,7 +22538,7 @@ function ImagePreview({
         onMouseLeave: (e) => {
           if (!isActive) e.currentTarget.style.opacity = "0.75";
         },
-        children: failed ? errorFallback || /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+        children: failed ? errorFallback || /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
           "div",
           {
             style: {
@@ -22355,8 +22553,8 @@ function ImagePreview({
             },
             children: "\u{1F5BC}"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(import_jsx_runtime85.Fragment, { children: [
-          placeholder && /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+        ) : /* @__PURE__ */ (0, import_jsx_runtime86.jsxs)(import_jsx_runtime86.Fragment, { children: [
+          placeholder && /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
             "div",
             {
               style: {
@@ -22370,7 +22568,7 @@ function ImagePreview({
               children: placeholder
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
             "img",
             {
               src,
@@ -22391,7 +22589,7 @@ function ImagePreview({
   };
   const renderThumbnails = () => {
     if (mode === "grid") {
-      return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
         "div",
         {
           style: {
@@ -22399,15 +22597,15 @@ function ImagePreview({
             gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
             gap: thumbGap
           },
-          children: images.map((item, idx) => /* @__PURE__ */ (0, import_jsx_runtime85.jsx)("div", { style: { aspectRatio: "1" }, children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(ThumbImage, { item, index: idx, size: thumbSize }) }, idx))
+          children: images.map((item, idx) => /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("div", { style: { aspectRatio: "1" }, children: /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(ThumbImage, { item, index: idx, size: thumbSize }) }, idx))
         }
       );
     }
     if (mode === "single") {
       if (images.length === 0) return null;
-      return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(ThumbImage, { item: images[0], index: 0, size: thumbSize });
+      return /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(ThumbImage, { item: images[0], index: 0, size: thumbSize });
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
       "div",
       {
         style: {
@@ -22416,13 +22614,13 @@ function ImagePreview({
           overflowX: "auto",
           paddingBottom: 4
         },
-        children: images.map((item, idx) => /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(ThumbImage, { item, index: idx, size: thumbSize }, idx))
+        children: images.map((item, idx) => /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(ThumbImage, { item, index: idx, size: thumbSize }, idx))
       }
     );
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)("div", { className, style, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime86.jsxs)("div", { className, style, children: [
     showThumbnails && renderThumbnails(),
-    isOpen && /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)(
+    isOpen && /* @__PURE__ */ (0, import_jsx_runtime86.jsxs)(
       "div",
       {
         style: BACKDROP_STYLE,
@@ -22430,7 +22628,7 @@ function ImagePreview({
           if (closeOnBackdrop && e.target === e.currentTarget) closeLightbox();
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
             "button",
             {
               style: CLOSE_BUTTON_STYLE,
@@ -22442,15 +22640,15 @@ function ImagePreview({
               onMouseLeave: (e) => {
                 e.currentTarget.style.background = "rgba(255,255,255,0.15)";
               },
-              children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(CloseIcon, {})
+              children: /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(CloseIcon, {})
             }
           ),
-          showCounter && images.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime85.jsxs)("div", { style: COUNTER_STYLE, children: [
+          showCounter && images.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime86.jsxs)("div", { style: COUNTER_STYLE, children: [
             currentIndex + 1,
             " / ",
             images.length
           ] }),
-          showArrows && images.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+          showArrows && images.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
             "button",
             {
               style: { ...NAV_BUTTON_BASE, left: 20 },
@@ -22465,10 +22663,10 @@ function ImagePreview({
               onMouseLeave: (e) => {
                 e.currentTarget.style.background = "rgba(255,255,255,0.15)";
               },
-              children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(ChevronLeft2, {})
+              children: /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(ChevronLeft2, {})
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
             "div",
             {
               style: {
@@ -22480,7 +22678,7 @@ function ImagePreview({
                 alignItems: "center",
                 justifyContent: "center"
               },
-              children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+              children: /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
                 "img",
                 {
                   src: currentImage.src,
@@ -22496,7 +22694,7 @@ function ImagePreview({
               )
             }
           ),
-          showArrows && images.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+          showArrows && images.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
             "button",
             {
               style: { ...NAV_BUTTON_BASE, right: 20 },
@@ -22511,10 +22709,10 @@ function ImagePreview({
               onMouseLeave: (e) => {
                 e.currentTarget.style.background = "rgba(255,255,255,0.15)";
               },
-              children: /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(ChevronRight2, {})
+              children: /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(ChevronRight2, {})
             }
           ),
-          currentImage.caption && /* @__PURE__ */ (0, import_jsx_runtime85.jsx)(
+          currentImage.caption && /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
             "div",
             {
               style: {
@@ -22540,8 +22738,8 @@ function ImagePreview({
 }
 
 // src/components/Slider.tsx
-var import_react56 = require("react");
-var import_jsx_runtime86 = require("react/jsx-runtime");
+var import_react57 = require("react");
+var import_jsx_runtime87 = require("react/jsx-runtime");
 var VARIANT_COLORS2 = {
   default: "#3b82f6",
   success: "#22c55e",
@@ -22593,25 +22791,25 @@ function Slider({
 }) {
   const isControlledSingle = valueProp !== void 0 && !Array.isArray(valueProp);
   const isControlledRange = valueProp !== void 0 && Array.isArray(valueProp);
-  const [internalSingle, setInternalSingle] = (0, import_react56.useState)(
+  const [internalSingle, setInternalSingle] = (0, import_react57.useState)(
     clamp2(defaultValue ?? min, min, max)
   );
-  const [internalRange, setInternalRange] = (0, import_react56.useState)(
+  const [internalRange, setInternalRange] = (0, import_react57.useState)(
     defaultRangeValue ? [clamp2(defaultRangeValue[0], min, max), clamp2(defaultRangeValue[1], min, max)] : [min, max]
   );
   const singleVal = isControlledSingle ? valueProp : internalSingle;
   const rangeVal = isControlledRange ? valueProp : internalRange;
-  const trackRef = (0, import_react56.useRef)(null);
-  const [dragging, setDragging] = (0, import_react56.useState)(null);
-  const idBase = (0, import_react56.useId)();
+  const trackRef = (0, import_react57.useRef)(null);
+  const [dragging, setDragging] = (0, import_react57.useState)(null);
+  const idBase = (0, import_react57.useId)();
   const isVertical = orientation === "vertical";
   const color = VARIANT_COLORS2[variant] ?? VARIANT_COLORS2.default;
   const trackBg = VARIANT_TRACK_BG[variant] ?? VARIANT_TRACK_BG.default;
-  const getRatio = (0, import_react56.useCallback)(
+  const getRatio = (0, import_react57.useCallback)(
     (v) => max - min > 0 ? (v - min) / (max - min) : 0,
     [min, max]
   );
-  const getValueFromPosition = (0, import_react56.useCallback)(
+  const getValueFromPosition = (0, import_react57.useCallback)(
     (clientPos) => {
       const el = trackRef.current;
       if (!el) return min;
@@ -22623,13 +22821,13 @@ function Slider({
     },
     [min, max, step, isVertical]
   );
-  const commitValue = (0, import_react56.useCallback)(
+  const commitValue = (0, import_react57.useCallback)(
     (val) => {
       onChangeCommitted?.(val);
     },
     [onChangeCommitted]
   );
-  const setSingle = (0, import_react56.useCallback)(
+  const setSingle = (0, import_react57.useCallback)(
     (v, commit = false) => {
       const clamped = clamp2(v, min, max);
       if (!isControlledSingle) setInternalSingle(clamped);
@@ -22638,7 +22836,7 @@ function Slider({
     },
     [isControlledSingle, onChange, commitValue, min, max]
   );
-  const setRange = (0, import_react56.useCallback)(
+  const setRange = (0, import_react57.useCallback)(
     (vals, commit = false) => {
       const lower = clamp2(vals[0], min, vals[1]);
       const upper = clamp2(vals[1], lower, max);
@@ -22648,7 +22846,7 @@ function Slider({
     },
     [isControlledRange, onRangeChange, commitValue, min, max]
   );
-  const handleStart = (0, import_react56.useCallback)(
+  const handleStart = (0, import_react57.useCallback)(
     (thumb) => (e) => {
       if (disabled) return;
       e.preventDefault();
@@ -22656,7 +22854,7 @@ function Slider({
     },
     [disabled]
   );
-  (0, import_react56.useEffect)(() => {
+  (0, import_react57.useEffect)(() => {
     if (!dragging) return;
     const onMove = (e) => {
       const pos = "touches" in e ? e.touches[0]?.[isVertical ? "clientY" : "clientX"] : e[isVertical ? "clientY" : "clientX"];
@@ -22689,7 +22887,7 @@ function Slider({
       window.removeEventListener("touchend", onEnd);
     };
   }, [dragging, getValueFromPosition, singleVal, rangeVal, setSingle, setRange, isVertical]);
-  const handleKeySingle = (0, import_react56.useCallback)(
+  const handleKeySingle = (0, import_react57.useCallback)(
     (e) => {
       if (disabled) return;
       let val = singleVal;
@@ -22719,7 +22917,7 @@ function Slider({
     },
     [disabled, singleVal, min, max, step, setSingle]
   );
-  const makeRangeKeyHandler = (0, import_react56.useCallback)(
+  const makeRangeKeyHandler = (0, import_react57.useCallback)(
     (which) => (e) => {
       if (disabled) return;
       const vals = [...rangeVal];
@@ -22757,7 +22955,7 @@ function Slider({
     },
     [disabled, rangeVal, min, max, step, setRange]
   );
-  const resolveTicks = (0, import_react56.useCallback)(() => {
+  const resolveTicks = (0, import_react57.useCallback)(() => {
     if (ticksProp) return ticksProp;
     const arr = [];
     for (let v = min; v <= max; v += step) arr.push(v);
@@ -22835,7 +23033,7 @@ function Slider({
   const renderThumb = (which, value, idx) => {
     const isRangePart = range && which !== "single";
     const ariaLabelVal = isRangePart ? ariaLabels?.[which === "lower" ? 0 : 1] ?? (which === "lower" ? "Lower value" : "Upper value") : ariaLabel ?? "Slider value";
-    return /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
       "div",
       {
         "data-testid": dataTestId ? `${dataTestId}-thumb-${which}` : void 0,
@@ -22869,7 +23067,7 @@ function Slider({
     );
   };
   const containerSize = isVertical ? { height: verticalHeight, width: thumbSize + 8, position: "relative", display: "flex", flexDirection: "column", alignItems: "center" } : { width: "100%", position: "relative" };
-  return /* @__PURE__ */ (0, import_jsx_runtime86.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime87.jsxs)(
     "div",
     {
       "data-testid": dataTestId,
@@ -22882,7 +23080,7 @@ function Slider({
         ...style
       },
       children: [
-        showValue || showInput ? /* @__PURE__ */ (0, import_jsx_runtime86.jsxs)(
+        showValue || showInput ? /* @__PURE__ */ (0, import_jsx_runtime87.jsxs)(
           "div",
           {
             "data-testid": dataTestId ? `${dataTestId}-header` : void 0,
@@ -22893,7 +23091,7 @@ function Slider({
               gap: 8
             },
             children: [
-              showValue && !showInput ? /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+              showValue && !showInput ? /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
                 "span",
                 {
                   "data-testid": dataTestId ? `${dataTestId}-value` : void 0,
@@ -22901,8 +23099,8 @@ function Slider({
                   children: displayValue
                 }
               ) : null,
-              showInput ? /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("div", { style: { display: "flex", alignItems: "center", gap: 4 }, children: range ? /* @__PURE__ */ (0, import_jsx_runtime86.jsxs)(import_jsx_runtime86.Fragment, { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+              showInput ? /* @__PURE__ */ (0, import_jsx_runtime87.jsx)("div", { style: { display: "flex", alignItems: "center", gap: 4 }, children: range ? /* @__PURE__ */ (0, import_jsx_runtime87.jsxs)(import_jsx_runtime87.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
                   "input",
                   {
                     "data-testid": dataTestId ? `${dataTestId}-input-lower` : void 0,
@@ -22926,8 +23124,8 @@ function Slider({
                     }
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("span", { style: { fontSize: 13, color: "#6b7280" }, children: "\u2013" }),
-                /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime87.jsx)("span", { style: { fontSize: 13, color: "#6b7280" }, children: "\u2013" }),
+                /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
                   "input",
                   {
                     "data-testid": dataTestId ? `${dataTestId}-input-upper` : void 0,
@@ -22951,7 +23149,7 @@ function Slider({
                     }
                   }
                 )
-              ] }) : /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+              ] }) : /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
                 "input",
                 {
                   "data-testid": dataTestId ? `${dataTestId}-input` : void 0,
@@ -22978,7 +23176,7 @@ function Slider({
             ]
           }
         ) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("div", { style: containerSize, ref: trackRef, children: /* @__PURE__ */ (0, import_jsx_runtime86.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime87.jsx)("div", { style: containerSize, ref: trackRef, children: /* @__PURE__ */ (0, import_jsx_runtime87.jsxs)(
           "div",
           {
             "data-testid": dataTestId ? `${dataTestId}-track` : void 0,
@@ -23007,7 +23205,7 @@ function Slider({
               }
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
                 "div",
                 {
                   "data-testid": dataTestId ? `${dataTestId}-fill` : void 0,
@@ -23033,7 +23231,7 @@ function Slider({
                   background: "#d1d5db",
                   marginTop: 4
                 };
-                return /* @__PURE__ */ (0, import_jsx_runtime86.jsx)("div", { style: tickStyle, children: formatTick ? /* @__PURE__ */ (0, import_jsx_runtime86.jsx)(
+                return /* @__PURE__ */ (0, import_jsx_runtime87.jsx)("div", { style: tickStyle, children: formatTick ? /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
                   "span",
                   {
                     style: {
@@ -23063,8 +23261,8 @@ function Slider({
 }
 
 // src/components/InputNumber.tsx
-var import_react57 = __toESM(require("react"));
-var import_jsx_runtime87 = require("react/jsx-runtime");
+var import_react58 = __toESM(require("react"));
+var import_jsx_runtime88 = require("react/jsx-runtime");
 var SIZE_MAP7 = {
   sm: { fontSize: 13, padding: 4, height: 28 },
   md: { fontSize: 14, padding: 6, height: 34 },
@@ -23114,7 +23312,7 @@ function InputNumber({
 }) {
   const generatedId = (() => {
     try {
-      return (0, import_react57.useId)();
+      return (0, import_react58.useId)();
     } catch {
       return "input-fallback";
     }
@@ -23122,14 +23320,14 @@ function InputNumber({
   const id = `input-number-${generatedId}`;
   const initialValue = valueProp !== void 0 ? valueProp : defaultValue ?? (allowEmpty ? NaN : 0);
   const isControlled = valueProp !== void 0;
-  const [internalValue, setInternalValue] = (0, import_react57.useState)(initialValue);
-  const [focused, setFocused] = (0, import_react57.useState)(false);
-  const [displayValue, setDisplayValue] = (0, import_react57.useState)(
+  const [internalValue, setInternalValue] = (0, import_react58.useState)(initialValue);
+  const [focused, setFocused] = (0, import_react58.useState)(false);
+  const [displayValue, setDisplayValue] = (0, import_react58.useState)(
     isNaN(initialValue) && allowEmpty ? "" : formatValue(initialValue, precision)
   );
   const currentValue = isControlled ? valueProp : internalValue;
   const hasError = Boolean(error);
-  const emitValue = (0, import_react57.useCallback)(
+  const emitValue = (0, import_react58.useCallback)(
     (next) => {
       const clamped = clampValue(next, min, max);
       if (!isControlled) setInternalValue(clamped);
@@ -23138,23 +23336,23 @@ function InputNumber({
     },
     [isControlled, min, max, precision, allowEmpty, onChange]
   );
-  import_react57.default.useEffect(() => {
+  import_react58.default.useEffect(() => {
     if (isControlled) {
       const v = valueProp;
       setDisplayValue(isNaN(v) && allowEmpty ? "" : formatValue(v, precision));
     }
   }, [isControlled, valueProp, precision, allowEmpty]);
-  const handleIncrement = (0, import_react57.useCallback)(() => {
+  const handleIncrement = (0, import_react58.useCallback)(() => {
     if (disabled || readOnly) return;
     const base = currentValue ?? 0;
     emitValue(base + step);
   }, [disabled, readOnly, currentValue, step, emitValue]);
-  const handleDecrement = (0, import_react57.useCallback)(() => {
+  const handleDecrement = (0, import_react58.useCallback)(() => {
     if (disabled || readOnly) return;
     const base = currentValue ?? 0;
     emitValue(base - step);
   }, [disabled, readOnly, currentValue, step, emitValue]);
-  const handleInputChange = (0, import_react57.useCallback)(
+  const handleInputChange = (0, import_react58.useCallback)(
     (e) => {
       const raw = e.target.value;
       if (raw === "" && allowEmpty) {
@@ -23172,7 +23370,7 @@ function InputNumber({
     },
     [allowEmpty, precision]
   );
-  const handleBlur = (0, import_react57.useCallback)(() => {
+  const handleBlur = (0, import_react58.useCallback)(() => {
     setFocused(false);
     if (displayValue === "" && allowEmpty) {
       return;
@@ -23187,7 +23385,7 @@ function InputNumber({
       setDisplayValue(formatValue(currentValue, precision));
     }
   }, [displayValue, allowEmpty, precision, currentValue, isControlled, min, max, onChange]);
-  const handleKeyDown = (0, import_react57.useCallback)(
+  const handleKeyDown = (0, import_react58.useCallback)(
     (e) => {
       if (disabled || readOnly) return;
       if (e.key === "ArrowUp") {
@@ -23203,13 +23401,13 @@ function InputNumber({
   const canIncrement = max === void 0 || (currentValue ?? 0) < max;
   const canDecrement = min === void 0 || (currentValue ?? 0) > min;
   const dims = SIZE_MAP7[size];
-  return /* @__PURE__ */ (0, import_jsx_runtime87.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime88.jsxs)(
     "div",
     {
       "data-testid": dataTestId,
       style: { display: "inline-flex", flexDirection: "column", width },
       children: [
-        label && /* @__PURE__ */ (0, import_jsx_runtime87.jsxs)(
+        label && /* @__PURE__ */ (0, import_jsx_runtime88.jsxs)(
           "label",
           {
             htmlFor: id,
@@ -23222,12 +23420,12 @@ function InputNumber({
             },
             children: [
               label,
-              required && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
+              required && /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("span", { style: { color: "#ef4444", marginLeft: 2 }, children: "*" })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime87.jsxs)("div", { style: { display: "flex", alignItems: "stretch", height: dims.height }, children: [
-          showStepper && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime88.jsxs)("div", { style: { display: "flex", alignItems: "stretch", height: dims.height }, children: [
+          showStepper && /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(
             "button",
             {
               type: "button",
@@ -23254,7 +23452,7 @@ function InputNumber({
               children: "\u2212"
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime87.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime88.jsxs)(
             "div",
             {
               style: {
@@ -23267,7 +23465,7 @@ function InputNumber({
                 boxShadow: focused && !hasError && !disabled ? "0 0 0 2px rgba(59,130,246,0.12)" : void 0
               },
               children: [
-                prefixText && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+                prefixText && /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(
                   "span",
                   {
                     "data-testid": dataTestId ? `${dataTestId}-prefix` : void 0,
@@ -23283,7 +23481,7 @@ function InputNumber({
                     children: prefixText
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(
                   "input",
                   {
                     id,
@@ -23323,7 +23521,7 @@ function InputNumber({
                     }
                   }
                 ),
-                unit && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+                unit && /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(
                   "span",
                   {
                     "data-testid": dataTestId ? `${dataTestId}-unit` : void 0,
@@ -23342,7 +23540,7 @@ function InputNumber({
               ]
             }
           ),
-          showStepper && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+          showStepper && /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(
             "button",
             {
               type: "button",
@@ -23370,7 +23568,7 @@ function InputNumber({
             }
           )
         ] }),
-        helperText && !error && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+        helperText && !error && /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(
           "div",
           {
             "data-testid": dataTestId ? `${dataTestId}-helper` : void 0,
@@ -23378,7 +23576,7 @@ function InputNumber({
             children: helperText
           }
         ),
-        error && /* @__PURE__ */ (0, import_jsx_runtime87.jsx)(
+        error && /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(
           "div",
           {
             role: "alert",
@@ -23393,8 +23591,8 @@ function InputNumber({
 }
 
 // src/components/PasswordInput.tsx
-var import_react58 = require("react");
-var import_jsx_runtime88 = require("react/jsx-runtime");
+var import_react59 = require("react");
+var import_jsx_runtime89 = require("react/jsx-runtime");
 var TOGGLE_BUTTON_STYLE = {
   position: "absolute",
   right: 8,
@@ -23415,15 +23613,15 @@ var TOGGLE_BUTTON_STYLE = {
 };
 function EyeIcon({ visible }) {
   if (visible) {
-    return /* @__PURE__ */ (0, import_jsx_runtime88.jsxs)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("path", { d: "M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" }),
-      /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("path", { d: "M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" }),
-      /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("line", { x1: "1", y1: "1", x2: "23", y2: "23" })
+    return /* @__PURE__ */ (0, import_jsx_runtime89.jsxs)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime89.jsx)("path", { d: "M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" }),
+      /* @__PURE__ */ (0, import_jsx_runtime89.jsx)("path", { d: "M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" }),
+      /* @__PURE__ */ (0, import_jsx_runtime89.jsx)("line", { x1: "1", y1: "1", x2: "23", y2: "23" })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime88.jsxs)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("path", { d: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" }),
-    /* @__PURE__ */ (0, import_jsx_runtime88.jsx)("circle", { cx: "12", cy: "12", r: "3" })
+  return /* @__PURE__ */ (0, import_jsx_runtime89.jsxs)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime89.jsx)("path", { d: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" }),
+    /* @__PURE__ */ (0, import_jsx_runtime89.jsx)("circle", { cx: "12", cy: "12", r: "3" })
   ] });
 }
 function PasswordInput({
@@ -23431,13 +23629,13 @@ function PasswordInput({
   toggleLabel,
   ...inputProps
 }) {
-  const [visible, setVisible] = (0, import_react58.useState)(defaultVisible);
-  const handleToggle = (0, import_react58.useCallback)(() => {
+  const [visible, setVisible] = (0, import_react59.useState)(defaultVisible);
+  const handleToggle = (0, import_react59.useCallback)(() => {
     setVisible((prev) => !prev);
   }, []);
   const toggleAriaLabel = toggleLabel ?? (visible ? "\u9690\u85CF\u5BC6\u7801" : "\u663E\u793A\u5BC6\u7801");
-  return /* @__PURE__ */ (0, import_jsx_runtime88.jsxs)("div", { style: { position: "relative", width: "100%" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime89.jsxs)("div", { style: { position: "relative", width: "100%" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
       Input,
       {
         ...inputProps,
@@ -23448,7 +23646,7 @@ function PasswordInput({
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
       "button",
       {
         type: "button",
@@ -23457,15 +23655,15 @@ function PasswordInput({
         style: TOGGLE_BUTTON_STYLE,
         onClick: handleToggle,
         tabIndex: -1,
-        children: /* @__PURE__ */ (0, import_jsx_runtime88.jsx)(EyeIcon, { visible })
+        children: /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(EyeIcon, { visible })
       }
     )
   ] });
 }
 
 // src/components/ErrorBoundary.tsx
-var import_react59 = __toESM(require("react"));
-var import_jsx_runtime89 = require("react/jsx-runtime");
+var import_react60 = __toESM(require("react"));
+var import_jsx_runtime90 = require("react/jsx-runtime");
 var DEFAULT_RETRY_LABEL = "\u91CD\u8BD5";
 var DEFAULT_FALLBACK_MESSAGE = "\u7EC4\u4EF6\u52A0\u8F7D\u5F02\u5E38";
 var BLOCK_STYLE = {
@@ -23507,7 +23705,7 @@ var ICON_STYLE = {
   height: 20,
   flexShrink: 0
 };
-var ErrorBoundary = class extends import_react59.default.Component {
+var ErrorBoundary = class extends import_react60.default.Component {
   constructor(props) {
     super(props);
     this.state = { error: null };
@@ -23543,7 +23741,7 @@ var ErrorBoundary = class extends import_react59.default.Component {
       return null;
     }
     if (severity === "inline") {
-      return /* @__PURE__ */ (0, import_jsx_runtime89.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime90.jsxs)(
         "div",
         {
           role: "alert",
@@ -23552,14 +23750,14 @@ var ErrorBoundary = class extends import_react59.default.Component {
           className,
           style: { ...INLINE_STYLE, ...style },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
               "svg",
               {
                 viewBox: "0 0 20 20",
                 fill: "currentColor",
                 style: ICON_STYLE,
                 "aria-hidden": "true",
-                children: /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+                children: /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
                   "path",
                   {
                     fillRule: "evenodd",
@@ -23569,8 +23767,8 @@ var ErrorBoundary = class extends import_react59.default.Component {
                 )
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime89.jsx)("span", { children: this.state.error.message || DEFAULT_FALLBACK_MESSAGE }),
-            /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime90.jsx)("span", { children: this.state.error.message || DEFAULT_FALLBACK_MESSAGE }),
+            /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
               "button",
               {
                 type: "button",
@@ -23584,7 +23782,7 @@ var ErrorBoundary = class extends import_react59.default.Component {
         }
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime89.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime90.jsxs)(
       "div",
       {
         role: "alert",
@@ -23593,31 +23791,31 @@ var ErrorBoundary = class extends import_react59.default.Component {
         className,
         style: { ...BLOCK_STYLE, ...style },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
             "svg",
             {
               viewBox: "0 0 24 24",
               fill: "currentColor",
               style: { width: 28, height: 28, color: "#ef4444", flexShrink: 0 },
               "aria-hidden": "true",
-              children: /* @__PURE__ */ (0, import_jsx_runtime89.jsx)("path", { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" })
+              children: /* @__PURE__ */ (0, import_jsx_runtime90.jsx)("path", { d: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" })
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
             "div",
             {
               style: { fontSize: 15, fontWeight: 600, color: "#b91c1c" },
               children: this.state.error.message || DEFAULT_FALLBACK_MESSAGE
             }
           ),
-          description ? /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+          description ? /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
             "div",
             {
               style: { fontSize: 13, color: "#dc2626", maxWidth: 360 },
               children: description
             }
           ) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime89.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
             "button",
             {
               type: "button",
@@ -23634,15 +23832,15 @@ var ErrorBoundary = class extends import_react59.default.Component {
 };
 
 // src/components/Tree.tsx
-var import_react60 = __toESM(require("react"));
-var import_jsx_runtime90 = require("react/jsx-runtime");
+var import_react61 = __toESM(require("react"));
+var import_jsx_runtime91 = require("react/jsx-runtime");
 var INDENT = 20;
 var NODE_HEIGHT = { sm: 28, md: 34 };
 var FONT_SIZE = { sm: 13, md: 14 };
 var CHEVRON_SIZE = { sm: 8, md: 10 };
 function ChevronIcon({ expanded, size = "md" }) {
   const s = CHEVRON_SIZE[size];
-  return /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
     "svg",
     {
       width: s,
@@ -23654,7 +23852,7 @@ function ChevronIcon({ expanded, size = "md" }) {
         flexShrink: 0,
         marginRight: 4
       },
-      children: /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+      children: /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
         "path",
         {
           d: "M3.5 1.5L7 5L3.5 8.5",
@@ -23669,7 +23867,7 @@ function ChevronIcon({ expanded, size = "md" }) {
   );
 }
 function CheckIcon() {
-  return /* @__PURE__ */ (0, import_jsx_runtime90.jsx)("svg", { width: 10, height: 8, viewBox: "0 0 10 8", style: { flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("svg", { width: 10, height: 8, viewBox: "0 0 10 8", style: { flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
     "path",
     {
       d: "M1 4L3.5 6.5L9 1",
@@ -23682,17 +23880,17 @@ function CheckIcon() {
   ) });
 }
 function HalfCheckIcon() {
-  return /* @__PURE__ */ (0, import_jsx_runtime90.jsx)("svg", { width: 8, height: 2, viewBox: "0 0 8 2", style: { flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime90.jsx)("rect", { x: 1, y: 0, width: 6, height: 2, rx: 1, fill: "white" }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("svg", { width: 8, height: 2, viewBox: "0 0 8 2", style: { flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("rect", { x: 1, y: 0, width: 6, height: 2, rx: 1, fill: "white" }) });
 }
 function FolderIcon({ open }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
     "svg",
     {
       width: 14,
       height: 14,
       viewBox: "0 0 14 14",
       style: { flexShrink: 0, marginRight: 5, opacity: 0.6 },
-      children: open ? /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+      children: open ? /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
         "path",
         {
           d: "M1.5 2.5H5L6.5 4H12.5V11.5H1.5V2.5Z",
@@ -23701,7 +23899,7 @@ function FolderIcon({ open }) {
           strokeWidth: 1,
           strokeLinejoin: "round"
         }
-      ) : /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+      ) : /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
         "path",
         {
           d: "M1.5 2.5H5L6.5 4H12.5V11.5H1.5V2.5Z",
@@ -23715,7 +23913,7 @@ function FolderIcon({ open }) {
   );
 }
 function FileIcon() {
-  return /* @__PURE__ */ (0, import_jsx_runtime90.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
     "svg",
     {
       width: 12,
@@ -23723,7 +23921,7 @@ function FileIcon() {
       viewBox: "0 0 12 14",
       style: { flexShrink: 0, marginRight: 5, opacity: 0.5 },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
           "path",
           {
             d: "M7 1H2.5C1.95 1 1.5 1.45 1.5 2V12C1.5 12.55 1.95 13 2.5 13H9.5C10.05 13 10.5 12.55 10.5 12V4.5L7 1Z",
@@ -23733,7 +23931,7 @@ function FileIcon() {
             strokeLinejoin: "round"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
           "path",
           {
             d: "M7 1V4.5H10.5",
@@ -23797,7 +23995,7 @@ function findNode(nodes, key) {
   }
   return null;
 }
-var TreeNodeRow = import_react60.default.memo(function TreeNodeRow2({
+var TreeNodeRow = import_react61.default.memo(function TreeNodeRow2({
   node,
   depth,
   expanded,
@@ -23816,7 +24014,7 @@ var TreeNodeRow = import_react60.default.memo(function TreeNodeRow2({
 }) {
   const nodeH = NODE_HEIGHT[size];
   const fontSize = FONT_SIZE[size];
-  const handleClick = (0, import_react60.useCallback)(
+  const handleClick = (0, import_react61.useCallback)(
     (e) => {
       onClick(node, e);
       if (hasChildren) onToggle(node.key);
@@ -23824,7 +24022,7 @@ var TreeNodeRow = import_react60.default.memo(function TreeNodeRow2({
     },
     [node, hasChildren, selectable, onToggle, onSelect, onClick]
   );
-  const handleCheckClick = (0, import_react60.useCallback)(
+  const handleCheckClick = (0, import_react61.useCallback)(
     (e) => {
       e.stopPropagation();
       if (!node.disabled) onCheck(node.key);
@@ -23850,7 +24048,7 @@ var TreeNodeRow = import_react60.default.memo(function TreeNodeRow2({
     opacity: node.disabled ? 0.5 : 1,
     transition: "background-color 0.12s ease"
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime90.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
     "div",
     {
       style: rowStyle,
@@ -23861,8 +24059,8 @@ var TreeNodeRow = import_react60.default.memo(function TreeNodeRow2({
       onClick: handleClick,
       "data-tree-key": node.key,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime90.jsx)("span", { style: { width: (CHEVRON_SIZE[size] ?? 10) + 4, display: "inline-flex", alignItems: "center" }, children: hasChildren && /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(ChevronIcon, { expanded, size }) }),
-        checkable && /* @__PURE__ */ (0, import_jsx_runtime90.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("span", { style: { width: (CHEVRON_SIZE[size] ?? 10) + 4, display: "inline-flex", alignItems: "center" }, children: hasChildren && /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(ChevronIcon, { expanded, size }) }),
+        checkable && /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
           "span",
           {
             style: {
@@ -23882,13 +24080,13 @@ var TreeNodeRow = import_react60.default.memo(function TreeNodeRow2({
             onClick: handleCheckClick,
             "data-tree-check": node.key,
             children: [
-              checked === true && /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(CheckIcon, {}),
-              checked === "half" && /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(HalfCheckIcon, {})
+              checked === true && /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(CheckIcon, {}),
+              checked === "half" && /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(HalfCheckIcon, {})
             ]
           }
         ),
-        variant === "directory" ? isDirectory ? /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(FolderIcon, { open: expanded }) : /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(FileIcon, {}) : node.icon ? /* @__PURE__ */ (0, import_jsx_runtime90.jsx)("span", { style: { marginRight: 5, display: "inline-flex", opacity: 0.65 }, children: node.icon }) : null,
-        renderNode ? renderNode(node, expanded, selected) : /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+        variant === "directory" ? isDirectory ? /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(FolderIcon, { open: expanded }) : /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(FileIcon, {}) : node.icon ? /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("span", { style: { marginRight: 5, display: "inline-flex", opacity: 0.65 }, children: node.icon }) : null,
+        renderNode ? renderNode(node, expanded, selected) : /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
           "span",
           {
             style: {
@@ -23928,10 +24126,10 @@ function Tree({
   className,
   style
 }) {
-  const [internalExpanded, setInternalExpanded] = (0, import_react60.useState)(defaultExpandedKeys ?? []);
+  const [internalExpanded, setInternalExpanded] = (0, import_react61.useState)(defaultExpandedKeys ?? []);
   const isExpandedControlled = controlledExpandedKeys !== void 0;
   const expandedSet = new Set(isExpandedControlled ? controlledExpandedKeys : internalExpanded);
-  const handleExpandToggle = (0, import_react60.useCallback)(
+  const handleExpandToggle = (0, import_react61.useCallback)(
     (key) => {
       const current = isExpandedControlled ? controlledExpandedKeys : internalExpanded;
       let next;
@@ -23945,13 +24143,13 @@ function Tree({
     },
     [isExpandedControlled, controlledExpandedKeys, internalExpanded, onExpand]
   );
-  const [internalSelected, setInternalSelected] = (0, import_react60.useState)(defaultSelectedKeys ?? []);
+  const [internalSelected, setInternalSelected] = (0, import_react61.useState)(defaultSelectedKeys ?? []);
   const isSelectedControlled = controlledSelectedKeys !== void 0;
-  const selectedSet = (0, import_react60.useMemo)(
+  const selectedSet = (0, import_react61.useMemo)(
     () => new Set(isSelectedControlled ? controlledSelectedKeys : internalSelected),
     [isSelectedControlled, controlledSelectedKeys, internalSelected]
   );
-  const handleSelect = (0, import_react60.useCallback)(
+  const handleSelect = (0, import_react61.useCallback)(
     (key) => {
       if (!selectable) return;
       const current = isSelectedControlled ? controlledSelectedKeys : internalSelected;
@@ -23966,13 +24164,13 @@ function Tree({
     },
     [selectable, multiple, isSelectedControlled, controlledSelectedKeys, internalSelected, onSelect]
   );
-  const [internalChecked, setInternalChecked] = (0, import_react60.useState)(defaultCheckedKeys ?? []);
+  const [internalChecked, setInternalChecked] = (0, import_react61.useState)(defaultCheckedKeys ?? []);
   const isCheckedControlled = controlledCheckedKeys !== void 0;
-  const checkedSet = (0, import_react60.useMemo)(
+  const checkedSet = (0, import_react61.useMemo)(
     () => new Set(isCheckedControlled ? controlledCheckedKeys : internalChecked),
     [isCheckedControlled, controlledCheckedKeys, internalChecked]
   );
-  const handleCheck = (0, import_react60.useCallback)(
+  const handleCheck = (0, import_react61.useCallback)(
     (key) => {
       if (!checkable) return;
       const current = new Set(isCheckedControlled ? controlledCheckedKeys : internalChecked);
@@ -24006,7 +24204,7 @@ function Tree({
     },
     [checkable, treeData, isCheckedControlled, controlledCheckedKeys, internalChecked, onCheck]
   );
-  const getCheckedStatus = (0, import_react60.useCallback)(
+  const getCheckedStatus = (0, import_react61.useCallback)(
     (node) => {
       if (!checkable) return false;
       if (checkedSet.has(node.key)) {
@@ -24024,13 +24222,13 @@ function Tree({
     },
     [checkable, checkedSet]
   );
-  const handleNodeClick = (0, import_react60.useCallback)(
+  const handleNodeClick = (0, import_react61.useCallback)(
     (node, event) => {
       onNodeClick?.(node, event);
     },
     [onNodeClick]
   );
-  const effectiveExpanded = (0, import_react60.useMemo)(() => {
+  const effectiveExpanded = (0, import_react61.useMemo)(() => {
     if (!autoExpandParent) return expandedSet;
     const set = new Set(expandedSet);
     const selectedKeysArr = isSelectedControlled ? controlledSelectedKeys : internalSelected;
@@ -24054,8 +24252,8 @@ function Tree({
       const isSelected = selectedSet.has(node.key);
       const checkedStatus = getCheckedStatus(node);
       const children = hasChildren && isExpanded ? renderTree(node.children, depth + 1) : null;
-      return /* @__PURE__ */ (0, import_jsx_runtime90.jsxs)(import_react60.default.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(import_react61.default.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
           TreeNodeRow,
           {
             node,
@@ -24079,7 +24277,7 @@ function Tree({
       ] }, node.key);
     });
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime90.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
     "div",
     {
       role: "tree",
@@ -24092,8 +24290,8 @@ function Tree({
 }
 
 // src/components/CommandPalette.tsx
-var import_react61 = __toESM(require("react"));
-var import_jsx_runtime91 = require("react/jsx-runtime");
+var import_react62 = __toESM(require("react"));
+var import_jsx_runtime92 = require("react/jsx-runtime");
 function groupCommands(commands) {
   const map = /* @__PURE__ */ new Map();
   for (const cmd of commands) {
@@ -24129,7 +24327,7 @@ function fuzzyMatch(text, query) {
   return qi === lowerQuery.length;
 }
 function ShortcutBadge({ shortcut }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
     "kbd",
     {
       style: {
@@ -24149,7 +24347,7 @@ function ShortcutBadge({ shortcut }) {
   );
 }
 function HighlightedLabel({ label, query }) {
-  if (!query) return /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(import_jsx_runtime91.Fragment, { children: label });
+  if (!query) return /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(import_jsx_runtime92.Fragment, { children: label });
   const lowerLabel = label.toLowerCase();
   const lowerQuery = query.toLowerCase();
   const parts = [];
@@ -24171,8 +24369,8 @@ function HighlightedLabel({ label, query }) {
   if (currentNonHighlight) {
     parts.push({ text: currentNonHighlight, highlight: false });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(import_jsx_runtime91.Fragment, { children: parts.map(
-    (p, i) => p.highlight ? /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(import_jsx_runtime92.Fragment, { children: parts.map(
+    (p, i) => p.highlight ? /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
       "mark",
       {
         style: {
@@ -24183,7 +24381,7 @@ function HighlightedLabel({ label, query }) {
         children: p.text
       },
       i
-    ) : /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("span", { children: p.text }, i)
+    ) : /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("span", { children: p.text }, i)
   ) });
 }
 function CommandPalette({
@@ -24197,26 +24395,26 @@ function CommandPalette({
   autoFocus = true,
   className
 }) {
-  const [query, setQuery] = (0, import_react61.useState)("");
-  const [activeIndex, setActiveIndex] = (0, import_react61.useState)(0);
-  const inputRef = (0, import_react61.useRef)(null);
-  const listRef = (0, import_react61.useRef)(null);
-  const itemRefs = (0, import_react61.useRef)(/* @__PURE__ */ new Map());
-  const filtered = (0, import_react61.useMemo)(() => {
+  const [query, setQuery] = (0, import_react62.useState)("");
+  const [activeIndex, setActiveIndex] = (0, import_react62.useState)(0);
+  const inputRef = (0, import_react62.useRef)(null);
+  const listRef = (0, import_react62.useRef)(null);
+  const itemRefs = (0, import_react62.useRef)(/* @__PURE__ */ new Map());
+  const filtered = (0, import_react62.useMemo)(() => {
     if (!query.trim()) return commands;
     return commands.filter(
       (cmd) => fuzzyMatch(cmd.label, query) || fuzzyMatch(cmd.description ?? "", query) || fuzzyMatch(cmd.group ?? "", query) || fuzzyMatch(cmd.shortcut ?? "", query)
     );
   }, [commands, query]);
-  const grouped = (0, import_react61.useMemo)(() => groupCommands(filtered), [filtered]);
-  const flatItems = (0, import_react61.useMemo)(() => {
+  const grouped = (0, import_react62.useMemo)(() => groupCommands(filtered), [filtered]);
+  const flatItems = (0, import_react62.useMemo)(() => {
     const result = [];
     for (const g of grouped) {
       result.push(...g.items);
     }
     return result;
   }, [grouped]);
-  (0, import_react61.useEffect)(() => {
+  (0, import_react62.useEffect)(() => {
     if (open) {
       setQuery("");
       setActiveIndex(0);
@@ -24226,13 +24424,13 @@ function CommandPalette({
     }
   }, [open, autoFocus]);
   const safeActiveIndex = flatItems.length === 0 ? -1 : Math.min(activeIndex, flatItems.length - 1);
-  (0, import_react61.useEffect)(() => {
+  (0, import_react62.useEffect)(() => {
     const el = itemRefs.current.get(safeActiveIndex);
     if (el) {
       el.scrollIntoView({ block: "nearest" });
     }
   }, [safeActiveIndex]);
-  const selectItem = (0, import_react61.useCallback)(
+  const selectItem = (0, import_react62.useCallback)(
     (item) => {
       if (item.disabled) return;
       onSelect(item);
@@ -24240,7 +24438,7 @@ function CommandPalette({
     },
     [onSelect, onClose]
   );
-  const handleKeyDown = (0, import_react61.useCallback)(
+  const handleKeyDown = (0, import_react62.useCallback)(
     (e) => {
       switch (e.key) {
         case "ArrowDown": {
@@ -24280,13 +24478,13 @@ function CommandPalette({
     },
     [flatItems, safeActiveIndex, selectItem, onClose]
   );
-  const handleItemMouseEnter = (0, import_react61.useCallback)(
+  const handleItemMouseEnter = (0, import_react62.useCallback)(
     (index) => {
       setActiveIndex(index);
     },
     []
   );
-  const handleOverlayClick = (0, import_react61.useCallback)(
+  const handleOverlayClick = (0, import_react62.useCallback)(
     (e) => {
       if (e.target === e.currentTarget) {
         onClose();
@@ -24294,7 +24492,7 @@ function CommandPalette({
     },
     [onClose]
   );
-  const handleItemClick = (0, import_react61.useCallback)(
+  const handleItemClick = (0, import_react62.useCallback)(
     (item) => {
       selectItem(item);
     },
@@ -24302,7 +24500,7 @@ function CommandPalette({
   );
   if (!open) return null;
   let flatIndex = 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
     "div",
     {
       role: "dialog",
@@ -24321,7 +24519,7 @@ function CommandPalette({
       className,
       onClick: handleOverlayClick,
       onKeyDown: handleKeyDown,
-      children: /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
+      children: /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
         "div",
         {
           style: {
@@ -24335,7 +24533,7 @@ function CommandPalette({
             flexDirection: "column"
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
+            /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
               "div",
               {
                 style: {
@@ -24346,7 +24544,7 @@ function CommandPalette({
                   borderBottom: "1px solid var(--m5-border-subtle, #e5e7eb)"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
+                  /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
                     "svg",
                     {
                       width: "18",
@@ -24356,12 +24554,12 @@ function CommandPalette({
                       stroke: "var(--m5-text-tertiary, #9ca3af)",
                       strokeWidth: "2",
                       children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("circle", { cx: "11", cy: "11", r: "8" }),
-                        /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("path", { d: "m21 21-4.35-4.35" })
+                        /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("circle", { cx: "11", cy: "11", r: "8" }),
+                        /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("path", { d: "m21 21-4.35-4.35" })
                       ]
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
                     "input",
                     {
                       ref: inputRef,
@@ -24384,7 +24582,7 @@ function CommandPalette({
                       }
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
                     "button",
                     {
                       type: "button",
@@ -24401,13 +24599,13 @@ function CommandPalette({
                         alignItems: "center",
                         justifyContent: "center"
                       },
-                      children: /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime91.jsx)("path", { d: "M18 6 6 18M6 6l12 12" }) })
+                      children: /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("path", { d: "M18 6 6 18M6 6l12 12" }) })
                     }
                   )
                 ]
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
               "div",
               {
                 ref: listRef,
@@ -24417,7 +24615,7 @@ function CommandPalette({
                   overflowY: "auto",
                   padding: "8px"
                 },
-                children: flatItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                children: flatItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
                   "div",
                   {
                     style: {
@@ -24430,7 +24628,7 @@ function CommandPalette({
                   }
                 ) : grouped.map((group) => {
                   const groupStartIndex = flatIndex;
-                  const groupHeader = group.group ? /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                  const groupHeader = group.group ? /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
                     "div",
                     {
                       style: {
@@ -24449,7 +24647,7 @@ function CommandPalette({
                   const items = group.items.map((item) => {
                     const idx = flatIndex++;
                     const isActive = idx === safeActiveIndex;
-                    return /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
+                    return /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
                       "div",
                       {
                         ref: (el) => {
@@ -24474,7 +24672,7 @@ function CommandPalette({
                           transition: "background-color 0.1s"
                         },
                         children: [
-                          item.icon && /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                          item.icon && /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
                             "span",
                             {
                               style: {
@@ -24491,8 +24689,8 @@ function CommandPalette({
                               children: item.icon
                             }
                           ),
-                          /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                            /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                          /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
                               "div",
                               {
                                 style: {
@@ -24502,10 +24700,10 @@ function CommandPalette({
                                   overflow: "hidden",
                                   textOverflow: "ellipsis"
                                 },
-                                children: /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(HighlightedLabel, { label: item.label, query })
+                                children: /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(HighlightedLabel, { label: item.label, query })
                               }
                             ),
-                            item.description && /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                            item.description && /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
                               "div",
                               {
                                 style: {
@@ -24520,20 +24718,20 @@ function CommandPalette({
                               }
                             )
                           ] }),
-                          item.shortcut && /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(ShortcutBadge, { shortcut: item.shortcut })
+                          item.shortcut && /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(ShortcutBadge, { shortcut: item.shortcut })
                         ]
                       },
                       item.id
                     );
                   });
-                  return /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(import_react61.default.Fragment, { children: [
+                  return /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(import_react62.default.Fragment, { children: [
                     groupHeader,
                     items
                   ] }, group.group || "ungrouped");
                 })
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)(
+            /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
               "div",
               {
                 style: {
@@ -24545,8 +24743,8 @@ function CommandPalette({
                   color: "var(--m5-text-tertiary, #9ca3af)"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)("span", { children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
                       "kbd",
                       {
                         style: {
@@ -24562,8 +24760,8 @@ function CommandPalette({
                     " ",
                     "Navigate"
                   ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)("span", { children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
                       "kbd",
                       {
                         style: {
@@ -24579,8 +24777,8 @@ function CommandPalette({
                     " ",
                     "Select"
                   ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime91.jsxs)("span", { children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime91.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
                       "kbd",
                       {
                         style: {
@@ -24607,8 +24805,8 @@ function CommandPalette({
 }
 
 // src/components/DeviceStatusPanel.tsx
-var import_react62 = require("react");
-var import_jsx_runtime92 = require("react/jsx-runtime");
+var import_react63 = require("react");
+var import_jsx_runtime93 = require("react/jsx-runtime");
 var DEVICE_TYPE_LABELS = {
   pos: "POS\u673A",
   printer: "\u6253\u5370\u673A",
@@ -24714,7 +24912,7 @@ function SummaryCard({ summary }) {
     { label: "\u7EF4\u62A4", count: summary.maintenance, color: "#3b82f6", bg: "rgba(59,130,246,0.08)" },
     { label: "\u6545\u969C", count: summary.error, color: "#ef4444", bg: "rgba(239,68,68,0.08)" }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
     "div",
     {
       className: "device-status-panel__summary",
@@ -24725,7 +24923,7 @@ function SummaryCard({ summary }) {
         marginBottom: 16
       },
       children: [
-        items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+        items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
           "div",
           {
             className: "device-status-panel__summary-item",
@@ -24739,13 +24937,13 @@ function SummaryCard({ summary }) {
               textAlign: "center"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { style: { fontSize: 22, fontWeight: 700, color: item.color }, children: item.count }),
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 2 }, children: item.label })
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { fontSize: 22, fontWeight: 700, color: item.color }, children: item.count }),
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 2 }, children: item.label })
             ]
           },
           item.label
         )),
-        /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
           "div",
           {
             className: "device-status-panel__summary-item device-status-panel__summary-total",
@@ -24759,8 +24957,8 @@ function SummaryCard({ summary }) {
               textAlign: "center"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { style: { fontSize: 22, fontWeight: 700, color: "#8b5cf6" }, children: summary.total }),
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 2 }, children: "\u603B\u8BA1" })
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { fontSize: 22, fontWeight: 700, color: "#8b5cf6" }, children: summary.total }),
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 2 }, children: "\u603B\u8BA1" })
             ]
           }
         )
@@ -24770,7 +24968,7 @@ function SummaryCard({ summary }) {
 }
 function StatusIndicator({ status }) {
   const cfg = STATUS_CONFIG2[status];
-  return /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
     "span",
     {
       className: "device-status-panel__status-indicator",
@@ -24788,7 +24986,7 @@ function StatusIndicator({ status }) {
       },
       title: cfg.label,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
           "span",
           {
             className: "device-status-panel__status-dot",
@@ -24812,9 +25010,9 @@ function UsageBar({ value, color, label }) {
   if (value === void 0 || value === null) return null;
   const pct = Math.max(0, Math.min(100, value));
   const barColor = pct > 90 ? "#ef4444" : pct > 70 ? "#f59e0b" : color;
-  return /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6, marginTop: 3 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("span", { style: { fontSize: 10, color: "#64748b", minWidth: 36 }, children: label }),
-    /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6, marginTop: 3 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("span", { style: { fontSize: 10, color: "#64748b", minWidth: 36 }, children: label }),
+    /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
       "div",
       {
         style: {
@@ -24824,7 +25022,7 @@ function UsageBar({ value, color, label }) {
           background: "rgba(148,163,184,0.12)",
           overflow: "hidden"
         },
-        children: /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
           "div",
           {
             style: {
@@ -24838,7 +25036,7 @@ function UsageBar({ value, color, label }) {
         )
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { style: { fontSize: 10, color: "#94a3b8", minWidth: 32, textAlign: "right" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: { fontSize: 10, color: "#94a3b8", minWidth: 32, textAlign: "right" }, children: [
       pct.toFixed(0),
       "%"
     ] })
@@ -24851,7 +25049,7 @@ function DeviceRow({
 }) {
   const typeIcon = DEVICE_TYPE_ICONS[device.type];
   const typeLabel = DEVICE_TYPE_LABELS[device.type];
-  return /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
     "div",
     {
       className: "device-status-panel__row",
@@ -24876,7 +25074,7 @@ function DeviceRow({
         e.currentTarget.style.borderColor = "rgba(148,163,184,0.08)";
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
           "div",
           {
             className: "device-status-panel__row-main",
@@ -24886,9 +25084,9 @@ function DeviceRow({
               gap: 10
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("span", { style: { fontSize: 18 }, children: typeIcon }),
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("span", { style: { fontSize: 18 }, children: typeIcon }),
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
                   "div",
                   {
                     className: "device-status-panel__device-name",
@@ -24896,7 +25094,7 @@ function DeviceRow({
                     children: device.name
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+                /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
                   "div",
                   {
                     className: "device-status-panel__device-meta",
@@ -24909,8 +25107,8 @@ function DeviceRow({
                   }
                 )
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(StatusIndicator, { status: device.status }),
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(StatusIndicator, { status: device.status }),
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
                 "span",
                 {
                   className: "device-status-panel__last-seen",
@@ -24921,7 +25119,7 @@ function DeviceRow({
             ]
           }
         ),
-        showDetails && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+        showDetails && /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
           "div",
           {
             className: "device-status-panel__row-details",
@@ -24931,17 +25129,17 @@ function DeviceRow({
               borderTop: "1px solid rgba(148,163,184,0.06)"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
                 "div",
                 {
                   className: "device-status-panel__usage",
                   style: { display: "flex", gap: 16, flexWrap: "wrap" },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { style: { flex: "1 1 120px", minWidth: 100 }, children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(UsageBar, { value: device.cpuUsage, color: "#3b82f6", label: "CPU" }),
-                      /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(UsageBar, { value: device.memoryUsage, color: "#8b5cf6", label: "\u5185\u5B58" })
+                    /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { style: { flex: "1 1 120px", minWidth: 100 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(UsageBar, { value: device.cpuUsage, color: "#3b82f6", label: "CPU" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(UsageBar, { value: device.memoryUsage, color: "#8b5cf6", label: "\u5185\u5B58" })
                     ] }),
-                    device.temperature !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+                    device.temperature !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
                       "div",
                       {
                         className: "device-status-panel__temperature",
@@ -24953,8 +25151,8 @@ function DeviceRow({
                           color: device.temperature > 75 ? "#ef4444" : device.temperature > 60 ? "#f59e0b" : "#22c55e"
                         },
                         children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime92.jsx)("span", { children: "\u{1F321}\uFE0F" }),
-                          /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { style: { fontWeight: 600 }, children: [
+                          /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("span", { children: "\u{1F321}\uFE0F" }),
+                          /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: { fontWeight: 600 }, children: [
                             device.temperature,
                             "\xB0C"
                           ] })
@@ -24964,7 +25162,7 @@ function DeviceRow({
                   ]
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
                 "div",
                 {
                   className: "device-status-panel__extra",
@@ -24977,15 +25175,15 @@ function DeviceRow({
                     flexWrap: "wrap"
                   },
                   children: [
-                    device.uptimeHours !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { children: [
+                    device.uptimeHours !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { children: [
                       "\u23F1 \u8FD0\u884C ",
                       formatUptime(device.uptimeHours)
                     ] }),
-                    device.firmwareVersion && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { children: [
+                    device.firmwareVersion && /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { children: [
                       "\u{1F4E6} v",
                       device.firmwareVersion
                     ] }),
-                    device.alertMessage && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+                    device.alertMessage && /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
                       "span",
                       {
                         className: "device-status-panel__alert-message",
@@ -25028,11 +25226,11 @@ var DeviceStatusPanel = ({
   emptyText = "\u6682\u65E0\u8BBE\u5907\u6570\u636E",
   showSearch = true
 }) => {
-  const [statusFilter, setStatusFilter] = (0, import_react62.useState)("all");
-  const [searchQuery, setSearchQuery] = (0, import_react62.useState)("");
-  const [expanded, setExpanded] = (0, import_react62.useState)(true);
-  const summary = (0, import_react62.useMemo)(() => computeDeviceSummary(devices), [devices]);
-  const filteredDevices = (0, import_react62.useMemo)(() => {
+  const [statusFilter, setStatusFilter] = (0, import_react63.useState)("all");
+  const [searchQuery, setSearchQuery] = (0, import_react63.useState)("");
+  const [expanded, setExpanded] = (0, import_react63.useState)(true);
+  const summary = (0, import_react63.useMemo)(() => computeDeviceSummary(devices), [devices]);
+  const filteredDevices = (0, import_react63.useMemo)(() => {
     let result = [...devices];
     if (statusFilter !== "all") {
       result = result.filter((d) => d.status === statusFilter);
@@ -25046,7 +25244,7 @@ var DeviceStatusPanel = ({
     return result.slice(0, maxDisplay);
   }, [devices, statusFilter, searchQuery, maxDisplay]);
   const isEmpty = devices.length === 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
     "div",
     {
       className: `device-status-panel ${className}`,
@@ -25060,7 +25258,7 @@ var DeviceStatusPanel = ({
       role: "region",
       "aria-label": title,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
           "div",
           {
             className: "device-status-panel__header",
@@ -25071,8 +25269,8 @@ var DeviceStatusPanel = ({
               marginBottom: 16
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
                   "button",
                   {
                     className: "device-status-panel__collapse-btn",
@@ -25090,7 +25288,7 @@ var DeviceStatusPanel = ({
                     children: expanded ? "\u25BC" : "\u25B6"
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+                /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
                   "h3",
                   {
                     className: "device-status-panel__title",
@@ -25106,7 +25304,7 @@ var DeviceStatusPanel = ({
                     ]
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+                /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
                   "span",
                   {
                     className: "device-status-panel__count",
@@ -25124,7 +25322,7 @@ var DeviceStatusPanel = ({
                   }
                 )
               ] }),
-              onRefresh && /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+              onRefresh && /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
                 "button",
                 {
                   className: "device-status-panel__refresh-btn",
@@ -25145,7 +25343,7 @@ var DeviceStatusPanel = ({
             ]
           }
         ),
-        !expanded && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+        !expanded && /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
           "div",
           {
             className: "device-status-panel__collapsed-summary",
@@ -25156,17 +25354,17 @@ var DeviceStatusPanel = ({
               color: "#94a3b8"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { children: [
                 "\u{1F7E2} ",
                 summary.online,
                 " \u5728\u7EBF"
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { children: [
                 "\u{1F7E1} ",
                 summary.warning,
                 " \u544A\u8B66"
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("span", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { children: [
                 "\u{1F534} ",
                 summary.error,
                 " \u6545\u969C"
@@ -25174,9 +25372,9 @@ var DeviceStatusPanel = ({
             ]
           }
         ),
-        expanded && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(import_jsx_runtime92.Fragment, { children: [
-          showSummary && /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(SummaryCard, { summary }),
-          (showSearch || showFilters) && !isEmpty && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+        expanded && /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(import_jsx_runtime93.Fragment, { children: [
+          showSummary && /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(SummaryCard, { summary }),
+          (showSearch || showFilters) && !isEmpty && /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
             "div",
             {
               className: "device-status-panel__controls",
@@ -25188,7 +25386,7 @@ var DeviceStatusPanel = ({
                 alignItems: "center"
               },
               children: [
-                showSearch && /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+                showSearch && /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
                   "input",
                   {
                     className: "device-status-panel__search",
@@ -25209,12 +25407,12 @@ var DeviceStatusPanel = ({
                     }
                   }
                 ),
-                showFilters && /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+                showFilters && /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
                   "div",
                   {
                     className: "device-status-panel__filters",
                     style: { display: "flex", gap: 4, flexWrap: "wrap" },
-                    children: FILTER_OPTIONS.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+                    children: FILTER_OPTIONS.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
                       "button",
                       {
                         className: `device-status-panel__filter-btn ${statusFilter === opt.key ? "device-status-panel__filter-btn--active" : ""}`,
@@ -25240,7 +25438,7 @@ var DeviceStatusPanel = ({
               ]
             }
           ),
-          isEmpty ? /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+          isEmpty ? /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
             "div",
             {
               className: "device-status-panel__empty",
@@ -25252,7 +25450,7 @@ var DeviceStatusPanel = ({
               },
               children: emptyText
             }
-          ) : filteredDevices.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+          ) : filteredDevices.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
             "div",
             {
               className: "device-status-panel__no-match",
@@ -25264,8 +25462,8 @@ var DeviceStatusPanel = ({
               },
               children: "\u6CA1\u6709\u5339\u914D\u7684\u8BBE\u5907"
             }
-          ) : /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)("div", { className: "device-status-panel__list", children: [
-            filteredDevices.map((device) => /* @__PURE__ */ (0, import_jsx_runtime92.jsx)(
+          ) : /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { className: "device-status-panel__list", children: [
+            filteredDevices.map((device) => /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
               DeviceRow,
               {
                 device,
@@ -25274,7 +25472,7 @@ var DeviceStatusPanel = ({
               },
               device.id
             )),
-            devices.length > maxDisplay && /* @__PURE__ */ (0, import_jsx_runtime92.jsxs)(
+            devices.length > maxDisplay && /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
               "div",
               {
                 className: "device-status-panel__more",
@@ -25315,7 +25513,7 @@ if (typeof document !== "undefined") {
 }
 
 // src/components/DeviceInspectionPanel.tsx
-var import_jsx_runtime93 = require("react/jsx-runtime");
+var import_jsx_runtime94 = require("react/jsx-runtime");
 var statusConfig = {
   healthy: { label: "\u6B63\u5E38", color: "#16a34a", bg: "#dcfce7" },
   warning: { label: "\u8B66\u544A", color: "#ca8a04", bg: "#fef9c3" },
@@ -25350,40 +25548,40 @@ var DeviceInspectionPanel = ({
   className
 }) => {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { "data-testid": "device-inspection-loading", className, style: { padding: 24 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { display: "grid", gap: 12, gridTemplateColumns: "repeat(4, 1fr)" }, children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { "data-testid": "skeleton-card", style: { height: 80, borderRadius: 12, background: "#f1f5f9", animation: "pulse 1.5s infinite" } }, i)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { marginTop: 24, height: 200, borderRadius: 12, background: "#f1f5f9", animation: "pulse 1.5s infinite" } })
+    return /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("div", { "data-testid": "device-inspection-loading", className, style: { padding: 24 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("div", { style: { display: "grid", gap: 12, gridTemplateColumns: "repeat(4, 1fr)" }, children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("div", { "data-testid": "skeleton-card", style: { height: 80, borderRadius: 12, background: "#f1f5f9", animation: "pulse 1.5s infinite" } }, i)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("div", { style: { marginTop: 24, height: 200, borderRadius: 12, background: "#f1f5f9", animation: "pulse 1.5s infinite" } })
     ] });
   }
   if (error) {
-    return /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { "data-testid": "device-inspection-error", className, style: { padding: 24, textAlign: "center", color: "#dc2626" }, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("p", { children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("div", { "data-testid": "device-inspection-error", className, style: { padding: 24, textAlign: "center", color: "#dc2626" }, children: /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("p", { children: [
       "\u26A0\uFE0F ",
       error
     ] }) });
   }
   const pendingAlerts = devices.reduce((count, d) => count + d.alerts.filter((a) => !a.acknowledged).length, 0);
-  return /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { "data-testid": "device-inspection-panel", className, style: { fontFamily: "system-ui, sans-serif" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { "data-testid": "inspection-summary", style: { display: "grid", gap: 12, gridTemplateColumns: "repeat(5, 1fr)", marginBottom: 20 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(SummaryCard2, { label: "\u8BBE\u5907\u603B\u6570", value: summary.total, color: "#1e293b" }),
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(SummaryCard2, { label: "\u6B63\u5E38", value: summary.healthy, color: "#16a34a" }),
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(SummaryCard2, { label: "\u8B66\u544A", value: summary.warning, color: "#ca8a04" }),
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(SummaryCard2, { label: "\u4E25\u91CD", value: summary.critical, color: "#dc2626" }),
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(SummaryCard2, { label: "\u79BB\u7EBF", value: summary.offline, color: "#6b7280" })
+  return /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("div", { "data-testid": "device-inspection-panel", className, style: { fontFamily: "system-ui, sans-serif" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("div", { "data-testid": "inspection-summary", style: { display: "grid", gap: 12, gridTemplateColumns: "repeat(5, 1fr)", marginBottom: 20 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(SummaryCard2, { label: "\u8BBE\u5907\u603B\u6570", value: summary.total, color: "#1e293b" }),
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(SummaryCard2, { label: "\u6B63\u5E38", value: summary.healthy, color: "#16a34a" }),
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(SummaryCard2, { label: "\u8B66\u544A", value: summary.warning, color: "#ca8a04" }),
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(SummaryCard2, { label: "\u4E25\u91CD", value: summary.critical, color: "#dc2626" }),
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(SummaryCard2, { label: "\u79BB\u7EBF", value: summary.offline, color: "#6b7280" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { "data-testid": "inspection-metrics", style: { display: "grid", gap: 12, gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 20 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(MetricGauge, { label: "\u5E73\u5747 CPU", value: summary.avgCpuUsage, unit: "%", max: 100 }),
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(MetricGauge, { label: "\u5E73\u5747\u5185\u5B58", value: summary.avgMemoryUsage, unit: "%", max: 100 }),
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(MetricGauge, { label: "\u5E73\u5747\u6E29\u5EA6", value: summary.avgTemperature, unit: "\xB0C", max: 100 })
+    /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("div", { "data-testid": "inspection-metrics", style: { display: "grid", gap: 12, gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 20 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(MetricGauge, { label: "\u5E73\u5747 CPU", value: summary.avgCpuUsage, unit: "%", max: 100 }),
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(MetricGauge, { label: "\u5E73\u5747\u5185\u5B58", value: summary.avgMemoryUsage, unit: "%", max: 100 }),
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(MetricGauge, { label: "\u5E73\u5747\u6E29\u5EA6", value: summary.avgTemperature, unit: "\xB0C", max: 100 })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { "data-testid": "inspection-actions", style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: { fontSize: 14, color: "#64748b" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("div", { "data-testid": "inspection-actions", style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("span", { style: { fontSize: 14, color: "#64748b" }, children: [
         "\u5171 ",
         devices.length,
         " \u53F0\u8BBE\u5907 \xB7 ",
         pendingAlerts > 0 ? `${pendingAlerts} \u6761\u672A\u5904\u7406\u544A\u8B66` : "\u65E0\u5F85\u5904\u7406\u544A\u8B66"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
           "button",
           {
             "data-testid": "start-inspection-btn",
@@ -25401,7 +25599,7 @@ var DeviceInspectionPanel = ({
             children: "\u5F00\u59CB\u5DE1\u68C0"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
           "button",
           {
             "data-testid": "export-report-btn",
@@ -25420,32 +25618,32 @@ var DeviceInspectionPanel = ({
         )
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { "data-testid": "device-table", style: { borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("table", { style: { width: "100%", borderCollapse: "collapse" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("tr", { style: { background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u8BBE\u5907\u540D\u79F0" }),
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u7C7B\u578B" }),
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u4F4D\u7F6E" }),
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u72B6\u6001" }),
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "CPU" }),
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u5185\u5B58" }),
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u6E29\u5EA6" }),
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u8FD0\u884C\u65F6\u957F" }),
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u4E0A\u6B21\u5DE1\u68C0" }),
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("th", { style: thStyle, children: "\u544A\u8B66" })
+    /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("div", { "data-testid": "device-table", style: { borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("table", { style: { width: "100%", borderCollapse: "collapse" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("tr", { style: { background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("th", { style: thStyle, children: "\u8BBE\u5907\u540D\u79F0" }),
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("th", { style: thStyle, children: "\u7C7B\u578B" }),
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("th", { style: thStyle, children: "\u4F4D\u7F6E" }),
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("th", { style: thStyle, children: "\u72B6\u6001" }),
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("th", { style: thStyle, children: "CPU" }),
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("th", { style: thStyle, children: "\u5185\u5B58" }),
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("th", { style: thStyle, children: "\u6E29\u5EA6" }),
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("th", { style: thStyle, children: "\u8FD0\u884C\u65F6\u957F" }),
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("th", { style: thStyle, children: "\u4E0A\u6B21\u5DE1\u68C0" }),
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("th", { style: thStyle, children: "\u544A\u8B66" })
       ] }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("tbody", { children: devices.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("tr", { children: /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { colSpan: 10, style: { padding: 32, textAlign: "center", color: "#94a3b8" }, children: "\u6682\u65E0\u8BBE\u5907\u6570\u636E" }) }) : devices.map((device) => {
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("tbody", { children: devices.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("tr", { children: /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("td", { colSpan: 10, style: { padding: 32, textAlign: "center", color: "#94a3b8" }, children: "\u6682\u65E0\u8BBE\u5907\u6570\u636E" }) }) : devices.map((device) => {
         const statusCfg = statusConfig[device.status];
-        return /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
+        return /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)(
           "tr",
           {
             "data-testid": `device-row-${device.id}`,
             onClick: () => onDeviceClick?.(device),
             style: { borderBottom: "1px solid #f1f5f9", cursor: onDeviceClick ? "pointer" : "default" },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { fontWeight: 600 }, children: device.deviceName }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: device.deviceType }),
-              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: device.location }),
-              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("div", { style: { fontWeight: 600 }, children: device.deviceName }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("td", { style: tdStyle, children: device.deviceType }),
+              /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("td", { style: tdStyle, children: device.location }),
+              /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
                 "span",
                 {
                   "data-testid": `status-${device.id}`,
@@ -25460,30 +25658,30 @@ var DeviceInspectionPanel = ({
                   children: statusCfg.label
                 }
               ) }),
-              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: formatMetric(device.metrics.cpuUsage, "%", 90), children: [
+              /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("span", { style: formatMetric(device.metrics.cpuUsage, "%", 90), children: [
                 device.metrics.cpuUsage,
                 "%"
               ] }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: formatMetric(device.metrics.memoryUsage, "%", 90), children: [
+              /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("span", { style: formatMetric(device.metrics.memoryUsage, "%", 90), children: [
                 device.metrics.memoryUsage,
                 "%"
               ] }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: formatMetric(device.metrics.temperature, "\xB0C", 80), children: [
+              /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("td", { style: tdStyle, children: /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("span", { style: formatMetric(device.metrics.temperature, "\xB0C", 80), children: [
                 device.metrics.temperature,
                 "\xB0C"
               ] }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: formatUptime2(device.metrics.uptimeHours) }),
-              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: new Date(device.lastInspectedAt).toLocaleDateString("zh-CN") }),
-              /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("td", { style: tdStyle, children: device.alerts.filter((a) => !a.acknowledged).length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: [
-                device.alerts.filter((a) => !a.acknowledged).slice(0, 2).map((alert) => /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("td", { style: tdStyle, children: formatUptime2(device.metrics.uptimeHours) }),
+              /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("td", { style: tdStyle, children: new Date(device.lastInspectedAt).toLocaleDateString("zh-CN") }),
+              /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("td", { style: tdStyle, children: device.alerts.filter((a) => !a.acknowledged).length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: [
+                device.alerts.filter((a) => !a.acknowledged).slice(0, 2).map((alert) => /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)(
                   "div",
                   {
                     "data-testid": `alert-${alert.id}`,
                     style: { display: "flex", alignItems: "center", gap: 4, fontSize: 12 },
                     children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("span", { children: severityConfig[alert.severity].icon }),
-                      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("span", { style: { color: severityConfig[alert.severity].color }, children: alert.message }),
-                      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
+                      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("span", { children: severityConfig[alert.severity].icon }),
+                      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("span", { style: { color: severityConfig[alert.severity].color }, children: alert.message }),
+                      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
                         "button",
                         {
                           "data-testid": `acknowledge-${alert.id}`,
@@ -25508,12 +25706,12 @@ var DeviceInspectionPanel = ({
                   },
                   alert.id
                 )),
-                device.alerts.filter((a) => !a.acknowledged).length > 2 && /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: { fontSize: 11, color: "#94a3b8" }, children: [
+                device.alerts.filter((a) => !a.acknowledged).length > 2 && /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("span", { style: { fontSize: 11, color: "#94a3b8" }, children: [
                   "+",
                   device.alerts.filter((a) => !a.acknowledged).length - 2,
                   " \u6761\u66F4\u591A"
                 ] })
-              ] }) : /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("span", { style: { color: "#94a3b8", fontSize: 12 }, children: "\u65E0\u544A\u8B66" }) })
+              ] }) : /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("span", { style: { color: "#94a3b8", fontSize: 12 }, children: "\u65E0\u544A\u8B66" }) })
             ]
           },
           device.id
@@ -25522,7 +25720,7 @@ var DeviceInspectionPanel = ({
     ] }) })
   ] });
 };
-var SummaryCard2 = ({ label, value, color }) => /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
+var SummaryCard2 = ({ label, value, color }) => /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)(
   "div",
   {
     "data-testid": `summary-card-${label}`,
@@ -25534,15 +25732,15 @@ var SummaryCard2 = ({ label, value, color }) => /* @__PURE__ */ (0, import_jsx_r
       background: "#fff"
     },
     children: [
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { fontSize: 13, color: "#64748b", marginBottom: 4 }, children: label }),
-      /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { fontSize: 28, fontWeight: 700, color }, children: value })
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("div", { style: { fontSize: 13, color: "#64748b", marginBottom: 4 }, children: label }),
+      /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("div", { style: { fontSize: 28, fontWeight: 700, color }, children: value })
     ]
   }
 );
 var MetricGauge = ({ label, value, unit, max }) => {
   const pct = Math.min(value / max * 100, 100);
   const color = value >= 90 ? "#dc2626" : value >= 70 ? "#ca8a04" : "#16a34a";
-  return /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)(
     "div",
     {
       "data-testid": `metric-gauge-${label}`,
@@ -25553,14 +25751,14 @@ var MetricGauge = ({ label, value, unit, max }) => {
         background: "#fff"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 8 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("span", { style: { fontSize: 13, color: "#64748b" }, children: label }),
-          /* @__PURE__ */ (0, import_jsx_runtime93.jsxs)("span", { style: { fontSize: 13, fontWeight: 700, color }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("span", { style: { fontSize: 13, color: "#64748b" }, children: label }),
+          /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)("span", { style: { fontSize: 13, fontWeight: 700, color }, children: [
             value,
             unit
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime93.jsx)("div", { style: { height: 6, borderRadius: 3, background: "#f1f5f9", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime93.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("div", { style: { height: 6, borderRadius: 3, background: "#f1f5f9", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
           "div",
           {
             "data-testid": `gauge-bar-${label}`,
@@ -25587,7 +25785,7 @@ var tdStyle = {
 };
 
 // src/components/MemberLevelDistribution.tsx
-var import_jsx_runtime94 = require("react/jsx-runtime");
+var import_jsx_runtime95 = require("react/jsx-runtime");
 var DEFAULT_LEVEL_COLORS = [
   "#f59e0b",
   // 黄金 - 黄金会员
@@ -25617,12 +25815,12 @@ var MemberLevelDistribution = ({
   emptyText = "\u6682\u65E0\u4F1A\u5458\u6570\u636E"
 }) => {
   if (!data || data.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
       "div",
       {
         className: `member-level-distribution member-level-distribution--empty ${className}`,
         style: { width, height, display: "flex", alignItems: "center", justifyContent: "center" },
-        children: /* @__PURE__ */ (0, import_jsx_runtime94.jsx)("span", { style: { color: "#9ca3af", fontSize: 14 }, children: emptyText })
+        children: /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: { color: "#9ca3af", fontSize: 14 }, children: emptyText })
       }
     );
   }
@@ -25631,7 +25829,7 @@ var MemberLevelDistribution = ({
   const barAreaHeight = height - 60;
   const barWidth = Math.max(20, Math.min(60, (width - 80) / data.length - 12));
   const gap = (width - 60 - barWidth * data.length) / (data.length + 1);
-  return /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
     "div",
     {
       className: `member-level-distribution ${className}`,
@@ -25647,7 +25845,7 @@ var MemberLevelDistribution = ({
         flexDirection: "column"
       },
       children: [
-        title && /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
+        title && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
           "div",
           {
             className: "member-level-distribution__title",
@@ -25661,7 +25859,7 @@ var MemberLevelDistribution = ({
             children: title
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
           "div",
           {
             className: "member-level-distribution__chart",
@@ -25680,7 +25878,7 @@ var MemberLevelDistribution = ({
               const barHeight = total > 0 ? item.count / maxCount * barAreaHeight : 0;
               const percentage = total > 0 ? (item.count / total * 100).toFixed(1) : "0";
               const color = item.color || DEFAULT_LEVEL_COLORS[index % DEFAULT_LEVEL_COLORS.length];
-              return /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)(
+              return /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
                 "div",
                 {
                   className: "member-level-distribution__bar-group",
@@ -25691,7 +25889,7 @@ var MemberLevelDistribution = ({
                     width: barWidth
                   },
                   children: [
-                    showValues && /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
+                    showValues && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
                       "span",
                       {
                         className: "member-level-distribution__value",
@@ -25705,7 +25903,7 @@ var MemberLevelDistribution = ({
                         children: item.count
                       }
                     ),
-                    /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
                       "div",
                       {
                         className: "member-level-distribution__bar",
@@ -25720,7 +25918,7 @@ var MemberLevelDistribution = ({
                         title: `${item.name}: ${item.count}\u4EBA${showPercentage ? ` (${percentage}%)` : ""}`
                       }
                     ),
-                    showPercentage && /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)(
+                    showPercentage && /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
                       "span",
                       {
                         className: "member-level-distribution__percentage",
@@ -25736,7 +25934,7 @@ var MemberLevelDistribution = ({
                         ]
                       }
                     ),
-                    /* @__PURE__ */ (0, import_jsx_runtime94.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
                       "span",
                       {
                         className: "member-level-distribution__label",
@@ -25759,7 +25957,7 @@ var MemberLevelDistribution = ({
             })
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime94.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
           "div",
           {
             className: "member-level-distribution__total",
@@ -25782,7 +25980,7 @@ var MemberLevelDistribution = ({
 };
 
 // src/components/AISummaryCard.tsx
-var import_jsx_runtime95 = require("react/jsx-runtime");
+var import_jsx_runtime96 = require("react/jsx-runtime");
 function getTrendSymbol(dir) {
   switch (dir) {
     case "up":
@@ -25820,7 +26018,7 @@ function formatRelativeTime(iso) {
   return `${Math.floor(hours / 24)}\u5929\u524D`;
 }
 function MetricChip({ metric }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(
     "div",
     {
       style: {
@@ -25835,9 +26033,9 @@ function MetricChip({ metric }) {
         minWidth: 0
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: { fontSize: 11, color: "#64748b", fontWeight: 500 }, children: metric.label }),
-        /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 6 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("span", { style: { fontSize: 11, color: "#64748b", fontWeight: 500 }, children: metric.label }),
+        /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 6 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(
             "span",
             {
               style: {
@@ -25848,11 +26046,11 @@ function MetricChip({ metric }) {
               },
               children: [
                 metric.value,
-                metric.unit && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: { fontSize: 12, fontWeight: 400, color: "#64748b", marginLeft: 2 }, children: metric.unit })
+                metric.unit && /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("span", { style: { fontSize: 12, fontWeight: 400, color: "#64748b", marginLeft: 2 }, children: metric.unit })
               ]
             }
           ),
-          metric.trend && metric.trend !== "flat" && /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+          metric.trend && metric.trend !== "flat" && /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(
             "span",
             {
               style: {
@@ -25873,7 +26071,7 @@ function MetricChip({ metric }) {
 }
 function InsightRow({ insight }) {
   const style = getInsightStyle(insight.type);
-  return /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(
     "div",
     {
       style: {
@@ -25884,15 +26082,15 @@ function InsightRow({ insight }) {
         background: style.bg
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: { fontSize: 12, flexShrink: 0 }, children: style.icon }),
-        /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: { fontSize: 12, color: "#cbd5e1", lineHeight: 1.5 }, children: insight.text })
+        /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("span", { style: { fontSize: 12, flexShrink: 0 }, children: style.icon }),
+        /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("span", { style: { fontSize: 12, color: "#cbd5e1", lineHeight: 1.5 }, children: insight.text })
       ]
     }
   );
 }
 function LoadingSkeletonBlock() {
-  return /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
       "div",
       {
         style: {
@@ -25904,7 +26102,7 @@ function LoadingSkeletonBlock() {
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
       "div",
       {
         style: {
@@ -25916,7 +26114,7 @@ function LoadingSkeletonBlock() {
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
       "div",
       {
         style: {
@@ -25928,7 +26126,7 @@ function LoadingSkeletonBlock() {
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("div", { style: { display: "flex", gap: 8, marginTop: 4 }, children: [1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("div", { style: { display: "flex", gap: 8, marginTop: 4 }, children: [1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
       "div",
       {
         style: {
@@ -25944,7 +26142,7 @@ function LoadingSkeletonBlock() {
   ] });
 }
 function ErrorBlock({ message }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
     "div",
     {
       style: {
@@ -25972,7 +26170,7 @@ function AISummaryCard({
   onAIAnalyze,
   analyzing = false
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(
     "div",
     {
       className,
@@ -25983,7 +26181,7 @@ function AISummaryCard({
         padding: "18px 20px"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(
           "div",
           {
             style: {
@@ -25993,8 +26191,8 @@ function AISummaryCard({
               marginBottom: 14
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: { fontSize: 14 }, children: "\u{1F9E0}" }),
-              /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("span", { style: { fontSize: 14 }, children: "\u{1F9E0}" }),
+              /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
                 "span",
                 {
                   style: {
@@ -26005,7 +26203,7 @@ function AISummaryCard({
                   children: title
                 }
               ),
-              analyzing && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+              analyzing && /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
                 "span",
                 {
                   style: {
@@ -26019,8 +26217,8 @@ function AISummaryCard({
                   children: "\u5206\u6790\u4E2D..."
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("div", { style: { flex: 1 } }),
-              onAIAnalyze && !loading && !error && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("div", { style: { flex: 1 } }),
+              onAIAnalyze && !loading && !error && /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
                 "button",
                 {
                   type: "button",
@@ -26040,14 +26238,14 @@ function AISummaryCard({
                   children: analyzing ? "\u5206\u6790\u4E2D..." : "\u{1F504} \u91CD\u65B0\u5206\u6790"
                 }
               ),
-              updatedAt && !loading && !error && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: { fontSize: 10, color: "#475569" }, children: formatRelativeTime(updatedAt) })
+              updatedAt && !loading && !error && /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("span", { style: { fontSize: 10, color: "#475569" }, children: formatRelativeTime(updatedAt) })
             ]
           }
         ),
-        loading && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(LoadingSkeletonBlock, {}),
-        error && !loading && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(ErrorBlock, { message: error }),
-        !loading && !error && /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(import_jsx_runtime95.Fragment, { children: [
-          summary ? /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+        loading && /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(LoadingSkeletonBlock, {}),
+        error && !loading && /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(ErrorBlock, { message: error }),
+        !loading && !error && /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(import_jsx_runtime96.Fragment, { children: [
+          summary ? /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
             "p",
             {
               style: {
@@ -26058,7 +26256,7 @@ function AISummaryCard({
               },
               children: summary
             }
-          ) : /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+          ) : /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
             "div",
             {
               style: {
@@ -26070,7 +26268,7 @@ function AISummaryCard({
               children: "\u{1F914} \u6682\u65E0\u6458\u8981\u6570\u636E\uFF0C\u70B9\u51FB\u201C\u91CD\u65B0\u5206\u6790\u201D\u751F\u6210"
             }
           ),
-          metrics && metrics.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+          metrics && metrics.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
             "div",
             {
               style: {
@@ -26079,10 +26277,10 @@ function AISummaryCard({
                 marginTop: 14,
                 flexWrap: "wrap"
               },
-              children: metrics.map((m, i) => /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(MetricChip, { metric: m }, i))
+              children: metrics.map((m, i) => /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(MetricChip, { metric: m }, i))
             }
           ),
-          insights && insights.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(
+          insights && insights.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(
             "div",
             {
               style: {
@@ -26095,7 +26293,7 @@ function AISummaryCard({
                 background: "rgba(15,23,42,0.3)"
               },
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
                   "span",
                   {
                     style: {
@@ -26107,7 +26305,7 @@ function AISummaryCard({
                     children: "\u5173\u952E\u6D1E\u5BDF"
                   }
                 ),
-                insights.map((item, i) => /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(InsightRow, { insight: item }, i))
+                insights.map((item, i) => /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(InsightRow, { insight: item }, i))
               ]
             }
           )
@@ -26118,8 +26316,8 @@ function AISummaryCard({
 }
 
 // src/components/Rating.tsx
-var import_react63 = require("react");
-var import_jsx_runtime96 = require("react/jsx-runtime");
+var import_react64 = require("react");
+var import_jsx_runtime97 = require("react/jsx-runtime");
 var DEFAULT_STAR_LABELS = ["\u5F88\u5DEE", "\u8F83\u5DEE", "\u4E00\u822C", "\u597D", "\u5F88\u597D"];
 function Rating({
   value = 0,
@@ -26138,11 +26336,11 @@ function Rating({
   className,
   style
 }) {
-  const [hoverValue, setHoverValue] = (0, import_react63.useState)(null);
-  const [internalValue, setInternalValue] = (0, import_react63.useState)(value);
+  const [hoverValue, setHoverValue] = (0, import_react64.useState)(null);
+  const [internalValue, setInternalValue] = (0, import_react64.useState)(value);
   const currentValue = interactive ? hoverValue ?? internalValue : value;
   const safeValue = Math.max(0, Math.min(currentValue, max));
-  const handleClick = (0, import_react63.useCallback)(
+  const handleClick = (0, import_react64.useCallback)(
     (starIndex, event) => {
       if (!interactive) return;
       let newValue;
@@ -26159,7 +26357,7 @@ function Rating({
     },
     [interactive, half, onChange]
   );
-  const handleMouseEnter = (0, import_react63.useCallback)(
+  const handleMouseEnter = (0, import_react64.useCallback)(
     (starIndex, event) => {
       if (!interactive || !half) {
         setHoverValue(starIndex + 1);
@@ -26172,7 +26370,7 @@ function Rating({
     },
     [interactive, half]
   );
-  const handleMouseLeave = (0, import_react63.useCallback)(() => {
+  const handleMouseLeave = (0, import_react64.useCallback)(() => {
     setHoverValue(null);
   }, []);
   const displayValue = hoverValue ?? internalValue;
@@ -26181,7 +26379,7 @@ function Rating({
     const isHalfFilled = half && fillRatio > 0 && fillRatio < 1;
     const isFilled = fillRatio >= 1;
     const label2 = starLabels?.[starIndex] ?? `${starIndex + 1} star${starIndex > 0 ? "s" : ""}`;
-    return /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(
       "span",
       {
         role: "radio",
@@ -26226,7 +26424,7 @@ function Rating({
           position: "relative",
           outline: "none"
         },
-        children: /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)(
           "svg",
           {
             viewBox: "0 0 24 24",
@@ -26235,15 +26433,15 @@ function Rating({
             "aria-hidden": "true",
             style: { display: "block" },
             children: [
-              half ? /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(import_jsx_runtime96.Fragment, { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
+              half ? /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)(import_jsx_runtime97.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(
                   "path",
                   {
                     d: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
                     fill: inactiveColor
                   }
                 ),
-                fillRatio > 0 && /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
+                fillRatio > 0 && /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(
                   "path",
                   {
                     d: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
@@ -26251,14 +26449,14 @@ function Rating({
                     clipPath: `url(#rating-half-clip-${starIndex})`
                   }
                 )
-              ] }) : /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
+              ] }) : /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(
                 "path",
                 {
                   d: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
                   fill: isFilled ? activeColor : inactiveColor
                 }
               ),
-              half && /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("clipPath", { id: `rating-half-clip-${starIndex}`, children: /* @__PURE__ */ (0, import_jsx_runtime96.jsx)("rect", { x: "0", y: "0", width: fillRatio * 24, height: "24" }) }) })
+              half && /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("clipPath", { id: `rating-half-clip-${starIndex}`, children: /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("rect", { x: "0", y: "0", width: fillRatio * 24, height: "24" }) }) })
             ]
           }
         )
@@ -26267,7 +26465,7 @@ function Rating({
     );
   };
   const label = formatLabel ? formatLabel(safeValue, max) : `${safeValue} / ${max}`;
-  return /* @__PURE__ */ (0, import_jsx_runtime96.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)(
     "div",
     {
       "data-testid": dataTestId,
@@ -26283,7 +26481,7 @@ function Rating({
       },
       children: [
         Array.from({ length: max }, (_, i) => renderStar(i)),
-        showValue && /* @__PURE__ */ (0, import_jsx_runtime96.jsx)(
+        showValue && /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(
           "span",
           {
             "data-testid": dataTestId ? `${dataTestId}-label` : void 0,
@@ -26303,8 +26501,8 @@ function Rating({
 }
 
 // src/components/BranchSelector.tsx
-var import_react64 = require("react");
-var import_jsx_runtime97 = require("react/jsx-runtime");
+var import_react65 = require("react");
+var import_jsx_runtime98 = require("react/jsx-runtime");
 function findNodeById(nodes, id) {
   for (const n of nodes) {
     if (n.id === id) return n;
@@ -26338,14 +26536,14 @@ function BranchNode({
   const hasChildren = node.children && node.children.length > 0;
   const isExpanded = expandedIds.has(node.id);
   const isSelected = selectedId === node.id;
-  const [initialized] = (0, import_react64.useState)(() => {
+  const [initialized] = (0, import_react65.useState)(() => {
     if (defaultExpandDepth < 0 || depth < defaultExpandDepth) {
       onToggle(node.id);
     }
     return true;
   });
   void initialized;
-  const typeIcon = (0, import_react64.useMemo)(() => {
+  const typeIcon = (0, import_react65.useMemo)(() => {
     switch (node.type) {
       case "region":
         return "\u{1F3E2}";
@@ -26357,8 +26555,8 @@ function BranchNode({
         return "\u{1F4C1}";
     }
   }, [node.type]);
-  return /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)("div", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime97.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)(
       "button",
       {
         type: "button",
@@ -26374,13 +26572,13 @@ function BranchNode({
         "aria-selected": isSelected,
         "aria-disabled": node.disabled,
         children: [
-          hasChildren && /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("span", { className: "branch-node-chevron", "aria-hidden": true, children: isExpanded ? "\u25BE" : "\u25B8" }),
-          /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("span", { className: "branch-node-icon", "aria-hidden": true, children: typeIcon }),
-          /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("span", { className: "branch-node-label", children: node.label })
+          hasChildren && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("span", { className: "branch-node-chevron", "aria-hidden": true, children: isExpanded ? "\u25BE" : "\u25B8" }),
+          /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("span", { className: "branch-node-icon", "aria-hidden": true, children: typeIcon }),
+          /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("span", { className: "branch-node-label", children: node.label })
         ]
       }
     ),
-    hasChildren && isExpanded && /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("div", { className: "branch-node-children", children: node.children.map((child) => /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(
+    hasChildren && isExpanded && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { className: "branch-node-children", children: node.children.map((child) => /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
       BranchNode,
       {
         node: child,
@@ -26404,13 +26602,13 @@ function BranchSelector({
   disabled = false,
   className = ""
 }) {
-  const [expandedIds, setExpandedIds] = (0, import_react64.useState)(() => /* @__PURE__ */ new Set());
-  const instanceId = (0, import_react64.useId)();
-  const selectedNode = (0, import_react64.useMemo)(
+  const [expandedIds, setExpandedIds] = (0, import_react65.useState)(() => /* @__PURE__ */ new Set());
+  const instanceId = (0, import_react65.useId)();
+  const selectedNode = (0, import_react65.useMemo)(
     () => value ? findNodeById(nodes, value) : null,
     [nodes, value]
   );
-  const handleToggle = (0, import_react64.useCallback)((id) => {
+  const handleToggle = (0, import_react65.useCallback)((id) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -26418,16 +26616,16 @@ function BranchSelector({
       return next;
     });
   }, []);
-  const handleSelect = (0, import_react64.useCallback)(
+  const handleSelect = (0, import_react65.useCallback)(
     (id) => {
       if (!disabled && onChange) onChange(id);
     },
     [disabled, onChange]
   );
   if (nodes.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime97.jsx)("div", { className: "branch-selector branch-selector--empty", children: emptyLabel });
+    return /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { className: "branch-selector branch-selector--empty", children: emptyLabel });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
     "div",
     {
       className: `branch-selector${className ? ` ${className}` : ""}`,
@@ -26435,7 +26633,7 @@ function BranchSelector({
       "aria-label": "\u7EC4\u7EC7\u67B6\u6784\u9009\u62E9\u5668",
       "aria-multiselectable": "false",
       "data-instance": instanceId,
-      children: nodes.map((node) => /* @__PURE__ */ (0, import_jsx_runtime97.jsx)(
+      children: nodes.map((node) => /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
         BranchNode,
         {
           node,
@@ -26454,8 +26652,8 @@ function BranchSelector({
 BranchSelector.displayName = "BranchSelector";
 
 // src/components/SalesForecastPanel.tsx
-var import_react65 = require("react");
-var import_jsx_runtime98 = require("react/jsx-runtime");
+var import_react66 = require("react");
+var import_jsx_runtime99 = require("react/jsx-runtime");
 var TREND_LABELS = {
   up: "\u{1F4C8} \u4E0A\u5347\u8D8B\u52BF",
   down: "\u{1F4C9} \u4E0B\u964D\u8D8B\u52BF",
@@ -26510,7 +26708,7 @@ function ForecastChart({ dataPoints, height = 220 }) {
   const yTicks = 5;
   const yTickValues = Array.from({ length: yTicks }, (_, i) => minVal + range * i / (yTicks - 1));
   const xTickIndices = dataPoints.length <= 4 ? dataPoints.map((_, i) => i) : [0, Math.floor(dataPoints.length / 2), dataPoints.length - 1];
-  return /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)(
     "svg",
     {
       width: "100%",
@@ -26520,8 +26718,8 @@ function ForecastChart({ dataPoints, height = 220 }) {
       "data-testid": "forecast-chart-svg",
       style: { display: "block", overflow: "visible" },
       children: [
-        yTickValues.map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("g", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        yTickValues.map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)("g", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
             "line",
             {
               x1: padding.left,
@@ -26532,7 +26730,7 @@ function ForecastChart({ dataPoints, height = 220 }) {
               strokeWidth: 1
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
             "text",
             {
               x: padding.left - 6,
@@ -26544,7 +26742,7 @@ function ForecastChart({ dataPoints, height = 220 }) {
             }
           )
         ] }, `grid-${i}`)),
-        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
           "polygon",
           {
             points: `${optimisticPoints} ${pessimisticPoints}`,
@@ -26552,7 +26750,7 @@ function ForecastChart({ dataPoints, height = 220 }) {
             "data-testid": "forecast-confidence-band"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
           "polyline",
           {
             points: linePoints,
@@ -26564,7 +26762,7 @@ function ForecastChart({ dataPoints, height = 220 }) {
             "data-testid": "forecast-line"
           }
         ),
-        dataPoints.map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        dataPoints.map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
           "circle",
           {
             cx: xScale(i),
@@ -26577,7 +26775,7 @@ function ForecastChart({ dataPoints, height = 220 }) {
         )),
         dataPoints.filter((d) => d.actual !== void 0).map((d, i) => {
           const idx = dataPoints.indexOf(d);
-          return /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          return /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
             "circle",
             {
               cx: xScale(idx),
@@ -26591,7 +26789,7 @@ function ForecastChart({ dataPoints, height = 220 }) {
             `actual-${i}`
           );
         }),
-        xTickIndices.map((i) => /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        xTickIndices.map((i) => /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
           "text",
           {
             x: xScale(i),
@@ -26619,22 +26817,22 @@ function SalesForecastPanel({
   footerActions,
   "data-testid": testId
 }) {
-  const lastPoint = (0, import_react65.useMemo)(() => dataPoints[dataPoints.length - 1], [dataPoints]);
-  return /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+  const lastPoint = (0, import_react66.useMemo)(() => dataPoints[dataPoints.length - 1], [dataPoints]);
+  return /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
     Card,
     {
       title,
       subtitle: description,
       "data-testid": testId ?? "sales-forecast-panel",
-      headerActions: /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "center" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+      headerActions: /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "center" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
           StatusBadge,
           {
             variant: TREND_BADGE_COLORS[trend],
             label: TREND_LABELS[trend]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
           StatusBadge,
           {
             variant: ACCURACY_COLORS[accuracy],
@@ -26642,15 +26840,15 @@ function SalesForecastPanel({
           }
         )
       ] }),
-      footer: footerActions ? /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { paddingTop: 12 }, children: footerActions }) : void 0,
-      children: /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 20 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { style: { display: "flex", gap: 16, flexWrap: "wrap" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { style: { flex: 1, minWidth: 200 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { fontSize: 12, color: "rgba(148, 163, 184, 0.7)", marginBottom: 4 }, children: "\u4E0B\u4E00\u671F\u9884\u6D4B" }),
-            /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { fontSize: 28, fontWeight: 700, color: "#f1f5f9", lineHeight: 1.2 }, children: lastPoint ? /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)(import_jsx_runtime98.Fragment, { children: [
+      footer: footerActions ? /* @__PURE__ */ (0, import_jsx_runtime99.jsx)("div", { style: { paddingTop: 12 }, children: footerActions }) : void 0,
+      children: /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 20 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)("div", { style: { display: "flex", gap: 16, flexWrap: "wrap" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)("div", { style: { flex: 1, minWidth: 200 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime99.jsx)("div", { style: { fontSize: 12, color: "rgba(148, 163, 184, 0.7)", marginBottom: 4 }, children: "\u4E0B\u4E00\u671F\u9884\u6D4B" }),
+            /* @__PURE__ */ (0, import_jsx_runtime99.jsx)("div", { style: { fontSize: 28, fontWeight: 700, color: "#f1f5f9", lineHeight: 1.2 }, children: lastPoint ? /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)(import_jsx_runtime99.Fragment, { children: [
               "\xA5",
               lastPoint.predicted >= 1e4 ? (lastPoint.predicted / 1e4).toFixed(1) + "w" : lastPoint.predicted.toLocaleString(),
-              /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("span", { style: { fontSize: 14, fontWeight: 400, color: "rgba(148, 163, 184, 0.5)", marginLeft: 8 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)("span", { style: { fontSize: 14, fontWeight: 400, color: "rgba(148, 163, 184, 0.5)", marginLeft: 8 }, children: [
                 "\u533A\u95F4 ",
                 lastPoint.pessimistic >= 1e4 ? (lastPoint.pessimistic / 1e4).toFixed(1) + "w" : lastPoint.pessimistic.toLocaleString(),
                 "~",
@@ -26658,9 +26856,9 @@ function SalesForecastPanel({
               ] })
             ] }) : "\u2014" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { style: { width: 140 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { fontSize: 12, color: "rgba(148, 163, 184, 0.7)", marginBottom: 4 }, children: "\u7F6E\u4FE1\u5EA6" }),
-            /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)("div", { style: { width: 140 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime99.jsx)("div", { style: { fontSize: 12, color: "rgba(148, 163, 184, 0.7)", marginBottom: 4 }, children: "\u7F6E\u4FE1\u5EA6" }),
+            /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
               GaugeChart,
               {
                 value: confidence,
@@ -26672,8 +26870,8 @@ function SalesForecastPanel({
             )
           ] })
         ] }),
-        showChart && dataPoints.length >= 2 && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { marginTop: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(ForecastChart, { dataPoints }) }),
-        stats && stats.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", marginTop: 4 }, children: stats.map((stat, i) => /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)(
+        showChart && dataPoints.length >= 2 && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)("div", { style: { marginTop: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(ForecastChart, { dataPoints }) }),
+        stats && stats.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", marginTop: 4 }, children: stats.map((stat, i) => /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)(
           "div",
           {
             style: {
@@ -26684,16 +26882,16 @@ function SalesForecastPanel({
               border: "1px solid rgba(148, 163, 184, 0.1)"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { fontSize: 11, color: "rgba(148, 163, 184, 0.6)", marginBottom: 4 }, children: stat.label }),
-              /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { style: { fontSize: 18, fontWeight: 600, color: "#e2e8f0" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime99.jsx)("div", { style: { fontSize: 11, color: "rgba(148, 163, 184, 0.6)", marginBottom: 4 }, children: stat.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)("div", { style: { fontSize: 18, fontWeight: 600, color: "#e2e8f0" }, children: [
                 stat.value,
-                stat.trend && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("span", { style: { marginLeft: 6, fontSize: 14 }, children: stat.trend === "up" ? "\u2191" : stat.trend === "down" ? "\u2193" : "\u2192" })
+                stat.trend && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)("span", { style: { marginLeft: 6, fontSize: 14 }, children: stat.trend === "up" ? "\u2191" : stat.trend === "down" ? "\u2193" : "\u2192" })
               ] })
             ]
           },
           i
         )) }),
-        dataPoints.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        dataPoints.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
           "div",
           {
             "data-testid": "sales-forecast-empty",
@@ -26712,10 +26910,10 @@ function SalesForecastPanel({
 }
 
 // src/components/WorkbenchHeader.tsx
-var import_react66 = __toESM(require("react"));
-var import_jsx_runtime99 = require("react/jsx-runtime");
+var import_react67 = __toESM(require("react"));
+var import_jsx_runtime100 = require("react/jsx-runtime");
 function Breadcrumbs({ items }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
     "nav",
     {
       "data-testid": "workbench-breadcrumbs",
@@ -26727,23 +26925,23 @@ function Breadcrumbs({ items }) {
         color: "#64748b",
         marginBottom: 12
       },
-      children: items.map((item, idx) => /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)(import_react66.default.Fragment, { children: [
-        idx > 0 && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)("span", { style: { color: "#475569", userSelect: "none" }, children: "/" }),
-        item.href ? /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
+      children: items.map((item, idx) => /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(import_react67.default.Fragment, { children: [
+        idx > 0 && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)("span", { style: { color: "#475569", userSelect: "none" }, children: "/" }),
+        item.href ? /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
           "a",
           {
             href: item.href,
             style: { color: "#93c5fd", textDecoration: "none" },
             children: item.label
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime99.jsx)("span", { style: { color: "#cbd5e1" }, children: item.label })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime100.jsx)("span", { style: { color: "#cbd5e1" }, children: item.label })
       ] }, item.label + idx))
     }
   );
 }
 function LoadingSkeleton2() {
-  return /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)("div", { "data-testid": "workbench-header-loading", style: { padding: 28 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)("div", { "data-testid": "workbench-header-loading", style: { padding: 28 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
       "div",
       {
         style: {
@@ -26755,7 +26953,7 @@ function LoadingSkeleton2() {
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
       "div",
       {
         style: {
@@ -26767,7 +26965,7 @@ function LoadingSkeleton2() {
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
       "div",
       {
         style: {
@@ -26791,9 +26989,9 @@ function WorkbenchHeader({
   "data-testid": testId = "workbench-header"
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(LoadingSkeleton2, {});
+    return /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(LoadingSkeleton2, {});
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(
     "section",
     {
       "data-testid": testId,
@@ -26805,8 +27003,8 @@ function WorkbenchHeader({
         border: "1px solid rgba(148, 163, 184, 0.12)"
       },
       children: [
-        breadcrumbs && breadcrumbs.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(Breadcrumbs, { items: breadcrumbs }),
-        /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)(
+        breadcrumbs && breadcrumbs.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(Breadcrumbs, { items: breadcrumbs }),
+        /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(
           "div",
           {
             style: {
@@ -26816,8 +27014,8 @@ function WorkbenchHeader({
               gap: 12
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                channel && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                channel && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
                   "div",
                   {
                     "data-testid": "workbench-channel",
@@ -26836,7 +27034,7 @@ function WorkbenchHeader({
                     children: channel
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
                   "h1",
                   {
                     "data-testid": "workbench-title",
@@ -26850,7 +27048,7 @@ function WorkbenchHeader({
                     children: title
                   }
                 ),
-                description && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
+                description && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
                   "p",
                   {
                     "data-testid": "workbench-description",
@@ -26865,7 +27063,7 @@ function WorkbenchHeader({
                   }
                 )
               ] }),
-              actions && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
+              actions && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
                 "div",
                 {
                   "data-testid": "workbench-actions",
@@ -26876,7 +27074,7 @@ function WorkbenchHeader({
             ]
           }
         ),
-        navItems && navItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
+        navItems && navItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
           "div",
           {
             "data-testid": "workbench-nav-items",
@@ -26886,7 +27084,7 @@ function WorkbenchHeader({
               gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
               marginTop: 20
             },
-            children: navItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)(
+            children: navItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(
               "a",
               {
                 href: item.href,
@@ -26911,9 +27109,9 @@ function WorkbenchHeader({
                   e.currentTarget.style.borderColor = "rgba(148,163,184,0.08)";
                 },
                 children: [
-                  item.icon && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)("span", { style: { color: "#93c5fd", flexShrink: 0, marginTop: 2 }, children: item.icon }),
-                  /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)(
+                  item.icon && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)("span", { style: { color: "#93c5fd", flexShrink: 0, marginTop: 2 }, children: item.icon }),
+                  /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(
                       "div",
                       {
                         style: {
@@ -26922,7 +27120,7 @@ function WorkbenchHeader({
                           gap: 6
                         },
                         children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
+                          /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
                             "span",
                             {
                               style: {
@@ -26933,7 +27131,7 @@ function WorkbenchHeader({
                               children: item.label
                             }
                           ),
-                          item.badge != null && item.badge > 0 && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
+                          item.badge != null && item.badge > 0 && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
                             "span",
                             {
                               style: {
@@ -26951,7 +27149,7 @@ function WorkbenchHeader({
                         ]
                       }
                     ),
-                    item.description && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
+                    item.description && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
                       "div",
                       {
                         style: {
@@ -26976,8 +27174,8 @@ function WorkbenchHeader({
 }
 
 // src/components/SideNavigation.tsx
-var import_react67 = __toESM(require("react"));
-var import_jsx_runtime100 = require("react/jsx-runtime");
+var import_react68 = __toESM(require("react"));
+var import_jsx_runtime101 = require("react/jsx-runtime");
 function NavItem({
   item,
   activeKey,
@@ -26998,8 +27196,8 @@ function NavItem({
       onNavigate(item.key, item);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)("li", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)("li", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)(
       "button",
       {
         type: "button",
@@ -27037,9 +27235,9 @@ function NavItem({
           }
         },
         children: [
-          item.icon && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)("span", { style: { flexShrink: 0, width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }, children: item.icon }),
-          !collapsed && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)("span", { style: { flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: item.label }),
-          !collapsed && item.badge != null && item.badge > 0 && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+          item.icon && /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("span", { style: { flexShrink: 0, width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }, children: item.icon }),
+          !collapsed && /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("span", { style: { flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: item.label }),
+          !collapsed && item.badge != null && item.badge > 0 && /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
             "span",
             {
               style: {
@@ -27055,7 +27253,7 @@ function NavItem({
               children: item.badge > 99 ? "99+" : item.badge
             }
           ),
-          !collapsed && hasChildren && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+          !collapsed && hasChildren && /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
             "span",
             {
               style: {
@@ -27070,7 +27268,7 @@ function NavItem({
         ]
       }
     ),
-    !collapsed && hasChildren && isExpanded && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)("ul", { style: { listStyle: "none", margin: 0, padding: 0 }, children: item.children.map((child) => /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+    !collapsed && hasChildren && isExpanded && /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("ul", { style: { listStyle: "none", margin: 0, padding: 0 }, children: item.children.map((child) => /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
       NavItem,
       {
         item: child,
@@ -27095,7 +27293,7 @@ function SideNavigation({
   footer,
   className
 }) {
-  const [expandedKeys, setExpandedKeys] = import_react67.default.useState(() => {
+  const [expandedKeys, setExpandedKeys] = import_react68.default.useState(() => {
     const initial = /* @__PURE__ */ new Set();
     const walk = (list) => {
       for (const item of list) {
@@ -27122,7 +27320,7 @@ function SideNavigation({
     });
   };
   if (items.length === 0) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime100.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)(
     "nav",
     {
       className,
@@ -27138,7 +27336,7 @@ function SideNavigation({
         overflow: "hidden"
       },
       children: [
-        header && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+        header && /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
           "div",
           {
             style: {
@@ -27149,7 +27347,7 @@ function SideNavigation({
             children: header
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime100.jsx)("ul", { style: { listStyle: "none", margin: 0, padding: "8px 0", flex: 1, overflowY: "auto" }, children: items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("ul", { style: { listStyle: "none", margin: 0, padding: "8px 0", flex: 1, overflowY: "auto" }, children: items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
           NavItem,
           {
             item,
@@ -27162,7 +27360,7 @@ function SideNavigation({
           },
           item.key
         )) }),
-        footer && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+        footer && /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
           "div",
           {
             style: {
@@ -27173,7 +27371,7 @@ function SideNavigation({
             children: footer
           }
         ),
-        onToggleCollapse && /* @__PURE__ */ (0, import_jsx_runtime100.jsx)(
+        onToggleCollapse && /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
           "button",
           {
             type: "button",
@@ -27201,8 +27399,8 @@ function SideNavigation({
 }
 
 // src/components/Button.tsx
-var import_react68 = __toESM(require("react"));
-var import_jsx_runtime101 = require("react/jsx-runtime");
+var import_react69 = __toESM(require("react"));
+var import_jsx_runtime102 = require("react/jsx-runtime");
 var VARIANT_STYLES7 = {
   primary: {
     background: "#1d4ed8",
@@ -27235,7 +27433,7 @@ var SIZE_STYLES2 = {
   md: { padding: "10px 16px", fontSize: 14, borderRadius: 10 },
   lg: { padding: "14px 20px", fontSize: 16, borderRadius: 12 }
 };
-var Button = import_react68.default.forwardRef(function Button2({
+var Button = import_react69.default.forwardRef(function Button2({
   children,
   variant = "primary",
   size = "md",
@@ -27249,7 +27447,7 @@ var Button = import_react68.default.forwardRef(function Button2({
   "data-testid": dataTestId
 }, ref) {
   const isDisabled = disabled || loading;
-  return /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime102.jsxs)(
     "button",
     {
       ref,
@@ -27275,7 +27473,7 @@ var Button = import_react68.default.forwardRef(function Button2({
         ...style
       },
       children: [
-        loading && /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+        loading && /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
           "span",
           {
             style: {
@@ -27291,15 +27489,15 @@ var Button = import_react68.default.forwardRef(function Button2({
           }
         ),
         children,
-        /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("style", { children: `@keyframes m5-btn-spin { to { transform: rotate(360deg); } }` })
+        /* @__PURE__ */ (0, import_jsx_runtime102.jsx)("style", { children: `@keyframes m5-btn-spin { to { transform: rotate(360deg); } }` })
       ]
     }
   );
 });
 
 // src/SmartTrendChart/SmartTrendChart.tsx
-var import_react69 = require("react");
-var import_jsx_runtime102 = require("react/jsx-runtime");
+var import_react70 = require("react");
+var import_jsx_runtime103 = require("react/jsx-runtime");
 function SmartTrendChart({
   data,
   title,
@@ -27314,18 +27512,18 @@ function SmartTrendChart({
   className = "",
   "data-testid": dataTestId = "smart-trend-chart"
 }) {
-  const maxValue = (0, import_react69.useMemo)(
+  const maxValue = (0, import_react70.useMemo)(
     () => Math.max(...data.map((d) => Math.max(d.value, d.target ?? 0)), 1),
     [data]
   );
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
       "div",
       {
         className: "smart-trend-chart smart-trend-chart--loading",
         "data-testid": `${dataTestId}-loading`,
         style: { height, display: "flex", alignItems: "center", justifyContent: "center" },
-        children: /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
           "div",
           {
             className: "smart-trend-chart__skeleton",
@@ -27336,7 +27534,7 @@ function SmartTrendChart({
     );
   }
   if (!data || data.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
       "div",
       {
         className: "smart-trend-chart smart-trend-chart--empty",
@@ -27369,7 +27567,7 @@ function SmartTrendChart({
       const x2 = chartPadding + i / Math.max(data.length - 1, 1) * (100 - chartPadding * 2);
       const y2 = chartTop + (1 - (curr.target ?? 0) / maxValue) * (chartHeight - chartTop);
       svgChildren.push(
-        /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
           "line",
           {
             x1: `${x1}%`,
@@ -27392,7 +27590,7 @@ function SmartTrendChart({
       const x = chartPadding + i / Math.max(data.length - 1, 1) * (100 - chartPadding * 2);
       const y = chartTop + (1 - point.target / maxValue) * (chartHeight - chartTop);
       svgChildren.push(
-        /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
           "circle",
           {
             cx: `${x}%`,
@@ -27412,7 +27610,7 @@ function SmartTrendChart({
     const barH = point.value / maxValue * (chartHeight - chartTop);
     const xPercent = chartPadding + i / Math.max(data.length - 1, 1) * (100 - chartPadding * 2);
     const barElements = [
-      /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
         "rect",
         {
           x: `calc(${xPercent}% - ${barWidth / 2}px)`,
@@ -27428,7 +27626,7 @@ function SmartTrendChart({
     ];
     if (showValues) {
       barElements.push(
-        /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
           "text",
           {
             x: `${xPercent}%`,
@@ -27444,7 +27642,7 @@ function SmartTrendChart({
       );
     }
     barElements.push(
-      /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
         "text",
         {
           x: `${xPercent}%`,
@@ -27458,16 +27656,16 @@ function SmartTrendChart({
         `label-${i}`
       )
     );
-    svgChildren.push(/* @__PURE__ */ (0, import_jsx_runtime102.jsx)("g", { children: barElements }, `bar-${i}`));
+    svgChildren.push(/* @__PURE__ */ (0, import_jsx_runtime103.jsx)("g", { children: barElements }, `bar-${i}`));
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime102.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime103.jsxs)(
     "div",
     {
       className: `smart-trend-chart ${className}`,
       "data-testid": dataTestId,
       style: { fontFamily: "system-ui, sans-serif" },
       children: [
-        title && /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
+        title && /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
           "div",
           {
             className: "smart-trend-chart__header",
@@ -27482,13 +27680,13 @@ function SmartTrendChart({
             children: title
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime102.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime103.jsxs)(
           "div",
           {
             className: "smart-trend-chart__canvas",
             style: { position: "relative", height, width: "100%" },
             children: [
-              yAxisLabel && /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
+              yAxisLabel && /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
                 "div",
                 {
                   style: {
@@ -27504,7 +27702,7 @@ function SmartTrendChart({
                   children: yAxisLabel
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime102.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
                 "svg",
                 {
                   width: "100%",
@@ -27523,8 +27721,8 @@ function SmartTrendChart({
 }
 
 // src/TierDistributionChart/TierDistributionChart.tsx
-var import_react70 = require("react");
-var import_jsx_runtime103 = require("react/jsx-runtime");
+var import_react71 = require("react");
+var import_jsx_runtime104 = require("react/jsx-runtime");
 var DEFAULT_SIZE = 240;
 var DEFAULT_EMPTY = "\u6682\u65E0\u7B49\u7EA7\u5206\u5E03\u6570\u636E";
 function TierDistributionChart({
@@ -27542,7 +27740,7 @@ function TierDistributionChart({
   const cy = size / 2;
   const outerRadius = size * 0.38;
   const innerRadius = size * 0.24;
-  const arcs = (0, import_react70.useMemo)(() => {
+  const arcs = (0, import_react71.useMemo)(() => {
     if (!tiers.length || !total) return [];
     let currentAngle = -Math.PI / 2;
     return tiers.map((tier) => {
@@ -27567,7 +27765,7 @@ function TierDistributionChart({
     });
   }, [tiers, total, cx, cy, outerRadius, innerRadius]);
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime104.jsx)(
       "div",
       {
         "data-testid": `${dataTestId}-loading`,
@@ -27578,7 +27776,7 @@ function TierDistributionChart({
           alignItems: "center",
           justifyContent: "center"
         },
-        children: /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime104.jsx)(
           "div",
           {
             style: {
@@ -27594,7 +27792,7 @@ function TierDistributionChart({
     );
   }
   if (!tiers.length || !total) {
-    return /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime104.jsx)(
       "div",
       {
         "data-testid": `${dataTestId}-empty`,
@@ -27611,14 +27809,14 @@ function TierDistributionChart({
       }
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime103.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime104.jsxs)(
     "div",
     {
       className,
       "data-testid": dataTestId,
       style: { fontFamily: "system-ui, sans-serif" },
       children: [
-        title && /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
+        title && /* @__PURE__ */ (0, import_jsx_runtime104.jsx)(
           "div",
           {
             "data-testid": `${dataTestId}-title`,
@@ -27632,10 +27830,10 @@ function TierDistributionChart({
             children: title
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime103.jsxs)("div", { style: { display: "flex", gap: 16, alignItems: "flex-start" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime103.jsxs)("div", { style: { position: "relative", width: size, height: size, flexShrink: 0 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime103.jsx)("svg", { width: size, height: size, "data-testid": `${dataTestId}-svg`, children: arcs.map(
-              (arc) => arc.path ? /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime104.jsxs)("div", { style: { display: "flex", gap: 16, alignItems: "flex-start" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime104.jsxs)("div", { style: { position: "relative", width: size, height: size, flexShrink: 0 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime104.jsx)("svg", { width: size, height: size, "data-testid": `${dataTestId}-svg`, children: arcs.map(
+              (arc) => arc.path ? /* @__PURE__ */ (0, import_jsx_runtime104.jsx)(
                 "path",
                 {
                   "data-testid": `${dataTestId}-segment-${arc.key}`,
@@ -27647,7 +27845,7 @@ function TierDistributionChart({
                 arc.key
               ) : null
             ) }),
-            showTotalInCenter && /* @__PURE__ */ (0, import_jsx_runtime103.jsxs)(
+            showTotalInCenter && /* @__PURE__ */ (0, import_jsx_runtime104.jsxs)(
               "div",
               {
                 style: {
@@ -27663,7 +27861,7 @@ function TierDistributionChart({
                   pointerEvents: "none"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime104.jsx)(
                     "div",
                     {
                       "data-testid": `${dataTestId}-total`,
@@ -27671,7 +27869,7 @@ function TierDistributionChart({
                       children: total
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime104.jsx)(
                     "div",
                     {
                       "data-testid": `${dataTestId}-total-label`,
@@ -27683,9 +27881,9 @@ function TierDistributionChart({
               }
             )
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime103.jsx)("div", { style: { flex: 1, minWidth: 0 }, children: arcs.map((arc) => {
+          /* @__PURE__ */ (0, import_jsx_runtime104.jsx)("div", { style: { flex: 1, minWidth: 0 }, children: arcs.map((arc) => {
             const pct = (arc.count / total * 100).toFixed(1);
-            return /* @__PURE__ */ (0, import_jsx_runtime103.jsxs)(
+            return /* @__PURE__ */ (0, import_jsx_runtime104.jsxs)(
               "div",
               {
                 "data-testid": `${dataTestId}-legend-${arc.key}`,
@@ -27698,7 +27896,7 @@ function TierDistributionChart({
                   color: "#374151"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime103.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime104.jsx)(
                     "span",
                     {
                       style: {
@@ -27710,9 +27908,9 @@ function TierDistributionChart({
                       }
                     }
                   ),
-                  /* @__PURE__ */ (0, import_jsx_runtime103.jsx)("span", { style: { flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }, children: arc.label }),
-                  /* @__PURE__ */ (0, import_jsx_runtime103.jsx)("span", { style: { color: "#6b7280", whiteSpace: "nowrap" }, children: arc.count }),
-                  /* @__PURE__ */ (0, import_jsx_runtime103.jsxs)("span", { style: { color: "#9ca3af", whiteSpace: "nowrap", fontSize: 12 }, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime104.jsx)("span", { style: { flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }, children: arc.label }),
+                  /* @__PURE__ */ (0, import_jsx_runtime104.jsx)("span", { style: { color: "#6b7280", whiteSpace: "nowrap" }, children: arc.count }),
+                  /* @__PURE__ */ (0, import_jsx_runtime104.jsxs)("span", { style: { color: "#9ca3af", whiteSpace: "nowrap", fontSize: 12 }, children: [
                     "(",
                     pct,
                     "%)"
@@ -27808,6 +28006,7 @@ function TierDistributionChart({
   ListToolbar,
   LoadingSkeleton,
   MemberLevelDistribution,
+  MemberMarketerDashboard,
   MemberTierDistribution,
   Modal,
   MultiSelect,

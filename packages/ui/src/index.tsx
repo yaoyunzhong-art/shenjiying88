@@ -58,6 +58,14 @@ export type {
   DeviceStatusSummary,
   QuickAction,
 } from './components/StoreManagerDashboard';
+export { MemberMarketerDashboard } from './components/MemberMarketerDashboard';
+export type {
+  MemberMarketerDashboardProps,
+  CampaignSnapshot,
+  MemberGrowthMetrics,
+  MarketingKpi,
+  MarketerQuickAction,
+} from './components/MemberMarketerDashboard';
 export { FrontDeskPanel } from './components/FrontDeskPanel';
 export type {
   FrontDeskPanelProps,
