@@ -25,17 +25,17 @@ export interface CustomerItem {
   lastActivity: string;
 }
 
-export const CUSTOMER_STATUS_MAP: Record<CustomerStatus, { label: string; variant: 'success' | 'warning' | 'error' | 'default' }> = {
+export const CUSTOMER_STATUS_MAP: Record<CustomerStatus, { label: string; variant: 'success' | 'warning' | 'danger' | 'neutral' }> = {
   active: { label: '合作中', variant: 'success' },
   suspended: { label: '暂停', variant: 'warning' },
-  pending: { label: '待审核', variant: 'default' },
-  churned: { label: '已流失', variant: 'error' },
+  pending: { label: '待审核', variant: 'neutral' },
+  churned: { label: '已流失', variant: 'danger' },
 };
 
-export const CUSTOMER_TIER_MAP: Record<CustomerTier, { label: string; variant: 'primary' | 'success' | 'warning' | 'error' | 'info' | 'default' | 'purple' }> = {
-  platinum: { label: '铂金', variant: 'purple' },
+export const CUSTOMER_TIER_MAP: Record<CustomerTier, { label: string; variant: 'success' | 'warning' | 'danger' | 'neutral' | 'info' }> = {
+  platinum: { label: '铂金', variant: 'info' },
   gold: { label: '黄金', variant: 'warning' },
-  silver: { label: '白银', variant: 'default' },
+  silver: { label: '白银', variant: 'neutral' },
   standard: { label: '标准', variant: 'success' },
 };
 

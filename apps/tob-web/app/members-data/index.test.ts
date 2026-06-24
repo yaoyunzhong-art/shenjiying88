@@ -108,8 +108,8 @@ describe('members-data', () => {
   test('sorted by totalSpent descending', () => {
     for (let i = 1; i < MOCK_MEMBERS.length; i++) {
       assert.ok(
-        MOCK_MEMBERS[i].totalSpent <= MOCK_MEMBERS[i - 1].totalSpent,
-        `not sorted at index ${i}: ${MOCK_MEMBERS[i].totalSpent} > ${MOCK_MEMBERS[i - 1].totalSpent}`
+        MOCK_MEMBERS[i]!.totalSpent <= MOCK_MEMBERS[i - 1]!.totalSpent,
+        `not sorted at index ${i}: ${MOCK_MEMBERS[i]!.totalSpent} > ${MOCK_MEMBERS[i - 1]!.totalSpent}`
       );
     }
   });
