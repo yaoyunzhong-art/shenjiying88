@@ -27,12 +27,11 @@ import {
   Get,
   Post
 } from '@nestjs/common'
-import { Test } from '@nestjs/testing'
 import request from 'supertest'
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
 import { MetricsService } from '../observability/metrics.service'
 import { MetricsController } from '../observability/metrics.controller'
 import { MetricsInterceptor } from '../observability/metrics.interceptor'
+import { buildCrossModuleTestApp, type BuiltCrossModuleTestApp } from './test-helpers'
 
 @Controller()
 class DemoController {
@@ -54,21 +53,18 @@ class DemoController {
   }
 }
 
-async function buildApp() {
+async function buildApp(): Promise<BuiltCrossModuleTestApp & { metricsService: MetricsService }> {
   // 直接构造,完全控制依赖 (测试场景下 @Global 模块有 DI 边界问题)
   const metricsService = new MetricsService()
-  const moduleRef = await Test.createTestingModule({
+  const { app, moduleRef } = await buildCrossModuleTestApp({
     controllers: [DemoController, MetricsController],
-    providers: [MetricsService, MetricsInterceptor]
+    providers: [
+      { provide: MetricsService, useValue: metricsService },
+      MetricsInterceptor,
+    ],
+    extraGlobalInterceptors: [new MetricsInterceptor(metricsService)],
   })
-    .overrideProvider(MetricsService)
-    .useValue(metricsService)
-    .compile()
-  const app = moduleRef.createNestApplication()
-  app.useGlobalInterceptors(new ResponseInterceptor())
-  app.useGlobalInterceptors(new MetricsInterceptor(metricsService))
-  await app.init()
-  return { app, metricsService }
+  return { app, moduleRef, metricsService }
 }
 
 // ═══════════════════════════════════════════════════

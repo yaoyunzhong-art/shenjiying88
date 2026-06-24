@@ -21,10 +21,7 @@ import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import type { NextFunction, Request, Response } from 'express';
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor';
 import { TournamentService } from '../tournament/tournament.service';
 import { TournamentStatus, TournamentType, MatchStatus } from '../tournament/tournament.entity';
 import { AiInsightService } from '../ai-insight/ai-insight.service';
@@ -34,6 +31,7 @@ import {
   FoundationScopeType,
   NotificationStatus,
 } from '../notification/notification.entity';
+import { buildCrossModuleTestApp } from './test-helpers';
 
 @Controller()
 class TestController {
@@ -121,18 +119,11 @@ class TestController {
 }
 
 async function buildApp() {
-  const module = await Test.createTestingModule({
+  const { app, moduleRef } = await buildCrossModuleTestApp({
     controllers: [TestController],
     providers: [TournamentService, AiInsightService, NotificationService],
-  }).compile();
-
-  const app = module.createNestApplication();
-  app.use((_req: Request, _res: Response, next: NextFunction) => {
-    next();
   });
-  app.useGlobalInterceptors(new ResponseInterceptor());
-  await app.init();
-  return { app };
+  return { app, moduleRef };
 }
 
 function getData(res: request.Response) {

@@ -51,7 +51,7 @@
  *   ```
  */
 
-import { INestApplication, SetMetadata, Type } from '@nestjs/common';
+import { INestApplication, NestInterceptor, PipeTransform, SetMetadata, Type } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor';
 import { attachRequestContext } from '../observability/logger/request-context.middleware';
@@ -122,6 +122,16 @@ export interface BuildCrossModuleTestAppOptions {
    * 用法: 加业务特有的中间件 (e.g. 模拟 actor)
    */
   extraMiddlewares?: Array<(req: Request, res: Response, next: NextFunction) => void>;
+  /**
+   * 额外全局 Interceptor (在 ResponseInterceptor 之后追加)。
+   * 用法: 测试可观测性 (e.g. MetricsInterceptor)、审计、链路等场景。
+   */
+  extraGlobalInterceptors?: NestInterceptor[];
+  /**
+   * 额外全局 Pipe (在 init 之前注册)。默认不挂任何 pipe。
+   * 用法: 需要 ValidationPipe 时传 [new ValidationPipe({ ... })]
+   */
+  extraGlobalPipes?: PipeTransform[];
 }
 
 export interface BuiltCrossModuleTestApp {
@@ -152,6 +162,8 @@ export async function buildCrossModuleTestApp(
     applyResponseInterceptor = true,
     applyRequestContext = true,
     extraMiddlewares = [],
+    extraGlobalInterceptors = [],
+    extraGlobalPipes = [],
   } = options;
 
   const moduleRef = await Test.createTestingModule({
@@ -162,6 +174,12 @@ export async function buildCrossModuleTestApp(
 
   if (applyResponseInterceptor) {
     app.useGlobalInterceptors(new ResponseInterceptor());
+  }
+  for (const interceptor of extraGlobalInterceptors) {
+    app.useGlobalInterceptors(interceptor);
+  }
+  for (const pipe of extraGlobalPipes) {
+    app.useGlobalPipes(pipe);
   }
   if (applyRequestContext) {
     app.use(attachRequestContext);

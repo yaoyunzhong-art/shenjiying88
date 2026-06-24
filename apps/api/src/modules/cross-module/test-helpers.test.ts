@@ -16,7 +16,17 @@
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import test, { describe } from 'node:test';
-import { Controller, Get, Inject, Injectable } from '@nestjs/common';
+import {
+  CallHandler,
+  Controller,
+  ExecutionContext,
+  Get,
+  Inject,
+  Injectable,
+  NestInterceptor,
+  PipeTransform,
+  Query,
+} from '@nestjs/common';
 import request from 'supertest';
 import type { NextFunction, Request, Response } from 'express';
 import {
@@ -222,6 +232,72 @@ describe('buildCrossModuleTestApp', () => {
       assert.equal(res.statusCode, 200);
       // 没有 interceptor 包 { code, data, meta } 包装
       assert.equal((res.body as { value: number }).value, 42);
+    } finally {
+      await app.close();
+    }
+  });
+
+  test('extraGlobalInterceptors → 业务 interceptor 被调用 (counter)', async () => {
+    let counter = 0;
+
+    @Injectable()
+    class CountingInterceptor implements NestInterceptor {
+      intercept(_ctx: ExecutionContext, next: CallHandler) {
+        counter += 1;
+        return next.handle();
+      }
+    }
+
+    @Controller('counter')
+    class CounterController {
+      @Get('hit')
+      hit() {
+        return { ok: true };
+      }
+    }
+
+    const { app } = await buildCrossModuleTestApp({
+      controllers: [CounterController],
+      providers: [],
+      extraGlobalInterceptors: [new CountingInterceptor()],
+    });
+    try {
+      await request(app.getHttpServer()).get('/counter/hit').expect(200);
+      assert.equal(counter, 1, 'CountingInterceptor 应被调用 1 次');
+    } finally {
+      await app.close();
+    }
+  });
+
+  test('extraGlobalPipes → pipe 在 controller 之前处理参数', async () => {
+    class UppercasePipe implements PipeTransform<string, string> {
+      transform(value: string): string {
+        return value.toUpperCase();
+      }
+    }
+
+    @Controller('echo')
+    class EchoController {
+      @Get('say')
+      say(@Query('q') q: string) {
+        return { echo: q };
+      }
+    }
+
+    const { app } = await buildCrossModuleTestApp({
+      controllers: [EchoController],
+      providers: [],
+      extraGlobalPipes: [new UppercasePipe()],
+    });
+    try {
+      const res = await request(app.getHttpServer()).get('/echo/say?q=hello').expect(200);
+      // 验证 pipe 把 q 改成大写
+      const data = (res.body as { data?: { echo: string } }).data;
+      if (data) {
+        assert.equal(data.echo, 'HELLO');
+      } else {
+        assert.equal((res.body as { echo: string }).echo, 'HELLO');
+      }
     } finally {
       await app.close();
     }

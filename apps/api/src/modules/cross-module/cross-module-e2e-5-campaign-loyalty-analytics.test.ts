@@ -22,26 +22,14 @@ import {
   Req,
   ValidationPipe
 } from '@nestjs/common'
-import { Test } from '@nestjs/testing'
 import request from 'supertest'
-import type { NextFunction, Request, Response } from 'express'
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import type { Request } from 'express'
 import { AnalyticsService } from '../analytics/analytics.service'
 import { CampaignService } from '../campaign/campaign.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { MemberService, resetMemberServiceTestState } from '../member/member.service'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
-
-function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
-  ctx.tenantContext = {
-    tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
-    brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
-    storeId: (req.header('x-store-id') as string | undefined) ?? 'store-001',
-    marketCode: (req.header('x-market-code') as string | undefined) ?? 'cn-mainland'
-  }
-  next()
-}
+import { buildCrossModuleTestApp, type BuiltCrossModuleTestApp } from './test-helpers'
 
 @Controller('campaigns')
 class TestCampaignController {
@@ -173,22 +161,18 @@ async function buildApp() {
   const campaignService = new CampaignService(memberService, loyaltyService)
   const analyticsService = new AnalyticsService(loyaltyService)
 
-  const moduleRef = await Test.createTestingModule({
+  const { app, moduleRef } = await buildCrossModuleTestApp({
     controllers: [TestCampaignController, TestLoyaltyController, TestAnalyticsController],
     providers: [
       { provide: MemberService, useValue: memberService },
       { provide: LoyaltyService, useValue: loyaltyService },
       { provide: CampaignService, useValue: campaignService },
       { provide: AnalyticsService, useValue: analyticsService }
-    ]
-  }).compile()
+    ],
+    extraGlobalPipes: [new ValidationPipe({ whitelist: true, transform: true })],
+  })
 
-  const app = moduleRef.createNestApplication()
-  app.use(attachTenantContext)
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
-  app.useGlobalInterceptors(new ResponseInterceptor())
-  await app.init()
-  return { app, memberService, loyaltyService, campaignService, analyticsService }
+  return { app, moduleRef, memberService, loyaltyService, campaignService, analyticsService }
 }
 
 test('e2e xm5: campaign AWARD_POINTS → loyalty settle → analytics snapshot reflects points', async () => {
