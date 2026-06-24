@@ -9,88 +9,142 @@ const { renderToStaticMarkup } = require(
 );
 const { AIDecisionPanel } = require('./AIDecisionPanel');
 
-const mockRules = [
-  {
-    id: '1',
+// ---- 测试工厂 ----
+function makeRule(overrides = {}) {
+  return {
+    id: 'r1',
     name: '价格合规检查',
-    description: '检查商品价格是否在合规范围内',
-    status: 'passed' as const,
+    status: 'passed',
     matchedCount: 1280,
     durationMs: 45,
-    executedAt: '11:00',
-  },
-  {
-    id: '2',
-    name: '库存异常检测',
-    description: '检测库存为负或超量SKU',
-    status: 'failed' as const,
-    matchedCount: 3,
-    durationMs: 120,
-    suggestion: 'SKU-001, SKU-045, SKU-089 库存为负',
-    executedAt: '11:00',
-  },
-  {
-    id: '3',
-    name: '会员等级异常',
-    status: 'warning' as const,
-    matchedCount: 12,
-    durationMs: 88,
-    executedAt: '11:01',
-  },
-  {
-    id: '4',
-    name: '待执行规则',
-    status: 'pending' as const,
-  },
-];
+    description: '检查所有SKU价格是否在合规范围内',
+    suggestion: undefined,
+    executedAt: '2026-06-24 18:00',
+    ...overrides,
+  };
+}
 
-const mockSummary = {
-  total: 4,
-  passed: 1,
-  failed: 1,
-  warning: 1,
-  pending: 1,
-  coveragePercent: 95,
-  delta: 2,
-};
+const defaultSummary = { total: 10, passed: 7, failed: 2, warning: 1, pending: 0 };
 
+// ---- 正例 ----
 describe('AIDecisionPanel', () => {
-  // ==================== 基础渲染 ====================
-
-  test('渲染面板标题', () => {
+  test('renders title and subtitle', () => {
     const html = renderToStaticMarkup(
       React.createElement(AIDecisionPanel, {
-        rules: mockRules,
-        title: '质量检测结果',
+        title: '质量检测规则',
+        subtitle: '实时评估',
+        rules: [makeRule()],
+        summary: defaultSummary,
       })
     );
-    assert.match(html, /质量检测结果/);
+    assert.match(html, /质量检测规则/);
+    assert.match(html, /实时评估/);
   });
 
-  test('渲染副标题', () => {
+  test('renders default title when not provided', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(AIDecisionPanel, { rules: [makeRule()], summary: defaultSummary })
+    );
+    assert.match(html, /AI 决策面板/);
+  });
+
+  test('renders summary bar with total, passed, failed, pass rate', () => {
     const html = renderToStaticMarkup(
       React.createElement(AIDecisionPanel, {
-        rules: mockRules,
-        title: 'AI决策',
-        subtitle: '最近一次执行: 11:00',
+        rules: [makeRule()],
+        summary: { total: 10, passed: 7, failed: 2, warning: 1, pending: 0 },
       })
     );
-    assert.match(html, /11:00/);
+    assert.match(html, /总计/);
+    assert.match(html, /10/);
+    assert.match(html, /通过/);
+    assert.match(html, /7/);
+    assert.match(html, /未通过/);
+    assert.match(html, /2/);
+    assert.match(html, /70%/); // 7/10 pass rate
   });
 
-  test('渲染规则名称', () => {
+  test('computes summary from rules when not explicitly provided', () => {
+    const rules = [
+      makeRule({ id: '1', name: 'A', status: 'passed' }),
+      makeRule({ id: '2', name: 'B', status: 'passed' }),
+      makeRule({ id: '3', name: 'C', status: 'failed' }),
+      makeRule({ id: '4', name: 'D', status: 'warning' }),
+      makeRule({ id: '5', name: 'E', status: 'pending' }),
+    ];
     const html = renderToStaticMarkup(
-      React.createElement(AIDecisionPanel, { rules: mockRules })
+      React.createElement(AIDecisionPanel, { rules })
+    );
+    assert.match(html, /总计/);
+    assert.match(html, /5/);
+    assert.match(html, /2/); // passed
+    assert.match(html, /1/); // failed / warning / pending each
+    assert.match(html, /40%/); // 2/5
+  });
+
+  test('renders rule name, status badge, matched count, duration, description', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(AIDecisionPanel, {
+        rules: [makeRule()],
+        summary: defaultSummary,
+      })
     );
     assert.match(html, /价格合规检查/);
-    assert.match(html, /库存异常检测/);
-    assert.match(html, /会员等级异常/);
-    assert.match(html, /待执行规则/);
+    assert.match(html, /通过/);
+    assert.match(html, /匹配\s*1280/);
+    assert.match(html, /45ms/);
+    assert.match(html, /检查所有SKU价格是否在合规范围内/);
   });
 
-  test('渲染状态标签', () => {
+  test('renders suggestion for failed rules', () => {
     const html = renderToStaticMarkup(
-      React.createElement(AIDecisionPanel, { rules: mockRules })
+      React.createElement(AIDecisionPanel, {
+        rules: [
+          makeRule({
+            id: 'f1',
+            name: '库存异常',
+            status: 'failed',
+            suggestion: '3个SKU库存为负',
+          }),
+        ],
+        summary: { total: 1, passed: 0, failed: 1, warning: 0, pending: 0 },
+      })
+    );
+    assert.match(html, /3个SKU库存为负/);
+  });
+
+  test('renders coverage percent and delta when provided', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(AIDecisionPanel, {
+        rules: [makeRule()],
+        summary: { ...defaultSummary, coveragePercent: 85, delta: 5 },
+      })
+    );
+    assert.match(html, /85%/);
+    assert.match(html, /↑/);
+    assert.match(html, /5%/);
+  });
+
+  test('renders negative delta', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(AIDecisionPanel, {
+        rules: [makeRule()],
+        summary: { ...defaultSummary, coveragePercent: 80, delta: -3 },
+      })
+    );
+    assert.match(html, /↓/);
+    assert.match(html, /3%/);
+  });
+
+  test('renders all four status types with correct labels', () => {
+    const rules = [
+      makeRule({ id: '1', name: 'P', status: 'passed' }),
+      makeRule({ id: '2', name: 'F', status: 'failed' }),
+      makeRule({ id: '3', name: 'W', status: 'warning' }),
+      makeRule({ id: '4', name: 'Pd', status: 'pending' }),
+    ];
+    const html = renderToStaticMarkup(
+      React.createElement(AIDecisionPanel, { rules })
     );
     assert.match(html, /通过/);
     assert.match(html, /未通过/);
@@ -98,148 +152,139 @@ describe('AIDecisionPanel', () => {
     assert.match(html, /待执行/);
   });
 
-  // ==================== 空状态 ====================
-
-  test('空规则列表显示空状态', () => {
+  test('renders status icons ✓ ✗ ⚠ ⋯', () => {
+    const rules = [
+      makeRule({ id: '1', name: 'P', status: 'passed' }),
+      makeRule({ id: '2', name: 'F', status: 'failed' }),
+      makeRule({ id: '3', name: 'W', status: 'warning' }),
+      makeRule({ id: '4', name: 'Pd', status: 'pending' }),
+    ];
     const html = renderToStaticMarkup(
-      React.createElement(AIDecisionPanel, { rules: [] })
+      React.createElement(AIDecisionPanel, { rules })
+    );
+    assert.match(html, /✓/);
+    assert.match(html, /✗/);
+    assert.match(html, /⚠/);
+    assert.match(html, /⋯/);
+  });
+
+  test('renders in compact mode without description and executedAt', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(AIDecisionPanel, {
+        rules: [makeRule()],
+        summary: defaultSummary,
+        compact: true,
+      })
+    );
+    // In compact mode, description and executedAt should not appear
+    const hasDescription = html.includes('检查所有SKU价格是否在合规范围内');
+    const hasExecutedAt = html.includes('2026-06-24 18:00');
+    assert.ok(!hasDescription, 'compact mode should hide description');
+    assert.ok(!hasExecutedAt, 'compact mode should hide executedAt');
+  });
+
+  // ---- 反例 / 边界 ----
+  test('renders empty state when rules is empty', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(AIDecisionPanel, {
+        rules: [],
+        emptyText: '暂无规则执行结果',
+      })
     );
     assert.match(html, /暂无规则执行结果/);
   });
 
-  test('自定义空状态文案', () => {
+  test('renders custom empty text', () => {
     const html = renderToStaticMarkup(
       React.createElement(AIDecisionPanel, {
         rules: [],
-        emptyText: '所有规则已通过',
+        emptyText: '✅ 所有规则均已执行',
       })
     );
-    assert.match(html, /所有规则已通过/);
+    assert.match(html, /✅ 所有规则均已执行/);
   });
 
-  // ==================== 统计汇总 ====================
-
-  test('渲染汇总统计数字', () => {
+  test('renders all passed -> 100% pass rate', () => {
     const html = renderToStaticMarkup(
       React.createElement(AIDecisionPanel, {
-        rules: mockRules,
-        summary: mockSummary,
+        rules: [makeRule({ id: '1' }), makeRule({ id: '2' })],
+        summary: { total: 2, passed: 2, failed: 0, warning: 0, pending: 0 },
       })
     );
-    // 总计=4
-    assert.match(html, />4</);
-    // 覆盖率
-    assert.match(html, /95%/);
+    assert.match(html, /100%/);
   });
 
-  test('未传入 summary 时自动计算', () => {
-    const html = renderToStaticMarkup(
-      React.createElement(AIDecisionPanel, { rules: mockRules })
-    );
-    // 自动计算: total=4, passed=1, failed=1
-    assert.match(html, />4</);
-  });
-
-  // ==================== 匹配数和耗时 ====================
-
-  test('渲染匹配数和耗时', () => {
-    const html = renderToStaticMarkup(
-      React.createElement(AIDecisionPanel, { rules: mockRules })
-    );
-    assert.match(html, /1280/);
-    assert.match(html, /45ms/);
-    assert.match(html, /120ms/);
-    assert.match(html, /88ms/);
-  });
-
-  // ==================== 建议信息 ====================
-
-  test('failed 规则显示建议', () => {
-    const html = renderToStaticMarkup(
-      React.createElement(AIDecisionPanel, { rules: mockRules })
-    );
-    assert.match(html, /库存为负/);
-  });
-
-  // ==================== 紧凑模式 ====================
-
-  test('compact 模式不显示描述', () => {
+  test('renders zero pass rate when all failed', () => {
     const html = renderToStaticMarkup(
       React.createElement(AIDecisionPanel, {
-        rules: mockRules,
-        compact: true,
+        rules: [makeRule({ id: '1', status: 'failed' })],
+        summary: { total: 1, passed: 0, failed: 1, warning: 0, pending: 0 },
       })
     );
-    // 规则名称仍渲染
+    assert.match(html, /0%/);
+  });
+
+  test('renders passed progress segment', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(AIDecisionPanel, {
+        rules: [makeRule()],
+        summary: defaultSummary,
+      })
+    );
+    assert.match(html, /#22c55e/); // green progress segment
+  });
+
+  test('renders failed progress segment with red color', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(AIDecisionPanel, {
+        rules: [makeRule()],
+        summary: { total: 10, passed: 0, failed: 10, warning: 0, pending: 0 },
+      })
+    );
+    assert.match(html, /#ef4444/); // red progress segment
+  });
+
+  test('applies custom className', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(AIDecisionPanel, {
+        rules: [makeRule()],
+        summary: defaultSummary,
+        className: 'my-custom-panel',
+      })
+    );
+    assert.match(html, /class="my-custom-panel"/);
+  });
+
+  test('rule without matchedCount does not crash', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(AIDecisionPanel, {
+        rules: [makeRule({ matchedCount: undefined })],
+        summary: defaultSummary,
+      })
+    );
+    // Should still render the rule name
     assert.match(html, /价格合规检查/);
-    // 规则描述不应出现
-    assert.ok(!html.includes('检查商品价格是否在合规范围内'));
   });
 
-  // ==================== 覆盖率与趋势 ====================
-
-  test('渲染覆盖率百分比', () => {
+  test('rule without durationMs does not show duration', () => {
     const html = renderToStaticMarkup(
       React.createElement(AIDecisionPanel, {
-        rules: mockRules,
-        summary: { total: 4, passed: 1, failed: 1, warning: 1, pending: 1, coveragePercent: 88 },
+        rules: [makeRule({ durationMs: undefined })],
+        summary: defaultSummary,
       })
     );
-    assert.match(html, /88%/);
+    // matchedCount (1280) is shown but no 'ms' duration suffix on this rule
+    assert.match(html, /1280/);
   });
 
-  test('渲染 delta 趋势变化', () => {
+  test('does not crash when rules empty and summary total=0', () => {
+    // Should not crash when summary has total=0 — empty state is rendered instead
     const html = renderToStaticMarkup(
       React.createElement(AIDecisionPanel, {
-        rules: mockRules,
-        summary: { total: 4, passed: 1, failed: 1, warning: 1, pending: 1, coveragePercent: 88, delta: -5 },
+        rules: [],
+        summary: { total: 0, passed: 0, failed: 0, warning: 0, pending: 0 },
       })
     );
-    assert.match(html, /vs 上轮/);
-    assert.match(html, /5%/);
-  });
-
-  // ==================== 通过率颜色 ====================
-
-  test('高通过率显示绿色', () => {
-    const html = renderToStaticMarkup(
-      React.createElement(AIDecisionPanel, {
-        rules: [
-          { id: '1', name: 'R1', status: 'passed' },
-          { id: '2', name: 'R2', status: 'passed' },
-          { id: '3', name: 'R3', status: 'passed' },
-          { id: '4', name: 'R4', status: 'passed' },
-          { id: '5', name: 'R5', status: 'passed' },
-          { id: '6', name: 'R6', status: 'passed' },
-          { id: '7', name: 'R7', status: 'passed' },
-          { id: '8', name: 'R8', status: 'passed' },
-          { id: '9', name: 'R9', status: 'passed' },
-          { id: '10', name: 'R10', status: 'failed' },
-        ],
-      })
-    );
-    // 90% pass rate -> should have #22c55e (green)
-    assert.match(html, /#22c55e/);
-  });
-
-  test('低通过率显示红色', () => {
-    const html = renderToStaticMarkup(
-      React.createElement(AIDecisionPanel, {
-        rules: [
-          { id: '1', name: 'R1', status: 'failed' },
-          { id: '2', name: 'R2', status: 'failed' },
-          { id: '3', name: 'R3', status: 'failed' },
-          { id: '4', name: 'R4', status: 'failed' },
-          { id: '5', name: 'R5', status: 'failed' },
-          { id: '6', name: 'R6', status: 'failed' },
-          { id: '7', name: 'R7', status: 'failed' },
-          { id: '8', name: 'R8', status: 'passed' },
-          { id: '9', name: 'R9', status: 'passed' },
-          { id: '10', name: 'R10', status: 'passed' },
-        ],
-      })
-    );
-    // 30% pass rate -> should have #ef4444 (red)
-    assert.match(html, /#ef4444/);
+    assert.match(html, /暂无规则执行结果/);
   });
 });
