@@ -115,25 +115,9 @@ function validateAlertDetail(alert: AlertDetail): string[] {
   if (!alert.severity) errors.push('severity 必填');
   if (!alert.status) errors.push('status 必填');
   if (!alert.occurredAt) errors.push('occurredAt 必填');
-  try {
-    new Date(alert.occurredAt);
-  } catch {
-    errors.push('occurredAt 无效日期');
-  }
-  if (alert.acknowledgedAt) {
-    try {
-      new Date(alert.acknowledgedAt);
-    } catch {
-      errors.push('acknowledgedAt 无效日期');
-    }
-  }
-  if (alert.resolvedAt) {
-    try {
-      new Date(alert.resolvedAt);
-    } catch {
-      errors.push('resolvedAt 无效日期');
-    }
-  }
+  if (isNaN(new Date(alert.occurredAt).getTime())) errors.push('occurredAt 无效日期');
+  if (alert.acknowledgedAt && isNaN(new Date(alert.acknowledgedAt).getTime())) errors.push('acknowledgedAt 无效日期');
+  if (alert.resolvedAt && isNaN(new Date(alert.resolvedAt).getTime())) errors.push('resolvedAt 无效日期');
   const validStatuses = ['open', 'acknowledged', 'resolved', 'suppressed'] as const;
   if (!(validStatuses as readonly string[]).includes(alert.status)) {
     errors.push(`status ${alert.status} 无效`);
@@ -163,8 +147,8 @@ function getActionButtons(status: AlertStatus, hasAssignee: boolean): string[] {
   return actions;
 }
 
-function timeSinceOccurred(occurredAt: string): number {
-  return Date.now() - new Date(occurredAt).getTime();
+function timeSinceOccurred(occurredAt: string, now: Date = new Date()): number {
+  return now.getTime() - new Date(occurredAt).getTime();
 }
 
 // ── 测试 ──
@@ -257,12 +241,14 @@ test('操作按钮: suppressed 应有 取消屏蔽', () => {
 // ── 时间差 ──
 
 test('timeSinceOccurred: 过去的时间应返回正数', () => {
-  assert.ok(timeSinceOccurred('2026-06-24T10:00:00Z') > 0);
+  const now = new Date('2026-06-25T12:00:00Z');
+  assert.ok(timeSinceOccurred('2026-06-24T10:00:00Z', now) > 0);
 });
 
 test('timeSinceOccurred: 最近的事件返回较小值', () => {
-  const older = timeSinceOccurred('2026-06-24T10:00:00Z');
-  const newer = timeSinceOccurred('2026-06-24T14:23:00Z');
+  const now = new Date('2026-06-25T12:00:00Z');
+  const older = timeSinceOccurred('2026-06-24T10:00:00Z', now);
+  const newer = timeSinceOccurred('2026-06-24T14:23:00Z', now);
   assert.ok(newer < older);
 });
 
