@@ -260,7 +260,7 @@ let TournamentService = class TournamentService {
                         round: currentRound,
                         bracketPosition: i,
                         player1Id: '', // TBD
-                        player2Id: undefined,
+                        player2Id: '', // TBD
                         score1: 0,
                         score2: 0,
                         status: tournament_entity_1.MatchStatus.Pending,
@@ -291,7 +291,8 @@ let TournamentService = class TournamentService {
         const now = new Date().toISOString();
         match.score1 = score1;
         match.score2 = score2;
-        match.winnerId = score1 > score2 ? match.player1Id : match.player2Id;
+        match.winnerId =
+            score1 > score2 ? match.player1Id : score1 < score2 ? match.player2Id : undefined;
         match.status = tournament_entity_1.MatchStatus.Completed;
         match.playedAt = now;
         match.updatedAt = now;

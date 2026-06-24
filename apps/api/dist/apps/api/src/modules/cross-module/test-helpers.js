@@ -110,7 +110,7 @@ exports.DEFAULT_TENANT_CONTEXT = {
  * 显式添加(避免改变现有断言)。
  */
 async function buildCrossModuleTestApp(options) {
-    const { controllers, providers, applyTenantContext = true, applyResponseInterceptor = true, applyRequestContext = true, extraMiddlewares = [], } = options;
+    const { controllers, providers, applyTenantContext = true, applyResponseInterceptor = true, applyRequestContext = true, extraMiddlewares = [], extraGlobalInterceptors = [], extraGlobalPipes = [], } = options;
     const moduleRef = await testing_1.Test.createTestingModule({
         controllers,
         providers: providers,
@@ -118,6 +118,12 @@ async function buildCrossModuleTestApp(options) {
     const app = moduleRef.createNestApplication();
     if (applyResponseInterceptor) {
         app.useGlobalInterceptors(new response_interceptor_1.ResponseInterceptor());
+    }
+    for (const interceptor of extraGlobalInterceptors) {
+        app.useGlobalInterceptors(interceptor);
+    }
+    for (const pipe of extraGlobalPipes) {
+        app.useGlobalPipes(pipe);
     }
     if (applyRequestContext) {
         app.use(request_context_middleware_1.attachRequestContext);

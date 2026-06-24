@@ -334,7 +334,7 @@ export class TournamentService {
             round: currentRound,
             bracketPosition: i,
             player1Id: '', // TBD
-            player2Id: undefined,
+            player2Id: '', // TBD
             score1: 0,
             score2: 0,
             status: MatchStatus.Pending,

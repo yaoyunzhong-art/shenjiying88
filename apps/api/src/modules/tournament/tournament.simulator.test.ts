@@ -158,8 +158,10 @@ describe('Tournament Simulator - Edge Cases', () => {
     );
     assert.ok(byeMatches.length > 0, 'Should have auto-completed bye matches');
 
-    // Pending matches should have either player2 defined
-    const pendingMatches = matches.filter((m) => m.status === MatchStatus.Pending);
+    // Pending matches should have player2 defined (skip future-round TBD placeholders)
+    const pendingMatches = matches.filter(
+      (m) => m.status === MatchStatus.Pending && m.player1Id !== '',
+    );
     for (const pm of pendingMatches) {
       assert.ok(
         pm.player2Id !== undefined && pm.player2Id !== '',
