@@ -474,3 +474,5 @@ export type {
 
 export { SmartTrendChart } from './SmartTrendChart';
 export type { SmartTrendChartProps, TrendDataPoint } from './SmartTrendChart';
+export { TierDistributionChart } from './TierDistributionChart';
+export type { TierDistributionChartProps, TierData } from './TierDistributionChart';

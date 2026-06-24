@@ -164,6 +164,7 @@ __export(index_exports, {
   Tabs: () => Tabs,
   Tag: () => Tag,
   TagGroup: () => TagGroup,
+  TierDistributionChart: () => TierDistributionChart,
   TimePicker: () => TimePicker,
   Timeline: () => Timeline,
   ToastContainer: () => ToastContainer,
@@ -27194,6 +27195,212 @@ function SmartTrendChart({
     }
   );
 }
+
+// src/TierDistributionChart/TierDistributionChart.tsx
+var import_react68 = require("react");
+var import_jsx_runtime101 = require("react/jsx-runtime");
+var DEFAULT_SIZE = 240;
+var DEFAULT_EMPTY = "\u6682\u65E0\u7B49\u7EA7\u5206\u5E03\u6570\u636E";
+function TierDistributionChart({
+  tiers,
+  total,
+  title,
+  size = DEFAULT_SIZE,
+  showTotalInCenter = false,
+  loading = false,
+  emptyText = DEFAULT_EMPTY,
+  className = "",
+  "data-testid": dataTestId = "tier-dist-chart"
+}) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const outerRadius = size * 0.38;
+  const innerRadius = size * 0.24;
+  const arcs = (0, import_react68.useMemo)(() => {
+    if (!tiers.length || !total) return [];
+    let currentAngle = -Math.PI / 2;
+    return tiers.map((tier) => {
+      const fraction = tier.count / total;
+      const angle = fraction * 2 * Math.PI;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + angle;
+      currentAngle = endAngle;
+      const x1 = cx + outerRadius * Math.cos(startAngle);
+      const y1 = cy + outerRadius * Math.sin(startAngle);
+      const x2 = cx + outerRadius * Math.cos(endAngle);
+      const y2 = cy + outerRadius * Math.sin(endAngle);
+      const largeArc = angle > Math.PI ? 1 : 0;
+      const path = fraction > 0 ? [
+        `M ${x1} ${y1}`,
+        `A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2} ${y2}`,
+        `L ${cx + innerRadius * Math.cos(endAngle)} ${cy + innerRadius * Math.sin(endAngle)}`,
+        `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${cx + innerRadius * Math.cos(startAngle)} ${cy + innerRadius * Math.sin(startAngle)}`,
+        "Z"
+      ].join(" ") : "";
+      return { ...tier, fraction, path, startAngle, endAngle };
+    });
+  }, [tiers, total, cx, cy, outerRadius, innerRadius]);
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+      "div",
+      {
+        "data-testid": `${dataTestId}-loading`,
+        style: {
+          width: size,
+          height: size,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        },
+        children: /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+          "div",
+          {
+            style: {
+              width: size * 0.5,
+              height: size * 0.5,
+              borderRadius: "50%",
+              background: "#e5e7eb",
+              animation: "pulse 2s infinite"
+            }
+          }
+        )
+      }
+    );
+  }
+  if (!tiers.length || !total) {
+    return /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+      "div",
+      {
+        "data-testid": `${dataTestId}-empty`,
+        style: {
+          width: size,
+          height: size,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#9ca3af",
+          fontSize: 14
+        },
+        children: emptyText
+      }
+    );
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)(
+    "div",
+    {
+      className,
+      "data-testid": dataTestId,
+      style: { fontFamily: "system-ui, sans-serif" },
+      children: [
+        title && /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+          "div",
+          {
+            "data-testid": `${dataTestId}-title`,
+            style: {
+              fontSize: 14,
+              fontWeight: 600,
+              color: "#374151",
+              marginBottom: 8,
+              textAlign: "center"
+            },
+            children: title
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)("div", { style: { display: "flex", gap: 16, alignItems: "flex-start" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)("div", { style: { position: "relative", width: size, height: size, flexShrink: 0 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("svg", { width: size, height: size, "data-testid": `${dataTestId}-svg`, children: arcs.map(
+              (arc) => arc.path ? /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+                "path",
+                {
+                  "data-testid": `${dataTestId}-segment-${arc.key}`,
+                  d: arc.path,
+                  fill: arc.color,
+                  stroke: "#fff",
+                  strokeWidth: 1
+                },
+                arc.key
+              ) : null
+            ) }),
+            showTotalInCenter && /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)(
+              "div",
+              {
+                style: {
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: size,
+                  height: size,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  pointerEvents: "none"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+                    "div",
+                    {
+                      "data-testid": `${dataTestId}-total`,
+                      style: { fontSize: size * 0.12, fontWeight: 700, color: "#111827", lineHeight: 1.2 },
+                      children: total
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+                    "div",
+                    {
+                      "data-testid": `${dataTestId}-total-label`,
+                      style: { fontSize: size * 0.06, color: "#9ca3af" },
+                      children: "\u603B\u4F1A\u5458"
+                    }
+                  )
+                ]
+              }
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("div", { style: { flex: 1, minWidth: 0 }, children: arcs.map((arc) => {
+            const pct = (arc.count / total * 100).toFixed(1);
+            return /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)(
+              "div",
+              {
+                "data-testid": `${dataTestId}-legend-${arc.key}`,
+                style: {
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "4px 0",
+                  fontSize: 13,
+                  color: "#374151"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime101.jsx)(
+                    "span",
+                    {
+                      style: {
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        background: arc.color,
+                        flexShrink: 0
+                      }
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("span", { style: { flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }, children: arc.label }),
+                  /* @__PURE__ */ (0, import_jsx_runtime101.jsx)("span", { style: { color: "#6b7280", whiteSpace: "nowrap" }, children: arc.count }),
+                  /* @__PURE__ */ (0, import_jsx_runtime101.jsxs)("span", { style: { color: "#9ca3af", whiteSpace: "nowrap", fontSize: 12 }, children: [
+                    "(",
+                    pct,
+                    "%)"
+                  ] })
+                ]
+              },
+              arc.key
+            );
+          }) })
+        ] })
+      ]
+    }
+  );
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIDecisionPanel,
@@ -27330,6 +27537,7 @@ function SmartTrendChart({
   Tabs,
   Tag,
   TagGroup,
+  TierDistributionChart,
   TimePicker,
   Timeline,
   ToastContainer,
