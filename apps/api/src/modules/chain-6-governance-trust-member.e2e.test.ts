@@ -223,12 +223,18 @@ async function buildChainHarness() {
     prisma as never,
     approvalService
   )
+  // 注册 recorder 钩子：当 governance-approval service 发出 outcome 事件时，
+  // recorder 写入 auditLog。这是 chain-6 跨模块链路的关键绑定。
+  const dispose = approvalService.registerApprovalOutcomeHook(
+    MEMBER_APPROVAL_OUTCOME_RESOURCE_TYPE,
+    (event) => memberRecorder.recordOutcome(event)
+  )
   return {
     approvalService,
     memberRecorder,
     prisma,
     auditRecords: prisma._records,
-    dispose: () => {}
+    dispose
   }
 }
 

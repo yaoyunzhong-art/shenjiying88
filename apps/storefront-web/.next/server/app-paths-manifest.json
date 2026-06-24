@@ -1,17 +1,17 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/alerts/[id]/page": "app/alerts/[id]/page.js",
-  "/alerts/page": "app/alerts/page.js",
-  "/coupons/page": "app/coupons/page.js",
-  "/insights/page": "app/insights/page.js",
-  "/members/new/page": "app/members/new/page.js",
   "/coupons/[id]/page": "app/coupons/[id]/page.js",
+  "/alerts/page": "app/alerts/page.js",
+  "/insights/page": "app/insights/page.js",
   "/members/[id]/page": "app/members/[id]/page.js",
-  "/operations/page": "app/operations/page.js",
+  "/members/new/page": "app/members/new/page.js",
   "/members/page": "app/members/page.js",
-  "/operations/[id]/page": "app/operations/[id]/page.js",
+  "/alerts/[id]/page": "app/alerts/[id]/page.js",
+  "/coupons/page": "app/coupons/page.js",
   "/[...storeScope]/page": "app/[...storeScope]/page.js",
-  "/page": "app/page.js",
+  "/products/[id]/page": "app/products/[id]/page.js",
   "/products/page": "app/products/page.js",
-  "/products/[id]/page": "app/products/[id]/page.js"
+  "/operations/[id]/page": "app/operations/[id]/page.js",
+  "/page": "app/page.js",
+  "/operations/page": "app/operations/page.js"
 }

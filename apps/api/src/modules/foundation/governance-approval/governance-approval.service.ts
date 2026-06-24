@@ -58,24 +58,111 @@ export class GovernanceApprovalService implements OnModuleDestroy {
     return materializeGovernanceApproval(this.prisma, input)
   }
 
+  // 从原始数据库记录获取层级上下文
+  private async getApprovalScope(
+    approvalTicket: string
+  ): Promise<{ tenantId?: string; brandId?: string; storeId?: string }> {
+    try {
+      const record = await (this.prisma as any).governanceApproval?.findUnique({
+        where: { approvalTicket }
+      })
+      if (record && typeof record === 'object') {
+        return {
+          tenantId: (record as any).tenantId ?? undefined,
+          brandId: (record as any).brandId ?? undefined,
+          storeId: (record as any).storeId ?? undefined
+        }
+      }
+    } catch {
+      // 不回退
+    }
+    return {}
+  }
+
   async decideApproval(input: GovernanceApprovalDecisionInput): Promise<GovernanceApprovalSnapshot> {
-    return decideGovernanceApproval(this.prisma, input)
+    // 获取当前状态（emit 需要 previousStatus）
+    const before = await getGovernanceApprovalByTicket(this.prisma, input.approvalTicket)
+    const scope = await this.getApprovalScope(input.approvalTicket)
+    const result = await decideGovernanceApproval(this.prisma, input)
+    await this.emitOutcomeEvent({
+      resourceType: before.resourceType ?? 'unknown',
+      resourceKey: before.resourceKey ?? 'unknown',
+      ...scope,
+      stage: input.status,
+      previousStatus: before.status,
+      decisionNote: input.decisionNote ?? null,
+      approval: result
+    })
+    return result
   }
 
   async cancelApproval(input: GovernanceApprovalCancelInput): Promise<GovernanceApprovalSnapshot> {
-    return cancelGovernanceApproval(this.prisma, input)
+    const before = await getGovernanceApprovalByTicket(this.prisma, input.approvalTicket)
+    const scope = await this.getApprovalScope(input.approvalTicket)
+    const result = await cancelGovernanceApproval(this.prisma, input)
+    await this.emitOutcomeEvent({
+      resourceType: before.resourceType ?? 'unknown',
+      resourceKey: before.resourceKey ?? 'unknown',
+      ...scope,
+      stage: 'CANCELLED',
+      previousStatus: before.status,
+      decisionNote: input.cancelReason ?? null,
+      approval: result
+    })
+    return result
   }
 
   async resubmitApproval(input: GovernanceApprovalResubmitInput): Promise<ReturnType<typeof resubmitGovernanceApproval>> {
-    return resubmitGovernanceApproval(this.prisma, input)
+    const before = await getGovernanceApprovalByTicket(this.prisma, input.approvalTicket)
+    const scope = await this.getApprovalScope(input.approvalTicket)
+    const result = await resubmitGovernanceApproval(this.prisma, input)
+    // 发出 SUPERSEDED 事件（原票据被替代）
+    await this.emitOutcomeEvent({
+      resourceType: before.resourceType ?? 'unknown',
+      resourceKey: before.resourceKey ?? 'unknown',
+      ...scope,
+      stage: 'SUPERSEDED',
+      previousStatus: before.status,
+      decisionNote: input.resubmitReason ?? null,
+      approval: {
+        ...before,
+        ticket: input.approvalTicket,
+        status: 'SUPERSEDED'
+      }
+    })
+    return result
   }
 
   async markExecuted(input: GovernanceApprovalExecutionInput): Promise<GovernanceApprovalSnapshot> {
-    return markGovernanceApprovalExecuted(this.prisma, input)
+    const before = await getGovernanceApprovalByTicket(this.prisma, input.approvalTicket)
+    const scope = await this.getApprovalScope(input.approvalTicket)
+    const result = await markGovernanceApprovalExecuted(this.prisma, input)
+    await this.emitOutcomeEvent({
+      resourceType: before.resourceType ?? 'unknown',
+      resourceKey: before.resourceKey ?? 'unknown',
+      ...scope,
+      stage: 'EXECUTED',
+      previousStatus: before.status,
+      approval: result
+    })
+    return result
   }
 
   async markExecutionFailed(input: GovernanceApprovalExecutionFailureInput): Promise<GovernanceApprovalSnapshot> {
-    return markGovernanceApprovalExecutionFailed(this.prisma, input)
+    const before = await getGovernanceApprovalByTicket(this.prisma, input.approvalTicket)
+    const scope = await this.getApprovalScope(input.approvalTicket)
+    const result = await markGovernanceApprovalExecutionFailed(this.prisma, input)
+    await this.emitOutcomeEvent({
+      resourceType: before.resourceType ?? 'unknown',
+      resourceKey: before.resourceKey ?? 'unknown',
+      ...scope,
+      stage: 'EXECUTION_FAILED',
+      previousStatus: before.status,
+      decisionNote: null,
+      failureReason: input.failureReason ?? null,
+      approval: result
+    })
+    return result
   }
 
   // --------------- outcome 钩子管理 ---------------

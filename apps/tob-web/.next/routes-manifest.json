@@ -102,6 +102,12 @@
       "namedRegex": "^/alerts(?:/)?$"
     },
     {
+      "page": "/members",
+      "regex": "^/members(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/members(?:/)?$"
+    },
+    {
       "page": "/operations",
       "regex": "^/operations(?:/)?$",
       "routeKeys": {},
