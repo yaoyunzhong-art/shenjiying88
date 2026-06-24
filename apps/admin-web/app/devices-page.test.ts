@@ -445,7 +445,7 @@ describe('devices sorting logic', () => {
     const sorted = [...MOCK_DEVICES].sort((a, b) => a.name.localeCompare(b.name));
     assert.ok(
       sorted.every(
-        (_, i) => i === 0 || sorted[i]?.name.localeCompare(sorted[i - 1]?.name ?? '') >= 0
+        (_, i) => i === 0 || sorted[i]!.name.localeCompare(sorted[i - 1]?.name ?? '') >= 0
       )
     );
   });
@@ -454,7 +454,7 @@ describe('devices sorting logic', () => {
     const sorted = [...MOCK_DEVICES].sort((a, b) => a.ip.localeCompare(b.ip));
     assert.ok(
       sorted.every(
-        (_, i) => i === 0 || sorted[i]?.ip.localeCompare(sorted[i - 1]?.ip ?? '') >= 0
+        (_, i) => i === 0 || sorted[i]!.ip.localeCompare(sorted[i - 1]?.ip ?? '') >= 0
       )
     );
   });
@@ -476,7 +476,7 @@ describe('devices sorting logic', () => {
     const sorted = [...MOCK_DEVICES].sort((a, b) => b.firmwareVersion.localeCompare(a.firmwareVersion));
     assert.ok(
       sorted.every(
-        (_, i) => i === 0 || sorted[i]?.firmwareVersion.localeCompare(sorted[i - 1]?.firmwareVersion ?? '') <= 0
+        (_, i) => i === 0 || sorted[i]!.firmwareVersion.localeCompare(sorted[i - 1]?.firmwareVersion ?? '') <= 0
       )
     );
   });

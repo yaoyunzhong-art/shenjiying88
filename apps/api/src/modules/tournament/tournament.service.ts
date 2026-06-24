@@ -375,7 +375,8 @@ export class TournamentService {
     const now = new Date().toISOString()
     match.score1 = score1
     match.score2 = score2
-    match.winnerId = score1 > score2 ? match.player1Id : match.player2Id!
+    match.winnerId =
+      score1 > score2 ? match.player1Id : score1 < score2 ? match.player2Id! : undefined
     match.status = MatchStatus.Completed
     match.playedAt = now
     match.updatedAt = now

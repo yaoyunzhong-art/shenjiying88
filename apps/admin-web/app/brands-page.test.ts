@@ -295,13 +295,13 @@ describe('brands-page: 分页 (paginate)', () => {
   it('第1页返回 pageSize 个元素', () => {
     const page1 = paginate(MOCK_BRANDS, 1, 5);
     assert.equal(page1.length, 5);
-    assert.equal(page1[0].id, MOCK_BRANDS[0].id);
+    assert.equal(page1[0]!.id, MOCK_BRANDS[0]!.id);
   });
 
   it('第2页偏移正确', () => {
     const page2 = paginate(MOCK_BRANDS, 2, 5);
     assert.equal(page2.length, 5);
-    assert.equal(page2[0].id, MOCK_BRANDS[5].id);
+    assert.equal(page2[0]!.id, MOCK_BRANDS[5]!.id);
   });
 
   it('最后一页可能不满', () => {
@@ -396,14 +396,14 @@ describe('brands-page: 排序后分页', () => {
     const page1 = paginate(sorted, 1, 5);
     assert.equal(page1.length, 5);
     // 第一页第一个是 storeCount 最大的
-    assert.equal(page1[0].storeCount, Math.max(...MOCK_BRANDS.map((b) => b.storeCount)));
+    assert.equal(page1[0]!.storeCount, Math.max(...MOCK_BRANDS.map((b) => b.storeCount)));
   });
 
   it('按 lastDeployed 降序排列后第1页', () => {
     const sorted = [...MOCK_BRANDS].sort((a, b) => b.lastDeployed.localeCompare(a.lastDeployed));
     const page1 = paginate(sorted, 1, 5);
     assert.equal(page1.length, 5);
-    assert.ok(page1[0].lastDeployed >= page1[page1.length - 1].lastDeployed);
+    assert.ok(page1[0]!.lastDeployed >= page1[page1.length - 1]!.lastDeployed);
   });
 
   it('排序不影响总数', () => {
