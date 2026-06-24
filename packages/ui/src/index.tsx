@@ -472,6 +472,9 @@ export type {
   WorkbenchBreadcrumb,
 } from './components/WorkbenchHeader';
 
+export { Button } from './components/Button';
+export type { ButtonProps, ButtonVariant, ButtonSize } from './components/Button';
+
 export { SmartTrendChart } from './SmartTrendChart';
 export type { SmartTrendChartProps, TrendDataPoint } from './SmartTrendChart';
 export { TierDistributionChart } from './TierDistributionChart';
