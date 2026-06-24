@@ -13,6 +13,7 @@ import {
   StatCard,
   LoadingSkeleton,
 } from '@m5/ui';
+
 import type { DataTableColumn } from '@m5/ui';
 import {
   MOCK_CUSTOMERS,
@@ -119,7 +120,7 @@ export default function CustomersPage() {
       header: '状态',
       render: (item) => {
         const info = CUSTOMER_STATUS_MAP[item.status];
-        return <StatusBadge variant={info.variant}>{info.label}</StatusBadge>;
+        return <StatusBadge variant={info.variant} label={info.label} />;
       },
     },
     {
@@ -141,24 +142,20 @@ export default function CustomersPage() {
       {/* Stats cards */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
         <StatCard
-          title="总客户数"
+          label="总客户数"
           value={stats.total.toString()}
-          trend="neutral"
         />
         <StatCard
-          title="合作中客户"
+          label="合作中客户"
           value={stats.active.toString()}
-          trend="up"
         />
         <StatCard
-          title="月均消费总额"
+          label="月均消费总额"
           value={formatCurrency(stats.totalMonthly)}
-          trend="up"
         />
         <StatCard
-          title="铂金客户"
+          label="铂金客户"
           value={stats.platinum.toString()}
-          trend="neutral"
         />
       </div>
 
@@ -245,14 +242,14 @@ export default function CustomersPage() {
       {loading ? (
         <LoadingSkeleton rows={5} />
       ) : (
-        <DataTable columns={columns} data={paged} />
+        <DataTable columns={columns} rows={paged} rowKey={(c: CustomerItem) => c.id} />
       )}
 
       {/* Pagination */}
       {totalPages > 1 && (
         <Pagination
           page={page}
-          totalPages={totalPages}
+          total={filtered.length}
           onPageChange={setPage}
         />
       )}
