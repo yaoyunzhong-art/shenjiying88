@@ -1,0 +1,1 @@
+{"version":3,"file":"workbench.controller.d.ts","sourceRoot":"","sources":["../../../src/modules/workbench/workbench.controller.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,oBAAoB,EAAE,MAAM,wBAAwB,CAAC;AACnE,OAAO,EAAE,gBAAgB,EAAE,MAAM,qBAAqB,CAAC;AAEvD,qBACa,mBAAmB;IAClB,OAAO,CAAC,QAAQ,CAAC,gBAAgB;gBAAhB,gBAAgB,EAAE,gBAAgB;IAG/D,YAAY,CAAkB,aAAa,EAAE,oBAAoB;CAGlE"}

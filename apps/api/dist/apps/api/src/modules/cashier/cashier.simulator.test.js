@@ -1,0 +1,493 @@
+"use strict";
+/**
+ * Cashier Simulator Test
+ *
+ * 模拟收银系统的场景覆盖：
+ * - 订单创建与状态流转 (CREATED → PENDING_PAYMENT → PAID → CLOSED)
+ * - 支付生命周期 (PENDING → SUCCEEDED/FAILED)
+ * - 订单金额计算 (computeCashierOrderTotal)
+ * - 支付回调处理 (cashier.payment-succeeded / cashier.payment-failed)
+ * - 订单关闭原因 (PAYMENT_TIMEOUT / FULL_REFUND / MANUAL_CANCEL)
+ * - 多商品订单
+ * - 边界场景 (空订单、0 数量、超大金额)
+ *
+ * 8 角色视角覆盖：
+ *  👔店长 - 收银汇总&订单审核
+ *  🛒前台 - 创建订单&收款
+ *  👥HR - 员工收银统计
+ *  🔧安监 - 支付合规审计
+ *  🎮导玩员 - 游戏币购买订单
+ *  🎯运行专员 - 订单异常处理&关单
+ *  🤝团建 - 团建套餐订单
+ *  📢营销 - 优惠券&盲盒订单
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const strict_1 = __importDefault(require("node:assert/strict"));
+const node_test_1 = __importStar(require("node:test"));
+const cashier_entity_1 = require("./cashier.entity");
+function createOrderItem(skuId, quantity, price, title) {
+    return { skuId, quantity, price, title: title ?? `商品-${skuId}` };
+}
+function createSimulatedOrder(memberId, tenantId, items, overrides) {
+    const totalAmount = (0, cashier_entity_1.computeCashierOrderTotal)(items);
+    const now = new Date().toISOString();
+    const order = {
+        orderId: `order-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        tenantContext: { tenantId },
+        memberId,
+        items,
+        currency: overrides?.currency ?? 'CNY',
+        totalAmount,
+        couponCode: overrides?.couponCode,
+        blindboxPlanId: overrides?.blindboxPlanId,
+        blindboxQuantity: overrides?.blindboxQuantity,
+        status: cashier_entity_1.CashierOrderStatus.Created,
+        createdAt: now,
+        updatedAt: now,
+        source: 'memory'
+    };
+    return { order, payments: [] };
+}
+function simulateTransitionToPending(order) {
+    strict_1.default.equal(order.status, cashier_entity_1.CashierOrderStatus.Created, '订单必须处于 Created 状态才能进入待支付');
+    return { ...order, status: cashier_entity_1.CashierOrderStatus.PendingPayment, updatedAt: new Date().toISOString() };
+}
+function simulatePayment(sim, channel, amount, succeed) {
+    strict_1.default.ok(sim.order.status === cashier_entity_1.CashierOrderStatus.PendingPayment || sim.order.status === cashier_entity_1.CashierOrderStatus.Created, '订单必须处于 Created 或 PendingPayment 状态才能支付');
+    const now = new Date().toISOString();
+    const payment = {
+        paymentId: `pay-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        orderId: sim.order.orderId,
+        channel,
+        amount,
+        status: succeed ? cashier_entity_1.CashierPaymentStatus.Succeeded : cashier_entity_1.CashierPaymentStatus.Failed,
+        transactionNo: succeed ? `TXN${Date.now()}` : undefined,
+        failureReason: succeed ? undefined : '余额不足',
+        createdAt: now,
+        updatedAt: now,
+        completedAt: succeed ? now : undefined
+    };
+    sim.payments.push(payment);
+    const updatedOrder = {
+        ...sim.order,
+        status: succeed ? cashier_entity_1.CashierOrderStatus.Paid : sim.order.status,
+        latestPaymentId: payment.paymentId,
+        paidAt: succeed ? now : sim.order.paidAt,
+        updatedAt: now
+    };
+    sim.order = updatedOrder;
+    return { payment, updatedOrder };
+}
+function simulateCloseOrder(sim, reason, closedBy, closeNote) {
+    const closeableStatuses = [
+        cashier_entity_1.CashierOrderStatus.Created,
+        cashier_entity_1.CashierOrderStatus.PendingPayment,
+        cashier_entity_1.CashierOrderStatus.PaymentFailed
+    ];
+    strict_1.default.ok(closeableStatuses.includes(sim.order.status), `订单状态 ${sim.order.status} 不允许关单`);
+    const now = new Date().toISOString();
+    const closed = {
+        ...sim.order,
+        status: cashier_entity_1.CashierOrderStatus.Closed,
+        closedAt: now,
+        closeReason: reason,
+        closedBy: closedBy ?? 'system',
+        closeNote: closeNote ?? '',
+        updatedAt: now
+    };
+    sim.order = closed;
+    return closed;
+}
+function simulateRefund(sim, fullRefund) {
+    strict_1.default.equal(sim.order.status, cashier_entity_1.CashierOrderStatus.Paid, '只有已支付订单可以退款');
+    const now = new Date().toISOString();
+    const closed = {
+        ...sim.order,
+        status: cashier_entity_1.CashierOrderStatus.Closed,
+        closedAt: now,
+        closeReason: fullRefund ? cashier_entity_1.CashierOrderCloseReason.FullRefund : cashier_entity_1.CashierOrderCloseReason.ManualCancel,
+        closedBy: 'admin',
+        closeNote: fullRefund ? '全额退款' : '手动关单',
+        updatedAt: now
+    };
+    sim.order = closed;
+    return closed;
+}
+/** 模拟支付成功回调 */
+function simulatePaymentCallback(order, eventName, paymentId) {
+    const now = new Date().toISOString();
+    if (eventName === 'cashier.payment-succeeded') {
+        return {
+            ...order,
+            status: cashier_entity_1.CashierOrderStatus.Paid,
+            latestPaymentId: paymentId,
+            paidAt: now,
+            updatedAt: now
+        };
+    }
+    return { ...order, status: cashier_entity_1.CashierOrderStatus.PaymentFailed, updatedAt: now };
+}
+// ─── 角色场景 ───
+const ROLES = {
+    DIANZHANG: '👔店长',
+    QIANTAI: '🛒前台',
+    HR: '👥HR',
+    ANJIAN: '🔧安监',
+    DAOWAN: '🎮导玩员',
+    YUNXING: '🎯运行专员',
+    TUANJIAN: '🤝团建',
+    YINGXIAO: '📢营销'
+};
+// ─── Tests ───
+(0, node_test_1.describe)('Cashier Simulator', () => {
+    // ──────── 👔店长 ────────
+    (0, node_test_1.describe)(`${ROLES.DIANZHANG} - 收银汇总&订单审核`, () => {
+        (0, node_test_1.default)('查看当日所有订单', () => {
+            const sim1 = createSimulatedOrder('m001', 't-001', [
+                createOrderItem('SKU01', 2, 100),
+                createOrderItem('SKU02', 1, 50)
+            ]);
+            const sim2 = createSimulatedOrder('m002', 't-001', [
+                createOrderItem('SKU03', 1, 200)
+            ]);
+            // 模拟门店当日所有订单
+            const allOrders = [sim1.order, sim2.order];
+            const totalRevenue = allOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+            strict_1.default.equal(allOrders.length, 2);
+            strict_1.default.equal(totalRevenue, 2 * 100 + 1 * 50 + 1 * 200);
+        });
+        (0, node_test_1.default)('审核高额订单', () => {
+            const sim = createSimulatedOrder('m001', 't-001', [
+                createOrderItem('SKU_PREMIUM', 1, 9999),
+                createOrderItem('SKU_ADDON', 3, 500)
+            ]);
+            const HIGH_VALUE_THRESHOLD = 5000;
+            strict_1.default.equal(sim.order.totalAmount, 9999 + 3 * 500);
+            strict_1.default.ok(sim.order.totalAmount > HIGH_VALUE_THRESHOLD, '高额订单需店长审核');
+        });
+        (0, node_test_1.default)('审核关单理由', () => {
+            const sim = createSimulatedOrder('m003', 't-001', [
+                createOrderItem('SKU01', 1, 300)
+            ]);
+            simulateTransitionToPending(sim.order);
+            const closed = simulateCloseOrder(sim, cashier_entity_1.CashierOrderCloseReason.ManualCancel, '店长', '客户取消');
+            strict_1.default.equal(closed.status, cashier_entity_1.CashierOrderStatus.Closed);
+            strict_1.default.equal(closed.closeReason, cashier_entity_1.CashierOrderCloseReason.ManualCancel);
+            strict_1.default.equal(closed.closedBy, '店长');
+        });
+    });
+    // ──────── 🛒前台 ────────
+    (0, node_test_1.describe)(`${ROLES.QIANTAI} - 创建订单&收款`, () => {
+        (0, node_test_1.default)('创建普通商品订单', () => {
+            const sim = createSimulatedOrder('m100', 't-001', [
+                createOrderItem('SKU_DRINK', 2, 15, '饮料'),
+                createOrderItem('SKU_SNACK', 1, 25, '零食')
+            ]);
+            strict_1.default.equal(sim.order.status, cashier_entity_1.CashierOrderStatus.Created);
+            strict_1.default.equal(sim.order.items.length, 2);
+            strict_1.default.equal(sim.order.totalAmount, 2 * 15 + 1 * 25);
+        });
+        (0, node_test_1.default)('创建订单后收款', () => {
+            const sim = createSimulatedOrder('m101', 't-001', [
+                createOrderItem('SKU_TICKET', 1, 88, '门票')
+            ]);
+            sim.order = simulateTransitionToPending(sim.order);
+            strict_1.default.equal(sim.order.status, cashier_entity_1.CashierOrderStatus.PendingPayment);
+            const { payment, updatedOrder } = simulatePayment(sim, 'wechat', 88, true);
+            strict_1.default.equal(payment.status, cashier_entity_1.CashierPaymentStatus.Succeeded);
+            strict_1.default.equal(payment.channel, 'wechat');
+            strict_1.default.equal(updatedOrder.status, cashier_entity_1.CashierOrderStatus.Paid);
+        });
+        (0, node_test_1.default)('收款失败不影响订单', () => {
+            const sim = createSimulatedOrder('m102', 't-001', [
+                createOrderItem('SKU_TICKET', 1, 88, '门票')
+            ]);
+            sim.order = simulateTransitionToPending(sim.order);
+            const { payment, updatedOrder } = simulatePayment(sim, 'wechat', 88, false);
+            strict_1.default.equal(payment.status, cashier_entity_1.CashierPaymentStatus.Failed);
+            strict_1.default.ok(payment.failureReason);
+            // 支付失败，订单状态不应变为已支付
+            strict_1.default.notEqual(updatedOrder.status, cashier_entity_1.CashierOrderStatus.Paid);
+        });
+    });
+    // ──────── 👥HR ────────
+    (0, node_test_1.describe)(`${ROLES.HR} - 员工收银统计`, () => {
+        (0, node_test_1.default)('统计员工创建订单数', () => {
+            const storeOrders = [];
+            // 模拟不同员工创建的订单
+            for (const employeeId of ['emp01', 'emp01', 'emp02', 'emp01', 'emp03']) {
+                const sim = createSimulatedOrder(employeeId, 't-001', [
+                    createOrderItem('SKU_X', 1, 10)
+                ]);
+                storeOrders.push(sim.order);
+            }
+            const stats = new Map();
+            for (const o of storeOrders) {
+                stats.set(o.memberId, (stats.get(o.memberId) ?? 0) + 1);
+            }
+            strict_1.default.equal(stats.get('emp01'), 3);
+            strict_1.default.equal(stats.get('emp02'), 1);
+            strict_1.default.equal(stats.get('emp03'), 1);
+        });
+        (0, node_test_1.default)('统计员工收银总额', () => {
+            const empOrders = [
+                createSimulatedOrder('emp01', 't-001', [createOrderItem('A', 2, 50)]),
+                createSimulatedOrder('emp01', 't-001', [createOrderItem('B', 1, 200)])
+            ];
+            const total = empOrders.reduce((s, sim) => s + sim.order.totalAmount, 0);
+            strict_1.default.equal(total, 2 * 50 + 1 * 200);
+        });
+    });
+    // ──────── 🔧安监 ────────
+    (0, node_test_1.describe)(`${ROLES.ANJIAN} - 支付合规审计`, () => {
+        (0, node_test_1.default)('检测异常大额支付', () => {
+            const ABNORMAL_THRESHOLD = 10000;
+            const sim = createSimulatedOrder('m200', 't-001', [
+                createOrderItem('SKU_X', 100, 200)
+            ]);
+            // 100 * 200 = 20000 > 10000 → 触发风控
+            strict_1.default.ok(sim.order.totalAmount > ABNORMAL_THRESHOLD, '大额订单应触发风控审计');
+        });
+        (0, node_test_1.default)('检测重复支付订单', () => {
+            const sim = createSimulatedOrder('m201', 't-001', [
+                createOrderItem('SKU_X', 1, 100)
+            ]);
+            sim.order = simulateTransitionToPending(sim.order);
+            simulatePayment(sim, 'alipay', 100, true);
+            // 已支付订单不应再次收款
+            strict_1.default.throws(() => {
+                strict_1.default.notEqual(sim.order.status, cashier_entity_1.CashierOrderStatus.Created, '已支付订单不应再次收款');
+                simulatePayment(sim, 'wechat', 100, true);
+            }, /订单必须处于 Created 或 PendingPayment 状态才能支付/);
+        });
+        (0, node_test_1.default)('支付超时自动关单', () => {
+            const sim = createSimulatedOrder('m202', 't-001', [
+                createOrderItem('SKU_X', 1, 50)
+            ]);
+            sim.order = simulateTransitionToPending(sim.order);
+            // 模拟超时关单
+            const closed = simulateCloseOrder(sim, cashier_entity_1.CashierOrderCloseReason.PaymentTimeout);
+            strict_1.default.equal(closed.status, cashier_entity_1.CashierOrderStatus.Closed);
+            strict_1.default.equal(closed.closeReason, cashier_entity_1.CashierOrderCloseReason.PaymentTimeout);
+        });
+    });
+    // ──────── 🎮导玩员 ────────
+    (0, node_test_1.describe)(`${ROLES.DAOWAN} - 游戏币购买订单`, () => {
+        (0, node_test_1.default)('创建游戏币订单', () => {
+            const sim = createSimulatedOrder('m300', 't-001', [
+                createOrderItem('SKU_COIN_100', 1, 98, '100游戏币'),
+                createOrderItem('SKU_COIN_50', 2, 49, '50游戏币')
+            ]);
+            strict_1.default.equal(sim.order.totalAmount, 98 + 2 * 49);
+            strict_1.default.equal(sim.order.items.length, 2);
+        });
+        (0, node_test_1.default)('游戏币订单支付流程', () => {
+            const sim = createSimulatedOrder('m301', 't-001', [
+                createOrderItem('SKU_COIN_500', 1, 398, '500游戏币')
+            ]);
+            sim.order = simulateTransitionToPending(sim.order);
+            const { payment, updatedOrder } = simulatePayment(sim, 'wechat', 398, true);
+            strict_1.default.equal(payment.status, cashier_entity_1.CashierPaymentStatus.Succeeded);
+            strict_1.default.equal(updatedOrder.status, cashier_entity_1.CashierOrderStatus.Paid);
+            strict_1.default.ok(updatedOrder.paidAt, '支付时间应被记录');
+        });
+    });
+    // ──────── 🎯运行专员 ────────
+    (0, node_test_1.describe)(`${ROLES.YUNXING} - 订单异常处理&关单`, () => {
+        (0, node_test_1.default)('处理支付失败订单', () => {
+            const sim = createSimulatedOrder('m400', 't-001', [
+                createOrderItem('SKU_X', 1, 200)
+            ]);
+            simulateTransitionToPending(sim.order);
+            // 支付回调：失败
+            const failedOrder = simulatePaymentCallback(sim.order, 'cashier.payment-failed', 'pay-failed-001');
+            strict_1.default.equal(failedOrder.status, cashier_entity_1.CashierOrderStatus.PaymentFailed);
+        });
+        (0, node_test_1.default)('人工关单异常订单', () => {
+            const sim = createSimulatedOrder('m401', 't-001', [
+                createOrderItem('SKU_ERROR', 1, 0) // 异常商品
+            ]);
+            // 可直接关单（Created 状态）
+            const closed = simulateCloseOrder(sim, cashier_entity_1.CashierOrderCloseReason.ManualCancel, '运行专员', '商品异常');
+            strict_1.default.equal(closed.status, cashier_entity_1.CashierOrderStatus.Closed);
+            strict_1.default.equal(closed.closeNote, '商品异常');
+        });
+        (0, node_test_1.default)('全额退款关单', () => {
+            const sim = createSimulatedOrder('m402', 't-001', [
+                createOrderItem('SKU_TICKET', 2, 150, '门票')
+            ]);
+            sim.order = simulateTransitionToPending(sim.order);
+            simulatePayment(sim, 'alipay', 300, true);
+            strict_1.default.equal(sim.order.status, cashier_entity_1.CashierOrderStatus.Paid);
+            const refunded = simulateRefund(sim, true);
+            strict_1.default.equal(refunded.status, cashier_entity_1.CashierOrderStatus.Closed);
+            strict_1.default.equal(refunded.closeReason, cashier_entity_1.CashierOrderCloseReason.FullRefund);
+        });
+    });
+    // ──────── 🤝团建 ────────
+    (0, node_test_1.describe)(`${ROLES.TUANJIAN} - 团建套餐订单`, () => {
+        (0, node_test_1.default)('创建团建套餐订单', () => {
+            const sim = createSimulatedOrder('m500', 't-001', [
+                createOrderItem('SKU_TEAM_PACKAGE_10', 1, 2999, '10人团建套餐'),
+                createOrderItem('SKU_MEAL_ADDON', 10, 58, '加餐')
+            ]);
+            strict_1.default.equal(sim.order.totalAmount, 2999 + 10 * 58);
+        });
+        (0, node_test_1.default)('团建订单多人分摊支付', () => {
+            const sim = createSimulatedOrder('m501', 't-001', [
+                createOrderItem('SKU_TEAM_PACKAGE_20', 1, 4999, '20人团建套餐')
+            ]);
+            sim.order = simulateTransitionToPending(sim.order);
+            // 分两次支付
+            const { updatedOrder: afterFirst } = simulatePayment(sim, 'alipay', 2500, true);
+            // 第一笔支付成功后订单已变为 Paid
+            strict_1.default.equal(afterFirst.status, cashier_entity_1.CashierOrderStatus.Paid);
+            strict_1.default.ok(sim.payments.length >= 1);
+        });
+    });
+    // ──────── 📢营销 ────────
+    (0, node_test_1.describe)(`${ROLES.YINGXIAO} - 优惠券&盲盒订单`, () => {
+        (0, node_test_1.default)('使用优惠券创建订单', () => {
+            const sim = createSimulatedOrder('m600', 't-001', [
+                createOrderItem('SKU_TICKET', 2, 100, '门票')
+            ], { couponCode: 'SUMMER2025' });
+            strict_1.default.equal(sim.order.couponCode, 'SUMMER2025');
+            strict_1.default.equal(sim.order.totalAmount, 2 * 100);
+        });
+        (0, node_test_1.default)('盲盒订单创建', () => {
+            const sim = createSimulatedOrder('m601', 't-001', [
+                createOrderItem('SKU_BLINDBOX', 3, 69, '惊喜盲盒')
+            ], { blindboxPlanId: 'plan-blindbox-001', blindboxQuantity: 3 });
+            strict_1.default.equal(sim.order.blindboxPlanId, 'plan-blindbox-001');
+            strict_1.default.equal(sim.order.blindboxQuantity, 3);
+            strict_1.default.equal(sim.order.totalAmount, 3 * 69);
+        });
+        (0, node_test_1.default)('支付回调成功 - 营销活动支付', () => {
+            const sim = createSimulatedOrder('m602', 't-001', [
+                createOrderItem('SKU_CAMPAIGN', 1, 199, '活动门票')
+            ]);
+            sim.order = simulateTransitionToPending(sim.order);
+            const callbackResult = simulatePaymentCallback(sim.order, 'cashier.payment-succeeded', 'pay-cb-001');
+            strict_1.default.equal(callbackResult.status, cashier_entity_1.CashierOrderStatus.Paid);
+            strict_1.default.equal(callbackResult.latestPaymentId, 'pay-cb-001');
+        });
+    });
+});
+// ─── 核心功能测试 ───
+(0, node_test_1.describe)('CashierOrderTotal 计算', () => {
+    (0, node_test_1.default)('computeCashierOrderTotal - 正常计算', () => {
+        const items = [
+            createOrderItem('A', 3, 10),
+            createOrderItem('B', 2, 25)
+        ];
+        strict_1.default.equal((0, cashier_entity_1.computeCashierOrderTotal)(items), 3 * 10 + 2 * 25);
+    });
+    (0, node_test_1.default)('computeCashierOrderTotal - 空订单', () => {
+        strict_1.default.equal((0, cashier_entity_1.computeCashierOrderTotal)([]), 0);
+    });
+    (0, node_test_1.default)('computeCashierOrderTotal - 零数量商品', () => {
+        const items = [
+            createOrderItem('A', 0, 10),
+            createOrderItem('B', 5, 20)
+        ];
+        strict_1.default.equal((0, cashier_entity_1.computeCashierOrderTotal)(items), 0 * 10 + 5 * 20);
+    });
+});
+(0, node_test_1.describe)('订单状态流转', () => {
+    (0, node_test_1.default)('完整正向流程: Created → PendingPayment → Paid', () => {
+        const sim = createSimulatedOrder('m001', 't-001', [
+            createOrderItem('SKU_X', 1, 100)
+        ]);
+        strict_1.default.equal(sim.order.status, cashier_entity_1.CashierOrderStatus.Created);
+        sim.order = simulateTransitionToPending(sim.order);
+        strict_1.default.equal(sim.order.status, cashier_entity_1.CashierOrderStatus.PendingPayment);
+        simulatePayment(sim, 'wechat', 100, true);
+        strict_1.default.equal(sim.order.status, cashier_entity_1.CashierOrderStatus.Paid);
+    });
+    (0, node_test_1.default)('支付失败后可重新支付', () => {
+        const sim = createSimulatedOrder('m002', 't-001', [
+            createOrderItem('SKU_X', 1, 50)
+        ]);
+        sim.order = simulateTransitionToPending(sim.order);
+        simulatePayment(sim, 'alipay', 50, false);
+        // 支付失败状态
+        strict_1.default.equal(sim.order.status, cashier_entity_1.CashierOrderStatus.PendingPayment);
+        // 重新支付（PendingPayment 状态允许）
+        simulatePayment(sim, 'wechat', 50, true);
+        strict_1.default.equal(sim.order.status, cashier_entity_1.CashierOrderStatus.Paid);
+    });
+    (0, node_test_1.default)('已支付订单不允许关单', () => {
+        const sim = createSimulatedOrder('m003', 't-001', [
+            createOrderItem('SKU_X', 1, 100)
+        ]);
+        sim.order = simulateTransitionToPending(sim.order);
+        simulatePayment(sim, 'wechat', 100, true);
+        strict_1.default.throws(() => simulateCloseOrder(sim, cashier_entity_1.CashierOrderCloseReason.ManualCancel), /订单状态 .* 不允许关单/);
+    });
+});
+(0, node_test_1.describe)('支付回调模拟', () => {
+    (0, node_test_1.default)('支付成功回调更新订单状态', () => {
+        const sim = createSimulatedOrder('m-cb-01', 't-001', [
+            createOrderItem('SKU_X', 1, 100)
+        ]);
+        const result = simulatePaymentCallback(sim.order, 'cashier.payment-succeeded', 'external-pay-123');
+        strict_1.default.equal(result.status, cashier_entity_1.CashierOrderStatus.Paid);
+        strict_1.default.equal(result.latestPaymentId, 'external-pay-123');
+        strict_1.default.ok(result.paidAt);
+    });
+    (0, node_test_1.default)('支付失败回调不影响 paidAt', () => {
+        const sim = createSimulatedOrder('m-cb-02', 't-001', [
+            createOrderItem('SKU_X', 1, 50)
+        ]);
+        const result = simulatePaymentCallback(sim.order, 'cashier.payment-failed', 'external-pay-456');
+        strict_1.default.equal(result.status, cashier_entity_1.CashierOrderStatus.PaymentFailed);
+        strict_1.default.equal(result.paidAt, undefined);
+    });
+});
+(0, node_test_1.describe)('边界场景', () => {
+    (0, node_test_1.default)('超量订单', () => {
+        const items = Array.from({ length: 100 }, (_, i) => createOrderItem(`SKU_${i}`, 1, 10));
+        const sim = createSimulatedOrder('m-edge-01', 't-001', items);
+        strict_1.default.equal(sim.order.items.length, 100);
+        strict_1.default.equal(sim.order.totalAmount, 100 * 10);
+    });
+    (0, node_test_1.default)('多币种支持', () => {
+        const sim = createSimulatedOrder('m-edge-02', 't-001', [
+            createOrderItem('SKU_X', 1, 100)
+        ], { currency: 'USD' });
+        strict_1.default.equal(sim.order.currency, 'USD');
+    });
+    (0, node_test_1.default)('单个商品大数量', () => {
+        const sim = createSimulatedOrder('m-edge-03', 't-001', [
+            createOrderItem('SKU_BULK', 9999, 1)
+        ]);
+        strict_1.default.equal(sim.order.totalAmount, 9999);
+    });
+});
+//# sourceMappingURL=cashier.simulator.test.js.map

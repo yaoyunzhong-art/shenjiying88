@@ -1,0 +1,1 @@
+{"version":3,"file":"health.controller.d.ts","sourceRoot":"","sources":["../../../src/modules/health/health.controller.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,UAAU,EAAE,MAAM,oBAAoB,CAAC;AAEhD,qBACa,gBAAgB;IACf,OAAO,CAAC,QAAQ,CAAC,UAAU;gBAAV,UAAU,EAAE,UAAU;IAG7C,SAAS;;;;;CAUhB"}
