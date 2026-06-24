@@ -256,7 +256,9 @@ var VARIANT_STYLES = {
   success: { bg: "#22c55e", text: "#ffffff", border: "#ffffff" },
   warning: { bg: "#f59e0b", text: "#ffffff", border: "#ffffff" },
   error: { bg: "#ef4444", text: "#ffffff", border: "#ffffff" },
+  danger: { bg: "#ef4444", text: "#ffffff", border: "#ffffff" },
   info: { bg: "#06b6d4", text: "#ffffff", border: "#ffffff" },
+  neutral: { bg: "#6b7280", text: "#ffffff", border: "#ffffff" },
   purple: { bg: "#a855f7", text: "#ffffff", border: "#ffffff" }
 };
 var SIZE_MAP = {

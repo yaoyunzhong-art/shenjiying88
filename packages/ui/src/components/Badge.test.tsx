@@ -102,6 +102,20 @@ describe('Badge', () => {
     assert.ok(html.includes('#a855f7'));
   });
 
+  test('renders danger variant (alias for error)', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(Badge, { variant: 'danger', 'data-testid': 'b' }, '1'),
+    );
+    assert.ok(html.includes('#ef4444'));
+  });
+
+  test('renders neutral variant', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(Badge, { variant: 'neutral', 'data-testid': 'b' }, '1'),
+    );
+    assert.ok(html.includes('#6b7280'));
+  });
+
   // ── Sizes ──
   test('renders sm size with correct dimensions', () => {
     const html = renderToStaticMarkup(

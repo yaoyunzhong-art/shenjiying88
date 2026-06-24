@@ -2,7 +2,7 @@ import * as React from 'react';
 import React__default, { InputHTMLAttributes } from 'react';
 import { FoundationAlertTimelineFilterState, FoundationAlertCode, FoundationAlertTimelineEntry, FoundationAlertDrilldownResponse, FoundationAlertCatalogItem, FoundationOperationsAlert, FoundationAlertMutationKind, FoundationAlertRuntimeCallbackStalledDetail, FoundationAlertTimelineMetrics as FoundationAlertTimelineMetrics$1, FoundationAlertTimelineDigest } from '@m5/types';
 
-type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' | 'purple';
+type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'error' | 'danger' | 'info' | 'neutral' | 'purple';
 type BadgePlacement = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 type BadgeSize = 'sm' | 'md' | 'lg';
 interface BadgeProps {

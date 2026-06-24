@@ -8,7 +8,9 @@ export type BadgeVariant =
   | 'success'
   | 'warning'
   | 'error'
+  | 'danger'
   | 'info'
+  | 'neutral'
   | 'purple';
 export type BadgePlacement = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 export type BadgeSize = 'sm' | 'md' | 'lg';
@@ -44,7 +46,9 @@ const VARIANT_STYLES: Record<BadgeVariant, { bg: string; text: string; border: s
   success: { bg: '#22c55e', text: '#ffffff', border: '#ffffff' },
   warning: { bg: '#f59e0b', text: '#ffffff', border: '#ffffff' },
   error: { bg: '#ef4444', text: '#ffffff', border: '#ffffff' },
+  danger: { bg: '#ef4444', text: '#ffffff', border: '#ffffff' },
   info: { bg: '#06b6d4', text: '#ffffff', border: '#ffffff' },
+  neutral: { bg: '#6b7280', text: '#ffffff', border: '#ffffff' },
   purple: { bg: '#a855f7', text: '#ffffff', border: '#ffffff' },
 };
 
