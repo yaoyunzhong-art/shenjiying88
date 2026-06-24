@@ -246,8 +246,11 @@ const TENANT_B: RequestTenantContext = {
 
 const ACTOR: CurrentActorValue = {
   actorId: 'admin-001',
-  actorType: 'SYSTEM',
+  actorType: 'SYSTEM' as any,
   roles: ['SUPER_ADMIN'],
+  permissions: ['*'],
+  authenticated: true,
+  source: 'headers',
 }
 
 function createController(): { ctrl: FoundationController; svc: MockSvc } {
@@ -395,7 +398,7 @@ describe('FoundationController', () => {
       const { ctrl, svc } = createController()
       const result = await ctrl.getOperationsOverview(undefined) as any
       assert.equal(result.tenantId, 'no-tenant')
-      assert.ok(svc.calls['getOperationsOverview']?.[0]?.[0] === undefined)
+      assert.ok((svc as any).calls?.['getOperationsOverview']?.[0]?.[0] === undefined)
     })
   })
 
