@@ -472,6 +472,9 @@ export type {
   WorkbenchBreadcrumb,
 } from './components/WorkbenchHeader';
 
+export { SideNavigation } from './components/SideNavigation';
+export type { SideNavigationProps, SideNavItem } from './components/SideNavigation';
+
 export { Button } from './components/Button';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './components/Button';
 
