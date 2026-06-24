@@ -457,5 +457,13 @@ export type { RatingProps } from './components/Rating';
 export { BranchSelector, findNodeById, collectLeafIds } from './components/BranchSelector';
 export type { BranchSelectorNode, BranchSelectorProps } from './components/BranchSelector';
 
+export { SalesForecastPanel } from './components/SalesForecastPanel';
+export type {
+  SalesForecastPanelProps,
+  ForecastDataPoint,
+  ForecastTrend,
+  ForecastAccuracy,
+} from './components/SalesForecastPanel';
+
 export { SmartTrendChart } from './SmartTrendChart';
 export type { SmartTrendChartProps, TrendDataPoint } from './SmartTrendChart';

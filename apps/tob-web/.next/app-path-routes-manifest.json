@@ -1,14 +1,14 @@
 {
   "/_not-found/page": "/_not-found",
-  "/[marketCode]/[tenantCode]/[brandCode]/login/page": "/[marketCode]/[tenantCode]/[brandCode]/login",
-  "/[marketCode]/[tenantCode]/login/page": "/[marketCode]/[tenantCode]/login",
-  "/alerts/[id]/page": "/alerts/[id]",
   "/[marketCode]/[tenantCode]/[brandCode]/page": "/[marketCode]/[tenantCode]/[brandCode]",
+  "/[marketCode]/[tenantCode]/[brandCode]/login/page": "/[marketCode]/[tenantCode]/[brandCode]/login",
+  "/alerts/[id]/page": "/alerts/[id]",
   "/alerts/page": "/alerts",
-  "/products/page": "/products",
   "/products/[id]/page": "/products/[id]",
+  "/[marketCode]/[tenantCode]/login/page": "/[marketCode]/[tenantCode]/login",
+  "/products/page": "/products",
   "/page": "/",
+  "/[marketCode]/[tenantCode]/page": "/[marketCode]/[tenantCode]",
   "/operations/page": "/operations",
-  "/operations/[id]/page": "/operations/[id]",
-  "/[marketCode]/[tenantCode]/page": "/[marketCode]/[tenantCode]"
+  "/operations/[id]/page": "/operations/[id]"
 }

@@ -147,6 +147,7 @@ __export(index_exports, {
   RuntimeReceiptEvents: () => RuntimeReceiptEvents,
   RuntimeReceiptStatusCard: () => RuntimeReceiptStatusCard,
   SalesClerkTool: () => SalesClerkTool,
+  SalesForecastPanel: () => SalesForecastPanel,
   ScrollArea: () => ScrollArea,
   SearchFilterInput: () => SearchFilterInput,
   Select: () => Select,
@@ -26441,9 +26442,267 @@ function BranchSelector({
 }
 BranchSelector.displayName = "BranchSelector";
 
-// src/SmartTrendChart/SmartTrendChart.tsx
+// src/components/SalesForecastPanel.tsx
 var import_react65 = require("react");
 var import_jsx_runtime98 = require("react/jsx-runtime");
+var TREND_LABELS = {
+  up: "\u{1F4C8} \u4E0A\u5347\u8D8B\u52BF",
+  down: "\u{1F4C9} \u4E0B\u964D\u8D8B\u52BF",
+  stable: "\u27A1\uFE0F \u5E73\u7A33\u8D8B\u52BF"
+};
+var TREND_BADGE_COLORS = {
+  up: "success",
+  down: "error",
+  stable: "warning"
+};
+var ACCURACY_LABELS = {
+  high: "\u9AD8",
+  medium: "\u4E2D",
+  low: "\u4F4E"
+};
+var ACCURACY_COLORS = {
+  high: "success",
+  medium: "warning",
+  low: "error"
+};
+var FORECAST_CHART_COLORS = {
+  line: "#60a5fa",
+  areaOptimistic: "rgba(96, 165, 250, 0.12)",
+  areaPessimistic: "rgba(96, 165, 250, 0.06)",
+  actual: "#4ade80",
+  grid: "rgba(148, 163, 184, 0.08)",
+  text: "rgba(148, 163, 184, 0.6)"
+};
+var ACCURACY_GAUGE_SEGMENTS = [
+  { from: 0, to: 50, color: "#f87171", label: "\u504F\u4F4E" },
+  { from: 50, to: 75, color: "#fbbf24", label: "\u4E2D\u7B49" },
+  { from: 75, to: 100, color: "#4ade80", label: "\u9AD8\u7F6E\u4FE1" }
+];
+function ForecastChart({ dataPoints, height = 220 }) {
+  if (!dataPoints || dataPoints.length < 2) return null;
+  const padding = { top: 20, right: 16, bottom: 28, left: 50 };
+  const chartWidth = 600;
+  const chartHeight = height;
+  const allValues = dataPoints.flatMap((d) => [d.optimistic, d.pessimistic, d.actual ?? d.predicted, d.predicted]);
+  const minVal = Math.min(...allValues) * 0.95;
+  const maxVal = Math.max(...allValues) * 1.05;
+  const range = maxVal - minVal || 1;
+  const xScale = (i) => padding.left + i / Math.max(dataPoints.length - 1, 1) * (chartWidth - padding.left - padding.right);
+  const yScale = (v) => padding.top + (1 - (v - minVal) / range) * (chartHeight - padding.top - padding.bottom);
+  const optimisticPoints = dataPoints.map((d, i) => `${xScale(i)},${yScale(d.optimistic)}`).join(" ");
+  const pessimisticPoints = [...dataPoints].reverse().map((d, i) => `${xScale(dataPoints.length - 1 - i)},${yScale(d.pessimistic)}`).join(" ");
+  const linePoints = dataPoints.map((d, i) => `${xScale(i)},${yScale(d.predicted)}`).join(" ");
+  const actualPoints = dataPoints.filter((d) => d.actual !== void 0).map((d, i) => {
+    const idx = dataPoints.indexOf(d);
+    return `${xScale(idx)},${yScale(d.actual)}`;
+  });
+  const yTicks = 5;
+  const yTickValues = Array.from({ length: yTicks }, (_, i) => minVal + range * i / (yTicks - 1));
+  const xTickIndices = dataPoints.length <= 4 ? dataPoints.map((_, i) => i) : [0, Math.floor(dataPoints.length / 2), dataPoints.length - 1];
+  return /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)(
+    "svg",
+    {
+      width: "100%",
+      height,
+      viewBox: `0 0 ${chartWidth} ${chartHeight}`,
+      preserveAspectRatio: "xMidYMid meet",
+      "data-testid": "forecast-chart-svg",
+      style: { display: "block", overflow: "visible" },
+      children: [
+        yTickValues.map((v, i) => /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("g", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+            "line",
+            {
+              x1: padding.left,
+              y1: yScale(v),
+              x2: chartWidth - padding.right,
+              y2: yScale(v),
+              stroke: FORECAST_CHART_COLORS.grid,
+              strokeWidth: 1
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+            "text",
+            {
+              x: padding.left - 6,
+              y: yScale(v) + 4,
+              textAnchor: "end",
+              fill: FORECAST_CHART_COLORS.text,
+              fontSize: 10,
+              children: v >= 1e4 ? `${(v / 1e4).toFixed(1)}w` : v >= 1e3 ? `${(v / 1e3).toFixed(1)}k` : v.toFixed(0)
+            }
+          )
+        ] }, `grid-${i}`)),
+        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          "polygon",
+          {
+            points: `${optimisticPoints} ${pessimisticPoints}`,
+            fill: FORECAST_CHART_COLORS.areaOptimistic,
+            "data-testid": "forecast-confidence-band"
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          "polyline",
+          {
+            points: linePoints,
+            fill: "none",
+            stroke: FORECAST_CHART_COLORS.line,
+            strokeWidth: 2,
+            strokeLinecap: "round",
+            strokeLinejoin: "round",
+            "data-testid": "forecast-line"
+          }
+        ),
+        dataPoints.map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          "circle",
+          {
+            cx: xScale(i),
+            cy: yScale(d.predicted),
+            r: 3,
+            fill: FORECAST_CHART_COLORS.line,
+            "data-testid": `forecast-dot-${i}`
+          },
+          `dot-${i}`
+        )),
+        dataPoints.filter((d) => d.actual !== void 0).map((d, i) => {
+          const idx = dataPoints.indexOf(d);
+          return /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+            "circle",
+            {
+              cx: xScale(idx),
+              cy: yScale(d.actual),
+              r: 4,
+              fill: FORECAST_CHART_COLORS.actual,
+              stroke: "#1e293b",
+              strokeWidth: 1.5,
+              "data-testid": `forecast-actual-dot-${i}`
+            },
+            `actual-${i}`
+          );
+        }),
+        xTickIndices.map((i) => /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          "text",
+          {
+            x: xScale(i),
+            y: chartHeight - 4,
+            textAnchor: "middle",
+            fill: FORECAST_CHART_COLORS.text,
+            fontSize: 10,
+            children: dataPoints[i]?.label ?? ""
+          },
+          `xlabel-${i}`
+        ))
+      ]
+    }
+  );
+}
+function SalesForecastPanel({
+  dataPoints,
+  trend,
+  accuracy,
+  confidence,
+  title = "\u9500\u552E\u9884\u6D4B",
+  description,
+  stats,
+  showChart = true,
+  footerActions,
+  "data-testid": testId
+}) {
+  const lastPoint = (0, import_react65.useMemo)(() => dataPoints[dataPoints.length - 1], [dataPoints]);
+  return /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+    Card,
+    {
+      title,
+      subtitle: description,
+      "data-testid": testId ?? "sales-forecast-panel",
+      headerActions: /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "center" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          StatusBadge,
+          {
+            variant: TREND_BADGE_COLORS[trend],
+            label: TREND_LABELS[trend]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          StatusBadge,
+          {
+            variant: ACCURACY_COLORS[accuracy],
+            label: `\u51C6\u786E\u5EA6: ${ACCURACY_LABELS[accuracy]}`
+          }
+        )
+      ] }),
+      footer: footerActions ? /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { paddingTop: 12 }, children: footerActions }) : void 0,
+      children: /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 20 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { style: { display: "flex", gap: 16, flexWrap: "wrap" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { style: { flex: 1, minWidth: 200 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { fontSize: 12, color: "rgba(148, 163, 184, 0.7)", marginBottom: 4 }, children: "\u4E0B\u4E00\u671F\u9884\u6D4B" }),
+            /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { fontSize: 28, fontWeight: 700, color: "#f1f5f9", lineHeight: 1.2 }, children: lastPoint ? /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)(import_jsx_runtime98.Fragment, { children: [
+              "\xA5",
+              lastPoint.predicted >= 1e4 ? (lastPoint.predicted / 1e4).toFixed(1) + "w" : lastPoint.predicted.toLocaleString(),
+              /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("span", { style: { fontSize: 14, fontWeight: 400, color: "rgba(148, 163, 184, 0.5)", marginLeft: 8 }, children: [
+                "\u533A\u95F4 ",
+                lastPoint.pessimistic >= 1e4 ? (lastPoint.pessimistic / 1e4).toFixed(1) + "w" : lastPoint.pessimistic.toLocaleString(),
+                "~",
+                lastPoint.optimistic >= 1e4 ? (lastPoint.optimistic / 1e4).toFixed(1) + "w" : lastPoint.optimistic.toLocaleString()
+              ] })
+            ] }) : "\u2014" })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { style: { width: 140 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { fontSize: 12, color: "rgba(148, 163, 184, 0.7)", marginBottom: 4 }, children: "\u7F6E\u4FE1\u5EA6" }),
+            /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+              GaugeChart,
+              {
+                value: confidence,
+                min: 0,
+                max: 100,
+                segments: ACCURACY_GAUGE_SEGMENTS,
+                size: 100
+              }
+            )
+          ] })
+        ] }),
+        showChart && dataPoints.length >= 2 && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { marginTop: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(ForecastChart, { dataPoints }) }),
+        stats && stats.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", marginTop: 4 }, children: stats.map((stat, i) => /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)(
+          "div",
+          {
+            style: {
+              flex: "1 1 120px",
+              padding: "10px 14px",
+              background: "rgba(15, 23, 42, 0.3)",
+              borderRadius: 8,
+              border: "1px solid rgba(148, 163, 184, 0.1)"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("div", { style: { fontSize: 11, color: "rgba(148, 163, 184, 0.6)", marginBottom: 4 }, children: stat.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)("div", { style: { fontSize: 18, fontWeight: 600, color: "#e2e8f0" }, children: [
+                stat.value,
+                stat.trend && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)("span", { style: { marginLeft: 6, fontSize: 14 }, children: stat.trend === "up" ? "\u2191" : stat.trend === "down" ? "\u2193" : "\u2192" })
+              ] })
+            ]
+          },
+          i
+        )) }),
+        dataPoints.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+          "div",
+          {
+            "data-testid": "sales-forecast-empty",
+            style: {
+              textAlign: "center",
+              padding: "32px 16px",
+              color: "rgba(148, 163, 184, 0.5)",
+              fontSize: 14
+            },
+            children: "\u6682\u65E0\u9884\u6D4B\u6570\u636E"
+          }
+        )
+      ] })
+    }
+  );
+}
+
+// src/SmartTrendChart/SmartTrendChart.tsx
+var import_react66 = require("react");
+var import_jsx_runtime99 = require("react/jsx-runtime");
 function SmartTrendChart({
   data,
   title,
@@ -26458,18 +26717,18 @@ function SmartTrendChart({
   className = "",
   "data-testid": dataTestId = "smart-trend-chart"
 }) {
-  const maxValue = (0, import_react65.useMemo)(
+  const maxValue = (0, import_react66.useMemo)(
     () => Math.max(...data.map((d) => Math.max(d.value, d.target ?? 0)), 1),
     [data]
   );
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
       "div",
       {
         className: "smart-trend-chart smart-trend-chart--loading",
         "data-testid": `${dataTestId}-loading`,
         style: { height, display: "flex", alignItems: "center", justifyContent: "center" },
-        children: /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
           "div",
           {
             className: "smart-trend-chart__skeleton",
@@ -26480,7 +26739,7 @@ function SmartTrendChart({
     );
   }
   if (!data || data.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
       "div",
       {
         className: "smart-trend-chart smart-trend-chart--empty",
@@ -26513,7 +26772,7 @@ function SmartTrendChart({
       const x2 = chartPadding + i / Math.max(data.length - 1, 1) * (100 - chartPadding * 2);
       const y2 = chartTop + (1 - (curr.target ?? 0) / maxValue) * (chartHeight - chartTop);
       svgChildren.push(
-        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
           "line",
           {
             x1: `${x1}%`,
@@ -26536,7 +26795,7 @@ function SmartTrendChart({
       const x = chartPadding + i / Math.max(data.length - 1, 1) * (100 - chartPadding * 2);
       const y = chartTop + (1 - point.target / maxValue) * (chartHeight - chartTop);
       svgChildren.push(
-        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
           "circle",
           {
             cx: `${x}%`,
@@ -26556,7 +26815,7 @@ function SmartTrendChart({
     const barH = point.value / maxValue * (chartHeight - chartTop);
     const xPercent = chartPadding + i / Math.max(data.length - 1, 1) * (100 - chartPadding * 2);
     const barElements = [
-      /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
         "rect",
         {
           x: `calc(${xPercent}% - ${barWidth / 2}px)`,
@@ -26572,7 +26831,7 @@ function SmartTrendChart({
     ];
     if (showValues) {
       barElements.push(
-        /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
           "text",
           {
             x: `${xPercent}%`,
@@ -26588,7 +26847,7 @@ function SmartTrendChart({
       );
     }
     barElements.push(
-      /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
         "text",
         {
           x: `${xPercent}%`,
@@ -26602,16 +26861,16 @@ function SmartTrendChart({
         `label-${i}`
       )
     );
-    svgChildren.push(/* @__PURE__ */ (0, import_jsx_runtime98.jsx)("g", { children: barElements }, `bar-${i}`));
+    svgChildren.push(/* @__PURE__ */ (0, import_jsx_runtime99.jsx)("g", { children: barElements }, `bar-${i}`));
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)(
     "div",
     {
       className: `smart-trend-chart ${className}`,
       "data-testid": dataTestId,
       style: { fontFamily: "system-ui, sans-serif" },
       children: [
-        title && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+        title && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
           "div",
           {
             className: "smart-trend-chart__header",
@@ -26626,13 +26885,13 @@ function SmartTrendChart({
             children: title
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime98.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime99.jsxs)(
           "div",
           {
             className: "smart-trend-chart__canvas",
             style: { position: "relative", height, width: "100%" },
             children: [
-              yAxisLabel && /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+              yAxisLabel && /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
                 "div",
                 {
                   style: {
@@ -26648,7 +26907,7 @@ function SmartTrendChart({
                   children: yAxisLabel
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime98.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime99.jsx)(
                 "svg",
                 {
                   width: "100%",
@@ -26784,6 +27043,7 @@ function SmartTrendChart({
   RuntimeReceiptEvents,
   RuntimeReceiptStatusCard,
   SalesClerkTool,
+  SalesForecastPanel,
   ScrollArea,
   SearchFilterInput,
   Select,
