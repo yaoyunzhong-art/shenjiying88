@@ -260,9 +260,9 @@ describe('brands-page: 正例 (positive cases)', () => {
   describe('computeBrandMarketDistribution', () => {
     it('should return market distribution', () => {
       const dist = computeBrandMarketDistribution(MOCK_BRANDS);
-      assert.ok(dist['cn-mainland'] > 0);
-      assert.ok(dist['us-default'] > 0);
-      assert.ok(dist['uk-default'] > 0);
+      assert.ok((dist['cn-mainland'] ?? 0) > 0);
+      assert.ok((dist['us-default'] ?? 0) > 0);
+      assert.ok((dist['uk-default'] ?? 0) > 0);
     });
   });
 

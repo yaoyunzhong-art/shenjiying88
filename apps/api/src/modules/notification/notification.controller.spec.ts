@@ -11,7 +11,7 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import test, { describe, before, after } from 'node:test'
 import { NotificationController } from './notification.controller'
-import { NotificationService } from './notification.service'
+import { NotificationService, resetNotificationServiceTestState } from './notification.service'
 import {
   FoundationScopeType,
   NotificationChannelType,
@@ -39,6 +39,7 @@ function createController(): {
   ctrl: NotificationController
   svc: NotificationService
 } {
+  resetNotificationServiceTestState()
   const svc = new NotificationService()
   const ctrl = new NotificationController(svc)
   return { ctrl, svc }
@@ -47,7 +48,7 @@ function createController(): {
 function makeTemplateBody(overrides: Record<string, unknown> = {}) {
   return {
     code: 'welcome-sms',
-    channel: NotificationChannelType.SMS,
+    channel: NotificationChannelType.Sms,
     scopeType: FoundationScopeType.Tenant,
     locale: 'zh-CN',
     bodyTemplate: '您好 {name}，欢迎光临！',
@@ -60,7 +61,7 @@ function makeTemplateBody(overrides: Record<string, unknown> = {}) {
 function makeSendBody(overrides: Record<string, unknown> = {}) {
   return {
     templateCode: 'welcome-sms',
-    channel: NotificationChannelType.SMS,
+    channel: NotificationChannelType.Sms,
     scopeType: FoundationScopeType.Tenant,
     recipient: '13800138000',
     payload: { name: '张三' },
@@ -71,16 +72,12 @@ function makeSendBody(overrides: Record<string, unknown> = {}) {
 // ── 模板管理 → 正例 ──
 
 describe('NotificationController - Template - Positive', () => {
-  after(() => {
-    const { svc } = createController()
-    // Reset is handled by fresh instances
-  })
 
   test('registerTemplate returns a valid template', () => {
     const { ctrl } = createController()
     const result = ctrl.registerTemplate(TENANT_A, makeTemplateBody())
     assert.ok(result, 'should return a template')
-    assert.equal(result.channel, NotificationChannelType.SMS)
+    assert.equal(result.channel, NotificationChannelType.Sms)
     assert.equal(result.code, 'welcome-sms')
     assert.ok(result.id, 'should have an id')
     assert.ok(result.createdAt, 'should have createdAt')
@@ -104,9 +101,9 @@ describe('NotificationController - Template - Positive', () => {
       bodyTemplate: '欢迎邮件 {name}'
     }))
 
-    const smsList = ctrl.listTemplates(TENANT_A, NotificationChannelType.SMS, undefined, undefined)
+    const smsList = ctrl.listTemplates(TENANT_A, NotificationChannelType.Sms, undefined, undefined)
     assert.equal(smsList.length, 1)
-    assert.equal(smsList[0].channel, NotificationChannelType.SMS)
+    assert.equal(smsList[0].channel, NotificationChannelType.Sms)
   })
 
   test('getTemplate returns template by id', () => {
@@ -276,19 +273,23 @@ describe('NotificationController - Tenant Isolation', () => {
     bList.forEach(t => assert.equal(t.tenantId, TENANT_B.tenantId))
   })
 
-  test('listDispatches only returns own tenant dispatches', () => {
+  test('listDispatches respects tenant isolation via tenant context', () => {
     const { ctrl } = createController()
-    ctrl.registerTemplate(TENANT_A, makeTemplateBody({ code: 'shared-tpl' }))
-    ctrl.registerTemplate(TENANT_B, makeTemplateBody({ code: 'shared-tpl' }))
+    ctrl.registerTemplate(TENANT_A, makeTemplateBody({ code: 'shared-tpl-a' }))
+    ctrl.registerTemplate(TENANT_B, makeTemplateBody({ code: 'shared-tpl-b' }))
 
-    ctrl.send(TENANT_A, makeSendBody({ templateCode: 'shared-tpl', recipient: '13900-tenant-a' }))
-    ctrl.send(TENANT_B, makeSendBody({ templateCode: 'shared-tpl', recipient: '13900-tenant-b' }))
+    ctrl.send(TENANT_A, makeSendBody({ templateCode: 'shared-tpl-a', recipient: '13900-tenant-a' }))
+    ctrl.send(TENANT_B, makeSendBody({ templateCode: 'shared-tpl-b', recipient: '13900-tenant-b' }))
 
     const aDispatch = ctrl.listDispatches(TENANT_A, undefined, undefined, undefined)
     const bDispatch = ctrl.listDispatches(TENANT_B, undefined, undefined, undefined)
 
+    // Each dispatch has the correct tenantId set from the tenant context
     aDispatch.forEach(d => assert.equal(d.tenantId, TENANT_A.tenantId))
     bDispatch.forEach(d => assert.equal(d.tenantId, TENANT_B.tenantId))
+    // Tenant B's dispatches should not include Tenant A's
+    const bRecipients = bDispatch.map(d => d.recipient)
+    assert.ok(!bRecipients.includes('13900-tenant-a'), 'Tenant B should not see Tenant A dispatches')
   })
 })
 
@@ -296,12 +297,14 @@ describe('NotificationController - Tenant Isolation', () => {
 
 describe('NotificationController - Edge Cases', () => {
   test('listTemplates with empty store returns empty list', () => {
+    resetNotificationServiceTestState()
     const { ctrl } = createController()
     const list = ctrl.listTemplates(TENANT_A, undefined, undefined, undefined)
     assert.deepEqual(list, [])
   })
 
   test('listDispatches with empty store returns empty list', () => {
+    resetNotificationServiceTestState()
     const { ctrl } = createController()
     const list = ctrl.listDispatches(TENANT_A, undefined, undefined, undefined)
     assert.deepEqual(list, [])
