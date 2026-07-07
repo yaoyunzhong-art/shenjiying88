@@ -6,16 +6,20 @@
 import { Module } from '@nestjs/common'
 import { LowCodePageBuilder, AuditAlertService } from './lowcode-audit.service'
 import { LowcodePageController } from './lowcode-page.controller'
+import { LowcodeController } from './lowcode.controller'
+import { LowcodeService } from './lowcode.service'
 
 @Module({
-  controllers: [LowcodePageController],
+  controllers: [LowcodePageController, LowcodeController],
   providers: [
     LowCodePageBuilder,
     AuditAlertService,
+    LowcodeService,
   ],
   exports: [
     LowCodePageBuilder,
     AuditAlertService,
+    LowcodeService,
   ],
 })
 export class LowcodeModule {}
