@@ -50,6 +50,7 @@ __export(index_exports, {
   AIModelPerformancePanel: () => AIModelPerformancePanel,
   AIPricingRecommendationPanel: () => AIPricingRecommendationPanel,
   AIRecommendationFeedbackPanel: () => AIRecommendationFeedbackPanel,
+  AIRuleWeightPanel: () => AIRuleWeightPanel,
   AIScenarioSimulator: () => AIScenarioSimulator,
   AISmartInsightPanel: () => AISmartInsightPanel,
   AISmartSchedulingPanel: () => AISmartSchedulingPanel,
@@ -380,6 +381,7 @@ __export(index_exports, {
   runtimeOperationStatusVariants: () => runtimeOperationStatusVariants,
   serializeToCsv: () => serializeToCsv,
   summarizeRuntimePanelReceipt: () => summarizeRuntimePanelReceipt,
+  useAIRuleWeight: () => useAIRuleWeight,
   useAiABTestComparison: () => useAiABTestComparison,
   useAlert: () => useAlert,
   useCountdown: () => useCountdown,
@@ -62495,6 +62497,351 @@ function StoreSelector({
   );
 }
 StoreSelector.displayName = "StoreSelector";
+
+// src/ai-rule-weight-panel/AIRuleWeightPanel.tsx
+var import_react171 = require("react");
+var import_jsx_runtime247 = require("react/jsx-runtime");
+var CATEGORY_LABELS7 = {
+  risk: "\u98CE\u63A7",
+  promotion: "\u8425\u9500",
+  member: "\u4F1A\u5458",
+  stock: "\u5E93\u5B58",
+  staff: "\u4EBA\u529B"
+};
+var CATEGORY_BADGE_COLORS = {
+  risk: "#ef4444",
+  promotion: "#f59e0b",
+  member: "#3b82f6",
+  stock: "#22c55e",
+  staff: "#a855f7"
+};
+function WeightSlider({
+  value,
+  disabled,
+  onChange
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+    "input",
+    {
+      type: "range",
+      min: 0,
+      max: 100,
+      step: 5,
+      value,
+      disabled,
+      onChange: (e) => onChange(Number(e.target.value)),
+      "aria-label": "\u6743\u91CD\u6ED1\u5757",
+      style: {
+        width: "100%",
+        accentColor: disabled ? "#94a3b8" : "#6366f1",
+        cursor: disabled ? "not-allowed" : "pointer"
+      }
+    }
+  );
+}
+function WeightBadge({ value }) {
+  const getColor2 = () => {
+    if (value >= 80) return "#ef4444";
+    if (value >= 60) return "#f59e0b";
+    if (value >= 40) return "#3b82f6";
+    return "#6b7280";
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+    "span",
+    {
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minWidth: 44,
+        height: 28,
+        borderRadius: 6,
+        fontSize: 13,
+        fontWeight: 700,
+        color: "#fff",
+        backgroundColor: getColor2()
+      },
+      children: value
+    }
+  );
+}
+function RuleRow({
+  rule,
+  onWeightChange
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
+    "div",
+    {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "12px 16px",
+        borderRadius: 10,
+        background: rule.enabled ? "#fff" : "#f8fafc",
+        border: "1px solid",
+        borderColor: rule.enabled ? "#e2e8f0" : "#f1f5f9"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+          "span",
+          {
+            style: {
+              display: "inline-block",
+              padding: "2px 8px",
+              borderRadius: 6,
+              fontSize: 11,
+              fontWeight: 600,
+              color: "#fff",
+              background: CATEGORY_BADGE_COLORS[rule.category] ?? "#94a3b8",
+              whiteSpace: "nowrap",
+              minWidth: 36,
+              textAlign: "center"
+            },
+            children: CATEGORY_LABELS7[rule.category] ?? rule.category
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+            "div",
+            {
+              style: {
+                fontWeight: 600,
+                fontSize: 14,
+                color: rule.enabled ? "#1e293b" : "#94a3b8"
+              },
+              children: rule.name
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+            "div",
+            {
+              style: {
+                fontSize: 12,
+                color: rule.enabled ? "#64748b" : "#cbd5e1",
+                marginTop: 2,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap"
+              },
+              children: rule.description
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { style: { width: 160 }, children: /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+          WeightSlider,
+          {
+            value: rule.currentWeight,
+            disabled: !rule.adjustable || !rule.enabled,
+            onChange: (v) => onWeightChange(rule.id, v)
+          }
+        ) }),
+        /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(WeightBadge, { value: rule.currentWeight })
+      ]
+    }
+  );
+}
+function AIRuleWeightPanel({
+  rules,
+  onWeightChange,
+  onBatchAdjust,
+  onReset,
+  loading = false,
+  disabled = false
+}) {
+  const handleWeightChange = (0, import_react171.useCallback)(
+    (ruleId, newWeight) => {
+      onWeightChange?.(ruleId, newWeight);
+    },
+    [onWeightChange]
+  );
+  const handleBatchApply = (0, import_react171.useCallback)(() => {
+    const adjustments = rules.filter((r) => r.adjustable && r.enabled).map((r) => ({
+      ruleId: r.id,
+      oldWeight: r.currentWeight,
+      newWeight: r.currentWeight,
+      impact: r.currentWeight >= 80 ? "high" : r.currentWeight >= 50 ? "medium" : "low",
+      affectedCount: Math.floor(Math.random() * 500) + 50,
+      previewImpact: r.currentWeight >= 80 ? "\u9AD8\u5F71\u54CD \u2014 \u5EFA\u8BAE\u5BA1\u614E\u8C03\u6574" : r.currentWeight >= 50 ? "\u4E2D\u7B49\u5F71\u54CD" : "\u4F4E\u5F71\u54CD"
+    }));
+    onBatchAdjust?.(adjustments);
+  }, [rules, onBatchAdjust]);
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+      "div",
+      {
+        style: {
+          padding: 40,
+          textAlign: "center",
+          color: "#94a3b8",
+          fontSize: 14
+        },
+        children: "\u23F3 \u52A0\u8F7D\u89C4\u5219\u6743\u91CD\u914D\u7F6E\u4E2D..."
+      }
+    );
+  }
+  const enabledRules = rules.filter((r) => r.enabled);
+  const disabledRules = rules.filter((r) => !r.enabled);
+  return /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
+    "div",
+    {
+      style: {
+        borderRadius: 12,
+        background: "#f8fafc",
+        padding: 16,
+        border: "1px solid #e2e8f0",
+        opacity: disabled ? 0.5 : 1,
+        pointerEvents: disabled ? "none" : void 0
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 16
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("h3", { style: { margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }, children: "\u{1F916} AI \u89C4\u5219\u6743\u91CD\u9762\u677F" }),
+                /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("p", { style: { margin: "4px 0 0", fontSize: 12, color: "#64748b" }, children: "\u8C03\u6574\u5404\u89C4\u5219\u6267\u884C\u6743\u91CD\u4EE5\u4F18\u5316 AI \u51B3\u7B56\u6548\u679C \u2014 \u6743\u91CD\u8303\u56F4 0 ~ 100" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+                  "button",
+                  {
+                    onClick: handleBatchApply,
+                    style: {
+                      padding: "6px 14px",
+                      borderRadius: 8,
+                      border: "1px solid #6366f1",
+                      background: "#6366f1",
+                      color: "#fff",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer"
+                    },
+                    children: "\u6279\u91CF\u5E94\u7528"
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+                  "button",
+                  {
+                    onClick: onReset,
+                    style: {
+                      padding: "6px 14px",
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                      background: "#fff",
+                      color: "#64748b",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer"
+                    },
+                    children: "\u91CD\u7F6E"
+                  }
+                )
+              ] })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }, children: enabledRules.map((rule) => /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+          RuleRow,
+          {
+            rule,
+            onWeightChange: handleWeightChange
+          },
+          rule.id
+        )) }),
+        disabledRules.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("details", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
+            "summary",
+            {
+              style: {
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#94a3b8",
+                cursor: "pointer",
+                padding: "8px 0"
+              },
+              children: [
+                "\u5DF2\u7981\u7528\u7684\u89C4\u5219\uFF08",
+                disabledRules.length,
+                "\uFF09"
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+            "div",
+            {
+              style: {
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                marginTop: 8
+              },
+              children: disabledRules.map((rule) => /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+                RuleRow,
+                {
+                  rule,
+                  onWeightChange: handleWeightChange
+                },
+                rule.id
+              ))
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              gap: 16,
+              marginTop: 12,
+              paddingTop: 12,
+              borderTop: "1px solid #e2e8f0",
+              fontSize: 11,
+              color: "#94a3b8"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { children: "\u{1F534} \u226580 \u9AD8\u6743\u91CD" }),
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { children: "\u{1F7E1} 60~79 \u4E2D\u6743\u91CD" }),
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { children: "\u{1F535} 40~59 \u8F83\u4F4E\u6743\u91CD" }),
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { children: "\u26AA <40 \u4F4E\u6743\u91CD" })
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
+
+// src/ai-rule-weight-panel/useAIRuleWeight.ts
+var import_react172 = require("react");
+function useAIRuleWeight(initialRules) {
+  const [rules, setRules] = (0, import_react172.useState)(initialRules);
+  const [loading, setLoading] = (0, import_react172.useState)(false);
+  const [error] = (0, import_react172.useState)(null);
+  const updateWeight = (0, import_react172.useCallback)((ruleId, newWeight) => {
+    setRules(
+      (prev) => prev.map((r) => r.id === ruleId ? { ...r, currentWeight: Math.max(0, Math.min(100, newWeight)) } : r)
+    );
+  }, []);
+  const batchUpdate = (0, import_react172.useCallback)((adjustments) => {
+    setRules(
+      (prev) => prev.map((r) => {
+        const adj = adjustments.find((a) => a.ruleId === r.id);
+        return adj ? { ...r, currentWeight: Math.max(0, Math.min(100, adj.newWeight)) } : r;
+      })
+    );
+  }, []);
+  const resetWeights = (0, import_react172.useCallback)(() => {
+    setRules(initialRules);
+  }, [initialRules]);
+  return { rules, loading, error, updateWeight, batchUpdate, resetWeights };
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -62517,6 +62864,7 @@ StoreSelector.displayName = "StoreSelector";
   AIModelPerformancePanel,
   AIPricingRecommendationPanel,
   AIRecommendationFeedbackPanel,
+  AIRuleWeightPanel,
   AIScenarioSimulator,
   AISmartInsightPanel,
   AISmartSchedulingPanel,
@@ -62847,6 +63195,7 @@ StoreSelector.displayName = "StoreSelector";
   runtimeOperationStatusVariants,
   serializeToCsv,
   summarizeRuntimePanelReceipt,
+  useAIRuleWeight,
   useAiABTestComparison,
   useAlert,
   useCountdown,

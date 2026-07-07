@@ -1218,3 +1218,6 @@ export type {
   StoreGroup,
   StoreSelectorMode,
 } from './components/StoreSelector';
+
+export { AIRuleWeightPanel, useAIRuleWeight } from './ai-rule-weight-panel';
+export type { AIRuleWeightPanelProps, RuleWeightItem, WeightAdjustResult } from './ai-rule-weight-panel';
