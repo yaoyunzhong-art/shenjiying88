@@ -329,12 +329,12 @@ describe('TimeSeriesCollector — detectSeasonality', () => {
   })
 
   it('[E10] 日周期峰值识别', () => {
+    const base = new Date()
+    base.setUTCDate(base.getUTCDate() - 7)
     for (let d = 0; d < 7; d++) {
       for (let h = 0; h < 24; h++) {
-        const date = new Date('2026-06-01T00:00:00Z')
-        date.setDate(date.getDate() + d)
-        date.setUTCHours(h, 0, 0, 0)
-        col.recordMetric({ metricName: 'orders', value: h === 10 ? 500 : h === 14 ? 400 : h === 20 ? 300 : 50, timestamp: date.toISOString() })
+        const ts = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate() + d, h, 0, 0, 0)).toISOString()
+        col.recordMetric({ metricName: 'orders', value: h === 10 ? 500 : h === 14 ? 400 : h === 20 ? 300 : 50, timestamp: ts })
       }
     }
     const sp = col.detectSeasonality({ metricName: 'orders' })
