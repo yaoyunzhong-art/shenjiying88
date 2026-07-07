@@ -566,6 +566,13 @@ export type {
   ContextMenuSeparator,
   ContextMenuEntry,
 } from './components/ContextMenu';
+export { DropdownMenu } from './components/DropdownMenu';
+export type {
+  DropdownMenuProps,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuEntry,
+} from './components/DropdownMenu';
 export { default as DateRangePicker } from './components/DateRangePicker';
 export type {
   DateRangePickerProps,
