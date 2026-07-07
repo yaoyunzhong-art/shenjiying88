@@ -358,8 +358,19 @@ describe('CanaryService', () => {
   // ── 审计日志 ───────────────────────────────────────────────
   describe('audit logs', () => {
     it('✅ 正例: 状态变更记录审计日志', () => {
-      const expId = service.listExperiments()[0].id
+      // 用新创建的实验（draft状态）做状态变更测试
+      const expId = service.createExperiment({
+        name: 'AuditTest',
+        description: 'audit',
+        flagKey: 'audit.test',
+        strategy: 'percentage',
+        strategyConfig: { type: 'percentage', includeAll: true },
+        initialPercentage: 10,
+        targetPercentage: 100,
+        createdBy: 'admin',
+      }).id
       const before = service.listAuditLogs(expId).length
+      // create 已有 1 条审计
       service.activate(expId, 'admin')
       service.pause(expId, 'admin', 'reason')
       const after = service.listAuditLogs(expId).length
