@@ -136,7 +136,9 @@ class MockAutoRollbackService {
     const pending = this.confirmations.get(id)
     if (pending) { clearTimeout(pending.timer); this.confirmations.delete(id) }
     this.updateStatus(record, 'PENDING', 'Manual confirmation received')
-    void this.executeRollback(id, 'FULL', record.reason)
+    if (!this.syncMode) {
+      void this.executeRollback(id, 'FULL', record.reason)
+    }
     return record
   }
 
@@ -471,7 +473,8 @@ describe('AutoRollbackService | executeRollbackSync 工作流', () => {
     const snap = svc.getSnapshot(r.snapshotId!)
     expect(snap).toBeDefined()
     expect(snap!.kind).toBe('DB')
-    expect(snap!.trigger).toContain('p95_spike')
+    // executeRollbackSync 内部用 record.reason 作为 trigger
+    expect(snap!.trigger).toContain('anomaly score')
   })
 })
 
