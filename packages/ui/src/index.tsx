@@ -1184,3 +1184,6 @@ export type {
 // --------------- YearPicker ---------------
 export { YearPicker } from './components/YearPicker';
 export type { YearPickerProps } from './components/YearPicker';
+
+export { StoreStatusIndicator } from './components/StoreStatusIndicator';
+export type { StoreStatusIndicatorProps, StoreStatus, StoreStatusSize } from './components/StoreStatusIndicator';
