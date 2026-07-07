@@ -175,7 +175,7 @@ export const MOCK_REVIEWS: Review[] = [
     rating: 5,
     content: '环境非常好，器材种类齐全，教练很专业。已经在这里锻炼半年了，强烈推荐！',
     tags: ['环境好', '服务好', '产品好'],
-    author: mockAuthors[0],
+    author: mockAuthors[0]!,
     createdAt: '2026-07-05T14:30:00Z',
     status: 'published',
     images: [],
@@ -190,7 +190,7 @@ export const MOCK_REVIEWS: Review[] = [
     rating: 4,
     content: '位置很好找，地铁直达。设施维护得不错，就是高峰时段人有点多。',
     tags: ['环境好', '位置方便'],
-    author: mockAuthors[1],
+    author: mockAuthors[1]!,
     createdAt: '2026-07-03T10:15:00Z',
     status: 'published',
     images: ['/images/reviews/rev-002-1.jpg'],
@@ -203,7 +203,7 @@ export const MOCK_REVIEWS: Review[] = [
     rating: 3,
     content: '价格有点贵，设施还不错。更衣室的储物柜不够用，希望能改进。',
     tags: ['环境好', '建议改善'],
-    author: mockAuthors[2],
+    author: mockAuthors[2]!,
     createdAt: '2026-06-28T16:00:00Z',
     status: 'published',
     images: [],
@@ -218,7 +218,7 @@ export const MOCK_REVIEWS: Review[] = [
     rating: 5,
     content: '家附近新开的店，环境干净整洁，课程种类丰富。特别喜欢他们的瑜伽课！',
     tags: ['环境好', '产品好', '体验好'],
-    author: mockAuthors[3],
+    author: mockAuthors[3]!,
     createdAt: '2026-07-04T09:00:00Z',
     status: 'published',
     images: ['/images/reviews/rev-004-1.jpg', '/images/reviews/rev-004-2.jpg'],
@@ -231,7 +231,7 @@ export const MOCK_REVIEWS: Review[] = [
     rating: 4,
     content: '工作人员很热情，服务周到。价格也合理，性价比不错。',
     tags: ['服务好', '价格优惠'],
-    author: mockAuthors[4],
+    author: mockAuthors[4]!,
     createdAt: '2026-07-02T11:30:00Z',
     status: 'published',
     images: [],
@@ -246,7 +246,7 @@ export const MOCK_REVIEWS: Review[] = [
     rating: 2,
     content: '周末人太多了，排队等了很久。更衣室卫生也需要改进。',
     tags: ['排队久', '建议改善'],
-    author: mockAuthors[5],
+    author: mockAuthors[5]!,
     createdAt: '2026-06-30T15:45:00Z',
     status: 'published',
     images: [],
@@ -259,7 +259,7 @@ export const MOCK_REVIEWS: Review[] = [
     rating: 5,
     content: '非常适合上班族，就在写字楼下。午休时间来锻炼很方便！',
     tags: ['体验好', '位置方便', '服务好'],
-    author: mockAuthors[6],
+    author: mockAuthors[6]!,
     createdAt: '2026-07-06T12:00:00Z',
     status: 'published',
     images: [],
@@ -272,7 +272,7 @@ export const MOCK_REVIEWS: Review[] = [
     rating: 4,
     content: '私教课程不错，教练很耐心。就是器械种类相对少了一些。',
     tags: ['服务好', '产品好', '建议改善'],
-    author: mockAuthors[7],
+    author: mockAuthors[7]!,
     createdAt: '2026-07-01T08:30:00Z',
     status: 'published',
     images: ['/images/reviews/rev-008-1.jpg'],
@@ -287,7 +287,7 @@ export const MOCK_REVIEWS: Review[] = [
     rating: 4,
     content: '新开的店，设施都非常新。价格也比较优惠，开业活动很给力。',
     tags: ['环境好', '价格优惠'],
-    author: mockAuthors[2],
+    author: mockAuthors[2]!,
     createdAt: '2026-07-05T18:00:00Z',
     status: 'published',
     images: ['/images/reviews/rev-009-1.jpg'],
@@ -300,7 +300,7 @@ export const MOCK_REVIEWS: Review[] = [
     rating: 3,
     content: '开业期间人特别多，体验稍微差了一点。等热度过了再来。',
     tags: ['排队久'],
-    author: mockAuthors[4],
+    author: mockAuthors[4]!,
     createdAt: '2026-06-29T14:20:00Z',
     status: 'published',
     images: [],
@@ -313,7 +313,7 @@ export const MOCK_REVIEWS: Review[] = [
     rating: 1,
     content: '预约的私教课程临时被取消，非常失望。希望能改进管理。',
     tags: ['服务好', '建议改善'],
-    author: mockAuthors[5],
+    author: mockAuthors[5]!,
     createdAt: '2026-06-25T09:00:00Z',
     status: 'published',
     images: [],
@@ -328,7 +328,7 @@ export const MOCK_REVIEWS: Review[] = [
     rating: 5,
     content: '买了季卡，性价比很高。还经常组织会员活动，氛围很好！',
     tags: ['服务好', '价格优惠', '体验好'],
-    author: mockAuthors[1],
+    author: mockAuthors[1]!,
     createdAt: '2026-06-22T20:00:00Z',
     status: 'published',
     images: [],
@@ -346,13 +346,13 @@ export function computeRatingDistribution(reviews: Review[]): RatingDistribution
   const total = reviews.length;
 
   for (const r of reviews) {
-    counts[r.rating]++;
+    counts[r.rating] = (counts[r.rating] ?? 0) + 1;
   }
 
   return ([1, 2, 3, 4, 5] as Rating[]).map((rating) => ({
     rating,
-    count: counts[rating],
-    percentage: total > 0 ? Math.round((counts[rating] / total) * 100) : 0,
+    count: counts[rating] ?? 0,
+    percentage: total > 0 ? Math.round(((counts[rating] ?? 0) / total) * 100) : 0,
   }));
 }
 
@@ -463,7 +463,7 @@ export function buildStoreReviewSummary(reviews: Review[], storeCode: string): S
   const storeReviews = filterByStore(reviews, storeCode);
   if (storeReviews.length === 0) return null;
 
-  const first = storeReviews[0];
+  const first = storeReviews[0]!;
   return {
     storeCode,
     storeName: first.storeName,
