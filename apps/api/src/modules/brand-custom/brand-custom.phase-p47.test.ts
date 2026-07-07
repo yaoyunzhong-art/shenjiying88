@@ -39,6 +39,9 @@ interface BrandComparison {
 // ── 品牌运营模拟函数（纯函数式） ──
 let _campaignIdCounter = 0
 
+/** 存储活动ID到品牌类型的映射，用于getCampaignMetrics */
+const _campaignTypeMap = new Map<string, BrandType>()
+
 function createBrandCampaign(
   name: string,
   brandType: BrandType,
@@ -52,8 +55,10 @@ function createBrandCampaign(
   }
 
   _campaignIdCounter++
+  const id = `camp_${_campaignIdCounter}`
+  _campaignTypeMap.set(id, brandType)
   return {
-    id: `camp_${_campaignIdCounter}`,
+    id,
     name,
     type: brandType,
     status: 'DRAFT',
@@ -74,17 +79,14 @@ function getCampaignMetrics(id: string): CampaignMetrics {
     throw new Error('CAMPAIGN_NOT_FOUND')
   }
 
-  // 根据不同类型返回不同的模拟指标
+  // 根据活动类型返回对应的模拟指标
+  const type = _campaignTypeMap.get(id) || 'PREMIUM'
   const metricsByType: Record<BrandType, CampaignMetrics> = {
     PREMIUM:  { impressions: 50000, clicks: 3000, conversion: 3.2, spend: 80000, roi: 2.5 },
     TRAFFIC:  { impressions: 200000, clicks: 15000, conversion: 1.8, spend: 50000, roi: 3.8 },
     KIDS:     { impressions: 80000, clicks: 5000, conversion: 4.5, spend: 30000, roi: 5.2 },
   }
 
-  // 用ID后缀的数字mod来决定返回哪类指标（模拟不同活动不同数据）
-  const key = id.split('_').pop() || '0'
-  const idx = parseInt(key, 10)
-  const type: BrandType = idx % 3 === 1 ? 'TRAFFIC' : idx % 3 === 2 ? 'KIDS' : 'PREMIUM'
   return metricsByType[type]
 }
 
