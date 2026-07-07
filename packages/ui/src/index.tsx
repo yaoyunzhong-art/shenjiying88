@@ -68,6 +68,8 @@ export type {
 } from './components/AiDecisionPanel';
 export { HeatmapChart } from './components/HeatmapChart';
 export type { HeatmapChartProps, HeatmapCell, HeatmapColorScheme } from './components/HeatmapChart';
+export { RadarChart } from './components/RadarChart';
+export type { RadarChartProps, RadarDimension, RadarSeries } from './components/RadarChart';
 export { AIAgentThinkingPanel } from './components/AIAgentThinkingPanel';
 export type {
   AIAgentThinkingPanelProps,
