@@ -1151,3 +1151,7 @@ export type {
   FeedbackRating,
   UserFeedbackItem,
 } from './components/AIRecommendationFeedbackPanel';
+
+// --------------- Popconfirm ---------------
+export { Popconfirm } from './components/Popconfirm';
+export type { PopconfirmProps, PopconfirmPlacement } from './components/Popconfirm';
