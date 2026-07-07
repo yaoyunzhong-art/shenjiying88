@@ -13,6 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
+import { PolicyConditionOperator } from '@m5/domain'
 import type {
   RuleCondition,
   MemberLevelInput,
@@ -34,38 +35,42 @@ import type {
 // 枚举常量
 // ═══════════════════════════════════════════════════════════════
 
-const POLICY_OP = { Gte: 'gte', Lte: 'lte', Eq: 'eq', NotEq: 'not_eq', In: 'in', NotIn: 'not_in', Exists: 'exists' } as const
+const ENGINE_ID = {
+  memberLevel: 'member-level-v1',
+  deviceAnomaly: 'device-anomaly-v1',
+  riskScore: 'risk-score-v1',
+} as const
 
 const ENGINES = {
   memberLevel: {
     id: 'member-level-v1',
     conditions: [
-      { id: 'cond-high-spend', field: 'totalSpend', operator: 'gte', value: 10000, weight: 0.4 },
-      { id: 'cond-high-points', field: 'totalPoints', operator: 'gte', value: 5000, weight: 0.3 },
-      { id: 'cond-frequent-visit', field: 'visitCount', operator: 'gte', value: 20, weight: 0.3 },
-    ] as RuleCondition[],
+      { id: 'cond-high-spend', engineId: ENGINE_ID.memberLevel, field: 'totalSpend', operator: PolicyConditionOperator.Gte, value: 10000, weight: 0.4 },
+      { id: 'cond-high-points', engineId: ENGINE_ID.memberLevel, field: 'totalPoints', operator: PolicyConditionOperator.Gte, value: 5000, weight: 0.3 },
+      { id: 'cond-frequent-visit', engineId: ENGINE_ID.memberLevel, field: 'visitCount', operator: PolicyConditionOperator.Gte, value: 20, weight: 0.3 },
+    ] as unknown as RuleCondition[],
     matchStrategy: 'ALL' as const,
   },
   deviceAnomaly: {
     id: 'device-anomaly-v1',
     conditions: [
-      { id: 'cond-cpu-high', field: 'cpuUsage', operator: 'gte', value: 90, weight: 0.25 },
-      { id: 'cond-memory-high', field: 'memoryUsage', operator: 'gte', value: 85, weight: 0.25 },
-      { id: 'cond-disk-high', field: 'diskUsage', operator: 'gte', value: 90, weight: 0.2 },
-      { id: 'cond-network-slow', field: 'networkLatencyMs', operator: 'gte', value: 500, weight: 0.15 },
-      { id: 'cond-error-high', field: 'errorRate', operator: 'gte', value: 5, weight: 0.15 },
-    ] as RuleCondition[],
+      { id: 'cond-cpu-high', engineId: ENGINE_ID.deviceAnomaly, field: 'cpuUsage', operator: PolicyConditionOperator.Gte, value: 90, weight: 0.25 },
+      { id: 'cond-memory-high', engineId: ENGINE_ID.deviceAnomaly, field: 'memoryUsage', operator: PolicyConditionOperator.Gte, value: 85, weight: 0.25 },
+      { id: 'cond-disk-high', engineId: ENGINE_ID.deviceAnomaly, field: 'diskUsage', operator: PolicyConditionOperator.Gte, value: 90, weight: 0.2 },
+      { id: 'cond-network-slow', engineId: ENGINE_ID.deviceAnomaly, field: 'networkLatencyMs', operator: PolicyConditionOperator.Gte, value: 500, weight: 0.15 },
+      { id: 'cond-error-high', engineId: ENGINE_ID.deviceAnomaly, field: 'errorRate', operator: PolicyConditionOperator.Gte, value: 5, weight: 0.15 },
+    ] as unknown as RuleCondition[],
     matchStrategy: 'ANY' as const,
   },
   riskScore: {
     id: 'risk-score-v1',
     conditions: [
-      { id: 'cond-high-refund', field: 'refundCount', operator: 'gte', value: 3, weight: 0.25 },
-      { id: 'cond-abnormal-payment', field: 'abnormalPaymentCount', operator: 'gte', value: 2, weight: 0.2 },
-      { id: 'cond-device-anomaly', field: 'deviceAnomalyCount', operator: 'gte', value: 2, weight: 0.15 },
-      { id: 'cond-complaints', field: 'complaintCount', operator: 'gte', value: 1, weight: 0.2 },
-      { id: 'cond-void-refund', field: 'voidRefundAmount', operator: 'gte', value: 500, weight: 0.2 },
-    ] as RuleCondition[],
+      { id: 'cond-high-refund', engineId: ENGINE_ID.riskScore, field: 'refundCount', operator: PolicyConditionOperator.Gte, value: 3, weight: 0.25 },
+      { id: 'cond-abnormal-payment', engineId: ENGINE_ID.riskScore, field: 'abnormalPaymentCount', operator: PolicyConditionOperator.Gte, value: 2, weight: 0.2 },
+      { id: 'cond-device-anomaly', engineId: ENGINE_ID.riskScore, field: 'deviceAnomalyCount', operator: PolicyConditionOperator.Gte, value: 2, weight: 0.15 },
+      { id: 'cond-complaints', engineId: ENGINE_ID.riskScore, field: 'complaintCount', operator: PolicyConditionOperator.Gte, value: 1, weight: 0.2 },
+      { id: 'cond-void-refund', engineId: ENGINE_ID.riskScore, field: 'voidRefundAmount', operator: PolicyConditionOperator.Gte, value: 500, weight: 0.2 },
+    ] as unknown as RuleCondition[],
     matchStrategy: 'ANY' as const,
   },
 }
@@ -146,19 +151,19 @@ function inlineEvaluateCondition(
   const ev = condition.value
 
   switch (condition.operator) {
-    case 'eq':
+    case PolicyConditionOperator.Eq:
       return fieldValue === ev
-    case 'not_eq':
+    case PolicyConditionOperator.NotEq:
       return fieldValue !== ev
-    case 'gte':
+    case PolicyConditionOperator.Gte:
       return typeof fieldValue === 'number' && typeof ev === 'number' && fieldValue >= ev
-    case 'lte':
+    case PolicyConditionOperator.Lte:
       return typeof fieldValue === 'number' && typeof ev === 'number' && fieldValue <= ev
-    case 'in':
+    case PolicyConditionOperator.In:
       return Array.isArray(ev) && ev.includes(fieldValue as string | number)
-    case 'not_in':
+    case PolicyConditionOperator.NotIn:
       return Array.isArray(ev) && !ev.includes(fieldValue as string | number)
-    case 'exists':
+    case PolicyConditionOperator.Exists:
       return fieldValue !== null && fieldValue !== undefined
     default:
       return false
@@ -502,39 +507,39 @@ describe('evaluateRiskScore', () => {
 
 describe('evaluateCondition', () => {
   it('Gte — 大于等于返回 true（正例）', () => {
-    expect(inlineEvaluateCondition({ id: 't', field: 'v', operator: 'gte', value: 10, weight: 1 }, { v: 15 })).toBe(true)
+    expect(inlineEvaluateCondition({ id: 't', engineId: 'test', field: 'v', operator: PolicyConditionOperator.Gte, value: 10, weight: 1 }, { v: 15 })).toBe(true)
   })
 
   it('Lte — 小于等于返回 false（反例）', () => {
-    expect(inlineEvaluateCondition({ id: 't', field: 'v', operator: 'lte', value: 10, weight: 1 }, { v: 15 })).toBe(false)
+    expect(inlineEvaluateCondition({ id: 't', engineId: 'test', field: 'v', operator: PolicyConditionOperator.Lte, value: 10, weight: 1 }, { v: 15 })).toBe(false)
   })
 
   it('Eq — 精确匹配（正例）', () => {
-    expect(inlineEvaluateCondition({ id: 't', field: 'v', operator: 'eq', value: 'active', weight: 1 }, { v: 'active' })).toBe(true)
+    expect(inlineEvaluateCondition({ id: 't', engineId: 'test', field: 'v', operator: PolicyConditionOperator.Eq, value: 'active', weight: 1 }, { v: 'active' })).toBe(true)
   })
 
   it('In — 包含（正例）', () => {
-    expect(inlineEvaluateCondition({ id: 't', field: 'v', operator: 'in', value: ['a', 'b', 'c'], weight: 1 }, { v: 'b' })).toBe(true)
+    expect(inlineEvaluateCondition({ id: 't', engineId: 'test', field: 'v', operator: PolicyConditionOperator.In, value: ['a', 'b', 'c'], weight: 1 }, { v: 'b' })).toBe(true)
   })
 
   it('Exists — 字段存在返回 true（正例）', () => {
-    expect(inlineEvaluateCondition({ id: 't', field: 'v', operator: 'exists', value: true, weight: 1 }, { v: 'anything' })).toBe(true)
+    expect(inlineEvaluateCondition({ id: 't', engineId: 'test', field: 'v', operator: PolicyConditionOperator.Exists, value: true, weight: 1 }, { v: 'anything' })).toBe(true)
   })
 
   it('字段缺失返回 false（反例）', () => {
-    expect(inlineEvaluateCondition({ id: 't', field: 'missing', operator: 'gte', value: 10, weight: 1 }, { v: 15 })).toBe(false)
+    expect(inlineEvaluateCondition({ id: 't', engineId: 'test', field: 'missing', operator: PolicyConditionOperator.Gte, value: 10, weight: 1 }, { v: 15 })).toBe(false)
   })
 
   it('类型不匹配返回 false（反例）', () => {
-    expect(inlineEvaluateCondition({ id: 't', field: 'v', operator: 'gte', value: 10, weight: 1 }, { v: 'string' })).toBe(false)
+    expect(inlineEvaluateCondition({ id: 't', engineId: 'test', field: 'v', operator: PolicyConditionOperator.Gte, value: 10, weight: 1 }, { v: 'string' })).toBe(false)
   })
 
   it('边界值 Gte 返回 true（边界）', () => {
-    expect(inlineEvaluateCondition({ id: 't', field: 'v', operator: 'gte', value: 10, weight: 1 }, { v: 10 })).toBe(true)
+    expect(inlineEvaluateCondition({ id: 't', engineId: 'test', field: 'v', operator: PolicyConditionOperator.Gte, value: 10, weight: 1 }, { v: 10 })).toBe(true)
   })
 
   it('NotIn 不包含返回 true（边界）', () => {
-    expect(inlineEvaluateCondition({ id: 't', field: 'v', operator: 'not_in', value: ['a'], weight: 1 }, { v: 'z' })).toBe(true)
+    expect(inlineEvaluateCondition({ id: 't', engineId: 'test', field: 'v', operator: PolicyConditionOperator.NotIn, value: ['a'], weight: 1 }, { v: 'z' })).toBe(true)
   })
 })
 

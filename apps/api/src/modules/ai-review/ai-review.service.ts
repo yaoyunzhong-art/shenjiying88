@@ -41,6 +41,8 @@ import {
   type ReviewOutput,
 } from './llm/prompt-templates'
 
+export type { ReviewOutput }
+
 // ─── 输入参数 ──────────────────────────────────────────────────────────
 
 /**

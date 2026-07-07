@@ -417,8 +417,7 @@ describe('反例 | CopywritingAssistant', () => {
   })
 
   it('未知 goal 回退到 conversion', () => {
-    // @ts-expect-error testing invalid goal
-    const copy = inlineGenerateCopy({ product: '测试', goal: 'invalid-goal', audience: '用户' })
+    const copy = inlineGenerateCopy({ product: '测试', goal: 'invalid-goal' as 'conversion', audience: '用户' })
     expect(copy.headline).toContain('测试')
   })
 })

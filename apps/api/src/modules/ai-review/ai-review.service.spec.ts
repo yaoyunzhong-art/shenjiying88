@@ -53,19 +53,15 @@ function mockReviewOutput(overrides?: Partial<ReviewOutput>): ReviewOutput {
     overallScore: 75,
     issues: [
       {
-        severity: 'warning',
+        severity: 'medium',
         category: 'security',
-        file: 'src/modules/test.service.ts',
-        line: 5,
+        filePath: 'src/modules/test.service.ts',
         message: 'Potential SQL injection risk',
         suggestion: 'Use parameterized queries',
       },
     ],
     strengths: [
-      {
-        category: 'testing',
-        message: 'Good test coverage on edge cases',
-      },
+      'Good test coverage on edge cases',
     ],
     summary: 'Overall code quality is good. One security concern identified.',
     needsApproverReview: false,
