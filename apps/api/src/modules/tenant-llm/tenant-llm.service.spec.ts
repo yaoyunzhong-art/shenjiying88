@@ -88,7 +88,7 @@ function makeLLMConfig(overrides: Partial<LLMConfig> & { name: string; provider:
 
 function createConfig(
   store: Map<string, LLMConfig>,
-  params: { name: string; provider: SupportedProvider; model?: string; apiBase?: string; maxTokens?: number; temperature?: number; topP?: number },
+  params: { name: string; provider: SupportedProvider; model?: string; apiBase?: string; apiVersion?: string; maxTokens?: number; temperature?: number; topP?: number },
 ): LLMConfig {
   const config = makeLLMConfig({
     name: params.name,
