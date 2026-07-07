@@ -19,6 +19,10 @@ export default defineConfig({
     maxConcurrencyPerFile: 1,    // 单个文件内串行, 避免状态冲突
     isolate: false,              // 不隔离进程环境, 减少开销
     hookTimeout: 60_000,         // beforeAll/afterAll 超时
+    // pg 包未实际安装 (workspace 阻塞), vitest 测试时用 mock 替身
+    alias: {
+      'pg': path.resolve(__dirname, 'src/__mocks__/pg.ts'),
+    },
   },
   resolve: {
     alias: {
