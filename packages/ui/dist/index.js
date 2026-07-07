@@ -168,6 +168,7 @@ __export(index_exports, {
   HeatmapChart: () => HeatmapChart,
   HoverCard: () => HoverCard,
   ImagePreview: () => ImagePreview,
+  InfoCard: () => InfoCard,
   InfoRow: () => InfoRow,
   Input: () => Input,
   InputNumber: () => InputNumber,
@@ -54709,15 +54710,166 @@ var Space = ({
   return /* @__PURE__ */ (0, import_jsx_runtime214.jsx)("div", { className, style: mergedStyle, ...rest, children });
 };
 
-// src/components/Empty.tsx
+// src/components/InfoCard.tsx
 var import_jsx_runtime215 = require("react/jsx-runtime");
-var DEFAULT_IMAGE = /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("svg", { width: "80", height: "80", viewBox: "0 0 80 80", fill: "none", xmlns: "http://www.w3.org/2000/svg", children: [
-  /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("rect", { x: "16", y: "8", width: "48", height: "6", rx: "3", fill: "#d9d9d9" }),
-  /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("rect", { x: "8", y: "24", width: "64", height: "40", rx: "4", fill: "#f0f0f0" }),
-  /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("rect", { x: "20", y: "32", width: "16", height: "16", rx: "8", fill: "#d9d9d9" }),
-  /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("rect", { x: "44", y: "34", width: "20", height: "4", rx: "2", fill: "#d9d9d9" }),
-  /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("rect", { x: "44", y: "42", width: "14", height: "4", rx: "2", fill: "#d9d9d9" }),
-  /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("circle", { cx: "28", cy: "40", r: "6", fill: "#e6e6e6" })
+var VARIANT_CONTAINER = {
+  default: {
+    background: "rgba(15, 23, 42, 0.35)",
+    border: "1px solid rgba(148, 163, 184, 0.18)"
+  },
+  elevated: {
+    background: "rgba(15, 23, 42, 0.5)",
+    border: "1px solid rgba(148, 163, 184, 0.16)",
+    boxShadow: "0 4px 24px rgba(0, 0, 0, 0.25)"
+  },
+  compact: {
+    background: "rgba(15, 23, 42, 0.25)",
+    border: "1px solid rgba(148, 163, 184, 0.12)"
+  }
+};
+var VALUE_COLORS = {
+  default: "#e2e8f0",
+  success: "#4ade80",
+  warning: "#fbbf24",
+  danger: "#f87171",
+  info: "#60a5fa"
+};
+function InfoCard({
+  title,
+  items,
+  layout = "vertical",
+  columns = 2,
+  variant = "default",
+  style,
+  className,
+  "data-testid": dataTestId
+}) {
+  const containerStyle5 = VARIANT_CONTAINER[variant] ?? VARIANT_CONTAINER.default;
+  return /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)(
+    "div",
+    {
+      "data-testid": dataTestId,
+      className,
+      style: {
+        borderRadius: 12,
+        padding: variant === "compact" ? 12 : 18,
+        color: "#e2e8f0",
+        ...containerStyle5,
+        ...style
+      },
+      children: [
+        title ? /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(
+          "div",
+          {
+            style: {
+              fontSize: 13,
+              fontWeight: 700,
+              marginBottom: 12,
+              color: "#94a3b8",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px"
+            },
+            children: title
+          }
+        ) : null,
+        layout === "horizontal" ? (
+          // Horizontal: label then value on same line
+          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("div", { style: { display: "grid", gap: 8 }, children: items.map((item, i) => /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)(
+            "div",
+            {
+              style: {
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12
+              },
+              title: item.tooltip,
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(
+                  "span",
+                  {
+                    style: {
+                      fontSize: 12,
+                      color: "#94a3b8",
+                      whiteSpace: "nowrap",
+                      flexShrink: 0
+                    },
+                    children: item.label
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(
+                  "span",
+                  {
+                    style: {
+                      fontSize: 13,
+                      color: item.variant ? VALUE_COLORS[item.variant] ?? VALUE_COLORS.default : VALUE_COLORS.default,
+                      fontFamily: "monospace",
+                      textAlign: "right",
+                      fontWeight: item.variant && item.variant !== "default" ? 600 : 400
+                    },
+                    children: item.value
+                  }
+                )
+              ]
+            },
+            `${item.label}-${i}`
+          )) })
+        ) : (
+          // Vertical: label above value in a CSS grid
+          /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(
+            "div",
+            {
+              style: {
+                display: "grid",
+                gridTemplateColumns: `repeat(${Math.min(columns, items.length)}, 1fr)`,
+                gap: 16
+              },
+              children: items.map((item, i) => /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)("div", { title: item.tooltip, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(
+                  "div",
+                  {
+                    style: {
+                      fontSize: 11,
+                      color: "#64748b",
+                      marginBottom: 4,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.3px"
+                    },
+                    children: item.label
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime215.jsx)(
+                  "div",
+                  {
+                    style: {
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: item.variant ? VALUE_COLORS[item.variant] ?? VALUE_COLORS.default : VALUE_COLORS.default,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap"
+                    },
+                    children: item.value
+                  }
+                )
+              ] }, `${item.label}-${i}`))
+            }
+          )
+        )
+      ]
+    }
+  );
+}
+
+// src/components/Empty.tsx
+var import_jsx_runtime216 = require("react/jsx-runtime");
+var DEFAULT_IMAGE = /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("svg", { width: "80", height: "80", viewBox: "0 0 80 80", fill: "none", xmlns: "http://www.w3.org/2000/svg", children: [
+  /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("rect", { x: "16", y: "8", width: "48", height: "6", rx: "3", fill: "#d9d9d9" }),
+  /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("rect", { x: "8", y: "24", width: "64", height: "40", rx: "4", fill: "#f0f0f0" }),
+  /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("rect", { x: "20", y: "32", width: "16", height: "16", rx: "8", fill: "#d9d9d9" }),
+  /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("rect", { x: "44", y: "34", width: "20", height: "4", rx: "2", fill: "#d9d9d9" }),
+  /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("rect", { x: "44", y: "42", width: "14", height: "4", rx: "2", fill: "#d9d9d9" }),
+  /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("circle", { cx: "28", cy: "40", r: "6", fill: "#e6e6e6" })
 ] });
 var Empty = ({
   description = "\u6682\u65E0\u6570\u636E",
@@ -54726,7 +54878,7 @@ var Empty = ({
   style,
   className
 }) => {
-  return /* @__PURE__ */ (0, import_jsx_runtime215.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(
     "div",
     {
       className,
@@ -54740,9 +54892,9 @@ var Empty = ({
         ...style
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("div", { style: { marginBottom: 16, lineHeight: 0 }, children: image ?? DEFAULT_IMAGE }),
-        description && /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("div", { style: { color: "#999", fontSize: 14, lineHeight: "22px" }, children: description }),
-        children && /* @__PURE__ */ (0, import_jsx_runtime215.jsx)("div", { style: { marginTop: 16 }, children })
+        /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { style: { marginBottom: 16, lineHeight: 0 }, children: image ?? DEFAULT_IMAGE }),
+        description && /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { style: { color: "#999", fontSize: 14, lineHeight: "22px" }, children: description }),
+        children && /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { style: { marginTop: 16 }, children })
       ]
     }
   );
@@ -54750,7 +54902,7 @@ var Empty = ({
 
 // src/components/AIDecisionComparisonPanel.tsx
 var import_react148 = require("react");
-var import_jsx_runtime216 = require("react/jsx-runtime");
+var import_jsx_runtime217 = require("react/jsx-runtime");
 var CATEGORY_LABELS6 = {
   pricing: "\u5B9A\u4EF7\u7B56\u7565",
   inventory: "\u5E93\u5B58\u8C03\u914D",
@@ -54834,8 +54986,8 @@ function AIDecisionComparisonPanel({
     const avgDeviation = items.filter((i) => i.deviationScore !== null).reduce((s, i) => s + (i.deviationScore ?? 0), 0) / (items.filter((i) => i.deviationScore !== null).length || 1);
     return { total, adopted, succeeded, avgConfidence, avgDeviation };
   }, [items]);
-  return /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { style: { fontFamily: "system-ui, sans-serif" }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { style: { fontFamily: "system-ui, sans-serif" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)(
       "div",
       {
         style: {
@@ -54850,15 +55002,15 @@ function AIDecisionComparisonPanel({
           flexWrap: "wrap"
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(Stat, { label: "\u603B\u51B3\u7B56\u6570", value: String(stats.total) }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(Stat, { label: "\u5DF2\u91C7\u7EB3", value: String(stats.adopted), color: "#22c55e" }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(Stat, { label: "\u6267\u884C\u6210\u529F", value: String(stats.succeeded), color: "#3b82f6" }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(Stat, { label: "\u5E73\u5747\u7F6E\u4FE1\u5EA6", value: `${(stats.avgConfidence * 100).toFixed(0)}%` }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(Stat, { label: "\u5E73\u5747\u504F\u5DEE", value: stats.avgDeviation ? `${(stats.avgDeviation * 100).toFixed(1)}%` : "-", color: deviationColor(stats.avgDeviation) })
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(Stat, { label: "\u603B\u51B3\u7B56\u6570", value: String(stats.total) }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(Stat, { label: "\u5DF2\u91C7\u7EB3", value: String(stats.adopted), color: "#22c55e" }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(Stat, { label: "\u6267\u884C\u6210\u529F", value: String(stats.succeeded), color: "#3b82f6" }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(Stat, { label: "\u5E73\u5747\u7F6E\u4FE1\u5EA6", value: `${(stats.avgConfidence * 100).toFixed(0)}%` }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(Stat, { label: "\u5E73\u5747\u504F\u5DEE", value: stats.avgDeviation ? `${(stats.avgDeviation * 100).toFixed(1)}%` : "-", color: deviationColor(stats.avgDeviation) })
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)(
       "div",
       {
         style: {
@@ -54875,18 +55027,18 @@ function AIDecisionComparisonPanel({
           alignItems: "center"
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { children: "\u89C4\u5219 / \u89E6\u53D1" }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { children: "\u63A8\u8350\u503C" }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { children: "\u539F\u59CB\u503C" }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { children: "\u63D0\u5347\u5BF9\u6BD4" }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { children: "\u7F6E\u4FE1\u5EA6" }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { children: "\u504F\u5DEE" }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { children: "\u72B6\u6001" }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { children: "\u91C7\u7EB3" })
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { children: "\u89C4\u5219 / \u89E6\u53D1" }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { children: "\u63A8\u8350\u503C" }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { children: "\u539F\u59CB\u503C" }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { children: "\u63D0\u5347\u5BF9\u6BD4" }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { children: "\u7F6E\u4FE1\u5EA6" }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { children: "\u504F\u5DEE" }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { children: "\u72B6\u6001" }),
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { children: "\u91C7\u7EB3" })
         ]
       }
     ),
-    sorted.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(
+    sorted.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(
       "div",
       {
         style: {
@@ -54900,7 +55052,7 @@ function AIDecisionComparisonPanel({
     ) : sorted.map((item) => {
       const isHovered = hoveredId === item.id;
       const liftGap = item.actualLiftPct !== null ? (item.actualLiftPct - item.expectedLiftPct).toFixed(1) : null;
-      return /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)(
         "div",
         {
           onClick: () => onItemClick?.(item),
@@ -54919,23 +55071,23 @@ function AIDecisionComparisonPanel({
             alignItems: "center"
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { style: { fontWeight: 500, color: "#1e293b" }, children: item.ruleName }),
-              /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 2 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { style: { fontWeight: 500, color: "#1e293b" }, children: item.ruleName }),
+              /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 2 }, children: [
                 CATEGORY_LABELS6[item.category],
                 " \xB7 ",
                 TRIGGER_LABELS[item.trigger]
               ] })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { style: { color: "#059669", fontWeight: 500 }, children: item.recommendedValue }),
-            /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { style: { color: "#6b7280" }, children: item.originalValue }),
-            /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { style: { fontSize: 12, color: "#3b82f6" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { style: { color: "#059669", fontWeight: 500 }, children: item.recommendedValue }),
+            /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { style: { color: "#6b7280" }, children: item.originalValue }),
+            /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { style: { fontSize: 12, color: "#3b82f6" }, children: [
                 "\u9884\u671F +",
                 item.expectedLiftPct,
                 "%"
               ] }),
-              item.actualLiftPct !== null ? /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(
+              item.actualLiftPct !== null ? /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)(
                 "div",
                 {
                   style: {
@@ -54946,7 +55098,7 @@ function AIDecisionComparisonPanel({
                     "\u5B9E\u9645 +",
                     item.actualLiftPct,
                     "%",
-                    liftGap !== null && /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("span", { style: { marginLeft: 4, fontSize: 11, color: "#94a3b8" }, children: [
+                    liftGap !== null && /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("span", { style: { marginLeft: 4, fontSize: 11, color: "#94a3b8" }, children: [
                       "(",
                       liftGap.startsWith("-") ? "" : "+",
                       liftGap,
@@ -54954,9 +55106,9 @@ function AIDecisionComparisonPanel({
                     ] })
                   ]
                 }
-              ) : /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { style: { fontSize: 11, color: "#94a3b8" }, children: "\u5F85\u91C7\u96C6" })
+              ) : /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { style: { fontSize: 11, color: "#94a3b8" }, children: "\u5F85\u91C7\u96C6" })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(
+            /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)(
               "div",
               {
                 style: {
@@ -54969,8 +55121,8 @@ function AIDecisionComparisonPanel({
                 ]
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { style: { color: deviationColor(item.deviationScore), fontWeight: 500, fontSize: 12 }, children: deviationLabel(item.deviationScore) }),
-            /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { style: { color: deviationColor(item.deviationScore), fontWeight: 500, fontSize: 12 }, children: deviationLabel(item.deviationScore) }),
+            /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(
               "div",
               {
                 style: {
@@ -54983,7 +55135,7 @@ function AIDecisionComparisonPanel({
                 title: item.status
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("div", { style: { justifySelf: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime216.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { style: { justifySelf: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(
               "input",
               {
                 type: "checkbox",
@@ -55002,7 +55154,7 @@ function AIDecisionComparisonPanel({
         item.id
       );
     }),
-    sorted.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)(
+    sorted.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)(
       "div",
       {
         style: {
@@ -55014,12 +55166,12 @@ function AIDecisionComparisonPanel({
           borderTop: "1px solid #f1f5f9"
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("span", { children: [
             "\u5171 ",
             sorted.length,
             " \u6761\u8BB0\u5F55"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("span", { children: [
             "\u5DF2\u91C7\u7EB3 ",
             sorted.filter((i) => i.adopted).length,
             " / ",
@@ -55035,14 +55187,14 @@ function Stat({
   value,
   color
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime216.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 2 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { style: { color: "#94a3b8", fontSize: 11 }, children: label }),
-    /* @__PURE__ */ (0, import_jsx_runtime216.jsx)("span", { style: { fontWeight: 600, fontSize: 18, color: color ?? "#1e293b" }, children: value })
+  return /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 2 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { style: { color: "#94a3b8", fontSize: 11 }, children: label }),
+    /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { style: { fontWeight: 600, fontSize: 18, color: color ?? "#1e293b" }, children: value })
   ] });
 }
 
 // src/components/ResourceOptimizationPanel.tsx
-var import_jsx_runtime217 = require("react/jsx-runtime");
+var import_jsx_runtime218 = require("react/jsx-runtime");
 var categoryLabel3 = {
   STAFF: "\u4EBA\u5458",
   EQUIPMENT: "\u8BBE\u5907",
@@ -55065,17 +55217,17 @@ function ResourceOptimizationPanel({
   isLoading = false
 }) {
   if (isLoading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { "data-testid": "resource-optimization-loading", role: "status", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { className: "skeleton", style: { height: 120, marginBottom: 12 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { className: "skeleton", style: { height: 120, marginBottom: 12 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { className: "skeleton", style: { height: 120 } })
+    return /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { "data-testid": "resource-optimization-loading", role: "status", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("div", { className: "skeleton", style: { height: 120, marginBottom: 12 } }),
+      /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("div", { className: "skeleton", style: { height: 120, marginBottom: 12 } }),
+      /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("div", { className: "skeleton", style: { height: 120 } })
     ] });
   }
   const sorted = [...suggestions].sort((a, b) => a.priority - b.priority);
-  return /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { "data-testid": "resource-optimization-panel", className: "resource-optimization-panel", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("h3", { style: { fontSize: 16, fontWeight: 600, marginBottom: 12 }, children: "AI \u8D44\u6E90\u4F18\u5316\u5EFA\u8BAE" }),
-    sorted.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("p", { "data-testid": "empty-state", style: { color: "#888" }, children: "\u6682\u65E0\u4F18\u5316\u5EFA\u8BAE" }),
-    sorted.map((item) => /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { "data-testid": "resource-optimization-panel", className: "resource-optimization-panel", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("h3", { style: { fontSize: 16, fontWeight: 600, marginBottom: 12 }, children: "AI \u8D44\u6E90\u4F18\u5316\u5EFA\u8BAE" }),
+    sorted.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("p", { "data-testid": "empty-state", style: { color: "#888" }, children: "\u6682\u65E0\u4F18\u5316\u5EFA\u8BAE" }),
+    sorted.map((item) => /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)(
       "div",
       {
         "data-testid": `suggestion-${item.id}`,
@@ -55088,8 +55240,8 @@ function ResourceOptimizationPanel({
           borderLeft: `4px solid ${priorityColor2[item.priority] ?? "#6b7280"}`
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime217.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(
               "span",
               {
                 "data-testid": `category-badge-${item.id}`,
@@ -55103,13 +55255,13 @@ function ResourceOptimizationPanel({
                 children: categoryLabel3[item.category]
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("span", { "data-testid": `effort-badge-${item.id}`, style: { fontSize: 12, color: "#6b7280" }, children: effortLabel[item.effortLevel] })
+            /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { "data-testid": `effort-badge-${item.id}`, style: { fontSize: 12, color: "#6b7280" }, children: effortLabel[item.effortLevel] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("div", { style: { marginTop: 8 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("strong", { "data-testid": `title-${item.id}`, children: item.title }),
-            /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("p", { "data-testid": `desc-${item.id}`, style: { fontSize: 14, color: "#6b7280", marginTop: 4 }, children: item.description })
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { style: { marginTop: 8 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("strong", { "data-testid": `title-${item.id}`, children: item.title }),
+            /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("p", { "data-testid": `desc-${item.id}`, style: { fontSize: 14, color: "#6b7280", marginTop: 4 }, children: item.description })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime217.jsx)("div", { style: { marginTop: 8, display: "flex", justifyContent: "space-between" }, children: /* @__PURE__ */ (0, import_jsx_runtime217.jsxs)("span", { style: { fontSize: 13, color: "#16a34a", fontWeight: 500 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("div", { style: { marginTop: 8, display: "flex", justifyContent: "space-between" }, children: /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("span", { style: { fontSize: 13, color: "#16a34a", fontWeight: 500 }, children: [
             "\u9884\u4F30\u6536\u76CA: ",
             item.estimatedBenefit
           ] }) })
@@ -55122,7 +55274,7 @@ function ResourceOptimizationPanel({
 
 // src/components/Mentions.tsx
 var import_react149 = require("react");
-var import_jsx_runtime218 = require("react/jsx-runtime");
+var import_jsx_runtime219 = require("react/jsx-runtime");
 function Mentions({
   options,
   value: controlledValue,
@@ -55313,7 +55465,7 @@ function Mentions({
     };
   }, [minRows, maxHeight, disabled]);
   const testId = (suffix) => `${dataTestId}-${suffix}`;
-  return /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(
     "div",
     {
       ref: containerRef,
@@ -55321,7 +55473,7 @@ function Mentions({
       style: { position: "relative", width: "100%" },
       "data-testid": dataTestId,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
           "textarea",
           {
             ref: textareaRef,
@@ -55334,7 +55486,7 @@ function Mentions({
             "data-testid": testId("textarea")
           }
         ),
-        isOpen && filteredOptions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(
+        isOpen && filteredOptions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
           "ul",
           {
             style: {
@@ -55354,7 +55506,7 @@ function Mentions({
               overflowY: "auto"
             },
             "data-testid": testId("dropdown"),
-            children: filteredOptions.map((option, idx) => /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)(
+            children: filteredOptions.map((option, idx) => /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(
               "li",
               {
                 role: "option",
@@ -55374,10 +55526,10 @@ function Mentions({
                 },
                 "data-testid": testId(`option-${idx}`),
                 children: [
-                  option.avatar && /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("span", { "data-testid": testId(`option-avatar-${idx}`), children: option.avatar }),
-                  /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)("div", { style: { flex: 1 }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime218.jsx)("div", { "data-testid": testId(`option-label-${idx}`), children: option.label }),
-                    option.subtitle && /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(
+                  option.avatar && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { "data-testid": testId(`option-avatar-${idx}`), children: option.avatar }),
+                  /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { style: { flex: 1 }, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { "data-testid": testId(`option-label-${idx}`), children: option.label }),
+                    option.subtitle && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
                       "div",
                       {
                         style: { fontSize: 11, color: "#6b7280" },
@@ -55399,7 +55551,7 @@ function Mentions({
 
 // src/components/CommentList.tsx
 var import_react150 = require("react");
-var import_jsx_runtime219 = require("react/jsx-runtime");
+var import_jsx_runtime220 = require("react/jsx-runtime");
 function CommentRow({
   comment,
   depth = 0,
@@ -55419,7 +55571,7 @@ function CommentRow({
       setShowReply(false);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)(
     "div",
     {
       "data-testid": `${testId}-comment-${comment.id}`,
@@ -55432,8 +55584,8 @@ function CommentRow({
         border: "1px solid #f3f4f6"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(
             "div",
             {
               style: {
@@ -55449,18 +55601,18 @@ function CommentRow({
                 color: "#6b7280",
                 flexShrink: 0
               },
-              children: comment.author.avatar ? /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("img", { src: comment.author.avatar, alt: comment.author.name, style: { width: 30, height: 30, borderRadius: "50%" } }) : comment.author.name.charAt(0).toUpperCase()
+              children: comment.author.avatar ? /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("img", { src: comment.author.avatar, alt: comment.author.name, style: { width: 30, height: 30, borderRadius: "50%" } }) : comment.author.name.charAt(0).toUpperCase()
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { style: { flex: 1 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { style: { fontWeight: 600, fontSize: 13, color: "#374151" }, children: comment.author.name }),
-            comment.author.role && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { style: { fontSize: 11, color: "#9ca3af", marginLeft: 6 }, children: comment.author.role })
+          /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { style: { flex: 1 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { style: { fontWeight: 600, fontSize: 13, color: "#374151" }, children: comment.author.name }),
+            comment.author.role && /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { style: { fontSize: 11, color: "#9ca3af", marginLeft: 6 }, children: comment.author.role })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { style: { fontSize: 11, color: "#9ca3af" }, children: comment.createdAt })
+          /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { style: { fontSize: 11, color: "#9ca3af" }, children: comment.createdAt })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("p", { style: { margin: "0 0 8px 38px", fontSize: 13, color: "#4b5563", lineHeight: 1.5, whiteSpace: "pre-wrap" }, children: comment.content }),
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { style: { marginLeft: 38, display: "flex", alignItems: "center", gap: 12 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("p", { style: { margin: "0 0 8px 38px", fontSize: 13, color: "#4b5563", lineHeight: 1.5, whiteSpace: "pre-wrap" }, children: comment.content }),
+        /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { style: { marginLeft: 38, display: "flex", alignItems: "center", gap: 12 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)(
             "button",
             {
               "data-testid": `${testId}-like-${comment.id}`,
@@ -55479,11 +55631,11 @@ function CommentRow({
               children: [
                 comment.liked ? "\u2764\uFE0F" : "\u{1F90D}",
                 " ",
-                /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { children: comment.likes > 0 ? comment.likes : "" })
+                /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { children: comment.likes > 0 ? comment.likes : "" })
               ]
             }
           ),
-          onAddComment && depth === 0 && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+          onAddComment && depth === 0 && /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(
             "button",
             {
               "data-testid": `${testId}-reply-btn-${comment.id}`,
@@ -55492,7 +55644,7 @@ function CommentRow({
               children: showReply ? "\u53D6\u6D88\u56DE\u590D" : "\u56DE\u590D"
             }
           ),
-          isAuthor && onDeleteComment && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+          isAuthor && onDeleteComment && /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(
             "button",
             {
               "data-testid": `${testId}-delete-${comment.id}`,
@@ -55502,8 +55654,8 @@ function CommentRow({
             }
           )
         ] }),
-        showReply && /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { style: { margin: "8px 0 0 38px", display: "flex", gap: 8 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+        showReply && /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { style: { margin: "8px 0 0 38px", display: "flex", gap: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(
             "input",
             {
               "data-testid": `${testId}-reply-input-${comment.id}`,
@@ -55526,7 +55678,7 @@ function CommentRow({
               }
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(
             "button",
             {
               "data-testid": `${testId}-reply-submit-${comment.id}`,
@@ -55545,7 +55697,7 @@ function CommentRow({
             }
           )
         ] }),
-        comment.replies?.map((reply) => /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+        comment.replies?.map((reply) => /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(
           CommentRow,
           {
             comment: reply,
@@ -55581,8 +55733,8 @@ function CommentList({
       setNewComment("");
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { "data-testid": testId, children: [
-    onAddComment && /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { "data-testid": testId, children: [
+    onAddComment && /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)(
       "div",
       {
         "data-testid": `${testId}-input-area`,
@@ -55596,7 +55748,7 @@ function CommentList({
           border: "1px solid #e5e7eb"
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(
             "input",
             {
               "data-testid": `${testId}-input`,
@@ -55619,7 +55771,7 @@ function CommentList({
               }
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(
             "button",
             {
               "data-testid": `${testId}-submit`,
@@ -55640,14 +55792,14 @@ function CommentList({
         ]
       }
     ),
-    comments.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+    comments.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(
       "div",
       {
         "data-testid": `${testId}-empty`,
         style: { textAlign: "center", padding: 32, color: "#9ca3af", fontSize: 13 },
         children: "\u6682\u65E0\u8BC4\u8BBA"
       }
-    ) : /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: comments.map((comment) => /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+    ) : /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: comments.map((comment) => /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(
       CommentRow,
       {
         comment,
@@ -55659,7 +55811,7 @@ function CommentList({
       },
       comment.id
     )) }),
-    hasMore && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { style: { textAlign: "center", marginTop: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime219.jsx)(
+    hasMore && /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("div", { style: { textAlign: "center", marginTop: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime220.jsx)(
       "button",
       {
         "data-testid": `${testId}-load-more`,
@@ -55682,7 +55834,7 @@ function CommentList({
 
 // src/components/RealtimeKpiStrip.tsx
 var import_react151 = require("react");
-var import_jsx_runtime220 = require("react/jsx-runtime");
+var import_jsx_runtime221 = require("react/jsx-runtime");
 var S_WRAPPER = {
   display: "flex",
   alignItems: "center",
@@ -55792,20 +55944,20 @@ function RealtimeKpiStrip({
   const liveText = (0, import_react151.useMemo)(() => {
     if (!isLive) return null;
     const now = lastUpdate || (/* @__PURE__ */ new Date()).toLocaleTimeString("zh-CN", { hour12: false });
-    return /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { style: S_LIVE_TAG, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("div", { style: S_LIVE_DOT2 }),
-      /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { children: "LIVE" }),
-      /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { style: { fontWeight: 400, opacity: 0.7 }, children: now })
+    return /* @__PURE__ */ (0, import_jsx_runtime221.jsxs)("div", { style: S_LIVE_TAG, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("div", { style: S_LIVE_DOT2 }),
+      /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("span", { children: "LIVE" }),
+      /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("span", { style: { fontWeight: 400, opacity: 0.7 }, children: now })
     ] });
   }, [isLive, lastUpdate]);
   if (!displayItems.length) {
-    return /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("div", { style: S_WRAPPER, className, children: /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("div", { style: { fontSize: 12, color: "#64748b", padding: "8px 0" }, children: "\u6682\u65E0\u5B9E\u65F6\u6570\u636E" }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("div", { style: S_WRAPPER, className, children: /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("div", { style: { fontSize: 12, color: "#64748b", padding: "8px 0" }, children: "\u6682\u65E0\u5B9E\u65F6\u6570\u636E" }) });
   }
   const containerStyle5 = direction === "vertical" ? { ...S_WRAPPER, flexDirection: "column", alignItems: "stretch" } : S_WRAPPER;
   const stripStyle = direction === "vertical" ? { ...S_STRIP, flexDirection: "column", overflowX: "hidden", overflowY: "auto" } : S_STRIP;
-  return /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { style: containerStyle5, className, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime221.jsxs)("div", { style: containerStyle5, className, children: [
     isLive && liveText,
-    /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("div", { style: stripStyle, children: displayItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("div", { style: stripStyle, children: displayItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime221.jsxs)(
       "div",
       {
         style: {
@@ -55813,14 +55965,14 @@ function RealtimeKpiStrip({
           borderLeft: `3px solid ${COLOR_MAP4[item.color || "default"]}`
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { style: S_LABEL, children: [
-            item.icon && /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { children: item.icon }),
-            /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { children: item.label })
+          /* @__PURE__ */ (0, import_jsx_runtime221.jsxs)("div", { style: S_LABEL, children: [
+            item.icon && /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("span", { children: item.icon }),
+            /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("span", { children: item.label })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("div", { style: S_VALUE_ROW, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { style: { ...S_VALUE, color: COLOR_MAP4[item.color || "default"] }, children: item.value }),
-            item.unit && /* @__PURE__ */ (0, import_jsx_runtime220.jsx)("span", { style: S_UNIT, children: item.unit }),
-            item.change !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime221.jsxs)("div", { style: S_VALUE_ROW, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("span", { style: { ...S_VALUE, color: COLOR_MAP4[item.color || "default"] }, children: item.value }),
+            item.unit && /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("span", { style: S_UNIT, children: item.unit }),
+            item.change !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime221.jsxs)(
               "span",
               {
                 style: {
@@ -55839,7 +55991,7 @@ function RealtimeKpiStrip({
       },
       item.id
     )) }),
-    !isLive && lastUpdate && /* @__PURE__ */ (0, import_jsx_runtime220.jsxs)("span", { style: S_TIME, children: [
+    !isLive && lastUpdate && /* @__PURE__ */ (0, import_jsx_runtime221.jsxs)("span", { style: S_TIME, children: [
       "\u66F4\u65B0\u4E8E ",
       lastUpdate
     ] })
@@ -55848,7 +56000,7 @@ function RealtimeKpiStrip({
 
 // src/components/AttachmentList.tsx
 var import_react152 = __toESM(require("react"));
-var import_jsx_runtime221 = require("react/jsx-runtime");
+var import_jsx_runtime222 = require("react/jsx-runtime");
 function getFileTypeIcon2(mimeType) {
   if (mimeType.startsWith("image/")) return "\u{1F5BC}\uFE0F";
   if (mimeType.startsWith("video/")) return "\u{1F3AC}";
@@ -55878,10 +56030,10 @@ var StatusIndicator2 = ({
   progress
 }) => {
   if (status === "uploading") {
-    return /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("span", { style: { fontSize: "12px", color: "#1677ff" }, children: progress != null ? `\u4E0A\u4F20\u4E2D ${progress}%` : "\u4E0A\u4F20\u4E2D..." });
+    return /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { style: { fontSize: "12px", color: "#1677ff" }, children: progress != null ? `\u4E0A\u4F20\u4E2D ${progress}%` : "\u4E0A\u4F20\u4E2D..." });
   }
   if (status === "error") {
-    return /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("span", { style: { fontSize: "12px", color: "#ff4d4f" }, children: "\u4E0A\u4F20\u5931\u8D25" });
+    return /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { style: { fontSize: "12px", color: "#ff4d4f" }, children: "\u4E0A\u4F20\u5931\u8D25" });
   }
   return null;
 };
@@ -55928,7 +56080,7 @@ var AttachmentList = ({
     lineHeight: 1
   };
   if (items.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime221.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
       "div",
       {
         style: {
@@ -55942,11 +56094,11 @@ var AttachmentList = ({
       }
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime221.jsxs)("div", { style: containerStyle5, className, role: "list", "aria-label": "\u9644\u4EF6\u5217\u8868", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { style: containerStyle5, className, role: "list", "aria-label": "\u9644\u4EF6\u5217\u8868", children: [
     displayItems.map((item) => {
       const hasError = item.status === "error";
       const isUploading = item.status === "uploading";
-      return /* @__PURE__ */ (0, import_jsx_runtime221.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)(
         "div",
         {
           role: "listitem",
@@ -55964,8 +56116,8 @@ var AttachmentList = ({
             e.currentTarget.style.background = "#fff";
           },
           children: [
-            showIcon && /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("span", { style: { fontSize: compact ? "16px" : "20px", flexShrink: 0 }, children: getFileTypeIcon2(item.mimeType) }),
-            item.thumbnailUrl && /* @__PURE__ */ (0, import_jsx_runtime221.jsx)(
+            showIcon && /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { style: { fontSize: compact ? "16px" : "20px", flexShrink: 0 }, children: getFileTypeIcon2(item.mimeType) }),
+            item.thumbnailUrl && /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
               "img",
               {
                 src: item.thumbnailUrl,
@@ -55979,8 +56131,8 @@ var AttachmentList = ({
                 }
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime221.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime221.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
                 "div",
                 {
                   style: {
@@ -55995,7 +56147,7 @@ var AttachmentList = ({
                   children: item.name
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime221.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)(
                 "div",
                 {
                   style: {
@@ -56006,16 +56158,16 @@ var AttachmentList = ({
                     color: "#9ca3af"
                   },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("span", { children: formatFileSize2(item.size) }),
-                    /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("span", { children: getFileExtension(item.name) }),
-                    /* @__PURE__ */ (0, import_jsx_runtime221.jsx)(StatusIndicator2, { status: item.status, progress: item.progress }),
-                    hasError && item.errorMessage && /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("span", { style: { color: "#ff4d4f" }, children: item.errorMessage })
+                    /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { children: formatFileSize2(item.size) }),
+                    /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { children: getFileExtension(item.name) }),
+                    /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(StatusIndicator2, { status: item.status, progress: item.progress }),
+                    hasError && item.errorMessage && /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { style: { color: "#ff4d4f" }, children: item.errorMessage })
                   ]
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime221.jsx)("div", { style: { display: "flex", gap: "2px", flexShrink: 0 }, children: !readonly && /* @__PURE__ */ (0, import_jsx_runtime221.jsxs)(import_jsx_runtime221.Fragment, { children: [
-              hasError && onRetry && /* @__PURE__ */ (0, import_jsx_runtime221.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { style: { display: "flex", gap: "2px", flexShrink: 0 }, children: !readonly && /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)(import_jsx_runtime222.Fragment, { children: [
+              hasError && onRetry && /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
                 "button",
                 {
                   type: "button",
@@ -56028,7 +56180,7 @@ var AttachmentList = ({
                   children: "\u91CD\u8BD5"
                 }
               ),
-              item.url && onDownload && !isUploading && /* @__PURE__ */ (0, import_jsx_runtime221.jsx)(
+              item.url && onDownload && !isUploading && /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
                 "button",
                 {
                   type: "button",
@@ -56041,7 +56193,7 @@ var AttachmentList = ({
                   children: "\u4E0B\u8F7D"
                 }
               ),
-              showRemove && onRemove && !isUploading && /* @__PURE__ */ (0, import_jsx_runtime221.jsx)(
+              showRemove && onRemove && !isUploading && /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
                 "button",
                 {
                   type: "button",
@@ -56060,7 +56212,7 @@ var AttachmentList = ({
         item.id
       );
     }),
-    hasMore && /* @__PURE__ */ (0, import_jsx_runtime221.jsx)(
+    hasMore && /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
       "button",
       {
         type: "button",
@@ -56082,7 +56234,7 @@ var AttachmentList = ({
 };
 
 // src/components/StoreComparisonPanel.tsx
-var import_jsx_runtime222 = require("react/jsx-runtime");
+var import_jsx_runtime223 = require("react/jsx-runtime");
 function formatCurrency5(value) {
   return new Intl.NumberFormat("zh-CN", {
     style: "currency",
@@ -56135,11 +56287,11 @@ function getTrendColor2(trend) {
 }
 var BarChart2 = ({ data, height = 200, maxBarWidth = 60 }) => {
   const maxValue = Math.max(...data.map((d) => d.value), 1);
-  return /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { style: { display: "flex", alignItems: "flex-end", gap: 12, height, padding: "0 4px" }, children: data.map((d, i) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { style: { display: "flex", alignItems: "flex-end", gap: 12, height, padding: "0 4px" }, children: data.map((d, i) => {
     const barHeight = d.value / maxValue * (height - 20);
-    return /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", flex: 1, maxWidth: maxBarWidth }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { style: { fontSize: 11, color: "#6b7280", marginBottom: 4, whiteSpace: "nowrap" }, children: formatCurrency5(d.value) }),
-      /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", flex: 1, maxWidth: maxBarWidth }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { style: { fontSize: 11, color: "#6b7280", marginBottom: 4, whiteSpace: "nowrap" }, children: formatCurrency5(d.value) }),
+      /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
         "div",
         {
           style: {
@@ -56152,7 +56304,7 @@ var BarChart2 = ({ data, height = 200, maxBarWidth = 60 }) => {
           }
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { style: { fontSize: 11, color: "#374151", marginTop: 6, textAlign: "center", maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: d.label })
+      /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { style: { fontSize: 11, color: "#374151", marginTop: 6, textAlign: "center", maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: d.label })
     ] }, i);
   }) });
 };
@@ -56160,7 +56312,7 @@ var SkeletonBlock = ({
   width = "100%",
   height = "16px",
   mb = "8px"
-}) => /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
+}) => /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
   "div",
   {
     style: {
@@ -56173,20 +56325,20 @@ var SkeletonBlock = ({
     }
   }
 );
-var LoadingSkeleton4 = () => /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { style: { padding: 24 }, children: [
-  /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(SkeletonBlock, { width: "200px", height: "24px", mb: "20px" }),
-  /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { style: { display: "flex", gap: 16, marginBottom: 24 }, children: [1, 2, 3, 4].map((i) => /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { style: { flex: 1, padding: 16, backgroundColor: "#f9fafb", borderRadius: 8 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(SkeletonBlock, { width: "60%", height: "14px", mb: "12px" }),
-    /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(SkeletonBlock, { width: "80%", height: "28px", mb: "8px" }),
-    /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(SkeletonBlock, { width: "40%", height: "12px" })
+var LoadingSkeleton4 = () => /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { style: { padding: 24 }, children: [
+  /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(SkeletonBlock, { width: "200px", height: "24px", mb: "20px" }),
+  /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { style: { display: "flex", gap: 16, marginBottom: 24 }, children: [1, 2, 3, 4].map((i) => /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { style: { flex: 1, padding: 16, backgroundColor: "#f9fafb", borderRadius: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(SkeletonBlock, { width: "60%", height: "14px", mb: "12px" }),
+    /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(SkeletonBlock, { width: "80%", height: "28px", mb: "8px" }),
+    /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(SkeletonBlock, { width: "40%", height: "12px" })
   ] }, i)) }),
-  /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(SkeletonBlock, { height: "160px", mb: "24px" }),
-  /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(SkeletonBlock, { height: "120px" })
+  /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(SkeletonBlock, { height: "160px", mb: "24px" }),
+  /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(SkeletonBlock, { height: "120px" })
 ] });
-var EmptyState4 = () => /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { style: { textAlign: "center", padding: "48px 24px", color: "#9ca3af" }, children: [
-  /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { style: { fontSize: 48, marginBottom: 12 }, children: "\u{1F4CA}" }),
-  /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { style: { fontSize: 16, fontWeight: 600, marginBottom: 8, color: "#6b7280" }, children: "\u6682\u65E0\u95E8\u5E97\u6570\u636E" }),
-  /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { style: { fontSize: 14 }, children: "\u5F53\u524D\u6CA1\u6709\u53EF\u5BF9\u6BD4\u7684\u95E8\u5E97\u6570\u636E" })
+var EmptyState4 = () => /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { style: { textAlign: "center", padding: "48px 24px", color: "#9ca3af" }, children: [
+  /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { style: { fontSize: 48, marginBottom: 12 }, children: "\u{1F4CA}" }),
+  /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { style: { fontSize: 16, fontWeight: 600, marginBottom: 8, color: "#6b7280" }, children: "\u6682\u65E0\u95E8\u5E97\u6570\u636E" }),
+  /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { style: { fontSize: 14 }, children: "\u5F53\u524D\u6CA1\u6709\u53EF\u5BF9\u6BD4\u7684\u95E8\u5E97\u6570\u636E" })
 ] });
 var StoreComparisonPanel = ({
   stores,
@@ -56195,10 +56347,10 @@ var StoreComparisonPanel = ({
   "data-testid": testId
 }) => {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { "data-testid": testId, children: /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(LoadingSkeleton4, {}) });
+    return /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { "data-testid": testId, children: /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(LoadingSkeleton4, {}) });
   }
   if (!stores || stores.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { "data-testid": testId, style: { border: "1px solid #e5e7eb", borderRadius: 12, backgroundColor: "#fff" }, children: /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(EmptyState4, {}) });
+    return /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { "data-testid": testId, style: { border: "1px solid #e5e7eb", borderRadius: 12, backgroundColor: "#fff" }, children: /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(EmptyState4, {}) });
   }
   const metricsList = stores.map((s) => s.metrics);
   const totalRevenue = sum(metricsList.map((m) => m.revenue));
@@ -56241,7 +56393,7 @@ var StoreComparisonPanel = ({
     if (metricKey === "deviceUtilization") return `${val}%`;
     return formatNumber6(val);
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(
     "div",
     {
       "data-testid": testId,
@@ -56252,7 +56404,7 @@ var StoreComparisonPanel = ({
         overflow: "hidden"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { style: { display: "flex", gap: 16, padding: "20px 24px", borderBottom: "1px solid #f3f4f6" }, children: overviewCards.map((card, i) => /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { style: { display: "flex", gap: 16, padding: "20px 24px", borderBottom: "1px solid #f3f4f6" }, children: overviewCards.map((card, i) => /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(
           "div",
           {
             style: {
@@ -56263,15 +56415,15 @@ var StoreComparisonPanel = ({
               textAlign: "center"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { style: { fontSize: 12, color: "#6b7280", marginBottom: 4 }, children: card.label }),
-              /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { style: { fontSize: 22, fontWeight: 700, color: "#111827" }, children: card.value })
+              /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { style: { fontSize: 12, color: "#6b7280", marginBottom: 4 }, children: card.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { style: { fontSize: 22, fontWeight: 700, color: "#111827" }, children: card.value })
             ]
           },
           i
         )) }),
-        /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { style: { padding: "20px 24px", borderBottom: "1px solid #f3f4f6" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { style: { fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 16 }, children: "\u5404\u95E8\u5E97\u8425\u6536\u5BF9\u6BD4" }),
-          /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { style: { padding: "20px 24px", borderBottom: "1px solid #f3f4f6" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { style: { fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 16 }, children: "\u5404\u95E8\u5E97\u8425\u6536\u5BF9\u6BD4" }),
+          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
             BarChart2,
             {
               data: stores.map((s, i) => ({
@@ -56282,10 +56434,10 @@ var StoreComparisonPanel = ({
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("div", { style: { padding: "20px 24px" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { style: { fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 12 }, children: "\u95E8\u5E97\u8BE6\u7EC6\u5BF9\u6BD4" }),
-          /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("div", { style: { overflowX: "auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime222.jsxs)("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("tr", { style: { backgroundColor: "#f9fafb" }, children: tableHeaders.map((h, i) => /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { style: { padding: "20px 24px" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { style: { fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 12 }, children: "\u95E8\u5E97\u8BE6\u7EC6\u5BF9\u6BD4" }),
+          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { style: { overflowX: "auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("tr", { style: { backgroundColor: "#f9fafb" }, children: tableHeaders.map((h, i) => /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
               "th",
               {
                 style: {
@@ -56300,14 +56452,14 @@ var StoreComparisonPanel = ({
               },
               i
             )) }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("tbody", { children: stores.map((store, idx) => /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("tbody", { children: stores.map((store, idx) => /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
               "tr",
               {
                 style: {
                   backgroundColor: store.id === baselineStoreId ? "#fffbeb" : idx % 2 === 0 ? "#fff" : "#fafafa",
                   transition: "background-color 0.15s ease"
                 },
-                children: tableKeys.map((key) => /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
+                children: tableKeys.map((key) => /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
                   "td",
                   {
                     style: {
@@ -56316,7 +56468,7 @@ var StoreComparisonPanel = ({
                       color: "#374151",
                       whiteSpace: "nowrap"
                     },
-                    children: key === "status" ? /* @__PURE__ */ (0, import_jsx_runtime222.jsx)(
+                    children: key === "status" ? /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
                       "span",
                       {
                         style: {
@@ -56330,7 +56482,7 @@ var StoreComparisonPanel = ({
                         },
                         children: getCellValue(store, key)
                       }
-                    ) : key === "trend" ? /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("span", { style: { color: getTrendColor2(store.trend), fontWeight: 600 }, children: getCellValue(store, key) }) : getCellValue(store, key)
+                    ) : key === "trend" ? /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { style: { color: getTrendColor2(store.trend), fontWeight: 600 }, children: getCellValue(store, key) }) : getCellValue(store, key)
                   },
                   key
                 ))
@@ -56339,7 +56491,7 @@ var StoreComparisonPanel = ({
             )) })
           ] }) })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime222.jsx)("style", { children: `
+        /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("style", { children: `
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
@@ -56352,7 +56504,7 @@ var StoreComparisonPanel = ({
 
 // src/components/BulkEditPanel.tsx
 var import_react153 = require("react");
-var import_jsx_runtime223 = require("react/jsx-runtime");
+var import_jsx_runtime224 = require("react/jsx-runtime");
 var inputContainer = {
   display: "flex",
   flexDirection: "column",
@@ -56489,7 +56641,7 @@ function BulkEditPanel({
     alignItems: "center",
     justifyContent: "space-between"
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)(
     "div",
     {
       className,
@@ -56498,10 +56650,10 @@ function BulkEditPanel({
       "aria-label": "\u6279\u91CF\u7F16\u8F91\u9762\u677F",
       "data-testid": "bulk-edit-panel",
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { style: headerStyle2, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("h3", { style: { margin: 0, fontSize: "16px", fontWeight: 600, color: "#111827" }, children: "\u6279\u91CF\u7F16\u8F91" }),
-            /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("p", { style: { margin: "2px 0 0", fontSize: "13px", color: "#6b7280" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)("div", { style: headerStyle2, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("h3", { style: { margin: 0, fontSize: "16px", fontWeight: 600, color: "#111827" }, children: "\u6279\u91CF\u7F16\u8F91" }),
+            /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)("p", { style: { margin: "2px 0 0", fontSize: "13px", color: "#6b7280" }, children: [
               "\u5DF2\u9009 ",
               entries.length,
               " \u6761\u8BB0\u5F55 \xB7 \u5DF2\u8BBE\u7F6E ",
@@ -56511,7 +56663,7 @@ function BulkEditPanel({
               " \u4E2A\u5B57\u6BB5"
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime224.jsx)(
             "button",
             {
               onClick: onCancel,
@@ -56528,8 +56680,8 @@ function BulkEditPanel({
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { style: { padding: "16px 20px", overflowY: "auto", flex: 1 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("div", { style: { marginBottom: "16px" }, children: fields.map((field) => {
+        /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)("div", { style: { padding: "16px 20px", overflowY: "auto", flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("div", { style: { marginBottom: "16px" }, children: fields.map((field) => {
             const currentValue = editingValues[field.key] ?? "";
             const errMsg = validationErrors[field.key];
             const isFocused = focusedField === field.key;
@@ -56538,12 +56690,12 @@ function BulkEditPanel({
               ...isFocused ? textInputFocus : {},
               ...errMsg ? { borderColor: "#dc2626", boxShadow: "0 0 0 2px rgba(220,38,38,0.15)" } : {}
             };
-            return /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { style: inputContainer, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("label", { style: labelStyle4, htmlFor: `bulk-field-${field.key}`, children: [
+            return /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)("div", { style: inputContainer, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)("label", { style: labelStyle4, htmlFor: `bulk-field-${field.key}`, children: [
                 field.label,
-                currentValue !== "" && currentValue !== null && /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { style: { color: "#2563eb", marginLeft: "6px", fontSize: "12px" }, children: "\u2713 \u5DF2\u8BBE\u7F6E" })
+                currentValue !== "" && currentValue !== null && /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("span", { style: { color: "#2563eb", marginLeft: "6px", fontSize: "12px" }, children: "\u2713 \u5DF2\u8BBE\u7F6E" })
               ] }),
-              field.type === "select" && field.options ? /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(
+              field.type === "select" && field.options ? /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)(
                 "select",
                 {
                   id: `bulk-field-${field.key}`,
@@ -56554,12 +56706,12 @@ function BulkEditPanel({
                   onBlur: () => setFocusedField(null),
                   "data-testid": `bulk-field-${field.key}`,
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("option", { value: "", children: "\u2014 \u4FDD\u6301\u4E0D\u53D8 \u2014" }),
-                    field.options.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("option", { value: opt.value, children: opt.label }, opt.value))
+                    /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("option", { value: "", children: "\u2014 \u4FDD\u6301\u4E0D\u53D8 \u2014" }),
+                    field.options.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("option", { value: opt.value, children: opt.label }, opt.value))
                   ]
                 }
-              ) : field.type === "toggle" ? /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
+              ) : field.type === "toggle" ? /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: "8px" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime224.jsx)(
                   "button",
                   {
                     role: "switch",
@@ -56579,7 +56731,7 @@ function BulkEditPanel({
                       transition: "background 0.15s"
                     },
                     "data-testid": `bulk-field-${field.key}`,
-                    children: /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
+                    children: /* @__PURE__ */ (0, import_jsx_runtime224.jsx)(
                       "span",
                       {
                         style: {
@@ -56596,8 +56748,8 @@ function BulkEditPanel({
                     )
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { style: { fontSize: "13px", color: "#6b7280" }, children: currentValue === true || currentValue === "true" ? "\u662F" : "\u5426" })
-              ] }) : field.type === "number" ? /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("span", { style: { fontSize: "13px", color: "#6b7280" }, children: currentValue === true || currentValue === "true" ? "\u662F" : "\u5426" })
+              ] }) : field.type === "number" ? /* @__PURE__ */ (0, import_jsx_runtime224.jsx)(
                 "input",
                 {
                   id: `bulk-field-${field.key}`,
@@ -56613,7 +56765,7 @@ function BulkEditPanel({
                   onBlur: () => setFocusedField(null),
                   "data-testid": `bulk-field-${field.key}`
                 }
-              ) : /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
+              ) : /* @__PURE__ */ (0, import_jsx_runtime224.jsx)(
                 "input",
                 {
                   id: `bulk-field-${field.key}`,
@@ -56627,12 +56779,12 @@ function BulkEditPanel({
                   "data-testid": `bulk-field-${field.key}`
                 }
               ),
-              errMsg && /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { style: { fontSize: "12px", color: "#dc2626", marginTop: "2px" }, children: errMsg })
+              errMsg && /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("span", { style: { fontSize: "12px", color: "#dc2626", marginTop: "2px" }, children: errMsg })
             ] }, field.key);
           }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("p", { style: { margin: "0 0 8px", fontSize: "13px", fontWeight: 600, color: "#374151" }, children: "\u53D7\u5F71\u54CD\u8BB0\u5F55\u9884\u89C8" }),
-            /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("p", { style: { margin: "0 0 8px", fontSize: "13px", fontWeight: 600, color: "#374151" }, children: "\u53D7\u5F71\u54CD\u8BB0\u5F55\u9884\u89C8" }),
+            /* @__PURE__ */ (0, import_jsx_runtime224.jsx)(
               "div",
               {
                 style: {
@@ -56641,15 +56793,15 @@ function BulkEditPanel({
                   maxHeight: "160px",
                   overflowY: "auto"
                 },
-                children: entries.map((entry) => /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { style: previewRowStyle, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { style: previewTitleStyle, children: entry.title }),
-                  entry.subtitle && /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { style: previewSubStyle, children: entry.subtitle })
+                children: entries.map((entry) => /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)("div", { style: previewRowStyle, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("span", { style: previewTitleStyle, children: entry.title }),
+                  entry.subtitle && /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("span", { style: previewSubStyle, children: entry.subtitle })
                 ] }, entry.id))
               }
             )
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)(
           "div",
           {
             style: {
@@ -56661,9 +56813,9 @@ function BulkEditPanel({
               gap: "12px"
             },
             children: [
-              error && /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { style: { fontSize: "13px", color: "#dc2626", flex: 1 }, children: error }),
-              /* @__PURE__ */ (0, import_jsx_runtime223.jsxs)("div", { style: { display: "flex", gap: "8px", marginLeft: "auto" }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
+              error && /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("span", { style: { fontSize: "13px", color: "#dc2626", flex: 1 }, children: error }),
+              /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)("div", { style: { display: "flex", gap: "8px", marginLeft: "auto" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime224.jsx)(
                   "button",
                   {
                     onClick: onCancel,
@@ -56673,7 +56825,7 @@ function BulkEditPanel({
                     children: "\u53D6\u6D88"
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime224.jsx)(
                   "button",
                   {
                     onClick: handleSubmit,
@@ -56698,7 +56850,7 @@ function BulkEditPanel({
 
 // src/components/Watermark.tsx
 var import_react154 = require("react");
-var import_jsx_runtime224 = require("react/jsx-runtime");
+var import_jsx_runtime225 = require("react/jsx-runtime");
 var DEFAULT_PROPS = {
   content: "",
   fontSize: 14,
@@ -56728,7 +56880,7 @@ var Watermark = ({
     return text;
   }, [content]);
   if (disabled || !content) {
-    return /* @__PURE__ */ (0, import_jsx_runtime224.jsx)(import_jsx_runtime224.Fragment, { children });
+    return /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(import_jsx_runtime225.Fragment, { children });
   }
   const [gapX, gapY] = gap;
   const [offsetX, offsetY] = offset;
@@ -56755,7 +56907,7 @@ var Watermark = ({
     )}")`,
     backgroundRepeat: "repeat"
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime224.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)(
     "div",
     {
       style: { position: "relative" },
@@ -56763,7 +56915,7 @@ var Watermark = ({
       "data-watermark": "true",
       children: [
         children,
-        /* @__PURE__ */ (0, import_jsx_runtime224.jsx)("div", { style: watermarkStyle, "aria-hidden": "true", "data-testid": "watermark-overlay" })
+        /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("div", { style: watermarkStyle, "aria-hidden": "true", "data-testid": "watermark-overlay" })
       ]
     }
   );
@@ -56771,7 +56923,7 @@ var Watermark = ({
 
 // src/components/Spin.tsx
 var import_react155 = __toESM(require("react"));
-var import_jsx_runtime225 = require("react/jsx-runtime");
+var import_jsx_runtime226 = require("react/jsx-runtime");
 var SPINNER_SIZE_MAP = {
   sm: 20,
   md: 28,
@@ -56788,7 +56940,7 @@ function DefaultSpinner({ size }) {
   const radius = (dim - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const dashLength = circumference * 0.75;
-  return /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
     "svg",
     {
       width: dim,
@@ -56796,7 +56948,7 @@ function DefaultSpinner({ size }) {
       viewBox: `0 0 ${dim} ${dim}`,
       style: { display: "block" },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(
           "circle",
           {
             cx: dim / 2,
@@ -56808,7 +56960,7 @@ function DefaultSpinner({ size }) {
             opacity: 0.3
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(
           "circle",
           {
             cx: dim / 2,
@@ -56854,7 +57006,7 @@ function Spin({
 }) {
   const visible = useDelay(delay, spinning);
   if (!children && !fullscreen) {
-    return /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
       "div",
       {
         role: "status",
@@ -56868,8 +57020,8 @@ function Spin({
           ...style
         },
         children: [
-          visible ? indicator ?? /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(DefaultSpinner, { size }) : null,
-          tip && visible ? /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(
+          visible ? indicator ?? /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(DefaultSpinner, { size }) : null,
+          tip && visible ? /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(
             "span",
             {
               style: {
@@ -56880,12 +57032,12 @@ function Spin({
               children: tip
             }
           ) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("style", { children: `@keyframes spin-rotate { to { transform: rotate(360deg); } }` })
+          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("style", { children: `@keyframes spin-rotate { to { transform: rotate(360deg); } }` })
         ]
       }
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
     "div",
     {
       className,
@@ -56895,7 +57047,7 @@ function Spin({
       },
       children: [
         children,
-        visible && /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)(
+        visible && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
           "div",
           {
             style: {
@@ -56910,8 +57062,8 @@ function Spin({
               gap: 8
             },
             children: [
-              indicator ?? /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(DefaultSpinner, { size }),
-              tip ? /* @__PURE__ */ (0, import_jsx_runtime225.jsx)(
+              indicator ?? /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(DefaultSpinner, { size }),
+              tip ? /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(
                 "span",
                 {
                   style: {
@@ -56925,14 +57077,14 @@ function Spin({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime225.jsx)("style", { children: `@keyframes spin-rotate { to { transform: rotate(360deg); } }` })
+        /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("style", { children: `@keyframes spin-rotate { to { transform: rotate(360deg); } }` })
       ]
     }
   );
 }
 
 // src/components/AIDecisionRuleChain.tsx
-var import_jsx_runtime226 = require("react/jsx-runtime");
+var import_jsx_runtime227 = require("react/jsx-runtime");
 var STATUS_CONFIG5 = {
   pending: { icon: "\u23F3", color: "#8c8c8c", bg: "#f5f5f5", label: "\u5F85\u6267\u884C" },
   running: { icon: "\u{1F504}", color: "#1677ff", bg: "#e6f4ff", label: "\u6267\u884C\u4E2D" },
@@ -56952,8 +57104,8 @@ function RuleNodeItem({
   depth = 0
 }) {
   const cfg = STATUS_CONFIG5[node.status];
-  return /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { "data-testid": `rule-node-${node.id}`, style: { marginLeft: depth * 20 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { "data-testid": `rule-node-${node.id}`, style: { marginLeft: depth * 20 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
       "div",
       {
         style: {
@@ -56967,8 +57119,8 @@ function RuleNodeItem({
           border: `1px solid ${cfg.color}22`
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { style: { fontSize: 14, width: 20, textAlign: "center" }, children: cfg.icon }),
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("span", { style: { fontSize: 14, width: 20, textAlign: "center" }, children: cfg.icon }),
+          /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
             "span",
             {
               style: {
@@ -56980,7 +57132,7 @@ function RuleNodeItem({
               children: node.name
             }
           ),
-          node.tag && /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(
+          node.tag && /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
             "span",
             {
               style: {
@@ -56994,15 +57146,15 @@ function RuleNodeItem({
               children: node.tag
             }
           ),
-          node.confidence !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("span", { style: { fontSize: 11, color: "#8c8c8c", minWidth: 40, textAlign: "right" }, children: [
+          node.confidence !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("span", { style: { fontSize: 11, color: "#8c8c8c", minWidth: 40, textAlign: "right" }, children: [
             (node.confidence * 100).toFixed(0),
             "%"
           ] }),
-          node.durationMs !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("span", { style: { fontSize: 11, color: "#8c8c8c", minWidth: 40, textAlign: "right" }, children: [
+          node.durationMs !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("span", { style: { fontSize: 11, color: "#8c8c8c", minWidth: 40, textAlign: "right" }, children: [
             node.durationMs,
             "ms"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
             "span",
             {
               style: {
@@ -57018,7 +57170,7 @@ function RuleNodeItem({
         ]
       }
     ),
-    !compact && node.output && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
+    !compact && node.output && /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
       "div",
       {
         style: {
@@ -57033,7 +57185,7 @@ function RuleNodeItem({
         ]
       }
     ),
-    !compact && node.description && /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(
+    !compact && node.description && /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
       "div",
       {
         style: {
@@ -57044,8 +57196,8 @@ function RuleNodeItem({
         children: node.description
       }
     ),
-    node.children?.map((child) => /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(RuleNodeItem, { node: child, compact, depth: depth + 1 }, child.id)),
-    node.children && node.children.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(
+    node.children?.map((child) => /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(RuleNodeItem, { node: child, compact, depth: depth + 1 }, child.id)),
+    node.children && node.children.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
       "div",
       {
         style: {
@@ -57060,7 +57212,7 @@ function RuleNodeItem({
 }
 function DecisionSummaryBar({ summary }) {
   const decisionCfg = summary.finalDecision ? FINAL_DECISION_CONFIG[summary.finalDecision] : null;
-  return /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
     "div",
     {
       style: {
@@ -57076,33 +57228,33 @@ function DecisionSummaryBar({ summary }) {
       },
       "data-testid": "summary-bar",
       children: [
-        decisionCfg && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { style: { fontSize: 16 }, children: decisionCfg.icon }),
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("span", { style: { fontSize: 14, fontWeight: 600, color: decisionCfg.color }, children: decisionCfg.label })
+        decisionCfg && /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("span", { style: { fontSize: 16 }, children: decisionCfg.icon }),
+          /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("span", { style: { fontSize: 14, fontWeight: 600, color: decisionCfg.color }, children: decisionCfg.label })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { style: { display: "flex", gap: 12, fontSize: 12, color: "#595959" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("span", { "data-testid": "summary-total", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { style: { display: "flex", gap: 12, fontSize: 12, color: "#595959" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("span", { "data-testid": "summary-total", children: [
             "\u{1F4CB} \u5171 ",
             summary.totalRules,
             " \u6761\u89C4\u5219"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("span", { "data-testid": "summary-triggered", style: { color: "#52c41a" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("span", { "data-testid": "summary-triggered", style: { color: "#52c41a" }, children: [
             "\u2705 ",
             summary.triggeredRules,
             " \u6761\u901A\u8FC7"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("span", { "data-testid": "summary-blocked", style: { color: "#f5222d" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("span", { "data-testid": "summary-blocked", style: { color: "#f5222d" }, children: [
             "\u{1F534} ",
             summary.blockedRules,
             " \u6761\u62E6\u622A"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("span", { "data-testid": "summary-duration", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("span", { "data-testid": "summary-duration", children: [
             "\u23F1 ",
             summary.totalDurationMs,
             "ms"
           ] })
         ] }),
-        summary.finalDecisionReason && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)("div", { style: { fontSize: 12, color: "#595959", flex: "1 1 100%", marginTop: 4 }, children: [
+        summary.finalDecisionReason && /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { style: { fontSize: 12, color: "#595959", flex: "1 1 100%", marginTop: 4 }, children: [
           "\u{1F4DD} ",
           summary.finalDecisionReason
         ] })
@@ -57117,7 +57269,7 @@ function AIDecisionRuleChain({
   compact = false,
   variant = "pc"
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
     "div",
     {
       "data-testid": "decision-rule-chain",
@@ -57129,7 +57281,7 @@ function AIDecisionRuleChain({
         padding: 16
       },
       children: [
-        title && /* @__PURE__ */ (0, import_jsx_runtime226.jsxs)(
+        title && /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
           "div",
           {
             style: {
@@ -57147,8 +57299,8 @@ function AIDecisionRuleChain({
             ]
           }
         ),
-        summary && /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(DecisionSummaryBar, { summary }),
-        rules.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(
+        summary && /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(DecisionSummaryBar, { summary }),
+        rules.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
           "div",
           {
             style: {
@@ -57160,7 +57312,7 @@ function AIDecisionRuleChain({
             "data-testid": "chain-empty",
             children: "\u6682\u65E0\u89C4\u5219\u94FE\u6570\u636E"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime226.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 2 }, "data-testid": "chain-list", children: rules.map((node) => /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(RuleNodeItem, { node, compact }, node.id)) })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 2 }, "data-testid": "chain-list", children: rules.map((node) => /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(RuleNodeItem, { node, compact }, node.id)) })
       ]
     }
   );
@@ -57168,9 +57320,9 @@ function AIDecisionRuleChain({
 
 // src/ai-ab-test-comparison/AiABTestComparisonPanel.tsx
 var import_react156 = require("react");
-var import_jsx_runtime227 = require("react/jsx-runtime");
+var import_jsx_runtime228 = require("react/jsx-runtime");
 function Card2({ children, style }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
     "div",
     {
       style: {
@@ -57185,7 +57337,7 @@ function Card2({ children, style }) {
   );
 }
 function Badge2({ children, color }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
     "span",
     {
       style: {
@@ -57207,8 +57359,8 @@ function VariantBar({
   label
 }) {
   const rate = stats.totalExecutions > 0 ? stats.successCount / stats.totalExecutions * 100 : 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(
       "div",
       {
         style: {
@@ -57218,8 +57370,8 @@ function VariantBar({
           marginBottom: 4
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("span", { style: { fontWeight: 700, fontSize: 14, color: "#1e293b" }, children: label }),
-          /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("span", { style: { fontWeight: 700, fontSize: 14, color: "#1e293b" }, children: label }),
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
             stats.totalExecutions,
             " \u6B21 \xB7 \u91C7\u7EB3 ",
             stats.adoptionCount
@@ -57227,7 +57379,7 @@ function VariantBar({
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
       "div",
       {
         style: {
@@ -57237,7 +57389,7 @@ function VariantBar({
           overflow: "hidden",
           marginBottom: 6
         },
-        children: /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
           "div",
           {
             style: {
@@ -57251,7 +57403,7 @@ function VariantBar({
         )
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(
       "div",
       {
         style: {
@@ -57262,22 +57414,22 @@ function VariantBar({
           color: "#64748b"
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("span", { children: [
             "\u6210\u529F\u7387 ",
             rate.toFixed(1),
             "%"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("span", { children: [
             "\u5E73\u5747 ",
             stats.avgDurationMs,
             "ms"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("span", { children: [
             "\u7F6E\u4FE1\u5EA6 ",
             (stats.avgConfidence * 100).toFixed(0),
             "%"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("span", { children: [
             "\u8282\u7701 ",
             stats.avgValueDelta.toFixed(1)
           ] })
@@ -57310,7 +57462,7 @@ function ComparisonCard({
     (new Date(comparison.endedAt).getTime() - new Date(comparison.startedAt).getTime()) / 864e5
   );
   const badgeColor = comparison.isSignificant ? "#22c55e" : "#94a3b8";
-  return /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(
     Card2,
     {
       style: {
@@ -57319,7 +57471,7 @@ function ComparisonCard({
         position: "relative"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(
           "div",
           {
             style: {
@@ -57330,9 +57482,9 @@ function ComparisonCard({
               flexWrap: "wrap"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { style: { fontSize: 15, fontWeight: 700, color: "#0f172a" }, children: comparison.experimentName }),
-                /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { style: { fontSize: 12, color: "#64748b", marginTop: 2 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { style: { fontSize: 15, fontWeight: 700, color: "#0f172a" }, children: comparison.experimentName }),
+                /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { style: { fontSize: 12, color: "#64748b", marginTop: 2 }, children: [
                   comparison.ruleName,
                   " \xB7 ",
                   fmtDate(comparison.startedAt),
@@ -57344,7 +57496,7 @@ function ComparisonCard({
                   " \u5929\uFF09"
                 ] })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { style: { display: "flex", gap: 8, alignItems: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(Badge2, { color: badgeColor, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { style: { display: "flex", gap: 8, alignItems: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(Badge2, { color: badgeColor, children: [
                 "p=",
                 comparison.pValue.toFixed(comparison.isSignificant ? 3 : 2),
                 comparison.isSignificant ? " \u2705" : " \u4E0D\u663E\u8457"
@@ -57352,7 +57504,7 @@ function ComparisonCard({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(
           "div",
           {
             style: {
@@ -57361,12 +57513,12 @@ function ComparisonCard({
               flexDirection: compact ? "column" : "row"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(VariantBar, { stats: comparison.variantA, color: "#3b82f6", label: "A \u7EC4\uFF08\u5F53\u524D\uFF09" }),
-              /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(VariantBar, { stats: comparison.variantB, color: "#8b5cf6", label: "B \u7EC4\uFF08\u5B9E\u9A8C\uFF09" })
+              /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(VariantBar, { stats: comparison.variantA, color: "#3b82f6", label: "A \u7EC4\uFF08\u5F53\u524D\uFF09" }),
+              /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(VariantBar, { stats: comparison.variantB, color: "#8b5cf6", label: "B \u7EC4\uFF08\u5B9E\u9A8C\uFF09" })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(
           "div",
           {
             style: {
@@ -57378,8 +57530,8 @@ function ComparisonCard({
               alignItems: "center"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { style: { fontSize: 12, color: "#475569", lineHeight: 1.6, flex: 1 }, children: comparison.liftSummary }),
-              /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { style: { display: "flex", gap: 6 }, children: comparison.isSignificant && comparison.recommendedVariant ? /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { style: { fontSize: 12, color: "#475569", lineHeight: 1.6, flex: 1 }, children: comparison.liftSummary }),
+              /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { style: { display: "flex", gap: 6 }, children: comparison.isSignificant && comparison.recommendedVariant ? /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
                 "button",
                 {
                   onClick: () => handleAdopt(comparison.recommendedVariant),
@@ -57397,7 +57549,7 @@ function ComparisonCard({
                   },
                   children: adopting ? "\u91C7\u7EB3\u4E2D..." : `\u91C7\u7EB3 ${comparison.recommendedVariant} \u65B9\u6848`
                 }
-              ) : /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
+              ) : /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
                 "span",
                 {
                   style: {
@@ -57448,8 +57600,8 @@ function AiABTestComparisonPanel({
     { value: "pValue", label: "\u663E\u8457\u7A0B\u5EA6" },
     { value: "lift", label: "\u63D0\u5347\u5E45\u5EA6" }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(
       "div",
       {
         style: {
@@ -57460,9 +57612,9 @@ function AiABTestComparisonPanel({
           alignItems: "center"
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("span", { style: { fontSize: 14, fontWeight: 600, color: "#0f172a" }, children: "AI A/B \u5B9E\u9A8C\u5BF9\u6BD4" }),
-          /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "center", marginLeft: "auto" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime227.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("span", { style: { fontSize: 14, fontWeight: 600, color: "#0f172a" }, children: "AI A/B \u5B9E\u9A8C\u5BF9\u6BD4" }),
+          /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "center", marginLeft: "auto" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(
               "label",
               {
                 style: {
@@ -57474,7 +57626,7 @@ function AiABTestComparisonPanel({
                   cursor: "pointer"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
                     "input",
                     {
                       type: "checkbox",
@@ -57487,7 +57639,7 @@ function AiABTestComparisonPanel({
                 ]
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { style: { display: "flex", gap: 4 }, children: sortOptions.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { style: { display: "flex", gap: 4 }, children: sortOptions.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
               "button",
               {
                 onClick: () => setSortBy(opt.value),
@@ -57508,7 +57660,7 @@ function AiABTestComparisonPanel({
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime227.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
       "div",
       {
         style: {
@@ -57519,7 +57671,7 @@ function AiABTestComparisonPanel({
         },
         children: "\u6682\u65E0\u5339\u914D\u7684 A/B \u5B9E\u9A8C\u6570\u636E"
       }
-    ) : filtered.map((c) => /* @__PURE__ */ (0, import_jsx_runtime227.jsx)(
+    ) : filtered.map((c) => /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
       ComparisonCard,
       {
         comparison: c,
@@ -57707,7 +57859,7 @@ function useAiABTestComparison() {
 
 // src/components/AIRecommendationFeedbackPanel.tsx
 var import_react158 = require("react");
-var import_jsx_runtime228 = require("react/jsx-runtime");
+var import_jsx_runtime229 = require("react/jsx-runtime");
 var ratingMeta = {
   helpful: { label: "\u6709\u5E2E\u52A9", variant: "success", buttonVariant: "primary", icon: "\u{1F44D}" },
   somewhat: { label: "\u90E8\u5206\u6709\u7528", variant: "info", buttonVariant: "outline", icon: "\u{1F914}" },
@@ -57721,54 +57873,54 @@ function SourceSummary({ source }) {
     decision: "\u51B3\u7B56",
     insight: "\u6D1E\u5BDF"
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-gray-50 p-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(Badge, { variant: "primary", children: typeLabel[source.type] ?? source.type }),
-        /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("span", { className: "text-sm font-medium text-gray-900", children: source.label })
+  return /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-gray-50 p-4", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(Badge, { variant: "primary", children: typeLabel[source.type] ?? source.type }),
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-sm font-medium text-gray-900", children: source.label })
       ] }),
-      source.confidence !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("span", { className: "text-xs text-gray-500", children: [
+      source.confidence !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("span", { className: "text-xs text-gray-500", children: [
         "AI \u7F6E\u4FE1\u5EA6: ",
         source.confidence,
         "%"
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("p", { className: "text-sm text-gray-700 leading-relaxed", children: source.summary }),
-    source.metricImpact && /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("p", { className: "text-xs text-gray-500 mt-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("p", { className: "text-sm text-gray-700 leading-relaxed", children: source.summary }),
+    source.metricImpact && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("p", { className: "text-xs text-gray-500 mt-2", children: [
       "\u9884\u671F\u5F71\u54CD: ",
       source.metricImpact
     ] })
   ] });
 }
 function AggregateStats({ agg }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "grid grid-cols-4 gap-3", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "text-lg font-bold text-green-600", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "grid grid-cols-4 gap-3", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "text-lg font-bold text-green-600", children: [
         agg.helpfulRate,
         "%"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u6709\u5E2E\u52A9" })
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u6709\u5E2E\u52A9" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "text-lg font-bold text-blue-600", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "text-lg font-bold text-blue-600", children: [
         agg.somewhatRate,
         "%"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u90E8\u5206\u6709\u7528" })
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u90E8\u5206\u6709\u7528" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "text-lg font-bold text-amber-600", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "text-lg font-bold text-amber-600", children: [
         agg.notHelpfulRate,
         "%"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u4E0D\u76F8\u5173" })
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u4E0D\u76F8\u5173" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "text-lg font-bold text-red-600", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "text-lg font-bold text-red-600", children: [
         agg.inaccurateRate,
         "%"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u4E0D\u51C6\u786E" })
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u4E0D\u51C6\u786E" })
     ] })
   ] });
 }
@@ -57803,22 +57955,22 @@ function AIRecommendationFeedbackPanel({
     setSubmitted(false);
   }, []);
   if (submitted) {
-    return /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(Card, { className: `p-6 ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "flex flex-col items-center justify-center py-8 text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { className: "text-4xl mb-3", children: "\u{1F389}" }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("h3", { className: "text-lg font-semibold text-gray-900", children: "\u53CD\u9988\u5DF2\u8BB0\u5F55" }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("p", { className: "text-sm text-gray-500 mt-1 mb-4", children: "\u60A8\u7684\u53CD\u9988\u5C06\u5E2E\u52A9 AI \u7CFB\u7EDF\u6301\u7EED\u6539\u8FDB\u63A8\u8350\u8D28\u91CF" }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { className: "flex gap-2", children: /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(Button, { variant: "outline", size: "sm", onClick: handleReset, children: "\u7EE7\u7EED\u53CD\u9988" }) })
+    return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(Card, { className: `p-6 ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex flex-col items-center justify-center py-8 text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-4xl mb-3", children: "\u{1F389}" }),
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("h3", { className: "text-lg font-semibold text-gray-900", children: "\u53CD\u9988\u5DF2\u8BB0\u5F55" }),
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("p", { className: "text-sm text-gray-500 mt-1 mb-4", children: "\u60A8\u7684\u53CD\u9988\u5C06\u5E2E\u52A9 AI \u7CFB\u7EDF\u6301\u7EED\u6539\u8FDB\u63A8\u8350\u8D28\u91CF" }),
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "flex gap-2", children: /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(Button, { variant: "outline", size: "sm", onClick: handleReset, children: "\u7EE7\u7EED\u53CD\u9988" }) })
     ] }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(import_jsx_runtime228.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(Card, { className: `p-6 ${className}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "mb-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("h2", { className: "text-lg font-semibold text-gray-900", children: "AI \u63A8\u8350\u53CD\u9988" }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("p", { className: "text-sm text-gray-500 mt-1", children: "\u60A8\u7684\u53CD\u9988\u5C06\u7528\u4E8E\u4F18\u5316 AI \u6A21\u578B\u7684\u63A8\u8350\u51C6\u786E\u6027" })
+  return /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(import_jsx_runtime229.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(Card, { className: `p-6 ${className}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "mb-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("h2", { className: "text-lg font-semibold text-gray-900", children: "AI \u63A8\u8350\u53CD\u9988" }),
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("p", { className: "text-sm text-gray-500 mt-1", children: "\u60A8\u7684\u53CD\u9988\u5C06\u7528\u4E8E\u4F18\u5316 AI \u6A21\u578B\u7684\u63A8\u8350\u51C6\u786E\u6027" })
     ] }),
-    aggregate && /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "mb-5", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("span", { className: "text-sm font-medium text-gray-700", children: "\u5386\u53F2\u53CD\u9988\u7EDF\u8BA1" }),
-        /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
+    aggregate && /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "mb-5", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-sm font-medium text-gray-700", children: "\u5386\u53F2\u53CD\u9988\u7EDF\u8BA1" }),
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(
           StatTrend,
           {
             value: String(aggregate.helpfulRate),
@@ -57828,18 +57980,18 @@ function AIRecommendationFeedbackPanel({
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(AggregateStats, { agg: aggregate })
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(AggregateStats, { agg: aggregate })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "mb-5", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: "\u5F53\u524D\u63A8\u8350\u5185\u5BB9" }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(SourceSummary, { source })
+    /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "mb-5", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: "\u5F53\u524D\u63A8\u8350\u5185\u5BB9" }),
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(SourceSummary, { source })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "mb-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: "\u6B64\u63A8\u8350\u5BF9\u60A8\u6709\u5E2E\u52A9\u5417\uFF1F" }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { className: "flex flex-wrap gap-2", children: Object.entries(ratingMeta).map(
+    /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "mb-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: "\u6B64\u63A8\u8350\u5BF9\u60A8\u6709\u5E2E\u52A9\u5417\uFF1F" }),
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "flex flex-wrap gap-2", children: Object.entries(ratingMeta).map(
         ([key, meta]) => {
           const isSelected = selectedRating === key;
-          return /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)(
+          return /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)(
             "button",
             {
               type: "button",
@@ -57852,7 +58004,7 @@ function AIRecommendationFeedbackPanel({
                       disabled:opacity-50 disabled:cursor-not-allowed
                     `,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("span", { className: "text-base", children: meta.icon }),
+                /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-base", children: meta.icon }),
                 meta.label
               ]
             },
@@ -57861,12 +58013,12 @@ function AIRecommendationFeedbackPanel({
         }
       ) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "mb-5", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "mb-5", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: [
         "\u8865\u5145\u8BF4\u660E ",
-        /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("span", { className: "text-gray-400 font-normal", children: "\uFF08\u9009\u586B\uFF09" })
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("span", { className: "text-gray-400 font-normal", children: "\uFF08\u9009\u586B\uFF09" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(
         TextArea,
         {
           placeholder: "\u8BF7\u8F93\u5165\u60A8\u7684\u60F3\u6CD5\u6216\u6539\u8FDB\u5EFA\u8BAE\u2026",
@@ -57877,15 +58029,15 @@ function AIRecommendationFeedbackPanel({
           rows: 3
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("p", { className: "text-xs text-gray-400 text-right mt-1", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("p", { className: "text-xs text-gray-400 text-right mt-1", children: [
         comment.length,
         "/500"
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "flex items-center justify-between pt-3 border-t border-gray-100", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsx)("div", { className: "text-xs text-gray-400", children: "\u53CD\u9988\u5C06\u533F\u540D\u7528\u4E8E\u6A21\u578B\u4F18\u5316" }),
-      /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { className: "flex gap-2", children: [
-        onSkip && /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex items-center justify-between pt-3 border-t border-gray-100", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsx)("div", { className: "text-xs text-gray-400", children: "\u53CD\u9988\u5C06\u533F\u540D\u7528\u4E8E\u6A21\u578B\u4F18\u5316" }),
+      /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { className: "flex gap-2", children: [
+        onSkip && /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(
           Button,
           {
             variant: "outline",
@@ -57895,15 +58047,15 @@ function AIRecommendationFeedbackPanel({
             children: "\u8DF3\u8FC7"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(
           Button,
           {
             variant: "primary",
             size: "sm",
             onClick: handleSubmit,
             disabled: !selectedRating || submitting,
-            children: submitting ? /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("span", { className: "inline-flex items-center gap-1", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime228.jsx)(Spinner, { size: "sm" }),
+            children: submitting ? /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("span", { className: "inline-flex items-center gap-1", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime229.jsx)(Spinner, { size: "sm" }),
               "\u63D0\u4EA4\u4E2D\u2026"
             ] }) : "\u63D0\u4EA4\u53CD\u9988"
           }
@@ -58052,6 +58204,7 @@ function AIRecommendationFeedbackPanel({
   HeatmapChart,
   HoverCard,
   ImagePreview,
+  InfoCard,
   InfoRow,
   Input,
   InputNumber,

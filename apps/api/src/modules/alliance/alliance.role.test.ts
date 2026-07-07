@@ -113,13 +113,13 @@ describe(`${ROLES.TenantAdmin} alliance 联盟店管理角色测试`, () => {
     ctrl.registerPartner({ name: '重复名称伙伴', businessType: 'RETAIL', contact: '13800000111', address: '深圳' })
     const result = ctrl.registerPartner({ name: '重复名称伙伴', businessType: 'TECH', contact: '13800000112', address: '广州' }) as { success: false; message: string }
     assert.equal(result.success, false)
-    assert.ok(result.message.includes('already exists'))
+    assert.ok(result.message!.includes('already exists'))
   })
 
   it('店长获取不存在的伙伴应返回失败（边界）', () => {
     const result = ctrl.getPartner('nonexistent-partner') as { success: false; message: string }
     assert.equal(result.success, false)
-    assert.ok(result.message.includes('not found'))
+    assert.ok(result.message!.includes('not found'))
   })
 })
 
@@ -150,7 +150,7 @@ describe(`${ROLES.Teambuilding} alliance 联盟活动角色测试`, () => {
       address: '杭州市西湖区',
     })
     assert.equal(result.success, true)
-    assert.equal(result.data.name, '团建合作农场')
+    assert.equal(result.data!.name, '团建合作农场')
   })
 
   it('团建可以为伙伴手动指定等级方便活动筛选（正常流程）', () => {
@@ -160,14 +160,14 @@ describe(`${ROLES.Teambuilding} alliance 联盟活动角色测试`, () => {
       contact: '13800000202',
       address: '北京市海淀区',
     })
-    const assign = ctrl.gradingService.assignGrade(reg.data.id, 'A')
-    const result = ctrl.assignGrade(reg.data.id, { grade: 'A' })
+    const assign = (ctrl as any).gradingService.assignGrade(reg.data!.id, 'A')
+    const result = ctrl.assignGrade(reg.data!.id, { grade: 'A' })
     assert.equal(result.success, true)
-    assert.ok(result.message.includes('A'))
+    assert.ok(result.message!.includes('A'))
 
-    const gradeResult = ctrl.getGrade(reg.data.id)
+    const gradeResult = ctrl.getGrade(reg.data!.id)
     assert.equal(gradeResult.success, true)
-    assert.equal(gradeResult.data.grade, 'A')
+    assert.equal(gradeResult.data!.grade, 'A')
   })
 
   it('团建可以查看联盟健康度判断活动适配度', () => {
@@ -177,15 +177,15 @@ describe(`${ROLES.Teambuilding} alliance 联盟活动角色测试`, () => {
       contact: '13800000203',
       address: '三亚市',
     })
-    const health = ctrl.calculateHealth(reg.data.id)
+    const health = ctrl.calculateHealth(reg.data!.id)
     assert.equal(health.success, true)
-    assert.equal(health.data.healthScore, 50) // 无指标数据时默认50
+    assert.equal(health.data!.healthScore, 50) // 无指标数据时默认50
 
     // 设置指标后重新计算
-    ctrl.setMetrics(reg.data.id, { revenue: 200000, orderCount: 800, complaintCount: 2, activeDays: 25 })
-    const updatedHealth = ctrl.calculateHealth(reg.data.id)
+    ctrl.setMetrics(reg.data!.id, { revenue: 200000, orderCount: 800, complaintCount: 2, activeDays: 25 })
+    const updatedHealth = ctrl.calculateHealth(reg.data!.id)
     assert.equal(updatedHealth.success, true)
-    assert.ok(updatedHealth.data.healthScore > 50)
+    assert.ok(updatedHealth.data!.healthScore > 50)
   })
 
   it('团建查看健康度趋势用于活动决策', () => {
@@ -195,10 +195,10 @@ describe(`${ROLES.Teambuilding} alliance 联盟活动角色测试`, () => {
       contact: '13800000204',
       address: '成都市',
     })
-    const trend = ctrl.getHealthTrend(reg.data.id)
+    const trend = ctrl.getHealthTrend(reg.data!.id)
     assert.equal(trend.success, true)
-    assert.ok(Array.isArray(trend.data))
-    assert.ok(trend.data.length > 0)
+    assert.ok(Array.isArray(trend.data!))
+    assert.ok(trend.data!.length > 0)
   })
 })
 
@@ -218,7 +218,7 @@ describe(`${ROLES.Marketing} alliance 联盟营销角色测试`, () => {
       address: '深圳市南山区',
     })
     assert.equal(result.success, true)
-    assert.equal(result.data.businessType, 'F&B')
+    assert.equal(result.data!.businessType, 'F&B')
   })
 
   it('营销可以按行业类型筛选联盟伙伴', () => {
@@ -241,12 +241,12 @@ describe(`${ROLES.Marketing} alliance 联盟营销角色测试`, () => {
       contact: '13800000321',
       address: '上海市黄浦区',
     })
-    const pid = reg.data.id
+    const pid = reg.data!.id
     ctrl.assignGrade(pid, { grade: 'S' })
 
     const grade = ctrl.getGrade(pid)
     assert.equal(grade.success, true)
-    assert.equal(grade.data.grade, 'S')
+    assert.equal(grade.data!.grade, 'S')
   })
 
   it('营销可以发起分账结算（营销活动分摊）', () => {
@@ -258,13 +258,13 @@ describe(`${ROLES.Marketing} alliance 联盟营销角色测试`, () => {
       type: 'ratio',
       totalAmount: 10000,
       participants: [
-        makeParticipant(regA.data.id, '合作伙伴A', 0.6),
-        makeParticipant(regB.data.id, '合作伙伴B', 0.4),
+        makeParticipant(regA.data!.id, '合作伙伴A', 0.6),
+        makeParticipant(regB.data!.id, '合作伙伴B', 0.4),
       ],
     })
     assert.equal(settlement.success, true)
-    assert.ok(settlement.data.settlementId)
-    assert.equal(settlement.data.status, 'pending')
+    assert.ok(settlement.data!.settlementId)
+    assert.equal(settlement.data!.status, 'pending')
   })
 
   it('营销可以批准并执行分账结算（正常流程）', () => {
@@ -276,19 +276,19 @@ describe(`${ROLES.Marketing} alliance 联盟营销角色测试`, () => {
       type: 'ratio',
       totalAmount: 50000,
       participants: [
-        makeParticipant(regA.data.id, '结算伙伴A', 0.7),
-        makeParticipant(regB.data.id, '结算伙伴B', 0.3),
+        makeParticipant(regA.data!.id, '结算伙伴A', 0.7),
+        makeParticipant(regB.data!.id, '结算伙伴B', 0.3),
       ],
     })
-    const sid = created.data.settlementId
+    const sid = created.data!.settlementId
 
     const approved = ctrl.approveSettlement(sid)
     assert.equal(approved.success, true)
-    assert.equal(approved.data.status, 'approved')
+    assert.equal(approved.data!.status, 'approved')
 
     const executed = ctrl.executeSettlement(sid)
     assert.equal(executed.success, true)
-    assert.equal(executed.data.status, 'executed')
+    assert.equal(executed.data!.status, 'executed')
   })
 
   it('营销创建比例不合法的分账应被拒绝（边界）', () => {
@@ -324,12 +324,12 @@ describe(`${ROLES.Ops} alliance 联盟结算角色测试`, () => {
       type: 'ratio',
       totalAmount: 20000,
       participants: [
-        makeParticipant(regA.data.id, '商户甲', 0.5),
-        makeParticipant(regB.data.id, '商户乙', 0.5),
+        makeParticipant(regA.data!.id, '商户甲', 0.5),
+        makeParticipant(regB.data!.id, '商户乙', 0.5),
       ],
     })
     assert.equal(ratioStl.success, true)
-    assert.equal(ratioStl.data.type, 'ratio')
+    assert.equal(ratioStl.data!.type, 'ratio')
 
     // 按固定金额分账
     const fixedStl = ctrl.createSettlement({
@@ -337,12 +337,12 @@ describe(`${ROLES.Ops} alliance 联盟结算角色测试`, () => {
       type: 'fixed',
       totalAmount: 10000,
       participants: [
-        { partnerId: regA.data.id, partnerName: '商户甲', ratio: undefined, fixedAmount: 6000 },
-        { partnerId: regB.data.id, partnerName: '商户乙', ratio: undefined, fixedAmount: 4000 },
+        { partnerId: regA.data!.id, partnerName: '商户甲', ratio: undefined, fixedAmount: 6000 },
+        { partnerId: regB.data!.id, partnerName: '商户乙', ratio: undefined, fixedAmount: 4000 },
       ],
     })
     assert.equal(fixedStl.success, true)
-    assert.equal(fixedStl.data.type, 'fixed')
+    assert.equal(fixedStl.data!.type, 'fixed')
   })
 
   it('运行专员可以查询分账详情（正常流程）', () => {
@@ -351,26 +351,26 @@ describe(`${ROLES.Ops} alliance 联盟结算角色测试`, () => {
       orderId: 'ops-order-003',
       type: 'ratio',
       totalAmount: 30000,
-      participants: [makeParticipant(reg.data.id, '商户', 1.0)],
+      participants: [makeParticipant(reg.data!.id, '商户', 1.0)],
     })
-    const sid = created.data.settlementId
+    const sid = created.data!.settlementId
     const queried = ctrl.querySettlement(sid)
     assert.equal(queried.success, true)
-    assert.equal(queried.data.settlementId, sid)
+    assert.equal(queried.data!.settlementId, sid)
   })
 
   it('运行专员可以查看伙伴分账历史', () => {
     const reg = ctrl.registerPartner({ name: '历史查询商户', businessType: 'RETAIL', contact: '13800000421', address: '广州' })
     ctrl.createSettlement({
       orderId: 'ops-hist-001', type: 'ratio', totalAmount: 10000,
-      participants: [makeParticipant(reg.data.id, '商户', 1.0)],
+      participants: [makeParticipant(reg.data!.id, '商户', 1.0)],
     })
     ctrl.createSettlement({
       orderId: 'ops-hist-002', type: 'ratio', totalAmount: 20000,
-      participants: [makeParticipant(reg.data.id, '商户', 1.0)],
+      participants: [makeParticipant(reg.data!.id, '商户', 1.0)],
     })
 
-    const history = ctrl.getSettlementHistory(reg.data.id)
+    const history = ctrl.getSettlementHistory(reg.data!.id)
     assert.equal(history.success, true)
     assert.ok(history.total >= 2)
   })
@@ -378,41 +378,41 @@ describe(`${ROLES.Ops} alliance 联盟结算角色测试`, () => {
   it('运行专员可以扫描未关联订单（正常流程）', () => {
     const result = ctrl.scanUnlinkedOrders({ storeId: 'store-A', since: '2026-01-01T00:00:00Z' })
     assert.equal(result.success, true)
-    assert.ok(result.data.total >= 2)
-    assert.ok(result.data.orders.every((o: any) => o.linkStatus === 'unlinked'))
+    assert.ok(result.data!.total >= 2)
+    assert.ok(result.data!.orders.every((o: any) => o.linkStatus === 'unlinked'))
   })
 
   it('运行专员可以手动关联订单到伙伴（正常流程）', () => {
     const reg = ctrl.registerPartner({ name: '关联商户', businessType: 'RETAIL', contact: '13800000431', address: '北京' })
-    const result = ctrl.linkOrder('order-u-001', { partnerId: reg.data.id })
+    const result = ctrl.linkOrder('order-u-001', { partnerId: reg.data!.id })
     assert.equal(result.success, true)
-    assert.equal(result.data.linkStatus, 'linked')
-    assert.equal(result.data.linkedPartnerId, reg.data.id)
+    assert.equal(result.data!.linkStatus, 'linked')
+    assert.equal(result.data!.linkedPartnerId, reg.data!.id)
   })
 
   it('运行专员可以触发自动关联规则', () => {
     const result = ctrl.autoLinkOrder('order-u-002')
     assert.equal(result.success, true)
     // 8000 < 10000 阈值，规则不应匹配
-    assert.equal(result.data.linked, false)
+    assert.equal(result.data!.linked, false)
   })
 
   it('运行专员关联已关联的订单应被拒绝（边界）', () => {
     // 先手动关联
     const reg = ctrl.registerPartner({ name: '已关联商户', businessType: 'RETAIL', contact: '13800000441', address: '北京' })
-    ctrl.linkOrder('order-u-001', { partnerId: reg.data.id })
+    ctrl.linkOrder('order-u-001', { partnerId: reg.data!.id })
 
     // 再关联应失败
-    const result = ctrl.linkOrder('order-u-001', { partnerId: reg.data.id })
+    const result = ctrl.linkOrder('order-u-001', { partnerId: reg.data!.id })
     assert.equal(result.success, false)
     assert.equal(result.code, 'ALREADY_LINKED')
   })
 
   it('运行专员可以检测异常结算模式（正常流程）', () => {
     const reg = ctrl.registerPartner({ name: '异常检测商户', businessType: 'RETAIL', contact: '13800000451', address: '北京' })
-    const anomaly = ctrl.detectAnomaly(reg.data.id)
+    const anomaly = ctrl.detectAnomaly(reg.data!.id)
     assert.equal(anomaly.success, true)
-    assert.ok(anomaly.data.count >= 0)
+    assert.ok(anomaly.data!.count >= 0)
   })
 
   it('运行专员可以标记可疑分账（正常流程）', () => {
@@ -421,11 +421,11 @@ describe(`${ROLES.Ops} alliance 联盟结算角色测试`, () => {
       orderId: 'ops-flagged-order',
       type: 'ratio',
       totalAmount: 5000,
-      participants: [makeParticipant(reg.data.id, '商户', 1.0)],
+      participants: [makeParticipant(reg.data!.id, '商户', 1.0)],
     })
-    const flag = ctrl.flagSuspicious(created.data.settlementId)
+    const flag = ctrl.flagSuspicious(created.data!.settlementId)
     assert.equal(flag.success, true)
-    assert.equal(flag.data.flagged, true)
+    assert.equal(flag.data!.flagged, true)
   })
 })
 
@@ -453,9 +453,9 @@ describe(`${ROLES.Reception} alliance 联盟会员查询角色测试`, () => {
       contact: '13800000503',
       address: '广州市天河区',
     })
-    const detail = ctrl.getPartner(reg.data.id)
+    const detail = ctrl.getPartner(reg.data!.id)
     assert.equal(detail.success, true)
-    assert.equal(detail.data.name, '前台可见伙伴C')
+    assert.equal(detail.data!.name, '前台可见伙伴C')
   })
 
   it('前台可以按行业筛选查询联盟伙伴', () => {
@@ -464,7 +464,7 @@ describe(`${ROLES.Reception} alliance 联盟会员查询角色测试`, () => {
     const filtered = ctrl.listPartners({ businessType: 'RETAIL' })
     assert.equal(filtered.success, true)
     assert.ok(filtered.total >= 1)
-    filtered.data.forEach((p: any) => {
+    filtered.data!.forEach((p: any) => {
       assert.equal(p.businessType, 'RETAIL')
     })
   })
@@ -476,17 +476,17 @@ describe(`${ROLES.Reception} alliance 联盟会员查询角色测试`, () => {
       contact: '13800000521',
       address: '上海市浦东新区',
     })
-    ctrl.assignGrade(reg.data.id, { grade: 'A' })
+    ctrl.assignGrade(reg.data!.id, { grade: 'A' })
 
-    const grade = ctrl.getGrade(reg.data.id)
+    const grade = ctrl.getGrade(reg.data!.id)
     assert.equal(grade.success, true)
-    assert.equal(grade.data.grade, 'A')
+    assert.equal(grade.data!.grade, 'A')
   })
 
   it('前台查询不存在的伙伴应返回明确错误（边界）', () => {
     const result = ctrl.getPartner('non-existent-front-desk')
     assert.equal(result.success, false)
-    assert.ok(result.message.includes('not found'))
+    assert.ok(result.message!.includes('not found'))
   })
 
   it('前台查看健康度因素了解服务质量', () => {
@@ -496,11 +496,11 @@ describe(`${ROLES.Reception} alliance 联盟会员查询角色测试`, () => {
       contact: '13800000531',
       address: '杭州市',
     })
-    ctrl.setMetrics(reg.data.id, { revenue: 300000, orderCount: 1000, complaintCount: 1, activeDays: 28 })
+    ctrl.setMetrics(reg.data!.id, { revenue: 300000, orderCount: 1000, complaintCount: 1, activeDays: 28 })
 
-    const factors = ctrl.getHealthFactors(reg.data.id)
+    const factors = ctrl.getHealthFactors(reg.data!.id)
     assert.equal(factors.success, true)
-    assert.ok(factors.data.revenueScore > 0)
-    assert.ok(factors.data.overall > 0)
+    assert.ok(factors.data!.revenueScore > 0)
+    assert.ok(factors.data!.overall > 0)
   })
 })

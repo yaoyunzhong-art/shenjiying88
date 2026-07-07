@@ -1064,6 +1064,9 @@ export type { MemberActivityCardProps, MemberActivity, ActivityType } from './co
 export { Space } from './components/Space';
 export type { SpaceProps, SpaceDirection, SpaceSize } from './components/Space';
 
+export { InfoCard } from './components/InfoCard';
+export type { InfoCardProps, InfoCardItem } from './components/InfoCard';
+
 export { Empty } from './components/Empty';
 export type { EmptyProps } from './components/Empty';
 
