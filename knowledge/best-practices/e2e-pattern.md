@@ -1,7 +1,7 @@
 # Best Practice · E2E Pattern (e2e 测试编写规范)
 
 > 创建日期: 2026-06-25
-> 最后更新: 2026-06-30 (Pulse-Nightly-06)
+> 最后更新: 2026-07-08 (Pulse-Nightly-10)
 > 来源: Phase-15E/16D/16E/16F + Pulse-Nightly-03/04/05 e2e 编写经验
 
 ## 命名规范
@@ -791,6 +791,87 @@ Node.js `--import tsx --test` 同进程共享模块作用域。跨模块 E2E 链
 5. **测试数据隔离(Pulse-Nightly-09)**: 在链16初期 4 fail 教训后, 关键原则是: **每个独立业务场景使用新建实体(新SKU/新订单/新通知), 而非复用种子数据**。同一场景的不同测试按业务顺序推演状态, 后置条件应计算实际剩余而非硬编码。
 6. **幂等性requestId唯一性(Pulse-Nightly-09)**: 不要纯用 `Date.now()` 生成 requestId——同一毫秒内多次调用返回相同值导致幂等性误拦截。使用计数器+时间戳组合: `reqId = \`order_\${Date.now()}_\${counter++}\``
 7. **校验优先级(Pulse-Nightly-09)**: 在多层校验逻辑中, 前置校验(如限购)后置校验(库存不足)的结果可能混肴。测试用例的输入值需明确指向特定校验层
+
+## 跨模块设计模式 (Pulse-Nightly-10 已扩展至 31 链)
+
+### 模式9: 物联网数据管道 (链29 · 20 subtests)
+```
+IoT Device(数据采集) → Edge AI(推理) → Realtime(协同) → Lineage(血缘) → Anomaly Alert(告警)
+```
+
+**设计要点**:
+- IoT 设备数据覆盖 online/offline/error 三种状态
+- Edge AI 推理验证 normal/anomaly/extreme 三种输入
+- Realtime 创建协同文档记录推理结果
+- Lineage 血缘追踪可溯源到原始 IoT 设备
+- 边缘推理异常检测触发告警链路
+
+**典型三元组**:
+- 正例: 正常温度 → Edge推理normal → 协同文档 → 血缘可溯源
+- 反例: 空deviceId → 拒绝; 缺失推理输入 → 拒绝
+- 边界: 极值温度(-20/999) → Edge检测anomaly → 告警文档 → 血缘关联
+
+### 模式10: 多云区域容灾+混沌工程+自动回滚 (链30 · 22 subtests)
+```
+MultiRegion Routing → Failover → HealthCheck → Deploy → AutoRollback
+```
+
+**设计要点**:
+- 区域路由测试优先级降级链: 主→备→备→全部故障→503
+- 健康检查覆盖 healthy/degraded/down/unknown 四种状态
+- 自动回滚验证: 健康部署→成功; 失败部署→自动回滚; 部署幂等性
+- 手动触发主从切换和自动切回恢复
+
+**容灾关键场景**:
+1. 主区域故障 → 备区域接管 ✅
+2. 多区域同时故障 → 降级到剩余活跃区域 ✅
+3. 全部区域故障 → 503 Service Unavailable ✅
+4. 降级区域恢复 → 自动切回最高优先级 ✅
+5. 部署失败 → 自动回滚触发 ✅
+
+### 模式11: 内容运营全链路 (链31 · 20 subtests)
+```
+Content CRUD → Brand Template → I18n Translate → Multimedia Embed → Publish
+```
+
+**设计要点**:
+- 内容创建/读取/更新/版本控制 (version 递增)
+- 品牌模板创建/查询/缺失品牌名拒绝
+- 国际化多语言翻译: 占位符保留、不支持locale警告、6+locale覆盖
+- 多媒体上传/查询/适配/超大文件拒绝
+- 全链路: 创建内容→应用模板→翻译多语言→嵌入媒体→发布
+
+## 内联 Domain 模拟模式 (Pulse-Nightly-10 新增)
+
+当真实 NestJS 模块导入失败或依赖复杂时, 可采用自包含 inline domain 模拟:
+
+```typescript
+// ====== Domain 层: IoT ======
+interface IoTDeviceData { deviceId: string; metrics: Record<string, number>; status: DeviceStatus }
+const iotStore: IoTDeviceData[] = []
+function resetIoTStore(): void { iotStore.length = 0 }
+function recordIoTData(d: IoTDeviceData): { success: boolean; warnings?: string[] } {
+  if (!d.deviceId) return { success: false, warnings: ['deviceId is required'] }
+  iotStore.push(d)
+  return { success: true }
+}
+
+beforeEach(() => resetIoTStore())
+
+describe('Phase 1: IoT 数据采集', () => {
+  it('[正例] ...', () => { /* ... */ })
+  it('[反例] ...', () => { /* ... */ })
+  it('[边界] ...', () => { /* ... */ })
+})
+
+// ... 多个 Phase -> 全链路集成
+```
+
+**适用原则**:
+1. 每个 domain 模拟层必须暴露统一的 reset 函数 (便于 beforeEach 清理)
+2. 测试按 Phase 分组 (Phase 1 单个模块 → Phase N 全链路集成)
+3. 每个子场景覆盖正例·反例·边界三元组
+4. 全链路 Phase 需 sequentially 调用多个 domain 函数
 
 ## 关联文档
 - [patterns/quota-guard.md](../patterns/quota-guard.md) · 业务实现
