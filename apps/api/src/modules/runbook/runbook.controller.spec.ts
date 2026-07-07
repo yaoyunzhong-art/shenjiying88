@@ -9,6 +9,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { NotFoundException } from '@nestjs/common'
 import { RunbookController } from './runbook.controller'
+import { RunbookService } from './runbook.service'
 import type { Runbook, AlertMapping } from './runbook.entity'
 
 describe('RunbookController', () => {
@@ -93,7 +94,12 @@ describe('RunbookController', () => {
         if (!runbook.lastTestedAt) warnings.push('尚未测试过')
         return { valid: errors.length === 0, errors, warnings }
       },
-    }
+      generateExecutionReport: (runbookId: string, executionLog: any[]) => {
+        const runbook = store.get(runbookId)
+        if (!runbook) throw new Error(`Runbook not found: ${runbookId}`)
+        return `# Runbook 执行报告\n\n**Runbook**: ${runbook.title}\n`
+      },
+    } as any as RunbookService
   }
 
   const makeCreateDto = (overrides: any = {}) => ({
@@ -304,7 +310,12 @@ describe('RunbookController', () => {
 
     it('反例: 空的 ID 处理', () => {
       const svc = createMockService()
-      svc.get = (id: string) => id === '' ? null : { id, title: 'ok' }
+      svc.get = (id: string) => id === '' ? null : {
+        id, title: 'ok', category: 'deployment' as const,
+        severity: 'high' as const, applicableVersions: [], prerequisites: [],
+        steps: [], estimatedTotalMinutes: 10, status: 'draft' as const,
+        tags: [], createdAt: new Date(), updatedAt: new Date(),
+      } as Runbook
       const ctrl = new RunbookController(svc)
 
       expect(() => ctrl.get('')).toThrow(NotFoundException)
