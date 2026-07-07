@@ -420,3 +420,48 @@ export class SDKMultiLangService {
     return `${base}/${appId}/sdk-${version}.zip`;
   }
 }
+
+// ── SandboxIsvService ───────────────────────────────────────────────────────────
+// ISV 沙箱环境服务：为 ISV 开发者提供沙箱化的应用测试环境
+
+@Injectable()
+export class SandboxIsvService {
+  private readonly logger = new Logger(SandboxIsvService.name);
+  private readonly isvSandboxes = new Map<string, { isvId: string; sandboxId: string; appId: string; createdAt: string; config: Record<string, unknown> }>();
+
+  /**
+   * 初始化 ISV 沙箱
+   */
+  initializeIsvSandbox(
+    isvId: string,
+    config: { appId: string },
+  ): { sandboxId: string } {
+    const sandboxId = `isv-sandbox-${randomUUID().substring(0, 8)}`;
+    const record = {
+      isvId,
+      sandboxId,
+      appId: config.appId,
+      createdAt: new Date().toISOString(),
+      config: config as unknown as Record<string, unknown>,
+    };
+    this.isvSandboxes.set(isvId, record);
+    this.logger.log(`[SandboxIsvService] initialized isv=${isvId} sandbox=${sandboxId} app=${config.appId}`);
+    return { sandboxId };
+  }
+
+  /**
+   * 重置 ISV 沙箱数据
+   */
+  resetSandbox(isvId: string): boolean {
+    const record = this.isvSandboxes.get(isvId);
+    if (!record) {
+      this.logger.warn(`[SandboxIsvService] isv=${isvId} not found`);
+      return false;
+    }
+    // 重设配置（保留 isvId 和 appId）
+    const newConfig = { ...record.config, resetAt: new Date().toISOString() };
+    record.config = newConfig;
+    this.logger.log(`[SandboxIsvService] reset isv=${isvId}`);
+    return true;
+  }
+}

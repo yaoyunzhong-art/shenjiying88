@@ -3,11 +3,11 @@
 
 import { Module } from '@nestjs/common';
 import { SandboxController } from './sandbox.controller';
-import { SandboxService, ISVAppStore, SDKMultiLangService } from './sandbox-isv.service';
+import { SandboxService, ISVAppStore, SDKMultiLangService, SandboxIsvService } from './sandbox-isv.service';
 
 @Module({
   controllers: [SandboxController],
-  providers: [SandboxService, ISVAppStore, SDKMultiLangService],
-  exports: [SandboxService, ISVAppStore, SDKMultiLangService],
+  providers: [SandboxService, ISVAppStore, SDKMultiLangService, SandboxIsvService],
+  exports: [SandboxService, ISVAppStore, SDKMultiLangService, SandboxIsvService],
 })
 export class SandboxModule {}

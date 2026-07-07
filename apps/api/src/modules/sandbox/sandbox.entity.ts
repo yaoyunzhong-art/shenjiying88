@@ -19,4 +19,5 @@ export {
   SandboxService,
   ISVAppStore,
   SDKMultiLangService,
+  SandboxIsvService,
 } from './sandbox-isv.service';
