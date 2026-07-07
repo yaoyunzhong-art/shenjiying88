@@ -17,9 +17,9 @@ import { AuditService } from './audit.service'
 import type { AuditQuery } from './audit.service'
 
 // ── 测试辅助：创建审计日志并追加时间偏移 ──
-function createEvent(overrides: Partial<any> = {}) {
+function createEvent(overrides: Partial<Record<string, unknown>> = {}) {
   return {
-    eventType: 'auth.login',
+    eventType: 'auth.login' as const,
     actorId: 'test_user',
     actorType: 'user' as const,
     riskLevel: 'low' as const,

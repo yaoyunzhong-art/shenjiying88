@@ -6,9 +6,14 @@ import type {
   InventoryItem,
   InventoryReservation,
   InventoryAuditEntry,
+} from './inventory-item.entity'
+import type {
   CreateInventoryItemInput,
   UpdateInventoryItemInput,
-} from './inventory-item.entity'
+  StockOpInput,
+  AdjustInput,
+  ReserveInput,
+} from './inventory-item.service'
 
 /** 伪 service — 全 mock, 仅验证 controller → service 委托 + 参数传递 */
 function mockService() {
@@ -26,7 +31,7 @@ function mockService() {
     getReservationById:  vi.fn(),
     getLowStock:         vi.fn(),
     getAuditLog:         vi.fn(),
-  } satisfies Partial<InventoryItemService> as unknown as InventoryItemService
+  }
 }
 
 type Svc = ReturnType<typeof mockService>
