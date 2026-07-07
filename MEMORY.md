@@ -1,6 +1,6 @@
 # 🧠 shenjiying88 长期知识 (MEMORY.md)
 
-> 最后更新: 2026-07-08 05:30 CST (晨间收尾 · Pulse-Nightly-10 · 31链 · 62 subtests 🟢)
+> 最后更新: 2026-07-09 05:50 CST (晨间收尾 · Pulse-Nightly-11 · 31链 · 62+ subtests 🟢 · 全模块首次计数: 14,855)
 > 维护者: 龙虾哥 测试指挥官
 
 ---
@@ -110,9 +110,9 @@
 
 ---
 
-## 📅 行动计划 (Pulse-Nightly-11 目标)
+## 📅 行动计划 (Pulse-Nightly-12 目标)
 
-### E2E 链扩展 31→34
+### E2E 链扩展 31→35 (下轮)
 | 链 | 模式 | 描述 |
 |:--:|------|------|
 | #32 | 真实 HTTP 集成升级 | 将链29-31 从内联domain升级为真实 Nest TestingModule |
@@ -127,14 +127,15 @@
 ### 知识迭代
 - expert-insights E31/E32
 
-### Pulse-Nightly-10 Runtime 沉淀
-- **新增 IoT Operator / SRE-DevOps / Content Manager 角色视角**
-- **内联 Domain 模拟模式**: 当真实 NestJS 模块导入失败时，使用自包含 inline domain 模拟层，配合统一 reset 函数和 Phase 分组测试
-- **持续债务**: @m5/api timeout (P0-007 30+脉冲)、TSC 73 errors (P0-009)、full-regression false positive (P1-022)
+### Pulse-Nightly-11 Runtime 沉淀
+- **全模块首次完整计数: 14,855/0** (pulse#196) — 首次所有模块测试总数完整统计
+- **#195验收**: 无新fail, 闭环成功, 凌晨3段全通过
+- **新增测试文件**: booking-data.test.ts (44项) + reviews-data.test.ts (40项) + 多模块 controller/entity/dto 补全
+- **持续债务**: @m5/api timeout (P0-007 30+脉冲)、TSC ~59 errors、full-regression false positive (P1-022)
 
 ---
 
-## 🦞 知识沉淀 (晨间收尾 · 2026-07-08 05:30)
+## 🦞 知识沉淀 (晨间收尾 · 2026-07-09 05:50)
 
 ### 凌晨03:30后新增模块知识
 - **IoT+Edge+Realtime+Lineage 集成 (链29)**: 物联网数据管道 E2E 模式成熟，覆盖数据采集→推理→协同→血缘→告警全链路，20 subtests 全绿
@@ -150,3 +151,56 @@
 - 测试体系分层: 非api包（持续全绿）独立于api包（持续有全量回归问题）
 - 非api包已连续 10+ 脉冲全绿，隔离性稳定性已成熟
 - 验收双轨制: 非api绿即可验收通过，api包 false positive 不计入验收阻塞
+
+---
+
+## 📊 凌晨测试综合报告 (2026-07-09 05:50)
+
+### 总体态势
+| 指标 | 数值 |
+|------|------|
+| 凌晨总提交 | 238 commits |
+| 产出代码行 (HEAD~10) | +4,168 / -572 |
+| 🐜 自动测试提交 | 220 commits |
+| 🐛 缺陷修复提交 | 17 commits |
+| 🦞 验收脉冲 | 11次 (pulse#174→pulse#196) |
+| 总测试数 | 25,075 (14,855 全模块首次完整计数) |
+| 新增测试文件 | ~12个 |
+
+### 第1段 全量回归结果 (21:00-23:33)
+- **范围**: pulse#180 → pulse#185
+- **提交数**: 51 commits
+- **测试成果**: 3850 tests → 0 fail (全绿)
+- **关键验收**: pulse#185 ✅ [闭环:#184→无派单] [测试:3850→0fail]
+- **内容**: 全量回归 + TSC修复 + A类型 service.spec 深层单元测试
+
+### 第2段 角色测试覆盖率 (23:33-04:23)
+- **范围**: pulse#185 → pulse#194
+- **提交数**: 174 commits (凌晨主力段)
+- **关键验收**: pulse#189 ✅ (静默·6轮0 fail全缓存) → pulse#190 ✅ (测试3956 ↑92) → pulse#194 ✅ (6个自动commit全通过)
+- **新增洞察**: pulse-nightly-11
+- **内容**: C类型8角色扩展测试 + 前端B/D页面创建 + controller/entity/dto 补全 + 多模块 TSC 修复
+
+### 第3段 E2E测试结果 (04:23-05:50)
+- **范围**: pulse#194 → pulse#196
+- **提交数**: 13 commits
+- **测试成果**: 14,855/0 fail (全模块首次完整计数)
+- **关键验收**: pulse#196 ✅ [闭环:#195无新fail] [全模块首次完整计数:14855/0]
+- **新增内容**:
+  - booking-data.test.ts 44项 | reviews-data.test.ts 40项
+  - ai-forecast controller spec 补全
+  - edge controller test (28项全通过)
+  - audit entity.test & dto.test 缺失文件
+  - open-api C类型8角色测试补全
+  - FeedbackList组件 9项SSR测试
+  - QualityInspectorDashboard
+  - chaos-engineering dto+module测试补全
+
+### 总计
+| 指标 | 数值 |
+|------|------|
+| 新增测试(估算) | ~520+ (测试数 3850→14,855 覆盖扩展) |
+| 发现缺陷 | 25个(含17🐛修复+其他TSC修复) |
+| 修复缺陷 | 25个(全部闭环) |
+| 持续债务 | P0: api timeout + full-regression false positive + TSC ~59 errors |
+| 1-test文件待填充 | 128个 |
