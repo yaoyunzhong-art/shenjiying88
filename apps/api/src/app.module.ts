@@ -101,6 +101,7 @@ import { LowcodeModule } from './modules/lowcode/lowcode.module';
 import { SandboxModule } from './modules/sandbox/sandbox.module';
 import { DocModule } from './modules/docs/doc.module';
 import { ContentModule } from './modules/content/content.module';
+import { SessionModule } from './modules/session/session.module';
 
 @Module({
   imports: [
@@ -214,6 +215,7 @@ import { ContentModule } from './modules/content/content.module';
     SandboxModule,
     DocModule,
     ContentModule,
+    SessionModule,
   ],
   providers: [
     RequestGovernanceService,
