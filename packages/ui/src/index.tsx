@@ -703,6 +703,13 @@ export type {
   InsightItem,
   TrendDirection,
 } from './components/AISummaryCard';
+export { AISuggestionCard } from './components/AISuggestionCard';
+export type {
+  AISuggestionCardProps,
+  SuggestionItem,
+  SuggestionPriority,
+  SuggestionSource,
+} from './components/AISuggestionCard';
 export { AIPricingRecommendationPanel } from './components/AIPricingRecommendationPanel';
 export type {
   AIPricingRecommendationPanelProps,
