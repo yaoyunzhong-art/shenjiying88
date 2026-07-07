@@ -5,13 +5,14 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { TournamentController } from './tournament.controller'
+import { TournamentService } from './tournament.service'
+import {
+  TournamentType,
+  TournamentStatus,
+} from './tournament.entity'
+
 describe('TournamentController', () => {
-  const { TournamentController } = require('./tournament.controller')
-  const { TournamentService } = require('./tournament.service')
-  const {
-    TournamentType,
-    TournamentStatus,
-  } = require('./tournament.entity')
 
   let controller: InstanceType<typeof TournamentController>
   let service: InstanceType<typeof TournamentService>
