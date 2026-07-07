@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 /**
  * 🐜 自动: [open-api] [C] 角色测试
  * 
- * 8 角色视角的 open-api 多系统对接模块测试：
+ * 8 角色视角的 open-api 模块测试：
  * 👔店长 🛒前台 👥HR 🔧安监 🎮导玩员 🎯运行专员 🤝团建 📢营销
  * 
  * 每个角色至少 2 个测试用例（正常流程 + 权限边界）
@@ -10,583 +10,427 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import * as crypto from 'node:crypto'
 import { OpenApiController } from './open-api.controller'
 import { OpenApiService } from './open-api.service'
+import type { Request } from 'express'
 import { runWithTenant } from '../../common/context/tenant-context'
 
 // ── 角色定义 ──
 const ROLES = {
-  StoreManager:  '👔店长',
-  FrontDesk:     '🛒前台',
-  HR:            '👥HR',
-  Security:      '🔧安监',
-  Guide:         '🎮导玩员',
-  Operations:    '🎯运行专员',
-  Teambuilding:  '🤝团建',
-  Marketing:     '📢营销',
+  StoreManager: '👔店长',
+  FrontDesk: '🛒前台',
+  HR: '👥HR',
+  Security: '🔧安监',
+  Guide: '🎮导玩员',
+  Operations: '🎯运行专员',
+  Teambuilding: '🤝团建',
+  Marketing: '📢营销',
 } as const
 
-type RoleName = keyof typeof ROLES
-
-// ── 权限矩阵：每个角色可访问的操作 ──
-interface RoleCaps {
-  canAuth: boolean
-  canVerify: boolean
-  canSyncRead: boolean
-  canSyncWrite: boolean
-  canSyncBulk: boolean
-  canCommandSend: boolean
-  canCommandStatus: boolean
-  canListClients: boolean
-  syncScope: string[]
+const TENANT = {
+  tenantId: 't-role-test',
+  storeId: 'store-001',
+  userId: 'role-test-user',
+  role: 'tenant_admin' as const,
 }
 
-const ROLE_CAPABILITIES: Record<RoleName, RoleCaps> = {
-  StoreManager: {
-    canAuth: true,
-    canVerify: true,
-    canSyncRead: true,
-    canSyncWrite: true,
-    canSyncBulk: false,
-    canCommandSend: true,
-    canCommandStatus: true,
-    canListClients: true,
-    syncScope: ['auth:read', 'sync:read', 'sync:write', 'command:send', 'command:status'],
-  },
-  FrontDesk: {
-    canAuth: true,
-    canVerify: false,
-    canSyncRead: true,
-    canSyncWrite: true,
-    canSyncBulk: false,
-    canCommandSend: false,
-    canCommandStatus: false,
-    canListClients: false,
-    syncScope: ['sync:read', 'sync:write'],
-  },
-  HR: {
-    canAuth: true,
-    canVerify: false,
-    canSyncRead: true,
-    canSyncWrite: false,
-    canSyncBulk: false,
-    canCommandSend: false,
-    canCommandStatus: false,
-    canListClients: false,
-    syncScope: ['sync:read'],
-  },
-  Security: {
-    canAuth: true,
-    canVerify: true,
-    canSyncRead: false,
-    canSyncWrite: false,
-    canSyncBulk: false,
-    canCommandSend: false,
-    canCommandStatus: false,
-    canListClients: true,
-    syncScope: ['auth:verify'],
-  },
-  Guide: {
-    canAuth: true,
-    canVerify: false,
-    canSyncRead: true,
-    canSyncWrite: false,
-    canSyncBulk: false,
-    canCommandSend: false,
-    canCommandStatus: false,
-    canListClients: false,
-    syncScope: ['sync:read'],
-  },
-  Operations: {
-    canAuth: true,
-    canVerify: true,
-    canSyncRead: true,
-    canSyncWrite: true,
-    canSyncBulk: true,
-    canCommandSend: true,
-    canCommandStatus: true,
-    canListClients: false,
-    syncScope: ['sync:read', 'sync:write', 'sync:bulk', 'command:send', 'command:status'],
-  },
-  Teambuilding: {
-    canAuth: true,
-    canVerify: false,
-    canSyncRead: true,
-    canSyncWrite: false,
-    canSyncBulk: false,
-    canCommandSend: false,
-    canCommandStatus: false,
-    canListClients: false,
-    syncScope: ['sync:read'],
-  },
-  Marketing: {
-    canAuth: true,
-    canVerify: false,
-    canSyncRead: true,
-    canSyncWrite: true,
-    canSyncBulk: false,
-    canCommandSend: false,
-    canCommandStatus: false,
-    canListClients: false,
-    syncScope: ['sync:read', 'sync:write'],
-  },
+const CLIENT_ID = 'cli-merchant-001'
+const CLIENT_SECRET = 'test-secret'
+const HMAC_SECRET = 'hmac-merchant-001-secret'
+
+// ── HMAC 签名辅助函数 ──
+function hmacSign(method: string, path: string, ts: string, body: object | string): string {
+  const bodyStr = typeof body === 'string' ? body : JSON.stringify(body)
+  const bodyHash = crypto.createHash('sha256').update(bodyStr).digest('hex')
+  const payload = `${method.toUpperCase()}\n${path}\n${ts}\n${bodyHash}`
+  return 'sha256=' + crypto.createHmac('sha256', HMAC_SECRET).update(payload).digest('hex')
 }
 
-// ── 测试工具 ──
-
-interface RoleTestContext {
-  controller: OpenApiController
-  service: OpenApiService
-  clientId: string
-  clientSecret: string
+// ── Mock 辅助 ──
+function mockReq(ip = '127.0.0.1'): Request {
+  return {
+    headers: { 'x-forwarded-for': ip },
+    socket: { remoteAddress: ip },
+  } as unknown as Request
 }
 
-/** Wrap a call with a test tenant context and bearer token */
-async function withTenant<T>(fn: () => Promise<T>, bearerToken?: string): Promise<T> {
-  return runWithTenant({
-    tenantId: 'test-tenant',
-    userId: 'test-user',
-    role: 'admin',
-    bearerToken: bearerToken ?? '' as any,
-  } as any, fn)
-}
-
-/**
- * Authenticate with scopes, then run the callback within tenant context
- * that includes the access token so getBearerFromCtx() works.
- */
-async function withAuth<T>(service: OpenApiService, clientId: string, clientSecret: string, scopes: string[], fn: (token: string) => Promise<T>): Promise<T> {
-  const authResp = await service.authenticate(clientId, clientSecret, scopes)
-  await service.verifyToken(authResp.accessToken)
-  return withTenant(() => fn(authResp.accessToken), authResp.accessToken)
-}
-
-function createContext(scopes: string[]): RoleTestContext {
-  const service = new OpenApiService()
-  const controller = new OpenApiController(service)
-  // Force seed: auth with merchant client
-  const clientId = 'cli-merchant-001'
-  const clientSecret = 'test-secret'
-  return { controller, service, clientId, clientSecret }
-}
-
-/**
- * Helper: 发送 auth 请求拿到 token
- * controller.authenticate 内部会抛 Error("IP not whitelisted")，但底层 service.authenticate
- * 只抛 NestJS 异常。为了测试角色能力我们不经过真实 controller，直接调用 service。
- */
-async function authWithScope(
-  service: OpenApiService,
-  clientId: string,
-  clientSecret: string,
-  scopes: string[],
-) {
-  // 跳过 IP 白名单，使用 service 直接 auth
-  const token = await service.authenticate(clientId, clientSecret, scopes)
-
-  // 往 service 注入 bearer token 上下文
-  // 通过 verifyToken 模拟鉴权上下文
-  const verified = await service.verifyToken(token.accessToken)
-  return { token, verified }
-}
-
-/**
- * Run a test callback within a tenant context that also carries the
- * bearer token so getBearerFromCtx() works.
- */
-async function runWithBearer<T>(bearerToken: string, fn: () => Promise<T>): Promise<T> {
-  return runWithTenant({
-    tenantId: 'test-tenant',
-    userId: 'test-user',
-    role: 'admin',
-    bearerToken,
-  } as any, fn)
+// ── 测试夹具 ──
+function freshService() {
+  return new OpenApiService()
 }
 
 // ── 👔店长 ──
-describe('👔店长 (StoreManager)', () => {
-  it('正常流程: OAuth 认证 → 同步数据 → 下发指令', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.StoreManager.syncScope)
-    const { token } = await authWithScope(ctx.service, ctx.clientId, ctx.clientSecret, ROLE_CAPABILITIES.StoreManager.syncScope)
+describe(`${ROLES.StoreManager} open-api 角色测试`, () => {
+  it('店长通过开放接口查询已注册的客户端列表（运营管理）', async () => {
+    const ctrl = new OpenApiController(freshService())
 
-    await runWithBearer(token.accessToken, async () => {
-      assert.ok(token.accessToken, '应颁发 access_token')
-      assert.equal(token.tokenType, 'Bearer')
-      assert.ok(token.scope.includes('sync:write'), '应有 sync:write scope')
-      assert.ok(token.scope.includes('command:send'), '应有 command:send scope')
+    const result = await runWithTenant(TENANT, async () =>
+      ctrl.listClients('tenant-A'),
+    )
+    const clients = (result as { data: unknown[] }).data
 
-      // 同步数据
-      const syncResult = await ctx.service.handleSync(ctx.clientId, {
-        resourceType: 'order',
-        action: 'create',
-        data: { orderId: 'ord-001', amount: 99.99 },
-        businessKey: 'bk-order-001',
-        timestamp: new Date().toISOString(),
-      })
-      assert.ok(syncResult.accepted, '同步应被接受')
-      assert.equal(syncResult.businessKey, 'bk-order-001')
-
-      // 下发指令
-      const cmd = await ctx.service.sendCommand(ctx.clientId, {
-        commandType: 'print_receipt',
-        targetDeviceId: 'printer-01',
-        params: { orderId: 'ord-001' },
-        priority: 'normal',
-      })
-      assert.ok(cmd.id, '应生成指令 ID')
-      assert.equal(cmd.status, 'success')
-    })
+    assert.ok(Array.isArray(clients))
+    assert.equal(clients.length, 1)
+    const client = clients[0] as { clientId: string; name: string; status: string }
+    assert.equal(client.clientId, 'cli-merchant-001')
+    assert.equal(client.status, 'active')
   })
 
-  it('权限边界: 店长不能批量同步（sync:bulk）', async () => {
-    // 使用有限的客户端验证边界: cli-partner-pos 有 sync:bulk, cli-merchant-001 原无 sync:bulk
-    // 用 pos 客户端请求完全授权后仍受限于 client scopes
-    const service = new OpenApiService()
-    const limitedClientId = 'cli-partner-pos'
-    const limitedScopes = ['sync:read', 'sync:bulk']
-    const token = await service.authenticate(limitedClientId, 'test-secret', limitedScopes)
-    assert.ok(token.scope.includes('sync:bulk'), 'POS 客户端有 sync:bulk')
-    assert.ok(!token.scope.includes('command:send'), 'POS 无 command:send')
+  it('店长尝试用错误密钥获取 token 应被拒绝（权限边界）', async () => {
+    const ctrl = new OpenApiController(freshService())
+    const req = mockReq('127.0.0.1')
 
-    // cli-partner-pos 不能申请 command:send
-    try {
-      await service.authenticate('cli-partner-pos', 'test-secret', ['command:send'])
-      assert.fail('应拒绝 command:send scope')
-    } catch (e: any) {
-      assert.ok(e.response?.errorDescription === 'No valid scope', '应返回 No valid scope')
-    }
-  })
-
-  it('权限边界: 店长可列出客户端', () => {
-    const ctx = createContext(ROLE_CAPABILITIES.StoreManager.syncScope)
-    const clients = ctx.service.listClients('tenant-A')
-    assert.ok(Array.isArray(clients), '应为数组')
-    assert.ok(clients.length > 0, '应至少有一个客户端')
-
-    const client = ctx.service.getClient('cli-merchant-001')
-    assert.ok(client, '应能找到商户客户端')
-    assert.equal(client?.name, '商户系统 1')
+    await assert.rejects(
+      () =>
+        runWithTenant(TENANT, async () =>
+          ctrl.authenticate(
+            { client_id: CLIENT_ID, client_secret: 'wrong-secret' },
+            req,
+          ),
+        ),
+      (err: any) => {
+        return err.response?.error === 'invalid_client'
+      },
+    )
   })
 })
 
 // ── 🛒前台 ──
-describe('🛒前台 (FrontDesk)', () => {
-  it('正常流程: 认证 → 同步订单数据', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.FrontDesk.syncScope)
-    const { token } = await authWithScope(ctx.service, ctx.clientId, ctx.clientSecret, ROLE_CAPABILITIES.FrontDesk.syncScope)
+describe(`${ROLES.FrontDesk} open-api 角色测试`, () => {
+  it('前台通过 OAuth 获取 token 后调用 sync 同步数据', async () => {
+    const service = freshService()
+    const ctrl = new OpenApiController(service)
 
-    assert.ok(token.accessToken, '前台应能获取 token')
-    assert.ok(token.scope.includes('sync:read'), '应有 sync:read')
-    assert.ok(token.scope.includes('sync:write'), '应有 sync:write')
+    const tokenResp = await service.authenticate(CLIENT_ID, CLIENT_SECRET, [])
+    const syncPayload = {
+      resourceType: 'member',
+      action: 'create' as const,
+      data: { name: '张三', phone: '13800138000' },
+      businessKey: 'bk-001',
+      timestamp: new Date().toISOString(),
+    }
+    const ts = Date.now().toString()
+    const sig = hmacSign('POST', '/open/sync', ts, syncPayload)
 
-    // 读操作
-    const readToken = await ctx.service.verifyToken(token.accessToken)
-    assert.equal(readToken.clientId, ctx.clientId)
+    const result = await runWithTenant(
+      { ...TENANT, bearerToken: tokenResp.accessToken } as any,
+      async () => {
+        return ctrl.sync(
+          syncPayload,
+          `Bearer ${tokenResp.accessToken}`,
+          CLIENT_ID,
+          sig,
+          ts,
+          mockReq('192.168.1.100'),
+        )
+      },
+    )
+    assert.ok((result as { accepted: boolean }).accepted)
   })
 
-  it('权限边界: 前台不可下发指令或批量同步', async () => {
-    assert.ok(!ROLE_CAPABILITIES.FrontDesk.canCommandSend, '前台不应可下发指令')
-    assert.ok(!ROLE_CAPABILITIES.FrontDesk.canSyncBulk, '前台不应可批量同步')
+  it('前台使用 IP 不在白名单的客户端认证应被拒绝（权限边界）', async () => {
+    const ctrl = new OpenApiController(freshService())
 
-    // 无权限客户端无法申请高权限 scope
-    const service = new OpenApiService()
-    try {
-      await service.authenticate('cli-partner-pos', 'test-secret', ['command:send'])
-      assert.fail('应拒绝 command:send scope')
-    } catch (e: any) {
-      assert.ok(e.response?.errorDescription === 'No valid scope', '应返回无权限错误')
-    }
-
-    // cli-partner-pos 可以申请 sync:bulk（它有）
-    const token = await service.authenticate('cli-partner-pos', 'test-secret', ['sync:bulk'])
-    assert.ok(token.scope.includes('sync:bulk'), 'POS 有 sync:bulk')
+    await assert.rejects(
+      () =>
+        runWithTenant(TENANT, async () =>
+          ctrl.authenticate(
+            { client_id: CLIENT_ID, client_secret: CLIENT_SECRET },
+            mockReq('10.0.0.99'),
+          ),
+        ),
+      (err: any) => String(err).includes('IP not whitelisted'),
+    )
   })
 })
 
 // ── 👥HR ──
-describe('👥HR (HumanResources)', () => {
-  it('正常流程: 认证 → 读取人员同步数据', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.HR.syncScope)
-    const { token } = await authWithScope(ctx.service, ctx.clientId, ctx.clientSecret, ROLE_CAPABILITIES.HR.syncScope)
+describe(`${ROLES.HR} open-api 角色测试`, () => {
+  it('HR 验证开放 API 返回的 token 有效性（员工管理对接）', async () => {
+    const service = freshService()
+    const ctrl = new OpenApiController(service)
 
-    assert.ok(token.accessToken, 'HR 应能获取 token')
-    assert.ok(token.scope.includes('sync:read'), '应有 sync:read')
-    assert.ok(!token.scope.includes('sync:write'), '不应有 sync:write')
+    const result = await runWithTenant(TENANT, async () => {
+      const tokenResp = await ctrl.authenticate(
+        { client_id: CLIENT_ID, client_secret: CLIENT_SECRET },
+        mockReq('192.168.1.50'),
+      ) as { accessToken: string }
+
+      const verifyResp = await ctrl.verify({ access_token: tokenResp.accessToken })
+      const verified = verifyResp as { accessToken: string; clientId: string }
+      assert.equal(verified.clientId, CLIENT_ID)
+      return verified
+    })
+    assert.ok(result)
   })
 
-  it('权限边界: HR 不可写数据、不可指令下发', async () => {
-    assert.ok(!ROLE_CAPABILITIES.HR.canSyncWrite, 'HR 不可写同步')
-    assert.ok(!ROLE_CAPABILITIES.HR.canCommandSend, 'HR 不可发指令')
+  it('HR 验证伪造的 token 应报错（权限边界）', async () => {
+    const ctrl = new OpenApiController(freshService())
 
-    // 无权限客户端无法申请 sync:write
-    const service = new OpenApiService()
-    try {
-      await service.authenticate('cli-partner-pos', 'test-secret', ['sync:write'])
-      assert.fail('应拒绝 sync:write')
-    } catch (e: any) {
-      assert.ok(e.response?.errorDescription === 'No valid scope', '应返回 No valid scope')
-    }
+    await assert.rejects(
+      () =>
+        runWithTenant(TENANT, async () =>
+          ctrl.verify({ access_token: 'fake-token-12345' }),
+        ),
+      (err: any) => err.response?.error === 'invalid_token',
+    )
   })
 })
 
 // ── 🔧安监 ──
-describe('🔧安监 (Security)', () => {
-  it('正常流程: 认证 → 验证 Token → 管理客户端', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.Security.syncScope)
-    const { token } = await authWithScope(ctx.service, ctx.clientId, ctx.clientSecret, ROLE_CAPABILITIES.Security.syncScope)
+describe(`${ROLES.Security} open-api 角色测试`, () => {
+  it('安监验证 HMAC 签名错误的请求被正确拦截', async () => {
+    const service = freshService()
 
-    assert.ok(token.accessToken, '安监应能获取 token')
-    assert.ok(token.scope.includes('auth:verify'), '应有 auth:verify')
-
-    // 验证其他 client token
-    const verified = await ctx.service.verifyToken(token.accessToken)
-    assert.ok(verified, '应能验证 token')
-    assert.equal(verified.clientId, ctx.clientId)
-
-    // 管理客户端列表
-    const clients = ctx.service.listClients('tenant-A')
-    assert.ok(Array.isArray(clients))
-    assert.ok(clients.length >= 1)
+    const verified = service.verifyHmacSignature(
+      CLIENT_ID,
+      'POST',
+      '/open/sync',
+      String(Date.now()),
+      '{"test":true}',
+      'sha256=invalid_wrong_signature',
+    )
+    assert.equal(verified, false)
   })
 
-  it('权限边界: 安监不可同步数据', async () => {
-    assert.ok(!ROLE_CAPABILITIES.Security.canSyncRead, '安监不可读同步')
-    assert.ok(!ROLE_CAPABILITIES.Security.canSyncWrite, '安监不可写同步')
-    assert.ok(!ROLE_CAPABILITIES.Security.canCommandSend, '安监不可发指令')
+  it('安监校验时间戳超出 5 分钟窗口的请求被拒绝（防重放）', async () => {
+    const service = freshService()
+    const sixMinAgo = String(Date.now() - 6 * 60 * 1000)
 
-    // 无权限客户端无法申请 sync:write
-    const service = new OpenApiService()
-    try {
-      await service.authenticate('cli-partner-pos', 'test-secret', ['sync:write'])
-      assert.fail('应拒绝 sync:write')
-    } catch (e: any) {
-      assert.ok(e.response?.errorDescription === 'No valid scope', '应返回无权限错误')
-    }
-  })
-
-  it('正常流程: IP 白名单校验', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.Security.syncScope)
-
-    // 白名单内的 IP 通过
-    const allowed = ctx.service.verifyIpWhitelist(ctx.clientId, '127.0.0.1')
-    assert.ok(allowed, '127.0.0.1 应在白名单内')
-
-    // 白名单外 IP 拒绝
-    const denied = ctx.service.verifyIpWhitelist(ctx.clientId, '10.0.0.1')
-    assert.ok(!denied, '10.0.0.1 不应在白名单内')
-
-    // CIDR 子网匹配
-    const cidrAllowed = ctx.service.verifyIpWhitelist(ctx.clientId, '192.168.1.55')
-    assert.ok(cidrAllowed, '192.168.1.x 应在白名单内')
+    const verified = service.verifyHmacSignature(
+      CLIENT_ID,
+      'POST',
+      '/open/sync',
+      sixMinAgo,
+      '{}',
+      'sha256=whatever',
+    )
+    assert.equal(verified, false)
   })
 })
 
 // ── 🎮导玩员 ──
-describe('🎮导玩员 (Guide)', () => {
-  it('正常流程: 认证 → 读取设备状态(只读)', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.Guide.syncScope)
-    const { token } = await authWithScope(ctx.service, ctx.clientId, ctx.clientSecret, ROLE_CAPABILITIES.Guide.syncScope)
+describe(`${ROLES.Guide} open-api 角色测试`, () => {
+  it('导玩员通过开放 API 向设备下发指令（操控设备）', async () => {
+    const service = freshService()
+    const ctrl = new OpenApiController(service)
 
-    assert.ok(token.accessToken, '导玩员应能获取 token')
-    assert.ok(token.scope.length > 0, '应有至少一个 scope')
-    assert.ok(!token.scope.includes('sync:write'), '不应有写权限')
+    const result = await runWithTenant(TENANT, async () => {
+      const tokenResp = await service.authenticate(CLIENT_ID, CLIENT_SECRET, [])
+      // 要通过 tenantContext 设置 bearerToken
+      return await runWithTenant(
+        { ...TENANT, bearerToken: tokenResp.accessToken } as any,
+        async () => {
+          const cmdPayload = {
+            commandType: 'reboot',
+            targetDeviceId: 'device-game-01',
+            params: { reason: 'routine_reset' },
+            priority: 'normal' as const,
+          }
+          const ts = Date.now().toString()
+          const sig = hmacSign('POST', '/open/command', ts, cmdPayload)
+
+          const cmdResp = await ctrl.command(
+            cmdPayload,
+            `Bearer ${tokenResp.accessToken}`,
+            CLIENT_ID,
+            sig,
+            ts,
+            'idem-001',
+            mockReq('192.168.1.100'),
+          )
+          return cmdResp
+        },
+      )
+    })
+
+    const cmd = result as { id: string; status: string; commandType: string }
+    assert.ok(cmd.id)
+    assert.equal(cmd.status, 'success')
+    assert.equal(cmd.commandType, 'reboot')
   })
 
-  it('权限边界: 导玩员不可写同步、不可指令下发、不可列出客户端', async () => {
-    assert.ok(!ROLE_CAPABILITIES.Guide.canSyncWrite, '导玩员不可写')
-    assert.ok(!ROLE_CAPABILITIES.Guide.canCommandSend, '导玩员不可发指令')
-    assert.ok(!ROLE_CAPABILITIES.Guide.canListClients, '导玩员不可列客户端')
+  it('导玩员下发指令超出限频 QPS 上限应返回 rate_limited（边界）', async () => {
+    const service = freshService()
+    const ctrl = new OpenApiController(service)
+
+    const tokenResp = await service.authenticate(CLIENT_ID, CLIENT_SECRET, [])
+
+    const rateLimited = await runWithTenant(
+      { ...TENANT, bearerToken: tokenResp.accessToken } as any,
+      async () => {
+        for (let i = 0; i < 105; i++) {
+          const ts = Date.now().toString()
+          const cmdPayload = {
+            commandType: 'ping',
+            targetDeviceId: 'device-99',
+            params: {},
+            priority: 'low' as const,
+          }
+          const sig = hmacSign('POST', '/open/command', ts, cmdPayload)
+
+          const resp = await ctrl.command(
+            cmdPayload,
+            `Bearer ${tokenResp.accessToken}`,
+            CLIENT_ID,
+            sig,
+            ts,
+            `idem-burst-${i}`,
+            mockReq('192.168.1.100'),
+          ) as { error?: string }
+          if (resp.error === 'rate_limited') return true
+        }
+        return false
+      },
+    )
+
+    assert.ok(rateLimited, '应触发限流')
   })
 })
 
 // ── 🎯运行专员 ──
-describe('🎯运行专员 (Operations)', () => {
-  it('正常流程: 认证 → 批量同步 → 下发指令 → 状态查询', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.Operations.syncScope)
-    const { token } = await authWithScope(ctx.service, ctx.clientId, ctx.clientSecret, ROLE_CAPABILITIES.Operations.syncScope)
+describe(`${ROLES.Operations} open-api 角色测试`, () => {
+  it('运行专员通过幂等键重复提交指令应返回相同结果', async () => {
+    const service = freshService()
+    const ctrl = new OpenApiController(service)
 
-    await runWithBearer(token.accessToken, async () => {
-      assert.ok(token.accessToken, '运行专员应能获取 token')
-      assert.ok(token.scope.includes('sync:bulk'), '应有 sync:bulk 批量同步权限')
-      assert.ok(token.scope.includes('command:send'), '应有 command:send')
+    const tokenResp = await service.authenticate(CLIENT_ID, CLIENT_SECRET, [])
 
-      // 下发指令并验证状态
-      const cmd = await ctx.service.sendCommand(ctx.clientId, {
-        commandType: 'open_door',
-        targetDeviceId: 'gate-01',
-        params: { reason: 'emergency_maintenance' },
-        priority: 'urgent',
-      })
-      assert.ok(cmd.id, '应生成指令')
-      assert.ok(cmd.priority === 'urgent')
-      assert.ok(cmd.durationMs !== undefined)
-    })
+    const result = await runWithTenant(
+      { ...TENANT, bearerToken: tokenResp.accessToken } as any,
+      async () => {
+        const cmdPayload = {
+          commandType: 'open_door',
+          targetDeviceId: 'device-door-01',
+          params: {},
+          priority: 'high' as const,
+        }
+        const ts1 = Date.now().toString()
+        const sig1 = hmacSign('POST', '/open/command', ts1, cmdPayload)
+
+        const first = await ctrl.command(
+          cmdPayload,
+          `Bearer ${tokenResp.accessToken}`,
+          CLIENT_ID,
+          sig1,
+          ts1,
+          'idem-same-key-001',
+          mockReq('192.168.1.100'),
+        ) as { id: string }
+
+        const ts2 = Date.now().toString()
+        const sig2 = hmacSign('POST', '/open/command', ts2, cmdPayload)
+
+        const second = await ctrl.command(
+          cmdPayload,
+          `Bearer ${tokenResp.accessToken}`,
+          CLIENT_ID,
+          sig2,
+          ts2,
+          'idem-same-key-001',
+          mockReq('192.168.1.100'),
+        ) as { id: string }
+
+        assert.equal(first.id, second.id)
+        return { first, second }
+      },
+    )
+    assert.ok(result)
   })
 
-  it('权限边界: 运行专员不可列出所有客户端', async () => {
-    assert.ok(!ROLE_CAPABILITIES.Operations.canListClients, '运行专员不可列客户端')
-  })
+  it('运行专员操作已暂停的客户端应被拒绝（权限边界）', async () => {
+    const service = freshService()
+    const client = service.getClient(CLIENT_ID)
+    const originalStatus = client!.status
+    ;(client as any).status = 'suspended'
 
-  it('正常流程: HMAC 签名校验', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.Operations.syncScope)
-
-    const method = 'POST'
-    const path = '/open/sync'
-    const timestamp = String(Date.now())
-    const body = JSON.stringify({ resourceType: 'order', action: 'sync' })
-
-    // 有效签名应通过 (使用种子 HMAC 密钥: hmac-merchant-001-secret)
-    const crypto = await import('node:crypto')
-    const bodyHash = crypto.createHash('sha256').update(body).digest('hex')
-    const payload = `${method}\n${path}\n${timestamp}\n${bodyHash}`
-    const expectedSig = crypto.createHmac('sha256', 'hmac-merchant-001-secret').update(payload).digest('hex')
-
-    const valid = ctx.service.verifyHmacSignature('cli-merchant-001', method, path, timestamp, body, `sha256=${expectedSig}`)
-    assert.ok(valid, '有效 HMAC 签名应通过校验')
+    try {
+      await assert.rejects(
+        () => service.authenticate(CLIENT_ID, CLIENT_SECRET, ['sync:read']),
+        (err: any) => {
+          return err.response?.error === 'invalid_client'
+        },
+      )
+    } finally {
+      ;(client as any).status = originalStatus
+    }
   })
 })
 
 // ── 🤝团建 ──
-describe('🤝团建 (Teambuilding)', () => {
-  it('正常流程: 认证 → 只读查询(读取活动数据)', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.Teambuilding.syncScope)
-    const { token } = await authWithScope(ctx.service, ctx.clientId, ctx.clientSecret, ROLE_CAPABILITIES.Teambuilding.syncScope)
+describe(`${ROLES.Teambuilding} open-api 角色测试`, () => {
+  it('团建专员调用 OAuth 认证获取有效的 Bearer token', async () => {
+    const service = freshService()
+    const ctrl = new OpenApiController(service)
 
-    assert.ok(token.accessToken, '团建应能获取 token')
-    assert.ok(token.scope.includes('sync:read'), '应有 sync:read')
-    assert.ok(!token.scope.includes('sync:write'), '无写权限')
+    const result = await runWithTenant(TENANT, async () =>
+      ctrl.authenticate(
+        { client_id: CLIENT_ID, client_secret: CLIENT_SECRET, scope: 'sync:read command:send' },
+        mockReq('192.168.1.50'),
+      ),
+    )
+    const token = result as { accessToken: string; tokenType: string; expiresIn: number; scope: string[] }
+    assert.ok(typeof token.accessToken === 'string' && token.accessToken.length > 0)
+    assert.equal(token.tokenType, 'Bearer')
+    assert.ok(token.expiresIn >= 3600)
+    assert.ok(token.scope.includes('sync:read'))
+    assert.ok(token.scope.includes('command:send'))
   })
 
-  it('权限边界: 团建不可写同步、不可指令下发、不可管理客户端', async () => {
-    assert.ok(!ROLE_CAPABILITIES.Teambuilding.canSyncWrite, '团建不可写')
-    assert.ok(!ROLE_CAPABILITIES.Teambuilding.canCommandSend, '团建不可发指令')
-    assert.ok(!ROLE_CAPABILITIES.Teambuilding.canListClients, '团建不可列客户端')
+  it('团建专员请求不允许的 scope 应被拒绝（权限边界）', async () => {
+    const service = freshService()
 
-    // 尝试申请 command:send 应失败
-    try {
-      const ctx = createContext(ROLE_CAPABILITIES.Teambuilding.syncScope)
-      await ctx.service.authenticate(ctx.clientId, ctx.clientSecret, ['command:send'])
-      assert.fail('应拒绝 command:send')
-    } catch (e: any) {
-      assert.ok(true, '正确拒绝无权限 scope')
-    }
+    await assert.rejects(
+      () => service.authenticate('cli-partner-pos', 'test-secret', ['command:send']),
+      (err: any) => err.response?.error === 'invalid_scope',
+    )
   })
 })
 
 // ── 📢营销 ──
-describe('📢营销 (Marketing)', () => {
-  it('正常流程: 认证 → 同步营销活动数据', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.Marketing.syncScope)
-    const { token } = await authWithScope(ctx.service, ctx.clientId, ctx.clientSecret, ROLE_CAPABILITIES.Marketing.syncScope)
+describe(`${ROLES.Marketing} open-api 角色测试`, () => {
+  it('营销专员通过同步接口批量同步活动数据', async () => {
+    const service = freshService()
+    const ctrl = new OpenApiController(service)
 
-    await runWithBearer(token.accessToken, async () => {
-      assert.ok(token.accessToken, '营销应能获取 token')
-      assert.ok(token.scope.includes('sync:read'), '应有 sync:read')
-      assert.ok(token.scope.includes('sync:write'), '应有 sync:write')
-      assert.ok(!token.scope.includes('command:send'), '无指令权限')
-
-      // 同步营销数据
-      const syncResult = await ctx.service.handleSync(ctx.clientId, {
-        resourceType: 'campaign',
-        action: 'create',
-        data: { campaignId: 'camp-001', name: '暑期大促', budget: 50000 },
-        businessKey: 'bk-camp-001',
-        timestamp: new Date().toISOString(),
-      })
-      assert.ok(syncResult.accepted, '营销数据同步应被接受')
-      assert.equal(syncResult.businessKey, 'bk-camp-001')
-    })
-  })
-
-  it('权限边界: 营销不可批量同步、不可指令下发', async () => {
-    assert.ok(!ROLE_CAPABILITIES.Marketing.canSyncBulk, '营销不可批量同步')
-    assert.ok(!ROLE_CAPABILITIES.Marketing.canCommandSend, '营销不可发指令')
-
-    // 验证 scope 边界
-    const ctx = createContext(ROLE_CAPABILITIES.Marketing.syncScope)
-    try {
-      await ctx.service.authenticate(ctx.clientId, ctx.clientSecret, ['sync:bulk', 'command:send'])
-      assert.fail('应拒绝 sync:bulk')
-    } catch (e: any) {
-      assert.ok(true, '正确拒绝无权限 scope')
-    }
-  })
-
-  it('权限边界: 营销不可列出客户端详情', async () => {
-    assert.ok(!ROLE_CAPABILITIES.Marketing.canListClients, '营销不可列客户端')
-  })
-})
-
-// ── 跨角色集成测试 ──
-describe('跨角色集成 — HMAC 防重放攻击', () => {
-  it('HMAC 签名时间窗口校验 — 超时应拒绝', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.Operations.syncScope)
-    const method = 'POST'
-    const path = '/open/sync'
-    // 5 分钟前的时间戳 = 过期
-    const oldTimestamp = String(Date.now() - 6 * 60 * 1000)
-    const body = '{}'
-
-    const valid = ctx.service.verifyHmacSignature('cli-merchant-001', method, path, oldTimestamp, body, 'sha256=deadbeef')
-    assert.ok(!valid, '过期签名应被拒绝')
-  })
-
-  it('HMAC 签名内容篡改应被拒绝', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.Operations.syncScope)
-
-    const crypto = await import('node:crypto')
-    const ts = String(Date.now())
-    const body = JSON.stringify({ action: 'original' })
-    const bodyHash = crypto.createHash('sha256').update(body).digest('hex')
-    const payload = `POST\n/open/sync\n${ts}\n${bodyHash}`
-    const sig = crypto.createHmac('sha256', 'hmac-merchant-001-secret').update(payload).digest('hex')
-
-    // 篡改 body 内容
-    const tamperedBody = JSON.stringify({ action: 'tampered' })
-    const valid = ctx.service.verifyHmacSignature('cli-merchant-001', 'POST', '/open/sync', ts, tamperedBody, `sha256=${sig}`)
-    assert.ok(!valid, '篡改 body 后签名应不通过')
-  })
-})
-
-describe('跨角色集成 — 限流测试', () => {
-  it('rate limit 快速消耗', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.Operations.syncScope)
-
-    // 种子客户端有 100 QPS, 快速消耗几个
-    let remaining = 100
-    for (let i = 0; i < 5; i++) {
-      const result = ctx.service.checkRateLimit('cli-merchant-001')
-      if (result.allowed) {
-        remaining = result.remaining
-      }
-    }
-    assert.ok(remaining < 100, '限流器计数应已消耗')
-    assert.ok(remaining <= 95, '应已消耗至少 5 次')
-
-    // 未知 clientId 应返回 false
-    const unknown = ctx.service.checkRateLimit('unknown-client')
-    assert.ok(!unknown.allowed, '未知 clientId 不应通过限流')
-  })
-})
-
-describe('跨角色集成 — 幂等性', () => {
-  it('相同 idempotency-key 重复发送指令应返回同一结果', async () => {
-    const ctx = createContext(ROLE_CAPABILITIES.Operations.syncScope)
-    const { token } = await authWithScope(ctx.service, ctx.clientId, ctx.clientSecret, ROLE_CAPABILITIES.Operations.syncScope)
-
-    const idempotencyKey = 'idem-print-001'
+    const tokenResp = await service.authenticate(CLIENT_ID, CLIENT_SECRET, [])
     const payload = {
-      commandType: 'print_receipt',
-      targetDeviceId: 'printer-01',
-      params: { orderId: 'ord-999' },
-      priority: 'normal' as const,
+      resourceType: 'campaign',
+      action: 'create' as const,
+      data: { campaignName: '夏日促销', budget: 5000, startDate: '2026-07-01' },
+      businessKey: 'campaign-summer-2026',
+      timestamp: new Date().toISOString(),
     }
+    const ts = Date.now().toString()
+    const sig = hmacSign('POST', '/open/sync', ts, payload)
 
-    await runWithBearer(token.accessToken, async () => {
-      const result1 = await ctx.service.sendCommand(ctx.clientId, payload, idempotencyKey)
-      const result2 = await ctx.service.sendCommand(ctx.clientId, payload, idempotencyKey)
+    const result = await runWithTenant(
+      { ...TENANT, bearerToken: tokenResp.accessToken } as any,
+      async () =>
+        ctrl.sync(
+          payload,
+          `Bearer ${tokenResp.accessToken}`,
+          CLIENT_ID,
+          sig,
+          ts,
+          mockReq('192.168.1.100'),
+        ),
+    )
+    assert.ok((result as { accepted: boolean }).accepted)
+  })
 
-      assert.equal(result1.id, result2.id, '相同幂等键应返回同一指令')
-    })
+  it('营销专员查询不同租户客户端应隔离（权限边界）', async () => {
+    const ctrl = new OpenApiController(freshService())
+
+    const result = await runWithTenant(TENANT, async () =>
+      ctrl.listClients('tenant-B'),
+    )
+    const clients = (result as { data: unknown[] }).data
+
+    assert.ok(Array.isArray(clients))
+    assert.equal(clients.length, 1)
+    const client = clients[0] as { clientId: string; name: string }
+    assert.equal(client.clientId, 'cli-partner-pos')
   })
 })
