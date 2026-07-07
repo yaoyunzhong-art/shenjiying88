@@ -1011,6 +1011,17 @@ export type {
   GuideAlert,
 } from './components/SalesGuideTool';
 
+export { ReturnGoodsProcessingPanel } from './components/ReturnGoodsProcessingPanel';
+export type {
+  ReturnGoodsPanelProps,
+  ReturnRequest,
+  ReturnItem,
+  ReturnType,
+  ReturnStatus,
+  ReturnGoodsPanelConfig,
+  ReturnGoodsPanelCallbacks,
+} from './components/ReturnGoodsProcessingPanel';
+
 export { CouponRedemptionPanel } from './components/CouponRedemptionPanel';
 export type {
   CouponRedemptionPanelProps,
