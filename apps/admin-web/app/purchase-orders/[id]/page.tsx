@@ -18,7 +18,6 @@ import {
   SubmitButton,
   useFormSubmit,
   FormSubmitFeedback,
-  type FormSubmitState,
 } from '@m5/ui';
 
 import {
@@ -30,7 +29,7 @@ import {
   PURCHASE_ORDER_URGENCY_MAP,
   computePurchaseOrderStats,
   formatCurrency,
-} from '../../purchase-orders-data';
+} from '../purchase-orders-data';
 
 // ─── 状态流转图 ──────────────────────────────────────────
 //
@@ -67,7 +66,7 @@ export default function PurchaseOrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const resolved = use(params);
-  const item = MOCK_PURCHASE_ORDERS.find((po) => po.id === resolved.id);
+  const item = MOCK_PURCHASE_ORDERS.find((po: PurchaseOrderItem) => po.id === resolved.id);
 
   const [form, setForm] = useState({
     remark: item?.remark ?? '',
@@ -310,7 +309,7 @@ export default function PurchaseOrderDetailPage({
                 placeholder="输入联系电话"
               />
             </FormField>
-            <FormField label="备注" span={2}>
+            <FormField label="备注">
               <textarea
                 style={{
                   width: '100%',
