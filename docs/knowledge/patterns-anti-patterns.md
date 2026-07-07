@@ -136,6 +136,14 @@
 ## 二、正向模式库
 
 [AM-021] 发现bug先关功能而不是修 | 发现日期: 2026-07-07
+[AM-022] Vitest 3 废弃 API 静默忽略 | 发现日期: 2026-07-07
+描述: vitest.config.ts 使用 poolOptions.forks.*（maxConcurrency/singleFork/isolate等）在 Vitest 4 下全部被静默废弃
+症状: 终端打印 DEPRECATED: test.poolOptions was removed in Vitest 4，所有并发控制参数形同虚设
+危害: 1363个测试文件全量并行无限制，worker进程风暴导致CPU耗尽→误以为hang
+根因: Vitest 4 移除了 poolOptions 配置，改用 fileParallelism/maxWorkers 等顶层选项
+修复方法: 移除 poolOptions.forks.* 配置，替换为 fileParallelism: true, maxWorkers: 4
+案例: @m5/api 测试hang（P0-001）持续~18天，直到排查发现配置全部被忽略
+
 描述: 验收cron触发vitest hang，不是改cron prompt跳过hang，而是直接关掉cron
 症状: 验收体系瘫痪，系统失去自动闭环能力
 根因: 图省事/怕麻烦 → 关掉比修好容易
