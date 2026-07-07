@@ -37,6 +37,7 @@ __export(index_exports, {
   AIAnalysisInsightsPanel: () => AIAnalysisInsightsPanel,
   AICompetitiveAnalysisPanel: () => AICompetitiveAnalysisPanel,
   AIDecisionComparisonPanel: () => AIDecisionComparisonPanel,
+  AIDecisionEffectivenessBoard: () => AIDecisionEffectivenessBoard,
   AIDecisionPanel: () => AIDecisionPanel,
   AIDecisionRuleChain: () => AIDecisionRuleChain,
   AIDecisionTimeline: () => AIDecisionTimeline,
@@ -62499,9 +62500,293 @@ function StoreSelector({
 }
 StoreSelector.displayName = "StoreSelector";
 
-// src/ai-rule-weight-panel/AIRuleWeightPanel.tsx
+// src/components/AIDecisionEffectivenessBoard.tsx
 var import_react171 = require("react");
 var import_jsx_runtime247 = require("react/jsx-runtime");
+var DEFAULT_SUCCESS_THRESHOLD = 80;
+var RESULT_LABELS = {
+  success: "\u6210\u529F",
+  partial: "\u90E8\u5206\u6210\u529F",
+  failure: "\u5931\u8D25"
+};
+var RESULT_COLORS = {
+  success: "#22c55e",
+  partial: "#f59e0b",
+  failure: "#ef4444"
+};
+var SOURCE_LABELS2 = {
+  rule: "\u89C4\u5219\u5F15\u64CE",
+  model: "AI\u6A21\u578B",
+  hybrid: "\u6DF7\u5408\u7B56\u7565"
+};
+var SOURCE_TAG_COLORS = {
+  rule: "#3b82f6",
+  model: "#8b5cf6",
+  hybrid: "#06b6d4"
+};
+var formatPct = (v) => `${Math.round(v)}%`;
+var formatMs = (ms) => {
+  if (ms < 1e3) return `${ms}ms`;
+  return `${(ms / 1e3).toFixed(1)}s`;
+};
+var getSuccessRate = (success, total) => total > 0 ? Math.round(success / total * 100) : 0;
+var getRateColor = (rate, threshold) => {
+  if (rate >= threshold) return "#22c55e";
+  if (rate >= threshold * 0.7) return "#f59e0b";
+  return "#ef4444";
+};
+function AIDecisionEffectivenessBoard({
+  items,
+  title = "AI\u51B3\u7B56\u6548\u679C\u770B\u677F",
+  showSummary = true,
+  successThreshold = DEFAULT_SUCCESS_THRESHOLD
+}) {
+  const [sortBy, setSortBy] = (0, import_react171.useState)("rate");
+  const [sourceFilter, setSourceFilter] = (0, import_react171.useState)("all");
+  const [resultFilter, setResultFilter] = (0, import_react171.useState)("all");
+  const summary = (0, import_react171.useMemo)(() => {
+    if (items.length === 0) {
+      return { totalDecisions: 0, totalExecutions: 0, overallSuccessRate: 0, avgResponseMs: 0, avgLiftPercent: 0 };
+    }
+    const totalExecutions = items.reduce((s, i) => s + i.executionCount, 0);
+    const totalSuccess = items.reduce((s, i) => s + i.successCount, 0);
+    const totalResponseMs = items.reduce((s, i) => s + i.avgResponseMs, 0);
+    const itemsWithLift = items.filter((i) => i.liftPercent != null);
+    const totalLift = itemsWithLift.reduce((s, i) => s + (i.liftPercent ?? 0), 0);
+    return {
+      totalDecisions: items.length,
+      totalExecutions,
+      overallSuccessRate: getSuccessRate(totalSuccess, totalExecutions),
+      avgResponseMs: Math.round(totalResponseMs / items.length),
+      avgLiftPercent: itemsWithLift.length > 0 ? Math.round(totalLift / itemsWithLift.length) : 0
+    };
+  }, [items]);
+  const processed = (0, import_react171.useMemo)(() => {
+    let list = [...items];
+    if (sourceFilter !== "all") {
+      list = list.filter((i) => i.source === sourceFilter);
+    }
+    if (resultFilter !== "all") {
+      list = list.filter((i) => i.result === resultFilter);
+    }
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "rate": {
+          const ra = getSuccessRate(a.successCount, a.executionCount);
+          const rb = getSuccessRate(b.successCount, b.executionCount);
+          return rb - ra;
+        }
+        case "executions":
+          return b.executionCount - a.executionCount;
+        case "lift":
+          return (b.liftPercent ?? 0) - (a.liftPercent ?? 0);
+        default:
+          return 0;
+      }
+    });
+    return list;
+  }, [items, sourceFilter, resultFilter, sortBy]);
+  const totalSuccessO = summary.overallSuccessRate;
+  const rateColor = getRateColor(totalSuccessO, successThreshold);
+  return /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: {
+    padding: 16,
+    borderRadius: 12,
+    background: "#0f172a",
+    border: "1px solid rgba(148,163,184,0.15)",
+    color: "#e2e8f0",
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+  }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("h3", { style: { margin: 0, fontSize: 16, fontWeight: 600, color: "#f1f5f9" }, children: title }),
+      /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+        items.length,
+        " \u9879\u51B3\u7B56 \xB7 ",
+        summary.totalExecutions,
+        " \u6B21\u6267\u884C"
+      ] })
+    ] }),
+    showSummary && /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(4, 1fr)",
+      gap: 8,
+      marginBottom: 16
+    }, children: [
+      { label: "\u7EFC\u5408\u6210\u529F\u7387", value: formatPct(totalSuccessO), color: rateColor, unit: "" },
+      { label: "\u5E73\u5747\u54CD\u5E94", value: formatMs(summary.avgResponseMs), color: "#3b82f6", unit: "" },
+      { label: "\u5E73\u5747\u63D0\u5347", value: formatPct(summary.avgLiftPercent), color: "#8b5cf6", unit: "" },
+      { label: "\u51B3\u7B56\u603B\u6570", value: String(summary.totalDecisions), color: "#64748b", unit: "" }
+    ].map((card) => /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: {
+      padding: "10px 8px",
+      borderRadius: 8,
+      background: "rgba(15,23,42,0.5)",
+      border: "1px solid rgba(148,163,184,0.1)",
+      textAlign: "center"
+    }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { style: { fontSize: 11, color: "#94a3b8", marginBottom: 2 }, children: card.label }),
+      /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { style: { fontSize: 20, fontWeight: 700, color: card.color }, children: card.value })
+    ] }, card.label)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 12,
+      flexWrap: "wrap",
+      alignItems: "center"
+    }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: { display: "flex", gap: 4, alignItems: "center" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { style: { fontSize: 11, color: "#64748b", marginRight: 4 }, children: "\u6765\u6E90:" }),
+        ["all", "rule", "model", "hybrid"].map((s) => /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+          "button",
+          {
+            onClick: () => setSourceFilter(s),
+            style: {
+              padding: "3px 8px",
+              borderRadius: 6,
+              border: `1px solid ${sourceFilter === s ? SOURCE_TAG_COLORS[sourceFilter === "all" ? "rule" : sourceFilter] : "rgba(148,163,184,0.15)"}`,
+              background: sourceFilter === s ? "rgba(59,130,246,0.15)" : "transparent",
+              color: sourceFilter === s ? "#93c5fd" : "#64748b",
+              fontSize: 11,
+              cursor: "pointer"
+            },
+            children: s === "all" ? "\u5168\u90E8" : SOURCE_LABELS2[s]
+          },
+          s
+        ))
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: { display: "flex", gap: 4, alignItems: "center" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { style: { fontSize: 11, color: "#64748b", marginRight: 4 }, children: "\u7ED3\u679C:" }),
+        ["all", "success", "partial", "failure"].map((r) => /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+          "button",
+          {
+            onClick: () => setResultFilter(r),
+            style: {
+              padding: "3px 8px",
+              borderRadius: 6,
+              border: `1px solid ${resultFilter === r ? RESULT_COLORS[resultFilter === "all" ? "success" : resultFilter] : "rgba(148,163,184,0.15)"}`,
+              background: resultFilter === r ? "rgba(59,130,246,0.15)" : "transparent",
+              color: resultFilter === r ? "#93c5fd" : "#64748b",
+              fontSize: 11,
+              cursor: "pointer"
+            },
+            children: r === "all" ? "\u5168\u90E8" : RESULT_LABELS[r]
+          },
+          r
+        ))
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: { marginLeft: "auto", display: "flex", gap: 4, alignItems: "center" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { style: { fontSize: 11, color: "#64748b" }, children: "\u6392\u5E8F:" }),
+        /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
+          "select",
+          {
+            value: sortBy,
+            onChange: (e) => setSortBy(e.target.value),
+            style: {
+              padding: "3px 6px",
+              borderRadius: 6,
+              background: "#1e293b",
+              color: "#e2e8f0",
+              border: "1px solid rgba(148,163,184,0.2)",
+              fontSize: 11
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("option", { value: "rate", children: "\u6210\u529F\u7387" }),
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("option", { value: "executions", children: "\u6267\u884C\u6B21\u6570" }),
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("option", { value: "lift", children: "\u63D0\u5347\u7387" }),
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("option", { value: "name", children: "\u540D\u79F0" })
+            ]
+          }
+        )
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8 }, children: processed.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { style: { padding: 24, textAlign: "center", color: "#64748b", fontSize: 13 }, children: "\u6682\u65E0\u5339\u914D\u7684\u51B3\u7B56\u6570\u636E" }) : processed.map((item) => {
+      const rate = getSuccessRate(item.successCount, item.executionCount);
+      const barColor = getRateColor(rate, successThreshold);
+      return /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
+        "div",
+        {
+          style: {
+            padding: "10px 12px",
+            borderRadius: 8,
+            background: "rgba(15,23,42,0.4)",
+            border: `1px solid rgba(148,163,184,0.08)`
+          },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { style: { fontSize: 13, fontWeight: 600, color: "#f1f5f9" }, children: item.name }),
+                /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { style: {
+                  padding: "1px 5px",
+                  borderRadius: 4,
+                  fontSize: 10,
+                  background: `${SOURCE_TAG_COLORS[item.source]}22`,
+                  color: SOURCE_TAG_COLORS[item.source],
+                  border: `1px solid ${SOURCE_TAG_COLORS[item.source]}33`
+                }, children: SOURCE_LABELS2[item.source] }),
+                /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { style: {
+                  padding: "1px 5px",
+                  borderRadius: 4,
+                  fontSize: 10,
+                  background: `${RESULT_COLORS[item.result]}22`,
+                  color: RESULT_COLORS[item.result],
+                  border: `1px solid ${RESULT_COLORS[item.result]}33`
+                }, children: RESULT_LABELS[item.result] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { style: {
+                padding: "2px 6px",
+                borderRadius: 4,
+                fontSize: 10,
+                background: item.enabled ? "rgba(34,197,94,0.15)" : "rgba(100,116,139,0.15)",
+                color: item.enabled ? "#22c55e" : "#94a3b8"
+              }, children: item.enabled ? "\u542F\u7528" : "\u505C\u7528" })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { style: { flex: 1 }, children: /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { style: {
+                height: 6,
+                borderRadius: 3,
+                background: "#1e293b",
+                overflow: "hidden"
+              }, children: /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { style: {
+                width: `${rate}%`,
+                height: "100%",
+                borderRadius: 3,
+                background: barColor,
+                transition: "width 0.3s ease"
+              } }) }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { style: { fontSize: 13, fontWeight: 600, color: barColor, minWidth: 42, textAlign: "right" }, children: formatPct(rate) }),
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("span", { style: { fontSize: 11, color: "#94a3b8", minWidth: 56, textAlign: "right" }, children: [
+                item.successCount,
+                "/",
+                item.executionCount
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { style: { fontSize: 11, color: "#64748b", minWidth: 50, textAlign: "right" }, children: formatMs(item.avgResponseMs) }),
+              item.liftPercent != null && /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("span", { style: {
+                fontSize: 11,
+                fontWeight: 500,
+                color: item.liftPercent >= 0 ? "#22c55e" : "#ef4444",
+                minWidth: 40,
+                textAlign: "right"
+              }, children: [
+                item.liftPercent >= 0 ? "+" : "",
+                item.liftPercent,
+                "%"
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: { fontSize: 10, color: "#475569", marginTop: 4 }, children: [
+              "\u6700\u540E\u6267\u884C: ",
+              item.lastExecutedAt
+            ] })
+          ]
+        },
+        item.id
+      );
+    }) })
+  ] });
+}
+
+// src/ai-rule-weight-panel/AIRuleWeightPanel.tsx
+var import_react172 = require("react");
+var import_jsx_runtime248 = require("react/jsx-runtime");
 var CATEGORY_LABELS7 = {
   risk: "\u98CE\u63A7",
   promotion: "\u8425\u9500",
@@ -62521,7 +62806,7 @@ function WeightSlider({
   disabled,
   onChange
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
     "input",
     {
       type: "range",
@@ -62547,7 +62832,7 @@ function WeightBadge({ value }) {
     if (value >= 40) return "#3b82f6";
     return "#6b7280";
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
     "span",
     {
       style: {
@@ -62570,7 +62855,7 @@ function RuleRow({
   rule,
   onWeightChange
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)(
     "div",
     {
       style: {
@@ -62584,7 +62869,7 @@ function RuleRow({
         borderColor: rule.enabled ? "#e2e8f0" : "#f1f5f9"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
           "span",
           {
             style: {
@@ -62602,8 +62887,8 @@ function RuleRow({
             children: CATEGORY_LABELS7[rule.category] ?? rule.category
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
             "div",
             {
               style: {
@@ -62614,7 +62899,7 @@ function RuleRow({
               children: rule.name
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
             "div",
             {
               style: {
@@ -62629,7 +62914,7 @@ function RuleRow({
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { style: { width: 160 }, children: /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { style: { width: 160 }, children: /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
           WeightSlider,
           {
             value: rule.currentWeight,
@@ -62637,7 +62922,7 @@ function RuleRow({
             onChange: (v) => onWeightChange(rule.id, v)
           }
         ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(WeightBadge, { value: rule.currentWeight })
+        /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(WeightBadge, { value: rule.currentWeight })
       ]
     }
   );
@@ -62650,13 +62935,13 @@ function AIRuleWeightPanel({
   loading = false,
   disabled = false
 }) {
-  const handleWeightChange = (0, import_react171.useCallback)(
+  const handleWeightChange = (0, import_react172.useCallback)(
     (ruleId, newWeight) => {
       onWeightChange?.(ruleId, newWeight);
     },
     [onWeightChange]
   );
-  const handleBatchApply = (0, import_react171.useCallback)(() => {
+  const handleBatchApply = (0, import_react172.useCallback)(() => {
     const adjustments = rules.filter((r) => r.adjustable && r.enabled).map((r) => ({
       ruleId: r.id,
       oldWeight: r.currentWeight,
@@ -62668,7 +62953,7 @@ function AIRuleWeightPanel({
     onBatchAdjust?.(adjustments);
   }, [rules, onBatchAdjust]);
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
       "div",
       {
         style: {
@@ -62683,7 +62968,7 @@ function AIRuleWeightPanel({
   }
   const enabledRules = rules.filter((r) => r.enabled);
   const disabledRules = rules.filter((r) => !r.enabled);
-  return /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)(
     "div",
     {
       style: {
@@ -62695,7 +62980,7 @@ function AIRuleWeightPanel({
         pointerEvents: disabled ? "none" : void 0
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)(
           "div",
           {
             style: {
@@ -62705,12 +62990,12 @@ function AIRuleWeightPanel({
               marginBottom: 16
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("h3", { style: { margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }, children: "\u{1F916} AI \u89C4\u5219\u6743\u91CD\u9762\u677F" }),
-                /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("p", { style: { margin: "4px 0 0", fontSize: 12, color: "#64748b" }, children: "\u8C03\u6574\u5404\u89C4\u5219\u6267\u884C\u6743\u91CD\u4EE5\u4F18\u5316 AI \u51B3\u7B56\u6548\u679C \u2014 \u6743\u91CD\u8303\u56F4 0 ~ 100" })
+              /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("h3", { style: { margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }, children: "\u{1F916} AI \u89C4\u5219\u6743\u91CD\u9762\u677F" }),
+                /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("p", { style: { margin: "4px 0 0", fontSize: 12, color: "#64748b" }, children: "\u8C03\u6574\u5404\u89C4\u5219\u6267\u884C\u6743\u91CD\u4EE5\u4F18\u5316 AI \u51B3\u7B56\u6548\u679C \u2014 \u6743\u91CD\u8303\u56F4 0 ~ 100" })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
                   "button",
                   {
                     onClick: handleBatchApply,
@@ -62727,7 +63012,7 @@ function AIRuleWeightPanel({
                     children: "\u6279\u91CF\u5E94\u7528"
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
                   "button",
                   {
                     onClick: onReset,
@@ -62748,7 +63033,7 @@ function AIRuleWeightPanel({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }, children: enabledRules.map((rule) => /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }, children: enabledRules.map((rule) => /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
           RuleRow,
           {
             rule,
@@ -62756,8 +63041,8 @@ function AIRuleWeightPanel({
           },
           rule.id
         )) }),
-        disabledRules.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)("details", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
+        disabledRules.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("details", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)(
             "summary",
             {
               style: {
@@ -62774,7 +63059,7 @@ function AIRuleWeightPanel({
               ]
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
             "div",
             {
               style: {
@@ -62783,7 +63068,7 @@ function AIRuleWeightPanel({
                 gap: 8,
                 marginTop: 8
               },
-              children: disabledRules.map((rule) => /* @__PURE__ */ (0, import_jsx_runtime247.jsx)(
+              children: disabledRules.map((rule) => /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
                 RuleRow,
                 {
                   rule,
@@ -62794,7 +63079,7 @@ function AIRuleWeightPanel({
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime247.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)(
           "div",
           {
             style: {
@@ -62807,10 +63092,10 @@ function AIRuleWeightPanel({
               color: "#94a3b8"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { children: "\u{1F534} \u226580 \u9AD8\u6743\u91CD" }),
-              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { children: "\u{1F7E1} 60~79 \u4E2D\u6743\u91CD" }),
-              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { children: "\u{1F535} 40~59 \u8F83\u4F4E\u6743\u91CD" }),
-              /* @__PURE__ */ (0, import_jsx_runtime247.jsx)("span", { children: "\u26AA <40 \u4F4E\u6743\u91CD" })
+              /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("span", { children: "\u{1F534} \u226580 \u9AD8\u6743\u91CD" }),
+              /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("span", { children: "\u{1F7E1} 60~79 \u4E2D\u6743\u91CD" }),
+              /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("span", { children: "\u{1F535} 40~59 \u8F83\u4F4E\u6743\u91CD" }),
+              /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("span", { children: "\u26AA <40 \u4F4E\u6743\u91CD" })
             ]
           }
         )
@@ -62820,17 +63105,17 @@ function AIRuleWeightPanel({
 }
 
 // src/ai-rule-weight-panel/useAIRuleWeight.ts
-var import_react172 = require("react");
+var import_react173 = require("react");
 function useAIRuleWeight(initialRules) {
-  const [rules, setRules] = (0, import_react172.useState)(initialRules);
-  const [loading, setLoading] = (0, import_react172.useState)(false);
-  const [error] = (0, import_react172.useState)(null);
-  const updateWeight = (0, import_react172.useCallback)((ruleId, newWeight) => {
+  const [rules, setRules] = (0, import_react173.useState)(initialRules);
+  const [loading, setLoading] = (0, import_react173.useState)(false);
+  const [error] = (0, import_react173.useState)(null);
+  const updateWeight = (0, import_react173.useCallback)((ruleId, newWeight) => {
     setRules(
       (prev) => prev.map((r) => r.id === ruleId ? { ...r, currentWeight: Math.max(0, Math.min(100, newWeight)) } : r)
     );
   }, []);
-  const batchUpdate = (0, import_react172.useCallback)((adjustments) => {
+  const batchUpdate = (0, import_react173.useCallback)((adjustments) => {
     setRules(
       (prev) => prev.map((r) => {
         const adj = adjustments.find((a) => a.ruleId === r.id);
@@ -62838,15 +63123,15 @@ function useAIRuleWeight(initialRules) {
       })
     );
   }, []);
-  const resetWeights = (0, import_react172.useCallback)(() => {
+  const resetWeights = (0, import_react173.useCallback)(() => {
     setRules(initialRules);
   }, [initialRules]);
   return { rules, loading, error, updateWeight, batchUpdate, resetWeights };
 }
 
 // src/components/AIModelSelector.tsx
-var import_react173 = require("react");
-var import_jsx_runtime248 = require("react/jsx-runtime");
+var import_react174 = require("react");
+var import_jsx_runtime249 = require("react/jsx-runtime");
 var TIER_COLORS = {
   budget: "#52c41a",
   standard: "#1677ff",
@@ -62953,13 +63238,13 @@ function AIModelSelector({
   className,
   variant = "detailed"
 }) {
-  const selectedModel = (0, import_react173.useMemo)(
+  const selectedModel = (0, import_react174.useMemo)(
     () => models.find((m) => m.id === value),
     [models, value]
   );
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: containerStyle5, className, children: [
-      [1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { style: containerStyle5, className, children: [
+      [1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(
         "div",
         {
           style: {
@@ -62969,7 +63254,7 @@ function AIModelSelector({
             animation: "pulse 1.5s infinite"
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(
               "div",
               {
                 style: {
@@ -62980,8 +63265,8 @@ function AIModelSelector({
                 }
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: { flex: 1 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { style: { flex: 1 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(
                 "div",
                 {
                   style: {
@@ -62993,7 +63278,7 @@ function AIModelSelector({
                   }
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(
                 "div",
                 {
                   style: {
@@ -63009,16 +63294,16 @@ function AIModelSelector({
         },
         i
       )),
-      /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("style", { children: `@keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 0.3; } }` })
+      /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("style", { children: `@keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 0.3; } }` })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: containerStyle5, className, children: [
-    !selectedModel && models.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { style: { fontSize: 13, color: "#94a3b8", padding: "4px 0" }, children: "\u8BF7\u9009\u62E9\u4E00\u4E2A AI \u6A21\u578B" }),
+  return /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { style: containerStyle5, className, children: [
+    !selectedModel && models.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { style: { fontSize: 13, color: "#94a3b8", padding: "4px 0" }, children: "\u8BF7\u9009\u62E9\u4E00\u4E2A AI \u6A21\u578B" }),
     models.map((model) => {
       const isSelected = model.id === value;
       const isDisabled3 = disabled || !model.available;
       const style = isSelected ? selectedItemStyle : isDisabled3 ? disabledItemStyle : itemStyle;
-      return /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)(
+      return /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(
         "div",
         {
           style,
@@ -63038,13 +63323,13 @@ function AIModelSelector({
             }
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { style: isSelected ? radioDotSelectedStyle : radioDotStyle, children: isSelected && /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { style: radioDotInnerStyle }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("span", { style: nameStyle, children: model.name }),
-                /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("span", { style: providerStyle, children: model.provider }),
-                model.recommended && /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("span", { style: badgeStyle4, children: "\u63A8\u8350" }),
-                /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { style: isSelected ? radioDotSelectedStyle : radioDotStyle, children: isSelected && /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { style: radioDotInnerStyle }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("span", { style: nameStyle, children: model.name }),
+                /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("span", { style: providerStyle, children: model.provider }),
+                model.recommended && /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("span", { style: badgeStyle4, children: "\u63A8\u8350" }),
+                /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(
                   "span",
                   {
                     style: {
@@ -63056,8 +63341,8 @@ function AIModelSelector({
                   }
                 )
               ] }),
-              variant === "detailed" && /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)(import_jsx_runtime248.Fragment, { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { style: { display: "flex", gap: 4, marginBottom: 6, flexWrap: "wrap" }, children: model.capabilities.map((cap) => /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+              variant === "detailed" && /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)(import_jsx_runtime249.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { style: { display: "flex", gap: 4, marginBottom: 6, flexWrap: "wrap" }, children: model.capabilities.map((cap) => /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(
                   "span",
                   {
                     style: {
@@ -63069,41 +63354,41 @@ function AIModelSelector({
                   },
                   cap
                 )) }),
-                /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: metricStyle, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { style: metricStyle, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("span", { children: [
                     "\u4E0A\u4E0B\u6587: ",
-                    /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { style: metricValueStyle, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("span", { style: metricValueStyle, children: [
                       (model.contextWindow / 1e3).toFixed(0),
                       "K"
                     ] })
                   ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("span", { children: [
                     "\u5EF6\u8FDF: ",
-                    /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { style: metricValueStyle, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("span", { style: metricValueStyle, children: [
                       model.avgLatencyMs,
                       "ms"
                     ] })
                   ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("span", { children: [
                     "\u8F93\u5165: ",
-                    /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { style: metricValueStyle, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("span", { style: metricValueStyle, children: [
                       "$",
                       model.inputPricePer1K.toFixed(4),
                       "/1K"
                     ] })
                   ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("span", { children: [
                     "\u8F93\u51FA: ",
-                    /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { style: metricValueStyle, children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("span", { style: metricValueStyle, children: [
                       "$",
                       model.outputPricePer1K.toFixed(4),
                       "/1K"
                     ] })
                   ] })
                 ] }),
-                model.description && /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { style: { fontSize: 12, color: "#64748b", marginTop: 4 }, children: model.description })
+                model.description && /* @__PURE__ */ (0, import_jsx_runtime249.jsx)("div", { style: { fontSize: 12, color: "#64748b", marginTop: 4 }, children: model.description })
               ] }),
-              variant === "compact" && /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: { fontSize: 12, color: "#64748b" }, children: [
+              variant === "compact" && /* @__PURE__ */ (0, import_jsx_runtime249.jsxs)("div", { style: { fontSize: 12, color: "#64748b" }, children: [
                 (model.contextWindow / 1e3).toFixed(0),
                 "K ctx \xB7 ",
                 model.avgLatencyMs,
@@ -63118,7 +63403,7 @@ function AIModelSelector({
         model.id
       );
     }),
-    models.length === 0 && !loading && /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+    models.length === 0 && !loading && /* @__PURE__ */ (0, import_jsx_runtime249.jsx)(
       "div",
       {
         style: {
@@ -63142,6 +63427,7 @@ function AIModelSelector({
   AIAnalysisInsightsPanel,
   AICompetitiveAnalysisPanel,
   AIDecisionComparisonPanel,
+  AIDecisionEffectivenessBoard,
   AIDecisionPanel,
   AIDecisionRuleChain,
   AIDecisionTimeline,

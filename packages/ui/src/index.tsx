@@ -1219,6 +1219,16 @@ export type {
   StoreSelectorMode,
 } from './components/StoreSelector';
 
+// --------------- AIDecisionEffectivenessBoard ---------------
+export { AIDecisionEffectivenessBoard } from './components/AIDecisionEffectivenessBoard';
+export type {
+  AIDecisionEffectivenessBoardProps,
+  DecisionEffectivenessItem,
+  DecisionResult,
+  DecisionSource,
+  EffectivenessSummary,
+} from './components/AIDecisionEffectivenessBoard';
+
 export { AIRuleWeightPanel, useAIRuleWeight } from './ai-rule-weight-panel';
 export type { AIRuleWeightPanelProps, RuleWeightItem, WeightAdjustResult } from './ai-rule-weight-panel';
 
