@@ -518,12 +518,10 @@ describe('anomaly-detector.service (内联纯函数)', () => {
   // ─── 边界条件 ───
 
   it('[B1] 精确在 IQR 上限边界不触发', () => {
+    // sorted: 1,2,3,10,11,12 => p25=2.25, p75=10.75, iqr=8.5, upper=23.5
     const hist = makeTimeoutSeries(1, 2, 3, 10, 11, 12)
-    // sorted: 1,2,3,10,11,12; q1=2.25, q3=11.25, iqr=9
-    // upper = 11.25 + 13.5 = 24.75
-    const result = iqrFence(hist, 24.75)
-    // 24.75 is NOT > 24.75, so detected=false
-    expect(result.detected).toBe(false)
+    const result = iqrFence(hist, 23.5)
+    expect(result.detected).toBe(false) // 23.5 is NOT > 23.5
   })
 
   it('[B2] 3σ 自定义阈值 1 时轻微偏离也触发', () => {
@@ -574,7 +572,7 @@ describe('anomaly-detector.service (内联纯函数)', () => {
   })
 
   it('[B6] 异常分数上限为 1', () => {
-    const hist = makeStableHistory(20, 50)
+    const hist = makeTimeoutSeries(45, 47, 49, 51, 53, 55, 46, 48, 50, 52, 54, 44)
     const { result } = detectAnomaly({
       metricKey: 'cpu',
       value: 999999,
@@ -583,5 +581,40 @@ describe('anomaly-detector.service (内联纯函数)', () => {
       whitelist: [],
     })
     expect(result.score).toBeLessThanOrEqual(1)
+  })
+
+  it('[P17] 标准差为 0 时 3σ 不崩溃', () => {
+    const hist = makeStableHistory(10, 100)
+    expect(() => threeSigma(hist, 200, 3)).not.toThrow()
+    const result = threeSigma(hist, 200, 3)
+    expect(result.detected).toBe(false)
+  })
+
+  it('[P18] IQR 检测到下限离群 (value < lower)', () => {
+    const hist = makeTimeoutSeries(100, 110, 120, 130, 140)
+    // sorted: 100,110,120,130,140; q1=105, q3=135, iqr=30
+    // lower = 105 - 45 = 60
+    const result = iqrFence(hist, 0)
+    expect(result.detected).toBe(true)
+    expect(result.deviation).toBeGreaterThan(0)
+  })
+
+  it('[P19] EWMA 第二次更新与前一个状态接近时 deviation 小', () => {
+    const s1 = ewmaUpdate(undefined, 100, 'mem', 0.3, 't1')
+    const { result } = ewmaUpdate(s1.state, 101, 'mem', 0.3, 't2')
+    expect(result.detected).toBe(false)
+    expect(result.deviation).toBeLessThan(0.1)
+  })
+
+  it('[B7] 单个历史点 (length=1) computeBaseline 返回该值', () => {
+    const hist = makeTimeoutSeries(42)
+    expect(computeBaseline(hist)).toBe(42)
+  })
+
+  it('[B8] 所有值相同时 IQR 不崩溃', () => {
+    const hist = makeStableHistory(10, 50)
+    const result = iqrFence(hist, 50)
+    // iqr=0, upper=50, lower=50, 50 is NOT > 50 and NOT < 50
+    expect(result.detected).toBe(false)
   })
 })
