@@ -141,6 +141,21 @@ export class LowCodePageBuilder {
   getTemplate(id: string) { return this.templates.get(id) }
 }
 
+// ============== LowcodeAuditService (审计管理) ==============
+
+@Injectable()
+export class LowcodeAuditService {
+  private auditRecords: Array<{ pageId: string; reviewer: string; action: string; comment?: string; timestamp: Date }> = []
+
+  recordAudit(record: { pageId: string; reviewer: string; action: string; comment?: string }): void {
+    this.auditRecords.push({ ...record, timestamp: new Date() })
+  }
+
+  getAuditHistory(pageId: string): Array<{ pageId: string; reviewer: string; action: string; comment?: string; timestamp: Date }> {
+    return this.auditRecords.filter(r => r.pageId === pageId).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+  }
+}
+
 // ============== AuditAlertService ==============
 
 @Injectable()

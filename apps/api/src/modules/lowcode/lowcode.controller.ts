@@ -45,7 +45,8 @@ export class LowcodeController {
     const tpl = this.lowcodeService.registerTemplate({
       name: dto.name,
       description: dto.description,
-      components: dto.components,
+      // 将 defaultProps 的 undefined 转为 {} 以满足实体非空约束
+      components: dto.components.map(c => ({ ...c, defaultProps: c.defaultProps ?? {} })),
       createdBy: 'admin',
     })
     return {
@@ -92,7 +93,11 @@ export class LowcodeController {
   @Put('templates/:id')
   @ApiOperation({ summary: '更新模板' })
   updateTemplate(@Param('id') id: string, @Body() dto: UpdateTemplateDto): Record<string, unknown> {
-    const tpl = this.lowcodeService.updateTemplate(id, dto)
+    const tpl = this.lowcodeService.updateTemplate(id, {
+      ...dto,
+      // 同 registerTemplate，确保组件 defaultProps 非 undefined
+      components: dto.components?.map(c => ({ ...c, defaultProps: c.defaultProps ?? {} })),
+    })
     return {
       id: tpl.id,
       name: tpl.name,

@@ -2,7 +2,8 @@
  * lowcode.contract.ts
  * 低代码模块跨模块合约类型定义
  */
-import type { LowcodePage as LowcodePageEntity, LowcodeComponent } from './lowcode-page.entity'
+import type { LowcodePage as LowcodePageEntity } from './lowcode-page.entity'
+import type { Component as LowcodeComponent } from './lowcode-audit.service'
 import type { LowcodeTemplate } from './lowcode.entity'
 
 /**
