@@ -145,7 +145,7 @@ function createMockAppStore() {
   const installs = new Map<string, AppInstall>()
   let appCounter = 0
 
-  async function publishApp(app: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt'>): Promise<ISVApp> {
+  async function publishApp(app: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'rating' | 'ratingCount' | 'installCount'>): Promise<ISVApp> {
     appCounter++
     const now = new Date().toISOString()
     const newApp: ISVApp = {

@@ -105,7 +105,7 @@ class SandboxController {
       getSandbox: (id: string) => SandboxInstance | undefined;
     },
     private readonly appStore: {
-      publishApp: (app: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt'> & { status: 'DRAFT' }) => Promise<ISVApp>;
+      publishApp: (app: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'rating' | 'ratingCount' | 'installCount'> & { status: 'DRAFT' }) => Promise<ISVApp>;
       listApps: (filter?: Record<string, unknown>) => Promise<ISVApp[]>;
       installApp: (appId: string, tenantId: string) => Promise<AppInstall | null>;
       uninstallApp: (appId: string, tenantId: string) => Promise<boolean>;
@@ -267,7 +267,7 @@ function createMockAppStore(overrides: Record<string, unknown> = {}) {
   let appCounter = 0;
 
   return {
-    publishApp: async (appData: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt'> & { status: 'DRAFT' }): Promise<ISVApp> => {
+    publishApp: async (appData: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'rating' | 'ratingCount' | 'installCount'> & { status: 'DRAFT' }): Promise<ISVApp> => {
       const now = new Date().toISOString();
       appCounter++;
       const app: ISVApp = {
