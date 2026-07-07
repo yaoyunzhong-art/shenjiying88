@@ -1162,3 +1162,13 @@ export type {
 // --------------- Popconfirm ---------------
 export { Popconfirm } from './components/Popconfirm';
 export type { PopconfirmProps, PopconfirmPlacement } from './components/Popconfirm';
+
+// --------------- RichTextEditor ---------------
+export { RichTextEditor } from './components/RichTextEditor';
+export type {
+  RichTextEditorProps,
+  RichTextEditorHandle,
+  RichTextEditorSize,
+  ToolbarPreset,
+  ToolbarAction,
+} from './components/RichTextEditor';

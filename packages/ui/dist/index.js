@@ -230,6 +230,7 @@ __export(index_exports, {
   RegionalManagerDashboard: () => RegionalManagerDashboard,
   ResourceOptimizationPanel: () => ResourceOptimizationPanel,
   Result: () => Result,
+  RichTextEditor: () => RichTextEditor,
   RuleRecommendationPanel: () => RuleRecommendationPanel,
   RuntimeGovernancePanelTemplate: () => RuntimeGovernancePanelTemplate,
   RuntimeOperationDateTimeReadout: () => RuntimeOperationDateTimeReadout,
@@ -59657,6 +59658,289 @@ var Popconfirm = import_react163.default.memo(function Popconfirm2({
     }
   );
 });
+
+// src/components/RichTextEditor.tsx
+var import_react164 = __toESM(require("react"));
+var import_jsx_runtime236 = require("react/jsx-runtime");
+var TOOLBAR_PRESETS = {
+  full: [
+    { key: "bold", label: "Bold", icon: "B", command: (e) => e.exec("bold") },
+    { key: "italic", label: "Italic", icon: "I", command: (e) => e.exec("italic") },
+    { key: "underline", label: "Underline", icon: "U", command: (e) => e.exec("underline") },
+    { key: "strikeThrough", label: "Strikethrough", icon: "S", command: (e) => e.exec("strikeThrough") },
+    { key: "|", label: "|", icon: "|", command: () => {
+    } },
+    { key: "heading", label: "Heading", icon: "H", command: (e) => e.exec("formatBlock", "h3") },
+    { key: "bulletList", label: "Bullet List", icon: "\u2022", command: (e) => e.exec("insertUnorderedList") },
+    { key: "orderedList", label: "Ordered List", icon: "1.", command: (e) => e.exec("insertOrderedList") },
+    { key: "|2", label: "|", icon: "|", command: () => {
+    } },
+    { key: "link", label: "Insert Link", icon: "\u{1F517}", command: (e) => {
+      const url = window.prompt("Enter URL:");
+      if (url) e.exec("createLink", url);
+    } },
+    { key: "image", label: "Insert Image", icon: "\u{1F5BC}", command: (e) => {
+      const url = window.prompt("Enter image URL:");
+      if (url) e.exec("insertImage", url);
+    } },
+    { key: "|3", label: "|", icon: "|", command: () => {
+    } },
+    { key: "undo", label: "Undo", icon: "\u21A9", command: (e) => e.exec("undo") },
+    { key: "redo", label: "Redo", icon: "\u21AA", command: (e) => e.exec("redo") }
+  ],
+  basic: [
+    { key: "bold", label: "Bold", icon: "B", command: (e) => e.exec("bold") },
+    { key: "italic", label: "Italic", icon: "I", command: (e) => e.exec("italic") },
+    { key: "underline", label: "Underline", icon: "U", command: (e) => e.exec("underline") },
+    { key: "|", label: "|", icon: "|", command: () => {
+    } },
+    { key: "bulletList", label: "Bullet List", icon: "\u2022", command: (e) => e.exec("insertUnorderedList") },
+    { key: "orderedList", label: "Ordered List", icon: "1.", command: (e) => e.exec("insertOrderedList") },
+    { key: "|2", label: "|", icon: "|", command: () => {
+    } },
+    { key: "link", label: "Link", icon: "\u{1F517}", command: (e) => {
+      const url = window.prompt("Enter URL:");
+      if (url) e.exec("createLink", url);
+    } }
+  ],
+  minimal: [
+    { key: "bold", label: "Bold", icon: "B", command: (e) => e.exec("bold") },
+    { key: "italic", label: "Italic", icon: "I", command: (e) => e.exec("italic") },
+    { key: "underline", label: "Underline", icon: "U", command: (e) => e.exec("underline") }
+  ]
+};
+var SIZE_STYLES4 = {
+  sm: { fontSize: 13, padding: "6px 8px", minHeight: 80 },
+  md: { fontSize: 14, padding: "8px 10px", minHeight: 120 },
+  lg: { fontSize: 16, padding: "10px 12px", minHeight: 160 }
+};
+function sanitizeHtml(html) {
+  return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "").replace(/on\w+\s*=\s*"[^"]*"/gi, "").replace(/on\w+\s*=\s*'[^']*'/gi, "");
+}
+var RichTextEditor = import_react164.default.forwardRef(function RichTextEditor2({
+  value = "",
+  onChange,
+  placeholder = "Type something...",
+  size = "md",
+  label,
+  error,
+  helperText,
+  loading = false,
+  disabled = false,
+  block = false,
+  minHeight,
+  maxHeight,
+  showCount = false,
+  toolbar = "basic",
+  maxLength,
+  editorRef,
+  "data-testid": dataTestId
+}, ref) {
+  const containerRef = (0, import_react164.useRef)(null);
+  const editorContentRef = (0, import_react164.useRef)(null);
+  const [isFocused, setIsFocused] = (0, import_react164.useState)(false);
+  const [currentValue, setCurrentValue] = (0, import_react164.useState)(value);
+  const uniqueId = (0, import_react164.useId)();
+  const contentId = `rte-content-${uniqueId}`;
+  const handle = (0, import_react164.useRef)({
+    getContent: () => editorContentRef.current?.innerHTML ?? "",
+    setContent: (html) => {
+      if (editorContentRef.current) {
+        editorContentRef.current.innerHTML = sanitizeHtml(html);
+        setCurrentValue(html);
+      }
+    },
+    exec: (command, value2) => {
+      document.execCommand(command, false, value2);
+      if (editorContentRef.current) {
+        const html = editorContentRef.current.innerHTML;
+        setCurrentValue(html);
+        onChange?.(html);
+      }
+    },
+    focus: () => editorContentRef.current?.focus()
+  });
+  import_react164.default.useImperativeHandle(ref, () => handle.current);
+  import_react164.default.useImperativeHandle(editorRef, () => handle.current);
+  (0, import_react164.useEffect)(() => {
+    if (editorContentRef.current && !editorContentRef.current.innerHTML) {
+      editorContentRef.current.innerHTML = sanitizeHtml(value);
+    }
+  }, []);
+  (0, import_react164.useEffect)(() => {
+    if (editorContentRef.current && value !== currentValue) {
+      editorContentRef.current.innerHTML = sanitizeHtml(value);
+      setCurrentValue(value);
+    }
+  }, [value]);
+  const handleInput = (0, import_react164.useCallback)(() => {
+    if (!editorContentRef.current) return;
+    const html = editorContentRef.current.innerHTML;
+    if (maxLength && html.replace(/<[^>]*>/g, "").length > maxLength) return;
+    setCurrentValue(html);
+    onChange?.(html);
+  }, [onChange, maxLength]);
+  const handlePaste = (0, import_react164.useCallback)((e) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData("text/plain");
+    document.execCommand("insertText", false, text);
+  }, []);
+  const toolbarActions = Array.isArray(toolbar) ? toolbar : TOOLBAR_PRESETS[toolbar] ?? TOOLBAR_PRESETS.basic;
+  const textLength = currentValue.replace(/<[^>]*>/g, "").length;
+  const containerStyle5 = {
+    display: "inline-flex",
+    flexDirection: "column",
+    width: block ? "100%" : void 0,
+    opacity: disabled ? 0.6 : loading ? 0.7 : 1,
+    pointerEvents: disabled ? "none" : void 0
+  };
+  const editorStyle = {
+    border: `1px solid ${error ? "#ef4444" : isFocused ? "#3b82f6" : "#374151"}`,
+    borderRadius: 6,
+    background: loading ? "#f9fafb" : "#1e1e2e",
+    overflow: "hidden",
+    boxShadow: isFocused && !error ? "0 0 0 3px rgba(59,130,246,0.12)" : void 0
+  };
+  const toolbarStyle2 = {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 2,
+    padding: "4px 6px",
+    borderBottom: "1px solid #374151",
+    background: "#16162a"
+  };
+  const tbBtnStyle = (action) => {
+    if (action.icon === "|") {
+      return {
+        width: 1,
+        height: 20,
+        background: "#374151",
+        margin: "0 4px",
+        border: "none",
+        padding: 0
+      };
+    }
+    return {
+      background: "transparent",
+      border: "none",
+      color: "#cbd5e1",
+      cursor: "pointer",
+      fontSize: size === "sm" ? 12 : size === "lg" ? 15 : 13,
+      fontWeight: 600,
+      width: 28,
+      height: 28,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 4,
+      transition: "background 0.15s",
+      fontFamily: "inherit"
+    };
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { style: containerStyle5, "data-testid": dataTestId, children: [
+    label && /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(
+      "label",
+      {
+        htmlFor: contentId,
+        style: {
+          display: "block",
+          fontSize: 13,
+          fontWeight: 500,
+          color: disabled ? "#64748b" : "#cbd5e1",
+          marginBottom: 6
+        },
+        children: label
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)(
+      "div",
+      {
+        ref: containerRef,
+        style: editorStyle,
+        onFocus: () => setIsFocused(true),
+        onBlur: () => setIsFocused(false),
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("div", { style: toolbarStyle2, role: "toolbar", "aria-label": "Rich text editor toolbar", children: toolbarActions.map((action) => {
+            if (action.icon === "|") {
+              return /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("div", { style: tbBtnStyle(action) }, action.key);
+            }
+            return /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(
+              "button",
+              {
+                type: "button",
+                title: action.label,
+                style: tbBtnStyle(action),
+                onMouseEnter: (e) => {
+                  e.currentTarget.style.background = "#374151";
+                },
+                onMouseLeave: (e) => {
+                  e.currentTarget.style.background = "transparent";
+                },
+                onMouseDown: (e) => {
+                  e.preventDefault();
+                  handle.current.exec(action.key === "heading" ? "formatBlock" : action.key === "link" || action.key === "image" ? "" : "", "");
+                  action.command(handle.current);
+                },
+                children: action.icon && action.icon.length <= 2 ? action.icon : action.label.charAt(0)
+              },
+              action.key
+            );
+          }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime236.jsx)(
+            "div",
+            {
+              id: contentId,
+              ref: editorContentRef,
+              contentEditable: !disabled,
+              suppressContentEditableWarning: true,
+              role: "textbox",
+              "aria-multiline": "true",
+              "aria-label": label ?? "Rich text editor",
+              "data-placeholder": placeholder,
+              onInput: handleInput,
+              onPaste: handlePaste,
+              style: {
+                ...SIZE_STYLES4[size],
+                outline: "none",
+                color: "#e2e8f0",
+                lineHeight: 1.6,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                overflowY: "auto",
+                minHeight: minHeight ?? SIZE_STYLES4[size].minHeight,
+                maxHeight,
+                cursor: disabled ? "default" : "text"
+              },
+              dangerouslySetInnerHTML: { __html: sanitizeHtml(currentValue) }
+            }
+          )
+        ]
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)(
+      "div",
+      {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: 4,
+          minHeight: 18
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { children: [
+            helperText && !error && /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { style: { fontSize: 12, color: "#64748b" }, children: helperText }),
+            error && /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { style: { fontSize: 12, color: "#fca5a5" }, children: error })
+          ] }),
+          showCount && /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+            textLength,
+            maxLength ? ` / ${maxLength}` : ""
+          ] })
+        ]
+      }
+    )
+  ] });
+});
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -59859,6 +60143,7 @@ var Popconfirm = import_react163.default.memo(function Popconfirm2({
   RegionalManagerDashboard,
   ResourceOptimizationPanel,
   Result,
+  RichTextEditor,
   RuleRecommendationPanel,
   RuntimeGovernancePanelTemplate,
   RuntimeOperationDateTimeReadout,
