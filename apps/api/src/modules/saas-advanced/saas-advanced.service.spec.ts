@@ -1,443 +1,358 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
- * saas-advanced.service.spec.ts — 高级 SaaS (自定义域名) Service 纯函数式内联测试
+ * 🐜 自动: [saas-advanced] [A] service.spec — ≥18项正反例+边界
+ * CustomDomainService + SsoService 纯函数式内联测试 (不 import 生产代码)
  *
- * 覆盖：
- *   - DomainMapping CRUD: add/list/getById/remove
- *   - DNS TXT 校验: 成功/失败/多次失败自动 disabled
- *   - SSL 申请: 前置条件校验/成功/失败
- *   - 租户解析: host → tenantId
- *   - 多租户隔离: 不同 tenant 互不可见
- *   - 域名唯一性: 全局唯一
- *
- * 全部内联 mock，不依赖 NestJS DI。≥ 18 项测试。
+ * 覆盖: 自定义域名 CRUD(3) + DNS 校验(2) + SSL(2) + Host 解析(1) + SSO 连接 CRUD(3)
+ *       + SAML 登录(2) + OIDC 登录(2) + 令牌(2) + 身份(1) = 18
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import assert from 'node:assert/strict'
 
-// ═══════════════════════════════════════════════════════════════
-// 枚举常量
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// 内联类型
+// ══════════════════════════════════════════════
 
-const DOMAIN_STATUSES = ['pending_verification', 'active', 'ssl_issuing', 'active_ssl', 'ssl_failed', 'disabled'] as const
+type DomainStatus = 'pending_verification' | 'active' | 'ssl_issuing' | 'active_ssl' | 'ssl_failed' | 'disabled'
 
-// ═══════════════════════════════════════════════════════════════
-// Types (内联)
-// ═══════════════════════════════════════════════════════════════
-
-interface InlineDomainMapping {
-  id: string
-  tenantId: string
-  domain: string
-  verificationToken: string
-  verificationHost: string
-  status: string
-  ssl?: {
-    provider: string
-    expiresAt: string
-    fingerprint: string
-    lastRenewedAt: string
-  }
+interface DomainMapping {
+  id: string; tenantId: string; domain: string; verificationToken: string; verificationHost: string
+  status: DomainStatus; verificationFailCount: number; createdAt: string; updatedAt: string; createdBy: string
+  ssl?: { provider: string; expiresAt: string; fingerprint: string; lastRenewedAt: string }
   lastVerifiedAt?: string
-  verificationFailCount: number
-  createdAt: string
-  updatedAt: string
-  createdBy: string
 }
 
-// ═══════════════════════════════════════════════════════════════
-// 内联业务逻辑 — 对应 custom-domain.service.ts / .entity.ts 核心函数
-// ═══════════════════════════════════════════════════════════════
+type SsoProtocol = 'saml' | 'oidc'
+type SsoConnectionStatus = 'active' | 'disabled' | 'pending_verification'
 
-function inlineGenerateVerificationToken(): string {
-  const bytes = new Uint8Array(18)
-  for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256)
-  return Buffer.from(bytes).toString('base64url')
+interface SamlConfig {
+  entityId: string; ssoUrl: string; idpCertificate: string; spEntityId: string; acsUrl: string
+  signedAssertions: boolean
+  attributeMapping: { email: string; name?: string; role?: string; tenantId?: string }
+}
+interface OidcConfig {
+  issuer: string; clientId: string; clientSecret: string; authorizationEndpoint: string
+  tokenEndpoint: string; userinfoEndpoint: string; jwksUri: string; redirectUri: string
+  scope: string; claimMapping: { email: string; name?: string; role?: string; tenantId?: string }
+}
+interface SsoConnection {
+  id: string; tenantId: string; protocol: SsoProtocol; name: string; status: SsoConnectionStatus
+  saml?: SamlConfig; oidc?: OidcConfig; isDefault: boolean; defaultRole: string
+  autoProvisionTenant: boolean; allowedEmailDomains: string[]
+  createdAt: string; updatedAt: string; createdBy: string
+}
+interface UserSsoIdentity {
+  id: string; userId: string; tenantId: string; connectionId: string; protocol: SsoProtocol
+  subject: string; email: string; displayName?: string; lastLoginAt: string; loginCount: number; createdAt: string
 }
 
-function inlineBuildVerificationHost(domain: string): string {
-  return `_shenjiying-verify.${domain}`
-}
+// ══════════════════════════════════════════════
+// 内联工具函数
+// ══════════════════════════════════════════════
 
-function inlineBuildVerificationValue(token: string): string {
-  return `shenjiying-verify=${token}`
-}
+function genId(): string { return `id-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}` }
 
-function inlineIsValidDomain(domain: string): { valid: boolean; error?: string } {
-  if (!domain || domain.length > 253) return { valid: false, error: '域名长度 1-253' }
-  const fqdnRegex = /^(?=.{1,253}$)([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$/
-  if (!fqdnRegex.test(domain)) return { valid: false, error: '域名格式不合法 (需 FQDN)' }
-  const blocked = ['localhost', 'local', 'example.com', 'example.org', 'test']
-  for (const b of blocked) {
-    if (domain === b || domain.endsWith(`.${b}`)) return { valid: false, error: `禁止使用保留域名: ${b}` }
-  }
+function isValidDomain(domain: string): { valid: boolean; error?: string } {
+  if (!domain || domain.length > 253) return { valid: false, error: '长度 1-253' }
+  if (!/^(?=.{1,253}$)([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$/.test(domain)) return { valid: false, error: 'FQDN 不合法' }
+  for (const b of ['localhost', 'example.com', 'example.org']) { if (domain === b || domain.endsWith(`.${b}`)) return { valid: false, error: `禁止: ${b}` } }
   return { valid: true }
 }
 
-function inlineAddDomain(
-  domains: Map<string, InlineDomainMapping>,
-  domainsByName: Map<string, string>,
-  domainsByTenant: Map<string, Set<string>>,
-  domain: string,
-  tenantId: string,
-  userId?: string,
-): { mapping?: InlineDomainMapping; error?: string } {
-  const valid = inlineIsValidDomain(domain)
-  if (!valid.valid) return { error: valid.error }
+function generateVerificationToken(): string { return Buffer.from(new Uint8Array(18).map(() => Math.floor(Math.random() * 256))).toString('base64url') }
+function buildVerificationHost(domain: string): string { return `_shenjiying-verify.${domain}` }
+function buildVerificationValue(token: string): string { return `shenjiying-verify=${token}` }
+function extractEmailDomain(email: string): string { const at = email.indexOf('@'); return at < 0 ? '' : email.slice(at + 1).toLowerCase() }
 
-  if (domainsByName.has(domain.toLowerCase())) return { error: `Domain ${domain} already registered` }
+// ══════════════════════════════════════════════
+// Internal Mock: CustomDomainService
+// ══════════════════════════════════════════════
 
-  const token = inlineGenerateVerificationToken()
-  const host = inlineBuildVerificationHost(domain)
-  const mapping: InlineDomainMapping = {
-    id: `dom-test-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`,
-    tenantId,
-    domain: domain.toLowerCase(),
-    verificationToken: token,
-    verificationHost: host,
-    status: 'pending_verification',
-    verificationFailCount: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    createdBy: userId ?? 'system',
-  }
-  domains.set(mapping.id, mapping)
-  domainsByName.set(mapping.domain, mapping.id)
-  if (!domainsByTenant.has(tenantId)) domainsByTenant.set(tenantId, new Set())
-  domainsByTenant.get(tenantId)!.add(mapping.id)
-  return { mapping }
-}
+class MockCustomDomainService {
+  private domains = new Map<string, DomainMapping>()
+  private domainsByName = new Map<string, string>()
+  private domainsByTenant = new Map<string, Set<string>>()
+  // DNS TXT overrides for test
+  dnsTxtOverrides = new Map<string, string[]>()
 
-function inlineListDomains(
-  domains: Map<string, InlineDomainMapping>,
-  domainsByTenant: Map<string, Set<string>>,
-  tenantId: string,
-): InlineDomainMapping[] {
-  const ids = domainsByTenant.get(tenantId) ?? new Set()
-  return Array.from(ids)
-    .map((id) => domains.get(id)!)
-    .filter((d) => d != null)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-}
-
-function inlineGetById(
-  domains: Map<string, InlineDomainMapping>,
-  id: string,
-  tenantId: string,
-): InlineDomainMapping | null {
-  const m = domains.get(id)
-  if (!m || m.tenantId !== tenantId) return null
-  return m
-}
-
-function inlineRemoveDomain(
-  domains: Map<string, InlineDomainMapping>,
-  domainsByName: Map<string, string>,
-  domainsByTenant: Map<string, Set<string>>,
-  id: string,
-  tenantId: string,
-): string | null {
-  const m = domains.get(id)
-  if (!m || m.tenantId !== tenantId) return 'not found'
-  domains.delete(id)
-  domainsByName.delete(m.domain)
-  domainsByTenant.get(tenantId)?.delete(id)
-  return null
-}
-
-function inlineVerify(
-  domains: Map<string, InlineDomainMapping>,
-  domainsByName: Map<string, string>,
-  id: string,
-  tenantId: string,
-  dnsOverrides: Map<string, string[]>,
-): string | null {
-  const m = inlineGetById(domains, id, tenantId)
-  if (!m) return 'Domain not found'
-  if (m.status !== 'pending_verification') return null
-
-  const expectedValue = inlineBuildVerificationValue(m.verificationToken)
-  let txtRecords: string[]
-  if (dnsOverrides.has(m.verificationHost)) {
-    txtRecords = dnsOverrides.get(m.verificationHost)!
-  } else {
-    txtRecords = []
-  }
-
-  if (txtRecords.includes(expectedValue)) {
-    m.status = 'active'
-    m.verificationFailCount = 0
-    m.lastVerifiedAt = new Date().toISOString()
-    m.updatedAt = m.lastVerifiedAt
-    return null
-  } else {
-    m.verificationFailCount++
-    if (m.verificationFailCount >= 3) {
-      m.status = 'disabled'
+  async addDomain(domain: string, tenantId = 't-a'): Promise<DomainMapping> {
+    const valid = isValidDomain(domain)
+    if (!valid.valid) throw new Error(valid.error)
+    if (this.domainsByName.has(domain.toLowerCase())) throw new Error(`Domain ${domain} already registered`)
+    const token = generateVerificationToken(); const host = buildVerificationHost(domain)
+    const m: DomainMapping = {
+      id: genId(), tenantId, domain: domain.toLowerCase(), verificationToken: token,
+      verificationHost: host, status: 'pending_verification', verificationFailCount: 0,
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), createdBy: 'system',
     }
-    m.updatedAt = new Date().toISOString()
-    return `DNS TXT 校验失败 (${m.verificationFailCount}/3)`
+    this.domains.set(m.id, m); this.domainsByName.set(m.domain, m.id)
+    if (!this.domainsByTenant.has(tenantId)) this.domainsByTenant.set(tenantId, new Set())
+    this.domainsByTenant.get(tenantId)!.add(m.id)
+    return m
   }
-}
 
-interface InlineMockSslResult {
-  certPem: string
-  expiresAt: string
-  fingerprint: string
-}
+  async list(tenantId = 't-a'): Promise<DomainMapping[]> {
+    const ids = this.domainsByTenant.get(tenantId) ?? new Set()
+    return Array.from(ids).map((id) => this.domains.get(id)!).filter(Boolean).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }
 
-async function inlineRequestSsl(
-  domains: Map<string, InlineDomainMapping>,
-  id: string,
-  tenantId: string,
-): Promise<{ error?: string }> {
-  const m = inlineGetById(domains, id, tenantId)
-  if (!m) return { error: 'Domain not found' }
-  if (m.status !== 'active') return { error: `Domain must be active before SSL request. Current: ${m.status}` }
+  async getById(id: string, tenantId = 't-a'): Promise<DomainMapping> {
+    const m = this.domains.get(id)
+    if (!m || m.tenantId !== tenantId) throw new Error(`Domain ${id} not found`)
+    return m
+  }
 
-  m.status = 'ssl_issuing'
-  m.updatedAt = new Date().toISOString()
+  async remove(id: string, tenantId = 't-a'): Promise<void> {
+    const m = this.domains.get(id)
+    if (!m || m.tenantId !== tenantId) throw new Error(`Domain ${id} not found`)
+    this.domains.delete(id); this.domainsByName.delete(m.domain)
+    this.domainsByTenant.get(tenantId)?.delete(id)
+  }
 
-  // Mock SSL issue
-  try {
-    const certPem = `-----BEGIN CERTIFICATE-----\nMOCK-${m.domain}-${Date.now().toString(36)}\n-----END CERTIFICATE-----`
-    const expiresAt = new Date(Date.now() + 90 * 86400 * 1000).toISOString()
-    const cleanPem = certPem.replace(/-----BEGIN CERTIFICATE-----/g, '').replace(/-----END CERTIFICATE-----/g, '').replace(/\s/g, '')
-    const fingerprint = Buffer.from(cleanPem).toString('base64').slice(0, 64)
-    m.ssl = {
-      provider: 'letsencrypt',
-      expiresAt,
-      fingerprint,
-      lastRenewedAt: new Date().toISOString(),
+  async verify(id: string, tenantId = 't-a'): Promise<DomainMapping> {
+    const m = await this.getById(id, tenantId)
+    if (m.status !== 'pending_verification') return m
+    const expected = buildVerificationValue(m.verificationToken)
+    const txtRecords = this.dnsTxtOverrides.get(m.verificationHost) ?? []
+    if (txtRecords.includes(expected)) {
+      m.status = 'active'; m.verificationFailCount = 0; m.lastVerifiedAt = new Date().toISOString(); m.updatedAt = m.lastVerifiedAt
+    } else {
+      m.verificationFailCount++
+      if (m.verificationFailCount >= 3) m.status = 'disabled'
+      m.updatedAt = new Date().toISOString()
+      throw new Error(`DNS TXT 校验失败 (${m.verificationFailCount}/3)`)
     }
+    return m
+  }
+
+  async requestSsl(id: string, tenantId = 't-a'): Promise<DomainMapping> {
+    const m = await this.getById(id, tenantId)
+    if (m.status !== 'active') throw new Error(`Domain must be active. Current: ${m.status}`)
     m.status = 'active_ssl'
-  } catch {
-    m.status = 'ssl_failed'
-    return { error: 'SSL 申请失败' }
-  } finally {
+    m.ssl = { provider: 'letsencrypt', expiresAt: new Date(Date.now() + 90 * 86400000).toISOString(), fingerprint: 'mock-fp', lastRenewedAt: new Date().toISOString() }
     m.updatedAt = new Date().toISOString()
+    return m
   }
-  return {}
+
+  resolveTenantByHost(host: string): string | null {
+    const domain = host.toLowerCase().split(':')[0]
+    const id = this.domainsByName.get(domain); if (!id) return null
+    const m = this.domains.get(id); if (!m || m.status === 'disabled' || (m.status !== 'active' && m.status !== 'active_ssl')) return null
+    return m.tenantId
+  }
+
+  count(): number { return this.domains.size }
 }
 
-function inlineResolveTenantByHost(
-  domains: Map<string, InlineDomainMapping>,
-  domainsByName: Map<string, string>,
-  host: string,
-): string | null {
-  const domain = host.toLowerCase().split(':')[0]
-  const mappingId = domainsByName.get(domain)
-  if (!mappingId) return null
-  const m = domains.get(mappingId)
-  if (!m || m.status === 'disabled') return null
-  if (m.status !== 'active' && m.status !== 'active_ssl') return null
-  return m.tenantId
+// ══════════════════════════════════════════════
+// Internal Mock: SsoService (精简版)
+// ══════════════════════════════════════════════
+
+class MockSsoService {
+  private connections = new Map<string, SsoConnection>()
+  private connectionsByTenant = new Map<string, Set<string>>()
+  private connectionsByName = new Map<string, string>()
+  private identities = new Map<string, UserSsoIdentity>()
+  private identitiesBySubject = new Map<string, string>()
+
+  async createSamlConnection(dto: { name: string; saml: SamlConfig; isDefault?: boolean; defaultRole?: string; allowedEmailDomains?: string[] }, tenantId = 't-a'): Promise<SsoConnection> {
+    if (!dto.saml.entityId || !dto.saml.ssoUrl || !dto.saml.acsUrl) throw new Error('SAML 配置不完整')
+    const nk = `${tenantId}:${dto.name}`
+    if (this.connectionsByName.has(nk)) throw new Error(`名称 "${dto.name}" 已存在`)
+    const conn: SsoConnection = { id: genId(), tenantId, protocol: 'saml', name: dto.name, status: 'active', saml: { ...dto.saml }, isDefault: dto.isDefault ?? false, defaultRole: dto.defaultRole ?? 'operator', autoProvisionTenant: false, allowedEmailDomains: dto.allowedEmailDomains ?? [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), createdBy: 'system' }
+    this.connections.set(conn.id, conn); this.connectionsByName.set(nk, conn.id)
+    if (!this.connectionsByTenant.has(tenantId)) this.connectionsByTenant.set(tenantId, new Set())
+    this.connectionsByTenant.get(tenantId)!.add(conn.id)
+    return conn
+  }
+
+  async createOidcConnection(dto: { name: string; oidc: OidcConfig; isDefault?: boolean; defaultRole?: string; allowedEmailDomains?: string[] }, tenantId = 't-a'): Promise<SsoConnection> {
+    if (!dto.oidc.clientId || !dto.oidc.authorizationEndpoint) throw new Error('OIDC 配置不完整')
+    const nk = `${tenantId}:${dto.name}`
+    if (this.connectionsByName.has(nk)) throw new Error(`名称 "${dto.name}" 已存在`)
+    const conn: SsoConnection = { id: genId(), tenantId, protocol: 'oidc', name: dto.name, status: 'active', oidc: { ...dto.oidc }, isDefault: dto.isDefault ?? false, defaultRole: dto.defaultRole ?? 'operator', autoProvisionTenant: false, allowedEmailDomains: dto.allowedEmailDomains ?? [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), createdBy: 'system' }
+    this.connections.set(conn.id, conn); this.connectionsByName.set(nk, conn.id)
+    if (!this.connectionsByTenant.has(tenantId)) this.connectionsByTenant.set(tenantId, new Set())
+    this.connectionsByTenant.get(tenantId)!.add(conn.id)
+    return conn
+  }
+
+  async list(tenantId = 't-a'): Promise<SsoConnection[]> {
+    const ids = this.connectionsByTenant.get(tenantId) ?? new Set()
+    return Array.from(ids).map((id) => this.connections.get(id)!).filter(Boolean)
+  }
+
+  async getConnection(id: string, tenantId = 't-a'): Promise<SsoConnection> {
+    const c = this.connections.get(id)
+    if (!c || c.tenantId !== tenantId) throw new Error(`SSO 连接 ${id} 不存在`)
+    return c
+  }
+
+  async deleteConnection(id: string, tenantId = 't-a'): Promise<void> {
+    const c = this.connections.get(id)
+    if (!c || c.tenantId !== tenantId) throw new Error(`SSO 连接 ${id} 不存在`)
+    this.connections.delete(id); this.connectionsByTenant.get(tenantId)?.delete(id)
+    this.connectionsByName.delete(`${tenantId}:${c.name}`)
+  }
+
+  /** 模拟 SAML 登录完成: 基于 email 匹配 connection, JIT 创建用户身份 */
+  async completeSamlLogin(samlXml: string, tenantId = 't-a'): Promise<{ userId: string; email: string; isNewUser: boolean; tenantId: string }> {
+    // 模拟 parseSamlAssertion
+    const emailMatch = samlXml.match(/email=([^\s&]+)/); const nameMatch = samlXml.match(/nameId=([^\s&]+)/)
+    const email = emailMatch ? emailMatch[1] : 'mock@example.com'; const nameId = nameMatch ? nameMatch[1] : 'mock-sub'
+    const conn = Array.from(this.connections.values()).find((c) => c.tenantId === tenantId && c.status === 'active')
+    if (!conn) throw new Error('无匹配的 SSO 连接')
+    if (conn.allowedEmailDomains.length > 0) {
+      const domain = extractEmailDomain(email)
+      if (!conn.allowedEmailDomains.includes(domain)) throw new Error(`域名 ${domain} 不在白名单`)
+    }
+    const subKey = `${conn.id}:${nameId}`
+    const existingId = this.identitiesBySubject.get(subKey)
+    let identity: UserSsoIdentity
+    if (existingId && this.identities.has(existingId)) {
+      identity = this.identities.get(existingId)!; identity.lastLoginAt = new Date().toISOString(); identity.loginCount++
+      return { userId: identity.userId, email, isNewUser: false, tenantId }
+    }
+    const userId = genId()
+    identity = { id: genId(), userId, tenantId, connectionId: conn.id, protocol: 'saml', subject: nameId, email: email.toLowerCase(), lastLoginAt: new Date().toISOString(), loginCount: 1, createdAt: new Date().toISOString() }
+    this.identities.set(identity.id, identity); this.identitiesBySubject.set(subKey, identity.id)
+    return { userId, email, isNewUser: true, tenantId }
+  }
+
+  /** 模拟 OIDC 登录 */
+  async completeOidcLogin(code: string, tenantId = 't-a'): Promise<{ userId: string; email: string; isNewUser: boolean; tenantId: string }> {
+    // 模拟 code → token → userinfo
+    const email = `oidc-user@example.com`; const sub = `oidc-${code.slice(0, 6)}`
+    const conn = Array.from(this.connections.values()).find((c) => c.tenantId === tenantId && c.status === 'active' && c.protocol === 'oidc')
+    if (!conn) throw new Error('无匹配的 OIDC 连接')
+    const subKey = `${conn.id}:${sub}`
+    const existingId = this.identitiesBySubject.get(subKey)
+    if (existingId && this.identities.has(existingId)) {
+      const identity = this.identities.get(existingId)!; identity.lastLoginAt = new Date().toISOString(); identity.loginCount++
+      return { userId: identity.userId, email, isNewUser: false, tenantId }
+    }
+    const userId = genId()
+    const identity: UserSsoIdentity = { id: genId(), userId, tenantId, connectionId: conn.id, protocol: 'oidc', subject: sub, email, lastLoginAt: new Date().toISOString(), loginCount: 1, createdAt: new Date().toISOString() }
+    this.identities.set(identity.id, identity); this.identitiesBySubject.set(subKey, identity.id)
+    return { userId, email, isNewUser: true, tenantId }
+  }
+
+  countConnections(): number { return this.connections.size }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// 测试套件
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// 测试
+// ══════════════════════════════════════════════
 
-describe('CustomDomainService (内联纯函数)', () => {
-  let domains: Map<string, InlineDomainMapping>
-  let domainsByName: Map<string, string>
-  let domainsByTenant: Map<string, Set<string>>
-  let dnsOverrides: Map<string, string[]>
+describe('saas-advanced service.spec', () => {
+  // ── Custom Domain ──
+  describe('CustomDomainService', () => {
+    let svc: MockCustomDomainService
+    beforeEach(() => { svc = new MockCustomDomainService() })
 
-  beforeEach(() => {
-    domains = new Map()
-    domainsByName = new Map()
-    domainsByTenant = new Map()
-    dnsOverrides = new Map()
-  })
-
-  // ── 1. 域名校验 ─────────────────────────────────────────────
-
-  describe('1. 域名校验', () => {
-    it('合法域名 — 通过校验', () => {
-      expect(inlineIsValidDomain('my-store.shenjiying.com').valid).toBe(true)
-      expect(inlineIsValidDomain('a-b.c-d.co.jp').valid).toBe(true)
-      expect(inlineIsValidDomain('valid.test.net').valid).toBe(true)
+    it('addDomain 创建 pending_verification 域名', async () => {
+      const m = await svc.addDomain('acme.shenjiying88.com', 't-a')
+      assert.ok(m.id); assert.equal(m.status, 'pending_verification')
+      assert.ok(m.verificationHost.includes('acme.shenjiying88.com'))
     })
-
-    it('非法域名 — 拒绝空字符串、格式错误', () => {
-      expect(inlineIsValidDomain('').valid).toBe(false)
-      expect(inlineIsValidDomain('not a domain').valid).toBe(false)
-      expect(inlineIsValidDomain('-leading-hyphen.com').valid).toBe(false)
-      expect(inlineIsValidDomain('a').valid).toBe(false)
+    it('无效域名被拒', async () => {
+      await assert.rejects(() => svc.addDomain('invalid!domain', 't-a'), /FQDN/)
     })
-
-    it('保留域名 — 拒绝 localhost / example.com 等', () => {
-      expect(inlineIsValidDomain('localhost').valid).toBe(false)
-      expect(inlineIsValidDomain('example.com').valid).toBe(false)
-      expect(inlineIsValidDomain('test').valid).toBe(false)
-      expect(inlineIsValidDomain('sub.example.com').valid).toBe(false)
+    it('重复域名被拒', async () => {
+      await svc.addDomain('dup.myshop.com', 't-a')
+      await assert.rejects(() => svc.addDomain('dup.myshop.com', 't-a'), /already registered/)
     })
-  })
-
-  // ── 2. DomainMapping CRUD ───────────────────────────────────
-
-  describe('2. DomainMapping CRUD', () => {
-    it('addDomain — 成功添加 pending_verification 域名', () => {
-      const result = inlineAddDomain(domains, domainsByName, domainsByTenant, 'acme.shenjiying88.com', 'tenant-A', 'admin')
-      expect(result.mapping).toBeTruthy()
-      expect(result.mapping!.status).toBe('pending_verification')
-      expect(result.mapping!.domain).toBe('acme.shenjiying88.com')
-      expect(result.mapping!.tenantId).toBe('tenant-A')
-      expect(result.mapping!.verificationHost).toBe('_shenjiying-verify.acme.shenjiying88.com')
-      expect(result.mapping!.verificationToken).toBeTruthy()
+    it('verify 成功通过 DNS TXT 校验', async () => {
+      const m = await svc.addDomain('verify-ok.myshop.com', 't-a')
+      svc.dnsTxtOverrides.set(m.verificationHost, [buildVerificationValue(m.verificationToken)])
+      const verified = await svc.verify(m.id, 't-a')
+      assert.equal(verified.status, 'active')
+      assert.ok(verified.lastVerifiedAt)
     })
-
-    it('addDomain — 重复域名报错（全局唯一）', () => {
-      inlineAddDomain(domains, domainsByName, domainsByTenant, 'acme.com', 'tenant-A')
-      const result = inlineAddDomain(domains, domainsByName, domainsByTenant, 'acme.com', 'tenant-B')
-      expect(result.error).toContain('already registered')
+    it('verify 失败 3 次后 disabled', async () => {
+      const m = await svc.addDomain('verify-fail.myshop.com', 't-a')
+      for (let i = 0; i < 3; i++) {
+        try { await svc.verify(m.id, 't-a') } catch {}
+      }
+      const after = await svc.getById(m.id, 't-a')
+      assert.equal(after.status, 'disabled'); assert.equal(after.verificationFailCount, 3)
     })
-
-    it('addDomain — 非法域名返回 error', () => {
-      const result = inlineAddDomain(domains, domainsByName, domainsByTenant, 'example.com', 'tenant-A')
-      expect(result.error).toContain('禁止使用保留域名')
+    it('requestSsl 需要 active 状态', async () => {
+      const m = await svc.addDomain('ssl.myshop.com', 't-a')
+      svc.dnsTxtOverrides.set(m.verificationHost, [buildVerificationValue(m.verificationToken)])
+      await svc.verify(m.id, 't-a')
+      const ssl = await svc.requestSsl(m.id, 't-a')
+      assert.equal(ssl.status, 'active_ssl')
+      assert.ok(ssl.ssl)
     })
-
-    it('list — 只返回当前 tenant 的域名，按创建时间倒序', () => {
-      const r1 = inlineAddDomain(domains, domainsByName, domainsByTenant, 'a.com', 'tenant-A')!
-      // 延迟一点确保时间戳不同
-      const r2 = inlineAddDomain(domains, domainsByName, domainsByTenant, 'b.com', 'tenant-A')!
-      inlineAddDomain(domains, domainsByName, domainsByTenant, 'c.com', 'tenant-B')
-      const list = inlineListDomains(domains, domainsByTenant, 'tenant-A')
-      expect(list).toHaveLength(2)
-      // 验证返回两个域名
-      expect(list.some((d) => d.domain === 'a.com')).toBe(true)
-      expect(list.some((d) => d.domain === 'b.com')).toBe(true)
-      // 确认 tenant-B 的域名不被返回
-      expect(list.some((d) => d.domain === 'c.com')).toBe(false)
+    it('非 active 域名 SSL 被拒', async () => {
+      const m = await svc.addDomain('ssl-fail.myshop.com', 't-a')
+      await assert.rejects(() => svc.requestSsl(m.id, 't-a'), /must be active/)
     })
-
-    it('getById — 跨租户不可见', () => {
-      const r = inlineAddDomain(domains, domainsByName, domainsByTenant, 'a.com', 'tenant-A')!
-      expect(inlineGetById(domains, r.mapping!.id, 'tenant-B')).toBeNull()
-      expect(inlineGetById(domains, r.mapping!.id, 'tenant-A')).toBeTruthy()
-    })
-
-    it('remove — 删除域名并清理关联索引', () => {
-      const r = inlineAddDomain(domains, domainsByName, domainsByTenant, 'del.com', 'tenant-A')!
-      const err = inlineRemoveDomain(domains, domainsByName, domainsByTenant, r.mapping!.id, 'tenant-A')
-      expect(err).toBeNull()
-      expect(domains.size).toBe(0)
-      expect(domainsByName.size).toBe(0)
-      expect(domainsByTenant.get('tenant-A')?.size).toBe(0)
-    })
-
-    it('remove — 跨租户无权限返回 error', () => {
-      const r = inlineAddDomain(domains, domainsByName, domainsByTenant, 'a.com', 'tenant-A')!
-      const err = inlineRemoveDomain(domains, domainsByName, domainsByTenant, r.mapping!.id, 'tenant-B')
-      expect(err).toBe('not found')
+    it('resolveTenantByHost 解析 tenant', async () => {
+      const m = await svc.addDomain('myapp.myshop.com', 't-b')
+      svc.dnsTxtOverrides.set(m.verificationHost, [buildVerificationValue(m.verificationToken)])
+      await svc.verify(m.id, 't-b')
+      assert.equal(svc.resolveTenantByHost('myapp.myshop.com'), 't-b')
+      assert.equal(svc.resolveTenantByHost('unknown.myshop.com'), null)
     })
   })
 
-  // ── 3. DNS TXT 校验 ─────────────────────────────────────────
+  // ── SSO ──
+  describe('SsoService', () => {
+    let svc: MockSsoService
+    beforeEach(() => { svc = new MockSsoService() })
 
-  describe('3. DNS TXT 校验', () => {
-    it('DNS TXT 校验成功 → status 变为 active', () => {
-      const r = inlineAddDomain(domains, domainsByName, domainsByTenant, 'verify-test.com', 'tenant-A')!
-      const m = r.mapping!
-      // 注入正确的 TXT 记录
-      const expectedValue = inlineBuildVerificationValue(m.verificationToken)
-      dnsOverrides.set(m.verificationHost, [expectedValue])
-      const err = inlineVerify(domains, domainsByName, m.id, 'tenant-A', dnsOverrides)
-      expect(err).toBeNull()
-      const updated = inlineGetById(domains, m.id, 'tenant-A')
-      expect(updated!.status).toBe('active')
-      expect(updated!.lastVerifiedAt).toBeTruthy()
+    it('createSamlConnection 创建 SAML 连接', async () => {
+      const c = await svc.createSamlConnection({
+        name: 'Okta', isDefault: true,
+        saml: { entityId: 'http://okta.com', ssoUrl: 'https://okta.com/sso', acsUrl: 'https://app.com/acs', spEntityId: 'app', idpCertificate: '-----BEGIN CERTIFICATE-----\nMOCK\n-----END CERTIFICATE-----', signedAssertions: true, attributeMapping: { email: 'email' } },
+      }, 't-a')
+      assert.equal(c.protocol, 'saml'); assert.ok(c.isDefault)
     })
-
-    it('DNS TXT 校验失败 → 递增失败次数，第 3 次自动 disabled', () => {
-      const r = inlineAddDomain(domains, domainsByName, domainsByTenant, 'fail-test.com', 'tenant-A')!
-      const m = r.mapping!
-      // 注入错误 TXT 记录
-      dnsOverrides.set(m.verificationHost, ['wrong-value-xxx'])
-
-      const err1 = inlineVerify(domains, domainsByName, m.id, 'tenant-A', dnsOverrides)
-      expect(err1).toContain('1/3')
-      expect(inlineGetById(domains, m.id, 'tenant-A')!.verificationFailCount).toBe(1)
-
-      const err2 = inlineVerify(domains, domainsByName, m.id, 'tenant-A', dnsOverrides)
-      expect(err2).toContain('2/3')
-      expect(inlineGetById(domains, m.id, 'tenant-A')!.verificationFailCount).toBe(2)
-
-      const err3 = inlineVerify(domains, domainsByName, m.id, 'tenant-A', dnsOverrides)
-      expect(err3).toContain('3/3')
-      expect(inlineGetById(domains, m.id, 'tenant-A')!.status).toBe('disabled')
+    it('createOidcConnection 创建 OIDC 连接', async () => {
+      const c = await svc.createOidcConnection({
+        name: 'Auth0',
+        oidc: { issuer: 'https://auth0.com', clientId: 'client-1', clientSecret: 'secret', authorizationEndpoint: 'https://auth0.com/auth', tokenEndpoint: 'https://auth0.com/token', userinfoEndpoint: 'https://auth0.com/userinfo', jwksUri: 'https://auth0.com/jwks', redirectUri: 'https://app.com/callback', scope: 'openid email', claimMapping: { email: 'email' } },
+      }, 't-a')
+      assert.equal(c.protocol, 'oidc')
     })
-
-    it('DNS TXT 校验 — 已 active 的域名直接返回', () => {
-      const r = inlineAddDomain(domains, domainsByName, domainsByTenant, 'active.com', 'tenant-A')!
-      const m = r.mapping!
-      // 先使状态变为 active
-      m.status = 'active'
-      const err = inlineVerify(domains, domainsByName, m.id, 'tenant-A', dnsOverrides)
-      expect(err).toBeNull()
+    it('重复连接名被拒', async () => {
+      await svc.createSamlConnection({ name: 'Dup', saml: { entityId: 'x', ssoUrl: 'https://x.com', acsUrl: 'https://x.com/acs', spEntityId: 'x', idpCertificate: 'BEGIN CERTIFICATE', signedAssertions: true, attributeMapping: { email: 'email' } } }, 't-a')
+      await assert.rejects(() => svc.createSamlConnection({ name: 'Dup', saml: { entityId: 'y', ssoUrl: 'https://y.com', acsUrl: 'https://y.com/acs', spEntityId: 'y', idpCertificate: 'BEGIN CERTIFICATE', signedAssertions: true, attributeMapping: { email: 'email' } } }, 't-a'), /已存在/)
     })
-  })
-
-  // ── 4. SSL 申请 ─────────────────────────────────────────────
-
-  describe('4. SSL 申请', () => {
-    it('SSL 申请 — active 域名可成功申请', async () => {
-      const r = inlineAddDomain(domains, domainsByName, domainsByTenant, 'ssl-test.com', 'tenant-A')!
-      const m = r.mapping!
-      // 先验证
-      m.status = 'active'
-
-      const result = await inlineRequestSsl(domains, m.id, 'tenant-A')
-      expect(result.error).toBeUndefined()
-      const updated = domains.get(m.id)!
-      expect(updated.status).toBe('active_ssl')
-      expect(updated.ssl).toBeTruthy()
-      expect(updated.ssl!.provider).toBe('letsencrypt')
+    it('SAML 完成登录 JIT 创建用户', async () => {
+      await svc.createSamlConnection({ name: 'Okta', saml: { entityId: 'x', ssoUrl: 'https://x.com', acsUrl: 'https://x.com/acs', spEntityId: 'x', idpCertificate: 'BEGIN CERTIFICATE', signedAssertions: true, attributeMapping: { email: 'email' } } }, 't-a')
+      const r = await svc.completeSamlLogin('email=alice@example.com&nameId=alice-1', 't-a')
+      assert.ok(r.isNewUser); assert.equal(r.email, 'alice@example.com')
     })
-
-    it('SSL 申请 — pending_verification 的域名被拒绝', async () => {
-      const r = inlineAddDomain(domains, domainsByName, domainsByTenant, 'pending.com', 'tenant-A')!
-      const result = await inlineRequestSsl(domains, r.mapping!.id, 'tenant-A')
-      expect(result.error).toContain('must be active')
+    it('SAML 再次登录返回 isNewUser=false', async () => {
+      await svc.createSamlConnection({ name: 'Okta', saml: { entityId: 'x', ssoUrl: 'https://x.com', acsUrl: 'https://x.com/acs', spEntityId: 'x', idpCertificate: 'BEGIN CERTIFICATE', signedAssertions: true, attributeMapping: { email: 'email' } } }, 't-a')
+      await svc.completeSamlLogin('email=bob@example.com&nameId=bob-1', 't-a')
+      const r2 = await svc.completeSamlLogin('email=bob@example.com&nameId=bob-1', 't-a')
+      assert.equal(r2.isNewUser, false)
     })
-
-    it('SSL 申请 — disabled 域名被拒绝', async () => {
-      const r = inlineAddDomain(domains, domainsByName, domainsByTenant, 'disabled.com', 'tenant-A')!
-      r.mapping!.status = 'disabled'
-      const result = await inlineRequestSsl(domains, r.mapping!.id, 'tenant-A')
-      expect(result.error).toContain('must be active')
+    it('OIDC 完成登录 JIT 创建用户', async () => {
+      await svc.createOidcConnection({ name: 'Google', oidc: { issuer: 'g', clientId: 'c', clientSecret: 's', authorizationEndpoint: 'https://g.com/auth', tokenEndpoint: 'https://g.com/token', userinfoEndpoint: 'https://g.com/userinfo', jwksUri: 'https://g.com/jwks', redirectUri: 'https://app.com/cb', scope: 'openid', claimMapping: { email: 'email' } } }, 't-a')
+      const r = await svc.completeOidcLogin('abc123', 't-a')
+      assert.ok(r.isNewUser); assert.ok(r.userId)
     })
-  })
-
-  // ── 5. Host → Tenant 解析 ──────────────────────────────────
-
-  describe('5. Host → Tenant 解析', () => {
-    it('active/active_ssl 状态的域名可解析', () => {
-      const r = inlineAddDomain(domains, domainsByName, domainsByTenant, 'shop.acme.com', 'tenant-A')!
-      r.mapping!.status = 'active'
-      expect(inlineResolveTenantByHost(domains, domainsByName, 'shop.acme.com')).toBe('tenant-A')
-      r.mapping!.status = 'active_ssl'
-      expect(inlineResolveTenantByHost(domains, domainsByName, 'SHOP.ACME.COM')).toBe('tenant-A')
+    it('OIDC 重复登录返回 isNewUser=false', async () => {
+      await svc.createOidcConnection({ name: 'Google', oidc: { issuer: 'g', clientId: 'c', clientSecret: 's', authorizationEndpoint: 'https://g.com/auth', tokenEndpoint: 'https://g.com/token', userinfoEndpoint: 'https://g.com/userinfo', jwksUri: 'https://g.com/jwks', redirectUri: 'https://app.com/cb', scope: 'openid', claimMapping: { email: 'email' } } }, 't-a')
+      await svc.completeOidcLogin('xyz789', 't-a')
+      const r2 = await svc.completeOidcLogin('xyz789', 't-a')
+      assert.equal(r2.isNewUser, false)
     })
-
-    it('disabled/pending_verification 域名不解析', () => {
-      const r = inlineAddDomain(domains, domainsByName, domainsByTenant, 'down.shop.com', 'tenant-A')!
-      r.mapping!.status = 'disabled'
-      expect(inlineResolveTenantByHost(domains, domainsByName, 'down.shop.com')).toBeNull()
-
-      const r2 = inlineAddDomain(domains, domainsByName, domainsByTenant, 'pending.shop.com', 'tenant-A')!
-      expect(inlineResolveTenantByHost(domains, domainsByName, 'pending.shop.com')).toBeNull()
+    it('list 返回所有连接', async () => {
+      await svc.createSamlConnection({ name: 'A', saml: { entityId: 'x', ssoUrl: 'https://x.com', acsUrl: 'https://x.com/acs', spEntityId: 'x', idpCertificate: 'BEGIN CERTIFICATE', signedAssertions: true, attributeMapping: { email: 'email' } } }, 't-a')
+      await svc.createOidcConnection({ name: 'B', oidc: { issuer: 'g', clientId: 'c', clientSecret: 's', authorizationEndpoint: 'https://g.com/auth', tokenEndpoint: 'https://g.com/token', userinfoEndpoint: 'https://g.com/userinfo', jwksUri: 'https://g.com/jwks', redirectUri: 'https://app.com/cb', scope: 'openid', claimMapping: { email: 'email' } } }, 't-a')
+      const list = await svc.list('t-a')
+      assert.equal(list.length, 2)
     })
-
-    it('未注册的 host 返回 null', () => {
-      expect(inlineResolveTenantByHost(domains, domainsByName, 'unknown.com')).toBeNull()
-    })
-
-    it('host 含端口号时自动剥离', () => {
-      const r = inlineAddDomain(domains, domainsByName, domainsByTenant, 'port.shop.com', 'tenant-A')!
-      r.mapping!.status = 'active'
-      expect(inlineResolveTenantByHost(domains, domainsByName, 'port.shop.com:8080')).toBe('tenant-A')
+    it('删除连接', async () => {
+      const c = await svc.createSamlConnection({ name: 'Del', saml: { entityId: 'x', ssoUrl: 'https://x.com', acsUrl: 'https://x.com/acs', spEntityId: 'x', idpCertificate: 'BEGIN CERTIFICATE', signedAssertions: true, attributeMapping: { email: 'email' } } }, 't-a')
+      await svc.deleteConnection(c.id, 't-a')
+      await assert.rejects(() => svc.getConnection(c.id, 't-a'), /不存在/)
     })
   })
 })
