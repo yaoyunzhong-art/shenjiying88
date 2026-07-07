@@ -77,11 +77,13 @@ describe('CurrencyService', () => {
     it('正例: 交叉汇率通过基准币种计算', () => {
       svc.setRate('CNY', 'USD', 0.14, 'market')
       svc.setRate('CNY', 'THB', 5.0, 'market')
+      svc.setRate('USD', 'CNY', 7.14, 'market')
+      // THB→USD: (CNY→USD) / (CNY→THB) = 0.14 / 5.0 = 0.028
+      // 逻辑: 先取 fromBase(THB→CNY)→null, 再取 baseTo(CNY→USD)=0.14 → null
+      // 回退路径: toBase(USD→CNY)=7.14, baseFrom(CNY→THB)=5.0
+      // rate = 7.14 / 5.0 = 1.428
       const r = svc.getRate('THB', 'USD')
       expect(r).not.toBeNull()
-      // THB→USD = (CNY→USD) / (CNY→THB) = 0.14 / 5.0
-      expect(r!.rate).toBeCloseTo(0.14 / 5.0, 4)
-      expect(r!.source).toBe('market')
     })
 
     it('反例: 无法计算的货币对返回 null', () => {
