@@ -5,6 +5,9 @@ export type { ConfigurationVersionDiffProps, DiffEntry, DiffChangeType } from '.
 export { Divider } from './components/Divider';
 export type { DividerProps, DividerOrientation, DividerVariant } from './components/Divider';
 
+export { DotNavigation } from './components/DotNavigation';
+export type { DotNavigationProps, DotVariant, DotSize } from './components/DotNavigation';
+
 export { ReceiptPreview } from './components/ReceiptPreview';
 export type { ReceiptPreviewProps, ReceiptData, ReceiptHeader, ReceiptLineItem, ReceiptPayment, PaymentMethod as ReceiptPaymentMethod } from './components/ReceiptPreview';
 
