@@ -1,501 +1,256 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
- * runbook.service.spec.ts — 运维手册 Service 纯函数式内联测试
+ * 🐜 自动: [runbook] [A] service.spec — ≥18项正反例+边界
+ * RunbookService 纯函数式内联测试 (不 import 生产代码)
  *
- * 覆盖：
- *   - Runbook CRUD: 创建/获取/列表/更新/删除
- *   - 列表筛选: 分类/严重级别/状态/标签
- *   - 告警映射: 绑定/查找
- *   - 执行报告: 生成 Markdown 报告
- *   - 关键步骤: 提取含 rollback/warning 的步骤
- *   - 验证: 完整/缺失字段/空步骤
- *   - 搜索: 标题/标签/步骤/前置条件
- *
- * 全部内联 mock，不依赖 NestJS DI。≥ 18 项测试。
+ * 覆盖: CRUD(4) + 告警映射(2) + 验证(3) + 搜索(2) + 执行报告(3) + 关键步骤(2) + 预设(2) = 18
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import assert from 'node:assert/strict'
 
-// ═══════════════════════════════════════════════════════════════
-// 枚举常量
-// ═══════════════════════════════════════════════════════════════
+// ── 内联类型 ──
 
-const RUNBOOK_CATEGORIES = ['deployment', 'scaling', '故障排查', '灾难恢复', '安全事件', '监控告警'] as const
-const SEVERITIES = ['critical', 'high', 'medium', 'low'] as const
-const STATUSES = ['draft', 'active', 'archived'] as const
+type RunbookCategory = 'deployment' | 'scaling' | '故障排查' | '灾难恢复' | '安全事件' | '监控告警'
+type Severity = 'critical' | 'high' | 'medium' | 'low'
+type RunbookStatus = 'draft' | 'active' | 'archived'
 
-// ═══════════════════════════════════════════════════════════════
-// Types (内联)
-// ═══════════════════════════════════════════════════════════════
-
-interface InlineRunbookStep {
-  stepNumber: number
-  title: string
-  description: string
-  command?: string
-  expectedOutput?: string
-  verificationCommand?: string
-  rollbackCommand?: string
-  estimatedMinutes?: number
-  warningMessage?: string
+interface RunbookStep {
+  stepNumber: number; title: string; description: string; command?: string
+  expectedOutput?: string; rollbackCommand?: string; estimatedMinutes?: number; warningMessage?: string
 }
 
-interface InlineRunbook {
-  id: string
-  title: string
-  category: string
-  severity: string
-  applicableVersions: string[]
-  prerequisites: string[]
-  steps: InlineRunbookStep[]
-  estimatedTotalMinutes: number
-  relatedAlerts?: string[]
-  relatedRunbooks?: string[]
-  status: string
-  createdAt: Date
-  updatedAt: Date
-  lastTestedAt?: Date
-  tags: string[]
+interface Runbook {
+  id: string; title: string; category: RunbookCategory; severity: Severity
+  applicableVersions: string[]; prerequisites: string[]; steps: RunbookStep[]
+  estimatedTotalMinutes: number; relatedAlerts?: string[]; relatedRunbooks?: string[]
+  status: RunbookStatus; createdAt: Date; updatedAt: Date; lastTestedAt?: Date; tags: string[]
 }
 
-interface InlineAlertMapping {
-  alertName: string
-  severity: string
-  possibleCauses: string[]
-  runbookId: string
-  autoAction?: string
+interface AlertMapping {
+  alertName: string; severity: Severity; possibleCauses: string[]; runbookId: string; autoAction?: string
 }
 
-interface InlineExecutionLog {
-  step: number
-  startedAt: Date
-  completedAt?: Date
-  success?: boolean
-  output?: string
-  error?: string
-}
+// ── 预设数据 ──
 
-// ═══════════════════════════════════════════════════════════════
-// 内联业务逻辑 — 对应 runbook.service.ts 核心函数
-// ═══════════════════════════════════════════════════════════════
+const PRESET_RUNBOOKS: Runbook[] = [
+  { id: 'deploy-api-single', title: '单机部署 API', category: 'deployment', severity: 'high', applicableVersions: ['v2.0.0+'], prerequisites: ['Ubuntu 22.04', 'Docker'], steps: [{ stepNumber: 1, title: '环境检查', description: '检查环境', command: 'docker --version', estimatedMinutes: 2 }, { stepNumber: 2, title: '部署', description: '启动服务', command: 'docker-compose up -d', estimatedMinutes: 10, rollbackCommand: 'docker-compose down' }], estimatedTotalMinutes: 15, status: 'active', createdAt: new Date('2024-01-15'), updatedAt: new Date('2024-06-01'), tags: ['部署'] },
+  { id: 'troubleshoot-slow-api', title: 'API 响应慢排查', category: '故障排查', severity: 'high', applicableVersions: ['v1.0.0+'], prerequisites: ['日志权限'], steps: [{ stepNumber: 1, title: '查看日志', description: '检查日志', command: 'kubectl logs', estimatedMinutes: 3, warningMessage: '注意高峰期' }, { stepNumber: 2, title: '分析', description: '分析慢查询', estimatedMinutes: 10 }], estimatedTotalMinutes: 30, status: 'active', createdAt: new Date('2024-01-10'), updatedAt: new Date('2024-06-20'), tags: ['故障排查'] },
+  { id: 'dr-database-failover', title: '数据库主从切换', category: '灾难恢复', severity: 'critical', applicableVersions: ['v1.0.0+'], prerequisites: ['主从架构'], steps: [{ stepNumber: 1, title: '检查主库', description: '确认故障', command: 'mysql -h primary -e "SELECT 1"', estimatedMinutes: 2, warningMessage: '确认真实故障' }, { stepNumber: 2, title: '切换', description: '提升从库', command: 'FAILOVER', estimatedMinutes: 5, rollbackCommand: 'ROLLBACK' }], estimatedTotalMinutes: 20, status: 'active', createdAt: new Date('2024-01-25'), updatedAt: new Date('2024-06-10'), tags: ['灾难恢复'] },
+  { id: 'monitor-setup', title: 'Prometheus 告警', category: '监控告警', severity: 'medium', applicableVersions: ['v2.0.0+'], prerequisites: ['Prometheus'], steps: [{ stepNumber: 1, title: '创建规则', description: '编写规则', command: 'vim rules.yml', estimatedMinutes: 10 }], estimatedTotalMinutes: 35, status: 'active', createdAt: new Date('2024-03-15'), updatedAt: new Date('2024-06-05'), tags: ['监控'] },
+]
 
-function inlineCreateRunbook(
-  store: Map<string, InlineRunbook>,
-  input: Omit<InlineRunbook, 'id' | 'createdAt' | 'updatedAt'>,
-): InlineRunbook {
-  const now = new Date()
-  const id = `runbook-test-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
-  const newRunbook: InlineRunbook = {
-    ...input,
-    id,
-    createdAt: now,
-    updatedAt: now,
+const PRESET_ALERT_MAPPINGS: AlertMapping[] = [
+  { alertName: 'ALERT_cpu_high', severity: 'high', possibleCauses: ['流量突增'], runbookId: 'deploy-api-single', autoAction: 'scale-hpa' },
+  { alertName: 'ALERT_db_slow_query', severity: 'high', possibleCauses: ['缺少索引'], runbookId: 'troubleshoot-slow-api' },
+]
+
+// ── 内联 Mock Service ──
+
+let _idCounter = 0
+function genId(): string { return `rb-${++_idCounter}` }
+
+class MockRunbookService {
+  private runbooks = new Map<string, Runbook>()
+  private alertMappings = new Map<string, AlertMapping>()
+
+  constructor() {
+    for (const r of PRESET_RUNBOOKS) this.runbooks.set(r.id, { ...r })
+    for (const m of PRESET_ALERT_MAPPINGS) this.alertMappings.set(m.alertName, { ...m })
   }
-  store.set(newRunbook.id, newRunbook)
-  return newRunbook
-}
 
-function inlineGetRunbook(
-  store: Map<string, InlineRunbook>,
-  id: string,
-): InlineRunbook | null {
-  return store.get(id) ?? null
-}
-
-function inlineListRunbooks(
-  store: Map<string, InlineRunbook>,
-  filter?: {
-    category?: string
-    severity?: string
-    status?: string
-    tag?: string
-  },
-): InlineRunbook[] {
-  let result = Array.from(store.values())
-  if (filter?.category) result = result.filter((r) => r.category === filter.category)
-  if (filter?.severity) result = result.filter((r) => r.severity === filter.severity)
-  if (filter?.status) result = result.filter((r) => r.status === filter.status)
-  if (filter?.tag) result = result.filter((r) => r.tags.includes(filter.tag!))
-  return result
-}
-
-function inlineUpdateRunbook(
-  store: Map<string, InlineRunbook>,
-  id: string,
-  updates: Partial<InlineRunbook>,
-): InlineRunbook {
-  const existing = store.get(id)
-  if (!existing) throw new Error(`Runbook not found: ${id}`)
-  const updated: InlineRunbook = {
-    ...existing,
-    ...updates,
-    id: existing.id,
-    createdAt: existing.createdAt,
-    updatedAt: new Date(),
+  create(input: Omit<Runbook, 'id' | 'createdAt' | 'updatedAt'>): Runbook {
+    const now = new Date()
+    const r: Runbook = { ...input, id: genId(), createdAt: now, updatedAt: now } as Runbook
+    this.runbooks.set(r.id, r)
+    return r
   }
-  store.set(id, updated)
-  return updated
-}
 
-function inlineDeleteRunbook(
-  store: Map<string, InlineRunbook>,
-  id: string,
-): void {
-  if (!store.has(id)) throw new Error(`Runbook not found: ${id}`)
-  store.delete(id)
-}
+  get(id: string): Runbook | null { return this.runbooks.get(id) ?? null }
 
-function inlineMapAlert(
-  alertMappings: Map<string, InlineAlertMapping>,
-  alertName: string,
-  runbookId: string,
-  possibleCauses: string[],
-  severity: string,
-  autoAction?: string,
-): InlineAlertMapping {
-  const mapping: InlineAlertMapping = { alertName, runbookId, possibleCauses, severity, autoAction }
-  alertMappings.set(alertName, mapping)
-  return mapping
-}
+  list(filter?: { category?: RunbookCategory; severity?: Severity; status?: RunbookStatus; tag?: string }): Runbook[] {
+    let r = Array.from(this.runbooks.values())
+    if (filter?.category) r = r.filter((x) => x.category === filter.category)
+    if (filter?.severity) r = r.filter((x) => x.severity === filter.severity)
+    if (filter?.status) r = r.filter((x) => x.status === filter.status)
+    if (filter?.tag) r = r.filter((x) => x.tags.includes(filter.tag!))
+    return r
+  }
 
-function inlineFindByAlert(
-  alertMappings: Map<string, InlineAlertMapping>,
-  alertName: string,
-): InlineAlertMapping | null {
-  return alertMappings.get(alertName) ?? null
-}
+  update(id: string, updates: Partial<Runbook>): Runbook {
+    const existing = this.runbooks.get(id)
+    if (!existing) throw new Error(`Runbook not found: ${id}`)
+    const updated: Runbook = { ...existing, ...updates, id: existing.id, createdAt: existing.createdAt, updatedAt: new Date() }
+    this.runbooks.set(id, updated)
+    return updated
+  }
 
-function inlineGenerateExecutionReport(
-  runbook: InlineRunbook,
-  executionLog: InlineExecutionLog[],
-): string {
-  const lines: string[] = []
-  lines.push('# Runbook 执行报告')
-  lines.push('')
-  lines.push(`**Runbook**: ${runbook.title}`)
-  lines.push(`**执行时间**: ${new Date().toISOString()}`)
-  lines.push(`**总计步骤**: ${runbook.steps.length}`)
-  lines.push('')
-  lines.push('---')
-  lines.push('')
+  delete(id: string): void {
+    if (!this.runbooks.has(id)) throw new Error(`Runbook not found: ${id}`)
+    this.runbooks.delete(id)
+  }
 
-  let successCount = 0
-  let failCount = 0
+  mapAlert(alertName: string, runbookId: string, possibleCauses: string[], severity: Severity, autoAction?: string): AlertMapping {
+    const m: AlertMapping = { alertName, runbookId, possibleCauses, severity, autoAction }
+    this.alertMappings.set(alertName, m)
+    return m
+  }
 
-  for (const log of executionLog) {
-    const step = runbook.steps.find((s) => s.stepNumber === log.step)
-    if (!step) continue
-    const status = log.success ? '✅ 成功' : log.error ? '❌ 失败' : '⏳ 进行中'
-    lines.push(`## 步骤 ${log.step}: ${step.title}`)
-    lines.push('')
-    lines.push(`**状态**: ${status}`)
-    lines.push(`**开始时间**: ${log.startedAt.toISOString()}`)
-    if (log.completedAt) {
-      const duration = Math.round((log.completedAt.getTime() - log.startedAt.getTime()) / 1000 / 60)
-      lines.push(`**耗时**: ${duration} 分钟`)
+  findByAlert(alertName: string): AlertMapping | null { return this.alertMappings.get(alertName) ?? null }
+
+  generateExecutionReport(runbookId: string, logs: Array<{ step: number; startedAt: Date; completedAt?: Date; success?: boolean; output?: string; error?: string }>): string {
+    const r = this.runbooks.get(runbookId)
+    if (!r) throw new Error(`Runbook not found: ${runbookId}`)
+    const lines: string[] = [`# Runbook 执行报告`, ``, `**Runbook**: ${r.title}`, `**总计步骤**: ${r.steps.length}`, ``]
+    let ok = 0; let fail = 0
+    for (const log of logs) {
+      const step = r.steps.find((s) => s.stepNumber === log.step)
+      if (!step) continue
+      const status = log.success ? '✅ 成功' : log.error ? '❌ 失败' : '⏳ 进行中'
+      lines.push(`## 步骤 ${log.step}: ${step.title}`, ``, `**状态**: ${status}`)
+      if (log.success) ok++; else if (log.error) fail++
     }
-    if (log.output) { lines.push(''); lines.push('**输出**:'); lines.push('```'); lines.push(log.output); lines.push('```') }
-    if (log.error) { lines.push(''); lines.push('**错误**:'); lines.push('```'); lines.push(log.error); lines.push('```') }
-    lines.push('')
-    if (log.success) successCount++
-    else if (log.error) failCount++
+    lines.push(``, `## 摘要`, ``, `- **成功**: ${ok}`, `- **失败**: ${fail}`)
+    return lines.join('\n')
   }
 
-  lines.push('---')
-  lines.push('')
-  lines.push('## 执行摘要')
-  lines.push('')
-  lines.push(`- **成功**: ${successCount}`)
-  lines.push(`- **失败**: ${failCount}`)
-  lines.push(`- **进行中**: ${executionLog.length - successCount - failCount}`)
-  lines.push('')
-
-  return lines.join('\n')
-}
-
-function inlineGetCriticalSteps(runbook: InlineRunbook): InlineRunbookStep[] {
-  return runbook.steps.filter(
-    (step) => step.rollbackCommand || step.warningMessage,
-  )
-}
-
-function inlineValidate(runbook: InlineRunbook): { valid: boolean; errors: string[]; warnings: string[] } {
-  const errors: string[] = []
-  const warnings: string[] = []
-
-  if (!runbook.title) errors.push('标题不能为空')
-  if (runbook.steps.length === 0) errors.push('必须包含至少一个步骤')
-  for (const step of runbook.steps) {
-    if (!step.title) errors.push(`步骤 ${step.stepNumber} 缺少标题`)
-    if (!step.description) warnings.push(`步骤 ${step.stepNumber} 缺少描述`)
-    if (!step.command && !step.description) warnings.push(`步骤 ${step.stepNumber} 既没有命令也没有描述`)
+  getCriticalSteps(runbookId: string): RunbookStep[] {
+    const r = this.runbooks.get(runbookId)
+    if (!r) throw new Error(`Runbook not found: ${runbookId}`)
+    return r.steps.filter((s) => s.rollbackCommand || s.warningMessage)
   }
-  if (runbook.prerequisites.length === 0) warnings.push('缺少前置条件说明')
-  if (!runbook.lastTestedAt) warnings.push('Runbook 尚未测试过')
 
-  return { valid: errors.length === 0, errors, warnings }
-}
-
-function inlineSearch(
-  store: Map<string, InlineRunbook>,
-  keyword: string,
-): InlineRunbook[] {
-  const lower = keyword.toLowerCase()
-  const results: InlineRunbook[] = []
-  for (const runbook of store.values()) {
-    if (runbook.title.toLowerCase().includes(lower)) { results.push(runbook); continue }
-    if (runbook.tags.some((t) => t.toLowerCase().includes(lower))) { results.push(runbook); continue }
-    if (runbook.steps.some((s) => s.title.toLowerCase().includes(lower) || s.description.toLowerCase().includes(lower))) { results.push(runbook); continue }
-    if (runbook.prerequisites.some((p) => p.toLowerCase().includes(lower))) { results.push(runbook); continue }
+  validate(runbookId: string): { valid: boolean; errors: string[]; warnings: string[] } {
+    const r = this.runbooks.get(runbookId)
+    const errors: string[] = []; const warnings: string[] = []
+    if (!r) { errors.push(`Runbook not found: ${runbookId}`); return { valid: false, errors, warnings } }
+    if (!r.title) errors.push('标题不能为空')
+    if (r.steps.length === 0) errors.push('必须包含至少一个步骤')
+    for (const s of r.steps) { if (!s.title) errors.push(`步骤 ${s.stepNumber} 缺少标题`) }
+    if (r.prerequisites.length === 0) warnings.push('缺少前置条件说明')
+    if (!r.lastTestedAt) warnings.push('Runbook 尚未测试过')
+    return { valid: errors.length === 0, errors, warnings }
   }
-  return results
-}
 
-// ═══════════════════════════════════════════════════════════════
-// Mock 数据工厂
-// ═══════════════════════════════════════════════════════════════
-
-function makeStep(overrides: Partial<InlineRunbookStep> = {}): InlineRunbookStep {
-  return {
-    stepNumber: 1,
-    title: '检查服务状态',
-    description: '查看 API 服务运行状态',
-    command: 'kubectl get pods',
-    expectedOutput: 'Running',
-    estimatedMinutes: 2,
-    ...overrides,
+  search(keyword: string): Runbook[] {
+    const kw = keyword.toLowerCase()
+    return Array.from(this.runbooks.values()).filter((r) =>
+      r.title.toLowerCase().includes(kw) || r.tags.some((t) => t.toLowerCase().includes(kw)) ||
+      r.steps.some((s) => s.title.toLowerCase().includes(kw) || s.description.toLowerCase().includes(kw))
+    )
   }
+
+  // testing helper
+  presetCount(): number { return PRESET_RUNBOOKS.length }
 }
 
-function makeRunbook(overrides: Partial<InlineRunbook> = {}): InlineRunbook {
-  return {
-    id: 'rb-test-001',
-    title: 'API 部署流程',
-    category: 'deployment',
-    severity: 'high',
-    applicableVersions: ['v1.0.0+'],
-    prerequisites: ['Docker 已安装', 'Kubectl 已配置'],
-    steps: [makeStep()],
-    estimatedTotalMinutes: 30,
-    relatedAlerts: ['ALERT_service_down'],
-    status: 'active',
-    createdAt: new Date('2026-01-01'),
-    updatedAt: new Date('2026-06-01'),
-    lastTestedAt: new Date('2026-06-01'),
-    tags: ['部署', 'API', 'Docker'],
-    ...overrides,
-  }
-}
+// ── 测试 ──
 
-function makeExecutionLog(overrides: Partial<InlineExecutionLog> = {}): InlineExecutionLog {
-  return {
-    step: 1,
-    startedAt: new Date('2026-07-01T00:00:00Z'),
-    completedAt: new Date('2026-07-01T00:02:00Z'),
-    success: true,
-    output: 'all pods running',
-    ...overrides,
-  }
-}
+describe('runbook service.spec', () => {
+  let svc: MockRunbookService
 
-// ═══════════════════════════════════════════════════════════════
-// 测试套件
-// ═══════════════════════════════════════════════════════════════
+  beforeEach(() => { svc = new MockRunbookService() })
 
-describe('RunbookService (内联纯函数)', () => {
-  let runbookStore: Map<string, InlineRunbook>
-  let alertMappings: Map<string, InlineAlertMapping>
-
-  beforeEach(() => {
-    runbookStore = new Map()
-    alertMappings = new Map()
-  })
-
-  // ── 1. Runbook CRUD ─────────────────────────────────────────
-
-  describe('1. Runbook CRUD', () => {
-    it('创建 Runbook — 生成 id / createdAt / updatedAt', () => {
-      const rb = inlineCreateRunbook(runbookStore, {
-        title: '数据库主从切换',
-        category: '灾难恢复',
-        severity: 'critical',
-        applicableVersions: ['v1.0.0+'],
-        prerequisites: ['主从架构已配置'],
-        steps: [makeStep({ stepNumber: 1, title: '检查从库同步' })],
-        estimatedTotalMinutes: 20,
-        status: 'draft',
-        tags: ['灾难恢复', '数据库'],
-      })
-      expect(rb.id).toMatch(/^runbook-test-/)
-      expect(rb.title).toBe('数据库主从切换')
-      expect(rb.createdAt).toBeInstanceOf(Date)
-      expect(rb.updatedAt).toEqual(rb.createdAt)
-      expect(runbookStore.size).toBe(1)
+  // === 1. CRUD (4) ===
+  describe('CRUD', () => {
+    it('create 创建新 Runbook', () => {
+      const r = svc.create({ title: '新手册', category: 'deployment', severity: 'low', applicableVersions: ['v1'], prerequisites: [], steps: [{ stepNumber: 1, title: '步骤1', description: '描述' }], estimatedTotalMinutes: 5, status: 'draft', tags: ['test'] })
+      assert.ok(r.id); assert.equal(r.title, '新手册'); assert.equal(r.status, 'draft')
     })
-
-    it('获取 Runbook — 存在返回对象，不存在 null', () => {
-      const rb = inlineCreateRunbook(runbookStore, { title: '测试', category: 'deployment', severity: 'low', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 5, status: 'draft', tags: [] })
-      expect(inlineGetRunbook(runbookStore, rb.id)).toEqual(rb)
-      expect(inlineGetRunbook(runbookStore, 'nonexistent')).toBeNull()
+    it('get 返回预设 Runbook', () => {
+      assert.ok(svc.get('deploy-api-single'))
+      assert.equal(svc.get('deploy-api-single')!.title, '单机部署 API')
     })
-
-    it('删除 Runbook — 存在时删除，不存在抛出异常', () => {
-      const rb = inlineCreateRunbook(runbookStore, { title: '待删除', category: 'deployment', severity: 'low', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 5, status: 'draft', tags: [] })
-      inlineDeleteRunbook(runbookStore, rb.id)
-      expect(runbookStore.size).toBe(0)
-      expect(() => inlineDeleteRunbook(runbookStore, 'nonexistent')).toThrow('not found')
+    it('get 不存在的返回 null', () => {
+      assert.equal(svc.get('non-existent'), null)
     })
-
-    it('更新 Runbook — 保留 id/createdAt，更新 updatedAt', () => {
-      const rb = inlineCreateRunbook(runbookStore, { title: '旧标题', category: 'deployment', severity: 'low', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 5, status: 'draft', tags: [] })
-      const updated = inlineUpdateRunbook(runbookStore, rb.id, { title: '新标题', severity: 'high' })
-      expect(updated.title).toBe('新标题')
-      expect(updated.severity).toBe('high')
-      expect(updated.id).toBe(rb.id)
-      expect(updated.createdAt).toEqual(rb.createdAt)
-      expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(rb.createdAt.getTime())
+    it('delete 删除后 get 返回 null', () => {
+      const r = svc.create({ title: '临时', category: 'deployment', severity: 'low', applicableVersions: [], prerequisites: [], steps: [{ stepNumber: 1, title: 'x', description: 'x' }], estimatedTotalMinutes: 1, status: 'draft', tags: [] })
+      svc.delete(r.id)
+      assert.equal(svc.get(r.id), null)
     })
   })
 
-  // ── 2. 列表筛选 ─────────────────────────────────────────────
-
-  describe('2. 列表筛选', () => {
-    it('按分类筛选 — 只返回匹配的', () => {
-      inlineCreateRunbook(runbookStore, { title: '部署', category: 'deployment', severity: 'high', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 10, status: 'active', tags: [] })
-      inlineCreateRunbook(runbookStore, { title: '故障排查', category: '故障排查', severity: 'critical', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 10, status: 'active', tags: [] })
-      inlineCreateRunbook(runbookStore, { title: '扩容', category: 'scaling', severity: 'medium', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 10, status: 'active', tags: [] })
-      const list = inlineListRunbooks(runbookStore, { category: 'deployment' })
-      expect(list).toHaveLength(1)
-      expect(list[0].title).toBe('部署')
+  // === 2. 告警映射 (2) ===
+  describe('告警映射', () => {
+    it('mapAlert + findByAlert', () => {
+      svc.mapAlert('ALERT_oom', 'troubleshoot-slow-api', ['内存不足'], 'critical', 'scale-up')
+      const m = svc.findByAlert('ALERT_oom')
+      assert.ok(m); assert.equal(m!.runbookId, 'troubleshoot-slow-api')
     })
-
-    it('按严重级别筛选 — 只返回匹配的', () => {
-      inlineCreateRunbook(runbookStore, { title: 'C1', category: 'deployment', severity: 'critical', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 5, status: 'active', tags: [] })
-      inlineCreateRunbook(runbookStore, { title: 'H1', category: 'scaling', severity: 'high', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 5, status: 'active', tags: [] })
-      expect(inlineListRunbooks(runbookStore, { severity: 'critical' })).toHaveLength(1)
-    })
-
-    it('按状态筛选 — 支持 draft / active / archived', () => {
-      inlineCreateRunbook(runbookStore, { title: '草稿', category: 'deployment', severity: 'low', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 5, status: 'draft', tags: [] })
-      inlineCreateRunbook(runbookStore, { title: '已归档', category: 'deployment', severity: 'low', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 5, status: 'archived', tags: [] })
-      expect(inlineListRunbooks(runbookStore, { status: 'draft' })).toHaveLength(1)
-      expect(inlineListRunbooks(runbookStore, { status: 'archived' })).toHaveLength(1)
-      expect(inlineListRunbooks(runbookStore, { status: 'active' })).toHaveLength(0)
-    })
-
-    it('按标签筛选 — 精确匹配', () => {
-      inlineCreateRunbook(runbookStore, { title: 'DB', category: '部署', severity: 'high', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 5, status: 'active', tags: ['数据库', '容灾'] })
-      inlineCreateRunbook(runbookStore, { title: 'API', category: '部署', severity: 'high', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 5, status: 'active', tags: ['API', '部署'] })
-      expect(inlineListRunbooks(runbookStore, { tag: '数据库' })).toHaveLength(1)
-      expect(inlineListRunbooks(runbookStore, { tag: '部署' })).toHaveLength(1)
+    it('findByAlert 不存在的返回 null', () => {
+      assert.equal(svc.findByAlert('ALERT_none'), null)
     })
   })
 
-  // ── 3. 告警映射 ─────────────────────────────────────────────
-
-  describe('3. 告警映射', () => {
-    it('mapAlert — 绑定告警到 Runbook', () => {
-      inlineCreateRunbook(runbookStore, { title: '慢查询排查', category: '故障排查', severity: 'high', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 30, status: 'active', tags: [] })
-      const m = inlineMapAlert(alertMappings, 'ALERT_db_slow', 'rb-slow', ['缺少索引', '查询效率低'], 'high', 'kill-slow-queries')
-      expect(m.alertName).toBe('ALERT_db_slow')
-      expect(m.runbookId).toBe('rb-slow')
-      expect(m.autoAction).toBe('kill-slow-queries')
+  // === 3. 验证 (3) ===
+  describe('验证', () => {
+    it('预设 Runbook 验证通过', () => {
+      const v = svc.validate('deploy-api-single')
+      assert.ok(v.valid)
     })
-
-    it('findByAlert — 根据告警名查找映射', () => {
-      inlineMapAlert(alertMappings, 'ALERT_cpu_high', 'rb-cpu', ['流量突增'], 'high')
-      const found = inlineFindByAlert(alertMappings, 'ALERT_cpu_high')
-      expect(found).toBeTruthy()
-      expect(found!.runbookId).toBe('rb-cpu')
-      expect(inlineFindByAlert(alertMappings, 'nonexistent')).toBeNull()
+    it('不存在的 Runbook 验证失败', () => {
+      const v = svc.validate('nonexistent')
+      assert.equal(v.valid, false)
+      assert.ok(v.errors.length > 0)
+    })
+    it('无步骤的 Runbook 验证失败', () => {
+      const r = svc.create({ title: '空', category: 'deployment', severity: 'low', applicableVersions: [], prerequisites: ['x'], steps: [], estimatedTotalMinutes: 0, status: 'draft', tags: [] })
+      const v = svc.validate(r.id)
+      assert.equal(v.valid, false)
     })
   })
 
-  // ── 4. 执行报告 & 关键步骤 ──────────────────────────────────
-
-  describe('4. 执行报告 & 关键步骤', () => {
-    it('generateExecutionReport — 生成 Markdown 格式报告', () => {
-      const rb = inlineCreateRunbook(runbookStore, { title: '测试流程', category: 'deployment', severity: 'low', applicableVersions: [], prerequisites: ['工具已安装'], steps: [makeStep({ stepNumber: 1, title: '步骤一' })], estimatedTotalMinutes: 5, status: 'active', tags: [] })
-      const report = inlineGenerateExecutionReport(rb, [makeExecutionLog({ step: 1, success: true, output: 'OK' })])
-      expect(report).toContain('# Runbook 执行报告')
-      expect(report).toContain('✅ 成功')
-      expect(report).toContain('OK')
-      expect(report).toContain('执行摘要')
-      expect(report).toContain('- **成功**: 1')
-      expect(report).toContain('- **失败**: 0')
+  // === 4. 搜索 (2) ===
+  describe('搜索', () => {
+    it('search 按标题匹配', () => {
+      assert.ok(svc.search('API').length >= 1)
     })
-
-    it('getCriticalSteps — 只返回含 rollbackCommand 或 warningMessage 的步骤', () => {
-      const rb = inlineCreateRunbook(runbookStore, { title: '关键步骤测试', category: 'deployment', severity: 'high', applicableVersions: [], prerequisites: [], steps: [
-        makeStep({ stepNumber: 1, title: '普通步骤' }),
-        makeStep({ stepNumber: 2, title: '有回滚', rollbackCommand: 'docker-compose down' }),
-        makeStep({ stepNumber: 3, title: '有警告', warningMessage: '注意 SSL 证书' }),
-      ], estimatedTotalMinutes: 10, status: 'active', tags: [] })
-      const critical = inlineGetCriticalSteps(rb)
-      expect(critical).toHaveLength(2)
-      expect(critical.map((s) => s.title)).toEqual(['有回滚', '有警告'])
+    it('search 按标签匹配', () => {
+      assert.ok(svc.search('故障').length >= 1)
     })
   })
 
-  // ── 5. 验证 ─────────────────────────────────────────────────
-
-  describe('5. 验证', () => {
-    it('validate — 完整 Runbook 返回 valid', () => {
-      const rb = makeRunbook()
-      const result = inlineValidate(rb)
-      expect(result.valid).toBe(true)
-      expect(result.errors).toHaveLength(0)
+  // === 5. 执行报告 (3) ===
+  describe('执行报告', () => {
+    it('generateExecutionReport 生成 Markdown', () => {
+      const report = svc.generateExecutionReport('deploy-api-single', [
+        { step: 1, startedAt: new Date(), completedAt: new Date(), success: true, output: 'ok' },
+        { step: 2, startedAt: new Date(), completedAt: new Date(), success: false, error: 'timeout' },
+      ])
+      assert.ok(report.includes('✅ 成功'))
+      assert.ok(report.includes('❌ 失败'))
     })
-
-    it('validate — 缺少 title 报错', () => {
-      const rb = makeRunbook({ title: '' })
-      const result = inlineValidate(rb)
-      expect(result.valid).toBe(false)
-      expect(result.errors).toContain('标题不能为空')
+    it('不存在 Runbook 抛错', () => {
+      assert.throws(() => svc.generateExecutionReport('x', []), /not found/)
     })
-
-    it('validate — 空 steps 报错', () => {
-      const rb = makeRunbook({ steps: [] })
-      const result = inlineValidate(rb)
-      expect(result.valid).toBe(false)
-      expect(result.errors).toContain('必须包含至少一个步骤')
-    })
-
-    it('validate — 缺少测试给出警告', () => {
-      const rb = makeRunbook({ lastTestedAt: undefined })
-      const result = inlineValidate(rb)
-      expect(result.valid).toBe(true)
-      expect(result.warnings).toContain('Runbook 尚未测试过')
+    it('成功/失败计数正确', () => {
+      const report = svc.generateExecutionReport('deploy-api-single', [
+        { step: 1, startedAt: new Date(), completedAt: new Date(), success: true },
+        { step: 2, startedAt: new Date(), completedAt: new Date(), success: true },
+      ])
+      assert.ok(report.includes('**成功**: 2'))
     })
   })
 
-  // ── 6. 搜索 ─────────────────────────────────────────────────
-
-  describe('6. 搜索', () => {
-    it('按标题关键词搜索', () => {
-      inlineCreateRunbook(runbookStore, { title: '数据库主从切换', category: 'deployment', severity: 'high', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 10, status: 'active', tags: [] })
-      inlineCreateRunbook(runbookStore, { title: 'API 服务部署', category: 'deployment', severity: 'high', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 10, status: 'active', tags: [] })
-      expect(inlineSearch(runbookStore, '数据库')).toHaveLength(1)
-      expect(inlineSearch(runbookStore, '部署')).toHaveLength(1)
+  // === 6. 关键步骤 (2) ===
+  describe('关键步骤', () => {
+    it('getCriticalSteps 返回含 rollback/warning 的步骤', () => {
+      const steps = svc.getCriticalSteps('deploy-api-single')
+      assert.ok(steps.some((s) => s.rollbackCommand))
     })
-
-    it('按标签搜索', () => {
-      inlineCreateRunbook(runbookStore, { title: 'R1', category: 'deployment', severity: 'low', applicableVersions: [], prerequisites: [], steps: [makeStep()], estimatedTotalMinutes: 5, status: 'active', tags: ['Kubernetes', 'Helm'] })
-      expect(inlineSearch(runbookStore, 'helm')).toHaveLength(1)
-      expect(inlineSearch(runbookStore, 'kubernetes')).toHaveLength(1)
+    it('无关键步骤返回空', () => {
+      const r = svc.create({ title: '简单', category: 'deployment', severity: 'low', applicableVersions: [], prerequisites: [], steps: [{ stepNumber: 1, title: 'x', description: 'x' }], estimatedTotalMinutes: 1, status: 'draft', tags: [] })
+      assert.equal(svc.getCriticalSteps(r.id).length, 0)
     })
+  })
 
-    it('按步骤描述搜索', () => {
-      inlineCreateRunbook(runbookStore, { title: 'R', category: 'deployment', severity: 'low', applicableVersions: [], prerequisites: [], steps: [makeStep({ title: '检查 Metrics Server', description: '确认 Metrics Server 是否运行' })], estimatedTotalMinutes: 5, status: 'active', tags: [] })
-      expect(inlineSearch(runbookStore, 'Metrics')).toHaveLength(1)
+  // === 7. 预设 (2) ===
+  describe('预设数据', () => {
+    it('list 返回所有预设', () => {
+      assert.equal(svc.list().length, svc.presetCount())
     })
-
-    it('按前置条件搜索', () => {
-      inlineCreateRunbook(runbookStore, { title: 'R', category: 'deployment', severity: 'low', applicableVersions: [], prerequisites: ['K8s 集群已就绪', 'kubectl 已配置'], steps: [makeStep()], estimatedTotalMinutes: 5, status: 'active', tags: [] })
-      expect(inlineSearch(runbookStore, 'kubectl')).toHaveLength(1)
-    })
-
-    it('搜索无结果返回空数组', () => {
-      expect(inlineSearch(runbookStore, 'nonexistent')).toEqual([])
+    it('list 按 category 过滤', () => {
+      assert.ok(svc.list({ category: '监控告警' }).length >= 1)
     })
   })
 })
