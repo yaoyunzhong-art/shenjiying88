@@ -208,9 +208,9 @@ describe('Alliance 8-Role Extended Tests', () => {
       controller.registerPartner({ name: '餐饮店', businessType: 'F&B', contact: '1', address: 'a' })
       controller.registerPartner({ name: '科技公司', businessType: 'TECH', contact: '2', address: 'b' })
       controller.registerPartner({ name: '零售店', businessType: 'RETAIL', contact: '3', address: 'c' })
-      const fList = asData(controller.listPartners({ businessType: 'F&B' }) as any)
+      const fList = controller.listPartners({ businessType: 'F&B' })
       expect(fList.total).toBe(1)
-      expect(fList.data[0].name).toBe('餐饮店')
+      expect((fList.data as any[])[0].name).toBe('餐饮店')
     })
   })
 
