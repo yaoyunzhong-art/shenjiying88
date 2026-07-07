@@ -11,7 +11,7 @@ import type { DescriptionItem } from './DescriptionList';
 import { Modal } from './Modal';
 import { TextArea } from './TextArea';
 import { Button } from './Button';
-import { Toast } from './Toast';
+import { ToastContainer } from './Toast';
 import { Spin } from './Spin';
 
 // ---- 类型定义 ----
@@ -60,7 +60,7 @@ function orderStatusToVariant(status: OrderStatus): 'info' | 'success' | 'warnin
     case 'cancelled':
       return 'error';
     case 'returned':
-      return 'danger';
+      return 'error';
     default:
       return 'neutral';
   }
@@ -245,12 +245,7 @@ export function OrderDetailWithStatusFlow({
     <>
       <DetailShell
         title={`订单详情 · ${order.orderNo}`}
-        subtitle={
-          <StatusBadge
-            label={ORDER_STATUS_LABELS[order.status]}
-            variant={orderStatusToVariant(order.status)}
-          />
-        }
+        subtitle={`${ORDER_STATUS_LABELS[order.status]}`}
         breadcrumbs={breadcrumbs}
         backLink={backLink}
         actions={allActions}
@@ -283,11 +278,37 @@ export function OrderDetailWithStatusFlow({
 
       {/* Toast 反馈 */}
       {toast && (
-        <Toast
-          type={toast.type}
-          message={toast.message}
-          onClose={() => setToast(null)}
-        />
+        <div style={{
+          position: 'fixed',
+          top: 20,
+          right: 20,
+          zIndex: 9999,
+          padding: '12px 20px',
+          borderRadius: 12,
+          background: toast.type === 'success' ? 'rgba(22, 101, 52, 0.65)' : 'rgba(127, 29, 29, 0.65)',
+          border: `1px solid ${toast.type === 'success' ? 'rgba(74, 222, 128, 0.35)' : 'rgba(248, 113, 113, 0.35)'}`,
+          color: toast.type === 'success' ? '#bbf7d0' : '#fecaca',
+          fontSize: 13,
+          backdropFilter: 'blur(12px)',
+          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.45)',
+          animation: 'toast-slide-in 0.25s ease-out',
+        }}
+          role="alert"
+        >
+          <span>{toast.message}</span>
+          <button
+            onClick={() => setToast(null)}
+            style={{
+              marginLeft: 12,
+              background: 'none',
+              border: 'none',
+              color: 'inherit',
+              cursor: 'pointer',
+              fontSize: 16,
+              opacity: 0.7,
+            }}
+          >×</button>
+        </div>
       )}
 
       {/* 确认弹窗 */}
