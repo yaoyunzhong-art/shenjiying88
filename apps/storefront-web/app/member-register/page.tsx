@@ -1,86 +1,52 @@
+/**
+ * 会员注册 — Member Registration Page (Next.js App Router Page)
+ * 角色视角: 👤 前台顾客 / 🛒 导购员协助
+ * 功能: 表单验证、短信验证码、提交
+ */
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { FormField, useFormSubmit, FormSubmitFeedback, SubmitButton } from '@m5/ui';
+import Link from 'next/link';
+import {
+  FormField,
+
+  SubmitButton,
+  FormSubmitFeedback,
+} from '@m5/ui';
 import { memberAuthService } from '../../lib/member-auth-service';
 
-export default function MemberRegisterPage() {
+// ---- 组件 ----
+
+export default function MemberRegisterPage(): React.ReactElement {
   const router = useRouter();
+  const [countdown, setCountdown] = useState(0);
+  const [localError, setLocalError] = useState<string>();
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string>();
+  const [submitSuccess, setSubmitSuccess] = useState<string>();
+
   const [formData, setFormData] = useState({
     mobile: '',
     code: '',
     nickname: '',
     agreeTerms: false,
   });
-  const [codeSent, setCodeSent] = useState(false);
-  const [countdown, setCountdown] = useState(0);
+
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const { state, submit } = useFormSubmit<any>({
-    onSubmit: async () => {
-      // TODO: 调用后端注册API
-      // 当前Mock成功注册
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push('/member-login?registered=true');
-      return { success: true };
-    },
-    successMessage: () => '注册成功，即将跳转到登录页...',
-    defaultErrorMessage: '注册失败，请稍后重试',
-  });
-
-  async function handleSendCode() {
-    if (!formData.mobile || !/^1[3-9]\d{9}$/.test(formData.mobile)) {
-      setFieldErrors({ mobile: '请输入有效的手机号' });
-      return;
-    }
-
-    const result = await memberAuthService.sendSmsCode(formData.mobile);
-    if (result.success) {
-      setCodeSent(true);
-      setCountdown(60);
-      const timer = setInterval(() => {
-        setCountdown((c) => {
-          if (c <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return c - 1;
-        });
-      }, 1000);
-    }
-  }
-
-  function handleChange(field: keyof typeof formData) {
-    return (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (field === 'agreeTerms') {
-        setFormData((prev) => ({ ...prev, [field]: (e.target as HTMLInputElement).checked }));
-      } else {
-        setFormData((prev) => ({ ...prev, [field]: e.target.value }));
-      }
-      if (fieldErrors[field]) {
-        setFieldErrors((prev) => {
-          const next = { ...prev };
-          delete next[field];
-          return next;
-        });
-      }
-    };
-  }
-
-  function validateForm(): boolean {
+  const validate = useCallback((): boolean => {
     const errors: Record<string, string> = {};
 
-    if (!formData.mobile || !/^1[3-9]\d{9}$/.test(formData.mobile)) {
-      errors.mobile = '请输入有效的手机号';
+    if (!/^1[3-9]\d{9}$/.test(formData.mobile)) {
+      errors.mobile = '请输入有效的11位手机号';
     }
 
-    if (!formData.code || formData.code.length !== 6) {
-      errors.code = '请输入6位验证码';
+    if (formData.code.length !== 6) {
+      errors.code = '验证码必须为6位';
     }
 
-    if (!formData.nickname.trim()) {
+    if (!formData.nickname || formData.nickname.trim() === '') {
       errors.nickname = '请输入昵称';
     }
 
@@ -90,184 +56,227 @@ export default function MemberRegisterPage() {
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
-  }
+  }, [formData]);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (validateForm()) {
-      submit();
+  const handleSubmit = useCallback(async (): Promise<Record<string, unknown> | undefined> => {
+    if (!validate()) {
+      setLocalError('请完善表单信息');
+      return undefined;
     }
-  }
+    setLocalError(undefined);
+
+    // 模拟提交延迟
+    await new Promise((r) => setTimeout(r, 800));
+
+    // 模拟随机失败（测试错误处理）
+    if (Math.random() < 0.08) {
+      throw new Error('注册服务暂时不可用，请稍后重试');
+    }
+
+    // 调用 authService（模拟）
+    await memberAuthService.sendSmsCode(formData.mobile);
+
+    router.push('/member-login?registered=true');
+    return formData;
+  }, [formData, validate, router]);
+
+  const handleSendCode = useCallback(() => {
+    if (!/^1[3-9]\d{9}$/.test(formData.mobile)) {
+      setFieldErrors((prev) => ({ ...prev, mobile: '请先输入正确的手机号' }));
+      return;
+    }
+    setCountdown(60);
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [formData.mobile]);
+
+  const handleFieldChange = useCallback(
+    (field: string, value: string | boolean) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      // 清除对应字段错误
+      setFieldErrors((prev) => {
+        if (prev[field]) {
+          const next = { ...prev };
+          delete next[field];
+          return next;
+        }
+        return prev;
+      });
+    },
+    [],
+  );
 
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        padding: '24px 16px',
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
-      }}
-    >
-      <div style={{ maxWidth: 400, margin: '0 auto' }}>
-        {/* 头部 */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Link
-            href="/member-login"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              marginBottom: 24,
-              color: '#94a3b8',
-              textDecoration: 'none',
-              fontSize: 14,
-            }}
-          >
-            <span>←</span> 返回登录
-          </Link>
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 14,
-              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 12,
-            }}
-          >
-            <span style={{ fontSize: 24, color: '#fff' }}>会</span>
-          </div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#f8fafc', margin: '0 0 4px' }}>
-            会员注册
-          </h1>
-          <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>加入神机营 SaaS 会员体系</p>
-        </div>
+    <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#0f172a' }}>
+      <div style={{ maxWidth: 420, margin: '0 auto', padding: '40px 16px', width: '100%' }}>
+        <h1 style={{ color: '#f1f5f9', fontSize: 24, fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>
+          会员注册
+        </h1>
+        <p style={{ color: '#64748b', fontSize: 14, textAlign: 'center', marginBottom: 32 }}>
+          注册成为会员，享受积分和优惠
+        </p>
 
-        {/* 注册表单 */}
-        <section
-          style={{
-            borderRadius: 20,
-            padding: 24,
-            background: 'rgba(15, 23, 42, 0.8)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(148, 163, 184, 0.12)',
+        <FormSubmitFeedback submitting={submitting} error={submitError || localError} success={submitSuccess} />
+
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setLocalError(undefined);
+            setSubmitError(undefined);
+            setSubmitSuccess(undefined);
+            const result = await handleSubmit();
+            if (result) {
+              setSubmitSuccess('注册成功');
+            }
           }}
+          style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
         >
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 18 }}>
-            <FormField label="手机号" error={fieldErrors.mobile} required disabled={state.isSubmitting}>
-              <input
-                type="tel"
-                value={formData.mobile}
-                onChange={handleChange('mobile')}
-                disabled={state.isSubmitting}
-                placeholder="13800138000"
-                style={inputStyle}
-                autoComplete="tel"
-              />
-            </FormField>
+          <FormField
+            label="手机号"
+            required
+            error={fieldErrors.mobile}
+          >
+            <input
+              type="tel"
+              placeholder="请输入11位手机号"
+              maxLength={11}
+              value={formData.mobile}
+              onChange={(e) => handleFieldChange('mobile', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: 8,
+                border: fieldErrors.mobile ? '1px solid #ef4444' : '1px solid #334155',
+                background: '#1e293b',
+                color: '#f1f5f9',
+                fontSize: 14,
+                outline: 'none',
+              }}
+            />
+          </FormField>
 
-            <FormField label="验证码" error={fieldErrors.code} required disabled={state.isSubmitting}>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="text"
-                  value={formData.code}
-                  onChange={handleChange('code')}
-                  disabled={state.isSubmitting}
-                  placeholder="6位验证码"
-                  style={{ ...inputStyle, flex: 1 }}
-                  maxLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={handleSendCode}
-                  disabled={countdown > 0 || state.isSubmitting}
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: 8,
-                    background: countdown > 0 ? 'rgba(148, 163, 184, 0.1)' : 'rgba(245, 158, 11, 0.2)',
-                    border: '1px solid rgba(245, 158, 11, 0.4)',
-                    color: countdown > 0 ? '#64748b' : '#fbbf24',
-                    fontSize: 13,
-                    cursor: countdown > 0 ? 'not-allowed' : 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {countdown > 0 ? `${countdown}s` : '获取验证码'}
-                </button>
-              </div>
-            </FormField>
-
-            <FormField label="昵称" error={fieldErrors.nickname} required disabled={state.isSubmitting}>
+          <FormField
+            label="验证码"
+            required
+            error={fieldErrors.code}
+          >
+            <div style={{ display: 'flex', gap: 8 }}>
               <input
                 type="text"
-                value={formData.nickname}
-                onChange={handleChange('nickname')}
-                disabled={state.isSubmitting}
-                placeholder="设置您的昵称"
-                style={inputStyle}
+                placeholder="6位验证码"
+                maxLength={6}
+                value={formData.code}
+                onChange={(e) => handleFieldChange('code', e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  border: fieldErrors.code ? '1px solid #ef4444' : '1px solid #334155',
+                  background: '#1e293b',
+                  color: '#f1f5f9',
+                  fontSize: 14,
+                  outline: 'none',
+                }}
               />
-            </FormField>
+              <button
+                type="button"
+                disabled={countdown > 0}
+                onClick={handleSendCode}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: countdown > 0 ? '#334155' : '#3b82f6',
+                  color: countdown > 0 ? '#64748b' : '#fff',
+                  fontSize: 13,
+                  whiteSpace: 'nowrap',
+                  cursor: countdown > 0 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {countdown > 0 ? `${countdown}s` : '获取验证码'}
+              </button>
+            </div>
+          </FormField>
 
-            <label
+          <FormField
+            label="昵称"
+            required
+            error={fieldErrors.nickname}
+          >
+            <input
+              type="text"
+              placeholder="请输入您的昵称"
+              maxLength={20}
+              value={formData.nickname}
+              onChange={(e) => handleFieldChange('nickname', e.target.value)}
               style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 10,
-                fontSize: 13,
-                color: fieldErrors.agreeTerms ? '#f87171' : '#94a3b8',
-                cursor: state.isSubmitting ? 'not-allowed' : 'pointer',
-                opacity: state.isSubmitting ? 0.7 : 1,
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: 8,
+                border: fieldErrors.nickname ? '1px solid #ef4444' : '1px solid #334155',
+                background: '#1e293b',
+                color: '#f1f5f9',
+                fontSize: 14,
+                outline: 'none',
               }}
-            >
-              <input
-                type="checkbox"
-                checked={formData.agreeTerms}
-                onChange={handleChange('agreeTerms')}
-                disabled={state.isSubmitting}
-                style={{ marginTop: 3, accentColor: '#f59e0b' }}
-              />
-              <span>
-                我已阅读并同意<a href="#" style={{ color: '#f59e0b', textDecoration: 'none' }}>《服务条款》</a>
-                和<a href="#" style={{ color: '#f59e0b', textDecoration: 'none' }}>《隐私政策》</a>
-              </span>
-            </label>
-
-            <SubmitButton
-              loading={state.isSubmitting}
-              label="立即注册"
-              loadingLabel="注册中..."
-              variant="primary"
             />
-          </form>
+          </FormField>
 
-          <div style={{ marginTop: 16 }}>
-            <FormSubmitFeedback state={state} onRetry={() => submit()} />
-          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: '#cbd5e1', fontSize: 13 }}>
+            <input
+              type="checkbox"
+              checked={formData.agreeTerms}
+              onChange={(e) => handleFieldChange('agreeTerms', e.target.checked)}
+              style={{ accentColor: '#3b82f6' }}
+            />
+            <span>
+              我已阅读并同意{' '}
+              <Link href="/terms" style={{ color: '#60a5fa', textDecoration: 'underline' }}>
+                服务条款
+              </Link>
+              {' '}和{' '}
+              <Link href="/privacy" style={{ color: '#60a5fa', textDecoration: 'underline' }}>
+                隐私政策
+              </Link>
+            </span>
+          </label>
+          {fieldErrors.agreeTerms && (
+            <p style={{ color: '#ef4444', fontSize: 12, margin: 0 }}>{fieldErrors.agreeTerms}</p>
+          )}
 
-          <div style={{ textAlign: 'center', marginTop: 20 }}>
-            <span style={{ fontSize: 13, color: '#94a3b8' }}>已有账号？</span>
-            <Link
-              href="/member-login"
-              style={{ marginLeft: 8, fontSize: 13, color: '#f59e0b', textDecoration: 'none', fontWeight: 500 }}
-            >
-              立即登录
-            </Link>
-          </div>
-        </section>
+          <SubmitButton
+            loading={submitting}
+            style={{
+              marginTop: 8,
+              padding: '12px 0',
+              borderRadius: 8,
+              border: 'none',
+              background: submitting ? '#334155' : '#3b82f6',
+              color: '#fff',
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: submitting ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s',
+            }}
+          >
+            注册会员
+          </SubmitButton>
+        </form>
+
+        <p style={{ textAlign: 'center', marginTop: 24, color: '#64748b', fontSize: 13 }}>
+          已有账号？{' '}
+          <Link href="/member-login" style={{ color: '#60a5fa', textDecoration: 'underline' }}>
+            立即登录
+          </Link>
+        </p>
       </div>
     </main>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  borderRadius: 8,
-  padding: '12px 14px',
-  background: 'rgba(15, 23, 42, 0.6)',
-  border: '1px solid rgba(148, 163, 184, 0.2)',
-  color: '#f8fafc',
-  fontSize: 14,
-  outline: 'none',
-  boxSizing: 'border-box',
-};

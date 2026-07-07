@@ -1,5 +1,5 @@
 /**
- * member-register/page.test.ts — 会员注册页面 L1 冒烟测试
+ * member-register/page.test.ts — 会员注册页面冒烟测试
  * 覆盖: 正例·边界·防御
  */
 import assert from 'node:assert/strict';
@@ -52,12 +52,12 @@ describe('member-register — 正例', () => {
 describe('member-register — 边界', () => {
   it('手机号须符合 /^1[3-9]\\d{9}$/ 格式校验', () => {
     const src = readSource();
-    assert.ok(src.includes("/^1[3-9]\\d{9}$/") || src.includes("1[3-9]"), '缺少手机号正则');
+    assert.ok(src.includes('/^1[3-9]'), '缺少手机号正则');
   });
 
   it('验证码必须为 6 位', () => {
     const src = readSource();
-    assert.ok(src.includes("formData.code.length !== 6"), '缺少验证码长度校验');
+    assert.ok(src.includes('code.length !== 6'), '缺少验证码长度校验');
   });
 
   it('验证码发送后倒计时 60 秒', () => {
@@ -84,9 +84,9 @@ describe('member-register — 防御', () => {
     assert.ok(src.includes('FormField'), '缺少 FormField');
   });
 
-  it('应包含 useFormSubmit 表单提交状态管理', () => {
+  it('应包含表单提交状态管理（submitting 状态）', () => {
     const src = readSource();
-    assert.ok(src.includes('useFormSubmit'), '缺少 useFormSubmit');
+    assert.ok(src.includes('submitting') || src.includes('setSubmitting'), '缺少 submitting 状态');
   });
 
   it('应包含 FormSubmitFeedback 反馈组件', () => {
@@ -108,5 +108,14 @@ describe('member-register — 防御', () => {
     const src = readSource();
     assert.ok(src.includes('服务条款'), '缺少服务条款');
     assert.ok(src.includes('隐私政策'), '缺少隐私政策');
+  });
+});
+
+// ---- 模块加载 ----
+
+describe('member-register — 模块加载', () => {
+  it('page 模块可正常导入且 default 为函数组件', async () => {
+    const mod = await import('./page');
+    assert.ok(typeof mod.default === 'function', 'default export should be a function component');
   });
 });
