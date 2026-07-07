@@ -1,386 +1,482 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+/* ===== member — 纯函数式内联测试，不 import 生产代码 ===== */
 
-// ── Enums & Types ────────────────────────────────────────────────
+// ── 1. 枚举 + 类型定义 ────────────────────────────────────────────
 
-enum MemberLifecycleStage {
+enum MemberLevel {
+  Bronze = 'BRONZE',
+  Silver = 'SILVER',
+  Gold = 'GOLD',
+  Platinum = 'PLATINUM',
+  Diamond = 'DIAMOND',
+}
+
+enum MemberStatus {
   Active = 'ACTIVE',
-  Dormant = 'DORMANT',
-  Churned = 'CHURNED',
+  Frozen = 'FROZEN',
+  Expired = 'EXPIRED',
+  Blacklisted = 'BLACKLISTED',
+}
+
+interface RequestTenantContext {
+  tenantId: string
+  brandId?: string
+  storeId?: string
+  marketCode?: string
 }
 
 interface MemberProfile {
   memberId: string
-  tenantId: string
+  userId?: string
+  tenantContext: RequestTenantContext
+  mobile?: string
   nickname: string
-  level: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'DIAMOND'
-  status: 'ACTIVE' | 'DORMANT' | 'CHURNED'
+  email?: string
+  address?: string
+  notes?: string
+  level: MemberLevel
+  status: MemberStatus
   points: number
+  growthValue?: number
+  svipStatus?: string
   registeredAt: string
-  lastActiveAt: string
-  lifecycleStage?: MemberLifecycleStage
-  lifecycleHistory?: Array<{ from: MemberLifecycleStage; to: MemberLifecycleStage; at: string; reason: string }>
+  lastActiveAt?: string
+  lifecycleStage?: 'prospect' | 'newly-paid' | 'repeat-paid' | 'vip-active'
+  tags?: string[]
+  lastPaymentAt?: string
+  lastPaymentAmount?: number
+  lastPaymentOrderId?: string
+  lastPaymentChannel?: string
+  source?: 'memory' | 'prisma'
+  persisted?: boolean
 }
 
-interface MemberConfig {
-  dormantDays: number
-  churnedDays: number
-  earnRate: number
-  redeemRate: number
+interface MemberOperationsAction {
+  code:
+    | 'complete-member-onboarding'
+    | 'send-post-payment-welcome'
+    | 'issue-bounce-back-coupon'
+    | 'recommend-repeat-purchase-bundle'
+    | 'invite-loyalty-challenge'
+    | 'assign-vip-concierge'
+    | 'push-new-arrival-preview'
+    | 'deliver-channel-follow-up'
+  label: string
+  reason: string
+  channel: 'coupon' | 'crm-task' | 'wechat' | 'app-push'
+  priority: 'high' | 'medium' | 'low'
 }
 
-// ── Default Constants ────────────────────────────────────────────
-
-const DEFAULT_CONFIG: MemberConfig = {
-  dormantDays: 90,
-  churnedDays: 180,
-  earnRate: 1,
-  redeemRate: 100,
+interface MemberAutomationTrigger {
+  code:
+    | 'payment-success-journey'
+    | 'newly-paid-bounce-back'
+    | 'repeat-paid-retention'
+    | 'vip-service-upgrade'
+    | 'channel-retouch'
+  status: 'ready' | 'watch'
+  source: 'payment-success' | 'lifecycle' | 'tag'
+  reason: string
 }
 
-// ── Pure Logic Functions — inline, no production import ──────────
-
-function daysAgo(days: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() - days)
-  return d.toISOString()
+interface MemberOperationsProfile {
+  memberId: string
+  tenantContext: RequestTenantContext
+  level: MemberLevel
+  status: MemberStatus
+  lifecycleStage: NonNullable<MemberProfile['lifecycleStage']> | 'prospect'
+  audienceSegments: string[]
+  recommendedActions: MemberOperationsAction[]
+  automationTriggers: MemberAutomationTrigger[]
+  lastPaymentAt?: string
+  lastPaymentAmount?: number
+  lastPaymentChannel?: string
+  tags: string[]
+  source?: 'memory' | 'prisma'
 }
 
-function makeMember(overrides: Partial<MemberProfile> = {}): MemberProfile {
-  const now = new Date().toISOString()
+interface MemberBootstrap {
+  tenantContext: RequestTenantContext
+  capabilities: string[]
+  phase: string
+}
+
+export {} // ensure module scope
+
+// ── 2. Mock 数据工厂 ──────────────────────────────────────────────
+
+const MEMBER_LEVEL_THRESHOLDS: Record<MemberLevel, number> = {
+  [MemberLevel.Bronze]: 0,
+  [MemberLevel.Silver]: 500,
+  [MemberLevel.Gold]: 2000,
+  [MemberLevel.Platinum]: 10000,
+  [MemberLevel.Diamond]: 50000,
+}
+
+const memberStore = new Map<string, MemberProfile>()
+
+function makeContext(overrides?: Partial<RequestTenantContext>): RequestTenantContext {
+  return { tenantId: 'tenant-001', brandId: 'brand-a', storeId: 'store-1', marketCode: 'cn-mainland', ...overrides }
+}
+
+function makeProfile(overrides?: Partial<MemberProfile>): MemberProfile {
   return {
-    memberId: `m-${Math.random().toString(36).slice(2, 10)}`,
-    tenantId: 't1',
-    nickname: 'Test',
-    level: 'BRONZE',
-    status: 'ACTIVE',
+    memberId: 'mem-001',
+    tenantContext: makeContext(),
+    nickname: '测试用户',
+    level: MemberLevel.Bronze,
+    status: MemberStatus.Active,
     points: 0,
-    registeredAt: now,
-    lastActiveAt: now,
+    growthValue: 0,
+    svipStatus: 'INACTIVE',
+    registeredAt: '2026-01-01T00:00:00Z',
+    source: 'memory',
+    persisted: false,
     ...overrides,
   }
 }
 
-function getLifecycleStage(m: MemberProfile): MemberLifecycleStage {
-  return m.lifecycleStage ?? MemberLifecycleStage.Active
+// ── 3. 内联业务逻辑 ──────────────────────────────────────────────
+
+function computeMemberLevel(points: number): MemberLevel {
+  if (points >= MEMBER_LEVEL_THRESHOLDS[MemberLevel.Diamond]) return MemberLevel.Diamond
+  if (points >= MEMBER_LEVEL_THRESHOLDS[MemberLevel.Platinum]) return MemberLevel.Platinum
+  if (points >= MEMBER_LEVEL_THRESHOLDS[MemberLevel.Gold]) return MemberLevel.Gold
+  if (points >= MEMBER_LEVEL_THRESHOLDS[MemberLevel.Silver]) return MemberLevel.Silver
+  return MemberLevel.Bronze
 }
 
-function setLifecycleStage(
-  m: MemberProfile,
-  stage: MemberLifecycleStage,
-  reason: string,
-): void {
-  const from = getLifecycleStage(m)
-  if (from === stage) return
+function canUpgrade(currentLevel: MemberLevel, points: number): boolean {
+  const computed = computeMemberLevel(points)
+  const levels = Object.values(MemberLevel)
+  return levels.indexOf(computed) > levels.indexOf(currentLevel)
+}
 
-  // guarded skip: ACTIVE -> CHURNED not allowed
-  if (from === MemberLifecycleStage.Active && stage === MemberLifecycleStage.Churned) {
-    throw new Error('lifecycle_skip_not_allowed: cannot skip DORMANT stage')
+function makeMemberBootstrap(
+  tenantContext: RequestTenantContext,
+  overrides: Partial<Pick<MemberBootstrap, 'capabilities' | 'phase'>> = {},
+): MemberBootstrap {
+  return { tenantContext, capabilities: ['member-center', 'points', 'svip', 'blind-box'], phase: 'scaffold', ...overrides }
+}
+
+function getBootstrap(tenantContext: RequestTenantContext): MemberBootstrap {
+  return makeMemberBootstrap(tenantContext)
+}
+
+function getProfile(memberId: string): MemberProfile | undefined {
+  return memberStore.get(memberId)
+}
+
+function listProfiles(): MemberProfile[] {
+  return Array.from(memberStore.values())
+}
+
+function register(input: { memberId: string; tenantContext: RequestTenantContext; nickname: string }): MemberProfile {
+  if (memberStore.has(input.memberId)) {
+    throw new Error(`Member ${input.memberId} already exists`)
   }
-
-  m.lifecycleStage = stage
-  m.lifecycleHistory = m.lifecycleHistory ?? []
-  m.lifecycleHistory.push({
-    from,
-    to: stage,
-    at: new Date().toISOString(),
-    reason,
-  })
-  if (m.lifecycleHistory.length > 50) m.lifecycleHistory.shift()
-}
-
-function recordActivity(m: MemberProfile, at?: Date): void {
-  m.lastActiveAt = (at ?? new Date()).toISOString()
-  const current = getLifecycleStage(m)
-  if (current !== MemberLifecycleStage.Active) {
-    setLifecycleStage(m, MemberLifecycleStage.Active, 'activity recorded')
+  const profile: MemberProfile = {
+    memberId: input.memberId,
+    userId: undefined,
+    tenantContext: input.tenantContext,
+    mobile: undefined,
+    nickname: input.nickname,
+    level: MemberLevel.Bronze,
+    status: MemberStatus.Active,
+    points: 0,
+    growthValue: 0,
+    svipStatus: 'INACTIVE',
+    registeredAt: new Date().toISOString(),
+    lastActiveAt: new Date().toISOString(),
+    source: 'memory',
+    persisted: false,
   }
+  memberStore.set(input.memberId, profile)
+  return profile
 }
 
-function getInactiveMs(m: MemberProfile, nowDate: Date = new Date()): number {
-  const lastMs = m.lastActiveAt
-    ? new Date(m.lastActiveAt).getTime()
-    : new Date(m.registeredAt).getTime()
-  return nowDate.getTime() - lastMs
+function addPoints(memberId: string, points: number): MemberProfile {
+  const profile = memberStore.get(memberId)
+  if (!profile) throw new Error(`Member ${memberId} not found`)
+  if (points <= 0) throw new Error('Points to add must be positive')
+  profile.points += points
+  profile.growthValue = (profile.growthValue ?? 0) + points
+  profile.level = computeMemberLevel(profile.points)
+  profile.lastActiveAt = new Date().toISOString()
+  return profile
 }
 
-interface ScanResult {
-  scannedCount: number
-  dormantPromoted: number
-  churnedPromoted: number
-  configSnapshot: { dormantDays: number; churnedDays: number }
+function revokePoints(memberId: string, points: number): MemberProfile {
+  const profile = memberStore.get(memberId)
+  if (!profile) throw new Error(`Member ${memberId} not found`)
+  if (points <= 0) throw new Error('Points to revoke must be positive')
+  profile.points = Math.max(0, profile.points - points)
+  profile.growthValue = Math.max(0, (profile.growthValue ?? 0) - points)
+  profile.level = computeMemberLevel(profile.points)
+  profile.lastActiveAt = new Date().toISOString()
+  return profile
 }
 
-function scanForDormancy(
-  members: MemberProfile[],
-  config: MemberConfig = DEFAULT_CONFIG,
-  nowDate: Date = new Date(),
-): ScanResult {
-  const { dormantDays, churnedDays } = config
-  const dormantThresholdMs = dormantDays * 86_400_000
-  const churnedThresholdMs = churnedDays * 86_400_000
+function sanitizeTagSegment(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
 
-  let dormantPromoted = 0
-  let churnedPromoted = 0
-
-  for (const m of members) {
-    const inactiveMs = getInactiveMs(m, nowDate)
-    const current = getLifecycleStage(m)
-
-    if (current === MemberLifecycleStage.Active && inactiveMs >= dormantThresholdMs) {
-      setLifecycleStage(m, MemberLifecycleStage.Dormant, `inactive for ${dormantDays} days`)
-      dormantPromoted++
-    } else if (current === MemberLifecycleStage.Dormant && inactiveMs >= churnedThresholdMs) {
-      setLifecycleStage(m, MemberLifecycleStage.Churned, `inactive for ${churnedDays} days`)
-      churnedPromoted++
-    }
+function mergeMemberTags(existing: string[] | undefined, additions: string[]): string[] {
+  const tags = new Set<string>(existing ?? [])
+  for (const addition of additions) {
+    const normalized = sanitizeTagSegment(addition)
+    if (normalized) tags.add(normalized)
   }
-
-  return {
-    scannedCount: members.length,
-    dormantPromoted,
-    churnedPromoted,
-    configSnapshot: { dormantDays, churnedDays },
-  }
+  return Array.from(tags).slice(0, 12)
 }
 
-function getStats(
-  members: MemberProfile[],
-  tenantId?: string,
-): { active: number; dormant: number; churned: number; total: number } {
-  const filtered = tenantId
-    ? members.filter((m) => m.tenantId === tenantId)
-    : members
-
-  let active = 0
-  let dormant = 0
-  let churned = 0
-  for (const m of filtered) {
-    const stage = getLifecycleStage(m)
-    if (stage === MemberLifecycleStage.Active) active++
-    else if (stage === MemberLifecycleStage.Dormant) dormant++
-    else if (stage === MemberLifecycleStage.Churned) churned++
-  }
-  return { active, dormant, churned, total: filtered.length }
+function deriveLifecycleStage(input: { hadPaymentBefore: boolean; amount: number; level: MemberLevel }): NonNullable<MemberProfile['lifecycleStage']> {
+  if (input.level === MemberLevel.Gold || input.level === MemberLevel.Platinum || input.level === MemberLevel.Diamond) return 'vip-active'
+  if (input.hadPaymentBefore || input.amount >= 200) return 'repeat-paid'
+  return 'newly-paid'
 }
 
-function reactivateMember(
-  m: MemberProfile | undefined,
-  memberId: string,
-  tenantId: string,
-  reason: string = 'manual',
-): MemberProfile {
-  if (!m) throw new Error(`member ${memberId} not found`)
-  if (m.tenantId !== tenantId) throw new Error('cross_tenant_member_access')
-  setLifecycleStage(m, MemberLifecycleStage.Active, reason)
-  m.lastActiveAt = new Date().toISOString()
-  return m
+function buildOperationsSegments(profile: MemberProfile): string[] {
+  const lifecycleStage = profile.lifecycleStage ?? 'prospect'
+  const normalizedChannel = profile.lastPaymentChannel ? sanitizeTagSegment(profile.lastPaymentChannel) : undefined
+  const values: Array<string | undefined> = [
+    `lifecycle-${lifecycleStage}`,
+    `level-${profile.level.toLowerCase()}`,
+    profile.persisted ? 'persisted-member' : 'memory-member',
+    profile.lastPaymentAt ? 'recent-payer' : undefined,
+    (profile.lastPaymentAmount ?? 0) >= 200 || profile.tags?.includes('high-value-buyer') ? 'high-value-buyer' : undefined,
+    profile.level === MemberLevel.Gold || profile.level === MemberLevel.Platinum || profile.level === MemberLevel.Diamond ? 'vip-tier-member' : undefined,
+    normalizedChannel ? `channel-${normalizedChannel}` : undefined,
+    ...(profile.tags ?? []).map((tag) => `tag-${sanitizeTagSegment(tag)}`),
+  ]
+  return Array.from(new Set(values.filter((v): v is string => Boolean(v))))
 }
 
-function listByStage(
-  members: MemberProfile[],
-  stage: MemberLifecycleStage,
-  tenantId?: string,
-): MemberProfile[] {
-  return members.filter((m) => {
-    if (tenantId && m.tenantId !== tenantId) return false
-    return getLifecycleStage(m) === stage
-  })
-}
+// ── 4. Tests ──────────────────────────────────────────────────────
 
-function calculateLevel(currentPoints: number, currentLevel: string): { nextLevel: string | null; pointsNeeded: number } {
-  const order = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND']
-  const thresholds: Record<string, number> = { BRONZE: 0, SILVER: 500, GOLD: 2000, PLATINUM: 10000, DIAMOND: 50000 }
-  const idx = order.indexOf(currentLevel)
-  if (idx < 0 || idx >= order.length - 1) return { nextLevel: null, pointsNeeded: 0 }
-  const nextLevel = order[idx + 1]
-  const pointsNeeded = Math.max(0, thresholds[nextLevel] - currentPoints)
-  return { nextLevel, pointsNeeded }
-}
-
-// ── Tests ────────────────────────────────────────────────────────
-
-describe('member service — dormancy state machine', () => {
-  let members: MemberProfile[]
-
+describe('MemberService (inline)', () => {
   beforeEach(() => {
-    members = []
+    memberStore.clear()
   })
 
-  it('AC-1: 默认 lifecycleStage 是 ACTIVE', () => {
-    const m = makeMember()
-    expect(getLifecycleStage(m)).toBe(MemberLifecycleStage.Active)
+  // ── computeMemberLevel ──
+  describe('computeMemberLevel', () => {
+    it('should return Bronze for 0 points', () => {
+      expect(computeMemberLevel(0)).toBe(MemberLevel.Bronze)
+    })
+
+    it('should return Bronze for 499 points', () => {
+      expect(computeMemberLevel(499)).toBe(MemberLevel.Bronze)
+    })
+
+    it('should return Silver for 500 points', () => {
+      expect(computeMemberLevel(500)).toBe(MemberLevel.Silver)
+    })
+
+    it('should return Gold for 2000 points', () => {
+      expect(computeMemberLevel(2000)).toBe(MemberLevel.Gold)
+    })
+
+    it('should return Platinum for 10000 points', () => {
+      expect(computeMemberLevel(10000)).toBe(MemberLevel.Platinum)
+    })
+
+    it('should return Diamond for 50000 points', () => {
+      expect(computeMemberLevel(50000)).toBe(MemberLevel.Diamond)
+    })
   })
 
-  it('AC-2: ACTIVE→DORMANT after dormantDays (90d)', () => {
-    const m = makeMember({ lastActiveAt: daysAgo(91) })
-    members.push(m)
-    const r = scanForDormancy(members)
-    expect(r.dormantPromoted).toBe(1)
-    expect(r.churnedPromoted).toBe(0)
-    expect(getLifecycleStage(m)).toBe(MemberLifecycleStage.Dormant)
+  // ── canUpgrade ──
+  describe('canUpgrade', () => {
+    it('should return true when points qualify for upgrade', () => {
+      expect(canUpgrade(MemberLevel.Bronze, 600)).toBe(true)
+    })
+
+    it('should return false when points are insufficient', () => {
+      expect(canUpgrade(MemberLevel.Silver, 300)).toBe(false)
+    })
+
+    it('should return false at same level', () => {
+      expect(canUpgrade(MemberLevel.Gold, 1500)).toBe(false)
+    })
+
+    it('should return false for Diamond (max level)', () => {
+      expect(canUpgrade(MemberLevel.Diamond, 100000)).toBe(false)
+    })
   })
 
-  it('AC-2: DORMANT→CHURNED after churnedDays (180d)', () => {
-    const m = makeMember({ lastActiveAt: daysAgo(200) })
-    members.push(m)
-    scanForDormancy(members) // ACTIVE→DORMANT
-    expect(getLifecycleStage(m)).toBe(MemberLifecycleStage.Dormant)
-    const r2 = scanForDormancy(members)
-    expect(r2.churnedPromoted).toBe(1)
-    expect(getLifecycleStage(m)).toBe(MemberLifecycleStage.Churned)
+  // ── makeMemberBootstrap / getBootstrap ──
+  describe('bootstrap', () => {
+    it('should return tenant context', () => {
+      const ctx = makeContext()
+      const result = getBootstrap(ctx)
+      expect(result.tenantContext.tenantId).toBe('tenant-001')
+    })
+
+    it('should include member-center capability', () => {
+      const result = getBootstrap(makeContext())
+      expect(result.capabilities).toContain('member-center')
+      expect(result.capabilities).toContain('points')
+      expect(result.capabilities).toContain('svip')
+    })
+
+    it('should be in scaffold phase', () => {
+      const result = getBootstrap(makeContext())
+      expect(result.phase).toBe('scaffold')
+    })
   })
 
-  it('AC-2: ACTIVE→CHURNED 跳级非法抛错', () => {
-    const m = makeMember()
-    expect(() => setLifecycleStage(m, MemberLifecycleStage.Churned, 'illegal skip')).toThrow(
-      /cannot skip DORMANT/,
-    )
+  // ── register ──
+  describe('register', () => {
+    it('should create a new member profile', () => {
+      const profile = register({ memberId: 'mem-new', tenantContext: makeContext(), nickname: '新人' })
+      expect(profile.memberId).toBe('mem-new')
+      expect(profile.nickname).toBe('新人')
+      expect(profile.level).toBe(MemberLevel.Bronze)
+      expect(profile.status).toBe(MemberStatus.Active)
+      expect(profile.points).toBe(0)
+    })
+
+    it('should throw when member already exists', () => {
+      register({ memberId: 'mem-dupe', tenantContext: makeContext(), nickname: 'first' })
+      expect(() => register({ memberId: 'mem-dupe', tenantContext: makeContext(), nickname: 'second' })).toThrow('already exists')
+    })
   })
 
-  it('AC-3: 配置变更 dormantDays=10 后扫描立即生效', () => {
-    const config = { ...DEFAULT_CONFIG, dormantDays: 10, churnedDays: 180 }
-    const m = makeMember({ lastActiveAt: daysAgo(15) })
-    members.push(m)
+  // ── getProfile / listProfiles ──
+  describe('getProfile / listProfiles', () => {
+    it('should return undefined for non-existent member', () => {
+      expect(getProfile('no-such-member')).toBeUndefined()
+    })
 
-    // 默认 90d: 不应转为 Dormant
-    let r = scanForDormancy(members)
-    expect(r.dormantPromoted).toBe(0)
-    expect(getLifecycleStage(m)).toBe(MemberLifecycleStage.Active)
+    it('should return registered member', () => {
+      const profile = register({ memberId: 'mem-find', tenantContext: makeContext(), nickname: '查找' })
+      expect(getProfile('mem-find')).toBe(profile)
+    })
 
-    // 改 10d
-    r = scanForDormancy(members, config)
-    expect(r.dormantPromoted).toBe(1)
-    expect(getLifecycleStage(m)).toBe(MemberLifecycleStage.Dormant)
+    it('should list all profiles', () => {
+      register({ memberId: 'mem-a', tenantContext: makeContext(), nickname: 'A' })
+      register({ memberId: 'mem-b', tenantContext: makeContext(), nickname: 'B' })
+      expect(listProfiles()).toHaveLength(2)
+    })
   })
 
-  it('AC-7: reactivate 任意→ACTIVE', () => {
-    const m = makeMember({ lastActiveAt: daysAgo(200) })
-    reactivateMember(m, m.memberId, 't1', 'test')
-    expect(getLifecycleStage(m)).toBe(MemberLifecycleStage.Active)
-    expect(new Date(m.lastActiveAt).getTime()).toBeGreaterThan(Date.now() - 5000)
+  // ── addPoints ──
+  describe('addPoints', () => {
+    it('should add points to member', () => {
+      const profile = register({ memberId: 'mem-p', tenantContext: makeContext(), nickname: '积分测试' })
+      addPoints('mem-p', 100)
+      expect(getProfile('mem-p')!.points).toBe(100)
+    })
+
+    it('should auto-upgrade level when crossing threshold', () => {
+      const profile = register({ memberId: 'mem-up', tenantContext: makeContext(), nickname: '升级' })
+      addPoints('mem-up', 2000)
+      expect(getProfile('mem-up')!.level).toBe(MemberLevel.Gold)
+    })
+
+    it('should throw for non-positive points', () => {
+      register({ memberId: 'mem-bad', tenantContext: makeContext(), nickname: '错误' })
+      expect(() => addPoints('mem-bad', 0)).toThrow('must be positive')
+    })
+
+    it('should throw for non-existent member', () => {
+      expect(() => addPoints('no-exist', 100)).toThrow('not found')
+    })
   })
 
-  it('AC-7: reactivate 记录 lifecycleHistory', () => {
-    const m = makeMember({ lastActiveAt: daysAgo(200) })
-    members.push(m)
-    scanForDormancy(members) // → DORMANT
-    reactivateMember(m, m.memberId, 't1', 'promotion')
-    expect(m.lifecycleHistory!.length).toBeGreaterThanOrEqual(2)
-    const last = m.lifecycleHistory![m.lifecycleHistory!.length - 1]
-    expect(last.to).toBe(MemberLifecycleStage.Active)
-    expect(last.reason).toBe('promotion')
-    expect(last.from).toBe(MemberLifecycleStage.Dormant)
+  // ── revokePoints ──
+  describe('revokePoints', () => {
+    it('should revoke points from member', () => {
+      register({ memberId: 'mem-r', tenantContext: makeContext(), nickname: '扣分' })
+      addPoints('mem-r', 500)
+      revokePoints('mem-r', 200)
+      expect(getProfile('mem-r')!.points).toBe(300)
+    })
+
+    it('should not go below 0 points', () => {
+      register({ memberId: 'mem-neg', tenantContext: makeContext(), nickname: '防负' })
+      addPoints('mem-neg', 100)
+      revokePoints('mem-neg', 999)
+      expect(getProfile('mem-neg')!.points).toBe(0)
+    })
+
+    it('should throw for non-positive points', () => {
+      register({ memberId: 'mem-br', tenantContext: makeContext(), nickname: '扣错' })
+      expect(() => revokePoints('mem-br', -5)).toThrow('must be positive')
+    })
   })
 
-  it('CHURNED→ACTIVE 通过 reactivate 允许', () => {
-    const m = makeMember({ lastActiveAt: daysAgo(365) })
-    members.push(m)
-    scanForDormancy(members) // → DORMANT
-    scanForDormancy(members) // → CHURNED
-    expect(getLifecycleStage(m)).toBe(MemberLifecycleStage.Churned)
-    reactivateMember(m, m.memberId, 't1', 'win-back')
-    expect(getLifecycleStage(m)).toBe(MemberLifecycleStage.Active)
+  // ── sanitizeTagSegment ──
+  describe('sanitizeTagSegment', () => {
+    it('should lowercase and hyphenate', () => {
+      expect(sanitizeTagSegment('Hello World!')).toBe('hello-world')
+    })
+
+    it('should strip Chinese characters leaving empty string', () => {
+      expect(sanitizeTagSegment('高级会员')).toBe('')
+    })
+
+    it('should handle mixed content', () => {
+      expect(sanitizeTagSegment('VIP_高级')).toBe('vip')
+    })
   })
 
-  it('AC-4: scan 返回 counts 且报告 configSnapshot', () => {
-    members.push(
-      makeMember({ memberId: 'a', lastActiveAt: daysAgo(91) }),
-      makeMember({ memberId: 'b', lastActiveAt: daysAgo(200) }),
-      makeMember({ memberId: 'c', lastActiveAt: daysAgo(30) }),
-    )
-    const r1 = scanForDormancy(members)
-    expect(r1.scannedCount).toBe(3)
-    expect(r1.dormantPromoted).toBe(2)
-    expect(r1.churnedPromoted).toBe(0)
-    expect(r1.configSnapshot).toEqual({ dormantDays: 90, churnedDays: 180 })
-
-    const r2 = scanForDormancy(members)
-    expect(r2.churnedPromoted).toBe(1) // only b crosses churned threshold
+  // ── mergeMemberTags ──
+  describe('mergeMemberTags', () => {
+    it('should merge and normalize tags', () => {
+      const result = mergeMemberTags(['paid'], ['New Tag!', 'VIP'])
+      expect(result).toContain('paid')
+      expect(result).toContain('new-tag')
+      expect(result).toContain('vip')
+    })
   })
 
-  it('AC-5: stats 计数 active/dormant/churned', () => {
-    members.push(
-      makeMember({ memberId: 'a', lastActiveAt: daysAgo(30), tenantId: 't1' }),
-      makeMember({ memberId: 'b', lastActiveAt: daysAgo(100), tenantId: 't1' }),
-      makeMember({ memberId: 'c', lastActiveAt: daysAgo(200), tenantId: 't1' }),
-    )
-    scanForDormancy(members)
-    scanForDormancy(members)
-    const stats = getStats(members, 't1')
-    expect(stats.total).toBe(3)
-    expect(stats.active).toBe(1) // a (30d < 90)
-    expect(stats.dormant).toBe(1) // b (100d < 180)
-    expect(stats.churned).toBe(1) // c (200d > 180)
+  // ── deriveLifecycleStage ──
+  describe('deriveLifecycleStage', () => {
+    it('should return newly-paid for first payment under 200', () => {
+      expect(deriveLifecycleStage({ hadPaymentBefore: false, amount: 50, level: MemberLevel.Bronze })).toBe('newly-paid')
+    })
+
+    it('should return repeat-paid if had payment before', () => {
+      expect(deriveLifecycleStage({ hadPaymentBefore: true, amount: 50, level: MemberLevel.Bronze })).toBe('repeat-paid')
+    })
+
+    it('should return repeat-paid for amount >= 200', () => {
+      expect(deriveLifecycleStage({ hadPaymentBefore: false, amount: 200, level: MemberLevel.Bronze })).toBe('repeat-paid')
+    })
+
+    it('should return vip-active for Gold level', () => {
+      expect(deriveLifecycleStage({ hadPaymentBefore: false, amount: 0, level: MemberLevel.Gold })).toBe('vip-active')
+    })
   })
 
-  it('recordActivity 自动唤醒 CHURNED→ACTIVE', () => {
-    const m = makeMember({ lastActiveAt: daysAgo(365) })
-    members.push(m)
-    scanForDormancy(members)
-    scanForDormancy(members)
-    expect(getLifecycleStage(m)).toBe(MemberLifecycleStage.Churned)
-    recordActivity(m)
-    expect(getLifecycleStage(m)).toBe(MemberLifecycleStage.Active)
-  })
+  // ── buildOperationsSegments ──
+  describe('buildOperationsSegments', () => {
+    it('should include lifecycle and level segments', () => {
+      const profile = makeProfile({ lifecycleStage: 'newly-paid', level: MemberLevel.Silver, persisted: true })
+      const segments = buildOperationsSegments(profile)
+      expect(segments).toContain('lifecycle-newly-paid')
+      expect(segments).toContain('level-silver')
+      expect(segments).toContain('persisted-member')
+    })
 
-  it('防御: 跨租户 reactivate 抛错', () => {
-    const m = makeMember({ tenantId: 't1' })
-    expect(() => reactivateMember(m, m.memberId, 't2', 'illegal')).toThrow(/cross_tenant/)
-  })
+    it('should include high-value-buyer when amount >= 200', () => {
+      const profile = makeProfile({ lastPaymentAmount: 300, lifecycleStage: 'repeat-paid' })
+      const segments = buildOperationsSegments(profile)
+      expect(segments).toContain('high-value-buyer')
+    })
 
-  it('防御: 不存在的 memberId 抛错', () => {
-    expect(() => reactivateMember(undefined, 'not-exist', 't1')).toThrow(/not found/)
-  })
+    it('should include vip-tier-member for premium levels', () => {
+      const profile = makeProfile({ level: MemberLevel.Platinum, lifecycleStage: 'vip-active' })
+      const segments = buildOperationsSegments(profile)
+      expect(segments).toContain('vip-tier-member')
+    })
 
-  it('listByStage 按阶段过滤', () => {
-    const m1 = makeMember({ memberId: 'm1', lastActiveAt: daysAgo(10) })
-    const m2 = makeMember({ memberId: 'm2', lastActiveAt: daysAgo(100) })
-    members.push(m1, m2)
-    scanForDormancy(members)
-    const dormantList = listByStage(members, MemberLifecycleStage.Dormant, 't1')
-    expect(dormantList.length).toBe(1)
-    expect(dormantList[0].memberId).toBe('m2')
-  })
-
-  it('listByStage 支持跨租户过滤', () => {
-    const m1 = makeMember({ memberId: 'm1', tenantId: 't1', lastActiveAt: daysAgo(10) })
-    const m2 = makeMember({ memberId: 'm2', tenantId: 't2', lastActiveAt: daysAgo(100) })
-    members.push(m1, m2)
-    scanForDormancy(members)
-    const t1Dormant = listByStage(members, MemberLifecycleStage.Dormant, 't1')
-    const t2Dormant = listByStage(members, MemberLifecycleStage.Dormant, 't2')
-    expect(t1Dormant.length).toBe(0)
-    expect(t2Dormant.length).toBe(1)
-  })
-
-  it('setLifecycleStage no-op 同阶段', () => {
-    const m = makeMember()
-    setLifecycleStage(m, MemberLifecycleStage.Active, 'test')
-    expect(m.lifecycleHistory).toBeUndefined()
-    expect(getLifecycleStage(m)).toBe(MemberLifecycleStage.Active)
-  })
-
-  it('lifecycleHistory ringbuffer 上限 50', () => {
-    const m = makeMember()
-    for (let i = 0; i < 60; i++) {
-      setLifecycleStage(m, i % 2 === 0 ? MemberLifecycleStage.Dormant : MemberLifecycleStage.Active, `cycle-${i}`)
-    }
-    expect(m.lifecycleHistory!.length).toBeLessThanOrEqual(50)
-  })
-
-  it('getInactiveMs 返回正确毫秒数', () => {
-    const m = makeMember({ lastActiveAt: daysAgo(1) })
-    const ms = getInactiveMs(m)
-    expect(ms).toBeGreaterThanOrEqual(86_000_000) // roughly 1 day
-  })
-
-  it('calculateLevel 返回下一等级及所需积分', () => {
-    const r = calculateLevel(100, 'BRONZE')
-    expect(r.nextLevel).toBe('SILVER')
-    expect(r.pointsNeeded).toBe(400)
-
-    const r2 = calculateLevel(99999, 'DIAMOND')
-    expect(r2.nextLevel).toBeNull()
-    expect(r2.pointsNeeded).toBe(0)
+    it('should include tags as segments', () => {
+      const profile = makeProfile({ tags: ['campaign-spring', 'referral'], lifecycleStage: 'prospect' })
+      const segments = buildOperationsSegments(profile)
+      expect(segments).toContain('tag-campaign-spring')
+      expect(segments).toContain('tag-referral')
+    })
   })
 })
