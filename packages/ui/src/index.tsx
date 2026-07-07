@@ -55,6 +55,8 @@ export { GaugeChart } from './components/GaugeChart';
 export type { GaugeChartProps, GaugeSegment } from './components/GaugeChart';
 export { FunnelChart } from './components/FunnelChart';
 export type { FunnelChartProps, FunnelStep } from './components/FunnelChart';
+export { PerformanceRanking } from './components/PerformanceRanking';
+export type { PerformanceRankingProps, RankingItem } from './components/PerformanceRanking';
 export { AIDecisionPanel } from './components/AiDecisionPanel';
 export type {
   AiDecisionPanelProps,
