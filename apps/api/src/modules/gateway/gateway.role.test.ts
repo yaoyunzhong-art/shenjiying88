@@ -5,7 +5,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
  * 8 角色视角的 gateway 模块测试：
  * 👔店长 🛒前台 👥HR 🔧安监 🎮导玩员 🎯运行专员 🤝团建 📢营销
  * 
- * 每个角色至少 2 个测试用例（正常流程 + 权限边界）
+ * 每个角色 ≥ 3 个测试用例（正常流程 + 权限边界 + 异常流程）
+ * 总计 ≥ 24 个测试用例
  */
 
 import 'reflect-metadata'
@@ -79,6 +80,23 @@ describe(`${ROLES.StoreManager} gateway 角色测试`, () => {
     expect(status.maxTokens).toBe(500)
     expect(status.refillRate).toBe(50)
   })
+
+  it('👔 店长: 调整后新配额立即生效，覆盖旧阈值', async () => {
+    const { rateLimiter } = createServices()
+    const client = 'store-manager-pos'
+    const endpoint = 'POST:/api/order'
+
+    // 先设低配额
+    await rateLimiter.setQuota(client, endpoint, { maxTokens: 5, refillRate: 1 })
+    const initial = await rateLimiter.getQuotaStatus(client, endpoint) as any
+    expect(initial.maxTokens).toBe(5)
+
+    // 再次调整到更高
+    await rateLimiter.setQuota(client, endpoint, { maxTokens: 200, refillRate: 20 })
+    const updated = await rateLimiter.getQuotaStatus(client, endpoint) as any
+    expect(updated.maxTokens).toBe(200)
+    expect(updated.refillRate).toBe(20)
+  })
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -115,6 +133,24 @@ describe(`${ROLES.FrontDesk} gateway 角色测试`, () => {
     expect(authResult.authenticated).toBe(false)
     expect(authResult.error).toContain('revoked')
   })
+
+  it('🛒 前台: 同时提交订单和查询会员需各自独立限流', async () => {
+    const { rateLimiter } = createServices()
+    const client = 'front-desk-pos'
+
+    // 会员查询不消耗订单的配额
+    const orderResult1 = await rateLimiter.consumeToken(client, 'POST:/api/order')
+    expect(orderResult1.allowed).toBe(true)
+
+    const memberResult = await rateLimiter.consumeToken(client, 'GET:/api/member')
+    expect(memberResult.allowed).toBe(true)
+
+    // 不同的 endpoint 配额桶是独立的
+    const orderStatus = await rateLimiter.getQuotaStatus(client, 'POST:/api/order') as any
+    const memberStatus = await rateLimiter.getQuotaStatus(client, 'GET:/api/member') as any
+    expect(orderStatus.tokens).toBeLessThan(orderStatus.maxTokens)
+    expect(memberStatus.tokens).toBeLessThan(memberStatus.maxTokens)
+  })
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -143,6 +179,12 @@ describe(`${ROLES.HR} gateway 角色测试`, () => {
     // 已撤销的 Key 无法通过认证
     const validateResult = await apiKeyManager.validateAPIKey(key.key)
     expect(validateResult.valid).toBe(false)
+  })
+
+  it('👥 HR: 吊销不存在的 API Key 应返回 false', async () => {
+    const { apiKeyManager } = createServices()
+    const revokeResult = await apiKeyManager.revokeAPIKey('key_non_existent')
+    expect(revokeResult).toBe(false)
   })
 })
 
@@ -179,6 +221,15 @@ describe(`${ROLES.Security} gateway 角色测试`, () => {
     }))
     expect(fakeKeyResult.authenticated).toBe(false)
   })
+
+  it('🔧 安监: 空白的认证头应返回缺失凭证错误', async () => {
+    const { gateway } = createServices()
+    const result = await gateway.authenticate(createTestRequest({
+      headers: {},
+    }))
+    expect(result.authenticated).toBe(false)
+    expect(result.error).toContain('Missing')
+  })
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -212,6 +263,15 @@ describe(`${ROLES.Guide} gateway 角色测试`, () => {
       method: 'POST',
     }))
     expect(route?.service).toBe('inventory-service')
+  })
+
+  it('🎮 导玩员: 查询不存在的设备路由应返回 null', async () => {
+    const { gateway } = createServices()
+    const route = await gateway.routeRequest(createTestRequest({
+      path: '/api/nonexistent/machines',
+      method: 'GET',
+    }))
+    expect(route).toBeNull()
   })
 })
 
@@ -248,6 +308,12 @@ describe(`${ROLES.Operations} gateway 角色测试`, () => {
     const limitedLogs = gateway.getRequestLogs(5)
     expect(limitedLogs.length).toBeLessThanOrEqual(5)
   })
+
+  it('🎯 运行专员: 可通过 controller 的 getRequestLogs 获取日志', async () => {
+    const { controller } = createServices()
+    const logs = controller.getRequestLogs('10')
+    expect(Array.isArray(logs)).toBe(true)
+  })
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -270,6 +336,16 @@ describe(`${ROLES.Teambuilding} gateway 角色测试`, () => {
       method: 'PUT',
     }))
     expect(route).toBeNull()
+  })
+
+  it('🤝 团建: 应该能路由团建数据分析请求到 analytics 服务', async () => {
+    const { gateway } = createServices()
+    const route = await gateway.routeRequest(createTestRequest({
+      path: '/api/analytics/team-building-report',
+      method: 'GET',
+    }))
+    expect(route?.service).toBe('analytics-service')
+    expect(route?.timeout).toBeDefined()
   })
 })
 
@@ -306,5 +382,21 @@ describe(`${ROLES.Marketing} gateway 角色测试`, () => {
 
     // 检查 scope 中没有 write
     expect(authResult.scopes).not.toContain('write')
+  })
+
+  it('📢 营销: 分配全域权限应包含所有 scope', async () => {
+    const { apiKeyManager } = createServices()
+    const key = await apiKeyManager.createAPIKey('营销高级账户', 'marketing-dept', ['*'])
+    expect(key.scopes).toContain('*')
+
+    const validated = await apiKeyManager.validateAPIKey(key.key)
+    expect(validated.valid).toBe(true)
+
+    // 全域权限 * 应满足任意 scope 检查
+    const hasAnalytics = apiKeyManager.hasScope(validated.scopes!, 'analytics:read')
+    expect(hasAnalytics).toBe(true)
+
+    const hasCampaignWrite = apiKeyManager.hasScope(validated.scopes!, 'campaign:write')
+    expect(hasCampaignWrite).toBe(true)
   })
 })
