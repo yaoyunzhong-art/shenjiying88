@@ -432,3 +432,213 @@ describe(`${ROLES.Reception} chain 角色测试`, () => {
     assert.ok((historyResult.data as any[]).length > 0)
   })
 })
+
+// ──────────── 🎮 导玩员：游戏合约与设备积分 ────────────
+describe(`${ROLES.Guide} chain 角色测试`, () => {
+  let ctrl: ChainController
+
+  beforeEach(() => {
+    resetSmartContractTestState()
+    ctrl = makeChainController()
+  })
+
+  it('导玩员可以创建游戏设备积分清算合约（正常流程）', () => {
+    const createResult = ctrl.createSettlement({
+      payerId: 'game-store',
+      payerName: '游戏厅A',
+      payees: [
+        { payeeId: 'machine-001', payeeName: '赛车区-机台1', amount: 1200 },
+        { payeeId: 'machine-002', payeeName: '射击区-机台2', amount: 800 },
+      ],
+    })
+    assert.equal(createResult.success, true)
+    const contract = createResult.data as any
+    assert.equal(contract.totalAmount, 2000)
+    assert.equal(contract.participants.length, 2)
+  })
+
+  it('导玩员审核积分清算并执行（正常流程）', () => {
+    const createResult = ctrl.createSettlement({
+      payerId: 'game-store',
+      payerName: '游戏厅B',
+      payees: [{ payeeId: 'machine-arcade', payeeName: '街机区', amount: 1500 }],
+    })
+    const contractId = (createResult.data as any).contractId
+
+    const approveResult = ctrl.approveSettlement(contractId)
+    assert.equal(approveResult.success, true)
+    assert.equal((approveResult.data as any).status, SettlementStatus.Approved)
+
+    const execResult = ctrl.executeSettlement(contractId)
+    assert.equal(execResult.success, true)
+    assert.equal((execResult.data as any).status, SettlementStatus.Completed)
+  })
+
+  it('导玩员无法执行未审批的合约（权限边界）', () => {
+    const createResult = ctrl.createSettlement({
+      payerId: 'game-store',
+      payerName: '游戏厅C',
+      payees: [{ payeeId: 'machine-dance', payeeName: '跳舞机', amount: 600 }],
+    })
+    const contractId = (createResult.data as any).contractId
+
+    assert.throws(
+      () => ctrl.executeSettlement(contractId),
+      /must be Approved/i,
+    )
+  })
+
+  it('导玩员查询不存在设备的合约结果应报错（边界）', () => {
+    assert.throws(
+      () => ctrl.getSettlement('nonexistent-machine'),
+      /not found/i,
+    )
+  })
+})
+
+// ──────────── 🤝 团建：团队分账与协作 ────────────
+describe(`${ROLES.Teambuilding} chain 角色测试`, () => {
+  let ctrl: ChainController
+
+  beforeEach(() => {
+    resetSmartContractTestState()
+    ctrl = makeChainController()
+  })
+
+  it('团建协调员可以为团建活动创建分账合约（正常流程）', () => {
+    const createResult = ctrl.createRevenueShare({
+      totalRevenue: 30000,
+      participants: [
+        { participantId: 'team-a', participantName: '战队A', ratio: 0.4 },
+        { participantId: 'team-b', participantName: '战队B', ratio: 0.35 },
+        { participantId: 'organizer', participantName: '团建组织方', ratio: 0.25 },
+      ],
+    })
+    assert.equal(createResult.success, true)
+    const contract = createResult.data as any
+    assert.equal(contract.participants.length, 3)
+    assert.equal(contract.status, RevenueShareStatus.Created)
+  })
+
+  it('团建协调员可以查看各团队分账详情（正常流程）', () => {
+    const createResult = ctrl.createRevenueShare({
+      totalRevenue: 20000,
+      participants: [
+        { participantId: 'red-team', participantName: '红队', ratio: 0.5 },
+        { participantId: 'blue-team', participantName: '蓝队', ratio: 0.5 },
+      ],
+    })
+    const contractId = (createResult.data as any).contractId
+    ctrl.distributeRevenue(contractId)
+
+    const redShare = ctrl.getParticipantShare(contractId, 'red-team')
+    assert.equal(redShare.success, true)
+    assert.equal((redShare.data as any).expected, 10000)
+    assert.equal((redShare.data as any).distributed, true)
+
+    const blueShare = ctrl.getParticipantShare(contractId, 'blue-team')
+    assert.equal(blueShare.success, true)
+    assert.equal((blueShare.data as any).expected, 10000)
+  })
+
+  it('团建协调员可以查看分账历史记录（正常流程）', () => {
+    const createResult = ctrl.createRevenueShare({
+      totalRevenue: 5000,
+      participants: [{ participantId: 'group-1', participantName: '团建一组', ratio: 1.0 }],
+    })
+    const contractId = (createResult.data as any).contractId
+    ctrl.distributeRevenue(contractId)
+
+    const historyResult = ctrl.getShareHistory(contractId)
+    assert.equal(historyResult.success, true)
+    assert.ok(Array.isArray(historyResult.data))
+  })
+
+  it('团建协调员查看不存在分账合约应报错（边界）', () => {
+    assert.throws(
+      () => ctrl.getRevenueShare('nonexistent-teambuilding'),
+      /not found/i,
+    )
+  })
+
+  it('团建分账比例不等 1 应报错（边界）', () => {
+    assert.throws(
+      () => ctrl.createRevenueShare({
+        totalRevenue: 10000,
+        participants: [{ participantId: 'only-one', participantName: '单一方', ratio: 0.5 }],
+      }),
+      /must sum to 1/i,
+    )
+  })
+})
+
+// ──────────── 📢 营销：活动收益分配与智能合约 ────────────
+describe(`${ROLES.Marketing} chain 角色测试`, () => {
+  let ctrl: ChainController
+
+  beforeEach(() => {
+    resetSmartContractTestState()
+    ctrl = makeChainController()
+  })
+
+  it('营销经理可以为活动收益创建分账合约（正常流程）', () => {
+    const createResult = ctrl.createRevenueShare({
+      totalRevenue: 100000,
+      participants: [
+        { participantId: 'channel-wx', participantName: '微信渠道', ratio: 0.3 },
+        { participantId: 'channel-dy', participantName: '抖音渠道', ratio: 0.3 },
+        { participantId: 'channel-xhs', participantName: '小红书渠道', ratio: 0.2 },
+        { participantId: 'store-own', participantName: '门店自营', ratio: 0.2 },
+      ],
+    })
+    assert.equal(createResult.success, true)
+    const contract = createResult.data as any
+    assert.equal(contract.participants.length, 4)
+    assert.equal(contract.totalRevenue, 100000)
+  })
+
+  it('营销经理可以分配活动收益（正常流程）', () => {
+    const createResult = ctrl.createRevenueShare({
+      totalRevenue: 50000,
+      participants: [
+        { participantId: 'campaign-a', participantName: '夏日促销', ratio: 0.6 },
+        { participantId: 'campaign-b', participantName: '会员活动', ratio: 0.4 },
+      ],
+    })
+    const contractId = (createResult.data as any).contractId
+
+    const distResult = ctrl.distributeRevenue(contractId)
+    assert.equal(distResult.success, true)
+    assert.equal((distResult.data as any).status, RevenueShareStatus.Completed)
+  })
+
+  it('营销经理可以通过合约执行器部署智能合约（正常流程）', () => {
+    const deployResult = ctrl.deployContract({
+      contractType: 'RevenueShare',
+      params: {
+        totalRevenue: 20000,
+        participants: [
+          { participantId: 'campaign-c', participantName: '国庆活动', ratio: 0.5 },
+          { participantId: 'campaign-d', participantName: '双11活动', ratio: 0.5 },
+        ],
+      },
+    })
+    assert.equal(deployResult.success, true)
+    assert.ok(deployResult.data)
+    assert.ok((deployResult.data as any).deployedContractId)
+  })
+
+  it('营销经理查看不存在分账合约的参与者份额应报错（边界）', () => {
+    const createResult = ctrl.createRevenueShare({
+      totalRevenue: 10000,
+      participants: [{ participantId: 'real-partner', participantName: '已有合作方', ratio: 1.0 }],
+    })
+    const contractId = (createResult.data as any).contractId
+
+    assert.throws(
+      () => ctrl.getParticipantShare(contractId, 'unknown-partner'),
+      /not found/i,
+    )
+  })
+})
+
