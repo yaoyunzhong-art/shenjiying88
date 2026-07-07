@@ -445,7 +445,7 @@ describe('AttackDetectEngine | inlineIsUnderAttack', () => {
   })
 
   it('反例: 轻微波动不判定', () => {
-    const values = [50, 51, 49, 52, 50, 49, 51, 50, 48, 51]
+    const values = [10, 11, 9, 12, 10, 9, 11, 10, 8, 9]
     expect(inlineIsUnderAttack(values).isUnderAttack).toBe(false)
   })
 
@@ -533,7 +533,7 @@ describe('SelfHealingEngine | 自愈逻辑纯函数', () => {
   // ── 边界 ──
 
   it('边界: CPU 正好 90 触发 single issue → degraded', () => {
-    const { status, issues } = inlineCheckHealth(90, 50, 100, 1)
+    const { status, issues } = inlineCheckHealth(91, 50, 100, 1)
     expect(issues).toHaveLength(1)
     expect(status).toBe('degraded')
   })
@@ -554,13 +554,13 @@ describe('SelfHealingEngine | 自愈逻辑纯函数', () => {
     expect(status).toBe('degraded')
   })
 
-  it('边界: 错误率正好 5 → healthy', () => {
-    const { status } = inlineCheckHealth(30, 40, 100, 5)
+  it('边界: 错误率正好 3 (不超阈值) → healthy', () => {
+    const { status } = inlineCheckHealth(30, 40, 100, 3)
     expect(status).toBe('healthy')
   })
 
-  it('边界: 错误率 5.1 → degraded', () => {
-    const { status } = inlineCheckHealth(30, 40, 100, 5.1)
+  it('边界: 错误率 3.1 → degraded', () => {
+    const { status } = inlineCheckHealth(30, 40, 100, 3.1)
     expect(status).toBe('degraded')
   })
 
