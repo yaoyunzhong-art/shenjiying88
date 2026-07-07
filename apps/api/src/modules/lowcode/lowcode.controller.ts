@@ -44,9 +44,9 @@ export class LowcodeController {
   createTemplate(@Body() dto: CreateTemplateDto): Record<string, unknown> {
     const tpl = this.lowcodeService.registerTemplate({
       name: dto.name,
-      description: dto.description,
+      description: dto.description ?? undefined,
       // 将 defaultProps 的 undefined 转为 {} 以满足实体非空约束
-      components: dto.components.map(c => ({ ...c, defaultProps: c.defaultProps ?? {} })),
+      components: dto.components.map(c => ({ type: c.type, defaultProps: c.defaultProps ?? {} })),
       createdBy: 'admin',
     })
     return {
@@ -162,8 +162,8 @@ export class LowcodeController {
       id: comp.id,
       name: comp.name,
       type: comp.type,
-      defaultProps: comp.defaultProps,
-      schema: comp.schema,
+      defaultProps: comp.defaultProps ?? {},
+      schema: comp.schema ?? {},
       status: comp.status,
       createdAt: comp.createdAt,
     }
@@ -176,8 +176,8 @@ export class LowcodeController {
       id: c.id,
       name: c.name,
       type: c.type,
-      defaultProps: c.defaultProps,
-      schema: c.schema,
+      defaultProps: c.defaultProps ?? {},
+      schema: c.schema ?? {},
       status: c.status,
     }))
   }

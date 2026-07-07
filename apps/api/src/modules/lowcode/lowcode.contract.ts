@@ -81,7 +81,7 @@ export function toPageContract(entity: LowcodePageEntity): LowcodePageContract {
     name: entity.name,
     templateId: entity.templateId,
     status: entity.status as 'draft' | 'published',
-    components: (entity.components ?? []).map(toComponentContract),
+    components: (entity.components ?? []).map(c => toComponentContract(c as unknown as LowcodeComponent)),
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
   }

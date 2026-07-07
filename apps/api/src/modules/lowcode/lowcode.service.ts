@@ -41,7 +41,7 @@ export class LowcodeService {
 
   // ─── Template Management ──────────────────────
 
-  registerTemplate(template: Omit<LowcodeTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> & { status?: string }): LowcodeTemplate {
+  registerTemplate(template: Partial<LowcodeTemplate> & { name: string; components: Array<{ type: string; defaultProps: Record<string, unknown> }> }): LowcodeTemplate {
     const id = `tpl-${Date.now()}-${++this.templateCounter}`
     const tpl: LowcodeTemplate = {
       id,
@@ -117,7 +117,7 @@ export class LowcodeService {
 
   // ─── Component Library ────────────────────────
 
-  registerComponent(comp: Omit<LowcodeComponentLibrary, 'id' | 'createdAt' | 'updatedAt' | 'status'> & { status?: string }): LowcodeComponentLibrary {
+  registerComponent(comp: Partial<LowcodeComponentLibrary> & { name: string; type: string }): LowcodeComponentLibrary {
     const id = `lib-${Date.now()}-${++this.componentCounter}`
     const entry: LowcodeComponentLibrary = {
       id,

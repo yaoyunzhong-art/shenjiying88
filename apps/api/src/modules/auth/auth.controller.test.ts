@@ -179,7 +179,7 @@ function createController(authService: MockAuthService) {
     // POST /auth/login/sms
     async loginBySms(body: any, userAgent?: string) {
       const deviceInfo = extractDeviceInfo(userAgent)
-      const result = await authService.loginBySms(body.mobile, body.code, deviceInfo)
+      const result: any = await authService.loginBySms(body.mobile, body.code, deviceInfo)
       if (!result.success) {
         return { success: false, statusCode: 401, error: result.error }
       }
@@ -189,7 +189,7 @@ function createController(authService: MockAuthService) {
     // POST /auth/login/password
     async loginByPassword(body: any, userAgent?: string) {
       const deviceInfo = extractDeviceInfo(userAgent)
-      const result = await authService.loginByPassword(
+      const result: any = await authService.loginByPassword(
         body.mobile, body.email, body.password, body.loginType || 'mobile_password', deviceInfo,
       )
       if (!result.success) {
@@ -201,7 +201,7 @@ function createController(authService: MockAuthService) {
     // POST /auth/login/wechat
     async loginByWechat(body: any, userAgent?: string) {
       const deviceInfo = extractDeviceInfo(userAgent)
-      const result = await authService.loginByWechat(body.code, deviceInfo)
+      const result: any = await authService.loginByWechat(body.code, deviceInfo)
       if (!result.success) {
         return { success: false, statusCode: 401, error: result.error }
       }
@@ -210,7 +210,7 @@ function createController(authService: MockAuthService) {
 
     // POST /auth/refresh
     async refreshToken(body: any) {
-      const result = await authService.refreshTokens(body.refreshToken)
+      const result: any = await authService.refreshTokens(body.refreshToken)
       if (!result.success) {
         return { success: false, statusCode: 401, error: result.error }
       }
@@ -417,11 +417,11 @@ describe('AuthController', () => {
       const result = await controller.logout({ sessionId: 'session-1' })
       expect(result.success).toBe(false)
       expect(result.statusCode).toBe(401)
-      expect(result.error.message).toBe('No token provided')
+      expect(result.error!.message).toBe('No token provided')
     })
 
     it('✗ 反例: 无效 Token 返回 401', async () => {
-      const result = await controller.logout(
+      const result: any = await controller.logout(
         { sessionId: 'session-1' },
         'Bearer invalid_token_xxx',
       )
@@ -445,7 +445,7 @@ describe('AuthController', () => {
 
   describe('GET /auth/me', () => {
     it('✓ 正例: 有效 Token 获取用户信息', async () => {
-      const result = await controller.getCurrentUser('Bearer valid_access_token_xyz')
+      const result: any = await controller.getCurrentUser('Bearer valid_access_token_xyz')
       expect(result.success).toBe(true)
       expect(result.data.userId).toBe('admin_001')
       expect(result.data.nickname).toBe('超级管理员')
@@ -456,14 +456,14 @@ describe('AuthController', () => {
       const result = await controller.getCurrentUser()
       expect(result.success).toBe(false)
       expect(result.statusCode).toBe(401)
-      expect(result.error.message).toBe('No token provided')
+      expect(result.error!.message).toBe('No token provided')
     })
 
     it('✗ 反例: 过期 Token 返回 401', async () => {
-      const result = await controller.getCurrentUser('Bearer expired_token_999')
+      const result: any = await controller.getCurrentUser('Bearer expired_token_999')
       expect(result.success).toBe(false)
       expect(result.statusCode).toBe(401)
-      expect(result.error.message).toContain('expired')
+      expect(result.error!.message).toContain('expired')
     })
 
     it('⚠ 边界: 非 Bearer 格式的 Authorization', async () => {

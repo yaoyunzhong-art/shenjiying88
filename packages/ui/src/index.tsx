@@ -58,6 +58,7 @@ export type { FunnelChartProps, FunnelStep } from './components/FunnelChart';
 export { PerformanceRanking } from './components/PerformanceRanking';
 export type { PerformanceRankingProps, RankingItem } from './components/PerformanceRanking';
 export { AIDecisionPanel } from './components/AiDecisionPanel';
+export type { DecisionRuleResult, DecisionPanelConfig, RuleExecutionStatus } from './components/AiDecisionPanel';
 export { HeatmapChart } from './components/HeatmapChart';
 export type { HeatmapChartProps, HeatmapCell, HeatmapColorScheme } from './components/HeatmapChart';
 export { RadarChart } from './components/RadarChart';
