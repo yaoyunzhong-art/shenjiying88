@@ -105,7 +105,7 @@ class SandboxController {
       getSandbox: (id: string) => SandboxInstance | undefined;
     },
     private readonly appStore: {
-      publishApp: (app: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'rating' | 'ratingCount' | 'installCount'> & { status: 'DRAFT' }) => Promise<ISVApp>;
+      publishApp: (app: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt' | 'rating' | 'ratingCount' | 'installCount'> & { status: 'DRAFT' }) => Promise<ISVApp>;
       listApps: (filter?: Record<string, unknown>) => Promise<ISVApp[]>;
       installApp: (appId: string, tenantId: string) => Promise<AppInstall | null>;
       uninstallApp: (appId: string, tenantId: string) => Promise<boolean>;
@@ -161,7 +161,13 @@ class SandboxController {
     category: AppCategory; version: string; price: number; isFree: boolean;
     tags?: string[]; screenshots?: string[];
   }): Promise<ISVApp> {
-    return this.appStore.publishApp({ ...dto, status: 'DRAFT' as const, rating: 0, ratingCount: 0, installCount: 0, tags: dto.tags ?? [], screenshots: dto.screenshots ?? [] });
+    const input: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt' | 'rating' | 'ratingCount' | 'installCount'> & { status: 'DRAFT' } = {
+      ...dto,
+      status: 'DRAFT' as const,
+      tags: dto.tags ?? [],
+      screenshots: dto.screenshots ?? [],
+    };
+    return this.appStore.publishApp(input);
   }
 
   async listApps(filter?: Record<string, unknown>): Promise<ISVApp[]> {
@@ -267,13 +273,16 @@ function createMockAppStore(overrides: Record<string, unknown> = {}) {
   let appCounter = 0;
 
   return {
-    publishApp: async (appData: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'rating' | 'ratingCount' | 'installCount'> & { status: 'DRAFT' }): Promise<ISVApp> => {
+    publishApp: async (appData: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt' | 'rating' | 'ratingCount' | 'installCount'> & { status: 'DRAFT' }): Promise<ISVApp> => {
       const now = new Date().toISOString();
       appCounter++;
       const app: ISVApp = {
         ...appData,
         id: `app-${appCounter}-${Date.now()}`,
         status: 'PUBLISHED',
+        rating: 0,
+        ratingCount: 0,
+        installCount: 0,
         publishedAt: now,
         createdAt: now,
         updatedAt: now,

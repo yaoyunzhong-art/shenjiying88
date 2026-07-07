@@ -212,7 +212,7 @@ export class ISVAppStore {
   private readonly apps = new Map<string, ISVApp>();
   private readonly installs = new Map<string, AppInstall>();
 
-  async publishApp(app: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt'>): Promise<ISVApp> {
+  async publishApp(app: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'rating' | 'ratingCount' | 'installCount'>): Promise<ISVApp> {
     const now = new Date().toISOString();
     const newApp: ISVApp = {
       ...app,

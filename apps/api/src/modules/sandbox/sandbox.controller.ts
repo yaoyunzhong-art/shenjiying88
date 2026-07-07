@@ -101,15 +101,18 @@ export class SandboxController {
 
   @Post('isv/apps')
   async publishApp(@Body() dto: PublishAppDto): Promise<AppResponseDto> {
-    const app = await this.appStore.publishApp({
-      ...dto,
-      status: 'DRAFT' as const,
-      rating: 0,
-      ratingCount: 0,
-      installCount: 0,
+    const input: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'rating' | 'ratingCount' | 'installCount'> = {
+      name: dto.name,
+      description: dto.description,
+      developerId: dto.developerId,
+      category: dto.category,
+      version: dto.version,
       tags: dto.tags ?? [],
       screenshots: dto.screenshots ?? [],
-    });
+      price: dto.price,
+      isFree: dto.isFree,
+    };
+    const app = await this.appStore.publishApp(input);
     return this.toAppResponse(app);
   }
 

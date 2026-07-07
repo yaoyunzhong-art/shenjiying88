@@ -36,6 +36,7 @@ import type {
   AppCategory,
   SDKLanguage,
   CodeLanguage,
+  ISVApp,
 } from './sandbox-isv.service'
 import {
   CreateSandboxDto,
@@ -127,15 +128,18 @@ class TestSandboxController {
 
   @Post('isv/apps')
   async publishApp(@Body() dto: PublishAppDto) {
-    const app = await this.appStore.publishApp({
-      ...dto,
-      status: 'DRAFT' as const,
-      rating: 0,
-      ratingCount: 0,
-      installCount: 0,
+    const input: Omit<ISVApp, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'rating' | 'ratingCount' | 'installCount'> = {
+      name: dto.name,
+      description: dto.description,
+      developerId: dto.developerId,
+      category: dto.category,
+      version: dto.version,
       tags: dto.tags ?? [],
       screenshots: dto.screenshots ?? [],
-    })
+      price: dto.price,
+      isFree: dto.isFree,
+    };
+    const app = await this.appStore.publishApp(input)
     return {
       id: app.id,
       name: app.name,
