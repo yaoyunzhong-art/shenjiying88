@@ -1187,3 +1187,12 @@ export type { YearPickerProps } from './components/YearPicker';
 
 export { StoreStatusIndicator } from './components/StoreStatusIndicator';
 export type { StoreStatusIndicatorProps, StoreStatus, StoreStatusSize } from './components/StoreStatusIndicator';
+
+// --------------- StoreSelector ---------------
+export { StoreSelector, groupStoresByKey } from './components/StoreSelector';
+export type {
+  StoreSelectorProps,
+  StoreItem,
+  StoreGroup,
+  StoreSelectorMode,
+} from './components/StoreSelector';

@@ -290,6 +290,7 @@ __export(index_exports, {
   Steps: () => Steps,
   StoreComparisonPanel: () => StoreComparisonPanel,
   StoreManagerDashboard: () => StoreManagerDashboard,
+  StoreSelector: () => StoreSelector,
   StoreStatusIndicator: () => StoreStatusIndicator,
   StoreTransferOrderPanel: () => StoreTransferOrderPanel,
   StrategyConfigPanel: () => StrategyConfigPanel,
@@ -363,6 +364,7 @@ __export(index_exports, {
   foundationAlertSeverityLabels: () => foundationAlertSeverityLabels,
   foundationAlertStatusLabels: () => foundationAlertStatusLabels,
   getRuntimePanelTenantId: () => getRuntimePanelTenantId,
+  groupStoresByKey: () => groupStoresByKey,
   hasRuntimePanelReceiptCode: () => hasRuntimePanelReceiptCode,
   joinRuntimeScopeSummary: () => joinRuntimeScopeSummary,
   listPageStatCardStyle: () => listPageStatCardStyle,
@@ -60928,6 +60930,460 @@ function StoreStatusIndicator({
     }
   );
 }
+
+// src/components/StoreSelector.tsx
+var import_react167 = require("react");
+var import_jsx_runtime242 = require("react/jsx-runtime");
+function groupStoresByKey(stores, key) {
+  const groups = /* @__PURE__ */ new Map();
+  for (const store of stores) {
+    const groupKey = key === "city" ? store.city : store.region ?? store.city;
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, []);
+    }
+    groups.get(groupKey).push(store);
+  }
+  return Array.from(groups.entries()).map(([groupKey, items]) => ({
+    key: groupKey,
+    label: groupKey,
+    stores: items
+  })).sort((a, b) => a.key.localeCompare(b.key, "zh-CN"));
+}
+function getDefaultGroupLabel(key, _stores) {
+  return key;
+}
+function StoreSelector({
+  stores,
+  groupBy = "city",
+  groupLabel,
+  value,
+  onChange,
+  mode = "single",
+  placeholder = "\u8BF7\u9009\u62E9\u95E8\u5E97",
+  searchPlaceholder = "\u641C\u7D22\u95E8\u5E97...",
+  notFoundContent = "\u65E0\u5339\u914D\u95E8\u5E97",
+  disabled = false,
+  showSelectAll = true,
+  selectAllText = "\u5168\u9009",
+  maxTagCount = 3,
+  minWidth = 220,
+  maxDropdownHeight = 320,
+  className,
+  style,
+  dropdownClassName,
+  name
+}) {
+  const [open, setOpen] = (0, import_react167.useState)(false);
+  const [searchText, setSearchText] = (0, import_react167.useState)("");
+  const containerRef = (0, import_react167.useRef)(null);
+  const searchInputRef = (0, import_react167.useRef)(null);
+  const instanceId = (0, import_react167.useId)();
+  const isMultiple = mode === "multiple";
+  const selectedValues = (0, import_react167.useMemo)(
+    () => {
+      if (!value) return [];
+      return Array.isArray(value) ? value : [value];
+    },
+    [value]
+  );
+  const grouped = (0, import_react167.useMemo)(
+    () => groupBy ? groupStoresByKey(stores, groupBy) : [],
+    [stores, groupBy]
+  );
+  const getGroupLabelFn = groupLabel ?? getDefaultGroupLabel;
+  const filteredItems = (0, import_react167.useMemo)(() => {
+    const search = searchText.trim().toLowerCase();
+    if (!search) return null;
+    const allItems = stores.filter((s) => {
+      return s.label.toLowerCase().includes(search) || s.city.toLowerCase().includes(search) || (s.region ?? "").toLowerCase().includes(search) || (s.address ?? "").toLowerCase().includes(search);
+    });
+    if (groupBy) {
+      const filteredMap = /* @__PURE__ */ new Map();
+      for (const item of allItems) {
+        const gk = groupBy === "city" ? item.city : item.region ?? item.city;
+        if (!filteredMap.has(gk)) filteredMap.set(gk, []);
+        filteredMap.get(gk).push(item);
+      }
+      return Array.from(filteredMap.entries()).map(([k, items]) => ({
+        key: k,
+        label: getGroupLabelFn(k, items),
+        stores: items
+      })).sort((a, b) => a.key.localeCompare(b.key, "zh-CN"));
+    }
+    return null;
+  }, [stores, searchText, groupBy, getGroupLabelFn]);
+  const displayGroups = filteredItems ?? (groupBy ? grouped : []);
+  const flatStores = filteredItems ? displayGroups.flatMap((g) => g.stores) : groupBy ? stores : stores;
+  const isSelected = (0, import_react167.useCallback)(
+    (id) => selectedValues.includes(id),
+    [selectedValues]
+  );
+  const isAllSelected = (0, import_react167.useMemo)(
+    () => {
+      if (!isMultiple || stores.length === 0) return false;
+      const selectable = stores.filter((s) => !s.disabled);
+      return selectable.length > 0 && selectable.every((s) => selectedValues.includes(s.id));
+    },
+    [isMultiple, stores, selectedValues]
+  );
+  const handleToggleStore = (0, import_react167.useCallback)(
+    (id) => {
+      const store = stores.find((s) => s.id === id);
+      if (!store || store.disabled || disabled) return;
+      if (isMultiple) {
+        const current = [...selectedValues];
+        const idx = current.indexOf(id);
+        if (idx >= 0) {
+          current.splice(idx, 1);
+        } else {
+          current.push(id);
+        }
+        onChange?.(current);
+      } else {
+        onChange?.(selectedValues[0] === id ? "" : id);
+      }
+    },
+    [stores, disabled, isMultiple, selectedValues, onChange]
+  );
+  const handleSelectAll = (0, import_react167.useCallback)(() => {
+    if (!isMultiple || disabled) return;
+    const selectable = stores.filter((s) => !s.disabled);
+    if (isAllSelected) {
+      onChange?.([]);
+    } else {
+      onChange?.(selectable.map((s) => s.id));
+    }
+  }, [isMultiple, stores, disabled, isAllSelected, onChange]);
+  const handleClearAll = (0, import_react167.useCallback)(() => {
+    if (!isMultiple || disabled) return;
+    onChange?.([]);
+  }, [isMultiple, disabled, onChange]);
+  const selectedTags = (0, import_react167.useMemo)(() => {
+    if (!isMultiple || selectedValues.length === 0) return null;
+    const labels = selectedValues.map((id) => stores.find((s) => s.id === id)?.label).filter(Boolean);
+    if (labels.length <= maxTagCount) {
+      return labels.join(", ");
+    }
+    return `${labels.slice(0, maxTagCount).join(", ")} +${labels.length - maxTagCount}`;
+  }, [isMultiple, selectedValues, stores, maxTagCount]);
+  const selectedLabel = (0, import_react167.useMemo)(() => {
+    if (selectedValues.length === 0) return null;
+    const s = stores.find((st) => st.id === selectedValues[0]);
+    return s?.label ?? null;
+  }, [selectedValues, stores]);
+  const handleClose = (0, import_react167.useCallback)(() => {
+    setOpen(false);
+    setSearchText("");
+  }, []);
+  (0, import_react167.useEffect)(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        handleClose();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open, handleClose]);
+  (0, import_react167.useEffect)(() => {
+    if (open && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [open]);
+  const handleToggle = (0, import_react167.useCallback)(() => {
+    if (disabled) return;
+    setOpen((prev) => {
+      if (prev) handleClose();
+      return !prev;
+    });
+  }, [disabled, handleClose]);
+  const handleKeyDown = (0, import_react167.useCallback)(
+    (e) => {
+      if (e.key === "Escape") {
+        handleClose();
+        return;
+      }
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleToggle();
+      }
+    },
+    [handleClose, handleToggle]
+  );
+  const renderStoreItem = (store) => {
+    const sel = isSelected(store.id);
+    return /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)(
+      "div",
+      {
+        "data-testid": `store-option-${store.id}`,
+        "data-store-id": store.id,
+        "data-selected": sel ? "true" : "false",
+        role: "option",
+        "aria-selected": sel,
+        "aria-disabled": store.disabled || void 0,
+        onClick: () => handleToggleStore(store.id),
+        style: {
+          padding: "8px 12px 8px groupBy ? 24 : 12px",
+          paddingLeft: groupBy ? 24 : 12,
+          cursor: store.disabled ? "not-allowed" : "pointer",
+          backgroundColor: sel ? "#e6f7ff" : "transparent",
+          color: store.disabled ? "#ccc" : "#333",
+          fontSize: 14,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          transition: "background-color 0.15s"
+        },
+        children: [
+          isMultiple && /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+            "span",
+            {
+              "data-testid": `store-checkbox-${store.id}`,
+              style: {
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 16,
+                height: 16,
+                borderRadius: 3,
+                border: sel ? "none" : "1px solid #d9d9d9",
+                backgroundColor: sel ? "#1677ff" : "transparent",
+                fontSize: 12,
+                color: "#fff",
+                flexShrink: 0,
+                lineHeight: 1
+              },
+              children: sel ? "\u2713" : ""
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("span", { style: { flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: store.label })
+        ]
+      },
+      store.id
+    );
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)(
+    "div",
+    {
+      ref: containerRef,
+      className,
+      style: {
+        position: "relative",
+        display: "inline-block",
+        minWidth,
+        ...style
+      },
+      "data-instance": instanceId,
+      "data-testid": "store-selector",
+      "data-mode": mode,
+      role: "combobox",
+      "aria-expanded": open,
+      "aria-label": "\u95E8\u5E97\u9009\u62E9\u5668",
+      tabIndex: disabled ? -1 : 0,
+      onKeyDown: handleKeyDown,
+      children: [
+        name && /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("input", { type: "hidden", name, value: JSON.stringify(selectedValues) }),
+        /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)(
+          "div",
+          {
+            "data-testid": "store-selector-trigger",
+            style: {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "6px 12px",
+              border: `1px solid ${open ? "#1677ff" : "#d9d9d9"}`,
+              borderRadius: 6,
+              backgroundColor: disabled ? "#f5f5f5" : "#fff",
+              cursor: disabled ? "not-allowed" : "pointer",
+              minHeight: 32,
+              boxSizing: "border-box",
+              transition: "border-color 0.2s",
+              opacity: disabled ? 0.6 : 1
+            },
+            onClick: handleToggle,
+            role: "button",
+            "aria-disabled": disabled,
+            children: [
+              isMultiple ? /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+                "span",
+                {
+                  style: {
+                    flex: 1,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    color: selectedTags ? "#333" : "#bfbfbf",
+                    fontSize: 14
+                  },
+                  children: selectedTags || placeholder
+                }
+              ) : /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+                "span",
+                {
+                  style: {
+                    flex: 1,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    color: selectedLabel ? "#333" : "#bfbfbf",
+                    fontSize: 14
+                  },
+                  children: selectedLabel || placeholder
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("span", { style: { marginLeft: 8, fontSize: 10, color: "#999", transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }, children: "\u25BC" })
+            ]
+          }
+        ),
+        open && /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)(
+          "div",
+          {
+            className: dropdownClassName,
+            "data-testid": "store-selector-dropdown",
+            style: {
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              right: 0,
+              marginTop: 4,
+              backgroundColor: "#fff",
+              border: "1px solid #d9d9d9",
+              borderRadius: 6,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+              zIndex: 1050,
+              maxHeight: maxDropdownHeight,
+              overflow: "auto"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+                "input",
+                {
+                  ref: searchInputRef,
+                  "data-testid": "store-selector-search",
+                  type: "text",
+                  placeholder: searchPlaceholder,
+                  value: searchText,
+                  onChange: (e) => {
+                    setSearchText(e.target.value);
+                  },
+                  onClick: (e) => e.stopPropagation(),
+                  style: {
+                    width: "100%",
+                    padding: "6px 12px",
+                    border: "none",
+                    borderBottom: "1px solid #f0f0f0",
+                    outline: "none",
+                    fontSize: 14,
+                    boxSizing: "border-box"
+                  }
+                }
+              ),
+              isMultiple && showSelectAll && !searchText && /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)(
+                "div",
+                {
+                  "data-testid": "store-selector-selectall",
+                  onClick: handleSelectAll,
+                  style: {
+                    padding: "8px 12px",
+                    cursor: disabled ? "not-allowed" : "pointer",
+                    backgroundColor: "#fafafa",
+                    fontSize: 14,
+                    color: "#666",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    borderBottom: "1px solid #f0f0f0"
+                  },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+                      "span",
+                      {
+                        style: {
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 16,
+                          height: 16,
+                          borderRadius: 3,
+                          border: isAllSelected ? "none" : "1px solid #d9d9d9",
+                          backgroundColor: isAllSelected ? "#1677ff" : "transparent",
+                          fontSize: 12,
+                          color: "#fff",
+                          flexShrink: 0
+                        },
+                        children: isAllSelected ? "\u2713" : ""
+                      }
+                    ),
+                    /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("span", { style: { flex: 1 }, children: selectAllText }),
+                    isAllSelected && /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+                      "span",
+                      {
+                        "data-testid": "store-selector-clearall",
+                        onClick: (e) => {
+                          e.stopPropagation();
+                          handleClearAll();
+                        },
+                        style: { color: "#999", cursor: "pointer", fontSize: 12 },
+                        children: "\u6E05\u9664"
+                      }
+                    )
+                  ]
+                }
+              ),
+              groupBy && displayGroups.length > 0 && displayGroups.map((group) => {
+                const groupSelectedCount = group.stores.filter((s) => isSelected(s.id)).length;
+                return /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { "data-testid": `store-group-${group.key}`, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)(
+                    "div",
+                    {
+                      "data-testid": `store-group-header-${group.key}`,
+                      style: {
+                        padding: "6px 12px",
+                        fontWeight: 600,
+                        fontSize: 13,
+                        color: "#888",
+                        backgroundColor: "#fafafa",
+                        borderBottom: "1px solid #f0f0f0",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between"
+                      },
+                      children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("span", { children: getGroupLabelFn(group.key, group.stores) }),
+                        isMultiple && groupSelectedCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("span", { style: { fontSize: 12, color: "#1677ff" }, children: [
+                          groupSelectedCount,
+                          "/",
+                          group.stores.length
+                        ] })
+                      ]
+                    }
+                  ),
+                  group.stores.map(renderStoreItem)
+                ] }, group.key);
+              }),
+              !groupBy && flatStores.length > 0 && flatStores.map(renderStoreItem),
+              (groupBy && displayGroups.length === 0 || !groupBy && flatStores.length === 0) && /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+                "div",
+                {
+                  "data-testid": "store-selector-empty",
+                  style: {
+                    padding: "16px 12px",
+                    color: "#999",
+                    textAlign: "center",
+                    fontSize: 14
+                  },
+                  children: notFoundContent
+                }
+              )
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
+StoreSelector.displayName = "StoreSelector";
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -61190,6 +61646,7 @@ function StoreStatusIndicator({
   Steps,
   StoreComparisonPanel,
   StoreManagerDashboard,
+  StoreSelector,
   StoreStatusIndicator,
   StoreTransferOrderPanel,
   StrategyConfigPanel,
@@ -61263,6 +61720,7 @@ function StoreStatusIndicator({
   foundationAlertSeverityLabels,
   foundationAlertStatusLabels,
   getRuntimePanelTenantId,
+  groupStoresByKey,
   hasRuntimePanelReceiptCode,
   joinRuntimeScopeSummary,
   listPageStatCardStyle,
