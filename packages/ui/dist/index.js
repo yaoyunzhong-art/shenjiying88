@@ -290,6 +290,7 @@ __export(index_exports, {
   Steps: () => Steps,
   StoreComparisonPanel: () => StoreComparisonPanel,
   StoreManagerDashboard: () => StoreManagerDashboard,
+  StoreStatusIndicator: () => StoreStatusIndicator,
   StoreTransferOrderPanel: () => StoreTransferOrderPanel,
   StrategyConfigPanel: () => StrategyConfigPanel,
   SubmitButton: () => SubmitButton,
@@ -60799,6 +60800,134 @@ var YearPicker = ({
     !error && helpText && /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("span", { style: styles8.helpText, children: helpText })
   ] });
 };
+
+// src/components/StoreStatusIndicator.tsx
+var import_jsx_runtime241 = require("react/jsx-runtime");
+var STATUS_LABELS4 = {
+  open: "\u8425\u4E1A\u4E2D",
+  closed: "\u4F11\u606F\u4E2D",
+  busy: "\u7E41\u5FD9",
+  maintenance: "\u7EF4\u4FEE\u4E2D",
+  offline: "\u79BB\u7EBF",
+  error: "\u5F02\u5E38"
+};
+var STATUS_COLORS4 = {
+  open: { dot: "#22c55e", label: "#22c55e" },
+  closed: { dot: "#ef4444", label: "#ef4444" },
+  busy: { dot: "#f59e0b", label: "#f59e0b" },
+  maintenance: { dot: "#eab308", label: "#eab308" },
+  offline: { dot: "#6b7280", label: "#9ca3af" },
+  error: { dot: "#dc2626", label: "#dc2626" }
+};
+var SIZE_MAP14 = {
+  sm: { dot: 8, fontSize: 12, gap: 6 },
+  md: { dot: 10, fontSize: 14, gap: 8 },
+  lg: { dot: 14, fontSize: 16, gap: 10 }
+};
+var ANIMATED_STATUSES = /* @__PURE__ */ new Set(["open", "busy"]);
+function getStatusColor2(status) {
+  const c = STATUS_COLORS4[status] ?? STATUS_COLORS4.offline;
+  return { dot: c.dot, labelColor: c.label };
+}
+function getStatusLabel2(status, customLabel) {
+  return customLabel ?? STATUS_LABELS4[status] ?? status;
+}
+function StoreStatusIndicator({
+  status,
+  label,
+  size = "md",
+  animated,
+  lastUpdated,
+  textOnly = false,
+  className,
+  style,
+  onClick
+}) {
+  const colors = getStatusColor2(status);
+  const displayLabel = getStatusLabel2(status, label);
+  const sizes = SIZE_MAP14[size];
+  const showAnimation = animated ?? ANIMATED_STATUSES.has(status);
+  const isInteractive = typeof onClick === "function";
+  const handleClick = () => {
+    onClick?.(status);
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)(
+    "div",
+    {
+      "data-testid": `store-status-indicator-${status}`,
+      "data-store-status": status,
+      "data-store-status-size": size,
+      onClick: handleClick,
+      role: isInteractive ? "button" : void 0,
+      tabIndex: isInteractive ? 0 : void 0,
+      onKeyDown: isInteractive ? (e) => {
+        if (e.key === "Enter" || e.key === " ") handleClick();
+      } : void 0,
+      className,
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: sizes.gap,
+        cursor: isInteractive ? "pointer" : "default",
+        ...style
+      },
+      children: [
+        !textOnly && /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+          "span",
+          {
+            "data-testid": `store-status-dot-${status}`,
+            "aria-hidden": "true",
+            style: {
+              width: sizes.dot,
+              height: sizes.dot,
+              borderRadius: "50%",
+              backgroundColor: colors.dot,
+              display: "inline-block",
+              flexShrink: 0,
+              ...showAnimation ? {
+                animation: "store-status-pulse 2s ease-in-out infinite"
+              } : {}
+            }
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+          "span",
+          {
+            "data-testid": `store-status-label-${status}`,
+            style: {
+              fontSize: sizes.fontSize,
+              fontWeight: 600,
+              color: colors.labelColor,
+              lineHeight: 1,
+              userSelect: "none"
+            },
+            children: displayLabel
+          }
+        ),
+        lastUpdated && /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+          "span",
+          {
+            "data-testid": `store-status-time-${status}`,
+            style: {
+              fontSize: sizes.fontSize - 2,
+              color: "#64748b",
+              marginLeft: lastUpdated ? 4 : 0,
+              lineHeight: 1
+            },
+            children: lastUpdated
+          }
+        ),
+        showAnimation && /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("style", { children: `
+          @keyframes store-status-pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+          }
+        ` })
+      ]
+    }
+  );
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -61061,6 +61190,7 @@ var YearPicker = ({
   Steps,
   StoreComparisonPanel,
   StoreManagerDashboard,
+  StoreStatusIndicator,
   StoreTransferOrderPanel,
   StrategyConfigPanel,
   SubmitButton,
