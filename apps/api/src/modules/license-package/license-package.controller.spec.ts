@@ -7,24 +7,12 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  */
 
 import assert from 'node:assert/strict'
+import { Logger } from '@nestjs/common'
 describe('LicensePackageController', () => {
   // mock service 工厂 - 每次返回干净 mock
-import { Logger } from '@nestjs/common'
 
-  function createMockService() {
-    class MockRepo {
-      find = vi.fn()
-      findOne = vi.fn()
-      create = vi.fn()
-      save = vi.fn()
-      update = vi.fn()
-      delete = vi.fn()
-      count = vi.fn()
-    }
+  function createMockService(): any {
     return {
-      logger: new Logger('test'),
-      packageRepository: new MockRepo() as any,
-      checkPackageInUse: () => Promise.resolve(),
       create: () => Promise.resolve({ id: 'pkg-001', name: '企业版', price: 2999 }),
       findAll: () => Promise.resolve({ list: [], total: 0, page: 1, pageSize: 10 }),
       findOne: (id: string) => {
