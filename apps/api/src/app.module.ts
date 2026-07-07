@@ -100,6 +100,7 @@ import { SaaSBillingModule } from './modules/saas-billing/saas-billing.module';
 import { LowcodeModule } from './modules/lowcode/lowcode.module';
 import { SandboxModule } from './modules/sandbox/sandbox.module';
 import { DocModule } from './modules/docs/doc.module';
+import { ContentModule } from './modules/content/content.module';
 
 @Module({
   imports: [
@@ -191,7 +192,6 @@ import { DocModule } from './modules/docs/doc.module';
     VoiceProcessingModule,
     ImageRecognitionModule,
     PerformanceModule,
-    PerformanceModule,
     MonitoringModule,
     MultimediaModule,
     FederatedLearningModule,
@@ -213,6 +213,7 @@ import { DocModule } from './modules/docs/doc.module';
     LowcodeModule,
     SandboxModule,
     DocModule,
+    ContentModule,
   ],
   providers: [
     RequestGovernanceService,
