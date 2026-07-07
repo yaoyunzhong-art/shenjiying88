@@ -208,3 +208,14 @@
 | 日期 | 修改人 | 内容 |
 |:----:|:------:|------|
 | 2026-07-07 | 🦞龙虾哥 | 初始版——反模式AM-001~AM-013 + 正向模式PP-001~PP-010 |
+
+## 2026-07-07 23:31 - mock数据`!`非空断言与pageSize默认值
+
+### 场景与根因
+- **reviews-data.ts 14 TSC errors**: 类型数组 `mockAuthors: (ReviewAuthor | undefined)[]` 但索引访问 `mockAuthors[0]` 返回 `ReviewAuthor | undefined`，赋值给 `author: ReviewAuthor` 时报错。
+- **修复**: 对明确的静态mock数据加上 `!` 非空断言 `mockAuthors[0]!`，而非改成 `author: mockAuthors[0] ?? defaultAuthor` 增加运行时备用逻辑——因为静态mock索引越界是编程错误，不应隐藏。
+- **FinanceManagerDashboard pageSize**: 页面size默认值缺失导致属性未定义（`undefined` 传入组件而非数字）。
+
+### 经验
+1. **静态mock数组 + `!` vs `??`**: 对于长度已知、索引明确的静态mock数据，使用 `!` 断言即可（更简洁、保留类型严格性）；对于动态索引或运行时数据，需用 `??` 或可选链。
+2. **pageSize等配置默认值**: 自定义组件接收的配置参数（如页面大小、每页条数）必须设置默认值，避免 `undefined` 渗透到渲染层。
