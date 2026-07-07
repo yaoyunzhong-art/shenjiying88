@@ -166,20 +166,6 @@ export function AIMemberLifecycleForecastPanel({
     border: '1px solid #e2e8f0',
   };
 
-  // 计算 LTV 变化
-  const ltvDirection = useMemo<'up' | 'down' | 'flat'>(() => {
-    if (forecast.estimatedLtv > forecast.previousLtv) return 'up';
-    if (forecast.estimatedLtv < forecast.previousLtv) return 'down';
-    return 'flat';
-  }, [forecast.estimatedLtv, forecast.previousLtv]);
-
-  // 置信度文字
-  const confidenceLabel = useMemo(() => {
-    if (forecast.confidence >= 80) return '高';
-    if (forecast.confidence >= 50) return '中';
-    return '低';
-  }, [forecast.confidence]);
-
   if (loading) {
     return (
       <div style={containerStyle} data-testid={`${testId}-loading`}>
@@ -201,6 +187,20 @@ export function AIMemberLifecycleForecastPanel({
       </div>
     );
   }
+
+  // 计算 LTV 变化 (必须先检查 forecast 非 null)
+  const ltvDirection = useMemo<'up' | 'down' | 'flat'>(() => {
+    if (forecast.estimatedLtv > forecast.previousLtv) return 'up';
+    if (forecast.estimatedLtv < forecast.previousLtv) return 'down';
+    return 'flat';
+  }, [forecast.estimatedLtv, forecast.previousLtv]);
+
+  // 置信度文字
+  const confidenceLabel = useMemo(() => {
+    if (forecast.confidence >= 80) return '高';
+    if (forecast.confidence >= 50) return '中';
+    return '低';
+  }, [forecast.confidence]);
 
   return (
     <div className={className} style={containerStyle} data-testid={testId}>
@@ -232,7 +232,7 @@ export function AIMemberLifecycleForecastPanel({
         <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', marginBottom: 12 }}>阶段关键指标</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
           {forecast.metrics.map((metric, idx) => {
-            const dir = DIRECTION_LABELS[metric.direction];
+            const dir = DIRECTION_LABELS[metric.direction] ?? { icon: '?', color: '#94a3b8' };
             const pctChange = metric.previousValue > 0
               ? ((metric.currentValue - metric.previousValue) / metric.previousValue * 100).toFixed(1)
               : '—';

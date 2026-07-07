@@ -45,6 +45,7 @@ __export(index_exports, {
   AIExecutionAuditPanel: () => AIExecutionAuditPanel,
   AIExperimentOptimizationPanel: () => AIExperimentOptimizationPanel,
   AIMemberChurnPredictionPanel: () => AIMemberChurnPredictionPanel,
+  AIMemberLifecycleForecastPanel: () => AIMemberLifecycleForecastPanel,
   AIMetricGoalPanel: () => AIMetricGoalPanel,
   AIModelPerformancePanel: () => AIModelPerformancePanel,
   AIPricingRecommendationPanel: () => AIPricingRecommendationPanel,
@@ -59586,8 +59587,266 @@ function Spin({
   );
 }
 
-// src/components/AIDecisionRuleChain.tsx
+// src/components/AIMemberLifecycleForecastPanel.tsx
+var import_react163 = __toESM(require("react"));
 var import_jsx_runtime237 = require("react/jsx-runtime");
+var STAGE_LABELS = {
+  new: "\u65B0\u6CE8\u518C",
+  active: "\u6D3B\u8DC3",
+  engaged: "\u9AD8\u7C98\u6027",
+  slipping: "\u4E0B\u6ED1",
+  at_risk: "\u9AD8\u5371",
+  churned: "\u5DF2\u6D41\u5931"
+};
+var STAGE_COLORS = {
+  new: "#60a5fa",
+  active: "#34d399",
+  engaged: "#818cf8",
+  slipping: "#fbbf24",
+  at_risk: "#f97316",
+  churned: "#ef4444"
+};
+var DIRECTION_LABELS2 = {
+  up: { icon: "\u2191", color: "#34d399" },
+  down: { icon: "\u2193", color: "#ef4444" },
+  flat: { icon: "\u2192", color: "#94a3b8" }
+};
+var DIRECTION_LABELS_CN = {
+  up: "\u4E0A\u5347",
+  down: "\u4E0B\u964D",
+  flat: "\u6301\u5E73"
+};
+function LifecycleStageBadge({ stage, size = "md" }) {
+  const sizeStyle = size === "sm" ? { padding: "2px 8px", fontSize: 12 } : size === "lg" ? { padding: "6px 16px", fontSize: 16 } : { padding: "4px 12px", fontSize: 14 };
+  return /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)(
+    "span",
+    {
+      "data-testid": `stage-badge-${stage}`,
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        borderRadius: 9999,
+        fontWeight: 600,
+        background: `${STAGE_COLORS[stage]}22`,
+        color: STAGE_COLORS[stage],
+        border: `1px solid ${STAGE_COLORS[stage]}44`,
+        ...sizeStyle
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("span", { style: { width: 8, height: 8, borderRadius: "50%", display: "inline-block", background: STAGE_COLORS[stage] } }),
+        STAGE_LABELS[stage]
+      ]
+    }
+  );
+}
+function AIMemberLifecycleForecastPanel({
+  forecast,
+  loading = false,
+  emptyText = "\u6682\u65E0\u9884\u6D4B\u6570\u636E",
+  className,
+  "data-testid": testId = "ai-member-lifecycle-forecast-panel"
+}) {
+  const containerStyle5 = {
+    borderRadius: 20,
+    padding: 24,
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06)"
+  };
+  const sectionStyle3 = {
+    marginTop: 20,
+    padding: 16,
+    borderRadius: 14,
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0"
+  };
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: containerStyle5, "data-testid": `${testId}-loading`, children: /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", height: 180, color: "#94a3b8" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("svg", { style: { animation: "spin 1s linear infinite", width: 24, height: 24 }, viewBox: "0 0 24 24", fill: "none", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("circle", { cx: "12", cy: "12", r: "10", stroke: "#e2e8f0", strokeWidth: "3" }),
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("path", { d: "M12 2a10 10 0 0 1 10 10", stroke: "#3b82f6", strokeWidth: "3", strokeLinecap: "round" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("span", { style: { marginLeft: 10 }, children: "\u52A0\u8F7D\u4E2D..." })
+    ] }) });
+  }
+  if (!forecast) {
+    return /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { ...containerStyle5, display: "flex", alignItems: "center", justifyContent: "center", height: 160, color: "#94a3b8" }, "data-testid": `${testId}-empty`, children: emptyText });
+  }
+  const ltvDirection = (0, import_react163.useMemo)(() => {
+    if (forecast.estimatedLtv > forecast.previousLtv) return "up";
+    if (forecast.estimatedLtv < forecast.previousLtv) return "down";
+    return "flat";
+  }, [forecast.estimatedLtv, forecast.previousLtv]);
+  const confidenceLabel = (0, import_react163.useMemo)(() => {
+    if (forecast.confidence >= 80) return "\u9AD8";
+    if (forecast.confidence >= 50) return "\u4E2D";
+    return "\u4F4E";
+  }, [forecast.confidence]);
+  return /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className, style: containerStyle5, "data-testid": testId, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { fontSize: 16, fontWeight: 700, color: "#0f172a" }, children: "AI \u4F1A\u5458\u751F\u547D\u5468\u671F\u9884\u6D4B" }),
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { fontSize: 13, color: "#64748b", marginTop: 4 }, children: [
+          forecast.memberName,
+          "\uFF08",
+          forecast.memberId,
+          "\uFF09"
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(LifecycleStageBadge, { stage: forecast.currentStage, size: "lg" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(StatusCard, { label: "\u5F53\u524D\u9636\u6BB5", value: STAGE_LABELS[forecast.currentStage], color: STAGE_COLORS[forecast.currentStage] }),
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
+        StatusCard,
+        {
+          label: "\u4E0B\u4E00\u9884\u6D4B",
+          value: forecast.predictedNextStage ? STAGE_LABELS[forecast.predictedNextStage] : "\u2014",
+          color: forecast.predictedNextStage ? STAGE_COLORS[forecast.predictedNextStage] : "#94a3b8"
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(StatusCard, { label: "\u7F6E\u4FE1\u5EA6", value: `${forecast.confidence}%`, subText: confidenceLabel, color: "#818cf8" }),
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(StatusCard, { label: "\u9884\u4F30 LTV", value: `\xA5${forecast.estimatedLtv.toLocaleString()}`, subText: `\u4E0A\u6708 \xA5${forecast.previousLtv.toLocaleString()} (${DIRECTION_LABELS_CN[ltvDirection]})`, color: ltvDirection === "up" ? "#34d399" : ltvDirection === "down" ? "#ef4444" : "#94a3b8" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: sectionStyle3, "data-testid": `${testId}-metrics`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 12 }, children: "\u9636\u6BB5\u5173\u952E\u6307\u6807" }),
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }, children: forecast.metrics.map((metric, idx) => {
+        const dir = DIRECTION_LABELS2[metric.direction] ?? { icon: "?", color: "#94a3b8" };
+        const pctChange = metric.previousValue > 0 ? ((metric.currentValue - metric.previousValue) / metric.previousValue * 100).toFixed(1) : "\u2014";
+        return /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { padding: "10px 12px", borderRadius: 10, background: "#ffffff", border: "1px solid #e2e8f0" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { fontSize: 12, color: "#64748b" }, children: metric.label }),
+          /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { fontSize: 20, fontWeight: 700, color: "#0f172a", marginTop: 4 }, children: [
+            metric.currentValue,
+            metric.unit
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { fontSize: 12, marginTop: 4, color: dir.color }, children: [
+            dir.icon,
+            " ",
+            pctChange,
+            "% (",
+            metric.previousValue,
+            metric.unit,
+            ")"
+          ] })
+        ] }, idx);
+      }) })
+    ] }),
+    forecast.advice.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: sectionStyle3, "data-testid": `${testId}-advice`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 12 }, children: "\u9636\u6BB5\u8FC1\u79FB\u5EFA\u8BAE" }),
+      forecast.advice.map((advice, idx) => /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)(
+        "div",
+        {
+          style: {
+            padding: 12,
+            borderRadius: 10,
+            background: "#ffffff",
+            border: "1px solid #e2e8f0",
+            marginBottom: idx < forecast.advice.length - 1 ? 10 : 0
+          },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(LifecycleStageBadge, { stage: advice.targetStage, size: "sm" }),
+                /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("span", { style: { marginLeft: 8, fontSize: 13, color: "#64748b" }, children: advice.description })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { textAlign: "right" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { fontSize: 16, fontWeight: 700, color: "#34d399" }, children: [
+                  "+",
+                  advice.expectedImprovement,
+                  "%"
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { fontSize: 11, color: "#94a3b8" }, children: advice.expectedTimeline })
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 6 }, children: advice.actions.map((action, ai) => /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
+              "span",
+              {
+                style: {
+                  display: "inline-block",
+                  padding: "3px 10px",
+                  borderRadius: 9999,
+                  fontSize: 12,
+                  background: "#eff6ff",
+                  color: "#3b82f6",
+                  border: "1px solid #bfdbfe"
+                },
+                children: action
+              },
+              ai
+            )) })
+          ]
+        },
+        idx
+      ))
+    ] }),
+    forecast.stageHistory.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: sectionStyle3, "data-testid": `${testId}-history`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 12 }, children: "\u9636\u6BB5\u53D8\u8FC1\u8BB0\u5F55" }),
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }, children: forecast.stageHistory.map((h, idx) => /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)(import_react163.default.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
+            "span",
+            {
+              style: {
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                display: "inline-block",
+                background: STAGE_COLORS[h.stage]
+              }
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("span", { style: { fontSize: 12, color: "#475569" }, children: STAGE_LABELS[h.stage] }),
+          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("span", { style: { fontSize: 11, color: "#94a3b8" }, children: h.date.slice(0, 10) })
+        ] }),
+        idx < forecast.stageHistory.length - 1 && /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("span", { style: { color: "#cbd5e1", fontSize: 12, margin: "0 2px" }, children: "\u2192" })
+      ] }, idx)) })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { marginTop: 12, display: "flex", gap: 16, fontSize: 12, color: "#94a3b8" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("span", { children: [
+        "\u4E0A\u6B21\u9636\u6BB5\u53D8\u66F4: ",
+        forecast.lastStageChange.slice(0, 10)
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("span", { children: [
+        "\u5F53\u524D\u9636\u6BB5\u5DF2 ",
+        forecast.daysInCurrentStage,
+        " \u5929"
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("span", { children: [
+        "\u9884\u6D4B\u7A97\u53E3: ",
+        forecast.predictedWindowDays,
+        " \u5929"
+      ] })
+    ] })
+  ] });
+}
+function StatusCard({
+  label,
+  value,
+  subText,
+  color
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)(
+    "div",
+    {
+      style: {
+        padding: 12,
+        borderRadius: 12,
+        background: "#ffffff",
+        border: `1px solid ${color}22`,
+        borderLeft: `3px solid ${color}`
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { fontSize: 12, color: "#64748b" }, children: label }),
+        /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { fontSize: 18, fontWeight: 700, color: "#0f172a", marginTop: 4 }, children: value }),
+        subText && /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 2 }, children: subText })
+      ]
+    }
+  );
+}
+
+// src/components/AIDecisionRuleChain.tsx
+var import_jsx_runtime238 = require("react/jsx-runtime");
 var STATUS_CONFIG5 = {
   pending: { icon: "\u23F3", color: "#8c8c8c", bg: "#f5f5f5", label: "\u5F85\u6267\u884C" },
   running: { icon: "\u{1F504}", color: "#1677ff", bg: "#e6f4ff", label: "\u6267\u884C\u4E2D" },
@@ -59607,8 +59866,8 @@ function RuleNodeItem({
   depth = 0
 }) {
   const cfg = STATUS_CONFIG5[node.status];
-  return /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { "data-testid": `rule-node-${node.id}`, style: { marginLeft: depth * 20 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { "data-testid": `rule-node-${node.id}`, style: { marginLeft: depth * 20 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(
       "div",
       {
         style: {
@@ -59622,8 +59881,8 @@ function RuleNodeItem({
           border: `1px solid ${cfg.color}22`
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("span", { style: { fontSize: 14, width: 20, textAlign: "center" }, children: cfg.icon }),
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("span", { style: { fontSize: 14, width: 20, textAlign: "center" }, children: cfg.icon }),
+          /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
             "span",
             {
               style: {
@@ -59635,7 +59894,7 @@ function RuleNodeItem({
               children: node.name
             }
           ),
-          node.tag && /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
+          node.tag && /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
             "span",
             {
               style: {
@@ -59649,15 +59908,15 @@ function RuleNodeItem({
               children: node.tag
             }
           ),
-          node.confidence !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("span", { style: { fontSize: 11, color: "#8c8c8c", minWidth: 40, textAlign: "right" }, children: [
+          node.confidence !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("span", { style: { fontSize: 11, color: "#8c8c8c", minWidth: 40, textAlign: "right" }, children: [
             (node.confidence * 100).toFixed(0),
             "%"
           ] }),
-          node.durationMs !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("span", { style: { fontSize: 11, color: "#8c8c8c", minWidth: 40, textAlign: "right" }, children: [
+          node.durationMs !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("span", { style: { fontSize: 11, color: "#8c8c8c", minWidth: 40, textAlign: "right" }, children: [
             node.durationMs,
             "ms"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
             "span",
             {
               style: {
@@ -59673,7 +59932,7 @@ function RuleNodeItem({
         ]
       }
     ),
-    !compact && node.output && /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)(
+    !compact && node.output && /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(
       "div",
       {
         style: {
@@ -59688,7 +59947,7 @@ function RuleNodeItem({
         ]
       }
     ),
-    !compact && node.description && /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
+    !compact && node.description && /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
       "div",
       {
         style: {
@@ -59699,8 +59958,8 @@ function RuleNodeItem({
         children: node.description
       }
     ),
-    node.children?.map((child) => /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(RuleNodeItem, { node: child, compact, depth: depth + 1 }, child.id)),
-    node.children && node.children.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
+    node.children?.map((child) => /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(RuleNodeItem, { node: child, compact, depth: depth + 1 }, child.id)),
+    node.children && node.children.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
       "div",
       {
         style: {
@@ -59715,7 +59974,7 @@ function RuleNodeItem({
 }
 function DecisionSummaryBar({ summary }) {
   const decisionCfg = summary.finalDecision ? FINAL_DECISION_CONFIG[summary.finalDecision] : null;
-  return /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(
     "div",
     {
       style: {
@@ -59731,33 +59990,33 @@ function DecisionSummaryBar({ summary }) {
       },
       "data-testid": "summary-bar",
       children: [
-        decisionCfg && /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("span", { style: { fontSize: 16 }, children: decisionCfg.icon }),
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("span", { style: { fontSize: 14, fontWeight: 600, color: decisionCfg.color }, children: decisionCfg.label })
+        decisionCfg && /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("span", { style: { fontSize: 16 }, children: decisionCfg.icon }),
+          /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("span", { style: { fontSize: 14, fontWeight: 600, color: decisionCfg.color }, children: decisionCfg.label })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { display: "flex", gap: 12, fontSize: 12, color: "#595959" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("span", { "data-testid": "summary-total", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { style: { display: "flex", gap: 12, fontSize: 12, color: "#595959" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("span", { "data-testid": "summary-total", children: [
             "\u{1F4CB} \u5171 ",
             summary.totalRules,
             " \u6761\u89C4\u5219"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("span", { "data-testid": "summary-triggered", style: { color: "#52c41a" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("span", { "data-testid": "summary-triggered", style: { color: "#52c41a" }, children: [
             "\u2705 ",
             summary.triggeredRules,
             " \u6761\u901A\u8FC7"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("span", { "data-testid": "summary-blocked", style: { color: "#f5222d" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("span", { "data-testid": "summary-blocked", style: { color: "#f5222d" }, children: [
             "\u{1F534} ",
             summary.blockedRules,
             " \u6761\u62E6\u622A"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("span", { "data-testid": "summary-duration", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("span", { "data-testid": "summary-duration", children: [
             "\u23F1 ",
             summary.totalDurationMs,
             "ms"
           ] })
         ] }),
-        summary.finalDecisionReason && /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { fontSize: 12, color: "#595959", flex: "1 1 100%", marginTop: 4 }, children: [
+        summary.finalDecisionReason && /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { style: { fontSize: 12, color: "#595959", flex: "1 1 100%", marginTop: 4 }, children: [
           "\u{1F4DD} ",
           summary.finalDecisionReason
         ] })
@@ -59772,7 +60031,7 @@ function AIDecisionRuleChain({
   compact = false,
   variant = "pc"
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(
     "div",
     {
       "data-testid": "decision-rule-chain",
@@ -59784,7 +60043,7 @@ function AIDecisionRuleChain({
         padding: 16
       },
       children: [
-        title && /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)(
+        title && /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(
           "div",
           {
             style: {
@@ -59802,8 +60061,8 @@ function AIDecisionRuleChain({
             ]
           }
         ),
-        summary && /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(DecisionSummaryBar, { summary }),
-        rules.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(
+        summary && /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(DecisionSummaryBar, { summary }),
+        rules.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
           "div",
           {
             style: {
@@ -59815,17 +60074,17 @@ function AIDecisionRuleChain({
             "data-testid": "chain-empty",
             children: "\u6682\u65E0\u89C4\u5219\u94FE\u6570\u636E"
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 2 }, "data-testid": "chain-list", children: rules.map((node) => /* @__PURE__ */ (0, import_jsx_runtime237.jsx)(RuleNodeItem, { node, compact }, node.id)) })
+        ) : /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 2 }, "data-testid": "chain-list", children: rules.map((node) => /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(RuleNodeItem, { node, compact }, node.id)) })
       ]
     }
   );
 }
 
 // src/ai-ab-test-comparison/AiABTestComparisonPanel.tsx
-var import_react163 = require("react");
-var import_jsx_runtime238 = require("react/jsx-runtime");
+var import_react164 = require("react");
+var import_jsx_runtime239 = require("react/jsx-runtime");
 function Card2({ children, style }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
     "div",
     {
       style: {
@@ -59840,7 +60099,7 @@ function Card2({ children, style }) {
   );
 }
 function Badge2({ children, color }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
     "span",
     {
       style: {
@@ -59862,8 +60121,8 @@ function VariantBar({
   label
 }) {
   const rate = stats.totalExecutions > 0 ? stats.successCount / stats.totalExecutions * 100 : 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(
       "div",
       {
         style: {
@@ -59873,8 +60132,8 @@ function VariantBar({
           marginBottom: 4
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("span", { style: { fontWeight: 700, fontSize: 14, color: "#1e293b" }, children: label }),
-          /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("span", { style: { fontWeight: 700, fontSize: 14, color: "#1e293b" }, children: label }),
+          /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
             stats.totalExecutions,
             " \u6B21 \xB7 \u91C7\u7EB3 ",
             stats.adoptionCount
@@ -59882,7 +60141,7 @@ function VariantBar({
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
       "div",
       {
         style: {
@@ -59892,7 +60151,7 @@ function VariantBar({
           overflow: "hidden",
           marginBottom: 6
         },
-        children: /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
           "div",
           {
             style: {
@@ -59906,7 +60165,7 @@ function VariantBar({
         )
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(
       "div",
       {
         style: {
@@ -59917,22 +60176,22 @@ function VariantBar({
           color: "#64748b"
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("span", { children: [
             "\u6210\u529F\u7387 ",
             rate.toFixed(1),
             "%"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("span", { children: [
             "\u5E73\u5747 ",
             stats.avgDurationMs,
             "ms"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("span", { children: [
             "\u7F6E\u4FE1\u5EA6 ",
             (stats.avgConfidence * 100).toFixed(0),
             "%"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("span", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("span", { children: [
             "\u8282\u7701 ",
             stats.avgValueDelta.toFixed(1)
           ] })
@@ -59946,8 +60205,8 @@ function ComparisonCard({
   onAdoptVariant,
   compact
 }) {
-  const [adopting, setAdopting] = (0, import_react163.useState)(false);
-  const handleAdopt = (0, import_react163.useCallback)(
+  const [adopting, setAdopting] = (0, import_react164.useState)(false);
+  const handleAdopt = (0, import_react164.useCallback)(
     (variant) => {
       if (onAdoptVariant && !adopting) {
         setAdopting(true);
@@ -59965,7 +60224,7 @@ function ComparisonCard({
     (new Date(comparison.endedAt).getTime() - new Date(comparison.startedAt).getTime()) / 864e5
   );
   const badgeColor = comparison.isSignificant ? "#22c55e" : "#94a3b8";
-  return /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(
     Card2,
     {
       style: {
@@ -59974,7 +60233,7 @@ function ComparisonCard({
         position: "relative"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(
           "div",
           {
             style: {
@@ -59985,9 +60244,9 @@ function ComparisonCard({
               flexWrap: "wrap"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("div", { style: { fontSize: 15, fontWeight: 700, color: "#0f172a" }, children: comparison.experimentName }),
-                /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { style: { fontSize: 12, color: "#64748b", marginTop: 2 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { style: { fontSize: 15, fontWeight: 700, color: "#0f172a" }, children: comparison.experimentName }),
+                /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { style: { fontSize: 12, color: "#64748b", marginTop: 2 }, children: [
                   comparison.ruleName,
                   " \xB7 ",
                   fmtDate(comparison.startedAt),
@@ -59999,7 +60258,7 @@ function ComparisonCard({
                   " \u5929\uFF09"
                 ] })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("div", { style: { display: "flex", gap: 8, alignItems: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(Badge2, { color: badgeColor, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { style: { display: "flex", gap: 8, alignItems: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(Badge2, { color: badgeColor, children: [
                 "p=",
                 comparison.pValue.toFixed(comparison.isSignificant ? 3 : 2),
                 comparison.isSignificant ? " \u2705" : " \u4E0D\u663E\u8457"
@@ -60007,7 +60266,7 @@ function ComparisonCard({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(
           "div",
           {
             style: {
@@ -60016,12 +60275,12 @@ function ComparisonCard({
               flexDirection: compact ? "column" : "row"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(VariantBar, { stats: comparison.variantA, color: "#3b82f6", label: "A \u7EC4\uFF08\u5F53\u524D\uFF09" }),
-              /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(VariantBar, { stats: comparison.variantB, color: "#8b5cf6", label: "B \u7EC4\uFF08\u5B9E\u9A8C\uFF09" })
+              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(VariantBar, { stats: comparison.variantA, color: "#3b82f6", label: "A \u7EC4\uFF08\u5F53\u524D\uFF09" }),
+              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(VariantBar, { stats: comparison.variantB, color: "#8b5cf6", label: "B \u7EC4\uFF08\u5B9E\u9A8C\uFF09" })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(
           "div",
           {
             style: {
@@ -60033,8 +60292,8 @@ function ComparisonCard({
               alignItems: "center"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("div", { style: { fontSize: 12, color: "#475569", lineHeight: 1.6, flex: 1 }, children: comparison.liftSummary }),
-              /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("div", { style: { display: "flex", gap: 6 }, children: comparison.isSignificant && comparison.recommendedVariant ? /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { style: { fontSize: 12, color: "#475569", lineHeight: 1.6, flex: 1 }, children: comparison.liftSummary }),
+              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { style: { display: "flex", gap: 6 }, children: comparison.isSignificant && comparison.recommendedVariant ? /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
                 "button",
                 {
                   onClick: () => handleAdopt(comparison.recommendedVariant),
@@ -60052,7 +60311,7 @@ function ComparisonCard({
                   },
                   children: adopting ? "\u91C7\u7EB3\u4E2D..." : `\u91C7\u7EB3 ${comparison.recommendedVariant} \u65B9\u6848`
                 }
-              ) : /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
+              ) : /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
                 "span",
                 {
                   style: {
@@ -60075,9 +60334,9 @@ function AiABTestComparisonPanel({
   onAdoptVariant,
   compact = false
 }) {
-  const [showOnlySignificant, setShowOnlySignificant] = (0, import_react163.useState)(false);
-  const [sortBy, setSortBy] = (0, import_react163.useState)("date");
-  const filtered = (0, import_react163.useMemo)(() => {
+  const [showOnlySignificant, setShowOnlySignificant] = (0, import_react164.useState)(false);
+  const [sortBy, setSortBy] = (0, import_react164.useState)("date");
+  const filtered = (0, import_react164.useMemo)(() => {
     let list = [...comparisons];
     if (showOnlySignificant) {
       list = list.filter((c) => c.isSignificant);
@@ -60103,8 +60362,8 @@ function AiABTestComparisonPanel({
     { value: "pValue", label: "\u663E\u8457\u7A0B\u5EA6" },
     { value: "lift", label: "\u63D0\u5347\u5E45\u5EA6" }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(
       "div",
       {
         style: {
@@ -60115,9 +60374,9 @@ function AiABTestComparisonPanel({
           alignItems: "center"
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("span", { style: { fontSize: 14, fontWeight: 600, color: "#0f172a" }, children: "AI A/B \u5B9E\u9A8C\u5BF9\u6BD4" }),
-          /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "center", marginLeft: "auto" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime238.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("span", { style: { fontSize: 14, fontWeight: 600, color: "#0f172a" }, children: "AI A/B \u5B9E\u9A8C\u5BF9\u6BD4" }),
+          /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "center", marginLeft: "auto" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(
               "label",
               {
                 style: {
@@ -60129,7 +60388,7 @@ function AiABTestComparisonPanel({
                   cursor: "pointer"
                 },
                 children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
+                  /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
                     "input",
                     {
                       type: "checkbox",
@@ -60142,7 +60401,7 @@ function AiABTestComparisonPanel({
                 ]
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("div", { style: { display: "flex", gap: 4 }, children: sortOptions.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { style: { display: "flex", gap: 4 }, children: sortOptions.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
               "button",
               {
                 onClick: () => setSortBy(opt.value),
@@ -60163,7 +60422,7 @@ function AiABTestComparisonPanel({
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime238.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
       "div",
       {
         style: {
@@ -60174,7 +60433,7 @@ function AiABTestComparisonPanel({
         },
         children: "\u6682\u65E0\u5339\u914D\u7684 A/B \u5B9E\u9A8C\u6570\u636E"
       }
-    ) : filtered.map((c) => /* @__PURE__ */ (0, import_jsx_runtime238.jsx)(
+    ) : filtered.map((c) => /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
       ComparisonCard,
       {
         comparison: c,
@@ -60187,7 +60446,7 @@ function AiABTestComparisonPanel({
 }
 
 // src/ai-ab-test-comparison/useAiABTestComparison.ts
-var import_react164 = require("react");
+var import_react165 = require("react");
 
 // src/ai-ab-test-comparison/useAiABTestComparison.mock.ts
 function makeVariantStats(base) {
@@ -60309,10 +60568,10 @@ function mockABTestComparisons() {
 
 // src/ai-ab-test-comparison/useAiABTestComparison.ts
 function useAiABTestComparison() {
-  const [sortKey, setSortKey] = (0, import_react164.useState)("date");
-  const [showOnlySignificant, setShowOnlySignificant] = (0, import_react164.useState)(false);
-  const raw = (0, import_react164.useMemo)(() => mockABTestComparisons(), []);
-  const filtered = (0, import_react164.useMemo)(() => {
+  const [sortKey, setSortKey] = (0, import_react165.useState)("date");
+  const [showOnlySignificant, setShowOnlySignificant] = (0, import_react165.useState)(false);
+  const raw = (0, import_react165.useMemo)(() => mockABTestComparisons(), []);
+  const filtered = (0, import_react165.useMemo)(() => {
     let list = [...raw];
     if (showOnlySignificant) {
       list = list.filter((e) => e.isSignificant);
@@ -60335,14 +60594,14 @@ function useAiABTestComparison() {
     });
     return list;
   }, [raw, sortKey, showOnlySignificant]);
-  const adoptVariant = (0, import_react164.useCallback)((_experimentId, _variant) => {
+  const adoptVariant = (0, import_react165.useCallback)((_experimentId, _variant) => {
     console.log(`Adopt variant ${_variant} for experiment ${_experimentId}`);
   }, []);
-  const getVariantRate = (0, import_react164.useCallback)((stats) => {
+  const getVariantRate = (0, import_react165.useCallback)((stats) => {
     if (stats.totalExecutions === 0) return 0;
     return stats.successCount / stats.totalExecutions;
   }, []);
-  const getVariantAdoptionRate = (0, import_react164.useCallback)((stats) => {
+  const getVariantAdoptionRate = (0, import_react165.useCallback)((stats) => {
     if (stats.totalExecutions === 0) return 0;
     return stats.adoptionCount / stats.totalExecutions;
   }, []);
@@ -60361,8 +60620,8 @@ function useAiABTestComparison() {
 }
 
 // src/components/AIRecommendationFeedbackPanel.tsx
-var import_react165 = require("react");
-var import_jsx_runtime239 = require("react/jsx-runtime");
+var import_react166 = require("react");
+var import_jsx_runtime240 = require("react/jsx-runtime");
 var ratingMeta = {
   helpful: { label: "\u6709\u5E2E\u52A9", variant: "success", buttonVariant: "primary", icon: "\u{1F44D}" },
   somewhat: { label: "\u90E8\u5206\u6709\u7528", variant: "info", buttonVariant: "outline", icon: "\u{1F914}" },
@@ -60376,54 +60635,54 @@ function SourceSummary({ source }) {
     decision: "\u51B3\u7B56",
     insight: "\u6D1E\u5BDF"
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-gray-50 p-4", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(Badge, { variant: "primary", children: typeLabel[source.type] ?? source.type }),
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("span", { className: "text-sm font-medium text-gray-900", children: source.label })
+  return /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-gray-50 p-4", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(Badge, { variant: "primary", children: typeLabel[source.type] ?? source.type }),
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("span", { className: "text-sm font-medium text-gray-900", children: source.label })
       ] }),
-      source.confidence !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("span", { className: "text-xs text-gray-500", children: [
+      source.confidence !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("span", { className: "text-xs text-gray-500", children: [
         "AI \u7F6E\u4FE1\u5EA6: ",
         source.confidence,
         "%"
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-sm text-gray-700 leading-relaxed", children: source.summary }),
-    source.metricImpact && /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("p", { className: "text-xs text-gray-500 mt-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("p", { className: "text-sm text-gray-700 leading-relaxed", children: source.summary }),
+    source.metricImpact && /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("p", { className: "text-xs text-gray-500 mt-2", children: [
       "\u9884\u671F\u5F71\u54CD: ",
       source.metricImpact
     ] })
   ] });
 }
 function AggregateStats({ agg }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "grid grid-cols-4 gap-3", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "text-lg font-bold text-green-600", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "grid grid-cols-4 gap-3", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "text-lg font-bold text-green-600", children: [
         agg.helpfulRate,
         "%"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u6709\u5E2E\u52A9" })
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u6709\u5E2E\u52A9" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "text-lg font-bold text-blue-600", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "text-lg font-bold text-blue-600", children: [
         agg.somewhatRate,
         "%"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u90E8\u5206\u6709\u7528" })
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u90E8\u5206\u6709\u7528" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "text-lg font-bold text-amber-600", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "text-lg font-bold text-amber-600", children: [
         agg.notHelpfulRate,
         "%"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u4E0D\u76F8\u5173" })
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u4E0D\u76F8\u5173" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "text-lg font-bold text-red-600", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-3 text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "text-lg font-bold text-red-600", children: [
         agg.inaccurateRate,
         "%"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u4E0D\u51C6\u786E" })
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("div", { className: "text-xs text-gray-500 mt-1", children: "\u4E0D\u51C6\u786E" })
     ] })
   ] });
 }
@@ -60435,11 +60694,11 @@ function AIRecommendationFeedbackPanel({
   submitting = false,
   className = ""
 }) {
-  const [selectedRating, setSelectedRating] = (0, import_react165.useState)(null);
-  const [comment, setComment] = (0, import_react165.useState)("");
-  const [submitted, setSubmitted] = (0, import_react165.useState)(false);
+  const [selectedRating, setSelectedRating] = (0, import_react166.useState)(null);
+  const [comment, setComment] = (0, import_react166.useState)("");
+  const [submitted, setSubmitted] = (0, import_react166.useState)(false);
   const { toast: showToast } = useToast();
-  const handleSubmit = (0, import_react165.useCallback)(async () => {
+  const handleSubmit = (0, import_react166.useCallback)(async () => {
     if (selectedRating === null) return;
     try {
       await onSubmitFeedback(source.id, selectedRating, comment);
@@ -60449,31 +60708,31 @@ function AIRecommendationFeedbackPanel({
       showToast("\u63D0\u4EA4\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002", { variant: "error" });
     }
   }, [selectedRating, comment, source.id, onSubmitFeedback, showToast]);
-  const handleSkip = (0, import_react165.useCallback)(() => {
+  const handleSkip = (0, import_react166.useCallback)(() => {
     onSkip?.(source.id);
   }, [onSkip, source.id]);
-  const handleReset = (0, import_react165.useCallback)(() => {
+  const handleReset = (0, import_react166.useCallback)(() => {
     setSelectedRating(null);
     setComment("");
     setSubmitted(false);
   }, []);
   if (submitted) {
-    return /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(Card, { className: `p-6 ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex flex-col items-center justify-center py-8 text-center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "text-4xl mb-3", children: "\u{1F389}" }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("h3", { className: "text-lg font-semibold text-gray-900", children: "\u53CD\u9988\u5DF2\u8BB0\u5F55" }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-sm text-gray-500 mt-1 mb-4", children: "\u60A8\u7684\u53CD\u9988\u5C06\u5E2E\u52A9 AI \u7CFB\u7EDF\u6301\u7EED\u6539\u8FDB\u63A8\u8350\u8D28\u91CF" }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "flex gap-2", children: /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(Button, { variant: "outline", size: "sm", onClick: handleReset, children: "\u7EE7\u7EED\u53CD\u9988" }) })
+    return /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(Card, { className: `p-6 ${className}`, children: /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex flex-col items-center justify-center py-8 text-center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("div", { className: "text-4xl mb-3", children: "\u{1F389}" }),
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("h3", { className: "text-lg font-semibold text-gray-900", children: "\u53CD\u9988\u5DF2\u8BB0\u5F55" }),
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("p", { className: "text-sm text-gray-500 mt-1 mb-4", children: "\u60A8\u7684\u53CD\u9988\u5C06\u5E2E\u52A9 AI \u7CFB\u7EDF\u6301\u7EED\u6539\u8FDB\u63A8\u8350\u8D28\u91CF" }),
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("div", { className: "flex gap-2", children: /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(Button, { variant: "outline", size: "sm", onClick: handleReset, children: "\u7EE7\u7EED\u53CD\u9988" }) })
     ] }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(import_jsx_runtime239.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(Card, { className: `p-6 ${className}`, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "mb-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("h2", { className: "text-lg font-semibold text-gray-900", children: "AI \u63A8\u8350\u53CD\u9988" }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("p", { className: "text-sm text-gray-500 mt-1", children: "\u60A8\u7684\u53CD\u9988\u5C06\u7528\u4E8E\u4F18\u5316 AI \u6A21\u578B\u7684\u63A8\u8350\u51C6\u786E\u6027" })
+  return /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(import_jsx_runtime240.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)(Card, { className: `p-6 ${className}`, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "mb-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("h2", { className: "text-lg font-semibold text-gray-900", children: "AI \u63A8\u8350\u53CD\u9988" }),
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("p", { className: "text-sm text-gray-500 mt-1", children: "\u60A8\u7684\u53CD\u9988\u5C06\u7528\u4E8E\u4F18\u5316 AI \u6A21\u578B\u7684\u63A8\u8350\u51C6\u786E\u6027" })
     ] }),
-    aggregate && /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "mb-5", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("span", { className: "text-sm font-medium text-gray-700", children: "\u5386\u53F2\u53CD\u9988\u7EDF\u8BA1" }),
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
+    aggregate && /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "mb-5", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("span", { className: "text-sm font-medium text-gray-700", children: "\u5386\u53F2\u53CD\u9988\u7EDF\u8BA1" }),
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
           StatTrend,
           {
             value: String(aggregate.helpfulRate),
@@ -60483,18 +60742,18 @@ function AIRecommendationFeedbackPanel({
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(AggregateStats, { agg: aggregate })
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(AggregateStats, { agg: aggregate })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "mb-5", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: "\u5F53\u524D\u63A8\u8350\u5185\u5BB9" }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(SourceSummary, { source })
+    /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "mb-5", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: "\u5F53\u524D\u63A8\u8350\u5185\u5BB9" }),
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(SourceSummary, { source })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "mb-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: "\u6B64\u63A8\u8350\u5BF9\u60A8\u6709\u5E2E\u52A9\u5417\uFF1F" }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "flex flex-wrap gap-2", children: Object.entries(ratingMeta).map(
+    /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "mb-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: "\u6B64\u63A8\u8350\u5BF9\u60A8\u6709\u5E2E\u52A9\u5417\uFF1F" }),
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("div", { className: "flex flex-wrap gap-2", children: Object.entries(ratingMeta).map(
         ([key, meta]) => {
           const isSelected = selectedRating === key;
-          return /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)(
+          return /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)(
             "button",
             {
               type: "button",
@@ -60507,7 +60766,7 @@ function AIRecommendationFeedbackPanel({
                       disabled:opacity-50 disabled:cursor-not-allowed
                     `,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("span", { className: "text-base", children: meta.icon }),
+                /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("span", { className: "text-base", children: meta.icon }),
                 meta.label
               ]
             },
@@ -60516,12 +60775,12 @@ function AIRecommendationFeedbackPanel({
         }
       ) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "mb-5", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "mb-5", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("label", { className: "block text-sm font-medium text-gray-700 mb-2", children: [
         "\u8865\u5145\u8BF4\u660E ",
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("span", { className: "text-gray-400 font-normal", children: "\uFF08\u9009\u586B\uFF09" })
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("span", { className: "text-gray-400 font-normal", children: "\uFF08\u9009\u586B\uFF09" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
         TextArea,
         {
           placeholder: "\u8BF7\u8F93\u5165\u60A8\u7684\u60F3\u6CD5\u6216\u6539\u8FDB\u5EFA\u8BAE\u2026",
@@ -60532,15 +60791,15 @@ function AIRecommendationFeedbackPanel({
           rows: 3
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("p", { className: "text-xs text-gray-400 text-right mt-1", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("p", { className: "text-xs text-gray-400 text-right mt-1", children: [
         comment.length,
         "/500"
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex items-center justify-between pt-3 border-t border-gray-100", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsx)("div", { className: "text-xs text-gray-400", children: "\u53CD\u9988\u5C06\u533F\u540D\u7528\u4E8E\u6A21\u578B\u4F18\u5316" }),
-      /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("div", { className: "flex gap-2", children: [
-        onSkip && /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex items-center justify-between pt-3 border-t border-gray-100", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("div", { className: "text-xs text-gray-400", children: "\u53CD\u9988\u5C06\u533F\u540D\u7528\u4E8E\u6A21\u578B\u4F18\u5316" }),
+      /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { className: "flex gap-2", children: [
+        onSkip && /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
           Button,
           {
             variant: "outline",
@@ -60550,15 +60809,15 @@ function AIRecommendationFeedbackPanel({
             children: "\u8DF3\u8FC7"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
           Button,
           {
             variant: "primary",
             size: "sm",
             onClick: handleSubmit,
             disabled: !selectedRating || submitting,
-            children: submitting ? /* @__PURE__ */ (0, import_jsx_runtime239.jsxs)("span", { className: "inline-flex items-center gap-1", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime239.jsx)(Spinner, { size: "sm" }),
+            children: submitting ? /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("span", { className: "inline-flex items-center gap-1", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(Spinner, { size: "sm" }),
               "\u63D0\u4EA4\u4E2D\u2026"
             ] }) : "\u63D0\u4EA4\u53CD\u9988"
           }
@@ -60569,8 +60828,8 @@ function AIRecommendationFeedbackPanel({
 }
 
 // src/components/Popconfirm.tsx
-var import_react166 = __toESM(require("react"));
-var import_jsx_runtime240 = require("react/jsx-runtime");
+var import_react167 = __toESM(require("react"));
+var import_jsx_runtime241 = require("react/jsx-runtime");
 function resolvePlacement2(p) {
   const parts = p.split("-");
   const side = parts[0];
@@ -60655,7 +60914,7 @@ function arrowStyles2(side) {
       return { ...base, left: -5, top: "50%", transform: "translateY(-50%) rotate(45deg)", borderRight: "none", borderTop: "none" };
   }
 }
-var Popconfirm = import_react166.default.memo(function Popconfirm2({
+var Popconfirm = import_react167.default.memo(function Popconfirm2({
   children,
   title,
   description,
@@ -60673,23 +60932,23 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
   onOpenChange,
   beforeConfirm
 }) {
-  const [open, setOpen] = (0, import_react166.useState)(false);
-  const [confirming, setConfirming] = (0, import_react166.useState)(false);
-  const [position, setPosition] = (0, import_react166.useState)({});
-  const containerRef = (0, import_react166.useRef)(null);
-  const popoverRef = (0, import_react166.useRef)(null);
+  const [open, setOpen] = (0, import_react167.useState)(false);
+  const [confirming, setConfirming] = (0, import_react167.useState)(false);
+  const [position, setPosition] = (0, import_react167.useState)({});
+  const containerRef = (0, import_react167.useRef)(null);
+  const popoverRef = (0, import_react167.useRef)(null);
   const { side } = resolvePlacement2(placement);
-  const close = (0, import_react166.useCallback)(() => {
+  const close = (0, import_react167.useCallback)(() => {
     setOpen(false);
     setConfirming(false);
     onOpenChange?.(false);
   }, [onOpenChange]);
-  const openPop = (0, import_react166.useCallback)(() => {
+  const openPop = (0, import_react167.useCallback)(() => {
     if (disabled) return;
     setOpen(true);
     onOpenChange?.(true);
   }, [disabled, onOpenChange]);
-  const toggle = (0, import_react166.useCallback)(() => {
+  const toggle = (0, import_react167.useCallback)(() => {
     if (disabled) return;
     setOpen((prev) => {
       const next = !prev;
@@ -60697,7 +60956,7 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
       return next;
     });
   }, [disabled, onOpenChange]);
-  const handleConfirm = (0, import_react166.useCallback)(async () => {
+  const handleConfirm = (0, import_react167.useCallback)(async () => {
     if (confirming) return;
     if (beforeConfirm) {
       const canProceed = await beforeConfirm();
@@ -60711,11 +60970,11 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
       setConfirming(false);
     }
   }, [confirming, beforeConfirm, onConfirm, close]);
-  const handleCancel = (0, import_react166.useCallback)(() => {
+  const handleCancel = (0, import_react167.useCallback)(() => {
     onCancel?.();
     close();
   }, [onCancel, close]);
-  (0, import_react166.useEffect)(() => {
+  (0, import_react167.useEffect)(() => {
     if (!open) return;
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -60735,7 +60994,7 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open, close]);
-  (0, import_react166.useEffect)(() => {
+  (0, import_react167.useEffect)(() => {
     if (!open || !containerRef.current || !popoverRef.current) return;
     const triggerEl = containerRef.current.firstElementChild;
     if (!triggerEl) return;
@@ -60743,20 +61002,20 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
     const popoverRect = popoverRef.current.getBoundingClientRect();
     setPosition(computePosition3(popoverRect, triggerRect, placement));
   }, [open, placement]);
-  const handleTriggerClick = (0, import_react166.useCallback)(() => {
+  const handleTriggerClick = (0, import_react167.useCallback)(() => {
     if (triggerMode === "click") toggle();
   }, [triggerMode, toggle]);
-  const handleMouseEnter = (0, import_react166.useCallback)(() => {
+  const handleMouseEnter = (0, import_react167.useCallback)(() => {
     if (triggerMode === "hover" && !disabled) {
       openPop();
     }
   }, [triggerMode, disabled, openPop]);
-  const handleMouseLeave = (0, import_react166.useCallback)(() => {
+  const handleMouseLeave = (0, import_react167.useCallback)(() => {
     if (triggerMode === "hover") {
       close();
     }
   }, [triggerMode, close]);
-  return /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)(
     "div",
     {
       ref: containerRef,
@@ -60764,7 +61023,7 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
       style: { position: "relative", display: "inline-flex", ...style },
       onMouseLeave: handleMouseLeave,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
           "div",
           {
             onClick: handleTriggerClick,
@@ -60787,7 +61046,7 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
             children
           }
         ),
-        open && /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)(
+        open && /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)(
           "div",
           {
             ref: popoverRef,
@@ -60807,8 +61066,8 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
               ...position
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("span", { style: arrowStyles2(side) }),
-              title && /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("span", { style: arrowStyles2(side) }),
+              title && /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
                 "div",
                 {
                   style: {
@@ -60821,7 +61080,7 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
                   children: title
                 }
               ),
-              description && /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
+              description && /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
                 "div",
                 {
                   style: {
@@ -60833,8 +61092,8 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
                   children: description
                 }
               ),
-              !title && !description && /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("div", { style: { padding: "14px 16px", fontSize: 13, color: "#94a3b8" }, children: "\u786E\u8BA4\u6267\u884C\u6B64\u64CD\u4F5C\uFF1F" }),
-              /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)(
+              !title && !description && /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("div", { style: { padding: "14px 16px", fontSize: 13, color: "#94a3b8" }, children: "\u786E\u8BA4\u6267\u884C\u6B64\u64CD\u4F5C\uFF1F" }),
+              /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)(
                 "div",
                 {
                   style: {
@@ -60845,7 +61104,7 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
                     borderTop: "1px solid rgba(148, 163, 184, 0.10)"
                   },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
                       "button",
                       {
                         type: "button",
@@ -60867,7 +61126,7 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
                         children: cancelText
                       }
                     ),
-                    /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)(
+                    /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)(
                       "button",
                       {
                         type: "button",
@@ -60891,7 +61150,7 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
                         },
                         "data-testid": "popconfirm-confirm-btn",
                         children: [
-                          confirming && /* @__PURE__ */ (0, import_jsx_runtime240.jsx)(
+                          confirming && /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
                             "span",
                             {
                               style: {
@@ -60915,7 +61174,7 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime240.jsx)("style", { children: `
+        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("style", { children: `
         @keyframes popconfirm-slide-in {
           from { opacity: 0; transform: scale(0.95) translateY(-4px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
@@ -60930,7 +61189,7 @@ var Popconfirm = import_react166.default.memo(function Popconfirm2({
 });
 
 // src/components/RolePadClient.tsx
-var import_jsx_runtime241 = require("react/jsx-runtime");
+var import_jsx_runtime242 = require("react/jsx-runtime");
 var styles7 = {
   container: {
     background: "#0f172a",
@@ -61017,23 +61276,23 @@ function RolePadClient({
 }) {
   const tabs = ROLE_TABS[role];
   const roleLabel = ROLE_LABELS[role];
-  return /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { style: styles7.container, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { style: styles7.header, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("span", { style: styles7.roleBadge(role), children: roleLabel }),
-        deviceWidthHint && /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { style: styles7.deviceHint, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { style: styles7.container, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { style: styles7.header, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("span", { style: styles7.roleBadge(role), children: roleLabel }),
+        deviceWidthHint && /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { style: styles7.deviceHint, children: [
           "\u5C4F\u5E55: ",
           deviceWidthHint,
           "px"
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { style: { fontSize: 18, fontWeight: 700, color: "#f1f5f9" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { style: { fontSize: 18, fontWeight: 700, color: "#f1f5f9" }, children: [
         roleLabel,
         "\u5DE5\u4F5C\u53F0"
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("div", { style: { width: 80 } })
+      /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("div", { style: { width: 80 } })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("div", { style: styles7.tabs, children: tabs.map((tab) => /* @__PURE__ */ (0, import_jsx_runtime241.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("div", { style: styles7.tabs, children: tabs.map((tab) => /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
       "button",
       {
         type: "button",
@@ -61043,10 +61302,10 @@ function RolePadClient({
       },
       tab
     )) }),
-    /* @__PURE__ */ (0, import_jsx_runtime241.jsx)("div", { style: styles7.content, children: /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { style: styles7.placeholder, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("div", { style: styles7.content, children: /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { style: styles7.placeholder, children: [
       TAB_LABELS[activeTab] || activeTab,
       " \u9762\u677F",
-      /* @__PURE__ */ (0, import_jsx_runtime241.jsxs)("div", { style: { marginTop: 8, fontSize: 12, color: "#475569" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { style: { marginTop: 8, fontSize: 12, color: "#475569" }, children: [
         "\u5F53\u524D\u89D2\u8272: ",
         roleLabel,
         " \xB7 \u5BF9\u5E94\u529F\u80FD\u5C06\u901A\u8FC7\u7EC4\u4EF6\u6CE8\u5165"
@@ -61056,8 +61315,8 @@ function RolePadClient({
 }
 
 // src/components/RichTextEditor.tsx
-var import_react167 = __toESM(require("react"));
-var import_jsx_runtime242 = require("react/jsx-runtime");
+var import_react168 = __toESM(require("react"));
+var import_jsx_runtime243 = require("react/jsx-runtime");
 var TOOLBAR_PRESETS = {
   full: [
     { key: "bold", label: "Bold", icon: "B", command: (e) => e.exec("bold") },
@@ -61113,7 +61372,7 @@ var SIZE_STYLES4 = {
 function sanitizeHtml(html) {
   return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "").replace(/on\w+\s*=\s*"[^"]*"/gi, "").replace(/on\w+\s*=\s*'[^']*'/gi, "");
 }
-var RichTextEditor = import_react167.default.forwardRef(function RichTextEditor2({
+var RichTextEditor = import_react168.default.forwardRef(function RichTextEditor2({
   value = "",
   onChange,
   placeholder = "Type something...",
@@ -61132,13 +61391,13 @@ var RichTextEditor = import_react167.default.forwardRef(function RichTextEditor2
   editorRef,
   "data-testid": dataTestId
 }, ref) {
-  const containerRef = (0, import_react167.useRef)(null);
-  const editorContentRef = (0, import_react167.useRef)(null);
-  const [isFocused, setIsFocused] = (0, import_react167.useState)(false);
-  const [currentValue, setCurrentValue] = (0, import_react167.useState)(value);
-  const uniqueId = (0, import_react167.useId)();
+  const containerRef = (0, import_react168.useRef)(null);
+  const editorContentRef = (0, import_react168.useRef)(null);
+  const [isFocused, setIsFocused] = (0, import_react168.useState)(false);
+  const [currentValue, setCurrentValue] = (0, import_react168.useState)(value);
+  const uniqueId = (0, import_react168.useId)();
   const contentId = `rte-content-${uniqueId}`;
-  const handle = (0, import_react167.useRef)({
+  const handle = (0, import_react168.useRef)({
     getContent: () => editorContentRef.current?.innerHTML ?? "",
     setContent: (html) => {
       if (editorContentRef.current) {
@@ -61156,27 +61415,27 @@ var RichTextEditor = import_react167.default.forwardRef(function RichTextEditor2
     },
     focus: () => editorContentRef.current?.focus()
   });
-  import_react167.default.useImperativeHandle(ref, () => handle.current);
-  import_react167.default.useImperativeHandle(editorRef, () => handle.current);
-  (0, import_react167.useEffect)(() => {
+  import_react168.default.useImperativeHandle(ref, () => handle.current);
+  import_react168.default.useImperativeHandle(editorRef, () => handle.current);
+  (0, import_react168.useEffect)(() => {
     if (editorContentRef.current && !editorContentRef.current.innerHTML) {
       editorContentRef.current.innerHTML = sanitizeHtml(value);
     }
   }, []);
-  (0, import_react167.useEffect)(() => {
+  (0, import_react168.useEffect)(() => {
     if (editorContentRef.current && value !== currentValue) {
       editorContentRef.current.innerHTML = sanitizeHtml(value);
       setCurrentValue(value);
     }
   }, [value]);
-  const handleInput = (0, import_react167.useCallback)(() => {
+  const handleInput = (0, import_react168.useCallback)(() => {
     if (!editorContentRef.current) return;
     const html = editorContentRef.current.innerHTML;
     if (maxLength && html.replace(/<[^>]*>/g, "").length > maxLength) return;
     setCurrentValue(html);
     onChange?.(html);
   }, [onChange, maxLength]);
-  const handlePaste = (0, import_react167.useCallback)((e) => {
+  const handlePaste = (0, import_react168.useCallback)((e) => {
     e.preventDefault();
     const text = e.clipboardData.getData("text/plain");
     document.execCommand("insertText", false, text);
@@ -61233,8 +61492,8 @@ var RichTextEditor = import_react167.default.forwardRef(function RichTextEditor2
       fontFamily: "inherit"
     };
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { style: containerStyle5, "data-testid": dataTestId, children: [
-    label && /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { style: containerStyle5, "data-testid": dataTestId, children: [
+    label && /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
       "label",
       {
         htmlFor: contentId,
@@ -61248,7 +61507,7 @@ var RichTextEditor = import_react167.default.forwardRef(function RichTextEditor2
         children: label
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)(
       "div",
       {
         ref: containerRef,
@@ -61256,11 +61515,11 @@ var RichTextEditor = import_react167.default.forwardRef(function RichTextEditor2
         onFocus: () => setIsFocused(true),
         onBlur: () => setIsFocused(false),
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("div", { style: toolbarStyle2, role: "toolbar", "aria-label": "Rich text editor toolbar", children: toolbarActions.map((action) => {
+          /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("div", { style: toolbarStyle2, role: "toolbar", "aria-label": "Rich text editor toolbar", children: toolbarActions.map((action) => {
             if (action.icon === "|") {
-              return /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("div", { style: tbBtnStyle(action) }, action.key);
+              return /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("div", { style: tbBtnStyle(action) }, action.key);
             }
-            return /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+            return /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
               "button",
               {
                 type: "button",
@@ -61282,7 +61541,7 @@ var RichTextEditor = import_react167.default.forwardRef(function RichTextEditor2
               action.key
             );
           }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime242.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
             "div",
             {
               id: contentId,
@@ -61313,7 +61572,7 @@ var RichTextEditor = import_react167.default.forwardRef(function RichTextEditor2
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)(
       "div",
       {
         style: {
@@ -61324,11 +61583,11 @@ var RichTextEditor = import_react167.default.forwardRef(function RichTextEditor2
           minHeight: 18
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("div", { children: [
-            helperText && !error && /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("span", { style: { fontSize: 12, color: "#64748b" }, children: helperText }),
-            error && /* @__PURE__ */ (0, import_jsx_runtime242.jsx)("span", { style: { fontSize: 12, color: "#fca5a5" }, children: error })
+          /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { children: [
+            helperText && !error && /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { style: { fontSize: 12, color: "#64748b" }, children: helperText }),
+            error && /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { style: { fontSize: 12, color: "#fca5a5" }, children: error })
           ] }),
-          showCount && /* @__PURE__ */ (0, import_jsx_runtime242.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
+          showCount && /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("span", { style: { fontSize: 12, color: "#64748b" }, children: [
             textLength,
             maxLength ? ` / ${maxLength}` : ""
           ] })
@@ -61339,8 +61598,8 @@ var RichTextEditor = import_react167.default.forwardRef(function RichTextEditor2
 });
 
 // src/components/YearPicker.tsx
-var import_react168 = require("react");
-var import_jsx_runtime243 = require("react/jsx-runtime");
+var import_react169 = require("react");
+var import_jsx_runtime244 = require("react/jsx-runtime");
 function parseYear(str) {
   const year = parseInt(str, 10);
   return isNaN(year) || year < 1900 || year > 2200 ? null : year;
@@ -61505,13 +61764,13 @@ var YearPicker = ({
   const minYear = min ? parseYear(min) ?? startYear : startYear;
   const maxYear = max ? parseYear(max) ?? endYear : endYear;
   const selectedYear = value ? parseYear(value) ?? null : null;
-  const [open, setOpen] = (0, import_react168.useState)(false);
-  const [decadeStart, setDecadeStart] = (0, import_react168.useState)(() => {
+  const [open, setOpen] = (0, import_react169.useState)(false);
+  const [decadeStart, setDecadeStart] = (0, import_react169.useState)(() => {
     const seed = selectedYear ?? currentYear;
     return getDecadeStart(seed);
   });
-  const wrapperRef = (0, import_react168.useRef)(null);
-  (0, import_react168.useEffect)(() => {
+  const wrapperRef = (0, import_react169.useRef)(null);
+  (0, import_react169.useEffect)(() => {
     if (!open) return;
     const handleClick = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
@@ -61521,13 +61780,13 @@ var YearPicker = ({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
-  (0, import_react168.useEffect)(() => {
+  (0, import_react169.useEffect)(() => {
     if (open) {
       const seed = selectedYear ?? currentYear;
       setDecadeStart(getDecadeStart(seed));
     }
   }, [open, selectedYear, currentYear]);
-  const handleSelect = (0, import_react168.useCallback)(
+  const handleSelect = (0, import_react169.useCallback)(
     (year) => {
       if (isYearDisabled(year, minYear, maxYear)) return;
       onChange?.(String(year));
@@ -61535,11 +61794,11 @@ var YearPicker = ({
     },
     [onChange, minYear, maxYear]
   );
-  const handleToggle = (0, import_react168.useCallback)(() => {
+  const handleToggle = (0, import_react169.useCallback)(() => {
     if (disabled) return;
     setOpen((prev) => !prev);
   }, [disabled]);
-  const years = (0, import_react168.useMemo)(() => {
+  const years = (0, import_react169.useMemo)(() => {
     const result = [];
     for (let y = decadeStart; y < decadeStart + 10; y++) {
       if (y >= startYear && y <= endYear) {
@@ -61550,10 +61809,10 @@ var YearPicker = ({
   }, [decadeStart, startYear, endYear]);
   const canPrev = decadeStart - 10 >= startYear;
   const canNext = decadeStart + 10 <= endYear;
-  const handlePrevDecade = (0, import_react168.useCallback)(() => {
+  const handlePrevDecade = (0, import_react169.useCallback)(() => {
     if (canPrev) setDecadeStart((d) => d - 10);
   }, [canPrev]);
-  const handleNextDecade = (0, import_react168.useCallback)(() => {
+  const handleNextDecade = (0, import_react169.useCallback)(() => {
     if (canNext) setDecadeStart((d) => d + 10);
   }, [canNext]);
   const displayText = selectedYear ? `${selectedYear}\u5E74` : "";
@@ -61566,12 +61825,12 @@ var YearPicker = ({
     ...styles8.arrow,
     ...open ? styles8.arrowOpen : {}
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { ref: wrapperRef, style: { ...styles8.wrapper, ...style }, className, children: [
-    label && /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { style: styles8.labelRow, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { children: label }),
-      required && /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { style: styles8.asterisk, children: "*" })
+  return /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { ref: wrapperRef, style: { ...styles8.wrapper, ...style }, className, children: [
+    label && /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { style: styles8.labelRow, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("span", { children: label }),
+      required && /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("span", { style: styles8.asterisk, children: "*" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)(
       "button",
       {
         type: "button",
@@ -61583,14 +61842,14 @@ var YearPicker = ({
         "aria-expanded": open,
         "aria-label": label ? `${label}, ${displayText || placeholder}` : displayText || placeholder,
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { style: displayText ? void 0 : styles8.placeholder, children: displayText || placeholder }),
-          /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { style: arrowStyles3, children: "\u25BC" })
+          /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("span", { style: displayText ? void 0 : styles8.placeholder, children: displayText || placeholder }),
+          /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("span", { style: arrowStyles3, children: "\u25BC" })
         ]
       }
     ),
-    open && /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { style: styles8.dropdown, role: "dialog", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { style: styles8.navRow, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
+    open && /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { style: styles8.dropdown, role: "dialog", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("div", { style: styles8.navRow, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(
           "button",
           {
             type: "button",
@@ -61604,12 +61863,12 @@ var YearPicker = ({
             children: "\u25C0"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("span", { style: styles8.decadeLabel, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)("span", { style: styles8.decadeLabel, children: [
           decadeStart,
           " - ",
           decadeStart + 9
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(
           "button",
           {
             type: "button",
@@ -61624,11 +61883,11 @@ var YearPicker = ({
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("div", { style: styles8.grid, role: "listbox", "aria-label": "\u5E74\u4EFD\u9009\u62E9", children: years.map((year) => {
+      /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("div", { style: styles8.grid, role: "listbox", "aria-label": "\u5E74\u4EFD\u9009\u62E9", children: years.map((year) => {
         const isSel = selectedYear === year;
         const isDis = isYearDisabled(year, minYear, maxYear);
         const isToday3 = year === currentYear;
-        return /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
+        return /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(
           "button",
           {
             type: "button",
@@ -61648,13 +61907,13 @@ var YearPicker = ({
         );
       }) })
     ] }),
-    error && /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { style: styles8.errorText, children: error }),
-    !error && helpText && /* @__PURE__ */ (0, import_jsx_runtime243.jsx)("span", { style: styles8.helpText, children: helpText })
+    error && /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("span", { style: styles8.errorText, children: error }),
+    !error && helpText && /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("span", { style: styles8.helpText, children: helpText })
   ] });
 };
 
 // src/components/StoreStatusIndicator.tsx
-var import_jsx_runtime244 = require("react/jsx-runtime");
+var import_jsx_runtime245 = require("react/jsx-runtime");
 var STATUS_LABELS4 = {
   open: "\u8425\u4E1A\u4E2D",
   closed: "\u4F11\u606F\u4E2D",
@@ -61703,7 +61962,7 @@ function StoreStatusIndicator({
   const handleClick = () => {
     onClick?.(status);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime244.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
     "div",
     {
       "data-testid": `store-status-indicator-${status}`,
@@ -61724,7 +61983,7 @@ function StoreStatusIndicator({
         ...style
       },
       children: [
-        !textOnly && /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(
+        !textOnly && /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
           "span",
           {
             "data-testid": `store-status-dot-${status}`,
@@ -61742,7 +62001,7 @@ function StoreStatusIndicator({
             }
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
           "span",
           {
             "data-testid": `store-status-label-${status}`,
@@ -61756,7 +62015,7 @@ function StoreStatusIndicator({
             children: displayLabel
           }
         ),
-        lastUpdated && /* @__PURE__ */ (0, import_jsx_runtime244.jsx)(
+        lastUpdated && /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
           "span",
           {
             "data-testid": `store-status-time-${status}`,
@@ -61769,7 +62028,7 @@ function StoreStatusIndicator({
             children: lastUpdated
           }
         ),
-        showAnimation && /* @__PURE__ */ (0, import_jsx_runtime244.jsx)("style", { children: `
+        showAnimation && /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("style", { children: `
           @keyframes store-status-pulse {
             0% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.5; transform: scale(0.8); }
@@ -61782,8 +62041,8 @@ function StoreStatusIndicator({
 }
 
 // src/components/StoreSelector.tsx
-var import_react169 = require("react");
-var import_jsx_runtime245 = require("react/jsx-runtime");
+var import_react170 = require("react");
+var import_jsx_runtime246 = require("react/jsx-runtime");
 function groupStoresByKey(stores, key) {
   const groups = /* @__PURE__ */ new Map();
   for (const store of stores) {
@@ -61823,25 +62082,25 @@ function StoreSelector({
   dropdownClassName,
   name
 }) {
-  const [open, setOpen] = (0, import_react169.useState)(false);
-  const [searchText, setSearchText] = (0, import_react169.useState)("");
-  const containerRef = (0, import_react169.useRef)(null);
-  const searchInputRef = (0, import_react169.useRef)(null);
-  const instanceId = (0, import_react169.useId)();
+  const [open, setOpen] = (0, import_react170.useState)(false);
+  const [searchText, setSearchText] = (0, import_react170.useState)("");
+  const containerRef = (0, import_react170.useRef)(null);
+  const searchInputRef = (0, import_react170.useRef)(null);
+  const instanceId = (0, import_react170.useId)();
   const isMultiple = mode === "multiple";
-  const selectedValues = (0, import_react169.useMemo)(
+  const selectedValues = (0, import_react170.useMemo)(
     () => {
       if (!value) return [];
       return Array.isArray(value) ? value : [value];
     },
     [value]
   );
-  const grouped = (0, import_react169.useMemo)(
+  const grouped = (0, import_react170.useMemo)(
     () => groupBy ? groupStoresByKey(stores, groupBy) : [],
     [stores, groupBy]
   );
   const getGroupLabelFn = groupLabel ?? getDefaultGroupLabel;
-  const filteredItems = (0, import_react169.useMemo)(() => {
+  const filteredItems = (0, import_react170.useMemo)(() => {
     const search = searchText.trim().toLowerCase();
     if (!search) return null;
     const allItems = stores.filter((s) => {
@@ -61864,11 +62123,11 @@ function StoreSelector({
   }, [stores, searchText, groupBy, getGroupLabelFn]);
   const displayGroups = filteredItems ?? (groupBy ? grouped : []);
   const flatStores = filteredItems ? displayGroups.flatMap((g) => g.stores) : groupBy ? stores : stores;
-  const isSelected = (0, import_react169.useCallback)(
+  const isSelected = (0, import_react170.useCallback)(
     (id) => selectedValues.includes(id),
     [selectedValues]
   );
-  const isAllSelected = (0, import_react169.useMemo)(
+  const isAllSelected = (0, import_react170.useMemo)(
     () => {
       if (!isMultiple || stores.length === 0) return false;
       const selectable = stores.filter((s) => !s.disabled);
@@ -61876,7 +62135,7 @@ function StoreSelector({
     },
     [isMultiple, stores, selectedValues]
   );
-  const handleToggleStore = (0, import_react169.useCallback)(
+  const handleToggleStore = (0, import_react170.useCallback)(
     (id) => {
       const store = stores.find((s) => s.id === id);
       if (!store || store.disabled || disabled) return;
@@ -61895,7 +62154,7 @@ function StoreSelector({
     },
     [stores, disabled, isMultiple, selectedValues, onChange]
   );
-  const handleSelectAll = (0, import_react169.useCallback)(() => {
+  const handleSelectAll = (0, import_react170.useCallback)(() => {
     if (!isMultiple || disabled) return;
     const selectable = stores.filter((s) => !s.disabled);
     if (isAllSelected) {
@@ -61904,11 +62163,11 @@ function StoreSelector({
       onChange?.(selectable.map((s) => s.id));
     }
   }, [isMultiple, stores, disabled, isAllSelected, onChange]);
-  const handleClearAll = (0, import_react169.useCallback)(() => {
+  const handleClearAll = (0, import_react170.useCallback)(() => {
     if (!isMultiple || disabled) return;
     onChange?.([]);
   }, [isMultiple, disabled, onChange]);
-  const selectedTags = (0, import_react169.useMemo)(() => {
+  const selectedTags = (0, import_react170.useMemo)(() => {
     if (!isMultiple || selectedValues.length === 0) return null;
     const labels = selectedValues.map((id) => stores.find((s) => s.id === id)?.label).filter(Boolean);
     if (labels.length <= maxTagCount) {
@@ -61916,16 +62175,16 @@ function StoreSelector({
     }
     return `${labels.slice(0, maxTagCount).join(", ")} +${labels.length - maxTagCount}`;
   }, [isMultiple, selectedValues, stores, maxTagCount]);
-  const selectedLabel = (0, import_react169.useMemo)(() => {
+  const selectedLabel = (0, import_react170.useMemo)(() => {
     if (selectedValues.length === 0) return null;
     const s = stores.find((st) => st.id === selectedValues[0]);
     return s?.label ?? null;
   }, [selectedValues, stores]);
-  const handleClose = (0, import_react169.useCallback)(() => {
+  const handleClose = (0, import_react170.useCallback)(() => {
     setOpen(false);
     setSearchText("");
   }, []);
-  (0, import_react169.useEffect)(() => {
+  (0, import_react170.useEffect)(() => {
     if (!open) return;
     const handler = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -61935,19 +62194,19 @@ function StoreSelector({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open, handleClose]);
-  (0, import_react169.useEffect)(() => {
+  (0, import_react170.useEffect)(() => {
     if (open && searchInputRef.current) {
       searchInputRef.current.focus();
     }
   }, [open]);
-  const handleToggle = (0, import_react169.useCallback)(() => {
+  const handleToggle = (0, import_react170.useCallback)(() => {
     if (disabled) return;
     setOpen((prev) => {
       if (prev) handleClose();
       return !prev;
     });
   }, [disabled, handleClose]);
-  const handleKeyDown = (0, import_react169.useCallback)(
+  const handleKeyDown = (0, import_react170.useCallback)(
     (e) => {
       if (e.key === "Escape") {
         handleClose();
@@ -61962,7 +62221,7 @@ function StoreSelector({
   );
   const renderStoreItem = (store) => {
     const sel = isSelected(store.id);
-    return /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)(
       "div",
       {
         "data-testid": `store-option-${store.id}`,
@@ -61987,7 +62246,7 @@ function StoreSelector({
           transition: "background-color 0.15s"
         },
         children: [
-          isMultiple && /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+          isMultiple && /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
             "span",
             {
               "data-testid": `store-checkbox-${store.id}`,
@@ -62008,13 +62267,13 @@ function StoreSelector({
               children: sel ? "\u2713" : ""
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("span", { style: { flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: store.label })
+          /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("span", { style: { flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: store.label })
         ]
       },
       store.id
     );
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)(
     "div",
     {
       ref: containerRef,
@@ -62034,8 +62293,8 @@ function StoreSelector({
       tabIndex: disabled ? -1 : 0,
       onKeyDown: handleKeyDown,
       children: [
-        name && /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("input", { type: "hidden", name, value: JSON.stringify(selectedValues) }),
-        /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
+        name && /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("input", { type: "hidden", name, value: JSON.stringify(selectedValues) }),
+        /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)(
           "div",
           {
             "data-testid": "store-selector-trigger",
@@ -62057,7 +62316,7 @@ function StoreSelector({
             role: "button",
             "aria-disabled": disabled,
             children: [
-              isMultiple ? /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+              isMultiple ? /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
                 "span",
                 {
                   style: {
@@ -62070,7 +62329,7 @@ function StoreSelector({
                   },
                   children: selectedTags || placeholder
                 }
-              ) : /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+              ) : /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
                 "span",
                 {
                   style: {
@@ -62084,11 +62343,11 @@ function StoreSelector({
                   children: selectedLabel || placeholder
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("span", { style: { marginLeft: 8, fontSize: 10, color: "#999", transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }, children: "\u25BC" })
+              /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("span", { style: { marginLeft: 8, fontSize: 10, color: "#999", transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }, children: "\u25BC" })
             ]
           }
         ),
-        open && /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
+        open && /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)(
           "div",
           {
             className: dropdownClassName,
@@ -62108,7 +62367,7 @@ function StoreSelector({
               overflow: "auto"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
                 "input",
                 {
                   ref: searchInputRef,
@@ -62131,7 +62390,7 @@ function StoreSelector({
                   }
                 }
               ),
-              isMultiple && showSelectAll && !searchText && /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
+              isMultiple && showSelectAll && !searchText && /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)(
                 "div",
                 {
                   "data-testid": "store-selector-selectall",
@@ -62148,7 +62407,7 @@ function StoreSelector({
                     borderBottom: "1px solid #f0f0f0"
                   },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
                       "span",
                       {
                         style: {
@@ -62167,8 +62426,8 @@ function StoreSelector({
                         children: isAllSelected ? "\u2713" : ""
                       }
                     ),
-                    /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("span", { style: { flex: 1 }, children: selectAllText }),
-                    isAllSelected && /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("span", { style: { flex: 1 }, children: selectAllText }),
+                    isAllSelected && /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
                       "span",
                       {
                         "data-testid": "store-selector-clearall",
@@ -62185,8 +62444,8 @@ function StoreSelector({
               ),
               groupBy && displayGroups.length > 0 && displayGroups.map((group) => {
                 const groupSelectedCount = group.stores.filter((s) => isSelected(s.id)).length;
-                return /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("div", { "data-testid": `store-group-${group.key}`, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)(
+                return /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("div", { "data-testid": `store-group-${group.key}`, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)(
                     "div",
                     {
                       "data-testid": `store-group-header-${group.key}`,
@@ -62202,8 +62461,8 @@ function StoreSelector({
                         justifyContent: "space-between"
                       },
                       children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime245.jsx)("span", { children: getGroupLabelFn(group.key, group.stores) }),
-                        isMultiple && groupSelectedCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime245.jsxs)("span", { style: { fontSize: 12, color: "#1677ff" }, children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("span", { children: getGroupLabelFn(group.key, group.stores) }),
+                        isMultiple && groupSelectedCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime246.jsxs)("span", { style: { fontSize: 12, color: "#1677ff" }, children: [
                           groupSelectedCount,
                           "/",
                           group.stores.length
@@ -62215,7 +62474,7 @@ function StoreSelector({
                 ] }, group.key);
               }),
               !groupBy && flatStores.length > 0 && flatStores.map(renderStoreItem),
-              (groupBy && displayGroups.length === 0 || !groupBy && flatStores.length === 0) && /* @__PURE__ */ (0, import_jsx_runtime245.jsx)(
+              (groupBy && displayGroups.length === 0 || !groupBy && flatStores.length === 0) && /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
                 "div",
                 {
                   "data-testid": "store-selector-empty",
@@ -62253,6 +62512,7 @@ StoreSelector.displayName = "StoreSelector";
   AIExecutionAuditPanel,
   AIExperimentOptimizationPanel,
   AIMemberChurnPredictionPanel,
+  AIMemberLifecycleForecastPanel,
   AIMetricGoalPanel,
   AIModelPerformancePanel,
   AIPricingRecommendationPanel,

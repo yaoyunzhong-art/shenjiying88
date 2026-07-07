@@ -1146,6 +1146,16 @@ export type { WatermarkProps, WatermarkContent } from './components/Watermark';
 export { Spin } from './components/Spin';
 export type { SpinProps, SpinSize } from './components/Spin';
 
+// --------------- AI 会员生命周期预测面板 ---------------
+export { AIMemberLifecycleForecastPanel } from './components/AIMemberLifecycleForecastPanel';
+export type {
+  AIMemberLifecycleForecastPanelProps,
+  MemberLifecycleForecast,
+  LifecycleStage,
+  StageMetric,
+  StageTransitionAdvice,
+} from './components/AIMemberLifecycleForecastPanel';
+
 // --------------- AI 决策规则链 ---------------
 export { AIDecisionRuleChain } from './components/AIDecisionRuleChain';
 export type {
