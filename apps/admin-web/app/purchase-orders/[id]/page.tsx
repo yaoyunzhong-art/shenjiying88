@@ -20,8 +20,9 @@ import {
   FormSubmitFeedback,
 } from '@m5/ui';
 
+import type { PurchaseOrderItem } from '../purchase-orders-data';
+
 import {
-  type PurchaseOrderItem,
   type PurchaseOrderStatus,
   type PurchaseOrderUrgency,
   MOCK_PURCHASE_ORDERS,

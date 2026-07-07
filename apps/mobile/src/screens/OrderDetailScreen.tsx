@@ -123,12 +123,13 @@ export const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({
 }) => {
   const canEdit = userRole === 'manager' || userRole === 'admin';
   const canManage = userRole === 'admin';
-  const transitions = STATUS_TRANSITIONS[order.status] || [];
+  const transitions = canEdit ? (STATUS_TRANSITIONS[order.status] || []) : [];
 
-  const handleAction = (action: OrderDetailScreenProps[keyof OrderDetailScreenProps], ...args: Parameters<typeof onEdit>) => {
-    if (action && args.length > 0) {
-      (action as (...a: unknown[]) => void)(...args);
-    }
+  const getHandler = (key: string) => {
+    const map: Record<string, ((o: OrderDetail) => void) | undefined> = {
+      onCancel, onConfirm, onShip, onDeliver, onRefund,
+    };
+    return map[key] ?? undefined;
   };
 
   return (
@@ -182,12 +183,12 @@ export const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({
       </View>
 
       {/* 状态流转操作 */}
-      {canEdit && transitions.length > 0 && (
+      {transitions.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>操作</Text>
           <View style={styles.buttonGroup}>
             {transitions.map((t) => {
-              const handler = order ? (t.handler ? (t.handler === 'onCancel' ? onCancel : t.handler === 'onConfirm' ? onConfirm : t.handler === 'onShip' ? onShip : t.handler === 'onDeliver' ? onDeliver : t.handler === 'onRefund' ? onRefund : undefined) : undefined) : undefined;
+              const handler = getHandler(t.handler);
               return (
                 <TouchableOpacity
                   key={t.action}
@@ -203,20 +204,18 @@ export const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({
         </View>
       )}
 
-      {/* 管理操作 */}
+      {/* 管理操作 — 仅 admin */}
       {canManage && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>管理</Text>
           <View style={styles.buttonGroup}>
-            {canEdit && (
-              <TouchableOpacity
-                style={styles.primaryBtn}
-                onPress={() => onEdit?.(order)}
-                accessibilityLabel="编辑订单"
-              >
-                <Text style={styles.primaryBtnText}>编辑订单</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={() => onEdit?.(order)}
+              accessibilityLabel="编辑订单"
+            >
+              <Text style={styles.primaryBtnText}>编辑订单</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.dangerBtn}
               onPress={() => onDelete?.(order)}
