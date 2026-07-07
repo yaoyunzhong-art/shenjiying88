@@ -61123,7 +61123,9 @@ function StoreSelector({
         "aria-disabled": store.disabled || void 0,
         onClick: () => handleToggleStore(store.id),
         style: {
-          padding: "8px 12px 8px groupBy ? 24 : 12px",
+          paddingTop: 8,
+          paddingRight: 12,
+          paddingBottom: 8,
           paddingLeft: groupBy ? 24 : 12,
           cursor: store.disabled ? "not-allowed" : "pointer",
           backgroundColor: sel ? "#e6f7ff" : "transparent",

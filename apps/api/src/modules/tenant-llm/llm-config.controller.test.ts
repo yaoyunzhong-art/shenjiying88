@@ -79,7 +79,8 @@ describe('TenantLLMController', () => {
       })
       const result = await controller.getConfig(created.id, 't-get-id')
       expect(result).not.toBeNull()
-      expect(result!.name).toBe('My Config')
+      expect((result as { error?: string }).error).toBeUndefined()
+      expect((result as any).name).toBe('My Config')
     })
 
     it('反例: 不存在的 ID 返回错误消息', async () => {
@@ -205,7 +206,7 @@ describe('TenantLLMController', () => {
         name: 'Apply Test', provider: 'deepseek', modelName: 'deepseek-chat', apiKey: 'sk',
       })
       const result = await controller.applyConfig(created.id, 't-apply-1', {
-        useCase: '智能客服', expectedVolume: 1000,
+        configId: created.id, useCase: '智能客服', expectedVolume: 1000,
       })
       expect(result.success).toBe(true)
       expect(result.message).toContain('等待平台管理员审批')
@@ -214,7 +215,7 @@ describe('TenantLLMController', () => {
     it('反例: 不存在配置抛异常', async () => {
       await expect(
         controller.applyConfig('non-existent', 't-apply-none', {
-          useCase: 'test', expectedVolume: 100,
+          configId: 'non-existent', useCase: 'test', expectedVolume: 100,
         })
       ).rejects.toThrow('配置不存在')
     })
@@ -225,7 +226,7 @@ describe('TenantLLMController', () => {
       })
       await expect(
         controller.applyConfig(created.id, 't-apply-tenant-other', {
-          useCase: 'hack', expectedVolume: 1,
+          configId: created.id, useCase: 'hack', expectedVolume: 1,
         })
       ).rejects.toThrow('配置不存在')
     })
