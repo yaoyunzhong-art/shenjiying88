@@ -18,7 +18,7 @@ function setup() {
 }
 
 describe('👔店长 gateway 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('路由查找已注册路径', async () => {
@@ -34,7 +34,7 @@ describe('👔店长 gateway 扩展测试', () => {
 })
 
 describe('🛒前台 gateway 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建 API Key', () => {
@@ -45,7 +45,7 @@ describe('🛒前台 gateway 扩展测试', () => {
 })
 
 describe('👥HR gateway 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建并撤销 API Key', () => {
@@ -57,7 +57,7 @@ describe('👥HR gateway 扩展测试', () => {
 })
 
 describe('🔧安监 gateway 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('API Key 认证通过', async () => {
@@ -73,7 +73,7 @@ describe('🔧安监 gateway 扩展测试', () => {
 })
 
 describe('🎯运行专员 gateway 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('限流检查未超限时允许', async () => {
@@ -91,7 +91,7 @@ describe('🎯运行专员 gateway 扩展测试', () => {
 })
 
 describe('📢营销 gateway 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建多个 API Key 并验证数量', () => {

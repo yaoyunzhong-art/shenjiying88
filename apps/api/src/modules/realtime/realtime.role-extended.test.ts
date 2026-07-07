@@ -14,7 +14,7 @@ function setup() {
 }
 
 describe('👔店长 realtime 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建实时会话', () => {
@@ -31,7 +31,7 @@ describe('👔店长 realtime 扩展测试', () => {
 })
 
 describe('🎮导玩员 realtime 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('协同编辑文档', () => {
@@ -53,7 +53,7 @@ describe('🎮导玩员 realtime 扩展测试', () => {
 })
 
 describe('🎯运行专员 realtime 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('广播消息到房间', () => {

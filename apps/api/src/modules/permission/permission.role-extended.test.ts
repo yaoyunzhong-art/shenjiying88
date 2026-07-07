@@ -16,7 +16,7 @@ function setup() {
 }
 
 describe('👔店长 permission 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('检查用户权限', () => {
@@ -33,7 +33,7 @@ describe('👔店长 permission 扩展测试', () => {
 })
 
 describe('🔧安监 permission 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('数据范围过滤', () => {
@@ -48,7 +48,7 @@ describe('🔧安监 permission 扩展测试', () => {
 })
 
 describe('📢营销 permission 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('为用户分配角色', () => {

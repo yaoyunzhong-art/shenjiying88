@@ -15,7 +15,7 @@ function setup() {
 }
 
 describe('👔店长 security 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('扫描 URL 安全', async () => {
@@ -31,7 +31,7 @@ describe('👔店长 security 扩展测试', () => {
 })
 
 describe('🔧安监 security 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('WAF 拦截恶意请求', () => {

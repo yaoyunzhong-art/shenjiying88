@@ -24,7 +24,7 @@ function setup() {
 }
 
 describe('👔店长 edge 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('列出所有边缘节点', () => {
@@ -36,7 +36,7 @@ describe('👔店长 edge 扩展测试', () => {
 })
 
 describe('🛒前台 edge 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('注册新边缘节点', () => {
@@ -60,7 +60,7 @@ describe('🛒前台 edge 扩展测试', () => {
 })
 
 describe('👥HR edge 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('更新节点状态', () => {
@@ -74,7 +74,7 @@ describe('👥HR edge 扩展测试', () => {
 })
 
 describe('🔧安监 edge 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('时间同步计算时差', () => {
@@ -100,7 +100,7 @@ describe('🔧安监 edge 扩展测试', () => {
 })
 
 describe('🎮导玩员 edge 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('离线发放排队号码', () => {
@@ -128,7 +128,7 @@ describe('🎮导玩员 edge 扩展测试', () => {
 })
 
 describe('🎯运行专员 edge 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('AI 推理加载模型后运行', async () => {
@@ -145,7 +145,7 @@ describe('🎯运行专员 edge 扩展测试', () => {
 })
 
 describe('🤝团建 edge 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('完成排队号码', () => {
@@ -165,7 +165,7 @@ describe('🤝团建 edge 扩展测试', () => {
 })
 
 describe('📢营销 edge 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('模型缓存操作', async () => {

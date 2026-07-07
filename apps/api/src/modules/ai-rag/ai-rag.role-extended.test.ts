@@ -30,7 +30,7 @@ function setup() {
 }
 
 describe(`${ROLES.StoreManager} ai-rag 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('店长创建知识库文档并查看统计', () => {
@@ -48,7 +48,7 @@ describe(`${ROLES.StoreManager} ai-rag 扩展测试`, () => {
 })
 
 describe(`${ROLES.FrontDesk} ai-rag 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('前台向知识库添加多篇文档并列表', () => {
@@ -65,7 +65,7 @@ describe(`${ROLES.FrontDesk} ai-rag 扩展测试`, () => {
 })
 
 describe(`${ROLES.HR} ai-rag 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('HR 更新已存在文档内容', () => {
@@ -82,7 +82,7 @@ describe(`${ROLES.HR} ai-rag 扩展测试`, () => {
 })
 
 describe(`${ROLES.Safety} ai-rag 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('安监创建含敏感词文档并通过 RAG 检索', async () => {
@@ -101,7 +101,7 @@ describe(`${ROLES.Safety} ai-rag 扩展测试`, () => {
 })
 
 describe(`${ROLES.Guide} ai-rag 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('导玩员检索时获取带分值的 chunk 列表', () => {
@@ -114,7 +114,7 @@ describe(`${ROLES.Guide} ai-rag 扩展测试`, () => {
 })
 
 describe(`${ROLES.Ops} ai-rag 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('运行专员对空集合 RAG 查询返回无结果信息', async () => {
@@ -133,7 +133,7 @@ describe(`${ROLES.Ops} ai-rag 扩展测试`, () => {
 })
 
 describe(`${ROLES.Teambuilding} ai-rag 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('团建专员多轮对话 RAG 持续回答', async () => {
@@ -150,7 +150,7 @@ describe(`${ROLES.Teambuilding} ai-rag 扩展测试`, () => {
 })
 
 describe(`${ROLES.Marketing} ai-rag 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('营销专员生成产品话术不同语气返回不同内容', () => {

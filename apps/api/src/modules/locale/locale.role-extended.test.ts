@@ -12,7 +12,7 @@ function setup() {
 }
 
 describe('👔店长 locale 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('获取已配置的语言列表', () => {
@@ -28,7 +28,7 @@ describe('👔店长 locale 扩展测试', () => {
 })
 
 describe('🛒前台 locale 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('翻译不存在的 key 返回 key 本身', () => {
@@ -44,7 +44,7 @@ describe('🛒前台 locale 扩展测试', () => {
 })
 
 describe('📢营销 locale 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('动态添加翻译并获取', () => {

@@ -30,7 +30,7 @@ function setup() {
 }
 
 describe(`${ROLES.StoreManager} aiops 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('店长检查系统整体状态', async () => {
@@ -46,7 +46,7 @@ describe(`${ROLES.StoreManager} aiops 扩展测试`, () => {
 })
 
 describe(`${ROLES.FrontDesk} aiops 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('前台记录正常数据点无异常', () => {
@@ -60,7 +60,7 @@ describe(`${ROLES.FrontDesk} aiops 扩展测试`, () => {
 })
 
 describe(`${ROLES.HR} aiops 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('HR 查看系统健康检查结果', () => {
@@ -73,7 +73,7 @@ describe(`${ROLES.HR} aiops 扩展测试`, () => {
 })
 
 describe(`${ROLES.Safety} aiops 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('安监检测攻击模式数据不足时返回安全', () => {
@@ -90,7 +90,7 @@ describe(`${ROLES.Safety} aiops 扩展测试`, () => {
 })
 
 describe(`${ROLES.Guide} aiops 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('导玩员预测数据不足时返回 0 置信度', () => {
@@ -102,7 +102,7 @@ describe(`${ROLES.Guide} aiops 扩展测试`, () => {
 })
 
 describe(`${ROLES.Ops} aiops 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('运行专员记录批量数据并检测异常', () => {
@@ -128,7 +128,7 @@ describe(`${ROLES.Ops} aiops 扩展测试`, () => {
 })
 
 describe(`${ROLES.Teambuilding} aiops 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('团建专员获取自愈历史', async () => {
@@ -140,7 +140,7 @@ describe(`${ROLES.Teambuilding} aiops 扩展测试`, () => {
 })
 
 describe(`${ROLES.Marketing} aiops 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('营销专员记录高并发数据模拟攻击场景', () => {

@@ -34,7 +34,7 @@ function setup() {
 const dayMs = 86400000
 
 describe(`${ROLES.StoreManager} ai-push 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('店长创建推送任务后获取统计', () => {
@@ -50,7 +50,7 @@ describe(`${ROLES.StoreManager} ai-push 扩展测试`, () => {
 })
 
 describe(`${ROLES.FrontDesk} ai-push 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('前台创建定时推送任务状态为 pending', () => {
@@ -62,7 +62,7 @@ describe(`${ROLES.FrontDesk} ai-push 扩展测试`, () => {
 })
 
 describe(`${ROLES.HR} ai-push 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('HR 分群识别流失会员', () => {
@@ -85,7 +85,7 @@ describe(`${ROLES.HR} ai-push 扩展测试`, () => {
 })
 
 describe(`${ROLES.Safety} ai-push 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('安监查询分群画像获取准确信息', () => {
@@ -103,7 +103,7 @@ describe(`${ROLES.Safety} ai-push 扩展测试`, () => {
 })
 
 describe(`${ROLES.Guide} ai-push 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('导玩员获取所有渠道最优时段', () => {
@@ -124,7 +124,7 @@ describe(`${ROLES.Guide} ai-push 扩展测试`, () => {
 })
 
 describe(`${ROLES.Ops} ai-push 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('运行专员按生命周期分群', () => {
@@ -136,7 +136,7 @@ describe(`${ROLES.Ops} ai-push 扩展测试`, () => {
 })
 
 describe(`${ROLES.Teambuilding} ai-push 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('团建专员预测推送时间获取完整窗口信息', () => {
@@ -148,7 +148,7 @@ describe(`${ROLES.Teambuilding} ai-push 扩展测试`, () => {
 })
 
 describe(`${ROLES.Marketing} ai-push 扩展测试`, () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('营销专员 A/B 实验分配幂等性验证', () => {

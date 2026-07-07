@@ -29,7 +29,7 @@ function setup() {
 }
 
 describe('👔店长 iot 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('注册新 ESP32 设备', () => {
@@ -46,7 +46,7 @@ describe('👔店长 iot 扩展测试', () => {
 })
 
 describe('🛒前台 iot 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('MQTT 发布和订阅消息', () => {
@@ -68,7 +68,7 @@ describe('🛒前台 iot 扩展测试', () => {
 })
 
 describe('👥HR iot 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('设备上线和下线状态变更', () => {
@@ -81,7 +81,7 @@ describe('👥HR iot 扩展测试', () => {
 })
 
 describe('🔧安监 iot 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('自适应心跳间隔调整', () => {
@@ -93,7 +93,7 @@ describe('🔧安监 iot 扩展测试', () => {
 })
 
 describe('🎯运行专员 iot 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('固件上传和 OTA 任务调度', async () => {
@@ -118,7 +118,7 @@ describe('🎯运行专员 iot 扩展测试', () => {
 })
 
 describe('📢营销 iot 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('按类型查询设备列表', () => {

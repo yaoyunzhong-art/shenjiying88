@@ -14,7 +14,7 @@ function setup() {
 }
 
 describe('👔店长 sandbox 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建沙箱环境', () => {
@@ -32,7 +32,7 @@ describe('👔店长 sandbox 扩展测试', () => {
 })
 
 describe('🎯运行专员 sandbox 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('ISV 沙箱初始化', () => {

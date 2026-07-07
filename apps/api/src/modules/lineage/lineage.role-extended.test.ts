@@ -13,7 +13,7 @@ function setup() {
 }
 
 describe('👔店长 lineage 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('记录数据血缘关系', () => {
@@ -25,7 +25,7 @@ describe('👔店长 lineage 扩展测试', () => {
 })
 
 describe('🔧安监 lineage 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('查询数据来源路径', () => {
@@ -37,7 +37,7 @@ describe('🔧安监 lineage 扩展测试', () => {
 })
 
 describe('🎯运行专员 lineage 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('查询不存在表血缘返回空数组', () => {

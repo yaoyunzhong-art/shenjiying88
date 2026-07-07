@@ -10,7 +10,7 @@ function setup() {
 }
 
 describe('👔店长 rbac 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建角色', () => {
@@ -28,7 +28,7 @@ describe('👔店长 rbac 扩展测试', () => {
 })
 
 describe('🛒前台 rbac 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('为用户分配角色', () => {
@@ -44,7 +44,7 @@ describe('🛒前台 rbac 扩展测试', () => {
 })
 
 describe('🔧安监 rbac 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('权限验证', () => {

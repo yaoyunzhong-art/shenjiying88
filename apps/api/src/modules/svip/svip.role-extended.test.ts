@@ -10,7 +10,7 @@ function setup() {
 }
 
 describe('👔店长 svip 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('开通 SVIP 会员', () => {
@@ -29,7 +29,7 @@ describe('👔店长 svip 扩展测试', () => {
 })
 
 describe('🛒前台 svip 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('续费 SVIP', () => {
@@ -41,7 +41,7 @@ describe('🛒前台 svip 扩展测试', () => {
 })
 
 describe('📢营销 svip 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('查询不存在的会员返回 null', () => {

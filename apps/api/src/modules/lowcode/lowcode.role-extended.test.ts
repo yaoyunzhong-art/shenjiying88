@@ -14,7 +14,7 @@ function setup() {
 }
 
 describe('👔店长 lowcode 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建页面模板', () => {
@@ -29,7 +29,7 @@ describe('👔店长 lowcode 扩展测试', () => {
 })
 
 describe('🔧安监 lowcode 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('审核通过页面', () => {
@@ -46,7 +46,7 @@ describe('🔧安监 lowcode 扩展测试', () => {
 })
 
 describe('🎯运行专员 lowcode 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('列出所有已创建页面', () => {

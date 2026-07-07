@@ -12,7 +12,7 @@ function setup() {
 }
 
 describe('👔店长 omnichannel 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建跨渠道订单', () => {
@@ -39,7 +39,7 @@ describe('👔店长 omnichannel 扩展测试', () => {
 })
 
 describe('🛒前台 omnichannel 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('跨渠道库存同步', () => {
@@ -57,7 +57,7 @@ describe('🛒前台 omnichannel 扩展测试', () => {
 })
 
 describe('👥HR omnichannel 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('跨渠道会员信息同步', () => {
@@ -75,7 +75,7 @@ describe('👥HR omnichannel 扩展测试', () => {
 })
 
 describe('🎯运行专员 omnichannel 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('取消订单并验证状态', () => {
@@ -92,7 +92,7 @@ describe('🎯运行专员 omnichannel 扩展测试', () => {
 })
 
 describe('📢营销 omnichannel 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('按渠道过滤订单', () => {

@@ -16,7 +16,7 @@ function setup() {
 }
 
 describe('👔店长 payment-gateway 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('发起支付交易', async () => {
@@ -43,7 +43,7 @@ describe('👔店长 payment-gateway 扩展测试', () => {
 })
 
 describe('🛒前台 payment-gateway 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('处理退款', async () => {
@@ -58,7 +58,7 @@ describe('🛒前台 payment-gateway 扩展测试', () => {
 })
 
 describe('🔧安监 payment-gateway 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('部分退款', async () => {
@@ -77,7 +77,7 @@ describe('🔧安监 payment-gateway 扩展测试', () => {
 })
 
 describe('🎯运行专员 payment-gateway 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('不同支付渠道处理', async () => {
@@ -108,7 +108,7 @@ describe('🎯运行专员 payment-gateway 扩展测试', () => {
 })
 
 describe('📢营销 payment-gateway 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('按客户查询交易记录', async () => {

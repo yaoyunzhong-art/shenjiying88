@@ -20,7 +20,7 @@ function setup() {
 }
 
 describe('👔店长 chain 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建积分清算合约', () => {
@@ -37,7 +37,7 @@ describe('👔店长 chain 扩展测试', () => {
 })
 
 describe('🛒前台 chain 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建分账合约', () => {
@@ -51,7 +51,7 @@ describe('🛒前台 chain 扩展测试', () => {
 })
 
 describe('🔧安监 chain 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建并取消积分清算', () => {
@@ -62,7 +62,7 @@ describe('🔧安监 chain 扩展测试', () => {
 })
 
 describe('🎯运行专员 chain 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建→审批→执行清算完整流程', () => {
@@ -86,7 +86,7 @@ describe('🎯运行专员 chain 扩展测试', () => {
 })
 
 describe('🤝团建 chain 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('查询参与者分账份额', () => {
@@ -101,7 +101,7 @@ describe('🤝团建 chain 扩展测试', () => {
 })
 
 describe('📢营销 chain 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('智能合约部署和查询', async () => {

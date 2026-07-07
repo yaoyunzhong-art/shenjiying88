@@ -14,7 +14,7 @@ function setup() {
 }
 
 describe('👔店长 tenant-llm 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('配置租户 LLM 模型', () => {
@@ -36,7 +36,7 @@ describe('👔店长 tenant-llm 扩展测试', () => {
 })
 
 describe('🛒前台 tenant-llm 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('通过 LLM 发送请求', async () => {
@@ -47,7 +47,7 @@ describe('🛒前台 tenant-llm 扩展测试', () => {
 })
 
 describe('📢营销 tenant-llm 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('地区语言服务检测', () => {

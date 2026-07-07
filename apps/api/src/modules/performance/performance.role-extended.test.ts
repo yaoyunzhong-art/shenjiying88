@@ -18,7 +18,7 @@ function setup() {
 }
 
 describe('👔店长 performance 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('获取缓存命中率', () => {
@@ -31,7 +31,7 @@ describe('👔店长 performance 扩展测试', () => {
 })
 
 describe('🎯运行专员 performance 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('设置并获取缓存', () => {
@@ -52,7 +52,7 @@ describe('🎯运行专员 performance 扩展测试', () => {
 })
 
 describe('📢营销 performance 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('DB 查询优化建议', () => {

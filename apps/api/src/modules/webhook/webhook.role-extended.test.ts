@@ -17,7 +17,7 @@ function setup() {
 }
 
 describe('👔店长 webhook 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建并列出多个 webhook', async () => {
@@ -34,7 +34,7 @@ describe('👔店长 webhook 扩展测试', () => {
 })
 
 describe('🛒前台 webhook 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('创建并测试 webhook 发送', async () => {
@@ -50,7 +50,7 @@ describe('🛒前台 webhook 扩展测试', () => {
 })
 
 describe('👥HR webhook 扩展测试', () => {
-  let svc: ReturnType<typeof setup>>
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('更新 webhook 配置', async () => {
@@ -66,7 +66,7 @@ describe('👥HR webhook 扩展测试', () => {
 })
 
 describe('🔧安监 webhook 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('验证签名机制', () => {
@@ -87,7 +87,7 @@ describe('🔧安监 webhook 扩展测试', () => {
 })
 
 describe('🎯运行专员 webhook 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('查看投递日志', async () => {
@@ -109,7 +109,7 @@ describe('🎯运行专员 webhook 扩展测试', () => {
 })
 
 describe('📢营销 webhook 扩展测试', () => {
-  let svc: ReturnType<typeof setup>}
+  let svc: ReturnType<typeof setup>
   beforeEach(() => { svc = setup() })
 
   it('获取支持的事件类型列表', async () => {
