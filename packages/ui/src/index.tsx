@@ -1221,3 +1221,11 @@ export type {
 
 export { AIRuleWeightPanel, useAIRuleWeight } from './ai-rule-weight-panel';
 export type { AIRuleWeightPanelProps, RuleWeightItem, WeightAdjustResult } from './ai-rule-weight-panel';
+
+export { AIModelSelector } from './components/AIModelSelector';
+export type {
+  AIModelSelectorProps,
+  AIModelOption,
+  AIModelCapability,
+  AIModelPricingTier,
+} from './components/AIModelSelector';

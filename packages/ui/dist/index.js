@@ -48,6 +48,7 @@ __export(index_exports, {
   AIMemberLifecycleForecastPanel: () => AIMemberLifecycleForecastPanel,
   AIMetricGoalPanel: () => AIMetricGoalPanel,
   AIModelPerformancePanel: () => AIModelPerformancePanel,
+  AIModelSelector: () => AIModelSelector,
   AIPricingRecommendationPanel: () => AIPricingRecommendationPanel,
   AIRecommendationFeedbackPanel: () => AIRecommendationFeedbackPanel,
   AIRuleWeightPanel: () => AIRuleWeightPanel,
@@ -643,7 +644,7 @@ function DotNavigation({
     return result;
   }, [total]);
   const effectiveGap = gap ?? (size === "sm" ? dotDim : dotDim * 1.5);
-  const containerStyle5 = {
+  const containerStyle6 = {
     display: "inline-flex",
     flexDirection: direction,
     alignItems: "center",
@@ -654,7 +655,7 @@ function DotNavigation({
     "div",
     {
       className,
-      style: containerStyle5,
+      style: containerStyle6,
       role: "tablist",
       "aria-label": ariaLabel,
       "data-testid": dataTestId,
@@ -1309,7 +1310,7 @@ function Avatar({
     if (!initials) return "";
     return initials.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase().slice(0, 2);
   }, [initials]);
-  const containerStyle5 = {
+  const containerStyle6 = {
     position: "relative",
     display: "inline-flex",
     alignItems: "center",
@@ -1340,7 +1341,7 @@ function Avatar({
     "div",
     {
       className,
-      style: containerStyle5,
+      style: containerStyle6,
       onClick,
       role: onClick ? "button" : void 0,
       tabIndex: onClick ? 0 : void 0,
@@ -1597,7 +1598,7 @@ function Accordion({
   const titlePaddingH = size === "sm" ? 12 : 16;
   const contentPadding = size === "sm" ? 12 : 16;
   const iconSize = size === "sm" ? 14 : 16;
-  const containerStyle5 = {
+  const containerStyle6 = {
     display: "flex",
     flexDirection: "column",
     ...variant === "bordered" ? {
@@ -1606,7 +1607,7 @@ function Accordion({
       overflow: "hidden"
     } : {}
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: containerStyle5, role: "region", "aria-label": "Accordion", children: items.map((item, idx) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: containerStyle6, role: "region", "aria-label": "Accordion", children: items.map((item, idx) => {
     const isExpanded = expandedKeys.includes(item.key);
     const isDisabled3 = item.disabled === true;
     const isFirst = idx === 0;
@@ -9008,7 +9009,7 @@ function Select({
     setOpen((prev) => !prev);
     setSearchText("");
   }, [disabled]);
-  const containerStyle5 = {
+  const containerStyle6 = {
     position: "relative",
     display: "inline-block",
     minWidth,
@@ -9106,7 +9107,7 @@ function Select({
     {
       ref: containerRef,
       className,
-      style: containerStyle5,
+      style: containerStyle6,
       onKeyDown: handleKeyDown,
       role: "combobox",
       "aria-expanded": open,
@@ -18439,7 +18440,7 @@ function WeekPicker({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
-  const containerStyle5 = {
+  const containerStyle6 = {
     position: "relative",
     display: "inline-block",
     ...style
@@ -18523,7 +18524,7 @@ function WeekPicker({
     displayText = `${weekPrefix}${parsedValue.week}${weekSuffix}`;
     rangeText = getWeekRangeText(parsedValue.year, parsedValue.week);
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime69.jsxs)("div", { ref: containerRef, style: containerStyle5, className, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime69.jsxs)("div", { ref: containerRef, style: containerStyle6, className, children: [
     label && /* @__PURE__ */ (0, import_jsx_runtime69.jsxs)(
       "div",
       {
@@ -20548,7 +20549,7 @@ function Tabs({
 }) {
   if (items.length === 0) return null;
   const containerGap = size === "sm" ? 4 : 8;
-  const containerStyle5 = {
+  const containerStyle6 = {
     display: "flex",
     gap: containerGap,
     flexWrap: "wrap",
@@ -20563,7 +20564,7 @@ function Tabs({
       paddingBottom: 0
     } : {}
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime87.jsx)("div", { style: containerStyle5, role: "tablist", children: items.map((item) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime87.jsx)("div", { style: containerStyle6, role: "tablist", children: items.map((item) => {
     const active = item.key === activeKey;
     const fontSize = size === "sm" ? 13 : 14;
     const paddingV = size === "sm" ? 6 : 10;
@@ -22958,7 +22959,7 @@ function MultiSelect({
     setOpen((prev) => !prev);
     setSearchText("");
   }, [disabled]);
-  const containerStyle5 = {
+  const containerStyle6 = {
     position: "relative",
     display: "inline-block",
     minWidth,
@@ -22990,7 +22991,7 @@ function MultiSelect({
     display: "flex",
     alignItems: "center"
   };
-  const tagStyle = {
+  const tagStyle2 = {
     display: "inline-flex",
     alignItems: "center",
     backgroundColor: "#e6f7ff",
@@ -23117,7 +23118,7 @@ function MultiSelect({
     {
       ref: containerRef,
       className,
-      style: containerStyle5,
+      style: containerStyle6,
       onKeyDown: handleKeyDown,
       role: "combobox",
       "aria-expanded": open,
@@ -23135,7 +23136,7 @@ function MultiSelect({
             "aria-disabled": disabled,
             children: [
               selectedOptions.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime95.jsx)("span", { style: placeholderStyle, children: placeholder }) : /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)(import_jsx_runtime95.Fragment, { children: [
-                visibleTags.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)("span", { style: tagStyle, children: [
+                visibleTags.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime95.jsxs)("span", { style: tagStyle2, children: [
                   opt.label,
                   /* @__PURE__ */ (0, import_jsx_runtime95.jsx)(
                     "span",
@@ -31431,7 +31432,7 @@ function TextArea({
     },
     [rest.onBlur]
   );
-  const containerStyle5 = {
+  const containerStyle6 = {
     display: "inline-flex",
     flexDirection: "column",
     gap: 4,
@@ -31458,7 +31459,7 @@ function TextArea({
     "div",
     {
       className: `text-area-wrapper ${className}`,
-      style: containerStyle5,
+      style: containerStyle6,
       "data-testid": `${dataTestId}-wrapper`,
       children: [
         label && /* @__PURE__ */ (0, import_jsx_runtime123.jsx)(
@@ -32314,7 +32315,7 @@ function ContentSwitcher({
     [controlledSelected, onSelect]
   );
   const sizeStyle = SIZE_STYLES3[size];
-  const containerStyle5 = {
+  const containerStyle6 = {
     display: "inline-flex",
     alignItems: "center",
     gap: sizeStyle.gap,
@@ -32325,7 +32326,7 @@ function ContentSwitcher({
       padding: 3
     } : {}
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime127.jsx)("div", { "data-testid": dataTestId, style: containerStyle5, role: "tablist", children: segments.map((seg) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime127.jsx)("div", { "data-testid": dataTestId, style: containerStyle6, role: "tablist", children: segments.map((seg) => {
     const isSelected = selected === seg.key;
     const isDisabled3 = seg.disabled ?? false;
     const segmentStyle = {
@@ -37947,7 +37948,7 @@ function Tree({
     }
     return set;
   }, [autoExpandParent, expandedSet, isSelectedControlled, controlledSelectedKeys, internalSelected, treeData]);
-  const containerStyle5 = {
+  const containerStyle6 = {
     maxHeight: maxHeight ?? void 0,
     overflowY: maxHeight ? "auto" : "visible",
     padding: "4px 0",
@@ -37992,7 +37993,7 @@ function Tree({
       role: "tree",
       "data-testid": testId,
       className,
-      style: containerStyle5,
+      style: containerStyle6,
       children: renderTree(treeData)
     }
   );
@@ -44008,7 +44009,7 @@ var StepDot = ({
 }) => {
   const cfg = SIZE_CONFIG[size];
   const colors = STATUS_COLORS3[status];
-  const containerStyle5 = {
+  const containerStyle6 = {
     display: "flex",
     alignItems: "center",
     ...orientation === "horizontal" ? { flexDirection: "column", flex: total > 1 && showConnector ? 1 : void 0 } : { flexDirection: "row" },
@@ -44042,7 +44043,7 @@ var StepDot = ({
   return /* @__PURE__ */ (0, import_jsx_runtime164.jsxs)(
     "div",
     {
-      style: containerStyle5,
+      style: containerStyle6,
       onClick: clickable ? onClick : void 0,
       role: clickable ? "button" : void 0,
       tabIndex: clickable ? 0 : void 0,
@@ -44092,7 +44093,7 @@ var Steps = ({
     gap: orientation === "vertical" ? 0 : void 0,
     ...style
   };
-  const itemStyle = {
+  const itemStyle2 = {
     display: "flex",
     ...orientation === "horizontal" ? { flexDirection: "column", alignItems: "center", flex: showConnector ? 1 : void 0, minWidth: 80, textAlign: "center" } : { flexDirection: "row", alignItems: "flex-start" }
   };
@@ -44133,7 +44134,7 @@ var Steps = ({
         return /* @__PURE__ */ (0, import_jsx_runtime164.jsxs)(
           "div",
           {
-            style: itemStyle,
+            style: itemStyle2,
             "data-testid": dataTestId ? `${dataTestId}-step-${idx}` : void 0,
             role: "listitem",
             children: [
@@ -44239,7 +44240,7 @@ function SplitPane({
   );
   const firstSizePct = splitPct;
   const secondSizePct = 100 - splitPct;
-  const containerStyle5 = {
+  const containerStyle6 = {
     display: "flex",
     flexDirection: isHorizontal ? "row" : "column",
     width: "100%",
@@ -44257,7 +44258,7 @@ function SplitPane({
     ...isHorizontal ? { width: dividerWidth, height: "100%", minHeight: "100%" } : { height: dividerWidth, width: "100%", minWidth: "100%" }
   };
   const containerClass = `split-pane-container${className ? ` ${className}` : ""}`;
-  return /* @__PURE__ */ (0, import_jsx_runtime165.jsxs)("div", { ref: containerRef, className: containerClass, style: containerStyle5, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime165.jsxs)("div", { ref: containerRef, className: containerClass, style: containerStyle6, children: [
     /* @__PURE__ */ (0, import_jsx_runtime165.jsx)(
       "div",
       {
@@ -49075,7 +49076,7 @@ function QuickActionBar({
   floating = false
 }) {
   const theme = role ? roleThemes[role] : void 0;
-  const containerStyle5 = floating ? {
+  const containerStyle6 = floating ? {
     position: "fixed",
     bottom: 0,
     left: 0,
@@ -49100,7 +49101,7 @@ function QuickActionBar({
     if (!icon) return null;
     return iconMap[icon] ?? icon;
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: `quick-action-bar ${className}`, style: containerStyle5, "data-role": role ?? "default", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)("div", { className: `quick-action-bar ${className}`, style: containerStyle6, "data-role": role ?? "default", children: [
     title && /* @__PURE__ */ (0, import_jsx_runtime184.jsxs)(
       "div",
       {
@@ -51538,7 +51539,7 @@ function SegmentedControl({
   );
   const selectedIndex = options.findIndex((o) => o.value === selectedValue);
   const sizeCfg = SIZE_MAP11[size];
-  const containerStyle5 = {
+  const containerStyle6 = {
     display: "inline-flex",
     position: "relative",
     alignItems: "center",
@@ -51569,7 +51570,7 @@ function SegmentedControl({
       "aria-label": ariaLabel,
       "data-testid": dataTestId,
       className,
-      style: containerStyle5,
+      style: containerStyle6,
       children: [
         /* @__PURE__ */ (0, import_jsx_runtime194.jsx)("div", { style: sliderStyle, "data-testid": dataTestId ? `${dataTestId}-slider` : void 0 }),
         options.map((opt) => {
@@ -51842,12 +51843,12 @@ function Masonry({
 }) {
   const colCount = typeof columns === "number" ? columns : resolveColumns(columns);
   const items = import_react135.Children.toArray(children).filter(import_react135.isValidElement);
-  const containerStyle5 = {
+  const containerStyle6 = {
     columnCount: colCount,
     columnGap: gap,
     ...style
   };
-  const itemStyle = {
+  const itemStyle2 = {
     breakInside: "avoid",
     pageBreakInside: "avoid",
     marginBottom: gap,
@@ -51859,8 +51860,8 @@ function Masonry({
     {
       "data-testid": dataTestId ?? "masonry",
       className,
-      style: containerStyle5,
-      children: items.map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime196.jsx)("div", { style: itemStyle, children: item }, index))
+      style: containerStyle6,
+      children: items.map((item, index) => /* @__PURE__ */ (0, import_jsx_runtime196.jsx)("div", { style: itemStyle2, children: item }, index))
     }
   );
 }
@@ -51882,7 +51883,7 @@ function WaterfallMasonry({
     cols[shortestIdx].push(item);
     heights[shortestIdx] += 1;
   });
-  const containerStyle5 = {
+  const containerStyle6 = {
     display: "flex",
     flexDirection: "row",
     gap,
@@ -51902,7 +51903,7 @@ function WaterfallMasonry({
     {
       "data-testid": dataTestId ?? "waterfall-masonry",
       className,
-      style: containerStyle5,
+      style: containerStyle6,
       children: cols.map((col, colIdx) => /* @__PURE__ */ (0, import_jsx_runtime196.jsx)("div", { style: columnStyle, children: col }, colIdx))
     }
   );
@@ -52126,7 +52127,7 @@ var Collapsible = ({
     if (!isControlled) setInternalOpen(next);
     onOpenChange?.(next);
   }, [disabled, isOpen, isControlled, onOpenChange]);
-  const containerStyle5 = {
+  const containerStyle6 = {
     ...style,
     overflow: "hidden",
     transition: animationDuration > 0 ? `max-height ${animationDuration}ms ease` : void 0,
@@ -52179,7 +52180,7 @@ var Collapsible = ({
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime198.jsx)("div", { ref: contentRef, style: containerStyle5, children: /* @__PURE__ */ (0, import_jsx_runtime198.jsx)("div", { style: { padding: "8px 12px" }, children }) })
+    /* @__PURE__ */ (0, import_jsx_runtime198.jsx)("div", { ref: contentRef, style: containerStyle6, children: /* @__PURE__ */ (0, import_jsx_runtime198.jsx)("div", { style: { padding: "8px 12px" }, children }) })
   ] });
 };
 
@@ -52399,7 +52400,7 @@ var Countdown = ({
       }
     );
   }
-  const containerStyle5 = {
+  const containerStyle6 = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -52412,7 +52413,7 @@ var Countdown = ({
     "span",
     {
       className: `m5-countdown m5-countdown--${status} ${className}`,
-      style: containerStyle5,
+      style: containerStyle6,
       "data-status": status,
       "data-testid": dataTestId,
       children: format(remaining)
@@ -55241,7 +55242,7 @@ function NavigationMenu({
     }
   }, [openKey, handleOutsideClick]);
   const isHorizontal = orientation === "horizontal";
-  const containerStyle5 = {
+  const containerStyle6 = {
     display: "flex",
     flexDirection: isHorizontal ? "row" : "column",
     alignItems: isHorizontal ? "center" : "stretch",
@@ -55286,7 +55287,7 @@ function NavigationMenu({
       "aria-label": ariaLabel,
       className,
       "data-testid": dataTestId,
-      style: containerStyle5,
+      style: containerStyle6,
       role: "navigation",
       children: items.map((item) => {
         const isActive = activeKey === item.key;
@@ -57250,7 +57251,7 @@ function InfoCard({
   className,
   "data-testid": dataTestId
 }) {
-  const containerStyle5 = VARIANT_CONTAINER[variant] ?? VARIANT_CONTAINER.default;
+  const containerStyle6 = VARIANT_CONTAINER[variant] ?? VARIANT_CONTAINER.default;
   return /* @__PURE__ */ (0, import_jsx_runtime225.jsxs)(
     "div",
     {
@@ -57260,7 +57261,7 @@ function InfoCard({
         borderRadius: 12,
         padding: variant === "compact" ? 12 : 18,
         color: "#e2e8f0",
-        ...containerStyle5,
+        ...containerStyle6,
         ...style
       },
       children: [
@@ -58459,9 +58460,9 @@ function RealtimeKpiStrip({
   if (!displayItems.length) {
     return /* @__PURE__ */ (0, import_jsx_runtime231.jsx)("div", { style: S_WRAPPER, className, children: /* @__PURE__ */ (0, import_jsx_runtime231.jsx)("div", { style: { fontSize: 12, color: "#64748b", padding: "8px 0" }, children: "\u6682\u65E0\u5B9E\u65F6\u6570\u636E" }) });
   }
-  const containerStyle5 = direction === "vertical" ? { ...S_WRAPPER, flexDirection: "column", alignItems: "stretch" } : S_WRAPPER;
+  const containerStyle6 = direction === "vertical" ? { ...S_WRAPPER, flexDirection: "column", alignItems: "stretch" } : S_WRAPPER;
   const stripStyle = direction === "vertical" ? { ...S_STRIP, flexDirection: "column", overflowX: "hidden", overflowY: "auto" } : S_STRIP;
-  return /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("div", { style: containerStyle5, className, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)("div", { style: containerStyle6, className, children: [
     isLive && liveText,
     /* @__PURE__ */ (0, import_jsx_runtime231.jsx)("div", { style: stripStyle, children: displayItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime231.jsxs)(
       "div",
@@ -58559,7 +58560,7 @@ var AttachmentList = ({
   const [expanded, setExpanded] = import_react159.default.useState(false);
   const displayItems = maxVisible && !expanded ? items.slice(0, maxVisible) : items;
   const hasMore = maxVisible != null && items.length > maxVisible;
-  const containerStyle5 = {
+  const containerStyle6 = {
     display: "flex",
     flexDirection: "column",
     gap: compact ? "4px" : "8px"
@@ -58600,7 +58601,7 @@ var AttachmentList = ({
       }
     );
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { style: containerStyle5, className, role: "list", "aria-label": "\u9644\u4EF6\u5217\u8868", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("div", { style: containerStyle6, className, role: "list", "aria-label": "\u9644\u4EF6\u5217\u8868", children: [
     displayItems.map((item) => {
       const hasError = item.status === "error";
       const isUploading = item.status === "uploading";
@@ -59649,7 +59650,7 @@ function AIMemberLifecycleForecastPanel({
   className,
   "data-testid": testId = "ai-member-lifecycle-forecast-panel"
 }) {
-  const containerStyle5 = {
+  const containerStyle6 = {
     borderRadius: 20,
     padding: 24,
     background: "#ffffff",
@@ -59664,7 +59665,7 @@ function AIMemberLifecycleForecastPanel({
     border: "1px solid #e2e8f0"
   };
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: containerStyle5, "data-testid": `${testId}-loading`, children: /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", height: 180, color: "#94a3b8" }, children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: containerStyle6, "data-testid": `${testId}-loading`, children: /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", height: 180, color: "#94a3b8" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("svg", { style: { animation: "spin 1s linear infinite", width: 24, height: 24 }, viewBox: "0 0 24 24", fill: "none", children: [
         /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("circle", { cx: "12", cy: "12", r: "10", stroke: "#e2e8f0", strokeWidth: "3" }),
         /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("path", { d: "M12 2a10 10 0 0 1 10 10", stroke: "#3b82f6", strokeWidth: "3", strokeLinecap: "round" })
@@ -59673,7 +59674,7 @@ function AIMemberLifecycleForecastPanel({
     ] }) });
   }
   if (!forecast) {
-    return /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { ...containerStyle5, display: "flex", alignItems: "center", justifyContent: "center", height: 160, color: "#94a3b8" }, "data-testid": `${testId}-empty`, children: emptyText });
+    return /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { ...containerStyle6, display: "flex", alignItems: "center", justifyContent: "center", height: 160, color: "#94a3b8" }, "data-testid": `${testId}-empty`, children: emptyText });
   }
   const ltvDirection = (0, import_react163.useMemo)(() => {
     if (forecast.estimatedLtv > forecast.previousLtv) return "up";
@@ -59685,7 +59686,7 @@ function AIMemberLifecycleForecastPanel({
     if (forecast.confidence >= 50) return "\u4E2D";
     return "\u4F4E";
   }, [forecast.confidence]);
-  return /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className, style: containerStyle5, "data-testid": testId, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { className, style: containerStyle6, "data-testid": testId, children: [
     /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("div", { style: { fontSize: 16, fontWeight: 700, color: "#0f172a" }, children: "AI \u4F1A\u5458\u751F\u547D\u5468\u671F\u9884\u6D4B" }),
@@ -61444,7 +61445,7 @@ var RichTextEditor = import_react168.default.forwardRef(function RichTextEditor2
   }, []);
   const toolbarActions = Array.isArray(toolbar) ? toolbar : TOOLBAR_PRESETS[toolbar] ?? TOOLBAR_PRESETS.basic;
   const textLength = currentValue.replace(/<[^>]*>/g, "").length;
-  const containerStyle5 = {
+  const containerStyle6 = {
     display: "inline-flex",
     flexDirection: "column",
     width: block ? "100%" : void 0,
@@ -61494,7 +61495,7 @@ var RichTextEditor = import_react168.default.forwardRef(function RichTextEditor2
       fontFamily: "inherit"
     };
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { style: containerStyle5, "data-testid": dataTestId, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime243.jsxs)("div", { style: containerStyle6, "data-testid": dataTestId, children: [
     label && /* @__PURE__ */ (0, import_jsx_runtime243.jsx)(
       "label",
       {
@@ -62842,6 +62843,296 @@ function useAIRuleWeight(initialRules) {
   }, [initialRules]);
   return { rules, loading, error, updateWeight, batchUpdate, resetWeights };
 }
+
+// src/components/AIModelSelector.tsx
+var import_react173 = require("react");
+var import_jsx_runtime248 = require("react/jsx-runtime");
+var TIER_COLORS = {
+  budget: "#52c41a",
+  standard: "#1677ff",
+  premium: "#722ed1"
+};
+var TIER_LABELS2 = {
+  budget: "\u7ECF\u6D4E\u578B",
+  standard: "\u6807\u51C6\u578B",
+  premium: "\u65D7\u8230\u578B"
+};
+var CAPABILITY_LABELS = {
+  chat: "\u5BF9\u8BDD",
+  vision: "\u89C6\u89C9",
+  code: "\u4EE3\u7801",
+  reasoning: "\u63A8\u7406",
+  embedding: "\u5411\u91CF"
+};
+var containerStyle5 = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 8
+};
+var itemStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  padding: "10px 14px",
+  borderRadius: 8,
+  border: "1px solid rgba(148, 163, 184, 0.2)",
+  cursor: "pointer",
+  transition: "all 0.2s",
+  background: "rgba(15, 23, 42, 0.3)"
+};
+var selectedItemStyle = {
+  ...itemStyle,
+  borderColor: "#1677ff",
+  background: "rgba(22, 119, 255, 0.1)",
+  boxShadow: "0 0 0 1px rgba(22, 119, 255, 0.3)"
+};
+var disabledItemStyle = {
+  ...itemStyle,
+  opacity: 0.4,
+  cursor: "not-allowed"
+};
+var nameStyle = {
+  fontWeight: 600,
+  fontSize: 14,
+  color: "#e2e8f0"
+};
+var providerStyle = {
+  fontSize: 12,
+  color: "#94a3b8"
+};
+var tagStyle = {
+  fontSize: 11,
+  padding: "2px 6px",
+  borderRadius: 4,
+  fontWeight: 500
+};
+var badgeStyle4 = {
+  fontSize: 11,
+  padding: "2px 8px",
+  borderRadius: 10,
+  background: "#1677ff",
+  color: "#fff",
+  fontWeight: 600
+};
+var metricStyle = {
+  fontSize: 12,
+  color: "#94a3b8",
+  display: "flex",
+  gap: 12
+};
+var metricValueStyle = {
+  color: "#e2e8f0",
+  fontWeight: 500
+};
+var radioDotStyle = {
+  width: 16,
+  height: 16,
+  borderRadius: "50%",
+  border: "2px solid rgba(148, 163, 184, 0.4)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0
+};
+var radioDotSelectedStyle = {
+  ...radioDotStyle,
+  borderColor: "#1677ff"
+};
+var radioDotInnerStyle = {
+  width: 8,
+  height: 8,
+  borderRadius: "50%",
+  background: "#1677ff"
+};
+function AIModelSelector({
+  models,
+  value,
+  onChange,
+  loading = false,
+  disabled = false,
+  className,
+  variant = "detailed"
+}) {
+  const selectedModel = (0, import_react173.useMemo)(
+    () => models.find((m) => m.id === value),
+    [models, value]
+  );
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: containerStyle5, className, children: [
+      [1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)(
+        "div",
+        {
+          style: {
+            ...itemStyle,
+            cursor: "default",
+            opacity: 0.5,
+            animation: "pulse 1.5s infinite"
+          },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+              "div",
+              {
+                style: {
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  background: "rgba(148,163,184,0.2)"
+                }
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: { flex: 1 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+                "div",
+                {
+                  style: {
+                    height: 14,
+                    width: "40%",
+                    background: "rgba(148,163,184,0.15)",
+                    borderRadius: 4,
+                    marginBottom: 6
+                  }
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+                "div",
+                {
+                  style: {
+                    height: 10,
+                    width: "60%",
+                    background: "rgba(148,163,184,0.1)",
+                    borderRadius: 4
+                  }
+                }
+              )
+            ] })
+          ]
+        },
+        i
+      )),
+      /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("style", { children: `@keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 0.3; } }` })
+    ] });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: containerStyle5, className, children: [
+    !selectedModel && models.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { style: { fontSize: 13, color: "#94a3b8", padding: "4px 0" }, children: "\u8BF7\u9009\u62E9\u4E00\u4E2A AI \u6A21\u578B" }),
+    models.map((model) => {
+      const isSelected = model.id === value;
+      const isDisabled3 = disabled || !model.available;
+      const style = isSelected ? selectedItemStyle : isDisabled3 ? disabledItemStyle : itemStyle;
+      return /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)(
+        "div",
+        {
+          style,
+          onClick: () => {
+            if (!isDisabled3 && onChange) {
+              onChange(model.id);
+            }
+          },
+          onMouseEnter: (e) => {
+            if (!isDisabled3 && !isSelected) {
+              e.currentTarget.style.borderColor = "rgba(148, 163, 184, 0.4)";
+            }
+          },
+          onMouseLeave: (e) => {
+            if (!isDisabled3 && !isSelected) {
+              e.currentTarget.style.borderColor = "rgba(148, 163, 184, 0.2)";
+            }
+          },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { style: isSelected ? radioDotSelectedStyle : radioDotStyle, children: isSelected && /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { style: radioDotInnerStyle }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("span", { style: nameStyle, children: model.name }),
+                /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("span", { style: providerStyle, children: model.provider }),
+                model.recommended && /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("span", { style: badgeStyle4, children: "\u63A8\u8350" }),
+                /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+                  "span",
+                  {
+                    style: {
+                      ...tagStyle,
+                      background: `${TIER_COLORS[model.pricingTier]}20`,
+                      color: TIER_COLORS[model.pricingTier]
+                    },
+                    children: TIER_LABELS2[model.pricingTier]
+                  }
+                )
+              ] }),
+              variant === "detailed" && /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)(import_jsx_runtime248.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { style: { display: "flex", gap: 4, marginBottom: 6, flexWrap: "wrap" }, children: model.capabilities.map((cap) => /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+                  "span",
+                  {
+                    style: {
+                      ...tagStyle,
+                      background: "rgba(148, 163, 184, 0.12)",
+                      color: "#cbd5e1"
+                    },
+                    children: CAPABILITY_LABELS[cap]
+                  },
+                  cap
+                )) }),
+                /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: metricStyle, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { children: [
+                    "\u4E0A\u4E0B\u6587: ",
+                    /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { style: metricValueStyle, children: [
+                      (model.contextWindow / 1e3).toFixed(0),
+                      "K"
+                    ] })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { children: [
+                    "\u5EF6\u8FDF: ",
+                    /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { style: metricValueStyle, children: [
+                      model.avgLatencyMs,
+                      "ms"
+                    ] })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { children: [
+                    "\u8F93\u5165: ",
+                    /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { style: metricValueStyle, children: [
+                      "$",
+                      model.inputPricePer1K.toFixed(4),
+                      "/1K"
+                    ] })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { children: [
+                    "\u8F93\u51FA: ",
+                    /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("span", { style: metricValueStyle, children: [
+                      "$",
+                      model.outputPricePer1K.toFixed(4),
+                      "/1K"
+                    ] })
+                  ] })
+                ] }),
+                model.description && /* @__PURE__ */ (0, import_jsx_runtime248.jsx)("div", { style: { fontSize: 12, color: "#64748b", marginTop: 4 }, children: model.description })
+              ] }),
+              variant === "compact" && /* @__PURE__ */ (0, import_jsx_runtime248.jsxs)("div", { style: { fontSize: 12, color: "#64748b" }, children: [
+                (model.contextWindow / 1e3).toFixed(0),
+                "K ctx \xB7 ",
+                model.avgLatencyMs,
+                "ms \xB7 $",
+                model.inputPricePer1K.toFixed(4),
+                "/$",
+                model.outputPricePer1K.toFixed(4)
+              ] })
+            ] })
+          ]
+        },
+        model.id
+      );
+    }),
+    models.length === 0 && !loading && /* @__PURE__ */ (0, import_jsx_runtime248.jsx)(
+      "div",
+      {
+        style: {
+          ...itemStyle,
+          cursor: "default",
+          justifyContent: "center",
+          color: "#94a3b8",
+          fontSize: 13
+        },
+        children: "\u6682\u65E0\u53EF\u7528 AI \u6A21\u578B"
+      }
+    )
+  ] });
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -62862,6 +63153,7 @@ function useAIRuleWeight(initialRules) {
   AIMemberLifecycleForecastPanel,
   AIMetricGoalPanel,
   AIModelPerformancePanel,
+  AIModelSelector,
   AIPricingRecommendationPanel,
   AIRecommendationFeedbackPanel,
   AIRuleWeightPanel,
