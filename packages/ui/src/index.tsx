@@ -411,6 +411,8 @@ export { CodeBlock } from './components/CodeBlock';
 export type { CodeBlockProps } from './components/CodeBlock';
 export { VirtualizedList } from './components/VirtualizedList';
 export type { VirtualizedListProps, VirtualizedListRow } from './components/VirtualizedList';
+export { FeedbackWidget } from './components/FeedbackWidget';
+export type { FeedbackWidgetProps } from './components/FeedbackWidget';
 export { FileUpload } from './components/FileUpload';
 export type { FileUploadProps, UploadFile } from './components/FileUpload';
 export { Switch } from './components/Switch';
@@ -1162,6 +1164,10 @@ export type {
 // --------------- Popconfirm ---------------
 export { Popconfirm } from './components/Popconfirm';
 export type { PopconfirmProps, PopconfirmPlacement } from './components/Popconfirm';
+
+// --------------- RolePadClient ---------------
+export { RolePadClient } from './components/RolePadClient';
+export type { RolePadClientProps, SupportedPadRole } from './components/RolePadClient';
 
 // --------------- RichTextEditor ---------------
 export { RichTextEditor } from './components/RichTextEditor';
