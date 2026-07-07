@@ -7,12 +7,10 @@ import {
   IsString,
   IsOptional,
   IsEnum,
-  IsArray,
   IsDateString,
   IsInt,
   Min,
   Max,
-  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import type { ContentCategory, ContentStatus, ContentMetadata } from './content.entity';
@@ -44,8 +42,6 @@ export class CreateContentDto {
   coverImageUrl?: string;
 
   @IsOptional()
-  @ValidateNested()
-  @Type(() => Object)
   metadata?: ContentMetadata;
 }
 
@@ -79,8 +75,6 @@ export class UpdateContentDto {
   coverImageUrl?: string;
 
   @IsOptional()
-  @ValidateNested()
-  @Type(() => Object)
   metadata?: ContentMetadata;
 }
 

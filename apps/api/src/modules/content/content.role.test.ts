@@ -362,7 +362,8 @@ describe(`${ROLES.Marketing} content 角色测试`, () => {
     if ('data' in published) {
       expect(published.data.status).toBe('published');
       expect(published.data.publishedAt).toBeDefined();
-      expect(new Date(published.data.publishedAt).getTime()).toBeGreaterThan(0);
+      expect(published.data.publishedAt).toBeDefined();
+      expect(new Date(published.data.publishedAt!).getTime()).toBeGreaterThan(0);
     }
   });
 
