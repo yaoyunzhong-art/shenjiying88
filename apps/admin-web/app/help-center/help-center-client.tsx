@@ -69,7 +69,7 @@ function buildColumns(
       sortable: true,
       render: (item: HelpArticle) => {
         const s = STATUS_MAP[item.status];
-        return <StatusBadge label={s.label} variant={s.variant} size="sm" dot />;
+        return <StatusBadge label={s?.label || item.status} variant={s?.variant || 'neutral'} size="sm" dot />;
       },
     },
     {
@@ -156,7 +156,7 @@ export function HelpCenterClient({ articles }: HelpCenterClientProps) {
     [],
   );
 
-  const { searchTerm, setSearchTerm, filteredItems } = useSearchFilter(articles, searchFields);
+  const { searchTerm, setSearchTerm, filteredItems } = searchTerm(articles, searchFields);
 
   // 分类筛选
   const [categoryFilter, setCategoryFilter] = useState<HelpCategoryId | 'ALL'>('ALL');
