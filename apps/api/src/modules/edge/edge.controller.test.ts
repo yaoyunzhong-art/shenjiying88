@@ -147,7 +147,7 @@ describe('EdgeController', () => {
       const result = await controller.callNext(mockReq(), { storeId: 'store-1' })
       expect(result.data).toBeDefined()
       expect(result.data.calledTicket).toBeDefined()
-      expect(result.data.calledTicket.ticketId).toBe(t1.data.ticketId)
+      expect(result.data.calledTicket!.ticketId).toBe(t1.data.ticketId)
     })
 
     it('should complete a ticket', async () => {

@@ -19,8 +19,8 @@ describe('AiForecastController', () => {
 
   beforeEach(() => {
     demandService = new DemandForecastService()
-    inventoryOptimizer = new InventoryOptimizer()
-    transferService = new TransferRecommendationService()
+    inventoryOptimizer = new InventoryOptimizer(demandService)
+    transferService = new TransferRecommendationService(inventoryOptimizer)
     controller = new AiForecastController(demandService, inventoryOptimizer, transferService)
   })
 
