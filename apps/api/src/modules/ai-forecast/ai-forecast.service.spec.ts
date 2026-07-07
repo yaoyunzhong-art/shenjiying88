@@ -16,7 +16,6 @@ import {
   InventoryOptimizer,
   TransferRecommendationService,
   productHistory,
-  storeInventoryData,
   initMockData
 } from './ai-forecast.service'
 import { movingAverage, standardDeviation, round2 } from './ai-forecast-stats'
@@ -116,13 +115,13 @@ describe('DemandForecastService', () => {
 
     it('adjustForPromotions: 多个活跃促销叠加，递减约束生效', () => {
       const forecast = svc.forecastSales('promo-stack', 7)
-      const now = new Date()
-      const future = new Date(now.getTime() + 86400000).toISOString().slice(0, 10)
-      const farFuture = new Date(now.getTime() + 365 * 86400000).toISOString().slice(0, 10)
+      // 使用过去的日期确保促销活跃
+      const past = '2020-01-01'
+      const farFuture = '2030-01-01'
 
       const promos = [
-        { id: 'p1', type: 'discount' as const, startDate: future, endDate: farFuture, boostPercent: 0.3 },
-        { id: 'p2', type: 'discount' as const, startDate: future, endDate: farFuture, boostPercent: 0.4 },
+        { id: 'p1', type: 'discount' as const, startDate: past, endDate: farFuture, boostPercent: 0.3 },
+        { id: 'p2', type: 'discount' as const, startDate: past, endDate: farFuture, boostPercent: 0.4 },
       ]
       const r = svc.adjustForPromotions(forecast, promos)
 
@@ -295,8 +294,6 @@ describe('TransferRecommendationService', () => {
 
   beforeEach(() => {
     productHistory.clear()
-    // 清理门店库存缓存，避免测试间干扰
-    ;(storeInventoryData as Map<string, any>).clear()
     demandSvc = new DemandForecastService()
     optimizer = new InventoryOptimizer(demandSvc)
     svc = new TransferRecommendationService(optimizer)
@@ -306,13 +303,14 @@ describe('TransferRecommendationService', () => {
 
   describe('正例', () => {
     it('suggestTransfer: 库存不均衡时返回有效调拨建议', () => {
-      // 先调用以填充 inventory cache
-      const result = svc.suggestTransfer('store-from-a', 'store-to-a', 'transfer-prod-a')
+      // 使用 Date.now() 保证每次测试都用不同 productId，避免缓存干扰
+      const pid = `transfer-prod-${Date.now()}`
+      const result = svc.suggestTransfer('store-from-a', 'store-to-a', pid)
       // 可能为 null（库存平衡时）, 如果有结果则字段完整
       if (result !== null) {
         expect(result.fromStore).toBe('store-from-a')
         expect(result.toStore).toBe('store-to-a')
-        expect(result.productId).toBe('transfer-prod-a')
+        expect(result.productId).toBe(pid)
         expect(result.quantity).toBeGreaterThan(0)
         expect(typeof result.netBenefit).toBe('number')
         expect(typeof result.cost.total).toBe('number')
@@ -320,7 +318,8 @@ describe('TransferRecommendationService', () => {
     })
 
     it('calculateTransferBenefit: 成本明细各字段 >= 0', () => {
-      const r = svc.calculateTransferBenefit('store-benefit-a', 'store-benefit-b', 'prod-benefit')
+      const pid = `benefit-prod-${Date.now()}`
+      const r = svc.calculateTransferBenefit('store-benefit-a', 'store-benefit-b', pid)
       expect(r.cost.freight).toBeGreaterThanOrEqual(0)
       expect(r.cost.loss).toBeGreaterThanOrEqual(0)
       expect(r.cost.labor).toBeGreaterThanOrEqual(0)
@@ -329,13 +328,13 @@ describe('TransferRecommendationService', () => {
     })
 
     it('optimizeGlobalAllocation: 多个门店同产品返回分配方案', () => {
+      const pid = `alloc-prod-${Date.now()}`
       const products = [
-        { storeId: 'global-s1', productId: 'global-p1' },
-        { storeId: 'global-s2', productId: 'global-p1' },
-        { storeId: 'global-s3', productId: 'global-p1' },
+        { storeId: 'global-s1', productId: pid },
+        { storeId: 'global-s2', productId: pid },
+        { storeId: 'global-s3', productId: pid },
       ]
       const result = svc.optimizeGlobalAllocation(products)
-      // 可能返回空（库存均衡）或有分配方案
       expect(Array.isArray(result)).toBe(true)
       for (const alloc of result) {
         expect(typeof alloc.productId).toBe('string')
@@ -358,7 +357,7 @@ describe('TransferRecommendationService', () => {
     it('suggestTransfer: 产品 ID 为空字符串不崩溃', () => {
       const r = svc.suggestTransfer('store-x', 'store-y', '')
       // 不抛异常即可
-      expect(r === null || typeof r === 'object').toBe(true)
+      expect(r === null || (r !== null && typeof r === 'object')).toBe(true)
     })
 
     it('optimizeGlobalAllocation: 空产品列表返回空数组', () => {
@@ -369,13 +368,13 @@ describe('TransferRecommendationService', () => {
   // ── 边界 ──
 
   describe('边界', () => {
-    it('suggestTransfer: 同一产品在同一门店对的不同组合缓存正确', () => {
-      // 多轮调用不互相干扰
-      const r1 = svc.suggestTransfer('edge-s1', 'edge-s2', 'edge-prod')
-      const r2 = svc.suggestTransfer('edge-s2', 'edge-s1', 'edge-prod')
-      // 如果 r1 null 则 r2 可能也有结果，两个都不抛异常
-      expect(r1 === null || (r1.fromStore === 'edge-s1' && r1.toStore === 'edge-s2')).toBe(true)
-      expect(r2 === null || (r2.fromStore === 'edge-s2' && r2.toStore === 'edge-s1')).toBe(true)
+    it('suggestTransfer: 同一产品在不同门店对之间缓存正确', () => {
+      const pid = `edge-prod-${Date.now()}`
+      const r1 = svc.suggestTransfer('edge-s1', 'edge-s2', pid)
+      const r2 = svc.suggestTransfer('edge-s2', 'edge-s1', pid)
+      // 两个都不抛异常
+      expect(r1 === null || (r1 && r1.fromStore === 'edge-s1' && r1.toStore === 'edge-s2')).toBe(true)
+      expect(r2 === null || (r2 && r2.fromStore === 'edge-s2' && r2.toStore === 'edge-s1')).toBe(true)
     })
 
     it('optimizeGlobalAllocation: 大量(20+)门店不超时', () => {
