@@ -51,12 +51,14 @@ describe('📢营销 tenant-llm 扩展测试', () => {
   beforeEach(() => { svc = setup() })
 
   it('地区语言服务检测', () => {
-    const locale = svc.geo.detectLocale('CN')
-    expect(locale).toBeDefined()
+    const ctx = svc.geo.getGeoContext('8.8.8.8')
+    expect(ctx.language).toBeDefined()
+    expect(ctx.currency).toBeDefined()
   })
 
-  it('翻译文本', () => {
-    const translated = svc.geo.translate('欢迎', 'en')
-    expect(translated).toBeDefined()
+  it('国家码检测', () => {
+    const country = svc.geo.detectCountryFromIP('8.8.8.8')
+    expect(country).toBeDefined()
+    expect(country).toBe('US')
   })
 })
