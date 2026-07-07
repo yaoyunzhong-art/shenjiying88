@@ -1,0 +1,421 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>大飞哥推广运营流程图</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f8fafc;
+    --fg: #172033;
+    --muted: #5b6475;
+    --line: #64748b;
+    --neutral: #e2e8f0;
+    --input: #bfdbfe;
+    --process: #c7d2fe;
+    --storage: #99f6e4;
+    --external: #fde68a;
+    --risk: #fecaca;
+    --outgoing: #fed7aa;
+    --crm: #d1fae5;
+    --ai: #e0e7ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a;
+      --fg: #e5e7eb;
+      --muted: #a3adbd;
+      --line: #94a3b8;
+      --neutral: #334155;
+      --input: #1d4ed8;
+      --process: #4338ca;
+      --storage: #0f766e;
+      --external: #92400e;
+      --risk: #991b1b;
+      --outgoing: #92400e;
+      --crm: #065f46;
+      --ai: #3730a3;
+    }
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font:
+      14px/1.4 ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+  }
+  main {
+    max-width: 1200px;
+    margin: 32px auto;
+    padding: 0 20px;
+  }
+  svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .title {
+    font-size: 20px;
+    font-weight: 650;
+    fill: var(--fg);
+  }
+  .label {
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--fg);
+  }
+  .small {
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .node {
+    stroke: var(--line);
+    stroke-width: 1.2;
+  }
+  .neutral {
+    fill: var(--neutral);
+  }
+  .input {
+    fill: var(--input);
+  }
+  .process {
+    fill: var(--process);
+  }
+  .storage {
+    fill: var(--storage);
+  }
+  .external {
+    fill: var(--external);
+  }
+  .risk {
+    fill: var(--risk);
+  }
+  .outgoing {
+    fill: var(--outgoing);
+  }
+  .crm {
+    fill: var(--crm);
+  }
+  .ai {
+    fill: var(--ai);
+  }
+  .edge {
+    stroke: var(--line);
+    stroke-width: 1.5;
+    fill: none;
+  }
+  .edge-dash {
+    stroke: var(--line);
+    stroke-width: 1.2;
+    fill: none;
+    stroke-dasharray: 5 3;
+  }
+  .zone {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1.2;
+    stroke-dasharray: 6 5;
+    opacity: 0.85;
+  }
+  .zone-bg {
+    fill: var(--neutral);
+    opacity: 0.06;
+  }
+  .arrow {
+    fill: var(--line);
+  }
+</style>
+<main>
+  <svg viewBox="0 0 1160 1480" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 Z" class="arrow"/>
+      </marker>
+      <marker id="arrow-dash" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 Z" class="arrow" opacity="0.6"/>
+      </marker>
+    </defs>
+
+    <!-- Title -->
+    <text x="580" y="30" text-anchor="middle" class="title">👑 大飞哥推广运营全流程图</text>
+    <text x="580" y="52" text-anchor="middle" class="small">神机营 SaaS — 线上线下全域推广体系</text>
+
+    <!-- ============ ZONE 1: 线上推广 ============ -->
+    <rect x="20" y="70" width="1120" height="380" rx="12" class="zone-bg"/>
+    <rect x="20" y="70" width="1120" height="380" rx="12" class="zone"/>
+    <text x="40" y="98" class="label" fill="var(--muted)">🌐 线上推广渠道 (Digital Promotion)</text>
+
+    <!-- A1: SEO -->
+    <rect x="60" y="120" width="200" height="80" rx="8" class="node input"/>
+    <text x="160" y="152" text-anchor="middle" class="label">SEO / SEM</text>
+    <text x="160" y="170" text-anchor="middle" class="small">搜索引擎优化</text>
+    <text x="160" y="186" text-anchor="middle" class="small">品牌词+长尾词排名</text>
+
+    <!-- A2: Brand Website -->
+    <rect x="60" y="220" width="200" height="90" rx="8" class="node process"/>
+    <text x="160" y="252" text-anchor="middle" class="label">品牌官网</text>
+    <text x="160" y="270" text-anchor="middle" class="small">Hero + 业务Cards</text>
+    <text x="160" y="286" text-anchor="middle" class="small">Case展示 + CTA转化</text>
+    <text x="160" y="302" text-anchor="middle" class="small">Schema/JSON-LD结构化</text>
+
+    <!-- A3: Social Media -->
+    <rect x="60" y="330" width="200" height="100" rx="8" class="node outgoing"/>
+    <text x="160" y="362" text-anchor="middle" class="label">社交媒体矩阵</text>
+    <text x="160" y="380" text-anchor="middle" class="small">抖音/小红书/微博</text>
+    <text x="160" y="396" text-anchor="middle" class="small">品牌内容 + 探店视频</text>
+    <text x="160" y="412" text-anchor="middle" class="small">KOL/KOC 种草</text>
+
+    <!-- B1: Paid Ads -->
+    <rect x="330" y="120" width="200" height="80" rx="8" class="node external"/>
+    <text x="430" y="152" text-anchor="middle" class="label">付费广告</text>
+    <text x="430" y="170" text-anchor="middle" class="small">美团/抖音竞价</text>
+    <text x="430" y="186" text-anchor="middle" class="small">信息流+搜索广告</text>
+
+    <!-- B2: Content Mkt -->
+    <rect x="330" y="220" width="200" height="90" rx="8" class="node process"/>
+    <text x="430" y="252" text-anchor="middle" class="label">内容营销</text>
+    <text x="430" y="270" text-anchor="middle" class="small">公众号推文</text>
+    <text x="430" y="286" text-anchor="middle" class="small">短视频+直播</text>
+    <text x="430" y="302" text-anchor="middle" class="small">行业白皮书</text>
+
+    <!-- B3: Social Sharing -->
+    <rect x="330" y="330" width="200" height="100" rx="8" class="node outgoing"/>
+    <text x="430" y="362" text-anchor="middle" class="label">裂变传播</text>
+    <text x="430" y="380" text-anchor="middle" class="small">社群裂变追踪</text>
+    <text x="430" y="396" text-anchor="middle" class="small">分享有奖</text>
+    <text x="430" y="412" text-anchor="middle" class="small">ReferralService</text>
+
+    <!-- C1: GEO/AI -->
+    <rect x="600" y="120" width="200" height="80" rx="8" class="node ai"/>
+    <text x="700" y="152" text-anchor="middle" class="label">GEO + AI智能</text>
+    <text x="700" y="170" text-anchor="middle" class="small">AI对话品牌引用优化</text>
+    <text x="700" y="186" text-anchor="middle" class="small">IP地域内容分发</text>
+
+    <!-- C2: EDM/SMS -->
+    <rect x="600" y="220" width="200" height="90" rx="8" class="node storage"/>
+    <text x="700" y="252" text-anchor="middle" class="label">EDM / SMS</text>
+    <text x="700" y="270" text-anchor="middle" class="small">邮件群发</text>
+    <text x="700" y="286" text-anchor="middle" class="small">短信触达</text>
+    <text x="700" y="302" text-anchor="middle" class="small">站内信 / App Push</text>
+
+    <!-- C3: 直播获客 -->
+    <rect x="600" y="330" width="200" height="100" rx="8" class="node external"/>
+    <text x="700" y="362" text-anchor="middle" class="label">直播获客</text>
+    <text x="700" y="380" text-anchor="middle" class="small">抖音直播/视频号</text>
+    <text x="700" y="396" text-anchor="middle" class="small">直播招商咨询</text>
+    <text x="700" y="412" text-anchor="middle" class="small">限时优惠引流</text>
+
+    <!-- D: Monitor -->
+    <rect x="870" y="120" width="240" height="90" rx="8" class="node risk"/>
+    <text x="990" y="152" text-anchor="middle" class="label">监测与数据</text>
+    <text x="990" y="170" text-anchor="middle" class="small">智能自治系统监测</text>
+    <text x="990" y="186" text-anchor="middle" class="small">SEO/性能指标追踪</text>
+    <text x="990" y="202" text-anchor="middle" class="small">异常预警(self-system)</text>
+
+    <!-- D2: 舆情 -->
+    <rect x="870" y="230" width="240" height="80" rx="8" class="node risk"/>
+    <text x="990" y="262" text-anchor="middle" class="label">舆情与竞品监控</text>
+    <text x="990" y="280" text-anchor="middle" class="small">微博/小红书/抖音采掘</text>
+    <text x="990" y="296" text-anchor="middle" class="small">竞品数据库349场馆</text>
+
+    <!-- D3: 知识库 -->
+    <rect x="870" y="330" width="240" height="100" rx="8" class="node storage"/>
+    <text x="990" y="362" text-anchor="middle" class="label">知识库维护</text>
+    <text x="990" y="380" text-anchor="middle" class="small">竞品情报/场馆数据</text>
+    <text x="990" y="396" text-anchor="middle" class="small">专家侦察报告</text>
+    <text x="990" y="412" text-anchor="middle" class="small">40人专家团队洞察</text>
+
+    <!-- Connectors: A1→A2, A2→A3 -->
+    <path d="M160,200 L160,220" class="edge" marker-end="url(#arrow)"/>
+    <path d="M160,310 L160,330" class="edge" marker-end="url(#arrow)"/>
+    <!-- B1→B2, B2→B3 -->
+    <path d="M430,200 L430,220" class="edge" marker-end="url(#arrow)"/>
+    <path d="M430,310 L430,330" class="edge" marker-end="url(#arrow)"/>
+    <!-- C1→C2, C2→C3 -->
+    <path d="M700,200 L700,220" class="edge" marker-end="url(#arrow)"/>
+    <path d="M700,310 L700,330" class="edge" marker-end="url(#arrow)"/>
+
+    <!-- Horizontal flow into funnel -->
+    <path d="M260,160 L330,160" class="edge" marker-end="url(#arrow)"/>
+    <path d="M530,160 L600,160" class="edge" marker-end="url(#arrow)"/>
+    <path d="M800,160 L870,160" class="edge-dash" marker-end="url(#arrow-dash)"/>
+
+    <!-- Arrow to Funnel -->
+    <path d="M580,430 L580,470" class="edge" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- ============ ZONE 2: 线索管理漏斗 ============ -->
+    <rect x="20" y="470" width="1120" height="300" rx="12" class="zone-bg"/>
+    <rect x="20" y="470" width="1120" height="300" rx="12" class="zone"/>
+    <text x="40" y="498" class="label" fill="var(--muted)">🎯 线索管理与转化漏斗 (Lead Funnel)</text>
+
+    <!-- Funnel: Top -->
+    <polygon points="580,520 320,560 840,560" class="node input" opacity="0.9"/>
+    <text x="580" y="548" text-anchor="middle" class="label">曝光/触达</text>
+    <text x="580" y="562" text-anchor="middle" class="small">搜索 · 社交 · 广告 · 直播</text>
+
+    <polygon points="580,570 370,610 790,610" class="node process" opacity="0.85"/>
+    <text x="580" y="598" text-anchor="middle" class="label">兴趣/访问</text>
+    <text x="580" y="612" text-anchor="middle" class="small">品牌官网 → 产品浏览</text>
+
+    <polygon points="580,620 420,660 740,660" class="node process" opacity="0.8"/>
+    <text x="580" y="648" text-anchor="middle" class="label">留资/咨询</text>
+    <text x="580" y="662" text-anchor="middle" class="small">表单提交 · 400电话 · 微信</text>
+
+    <polygon points="580,670 470,710 690,710" class="node crm" opacity="0.9"/>
+    <text x="580" y="698" text-anchor="middle" class="label">意向客户</text>
+    <text x="580" y="712" text-anchor="middle" class="small">CRM记录 → 销售跟进</text>
+
+    <!-- Sidebar: CRM -->
+    <rect x="60" y="630" width="170" height="110" rx="8" class="node crm"/>
+    <text x="145" y="662" text-anchor="middle" class="label">CRM 客户系统</text>
+    <text x="145" y="680" text-anchor="middle" class="small">线索记录</text>
+    <text x="145" y="696" text-anchor="middle" class="small">跟进状态追踪</text>
+    <text x="145" y="712" text-anchor="middle" class="small">销售分配</text>
+
+    <path d="M230,685 L320,685" class="edge" marker-end="url(#arrow)"/>
+
+    <!-- Right: 智能营销 -->
+    <rect x="930" y="590" width="190" height="120" rx="8" class="node ai"/>
+    <text x="1025" y="622" text-anchor="middle" class="label">智能营销引擎</text>
+    <text x="1025" y="640" text-anchor="middle" class="small">RFM 8分群</text>
+    <text x="1025" y="656" text-anchor="middle" class="small">A/B测试</text>
+    <text x="1025" y="672" text-anchor="middle" class="small">优惠券精准发放</text>
+    <text x="1025" y="688" text-anchor="middle" class="small">ROI归因分析</text>
+
+    <path d="M690,690 L930,690" class="edge-dash" marker-end="url(#arrow-dash)"/>
+
+    <!-- Funnel: Down arrow -->
+    <path d="M580,720 L580,760" class="edge" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- ============ ZONE 3: 客户转化通路 ============ -->
+    <rect x="20" y="780" width="1120" height="320" rx="12" class="zone-bg"/>
+    <rect x="20" y="780" width="1120" height="320" rx="12" class="zone"/>
+    <text x="40" y="808" class="label" fill="var(--muted)">🛒 客户转化通路 (Conversion Pipeline)</text>
+
+    <!-- EPC+O -->
+    <rect x="60" y="830" width="240" height="100" rx="8" class="node process"/>
+    <text x="180" y="862" text-anchor="middle" class="label">EPC+O 全流程</text>
+    <text x="180" y="880" text-anchor="middle" class="small">场地评估·方案设计</text>
+    <text x="180" y="896" text-anchor="middle" class="small">工程施工·设备供应</text>
+    <text x="180" y="912" text-anchor="middle" class="small">运营支持</text>
+
+    <!-- 产品销售 -->
+    <rect x="60" y="950" width="240" height="100" rx="8" class="node storage"/>
+    <text x="180" y="982" text-anchor="middle" class="label">产品销售</text>
+    <text x="180" y="1000" text-anchor="middle" class="small">全品类供应链</text>
+    <text x="180" y="1016" text-anchor="middle" class="small">1000+ SKU</text>
+    <text x="180" y="1032" text-anchor="middle" class="small">源头直供·48h达</text>
+
+    <!-- 加盟 -->
+    <rect x="370" y="830" width="240" height="100" rx="8" class="node crm"/>
+    <text x="490" y="862" text-anchor="middle" class="label">招商加盟</text>
+    <text x="490" y="880" text-anchor="middle" class="small">特许加盟</text>
+    <text x="490" y="896" text-anchor="middle" class="small">合资联营</text>
+    <text x="490" y="912" text-anchor="middle" class="small">品牌授权</text>
+
+    <!-- 数字运动 -->
+    <rect x="370" y="950" width="240" height="100" rx="8" class="node external"/>
+    <text x="490" y="982" text-anchor="middle" class="label">数字运动潮玩馆</text>
+    <text x="490" y="1000" text-anchor="middle" class="small">沉浸式运动娱乐</text>
+    <text x="490" y="1016" text-anchor="middle" class="small">科技赋能·多人互动</text>
+    <text x="490" y="1032" text-anchor="middle" class="small">日均客流1000+</text>
+
+    <!-- 品牌 -->
+    <rect x="680" y="830" width="240" height="100" rx="8" class="node input"/>
+    <text x="800" y="862" text-anchor="middle" class="label">品牌管理</text>
+    <text x="800" y="880" text-anchor="middle" class="small">品牌矩阵·VI系统</text>
+    <text x="800" y="896" text-anchor="middle" class="small">商标·版权管理</text>
+    <text x="800" y="912" text-anchor="middle" class="small">品牌授权合规</text>
+
+    <!-- 老客 -->
+    <rect x="680" y="950" width="240" height="100" rx="8" class="node storage"/>
+    <text x="800" y="982" text-anchor="middle" class="label">老客复购/增值</text>
+    <text x="800" y="1000" text-anchor="middle" class="small">会员系统联动</text>
+    <text x="800" y="1016" text-anchor="middle" class="small">优惠券精准推送</text>
+    <text x="800" y="1032" text-anchor="middle" class="small">社群裂变激励</text>
+
+    <!-- Right: 跨门店优惠券 -->
+    <rect x="960" y="830" width="150" height="220" rx="8" class="node risk"/>
+    <text x="1035" y="862" text-anchor="middle" class="label">P0核心</text>
+    <text x="1035" y="880" text-anchor="middle" class="small">跨门店优惠券</text>
+    <text x="1035" y="896" text-anchor="middle" class="small">核销服务</text>
+    <text x="1035" y="912" text-anchor="middle" class="small">大客户续约</text>
+    <text x="1035" y="930" text-anchor="middle" class="small">CouponV2</text>
+    <text x="1035" y="946" text-anchor="middle" class="small">RedemptionRules</text>
+    <text x="1035" y="962" text-anchor="middle" class="small">频控+预算</text>
+
+    <!-- Cross connectors -->
+    <path d="M300,880 L370,880" class="edge" marker-end="url(#arrow)"/>
+    <path d="M610,880 L680,880" class="edge" marker-end="url(#arrow)"/>
+    <path d="M920,880 L960,830" class="edge-dash" marker-end="url(#arrow-dash)"/>
+
+    <!-- Funnel down -->
+    <path d="M580,1100 L580,1130" class="edge" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- ============ ZONE 4: 运营/监测闭环 ============ -->
+    <rect x="20" y="1130" width="1120" height="160" rx="12" class="zone-bg"/>
+    <rect x="20" y="1130" width="1120" height="160" rx="12" class="zone"/>
+    <text x="40" y="1158" class="label" fill="var(--muted)">🔄 运营监测与闭环 (Operation & Feedback Loop)</text>
+
+    <!-- 运营 -->
+    <rect x="60" y="1180" width="250" height="90" rx="8" class="node process"/>
+    <text x="185" y="1212" text-anchor="middle" class="label">运营团队</text>
+    <text x="185" y="1230" text-anchor="middle" class="small">活动策划·内容运营</text>
+    <text x="185" y="1246" text-anchor="middle" class="small">社群维护·客户服务</text>
+    <text x="185" y="1262" text-anchor="middle" class="small">数据复盘·策略调整</text>
+
+    <!-- AI 自进化 -->
+    <rect x="380" y="1180" width="250" height="90" rx="8" class="node ai"/>
+    <text x="505" y="1212" text-anchor="middle" class="label">AI 自进化闭环</text>
+    <text x="505" y="1230" text-anchor="middle" class="small">验收脉冲·异常检测</text>
+    <text x="505" y="1246" text-anchor="middle" class="small">根因分析→修复建议</text>
+    <text x="505" y="1262" text-anchor="middle" class="small">知识沉淀·赋能下次</text>
+
+    <!-- KPI -->
+    <rect x="700" y="1180" width="250" height="90" rx="8" class="node crm"/>
+    <text x="825" y="1212" text-anchor="middle" class="label">KPI 目标</text>
+    <text x="825" y="1230" text-anchor="middle" class="small">日≥60,000行代码</text>
+    <text x="825" y="1246" text-anchor="middle" class="small">日≥10 Git commits</text>
+    <text x="825" y="1262" text-anchor="middle" class="small">测试0 fail · TSC 0 error</text>
+
+    <!-- 专家团 -->
+    <rect x="1020" y="1160" width="100" height="130" rx="8" class="node external"/>
+    <text x="1070" y="1192" text-anchor="middle" class="label">40人</text>
+    <text x="1070" y="1210" text-anchor="middle" class="small">专家团</text>
+    <text x="1070" y="1228" text-anchor="middle" class="small">事前评审</text>
+    <text x="1070" y="1244" text-anchor="middle" class="small">事中抽查</text>
+    <text x="1070" y="1260" text-anchor="middle" class="small">事后验收</text>
+
+    <!-- Feedback loop arrows -->
+    <path d="M310,1225 L380,1225" class="edge" marker-end="url(#arrow)"/>
+    <path d="M630,1225 L700,1225" class="edge" marker-end="url(#arrow)"/>
+    <path d="M950,1225 L1020,1225" class="edge-dash" marker-end="url(#arrow-dash)"/>
+
+    <!-- Big feedback loop back to top -->
+    <path d="M1070,1160 L1070,90 L820,90" class="edge-dash" stroke-width="1.5" marker-end="url(#arrow-dash)"/>
+    <text x="1085" y="625" class="small" transform="rotate(90,1085,625)">数据反馈驱动优化 (闭环)</text>
+
+    <!-- Legend -->
+    <rect x="760" y="1320" width="16" height="16" rx="2" class="node input"/>
+    <text x="782" y="1332" class="small">获客入口</text>
+    <rect x="860" y="1320" width="16" height="16" rx="2" class="node process"/>
+    <text x="882" y="1332" class="small">推广/转化</text>
+    <rect x="960" y="1320" width="16" height="16" rx="2" class="node crm"/>
+    <text x="982" y="1332" class="small">CRM/运营</text>
+    <rect x="1060" y="1320" width="16" height="16" rx="2" class="node ai"/>
+    <text x="1082" y="1332" class="small">AI智能</text>
+    <rect x="760" y="1348" width="16" height="16" rx="2" class="node external"/>
+    <text x="782" y="1360" class="small">外部/加盟</text>
+    <rect x="860" y="1348" width="16" height="16" rx="2" class="node storage"/>
+    <text x="882" y="1360" class="small">数据/资产</text>
+    <rect x="960" y="1348" width="16" height="16" rx="2" class="node risk"/>
+    <text x="982" y="1360" class="small">监控/风险</text>
+
+    <!-- Version -->
+    <text x="580" y="1390" text-anchor="middle" class="small">神机营 V4 · 2026-07-05 · 龙虾哥绘制 🦞</text>
+  </svg>
+</main>

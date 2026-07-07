@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-insight] E2E 基础测试
  *
@@ -15,7 +16,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   Controller,
   Get,
@@ -149,7 +149,7 @@ const TENANT_HEADERS = {
 // ========== E2E: KPI 看板 ==========
 
 describe('E2E: KPI 看板流程', () => {
-  test('GET /ai-insight/kpis 返回 KPI 列表', async () => {
+  it('GET /ai-insight/kpis 返回 KPI 列表', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -165,7 +165,7 @@ describe('E2E: KPI 看板流程', () => {
     }
   })
 
-  test('GET /ai-insight/kpis 默认 tenant(无 header)返回 seed 数据', async () => {
+  it('GET /ai-insight/kpis 默认 tenant(无 header)返回 seed 数据', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -179,7 +179,7 @@ describe('E2E: KPI 看板流程', () => {
     }
   })
 
-  test('GET /ai-insight/kpis?category=revenue 过滤类别', async () => {
+  it('GET /ai-insight/kpis?category=revenue 过滤类别', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -193,7 +193,7 @@ describe('E2E: KPI 看板流程', () => {
     }
   })
 
-  test('GET /ai-insight/kpis/:id 返回 KPI 详情', async () => {
+  it('GET /ai-insight/kpis/:id 返回 KPI 详情', async () => {
     const { app, insightService } = await buildApp()
     try {
       const kpiId = insightService.getKPIs('default')[0].id
@@ -207,7 +207,7 @@ describe('E2E: KPI 看板流程', () => {
     }
   })
 
-  test('GET /ai-insight/kpis/:id 不存在返回 404', async () => {
+  it('GET /ai-insight/kpis/:id 不存在返回 404', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -223,7 +223,7 @@ describe('E2E: KPI 看板流程', () => {
 // ========== E2E: 洞察报告 ==========
 
 describe('E2E: 洞察报告流程', () => {
-  test('POST /ai-insight/reports 生成报告 → GET 列表完整流程', async () => {
+  it('POST /ai-insight/reports 生成报告 → GET 列表完整流程', async () => {
     const { app } = await buildApp()
     try {
       const createRes = await request(app.getHttpServer())
@@ -250,7 +250,7 @@ describe('E2E: 洞察报告流程', () => {
     }
   })
 
-  test('GET /ai-insight/reports?type=member 过滤类型', async () => {
+  it('GET /ai-insight/reports?type=member 过滤类型', async () => {
     const { app } = await buildApp()
     try {
       await request(app.getHttpServer())
@@ -268,7 +268,7 @@ describe('E2E: 洞察报告流程', () => {
     }
   })
 
-  test('GET /ai-insight/reports?limit=2 限制数量', async () => {
+  it('GET /ai-insight/reports?limit=2 限制数量', async () => {
     const { app } = await buildApp()
     try {
       for (let i = 0; i < 3; i++) {
@@ -291,7 +291,7 @@ describe('E2E: 洞察报告流程', () => {
 // ========== E2E: 异常检测 ==========
 
 describe('E2E: 异常检测流程', () => {
-  test('POST /ai-insight/anomalies/detect → GET 列表完整流程', async () => {
+  it('POST /ai-insight/anomalies/detect → GET 列表完整流程', async () => {
     const { app } = await buildApp()
     try {
       const detectRes = await request(app.getHttpServer())
@@ -311,7 +311,7 @@ describe('E2E: 异常检测流程', () => {
     }
   })
 
-  test('PUT /ai-insight/anomalies/:id/acknowledge 确认异常', async () => {
+  it('PUT /ai-insight/anomalies/:id/acknowledge 确认异常', async () => {
     const { app, insightService } = await buildApp()
     try {
       const open = insightService.getAnomalies('default', { status: 'open' })
@@ -329,7 +329,7 @@ describe('E2E: 异常检测流程', () => {
     }
   })
 
-  test('PUT /ai-insight/anomalies/:id/resolve 解决异常', async () => {
+  it('PUT /ai-insight/anomalies/:id/resolve 解决异常', async () => {
     const { app, insightService } = await buildApp()
     try {
       // 先创建 open 异常
@@ -347,7 +347,7 @@ describe('E2E: 异常检测流程', () => {
     }
   })
 
-  test('PUT /ai-insight/anomalies/:id/acknowledge 不存在返回 404', async () => {
+  it('PUT /ai-insight/anomalies/:id/acknowledge 不存在返回 404', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -359,7 +359,7 @@ describe('E2E: 异常检测流程', () => {
     }
   })
 
-  test('GET /ai-insight/anomalies?severity=critical 严重度过滤', async () => {
+  it('GET /ai-insight/anomalies?severity=critical 严重度过滤', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -376,7 +376,7 @@ describe('E2E: 异常检测流程', () => {
 // ========== E2E: 趋势预测 ==========
 
 describe('E2E: 趋势预测流程', () => {
-  test('POST /ai-insight/forecasts → GET 详情完整流程', async () => {
+  it('POST /ai-insight/forecasts → GET 详情完整流程', async () => {
     const { app } = await buildApp()
     try {
       const createRes = await request(app.getHttpServer())
@@ -398,7 +398,7 @@ describe('E2E: 趋势预测流程', () => {
     }
   })
 
-  test('GET /ai-insight/forecasts/:id 不存在返回 404', async () => {
+  it('GET /ai-insight/forecasts/:id 不存在返回 404', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -414,7 +414,7 @@ describe('E2E: 趋势预测流程', () => {
 // ========== E2E: 仪表盘 ==========
 
 describe('E2E: 仪表盘流程', () => {
-  test('GET /ai-insight/dashboard 返回三周期摘要', async () => {
+  it('GET /ai-insight/dashboard 返回三周期摘要', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -431,7 +431,7 @@ describe('E2E: 仪表盘流程', () => {
     }
   })
 
-  test('GET /ai-insight/dashboard?storeId=store-01 门店级摘要', async () => {
+  it('GET /ai-insight/dashboard?storeId=store-01 门店级摘要', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -448,7 +448,7 @@ describe('E2E: 仪表盘流程', () => {
 // ========== E2E: 跨租户隔离 ==========
 
 describe('E2E: 跨租户隔离', () => {
-  test('不同 tenant 的 KPI 互不可见', async () => {
+  it('不同 tenant 的 KPI 互不可见', async () => {
     const { app } = await buildApp()
     try {
       const a = await request(app.getHttpServer())
@@ -468,7 +468,7 @@ describe('E2E: 跨租户隔离', () => {
     }
   })
 
-  test('不同 tenant 的报告独立', async () => {
+  it('不同 tenant 的报告独立', async () => {
     const { app } = await buildApp()
     try {
       // tenant-A 创建报告

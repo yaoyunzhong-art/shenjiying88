@@ -3800,3 +3800,472 @@ export function buildIntegrationOrchestrationHref(query: IntegrationOrchestratio
   const queryString = params.toString();
   return queryString ? `/integration-orchestration?${queryString}` : '/integration-orchestration';
 }
+
+// ── Agent & Knowledge V2 (Phase-23/24/25 — 后端 entity 镜像) ──
+
+/** Agent 会话状态 */
+export type AgentSessionStatus =
+  | 'PENDING'
+  | 'RUNNING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED';
+
+/** Agent 执行状态 */
+export type AgentExecutionStatus = 'RUNNING' | 'SUCCESS' | 'FAILED' | 'TIMEOUT';
+
+/** Agent 工具调用状态 */
+export type AgentToolCallStatus = 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED';
+
+/** Agent 消息角色 */
+export type AgentMessageRole = 'system' | 'user' | 'assistant' | 'tool';
+
+/** Agent 运行时配置 */
+export interface AgentConfig {
+  id: string;
+  name: string;
+  systemPrompt: string;
+  model: string;
+  maxSteps: number;
+  enableReflection: boolean;
+  allowedTools: string[];
+  timeoutMs: number;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  tenantId: string;
+}
+
+/** Agent 消息 */
+export interface AgentMessage {
+  id: string;
+  sessionId: string;
+  role: AgentMessageRole;
+  content: string;
+  toolCallId?: string;
+  toolCalls?: AgentToolCall[];
+  timestamp: string;
+}
+
+/** Agent 工具调用 */
+export interface AgentToolCall {
+  id: string;
+  name: string;
+  input: unknown;
+  output?: unknown;
+  status: AgentToolCallStatus;
+  durationMs?: number;
+  error?: string;
+}
+
+/** Agent 运行会话 */
+export interface AgentSession {
+  id: string;
+  configId: string;
+  status: AgentSessionStatus;
+  userInput: string;
+  finalOutput?: string;
+  currentStep: number;
+  maxSteps: number;
+  enableReflection: boolean;
+  messages: AgentMessage[];
+  error?: string;
+  startedAt?: string;
+  completedAt?: string;
+  createdAt: string;
+  createdBy: string;
+  tenantId: string;
+}
+
+/** Agent 执行记录 */
+export interface AgentExecution {
+  id: string;
+  sessionId: string;
+  configId: string;
+  status: AgentExecutionStatus;
+  steps: number;
+  totalDurationMs: number;
+  llmCalls: number;
+  toolCalls: number;
+  error?: string;
+  startedAt: string;
+  completedAt?: string;
+  tenantId: string;
+}
+
+/** 质量评估结果 */
+export interface QualityEvaluation {
+  id: string;
+  sessionId: string;
+  userInput: string;
+  agentOutput: string;
+  relevanceScore: number;
+  accuracyScore: number;
+  completenessScore: number;
+  safetyScore: number;
+  helpfulnessScore: number;
+  concisenessScore: number;
+  overallScore: number;
+  feedback: string;
+  evaluatedAt: string;
+  evaluatedBy: string;
+  tenantId: string;
+}
+
+/** 创建 Agent 会话请求 */
+export interface CreateSessionRequest {
+  configId: string;
+  userInput: string;
+  maxSteps?: number;
+  enableReflection?: boolean;
+  createdBy: string;
+  tenantId: string;
+}
+
+/** Agent 会话执行响应 */
+export interface SessionExecutionResult {
+  session: AgentSession;
+  execution: AgentExecution;
+  evaluation?: QualityEvaluation;
+  timestamp: string;
+}
+
+/** 批量 Agent 请求 */
+export interface BatchAgentRequest {
+  items: Array<{
+    configId: string;
+    userInput: string;
+    maxSteps?: number;
+    enableReflection?: boolean;
+  }>;
+  createdBy: string;
+  tenantId: string;
+}
+
+/** 批量 Agent 响应 */
+export interface BatchAgentResponse {
+  total: number;
+  succeeded: number;
+  failed: number;
+  results: Array<{
+    index: number;
+    session: AgentSession;
+    execution: AgentExecution;
+  }>;
+  timestamp: string;
+}
+
+/** Agent 统计 */
+export interface AgentStats {
+  totalSessions: number;
+  completedSessions: number;
+  failedSessions: number;
+  runningSessions: number;
+  avgSteps: number;
+  avgDurationMs: number;
+  avgLlmCalls: number;
+  avgQualityScore: number;
+  tenantId: string;
+  timestamp: string;
+}
+
+export type ToolRiskLevel = 'low' | 'medium' | 'high';
+
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  category: string;
+  riskLevel: ToolRiskLevel;
+  inputSchema: {
+    type: 'object';
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
+}
+
+// ── Phase-27: Agent Session Event Stream ──
+
+/** Agent 会话流事件 — discriminated union */
+export type AgentSessionEvent =
+  | { type: 'session_started'; session: AgentSession; timestamp: string }
+  | { type: 'message_added'; message: AgentMessage; timestamp: string }
+  | { type: 'tool_call_started'; toolCall: AgentToolCall; timestamp: string }
+  | { type: 'tool_call_completed'; toolCall: AgentToolCall; timestamp: string }
+  | { type: 'step_progress'; step: number; maxSteps: number; timestamp: string }
+  | { type: 'reflection_started'; step: number; timestamp: string }
+  | {
+      type: 'session_completed';
+      session: AgentSession;
+      execution: AgentExecution;
+      timestamp: string;
+    }
+  | { type: 'session_failed'; session: AgentSession; error: string; timestamp: string };
+
+/** 事件类型联合 (用于 SDK filter / switch) */
+export type AgentSessionEventType = AgentSessionEvent['type'];
+
+// ════════════════════════════════════════════════════════════════════════════
+// Phase-35: 收银台业务模块 (订单 / 支付 / 退款)
+// DR-36: 状态机 + 幂等性 + 整数分(cents) + 乐观锁
+// ════════════════════════════════════════════════════════════════════════════
+
+/** 订单状态 (8 个, 状态机见 apps/api/src/modules/cashier/order-state-machine.ts) */
+export type OrderStatus =
+  | 'DRAFT'             // 草稿
+  | 'PENDING'           // 待支付
+  | 'PAID'              // 已支付
+  | 'FULFILLED'         // 已履约 (发货/核销)
+  | 'PARTIALLY_REFUNDED'// 部分退款
+  | 'REFUNDED'          // 全部退款 (终态)
+  | 'CANCELED'          // 已取消 (终态)
+  | 'TIMEOUT';          // 超时关闭 (终态)
+
+/** 支付方式 (4 种) */
+export type PaymentMethod = 'CASH' | 'WECHAT' | 'ALIPAY' | 'CARD';
+
+/** 支付状态 (4 个) */
+export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
+
+/** 退款状态 (3 个) */
+export type RefundStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
+
+/** 订单行 (商品明细) */
+export interface OrderItem {
+  id: string;                     // OIT-YYYYMMDD-XXXXX
+  orderId: string;
+  tenantId: string;
+  productId: string;
+  productName: string;            // 冗余, 商品改名不影响历史
+  unitPriceCents: number;         // 单价 (整数分)
+  quantity: number;               // 数量
+  subtotalCents: number;          // 小计 = unitPriceCents × quantity
+  discountCents: number;          // 优惠
+  createdAt: string;
+}
+
+/** 订单主单 */
+export interface Order {
+  id: string;                     // ORD-YYYYMMDD-XXXXX
+  tenantId: string;
+  memberId: string | null;        // 散客 = null
+  status: OrderStatus;
+  /** 金额 (整数分, DR-36 决策 4: 绝不用浮点) */
+  subtotalCents: number;
+  discountCents: number;
+  taxCents: number;
+  totalCents: number;             // 应付
+  paidCents: number;              // 已付
+  refundedCents: number;          // 累计退款
+  paymentMethod: PaymentMethod | null;
+  createdBy: string;              // 收银员 userId
+  clientOrderId: string;          // 前端 UUID (幂等键)
+  version: number;                // 乐观锁
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+  paidAt: string | null;
+  closedAt: string | null;        // 取消/完成
+}
+
+/** 支付记录 */
+export interface Payment {
+  id: string;                     // PAY-YYYYMMDD-XXXXX
+  tenantId: string;
+  orderId: string;
+  method: PaymentMethod;
+  amountCents: number;
+  status: PaymentStatus;
+  providerTxnId: string | null;   // 微信/支付宝流水号 (幂等键)
+  idempotencyKey: string;         // (orderId + method) hash
+  paidAt: string | null;
+  failureReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 退款记录 */
+export interface Refund {
+  id: string;                     // RFD-YYYYMMDD-XXXXX
+  tenantId: string;
+  orderId: string;
+  paymentId: string;
+  amountCents: number;
+  reason: string;
+  reasonHash: string;             // 幂等键 part
+  status: RefundStatus;
+  providerRefundId: string | null;
+  idempotencyKey: string;         // (orderId + amount + reasonHash) hash
+  refundedAt: string | null;
+  failureReason: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 订单事件 (SSE 推送, 8 类型 discriminated union) */
+export type OrderEvent =
+  | { type: 'order_created'; order: Order; timestamp: string }
+  | { type: 'order_submitted'; order: Order; timestamp: string }
+  | { type: 'payment_pending'; order: Order; payment: Payment; timestamp: string }
+  | { type: 'order_paid'; order: Order; payment: Payment; timestamp: string }
+  | { type: 'order_fulfilled'; order: Order; timestamp: string }
+  | { type: 'order_refunded'; order: Order; refund: Refund; timestamp: string }
+  | { type: 'order_timeout'; order: Order; timestamp: string }
+  | { type: 'order_canceled'; order: Order; reason: string; timestamp: string };
+
+/** OrderEvent 类型联合 */
+export type OrderEventType = OrderEvent['type'];
+
+/** 创建订单输入 */
+export interface CreateOrderInput {
+  clientOrderId: string;          // 前端 UUID (幂等键)
+  memberId?: string;
+  items: Array<{
+    productId: string;
+    quantity: number;
+    unitPriceCents: number;
+    discountCents?: number;
+  }>;
+  discountCents?: number;
+  taxCents?: number;
+  metadata?: Record<string, unknown>;
+}
+
+/** 创建支付输入 */
+export interface CreatePaymentInput {
+  orderId: string;
+  method: PaymentMethod;
+  amountCents: number;            // 应等于 order.totalCents
+}
+
+/** 创建退款输入 */
+export interface CreateRefundInput {
+  orderId: string;
+  paymentId: string;
+  amountCents: number;            // ≤ order.paidCents - order.refundedCents
+  reason: string;
+}
+
+/** 订单事件 (带 id, 用于 SSE Last-Event-ID 续传) */
+export type OrderEventWithId = OrderEvent & { id: number };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Phase-35: 智能体接入模块 - LLM配置类型
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** LLM 服务提供商 */
+export type LLMProvider = 'openai' | 'anthropic' | 'deepseek' | 'qwen' | 'moonshot' | 'minimax' | 'custom';
+
+/** LLM 配置状态 */
+export type LLMConfigStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
+
+/** 站点LLM配置 */
+export interface TenantLLMConfig {
+  id: string;
+  tenantId: string;
+  siteId?: string;
+  storeId?: string;
+  name: string;
+  provider: LLMProvider;
+  modelName: string;
+  apiEndpoint?: string;
+  temperature: number;
+  maxTokens: number;
+  topP?: number;
+  quotaLimit?: number;
+  quotaUsed?: number;
+  quotaAlertThreshold?: number;
+  status: LLMConfigStatus;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  approvedAt?: string;
+  approvedBy?: string;
+}
+
+/** 创建LLM配置请求 */
+export interface CreateLLMConfigRequest {
+  name: string;
+  provider: LLMProvider;
+  modelName: string;
+  apiEndpoint?: string;
+  apiKey: string;
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+  quotaLimit?: number;
+  quotaAlertThreshold?: number;
+  siteId?: string;
+  storeId?: string;
+}
+
+/** 更新LLM配置请求 */
+export interface UpdateLLMConfigRequest {
+  name?: string;
+  provider?: LLMProvider;
+  modelName?: string;
+  apiEndpoint?: string;
+  apiKey?: string;
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+  quotaLimit?: number;
+  quotaAlertThreshold?: number;
+  enabled?: boolean;
+}
+
+/** LLM调用统计 */
+export interface LLMStats {
+  totalCalls: number;
+  successCalls: number;
+  failedCalls: number;
+  totalPromptTokens: number;
+  totalCompletionTokens: number;
+  totalCost: number;
+  currency: string;
+  avgLatencyMs: number;
+  periodStart: string;
+  periodEnd: string;
+}
+
+/** LLM调用日志 */
+export interface LLMCallLog {
+  id: string;
+  configId: string;
+  tenantId: string;
+  sessionId?: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  costEstimate: number;
+  currency: string;
+  latencyMs: number;
+  status: 'success' | 'error' | 'timeout';
+  errorMessage?: string;
+  createdAt: string;
+}
+
+/** 接入申请请求 */
+export interface ApplyLLMConfigRequest {
+  configId: string;
+  useCase: string;
+  expectedVolume: number;
+  businessJustification?: string;
+}
+
+/** 全球化地域上下文 */
+export interface GeoContext {
+  country: string;
+  province?: string;
+  city?: string;
+  language: SupportedLanguage;
+  currency: SupportedCurrency;
+  timezone: string;
+  regionCode: string;
+}
+
+/** 支持的语言 */
+export type SupportedLanguage = 'zh-CN' | 'en-US' | 'ja-JP' | 'ko-KR' | 'zh-TW' | 'es-ES' | 'fr-FR' | 'de-DE';
+
+/** 支持的货币 */
+export type SupportedCurrency = 'USD' | 'CNY' | 'JPY' | 'KRW' | 'EUR' | 'GBP' | 'HKD' | 'SGD';

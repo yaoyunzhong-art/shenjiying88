@@ -1,15 +1,14 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
-
-test('configuration-governance controller path metadata is set', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+it('configuration-governance controller path metadata is set', () => {
+   
   const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
   const path = Reflect.getMetadata('path', ConfigurationGovernanceController)
   assert.equal(path, 'foundation/configuration-governance')
 })
 
-test('configuration-governance controller management-metadata route has GET metadata', () => {
+it('configuration-governance controller management-metadata route has GET metadata', () => {
   const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
   const method = Reflect.getMetadata(
     'method',
@@ -24,7 +23,7 @@ test('configuration-governance controller management-metadata route has GET meta
   assert.equal(path, 'management-metadata')
 })
 
-test('configuration-governance controller overview route has GET metadata', () => {
+it('configuration-governance controller overview route has GET metadata', () => {
   const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
   const method = Reflect.getMetadata(
     'method',
@@ -39,7 +38,7 @@ test('configuration-governance controller overview route has GET metadata', () =
   assert.equal(path, 'overview')
 })
 
-test('configuration-governance controller snapshot route has GET metadata', () => {
+it('configuration-governance controller snapshot route has GET metadata', () => {
   const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
   const method = Reflect.getMetadata(
     'method',
@@ -54,7 +53,7 @@ test('configuration-governance controller snapshot route has GET metadata', () =
   assert.equal(path, 'snapshot')
 })
 
-test('configuration-governance controller feature-flags route has GET metadata', () => {
+it('configuration-governance controller feature-flags route has GET metadata', () => {
   const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
   const method = Reflect.getMetadata(
     'method',
@@ -69,7 +68,7 @@ test('configuration-governance controller feature-flags route has GET metadata',
   assert.equal(path, 'feature-flags')
 })
 
-test('configuration-governance controller saveFeatureFlag route has POST metadata', () => {
+it('configuration-governance controller saveFeatureFlag route has POST metadata', () => {
   const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
   const method = Reflect.getMetadata(
     'method',
@@ -84,7 +83,7 @@ test('configuration-governance controller saveFeatureFlag route has POST metadat
   assert.equal(path, 'feature-flags')
 })
 
-test('configuration-governance controller getManagementMetadata delegates to service', () => {
+it('configuration-governance controller getManagementMetadata delegates to service', () => {
   const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
 
   const mockMetadata = {
@@ -102,7 +101,7 @@ test('configuration-governance controller getManagementMetadata delegates to ser
   assert.deepStrictEqual(result, mockMetadata)
 })
 
-test('configuration-governance controller getOperationsOverview delegates to service', async () => {
+it('configuration-governance controller getOperationsOverview delegates to service', async () => {
   const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
 
   const mockOverview = {
@@ -121,7 +120,7 @@ test('configuration-governance controller getOperationsOverview delegates to ser
   assert.deepStrictEqual(result, mockOverview)
 })
 
-test('configuration-governance controller getSnapshot delegates to service with tenant context', async () => {
+it('configuration-governance controller getSnapshot delegates to service with tenant context', async () => {
   const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
 
   const mockSnapshot = { featureFlags: {}, configEntries: {} }
@@ -143,7 +142,7 @@ test('configuration-governance controller getSnapshot delegates to service with 
   assert.deepStrictEqual(result, mockSnapshot)
 })
 
-test('configuration-governance controller saveFeatureFlag delegates to service', async () => {
+it('configuration-governance controller saveFeatureFlag delegates to service', async () => {
   const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
 
   const mockResult = { flagKey: 'new-checkout-flow', status: 'ENABLED' }

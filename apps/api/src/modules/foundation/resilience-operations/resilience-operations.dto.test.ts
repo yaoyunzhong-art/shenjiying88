@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { validateSync } from 'class-validator'
 import {
   ObservabilityQueryDto,
@@ -9,7 +9,7 @@ import {
   StageEdgeReplayDto
 } from './resilience-operations.dto'
 
-test('ObservabilityQueryDto accepts optional status filter', () => {
+it('ObservabilityQueryDto accepts optional status filter', () => {
   // empty query should be valid (no required fields)
   const empty = new ObservabilityQueryDto()
   assert.equal(validateSync(empty).length, 0)
@@ -23,7 +23,7 @@ test('ObservabilityQueryDto accepts optional status filter', () => {
   assert.equal(validateSync(invalidStatus).length > 0, true)
 })
 
-test('RetryPolicyQueryDto accepts optional capability filter', () => {
+it('RetryPolicyQueryDto accepts optional capability filter', () => {
   const empty = new RetryPolicyQueryDto()
   assert.equal(validateSync(empty).length, 0)
 
@@ -35,7 +35,7 @@ test('RetryPolicyQueryDto accepts optional capability filter', () => {
   assert.equal(validateSync(invalidCapability).length > 0, true)
 })
 
-test('RecoveryPlanQueryDto accepts optional status filter', () => {
+it('RecoveryPlanQueryDto accepts optional status filter', () => {
   const empty = new RecoveryPlanQueryDto()
   assert.equal(validateSync(empty).length, 0)
 
@@ -43,7 +43,7 @@ test('RecoveryPlanQueryDto accepts optional status filter', () => {
   assert.equal(validateSync(withStatus).length, 0)
 })
 
-test('StageEdgeReplayDto validates required fields and bounds', () => {
+it('StageEdgeReplayDto validates required fields and bounds', () => {
   // valid payload
   const valid = Object.assign(new StageEdgeReplayDto(), {
     storeId: 'store-001',

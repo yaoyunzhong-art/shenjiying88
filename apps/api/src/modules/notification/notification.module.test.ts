@@ -1,36 +1,38 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [notification] [D] module 测试补全
  */
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
+import { MetricsModule } from '../observability/metrics.module'
 import { NotificationController } from './notification.controller'
 import { NotificationModule } from './notification.module'
 import { NotificationService } from './notification.service'
 
-test('NotificationModule wires controller, provider, and export', () => {
+it('NotificationModule wires controller, provider, and export', () => {
+  const importsList = Reflect.getMetadata('imports', NotificationModule) as unknown[] | undefined
   const controllers = Reflect.getMetadata('controllers', NotificationModule) as unknown[] | undefined
   const providers = Reflect.getMetadata('providers', NotificationModule) as unknown[] | undefined
   const exportsList = Reflect.getMetadata('exports', NotificationModule) as unknown[] | undefined
 
+  assert.ok(importsList?.includes(MetricsModule))
   assert.ok(controllers?.includes(NotificationController))
   assert.ok(providers?.includes(NotificationService))
   assert.ok(exportsList?.includes(NotificationService))
 })
 
-test('NotificationModule 无外部依赖导入', () => {
+it('NotificationModule 导入 MetricsModule 支撑 observability', () => {
   const importsList = Reflect.getMetadata('imports', NotificationModule) as unknown[] | undefined
-  // NotificationModule is self-contained, no cross-module imports
-  assert.ok(!importsList || importsList.length === 0)
+  assert.ok(importsList?.includes(MetricsModule))
 })
 
-test('NotificationController is mounted at /notifications', () => {
+it('NotificationController is mounted at /notifications', () => {
   const path = Reflect.getMetadata('path', NotificationController)
   assert.equal(path, 'notifications')
 })
 
-test('NotificationController exposes template + dispatch routes', () => {
+it('NotificationController exposes template + dispatch routes', () => {
   const proto = NotificationController.prototype as unknown as Record<string, unknown>
   const routes: Array<{ method: string; path: string; handler: string }> = []
   for (const key of Object.getOwnPropertyNames(proto)) {

@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { Body, Controller, Get, Inject, Param, Post, Query, ValidationPipe } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
@@ -591,7 +591,7 @@ class TestTrustGovernanceManagementController {
   }
 }
 
-test('e2e: manages rate limit policies and resets ledgers', async () => {
+it('e2e: manages rate limit policies and resets ledgers', async () => {
   const { prisma, policies, ledgers, approvals } = createTrustGovernanceManagementPrismaMock()
   approvals.push({
     id: 'approval_seed_approved',
@@ -701,7 +701,7 @@ test('e2e: manages rate limit policies and resets ledgers', async () => {
   }
 })
 
-test('e2e: trust governance overview aggregates approvals audits policies and ledgers', async () => {
+it('e2e: trust governance overview aggregates approvals audits policies and ledgers', async () => {
   const { prisma, policies, ledgers, approvals, audits } = createTrustGovernanceManagementPrismaMock()
   const now = new Date()
   approvals.push({
@@ -819,7 +819,7 @@ test('e2e: trust governance overview aggregates approvals audits policies and le
   }
 })
 
-test('e2e: quota reset stays pending without approval', async () => {
+it('e2e: quota reset stays pending without approval', async () => {
   const { prisma, ledgers, approvals } = createTrustGovernanceManagementPrismaMock()
 
   const moduleRef = await Test.createTestingModule({
@@ -860,7 +860,7 @@ test('e2e: quota reset stays pending without approval', async () => {
   }
 })
 
-test('e2e: approval lifecycle runs submit -> review -> execute', async () => {
+it('e2e: approval lifecycle runs submit -> review -> execute', async () => {
   const { prisma, ledgers, approvals } = createTrustGovernanceManagementPrismaMock()
   const from = new Date(Date.now() - 60_000).toISOString()
 
@@ -980,7 +980,7 @@ test('e2e: approval lifecycle runs submit -> review -> execute', async () => {
   }
 })
 
-test('e2e: pending approval can be cancelled and resubmitted before execution', async () => {
+it('e2e: pending approval can be cancelled and resubmitted before execution', async () => {
   const { prisma, ledgers, approvals } = createTrustGovernanceManagementPrismaMock()
 
   const moduleRef = await Test.createTestingModule({
@@ -1074,7 +1074,7 @@ test('e2e: pending approval can be cancelled and resubmitted before execution', 
   }
 })
 
-test('e2e: approval decision rejects stale expectedVersion', async () => {
+it('e2e: approval decision rejects stale expectedVersion', async () => {
   const { prisma, approvals } = createTrustGovernanceManagementPrismaMock()
 
   const moduleRef = await Test.createTestingModule({
@@ -1133,7 +1133,7 @@ test('e2e: approval decision rejects stale expectedVersion', async () => {
   }
 })
 
-test('e2e: rejected approval blocks later execution with same ticket', async () => {
+it('e2e: rejected approval blocks later execution with same ticket', async () => {
   const { prisma, ledgers, approvals } = createTrustGovernanceManagementPrismaMock()
 
   const moduleRef = await Test.createTestingModule({
@@ -1197,7 +1197,7 @@ test('e2e: rejected approval blocks later execution with same ticket', async () 
   }
 })
 
-test('e2e: approved ticket cannot be replayed with a different reset payload', async () => {
+it('e2e: approved ticket cannot be replayed with a different reset payload', async () => {
   const { prisma, ledgers } = createTrustGovernanceManagementPrismaMock()
 
   const moduleRef = await Test.createTestingModule({
@@ -1250,7 +1250,7 @@ test('e2e: approved ticket cannot be replayed with a different reset payload', a
   }
 })
 
-test('e2e: failed quota reset execution records failure and allows retry', async () => {
+it('e2e: failed quota reset execution records failure and allows retry', async () => {
   const { prisma, ledgers, approvals } = createTrustGovernanceManagementPrismaMock({ failLedgerUpdateOnce: true })
 
   const moduleRef = await Test.createTestingModule({

@@ -6,6 +6,7 @@ import {
   materializeGovernanceApproval,
   type GovernanceApprovalSnapshot
 } from '../foundation/governance-approval/governance-approval'
+import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
 import { RuntimeGovernanceService } from '../foundation/runtime-governance/runtime-governance.service'
 import type { RequestTenantContext } from '../tenant/tenant.types';
 import {
@@ -55,7 +56,8 @@ export function resetMemberServiceTestState() {
 export class MemberService {
   constructor(
     @Optional() private readonly prisma?: PrismaService,
-    @Optional() private readonly runtimeGovernanceService?: RuntimeGovernanceService
+    @Optional() private readonly runtimeGovernanceService?: RuntimeGovernanceService,
+    @Optional() private readonly marketingMetricsService?: MarketingMetricsService
   ) {}
 
   private getLytMemberSnapshotModel():
@@ -1168,6 +1170,7 @@ export class MemberService {
         executionTargetId: receipt.targetId,
         executedAt
       })
+      this.marketingMetricsService?.incrCouponIssued(1, task.tenantContext.tenantId)
       return this.attachRuntimeExecutionTrace(task, receipt)
     }
 
@@ -1205,6 +1208,7 @@ export class MemberService {
       ...task,
       status: 'dispatched'
     })
+    this.marketingMetricsService?.incrNotificationDispatch(task.tenantContext.tenantId)
     return undefined
   }
 

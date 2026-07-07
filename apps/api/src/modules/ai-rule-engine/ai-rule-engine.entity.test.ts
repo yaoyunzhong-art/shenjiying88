@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { PolicyConditionOperator, AiProvider, AiExecutionStatus } from '@m5/domain'
 import type {
   RuleCondition,
@@ -18,7 +18,7 @@ import type {
 
 // ── RuleCondition type contract ─────────────────────────────────
 describe('ai-rule-engine.entity: RuleCondition', () => {
-  test('creates valid RuleCondition with all required fields', () => {
+  it('creates valid RuleCondition with all required fields', () => {
     const cond: RuleCondition = {
       id: 'cond-001',
       engineId: 'engine-v1',
@@ -38,7 +38,7 @@ describe('ai-rule-engine.entity: RuleCondition', () => {
     assert.equal(cond.description, '消费金额 >= 10000')
   })
 
-  test('creates RuleCondition without optional description', () => {
+  it('creates RuleCondition without optional description', () => {
     const cond: RuleCondition = {
       id: 'cond-002',
       engineId: 'engine-v1',
@@ -52,7 +52,7 @@ describe('ai-rule-engine.entity: RuleCondition', () => {
     assert.equal(cond.description, undefined)
   })
 
-  test('weight is a number in 0-1 range', () => {
+  it('weight is a number in 0-1 range', () => {
     const cond: RuleCondition = {
       id: 'cond-003',
       engineId: 'engine-v2',
@@ -65,7 +65,7 @@ describe('ai-rule-engine.entity: RuleCondition', () => {
     assert.ok(cond.weight >= 0 && cond.weight <= 1)
   })
 
-  test('value supports unknown type for flexibility', () => {
+  it('value supports unknown type for flexibility', () => {
     const stringCond: RuleCondition = {
       id: 'cond-str',
       engineId: 'eng-str',
@@ -90,7 +90,7 @@ describe('ai-rule-engine.entity: RuleCondition', () => {
 
 // ── RuleAction type contract ────────────────────────────────────
 describe('ai-rule-engine.entity: RuleAction', () => {
-  test('creates valid ASSIGN_LEVEL action', () => {
+  it('creates valid ASSIGN_LEVEL action', () => {
     const action: RuleAction = {
       id: 'act-001',
       engineId: 'engine-v1',
@@ -106,7 +106,7 @@ describe('ai-rule-engine.entity: RuleAction', () => {
     assert.equal(action.priority, 1)
   })
 
-  test('creates valid FLAG_ANOMALY action', () => {
+  it('creates valid FLAG_ANOMALY action', () => {
     const action: RuleAction = {
       id: 'act-002',
       engineId: 'engine-v2',
@@ -119,7 +119,7 @@ describe('ai-rule-engine.entity: RuleAction', () => {
     assert.equal(action.priority, 2)
   })
 
-  test('creates valid SEND_NOTIFICATION action', () => {
+  it('creates valid SEND_NOTIFICATION action', () => {
     const action: RuleAction = {
       id: 'act-003',
       engineId: 'engine-v1',
@@ -131,7 +131,7 @@ describe('ai-rule-engine.entity: RuleAction', () => {
     assert.equal(action.type, 'SEND_NOTIFICATION')
   })
 
-  test('creates valid ESCALATE action', () => {
+  it('creates valid ESCALATE action', () => {
     const action: RuleAction = {
       id: 'act-004',
       engineId: 'engine-v1',
@@ -143,7 +143,7 @@ describe('ai-rule-engine.entity: RuleAction', () => {
     assert.equal(action.type, 'ESCALATE')
   })
 
-  test('priority is within valid range 1-10', () => {
+  it('priority is within valid range 1-10', () => {
     const low: RuleAction = {
       id: 'low-prio',
       engineId: 'eng',
@@ -166,7 +166,7 @@ describe('ai-rule-engine.entity: RuleAction', () => {
 
 // ── RuleEngine type contract ────────────────────────────────────
 describe('ai-rule-engine.entity: RuleEngine', () => {
-  test('creates valid RuleEngine with ALL match strategy', () => {
+  it('creates valid RuleEngine with ALL match strategy', () => {
     const conditions: RuleCondition[] = [
       { id: 'c1', engineId: 'eng-v1', field: 'points', operator: PolicyConditionOperator.Gte, value: 5000, weight: 0.5 },
       { id: 'c2', engineId: 'eng-v1', field: 'spend', operator: PolicyConditionOperator.Gte, value: 10000, weight: 0.5 }
@@ -196,7 +196,7 @@ describe('ai-rule-engine.entity: RuleEngine', () => {
     assert.equal(engine.status, AiExecutionStatus.Succeeded)
   })
 
-  test('creates valid RuleEngine with ANY match strategy', () => {
+  it('creates valid RuleEngine with ANY match strategy', () => {
     const engine: RuleEngine = {
       id: 'eng-v2',
       name: 'Device Anomaly Detector',
@@ -213,7 +213,7 @@ describe('ai-rule-engine.entity: RuleEngine', () => {
     assert.equal(engine.conditions.length, 0)
   })
 
-  test('lastEvaluatedAt is optional and can be ISO date string', () => {
+  it('lastEvaluatedAt is optional and can be ISO date string', () => {
     const engine: RuleEngine = {
       id: 'eng-v3',
       name: 'Test Engine',
@@ -231,7 +231,7 @@ describe('ai-rule-engine.entity: RuleEngine', () => {
     assert.ok(!isNaN(Date.parse(engine.lastEvaluatedAt)))
   })
 
-  test('description is optional', () => {
+  it('description is optional', () => {
     const engine: RuleEngine = {
       id: 'eng-no-desc',
       name: 'No Description',
@@ -249,7 +249,7 @@ describe('ai-rule-engine.entity: RuleEngine', () => {
 
 // ── MemberLevelInput type contract ──────────────────────────────
 describe('ai-rule-engine.entity: MemberLevelInput', () => {
-  test('creates valid MemberLevelInput', () => {
+  it('creates valid MemberLevelInput', () => {
     const input: MemberLevelInput = {
       memberId: 'mem-001',
       totalPoints: 6000,
@@ -265,7 +265,7 @@ describe('ai-rule-engine.entity: MemberLevelInput', () => {
     assert.equal(input.tenantId, 'tenant-1')
   })
 
-  test('accepts zero values for new members', () => {
+  it('accepts zero values for new members', () => {
     const input: MemberLevelInput = {
       memberId: 'new-member',
       totalPoints: 0,
@@ -279,7 +279,7 @@ describe('ai-rule-engine.entity: MemberLevelInput', () => {
     assert.equal(input.visitCount, 0)
   })
 
-  test('field types are correct', () => {
+  it('field types are correct', () => {
     const input: MemberLevelInput = {
       memberId: 'mem-002',
       totalPoints: 3000,
@@ -298,7 +298,7 @@ describe('ai-rule-engine.entity: MemberLevelInput', () => {
 
 // ── MemberLevelOutput type contract ─────────────────────────────
 describe('ai-rule-engine.entity: MemberLevelOutput', () => {
-  test('creates valid MemberLevelOutput with triggered rules', () => {
+  it('creates valid MemberLevelOutput with triggered rules', () => {
     const output: MemberLevelOutput = {
       memberId: 'mem-001',
       currentLevel: 'VIP',
@@ -314,7 +314,7 @@ describe('ai-rule-engine.entity: MemberLevelOutput', () => {
     assert.ok(output.confidence >= 0 && output.confidence <= 1)
   })
 
-  test('creates output with no triggered rules（无匹配）', () => {
+  it('creates output with no triggered rules（无匹配）', () => {
     const output: MemberLevelOutput = {
       memberId: 'mem-002',
       currentLevel: 'REGULAR',
@@ -327,7 +327,7 @@ describe('ai-rule-engine.entity: MemberLevelOutput', () => {
     assert.equal(output.confidence, 0.3)
   })
 
-  test('confidence is always between 0 and 1', () => {
+  it('confidence is always between 0 and 1', () => {
     const boundaries = [0, 0.5, 1.0]
     for (const c of boundaries) {
       const output: MemberLevelOutput = {
@@ -344,7 +344,7 @@ describe('ai-rule-engine.entity: MemberLevelOutput', () => {
 
 // ── DeviceAnomalyInput type contract ────────────────────────────
 describe('ai-rule-engine.entity: DeviceAnomalyInput', () => {
-  test('creates valid DeviceAnomalyInput', () => {
+  it('creates valid DeviceAnomalyInput', () => {
     const input: DeviceAnomalyInput = {
       deviceId: 'dev-001',
       storeId: 'store-1',
@@ -370,7 +370,7 @@ describe('ai-rule-engine.entity: DeviceAnomalyInput', () => {
     assert.equal(input.tenantId, 'tenant-1')
   })
 
-  test('metrics fields are all numbers', () => {
+  it('metrics fields are all numbers', () => {
     const input: DeviceAnomalyInput = {
       deviceId: 'dev-002',
       storeId: 'store-2',
@@ -393,7 +393,7 @@ describe('ai-rule-engine.entity: DeviceAnomalyInput', () => {
 
 // ── DeviceAnomalyOutput type contract ───────────────────────────
 describe('ai-rule-engine.entity: DeviceAnomalyOutput', () => {
-  test('creates anomaly detected output with CRITICAL severity', () => {
+  it('creates anomaly detected output with CRITICAL severity', () => {
     const output: DeviceAnomalyOutput = {
       deviceId: 'dev-001',
       isAnomaly: true,
@@ -409,7 +409,7 @@ describe('ai-rule-engine.entity: DeviceAnomalyOutput', () => {
     assert.ok(output.triggeredRules.length >= 3)
   })
 
-  test('creates normal output with no anomaly', () => {
+  it('creates normal output with no anomaly', () => {
     const output: DeviceAnomalyOutput = {
       deviceId: 'dev-002',
       isAnomaly: false,
@@ -424,7 +424,7 @@ describe('ai-rule-engine.entity: DeviceAnomalyOutput', () => {
     assert.equal(output.triggeredRules.length, 0)
   })
 
-  test('severity extends valid values: LOW / MEDIUM / HIGH / CRITICAL', () => {
+  it('severity extends valid values: LOW / MEDIUM / HIGH / CRITICAL', () => {
     const severities: DeviceAnomalyOutput['severity'][] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
     for (const sev of severities) {
       const output: DeviceAnomalyOutput = {
@@ -440,14 +440,16 @@ describe('ai-rule-engine.entity: DeviceAnomalyOutput', () => {
 
 // ── BatchEvaluate type contracts ─────────────────────────────────
 describe('ai-rule-engine.entity: BatchEvaluate', () => {
-  test('creates valid BatchEvaluateRequest with mixed items', () => {
+  it('creates valid BatchEvaluateRequest with mixed items', () => {
     const request: BatchEvaluateRequest = {
       items: [
         {
+          index: 0,
           type: 'member-level',
           data: { memberId: 'mem-001', totalPoints: 8000, totalSpend: 20000, visitCount: 50, tenantId: 't-001' }
         },
         {
+          index: 1,
           type: 'device-anomaly',
           data: {
             deviceId: 'dev-001', storeId: 'store-1',
@@ -463,27 +465,24 @@ describe('ai-rule-engine.entity: BatchEvaluate', () => {
     assert.equal(request.items[1].type, 'device-anomaly')
   })
 
-  test('BatchEvaluateItem carries index and result', () => {
+  it('BatchEvaluateItem carries index and data', () => {
     const item: BatchEvaluateItem = {
       index: 0,
       type: 'member-level',
-      inputId: 'mem-001',
-      result: {
+      data: {
         memberId: 'mem-001',
-        currentLevel: 'VIP',
-        suggestedLevel: 'SVIP',
-        triggeredRules: ['cond-high-spend'],
-        confidence: 0.85
+        totalPoints: 8000,
+        totalSpend: 20000,
+        visitCount: 50,
+        tenantId: 't-001',
       }
     }
 
     assert.equal(item.index, 0)
-    assert.equal(item.inputId, 'mem-001')
     assert.equal(item.type, 'member-level')
-    assert.ok((item.result as { confidence: number }).confidence >= 0)
   })
 
-  test('BatchEvaluateResponse includes summary stats', () => {
+  it('BatchEvaluateResponse includes summary stats', () => {
     const response: BatchEvaluateResponse = {
       total: 3,
       succeeded: 3,
@@ -498,7 +497,7 @@ describe('ai-rule-engine.entity: BatchEvaluate', () => {
     assert.ok(new Date(response.timestamp).getTime() > 0)
   })
 
-  test('BatchEvaluateResponse handles partial failures', () => {
+  it('BatchEvaluateResponse handles partial failures', () => {
     const response: BatchEvaluateResponse = {
       total: 5,
       succeeded: 3,
@@ -513,7 +512,7 @@ describe('ai-rule-engine.entity: BatchEvaluate', () => {
 
 // ── EngineStatus type contract ──────────────────────────────────
 describe('ai-rule-engine.entity: EngineStatus', () => {
-  test('creates valid EngineStatus snapshot', () => {
+  it('creates valid EngineStatus snapshot', () => {
     const status: EngineStatus = {
       engineId: 'member-level-v1',
       engineName: 'Member Level Evaluator',
@@ -521,6 +520,7 @@ describe('ai-rule-engine.entity: EngineStatus', () => {
       actionsCount: 3,
       matchStrategy: 'ALL',
       status: AiExecutionStatus.Succeeded,
+      enabled: true,
       lastEvaluatedAt: '2026-06-14T08:00:00.000Z'
     }
 
@@ -531,21 +531,22 @@ describe('ai-rule-engine.entity: EngineStatus', () => {
     assert.equal(status.status, AiExecutionStatus.Succeeded)
   })
 
-  test('EngineStatus lastEvaluatedAt is optional', () => {
+  it('EngineStatus lastEvaluatedAt is optional', () => {
     const status: EngineStatus = {
       engineId: 'device-anomaly-v1',
       engineName: 'Device Anomaly Detector',
       conditionsCount: 5,
       actionsCount: 2,
       matchStrategy: 'ANY',
-      status: AiExecutionStatus.Pending
+      status: AiExecutionStatus.Pending,
+      enabled: true
     }
 
     assert.equal(status.lastEvaluatedAt, undefined)
   })
 })
 
-  test('anomalyType valid values', () => {
+  it('anomalyType valid values', () => {
     const types: DeviceAnomalyOutput['anomalyType'][] = [
       'CPU_SPIKE', 'MEMORY_LEAK', 'DISK_FULL', 'NETWORK_LATENCY', 'HIGH_ERROR_RATE'
     ]
@@ -569,12 +570,12 @@ describe('ai-rule-engine.entity: EngineStatus', () => {
 // Phase-5 Wave-3 🐜7 补强：DiagnosisEntity / DiagnosisBatch 单元测试
 // ──────────────────────────────────────────────────────────────────────────
 
-test('entity: DiagnosisEntity shape validation with COMPLETED status', () => {
+it('entity: DiagnosisEntity shape validation with Succeeded status', () => {
   const entity: import('./ai-rule-engine.entity').DiagnosisEntity = {
     diagnosisId: 'diag-001',
     engineId: 'engine-fraud-v1',
     scenarioId: 'scenario-spike-tx',
-    status: 'COMPLETED',
+    status: AiExecutionStatus.Succeeded,
     matchedRuleIds: ['rule-spike-amount'],
     matchedConditionIds: ['cond-amount-gt-50k'],
     triggeredActionIds: ['action-flag-anomaly'],
@@ -589,18 +590,18 @@ test('entity: DiagnosisEntity shape validation with COMPLETED status', () => {
     tenantId: 'tenant-demo',
     requestedBy: 'sec-admin-001'
   }
-  assert.equal(entity.status, 'COMPLETED')
+  assert.equal(entity.status, AiExecutionStatus.Succeeded)
   assert.equal(entity.matchedRuleIds.length, 1)
   assert.equal(entity.riskLevel, 'high')
-  assert.ok(entity.completedAt, 'expected completedAt to be set on COMPLETED status')
+  assert.ok(entity.completedAt, 'expected completedAt to be set on completed status')
 })
 
-test('entity: DiagnosisEntity without completedAt is valid for PENDING status', () => {
+it('entity: DiagnosisEntity without completedAt is valid for Pending status', () => {
   const entity: import('./ai-rule-engine.entity').DiagnosisEntity = {
     diagnosisId: 'diag-002',
     engineId: 'engine-fraud-v1',
     scenarioId: 'scenario-pending',
-    status: 'PENDING',
+    status: AiExecutionStatus.Pending,
     matchedRuleIds: [],
     matchedConditionIds: [],
     triggeredActionIds: [],
@@ -614,12 +615,12 @@ test('entity: DiagnosisEntity without completedAt is valid for PENDING status', 
     tenantId: 'tenant-demo',
     requestedBy: 'system'
   }
-  assert.equal(entity.status, 'PENDING')
+  assert.equal(entity.status, AiExecutionStatus.Pending)
   assert.equal(entity.completedAt, undefined)
   assert.equal(entity.matchedRuleIds.length, 0)
 })
 
-test('entity: DiagnosisBatch riskDistribution sums to totalDiagnoses', () => {
+it('entity: DiagnosisBatch riskDistribution sums to totalDiagnoses', () => {
   const batch: import('./ai-rule-engine.entity').DiagnosisBatch = {
     batchId: 'batch-001',
     engineId: 'engine-fraud-v2',
@@ -638,7 +639,7 @@ test('entity: DiagnosisBatch riskDistribution sums to totalDiagnoses', () => {
   assert.equal(batch.matchRate, 0.7)
 })
 
-test('entity: DiagnosisBatch with zero match preserves zero matchRate', () => {
+it('entity: DiagnosisBatch with zero match preserves zero matchRate', () => {
   const batch: import('./ai-rule-engine.entity').DiagnosisBatch = {
     batchId: 'batch-002',
     engineId: 'engine-fraud-v2',

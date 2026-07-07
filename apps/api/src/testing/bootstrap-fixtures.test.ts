@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   createBrandPortalFixture,
   createContractTestFoundationDependencySummary,
@@ -13,7 +13,7 @@ import {
   createTenantPortalFixture
 } from './bootstrap-fixtures'
 
-test('fixture: foundation dependency summaries preserve consumer-specific contract names', () => {
+it('fixture: foundation dependency summaries preserve consumer-specific contract names', () => {
   assert.deepEqual(createContractTestFoundationDependencySummary(), {
     dependsOn: ['identity-access', 'configuration-governance'],
     handoffContracts: ['contract-a']
@@ -24,7 +24,7 @@ test('fixture: foundation dependency summaries preserve consumer-specific contra
   })
 })
 
-test('fixture: market and portal fixtures remain aligned to bootstrap samples', () => {
+it('fixture: market and portal fixtures remain aligned to bootstrap samples', () => {
   assert.equal(createMarketProfileFixture().marketCode, 'cn-mainland')
   assert.equal(createMarketProfileFixture().tax.taxMode, 'PRICES_INCLUDE_TAX')
   assert.equal(createTenantPortalFixture().loginEntry.loginPath, '/cn-mainland/tenant-demo/login')
@@ -43,7 +43,7 @@ test('fixture: market and portal fixtures remain aligned to bootstrap samples', 
   ])
 })
 
-test('fixture: regional override collection remains stable', () => {
+it('fixture: regional override collection remains stable', () => {
   assert.deepEqual(createRegionalOverridesFixture(), [
     {
       scopeType: 'TENANT',
@@ -69,7 +69,7 @@ test('fixture: regional override collection remains stable', () => {
   ])
 })
 
-test('fixture: resolved tenant context and supported clients stay stable', () => {
+it('fixture: resolved tenant context and supported clients stay stable', () => {
   assert.deepEqual(createMinimalTenantContextFixture(), {
     tenantId: 'tenant-demo'
   })

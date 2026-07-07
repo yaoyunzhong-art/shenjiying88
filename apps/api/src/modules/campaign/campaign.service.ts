@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { Injectable, Optional } from '@nestjs/common'
 import { LoyaltyService } from '../loyalty/loyalty.service'
+import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
 import { MemberService } from '../member/member.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -43,7 +44,8 @@ export interface CampaignEvaluationResult {
 export class CampaignService {
   constructor(
     @Optional() private readonly memberService?: MemberService,
-    @Optional() private readonly loyaltyService?: LoyaltyService
+    @Optional() private readonly loyaltyService?: LoyaltyService,
+    @Optional() private readonly marketingMetricsService?: MarketingMetricsService
   ) {}
 
   // ── Plan management ────────────────────────────────────────────────
@@ -176,6 +178,12 @@ export class CampaignService {
         else if (dispatch.status === CampaignActionStatus.Failed) failedActions += 1
       }
     }
+
+    this.marketingMetricsService?.incrCampaignTrigger(
+      candidateCampaigns.length,
+      dispatchedActions,
+      tenantId
+    )
 
     return {
       matchedCampaigns: candidateCampaigns.length,

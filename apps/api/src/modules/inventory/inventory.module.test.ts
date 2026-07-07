@@ -1,23 +1,22 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 const { InventoryModule } = require('./inventory.module')
 const { InventoryController } = require('./inventory.controller')
 const { InventoryService } = require('./inventory.service')
 
 describe('InventoryModule', () => {
-  test('is defined', () => {
+  it('is defined', () => {
     assert.ok(InventoryModule)
   })
 
-  test('registers controller', () => {
+  it('registers controller', () => {
     const controllers = Reflect.getMetadata('controllers', InventoryModule) || []
     const controllerNames = controllers.map((c: any) => c.name || c)
     assert.ok(controllerNames.includes('InventoryController') || controllers.includes(InventoryController))
   })
 
-  test('registers service as provider', () => {
+  it('registers service as provider', () => {
     const providers = Reflect.getMetadata('providers', InventoryModule) || []
     const providerNames = providers.map((p: any) => {
       if (typeof p === 'function') return p.name
@@ -28,13 +27,13 @@ describe('InventoryModule', () => {
     )
   })
 
-  test('exports InventoryService', () => {
+  it('exports InventoryService', () => {
     const exports = Reflect.getMetadata('exports', InventoryModule) || []
     const exportNames = exports.map((e: any) => (typeof e === 'function' ? e.name : String(e)))
     assert.ok(exportNames.some((n: string) => n === 'InventoryService' || n.includes('InventoryService')))
   })
 
-  test('constructs module instance', () => {
+  it('constructs module instance', () => {
     const mod = new InventoryModule()
     assert.ok(mod instanceof InventoryModule)
   })

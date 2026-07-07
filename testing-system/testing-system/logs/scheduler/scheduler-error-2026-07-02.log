@@ -1,0 +1,7 @@
+bash: /dev/fd/63: Bad file descriptor
+[2026-07-03 07:00:18] ERROR: ✗ 任务失败: 冒烟测试 (尝试 1)
+bash: /dev/fd/63: Bad file descriptor
+[2026-07-03 07:00:48] ERROR: ✗ 任务失败: 冒烟测试 (尝试 2)
+bash: /dev/fd/63: Bad file descriptor
+[2026-07-03 07:01:18] ERROR: ✗ 任务失败: 冒烟测试 (尝试 3)
+[2026-07-03 07:01:18] ERROR: 任务彻底失败: 冒烟测试

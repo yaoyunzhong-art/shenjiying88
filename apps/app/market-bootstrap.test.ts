@@ -417,7 +417,7 @@ test('native app bootstrap: creates submit history entry with receipt and summar
   const outcome = submitNativeAppActionPlan(createNativeAppActionPlan(snapshot, createNativeSession(), 'member-login'));
   const entry = createNativeAppSubmitHistoryEntry(outcome, '2026-06-12T10:00:00.000Z');
 
-  assert.equal(entry.receiptCode, 'APP-MEMBER-LOGIN-PROCEED');
+  assert.equal(entry.receiptCode, 'NATIVE-MEMBER-LOGIN-PROCEED');
   assert.equal(entry.occurredAt, '2026-06-12T10:00:00.000Z');
   assert.match(entry.summary, /FOLLOW_SUBMIT_CALLBACK/);
 });
@@ -438,7 +438,7 @@ test('native app bootstrap: prepends submit history and keeps latest five entrie
   const nextHistory = appendNativeAppSubmitHistory(history, outcome);
 
   assert.equal(nextHistory.length, 5);
-  assert.equal(nextHistory[0]?.receiptCode, 'APP-MEMBER-LOGIN-PROCEED');
+  assert.equal(nextHistory[0]?.receiptCode, 'NATIVE-MEMBER-LOGIN-PROCEED');
   assert.equal(nextHistory[4]?.receiptCode, 'OLD-3');
 });
 
@@ -448,9 +448,9 @@ test('native app bootstrap: builds replayable ledger record for submitted histor
   const history = appendNativeAppSubmitHistory([], outcome);
   const ledger = buildNativeAppLedger(history);
 
-  assert.equal(ledger[0]?.ledgerKey, 'app-ledger:APP-MEMBER-LOGIN-PROCEED');
+  assert.equal(ledger[0]?.ledgerKey, 'native-ledger:NATIVE-MEMBER-LOGIN-PROCEED');
   assert.equal(ledger[0]?.replayable, true);
-  assert.equal(ledger[0]?.replayEndpoint, '/api/v1/app/actions/APP-MEMBER-LOGIN-PROCEED/replay');
+  assert.equal(ledger[0]?.replayEndpoint, '/api/v1/app/actions/NATIVE-MEMBER-LOGIN-PROCEED/replay');
 });
 
 test('native app bootstrap: blocks replay when challenge is unfinished', () => {
@@ -460,7 +460,7 @@ test('native app bootstrap: blocks replay when challenge is unfinished', () => {
   const replay = replayNativeAppSubmitHistoryEntry(historyEntry);
 
   assert.equal(replay.status, 'replay-blocked');
-  assert.equal(replay.replayEndpoint, '/api/v1/app/actions/APP-PAYMENT-SUBMIT-CHALLENGE/replay');
+  assert.equal(replay.replayEndpoint, '/api/v1/app/actions/NATIVE-PAYMENT-SUBMIT-CHALLENGE/replay');
 });
 
 test('native app bootstrap: schedules replay for submitted login history', () => {
@@ -480,7 +480,7 @@ test('native app bootstrap: builds challenge ticket for payment outcome', () => 
 
   assert.equal(ticket.ticketType, 'CHALLENGE_GATE');
   assert.equal(ticket.status, 'pending-challenge');
-  assert.equal(ticket.ticketCode, 'APP-PAYMENT-SUBMIT-CHALLENGE-CHALLENGE');
+  assert.equal(ticket.ticketCode, 'NATIVE-PAYMENT-SUBMIT-CHALLENGE-CHALLENGE');
 });
 
 test('native app bootstrap: builds handler sync contract for submitted login outcome', () => {
@@ -502,9 +502,9 @@ test('native app bootstrap: builds replay request from ledger record', () => {
   const request = createNativeAppReplayRequest(ledger[0]!);
 
   assert.equal(request.method, 'POST');
-  assert.equal(request.endpoint, '/api/v1/app/actions/APP-MEMBER-LOGIN-PROCEED/replay');
-  assert.equal(request.headers['x-m5-receipt-code'], 'APP-MEMBER-LOGIN-PROCEED');
-  assert.equal(request.body.ticketCode, 'APP-MEMBER-LOGIN-PROCEED-HANDLER');
+  assert.equal(request.endpoint, '/api/v1/app/actions/NATIVE-MEMBER-LOGIN-PROCEED/replay');
+  assert.equal(request.headers['x-m5-receipt-code'], 'NATIVE-MEMBER-LOGIN-PROCEED');
+  assert.equal(request.body.ticketCode, 'NATIVE-MEMBER-LOGIN-PROCEED-HANDLER');
 });
 
 test('native app bootstrap: builds auth envelope from handler sync contract', () => {
@@ -513,9 +513,9 @@ test('native app bootstrap: builds auth envelope from handler sync contract', ()
   const sync = buildNativeAppHandlerSyncContract(outcome);
   const auth = buildNativeAppAuthEnvelope(sync);
 
-  assert.equal(auth.audience, 'app-handler-sync');
+  assert.equal(auth.audience, 'native-app-handler-sync');
   assert.equal(auth.authScheme, 'M5-HMAC-SHA256');
-  assert.equal(auth.authorization, 'M5 APP-MEMBER-LOGIN-PROCEED-HANDLER.app-sync:APP-MEMBER-LOGIN-PROCEED');
+  assert.equal(auth.authorization, 'M5 NATIVE-MEMBER-LOGIN-PROCEED-HANDLER.app-sync:NATIVE-MEMBER-LOGIN-PROCEED');
 });
 
 test('native app bootstrap: builds callback receipt for submitted outcome', () => {
@@ -526,7 +526,7 @@ test('native app bootstrap: builds callback receipt for submitted outcome', () =
 
   assert.equal(receipt.callbackStatus, 'awaiting-callback');
   assert.equal(receipt.lastEvent, 'HANDLER_ACCEPTED');
-  assert.equal(receipt.ackToken, 'APP-MEMBER-LOGIN-PROCEED-ACK-HANDLER');
+  assert.equal(receipt.ackToken, 'NATIVE-MEMBER-LOGIN-PROCEED-ACK-HANDLER');
 });
 
 test('native app bootstrap: builds retry policy for blocked replay', () => {

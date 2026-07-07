@@ -1,18 +1,18 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { AiRuleEngineService } from './ai-rule-engine.service'
 
 describe('AiRuleEngineService', () => {
   let service: AiRuleEngineService
 
-  test.beforeEach(() => {
+  beforeEach(() => {
     service = new AiRuleEngineService()
   })
 
   describe('evaluateMemberLevel', () => {
     // 正常流程：高消费高积分 -> SVIP
-    test('should assign SVIP to high-spend high-points member', () => {
+    it('should assign SVIP to high-spend high-points member', () => {
       const result = service.evaluateMemberLevel({
         memberId: 'member-001',
         totalPoints: 6000,
@@ -28,7 +28,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 正常流程：中等消费 -> VIP
-    test('should assign VIP to medium-spend member', () => {
+    it('should assign VIP to medium-spend member', () => {
       const result = service.evaluateMemberLevel({
         memberId: 'member-002',
         totalPoints: 3000,
@@ -45,7 +45,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 正常流程：全低 -> REGULAR
-    test('should assign REGULAR to low-spend member', () => {
+    it('should assign REGULAR to low-spend member', () => {
       const result = service.evaluateMemberLevel({
         memberId: 'member-003',
         totalPoints: 100,
@@ -61,7 +61,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：恰好达到阈值
-    test('should trigger conditions at exact threshold values', () => {
+    it('should trigger conditions at exact threshold values', () => {
       const result = service.evaluateMemberLevel({
         memberId: 'member-004',
         totalPoints: 5000,
@@ -77,7 +77,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：零值输入
-    test('should handle zero values gracefully', () => {
+    it('should handle zero values gracefully', () => {
       const result = service.evaluateMemberLevel({
         memberId: 'member-005',
         totalPoints: 0,
@@ -91,7 +91,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 只有满足部分条件
-    test('should only trigger matching conditions partially', () => {
+    it('should only trigger matching conditions partially', () => {
       const result = service.evaluateMemberLevel({
         memberId: 'member-006',
         totalPoints: 100,
@@ -108,7 +108,7 @@ describe('AiRuleEngineService', () => {
 
   describe('detectDeviceAnomaly', () => {
     // 正常流程：CPU 异常
-    test('should detect CPU anomaly', () => {
+    it('should detect CPU anomaly', () => {
       const result = service.detectDeviceAnomaly({
         deviceId: 'device-001',
         storeId: 'store-001',
@@ -132,7 +132,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 正常流程：无异常
-    test('should return no anomaly for normal device', () => {
+    it('should return no anomaly for normal device', () => {
       const result = service.detectDeviceAnomaly({
         deviceId: 'device-002',
         storeId: 'store-001',
@@ -154,7 +154,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 正常流程：多异常 -> CRITICAL
-    test('should detect multiple anomalies as CRITICAL', () => {
+    it('should detect multiple anomalies as CRITICAL', () => {
       const result = service.detectDeviceAnomaly({
         deviceId: 'device-003',
         storeId: 'store-001',
@@ -176,7 +176,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：恰好达到阈值
-    test('should detect anomaly at exact threshold', () => {
+    it('should detect anomaly at exact threshold', () => {
       const result = service.detectDeviceAnomaly({
         deviceId: 'device-004',
         storeId: 'store-001',
@@ -199,7 +199,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：内存泄漏
-    test('should detect memory leak', () => {
+    it('should detect memory leak', () => {
       const result = service.detectDeviceAnomaly({
         deviceId: 'device-005',
         storeId: 'store-001',
@@ -221,7 +221,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：磁盘满
-    test('should detect disk full anomaly', () => {
+    it('should detect disk full anomaly', () => {
       const result = service.detectDeviceAnomaly({
         deviceId: 'device-006',
         storeId: 'store-001',
@@ -242,7 +242,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：网络延迟
-    test('should detect network latency anomaly', () => {
+    it('should detect network latency anomaly', () => {
       const result = service.detectDeviceAnomaly({
         deviceId: 'device-007',
         storeId: 'store-001',
@@ -264,7 +264,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：高错误率
-    test('should detect high error rate anomaly', () => {
+    it('should detect high error rate anomaly', () => {
       const result = service.detectDeviceAnomaly({
         deviceId: 'device-008',
         storeId: 'store-001',
@@ -286,7 +286,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：单个异常 -> MEDIUM
-    test('should detect single anomaly as MEDIUM severity', () => {
+    it('should detect single anomaly as MEDIUM severity', () => {
       const result = service.detectDeviceAnomaly({
         deviceId: 'device-009',
         storeId: 'store-001',
@@ -308,7 +308,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：两个异常 -> HIGH
-    test('should detect two anomalies as HIGH severity', () => {
+    it('should detect two anomalies as HIGH severity', () => {
       const result = service.detectDeviceAnomaly({
         deviceId: 'device-010',
         storeId: 'store-001',
@@ -330,7 +330,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：未知推荐字段回退
-    test('should provide fallback recommendation for unknown field', () => {
+    it('should provide fallback recommendation for unknown field', () => {
       const result = service.detectDeviceAnomaly({
         deviceId: 'device-011',
         storeId: 'store-001',
@@ -352,7 +352,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：uptimeHours 不参与异常检测
-    test('should not trigger anomaly for uptimeHours value', () => {
+    it('should not trigger anomaly for uptimeHours value', () => {
       const result = service.detectDeviceAnomaly({
         deviceId: 'device-012',
         storeId: 'store-001',
@@ -373,14 +373,16 @@ describe('AiRuleEngineService', () => {
   })
 
   describe('batchEvaluate', () => {
-    test('should evaluate multiple member levels', () => {
+    it('should evaluate multiple member levels', () => {
       const response = service.batchEvaluate({
         items: [
           {
+            index: 0,
             type: 'member-level',
             data: { memberId: 'batch-mem-001', totalPoints: 8000, totalSpend: 20000, visitCount: 50, tenantId: 't-001' }
           },
           {
+            index: 1,
             type: 'member-level',
             data: { memberId: 'batch-mem-002', totalPoints: 100, totalSpend: 200, visitCount: 3, tenantId: 't-001' }
           }
@@ -395,14 +397,16 @@ describe('AiRuleEngineService', () => {
       assert.ok(response.items[1].result)
     })
 
-    test('should evaluate mixed member and device items', () => {
+    it('should evaluate mixed member and device items', () => {
       const response = service.batchEvaluate({
         items: [
           {
+            index: 0,
             type: 'member-level',
             data: { memberId: 'mixed-mem', totalPoints: 6000, totalSpend: 15000, visitCount: 30, tenantId: 't-001' }
           },
           {
+            index: 1,
             type: 'device-anomaly',
             data: {
               deviceId: 'mixed-dev', storeId: 's-001',
@@ -419,7 +423,7 @@ describe('AiRuleEngineService', () => {
       assert.equal(response.items[1].type, 'device-anomaly')
     })
 
-    test('should handle empty batch request', () => {
+    it('should handle empty batch request', () => {
       const response = service.batchEvaluate({ items: [] })
 
       assert.equal(response.total, 0)
@@ -428,11 +432,11 @@ describe('AiRuleEngineService', () => {
       assert.equal(response.items.length, 0)
     })
 
-    test('should set correct index and inputId for each item', () => {
+    it('should set correct index and inputId for each item', () => {
       const response = service.batchEvaluate({
         items: [
-          { type: 'member-level', data: { memberId: 'idx-mem', totalPoints: 8000, totalSpend: 20000, visitCount: 50, tenantId: 't-001' } },
-          { type: 'member-level', data: { memberId: 'idx-mem-2', totalPoints: 0, totalSpend: 0, visitCount: 0, tenantId: 't-001' } }
+          { index: 0, type: 'member-level', data: { memberId: 'idx-mem', totalPoints: 8000, totalSpend: 20000, visitCount: 50, tenantId: 't-001' } },
+          { index: 1, type: 'member-level', data: { memberId: 'idx-mem-2', totalPoints: 0, totalSpend: 0, visitCount: 0, tenantId: 't-001' } }
         ]
       })
 
@@ -445,7 +449,7 @@ describe('AiRuleEngineService', () => {
 
   describe('evaluateRiskScore', () => {
     // 覆盖所有 risk recommendation fields
-    test('should include all risk recommendation fields', () => {
+    it('should include all risk recommendation fields', () => {
       const result = service.evaluateRiskScore({
         subjectId: 'subject-rec-all',
         subjectType: 'member',
@@ -469,7 +473,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 正常流程：高风险
-    test('should detect CRITICAL risk for subject with multiple flags', () => {
+    it('should detect CRITICAL risk for subject with multiple flags', () => {
       const result = service.evaluateRiskScore({
         subjectId: 'subject-001',
         subjectType: 'member',
@@ -492,7 +496,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 正常流程：低风险
-    test('should report LOW risk for normal subject', () => {
+    it('should report LOW risk for normal subject', () => {
       const result = service.evaluateRiskScore({
         subjectId: 'subject-002',
         subjectType: 'member',
@@ -513,7 +517,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 正常流程：中等风险
-    test('should report MEDIUM risk for moderate flags', () => {
+    it('should report MEDIUM risk for moderate flags', () => {
       const result = service.evaluateRiskScore({
         subjectId: 'subject-003',
         subjectType: 'store',
@@ -534,7 +538,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：恰好达到高风险阈值
-    test('should score exactly at threshold for HIGH risk', () => {
+    it('should score exactly at threshold for HIGH risk', () => {
       // 触发 cond-high-refund(0.25) + cond-complaints(0.20) = 45, 加上 cond-abnormal-payment(0.20)=65，再...
       // 简化为：refundCount=3(0.25)=25, complaintCount=1(0.20)=20, abnormalPaymentCount=2(0.20)=20 -> 65
       const result = service.evaluateRiskScore({
@@ -555,7 +559,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：大额注销退款增加分数
-    test('should boost score for large void refund amount', () => {
+    it('should boost score for large void refund amount', () => {
       const result = service.evaluateRiskScore({
         subjectId: 'subject-005',
         subjectType: 'member',
@@ -572,7 +576,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：大量异常支付额外加分
-    test('should boost score for many abnormal payments', () => {
+    it('should boost score for many abnormal payments', () => {
       const result = service.evaluateRiskScore({
         subjectId: 'subject-006',
         subjectType: 'member',
@@ -588,7 +592,7 @@ describe('AiRuleEngineService', () => {
     })
 
     // 边界条件：评分上限 100
-    test('should cap risk score at 100', () => {
+    it('should cap risk score at 100', () => {
       const result = service.evaluateRiskScore({
         subjectId: 'subject-007',
         subjectType: 'member',
@@ -608,14 +612,14 @@ describe('AiRuleEngineService', () => {
   })
 
   describe('getEngineStatus', () => {
-    test('should return status for all engines', () => {
+    it('should return status for all engines', () => {
       const statuses = service.getEngineStatus()
 
       assert.ok(Array.isArray(statuses))
       assert.ok(statuses.length >= 3)
     })
 
-    test('member-level engine status should be correct', () => {
+    it('member-level engine status should be correct', () => {
       const statuses = service.getEngineStatus()
       const ml = statuses.find((s) => s.engineId === 'member-level-v1')
 
@@ -626,7 +630,7 @@ describe('AiRuleEngineService', () => {
       assert.equal(ml.matchStrategy, 'ALL')
     })
 
-    test('device-anomaly engine status should be correct', () => {
+    it('device-anomaly engine status should be correct', () => {
       const statuses = service.getEngineStatus()
       const da = statuses.find((s) => s.engineId === 'device-anomaly-v1')
 
@@ -637,7 +641,7 @@ describe('AiRuleEngineService', () => {
       assert.equal(da.matchStrategy, 'ANY')
     })
 
-    test('risk-score engine status should be correct', () => {
+    it('risk-score engine status should be correct', () => {
       const statuses = service.getEngineStatus()
       const rs = statuses.find((s) => s.engineId === 'risk-score-v1')
 
@@ -648,7 +652,7 @@ describe('AiRuleEngineService', () => {
       assert.equal(rs.matchStrategy, 'ANY')
     })
 
-    test('status should include all required fields', () => {
+    it('status should include all required fields', () => {
       const statuses = service.getEngineStatus()
 
       for (const s of statuses) {

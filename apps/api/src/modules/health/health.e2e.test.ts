@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Health 健康检查 HTTP 链路
  *
@@ -17,7 +18,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Controller,
   Get,
@@ -152,7 +152,7 @@ async function buildApp() {
 
 // ========== 测试 ==========
 
-test('e2e: GET /health returns alive=true', async () => {
+it('e2e: GET /health returns alive=true', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/health')
@@ -164,7 +164,7 @@ test('e2e: GET /health returns alive=true', async () => {
   }
 })
 
-test('e2e: GET /health/ping returns alive=true (alias)', async () => {
+it('e2e: GET /health/ping returns alive=true (alias)', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/health/ping')
@@ -175,7 +175,7 @@ test('e2e: GET /health/ping returns alive=true (alias)', async () => {
   }
 })
 
-test('e2e: GET /health/readiness returns full health check', async () => {
+it('e2e: GET /health/readiness returns full health check', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -193,7 +193,7 @@ test('e2e: GET /health/readiness returns full health check', async () => {
   }
 })
 
-test('e2e: GET /health/readiness?verbose=true returns all components', async () => {
+it('e2e: GET /health/readiness?verbose=true returns all components', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -209,7 +209,7 @@ test('e2e: GET /health/readiness?verbose=true returns all components', async () 
   }
 })
 
-test('e2e: GET /health/readiness components have expected structure', async () => {
+it('e2e: GET /health/readiness components have expected structure', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -231,7 +231,7 @@ test('e2e: GET /health/readiness components have expected structure', async () =
   }
 })
 
-test('e2e: GET /health/readiness includes version info', async () => {
+it('e2e: GET /health/readiness includes version info', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -246,7 +246,7 @@ test('e2e: GET /health/readiness includes version info', async () => {
   }
 })
 
-test('e2e: GET /health/readiness includes lytMode', async () => {
+it('e2e: GET /health/readiness includes lytMode', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -260,7 +260,7 @@ test('e2e: GET /health/readiness includes lytMode', async () => {
   }
 })
 
-test('e2e: GET /health returns consistent response format', async () => {
+it('e2e: GET /health returns consistent response format', async () => {
   const { app } = await buildApp()
   try {
     // 多次调用应一致
@@ -273,7 +273,7 @@ test('e2e: GET /health returns consistent response format', async () => {
   }
 })
 
-test('e2e: GET /health/readiness without tenant returns 200', async () => {
+it('e2e: GET /health/readiness without tenant returns 200', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -286,7 +286,7 @@ test('e2e: GET /health/readiness without tenant returns 200', async () => {
   }
 })
 
-test('e2e: GET /health/readiness verbose shows sampleMember', async () => {
+it('e2e: GET /health/readiness verbose shows sampleMember', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -350,7 +350,7 @@ async function buildRoleHealthApp() {
 }
 
 // 1. 👔 店长: 可以访问健康检查
-test('e2e: 👔 店长 可以访问基础健康检查', async () => {
+it('e2e: 👔 店长 可以访问基础健康检查', async () => {
   const { app } = await buildRoleHealthApp()
   try {
     const res = await request(app.getHttpServer())
@@ -370,7 +370,7 @@ test('e2e: 👔 店长 可以访问基础健康检查', async () => {
 })
 
 // 2. 🎮 导玩员: 可以访问基础健康检查
-test('e2e: 🎮 导玩员 可以 ping 基础健康检查', async () => {
+it('e2e: 🎮 导玩员 可以 ping 基础健康检查', async () => {
   const { app } = await buildRoleHealthApp()
   try {
     const res = await request(app.getHttpServer())
@@ -390,7 +390,7 @@ test('e2e: 🎮 导玩员 可以 ping 基础健康检查', async () => {
 })
 
 // 3. 🔧 安监: 访问详细的系统健康状态
-test('e2e: 🔧 安监 访问 readiness 详细系统健康状态', async () => {
+it('e2e: 🔧 安监 访问 readiness 详细系统健康状态', async () => {
   const { app } = await buildRoleHealthApp()
   try {
     const res = await request(app.getHttpServer())
@@ -416,7 +416,7 @@ test('e2e: 🔧 安监 访问 readiness 详细系统健康状态', async () => {
 })
 
 // 4. 📢 营销: 可以访问但不操作
-test('e2e: 📢 营销 可以 ping 健康检查但不具有管理权限', async () => {
+it('e2e: 📢 营销 可以 ping 健康检查但不具有管理权限', async () => {
   const { app } = await buildRoleHealthApp()
   try {
     const res = await request(app.getHttpServer())
@@ -438,7 +438,7 @@ test('e2e: 📢 营销 可以 ping 健康检查但不具有管理权限', async 
 })
 
 // 5. 🎯 运行专员: 可以 ping
-test('e2e: 🎯 运行专员 可以 ping 健康检查', async () => {
+it('e2e: 🎯 运行专员 可以 ping 健康检查', async () => {
   const { app } = await buildRoleHealthApp()
   try {
     const res = await request(app.getHttpServer())
@@ -458,7 +458,7 @@ test('e2e: 🎯 运行专员 可以 ping 健康检查', async () => {
 })
 
 // 6. 🛒 前台: 基础健康检查可访问
-test('e2e: 🛒 前台 可以访问基础健康检查', async () => {
+it('e2e: 🛒 前台 可以访问基础健康检查', async () => {
   const { app } = await buildRoleHealthApp()
   try {
     const res = await request(app.getHttpServer())
@@ -479,7 +479,7 @@ test('e2e: 🛒 前台 可以访问基础健康检查', async () => {
 })
 
 // 7. 跨 tenant 的健康检查隔离
-test('e2e: 跨 tenant 健康检查隔离', async () => {
+it('e2e: 跨 tenant 健康检查隔离', async () => {
   const { app } = await buildRoleHealthApp()
   try {
     // Tenant A readiness

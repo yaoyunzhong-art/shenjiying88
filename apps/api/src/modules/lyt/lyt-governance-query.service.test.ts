@@ -1,12 +1,11 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 describe('LytGovernanceQueryService', () => {
   const { LytGovernanceQueryService } = require('./lyt-governance-query.service')
   const { LytService } = require('./lyt.service')
 
-  test('getConnectionGovernanceSummary aggregates readiness and recommendations', async () => {
+  it('getConnectionGovernanceSummary aggregates readiness and recommendations', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-ready': {
         vendor: 'lyt',
@@ -131,7 +130,7 @@ describe('LytGovernanceQueryService', () => {
     assert.ok(result.stores[0]?.recommendedNextActions.some((item: string) => item.includes('endpoint')))
   })
 
-  test('getStoreCapabilityAccessView maps readiness to access states and next actions', async () => {
+  it('getStoreCapabilityAccessView maps readiness to access states and next actions', async () => {
     const connectionManager = {
       getConnectionForStore: async () => ({
         vendor: 'lyt-enterprise',
@@ -175,7 +174,7 @@ describe('LytGovernanceQueryService', () => {
     assert.ok(result.recommendedNextActions.some((item: string) => item.includes('健康检查')))
   })
 
-  test('getConnectionCapabilityReadiness flags missing vendor mappings as governance requirements', async () => {
+  it('getConnectionCapabilityReadiness flags missing vendor mappings as governance requirements', async () => {
     const connectionManager = {
       getConnectionForStore: async () => ({
         vendor: 'lyt-enterprise',
@@ -219,7 +218,7 @@ describe('LytGovernanceQueryService', () => {
     assert.deepEqual(summary.stores[0]?.focusTrail, ['vendor-mapping'])
   })
 
-  test('getConnectionCapabilityReadiness keeps recommendation priority for combined readiness issues', async () => {
+  it('getConnectionCapabilityReadiness keeps recommendation priority for combined readiness issues', async () => {
     const connectionManager = {
       getConnectionForStore: async () => ({
         vendor: 'lyt-enterprise',
@@ -263,7 +262,7 @@ describe('LytGovernanceQueryService', () => {
     assert.ok(result.missingRequirements.includes('store-level-capability-verification'))
   })
 
-  test('getConnectionCapabilityReadiness returns stable default recommendation for fully ready store', async () => {
+  it('getConnectionCapabilityReadiness returns stable default recommendation for fully ready store', async () => {
     const allCapabilities = ['member', 'payment', 'order', 'device', 'gate', 'coin', 'inventory', 'shelf']
     const connectionManager = {
       getConnectionForStore: async () => ({
@@ -300,7 +299,7 @@ describe('LytGovernanceQueryService', () => {
     assert.deepEqual(result.recommendedNextActions, ['当前门店连接与 capability readiness 已具备接入治理条件，可继续接真实读面与运营台'])
   })
 
-  test('getStoreCapabilityAccessView exposes reason copy for enabled degraded blocked and hidden states', async () => {
+  it('getStoreCapabilityAccessView exposes reason copy for enabled degraded blocked and hidden states', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-ready': {
         vendor: 'lyt-enterprise',
@@ -408,7 +407,7 @@ describe('LytGovernanceQueryService', () => {
     )
   })
 
-  test('LytService fallback readiness matches query service readiness shape', async () => {
+  it('LytService fallback readiness matches query service readiness shape', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-readiness': {
         vendor: 'lyt-enterprise',
@@ -459,7 +458,7 @@ describe('LytGovernanceQueryService', () => {
     assert.deepEqual(fallbackReadiness, queryReadiness)
   })
 
-  test('LytService fallback readiness matches query service stable default recommendation', async () => {
+  it('LytService fallback readiness matches query service stable default recommendation', async () => {
     const allCapabilities = ['member', 'payment', 'order', 'device', 'gate', 'coin', 'inventory', 'shelf']
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-ready-stable': {
@@ -521,7 +520,7 @@ describe('LytGovernanceQueryService', () => {
     ])
   })
 
-  test('LytService fallback access view matches query service access reasons', async () => {
+  it('LytService fallback access view matches query service access reasons', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-access': {
         vendor: 'lyt-enterprise',
@@ -579,7 +578,7 @@ describe('LytGovernanceQueryService', () => {
     assert.equal(fallbackAccessView.accessByCapability.find((item: { capability: string }) => item.capability === 'member')?.access, 'hidden')
   })
 
-  test('LytService fallback access view matches query service stale degraded reasons', async () => {
+  it('LytService fallback access view matches query service stale degraded reasons', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-stale-access': {
         vendor: 'lyt-enterprise',
@@ -649,7 +648,7 @@ describe('LytGovernanceQueryService', () => {
     )
   })
 
-  test('LytService fallback access view matches query service ready and hidden reasons', async () => {
+  it('LytService fallback access view matches query service ready and hidden reasons', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-ready-access': {
         vendor: 'lyt-enterprise',
@@ -724,7 +723,7 @@ describe('LytGovernanceQueryService', () => {
     )
   })
 
-  test('LytService fallback access view matches query service inherited degraded reasons', async () => {
+  it('LytService fallback access view matches query service inherited degraded reasons', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-inherited-access': {
         vendor: 'lyt-enterprise',
@@ -794,7 +793,7 @@ describe('LytGovernanceQueryService', () => {
     )
   })
 
-  test('getConnectionGovernanceAlerts emits vendor mapping gaps alert', async () => {
+  it('getConnectionGovernanceAlerts emits vendor mapping gaps alert', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-mapping-gap': {
         vendor: 'lyt',
@@ -832,7 +831,7 @@ describe('LytGovernanceQueryService', () => {
     assert.equal(vendorGapAlert?.recommendedNextActions[0], '先统一 LYT 外部编码映射，再推进真实门店接入、事件治理与前端读面')
   })
 
-  test('LytService fallback governance alerts match query service vendor mapping guidance', async () => {
+  it('LytService fallback governance alerts match query service vendor mapping guidance', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-mapping-gap': {
         vendor: 'lyt',
@@ -879,7 +878,7 @@ describe('LytGovernanceQueryService', () => {
     assert.equal(fallbackVendorGapAlert?.recommendedNextActions[0], '先统一 LYT 外部编码映射，再推进真实门店接入、事件治理与前端读面')
   })
 
-  test('getConnectionGovernanceAlerts emits pending configuration guidance', async () => {
+  it('getConnectionGovernanceAlerts emits pending configuration guidance', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-pending-alert': {
         vendor: 'lyt',
@@ -916,7 +915,7 @@ describe('LytGovernanceQueryService', () => {
     assert.equal(pendingAlert?.recommendedNextActions[0], '优先补齐 endpoint、credential 与 vendorStoreId，尽快退出 fallback/mock 状态')
   })
 
-  test('LytService fallback governance alerts match query service pending configuration guidance', async () => {
+  it('LytService fallback governance alerts match query service pending configuration guidance', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-pending-alert': {
         vendor: 'lyt',
@@ -963,7 +962,7 @@ describe('LytGovernanceQueryService', () => {
     assert.equal(fallbackPendingAlert?.recommendedNextActions[0], '优先补齐 endpoint、credential 与 vendorStoreId，尽快退出 fallback/mock 状态')
   })
 
-  test('getConnectionGovernanceAlerts emits stale connection guidance', async () => {
+  it('getConnectionGovernanceAlerts emits stale connection guidance', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-stale-alert': {
         vendor: 'lyt',
@@ -1000,7 +999,7 @@ describe('LytGovernanceQueryService', () => {
     assert.equal(staleAlert?.recommendedNextActions[0], '批量执行连接巡检并刷新健康状态，确认 token、签名和域名仍有效')
   })
 
-  test('LytService fallback governance alerts match query service stale guidance', async () => {
+  it('LytService fallback governance alerts match query service stale guidance', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-stale-alert': {
         vendor: 'lyt',
@@ -1047,7 +1046,7 @@ describe('LytGovernanceQueryService', () => {
     assert.equal(fallbackStaleAlert?.recommendedNextActions[0], '批量执行连接巡检并刷新健康状态，确认 token、签名和域名仍有效')
   })
 
-  test('getConnectionGovernanceAlerts emits credential missing guidance', async () => {
+  it('getConnectionGovernanceAlerts emits credential missing guidance', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-credential-alert': {
         vendor: 'lyt',
@@ -1084,7 +1083,7 @@ describe('LytGovernanceQueryService', () => {
     assert.equal(credentialAlert?.recommendedNextActions[0], '为缺失凭证的门店补齐 credentialRef 或安全密钥绑定')
   })
 
-  test('LytService fallback governance alerts match query service credential guidance', async () => {
+  it('LytService fallback governance alerts match query service credential guidance', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-credential-alert': {
         vendor: 'lyt',
@@ -1131,7 +1130,7 @@ describe('LytGovernanceQueryService', () => {
     assert.equal(fallbackCredentialAlert?.recommendedNextActions[0], '为缺失凭证的门店补齐 credentialRef 或安全密钥绑定')
   })
 
-  test('getConnectionGovernanceSummary orders complex high risk stores by issue weight and preserves focus trail order', async () => {
+  it('getConnectionGovernanceSummary orders complex high risk stores by issue weight and preserves focus trail order', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-complex': {
         vendor: 'lyt',
@@ -1225,7 +1224,7 @@ describe('LytGovernanceQueryService', () => {
     assert.deepEqual(result.stores[2]?.focusTrail, ['stable'])
   })
 
-  test('LytService fallback governance summary matches query service focus trail shape', async () => {
+  it('LytService fallback governance summary matches query service focus trail shape', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-complex': {
         vendor: 'lyt',
@@ -1319,7 +1318,7 @@ describe('LytGovernanceQueryService', () => {
     )
   })
 
-  test('getConnectionGovernanceSummary aggregates capability breakdown across ready inherited stale pending and hidden states', async () => {
+  it('getConnectionGovernanceSummary aggregates capability breakdown across ready inherited stale pending and hidden states', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-ready': {
         vendor: 'lyt',
@@ -1448,7 +1447,7 @@ describe('LytGovernanceQueryService', () => {
     )
   })
 
-  test('LytService fallback governance summary matches query service capability breakdown', async () => {
+  it('LytService fallback governance summary matches query service capability breakdown', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-ready': {
         vendor: 'lyt',
@@ -1513,7 +1512,7 @@ describe('LytGovernanceQueryService', () => {
     assert.deepEqual(fallbackSummary.capabilityBreakdown, querySummary.capabilityBreakdown)
   })
 
-  test('getConnectionGovernanceSummary keeps recommended next actions in governance priority order', async () => {
+  it('getConnectionGovernanceSummary keeps recommended next actions in governance priority order', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-priority-a': {
         vendor: 'lyt',
@@ -1588,7 +1587,7 @@ describe('LytGovernanceQueryService', () => {
     ])
   })
 
-  test('LytService fallback governance summary matches query service recommended next actions', async () => {
+  it('LytService fallback governance summary matches query service recommended next actions', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-query-a': {
         vendor: 'lyt',
@@ -1653,7 +1652,7 @@ describe('LytGovernanceQueryService', () => {
     assert.deepEqual(fallbackSummary.recommendedNextActions, querySummary.recommendedNextActions)
   })
 
-  test('getConnectionGovernanceSummary returns only stable default recommendation for healthy fully configured stores', async () => {
+  it('getConnectionGovernanceSummary returns only stable default recommendation for healthy fully configured stores', async () => {
     const allCapabilities = ['member', 'payment', 'order', 'device', 'gate', 'coin', 'inventory', 'shelf']
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-stable-a': {
@@ -1708,7 +1707,7 @@ describe('LytGovernanceQueryService', () => {
     assert.ok(result.stores.every((item: { focusTrail: string[] }) => item.focusTrail.length === 1 && item.focusTrail[0] === 'stable'))
   })
 
-  test('healthy tenant emits no governance alerts and fallback matches query defaults', async () => {
+  it('healthy tenant emits no governance alerts and fallback matches query defaults', async () => {
     const allCapabilities = ['member', 'payment', 'order', 'device', 'gate', 'coin', 'inventory', 'shelf']
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-stable-a': {
@@ -1782,7 +1781,7 @@ describe('LytGovernanceQueryService', () => {
     assert.deepEqual(fallbackSummary.storeGroups, querySummary.storeGroups)
   })
 
-  test('getConnectionGovernanceSummary prefers earliest governed capability when pending counts tie', async () => {
+  it('getConnectionGovernanceSummary prefers earliest governed capability when pending counts tie', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-tie-a': {
         vendor: 'lyt',
@@ -1836,7 +1835,7 @@ describe('LytGovernanceQueryService', () => {
     )
   })
 
-  test('getConnectionGovernanceAlerts prefers earliest governed capability on tied pending and hidden counts', async () => {
+  it('getConnectionGovernanceAlerts prefers earliest governed capability on tied pending and hidden counts', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-tie-a': {
         vendor: 'lyt',
@@ -1907,7 +1906,7 @@ describe('LytGovernanceQueryService', () => {
     assert.deepEqual(fallbackAlerts.alerts, queryAlerts.alerts)
   })
 
-  test('getConnectionGovernanceSummary keeps storeGroups sorted and counts overlapping stores correctly', async () => {
+  it('getConnectionGovernanceSummary keeps storeGroups sorted and counts overlapping stores correctly', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-alpha': {
         vendor: 'lyt',
@@ -2010,7 +2009,7 @@ describe('LytGovernanceQueryService', () => {
     )
   })
 
-  test('getConnectionGovernanceAlerts picks top pending and not-enabled capabilities by affected store count', async () => {
+  it('getConnectionGovernanceAlerts picks top pending and not-enabled capabilities by affected store count', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-payment-pending-a': {
         vendor: 'lyt',
@@ -2110,7 +2109,7 @@ describe('LytGovernanceQueryService', () => {
     assert.ok(notEnabledCapabilityAlert?.recommendedNextActions[0]?.includes('gate'))
   })
 
-  test('LytService fallback governance alerts match query service alert shape', async () => {
+  it('LytService fallback governance alerts match query service alert shape', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {
       'store-pending': {
         vendor: 'lyt',
@@ -2206,7 +2205,7 @@ describe('LytGovernanceQueryService', () => {
     )
   })
 
-  test('LytService delegates governance queries to LytGovernanceQueryService when injected', async () => {
+  it('LytService delegates governance queries to LytGovernanceQueryService when injected', async () => {
     const governanceQueryService = {
       getConnectionCapabilityReadiness: async () => ({ kind: 'readiness-delegated' }),
       getConnectionGovernanceSummary: async () => ({ kind: 'summary-delegated' }),

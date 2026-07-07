@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [lyt] [D] controller spec 补全
  *
@@ -6,13 +7,12 @@
  */
 
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import type { RequestTenantContext } from '../tenant/tenant.types';
 
 // ── 模拟装饰器 ──
 
 function Controller(prefix: string) {
-  return (target: Function & { __prefix?: string }) => {
+  return (target: { new (...args: any[]): unknown; __prefix?: string }) => {
     target.__prefix = prefix;
     return target;
   };
@@ -430,26 +430,26 @@ const CTX = makeCtx();
 describe('LytController', () => {
   let controller: LytController;
 
-  test.beforeEach(() => {
+  beforeEach(() => {
     controller = new LytController();
   });
 
   // ═══════════ 装饰器元数据 ═══════════
   describe('装饰器元数据', () => {
-    test('@Controller prefix 为 "lyt"', () => {
+    it('@Controller prefix 为 "lyt"', () => {
       const prefix = (LytController as typeof LytController & { __prefix?: string }).__prefix;
       assert.equal(prefix, 'lyt');
     });
 
-    test('注册了 11 个 @Get 路由', () => {
+    it('注册了 11 个 @Get 路由', () => {
       assert.equal(getRegistrations.length, 11);
     });
 
-    test('注册了 7 个 @Post 路由', () => {
+    it('注册了 7 个 @Post 路由', () => {
       assert.equal(postRegistrations.length, 7);
     });
 
-    test('所有 @Get 路由清单完整', () => {
+    it('所有 @Get 路由清单完整', () => {
       const expectedGetRoutes = [
         'getFixtures:fixtures',
         'getFixtureSummary:fixtures/summary',
@@ -468,7 +468,7 @@ describe('LytController', () => {
       }
     });
 
-    test('所有 @Post 路由清单完整', () => {
+    it('所有 @Post 路由清单完整', () => {
       const expectedPostRoutes = [
         'compareFixture:fixtures/:key/compare',
         'importFixturePreview:fixtures/:key/import-preview',
@@ -483,7 +483,7 @@ describe('LytController', () => {
       }
     });
 
-    test('所有 ID 参数路由注册了 @Param', () => {
+    it('所有 ID 参数路由注册了 @Param', () => {
       const paramKeys = ['key', 'storeId', 'deviceId'];
       for (const key of paramKeys) {
         const matched = paramRegistrations.filter((r) => r.endsWith(`:${key}`));
@@ -491,68 +491,68 @@ describe('LytController', () => {
       }
     });
 
-    test('所有方法注册了 @TenantContext', () => {
+    it('所有方法注册了 @TenantContext', () => {
       assert.equal(tenantContextRegistrations.length, 6);
     });
   });
 
   // ═══════════ Fixtures ═══════════
   describe('Fixtures — 样例管理', () => {
-    test('getFixtures 返回全部样例', () => {
+    it('getFixtures 返回全部样例', () => {
       const result = controller.getFixtures();
       assert.ok(result.fixtures);
       assert.equal(result.total, 3);
       assert.ok(result.fixtures.some((f: Record<string, unknown>) => f.key === 'member-query'));
     });
 
-    test('getFixtures 按 transport 过滤 Webhook', () => {
+    it('getFixtures 按 transport 过滤 Webhook', () => {
       const result = controller.getFixtures('webhook');
       assert.equal(result.total, 1);
       assert.equal(result.fixtures[0].transport, 'webhook');
     });
 
-    test('getFixtures 按 capability 过滤 member', () => {
+    it('getFixtures 按 capability 过滤 member', () => {
       const result = controller.getFixtures(undefined, 'member');
       assert.equal(result.total, 1);
       assert.equal(result.fixtures[0].capability, 'member');
     });
 
-    test('getFixture 按 key 查询存在 fixture', () => {
+    it('getFixture 按 key 查询存在 fixture', () => {
       const result = controller.getFixture('member-query');
       assert.equal(result.key, 'member-query');
       assert.ok(result.recommendedUsage);
     });
 
-    test('getFixture 空 key 返回错误', () => {
+    it('getFixture 空 key 返回错误', () => {
       const result = controller.getFixture('');
       assert.equal(result.error, 'fixture key is required');
     });
 
-    test('getFixtureSummary 返回分组的汇总统计', () => {
+    it('getFixtureSummary 返回分组的汇总统计', () => {
       const result = controller.getFixtureSummary();
       assert.equal(typeof result.total, 'number');
       assert.ok(result.byTransport.api >= 0);
       assert.ok(result.byCapability.member >= 0);
     });
 
-    test('compareFixture 对比 body 返回 readiness', () => {
+    it('compareFixture 对比 body 返回 readiness', () => {
       const result = controller.compareFixture('member-query', { payload: { name: 'test' } });
       assert.equal(result.fixtureKey, 'member-query');
       assert.equal(result.readiness, 'ready');
     });
 
-    test('compareFixture 空 body 返回错误', () => {
+    it('compareFixture 空 body 返回错误', () => {
       const result = controller.compareFixture('member-query', {});
       assert.equal(result.error, 'compare body is required');
     });
 
-    test('importFixturePreview 返回导入预览', () => {
+    it('importFixturePreview 返回导入预览', () => {
       const result = controller.importFixturePreview('member-query', { nickname: 'test' });
       assert.equal(result.fixtureKey, 'member-query');
       assert.equal(result.readinessAfterImport, 'ready');
     });
 
-    test('importFixturePlan 返回导入计划', () => {
+    it('importFixturePlan 返回导入计划', () => {
       const result = controller.importFixturePlan('member-query', { nickname: 'test' });
       assert.equal(result.fixtureKey, 'member-query');
       assert.equal(result.importDecision, 'ready-to-promote');
@@ -562,7 +562,7 @@ describe('LytController', () => {
 
   // ═══════════ Bootstrap ═══════════
   describe('Bootstrap — 启动配置', () => {
-    test('getBootstrap 返回适配器 + 能力 + 阶段', () => {
+    it('getBootstrap 返回适配器 + 能力 + 阶段', () => {
       const result = controller.getBootstrap();
       assert.equal(result.phase, 'scaffold');
       assert.equal(result.adapter, 'mock');
@@ -572,52 +572,52 @@ describe('LytController', () => {
 
   // ═══════════ Connection ── 连接管理 ═══════════
   describe('Connection — 连接管理', () => {
-    test('getConnection 按 storeId 返回连接详情', async () => {
+    it('getConnection 按 storeId 返回连接详情', async () => {
       const result = await controller.getConnection('store-sz', CTX);
       assert.equal(result.storeId, 'store-sz');
       assert.equal(result.tenantId, 'tenant-default');
       assert.equal(result.connectionStatus, 'configured');
     });
 
-    test('getConnection 无 tenantContext 使用默认值', async () => {
+    it('getConnection 无 tenantContext 使用默认值', async () => {
       const result = await controller.getConnection('store-default');
       assert.equal(result.tenantId, 'default-tenant');
     });
 
-    test('getConnectionCapabilityReadiness 返回能力就绪状态', async () => {
+    it('getConnectionCapabilityReadiness 返回能力就绪状态', async () => {
       const result = await controller.getConnectionCapabilityReadiness('store-sz', CTX);
       assert.ok(result.readinessByCapability.length >= 2);
       const deviceCap = result.readinessByCapability.find((c: Record<string, unknown>) => c.capability === 'device');
       assert.equal(deviceCap?.readiness, 'ready');
     });
 
-    test('getStoreCapabilityAccessView 返回门店访问视图', async () => {
+    it('getStoreCapabilityAccessView 返回门店访问视图', async () => {
       const result = await controller.getStoreCapabilityAccessView('store-sz', CTX);
       assert.equal(result.storeId, 'store-sz');
       assert.ok(result.accessByCapability.length >= 2);
     });
 
-    test('getAdapterSelection 返回适配器选择结果', async () => {
+    it('getAdapterSelection 返回适配器选择结果', async () => {
       const result = await controller.getAdapterSelection('store-sz', CTX);
       assert.equal(result.storeId, 'store-sz');
       assert.equal(result.adapterName, 'mock-lyt');
       assert.equal(result.adapterMode, 'mock');
     });
 
-    test('getConnectionGovernanceSummary 返回治理摘要', async () => {
+    it('getConnectionGovernanceSummary 返回治理摘要', async () => {
       const result = await controller.getConnectionGovernanceSummary(CTX);
       assert.equal(typeof result.totalStores, 'number');
       assert.equal(result.configuredStores, 3);
       assert.ok(result.capabilityBreakdown.length >= 1);
     });
 
-    test('getConnectionGovernanceAlerts 返回治理告警', async () => {
+    it('getConnectionGovernanceAlerts 返回治理告警', async () => {
       const result = await controller.getConnectionGovernanceAlerts(CTX);
       assert.ok(result.alerts.length >= 1);
       assert.equal(result.alerts[0].code, 'pending-configuration-stores');
     });
 
-    test('不同门店隔离', async () => {
+    it('不同门店隔离', async () => {
       const [sz, bj] = await Promise.all([
         controller.getConnection('store-sz', CTX),
         controller.getConnection('store-bj', CTX),
@@ -629,13 +629,13 @@ describe('LytController', () => {
 
   // ═══════════ Devices — 设备管理 ═══════════
   describe('Devices — 设备管理', () => {
-    test('getDeviceStatus 返回设备在线状态', async () => {
+    it('getDeviceStatus 返回设备在线状态', async () => {
       const result = await controller.getDeviceStatus('device-001');
       assert.equal(result.deviceId, 'device-001');
       assert.equal(result.status, 'ONLINE');
     });
 
-    test('getDeviceHealthSummary 返回健康汇总', () => {
+    it('getDeviceHealthSummary 返回健康汇总', () => {
       const devices = [
         { deviceId: 'd1', status: 'ONLINE' },
         { deviceId: 'd2', status: 'ONLINE' },
@@ -650,13 +650,13 @@ describe('LytController', () => {
       assert.equal(result.anomalous, 1);
     });
 
-    test('getDeviceHealthSummary 空设备列表', () => {
+    it('getDeviceHealthSummary 空设备列表', () => {
       const result = controller.getDeviceHealthSummary([]);
       assert.equal(result.total, 0);
       assert.equal(result.healthRate, 100);
     });
 
-    test('getDeviceHealthSummary 全在线健康率为 100%', () => {
+    it('getDeviceHealthSummary 全在线健康率为 100%', () => {
       const devices = [
         { deviceId: 'd1', status: 'ONLINE' },
         { deviceId: 'd2', status: 'ONLINE' },
@@ -665,7 +665,7 @@ describe('LytController', () => {
       assert.equal(result.healthRate, 100);
     });
 
-    test('getDeviceHealthSummary 自定义阈值', () => {
+    it('getDeviceHealthSummary 自定义阈值', () => {
       const devices = [
         { deviceId: 'd1', status: 'ONLINE' },
         { deviceId: 'd2', status: 'OFFLINE' },
@@ -677,7 +677,7 @@ describe('LytController', () => {
 
   // ═══════════ Webhooks ═══════════
   describe('Webhooks — Webhook 管理', () => {
-    test('acceptWebhook 接受有效签名回调', async () => {
+    it('acceptWebhook 接受有效签名回调', async () => {
       const result = await controller.acceptWebhook({
         eventId: 'evt-1',
         signature: 'sig-abc',
@@ -688,7 +688,7 @@ describe('LytController', () => {
       assert.equal(result.status, 'processed');
     });
 
-    test('acceptWebhook 缺少签名返回错误', async () => {
+    it('acceptWebhook 缺少签名返回错误', async () => {
       const result = await controller.acceptWebhook({
         eventId: 'evt-2',
         payload: { memberId: 'm1' },
@@ -696,7 +696,7 @@ describe('LytController', () => {
       assert.equal(result.error, 'signature is required');
     });
 
-    test('drillWebhook 默认非 dry-run', async () => {
+    it('drillWebhook 默认非 dry-run', async () => {
       const result = await controller.drillWebhook({
         eventId: 'evt-drill',
         eventType: 'payment.success',
@@ -705,7 +705,7 @@ describe('LytController', () => {
       assert.equal(result.mode, 'published');
     });
 
-    test('drillWebhook dryRun 模式', async () => {
+    it('drillWebhook dryRun 模式', async () => {
       const result = await controller.drillWebhook({
         eventId: 'evt-dry',
         eventType: 'member.sync',
@@ -714,12 +714,12 @@ describe('LytController', () => {
       assert.equal(result.mode, 'dry-run');
     });
 
-    test('replayWebhookFixture 缺少 fixtureKey 返回错误', async () => {
+    it('replayWebhookFixture 缺少 fixtureKey 返回错误', async () => {
       const result = await controller.replayWebhookFixture({ payload: {} });
       assert.equal(result.error, 'fixtureKey is required for replay');
     });
 
-    test('replayWebhookFixture 按 fixtureKey 重放', async () => {
+    it('replayWebhookFixture 按 fixtureKey 重放', async () => {
       const result = await controller.replayWebhookFixture({
         fixtureKey: 'payment-success-webhook',
         payload: { orderId: 'O-1' },
@@ -731,25 +731,25 @@ describe('LytController', () => {
 
   // ═══════════ 边界场景 ═══════════
   describe('边界与异常场景', () => {
-    test('空 tenant context 不阻塞 connection 查询', async () => {
+    it('空 tenant context 不阻塞 connection 查询', async () => {
       const emptyCtx = {} as RequestTenantContext;
       const result = await controller.getConnection('store-empty', emptyCtx);
       assert.equal(result.storeId, 'store-empty');
       assert.notEqual(result.tenantId, undefined);
     });
 
-    test('空 transport/capability 返回全部 fixtures', () => {
+    it('空 transport/capability 返回全部 fixtures', () => {
       const result = controller.getFixtures(undefined, undefined);
       assert.equal(result.total, 3);
     });
 
-    test('不存在的 fixture key 仍有默认响应', () => {
+    it('不存在的 fixture key 仍有默认响应', () => {
       const result = controller.getFixture('nonexistent-key');
       assert.equal(result.key, 'nonexistent-key');
       assert.ok(result.recommendedUsage);
     });
 
-    test('全离线设备健康率为 0%', () => {
+    it('全离线设备健康率为 0%', () => {
       const devices = [
         { deviceId: 'd1', status: 'OFFLINE' },
         { deviceId: 'd2', status: 'OFFLINE' },
@@ -758,7 +758,7 @@ describe('LytController', () => {
       assert.equal(result.healthRate, 0);
     });
 
-    test('不同 tenant 隔离', async () => {
+    it('不同 tenant 隔离', async () => {
       const ctxA = makeCtx({ tenantId: 'tenant-a' });
       const ctxB = makeCtx({ tenantId: 'tenant-b' });
       const [resultA, resultB] = await Promise.all([

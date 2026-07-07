@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: AI Rule Engine 评估 HTTP 链路
  *
@@ -15,7 +16,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -92,7 +92,7 @@ async function buildApp() {
   return { app, aiRuleEngineService }
 }
 
-test('e2e: member level → SVIP when high spend + points + visits', async () => {
+it('e2e: member level → SVIP when high spend + points + visits', async () => {
   const { app } = await buildApp()
 
   try {
@@ -117,7 +117,7 @@ test('e2e: member level → SVIP when high spend + points + visits', async () =>
   }
 })
 
-test('e2e: member level → SVIP with all 3 conditions matched (ALL strategy)', async () => {
+it('e2e: member level → SVIP with all 3 conditions matched (ALL strategy)', async () => {
   const { app } = await buildApp()
 
   try {
@@ -141,7 +141,7 @@ test('e2e: member level → SVIP with all 3 conditions matched (ALL strategy)', 
   }
 })
 
-test('e2e: member level → REGULAR when partial match (ALL strategy fails)', async () => {
+it('e2e: member level → REGULAR when partial match (ALL strategy fails)', async () => {
   const { app } = await buildApp()
 
   try {
@@ -164,7 +164,7 @@ test('e2e: member level → REGULAR when partial match (ALL strategy fails)', as
   }
 })
 
-test('e2e: member level → REGULAR when no conditions match', async () => {
+it('e2e: member level → REGULAR when no conditions match', async () => {
   const { app } = await buildApp()
 
   try {
@@ -187,7 +187,7 @@ test('e2e: member level → REGULAR when no conditions match', async () => {
   }
 })
 
-test('e2e: device anomaly → CRITICAL with multiple metrics breached', async () => {
+it('e2e: device anomaly → CRITICAL with multiple metrics breached', async () => {
   const { app } = await buildApp()
 
   try {
@@ -218,7 +218,7 @@ test('e2e: device anomaly → CRITICAL with multiple metrics breached', async ()
   }
 })
 
-test('e2e: device anomaly → LOW with no metrics breached', async () => {
+it('e2e: device anomaly → LOW with no metrics breached', async () => {
   const { app } = await buildApp()
 
   try {
@@ -247,7 +247,7 @@ test('e2e: device anomaly → LOW with no metrics breached', async () => {
   }
 })
 
-test('e2e: device anomaly → CPU_SPIKE detected with type', async () => {
+it('e2e: device anomaly → CPU_SPIKE detected with type', async () => {
   const { app } = await buildApp()
 
   try {
@@ -275,7 +275,7 @@ test('e2e: device anomaly → CPU_SPIKE detected with type', async () => {
   }
 })
 
-test('e2e: dispatch endpoint routes member-level correctly', async () => {
+it('e2e: dispatch endpoint routes member-level correctly', async () => {
   const { app } = await buildApp()
 
   try {
@@ -300,7 +300,7 @@ test('e2e: dispatch endpoint routes member-level correctly', async () => {
   }
 })
 
-test('e2e: dispatch endpoint routes device-anomaly correctly', async () => {
+it('e2e: dispatch endpoint routes device-anomaly correctly', async () => {
   const { app } = await buildApp()
 
   try {
@@ -330,7 +330,7 @@ test('e2e: dispatch endpoint routes device-anomaly correctly', async () => {
   }
 })
 
-test('e2e: dispatch endpoint rejects unsupported type', async () => {
+it('e2e: dispatch endpoint rejects unsupported type', async () => {
   const { app } = await buildApp()
 
   try {
@@ -343,7 +343,7 @@ test('e2e: dispatch endpoint rejects unsupported type', async () => {
   }
 })
 
-test('e2e: batch evaluate mixes member-level + device-anomaly', async () => {
+it('e2e: batch evaluate mixes member-level + device-anomaly', async () => {
   const { app } = await buildApp()
 
   try {
@@ -406,7 +406,7 @@ test('e2e: batch evaluate mixes member-level + device-anomaly', async () => {
   }
 })
 
-test('e2e: batch evaluate handles empty items list', async () => {
+it('e2e: batch evaluate handles empty items list', async () => {
   const { app } = await buildApp()
 
   try {
@@ -423,7 +423,7 @@ test('e2e: batch evaluate handles empty items list', async () => {
   }
 })
 
-test('e2e: get engines returns all rule engines with status', async () => {
+it('e2e: get engines returns all rule engines with status', async () => {
   const { app } = await buildApp()
 
   try {
@@ -452,7 +452,7 @@ test('e2e: get engines returns all rule engines with status', async () => {
   }
 })
 
-test('e2e: member level → SVIP with exactly boundary values', async () => {
+it('e2e: member level → SVIP with exactly boundary values', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -471,7 +471,7 @@ test('e2e: member level → SVIP with exactly boundary values', async () => {
   }
 })
 
-test('e2e: member level → REGULAR when just below threshold', async () => {
+it('e2e: member level → REGULAR when just below threshold', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -489,7 +489,7 @@ test('e2e: member level → REGULAR when just below threshold', async () => {
   }
 })
 
-test('e2e: device anomaly → MEMORY_LEAK type detected', async () => {
+it('e2e: device anomaly → MEMORY_LEAK type detected', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -514,7 +514,7 @@ test('e2e: device anomaly → MEMORY_LEAK type detected', async () => {
   }
 })
 
-test('e2e: device anomaly → DISK_FULL type detected', async () => {
+it('e2e: device anomaly → DISK_FULL type detected', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -539,7 +539,7 @@ test('e2e: device anomaly → DISK_FULL type detected', async () => {
   }
 })
 
-test('e2e: device anomaly → NETWORK_LATENCY type detected', async () => {
+it('e2e: device anomaly → NETWORK_LATENCY type detected', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -564,7 +564,7 @@ test('e2e: device anomaly → NETWORK_LATENCY type detected', async () => {
   }
 })
 
-test('e2e: device anomaly → HIGH_ERROR_RATE type detected', async () => {
+it('e2e: device anomaly → HIGH_ERROR_RATE type detected', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -589,7 +589,7 @@ test('e2e: device anomaly → HIGH_ERROR_RATE type detected', async () => {
   }
 })
 
-test('e2e: device anomaly LOW severity has no anomalyType', async () => {
+it('e2e: device anomaly LOW severity has no anomalyType', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -614,7 +614,7 @@ test('e2e: device anomaly LOW severity has no anomalyType', async () => {
   }
 })
 
-test('e2e: batch evaluate ignores unknown type without counting as success or failure', async () => {
+it('e2e: batch evaluate ignores unknown type without counting as success or failure', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -646,7 +646,7 @@ test('e2e: batch evaluate ignores unknown type without counting as success or fa
   }
 })
 
-test('e2e: engines endpoint returns deterministic order', async () => {
+it('e2e: engines endpoint returns deterministic order', async () => {
   const { app } = await buildApp()
   try {
     const r1 = await request(app.getHttpServer()).get('/ai-rule-engine/engines')

@@ -1,19 +1,19 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [reservation] [A] module.test 补全
  */
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 
 describe('ReservationModule', () => {
-  test('should be defined', () => {
+  it('should be defined', () => {
     const { ReservationModule } = require('./reservation.module')
     const mod = new ReservationModule()
     assert.ok(mod instanceof ReservationModule)
   })
 
-  test('should have correct module metadata', () => {
+  it('should have correct module metadata', () => {
     const { ReservationModule } = require('./reservation.module')
     const { ReservationController } = require('./reservation.controller')
     const { ReservationService } = require('./reservation.service')

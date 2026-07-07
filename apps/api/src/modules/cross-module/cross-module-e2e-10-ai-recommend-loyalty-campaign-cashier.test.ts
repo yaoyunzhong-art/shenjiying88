@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E 跨模块 #10 — AI 推荐 → 会员 → 营销 → 收银 联动
  *
@@ -23,7 +24,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -34,10 +34,8 @@ import {
   Req,
   ValidationPipe
 } from '@nestjs/common'
-import { Test } from '@nestjs/testing'
 import request from 'supertest'
-import type { NextFunction, Request, Response } from 'express'
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import type { Request } from 'express'
 import { AiRecommendService } from '../ai-recommend/ai-recommend.service'
 import { CampaignService } from '../campaign/campaign.service'
 import { CashierService } from '../cashier/cashier.service'
@@ -52,17 +50,7 @@ import {
   type CampaignAction
 } from '../campaign/campaign.entity'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
-
-function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
-  ctx.tenantContext = {
-    tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
-    brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
-    storeId: (req.header('x-store-id') as string | undefined) ?? 'store-001',
-    marketCode: (req.header('x-market-code') as string | undefined) ?? 'cn-mainland'
-  }
-  next()
-}
+import { buildCrossModuleTestApp } from './test-helpers'
 
 // ─── TestController ───
 
@@ -170,7 +158,7 @@ async function buildApp() {
   const campaignService = new CampaignService(memberService, loyaltyService)
   campaignService.resetCampaignStoresForTests()
 
-  const moduleRef = await Test.createTestingModule({
+  const { app, moduleRef } = await buildCrossModuleTestApp({
     controllers: [TestController],
     providers: [
       { provide: MemberService, useValue: memberService },
@@ -178,15 +166,10 @@ async function buildApp() {
       { provide: LoyaltyService, useValue: loyaltyService },
       { provide: AiRecommendService, useValue: aiRecommendService },
       { provide: CampaignService, useValue: campaignService }
-    ]
-  }).compile()
-
-  const app = moduleRef.createNestApplication()
-  app.use(attachTenantContext)
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
-  app.useGlobalInterceptors(new ResponseInterceptor())
-  await app.init()
-  return { app, memberService, loyaltyService, cashierService, aiRecommendService, campaignService }
+    ],
+    extraGlobalPipes: [new ValidationPipe({ whitelist: true, transform: true })],
+  })
+  return { app, moduleRef, memberService, loyaltyService, cashierService, aiRecommendService, campaignService }
 }
 
 const TENANT_A = {
@@ -244,7 +227,7 @@ async function registerAndActivate(
 // E2E: AI 推荐 → 会员 → 营销 → 收银 完整联动
 // ═══════════════════════════════════════════════════
 
-test('e2e-10: full ai-recommend → member → campaign → cashier chain', async () => {
+it('e2e-10: full ai-recommend → member → campaign → cashier chain', async () => {
   const { app } = await buildApp()
 
   try {
@@ -343,7 +326,7 @@ test('e2e-10: full ai-recommend → member → campaign → cashier chain', asyn
   }
 })
 
-test('e2e-10: cold-start member without profile falls back to popularity', async () => {
+it('e2e-10: cold-start member without profile falls back to popularity', async () => {
   const { app } = await buildApp()
 
   try {
@@ -367,7 +350,7 @@ test('e2e-10: cold-start member without profile falls back to popularity', async
   }
 })
 
-test('e2e-10: personalized recommendations with user profile', async () => {
+it('e2e-10: personalized recommendations with user profile', async () => {
   const { app } = await buildApp()
 
   try {
@@ -410,7 +393,7 @@ test('e2e-10: personalized recommendations with user profile', async () => {
   }
 })
 
-test('e2e-10: campaign AwardPoints dispatches to member.awardPoints', async () => {
+it('e2e-10: campaign AwardPoints dispatches to member.awardPoints', async () => {
   const { app, memberService } = await buildApp()
 
   try {
@@ -460,7 +443,7 @@ test('e2e-10: campaign AwardPoints dispatches to member.awardPoints', async () =
   }
 })
 
-test('e2e-10: campaign MinOrderAmount condition not met → not dispatched', async () => {
+it('e2e-10: campaign MinOrderAmount condition not met → not dispatched', async () => {
   const { app } = await buildApp()
 
   try {
@@ -503,7 +486,7 @@ test('e2e-10: campaign MinOrderAmount condition not met → not dispatched', asy
   }
 })
 
-test('e2e-10: campaign RecommendTag action dispatches tag without state change', async () => {
+it('e2e-10: campaign RecommendTag action dispatches tag without state change', async () => {
   const { app } = await buildApp()
 
   try {
@@ -549,7 +532,7 @@ test('e2e-10: campaign RecommendTag action dispatches tag without state change',
   }
 })
 
-test('e2e-10: cross-tenant isolation - Tenant B cannot see Tenant A campaigns/recommendations', async () => {
+it('e2e-10: cross-tenant isolation - Tenant B cannot see Tenant A campaigns/recommendations', async () => {
   const { app, aiRecommendService, campaignService } = await buildApp()
 
   try {
@@ -606,7 +589,7 @@ test('e2e-10: cross-tenant isolation - Tenant B cannot see Tenant A campaigns/re
   }
 })
 
-test('e2e-10: campaign idempotency - duplicate evaluate with same orderId skips', async () => {
+it('e2e-10: campaign idempotency - duplicate evaluate with same orderId skips', async () => {
   const { app } = await buildApp()
 
   try {

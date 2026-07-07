@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import type { LytMemberProfile } from '@m5/domain'
 import {
   toLytFixtureCatalogItemContract,
@@ -10,31 +10,31 @@ import {
   toLytWebhookArchiveRecordContract
 } from './lyt.contract'
 
-test('toLytMemberProfileContract maps domain profile to public contract', () => {
+it('toLytMemberProfileContract maps domain profile to public contract', () => {
   const profile: LytMemberProfile = { memberId: 'member-1', nickname: '测试会员', levelName: 'GOLD' }
   const result = toLytMemberProfileContract(profile)
 
   assert.deepEqual(result, { id: 'member-1', name: '测试会员', level: 'GOLD' })
 })
 
-test('toLytMemberProfileContract defaults missing optional fields', () => {
+it('toLytMemberProfileContract defaults missing optional fields', () => {
   const profile: LytMemberProfile = { memberId: 'member-1' }
   const result = toLytMemberProfileContract(profile)
 
   assert.deepEqual(result, { id: 'member-1', name: 'member-1', level: 'N/A' })
 })
 
-test('toLytDeviceStatusContract maps online device status', () => {
+it('toLytDeviceStatusContract maps online device status', () => {
   const result = toLytDeviceStatusContract({ deviceId: 'dev-42', status: 'ONLINE' })
   assert.deepEqual(result, { deviceId: 'dev-42', status: 'ONLINE' })
 })
 
-test('toLytDeviceStatusContract maps offline device status', () => {
+it('toLytDeviceStatusContract maps offline device status', () => {
   const result = toLytDeviceStatusContract({ deviceId: 'dev-99', status: 'OFFLINE' })
   assert.deepEqual(result, { deviceId: 'dev-99', status: 'OFFLINE' })
 })
 
-test('toLytBootstrapContract normalizes bootstrap data', () => {
+it('toLytBootstrapContract normalizes bootstrap data', () => {
   const bootstrap = {
     adapter: 'MockLytAdapter',
     foundationDependencies: ['identity-access', 'configuration-governance'],
@@ -55,7 +55,7 @@ test('toLytBootstrapContract normalizes bootstrap data', () => {
   assert.equal(result.selectionStrategy, 'connection-driven: mock -> sandbox -> real')
 })
 
-test('toLytBootstrapContract returns safe copy (not the same array reference)', () => {
+it('toLytBootstrapContract returns safe copy (not the same array reference)', () => {
   const deps = ['identity-access']
   const result = toLytBootstrapContract({
     adapter: 'test',
@@ -70,7 +70,7 @@ test('toLytBootstrapContract returns safe copy (not the same array reference)', 
   assert.equal(deps.length, 2)
 })
 
-test('toLytStandardizedWebhookEventContract maps payment success event', () => {
+it('toLytStandardizedWebhookEventContract maps payment success event', () => {
   const result = toLytStandardizedWebhookEventContract({
     eventId: 'evt-1001',
     eventType: 'payment.success',
@@ -93,7 +93,7 @@ test('toLytStandardizedWebhookEventContract maps payment success event', () => {
   assert.equal(result.payload.aggregateId, 'evt-1001')
 })
 
-test('toLytStandardizedWebhookEventContract falls back for unknown source event', () => {
+it('toLytStandardizedWebhookEventContract falls back for unknown source event', () => {
   const result = toLytStandardizedWebhookEventContract({
     eventId: 'evt-unknown',
     eventType: 'mystery.changed',
@@ -105,7 +105,7 @@ test('toLytStandardizedWebhookEventContract falls back for unknown source event'
   assert.equal(result.tenantId, undefined)
 })
 
-test('toLytWebhookArchiveRecordContract captures raw payload archive metadata', () => {
+it('toLytWebhookArchiveRecordContract captures raw payload archive metadata', () => {
   const standardizedEvent = toLytStandardizedWebhookEventContract({
     eventId: 'evt-archive',
     eventType: 'gate.pass',
@@ -138,7 +138,7 @@ test('toLytWebhookArchiveRecordContract captures raw payload archive metadata', 
   assert.deepEqual(result.rawQuery, { channel: 'fixture-test' })
 })
 
-test('toLytFixtureCatalogItemContract returns defensive payload copy', () => {
+it('toLytFixtureCatalogItemContract returns defensive payload copy', () => {
   const samplePayload = { requestId: 'req-1' }
   const result = toLytFixtureCatalogItemContract({
     key: 'payment-success-webhook',

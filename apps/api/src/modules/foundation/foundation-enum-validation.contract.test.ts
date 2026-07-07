@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { ConfigurationGovernanceService } from './configuration-governance/configuration-governance.service'
 import { FoundationService } from './foundation.service'
 import { IdentityAccessService } from './identity-access/identity-access.service'
@@ -28,7 +28,7 @@ function buildModuleStub(key: string) {
   }
 }
 
-test('contract: foundation module detail returns available keys on unknown moduleKey', async () => {
+it('contract: foundation module detail returns available keys on unknown moduleKey', async () => {
   const service = new FoundationService(
     buildModuleStub('identity-access') as never,
     buildModuleStub('configuration-governance') as never,
@@ -44,7 +44,7 @@ test('contract: foundation module detail returns available keys on unknown modul
   assert.equal(((result as Record<string, unknown>).availableModuleKeys as string[]).includes('runtime-governance'), true)
 })
 
-test('contract: foundation alert drilldown returns available codes on unknown code', async () => {
+it('contract: foundation alert drilldown returns available codes on unknown code', async () => {
   const service = new FoundationService(
     buildModuleStub('identity-access') as never,
     buildModuleStub('configuration-governance') as never,
@@ -63,7 +63,7 @@ test('contract: foundation alert drilldown returns available codes on unknown co
   )
 })
 
-test('contract: foundation module descriptors expose active capabilities', () => {
+it('contract: foundation module descriptors expose active capabilities', () => {
   const descriptors = [
     new IdentityAccessService().getDescriptor(),
     new ConfigurationGovernanceService({} as never, {} as never).getDescriptor(),

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [tournament] E2E 基础测试
  *
@@ -17,7 +18,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   Controller,
   Get,
@@ -217,7 +217,7 @@ async function openTournament(app: any, id: string, headers: any = TENANT_HEADER
 // ========== E2E: Tournament CRUD ==========
 
 describe('E2E: Tournament CRUD', () => {
-  test('POST → GET :id → GET 列表 完整生命周期', async () => {
+  it('POST → GET :id → GET 列表 完整生命周期', async () => {
     const { app } = await buildApp()
     try {
       const createRes = await createTournament(app)
@@ -242,7 +242,7 @@ describe('E2E: Tournament CRUD', () => {
     }
   })
 
-  test('GET /tournament/:id 不存在返回 404', async () => {
+  it('GET /tournament/:id 不存在返回 404', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -254,7 +254,7 @@ describe('E2E: Tournament CRUD', () => {
     }
   })
 
-  test('GET /tournament?status=Draft 状态过滤', async () => {
+  it('GET /tournament?status=Draft 状态过滤', async () => {
     const { app } = await buildApp()
     try {
       await createTournament(app)
@@ -268,7 +268,7 @@ describe('E2E: Tournament CRUD', () => {
     }
   })
 
-  test('GET /tournament?type=ROUND_ROBIN 类型过滤', async () => {
+  it('GET /tournament?type=ROUND_ROBIN 类型过滤', async () => {
     const { app } = await buildApp()
     try {
       await createTournament(app, TENANT_HEADERS, { type: TournamentType.RoundRobin })
@@ -286,7 +286,7 @@ describe('E2E: Tournament CRUD', () => {
 // ========== E2E: 状态机 ==========
 
 describe('E2E: 状态机转换', () => {
-  test('Draft → Open 合法转换', async () => {
+  it('Draft → Open 合法转换', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app)
@@ -299,7 +299,7 @@ describe('E2E: 状态机转换', () => {
     }
   })
 
-  test('Open → Ongoing (生成 bracket) 合法转换', async () => {
+  it('Open → Ongoing (生成 bracket) 合法转换', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app)
@@ -332,7 +332,7 @@ describe('E2E: 状态机转换', () => {
     }
   })
 
-  test('Draft 不可直接进 Ongoing', async () => {
+  it('Draft 不可直接进 Ongoing', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app)
@@ -347,7 +347,7 @@ describe('E2E: 状态机转换', () => {
     }
   })
 
-  test('Completed 不可再转换', async () => {
+  it('Completed 不可再转换', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app)
@@ -372,7 +372,7 @@ describe('E2E: 状态机转换', () => {
 // ========== E2E: 报名 ==========
 
 describe('E2E: 报名流程', () => {
-  test('个人报名 + 重复报名报错', async () => {
+  it('个人报名 + 重复报名报错', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app)
@@ -396,7 +396,7 @@ describe('E2E: 报名流程', () => {
     }
   })
 
-  test('满员后禁止报名', async () => {
+  it('满员后禁止报名', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app, TENANT_HEADERS, { maxParticipants: 1 })
@@ -418,7 +418,7 @@ describe('E2E: 报名流程', () => {
     }
   })
 
-  test('Draft 状态禁止报名', async () => {
+  it('Draft 状态禁止报名', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app)
@@ -434,7 +434,7 @@ describe('E2E: 报名流程', () => {
     }
   })
 
-  test('团队报名 → 审核通过 / 拒绝', async () => {
+  it('团队报名 → 审核通过 / 拒绝', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app)
@@ -474,7 +474,7 @@ describe('E2E: 报名流程', () => {
 // ========== E2E: Bracket ==========
 
 describe('E2E: Bracket 生成', () => {
-  test('单淘汰: 4 人 → 2 首轮比赛 + 1 决赛占位', async () => {
+  it('单淘汰: 4 人 → 2 首轮比赛 + 1 决赛占位', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app)
@@ -500,7 +500,7 @@ describe('E2E: Bracket 生成', () => {
     }
   })
 
-  test('循环赛: 3 人 → 3 场比赛 (每两两一对)', async () => {
+  it('循环赛: 3 人 → 3 场比赛 (每两两一对)', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app, TENANT_HEADERS, {
@@ -529,7 +529,7 @@ describe('E2E: Bracket 生成', () => {
     }
   })
 
-  test('少于 2 人 → Bracket 报错', async () => {
+  it('少于 2 人 → Bracket 报错', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app)
@@ -553,7 +553,7 @@ describe('E2E: Bracket 生成', () => {
 // ========== E2E: 比赛结果 & 排名 ==========
 
 describe('E2E: 比赛结果与排名', () => {
-  test('录入比赛结果 → 自动更新 ranking + 比赛 completed', async () => {
+  it('录入比赛结果 → 自动更新 ranking + 比赛 completed', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app)
@@ -600,7 +600,7 @@ describe('E2E: 比赛结果与排名', () => {
     }
   })
 
-  test('比赛争议: PUT /dispute 转 disputed', async () => {
+  it('比赛争议: PUT /dispute 转 disputed', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app)
@@ -628,7 +628,7 @@ describe('E2E: 比赛结果与排名', () => {
     }
   })
 
-  test('GET /tournament/:id/matches?status=Pending 过滤', async () => {
+  it('GET /tournament/:id/matches?status=Pending 过滤', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app)
@@ -660,7 +660,7 @@ describe('E2E: 比赛结果与排名', () => {
 // ========== E2E: 跨租户隔离 ==========
 
 describe('E2E: 跨租户隔离', () => {
-  test('tenant-B 看不到 tenant-A 的 tournament', async () => {
+  it('tenant-B 看不到 tenant-A 的 tournament', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app, TENANT_HEADERS)
@@ -675,7 +675,7 @@ describe('E2E: 跨租户隔离', () => {
     }
   })
 
-  test('tenant-B 列表只返回自己的', async () => {
+  it('tenant-B 列表只返回自己的', async () => {
     const { app } = await buildApp()
     try {
       await createTournament(app, TENANT_HEADERS, { name: 'A-1' })
@@ -694,7 +694,7 @@ describe('E2E: 跨租户隔离', () => {
     }
   })
 
-  test('tenant-B 无法修改 tenant-A 的 tournament 状态', async () => {
+  it('tenant-B 无法修改 tenant-A 的 tournament 状态', async () => {
     const { app } = await buildApp()
     try {
       const create = await createTournament(app, TENANT_HEADERS)

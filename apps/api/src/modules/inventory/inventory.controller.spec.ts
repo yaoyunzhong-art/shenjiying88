@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [inventory] [D] Controller spec 补全
  *
@@ -6,14 +7,13 @@
  */
 
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import type { RequestTenantContext } from '../tenant/tenant.types';
 
 // ── Lightweight inline decorator fakes ──────────────────────────
 
-const controllerPrefixes = new Map<Function, string>();
+const controllerPrefixes = new Map<{ new (...args: any[]): unknown }, string>();
 function Controller(prefix: string) {
-  return (target: Function) => {
+  return (target: { new (...args: any[]): unknown }) => {
     controllerPrefixes.set(target, prefix);
     return target;
   };
@@ -291,12 +291,12 @@ function mockService(
 }
 
 describe('InventoryController — Route metadata', () => {
-  test('registers @Controller("inventory") prefix', () => {
+  it('registers @Controller("inventory") prefix', () => {
     assert.equal(controllerPrefixes.get(InventoryController), 'inventory');
   });
 
   for (const [label, key, expectedMethod, expectedPath] of endpoints) {
-    test(`${label} → method=${expectedMethod === HttpMethod.GET ? 'GET' : expectedMethod === HttpMethod.POST ? 'POST' : 'PUT'} path="${expectedPath}"`, () => {
+    it(`${label} → method=${expectedMethod === HttpMethod.GET ? 'GET' : expectedMethod === HttpMethod.POST ? 'POST' : 'PUT'} path="${expectedPath}"`, () => {
       const meta = routeMeta.get(key);
       assert.ok(meta, `Route metadata not found for ${label}`);
       assert.equal(meta.method, expectedMethod);
@@ -304,7 +304,7 @@ describe('InventoryController — Route metadata', () => {
     });
   }
 
-  test('all endpoints have TenantContext on a parameter', () => {
+  it('all endpoints have TenantContext on a parameter', () => {
     const expectedTenantMethods = new Set(endpoints.map(([, k]) => k));
     for (const key of expectedTenantMethods) {
       assert.ok(tenantParams.has(key), `Missing TenantContext on ${String(key)}`);
@@ -313,7 +313,7 @@ describe('InventoryController — Route metadata', () => {
 });
 
 describe('InventoryController — Delegation behaviours', () => {
-  test('createProduct: delegates with tenant context and body', () => {
+  it('createProduct: delegates with tenant context and body', () => {
     let captured: any = null;
     const ctrl = new InventoryController(
       mockService({
@@ -339,7 +339,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(captured.body.name, 'Test Product');
   });
 
-  test('updateProduct: delegates with productId, tenant context, and body', () => {
+  it('updateProduct: delegates with productId, tenant context, and body', () => {
     let captured: any = null;
     const ctrl = new InventoryController(
       mockService({
@@ -355,7 +355,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(captured.body.name, 'Renamed');
   });
 
-  test('getProduct: returns product by id', () => {
+  it('getProduct: returns product by id', () => {
     const ctrl = new InventoryController(
       mockService({
         getProduct: (id: string) => ({ id, name: 'Widget' }),
@@ -366,7 +366,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(result.name, 'Widget');
   });
 
-  test('getProduct: throws when not found', () => {
+  it('getProduct: throws when not found', () => {
     const ctrl = new InventoryController(
       mockService({
         getProduct: () => {
@@ -377,7 +377,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.throws(() => ctrl.getProduct('nonexistent', tenantCtx), /Product not found/);
   });
 
-  test('listProducts: delegates query filter', () => {
+  it('listProducts: delegates query filter', () => {
     let capturedQuery: any = null;
     const ctrl = new InventoryController(
       mockService({
@@ -393,7 +393,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(capturedQuery.category, 'electronics');
   });
 
-  test('stockIn: delegates with quantity', () => {
+  it('stockIn: delegates with quantity', () => {
     let capturedBody: any = null;
     const ctrl = new InventoryController(
       mockService({
@@ -408,7 +408,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(capturedBody.quantity, 50);
   });
 
-  test('stockOut: returns updated stock', () => {
+  it('stockOut: returns updated stock', () => {
     const ctrl = new InventoryController(
       mockService({
         stockOut: () => ({ product: { currentStock: 30 }, record: {} }),
@@ -418,7 +418,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(result.product.currentStock, 30);
   });
 
-  test('stockOut: throws on insufficient stock', () => {
+  it('stockOut: throws on insufficient stock', () => {
     const ctrl = new InventoryController(
       mockService({
         stockOut: () => {
@@ -432,7 +432,7 @@ describe('InventoryController — Delegation behaviours', () => {
     );
   });
 
-  test('adjustStock: delegates adjustment', () => {
+  it('adjustStock: delegates adjustment', () => {
     const ctrl = new InventoryController(
       mockService({
         adjustStock: () => ({ product: { currentStock: 75 }, record: { type: 'adjustment' } }),
@@ -447,26 +447,26 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(result.record.type, 'adjustment');
   });
 
-  test('checkStock: sufficient when qty <= 50', () => {
+  it('checkStock: sufficient when qty <= 50', () => {
     const ctrl = new InventoryController(mockService());
     const result = ctrl.checkStock('p-1', '30', tenantCtx);
     assert.deepEqual(result, { productId: 'p-1', requiredQty: 30, sufficient: true });
   });
 
-  test('checkStock: insufficient when qty > 50', () => {
+  it('checkStock: insufficient when qty > 50', () => {
     const ctrl = new InventoryController(mockService());
     const result = ctrl.checkStock('p-1', '100', tenantCtx);
     assert.deepEqual(result, { productId: 'p-1', requiredQty: 100, sufficient: false });
   });
 
-  test('checkStock: defaults to 0 when qty is empty string', () => {
+  it('checkStock: defaults to 0 when qty is empty string', () => {
     const ctrl = new InventoryController(mockService());
     const result = ctrl.checkStock('p-1', '', tenantCtx);
     assert.equal(result.requiredQty, 0);
     assert.equal(result.sufficient, true);
   });
 
-  test('getLowStockProducts: delegates with no threshold', () => {
+  it('getLowStockProducts: delegates with no threshold', () => {
     let captured: any = null;
     const ctrl = new InventoryController(
       mockService({
@@ -480,7 +480,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(captured.threshold, undefined);
   });
 
-  test('getLowStockProducts: with threshold parses string to number', () => {
+  it('getLowStockProducts: with threshold parses string to number', () => {
     let capturedThreshold: number | undefined;
     const ctrl = new InventoryController(
       mockService({
@@ -494,7 +494,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(capturedThreshold, 30);
   });
 
-  test('getStockRecords: delegates with query', () => {
+  it('getStockRecords: delegates with query', () => {
     let capturedQuery: any = null;
     const ctrl = new InventoryController(
       mockService({
@@ -508,7 +508,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(capturedQuery.productId, 'p-1');
   });
 
-  test('createSupplier: returns new supplier', () => {
+  it('createSupplier: returns new supplier', () => {
     const ctrl = new InventoryController(
       mockService({
         createSupplier: () => ({ id: 's-new', name: 'Supplier Co' }),
@@ -519,14 +519,14 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(result.name, 'Supplier Co');
   });
 
-  test('listSuppliers: returns supplier list', () => {
+  it('listSuppliers: returns supplier list', () => {
     const ctrl = new InventoryController(mockService());
     const result = ctrl.listSuppliers(tenantCtx);
     assert.equal(result.length, 2);
     assert.equal(result[0].id, 's-1');
   });
 
-  test('createPurchaseOrder: returns draft order', () => {
+  it('createPurchaseOrder: returns draft order', () => {
     const ctrl = new InventoryController(
       mockService({
         createPurchaseOrder: () => ({ id: 'po-new', status: 'draft' }),
@@ -550,7 +550,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(result.status, 'draft');
   });
 
-  test('confirmOrder: transitions status to confirmed', () => {
+  it('confirmOrder: transitions status to confirmed', () => {
     let capturedId: string | null = null;
     const ctrl = new InventoryController(
       mockService({
@@ -565,7 +565,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(capturedId, 'po-abc');
   });
 
-  test('receiveOrder: transitions status to received', () => {
+  it('receiveOrder: transitions status to received', () => {
     const ctrl = new InventoryController(
       mockService({
         receiveOrder: (id: string) => ({ id, status: 'received' }),
@@ -575,7 +575,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.equal(result.status, 'received');
   });
 
-  test('confirmOrder: throws on invalid transition', () => {
+  it('confirmOrder: throws on invalid transition', () => {
     const ctrl = new InventoryController(
       mockService({
         confirmOrder: () => {
@@ -586,7 +586,7 @@ describe('InventoryController — Delegation behaviours', () => {
     assert.throws(() => ctrl.confirmOrder('po-bad', tenantCtx), /Cannot confirm/);
   });
 
-  test('listPurchaseOrders: delegates query', () => {
+  it('listPurchaseOrders: delegates query', () => {
     let capturedQuery: any = null;
     const ctrl = new InventoryController(
       mockService({
@@ -602,7 +602,7 @@ describe('InventoryController — Delegation behaviours', () => {
 });
 
 describe('InventoryController — Error propagation', () => {
-  test('service error propagates through stockOut', () => {
+  it('service error propagates through stockOut', () => {
     const ctrl = new InventoryController(
       mockService({
         stockOut: () => {
@@ -616,7 +616,7 @@ describe('InventoryController — Error propagation', () => {
     );
   });
 
-  test('service error propagates through getProduct', () => {
+  it('service error propagates through getProduct', () => {
     const ctrl = new InventoryController(
       mockService({
         getProduct: () => {
@@ -627,7 +627,7 @@ describe('InventoryController — Error propagation', () => {
     assert.throws(() => ctrl.getProduct('bad-id', tenantCtx), /Product not found/);
   });
 
-  test('service error propagates through confirmOrder', () => {
+  it('service error propagates through confirmOrder', () => {
     const ctrl = new InventoryController(
       mockService({
         confirmOrder: () => {

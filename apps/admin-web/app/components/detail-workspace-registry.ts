@@ -30,6 +30,7 @@ export const DETAIL_WORKSPACE_REGISTRY: Record<string, DetailWorkspaceMeta> = {
   tenants:        { href: '/tenants',       breadcrumbLabel: '租户管理', closureLabel: '返回租户管理' },
   devices:        { href: '/devices',       breadcrumbLabel: '设备管理', closureLabel: '返回设备管理' },
   notifications:  { href: '/notifications', breadcrumbLabel: '通知中心', closureLabel: '返回通知中心' },
+  coupons:        { href: '/coupons',       breadcrumbLabel: '优惠券管理', closureLabel: '返回优惠券列表' },
   stores:         { href: '/stores',        breadcrumbLabel: '门店管理', closureLabel: '返回门店管理' },
   members:        { href: '/members',       breadcrumbLabel: '会员管理', closureLabel: '返回会员管理' },
   approvals:      { href: '/approvals',     breadcrumbLabel: '治理审批', closureLabel: '返回审批工作台' },
@@ -44,7 +45,9 @@ export const DETAIL_WORKSPACE_REGISTRY: Record<string, DetailWorkspaceMeta> = {
   'identity-access':       { href: '/identity-access',       breadcrumbLabel: '身份访问',   closureLabel: '返回身份访问中心' },
   'integration-orchestration': { href: '/integration-orchestration', breadcrumbLabel: '集成编排', closureLabel: '返回集成编排中心' },
   'rate-limits':           { href: '/rate-limits',           breadcrumbLabel: '限流与配额', closureLabel: '返回限流中心' },
-  'resilience':            { href: '/resilience',            breadcrumbLabel: '强韧性作战', closureLabel: '返回韧性中心' }
+  'resilience':            { href: '/resilience',            breadcrumbLabel: '强韧性作战', closureLabel: '返回韧性中心' },
+  'suppliers':             { href: '/suppliers',             breadcrumbLabel: '供应商管理', closureLabel: '返回供应商管理' },
+  'recommendations':       { href: '/recommendations',       breadcrumbLabel: '推荐策略',    closureLabel: '返回推荐策略列表' },
 };
 
 export function lookupWorkspaceMeta(workspace: string): DetailWorkspaceMeta | undefined {

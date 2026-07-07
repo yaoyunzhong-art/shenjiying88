@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { describe, test, mock } from 'node:test'
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { TrafficGovernanceGuard } from './traffic-governance.guard'
 import { RATE_LIMIT_METADATA_KEY } from '../governance/request-governance.decorator'
@@ -10,7 +10,7 @@ import type { Response } from 'express'
 
 function makeReflector(metadata: RateLimitMetadata | undefined) {
   return {
-    getAllAndOverride: mock.fn((_key: string, _targets: unknown[]) => metadata),
+    getAllAndOverride: vi.fn((_key: string, _targets: unknown[]) => metadata),
   } as any
 }
 
@@ -20,7 +20,7 @@ function makeReq(overrides: Partial<TenantAwareRequest> = {}): TenantAwareReques
     url: '/api/test',
     originalUrl: '/api/test',
     baseUrl: '',
-    header: mock.fn(() => undefined),
+    header: vi.fn(() => undefined),
     ip: '127.0.0.1',
     socket: { remoteAddress: '127.0.0.1' } as any,
     route: { path: '/api/test' },
@@ -34,7 +34,7 @@ function makeReq(overrides: Partial<TenantAwareRequest> = {}): TenantAwareReques
 function makeRes(): Response {
   const headers: Record<string, string> = {}
   return {
-    setHeader: mock.fn((name: string, value: string | number) => {
+    setHeader: vi.fn((name: string, value: string | number) => {
       headers[name.toLowerCase()] = String(value)
     }),
     getHeader: (name: string) => headers[name.toLowerCase()],
@@ -50,13 +50,13 @@ function makeRequestGovernanceService(result: {
   scopeKey: string
 } = { allowed: true, limit: 100, remaining: 99, retryAfterSeconds: 0, scopeKey: 'test|route:/api/test' }) {
   return {
-    evaluateRateLimit: mock.fn(async () => ({
+    evaluateRateLimit: vi.fn(async () => ({
       applied: true as const,
       ...result,
       state: {},
     })),
-    applyRateLimitHeaders: mock.fn(),
-    ensureRequestContext: mock.fn(),
+    applyRateLimitHeaders: vi.fn(),
+    ensureRequestContext: vi.fn(),
   } as any
 }
 
@@ -74,7 +74,7 @@ function makeHttpContext(req: TenantAwareRequest, res: Response) {
 
 describe('TrafficGovernanceGuard', () => {
   describe('canActivate', () => {
-    test('returns true when context is not http', async () => {
+    it('returns true when context is not http', async () => {
       const reflector = makeReflector(undefined)
       const svc = makeRequestGovernanceService()
       const guard = new TrafficGovernanceGuard(reflector, svc)
@@ -83,7 +83,7 @@ describe('TrafficGovernanceGuard', () => {
       assert.equal(result, true)
     })
 
-    test('returns true when no rate-limit metadata is set', async () => {
+    it('returns true when no rate-limit metadata is set', async () => {
       const reflector = makeReflector(undefined)
       const svc = makeRequestGovernanceService()
       const guard = new TrafficGovernanceGuard(reflector, svc)
@@ -95,7 +95,7 @@ describe('TrafficGovernanceGuard', () => {
       assert.equal(result, true)
     })
 
-    test('returns true when rate limit allows the request', async () => {
+    it('returns true when rate limit allows the request', async () => {
       const metadata: RateLimitMetadata = { limit: 100, windowSeconds: 60 }
       const reflector = makeReflector(metadata)
       const svc = makeRequestGovernanceService({
@@ -114,7 +114,7 @@ describe('TrafficGovernanceGuard', () => {
       assert.equal(result, true)
     })
 
-    test('throws HttpException 429 when rate limit blocks the request', async () => {
+    it('throws HttpException 429 when rate limit blocks the request', async () => {
       const metadata: RateLimitMetadata = { limit: 10, windowSeconds: 10 }
       const reflector = makeReflector(metadata)
       const svc = makeRequestGovernanceService({
@@ -141,7 +141,7 @@ describe('TrafficGovernanceGuard', () => {
       )
     })
 
-    test('applies rate limit headers on the response for allowed requests', async () => {
+    it('applies rate limit headers on the response for allowed requests', async () => {
       const metadata: RateLimitMetadata = { limit: 50, windowSeconds: 30 }
       const reflector = makeReflector(metadata)
       const svc = makeRequestGovernanceService({
@@ -166,7 +166,7 @@ describe('TrafficGovernanceGuard', () => {
       assert.equal(calledWith[1].remaining, 45)
     })
 
-    test('applies rate limit headers on the response even when blocked', async () => {
+    it('applies rate limit headers on the response even when blocked', async () => {
       const metadata: RateLimitMetadata = { limit: 5, windowSeconds: 60, blockSeconds: 120 }
       const reflector = makeReflector(metadata)
       const svc = makeRequestGovernanceService({
@@ -190,7 +190,7 @@ describe('TrafficGovernanceGuard', () => {
       assert.equal(calledWith[1].retryAfterSeconds, 60)
     })
 
-    test('delegates metadata to evaluateRateLimit with correct request', async () => {
+    it('delegates metadata to evaluateRateLimit with correct request', async () => {
       const metadata: RateLimitMetadata = {
         limit: 200,
         windowSeconds: 120,
@@ -213,7 +213,7 @@ describe('TrafficGovernanceGuard', () => {
       assert.deepStrictEqual(callArgs[1], metadata)
     })
 
-    test('reads metadata from both handler and class using getAllAndOverride', async () => {
+    it('reads metadata from both handler and class using getAllAndOverride', async () => {
       const metadata: RateLimitMetadata = { limit: 30, windowSeconds: 15 }
       const reflector = makeReflector(metadata)
       const svc = makeRequestGovernanceService()

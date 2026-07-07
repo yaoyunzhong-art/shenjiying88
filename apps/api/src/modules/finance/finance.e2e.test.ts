@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Finance 财务 HTTP 链路
  *
@@ -22,7 +23,6 @@
 
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 import { Controller, Get, Post, Body, Param, Query, Inject, Req } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -315,7 +315,7 @@ async function buildApp() {
 // Ledger E2E 测试
 // ═══════════════════════════════════════════════════════
 
-test('e2e: POST /finance/ledgers — 记录收入流水', async () => {
+it('e2e: POST /finance/ledgers — 记录收入流水', async () => {
   const { app } = await buildApp();
   try {
     const res = await request(app.getHttpServer()).post('/finance/ledgers').set(TENANT_A).send({
@@ -336,7 +336,7 @@ test('e2e: POST /finance/ledgers — 记录收入流水', async () => {
   }
 });
 
-test('e2e: POST /finance/ledgers — 记录支出流水', async () => {
+it('e2e: POST /finance/ledgers — 记录支出流水', async () => {
   const { app } = await buildApp();
   try {
     await request(app.getHttpServer()).post('/finance/ledgers').set(TENANT_A).send({
@@ -361,7 +361,7 @@ test('e2e: POST /finance/ledgers — 记录支出流水', async () => {
   }
 });
 
-test('e2e: POST /finance/ledgers — 记录退款流水', async () => {
+it('e2e: POST /finance/ledgers — 记录退款流水', async () => {
   const { app } = await buildApp();
   try {
     await request(app.getHttpServer())
@@ -385,7 +385,7 @@ test('e2e: POST /finance/ledgers — 记录退款流水', async () => {
   }
 });
 
-test('e2e: GET /finance/ledgers — 查询流水列表', async () => {
+it('e2e: GET /finance/ledgers — 查询流水列表', async () => {
   const { app } = await buildApp();
   try {
     const r1 = await request(app.getHttpServer())
@@ -417,7 +417,7 @@ test('e2e: GET /finance/ledgers — 查询流水列表', async () => {
   }
 });
 
-test('e2e: GET /finance/ledgers — 按类型过滤流水', async () => {
+it('e2e: GET /finance/ledgers — 按类型过滤流水', async () => {
   const { app } = await buildApp();
   try {
     await request(app.getHttpServer())
@@ -445,7 +445,7 @@ test('e2e: GET /finance/ledgers — 按类型过滤流水', async () => {
 // Account E2E 测试
 // ═══════════════════════════════════════════════════════
 
-test('e2e: POST /finance/accounts — 创建账户', async () => {
+it('e2e: POST /finance/accounts — 创建账户', async () => {
   const { app } = await buildApp();
   try {
     const res = await request(app.getHttpServer()).post('/finance/accounts').set(TENANT_A).send({
@@ -465,7 +465,7 @@ test('e2e: POST /finance/accounts — 创建账户', async () => {
   }
 });
 
-test('e2e: POST /finance/accounts & GET — 查询账户余额', async () => {
+it('e2e: POST /finance/accounts & GET — 查询账户余额', async () => {
   const { app } = await buildApp();
   try {
     const createRes = await request(app.getHttpServer())
@@ -489,7 +489,7 @@ test('e2e: POST /finance/accounts & GET — 查询账户余额', async () => {
   }
 });
 
-test('e2e: POST /finance/accounts/:id/freeze + close — 账户状态转换', async () => {
+it('e2e: POST /finance/accounts/:id/freeze + close — 账户状态转换', async () => {
   const { app } = await buildApp();
   try {
     const createRes = await request(app.getHttpServer())
@@ -520,7 +520,7 @@ test('e2e: POST /finance/accounts/:id/freeze + close — 账户状态转换', as
 // Settlement E2E 测试
 // ═══════════════════════════════════════════════════════
 
-test('e2e: POST /finance/settlements — 创建结算', async () => {
+it('e2e: POST /finance/settlements — 创建结算', async () => {
   const { app } = await buildApp();
   try {
     const res = await request(app.getHttpServer()).post('/finance/settlements').set(TENANT_A).send({
@@ -542,7 +542,7 @@ test('e2e: POST /finance/settlements — 创建结算', async () => {
   }
 });
 
-test('e2e: POST /finance/settlements/:id/confirm — 确认结算', async () => {
+it('e2e: POST /finance/settlements/:id/confirm — 确认结算', async () => {
   const { app } = await buildApp();
   try {
     const createRes = await request(app.getHttpServer())
@@ -563,7 +563,7 @@ test('e2e: POST /finance/settlements/:id/confirm — 确认结算', async () => 
   }
 });
 
-test('e2e: POST /finance/settlements/:id/dispute — 争议结算', async () => {
+it('e2e: POST /finance/settlements/:id/dispute — 争议结算', async () => {
   const { app } = await buildApp();
   try {
     const createRes = await request(app.getHttpServer())
@@ -583,7 +583,7 @@ test('e2e: POST /finance/settlements/:id/dispute — 争议结算', async () => 
   }
 });
 
-test('e2e: GET /finance/settlements — 查询结算列表并按状态过滤', async () => {
+it('e2e: GET /finance/settlements — 查询结算列表并按状态过滤', async () => {
   const { app } = await buildApp();
   try {
     await request(app.getHttpServer())
@@ -607,7 +607,7 @@ test('e2e: GET /finance/settlements — 查询结算列表并按状态过滤', a
 // Invoice E2E 测试
 // ═══════════════════════════════════════════════════════
 
-test('e2e: POST /finance/invoices → GET → issue → cancel', async () => {
+it('e2e: POST /finance/invoices → GET → issue → cancel', async () => {
   const { app } = await buildApp();
   try {
     // 创建发票
@@ -651,7 +651,7 @@ test('e2e: POST /finance/invoices → GET → issue → cancel', async () => {
   }
 });
 
-test('e2e: GET /finance/invoices — 查询发票列表', async () => {
+it('e2e: GET /finance/invoices — 查询发票列表', async () => {
   const { app } = await buildApp();
   try {
     await request(app.getHttpServer())
@@ -675,7 +675,7 @@ test('e2e: GET /finance/invoices — 查询发票列表', async () => {
 // Revenue E2E 测试
 // ═══════════════════════════════════════════════════════
 
-test('e2e: GET /finance/revenue/summary — 营收汇总', async () => {
+it('e2e: GET /finance/revenue/summary — 营收汇总', async () => {
   const { app } = await buildApp();
   try {
     await request(app.getHttpServer())
@@ -702,7 +702,7 @@ test('e2e: GET /finance/revenue/summary — 营收汇总', async () => {
   }
 });
 
-test('e2e: GET /finance/revenue/daily — 日营收', async () => {
+it('e2e: GET /finance/revenue/daily — 日营收', async () => {
   const { app } = await buildApp();
   try {
     await request(app.getHttpServer()).post('/finance/ledgers').set(TENANT_A).send({
@@ -729,7 +729,7 @@ test('e2e: GET /finance/revenue/daily — 日营收', async () => {
 // 交易联动
 // ═══════════════════════════════════════════════════════
 
-test('e2e: POST /finance/transactions/revenue — 交易联动记账', async () => {
+it('e2e: POST /finance/transactions/revenue — 交易联动记账', async () => {
   const { app } = await buildApp();
   try {
     const res = await request(app.getHttpServer())
@@ -752,7 +752,7 @@ test('e2e: POST /finance/transactions/revenue — 交易联动记账', async () 
   }
 });
 
-test('e2e: POST /finance/transactions/refund — 交易退款记账', async () => {
+it('e2e: POST /finance/transactions/refund — 交易退款记账', async () => {
   const { app } = await buildApp();
   try {
     const res = await request(app.getHttpServer())
@@ -778,7 +778,7 @@ test('e2e: POST /finance/transactions/refund — 交易退款记账', async () =
 // 跨租户隔离
 // ═══════════════════════════════════════════════════════
 
-test('e2e: 跨租户隔离 — Tenant A 数据不被 Tenant B 看到', async () => {
+it('e2e: 跨租户隔离 — Tenant A 数据不被 Tenant B 看到', async () => {
   const { app } = await buildApp();
   try {
     // Tenant A 记账

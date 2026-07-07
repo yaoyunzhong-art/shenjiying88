@@ -109,7 +109,7 @@ test('app interaction: history keeps latest 5 entries', () => {
 
   const next = appendNativeAppSubmitHistory(history, outcome);
   assert.equal(next.length, 5);
-  assert.equal(next[0]!.receiptCode, 'APP-MEMBER-LOGIN-PROCEED');
+  assert.equal(next[0]!.receiptCode, 'NATIVE-MEMBER-LOGIN-PROCEED');
   assert.equal(next[4]!.receiptCode, 'OLD-3');
 });
 
@@ -121,7 +121,7 @@ test('app interaction: ledger built from submit history', () => {
 
   assert.equal(ledger.length, 1);
   assert.ok(ledger[0]!.replayable);
-  assert.equal(ledger[0]!.ledgerKey, 'app-ledger:APP-MEMBER-LOGIN-PROCEED');
+  assert.equal(ledger[0]!.ledgerKey, 'native-ledger:NATIVE-MEMBER-LOGIN-PROCEED');
 });
 
 // ---- 反例 ----

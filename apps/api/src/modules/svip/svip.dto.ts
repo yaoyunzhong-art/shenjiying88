@@ -1,190 +1,143 @@
-import {
-  IsArray,
-  IsBoolean,
-  IsEnum,
-  IsISO8601,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Min,
-  Max
-} from 'class-validator'
-import 'reflect-metadata'
-import { SvipBenefitType, SvipMemberStatus, SvipTierLevel } from './svip.entity'
-
 /**
- * SVIP 等级 DTO
+ * SVIP 会员管理 DTOs
  */
-export class SvipTierDto {
-  @IsString()
-  @IsOptional()
-  id?: string
 
-  @IsString()
-  name!: string
+import { SVIPBenefitType, SVIPStatus } from './svip.entity';
 
-  @IsNumber()
-  @Min(1)
-  @Max(5)
-  level!: number
+// ── 请求 DTO ──
 
-  @IsNumber()
-  @Min(0)
-  minSpendAmount!: number
+export class CreatePlanDto {
+  /** 计划名称 */
+  name!: string;
 
-  @IsNumber()
-  @Min(0)
-  minPoints!: number
+  /** 价格(元) */
+  price!: number;
 
-  @IsArray()
-  @IsString({ each: true })
-  benefits!: string[]
+  /** 有效天数 */
+  durationDays!: number;
 
-  @IsString()
-  @IsOptional()
-  icon?: string
-
-  @IsString()
-  @IsOptional()
-  color?: string
+  /** 包含的权益列表 */
+  benefits!: string[];
 }
 
-/**
- * 创建 SVIP 会员 DTO
- */
-export class CreateSvipMemberDto {
-  @IsString()
-  memberId!: string
+export class SubscribeDto {
+  /** 用户ID */
+  userId!: string;
 
-  @IsString()
-  tierId!: string
-
-  @IsNumber()
-  @Min(0)
-  totalSpend!: number
-
-  @IsNumber()
-  @Min(0)
-  currentPoints!: number
-
-  @IsISO8601()
-  @IsOptional()
-  joinedAt?: string
-
-  @IsISO8601()
-  expiresAt!: string
-
-  @IsBoolean()
-  @IsOptional()
-  autoRenew?: boolean
-
-  @IsString()
-  @IsOptional()
-  brandId?: string
-
-  @IsString()
-  @IsOptional()
-  storeId?: string
+  /** 计划ID */
+  planId!: string;
 }
 
-/**
- * SVIP 权益 DTO
- */
-export class SvipBenefitDto {
-  @IsString()
-  @IsOptional()
-  id?: string
+export class UseBenefitDto {
+  /** 用户ID */
+  userId!: string;
 
-  @IsString()
-  tierId!: string
-
-  @IsEnum(SvipBenefitType)
-  benefitType!: SvipBenefitType
-
-  @IsString()
-  benefitValue!: string
-
-  @IsString()
-  description!: string
-
-  @IsBoolean()
-  @IsOptional()
-  isActive?: boolean
+  /** 权益类型 */
+  benefitType!: SVIPBenefitType;
 }
 
-/**
- * SVIP 升降级 DTO
- */
-export class SvipUpgradeDto {
-  @IsString()
-  memberId!: string
-
-  @IsNumber()
-  @Min(1)
-  @Max(5)
-  @IsOptional()
-  targetTierLevel?: number
-
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  totalSpend?: number
-
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  currentPoints?: number
-
-  @IsString()
-  @IsOptional()
-  reason?: string
+export class RenewSubscriptionDto {
+  /** 订阅ID */
+  subscriptionId!: string;
 }
 
-/**
- * SVIP 权益使用 DTO
- */
-export class UseSvipBenefitDto {
-  @IsString()
-  memberId!: string
-
-  @IsEnum(SvipBenefitType)
-  benefitType!: SvipBenefitType
-
-  @IsString()
-  @IsOptional()
-  referenceOrderId?: string
-
-  @IsString()
-  @IsOptional()
-  referencePaymentId?: string
+export class CancelSubscriptionDto {
+  /** 订阅ID */
+  subscriptionId!: string;
 }
 
-/**
- * SVIP 会员查询 DTO
- */
-export class SvipMemberQueryDto {
-  @IsString()
-  @IsOptional()
-  memberId?: string
+// ── 查询 DTO ──
 
-  @IsEnum(SvipMemberStatus)
-  @IsOptional()
-  status?: SvipMemberStatus
+export class SubscriptionQueryDto {
+  /** 用户ID */
+  userId?: string;
 
-  @IsNumber()
-  @IsOptional()
-  @Min(1)
-  @Max(5)
-  tierLevel?: number
+  /** 状态过滤 */
+  status?: SVIPStatus;
+
+  /** 页码 */
+  page?: number = 1;
+
+  /** 每页条数 */
+  pageSize?: number = 10;
 }
 
-/**
- * SVIP 等级查询 DTO
- */
-export class SvipTierQueryDto {
-  @IsNumber()
-  @IsOptional()
-  @Min(1)
-  @Max(5)
-  level?: number
+export class PlanQueryDto {
+  /** 计划名称（模糊搜索） */
+  name?: string;
+
+  /** 最低价格 */
+  minPrice?: number;
+
+  /** 最高价格 */
+  maxPrice?: number;
+
+  /** 页码 */
+  page?: number = 1;
+
+  /** 每页条数 */
+  pageSize?: number = 10;
+}
+
+export class BenefitQueryDto {
+  /** 订阅ID */
+  subscriptionId!: string;
+
+  /** 权益类型过滤 */
+  type?: SVIPBenefitType;
+
+  /** 是否已使用 */
+  used?: boolean;
+}
+
+// ── 响应 DTO ──
+
+export class PlanResponseDto {
+  planId!: string;
+  name!: string;
+  price!: number;
+  durationDays!: number;
+  benefits!: string[];
+  createdAt!: string;
+}
+
+export class SubscriptionResponseDto {
+  subscriptionId!: string;
+  userId!: string;
+  planId!: string;
+  status!: SVIPStatus;
+  startAt!: string;
+  expireAt!: string;
+  autoRenew!: boolean;
+  createdAt!: string;
+}
+
+export class BenefitResponseDto {
+  benefitId!: string;
+  subscriptionId!: string;
+  type!: SVIPBenefitType;
+  usedAt?: string;
+  expiresAt?: string;
+}
+
+export class PlanListResponseDto {
+  data!: PlanResponseDto[];
+  total!: number;
+  page!: number;
+  pageSize!: number;
+}
+
+export class SubscriptionListResponseDto {
+  data!: SubscriptionResponseDto[];
+  total!: number;
+  page!: number;
+  pageSize!: number;
+}
+
+export class SvipStatsResponseDto {
+  totalSubscriptions!: number;
+  activeCount!: number;
+  expiredCount!: number;
+  cancelledCount!: number;
+  totalRevenue!: number;
 }

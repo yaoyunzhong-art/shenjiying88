@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * Analytics Simulator Test
  *
@@ -20,7 +21,6 @@
  */
 
 import assert from 'node:assert/strict'
-import test, { describe, beforeEach } from 'node:test'
 import { AnalyticsService } from './analytics.service'
 import {
   AnalyticsScope,
@@ -123,7 +123,7 @@ const ROLES = {
 describe('Analytics Simulator', () => {
   // ──────── 👔店长 ────────
   describe(`${ROLES.DIANZHANG} - 全店运营总览&异常诊断`, () => {
-    test('查看租户级运营快照包含所有分组', () => {
+    it('查看租户级运营快照包含所有分组', () => {
       const svc = makeAnalyticsService(HEALTHY_LOYALTY)
       const snapshot = svc.getOperationSnapshot(makeTenantContext())
 
@@ -136,7 +136,7 @@ describe('Analytics Simulator', () => {
       assert.ok(orderGroup!.metrics.length >= 2)
     })
 
-    test('支付成功率低于80%应触发Critical诊断', () => {
+    it('支付成功率低于80%应触发Critical诊断', () => {
       const state: SimulatedLoyaltyState = {
         ...HEALTHY_LOYALTY,
         settlementCount: 100,
@@ -153,7 +153,7 @@ describe('Analytics Simulator', () => {
       assert.ok(paymentDiag!.recommendations.length > 0)
     })
 
-    test('健康状态下不应有Critical诊断', () => {
+    it('健康状态下不应有Critical诊断', () => {
       const svc = makeAnalyticsService(HEALTHY_LOYALTY)
       const diagnostics = svc.getDiagnostics(makeTenantContext())
 
@@ -164,7 +164,7 @@ describe('Analytics Simulator', () => {
 
   // ──────── 🛒前台 ────────
   describe(`${ROLES.QIANTAI} - 当日结算统计查看`, () => {
-    test('查看品牌级快照获取结算数据', () => {
+    it('查看品牌级快照获取结算数据', () => {
       const svc = makeAnalyticsService(HEALTHY_LOYALTY)
       const snapshot = svc.getOperationSnapshot(makeTenantContext(), {
         scope: AnalyticsScope.Brand,
@@ -177,7 +177,7 @@ describe('Analytics Simulator', () => {
       assert.ok(settlementMetric!.value > 0, '应有结算数据')
     })
 
-    test('零结算时应正确显示0', () => {
+    it('零结算时应正确显示0', () => {
       const state: SimulatedLoyaltyState = {
         settlementCount: 0,
         settlementSuccessCount: 0,
@@ -196,7 +196,7 @@ describe('Analytics Simulator', () => {
 
   // ──────── 👥HR ────────
   describe(`${ROLES.HR} - 员工绩效与会员活跃度分析`, () => {
-    test('会员活动稀疏触发Info诊断', () => {
+    it('会员活动稀疏触发Info诊断', () => {
       const state: SimulatedLoyaltyState = {
         settlementCount: 2,
         settlementSuccessCount: 2,
@@ -214,7 +214,7 @@ describe('Analytics Simulator', () => {
       assert.ok(thinningDiag!.recommendations.some((r) => r.actionCode === 'increase-touchpoint-frequency'))
     })
 
-    test('高活跃度会员无活动稀疏诊断', () => {
+    it('高活跃度会员无活动稀疏诊断', () => {
       const svc = makeAnalyticsService(HEALTHY_LOYALTY)
       const diagnostics = svc.getDiagnostics(makeTenantContext())
 
@@ -225,7 +225,7 @@ describe('Analytics Simulator', () => {
 
   // ──────── 🔧安监 ────────
   describe(`${ROLES.ANJIAN} - 支付合规与风控诊断`, () => {
-    test('支付失败率高触发Critical诊断并含action建议', () => {
+    it('支付失败率高触发Critical诊断并含action建议', () => {
       const state: SimulatedLoyaltyState = {
         ...HEALTHY_LOYALTY,
         settlementCount: 50,
@@ -242,7 +242,7 @@ describe('Analytics Simulator', () => {
       assert.ok(paymentDiag!.recommendations.some((r) => r.actionCode === 'inspect-payment-gateway'))
     })
 
-    test('零结算不触发支付成功率诊断', () => {
+    it('零结算不触发支付成功率诊断', () => {
       const state: SimulatedLoyaltyState = {
         settlementCount: 0,
         settlementSuccessCount: 0,
@@ -261,7 +261,7 @@ describe('Analytics Simulator', () => {
 
   // ──────── 🎮导玩员 ────────
   describe(`${ROLES.DAOWAN} - 盲盒与游戏币转化分析`, () => {
-    test('盲盒履约零但券核销多触发盲盒转化诊断', () => {
+    it('盲盒履约零但券核销多触发盲盒转化诊断', () => {
       const state: SimulatedLoyaltyState = {
         ...HEALTHY_LOYALTY,
         settlementCount: 10,
@@ -280,7 +280,7 @@ describe('Analytics Simulator', () => {
       assert.ok(blindboxDiag!.recommendations.some((r) => r.actionCode === 'launch-blindbox-promo'))
     })
 
-    test('盲盒履约正常不触发该诊断', () => {
+    it('盲盒履约正常不触发该诊断', () => {
       const svc = makeAnalyticsService(HEALTHY_LOYALTY)
       const diagnostics = svc.getDiagnostics(makeTenantContext())
 
@@ -291,7 +291,7 @@ describe('Analytics Simulator', () => {
 
   // ──────── 🎯运行专员 ────────
   describe(`${ROLES.YUNXING} - 运营健康检查&积压诊断`, () => {
-    test('多诊断叠加按优先级排序推荐', () => {
+    it('多诊断叠加按优先级排序推荐', () => {
       const state: SimulatedLoyaltyState = {
         settlementCount: 20,
         settlementSuccessCount: 12, // 60% -> 触发支付诊断
@@ -314,7 +314,7 @@ describe('Analytics Simulator', () => {
       }
     })
 
-    test('券计划额度耗尽触发诊断', () => {
+    it('券计划额度耗尽触发诊断', () => {
       const state: SimulatedLoyaltyState = {
         ...HEALTHY_LOYALTY,
         couponPlans: [
@@ -329,7 +329,7 @@ describe('Analytics Simulator', () => {
       assert.ok((couponDiag!.evidence as any).exhaustedPlanIds.includes('plan-exhausted'))
     })
 
-    test('无结算活动触发静默诊断', () => {
+    it('无结算活动触发静默诊断', () => {
       const state: SimulatedLoyaltyState = {
         settlementCount: 0,
         settlementSuccessCount: 0,
@@ -349,7 +349,7 @@ describe('Analytics Simulator', () => {
 
   // ──────── 🤝团建 ────────
   describe(`${ROLES.TUANJIAN} - 团建套餐消费分析`, () => {
-    test('Store级快照精确到门店', () => {
+    it('Store级快照精确到门店', () => {
       const svc = makeAnalyticsService(HEALTHY_LOYALTY)
       const snapshot = svc.getOperationSnapshot(makeTenantContext(), {
         scope: AnalyticsScope.Store,
@@ -361,7 +361,7 @@ describe('Analytics Simulator', () => {
       assert.ok(snapshot.groups.length > 0)
     })
 
-    test('积分净流指标趋势正确计算', () => {
+    it('积分净流指标趋势正确计算', () => {
       // pointsIn > pointsOut -> UP trend
       const state: SimulatedLoyaltyState = {
         ...HEALTHY_LOYALTY,
@@ -379,7 +379,7 @@ describe('Analytics Simulator', () => {
       assert.equal(pointsNet!.value, 20000)
     })
 
-    test('积分净流出时趋势为DOWN', () => {
+    it('积分净流出时趋势为DOWN', () => {
       const state: SimulatedLoyaltyState = {
         ...HEALTHY_LOYALTY,
         pointsIn: 10000,
@@ -396,7 +396,7 @@ describe('Analytics Simulator', () => {
 
   // ──────── 📢营销 ────────
   describe(`${ROLES.YINGXIAO} - 券&积分活动效果分析`, () => {
-    test('积分净流出触发高优先级诊断', () => {
+    it('积分净流出触发高优先级诊断', () => {
       const state: SimulatedLoyaltyState = {
         ...HEALTHY_LOYALTY,
         pointsIn: 10000,
@@ -413,7 +413,7 @@ describe('Analytics Simulator', () => {
       assert.ok(outflowDiag!.recommendations.some((r) => r.actionCode === 'rebalance-point-economy'))
     })
 
-    test('券核销和盲盒数据出现在快照中', () => {
+    it('券核销和盲盒数据出现在快照中', () => {
       const svc = makeAnalyticsService(HEALTHY_LOYALTY)
       const snapshot = svc.getOperationSnapshot(makeTenantContext())
 
@@ -428,7 +428,7 @@ describe('Analytics Simulator', () => {
       assert.equal(blindboxMetric!.value, 20)
     })
 
-    test('推荐按优先级排序后最高优先级最先', () => {
+    it('推荐按优先级排序后最高优先级最先', () => {
       const state: SimulatedLoyaltyState = {
         settlementCount: 20,
         settlementSuccessCount: 12, // 支付低 -> priority 100
@@ -454,7 +454,7 @@ describe('Analytics Simulator', () => {
 // ─── 纯单元测试 ───
 
 describe('Analytics Simulator - 纯单元', () => {
-  test('getOperationSnapshot 返回完整结构', () => {
+  it('getOperationSnapshot 返回完整结构', () => {
     const svc = makeAnalyticsService(HEALTHY_LOYALTY)
     const snapshot = svc.getOperationSnapshot(makeTenantContext())
 
@@ -475,7 +475,7 @@ describe('Analytics Simulator - 纯单元', () => {
     }
   })
 
-  test('getDiagnostics 为每个 diagnostic 返回合规结构', () => {
+  it('getDiagnostics 为每个 diagnostic 返回合规结构', () => {
     const state: SimulatedLoyaltyState = {
       settlementCount: 10,
       settlementSuccessCount: 5, // 触发支付诊断
@@ -503,7 +503,7 @@ describe('Analytics Simulator - 纯单元', () => {
     }
   })
 
-  test('getRecommendations 去重并按优先级排序', () => {
+  it('getRecommendations 去重并按优先级排序', () => {
     const svc = makeAnalyticsService(HEALTHY_LOYALTY)
     const recommendations = svc.getRecommendations(makeTenantContext())
 
@@ -511,7 +511,7 @@ describe('Analytics Simulator - 纯单元', () => {
     assert.ok(Array.isArray(recommendations))
   })
 
-  test('空数据场景不崩溃', () => {
+  it('空数据场景不崩溃', () => {
     const emptyState: SimulatedLoyaltyState = {
       settlementCount: 0,
       settlementSuccessCount: 0,
@@ -528,7 +528,7 @@ describe('Analytics Simulator - 纯单元', () => {
     assert.doesNotThrow(() => svc.getRecommendations(makeTenantContext()))
   })
 
-  test('不同tenantId独立生成snapshot', () => {
+  it('不同tenantId独立生成snapshot', () => {
     const svc = makeAnalyticsService(HEALTHY_LOYALTY)
     const s1 = svc.getOperationSnapshot(makeTenantContext({ tenantId: 't-001' }))
     const s2 = svc.getOperationSnapshot(makeTenantContext({ tenantId: 't-002' }))

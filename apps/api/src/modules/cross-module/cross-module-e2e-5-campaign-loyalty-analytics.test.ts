@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Cross-module #5 — Campaign → Loyalty → Analytics 闭环
  *
@@ -9,7 +10,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -175,7 +175,7 @@ async function buildApp() {
   return { app, moduleRef, memberService, loyaltyService, campaignService, analyticsService }
 }
 
-test('e2e xm5: campaign AWARD_POINTS → loyalty settle → analytics snapshot reflects points', async () => {
+it('e2e xm5: campaign AWARD_POINTS → loyalty settle → analytics snapshot reflects points', async () => {
   const { app, memberService, campaignService, loyaltyService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
   loyaltyService.resetLoyaltyStoresForTests()
@@ -225,7 +225,7 @@ test('e2e xm5: campaign AWARD_POINTS → loyalty settle → analytics snapshot r
   }
 })
 
-test('e2e xm5: cross-tenant — analytics reflects tenant isolation', async () => {
+it('e2e xm5: cross-tenant — analytics reflects tenant isolation', async () => {
   const { app, memberService, loyaltyService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
 
@@ -251,7 +251,7 @@ test('e2e xm5: cross-tenant — analytics reflects tenant isolation', async () =
   }
 })
 
-test('e2e xm5: coupon issued via loyalty service is counted in analytics couponRedemptionCount', async () => {
+it('e2e xm5: coupon issued via loyalty service is counted in analytics couponRedemptionCount', async () => {
   const { app, memberService, loyaltyService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
 
@@ -288,7 +288,7 @@ test('e2e xm5: coupon issued via loyalty service is counted in analytics couponR
   }
 })
 
-test('e2e xm5: high payment failure rate → analytics diagnostics CRITICAL', async () => {
+it('e2e xm5: high payment failure rate → analytics diagnostics CRITICAL', async () => {
   const { app, memberService, loyaltyService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
 
@@ -320,7 +320,7 @@ test('e2e xm5: high payment failure rate → analytics diagnostics CRITICAL', as
   }
 })
 
-test('e2e xm5: campaign triggers respect brand scope', async () => {
+it('e2e xm5: campaign triggers respect brand scope', async () => {
   const { app, memberService, campaignService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
 
@@ -369,7 +369,7 @@ test('e2e xm5: campaign triggers respect brand scope', async () => {
   }
 })
 
-test('e2e xm5: idempotency — duplicate evaluate with same planId+memberId+orderId skips', async () => {
+it('e2e xm5: idempotency — duplicate evaluate with same planId+memberId+orderId skips', async () => {
   const { app, memberService, campaignService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
 
@@ -406,7 +406,7 @@ test('e2e xm5: idempotency — duplicate evaluate with same planId+memberId+orde
   }
 })
 
-test('e2e xm5: analytics totals align with loyalty settlements', async () => {
+it('e2e xm5: analytics totals align with loyalty settlements', async () => {
   const { app, memberService, loyaltyService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
 
@@ -430,7 +430,7 @@ test('e2e xm5: analytics totals align with loyalty settlements', async () => {
   }
 })
 
-test('e2e xm5: campaign inactive status does not dispatch', async () => {
+it('e2e xm5: campaign inactive status does not dispatch', async () => {
   const { app, memberService, campaignService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
 

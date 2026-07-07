@@ -1,10 +1,10 @@
+import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 /**
  * 🐜 自动: [ai-insight] [D] service 测试
  * AiInsightService 单元测试：KPI看板、洞察报告、异常检测、趋势预测、仪表盘
  */
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { AiInsightService } from './ai-insight.service'
 import type { InsightReport, KPI, Anomaly, Trend } from './ai-insight.entity'
 
@@ -17,14 +17,14 @@ function createService(): AiInsightService {
 
 // ── KPI 看板 ──
 describe('AiInsightService: KPI', () => {
-  test('getKPIs returns KPIs for tenant', () => {
+  it('getKPIs returns KPIs for tenant', () => {
     const service = createService()
     const kpis = service.getKPIs(TENANT_ID)
     assert.ok(Array.isArray(kpis))
     assert.ok(kpis.length > 0, 'seed data should provide KPIs')
   })
 
-  test('getKPIs filters by storeId', () => {
+  it('getKPIs filters by storeId', () => {
     const service = createService()
     const all = service.getKPIs(TENANT_ID)
     const filtered = service.getKPIs(TENANT_ID, STORE_ID)
@@ -40,7 +40,7 @@ describe('AiInsightService: KPI', () => {
     }
   })
 
-  test('getKPIs filters by category', () => {
+  it('getKPIs filters by category', () => {
     const service = createService()
     const revenueKPIs = service.getKPIs(TENANT_ID, undefined, 'revenue')
 
@@ -50,7 +50,7 @@ describe('AiInsightService: KPI', () => {
     }
   })
 
-  test('getKPIs combines storeId and category filters', () => {
+  it('getKPIs combines storeId and category filters', () => {
     const service = createService()
     const result = service.getKPIs(TENANT_ID, STORE_ID, 'game')
 
@@ -61,7 +61,7 @@ describe('AiInsightService: KPI', () => {
     }
   })
 
-  test('getKPIDetail returns KPI by id', () => {
+  it('getKPIDetail returns KPI by id', () => {
     const service = createService()
     const kpis = service.getKPIs(TENANT_ID)
     const first = kpis[0]
@@ -71,13 +71,13 @@ describe('AiInsightService: KPI', () => {
     assert.equal(detail.id, first.id)
   })
 
-  test('getKPIDetail returns undefined for non-existent id', () => {
+  it('getKPIDetail returns undefined for non-existent id', () => {
     const service = createService()
     const result = service.getKPIDetail('non-existent-id')
     assert.equal(result, undefined)
   })
 
-  test('KPIs have correct structure', () => {
+  it('KPIs have correct structure', () => {
     const service = createService()
     const kpis = service.getKPIs(TENANT_ID)
 
@@ -96,7 +96,7 @@ describe('AiInsightService: KPI', () => {
 
 // ── 洞察报告 ──
 describe('AiInsightService: Reports', () => {
-  test('generateReport creates a report with correct type', () => {
+  it('generateReport creates a report with correct type', () => {
     const service = createService()
     const report = service.generateReport(
       TENANT_ID, STORE_ID, 'revenue', '2026-06-01', '2026-06-07'
@@ -111,7 +111,7 @@ describe('AiInsightService: Reports', () => {
     assert.ok(report.summary.length > 0)
   })
 
-  test('generateReport includes data with metrics, trends, anomalies', () => {
+  it('generateReport includes data with metrics, trends, anomalies', () => {
     const service = createService()
     const report = service.generateReport(
       TENANT_ID, undefined, 'kpi', '2026-06-01', '2026-06-07'
@@ -124,7 +124,7 @@ describe('AiInsightService: Reports', () => {
     assert.ok(Object.keys(report.data.metrics).length > 0)
   })
 
-  test('generateReport generates summary text', () => {
+  it('generateReport generates summary text', () => {
     const service = createService()
     const report = service.generateReport(
       TENANT_ID, STORE_ID, 'revenue', '2026-06-01', '2026-06-07'
@@ -133,7 +133,7 @@ describe('AiInsightService: Reports', () => {
     assert.ok(report.summary.endsWith('。'), 'summary should end with Chinese period')
   })
 
-  test('getReports returns generated reports', () => {
+  it('getReports returns generated reports', () => {
     const service = createService()
     // 生成报告
     service.generateReport(TENANT_ID, STORE_ID, 'revenue', '2026-06-01', '2026-06-07')
@@ -143,7 +143,7 @@ describe('AiInsightService: Reports', () => {
     assert.ok(reports.length >= 2)
   })
 
-  test('getReports sorts by generatedAt descending', () => {
+  it('getReports sorts by generatedAt descending', () => {
     const service = createService()
     service.generateReport(TENANT_ID, STORE_ID, 'revenue', '2026-06-01', '2026-06-07')
     service.generateReport(TENANT_ID, STORE_ID, 'member', '2026-06-01', '2026-06-07')
@@ -158,7 +158,7 @@ describe('AiInsightService: Reports', () => {
     }
   })
 
-  test('getReports filters by type', () => {
+  it('getReports filters by type', () => {
     const service = createService()
     service.generateReport(TENANT_ID, STORE_ID, 'revenue', '2026-06-01', '2026-06-07')
     service.generateReport(TENANT_ID, STORE_ID, 'member', '2026-06-01', '2026-06-07')
@@ -169,7 +169,7 @@ describe('AiInsightService: Reports', () => {
     }
   })
 
-  test('getReports applies limit', () => {
+  it('getReports applies limit', () => {
     const service = createService()
     service.generateReport(TENANT_ID, STORE_ID, 'revenue', '2026-06-01', '2026-06-07')
     service.generateReport(TENANT_ID, STORE_ID, 'member', '2026-06-01', '2026-06-07')
@@ -179,7 +179,7 @@ describe('AiInsightService: Reports', () => {
     assert.ok(reports.length <= 2)
   })
 
-  test('getReports returns empty for unknown tenant', () => {
+  it('getReports returns empty for unknown tenant', () => {
     const service = createService()
     const reports = service.getReports('unknown-tenant')
     assert.deepEqual(reports, [])
@@ -188,7 +188,7 @@ describe('AiInsightService: Reports', () => {
 
 // ── 异常检测 ──
 describe('AiInsightService: Anomalies', () => {
-  test('getAnomalies returns seed anomalies', () => {
+  it('getAnomalies returns seed anomalies', () => {
     const service = createService()
     const anomalies = service.getAnomalies(TENANT_ID)
     assert.ok(anomalies.length > 0, 'seed data should have anomalies')
@@ -196,7 +196,7 @@ describe('AiInsightService: Anomalies', () => {
     assert.ok(anomalies.length >= 3)
   })
 
-  test('getAnomalies filters by status', () => {
+  it('getAnomalies filters by status', () => {
     const service = createService()
     const open = service.getAnomalies(TENANT_ID, { status: 'open' })
     const resolved = service.getAnomalies(TENANT_ID, { status: 'resolved' })
@@ -209,7 +209,7 @@ describe('AiInsightService: Anomalies', () => {
     }
   })
 
-  test('getAnomalies filters by severity', () => {
+  it('getAnomalies filters by severity', () => {
     const service = createService()
     const high = service.getAnomalies(TENANT_ID, { severity: 'high' })
     for (const a of high) {
@@ -217,13 +217,13 @@ describe('AiInsightService: Anomalies', () => {
     }
   })
 
-  test('getAnomalies applies limit', () => {
+  it('getAnomalies applies limit', () => {
     const service = createService()
     const result = service.getAnomalies(TENANT_ID, { limit: 1 })
     assert.ok(result.length <= 1)
   })
 
-  test('acknowledgeAnomaly transitions open to acknowledged', () => {
+  it('acknowledgeAnomaly transitions open to acknowledged', () => {
     const service = createService()
     const anomalies = service.getAnomalies(TENANT_ID, { status: 'open' })
     assert.ok(anomalies.length > 0, 'should have open anomalies')
@@ -233,13 +233,13 @@ describe('AiInsightService: Anomalies', () => {
     assert.equal(result.status, 'acknowledged')
   })
 
-  test('acknowledgeAnomaly returns undefined for non-existent', () => {
+  it('acknowledgeAnomaly returns undefined for non-existent', () => {
     const service = createService()
     const result = service.acknowledgeAnomaly('no-such-id')
     assert.equal(result, undefined)
   })
 
-  test('resolveAnomaly transitions to resolved with resolvedAt', () => {
+  it('resolveAnomaly transitions to resolved with resolvedAt', () => {
     const service = createService()
     const anomalies = service.getAnomalies(TENANT_ID, { status: 'open' })
     assert.ok(anomalies.length > 0)
@@ -250,7 +250,7 @@ describe('AiInsightService: Anomalies', () => {
     assert.ok(result.resolvedAt, 'should set resolvedAt')
   })
 
-  test('resolveAnomaly can resolve acknowledged anomalies too', () => {
+  it('resolveAnomaly can resolve acknowledged anomalies too', () => {
     const service = createService()
     const acked = service.getAnomalies(TENANT_ID, { status: 'acknowledged' })
     if (acked.length > 0) {
@@ -260,7 +260,7 @@ describe('AiInsightService: Anomalies', () => {
     }
   })
 
-  test('detectAnomalies performs 3-sigma detection', () => {
+  it('detectAnomalies performs 3-sigma detection', () => {
     const service = createService()
     const detected = service.detectAnomalies(TENANT_ID, STORE_ID)
     assert.ok(Array.isArray(detected), 'should return array')
@@ -276,7 +276,7 @@ describe('AiInsightService: Anomalies', () => {
     }
   })
 
-  test('detectAnomalies filters by metric', () => {
+  it('detectAnomalies filters by metric', () => {
     const service = createService()
     const detected = service.detectAnomalies(TENANT_ID, undefined, '日营收')
     // 如果有足够的数据点进行标准差计算
@@ -287,7 +287,7 @@ describe('AiInsightService: Anomalies', () => {
     }
   })
 
-  test('getAnomalies filters by storeId', () => {
+  it('getAnomalies filters by storeId', () => {
     const service = createService()
     const result = service.getAnomalies(TENANT_ID, { storeId: STORE_ID })
     for (const a of result) {
@@ -295,7 +295,7 @@ describe('AiInsightService: Anomalies', () => {
     }
   })
 
-  test('getAnomalies returns empty for unknown tenant', () => {
+  it('getAnomalies returns empty for unknown tenant', () => {
     const service = createService()
     const result = service.getAnomalies('unknown')
     assert.deepEqual(result, [])
@@ -304,7 +304,7 @@ describe('AiInsightService: Anomalies', () => {
 
 // ── 趋势预测 ──
 describe('AiInsightService: Forecasts', () => {
-  test('generateForecast creates trend with forecast points', () => {
+  it('generateForecast creates trend with forecast points', () => {
     const service = createService()
     const trend = service.generateForecast(TENANT_ID, '日营收', 'week')
 
@@ -316,7 +316,7 @@ describe('AiInsightService: Forecasts', () => {
     assert.ok(trend.generatedAt)
   })
 
-  test('generateForecast creates sequential forecast dates', () => {
+  it('generateForecast creates sequential forecast dates', () => {
     const service = createService()
     const trend = service.generateForecast(TENANT_ID, '日营收', 'week')
 
@@ -328,7 +328,7 @@ describe('AiInsightService: Forecasts', () => {
     }
   })
 
-  test('generateForecast handles unknown metric with low confidence', () => {
+  it('generateForecast handles unknown metric with low confidence', () => {
     const service = createService()
     const trend = service.generateForecast(TENANT_ID, 'unknown_metric', 'week')
 
@@ -338,7 +338,7 @@ describe('AiInsightService: Forecasts', () => {
       `confidence ${trend.confidence} should be low for unknown metric`)
   })
 
-  test('getForecast returns existing trend', () => {
+  it('getForecast returns existing trend', () => {
     const service = createService()
     const created = service.generateForecast(TENANT_ID, '日营收', 'week')
     const fetched = service.getForecast(created.id)
@@ -349,13 +349,13 @@ describe('AiInsightService: Forecasts', () => {
     assert.equal(fetched.confidence, created.confidence)
   })
 
-  test('getForecast returns undefined for non-existent', () => {
+  it('getForecast returns undefined for non-existent', () => {
     const service = createService()
     const result = service.getForecast('no-such-id')
     assert.equal(result, undefined)
   })
 
-  test('multiple forecasts for same metric create distinct trends', () => {
+  it('multiple forecasts for same metric create distinct trends', () => {
     const service = createService()
     const t1 = service.generateForecast(TENANT_ID, '日营收', 'week')
     const t2 = service.generateForecast(TENANT_ID, '日营收', 'week')
@@ -366,7 +366,7 @@ describe('AiInsightService: Forecasts', () => {
 
 // ── 仪表盘 ──
 describe('AiInsightService: Dashboard', () => {
-  test('getDashboardSummary returns summary with all periods', () => {
+  it('getDashboardSummary returns summary with all periods', () => {
     const service = createService()
     const dashboard = service.getDashboardSummary(TENANT_ID, STORE_ID)
 
@@ -392,7 +392,7 @@ describe('AiInsightService: Dashboard', () => {
     }
   })
 
-  test('getDashboardSummary includes active anomalies count', () => {
+  it('getDashboardSummary includes active anomalies count', () => {
     const service = createService()
     const dashboard = service.getDashboardSummary(TENANT_ID)
 
@@ -400,7 +400,7 @@ describe('AiInsightService: Dashboard', () => {
     assert.ok(dashboard.activeAnomalies >= 0)
   })
 
-  test('getDashboardSummary includes report count', () => {
+  it('getDashboardSummary includes report count', () => {
     const service = createService()
     // 生成一些报告
     service.generateReport(TENANT_ID, STORE_ID, 'revenue', '2026-06-01', '2026-06-07')
@@ -410,14 +410,14 @@ describe('AiInsightService: Dashboard', () => {
     assert.ok(dashboard.reportCount >= 2)
   })
 
-  test('getDashboardSummary without storeId returns all data', () => {
+  it('getDashboardSummary without storeId returns all data', () => {
     const service = createService()
     const dashboard = service.getDashboardSummary(TENANT_ID)
     assert.equal(dashboard.storeId, undefined)
     assert.ok(dashboard.today)
   })
 
-  test('getDashboardSummary KPIs are limited to top 5', () => {
+  it('getDashboardSummary KPIs are limited to top 5', () => {
     const service = createService()
     const dashboard = service.getDashboardSummary(TENANT_ID, STORE_ID)
     // 每个周期最多5个KPI
@@ -426,7 +426,7 @@ describe('AiInsightService: Dashboard', () => {
     assert.ok(dashboard.thisMonth.kpis.length <= 5)
   })
 
-  test('getDashboardSummary yoyPercent is within reasonable range', () => {
+  it('getDashboardSummary yoyPercent is within reasonable range', () => {
     const service = createService()
     const dashboard = service.getDashboardSummary(TENANT_ID, STORE_ID)
     // yoyPercent 应该在 -10 ~ +30 之间 (基于 simulateYoyPercent)
@@ -437,7 +437,7 @@ describe('AiInsightService: Dashboard', () => {
 
 // ── 集成流程测试 ──
 describe('AiInsightService: Integration flows', () => {
-  test('full workflow: KPI → report → anomaly → forecast → dashboard', () => {
+  it('full workflow: KPI → report → anomaly → forecast → dashboard', () => {
     const service = createService()
 
     // 1. 查看KPI
@@ -465,7 +465,7 @@ describe('AiInsightService: Integration flows', () => {
     assert.ok(dashboard.activeAnomalies >= 0)
   })
 
-  test('anomaly lifecycle: open → acknowledge → resolve', () => {
+  it('anomaly lifecycle: open → acknowledge → resolve', () => {
     const service = createService()
     const anomalies = service.getAnomalies(TENANT_ID, { status: 'open' })
     assert.ok(anomalies.length > 0, 'should have open anomalies')
@@ -482,7 +482,7 @@ describe('AiInsightService: Integration flows', () => {
     assert.ok(resolved?.resolvedAt)
   })
 
-  test('getKPIDetail works across all KPIs', () => {
+  it('getKPIDetail works across all KPIs', () => {
     const service = createService()
     const all = service.getKPIs(TENANT_ID)
 

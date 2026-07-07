@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Workbench 工作台 HTTP 链路
  *
@@ -13,7 +14,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -109,7 +109,7 @@ const TENANT_US = {
   'x-market-code': 'us-default'
 }
 
-test('e2e: bootstrap returns workbenches + portals + market', async () => {
+it('e2e: bootstrap returns workbenches + portals + market', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbench/bootstrap').set(TENANT_CN)
@@ -129,7 +129,7 @@ test('e2e: bootstrap returns workbenches + portals + market', async () => {
   }
 })
 
-test('e2e: bootstrap supported clients list', async () => {
+it('e2e: bootstrap supported clients list', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbench/bootstrap').set(TENANT_CN)
@@ -140,7 +140,7 @@ test('e2e: bootstrap supported clients list', async () => {
   }
 })
 
-test('e2e: bootstrap supported locales come from market profile', async () => {
+it('e2e: bootstrap supported locales come from market profile', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbench/bootstrap').set(TENANT_CN)
@@ -151,7 +151,7 @@ test('e2e: bootstrap supported locales come from market profile', async () => {
   }
 })
 
-test('e2e: getRoleWorkbenches returns role list with nav items', async () => {
+it('e2e: getRoleWorkbenches returns role list with nav items', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbench/role-workbenches')
@@ -166,7 +166,7 @@ test('e2e: getRoleWorkbenches returns role list with nav items', async () => {
   }
 })
 
-test('e2e: checkCapability returns true for SUPER_ADMIN with tenant-management', async () => {
+it('e2e: checkCapability returns true for SUPER_ADMIN with tenant-management', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -178,7 +178,7 @@ test('e2e: checkCapability returns true for SUPER_ADMIN with tenant-management',
   }
 })
 
-test('e2e: checkCapability returns false for unknown capability', async () => {
+it('e2e: checkCapability returns false for unknown capability', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -190,7 +190,7 @@ test('e2e: checkCapability returns false for unknown capability', async () => {
   }
 })
 
-test('e2e: bootstrap marketProfile differs by tenant', async () => {
+it('e2e: bootstrap marketProfile differs by tenant', async () => {
   const { app } = await buildApp()
   try {
     const cn = await request(app.getHttpServer()).get('/workbench/bootstrap').set(TENANT_CN)
@@ -202,7 +202,7 @@ test('e2e: bootstrap marketProfile differs by tenant', async () => {
   }
 })
 
-test('e2e: bootstrap tenantContext reflects request headers', async () => {
+it('e2e: bootstrap tenantContext reflects request headers', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -218,7 +218,7 @@ test('e2e: bootstrap tenantContext reflects request headers', async () => {
   }
 })
 
-test('e2e: bootstrap workbenches array has SUPER_ADMIN + others', async () => {
+it('e2e: bootstrap workbenches array has SUPER_ADMIN + others', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbench/bootstrap').set(TENANT_CN)
@@ -229,7 +229,7 @@ test('e2e: bootstrap workbenches array has SUPER_ADMIN + others', async () => {
   }
 })
 
-test('e2e: bootstrap foundationDependencies array is present', async () => {
+it('e2e: bootstrap foundationDependencies array is present', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbench/bootstrap').set(TENANT_CN)
@@ -239,7 +239,7 @@ test('e2e: bootstrap foundationDependencies array is present', async () => {
   }
 })
 
-test('e2e: role workbenches have role/channel/title', async () => {
+it('e2e: role workbenches have role/channel/title', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbench/role-workbenches')
@@ -253,7 +253,7 @@ test('e2e: role workbenches have role/channel/title', async () => {
   }
 })
 
-test('e2e: bootstrap returns portalIdentifier derived from tenant', async () => {
+it('e2e: bootstrap returns portalIdentifier derived from tenant', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbench/bootstrap').set(TENANT_CN)
@@ -264,7 +264,7 @@ test('e2e: bootstrap returns portalIdentifier derived from tenant', async () => 
   }
 })
 
-test('e2e: checkCapability returns true for GUIDE with promo-conversion', async () => {
+it('e2e: checkCapability returns true for GUIDE with promo-conversion', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -276,7 +276,7 @@ test('e2e: checkCapability returns true for GUIDE with promo-conversion', async 
   }
 })
 
-test('e2e: checkCapability returns false for GUIDE with audit-center', async () => {
+it('e2e: checkCapability returns false for GUIDE with audit-center', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -288,7 +288,7 @@ test('e2e: checkCapability returns false for GUIDE with audit-center', async () 
   }
 })
 
-test('e2e: checkCapability returns false for CASHIER with tenant-management', async () => {
+it('e2e: checkCapability returns false for CASHIER with tenant-management', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -300,7 +300,7 @@ test('e2e: checkCapability returns false for CASHIER with tenant-management', as
   }
 })
 
-test('e2e: checkCapability returns false for unknown role', async () => {
+it('e2e: checkCapability returns false for unknown role', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -312,7 +312,7 @@ test('e2e: checkCapability returns false for unknown role', async () => {
   }
 })
 
-test('e2e: bootstrap regionalLoginPolicies contains loginPath and ssoEnabled', async () => {
+it('e2e: bootstrap regionalLoginPolicies contains loginPath and ssoEnabled', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbench/bootstrap').set(TENANT_CN)
@@ -325,7 +325,7 @@ test('e2e: bootstrap regionalLoginPolicies contains loginPath and ssoEnabled', a
   }
 })
 
-test('e2e: bootstrap workbenches have nav items with key, label, href', async () => {
+it('e2e: bootstrap workbenches have nav items with key, label, href', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbench/bootstrap').set(TENANT_CN)
@@ -341,7 +341,7 @@ test('e2e: bootstrap workbenches have nav items with key, label, href', async ()
   }
 })
 
-test('e2e: bootstrap storePortals array contains one entry per request', async () => {
+it('e2e: bootstrap storePortals array contains one entry per request', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -354,7 +354,7 @@ test('e2e: bootstrap storePortals array contains one entry per request', async (
   }
 })
 
-test('e2e: supportedClients list includes core channels', async () => {
+it('e2e: supportedClients list includes core channels', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbench/bootstrap').set(TENANT_CN)

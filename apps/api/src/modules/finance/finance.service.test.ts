@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [finance] [C] 合约 + service 测试
  *
@@ -12,7 +13,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { FinanceService, resetFinanceServiceTestState } from './finance.service'
 import {
   LedgerType,
@@ -34,7 +34,7 @@ const CTX_B = { tenantId: 'tenant-B', brandId: 'brand-B', storeId: 'store-B', ma
 // ─── Ledger 合约 ───────────────────────────────────────
 
 describe('[finance] 合约: Ledger 记账', () => {
-  test('Revenue 类型增加 balance', async () => {
+  it('Revenue 类型增加 balance', async () => {
     const svc = makeService()
     const l = await svc.recordLedger(CTX_A, {
       type: LedgerType.Revenue,
@@ -44,7 +44,7 @@ describe('[finance] 合约: Ledger 记账', () => {
     assert.equal(l.balance, 1000)
   })
 
-  test('Expense 类型减少 balance', async () => {
+  it('Expense 类型减少 balance', async () => {
     const svc = makeService()
     await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 1000, description: 'init' })
     const l = await svc.recordLedger(CTX_A, {
@@ -55,7 +55,7 @@ describe('[finance] 合约: Ledger 记账', () => {
     assert.equal(l.balance, 700)
   })
 
-  test('Refund 类型减少 balance', async () => {
+  it('Refund 类型减少 balance', async () => {
     const svc = makeService()
     await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 1000, description: 'init' })
     const l = await svc.recordLedger(CTX_A, {
@@ -66,7 +66,7 @@ describe('[finance] 合约: Ledger 记账', () => {
     assert.equal(l.balance, 800)
   })
 
-  test('Adjustment 类型增加 balance', async () => {
+  it('Adjustment 类型增加 balance', async () => {
     const svc = makeService()
     await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 1000, description: 'init' })
     const l = await svc.recordLedger(CTX_A, {
@@ -77,7 +77,7 @@ describe('[finance] 合约: Ledger 记账', () => {
     assert.equal(l.balance, 1050)
   })
 
-  test('recordTransactionRevenue 联动写 Ledger', async () => {
+  it('recordTransactionRevenue 联动写 Ledger', async () => {
     const svc = makeService()
     const l = await svc.recordTransactionRevenue(CTX_A, {
       orderId: 'O-1',
@@ -91,7 +91,7 @@ describe('[finance] 合约: Ledger 记账', () => {
     assert.equal(l.balance, 500)
   })
 
-  test('recordTransactionRefund 联动写 Ledger', async () => {
+  it('recordTransactionRefund 联动写 Ledger', async () => {
     const svc = makeService()
     await svc.recordTransactionRevenue(CTX_A, { orderId: 'O', transactionId: 'T', amount: 500, description: 'x' })
     const l = await svc.recordTransactionRefund(CTX_A, {
@@ -104,7 +104,7 @@ describe('[finance] 合约: Ledger 记账', () => {
     assert.equal(l.balance, 400)
   })
 
-  test('listLedgers 按 type 过滤', async () => {
+  it('listLedgers 按 type 过滤', async () => {
     const svc = makeService()
     await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 100, description: "test" })
     await svc.recordLedger(CTX_A, { type: LedgerType.Expense, amount: 30, description: "test" })
@@ -113,7 +113,7 @@ describe('[finance] 合约: Ledger 记账', () => {
     assert.equal(revs[0].type, LedgerType.Revenue)
   })
 
-  test('listLedgers limit 限制', async () => {
+  it('listLedgers limit 限制', async () => {
     const svc = makeService()
     for (let i = 0; i < 5; i++) {
       await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 10, description: "test" })
@@ -121,7 +121,7 @@ describe('[finance] 合约: Ledger 记账', () => {
     assert.equal(svc.listLedgers(CTX_A, { limit: 3 }).length, 3)
   })
 
-  test('listLedgers 按日期范围', async () => {
+  it('listLedgers 按日期范围', async () => {
     const svc = makeService()
     await svc.recordLedger(CTX_A, {
       type: LedgerType.Revenue,
@@ -143,7 +143,7 @@ describe('[finance] 合约: Ledger 记账', () => {
     assert.equal(result[0].amount, 200)
   })
 
-  test('getLedger 不存在 → throw', async () => {
+  it('getLedger 不存在 → throw', async () => {
     const svc = makeService()
     assert.throws(() => svc.getLedger('non-existent', CTX_A))
   })
@@ -152,7 +152,7 @@ describe('[finance] 合约: Ledger 记账', () => {
 // ─── Account 合约 ──────────────────────────────────────
 
 describe('[finance] 合约: Account 账户', () => {
-  test('createAccount → getAccount', async () => {
+  it('createAccount → getAccount', async () => {
     const svc = makeService()
     const a = await svc.createAccount(CTX_A, {
       name: '现金账户',
@@ -166,21 +166,21 @@ describe('[finance] 合约: Account 账户', () => {
     assert.equal(fetched.id, a.id)
   })
 
-  test('freezeAccount Active → Frozen', async () => {
+  it('freezeAccount Active → Frozen', async () => {
     const svc = makeService()
     const a = await svc.createAccount(CTX_A, { name: 'X', type: AccountType.Cash })
     const frozen = svc.freezeAccount(a.id, CTX_A)
     assert.equal(frozen.status, AccountStatus.Frozen)
   })
 
-  test('freezeAccount 非 Active 状态报错', async () => {
+  it('freezeAccount 非 Active 状态报错', async () => {
     const svc = makeService()
     const a = await svc.createAccount(CTX_A, { name: 'X', type: AccountType.Cash })
     svc.freezeAccount(a.id, CTX_A)
     assert.throws(() => svc.freezeAccount(a.id, CTX_A))
   })
 
-  test('closeAccount → Closed, 重复 close 报错', async () => {
+  it('closeAccount → Closed, 重复 close 报错', async () => {
     const svc = makeService()
     const a = await svc.createAccount(CTX_A, { name: 'X', type: AccountType.Cash })
     const closed = svc.closeAccount(a.id, CTX_A)
@@ -188,7 +188,7 @@ describe('[finance] 合约: Account 账户', () => {
     assert.throws(() => svc.closeAccount(a.id, CTX_A))
   })
 
-  test('getAccountBalance 摘要字段', async () => {
+  it('getAccountBalance 摘要字段', async () => {
     const svc = makeService()
     const a = await svc.createAccount(CTX_A, {
       name: '现金',
@@ -205,7 +205,7 @@ describe('[finance] 合约: Account 账户', () => {
 // ─── Settlement 合约 ───────────────────────────────────
 
 describe('[finance] 合约: Settlement 结算', () => {
-  test('createSettlement 自动计算 revenue/expense', async () => {
+  it('createSettlement 自动计算 revenue/expense', async () => {
     const svc = makeService()
     await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 1000, description: "test" })
     await svc.recordLedger(CTX_A, { type: LedgerType.Expense, amount: 300, description: "test" })
@@ -220,7 +220,7 @@ describe('[finance] 合约: Settlement 结算', () => {
     assert.equal(s.settlementStatus, SettlementStatus.Pending)
   })
 
-  test('confirmSettlement Pending → Confirmed', async () => {
+  it('confirmSettlement Pending → Confirmed', async () => {
     const svc = makeService()
     const s = await svc.createSettlement(CTX_A, {
       startDate: '2020-01-01T00:00:00Z',
@@ -230,7 +230,7 @@ describe('[finance] 合约: Settlement 结算', () => {
     assert.equal(c.settlementStatus, SettlementStatus.Confirmed)
   })
 
-  test('disputeSettlement Pending → Disputed', async () => {
+  it('disputeSettlement Pending → Disputed', async () => {
     const svc = makeService()
     const s = await svc.createSettlement(CTX_A, {
       startDate: '2020-01-01T00:00:00Z',
@@ -240,7 +240,7 @@ describe('[finance] 合约: Settlement 结算', () => {
     assert.equal(d.settlementStatus, SettlementStatus.Disputed)
   })
 
-  test('Confirmed 状态不能再次 confirm', async () => {
+  it('Confirmed 状态不能再次 confirm', async () => {
     const svc = makeService()
     const s = await svc.createSettlement(CTX_A, {
       startDate: '2020-01-01T00:00:00Z',
@@ -250,7 +250,7 @@ describe('[finance] 合约: Settlement 结算', () => {
     assert.throws(() => svc.confirmSettlement(s.id, CTX_A))
   })
 
-  test('getSettlementDetail 包含 ledgers', async () => {
+  it('getSettlementDetail 包含 ledgers', async () => {
     const svc = makeService()
     await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 100, description: "test" })
     const s = await svc.createSettlement(CTX_A, {
@@ -267,7 +267,7 @@ describe('[finance] 合约: Settlement 结算', () => {
 // ─── Invoice 合约 ──────────────────────────────────────
 
 describe('[finance] 合约: Invoice 发票', () => {
-  test('createInvoice Draft + taxAmount 自动加总', async () => {
+  it('createInvoice Draft + taxAmount 自动加总', async () => {
     const svc = makeService()
     const inv = await svc.createInvoice(CTX_A, {
       amount: 1000,
@@ -281,7 +281,7 @@ describe('[finance] 合约: Invoice 发票', () => {
     assert.match(inv.invoiceNo, /^INV-/)
   })
 
-  test('issueInvoice Draft → Issued', async () => {
+  it('issueInvoice Draft → Issued', async () => {
     const svc = makeService()
     const inv = await svc.createInvoice(CTX_A, {
       amount: 100, type: InvoiceType.Regular, orderId: 'O-1'
@@ -291,7 +291,7 @@ describe('[finance] 合约: Invoice 发票', () => {
     assert.ok(issued.issuedAt)
   })
 
-  test('issueInvoice 非 Draft 报错', async () => {
+  it('issueInvoice 非 Draft 报错', async () => {
     const svc = makeService()
     const inv = await svc.createInvoice(CTX_A, {
       amount: 100, type: InvoiceType.Regular, orderId: 'O-1'
@@ -300,7 +300,7 @@ describe('[finance] 合约: Invoice 发票', () => {
     assert.throws(() => svc.issueInvoice(inv.id, CTX_A))
   })
 
-  test('cancelInvoice → Cancelled', async () => {
+  it('cancelInvoice → Cancelled', async () => {
     const svc = makeService()
     const inv = await svc.createInvoice(CTX_A, {
       amount: 100, type: InvoiceType.Regular, orderId: 'O-1'
@@ -309,7 +309,7 @@ describe('[finance] 合约: Invoice 发票', () => {
     assert.equal(c.status, InvoiceStatus.Cancelled)
   })
 
-  test('cancelInvoice 已取消报错', async () => {
+  it('cancelInvoice 已取消报错', async () => {
     const svc = makeService()
     const inv = await svc.createInvoice(CTX_A, {
       amount: 100, type: InvoiceType.Regular, orderId: 'O-1'
@@ -322,7 +322,7 @@ describe('[finance] 合约: Invoice 发票', () => {
 // ─── Revenue Summary 合约 ──────────────────────────────
 
 describe('[finance] 合约: 营收汇总', () => {
-  test('getRevenueSummary 聚合 revenue/expense/refund', async () => {
+  it('getRevenueSummary 聚合 revenue/expense/refund', async () => {
     const svc = makeService()
     await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 1000, description: "test" })
     await svc.recordLedger(CTX_A, { type: LedgerType.Expense, amount: 300, description: "test" })
@@ -339,7 +339,7 @@ describe('[finance] 合约: 营收汇总', () => {
     assert.equal(summary.transactionCount, 3)
   })
 
-  test('getDailyRevenue 按日期过滤', async () => {
+  it('getDailyRevenue 按日期过滤', async () => {
     const svc = makeService()
     await svc.recordLedger(CTX_A, {
       type: LedgerType.Revenue,
@@ -362,26 +362,26 @@ describe('[finance] 合约: 营收汇总', () => {
 // ─── 跨租户隔离合约 ────────────────────────────────────
 
 describe('[finance] 合约: 跨租户隔离', () => {
-  test('tenant-B 看不到 tenant-A 的 ledger', async () => {
+  it('tenant-B 看不到 tenant-A 的 ledger', async () => {
     const svc = makeService()
     await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 100, description: "test" })
     const all = svc.listLedgers(CTX_B)
     assert.equal(all.length, 0)
   })
 
-  test('tenant-B 不能 getLedger tenant-A 的 entry', async () => {
+  it('tenant-B 不能 getLedger tenant-A 的 entry', async () => {
     const svc = makeService()
     const l = await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 100, description: "test" })
     assert.throws(() => svc.getLedger(l.id, CTX_B))
   })
 
-  test('tenant-B 不能 getAccount tenant-A 的账户', async () => {
+  it('tenant-B 不能 getAccount tenant-A 的账户', async () => {
     const svc = makeService()
     const a = await svc.createAccount(CTX_A, { name: 'X', type: AccountType.Cash })
     assert.throws(() => svc.getAccount(a.id, CTX_B))
   })
 
-  test('tenant-B 不能 confirmSettlement tenant-A 的结算', async () => {
+  it('tenant-B 不能 confirmSettlement tenant-A 的结算', async () => {
     const svc = makeService()
     const s = await svc.createSettlement(CTX_A, {
       startDate: '2020-01-01T00:00:00Z',

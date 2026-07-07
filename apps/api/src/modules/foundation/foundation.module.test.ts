@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { FoundationModule } from './foundation.module'
 import { FoundationController } from './foundation.controller'
 import { FoundationService } from './foundation.service'
@@ -13,17 +13,17 @@ import { RuntimeGovernanceModule } from './runtime-governance/runtime-governance
 import { GovernanceApprovalModule } from './governance-approval/governance-approval.module'
 
 describe('FoundationModule', () => {
-  test('FoundationModule exposes controller metadata', () => {
+  it('FoundationModule exposes controller metadata', () => {
     const controllers = Reflect.getMetadata('controllers', FoundationModule) || []
     assert.ok(controllers.includes(FoundationController), 'FoundationController should be registered')
   })
 
-  test('FoundationModule exposes provider metadata', () => {
+  it('FoundationModule exposes provider metadata', () => {
     const providers = Reflect.getMetadata('providers', FoundationModule) || []
     assert.ok(providers.includes(FoundationService), 'FoundationService should be registered')
   })
 
-  test('FoundationModule imports all sub-modules', () => {
+  it('FoundationModule imports all sub-modules', () => {
     const imports = Reflect.getMetadata('imports', FoundationModule) || []
 
     const expectedModules = [
@@ -41,29 +41,29 @@ describe('FoundationModule', () => {
     }
   })
 
-  test('FoundationModule exports FoundationService', () => {
+  it('FoundationModule exports FoundationService', () => {
     const exports_ = Reflect.getMetadata('exports', FoundationModule) || []
     assert.ok(exports_.includes(FoundationService), 'FoundationService should be exported')
   })
 
-  test('FoundationModule has the expected set of controllers (one)', () => {
+  it('FoundationModule has the expected set of controllers (one)', () => {
     const controllers: unknown[] = Reflect.getMetadata('controllers', FoundationModule) || []
     assert.strictEqual(controllers.length, 1, 'FoundationModule should have exactly 1 controller')
     assert.strictEqual(controllers[0], FoundationController, 'The only controller should be FoundationController')
   })
 
-  test('FoundationModule has exactly 1 provider (FoundationService)', () => {
+  it('FoundationModule has exactly 1 provider (FoundationService)', () => {
     const providers: unknown[] = Reflect.getMetadata('providers', FoundationModule) || []
     assert.strictEqual(providers.length, 1, 'FoundationModule should have exactly 1 provider')
     assert.strictEqual(providers[0], FoundationService, 'The only provider should be FoundationService')
   })
 
-  test('FoundationModule imports exactly 7 sub-modules', () => {
+  it('FoundationModule imports exactly 7 sub-modules', () => {
     const imports: unknown[] = Reflect.getMetadata('imports', FoundationModule) || []
     assert.strictEqual(imports.length, 7, 'FoundationModule should import exactly 7 sub-modules')
   })
 
-  test('FoundationModule exports only FoundationService', () => {
+  it('FoundationModule exports only FoundationService', () => {
     const exports_: unknown[] = Reflect.getMetadata('exports', FoundationModule) || []
     assert.strictEqual(exports_.length, 1, 'FoundationModule should export exactly 1 entity')
     assert.strictEqual(exports_[0], FoundationService, 'Should export FoundationService')

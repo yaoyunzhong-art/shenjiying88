@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import { describe, test, mock } from 'node:test'
 import { of } from 'rxjs'
 import { RequestAuditInterceptor } from './request-audit.interceptor'
 
@@ -7,12 +7,12 @@ describe('RequestAuditInterceptor', () => {
   // Helper to create a mock RequestGovernanceService
   function createMockService() {
     return {
-      ensureRequestContext: mock.fn((_req: any) => ({
+      ensureRequestContext: vi.fn((_req: any) => ({
         requestId: 'mock-request-id',
         startedAt: Date.now(),
       })),
-      recordRequestSuccess: mock.fn(),
-      recordRequestFailure: mock.fn(),
+      recordRequestSuccess: vi.fn(),
+      recordRequestFailure: vi.fn(),
     }
   }
 
@@ -27,7 +27,7 @@ describe('RequestAuditInterceptor', () => {
     }
     const res = {
       statusCode: 200,
-      setHeader: mock.fn(),
+      setHeader: vi.fn(),
     }
     return {
       getType: () => 'http',
@@ -43,7 +43,7 @@ describe('RequestAuditInterceptor', () => {
     return { handle: () => of(data) }
   }
 
-  test('should call ensureRequestContext on HTTP request', async () => {
+  it('should call ensureRequestContext on HTTP request', async () => {
     const mockService = createMockService()
     const interceptor = new RequestAuditInterceptor(mockService as any)
     const ctx = createHttpContext()
@@ -56,10 +56,10 @@ describe('RequestAuditInterceptor', () => {
       })
     })
 
-    assert.strictEqual(mockService.ensureRequestContext.mock.callCount(), 1)
+    assert.strictEqual(mockService.ensureRequestContext.mock.calls.length, 1)
   })
 
-  test('should call recordRequestSuccess after successful response', async () => {
+  it('should call recordRequestSuccess after successful response', async () => {
     const mockService = createMockService()
     const interceptor = new RequestAuditInterceptor(mockService as any)
     const ctx = createHttpContext()
@@ -72,10 +72,10 @@ describe('RequestAuditInterceptor', () => {
       })
     })
 
-    assert.strictEqual(mockService.recordRequestSuccess.mock.callCount(), 1)
+    assert.strictEqual(mockService.recordRequestSuccess.mock.calls.length, 1)
   })
 
-  test('should not call recordRequestSuccess on non-HTTP context', async () => {
+  it('should not call recordRequestSuccess on non-HTTP context', async () => {
     const mockService = createMockService()
     const interceptor = new RequestAuditInterceptor(mockService as any)
     const ctx = {
@@ -94,11 +94,11 @@ describe('RequestAuditInterceptor', () => {
     })
 
     // For non-HTTP, neither ensureRequestContext nor recordRequestSuccess should be called
-    assert.strictEqual(mockService.ensureRequestContext.mock.callCount(), 0)
-    assert.strictEqual(mockService.recordRequestSuccess.mock.callCount(), 0)
+    assert.strictEqual(mockService.ensureRequestContext.mock.calls.length, 0)
+    assert.strictEqual(mockService.recordRequestSuccess.mock.calls.length, 0)
   })
 
-  test('should pass HTTP response data through unchanged', async () => {
+  it('should pass HTTP response data through unchanged', async () => {
     const mockService = createMockService()
     const interceptor = new RequestAuditInterceptor(mockService as any)
     const ctx = createHttpContext()
@@ -115,7 +115,7 @@ describe('RequestAuditInterceptor', () => {
     assert.deepStrictEqual(result, responseData)
   })
 
-  test('should pass null through unchanged', async () => {
+  it('should pass null through unchanged', async () => {
     const mockService = createMockService()
     const interceptor = new RequestAuditInterceptor(mockService as any)
     const ctx = createHttpContext()
@@ -131,14 +131,14 @@ describe('RequestAuditInterceptor', () => {
     assert.strictEqual(result, null)
   })
 
-  test('should call ensureRequestContext before recordRequestSuccess', async () => {
+  it('should call ensureRequestContext before recordRequestSuccess', async () => {
     const callOrder: string[] = []
     const mockService = {
-      ensureRequestContext: mock.fn(() => {
+      ensureRequestContext: vi.fn(() => {
         callOrder.push('ensureRequestContext')
         return { requestId: 'ordered-test', startedAt: Date.now() }
       }),
-      recordRequestSuccess: mock.fn(() => {
+      recordRequestSuccess: vi.fn(() => {
         callOrder.push('recordRequestSuccess')
       }),
     }

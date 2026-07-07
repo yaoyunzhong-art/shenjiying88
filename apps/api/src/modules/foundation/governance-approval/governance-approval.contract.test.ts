@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { ApprovalStatus, FoundationScopeType } from '@prisma/client'
 import { materializeGovernanceApproval, GovernanceApprovalSnapshot, decideGovernanceApproval, cancelGovernanceApproval, resubmitGovernanceApproval, markGovernanceApprovalExecuted, markGovernanceApprovalExecutionFailed, getGovernanceApprovalByTicket, listGovernanceApprovals, summarizeGovernanceApprovals } from './governance-approval'
 
@@ -113,7 +113,7 @@ function createPrismaMock() {
 }
 
 describe('governance-approval contract: materialize lifecycle', () => {
-  test('materialize creates a new approval record when not required and no ticket', async () => {
+  it('materialize creates a new approval record when not required and no ticket', async () => {
     const { prisma, records } = createPrismaMock()
     const result = await materializeGovernanceApproval(prisma as never, {
       operation: 'create-store',
@@ -129,7 +129,7 @@ describe('governance-approval contract: materialize lifecycle', () => {
     assert.equal(records.length, 0)
   })
 
-  test('materialize persists approval when required', async () => {
+  it('materialize persists approval when required', async () => {
     const { prisma, records } = createPrismaMock()
     const result = await materializeGovernanceApproval(prisma as never, {
       operation: 'delete-brand',
@@ -150,7 +150,7 @@ describe('governance-approval contract: materialize lifecycle', () => {
     assert.equal(records[0]?.version, 1)
   })
 
-  test('materialize returns same record on re-materialize with same status', async () => {
+  it('materialize returns same record on re-materialize with same status', async () => {
     const { prisma, records } = createPrismaMock()
 
     const first = await materializeGovernanceApproval(prisma as never, {
@@ -181,7 +181,7 @@ describe('governance-approval contract: materialize lifecycle', () => {
     assert.equal(second.persisted, true)
   })
 
-  test('materialize binds by approvalTicket for idempotency — only one record', async () => {
+  it('materialize binds by approvalTicket for idempotency — only one record', async () => {
     const { prisma, records } = createPrismaMock()
 
     await materializeGovernanceApproval(prisma as never, {
@@ -206,7 +206,7 @@ describe('governance-approval contract: materialize lifecycle', () => {
     assert.equal(result.persisted, true)
   })
 
-  test('materialize generates internal ticket when approval is required without explicit ticket', async () => {
+  it('materialize generates internal ticket when approval is required without explicit ticket', async () => {
     const { prisma, records } = createPrismaMock()
     const result = await materializeGovernanceApproval(prisma as never, {
       operation: 'audit-log',
@@ -222,7 +222,7 @@ describe('governance-approval contract: materialize lifecycle', () => {
 })
 
 describe('governance-approval contract: decide', () => {
-  test('decide sets APPROVED status', async () => {
+  it('decide sets APPROVED status', async () => {
     const { prisma, records } = createPrismaMock()
 
     await materializeGovernanceApproval(prisma as never, {
@@ -250,7 +250,7 @@ describe('governance-approval contract: decide', () => {
     assert.equal(records[0]?.status, 'APPROVED')
   })
 
-  test('decide sets REJECTED status', async () => {
+  it('decide sets REJECTED status', async () => {
     const { prisma, records } = createPrismaMock()
 
     await materializeGovernanceApproval(prisma as never, {
@@ -272,7 +272,7 @@ describe('governance-approval contract: decide', () => {
     assert.equal(records[0]?.version, 2)
   })
 
-  test('decide throws when ticket not found', async () => {
+  it('decide throws when ticket not found', async () => {
     const { prisma } = createPrismaMock()
 
     await assert.rejects(
@@ -285,7 +285,7 @@ describe('governance-approval contract: decide', () => {
     )
   })
 
-  test('decide throws on version mismatch', async () => {
+  it('decide throws on version mismatch', async () => {
     const { prisma } = createPrismaMock()
 
     await materializeGovernanceApproval(prisma as never, {
@@ -309,7 +309,7 @@ describe('governance-approval contract: decide', () => {
 })
 
 describe('governance-approval contract: cancel', () => {
-  test('cancel sets CANCELLED status', async () => {
+  it('cancel sets CANCELLED status', async () => {
     const { prisma, records } = createPrismaMock()
 
     await materializeGovernanceApproval(prisma as never, {
@@ -332,7 +332,7 @@ describe('governance-approval contract: cancel', () => {
     assert.equal(records[0]?.version, 2)
   })
 
-  test('cancel throws when status is not PENDING', async () => {
+  it('cancel throws when status is not PENDING', async () => {
     const { prisma } = createPrismaMock()
 
     await materializeGovernanceApproval(prisma as never, {
@@ -360,7 +360,7 @@ describe('governance-approval contract: cancel', () => {
 })
 
 describe('governance-approval contract: resubmit', () => {
-  test('resubmit creates a new PENDING approval from a REJECTED one', async () => {
+  it('resubmit creates a new PENDING approval from a REJECTED one', async () => {
     const { prisma, records } = createPrismaMock()
 
     await materializeGovernanceApproval(prisma as never, {
@@ -394,7 +394,7 @@ describe('governance-approval contract: resubmit', () => {
 })
 
 describe('governance-approval contract: execution', () => {
-  test('markExecuted sets execution summary on approved approval', async () => {
+  it('markExecuted sets execution summary on approved approval', async () => {
     const { prisma, records } = createPrismaMock()
 
     await materializeGovernanceApproval(prisma as never, {
@@ -424,7 +424,7 @@ describe('governance-approval contract: execution', () => {
     assert.equal(records[0]?.version, 3)
   })
 
-  test('markExecutionFailed sets failure summary', async () => {
+  it('markExecutionFailed sets failure summary', async () => {
     const { prisma } = createPrismaMock()
 
     await materializeGovernanceApproval(prisma as never, {
@@ -457,7 +457,7 @@ describe('governance-approval contract: execution', () => {
 })
 
 describe('governance-approval contract: query', () => {
-  test('getApprovalByTicket retrieves existing approval', async () => {
+  it('getApprovalByTicket retrieves existing approval', async () => {
     const { prisma } = createPrismaMock()
 
     await materializeGovernanceApproval(prisma as never, {
@@ -474,7 +474,7 @@ describe('governance-approval contract: query', () => {
     assert.equal(detail.status, 'PENDING')
   })
 
-  test('getApprovalByTicket throws for missing ticket', async () => {
+  it('getApprovalByTicket throws for missing ticket', async () => {
     const { prisma } = createPrismaMock()
 
     await assert.rejects(
@@ -483,7 +483,7 @@ describe('governance-approval contract: query', () => {
     )
   })
 
-  test('listGovernanceApprovals returns all approvals', async () => {
+  it('listGovernanceApprovals returns all approvals', async () => {
     const { prisma } = createPrismaMock()
 
     await materializeGovernanceApproval(prisma as never, {
@@ -500,7 +500,7 @@ describe('governance-approval contract: query', () => {
     assert.equal(list.length, 3)
   })
 
-  test('listGovernanceApprovals filters by operation', async () => {
+  it('listGovernanceApprovals filters by operation', async () => {
     const { prisma } = createPrismaMock()
 
     await materializeGovernanceApproval(prisma as never, {
@@ -515,7 +515,7 @@ describe('governance-approval contract: query', () => {
     assert.equal(list[0]?.operation, 'create')
   })
 
-  test('summarizeGovernanceApprovals returns metrics', async () => {
+  it('summarizeGovernanceApprovals returns metrics', async () => {
     const { prisma } = createPrismaMock()
 
     await materializeGovernanceApproval(prisma as never, {

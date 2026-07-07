@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { validateSync } from 'class-validator'
 import {
   ConfigurationScopeDto,
@@ -14,7 +14,7 @@ import {
 } from './configuration-governance.dto'
 
 // ── ConfigurationScopeDto ────────────────────────────────────────
-test('ConfigurationScopeDto accepts all optional scope fields', () => {
+it('ConfigurationScopeDto accepts all optional scope fields', () => {
   const dto = Object.assign(new ConfigurationScopeDto(), {
     tenantId: 't-001',
     brandId: 'b-001',
@@ -24,13 +24,13 @@ test('ConfigurationScopeDto accepts all optional scope fields', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('ConfigurationScopeDto accepts empty payload (all fields optional)', () => {
+it('ConfigurationScopeDto accepts empty payload (all fields optional)', () => {
   const dto = Object.assign(new ConfigurationScopeDto(), {})
   assert.equal(validateSync(dto).length, 0)
 })
 
 // ── FeatureFlagQueryDto ─────────────────────────────────────────
-test('FeatureFlagQueryDto accepts optional subjectKey', () => {
+it('FeatureFlagQueryDto accepts optional subjectKey', () => {
   const dto = Object.assign(new FeatureFlagQueryDto(), {
     tenantId: 't-001',
     subjectKey: 'order-001'
@@ -38,13 +38,13 @@ test('FeatureFlagQueryDto accepts optional subjectKey', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('FeatureFlagQueryDto accepts empty payload', () => {
+it('FeatureFlagQueryDto accepts empty payload', () => {
   const dto = Object.assign(new FeatureFlagQueryDto(), {})
   assert.equal(validateSync(dto).length, 0)
 })
 
 // ── RotateSecretDto ─────────────────────────────────────────────
-test('RotateSecretDto accepts valid approval values', () => {
+it('RotateSecretDto accepts valid approval values', () => {
   const dto = Object.assign(new RotateSecretDto(), {
     rotatedBy: 'user-001',
     approvalStatus: 'APPROVED'
@@ -52,7 +52,7 @@ test('RotateSecretDto accepts valid approval values', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('RotateSecretDto rejects invalid approvalStatus', () => {
+it('RotateSecretDto rejects invalid approvalStatus', () => {
   const dto = Object.assign(new RotateSecretDto(), {
     approvalStatus: 'INVALID_STATUS'
   })
@@ -62,7 +62,7 @@ test('RotateSecretDto rejects invalid approvalStatus', () => {
 })
 
 // ── ConfigEntryQueryDto ─────────────────────────────────────────
-test('ConfigEntryQueryDto accepts namespace and key filters', () => {
+it('ConfigEntryQueryDto accepts namespace and key filters', () => {
   const dto = Object.assign(new ConfigEntryQueryDto(), {
     namespace: 'feature',
     key: 'dark-mode'
@@ -71,7 +71,7 @@ test('ConfigEntryQueryDto accepts namespace and key filters', () => {
 })
 
 // ── CertificateQueryDto ─────────────────────────────────────────
-test('CertificateQueryDto accepts valid status filter', () => {
+it('CertificateQueryDto accepts valid status filter', () => {
   const dto = Object.assign(new CertificateQueryDto(), {
     name: 'ssl-cert',
     status: 'active',
@@ -80,7 +80,7 @@ test('CertificateQueryDto accepts valid status filter', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('CertificateQueryDto rejects out-of-range expiringWithinDays', () => {
+it('CertificateQueryDto rejects out-of-range expiringWithinDays', () => {
   const dto = Object.assign(new CertificateQueryDto(), {
     expiringWithinDays: 0
   })
@@ -89,7 +89,7 @@ test('CertificateQueryDto rejects out-of-range expiringWithinDays', () => {
   assert.equal(errors[0].property, 'expiringWithinDays')
 })
 
-test('CertificateQueryDto rejects invalid status value', () => {
+it('CertificateQueryDto rejects invalid status value', () => {
   const dto = Object.assign(new CertificateQueryDto(), {
     status: 'unknown'
   })
@@ -99,7 +99,7 @@ test('CertificateQueryDto rejects invalid status value', () => {
 })
 
 // ── UpsertConfigEntryDto ────────────────────────────────────────
-test('UpsertConfigEntryDto accepts valid config entry', () => {
+it('UpsertConfigEntryDto accepts valid config entry', () => {
   const dto = Object.assign(new UpsertConfigEntryDto(), {
     namespace: 'feature',
     key: 'dark-mode',
@@ -114,7 +114,7 @@ test('UpsertConfigEntryDto accepts valid config entry', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('UpsertConfigEntryDto rejects missing required fields', () => {
+it('UpsertConfigEntryDto rejects missing required fields', () => {
   const dto = Object.assign(new UpsertConfigEntryDto(), {})
   const errors = validateSync(dto)
   assert.equal(errors.length > 0, true)
@@ -126,7 +126,7 @@ test('UpsertConfigEntryDto rejects missing required fields', () => {
   assert.equal(props.includes('value'), true)
 })
 
-test('UpsertConfigEntryDto rejects invalid valueType', () => {
+it('UpsertConfigEntryDto rejects invalid valueType', () => {
   const dto = Object.assign(new UpsertConfigEntryDto(), {
     namespace: 'test',
     key: 'k',
@@ -139,7 +139,7 @@ test('UpsertConfigEntryDto rejects invalid valueType', () => {
   assert.equal(errors[0].property, 'valueType')
 })
 
-test('UpsertConfigEntryDto rejects invalid scopeType', () => {
+it('UpsertConfigEntryDto rejects invalid scopeType', () => {
   const dto = Object.assign(new UpsertConfigEntryDto(), {
     namespace: 'test',
     key: 'k',
@@ -152,7 +152,7 @@ test('UpsertConfigEntryDto rejects invalid scopeType', () => {
   assert.equal(errors[0].property, 'scopeType')
 })
 
-test('UpsertConfigEntryDto rejects tags exceeding max size', () => {
+it('UpsertConfigEntryDto rejects tags exceeding max size', () => {
   const dto = Object.assign(new UpsertConfigEntryDto(), {
     namespace: 'test',
     key: 'k',
@@ -166,7 +166,7 @@ test('UpsertConfigEntryDto rejects tags exceeding max size', () => {
 })
 
 // ── PersistFeatureFlagDto ───────────────────────────────────────
-test('PersistFeatureFlagDto accepts valid feature flag', () => {
+it('PersistFeatureFlagDto accepts valid feature flag', () => {
   const dto = Object.assign(new PersistFeatureFlagDto(), {
     key: 'dark-mode',
     name: 'Dark Mode',
@@ -179,7 +179,7 @@ test('PersistFeatureFlagDto accepts valid feature flag', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('PersistFeatureFlagDto rejects missing required fields', () => {
+it('PersistFeatureFlagDto rejects missing required fields', () => {
   const dto = Object.assign(new PersistFeatureFlagDto(), {})
   const errors = validateSync(dto)
   assert.equal(errors.length > 0, true)
@@ -192,7 +192,7 @@ test('PersistFeatureFlagDto rejects missing required fields', () => {
   assert.equal(props.includes('enabled'), true)
 })
 
-test('PersistFeatureFlagDto rejects invalid strategy', () => {
+it('PersistFeatureFlagDto rejects invalid strategy', () => {
   const dto = Object.assign(new PersistFeatureFlagDto(), {
     key: 'k',
     name: 'n',
@@ -205,7 +205,7 @@ test('PersistFeatureFlagDto rejects invalid strategy', () => {
   assert.equal(errors.length > 0, true)
 })
 
-test('PersistFeatureFlagDto rejects percentage out of range', () => {
+it('PersistFeatureFlagDto rejects percentage out of range', () => {
   const dto = Object.assign(new PersistFeatureFlagDto(), {
     key: 'k',
     name: 'n',
@@ -219,7 +219,7 @@ test('PersistFeatureFlagDto rejects percentage out of range', () => {
   assert.equal(errors.length > 0, true)
 })
 
-test('PersistFeatureFlagDto accepts valid PERCENTAGE strategy', () => {
+it('PersistFeatureFlagDto accepts valid PERCENTAGE strategy', () => {
   const dto = Object.assign(new PersistFeatureFlagDto(), {
     key: 'k',
     name: 'n',
@@ -232,7 +232,7 @@ test('PersistFeatureFlagDto accepts valid PERCENTAGE strategy', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('PersistFeatureFlagDto accepts ALLOW_LIST strategy with allowList', () => {
+it('PersistFeatureFlagDto accepts ALLOW_LIST strategy with allowList', () => {
   const dto = Object.assign(new PersistFeatureFlagDto(), {
     key: 'k',
     name: 'n',
@@ -246,7 +246,7 @@ test('PersistFeatureFlagDto accepts ALLOW_LIST strategy with allowList', () => {
 })
 
 // ── RegisterSecretDto ───────────────────────────────────────────
-test('RegisterSecretDto accepts valid secret registration', () => {
+it('RegisterSecretDto accepts valid secret registration', () => {
   const dto = Object.assign(new RegisterSecretDto(), {
     key: 'integration-api-key',
     type: 'api-key',
@@ -258,7 +258,7 @@ test('RegisterSecretDto accepts valid secret registration', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('RegisterSecretDto rejects missing required fields', () => {
+it('RegisterSecretDto rejects missing required fields', () => {
   const dto = Object.assign(new RegisterSecretDto(), {})
   const errors = validateSync(dto)
   assert.equal(errors.length > 0, true)
@@ -268,7 +268,7 @@ test('RegisterSecretDto rejects missing required fields', () => {
   assert.equal(props.includes('scopeType'), true)
 })
 
-test('RegisterSecretDto rejects invalid secret type', () => {
+it('RegisterSecretDto rejects invalid secret type', () => {
   const dto = Object.assign(new RegisterSecretDto(), {
     key: 'k',
     type: 'password',

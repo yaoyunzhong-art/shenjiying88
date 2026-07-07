@@ -2,3 +2,17 @@
 node_modules/
 .next/
 playwright-report/
+apps/*/dist/
+*.tsbuildinfo
+.DS_Store
+
+# Auto-generated backup files (星号+数字 后缀)
+* "[0-9]*
+* [0-9].*
+* [0-9][0-9].*
+.DS_Store
+.trae/
+packages/config-typescript/dist/
+logs/v6-nightly/launchd-stderr.log
+logs/v6-rhythm/launchd-stderr.log
+logs/

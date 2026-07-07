@@ -1,5 +1,9 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
+
+// ESM import of the service under test
+import { ConfigurationGovernanceService } from './configuration-governance.service'
+import type { FoundationGovernanceBaseline } from '@m5/types'
 
 // light mock for service tests — we test the in-memory config + feature flags logic
 
@@ -191,11 +195,11 @@ function createConfigurationPrismaMock() {
             ...existing.revisions,
             {
               version: data.version as number,
-              changedBy: ((data.revisions as { create: { changedBy: string; changeReason?: string; snapshot: unknown } })?.create)
+              changedBy: ((data.revisions as { create?: { changedBy: string; changeReason?: string; snapshot: unknown } }).create ?? { changedBy: 'foundation-console', changeReason: undefined, snapshot: undefined })
                 .changedBy ?? 'foundation-console',
-              changeReason: ((data.revisions as { create: { changedBy: string; changeReason?: string; snapshot: unknown } })?.create)
+              changeReason: ((data.revisions as { create?: { changedBy: string; changeReason?: string; snapshot: unknown } }).create ?? { changedBy: '', changeReason: null, snapshot: undefined })
                 .changeReason ?? null,
-              snapshot: ((data.revisions as { create: { changedBy: string; changeReason?: string; snapshot: unknown } })?.create)
+              snapshot: ((data.revisions as { create?: { changedBy: string; changeReason?: string; snapshot: unknown } }).create ?? { changedBy: '', changeReason: null, snapshot: undefined })
                 .snapshot,
               createdAt: new Date()
             }
@@ -325,17 +329,21 @@ interface StoredRevision {
 }
 
 // ---------------------------------------------------------------------------
+// Helper — build a service instance with mocked dependencies
+// ---------------------------------------------------------------------------
+
+function createService() {
+  const prisma = createConfigurationPrismaMock() as never
+  const trust = createTrustGovernanceMock() as never
+  return new ConfigurationGovernanceService(prisma, trust)
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-test('resolveConfigSnapshot returns a snapshot for default tenant context', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('resolveConfigSnapshot returns a snapshot for default tenant context', async () => {
+  const service = createService()
   const snapshot = await service.resolveConfigSnapshot({
     tenantId: 'tenant-demo',
     brandId: 'brand-default',
@@ -354,14 +362,8 @@ test('resolveConfigSnapshot returns a snapshot for default tenant context', asyn
   assert.ok(typeof snapshot.checksum === 'string', 'checksum should be a string')
 })
 
-test('getFeatureFlags returns in-memory flags for empty persisted data', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('getFeatureFlags returns in-memory flags for empty persisted data', async () => {
+  const service = createService()
   const flags = await service.getFeatureFlags({
     tenantId: 'tenant-demo',
     brandId: 'brand-default',
@@ -377,14 +379,8 @@ test('getFeatureFlags returns in-memory flags for empty persisted data', async (
   })
 })
 
-test('getFeatureFlags evaluates premium tenant to enabled for new-checkout', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('getFeatureFlags evaluates premium tenant to enabled for new-checkout', async () => {
+  const service = createService()
   const flags = await service.getFeatureFlags({
     tenantId: 'tenant-premium',
     brandId: 'brand-default',
@@ -397,14 +393,8 @@ test('getFeatureFlags evaluates premium tenant to enabled for new-checkout', asy
   assert.equal(checkoutFlag.source, 'in-memory')
 })
 
-test('getFeatureFlags evaluates unknown tenant to default flag values', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('getFeatureFlags evaluates unknown tenant to default flag values', async () => {
+  const service = createService()
   const flags = await service.getFeatureFlags({
     tenantId: 'tenant-unknown',
     brandId: 'brand-default',
@@ -420,14 +410,8 @@ test('getFeatureFlags evaluates unknown tenant to default flag values', async ()
   assert.equal(aiFlag.enabled, true, 'ai-order-review should default to enabled')
 })
 
-test('getManagementMetadata returns governance metadata entries', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('getManagementMetadata returns governance metadata entries', () => {
+  const service = createService()
   const metadata = service.getManagementMetadata()
 
   assert.ok(Array.isArray(metadata), 'metadata should be an array')
@@ -445,14 +429,8 @@ test('getManagementMetadata returns governance metadata entries', () => {
   })
 })
 
-test('saveConfigEntry creates a new entry with governance metadata', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('saveConfigEntry creates a new entry with governance metadata', async () => {
+  const service = createService()
   const result = await service.saveConfigEntry({
     namespace: 'checkout',
     key: 'guest-checkout',
@@ -476,14 +454,8 @@ test('saveConfigEntry creates a new entry with governance metadata', async () =>
   assert.equal(result.governance.operation, 'config-entry.write')
 })
 
-test('saveConfigEntry updates existing entry and increments version', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('saveConfigEntry updates existing entry and increments version', async () => {
+  const service = createService()
 
   // first create
   await service.saveConfigEntry({
@@ -514,20 +486,14 @@ test('saveConfigEntry updates existing entry and increments version', async () =
   assert.deepStrictEqual(result.entry.value, false, 'value should be updated to false')
 })
 
-test('saveFeatureFlag creates a new flag', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('saveFeatureFlag creates a new flag', async () => {
+  const service = createService()
   const result = await service.saveFeatureFlag({
     key: 'experimental-ui',
     name: 'Experimental UI',
     scopeType: 'PLATFORM',
     status: 'ACTIVE',
-    strategy: 'ENABLE_ALL',
+    strategy: 'ALL',
     enabled: false,
     percentage: 10,
     description: 'Enable experimental UI features',
@@ -542,14 +508,8 @@ test('saveFeatureFlag creates a new flag', async () => {
   assert.ok(result.governance, 'should include governance metadata')
 })
 
-test('getSecretMetadata returns combined persisted and in-memory secrets', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('getSecretMetadata returns combined persisted and in-memory secrets', async () => {
+  const service = createService()
   const secrets = await service.getSecretMetadata()
 
   assert.ok(Array.isArray(secrets), 'secrets should be an array')
@@ -564,14 +524,8 @@ test('getSecretMetadata returns combined persisted and in-memory secrets', async
   assert.equal(paySecret.status, 'rotation-due')
 })
 
-test('getSecretMetadata throws NotFoundException for unknown secret', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('getSecretMetadata throws NotFoundException for unknown secret', async () => {
+  const service = createService()
 
   await assert.rejects(
     () => service.getSecretMetadata('non-existent-secret'),
@@ -579,14 +533,8 @@ test('getSecretMetadata throws NotFoundException for unknown secret', async () =
   )
 })
 
-test('getCertificateMetadata returns certificate records', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('getCertificateMetadata returns certificate records', async () => {
+  const service = createService()
   const certificates = await service.getCertificateMetadata()
 
   assert.ok(Array.isArray(certificates), 'certificates should be an array')
@@ -597,14 +545,8 @@ test('getCertificateMetadata returns certificate records', async () => {
   assert.equal(lytCert.autoRenew, true)
 })
 
-test('getCertificateDetail returns a specific certificate', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('getCertificateDetail returns a specific certificate', async () => {
+  const service = createService()
   const cert = await service.getCertificateDetail('payment-gateway-client-cert', {})
 
   assert.ok(cert, 'certificate should exist')
@@ -613,14 +555,8 @@ test('getCertificateDetail returns a specific certificate', async () => {
   assert.equal(cert.autoRenew, false)
 })
 
-test('getCertificateDetail throws NotFoundException for unknown certificate', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('getCertificateDetail throws NotFoundException for unknown certificate', async () => {
+  const service = createService()
 
   await assert.rejects(
     () => service.getCertificateDetail('non-existent-cert', {}),
@@ -628,14 +564,8 @@ test('getCertificateDetail throws NotFoundException for unknown certificate', as
   )
 })
 
-test('getSecretsCertificatePosture returns posture snapshot', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('getSecretsCertificatePosture returns posture snapshot', async () => {
+  const service = createService()
   const posture = await service.getSecretsCertificatePosture()
 
   assert.ok(posture, 'posture should exist')
@@ -647,20 +577,14 @@ test('getSecretsCertificatePosture returns posture snapshot', async () => {
   assert.ok(Array.isArray(posture.attention.certificates), 'attention.certificates should be an array')
 })
 
-test('getGovernanceBaselines returns baseline entries', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('getGovernanceBaselines returns baseline entries', () => {
+  const service = createService()
   const baselines = service.getGovernanceBaselines()
 
   assert.ok(Array.isArray(baselines), 'baselines should be an array')
   assert.ok(baselines.length >= 2, 'expected at least 2 baselines')
 
-  baselines.forEach((baseline: Record<string, unknown>) => {
+  baselines.forEach((baseline: FoundationGovernanceBaseline) => {
     assert.ok(typeof baseline.key === 'string')
     assert.ok(typeof baseline.name === 'string')
     assert.ok(typeof baseline.summary === 'string')
@@ -670,14 +594,8 @@ test('getGovernanceBaselines returns baseline entries', () => {
   })
 })
 
-test('getDescriptor returns module descriptor', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
+it('getDescriptor returns module descriptor', () => {
+  const service = createService()
   const descriptor = service.getDescriptor()
 
   assert.equal(descriptor.key, 'configuration-governance')
@@ -686,15 +604,9 @@ test('getDescriptor returns module descriptor', () => {
   assert.ok(descriptor.capabilities.length >= 3, 'expected at least 3 capabilities')
 })
 
-test('getOperationsOverview returns combined overview', async () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ConfigurationGovernanceService } = require('./configuration-governance.service')
-
-  const prisma = createConfigurationPrismaMock() as never
-  const trust = createTrustGovernanceMock() as never
-
-  const service = new ConfigurationGovernanceService(prisma, trust)
-  const overview = await service.getOperationsOverview()
+it('getOperationsOverview returns combined overview', async () => {
+  const service = createService()
+  const overview = await service.getOperationsOverview() as { generatedAt: string; configuration: { entries: unknown; featureFlags: unknown; secrets: unknown; certificates: unknown }; posture: unknown }
 
   assert.ok(overview, 'overview should exist')
   assert.ok(typeof overview.generatedAt === 'string', 'should have generatedAt')

@@ -268,7 +268,7 @@ export interface NativeAppReplayRequest {
 
 export interface NativeAppAuthEnvelope {
   receiptCode: string;
-  audience: 'app-handler-sync';
+  audience: 'native-app-handler-sync';
   authScheme: 'M5-HMAC-SHA256';
   authorization: string;
   signedHeaders: string[];
@@ -1062,7 +1062,7 @@ export function listNativeAppActionPlans(
 
 export function submitNativeAppActionPlan(plan: NativeAppActionPlan): NativeAppSubmitOutcome {
   const payloadSummary = JSON.stringify(plan.requestPreview.payload);
-  const receiptCode = `APP-${plan.action.toUpperCase()}-${plan.decision.nextStep}`;
+  const receiptCode = `NATIVE-${plan.action.toUpperCase()}-${plan.decision.nextStep}`;
 
   if (plan.decision.nextStep === 'REFRESH' || plan.decision.nextStep === 'LOGIN') {
     return {
@@ -1130,7 +1130,7 @@ export function appendNativeAppSubmitHistory(
 export function buildNativeAppLedger(history: NativeAppSubmitHistoryEntry[]): NativeAppLedgerRecord[] {
   return history.map((entry) => ({
     receiptCode: entry.receiptCode,
-    ledgerKey: `app-ledger:${entry.receiptCode}`,
+    ledgerKey: `native-ledger:${entry.receiptCode}`,
     action: entry.action,
     state: entry.state,
     replayEndpoint: `/api/v1/app/actions/${entry.receiptCode}/replay`,
@@ -1248,10 +1248,10 @@ export function createNativeAppReplayRequest(record: NativeAppLedgerRecord): Nat
 export function buildNativeAppAuthEnvelope(sync: NativeAppHandlerSyncContract): NativeAppAuthEnvelope {
   return {
     receiptCode: sync.receiptCode,
-    audience: 'app-handler-sync',
+    audience: 'native-app-handler-sync',
     authScheme: 'M5-HMAC-SHA256',
     authorization: `M5 ${sync.ticketCode}.${sync.idempotencyKey}`,
-    signedHeaders: ['x-m5-ticket-code', 'x-m5-idempotency-key', 'x-m5-receipt-code'],
+    signedHeaders: ['x-m5-ticket-code', 'x-m5-idempotency-key', 'x-m5-receipt-code', 'x-m5-nonce', 'x-m5-timestamp'],
     expiresAt: '2026-06-12T00:05:00.000Z',
     nonce: `nonce:${sync.receiptCode}`
   };

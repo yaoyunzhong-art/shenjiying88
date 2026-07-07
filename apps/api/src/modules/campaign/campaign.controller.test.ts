@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 
 const { CampaignController } = require('./campaign.controller')
 const {
@@ -48,54 +48,54 @@ function makeController(overrides: MockServiceOverrides = {}) {
 
 // ── 路由元数据 ──
 describe('CampaignController 路由元数据', () => {
-  test('controller metadata path is campaigns', () => {
+  it('controller metadata path is campaigns', () => {
     const path = Reflect.getMetadata('path', CampaignController)
     assert.equal(path, 'campaigns')
   })
 
-  test('registerCampaign POST /', () => {
+  it('registerCampaign POST /', () => {
     const method = Reflect.getMetadata('method', CampaignController.prototype.registerCampaign)
     const path = Reflect.getMetadata('path', CampaignController.prototype.registerCampaign)
     assert.equal(method, 1) // POST
     assert.equal(path, '/')
   })
 
-  test('listCampaigns GET /', () => {
+  it('listCampaigns GET /', () => {
     const method = Reflect.getMetadata('method', CampaignController.prototype.listCampaigns)
     const path = Reflect.getMetadata('path', CampaignController.prototype.listCampaigns)
     assert.equal(method, 0) // GET
     assert.equal(path, '/')
   })
 
-  test('getCampaign GET /:planId', () => {
+  it('getCampaign GET /:planId', () => {
     const method = Reflect.getMetadata('method', CampaignController.prototype.getCampaign)
     const path = Reflect.getMetadata('path', CampaignController.prototype.getCampaign)
     assert.equal(method, 0)
     assert.equal(path, ':planId')
   })
 
-  test('updateCampaignStatus PATCH /:planId/status', () => {
+  it('updateCampaignStatus PATCH /:planId/status', () => {
     const method = Reflect.getMetadata('method', CampaignController.prototype.updateCampaignStatus)
     const path = Reflect.getMetadata('path', CampaignController.prototype.updateCampaignStatus)
     assert.ok(method === 2 || method === 4) // PATCH (RequestMethod.PATCH = 2 in NestJS enum, but can vary)
     assert.equal(path, ':planId/status')
   })
 
-  test('listPlanDispatches GET /:planId/dispatches', () => {
+  it('listPlanDispatches GET /:planId/dispatches', () => {
     const method = Reflect.getMetadata('method', CampaignController.prototype.listPlanDispatches)
     const path = Reflect.getMetadata('path', CampaignController.prototype.listPlanDispatches)
     assert.equal(method, 0)
     assert.equal(path, ':planId/dispatches')
   })
 
-  test('listDispatches GET /dispatches/list', () => {
+  it('listDispatches GET /dispatches/list', () => {
     const method = Reflect.getMetadata('method', CampaignController.prototype.listDispatches)
     const path = Reflect.getMetadata('path', CampaignController.prototype.listDispatches)
     assert.equal(method, 0)
     assert.equal(path, 'dispatches/list')
   })
 
-  test('evaluateTriggers POST /evaluate', () => {
+  it('evaluateTriggers POST /evaluate', () => {
     const method = Reflect.getMetadata('method', CampaignController.prototype.evaluateTriggers)
     const path = Reflect.getMetadata('path', CampaignController.prototype.evaluateTriggers)
     assert.equal(method, 1)
@@ -105,7 +105,7 @@ describe('CampaignController 路由元数据', () => {
 
 // ── 正例测试 ──
 describe('CampaignController 正例', () => {
-  test('registerCampaign 委托 service 并返回 plan contract', () => {
+  it('registerCampaign 委托 service 并返回 plan contract', () => {
     const mockPlan = {
       planId: 'campaign-test-1',
       tenantContext: { tenantId: 't-campaign', brandId: 'b-campaign' },
@@ -141,7 +141,39 @@ describe('CampaignController 正例', () => {
     assert.equal(result.actions.length, 1)
   })
 
-  test('listCampaigns 返回 campaign plans 列表', () => {
+  it('registerCampaign 缺省 conditions 时回退为空数组', () => {
+    let capturedInput: any = null
+    const controller = makeController({
+      registerCampaign: (input: any) => {
+        capturedInput = input
+        return {
+          planId: 'campaign-test-empty-conditions',
+          tenantContext: createContext(),
+          code: input.code,
+          title: input.title,
+          status: CampaignStatus.Draft,
+          triggerEvent: input.triggerEvent,
+          conditions: input.conditions,
+          actions: input.actions,
+          priority: 100,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      }
+    })
+
+    const result = controller.registerCampaign(createContext(), {
+      code: 'NO_CONDITIONS',
+      title: '无条件活动',
+      triggerEvent: CampaignTrigger.PaymentSuccess,
+      actions: [{ kind: CampaignActionKind.RecommendTag, params: { tagCode: 'no-conditions' } }]
+    } as any)
+
+    assert.deepEqual(capturedInput.conditions, [])
+    assert.deepEqual(result.conditions, [])
+  })
+
+  it('listCampaigns 返回 campaign plans 列表', () => {
     const mockPlans = [
       {
         planId: 'p-1', code: 'BIRTHDAY', title: '生日活动', status: CampaignStatus.Active,
@@ -167,7 +199,7 @@ describe('CampaignController 正例', () => {
     assert.equal(result[1].planId, 'p-2')
   })
 
-  test('listCampaigns 支持状态过滤', () => {
+  it('listCampaigns 支持状态过滤', () => {
     const mockPlans = [
       { planId: 'p-draft', code: 'DRAFT_CAMPAIGN', title: '草稿活动', status: CampaignStatus.Draft,
         tenantContext: createContext(),
@@ -188,7 +220,7 @@ describe('CampaignController 正例', () => {
     assert.equal(result[0].status, CampaignStatus.Draft)
   })
 
-  test('getCampaign 找到有效 plan 返回', () => {
+  it('getCampaign 找到有效 plan 返回', () => {
     const mockPlan = {
       planId: 'p-find',
       tenantContext: createContext(),
@@ -212,7 +244,7 @@ describe('CampaignController 正例', () => {
     assert.equal(result.conditions.length, 1)
   })
 
-  test('getCampaign 找不到返回 null', () => {
+  it('getCampaign 找不到返回 null', () => {
     const controller = makeController({ getCampaign: () => undefined })
 
     const result = controller.getCampaign(createContext(), 'nonexistent')
@@ -220,7 +252,7 @@ describe('CampaignController 正例', () => {
     assert.equal(result, null)
   })
 
-  test('updateCampaignStatus 更新状态返回更新后 plan', () => {
+  it('updateCampaignStatus 更新状态返回更新后 plan', () => {
     const updatedPlan = {
       planId: 'p-status',
       tenantContext: createContext(),
@@ -249,7 +281,7 @@ describe('CampaignController 正例', () => {
     assert.equal(capturedStatus, CampaignStatus.Active)
   })
 
-  test('listDispatches 返回 dispatches 列表', () => {
+  it('listDispatches 返回 dispatches 列表', () => {
     const mockDispatches = [
       {
         dispatchId: 'd-1', planId: 'p-1', actionIndex: 0,
@@ -278,7 +310,7 @@ describe('CampaignController 正例', () => {
     assert.equal(result[1].status, CampaignActionStatus.Failed)
   })
 
-  test('evaluateTriggers 触发评估返回评估结果', () => {
+  it('evaluateTriggers 触发评估返回评估结果', () => {
     const mockResult = {
       matchedCampaigns: 2,
       dispatchedActions: 3,
@@ -308,11 +340,22 @@ describe('CampaignController 正例', () => {
     assert.equal(result.dispatchedActions, 3)
     assert.equal(result.dispatches.length, 1)
   })
+
+  it('evaluateTriggers 缺少 eventName 时拒绝请求', () => {
+    const controller = makeController()
+
+    assert.throws(
+      () => controller.evaluateTriggers(createContext(), {
+        eventName: '   '
+      }),
+      /eventName is required/
+    )
+  })
 })
 
 // ── 反例测试 ──
 describe('CampaignController 反例', () => {
-  test('registerCampaign 缺少 actions 应被 service 层拒绝', () => {
+  it('registerCampaign 缺少 actions 应被 service 层拒绝', () => {
     const controller = makeController({
       registerCampaign: () => {
         throw new Error('Campaign must declare at least one action')
@@ -331,7 +374,7 @@ describe('CampaignController 反例', () => {
     )
   })
 
-  test('registerCampaign 无效 action kind 被拒绝', () => {
+  it('registerCampaign 无效 action kind 被拒绝', () => {
     const controller = makeController({
       registerCampaign: () => {
         throw new Error('Campaign action[0] (AwardPoints) requires positive pointsAmount')
@@ -350,7 +393,7 @@ describe('CampaignController 反例', () => {
     )
   })
 
-  test('updateCampaignStatus 非法状态转换被拒绝', () => {
+  it('updateCampaignStatus 非法状态转换被拒绝', () => {
     const controller = makeController({
       updateCampaignStatus: () => {
         throw new Error('Invalid campaign status transition: COMPLETED → ACTIVE')
@@ -363,7 +406,7 @@ describe('CampaignController 反例', () => {
     )
   })
 
-  test('getCampaign 跨租户访问返回 null', () => {
+  it('getCampaign 跨租户访问返回 null', () => {
     const controller = makeController({
       getCampaign: () => undefined
     })
@@ -376,7 +419,7 @@ describe('CampaignController 反例', () => {
 
 // ── 边界值测试 ──
 describe('CampaignController 边界值', () => {
-  test('listCampaigns 空列表返回空数组', () => {
+  it('listCampaigns 空列表返回空数组', () => {
     const controller = makeController({ listCampaigns: () => [] })
 
     const result = controller.listCampaigns(createContext())
@@ -385,7 +428,7 @@ describe('CampaignController 边界值', () => {
     assert.equal(result.length, 0)
   })
 
-  test('listDispatches 空列表返回空数组', () => {
+  it('listDispatches 空列表返回空数组', () => {
     const controller = makeController({ listDispatches: () => [] })
 
     const result = controller.listPlanDispatches(createContext(), 'plan-no-dispatches')
@@ -394,7 +437,7 @@ describe('CampaignController 边界值', () => {
     assert.equal(result.length, 0)
   })
 
-  test('resgisterCampaign 携带所有可选字段', () => {
+  it('resgisterCampaign 携带所有可选字段', () => {
     const mockPlan = {
       planId: 'p-full', code: 'FULL_FEATURE', title: '全功能活动',
       description: '包含所有可选字段',
@@ -449,7 +492,7 @@ describe('CampaignController 边界值', () => {
     assert.equal(capturedInput.scheduledEnd, '2026-12-31T23:59:59.000Z')
   })
 
-  test('evaluateTriggers 无匹配 campaign 返回空结果', () => {
+  it('evaluateTriggers 无匹配 campaign 返回空结果', () => {
     const mockResult = {
       matchedCampaigns: 0,
       dispatchedActions: 0,
@@ -469,7 +512,7 @@ describe('CampaignController 边界值', () => {
     assert.equal(result.dispatches.length, 0)
   })
 
-  test('listDispatches 支持按 memberId 过滤', () => {
+  it('listDispatches 支持按 memberId 过滤', () => {
     const allDispatches = [
       { dispatchId: 'd-a', planId: 'p-1', actionIndex: 0,
         tenantContext: createContext(), memberId: 'm-alice',
@@ -497,7 +540,7 @@ describe('CampaignController 边界值', () => {
 
 // ── 多状态组合 ──
 describe('CampaignController 状态流转组合', () => {
-  test('Draft → Scheduled → Active → Paused → Active → Completed 完整生命周期', () => {
+  it('Draft → Scheduled → Active → Paused → Active → Completed 完整生命周期', () => {
     const statuses: string[] = []
     const controller = makeController({
       updateCampaignStatus: (_planId: string, status: string) => {

@@ -19,6 +19,8 @@ interface CardProps {
   style?: React.CSSProperties;
   /** Footer content */
   footer?: React.ReactNode;
+  /** Additional CSS class name */
+  className?: string;
   /** Test id */
   'data-testid'?: string;
 }
@@ -58,6 +60,7 @@ export function Card({
   padding = 20,
   style,
   footer,
+  className,
   'data-testid': dataTestId,
 }: CardProps) {
   const variantStyle = VARIANT_STYLES[variant] ?? VARIANT_STYLES.default;
@@ -65,6 +68,7 @@ export function Card({
   return (
     <div
       data-testid={dataTestId}
+      className={className}
       style={{
         borderRadius: 16,
         padding,

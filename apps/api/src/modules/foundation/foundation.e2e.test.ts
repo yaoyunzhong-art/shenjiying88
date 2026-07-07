@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E-level: Foundation 底座服务层测试
  *
@@ -23,7 +24,6 @@
  */
 
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { FoundationService } from './foundation.service'
 import type { FoundationModuleDescriptor, FoundationGovernanceBaseline } from './foundation.types'
 
@@ -142,20 +142,20 @@ function createService(): FoundationService {
 // ── getModuleCatalog ──
 
 describe('E2E: getModuleCatalog', () => {
-  test('返回 6 个子模块描述符', () => {
+  it('返回 6 个子模块描述符', () => {
     const svc = createService()
     const modules = svc.getModuleCatalog()
     assert.equal(modules.length, 6, '应有 6 个 Foundation 子模块')
   })
 
-  test('所有模块 key 唯一', () => {
+  it('所有模块 key 唯一', () => {
     const svc = createService()
     const keys = svc.getModuleCatalog().map((m) => m.key)
     const unique = new Set(keys)
     assert.equal(unique.size, keys.length, '模块 key 不应重复')
   })
 
-  test('模块 key 包含所有预期值', () => {
+  it('模块 key 包含所有预期值', () => {
     const svc = createService()
     const keys = svc.getModuleCatalog().map((m) => m.key)
     assert.ok(keys.includes('identity-access'))
@@ -166,7 +166,7 @@ describe('E2E: getModuleCatalog', () => {
     assert.ok(keys.includes('runtime-governance'))
   })
 
-  test('每个模块具有完整结构', () => {
+  it('每个模块具有完整结构', () => {
     const svc = createService()
     for (const mod of svc.getModuleCatalog()) {
       assert.equal(typeof mod.key, 'string')
@@ -186,7 +186,7 @@ describe('E2E: getModuleCatalog', () => {
     }
   })
 
-  test('多次调用返回独立数组', () => {
+  it('多次调用返回独立数组', () => {
     const svc = createService()
     const a = svc.getModuleCatalog()
     const b = svc.getModuleCatalog()
@@ -199,13 +199,13 @@ describe('E2E: getModuleCatalog', () => {
 // ── getGovernanceBaselines ──
 
 describe('E2E: getGovernanceBaselines', () => {
-  test('返回治理基线数组', () => {
+  it('返回治理基线数组', () => {
     const svc = createService()
     const baselines = svc.getGovernanceBaselines()
     assert.ok(Array.isArray(baselines))
   })
 
-  test('基线总数 = 各个子服务基线之和', () => {
+  it('基线总数 = 各个子服务基线之和', () => {
     const svc = createService()
     const baselines = svc.getGovernanceBaselines()
     // 仅 configuration-governance / trust-governance / resilience-operations 有 getGovernanceBaselines
@@ -213,7 +213,7 @@ describe('E2E: getGovernanceBaselines', () => {
     assert.equal(baselines.length, 3)
   })
 
-  test('每条基线具有必需字段', () => {
+  it('每条基线具有必需字段', () => {
     const svc = createService()
     for (const b of svc.getGovernanceBaselines()) {
       assert.equal(typeof b.key, 'string')
@@ -229,7 +229,7 @@ describe('E2E: getGovernanceBaselines', () => {
 // ── getBlueprint ──
 
 describe('E2E: getBlueprint', () => {
-  test('返回完整蓝图对象', () => {
+  it('返回完整蓝图对象', () => {
     const svc = createService()
     const bp = svc.getBlueprint()
     assert.equal(typeof bp.generatedAt, 'string')
@@ -240,13 +240,13 @@ describe('E2E: getBlueprint', () => {
     assert.ok(Array.isArray(bp.governanceBaselines))
   })
 
-  test('generatedAt 是合法 ISO 时间戳', () => {
+  it('generatedAt 是合法 ISO 时间戳', () => {
     const svc = createService()
     const bp = svc.getBlueprint()
     assert.ok(new Date(bp.generatedAt).getTime() > 0)
   })
 
-  test('docs 包含 foundation 架构文档', () => {
+  it('docs 包含 foundation 架构文档', () => {
     const svc = createService()
     const docs = svc.getBlueprint().docs
     assert.ok(docs.some((d) => d.includes('foundation-architecture.md')))
@@ -255,29 +255,29 @@ describe('E2E: getBlueprint', () => {
     assert.ok(docs.some((d) => d.includes('operations-runbook-template.md')))
   })
 
-  test('guardrails 有 5 条规则', () => {
+  it('guardrails 有 5 条规则', () => {
     const svc = createService()
     const guardrails = svc.getBlueprint().guardrails
     assert.equal(guardrails.length, 5, '应有 5 条底座护栏规则')
   })
 
-  test('modules 长度 = 6', () => {
+  it('modules 长度 = 6', () => {
     const svc = createService()
     assert.equal(svc.getBlueprint().modules.length, 6)
   })
 
-  test('governanceBaselines 长度 = 3', () => {
+  it('governanceBaselines 长度 = 3', () => {
     const svc = createService()
     assert.equal(svc.getBlueprint().governanceBaselines.length, 3)
   })
 
-  test('blueprint 包含 frontendBootstrap', () => {
+  it('blueprint 包含 frontendBootstrap', () => {
     const svc = createService()
     const bp = svc.getBlueprint()
     assert.ok('frontendBootstrap' in bp)
   })
 
-  test('多次调用 generatedAt 递增', () => {
+  it('多次调用 generatedAt 递增', () => {
     const svc = createService()
     const a = svc.getBlueprint()
     const b = svc.getBlueprint()
@@ -288,20 +288,20 @@ describe('E2E: getBlueprint', () => {
 // ── getConsumerCatalog ──
 
 describe('E2E: getConsumerCatalog', () => {
-  test('返回消费者描述符数组', () => {
+  it('返回消费者描述符数组', () => {
     const svc = createService()
     const consumers = svc.getConsumerCatalog()
     assert.ok(Array.isArray(consumers))
   })
 
-  test('至少包含 adminWorkbench', () => {
+  it('至少包含 adminWorkbench', () => {
     const svc = createService()
     const consumers = svc.getConsumerCatalog()
     const hasWorkbench = consumers.some((c) => c.consumer === 'workbench')
     assert.ok(hasWorkbench, '应包含 workbench 消费者')
   })
 
-  test('每个消费者有必需字段', () => {
+  it('每个消费者有必需字段', () => {
     const svc = createService()
     for (const c of svc.getConsumerCatalog()) {
       assert.equal(typeof c.consumer, 'string')
@@ -316,7 +316,7 @@ describe('E2E: getConsumerCatalog', () => {
 // ── getConsumerDependency ──
 
 describe('E2E: getConsumerDependency', () => {
-  test('命中 market consumer 返回描述符', () => {
+  it('命中 market consumer 返回描述符', () => {
     const svc = createService()
     const result = svc.getConsumerDependency('market')
     // market 在 consumer catalog 中存在
@@ -326,13 +326,13 @@ describe('E2E: getConsumerDependency', () => {
     }
   })
 
-  test('未命中返回 availableConsumers', () => {
+  it('未命中返回 availableConsumers', () => {
     const svc = createService()
     const result = svc.getConsumerDependency('non-existent-consumer')
     assert.ok(Array.isArray((result as any).availableConsumers))
   })
 
-  test('availableConsumers 列出所有已知消费者', () => {
+  it('availableConsumers 列出所有已知消费者', () => {
     const svc = createService()
     const allConsumers = svc.getConsumerCatalog().map((c) => c.consumer)
     const result = svc.getConsumerDependency('non-existent-consumer')
@@ -340,7 +340,7 @@ describe('E2E: getConsumerDependency', () => {
     assert.deepStrictEqual(available, allConsumers)
   })
 
-  test('空字符串 consumer 返回 availableConsumers', () => {
+  it('空字符串 consumer 返回 availableConsumers', () => {
     const svc = createService()
     const result = svc.getConsumerDependency('')
     assert.ok(Array.isArray((result as any).availableConsumers))
@@ -350,20 +350,20 @@ describe('E2E: getConsumerDependency', () => {
 // ── getDependencySummary ──
 
 describe('E2E: getDependencySummary', () => {
-  test('命中返回消费者描述符', () => {
+  it('命中返回消费者描述符', () => {
     const svc = createService()
     const result = svc.getDependencySummary('market' as any)
     assert.ok(result)
     assert.equal(result!.consumer, 'market')
   })
 
-  test('未命中返回 undefined', () => {
+  it('未命中返回 undefined', () => {
     const svc = createService()
     const result = svc.getDependencySummary('ghost-consumer' as any)
     assert.equal(result, undefined)
   })
 
-  test('workbench 可以查到', () => {
+  it('workbench 可以查到', () => {
     const svc = createService()
     const result = svc.getDependencySummary('workbench' as any)
     assert.ok(result)
@@ -374,7 +374,7 @@ describe('E2E: getDependencySummary', () => {
 // ── 边界 ──
 
 describe('E2E: 边界与结构一致性', () => {
-  test('getModuleCatalog 不含重复 capability key', () => {
+  it('getModuleCatalog 不含重复 capability key', () => {
     const svc = createService()
     const allKeys: string[] = []
     for (const mod of svc.getModuleCatalog()) {
@@ -386,14 +386,14 @@ describe('E2E: 边界与结构一致性', () => {
     assert.equal(unique.size, allKeys.length, 'capability key 不应重复')
   })
 
-  test('getBlueprint docs 全为非空字符串', () => {
+  it('getBlueprint docs 全为非空字符串', () => {
     const svc = createService()
     for (const doc of svc.getBlueprint().docs) {
       assert.ok(typeof doc === 'string' && doc.length > 0)
     }
   })
 
-  test('getBlueprint guardrails 全为非空字符串', () => {
+  it('getBlueprint guardrails 全为非空字符串', () => {
     const svc = createService()
     for (const rule of svc.getBlueprint().guardrails) {
       assert.ok(typeof rule === 'string' && rule.length > 0)

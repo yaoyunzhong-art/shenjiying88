@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [reservation] [D] controller spec 补全
  *
@@ -9,7 +10,6 @@
 
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test, { describe, before, after } from 'node:test';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ReservationController } from './reservation.controller';
 import { ReservationService } from './reservation.service';
@@ -84,7 +84,7 @@ describe('ReservationController', () => {
   // ── POST /reservations 创建预约 ──
 
   describe('POST /reservations — 创建预约', () => {
-    test('正例: 有效数据创建预约，返回完整实体', () => {
+    it('正例: 有效数据创建预约，返回完整实体', () => {
       const { ctrl } = createController();
       const body = makeCreateBody();
       const result = ctrl.createReservation(TENANT_A, body);
@@ -98,7 +98,7 @@ describe('ReservationController', () => {
       assert.equal((result as { duration: number }).duration, 60);
     });
 
-    test('反例: endTime <= startTime 时抛出错误', () => {
+    it('反例: endTime <= startTime 时抛出错误', () => {
       const { ctrl } = createController();
       const body = makeCreateBody({
         startTime: ONE_HOUR_LATER,
@@ -111,7 +111,7 @@ describe('ReservationController', () => {
       );
     });
 
-    test('边界: 不同租户创建相同资源预约互不干扰', () => {
+    it('边界: 不同租户创建相同资源预约互不干扰', () => {
       const { ctrl } = createController();
       const idA = createReservation(ctrl, TENANT_A);
       const idB = createReservation(ctrl, TENANT_B);
@@ -125,7 +125,7 @@ describe('ReservationController', () => {
   // ── GET /reservations 查询列表 ──
 
   describe('GET /reservations — 查询列表', () => {
-    test('正例: 返回同一租户所有预约', () => {
+    it('正例: 返回同一租户所有预约', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -137,7 +137,7 @@ describe('ReservationController', () => {
       assert.equal(result.length, 2, '只返回 tenant_a 的 2 条');
     });
 
-    test('正例: 按 type 筛选', () => {
+    it('正例: 按 type 筛选', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -151,7 +151,7 @@ describe('ReservationController', () => {
       assert.equal(result.length, 2);
     });
 
-    test('边界: 无预约时返回空数组', () => {
+    it('边界: 无预约时返回空数组', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -160,7 +160,7 @@ describe('ReservationController', () => {
       assert.equal(result.length, 0);
     });
 
-    test('反例: 不同租户看不到对方预约', () => {
+    it('反例: 不同租户看不到对方预约', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -173,7 +173,7 @@ describe('ReservationController', () => {
   // ── GET /reservations/:id 单个查询 ──
 
   describe('GET /reservations/:id — 单个查询', () => {
-    test('正例: 根据 ID 查到预约', () => {
+    it('正例: 根据 ID 查到预约', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -182,7 +182,7 @@ describe('ReservationController', () => {
       assert.equal(result.id, id);
     });
 
-    test('反例: 不存在的 ID 抛出 404', () => {
+    it('反例: 不存在的 ID 抛出 404', () => {
       const { ctrl } = createController();
       assert.throws(
         () => ctrl.findOne(TENANT_A, 'non-existent-id'),
@@ -190,7 +190,7 @@ describe('ReservationController', () => {
       );
     });
 
-    test('反例: 跨租户访问返回 404', () => {
+    it('反例: 跨租户访问返回 404', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -205,7 +205,7 @@ describe('ReservationController', () => {
   // ── GET 辅助查询 ──
 
   describe('GET /reservations/by-user/:userId', () => {
-    test('正例: 按用户查询', () => {
+    it('正例: 按用户查询', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -217,7 +217,7 @@ describe('ReservationController', () => {
       assert.equal(result.length, 2);
     });
 
-    test('边界: 用户无预约时返回 []', () => {
+    it('边界: 用户无预约时返回 []', () => {
       const { ctrl } = createController();
       const result = ctrl.findByUser(TENANT_A, 'no-reservations') as Array<unknown>;
       assert.equal(result.length, 0);
@@ -225,7 +225,7 @@ describe('ReservationController', () => {
   });
 
   describe('GET /reservations/by-resource/:resourceId', () => {
-    test('正例: 按资源查询', () => {
+    it('正例: 按资源查询', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -239,7 +239,7 @@ describe('ReservationController', () => {
   });
 
   describe('GET /reservations/by-timerange', () => {
-    test('正例: 按时间范围筛选', () => {
+    it('正例: 按时间范围筛选', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -260,7 +260,7 @@ describe('ReservationController', () => {
       assert.equal(result.length, 1);
     });
 
-    test('反例: 缺少参数时抛出 400', () => {
+    it('反例: 缺少参数时抛出 400', () => {
       const { ctrl } = createController();
       assert.throws(
         () => ctrl.findByTimeRange(TENANT_A, '', ''),
@@ -272,7 +272,7 @@ describe('ReservationController', () => {
   // ── GET /reservations/check-conflict ──
 
   describe('GET /reservations/check-conflict', () => {
-    test('正例: 无冲突返回 false', () => {
+    it('正例: 无冲突返回 false', () => {
       const { ctrl } = createController();
       const result = ctrl.checkConflict(TENANT_A, 'room-01', NOW, ONE_HOUR_LATER) as {
         hasConflict: boolean;
@@ -280,7 +280,7 @@ describe('ReservationController', () => {
       assert.equal(result.hasConflict, false);
     });
 
-    test('反例: 资源已预订返回 true', () => {
+    it('反例: 资源已预订返回 true', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -294,7 +294,7 @@ describe('ReservationController', () => {
       assert.equal(result.hasConflict, true);
     });
 
-    test('反例: 缺少必填参数抛出 400', () => {
+    it('反例: 缺少必填参数抛出 400', () => {
       const { ctrl } = createController();
       assert.throws(
         () => ctrl.checkConflict(TENANT_A, null as unknown as string, null as unknown as string, null as unknown as string),
@@ -302,7 +302,7 @@ describe('ReservationController', () => {
       );
     });
 
-    test('边界: 确认后已取消的预约不产生冲突', () => {
+    it('边界: 确认后已取消的预约不产生冲突', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -320,7 +320,7 @@ describe('ReservationController', () => {
   // ── PATCH /reservations/:id 更新与状态流转 ──
 
   describe('PATCH /reservations/:id — 更新与状态流转', () => {
-    test('正例: Pending → Confirmed', () => {
+    it('正例: Pending → Confirmed', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -331,7 +331,7 @@ describe('ReservationController', () => {
       assert.equal(result.status, ReservationStatus.Confirmed);
     });
 
-    test('正例: Confirmed → InProgress → Completed 全流程', () => {
+    it('正例: Confirmed → InProgress → Completed 全流程', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -344,7 +344,7 @@ describe('ReservationController', () => {
       assert.equal(result.status, ReservationStatus.Completed);
     });
 
-    test('正例: 更新非状态字段（price, remark）', () => {
+    it('正例: 更新非状态字段（price, remark）', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -357,7 +357,7 @@ describe('ReservationController', () => {
       assert.equal(result.remark, 'VIP 加时服务');
     });
 
-    test('反例: Pending → Completed 非法流转', () => {
+    it('反例: Pending → Completed 非法流转', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -371,7 +371,7 @@ describe('ReservationController', () => {
       );
     });
 
-    test('反例: Completed → Confirmed 逆向流转', () => {
+    it('反例: Completed → Confirmed 逆向流转', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -388,7 +388,7 @@ describe('ReservationController', () => {
       );
     });
 
-    test('反例: 跨租户更新抛出错误', () => {
+    it('反例: 跨租户更新抛出错误', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -406,7 +406,7 @@ describe('ReservationController', () => {
   // ── DELETE /reservations/:id 取消 ──
 
   describe('DELETE /reservations/:id — 取消预约', () => {
-    test('正例: 取消预约并记录原因', () => {
+    it('正例: 取消预约并记录原因', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -419,7 +419,7 @@ describe('ReservationController', () => {
       assert.equal(result.cancelledReason, '行程变更');
     });
 
-    test('反例: 已完成预约无法取消', () => {
+    it('反例: 已完成预约无法取消', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -434,7 +434,7 @@ describe('ReservationController', () => {
       );
     });
 
-    test('反例: 跨租户取消抛出错误', () => {
+    it('反例: 跨租户取消抛出错误', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -446,7 +446,7 @@ describe('ReservationController', () => {
   // ── 确认时的冲突检测（集成） ──
 
   describe('确认预约冲突检测', () => {
-    test('反例: 同一资源同一时间确认冲突', () => {
+    it('反例: 同一资源同一时间确认冲突', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -464,7 +464,7 @@ describe('ReservationController', () => {
       );
     });
 
-    test('边界: 非重叠时间可以确认', () => {
+    it('边界: 非重叠时间可以确认', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 
@@ -487,7 +487,7 @@ describe('ReservationController', () => {
       assert.equal(result.status, ReservationStatus.Confirmed);
     });
 
-    test('边界: 不同资源不冲突', () => {
+    it('边界: 不同资源不冲突', () => {
       const { ctrl, svc } = createController();
       svc.resetStoreForTests();
 

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E 跨模块 #16 — Observability 管道: Logger → Tracing → Metrics 联动
  *
@@ -16,11 +17,8 @@
 
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 import { Body, Controller, Get, Inject, Post } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import type { NextFunction, Request, Response } from 'express';
 import { trace } from '@opentelemetry/api';
 import {
   BasicTracerProvider,
@@ -28,11 +26,11 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor';
 import { LoggerService } from '../observability/logger/logger.service';
 import { TracingService } from '../observability/tracing/tracing.service';
 import { MetricsService } from '../observability/metrics.service';
 import { MetricsController } from '../observability/metrics.controller';
+import { buildCrossModuleTestApp } from './test-helpers';
 
 const exporter = new InMemorySpanExporter();
 trace.setGlobalTracerProvider(
@@ -168,20 +166,15 @@ async function buildApp() {
   const metrics = new MetricsService(false);
 
   exporter.reset();
-  const module = await Test.createTestingModule({
+  const { app, moduleRef } = await buildCrossModuleTestApp({
     controllers: [TestController, MetricsController],
     providers: [
       { provide: LoggerService, useValue: logger },
       { provide: TracingService, useValue: tracing },
       { provide: MetricsService, useValue: metrics },
     ],
-  }).compile();
-
-  const app = module.createNestApplication();
-  app.use((_r: Request, _s: Response, n: NextFunction) => n());
-  app.useGlobalInterceptors(new ResponseInterceptor());
-  await app.init();
-  return { app, lines, metrics };
+  });
+  return { app, moduleRef, lines, metrics };
 }
 
 function getData(res: request.Response) {
@@ -190,7 +183,7 @@ function getData(res: request.Response) {
 
 // ── Tests ──
 
-test('跨模块链#16 正例: Logger info/child/redact', async () => {
+it('跨模块链#16 正例: Logger info/child/redact', async () => {
   const { app, lines } = await buildApp();
   const srv = app.getHttpServer();
   try {
@@ -207,7 +200,7 @@ test('跨模块链#16 正例: Logger info/child/redact', async () => {
   }
 });
 
-test('跨模块链#16 正例: child logger 继承 bindings', async () => {
+it('跨模块链#16 正例: child logger 继承 bindings', async () => {
   const { app, lines } = await buildApp();
   const srv = app.getHttpServer();
   try {
@@ -227,7 +220,7 @@ test('跨模块链#16 正例: child logger 继承 bindings', async () => {
   }
 });
 
-test('跨模块链#16 正例: redact 生效', async () => {
+it('跨模块链#16 正例: redact 生效', async () => {
   const { app, lines } = await buildApp();
   const srv = app.getHttpServer();
   try {
@@ -243,7 +236,7 @@ test('跨模块链#16 正例: redact 生效', async () => {
   }
 });
 
-test('跨模块链#16 正例: TracingService.withSpan 正常/异常', async () => {
+it('跨模块链#16 正例: TracingService.withSpan 正常/异常', async () => {
   const { app } = await buildApp();
   const srv = app.getHttpServer();
   try {
@@ -267,7 +260,7 @@ test('跨模块链#16 正例: TracingService.withSpan 正常/异常', async () =
   }
 });
 
-test('跨模块链#16 正例: Metrics counter/histogram/gauge', async () => {
+it('跨模块链#16 正例: Metrics counter/histogram/gauge', async () => {
   const { app } = await buildApp();
   const srv = app.getHttpServer();
   try {
@@ -285,7 +278,7 @@ test('跨模块链#16 正例: Metrics counter/histogram/gauge', async () => {
   }
 });
 
-test('跨模块链#16 正例: GET /metrics Prometheus 格式', async () => {
+it('跨模块链#16 正例: GET /metrics Prometheus 格式', async () => {
   const { app } = await buildApp();
   const srv = app.getHttpServer();
   try {
@@ -298,7 +291,7 @@ test('跨模块链#16 正例: GET /metrics Prometheus 格式', async () => {
   }
 });
 
-test('跨模块链#16 复合: Logger+Tracing+Metrics 同时工作', async () => {
+it('跨模块链#16 复合: Logger+Tracing+Metrics 同时工作', async () => {
   const { app } = await buildApp();
   const srv = app.getHttpServer();
   try {

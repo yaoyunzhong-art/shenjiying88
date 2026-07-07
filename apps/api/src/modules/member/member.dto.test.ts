@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   MemberQueryDto,
   MemberCreateDto,
@@ -18,7 +18,7 @@ import { MemberLevel, MemberStatus } from './member.entity'
 
 // ── MemberQueryDto ─────────────────────────────────────────────
 describe('member.dto: MemberQueryDto', () => {
-  test('default properties are undefined', () => {
+  it('default properties are undefined', () => {
     const dto = new MemberQueryDto()
     assert.equal(dto.level, undefined)
     assert.equal(dto.status, undefined)
@@ -27,25 +27,25 @@ describe('member.dto: MemberQueryDto', () => {
     assert.equal(dto.pageSize, undefined)
   })
 
-  test('can set level filter', () => {
+  it('can set level filter', () => {
     const dto = new MemberQueryDto()
     dto.level = MemberLevel.Gold
     assert.equal(dto.level, 'GOLD')
   })
 
-  test('can set status filter', () => {
+  it('can set status filter', () => {
     const dto = new MemberQueryDto()
     dto.status = MemberStatus.Active
     assert.equal(dto.status, 'ACTIVE')
   })
 
-  test('can set keyword search', () => {
+  it('can set keyword search', () => {
     const dto = new MemberQueryDto()
     dto.keyword = 'test-user'
     assert.equal(dto.keyword, 'test-user')
   })
 
-  test('can set pagination', () => {
+  it('can set pagination', () => {
     const dto = new MemberQueryDto()
     dto.page = 1
     dto.pageSize = 20
@@ -53,7 +53,7 @@ describe('member.dto: MemberQueryDto', () => {
     assert.equal(dto.pageSize, 20)
   })
 
-  test('can set all properties', () => {
+  it('can set all properties', () => {
     const dto = new MemberQueryDto()
     dto.level = MemberLevel.Silver
     dto.status = MemberStatus.Frozen
@@ -68,7 +68,7 @@ describe('member.dto: MemberQueryDto', () => {
     assert.equal(dto.pageSize, 50)
   })
 
-  test('instanceof check', () => {
+  it('instanceof check', () => {
     const dto = new MemberQueryDto()
     assert.ok(dto instanceof MemberQueryDto)
   })
@@ -76,33 +76,33 @@ describe('member.dto: MemberQueryDto', () => {
 
 // ── MemberCreateDto ────────────────────────────────────────────
 describe('member.dto: MemberCreateDto', () => {
-  test('requires nickname property', () => {
+  it('requires nickname property', () => {
     const dto = new MemberCreateDto()
     dto.nickname = 'NewUser'
     assert.equal(dto.nickname, 'NewUser')
   })
 
-  test('points defaults to undefined', () => {
+  it('points defaults to undefined', () => {
     const dto = new MemberCreateDto()
     dto.nickname = 'Test'
     assert.equal(dto.points, undefined)
   })
 
-  test('can set initial points', () => {
+  it('can set initial points', () => {
     const dto = new MemberCreateDto()
     dto.nickname = 'VIP'
     dto.points = 100
     assert.equal(dto.points, 100)
   })
 
-  test('can set initial level', () => {
+  it('can set initial level', () => {
     const dto = new MemberCreateDto()
     dto.nickname = 'GoldUser'
     dto.level = MemberLevel.Gold
     assert.equal(dto.level, 'GOLD')
   })
 
-  test('can set all create properties', () => {
+  it('can set all create properties', () => {
     const dto = new MemberCreateDto()
     dto.nickname = 'FullUser'
     dto.points = 5000
@@ -113,7 +113,7 @@ describe('member.dto: MemberCreateDto', () => {
     assert.equal(dto.level, 'PLATINUM')
   })
 
-  test('instanceof check', () => {
+  it('instanceof check', () => {
     const dto = new MemberCreateDto()
     assert.ok(dto instanceof MemberCreateDto)
   })
@@ -121,7 +121,7 @@ describe('member.dto: MemberCreateDto', () => {
 
 // ── MemberUpdateDto ────────────────────────────────────────────
 describe('member.dto: MemberUpdateDto', () => {
-  test('all properties default to undefined', () => {
+  it('all properties default to undefined', () => {
     const dto = new MemberUpdateDto()
     assert.equal(dto.nickname, undefined)
     assert.equal(dto.level, undefined)
@@ -129,43 +129,43 @@ describe('member.dto: MemberUpdateDto', () => {
     assert.equal(dto.pointsDelta, undefined)
   })
 
-  test('can update nickname', () => {
+  it('can update nickname', () => {
     const dto = new MemberUpdateDto()
     dto.nickname = 'UpdatedName'
     assert.equal(dto.nickname, 'UpdatedName')
   })
 
-  test('can update level', () => {
+  it('can update level', () => {
     const dto = new MemberUpdateDto()
     dto.level = MemberLevel.Diamond
     assert.equal(dto.level, 'DIAMOND')
   })
 
-  test('can update status', () => {
+  it('can update status', () => {
     const dto = new MemberUpdateDto()
     dto.status = MemberStatus.Blacklisted
     assert.equal(dto.status, 'BLACKLISTED')
   })
 
-  test('can apply positive pointsDelta', () => {
+  it('can apply positive pointsDelta', () => {
     const dto = new MemberUpdateDto()
     dto.pointsDelta = 200
     assert.equal(dto.pointsDelta, 200)
   })
 
-  test('can apply negative pointsDelta (deduction)', () => {
+  it('can apply negative pointsDelta (deduction)', () => {
     const dto = new MemberUpdateDto()
     dto.pointsDelta = -50
     assert.equal(dto.pointsDelta, -50)
   })
 
-  test('can apply zero pointsDelta', () => {
+  it('can apply zero pointsDelta', () => {
     const dto = new MemberUpdateDto()
     dto.pointsDelta = 0
     assert.equal(dto.pointsDelta, 0)
   })
 
-  test('can set multiple update fields', () => {
+  it('can set multiple update fields', () => {
     const dto = new MemberUpdateDto()
     dto.nickname = 'MultiUpdate'
     dto.level = MemberLevel.Silver
@@ -178,7 +178,7 @@ describe('member.dto: MemberUpdateDto', () => {
     assert.equal(dto.pointsDelta, -100)
   })
 
-  test('instanceof check', () => {
+  it('instanceof check', () => {
     const dto = new MemberUpdateDto()
     assert.ok(dto instanceof MemberUpdateDto)
   })
@@ -186,25 +186,25 @@ describe('member.dto: MemberUpdateDto', () => {
 
 // ── MemberBootstrapResponseDto ─────────────────────────────────
 describe('member.dto: MemberBootstrapResponseDto', () => {
-  test('can set tenant context', () => {
+  it('can set tenant context', () => {
     const dto = new MemberBootstrapResponseDto()
     dto.tenantContext = { tenantId: 't-1', brandId: 'b-1' }
     assert.deepEqual(dto.tenantContext, { tenantId: 't-1', brandId: 'b-1' })
   })
 
-  test('can set capabilities array', () => {
+  it('can set capabilities array', () => {
     const dto = new MemberBootstrapResponseDto()
     dto.capabilities = ['member-center', 'points']
     assert.deepEqual(dto.capabilities, ['member-center', 'points'])
   })
 
-  test('can set phase', () => {
+  it('can set phase', () => {
     const dto = new MemberBootstrapResponseDto()
     dto.phase = 'scaffold'
     assert.equal(dto.phase, 'scaffold')
   })
 
-  test('can set all fields', () => {
+  it('can set all fields', () => {
     const dto = new MemberBootstrapResponseDto()
     dto.tenantContext = { tenantId: 't-full' }
     dto.capabilities = ['member-center', 'points', 'svip', 'blind-box']
@@ -215,14 +215,14 @@ describe('member.dto: MemberBootstrapResponseDto', () => {
     assert.equal(dto.tenantContext.tenantId, 't-full')
   })
 
-  test('instanceof check', () => {
+  it('instanceof check', () => {
     const dto = new MemberBootstrapResponseDto()
     assert.ok(dto instanceof MemberBootstrapResponseDto)
   })
 })
 
 describe('member.dto: MemberPersistentRegisterDto', () => {
-  test('can assign persistent register fields', () => {
+  it('can assign persistent register fields', () => {
     const dto = new MemberPersistentRegisterDto()
     dto.mobile = '13800000000'
     dto.nickname = 'Persistent User'
@@ -235,7 +235,7 @@ describe('member.dto: MemberPersistentRegisterDto', () => {
 })
 
 describe('member.dto: MemberLoginDto', () => {
-  test('can assign login mobile', () => {
+  it('can assign login mobile', () => {
     const dto = new MemberLoginDto()
     dto.mobile = '13900000000'
 
@@ -244,7 +244,7 @@ describe('member.dto: MemberLoginDto', () => {
 })
 
 describe('member.dto: MemberPointsAdjustDto', () => {
-  test('can assign points delta for controller actions', () => {
+  it('can assign points delta for controller actions', () => {
     const dto = new MemberPointsAdjustDto()
     dto.points = 300
     dto.approvalTicket = 'APR-POINTS-001'
@@ -255,7 +255,7 @@ describe('member.dto: MemberPointsAdjustDto', () => {
 })
 
 describe('member.dto: MemberPaymentActivityDto', () => {
-  test('can assign payment activity fields', () => {
+  it('can assign payment activity fields', () => {
     const dto = new MemberPaymentActivityDto()
     dto.orderId = 'order-001'
     dto.amount = 88
@@ -272,7 +272,7 @@ describe('member.dto: MemberPaymentActivityDto', () => {
 })
 
 describe('member.dto: MemberStatusAdjustDto', () => {
-  test('can assign target member status', () => {
+  it('can assign target member status', () => {
     const dto = new MemberStatusAdjustDto()
     dto.status = MemberStatus.Blacklisted
     dto.approvalTicket = 'APR-STATUS-001'
@@ -283,7 +283,7 @@ describe('member.dto: MemberStatusAdjustDto', () => {
 })
 
 describe('member.dto: MemberLevelAdjustDto', () => {
-  test('can assign target member level', () => {
+  it('can assign target member level', () => {
     const dto = new MemberLevelAdjustDto()
     dto.level = MemberLevel.Platinum
     dto.approvalTicket = 'APR-LEVEL-001'
@@ -294,7 +294,7 @@ describe('member.dto: MemberLevelAdjustDto', () => {
 })
 
 describe('member.dto: MemberPersistentProfileUpdateDto', () => {
-  test('can assign persisted profile edit fields', () => {
+  it('can assign persisted profile edit fields', () => {
     const dto = new MemberPersistentProfileUpdateDto()
     dto.nickname = '资料更新用户'
     dto.mobile = '13800138000'

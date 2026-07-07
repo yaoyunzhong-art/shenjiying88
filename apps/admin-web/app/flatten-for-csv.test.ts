@@ -37,9 +37,9 @@ describe('flattenForCsv', () => {
     assert.deepEqual(flattenForCsv({ a: { b: { c: 7 } } }), { 'a.b.c': 7 })
   })
 
-  test('arrays of primitives join with pipe separator', () => {
-    assert.deepEqual(flattenForCsv([1, 2, 3]), { value: '1|2|3' })
-    assert.deepEqual(flattenForCsv(['a', 'b'], 'tags'), { tags: 'a|b' })
+  test('arrays flatten to indexed keys', () => {
+    assert.deepEqual(flattenForCsv([1, 2, 3]), { 'item[0]': 1, 'item[1]': 2, 'item[2]': 3 })
+    assert.deepEqual(flattenForCsv(['a', 'b'], 'tags'), { 'tags[0]': 'a', 'tags[1]': 'b' })
   })
 
   test('arrays of objects prefix each item with item[index]', () => {
@@ -64,11 +64,15 @@ describe('flattenForCsv', () => {
 
   test('arrays of Dates serialize to ISO strings', () => {
     const d = new Date('2026-06-22T08:00:00.000Z')
-    assert.deepEqual(flattenForCsv([d], 'dates'), { dates: '2026-06-22T08:00:00.000Z' })
+    assert.deepEqual(flattenForCsv([d], 'dates'), { 'dates[0]': '2026-06-22T08:00:00.000Z' })
   })
 
-  test('null and string mix in array flattens the nulls to empty cells', () => {
-    assert.deepEqual(flattenForCsv([null, 'x', null], 'col'), { col: '|x|' })
+  test('null and string mix in array flattens to indexed keys with empty strings', () => {
+    assert.deepEqual(flattenForCsv([null, 'x', null], 'col'), {
+      'col[0]': '',
+      'col[1]': 'x',
+      'col[2]': '',
+    })
   })
 })
 

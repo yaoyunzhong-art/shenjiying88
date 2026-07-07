@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * metrics.simulator.test.ts — 可观测性模块模拟场景测试
  *
@@ -8,7 +9,6 @@
  */
 
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { of, throwError, Observable } from 'rxjs'
 import { MetricsService } from './metrics.service'
 import { MetricsInterceptor } from './metrics.interceptor'
@@ -36,7 +36,7 @@ function mockNextHandler(returnValue: any, error?: Error) {
 }
 
 describe('MetricsInterceptor — 正常请求', () => {
-  test('成功请求增加 counter 和 histogram', async () => {
+  it('成功请求增加 counter 和 histogram', async () => {
     const service = new MetricsService()
     service.registerCounter('http_requests_total', '')
     service.registerHistogram('http_request_duration_ms', '')
@@ -54,7 +54,7 @@ describe('MetricsInterceptor — 正常请求', () => {
     assert.ok(render.includes('http_request_duration_ms'))
   })
 
-  test('非 HTTP 请求跳过拦截器', () => {
+  it('非 HTTP 请求跳过拦截器', () => {
     const service = new MetricsService()
     const interceptor = new MetricsInterceptor(service)
     const ctx = {
@@ -69,7 +69,7 @@ describe('MetricsInterceptor — 正常请求', () => {
 })
 
 describe('MetricsInterceptor — 异常请求', () => {
-  test('抛出异常的请求增加例外计数器', async () => {
+  it('抛出异常的请求增加例外计数器', async () => {
     const service = new MetricsService()
     service.registerCounter('http_requests_total', '')
     service.registerCounter('http_exceptions_total', '')
@@ -102,7 +102,7 @@ describe('MetricsInterceptor — 异常请求', () => {
 })
 
 describe('MetricsInterceptor — active connections gauge', () => {
-  test('并发请求时 active_connections 正确增减', async () => {
+  it('并发请求时 active_connections 正确增减', async () => {
     const service = new MetricsService()
     service.registerCounter('http_requests_total', '')
     service.registerHistogram('http_request_duration_ms', '')

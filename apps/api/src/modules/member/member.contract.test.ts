@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
 import {
   toMemberProfileContract,
   toMemberBootstrapContract,
@@ -53,7 +53,7 @@ function makeFullMemberProfile(overrides: any = {}) {
 
 // ── toMemberProfileContract ──
 describe('toMemberProfileContract()', () => {
-  test('maps full MemberProfile to MemberProfileContract', () => {
+  it('maps full MemberProfile to MemberProfileContract', () => {
     const profile = makeFullMemberProfile()
     const contract = toMemberProfileContract(profile)
 
@@ -78,7 +78,7 @@ describe('toMemberProfileContract()', () => {
     assert.deepStrictEqual(contract.tenantContext, tenantCtx)
   })
 
-  test('copies tags array (not reference)', () => {
+  it('copies tags array (not reference)', () => {
     const profile = makeFullMemberProfile({ tags: ['tag-a', 'tag-b'] })
     const contract = toMemberProfileContract(profile)
     assert.deepEqual(contract.tags, ['tag-a', 'tag-b'])
@@ -87,7 +87,7 @@ describe('toMemberProfileContract()', () => {
     assert.deepEqual(profile.tags, ['tag-a', 'tag-b'])
   })
 
-  test('handles undefined optional fields gracefully', () => {
+  it('handles undefined optional fields gracefully', () => {
     const profile = makeFullMemberProfile({
       email: undefined,
       address: undefined,
@@ -108,7 +108,7 @@ describe('toMemberProfileContract()', () => {
     assert.equal(contract.lifecycleStage, undefined)
   })
 
-  test('new member (Bronze, memory source)', () => {
+  it('new member (Bronze, memory source)', () => {
     const profile = makeFullMemberProfile({
       level: MemberLevel.Bronze,
       points: 0,
@@ -129,7 +129,7 @@ describe('toMemberProfileContract()', () => {
 
 // ── toMemberBootstrapContract ──
 describe('toMemberBootstrapContract()', () => {
-  test('maps MemberBootstrap to contract', () => {
+  it('maps MemberBootstrap to contract', () => {
     const bootstrap = {
       tenantContext: tenantCtx,
       capabilities: ['member-center', 'points', 'svip', 'blind-box'],
@@ -141,7 +141,7 @@ describe('toMemberBootstrapContract()', () => {
     assert.equal(contract.phase, 'scaffold')
   })
 
-  test('copies capabilities array (not reference)', () => {
+  it('copies capabilities array (not reference)', () => {
     const bootstrap = {
       tenantContext: tenantCtx,
       capabilities: ['member-center'],
@@ -155,7 +155,7 @@ describe('toMemberBootstrapContract()', () => {
 
 // ── toMemberSessionContract ──
 describe('toMemberSessionContract()', () => {
-  test('maps MemberSession to contract', () => {
+  it('maps MemberSession to contract', () => {
     const session = {
       sessionToken: 'tok-abc123',
       memberId: 'mem-001',
@@ -179,7 +179,7 @@ describe('toMemberSessionContract()', () => {
     assert.equal(contract.authenticated, true)
   })
 
-  test('maps unauthenticated session', () => {
+  it('maps unauthenticated session', () => {
     const session = {
       sessionToken: 'tok-expired',
       memberId: 'mem-002',
@@ -197,7 +197,7 @@ describe('toMemberSessionContract()', () => {
 
 // ── toMemberLoginResultContract ──
 describe('toMemberLoginResultContract()', () => {
-  test('maps MemberLoginResult to contract', () => {
+  it('maps MemberLoginResult to contract', () => {
     const member = makeFullMemberProfile({ memberId: 'mem-login', nickname: '登录会员' })
     const session = {
       sessionToken: 'tok-login-001',
@@ -219,7 +219,7 @@ describe('toMemberLoginResultContract()', () => {
 
 // ── toMemberOperationsProfileContract ──
 describe('toMemberOperationsProfileContract()', () => {
-  test('maps operations profile to contract with recommended actions and triggers', () => {
+  it('maps operations profile to contract with recommended actions and triggers', () => {
     const profile = {
       memberId: 'mem-ops-001',
       tenantContext: tenantCtx,
@@ -264,7 +264,7 @@ describe('toMemberOperationsProfileContract()', () => {
 
 // ── toMemberOperationsActionContract ──
 describe('toMemberOperationsActionContract()', () => {
-  test('maps action fields', () => {
+  it('maps action fields', () => {
     const action = {
       code: 'send-post-payment-welcome',
       label: '发送首购欢迎触达',
@@ -283,7 +283,7 @@ describe('toMemberOperationsActionContract()', () => {
 
 // ── toMemberAutomationTriggerContract ──
 describe('toMemberAutomationTriggerContract()', () => {
-  test('maps trigger fields', () => {
+  it('maps trigger fields', () => {
     const trigger = {
       code: 'payment-success-journey',
       status: 'ready',
@@ -300,7 +300,7 @@ describe('toMemberAutomationTriggerContract()', () => {
 
 // ── toMemberOperationsTaskContract ──
 describe('toMemberOperationsTaskContract()', () => {
-  test('maps queued task', () => {
+  it('maps queued task', () => {
     const task = {
       taskId: 'task-001',
       tenantContext: tenantCtx,
@@ -330,7 +330,7 @@ describe('toMemberOperationsTaskContract()', () => {
     assert.equal(contract.sourceOrderId, 'ord-001')
   })
 
-  test('maps completed task with execution details', () => {
+  it('maps completed task with execution details', () => {
     const task = {
       taskId: 'task-002',
       tenantContext: tenantCtx,
@@ -362,7 +362,7 @@ describe('toMemberOperationsTaskContract()', () => {
 
 // ── toMemberOperationsExecutionReceiptContract ──
 describe('toMemberOperationsExecutionReceiptContract()', () => {
-  test('maps execution receipt', () => {
+  it('maps execution receipt', () => {
     const receipt = {
       executionId: 'exec-001',
       tenantContext: tenantCtx,
@@ -392,7 +392,7 @@ describe('toMemberOperationsExecutionReceiptContract()', () => {
     assert.deepEqual(contract.payload, { couponCode: 'CP-ABC', discountAmount: 30, currency: 'CNY' })
   })
 
-  test('copies payload (not reference)', () => {
+  it('copies payload (not reference)', () => {
     const receipt = {
       executionId: 'exec-002',
       tenantContext: tenantCtx,
@@ -414,7 +414,7 @@ describe('toMemberOperationsExecutionReceiptContract()', () => {
 
 // ── toMemberProfileMutationHistoryContract ──
 describe('toMemberProfileMutationHistoryContract()', () => {
-  test('maps status-updated history entry', () => {
+  it('maps status-updated history entry', () => {
     const entry = {
       historyId: 'hist-001',
       tenantContext: tenantCtx,
@@ -440,7 +440,7 @@ describe('toMemberProfileMutationHistoryContract()', () => {
     assert.deepEqual(contract.afterValue, { status: 'FROZEN' })
   })
 
-  test('maps points-awarded entry', () => {
+  it('maps points-awarded entry', () => {
     const entry = {
       historyId: 'hist-002',
       tenantContext: tenantCtx,
@@ -459,7 +459,7 @@ describe('toMemberProfileMutationHistoryContract()', () => {
     assert.equal(contract.afterValue, undefined)
   })
 
-  test('copies payload/values (not reference)', () => {
+  it('copies payload/values (not reference)', () => {
     const entry = {
       historyId: 'hist-003',
       tenantContext: tenantCtx,
@@ -483,7 +483,7 @@ describe('toMemberProfileMutationHistoryContract()', () => {
 
 // ── toMemberMutationApprovalResultContract ──
 describe('toMemberMutationApprovalResultContract()', () => {
-  test('maps pending approval', () => {
+  it('maps pending approval', () => {
     const result = {
       memberId: 'mem-001',
       applied: false,
@@ -503,7 +503,7 @@ describe('toMemberMutationApprovalResultContract()', () => {
     assert.equal(contract.summary, '加积分需要审批')
   })
 
-  test('maps rejected approval', () => {
+  it('maps rejected approval', () => {
     const result = {
       memberId: 'mem-002',
       applied: false,
@@ -518,7 +518,7 @@ describe('toMemberMutationApprovalResultContract()', () => {
     assert.equal(contract.approvalStatus, 'REJECTED')
   })
 
-  test('maps not-required (no approval needed)', () => {
+  it('maps not-required (no approval needed)', () => {
     const result = {
       memberId: 'mem-003',
       applied: false,
@@ -537,7 +537,7 @@ describe('toMemberMutationApprovalResultContract()', () => {
 
 // ── toLytMemberSnapshotContract ──
 describe('toLytMemberSnapshotContract()', () => {
-  test('maps full LYT member snapshot', () => {
+  it('maps full LYT member snapshot', () => {
     const snapshot = {
       snapshotId: 'snap-001',
       tenantContext: tenantCtx,
@@ -571,7 +571,7 @@ describe('toLytMemberSnapshotContract()', () => {
     assert.deepEqual(contract.tenantContext, tenantCtx)
   })
 
-  test('maps memory-sourced snapshot', () => {
+  it('maps memory-sourced snapshot', () => {
     const snapshot = {
       snapshotId: 'snap-002',
       tenantContext: { tenantId: 't-min' },
@@ -591,7 +591,7 @@ describe('toLytMemberSnapshotContract()', () => {
     assert.equal(contract.source, 'memory')
   })
 
-  test('copies rawPayload (not reference)', () => {
+  it('copies rawPayload (not reference)', () => {
     const snapshot = {
       snapshotId: 'snap-003',
       tenantContext: tenantCtx,

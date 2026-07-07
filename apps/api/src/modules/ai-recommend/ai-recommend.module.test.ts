@@ -1,32 +1,32 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-recommend] [A] module 测试
  * AiRecommendModule 的模块注册和导出验证
  */
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { AiRecommendModule } from './ai-recommend.module'
 import { AiRecommendController } from './ai-recommend.controller'
 import { AiRecommendService } from './ai-recommend.service'
 
 describe('AiRecommendModule', () => {
-  test('should be defined', () => {
+  it('should be defined', () => {
     assert.ok(AiRecommendModule)
   })
 
-  test('should be instantiable', () => {
+  it('should be instantiable', () => {
     const instance = new AiRecommendModule()
     assert.ok(instance instanceof AiRecommendModule)
   })
 
-  test('module metadata has controllers', () => {
+  it('module metadata has controllers', () => {
     const controllers = Reflect.getMetadata('controllers', AiRecommendModule) as unknown[]
     if (controllers) {
       assert.ok(controllers.includes(AiRecommendController))
     }
   })
 
-  test('module metadata has providers/exports', () => {
+  it('module metadata has providers/exports', () => {
     const providers = Reflect.getMetadata('providers', AiRecommendModule) as unknown[]
     if (providers) {
       const hasService = providers.some(
@@ -39,7 +39,7 @@ describe('AiRecommendModule', () => {
     }
   })
 
-  test('module exports AiRecommendService', () => {
+  it('module exports AiRecommendService', () => {
     const exports = Reflect.getMetadata('exports', AiRecommendModule) as unknown[]
     if (exports) {
       const exportsService = exports.some(
@@ -52,7 +52,7 @@ describe('AiRecommendModule', () => {
     }
   })
 
-  test('controller has expected methods', () => {
+  it('controller has expected methods', () => {
     const proto = AiRecommendController.prototype
     // 推荐查询
     assert.equal(typeof proto.getPopular, 'function')
@@ -76,7 +76,7 @@ describe('AiRecommendModule', () => {
     assert.equal(typeof proto.recordConversion, 'function')
   })
 
-  test('service has expected methods', () => {
+  it('service has expected methods', () => {
     const proto = AiRecommendService.prototype
     // 推荐
     assert.equal(typeof proto.getPopularRecommendations, 'function')
@@ -98,7 +98,7 @@ describe('AiRecommendModule', () => {
     assert.equal(typeof proto.recordConversion, 'function')
   })
 
-  test('controller and service contract alignment', () => {
+  it('controller and service contract alignment', () => {
     const ctrlProto = AiRecommendController.prototype
     const svcProto = AiRecommendService.prototype
 
@@ -129,7 +129,7 @@ describe('AiRecommendModule', () => {
     }
   })
 
-  test('module can be imported and used with NestJS Test', async () => {
+  it('module can be imported and used with NestJS Test', async () => {
     const { Test } = await import('@nestjs/testing')
     const module = await Test.createTestingModule({
       imports: [AiRecommendModule]

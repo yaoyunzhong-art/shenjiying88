@@ -1,12 +1,12 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   createMinimalTenantContextFixture,
   createSupportedClientsFixture
 } from '../../testing/bootstrap-fixtures'
 import { toRoleWorkbenchContract, toTenantContextContract } from './workbench.contract'
 
-test('contract mapper: workbench contracts normalize marketCodes and tenant context', () => {
+it('contract mapper: workbench contracts normalize marketCodes and tenant context', () => {
   const workbench = toRoleWorkbenchContract({
     role: 'GUIDE' as never,
     channel: 'PAD' as never,
@@ -21,6 +21,6 @@ test('contract mapper: workbench contracts normalize marketCodes and tenant cont
   assert.deepEqual(tenantContext, { tenantId: 'tenant-demo' })
 })
 
-test('fixture: supported clients source stays stable', () => {
+it('fixture: supported clients source stays stable', () => {
   assert.deepEqual(createSupportedClientsFixture(), ['PC', 'PAD', 'H5', 'MINIAPP', 'APP'])
 })

@@ -1,5 +1,6 @@
 import { Injectable, Optional } from '@nestjs/common'
 import { LoyaltyService } from '../loyalty/loyalty.service'
+import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
   AnalyticsScope,
@@ -117,7 +118,10 @@ interface AnalyticsInputs {
 
 @Injectable()
 export class AnalyticsService {
-  constructor(@Optional() private readonly loyaltyService?: LoyaltyService) {}
+  constructor(
+    @Optional() private readonly loyaltyService?: LoyaltyService,
+    @Optional() private readonly marketingMetricsService?: MarketingMetricsService
+  ) {}
 
   getOperationSnapshot(
     tenantContext: RequestTenantContext,
@@ -137,6 +141,21 @@ export class AnalyticsService {
       blindboxFulfillmentCount: 0,
       pointsIn: 0,
       pointsOut: 0
+    }
+    const marketing = this.marketingMetricsService?.snapshot(inputs.tenantId) ?? {
+      couponRedemptionTotal: 0,
+      couponIssuedTotal: 0,
+      couponCrossStoreTotal: 0,
+      campaignTriggerTotal: 0,
+      campaignDispatchedTotal: 0,
+      referralTrackTotal: 0,
+      referralRewardTotal: 0,
+      notificationDispatchTotal: 0,
+      leadIngestTotal: 0,
+      leadCloseWonTotal: 0,
+      funnelByStage: {},
+      roi: 0,
+      avgOrderValue: 0
     }
 
     const orderGroup: OperationSnapshotGroup = {
@@ -203,6 +222,68 @@ export class AnalyticsService {
       ]
     }
 
+    const marketingGroup: OperationSnapshotGroup = {
+      groupKey: 'marketing',
+      groupLabel: '营销与转化',
+      metrics: [
+        {
+          key: 'couponIssuedTotal',
+          label: '券发放数',
+          value: marketing.couponIssuedTotal,
+          unit: '张'
+        },
+        {
+          key: 'couponRedemptionTotal',
+          label: '营销核券数',
+          value: marketing.couponRedemptionTotal,
+          unit: '张'
+        },
+        {
+          key: 'campaignTriggerTotal',
+          label: '营销触发数',
+          value: marketing.campaignTriggerTotal,
+          unit: '次'
+        },
+        {
+          key: 'campaignDispatchedTotal',
+          label: '营销下发数',
+          value: marketing.campaignDispatchedTotal,
+          unit: '次'
+        },
+        {
+          key: 'notificationDispatchTotal',
+          label: '通知发送数',
+          value: marketing.notificationDispatchTotal,
+          unit: '次'
+        },
+        {
+          key: 'referralTrackTotal',
+          label: '裂变追踪数',
+          value: marketing.referralTrackTotal,
+          unit: '次'
+        },
+        {
+          key: 'leadIngestTotal',
+          label: '线索流入数',
+          value: marketing.leadIngestTotal,
+          unit: '条'
+        },
+        {
+          key: 'leadCloseWonTotal',
+          label: '赢单数',
+          value: marketing.leadCloseWonTotal,
+          unit: '单'
+        },
+        {
+          key: 'marketingRoi',
+          label: '营销ROI',
+          value: Math.round(marketing.roi * 100) / 100,
+          unit: '倍',
+          trend: marketing.roi > 0 ? 'UP' : marketing.roi < 0 ? 'DOWN' : 'FLAT'
+        }
+      ]
+    }
+
     const totals: OperationSnapshotMetric[] = [
       {
         key: 'totalSettlements',
@@ -221,6 +302,24 @@ export class AnalyticsService {
         label: '总盲盒履约',
         value: loyalty.blindboxFulfillmentCount,
         unit: '盒'
+      },
+      {
+        key: 'totalCouponsIssued',
+        label: '总发券数',
+        value: marketing.couponIssuedTotal,
+        unit: '张'
+      },
+      {
+        key: 'totalMarketingRedemptions',
+        label: '总营销核券',
+        value: marketing.couponRedemptionTotal,
+        unit: '张'
+      },
+      {
+        key: 'totalNotifications',
+        label: '总通知发送',
+        value: marketing.notificationDispatchTotal,
+        unit: '次'
       }
     ]
 
@@ -230,7 +329,7 @@ export class AnalyticsService {
       brandId: inputs.brandId,
       storeId: inputs.storeId,
       generatedAt: new Date().toISOString(),
-      groups: [orderGroup, loyaltyGroup],
+      groups: [orderGroup, loyaltyGroup, marketingGroup],
       totals
     }
   }

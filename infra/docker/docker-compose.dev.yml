@@ -1,0 +1,95 @@
+# docker-compose.dev.yml — M5 backend dev infrastructure
+#
+# 用法:
+#   pnpm docker:up       # 启动基础 (postgres + redis + rabbitmq)
+#   pnpm docker:up:full  # 启动全部 (含 minio)
+#   pnpm docker:down     # 停止基础服务
+#
+# 注意:postgres 数据持久化到 named volume `postgres_data`,
+# 重启容器不会丢数据。删除 volume 用 `docker volume rm`。
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: m5-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: m5
+      POSTGRES_PASSWORD: m5_dev_password
+      POSTGRES_DB: m5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U m5 -d m5"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: m5-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: m5-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: m5
+      RABBITMQ_DEFAULT_PASS: m5_dev_password
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: m5-minio
+    restart: unless-stopped
+    profiles: ["full"]  # 默认不启动;用 --profile full 或 docker:up:full
+    environment:
+      MINIO_ROOT_USER: m5
+      MINIO_ROOT_PASSWORD: m5_dev_password
+    ports:
+      - "9000:9000"  # S3 API
+      - "9001:9001"  # Console
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    name: m5_postgres_data
+  redis_data:
+    name: m5_redis_data
+  rabbitmq_data:
+    name: m5_rabbitmq_data
+  minio_data:
+    name: m5_minio_data

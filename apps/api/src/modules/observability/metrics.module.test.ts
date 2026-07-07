@@ -1,14 +1,14 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * metrics.module.test.ts — MetricsModule 初始化测试
  */
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { MetricsModule } from './metrics.module'
 
 describe('MetricsModule', () => {
-  test('模块定义包含必要的元数据', () => {
+  it('模块定义包含必要的元数据', () => {
     const metadata = Reflect.getMetadata('imports', MetricsModule) ?? []
     const controllers = Reflect.getMetadata('controllers', MetricsModule) ?? []
     const providers = Reflect.getMetadata('providers', MetricsModule) ?? []

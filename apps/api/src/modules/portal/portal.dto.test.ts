@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { plainToInstance } from 'class-transformer'
 import {
   PortalAudience,
@@ -28,7 +28,7 @@ import {
  */
 
 describe('portal.dto: CreatePortalDto', () => {
-  test('plainToInstance assigns all required fields', () => {
+  it('plainToInstance assigns all required fields', () => {
     const dto = plainToInstance(CreatePortalDto, {
       tenantId: 'tenant-demo',
       audience: PortalAudience.ToB,
@@ -50,7 +50,7 @@ describe('portal.dto: CreatePortalDto', () => {
     assert.deepEqual(dto.supportedLanguages, [LanguageCode.ZhCn])
   })
 
-  test('plainToInstance assigns optional fields', () => {
+  it('plainToInstance assigns optional fields', () => {
     const dto = plainToInstance(CreatePortalDto, {
       tenantId: 'tenant-demo',
       audience: PortalAudience.ToB,
@@ -79,7 +79,7 @@ describe('portal.dto: CreatePortalDto', () => {
     assert.equal(dto.loginEntry.ssoEnabled, true)
   })
 
-  test('plainToInstance with Store portal fields', () => {
+  it('plainToInstance with Store portal fields', () => {
     const dto = plainToInstance(CreatePortalDto, {
       tenantId: 'tenant-demo',
       brandId: 'brand-demo',
@@ -101,12 +101,12 @@ describe('portal.dto: CreatePortalDto', () => {
     assert.deepEqual(dto.supportedSurfaces, [StorefrontSurface.OfficialSite, StorefrontSurface.H5])
   })
 
-  test('CreatePortalDto is a class (structural check)', () => {
+  it('CreatePortalDto is a class (structural check)', () => {
     assert.ok(CreatePortalDto.prototype)
     assert.ok(typeof CreatePortalDto === 'function')
   })
 
-  test('audience field accepts PortalAudience enum values', () => {
+  it('audience field accepts PortalAudience enum values', () => {
     const dto = plainToInstance(CreatePortalDto, {
       tenantId: 't', audience: PortalAudience.ToB, scopeType: PortalScopeType.Tenant,
       scopeCode: 's', marketCode: 'm', channel: PortalChannel.Web,
@@ -117,7 +117,7 @@ describe('portal.dto: CreatePortalDto', () => {
 })
 
 describe('portal.dto: UpdatePortalDto', () => {
-  test('plainToInstance with partial name update', () => {
+  it('plainToInstance with partial name update', () => {
     const dto = plainToInstance(UpdatePortalDto, {
       name: '更新后的名称'
     })
@@ -127,7 +127,7 @@ describe('portal.dto: UpdatePortalDto', () => {
     assert.equal(dto.supportedLanguages, undefined)
   })
 
-  test('plainToInstance with supportedLanguages update', () => {
+  it('plainToInstance with supportedLanguages update', () => {
     const dto = plainToInstance(UpdatePortalDto, {
       supportedLanguages: [LanguageCode.ZhCn, LanguageCode.EnUs]
     })
@@ -135,7 +135,7 @@ describe('portal.dto: UpdatePortalDto', () => {
     assert.deepEqual(dto.supportedLanguages, [LanguageCode.ZhCn, LanguageCode.EnUs])
   })
 
-  test('plainToInstance with loginEntry update', () => {
+  it('plainToInstance with loginEntry update', () => {
     const dto = plainToInstance(UpdatePortalDto, {
       loginEntry: {
         label: '新入口',
@@ -149,7 +149,7 @@ describe('portal.dto: UpdatePortalDto', () => {
     assert.equal(dto.loginEntry.ssoEnabled, false)
   })
 
-  test('plainToInstance with store fields update', () => {
+  it('plainToInstance with store fields update', () => {
     const dto = plainToInstance(UpdatePortalDto, {
       supportedSurfaces: [StorefrontSurface.App, StorefrontSurface.MiniApp],
       storeName: '新门店名'
@@ -159,7 +159,7 @@ describe('portal.dto: UpdatePortalDto', () => {
     assert.equal(dto.storeName, '新门店名')
   })
 
-  test('all fields are undefined by default', () => {
+  it('all fields are undefined by default', () => {
     const dto = plainToInstance(UpdatePortalDto, {})
 
     assert.equal(dto.name, undefined)
@@ -172,7 +172,7 @@ describe('portal.dto: UpdatePortalDto', () => {
 })
 
 describe('portal.dto: PortalQueryDto', () => {
-  test('plainToInstance with empty query', () => {
+  it('plainToInstance with empty query', () => {
     const dto = plainToInstance(PortalQueryDto, {})
 
     assert.equal(dto.tenantId, undefined)
@@ -180,19 +180,19 @@ describe('portal.dto: PortalQueryDto', () => {
     assert.equal(dto.audience, undefined)
   })
 
-  test('plainToInstance with tenantId filter', () => {
+  it('plainToInstance with tenantId filter', () => {
     const dto = plainToInstance(PortalQueryDto, { tenantId: 'tenant-demo' })
 
     assert.equal(dto.tenantId, 'tenant-demo')
   })
 
-  test('plainToInstance with audience filter', () => {
+  it('plainToInstance with audience filter', () => {
     const dto = plainToInstance(PortalQueryDto, { audience: PortalAudience.ToB })
 
     assert.equal(dto.audience, PortalAudience.ToB)
   })
 
-  test('plainToInstance with combined filters', () => {
+  it('plainToInstance with combined filters', () => {
     const dto = plainToInstance(PortalQueryDto, {
       tenantId: 'tenant-demo',
       brandId: 'brand-demo',
@@ -210,7 +210,7 @@ describe('portal.dto: PortalQueryDto', () => {
 })
 
 describe('portal.dto: PortalLoginEntryDto', () => {
-  test('plainToInstance assigns all fields', () => {
+  it('plainToInstance assigns all fields', () => {
     const dto = plainToInstance(PortalLoginEntryDto, {
       label: '进入后台',
       loginPath: '/login',
@@ -222,7 +222,7 @@ describe('portal.dto: PortalLoginEntryDto', () => {
     assert.equal(dto.ssoEnabled, true)
   })
 
-  test('plainToInstance with ssoEnabled=false', () => {
+  it('plainToInstance with ssoEnabled=false', () => {
     const dto = plainToInstance(PortalLoginEntryDto, {
       label: '进入后台',
       loginPath: '/login',
@@ -232,7 +232,7 @@ describe('portal.dto: PortalLoginEntryDto', () => {
     assert.equal(dto.ssoEnabled, false)
   })
 
-  test('PortalLoginEntryDto is a class (structural check)', () => {
+  it('PortalLoginEntryDto is a class (structural check)', () => {
     assert.ok(PortalLoginEntryDto.prototype)
     assert.ok(typeof PortalLoginEntryDto === 'function')
   })

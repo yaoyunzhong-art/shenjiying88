@@ -1,18 +1,18 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { ConfigurationGovernanceModule } from './configuration-governance.module'
 import { ConfigurationGovernanceController } from './configuration-governance.controller'
 import { ConfigurationGovernanceService } from './configuration-governance.service'
 
 describe('ConfigurationGovernanceModule', () => {
-  test('module class should be defined', () => {
+  it('module class should be defined', () => {
     assert.ok(ConfigurationGovernanceModule !== undefined)
     assert.ok(typeof ConfigurationGovernanceModule === 'function')
   })
 
-  test('module should register controller and service in metadata', () => {
+  it('module should register controller and service in metadata', () => {
     const controllers: unknown[] = Reflect.getMetadata('controllers', ConfigurationGovernanceModule) || []
     const providers: unknown[] = Reflect.getMetadata('providers', ConfigurationGovernanceModule) || []
     const exports: unknown[] = Reflect.getMetadata('exports', ConfigurationGovernanceModule) || []
@@ -25,7 +25,7 @@ describe('ConfigurationGovernanceModule', () => {
     assert.ok(exports.includes(ConfigurationGovernanceService))
   })
 
-  test('controller should have all expected endpoints', () => {
+  it('controller should have all expected endpoints', () => {
     const proto = ConfigurationGovernanceController.prototype
     assert.equal(typeof proto.getManagementMetadata, 'function')
     assert.equal(typeof proto.getOperationsOverview, 'function')
@@ -51,10 +51,10 @@ describe('ConfigurationGovernanceModule', () => {
     assert.equal(typeof proto.getSecretsCertificatePosture, 'function')
   })
 
-  test('service getGovernanceBaselines returns 3 baselines (no DI)', () => {
+  it('service getGovernanceBaselines returns 3 baselines (no DI)', () => {
     // getGovernanceBaselines uses only inline data, no prisma dependency
     const service = new ConfigurationGovernanceService(
-      { $transaction: async (fn: Function) => fn({}) } as any,
+      { $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn({}) } as any,
       {} as any
     )
     const baselines = service.getGovernanceBaselines()
@@ -65,9 +65,9 @@ describe('ConfigurationGovernanceModule', () => {
     assert.ok(baselines.some((b: { key: string }) => b.key === 'multi-cloud-iac-environment-isolation'))
   })
 
-  test('service getDescriptor returns correct descriptor (no DI)', () => {
+  it('service getDescriptor returns correct descriptor (no DI)', () => {
     const service = new ConfigurationGovernanceService(
-      { $transaction: async (fn: Function) => fn({}) } as any,
+      { $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn({}) } as any,
       {} as any
     )
     const descriptor = service.getDescriptor()
@@ -80,9 +80,9 @@ describe('ConfigurationGovernanceModule', () => {
     assert.ok(descriptor.capabilities.some((c: { key: string }) => c.key === 'secrets-certificates'))
   })
 
-  test('service getManagementMetadata returns 4 entries (no DB needed)', () => {
+  it('service getManagementMetadata returns 4 entries (no DB needed)', () => {
     const service = new ConfigurationGovernanceService(
-      { $transaction: async (fn: Function) => fn({}) } as any,
+      { $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn({}) } as any,
       {} as any
     )
     const metadata = service.getManagementMetadata()
@@ -92,10 +92,10 @@ describe('ConfigurationGovernanceModule', () => {
     assert.ok(metadata.every((m: any) => typeof m.rbac === 'object'))
   })
 
-  test('service evaluateFeatureFlag works with default context', async () => {
+  it('service evaluateFeatureFlag works with default context', async () => {
     const mockPrisma = {
       featureFlag: { findMany: () => Promise.resolve([]) },
-      $transaction: async (fn: Function) => fn(mockPrisma)
+      $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(mockPrisma)
     }
     const service = new ConfigurationGovernanceService(mockPrisma as any, {} as any)
     const result = await service.evaluateFeatureFlag('new-checkout', {
@@ -108,10 +108,10 @@ describe('ConfigurationGovernanceModule', () => {
     assert.equal(result.source, 'in-memory')
   })
 
-  test('service getSecretMetadata returns fallback secrets', async () => {
+  it('service getSecretMetadata returns fallback secrets', async () => {
     const mockPrisma = {
       secretAsset: { findMany: () => Promise.resolve([]) },
-      $transaction: async (fn: Function) => fn(mockPrisma)
+      $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(mockPrisma)
     }
     const service = new ConfigurationGovernanceService(mockPrisma as any, {} as any)
     const secrets = await service.getSecretMetadata()
@@ -123,12 +123,12 @@ describe('ConfigurationGovernanceModule', () => {
     assert.equal(lytSecret.type, 'webhook-signing')
   })
 
-  test('service resolveConfigSnapshot returns snapshot shape', async () => {
+  it('service resolveConfigSnapshot returns snapshot shape', async () => {
     const mockPrisma = {
       configEntry: { findMany: () => Promise.resolve([]) },
       featureFlag: { findMany: () => Promise.resolve([]) },
       secretAsset: { findMany: () => Promise.resolve([]) },
-      $transaction: async (fn: Function) => fn(mockPrisma)
+      $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(mockPrisma)
     }
     const service = new ConfigurationGovernanceService(mockPrisma as any, {} as any)
     const snapshot = await service.resolveConfigSnapshot({

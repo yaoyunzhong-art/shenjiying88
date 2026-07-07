@@ -1,7 +1,8 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
+import { MarketingMetricsModule } from '../marketing-metrics/marketing-metrics.module'
 import { MemberModule } from './member.module'
 import { MemberController } from './member.controller'
 import { MemberService } from './member.service'
@@ -13,7 +14,7 @@ function createBootstrapService(): MemberService {
 describe('MemberModule', () => {
   let moduleRef: TestingModule
 
-  test('should compile and instantiate', async () => {
+  it('should compile and instantiate', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [MemberModule],
     }).compile()
@@ -21,7 +22,7 @@ describe('MemberModule', () => {
     assert.ok(moduleRef)
   })
 
-  test('should provide MemberService', async () => {
+  it('should provide MemberService', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [MemberModule],
     }).compile()
@@ -31,7 +32,7 @@ describe('MemberModule', () => {
     assert.ok(service instanceof MemberService)
   })
 
-  test('should provide MemberController', async () => {
+  it('should provide MemberController', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [MemberModule],
     }).compile()
@@ -41,7 +42,7 @@ describe('MemberModule', () => {
     assert.ok(controller instanceof MemberController)
   })
 
-  test('MemberService.getBootstrap() should return scaffold capabilities', () => {
+  it('MemberService.getBootstrap() should return scaffold capabilities', () => {
     const service = createBootstrapService()
     const result = service.getBootstrap({
       tenantId: 'test-tenant'
@@ -55,5 +56,10 @@ describe('MemberModule', () => {
       'blind-box',
     ])
     assert.equal(result.tenantContext.tenantId, 'test-tenant')
+  })
+
+  it('should import MarketingMetricsModule for member operations metrics', () => {
+    const importsList = Reflect.getMetadata('imports', MemberModule) as unknown[] | undefined
+    assert.ok(importsList?.includes(MarketingMetricsModule))
   })
 })

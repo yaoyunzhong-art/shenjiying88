@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * Member Simulator Test
  *
@@ -22,7 +23,6 @@
  */
 
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   MemberLevel,
   MemberStatus,
@@ -114,27 +114,27 @@ function simulateMemberLogin(
 // ─── 会员等级计算 (使用真实 computeMemberLevel) ───
 
 describe('Member - Simulator (level computation)', () => {
-  test('should compute Bronze level for new member with 0 points', () => {
+  it('should compute Bronze level for new member with 0 points', () => {
     assert.equal(computeMemberLevel(0), MemberLevel.Bronze)
   })
 
-  test('should compute Silver level at 500 points', () => {
+  it('should compute Silver level at 500 points', () => {
     assert.equal(computeMemberLevel(500), MemberLevel.Silver)
   })
 
-  test('should compute Gold level at 2000 points', () => {
+  it('should compute Gold level at 2000 points', () => {
     assert.equal(computeMemberLevel(2000), MemberLevel.Gold)
   })
 
-  test('should compute Platinum level at 10000 points', () => {
+  it('should compute Platinum level at 10000 points', () => {
     assert.equal(computeMemberLevel(10000), MemberLevel.Platinum)
   })
 
-  test('should compute Diamond level at 50000 points', () => {
+  it('should compute Diamond level at 50000 points', () => {
     assert.equal(computeMemberLevel(50000), MemberLevel.Diamond)
   })
 
-  test('should NOT downgrade a Diamond member whose points are still well above threshold', () => {
+  it('should NOT downgrade a Diamond member whose points are still well above threshold', () => {
     const diamondMember = createSimulatedMember('mem-diamond', 80000)
     assert.equal(diamondMember.level, MemberLevel.Diamond)
 
@@ -144,7 +144,7 @@ describe('Member - Simulator (level computation)', () => {
     assert.equal(afterDeduction.action, 'unchanged')
   })
 
-  test('Diamond member dropping below 50000 should be re-evaluated as Platinum', () => {
+  it('Diamond member dropping below 50000 should be re-evaluated as Platinum', () => {
     const diamondMember = createSimulatedMember('mem-fall', 60000)
     assert.equal(diamondMember.level, MemberLevel.Diamond)
 
@@ -153,7 +153,7 @@ describe('Member - Simulator (level computation)', () => {
     assert.equal(afterDeduction.updated.level, MemberLevel.Platinum)
   })
 
-  test('should handle negative total but points clamped at zero', () => {
+  it('should handle negative total but points clamped at zero', () => {
     const member = createSimulatedMember('mem-zero', 10)
     const adjusted = simulatePointsAdjustment(member, -100)
     assert.equal(adjusted.updated.points, 0)
@@ -164,36 +164,36 @@ describe('Member - Simulator (level computation)', () => {
 // ─── 等级升级判断 (使用真实 canUpgrade) ───
 
 describe('Member - Simulator (canUpgrade)', () => {
-  test('should allow upgrade from Bronze to Silver at 500 points', () => {
+  it('should allow upgrade from Bronze to Silver at 500 points', () => {
     assert.equal(canUpgrade(MemberLevel.Bronze, 500), true)
   })
 
-  test('should allow upgrade from Silver to Gold at 2000 points', () => {
+  it('should allow upgrade from Silver to Gold at 2000 points', () => {
     assert.equal(canUpgrade(MemberLevel.Silver, 2000), true)
   })
 
-  test('should allow upgrade from Gold to Platinum at 10000 points', () => {
+  it('should allow upgrade from Gold to Platinum at 10000 points', () => {
     assert.equal(canUpgrade(MemberLevel.Gold, 10000), true)
   })
 
-  test('should allow upgrade from Platinum to Diamond at 50000 points', () => {
+  it('should allow upgrade from Platinum to Diamond at 50000 points', () => {
     assert.equal(canUpgrade(MemberLevel.Platinum, 50000), true)
   })
 
-  test('should NOT allow same-level "upgrade"', () => {
+  it('should NOT allow same-level "upgrade"', () => {
     assert.equal(canUpgrade(MemberLevel.Gold, 2500), false) // still Gold only
   })
 
-  test('should NOT allow downgrade (Diamond member at 10000 points still cannot upgrade-from Diamond)', () => {
+  it('should NOT allow downgrade (Diamond member at 10000 points still cannot upgrade-from Diamond)', () => {
     // canUpgrade(Diamond, 10000) -> computeMemberLevel(10000)=Platinum, Platinum < Diamond -> false
     assert.equal(canUpgrade(MemberLevel.Diamond, 10000), false)
   })
 
-  test('should allow skip-level upgrade (Bronze + 10000 points = Platinum > Bronze)', () => {
+  it('should allow skip-level upgrade (Bronze + 10000 points = Platinum > Bronze)', () => {
     assert.equal(canUpgrade(MemberLevel.Bronze, 10000), true)
   })
 
-  test('Bronze member at 0 points should NOT upgrade', () => {
+  it('Bronze member at 0 points should NOT upgrade', () => {
     assert.equal(canUpgrade(MemberLevel.Bronze, 0), false)
   })
 })
@@ -201,7 +201,7 @@ describe('Member - Simulator (canUpgrade)', () => {
 // ─── 阈值边界测试 ───
 
 describe('Member - Simulator (threshold boundaries)', () => {
-  test('MEMBER_LEVEL_THRESHOLDS should have all 5 levels defined', () => {
+  it('MEMBER_LEVEL_THRESHOLDS should have all 5 levels defined', () => {
     const levels = Object.keys(MEMBER_LEVEL_THRESHOLDS)
     assert.equal(levels.length, 5)
     for (const lv of Object.values(MemberLevel)) {
@@ -209,7 +209,7 @@ describe('Member - Simulator (threshold boundaries)', () => {
     }
   })
 
-  test('thresholds should be monotonically increasing', () => {
+  it('thresholds should be monotonically increasing', () => {
     const thresholds = Object.values(MEMBER_LEVEL_THRESHOLDS) as number[]
     for (let i = 1; i < thresholds.length; i++) {
       assert.ok(thresholds[i] > thresholds[i - 1],
@@ -217,23 +217,23 @@ describe('Member - Simulator (threshold boundaries)', () => {
     }
   })
 
-  test('exactly at Bronze threshold (0) should be Bronze', () => {
+  it('exactly at Bronze threshold (0) should be Bronze', () => {
     assert.equal(computeMemberLevel(MEMBER_LEVEL_THRESHOLDS[MemberLevel.Bronze]), MemberLevel.Bronze)
   })
 
-  test('exactly at Silver threshold should be Silver', () => {
+  it('exactly at Silver threshold should be Silver', () => {
     assert.equal(computeMemberLevel(MEMBER_LEVEL_THRESHOLDS[MemberLevel.Silver]), MemberLevel.Silver)
   })
 
-  test('one point below Silver threshold should be Bronze', () => {
+  it('one point below Silver threshold should be Bronze', () => {
     assert.equal(computeMemberLevel(MEMBER_LEVEL_THRESHOLDS[MemberLevel.Silver] - 1), MemberLevel.Bronze)
   })
 
-  test('exactly at Diamond threshold should be Diamond', () => {
+  it('exactly at Diamond threshold should be Diamond', () => {
     assert.equal(computeMemberLevel(MEMBER_LEVEL_THRESHOLDS[MemberLevel.Diamond]), MemberLevel.Diamond)
   })
 
-  test('one point below Diamond threshold should be Platinum', () => {
+  it('one point below Diamond threshold should be Platinum', () => {
     assert.equal(computeMemberLevel(MEMBER_LEVEL_THRESHOLDS[MemberLevel.Diamond] - 1), MemberLevel.Platinum)
   })
 })
@@ -241,7 +241,7 @@ describe('Member - Simulator (threshold boundaries)', () => {
 // ─── 积分调整模拟 ───
 
 describe('Member - Simulator (points adjustment)', () => {
-  test('adding points should trigger upgrade when crossing threshold', () => {
+  it('adding points should trigger upgrade when crossing threshold', () => {
     const member = createSimulatedMember('mem-upgrade', MEMBER_LEVEL_THRESHOLDS[MemberLevel.Silver] - 1)
     assert.equal(member.level, MemberLevel.Bronze)
 
@@ -250,7 +250,7 @@ describe('Member - Simulator (points adjustment)', () => {
     assert.equal(result.action, 'upgrade')
   })
 
-  test('large point addition can skip levels (Bronze to Platinum)', () => {
+  it('large point addition can skip levels (Bronze to Platinum)', () => {
     const member = createSimulatedMember('mem-skip', 100)
     assert.equal(member.level, MemberLevel.Bronze)
 
@@ -259,7 +259,7 @@ describe('Member - Simulator (points adjustment)', () => {
     assert.equal(result.action, 'upgrade')
   })
 
-  test('multiple small additions should eventually trigger upgrade', () => {
+  it('multiple small additions should eventually trigger upgrade', () => {
     let member = createSimulatedMember('mem-incremental', 4000)
     assert.equal(member.level, MemberLevel.Gold)
 
@@ -272,14 +272,14 @@ describe('Member - Simulator (points adjustment)', () => {
     assert.equal(member.level, MemberLevel.Platinum)
   })
 
-  test('points cannot go below zero', () => {
+  it('points cannot go below zero', () => {
     const member = createSimulatedMember('mem-min-zero', 50)
     const result = simulatePointsAdjustment(member, -100)
     assert.equal(result.updated.points, 0)
     assert.equal(result.updated.level, MemberLevel.Bronze)
   })
 
-  test('deducting points can cause downgrade', () => {
+  it('deducting points can cause downgrade', () => {
     const member = createSimulatedMember('mem-drop', 12000) // Platinum
     assert.equal(member.level, MemberLevel.Platinum)
 
@@ -293,7 +293,7 @@ describe('Member - Simulator (points adjustment)', () => {
 // ─── 会员状态流转 ───
 
 describe('Member - Simulator (status transitions)', () => {
-  test('Active member can be frozen', () => {
+  it('Active member can be frozen', () => {
     const member = createSimulatedMember('mem-to-freeze', 1000)
     assert.equal(member.status, MemberStatus.Active)
 
@@ -301,19 +301,19 @@ describe('Member - Simulator (status transitions)', () => {
     assert.equal(frozen.status, MemberStatus.Frozen)
   })
 
-  test('Active member can be blacklisted', () => {
+  it('Active member can be blacklisted', () => {
     const member = createSimulatedMember('mem-to-blacklist', 100)
     const blacklisted = simulateStatusChange(member, MemberStatus.Blacklisted)
     assert.equal(blacklisted.status, MemberStatus.Blacklisted)
   })
 
-  test('Active member can be expired', () => {
+  it('Active member can be expired', () => {
     const member = createSimulatedMember('mem-expire', 500)
     const expired = simulateStatusChange(member, MemberStatus.Expired)
     assert.equal(expired.status, MemberStatus.Expired)
   })
 
-  test('Expired member can still login in this model', () => {
+  it('Expired member can still login in this model', () => {
     const expired = simulateStatusChange(
       createSimulatedMember('mem-login-expired', 200),
       MemberStatus.Expired
@@ -322,7 +322,7 @@ describe('Member - Simulator (status transitions)', () => {
     assert.equal(result.success, true)
   })
 
-  test('Frozen member should NOT be able to login', () => {
+  it('Frozen member should NOT be able to login', () => {
     const frozen = simulateStatusChange(
       createSimulatedMember('mem-login-frozen', 2000),
       MemberStatus.Frozen
@@ -331,7 +331,7 @@ describe('Member - Simulator (status transitions)', () => {
     assert.equal(result.success, false)
   })
 
-  test('Blacklisted member should NOT be able to login', () => {
+  it('Blacklisted member should NOT be able to login', () => {
     const blacklisted = simulateStatusChange(
       createSimulatedMember('mem-login-bl', 3000),
       MemberStatus.Blacklisted
@@ -340,7 +340,7 @@ describe('Member - Simulator (status transitions)', () => {
     assert.equal(result.success, false)
   })
 
-  test('Active member login should update lastActiveAt', async () => {
+  it('Active member login should update lastActiveAt', async () => {
     const member = createSimulatedMember('mem-login-ok', 1000)
     const beforeLogin = member.lastActiveAt
     // Small delay to ensure timestamp changes
@@ -355,7 +355,7 @@ describe('Member - Simulator (status transitions)', () => {
 // ─── 角色场景 ───
 
 describe('Member - Simulator (👔店长)', () => {
-  test('店长应能查看全店会员等级分布', () => {
+  it('店长应能查看全店会员等级分布', () => {
     const members = [
       createSimulatedMember('mem-001', 100),
       createSimulatedMember('mem-002', 1200),
@@ -372,7 +372,7 @@ describe('Member - Simulator (👔店长)', () => {
       `Expected at least 3 distinct levels, got ${Object.keys(distribution).length}`)
   })
 
-  test('店长应能识别高价值会员 (Platinum+) 进行 VIP 关怀', () => {
+  it('店长应能识别高价值会员 (Platinum+) 进行 VIP 关怀', () => {
     const members = [
       createSimulatedMember('mem-001', 100),      // Bronze
       createSimulatedMember('mem-002', 1200),     // Silver
@@ -391,20 +391,20 @@ describe('Member - Simulator (👔店长)', () => {
 })
 
 describe('Member - Simulator (🛒前台)', () => {
-  test('前台应能查询会员当前积分和等级', () => {
+  it('前台应能查询会员当前积分和等级', () => {
     const member = createSimulatedMember('mem-fd', 3500)
     assert.equal(member.points, 3500)
     assert.equal(member.level, MemberLevel.Gold)
   })
 
-  test('前台消费后积分应正确累加', () => {
+  it('前台消费后积分应正确累加', () => {
     const member = createSimulatedMember('mem-fd', 3500)
     const result = simulatePointsAdjustment(member, 500)
     assert.equal(result.updated.points, 4000)
     assert.equal(result.updated.level, MemberLevel.Gold) // Still Gold
   })
 
-  test('前台应能识别刚达到升级资格的会员', () => {
+  it('前台应能识别刚达到升级资格的会员', () => {
     const nearUpgrade = createSimulatedMember('mem-near', 9500)
     assert.equal(nearUpgrade.level, MemberLevel.Gold)
 
@@ -416,7 +416,7 @@ describe('Member - Simulator (🛒前台)', () => {
 })
 
 describe('Member - Simulator (👥HR)', () => {
-  test('HR 应能标记黑名单会员无法登录', () => {
+  it('HR 应能标记黑名单会员无法登录', () => {
     const member = createSimulatedMember('mem-hr', 5000)
     const blacklisted = simulateStatusChange(member, MemberStatus.Blacklisted)
     assert.equal(blacklisted.status, MemberStatus.Blacklisted)
@@ -425,7 +425,7 @@ describe('Member - Simulator (👥HR)', () => {
     assert.equal(loginResult.success, false)
   })
 
-  test('HR 应能看到黑名单会员的积分和等级数据', () => {
+  it('HR 应能看到黑名单会员的积分和等级数据', () => {
     const blacklisted = simulateStatusChange(
       createSimulatedMember('mem-hr-data', 8000),
       MemberStatus.Blacklisted
@@ -437,7 +437,7 @@ describe('Member - Simulator (👥HR)', () => {
 })
 
 describe('Member - Simulator (🔧安监)', () => {
-  test('安监应能冻结风险会员', () => {
+  it('安监应能冻结风险会员', () => {
     const member = createSimulatedMember('mem-sec', 12000)
     const frozen = simulateStatusChange(member, MemberStatus.Frozen)
     assert.equal(frozen.status, MemberStatus.Frozen)
@@ -445,7 +445,7 @@ describe('Member - Simulator (🔧安监)', () => {
     assert.equal(frozen.level, MemberLevel.Platinum) // 等级保留
   })
 
-  test('安监冻结的会员无法登录', () => {
+  it('安监冻结的会员无法登录', () => {
     const frozen = simulateStatusChange(
       createSimulatedMember('mem-sec-login', 3000),
       MemberStatus.Frozen
@@ -456,7 +456,7 @@ describe('Member - Simulator (🔧安监)', () => {
 })
 
 describe('Member - Simulator (🎮导玩员)', () => {
-  test('导玩员应能识别接近升级门槛的会员', () => {
+  it('导玩员应能识别接近升级门槛的会员', () => {
     // 4900 points is below Gold (2000) but below Platinum (10000)
     // Actually 4900 > 2000 = Gold. Let me pick below Gold:
     const nearGoldMember = createSimulatedMember('mem-near-gold',
@@ -465,7 +465,7 @@ describe('Member - Simulator (🎮导玩员)', () => {
     assert.ok(nearGoldMember.points < MEMBER_LEVEL_THRESHOLDS[MemberLevel.Gold])
   })
 
-  test('导玩员激励消费后会员应升级到 Gold', () => {
+  it('导玩员激励消费后会员应升级到 Gold', () => {
     const nearGoldMember = createSimulatedMember('mem-upgrade-gold',
       MEMBER_LEVEL_THRESHOLDS[MemberLevel.Gold] - 1)
     assert.equal(nearGoldMember.level, MemberLevel.Silver)
@@ -477,7 +477,7 @@ describe('Member - Simulator (🎮导玩员)', () => {
 })
 
 describe('Member - Simulator (🎯运行专员)', () => {
-  test('运行专员应能跟踪新会员从 Bronze 到 Silver 的成长路径', () => {
+  it('运行专员应能跟踪新会员从 Bronze 到 Silver 的成长路径', () => {
     let newMember = createSimulatedMember('mem-newbie', 100)
     assert.equal(newMember.level, MemberLevel.Bronze)
 
@@ -490,7 +490,7 @@ describe('Member - Simulator (🎯运行专员)', () => {
     assert.ok(newMember.points >= MEMBER_LEVEL_THRESHOLDS[MemberLevel.Silver])
   })
 
-  test('运行专员应能识别到期会员进行续费提醒', () => {
+  it('运行专员应能识别到期会员进行续费提醒', () => {
     const member = createSimulatedMember('mem-renewal', 3000)
     const expired = simulateStatusChange(member, MemberStatus.Expired)
     assert.equal(expired.status, MemberStatus.Expired)
@@ -501,7 +501,7 @@ describe('Member - Simulator (🎯运行专员)', () => {
 })
 
 describe('Member - Simulator (🤝团建)', () => {
-  test('团建应能筛选 VIP 会员 (Platinum+) 参与高端活动', () => {
+  it('团建应能筛选 VIP 会员 (Platinum+) 参与高端活动', () => {
     const members = [
       createSimulatedMember('mem-tb-001', 6000),    // Gold
       createSimulatedMember('mem-tb-002', 200),     // Bronze
@@ -517,7 +517,7 @@ describe('Member - Simulator (🤝团建)', () => {
     }
   })
 
-  test('团建应排除黑名单和冻结会员', () => {
+  it('团建应排除黑名单和冻结会员', () => {
     const members = [
       createSimulatedMember('mem-safe-1', 500),
       simulateStatusChange(createSimulatedMember('mem-bl-1', 2000), MemberStatus.Blacklisted),
@@ -532,7 +532,7 @@ describe('Member - Simulator (🤝团建)', () => {
 })
 
 describe('Member - Simulator (📢营销)', () => {
-  test('营销应能按等级分层推送不同内容', () => {
+  it('营销应能按等级分层推送不同内容', () => {
     const members = [
       createSimulatedMember('mem-mkt-001', 500),    // Silver
       createSimulatedMember('mem-mkt-002', 3000),   // Gold
@@ -552,7 +552,7 @@ describe('Member - Simulator (📢营销)', () => {
       `Expected >=2 distinct levels, got ${nonEmptyLevels.length}`)
   })
 
-  test('营销应能向白金会员 (Platinum) 推送专属活动', () => {
+  it('营销应能向白金会员 (Platinum) 推送专属活动', () => {
     const members = [
       createSimulatedMember('mem-mkt-p1', 12000),
       createSimulatedMember('mem-mkt-p2', 15000),
@@ -566,7 +566,7 @@ describe('Member - Simulator (📢营销)', () => {
     }
   })
 
-  test('营销应能对 Bronze 新会员推送首单优惠', () => {
+  it('营销应能对 Bronze 新会员推送首单优惠', () => {
     const members = [
       createSimulatedMember('mem-new-1', 0),
       createSimulatedMember('mem-new-2', 100),
@@ -590,17 +590,17 @@ describe('Member - Simulator (all-level coverage)', () => {
   ]
 
   for (const { level, minPoints } of allLevelTests) {
-    test(`member with ${minPoints} points should be ${level}`, () => {
+    it(`member with ${minPoints} points should be ${level}`, () => {
       const computed = computeMemberLevel(minPoints)
       assert.equal(computed, level)
     })
   }
 
-  test('should produce correct level for 1 million points (Diamond)', () => {
+  it('should produce correct level for 1 million points (Diamond)', () => {
     assert.equal(computeMemberLevel(1_000_000), MemberLevel.Diamond)
   })
 
-  test('should produce Bronze for undefined/null-like edge (0 points)', () => {
+  it('should produce Bronze for undefined/null-like edge (0 points)', () => {
     assert.equal(computeMemberLevel(0), MemberLevel.Bronze)
   })
 })
@@ -608,7 +608,7 @@ describe('Member - Simulator (all-level coverage)', () => {
 // ─── 批量操作 ───
 
 describe('Member - Simulator (bulk operations)', () => {
-  test('batch status change should work for 100 members', () => {
+  it('batch status change should work for 100 members', () => {
     const members = Array.from({ length: 100 }, (_, i) =>
       createSimulatedMember(`bulk-${i}`, Math.floor(Math.random() * 60000))
     )
@@ -620,7 +620,7 @@ describe('Member - Simulator (bulk operations)', () => {
     }
   })
 
-  test('batch points adjustment should handle 500 members without error', () => {
+  it('batch points adjustment should handle 500 members without error', () => {
     const members = Array.from({ length: 500 }, (_, i) =>
       createSimulatedMember(`bulk-adj-${i}`, 1000)
     )
@@ -635,7 +635,7 @@ describe('Member - Simulator (bulk operations)', () => {
     }
   })
 
-  test('should correctly categorize a mixed batch by level', () => {
+  it('should correctly categorize a mixed batch by level', () => {
     // Deterministic quotas to avoid flaky random sampling (BRONZE range 0-499
     // is only ~0.7% of the 0-70000 spread; 200 random samples may yield 0 BRONZE).
     // Quotas: 40 × BRONZE(0..499) + 40 × SILVER(500..1999) + 40 × GOLD(2000..9999)

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [reservation] 角色测试增强 (8角色全覆盖)
  *
@@ -13,7 +14,6 @@
 
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test, { describe, before, mock } from 'node:test';
 import { ReservationController } from './reservation.controller';
 import { ReservationService } from './reservation.service';
 import { ReservationStatus, ReservationType } from './reservation.entity';
@@ -169,7 +169,7 @@ function seedReservations(service: ReservationService): string[] {
 // 👔 店长 — 全局管理权限
 // ══════════════════════════════════════════════
 describe(`${ROLES.TenantAdmin} reservation 角色测试`, () => {
-  test('店长创建预约 — 正常流程填充分配 ID', () => {
+  it('店长创建预约 — 正常流程填充分配 ID', () => {
     const ctrl = makeController();
     const result = ctrl.createReservation(tenantCtx(), DEFAULT_CREATE_BODY);
     assert.equal(result.status, ReservationStatus.Pending);
@@ -180,7 +180,7 @@ describe(`${ROLES.TenantAdmin} reservation 角色测试`, () => {
     assert.equal(result.price, 200);
   });
 
-  test('店长查看本店所有预约 — 不包含其他租户数据', () => {
+  it('店长查看本店所有预约 — 不包含其他租户数据', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -194,7 +194,7 @@ describe(`${ROLES.TenantAdmin} reservation 角色测试`, () => {
     }
   });
 
-  test('店长查找特定预约详情 — 不存在时抛出 NotFound', () => {
+  it('店长查找特定预约详情 — 不存在时抛出 NotFound', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -204,7 +204,7 @@ describe(`${ROLES.TenantAdmin} reservation 角色测试`, () => {
     }, /Reservation not found/);
   });
 
-  test('店长取消预约 — 正常流程状态变为 cancelled', () => {
+  it('店长取消预约 — 正常流程状态变为 cancelled', () => {
     const svc = makeService();
     const [id] = seedReservations(svc);
     const ctrl = makeController(svc);
@@ -219,7 +219,7 @@ describe(`${ROLES.TenantAdmin} reservation 角色测试`, () => {
 // 🛒 前台 — 接待客户，处理即时预约
 // ══════════════════════════════════════════════
 describe(`${ROLES.Reception} reservation 角色测试`, () => {
-  test('前台为客户创建即时预约 — 正常流程含不同用户', () => {
+  it('前台为客户创建即时预约 — 正常流程含不同用户', () => {
     const svc = makeService();
     const ctrl = makeController(svc);
 
@@ -234,7 +234,7 @@ describe(`${ROLES.Reception} reservation 角色测试`, () => {
     assert.equal(result.resourceName, '普通卡座');
   });
 
-  test('前台查询某客户所有预约记录 — 仅该客户数据', () => {
+  it('前台查询某客户所有预约记录 — 仅该客户数据', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -248,7 +248,7 @@ describe(`${ROLES.Reception} reservation 角色测试`, () => {
     }
   });
 
-  test('前台创建预约时间非法 — 结束时间早于开始时间拒绝', () => {
+  it('前台创建预约时间非法 — 结束时间早于开始时间拒绝', () => {
     const ctrl = makeController();
     assert.throws(() => {
       ctrl.createReservation(tenantCtx(), {
@@ -264,7 +264,7 @@ describe(`${ROLES.Reception} reservation 角色测试`, () => {
 // 👥 HR — 团建活动管理，面向员工福利
 // ══════════════════════════════════════════════
 describe(`${ROLES.HR} reservation 角色测试`, () => {
-  test('HR 为团建活动预约多功能厅 — 正常流程', () => {
+  it('HR 为团建活动预约多功能厅 — 正常流程', () => {
     const ctrl = makeController();
     const result = ctrl.createReservation(tenantCtx(), {
       ...DEFAULT_CREATE_BODY,
@@ -278,7 +278,7 @@ describe(`${ROLES.HR} reservation 角色测试`, () => {
     assert.equal(result.price, 0); // 内部活动免费
   });
 
-  test('HR 查询某时间段可用性 — 无冲突返回 false', () => {
+  it('HR 查询某时间段可用性 — 无冲突返回 false', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -302,7 +302,7 @@ describe(`${ROLES.HR} reservation 角色测试`, () => {
     assert.equal(conflictResult.hasConflict, true);
   });
 
-  test('HR 查看已完成的设备预约 — 状态过滤', () => {
+  it('HR 查看已完成的设备预约 — 状态过滤', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -321,7 +321,7 @@ describe(`${ROLES.HR} reservation 角色测试`, () => {
 // 🔧 安监 — 安全合规检查，查看所有资源使用
 // ══════════════════════════════════════════════
 describe(`${ROLES.Safety} reservation 角色测试`, () => {
-  test('安监查看所有预约 — 确保全部资源可追溯', () => {
+  it('安监查看所有预约 — 确保全部资源可追溯', () => {
     const svc = makeService();
     const ids = seedReservations(svc);
     const ctrl = makeController(svc);
@@ -334,7 +334,7 @@ describe(`${ROLES.Safety} reservation 角色测试`, () => {
     assert.ok(types.has(ReservationType.Equipment));
   });
 
-  test('安监查看特定资源预约历史 — 安全审计', () => {
+  it('安监查看特定资源预约历史 — 安全审计', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -347,7 +347,7 @@ describe(`${ROLES.Safety} reservation 角色测试`, () => {
     }
   });
 
-  test('安监查看不同租户资源隔离 — 跨租户无权查看', () => {
+  it('安监查看不同租户资源隔离 — 跨租户无权查看', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -362,7 +362,7 @@ describe(`${ROLES.Safety} reservation 角色测试`, () => {
 // 🎮 导玩员 — 设备管理和服务确认
 // ══════════════════════════════════════════════
 describe(`${ROLES.Guide} reservation 角色测试`, () => {
-  test('导玩员查询设备预约 — 按资源ID过滤', () => {
+  it('导玩员查询设备预约 — 按资源ID过滤', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -374,7 +374,7 @@ describe(`${ROLES.Guide} reservation 角色测试`, () => {
     }
   });
 
-  test('导玩员将预约标记为已确认 — 状态变更为 confirmed', () => {
+  it('导玩员将预约标记为已确认 — 状态变更为 confirmed', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -388,7 +388,7 @@ describe(`${ROLES.Guide} reservation 角色测试`, () => {
     assert.equal(result.status, ReservationStatus.Confirmed);
   });
 
-  test('导玩员无法从 Pending 直接变为 Completed — 无效状态流转', () => {
+  it('导玩员无法从 Pending 直接变为 Completed — 无效状态流转', () => {
     const svc = makeService();
     const ctrl = makeController(svc);
 
@@ -410,7 +410,7 @@ describe(`${ROLES.Guide} reservation 角色测试`, () => {
 // 🎯 运行专员 — 运营调度，查看当天+完成预约
 // ══════════════════════════════════════════════
 describe(`${ROLES.Ops} reservation 角色测试`, () => {
-  test('运行专员查看当天所有预约 — 时间段过滤', () => {
+  it('运行专员查看当天所有预约 — 时间段过滤', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -428,7 +428,7 @@ describe(`${ROLES.Ops} reservation 角色测试`, () => {
     }
   });
 
-  test('运行专员将已确认预约开始服务 — 状态流转 InProgress', () => {
+  it('运行专员将已确认预约开始服务 — 状态流转 InProgress', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -442,7 +442,7 @@ describe(`${ROLES.Ops} reservation 角色测试`, () => {
     assert.equal(result.status, ReservationStatus.InProgress);
   });
 
-  test('运行专员完成进行中的预约 — Completed 状态变更', () => {
+  it('运行专员完成进行中的预约 — Completed 状态变更', () => {
     const svc = makeService();
     const ctrl = makeController(svc);
     const r = ctrl.createReservation(tenantCtx(), DEFAULT_CREATE_BODY);
@@ -461,7 +461,7 @@ describe(`${ROLES.Ops} reservation 角色测试`, () => {
 // 🤝 团建 — 团队建设预约，批量或长时段
 // ══════════════════════════════════════════════
 describe(`${ROLES.Teambuilding} reservation 角色测试`, () => {
-  test('团建专员预约户外拓展场地 — 正常流程', () => {
+  it('团建专员预约户外拓展场地 — 正常流程', () => {
     const ctrl = makeController();
     const result = ctrl.createReservation(tenantCtx(), {
       ...DEFAULT_CREATE_BODY,
@@ -478,7 +478,7 @@ describe(`${ROLES.Teambuilding} reservation 角色测试`, () => {
     assert.equal(result.remark, '季度团队建设活动');
   });
 
-  test('团建专员查询团队历史预约 — 按用户查找', () => {
+  it('团建专员查询团队历史预约 — 按用户查找', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -491,7 +491,7 @@ describe(`${ROLES.Teambuilding} reservation 角色测试`, () => {
     }
   });
 
-  test('团建专员检查场地可用性 — 无冲突时返回 false', () => {
+  it('团建专员检查场地可用性 — 无冲突时返回 false', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -511,7 +511,7 @@ describe(`${ROLES.Teambuilding} reservation 角色测试`, () => {
 // 📢 营销 — 活动营销场地预约，对接市场活动
 // ══════════════════════════════════════════════
 describe(`${ROLES.Marketing} reservation 角色测试`, () => {
-  test('营销专员预约中庭广场办活动 — 正常流程', () => {
+  it('营销专员预约中庭广场办活动 — 正常流程', () => {
     const ctrl = makeController();
     const result = ctrl.createReservation(tenantCtx(), {
       ...DEFAULT_CREATE_BODY,
@@ -527,7 +527,7 @@ describe(`${ROLES.Marketing} reservation 角色测试`, () => {
     assert.equal(result.remark, '新品发布会');
   });
 
-  test('营销专员取消不适合的活动预约 — 带取消原因', () => {
+  it('营销专员取消不适合的活动预约 — 带取消原因', () => {
     const svc = makeService();
     const ctrl = makeController(svc);
     const r = ctrl.createReservation(tenantCtx(), {
@@ -541,7 +541,7 @@ describe(`${ROLES.Marketing} reservation 角色测试`, () => {
     assert.equal(result.cancelledReason, '天气原因取消');
   });
 
-  test('营销专员不允许取消已完成活动预约 — 状态流转限制', () => {
+  it('营销专员不允许取消已完成活动预约 — 状态流转限制', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrl = makeController(svc);
@@ -563,7 +563,7 @@ describe(`${ROLES.Marketing} reservation 角色测试`, () => {
 // 🌐 跨角色通用测试 — 租户隔离 + 边界条件
 // ══════════════════════════════════════════════
 describe('reservation 通用隔离与边界测试', () => {
-  test('租户隔离 — 租户 A 看不到租户 B 的预约', () => {
+  it('租户隔离 — 租户 A 看不到租户 B 的预约', () => {
     const svc = makeService();
     seedReservations(svc);
     const ctrlA = makeController(svc);
@@ -584,7 +584,7 @@ describe('reservation 通用隔离与边界测试', () => {
     }
   });
 
-  test('缺少必填参数 findByTimeRange — 空参数不会被传到端点', () => {
+  it('缺少必填参数 findByTimeRange — 空参数不会被传到端点', () => {
     // findByTimeRange 在 controller 层做了校验
     const ctrl = makeController();
     assert.throws(() => {
@@ -592,14 +592,14 @@ describe('reservation 通用隔离与边界测试', () => {
     });
   });
 
-  test('缺少必填参数 checkConflict — 抛出错误', () => {
+  it('缺少必填参数 checkConflict — 抛出错误', () => {
     const ctrl = makeController();
     assert.throws(() => {
       (ctrl as any).checkConflict(tenantCtx(), '', '', '');
     });
   });
 
-  test('创建预约后 createdAt / updatedAt 被正确设置', () => {
+  it('创建预约后 createdAt / updatedAt 被正确设置', () => {
     const ctrl = makeController();
     const result = ctrl.createReservation(tenantCtx(), DEFAULT_CREATE_BODY);
     assert.ok(result.createdAt instanceof Date);
@@ -607,7 +607,7 @@ describe('reservation 通用隔离与边界测试', () => {
     assert.ok(result.createdAt.getTime() > 0);
   });
 
-  test('取消已取消的预约 — 重复取消被拒绝', () => {
+  it('取消已取消的预约 — 重复取消被拒绝', () => {
     const svc = makeService();
     const ctrl = makeController(svc);
     const r = ctrl.createReservation(tenantCtx(), DEFAULT_CREATE_BODY);
@@ -621,7 +621,7 @@ describe('reservation 通用隔离与边界测试', () => {
     }, /Invalid reservation status transition/);
   });
 
-  test('预约冲突检测 — 同一资源同一时间段重叠被拒绝', () => {
+  it('预约冲突检测 — 同一资源同一时间段重叠被拒绝', () => {
     const svc = makeService();
     const ctrl = makeController(svc);
 
@@ -642,7 +642,7 @@ describe('reservation 通用隔离与边界测试', () => {
     }, /is already booked/);
   });
 
-  test('全类型预约创建 — Venue / Equipment / Service / Class 均支持', () => {
+  it('全类型预约创建 — Venue / Equipment / Service / Class 均支持', () => {
     const svc = makeService();
     const ctrl = makeController(svc);
 

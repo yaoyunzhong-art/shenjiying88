@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
 import {
   toCampaignPlanContract,
   toCampaignDispatchContract
@@ -16,7 +16,7 @@ describe('campaign contract mappers', () => {
   // ── toCampaignPlanContract ──
 
   describe('toCampaignPlanContract()', () => {
-    test('maps full CampaignPlan to CampaignPlanContract', () => {
+    it('maps full CampaignPlan to CampaignPlanContract', () => {
       const plan = {
         planId: 'plan-001',
         tenantContext: { scopeType: 'TENANT', scopeCode: 'tenant-a' } as never,
@@ -75,7 +75,7 @@ describe('campaign contract mappers', () => {
       assert.deepEqual(contract.actions[1].params, { couponPlanId: 'cp-free-coffee' })
     })
 
-    test('maps plan with optional fields omitted (undefined → undefined)', () => {
+    it('maps plan with optional fields omitted (undefined → undefined)', () => {
       const plan = {
         planId: 'plan-minimal',
         tenantContext: { scopeType: 'PLATFORM', scopeCode: 'default' } as never,
@@ -98,7 +98,7 @@ describe('campaign contract mappers', () => {
       assert.equal(contract.scheduledEnd, undefined)
     })
 
-    test('maps DRAFT status plan correctly', () => {
+    it('maps DRAFT status plan correctly', () => {
       const plan = {
         planId: 'plan-draft',
         tenantContext: { scopeType: 'TENANT', scopeCode: 'tenant-b' } as never,
@@ -128,7 +128,7 @@ describe('campaign contract mappers', () => {
   // ── toCampaignDispatchContract ──
 
   describe('toCampaignDispatchContract()', () => {
-    test('maps full CampaignDispatch to CampaignDispatchContract', () => {
+    it('maps full CampaignDispatch to CampaignDispatchContract', () => {
       const dispatch = {
         dispatchId: 'disp-001',
         planId: 'plan-001',
@@ -159,7 +159,7 @@ describe('campaign contract mappers', () => {
       assert.equal(contract.errorMessage, undefined)
     })
 
-    test('maps Failed dispatch with errorMessage', () => {
+    it('maps Failed dispatch with errorMessage', () => {
       const dispatch = {
         dispatchId: 'disp-fail',
         planId: 'plan-001',
@@ -182,7 +182,7 @@ describe('campaign contract mappers', () => {
       assert.equal(contract.resultRef, undefined)
     })
 
-    test('maps Skipped dispatch', () => {
+    it('maps Skipped dispatch', () => {
       const dispatch = {
         dispatchId: 'disp-skip',
         planId: 'plan-001',
@@ -206,7 +206,7 @@ describe('campaign contract mappers', () => {
   // ── contract field integrity ──
 
   describe('contract field integrity', () => {
-    test('CampaignPlanContract contains all required output fields', () => {
+    it('CampaignPlanContract contains all required output fields', () => {
       const plan = {
         planId: 'p-001',
         tenantContext: { scopeType: 'TENANT', scopeCode: 't-001' } as never,
@@ -248,7 +248,7 @@ describe('campaign contract mappers', () => {
       // (they are marked as optional in the interface)
     })
 
-    test('CampaignDispatchContract contains all required output fields', () => {
+    it('CampaignDispatchContract contains all required output fields', () => {
       const dispatch = {
         dispatchId: 'd-001',
         planId: 'p-001',

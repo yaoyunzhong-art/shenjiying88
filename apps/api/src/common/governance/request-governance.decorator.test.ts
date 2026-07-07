@@ -1,8 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
- 
 const {
   RequireRateLimit,
   RATE_LIMIT_METADATA_KEY,
@@ -18,16 +16,16 @@ const sampleMetadata = {
 }
 
 describe('RequireRateLimit decorator', () => {
-  test('is a function', () => {
+  it('is a function', () => {
     assert.equal(typeof RequireRateLimit, 'function')
   })
 
-  test('returns a decorator function when called with metadata', () => {
+  it('returns a decorator function when called with metadata', () => {
     const decorator = RequireRateLimit(sampleMetadata)
     assert.equal(typeof decorator, 'function')
   })
 
-  test('sets metadata on method via descriptor.value', () => {
+  it('sets metadata on method via descriptor.value', () => {
     class TestController {
       handle() {}
     }
@@ -47,7 +45,7 @@ describe('RequireRateLimit decorator', () => {
     assert.equal(returnedDescriptor, descriptor)
   })
 
-  test('sets metadata on class-level target (no descriptor)', () => {
+  it('sets metadata on class-level target (no descriptor)', () => {
     const decorator = RequireRateLimit({ limit: 10, windowSeconds: 30 })
     class TestController {}
     const result = decorator(TestController)
@@ -60,7 +58,7 @@ describe('RequireRateLimit decorator', () => {
     assert.equal(result, TestController)
   })
 
-  test('metadata between different methods does not interfere', () => {
+  it('metadata between different methods does not interfere', () => {
     class TestController {
       handleA() {}
       handleB() {}
@@ -81,12 +79,12 @@ describe('RequireRateLimit decorator', () => {
     assert.notEqual(storedA.windowSeconds, storedB.windowSeconds)
   })
 
-  test('RATE_LIMIT_METADATA_KEY is the expected constant', () => {
+  it('RATE_LIMIT_METADATA_KEY is the expected constant', () => {
     assert.equal(RATE_LIMIT_METADATA_KEY, 'trust-governance:rate-limit')
     assert.equal(typeof RATE_LIMIT_METADATA_KEY, 'string')
   })
 
-  test('accepts minimal metadata (only limit + windowSeconds)', () => {
+  it('accepts minimal metadata (only limit + windowSeconds)', () => {
     class TestController {
       handle() {}
     }
@@ -102,7 +100,7 @@ describe('RequireRateLimit decorator', () => {
     assert.equal(stored.scopeBy, undefined)
   })
 
-  test('accepts metadata with scopeBy ip and route', () => {
+  it('accepts metadata with scopeBy ip and route', () => {
     class TestController {
       handle() {}
     }
@@ -119,7 +117,7 @@ describe('RequireRateLimit decorator', () => {
     assert.deepStrictEqual(stored.scopeBy, ['ip', 'route'])
   })
 
-  test('different controllers do not share metadata', () => {
+  it('different controllers do not share metadata', () => {
     class CtrlA {
       handleA() {}
     }

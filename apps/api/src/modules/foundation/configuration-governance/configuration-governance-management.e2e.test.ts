@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { Body, Controller, Get, Inject, Param, Post, Query, ValidationPipe } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
@@ -623,7 +623,7 @@ class TestApprovalReviewController {
   }
 }
 
-test('e2e: manages config entries and secret rotation with audit linkage', async () => {
+it('e2e: manages config entries and secret rotation with audit linkage', async () => {
   const { prisma, entries, secrets, approvals } = createConfigurationGovernancePrismaMock()
   const audits: string[] = []
 
@@ -836,7 +836,7 @@ test('e2e: manages config entries and secret rotation with audit linkage', async
   }
 })
 
-test('e2e: secret rotation stays pending until approval is granted', async () => {
+it('e2e: secret rotation stays pending until approval is granted', async () => {
   const { prisma, secrets, approvals } = createConfigurationGovernancePrismaMock()
 
   const moduleRef = await Test.createTestingModule({
@@ -887,7 +887,7 @@ test('e2e: secret rotation stays pending until approval is granted', async () =>
   }
 })
 
-test('e2e: failed secret registration execution records failure and allows retry', async () => {
+it('e2e: failed secret registration execution records failure and allows retry', async () => {
   const { prisma, secrets, approvals } = createConfigurationGovernancePrismaMock({ failSecretCreateOnce: true })
 
   const moduleRef = await Test.createTestingModule({
@@ -977,7 +977,7 @@ test('e2e: failed secret registration execution records failure and allows retry
   }
 })
 
-test('e2e: configuration governance approval queries only expose configuration approvals', async () => {
+it('e2e: configuration governance approval queries only expose configuration approvals', async () => {
   const { prisma, approvals, entries, secrets, featureFlags } = createConfigurationGovernancePrismaMock()
   const now = new Date()
   entries.push({

@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict';
-import test from 'node:test';
 import {
   toTournamentContract,
   toMatchContract,
@@ -20,7 +20,7 @@ import {
 /*  toTournamentContract                                               */
 /* ------------------------------------------------------------------ */
 
-test('toTournamentContract maps full tournament correctly', () => {
+it('toTournamentContract maps full tournament correctly', () => {
   const tournament = {
     id: 't-001',
     tenantId: 'tenant-1',
@@ -56,7 +56,7 @@ test('toTournamentContract maps full tournament correctly', () => {
   assert.equal(contract.createdAt, '2026-06-01T08:00:00.000Z');
 });
 
-test('toTournamentContract maps tournament with minimal fields', () => {
+it('toTournamentContract maps tournament with minimal fields', () => {
   const tournament = {
     id: 't-002',
     tenantId: 'tenant-1',
@@ -89,7 +89,7 @@ test('toTournamentContract maps tournament with minimal fields', () => {
 /*  toMatchContract                                                    */
 /* ------------------------------------------------------------------ */
 
-test('toMatchContract maps match with both players and result', () => {
+it('toMatchContract maps match with both players and result', () => {
   const match = {
     id: 'm-001',
     tournamentId: 't-001',
@@ -121,7 +121,7 @@ test('toMatchContract maps match with both players and result', () => {
   assert.equal(contract.scheduledAt, '2026-07-02T14:00:00.000Z');
 });
 
-test('toMatchContract maps match with bye (no player2)', () => {
+it('toMatchContract maps match with bye (no player2)', () => {
   const match = {
     id: 'm-002',
     tournamentId: 't-001',
@@ -150,7 +150,7 @@ test('toMatchContract maps match with bye (no player2)', () => {
 /*  toRankingContract                                                  */
 /* ------------------------------------------------------------------ */
 
-test('toRankingContract maps ranking with all fields', () => {
+it('toRankingContract maps ranking with all fields', () => {
   const ranking = {
     id: 'r-001',
     tournamentId: 't-001',
@@ -178,7 +178,7 @@ test('toRankingContract maps ranking with all fields', () => {
 /*  toTeamRegistrationContract                                         */
 /* ------------------------------------------------------------------ */
 
-test('toTeamRegistrationContract maps team registration correctly', () => {
+it('toTeamRegistrationContract maps team registration correctly', () => {
   const reg = {
     id: 'tr-001',
     tournamentId: 't-001',
@@ -200,7 +200,7 @@ test('toTeamRegistrationContract maps team registration correctly', () => {
   assert.equal(contract.createdAt, '2026-06-20T08:00:00.000Z');
 });
 
-test('toTeamRegistrationContract maps single-member team', () => {
+it('toTeamRegistrationContract maps single-member team', () => {
   const reg = {
     id: 'tr-002',
     tournamentId: 't-001',
@@ -222,11 +222,11 @@ test('toTeamRegistrationContract maps single-member team', () => {
 /*  isTournamentOpenForRegistration                                    */
 /* ------------------------------------------------------------------ */
 
-test('isTournamentOpenForRegistration returns true for OPEN status', () => {
+it('isTournamentOpenForRegistration returns true for OPEN status', () => {
   assert.equal(isTournamentOpenForRegistration('OPEN'), true);
 });
 
-test('isTournamentOpenForRegistration returns false for non-OPEN statuses', () => {
+it('isTournamentOpenForRegistration returns false for non-OPEN statuses', () => {
   assert.equal(isTournamentOpenForRegistration('DRAFT'), false);
   assert.equal(isTournamentOpenForRegistration('ONGOING'), false);
   assert.equal(isTournamentOpenForRegistration('COMPLETED'), false);
@@ -237,13 +237,13 @@ test('isTournamentOpenForRegistration returns false for non-OPEN statuses', () =
 /*  hasAvailableSlots                                                   */
 /* ------------------------------------------------------------------ */
 
-test('hasAvailableSlots returns true when slots remain', () => {
+it('hasAvailableSlots returns true when slots remain', () => {
   assert.equal(hasAvailableSlots(32, 64), true);
   assert.equal(hasAvailableSlots(0, 8), true);
   assert.equal(hasAvailableSlots(63, 64), true);
 });
 
-test('hasAvailableSlots returns false when full or over capacity', () => {
+it('hasAvailableSlots returns false when full or over capacity', () => {
   assert.equal(hasAvailableSlots(64, 64), false);
   assert.equal(hasAvailableSlots(100, 64), false);
 });
@@ -252,13 +252,13 @@ test('hasAvailableSlots returns false when full or over capacity', () => {
 /*  isDraw                                                              */
 /* ------------------------------------------------------------------ */
 
-test('isDraw returns true when scores are equal', () => {
+it('isDraw returns true when scores are equal', () => {
   assert.equal(isDraw(0, 0), true);
   assert.equal(isDraw(3, 3), true);
   assert.equal(isDraw(100, 100), true);
 });
 
-test('isDraw returns false when scores differ', () => {
+it('isDraw returns false when scores differ', () => {
   assert.equal(isDraw(2, 1), false);
   assert.equal(isDraw(0, 1), false);
   assert.equal(isDraw(5, 3), false);

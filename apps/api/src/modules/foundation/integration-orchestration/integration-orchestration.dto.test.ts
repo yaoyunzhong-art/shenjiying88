@@ -1,10 +1,10 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { validateSync } from 'class-validator'
 import { PublishEventDto, WebhookIngestDto, EventListQueryDto } from './integration-orchestration.dto'
 
-test('PublishEventDto accepts valid event publication payload', () => {
+it('PublishEventDto accepts valid event publication payload', () => {
   const dto = Object.assign(new PublishEventDto(), {
     eventName: 'storefront.order.created',
     source: 'storefront-web',
@@ -16,7 +16,7 @@ test('PublishEventDto accepts valid event publication payload', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('PublishEventDto rejects missing eventName and payload', () => {
+it('PublishEventDto rejects missing eventName and payload', () => {
   const dto = Object.assign(new PublishEventDto(), {
     source: 'storefront-web'
   })
@@ -28,7 +28,7 @@ test('PublishEventDto rejects missing eventName and payload', () => {
   assert.equal(propertiesWithErrors.includes('payload'), true)
 })
 
-test('PublishEventDto accepts minimal event with only required fields', () => {
+it('PublishEventDto accepts minimal event with only required fields', () => {
   const dto = Object.assign(new PublishEventDto(), {
     eventName: 'system.heartbeat',
     payload: {}
@@ -37,7 +37,7 @@ test('PublishEventDto accepts minimal event with only required fields', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('WebhookIngestDto accepts valid webhook ingestion payload', () => {
+it('WebhookIngestDto accepts valid webhook ingestion payload', () => {
   const dto = Object.assign(new WebhookIngestDto(), {
     eventId: 'wh-001',
     eventType: 'payment.completed',
@@ -50,7 +50,7 @@ test('WebhookIngestDto accepts valid webhook ingestion payload', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('WebhookIngestDto rejects missing signature, timestamp, and payload', () => {
+it('WebhookIngestDto rejects missing signature, timestamp, and payload', () => {
   const dto = Object.assign(new WebhookIngestDto(), {
     eventId: 'wh-002'
   })
@@ -63,7 +63,7 @@ test('WebhookIngestDto rejects missing signature, timestamp, and payload', () =>
   assert.equal(properties.includes('payload'), true)
 })
 
-test('WebhookIngestDto accepts minimal webhook with only required fields', () => {
+it('WebhookIngestDto accepts minimal webhook with only required fields', () => {
   const dto = Object.assign(new WebhookIngestDto(), {
     signature: 'sha256=def456',
     timestamp: '2026-06-13T20:00:00Z',
@@ -73,7 +73,7 @@ test('WebhookIngestDto accepts minimal webhook with only required fields', () =>
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('EventListQueryDto accepts optional source filter', () => {
+it('EventListQueryDto accepts optional source filter', () => {
   const withSource = Object.assign(new EventListQueryDto(), {
     source: 'storefront-web'
   })

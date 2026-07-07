@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 
 describe('AiRuleEngineController', () => {
   const { AiRuleEngineController } = require('./ai-rule-engine.controller')
@@ -9,18 +9,18 @@ describe('AiRuleEngineController', () => {
   let controller: InstanceType<typeof AiRuleEngineController>
   let service: InstanceType<typeof AiRuleEngineService>
 
-  test.beforeEach(() => {
+  beforeEach(() => {
     service = new AiRuleEngineService()
     controller = new AiRuleEngineController(service)
   })
 
   describe('route metadata', () => {
-    test('controller path metadata should be ai-rule-engine', () => {
+    it('controller path metadata should be ai-rule-engine', () => {
       const path = Reflect.getMetadata('path', AiRuleEngineController)
       assert.equal(path, 'ai-rule-engine')
     })
 
-    test('evaluate route should have POST method and evaluate path', () => {
+    it('evaluate route should have POST method and evaluate path', () => {
       const method = Reflect.getMetadata('method', AiRuleEngineController.prototype.evaluate)
       const path = Reflect.getMetadata('path', AiRuleEngineController.prototype.evaluate)
 
@@ -28,7 +28,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(path, 'evaluate')
     })
 
-    test('evaluateMemberLevel route should have POST method', () => {
+    it('evaluateMemberLevel route should have POST method', () => {
       const method = Reflect.getMetadata('method', AiRuleEngineController.prototype.evaluateMemberLevel)
       const path = Reflect.getMetadata('path', AiRuleEngineController.prototype.evaluateMemberLevel)
 
@@ -36,7 +36,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(path, 'evaluate/member-level')
     })
 
-    test('detectDeviceAnomaly route should have POST method', () => {
+    it('detectDeviceAnomaly route should have POST method', () => {
       const method = Reflect.getMetadata('method', AiRuleEngineController.prototype.detectDeviceAnomaly)
       const path = Reflect.getMetadata('path', AiRuleEngineController.prototype.detectDeviceAnomaly)
 
@@ -44,7 +44,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(path, 'evaluate/device-anomaly')
     })
 
-    test('evaluateBatch route should have POST method', () => {
+    it('evaluateBatch route should have POST method', () => {
       const method = Reflect.getMetadata('method', AiRuleEngineController.prototype.evaluateBatch)
       const path = Reflect.getMetadata('path', AiRuleEngineController.prototype.evaluateBatch)
 
@@ -52,7 +52,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(path, 'evaluate/batch')
     })
 
-    test('getEngines route should have GET method', () => {
+    it('getEngines route should have GET method', () => {
       const method = Reflect.getMetadata('method', AiRuleEngineController.prototype.getEngines)
       const path = Reflect.getMetadata('path', AiRuleEngineController.prototype.getEngines)
 
@@ -60,7 +60,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(path, 'engines')
     })
 
-    test('evaluateRiskScore route should have POST method', () => {
+    it('evaluateRiskScore route should have POST method', () => {
       const method = Reflect.getMetadata('method', AiRuleEngineController.prototype.evaluateRiskScore)
       const path = Reflect.getMetadata('path', AiRuleEngineController.prototype.evaluateRiskScore)
 
@@ -70,7 +70,7 @@ describe('AiRuleEngineController', () => {
   })
 
   describe('POST /ai-rule-engine/evaluate (member-level)', () => {
-    test('should evaluate member level for SVIP candidate', () => {
+    it('should evaluate member level for SVIP candidate', () => {
       const response = controller.evaluate({
         type: 'member-level',
         data: {
@@ -92,7 +92,7 @@ describe('AiRuleEngineController', () => {
       assert.ok(result.confidence > 0.7)
     })
 
-    test('should evaluate member level for REGULAR member', () => {
+    it('should evaluate member level for REGULAR member', () => {
       const response = controller.evaluate({
         type: 'member-level',
         data: {
@@ -112,7 +112,7 @@ describe('AiRuleEngineController', () => {
   })
 
   describe('POST /ai-rule-engine/evaluate (device-anomaly)', () => {
-    test('should detect CPU anomaly via evaluate endpoint', () => {
+    it('should detect CPU anomaly via evaluate endpoint', () => {
       const response = controller.evaluate({
         type: 'device-anomaly',
         data: {
@@ -137,7 +137,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.anomalyType, 'CPU_SPIKE')
     })
 
-    test('should return no anomaly for healthy device', () => {
+    it('should return no anomaly for healthy device', () => {
       const response = controller.evaluate({
         type: 'device-anomaly',
         data: {
@@ -162,7 +162,7 @@ describe('AiRuleEngineController', () => {
   })
 
   describe('POST /ai-rule-engine/evaluate/member-level', () => {
-    test('should evaluate member level directly', () => {
+    it('should evaluate member level directly', () => {
       const response = controller.evaluateMemberLevel({
         memberId: 'direct-001',
         totalPoints: 6000,
@@ -178,7 +178,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.triggeredRules.length, 3)
     })
 
-    test('should handle minimal input', () => {
+    it('should handle minimal input', () => {
       const response = controller.evaluateMemberLevel({
         memberId: 'direct-002',
         totalPoints: 0,
@@ -194,7 +194,7 @@ describe('AiRuleEngineController', () => {
   })
 
   describe('POST /ai-rule-engine/evaluate/device-anomaly', () => {
-    test('should detect device anomaly directly', () => {
+    it('should detect device anomaly directly', () => {
       const response = controller.detectDeviceAnomaly({
         deviceId: 'direct-dev-001',
         storeId: 'store-001',
@@ -214,7 +214,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.severity, 'HIGH')
     })
 
-    test('should return no anomaly for normal metrics', () => {
+    it('should return no anomaly for normal metrics', () => {
       const response = controller.detectDeviceAnomaly({
         deviceId: 'direct-dev-002',
         storeId: 'store-001',
@@ -235,7 +235,7 @@ describe('AiRuleEngineController', () => {
   })
 
   describe('POST /ai-rule-engine/evaluate/batch', () => {
-    test('should batch evaluate multiple member levels', () => {
+    it('should batch evaluate multiple member levels', () => {
       const response = controller.evaluateBatch({
         items: [
           {
@@ -258,7 +258,7 @@ describe('AiRuleEngineController', () => {
       assert.ok(Date.parse(response.timestamp) > 0)
     })
 
-    test('should batch evaluate mixed types (member + device)', () => {
+    it('should batch evaluate mixed types (member + device)', () => {
       const response = controller.evaluateBatch({
         items: [
           {
@@ -292,7 +292,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(response.items[2].type, 'device-anomaly')
     })
 
-    test('should handle empty batch request', () => {
+    it('should handle empty batch request', () => {
       const response = controller.evaluateBatch({ items: [] })
 
       assert.equal(response.total, 0)
@@ -303,7 +303,7 @@ describe('AiRuleEngineController', () => {
   })
 
   describe('GET /ai-rule-engine/engines', () => {
-    test('should return all engine statuses', () => {
+    it('should return all engine statuses', () => {
       const engines = controller.getEngines()
 
       assert.ok(Array.isArray(engines))
@@ -329,7 +329,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(riskEngine.actionsCount, 3)
     })
 
-    test('engine status should include valid status values', () => {
+    it('engine status should include valid status values', () => {
       const engines = controller.getEngines()
 
       for (const engine of engines) {
@@ -344,7 +344,7 @@ describe('AiRuleEngineController', () => {
   })
 
   describe('POST /ai-rule-engine/evaluate/risk-score', () => {
-    test('should evaluate CRITICAL risk for flagged subject', () => {
+    it('should evaluate CRITICAL risk for flagged subject', () => {
       const response = controller.evaluateRiskScore({
         subjectId: 'risk-sub-001',
         subjectType: 'member',
@@ -371,7 +371,7 @@ describe('AiRuleEngineController', () => {
       assert.ok(result.recommendations.length >= 3)
     })
 
-    test('should report LOW risk for clean subject', () => {
+    it('should report LOW risk for clean subject', () => {
       const response = controller.evaluateRiskScore({
         subjectId: 'risk-sub-002',
         subjectType: 'store',
@@ -392,7 +392,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.triggeredRules.length, 0)
     })
 
-    test('should report MEDIUM risk for single flag', () => {
+    it('should report MEDIUM risk for single flag', () => {
       const response = controller.evaluateRiskScore({
         subjectId: 'risk-sub-003',
         subjectType: 'device',
@@ -407,7 +407,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.riskScore, 25)
     })
 
-    test('should cap risk score at 100', () => {
+    it('should cap risk score at 100', () => {
       const response = controller.evaluateRiskScore({
         subjectId: 'risk-sub-004',
         subjectType: 'member',
@@ -428,7 +428,7 @@ describe('AiRuleEngineController', () => {
   })
 
   describe('error handling', () => {
-    test('should throw for unsupported evaluation type', () => {
+    it('should throw for unsupported evaluation type', () => {
       assert.throws(
         () =>
           controller.evaluate({

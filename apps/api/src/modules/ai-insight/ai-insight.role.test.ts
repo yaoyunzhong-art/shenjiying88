@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-insight] [C] 角色测试
  * 
@@ -9,7 +10,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { AiInsightController } from './ai-insight.controller'
 import { AiInsightService } from './ai-insight.service'
 
@@ -51,7 +51,7 @@ const STORE_ID = 'store-01'
 
 // ── 👔店长 ──
 describe('👔店长 (StoreManager)', () => {
-  test('正常流程: 查看仪表盘摘要 → 生成营收报告 → 查看异常', () => {
+  it('正常流程: 查看仪表盘摘要 → 生成营收报告 → 查看异常', () => {
     const ctrl = createController()
 
     // 1. 查看仪表盘摘要
@@ -80,7 +80,7 @@ describe('👔店长 (StoreManager)', () => {
     assert.ok(Array.isArray(anomalies), '异常应为数组')
   })
 
-  test('权限边界: 可执行所有操作 — KPI、报告、异常、预测', () => {
+  it('权限边界: 可执行所有操作 — KPI、报告、异常、预测', () => {
     const ctrl = createController()
 
     // KPI
@@ -131,7 +131,7 @@ describe('👔店长 (StoreManager)', () => {
 
 // ── 🛒前台 ──
 describe('🛒前台 (FrontDesk)', () => {
-  test('正常流程: 查看今日仪表盘 → 查看KPI', () => {
+  it('正常流程: 查看今日仪表盘 → 查看KPI', () => {
     const ctrl = createController()
 
     // 1. 今日仪表盘
@@ -154,7 +154,7 @@ describe('🛒前台 (FrontDesk)', () => {
     }
   })
 
-  test('权限边界: 可读但不可改 — 无法生成报告/确认异常', () => {
+  it('权限边界: 可读但不可改 — 无法生成报告/确认异常', () => {
     const ctrl = createController()
     const permissions = ROLE_PERMISSIONS.FrontDesk
 
@@ -179,7 +179,7 @@ describe('🛒前台 (FrontDesk)', () => {
 
 // ── 👥HR ──
 describe('👥HR (HR)', () => {
-  test('正常流程: 查看会员相关 KPI → 仪表盘摘要', () => {
+  it('正常流程: 查看会员相关 KPI → 仪表盘摘要', () => {
     const ctrl = createController()
 
     // 1. 按会员分类筛选 KPI
@@ -206,7 +206,7 @@ describe('👥HR (HR)', () => {
     }
   })
 
-  test('权限边界: 可查看KPI和仪表盘，不可操作异常/预测', () => {
+  it('权限边界: 可查看KPI和仪表盘，不可操作异常/预测', () => {
     const permissions = ROLE_PERMISSIONS.HR
 
     // 确保有读权限
@@ -225,7 +225,7 @@ describe('👥HR (HR)', () => {
 
 // ── 🔧安监 ──
 describe('🔧安监 (Security)', () => {
-  test('正常流程: 检测异常 → 查看异常 → 确认 → 解决', () => {
+  it('正常流程: 检测异常 → 查看异常 → 确认 → 解决', () => {
     const ctrl = createController()
 
     // 1. 执行异常检测
@@ -259,7 +259,7 @@ describe('🔧安监 (Security)', () => {
     }
   })
 
-  test('权限边界: 可操作异常但不可生成报告/预测', () => {
+  it('权限边界: 可操作异常但不可生成报告/预测', () => {
     const permissions = ROLE_PERMISSIONS.Security
 
     // 确保有异常操作权限
@@ -283,7 +283,7 @@ describe('🔧安监 (Security)', () => {
 
 // ── 🎮导玩员 ──
 describe('🎮导玩员 (Guide)', () => {
-  test('正常流程: 查看游戏类 KPI → 仪表盘游戏指标', () => {
+  it('正常流程: 查看游戏类 KPI → 仪表盘游戏指标', () => {
     const ctrl = createController()
 
     // 1. 查看游戏类 KPI
@@ -309,7 +309,7 @@ describe('🎮导玩员 (Guide)', () => {
     }
   })
 
-  test('权限边界: 仅可查看 KPI 和仪表盘，不可查看报告/异常/预测', () => {
+  it('权限边界: 仅可查看 KPI 和仪表盘，不可查看报告/异常/预测', () => {
     const permissions = ROLE_PERMISSIONS.Guide
 
     assert.ok(permissions.includes('getKPIs'))
@@ -331,7 +331,7 @@ describe('🎮导玩员 (Guide)', () => {
 
 // ── 🎯运行专员 ──
 describe('🎯运行专员 (Operations)', () => {
-  test('正常流程: KPI 看板 → 异常检测 → 仪表盘 → 趋势预测', () => {
+  it('正常流程: KPI 看板 → 异常检测 → 仪表盘 → 趋势预测', () => {
     const ctrl = createController()
 
     // 1. KPI 看板
@@ -354,7 +354,7 @@ describe('🎯运行专员 (Operations)', () => {
     assert.ok(trend.confidence >= 0 && trend.confidence <= 1, '置信度应在 0-1 之间')
   })
 
-  test('权限边界: 拥有全部操作权限，但验证数据一致性', () => {
+  it('权限边界: 拥有全部操作权限，但验证数据一致性', () => {
     const permissions = ROLE_PERMISSIONS.Operations
     // 运行专员应有全部 11 项权限
     assert.equal(permissions.length, 11, '运行专员应有全部权限')
@@ -388,7 +388,7 @@ describe('🎯运行专员 (Operations)', () => {
 
 // ── 🤝团建 ──
 describe('🤝团建 (Teambuilding)', () => {
-  test('正常流程: 查看到店人数 KPI → 仪表盘摘要 → 报告列表', () => {
+  it('正常流程: 查看到店人数 KPI → 仪表盘摘要 → 报告列表', () => {
     const ctrl = createController()
 
     // 1. 查看到店类 KPI（用于团建策划参考）
@@ -419,7 +419,7 @@ describe('🤝团建 (Teambuilding)', () => {
     }
   })
 
-  test('权限边界: 可查看KPI/报告/仪表盘，不可生成报告/操作异常/预测', () => {
+  it('权限边界: 可查看KPI/报告/仪表盘，不可生成报告/操作异常/预测', () => {
     const permissions = ROLE_PERMISSIONS.Teambuilding
 
     assert.ok(permissions.includes('getKPIs'))
@@ -441,7 +441,7 @@ describe('🤝团建 (Teambuilding)', () => {
 
 // ── 📢营销 ──
 describe('📢营销 (Marketing)', () => {
-  test('正常流程: 生成营收报告 → 查看趋势预测 → 仪表盘', () => {
+  it('正常流程: 生成营收报告 → 查看趋势预测 → 仪表盘', () => {
     const ctrl = createController()
 
     // 1. 生成营收报告（用于营销分析）
@@ -471,7 +471,7 @@ describe('📢营销 (Marketing)', () => {
     assert.ok(typeof dashboard.today.revenue === 'number')
   })
 
-  test('权限边界: 可生成报告/预测，但不可操作异常', () => {
+  it('权限边界: 可生成报告/预测，但不可操作异常', () => {
     const permissions = ROLE_PERMISSIONS.Marketing
 
     // 确保有报告和预测权限
@@ -500,7 +500,7 @@ describe('📢营销 (Marketing)', () => {
 
 // ── 跨角色对比测试 ──
 describe('跨角色对比', () => {
-  test('所有角色权限矩阵不重叠验证', () => {
+  it('所有角色权限矩阵不重叠验证', () => {
     // 验证店长和运行专员权限完全相同（都是全部）
     assert.deepEqual(
       ROLE_PERMISSIONS.StoreManager.sort(),
@@ -525,7 +525,7 @@ describe('跨角色对比', () => {
     }
   })
 
-  test('所有角色都能成功获取仪表盘摘要', () => {
+  it('所有角色都能成功获取仪表盘摘要', () => {
     const ctrl = createController()
 
     for (const [role, permissions] of Object.entries(ROLE_PERMISSIONS)) {

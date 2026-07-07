@@ -1,7 +1,7 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { BootstrapModule } from './bootstrap.module'
 import { BootstrapController } from './bootstrap.controller'
 import { BootstrapService } from './bootstrap.service'
@@ -9,7 +9,7 @@ import { BootstrapService } from './bootstrap.service'
 describe('BootstrapModule', () => {
   let moduleRef: TestingModule
 
-  test('should compile and instantiate', async () => {
+  it('should compile and instantiate', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [BootstrapModule],
     }).compile()
@@ -17,7 +17,7 @@ describe('BootstrapModule', () => {
     assert.ok(moduleRef)
   })
 
-  test('should provide BootstrapController', async () => {
+  it('should provide BootstrapController', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [BootstrapModule],
     }).compile()
@@ -27,7 +27,7 @@ describe('BootstrapModule', () => {
     assert.ok(controller instanceof BootstrapController)
   })
 
-  test('should provide BootstrapService', async () => {
+  it('should provide BootstrapService', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [BootstrapModule],
     }).compile()
@@ -37,7 +37,7 @@ describe('BootstrapModule', () => {
     assert.ok(service instanceof BootstrapService)
   })
 
-  test('BootstrapService should be exported', async () => {
+  it('BootstrapService should be exported', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [BootstrapModule],
     }).compile()

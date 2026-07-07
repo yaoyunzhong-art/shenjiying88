@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [transactions] [D] controller spec 补全
  *
@@ -13,7 +14,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe, beforeEach, afterEach } from 'node:test'
 import { resetTransactionsServiceTestState } from './transactions.service'
 import { TransactionsController } from './transactions.controller'
 import { TransactionsService } from './transactions.service'
@@ -105,7 +105,7 @@ afterEach(() => { resetTransactionsServiceTestState() })
 
 describe('transactions controller', () => {
   describe('startCheckout', () => {
-    test('should create checkout and return aggregate', async () => {
+    it('should create checkout and return aggregate', async () => {
       reg('m-1')
       const result = await controller.startCheckout(CTX, {
         memberId: 'm-1',
@@ -118,7 +118,7 @@ describe('transactions controller', () => {
       assert.equal(result.payment.amount, 59.8)
     })
 
-    test('should throw when items is empty (boundary)', async () => {
+    it('should throw when items is empty (boundary)', async () => {
       reg('m-1b')
       await assert.rejects(
         () => controller.startCheckout(CTX, { memberId: 'm-1b', items: [], paymentChannel: 'wechat' }),
@@ -126,7 +126,7 @@ describe('transactions controller', () => {
       )
     })
 
-    test('should throw when member not found (negative)', async () => {
+    it('should throw when member not found (negative)', async () => {
       await assert.rejects(
         () => controller.startCheckout(CTX, { memberId: 'ghost', items: [{ skuId: 'x', quantity: 1, price: 10 }], paymentChannel: 'wechat' }),
         /not found/
@@ -135,7 +135,7 @@ describe('transactions controller', () => {
   })
 
   describe('applyPaymentCallback', () => {
-    test('should apply payment callback (positive)', async () => {
+    it('should apply payment callback (positive)', async () => {
       const initial = await checkoutOnly('m-2', 30, 'ep-2')
       const result = await controller.applyPaymentCallback({
         orderId: initial.order.orderId,
@@ -150,7 +150,7 @@ describe('transactions controller', () => {
       assert.equal(result.order.status, CashierOrderStatus.Paid)
     })
 
-    test('should throw for unknown order (negative)', async () => {
+    it('should throw for unknown order (negative)', async () => {
       await assert.rejects(
         () => controller.applyPaymentCallback({
           orderId: 'ghost', paymentId: 'ghost-pay', tenantId: CTX.tenantId, status: CashierPaymentStatus.Succeeded, amount: 10
@@ -161,32 +161,32 @@ describe('transactions controller', () => {
   })
 
   describe('getOrderTransaction', () => {
-    test('should return aggregate for existing order', async () => {
+    it('should return aggregate for existing order', async () => {
       const created = await checkoutAndPay('m-3', 50, 'ep-3')
       const result = controller.getOrderTransaction(created.order.orderId, CTX)
       assert.equal(result.order.memberId, 'm-3')
       assert.ok(result.payment)
     })
 
-    test('should throw for non-existing order (negative)', () => {
+    it('should throw for non-existing order (negative)', () => {
       assert.throws(() => controller.getOrderTransaction('ghost', CTX), /not found/)
     })
   })
 
   describe('listOrderTransactions', () => {
-    test('should list all orders for tenant', async () => {
+    it('should list all orders for tenant', async () => {
       await checkoutAndPay('m-4', 10, 'ep-4')
       const result = controller.listOrderTransactions(CTX)
       assert.ok(result.length >= 1)
     })
 
-    test('should filter by memberId', async () => {
+    it('should filter by memberId', async () => {
       await checkoutAndPay('m-5', 20, 'ep-5')
       const result = controller.listOrderTransactions(CTX, { memberId: 'm-5' })
       result.forEach(r => assert.equal(r.order.memberId, 'm-5'))
     })
 
-    test('should filter by hasRefund=true (boundary)', async () => {
+    it('should filter by hasRefund=true (boundary)', async () => {
       const created = await checkoutAndPay('m-rf', 100, 'ep-rf')
       await controller.requestRefund(created.order.orderId, CTX, { reason: 'test', refundAmount: 50 })
       const result = controller.listOrderTransactions(CTX, { hasRefund: true })
@@ -195,7 +195,7 @@ describe('transactions controller', () => {
   })
 
   describe('requestRefund', () => {
-    test('should create pending refund for paid order', async () => {
+    it('should create pending refund for paid order', async () => {
       const created = await checkoutAndPay('m-6', 80, 'ep-6')
       const result = await controller.requestRefund(created.order.orderId, CTX, { reason: 'quality', refundAmount: 30, operator: 'ops' })
       const refund = result.refunds.find(r => r.status === TransactionRefundStatus.Pending)
@@ -204,7 +204,7 @@ describe('transactions controller', () => {
       assert.equal(refund.operator, 'ops')
     })
 
-    test('should throw when refund exceeds payment (negative)', async () => {
+    it('should throw when refund exceeds payment (negative)', async () => {
       const created = await checkoutAndPay('m-7', 50, 'ep-7')
       await assert.rejects(
         () => controller.requestRefund(created.order.orderId, CTX, { reason: 'too much', refundAmount: 999 }),
@@ -212,7 +212,7 @@ describe('transactions controller', () => {
       )
     })
 
-    test('should throw when order is not paid (boundary)', async () => {
+    it('should throw when order is not paid (boundary)', async () => {
       const created = await checkoutOnly('m-8', 30, 'ep-8')
       await assert.rejects(
         () => controller.requestRefund(created.order.orderId, CTX, { reason: 'premature', refundAmount: 10 }),
@@ -222,7 +222,7 @@ describe('transactions controller', () => {
   })
 
   describe('approveRefund / rejectRefund', () => {
-    test('should approve a pending refund', async () => {
+    it('should approve a pending refund', async () => {
       const created = await checkoutAndPay('m-9', 60, 'ep-9')
       const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'ok', refundAmount: 20 })
       const refundId = withRefund.refunds[0].refundId
@@ -231,7 +231,7 @@ describe('transactions controller', () => {
       assert.equal(found?.status, TransactionRefundStatus.Completed)
     })
 
-    test('should reject a pending refund', async () => {
+    it('should reject a pending refund', async () => {
       const created = await checkoutAndPay('m-10', 40, 'ep-10')
       const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'no', refundAmount: 10 })
       const refundId = withRefund.refunds[0].refundId
@@ -239,7 +239,7 @@ describe('transactions controller', () => {
       assert.equal(rejected.refunds.find(r => r.refundId === refundId)?.status, TransactionRefundStatus.Rejected)
     })
 
-    test('should throw when approving already handled refund (negative)', async () => {
+    it('should throw when approving already handled refund (negative)', async () => {
       const created = await checkoutAndPay('m-11', 70, 'ep-11')
       const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'x', refundAmount: 10 })
       const refundId = withRefund.refunds[0].refundId
@@ -252,13 +252,13 @@ describe('transactions controller', () => {
   })
 
   describe('listRefunds / getRefund / listOrderRefunds', () => {
-    test('should list refunds for tenant', async () => {
+    it('should list refunds for tenant', async () => {
       const created = await checkoutAndPay('m-12', 100, 'ep-12')
       await controller.requestRefund(created.order.orderId, CTX, { reason: 'list', refundAmount: 25 })
       assert.ok(controller.listRefunds(CTX).length >= 1)
     })
 
-    test('should get single refund by id', async () => {
+    it('should get single refund by id', async () => {
       const created = await checkoutAndPay('m-13', 90, 'ep-13')
       const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'get', refundAmount: 15 })
       const refundId = withRefund.refunds[0].refundId
@@ -267,11 +267,11 @@ describe('transactions controller', () => {
       assert.equal(refund.refundAmount, 15)
     })
 
-    test('should throw for unknown refund id (negative)', () => {
+    it('should throw for unknown refund id (negative)', () => {
       assert.throws(() => controller.getRefund('not-exist', CTX), /not found/)
     })
 
-    test('should list refunds for specific order', async () => {
+    it('should list refunds for specific order', async () => {
       const created = await checkoutAndPay('m-14', 120, 'ep-14')
       await controller.requestRefund(created.order.orderId, CTX, { reason: 'order', refundAmount: 20 })
       assert.ok(controller.listOrderRefunds(created.order.orderId, CTX).length >= 1)
@@ -279,7 +279,7 @@ describe('transactions controller', () => {
   })
 
   describe('listPendingRefunds', () => {
-    test('should return only pending refunds', async () => {
+    it('should return only pending refunds', async () => {
       const created = await checkoutAndPay('m-15', 200, 'ep-15')
       await controller.requestRefund(created.order.orderId, CTX, { reason: 'pending', refundAmount: 50 })
       const pending = controller.listPendingRefunds(CTX)
@@ -289,7 +289,7 @@ describe('transactions controller', () => {
   })
 
   describe('batchApproveRefunds / batchRejectRefunds', () => {
-    test('should batch approve refunds', async () => {
+    it('should batch approve refunds', async () => {
       const created = await checkoutAndPay('m-16', 300, 'ep-16')
       const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'batch', refundAmount: 30 })
       const refundId = withRefund.refunds[0].refundId
@@ -299,7 +299,7 @@ describe('transactions controller', () => {
       assert.equal(result.refunds[0].status, TransactionRefundStatus.Completed)
     })
 
-    test('should batch reject refunds', async () => {
+    it('should batch reject refunds', async () => {
       const created = await checkoutAndPay('m-17', 150, 'ep-17')
       const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'batch', refundAmount: 10 })
       const refundId = withRefund.refunds[0].refundId
@@ -309,14 +309,14 @@ describe('transactions controller', () => {
       assert.equal(result.refunds[0].status, TransactionRefundStatus.Rejected)
     })
 
-    test('should skip non-existent refund ids (boundary)', async () => {
+    it('should skip non-existent refund ids (boundary)', async () => {
       const result = await controller.batchApproveRefunds(CTX, { refundIds: ['ghost-refund'], operator: 'ghost' })
       assert.equal(result.skippedCount, 1)
     })
   })
 
   describe('batchAssignRefunds / batchClaimRefunds', () => {
-    test('should batch assign refunds', async () => {
+    it('should batch assign refunds', async () => {
       const created = await checkoutAndPay('m-18', 80, 'ep-18')
       const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'assign', refundAmount: 20 })
       const dto: BatchAssignTransactionRefundsDto = {
@@ -329,7 +329,7 @@ describe('transactions controller', () => {
       assert.equal(result.refunds[0].assignedTo, 'assigned-user')
     })
 
-    test('should batch claim refunds', async () => {
+    it('should batch claim refunds', async () => {
       const created = await checkoutAndPay('m-19', 60, 'ep-19')
       const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'claim', refundAmount: 10 })
       const dto: BatchClaimTransactionRefundsDto = {
@@ -343,25 +343,25 @@ describe('transactions controller', () => {
   })
 
   describe('timeoutCloseOrder / batchTimeoutCloseOrders / manualCloseOrder', () => {
-    test('should timeout close a stale order', async () => {
+    it('should timeout close a stale order', async () => {
       const created = await checkoutOnly('m-20', 40, 'ep-20')
       const result = await controller.timeoutCloseOrder(created.order.orderId, CTX, { reason: 'timeout', operator: 'sys' })
       assert.equal(result.order.closeReason, 'PAYMENT_TIMEOUT')
     })
 
-    test('should batch timeout close orders', async () => {
+    it('should batch timeout close orders', async () => {
       await checkoutOnly('m-21', 25, 'ep-21')
       const result = await controller.batchTimeoutCloseOrders(CTX, { memberId: 'm-21', limit: 10 })
       assert.ok(result.processedCount >= 1)
     })
 
-    test('should manual close an order', async () => {
+    it('should manual close an order', async () => {
       const created = await checkoutOnly('m-22', 35, 'ep-22')
       const result = await controller.manualCloseOrder(created.order.orderId, CTX, { reason: 'cancel', operator: 'admin' })
       assert.equal(result.order.status, CashierOrderStatus.Closed)
     })
 
-    test('should throw when closing non-existent order (negative)', async () => {
+    it('should throw when closing non-existent order (negative)', async () => {
       await assert.rejects(
         () => controller.timeoutCloseOrder('ghost', CTX, { reason: 'nope', operator: 'sys' }),
         /not found/
@@ -370,7 +370,7 @@ describe('transactions controller', () => {
   })
 
   describe('getRefundDashboard', () => {
-    test('should return dashboard with status groups and aging', async () => {
+    it('should return dashboard with status groups and aging', async () => {
       const created = await checkoutAndPay('m-23', 500, 'ep-23')
       await controller.requestRefund(created.order.orderId, CTX, { reason: 'dash', refundAmount: 100 })
       const dashboard = controller.getRefundDashboard(CTX)
@@ -380,7 +380,7 @@ describe('transactions controller', () => {
       assert.ok(dashboard.slaThresholds.teamLeadMinutes > 0)
     })
 
-    test('should respect query limits (boundary)', () => {
+    it('should respect query limits (boundary)', () => {
       const dashboard = controller.getRefundDashboard(CTX, { priorityQueueLimit: 1, recentReviewLimit: 1, dispatchQueueLimit: 2 })
       assert.ok(dashboard.priorityQueue.length <= 1)
       assert.ok(dashboard.recentReviews.length <= 1)
@@ -389,27 +389,27 @@ describe('transactions controller', () => {
   })
 
   describe('lyt snapshots', () => {
-    test('should list lyt order snapshots', () => {
+    it('should list lyt order snapshots', () => {
       const result = controller.listLytOrderSnapshots(CTX)
       assert.ok(result instanceof Promise || Array.isArray(result))
     })
 
-    test('should list lyt payment snapshots', () => {
+    it('should list lyt payment snapshots', () => {
       const result = controller.listLytPaymentSnapshots(CTX)
       assert.ok(result instanceof Promise || Array.isArray(result))
     })
 
-    test('should return undefined for unknown lyt order snapshot', async () => {
+    it('should return undefined for unknown lyt order snapshot', async () => {
       assert.equal(await controller.getLytOrderSnapshot('no-such', CTX), undefined)
     })
 
-    test('should return undefined for unknown lyt payment snapshot', async () => {
+    it('should return undefined for unknown lyt payment snapshot', async () => {
       assert.equal(await controller.getLytPaymentSnapshot('no-such', CTX), undefined)
     })
   })
 
   describe('listMemberTransactions', () => {
-    test('should return member timeline', async () => {
+    it('should return member timeline', async () => {
       await checkoutAndPay('m-24', 10, 'ep-24')
       const timeline = controller.listMemberTransactions('m-24', CTX)
       assert.ok(Array.isArray(timeline))
@@ -417,7 +417,7 @@ describe('transactions controller', () => {
       timeline.forEach(e => assert.equal(e.memberId, 'm-24'))
     })
 
-    test('should return empty for unknown member (boundary)', () => {
+    it('should return empty for unknown member (boundary)', () => {
       const timeline = controller.listMemberTransactions('unknown', CTX)
       assert.ok(Array.isArray(timeline))
       assert.equal(timeline.length, 0)

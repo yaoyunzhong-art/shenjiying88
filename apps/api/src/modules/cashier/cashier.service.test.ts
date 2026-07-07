@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { MemberService } from '../member/member.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -9,7 +9,6 @@ import {
   CashierPaymentStatus
 } from './cashier.entity'
 import { CashierService } from './cashier.service'
-
 function createContext(): RequestTenantContext {
   return {
     tenantId: 'tenant-cashier',
@@ -17,9 +16,8 @@ function createContext(): RequestTenantContext {
     storeId: 'store-cashier'
   }
 }
-
 describe('CashierService', () => {
-  test('createOrder creates minimal cashier order for existing member', async () => {
+  it('createOrder creates minimal cashier order for existing member', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'member-order-1',
@@ -27,7 +25,6 @@ describe('CashierService', () => {
       nickname: 'Cashier User'
     })
     const service = new CashierService(memberService)
-
     const order = await service.createOrder(createContext(), {
       memberId: 'member-order-1',
       items: [
@@ -36,12 +33,10 @@ describe('CashierService', () => {
       ],
       currency: 'CNY'
     })
-
     assert.equal(order.status, CashierOrderStatus.Created)
     assert.equal(order.totalAmount, 100)
   })
-
-  test('createPayment moves order into pending payment state', async () => {
+  it('createPayment moves order into pending payment state', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'member-order-2',
@@ -53,18 +48,15 @@ describe('CashierService', () => {
       memberId: 'member-order-2',
       items: [{ skuId: 'sku-1', quantity: 1, price: 88 }]
     })
-
     const payment = await service.createPayment(order.orderId, {
       channel: 'wechat-pay'
     })
     const storedOrder = service.getOrder(order.orderId, createContext())
-
     assert.equal(payment.status, CashierPaymentStatus.Pending)
     assert.equal(storedOrder?.status, CashierOrderStatus.PendingPayment)
     assert.equal(storedOrder?.latestPaymentId, payment.paymentId)
   })
-
-  test('applyPaymentCallback marks payment succeeded and order paid', async () => {
+  it('applyPaymentCallback marks payment succeeded and order paid', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'member-order-3',
@@ -80,12 +72,10 @@ describe('CashierService', () => {
       blindboxPlanId: 'blindbox-pro',
       blindboxQuantity: 1
     })
-
     const payment = await service.createPayment(order.orderId, {
       channel: 'alipay',
       externalPaymentId: 'ext-paid-1'
     })
-
     const result = await service.applyPaymentCallback({
       standardizedEventName: 'cashier.payment-succeeded',
       aggregateId: 'agg-1',
@@ -94,7 +84,6 @@ describe('CashierService', () => {
       externalPaymentId: 'ext-paid-1',
       transactionNo: 'txn-1'
     })
-
     assert.equal(result.payment.paymentId, payment.paymentId)
     assert.equal(result.payment.status, CashierPaymentStatus.Succeeded)
     assert.equal(result.order.status, CashierOrderStatus.Paid)
@@ -103,8 +92,7 @@ describe('CashierService', () => {
     assert.equal(loyaltyService.listCouponRedemptions(createContext().tenantId).slice(-1)[0]?.couponCode, 'COUPON-66')
     assert.equal(loyaltyService.listBlindboxFulfillments(createContext().tenantId).slice(-1)[0]?.blindboxPlanId, 'blindbox-pro')
   })
-
-  test('applyPaymentCallback can synthesize failed payment writeback', async () => {
+  it('applyPaymentCallback can synthesize failed payment writeback', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'member-order-4',
@@ -118,7 +106,6 @@ describe('CashierService', () => {
       items: [{ skuId: 'sku-1', quantity: 1, price: 120 }],
       couponCode: 'COUPON-FAIL'
     })
-
     const result = await service.applyPaymentCallback({
       standardizedEventName: 'cashier.payment-failed',
       aggregateId: 'agg-2',
@@ -127,13 +114,11 @@ describe('CashierService', () => {
       channel: 'mock-gateway',
       amount: 120
     })
-
     assert.equal(result.payment.status, CashierPaymentStatus.Failed)
     assert.equal(result.order.status, CashierOrderStatus.PaymentFailed)
     assert.equal(loyaltyService.listCouponRedemptions(createContext().tenantId).slice(-1)[0]?.couponCode, 'COUPON-FAIL')
   })
-
-  test('closeTimedOutOrder closes pending payment order and releases coupon', async () => {
+  it('closeTimedOutOrder closes pending payment order and releases coupon', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'member-order-timeout-1',
@@ -147,13 +132,10 @@ describe('CashierService', () => {
       items: [{ skuId: 'sku-1', quantity: 1, price: 45 }],
       couponCode: 'COUPON-TIMEOUT'
     })
-
     const payment = await service.createPayment(order.orderId, {
       channel: 'wechat-pay'
     })
-
     const result = await service.closeTimedOutOrder(order.orderId, createContext())
-
     assert.equal(result.order.status, CashierOrderStatus.Closed)
     assert.equal(result.order.closeReason, CashierOrderCloseReason.PaymentTimeout)
     assert.ok(result.order.closedAt)
@@ -162,8 +144,7 @@ describe('CashierService', () => {
     assert.equal(result.payment?.failureReason, 'Payment timed out')
     assert.equal(loyaltyService.listCouponRedemptions(createContext().tenantId).slice(-1)[0]?.status, 'RELEASED')
   })
-
-  test('closeTimedOutOrder rejects paid order', async () => {
+  it('closeTimedOutOrder rejects paid order', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'member-order-timeout-2',
@@ -176,7 +157,6 @@ describe('CashierService', () => {
       memberId: 'member-order-timeout-2',
       items: [{ skuId: 'sku-2', quantity: 1, price: 88 }]
     })
-
     await service.createPayment(order.orderId, {
       channel: 'alipay',
       externalPaymentId: 'timeout-paid'
@@ -189,14 +169,12 @@ describe('CashierService', () => {
       externalPaymentId: 'timeout-paid',
       transactionNo: 'txn-timeout-paid'
     })
-
     await assert.rejects(
       () => service.closeTimedOutOrder(order.orderId, createContext()),
       /cannot be timeout-closed/
     )
   })
-
-  test('closeOrder manually closes pending payment order with audit fields', async () => {
+  it('closeOrder manually closes pending payment order with audit fields', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'member-order-manual-1',
@@ -210,16 +188,13 @@ describe('CashierService', () => {
       items: [{ skuId: 'sku-manual-1', quantity: 1, price: 77 }],
       couponCode: 'COUPON-MANUAL'
     })
-
     const payment = await service.createPayment(order.orderId, {
       channel: 'wechat-pay'
     })
-
     const result = await service.closeOrder(order.orderId, createContext(), {
       operator: 'ops-a',
       reason: 'customer-cancelled'
     })
-
     assert.equal(result.order.status, CashierOrderStatus.Closed)
     assert.equal(result.order.closeReason, CashierOrderCloseReason.ManualCancel)
     assert.equal(result.order.closedBy, 'ops-a')
@@ -230,8 +205,7 @@ describe('CashierService', () => {
     assert.equal(result.payment?.failureReason, 'Order manually closed')
     assert.equal(loyaltyService.listCouponRedemptions(createContext().tenantId).slice(-1)[0]?.status, 'RELEASED')
   })
-
-  test('closeOrder manually closes created order without payment', async () => {
+  it('closeOrder manually closes created order without payment', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'member-order-manual-2',
@@ -244,20 +218,17 @@ describe('CashierService', () => {
       memberId: 'member-order-manual-2',
       items: [{ skuId: 'sku-manual-2', quantity: 1, price: 33 }]
     })
-
     const result = await service.closeOrder(order.orderId, createContext(), {
       operator: 'ops-b',
       reason: 'inventory-blocked'
     })
-
     assert.equal(result.order.status, CashierOrderStatus.Closed)
     assert.equal(result.order.closeReason, CashierOrderCloseReason.ManualCancel)
     assert.equal(result.order.closedBy, 'ops-b')
     assert.equal(result.order.closeNote, 'inventory-blocked')
     assert.equal(result.payment, undefined)
   })
-
-  test('closeOrder rejects paid order', async () => {
+  it('closeOrder rejects paid order', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'member-order-manual-3',
@@ -270,7 +241,6 @@ describe('CashierService', () => {
       memberId: 'member-order-manual-3',
       items: [{ skuId: 'sku-manual-3', quantity: 1, price: 55 }]
     })
-
     await service.createPayment(order.orderId, {
       channel: 'alipay',
       externalPaymentId: 'manual-paid'
@@ -283,7 +253,6 @@ describe('CashierService', () => {
       externalPaymentId: 'manual-paid',
       transactionNo: 'txn-manual-paid'
     })
-
     await assert.rejects(
       () =>
         service.closeOrder(order.orderId, createContext(), {
@@ -292,8 +261,7 @@ describe('CashierService', () => {
       /cannot be manually closed/
     )
   })
-
-  test('applyPaymentCallback rejects already closed order', async () => {
+  it('applyPaymentCallback rejects already closed order', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'member-order-timeout-3',
@@ -306,13 +274,11 @@ describe('CashierService', () => {
       memberId: 'member-order-timeout-3',
       items: [{ skuId: 'sku-3', quantity: 1, price: 99 }]
     })
-
     await service.createPayment(order.orderId, {
       channel: 'wechat-pay',
       externalPaymentId: 'timeout-close-late'
     })
     await service.closeTimedOutOrder(order.orderId, createContext())
-
     await assert.rejects(
       () =>
         service.applyPaymentCallback({

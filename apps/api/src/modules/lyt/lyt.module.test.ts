@@ -1,8 +1,8 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Global, Module } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { LytModule } from './lyt.module'
 import { LytController } from './lyt.controller'
 import { LytAdapterRegistry } from './lyt-adapter.registry'
@@ -45,40 +45,40 @@ function createTestingModule(): Promise<TestingModule> {
 }
 
 describe('LytModule', () => {
-  test('should compile and instantiate', async () => {
+  it('should compile and instantiate', async () => {
     const moduleRef = await createTestingModule()
     assert.ok(moduleRef)
   })
 
-  test('should provide LytController', async () => {
+  it('should provide LytController', async () => {
     const moduleRef = await createTestingModule()
     const controller = moduleRef.get<LytController>(LytController)
     assert.ok(controller)
     assert.ok(controller instanceof LytController)
   })
 
-  test('should provide LytService', async () => {
+  it('should provide LytService', async () => {
     const moduleRef = await createTestingModule()
     const service = moduleRef.get<LytService>(LytService)
     assert.ok(service)
     assert.ok(service instanceof LytService)
   })
 
-  test('should provide LytConnectionManager', async () => {
+  it('should provide LytConnectionManager', async () => {
     const moduleRef = await createTestingModule()
     const manager = moduleRef.get<LytConnectionManager>(LytConnectionManager)
     assert.ok(manager)
     assert.ok(manager instanceof LytConnectionManager)
   })
 
-  test('should provide MockLytAdapter', async () => {
+  it('should provide MockLytAdapter', async () => {
     const moduleRef = await createTestingModule()
     const adapter = moduleRef.get<MockLytAdapter>(MockLytAdapter)
     assert.ok(adapter)
     assert.ok(adapter instanceof MockLytAdapter)
   })
 
-  test('should provide SandboxLytAdapter and RealLytAdapter', async () => {
+  it('should provide SandboxLytAdapter and RealLytAdapter', async () => {
     const moduleRef = await createTestingModule()
     const sandbox = moduleRef.get<SandboxLytAdapter>(SandboxLytAdapter)
     const real = moduleRef.get<RealLytAdapter>(RealLytAdapter)
@@ -86,7 +86,7 @@ describe('LytModule', () => {
     assert.ok(real instanceof RealLytAdapter)
   })
 
-  test('should provide LytAdapterRegistry', async () => {
+  it('should provide LytAdapterRegistry', async () => {
     const moduleRef = await createTestingModule()
     const registry = moduleRef.get<LytAdapterRegistry>(LytAdapterRegistry)
     assert.ok(registry)

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [analytics] [D] controller spec 补全
  *
@@ -6,13 +7,12 @@
  */
 
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import type { RequestTenantContext } from '../tenant/tenant.types';
 
 // ── 模拟装饰器 ──
 
 function Controller(prefix: string) {
-  return (target: Function & { __prefix?: string }) => {
+  return (target: { new (...args: any[]): unknown; __prefix?: string }) => {
     target.__prefix = prefix;
     return target;
   };
@@ -46,10 +46,10 @@ function Delete(path = '') {
   };
 }
 
-const bodyRegistrations: string[] = [];
-function Body() {
+const queryRegistrations: string[] = [];
+function Query() {
   return (_target: object, propertyKey: string | symbol, parameterIndex: number) => {
-    bodyRegistrations.push(`${String(propertyKey)}:${parameterIndex}`);
+    queryRegistrations.push(`${String(propertyKey)}:${parameterIndex}`);
   };
 }
 
@@ -66,7 +66,7 @@ function resetRegistrations() {
   postRegistrations.length = 0;
   putRegistrations.length = 0;
   deleteRegistrations.length = 0;
-  bodyRegistrations.length = 0;
+  queryRegistrations.length = 0;
   tenantContextRegistrations.length = 0;
 }
 
@@ -192,14 +192,14 @@ const mockCtx: RequestTenantContext = {
 // ══════════════════════════════════════════════════
 
 describe('AnalyticsController 路由元数据', () => {
-  test('Controller prefix 是 analytics', () => {
+  it('Controller prefix 是 analytics', () => {
     // NestJS 的 @Controller('analytics') 会在 prototype 上挂 prefix
     // 因 mock class 未用装饰器, __prefix 是 undefined
     // 我们在实际测试里正确验证
     assert.ok(true, '路由前缀由 @Controller("analytics") 装饰器定义');
   });
 
-  test('getOperationSnapshot → GET snapshot', () => {
+  it('getOperationSnapshot → GET snapshot', () => {
     // 清除上次记录
     getRegistrations.length = 0;
 
@@ -210,7 +210,7 @@ describe('AnalyticsController 路由元数据', () => {
     assert.equal(getRegistrations[0], 'getOperationSnapshot:snapshot');
   });
 
-  test('getDiagnostics → GET diagnostics', () => {
+  it('getDiagnostics → GET diagnostics', () => {
     getRegistrations.length = 0;
 
     const decorator = Get('diagnostics');
@@ -220,7 +220,7 @@ describe('AnalyticsController 路由元数据', () => {
     assert.equal(getRegistrations[0], 'getDiagnostics:diagnostics');
   });
 
-  test('getRecommendations → GET recommendations', () => {
+  it('getRecommendations → GET recommendations', () => {
     getRegistrations.length = 0;
 
     const decorator = Get('recommendations');
@@ -230,21 +230,21 @@ describe('AnalyticsController 路由元数据', () => {
     assert.equal(getRegistrations[0], 'getRecommendations:recommendations');
   });
 
-  test('所有 GET 端点都接受 Body 参数（GET with body pattern）', () => {
-    bodyRegistrations.length = 0;
+  it('所有 GET 端点都接受 Query 参数（GET with query pattern）', () => {
+    queryRegistrations.length = 0;
 
-    const decorator = Body();
+    const decorator = Query();
     decorator(AnalyticsController.prototype, 'getOperationSnapshot', 1);
     decorator(AnalyticsController.prototype, 'getDiagnostics', 1);
     decorator(AnalyticsController.prototype, 'getRecommendations', 1);
 
-    assert.equal(bodyRegistrations.length, 3);
-    bodyRegistrations.forEach((reg) => {
+    assert.equal(queryRegistrations.length, 3);
+    queryRegistrations.forEach((reg) => {
       assert.equal(reg.split(':')[1], '1', `${reg} should decorate param index 1`);
     });
   });
 
-  test('所有端点都有 TenantContext 装饰器在第 0 位参数', () => {
+  it('所有端点都有 TenantContext 装饰器在第 0 位参数', () => {
     tenantContextRegistrations.length = 0;
 
     const decorator = TenantContext();
@@ -258,7 +258,7 @@ describe('AnalyticsController 路由元数据', () => {
     });
   });
 
-  test('端点数量正确 — 3 个 GET, 0 个 POST/PUT/DELETE', () => {
+  it('端点数量正确 — 3 个 GET, 0 个 POST/PUT/DELETE', () => {
     // 该 Controller 只有只读端点，验证方法数量而非装饰器调用顺序
     const methodNames = Object.getOwnPropertyNames(AnalyticsController.prototype)
       .filter((m) => m !== 'constructor' && typeof (AnalyticsController.prototype as any)[m] === 'function');
@@ -282,7 +282,7 @@ describe('AnalyticsController 路由元数据', () => {
 describe('getOperationSnapshot', () => {
   const controller = new AnalyticsController();
 
-  test('正例: 默认作用域返回 TENANT 级别快照', () => {
+  it('正例: 默认作用域返回 TENANT 级别快照', () => {
     const result: any = controller.getOperationSnapshot(mockCtx, {});
     assert.equal(result.tenantId, 'spec-tenant-1');
     assert.equal(result.scope, 'TENANT');
@@ -291,7 +291,7 @@ describe('getOperationSnapshot', () => {
     assert.ok(Array.isArray(result.totals));
   });
 
-  test('正例: STORE 作用域携带 storeId', () => {
+  it('正例: STORE 作用域携带 storeId', () => {
     const result: any = controller.getOperationSnapshot(mockCtx, {
       scope: 'STORE',
       storeId: 'store-alpha',
@@ -301,7 +301,7 @@ describe('getOperationSnapshot', () => {
     assert.equal(result.brandId, undefined);
   });
 
-  test('正例: BRAND 作用域携带 brandId', () => {
+  it('正例: BRAND 作用域携带 brandId', () => {
     const result: any = controller.getOperationSnapshot(mockCtx, {
       scope: 'BRAND',
       brandId: 'brand-omega',
@@ -311,14 +311,14 @@ describe('getOperationSnapshot', () => {
     assert.equal(result.storeId, undefined);
   });
 
-  test('正例: groups 中包含 orders 和 loyalty 分组', () => {
+  it('正例: groups 中包含 orders 和 loyalty 分组', () => {
     const result: any = controller.getOperationSnapshot(mockCtx, {});
     const groupKeys = result.groups.map((g: any) => g.groupKey);
     assert.ok(groupKeys.includes('orders'));
     assert.ok(groupKeys.includes('loyalty'));
   });
 
-  test('正例: totals 包含 3 个汇总指标', () => {
+  it('正例: totals 包含 3 个汇总指标', () => {
     const result: any = controller.getOperationSnapshot(mockCtx, {});
     assert.equal(result.totals.length, 3);
     const totalKeys = result.totals.map((t: any) => t.key);
@@ -327,7 +327,7 @@ describe('getOperationSnapshot', () => {
     assert.ok(totalKeys.includes('totalBlindboxes'));
   });
 
-  test('正例: 结算成功率为百分比格式', () => {
+  it('正例: 结算成功率为百分比格式', () => {
     const result: any = controller.getOperationSnapshot(mockCtx, {});
     const ordersGroup = result.groups.find((g: any) => g.groupKey === 'orders');
     const rateMetric = ordersGroup.metrics.find((m: any) => m.key === 'settlementSuccessRate');
@@ -336,7 +336,7 @@ describe('getOperationSnapshot', () => {
     assert.equal(rateMetric.unit, '%');
   });
 
-  test('边界: scope 不传默认 TENANT', () => {
+  it('边界: scope 不传默认 TENANT', () => {
     const result1: any = controller.getOperationSnapshot(mockCtx, { scope: undefined });
     assert.equal(result1.scope, 'TENANT');
 
@@ -344,13 +344,13 @@ describe('getOperationSnapshot', () => {
     assert.equal(result2.scope, 'TENANT');
   });
 
-  test('边界: 传入无效 scope 字符串时直接透传', () => {
+  it('边界: 传入无效 scope 字符串时直接透传', () => {
     const result: any = controller.getOperationSnapshot(mockCtx, { scope: 'UNKNOWN' as any });
     // Mock 在未匹配时直接使用 body.scope
     assert.equal(result.scope, 'UNKNOWN');
   });
 
-  test('边界: brandId/storeId 随 scope 变化正确清零', () => {
+  it('边界: brandId/storeId 随 scope 变化正确清零', () => {
     // scope=STORE 不携带 brandId
     const r1: any = controller.getOperationSnapshot(mockCtx, { scope: 'STORE', storeId: 's-1', brandId: 'b-1' });
     assert.equal(r1.storeId, 's-1');
@@ -362,7 +362,7 @@ describe('getOperationSnapshot', () => {
     assert.equal(r2.storeId, undefined);
   });
 
-  test('边界: 空 body 不报错', () => {
+  it('边界: 空 body 不报错', () => {
     assert.doesNotThrow(() => {
       controller.getOperationSnapshot(mockCtx, undefined as any);
     });
@@ -376,14 +376,14 @@ describe('getOperationSnapshot', () => {
 describe('getDiagnostics', () => {
   const controller = new AnalyticsController();
 
-  test('正例: 健康状态返回空诊断数组', () => {
+  it('正例: 健康状态返回空诊断数组', () => {
     // TENANT 作用域默认使用健康数据, 不触发任何诊断规则
     const result: any = controller.getDiagnostics(mockCtx, {});
     assert.ok(Array.isArray(result));
     assert.equal(result.length, 0);
   });
 
-  test('正例: 当支付成功率低时返回 CRITICAL 诊断', () => {
+  it('正例: 当支付成功率低时返回 CRITICAL 诊断', () => {
     const result: any = controller.getDiagnostics(mockCtx, {
       scope: 'STORE',
       brandId: 'store-sick',
@@ -395,7 +395,7 @@ describe('getDiagnostics', () => {
     assert.equal(paymentDiag.severity, 'CRITICAL');
   });
 
-  test('正例: 诊断包含 recommendations 建议列表', () => {
+  it('正例: 诊断包含 recommendations 建议列表', () => {
     const result: any = controller.getDiagnostics(mockCtx, { scope: 'STORE', brandId: 'store-sick' });
     const paymentDiag = result.find((d: any) => d.ruleId === 'payment-success-rate-low');
     assert.ok(Array.isArray(paymentDiag.recommendations));
@@ -403,7 +403,7 @@ describe('getDiagnostics', () => {
     assert.ok(paymentDiag.recommendations[0].priority >= 0);
   });
 
-  test('正例: 诊断包含 evidence 证据字段', () => {
+  it('正例: 诊断包含 evidence 证据字段', () => {
     const result: any = controller.getDiagnostics(mockCtx, { scope: 'STORE', brandId: 'store-sick' });
     const paymentDiag = result.find((d: any) => d.ruleId === 'payment-success-rate-low');
     assert.ok(paymentDiag.evidence);
@@ -412,7 +412,7 @@ describe('getDiagnostics', () => {
     assert.ok(paymentDiag.evidence.successRate !== undefined);
   });
 
-  test('正例: 诊断有 tenantContext, scope, category, severity 等完整字段', () => {
+  it('正例: 诊断有 tenantContext, scope, category, severity 等完整字段', () => {
     const result: any = controller.getDiagnostics(mockCtx, { scope: 'STORE', brandId: 'store-sick' });
     if (result.length > 0) {
       const diag = result[0];
@@ -427,23 +427,23 @@ describe('getDiagnostics', () => {
     }
   });
 
-  test('反例: STORE 无品牌限制时不触发诊断', () => {
+  it('反例: STORE 无品牌限制时不触发诊断', () => {
     const result: any = controller.getDiagnostics(mockCtx, { scope: 'STORE', storeId: 's-healthy' });
     assert.equal(result.length, 0);
   });
 
-  test('反例: BRAND 作用域默认健康', () => {
+  it('反例: BRAND 作用域默认健康', () => {
     const result: any = controller.getDiagnostics(mockCtx, { scope: 'BRAND', brandId: 'brand-healthy' });
     assert.equal(result.length, 0);
   });
 
-  test('边界: 空 body 不报错', () => {
+  it('边界: 空 body 不报错', () => {
     assert.doesNotThrow(() => {
       controller.getDiagnostics(mockCtx, undefined as any);
     });
   });
 
-  test('边界: 多条件同时触发诊断返回多条', () => {
+  it('边界: 多条件同时触发诊断返回多条', () => {
     // 只有 payment-success-rate-low 规则在 mock 中实现
     // 确保 mock 返回恰当时长度正确
     const result: any = controller.getDiagnostics(mockCtx, { scope: 'STORE', brandId: 'store-sick' });
@@ -458,13 +458,13 @@ describe('getDiagnostics', () => {
 describe('getRecommendations', () => {
   const controller = new AnalyticsController();
 
-  test('正例: 无诊断时返回空推荐数组', () => {
+  it('正例: 无诊断时返回空推荐数组', () => {
     const result: any = controller.getRecommendations(mockCtx, {});
     assert.ok(Array.isArray(result));
     assert.equal(result.length, 0);
   });
 
-  test('正例: 有诊断时返回推荐并按优先级降序排列', () => {
+  it('正例: 有诊断时返回推荐并按优先级降序排列', () => {
     const result: any = controller.getRecommendations(mockCtx, {
       scope: 'STORE',
       brandId: 'store-sick',
@@ -477,7 +477,7 @@ describe('getRecommendations', () => {
     }
   });
 
-  test('正例: 每条 recommend 有 actionCode, description, priority', () => {
+  it('正例: 每条 recommend 有 actionCode, description, priority', () => {
     const result: any = controller.getRecommendations(mockCtx, {
       scope: 'STORE',
       brandId: 'store-sick',
@@ -489,7 +489,7 @@ describe('getRecommendations', () => {
     });
   });
 
-  test('反例: BRAND 健康时无推荐', () => {
+  it('反例: BRAND 健康时无推荐', () => {
     const result: any = controller.getRecommendations(mockCtx, {
       scope: 'BRAND',
       brandId: 'brand-healthy',
@@ -497,7 +497,7 @@ describe('getRecommendations', () => {
     assert.equal(result.length, 0);
   });
 
-  test('边界: STORE + store-sick 触发 inspect-payment-gateway 建议', () => {
+  it('边界: STORE + store-sick 触发 inspect-payment-gateway 建议', () => {
     const result: any = controller.getRecommendations(mockCtx, {
       scope: 'STORE',
       brandId: 'store-sick',
@@ -507,13 +507,13 @@ describe('getRecommendations', () => {
     assert.equal(gatewayRec.priority, 100);
   });
 
-  test('边界: 空 body 不报错', () => {
+  it('边界: 空 body 不报错', () => {
     assert.doesNotThrow(() => {
       controller.getRecommendations(mockCtx, undefined as any);
     });
   });
 
-  test('边界: 推荐优先级为正整数', () => {
+  it('边界: 推荐优先级为正整数', () => {
     const result: any = controller.getRecommendations(mockCtx, {
       scope: 'STORE',
       brandId: 'store-sick',
@@ -524,7 +524,7 @@ describe('getRecommendations', () => {
     });
   });
 
-  test('边界: 多次调用返回一致结构', () => {
+  it('边界: 多次调用返回一致结构', () => {
     const result1: any = controller.getRecommendations(mockCtx, { scope: 'STORE', brandId: 'store-sick' });
     const result2: any = controller.getRecommendations(mockCtx, { scope: 'STORE', brandId: 'store-sick' });
     assert.equal(result1.length, result2.length);
@@ -539,12 +539,12 @@ describe('getRecommendations', () => {
 // ══════════════════════════════════════════════════
 
 describe('端点路由注册完整性', () => {
-  test('三个端点挂载在 analytics prefix 下形成完整路径', () => {
+  it('三个端点挂载在 analytics prefix 下形成完整路径', () => {
     // 验证: prefix = analytics, path 分别为 snapshot / diagnostics / recommendations
     assert.ok(true, 'Controller 前缀 + 方法路径构成 analytics/snapshot, analytics/diagnostics, analytics/recommendations');
   });
 
-  test('没有未注册的端点', () => {
+  it('没有未注册的端点', () => {
     const excludedMethods = ['constructor'];
     const protoMethods = Object.getOwnPropertyNames(AnalyticsController.prototype)
       .filter((m) => m !== 'constructor' && typeof (AnalyticsController.prototype as any)[m] === 'function')
@@ -561,14 +561,14 @@ describe('端点路由注册完整性', () => {
     });
   });
 
-  test('端点不暴露写入操作', () => {
+  it('端点不暴露写入操作', () => {
     // AnalyticsController 是只读观察端点, 无 POST/PUT/DELETE
     assert.equal(postRegistrations.length, 0);
     assert.equal(putRegistrations.length, 0);
     assert.equal(deleteRegistrations.length, 0);
   });
 
-  test('所有端点符合只读 API 约定', () => {
+  it('所有端点符合只读 API 约定', () => {
     // 在所有注册端点中确认 GET 是唯一方法
     resetRegistrations();
     Get('snapshot')(AnalyticsController.prototype, 'getOperationSnapshot');
@@ -587,7 +587,7 @@ describe('端点路由注册完整性', () => {
 // ══════════════════════════════════════════════════
 
 describe('权限边界', () => {
-  test('Snapshot 端点数据不应包含敏感字段', () => {
+  it('Snapshot 端点数据不应包含敏感字段', () => {
     const controller = new AnalyticsController();
     const result: any = controller.getOperationSnapshot(mockCtx, {});
     // 快照只包含聚合数据, 无用户身份标识
@@ -599,7 +599,7 @@ describe('权限边界', () => {
     assert.ok(!allKeys.includes('phone'), 'no phone in snapshot');
   });
 
-  test('Diagnostic 端点不泄露内部实现细节', () => {
+  it('Diagnostic 端点不泄露内部实现细节', () => {
     // Diagnostic 数据应避免暴露数据库表名、SQL 语句等
     const controller = new AnalyticsController();
     const result: any = controller.getDiagnostics(mockCtx, { scope: 'STORE', brandId: 'store-sick' });
@@ -609,7 +609,7 @@ describe('权限边界', () => {
     assert.ok(!allText.includes('DROP'), 'no DROP in diagnostics');
   });
 
-  test('未传入 tenantContext 时 mock 依然返回符合结构的数据', () => {
+  it('未传入 tenantContext 时 mock 依然返回符合结构的数据', () => {
     const controller = new AnalyticsController();
     const result: any = controller.getOperationSnapshot({} as any, {});
     // Mock 层不做 tenantContext 校验, 但在实际 NestJS 中会由 Guard 拒绝
@@ -618,7 +618,7 @@ describe('权限边界', () => {
     assert.ok(result.totals);
   });
 
-  test('scope 边界: 枚举值之外的字符串应优雅兜底', () => {
+  it('scope 边界: 枚举值之外的字符串应优雅兜底', () => {
     const controller = new AnalyticsController();
     const result: any = controller.getOperationSnapshot(mockCtx, { scope: 'INVALID_SCOPE' as any });
     // mock 直接将 scope 透传
@@ -635,13 +635,13 @@ describe('权限边界', () => {
 describe('数据格式一致性', () => {
   const controller = new AnalyticsController();
 
-  test('generatedAt 是 ISO 8601 格式', () => {
+  it('generatedAt 是 ISO 8601 格式', () => {
     const result: any = controller.getOperationSnapshot(mockCtx, {});
     const isoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
     assert.ok(isoRegex.test(result.generatedAt), 'generatedAt should be ISO8601');
   });
 
-  test('snapshot.groups 中 metrics 的 value 为数字', () => {
+  it('snapshot.groups 中 metrics 的 value 为数字', () => {
     const result: any = controller.getOperationSnapshot(mockCtx, {});
     result.groups.forEach((group: any) => {
       group.metrics.forEach((m: any) => {
@@ -651,7 +651,7 @@ describe('数据格式一致性', () => {
     });
   });
 
-  test('snapshot.totals 使用统一汇总单位', () => {
+  it('snapshot.totals 使用统一汇总单位', () => {
     const result: any = controller.getOperationSnapshot(mockCtx, {});
     result.totals.forEach((t: any) => {
       assert.equal(typeof t.value, 'number');
@@ -659,7 +659,7 @@ describe('数据格式一致性', () => {
     });
   });
 
-  test('groups 中 metric 可选字段 trend 为 UP/DOWN/FLAT 之一', () => {
+  it('groups 中 metric 可选字段 trend 为 UP/DOWN/FLAT 之一', () => {
     const result: any = controller.getOperationSnapshot(mockCtx, {});
     const validTrends = ['UP', 'DOWN', 'FLAT'];
     result.groups.forEach((group: any) => {
@@ -672,7 +672,7 @@ describe('数据格式一致性', () => {
     });
   });
 
-  test('diagnosticId 格式为 ruleId-tenantId-timestamp', () => {
+  it('diagnosticId 格式为 ruleId-tenantId-timestamp', () => {
     const result: any = controller.getDiagnostics(mockCtx, { scope: 'STORE', brandId: 'store-sick' });
     result.forEach((d: any) => {
       assert.ok(d.diagnosticId.startsWith(d.ruleId), 'diagnosticId should start with ruleId');
@@ -680,7 +680,7 @@ describe('数据格式一致性', () => {
     });
   });
 
-  test('recommendation 可选字段 suggestedCampaignKind 为合规值', () => {
+  it('recommendation 可选字段 suggestedCampaignKind 为合规值', () => {
     const validKinds = ['POINTS_AWARD', 'COUPON_ISSUE', 'BLINDBOX_PROMO', 'RE_ENGAGEMENT'];
     const result: any = controller.getRecommendations(mockCtx, { scope: 'STORE', brandId: 'store-sick' });
     result.forEach((r: any) => {

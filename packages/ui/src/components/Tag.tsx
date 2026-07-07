@@ -19,6 +19,8 @@ export interface TagProps {
   bordered?: boolean;
   /** Optional className for the wrapper */
   className?: string;
+  /** Optional inline styles */
+  style?: React.CSSProperties;
 }
 
 const VARIANT_STYLES: Record<TagVariant, { bg: string; text: string; border: string }> = {
@@ -45,6 +47,7 @@ export function Tag({
   onClose,
   bordered = false,
   className,
+  style,
 }: TagProps) {
   const colors = VARIANT_STYLES[variant] ?? VARIANT_STYLES.default;
   const padding = size === 'sm' ? '1px 6px' : '2px 10px';
@@ -71,6 +74,7 @@ export function Tag({
         border: bordered ? `1px solid ${colors.border}` : '1px solid transparent',
         whiteSpace: 'nowrap',
         lineHeight: '20px',
+        ...style,
       }}
     >
       {children}

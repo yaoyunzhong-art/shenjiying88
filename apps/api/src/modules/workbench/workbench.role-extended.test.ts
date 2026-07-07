@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 Wave-6: 5角色工作台补全 — 扩展测试
  *
@@ -12,7 +13,6 @@
  */
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   SUPER_ADMIN_BOOTSTRAP,
   OPERATIONS_BOOTSTRAP,
@@ -39,18 +39,18 @@ const TARGET_ROLES = [
 // =========================================================================
 for (const roleDef of TARGET_ROLES) {
   describe(`${roleDef.label} (${roleDef.key}) bootstrap 加载`, () => {
-    test(`normal: ${roleDef.key} bootstrap config exists`, () => {
+    it(`normal: ${roleDef.key} bootstrap config exists`, () => {
       const config = getRoleBootstrapConfig(roleDef.key)
       assert.ok(config, `${roleDef.key} bootstrap config should exist`)
       assert.equal(config!.role, roleDef.key)
     })
 
-    test(`normal: ${roleDef.key} homePath is ${roleDef.home}`, () => {
+    it(`normal: ${roleDef.key} homePath is ${roleDef.home}`, () => {
       const config = getRoleBootstrapConfig(roleDef.key)!
       assert.equal(config.homePath, roleDef.home)
     })
 
-    test(`normal: ${roleDef.key} has ≥5 nav items`, () => {
+    it(`normal: ${roleDef.key} has ≥5 nav items`, () => {
       const config = getRoleBootstrapConfig(roleDef.key)!
       assert.ok(
         config.extendedNavItems.length >= 5,
@@ -58,12 +58,12 @@ for (const roleDef of TARGET_ROLES) {
       )
     })
 
-    test(`normal: ${roleDef.key} has todo card types`, () => {
+    it(`normal: ${roleDef.key} has todo card types`, () => {
       const config = getRoleBootstrapConfig(roleDef.key)!
       assert.ok(config.todoCardTypes.length > 0, `${roleDef.key} should have todo card types`)
     })
 
-    test(`normal: ${roleDef.key} has permission snippets`, () => {
+    it(`normal: ${roleDef.key} has permission snippets`, () => {
       const config = getRoleBootstrapConfig(roleDef.key)!
       assert.ok(config.permissionSnippets.length > 0, `${roleDef.key} should have permission snippets`)
     })
@@ -74,16 +74,16 @@ for (const roleDef of TARGET_ROLES) {
 // Test 6-10: 每个角色导航菜单完整性 (≥5 items 互不重复)
 // =========================================================================
 describe('SUPER_ADMIN 导航菜单完整性', () => {
-  test('SUPER_ADMIN nav items ≥ 7 (富菜单)', () => {
+  it('SUPER_ADMIN nav items ≥ 7 (富菜单)', () => {
     assert.ok(SUPER_ADMIN_BOOTSTRAP.extendedNavItems.length >= 7)
   })
 
-  test('SUPER_ADMIN nav keys unique', () => {
+  it('SUPER_ADMIN nav keys unique', () => {
     const keys = SUPER_ADMIN_BOOTSTRAP.extendedNavItems.map(i => i.key)
     assert.equal(keys.length, new Set(keys).size, 'nav keys should be unique')
   })
 
-  test('SUPER_ADMIN nav items contain tenants + audit + markets', () => {
+  it('SUPER_ADMIN nav items contain tenants + audit + markets', () => {
     const keys = SUPER_ADMIN_BOOTSTRAP.extendedNavItems.map(i => i.key)
     assert.ok(keys.includes('tenants'))
     assert.ok(keys.includes('audit'))
@@ -92,11 +92,11 @@ describe('SUPER_ADMIN 导航菜单完整性', () => {
 })
 
 describe('OPERATIONS 导航菜单完整性', () => {
-  test('OPERATIONS nav items ≥ 6', () => {
+  it('OPERATIONS nav items ≥ 6', () => {
     assert.ok(OPERATIONS_BOOTSTRAP.extendedNavItems.length >= 6)
   })
 
-  test('OPERATIONS nav items contain kpi-dashboard + campaign-effects + traffic-analysis', () => {
+  it('OPERATIONS nav items contain kpi-dashboard + campaign-effects + traffic-analysis', () => {
     const keys = OPERATIONS_BOOTSTRAP.extendedNavItems.map(i => i.key)
     assert.ok(keys.includes('kpi-dashboard'))
     assert.ok(keys.includes('campaign-effects'))
@@ -105,11 +105,11 @@ describe('OPERATIONS 导航菜单完整性', () => {
 })
 
 describe('FINANCE 导航菜单完整性', () => {
-  test('FINANCE nav items ≥ 6', () => {
+  it('FINANCE nav items ≥ 6', () => {
     assert.ok(FINANCE_BOOTSTRAP.extendedNavItems.length >= 6)
   })
 
-  test('FINANCE nav items contain reconciliation + settlements + invoices', () => {
+  it('FINANCE nav items contain reconciliation + settlements + invoices', () => {
     const keys = FINANCE_BOOTSTRAP.extendedNavItems.map(i => i.key)
     assert.ok(keys.includes('reconciliation'))
     assert.ok(keys.includes('settlements'))
@@ -118,11 +118,11 @@ describe('FINANCE 导航菜单完整性', () => {
 })
 
 describe('WAREHOUSE 导航菜单完整性', () => {
-  test('WAREHOUSE nav items ≥ 6', () => {
+  it('WAREHOUSE nav items ≥ 6', () => {
     assert.ok(WAREHOUSE_BOOTSTRAP.extendedNavItems.length >= 6)
   })
 
-  test('WAREHOUSE nav items contain inventory-dashboard + purchase-orders + suppliers', () => {
+  it('WAREHOUSE nav items contain inventory-dashboard + purchase-orders + suppliers', () => {
     const keys = WAREHOUSE_BOOTSTRAP.extendedNavItems.map(i => i.key)
     assert.ok(keys.includes('inventory-dashboard'))
     assert.ok(keys.includes('purchase-orders'))
@@ -131,11 +131,11 @@ describe('WAREHOUSE 导航菜单完整性', () => {
 })
 
 describe('COACH 导航菜单完整性', () => {
-  test('COACH nav items ≥ 6', () => {
+  it('COACH nav items ≥ 6', () => {
     assert.ok(COACH_BOOTSTRAP.extendedNavItems.length >= 6)
   })
 
-  test('COACH nav items contain class-schedule + students + teaching-records', () => {
+  it('COACH nav items contain class-schedule + students + teaching-records', () => {
     const keys = COACH_BOOTSTRAP.extendedNavItems.map(i => i.key)
     assert.ok(keys.includes('class-schedule'))
     assert.ok(keys.includes('students'))
@@ -147,41 +147,41 @@ describe('COACH 导航菜单完整性', () => {
 // Test 11: 越权验证 — WAREHOUSE 不能访问 FINANCE 菜单
 // =========================================================================
 describe('越权验证', () => {
-  test('WAREHOUSE cannot access FINANCE menu', () => {
+  it('WAREHOUSE cannot access FINANCE menu', () => {
     assert.equal(canAccessRoleMenu('WAREHOUSE', 'FINANCE'), false)
   })
 
-  test('COACH cannot access FINANCE menu', () => {
+  it('COACH cannot access FINANCE menu', () => {
     assert.equal(canAccessRoleMenu('COACH', 'FINANCE'), false)
   })
 
-  test('OPERATIONS cannot access FINANCE menu', () => {
+  it('OPERATIONS cannot access FINANCE menu', () => {
     assert.equal(canAccessRoleMenu('OPERATIONS', 'FINANCE'), false)
   })
 
-  test('FINANCE cannot access WAREHOUSE menu', () => {
+  it('FINANCE cannot access WAREHOUSE menu', () => {
     assert.equal(canAccessRoleMenu('FINANCE', 'WAREHOUSE'), false)
   })
 
-  test('STORE_MANAGER cannot access WAREHOUSE menu', () => {
+  it('STORE_MANAGER cannot access WAREHOUSE menu', () => {
     assert.equal(canAccessRoleMenu('STORE_MANAGER', 'WAREHOUSE'), false)
   })
 
-  test('SUPER_ADMIN can access any role menu', () => {
+  it('SUPER_ADMIN can access any role menu', () => {
     for (const { key } of TARGET_ROLES) {
       assert.equal(canAccessRoleMenu('SUPER_ADMIN', key), true,
         `SUPER_ADMIN should access ${key} menu`)
     }
   })
 
-  test('Self role can access own menu', () => {
+  it('Self role can access own menu', () => {
     for (const { key } of TARGET_ROLES) {
       assert.equal(canAccessRoleMenu(key, key), true,
         `${key} should access own menu`)
     }
   })
 
-  test('Unknown role cannot access FINANCE', () => {
+  it('Unknown role cannot access FINANCE', () => {
     assert.equal(canAccessRoleMenu('UNKNOWN_ROLE', 'FINANCE'), false)
   })
 })
@@ -191,7 +191,7 @@ describe('越权验证', () => {
 // =========================================================================
 describe('待办卡片类型', () => {
   for (const roleDef of TARGET_ROLES) {
-    test(`${roleDef.key} todo cards have valid priorities`, () => {
+    it(`${roleDef.key} todo cards have valid priorities`, () => {
       const config = getRoleBootstrapConfig(roleDef.key)!
       const validPriorities = ['HIGH', 'MEDIUM', 'LOW']
       for (const card of config.todoCardTypes) {
@@ -208,7 +208,7 @@ describe('待办卡片类型', () => {
 // Test 13: 权限矩阵片段完整性
 // =========================================================================
 describe('权限矩阵片段完整性', () => {
-  test('All 5 roles have permission snippets covering resources', () => {
+  it('All 5 roles have permission snippets covering resources', () => {
     for (const { key } of TARGET_ROLES) {
       const config = getRoleBootstrapConfig(key)!
       assert.ok(config.permissionSnippets.length >= 2,
@@ -228,7 +228,7 @@ describe('权限矩阵片段完整性', () => {
 // Test 14: ROLE_BOOTSTRAP_CONFIGS 聚合正确
 // =========================================================================
 describe('ROLE_BOOTSTRAP_CONFIGS 聚合', () => {
-  test('ROLE_BOOTSTRAP_CONFIGS contains all 5 target roles', () => {
+  it('ROLE_BOOTSTRAP_CONFIGS contains all 5 target roles', () => {
     const keys = Object.keys(ROLE_BOOTSTRAP_CONFIGS)
     assert.equal(keys.length, 5)
     assert.ok(keys.includes('SUPER_ADMIN'))
@@ -238,7 +238,7 @@ describe('ROLE_BOOTSTRAP_CONFIGS 聚合', () => {
     assert.ok(keys.includes('COACH'))
   })
 
-  test('ROLE_BOOTSTRAP_CONFIGS entries match standalone exports', () => {
+  it('ROLE_BOOTSTRAP_CONFIGS entries match standalone exports', () => {
     assert.equal(ROLE_BOOTSTRAP_CONFIGS['SUPER_ADMIN'], SUPER_ADMIN_BOOTSTRAP)
     assert.equal(ROLE_BOOTSTRAP_CONFIGS['OPERATIONS'], OPERATIONS_BOOTSTRAP)
     assert.equal(ROLE_BOOTSTRAP_CONFIGS['FINANCE'], FINANCE_BOOTSTRAP)
@@ -251,13 +251,13 @@ describe('ROLE_BOOTSTRAP_CONFIGS 聚合', () => {
 // Test 15: getRoleBootstrapConfig 边界
 // =========================================================================
 describe('getRoleBootstrapConfig 边界', () => {
-  test('returns undefined for unknown role', () => {
+  it('returns undefined for unknown role', () => {
     assert.equal(getRoleBootstrapConfig('GUIDE'), undefined)
     assert.equal(getRoleBootstrapConfig('CASHIER'), undefined)
     assert.equal(getRoleBootstrapConfig(''), undefined)
   })
 
-  test('returns undefined for TENANT_ADMIN (不在新增5角色中)', () => {
+  it('returns undefined for TENANT_ADMIN (不在新增5角色中)', () => {
     assert.equal(getRoleBootstrapConfig('TENANT_ADMIN'), undefined)
   })
 })
@@ -266,13 +266,13 @@ describe('getRoleBootstrapConfig 边界', () => {
 // Test 16: NavItemPriority 枚举值
 // =========================================================================
 describe('NavItemPriority 枚举值', () => {
-  test('has High/Medium/Low', () => {
+  it('has High/Medium/Low', () => {
     assert.equal(NavItemPriority.High, 'HIGH')
     assert.equal(NavItemPriority.Medium, 'MEDIUM')
     assert.equal(NavItemPriority.Low, 'LOW')
   })
 
-  test('all config nav items use valid priorities', () => {
+  it('all config nav items use valid priorities', () => {
     const valid = new Set(Object.values(NavItemPriority))
     for (const config of Object.values(ROLE_BOOTSTRAP_CONFIGS)) {
       for (const item of config.extendedNavItems) {

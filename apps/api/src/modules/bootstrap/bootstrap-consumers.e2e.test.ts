@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { Controller, Get, Inject, Req } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import type { Request } from 'express'
@@ -59,7 +59,7 @@ class TestWorkbenchController {
   }
 }
 
-test('e2e: bootstrap consumers expose stable api result envelopes', async () => {
+it('e2e: bootstrap consumers expose stable api result envelopes', async () => {
   const moduleRef = await Test.createTestingModule({
     controllers: [TestMarketController, TestPortalController, TestWorkbenchController],
     providers: [
@@ -283,7 +283,7 @@ async function buildBootstrapApp() {
   return app
 }
 
-test('e2e: markets bootstrap returns exactly 2 supported markets with cn-mainland first', async () => {
+it('e2e: markets bootstrap returns exactly 2 supported markets with cn-mainland first', async () => {
   const app = await buildBootstrapApp()
   try {
     const res = await request(app.getHttpServer()).get('/markets/bootstrap')
@@ -296,7 +296,7 @@ test('e2e: markets bootstrap returns exactly 2 supported markets with cn-mainlan
   }
 })
 
-test('e2e: markets bootstrap defaults match cn-mainland + us-default pair', async () => {
+it('e2e: markets bootstrap defaults match cn-mainland + us-default pair', async () => {
   const app = await buildBootstrapApp()
   try {
     const res = await request(app.getHttpServer()).get('/markets/bootstrap')
@@ -307,7 +307,7 @@ test('e2e: markets bootstrap defaults match cn-mainland + us-default pair', asyn
   }
 })
 
-test('e2e: portal bootstrap returns tenantPortal with login entry', async () => {
+it('e2e: portal bootstrap returns tenantPortal with login entry', async () => {
   const app = await buildBootstrapApp()
   try {
     const res = await request(app.getHttpServer()).get('/portals/bootstrap')
@@ -320,7 +320,7 @@ test('e2e: portal bootstrap returns tenantPortal with login entry', async () => 
   }
 })
 
-test('e2e: workbench bootstrap returns 10 roles sorted in order', async () => {
+it('e2e: workbench bootstrap returns 10 roles sorted in order', async () => {
   const app = await buildBootstrapApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbenches/bootstrap')
@@ -342,7 +342,7 @@ test('e2e: workbench bootstrap returns 10 roles sorted in order', async () => {
   }
 })
 
-test('e2e: portal bootstrap supports x-market-code override', async () => {
+it('e2e: portal bootstrap supports x-market-code override', async () => {
   const app = await buildBootstrapApp()
   try {
     const res = await request(app.getHttpServer())
@@ -356,7 +356,7 @@ test('e2e: portal bootstrap supports x-market-code override', async () => {
   }
 })
 
-test('e2e: workbench bootstrap respects x-tenant-id in tenantContext echo', async () => {
+it('e2e: workbench bootstrap respects x-tenant-id in tenantContext echo', async () => {
   const app = await buildBootstrapApp()
   try {
     const res = await request(app.getHttpServer())
@@ -368,7 +368,7 @@ test('e2e: workbench bootstrap respects x-tenant-id in tenantContext echo', asyn
   }
 })
 
-test('e2e: market bootstrap returns same payload on second call (idempotency)', async () => {
+it('e2e: market bootstrap returns same payload on second call (idempotency)', async () => {
   const app = await buildBootstrapApp()
   try {
     const first = await request(app.getHttpServer()).get('/markets/bootstrap')
@@ -381,7 +381,7 @@ test('e2e: market bootstrap returns same payload on second call (idempotency)', 
   }
 })
 
-test('e2e: workbench bootstrap regionalLoginPolicies defaultLoginPath follows market/tenant pattern', async () => {
+it('e2e: workbench bootstrap regionalLoginPolicies defaultLoginPath follows market/tenant pattern', async () => {
   const app = await buildBootstrapApp()
   try {
     const res = await request(app.getHttpServer())
@@ -395,7 +395,7 @@ test('e2e: workbench bootstrap regionalLoginPolicies defaultLoginPath follows ma
   }
 })
 
-test('e2e: workbench bootstrap supportedClients is exactly 5 channels', async () => {
+it('e2e: workbench bootstrap supportedClients is exactly 5 channels', async () => {
   const app = await buildBootstrapApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbenches/bootstrap')
@@ -406,7 +406,7 @@ test('e2e: workbench bootstrap supportedClients is exactly 5 channels', async ()
   }
 })
 
-test('e2e: workbench bootstrap workbenches each have marketCodes array', async () => {
+it('e2e: workbench bootstrap workbenches each have marketCodes array', async () => {
   const app = await buildBootstrapApp()
   try {
     const res = await request(app.getHttpServer()).get('/workbenches/bootstrap')
@@ -419,7 +419,7 @@ test('e2e: workbench bootstrap workbenches each have marketCodes array', async (
   }
 })
 
-test('e2e: portal bootstrap market profile inherits from x-market-code header', async () => {
+it('e2e: portal bootstrap market profile inherits from x-market-code header', async () => {
   const app = await buildBootstrapApp()
   try {
     const res = await request(app.getHttpServer())

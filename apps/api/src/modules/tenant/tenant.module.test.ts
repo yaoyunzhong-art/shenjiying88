@@ -1,7 +1,7 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { TenantModule } from './tenant.module'
 import { TenantController } from './tenant.controller'
 import { TenantService } from './tenant.service'
@@ -9,7 +9,7 @@ import { TenantService } from './tenant.service'
 describe('TenantModule', () => {
   let moduleRef: TestingModule
 
-  test('should compile and instantiate', async () => {
+  it('should compile and instantiate', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [TenantModule],
     }).compile()
@@ -18,7 +18,7 @@ describe('TenantModule', () => {
     assert.ok(moduleRef instanceof TestingModule)
   })
 
-  test('should provide TenantController', async () => {
+  it('should provide TenantController', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [TenantModule],
     }).compile()
@@ -28,7 +28,7 @@ describe('TenantModule', () => {
     assert.ok(controller instanceof TenantController)
   })
 
-  test('should provide TenantService', async () => {
+  it('should provide TenantService', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [TenantModule],
     }).compile()
@@ -38,7 +38,7 @@ describe('TenantModule', () => {
     assert.ok(service instanceof TenantService)
   })
 
-  test('should export TenantService', async () => {
+  it('should export TenantService', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [TenantModule],
     }).compile()

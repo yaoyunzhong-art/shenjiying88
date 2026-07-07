@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { randomUUID } from 'node:crypto'
 
  
@@ -21,7 +21,7 @@ function makeReq(headers: Record<string, string> = {}): Record<string, any> {
   } as Record<string, any>
 }
 
-test('TenantMiddleware use() sets default tenantContext', () => {
+it('TenantMiddleware use() sets default tenantContext', () => {
   const middleware = new TenantMiddleware()
   const req = makeReq()
   let nextCalled = false
@@ -39,7 +39,7 @@ test('TenantMiddleware use() sets default tenantContext', () => {
   assert.equal(req.tenantContext.storeId, undefined)
 })
 
-test('TenantMiddleware use() reads tenantContext from headers', () => {
+it('TenantMiddleware use() reads tenantContext from headers', () => {
   const middleware = new TenantMiddleware()
   const req = makeReq({
     'x-tenant-id': 'tenant-custom',
@@ -57,7 +57,7 @@ test('TenantMiddleware use() reads tenantContext from headers', () => {
   assert.equal(req.tenantContext.marketCode, 'zh-cn')
 })
 
-test('TenantMiddleware use() trims whitespace from header values', () => {
+it('TenantMiddleware use() trims whitespace from header values', () => {
   const middleware = new TenantMiddleware()
   const req = makeReq({
     'x-tenant-id': '  tenant-trimmed  ',
@@ -71,7 +71,7 @@ test('TenantMiddleware use() trims whitespace from header values', () => {
   assert.equal(req.tenantContext.marketCode, 'jp')
 })
 
-test('TenantMiddleware use() sets governanceContext with requestId', () => {
+it('TenantMiddleware use() sets governanceContext with requestId', () => {
   const middleware = new TenantMiddleware()
   const req = makeReq({
     'x-request-id': 'custom-request-id-123'
@@ -86,7 +86,7 @@ test('TenantMiddleware use() sets governanceContext with requestId', () => {
   assert.ok(req.governanceContext.startedAt > 0)
 })
 
-test('TenantMiddleware use() generates randomUUID for governanceContext when x-request-id missing', () => {
+it('TenantMiddleware use() generates randomUUID for governanceContext when x-request-id missing', () => {
   const middleware = new TenantMiddleware()
   const req = makeReq({})
   const res = {} as any
@@ -98,7 +98,7 @@ test('TenantMiddleware use() generates randomUUID for governanceContext when x-r
   assert.ok(req.governanceContext.requestId.length > 30)
 })
 
-test('TenantMiddleware use() builds actorContext from x-actor header (JSON)', () => {
+it('TenantMiddleware use() builds actorContext from x-actor header (JSON)', () => {
   const middleware = new TenantMiddleware()
   const actor = {
     actorId: 'json-actor-1',
@@ -124,7 +124,7 @@ test('TenantMiddleware use() builds actorContext from x-actor header (JSON)', ()
   assert.equal(req.actorContext?.source, 'headers')
 })
 
-test('TenantMiddleware use() builds actorContext from x-actor header (plain id)', () => {
+it('TenantMiddleware use() builds actorContext from x-actor header (plain id)', () => {
   const middleware = new TenantMiddleware()
   const req = makeReq({ 'x-actor': 'plain-actor-id' })
   const res = {} as any
@@ -137,7 +137,7 @@ test('TenantMiddleware use() builds actorContext from x-actor header (plain id)'
   assert.equal(req.actorContext?.authenticated, true)
 })
 
-test('TenantMiddleware use() builds actorContext from x-actor-id and individual headers', () => {
+it('TenantMiddleware use() builds actorContext from x-actor-id and individual headers', () => {
   const middleware = new TenantMiddleware()
   const req = makeReq({
     'x-actor-id': 'actor-direct',
@@ -161,7 +161,7 @@ test('TenantMiddleware use() builds actorContext from x-actor-id and individual 
   assert.equal(req.actorContext?.authenticated, true)
 })
 
-test('TenantMiddleware use() deduplicates roles and permissions', () => {
+it('TenantMiddleware use() deduplicates roles and permissions', () => {
   const middleware = new TenantMiddleware()
   const req = makeReq({
     'x-actor-id': 'actor-dedup',
@@ -176,7 +176,7 @@ test('TenantMiddleware use() deduplicates roles and permissions', () => {
   assert.deepStrictEqual(req.actorContext?.permissions, ['read', 'write'])
 })
 
-test('TenantMiddleware use() returns undefined actorContext when no identity headers', () => {
+it('TenantMiddleware use() returns undefined actorContext when no identity headers', () => {
   const middleware = new TenantMiddleware()
   const req = makeReq({
     'x-tenant-id': 'tenant-no-actor'
@@ -189,7 +189,7 @@ test('TenantMiddleware use() returns undefined actorContext when no identity hea
   assert.equal(req.actorContext, undefined)
 })
 
-test('TenantMiddleware use() uses x-actor as fallback id when x-actor-id is missing', () => {
+it('TenantMiddleware use() uses x-actor as fallback id when x-actor-id is missing', () => {
   const middleware = new TenantMiddleware()
   const req = makeReq({
     'x-actor': 'fallback-actor',
@@ -204,7 +204,7 @@ test('TenantMiddleware use() uses x-actor as fallback id when x-actor-id is miss
   assert.deepStrictEqual(req.actorContext?.roles, ['viewer'])
 })
 
-test('TenantMiddleware use() prefers x-actor-id over JSON x-actor actorId', () => {
+it('TenantMiddleware use() prefers x-actor-id over JSON x-actor actorId', () => {
   const middleware = new TenantMiddleware()
   const actor = { actorId: 'json-id', actorType: 'service-account' }
   const req = makeReq({
@@ -223,7 +223,7 @@ test('TenantMiddleware use() prefers x-actor-id over JSON x-actor actorId', () =
   assert.equal(req.actorContext?.actorType, 'service-account')
 })
 
-test('TenantMiddleware use() handles whitespace-only header values as undefined', () => {
+it('TenantMiddleware use() handles whitespace-only header values as undefined', () => {
   const middleware = new TenantMiddleware()
   const req = makeReq({
     'x-tenant-id': '   ',
@@ -239,7 +239,7 @@ test('TenantMiddleware use() handles whitespace-only header values as undefined'
   assert.equal(req.tenantContext.marketCode, 'us-default')
 })
 
-test('TenantMiddleware use() uses x-actor id field as fallback', () => {
+it('TenantMiddleware use() uses x-actor id field as fallback', () => {
   const middleware = new TenantMiddleware()
   const actor = { id: 'id-field', type: 'platform-user', name: 'Platform Actor' }
   const req = makeReq({
@@ -257,7 +257,7 @@ test('TenantMiddleware use() uses x-actor id field as fallback', () => {
   assert.equal(req.actorContext?.tenantId, 'plat-tenant')
 })
 
-test('TenantMiddleware use() handles empty string x-actor', () => {
+it('TenantMiddleware use() handles empty string x-actor', () => {
   const middleware = new TenantMiddleware()
   const req = makeReq({
     'x-actor': ''
@@ -270,7 +270,7 @@ test('TenantMiddleware use() handles empty string x-actor', () => {
   assert.equal(req.actorContext, undefined)
 })
 
-test('TenantMiddleware use() supports x-role and x-permission as singular aliases', () => {
+it('TenantMiddleware use() supports x-role and x-permission as singular aliases', () => {
   const middleware = new TenantMiddleware()
   const req = makeReq({
     'x-actor-id': 'sing-alias',

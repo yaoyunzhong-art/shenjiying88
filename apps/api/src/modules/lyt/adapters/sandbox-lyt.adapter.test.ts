@@ -1,9 +1,9 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict';
-import test from 'node:test';
 import { ConfigService } from '@nestjs/config';
 import { SandboxLytAdapter } from './sandbox-lyt.adapter';
 
-test('SandboxLytAdapter calls sandbox member endpoint', async () => {
+it('SandboxLytAdapter calls sandbox member endpoint', async () => {
   globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
     const url = String(input);
     const headers = init?.headers as Record<string, string>;
@@ -29,7 +29,7 @@ test('SandboxLytAdapter calls sandbox member endpoint', async () => {
   assert.equal(member.levelName, 'SILVER');
 });
 
-test('SandboxLytAdapter posts order payload to sandbox endpoint', async () => {
+it('SandboxLytAdapter posts order payload to sandbox endpoint', async () => {
   globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
     const url = String(input);
     assert.equal(url, 'https://sandbox.lyt.local/orders');
@@ -56,7 +56,7 @@ test('SandboxLytAdapter posts order payload to sandbox endpoint', async () => {
   assert.equal(result.status, 'CREATED');
 });
 
-test('SandboxLytAdapter retries retryable failures before succeeding', async () => {
+it('SandboxLytAdapter retries retryable failures before succeeding', async () => {
   let attempts = 0;
 
   globalThis.fetch = (async (_input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
@@ -85,7 +85,7 @@ test('SandboxLytAdapter retries retryable failures before succeeding', async () 
   assert.equal(result.storeId, 'store-rt');
 });
 
-test('SandboxLytAdapter honors ConfigService endpoint override', async () => {
+it('SandboxLytAdapter honors ConfigService endpoint override', async () => {
   globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
     assert.equal(String(input), 'https://sandbox-override.lyt.local/devices/device-007/status');
 

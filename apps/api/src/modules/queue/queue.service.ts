@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto'
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable, Optional } from '@nestjs/common'
+import {
+  CACHE_SERVICE,
+  type CacheService
+} from '../../infrastructure/cache/cache.module'
 import {
   QueueEntity,
   QueueStatus,
@@ -156,7 +160,7 @@ export class QueueService {
     const page = filter?.page ?? 1
     const pageSize = filter?.pageSize ?? 20
 
-    let items = this.findAll(tenantId, {
+    const items = this.findAll(tenantId, {
       type: filter?.type,
       status: filter?.status,
       resourceId: filter?.resourceId,

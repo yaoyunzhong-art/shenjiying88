@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E 跨模块 #8 — 预约 → 排队 → 收银 → 完成 全链路
  *
@@ -20,12 +21,9 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { Body, Controller, Inject, Param, Post, Req } from '@nestjs/common'
-import { Test } from '@nestjs/testing'
 import request from 'supertest'
-import type { NextFunction, Request, Response } from 'express'
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import type { Request } from 'express'
 import { CashierService } from '../cashier/cashier.service'
 import { MemberService, resetMemberServiceTestState } from '../member/member.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'
@@ -39,17 +37,7 @@ import {
   ReservationType
 } from '../reservation/reservation.entity'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
-
-function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
-  ctx.tenantContext = {
-    tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-A',
-    brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-A',
-    storeId: (req.header('x-store-id') as string | undefined) ?? 'store-A',
-    marketCode: (req.header('x-market-code') as string | undefined) ?? 'cn-mainland'
-  }
-  next()
-}
+import { buildCrossModuleTestApp } from './test-helpers'
 
 // ─── TestController ───
 
@@ -184,21 +172,16 @@ async function buildApp() {
   const queueService = new QueueService()
   queueService.resetQueueStoresForTests()
 
-  const moduleRef = await Test.createTestingModule({
+  const { app, moduleRef } = await buildCrossModuleTestApp({
     controllers: [TestController],
     providers: [
       { provide: MemberService, useValue: memberService },
       { provide: ReservationService, useValue: reservationService },
       { provide: QueueService, useValue: queueService },
       { provide: CashierService, useValue: cashierService }
-    ]
-  }).compile()
-
-  const app = moduleRef.createNestApplication()
-  app.use(attachTenantContext)
-  app.useGlobalInterceptors(new ResponseInterceptor())
-  await app.init()
-  return { app, memberService, reservationService, queueService, cashierService }
+    ],
+  })
+  return { app, moduleRef, memberService, reservationService, queueService, cashierService }
 }
 
 const TENANT_A = {
@@ -218,7 +201,7 @@ function futureTime(offsetMin: number): string {
 
 // ═══════════════════════════════════════════════════
 
-test('e2e-8: full reservation → queue → service → payment → complete lifecycle', async () => {
+it('e2e-8: full reservation → queue → service → payment → complete lifecycle', async () => {
   const { app } = await buildApp()
   await request(app.getHttpServer()).post('/members').set(TENANT_A).send({ memberId: 'grace' })
 
@@ -342,7 +325,7 @@ test('e2e-8: full reservation → queue → service → payment → complete lif
   }
 })
 
-test('e2e-8: queue number increment per tenant+type', async () => {
+it('e2e-8: queue number increment per tenant+type', async () => {
   const { app } = await buildApp()
   await request(app.getHttpServer()).post('/members').set(TENANT_A).send({ memberId: 'h1' })
   await request(app.getHttpServer()).post('/members').set(TENANT_A).send({ memberId: 'h2' })
@@ -361,7 +344,7 @@ test('e2e-8: queue number increment per tenant+type', async () => {
   }
 })
 
-test('e2e-8: cancel reservation + cancel queue keeps data consistent', async () => {
+it('e2e-8: cancel reservation + cancel queue keeps data consistent', async () => {
   const { app } = await buildApp()
   await request(app.getHttpServer()).post('/members').set(TENANT_A).send({ memberId: 'ivy' })
 
@@ -403,7 +386,7 @@ test('e2e-8: cancel reservation + cancel queue keeps data consistent', async () 
   }
 })
 
-test('e2e-8: cannot start progress without CONFIRMED status', async () => {
+it('e2e-8: cannot start progress without CONFIRMED status', async () => {
   const { app } = await buildApp()
   await request(app.getHttpServer()).post('/members').set(TENANT_A).send({ memberId: 'jack' })
 
@@ -432,7 +415,7 @@ test('e2e-8: cannot start progress without CONFIRMED status', async () => {
   }
 })
 
-test('e2e-8: cross-tenant isolation - Tenant B cannot confirm Tenant A reservation', async () => {
+it('e2e-8: cross-tenant isolation - Tenant B cannot confirm Tenant A reservation', async () => {
   const { app } = await buildApp()
   await request(app.getHttpServer()).post('/members').set(TENANT_A).send({ memberId: 'lily' })
 
@@ -461,7 +444,7 @@ test('e2e-8: cross-tenant isolation - Tenant B cannot confirm Tenant A reservati
   }
 })
 
-test('e2e-8: estimated wait time accumulates per queue (5min/person)', async () => {
+it('e2e-8: estimated wait time accumulates per queue (5min/person)', async () => {
   const { app } = await buildApp()
   await request(app.getHttpServer()).post('/members').set(TENANT_A).send({ memberId: 'm1' })
   await request(app.getHttpServer()).post('/members').set(TENANT_A).send({ memberId: 'm2' })
@@ -480,7 +463,7 @@ test('e2e-8: estimated wait time accumulates per queue (5min/person)', async () 
   }
 })
 
-test('e2e-8: reservation conflict detection - same resource + overlapping time', async () => {
+it('e2e-8: reservation conflict detection - same resource + overlapping time', async () => {
   const { app } = await buildApp()
   await request(app.getHttpServer()).post('/members').set(TENANT_A).send({ memberId: 'n1' })
   await request(app.getHttpServer()).post('/members').set(TENANT_A).send({ memberId: 'n2' })

@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { validateSync } from 'class-validator'
 import {
   RecordRuntimeGovernanceCallbackDto,
@@ -8,7 +8,7 @@ import {
   SubmitRuntimeGovernanceActionDto
 } from './runtime-governance.dto'
 
-test('runtime governance dto accepts shared submit enums and rejects non-api actions', () => {
+it('runtime governance dto accepts shared submit enums and rejects non-api actions', () => {
   const validDto = Object.assign(new SubmitRuntimeGovernanceActionDto(), {
     app: 'admin-web',
     action: 'runtime-replay',
@@ -30,7 +30,7 @@ test('runtime governance dto accepts shared submit enums and rejects non-api act
   assert.equal(validateSync(invalidDto).some((error) => error.property === 'action'), true)
 })
 
-test('runtime governance dto accepts shared callback and replay enums', () => {
+it('runtime governance dto accepts shared callback and replay enums', () => {
   const callbackDto = Object.assign(new RecordRuntimeGovernanceCallbackDto(), {
     callbackStatus: 'callback-recorded',
     ackToken: 'ack-token',

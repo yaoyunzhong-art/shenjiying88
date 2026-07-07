@@ -8,5 +8,5 @@
  * 该函数是纯函数，方便单测。
  */
 export function sanitizeFilename(input: string): string {
-  return input.replace(/[^a-zA-Z0-9_-]/g, '-');
+  return input.replace(/[^a-zA-Z0-9_\u4e00-\u9fff-]/g, '-');
 }

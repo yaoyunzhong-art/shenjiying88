@@ -1,0 +1,157 @@
+/**
+ * AI 异常告警面板 - Mock 数据 + Hooks
+ */
+
+import type { AiDecision, AnomalyAlert, AnomalyTrendPoint } from './types'
+
+export const MOCK_DECISIONS: AiDecision[] = [
+  {
+    id: 'decision-1',
+    ruleName: '流量突增检测 V2',
+    description: '基于3-sigma的流量异常检测',
+    input: { metric: 'api.request.count', window: '5m', currentAvg: 1250, baselineAvg: 420 },
+    output: { isAnomaly: true, zScore: 4.2, deviationPercent: 197.6 },
+    confidence: 0.96,
+    executedAt: '2026-07-07T11:20:00Z',
+    durationMs: 48,
+    success: true,
+  },
+  {
+    id: 'decision-2',
+    ruleName: '响应时间漂移检测',
+    description: '时序数据漂移检测 (KS检验)',
+    input: { metric: 'api.latency.p99', window: '15m', distribution: { mean: 320, stddev: 45 } },
+    output: { driftDetected: true, ksStatistic: 0.82, pValue: 0.003 },
+    confidence: 0.91,
+    executedAt: '2026-07-07T11:15:00Z',
+    durationMs: 120,
+    success: true,
+  },
+  {
+    id: 'decision-3',
+    ruleName: '错误率离群检测',
+    description: '基于孤立森林的离群检测',
+    input: { metric: 'http.error.rate', samples: [0.02, 0.03, 0.01, 0.15, 0.02] },
+    output: { outliers: ['sample-3'], anomalyScore: 0.73 },
+    confidence: 0.83,
+    executedAt: '2026-07-07T11:10:00Z',
+    durationMs: 210,
+    success: true,
+  },
+  {
+    id: 'decision-4',
+    ruleName: '季节性模式检测',
+    description: '周期性模式偏离检测',
+    input: { metric: 'user.active.dau', period: '7d', currentWeekdayAvg: 18500, historicalWeekdayAvg: 22000 },
+    output: { seasonalBreak: true, deviation: -15.9 },
+    confidence: 0.78,
+    executedAt: '2026-07-07T10:50:00Z',
+    durationMs: 95,
+    success: true,
+  },
+  {
+    id: 'decision-5',
+    ruleName: '全链路异常评分',
+    description: '综合多指标异常评分',
+    input: { metrics: ['cpu.usage', 'mem.usage', 'disk.iops'] },
+    output: { compositeScore: 0.65, topContributor: 'cpu.usage', breakdown: { 'cpu.usage': 0.82, 'mem.usage': 0.45, 'disk.iops': 0.31 } },
+    confidence: 0.88,
+    executedAt: '2026-07-07T10:30:00Z',
+    durationMs: 320,
+    success: false,
+    errorMessage: '部分指标数据缺失 (disk.iops)',
+  },
+]
+
+export const MOCK_ANOMALY_ALERTS: AnomalyAlert[] = [
+  {
+    id: 'anomaly-1',
+    anomalyType: 'spike',
+    severity: 'critical',
+    status: 'open',
+    metric: 'api.request.count',
+    metricLabel: 'API 请求数',
+    currentValue: 1250,
+    baselineValue: 420,
+    deviation: 197.6,
+    message: 'API请求数突增198%，超出3-sigma阈值',
+    detectedAt: '2026-07-07T11:20:00Z',
+    aiRecommendation: '建议检查是否存在异常流量注入或营销活动突发流量，建议启用限流策略 rate-limit: 800/min',
+    relatedDecisionId: 'decision-1',
+  },
+  {
+    id: 'anomaly-2',
+    anomalyType: 'drift',
+    severity: 'warning',
+    status: 'open',
+    metric: 'api.latency.p99',
+    metricLabel: 'P99 响应延迟',
+    currentValue: 520,
+    baselineValue: 320,
+    deviation: 62.5,
+    message: 'P99响应延迟漂移62.5%，分布与历史显著不同',
+    detectedAt: '2026-07-07T11:15:00Z',
+    aiRecommendation: '可能由新部署版本引入性能回归，建议回滚或排查最近30分钟内的变更',
+    relatedDecisionId: 'decision-2',
+  },
+  {
+    id: 'anomaly-3',
+    anomalyType: 'outlier',
+    severity: 'warning',
+    status: 'investigating',
+    metric: 'http.error.rate',
+    metricLabel: 'HTTP 错误率',
+    currentValue: 0.15,
+    baselineValue: 0.02,
+    deviation: 650,
+    message: 'HTTP错误率在样本点突增至15%，为正常值的7.5倍',
+    detectedAt: '2026-07-07T11:10:00Z',
+    assignedTo: 'oncall@shenjiying88.com',
+    aiRecommendation: '检查最近的API部署 /api/v2/order 服务是否存在异常，建议回滚并查看日志',
+    relatedDecisionId: 'decision-3',
+  },
+  {
+    id: 'anomaly-4',
+    anomalyType: 'seasonal_break',
+    severity: 'info',
+    status: 'dismissed',
+    metric: 'user.active.dau',
+    metricLabel: '日活跃用户',
+    currentValue: 18500,
+    baselineValue: 22000,
+    deviation: -15.9,
+    message: 'DAU较历史同期下降15.9%，可能受节假日影响',
+    detectedAt: '2026-07-07T10:50:00Z',
+    resolvedAt: '2026-07-07T11:00:00Z',
+    aiRecommendation: '确认是否为法定节假日效应，排除后无需处理',
+    relatedDecisionId: 'decision-4',
+  },
+]
+
+export const MOCK_TREND_DATA: AnomalyTrendPoint[] = [
+  { timestamp: '2026-07-07T10:00:00Z', value: 410, isAnomaly: false },
+  { timestamp: '2026-07-07T10:05:00Z', value: 425, isAnomaly: false },
+  { timestamp: '2026-07-07T10:10:00Z', value: 395, isAnomaly: false },
+  { timestamp: '2026-07-07T10:15:00Z', value: 430, isAnomaly: false },
+  { timestamp: '2026-07-07T10:20:00Z', value: 415, isAnomaly: false },
+  { timestamp: '2026-07-07T10:25:00Z', value: 440, isAnomaly: false },
+  { timestamp: '2026-07-07T10:30:00Z', value: 405, isAnomaly: false },
+  { timestamp: '2026-07-07T10:35:00Z', value: 450, isAnomaly: false },
+  { timestamp: '2026-07-07T10:40:00Z', value: 420, isAnomaly: false },
+  { timestamp: '2026-07-07T10:45:00Z', value: 435, isAnomaly: false },
+  { timestamp: '2026-07-07T10:50:00Z', value: 410, isAnomaly: false },
+  { timestamp: '2026-07-07T10:55:00Z', value: 445, isAnomaly: false },
+  { timestamp: '2026-07-07T11:00:00Z', value: 430, isAnomaly: false },
+  { timestamp: '2026-07-07T11:05:00Z', value: 460, isAnomaly: false },
+  { timestamp: '2026-07-07T11:10:00Z', value: 470, isAnomaly: false },
+  { timestamp: '2026-07-07T11:15:00Z', value: 580, isAnomaly: true, anomalyType: 'spike' },
+  { timestamp: '2026-07-07T11:20:00Z', value: 1250, isAnomaly: true, anomalyType: 'spike' },
+  { timestamp: '2026-07-07T11:25:00Z', value: 1100, isAnomaly: true, anomalyType: 'spike' },
+]
+
+export function useAiDecisions() { return { data: MOCK_DECISIONS, isLoading: false } }
+export function useAnomalyAlerts() { return { data: MOCK_ANOMALY_ALERTS, isLoading: false } }
+export function useAnomalyTrend() { return { data: MOCK_TREND_DATA, isLoading: false } }
+export function useUpdateAlertStatus() {
+  return { mutate: () => undefined, isPending: false }
+}

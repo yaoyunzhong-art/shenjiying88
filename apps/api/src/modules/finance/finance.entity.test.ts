@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   LedgerType,
   AccountType,
@@ -16,14 +16,14 @@ import {
 } from './finance.entity'
 
 describe('finance.entity enums', () => {
-  test('LedgerType 包含 Revenue / Expense / Refund / Adjustment', () => {
+  it('LedgerType 包含 Revenue / Expense / Refund / Adjustment', () => {
     assert.equal(LedgerType.Revenue, 'REVENUE')
     assert.equal(LedgerType.Expense, 'EXPENSE')
     assert.equal(LedgerType.Refund, 'REFUND')
     assert.equal(LedgerType.Adjustment, 'ADJUSTMENT')
   })
 
-  test('AccountType 包含 Cash / Wechat / Alipay / Bank / Other', () => {
+  it('AccountType 包含 Cash / Wechat / Alipay / Bank / Other', () => {
     assert.equal(AccountType.Cash, 'CASH')
     assert.equal(AccountType.Wechat, 'WECHAT')
     assert.equal(AccountType.Alipay, 'ALIPAY')
@@ -31,24 +31,24 @@ describe('finance.entity enums', () => {
     assert.equal(AccountType.Other, 'OTHER')
   })
 
-  test('AccountStatus 包含 Active / Frozen / Closed', () => {
+  it('AccountStatus 包含 Active / Frozen / Closed', () => {
     assert.equal(AccountStatus.Active, 'ACTIVE')
     assert.equal(AccountStatus.Frozen, 'FROZEN')
     assert.equal(AccountStatus.Closed, 'CLOSED')
   })
 
-  test('SettlementStatus 包含 Pending / Confirmed / Disputed', () => {
+  it('SettlementStatus 包含 Pending / Confirmed / Disputed', () => {
     assert.equal(SettlementStatus.Pending, 'PENDING')
     assert.equal(SettlementStatus.Confirmed, 'CONFIRMED')
     assert.equal(SettlementStatus.Disputed, 'DISPUTED')
   })
 
-  test('InvoiceType 包含 Regular / Vat', () => {
+  it('InvoiceType 包含 Regular / Vat', () => {
     assert.equal(InvoiceType.Regular, 'REGULAR')
     assert.equal(InvoiceType.Vat, 'VAT')
   })
 
-  test('InvoiceStatus 包含 Draft / Issued / Cancelled', () => {
+  it('InvoiceStatus 包含 Draft / Issued / Cancelled', () => {
     assert.equal(InvoiceStatus.Draft, 'DRAFT')
     assert.equal(InvoiceStatus.Issued, 'ISSUED')
     assert.equal(InvoiceStatus.Cancelled, 'CANCELLED')
@@ -56,7 +56,7 @@ describe('finance.entity enums', () => {
 })
 
 describe('finance.entity interfaces', () => {
-  test('Ledger 接口包含所有必填字段', () => {
+  it('Ledger 接口包含所有必填字段', () => {
     const ledger: Ledger = {
       id: 'ledger-1',
       tenantId: 'tenant-1',
@@ -80,7 +80,7 @@ describe('finance.entity interfaces', () => {
     assert.equal(ledger.description, 'Test ledger')
   })
 
-  test('Account 接口包含所有必填字段', () => {
+  it('Account 接口包含所有必填字段', () => {
     const account: Account = {
       id: 'acct-1',
       tenantId: 'tenant-1',
@@ -99,7 +99,7 @@ describe('finance.entity interfaces', () => {
     assert.equal(account.status, AccountStatus.Active)
   })
 
-  test('Account 已冻结状态', () => {
+  it('Account 已冻结状态', () => {
     const account: Account = {
       id: 'acct-frozen',
       tenantId: 'tenant-1',
@@ -114,7 +114,7 @@ describe('finance.entity interfaces', () => {
     assert.equal(account.status, AccountStatus.Frozen)
   })
 
-  test('Settlement 接口包含所有字段', () => {
+  it('Settlement 接口包含所有字段', () => {
     const settlement: Settlement = {
       id: 'stl-1',
       tenantId: 'tenant-1',
@@ -134,7 +134,7 @@ describe('finance.entity interfaces', () => {
     assert.equal(settlement.settlementStatus, SettlementStatus.Pending)
   })
 
-  test('Settlement 已确认带 settledAt', () => {
+  it('Settlement 已确认带 settledAt', () => {
     const settlement: Settlement = {
       id: 'stl-confirmed',
       tenantId: 'tenant-1',
@@ -152,7 +152,7 @@ describe('finance.entity interfaces', () => {
     assert.equal(settlement.settledAt, '2026-07-01T10:00:00.000Z')
   })
 
-  test('Invoice 接口包含所有字段', () => {
+  it('Invoice 接口包含所有字段', () => {
     const invoice: Invoice = {
       id: 'inv-1',
       tenantId: 'tenant-1',
@@ -177,7 +177,7 @@ describe('finance.entity interfaces', () => {
     assert.deepEqual(invoice.buyerInfo, { name: 'Test Co' })
   })
 
-  test('RevenueSummary 接口形状', () => {
+  it('RevenueSummary 接口形状', () => {
     const summary: RevenueSummary = {
       storeId: 'store-1',
       totalRevenue: 10000,
@@ -195,7 +195,7 @@ describe('finance.entity interfaces', () => {
     assert.equal(summary.transactionCount, 42)
   })
 
-  test('DailyRevenue 接口形状', () => {
+  it('DailyRevenue 接口形状', () => {
     const daily: DailyRevenue = {
       date: '2026-06-23',
       storeId: 'store-1',

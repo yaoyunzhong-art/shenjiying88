@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-diagnosis] [D] controller spec 补全
  * AiDiagnosisController 单元测试 (node:test)
@@ -8,8 +9,6 @@
  */
 
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
-
 // ── Entity mirrors ───────────────────────────────────────────
 function makeDiagnosis(overrides: Record<string, unknown> = {}) {
   return {
@@ -258,7 +257,7 @@ class AiDiagnosisController {
 describe('AiDiagnosisController', () => {
   // ── 诊断 CRUD ──
   describe('create()', () => {
-    test('creates a diagnosis and returns full entity', () => {
+    it('creates a diagnosis and returns full entity', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const result = ctrl.create({
         engineId: 'engine-001',
@@ -272,7 +271,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.diagnosis.status, 'PENDING')
     })
 
-    test('creates diagnosis with optional fields', () => {
+    it('creates diagnosis with optional fields', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const result = ctrl.create({
         engineId: 'engine-001',
@@ -286,7 +285,7 @@ describe('AiDiagnosisController', () => {
       assert.deepEqual(result.diagnosis.inputSnapshot, { cpu: 95 })
     })
 
-    test('generates unique IDs for each diagnosis', () => {
+    it('generates unique IDs for each diagnosis', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const r1 = ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       const r2 = ctrl.create({ engineId: 'e1', scenarioId: 's2', tenantId: 't-001', requestedBy: 'u2' })
@@ -295,14 +294,14 @@ describe('AiDiagnosisController', () => {
   })
 
   describe('get()', () => {
-    test('returns diagnosis by id', () => {
+    it('returns diagnosis by id', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const created = ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       const result = ctrl.get(created.diagnosis.diagnosisId)
       assert.equal(result.diagnosis.diagnosisId, created.diagnosis.diagnosisId)
     })
 
-    test('throws 404 for non-existent diagnosis', () => {
+    it('throws 404 for non-existent diagnosis', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       assert.throws(
         () => ctrl.get('non-existent'),
@@ -312,28 +311,28 @@ describe('AiDiagnosisController', () => {
   })
 
   describe('list()', () => {
-    test('returns empty list when no diagnoses', () => {
+    it('returns empty list when no diagnoses', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const result = ctrl.list({})
       assert.equal(result.total, 0)
       assert.deepEqual(result.diagnoses, [])
     })
 
-    test('lists all diagnoses', () => {
+    it('lists all diagnoses', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       ctrl.create({ engineId: 'e1', scenarioId: 's2', tenantId: 't-001', requestedBy: 'u2' })
       assert.equal(ctrl.list({}).total, 2)
     })
 
-    test('filters by engineId', () => {
+    it('filters by engineId', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       ctrl.create({ engineId: 'e2', scenarioId: 's2', tenantId: 't-001', requestedBy: 'u2' })
       assert.equal(ctrl.list({ engineId: 'e1' }).total, 1)
     })
 
-    test('filters by status', () => {
+    it('filters by status', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const d1 = ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       ctrl.update(d1.diagnosis.diagnosisId, { status: 'COMPLETED' })
@@ -341,7 +340,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(ctrl.list({ status: 'COMPLETED' }).total, 1)
     })
 
-    test('filters by riskLevel', () => {
+    it('filters by riskLevel', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const d1 = ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       ctrl.update(d1.diagnosis.diagnosisId, { status: 'COMPLETED', riskLevel: 'high' })
@@ -352,7 +351,7 @@ describe('AiDiagnosisController', () => {
   })
 
   describe('update()', () => {
-    test('updates diagnosis status and riskLevel', () => {
+    it('updates diagnosis status and riskLevel', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const created = ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       const result = ctrl.update(created.diagnosis.diagnosisId, {
@@ -365,7 +364,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.diagnosis.recommendation, 'All good')
     })
 
-    test('updates step by step: PENDING → IN_PROGRESS → COMPLETED', () => {
+    it('updates step by step: PENDING → IN_PROGRESS → COMPLETED', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const d = ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       const id = d.diagnosis.diagnosisId
@@ -373,7 +372,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(ctrl.update(id, { status: 'COMPLETED' }).diagnosis.status, 'COMPLETED')
     })
 
-    test('throws 404 for non-existent diagnosis', () => {
+    it('throws 404 for non-existent diagnosis', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       assert.throws(
         () => ctrl.update('ghost', { status: 'COMPLETED' }),
@@ -381,7 +380,7 @@ describe('AiDiagnosisController', () => {
       )
     })
 
-    test('no-op update with empty patch returns unchanged entity', () => {
+    it('no-op update with empty patch returns unchanged entity', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const d = ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       const result = ctrl.update(d.diagnosis.diagnosisId, {})
@@ -390,7 +389,7 @@ describe('AiDiagnosisController', () => {
   })
 
   describe('remove()', () => {
-    test('deletes diagnosis and returns void', () => {
+    it('deletes diagnosis and returns void', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const d = ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       const id = d.diagnosis.diagnosisId
@@ -398,7 +397,7 @@ describe('AiDiagnosisController', () => {
       assert.throws(() => ctrl.get(id))
     })
 
-    test('throws 404 for non-existent diagnosis', () => {
+    it('throws 404 for non-existent diagnosis', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       assert.throws(
         () => ctrl.remove('ghost'),
@@ -406,7 +405,7 @@ describe('AiDiagnosisController', () => {
       )
     })
 
-    test('delete is idempotent-first-call-succeeds', () => {
+    it('delete is idempotent-first-call-succeeds', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const d = ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       const id = d.diagnosis.diagnosisId
@@ -417,7 +416,7 @@ describe('AiDiagnosisController', () => {
 
   // ── 批量诊断 ──
   describe('createBatch()', () => {
-    test('creates batch with multiple scenarioIds', () => {
+    it('creates batch with multiple scenarioIds', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const result = ctrl.createBatch({
         engineId: 'engine-001',
@@ -430,7 +429,7 @@ describe('AiDiagnosisController', () => {
       assert.ok(result.batch.batchId.startsWith('batch-'))
     })
 
-    test('auto-evaluates all diagnoses in batch', () => {
+    it('auto-evaluates all diagnoses in batch', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const result = ctrl.createBatch({
         engineId: 'engine-001',
@@ -442,7 +441,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.batch.riskDistribution.low, 1)
     })
 
-    test('detects critical/high-risk scenarios in batch', () => {
+    it('detects critical/high-risk scenarios in batch', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const result = ctrl.createBatch({
         engineId: 'engine-001',
@@ -454,7 +453,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.batch.riskDistribution.high, 1)
     })
 
-    test('single scenario batch produces matchRate 0 or 1', () => {
+    it('single scenario batch produces matchRate 0 or 1', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const low = ctrl.createBatch({ engineId: 'e1', scenarioIds: ['normal'], tenantId: 't-001', triggeredBy: 'u1' })
       assert.equal(low.batch.matchRate, 0)
@@ -464,14 +463,14 @@ describe('AiDiagnosisController', () => {
   })
 
   describe('getBatch()', () => {
-    test('returns batch by id', () => {
+    it('returns batch by id', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const created = ctrl.createBatch({ engineId: 'e1', scenarioIds: ['s1'], tenantId: 't-001', triggeredBy: 'u1' })
       const result = ctrl.getBatch(created.batch.batchId)
       assert.equal(result.batch.batchId, created.batch.batchId)
     })
 
-    test('throws 404 for non-existent batch', () => {
+    it('throws 404 for non-existent batch', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       assert.throws(
         () => ctrl.getBatch('ghost-batch'),
@@ -481,26 +480,26 @@ describe('AiDiagnosisController', () => {
   })
 
   describe('listBatches()', () => {
-    test('returns empty when no batches', () => {
+    it('returns empty when no batches', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       assert.deepEqual(ctrl.listBatches(), [])
     })
 
-    test('lists all batches', () => {
+    it('lists all batches', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       ctrl.createBatch({ engineId: 'e1', scenarioIds: ['s1'], tenantId: 't-001', triggeredBy: 'u1' })
       ctrl.createBatch({ engineId: 'e2', scenarioIds: ['s2'], tenantId: 't-001', triggeredBy: 'u2' })
       assert.equal(ctrl.listBatches().length, 2)
     })
 
-    test('filters by engineId', () => {
+    it('filters by engineId', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       ctrl.createBatch({ engineId: 'e1', scenarioIds: ['s1'], tenantId: 't-001', triggeredBy: 'u1' })
       ctrl.createBatch({ engineId: 'e2', scenarioIds: ['s2'], tenantId: 't-001', triggeredBy: 'u2' })
       assert.equal(ctrl.listBatches('e1').length, 1)
     })
 
-    test('filters by tenantId', () => {
+    it('filters by tenantId', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       ctrl.createBatch({ engineId: 'e1', scenarioIds: ['s1'], tenantId: 't-001', triggeredBy: 'u1' })
       ctrl.createBatch({ engineId: 'e1', scenarioIds: ['s2'], tenantId: 't-002', triggeredBy: 'u2' })
@@ -510,7 +509,7 @@ describe('AiDiagnosisController', () => {
 
   // ── 风险报告 ──
   describe('riskReport()', () => {
-    test('generates empty report when no diagnoses', () => {
+    it('generates empty report when no diagnoses', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const report = ctrl.riskReport()
       assert.equal(report.totalEvaluated, 0)
@@ -518,7 +517,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(report.averageEvaluationDurationMs, 0)
     })
 
-    test('generates report with risk distribution', () => {
+    it('generates report with risk distribution', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const d = ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       ctrl.update(d.diagnosis.diagnosisId, { status: 'COMPLETED', riskLevel: 'high', recommendation: 'Check' })
@@ -528,21 +527,21 @@ describe('AiDiagnosisController', () => {
       assert.equal(report.topRecommendations.length, 1)
     })
 
-    test('filters report by engineId', () => {
+    it('filters report by engineId', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       ctrl.create({ engineId: 'e2', scenarioId: 's2', tenantId: 't-001', requestedBy: 'u2' })
       assert.equal(ctrl.riskReport('e1').totalEvaluated, 1)
     })
 
-    test('filters report by tenantId', () => {
+    it('filters report by tenantId', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       ctrl.create({ engineId: 'e1', scenarioId: 's2', tenantId: 't-002', requestedBy: 'u2' })
       assert.equal(ctrl.riskReport(undefined, 't-001').totalEvaluated, 1)
     })
 
-    test('sorts high-risk recommendations first (critical before high)', () => {
+    it('sorts high-risk recommendations first (critical before high)', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const d1 = ctrl.create({ engineId: 'e1', scenarioId: 'critical-s1', tenantId: 't-001', requestedBy: 'u1' })
       ctrl.update(d1.diagnosis.diagnosisId, { status: 'COMPLETED', riskLevel: 'critical', recommendation: 'Urgent' })
@@ -554,7 +553,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(report.topRecommendations[1].riskLevel, 'high')
     })
 
-    test('calculates averageEvaluationDurationMs', () => {
+    it('calculates averageEvaluationDurationMs', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const d1 = ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       ctrl.update(d1.diagnosis.diagnosisId, { status: 'COMPLETED', evaluationDurationMs: 100 })
@@ -566,7 +565,7 @@ describe('AiDiagnosisController', () => {
 
   // ── 边界与并发 ──
   describe('edge cases', () => {
-    test('create + delete + create same scenario works', () => {
+    it('create + delete + create same scenario works', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const d1 = ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       const id1 = d1.diagnosis.diagnosisId
@@ -576,7 +575,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(ctrl.list({}).total, 1)
     })
 
-    test('batch + individual diagnosis are independent', () => {
+    it('batch + individual diagnosis are independent', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       ctrl.createBatch({ engineId: 'e1', scenarioIds: ['s1'], tenantId: 't-001', triggeredBy: 'u1' })
       ctrl.create({ engineId: 'e1', scenarioId: 's2', tenantId: 't-001', requestedBy: 'u2' })
@@ -584,13 +583,13 @@ describe('AiDiagnosisController', () => {
       assert.equal(ctrl.list({}).total, 2)
     })
 
-    test('listBatches with no matching filter returns empty', () => {
+    it('listBatches with no matching filter returns empty', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       ctrl.createBatch({ engineId: 'e1', scenarioIds: ['s1'], tenantId: 't-001', triggeredBy: 'u1' })
       assert.deepEqual(ctrl.listBatches('non-existent-engine'), [])
     })
 
-    test('riskReport with filtered engine and no data returns zeroes', () => {
+    it('riskReport with filtered engine and no data returns zeroes', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       const report = ctrl.riskReport('non-existent-engine')
@@ -598,7 +597,7 @@ describe('AiDiagnosisController', () => {
       assert.deepEqual(report.riskDistribution, { low: 0, medium: 0, high: 0, critical: 0 })
     })
 
-    test('updating deleted diagnosis throws', () => {
+    it('updating deleted diagnosis throws', () => {
       const ctrl = new AiDiagnosisController(makeMockService())
       const d = ctrl.create({ engineId: 'e1', scenarioId: 's1', tenantId: 't-001', requestedBy: 'u1' })
       const id = d.diagnosis.diagnosisId

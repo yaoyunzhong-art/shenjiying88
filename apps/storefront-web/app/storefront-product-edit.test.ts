@@ -120,3 +120,94 @@ test('view-model: saveProductEdit returns issues when name empty (blocks non-arc
   const result = await saveProductEdit({ ...baseInput, name: '' }, { action: 'submit' })
   assert.equal(result.issues.some((i) => i.severity === 'error' && i.field === 'name'), true)
 })
+
+// ── 附加边界覆盖 ──
+
+test('view-model: buildProductEditSnapshot rejects negative priceCents', () => {
+  const snap = buildProductEditSnapshot({ ...baseInput, priceCents: -100 })
+  const errors = snap.issues.filter((i) => i.severity === 'error')
+  assert.ok(errors.some((e) => e.field === 'priceCents'), 'expected priceCents error')
+  assert.equal(snap.canSubmitForReview, false)
+})
+
+test('view-model: buildProductEditSnapshot warns empty categoryId as error', () => {
+  const snap = buildProductEditSnapshot({ ...baseInput, categoryId: '' })
+  const errors = snap.issues.filter((i) => i.severity === 'error')
+  assert.ok(errors.some((e) => e.field === 'categoryId'), 'expected categoryId error')
+})
+
+test('view-model: buildProductEditSnapshot warns long name as error', () => {
+  const longName = '超'.repeat(81)
+  const snap = buildProductEditSnapshot({ ...baseInput, name: longName })
+  const errors = snap.issues.filter((i) => i.severity === 'error')
+  assert.ok(errors.some((e) => e.field === 'name'), 'expected name length error')
+})
+
+test('view-model: buildProductEditSnapshot warns long description as error', () => {
+  const longDesc = '长'.repeat(2001)
+  const snap = buildProductEditSnapshot({ ...baseInput, description: longDesc })
+  const errors = snap.issues.filter((i) => i.severity === 'error')
+  assert.ok(errors.some((e) => e.field === 'description'), 'expected description length error')
+})
+
+test('view-model: buildProductEditSnapshot rejects price over max', () => {
+  const snap = buildProductEditSnapshot({ ...baseInput, priceCents: 100_000_000 })
+  const errors = snap.issues.filter((i) => i.severity === 'error')
+  assert.ok(errors.some((e) => e.field === 'priceCents'), 'expected priceCents over max error')
+})
+
+test('view-model: buildProductEditSnapshot rejects empty SKU', () => {
+  const snap = buildProductEditSnapshot({ ...baseInput, inventory: { ...baseInput.inventory, sku: '' } })
+  const errors = snap.issues.filter((i) => i.severity === 'error')
+  assert.ok(errors.some((e) => e.field === 'inventory.sku'), 'expected sku error')
+})
+
+test('view-model: buildProductEditSnapshot rejects negative lowStockThreshold', () => {
+  const snap = buildProductEditSnapshot({ ...baseInput, inventory: { ...baseInput.inventory, lowStockThreshold: -1 } })
+  const errors = snap.issues.filter((i) => i.severity === 'error')
+  assert.ok(errors.some((e) => e.field === 'inventory.lowStockThreshold'), 'expected lowStockThreshold error')
+})
+
+test('view-model: buildProductEditSnapshot empty name shows proper canSubmit state', () => {
+  const snap = buildProductEditSnapshot({ ...baseInput, name: '   ' })
+  assert.equal(snap.canSubmitForReview, false)
+  assert.equal(snap.canPublishDirectly, false)
+})
+
+test('view-model: buildProductEditSnapshot empty tags with whitespace only category', () => {
+  const snap = buildProductEditSnapshot({ ...baseInput, categoryId: '   ' })
+  // non-empty string, so no categoryId error despite being whitespace
+  // but logically a store should handle; this documents current behavior
+  const catErrors = snap.issues.filter((i) => i.field === 'categoryId')
+  assert.equal(catErrors.length, 0)
+})
+
+test('view-model: diffProductEdit detects inventory.quantity change', () => {
+  const updated = { ...baseInput, inventory: { ...baseInput.inventory, quantity: 100 } }
+  const diffs = diffProductEdit(baseInput, updated)
+  assert.ok(diffs.some((d) => d.field === 'inventory.quantity'))
+})
+
+test('view-model: diffProductEdit detects inventory.lowStockThreshold change', () => {
+  const updated = { ...baseInput, inventory: { ...baseInput.inventory, lowStockThreshold: 10 } }
+  const diffs = diffProductEdit(baseInput, updated)
+  assert.ok(diffs.some((d) => d.field === 'inventory.lowStockThreshold'))
+})
+
+test('view-model: diffProductEdit detects status change', () => {
+  const updated = { ...baseInput, status: 'PENDING_REVIEW' as const }
+  const diffs = diffProductEdit(baseInput, updated)
+  assert.ok(diffs.some((d) => d.field === 'status'))
+})
+
+test('view-model: diffProductEdit detects brandId change', () => {
+  const updated = { ...baseInput, brandId: 'brand-002' }
+  const diffs = diffProductEdit(baseInput, updated)
+  assert.ok(diffs.some((d) => d.field === 'brandId'))
+})
+
+test('view-model: saveProductEdit action=archive bypasses validation errors', async () => {
+  const result = await saveProductEdit({ ...baseInput, name: '', priceCents: -1 }, { action: 'archive' })
+  assert.equal(result.status, 'archived')
+  assert.equal(result.newStatus, 'ARCHIVED')
+})

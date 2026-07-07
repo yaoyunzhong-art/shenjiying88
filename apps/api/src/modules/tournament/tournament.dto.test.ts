@@ -1,10 +1,10 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [tournament] [D] DTO 测试
  */
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   CreateTournamentDto,
   UpdateTournamentDto,
@@ -24,7 +24,7 @@ describe('Tournament DTOs', () => {
     const toDto = (raw: Record<string, unknown>): CreateTournamentDto =>
       Object.assign(new CreateTournamentDto(), raw)
 
-    test('should accept all required fields', () => {
+    it('should accept all required fields', () => {
       const dto = toDto({
         name: 'Summer Cup',
         type: TournamentType.SingleElimination,
@@ -42,7 +42,7 @@ describe('Tournament DTOs', () => {
       assert.equal(dto.maxParticipants, 64)
     })
 
-    test('should accept optional fields', () => {
+    it('should accept optional fields', () => {
       const dto = toDto({
         name: 'Cup',
         type: TournamentType.League,
@@ -62,7 +62,7 @@ describe('Tournament DTOs', () => {
       assert.equal(dto.bannerImage, 'https://example.com/banner.png')
     })
 
-    test('should be instance of CreateTournamentDto', () => {
+    it('should be instance of CreateTournamentDto', () => {
       const dto = toDto({
         name: 'Cup',
         type: TournamentType.RoundRobin,
@@ -76,13 +76,13 @@ describe('Tournament DTOs', () => {
   })
 
   describe('UpdateTournamentDto', () => {
-    test('should accept partial data', () => {
+    it('should accept partial data', () => {
       const dto = Object.assign(new UpdateTournamentDto(), { name: 'New Name' })
       assert.equal(dto.name, 'New Name')
       assert.equal(dto.description, undefined)
     })
 
-    test('should accept type change', () => {
+    it('should accept type change', () => {
       const dto = Object.assign(new UpdateTournamentDto(), {
         type: TournamentType.RoundRobin,
         maxParticipants: 64,
@@ -91,7 +91,7 @@ describe('Tournament DTOs', () => {
       assert.equal(dto.maxParticipants, 64)
     })
 
-    test('should accept empty object', () => {
+    it('should accept empty object', () => {
       const dto = new UpdateTournamentDto()
       assert.equal(dto.name, undefined)
       assert.equal(dto.type, undefined)
@@ -99,14 +99,14 @@ describe('Tournament DTOs', () => {
   })
 
   describe('UpdateTournamentStatusDto', () => {
-    test('should hold status', () => {
+    it('should hold status', () => {
       const dto = Object.assign(new UpdateTournamentStatusDto(), { status: TournamentStatus.Open })
       assert.equal(dto.status, TournamentStatus.Open)
     })
   })
 
   describe('TournamentQueryDto', () => {
-    test('should hold query filters', () => {
+    it('should hold query filters', () => {
       const dto = Object.assign(new TournamentQueryDto(), {
         status: TournamentStatus.Open,
         type: TournamentType.RoundRobin,
@@ -119,7 +119,7 @@ describe('Tournament DTOs', () => {
       assert.equal(dto.brandId, 'brand-1')
     })
 
-    test('should accept empty query', () => {
+    it('should accept empty query', () => {
       const dto = new TournamentQueryDto()
       assert.equal(dto.status, undefined)
       assert.equal(dto.type, undefined)
@@ -127,7 +127,7 @@ describe('Tournament DTOs', () => {
   })
 
   describe('MatchResultDto', () => {
-    test('should hold scores', () => {
+    it('should hold scores', () => {
       const dto = Object.assign(new MatchResultDto(), { score1: 2, score2: 1 })
       assert.equal(dto.score1, 2)
       assert.equal(dto.score2, 1)
@@ -135,7 +135,7 @@ describe('Tournament DTOs', () => {
   })
 
   describe('MatchQueryDto', () => {
-    test('should hold match filter', () => {
+    it('should hold match filter', () => {
       const dto = Object.assign(new MatchQueryDto(), {
         round: 1,
         status: MatchStatus.Pending,
@@ -146,14 +146,14 @@ describe('Tournament DTOs', () => {
   })
 
   describe('RegisterParticipantDto', () => {
-    test('should hold memberId', () => {
+    it('should hold memberId', () => {
       const dto = Object.assign(new RegisterParticipantDto(), { memberId: 'mem-001' })
       assert.equal(dto.memberId, 'mem-001')
     })
   })
 
   describe('RegisterTeamDto', () => {
-    test('should hold team data', () => {
+    it('should hold team data', () => {
       const dto = Object.assign(new RegisterTeamDto(), {
         teamName: 'Team Alpha',
         captainId: 'mem-001',
@@ -166,19 +166,19 @@ describe('Tournament DTOs', () => {
   })
 
   describe('ApproveRejectTeamDto', () => {
-    test('should hold teamRegId', () => {
+    it('should hold teamRegId', () => {
       const dto = Object.assign(new ApproveRejectTeamDto(), { teamRegId: 'teamreg-xxx' })
       assert.equal(dto.teamRegId, 'teamreg-xxx')
     })
   })
 
   describe('RankingQueryDto', () => {
-    test('should hold limit', () => {
+    it('should hold limit', () => {
       const dto = Object.assign(new RankingQueryDto(), { limit: 10 })
       assert.equal(dto.limit, 10)
     })
 
-    test('should accept empty', () => {
+    it('should accept empty', () => {
       const dto = new RankingQueryDto()
       assert.equal(dto.limit, undefined)
     })

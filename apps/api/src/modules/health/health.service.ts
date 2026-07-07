@@ -2,7 +2,16 @@ import { statfs } from 'node:fs/promises'
 import { Socket } from 'node:net'
 import os from 'node:os'
 import { FoundationScopeType } from '@m5/domain'
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable, Optional } from '@nestjs/common'
+import { RedisService } from '../../infrastructure/redis/redis.module'
+import {
+  EVENT_BUS_SERVICE,
+  type EventBusService
+} from '../../infrastructure/event-bus/event-bus.module'
+import {
+  QUEUE_PRODUCER_SERVICE,
+  type QueueProducerService
+} from '../../infrastructure/queue/queue.module'
 import {
   HealthStatus,
   type ComponentHealth,
@@ -21,7 +30,10 @@ const REDIS_PROBE_TIMEOUT_MS = 1500
 export class HealthService {
   constructor(
     private readonly lytService: LytService,
-    private readonly prismaService: PrismaService
+    private readonly prismaService: PrismaService,
+    @Optional() private readonly redisService?: RedisService,
+    @Optional() @Inject(EVENT_BUS_SERVICE) private readonly eventBus?: EventBusService,
+    @Optional() @Inject(QUEUE_PRODUCER_SERVICE) private readonly queueProducer?: QueueProducerService
   ) {}
 
   /**
@@ -82,7 +94,7 @@ export class HealthService {
    */
   private async collectComponentHealths(verbose: boolean): Promise<ComponentHealth[]> {
     const names = verbose
-      ? ['database', 'redis', 'lyt-adapter', 'memory', 'disk']
+      ? ['database', 'redis', 'lyt-adapter', 'memory', 'disk', 'event-bus', 'queue-producer']
       : ['database', 'lyt-adapter']
 
     const results = await Promise.allSettled(
@@ -116,6 +128,10 @@ export class HealthService {
         return this.probeMemory()
       case 'disk':
         return this.probeDisk()
+      case 'event-bus':
+        return this.probeEventBus()
+      case 'queue-producer':
+        return this.probeQueueProducer()
       default:
         throw new Error(`Unknown component: ${name}`)
     }
@@ -132,15 +148,26 @@ export class HealthService {
   }
 
   private async probeRedis(): Promise<Record<string, unknown>> {
+    if (this.redisService) {
+      const connected = await this.redisService.ping()
+      const info = connected ? await this.redisService.info() : null
+      return {
+        connected,
+        transport: 'ioredis',
+        ...(info ?? {}),
+      }
+    }
+
+    // Fallback:raw socket (RedisModule 未注入时使用)
     const host = process.env.REDIS_HOST?.trim() || 'localhost'
     const port = parsePort(process.env.REDIS_PORT, 6379)
     const response = await this.pingRedis(host, port)
-
     return {
       connected: response === 'PONG',
       host,
       port,
-      response
+      response,
+      transport: 'raw-socket'
     }
   }
 
@@ -180,6 +207,34 @@ export class HealthService {
       usedGB: bytesToGb(usedBytes),
       freeGB: bytesToGb(freeBytes),
       usagePercent: usagePercent(usedBytes, totalBytes)
+    }
+  }
+
+  private async probeEventBus(): Promise<Record<string, unknown>> {
+    if (!this.eventBus) {
+      throw new Error('EventBus not injected')
+    }
+
+    const connected = await this.eventBus.ping()
+    return {
+      connected,
+      backend: this.eventBus.backend
+    }
+  }
+
+  private async probeQueueProducer(): Promise<Record<string, unknown>> {
+    if (!this.queueProducer) {
+      throw new Error('QueueProducer not injected')
+    }
+
+    const stats = await this.queueProducer.stats()
+    return {
+      connected: true,
+      jobs: {
+        pending: stats.pending,
+        completed: stats.completed,
+        failed: stats.failed
+      }
     }
   }
 

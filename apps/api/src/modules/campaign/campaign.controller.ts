@@ -1,17 +1,21 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
   toCampaignDispatchContract,
   toCampaignPlanContract
 } from './campaign.contract'
-import { RegisterCampaignDto, UpdateCampaignStatusDto } from './campaign.dto'
+import {
+  EvaluateCampaignDto,
+  RegisterCampaignDto,
+  UpdateCampaignStatusDto
+} from './campaign.dto'
 import {
   CampaignActionStatus,
   CampaignStatus,
   CampaignTrigger
 } from './campaign.entity'
-import { CampaignService, type CampaignTriggerEvent } from './campaign.service'
+import { CampaignService } from './campaign.service'
 
 @Controller('campaigns')
 export class CampaignController {
@@ -28,8 +32,8 @@ export class CampaignController {
       title: body.title,
       description: body.description,
       triggerEvent: body.triggerEvent,
-      conditions: body.conditions,
-      actions: body.actions,
+      conditions: body.conditions ?? [],
+      actions: body.actions ?? [],
       priority: body.priority,
       scheduledStart: body.scheduledStart,
       scheduledEnd: body.scheduledEnd
@@ -95,8 +99,11 @@ export class CampaignController {
   @Post('evaluate')
   evaluateTriggers(
     @TenantContext() tenantContext: RequestTenantContext,
-    @Body() body: Omit<CampaignTriggerEvent, 'tenantContext'>
+    @Body() body: EvaluateCampaignDto
   ) {
+    if (!body.eventName?.trim()) {
+      throw new BadRequestException('eventName is required')
+    }
     return this.campaignService.evaluateTriggers({ ...body, tenantContext })
   }
 }

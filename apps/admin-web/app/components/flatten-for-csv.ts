@@ -2,48 +2,60 @@
  * flattenForCsv 把任意 JS 值拍扁成 CSV 友好的 Record<string, unknown>。
  *
  * 规则：
- * - null / undefined  →  { [prefix]: '' }
+ * - null / undefined  →  {}（无前缀时）或 { [prefix]: '' }
  * - 基本类型（含 Date） →  { [prefix || 'value']: 序列化后的值 }
- *   - Date → ISO 字符串
- * - 数组：
- *   - 如果所有元素都是标量（含 Date）→ { [prefix || 'value']: '|'-分隔的字符串 }
- *   - 否则按 index 拍扁每个元素，前缀 `${prefix || 'item'}[${index}]`
+ *   - Date → ISO 字符串，非法 Date → 'Invalid Date'
+ * - 数组：按 index 拍扁每个元素，前缀 `${prefix || 'item'}[${index}]`
+ *   空数组 → {}
  * - 普通对象：递归拍扁每个字段，前缀 `${prefix ? prefix + '.' : ''}${key}`
+ * - 循环引用：使用 WeakSet 检测，跳过已访问过的对象
  *
  * 该函数是纯函数，方便单测；不含 DOM / 浏览器 API。
  */
-export function flattenForCsv(value: unknown, prefix = ''): Record<string, unknown> {
+export function flattenForCsv(
+  value: unknown,
+  prefix = '',
+  seen = new WeakSet<object>(),
+): Record<string, unknown> {
   if (value == null) {
     return prefix ? { [prefix]: '' } : {};
   }
+  if (typeof value === 'object' && !(value instanceof Date)) {
+    if (seen.has(value)) {
+      return prefix ? { [prefix]: '[Circular]' } : {};
+    }
+    seen.add(value);
+  }
   if (typeof value !== 'object' || value instanceof Date) {
-    return { [prefix || 'value']: value instanceof Date ? value.toISOString() : value };
+    const val = value instanceof Date ? toCsvDateString(value) : value;
+    return { [prefix || 'value']: val };
   }
   if (Array.isArray(value)) {
-    if (value.every((v) => v == null || typeof v !== 'object' || v instanceof Date)) {
-      return {
-        [prefix || 'value']: value
-          .map((v) => (v instanceof Date ? v.toISOString() : v == null ? '' : String(v)))
-          .join('|')
-      };
-    }
     const out: Record<string, unknown> = {};
-    value.forEach((item, index) => {
-      const child = flattenForCsv(item, `${prefix || 'item'}[${index}]`);
+    for (let index = 0; index < value.length; index++) {
+      const child = flattenForCsv(value[index], `${prefix || 'item'}[${index}]`, seen);
       for (const [k, v] of Object.entries(child)) {
         out[k] = v;
       }
-    });
+    }
     return out;
   }
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-    const child = flattenForCsv(v, prefix ? `${prefix}.${k}` : k);
+    const child = flattenForCsv(v, prefix ? `${prefix}.${k}` : k, seen);
     for (const [ck, cv] of Object.entries(child)) {
       out[ck] = cv;
     }
   }
   return out;
+}
+
+function toCsvDateString(d: Date): string {
+  try {
+    return d.toISOString();
+  } catch {
+    return 'Invalid Date';
+  }
 }
 
 /**
@@ -56,6 +68,9 @@ export function flattenForCsv(value: unknown, prefix = ''): Record<string, unkno
 export function recordsToCsv(record: unknown): string {
   if (record == null) {
     return '\uFEFF';
+  }
+  if (Array.isArray(record) && record.length === 0) {
+    return '';
   }
   const header = collectHeader(record);
   const escape = (v: unknown): string => {

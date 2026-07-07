@@ -1,7 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 // ── Helpers ──
 function mockRuntimeGovService() {
   return {
@@ -33,7 +32,7 @@ const ROLES = {
 
 // ── 🎯运行专员 ──
 describe(`${ROLES.Operations} runtime-governance 角色测试`, () => {
-  test('运营专员可以 submit action', () => {
+  it('运营专员可以 submit action', () => {
     const ctrl = createRuntimeGovController()
     const result = ctrl.submitAction(
       { actionType: 'booking-create', payload: { bookingId: 'b-001' }, receiptCode: 'REC-001' },
@@ -44,25 +43,25 @@ describe(`${ROLES.Operations} runtime-governance 角色测试`, () => {
     assert.equal(result.status, 'submitted')
   })
 
-  test('运营专员可以获取 action receipt', () => {
+  it('运营专员可以获取 action receipt', () => {
     const ctrl = createRuntimeGovController()
     const result = ctrl.getActionReceipt('REC-001')
     assert.equal(result.receiptCode, 'REC-001')
   })
 
-  test('运营专员可以 sync action', () => {
+  it('运营专员可以 sync action', () => {
     const ctrl = createRuntimeGovController()
     const result = ctrl.syncAction('REC-001', { status: 'in-progress' }, tenantCtx, actorCtx)
     assert.equal(result.status, 'synced')
   })
 
-  test('运营专员可以 record callback', () => {
+  it('运营专员可以 record callback', () => {
     const ctrl = createRuntimeGovController()
     const result = ctrl.recordCallback('REC-001', { callbackType: 'SUCCESS', data: {} }, tenantCtx, actorCtx)
     assert.equal(result.callbackStatus, 'callback-recorded')
   })
 
-  test('运营专员可以 replay action', () => {
+  it('运营专员可以 replay action', () => {
     const ctrl = createRuntimeGovController()
     const result = ctrl.replayAction('REC-001', { reason: 'retry-failed' }, tenantCtx, actorCtx)
     assert.equal(result.status, 'replay-scheduled')
@@ -71,7 +70,7 @@ describe(`${ROLES.Operations} runtime-governance 角色测试`, () => {
 
 // ── 👔店长 ──
 describe(`${ROLES.TenantAdmin} runtime-governance 角色测试`, () => {
-  test('店长可以 submit action（全局操作）', () => {
+  it('店长可以 submit action（全局操作）', () => {
     const svc = mockRuntimeGovService()
     svc.submitAction = () => ({ receiptCode: 'REC-ADMIN-001', status: 'submitted', actionType: 'secret-rotation' })
     const ctrl = createRuntimeGovController(svc)
@@ -83,13 +82,13 @@ describe(`${ROLES.TenantAdmin} runtime-governance 角色测试`, () => {
     assert.equal(result.receiptCode, 'REC-ADMIN-001')
   })
 
-  test('店长可以获取 action receipt', () => {
+  it('店长可以获取 action receipt', () => {
     const ctrl = createRuntimeGovController()
     const result = ctrl.getActionReceipt('REC-001')
     assert.ok(result.timeline)
   })
 
-  test('店长可以 replay action', () => {
+  it('店长可以 replay action', () => {
     const ctrl = createRuntimeGovController()
     const result = ctrl.replayAction('REC-001', { reason: 'admin-force-replay' }, tenantCtx, actorCtx)
     assert.ok(result)
@@ -98,13 +97,13 @@ describe(`${ROLES.TenantAdmin} runtime-governance 角色测试`, () => {
 
 // ── 🔧安监 ──
 describe(`${ROLES.Security} runtime-governance 角色测试`, () => {
-  test('安监可以获取 action receipt（审计视角）', () => {
+  it('安监可以获取 action receipt（审计视角）', () => {
     const ctrl = createRuntimeGovController()
     const result = ctrl.getActionReceipt('REC-001')
     assert.equal(result.receiptCode, 'REC-001')
   })
 
-  test('安监可以 submit action（安全类操作）', () => {
+  it('安监可以 submit action（安全类操作）', () => {
     const svc = mockRuntimeGovService()
     svc.submitAction = () => ({ receiptCode: 'REC-SEC-001', status: 'submitted', actionType: 'security-audit' })
     const ctrl = createRuntimeGovController(svc)
@@ -116,7 +115,7 @@ describe(`${ROLES.Security} runtime-governance 角色测试`, () => {
     assert.equal(result.actionType, 'security-audit')
   })
 
-  test('安监可以 sync action', () => {
+  it('安监可以 sync action', () => {
     const ctrl = createRuntimeGovController()
     const result = ctrl.syncAction('REC-001', { status: 'pending-review' }, tenantCtx, actorCtx)
     assert.ok(result)
@@ -125,7 +124,7 @@ describe(`${ROLES.Security} runtime-governance 角色测试`, () => {
 
 // ── 🎮导玩员 ──
 describe(`${ROLES.Guide} runtime-governance 角色测试`, () => {
-  test('导玩员可以 submit action（设备同步）', () => {
+  it('导玩员可以 submit action（设备同步）', () => {
     const svc = mockRuntimeGovService()
     svc.submitAction = () => ({ receiptCode: 'REC-GUIDE-001', status: 'submitted', actionType: 'device-sync' })
     const ctrl = createRuntimeGovController(svc)
@@ -137,13 +136,13 @@ describe(`${ROLES.Guide} runtime-governance 角色测试`, () => {
     assert.equal(result.actionType, 'device-sync')
   })
 
-  test('导玩员可以获取 action receipt', () => {
+  it('导玩员可以获取 action receipt', () => {
     const ctrl = createRuntimeGovController()
     const result = ctrl.getActionReceipt('REC-001')
     assert.ok(result)
   })
 
-  test('导玩员可以 record callback', () => {
+  it('导玩员可以 record callback', () => {
     const ctrl = createRuntimeGovController()
     const result = ctrl.recordCallback('REC-001', { callbackType: 'DEVICE_ONLINE', data: { deviceId: 'dev-001' } }, tenantCtx, actorCtx)
     assert.ok(result)

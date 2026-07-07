@@ -10,6 +10,7 @@ export interface LegacyFormSubmitState<T = unknown> {
 }
 
 interface FormSubmitFeedbackProps<T = unknown> {
+  children?: React.ReactNode;
   state?: LegacyFormSubmitState<T>;
   submitting?: boolean;
   error?: string;

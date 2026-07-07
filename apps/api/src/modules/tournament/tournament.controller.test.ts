@@ -1,11 +1,10 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [tournament] [D] controller 测试
  */
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 describe('TournamentController', () => {
   const { TournamentController } = require('./tournament.controller')
   const { TournamentService } = require('./tournament.service')
@@ -19,136 +18,136 @@ describe('TournamentController', () => {
 
   const TENANT = { tenantId: 'tenant-001', brandId: 'brand-1', storeId: 'store-001' }
 
-  test.beforeEach(() => {
+  beforeEach(() => {
     service = new TournamentService()
     controller = new TournamentController(service)
   })
 
-  test.afterEach(() => {
+  afterEach(() => {
     service.resetTournamentStoresForTests()
   })
 
   // ── Route metadata ──
 
   describe('route metadata', () => {
-    test('controller path should be tournaments', () => {
+    it('controller path should be tournaments', () => {
       const path = Reflect.getMetadata('path', TournamentController)
       assert.equal(path, 'tournaments')
     })
 
-    test('createTournament should be POST /', () => {
+    it('createTournament should be POST /', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.createTournament)
       const path = Reflect.getMetadata('path', TournamentController.prototype.createTournament)
       assert.equal(method, 1) // POST
       assert.equal(path, '/')
     })
 
-    test('listTournaments should be GET /', () => {
+    it('listTournaments should be GET /', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.listTournaments)
       const path = Reflect.getMetadata('path', TournamentController.prototype.listTournaments)
       assert.equal(method, 0) // GET
       assert.equal(path, '/')
     })
 
-    test('getTournament should be GET /:tournamentId', () => {
+    it('getTournament should be GET /:tournamentId', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.getTournament)
       const path = Reflect.getMetadata('path', TournamentController.prototype.getTournament)
       assert.equal(method, 0)
       assert.equal(path, ':tournamentId')
     })
 
-    test('updateTournament should be PATCH /:tournamentId', () => {
+    it('updateTournament should be PATCH /:tournamentId', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.updateTournament)
       const path = Reflect.getMetadata('path', TournamentController.prototype.updateTournament)
       assert.equal(method, 4) // PATCH
       assert.equal(path, ':tournamentId')
     })
 
-    test('updateTournamentStatus should be PATCH /:tournamentId/status', () => {
+    it('updateTournamentStatus should be PATCH /:tournamentId/status', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.updateTournamentStatus)
       const path = Reflect.getMetadata('path', TournamentController.prototype.updateTournamentStatus)
       assert.equal(method, 4)
       assert.equal(path, ':tournamentId/status')
     })
 
-    test('registerParticipant should be POST /:tournamentId/register', () => {
+    it('registerParticipant should be POST /:tournamentId/register', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.registerParticipant)
       const path = Reflect.getMetadata('path', TournamentController.prototype.registerParticipant)
       assert.equal(method, 1)
       assert.equal(path, ':tournamentId/register')
     })
 
-    test('registerTeam should be POST /:tournamentId/teams', () => {
+    it('registerTeam should be POST /:tournamentId/teams', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.registerTeam)
       const path = Reflect.getMetadata('path', TournamentController.prototype.registerTeam)
       assert.equal(method, 1)
       assert.equal(path, ':tournamentId/teams')
     })
 
-    test('approveTeam should be PATCH /:tournamentId/teams/approve', () => {
+    it('approveTeam should be PATCH /:tournamentId/teams/approve', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.approveTeam)
       const path = Reflect.getMetadata('path', TournamentController.prototype.approveTeam)
       assert.equal(method, 4)
       assert.equal(path, ':tournamentId/teams/approve')
     })
 
-    test('rejectTeam should be PATCH /:tournamentId/teams/reject', () => {
+    it('rejectTeam should be PATCH /:tournamentId/teams/reject', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.rejectTeam)
       const path = Reflect.getMetadata('path', TournamentController.prototype.rejectTeam)
       assert.equal(method, 4)
       assert.equal(path, ':tournamentId/teams/reject')
     })
 
-    test('generateBracket should be POST /:tournamentId/bracket/generate', () => {
+    it('generateBracket should be POST /:tournamentId/bracket/generate', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.generateBracket)
       const path = Reflect.getMetadata('path', TournamentController.prototype.generateBracket)
       assert.equal(method, 1)
       assert.equal(path, ':tournamentId/bracket/generate')
     })
 
-    test('listMatches should be GET /:tournamentId/matches', () => {
+    it('listMatches should be GET /:tournamentId/matches', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.listMatches)
       const path = Reflect.getMetadata('path', TournamentController.prototype.listMatches)
       assert.equal(method, 0)
       assert.equal(path, ':tournamentId/matches')
     })
 
-    test('getMatch should be GET /matches/:matchId', () => {
+    it('getMatch should be GET /matches/:matchId', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.getMatch)
       const path = Reflect.getMetadata('path', TournamentController.prototype.getMatch)
       assert.equal(method, 0)
       assert.equal(path, 'matches/:matchId')
     })
 
-    test('recordMatchResult should be PATCH /matches/:matchId/result', () => {
+    it('recordMatchResult should be PATCH /matches/:matchId/result', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.recordMatchResult)
       const path = Reflect.getMetadata('path', TournamentController.prototype.recordMatchResult)
       assert.equal(method, 4)
       assert.equal(path, 'matches/:matchId/result')
     })
 
-    test('setDisputed should be PATCH /matches/:matchId/dispute', () => {
+    it('setDisputed should be PATCH /matches/:matchId/dispute', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.setDisputed)
       const path = Reflect.getMetadata('path', TournamentController.prototype.setDisputed)
       assert.equal(method, 4)
       assert.equal(path, 'matches/:matchId/dispute')
     })
 
-    test('getRankings should be GET /:tournamentId/rankings', () => {
+    it('getRankings should be GET /:tournamentId/rankings', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.getRankings)
       const path = Reflect.getMetadata('path', TournamentController.prototype.getRankings)
       assert.equal(method, 0)
       assert.equal(path, ':tournamentId/rankings')
     })
 
-    test('getUpcomingMatches should be GET /members/:memberId/upcoming', () => {
+    it('getUpcomingMatches should be GET /members/:memberId/upcoming', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.getUpcomingMatches)
       const path = Reflect.getMetadata('path', TournamentController.prototype.getUpcomingMatches)
       assert.equal(method, 0)
       assert.equal(path, 'members/:memberId/upcoming')
     })
 
-    test('getLiveMatches should be GET /stores/:storeId/live', () => {
+    it('getLiveMatches should be GET /stores/:storeId/live', () => {
       const method = Reflect.getMetadata('method', TournamentController.prototype.getLiveMatches)
       const path = Reflect.getMetadata('path', TournamentController.prototype.getLiveMatches)
       assert.equal(method, 0)
@@ -159,7 +158,7 @@ describe('TournamentController', () => {
   // ── Tournament CRUD via controller ──
 
   describe('POST /tournaments', () => {
-    test('should create tournament', () => {
+    it('should create tournament', () => {
       const result = controller.createTournament(TENANT, {
         name: 'Summer Cup',
         type: TournamentType.SingleElimination,
@@ -176,7 +175,7 @@ describe('TournamentController', () => {
   })
 
   describe('GET /tournaments', () => {
-    test('should list tournaments', () => {
+    it('should list tournaments', () => {
       controller.createTournament(TENANT, {
         name: 'T1',
         type: TournamentType.RoundRobin,
@@ -191,7 +190,7 @@ describe('TournamentController', () => {
       assert.equal(list[0].name, 'T1')
     })
 
-    test('should list with status filter', () => {
+    it('should list with status filter', () => {
       controller.createTournament(TENANT, {
         name: 'Draft Tournament',
         type: TournamentType.League,
@@ -207,7 +206,7 @@ describe('TournamentController', () => {
   })
 
   describe('GET /tournaments/:tournamentId', () => {
-    test('should get tournament', () => {
+    it('should get tournament', () => {
       const created = controller.createTournament(TENANT, {
         name: 'Get Me',
         type: TournamentType.SingleElimination,
@@ -224,7 +223,7 @@ describe('TournamentController', () => {
   })
 
   describe('PATCH /tournaments/:tournamentId', () => {
-    test('should update tournament', () => {
+    it('should update tournament', () => {
       const created = controller.createTournament(TENANT, {
         name: 'Old',
         type: TournamentType.RoundRobin,
@@ -240,7 +239,7 @@ describe('TournamentController', () => {
   })
 
   describe('PATCH /tournaments/:tournamentId/status', () => {
-    test('should update status Draft → Open', () => {
+    it('should update status Draft → Open', () => {
       const created = controller.createTournament(TENANT, {
         name: 'Status Test',
         type: TournamentType.SingleElimination,
@@ -260,7 +259,7 @@ describe('TournamentController', () => {
   // ── Registration via controller ──
 
   describe('POST /tournaments/:tournamentId/register', () => {
-    test('should register participant', () => {
+    it('should register participant', () => {
       const t = controller.createTournament(TENANT, {
         name: 'Reg Test',
         type: TournamentType.RoundRobin,
@@ -277,7 +276,7 @@ describe('TournamentController', () => {
   })
 
   describe('POST /tournaments/:tournamentId/teams', () => {
-    test('should register a team', () => {
+    it('should register a team', () => {
       const t = controller.createTournament(TENANT, {
         name: 'Team Test',
         type: TournamentType.League,
@@ -300,7 +299,7 @@ describe('TournamentController', () => {
   })
 
   describe('PATCH approve/reject team', () => {
-    test('should approve team', () => {
+    it('should approve team', () => {
       const t = controller.createTournament(TENANT, {
         name: 'Approve Test',
         type: TournamentType.League,
@@ -319,7 +318,7 @@ describe('TournamentController', () => {
       assert.equal(approved.status, 'APPROVED')
     })
 
-    test('should reject team', () => {
+    it('should reject team', () => {
       const t = controller.createTournament(TENANT, {
         name: 'Reject Test',
         type: TournamentType.League,
@@ -342,7 +341,7 @@ describe('TournamentController', () => {
   // ── Bracket & Matches via controller ──
 
   describe('POST /tournaments/:tournamentId/bracket/generate', () => {
-    test('should generate bracket', () => {
+    it('should generate bracket', () => {
       const t = controller.createTournament(TENANT, {
         name: 'Bracket Test',
         type: TournamentType.SingleElimination,
@@ -363,7 +362,7 @@ describe('TournamentController', () => {
   })
 
   describe('GET /tournaments/:tournamentId/matches', () => {
-    test('should list matches', () => {
+    it('should list matches', () => {
       const t = controller.createTournament(TENANT, {
         name: 'Match List',
         type: TournamentType.RoundRobin,
@@ -384,7 +383,7 @@ describe('TournamentController', () => {
   })
 
   describe('PATCH /matches/:matchId/result', () => {
-    test('should record match result', () => {
+    it('should record match result', () => {
       const t = controller.createTournament(TENANT, {
         name: 'Result Test',
         type: TournamentType.RoundRobin,
@@ -406,7 +405,7 @@ describe('TournamentController', () => {
   })
 
   describe('PATCH /matches/:matchId/dispute', () => {
-    test('should set match as disputed', () => {
+    it('should set match as disputed', () => {
       const t = controller.createTournament(TENANT, {
         name: 'Dispute Test',
         type: TournamentType.RoundRobin,
@@ -428,7 +427,7 @@ describe('TournamentController', () => {
   // ── Rankings via controller ──
 
   describe('GET /tournaments/:tournamentId/rankings', () => {
-    test('should get rankings', () => {
+    it('should get rankings', () => {
       const t = controller.createTournament(TENANT, {
         name: 'Ranking Test',
         type: TournamentType.RoundRobin,
@@ -448,7 +447,7 @@ describe('TournamentController', () => {
       assert.ok(rankings.length > 0)
     })
 
-    test('should respect limit', () => {
+    it('should respect limit', () => {
       const t = controller.createTournament(TENANT, {
         name: 'Limit Test',
         type: TournamentType.RoundRobin,
@@ -471,7 +470,7 @@ describe('TournamentController', () => {
   // ── Push endpoints ──
 
   describe('GET /members/:memberId/upcoming', () => {
-    test('should get upcoming matches for a member', () => {
+    it('should get upcoming matches for a member', () => {
       const t = controller.createTournament(TENANT, {
         name: 'Upcoming Test',
         type: TournamentType.RoundRobin,
@@ -491,7 +490,7 @@ describe('TournamentController', () => {
   })
 
   describe('GET /stores/:storeId/live', () => {
-    test('should get live matches for a store', () => {
+    it('should get live matches for a store', () => {
       const live = controller.getLiveMatches('store-001')
       assert.ok(Array.isArray(live))
     })
@@ -500,14 +499,14 @@ describe('TournamentController', () => {
   // ── Error handling ──
 
   describe('error propagation from service', () => {
-    test('should propagate tournament not found', () => {
+    it('should propagate tournament not found', () => {
       assert.throws(
         () => controller.getTournament(TENANT, 'nonexistent'),
         /Tournament not found: nonexistent/
       )
     })
 
-    test('should propagate invalid status transition', () => {
+    it('should propagate invalid status transition', () => {
       const t = controller.createTournament(TENANT, {
         name: 'Err Test',
         type: TournamentType.SingleElimination,

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Market 市场配置 HTTP 链路
  *
@@ -13,7 +14,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Controller,
   Get,
@@ -118,7 +118,7 @@ const TENANT_US = {
   'x-market-code': 'us-default'
 }
 
-test('e2e: bootstrap returns supported markets + foundation dependency', async () => {
+it('e2e: bootstrap returns supported markets + foundation dependency', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/markets/bootstrap')
@@ -136,7 +136,7 @@ test('e2e: bootstrap returns supported markets + foundation dependency', async (
   }
 })
 
-test('e2e: scoped market returns profile + overrides for tenant scope', async () => {
+it('e2e: scoped market returns profile + overrides for tenant scope', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -155,7 +155,7 @@ test('e2e: scoped market returns profile + overrides for tenant scope', async ()
   }
 })
 
-test('e2e: scoped market for US uses LA timezone + USD currency', async () => {
+it('e2e: scoped market for US uses LA timezone + USD currency', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -170,7 +170,7 @@ test('e2e: scoped market for US uses LA timezone + USD currency', async () => {
   }
 })
 
-test('e2e: scoped market for store scope returns store-level override', async () => {
+it('e2e: scoped market for store scope returns store-level override', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -186,7 +186,7 @@ test('e2e: scoped market for store scope returns store-level override', async ()
   }
 })
 
-test('e2e: portal market route returns flat market basics', async () => {
+it('e2e: portal market route returns flat market basics', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -206,7 +206,7 @@ test('e2e: portal market route returns flat market basics', async () => {
   }
 })
 
-test('e2e: overrides array contains tenant / brand / store entries', async () => {
+it('e2e: overrides array contains tenant / brand / store entries', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -222,7 +222,7 @@ test('e2e: overrides array contains tenant / brand / store entries', async () =>
   }
 })
 
-test('e2e: CN market has wechat as primary platform', async () => {
+it('e2e: CN market has wechat as primary platform', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -235,7 +235,7 @@ test('e2e: CN market has wechat as primary platform', async () => {
   }
 })
 
-test('e2e: US market has linkedin as primary platform', async () => {
+it('e2e: US market has linkedin as primary platform', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -248,7 +248,7 @@ test('e2e: US market has linkedin as primary platform', async () => {
   }
 })
 
-test('e2e: CN market tax mode is Included with 增值税 label', async () => {
+it('e2e: CN market tax mode is Included with 增值税 label', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -263,7 +263,7 @@ test('e2e: CN market tax mode is Included with 增值税 label', async () => {
   }
 })
 
-test('e2e: US market tax mode is Excluded with Sales Tax label', async () => {
+it('e2e: US market tax mode is Excluded with Sales Tax label', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -278,7 +278,7 @@ test('e2e: US market tax mode is Excluded with Sales Tax label', async () => {
   }
 })
 
-test('e2e: CN/US markets use distinct currency symbols and network regions', async () => {
+it('e2e: CN/US markets use distinct currency symbols and network regions', async () => {
   const { app } = await buildApp()
   try {
     const cn = await request(app.getHttpServer())
@@ -296,7 +296,7 @@ test('e2e: CN/US markets use distinct currency symbols and network regions', asy
   }
 })
 
-test('e2e: CN uses AliyunDm email, US uses SendGrid', async () => {
+it('e2e: CN uses AliyunDm email, US uses SendGrid', async () => {
   const { app } = await buildApp()
   try {
     const cn = await request(app.getHttpServer())
@@ -315,7 +315,7 @@ test('e2e: CN uses AliyunDm email, US uses SendGrid', async () => {
   }
 })
 
-test('e2e: override scopeCode matches request tenant context', async () => {
+it('e2e: override scopeCode matches request tenant context', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -339,7 +339,7 @@ test('e2e: override scopeCode matches request tenant context', async () => {
   }
 })
 
-test('e2e: bootstrap lists exactly 2 supported markets with both country codes', async () => {
+it('e2e: bootstrap lists exactly 2 supported markets with both country codes', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/markets/bootstrap')

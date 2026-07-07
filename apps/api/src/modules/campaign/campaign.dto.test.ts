@@ -1,9 +1,10 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   CampaignConditionDto,
   CampaignActionDto,
+  EvaluateCampaignDto,
   RegisterCampaignDto,
   UpdateCampaignStatusDto
 } from './campaign.dto'
@@ -16,13 +17,13 @@ import {
 
 // ── CampaignConditionDto ──
 describe('campaign.dto: CampaignConditionDto', () => {
-  test('default properties are undefined', () => {
+  it('default properties are undefined', () => {
     const dto = new CampaignConditionDto()
     assert.equal(dto.type, undefined)
     assert.equal(dto.value, undefined)
   })
 
-  test('can set MIN_ORDER_AMOUNT condition (正例)', () => {
+  it('can set MIN_ORDER_AMOUNT condition (正例)', () => {
     const dto = new CampaignConditionDto()
     dto.type = CampaignConditionType.MinOrderAmount
     dto.value = 100
@@ -30,7 +31,7 @@ describe('campaign.dto: CampaignConditionDto', () => {
     assert.equal(dto.value, 100)
   })
 
-  test('can set MEMBER_LEVEL condition with string value (正例)', () => {
+  it('can set MEMBER_LEVEL condition with string value (正例)', () => {
     const dto = new CampaignConditionDto()
     dto.type = CampaignConditionType.MemberLevel
     dto.value = 'GOLD'
@@ -38,7 +39,7 @@ describe('campaign.dto: CampaignConditionDto', () => {
     assert.equal(dto.value, 'GOLD')
   })
 
-  test('can set STORE_SCOPE condition with string array value (正例)', () => {
+  it('can set STORE_SCOPE condition with string array value (正例)', () => {
     const dto = new CampaignConditionDto()
     dto.type = CampaignConditionType.StoreScope
     dto.value = ['store-001', 'store-002']
@@ -46,7 +47,7 @@ describe('campaign.dto: CampaignConditionDto', () => {
     assert.deepStrictEqual(dto.value, ['store-001', 'store-002'])
   })
 
-  test('can set BRAND_SCOPE condition (正例)', () => {
+  it('can set BRAND_SCOPE condition (正例)', () => {
     const dto = new CampaignConditionDto()
     dto.type = CampaignConditionType.BrandScope
     dto.value = 'brand-xyz'
@@ -54,7 +55,7 @@ describe('campaign.dto: CampaignConditionDto', () => {
     assert.equal(dto.value, 'brand-xyz')
   })
 
-  test('value supports number, string, and string[] (联合类型)', () => {
+  it('value supports number, string, and string[] (联合类型)', () => {
     const dto1 = new CampaignConditionDto()
     dto1.value = 50
     assert.equal(typeof dto1.value, 'number')
@@ -68,7 +69,7 @@ describe('campaign.dto: CampaignConditionDto', () => {
     assert.ok(Array.isArray(dto3.value))
   })
 
-  test('instanceof check', () => {
+  it('instanceof check', () => {
     const dto = new CampaignConditionDto()
     assert.ok(dto instanceof CampaignConditionDto)
   })
@@ -76,13 +77,13 @@ describe('campaign.dto: CampaignConditionDto', () => {
 
 // ── CampaignActionDto ──
 describe('campaign.dto: CampaignActionDto', () => {
-  test('default properties are undefined', () => {
+  it('default properties are undefined', () => {
     const dto = new CampaignActionDto()
     assert.equal(dto.kind, undefined)
     assert.equal(dto.params, undefined)
   })
 
-  test('can set AWARD_POINTS action (正例)', () => {
+  it('can set AWARD_POINTS action (正例)', () => {
     const dto = new CampaignActionDto()
     dto.kind = CampaignActionKind.AwardPoints
     dto.params = { points: 100 }
@@ -90,7 +91,7 @@ describe('campaign.dto: CampaignActionDto', () => {
     assert.deepStrictEqual(dto.params, { points: 100 })
   })
 
-  test('can set ISSUE_COUPON action (正例)', () => {
+  it('can set ISSUE_COUPON action (正例)', () => {
     const dto = new CampaignActionDto()
     dto.kind = CampaignActionKind.IssueCoupon
     dto.params = { couponTemplateId: 'ct-001', discountType: 'PERCENTAGE', discountValue: 20 }
@@ -99,7 +100,7 @@ describe('campaign.dto: CampaignActionDto', () => {
     assert.equal(dto.params.discountValue, 20)
   })
 
-  test('can set ISSUE_BLINDBOX action (正例)', () => {
+  it('can set ISSUE_BLINDBOX action (正例)', () => {
     const dto = new CampaignActionDto()
     dto.kind = CampaignActionKind.IssueBlindbox
     dto.params = { blindboxPoolId: 'bp-001' }
@@ -107,7 +108,7 @@ describe('campaign.dto: CampaignActionDto', () => {
     assert.equal(dto.params.blindboxPoolId, 'bp-001')
   })
 
-  test('can set RECOMMEND_TAG action (正例)', () => {
+  it('can set RECOMMEND_TAG action (正例)', () => {
     const dto = new CampaignActionDto()
     dto.kind = CampaignActionKind.RecommendTag
     dto.params = { tag: 'high_value' }
@@ -115,7 +116,7 @@ describe('campaign.dto: CampaignActionDto', () => {
     assert.equal(dto.params.tag, 'high_value')
   })
 
-  test('params supports any object shape', () => {
+  it('params supports any object shape', () => {
     const dto = new CampaignActionDto()
     dto.kind = CampaignActionKind.AwardPoints
     dto.params = { points: 50, expiresAt: '2026-12-31T23:59:59Z', reason: 'signup' }
@@ -123,7 +124,7 @@ describe('campaign.dto: CampaignActionDto', () => {
     assert.equal(dto.params.reason, 'signup')
   })
 
-  test('instanceof check', () => {
+  it('instanceof check', () => {
     const dto = new CampaignActionDto()
     assert.ok(dto instanceof CampaignActionDto)
   })
@@ -131,7 +132,7 @@ describe('campaign.dto: CampaignActionDto', () => {
 
 // ── RegisterCampaignDto ──
 describe('campaign.dto: RegisterCampaignDto', () => {
-  test('default properties are undefined', () => {
+  it('default properties are undefined', () => {
     const dto = new RegisterCampaignDto()
     assert.equal(dto.code, undefined)
     assert.equal(dto.title, undefined)
@@ -144,7 +145,7 @@ describe('campaign.dto: RegisterCampaignDto', () => {
     assert.equal(dto.scheduledEnd, undefined)
   })
 
-  test('can register a complete campaign DTO (正例)', () => {
+  it('can register a complete campaign DTO (正例)', () => {
     const dto = new RegisterCampaignDto()
     dto.code = 'WELCOME_BONUS'
     dto.title = '新会员欢迎奖励'
@@ -167,7 +168,7 @@ describe('campaign.dto: RegisterCampaignDto', () => {
     assert.equal(dto.actions.length, 1)
   })
 
-  test('can register campaign with optional description (边界)', () => {
+  it('can register campaign with optional description (边界)', () => {
     const dto = new RegisterCampaignDto()
     dto.code = 'TEST_CAMPAIGN'
     dto.title = 'Test'
@@ -178,7 +179,7 @@ describe('campaign.dto: RegisterCampaignDto', () => {
     assert.equal(dto.description, '测试描述')
   })
 
-  test('description is optional - undefined is valid', () => {
+  it('description is optional - undefined is valid', () => {
     const dto = new RegisterCampaignDto()
     dto.code = 'NO_DESC'
     dto.title = 'No Description'
@@ -188,7 +189,7 @@ describe('campaign.dto: RegisterCampaignDto', () => {
     assert.equal(dto.description, undefined)
   })
 
-  test('can register with multiple conditions and actions (正例)', () => {
+  it('can register with multiple conditions and actions (正例)', () => {
     const dto = new RegisterCampaignDto()
     dto.code = 'MULTI'
     dto.title = 'Multi conditions'
@@ -215,7 +216,7 @@ describe('campaign.dto: RegisterCampaignDto', () => {
     assert.equal(dto.actions.length, 2)
   })
 
-  test('can set scheduled time range (正例)', () => {
+  it('can set scheduled time range (正例)', () => {
     const dto = new RegisterCampaignDto()
     dto.code = 'SCHEDULED_CAMPAIGN'
     dto.title = 'Scheduled'
@@ -230,7 +231,7 @@ describe('campaign.dto: RegisterCampaignDto', () => {
     assert.equal(dto.priority, 10)
   })
 
-  test('scheduledStart and scheduledEnd are optional (边界)', () => {
+  it('scheduledStart and scheduledEnd are optional (边界)', () => {
     const dto = new RegisterCampaignDto()
     dto.code = 'NO_SCHEDULE'
     dto.title = 'No Schedule'
@@ -241,7 +242,7 @@ describe('campaign.dto: RegisterCampaignDto', () => {
     assert.equal(dto.scheduledEnd, undefined)
   })
 
-  test('priority defaults to undefined (边界)', () => {
+  it('priority defaults to undefined (边界)', () => {
     const dto = new RegisterCampaignDto()
     dto.code = 'NO_PRIORITY'
     dto.title = 'No Priority'
@@ -251,7 +252,7 @@ describe('campaign.dto: RegisterCampaignDto', () => {
     assert.equal(dto.priority, undefined)
   })
 
-  test('instanceof check', () => {
+  it('instanceof check', () => {
     const dto = new RegisterCampaignDto()
     assert.ok(dto instanceof RegisterCampaignDto)
   })
@@ -259,42 +260,42 @@ describe('campaign.dto: RegisterCampaignDto', () => {
 
 // ── UpdateCampaignStatusDto ──
 describe('campaign.dto: UpdateCampaignStatusDto', () => {
-  test('default status is undefined', () => {
+  it('default status is undefined', () => {
     const dto = new UpdateCampaignStatusDto()
     assert.equal(dto.status, undefined)
   })
 
-  test('can set DRAFT status (正例)', () => {
+  it('can set DRAFT status (正例)', () => {
     const dto = new UpdateCampaignStatusDto()
     dto.status = CampaignStatus.Draft
     assert.equal(dto.status, CampaignStatus.Draft)
   })
 
-  test('can set ACTIVE status (正例)', () => {
+  it('can set ACTIVE status (正例)', () => {
     const dto = new UpdateCampaignStatusDto()
     dto.status = CampaignStatus.Active
     assert.equal(dto.status, CampaignStatus.Active)
   })
 
-  test('can set PAUSED status (正例)', () => {
+  it('can set PAUSED status (正例)', () => {
     const dto = new UpdateCampaignStatusDto()
     dto.status = CampaignStatus.Paused
     assert.equal(dto.status, CampaignStatus.Paused)
   })
 
-  test('can set COMPLETED status (正例)', () => {
+  it('can set COMPLETED status (正例)', () => {
     const dto = new UpdateCampaignStatusDto()
     dto.status = CampaignStatus.Completed
     assert.equal(dto.status, CampaignStatus.Completed)
   })
 
-  test('can set SCHEDULED status (正例)', () => {
+  it('can set SCHEDULED status (正例)', () => {
     const dto = new UpdateCampaignStatusDto()
     dto.status = CampaignStatus.Scheduled
     assert.equal(dto.status, CampaignStatus.Scheduled)
   })
 
-  test('status is a required field in DTO (反例 - 未设置时 undefined)', () => {
+  it('status is a required field in DTO (反例 - 未设置时 undefined)', () => {
     const dto = new UpdateCampaignStatusDto()
     assert.equal(dto.status, undefined)
     // 验证 DTO 构造，设置后才有效
@@ -302,8 +303,54 @@ describe('campaign.dto: UpdateCampaignStatusDto', () => {
     assert.notEqual(dto.status, undefined)
   })
 
-  test('instanceof check', () => {
+  it('instanceof check', () => {
     const dto = new UpdateCampaignStatusDto()
     assert.ok(dto instanceof UpdateCampaignStatusDto)
+  })
+})
+
+describe('campaign.dto: EvaluateCampaignDto', () => {
+  it('default properties are undefined', () => {
+    const dto = new EvaluateCampaignDto()
+    assert.equal(dto.eventName, undefined)
+    assert.equal(dto.memberId, undefined)
+    assert.equal(dto.orderId, undefined)
+    assert.equal(dto.paymentId, undefined)
+    assert.equal(dto.orderAmount, undefined)
+    assert.equal(dto.memberLevel, undefined)
+    assert.equal(dto.storeId, undefined)
+    assert.equal(dto.brandId, undefined)
+    assert.equal(dto.payload, undefined)
+  })
+
+  it('can set complete evaluate payload', () => {
+    const dto = new EvaluateCampaignDto()
+    dto.eventName = CampaignTrigger.PaymentSuccess
+    dto.memberId = 'member-001'
+    dto.orderId = 'order-001'
+    dto.paymentId = 'payment-001'
+    dto.orderAmount = 288
+    dto.memberLevel = 'GOLD'
+    dto.storeId = 'store-001'
+    dto.brandId = 'brand-001'
+    dto.payload = { source: 'lyt', campaignHint: 'welcome-back' }
+
+    assert.equal(dto.eventName, CampaignTrigger.PaymentSuccess)
+    assert.equal(dto.memberId, 'member-001')
+    assert.equal(dto.orderAmount, 288)
+    assert.equal(dto.memberLevel, 'GOLD')
+    assert.deepEqual(dto.payload, { source: 'lyt', campaignHint: 'welcome-back' })
+  })
+
+  it('supports minimal evaluate payload', () => {
+    const dto = new EvaluateCampaignDto()
+    dto.eventName = 'custom.event'
+    assert.equal(dto.eventName, 'custom.event')
+    assert.equal(dto.memberId, undefined)
+  })
+
+  it('instanceof check', () => {
+    const dto = new EvaluateCampaignDto()
+    assert.ok(dto instanceof EvaluateCampaignDto)
   })
 })

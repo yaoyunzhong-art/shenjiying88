@@ -1,7 +1,7 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { GovernanceApprovalModule } from './governance-approval.module'
 import { GovernanceApprovalController } from './governance-approval.controller'
 
@@ -37,7 +37,7 @@ const stubPrismaService = {
 describe('GovernanceApprovalModule', () => {
   let moduleRef: TestingModule
 
-  test('should compile and instantiate', async () => {
+  it('should compile and instantiate', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [GovernanceApprovalModule],
     })
@@ -48,7 +48,7 @@ describe('GovernanceApprovalModule', () => {
     assert.ok(moduleRef)
   })
 
-  test('should provide GovernanceApprovalController', async () => {
+  it('should provide GovernanceApprovalController', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [GovernanceApprovalModule],
     })

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { RuleExecutionStatus } from './AIDecisionPanel';
+import { RuleExecutionStatus } from './AiDecisionPanel';
 import { StatusBadge } from './StatusBadge';
 import { Pagination } from './Pagination';
 

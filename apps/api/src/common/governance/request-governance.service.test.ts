@@ -1,6 +1,6 @@
+import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
-import { describe, test, beforeEach, mock } from 'node:test'
 import { RequestGovernanceService } from './request-governance.service'
 import type { RateLimitMetadata } from './request-governance.decorator'
 import type { TenantAwareRequest } from '../../modules/tenant/tenant.types'
@@ -51,8 +51,8 @@ function mockTrustGovernanceService(
   }
 ) {
   return {
-    evaluateRateLimit: mock.fn(async () => rateLimitResult),
-    recordAudit: mock.fn(async () => {}),
+    evaluateRateLimit: vi.fn(async () => rateLimitResult),
+    recordAudit: vi.fn(async () => {}),
   } as any
 }
 
@@ -65,7 +65,7 @@ describe('RequestGovernanceService', () => {
     service = new RequestGovernanceService(trustGov)
   })
 
-  test('ensureRequestContext creates context with requestId from header', () => {
+  it('ensureRequestContext creates context with requestId from header', () => {
     const req = mockRequest({ governanceContext: undefined })
     const ctx = service.ensureRequestContext(req)
 
@@ -75,7 +75,7 @@ describe('RequestGovernanceService', () => {
     assert.ok(ctx.startedAt > 0)
   })
 
-  test('ensureRequestContext generates UUID when no x-request-id header', () => {
+  it('ensureRequestContext generates UUID when no x-request-id header', () => {
     const req = mockRequest({
       governanceContext: undefined,
       header: () => undefined,
@@ -87,7 +87,7 @@ describe('RequestGovernanceService', () => {
     assert.ok(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(ctx.requestId))
   })
 
-  test('ensureRequestContext returns existing context if already set', () => {
+  it('ensureRequestContext returns existing context if already set', () => {
     const existing = { requestId: 'existing-id', startedAt: 1000 }
     const req = mockRequest({ governanceContext: existing })
     const ctx = service.ensureRequestContext(req)
@@ -95,7 +95,7 @@ describe('RequestGovernanceService', () => {
     assert.strictEqual(ctx.startedAt, 1000)
   })
 
-  test('evaluateRateLimit delegates to trustGovernanceService', async () => {
+  it('evaluateRateLimit delegates to trustGovernanceService', async () => {
     const req = mockRequest()
     const metadata: RateLimitMetadata = {
       limit: 100,
@@ -119,7 +119,7 @@ describe('RequestGovernanceService', () => {
     assert.strictEqual(callArgs.windowSeconds, 60)
   })
 
-  test('evaluateRateLimit stores decision on request context', async () => {
+  it('evaluateRateLimit stores decision on request context', async () => {
     const req = mockRequest()
     const metadata: RateLimitMetadata = { limit: 50, windowSeconds: 30 }
     const decision = await service.evaluateRateLimit(req, metadata)
@@ -128,7 +128,7 @@ describe('RequestGovernanceService', () => {
     assert.strictEqual(decision.limit, 100) // from mock default
   })
 
-  test('applyRateLimitHeaders sets rate limit headers on response', () => {
+  it('applyRateLimitHeaders sets rate limit headers on response', () => {
     const res = mockResponse()
     const decision = {
       applied: true as const,
@@ -148,7 +148,7 @@ describe('RequestGovernanceService', () => {
     assert.strictEqual(res.getHeader('Retry-After'), undefined)
   })
 
-  test('applyRateLimitHeaders sets Retry-After when blocked', () => {
+  it('applyRateLimitHeaders sets Retry-After when blocked', () => {
     const res = mockResponse()
     const decision = {
       applied: true as const,
@@ -164,7 +164,7 @@ describe('RequestGovernanceService', () => {
     assert.strictEqual(res.getHeader('Retry-After'), '30')
   })
 
-  test('applyRateLimitHeaders floors negative remaining to 0', () => {
+  it('applyRateLimitHeaders floors negative remaining to 0', () => {
     const res = mockResponse()
     const decision = {
       applied: true as const,
@@ -180,7 +180,7 @@ describe('RequestGovernanceService', () => {
     assert.strictEqual(res.getHeader('X-RateLimit-Remaining'), '0')
   })
 
-  test('recordRequestSuccess records audit with 200 status', async () => {
+  it('recordRequestSuccess records audit with 200 status', async () => {
     const req = mockRequest()
     service.ensureRequestContext(req)
     const res = mockResponse()
@@ -198,7 +198,7 @@ describe('RequestGovernanceService', () => {
     })
   })
 
-  test('recordRequestFailure records rate-limited audit for 429', async () => {
+  it('recordRequestFailure records rate-limited audit for 429', async () => {
     const req = mockRequest()
     service.ensureRequestContext(req)
 
@@ -211,7 +211,7 @@ describe('RequestGovernanceService', () => {
     assert.strictEqual(callArgs[2].riskLevel, 'medium')
   })
 
-  test('recordRequestFailure records denied audit for 401', async () => {
+  it('recordRequestFailure records denied audit for 401', async () => {
     const req = mockRequest()
     service.ensureRequestContext(req)
 
@@ -223,7 +223,7 @@ describe('RequestGovernanceService', () => {
     assert.strictEqual(callArgs[2].riskLevel, 'medium')
   })
 
-  test('recordRequestFailure records failed audit for 500', async () => {
+  it('recordRequestFailure records failed audit for 500', async () => {
     const req = mockRequest()
     service.ensureRequestContext(req)
 
@@ -234,7 +234,7 @@ describe('RequestGovernanceService', () => {
     assert.strictEqual(callArgs[2].riskLevel, 'high')
   })
 
-  test('evaluateRateLimit uses default scopeBy when not provided', async () => {
+  it('evaluateRateLimit uses default scopeBy when not provided', async () => {
     const req = mockRequest()
     const metadata: RateLimitMetadata = { limit: 10, windowSeconds: 10 }
 

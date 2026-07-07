@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [finance] [D] controller spec 补全
  *
@@ -6,13 +7,12 @@
  */
 
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import type { RequestTenantContext } from '../tenant/tenant.types';
 
 // ── 模拟装饰器 ──
 
 function Controller(prefix: string) {
-  return (target: Function & { __prefix?: string }) => {
+  return (target: { new (...args: any[]): unknown; __prefix?: string }) => {
     target.__prefix = prefix;
     return target;
   };
@@ -504,27 +504,27 @@ const CTX = makeCtx();
 describe('FinanceController', () => {
   let controller: FinanceController;
 
-  test.beforeEach(() => {
+  beforeEach(() => {
     controller = new FinanceController();
   });
 
   // ═══════════ 装饰器元数据 ═══════════
   describe('装饰器元数据', () => {
-    test('@Controller prefix 为 "finance"', () => {
+    it('@Controller prefix 为 "finance"', () => {
       const prefix = (FinanceController as typeof FinanceController & { __prefix?: string })
         .__prefix;
       assert.equal(prefix, 'finance');
     });
 
-    test('注册了 12 个 @Get 路由', () => {
+    it('注册了 12 个 @Get 路由', () => {
       assert.equal(getRegistrations.length, 12);
     });
 
-    test('注册了 12 个 @Post 路由', () => {
+    it('注册了 12 个 @Post 路由', () => {
       assert.equal(postRegistrations.length, 12);
     });
 
-    test('所有 @Get 路由清单完整', () => {
+    it('所有 @Get 路由清单完整', () => {
       const expectedGetRoutes = [
         'listLedgers:ledgers',
         'getLedger:ledgers/:ledgerId',
@@ -544,7 +544,7 @@ describe('FinanceController', () => {
       }
     });
 
-    test('所有 @Post 路由清单完整', () => {
+    it('所有 @Post 路由清单完整', () => {
       const expectedPostRoutes = [
         'recordLedger:ledgers',
         'createAccount:accounts',
@@ -564,7 +564,7 @@ describe('FinanceController', () => {
       }
     });
 
-    test('所有 ID 参数路由注册了 @Param', () => {
+    it('所有 ID 参数路由注册了 @Param', () => {
       const paramKeys = ['ledgerId', 'accountId', 'settlementId', 'invoiceId'];
       for (const key of paramKeys) {
         const matched = paramRegistrations.filter((r) => r.endsWith(`:${key}`));
@@ -572,7 +572,7 @@ describe('FinanceController', () => {
       }
     });
 
-    test('所有方法注册了 @TenantContext', () => {
+    it('所有方法注册了 @TenantContext', () => {
       assert.ok(
         tenantContextRegistrations.length >= 23,
         `期望 >= 23 TenantContext 装饰器，实际 ${tenantContextRegistrations.length}`,
@@ -582,7 +582,7 @@ describe('FinanceController', () => {
 
   // ═══════════ Ledger ═══════════
   describe('Ledger — 记账', () => {
-    test('recordLedger 记录收入返回正余额', async () => {
+    it('recordLedger 记录收入返回正余额', async () => {
       const result = await controller.recordLedger(CTX, {
         type: 'REVENUE',
         amount: 1000,
@@ -593,7 +593,7 @@ describe('FinanceController', () => {
       assert.equal(result.balance, 1000); // 收入余额正向
     });
 
-    test('recordLedger 记录支出返回负余额', async () => {
+    it('recordLedger 记录支出返回负余额', async () => {
       const result = await controller.recordLedger(CTX, {
         type: 'EXPENSE',
         amount: 500,
@@ -603,7 +603,7 @@ describe('FinanceController', () => {
       assert.equal(result.balance, -500);
     });
 
-    test('recordLedger 带 orderId 和 category', async () => {
+    it('recordLedger 带 orderId 和 category', async () => {
       const result = await controller.recordLedger(CTX, {
         type: 'REFUND',
         amount: 100,
@@ -615,12 +615,12 @@ describe('FinanceController', () => {
       assert.equal(result.category, 'refund');
     });
 
-    test('listLedgers 返回数组', () => {
+    it('listLedgers 返回数组', () => {
       const result = controller.listLedgers(CTX);
       assert.ok(Array.isArray(result));
     });
 
-    test('getLedger 按 ID 返回', () => {
+    it('getLedger 按 ID 返回', () => {
       const result = controller.getLedger('ledger-abc', CTX);
       assert.equal(result.id, 'ledger-abc');
       assert.equal(result.amount, 100);
@@ -629,14 +629,14 @@ describe('FinanceController', () => {
 
   // ═══════════ Account ═══════════
   describe('Account — 账户管理', () => {
-    test('createAccount 创建现金账户 Active', async () => {
+    it('createAccount 创建现金账户 Active', async () => {
       const result = await controller.createAccount(CTX, { name: '门店现金', type: 'CASH' });
       assert.equal(result.name, '门店现金');
       assert.equal(result.type, 'CASH');
       assert.equal(result.status, 'ACTIVE');
     });
 
-    test('createAccount 带初始余额', async () => {
+    it('createAccount 带初始余额', async () => {
       const result = await controller.createAccount(CTX, {
         name: '银行账户',
         type: 'BANK',
@@ -645,7 +645,7 @@ describe('FinanceController', () => {
       assert.equal(result.balance, 50000);
     });
 
-    test('createAccount 带 storeId', async () => {
+    it('createAccount 带 storeId', async () => {
       const result = await controller.createAccount(CTX, {
         name: '分店账户',
         type: 'WECHAT',
@@ -654,13 +654,13 @@ describe('FinanceController', () => {
       assert.equal(result.storeId, 'store-sz');
     });
 
-    test('getAccount 返回账户详情', () => {
+    it('getAccount 返回账户详情', () => {
       const result = controller.getAccount('acct-1', CTX);
       assert.equal(result.id, 'acct-1');
       assert.equal(result.status, 'ACTIVE');
     });
 
-    test('getAccountBalance 返回摘要而非全量', () => {
+    it('getAccountBalance 返回摘要而非全量', () => {
       const result = controller.getAccountBalance('acct-1', CTX);
       assert.equal(result.id, 'acct-1');
       assert.equal(typeof result.balance, 'number');
@@ -670,23 +670,23 @@ describe('FinanceController', () => {
       assert.deepEqual(keys, ['balance', 'id', 'name', 'status']);
     });
 
-    test('freezeAccount 状态变 FROZEN', () => {
+    it('freezeAccount 状态变 FROZEN', () => {
       const result = controller.freezeAccount('acct-1', CTX);
       assert.equal(result.status, 'FROZEN');
     });
 
-    test('closeAccount 状态变 CLOSED 余额清零', () => {
+    it('closeAccount 状态变 CLOSED 余额清零', () => {
       const result = controller.closeAccount('acct-1', CTX);
       assert.equal(result.status, 'CLOSED');
       assert.equal(result.balance, 0);
     });
 
-    test('listAccounts 无 storeId 返回全部', () => {
+    it('listAccounts 无 storeId 返回全部', () => {
       const result = controller.listAccounts(CTX);
       assert.ok(Array.isArray(result));
     });
 
-    test('listAccounts 带 storeId 过滤', () => {
+    it('listAccounts 带 storeId 过滤', () => {
       let capturedStoreId: string | undefined;
       const original = controller.listAccounts;
       controller.listAccounts = (ctx: RequestTenantContext, storeId?: string) => {
@@ -701,7 +701,7 @@ describe('FinanceController', () => {
 
   // ═══════════ Settlement ═══════════
   describe('Settlement — 结算', () => {
-    test('createSettlement 默认 PENDING，自动计算净利', async () => {
+    it('createSettlement 默认 PENDING，自动计算净利', async () => {
       const result = await controller.createSettlement(CTX, {
         startDate: '2026-06-01T00:00:00.000Z',
         endDate: '2026-06-30T23:59:59.999Z',
@@ -710,7 +710,7 @@ describe('FinanceController', () => {
       assert.equal(result.netProfit, 700); // 1000 - 300
     });
 
-    test('createSettlement 手动指定收支', async () => {
+    it('createSettlement 手动指定收支', async () => {
       const result = await controller.createSettlement(CTX, {
         storeId: 'store-sz',
         startDate: '2026-06-01T00:00:00.000Z',
@@ -723,18 +723,18 @@ describe('FinanceController', () => {
       assert.equal(result.netProfit, 12000);
     });
 
-    test('confirmSettlement → CONFIRMED 带 settledAt', () => {
+    it('confirmSettlement → CONFIRMED 带 settledAt', () => {
       const result = controller.confirmSettlement('stl-1', CTX);
       assert.equal(result.settlementStatus, 'CONFIRMED');
       assert.ok(result.settledAt);
     });
 
-    test('disputeSettlement → DISPUTED', () => {
+    it('disputeSettlement → DISPUTED', () => {
       const result = controller.disputeSettlement('stl-1', CTX);
       assert.equal(result.settlementStatus, 'DISPUTED');
     });
 
-    test('getSettlementDetail 含 settlement + ledgers', () => {
+    it('getSettlementDetail 含 settlement + ledgers', () => {
       const result = controller.getSettlementDetail('stl-1', CTX);
       assert.ok(result.settlement);
       assert.equal(result.settlement.id, 'stl-1');
@@ -744,13 +744,13 @@ describe('FinanceController', () => {
 
   // ═══════════ Invoice ═══════════
   describe('Invoice — 发票', () => {
-    test('createInvoice Draft 状态', async () => {
+    it('createInvoice Draft 状态', async () => {
       const result = await controller.createInvoice(CTX, { type: 'REGULAR', amount: 500 });
       assert.equal(result.status, 'DRAFT');
       assert.equal(result.type, 'REGULAR');
     });
 
-    test('createInvoice 增值税发票含税金额正确', async () => {
+    it('createInvoice 增值税发票含税金额正确', async () => {
       const result = await controller.createInvoice(CTX, {
         type: 'VAT',
         amount: 1000,
@@ -762,13 +762,13 @@ describe('FinanceController', () => {
       assert.equal(result.orderId, 'order-inv');
     });
 
-    test('issueInvoice → ISSUED 带 issuedAt', () => {
+    it('issueInvoice → ISSUED 带 issuedAt', () => {
       const result = controller.issueInvoice('inv-1', CTX);
       assert.equal(result.status, 'ISSUED');
       assert.ok(result.issuedAt);
     });
 
-    test('cancelInvoice → CANCELLED', () => {
+    it('cancelInvoice → CANCELLED', () => {
       const result = controller.cancelInvoice('inv-1', CTX);
       assert.equal(result.status, 'CANCELLED');
     });
@@ -776,19 +776,19 @@ describe('FinanceController', () => {
 
   // ═══════════ Revenue ═══════════
   describe('Revenue — 营收', () => {
-    test('getRevenueSummary 默认返回汇总', () => {
+    it('getRevenueSummary 默认返回汇总', () => {
       const result = controller.getRevenueSummary(CTX);
       assert.equal(result.totalRevenue, 10000);
       assert.equal(result.netRevenue, 6500);
       assert.equal(result.transactionCount, 42);
     });
 
-    test('getRevenueSummary 按门店过滤', () => {
+    it('getRevenueSummary 按门店过滤', () => {
       const result = controller.getRevenueSummary(CTX, { storeId: 'store-bj' });
       assert.equal(result.storeId, 'store-bj');
     });
 
-    test('getDailyRevenue 按日期查询', () => {
+    it('getDailyRevenue 按日期查询', () => {
       const result = controller.getDailyRevenue(CTX, { date: '2026-06-15' });
       assert.equal(result.date, '2026-06-15');
       assert.equal(result.revenue, 1500);
@@ -798,7 +798,7 @@ describe('FinanceController', () => {
 
   // ═══════════ Transaction Integration ═══════════
   describe('Transaction Integration — 交易集成', () => {
-    test('recordTransactionRevenue 收入到账', async () => {
+    it('recordTransactionRevenue 收入到账', async () => {
       const result = await controller.recordTransactionRevenue(CTX, {
         orderId: 'O-1',
         transactionId: 'T-1',
@@ -810,7 +810,7 @@ describe('FinanceController', () => {
       assert.equal(result.orderId, 'O-1');
     });
 
-    test('recordTransactionRefund 退款记录', async () => {
+    it('recordTransactionRefund 退款记录', async () => {
       const result = await controller.recordTransactionRefund(CTX, {
         orderId: 'O-1',
         transactionId: 'T-2',
@@ -825,13 +825,13 @@ describe('FinanceController', () => {
 
   // ═══════════ 边界场景 ═══════════
   describe('边界与异常场景', () => {
-    test('空 tenant context 不阻塞执行', () => {
+    it('空 tenant context 不阻塞执行', () => {
       const emptyCtx = {} as RequestTenantContext;
       const result = controller.getRevenueSummary(emptyCtx);
       assert.equal(typeof result.totalRevenue, 'number');
     });
 
-    test('极小金额记录', async () => {
+    it('极小金额记录', async () => {
       const result = await controller.recordLedger(CTX, {
         type: 'REVENUE',
         amount: 0.01,
@@ -840,7 +840,7 @@ describe('FinanceController', () => {
       assert.equal(result.amount, 0.01);
     });
 
-    test('极大金额记录', async () => {
+    it('极大金额记录', async () => {
       const result = await controller.recordLedger(CTX, {
         type: 'REVENUE',
         amount: 999999.99,
@@ -849,22 +849,22 @@ describe('FinanceController', () => {
       assert.equal(result.amount, 999999.99);
     });
 
-    test('listLedgers 不带任何查询参数', () => {
+    it('listLedgers 不带任何查询参数', () => {
       const result = controller.listLedgers(CTX);
       assert.ok(Array.isArray(result));
     });
 
-    test('listInvoices 不带查询参数', () => {
+    it('listInvoices 不带查询参数', () => {
       const result = controller.listInvoices(CTX);
       assert.ok(Array.isArray(result));
     });
 
-    test('listAccounts 不带 storeId', () => {
+    it('listAccounts 不带 storeId', () => {
       const result = controller.listAccounts(CTX);
       assert.ok(Array.isArray(result));
     });
 
-    test('不同 tenant 隔离', () => {
+    it('不同 tenant 隔离', () => {
       const ctxA = makeCtx({ tenantId: 'tenant-a' });
       const ctxB = makeCtx({ tenantId: 'tenant-b' });
       const resultA = controller.getLedger('l-1', ctxA);

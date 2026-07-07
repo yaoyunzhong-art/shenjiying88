@@ -1,12 +1,12 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
 import { of } from 'rxjs'
 import { ResponseInterceptor } from './response.interceptor'
 
 describe('ResponseInterceptor', () => {
   const interceptor = new ResponseInterceptor()
 
-  test('should wrap response data in ApiResult envelope', async () => {
+  it('should wrap response data in ApiResult envelope', async () => {
     const handler = { handle: () => of({ items: [1, 2, 3] }) }
     const result = await new Promise((resolve, reject) => {
       interceptor.intercept({} as any, handler as any).subscribe({
@@ -24,7 +24,7 @@ describe('ResponseInterceptor', () => {
     assert.ok(typeof (result as any).timestamp === 'string')
   })
 
-  test('should handle null data', async () => {
+  it('should handle null data', async () => {
     const handler = { handle: () => of(null) }
     const result = await new Promise((resolve, reject) => {
       interceptor.intercept({} as any, handler as any).subscribe({
@@ -41,7 +41,7 @@ describe('ResponseInterceptor', () => {
     })
   })
 
-  test('should handle string data', async () => {
+  it('should handle string data', async () => {
     const handler = { handle: () => of('hello') }
     const result = await new Promise((resolve, reject) => {
       interceptor.intercept({} as any, handler as any).subscribe({
@@ -58,7 +58,7 @@ describe('ResponseInterceptor', () => {
     })
   })
 
-  test('should propagate errors from handler', async () => {
+  it('should propagate errors from handler', async () => {
     const handler = { handle: () => of(null).pipe(() => { throw new Error('upstream error') }) }
     
     try {
@@ -71,7 +71,7 @@ describe('ResponseInterceptor', () => {
     }
   })
 
-  test('should preserve object structure without mutation', async () => {
+  it('should preserve object structure without mutation', async () => {
     const data = { id: 1, name: 'test' }
     const handler = { handle: () => of(data) }
     const result = await new Promise((resolve, reject) => {

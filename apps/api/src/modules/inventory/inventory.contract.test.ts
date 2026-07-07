@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict';
-import test from 'node:test';
 import {
   toProductContract,
   toStockRecordContract,
@@ -14,7 +14,7 @@ import { ProductStatus, StockRecordType, PurchaseOrderStatus } from './inventory
 /*  toProductContract                                                  */
 /* ------------------------------------------------------------------ */
 
-test('toProductContract maps full product correctly', () => {
+it('toProductContract maps full product correctly', () => {
   const product = {
     id: 'prod-123',
     tenantId: 't-1',
@@ -49,7 +49,7 @@ test('toProductContract maps full product correctly', () => {
   assert.equal(contract.createdAt, '2026-06-23T08:00:00.000Z');
 });
 
-test('toProductContract maps product with minimal fields', () => {
+it('toProductContract maps product with minimal fields', () => {
   const product = {
     id: 'prod-456',
     tenantId: 't-2',
@@ -75,7 +75,7 @@ test('toProductContract maps product with minimal fields', () => {
   assert.equal(contract.category, undefined);
 });
 
-test('toProductContract maps discontinued status correctly', () => {
+it('toProductContract maps discontinued status correctly', () => {
   const product = {
     id: 'prod-789',
     tenantId: 't-1',
@@ -102,7 +102,7 @@ test('toProductContract maps discontinued status correctly', () => {
 /*  toStockRecordContract                                              */
 /* ------------------------------------------------------------------ */
 
-test('toStockRecordContract maps inbound record correctly', () => {
+it('toStockRecordContract maps inbound record correctly', () => {
   const record = {
     id: 'sr-001',
     productId: 'prod-123',
@@ -129,7 +129,7 @@ test('toStockRecordContract maps inbound record correctly', () => {
   assert.equal(contract.createdAt, '2026-06-23T08:00:00.000Z');
 });
 
-test('toStockRecordContract maps outbound record correctly', () => {
+it('toStockRecordContract maps outbound record correctly', () => {
   const record = {
     id: 'sr-002',
     productId: 'prod-123',
@@ -148,7 +148,7 @@ test('toStockRecordContract maps outbound record correctly', () => {
   assert.equal(contract.reason, undefined);
 });
 
-test('toStockRecordContract maps adjustment record correctly', () => {
+it('toStockRecordContract maps adjustment record correctly', () => {
   const record = {
     id: 'sr-003',
     productId: 'prod-456',
@@ -168,7 +168,7 @@ test('toStockRecordContract maps adjustment record correctly', () => {
   assert.equal(contract.afterStock, 25);
 });
 
-test('toStockRecordContract maps return record correctly', () => {
+it('toStockRecordContract maps return record correctly', () => {
   const record = {
     id: 'sr-004',
     productId: 'prod-789',
@@ -190,7 +190,7 @@ test('toStockRecordContract maps return record correctly', () => {
 /*  toSupplierContract                                                 */
 /* ------------------------------------------------------------------ */
 
-test('toSupplierContract maps full supplier correctly', () => {
+it('toSupplierContract maps full supplier correctly', () => {
   const supplier = {
     id: 'supplier-001',
     tenantId: 't-1',
@@ -211,7 +211,7 @@ test('toSupplierContract maps full supplier correctly', () => {
   assert.equal(contract.email, 'zhangsan@supplier.com');
 });
 
-test('toSupplierContract maps minimal supplier correctly', () => {
+it('toSupplierContract maps minimal supplier correctly', () => {
   const supplier = {
     id: 'supplier-002',
     tenantId: 't-2',
@@ -231,7 +231,7 @@ test('toSupplierContract maps minimal supplier correctly', () => {
 /*  toPurchaseOrderContract                                            */
 /* ------------------------------------------------------------------ */
 
-test('toPurchaseOrderContract maps draft order correctly', () => {
+it('toPurchaseOrderContract maps draft order correctly', () => {
   const order = {
     id: 'po-001',
     tenantId: 't-1',
@@ -269,7 +269,7 @@ test('toPurchaseOrderContract maps draft order correctly', () => {
   assert.equal(contract.receivedAt, undefined);
 });
 
-test('toPurchaseOrderContract maps received order with receivedAt', () => {
+it('toPurchaseOrderContract maps received order with receivedAt', () => {
   const order = {
     id: 'po-002',
     tenantId: 't-1',
@@ -298,7 +298,7 @@ test('toPurchaseOrderContract maps received order with receivedAt', () => {
   assert.equal(contract.receivedAt, '2026-06-23T08:00:00.000Z');
 });
 
-test('toPurchaseOrderContract maps cancelled order', () => {
+it('toPurchaseOrderContract maps cancelled order', () => {
   const order = {
     id: 'po-003',
     tenantId: 't-1',
@@ -319,7 +319,7 @@ test('toPurchaseOrderContract maps cancelled order', () => {
 /*  toStockAlertContract                                               */
 /* ------------------------------------------------------------------ */
 
-test('toStockAlertContract maps low stock alert correctly', () => {
+it('toStockAlertContract maps low stock alert correctly', () => {
   const product = {
     id: 'prod-123',
     tenantId: 't-1',
@@ -354,7 +354,7 @@ test('toStockAlertContract maps low stock alert correctly', () => {
   assert.equal(contract.status, 'low');
 });
 
-test('toStockAlertContract maps out of stock alert correctly', () => {
+it('toStockAlertContract maps out of stock alert correctly', () => {
   const product = {
     id: 'prod-456',
     tenantId: 't-1',
@@ -385,7 +385,7 @@ test('toStockAlertContract maps out of stock alert correctly', () => {
   assert.equal(contract.status, 'out_of_stock');
 });
 
-test('toStockAlertContract maps overstock alert correctly', () => {
+it('toStockAlertContract maps overstock alert correctly', () => {
   const product = {
     id: 'prod-789',
     tenantId: 't-1',
@@ -421,18 +421,18 @@ test('toStockAlertContract maps overstock alert correctly', () => {
 /*  isStockSufficient                                                  */
 /* ------------------------------------------------------------------ */
 
-test('isStockSufficient returns true when stock >= required', () => {
+it('isStockSufficient returns true when stock >= required', () => {
   assert.equal(isStockSufficient(50, 10), true);
   assert.equal(isStockSufficient(10, 10), true);
   assert.equal(isStockSufficient(100, 0), true);
 });
 
-test('isStockSufficient returns false when stock < required', () => {
+it('isStockSufficient returns false when stock < required', () => {
   assert.equal(isStockSufficient(5, 10), false);
   assert.equal(isStockSufficient(0, 1), false);
 });
 
-test('isStockSufficient handles boundary values', () => {
+it('isStockSufficient handles boundary values', () => {
   assert.equal(isStockSufficient(0, 0), true);
   assert.equal(isStockSufficient(1, 1), true);
   assert.equal(isStockSufficient(100, 101), false);

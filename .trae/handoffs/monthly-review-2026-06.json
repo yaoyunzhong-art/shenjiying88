@@ -1,0 +1,18 @@
+{
+  "month": "2026-06",
+  "generated_at": "2026-06-26T02:05:33.213525",
+  "metrics": {
+    "experts_total": 0,
+    "approvers": 0,
+    "champions": 0,
+    "feedback_entries": 0,
+    "knowledge_files": 64
+  },
+  "targets_met": {
+    "approver": false,
+    "champion": false,
+    "feedback": false,
+    "experts": false
+  },
+  "overall_pass": false
+}

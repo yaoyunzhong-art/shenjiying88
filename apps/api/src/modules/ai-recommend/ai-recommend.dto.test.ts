@@ -1,10 +1,10 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-recommend] [A] DTO 测试
  * 验证 class-validator 装饰器的约束和 DTO 转换
  */
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { validate } from 'class-validator'
 import { plainToInstance } from 'class-transformer'
 import {
@@ -24,41 +24,41 @@ import {
 
 // ── PriceRangeDto ──
 describe('ai-recommend.dto: PriceRangeDto', () => {
-  test('validates correct price range', async () => {
+  it('validates correct price range', async () => {
     const dto = plainToInstance(PriceRangeDto, { min: 0, max: 500 })
     const errors = await validate(dto)
     assert.equal(errors.length, 0)
   })
 
-  test('rejects negative min', async () => {
+  it('rejects negative min', async () => {
     const dto = plainToInstance(PriceRangeDto, { min: -1, max: 100 })
     const errors = await validate(dto)
     assert.ok(errors.length > 0)
     assert.ok(errors.some(e => e.property === 'min'))
   })
 
-  test('rejects negative max', async () => {
+  it('rejects negative max', async () => {
     const dto = plainToInstance(PriceRangeDto, { min: 0, max: -1 })
     const errors = await validate(dto)
     assert.ok(errors.length > 0)
     assert.ok(errors.some(e => e.property === 'max'))
   })
 
-  test('rejects missing min', async () => {
+  it('rejects missing min', async () => {
     const dto = plainToInstance(PriceRangeDto, { max: 100 })
     const errors = await validate(dto)
     assert.ok(errors.length > 0)
     assert.ok(errors.some(e => e.property === 'min'))
   })
 
-  test('rejects missing max', async () => {
+  it('rejects missing max', async () => {
     const dto = plainToInstance(PriceRangeDto, { min: 0 })
     const errors = await validate(dto)
     assert.ok(errors.length > 0)
     assert.ok(errors.some(e => e.property === 'max'))
   })
 
-  test('rejects string min', async () => {
+  it('rejects string min', async () => {
     const dto = plainToInstance(PriceRangeDto, { min: 'abc', max: 100 })
     const errors = await validate(dto)
     assert.ok(errors.length > 0)
@@ -67,7 +67,7 @@ describe('ai-recommend.dto: PriceRangeDto', () => {
 
 // ── PreferencesDto ──
 describe('ai-recommend.dto: PreferencesDto', () => {
-  test('validates correct preferences', async () => {
+  it('validates correct preferences', async () => {
     const dto = plainToInstance(PreferencesDto, {
       gameTypes: ['MOBA', 'RPG'],
       priceRange: { min: 0, max: 500 },
@@ -79,7 +79,7 @@ describe('ai-recommend.dto: PreferencesDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('rejects invalid visitFrequency', async () => {
+  it('rejects invalid visitFrequency', async () => {
     const dto = plainToInstance(PreferencesDto, {
       gameTypes: ['MOBA'],
       priceRange: { min: 0, max: 100 },
@@ -92,7 +92,7 @@ describe('ai-recommend.dto: PreferencesDto', () => {
     assert.ok(errors.some(e => e.property === 'visitFrequency'))
   })
 
-  test('rejects negative avgSpend', async () => {
+  it('rejects negative avgSpend', async () => {
     const dto = plainToInstance(PreferencesDto, {
       gameTypes: [],
       priceRange: { min: 0, max: 100 },
@@ -105,7 +105,7 @@ describe('ai-recommend.dto: PreferencesDto', () => {
     assert.ok(errors.some(e => e.property === 'avgSpend'))
   })
 
-  test('rejects empty gameTypes without array', async () => {
+  it('rejects empty gameTypes without array', async () => {
     const dto = plainToInstance(PreferencesDto, {
       gameTypes: 'not-array',
       priceRange: { min: 0, max: 100 },
@@ -117,7 +117,7 @@ describe('ai-recommend.dto: PreferencesDto', () => {
     assert.ok(errors.length > 0)
   })
 
-  test('rejects empty favoriteTimeSlot', async () => {
+  it('rejects empty favoriteTimeSlot', async () => {
     const dto = plainToInstance(PreferencesDto, {
       gameTypes: ['MOBA'],
       priceRange: { min: 0, max: 100 },
@@ -133,7 +133,7 @@ describe('ai-recommend.dto: PreferencesDto', () => {
 
 // ── UserProfileDto ──
 describe('ai-recommend.dto: UserProfileDto', () => {
-  test('validates correct user profile', async () => {
+  it('validates correct user profile', async () => {
     const dto = plainToInstance(UserProfileDto, {
       memberId: 'member-001',
       tenantId: 'tenant-1',
@@ -150,7 +150,7 @@ describe('ai-recommend.dto: UserProfileDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('rejects missing memberId', async () => {
+  it('rejects missing memberId', async () => {
     const dto = plainToInstance(UserProfileDto, {
       tenantId: 'tenant-1',
       preferences: {
@@ -167,7 +167,7 @@ describe('ai-recommend.dto: UserProfileDto', () => {
     assert.ok(errors.some(e => e.property === 'memberId'))
   })
 
-  test('rejects missing tenantId', async () => {
+  it('rejects missing tenantId', async () => {
     const dto = plainToInstance(UserProfileDto, {
       memberId: 'm-1',
       preferences: {
@@ -184,7 +184,7 @@ describe('ai-recommend.dto: UserProfileDto', () => {
     assert.ok(errors.some(e => e.property === 'tenantId'))
   })
 
-  test('rejects empty memberId', async () => {
+  it('rejects empty memberId', async () => {
     const dto = plainToInstance(UserProfileDto, {
       memberId: '',
       tenantId: 't1',
@@ -201,7 +201,7 @@ describe('ai-recommend.dto: UserProfileDto', () => {
     assert.ok(errors.length > 0)
   })
 
-  test('validates nested PreferencesDto', async () => {
+  it('validates nested PreferencesDto', async () => {
     const dto = plainToInstance(UserProfileDto, {
       memberId: 'm-1',
       tenantId: 't1',
@@ -215,13 +215,13 @@ describe('ai-recommend.dto: UserProfileDto', () => {
 
 // ── UpdateProfileDto ──
 describe('ai-recommend.dto: UpdateProfileDto', () => {
-  test('validates empty update (all optional)', async () => {
+  it('validates empty update (all optional)', async () => {
     const dto = plainToInstance(UpdateProfileDto, {})
     const errors = await validate(dto)
     assert.equal(errors.length, 0)
   })
 
-  test('validates partial update with preferences only', async () => {
+  it('validates partial update with preferences only', async () => {
     const dto = plainToInstance(UpdateProfileDto, {
       preferences: {
         gameTypes: ['MOBA'],
@@ -235,7 +235,7 @@ describe('ai-recommend.dto: UpdateProfileDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('validates partial update with behaviorTags only', async () => {
+  it('validates partial update with behaviorTags only', async () => {
     const dto = plainToInstance(UpdateProfileDto, {
       behaviorTags: ['new-tag']
     })
@@ -243,7 +243,7 @@ describe('ai-recommend.dto: UpdateProfileDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('rejects invalid nested preferences in update', async () => {
+  it('rejects invalid nested preferences in update', async () => {
     const dto = plainToInstance(UpdateProfileDto, {
       preferences: {
         gameTypes: 'not-array',
@@ -260,7 +260,7 @@ describe('ai-recommend.dto: UpdateProfileDto', () => {
 
 // ── ItemScoreDto ──
 describe('ai-recommend.dto: ItemScoreDto', () => {
-  test('validates correct item score', async () => {
+  it('validates correct item score', async () => {
     const dto = plainToInstance(ItemScoreDto, {
       memberId: 'member-001',
       itemId: 'game-001',
@@ -273,7 +273,7 @@ describe('ai-recommend.dto: ItemScoreDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('rejects invalid itemType', async () => {
+  it('rejects invalid itemType', async () => {
     const dto = plainToInstance(ItemScoreDto, {
       memberId: 'm-1',
       itemId: 'x',
@@ -287,7 +287,7 @@ describe('ai-recommend.dto: ItemScoreDto', () => {
     assert.ok(errors.some(e => e.property === 'itemType'))
   })
 
-  test('rejects invalid interaction type', async () => {
+  it('rejects invalid interaction type', async () => {
     const dto = plainToInstance(ItemScoreDto, {
       memberId: 'm-1',
       itemId: 'x',
@@ -301,7 +301,7 @@ describe('ai-recommend.dto: ItemScoreDto', () => {
     assert.ok(errors.some(e => e.property === 'interaction'))
   })
 
-  test('rejects rating below 1', async () => {
+  it('rejects rating below 1', async () => {
     const dto = plainToInstance(ItemScoreDto, {
       memberId: 'm-1',
       itemId: 'x',
@@ -315,7 +315,7 @@ describe('ai-recommend.dto: ItemScoreDto', () => {
     assert.ok(errors.some(e => e.property === 'rating'))
   })
 
-  test('rejects rating above 5', async () => {
+  it('rejects rating above 5', async () => {
     const dto = plainToInstance(ItemScoreDto, {
       memberId: 'm-1',
       itemId: 'x',
@@ -329,7 +329,7 @@ describe('ai-recommend.dto: ItemScoreDto', () => {
     assert.ok(errors.some(e => e.property === 'rating'))
   })
 
-  test('rejects weight below 0', async () => {
+  it('rejects weight below 0', async () => {
     const dto = plainToInstance(ItemScoreDto, {
       memberId: 'm-1',
       itemId: 'x',
@@ -343,7 +343,7 @@ describe('ai-recommend.dto: ItemScoreDto', () => {
     assert.ok(errors.some(e => e.property === 'weight'))
   })
 
-  test('rejects weight above 10', async () => {
+  it('rejects weight above 10', async () => {
     const dto = plainToInstance(ItemScoreDto, {
       memberId: 'm-1',
       itemId: 'x',
@@ -360,7 +360,7 @@ describe('ai-recommend.dto: ItemScoreDto', () => {
 
 // ── RecordInteractionDto ──
 describe('ai-recommend.dto: RecordInteractionDto', () => {
-  test('validates correct interaction record', async () => {
+  it('validates correct interaction record', async () => {
     const dto = plainToInstance(RecordInteractionDto, {
       memberId: 'member-001',
       itemId: 'game-001',
@@ -371,7 +371,7 @@ describe('ai-recommend.dto: RecordInteractionDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('rejects invalid interaction type', async () => {
+  it('rejects invalid interaction type', async () => {
     const dto = plainToInstance(RecordInteractionDto, {
       memberId: 'm-1',
       itemId: 'x',
@@ -383,7 +383,7 @@ describe('ai-recommend.dto: RecordInteractionDto', () => {
     assert.ok(errors.some(e => e.property === 'interaction'))
   })
 
-  test('rejects missing memberId', async () => {
+  it('rejects missing memberId', async () => {
     const dto = plainToInstance(RecordInteractionDto, {
       itemId: 'x',
       itemType: 'game',
@@ -394,7 +394,7 @@ describe('ai-recommend.dto: RecordInteractionDto', () => {
     assert.ok(errors.some(e => e.property === 'memberId'))
   })
 
-  test('rejects empty itemId', async () => {
+  it('rejects empty itemId', async () => {
     const dto = plainToInstance(RecordInteractionDto, {
       memberId: 'm-1',
       itemId: '',
@@ -408,13 +408,13 @@ describe('ai-recommend.dto: RecordInteractionDto', () => {
 
 // ── RecommendationQueryDto ──
 describe('ai-recommend.dto: RecommendationQueryDto', () => {
-  test('validates empty query (all optional)', async () => {
+  it('validates empty query (all optional)', async () => {
     const dto = plainToInstance(RecommendationQueryDto, {})
     const errors = await validate(dto)
     assert.equal(errors.length, 0)
   })
 
-  test('validates query with all fields', async () => {
+  it('validates query with all fields', async () => {
     const dto = plainToInstance(RecommendationQueryDto, {
       storeId: 'store-001',
       memberId: 'member-001',
@@ -425,7 +425,7 @@ describe('ai-recommend.dto: RecommendationQueryDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('rejects invalid type in query', async () => {
+  it('rejects invalid type in query', async () => {
     const dto = plainToInstance(RecommendationQueryDto, {
       type: 'invalid'
     })
@@ -434,7 +434,7 @@ describe('ai-recommend.dto: RecommendationQueryDto', () => {
     assert.ok(errors.some(e => e.property === 'type'))
   })
 
-  test('rejects limit below 1', async () => {
+  it('rejects limit below 1', async () => {
     const dto = plainToInstance(RecommendationQueryDto, {
       limit: 0
     })
@@ -443,7 +443,7 @@ describe('ai-recommend.dto: RecommendationQueryDto', () => {
     assert.ok(errors.some(e => e.property === 'limit'))
   })
 
-  test('rejects limit above 100', async () => {
+  it('rejects limit above 100', async () => {
     const dto = plainToInstance(RecommendationQueryDto, {
       limit: 101
     })
@@ -452,7 +452,7 @@ describe('ai-recommend.dto: RecommendationQueryDto', () => {
     assert.ok(errors.some(e => e.property === 'limit'))
   })
 
-  test('accepts limit at boundary values', async () => {
+  it('accepts limit at boundary values', async () => {
     const dto1 = plainToInstance(RecommendationQueryDto, { limit: 1 })
     const errors1 = await validate(dto1)
     assert.equal(errors1.length, 0)
@@ -465,7 +465,7 @@ describe('ai-recommend.dto: RecommendationQueryDto', () => {
 
 // ── StrategyWeightDto ──
 describe('ai-recommend.dto: StrategyWeightDto', () => {
-  test('validates correct weight factor', async () => {
+  it('validates correct weight factor', async () => {
     const dto = plainToInstance(StrategyWeightDto, {
       factor: 'popularity',
       weight: 0.5
@@ -474,7 +474,7 @@ describe('ai-recommend.dto: StrategyWeightDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('rejects empty factor', async () => {
+  it('rejects empty factor', async () => {
     const dto = plainToInstance(StrategyWeightDto, {
       factor: '',
       weight: 0.5
@@ -484,7 +484,7 @@ describe('ai-recommend.dto: StrategyWeightDto', () => {
     assert.ok(errors.some(e => e.property === 'factor'))
   })
 
-  test('rejects weight below 0', async () => {
+  it('rejects weight below 0', async () => {
     const dto = plainToInstance(StrategyWeightDto, {
       factor: 'test',
       weight: -0.1
@@ -494,7 +494,7 @@ describe('ai-recommend.dto: StrategyWeightDto', () => {
     assert.ok(errors.some(e => e.property === 'weight'))
   })
 
-  test('rejects weight above 1', async () => {
+  it('rejects weight above 1', async () => {
     const dto = plainToInstance(StrategyWeightDto, {
       factor: 'test',
       weight: 1.1
@@ -504,7 +504,7 @@ describe('ai-recommend.dto: StrategyWeightDto', () => {
     assert.ok(errors.some(e => e.property === 'weight'))
   })
 
-  test('accepts weight at boundaries', async () => {
+  it('accepts weight at boundaries', async () => {
     const dto1 = plainToInstance(StrategyWeightDto, { factor: 'a', weight: 0 })
     const errors1 = await validate(dto1)
     assert.equal(errors1.length, 0)
@@ -517,7 +517,7 @@ describe('ai-recommend.dto: StrategyWeightDto', () => {
 
 // ── CreateStrategyDto ──
 describe('ai-recommend.dto: CreateStrategyDto', () => {
-  test('validates correct create strategy', async () => {
+  it('validates correct create strategy', async () => {
     const dto = plainToInstance(CreateStrategyDto, {
       name: 'test-strategy',
       description: 'A test strategy',
@@ -530,7 +530,7 @@ describe('ai-recommend.dto: CreateStrategyDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('validates create with minimal optional fields', async () => {
+  it('validates create with minimal optional fields', async () => {
     const dto = plainToInstance(CreateStrategyDto, {
       name: 'minimal',
       description: 'Minimal',
@@ -541,7 +541,7 @@ describe('ai-recommend.dto: CreateStrategyDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('rejects missing name', async () => {
+  it('rejects missing name', async () => {
     const dto = plainToInstance(CreateStrategyDto, {
       description: 'test',
       targetType: 'game',
@@ -552,7 +552,7 @@ describe('ai-recommend.dto: CreateStrategyDto', () => {
     assert.ok(errors.some(e => e.property === 'name'))
   })
 
-  test('rejects missing description', async () => {
+  it('rejects missing description', async () => {
     const dto = plainToInstance(CreateStrategyDto, {
       name: 'test',
       targetType: 'game',
@@ -563,7 +563,7 @@ describe('ai-recommend.dto: CreateStrategyDto', () => {
     assert.ok(errors.some(e => e.property === 'description'))
   })
 
-  test('rejects empty name', async () => {
+  it('rejects empty name', async () => {
     const dto = plainToInstance(CreateStrategyDto, {
       name: '',
       description: 'test',
@@ -574,7 +574,7 @@ describe('ai-recommend.dto: CreateStrategyDto', () => {
     assert.ok(errors.length > 0)
   })
 
-  test('rejects invalid targetType', async () => {
+  it('rejects invalid targetType', async () => {
     const dto = plainToInstance(CreateStrategyDto, {
       name: 'test',
       description: 'test',
@@ -586,7 +586,7 @@ describe('ai-recommend.dto: CreateStrategyDto', () => {
     assert.ok(errors.some(e => e.property === 'targetType'))
   })
 
-  test('rejects empty weights array', async () => {
+  it('rejects empty weights array', async () => {
     const dto = plainToInstance(CreateStrategyDto, {
       name: 'test',
       description: 'test',
@@ -598,7 +598,7 @@ describe('ai-recommend.dto: CreateStrategyDto', () => {
     assert.ok(errors.some(e => e.property === 'weights'))
   })
 
-  test('rejects minScore below 0', async () => {
+  it('rejects minScore below 0', async () => {
     const dto = plainToInstance(CreateStrategyDto, {
       name: 'test',
       description: 'test',
@@ -611,7 +611,7 @@ describe('ai-recommend.dto: CreateStrategyDto', () => {
     assert.ok(errors.some(e => e.property === 'minScore'))
   })
 
-  test('rejects maxResults below 1', async () => {
+  it('rejects maxResults below 1', async () => {
     const dto = plainToInstance(CreateStrategyDto, {
       name: 'test',
       description: 'test',
@@ -624,7 +624,7 @@ describe('ai-recommend.dto: CreateStrategyDto', () => {
     assert.ok(errors.some(e => e.property === 'maxResults'))
   })
 
-  test('rejects maxResults above 100', async () => {
+  it('rejects maxResults above 100', async () => {
     const dto = plainToInstance(CreateStrategyDto, {
       name: 'test',
       description: 'test',
@@ -640,13 +640,13 @@ describe('ai-recommend.dto: CreateStrategyDto', () => {
 
 // ── UpdateStrategyDto ──
 describe('ai-recommend.dto: UpdateStrategyDto', () => {
-  test('validates empty update (all optional)', async () => {
+  it('validates empty update (all optional)', async () => {
     const dto = plainToInstance(UpdateStrategyDto, {})
     const errors = await validate(dto)
     assert.equal(errors.length, 0)
   })
 
-  test('validates partial update with name only', async () => {
+  it('validates partial update with name only', async () => {
     const dto = plainToInstance(UpdateStrategyDto, {
       name: 'new-name'
     })
@@ -654,7 +654,7 @@ describe('ai-recommend.dto: UpdateStrategyDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('validates partial update with weights only', async () => {
+  it('validates partial update with weights only', async () => {
     const dto = plainToInstance(UpdateStrategyDto, {
       weights: [{ factor: 'popularity', weight: 0.8 }]
     })
@@ -662,7 +662,7 @@ describe('ai-recommend.dto: UpdateStrategyDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('rejects invalid targetType in update', async () => {
+  it('rejects invalid targetType in update', async () => {
     const dto = plainToInstance(UpdateStrategyDto, {
       targetType: 'invalid'
     })
@@ -674,7 +674,7 @@ describe('ai-recommend.dto: UpdateStrategyDto', () => {
 
 // ── GenerateRecommendationsDto ──
 describe('ai-recommend.dto: GenerateRecommendationsDto', () => {
-  test('validates correct generate request', async () => {
+  it('validates correct generate request', async () => {
     const dto = plainToInstance(GenerateRecommendationsDto, {
       strategyId: 'strategy-hybrid-v1',
       memberId: 'member-001',
@@ -686,7 +686,7 @@ describe('ai-recommend.dto: GenerateRecommendationsDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('validates generate with only strategyId', async () => {
+  it('validates generate with only strategyId', async () => {
     const dto = plainToInstance(GenerateRecommendationsDto, {
       strategyId: 'strategy-popularity-v1'
     })
@@ -694,7 +694,7 @@ describe('ai-recommend.dto: GenerateRecommendationsDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('rejects missing strategyId', async () => {
+  it('rejects missing strategyId', async () => {
     const dto = plainToInstance(GenerateRecommendationsDto, {
       memberId: 'm-1'
     })
@@ -703,7 +703,7 @@ describe('ai-recommend.dto: GenerateRecommendationsDto', () => {
     assert.ok(errors.some(e => e.property === 'strategyId'))
   })
 
-  test('rejects empty strategyId', async () => {
+  it('rejects empty strategyId', async () => {
     const dto = plainToInstance(GenerateRecommendationsDto, {
       strategyId: ''
     })
@@ -711,7 +711,7 @@ describe('ai-recommend.dto: GenerateRecommendationsDto', () => {
     assert.ok(errors.length > 0)
   })
 
-  test('rejects invalid type in generate', async () => {
+  it('rejects invalid type in generate', async () => {
     const dto = plainToInstance(GenerateRecommendationsDto, {
       strategyId: 'hybrid',
       type: 'invalid'
@@ -720,7 +720,7 @@ describe('ai-recommend.dto: GenerateRecommendationsDto', () => {
     assert.ok(errors.length > 0)
   })
 
-  test('rejects limit below 1', async () => {
+  it('rejects limit below 1', async () => {
     const dto = plainToInstance(GenerateRecommendationsDto, {
       strategyId: 'hybrid',
       limit: 0
@@ -729,7 +729,7 @@ describe('ai-recommend.dto: GenerateRecommendationsDto', () => {
     assert.ok(errors.length > 0)
   })
 
-  test('rejects limit above 100', async () => {
+  it('rejects limit above 100', async () => {
     const dto = plainToInstance(GenerateRecommendationsDto, {
       strategyId: 'hybrid',
       limit: 200
@@ -741,7 +741,7 @@ describe('ai-recommend.dto: GenerateRecommendationsDto', () => {
 
 // ── RecordConversionDto ──
 describe('ai-recommend.dto: RecordConversionDto', () => {
-  test('validates correct conversion record', async () => {
+  it('validates correct conversion record', async () => {
     const dto = plainToInstance(RecordConversionDto, {
       recommendationId: 'rec-001'
     })
@@ -749,14 +749,14 @@ describe('ai-recommend.dto: RecordConversionDto', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('rejects missing recommendationId', async () => {
+  it('rejects missing recommendationId', async () => {
     const dto = plainToInstance(RecordConversionDto, {})
     const errors = await validate(dto)
     assert.ok(errors.length > 0)
     assert.ok(errors.some(e => e.property === 'recommendationId'))
   })
 
-  test('rejects empty recommendationId', async () => {
+  it('rejects empty recommendationId', async () => {
     const dto = plainToInstance(RecordConversionDto, {
       recommendationId: ''
     })
@@ -767,13 +767,13 @@ describe('ai-recommend.dto: RecordConversionDto', () => {
 
 // ── Cross-DTO edge case ──
 describe('ai-recommend.dto: cross-DTO edge cases', () => {
-  test('price range min can equal max', async () => {
+  it('price range min can equal max', async () => {
     const dto = plainToInstance(PriceRangeDto, { min: 100, max: 100 })
     const errors = await validate(dto)
     assert.equal(errors.length, 0)
   })
 
-  test('gameTypes can include non-array values rejected', async () => {
+  it('gameTypes can include non-array values rejected', async () => {
     const dto = plainToInstance(PreferencesDto, {
       gameTypes: 'string-illegal',
       priceRange: { min: 0, max: 100 },
@@ -785,7 +785,7 @@ describe('ai-recommend.dto: cross-DTO edge cases', () => {
     assert.ok(errors.length > 0)
   })
 
-  test('weight factor names can be arbitrary strings', async () => {
+  it('weight factor names can be arbitrary strings', async () => {
     const dto = plainToInstance(StrategyWeightDto, {
       factor: 'custom-long-factor-name',
       weight: 0.33
@@ -794,7 +794,7 @@ describe('ai-recommend.dto: cross-DTO edge cases', () => {
     assert.equal(errors.length, 0)
   })
 
-  test('CreateStrategyDto fallbackStrategy is optional', async () => {
+  it('CreateStrategyDto fallbackStrategy is optional', async () => {
     const dto = plainToInstance(CreateStrategyDto, {
       name: 'no-fallback',
       description: 'no fallback test',

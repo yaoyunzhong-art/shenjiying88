@@ -1,0 +1,14 @@
+{
+    "timestamp": 1783180764,
+    "date": "2026-07-04",
+    "status": "UNHEALTHY",
+    "checks": {
+        "api": UP,
+        "postgres": DOWN,
+        "redis": DOWN,
+        "disk": 1,
+        "memory": 
+    },
+    "details": {},
+    "hostname": "yaoyunzhongdeMacBook-Pro-5.local"
+}

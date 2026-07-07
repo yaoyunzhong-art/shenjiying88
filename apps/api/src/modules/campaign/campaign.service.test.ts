@@ -1,6 +1,7 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
+import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
 import {
   CampaignActionKind,
   CampaignConditionType,
@@ -16,7 +17,7 @@ const tenantContext = {
 }
 
 describe('CampaignService', () => {
-  test('registerCampaign creates a Draft plan with default priority', () => {
+  it('registerCampaign creates a Draft plan with default priority', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     const plan = service.registerCampaign({
@@ -33,7 +34,7 @@ describe('CampaignService', () => {
     assert.equal(plan.actions[0]?.kind, CampaignActionKind.AwardPoints)
   })
 
-  test('registerCampaign rejects empty actions', () => {
+  it('registerCampaign rejects empty actions', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     assert.throws(
@@ -50,7 +51,7 @@ describe('CampaignService', () => {
     )
   })
 
-  test('registerCampaign validates action params per kind', () => {
+  it('registerCampaign validates action params per kind', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     assert.throws(
@@ -103,7 +104,7 @@ describe('CampaignService', () => {
     )
   })
 
-  test('updateCampaignStatus enforces valid transitions', () => {
+  it('updateCampaignStatus enforces valid transitions', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     const plan = service.registerCampaign({
@@ -127,7 +128,7 @@ describe('CampaignService', () => {
     )
   })
 
-  test('updateCampaignStatus rejects plans from other tenants', () => {
+  it('updateCampaignStatus rejects plans from other tenants', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     const plan = service.registerCampaign({
@@ -144,7 +145,7 @@ describe('CampaignService', () => {
     )
   })
 
-  test('listCampaigns filters by tenant, status, triggerEvent and sorts by priority', () => {
+  it('listCampaigns filters by tenant, status, triggerEvent and sorts by priority', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     const high = service.registerCampaign({
@@ -180,7 +181,7 @@ describe('CampaignService', () => {
     assert.equal(allCampaigns[1]?.priority, 200)
   })
 
-  test('evaluateTriggers only matches Active campaigns with the matching trigger event', () => {
+  it('evaluateTriggers only matches Active campaigns with the matching trigger event', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     const draftPlan = service.registerCampaign({
@@ -214,7 +215,35 @@ describe('CampaignService', () => {
     assert.equal(result.skippedActions, 0)
   })
 
-  test('evaluateTriggers respects MinOrderAmount condition', () => {
+  it('evaluateTriggers writes campaign metrics into tenant marketing bucket', () => {
+    const metricsService = new MarketingMetricsService()
+    const service = new CampaignService(undefined, undefined, metricsService)
+    service.resetCampaignStoresForTests()
+    const plan = service.registerCampaign({
+      tenantContext,
+      code: 'METRICS',
+      title: 'metrics',
+      triggerEvent: CampaignTrigger.PaymentSuccess,
+      conditions: [],
+      actions: [{ kind: CampaignActionKind.RecommendTag, params: { tagCode: 'metrics-tag' } }]
+    })
+    service.updateCampaignStatus(plan.planId, CampaignStatus.Active, tenantContext.tenantId)
+
+    const result = service.evaluateTriggers({
+      eventName: CampaignTrigger.PaymentSuccess,
+      tenantContext,
+      memberId: 'm-metrics',
+      orderId: 'o-metrics'
+    })
+    const snapshot = metricsService.snapshot(tenantContext.tenantId)
+
+    assert.equal(result.matchedCampaigns, 1)
+    assert.equal(result.dispatchedActions, 1)
+    assert.equal(snapshot.campaignTriggerTotal, 1)
+    assert.equal(snapshot.campaignDispatchedTotal, 1)
+  })
+
+  it('evaluateTriggers respects MinOrderAmount condition', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     const plan = service.registerCampaign({
@@ -245,7 +274,7 @@ describe('CampaignService', () => {
     assert.equal(above.dispatchedActions, 1)
   })
 
-  test('evaluateTriggers respects MemberLevel, StoreScope, BrandScope conditions', () => {
+  it('evaluateTriggers respects MemberLevel, StoreScope, BrandScope conditions', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     const plan = service.registerCampaign({
@@ -298,7 +327,7 @@ describe('CampaignService', () => {
     assert.equal(accept.matchedCampaigns, 1)
   })
 
-  test('evaluateTriggers enforces idempotency by (planId, actionIndex, memberId, orderId)', () => {
+  it('evaluateTriggers enforces idempotency by (planId, actionIndex, memberId, orderId)', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     const plan = service.registerCampaign({
@@ -330,7 +359,7 @@ describe('CampaignService', () => {
     assert.equal(second.skippedActions, 1)
   })
 
-  test('evaluateTriggers dispatches AwardPoints through MemberService when configured', () => {
+  it('evaluateTriggers dispatches AwardPoints through MemberService when configured', () => {
     const service = new CampaignService(undefined, undefined)
     service.resetCampaignStoresForTests()
     const awardPointsCalls: Array<{ memberId: string; amount: number; tenantId: string }> = []
@@ -365,7 +394,7 @@ describe('CampaignService', () => {
     assert.equal(awardPointsCalls[0]?.tenantId, 'tenant-001')
   })
 
-  test('evaluateTriggers dispatches IssueCoupon through LoyaltyService when configured', () => {
+  it('evaluateTriggers dispatches IssueCoupon through LoyaltyService when configured', () => {
     const svc = new CampaignService(undefined, undefined)
     svc.resetCampaignStoresForTests()
     const redemption = {
@@ -406,7 +435,7 @@ describe('CampaignService', () => {
     )
   })
 
-  test('evaluateTriggers marks IssueBlindbox dispatch failed when LoyaltyService throws', () => {
+  it('evaluateTriggers marks IssueBlindbox dispatch failed when LoyaltyService throws', () => {
     const svc = new CampaignService(undefined, undefined)
     svc.resetCampaignStoresForTests()
     const loyaltyService = {
@@ -438,7 +467,7 @@ describe('CampaignService', () => {
     assert.equal(dispatch?.errorMessage, 'quota exhausted')
   })
 
-  test('evaluateTriggers skips RecommendTag with no resultRef but records dispatch', () => {
+  it('evaluateTriggers skips RecommendTag with no resultRef but records dispatch', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     const plan = service.registerCampaign({
@@ -460,7 +489,7 @@ describe('CampaignService', () => {
     assert.equal(dispatch?.resultRef, 'tag:new-vip')
   })
 
-  test('evaluateTriggers skips AwardPoints when memberId is missing', () => {
+  it('evaluateTriggers skips AwardPoints when memberId is missing', () => {
     const memberService = {
       awardPoints: async () => undefined
     } as any
@@ -485,7 +514,7 @@ describe('CampaignService', () => {
     assert.equal(dispatch?.status, 'SKIPPED')
   })
 
-  test('listDispatches filters by memberId and planId', () => {
+  it('listDispatches filters by memberId and planId', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     const p1 = service.registerCampaign({
@@ -535,7 +564,7 @@ describe('CampaignService', () => {
     assert.equal(dispatched.length, 2)
   })
 
-  test('scheduledStart in the future suppresses trigger evaluation', () => {
+  it('scheduledStart in the future suppresses trigger evaluation', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     const plan = service.registerCampaign({
@@ -556,7 +585,7 @@ describe('CampaignService', () => {
     assert.equal(result.matchedCampaigns, 0)
   })
 
-  test('scheduledEnd in the past suppresses trigger evaluation', () => {
+  it('scheduledEnd in the past suppresses trigger evaluation', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     const plan = service.registerCampaign({
@@ -577,7 +606,7 @@ describe('CampaignService', () => {
     assert.equal(result.matchedCampaigns, 0)
   })
 
-  test('cross-tenant isolation: plan in tenant A is invisible to tenant B', () => {
+  it('cross-tenant isolation: plan in tenant A is invisible to tenant B', () => {
     const service = new CampaignService()
     service.resetCampaignStoresForTests()
     service.registerCampaign({

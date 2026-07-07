@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { Body, Controller, Inject, Post, ValidationPipe } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
@@ -194,7 +194,7 @@ class TestTrustGovernanceRateLimitController {
   }
 }
 
-test('e2e: rate limit endpoint persists ledger and blocks after threshold', async () => {
+it('e2e: rate limit endpoint persists ledger and blocks after threshold', async () => {
   const { prisma, policies, ledgers } = createRateLimitPrismaMock()
 
   const moduleRef = await Test.createTestingModule({

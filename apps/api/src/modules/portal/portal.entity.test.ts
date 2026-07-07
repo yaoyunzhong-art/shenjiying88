@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   PortalAudience,
   PortalScopeType,
@@ -65,7 +65,7 @@ function createStorePortal(overrides: Partial<StorePortal> = {}): StorePortal {
 }
 
 describe('portal.entity: toPortalEntity', () => {
-  test('converts TobPortal to PortalEntity with correct audience', () => {
+  it('converts TobPortal to PortalEntity with correct audience', () => {
     const portal = createTobPortal()
     const entity = toPortalEntity(portal, { id: 'p1', tenantId: 'tenant-demo' })
 
@@ -79,7 +79,7 @@ describe('portal.entity: toPortalEntity', () => {
     assert.equal(entity.name, '测试租户 ToB 官网')
   })
 
-  test('converts TobPortal includes login entry and hero fields', () => {
+  it('converts TobPortal includes login entry and hero fields', () => {
     const portal = createTobPortal()
     const entity = toPortalEntity(portal, { id: 'p1', tenantId: 'tenant-demo' })
 
@@ -91,7 +91,7 @@ describe('portal.entity: toPortalEntity', () => {
     assert.equal(entity.loginEntry.loginPath, '/cn-mainland/tenant-demo/login')
   })
 
-  test('converts StorePortal to PortalEntity with ToC audience', () => {
+  it('converts StorePortal to PortalEntity with ToC audience', () => {
     const portal = createStorePortal()
     const entity = toPortalEntity(portal, {
       id: 'p2',
@@ -107,7 +107,7 @@ describe('portal.entity: toPortalEntity', () => {
     assert.equal(entity.storeName, 'store-001 门店')
   })
 
-  test('converts StorePortal includes supported surfaces', () => {
+  it('converts StorePortal includes supported surfaces', () => {
     const portal = createStorePortal()
     const entity = toPortalEntity(portal, { id: 'p2', tenantId: 'tenant-demo' })
 
@@ -117,7 +117,7 @@ describe('portal.entity: toPortalEntity', () => {
     assert.ok(entity.supportedSurfaces!.includes(StorefrontSurface.MiniApp))
   })
 
-  test('converts StorePortal has createdAt and updatedAt', () => {
+  it('converts StorePortal has createdAt and updatedAt', () => {
     const portal = createStorePortal()
     const entity = toPortalEntity(portal, { id: 'p2', tenantId: 'tenant-demo' })
 
@@ -128,7 +128,7 @@ describe('portal.entity: toPortalEntity', () => {
     assert.ok(!isNaN(Date.parse(entity.updatedAt)))
   })
 
-  test('entity has primaryDomain from portal', () => {
+  it('entity has primaryDomain from portal', () => {
     const portal = createTobPortal()
     const entity = toPortalEntity(portal, { id: 'p1', tenantId: 'tenant-demo' })
 
@@ -137,14 +137,14 @@ describe('portal.entity: toPortalEntity', () => {
 })
 
 describe('portal.entity: isTobPortalEntity', () => {
-  test('returns true for ToB portal entity', () => {
+  it('returns true for ToB portal entity', () => {
     const portal = createTobPortal()
     const entity = toPortalEntity(portal, { id: 'p1', tenantId: 'tenant-demo' })
 
     assert.equal(isTobPortalEntity(entity), true)
   })
 
-  test('returns false for Store portal entity', () => {
+  it('returns false for Store portal entity', () => {
     const portal = createStorePortal()
     const entity = toPortalEntity(portal, { id: 'p2', tenantId: 'tenant-demo' })
 
@@ -153,14 +153,14 @@ describe('portal.entity: isTobPortalEntity', () => {
 })
 
 describe('portal.entity: isStorePortalEntity', () => {
-  test('returns true for Store portal entity', () => {
+  it('returns true for Store portal entity', () => {
     const portal = createStorePortal()
     const entity = toPortalEntity(portal, { id: 'p2', tenantId: 'tenant-demo' })
 
     assert.equal(isStorePortalEntity(entity), true)
   })
 
-  test('returns false for ToB portal entity', () => {
+  it('returns false for ToB portal entity', () => {
     const portal = createTobPortal()
     const entity = toPortalEntity(portal, { id: 'p1', tenantId: 'tenant-demo' })
 
@@ -169,14 +169,14 @@ describe('portal.entity: isStorePortalEntity', () => {
 })
 
 describe('portal.entity: isSsoEnabled', () => {
-  test('returns true when loginEntry has ssoEnabled=true', () => {
+  it('returns true when loginEntry has ssoEnabled=true', () => {
     const portal = createTobPortal()
     const entity = toPortalEntity(portal, { id: 'p1', tenantId: 'tenant-demo' })
 
     assert.equal(isSsoEnabled(entity), true)
   })
 
-  test('returns false when loginEntry has ssoEnabled=false', () => {
+  it('returns false when loginEntry has ssoEnabled=false', () => {
     const portal = createTobPortal({
       loginEntry: {
         label: '进入后台',
@@ -189,7 +189,7 @@ describe('portal.entity: isSsoEnabled', () => {
     assert.equal(isSsoEnabled(entity), false)
   })
 
-  test('returns false when loginEntry is undefined', () => {
+  it('returns false when loginEntry is undefined', () => {
     const storePortal = createStorePortal()
     const entity = toPortalEntity(storePortal, { id: 'p2', tenantId: 'tenant-demo' })
 

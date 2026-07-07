@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * LoyaltyController 单元测试 (node:test)
  *
@@ -5,13 +6,12 @@
  */
 
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
 
 // ── Decorator mocks ─────────────────────────────────────────────
 const routeRegistrations: Array<{ method: string; path: string; handler: string }> = []
 
 function Controller(prefix: string) {
-  return (target: Function & { __prefix?: string }) => {
+  return (target: { new (...args: any[]): unknown; __prefix?: string }) => {
     target.__prefix = prefix
     return target
   }
@@ -69,6 +69,40 @@ interface BlindboxFulfillment {
   status: string
 }
 
+interface BlindboxDrawAuditLog {
+  auditLogId: string
+  sequence: number
+  memberId: string
+  planId: string
+  quantity: number
+  auditHash?: string
+  previousHash?: string
+}
+
+interface BlindboxDrawAuditPage {
+  items: BlindboxDrawAuditLog[]
+  total: number
+  offset: number
+  limit: number
+  hasMore: boolean
+}
+
+interface BlindboxMemberOverview {
+  memberId: string
+  totalFulfillments: number
+  totalDrawQuantity: number
+  guaranteeHitCount: number
+  totalSpentQuota: number
+}
+
+interface BlindboxAuditIntegrityReport {
+  valid: boolean
+  totalLogs: number
+  checkedAt: string
+  lastAuditLogId?: string
+  lastHash?: string
+}
+
 interface LoyaltyOrderSettlement {
   settlementId: string
   orderId: string
@@ -80,6 +114,9 @@ class LoyaltyController {
     listPointsLedger: (tenantId: string) => PointsLedgerEntry[]
     listCouponRedemptions: (tenantId: string) => CouponRedemption[]
     listBlindboxFulfillments: (tenantId: string) => BlindboxFulfillment[]
+    listBlindboxDrawAuditLogPage: (tenantId: string, query?: Record<string, unknown>) => BlindboxDrawAuditPage
+    getBlindboxDrawAuditIntegrityReport: (tenantId: string) => BlindboxAuditIntegrityReport
+    getBlindboxMemberOverview: (tenantId: string, memberId: string) => BlindboxMemberOverview
     listSettlements: (tenantId: string) => LoyaltyOrderSettlement[]
     registerCouponPlan: (input: Record<string, unknown>) => LoyaltyPlan
     listCouponPlans: (tenantId: string) => LoyaltyPlan[]
@@ -89,8 +126,13 @@ class LoyaltyController {
     registerBlindboxPlan: (input: Record<string, unknown>) => BlindboxPlan
     listBlindboxPlans: (tenantId: string) => BlindboxPlan[]
     getBlindboxPlan: (planId: string, tenantId: string) => BlindboxPlan
+    getBlindboxProbabilityOverview: (
+      planId: string,
+      tenantId: string,
+      query?: { historyOffset?: number; historyLimit?: number }
+    ) => Record<string, unknown> | undefined
     updateBlindboxPlanStatus: (planId: string, status: string, tenantId: string) => BlindboxPlan
-    issueBlindboxFromPlan: (input: Record<string, unknown>) => BlindboxFulfillment
+    issueBlindboxFromPlanAtomically: (input: Record<string, unknown>) => Promise<BlindboxFulfillment>
   }
 
   constructor(loyaltyService: typeof LoyaltyController.prototype.loyaltyService) {
@@ -107,6 +149,21 @@ class LoyaltyController {
 
   listBlindboxFulfillments(tenantContext: { tenantId: string }) {
     return this.loyaltyService.listBlindboxFulfillments(tenantContext.tenantId)
+  }
+
+  listBlindboxDrawRecords(
+    tenantContext: { tenantId: string },
+    query: { memberId?: string; planId?: string; blindboxPlanId?: string; offset?: number; limit?: number }
+  ) {
+    return this.loyaltyService.listBlindboxDrawAuditLogPage(tenantContext.tenantId, query)
+  }
+
+  getBlindboxDrawRecordIntegrity(tenantContext: { tenantId: string }) {
+    return this.loyaltyService.getBlindboxDrawAuditIntegrityReport(tenantContext.tenantId)
+  }
+
+  getBlindboxMemberOverview(tenantContext: { tenantId: string }, memberId: string) {
+    return this.loyaltyService.getBlindboxMemberOverview(tenantContext.tenantId, memberId)
   }
 
   listSettlements(tenantContext: { tenantId: string }) {
@@ -184,6 +241,14 @@ class LoyaltyController {
     return this.loyaltyService.getBlindboxPlan(planId, tenantContext.tenantId)
   }
 
+  getBlindboxProbabilityOverview(
+    tenantContext: { tenantId: string },
+    planId: string,
+    query: { historyOffset?: number; historyLimit?: number }
+  ) {
+    return this.loyaltyService.getBlindboxProbabilityOverview(planId, tenantContext.tenantId, query)
+  }
+
   activateBlindboxPlan(
     tenantContext: { tenantId: string },
     planId: string,
@@ -192,12 +257,12 @@ class LoyaltyController {
     return this.loyaltyService.updateBlindboxPlanStatus(planId, body.status, tenantContext.tenantId)
   }
 
-  issueBlindbox(
+  async issueBlindbox(
     tenantContext: { tenantId: string },
     planId: string,
     body: { memberId: string; quantity?: number }
   ) {
-    return this.loyaltyService.issueBlindboxFromPlan({
+    return this.loyaltyService.issueBlindboxFromPlanAtomically({
       tenantContext,
       memberId: body.memberId,
       planId,
@@ -211,6 +276,9 @@ Controller('loyalty')(LoyaltyController)
 Get('points-ledger')(LoyaltyController.prototype, 'listPointsLedger')
 Get('coupon-redemptions')(LoyaltyController.prototype, 'listCouponRedemptions')
 Get('blindbox-fulfillments')(LoyaltyController.prototype, 'listBlindboxFulfillments')
+Get('blindbox-draw-records')(LoyaltyController.prototype, 'listBlindboxDrawRecords')
+Get('blindbox-draw-records/integrity')(LoyaltyController.prototype, 'getBlindboxDrawRecordIntegrity')
+Get('blindbox-members/:memberId/overview')(LoyaltyController.prototype, 'getBlindboxMemberOverview')
 Get('settlements')(LoyaltyController.prototype, 'listSettlements')
 Post('coupon-plans')(LoyaltyController.prototype, 'registerCouponPlan')
 Get('coupon-plans')(LoyaltyController.prototype, 'listCouponPlans')
@@ -220,6 +288,7 @@ Post('coupon-plans/:planId/issue')(LoyaltyController.prototype, 'issueCoupon')
 Post('blindbox-plans')(LoyaltyController.prototype, 'registerBlindboxPlan')
 Get('blindbox-plans')(LoyaltyController.prototype, 'listBlindboxPlans')
 Get('blindbox-plans/:planId')(LoyaltyController.prototype, 'getBlindboxPlan')
+Get('blindbox-plans/:planId/probability')(LoyaltyController.prototype, 'getBlindboxProbabilityOverview')
 Patch('blindbox-plans/:planId/status')(LoyaltyController.prototype, 'activateBlindboxPlan')
 Post('blindbox-plans/:planId/issue')(LoyaltyController.prototype, 'issueBlindbox')
 
@@ -237,6 +306,27 @@ function makeMockService() {
     listBlindboxFulfillments: (_tenantId: string): BlindboxFulfillment[] => [
       { fulfillmentId: 'bf-1', blindboxPlanId: 'bb-plan-1', status: 'FULFILLED' }
     ],
+    listBlindboxDrawAuditLogPage: (_tenantId: string, _query?: Record<string, unknown>): BlindboxDrawAuditPage => ({
+      items: [{ auditLogId: 'audit-1', sequence: 1, memberId: 'mem-1', planId: 'bbp-1', quantity: 12, auditHash: 'hash-1' }],
+      total: 1,
+      offset: 0,
+      limit: 20,
+      hasMore: false
+    }),
+    getBlindboxDrawAuditIntegrityReport: (_tenantId: string): BlindboxAuditIntegrityReport => ({
+      valid: true,
+      totalLogs: 1,
+      checkedAt: '2026-01-01T00:00:00.000Z',
+      lastAuditLogId: 'audit-1',
+      lastHash: 'hash-1'
+    }),
+    getBlindboxMemberOverview: (_tenantId: string, memberId: string): BlindboxMemberOverview => ({
+      memberId,
+      totalFulfillments: 2,
+      totalDrawQuantity: 13,
+      guaranteeHitCount: 1,
+      totalSpentQuota: 13
+    }),
     listSettlements: (_tenantId: string): LoyaltyOrderSettlement[] => [
       { settlementId: 'stl-1', orderId: 'ord-1', status: 'SUCCEEDED' }
     ],
@@ -281,13 +371,26 @@ function makeMockService() {
       title: 'Mystery Box',
       status: 'ACTIVE'
     }),
+    getBlindboxProbabilityOverview: (
+      _planId: string,
+      _tenantId: string,
+      _query?: { historyOffset?: number; historyLimit?: number }
+    ) => ({
+      planId: _planId,
+      blindboxPlanId: 'bb-plan-1',
+      probabilityDisclosure: [{ tier: 'STANDARD', weight: 90, probabilityPct: 90 }],
+      recentDrawRecordTotal: 1,
+      historyLimitApplied: _query?.historyLimit ?? 10,
+      hasMoreRecentDrawRecords: false,
+      recentDrawRecords: [{ auditLogId: 'audit-1', sequence: 1, memberId: 'mem-1', planId: 'bbp-1', quantity: 12 }]
+    }),
     updateBlindboxPlanStatus: (planId: string, status: string, _tenantId: string): BlindboxPlan => ({
       planId,
       blindboxPlanId: 'bb-plan-1',
       title: 'Mystery Box',
       status
     }),
-    issueBlindboxFromPlan: (_input: Record<string, unknown>): BlindboxFulfillment => ({
+    issueBlindboxFromPlanAtomically: async (_input: Record<string, unknown>): Promise<BlindboxFulfillment> => ({
       fulfillmentId: 'bf-new',
       blindboxPlanId: _input.planId as string,
       status: 'FULFILLED'
@@ -299,21 +402,24 @@ function makeMockService() {
 describe('LoyaltyController', () => {
   let controller: LoyaltyController
 
-  test.beforeEach(() => {
-    controller = new LoyaltyController(makeMockService())
+  beforeEach(() => {
+    controller = new LoyaltyController(makeMockService() as any)
   })
 
   describe('decorator metadata', () => {
-    test('registers controller prefix "loyalty"', () => {
+    it('registers controller prefix "loyalty"', () => {
       const Target = LoyaltyController as typeof LoyaltyController & { __prefix?: string }
       assert.strictEqual(Target.__prefix, 'loyalty')
     })
 
-    test('registers all expected routes', () => {
+    it('registers all expected routes', () => {
       const expected = [
         { method: 'GET', path: 'points-ledger', handler: 'listPointsLedger' },
         { method: 'GET', path: 'coupon-redemptions', handler: 'listCouponRedemptions' },
         { method: 'GET', path: 'blindbox-fulfillments', handler: 'listBlindboxFulfillments' },
+        { method: 'GET', path: 'blindbox-draw-records', handler: 'listBlindboxDrawRecords' },
+        { method: 'GET', path: 'blindbox-draw-records/integrity', handler: 'getBlindboxDrawRecordIntegrity' },
+        { method: 'GET', path: 'blindbox-members/:memberId/overview', handler: 'getBlindboxMemberOverview' },
         { method: 'GET', path: 'settlements', handler: 'listSettlements' },
         { method: 'POST', path: 'coupon-plans', handler: 'registerCouponPlan' },
         { method: 'GET', path: 'coupon-plans', handler: 'listCouponPlans' },
@@ -323,6 +429,7 @@ describe('LoyaltyController', () => {
         { method: 'POST', path: 'blindbox-plans', handler: 'registerBlindboxPlan' },
         { method: 'GET', path: 'blindbox-plans', handler: 'listBlindboxPlans' },
         { method: 'GET', path: 'blindbox-plans/:planId', handler: 'getBlindboxPlan' },
+        { method: 'GET', path: 'blindbox-plans/:planId/probability', handler: 'getBlindboxProbabilityOverview' },
         { method: 'PATCH', path: 'blindbox-plans/:planId/status', handler: 'activateBlindboxPlan' },
         { method: 'POST', path: 'blindbox-plans/:planId/issue', handler: 'issueBlindbox' }
       ]
@@ -341,7 +448,7 @@ describe('LoyaltyController', () => {
 
   // ── Points Ledger ──
   describe('listPointsLedger()', () => {
-    test('returns points ledger entries for tenant', () => {
+    it('returns points ledger entries for tenant', () => {
       const result = controller.listPointsLedger(CTX)
       assert.ok(Array.isArray(result))
       assert.strictEqual(result.length, 1)
@@ -352,7 +459,7 @@ describe('LoyaltyController', () => {
 
   // ── Coupon Redemptions ──
   describe('listCouponRedemptions()', () => {
-    test('returns coupon redemptions for tenant', () => {
+    it('returns coupon redemptions for tenant', () => {
       const result = controller.listCouponRedemptions(CTX)
       assert.ok(Array.isArray(result))
       assert.strictEqual(result.length, 1)
@@ -362,7 +469,7 @@ describe('LoyaltyController', () => {
 
   // ── Blindbox Fulfillments ──
   describe('listBlindboxFulfillments()', () => {
-    test('returns blindbox fulfillments for tenant', () => {
+    it('returns blindbox fulfillments for tenant', () => {
       const result = controller.listBlindboxFulfillments(CTX)
       assert.ok(Array.isArray(result))
       assert.strictEqual(result.length, 1)
@@ -370,9 +477,36 @@ describe('LoyaltyController', () => {
     })
   })
 
+  describe('listBlindboxDrawRecords()', () => {
+    it('returns paged blindbox draw audit logs', () => {
+      const result = controller.listBlindboxDrawRecords(CTX, { memberId: 'mem-1', offset: 0, limit: 10 })
+      assert.strictEqual(result.total, 1)
+      assert.strictEqual(result.items.length, 1)
+      assert.strictEqual(result.items[0].auditLogId, 'audit-1')
+    })
+  })
+
+  describe('getBlindboxDrawRecordIntegrity()', () => {
+    it('returns blindbox audit integrity report', () => {
+      const result = controller.getBlindboxDrawRecordIntegrity(CTX)
+      assert.strictEqual(result.valid, true)
+      assert.strictEqual(result.totalLogs, 1)
+      assert.strictEqual(result.lastAuditLogId, 'audit-1')
+    })
+  })
+
+  describe('getBlindboxMemberOverview()', () => {
+    it('returns member blindbox overview', () => {
+      const result = controller.getBlindboxMemberOverview(CTX, 'mem-1')
+      assert.strictEqual(result.memberId, 'mem-1')
+      assert.strictEqual(result.totalFulfillments, 2)
+      assert.strictEqual(result.guaranteeHitCount, 1)
+    })
+  })
+
   // ── Settlements ──
   describe('listSettlements()', () => {
-    test('returns settlements for tenant', () => {
+    it('returns settlements for tenant', () => {
       const result = controller.listSettlements(CTX)
       assert.ok(Array.isArray(result))
       assert.strictEqual(result.length, 1)
@@ -382,7 +516,7 @@ describe('LoyaltyController', () => {
 
   // ── Coupon Plans ──
   describe('registerCouponPlan()', () => {
-    test('registers a new coupon plan and returns it with draft status', () => {
+    it('registers a new coupon plan and returns it with draft status', () => {
       const result = controller.registerCouponPlan(CTX, {
         code: 'SUMMER50',
         title: 'Summer Sale 50',
@@ -401,7 +535,7 @@ describe('LoyaltyController', () => {
   })
 
   describe('listCouponPlans()', () => {
-    test('returns coupon plans for tenant', () => {
+    it('returns coupon plans for tenant', () => {
       const result = controller.listCouponPlans(CTX)
       assert.ok(Array.isArray(result))
       assert.strictEqual(result.length, 1)
@@ -410,7 +544,7 @@ describe('LoyaltyController', () => {
   })
 
   describe('getCouponPlan()', () => {
-    test('returns coupon plan by planId', () => {
+    it('returns coupon plan by planId', () => {
       const result = controller.getCouponPlan(CTX, 'cp-1')
       assert.strictEqual(result.planId, 'cp-1')
       assert.strictEqual(result.code, 'WELCOME10')
@@ -418,7 +552,7 @@ describe('LoyaltyController', () => {
   })
 
   describe('activateCouponPlan()', () => {
-    test('updates coupon plan status', () => {
+    it('updates coupon plan status', () => {
       const result = controller.activateCouponPlan(CTX, 'cp-1', { status: 'ACTIVE' })
       assert.strictEqual(result.planId, 'cp-1')
       assert.strictEqual(result.status, 'ACTIVE')
@@ -426,7 +560,7 @@ describe('LoyaltyController', () => {
   })
 
   describe('issueCoupon()', () => {
-    test('issues coupon from plan for a member', () => {
+    it('issues coupon from plan for a member', () => {
       const result = controller.issueCoupon(CTX, 'cp-1', { memberId: 'mem-001' })
       assert.strictEqual(result.status, 'REDEEMED')
       assert.ok(result.redemptionId)
@@ -435,7 +569,7 @@ describe('LoyaltyController', () => {
 
   // ── Blindbox Plans ──
   describe('registerBlindboxPlan()', () => {
-    test('registers a new blindbox plan with draft status', () => {
+    it('registers a new blindbox plan with draft status', () => {
       const result = controller.registerBlindboxPlan(CTX, {
         blindboxPlanId: 'bb-plan-2',
         title: 'Summer Mystery Box',
@@ -452,7 +586,7 @@ describe('LoyaltyController', () => {
   })
 
   describe('listBlindboxPlans()', () => {
-    test('returns blindbox plans for tenant', () => {
+    it('returns blindbox plans for tenant', () => {
       const result = controller.listBlindboxPlans(CTX)
       assert.ok(Array.isArray(result))
       assert.strictEqual(result.length, 1)
@@ -461,14 +595,14 @@ describe('LoyaltyController', () => {
   })
 
   describe('getBlindboxPlan()', () => {
-    test('returns blindbox plan by planId', () => {
+    it('returns blindbox plan by planId', () => {
       const result = controller.getBlindboxPlan(CTX, 'bbp-1')
       assert.strictEqual(result.planId, 'bbp-1')
     })
   })
 
   describe('activateBlindboxPlan()', () => {
-    test('updates blindbox plan status', () => {
+    it('updates blindbox plan status', () => {
       const result = controller.activateBlindboxPlan(CTX, 'bbp-1', { status: 'ACTIVE' })
       assert.strictEqual(result.planId, 'bbp-1')
       assert.strictEqual(result.status, 'ACTIVE')
@@ -476,8 +610,8 @@ describe('LoyaltyController', () => {
   })
 
   describe('issueBlindbox()', () => {
-    test('issues blindbox from plan for a member', () => {
-      const result = controller.issueBlindbox(CTX, 'bbp-1', { memberId: 'mem-001', quantity: 1 })
+    it('issues blindbox from plan for a member', async () => {
+      const result = await controller.issueBlindbox(CTX, 'bbp-1', { memberId: 'mem-001', quantity: 1 })
       assert.strictEqual(result.status, 'FULFILLED')
       assert.ok(result.fulfillmentId)
     })
@@ -485,45 +619,45 @@ describe('LoyaltyController', () => {
 
   // ── Edge Cases / Boundary ──
   describe('edge cases', () => {
-    test('listPointsLedger returns empty array when no entries are registered', () => {
+    it('listPointsLedger returns empty array when no entries are registered', () => {
       const emptyService = {
         ...makeMockService(),
         listPointsLedger: (_tenantId: string): PointsLedgerEntry[] => []
       }
-      const ctrl = new LoyaltyController(emptyService)
+      const ctrl = new LoyaltyController(emptyService as any)
       const result = ctrl.listPointsLedger(CTX)
       assert.ok(Array.isArray(result))
       assert.strictEqual(result.length, 0)
     })
 
-    test('listCouponPlans returns empty array when no plans exist', () => {
+    it('listCouponPlans returns empty array when no plans exist', () => {
       const emptyService = {
         ...makeMockService(),
         listCouponPlans: (_tenantId: string): LoyaltyPlan[] => []
       }
-      const ctrl = new LoyaltyController(emptyService)
+      const ctrl = new LoyaltyController(emptyService as any)
       const result = ctrl.listCouponPlans(CTX)
       assert.ok(Array.isArray(result))
       assert.strictEqual(result.length, 0)
     })
 
-    test('issueCoupon without source defaults gracefully', () => {
+    it('issueCoupon without source defaults gracefully', () => {
       const result = controller.issueCoupon(CTX, 'cp-1', { memberId: 'mem-002' })
       assert.strictEqual(result.status, 'REDEEMED')
     })
 
-    test('issueBlindbox without quantity defaults gracefully', () => {
-      const result = controller.issueBlindbox(CTX, 'bbp-1', { memberId: 'mem-003' })
+    it('issueBlindbox without quantity defaults gracefully', async () => {
+      const result = await controller.issueBlindbox(CTX, 'bbp-1', { memberId: 'mem-003' })
       assert.strictEqual(result.status, 'FULFILLED')
     })
 
-    test('getCouponPlan returns for valid planId', () => {
+    it('getCouponPlan returns for valid planId', () => {
       const result = controller.getCouponPlan(CTX, 'cp-unknown')
       // still returns because mock doesn't validate existence
       assert.strictEqual(result.planId, 'cp-unknown')
     })
 
-    test('activateCouponPlan to PAUSED status', () => {
+    it('activateCouponPlan to PAUSED status', () => {
       const result = controller.activateCouponPlan(CTX, 'cp-1', { status: 'PAUSED' })
       assert.strictEqual(result.status, 'PAUSED')
     })

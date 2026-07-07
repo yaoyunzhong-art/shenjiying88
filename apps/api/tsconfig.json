@@ -16,6 +16,7 @@
     "sourceMap": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "types": ["vitest/globals"],
     "baseUrl": "../..",
     "paths": {
       "@m5/types": ["packages/types/src/index.ts"],

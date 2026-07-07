@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { PortalService } from './portal.service'
 import type { MarketService } from '../market/market.service'
 import type { FoundationService } from '../foundation/foundation.service'
@@ -53,7 +53,7 @@ function createContext(overrides: Partial<RequestTenantContext> = {}): RequestTe
 }
 
 describe('portal.service: resolveTenantPortal', () => {
-  test('returns tenant portal with correct audience and scope', () => {
+  it('returns tenant portal with correct audience and scope', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const portal = svc.resolveTenantPortal(createContext())
 
@@ -65,14 +65,14 @@ describe('portal.service: resolveTenantPortal', () => {
     assert.equal(portal.channel, PortalChannel.Web)
   })
 
-  test('tenant portal name includes tenantId', () => {
+  it('tenant portal name includes tenantId', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const portal = svc.resolveTenantPortal(createContext())
 
     assert.ok(portal.name.includes('tenant-demo'))
   })
 
-  test('tenant portal has login entry with sso enabled', () => {
+  it('tenant portal has login entry with sso enabled', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const portal = svc.resolveTenantPortal(createContext())
 
@@ -82,14 +82,14 @@ describe('portal.service: resolveTenantPortal', () => {
     assert.ok(portal.loginEntry.loginPath.includes('tenant-demo'))
   })
 
-  test('tenant portal supports the market profile languages', () => {
+  it('tenant portal supports the market profile languages', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const portal = svc.resolveTenantPortal(createContext())
 
     assert.deepEqual(portal.supportedLanguages, [LanguageCode.ZhCn])
   })
 
-  test('tenant portal primaryDomain is constructed correctly', () => {
+  it('tenant portal primaryDomain is constructed correctly', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const portal = svc.resolveTenantPortal(createContext())
 
@@ -98,7 +98,7 @@ describe('portal.service: resolveTenantPortal', () => {
 })
 
 describe('portal.service: resolveBrandPortal', () => {
-  test('returns brand portal with correct audience and scope', () => {
+  it('returns brand portal with correct audience and scope', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const portal = svc.resolveBrandPortal(createContext())
 
@@ -109,7 +109,7 @@ describe('portal.service: resolveBrandPortal', () => {
     assert.equal(portal.marketCode, 'cn-mainland')
   })
 
-  test('brand portal uses default brand code when not provided', () => {
+  it('brand portal uses default brand code when not provided', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const portal = svc.resolveBrandPortal(createContext({ brandId: undefined }))
 
@@ -117,7 +117,7 @@ describe('portal.service: resolveBrandPortal', () => {
     assert.equal(portal.brandCode, 'brand-demo')
   })
 
-  test('brand portal has login entry with sso enabled', () => {
+  it('brand portal has login entry with sso enabled', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const portal = svc.resolveBrandPortal(createContext())
 
@@ -128,7 +128,7 @@ describe('portal.service: resolveBrandPortal', () => {
 })
 
 describe('portal.service: resolveStorePortal', () => {
-  test('returns store portal with ToC audience', () => {
+  it('returns store portal with ToC audience', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const portal = svc.resolveStorePortal(createContext())
 
@@ -139,7 +139,7 @@ describe('portal.service: resolveStorePortal', () => {
     assert.equal(portal.storeName, 'store-001 门店')
   })
 
-  test('store portal uses defaults when not provided', () => {
+  it('store portal uses defaults when not provided', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const portal = svc.resolveStorePortal(createContext({ brandId: undefined, storeId: undefined }))
 
@@ -147,7 +147,7 @@ describe('portal.service: resolveStorePortal', () => {
     assert.equal(portal.storeCode, 'store-001')
   })
 
-  test('store portal has supported surfaces for all channels', () => {
+  it('store portal has supported surfaces for all channels', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const portal = svc.resolveStorePortal(createContext())
 
@@ -159,7 +159,7 @@ describe('portal.service: resolveStorePortal', () => {
     assert.ok(portal.supportedSurfaces.includes(StorefrontSurface.PadConsole))
   })
 
-  test('store portal in cn-mainland only supports ZhCn', () => {
+  it('store portal in cn-mainland only supports ZhCn', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const portal = svc.resolveStorePortal(createContext())
 
@@ -168,7 +168,7 @@ describe('portal.service: resolveStorePortal', () => {
 })
 
 describe('portal.service: getBootstrap', () => {
-  test('getBootstrap returns bootstrap response with portals', () => {
+  it('getBootstrap returns bootstrap response with portals', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const result = svc.getBootstrap(createContext())
 
@@ -181,21 +181,21 @@ describe('portal.service: getBootstrap', () => {
     assert.ok(Array.isArray(result.regionalOverrides))
   })
 
-  test('getBootstrap tenantPortal has ToB audience', () => {
+  it('getBootstrap tenantPortal has ToB audience', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const result = svc.getBootstrap(createContext())
 
     assert.equal(result.tenantPortal.audience, PortalAudience.ToB)
   })
 
-  test('getBootstrap storePortal has ToC audience', () => {
+  it('getBootstrap storePortal has ToC audience', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const result = svc.getBootstrap(createContext())
 
     assert.equal(result.storePortal.audience, PortalAudience.ToC)
   })
 
-  test('getBootstrap marketProfile has correct marketCode', () => {
+  it('getBootstrap marketProfile has correct marketCode', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
     const result = svc.getBootstrap(createContext())
 

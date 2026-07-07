@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { AiRecommendController } from './ai-recommend.controller'
 import { AiRecommendService } from './ai-recommend.service'
 
@@ -25,7 +25,7 @@ const ROLES = {
 
 // ── 👔店长 ──
 describe(`${ROLES.TenantAdmin} ai-recommend 角色测试`, () => {
-  test('店长可以查看所有推荐策略（全局视角）', () => {
+  it('店长可以查看所有推荐策略（全局视角）', () => {
     const { controller } = makeCtrl()
     const strategies = controller.getStrategies()
     assert.ok(Array.isArray(strategies))
@@ -36,7 +36,7 @@ describe(`${ROLES.TenantAdmin} ai-recommend 角色测试`, () => {
     assert.ok(names.includes('hybrid'))
   })
 
-  test('店长可以批量生成推荐（hybrid 策略）', () => {
+  it('店长可以批量生成推荐（hybrid 策略）', () => {
     const { controller } = makeCtrl()
     const result = controller.generateRecommendations({
       strategyId: 'strategy-hybrid-v1',
@@ -50,7 +50,7 @@ describe(`${ROLES.TenantAdmin} ai-recommend 角色测试`, () => {
 
 // ── 🛒前台 ──
 describe(`${ROLES.Reception} ai-recommend 角色测试`, () => {
-  test('前台可以查询热门推荐（面向 walk-in 客户）', () => {
+  it('前台可以查询热门推荐（面向 walk-in 客户）', () => {
     const { controller } = makeCtrl()
     const result = controller.getPopular({
       type: 'game',
@@ -66,7 +66,7 @@ describe(`${ROLES.Reception} ai-recommend 角色测试`, () => {
     }
   })
 
-  test('前台为新客户查询推荐（冷启动场景）', () => {
+  it('前台为新客户查询推荐（冷启动场景）', () => {
     const { controller } = makeCtrl()
     // memberId 不存在于画像 map 中 — 冷启动
     const result = controller.getPersonalized({
@@ -84,7 +84,7 @@ describe(`${ROLES.Reception} ai-recommend 角色测试`, () => {
 
 // ── 👥HR ──
 describe(`${ROLES.HR} ai-recommend 角色测试`, () => {
-  test('HR 可以为团队新成员查看个性化推荐', () => {
+  it('HR 可以为团队新成员查看个性化推荐', () => {
     const { controller, service } = makeCtrl()
     // 先为成员建立画像
     service.updateProfile('member-hr-001', {
@@ -105,7 +105,7 @@ describe(`${ROLES.HR} ai-recommend 角色测试`, () => {
       'HR 视角：应推荐 MOBA/RPG 类型游戏')
   })
 
-  test('HR 不能修改推荐策略（权限边界）', () => {
+  it('HR 不能修改推荐策略（权限边界）', () => {
     const { controller } = makeCtrl()
     // HR 不应该有创建策略的权限 — 但 controller 不校验权限，边界由 guard 处理
     // 这里验证策略列表中不含 HR 创建的策略（未被污染）
@@ -117,7 +117,7 @@ describe(`${ROLES.HR} ai-recommend 角色测试`, () => {
 
 // ── 🔧安监 ──
 describe(`${ROLES.Safety} ai-recommend 角色测试`, () => {
-  test('安监可以禁用不良推荐策略（安全审计）', () => {
+  it('安监可以禁用不良推荐策略（安全审计）', () => {
     const { controller } = makeCtrl()
     // 禁用一个策略
     const disabled = controller.disableStrategy('strategy-collaborative-v1')
@@ -132,7 +132,7 @@ describe(`${ROLES.Safety} ai-recommend 角色测试`, () => {
     assert.equal(reEnabled.isEnabled, true)
   })
 
-  test('安监使用禁用策略生成推荐时会收到错误', () => {
+  it('安监使用禁用策略生成推荐时会收到错误', () => {
     const { controller } = makeCtrl()
     // 先禁用一个策略
     controller.disableStrategy('strategy-content-v1')
@@ -155,7 +155,7 @@ describe(`${ROLES.Safety} ai-recommend 角色测试`, () => {
 
 // ── 🎮导玩员 ──
 describe(`${ROLES.Guide} ai-recommend 角色测试`, () => {
-  test('导玩员记录用户交互并查看更新后的个性化推荐', () => {
+  it('导玩员记录用户交互并查看更新后的个性化推荐', () => {
     const { controller, service } = makeCtrl()
     // 导玩员帮用户记录一次游戏体验
     controller.recordInteraction({
@@ -176,7 +176,7 @@ describe(`${ROLES.Guide} ai-recommend 角色测试`, () => {
     assert.ok(rpgItems.length > 0, '导玩员记录交互后应推荐相似类型游戏')
   })
 
-  test('导玩员可以查看用户画像以了解偏好', () => {
+  it('导玩员可以查看用户画像以了解偏好', () => {
     const { controller, service } = makeCtrl()
     // 先创建一个画像
     service.updateProfile('member-guide-002', {
@@ -195,7 +195,7 @@ describe(`${ROLES.Guide} ai-recommend 角色测试`, () => {
 
 // ── 🎯运行专员 ──
 describe(`${ROLES.Ops} ai-recommend 角色测试`, () => {
-  test('运行专员可以创建并启用新推荐策略', () => {
+  it('运行专员可以创建并启用新推荐策略', () => {
     const { controller } = makeCtrl()
     const newStrategy = controller.createStrategy({
       name: 'ops-weekend-boost',
@@ -217,7 +217,7 @@ describe(`${ROLES.Ops} ai-recommend 角色测试`, () => {
     assert.equal(found!.name, 'ops-weekend-boost')
   })
 
-  test('运行专员使用新策略生成推荐', () => {
+  it('运行专员使用新策略生成推荐', () => {
     const { controller } = makeCtrl()
     const strategy = controller.createStrategy({
       name: 'ops-quick-test',
@@ -240,7 +240,7 @@ describe(`${ROLES.Ops} ai-recommend 角色测试`, () => {
 
 // ── 🤝团建 ──
 describe(`${ROLES.Teambuilding} ai-recommend 角色测试`, () => {
-  test('团建可以为团队成员批量推荐团建游戏', () => {
+  it('团建可以为团队成员批量推荐团建游戏', () => {
     const { controller, service } = makeCtrl()
     // 创建多个团队成员画像
     const members = ['tb-member-01', 'tb-member-02', 'tb-member-03']
@@ -277,7 +277,7 @@ describe(`${ROLES.Teambuilding} ai-recommend 角色测试`, () => {
     assert.ok(true, '团建成员推荐已生成')
   })
 
-  test('团建使用混合策略获取团体推荐', () => {
+  it('团建使用混合策略获取团体推荐', () => {
     const { controller } = makeCtrl()
     const result = controller.generateRecommendations({
       strategyId: 'strategy-hybrid-v1',
@@ -293,7 +293,7 @@ describe(`${ROLES.Teambuilding} ai-recommend 角色测试`, () => {
 
 // ── 📢营销 ──
 describe(`${ROLES.Marketing} ai-recommend 角色测试`, () => {
-  test('营销可以查询热门推荐用于活动策划', () => {
+  it('营销可以查询热门推荐用于活动策划', () => {
     const { controller } = makeCtrl()
     const popular = controller.getPopular({
       type: 'game',
@@ -307,7 +307,7 @@ describe(`${ROLES.Marketing} ai-recommend 角色测试`, () => {
     assert.ok(maxScore > 0, '热门推荐应有正分')
   })
 
-  test('营销可以创建针对特定类型的推荐策略', () => {
+  it('营销可以创建针对特定类型的推荐策略', () => {
     const { controller } = makeCtrl()
     const strategy = controller.createStrategy({
       name: 'mkt-summer-campaign',
@@ -331,7 +331,7 @@ describe(`${ROLES.Marketing} ai-recommend 角色测试`, () => {
     assert.equal(detail!.description, '暑期营销活动推荐策略')
   })
 
-  test('营销可以记录推荐转化以追踪效果', () => {
+  it('营销可以记录推荐转化以追踪效果', () => {
     const { controller } = makeCtrl()
     // 先生成一个推荐
     const genResult = controller.generateRecommendations({
@@ -356,7 +356,7 @@ describe(`${ROLES.Marketing} ai-recommend 角色测试`, () => {
 
 // ──────────── 跨角色边界测试 ────────────
 describe('ai-recommend 跨角色边界测试', () => {
-  test('多个角色连续操作不互相污染策略', () => {
+  it('多个角色连续操作不互相污染策略', () => {
     const { controller } = makeCtrl()
 
     // 运行专员创建策略
@@ -390,7 +390,7 @@ describe('ai-recommend 跨角色边界测试', () => {
     assert.equal(mktAfter!.isEnabled, true)
   })
 
-  test('冷启动用户返回非空推荐（通用边界）', () => {
+  it('冷启动用户返回非空推荐（通用边界）', () => {
     const { controller } = makeCtrl()
     // 全新用户，无画像无历史
     const result = controller.getPersonalized({
@@ -407,7 +407,7 @@ describe('ai-recommend 跨角色边界测试', () => {
     })
   })
 
-  test('无 memberId 的个性化推荐应报错', () => {
+  it('无 memberId 的个性化推荐应报错', () => {
     const { controller } = makeCtrl()
     try {
       controller.getPersonalized({} as any)
@@ -417,7 +417,7 @@ describe('ai-recommend 跨角色边界测试', () => {
     }
   })
 
-  test('不存在的策略 ID 应报错', () => {
+  it('不存在的策略 ID 应报错', () => {
     const { controller } = makeCtrl()
     try {
       controller.generateRecommendations({
@@ -431,7 +431,7 @@ describe('ai-recommend 跨角色边界测试', () => {
     }
   })
 
-  test('创建策略必须提供权重因子', () => {
+  it('创建策略必须提供权重因子', () => {
     const { controller } = makeCtrl()
     const strategy = controller.createStrategy({
       name: 'no-weight-strategy',

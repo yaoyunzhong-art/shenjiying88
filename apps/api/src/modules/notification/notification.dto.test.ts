@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [notification] [D] dto 测试补全
  * 覆盖: RegisterNotificationTemplateDto / SendNotificationDto / UpdateNotificationTemplateDto
@@ -7,16 +8,15 @@
  */
 
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 
 describe('RegisterNotificationTemplateDto 结构', () => {
-  test('code 是 string 属性', () => {
+  it('code 是 string 属性', () => {
     const dto: Record<string, unknown> = { code: 'test_tpl' }
     assert.equal(typeof dto.code, 'string')
     assert.equal((dto.code as string).length, 8)
   })
 
-  test('channel 必须有效', () => {
+  it('channel 必须有效', () => {
     const validChannels = ['EMAIL', 'SMS', 'PUSH', 'IN_APP', 'WEBHOOK', 'SOCIAL']
     for (const ch of validChannels) {
       assert.ok(validChannels.includes(ch))
@@ -24,7 +24,7 @@ describe('RegisterNotificationTemplateDto 结构', () => {
     assert.equal(validChannels.length, 6)
   })
 
-  test('scopeType 必须有效', () => {
+  it('scopeType 必须有效', () => {
     const validScopes = ['TENANT', 'BRAND', 'STORE']
     for (const s of validScopes) {
       assert.ok(validScopes.includes(s))
@@ -32,19 +32,19 @@ describe('RegisterNotificationTemplateDto 结构', () => {
     assert.equal(validScopes.length, 3)
   })
 
-  test('locale 是 string', () => {
+  it('locale 是 string', () => {
     const dto: Record<string, unknown> = { locale: 'zh-CN' }
     assert.equal(dto.locale, 'zh-CN')
     assert.ok(typeof dto.locale === 'string')
   })
 
-  test('bodyTemplate 是必填 string', () => {
+  it('bodyTemplate 是必填 string', () => {
     const dto: Record<string, unknown> = { bodyTemplate: '欢迎 {{name}}' }
     assert.equal(typeof dto.bodyTemplate, 'string')
     assert.ok((dto.bodyTemplate as string).length > 0)
   })
 
-  test('可选字段可为 undefined', () => {
+  it('可选字段可为 undefined', () => {
     const dto: Record<string, unknown> = {
       code: 't',
       channel: 'EMAIL',
@@ -61,20 +61,20 @@ describe('RegisterNotificationTemplateDto 结构', () => {
     assert.equal(dto.enabled, undefined)
   })
 
-  test('variables 是 string[]', () => {
+  it('variables 是 string[]', () => {
     const dto: Record<string, unknown> = { variables: ['name', 'store'] }
     assert.ok(Array.isArray(dto.variables))
     assert.equal((dto.variables as string[]).length, 2)
   })
 
-  test('enabled 是 boolean', () => {
+  it('enabled 是 boolean', () => {
     assert.equal(typeof true, 'boolean')
     assert.equal(typeof false, 'boolean')
   })
 })
 
 describe('SendNotificationDto 结构', () => {
-  test('channel / scopeType / recipient / payload 必填', () => {
+  it('channel / scopeType / recipient / payload 必填', () => {
     const dto: Record<string, unknown> = {
       channel: 'EMAIL',
       scopeType: 'TENANT',
@@ -87,7 +87,7 @@ describe('SendNotificationDto 结构', () => {
     assert.deepStrictEqual(dto.payload, { key: 'value' })
   })
 
-  test('templateCode 可选', () => {
+  it('templateCode 可选', () => {
     const dto: Record<string, unknown> = { templateCode: undefined }
     assert.equal(dto.templateCode, undefined)
 
@@ -95,21 +95,21 @@ describe('SendNotificationDto 结构', () => {
     assert.equal(dto2.templateCode, 'welcome_email')
   })
 
-  test('scheduledAt 是 ISO 字符串', () => {
+  it('scheduledAt 是 ISO 字符串', () => {
     const iso = new Date().toISOString()
     const dto: Record<string, unknown> = { scheduledAt: iso }
     assert.ok(typeof dto.scheduledAt === 'string')
     assert.ok(new Date(dto.scheduledAt as string).getTime() > 0)
   })
 
-  test('payload 是 object', () => {
+  it('payload 是 object', () => {
     assert.equal(typeof {}, 'object')
     assert.ok(!Array.isArray({}))
   })
 })
 
 describe('UpdateNotificationTemplateDto 结构', () => {
-  test('所有字段可选', () => {
+  it('所有字段可选', () => {
     const dto: Record<string, unknown> = {}
     assert.equal(dto.titleTemplate, undefined)
     assert.equal(dto.bodyTemplate, undefined)
@@ -117,18 +117,18 @@ describe('UpdateNotificationTemplateDto 结构', () => {
     assert.equal(dto.enabled, undefined)
   })
 
-  test('可部分更新 titleTemplate', () => {
+  it('可部分更新 titleTemplate', () => {
     const dto: Record<string, unknown> = { titleTemplate: '新标题' }
     assert.equal(dto.titleTemplate, '新标题')
     assert.equal(dto.bodyTemplate, undefined)
   })
 
-  test('可部分更新 enabled', () => {
+  it('可部分更新 enabled', () => {
     const dto: Record<string, unknown> = { enabled: false }
     assert.equal(dto.enabled, false)
   })
 
-  test('可同时更新多个字段', () => {
+  it('可同时更新多个字段', () => {
     const dto: Record<string, unknown> = {
       titleTemplate: '新标题',
       bodyTemplate: '新内容',

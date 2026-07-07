@@ -1,11 +1,12 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { AnalyticsController } from './analytics.controller'
 import { AnalyticsModule } from './analytics.module'
 import { AnalyticsService } from './analytics.service'
+import { MarketingMetricsModule } from '../marketing-metrics/marketing-metrics.module'
 
-test('AnalyticsModule wires controller, provider, and LoyaltyModule', () => {
+it('AnalyticsModule wires controller, provider, LoyaltyModule, and MarketingMetricsModule', () => {
   const controllers = Reflect.getMetadata('controllers', AnalyticsModule) as unknown[] | undefined
   const providers = Reflect.getMetadata('providers', AnalyticsModule) as unknown[] | undefined
   const importsList = Reflect.getMetadata('imports', AnalyticsModule) as unknown[] | undefined
@@ -17,14 +18,15 @@ test('AnalyticsModule wires controller, provider, and LoyaltyModule', () => {
 
   const importNames = (importsList ?? []).map((entry) => (entry as { name?: string }).name)
   assert.ok(importNames.includes('LoyaltyModule'))
+  assert.ok(importNames.includes(MarketingMetricsModule.name))
 })
 
-test('AnalyticsController is mounted at /analytics', () => {
+it('AnalyticsController is mounted at /analytics', () => {
   const path = Reflect.getMetadata('path', AnalyticsController)
   assert.equal(path, 'analytics')
 })
 
-test('AnalyticsController exposes snapshot, diagnostics, recommendations routes', () => {
+it('AnalyticsController exposes snapshot, diagnostics, recommendations routes', () => {
   const proto = AnalyticsController.prototype as unknown as Record<string, unknown>
   const routes: Array<{ method: string; path: string }> = []
   for (const key of Object.getOwnPropertyNames(proto)) {

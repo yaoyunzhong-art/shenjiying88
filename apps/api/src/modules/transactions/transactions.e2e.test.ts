@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Transactions 交易流水 HTTP 链路
  *
@@ -21,7 +22,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -37,6 +37,7 @@ import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import type { NextFunction, Request, Response } from 'express'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
 import { MemberService, resetMemberServiceTestState } from '../member/member.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { CashierService } from '../cashier/cashier.service'
@@ -231,7 +232,8 @@ async function buildApp() {
   resetMemberServiceTestState()
   resetTransactionsServiceTestState()
   const memberService = new MemberService()
-  const loyaltyService = new LoyaltyService(memberService)
+  const metricsService = new MarketingMetricsService()
+  const loyaltyService = new LoyaltyService(memberService, undefined, metricsService)
   loyaltyService.resetLoyaltyStoresForTests()
   const cashierService = new CashierService(memberService, loyaltyService)
   cashierService.resetCashierStoresForTests()
@@ -251,7 +253,7 @@ async function buildApp() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
   app.useGlobalInterceptors(new ResponseInterceptor())
   await app.init()
-  return { app, memberService, loyaltyService, cashierService, transactionsService }
+  return { app, memberService, loyaltyService, cashierService, transactionsService, metricsService }
 }
 
 const TENANT_A = {
@@ -275,10 +277,10 @@ function ensureMember(memberService: MemberService, memberId: string) {
 }
 
 async function settleOrder(
-  app: any,
+  _app: any,
   cashierService: CashierService,
-  memberService: MemberService,
-  loyaltyService: LoyaltyService,
+  _memberService: MemberService,
+  _loyaltyService: LoyaltyService,
   memberId: string,
   amount: number,
   externalPaymentId: string
@@ -302,8 +304,8 @@ async function settleOrder(
   return orderId
 }
 
-test('e2e: payment callback persists order transaction', async () => {
-  const { app, memberService, cashierService, loyaltyService, transactionsService } = await buildApp()
+it('e2e: payment callback persists order transaction', async () => {
+  const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
   try {
@@ -326,7 +328,48 @@ test('e2e: payment callback persists order transaction', async () => {
   }
 })
 
-test('e2e: list transactions scoped by tenant', async () => {
+it('e2e: payment callback with coupon writes tenant marketing metrics once', async () => {
+  const { app, memberService, transactionsService, metricsService } = await buildApp()
+  ensureMember(memberService, 'm-metrics')
+
+  try {
+    const aggregate = await transactionsService.startCheckout(tenantContextA(), {
+      memberId: 'm-metrics',
+      items: [{ skuId: 'sku-metrics', title: 'metrics', quantity: 1, price: 120 }],
+      paymentChannel: 'wechat-pay',
+      couponCode: 'COUPON-METRICS',
+      externalPaymentId: 'ext-pay-metrics'
+    })
+
+    const callback = await request(app.getHttpServer())
+      .post('/transactions/payments/standardized-callback')
+      .send({
+        orderId: aggregate.order.orderId,
+        tenantId: 'tenant-A',
+        externalPaymentId: 'ext-pay-metrics',
+        standardizedEventName: 'cashier.payment-succeeded'
+      })
+    assert.equal(callback.statusCode, 201)
+
+    await request(app.getHttpServer())
+      .post('/transactions/payments/standardized-callback')
+      .send({
+        orderId: aggregate.order.orderId,
+        tenantId: 'tenant-A',
+        externalPaymentId: 'ext-pay-metrics',
+        standardizedEventName: 'cashier.payment-succeeded'
+      })
+
+    const snapshot = metricsService.snapshot('tenant-A')
+    assert.equal(snapshot.couponRedemptionTotal, 1)
+    assert.equal(snapshot.avgOrderValue, 120)
+    assert.ok(metricsService.toPrometheus('tenant-A').includes('order_value_count 1'))
+  } finally {
+    await app.close()
+  }
+})
+
+it('e2e: list transactions scoped by tenant', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
@@ -348,7 +391,7 @@ test('e2e: list transactions scoped by tenant', async () => {
   }
 })
 
-test('e2e: refund request → approve → status Approved', async () => {
+it('e2e: refund request → approve → status Approved', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
@@ -380,7 +423,7 @@ test('e2e: refund request → approve → status Approved', async () => {
   }
 })
 
-test('e2e: refund request → reject → status Rejected', async () => {
+it('e2e: refund request → reject → status Rejected', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
@@ -404,7 +447,7 @@ test('e2e: refund request → reject → status Rejected', async () => {
   }
 })
 
-test('e2e: refund cannot be approved twice', async () => {
+it('e2e: refund cannot be approved twice', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
@@ -430,7 +473,7 @@ test('e2e: refund cannot be approved twice', async () => {
   }
 })
 
-test('e2e: refund dashboard aggregates by status', async () => {
+it('e2e: refund dashboard aggregates by status', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
@@ -481,7 +524,7 @@ test('e2e: refund dashboard aggregates by status', async () => {
   }
 })
 
-test('e2e: member transaction timeline aggregates orders + refunds', async () => {
+it('e2e: member transaction timeline aggregates orders + refunds', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
@@ -503,7 +546,7 @@ test('e2e: member transaction timeline aggregates orders + refunds', async () =>
   }
 })
 
-test('e2e: refund request for unknown order is rejected', async () => {
+it('e2e: refund request for unknown order is rejected', async () => {
   const { app } = await buildApp()
 
   try {
@@ -517,7 +560,7 @@ test('e2e: refund request for unknown order is rejected', async () => {
   }
 })
 
-test('e2e: cross-tenant cannot read another tenant refund', async () => {
+it('e2e: cross-tenant cannot read another tenant refund', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
@@ -538,7 +581,7 @@ test('e2e: cross-tenant cannot read another tenant refund', async () => {
   }
 })
 
-test('e2e: list refunds for tenant scope only', async () => {
+it('e2e: list refunds for tenant scope only', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
@@ -560,7 +603,7 @@ test('e2e: list refunds for tenant scope only', async () => {
   }
 })
 
-test('e2e: list member transactions aggregates all tenant orders', async () => {
+it('e2e: list member transactions aggregates all tenant orders', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
@@ -580,7 +623,7 @@ test('e2e: list member transactions aggregates all tenant orders', async () => {
   }
 })
 
-test('e2e: refund reject reason persisted on refund record', async () => {
+it('e2e: refund reject reason persisted on refund record', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
@@ -603,7 +646,7 @@ test('e2e: refund reject reason persisted on refund record', async () => {
   }
 })
 
-test('e2e: refund reject on non-pending refund throws', async () => {
+it('e2e: refund reject on non-pending refund throws', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
@@ -629,7 +672,7 @@ test('e2e: refund reject on non-pending refund throws', async () => {
   }
 })
 
-test('e2e: list orders scoped by tenant', async () => {
+it('e2e: list orders scoped by tenant', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
@@ -647,7 +690,7 @@ test('e2e: list orders scoped by tenant', async () => {
   }
 })
 
-test('e2e: list refunds with no orders returns empty array', async () => {
+it('e2e: list refunds with no orders returns empty array', async () => {
   const { app } = await buildApp()
   try {
     const list = await request(app.getHttpServer()).get('/transactions/refunds').set(TENANT_A)
@@ -659,7 +702,7 @@ test('e2e: list refunds with no orders returns empty array', async () => {
   }
 })
 
-test('e2e: dashboard returns 0 totals for empty tenant', async () => {
+it('e2e: dashboard returns 0 totals for empty tenant', async () => {
   const { app } = await buildApp()
   try {
     const dashboard = await request(app.getHttpServer())
@@ -672,7 +715,7 @@ test('e2e: dashboard returns 0 totals for empty tenant', async () => {
   }
 })
 
-test('e2e: get unknown order returns 500', async () => {
+it('e2e: get unknown order returns 500', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/transactions/orders/unknown-order').set(TENANT_A)
@@ -682,7 +725,7 @@ test('e2e: get unknown order returns 500', async () => {
   }
 })
 
-test('e2e: cross-tenant refund list does not include another tenant', async () => {
+it('e2e: cross-tenant refund list does not include another tenant', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
@@ -702,7 +745,7 @@ test('e2e: cross-tenant refund list does not include another tenant', async () =
 
 // ── Phase-5 B₂: 7 new tests ──
 
-test('e2e: GET /transactions?type=order filters by type', async () => {
+it('e2e: GET /transactions?type=order filters by type', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-type')
 
@@ -733,7 +776,7 @@ test('e2e: GET /transactions?type=order filters by type', async () => {
   }
 })
 
-test('e2e: GET /transactions?dateFrom&dateTo filters by date range', async () => {
+it('e2e: GET /transactions?dateFrom&dateTo filters by date range', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-date')
 
@@ -761,7 +804,7 @@ test('e2e: GET /transactions?dateFrom&dateTo filters by date range', async () =>
   }
 })
 
-test('e2e: POST /transactions creates batch orders', async () => {
+it('e2e: POST /transactions creates batch orders', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-batch-1')
   ensureMember(memberService, 'm-batch-2')
@@ -801,7 +844,7 @@ test('e2e: POST /transactions creates batch orders', async () => {
   }
 })
 
-test('e2e: GET /transactions/stats returns aggregated stats', async () => {
+it('e2e: GET /transactions/stats returns aggregated stats', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-stats')
 
@@ -833,7 +876,7 @@ test('e2e: GET /transactions/stats returns aggregated stats', async () => {
   }
 })
 
-test('e2e: cross-tenant data isolation for transactions list', async () => {
+it('e2e: cross-tenant data isolation for transactions list', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-iso')
 
@@ -863,7 +906,7 @@ test('e2e: cross-tenant data isolation for transactions list', async () => {
   }
 })
 
-test('e2e: pagination with page and pageSize', async () => {
+it('e2e: pagination with page and pageSize', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-page')
 
@@ -908,7 +951,7 @@ test('e2e: pagination with page and pageSize', async () => {
   }
 })
 
-test('e2e: non-existent transaction returns error', async () => {
+it('e2e: non-existent transaction returns error', async () => {
   const { app } = await buildApp()
 
   try {

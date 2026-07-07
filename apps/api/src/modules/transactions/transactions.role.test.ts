@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { MemberService } from '../member/member.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { CashierService } from '../cashier/cashier.service'
@@ -56,7 +56,7 @@ function makeController() {
 
 // ──────────── 👔店长 ────────────
 describe(`${ROLES.TenantAdmin} 交易角色测试`, () => {
-  test('店长可创建完整交易（下单+支付）', async () => {
+  it('店长可创建完整交易（下单+支付）', async () => {
     const { controller, memberId } = makeController()
 
     const result = await controller.startCheckout(createContext(), {
@@ -72,7 +72,7 @@ describe(`${ROLES.TenantAdmin} 交易角色测试`, () => {
     assert.equal(result.payment?.channel, 'wechat-pay')
   })
 
-  test('店长可查询订单交易聚合信息（权限边界）', () => {
+  it('店长可查询订单交易聚合信息（权限边界）', () => {
     const { controller } = makeController()
 
     // 查询不存在的订单应报错
@@ -85,7 +85,7 @@ describe(`${ROLES.TenantAdmin} 交易角色测试`, () => {
 
 // ──────────── 🛒前台 ────────────
 describe(`${ROLES.Reception} 交易角色测试`, () => {
-  test('前台可为会员快速创建交易（正常流程）', async () => {
+  it('前台可为会员快速创建交易（正常流程）', async () => {
     const { controller, memberId } = makeController()
 
     const result = await controller.startCheckout(createContext(), {
@@ -98,7 +98,7 @@ describe(`${ROLES.Reception} 交易角色测试`, () => {
     assert.equal(result.order.totalAmount, 15)
   })
 
-  test('前台不可跨租户查看交易（权限边界）', () => {
+  it('前台不可跨租户查看交易（权限边界）', () => {
     const { controller, memberId } = makeController()
 
     const timeline = controller.listMemberTransactions(
@@ -112,7 +112,7 @@ describe(`${ROLES.Reception} 交易角色测试`, () => {
 
 // ──────────── 👥HR ────────────
 describe(`${ROLES.HR} 交易角色测试`, () => {
-  test('HR可查看会员的交易时间线（正常流程）', async () => {
+  it('HR可查看会员的交易时间线（正常流程）', async () => {
     const { controller, memberId } = makeController()
 
     await controller.startCheckout(createContext(), {
@@ -128,7 +128,7 @@ describe(`${ROLES.HR} 交易角色测试`, () => {
     })
   })
 
-  test('HR查看不存在会员的交易返回空（权限边界）', () => {
+  it('HR查看不存在会员的交易返回空（权限边界）', () => {
     const { controller } = makeController()
 
     const timeline = controller.listMemberTransactions('ghost-member', createContext())
@@ -138,7 +138,7 @@ describe(`${ROLES.HR} 交易角色测试`, () => {
 
 // ──────────── 🔧安监 ────────────
 describe(`${ROLES.Safety} 交易角色测试`, () => {
-  test('安监可查询订单交易详情做安全审计（正常流程）', async () => {
+  it('安监可查询订单交易详情做安全审计（正常流程）', async () => {
     const { controller, memberId } = makeController()
 
     const created = await controller.startCheckout(createContext(), {
@@ -152,7 +152,7 @@ describe(`${ROLES.Safety} 交易角色测试`, () => {
     assert.ok(aggregate.payment)
   })
 
-  test('安监无法修改交易状态（权限边界 - 只读）', () => {
+  it('安监无法修改交易状态（权限边界 - 只读）', () => {
     const { controller } = makeController()
 
     // 安监只有读取权限，controller 不提供修改接口
@@ -165,7 +165,7 @@ describe(`${ROLES.Safety} 交易角色测试`, () => {
 
 // ──────────── 🎮导玩员 ────────────
 describe(`${ROLES.Guide} 交易角色测试`, () => {
-  test('导玩员可为玩家快速创建游戏币购买交易（正常流程）', async () => {
+  it('导玩员可为玩家快速创建游戏币购买交易（正常流程）', async () => {
     const { controller, memberId } = makeController()
 
     const result = await controller.startCheckout(createContext(), {
@@ -178,7 +178,7 @@ describe(`${ROLES.Guide} 交易角色测试`, () => {
     assert.equal(result.order.totalAmount, 50)
   })
 
-  test('导玩员创建交易需有效会员验证（权限边界）', async () => {
+  it('导玩员创建交易需有效会员验证（权限边界）', async () => {
     const memberService = new MemberService()
     const loyaltyService = new LoyaltyService(memberService)
     const cashierService = new CashierService(memberService, loyaltyService)
@@ -198,7 +198,7 @@ describe(`${ROLES.Guide} 交易角色测试`, () => {
 
 // ──────────── 🎯运行专员 ────────────
 describe(`${ROLES.Ops} 交易角色测试`, () => {
-  test('运行专员可处理支付成功回调并查看聚合结果（正常流程）', async () => {
+  it('运行专员可处理支付成功回调并查看聚合结果（正常流程）', async () => {
     const { controller, memberId } = makeController()
 
     const created = await controller.startCheckout(createContext(), {
@@ -221,7 +221,7 @@ describe(`${ROLES.Ops} 交易角色测试`, () => {
     assert.ok(result.pointsLedger.length >= 1)
   })
 
-  test('运行专员处理支付失败回调正确更新状态（异常流程）', async () => {
+  it('运行专员处理支付失败回调正确更新状态（异常流程）', async () => {
     const { controller, memberId } = makeController()
 
     const created = await controller.startCheckout(createContext(), {
@@ -246,7 +246,7 @@ describe(`${ROLES.Ops} 交易角色测试`, () => {
 
 // ──────────── 🤝团建 ────────────
 describe(`${ROLES.Teambuilding} 交易角色测试`, () => {
-  test('团建可创建团队多项目交易（正常流程）', async () => {
+  it('团建可创建团队多项目交易（正常流程）', async () => {
     const { controller, memberId } = makeController()
 
     const result = await controller.startCheckout(createContext(), {
@@ -263,7 +263,7 @@ describe(`${ROLES.Teambuilding} 交易角色测试`, () => {
     assert.equal(result.order.items.length, 2)
   })
 
-  test('团建空订单应被拒绝（权限边界 - 输入验证）', async () => {
+  it('团建空订单应被拒绝（权限边界 - 输入验证）', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tb-empty',
@@ -288,7 +288,7 @@ describe(`${ROLES.Teambuilding} 交易角色测试`, () => {
 
 // ──────────── 📢营销 ────────────
 describe(`${ROLES.Marketing} 交易角色测试`, () => {
-  test('营销可创建含优惠券和盲盒的营销交易（正常流程）', async () => {
+  it('营销可创建含优惠券和盲盒的营销交易（正常流程）', async () => {
     const { controller, memberId } = makeController()
 
     const result = await controller.startCheckout(createContext(), {
@@ -306,7 +306,7 @@ describe(`${ROLES.Marketing} 交易角色测试`, () => {
     assert.equal(result.order.totalAmount, 90)
   })
 
-  test('营销可查看会员交易时间线做营销效果分析（数据边界）', async () => {
+  it('营销可查看会员交易时间线做营销效果分析（数据边界）', async () => {
     const { controller, memberId } = makeController()
 
     await controller.startCheckout(createContext(), {
@@ -323,7 +323,7 @@ describe(`${ROLES.Marketing} 交易角色测试`, () => {
 
 // ──────────── 跨角色租户隔离 ────────────
 describe('交易模块多租户隔离验证', () => {
-  test('租户A和租户B的交易完全隔离', async () => {
+  it('租户A和租户B的交易完全隔离', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-iso',

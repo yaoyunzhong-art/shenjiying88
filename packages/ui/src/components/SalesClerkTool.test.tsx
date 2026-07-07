@@ -1,236 +1,207 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
 /**
- * @jest-environment jsdom
- * 或使用 react-testing-library:
- *   import { render, screen, fireEvent } from '@testing-library/react';
- *   import { SalesClerkTool } from './SalesClerkTool';
+ * SalesClerkTool 组件测试
  *
- * 因当前项目使用 node:test + assert 作为核心跑器，
- * 本测试覆盖 SalesClerkTool 的类型契约和纯逻辑：
- *   - 默认统计/状态/优先级标签映射
- *   - 空数据边界
- *   - 统计快照验证
+ * 覆盖: 基础渲染、统计数据、Tab标签、会员速查区域、空状态、回调类型校验、边缘情况
+ *
+ * 注意：组件使用客户端 useState 控制 Tab 切换，SSR 仅渲染默认 Tab（会员速查）
+ * 故 FollowUp 和 Scripts 内容在 SSR 测试中不可见，仅验证 Tab 标签和对应数量
  */
 
-import type {
-  SalesClerkToolProps,
-  DailyReceptionStats,
-  FollowUpClient,
-  SalesScript,
-  MemberQuickLookup,
-} from './SalesClerkTool';
+import React from 'react';
 
-// ---- 类型导出完整性 ----
-describe('SalesClerkTool type exports', () => {
-  it('exports all required prop types', () => {
-    const props: SalesClerkToolProps = {
-      stats: {
-        totalReceptions: 42,
-        newLeads: 8,
-        conversions: 5,
-        conversionRate: 11.9,
-        avgResponseMin: 3.2,
-      },
-      followUpClients: [],
-      scripts: [],
+const assert = require('node:assert/strict');
+const { describe, test } = require('node:test');
+
+const PROJECT_ROOT = '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88';
+const { renderToStaticMarkup } = require(
+  PROJECT_ROOT + '/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/server.node.js'
+);
+const { SalesClerkTool } = require('./SalesClerkTool');
+
+// ==================== 测试数据 ====================
+
+const defaultStats = {
+  totalReceptions: 38,
+  newLeads: 12,
+  conversions: 5,
+  conversionRate: 41.7,
+  avgResponseMin: 3.2,
+};
+
+const followUpClients = [
+  { id: 'c1', name: '张三', phone: '13800138001', tier: 'VIP' as const, lastVisit: '2026-06-25', reason: '意向大单未成交', priority: 'high' as const },
+  { id: 'c2', name: '李四', phone: '13800138002', tier: 'GOLD' as const, lastVisit: '2026-06-20', reason: '优惠到期提醒', priority: 'medium' as const },
+  { id: 'c3', name: '王五', phone: '13800138003', tier: 'SILVER' as const, lastVisit: '2026-05-30', reason: '回访调查', priority: 'low' as const },
+];
+
+const scripts = [
+  { id: 's1', scenario: '新客进店问候', text: '您好，欢迎光临！请问有什么可以帮您的？', tags: ['接待', '初次'] },
+  { id: 's2', scenario: '推荐会员卡', text: '您本月消费已达VIP门槛，要不要升级会员卡？', tags: ['会员', '转化'] },
+];
+
+describe('SalesClerkTool', () => {
+  // ==================== 基础渲染 ====================
+
+  test('渲染组件标题', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients, scripts })
+    );
+    assert.match(html, /导购工作台/);
+  });
+
+  test('渲染店员姓名', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients, scripts, clerkName: '小杨' })
+    );
+    assert.match(html, /小杨/);
+  });
+
+  test('渲染门店名称', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients, scripts, storeName: '旗舰店' })
+    );
+    assert.match(html, /旗舰店/);
+  });
+
+  test('显示在线状态', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients, scripts })
+    );
+    assert.match(html, /在线/);
+  });
+
+  // ==================== 统计卡片 ====================
+
+  test('渲染接待统计数据 - 数值', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients, scripts })
+    );
+    assert.match(html, />38</);
+    assert.match(html, />12</);
+    assert.match(html, />5</);
+    assert.match(html, /41\.7%/);
+    assert.match(html, /3\.2min/);
+  });
+
+  test('渲染接待统计数据 - 标签', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients, scripts })
+    );
+    assert.match(html, /今日接待/);
+    assert.match(html, /新增线索/);
+    assert.match(html, /转化率/);
+    assert.match(html, /平均响应/);
+  });
+
+  // ==================== Tab 标签验证（SSR 可见） ====================
+
+  test('Tab 标签全部渲染', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients, scripts })
+    );
+    assert.match(html, /会员速查/);
+    assert.match(html, /待跟进 \(3\)/);
+    assert.match(html, /推荐话术 \(2\)/);
+  });
+
+  test('默认 Tab 被选中（会员速查）', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients, scripts })
+    );
+    // 第一个 button 的 background 应为 #1e293b 表示选中
+    const searchTab = /<button[^>]*background:#1e293b[^>]*>会员速查<\/button>/;
+    assert.match(html, searchTab);
+  });
+
+  // ==================== 会员速查 Tab 内容（SSR 可见） ====================
+
+  test('会员速查区域渲染搜索输入框', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients, scripts })
+    );
+    assert.match(html, /输入手机号或姓名查询会员/);
+    assert.match(html, /查询/);
+  });
+
+  // ==================== 空状态（SSR 可见的缺省计数标签） ====================
+
+  test('空跟进列表显示待跟进 = 0', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients: [], scripts })
+    );
+    assert.match(html, /待跟进 \(0\)/);
+  });
+
+  test('空话术列表显示推荐话术 = 0', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients, scripts: [] })
+    );
+    assert.match(html, /推荐话术 \(0\)/);
+  });
+
+  test('全空数据', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients: [], scripts: [] })
+    );
+    assert.match(html, /待跟进 \(0\)/);
+    assert.match(html, /推荐话术 \(0\)/);
+  });
+
+  // ==================== 默认副标题 ====================
+
+  test('无店员姓名和门店显示默认副标题', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients, scripts })
+    );
+    assert.match(html, /客户接待与转化工具/);
+  });
+
+  // ==================== 边缘情况：异常数据 ====================
+
+  test('大量统计数据显示正确', () => {
+    const highStats = {
+      totalReceptions: 999,
+      newLeads: 888,
+      conversions: 777,
+      conversionRate: 99.9,
+      avgResponseMin: 0.5,
     };
-    assert.ok(props);
-    assert.equal(props.stats.totalReceptions, 42);
-    assert.equal(props.stats.conversions, 5);
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: highStats, followUpClients, scripts })
+    );
+    assert.match(html, />999</);
+    assert.match(html, />888</);
+    assert.match(html, />777</);
+    assert.match(html, /99\.9%/);
+    assert.match(html, /0\.5min/);
   });
 
-  it('FollowUpClient enforces all required fields', () => {
-    const client: FollowUpClient = {
-      id: 'c1',
-      name: '张三',
-      phone: '13800001111',
-      tier: 'GOLD',
-      lastVisit: '2026-06-14',
-      reason: '生日回访',
-      priority: 'high',
-    };
-    assert.equal(client.name, '张三');
-    assert.equal(client.tier, 'GOLD');
-    assert.equal(client.priority, 'high');
-  });
-
-  it('MemberQuickLookup has all display fields', () => {
-    const member: MemberQuickLookup = {
-      id: 'm1',
-      name: '李四',
-      phone: '13900002222',
-      tier: 'VIP',
-      points: 12000,
-      totalSpent: 88000,
-      visitCount: 24,
-      tags: ['高意向', '复购'],
-    };
-    assert.equal(member.tier, 'VIP');
-    assert.ok(member.tags.includes('高意向'));
-  });
-
-  it('SalesScript has required scenario text and tags', () => {
-    const script: SalesScript = {
-      id: 's1',
-      scenario: '新人欢迎',
-      text: '欢迎光临！我是导购小陈，有任何需要随时找我~',
-      tags: ['迎宾', '新客'],
-    };
-    assert.equal(script.scenario, '新人欢迎');
-    assert.ok(script.tags.length > 0);
-  });
-});
-
-// ---- 边界与空数据 ----
-describe('SalesClerkTool edge cases', () => {
-  it('handles empty followUpClients gracefully', () => {
-    const emptyClients: FollowUpClient[] = [];
-    assert.equal(emptyClients.length, 0);
-  });
-
-  it('handles empty scripts gracefully', () => {
-    const emptyScripts: SalesScript[] = [];
-    assert.equal(emptyScripts.length, 0);
-  });
-
-  it('handles zero stats snapshot', () => {
-    const zeroStats: DailyReceptionStats = {
+  test('零统计数据显示正确', () => {
+    const zeroStats = {
       totalReceptions: 0,
       newLeads: 0,
       conversions: 0,
       conversionRate: 0,
       avgResponseMin: 0,
     };
-    assert.equal(zeroStats.totalReceptions, 0);
-    assert.equal(zeroStats.conversionRate, 0);
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: zeroStats, followUpClients: [], scripts: [] })
+    );
+    assert.match(html, />0</);
   });
 
-  it('handles conversionRate as a float', () => {
-    const stats: DailyReceptionStats = {
-      totalReceptions: 100,
-      newLeads: 20,
-      conversions: 15,
-      conversionRate: 15.0,
-      avgResponseMin: 2.5,
-    };
-    assert.ok(stats.conversionRate >= 0 && stats.conversionRate <= 100);
+  // ==================== 导出类型校验 ====================
+
+  test('组件为函数', () => {
+    assert.equal(typeof SalesClerkTool, 'function');
   });
 
-  it('handles 100% conversionRate boundary', () => {
-    const maxStats: DailyReceptionStats = {
-      totalReceptions: 1,
-      newLeads: 1,
-      conversions: 1,
-      conversionRate: 100,
-      avgResponseMin: 0.1,
-    };
-    assert.equal(maxStats.conversionRate, 100);
-  });
-});
+  // ==================== 会员速查区域的静态元素 ====================
 
-// ---- 优先级 / 等级标记完整性 ----
-describe('SalesClerkTool tier & priority enumerations', () => {
-  it('covers all 4 tier values', () => {
-    const tiers: FollowUpClient['tier'][] = ['VIP', 'GOLD', 'SILVER', 'REGULAR'];
-    assert.equal(tiers.length, 4);
-  });
-
-  it('covers all 3 priority values', () => {
-    const priorities: FollowUpClient['priority'][] = ['high', 'medium', 'low'];
-    assert.equal(priorities.length, 3);
-  });
-});
-
-// ---- 回调签名验证 ----
-describe('SalesClerkTool optional callbacks', () => {
-  it('onMemberSearch returns MemberQuickLookup[]', async () => {
-    const search: SalesClerkToolProps['onMemberSearch'] = async (_query) => [
-      {
-        id: 'm1',
-        name: '测试',
-        phone: '13800000000',
-        tier: 'REGULAR',
-        points: 100,
-        totalSpent: 500,
-        visitCount: 3,
-        tags: ['新客'],
-      },
-    ];
-    const result = await search('测试');
-    assert.ok(result);
-    assert.equal(result[0]!.name, '测试');
-  });
-
-  it('onFollowUp passes clientId', () => {
-    let capturedId = '';
-    const onFollowUp: SalesClerkToolProps['onFollowUp'] = (id) => {
-      capturedId = id;
-    };
-    onFollowUp?.('c-001');
-    assert.equal(capturedId, 'c-001');
-  });
-
-  it('onScriptCopy passes scriptId', () => {
-    let captured = '';
-    const onScriptCopy: SalesClerkToolProps['onScriptCopy'] = (id) => {
-      captured = id;
-    };
-    onScriptCopy?.('s-copy-1');
-    assert.equal(captured, 's-copy-1');
-  });
-});
-
-// ---- 多客户组合场景 ----
-describe('SalesClerkTool multi-client scenario', () => {
-  it('organizes followUpClients sorted by priority', () => {
-    const clients: FollowUpClient[] = [
-      { id: 'c1', name: 'A', phone: '1', tier: 'REGULAR', lastVisit: '2026-06-10', reason: '咨询', priority: 'low' },
-      { id: 'c2', name: 'B', phone: '2', tier: 'VIP', lastVisit: '2026-06-13', reason: '投诉', priority: 'high' },
-      { id: 'c3', name: 'C', phone: '3', tier: 'GOLD', lastVisit: '2026-06-12', reason: '回访', priority: 'medium' },
-    ];
-
-    const sorted = [...clients].sort((a, b) => {
-      const order = { high: 0, medium: 1, low: 2 };
-      return order[a.priority] - order[b.priority];
-    });
-
-    assert.equal(sorted[0]!.priority, 'high');
-    assert.equal(sorted[0]!.name, 'B');
-    assert.equal(sorted[2]!.priority, 'low');
-  });
-
-  it('validates all clients have unique ids', () => {
-    const clients: FollowUpClient[] = [
-      { id: 'c1', name: '甲', phone: '1', tier: 'REGULAR', lastVisit: '2026-06-10', reason: 'x', priority: 'low' },
-      { id: 'c2', name: '乙', phone: '2', tier: 'VIP', lastVisit: '2026-06-10', reason: 'y', priority: 'high' },
-    ];
-    const ids = clients.map((c) => c.id);
-    assert.equal(new Set(ids).size, ids.length);
-  });
-});
-
-// ---- clerkName / storeName 可选 ----
-describe('SalesClerkTool optional identity props', () => {
-  it('accepts clerkName and storeName', () => {
-    const props: SalesClerkToolProps = {
-      stats: { totalReceptions: 10, newLeads: 2, conversions: 1, conversionRate: 10, avgResponseMin: 5 },
-      followUpClients: [],
-      scripts: [],
-      clerkName: '小陈',
-      storeName: '万象城旗舰店',
-    };
-    assert.equal(props.clerkName, '小陈');
-    assert.equal(props.storeName, '万象城旗舰店');
-  });
-
-  it('defaults identity to undefined gracefully', () => {
-    const props: SalesClerkToolProps = {
-      stats: { totalReceptions: 0, newLeads: 0, conversions: 0, conversionRate: 0, avgResponseMin: 0 },
-      followUpClients: [],
-      scripts: [],
-    };
-    assert.equal(props.clerkName, undefined);
-    assert.equal(props.storeName, undefined);
+  test('会员速查标题渲染', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SalesClerkTool, { stats: defaultStats, followUpClients, scripts })
+    );
+    assert.match(html, /会员速查/);
   });
 });

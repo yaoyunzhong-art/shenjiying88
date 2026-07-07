@@ -4,7 +4,7 @@ import React from 'react';
 
 type Severity = 'info' | 'warning' | 'error' | 'success';
 
-interface StatusBadgeProps {
+export interface StatusBadgeProps {
   label: string;
   variant?: Severity | 'neutral' | 'default' | 'pending' | 'danger';
   size?: 'sm' | 'md';
@@ -58,7 +58,7 @@ export function StatusBadge({ label, variant = 'default', size = 'md', dot = tru
   );
 }
 
-interface StatusBadgeGroupProps {
+export interface StatusBadgeGroupProps {
   items?: { label: string; variant?: Severity | 'neutral' | 'default' | 'pending' | 'danger' }[];
   children?: React.ReactNode;
   size?: 'sm' | 'md';

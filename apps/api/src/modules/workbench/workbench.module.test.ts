@@ -1,7 +1,7 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { WorkbenchModule } from './workbench.module'
 import { WorkbenchController } from './workbench.controller'
 import { WorkbenchService } from './workbench.service'
@@ -47,7 +47,7 @@ const stubRuntimeGovernanceService = {
 describe('WorkbenchModule', () => {
   let moduleRef: TestingModule
 
-  test('should compile and instantiate', async () => {
+  it('should compile and instantiate', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [WorkbenchModule],
     })
@@ -64,7 +64,7 @@ describe('WorkbenchModule', () => {
     assert.ok(moduleRef)
   })
 
-  test('should provide WorkbenchController', async () => {
+  it('should provide WorkbenchController', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [WorkbenchModule],
     })
@@ -83,7 +83,7 @@ describe('WorkbenchModule', () => {
     assert.ok(controller instanceof WorkbenchController)
   })
 
-  test('should provide WorkbenchService', async () => {
+  it('should provide WorkbenchService', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [WorkbenchModule],
     })

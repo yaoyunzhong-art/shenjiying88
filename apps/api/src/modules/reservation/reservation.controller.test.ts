@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { ReservationController } from './reservation.controller'
 import { ReservationStatus, ReservationType } from './reservation.entity'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -70,40 +70,40 @@ function makeController(overrides?: Partial<MockReservationService>): Reservatio
 
 // ── Route Metadata ──
 describe('路由元数据验证', () => {
-  test('controller path 为 reservations', () => {
+  it('controller path 为 reservations', () => {
     const path = Reflect.getMetadata('path', ReservationController)
     assert.equal(path, 'reservations')
   })
 
-  test('createReservation POST /', () => {
+  it('createReservation POST /', () => {
     const method = Reflect.getMetadata('method', ReservationController.prototype.createReservation)
     const path = Reflect.getMetadata('path', ReservationController.prototype.createReservation)
     assert.equal(method, 1) // POST
     assert.equal(path, '/')
   })
 
-  test('findAll GET /', () => {
+  it('findAll GET /', () => {
     const method = Reflect.getMetadata('method', ReservationController.prototype.findAll)
     const path = Reflect.getMetadata('path', ReservationController.prototype.findAll)
     assert.equal(method, 0) // GET
     assert.equal(path, '/')
   })
 
-  test('findOne GET /:id', () => {
+  it('findOne GET /:id', () => {
     const method = Reflect.getMetadata('method', ReservationController.prototype.findOne)
     const path = Reflect.getMetadata('path', ReservationController.prototype.findOne)
     assert.equal(method, 0)
     assert.equal(path, ':id')
   })
 
-  test('updateReservation PATCH /:id', () => {
+  it('updateReservation PATCH /:id', () => {
     const method = Reflect.getMetadata('method', ReservationController.prototype.updateReservation)
     const path = Reflect.getMetadata('path', ReservationController.prototype.updateReservation)
     assert.equal(method, 4) // PATCH
     assert.equal(path, ':id')
   })
 
-  test('cancelReservation DELETE /:id', () => {
+  it('cancelReservation DELETE /:id', () => {
     const method = Reflect.getMetadata('method', ReservationController.prototype.cancelReservation)
     const path = Reflect.getMetadata('path', ReservationController.prototype.cancelReservation)
     assert.equal(method, 3) // DELETE
@@ -115,7 +115,7 @@ describe('路由元数据验证', () => {
 describe('ReservationController 方法', () => {
   // ── createReservation ──
   describe('createReservation', () => {
-    test('正常创建预约', () => {
+    it('正常创建预约', () => {
       const ctrl = makeController()
       const body = {
         type: ReservationType.Venue,
@@ -134,7 +134,7 @@ describe('ReservationController 方法', () => {
       assert.equal(result.resourceName, 'VIP Room')
     })
 
-    test('service create 抛出异常时向上传递', () => {
+    it('service create 抛出异常时向上传递', () => {
       const ctrl = makeController({
         create: () => { throw new Error('endTime must be after startTime') }
       })
@@ -158,14 +158,14 @@ describe('ReservationController 方法', () => {
 
   // ── findAll ──
   describe('findAll', () => {
-    test('正常返回预约列表', () => {
+    it('正常返回预约列表', () => {
       const ctrl = makeController()
       const result = ctrl.findAll(tenantCtx(), {})
       assert.ok(Array.isArray(result))
       assert.equal(result.length, 1)
     })
 
-    test('空列表', () => {
+    it('空列表', () => {
       const ctrl = makeController({ findAll: () => [] })
       const result = ctrl.findAll(tenantCtx(), {})
       assert.deepEqual(result, [])
@@ -174,13 +174,13 @@ describe('ReservationController 方法', () => {
 
   // ── findOne ──
   describe('findOne', () => {
-    test('找到预约返回实体', () => {
+    it('找到预约返回实体', () => {
       const ctrl = makeController()
       const result = ctrl.findOne(tenantCtx(), 'reservation-001')
       assert.equal(result.id, 'reservation-001')
     })
 
-    test('找不到预约返回 404', () => {
+    it('找不到预约返回 404', () => {
       const ctrl = makeController({ findOne: () => undefined })
       assert.throws(
         () => ctrl.findOne(tenantCtx(), 'non-existent'),
@@ -191,7 +191,7 @@ describe('ReservationController 方法', () => {
 
   // ── findByUser ──
   describe('findByUser', () => {
-    test('按用户查询', () => {
+    it('按用户查询', () => {
       const ctrl = makeController()
       const result = ctrl.findByUser(tenantCtx(), 'u-01')
       assert.ok(Array.isArray(result))
@@ -201,7 +201,7 @@ describe('ReservationController 方法', () => {
 
   // ── findByResource ──
   describe('findByResource', () => {
-    test('按资源查询', () => {
+    it('按资源查询', () => {
       const ctrl = makeController()
       const result = ctrl.findByResource(tenantCtx(), 'room-101')
       assert.ok(Array.isArray(result))
@@ -210,13 +210,13 @@ describe('ReservationController 方法', () => {
 
   // ── findByTimeRange ──
   describe('findByTimeRange', () => {
-    test('正常查询时间范围', () => {
+    it('正常查询时间范围', () => {
       const ctrl = makeController()
       const result = ctrl.findByTimeRange(tenantCtx(), '2026-06-24T00:00:00.000Z', '2026-06-25T00:00:00.000Z')
       assert.ok(Array.isArray(result))
     })
 
-    test('缺少参数返回 400', () => {
+    it('缺少参数返回 400', () => {
       const ctrl = makeController()
       assert.throws(
         () => ctrl.findByTimeRange(tenantCtx(), '', ''),
@@ -227,13 +227,13 @@ describe('ReservationController 方法', () => {
 
   // ── checkConflict ──
   describe('checkConflict', () => {
-    test('无冲突返回 hasConflict false', () => {
+    it('无冲突返回 hasConflict false', () => {
       const ctrl = makeController()
       const result = ctrl.checkConflict(tenantCtx(), 'room-101', '2026-06-24T10:00:00.000Z', '2026-06-24T12:00:00.000Z')
       assert.equal(result.hasConflict, false)
     })
 
-    test('有冲突返回 hasConflict true', () => {
+    it('有冲突返回 hasConflict true', () => {
       const ctrl = makeController({
         checkConflict: () => { throw new Error('conflict') }
       })
@@ -241,7 +241,7 @@ describe('ReservationController 方法', () => {
       assert.equal(result.hasConflict, true)
     })
 
-    test('缺少参数返回 400', () => {
+    it('缺少参数返回 400', () => {
       const ctrl = makeController()
       assert.throws(
         () => ctrl.checkConflict(tenantCtx(), '', '', ''),
@@ -252,7 +252,7 @@ describe('ReservationController 方法', () => {
 
   // ── updateReservation (status transitions) ──
   describe('updateReservation', () => {
-    test('status=Confirmed 调用 confirm', () => {
+    it('status=Confirmed 调用 confirm', () => {
       const confirmed = false
       let called = false
       const ctrl = makeController({
@@ -263,31 +263,31 @@ describe('ReservationController 方法', () => {
       assert.ok(called || true)
     })
 
-    test('status=Cancelled 调用 cancel', () => {
+    it('status=Cancelled 调用 cancel', () => {
       const ctrl = makeController()
       const result = ctrl.updateReservation(tenantCtx(), 'r-1', { status: ReservationStatus.Cancelled })
       assert.equal(result.status, ReservationStatus.Cancelled)
     })
 
-    test('status=InProgress 调用 startProgress', () => {
+    it('status=InProgress 调用 startProgress', () => {
       const ctrl = makeController()
       const result = ctrl.updateReservation(tenantCtx(), 'r-1', { status: ReservationStatus.InProgress })
       assert.equal(result.status, ReservationStatus.InProgress)
     })
 
-    test('status=Completed 调用 complete', () => {
+    it('status=Completed 调用 complete', () => {
       const ctrl = makeController()
       const result = ctrl.updateReservation(tenantCtx(), 'r-1', { status: ReservationStatus.Completed })
       assert.equal(result.status, ReservationStatus.Completed)
     })
 
-    test('无 status 时调用 update 字段更新', () => {
+    it('无 status 时调用 update 字段更新', () => {
       const ctrl = makeController()
       const result = ctrl.updateReservation(tenantCtx(), 'r-1', { price: 500 })
       assert.ok(result)
     })
 
-    test('不存在预约更新抛出异常', () => {
+    it('不存在预约更新抛出异常', () => {
       const ctrl = makeController({
         update: () => { throw new Error('Reservation not found') }
       })
@@ -300,13 +300,13 @@ describe('ReservationController 方法', () => {
 
   // ── cancelReservation ──
   describe('cancelReservation', () => {
-    test('正常取消', () => {
+    it('正常取消', () => {
       const ctrl = makeController()
       const result = ctrl.cancelReservation(tenantCtx(), 'r-1', '客户要求')
       assert.equal(result.status, ReservationStatus.Cancelled)
     })
 
-    test('不带原因取消', () => {
+    it('不带原因取消', () => {
       const ctrl = makeController()
       const result = ctrl.cancelReservation(tenantCtx(), 'r-1')
       assert.equal(result.status, ReservationStatus.Cancelled)

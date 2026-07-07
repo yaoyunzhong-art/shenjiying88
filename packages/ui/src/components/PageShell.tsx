@@ -7,6 +7,8 @@ interface PageShellProps {
   description?: string;
   subtitle?: string;
   actions?: React.ReactNode;
+  /** @deprecated Breadcrumb is not rendered. Use `subtitle` or `description` instead. */
+  breadcrumb?: React.ReactNode;
   children: React.ReactNode;
 }
 

@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { FoundationService } from './foundation.service'
 import type { FoundationModuleDescriptor, FoundationConsumerDescriptor, FoundationBlueprint } from './foundation.types'
 
@@ -62,13 +62,13 @@ function makeService(): FoundationService {
 
 describe('FoundationService', () => {
   describe('getModuleCatalog', () => {
-    test('returns six modules', () => {
+    it('returns six modules', () => {
       const service = makeService()
       const catalog = service.getModuleCatalog()
       assert.equal(catalog.length, 6)
     })
 
-    test('returns modules with required fields', () => {
+    it('returns modules with required fields', () => {
       const service = makeService()
       for (const m of service.getModuleCatalog()) {
         assert.ok(m.key, 'key')
@@ -78,7 +78,7 @@ describe('FoundationService', () => {
       }
     })
 
-    test('includes expected module keys', () => {
+    it('includes expected module keys', () => {
       const service = makeService()
       const keys = service.getModuleCatalog().map((m) => m.key).sort()
       assert.deepEqual(keys, ['configuration', 'identity', 'integration', 'resilience', 'runtime', 'trust'])
@@ -86,13 +86,13 @@ describe('FoundationService', () => {
   })
 
   describe('getConsumerCatalog', () => {
-    test('returns four consumers', () => {
+    it('returns four consumers', () => {
       const service = makeService()
       const catalog = service.getConsumerCatalog()
       assert.equal(catalog.length, 4)
     })
 
-    test('each consumer has required fields', () => {
+    it('each consumer has required fields', () => {
       const service = makeService()
       for (const c of service.getConsumerCatalog()) {
         assert.ok(c.consumer, 'consumer')
@@ -101,7 +101,7 @@ describe('FoundationService', () => {
       }
     })
 
-    test('includes market, portal, workbench, and lyt-adapter consumers', () => {
+    it('includes market, portal, workbench, and lyt-adapter consumers', () => {
       const service = makeService()
       const keys = service.getConsumerCatalog().map((c) => c.consumer).sort()
       assert.deepEqual(keys, ['lyt-adapter', 'market', 'portal', 'workbench'])
@@ -109,13 +109,13 @@ describe('FoundationService', () => {
   })
 
   describe('getGovernanceBaselines', () => {
-    test('returns six baselines from three sub-services', () => {
+    it('returns six baselines from three sub-services', () => {
       const service = makeService()
       const baselines = service.getGovernanceBaselines()
       assert.equal(baselines.length, 6)
     })
 
-    test('each baseline has key and name', () => {
+    it('each baseline has key and name', () => {
       const service = makeService()
       for (const b of service.getGovernanceBaselines()) {
         assert.ok(b.key, 'key')
@@ -125,7 +125,7 @@ describe('FoundationService', () => {
   })
 
   describe('getBlueprint', () => {
-    test('returns blueprint with required top-level fields', () => {
+    it('returns blueprint with required top-level fields', () => {
       const service = makeService()
       const blueprint = service.getBlueprint()
       assert.ok(blueprint.generatedAt, 'generatedAt')
@@ -136,7 +136,7 @@ describe('FoundationService', () => {
       assert.ok(blueprint.governanceBaselines, 'governanceBaselines')
     })
 
-    test('blueprint composits modules, consumers, and baselines', () => {
+    it('blueprint composits modules, consumers, and baselines', () => {
       const service = makeService()
       const blueprint = service.getBlueprint()
       assert.equal(blueprint.modules.length, 6)
@@ -144,27 +144,27 @@ describe('FoundationService', () => {
       assert.equal(blueprint.governanceBaselines.length, 6)
     })
 
-    test('blueprint docs include foundation-architecture.md', () => {
+    it('blueprint docs include foundation-architecture.md', () => {
       const service = makeService()
       const blueprint = service.getBlueprint()
       assert.ok(blueprint.docs.some((d) => d.includes('foundation-architecture.md')))
     })
 
-    test('blueprint guardrails are non-empty strings', () => {
+    it('blueprint guardrails are non-empty strings', () => {
       const service = makeService()
       for (const g of service.getBlueprint().guardrails) {
         assert.ok(typeof g === 'string' && g.length > 0)
       }
     })
 
-    test('frontendBootstrap is defined', () => {
+    it('frontendBootstrap is defined', () => {
       const service = makeService()
       const blueprint = service.getBlueprint()
       assert.ok(blueprint.frontendBootstrap !== undefined)
       assert.ok(blueprint.frontendBootstrap !== null)
     })
 
-    test('generatedAt is a valid ISO string', () => {
+    it('generatedAt is a valid ISO string', () => {
       const service = makeService()
       const blueprint = service.getBlueprint()
       const d = new Date(blueprint.generatedAt)
@@ -173,21 +173,21 @@ describe('FoundationService', () => {
   })
 
   describe('getConsumerDependency', () => {
-    test('returns matching consumer for known key', () => {
+    it('returns matching consumer for known key', () => {
       const service = makeService()
       const dep = service.getConsumerDependency('market')
       assert.ok(dep)
       assert.equal((dep as any).consumer, 'market')
     })
 
-    test('returns availableConsumers for unknown key', () => {
+    it('returns availableConsumers for unknown key', () => {
       const service = makeService()
       const dep = service.getConsumerDependency('nonexistent')
       assert.ok(Array.isArray((dep as any).availableConsumers))
       assert.ok((dep as any).availableConsumers.includes('market'))
     })
 
-    test('availableConsumers includes all four keys', () => {
+    it('availableConsumers includes all four keys', () => {
       const service = makeService()
       const dep = service.getConsumerDependency('unknown')
       assert.deepEqual((dep as any).availableConsumers.sort(), ['lyt-adapter', 'market', 'portal', 'workbench'])
@@ -195,14 +195,14 @@ describe('FoundationService', () => {
   })
 
   describe('getDependencySummary', () => {
-    test('returns consumer for known key', () => {
+    it('returns consumer for known key', () => {
       const service = makeService()
       const summary = service.getDependencySummary('portal')
       assert.ok(summary)
       assert.equal(summary.consumer, 'portal')
     })
 
-    test('returns undefined for unknown key', () => {
+    it('returns undefined for unknown key', () => {
       const service = makeService()
       const summary = service.getDependencySummary('nonexistent' as never)
       assert.equal(summary, undefined)

@@ -1,22 +1,20 @@
+import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const approval = require('./governance-approval')
 
 describe('governance-approval: isGovernanceApprovalExecuted', () => {
-  test('returns false when summary is null', () => {
+  it('returns false when summary is null', () => {
     assert.equal(approval.isGovernanceApprovalExecuted(null), false)
   })
 
-  test('returns false when execution has no executedAt', () => {
+  it('returns false when execution has no executedAt', () => {
     assert.equal(
       approval.isGovernanceApprovalExecuted({ execution: { attempts: 1 } }),
       false
     )
   })
 
-  test('returns true when execution has an executedAt timestamp', () => {
+  it('returns true when execution has an executedAt timestamp', () => {
     assert.equal(
       approval.isGovernanceApprovalExecuted({
         execution: { executedAt: '2026-06-13T11:00:00.000Z', executionStatus: 'SUCCESS' }
@@ -25,66 +23,66 @@ describe('governance-approval: isGovernanceApprovalExecuted', () => {
     )
   })
 
-  test('returns false when summary is empty object', () => {
+  it('returns false when summary is empty object', () => {
     assert.equal(approval.isGovernanceApprovalExecuted({}), false)
   })
 
-  test('returns false when summary is a string instead of object', () => {
+  it('returns false when summary is a string instead of object', () => {
     assert.equal(approval.isGovernanceApprovalExecuted('not-an-object'), false)
   })
 })
 
 describe('governance-approval: buildInternalApprovalTicket', () => {
-  test('generates ticket with APR prefix and operation slug', () => {
+  it('generates ticket with APR prefix and operation slug', () => {
     const ticket = approval.buildInternalApprovalTicket('create-user')
     assert.ok(ticket.startsWith('APR-CREATEUS'), `Expected ticket to start with APR-CREATEUS, got: ${ticket}`)
     assert.ok(ticket.length > 12, `Expected ticket to be longer than 12 chars, got: ${ticket.length}`)
   })
 
-  test('generates ticket with uppercase operation prefix truncated to 8 chars', () => {
+  it('generates ticket with uppercase operation prefix truncated to 8 chars', () => {
     const ticket = approval.buildInternalApprovalTicket('very-long-operation-name-here')
     assert.ok(ticket.startsWith('APR-VERYLONG'), `Expected ticket to start with APR-VERYLONG, got: ${ticket}`)
   })
 
-  test('generates unique tickets for same operation', () => {
+  it('generates unique tickets for same operation', () => {
     const ticket1 = approval.buildInternalApprovalTicket('test')
     const ticket2 = approval.buildInternalApprovalTicket('test')
     assert.notEqual(ticket1, ticket2)
   })
 
-  test('handles special characters in operation name', () => {
+  it('handles special characters in operation name', () => {
     const ticket = approval.buildInternalApprovalTicket('order/create@store!')
     assert.ok(ticket.startsWith('APR-ORDERCRE'), `Got: ${ticket}`)
     assert.ok(ticket.match(/^APR-[A-Z0-9]+-[A-Z0-9]+$/), `Got malformed ticket: ${ticket}`)
   })
 
-  test('handles entirely non-alphanumeric operation as APR prefix default', () => {
+  it('handles entirely non-alphanumeric operation as APR prefix default', () => {
     const ticket = approval.buildInternalApprovalTicket('!@#$%^&*()')
     assert.ok(ticket.startsWith('APR-APR-'), `Expected APR-APR- fallback, got: ${ticket}`)
   })
 })
 
 describe('governance-approval: assertExpectedVersion', () => {
-  test('does not throw when expectedVersion is undefined', () => {
+  it('does not throw when expectedVersion is undefined', () => {
     assert.doesNotThrow(() => approval.assertExpectedVersion(3, undefined))
   })
 
-  test('does not throw when expectedVersion is null', () => {
+  it('does not throw when expectedVersion is null', () => {
     assert.doesNotThrow(() => approval.assertExpectedVersion(3, null))
   })
 
-  test('does not throw when versions match', () => {
+  it('does not throw when versions match', () => {
     assert.doesNotThrow(() => approval.assertExpectedVersion(5, 5))
   })
 
-  test('throws ConflictException when versions differ', () => {
+  it('throws ConflictException when versions differ', () => {
     assert.throws(
       () => approval.assertExpectedVersion(3, 5),
       (err: Error) => err.message.includes('version mismatch') || err.message.includes('Expected')
     )
   })
 
-  test('throws when current version is newer than expected', () => {
+  it('throws when current version is newer than expected', () => {
     assert.throws(
       () => approval.assertExpectedVersion(10, 5),
       (err: Error) => err.message.includes('10')
@@ -93,88 +91,88 @@ describe('governance-approval: assertExpectedVersion', () => {
 })
 
 describe('governance-approval: normalizeRequestedStatus', () => {
-  test('returns NOT_REQUIRED when not required and no status', () => {
+  it('returns NOT_REQUIRED when not required and no status', () => {
     assert.equal(approval.normalizeRequestedStatus(false), 'NOT_REQUIRED')
   })
 
-  test('returns provided status when not required', () => {
+  it('returns provided status when not required', () => {
     assert.equal(approval.normalizeRequestedStatus(false, 'APPROVED'), 'APPROVED')
   })
 
-  test('returns PENDING when required and no status', () => {
+  it('returns PENDING when required and no status', () => {
     assert.equal(approval.normalizeRequestedStatus(true), 'PENDING')
   })
 
-  test('returns PENDING when required with APPROVED overridden', () => {
+  it('returns PENDING when required with APPROVED overridden', () => {
     assert.equal(approval.normalizeRequestedStatus(true, 'APPROVED'), 'PENDING')
   })
 
-  test('returns PENDING when required with REJECTED overridden', () => {
+  it('returns PENDING when required with REJECTED overridden', () => {
     assert.equal(approval.normalizeRequestedStatus(true, 'REJECTED'), 'PENDING')
   })
 
-  test('returns PENDING when required with CANCELLED overridden', () => {
+  it('returns PENDING when required with CANCELLED overridden', () => {
     assert.equal(approval.normalizeRequestedStatus(true, 'CANCELLED'), 'PENDING')
   })
 
-  test('returns PENDING when required with SUPERSEDED overridden', () => {
+  it('returns PENDING when required with SUPERSEDED overridden', () => {
     assert.equal(approval.normalizeRequestedStatus(true, 'SUPERSEDED'), 'PENDING')
   })
 
-  test('returns PENDING when required with explicit PENDING', () => {
+  it('returns PENDING when required with explicit PENDING', () => {
     assert.equal(approval.normalizeRequestedStatus(true, 'PENDING'), 'PENDING')
   })
 
-  test('returns NOT_REQUIRED when required flag is false and status NOT_REQUIRED', () => {
+  it('returns NOT_REQUIRED when required flag is false and status NOT_REQUIRED', () => {
     assert.equal(approval.normalizeRequestedStatus(false, 'NOT_REQUIRED'), 'NOT_REQUIRED')
   })
 })
 
 describe('governance-approval: resolveScopeType', () => {
-  test('returns PLATFORM when no scopeType provided', () => {
+  it('returns PLATFORM when no scopeType provided', () => {
     assert.equal(approval.resolveScopeType(), 'PLATFORM')
   })
 
-  test('returns PLATFORM when scopeType is undefined', () => {
+  it('returns PLATFORM when scopeType is undefined', () => {
     assert.equal(approval.resolveScopeType(undefined), 'PLATFORM')
   })
 
-  test('returns the string scopeType directly when provided as enum-like value', () => {
+  it('returns the string scopeType directly when provided as enum-like value', () => {
     assert.equal(approval.resolveScopeType('PLATFORM'), 'PLATFORM')
   })
 })
 
 describe('governance-approval: toPrismaApprovalStatus', () => {
-  test('returns the same status value', () => {
+  it('returns the same status value', () => {
     assert.equal(approval.toPrismaApprovalStatus('PENDING'), 'PENDING')
   })
 
-  test('returns APPROVED as-is', () => {
+  it('returns APPROVED as-is', () => {
     assert.equal(approval.toPrismaApprovalStatus('APPROVED'), 'APPROVED')
   })
 
-  test('returns CANCELLED as-is', () => {
+  it('returns CANCELLED as-is', () => {
     assert.equal(approval.toPrismaApprovalStatus('CANCELLED'), 'CANCELLED')
   })
 })
 
 describe('governance-approval: matchesApprovalStatus', () => {
-  test('matches when string values are equal', () => {
+  it('matches when string values are equal', () => {
     assert.equal(approval.matchesApprovalStatus('PENDING', 'PENDING'), true)
   })
 
-  test('does not match when values differ', () => {
+  it('does not match when values differ', () => {
     assert.equal(approval.matchesApprovalStatus('APPROVED', 'REJECTED'), false)
   })
 })
 
 describe('governance-approval: createApprovalMetrics', () => {
-  test('creates metrics with zero totals', () => {
+  it('creates metrics with zero totals', () => {
     const metrics = approval.createApprovalMetrics()
     assert.equal(metrics.total, 0)
   })
 
-  test('creates metrics with all statuses zeroed', () => {
+  it('creates metrics with all statuses zeroed', () => {
     const metrics = approval.createApprovalMetrics()
     assert.equal(metrics.statuses.PENDING, 0)
     assert.equal(metrics.statuses.APPROVED, 0)
@@ -184,7 +182,7 @@ describe('governance-approval: createApprovalMetrics', () => {
     assert.equal(metrics.statuses.NOT_REQUIRED, 0)
   })
 
-  test('creates metrics with execution counters zeroed', () => {
+  it('creates metrics with execution counters zeroed', () => {
     const metrics = approval.createApprovalMetrics()
     assert.equal(metrics.execution.executed, 0)
     assert.equal(metrics.execution.pending, 0)
@@ -195,28 +193,28 @@ describe('governance-approval: createApprovalMetrics', () => {
 })
 
 describe('governance-approval: accumulateApprovalMetrics', () => {
-  test('increments total count', () => {
+  it('increments total count', () => {
     const metrics = approval.createApprovalMetrics()
     const snap = { status: 'PENDING', execution: { attempts: 0, executed: false, executionStatus: null, executedAt: null, executedBy: null, lastFailure: null } }
     approval.accumulateApprovalMetrics(metrics, snap)
     assert.equal(metrics.total, 1)
   })
 
-  test('increments pending status counter', () => {
+  it('increments pending status counter', () => {
     const metrics = approval.createApprovalMetrics()
     const snap = { status: 'PENDING', execution: { attempts: 0, executed: false, executionStatus: null, executedAt: null, executedBy: null, lastFailure: null } }
     approval.accumulateApprovalMetrics(metrics, snap)
     assert.equal(metrics.statuses.PENDING, 1)
   })
 
-  test('increments APPROVED status counter', () => {
+  it('increments APPROVED status counter', () => {
     const metrics = approval.createApprovalMetrics()
     const snap = { status: 'APPROVED', execution: { attempts: 0, executed: false, executionStatus: null, executedAt: null, executedBy: null, lastFailure: null } }
     approval.accumulateApprovalMetrics(metrics, snap)
     assert.equal(metrics.statuses.APPROVED, 1)
   })
 
-  test('counts executed flag', () => {
+  it('counts executed flag', () => {
     const metrics = approval.createApprovalMetrics()
     const snap = {
       status: 'APPROVED' as const,
@@ -226,7 +224,7 @@ describe('governance-approval: accumulateApprovalMetrics', () => {
     assert.equal(metrics.execution.executed, 1)
   })
 
-  test('counts pending execution', () => {
+  it('counts pending execution', () => {
     const metrics = approval.createApprovalMetrics()
     const snap = {
       status: 'PENDING' as const,
@@ -236,7 +234,7 @@ describe('governance-approval: accumulateApprovalMetrics', () => {
     assert.equal(metrics.execution.pending, 1)
   })
 
-  test('counts withFailures flag', () => {
+  it('counts withFailures flag', () => {
     const metrics = approval.createApprovalMetrics()
     const snap = {
       status: 'APPROVED' as const,
@@ -254,7 +252,7 @@ describe('governance-approval: accumulateApprovalMetrics', () => {
     assert.equal(metrics.execution.byFailureStatus['NETWORK_ERROR'], 1)
   })
 
-  test('accumulates multiple approvals correctly', () => {
+  it('accumulates multiple approvals correctly', () => {
     const metrics = approval.createApprovalMetrics()
     approval.accumulateApprovalMetrics(metrics, {
       status: 'PENDING',
@@ -279,7 +277,7 @@ describe('governance-approval: accumulateApprovalMetrics', () => {
 })
 
 describe('governance-approval: toApprovalSnapshot', () => {
-  test('maps approval record to snapshot with all fields', () => {
+  it('maps approval record to snapshot with all fields', () => {
     const record = {
       id: 'approval-001',
       operation: 'create',
@@ -314,7 +312,7 @@ describe('governance-approval: toApprovalSnapshot', () => {
     assert.equal(snap.execution.attempts, 0)
   })
 
-  test('maps execution summary from nested summary object', () => {
+  it('maps execution summary from nested summary object', () => {
     const record = {
       id: 'approval-002',
       operation: 'update',
@@ -346,7 +344,7 @@ describe('governance-approval: toApprovalSnapshot', () => {
     assert.equal(snap.execution.attempts, 0)
   })
 
-  test('maps execution failure from summary', () => {
+  it('maps execution failure from summary', () => {
     const record = {
       id: 'approval-003',
       operation: 'delete',
@@ -380,7 +378,7 @@ describe('governance-approval: toApprovalSnapshot', () => {
     assert.equal(snap.execution.lastFailure?.failedBy, 'system')
   })
 
-  test('handles null approvalTicket', () => {
+  it('handles null approvalTicket', () => {
     const record = {
       id: 'approval-004',
       operation: 'read',
@@ -407,7 +405,7 @@ describe('governance-approval: toApprovalSnapshot', () => {
 })
 
 describe('governance-approval: toExecutionSummary', () => {
-  test('returns empty summary for null input', () => {
+  it('returns empty summary for null input', () => {
     const summary = approval.toExecutionSummary(null)
     assert.equal(summary.attempts, 0)
     assert.equal(summary.executed, false)
@@ -417,7 +415,7 @@ describe('governance-approval: toExecutionSummary', () => {
     assert.equal(summary.lastFailure, null)
   })
 
-  test('maps execution details from summary object', () => {
+  it('maps execution details from summary object', () => {
     const summary = approval.toExecutionSummary({
       executionAttempts: 2,
       execution: {
@@ -435,23 +433,23 @@ describe('governance-approval: toExecutionSummary', () => {
 })
 
 describe('governance-approval: normalizeGroupBy', () => {
-  test('returns empty array when value is undefined', () => {
+  it('returns empty array when value is undefined', () => {
     assert.deepStrictEqual(approval.normalizeGroupBy(undefined), [])
   })
 
-  test('returns array as-is', () => {
+  it('returns array as-is', () => {
     assert.deepStrictEqual(approval.normalizeGroupBy(['status', 'operation']), ['status', 'operation'])
   })
 
-  test('parses comma-separated string', () => {
+  it('parses comma-separated string', () => {
     assert.deepStrictEqual(approval.normalizeGroupBy('status,operation'), ['status', 'operation'])
   })
 
-  test('parses single string value', () => {
+  it('parses single string value', () => {
     assert.deepStrictEqual(approval.normalizeGroupBy('status'), ['status'])
   })
 
-  test('trims whitespace from string values', () => {
+  it('trims whitespace from string values', () => {
     assert.deepStrictEqual(approval.normalizeGroupBy(' status , operation '), ['status', 'operation'])
   })
 })
@@ -483,29 +481,29 @@ describe('governance-approval: getApprovalGroupValue', () => {
     summary: null
   }
 
-  test('returns operation value', () => {
+  it('returns operation value', () => {
     assert.equal(approval.getApprovalGroupValue(snap, 'operation'), 'create')
   })
 
-  test('returns resourceType value', () => {
+  it('returns resourceType value', () => {
     assert.equal(approval.getApprovalGroupValue(snap, 'resourceType'), 'store')
   })
 
-  test('returns status value', () => {
+  it('returns status value', () => {
     assert.equal(approval.getApprovalGroupValue(snap, 'status'), 'PENDING')
   })
 
-  test('returns requestedBy value', () => {
+  it('returns requestedBy value', () => {
     assert.equal(approval.getApprovalGroupValue(snap, 'requestedBy'), 'user-1')
   })
 
-  test('returns null for unknown groupBy key', () => {
+  it('returns null for unknown groupBy key', () => {
     assert.equal(approval.getApprovalGroupValue(snap, 'unknown' as any), null)
   })
 })
 
 describe('governance-approval: assertApprovalBinding', () => {
-  test('does not throw when all fields match', () => {
+  it('does not throw when all fields match', () => {
     const existing = {
       operation: 'create',
       resourceType: 'store',
@@ -519,7 +517,7 @@ describe('governance-approval: assertApprovalBinding', () => {
     assert.doesNotThrow(() => approval.assertApprovalBinding(existing, input))
   })
 
-  test('throws when operation differs', () => {
+  it('throws when operation differs', () => {
     const existing = {
       operation: 'create',
       resourceType: 'store',
@@ -533,7 +531,7 @@ describe('governance-approval: assertApprovalBinding', () => {
     assert.throws(() => approval.assertApprovalBinding(existing, input))
   })
 
-  test('throws when resourceType differs', () => {
+  it('throws when resourceType differs', () => {
     const existing = {
       operation: 'create',
       resourceType: 'store',
@@ -547,7 +545,7 @@ describe('governance-approval: assertApprovalBinding', () => {
     assert.throws(() => approval.assertApprovalBinding(existing, input))
   })
 
-  test('throws when resourceKey differs', () => {
+  it('throws when resourceKey differs', () => {
     const existing = {
       operation: 'create',
       resourceType: 'store',
@@ -563,19 +561,19 @@ describe('governance-approval: assertApprovalBinding', () => {
 })
 
 describe('governance-approval: assertRequestDigest', () => {
-  test('does not throw when existing digest is null', () => {
+  it('does not throw when existing digest is null', () => {
     assert.doesNotThrow(() => approval.assertRequestDigest(null, 'abc123'))
   })
 
-  test('does not throw when no requestDigest is provided to compare', () => {
+  it('does not throw when no requestDigest is provided to compare', () => {
     assert.doesNotThrow(() => approval.assertRequestDigest({ requestDigest: 'existing-digest' }, null))
   })
 
-  test('does not throw when digests match', () => {
+  it('does not throw when digests match', () => {
     assert.doesNotThrow(() => approval.assertRequestDigest({ requestDigest: 'same-digest' }, 'same-digest'))
   })
 
-  test('throws when digests differ', () => {
+  it('throws when digests differ', () => {
     assert.throws(
       () => approval.assertRequestDigest({ requestDigest: 'old-digest' }, 'new-digest'),
       (err: Error) => err.message.includes('request payload') || err.message.includes('digest')
@@ -584,58 +582,58 @@ describe('governance-approval: assertRequestDigest', () => {
 })
 
 describe('governance-approval: stableStringify', () => {
-  test('stringifies null', () => {
+  it('stringifies null', () => {
     assert.equal(approval.stableStringify(null), 'null')
   })
 
-  test('stringifies number', () => {
+  it('stringifies number', () => {
     assert.equal(approval.stableStringify(42), '42')
   })
 
-  test('stringifies string', () => {
+  it('stringifies string', () => {
     assert.equal(approval.stableStringify('hello'), '"hello"')
   })
 
-  test('stringifies array', () => {
+  it('stringifies array', () => {
     assert.equal(approval.stableStringify([1, 2, 3]), '[1,2,3]')
   })
 
-  test('stringifies object with sorted keys', () => {
+  it('stringifies object with sorted keys', () => {
     const result = approval.stableStringify({ z: 1, a: 2 })
     assert.equal(result, '{"a":2,"z":1}')
   })
 
-  test('stable stringify produces same output for differently-ordered inputs', () => {
+  it('stable stringify produces same output for differently-ordered inputs', () => {
     const a = approval.stableStringify({ b: 1, a: 2, c: 3 })
     const b2 = approval.stableStringify({ a: 2, c: 3, b: 1 })
     assert.equal(a, b2)
   })
 
-  test('stable stringify handles nested objects', () => {
+  it('stable stringify handles nested objects', () => {
     const result = approval.stableStringify({ user: { name: 'test', id: 1 } })
     assert.equal(result, '{"user":{"id":1,"name":"test"}}')
   })
 
-  test('stable stringify handles nested arrays', () => {
+  it('stable stringify handles nested arrays', () => {
     const result = approval.stableStringify({ items: [3, 1, 2] })
     assert.equal(result, '{"items":[3,1,2]}')
   })
 })
 
 describe('governance-approval: buildRequestDigest', () => {
-  test('returns a hex string', () => {
+  it('returns a hex string', () => {
     const digest = approval.buildRequestDigest({ key: 'value' })
     assert.ok(typeof digest === 'string')
     assert.ok(/^[0-9a-f]{64}$/.test(digest), `Expected 64-char hex, got: ${digest}`)
   })
 
-  test('same input produces same digest', () => {
+  it('same input produces same digest', () => {
     const d1 = approval.buildRequestDigest({ a: 1, b: 2 })
     const d2 = approval.buildRequestDigest({ a: 1, b: 2 })
     assert.equal(d1, d2)
   })
 
-  test('different inputs produce different digests', () => {
+  it('different inputs produce different digests', () => {
     const d1 = approval.buildRequestDigest({ a: 1 })
     const d2 = approval.buildRequestDigest({ a: 2 })
     assert.notEqual(d1, d2)
@@ -643,19 +641,19 @@ describe('governance-approval: buildRequestDigest', () => {
 })
 
 describe('governance-approval: parseDate', () => {
-  test('returns null for undefined', () => {
+  it('returns null for undefined', () => {
     assert.equal(approval.parseDate(undefined), null)
   })
 
-  test('returns null for empty string', () => {
+  it('returns null for empty string', () => {
     assert.equal(approval.parseDate(''), null)
   })
 
-  test('returns null for invalid date string', () => {
+  it('returns null for invalid date string', () => {
     assert.equal(approval.parseDate('not-a-date'), null)
   })
 
-  test('parses valid ISO date string', () => {
+  it('parses valid ISO date string', () => {
     const result = approval.parseDate('2026-06-13T12:00:00Z')
     assert.ok(result instanceof Date)
     assert.equal(result.toISOString(), '2026-06-13T12:00:00.000Z')
@@ -689,23 +687,23 @@ describe('governance-approval: matchesApprovalListFilters', () => {
     summary: null
   }
 
-  test('returns true with empty filters', () => {
+  it('returns true with empty filters', () => {
     assert.equal(approval.matchesApprovalListFilters(baseSnap, {}), true)
   })
 
-  test('returns true when operationIn includes approval operation', () => {
+  it('returns true when operationIn includes approval operation', () => {
     assert.equal(approval.matchesApprovalListFilters(baseSnap, { operationIn: ['create', 'update'] }), true)
   })
 
-  test('returns false when operationIn does not include approval operation', () => {
+  it('returns false when operationIn does not include approval operation', () => {
     assert.equal(approval.matchesApprovalListFilters(baseSnap, { operationIn: ['delete'] }), false)
   })
 
-  test('returns true when resourceTypeIn includes approval resourceType', () => {
+  it('returns true when resourceTypeIn includes approval resourceType', () => {
     assert.equal(approval.matchesApprovalListFilters(baseSnap, { resourceTypeIn: ['store', 'brand'] }), true)
   })
 
-  test('returns false when resourceTypeIn does not include approval resourceType', () => {
+  it('returns false when resourceTypeIn does not include approval resourceType', () => {
     assert.equal(approval.matchesApprovalListFilters(baseSnap, { resourceTypeIn: ['brand'] }), false)
   })
 })
@@ -737,15 +735,15 @@ describe('governance-approval: matchesApprovalExecutionFilters', () => {
     summary: null
   }
 
-  test('returns true with empty execution filters', () => {
+  it('returns true with empty execution filters', () => {
     assert.equal(approval.matchesApprovalExecutionFilters(baseSnap, {}), true)
   })
 
-  test('returns true when executed filter matches', () => {
+  it('returns true when executed filter matches', () => {
     assert.equal(approval.matchesApprovalExecutionFilters(baseSnap, { executed: false }), true)
   })
 
-  test('returns false when executed filter does not match', () => {
+  it('returns false when executed filter does not match', () => {
     assert.equal(approval.matchesApprovalExecutionFilters(baseSnap, { executed: true }), false)
   })
 })

@@ -1,10 +1,9 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 // Test that foundation entity types are structurally sound
 describe('foundation entity 类型验证', () => {
-  test('FoundationAlertMutationResponse 结构', () => {
+  it('FoundationAlertMutationResponse 结构', () => {
     const resp = {
       generatedAt: '2026-01-01T00:00:00.000Z',
       code: 'observability-degradation' as const,
@@ -42,7 +41,7 @@ describe('foundation entity 类型验证', () => {
     assert.ok(Array.isArray(resp.availableActions))
   })
 
-  test('FoundationBootstrapResponse 结构', () => {
+  it('FoundationBootstrapResponse 结构', () => {
     const resp = {
       tenantContext: { tenantId: 't-1', brandId: 'b-1' },
       generatedAt: '2026-01-01T00:00:00.000Z',
@@ -60,7 +59,7 @@ describe('foundation entity 类型验证', () => {
     assert.equal(resp.guardrails[0], '不得绕过底座')
   })
 
-  test('FoundationOperationsAlertSummary 结构', () => {
+  it('FoundationOperationsAlertSummary 结构', () => {
     const summary = {
       generatedAt: '2026-01-01T00:00:00.000Z',
       summary: {
@@ -87,7 +86,7 @@ describe('foundation entity 类型验证', () => {
     assert.equal(summary.topFailures[0].module, 'trust-governance')
   })
 
-  test('FoundationAlertDrilldownResponse 结构', () => {
+  it('FoundationAlertDrilldownResponse 结构', () => {
     const drilldown = {
       generatedAt: '2026-01-01T00:00:00.000Z',
       code: 'approvals-pending' as const,
@@ -126,7 +125,7 @@ describe('foundation entity 类型验证', () => {
     assert.equal(drilldown.alert?.count, 5)
   })
 
-  test('AlertAcknowledgeBody / AlertMuteBody / AlertUnmuteBody 结构', () => {
+  it('AlertAcknowledgeBody / AlertMuteBody / AlertUnmuteBody 结构', () => {
     const ack = { note: '确认处理' }
     const mute = { mutedUntil: '2026-01-02T00:00:00.000Z', note: '临时静默' }
     const unmute = { note: '取消静默' }

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * lyt.role.test.ts — L1 角色冒烟测试 (8角色 × LYT)
  *
@@ -10,7 +11,6 @@
 
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import { LytController } from './lyt.controller';
 import type { LytService } from './lyt.service';
 import type { RequestTenantContext } from '../tenant/tenant.types';
@@ -144,21 +144,21 @@ function makeController() {
 
 // ──────── 👔店长 ────────
 describe(`${ROLES.TenantAdmin} LYT 角色测试`, () => {
-  test('店长可查看 LYT bootstrap 配置（正常流程）', () => {
+  it('店长可查看 LYT bootstrap 配置（正常流程）', () => {
     const { controller } = makeController();
     const bootstrap = controller.getBootstrap();
     assert.ok(bootstrap);
     assert.equal(typeof bootstrap, 'object');
   });
 
-  test('店长可查看所有 Fixture 目录（正常流程）', () => {
+  it('店长可查看所有 Fixture 目录（正常流程）', () => {
     const { controller } = makeController();
     const fixtures = controller.getFixtures();
     assert.ok(Array.isArray(fixtures));
     assert.ok(fixtures.length > 0);
   });
 
-  test('店长可查看设备状态（正常流程）', async () => {
+  it('店长可查看设备状态（正常流程）', async () => {
     const { controller } = makeController();
     const status = await controller.getDeviceStatus('device-001');
     assert.ok(status);
@@ -168,7 +168,7 @@ describe(`${ROLES.TenantAdmin} LYT 角色测试`, () => {
 
 // ──────── 🛒前台 ────────
 describe(`${ROLES.Reception} LYT 角色测试`, () => {
-  test('前台可查看门店连接状态（正常流程）', async () => {
+  it('前台可查看门店连接状态（正常流程）', async () => {
     const { controller } = makeController();
     const connection = await controller.getConnection('store-01', tCtx());
     assert.ok(connection);
@@ -176,14 +176,14 @@ describe(`${ROLES.Reception} LYT 角色测试`, () => {
     assert.equal(connection.connectionStatus, 'configured');
   });
 
-  test('前台可查看门店能力就绪状态（正常流程）', async () => {
+  it('前台可查看门店能力就绪状态（正常流程）', async () => {
     const { controller } = makeController();
     const readiness = await controller.getConnectionCapabilityReadiness('store-01', tCtx());
     assert.ok(readiness);
     assert.equal(readiness.storeId, 'store-01');
   });
 
-  test('前台不能跨门店查看连接（边界 - 租户隔离）', async () => {
+  it('前台不能跨门店查看连接（边界 - 租户隔离）', async () => {
     const { controller } = makeController();
     // Different store on same tenant should be accessible
     const connA = await controller.getConnection('store-a', tCtx());
@@ -197,21 +197,21 @@ describe(`${ROLES.Reception} LYT 角色测试`, () => {
 
 // ──────── 👥HR ────────
 describe(`${ROLES.HR} LYT 角色测试`, () => {
-  test('HR可查看设备在线状态确认员工打卡设备可用（正常流程）', async () => {
+  it('HR可查看设备在线状态确认员工打卡设备可用（正常流程）', async () => {
     const { controller } = makeController();
     const status = await controller.getDeviceStatus('attendance-001');
     assert.ok(status);
     assert.ok('online' in status);
   });
 
-  test('HR可查看 Fixture 摘要确认集成稳定性（正常流程）', () => {
+  it('HR可查看 Fixture 摘要确认集成稳定性（正常流程）', () => {
     const { controller } = makeController();
     const summary = controller.getFixtureSummary();
     assert.ok(summary);
     assert.equal(typeof summary.totalFixtures, 'number');
   });
 
-  test('HR不能修改 Fixture（权限边界 - 只读验证）', () => {
+  it('HR不能修改 Fixture（权限边界 - 只读验证）', () => {
     const { controller } = makeController();
     // Controller exposes getFixtures/getFixtureSummary/getFixture as read-only
     // Write operations (import/plan) require POST which HR may not have
@@ -223,21 +223,21 @@ describe(`${ROLES.HR} LYT 角色测试`, () => {
 
 // ──────── 🔧安监 ────────
 describe(`${ROLES.Safety} LYT 角色测试`, () => {
-  test('安监可查看连接治理摘要（正常流程）', async () => {
+  it('安监可查看连接治理摘要（正常流程）', async () => {
     const { controller } = makeController();
     const summary = await controller.getConnectionGovernanceSummary(tCtx());
     assert.ok(summary);
     assert.equal(typeof summary.totalStores, 'number');
   });
 
-  test('安监可查看连接治理告警（正常流程）', async () => {
+  it('安监可查看连接治理告警（正常流程）', async () => {
     const { controller } = makeController();
     const result = await controller.getConnectionGovernanceAlerts(tCtx());
     assert.ok(result);
     assert.ok(Array.isArray(result.alerts));
   });
 
-  test('安监可 drill Webhook 事件做安全检查（正常流程）', async () => {
+  it('安监可 drill Webhook 事件做安全检查（正常流程）', async () => {
     const { controller } = makeController();
     const result = await controller.drillWebhook({
       eventName: 'member.registered',
@@ -246,7 +246,7 @@ describe(`${ROLES.Safety} LYT 角色测试`, () => {
     assert.ok(result);
   });
 
-  test('安监可通过 adapter 检查设备安全状态（边界）', async () => {
+  it('安监可通过 adapter 检查设备安全状态（边界）', async () => {
     const { controller } = makeController();
     const status = await controller.getDeviceStatus('gate-001');
     assert.ok(status);
@@ -256,21 +256,21 @@ describe(`${ROLES.Safety} LYT 角色测试`, () => {
 
 // ──────── 🎮导玩员 ────────
 describe(`${ROLES.Guide} LYT 角色测试`, () => {
-  test('导玩员可查看设备连接做游戏设备管理（正常流程）', async () => {
+  it('导玩员可查看设备连接做游戏设备管理（正常流程）', async () => {
     const { controller } = makeController();
     const accessView = await controller.getStoreCapabilityAccessView('store-01', tCtx());
     assert.ok(accessView);
     assert.equal(accessView.storeId, 'store-01');
   });
 
-  test('导玩员可查看 adapter 选择确认设备类型（正常流程）', async () => {
+  it('导玩员可查看 adapter 选择确认设备类型（正常流程）', async () => {
     const { controller } = makeController();
     const adapter = await controller.getAdapterSelection('store-01', tCtx());
     assert.ok(adapter);
     assert.equal(adapter.vendorStoreId, 'store-01');
   });
 
-  test('导玩员可查看 Fixture 了解设备接口（边界）', () => {
+  it('导玩员可查看 Fixture 了解设备接口（边界）', () => {
     const { controller } = makeController();
     const fixture = controller.getFixture('member-lookup-ok');
     assert.ok(fixture);
@@ -280,7 +280,7 @@ describe(`${ROLES.Guide} LYT 角色测试`, () => {
 
 // ──────── 🎯运行专员 ────────
 describe(`${ROLES.Ops} LYT 角色测试`, () => {
-  test('运行专员可完整走通连接 → 就绪 → 访问链路（正常流程）', async () => {
+  it('运行专员可完整走通连接 → 就绪 → 访问链路（正常流程）', async () => {
     const { controller } = makeController();
     const ctx = tCtx();
     const storeId = 'store-ops-01';
@@ -298,7 +298,7 @@ describe(`${ROLES.Ops} LYT 角色测试`, () => {
     assert.ok(accessView);
   });
 
-  test('运行专员可接收并 drill Webhook 完整链路（正常流程）', async () => {
+  it('运行专员可接收并 drill Webhook 完整链路（正常流程）', async () => {
     const { controller } = makeController();
 
     // 1. 接收 Webhook
@@ -316,7 +316,7 @@ describe(`${ROLES.Ops} LYT 角色测试`, () => {
     assert.ok(drillResult);
   });
 
-  test('运行专员可预览并计划 Fixture 导入（正常流程）', async () => {
+  it('运行专员可预览并计划 Fixture 导入（正常流程）', async () => {
     const { controller } = makeController();
 
     const preview = await controller.importFixturePreview('member-lookup-ok', {} as never);
@@ -329,7 +329,7 @@ describe(`${ROLES.Ops} LYT 角色测试`, () => {
 
 // ──────── 🤝团建 ────────
 describe(`${ROLES.Teambuilding} LYT 角色测试`, () => {
-  test('团建可通过 Webhook 接收团建活动数据（正常流程）', async () => {
+  it('团建可通过 Webhook 接收团建活动数据（正常流程）', async () => {
     const { controller } = makeController();
     const result = await controller.acceptWebhook({
       eventName: 'team.activity',
@@ -338,14 +338,14 @@ describe(`${ROLES.Teambuilding} LYT 角色测试`, () => {
     assert.ok(result);
   });
 
-  test('团建可通过 Fixture 验证团建设备接口（正常流程）', () => {
+  it('团建可通过 Fixture 验证团建设备接口（正常流程）', () => {
     const { controller } = makeController();
     const fixtures = controller.getFixtures();
     assert.ok(fixtures.length > 0);
     assert.ok(fixtures.some(f => f.capability));
   });
 
-  test('团建可 replay fixture 做团建活动验证（边界）', async () => {
+  it('团建可 replay fixture 做团建活动验证（边界）', async () => {
     const { controller } = makeController();
     const result = await controller.replayWebhookFixture({
       fixtureKey: 'member-lookup-ok',
@@ -357,7 +357,7 @@ describe(`${ROLES.Teambuilding} LYT 角色测试`, () => {
 
 // ──────── 📢营销 ────────
 describe(`${ROLES.Marketing} LYT 角色测试`, () => {
-  test('营销可通过 Webhook 接收营销数据（正常流程）', async () => {
+  it('营销可通过 Webhook 接收营销数据（正常流程）', async () => {
     const { controller } = makeController();
     const result = await controller.acceptWebhook({
       eventName: 'marketing.campaign-triggered',
@@ -366,7 +366,7 @@ describe(`${ROLES.Marketing} LYT 角色测试`, () => {
     assert.ok(result);
   });
 
-  test('营销可 compare fixture 验证营销类接口（正常流程）', async () => {
+  it('营销可 compare fixture 验证营销类接口（正常流程）', async () => {
     const { controller } = makeController();
     const result = await controller.compareFixture('member-lookup-ok', {
       input: { memberId: 'm-mkt' }
@@ -374,7 +374,7 @@ describe(`${ROLES.Marketing} LYT 角色测试`, () => {
     assert.ok(result);
   });
 
-  test('营销可 drill Webhook 做营销效果检查（边界）', async () => {
+  it('营销可 drill Webhook 做营销效果检查（边界）', async () => {
     const { controller } = makeController();
     const result = await controller.drillWebhook({
       eventName: 'marketing.coupon-issued',
@@ -386,7 +386,7 @@ describe(`${ROLES.Marketing} LYT 角色测试`, () => {
 
 // ──────────── 跨角色边界 ────────────
 describe('LYT 跨角色边界验证', () => {
-  test('Fixture 目录对所有角色可见且一致', () => {
+  it('Fixture 目录对所有角色可见且一致', () => {
     const { controller } = makeController();
     const fixtures = controller.getFixtures();
     const summary = controller.getFixtureSummary();
@@ -395,7 +395,7 @@ describe('LYT 跨角色边界验证', () => {
     assert.equal(summary.totalFixtures, fixtures.length);
   });
 
-  test('Webhook 链路完整性: 接收 → drill → replay', async () => {
+  it('Webhook 链路完整性: 接收 → drill → replay', async () => {
     const { controller } = makeController();
     const event = {
       eventName: 'member.registered',
@@ -418,7 +418,7 @@ describe('LYT 跨角色边界验证', () => {
     assert.ok(replayed);
   });
 
-  test('设备状态查询对所有角色开放', async () => {
+  it('设备状态查询对所有角色开放', async () => {
     const { controller } = makeController();
     const devices = ['device-001', 'gate-001', 'attendance-001', 'game-001'];
 
@@ -429,7 +429,7 @@ describe('LYT 跨角色边界验证', () => {
     }
   });
 
-  test('连接治理告警列表对所有角色开放且不泄露敏感数据', async () => {
+  it('连接治理告警列表对所有角色开放且不泄露敏感数据', async () => {
     const { controller } = makeController();
     const result = await controller.getConnectionGovernanceAlerts(tCtx());
     assert.ok(result);

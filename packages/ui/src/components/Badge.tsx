@@ -38,6 +38,8 @@ export interface BadgeProps {
   className?: string;
   /** Test id */
   'data-testid'?: string;
+  /** Inline styles for the badge element */
+  style?: React.CSSProperties;
 }
 
 const VARIANT_STYLES: Record<BadgeVariant, { bg: string; text: string; border: string }> = {
@@ -87,6 +89,7 @@ export function Badge({
   offset,
   standalone = false,
   className,
+  style: externalStyle,
   'data-testid': dataTestId,
 }: BadgeProps) {
   if (!visible) return null;
@@ -135,6 +138,7 @@ export function Badge({
                   }
                 : {}),
             }),
+      ...(externalStyle ?? {}),
       }}
     >
       {!dot && displayContent}

@@ -1,11 +1,11 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { assertExactKeys } from '../../testing/contract-assertions'
 import { createContractTestFoundationDependencySummary } from '../../testing/bootstrap-fixtures'
 import { MarketService } from './market.service'
 
-test('contract: market bootstrap shape', () => {
+it('contract: market bootstrap shape', () => {
   const foundationService = {
     getDependencySummary: () => createContractTestFoundationDependencySummary()
   }

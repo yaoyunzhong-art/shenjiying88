@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   CashierOrderCloseReason,
   CashierOrderStatus,
@@ -23,7 +23,7 @@ import {
 } from './transactions.entity'
 
 describe('transactions.entity', () => {
-  test('TransactionAggregate contract supports full snapshot shape', () => {
+  it('TransactionAggregate contract supports full snapshot shape', () => {
     const aggregate: TransactionAggregate = {
       order: {
         orderId: 'order-1',
@@ -101,7 +101,7 @@ describe('transactions.entity', () => {
     assert.equal(aggregate.refunds[0]?.refundAmount, 20)
   })
 
-  test('MemberTransactionTimelineEntry contract supports sorted timeline entry', () => {
+  it('MemberTransactionTimelineEntry contract supports sorted timeline entry', () => {
     const entry: MemberTransactionTimelineEntry = {
       orderId: 'order-2',
       memberId: 'mem-2',
@@ -135,7 +135,7 @@ describe('transactions.entity', () => {
     assert.ok(entry.paidAt)
   })
 
-  test('MemberTransactionTimelineEntry supports minimal shape without coupon/blindbox', () => {
+  it('MemberTransactionTimelineEntry supports minimal shape without coupon/blindbox', () => {
     const entry: MemberTransactionTimelineEntry = {
       orderId: 'order-min',
       memberId: 'mem-min',
@@ -159,7 +159,7 @@ describe('transactions.entity', () => {
     assert.equal(entry.refundStatus, undefined)
   })
 
-  test('TransactionBatchTimeoutCloseResult supports processed and skipped order sets', () => {
+  it('TransactionBatchTimeoutCloseResult supports processed and skipped order sets', () => {
     const result: TransactionBatchTimeoutCloseResult = {
       processedCount: 1,
       skippedCount: 1,
@@ -204,7 +204,7 @@ describe('transactions.entity', () => {
     assert.equal(result.skippedOrderIds[0], 'order-2')
   })
 
-  test('TransactionBatchRefundReviewResult supports processed and skipped refund sets', () => {
+  it('TransactionBatchRefundReviewResult supports processed and skipped refund sets', () => {
     const result: TransactionBatchRefundReviewResult = {
       processedCount: 1,
       skippedCount: 1,
@@ -244,7 +244,7 @@ describe('transactions.entity', () => {
     assert.equal(result.auditSummary.note, 'approved')
   })
 
-  test('TransactionBatchRefundAssignmentResult supports processed and skipped refund sets', () => {
+  it('TransactionBatchRefundAssignmentResult supports processed and skipped refund sets', () => {
     const result: TransactionBatchRefundAssignmentResult = {
       processedCount: 1,
       skippedCount: 1,
@@ -284,18 +284,18 @@ describe('transactions.entity', () => {
     assert.equal(result.assignmentSummary.assignee, 'ops-owner-a')
   })
 
-  test('TransactionRefundStatus exposes pending, completed and rejected states', () => {
+  it('TransactionRefundStatus exposes pending, completed and rejected states', () => {
     assert.equal(TransactionRefundStatus.Pending, 'PENDING')
     assert.equal(TransactionRefundStatus.Completed, 'COMPLETED')
     assert.equal(TransactionRefundStatus.Rejected, 'REJECTED')
   })
 
-  test('TransactionRefundReviewAction exposes approve and reject actions', () => {
+  it('TransactionRefundReviewAction exposes approve and reject actions', () => {
     assert.equal(TransactionRefundReviewAction.Approve, 'APPROVE')
     assert.equal(TransactionRefundReviewAction.Reject, 'REJECT')
   })
 
-  test('TransactionRefundDashboard supports summary, pending queue, and recent reviews', () => {
+  it('TransactionRefundDashboard supports summary, pending queue, and recent reviews', () => {
     const dashboard: TransactionRefundDashboard = {
       totalCount: 3,
       totalRequestedAmount: 120,

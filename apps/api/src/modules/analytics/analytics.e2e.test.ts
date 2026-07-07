@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Analytics 诊断 / 快照 / 推荐 HTTP 链路
  *
@@ -14,7 +15,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -155,7 +155,7 @@ function makePayment(paymentId: string, orderId: string, amount: number, success
   }
 }
 
-test('e2e: snapshot returns empty-but-valid groups for new tenant', async () => {
+it('e2e: snapshot returns empty-but-valid groups for new tenant', async () => {
   const { app, loyaltyService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
 
@@ -169,9 +169,10 @@ test('e2e: snapshot returns empty-but-valid groups for new tenant', async () => 
     const snap = res.body.data
     assert.equal(snap.tenantId, 'tenant-A')
     assert.equal(snap.scope, 'TENANT')
-    assert.equal(snap.groups.length, 2)
+    assert.equal(snap.groups.length, 3)
     assert.equal(snap.groups[0].groupKey, 'orders')
     assert.equal(snap.groups[1].groupKey, 'loyalty')
+    assert.equal(snap.groups[2].groupKey, 'marketing')
 
     const settlementMetric = snap.groups[0].metrics.find((m: any) => m.key === 'settlementCount')
     assert.equal(settlementMetric.value, 0)
@@ -179,13 +180,17 @@ test('e2e: snapshot returns empty-but-valid groups for new tenant', async () => 
 
     const totals = snap.totals
     assert.ok(Array.isArray(totals))
-    assert.equal(totals.length, 3)
+    assert.equal(totals.length, 6)
+    assert.equal(
+      totals.find((m: any) => m.key === 'totalMarketingRedemptions')?.value,
+      0
+    )
   } finally {
     await app.close()
   }
 })
 
-test('e2e: snapshot reflects loyalty aggregates (settlements, coupons, points)', async () => {
+it('e2e: snapshot reflects loyalty aggregates (settlements, coupons, points)', async () => {
   const { app, loyaltyService, memberService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   memberService.register({
@@ -247,7 +252,7 @@ test('e2e: snapshot reflects loyalty aggregates (settlements, coupons, points)',
   }
 })
 
-test('e2e: diagnostics flag no-settlement activity for new tenant', async () => {
+it('e2e: diagnostics flag no-settlement activity for new tenant', async () => {
   const { app, loyaltyService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
 
@@ -273,7 +278,7 @@ test('e2e: diagnostics flag no-settlement activity for new tenant', async () => 
   }
 })
 
-test('e2e: diagnostics flag low payment success rate', async () => {
+it('e2e: diagnostics flag low payment success rate', async () => {
   const { app, loyaltyService, memberService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   memberService.register({
@@ -307,7 +312,7 @@ test('e2e: diagnostics flag low payment success rate', async () => {
   }
 })
 
-test('e2e: diagnostics flag coupon plan near quota exhaustion', async () => {
+it('e2e: diagnostics flag coupon plan near quota exhaustion', async () => {
   const { app, loyaltyService, memberService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   memberService.register({
@@ -357,7 +362,7 @@ test('e2e: diagnostics flag coupon plan near quota exhaustion', async () => {
   }
 })
 
-test('e2e: diagnostics flag blindbox redemption shortfall when coupons move but blindboxes do not', async () => {
+it('e2e: diagnostics flag blindbox redemption shortfall when coupons move but blindboxes do not', async () => {
   const { app, loyaltyService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
 
@@ -401,7 +406,7 @@ test('e2e: diagnostics flag blindbox redemption shortfall when coupons move but 
   }
 })
 
-test('e2e: recommendations are sorted by priority desc', async () => {
+it('e2e: recommendations are sorted by priority desc', async () => {
   const { app, loyaltyService, memberService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   memberService.register({
@@ -444,7 +449,7 @@ test('e2e: recommendations are sorted by priority desc', async () => {
   }
 })
 
-test('e2e: diagnostics are tenant-scoped', async () => {
+it('e2e: diagnostics are tenant-scoped', async () => {
   const { app, loyaltyService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
 
@@ -478,7 +483,7 @@ test('e2e: diagnostics are tenant-scoped', async () => {
   }
 })
 
-test('e2e: snapshot scope STORE includes storeId; TENANT omits it', async () => {
+it('e2e: snapshot scope STORE includes storeId; TENANT omits it', async () => {
   const { app, loyaltyService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
 
@@ -501,7 +506,7 @@ test('e2e: snapshot scope STORE includes storeId; TENANT omits it', async () => 
   }
 })
 
-test('e2e: snapshot BRAND scope includes brandId only', async () => {
+it('e2e: snapshot BRAND scope includes brandId only', async () => {
   const { app, loyaltyService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   try {
@@ -517,7 +522,7 @@ test('e2e: snapshot BRAND scope includes brandId only', async () => {
   }
 })
 
-test('e2e: recommendations return empty array when no diagnostics triggered', async () => {
+it('e2e: recommendations return empty array when no diagnostics triggered', async () => {
   const { app, loyaltyService, memberService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   memberService.register({
@@ -544,7 +549,7 @@ test('e2e: recommendations return empty array when no diagnostics triggered', as
   }
 })
 
-test('e2e: diagnostics severity distribution shows correct counts', async () => {
+it('e2e: diagnostics severity distribution shows correct counts', async () => {
   const { app, loyaltyService, memberService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   memberService.register({
@@ -580,7 +585,7 @@ test('e2e: diagnostics severity distribution shows correct counts', async () => 
   }
 })
 
-test('e2e: snapshot metrics include trend direction', async () => {
+it('e2e: snapshot metrics include trend direction', async () => {
   const { app, loyaltyService, memberService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   memberService.register({
@@ -602,7 +607,7 @@ test('e2e: snapshot metrics include trend direction', async () => {
   }
 })
 
-test('e2e: snapshot covers multiple brandIds in BRAND scope', async () => {
+it('e2e: snapshot covers multiple brandIds in BRAND scope', async () => {
   const { app, loyaltyService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   try {
@@ -622,7 +627,7 @@ test('e2e: snapshot covers multiple brandIds in BRAND scope', async () => {
   }
 })
 
-test('e2e: diagnostics includes payment-success-rate-low diagnostic with recommendations', async () => {
+it('e2e: diagnostics includes payment-success-rate-low diagnostic with recommendations', async () => {
   const { app, loyaltyService, memberService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   memberService.register({

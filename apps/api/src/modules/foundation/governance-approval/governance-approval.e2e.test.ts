@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Foundation / Governance-Approval 审批流程 HTTP 链路
  *
@@ -24,7 +25,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { randomUUID } from 'node:crypto'
 import {
   Body,
@@ -278,7 +278,7 @@ function getData(res: request.Response) {
 
 // ── Tests ────────────────────────────────────────────────────────────
 
-test('e2e: materialize approval returns PENDING ticket', async () => {
+it('e2e: materialize approval returns PENDING ticket', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -303,7 +303,7 @@ test('e2e: materialize approval returns PENDING ticket', async () => {
   }
 })
 
-test('e2e: approve a pending ticket → APPROVED', async () => {
+it('e2e: approve a pending ticket → APPROVED', async () => {
   const { app } = await buildApp()
   try {
     const submitted = await request(app.getHttpServer())
@@ -337,7 +337,7 @@ test('e2e: approve a pending ticket → APPROVED', async () => {
   }
 })
 
-test('e2e: reject a pending ticket → REJECTED', async () => {
+it('e2e: reject a pending ticket → REJECTED', async () => {
   const { app } = await buildApp()
   try {
     const submitted = await request(app.getHttpServer())
@@ -371,7 +371,7 @@ test('e2e: reject a pending ticket → REJECTED', async () => {
   }
 })
 
-test('e2e: cancel a pending ticket → CANCELLED', async () => {
+it('e2e: cancel a pending ticket → CANCELLED', async () => {
   const { app } = await buildApp()
   try {
     const submitted = await request(app.getHttpServer())
@@ -404,7 +404,7 @@ test('e2e: cancel a pending ticket → CANCELLED', async () => {
   }
 })
 
-test('e2e: list approvals with filtering and default limit', async () => {
+it('e2e: list approvals with filtering and default limit', async () => {
   const { app } = await buildApp()
   try {
     // Create multiple approvals
@@ -437,7 +437,7 @@ test('e2e: list approvals with filtering and default limit', async () => {
   }
 })
 
-test('e2e: get single approval detail by ticket', async () => {
+it('e2e: get single approval detail by ticket', async () => {
   const { app } = await buildApp()
   try {
     const submitted = await request(app.getHttpServer())
@@ -464,7 +464,7 @@ test('e2e: get single approval detail by ticket', async () => {
   }
 })
 
-test('e2e: idempotent — same ticket for same resource does not create duplicate', async () => {
+it('e2e: idempotent — same ticket for same resource does not create duplicate', async () => {
   const { app } = await buildApp()
   try {
     const first = await request(app.getHttpServer())
@@ -503,7 +503,7 @@ test('e2e: idempotent — same ticket for same resource does not create duplicat
   }
 })
 
-test('e2e: mark executed on APPROVED approval', async () => {
+it('e2e: mark executed on APPROVED approval', async () => {
   const { app } = await buildApp()
   try {
     const submitted = await request(app.getHttpServer())
@@ -543,7 +543,7 @@ test('e2e: mark executed on APPROVED approval', async () => {
   }
 })
 
-test('e2e: mark execution failed records failure detail', async () => {
+it('e2e: mark execution failed records failure detail', async () => {
   const { app } = await buildApp()
   try {
     const submitted = await request(app.getHttpServer())
@@ -584,7 +584,7 @@ test('e2e: mark execution failed records failure detail', async () => {
   }
 })
 
-test('e2e: summarize approvals returns metrics', async () => {
+it('e2e: summarize approvals returns metrics', async () => {
   const { app } = await buildApp()
   try {
     const s1 = await request(app.getHttpServer())
@@ -638,7 +638,7 @@ test('e2e: summarize approvals returns metrics', async () => {
   }
 })
 
-test('e2e: materialize with not-required returns NOT_REQUIRED snapshot', async () => {
+it('e2e: materialize with not-required returns NOT_REQUIRED snapshot', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -659,7 +659,7 @@ test('e2e: materialize with not-required returns NOT_REQUIRED snapshot', async (
   }
 })
 
-test('e2e: non-existent ticket returns error response', async () => {
+it('e2e: non-existent ticket returns error response', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -673,7 +673,7 @@ test('e2e: non-existent ticket returns error response', async () => {
   }
 })
 
-test('e2e: cross-tenant isolation — tenant-A cannot see tenant-B approvals', async () => {
+it('e2e: cross-tenant isolation — tenant-A cannot see tenant-B approvals', async () => {
   const { app } = await buildApp()
   try {
     // Create for tenant-A
@@ -715,7 +715,7 @@ test('e2e: cross-tenant isolation — tenant-A cannot see tenant-B approvals', a
   }
 })
 
-test('e2e: resubmit cancelled approval creates NEW ticket in PENDING', async () => {
+it('e2e: resubmit cancelled approval creates NEW ticket in PENDING', async () => {
   const { app } = await buildApp()
   try {
     const submitted = await request(app.getHttpServer())
@@ -761,7 +761,7 @@ test('e2e: resubmit cancelled approval creates NEW ticket in PENDING', async () 
   }
 })
 
-test('e2e: normal + exception dual path (pipeline-status)', async () => {
+it('e2e: normal + exception dual path (pipeline-status)', async () => {
   const { app } = await buildApp()
   try {
     // Path 1: Normal — approve + execute

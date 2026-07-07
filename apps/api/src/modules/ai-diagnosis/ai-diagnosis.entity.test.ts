@@ -1,11 +1,11 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import type { DiagnosisEntity, DiagnosisBatch } from './ai-diagnosis.entity'
 
 describe('DiagnosisEntity 类型形状', () => {
   // ── 构造合规对象并验证字段 ──
 
-  test('应支持 PENDING 状态的诊断实体', () => {
+  it('应支持 PENDING 状态的诊断实体', () => {
     const diagnosis: DiagnosisEntity = {
       diagnosisId: 'diag-abc12345',
       engineId: 'engine-001',
@@ -45,7 +45,7 @@ describe('DiagnosisEntity 类型形状', () => {
     assert.equal(diagnosis.completedAt, undefined)
   })
 
-  test('应支持 COMPLETED 状态的诊断实体', () => {
+  it('应支持 COMPLETED 状态的诊断实体', () => {
     const diagnosis: DiagnosisEntity = {
       diagnosisId: 'diag-xyz98765',
       engineId: 'engine-002',
@@ -77,7 +77,7 @@ describe('DiagnosisEntity 类型形状', () => {
     assert.equal(diagnosis.completedAt, '2024-01-15T08:05:01.150Z')
   })
 
-  test('应支持 FAILED 状态的诊断实体', () => {
+  it('应支持 FAILED 状态的诊断实体', () => {
     const diagnosis: DiagnosisEntity = {
       diagnosisId: 'diag-fail01',
       engineId: 'engine-003',
@@ -105,7 +105,7 @@ describe('DiagnosisEntity 类型形状', () => {
 })
 
 describe('DiagnosisEntity status 枚举约束', () => {
-  test('status 仅接受 PENDING | IN_PROGRESS | COMPLETED | FAILED', () => {
+  it('status 仅接受 PENDING | IN_PROGRESS | COMPLETED | FAILED', () => {
     // 类型编译时约束 —— 运行时验证合法值
     const validStatuses: DiagnosisEntity['status'][] = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED']
     assert.equal(validStatuses.length, 4)
@@ -117,7 +117,7 @@ describe('DiagnosisEntity status 枚举约束', () => {
 })
 
 describe('DiagnosisEntity riskLevel 枚举约束', () => {
-  test('riskLevel 仅接受 low | medium | high | critical', () => {
+  it('riskLevel 仅接受 low | medium | high | critical', () => {
     const validLevels: DiagnosisEntity['riskLevel'][] = ['low', 'medium', 'high', 'critical']
     assert.equal(validLevels.length, 4)
     assert.ok(validLevels.includes('low'))
@@ -128,7 +128,7 @@ describe('DiagnosisEntity riskLevel 枚举约束', () => {
 })
 
 describe('DiagnosisBatch 类型形状', () => {
-  test('应包含 DiagnosisEntity[] 数组', () => {
+  it('应包含 DiagnosisEntity[] 数组', () => {
     const diagnosis: DiagnosisEntity = {
       diagnosisId: 'diag-test001',
       engineId: 'engine-001',
@@ -180,7 +180,7 @@ describe('DiagnosisBatch 类型形状', () => {
     assert.equal(batch.diagnoses[0]!.riskLevel, 'medium')
   })
 
-  test('应支持多个 diagnoses', () => {
+  it('应支持多个 diagnoses', () => {
     const makeDiagnosis = (id: string, riskLevel: DiagnosisEntity['riskLevel']): DiagnosisEntity => ({
       diagnosisId: id,
       engineId: 'engine-001',
@@ -233,7 +233,7 @@ describe('DiagnosisBatch 类型形状', () => {
     }
   })
 
-  test('DiagnosisBatch 的 diagnoses 应为 DiagnosisEntity 类型数组', () => {
+  it('DiagnosisBatch 的 diagnoses 应为 DiagnosisEntity 类型数组', () => {
     // 通过构造和类型推导验证 diagnoses 是 DiagnosisEntity[]
     const batch: DiagnosisBatch = {
       batchId: 'batch-type-check',

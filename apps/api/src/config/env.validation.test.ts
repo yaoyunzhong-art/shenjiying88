@@ -1,9 +1,9 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
 import { envValidation } from './env.validation'
 
 describe('envValidation', () => {
-  test('returns config when required env set is complete', () => {
+  it('returns config when required env set is complete', () => {
     const config = {
       API_PORT: '3001',
       JWT_SECRET: 'super-secret-key',
@@ -17,7 +17,7 @@ describe('envValidation', () => {
     assert.deepEqual(result, config)
   })
 
-  test('returns config when numeric env values are numbers', () => {
+  it('returns config when numeric env values are numbers', () => {
     const config = {
       API_PORT: 3001,
       JWT_SECRET: 'abc123',
@@ -30,7 +30,7 @@ describe('envValidation', () => {
     assert.strictEqual(result, config)
   })
 
-  test('throws when JWT_SECRET is missing', () => {
+  it('throws when JWT_SECRET is missing', () => {
     assert.throws(
       () =>
         envValidation({
@@ -44,7 +44,7 @@ describe('envValidation', () => {
     )
   })
 
-  test('throws when JWT_SECRET is empty string', () => {
+  it('throws when JWT_SECRET is empty string', () => {
     assert.throws(
       () =>
         envValidation({
@@ -59,7 +59,7 @@ describe('envValidation', () => {
     )
   })
 
-  test('throws when DATABASE_URL is undefined', () => {
+  it('throws when DATABASE_URL is undefined', () => {
     assert.throws(
       () =>
         envValidation({
@@ -74,7 +74,7 @@ describe('envValidation', () => {
     )
   })
 
-  test('throws when DATABASE_URL is invalid', () => {
+  it('throws when DATABASE_URL is invalid', () => {
     assert.throws(
       () =>
         envValidation({
@@ -89,7 +89,7 @@ describe('envValidation', () => {
     )
   })
 
-  test('throws when API_PORT is invalid', () => {
+  it('throws when API_PORT is invalid', () => {
     assert.throws(
       () =>
         envValidation({
@@ -104,7 +104,7 @@ describe('envValidation', () => {
     )
   })
 
-  test('throws when REDIS_PORT is zero', () => {
+  it('throws when REDIS_PORT is zero', () => {
     assert.throws(
       () =>
         envValidation({
@@ -119,7 +119,7 @@ describe('envValidation', () => {
     )
   })
 
-  test('throws when LYT_MODE is blank', () => {
+  it('throws when LYT_MODE is blank', () => {
     assert.throws(
       () =>
         envValidation({

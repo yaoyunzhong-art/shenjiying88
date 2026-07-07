@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { QueueController } from './queue.controller'
 import { QueueService } from './queue.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -52,7 +52,7 @@ function joinQueue(
 
 // ═══════════════ 👔店长 ═══════════════
 describe(`${ROLES.TenantAdmin} 排队角色测试`, () => {
-  test('店长可查看全店排队状态（正常流程）', () => {
+  it('店长可查看全店排队状态（正常流程）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -69,7 +69,7 @@ describe(`${ROLES.TenantAdmin} 排队角色测试`, () => {
     assert.equal(typeof status.avgWaitMin, 'number')
   })
 
-  test('店长可叫号并推进服务流程（管理操作）', () => {
+  it('店长可叫号并推进服务流程（管理操作）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -96,7 +96,7 @@ describe(`${ROLES.TenantAdmin} 排队角色测试`, () => {
 
 // ═══════════════ 🛒前台 ═══════════════
 describe(`${ROLES.Reception} 排队角色测试`, () => {
-  test('前台可为客人加入排队（正常流程）', () => {
+  it('前台可为客人加入排队（正常流程）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -118,7 +118,7 @@ describe(`${ROLES.Reception} 排队角色测试`, () => {
     assert.ok(entry.queueNumber.startsWith('A'))
   })
 
-  test('前台无法查看其他门店排队数据（权限边界 - 租户隔离）', () => {
+  it('前台无法查看其他门店排队数据（权限边界 - 租户隔离）', () => {
     const { controller } = makeQueueController()
     const tcA = makeTenantContext('t-store-a')
     const tcB = makeTenantContext('t-store-b')
@@ -136,7 +136,7 @@ describe(`${ROLES.Reception} 排队角色测试`, () => {
 
 // ═══════════════ 👥HR ═══════════════
 describe(`${ROLES.HR} 排队角色测试`, () => {
-  test('HR可查看排队数据用于人力调度（正常流程）', () => {
+  it('HR可查看排队数据用于人力调度（正常流程）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -153,7 +153,7 @@ describe(`${ROLES.HR} 排队角色测试`, () => {
     assert.equal(typeof status.avgWaitMin, 'number')
   })
 
-  test('HR无法直接叫号（权限边界 - 非操作权限）', () => {
+  it('HR无法直接叫号（权限边界 - 非操作权限）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -171,7 +171,7 @@ describe(`${ROLES.HR} 排队角色测试`, () => {
 
 // ═══════════════ 🔧安监 ═══════════════
 describe(`${ROLES.Safety} 排队角色测试`, () => {
-  test('安监可监控排队状态确保安全（正常流程）', () => {
+  it('安监可监控排队状态确保安全（正常流程）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -188,7 +188,7 @@ describe(`${ROLES.Safety} 排队角色测试`, () => {
     assert.ok(status.waitingCount >= 0)
   })
 
-  test('安监可查询排队位置（只读操作）', () => {
+  it('安监可查询排队位置（只读操作）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -207,7 +207,7 @@ describe(`${ROLES.Safety} 排队角色测试`, () => {
 
 // ═══════════════ 🎮导玩员 ═══════════════
 describe(`${ROLES.Guide} 排队角色测试`, () => {
-  test('导玩员可为会员加入排队引导游戏（正常流程）', () => {
+  it('导玩员可为会员加入排队引导游戏（正常流程）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -228,7 +228,7 @@ describe(`${ROLES.Guide} 排队角色测试`, () => {
     assert.equal(entry.status, QueueStatus.Waiting)
   })
 
-  test('导玩员可查询会员排队位置告知等待时间（正常流程-边界值）', () => {
+  it('导玩员可查询会员排队位置告知等待时间（正常流程-边界值）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -249,7 +249,7 @@ describe(`${ROLES.Guide} 排队角色测试`, () => {
 
 // ═══════════════ 🎯运行专员 ═══════════════
 describe(`${ROLES.Ops} 排队角色测试`, () => {
-  test('运行专员可叫号并处理过号（正常流程）', () => {
+  it('运行专员可叫号并处理过号（正常流程）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -267,7 +267,7 @@ describe(`${ROLES.Ops} 排队角色测试`, () => {
     assert.equal(noShow.status, QueueStatus.NoShow)
   })
 
-  test('运行专员处理非法状态转换应报错（异常流程）', () => {
+  it('运行专员处理非法状态转换应报错（异常流程）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -284,7 +284,7 @@ describe(`${ROLES.Ops} 排队角色测试`, () => {
 
 // ═══════════════ 🤝团建 ═══════════════
 describe(`${ROLES.Teambuilding} 排队角色测试`, () => {
-  test('团建可为团队批量加入排队（正常流程）', () => {
+  it('团建可为团队批量加入排队（正常流程）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -308,7 +308,7 @@ describe(`${ROLES.Teambuilding} 排队角色测试`, () => {
     assert.equal(status.waitingCount, 5)
   })
 
-  test('团建查询不存在的排队位置返回 -1（边界条件）', () => {
+  it('团建查询不存在的排队位置返回 -1（边界条件）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -326,7 +326,7 @@ describe(`${ROLES.Teambuilding} 排队角色测试`, () => {
 
 // ═══════════════ 📢营销 ═══════════════
 describe(`${ROLES.Marketing} 排队角色测试`, () => {
-  test('营销可分析排队数据优化活动策略（正常流程）', () => {
+  it('营销可分析排队数据优化活动策略（正常流程）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -348,7 +348,7 @@ describe(`${ROLES.Marketing} 排队角色测试`, () => {
     assert.equal(typeof status.avgWaitMin, 'number')
   })
 
-  test('营销查询排队位置（查看用户等待体验）', () => {
+  it('营销查询排队位置（查看用户等待体验）', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 
@@ -367,7 +367,7 @@ describe(`${ROLES.Marketing} 排队角色测试`, () => {
 
 // ═══════════════ 跨角色租户隔离 ═══════════════
 describe('多租户隔离验证——排队模块', () => {
-  test('不同门店排队数据完全隔离', () => {
+  it('不同门店排队数据完全隔离', () => {
     const { controller } = makeQueueController()
     const tcA = makeTenantContext('t-alpha')
     const tcB = makeTenantContext('t-beta')
@@ -387,7 +387,7 @@ describe('多租户隔离验证——排队模块', () => {
     assert.equal(statusB.total, 1)
   })
 
-  test('跨门店无法操作对方排队记录', () => {
+  it('跨门店无法操作对方排队记录', () => {
     const { controller } = makeQueueController()
 
     // 在 t-alpha 创建排队
@@ -400,7 +400,7 @@ describe('多租户隔离验证——排队模块', () => {
     )
   })
 
-  test('不同排队类型的叫号正确隔离', () => {
+  it('不同排队类型的叫号正确隔离', () => {
     const { controller } = makeQueueController()
     const tc = makeTenantContext()
 

@@ -1,33 +1,38 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { CampaignController } from './campaign.controller'
 import { CampaignModule } from './campaign.module'
+import { MarketingMetricsModule } from '../marketing-metrics/marketing-metrics.module'
 import { CampaignService } from './campaign.service'
+import { CampaignTriggerService } from './trigger.service'
 
-test('CampaignModule wires controller, provider, and export', () => {
+it('CampaignModule wires controller, provider, and export', () => {
   const controllers = Reflect.getMetadata('controllers', CampaignModule) as unknown[] | undefined
   const providers = Reflect.getMetadata('providers', CampaignModule) as unknown[] | undefined
   const exportsList = Reflect.getMetadata('exports', CampaignModule) as unknown[] | undefined
 
   assert.ok(controllers?.includes(CampaignController))
   assert.ok(providers?.includes(CampaignService))
+  assert.ok(providers?.includes(CampaignTriggerService))
   assert.ok(exportsList?.includes(CampaignService))
+  assert.ok(exportsList?.includes(CampaignTriggerService))
 })
 
-test('CampaignModule imports Member and Loyalty modules for plan-driven actions', () => {
+it('CampaignModule imports Member and Loyalty modules for plan-driven actions', () => {
   const importsList = Reflect.getMetadata('imports', CampaignModule) as unknown[] | undefined
   const importNames = (importsList ?? []).map((entry) => (entry as { name?: string }).name)
   assert.ok(importNames.includes('MemberModule'))
   assert.ok(importNames.includes('LoyaltyModule'))
+  assert.ok(importNames.includes(MarketingMetricsModule.name))
 })
 
-test('CampaignController is mounted at /campaigns', () => {
+it('CampaignController is mounted at /campaigns', () => {
   const path = Reflect.getMetadata('path', CampaignController)
   assert.equal(path, 'campaigns')
 })
 
-test('CampaignController exposes register, list, get, update, dispatches, evaluate routes', () => {
+it('CampaignController exposes register, list, get, update, dispatches, evaluate routes', () => {
   const proto = CampaignController.prototype as unknown as Record<string, unknown>
   const routes: Array<{ method: string; path: string; handler: string }> = []
   for (const key of Object.getOwnPropertyNames(proto)) {

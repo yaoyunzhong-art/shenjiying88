@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { FoundationService } from './foundation.service'
 
 function buildIdentityAccessStub() {
@@ -66,7 +66,7 @@ function buildRuntimeGovernanceStub(input?: {
   }
 }
 
-test('e2e: foundation overview filters muted alerts and annotates acknowledgement', async () => {
+it('e2e: foundation overview filters muted alerts and annotates acknowledgement', async () => {
   const now = Date.now()
   const future = new Date(now + 60 * 60 * 1000)
 
@@ -137,7 +137,7 @@ test('e2e: foundation overview filters muted alerts and annotates acknowledgemen
   assert.equal(overview.alerts.some((alert) => alert.code === 'approvals-pending'), true)
 })
 
-test('e2e: foundation overview carries triage and recent operation for visible alerts', async () => {
+it('e2e: foundation overview carries triage and recent operation for visible alerts', async () => {
   const now = new Date('2026-06-13T00:05:00.000Z')
 
   const prisma = {
@@ -229,7 +229,7 @@ test('e2e: foundation overview carries triage and recent operation for visible a
   assert.equal(overview.topRisks[0]?.recentOperation?.actorId, 'ops-admin')
 })
 
-test('e2e: foundation alert catalog carries recent operation summary', async () => {
+it('e2e: foundation alert catalog carries recent operation summary', async () => {
   const now = new Date('2026-06-13T00:05:00.000Z')
   const future = new Date(now.getTime() + 60 * 60 * 1000)
 
@@ -324,7 +324,7 @@ test('e2e: foundation alert catalog carries recent operation summary', async () 
   )
 })
 
-test('e2e: foundation alert drilldown keeps muted alert context for operations follow-up', async () => {
+it('e2e: foundation alert drilldown keeps muted alert context for operations follow-up', async () => {
   const now = Date.now()
   const future = new Date(now + 60 * 60 * 1000)
 
@@ -424,7 +424,7 @@ test('e2e: foundation alert drilldown keeps muted alert context for operations f
   assert.equal(drilldown.history?.[0]?.action, 'MUTE')
 })
 
-test('e2e: foundation alert mutation returns persisted history timeline', async () => {
+it('e2e: foundation alert mutation returns persisted history timeline', async () => {
   const now = new Date('2026-06-13T00:05:00.000Z')
   const auditLogs: Array<Record<string, unknown>> = []
   const acknowledgements = new Map<string, Record<string, unknown>>()
@@ -490,7 +490,7 @@ test('e2e: foundation alert mutation returns persisted history timeline', async 
   assert.equal(mutation.history?.[0]?.actorId, 'ops-admin')
 })
 
-test('e2e: foundation overview surfaces runtime governance alerts and module health', async () => {
+it('e2e: foundation overview surfaces runtime governance alerts and module health', async () => {
   const service = new FoundationService(
     buildIdentityAccessStub() as never,
     {
@@ -544,7 +544,7 @@ test('e2e: foundation overview surfaces runtime governance alerts and module hea
   assert.equal(overview.moduleHealth.runtimeGovernance.status, 'critical')
 })
 
-test('e2e: foundation runtime callback stalled drilldown returns timeout thresholds and escalation detail', async () => {
+it('e2e: foundation runtime callback stalled drilldown returns timeout thresholds and escalation detail', async () => {
   const service = new FoundationService(
     buildIdentityAccessStub() as never,
     {

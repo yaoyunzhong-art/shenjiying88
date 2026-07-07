@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [identity-access] [A] entity.test 补全
  * 
@@ -7,7 +8,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   type ActorIdentity,
   type AccessPolicy,
@@ -23,7 +23,7 @@ import {
 
 // ── ActorIdentity ──
 describe('ActorIdentity type', () => {
-  test('正例：完整的认证参与者身份', () => {
+  it('正例：完整的认证参与者身份', () => {
     const identity: ActorIdentity = {
       actorId: 'actor-001',
       actorType: 'employee',
@@ -44,7 +44,7 @@ describe('ActorIdentity type', () => {
     assert.equal(identity.authenticated, true)
   })
 
-  test('边界：可选字段 brandId/storeId 为 undefined', () => {
+  it('边界：可选字段 brandId/storeId 为 undefined', () => {
     const identity: ActorIdentity = {
       actorId: 'actor-002',
       actorType: 'member',
@@ -62,7 +62,7 @@ describe('ActorIdentity type', () => {
     assert.equal(identity.actorType, 'member')
   })
 
-  test('反例：roles 为空时不触发 assertion 错误但应合法（允许最小权限角色）', () => {
+  it('反例：roles 为空时不触发 assertion 错误但应合法（允许最小权限角色）', () => {
     const identity: ActorIdentity = {
       actorId: 'actor-003',
       actorType: 'system',
@@ -82,7 +82,7 @@ describe('ActorIdentity type', () => {
 
 // ── AccessPolicy ──
 describe('AccessPolicy type', () => {
-  test('正例：完整的访问控制策略', () => {
+  it('正例：完整的访问控制策略', () => {
     const policy: AccessPolicy = {
       policyId: 'policy-member-read',
       name: 'Member Read Policy',
@@ -100,7 +100,7 @@ describe('AccessPolicy type', () => {
     assert.equal(policy.priority, 1)
   })
 
-  test('边界：空 requiredRoles 和 requiredPermissions', () => {
+  it('边界：空 requiredRoles 和 requiredPermissions', () => {
     const policy: AccessPolicy = {
       policyId: 'policy-public',
       name: 'Public Access',
@@ -116,7 +116,7 @@ describe('AccessPolicy type', () => {
     assert.equal(policy.requiredPermissions.length, 0)
   })
 
-  test('边界：description 可选为空', () => {
+  it('边界：description 可选为空', () => {
     const policy: AccessPolicy = {
       policyId: 'policy-no-desc',
       name: 'No Description Policy',
@@ -135,7 +135,7 @@ describe('AccessPolicy type', () => {
 
 // ── AuthorizationRequest ──
 describe('AuthorizationRequest type', () => {
-  test('正例：完整的授权请求', () => {
+  it('正例：完整的授权请求', () => {
     const request: AuthorizationRequest = {
       action: 'member.read',
       resourceScope: {
@@ -150,7 +150,7 @@ describe('AuthorizationRequest type', () => {
     assert.equal(request.context?.ip, '192.168.1.1')
   })
 
-  test('边界：空 resourceScope', () => {
+  it('边界：空 resourceScope', () => {
     const request: AuthorizationRequest = {
       action: 'health.ping',
       resourceScope: {},
@@ -163,7 +163,7 @@ describe('AuthorizationRequest type', () => {
 
 // ── AuthorizationResult ──
 describe('AuthorizationResult type', () => {
-  test('正例：允许的授权结果', () => {
+  it('正例：允许的授权结果', () => {
     const result: AuthorizationResult = {
       status: 'allowed',
       action: 'member.read',
@@ -191,7 +191,7 @@ describe('AuthorizationResult type', () => {
     assert.equal(result.denialReason, undefined)
   })
 
-  test('反例：拒绝的授权结果（有拒绝原因）', () => {
+  it('反例：拒绝的授权结果（有拒绝原因）', () => {
     const result: AuthorizationResult = {
       status: 'denied',
       action: 'member.write',
@@ -209,7 +209,7 @@ describe('AuthorizationResult type', () => {
     assert.equal(result.denialReason, 'Missing permission: member.write')
   })
 
-  test('边界：actor 为 null 且 permissionMatched 为 false', () => {
+  it('边界：actor 为 null 且 permissionMatched 为 false', () => {
     const result: AuthorizationResult = {
       status: 'denied',
       action: 'unknown.action',
@@ -228,7 +228,7 @@ describe('AuthorizationResult type', () => {
 
 // ── TenantScopeBinding ──
 describe('TenantScopeBinding type', () => {
-  test('正例：大门店作用域绑定', () => {
+  it('正例：大门店作用域绑定', () => {
     const binding: TenantScopeBinding = {
       bindingId: 'bind-001',
       actorId: 'actor-001',
@@ -245,7 +245,7 @@ describe('TenantScopeBinding type', () => {
     assert.equal(binding.expiresAt, undefined)
   })
 
-  test('边界：带过期时间的绑定', () => {
+  it('边界：带过期时间的绑定', () => {
     const binding: TenantScopeBinding = {
       bindingId: 'bind-002',
       actorId: 'actor-002',
@@ -260,7 +260,7 @@ describe('TenantScopeBinding type', () => {
     assert.ok(Date.parse(binding.expiresAt!) > Date.parse(binding.createdAt))
   })
 
-  test('边界：不活跃的绑定', () => {
+  it('边界：不活跃的绑定', () => {
     const binding: TenantScopeBinding = {
       bindingId: 'bind-003',
       actorId: 'actor-003',
@@ -277,7 +277,7 @@ describe('TenantScopeBinding type', () => {
 
 // ── RolePermissionEntry ──
 describe('RolePermissionEntry type', () => {
-  test('正例：带继承的角色权限映射', () => {
+  it('正例：带继承的角色权限映射', () => {
     const entry: RolePermissionEntry = {
       role: 'STORE_MANAGER',
       displayName: 'Store Manager',
@@ -291,7 +291,7 @@ describe('RolePermissionEntry type', () => {
     assert.equal(entry.level, 3)
   })
 
-  test('边界：无父角色的顶层角色', () => {
+  it('边界：无父角色的顶层角色', () => {
     const entry: RolePermissionEntry = {
       role: 'SUPER_ADMIN',
       displayName: 'Super Admin',
@@ -306,7 +306,7 @@ describe('RolePermissionEntry type', () => {
 
 // ── AccessAuditEntry ──
 describe('AccessAuditEntry type', () => {
-  test('正例：允许的审计条目', () => {
+  it('正例：允许的审计条目', () => {
     const entry: AccessAuditEntry = {
       auditId: 'audit-001',
       actorId: 'actor-001',
@@ -323,7 +323,7 @@ describe('AccessAuditEntry type', () => {
     assert.equal(entry.clientIp, '192.168.1.1')
   })
 
-  test('反例：拒绝的审计条目（带原因）', () => {
+  it('反例：拒绝的审计条目（带原因）', () => {
     const entry: AccessAuditEntry = {
       auditId: 'audit-002',
       actorId: 'actor-002',
@@ -339,7 +339,7 @@ describe('AccessAuditEntry type', () => {
     assert.equal(entry.reason, 'Insufficient permissions')
   })
 
-  test('边界：无 clientIP 和 userAgent 的审计条目', () => {
+  it('边界：无 clientIP 和 userAgent 的审计条目', () => {
     const entry: AccessAuditEntry = {
       auditId: 'audit-003',
       actorId: 'system-service',
@@ -357,7 +357,7 @@ describe('AccessAuditEntry type', () => {
 
 // ── SYSTEM_ROLES ──
 describe('SYSTEM_ROLES constants', () => {
-  test('正例：包含所有预定义角色', () => {
+  it('正例：包含所有预定义角色', () => {
     assert.equal(SYSTEM_ROLES.SUPER_ADMIN, 'SUPER_ADMIN')
     assert.equal(SYSTEM_ROLES.TENANT_ADMIN, 'TENANT_ADMIN')
     assert.equal(SYSTEM_ROLES.STORE_MANAGER, 'STORE_MANAGER')
@@ -370,7 +370,7 @@ describe('SYSTEM_ROLES constants', () => {
     assert.equal(SYSTEM_ROLES.TEAMBUILDING, 'TEAMBUILDING')
   })
 
-  test('边界：SYSTEM_ROLES 是只读对象', () => {
+  it('边界：SYSTEM_ROLES 是只读对象', () => {
     // 确保所有值都是大写字符串常量
     const values = Object.values(SYSTEM_ROLES)
     for (const v of values) {
@@ -381,7 +381,7 @@ describe('SYSTEM_ROLES constants', () => {
 
 // ── SYSTEM_PERMISSIONS ──
 describe('SYSTEM_PERMISSIONS constants', () => {
-  test('正例：包含所有核心权限', () => {
+  it('正例：包含所有核心权限', () => {
     assert.ok(SYSTEM_PERMISSIONS.FOUNDATION_GOVERNANCE_READ)
     assert.ok(SYSTEM_PERMISSIONS.MEMBER_READ)
     assert.ok(SYSTEM_PERMISSIONS.MEMBER_WRITE)
@@ -391,7 +391,7 @@ describe('SYSTEM_PERMISSIONS constants', () => {
     assert.ok(SYSTEM_PERMISSIONS.TENANT_ALL)
   })
 
-  test('边界：所有权限值都是有效的资源标识符（含点或冒号分隔）', () => {
+  it('边界：所有权限值都是有效的资源标识符（含点或冒号分隔）', () => {
     const values = Object.values(SYSTEM_PERMISSIONS)
     for (const v of values) {
       assert.ok(
@@ -404,14 +404,14 @@ describe('SYSTEM_PERMISSIONS constants', () => {
 
 // ── AUTH_SOURCES ──
 describe('AUTH_SOURCES constants', () => {
-  test('正例：包含四种认证来源', () => {
+  it('正例：包含四种认证来源', () => {
     assert.equal(AUTH_SOURCES.JWT, 'jwt')
     assert.equal(AUTH_SOURCES.SESSION, 'session')
     assert.equal(AUTH_SOURCES.DEVICE_TOKEN, 'device-token')
     assert.equal(AUTH_SOURCES.API_KEY, 'api-key')
   })
 
-  test('边界：值互不重复', () => {
+  it('边界：值互不重复', () => {
     const values = Object.values(AUTH_SOURCES)
     const unique = new Set(values)
     assert.equal(unique.size, values.length)

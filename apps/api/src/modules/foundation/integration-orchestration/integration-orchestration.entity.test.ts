@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   type EventEnvelope,
   type WebhookSource,
@@ -11,7 +11,7 @@ import {
 } from './integration-orchestration.entity'
 
 describe('integration-orchestration entity - EventEnvelope', () => {
-  test('符合 EventEnvelope 结构', () => {
+  it('符合 EventEnvelope 结构', () => {
     const envelope: EventEnvelope = {
       envelopeId: 'evt-001',
       eventName: 'member.created',
@@ -31,7 +31,7 @@ describe('integration-orchestration entity - EventEnvelope', () => {
     assert.equal(envelope.headers['x-event-source'], 'member')
   })
 
-  test('EventEnvelope - 最小字段', () => {
+  it('EventEnvelope - 最小字段', () => {
     const envelope: EventEnvelope = {
       envelopeId: 'evt-min',
       eventName: 'health.ping',
@@ -48,7 +48,7 @@ describe('integration-orchestration entity - EventEnvelope', () => {
     assert.deepEqual(envelope.headers, {})
   })
 
-  test('EventEnvelope - headers 为 Record<string, string>', () => {
+  it('EventEnvelope - headers 为 Record<string, string>', () => {
     const envelope: EventEnvelope = {
       envelopeId: 'evt-002',
       eventName: 'order.placed',
@@ -65,7 +65,7 @@ describe('integration-orchestration entity - EventEnvelope', () => {
 })
 
 describe('integration-orchestration entity - WebhookSource', () => {
-  test('符合 WebhookSource 结构', () => {
+  it('符合 WebhookSource 结构', () => {
     const source: WebhookSource = {
       source: 'lyt',
       algorithm: 'hmac-sha256',
@@ -78,7 +78,7 @@ describe('integration-orchestration entity - WebhookSource', () => {
     assert.equal(source.toleranceSeconds, 300)
   })
 
-  test('WebhookSource - payment gateway', () => {
+  it('WebhookSource - payment gateway', () => {
     const source: WebhookSource = {
       source: 'payment',
       algorithm: 'hmac-sha256',
@@ -92,7 +92,7 @@ describe('integration-orchestration entity - WebhookSource', () => {
 })
 
 describe('integration-orchestration entity - WebhookIngestInput', () => {
-  test('符合 WebhookIngestInput 完整结构', () => {
+  it('符合 WebhookIngestInput 完整结构', () => {
     const input: WebhookIngestInput = {
       eventId: 'pay-ev-001',
       eventType: 'payment.succeeded',
@@ -107,7 +107,7 @@ describe('integration-orchestration entity - WebhookIngestInput', () => {
     assert.ok(input.signature?.startsWith('sha256='))
   })
 
-  test('WebhookIngestInput - 最小字段', () => {
+  it('WebhookIngestInput - 最小字段', () => {
     const input: WebhookIngestInput = {
       payload: { ping: 'pong' },
       timestamp: '1751212800000'
@@ -120,7 +120,7 @@ describe('integration-orchestration entity - WebhookIngestInput', () => {
 })
 
 describe('integration-orchestration entity - IdempotencyRecord', () => {
-  test('符合 IdempotencyRecord 结构', () => {
+  it('符合 IdempotencyRecord 结构', () => {
     const record: IdempotencyRecord = {
       key: 'lyt:evt-001',
       source: 'lyt',
@@ -137,7 +137,7 @@ describe('integration-orchestration entity - IdempotencyRecord', () => {
     assert.equal(record.eventType, 'lyt.device.connected')
   })
 
-  test('IdempotencyRecord - 支持多个来源', () => {
+  it('IdempotencyRecord - 支持多个来源', () => {
     const records: IdempotencyRecord[] = [
       {
         key: 'payment:ord-001',
@@ -168,7 +168,7 @@ describe('integration-orchestration entity - IdempotencyRecord', () => {
 })
 
 describe('integration-orchestration entity - WebhookSourceCatalogEntry', () => {
-  test('符合 WebhookSourceCatalogEntry 结构', () => {
+  it('符合 WebhookSourceCatalogEntry 结构', () => {
     const entry: WebhookSourceCatalogEntry = {
       source: 'lyt',
       algorithm: 'hmac-sha256',
@@ -182,7 +182,7 @@ describe('integration-orchestration entity - WebhookSourceCatalogEntry', () => {
     assert.ok(!('secret' in entry))
   })
 
-  test('WebhookSourceCatalogEntry - payment entry', () => {
+  it('WebhookSourceCatalogEntry - payment entry', () => {
     const entry: WebhookSourceCatalogEntry = {
       source: 'payment',
       algorithm: 'hmac-sha256',
@@ -197,7 +197,7 @@ describe('integration-orchestration entity - WebhookSourceCatalogEntry', () => {
 })
 
 describe('integration-orchestration entity - PublishEventOptions', () => {
-  test('符合 PublishEventOptions 完整结构', () => {
+  it('符合 PublishEventOptions 完整结构', () => {
     const options: PublishEventOptions = {
       source: 'member',
       aggregateId: 'agg-001',
@@ -210,7 +210,7 @@ describe('integration-orchestration entity - PublishEventOptions', () => {
     assert.equal(options.headers?.['x-custom'], 'value')
   })
 
-  test('PublishEventOptions - 空选项', () => {
+  it('PublishEventOptions - 空选项', () => {
     const options: PublishEventOptions = {}
     assert.equal(options.source, undefined)
     assert.equal(options.headers, undefined)
@@ -218,7 +218,7 @@ describe('integration-orchestration entity - PublishEventOptions', () => {
 })
 
 describe('integration-orchestration entity - EventPipelineResult', () => {
-  test('符合 EventPipelineResult - accepted 状态', () => {
+  it('符合 EventPipelineResult - accepted 状态', () => {
     const result: EventPipelineResult = {
       status: 'accepted',
       envelope: {
@@ -241,7 +241,7 @@ describe('integration-orchestration entity - EventPipelineResult', () => {
     assert.equal(result.guarantees?.length, 3)
   })
 
-  test('符合 EventPipelineResult - duplicate 状态', () => {
+  it('符合 EventPipelineResult - duplicate 状态', () => {
     const result: EventPipelineResult = {
       status: 'duplicate',
       persistedEventId: 'evt-existing-001',
@@ -252,7 +252,7 @@ describe('integration-orchestration entity - EventPipelineResult', () => {
     assert.equal(result.guarantees?.[0], 'database-unique-idempotency-key')
   })
 
-  test('符合 EventPipelineResult - Webhook accepted 带 pipeline', () => {
+  it('符合 EventPipelineResult - Webhook accepted 带 pipeline', () => {
     const result: EventPipelineResult = {
       status: 'accepted',
       source: 'lyt',
@@ -287,7 +287,7 @@ describe('integration-orchestration entity - EventPipelineResult', () => {
     assert.ok(result.pipeline?.includes('audit-log'))
   })
 
-  test('符合 EventPipelineResult - Webhook duplicate 带 pipeline', () => {
+  it('符合 EventPipelineResult - Webhook duplicate 带 pipeline', () => {
     const result: EventPipelineResult = {
       status: 'duplicate',
       source: 'payment',

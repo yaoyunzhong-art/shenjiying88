@@ -1,6 +1,6 @@
+import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { RuntimeGovernanceService } from './runtime-governance.service'
 import type {
   RuntimeGovernanceSubmitRequest,
@@ -40,23 +40,23 @@ describe('RuntimeGovernanceService', () => {
   const service = new RuntimeGovernanceService(null as never, null as never, null as never)
 
   describe('getDescriptor', () => {
-    test('returns descriptor with correct module key', () => {
+    it('returns descriptor with correct module key', () => {
       const d = service.getDescriptor()
       assert.equal(d.key, 'runtime-governance')
     })
 
-    test('returns descriptor with correct name', () => {
+    it('returns descriptor with correct name', () => {
       const d = service.getDescriptor()
       assert.equal(d.name, 'Runtime Governance Module')
     })
 
-    test('has three capabilities', () => {
+    it('has three capabilities', () => {
       const d = service.getDescriptor()
       assert.ok(Array.isArray(d.capabilities))
       assert.equal(d.capabilities.length, 3)
     })
 
-    test('each capability has required fields', () => {
+    it('each capability has required fields', () => {
       const d = service.getDescriptor()
       for (const c of d.capabilities) {
         assert.ok(c.key, `capability ${c.key} missing key`)
@@ -73,51 +73,51 @@ describe('RuntimeGovernanceService', () => {
     const capabilityKeys = ['runtime-receipt', 'handler-sync', 'callback-replay'] as const
 
     for (const key of capabilityKeys) {
-      test(`capability ${key} is present`, () => {
+      it(`capability ${key} is present`, () => {
         const d = service.getDescriptor()
         const c = d.capabilities.find((x) => x.key === key)
         assert.ok(c, `missing capability: ${key}`)
       })
 
-      test(`capability ${key} has status active`, () => {
+      it(`capability ${key} has status active`, () => {
         const d = service.getDescriptor()
         const c = d.capabilities.find((x) => x.key === key)
         assert.equal(c!.status, 'active')
       })
     }
 
-    test('runtime-receipt capability includes submitAction entrypoint', () => {
+    it('runtime-receipt capability includes submitAction entrypoint', () => {
       const d = service.getDescriptor()
       const c = d.capabilities.find((x) => x.key === 'runtime-receipt')
       assert.ok(c!.entrypoints.includes('RuntimeGovernanceService.submitAction'))
     })
 
-    test('handler-sync capability includes syncAction entrypoint', () => {
+    it('handler-sync capability includes syncAction entrypoint', () => {
       const d = service.getDescriptor()
       const c = d.capabilities.find((x) => x.key === 'handler-sync')
       assert.ok(c!.entrypoints.includes('RuntimeGovernanceService.syncAction'))
     })
 
-    test('callback-replay capability includes recordCallback entrypoint', () => {
+    it('callback-replay capability includes recordCallback entrypoint', () => {
       const d = service.getDescriptor()
       const c = d.capabilities.find((x) => x.key === 'callback-replay')
       assert.ok(c!.entrypoints.includes('RuntimeGovernanceService.recordCallback'))
     })
 
-    test('callback-replay capability includes replayAction entrypoint', () => {
+    it('callback-replay capability includes replayAction entrypoint', () => {
       const d = service.getDescriptor()
       const c = d.capabilities.find((x) => x.key === 'callback-replay')
       assert.ok(c!.entrypoints.includes('RuntimeGovernanceService.replayAction'))
     })
 
-    test('portal and workbench are consumers of runtime-receipt', () => {
+    it('portal and workbench are consumers of runtime-receipt', () => {
       const d = service.getDescriptor()
       const c = d.capabilities.find((x) => x.key === 'runtime-receipt')
       assert.ok(c!.consumers.includes('portal'))
       assert.ok(c!.consumers.includes('workbench'))
     })
 
-    test('inboundContracts includes the expected four contracts', () => {
+    it('inboundContracts includes the expected four contracts', () => {
       const d = service.getDescriptor()
       assert.ok(Array.isArray(d.inboundContracts))
       assert.ok(d.inboundContracts.includes('Runtime action submit request'))
@@ -126,7 +126,7 @@ describe('RuntimeGovernanceService', () => {
       assert.ok(d.inboundContracts.includes('Replay request'))
     })
 
-    test('outboundContracts includes runtime operations overview', () => {
+    it('outboundContracts includes runtime operations overview', () => {
       const d = service.getDescriptor()
       assert.ok(d.outboundContracts.includes('Runtime operations overview'))
     })
@@ -136,7 +136,7 @@ describe('RuntimeGovernanceService', () => {
   // The private buildReceiptCode produces a deterministic SHA1-based
   // code for a given idempotencyKey.  We validate the format.
   describe('receipt-code format contract', () => {
-    test('receipt code follows APP-ACTION-STEP-HASH pattern for PROCEED', () => {
+    it('receipt code follows APP-ACTION-STEP-HASH pattern for PROCEED', () => {
       // Indirect: the receiptCode is part of the submit receipt, which
       // we can't call without real deps.  We validate that the expected
       // shape is APP-ACTION-NEXTSTEP-SHA8.
@@ -151,14 +151,14 @@ describe('RuntimeGovernanceService', () => {
       assert.ok(/^[A-F0-9]{8}$/.test(parts[4]!), `last part "${parts[4]}" should be 8 hex chars`)
     })
 
-    test('receipt code for CHALLENGE step would include CHALLENGE', () => {
+    it('receipt code for CHALLENGE step would include CHALLENGE', () => {
       const raw = 'APP-MEMBER-LOGIN-CHALLENGE-00ABCDEF'
       const parts = raw.split('-')
       assert.equal(parts[3], 'CHALLENGE')
       assert.ok(/^[A-F0-9]{8}$/.test(parts[4]!))
     })
 
-    test('receipt code for REFRESH step would include REFRESH', () => {
+    it('receipt code for REFRESH step would include REFRESH', () => {
       const raw = 'ADMIN-MARKET-PROFILE-REFRESH-12345678'
       const parts = raw.split('-')
       assert.equal(parts[3], 'REFRESH')
@@ -177,7 +177,7 @@ describe('RuntimeGovernanceService', () => {
     }
 
     for (const [nextStep, expectedState] of Object.entries(stateMap)) {
-      test(`nextStep ${nextStep} resolves to ${expectedState}`, () => {
+      it(`nextStep ${nextStep} resolves to ${expectedState}`, () => {
         // The service's private resolveActionState maps:
         //  CHALLENGE → challenge-issued
         //  PROCEED   → submitted
@@ -193,7 +193,7 @@ describe('RuntimeGovernanceService', () => {
 
   // ── ticket type rules (derived from action state) ─────────────
   describe('ticket type rules', () => {
-    test('blocked state produces BLOCK_GUARD ticket', () => {
+    it('blocked state produces BLOCK_GUARD ticket', () => {
       const state: RuntimeGovernanceActionState = 'blocked'
       const ticketType = (state as string) === 'blocked' ? 'BLOCK_GUARD' :
         (state as string) === 'challenge-issued' ? 'CHALLENGE_GATE' :
@@ -201,7 +201,7 @@ describe('RuntimeGovernanceService', () => {
       assert.equal(ticketType, 'BLOCK_GUARD')
     })
 
-    test('challenge-issued state produces CHALLENGE_GATE ticket', () => {
+    it('challenge-issued state produces CHALLENGE_GATE ticket', () => {
       const state: RuntimeGovernanceActionState = 'challenge-issued'
       const ticketType = (state as string) === 'challenge-issued' ? 'CHALLENGE_GATE' :
         (state as string) === 'blocked' ? 'BLOCK_GUARD' :
@@ -209,7 +209,7 @@ describe('RuntimeGovernanceService', () => {
       assert.equal(ticketType, 'CHALLENGE_GATE')
     })
 
-    test('submitted state produces HANDLER_CALLBACK ticket', () => {
+    it('submitted state produces HANDLER_CALLBACK ticket', () => {
       const state: RuntimeGovernanceActionState = 'submitted'
       const ticketType = (state as string) === 'submitted' ? 'HANDLER_CALLBACK' :
         (state as string) === 'challenge-issued' ? 'CHALLENGE_GATE' :
@@ -217,7 +217,7 @@ describe('RuntimeGovernanceService', () => {
       assert.equal(ticketType, 'HANDLER_CALLBACK')
     })
 
-    test('callback-recorded state produces HANDLER_CALLBACK ticket', () => {
+    it('callback-recorded state produces HANDLER_CALLBACK ticket', () => {
       const state: RuntimeGovernanceActionState = 'callback-recorded'
       const ticketType = (state as string) === 'callback-recorded' ? 'HANDLER_CALLBACK' :
         (state as string) === 'challenge-issued' ? 'CHALLENGE_GATE' :
@@ -228,7 +228,7 @@ describe('RuntimeGovernanceService', () => {
 
   // ── sync mode rules ───────────────────────────────────────────
   describe('sync mode rules', () => {
-    test('blocked → deferred', () => {
+    it('blocked → deferred', () => {
       const state: RuntimeGovernanceActionState = 'blocked'
       const mode = (state as string) === 'blocked' ? 'deferred' :
         (state as string) === 'challenge-issued' ? 'challenge-gated' :
@@ -236,7 +236,7 @@ describe('RuntimeGovernanceService', () => {
       assert.equal(mode, 'deferred')
     })
 
-    test('challenge-issued → challenge-gated', () => {
+    it('challenge-issued → challenge-gated', () => {
       const state: RuntimeGovernanceActionState = 'challenge-issued'
       const mode = (state as string) === 'challenge-issued' ? 'challenge-gated' :
         (state as string) === 'blocked' ? 'deferred' :
@@ -244,7 +244,7 @@ describe('RuntimeGovernanceService', () => {
       assert.equal(mode, 'challenge-gated')
     })
 
-    test('submitted → callback-followup', () => {
+    it('submitted → callback-followup', () => {
       const state: RuntimeGovernanceActionState = 'submitted'
       const mode = (state as string) === 'blocked' ? 'deferred' :
         (state as string) === 'challenge-issued' ? 'challenge-gated' :
@@ -252,7 +252,7 @@ describe('RuntimeGovernanceService', () => {
       assert.equal(mode, 'callback-followup')
     })
 
-    test('callback-recorded → callback-followup', () => {
+    it('callback-recorded → callback-followup', () => {
       const state: RuntimeGovernanceActionState = 'callback-recorded'
       const mode = (state as string) === 'blocked' ? 'deferred' :
         (state as string) === 'challenge-issued' ? 'challenge-gated' :
@@ -263,7 +263,7 @@ describe('RuntimeGovernanceService', () => {
 
   // ── callback status rules ─────────────────────────────────────
   describe('callback status rules', () => {
-    test('blocked → callback-blocked', () => {
+    it('blocked → callback-blocked', () => {
       const state: RuntimeGovernanceActionState = 'blocked'
       const cbStatus =
         (state as string) === 'blocked' || (state as string) === 'challenge-issued'
@@ -272,7 +272,7 @@ describe('RuntimeGovernanceService', () => {
       assert.equal(cbStatus, 'callback-blocked')
     })
 
-    test('challenge-issued → callback-blocked', () => {
+    it('challenge-issued → callback-blocked', () => {
       const state: RuntimeGovernanceActionState = 'challenge-issued'
       const cbStatus =
         (state as string) === 'blocked' || (state as string) === 'challenge-issued'
@@ -281,7 +281,7 @@ describe('RuntimeGovernanceService', () => {
       assert.equal(cbStatus, 'callback-blocked')
     })
 
-    test('submitted → awaiting-callback', () => {
+    it('submitted → awaiting-callback', () => {
       const state: RuntimeGovernanceActionState = 'submitted'
       const cbStatus =
         (state as string) === 'blocked' || (state as string) === 'challenge-issued'
@@ -293,19 +293,19 @@ describe('RuntimeGovernanceService', () => {
 
   // ── ledger replayable rules ───────────────────────────────────
   describe('ledger replayable rules', () => {
-    test('blocked → not replayable', () => {
+    it('blocked → not replayable', () => {
       const state: RuntimeGovernanceActionState = 'blocked'
       const replayable = (state as string) === 'submitted' || (state as string) === 'callback-recorded'
       assert.equal(replayable, false)
     })
 
-    test('submitted → replayable', () => {
+    it('submitted → replayable', () => {
       const state: RuntimeGovernanceActionState = 'submitted'
       const replayable = (state as string) === 'submitted' || (state as string) === 'callback-recorded'
       assert.equal(replayable, true)
     })
 
-    test('callback-recorded → replayable', () => {
+    it('callback-recorded → replayable', () => {
       const state: RuntimeGovernanceActionState = 'callback-recorded'
       const replayable = (state as string) === 'submitted' || (state as string) === 'callback-recorded'
       assert.equal(replayable, true)
@@ -314,7 +314,7 @@ describe('RuntimeGovernanceService', () => {
 
   // ── replay policy contract (from @m5/types) ───────────────────
   describe('replay policy contract', () => {
-    test('submitted state replay policy is retryable with 3 max attempts', async () => {
+    it('submitted state replay policy is retryable with 3 max attempts', async () => {
       const { createRuntimeGovernanceReplayPolicy } = await import('@m5/types')
       const policy = createRuntimeGovernanceReplayPolicy('RC-001', 'submitted')
       assert.equal(policy.retryable, true)
@@ -324,14 +324,14 @@ describe('RuntimeGovernanceService', () => {
       assert.equal(policy.escalationAction, 'WAIT_CALLBACK')
     })
 
-    test('challenge-issued state replay policy has 2 max attempts', async () => {
+    it('challenge-issued state replay policy has 2 max attempts', async () => {
       const { createRuntimeGovernanceReplayPolicy } = await import('@m5/types')
       const policy = createRuntimeGovernanceReplayPolicy('RC-002', 'challenge-issued')
       assert.equal(policy.maxAttempts, 2)
       assert.equal(policy.escalationAction, 'REFRESH_TICKET')
     })
 
-    test('blocked state replay policy is not retryable', async () => {
+    it('blocked state replay policy is not retryable', async () => {
       const { createRuntimeGovernanceReplayPolicy } = await import('@m5/types')
       const policy = createRuntimeGovernanceReplayPolicy('RC-003', 'blocked')
       assert.equal(policy.retryable, false)
@@ -339,7 +339,7 @@ describe('RuntimeGovernanceService', () => {
       assert.equal(policy.currentAttempt, 0)
     })
 
-    test('advance replay policy increments attempt', async () => {
+    it('advance replay policy increments attempt', async () => {
       const { advanceRuntimeGovernanceReplayPolicy } = await import('@m5/types')
       const result = advanceRuntimeGovernanceReplayPolicy({
         currentAttempt: 0,
@@ -352,7 +352,7 @@ describe('RuntimeGovernanceService', () => {
       assert.equal(result.escalationAction, 'WAIT_CALLBACK')
     })
 
-    test('advance on last attempt is not retryable', async () => {
+    it('advance on last attempt is not retryable', async () => {
       const { advanceRuntimeGovernanceReplayPolicy } = await import('@m5/types')
       const result = advanceRuntimeGovernanceReplayPolicy({
         currentAttempt: 2,

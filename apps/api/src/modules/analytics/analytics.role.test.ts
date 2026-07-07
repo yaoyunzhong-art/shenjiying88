@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * analytics.role.test.ts — L1 角色冒烟测试 (8角色 × analytics)
  *
@@ -7,7 +8,6 @@
 
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import { AnalyticsController } from './analytics.controller';
 import { AnalyticsService } from './analytics.service';
 import type { RequestTenantContext } from '../tenant/tenant.types';
@@ -48,7 +48,7 @@ function makeController(withLoyalty?: boolean) {
 
 // ──────── 👔店长 ────────
 describe(`${ROLES.TenantAdmin} Analytics 角色测试`, () => {
-  test('店长可查看租户运营快照（正常流程）', () => {
+  it('店长可查看租户运营快照（正常流程）', () => {
     const { controller } = makeController(true);
     const snapshot = controller.getOperationSnapshot(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -58,14 +58,14 @@ describe(`${ROLES.TenantAdmin} Analytics 角色测试`, () => {
     assert.ok(snapshot.totals.length >= 2);
   });
 
-  test('店长可查看诊断结果', () => {
+  it('店长可查看诊断结果', () => {
     const { controller } = makeController(true);
     const diagnostics = controller.getDiagnostics(tCtx(), { scope: AnalyticsScope.Tenant });
 
     assert.ok(Array.isArray(diagnostics));
   });
 
-  test('店长可获取运营建议', () => {
+  it('店长可获取运营建议', () => {
     const { controller } = makeController(true);
     const recommendations = controller.getRecommendations(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -79,7 +79,7 @@ describe(`${ROLES.TenantAdmin} Analytics 角色测试`, () => {
 
 // ──────── 🛒前台 ────────
 describe(`${ROLES.Reception} Analytics 角色测试`, () => {
-  test('前台可查看门店运营快照（正常流程）', () => {
+  it('前台可查看门店运营快照（正常流程）', () => {
     const { controller } = makeController(true);
     const snapshot = controller.getOperationSnapshot(
       { tenantId: 't-analytics', brandId: 'b-store', storeId: 's-01' },
@@ -90,7 +90,7 @@ describe(`${ROLES.Reception} Analytics 角色测试`, () => {
     assert.equal(snapshot.scope, AnalyticsScope.Store);
   });
 
-  test('前台可查看当前门店结算成功率（正常流程）', () => {
+  it('前台可查看当前门店结算成功率（正常流程）', () => {
     const { controller } = makeController(true);
     const snapshot = controller.getOperationSnapshot(
       { tenantId: 't-analytics', brandId: 'b-store', storeId: 's-01' },
@@ -104,7 +104,7 @@ describe(`${ROLES.Reception} Analytics 角色测试`, () => {
     assert.equal(typeof successRate.value, 'number');
   });
 
-  test('前台不能跨门店查询（边界 - 范围隔离）', () => {
+  it('前台不能跨门店查询（边界 - 范围隔离）', () => {
     const { controller } = makeController(true);
     const snapshot = controller.getOperationSnapshot(
       { tenantId: 't-analytics', brandId: 'b-store', storeId: 's-a' },
@@ -117,7 +117,7 @@ describe(`${ROLES.Reception} Analytics 角色测试`, () => {
 
 // ──────── 👥HR ────────
 describe(`${ROLES.HR} Analytics 角色测试`, () => {
-  test('HR可查看积分经济数据评估员工激励效果（正常流程）', () => {
+  it('HR可查看积分经济数据评估员工激励效果（正常流程）', () => {
     const { controller } = makeController(true);
     const snapshot = controller.getOperationSnapshot(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -129,7 +129,7 @@ describe(`${ROLES.HR} Analytics 角色测试`, () => {
     assert.equal(typeof pointsNet.value, 'number');
   });
 
-  test('HR可获取会员活跃度诊断（正常流程）', () => {
+  it('HR可获取会员活跃度诊断（正常流程）', () => {
     const { controller } = makeController(true);
     const diagnostics = controller.getDiagnostics(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -140,7 +140,7 @@ describe(`${ROLES.HR} Analytics 角色测试`, () => {
     });
   });
 
-  test('HR不能修改诊断数据（权限边界 - 只读）', () => {
+  it('HR不能修改诊断数据（权限边界 - 只读）', () => {
     const { controller } = makeController(true);
     // AnalyticsController only exposes GET endpoints — structural read-only
     // This verifies the controller interface doesn't expose write operations
@@ -155,7 +155,7 @@ describe(`${ROLES.HR} Analytics 角色测试`, () => {
 
 // ──────── 🔧安监 ────────
 describe(`${ROLES.Safety} Analytics 角色测试`, () => {
-  test('安监可查看支付健康诊断（正常流程）', () => {
+  it('安监可查看支付健康诊断（正常流程）', () => {
     const { controller } = makeController(true);
     const diagnostics = controller.getDiagnostics(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -166,7 +166,7 @@ describe(`${ROLES.Safety} Analytics 角色测试`, () => {
     });
   });
 
-  test('安监可查看积分集中度风险（正常流程）', () => {
+  it('安监可查看积分集中度风险（正常流程）', () => {
     const { controller } = makeController(true);
     const diagnostics = controller.getDiagnostics(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -177,7 +177,7 @@ describe(`${ROLES.Safety} Analytics 角色测试`, () => {
     });
   });
 
-  test('无 loyalty 数据时诊断仍返回数组（边界）', () => {
+  it('无 loyalty 数据时诊断仍返回数组（边界）', () => {
     const { controller } = makeController(false);
     const diagnostics = controller.getDiagnostics(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -190,7 +190,7 @@ describe(`${ROLES.Safety} Analytics 角色测试`, () => {
 
 // ──────── 🎮导玩员 ────────
 describe(`${ROLES.Guide} Analytics 角色测试`, () => {
-  test('导玩员可查看盲盒履约转化数据（正常流程）', () => {
+  it('导玩员可查看盲盒履约转化数据（正常流程）', () => {
     const { controller } = makeController(true);
     const snapshot = controller.getOperationSnapshot(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -201,7 +201,7 @@ describe(`${ROLES.Guide} Analytics 角色测试`, () => {
     assert.ok(blindboxMetric.value >= 0);
   });
 
-  test('导玩员可查看券核销数据（正常流程）', () => {
+  it('导玩员可查看券核销数据（正常流程）', () => {
     const { controller } = makeController(true);
     const snapshot = controller.getOperationSnapshot(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -212,7 +212,7 @@ describe(`${ROLES.Guide} Analytics 角色测试`, () => {
     assert.ok(couponMetric.value >= 0);
   });
 
-  test('导玩员获取盲盒相关诊断建议（边界）', () => {
+  it('导玩员获取盲盒相关诊断建议（边界）', () => {
     const { controller } = makeController(true);
     const recommendations = controller.getRecommendations(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -227,7 +227,7 @@ describe(`${ROLES.Guide} Analytics 角色测试`, () => {
 
 // ──────── 🎯运行专员 ────────
 describe(`${ROLES.Ops} Analytics 角色测试`, () => {
-  test('运行专员可获取全量快照用于运营监控（正常流程）', () => {
+  it('运行专员可获取全量快照用于运营监控（正常流程）', () => {
     const { controller } = makeController(true);
     const snapshot = controller.getOperationSnapshot(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -239,7 +239,7 @@ describe(`${ROLES.Ops} Analytics 角色测试`, () => {
     });
   });
 
-  test('运行专员可查看所有诊断并排序（正常流程）', () => {
+  it('运行专员可查看所有诊断并排序（正常流程）', () => {
     const { controller } = makeController(true);
     const diagnostics = controller.getDiagnostics(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -250,7 +250,7 @@ describe(`${ROLES.Ops} Analytics 角色测试`, () => {
     assert.ok(Array.isArray(diagnostics));
   });
 
-  test('运行专员可获取按优先级排序的建议（正常流程）', () => {
+  it('运行专员可获取按优先级排序的建议（正常流程）', () => {
     const { controller } = makeController(true);
     const recommendations = controller.getRecommendations(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -265,7 +265,7 @@ describe(`${ROLES.Ops} Analytics 角色测试`, () => {
 
 // ──────── 🤝团建 ────────
 describe(`${ROLES.Teambuilding} Analytics 角色测试`, () => {
-  test('团建可查看品牌维度数据做团建活动规划（正常流程）', () => {
+  it('团建可查看品牌维度数据做团建活动规划（正常流程）', () => {
     const { controller } = makeController(true);
     const snapshot = controller.getOperationSnapshot(
       { tenantId: 't-analytics', brandId: 'b-team' },
@@ -277,7 +277,7 @@ describe(`${ROLES.Teambuilding} Analytics 角色测试`, () => {
     assert.ok(snapshot.totals.length > 0);
   });
 
-  test('团建可获取券核销率评估团建预算利用率（正常流程）', () => {
+  it('团建可获取券核销率评估团建预算利用率（正常流程）', () => {
     const { controller } = makeController(true);
     const snapshot = controller.getOperationSnapshot(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -288,7 +288,7 @@ describe(`${ROLES.Teambuilding} Analytics 角色测试`, () => {
     assert.ok(typeof couponRedemption.value === 'number');
   });
 
-  test('团建基于诊断获取行动建议（边界）', () => {
+  it('团建基于诊断获取行动建议（边界）', () => {
     const { controller } = makeController(true);
     const recommendations = controller.getRecommendations(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -303,7 +303,7 @@ describe(`${ROLES.Teambuilding} Analytics 角色测试`, () => {
 
 // ──────── 📢营销 ────────
 describe(`${ROLES.Marketing} Analytics 角色测试`, () => {
-  test('营销可查看盲盒和优惠券的核心指标做活动策划（正常流程）', () => {
+  it('营销可查看盲盒和优惠券的核心指标做活动策划（正常流程）', () => {
     const { controller } = makeController(true);
     const snapshot = controller.getOperationSnapshot(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -317,7 +317,7 @@ describe(`${ROLES.Marketing} Analytics 角色测试`, () => {
     assert.ok(coupon);
   });
 
-  test('营销可获取营促销相关诊断建议（正常流程）', () => {
+  it('营销可获取营促销相关诊断建议（正常流程）', () => {
     const { controller } = makeController(true);
     const diagnostics = controller.getDiagnostics(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -330,7 +330,7 @@ describe(`${ROLES.Marketing} Analytics 角色测试`, () => {
     });
   });
 
-  test('营销无法访问原始会员数据仅看聚合（边界 - 数据脱敏）', () => {
+  it('营销无法访问原始会员数据仅看聚合（边界 - 数据脱敏）', () => {
     const { controller } = makeController(true);
     const snapshot = controller.getOperationSnapshot(tCtx(), { scope: AnalyticsScope.Tenant });
 
@@ -352,7 +352,7 @@ describe(`${ROLES.Marketing} Analytics 角色测试`, () => {
 
 // ──────────── 跨角色边界测试 ────────────
 describe('Analytics 跨角色边界验证', () => {
-  test('不同 Scope 产生不同数据', () => {
+  it('不同 Scope 产生不同数据', () => {
     const { controller } = makeController(true);
 
     const tenantSnapshot = controller.getOperationSnapshot(tCtx(), { scope: AnalyticsScope.Tenant });
@@ -372,7 +372,7 @@ describe('Analytics 跨角色边界验证', () => {
     assert.equal(storeSnapshot.scope, AnalyticsScope.Store);
   });
 
-  test('所有 scope 级别都返回有效的快照结构', () => {
+  it('所有 scope 级别都返回有效的快照结构', () => {
     const { controller } = makeController(true);
     const scopes = [AnalyticsScope.Tenant, AnalyticsScope.Brand, AnalyticsScope.Store];
 
@@ -385,7 +385,7 @@ describe('Analytics 跨角色边界验证', () => {
     }
   });
 
-  test('空数据返回零值而非 undefined', () => {
+  it('空数据返回零值而非 undefined', () => {
     const { controller } = makeController(false); // no loyalty data
     const snapshot = controller.getOperationSnapshot(tCtx(), { scope: AnalyticsScope.Tenant });
 

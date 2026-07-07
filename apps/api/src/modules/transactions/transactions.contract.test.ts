@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { TransactionRefundStatus } from './transactions.entity'
 import { CashierOrderStatus, CashierPaymentStatus, CashierOrderCloseReason } from '../cashier/cashier.entity'
 import { BlindboxFulfillmentStatus } from '../loyalty/loyalty.entity'
@@ -17,7 +17,7 @@ const tenantCtx = { tenantId: 'tenant-demo', brandId: 'brand-demo', storeId: 'st
 // toTransactionRefundContract
 // ---------------------------------------------------------------------------
 
-test('toTransactionRefundContract maps pending refund', () => {
+it('toTransactionRefundContract maps pending refund', () => {
   const refund = {
     refundId: 'refund-1',
     tenantContext: tenantCtx,
@@ -49,7 +49,7 @@ test('toTransactionRefundContract maps pending refund', () => {
   assert.equal(contract.reviewNote, undefined)
 })
 
-test('toTransactionRefundContract maps completed refund with review info', () => {
+it('toTransactionRefundContract maps completed refund with review info', () => {
   const refund = {
     refundId: 'refund-2',
     tenantContext: tenantCtx,
@@ -76,7 +76,7 @@ test('toTransactionRefundContract maps completed refund with review info', () =>
   assert.equal(contract.reviewNote, '同意退款')
 })
 
-test('toTransactionRefundContract maps rejected refund', () => {
+it('toTransactionRefundContract maps rejected refund', () => {
   const refund = {
     refundId: 'refund-3',
     tenantContext: tenantCtx,
@@ -104,7 +104,7 @@ test('toTransactionRefundContract maps rejected refund', () => {
 // toTransactionAggregateContract
 // ---------------------------------------------------------------------------
 
-test('toTransactionAggregateContract maps paid order without refunds', () => {
+it('toTransactionAggregateContract maps paid order without refunds', () => {
   const order = {
     orderId: 'order-1',
     tenantContext: tenantCtx,
@@ -160,7 +160,7 @@ test('toTransactionAggregateContract maps paid order without refunds', () => {
   assert.equal(contract.blindboxPlanId, undefined)
 })
 
-test('toTransactionAggregateContract maps order with completed refund', () => {
+it('toTransactionAggregateContract maps order with completed refund', () => {
   const order = {
     orderId: 'order-2',
     tenantContext: tenantCtx,
@@ -224,7 +224,7 @@ test('toTransactionAggregateContract maps order with completed refund', () => {
   assert.equal(contract.couponCode, undefined)
 })
 
-test('toTransactionAggregateContract maps pending refund not counted in refundedAmount', () => {
+it('toTransactionAggregateContract maps pending refund not counted in refundedAmount', () => {
   const order = {
     orderId: 'order-3',
     tenantContext: tenantCtx,
@@ -284,7 +284,7 @@ test('toTransactionAggregateContract maps pending refund not counted in refunded
   assert.equal(contract.orderStatus, 'PAID')
 })
 
-test('toTransactionAggregateContract handles missing payment', () => {
+it('toTransactionAggregateContract handles missing payment', () => {
   const order = {
     orderId: 'order-4',
     tenantContext: tenantCtx,
@@ -326,7 +326,7 @@ test('toTransactionAggregateContract handles missing payment', () => {
 // toLytOrderSnapshotContract
 // ---------------------------------------------------------------------------
 
-test('toLytOrderSnapshotContract maps snapshot from memory source', () => {
+it('toLytOrderSnapshotContract maps snapshot from memory source', () => {
   const snapshot = {
     snapshotId: 'snap-order-1',
     tenantContext: tenantCtx,
@@ -361,7 +361,7 @@ test('toLytOrderSnapshotContract maps snapshot from memory source', () => {
   assert.equal(contract.source, 'memory')
 })
 
-test('toLytOrderSnapshotContract maps snapshot from prisma source with optional fields omitted', () => {
+it('toLytOrderSnapshotContract maps snapshot from prisma source with optional fields omitted', () => {
   const snapshot = {
     snapshotId: 'snap-order-2',
     tenantContext: tenantCtx,
@@ -390,7 +390,7 @@ test('toLytOrderSnapshotContract maps snapshot from prisma source with optional 
   assert.equal(contract.payableAmount, 50)
 })
 
-test('toLytOrderSnapshotContract source defaults to memory when undefined', () => {
+it('toLytOrderSnapshotContract source defaults to memory when undefined', () => {
   const snapshot = {
     snapshotId: 'snap-order-3',
     tenantContext: tenantCtx,
@@ -413,7 +413,7 @@ test('toLytOrderSnapshotContract source defaults to memory when undefined', () =
 // toLytPaymentSnapshotContract
 // ---------------------------------------------------------------------------
 
-test('toLytPaymentSnapshotContract maps succeeded payment snapshot', () => {
+it('toLytPaymentSnapshotContract maps succeeded payment snapshot', () => {
   const snapshot = {
     snapshotId: 'snap-pay-1',
     tenantContext: tenantCtx,
@@ -444,7 +444,7 @@ test('toLytPaymentSnapshotContract maps succeeded payment snapshot', () => {
   assert.equal(contract.source, 'memory')
 })
 
-test('toLytPaymentSnapshotContract maps pending payment snapshot', () => {
+it('toLytPaymentSnapshotContract maps pending payment snapshot', () => {
   const snapshot = {
     snapshotId: 'snap-pay-2',
     tenantContext: tenantCtx,
@@ -473,7 +473,7 @@ test('toLytPaymentSnapshotContract maps pending payment snapshot', () => {
 // toMemberTransactionTimelineContract
 // ---------------------------------------------------------------------------
 
-test('toMemberTransactionTimelineContract maps paid entry with points and refund', () => {
+it('toMemberTransactionTimelineContract maps paid entry with points and refund', () => {
   const entry = {
     orderId: 'order-1',
     memberId: 'member-1',
@@ -514,7 +514,7 @@ test('toMemberTransactionTimelineContract maps paid entry with points and refund
   assert.equal(contract.closedAt, undefined)
 })
 
-test('toMemberTransactionTimelineContract maps closed entry with full refund', () => {
+it('toMemberTransactionTimelineContract maps closed entry with full refund', () => {
   const entry = {
     orderId: 'order-2',
     memberId: 'member-2',
@@ -553,7 +553,7 @@ test('toMemberTransactionTimelineContract maps closed entry with full refund', (
   assert.equal(contract.closedAt, '2026-06-22T11:00:00.000Z')
 })
 
-test('toMemberTransactionTimelineContract maps entry with rejected refund', () => {
+it('toMemberTransactionTimelineContract maps entry with rejected refund', () => {
   const entry = {
     orderId: 'order-3',
     memberId: 'member-3',
@@ -587,7 +587,7 @@ test('toMemberTransactionTimelineContract maps entry with rejected refund', () =
   assert.equal(contract.closedBy, undefined)
 })
 
-test('toMemberTransactionTimelineContract maps entry without payment', () => {
+it('toMemberTransactionTimelineContract maps entry without payment', () => {
   const entry = {
     orderId: 'order-4',
     memberId: 'member-4',

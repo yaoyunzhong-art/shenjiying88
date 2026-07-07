@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-recommend] Service 单元测试
  *
@@ -14,32 +15,31 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { AiRecommendService } from './ai-recommend.service'
 
 // ─── 热门推荐 ───
 
 describe('Service: 热门推荐', () => {
-  test('默认 limit=10 返回 8 个种子 (最多 10)', () => {
+  it('默认 limit=10 返回 8 个种子 (最多 10)', () => {
     const svc = new AiRecommendService()
     const popular = svc.getPopularRecommendations(undefined, 'game')
     assert.ok(popular.length > 0)
     assert.ok(popular.length <= 10)
   })
 
-  test('limit=3 返回前 3', () => {
+  it('limit=3 返回前 3', () => {
     const svc = new AiRecommendService()
     const popular = svc.getPopularRecommendations(undefined, 'game', 3)
     assert.equal(popular.length, 3)
   })
 
-  test('strategy 标记为 popularity', () => {
+  it('strategy 标记为 popularity', () => {
     const svc = new AiRecommendService()
     const popular = svc.getPopularRecommendations(undefined, 'game', 3)
     for (const r of popular) assert.equal(r.strategy, 'popularity')
   })
 
-  test('itemName 来自默认 "Item-${id}" 格式', () => {
+  it('itemName 来自默认 "Item-${id}" 格式', () => {
     const svc = new AiRecommendService()
     const popular = svc.getPopularRecommendations(undefined, 'game', 8)
     const names = popular.map((r) => r.itemName)
@@ -47,25 +47,25 @@ describe('Service: 热门推荐', () => {
     assert.ok(names.every((n) => n.startsWith('Item-')))
   })
 
-  test('storeId 透传', () => {
+  it('storeId 透传', () => {
     const svc = new AiRecommendService()
     const popular = svc.getPopularRecommendations('store-X', 'game', 2)
     for (const r of popular) assert.equal(r.storeId, 'store-X')
   })
 
-  test('type 覆盖默认 game', () => {
+  it('type 覆盖默认 game', () => {
     const svc = new AiRecommendService()
     const popular = svc.getPopularRecommendations(undefined, 'product', 3)
     for (const r of popular) assert.equal(r.type, 'product')
   })
 
-  test('status 默认 active', () => {
+  it('status 默认 active', () => {
     const svc = new AiRecommendService()
     const popular = svc.getPopularRecommendations(undefined, 'game', 2)
     for (const r of popular) assert.equal(r.status, 'active')
   })
 
-  test('expiresAt 未来时间', () => {
+  it('expiresAt 未来时间', () => {
     const svc = new AiRecommendService()
     const popular = svc.getPopularRecommendations(undefined, 'game', 1)
     const now = Date.now()
@@ -77,7 +77,7 @@ describe('Service: 热门推荐', () => {
 // ─── 个性化推荐 ───
 
 describe('Service: 个性化推荐', () => {
-  test('无画像 → 冷启动回退热门', () => {
+  it('无画像 → 冷启动回退热门', () => {
     const svc = new AiRecommendService()
     const pers = svc.getPersonalizedRecommendations('cold-user', 'game', 5)
     assert.ok(pers.length > 0)
@@ -85,7 +85,7 @@ describe('Service: 个性化推荐', () => {
     assert.ok(pers[0].strategy.includes('cold-start') || pers[0].strategy.includes('popularity'))
   })
 
-  test('有画像 → 基于内容匹配', () => {
+  it('有画像 → 基于内容匹配', () => {
     const svc = new AiRecommendService()
     svc.updateProfile('m-1', {
       preferences: {
@@ -103,7 +103,7 @@ describe('Service: 个性化推荐', () => {
     assert.ok(pers.some((r) => ['王者荣耀', '英雄联盟'].includes(r.itemName)))
   })
 
-  test('画像 avgSpend 50 以下不触发消费匹配', () => {
+  it('画像 avgSpend 50 以下不触发消费匹配', () => {
     const svc = new AiRecommendService()
     svc.updateProfile('low-spender', {
       preferences: {
@@ -119,7 +119,7 @@ describe('Service: 个性化推荐', () => {
     assert.ok(Array.isArray(pers))
   })
 
-  test('limit 限制结果数', () => {
+  it('limit 限制结果数', () => {
     const svc = new AiRecommendService()
     const pers = svc.getPersonalizedRecommendations('any-user', 'game', 2)
     assert.ok(pers.length <= 2)
@@ -129,7 +129,7 @@ describe('Service: 个性化推荐', () => {
 // ─── 策略 CRUD ───
 
 describe('Service: 策略 CRUD', () => {
-  test('createStrategy 新增自定义策略', () => {
+  it('createStrategy 新增自定义策略', () => {
     const svc = new AiRecommendService()
     const created = svc.createStrategy({
       name: 'custom-v1',
@@ -144,7 +144,7 @@ describe('Service: 策略 CRUD', () => {
     assert.equal(created.isEnabled, true)
   })
 
-  test('createStrategy 指定 fallback', () => {
+  it('createStrategy 指定 fallback', () => {
     const svc = new AiRecommendService()
     const created = svc.createStrategy({
       name: 'with-fallback',
@@ -156,7 +156,7 @@ describe('Service: 策略 CRUD', () => {
     assert.equal(created.config.fallbackStrategy, 'strategy-popularity-v1')
   })
 
-  test('getStrategies 包含默认 + 自定义', () => {
+  it('getStrategies 包含默认 + 自定义', () => {
     const svc = new AiRecommendService()
     svc.createStrategy({
       name: 'mine',
@@ -168,19 +168,19 @@ describe('Service: 策略 CRUD', () => {
     assert.ok(all.length >= 5) // 4 默认 + 1 自定义
   })
 
-  test('getStrategy 查找存在的策略', () => {
+  it('getStrategy 查找存在的策略', () => {
     const svc = new AiRecommendService()
     const s = svc.getStrategy('strategy-popularity-v1')
     assert.ok(s)
     assert.equal(s!.name, 'popularity')
   })
 
-  test('getStrategy 不存在返回 undefined', () => {
+  it('getStrategy 不存在返回 undefined', () => {
     const svc = new AiRecommendService()
     assert.equal(svc.getStrategy('non-existent'), undefined)
   })
 
-  test('updateStrategy 修改权重 + minScore', () => {
+  it('updateStrategy 修改权重 + minScore', () => {
     const svc = new AiRecommendService()
     const updated = svc.updateStrategy('strategy-popularity-v1', {
       minScore: 50,
@@ -190,30 +190,30 @@ describe('Service: 策略 CRUD', () => {
     assert.equal(updated.config.maxResults, 3)
   })
 
-  test('updateStrategy 不存在抛错', () => {
+  it('updateStrategy 不存在抛错', () => {
     const svc = new AiRecommendService()
     assert.throws(() => svc.updateStrategy('non-existent', {}), /策略不存在/)
   })
 
-  test('disableStrategy 切换 isEnabled=false', () => {
+  it('disableStrategy 切换 isEnabled=false', () => {
     const svc = new AiRecommendService()
     const updated = svc.disableStrategy('strategy-popularity-v1')
     assert.equal(updated.isEnabled, false)
   })
 
-  test('enableStrategy 切换 isEnabled=true', () => {
+  it('enableStrategy 切换 isEnabled=true', () => {
     const svc = new AiRecommendService()
     svc.disableStrategy('strategy-popularity-v1')
     const updated = svc.enableStrategy('strategy-popularity-v1')
     assert.equal(updated.isEnabled, true)
   })
 
-  test('enableStrategy 不存在抛错', () => {
+  it('enableStrategy 不存在抛错', () => {
     const svc = new AiRecommendService()
     assert.throws(() => svc.enableStrategy('nope'), /策略不存在/)
   })
 
-  test('disableStrategy 不存在抛错', () => {
+  it('disableStrategy 不存在抛错', () => {
     const svc = new AiRecommendService()
     assert.throws(() => svc.disableStrategy('nope'), /策略不存在/)
   })
@@ -222,7 +222,7 @@ describe('Service: 策略 CRUD', () => {
 // ─── 推荐生成 ───
 
 describe('Service: generateRecommendations', () => {
-  test('popularity 策略返回热门', () => {
+  it('popularity 策略返回热门', () => {
     const svc = new AiRecommendService()
     const out = svc.generateRecommendations({
       strategyId: 'strategy-popularity-v1',
@@ -232,7 +232,7 @@ describe('Service: generateRecommendations', () => {
     assert.ok(out.items.length > 0)
   })
 
-  test('collaborative-filtering 无 memberId 回退热门', () => {
+  it('collaborative-filtering 无 memberId 回退热门', () => {
     const svc = new AiRecommendService()
     const out = svc.generateRecommendations({
       strategyId: 'strategy-collaborative-v1',
@@ -242,7 +242,7 @@ describe('Service: generateRecommendations', () => {
     assert.ok(out.items.length > 0)
   })
 
-  test('content-based 有 memberId 用画像', () => {
+  it('content-based 有 memberId 用画像', () => {
     const svc = new AiRecommendService()
     svc.updateProfile('m-content', {
       preferences: {
@@ -261,7 +261,7 @@ describe('Service: generateRecommendations', () => {
     assert.equal(out.strategy, 'content-based')
   })
 
-  test('hybrid 策略 memberId 必填', () => {
+  it('hybrid 策略 memberId 必填', () => {
     const svc = new AiRecommendService()
     const out = svc.generateRecommendations({
       strategyId: 'strategy-hybrid-v1',
@@ -271,7 +271,7 @@ describe('Service: generateRecommendations', () => {
     assert.equal(out.strategy, 'hybrid')
   })
 
-  test('hybrid 策略无 memberId 回退热门', () => {
+  it('hybrid 策略无 memberId 回退热门', () => {
     const svc = new AiRecommendService()
     const out = svc.generateRecommendations({
       strategyId: 'strategy-hybrid-v1',
@@ -280,7 +280,7 @@ describe('Service: generateRecommendations', () => {
     assert.ok(out.items.length > 0)
   })
 
-  test('策略不存在抛错', () => {
+  it('策略不存在抛错', () => {
     const svc = new AiRecommendService()
     assert.throws(
       () => svc.generateRecommendations({ strategyId: 'non-existent' }),
@@ -288,7 +288,7 @@ describe('Service: generateRecommendations', () => {
     )
   })
 
-  test('禁用策略抛错', () => {
+  it('禁用策略抛错', () => {
     const svc = new AiRecommendService()
     svc.disableStrategy('strategy-popularity-v1')
     assert.throws(
@@ -297,7 +297,7 @@ describe('Service: generateRecommendations', () => {
     )
   })
 
-  test('executionTimeMs 必填', () => {
+  it('executionTimeMs 必填', () => {
     const svc = new AiRecommendService()
     const out = svc.generateRecommendations({
       strategyId: 'strategy-popularity-v1'
@@ -306,7 +306,7 @@ describe('Service: generateRecommendations', () => {
     assert.ok(out.executionTimeMs >= 0)
   })
 
-  test('timestamp ISO 格式', () => {
+  it('timestamp ISO 格式', () => {
     const svc = new AiRecommendService()
     const out = svc.generateRecommendations({
       strategyId: 'strategy-popularity-v1'
@@ -314,7 +314,7 @@ describe('Service: generateRecommendations', () => {
     assert.ok(!isNaN(Date.parse(out.timestamp)))
   })
 
-  test('输入 limit 覆盖策略默认', () => {
+  it('输入 limit 覆盖策略默认', () => {
     const svc = new AiRecommendService()
     const out = svc.generateRecommendations({
       strategyId: 'strategy-popularity-v1',
@@ -323,7 +323,7 @@ describe('Service: generateRecommendations', () => {
     assert.ok(out.items.length <= 2)
   })
 
-  test('输入 type 覆盖策略默认 targetType', () => {
+  it('输入 type 覆盖策略默认 targetType', () => {
     const svc = new AiRecommendService()
     const out = svc.generateRecommendations({
       strategyId: 'strategy-popularity-v1',
@@ -333,7 +333,7 @@ describe('Service: generateRecommendations', () => {
     for (const r of out.items) assert.equal(r.type, 'product')
   })
 
-  test('空结果 + fallback 触发 (minScore 极高 → 过滤空)', async () => {
+  it('空结果 + fallback 触发 (minScore 极高 → 过滤空)', async () => {
     const svc = new AiRecommendService()
     // 创建带 fallback 的策略,但 minScore=999999 让 popularity 推荐全部过滤
     const created = svc.createStrategy({
@@ -357,7 +357,7 @@ describe('Service: generateRecommendations', () => {
     void out.items
   })
 
-  test('未知策略名 → 默认 popularity', () => {
+  it('未知策略名 → 默认 popularity', () => {
     const svc = new AiRecommendService()
     // 通过 updateStrategy 改 name 到未知值
     const updated = svc.updateStrategy('strategy-popularity-v1', { name: 'unknown-strategy' })
@@ -373,7 +373,7 @@ describe('Service: generateRecommendations', () => {
 // ─── 反馈收集 ───
 
 describe('Service: 反馈收集', () => {
-  test('recordInteraction 新增评分', () => {
+  it('recordInteraction 新增评分', () => {
     const svc = new AiRecommendService()
     const score = svc.recordInteraction({
       memberId: 'm-1',
@@ -388,7 +388,7 @@ describe('Service: 反馈收集', () => {
     assert.equal(score.itemId, 'game-001')
   })
 
-  test('recordInteraction 更新物品交互计数', () => {
+  it('recordInteraction 更新物品交互计数', () => {
     const svc = new AiRecommendService()
     const before = svc.getPopularRecommendations(undefined, 'game', 10)
     const gameScore = before.find((r) => r.itemId === 'game-001')?.score ?? 0
@@ -406,7 +406,7 @@ describe('Service: 反馈收集', () => {
     assert.ok(newScore >= gameScore)
   })
 
-  test('recordInteraction 自动更新画像', () => {
+  it('recordInteraction 自动更新画像', () => {
     const svc = new AiRecommendService()
     assert.equal(svc.getProfile('m-auto'), undefined)
     svc.recordInteraction({
@@ -423,7 +423,7 @@ describe('Service: 反馈收集', () => {
     assert.ok(profile!.preferences.gameTypes.includes('MOBA'))
   })
 
-  test('recordInteraction 高 rating 添加 game-enthusiast 标签', () => {
+  it('recordInteraction 高 rating 添加 game-enthusiast 标签', () => {
     const svc = new AiRecommendService()
     svc.recordInteraction({
       memberId: 'm-ent',
@@ -437,12 +437,12 @@ describe('Service: 反馈收集', () => {
     assert.ok(p!.behaviorTags.includes('game-enthusiast'))
   })
 
-  test('recordConversion 不存在返回 undefined', () => {
+  it('recordConversion 不存在返回 undefined', () => {
     const svc = new AiRecommendService()
     assert.equal(svc.recordConversion('non-existent'), undefined)
   })
 
-  test('recordConversion active → converted (不持久化,仅验证调用)', () => {
+  it('recordConversion active → converted (不持久化,仅验证调用)', () => {
     const svc = new AiRecommendService()
     // generateRecommendations 不持久化到 recommendations 池
     // recordConversion 找不到 → undefined
@@ -456,12 +456,12 @@ describe('Service: 反馈收集', () => {
 // ─── 用户画像 ───
 
 describe('Service: 用户画像', () => {
-  test('getProfile 未创建返回 undefined', () => {
+  it('getProfile 未创建返回 undefined', () => {
     const svc = new AiRecommendService()
     assert.equal(svc.getProfile('never-created'), undefined)
   })
 
-  test('updateProfile 创建画像', () => {
+  it('updateProfile 创建画像', () => {
     const svc = new AiRecommendService()
     const p = svc.updateProfile('m-new', {
       preferences: {
@@ -477,7 +477,7 @@ describe('Service: 用户画像', () => {
     assert.equal(p.preferences.gameTypes[0], 'MOBA')
   })
 
-  test('updateProfile 增量更新', () => {
+  it('updateProfile 增量更新', () => {
     const svc = new AiRecommendService()
     svc.updateProfile('m-inc', {
       preferences: {
@@ -497,7 +497,7 @@ describe('Service: 用户画像', () => {
     assert.deepEqual(updated.behaviorTags, ['new-tag'])
   })
 
-  test('updateProfile 修改 priceRange', () => {
+  it('updateProfile 修改 priceRange', () => {
     const svc = new AiRecommendService()
     svc.updateProfile('m-pr', {
       preferences: {
@@ -525,13 +525,13 @@ describe('Service: 用户画像', () => {
 // ─── 推荐历史查询 ───
 
 describe('Service: 推荐历史查询', () => {
-  test('空查询返回空', () => {
+  it('空查询返回空', () => {
     const svc = new AiRecommendService()
     const list = svc.getRecommendations({})
     assert.ok(Array.isArray(list))
   })
 
-  test('filter by storeId', () => {
+  it('filter by storeId', () => {
     const svc = new AiRecommendService()
     const popular = svc.getPopularRecommendations('store-A', 'game', 2)
     // popular 不持久化,直接测 getRecommendations 空
@@ -540,19 +540,19 @@ describe('Service: 推荐历史查询', () => {
     assert.ok(popular.length > 0) // sanity
   })
 
-  test('filter by memberId', () => {
+  it('filter by memberId', () => {
     const svc = new AiRecommendService()
     const list = svc.getRecommendations({ memberId: 'm-1' })
     assert.equal(list.length, 0)
   })
 
-  test('filter by type', () => {
+  it('filter by type', () => {
     const svc = new AiRecommendService()
     const list = svc.getRecommendations({ type: 'game' })
     assert.equal(list.length, 0)
   })
 
-  test('limit 限制', () => {
+  it('limit 限制', () => {
     const svc = new AiRecommendService()
     const list = svc.getRecommendations({ limit: 3 })
     assert.ok(list.length <= 3)

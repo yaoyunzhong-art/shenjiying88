@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>告警管理 - Monitor Pro</title>
+  <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">MP</div>
+        <div class="brand-text">
+          <h1>Monitor Pro</h1>
+          <p>v2.0.0</p>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">概览</div>
+          <a href="dashboard.html" class="nav-item">
+            <span class="nav-icon">📊</span>
+            <span>仪表盘</span>
+          </a>
+        </div>
+        
+        <div class="nav-section">
+          <div class="nav-section-title">监控</div>
+          <a href="performance.html" class="nav-item">
+            <span class="nav-icon">🖥️</span>
+            <span>性能监控</span>
+          </a>
+          <a href="logs.html" class="nav-item">
+            <span class="nav-icon">📋</span>
+            <span>日志监控</span>
+          </a>
+          <a href="alerts.html" class="nav-item active">
+            <span class="nav-icon">🔔</span>
+            <span>告警管理</span>
+          </a>
+        </div>
+        
+        <div class="nav-section">
+          <div class="nav-section-title">分析</div>
+          <a href="users.html" class="nav-item">
+            <span class="nav-icon">👥</span>
+            <span>用户分析</span>
+          </a>
+        </div>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          <span>系统正常运行</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+      <!-- 顶部栏 -->
+      <header class="top-bar">
+        <div class="page-title">
+          <h2>告警管理</h2>
+          <p>告警监控、处理和配置</p>
+        </div>
+        <div class="top-actions">
+          <div class="live-indicator">
+            <span class="live-dot"></span>
+            <span>实时</span>
+          </div>
+          <button class="btn btn-primary" onclick="createAlertRule()">
+            <span>➕</span>
+            <span>新建规则</span>
+          </button>
+          <button class="btn btn-secondary" onclick="refreshAlerts()">
+            <span>🔄</span>
+            <span>刷新</span>
+          </button>
+          <button class="theme-toggle" onclick="toggleTheme()">
+            <span id="theme-icon">🌙</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- 内容区域 -->
+      <div class="content-area">
+        <!-- 告警统计 -->
+        <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">未处理告警</span>
+              <div class="stat-icon danger">🚨</div>
+            </div>
+            <div class="stat-value" id="open-alerts" style="color: var(--danger);">5</div>
+            <div class="stat-change">
+              <span style="color: var(--text-secondary);">需要立即处理</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">严重告警</span>
+              <div class="stat-icon danger">🔴</div>
+            </div>
+            <div class="stat-value" id="critical-alerts" style="color: var(--danger);">2</div>
+            <div class="stat-change negative">
+              <span>↑</span>
+              <span>1 较昨日</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">警告告警</span>
+              <div class="stat-icon warning">🟡</div>
+            </div>
+            <div class="stat-value" id="warning-alerts" style="color: var(--warning);">8</div>
+            <div class="stat-change positive">
+              <span>↓</span>
+              <span>3 较昨日</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">今日已解决</span>
+              <div class="stat-icon success">✅</div>
+            </div>
+            <div class="stat-value" id="resolved-alerts" style="color: var(--success);">15</div>
+            <div class="stat-change positive">
+              <span>↑</span>
+              <span>5 较昨日</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 告警表格 -->
+        <div class="data-table-container">
+          <div class="table-header">
+            <h3 class="table-title">告警列表</h3>
+            <div class="table-filters">
+              <select class="filter-select" id="severity-filter">
+                <option value="">所有级别</option>
+                <option value="critical">严重</option>
+                <option value="warning">警告</option>
+                <option value="info">信息</option>
+              </select>
+              <select class="filter-select" id="status-filter">
+                <option value="">所有状态</option>
+                <option value="open">未处理</option>
+                <option value="acknowledged">已确认</option>
+                <option value="resolved">已解决</option>
+              </select>
+              <select class="filter-select" id="category-filter">
+                <option value="">所有类别</option>
+                <option value="performance">性能</option>
+                <option value="availability">可用性</option>
+                <option value="security">安全</option>
+                <option value="capacity">容量</option>
+              </select>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>告警ID</th>
+                <th>级别</th>
+                <th>类别</th>
+                <th>标题</th>
+                <th>状态</th>
+                <th>创建时间</th>
+                <th>持续时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="alerts-tbody">
+              <!-- 动态生成 -->
+            </tbody>
+          </table>
+          <div class="pagination">
+            <div class="pagination-info">
+              显示第 <span id="page-start">1</span> 到 <span id="page-end">20</span> 条，共 <span id="total-count">100</span> 条
+            </div>
+            <div class="pagination-actions">
+              <button class="page-btn" id="prev-btn" disabled>上一页</button>
+              <button class="page-btn active">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">3</button>
+              <button class="page-btn" id="next-btn">下一页</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/app.js"></script>
+  <script src="../js/mock-api.js"></script>
+  <script>
+    let currentPage = 1;
+    let currentFilters = {};
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTheme();
+      setupEventListeners();
+      await loadAlerts();
+    });
+
+    function initTheme() {
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      updateThemeIcon(theme);
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
+    }
+
+    function updateThemeIcon(theme) {
+      const icon = document.getElementById('theme-icon');
+      if (icon) {
+        icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+      }
+    }
+
+    function setupEventListeners() {
+      document.getElementById('severity-filter').addEventListener('change', () => {
+        currentPage = 1;
+        applyFilters();
+      });
+      
+      document.getElementById('status-filter').addEventListener('change', () => {
+        currentPage = 1;
+        applyFilters();
+      });
+      
+      document.getElementById('category-filter').addEventListener('change', () => {
+        currentPage = 1;
+        applyFilters();
+      });
+      
+      document.getElementById('prev-btn').addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          loadAlerts();
+        }
+      });
+      
+      document.getElementById('next-btn').addEventListener('click', () => {
+        currentPage++;
+        loadAlerts();
+      });
+    }
+
+    function applyFilters() {
+      currentFilters = {
+        severity: document.getElementById('severity-filter').value,
+        status: document.getElementById('status-filter').value,
+        category: document.getElementById('category-filter').value
+      };
+      loadAlerts();
+    }
+
+    async function loadAlerts() {
+      try {
+        const response = await MockAPI.getAlerts(currentFilters, currentPage, 20);
+        if (response.success) {
+          renderAlerts(response.data.alerts);
+          updatePagination(response.data.pagination);
+          updateStats(response.data.summary);
+        }
+      } catch (error) {
+        console.error('Failed to load alerts:', error);
+      }
+    }
+
+    function renderAlerts(alerts) {
+      const tbody = document.getElementById('alerts-tbody');
+      if (!tbody) return;
+      
+      tbody.innerHTML = alerts.map(alert => {
+        const duration = getDuration(new Date(alert.created_at), alert.resolved_at ? new Date(alert.resolved_at) : new Date());
+        return `
+        <tr>
+          <td><code style="font-size: 11px; background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">${alert.id}</code></td>
+          <td><span class="status-badge status-${alert.severity}">${alert.severity}</span></td>
+          <td>${alert.category}</td>
+          <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${alert.message}">${alert.message}</td>
+          <td><span class="status-badge status-${alert.status === 'open' ? 'danger' : alert.status === 'acknowledged' ? 'warning' : 'success'}">${alert.status}</span></td>
+          <td>${new Date(alert.created_at).toLocaleString('zh-CN')}</td>
+          <td>${duration}</td>
+          <td>
+            ${alert.status === 'open' ? `
+              <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px;" onclick="acknowledgeAlert('${alert.id}')">
+                确认
+              </button>
+              <button class="btn btn-primary" style="padding: 4px 12px; font-size: 12px; margin-left: 8px;" onclick="resolveAlert('${alert.id}')">
+                解决
+              </button>
+            ` : ''}
+          </td>
+        </tr>
+      `}).join('');
+    }
+
+    function getDuration(start, end) {
+      const diff = end - start;
+      const minutes = Math.floor(diff / 60000);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+      
+      if (days > 0) return `${days}天${hours % 24}小时`;
+      if (hours > 0) return `${hours}小时${minutes % 60}分钟`;
+      return `${minutes}分钟`;
+    }
+
+    function updatePagination(pagination) {
+      const start = (pagination.page - 1) * pagination.limit + 1;
+      const end = Math.min(start + pagination.limit - 1, pagination.total);
+      
+      document.getElementById('page-start').textContent = start;
+      document.getElementById('page-end').textContent = end;
+      document.getElementById('total-count').textContent = pagination.total;
+      
+      document.getElementById('prev-btn').disabled = !pagination.hasPrev;
+      document.getElementById('next-btn').disabled = !pagination.hasNext;
+    }
+
+    function updateStats(summary) {
+      document.getElementById('open-alerts').textContent = summary.critical + summary.warning;
+      document.getElementById('critical-alerts').textContent = summary.critical;
+      document.getElementById('warning-alerts').textContent = summary.warning;
+      document.getElementById('resolved-alerts').textContent = summary.resolved;
+    }
+
+    function acknowledgeAlert(alertId) {
+      alert('确认告警: ' + alertId);
+      loadAlerts();
+    }
+
+    function resolveAlert(alertId) {
+      alert('解决告警: ' + alertId);
+      loadAlerts();
+    }
+
+    function createAlertRule() {
+      alert('新建告警规则');
+    }
+
+    function refreshAlerts() {
+      loadAlerts();
+    }
+  </script>
+</body>
+</html>

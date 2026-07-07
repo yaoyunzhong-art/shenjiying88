@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Cashier 收银台 HTTP 链路
  *
@@ -13,10 +14,8 @@
  *   - 订单关闭 (manual close / timeout close / 已支付订单不可关闭)
  *   - 跨租户访问拒绝
  */
-
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -35,7 +34,6 @@ import { MemberService, resetMemberServiceTestState } from '../member/member.ser
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
 import { CashierService } from './cashier.service'
-
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
   const ctx = req as TenantAwareRequest
   ctx.tenantContext = {
@@ -46,7 +44,6 @@ function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
   }
   next()
 }
-
 @Controller('cashier')
 class TestCashierController {
   constructor(
@@ -54,13 +51,11 @@ class TestCashierController {
     @Inject(LoyaltyService) private readonly loyaltyService: LoyaltyService,
     @Inject(CashierService) private readonly cashierService: CashierService
   ) {}
-
   @Get('orders')
   listOrders(@Req() req: Request) {
     const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.cashierService.listOrders(tenantContext)
   }
-
   @Get('orders/:orderId')
   getOrder(@Req() req: Request, @Param('orderId') orderId: string) {
     const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
@@ -68,13 +63,11 @@ class TestCashierController {
     if (!order) throw new Error(`Cashier order ${orderId} not found`)
     return order
   }
-
   @Post('orders')
   createOrder(@Req() req: Request, @Body() body: Record<string, unknown>) {
     const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.cashierService.createOrder(tenantContext, body as any)
   }
-
   @Post('orders/:orderId/payments')
   createPayment(
     @Req() _req: Request,
@@ -83,18 +76,15 @@ class TestCashierController {
   ) {
     return this.cashierService.createPayment(orderId, body as any)
   }
-
   @Get('payments')
   listPayments(@Req() req: Request) {
     const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.cashierService.listPayments(tenantContext)
   }
-
   @Post('payments/standardized-callback')
   applyPaymentCallback(@Body() body: Record<string, unknown>) {
     return this.cashierService.applyPaymentCallback(body as any)
   }
-
   @Post('orders/:orderId/manual-close')
   manualClose(
     @Req() req: Request,
@@ -104,14 +94,12 @@ class TestCashierController {
     const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.cashierService.closeOrder(orderId, tenantContext, body as any)
   }
-
   @Post('orders/:orderId/timeout-close')
   timeoutClose(@Req() req: Request, @Param('orderId') orderId: string) {
     const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.cashierService.closeTimedOutOrder(orderId, tenantContext)
   }
 }
-
 async function buildApp() {
   resetMemberServiceTestState()
   const memberService = new MemberService()
@@ -127,7 +115,6 @@ async function buildApp() {
       { provide: CashierService, useValue: cashierService }
     ]
   }).compile()
-
   const app = moduleRef.createNestApplication()
   app.use(attachTenantContext)
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -135,31 +122,25 @@ async function buildApp() {
   await app.init()
   return { app, memberService, loyaltyService, cashierService }
 }
-
 const TENANT_A = {
   'x-tenant-id': 'tenant-A',
   'x-brand-id': 'brand-A',
   'x-store-id': 'store-A'
 }
-
 const TENANT_B = {
   'x-tenant-id': 'tenant-B',
   'x-brand-id': 'brand-B',
   'x-store-id': 'store-B'
 }
-
 function tenantContextA() {
   return { tenantId: 'tenant-A', brandId: 'brand-A', storeId: 'store-A', marketCode: 'cn-mainland' }
 }
-
 function ensureMember(memberService: MemberService, memberId: string, ctx = tenantContextA()) {
   memberService.register({ memberId, tenantContext: ctx, nickname: `User-${memberId}` })
 }
-
-test('e2e: order create → get → list lifecycle with computed total', async () => {
+it('e2e: order create → get → list lifecycle with computed total', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const create = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -175,21 +156,17 @@ test('e2e: order create → get → list lifecycle with computed total', async (
     const orderId = create.body.data.orderId
     assert.equal(create.body.data.totalAmount, 130) // 2*50 + 1*30
     assert.equal(create.body.data.status, 'CREATED')
-
     const detail = await request(app.getHttpServer()).get(`/cashier/orders/${orderId}`).set(TENANT_A)
     assert.equal(detail.body.data.orderId, orderId)
     assert.equal(detail.body.data.totalAmount, 130)
-
     const list = await request(app.getHttpServer()).get('/cashier/orders').set(TENANT_A)
     assert.equal(list.body.data.length, 1)
   } finally {
     await app.close()
   }
 })
-
-test('e2e: order creation rejects unknown member', async () => {
+it('e2e: order creation rejects unknown member', async () => {
   const { app } = await buildApp()
-
   try {
     const res = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -203,11 +180,9 @@ test('e2e: order creation rejects unknown member', async () => {
     await app.close()
   }
 })
-
-test('e2e: order creation rejects empty items', async () => {
+it('e2e: order creation rejects empty items', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const res = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -218,11 +193,9 @@ test('e2e: order creation rejects empty items', async () => {
     await app.close()
   }
 })
-
-test('e2e: payment creation transitions order to PendingPayment', async () => {
+it('e2e: payment creation transitions order to PendingPayment', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const order = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -232,14 +205,12 @@ test('e2e: payment creation transitions order to PendingPayment', async () => {
         items: [{ skuId: 'sku-1', title: 'x', quantity: 1, price: 100 }]
       })
     const orderId = order.body.data.orderId
-
     const payRes = await request(app.getHttpServer())
       .post(`/cashier/orders/${orderId}/payments`)
       .set(TENANT_A)
       .send({ channel: 'wechat', amount: 100, externalPaymentId: 'ext-pay-1' })
     assert.equal(payRes.statusCode, 201)
     assert.equal(payRes.body.data.status, 'PENDING')
-
     const orderDetail = await request(app.getHttpServer()).get(`/cashier/orders/${orderId}`).set(TENANT_A)
     assert.equal(orderDetail.body.data.status, 'PENDING_PAYMENT')
     assert.equal(orderDetail.body.data.latestPaymentId, payRes.body.data.paymentId)
@@ -247,11 +218,9 @@ test('e2e: payment creation transitions order to PendingPayment', async () => {
     await app.close()
   }
 })
-
-test('e2e: standardized payment callback (succeeded) → order Paid + loyalty settlePaidOrder', async () => {
+it('e2e: standardized payment callback (succeeded) → order Paid + loyalty settlePaidOrder', async () => {
   const { app, memberService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const order = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -265,7 +234,6 @@ test('e2e: standardized payment callback (succeeded) → order Paid + loyalty se
       .post(`/cashier/orders/${orderId}/payments`)
       .set(TENANT_A)
       .send({ channel: 'wechat', amount: 200, externalPaymentId: 'ext-pay-2' })
-
     const cbRes = await request(app.getHttpServer())
       .post('/cashier/payments/standardized-callback')
       .send({
@@ -280,10 +248,8 @@ test('e2e: standardized payment callback (succeeded) → order Paid + loyalty se
     assert.equal(cbRes.statusCode, 201)
     assert.equal(cbRes.body.data.order.status, 'PAID')
     assert.equal(cbRes.body.data.payment.status, 'SUCCEEDED')
-
     const orderDetail = await request(app.getHttpServer()).get(`/cashier/orders/${orderId}`).set(TENANT_A)
     assert.equal(orderDetail.body.data.status, 'PAID')
-
     // Loyalty service should have awarded points via settlePaidOrder
     const summary = loyaltyService.getLoyaltySummary({ tenantId: 'tenant-A' })
     assert.ok(summary.pointsIn >= 200, `expected pointsIn >= 200 from settlement, got ${summary.pointsIn}`)
@@ -291,11 +257,9 @@ test('e2e: standardized payment callback (succeeded) → order Paid + loyalty se
     await app.close()
   }
 })
-
-test('e2e: standardized payment callback (failed) → order PaymentFailed + loyalty settleFailedOrder', async () => {
+it('e2e: standardized payment callback (failed) → order PaymentFailed + loyalty settleFailedOrder', async () => {
   const { app, memberService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const order = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -309,7 +273,6 @@ test('e2e: standardized payment callback (failed) → order PaymentFailed + loya
       .post(`/cashier/orders/${orderId}/payments`)
       .set(TENANT_A)
       .send({ channel: 'wechat', amount: 50, externalPaymentId: 'ext-pay-fail' })
-
     const cbRes = await request(app.getHttpServer())
       .post('/cashier/payments/standardized-callback')
       .send({
@@ -323,7 +286,6 @@ test('e2e: standardized payment callback (failed) → order PaymentFailed + loya
       })
     assert.equal(cbRes.body.data.order.status, 'PAYMENT_FAILED')
     assert.equal(cbRes.body.data.payment.status, 'FAILED')
-
     // Loyalty service should have recorded failed settlement (no points awarded)
     const summary = loyaltyService.getLoyaltySummary({ tenantId: 'tenant-A' })
     assert.equal(summary.pointsIn, 0)
@@ -331,11 +293,9 @@ test('e2e: standardized payment callback (failed) → order PaymentFailed + loya
     await app.close()
   }
 })
-
-test('e2e: manual close transitions PendingPayment → Closed', async () => {
+it('e2e: manual close transitions PendingPayment → Closed', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const order = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -349,7 +309,6 @@ test('e2e: manual close transitions PendingPayment → Closed', async () => {
       .post(`/cashier/orders/${orderId}/payments`)
       .set(TENANT_A)
       .send({ channel: 'alipay', amount: 75 })
-
     const closeRes = await request(app.getHttpServer())
       .post(`/cashier/orders/${orderId}/manual-close`)
       .set(TENANT_A)
@@ -361,11 +320,9 @@ test('e2e: manual close transitions PendingPayment → Closed', async () => {
     await app.close()
   }
 })
-
-test('e2e: cannot close a Paid order', async () => {
+it('e2e: cannot close a Paid order', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const order = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -387,7 +344,6 @@ test('e2e: cannot close a Paid order', async () => {
         externalPaymentId: 'ext-pay-cant-close',
         standardizedEventName: 'cashier.payment-succeeded'
       })
-
     const closeRes = await request(app.getHttpServer())
       .post(`/cashier/orders/${orderId}/manual-close`)
       .set(TENANT_A)
@@ -397,11 +353,9 @@ test('e2e: cannot close a Paid order', async () => {
     await app.close()
   }
 })
-
-test('e2e: timeout close transitions Created → Closed with PaymentTimeout reason', async () => {
+it('e2e: timeout close transitions Created → Closed with PaymentTimeout reason', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const order = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -411,7 +365,6 @@ test('e2e: timeout close transitions Created → Closed with PaymentTimeout reas
         items: [{ skuId: 'sku-1', title: 'x', quantity: 1, price: 20 }]
       })
     const orderId = order.body.data.orderId
-
     const closeRes = await request(app.getHttpServer())
       .post(`/cashier/orders/${orderId}/timeout-close`)
       .set(TENANT_A)
@@ -421,12 +374,10 @@ test('e2e: timeout close transitions Created → Closed with PaymentTimeout reas
     await app.close()
   }
 })
-
-test('e2e: orders and payments are tenant-scoped', async () => {
+it('e2e: orders and payments are tenant-scoped', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1', tenantContextA())
   ensureMember(memberService, 'm-B', { tenantId: 'tenant-B', brandId: 'brand-B', storeId: 'store-B', marketCode: 'cn-mainland' })
-
   try {
     const orderA = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -436,7 +387,6 @@ test('e2e: orders and payments are tenant-scoped', async () => {
         items: [{ skuId: 'sku-1', title: 'x', quantity: 1, price: 10 }]
       })
     const orderAId = orderA.body.data.orderId
-
     const orderB = await request(app.getHttpServer())
       .post('/cashier/orders')
       .set(TENANT_B)
@@ -445,15 +395,12 @@ test('e2e: orders and payments are tenant-scoped', async () => {
         items: [{ skuId: 'sku-2', title: 'y', quantity: 1, price: 20 }]
       })
     const orderBId = orderB.body.data.orderId
-
     const listA = await request(app.getHttpServer()).get('/cashier/orders').set(TENANT_A)
     assert.equal(listA.body.data.length, 1)
     assert.equal(listA.body.data[0].orderId, orderAId)
-
     const listB = await request(app.getHttpServer()).get('/cashier/orders').set(TENANT_B)
     assert.equal(listB.body.data.length, 1)
     assert.equal(listB.body.data[0].orderId, orderBId)
-
     // Cross-tenant access: tenant-B cannot read tenant-A's order
     const crossGet = await request(app.getHttpServer()).get(`/cashier/orders/${orderAId}`).set(TENANT_B)
     assert.equal(crossGet.statusCode, 500)
@@ -461,11 +408,9 @@ test('e2e: orders and payments are tenant-scoped', async () => {
     await app.close()
   }
 })
-
-test('e2e: standardized payment callback rejects cross-tenant order', async () => {
+it('e2e: standardized payment callback rejects cross-tenant order', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1', tenantContextA())
-
   try {
     const order = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -475,7 +420,6 @@ test('e2e: standardized payment callback rejects cross-tenant order', async () =
         items: [{ skuId: 'sku-1', title: 'x', quantity: 1, price: 10 }]
       })
     const orderId = order.body.data.orderId
-
     const cbRes = await request(app.getHttpServer())
       .post('/cashier/payments/standardized-callback')
       .send({
@@ -489,12 +433,10 @@ test('e2e: standardized payment callback rejects cross-tenant order', async () =
     await app.close()
   }
 })
-
-test('e2e: list payments returns all tenant payments', async () => {
+it('e2e: list payments returns all tenant payments', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
   ensureMember(memberService, 'm-2')
-
   try {
     const o1 = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -504,7 +446,6 @@ test('e2e: list payments returns all tenant payments', async () => {
       .post('/cashier/orders')
       .set(TENANT_A)
       .send({ memberId: 'm-2', items: [{ skuId: 'sku-1', title: 'b', quantity: 1, price: 50 }] })
-
     await request(app.getHttpServer())
       .post(`/cashier/orders/${o1.body.data.orderId}/payments`)
       .set(TENANT_A)
@@ -513,7 +454,6 @@ test('e2e: list payments returns all tenant payments', async () => {
       .post(`/cashier/orders/${o2.body.data.orderId}/payments`)
       .set(TENANT_A)
       .send({ channel: 'alipay', amount: 50, externalPaymentId: 'ext-pay-list-2' })
-
     const list = await request(app.getHttpServer()).get('/cashier/payments').set(TENANT_A)
     assert.ok(list.body.data.length >= 2)
     const channels = list.body.data.map((p: any) => p.channel)
@@ -523,11 +463,9 @@ test('e2e: list payments returns all tenant payments', async () => {
     await app.close()
   }
 })
-
-test('e2e: list payments isolated by tenant', async () => {
+it('e2e: list payments isolated by tenant', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const o1 = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -537,18 +475,15 @@ test('e2e: list payments isolated by tenant', async () => {
       .post(`/cashier/orders/${o1.body.data.orderId}/payments`)
       .set(TENANT_A)
       .send({ channel: 'wechat', amount: 30, externalPaymentId: 'ext-pay-iso' })
-
     const listB = await request(app.getHttpServer()).get('/cashier/payments').set(TENANT_B)
     assert.equal(listB.body.data.length, 0)
   } finally {
     await app.close()
   }
 })
-
-test('e2e: order total computed from items', async () => {
+it('e2e: order total computed from items', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const order = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -565,8 +500,7 @@ test('e2e: order total computed from items', async () => {
     await app.close()
   }
 })
-
-test('e2e: get order returns 500 for unknown orderId', async () => {
+it('e2e: get order returns 500 for unknown orderId', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/cashier/orders/unknown-id').set(TENANT_A)
@@ -575,8 +509,7 @@ test('e2e: get order returns 500 for unknown orderId', async () => {
     await app.close()
   }
 })
-
-test('e2e: create payment for unknown order throws', async () => {
+it('e2e: create payment for unknown order throws', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -588,11 +521,9 @@ test('e2e: create payment for unknown order throws', async () => {
     await app.close()
   }
 })
-
-test('e2e: order status lifecycle Created → PaymentPending → Paid', async () => {
+it('e2e: order status lifecycle Created → PaymentPending → Paid', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const order = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -600,13 +531,11 @@ test('e2e: order status lifecycle Created → PaymentPending → Paid', async ()
       .send({ memberId: 'm-1', items: [{ skuId: 'sku-1', title: 'a', quantity: 1, price: 80 }] })
     const orderId = order.body.data.orderId
     assert.equal(order.body.data.status, 'CREATED')
-
     const payment = await request(app.getHttpServer())
       .post(`/cashier/orders/${orderId}/payments`)
       .set(TENANT_A)
       .send({ channel: 'wechat', amount: 80, externalPaymentId: 'ext-lifecycle' })
     assert.equal(payment.body.data.status, 'PENDING')
-
     const cb = await request(app.getHttpServer())
       .post('/cashier/payments/standardized-callback')
       .send({
@@ -621,11 +550,9 @@ test('e2e: order status lifecycle Created → PaymentPending → Paid', async ()
     await app.close()
   }
 })
-
-test('e2e: multiple payment channels supported', async () => {
+it('e2e: multiple payment channels supported', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const channels = ['wechat', 'alipay', 'unionpay', 'cash']
     for (let i = 0; i < channels.length; i++) {
@@ -645,11 +572,9 @@ test('e2e: multiple payment channels supported', async () => {
     await app.close()
   }
 })
-
-test('e2e: duplicate callback for same payment is idempotent', async () => {
+it('e2e: duplicate callback for same payment is idempotent', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const order = await request(app.getHttpServer())
       .post('/cashier/orders')
@@ -683,18 +608,15 @@ test('e2e: duplicate callback for same payment is idempotent', async () => {
     await app.close()
   }
 })
-
-test('e2e: order close with timeout reason transitions to CLOSED', async () => {
+it('e2e: order close with timeout reason transitions to CLOSED', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const order = await request(app.getHttpServer())
       .post('/cashier/orders')
       .set(TENANT_A)
       .send({ memberId: 'm-1', items: [{ skuId: 'sku-1', title: 'a', quantity: 1, price: 15 }] })
     const orderId = order.body.data.orderId
-
     const closeRes = await request(app.getHttpServer())
       .post(`/cashier/orders/${orderId}/timeout-close`)
       .set(TENANT_A)
@@ -705,18 +627,15 @@ test('e2e: order close with timeout reason transitions to CLOSED', async () => {
     await app.close()
   }
 })
-
-test('e2e: get order from different tenant returns 500', async () => {
+it('e2e: get order from different tenant returns 500', async () => {
   const { app, memberService } = await buildApp()
   ensureMember(memberService, 'm-1')
-
   try {
     const order = await request(app.getHttpServer())
       .post('/cashier/orders')
       .set(TENANT_A)
       .send({ memberId: 'm-1', items: [{ skuId: 'sku-1', title: 'a', quantity: 1, price: 10 }] })
     const orderId = order.body.data.orderId
-
     const get = await request(app.getHttpServer()).get(`/cashier/orders/${orderId}`).set(TENANT_B)
     assert.equal(get.statusCode, 500)
   } finally {

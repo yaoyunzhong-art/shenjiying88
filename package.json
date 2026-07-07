@@ -8,6 +8,7 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
+    "commit:f11": "bash scripts/foundation11-commit.sh",
     "e2e:smoke": "playwright test e2e/smoke.spec.ts",
     "e2e:smoke:headed": "playwright test e2e/smoke.spec.ts --headed",
     "e2e:report": "playwright show-report",
@@ -46,6 +47,13 @@
     "overrides": {
       "react": "18.3.1",
       "react-dom": "18.3.1"
+    },
+    "packageExtensions": {
+      "@react-native/babel-preset": {
+        "dependencies": {
+          "@babel/plugin-proposal-async-generator-functions": "^7.20.7"
+        }
+      }
     }
   }
 }

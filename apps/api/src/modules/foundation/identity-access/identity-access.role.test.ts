@@ -1,7 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 // ── Helpers ──
 function mockIdentityAccessService() {
   return {
@@ -34,7 +33,7 @@ const ROLES = {
 
 // ── 👔店长 ──
 describe(`${ROLES.TenantAdmin} identity-access 角色测试`, () => {
-  test('店长可以获取 actor context', () => {
+  it('店长可以获取 actor context', () => {
     const svc = mockIdentityAccessService()
     const ctrl = createIdentityAccessController(svc)
     const result = ctrl.getContext(tenantCtx, actorCtx)
@@ -42,7 +41,7 @@ describe(`${ROLES.TenantAdmin} identity-access 角色测试`, () => {
     assert.equal(result.effectiveTenantId, 't-1')
   })
 
-  test('店长可以 validate role', () => {
+  it('店长可以 validate role', () => {
     const svc = mockIdentityAccessService()
     const ctrl = createIdentityAccessController(svc)
     const result = ctrl.validateRole(tenantCtx, actorCtx)
@@ -50,7 +49,7 @@ describe(`${ROLES.TenantAdmin} identity-access 角色测试`, () => {
     assert.equal(result.check, 'role')
   })
 
-  test('店长可以 validate permission', () => {
+  it('店长可以 validate permission', () => {
     const svc = mockIdentityAccessService()
     const ctrl = createIdentityAccessController(svc)
     const result = ctrl.validatePermission(tenantCtx, actorCtx)
@@ -58,7 +57,7 @@ describe(`${ROLES.TenantAdmin} identity-access 角色测试`, () => {
     assert.equal(result.check, 'permission')
   })
 
-  test('店长可以 validate tenant scope', () => {
+  it('店长可以 validate tenant scope', () => {
     const svc = mockIdentityAccessService()
     svc.authorizeAction = () => ({ status: 'allowed', action: 'tenant:read', permissionMatched: true, tenantScopeMatched: true })
     const ctrl = createIdentityAccessController(svc)
@@ -71,7 +70,7 @@ describe(`${ROLES.TenantAdmin} identity-access 角色测试`, () => {
 
 // ── 🔧安监 ──
 describe(`${ROLES.Security} identity-access 角色测试`, () => {
-  test('安监可以获取 actor context（审计视角）', () => {
+  it('安监可以获取 actor context（审计视角）', () => {
     const svc = mockIdentityAccessService()
     svc.resolveActorContext = () => ({
       authenticated: true,
@@ -85,7 +84,7 @@ describe(`${ROLES.Security} identity-access 角色测试`, () => {
     assert.ok(result.roles.includes('SECURITY_ADMIN'))
   })
 
-  test('安监可以 validate permission', () => {
+  it('安监可以 validate permission', () => {
     const svc = mockIdentityAccessService()
     svc.authorizeAction = () => ({ status: 'allowed', action: 'identity-access:read', permissionMatched: true, tenantScopeMatched: true })
     const ctrl = createIdentityAccessController(svc)
@@ -93,7 +92,7 @@ describe(`${ROLES.Security} identity-access 角色测试`, () => {
     assert.equal(result.status, 'allowed')
   })
 
-  test('安监跨租户 scope validate — 边界（authorization denied）', () => {
+  it('安监跨租户 scope validate — 边界（authorization denied）', () => {
     const svc = mockIdentityAccessService()
     svc.authorizeAction = () => ({ status: 'denied', action: 'tenant:read', permissionMatched: false, tenantScopeMatched: false, resourceScope: {}, actor: null, enforcedBy: [] })
     const ctrl = new (require('./identity-access.controller').IdentityAccessController)(svc)
@@ -107,7 +106,7 @@ describe(`${ROLES.Security} identity-access 角色测试`, () => {
 
 // ── 🎯运行专员 ──
 describe(`${ROLES.Operations} identity-access 角色测试`, () => {
-  test('运营专员可以获取 context', () => {
+  it('运营专员可以获取 context', () => {
     const svc = mockIdentityAccessService()
     svc.resolveActorContext = () => ({
       authenticated: true,
@@ -121,13 +120,13 @@ describe(`${ROLES.Operations} identity-access 角色测试`, () => {
     assert.ok(result)
   })
 
-  test('运营专员可以 validate role', () => {
+  it('运营专员可以 validate role', () => {
     const ctrl = createIdentityAccessController()
     const result = ctrl.validateRole(tenantCtx, actorCtx)
     assert.equal(result.check, 'role')
   })
 
-  test('运营专员可以 validate tenant scope', () => {
+  it('运营专员可以 validate tenant scope', () => {
     const ctrl = createIdentityAccessController()
     const result = ctrl.validateTenantScope('t-ia', tenantCtx, actorCtx)
     assert.equal(result.check, 'tenant-scope')
@@ -136,7 +135,7 @@ describe(`${ROLES.Operations} identity-access 角色测试`, () => {
 
 // ── 👥HR ──
 describe(`${ROLES.HR} identity-access 角色测试`, () => {
-  test('HR可以获取 context', () => {
+  it('HR可以获取 context', () => {
     const svc = mockIdentityAccessService()
     svc.resolveActorContext = () => ({
       authenticated: true,
@@ -150,14 +149,14 @@ describe(`${ROLES.HR} identity-access 角色测试`, () => {
     assert.ok(result.authenticated)
   })
 
-  test('HR可以 validate role', () => {
+  it('HR可以 validate role', () => {
     const svc = mockIdentityAccessService()
     const ctrl = createIdentityAccessController(svc)
     const result = ctrl.validateRole(tenantCtx, { ...actorCtx, roles: ['HR'] })
     assert.equal(result.status, 'allowed')
   })
 
-  test('HR尝试跨scope validate — 边界（authorization denied）', () => {
+  it('HR尝试跨scope validate — 边界（authorization denied）', () => {
     const svc = mockIdentityAccessService()
     svc.authorizeAction = () => ({ status: 'denied', action: 'tenant:read', permissionMatched: false, tenantScopeMatched: false, resourceScope: {}, actor: null, enforcedBy: [] })
     const ctrl = new (require('./identity-access.controller').IdentityAccessController)(svc)

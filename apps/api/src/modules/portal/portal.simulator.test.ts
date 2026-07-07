@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [portal] [D] simulator 测试补全
  *
@@ -21,7 +22,6 @@
  */
 
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   PortalAudience,
   PortalScopeType,
@@ -192,7 +192,7 @@ function simulateMarketSwitch(entity: PortalEntity, newMarketCode: string): Port
 // ════════════════════════════════════════════════════════
 
 describe('[Portal Simulator] Entity helpers', () => {
-  test('toPortalEntity 从 TobPortal 构造 ToB PortalEntity', () => {
+  it('toPortalEntity 从 TobPortal 构造 ToB PortalEntity', () => {
     const tobPortal = createSimulatedTobPortal(PortalScopeType.Tenant)
     const entity = toPortalEntity(tobPortal, { id: 'p-001', tenantId: 't-001' })
 
@@ -203,7 +203,7 @@ describe('[Portal Simulator] Entity helpers', () => {
     assert.equal(entity.supportedSurfaces, undefined)
   })
 
-  test('toPortalEntity 从 StorePortal 构造 ToC PortalEntity', () => {
+  it('toPortalEntity 从 StorePortal 构造 ToC PortalEntity', () => {
     const storePortal = createSimulatedStorePortal()
     const entity = toPortalEntity(storePortal, { id: 'p-002', tenantId: 't-001', brandId: 'b-001', storeId: 's-001' })
 
@@ -214,7 +214,7 @@ describe('[Portal Simulator] Entity helpers', () => {
     assert.equal(entity.heroTitle, undefined)
   })
 
-  test('isTobPortalEntity 正确区分 ToB 和 ToC', () => {
+  it('isTobPortalEntity 正确区分 ToB 和 ToC', () => {
     const tobEntity = createSimulatedPortalEntity(PortalAudience.ToB, PortalScopeType.Tenant)
     const tocEntity = createSimulatedPortalEntity(PortalAudience.ToC, PortalScopeType.Store)
 
@@ -222,7 +222,7 @@ describe('[Portal Simulator] Entity helpers', () => {
     assert.equal(isTobPortalEntity(tocEntity), false)
   })
 
-  test('isStorePortalEntity 正确区分 ToC 和 ToB', () => {
+  it('isStorePortalEntity 正确区分 ToC 和 ToB', () => {
     const tocEntity = createSimulatedPortalEntity(PortalAudience.ToC, PortalScopeType.Store)
     const tobEntity = createSimulatedPortalEntity(PortalAudience.ToB, PortalScopeType.Tenant)
 
@@ -230,7 +230,7 @@ describe('[Portal Simulator] Entity helpers', () => {
     assert.equal(isStorePortalEntity(tobEntity), false)
   })
 
-  test('isSsoEnabled 检测 SSO 状态', () => {
+  it('isSsoEnabled 检测 SSO 状态', () => {
     const withSso = createSimulatedPortalEntity(PortalAudience.ToB, PortalScopeType.Tenant)
     assert.ok(isSsoEnabled(withSso))
 
@@ -243,7 +243,7 @@ describe('[Portal Simulator] Entity helpers', () => {
     assert.equal(isSsoEnabled(withSsoDisabled), false)
   })
 
-  test('toPortalEntity 品牌门户带 brandId', () => {
+  it('toPortalEntity 品牌门户带 brandId', () => {
     const brandPortal = createSimulatedTobPortal(PortalScopeType.Brand, {
       brandCode: 'nike-cn',
       name: 'Nike CN 品牌官网',
@@ -262,7 +262,7 @@ describe('[Portal Simulator] Entity helpers', () => {
 // ════════════════════════════════════════════════════════
 
 describe('[Portal Simulator] Contract serialization', () => {
-  test('toTobPortalContract 序列化 TobPortal', () => {
+  it('toTobPortalContract 序列化 TobPortal', () => {
     const portal = createSimulatedTobPortal(PortalScopeType.Tenant)
     const contract = toTobPortalContract(portal)
 
@@ -275,7 +275,7 @@ describe('[Portal Simulator] Contract serialization', () => {
     assert.ok(contract.loginEntry)
   })
 
-  test('toTobPortalContract 缺少 primaryDomain 时自动补全', () => {
+  it('toTobPortalContract 缺少 primaryDomain 时自动补全', () => {
     const portal = createSimulatedTobPortal(PortalScopeType.Tenant)
     delete (portal as any).primaryDomain
     const contract = toTobPortalContract(portal)
@@ -283,7 +283,7 @@ describe('[Portal Simulator] Contract serialization', () => {
     assert.ok(contract.primaryDomain?.endsWith('.b2b.local'))
   })
 
-  test('toStorePortalContract 序列化 StorePortal', () => {
+  it('toStorePortalContract 序列化 StorePortal', () => {
     const portal = createSimulatedStorePortal()
     const contract = toStorePortalContract(portal)
 
@@ -295,7 +295,7 @@ describe('[Portal Simulator] Contract serialization', () => {
     assert.ok(contract.supportedSurfaces?.includes(StorefrontSurface.App))
   })
 
-  test('toStorePortalContract 缺少 primaryDomain 时自动补全', () => {
+  it('toStorePortalContract 缺少 primaryDomain 时自动补全', () => {
     const portal = createSimulatedStorePortal()
     delete (portal as any).primaryDomain
     const contract = toStorePortalContract(portal)
@@ -310,7 +310,7 @@ describe('[Portal Simulator] Contract serialization', () => {
 // ════════════════════════════════════════════════════════
 
 describe('[Portal Simulator] State machine operations', () => {
-  test('PortalStateMachine 应用更新 + snapshot', () => {
+  it('PortalStateMachine 应用更新 + snapshot', () => {
     const initial = createSimulatedPortalEntity(PortalAudience.ToB, PortalScopeType.Tenant)
     const sm = createPortalStateMachine(initial)
 
@@ -323,7 +323,7 @@ describe('[Portal Simulator] State machine operations', () => {
     assert.equal(sm.updates.length, 2)
   })
 
-  test('simulateMarketSwitch 中国大陆切全球市场', () => {
+  it('simulateMarketSwitch 中国大陆切全球市场', () => {
     const initial = createSimulatedPortalEntity(PortalAudience.ToC, PortalScopeType.Store)
     const switched = simulateMarketSwitch(initial, 'global')
 
@@ -331,7 +331,7 @@ describe('[Portal Simulator] State machine operations', () => {
     assert.ok(switched.supportedLanguages.includes(LanguageCode.EnUs))
   })
 
-  test('simulateMarketSwitch 全球市场保留多语言', () => {
+  it('simulateMarketSwitch 全球市场保留多语言', () => {
     const initial = createSimulatedPortalEntity(PortalAudience.ToB, PortalScopeType.Tenant)
     const switched = simulateMarketSwitch(initial, 'global')
 
@@ -340,7 +340,7 @@ describe('[Portal Simulator] State machine operations', () => {
     assert.ok(switched.supportedLanguages.includes(LanguageCode.ZhCn))
   })
 
-  test('模拟中国门店只保留中文', () => {
+  it('模拟中国门店只保留中文', () => {
     const initial = createSimulatedPortalEntity(PortalAudience.ToC, PortalScopeType.Store)
     const switched = simulateMarketSwitch(initial, 'cn-mainland')
 
@@ -354,7 +354,7 @@ describe('[Portal Simulator] State machine operations', () => {
 // ════════════════════════════════════════════════════════
 
 describe(`[Portal Simulator] ${ROLES.StoreManager} - 全门户审核`, () => {
-  test('店长可以查看完整 bootstrap 的门户信息', () => {
+  it('店长可以查看完整 bootstrap 的门户信息', () => {
     // 模拟: 店长拿到租户/品牌/门店三级门户后做交叉校验
     const tenantPortal = createSimulatedTobPortal(PortalScopeType.Tenant, { tenantCode: 't-001' })
     const brandPortal = createSimulatedTobPortal(PortalScopeType.Brand, { brandCode: 'nike-cn' })
@@ -372,7 +372,7 @@ describe(`[Portal Simulator] ${ROLES.StoreManager} - 全门户审核`, () => {
     assert.ok(storeContract.supportedSurfaces.length >= 4)
   })
 
-  test('店长审核发现 SSO 未启用的品牌门户应告警', () => {
+  it('店长审核发现 SSO 未启用的品牌门户应告警', () => {
     const portal = createSimulatedTobPortal(PortalScopeType.Brand, {
       loginEntry: { label: '进入后台', loginPath: '/login', ssoEnabled: false },
     })
@@ -387,7 +387,7 @@ describe(`[Portal Simulator] ${ROLES.StoreManager} - 全门户审核`, () => {
 })
 
 describe(`[Portal Simulator] ${ROLES.FrontDesk} - 前台门店查询`, () => {
-  test('前台查询当前门店的终端适配', () => {
+  it('前台查询当前门店的终端适配', () => {
     const storePortal = createSimulatedStorePortal({ storeCode: 'store-front-01', storeName: '前台一店' })
     const contract = toStorePortalContract(storePortal)
 
@@ -397,7 +397,7 @@ describe(`[Portal Simulator] ${ROLES.FrontDesk} - 前台门店查询`, () => {
     assert.equal(contract.storeName, '前台一店')
   })
 
-  test('前台查询门店语言配置', () => {
+  it('前台查询门店语言配置', () => {
     const storePortal = createSimulatedStorePortal({
       storeCode: 'store-cn-01',
       marketCode: 'cn-mainland',
@@ -411,7 +411,7 @@ describe(`[Portal Simulator] ${ROLES.FrontDesk} - 前台门店查询`, () => {
 })
 
 describe(`[Portal Simulator] ${ROLES.HR} - 品牌门户视角`, () => {
-  test('HR 需要查看品牌层级的解决方案标签', () => {
+  it('HR 需要查看品牌层级的解决方案标签', () => {
     const brandPortal = createSimulatedTobPortal(PortalScopeType.Brand, {
       name: 'HR 品牌站',
       solutionTags: ['品牌招商', '加盟合作', 'HR 人才招聘'],
@@ -423,7 +423,7 @@ describe(`[Portal Simulator] ${ROLES.HR} - 品牌门户视角`, () => {
     assert.equal(brandPortal.heroTitle, 'brand-sim-001 企业级经营门户')
   })
 
-  test('HR 品牌门户边界: 不能访问门店级数据', () => {
+  it('HR 品牌门户边界: 不能访问门店级数据', () => {
     const brandPortal = createSimulatedTobPortal(PortalScopeType.Brand)
     // 品牌门户不应该有 storeName / supportedSurfaces
     assert.equal((brandPortal as any).storeName, undefined)
@@ -434,7 +434,7 @@ describe(`[Portal Simulator] ${ROLES.HR} - 品牌门户视角`, () => {
 })
 
 describe(`[Portal Simulator] ${ROLES.Security} - SSO 安全审计`, () => {
-  test('安监审计 SSO 安全: 所有 ToB 入口都必须启用 SSO', () => {
+  it('安监审计 SSO 安全: 所有 ToB 入口都必须启用 SSO', () => {
     const tenantPortal = createSimulatedTobPortal(PortalScopeType.Tenant)
     const brandPortal = createSimulatedTobPortal(PortalScopeType.Brand)
 
@@ -446,7 +446,7 @@ describe(`[Portal Simulator] ${ROLES.Security} - SSO 安全审计`, () => {
     assert.ok(isSsoEnabled(brandEntity))
   })
 
-  test('安监发现门店门户不需要 SSO - 符合预期', () => {
+  it('安监发现门店门户不需要 SSO - 符合预期', () => {
     const storePortal = createSimulatedStorePortal()
     const entity = toPortalEntity(storePortal, {
       id: 'p-store', tenantId: 't-001', brandId: 'b-001', storeId: 's-001',
@@ -459,7 +459,7 @@ describe(`[Portal Simulator] ${ROLES.Security} - SSO 安全审计`, () => {
 })
 
 describe(`[Portal Simulator] ${ROLES.Guide} - 门店终端适配`, () => {
-  test('导玩员确认门店支持全终端渠道', () => {
+  it('导玩员确认门店支持全终端渠道', () => {
     const storePortal = createSimulatedStorePortal({
       supportedSurfaces: [
         StorefrontSurface.OfficialSite,
@@ -478,7 +478,7 @@ describe(`[Portal Simulator] ${ROLES.Guide} - 门店终端适配`, () => {
     assert.ok(contract.supportedSurfaces.includes(StorefrontSurface.PadConsole))
   })
 
-  test('导玩员边界: MiniApp 门店入口不可为空', () => {
+  it('导玩员边界: MiniApp 门店入口不可为空', () => {
     const storePortal = createSimulatedStorePortal({
       supportedSurfaces: [StorefrontSurface.MiniApp],
     })
@@ -491,7 +491,7 @@ describe(`[Portal Simulator] ${ROLES.Guide} - 门店终端适配`, () => {
 })
 
 describe(`[Portal Simulator] ${ROLES.Operations} - 门户生命周期`, () => {
-  test('运行专员: 从创建到市场切换全流程', () => {
+  it('运行专员: 从创建到市场切换全流程', () => {
     // 创建门店门户: scopeCode = storeCode = storeId 一致
     const storePortal = createSimulatedStorePortal()
     const entity = toPortalEntity(storePortal, {
@@ -513,7 +513,7 @@ describe(`[Portal Simulator] ${ROLES.Operations} - 门户生命周期`, () => {
     assert.ok(globalEntity.supportedLanguages.includes(LanguageCode.EnUs))
   })
 
-  test('运行专员: 品牌门户升级方案标签', () => {
+  it('运行专员: 品牌门户升级方案标签', () => {
     const brandPortal = createSimulatedTobPortal(PortalScopeType.Brand, {
       solutionTags: [],
     })
@@ -529,7 +529,7 @@ describe(`[Portal Simulator] ${ROLES.Operations} - 门户生命周期`, () => {
 })
 
 describe(`[Portal Simulator] ${ROLES.Teambuilding} - 多门店门户筛选`, () => {
-  test('团建专员批量筛选门店门户', () => {
+  it('团建专员批量筛选门店门户', () => {
     const stores = [
       createSimulatedStorePortal({ storeCode: 'team-a', storeName: '团建A店' }),
       createSimulatedStorePortal({ storeCode: 'team-b', storeName: '团建B店' }),
@@ -547,7 +547,7 @@ describe(`[Portal Simulator] ${ROLES.Teambuilding} - 多门店门户筛选`, () 
     assert.equal(stores[0].storeName, '团建A店')
   })
 
-  test('团建专员边界: 门店语言筛选中文门店', () => {
+  it('团建专员边界: 门店语言筛选中文门店', () => {
     const cnStore = createSimulatedStorePortal({
       storeCode: 'team-cn',
       marketCode: 'cn-mainland',
@@ -561,7 +561,7 @@ describe(`[Portal Simulator] ${ROLES.Teambuilding} - 多门店门户筛选`, () 
 })
 
 describe(`[Portal Simulator] ${ROLES.Marketing} - 市场区域配置`, () => {
-  test('营销专员全局市场多语言门户验证', () => {
+  it('营销专员全局市场多语言门户验证', () => {
     const globalStore = createSimulatedStorePortal({
       storeCode: 'mkt-global',
       marketCode: 'global',
@@ -579,7 +579,7 @@ describe(`[Portal Simulator] ${ROLES.Marketing} - 市场区域配置`, () => {
     assert.equal(switched.supportedLanguages[0], LanguageCode.ZhCn)
   })
 
-  test('营销专员租户门户品牌强化', () => {
+  it('营销专员租户门户品牌强化', () => {
     const tenantPortal = createSimulatedTobPortal(PortalScopeType.Tenant, {
       heroTitle: '超级品牌经营平台',
       solutionTags: ['品牌招商', '国际化', '全渠道', '智能营销'],

@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>团队开发进度 - Monitor Pro</title>
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* 团队监控特有样式 */
+    .member-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s;
+    }
+    
+    .member-card:hover {
+      border-color: var(--accent-primary);
+      box-shadow: 0 8px 24px rgba(0, 212, 255, 0.1);
+    }
+    
+    .member-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .member-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: bold;
+      position: relative;
+    }
+    
+    .member-avatar.online {
+      background: linear-gradient(135deg, #00ff88, #00cc6a);
+    }
+    
+    .member-avatar.busy {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+    }
+    
+    .member-info h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 4px 0;
+    }
+    
+    .member-info p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+    
+    .status-badge-large {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .status-badge-large.coding {
+      background: rgba(0, 212, 255, 0.1);
+      color: #00d4ff;
+    }
+    
+    .status-badge-large.reviewing {
+      background: rgba(255, 170, 0, 0.1);
+      color: #ffaa00;
+    }
+    
+    .task-progress {
+      margin-top: 16px;
+    }
+    
+    .task-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .task-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .task-percentage {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent-primary);
+    }
+    
+    .progress-bar {
+      height: 8px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+    
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .stat-item {
+      text-align: center;
+    }
+    
+    .stat-value-small {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+    
+    .activity-log {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .activity-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+    
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+    
+    .activity-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    
+    .activity-icon.commit {
+      background: rgba(0, 212, 255, 0.1);
+      color: #00d4ff;
+    }
+    
+    .activity-icon.pr {
+      background: rgba(0, 255, 136, 0.1);
+      color: #00ff88;
+    }
+    
+    .activity-icon.issue {
+      background: rgba(255, 170, 0, 0.1);
+      color: #ffaa00;
+    }
+    
+    .activity-content {
+      flex: 1;
+    }
+    
+    .activity-text {
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+    
+    .activity-time {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">MP</div>
+        <div class="brand-text">
+          <h1>Monitor Pro</h1>
+          <p>v2.0.0</p>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">概览</div>
+          <a href="dashboard.html" class="nav-item">
+            <span class="nav-icon">📊</span>
+            <span>仪表盘</span>
+          </a>
+        </div>
+        
+        <div class="nav-section">
+          <div class="nav-section-title">监控</div>
+          <a href="performance.html" class="nav-item">
+            <span class="nav-icon">🖥️</span>
+            <span>性能监控</span>
+          </a>
+          <a href="logs.html" class="nav-item">
+            <span class="nav-icon">📋</span>
+            <span>日志监控</span>
+          </a>
+          <a href="alerts.html" class="nav-item">
+            <span class="nav-icon">🔔</span>
+            <span>告警管理</span>
+          </a>
+        </div>
+        
+        <div class="nav-section">
+          <div class="nav-section-title">分析</div>
+          <a href="users.html" class="nav-item active">
+            <span class="nav-icon">👥</span>
+            <span>团队开发进度</span>
+          </a>
+        </div>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          <span>系统正常运行</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+      <!-- 顶部栏 -->
+      <header class="top-bar">
+        <div class="page-title">
+          <h2>团队开发进度</h2>
+          <p>龙虾哥 & 树哥 Sprint 1 实时监控</p>
+        </div>
+        <div class="top-actions">
+          <div class="live-indicator">
+            <span class="live-dot"></span>
+            <span>实时</span>
+          </div>
+          <button class="btn btn-secondary" onclick="refreshData()">
+            <span>🔄</span>
+            <span>刷新</span>
+          </button>
+          <button class="theme-toggle" onclick="toggleTheme()">
+            <span id="theme-icon">🌙</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- 内容区域 -->
+      <div class="content-area">
+        <!-- 团队总览 -->
+        <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">团队成员</span>
+              <div class="stat-icon info">👥</div>
+            </div>
+            <div class="stat-value">2</div>
+            <div class="stat-change">
+              <span style="color: var(--text-secondary);">龙虾哥 + 树哥</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">已完成任务</span>
+              <div class="stat-icon success">✅</div>
+            </div>
+            <div class="stat-value" style="color: var(--success);">8</div>
+            <div class="stat-change positive">
+              <span>↑</span>
+              <span>Sprint 1 进度 73%</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">进行中</span>
+              <div class="stat-icon warning">🔄</div>
+            </div>
+            <div class="stat-value" style="color: var(--warning);">3</div>
+            <div class="stat-change">
+              <span style="color: var(--text-secondary);">预计今晚完成</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">整体进度</span>
+              <div class="stat-icon info">📊</div>
+            </div>
+            <div class="stat-value" id="overall-progress" style="color: var(--accent-primary);">73%</div>
+            <div class="stat-change positive">
+              <span>↑</span>
+              <span>较昨日 +15%</span>
+            </div>
+          </div>
+
+          <!-- 复盘状态检查 -->
+          <div class="stat-card" id="review-status-card" style="border: 2px solid var(--success);">
+            <div class="stat-header">
+              <span class="stat-title">今日复盘</span>
+              <div class="stat-icon" style="background: rgba(0, 255, 136, 0.2); color: var(--success);">✅</div>
+            </div>
+            <div class="stat-value" style="color: var(--success);">已完成</div>
+            <div class="stat-change">
+              <span style="color: var(--text-secondary);">Day 3 Sprint 1</span>
+            </div>
+          </div>
+
+          <!-- 知识库更新检查 -->
+          <div class="stat-card" id="kb-status-card" style="border: 2px solid var(--success);">
+            <div class="stat-header">
+              <span class="stat-title">知识库更新</span>
+              <div class="stat-icon" style="background: rgba(0, 255, 136, 0.2); color: var(--success);">✅</div>
+            </div>
+            <div class="stat-value" style="color: var(--success);">已更新</div>
+            <div class="stat-change">
+              <span style="color: var(--text-secondary);">V10 Day 3 文档</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 成员卡片 -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+          <!-- 树哥卡片 -->
+          <div class="member-card">
+            <div class="member-header">
+              <div class="member-avatar busy">🐜</div>
+              <div class="member-info">
+                <h3>树哥（后台）</h3>
+                <p>后端开发工程师</p>
+              </div>
+              <span class="status-badge-large coding">编码中</span>
+            </div>
+            
+            <div class="task-progress">
+              <div class="task-info">
+                <span class="task-name">T104-U MemberCenter 前台</span>
+                <span class="task-percentage" id="shuge-progress-text">75%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="shuge-bar" style="width: 75%"></div>
+              </div>
+            </div>
+            
+            <div class="stats-row">
+              <div class="stat-item">
+                <div class="stat-value-small" id="shuge-lines">156</div>
+                <div class="stat-label">今日代码行</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value-small">12</div>
+                <div class="stat-label">今日提交</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value-small">3</div>
+                <div class="stat-label">待办任务</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value-small">4h</div>
+                <div class="stat-label">预计剩余</div>
+              </div>
+            </div>
+            
+            <div class="activity-log">
+              <div class="activity-title">最近动态</div>
+              <div class="activity-item">
+                <div class="activity-icon commit">💻</div>
+                <div class="activity-content">
+                  <div class="activity-text">提交了代码到 T104-U MemberCenter</div>
+                  <div class="activity-time">10分钟前</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon pr">🔧</div>
+                <div class="activity-content">
+                  <div class="activity-text">修复了登录页面的响应式问题</div>
+                  <div class="activity-time">45分钟前</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon issue">📝</div>
+                <div class="activity-content">
+                  <div class="activity-text">更新了任务进度到 75%</div>
+                  <div class="activity-time">1小时前</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 龙虾哥卡片 -->
+          <div class="member-card">
+            <div class="member-header">
+              <div class="member-avatar online">🦞</div>
+              <div class="member-info">
+                <h3>龙虾哥（前台）</h3>
+                <p>前端开发工程师</p>
+              </div>
+              <span class="status-badge-large reviewing">汇报中</span>
+            </div>
+            
+            <div class="task-progress">
+              <div class="task-info">
+                <span class="task-name">进度追踪 & 实时监控</span>
+                <span class="task-percentage" id="longxia-progress-text">90%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="longxia-bar" style="width: 90%"></div>
+              </div>
+            </div>
+            
+            <div class="stats-row">
+              <div class="stat-item">
+                <div class="stat-value-small" id="longxia-lines">89</div>
+                <div class="stat-label">今日代码行</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value-small">8</div>
+                <div class="stat-label">今日提交</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value-small">2</div>
+                <div class="stat-label">待办任务</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value-small">1h</div>
+                <div class="stat-label">预计剩余</div>
+              </div>
+            </div>
+            
+            <div class="activity-log">
+              <div class="activity-title">最近动态</div>
+              <div class="activity-item">
+                <div class="activity-icon pr">📊</div>
+                <div class="activity-content">
+                  <div class="activity-text">更新了监控面板实时数据</div>
+                  <div class="activity-time">5分钟前</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon commit">✅</div>
+                <div class="activity-content">
+                  <div class="activity-text">提交了进度报告到钉钉群</div>
+                  <div class="activity-time">30分钟前</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon issue">🎨</div>
+                <div class="activity-content">
+                  <div class="activity-text">优化了监控面板的UI设计</div>
+                  <div class="activity-time">1小时前</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sprint 进度对比 -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">Sprint 1 任务进度对比</h3>
+            <div class="chart-actions">
+              <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px;">
+                导出报告
+              </button>
+            </div>
+          </div>
+          <div class="chart-body" style="height: 300px;">
+            <canvas id="sprint-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- 今日任务列表 -->
+        <div class="data-table-container">
+          <div class="table-header">
+            <h3 class="table-title">今日任务清单</h3>
+            <div class="table-filters">
+              <select class="filter-select" id="member-filter">
+                <option value="">所有成员</option>
+                <option value="shuge">树哥</option>
+                <option value="longxia">龙虾哥</option>
+              </select>
+              <select class="filter-select" id="status-filter">
+                <option value="">所有状态</option>
+                <option value="done">已完成</option>
+                <option value="doing">进行中</option>
+                <option value="todo">待开始</option>
+              </select>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>任务ID</th>
+                <th>任务名称</th>
+                <th>负责人</th>
+                <th>优先级</th>
+                <th>状态</th>
+                <th>进度</th>
+                <th>预计完成</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-tbody">
+              <!-- 动态生成 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/app.js"></script>
+  <script src="../js/mock-api.js"></script>
+  <script>
+    // 今日任务列表
+    const todayTasks = [
+      // 树哥任务
+      { id: 'T104-U', name: 'MemberCenter 前台开发', owner: 'shuge', priority: 'high', status: 'doing', progress: 75, eta: '21:30' },
+      { id: 'T105-1', name: '盲盒引擎后台', owner: 'shuge', priority: 'medium', status: 'todo', progress: 0, eta: '22:30' },
+      { id: 'T104-1', name: '会员等级后台', owner: 'shuge', priority: 'high', status: 'done', progress: 100, eta: '已完成' },
+      { id: 'T104-2', name: ' SVIP订阅后台', owner: 'shuge', priority: 'high', status: 'done', progress: 100, eta: '已完成' },
+      // 龙虾哥任务
+      { id: 'MON-01', name: '进度追踪面板优化', owner: 'longxia', priority: 'high', status: 'doing', progress: 90, eta: '20:00' },
+      { id: 'MON-02', name: '实时监控图表', owner: 'longxia', priority: 'medium', status: 'done', progress: 100, eta: '已完成' },
+      // 龙虾哥每日必做任务
+      { id: 'DAILY-01', name: '🎓 组织专家学习', owner: 'longxia', priority: 'high', status: 'doing', progress: 60, eta: '进行中' },
+      { id: 'DAILY-02', name: '🔍 项目复盘', owner: 'longxia', priority: 'high', status: 'doing', progress: 80, eta: '进行中' },
+      { id: 'DAILY-03', name: '📚 知识库进化', owner: 'longxia', priority: 'high', status: 'doing', progress: 70, eta: '进行中' },
+      { id: 'DAILY-04', name: '👥 专家协调', owner: 'longxia', priority: 'high', status: 'doing', progress: 75, eta: '进行中' },
+      { id: 'DAILY-05', name: '📊 进度追踪', owner: 'longxia', priority: 'high', status: 'doing', progress: 90, eta: '进行中' },
+    ];
+
+    let sprintChart = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      initSprintChart();
+      renderTasks();
+      startRealtimeUpdates();
+      initDailyCheckStatus(); // 初始化每日检查状态
+    });
+
+    // 每日检查状态指示器
+    function initDailyCheckStatus() {
+      // 检查复盘状态
+      const reviewCard = document.getElementById('review-status-card');
+      if (reviewCard) {
+        // 根据时间更新状态
+        const now = new Date();
+        const currentHour = now.getHours();
+        
+        if (currentHour >= 17 && currentHour < 18) {
+          // 17:00-18:00 复盘进行中
+          updateStatusCard(reviewCard, '进行中', 'warning', '🔄');
+        } else if (currentHour >= 18) {
+          // 18:00后 复盘应已完成
+          updateStatusCard(reviewCard, '已完成', 'success', '✅');
+        }
+      }
+
+      // 检查知识库更新状态
+      const kbCard = document.getElementById('kb-status-card');
+      if (kbCard) {
+        const now = new Date();
+        const currentHour = now.getHours();
+        
+        if (currentHour >= 19) {
+          // 19:00后 知识库应已开始更新
+          updateStatusCard(kbCard, '进行中', 'warning', '🔄');
+        }
+        
+        // 检查是否已完成（通过localStorage或其他方式）
+        const kbCompleted = localStorage.getItem('kb-update-completed-' + new Date().toDateString());
+        if (kbCompleted === 'true') {
+          updateStatusCard(kbCard, '已完成', 'success', '✅');
+        }
+      }
+    }
+
+    // 更新状态卡片
+    function updateStatusCard(card, status, type, icon) {
+      const valueEl = card.querySelector('.stat-value');
+      const iconEl = card.querySelector('.stat-icon');
+      
+      if (valueEl) {
+        valueEl.textContent = status;
+        valueEl.style.color = `var(--${type})`;
+      }
+      
+      if (iconEl) {
+        iconEl.textContent = icon;
+        iconEl.style.color = `var(--${type})`;
+        iconEl.style.background = `rgba(${type === 'success' ? '0, 255, 136' : type === 'warning' ? '255, 170, 0' : '255, 68, 68'}, 0.2)`;
+      }
+      
+      // 更新边框颜色
+      card.style.border = `2px solid var(--${type})`;
+    }
+
+    // 标记知识库更新完成
+    function markKBCompleted() {
+      localStorage.setItem('kb-update-completed-' + new Date().toDateString(), 'true');
+      initDailyCheckStatus();
+    }
+
+    // 每小时更新一次状态
+    setInterval(initDailyCheckStatus, 3600000);
+
+    function initTheme() {
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      updateThemeIcon(theme);
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
+    }
+
+    function updateThemeIcon(theme) {
+      const icon = document.getElementById('theme-icon');
+      if (icon) {
+        icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+      }
+    }
+
+    function initSprintChart() {
+      const ctx = document.getElementById('sprint-chart');
+      if (!ctx) return;
+
+      sprintChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['树哥', '龙虾哥'],
+          datasets: [
+            {
+              label: '已完成',
+              data: [3, 2],
+              backgroundColor: '#00ff88',
+              borderRadius: 4
+            },
+            {
+              label: '进行中',
+              data: [1, 1],
+              backgroundColor: '#00d4ff',
+              borderRadius: 4
+            },
+            {
+              label: '待开始',
+              data: [1, 0],
+              backgroundColor: '#ffaa00',
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: { color: '#8888a0' }
+            }
+          },
+          scales: {
+            x: {
+              stacked: true,
+              grid: { display: false },
+              ticks: { color: '#8888a0', font: { size: 14 } }
+            },
+            y: {
+              stacked: true,
+              grid: { color: 'rgba(42, 42, 58, 0.5)' },
+              ticks: { color: '#8888a0' }
+            }
+          }
+        }
+      });
+    }
+
+    function renderTasks() {
+      const tbody = document.getElementById('tasks-tbody');
+      if (!tbody) return;
+
+      tbody.innerHTML = todayTasks.map(task => {
+        const owner = task.owner === 'shuge' ? '树哥' : '龙虾哥';
+        const statusClass = task.status === 'done' ? 'success' : task.status === 'doing' ? 'warning' : 'info';
+        const statusText = task.status === 'done' ? '已完成' : task.status === 'doing' ? '进行中' : '待开始';
+        const priorityClass = task.priority === 'high' ? 'danger' : task.priority === 'medium' ? 'warning' : 'info';
+        const priorityText = task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低';
+
+        return `
+          <tr>
+            <td><code style="font-size: 11px; background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;">${task.id}</code></td>
+            <td style="font-weight: 500;">${task.name}</td>
+            <td>${owner}</td>
+            <td><span class="status-badge status-${priorityClass}">${priorityText}</span></td>
+            <td><span class="status-badge status-${statusClass}">${statusText}</span></td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="flex: 1; height: 6px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden;">
+                  <div style="width: ${task.progress}%; height: 100%; background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); border-radius: 3px;"></div>
+                </div>
+                <span style="font-size: 12px; color: var(--text-secondary); min-width: 35px;">${task.progress}%</span>
+              </div>
+            </td>
+            <td style="font-size: 13px; color: var(--text-secondary);">${task.eta}</td>
+            <td>
+              <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px;" onclick="viewTaskDetail('${task.id}')">
+                查看
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function startRealtimeUpdates() {
+      // 每30秒更新一次进度
+      setInterval(() => {
+        updateMemberProgress();
+      }, 30000);
+
+      // 模拟实时代码行数增长
+      simulateRealtimeProgress();
+    }
+
+    function updateMemberProgress() {
+      // 树哥进度增长
+      const shugeBar = document.getElementById('shuge-bar');
+      const shugeText = document.getElementById('shuge-progress-text');
+      if (shugeBar && shugeText) {
+        const current = parseInt(shugeBar.style.width);
+        if (current < 100) {
+          const newProgress = Math.min(current + Math.floor(Math.random() * 3), 100);
+          shugeBar.style.width = newProgress + '%';
+          shugeText.textContent = newProgress + '%';
+        }
+      }
+
+      // 龙虾哥进度增长
+      const longxiaBar = document.getElementById('longxia-bar');
+      const longxiaText = document.getElementById('longxia-progress-text');
+      if (longxiaBar && longxiaText) {
+        const current = parseInt(longxiaBar.style.width);
+        if (current < 100) {
+          const newProgress = Math.min(current + Math.floor(Math.random() * 2), 100);
+          longxiaBar.style.width = newProgress + '%';
+          longxiaText.textContent = newProgress + '%';
+        }
+      }
+    }
+
+    function simulateRealtimeProgress() {
+      // 每5秒随机更新代码行数
+      setInterval(() => {
+        const shugeLines = document.getElementById('shuge-lines');
+        if (shugeLines && Math.random() > 0.7) {
+          const current = parseInt(shugeLines.textContent);
+          shugeLines.textContent = current + Math.floor(Math.random() * 10);
+        }
+
+        const longxiaLines = document.getElementById('longxia-lines');
+        if (longxiaLines && Math.random() > 0.7) {
+          const current = parseInt(longxiaLines.textContent);
+          longxiaLines.textContent = current + Math.floor(Math.random() * 8);
+        }
+      }, 5000);
+    }
+
+    function viewTaskDetail(taskId) {
+      alert('查看任务详情: ' + taskId);
+    }
+
+    function refreshData() {
+      // 刷新按钮动画
+      const btn = document.querySelector('.top-actions .btn-secondary');
+      if (btn) {
+        btn.style.animation = 'spin 1s linear';
+        setTimeout(() => btn.style.animation = '', 1000);
+      }
+      
+      // 重新渲染任务
+      renderTasks();
+      
+      // 更新进度
+      updateMemberProgress();
+    }
+  </script>
+</body>
+</html>

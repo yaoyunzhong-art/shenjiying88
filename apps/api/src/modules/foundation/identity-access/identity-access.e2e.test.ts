@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Foundation / Identity-Access 身份授权 HTTP 链路
  *
@@ -15,7 +16,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -123,7 +123,7 @@ async function buildApp() {
   return { app, identityAccess }
 }
 
-test('e2e: resolve actor context without actor header returns authenticated: false', async () => {
+it('e2e: resolve actor context without actor header returns authenticated: false', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/foundation/identity-access/resolve')
@@ -136,7 +136,7 @@ test('e2e: resolve actor context without actor header returns authenticated: fal
   }
 })
 
-test('e2e: resolve actor context with actor header returns authenticated: true', async () => {
+it('e2e: resolve actor context with actor header returns authenticated: true', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -152,7 +152,7 @@ test('e2e: resolve actor context with actor header returns authenticated: true',
   }
 })
 
-test('e2e: hasAnyRole returns true when actor has matching role', async () => {
+it('e2e: hasAnyRole returns true when actor has matching role', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -166,7 +166,7 @@ test('e2e: hasAnyRole returns true when actor has matching role', async () => {
   }
 })
 
-test('e2e: hasAnyRole returns false when actor has no matching role', async () => {
+it('e2e: hasAnyRole returns false when actor has no matching role', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -180,7 +180,7 @@ test('e2e: hasAnyRole returns false when actor has no matching role', async () =
   }
 })
 
-test('e2e: hasAnyRole returns false when no actor', async () => {
+it('e2e: hasAnyRole returns false when no actor', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -192,7 +192,7 @@ test('e2e: hasAnyRole returns false when no actor', async () => {
   }
 })
 
-test('e2e: hasAllPermissions honors wildcard * permission', async () => {
+it('e2e: hasAllPermissions honors wildcard * permission', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -206,7 +206,7 @@ test('e2e: hasAllPermissions honors wildcard * permission', async () => {
   }
 })
 
-test('e2e: hasAllPermissions returns false when one permission missing', async () => {
+it('e2e: hasAllPermissions returns false when one permission missing', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -220,7 +220,7 @@ test('e2e: hasAllPermissions returns false when one permission missing', async (
   }
 })
 
-test('e2e: isPrivilegedActor true for platform-admin', async () => {
+it('e2e: isPrivilegedActor true for platform-admin', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -233,7 +233,7 @@ test('e2e: isPrivilegedActor true for platform-admin', async () => {
   }
 })
 
-test('e2e: isPrivilegedActor true for super-admin', async () => {
+it('e2e: isPrivilegedActor true for super-admin', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -246,7 +246,7 @@ test('e2e: isPrivilegedActor true for super-admin', async () => {
   }
 })
 
-test('e2e: isPrivilegedActor true for tenant:* permission', async () => {
+it('e2e: isPrivilegedActor true for tenant:* permission', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -259,7 +259,7 @@ test('e2e: isPrivilegedActor true for tenant:* permission', async () => {
   }
 })
 
-test('e2e: isPrivilegedActor false for regular operator', async () => {
+it('e2e: isPrivilegedActor false for regular operator', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -272,7 +272,7 @@ test('e2e: isPrivilegedActor false for regular operator', async () => {
   }
 })
 
-test('e2e: validateTenantScope matches when tenant/brand/store align', async () => {
+it('e2e: validateTenantScope matches when tenant/brand/store align', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -287,7 +287,7 @@ test('e2e: validateTenantScope matches when tenant/brand/store align', async () 
   }
 })
 
-test('e2e: validateTenantScope fails when store mismatches', async () => {
+it('e2e: validateTenantScope fails when store mismatches', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -302,7 +302,7 @@ test('e2e: validateTenantScope fails when store mismatches', async () => {
   }
 })
 
-test('e2e: validateTenantScope succeeds for privileged actor regardless of scope', async () => {
+it('e2e: validateTenantScope succeeds for privileged actor regardless of scope', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -316,7 +316,7 @@ test('e2e: validateTenantScope succeeds for privileged actor regardless of scope
   }
 })
 
-test('e2e: authorizeAction returns allowed when both permission and scope match', async () => {
+it('e2e: authorizeAction returns allowed when both permission and scope match', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -336,7 +336,7 @@ test('e2e: authorizeAction returns allowed when both permission and scope match'
   }
 })
 
-test('e2e: authorizeAction returns denied when permission missing', async () => {
+it('e2e: authorizeAction returns denied when permission missing', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -353,7 +353,7 @@ test('e2e: authorizeAction returns denied when permission missing', async () => 
   }
 })
 
-test('e2e: authorizeAction denied when scope mismatches for non-privileged actor', async () => {
+it('e2e: authorizeAction denied when scope mismatches for non-privileged actor', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -371,7 +371,7 @@ test('e2e: authorizeAction denied when scope mismatches for non-privileged actor
   }
 })
 
-test('e2e: getDescriptor returns module key and capabilities', async () => {
+it('e2e: getDescriptor returns module key and capabilities', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/foundation/identity-access/descriptor')
@@ -384,7 +384,7 @@ test('e2e: getDescriptor returns module key and capabilities', async () => {
   }
 })
 
-test('e2e: resolve actor context with no actor header defaults effectiveTenantId to header', async () => {
+it('e2e: resolve actor context with no actor header defaults effectiveTenantId to header', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -397,7 +397,7 @@ test('e2e: resolve actor context with no actor header defaults effectiveTenantId
   }
 })
 
-test('e2e: resolve actor context with missing marketCode defaults to us-default', async () => {
+it('e2e: resolve actor context with missing marketCode defaults to us-default', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -413,7 +413,7 @@ test('e2e: resolve actor context with missing marketCode defaults to us-default'
 // Phase-4 扩展：覆盖 IdentityAccessService 的更多授权边界与返回值细节
 // ---------------------------------------------------------------------------
 
-test('e2e phase-4: hasAnyRole returns true when required roles array is empty', async () => {
+it('e2e phase-4: hasAnyRole returns true when required roles array is empty', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -425,7 +425,7 @@ test('e2e phase-4: hasAnyRole returns true when required roles array is empty', 
   }
 })
 
-test('e2e phase-4: hasAllPermissions returns true when required permissions array is empty', async () => {
+it('e2e phase-4: hasAllPermissions returns true when required permissions array is empty', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -437,7 +437,7 @@ test('e2e phase-4: hasAllPermissions returns true when required permissions arra
   }
 })
 
-test('e2e phase-4: hasAllPermissions returns true for single matching permission', async () => {
+it('e2e phase-4: hasAllPermissions returns true for single matching permission', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -451,7 +451,7 @@ test('e2e phase-4: hasAllPermissions returns true for single matching permission
   }
 })
 
-test('e2e phase-4: hasAllPermissions returns false when actor missing for non-empty list', async () => {
+it('e2e phase-4: hasAllPermissions returns false when actor missing for non-empty list', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -463,7 +463,7 @@ test('e2e phase-4: hasAllPermissions returns false when actor missing for non-em
   }
 })
 
-test('e2e phase-4: isPrivilegedActor true for tenant:cross-scope permission', async () => {
+it('e2e phase-4: isPrivilegedActor true for tenant:cross-scope permission', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -476,7 +476,7 @@ test('e2e phase-4: isPrivilegedActor true for tenant:cross-scope permission', as
   }
 })
 
-test('e2e phase-4: isPrivilegedActor false when no actor header provided', async () => {
+it('e2e phase-4: isPrivilegedActor false when no actor header provided', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/foundation/identity-access/is-privileged')
@@ -486,7 +486,7 @@ test('e2e phase-4: isPrivilegedActor false when no actor header provided', async
   }
 })
 
-test('e2e phase-4: validateTenantScope returns true for empty requiredScope body', async () => {
+it('e2e phase-4: validateTenantScope returns true for empty requiredScope body', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -499,7 +499,7 @@ test('e2e phase-4: validateTenantScope returns true for empty requiredScope body
   }
 })
 
-test('e2e phase-4: validateTenantScope returns false when brandId mismatches', async () => {
+it('e2e phase-4: validateTenantScope returns false when brandId mismatches', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -513,7 +513,7 @@ test('e2e phase-4: validateTenantScope returns false when brandId mismatches', a
   }
 })
 
-test('e2e phase-4: validateTenantScope returns false for non-privileged actor when tenantId required but missing in context', async () => {
+it('e2e phase-4: validateTenantScope returns false for non-privileged actor when tenantId required but missing in context', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -527,7 +527,7 @@ test('e2e phase-4: validateTenantScope returns false for non-privileged actor wh
   }
 })
 
-test('e2e phase-4: authorizeAction returns allowed for platform-admin even with mismatched scope', async () => {
+it('e2e phase-4: authorizeAction returns allowed for platform-admin even with mismatched scope', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -548,7 +548,7 @@ test('e2e phase-4: authorizeAction returns allowed for platform-admin even with 
   }
 })
 
-test('e2e phase-4: authorizeAction decision carries enforcedBy metadata', async () => {
+it('e2e phase-4: authorizeAction decision carries enforcedBy metadata', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -570,7 +570,7 @@ test('e2e phase-4: authorizeAction decision carries enforcedBy metadata', async 
   }
 })
 
-test('e2e phase-4: authorizeAction returns denied when both permission and scope missing', async () => {
+it('e2e phase-4: authorizeAction returns denied when both permission and scope missing', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -590,7 +590,7 @@ test('e2e phase-4: authorizeAction returns denied when both permission and scope
   }
 })
 
-test('e2e phase-4: resolve actor context normalizes duplicate roles via Set', async () => {
+it('e2e phase-4: resolve actor context normalizes duplicate roles via Set', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -606,7 +606,7 @@ test('e2e phase-4: resolve actor context normalizes duplicate roles via Set', as
   }
 })
 
-test('e2e phase-4: resolve actor context with whitespace-only roles header yields empty roles', async () => {
+it('e2e phase-4: resolve actor context with whitespace-only roles header yields empty roles', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -620,7 +620,7 @@ test('e2e phase-4: resolve actor context with whitespace-only roles header yield
   }
 })
 
-test('e2e phase-4: descriptor exposes capabilities with consumers and entrypoints', async () => {
+it('e2e phase-4: descriptor exposes capabilities with consumers and entrypoints', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/foundation/identity-access/descriptor')
@@ -639,7 +639,7 @@ test('e2e phase-4: descriptor exposes capabilities with consumers and entrypoint
   }
 })
 
-test('e2e phase-4: descriptor exposes inbound and outbound contracts', async () => {
+it('e2e phase-4: descriptor exposes inbound and outbound contracts', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/foundation/identity-access/descriptor')
@@ -652,7 +652,7 @@ test('e2e phase-4: descriptor exposes inbound and outbound contracts', async () 
   }
 })
 
-test('e2e phase-4: validateTenantScope tenant-only match succeeds when brandId/storeId not required', async () => {
+it('e2e phase-4: validateTenantScope tenant-only match succeeds when brandId/storeId not required', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -671,7 +671,7 @@ test('e2e phase-4: validateTenantScope tenant-only match succeeds when brandId/s
 // Phase-5 Wave-2 🐜5 补强：identity-access D-E2E auth 边界 / 集成路径
 // ──────────────────────────────────────────────────────────────────────────
 
-test('e2e phase-5: resolve actor with no token returns anonymous fallback', async () => {
+it('e2e phase-5: resolve actor with no token returns anonymous fallback', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/foundation/identity-access/resolve')
@@ -684,7 +684,7 @@ test('e2e phase-5: resolve actor with no token returns anonymous fallback', asyn
   }
 })
 
-test('e2e phase-5: authorizeAction with multiple roles returns allowed when any matches', async () => {
+it('e2e phase-5: authorizeAction with multiple roles returns allowed when any matches', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -704,7 +704,7 @@ test('e2e phase-5: authorizeAction with multiple roles returns allowed when any 
   }
 })
 
-test('e2e phase-5: authorizeAction with insufficient roles returns denied with reason', async () => {
+it('e2e phase-5: authorizeAction with insufficient roles returns denied with reason', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -724,7 +724,7 @@ test('e2e phase-5: authorizeAction with insufficient roles returns denied with r
   }
 })
 
-test('e2e phase-5: descriptor metadata includes key', async () => {
+it('e2e phase-5: descriptor metadata includes key', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/foundation/identity-access/descriptor')
@@ -737,7 +737,7 @@ test('e2e phase-5: descriptor metadata includes key', async () => {
   }
 })
 
-test('e2e phase-5: validate-tenant-scope with mismatched store returns false', async () => {
+it('e2e phase-5: validate-tenant-scope with mismatched store returns false', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -754,7 +754,7 @@ test('e2e phase-5: validate-tenant-scope with mismatched store returns false', a
   }
 })
 
-test('e2e phase-5: resolve actor with platform-admin role marks as privileged', async () => {
+it('e2e phase-5: resolve actor with platform-admin role marks as privileged', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -769,7 +769,7 @@ test('e2e phase-5: resolve actor with platform-admin role marks as privileged', 
   }
 })
 
-test('e2e phase-5: authorizeAction with super-admin role grants access', async () => {
+it('e2e phase-5: authorizeAction with super-admin role grants access', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())

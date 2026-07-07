@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
 import { TrustGovernanceService } from './trust-governance.service'
 
 /**
@@ -11,36 +11,34 @@ import { TrustGovernanceService } from './trust-governance.service'
  * - getDescriptor
  */
 void describe('TrustGovernanceService', () => {
-  let service: TrustGovernanceService
-
   // PrismaService 注入 → 使用类型断言绕过构造
   const noopPrisma = {} as never
-  service = new TrustGovernanceService(noopPrisma)
+  const service = new TrustGovernanceService(noopPrisma)
 
   // ── maskPii ────────────────────────────────────────────────
   void describe('maskPii()', () => {
-    test('masks email address local-part beyond first char', () => {
+    it('masks email address local-part beyond first char', () => {
       const result = service.maskPii({ email: 'alice@example.com' })
       assert.equal(result.email, 'a***@example.com')
     })
 
-    test('masks 11-digit phone numbers (middle 4 digits)', () => {
+    it('masks 11-digit phone numbers (middle 4 digits)', () => {
       const result = service.maskPii({ phone: '13812345678' })
       assert.equal(result.phone, '138****5678')
     })
 
-    test('masks Bearer token', () => {
+    it('masks Bearer token', () => {
       const result = service.maskPii({ auth: 'Bearer abcDEF123-_token' })
       assert.equal(result.auth, 'Bearer ***')
     })
 
-    test('leaves non-sensitive strings unchanged', () => {
+    it('leaves non-sensitive strings unchanged', () => {
       const result = service.maskPii({ name: '张三', city: '北京' })
       assert.equal(result.name, '张三')
       assert.equal(result.city, '北京')
     })
 
-    test('handles nested objects', () => {
+    it('handles nested objects', () => {
       const result = service.maskPii({
         user: { name: '李四', email: 'lisi@gmail.com' }
       })
@@ -48,7 +46,7 @@ void describe('TrustGovernanceService', () => {
       assert.equal(result.user.email, 'l***@gmail.com')
     })
 
-    test('handles arrays', () => {
+    it('handles arrays', () => {
       const result = service.maskPii({
         emails: ['bob@test.com', 'carol@test.com']
       })
@@ -56,7 +54,7 @@ void describe('TrustGovernanceService', () => {
       assert.equal(result.emails[1], 'c***@test.com')
     })
 
-    test('returns primitives unchanged', () => {
+    it('returns primitives unchanged', () => {
       assert.equal(service.maskPii(42), 42)
       assert.equal(service.maskPii(null), null)
       assert.equal(service.maskPii(true), true)
@@ -65,7 +63,7 @@ void describe('TrustGovernanceService', () => {
 
   // ── reviewAiInvocation ──────────────────────────────────────
   void describe('reviewAiInvocation()', () => {
-    test('returns approved for safe low-token prompt', () => {
+    it('returns approved for safe low-token prompt', () => {
       const result = service.reviewAiInvocation('gpt-4o', {
         tenantId: 'tenant-demo',
         purpose: 'chat',
@@ -80,7 +78,7 @@ void describe('TrustGovernanceService', () => {
       assert.ok(result.findings.length === 0)
     })
 
-    test('flags prompt containing "password" as high risk', () => {
+    it('flags prompt containing "password" as high risk', () => {
       const result = service.reviewAiInvocation('gpt-4o', {
         tenantId: 'tenant-demo',
         purpose: 'chat',
@@ -93,7 +91,7 @@ void describe('TrustGovernanceService', () => {
       assert.equal(result.verdict, 'approved-with-guardrails') // 50 ∈ [35, 70)
     })
 
-    test('flags bypass / ignore-previous as injection risk', () => {
+    it('flags bypass / ignore-previous as injection risk', () => {
       const result = service.reviewAiInvocation('gpt-4o', {
         tenantId: 'tenant-demo',
         purpose: 'chat',
@@ -105,7 +103,7 @@ void describe('TrustGovernanceService', () => {
       assert.ok(result.riskScore >= 40)
     })
 
-    test('warns when tokens exceed remaining budget', () => {
+    it('warns when tokens exceed remaining budget', () => {
       const result = service.reviewAiInvocation('gpt-4o', {
         tenantId: 'tenant-demo',
         purpose: 'generation',
@@ -117,7 +115,7 @@ void describe('TrustGovernanceService', () => {
       assert.ok(result.riskScore >= 35)
     })
 
-    test('returns manual-review when injection + over-budget', () => {
+    it('returns manual-review when injection + over-budget', () => {
       const result = service.reviewAiInvocation('gpt-4o', {
         tenantId: 'tenant-demo',
         purpose: 'chat',
@@ -131,7 +129,7 @@ void describe('TrustGovernanceService', () => {
       assert.equal(result.verdict, 'manual-review') // 75 ≥ 70
     })
 
-    test('returns budget for tenant-premium', () => {
+    it('returns budget for tenant-premium', () => {
       const result = service.reviewAiInvocation('claude-3', {
         tenantId: 'tenant-premium',
         purpose: 'analysis',
@@ -143,7 +141,7 @@ void describe('TrustGovernanceService', () => {
       assert.equal(result.budget.remainingTokens, 160_000)
     })
 
-    test('returns default budget for unknown tenant', () => {
+    it('returns default budget for unknown tenant', () => {
       const result = service.reviewAiInvocation('gpt-4o', {
         tenantId: 'tenant-unknown',
         purpose: 'test',
@@ -155,7 +153,7 @@ void describe('TrustGovernanceService', () => {
       assert.equal(result.budget.remainingTokens, 10_000)
     })
 
-    test('always returns controls array', () => {
+    it('always returns controls array', () => {
       const result = service.reviewAiInvocation('gpt-4o', {
         tenantId: 'tenant-demo',
         purpose: 'chat',
@@ -170,13 +168,13 @@ void describe('TrustGovernanceService', () => {
 
   // ── getManagementMetadata ───────────────────────────────────
   void describe('getManagementMetadata()', () => {
-    test('returns non-empty array', () => {
+    it('returns non-empty array', () => {
       const metadata = service.getManagementMetadata()
       assert.ok(Array.isArray(metadata))
       assert.ok(metadata.length > 0)
     })
 
-    test('each entry has operation and rbac fields', () => {
+    it('each entry has operation and rbac fields', () => {
       for (const entry of service.getManagementMetadata()) {
         assert.ok(typeof entry.operation === 'string')
         assert.ok(entry.rbac)
@@ -187,7 +185,7 @@ void describe('TrustGovernanceService', () => {
       }
     })
 
-    test('includes approval lifecycle operations', () => {
+    it('includes approval lifecycle operations', () => {
       const operations = service.getManagementMetadata().map((e) => e.operation)
       assert.ok(operations.includes('approval.read'))
       assert.ok(operations.includes('approval.decide'))
@@ -197,7 +195,7 @@ void describe('TrustGovernanceService', () => {
 
   // ── getGovernanceBaselines ───────────────────────────────────
   void describe('getGovernanceBaselines()', () => {
-    test('returns array with rate-limit-quota and ai-cost-governance keys', () => {
+    it('returns array with rate-limit-quota and ai-cost-governance keys', () => {
       const baselines = service.getGovernanceBaselines()
       assert.ok(Array.isArray(baselines))
       const keys = baselines.map((b) => b.key)
@@ -205,7 +203,7 @@ void describe('TrustGovernanceService', () => {
       assert.ok(keys.includes('ai-cost-governance'))
     })
 
-    test('each baseline has required fields', () => {
+    it('each baseline has required fields', () => {
       for (const baseline of service.getGovernanceBaselines()) {
         assert.equal(typeof baseline.key, 'string')
         assert.equal(typeof baseline.name, 'string')
@@ -219,14 +217,14 @@ void describe('TrustGovernanceService', () => {
 
   // ── getDescriptor ───────────────────────────────────────────
   void describe('getDescriptor()', () => {
-    test('returns descriptor with correct key', () => {
+    it('returns descriptor with correct key', () => {
       const descriptor = service.getDescriptor()
       assert.equal(descriptor.key, 'trust-governance')
       assert.equal(typeof descriptor.name, 'string')
       assert.equal(typeof descriptor.purpose, 'string')
     })
 
-    test('descriptor includes audit, rate-limit, privacy, and ai capabilities', () => {
+    it('descriptor includes audit, rate-limit, privacy, and ai capabilities', () => {
       const descriptor = service.getDescriptor()
       const capabilityKeys = descriptor.capabilities.map((c) => c.key)
       assert.ok(capabilityKeys.includes('audit'))
@@ -235,7 +233,7 @@ void describe('TrustGovernanceService', () => {
       assert.ok(capabilityKeys.includes('ai-governance'))
     })
 
-    test('descriptor has inbound and outbound contracts', () => {
+    it('descriptor has inbound and outbound contracts', () => {
       const descriptor = service.getDescriptor()
       assert.ok(descriptor.inboundContracts.length > 0)
       assert.ok(descriptor.outboundContracts.length > 0)

@@ -9,148 +9,361 @@ const { renderToStaticMarkup } = require(
 );
 const { StoreManagerDashboard } = require('./StoreManagerDashboard');
 
-const BASE_PROPS = {
-  storeName: '朝阳旗舰店',
-  dailyMetrics: {
-    revenue: 52800,
-    orderCount: 342,
-    avgOrderValue: 154.4,
-    newMembers: 12,
-    revenueTrend: 5.2,
-    orderTrend: -1.3,
-    avgValueTrend: 3.1,
-    memberTrend: 8.0,
-  },
-  pendingTasks: [
-    { id: '1', title: 'SKU-089 库存不足', type: 'inventory', priority: 'high', createdAt: '10:45' },
-    { id: '2', title: '新会员入会审核', type: 'member', priority: 'medium', createdAt: '11:20' },
-    { id: '3', title: '订单配送异常', type: 'order', priority: 'high', createdAt: '09:30' },
-  ],
-  deviceStatus: { total: 48, online: 42, offline: 3, warning: 3, lastCheckAt: '15:30' },
-  quickActions: [
-    { key: 'scan', label: '扫码入库', primary: true },
-    { key: 'report', label: '生成日报' },
-    { key: 'inspect', label: '巡店检查', primary: false },
-  ],
-  lastSyncAt: '16:00',
+// ---- 测试数据 ----
+
+const MOCK_METRICS = {
+  revenue: 52800,
+  orderCount: 342,
+  avgOrderValue: 154.4,
+  newMembers: 12,
+  revenueTrend: 5.2,
+  orderTrend: -1.3,
+  avgValueTrend: 3.1,
+  memberTrend: 8.0,
 };
 
+const MOCK_TASKS = [
+  { id: '1', title: 'SKU-089 库存不足', type: 'inventory' as const, priority: 'high' as const, createdAt: '10:45' },
+  { id: '2', title: '会员投诉跟进', type: 'member' as const, priority: 'medium' as const, createdAt: '09:30' },
+  { id: '3', title: '打印机固件更新', type: 'device' as const, priority: 'low' as const, createdAt: '昨天' },
+];
+
+const MOCK_DEVICE = { total: 48, online: 42, offline: 3, warning: 3 };
+
+const MOCK_ACTIONS = [
+  { key: 'scan', label: '扫码入库', icon: '📷', primary: true },
+  { key: 'inventory', label: '盘点', icon: '📋' },
+  { key: 'report', label: '日报', primary: false },
+];
+
+const MOCK_ACTIONS_NO_ICON = [
+  { key: 'scan', label: '扫码入库', primary: true },
+  { key: 'inventory', label: '盘点' },
+];
+
+// ---- 测试套件 ----
+
 describe('StoreManagerDashboard', () => {
-  test('renders store name', () => {
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, BASE_PROPS));
-    assert.match(html, /朝阳旗舰店/);
-    assert.match(html, /data-testid="storedashboard-title"/);
+  // ── 加载状态 ──
+  test('renders loading skeleton when loading is true', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, { loading: true })
+    );
+    assert.match(html, /data-testid="storedashboard-loading"/);
+    assert.match(html, /正在加载门店数据/);
   });
 
-  test('renders default title when no storeName', () => {
-    const { storeName, ...rest } = BASE_PROPS;
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, rest));
+  // ── 有完整数据 ──
+  test('renders title with storeName', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        storeName: '朝阳旗舰店',
+        dailyMetrics: MOCK_METRICS,
+      })
+    );
+    assert.match(html, /data-testid="storedashboard-title"/);
+    assert.match(html, /朝阳旗舰店/);
+  });
+
+  test('renders default title when storeName is omitted', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, { dailyMetrics: MOCK_METRICS })
+    );
     assert.match(html, /店长工作台/);
   });
 
-  test('renders dailyMetrics as QuickStats', () => {
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, BASE_PROPS));
-    assert.match(html, /今日营收/);
-    assert.match(html, /订单数/);
-    assert.match(html, /客单价/);
-    assert.match(html, /新增会员/);
-    assert.match(html, /¥5\.3万/);
+  test('renders lastSyncAt when provided', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        storeName: '测试店',
+        dailyMetrics: MOCK_METRICS,
+        lastSyncAt: '2026-06-27 22:30',
+      })
+    );
+    assert.match(html, /2026-06-27 22:30/);
+  });
+
+  // ── 运营指标 ──
+  test('renders revenue metric', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+      })
+    );
+    // 52800 → 5.3万
+    assert.match(html, /今\u65E5\u8425\u6536/);
+    assert.match(html, /5\.3\u4E07/);
+  });
+
+  test('renders order count metric', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+      })
+    );
     assert.match(html, /342/);
+    assert.match(html, /订\u5355\u6570/);
   });
 
-  test('shows trend indicators', () => {
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, BASE_PROPS));
-    assert.match(html, /同比 \+5\.2%/);
-    assert.match(html, /同比 -1\.3%/);
-    assert.match(html, /同比 \+3\.1%/);
-    assert.match(html, /同比 \+8\.0%/);
+  test('renders trend helper text with sign', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+      })
+    );
+    // revenueTrend: +5.2%
+    assert.match(html, /\+5\.2%/);
+    // orderTrend: -1.3%
+    assert.match(html, /-1\.3%/);
   });
 
-  test('renders quick action buttons', () => {
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, BASE_PROPS));
-    assert.match(html, /data-testid="storedashboard-quick-actions"/);
-    assert.match(html, /扫码入库/);
-    assert.match(html, /生成日报/);
-    assert.match(html, /巡店检查/);
+  // ── 空指标 ──
+  test('renders fallback dashes when dailyMetrics is undefined', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {})
+    );
+    assert.match(html, /--/);
   });
 
-  test('renders device status bar', () => {
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, BASE_PROPS));
-    assert.match(html, /data-testid="storedashboard-device-status"/);
-    assert.match(html, /总计 48/);
-    assert.match(html, /在线 42/);
-    assert.match(html, /离线 3/);
-    assert.match(html, /告警 3/);
-    assert.match(html, /在线率 88%/);
-    assert.match(html, /15:30/);
-  });
-
-  test('renders pending tasks', () => {
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, BASE_PROPS));
+  // ── 待办任务 ──
+  test('renders pending tasks section', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        pendingTasks: MOCK_TASKS,
+      })
+    );
     assert.match(html, /data-testid="storedashboard-tasks"/);
-    assert.match(html, /待办任务/);
-    assert.match(html, /SKU-089 库存不足/);
-    assert.match(html, /新会员入会审核/);
-    assert.match(html, /订单配送异常/);
+    assert.match(html, /SKU-089/);
+    assert.match(html, /会员投诉跟进/);
+  });
+
+  test('renders task count badge', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        pendingTasks: MOCK_TASKS,
+      })
+    );
     assert.match(html, /\(3\)/);
   });
 
-  test('shows empty state when no tasks', () => {
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, {
-      ...BASE_PROPS,
-      pendingTasks: [],
-    }));
+  test('renders empty state when no tasks', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        pendingTasks: [],
+      })
+    );
     assert.match(html, /暂无待办任务/);
-    assert.doesNotMatch(html, /\(0\)/);
   });
 
-  test('renders loading skeleton', () => {
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, {
-      ...BASE_PROPS,
-      loading: true,
+  test('renders empty state when pendingTasks is undefined', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+      })
+    );
+    assert.match(html, /暂无待办任务/);
+  });
+
+  // ── 紧凑模式下的待办 ──
+  test('compact mode renders task cards with priority badges', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        pendingTasks: MOCK_TASKS,
+        compact: true,
+      })
+    );
+    assert.match(html, /\[库存\]/);
+    assert.match(html, /\[会员\]/);
+    assert.match(html, /\[设备\]/);
+    assert.match(html, /SKU-089/);
+  });
+
+  test('compact mode shows overflow count when tasks > 5', () => {
+    const manyTasks = Array.from({ length: 8 }, (_, i) => ({
+      id: String(i + 1),
+      title: `任务 ${i + 1}`,
+      type: 'inventory' as const,
+      priority: 'low' as const,
+      createdAt: '00:00',
     }));
-    assert.match(html, /data-testid="storedashboard-loading"/);
-    assert.match(html, /正在加载门店数据/);
-    assert.doesNotMatch(html, /data-testid="storedashboard-root"/);
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        pendingTasks: manyTasks,
+        compact: true,
+      })
+    );
+    assert.match(html, /还有 3 条待办/);
   });
 
-  test('renders without deviceStatus when not provided', () => {
-    const { deviceStatus, ...rest } = BASE_PROPS;
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, rest));
+  // ── 设备状态 ──
+  test('renders device status section', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        deviceStatus: MOCK_DEVICE,
+      })
+    );
+    assert.match(html, /data-testid="storedashboard-device-status"/);
+    assert.match(html, /设备状态/);
+    assert.match(html, /在线 42/);
+  });
+
+  test('renders offline count when > 0', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        deviceStatus: MOCK_DEVICE,
+      })
+    );
+    assert.match(html, /离线 3/);
+  });
+
+  test('renders warning count when > 0', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        deviceStatus: MOCK_DEVICE,
+      })
+    );
+    assert.match(html, /告警 3/);
+  });
+
+  test('renders online rate percentage', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        deviceStatus: MOCK_DEVICE,
+      })
+    );
+    assert.match(html, /88%/); // 42/48 = 87.5% → 88%
+  });
+
+  test('renders device lastCheckAt when provided', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        deviceStatus: { ...MOCK_DEVICE, lastCheckAt: '10分钟前' },
+      })
+    );
+    assert.match(html, /10分钟前/);
+  });
+
+  test('hides device section when deviceStatus is undefined', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+      })
+    );
     assert.doesNotMatch(html, /data-testid="storedashboard-device-status"/);
   });
 
-  test('renders without quickActions when not provided', () => {
-    const { quickActions, ...rest } = BASE_PROPS;
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, rest));
+  // ── 快速操作 ──
+  test('renders quick action buttons', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        quickActions: MOCK_ACTIONS,
+      })
+    );
+    assert.match(html, /扫码入库/);
+    assert.match(html, /盘点/);
+    assert.match(html, /日报/);
+  });
+
+  test('renders action with icon', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        quickActions: MOCK_ACTIONS,
+      })
+    );
+    assert.match(html, /📷/);
+  });
+
+  test('renders action without icon gracefully', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        quickActions: MOCK_ACTIONS_NO_ICON,
+      })
+    );
+    assert.match(html, /扫码入库/);
+    assert.match(html, /盘点/);
+  });
+
+  test('primary action has different style from normal actions', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        quickActions: MOCK_ACTIONS,
+      })
+    );
+    // 两个不同的背景色风格出现
+    assert.match(html, /rgba\(59,130,246/);
+  });
+
+  test('renders empty quick action section when quickActions is empty', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        quickActions: [],
+      })
+    );
+    // wrapper div is rendered but no buttons inside
+    assert.match(html, /data-testid="storedashboard-quick-actions"/);
     assert.doesNotMatch(html, /扫码入库/);
-    assert.doesNotMatch(html, /生成日报/);
   });
 
-  test('shows lastSyncAt when provided', () => {
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, BASE_PROPS));
-    assert.match(html, /数据同步: 16:00/);
+  // ── 紧凑模式 ──
+  test('compact mode uses smaller padding and 2-column metrics', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        compact: true,
+      })
+    );
+    assert.match(html, /data-testid="storedashboard-root"/);
+    assert.match(html, /今\u65E5\u8425\u6536/);
+    assert.match(html, /订\u5355\u6570/);
   });
 
-  test('renders default metrics when no dailyMetrics', () => {
-    const { dailyMetrics, ...rest } = BASE_PROPS;
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, rest));
-    assert.match(html, /营收/);
-    assert.match(html, /订单/);
-    assert.match(html, /客单价/);
-    assert.match(html, /新会员/);
+  // ── 自定义类名 ──
+  test('accepts className prop', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        className: 'my-custom-class',
+      })
+    );
+    assert.match(html, /my-custom-class/);
   });
 
-  test('applies className', () => {
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, {
-      ...BASE_PROPS,
-      className: 'custom-dashboard',
-    }));
-    assert.match(html, /class="custom-dashboard"/);
+  // ── 边界情况 ──
+  test('handles zero device total gracefully', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: MOCK_METRICS,
+        deviceStatus: { total: 0, online: 0, offline: 0, warning: 0 },
+      })
+    );
+    assert.match(html, /0%/);
   });
 
-  test('shows task count badge', () => {
-    const html = renderToStaticMarkup(React.createElement(StoreManagerDashboard, BASE_PROPS));
-    assert.match(html, /\(3\)/);
+  test('renders large revenue as 万 format', () => {
+    const highMetrics = {
+      ...MOCK_METRICS,
+      revenue: 1234500,
+    };
+    const html = renderToStaticMarkup(
+      React.createElement(StoreManagerDashboard, {
+        dailyMetrics: highMetrics,
+      })
+    );
+    assert.match(html, /123\.5\u4E07/);
   });
 });

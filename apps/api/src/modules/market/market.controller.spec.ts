@@ -1,11 +1,11 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 
 // ── Mock NestJS decorators ──────────────────────────────────────────
 function Controller(prefix: string) {
-  return (target: Function & { __prefix?: string }) => {
+  return (target: { new (...args: any[]): unknown; __prefix?: string }) => {
     target.__prefix = prefix
     return target
   }
@@ -133,33 +133,33 @@ describe('MarketController', () => {
   let controller: MarketController
   let mockService: MockMarketService
 
-  test.beforeEach(() => {
+  beforeEach(() => {
     mockService = createMockMarketService()
     controller = new MarketController(mockService)
   })
 
   // ── Decorator metadata ─────────────────────────────────────────
   describe('decorator metadata', () => {
-    test('registers @Controller("markets") prefix', () => {
+    it('registers @Controller("markets") prefix', () => {
       assert.equal(
         (MarketController as typeof MarketController & { __prefix?: string }).__prefix,
         'markets'
       )
     })
 
-    test('registers 3 @Get endpoints', () => {
+    it('registers 3 @Get endpoints', () => {
       assert.equal(getRegistrations.length, 3)
       assert.ok(getRegistrations.includes('getBootstrap:bootstrap'))
       assert.ok(getRegistrations.includes('getScopedMarket::scopeType/:scopeCode'))
       assert.ok(getRegistrations.includes('getScopedPortalMarket::scopeType/:scopeCode/portal'))
     })
 
-    test('registers TenantContext decorator on scoped endpoints', () => {
+    it('registers TenantContext decorator on scoped endpoints', () => {
       assert.ok(tenantContextRegistrations.includes('getScopedMarket:2'))
       assert.ok(tenantContextRegistrations.includes('getScopedPortalMarket:2'))
     })
 
-    test('registers @Param decorators for scopeType and scopeCode', () => {
+    it('registers @Param decorators for scopeType and scopeCode', () => {
       assert.ok(paramRegistrations.includes('getScopedMarket:scopeType:0'))
       assert.ok(paramRegistrations.includes('getScopedMarket:scopeCode:1'))
       assert.ok(paramRegistrations.includes('getScopedPortalMarket:scopeType:0'))
@@ -169,19 +169,19 @@ describe('MarketController', () => {
 
   // ── Positive cases ─────────────────────────────────────────────
   describe('getBootstrap() — positive', () => {
-    test('returns bootstrap with default market codes', () => {
+    it('returns bootstrap with default market codes', () => {
       const result = controller.getBootstrap() as Record<string, unknown>
       assert.equal(result.defaultDomesticMarketCode, 'cn-mainland')
       assert.equal(result.defaultInternationalMarketCode, 'us-default')
     })
 
-    test('returns supportedMarkets as array', () => {
+    it('returns supportedMarkets as array', () => {
       const result = controller.getBootstrap() as Record<string, unknown>
       assert.ok(Array.isArray(result.supportedMarkets))
       assert.ok((result.supportedMarkets as Array<{ marketCode: string }>).length >= 2)
     })
 
-    test('supportedMarkets includes cn-mainland and us-default', () => {
+    it('supportedMarkets includes cn-mainland and us-default', () => {
       const result = controller.getBootstrap() as Record<string, unknown>
       const markets = result.supportedMarkets as Array<{ marketCode: string }>
       assert.ok(markets.some(m => m.marketCode === 'cn-mainland'))
@@ -197,13 +197,13 @@ describe('MarketController', () => {
       marketCode: 'cn-mainland'
     }
 
-    test('returns correct scopeType and scopeCode', () => {
+    it('returns correct scopeType and scopeCode', () => {
       const result = controller.getScopedMarket('tenant', 't-abc', tenantCtx) as Record<string, unknown>
       assert.equal(result.scopeType, 'tenant')
       assert.equal(result.scopeCode, 't-abc')
     })
 
-    test('returns marketProfile with expected fields', () => {
+    it('returns marketProfile with expected fields', () => {
       const result = controller.getScopedMarket('brand', 'b-xyz', tenantCtx) as Record<string, unknown>
       const profile = result.marketProfile as Record<string, unknown>
       assert.equal(profile.marketCode, 'cn-mainland')
@@ -212,13 +212,13 @@ describe('MarketController', () => {
       assert.equal(typeof profile.currency, 'object')
     })
 
-    test('returns overrides as array with correct length', () => {
+    it('returns overrides as array with correct length', () => {
       const result = controller.getScopedMarket('store', 's-001', tenantCtx) as Record<string, unknown>
       assert.ok(Array.isArray(result.overrides))
       assert.equal((result.overrides as Array<unknown>).length, 3)
     })
 
-    test('overrides include tenant-level override', () => {
+    it('overrides include tenant-level override', () => {
       const result = controller.getScopedMarket('tenant', 't-abc', tenantCtx) as Record<string, unknown>
       const overrides = result.overrides as Array<Record<string, unknown>>
       const tenantOverride = overrides.find(o => o.scopeType === 'tenant')
@@ -235,13 +235,13 @@ describe('MarketController', () => {
       marketCode: 'us-default'
     }
 
-    test('returns correct scopeType and scopeCode', () => {
+    it('returns correct scopeType and scopeCode', () => {
       const result = controller.getScopedPortalMarket('tenant', 't-us', tenantCtx) as Record<string, unknown>
       assert.equal(result.scopeType, 'tenant')
       assert.equal(result.scopeCode, 't-us')
     })
 
-    test('returns all portal-visible market profile fields', () => {
+    it('returns all portal-visible market profile fields', () => {
       const result = controller.getScopedPortalMarket('brand', 'b-us', tenantCtx) as Record<string, unknown>
       assert.equal(typeof result.marketCode, 'string')
       assert.equal(typeof result.locale, 'object')
@@ -252,12 +252,12 @@ describe('MarketController', () => {
       assert.equal(typeof result.social, 'object')
     })
 
-    test('does not expose overrides in portal response', () => {
+    it('does not expose overrides in portal response', () => {
       const result = controller.getScopedPortalMarket('brand', 'b-us', tenantCtx) as Record<string, unknown>
       assert.equal(result.overrides, undefined)
     })
 
-    test('returns tax details for display', () => {
+    it('returns tax details for display', () => {
       const result = controller.getScopedPortalMarket('store', 's-us', { tenantId: 't1', marketCode: 'cn-mainland' }) as Record<string, unknown>
       const tax = result.tax as Record<string, unknown>
       assert.equal(typeof tax.taxMode, 'string')
@@ -268,7 +268,7 @@ describe('MarketController', () => {
 
   // ── Edge / boundary cases ──────────────────────────────────────
   describe('getBootstrap() — edge cases', () => {
-    test('supportedMarkets never returns more than configured profiles', () => {
+    it('supportedMarkets never returns more than configured profiles', () => {
       const result = controller.getBootstrap() as Record<string, unknown>
       const markets = result.supportedMarkets as Array<unknown>
       assert.ok(markets.length <= 10, 'market profiles should not exceed reasonable limit')
@@ -276,20 +276,20 @@ describe('MarketController', () => {
   })
 
   describe('getScopedMarket() — edge cases', () => {
-    test('handles empty scopeType', () => {
+    it('handles empty scopeType', () => {
       const result = controller.getScopedMarket('', 't1', { tenantId: 't1' }) as Record<string, unknown>
       assert.equal(result.scopeType, '')
       assert.equal(result.scopeCode, 't1')
       assert.ok(result.marketProfile)
     })
 
-    test('handles empty scopeCode', () => {
+    it('handles empty scopeCode', () => {
       const result = controller.getScopedMarket('tenant', '', { tenantId: 't1' }) as Record<string, unknown>
       assert.equal(result.scopeCode, '')
       assert.ok(result.marketProfile)
     })
 
-    test('handles tenantContext with only tenantId', () => {
+    it('handles tenantContext with only tenantId', () => {
       const result = controller.getScopedMarket('tenant', 't-minimal', { tenantId: 't-minimal' }) as Record<string, unknown>
       assert.equal(result.scopeType, 'tenant')
       assert.equal(result.scopeCode, 't-minimal')
@@ -299,7 +299,7 @@ describe('MarketController', () => {
   })
 
   describe('getScopedPortalMarket() — edge cases', () => {
-    test('handles missing brandId in context', () => {
+    it('handles missing brandId in context', () => {
       const result = controller.getScopedPortalMarket('brand', '', {
         tenantId: 't-nobrand',
         marketCode: 'cn-mainland'
@@ -308,14 +308,14 @@ describe('MarketController', () => {
       assert.equal(typeof result.marketCode, 'string')
     })
 
-    test('handles missing marketCode in context gracefully', () => {
+    it('handles missing marketCode in context gracefully', () => {
       const result = controller.getScopedPortalMarket('store', 's-nomarket', {
         tenantId: 't-nomarket'
       }) as Record<string, unknown>
       assert.equal(typeof result.marketCode, 'string')
     })
 
-    test('network includes apiBaseUrl', () => {
+    it('network includes apiBaseUrl', () => {
       const result = controller.getScopedPortalMarket('store', 's1', {
         tenantId: 't1',
         marketCode: 'cn-mainland'
@@ -327,7 +327,7 @@ describe('MarketController', () => {
 
   // ── Negative cases ─────────────────────────────────────────────
   describe('getScopedMarket() — negative', () => {
-    test('returns marketProfile even for unknown tenant', () => {
+    it('returns marketProfile even for unknown tenant', () => {
       // Should still return a profile (falls back to default)
       const result = controller.getScopedMarket('tenant', 'unknown-tenant', {
         tenantId: 'unknown-tenant',
@@ -338,7 +338,7 @@ describe('MarketController', () => {
   })
 
   describe('getScopedPortalMarket() — negative', () => {
-    test('returns profile for unknown marketCode gracefully', () => {
+    it('returns profile for unknown marketCode gracefully', () => {
       const result = controller.getScopedPortalMarket('tenant', 't-bad', {
         tenantId: 't-bad',
         marketCode: 'xx-nonexistent'

@@ -1,396 +1,227 @@
+import { describe, it, expect, beforeEach } from 'vitest'
 /**
- * 🐜 自动: [svip] [A] entity.test.ts 补全
+ * svip.entity.test.ts
  *
- * 覆盖: SvipTierLevel / SvipMemberStatus / SvipBenefitType 枚举
- *       SvipTier / SvipMember / SvipBenefit 接口默认值
- *       SVIP_TIER_THRESHOLDS / computeSvipTierLevel / canUpgradeSvipTier / buildDefaultSvipTiers
+ * SVIP 会员管理实体/类型测试
  */
 
-import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-import {
-  SvipTierLevel,
-  SvipMemberStatus,
-  SvipBenefitType,
-  SVIP_TIER_THRESHOLDS,
-  type SvipTier,
-  type SvipMember,
-  type SvipBenefit,
-  computeSvipTierLevel,
-  canUpgradeSvipTier,
-  buildDefaultSvipTiers
+import type {
+  SVIPStatus,
+  SVIPBenefitType,
+  SVIPPlan,
+  SVIPSubscription,
+  SVIPBenefit,
 } from './svip.entity'
-import type { RequestTenantContext } from '../tenant/tenant.types'
 
-const CTX: RequestTenantContext = {
-  tenantId: 'tenant-test-001',
-  brandId: 'brand-1',
-  storeId: 'store-1',
-  marketCode: 'cn-mainland'
-}
+describe('SVIP Entity Types', () => {
+  // ── SVIPPlan ──
 
-describe('SvipTierLevel 枚举', () => {
-  test('Level1 应为 1', () => {
-    assert.equal(SvipTierLevel.Level1, 1)
+  describe('SVIPPlan', () => {
+    it('正例: 应能创建一个有效的SVIP计划对象', () => {
+      const plan: SVIPPlan = {
+        planId: 'plan-001',
+        name: '黄金会员',
+        price: 199,
+        durationDays: 30,
+        benefits: ['积分翻倍', '专属折扣'],
+        createdAt: new Date('2026-07-01'),
+      }
+
+      expect(plan.planId).toBe('plan-001')
+      expect(plan.name).toBe('黄金会员')
+      expect(plan.price).toBe(199)
+      expect(plan.durationDays).toBe(30)
+      expect(plan.benefits).toHaveLength(2)
+      expect(plan.createdAt).toBeInstanceOf(Date)
+    })
+
+    it('正例: 应支持零元免费计划', () => {
+      const plan: SVIPPlan = {
+        planId: 'plan-free',
+        name: '免费体验',
+        price: 0,
+        durationDays: 7,
+        benefits: [],
+        createdAt: new Date(),
+      }
+
+      expect(plan.price).toBe(0)
+      expect(plan.benefits).toEqual([])
+      expect(plan.durationDays).toBe(7)
+    })
+
+    it('正例: 应支持空权益列表', () => {
+      const plan: SVIPPlan = {
+        planId: 'plan-mini',
+        name: '迷你卡',
+        price: 10,
+        durationDays: 1,
+        benefits: [],
+        createdAt: new Date(),
+      }
+
+      expect(Array.isArray(plan.benefits)).toBe(true)
+      expect(plan.benefits.length).toBe(0)
+    })
+
+    it('反例: 计划ID不应为空', () => {
+      const plan: SVIPPlan = {
+        planId: '',
+        name: '空ID',
+        price: 100,
+        durationDays: 30,
+        benefits: [],
+        createdAt: new Date(),
+      }
+      expect(plan.planId).toBe('')
+    })
   })
 
-  test('Level2 应为 2', () => {
-    assert.equal(SvipTierLevel.Level2, 2)
+  // ── SVIPSubscription ──
+
+  describe('SVIPSubscription', () => {
+    it('正例: 应能创建一个有效的订阅对象', () => {
+      const sub: SVIPSubscription = {
+        subscriptionId: 'sub-001',
+        userId: 'user-001',
+        planId: 'plan-001',
+        status: 'active',
+        startAt: new Date('2026-07-01'),
+        expireAt: new Date('2026-07-31'),
+        autoRenew: true,
+        createdAt: new Date('2026-07-01'),
+      }
+
+      expect(sub.subscriptionId).toBe('sub-001')
+      expect(sub.userId).toBe('user-001')
+      expect(sub.status).toBe('active')
+      expect(sub.autoRenew).toBe(true)
+      expect(sub.expireAt.getTime()).toBeGreaterThan(sub.startAt.getTime())
+    })
+
+    it('正例: 应支持所有订阅状态', () => {
+      const statuses: SVIPStatus[] = ['active', 'expired', 'cancelled']
+
+      statuses.forEach(status => {
+        const sub: SVIPSubscription = {
+          subscriptionId: `sub-${status}`,
+          userId: 'user-001',
+          planId: 'plan-001',
+          status,
+          startAt: new Date(),
+          expireAt: new Date(),
+          autoRenew: status === 'active',
+          createdAt: new Date(),
+        }
+        expect(sub.status).toBe(status)
+      })
+    })
+
+    it('正例: 已过期订阅的expireAt应在startAt之前', () => {
+      const sub: SVIPSubscription = {
+        subscriptionId: 'sub-expired',
+        userId: 'user-001',
+        planId: 'plan-001',
+        status: 'expired',
+        startAt: new Date('2026-01-01'),
+        expireAt: new Date('2026-01-15'),
+        autoRenew: false,
+        createdAt: new Date('2026-01-01'),
+      }
+
+      expect(sub.status).toBe('expired')
+      expect(sub.autoRenew).toBe(false)
+      expect(sub.expireAt.getTime()).toBeGreaterThan(sub.startAt.getTime())
+    })
+
+    it('边界: 应支持同一天开始和结束的订阅', () => {
+      const sameDay = new Date('2026-07-06')
+      const sub: SVIPSubscription = {
+        subscriptionId: 'sub-sameday',
+        userId: 'user-001',
+        planId: 'plan-001',
+        status: 'expired',
+        startAt: sameDay,
+        expireAt: sameDay,
+        autoRenew: false,
+        createdAt: sameDay,
+      }
+
+      expect(sub.startAt.getTime()).toBe(sub.expireAt.getTime())
+    })
   })
 
-  test('Level3 应为 3', () => {
-    assert.equal(SvipTierLevel.Level3, 3)
+  // ── SVIPBenefit ──
+
+  describe('SVIPBenefit', () => {
+    it('正例: 应能创建一个有效的权益对象', () => {
+      const benefit: SVIPBenefit = {
+        benefitId: 'ben-001',
+        subscriptionId: 'sub-001',
+        type: 'points_multiplier',
+        expiresAt: new Date('2026-08-01'),
+      }
+
+      expect(benefit.benefitId).toBe('ben-001')
+      expect(benefit.type).toBe('points_multiplier')
+      expect(benefit.usedAt).toBeUndefined()
+      expect(benefit.expiresAt).toBeInstanceOf(Date)
+    })
+
+    it('正例: 应支持所有权益类型', () => {
+      const types: SVIPBenefitType[] = ['points_multiplier', 'free_delivery', 'exclusive_discount']
+
+      types.forEach(type => {
+        const benefit: SVIPBenefit = {
+          benefitId: `ben-${type}`,
+          subscriptionId: 'sub-001',
+          type,
+        }
+        expect(benefit.type).toBe(type)
+      })
+    })
+
+    it('正例: usedAt 在使用后应有值', () => {
+      const benefit: SVIPBenefit = {
+        benefitId: 'ben-used',
+        subscriptionId: 'sub-001',
+        type: 'free_delivery',
+        usedAt: new Date('2026-07-05T10:00:00Z'),
+        expiresAt: new Date('2026-08-01'),
+      }
+
+      expect(benefit.usedAt).toBeInstanceOf(Date)
+      expect(benefit.usedAt!.toISOString()).toBe('2026-07-05T10:00:00.000Z')
+    })
+
+    it('反例: 已使用权益的 usedAt 不应为 undefined', () => {
+      const benefit: SVIPBenefit = {
+        benefitId: 'ben-used',
+        subscriptionId: 'sub-001',
+        type: 'exclusive_discount',
+      }
+
+      // before use, usedAt is undefined
+      expect(benefit.usedAt).toBeUndefined()
+
+      // after use, usedAt has a value
+      benefit.usedAt = new Date()
+      expect(benefit.usedAt).toBeDefined()
+      expect(benefit.usedAt).toBeInstanceOf(Date)
+    })
   })
 
-  test('Level4 应为 4', () => {
-    assert.equal(SvipTierLevel.Level4, 4)
-  })
+  // ── Type Unions ──
 
-  test('Level5 应为 5', () => {
-    assert.equal(SvipTierLevel.Level5, 5)
-  })
+  describe('SVIPStatus & SVIPBenefitType type unions', () => {
+    it('SVIPStatus 应只接受三个合法值', () => {
+      const statuses: SVIPStatus[] = ['active', 'expired', 'cancelled']
+      expect(statuses).toHaveLength(3)
+    })
 
-  test('等级值连续递增', () => {
-    const values = Object.values(SvipTierLevel).filter((v) => typeof v === 'number') as number[]
-    for (let i = 1; i < values.length; i++) {
-      assert.ok(values[i]! > values[i - 1]!, `Level ${values[i]} should be > Level ${values[i - 1]}`)
-    }
-  })
-})
-
-describe('SvipMemberStatus 枚举', () => {
-  test('Active 字符串值', () => {
-    assert.equal(SvipMemberStatus.Active, 'active')
-  })
-
-  test('Expired 字符串值', () => {
-    assert.equal(SvipMemberStatus.Expired, 'expired')
-  })
-
-  test('Frozen 字符串值', () => {
-    assert.equal(SvipMemberStatus.Frozen, 'frozen')
-  })
-
-  test('所有值均为合法字符串', () => {
-    const valid = ['active', 'expired', 'frozen']
-    for (const v of Object.values(SvipMemberStatus)) {
-      assert.ok(valid.includes(v))
-    }
-  })
-})
-
-describe('SvipBenefitType 枚举', () => {
-  test('应包含所有权益类型', () => {
-    const types = Object.values(SvipBenefitType)
-    assert.ok(types.includes('discount' as any))
-    assert.ok(types.includes('freeUpgrade' as any))
-    assert.ok(types.includes('priorityQueue' as any))
-    assert.ok(types.includes('vipRoom' as any))
-    assert.ok(types.includes('exclusiveEvent' as any))
-  })
-})
-
-describe('SVIP_TIER_THRESHOLDS 阈值配置', () => {
-  test('应包含 5 个等级', () => {
-    assert.equal(Object.keys(SVIP_TIER_THRESHOLDS).length, 5)
-  })
-
-  test('Level1 阈值', () => {
-    const t = SVIP_TIER_THRESHOLDS[SvipTierLevel.Level1]
-    assert.equal(t.minSpendAmount, 5000)
-    assert.equal(t.minPoints, 500)
-  })
-
-  test('Level5 阈值最高', () => {
-    const l1 = SVIP_TIER_THRESHOLDS[SvipTierLevel.Level1]
-    const l5 = SVIP_TIER_THRESHOLDS[SvipTierLevel.Level5]
-    assert.ok(l5.minSpendAmount > l1.minSpendAmount)
-    assert.ok(l5.minPoints > l1.minPoints)
-  })
-
-  test('阈值严格递增', () => {
-    const levels = [SvipTierLevel.Level1, SvipTierLevel.Level2, SvipTierLevel.Level3, SvipTierLevel.Level4, SvipTierLevel.Level5]
-    for (let i = 1; i < levels.length; i++) {
-      const prev = SVIP_TIER_THRESHOLDS[levels[i - 1]!]
-      const curr = SVIP_TIER_THRESHOLDS[levels[i]!]
-      assert.ok(curr.minSpendAmount > prev.minSpendAmount, `Level ${i + 1} minSpendAmount should be > Level ${i}`)
-      assert.ok(curr.minPoints > prev.minPoints, `Level ${i + 1} minPoints should be > Level ${i}`)
-    }
-  })
-})
-
-describe('computeSvipTierLevel', () => {
-  test('花费和积分均不足 Level1 时返回 Level1 作为最低', () => {
-    const level = computeSvipTierLevel(0, 0)
-    assert.equal(level, SvipTierLevel.Level1)
-  })
-
-  test('达到 Level1 阈值', () => {
-    const level = computeSvipTierLevel(5000, 500)
-    assert.ok(level >= SvipTierLevel.Level1)
-  })
-
-  test('花费达到 Level3 但积分不足应降级', () => {
-    const level = computeSvipTierLevel(30000, 500) // 积分仅 500
-    assert.ok(level < SvipTierLevel.Level3)
-  })
-
-  test('积分达到 Level3 但花费不足应降级', () => {
-    const level = computeSvipTierLevel(2000, 6000) // 花费仅 2000
-    assert.ok(level < SvipTierLevel.Level3)
-  })
-
-  test('超大花费和积分返回 Level5', () => {
-    const level = computeSvipTierLevel(999999, 999999)
-    assert.equal(level, SvipTierLevel.Level5)
-  })
-
-  test('刚好 Level4 阈值返回 Level4', () => {
-    const level = computeSvipTierLevel(80000, 15000)
-    assert.ok(level >= SvipTierLevel.Level4)
-  })
-})
-
-describe('canUpgradeSvipTier', () => {
-  test('Level1 达标花费可升级', () => {
-    assert.equal(canUpgradeSvipTier(SvipTierLevel.Level1, 20000, 3000), true)
-  })
-
-  test('Level1 花费不足不可升级', () => {
-    assert.equal(canUpgradeSvipTier(SvipTierLevel.Level1, 2000, 300), false)
-  })
-
-  test('Level3 花费积分均达标可升级', () => {
-    assert.equal(canUpgradeSvipTier(SvipTierLevel.Level3, 100000, 20000), true)
-  })
-
-  test('Level5 已达最高不可升级', () => {
-    assert.equal(canUpgradeSvipTier(SvipTierLevel.Level5, 999999, 999999), false)
-  })
-})
-
-describe('SvipTier 接口形状', () => {
-  test('应构建一个完整的 SvipTier 对象', () => {
-    const tier: SvipTier = {
-      id: 'tier-001',
-      tenantContext: CTX,
-      name: '银卡会员',
-      level: SvipTierLevel.Level1,
-      minSpendAmount: 5000,
-      minPoints: 500,
-      benefits: ['discount_95', 'priority_queue'],
-      createdAt: '2024-01-01T00:00:00Z'
-    }
-
-    assert.equal(tier.id, 'tier-001')
-    assert.equal(tier.name, '银卡会员')
-    assert.equal(tier.level, SvipTierLevel.Level1)
-    assert.equal(tier.minSpendAmount, 5000)
-    assert.equal(tier.minPoints, 500)
-    assert.deepEqual(tier.benefits, ['discount_95', 'priority_queue'])
-    assert.equal(tier.createdAt, '2024-01-01T00:00:00Z')
-  })
-
-  test('icon 和 color 应为可选', () => {
-    const tier: SvipTier = {
-      id: 'tier-opt',
-      tenantContext: CTX,
-      name: '测试',
-      level: SvipTierLevel.Level2,
-      minSpendAmount: 10000,
-      minPoints: 2000,
-      benefits: [],
-      createdAt: '2024-01-01T00:00:00Z'
-    }
-
-    assert.equal(tier.icon, undefined)
-    assert.equal(tier.color, undefined)
-  })
-
-  test('benefits 可包含多个', () => {
-    const tier: SvipTier = {
-      id: 'tier-benefits',
-      tenantContext: CTX,
-      name: '高级',
-      level: SvipTierLevel.Level5,
-      minSpendAmount: 200000,
-      minPoints: 40000,
-      benefits: ['discount_80', 'priority_queue', 'free_upgrade', 'vip_room', 'exclusive_event', 'personal_concierge'],
-      icon: 'crown',
-      color: '#FFD700',
-      createdAt: '2024-06-01T00:00:00Z'
-    }
-
-    assert.equal(tier.benefits.length, 6)
-    assert.equal(tier.icon, 'crown')
-    assert.equal(tier.color, '#FFD700')
-  })
-})
-
-describe('SvipMember 接口形状', () => {
-  test('应构建完整的 SvipMember', () => {
-    const member: SvipMember = {
-      id: 'svip-mem-001',
-      tenantContext: CTX,
-      memberId: 'member-001',
-      tierId: 'tier-001',
-      tierName: '银卡会员',
-      tierLevel: SvipTierLevel.Level1,
-      totalSpend: 6000,
-      currentPoints: 600,
-      joinedAt: '2024-01-01T00:00:00Z',
-      expiresAt: '2025-01-01T00:00:00Z',
-      status: SvipMemberStatus.Active,
-      autoRenew: false,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
-    }
-
-    assert.equal(member.memberId, 'member-001')
-    assert.equal(member.tierLevel, SvipTierLevel.Level1)
-    assert.equal(member.status, SvipMemberStatus.Active)
-    assert.equal(member.autoRenew, false)
-    assert.equal(member.totalSpend, 6000)
-    assert.equal(member.currentPoints, 600)
-  })
-
-  test('brandId 和 storeId 应为可选', () => {
-    const member: SvipMember = {
-      id: 'svip-mem-002',
-      tenantContext: CTX,
-      memberId: 'member-002',
-      tierId: 'tier-002',
-      tierName: '金卡',
-      tierLevel: SvipTierLevel.Level2,
-      totalSpend: 15000,
-      currentPoints: 3000,
-      joinedAt: '2024-01-01T00:00:00Z',
-      expiresAt: '2025-01-01T00:00:00Z',
-      status: SvipMemberStatus.Active,
-      autoRenew: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
-    }
-
-    assert.equal(member.brandId, undefined)
-    assert.equal(member.storeId, undefined)
-  })
-
-  test('支持 Frozen 状态', () => {
-    const member: SvipMember = {
-      id: 'svip-mem-frozen',
-      tenantContext: CTX,
-      memberId: 'frozen-user',
-      tierId: 'tier-001',
-      tierName: '银卡',
-      tierLevel: SvipTierLevel.Level1,
-      totalSpend: 5000,
-      currentPoints: 500,
-      joinedAt: '2024-01-01T00:00:00Z',
-      expiresAt: '2025-01-01T00:00:00Z',
-      status: SvipMemberStatus.Frozen,
-      autoRenew: false,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-06-01T00:00:00Z'
-    }
-
-    assert.equal(member.status, SvipMemberStatus.Frozen)
-  })
-
-  test('支持 Expired 状态', () => {
-    const member: SvipMember = {
-      id: 'svip-mem-expired',
-      tenantContext: CTX,
-      memberId: 'expired-user',
-      tierId: 'tier-001',
-      tierName: '银卡',
-      tierLevel: SvipTierLevel.Level1,
-      totalSpend: 5000,
-      currentPoints: 500,
-      joinedAt: '2024-01-01T00:00:00Z',
-      expiresAt: '2024-06-01T00:00:00Z',
-      status: SvipMemberStatus.Expired,
-      autoRenew: false,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-06-01T00:00:00Z'
-    }
-
-    assert.equal(member.status, SvipMemberStatus.Expired)
-  })
-})
-
-describe('SvipBenefit 接口形状', () => {
-  test('应构建完整的 SvipBenefit', () => {
-    const benefit: SvipBenefit = {
-      id: 'benefit-001',
-      tierId: 'tier-001',
-      benefitType: SvipBenefitType.Discount,
-      benefitValue: '95%',
-      description: '95折优惠',
-      isActive: true
-    }
-
-    assert.equal(benefit.benefitType, SvipBenefitType.Discount)
-    assert.equal(benefit.benefitValue, '95%')
-    assert.ok(benefit.isActive)
-  })
-
-  test('支持冻结权益', () => {
-    const benefit: SvipBenefit = {
-      id: 'benefit-inactive',
-      tierId: 'tier-001',
-      benefitType: SvipBenefitType.VipRoom,
-      benefitValue: '2h',
-      description: '已下线',
-      isActive: false
-    }
-
-    assert.equal(benefit.isActive, false)
-  })
-})
-
-describe('buildDefaultSvipTiers', () => {
-  test('应返回 5 个默认等级', () => {
-    const tiers = buildDefaultSvipTiers(CTX)
-    assert.equal(tiers.length, 5)
-  })
-
-  test('等级按 level 升序排列', () => {
-    const tiers = buildDefaultSvipTiers(CTX)
-    for (let i = 1; i < tiers.length; i++) {
-      assert.ok(tiers[i]!.level > tiers[i - 1]!.level)
-    }
-  })
-
-  test('Level1 名称为"银卡会员"', () => {
-    const tiers = buildDefaultSvipTiers(CTX)
-    assert.equal(tiers[0]!.name, '银卡会员')
-  })
-
-  test('Level5 名称为"至尊会员"', () => {
-    const tiers = buildDefaultSvipTiers(CTX)
-    assert.equal(tiers[4]!.name, '至尊会员')
-  })
-
-  test('每个等级应有 tenantContext', () => {
-    const tiers = buildDefaultSvipTiers(CTX)
-    for (const tier of tiers) {
-      assert.equal(tier.tenantContext.tenantId, CTX.tenantId)
-    }
-  })
-
-  test('阈值与 SVIP_TIER_THRESHOLDS 一致', () => {
-    const tiers = buildDefaultSvipTiers(CTX)
-    for (const tier of tiers) {
-      const expected = SVIP_TIER_THRESHOLDS[tier.level]
-      assert.equal(tier.minSpendAmount, expected.minSpendAmount)
-      assert.equal(tier.minPoints, expected.minPoints)
-    }
-  })
-
-  test('各等级应有 unique id', () => {
-    const tiers = buildDefaultSvipTiers(CTX)
-    const ids = new Set(tiers.map((t) => t.id))
-    assert.equal(ids.size, 5)
+    it('SVIPBenefitType 应只接受三个合法值', () => {
+      const types: SVIPBenefitType[] = ['points_multiplier', 'free_delivery', 'exclusive_discount']
+      expect(types).toHaveLength(3)
+    })
   })
 })

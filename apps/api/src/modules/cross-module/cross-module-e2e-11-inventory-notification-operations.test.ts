@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E 跨模块 #11 — 库存预警 → 运营通知 联动
  *
@@ -28,7 +29,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -38,10 +38,8 @@ import {
   Post,
   Req
 } from '@nestjs/common'
-import { Test } from '@nestjs/testing'
 import request from 'supertest'
-import type { NextFunction, Request, Response } from 'express'
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import type { Request } from 'express'
 import {
   InventoryService,
   resetInventoryServiceTestState
@@ -56,17 +54,7 @@ import {
   NotificationStatus
 } from '../notification/notification.entity'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
-
-function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
-  ctx.tenantContext = {
-    tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
-    brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
-    storeId: (req.header('x-store-id') as string | undefined) ?? 'store-001',
-    marketCode: (req.header('x-market-code') as string | undefined) ?? 'cn-mainland'
-  }
-  next()
-}
+import { buildCrossModuleTestApp } from './test-helpers'
 
 // ─── TestController ───
 
@@ -154,19 +142,14 @@ async function buildApp() {
   const inventoryService = new InventoryService()
   const notificationService = new NotificationService()
 
-  const moduleRef = await Test.createTestingModule({
+  const { app, moduleRef } = await buildCrossModuleTestApp({
     controllers: [TestController],
     providers: [
       { provide: InventoryService, useValue: inventoryService },
       { provide: NotificationService, useValue: notificationService }
-    ]
-  }).compile()
-
-  const app = moduleRef.createNestApplication()
-  app.use(attachTenantContext)
-  app.useGlobalInterceptors(new ResponseInterceptor())
-  await app.init()
-  return { app, inventoryService, notificationService }
+    ],
+  })
+  return { app, moduleRef, inventoryService, notificationService }
 }
 
 const TENANT_A = {
@@ -210,7 +193,7 @@ async function createProduct(
 // E2E: 库存预警 → 运营通知 完整联动
 // ═══════════════════════════════════════════════════
 
-test('e2e-11: full chain inventory low-stock alert → notification dispatch SENT', async () => {
+it('e2e-11: full chain inventory low-stock alert → notification dispatch SENT', async () => {
   const { app, inventoryService, notificationService } = await buildApp()
 
   try {
@@ -293,7 +276,7 @@ test('e2e-11: full chain inventory low-stock alert → notification dispatch SEN
   }
 })
 
-test('e2e-11: out-of-stock alert when stock reaches 0', async () => {
+it('e2e-11: out-of-stock alert when stock reaches 0', async () => {
   const { app, inventoryService } = await buildApp()
 
   try {
@@ -323,7 +306,7 @@ test('e2e-11: out-of-stock alert when stock reaches 0', async () => {
   }
 })
 
-test('e2e-11: failed dispatch → retry → SENT', async () => {
+it('e2e-11: failed dispatch → retry → SENT', async () => {
   const { app, notificationService } = await buildApp()
 
   try {
@@ -370,7 +353,7 @@ test('e2e-11: failed dispatch → retry → SENT', async () => {
   }
 })
 
-test('e2e-11: cancel a sent dispatch → status remains SENT (not cancellable)', async () => {
+it('e2e-11: cancel a sent dispatch → status remains SENT (not cancellable)', async () => {
   const { app, notificationService } = await buildApp()
 
   try {
@@ -397,7 +380,7 @@ test('e2e-11: cancel a sent dispatch → status remains SENT (not cancellable)',
   }
 })
 
-test('e2e-11: list dispatches filter by status (PENDING/SENT/FAILED)', async () => {
+it('e2e-11: list dispatches filter by status (PENDING/SENT/FAILED)', async () => {
   const { app, notificationService } = await buildApp()
 
   try {
@@ -454,7 +437,7 @@ test('e2e-11: list dispatches filter by status (PENDING/SENT/FAILED)', async () 
   }
 })
 
-test('e2e-11: update notification template body and toggle enabled', async () => {
+it('e2e-11: update notification template body and toggle enabled', async () => {
   const { app, notificationService } = await buildApp()
 
   try {
@@ -492,7 +475,7 @@ test('e2e-11: update notification template body and toggle enabled', async () =>
   }
 })
 
-test('e2e-11: restock clears low-stock alert', async () => {
+it('e2e-11: restock clears low-stock alert', async () => {
   const { app, inventoryService } = await buildApp()
 
   try {
@@ -535,7 +518,7 @@ test('e2e-11: restock clears low-stock alert', async () => {
   }
 })
 
-test('e2e-11: cross-tenant isolation - Tenant B cannot see Tenant A dispatches', async () => {
+it('e2e-11: cross-tenant isolation - Tenant B cannot see Tenant A dispatches', async () => {
   const { app, inventoryService, notificationService } = await buildApp()
 
   try {

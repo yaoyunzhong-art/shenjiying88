@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { ReservationType, ReservationStatus } from './reservation.entity'
 import {
   CreateReservationDto,
@@ -8,7 +8,7 @@ import {
 } from './reservation.dto'
 
 describe('CreateReservationDto', () => {
-  test('标准预约 DTO：必填 type + resourceId + userId + startTime + endTime + duration + price + deposit', () => {
+  it('标准预约 DTO：必填 type + resourceId + userId + startTime + endTime + duration + price + deposit', () => {
     const dto = Object.assign(new CreateReservationDto(), {
       type: ReservationType.Venue,
       resourceId: 'table-1',
@@ -34,7 +34,7 @@ describe('CreateReservationDto', () => {
     assert.equal(dto.deposit, 30)
   })
 
-  test('设备预约 DTO', () => {
+  it('设备预约 DTO', () => {
     const dto = Object.assign(new CreateReservationDto(), {
       type: ReservationType.Equipment,
       resourceId: 'glove-1',
@@ -53,7 +53,7 @@ describe('CreateReservationDto', () => {
     assert.equal(dto.remark, '需要大号')
   })
 
-  test('服务预约 DTO', () => {
+  it('服务预约 DTO', () => {
     const dto = Object.assign(new CreateReservationDto(), {
       type: ReservationType.Service,
       resourceId: 'coach-1',
@@ -71,7 +71,7 @@ describe('CreateReservationDto', () => {
     assert.equal(dto.resourceName, '张教练')
   })
 
-  test('课程预约 DTO', () => {
+  it('课程预约 DTO', () => {
     const dto = Object.assign(new CreateReservationDto(), {
       type: ReservationType.Class,
       resourceId: 'class-yoga',
@@ -90,7 +90,7 @@ describe('CreateReservationDto', () => {
 })
 
 describe('UpdateReservationDto', () => {
-  test('全部字段可选', () => {
+  it('全部字段可选', () => {
     const dto = Object.assign(new UpdateReservationDto(), {
       startTime: '2026-06-23T13:00:00.000Z',
       endTime: '2026-06-23T15:00:00.000Z',
@@ -110,7 +110,7 @@ describe('UpdateReservationDto', () => {
     assert.equal(dto.resourceName, '台球桌 2 号')
   })
 
-  test('状态更新 DTO', () => {
+  it('状态更新 DTO', () => {
     const dto = Object.assign(new UpdateReservationDto(), {
       status: ReservationStatus.Cancelled,
       remark: '客户取消'
@@ -120,7 +120,7 @@ describe('UpdateReservationDto', () => {
     assert.equal(dto.remark, '客户取消')
   })
 
-  test('空 DTO：不传任何字段', () => {
+  it('空 DTO：不传任何字段', () => {
     const dto = new UpdateReservationDto()
     assert.equal(dto.status, undefined)
     assert.equal(dto.startTime, undefined)
@@ -134,7 +134,7 @@ describe('UpdateReservationDto', () => {
 })
 
 describe('ReservationQueryDto', () => {
-  test('全部查询字段可选', () => {
+  it('全部查询字段可选', () => {
     const dto = Object.assign(new ReservationQueryDto(), {
       type: ReservationType.Venue,
       resourceId: 'table-1',
@@ -152,7 +152,7 @@ describe('ReservationQueryDto', () => {
     assert.equal(dto.endDate, '2026-06-23T23:59:59.999Z')
   })
 
-  test('部分字段查询', () => {
+  it('部分字段查询', () => {
     const dto = Object.assign(new ReservationQueryDto(), {
       userId: 'user-2',
       status: ReservationStatus.Pending
@@ -164,7 +164,7 @@ describe('ReservationQueryDto', () => {
     assert.equal(dto.resourceId, undefined)
   })
 
-  test('空查询 DTO', () => {
+  it('空查询 DTO', () => {
     const dto = new ReservationQueryDto()
     assert.equal(dto.type, undefined)
     assert.equal(dto.resourceId, undefined)

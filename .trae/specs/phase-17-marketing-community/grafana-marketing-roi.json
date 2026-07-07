@@ -1,0 +1,80 @@
+{
+  "title": "Phase-17 营销 ROI 仪表板",
+  "uid": "phase17-marketing-roi",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-7d", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "优惠券核销速率 (每小时)",
+      "type": "graph",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 6 },
+      "targets": [{ "expr": "rate(coupon_redemption_total[1h])" }]
+    },
+    {
+      "id": 2,
+      "title": "营销触发器效率",
+      "type": "stat",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 6 },
+      "targets": [
+        { "expr": "campaign_trigger_total", "legendFormat": "matched" },
+        { "expr": "campaign_dispatched_total", "legendFormat": "dispatched" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "裂变追踪率 (目标 ≥95%)",
+      "type": "gauge",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 6 },
+      "targets": [{ "expr": "referral_track_total / referral_click_total" }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "green", "value": 0.95 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "线索漏斗",
+      "type": "bargauge",
+      "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "lead_total{stage=\"new\"}", "legendFormat": "新线索" },
+        { "expr": "lead_total{stage=\"assigned\"}", "legendFormat": "已分配" },
+        { "expr": "lead_total{stage=\"contacted\"}", "legendFormat": "已联系" },
+        { "expr": "lead_total{stage=\"trial\"}", "legendFormat": "体验中" },
+        { "expr": "lead_total{stage=\"closed_won\"}", "legendFormat": "已成交" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "ROI (营收/成本)",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
+      "targets": [{ "expr": "marketing_roi" }],
+      "options": { "colorMode": "value", "graphMode": "area" }
+    },
+    {
+      "id": 6,
+      "title": "通知发送速率",
+      "type": "graph",
+      "gridPos": { "x": 0, "y": 14, "w": 12, "h": 6 },
+      "targets": [{ "expr": "rate(notification_dispatch_total[5m])" }]
+    },
+    {
+      "id": 7,
+      "title": "平均客单价",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 14, "w": 12, "h": 6 },
+      "targets": [{ "expr": "lead_won_amount_avg" }]
+    }
+  ]
+}

@@ -1,0 +1,202 @@
+---
+openapi: 3.0.0
+info:
+  title: 神机营 SaaS - V10 Sprint 1 API
+  version: 1.0.0
+  description: |
+    V10 Sprint 1 (Day 1-9) 完整 API 文档
+    - Phase 87 大模型配置 (Day 1-3)
+    - Phase 88 付费授权 (Day 4)
+    - Phase 89 多系统对接 (Day 5)
+    - Phase 90 三级独立配置 (Day 6)
+    - Phase 91 报表/看板 (Day 7)
+    - Phase 92 灰度发布 (Day 8)
+    - Phase 93 监控告警 (Day 9)
+
+servers:
+  - url: http://localhost:3000
+    description: 本地开发
+  - url: https://api.shenjiying88.com
+    description: 生产环境
+
+tags:
+  - name: ai-model-config
+    description: 大模型配置 (Phase 87)
+  - name: license
+    description: 付费授权 (Phase 88)
+  - name: open-api
+    description: 多系统对接 (Phase 89)
+  - name: tenant-config
+    description: 三级独立配置 (Phase 90)
+  - name: report
+    description: 报表/看板 (Phase 91)
+  - name: canary
+    description: 灰度发布 (Phase 92)
+  - name: monitoring
+    description: 监控告警 (Phase 93)
+
+paths:
+  # ============ Phase 87 大模型配置 ============
+  /ai-model-config/presets:
+    get:
+      tags: [ai-model-config]
+      summary: 列出所有预设
+      responses:
+        '200':
+          description: OK
+  /ai-model-config/store-configs:
+    get:
+      tags: [ai-model-config]
+      summary: 列出门店配置
+      parameters:
+        - name: storeId
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [ai-model-config]
+      summary: 创建门店配置
+      responses:
+        '201': { description: Created }
+
+  # ============ Phase 88 付费授权 ============
+  /license/check:
+    post:
+      tags: [license]
+      summary: 检查授权
+      responses:
+        '200': { description: OK }
+  /license:
+    get:
+      tags: [license]
+      summary: 列出授权
+    post:
+      tags: [license]
+      summary: 创建授权
+
+  # ============ Phase 89 多系统对接 ============
+  /open/auth/token:
+    post:
+      tags: [open-api]
+      summary: OAuth 2.0 client_credentials
+      responses:
+        '200': { description: OK }
+  /open/sync:
+    post:
+      tags: [open-api]
+      summary: 数据同步 (HMAC + Idempotency-Key)
+      responses:
+        '200': { description: OK }
+  /open/command:
+    post:
+      tags: [open-api]
+      summary: 指令下发
+      responses:
+        '200': { description: OK }
+
+  # ============ Phase 90 三级独立配置 ============
+  /tenant-config:
+    get:
+      tags: [tenant-config]
+      summary: 列出当前级别配置
+      parameters:
+        - name: level
+          in: query
+          schema: { type: string, enum: [store, tenant, brand] }
+    post:
+      tags: [tenant-config]
+      summary: 批量设置配置
+  /tenant-config/effective:
+    get:
+      tags: [tenant-config]
+      summary: 获取生效配置 (考虑继承)
+  /tenant-config/workbench/{code}:
+    get:
+      tags: [tenant-config]
+      summary: 工作台视角 (W-S/W-T/W-B)
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: { type: string, enum: ['W-S', 'W-T', 'W-B'] }
+
+  # ============ Phase 91 报表 ============
+  /report/list:
+    get:
+      tags: [report]
+      summary: 列出报表
+  /report/query:
+    post:
+      tags: [report]
+      summary: 查询报表数据
+  /report/dashboard/list:
+    get:
+      tags: [report]
+      summary: 列出看板
+
+  # ============ Phase 92 灰度发布 ============
+  /canary/list:
+    get:
+      tags: [canary]
+      summary: 列出灰度实验
+  /canary/evaluate:
+    post:
+      tags: [canary]
+      summary: 评估灰度策略
+  /canary/{id}/activate:
+    post:
+      tags: [canary]
+      summary: 启动灰度
+  /canary/{id}/promote:
+    post:
+      tags: [canary]
+      summary: 晋级灰度
+  /canary/{id}/rollback:
+    post:
+      tags: [canary]
+      summary: 回滚灰度
+
+  # ============ Phase 93 监控告警 ============
+  /monitoring/metrics:
+    get:
+      tags: [monitoring]
+      summary: 列出指标定义
+  /monitoring/metrics/record:
+    post:
+      tags: [monitoring]
+      summary: 上报指标
+  /monitoring/rules:
+    get:
+      tags: [monitoring]
+      summary: 列出告警规则
+  /monitoring/alerts:
+    get:
+      tags: [monitoring]
+      summary: 列出告警
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [firing, resolved, silenced] }
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+    Pagination:
+      type: object
+      properties:
+        items: { type: array }
+        total: { type: integer }
+
+security:
+  - BearerAuth: []
+
+securitySchemes:
+  BearerAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT

@@ -1,7 +1,8 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { LoyaltyService } from '../loyalty/loyalty.service'
+import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
 import { MemberService } from '../member/member.service'
 import {
   AnalyticsScope,
@@ -18,10 +19,11 @@ const tenantContext = {
 
 function createHarness() {
   const memberService = new MemberService()
-  const loyaltyService = new LoyaltyService(memberService)
+  const metricsService = new MarketingMetricsService()
+  const loyaltyService = new LoyaltyService(memberService, undefined, metricsService)
   loyaltyService.resetLoyaltyStoresForTests()
-  const analyticsService = new AnalyticsService(loyaltyService)
-  return { memberService, loyaltyService, analyticsService }
+  const analyticsService = new AnalyticsService(loyaltyService, metricsService)
+  return { memberService, loyaltyService, analyticsService, metricsService }
 }
 
 function ensureMember(harness: ReturnType<typeof createHarness>, memberId = 'm-1', brandId = 'brand-001') {
@@ -66,20 +68,23 @@ function buildLytPayment(orderId: string, paymentId: string, brandId = 'brand-00
 }
 
 describe('AnalyticsService', () => {
-  test('getOperationSnapshot returns zeroed snapshot when loyalty is empty', () => {
+  it('getOperationSnapshot returns zeroed snapshot when loyalty is empty', () => {
     const { analyticsService } = createHarness()
     const snapshot = analyticsService.getOperationSnapshot(tenantContext)
     assert.equal(snapshot.tenantId, 'tenant-001')
     assert.equal(snapshot.scope, AnalyticsScope.Tenant)
-    assert.equal(snapshot.groups.length, 2)
+    assert.equal(snapshot.groups.length, 3)
     assert.equal(snapshot.groups[0]?.groupKey, 'orders')
     assert.equal(snapshot.groups[1]?.groupKey, 'loyalty')
+    assert.equal(snapshot.groups[2]?.groupKey, 'marketing')
     const settlementCount = snapshot.groups[0]?.metrics.find((m) => m.key === 'settlementCount')
     assert.equal(settlementCount?.value, 0)
     assert.equal(settlementCount?.unit, '笔')
+    const couponIssued = snapshot.groups[2]?.metrics.find((m) => m.key === 'couponIssuedTotal')
+    assert.equal(couponIssued?.value, 0)
   })
 
-  test('getOperationSnapshot aggregates settlePaidOrder counts', async () => {
+  it('getOperationSnapshot aggregates settlePaidOrder counts', async () => {
     const harness = createHarness()
     const { analyticsService, loyaltyService } = harness
     ensureMember(harness)
@@ -96,7 +101,46 @@ describe('AnalyticsService', () => {
     assert.ok((pointsIn?.value ?? 0) > 0)
   })
 
-  test('getOperationSnapshot filters by brandId when supplied', async () => {
+  it('getOperationSnapshot aggregates marketing metrics into marketing group and totals', () => {
+    const harness = createHarness()
+    const { analyticsService, loyaltyService, metricsService } = harness
+    const plan = loyaltyService.registerCouponPlan({
+      tenantContext,
+      code: 'MARKETING',
+      title: 'marketing coupon',
+      discountType: 'FIXED_AMOUNT' as any,
+      discountValue: 10,
+      totalQuota: 10,
+      perMemberLimit: 5,
+      validFrom: new Date(Date.now() - 1000).toISOString(),
+      validUntil: new Date(Date.now() + 1000 * 60 * 60).toISOString()
+    })
+    loyaltyService.updateCouponPlanStatus(plan.planId, 'ACTIVE' as any, tenantContext.tenantId)
+    loyaltyService.issueCouponFromPlan({ tenantContext, memberId: 'm-1', planId: plan.planId })
+    loyaltyService.issueCouponFromPlan({ tenantContext, memberId: 'm-2', planId: plan.planId })
+    metricsService.incrCouponRedemption(false, tenantContext.tenantId)
+    metricsService.incrCampaignTrigger(3, 2, tenantContext.tenantId)
+    metricsService.incrNotificationDispatch(tenantContext.tenantId)
+    metricsService.incrLeadIngest(tenantContext.tenantId)
+    metricsService.incrLeadCloseWon(188, tenantContext.tenantId)
+
+    const snapshot = analyticsService.getOperationSnapshot(tenantContext)
+    const marketingGroup = snapshot.groups.find((group) => group.groupKey === 'marketing')
+
+    assert.ok(marketingGroup)
+    assert.equal(marketingGroup?.metrics.find((m) => m.key === 'couponIssuedTotal')?.value, 2)
+    assert.equal(marketingGroup?.metrics.find((m) => m.key === 'couponRedemptionTotal')?.value, 1)
+    assert.equal(marketingGroup?.metrics.find((m) => m.key === 'campaignTriggerTotal')?.value, 3)
+    assert.equal(marketingGroup?.metrics.find((m) => m.key === 'campaignDispatchedTotal')?.value, 2)
+    assert.equal(marketingGroup?.metrics.find((m) => m.key === 'notificationDispatchTotal')?.value, 1)
+    assert.equal(marketingGroup?.metrics.find((m) => m.key === 'leadIngestTotal')?.value, 1)
+    assert.equal(marketingGroup?.metrics.find((m) => m.key === 'leadCloseWonTotal')?.value, 1)
+    assert.equal(snapshot.totals.find((m) => m.key === 'totalCouponsIssued')?.value, 2)
+    assert.equal(snapshot.totals.find((m) => m.key === 'totalMarketingRedemptions')?.value, 1)
+    assert.equal(snapshot.totals.find((m) => m.key === 'totalNotifications')?.value, 1)
+  })
+
+  it('getOperationSnapshot filters by brandId when supplied', async () => {
     const harness = createHarness()
     const { analyticsService, loyaltyService } = harness
     ensureMember(harness, 'm-1', 'brand-001')
@@ -113,7 +157,7 @@ describe('AnalyticsService', () => {
     assert.equal(brand.totals.find((m) => m.key === 'totalSettlements')?.value, 1)
   })
 
-  test('getDiagnostics flags low payment success rate', async () => {
+  it('getDiagnostics flags low payment success rate', async () => {
     const harness = createHarness()
     const { analyticsService, loyaltyService } = harness
     ensureMember(harness)
@@ -137,7 +181,7 @@ describe('AnalyticsService', () => {
     assert.equal(paymentDiagnostic?.recommendations[0]?.actionCode, 'inspect-payment-gateway')
   })
 
-  test('getDiagnostics flags no-settlement-activity for empty tenants', () => {
+  it('getDiagnostics flags no-settlement-activity for empty tenants', () => {
     const { analyticsService } = createHarness()
     const diagnostics = analyticsService.getDiagnostics(tenantContext)
     const silence = diagnostics.find((d) => d.ruleId.startsWith('no-settlement-activity'))
@@ -146,7 +190,7 @@ describe('AnalyticsService', () => {
     assert.equal(silence?.recommendations[0]?.suggestedCampaignKind, 'RE_ENGAGEMENT')
   })
 
-  test('getDiagnostics flags blindbox shortfall when coupons move but blindboxes do not', () => {
+  it('getDiagnostics flags blindbox shortfall when coupons move but blindboxes do not', () => {
     const { analyticsService, loyaltyService } = createHarness()
     const plan = loyaltyService.registerCouponPlan({
       tenantContext,
@@ -173,7 +217,7 @@ describe('AnalyticsService', () => {
     assert.equal(shortfall?.recommendations[0]?.suggestedCampaignKind, 'BLINDBOX_PROMO')
   })
 
-  test('getDiagnostics flags coupon quota exhaustion when a plan is below 10%', () => {
+  it('getDiagnostics flags coupon quota exhaustion when a plan is below 10%', () => {
     const { analyticsService, loyaltyService } = createHarness()
     const plan = loyaltyService.registerCouponPlan({
       tenantContext,
@@ -199,7 +243,7 @@ describe('AnalyticsService', () => {
     assert.ok(quota)
   })
 
-  test('getRecommendations merges and sorts diagnostics by priority', async () => {
+  it('getRecommendations merges and sorts diagnostics by priority', async () => {
     const harness = createHarness()
     const { analyticsService, loyaltyService } = harness
     ensureMember(harness)
@@ -217,7 +261,7 @@ describe('AnalyticsService', () => {
     }
   })
 
-  test('getDiagnostics returns no payment failure diagnostic when success rate is 100%', async () => {
+  it('getDiagnostics returns no payment failure diagnostic when success rate is 100%', async () => {
     const harness = createHarness()
     const { analyticsService, loyaltyService } = harness
     ensureMember(harness)
@@ -230,9 +274,10 @@ describe('AnalyticsService', () => {
     assert.equal(silence, undefined)
   })
 
-  test('getOperationSnapshot no-ops gracefully when LoyaltyService is not injected', () => {
-    const analyticsService = new AnalyticsService(undefined)
+  it('getOperationSnapshot no-ops gracefully when LoyaltyService is not injected', () => {
+    const analyticsService = new AnalyticsService(undefined, undefined)
     const snapshot = analyticsService.getOperationSnapshot(tenantContext)
     assert.equal(snapshot.totals.find((m) => m.key === 'totalSettlements')?.value, 0)
+    assert.equal(snapshot.totals.find((m) => m.key === 'totalCouponsIssued')?.value, 0)
   })
 })

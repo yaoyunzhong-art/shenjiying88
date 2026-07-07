@@ -1,9 +1,9 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [queue] [A] entity.test 补全
  */
 
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   QueueType,
   QueueStatus,
@@ -12,13 +12,13 @@ import {
 } from './queue.entity'
 
 describe('queue.entity enums', () => {
-  test('QueueType 包含 Booking / Waiting / Service', () => {
+  it('QueueType 包含 Booking / Waiting / Service', () => {
     assert.equal(QueueType.Booking, 'booking')
     assert.equal(QueueType.Waiting, 'waiting')
     assert.equal(QueueType.Service, 'service')
   })
 
-  test('QueueStatus 包含 6 种状态', () => {
+  it('QueueStatus 包含 6 种状态', () => {
     assert.equal(QueueStatus.Waiting, 'waiting')
     assert.equal(QueueStatus.Called, 'called')
     assert.equal(QueueStatus.Serving, 'serving')
@@ -29,14 +29,14 @@ describe('queue.entity enums', () => {
 })
 
 describe('queue.entity QUEUE_STATUS_TRANSITIONS', () => {
-  test('Waiting → Called / Cancelled', () => {
+  it('Waiting → Called / Cancelled', () => {
     assert.deepEqual(QUEUE_STATUS_TRANSITIONS[QueueStatus.Waiting], [
       QueueStatus.Called,
       QueueStatus.Cancelled
     ])
   })
 
-  test('Called → Serving / NoShow / Cancelled', () => {
+  it('Called → Serving / NoShow / Cancelled', () => {
     assert.deepEqual(QUEUE_STATUS_TRANSITIONS[QueueStatus.Called], [
       QueueStatus.Serving,
       QueueStatus.NoShow,
@@ -44,28 +44,28 @@ describe('queue.entity QUEUE_STATUS_TRANSITIONS', () => {
     ])
   })
 
-  test('Serving → Completed / Cancelled', () => {
+  it('Serving → Completed / Cancelled', () => {
     assert.deepEqual(QUEUE_STATUS_TRANSITIONS[QueueStatus.Serving], [
       QueueStatus.Completed,
       QueueStatus.Cancelled
     ])
   })
 
-  test('Completed — 不可再转换', () => {
+  it('Completed — 不可再转换', () => {
     assert.deepEqual(QUEUE_STATUS_TRANSITIONS[QueueStatus.Completed], [])
   })
 
-  test('Cancelled — 不可再转换', () => {
+  it('Cancelled — 不可再转换', () => {
     assert.deepEqual(QUEUE_STATUS_TRANSITIONS[QueueStatus.Cancelled], [])
   })
 
-  test('NoShow — 不可再转换', () => {
+  it('NoShow — 不可再转换', () => {
     assert.deepEqual(QUEUE_STATUS_TRANSITIONS[QueueStatus.NoShow], [])
   })
 })
 
 describe('queue.entity QueueEntity class', () => {
-  test('QueueEntity 实例包含所有字段', () => {
+  it('QueueEntity 实例包含所有字段', () => {
     const now = new Date()
     const entity = Object.assign(new QueueEntity(), {
       id: 'queue-1',
@@ -106,7 +106,7 @@ describe('queue.entity QueueEntity class', () => {
     assert.equal(entity.updatedAt, now)
   })
 
-  test('QueueEntity 可选字段 phone / calledAt / servedAt 等可为 undefined', () => {
+  it('QueueEntity 可选字段 phone / calledAt / servedAt 等可为 undefined', () => {
     const entity = Object.assign(new QueueEntity(), {
       id: 'queue-2',
       tenantId: 'tenant-1',
@@ -133,7 +133,7 @@ describe('queue.entity QueueEntity class', () => {
     assert.equal(entity.actualWaitMin, undefined)
   })
 
-  test('QueueEntity 兼容带所有时间戳的完整记录', () => {
+  it('QueueEntity 兼容带所有时间戳的完整记录', () => {
     const entity = Object.assign(new QueueEntity(), {
       id: 'queue-3',
       tenantId: 'tenant-1',

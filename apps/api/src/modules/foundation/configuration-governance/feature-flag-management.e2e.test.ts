@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { Body, Controller, Get, Inject, Param, Post, Query, ValidationPipe } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
@@ -222,7 +222,7 @@ class TestFeatureFlagManagementController {
   }
 }
 
-test('e2e: manages feature flags and validates persisted rollout decisions', async () => {
+it('e2e: manages feature flags and validates persisted rollout decisions', async () => {
   const { prisma, flags } = createFeatureFlagPrismaMock()
   const audits: string[] = []
 

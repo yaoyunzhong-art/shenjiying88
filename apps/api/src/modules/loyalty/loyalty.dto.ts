@@ -1,7 +1,7 @@
-import { IsArray, IsEnum, IsISO8601, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator'
+import { IsArray, IsBoolean, IsEnum, IsISO8601, IsInt, IsNumber, IsOptional, IsString, Max, Min, ValidateNested } from 'class-validator'
 import { Type } from 'class-transformer'
 import 'reflect-metadata'
-import { CouponDiscountType, LoyaltyPlanStatus } from './loyalty.entity'
+import { BlindboxRewardTier, CouponDiscountType, LoyaltyPlanStatus } from './loyalty.entity'
 
 /**
  * 积分台账查询 DTO
@@ -50,6 +50,47 @@ export class BlindboxFulfillmentQueryDto {
   blindboxPlanId?: string
 }
 
+export class BlindboxDrawAuditQueryDto {
+  @IsString()
+  @IsOptional()
+  memberId?: string
+
+  @IsString()
+  @IsOptional()
+  planId?: string
+
+  @IsString()
+  @IsOptional()
+  blindboxPlanId?: string
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  offset?: number
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  limit?: number
+}
+
+export class BlindboxProbabilityOverviewQueryDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  historyOffset?: number
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  @IsOptional()
+  historyLimit?: number
+}
+
 /**
  * 结算查询 DTO
  */
@@ -69,6 +110,23 @@ export class BlindboxRewardEntryDto {
 
   @IsString()
   label!: string
+
+  @IsEnum(BlindboxRewardTier)
+  @IsOptional()
+  tier?: BlindboxRewardTier
+}
+
+export class BlindboxCaseGuaranteeDto {
+  @IsNumber()
+  @Min(1)
+  caseSize!: number
+
+  @IsEnum(BlindboxRewardTier)
+  guaranteedTier!: BlindboxRewardTier
+
+  @IsBoolean()
+  @IsOptional()
+  distinctRewards?: boolean
 }
 
 export class RegisterCouponPlanDto {
@@ -132,6 +190,11 @@ export class RegisterBlindboxPlanDto {
   @ValidateNested({ each: true })
   @Type(() => BlindboxRewardEntryDto)
   rewardPool!: BlindboxRewardEntryDto[]
+
+  @ValidateNested()
+  @Type(() => BlindboxCaseGuaranteeDto)
+  @IsOptional()
+  caseGuarantee?: BlindboxCaseGuaranteeDto
 
   @IsISO8601()
   validFrom!: string

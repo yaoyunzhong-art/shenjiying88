@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { HealthController } from './health.controller'
 import type { RequestTenantContext, ActorType } from '../tenant/tenant.types'
 import type { CurrentActorValue } from '../foundation/identity-access/identity-access.decorator'
@@ -41,26 +41,26 @@ function makeController(serviceOverrides?: Partial<MockHealthService>): HealthCo
 
 // ── 元数据检查 ──
 describe('路由元数据验证', () => {
-  test('health controller path metadata is set', () => {
+  it('health controller path metadata is set', () => {
     const path = Reflect.getMetadata('path', HealthController)
     assert.equal(path, 'health')
   })
 
-  test('getHealth route keeps GET metadata on root path', () => {
+  it('getHealth route keeps GET metadata on root path', () => {
     const method = Reflect.getMetadata('method', HealthController.prototype.getHealth)
     const path = Reflect.getMetadata('path', HealthController.prototype.getHealth)
     assert.equal(method, 0) // GET
     assert.equal(path, '/')
   })
 
-  test('getPing route has GET metadata on ping path', () => {
+  it('getPing route has GET metadata on ping path', () => {
     const method = Reflect.getMetadata('method', HealthController.prototype.getPing)
     const path = Reflect.getMetadata('path', HealthController.prototype.getPing)
     assert.equal(method, 0) // GET
     assert.equal(path, 'ping')
   })
 
-  test('getReadiness route has GET metadata on readiness path', () => {
+  it('getReadiness route has GET metadata on readiness path', () => {
     const method = Reflect.getMetadata('method', HealthController.prototype.getReadiness)
     const path = Reflect.getMetadata('path', HealthController.prototype.getReadiness)
     assert.equal(method, 0) // GET
@@ -70,7 +70,7 @@ describe('路由元数据验证', () => {
 
 // ── GET /health ──
 describe('GET /health（基本存活性检查）', () => {
-  test('返回 alive=true 和有效 ISO 时间戳', async () => {
+  it('返回 alive=true 和有效 ISO 时间戳', async () => {
     const ctrl = makeController()
     const result = await ctrl.getHealth()
     assert.equal(result.alive, true)
@@ -80,7 +80,7 @@ describe('GET /health（基本存活性检查）', () => {
     assert.ok(!isNaN(parsed.getTime()))
   })
 
-  test('多次调用返回的 timestamp 随时间递增', async () => {
+  it('多次调用返回的 timestamp 随时间递增', async () => {
     const timestamps: string[] = []
     const ctrl = makeController({
       ping: async () => {
@@ -99,7 +99,7 @@ describe('GET /health（基本存活性检查）', () => {
     assert.ok(new Date(timestamps[1]) >= new Date(timestamps[0]))
   })
 
-  test('即使服务降级，alive 依然为 true（存活探头容忍降级）', async () => {
+  it('即使服务降级，alive 依然为 true（存活探头容忍降级）', async () => {
     const ctrl = makeController({
       ping: async () => ({ alive: true, timestamp: '2026-01-01T00:00:00.000Z' })
     })
@@ -107,7 +107,7 @@ describe('GET /health（基本存活性检查）', () => {
     assert.equal(result.alive, true)
   })
 
-  test('服务不可用时 alive 应为 false（进程异常）', async () => {
+  it('服务不可用时 alive 应为 false（进程异常）', async () => {
     const ctrl = makeController({
       ping: async () => ({ alive: false, timestamp: new Date().toISOString() })
     })
@@ -118,7 +118,7 @@ describe('GET /health（基本存活性检查）', () => {
 
 // ── GET /health/ping ──
 describe('GET /health/ping（连通性检查）', () => {
-  test('返回 alive=true（正常连通）', async () => {
+  it('返回 alive=true（正常连通）', async () => {
     let called = false
     const ctrl = makeController({
       ping: async () => {
@@ -132,7 +132,7 @@ describe('GET /health/ping（连通性检查）', () => {
     assert.ok(typeof result.timestamp === 'string')
   })
 
-  test('极短时间内连续 ping 都能正确返回', async () => {
+  it('极短时间内连续 ping 都能正确返回', async () => {
     let callCount = 0
     const ctrl = makeController({
       ping: async () => {
@@ -151,7 +151,7 @@ describe('GET /health/ping（连通性检查）', () => {
     results.forEach(r => assert.equal(r.alive, true))
   })
 
-  test('返回的 timestamp 是有效 ISO 8601 格式', async () => {
+  it('返回的 timestamp 是有效 ISO 8601 格式', async () => {
     const ctrl = makeController()
     const result = await ctrl.getPing()
     const isoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
@@ -161,7 +161,7 @@ describe('GET /health/ping（连通性检查）', () => {
 
 // ── GET /health/readiness ──
 describe('GET /health/readiness（就绪检查）', () => {
-  test('verbose=false 时仅检查 database + lyt-adapter', async () => {
+  it('verbose=false 时仅检查 database + lyt-adapter', async () => {
     let capturedContext: Record<string, unknown> | undefined
     const ctrl = makeController({
       check: async (ctx: unknown) => {
@@ -187,7 +187,7 @@ describe('GET /health/readiness（就绪检查）', () => {
     assert.ok(Array.isArray((result as { components: unknown[] }).components))
   })
 
-  test('verbose=true 时检查 5 个组件（含 memory + disk）', async () => {
+  it('verbose=true 时检查 5 个组件（含 memory + disk）', async () => {
     let capturedVerbose: boolean | undefined
     const ctrl = makeController({
       check: async (ctx: unknown) => {
@@ -215,7 +215,7 @@ describe('GET /health/readiness（就绪检查）', () => {
     assert.equal(result.status, 'DEGRADED')
   })
 
-  test('缺少 tenantContext 时 scopeType 为 Platform', async () => {
+  it('缺少 tenantContext 时 scopeType 为 Platform', async () => {
     let capturedScope: { scopeType: string; scopeId: string } | undefined
     const ctrl = makeController({
       check: async (ctx: unknown) => {
@@ -233,7 +233,7 @@ describe('GET /health/readiness（就绪检查）', () => {
     assert.equal(capturedScope?.scopeId, 'platform')
   })
 
-  test('仅有 tenantId 时 scopeType 为 Tenant', async () => {
+  it('仅有 tenantId 时 scopeType 为 Tenant', async () => {
     let capturedScope: { scopeType: string; scopeId: string } | undefined
     const ctrl = makeController({
       check: async (ctx: unknown) => {
@@ -251,7 +251,7 @@ describe('GET /health/readiness（就绪检查）', () => {
     assert.equal(capturedScope?.scopeId, 'acme-corp')
   })
 
-  test('有 brandId 时 scopeType 为 Brand', async () => {
+  it('有 brandId 时 scopeType 为 Brand', async () => {
     let capturedScope: { scopeType: string; scopeId: string } | undefined
     const ctrl = makeController({
       check: async (ctx: unknown) => {
@@ -269,7 +269,7 @@ describe('GET /health/readiness（就绪检查）', () => {
     assert.equal(capturedScope?.scopeId, 'b-brand-x')
   })
 
-  test('有 storeId 时 scopeType 为 Store（最高优先级）', async () => {
+  it('有 storeId 时 scopeType 为 Store（最高优先级）', async () => {
     let capturedScope: { scopeType: string; scopeId: string } | undefined
     const ctrl = makeController({
       check: async (ctx: unknown) => {
@@ -287,7 +287,7 @@ describe('GET /health/readiness（就绪检查）', () => {
     assert.equal(capturedScope?.scopeId, 's-store-99')
   })
 
-  test('有 marketCode 时 scopeType 为 Tenant（若 tenantId 存在）', async () => {
+  it('有 marketCode 时 scopeType 为 Tenant（若 tenantId 存在）', async () => {
     let capturedScope: { scopeType: string; scopeId: string } | undefined
     const ctrl = makeController({
       check: async (ctx: unknown) => {
@@ -306,7 +306,7 @@ describe('GET /health/readiness（就绪检查）', () => {
     assert.equal(capturedScope?.scopeId, 't-1')
   })
 
-  test('verbose 字符串 "true" 被正确转换为 boolean', async () => {
+  it('verbose 字符串 "true" 被正确转换为 boolean', async () => {
     let capturedVerbose: boolean | undefined
     const ctrl = makeController({
       check: async (ctx: unknown) => {
@@ -323,7 +323,7 @@ describe('GET /health/readiness（就绪检查）', () => {
     assert.equal(capturedVerbose, true)
   })
 
-  test('verbose 未传递时默认为 false', async () => {
+  it('verbose 未传递时默认为 false', async () => {
     let capturedVerbose: boolean | undefined
     const ctrl = makeController({
       check: async (ctx: unknown) => {
@@ -340,7 +340,7 @@ describe('GET /health/readiness（就绪检查）', () => {
     assert.equal(capturedVerbose, false)
   })
 
-  test('actorId 正确传递到 requestorId', async () => {
+  it('actorId 正确传递到 requestorId', async () => {
     let capturedRequestorId: string | undefined
     const ctrl = makeController({
       check: async (ctx: unknown) => {
@@ -357,7 +357,7 @@ describe('GET /health/readiness（就绪检查）', () => {
     assert.equal(capturedRequestorId, 'security-auditor-007')
   })
 
-  test('检查返回包含 checkedAt 和 status 字段', async () => {
+  it('检查返回包含 checkedAt 和 status 字段', async () => {
     const ctrl = makeController()
     const result = await ctrl.getReadiness(
       tenantCtx({ tenantId: 't-1' }),
@@ -371,7 +371,7 @@ describe('GET /health/readiness（就绪检查）', () => {
 
 // ── 跨端点行为一致性 ──
 describe('跨端点行为一致性', () => {
-  test('getHealth 和 getPing 都委托到 service.ping()', async () => {
+  it('getHealth 和 getPing 都委托到 service.ping()', async () => {
     let pingCallCount = 0
     const ctrl = makeController({
       ping: async () => {
@@ -387,7 +387,7 @@ describe('跨端点行为一致性', () => {
     assert.equal(pingCallCount, 3)
   })
 
-  test('getHealth 和 getPing 返回结构一致', async () => {
+  it('getHealth 和 getPing 返回结构一致', async () => {
     const ctrl = makeController()
     const health = await ctrl.getHealth()
     const ping = await ctrl.getPing()
@@ -398,7 +398,7 @@ describe('跨端点行为一致性', () => {
     assert.equal(typeof ping.timestamp, 'string')
   })
 
-  test('getReadiness 返回更丰富的结果（含 components）', async () => {
+  it('getReadiness 返回更丰富的结果（含 components）', async () => {
     const ctrl = makeController({
       check: async () => ({
         status: 'OK',
@@ -426,7 +426,7 @@ describe('跨端点行为一致性', () => {
 
 // ── 异常场景 ──
 describe('异常与边界场景', () => {
-  test('getReadiness 中 service.check() 抛出异常时向上传播', async () => {
+  it('getReadiness 中 service.check() 抛出异常时向上传播', async () => {
     const ctrl = makeController({
       check: async () => {
         throw new Error('DB connection timeout')
@@ -443,7 +443,7 @@ describe('异常与边界场景', () => {
     )
   })
 
-  test('actorContext 缺少 actorId 时 requestorId 为 undefined', async () => {
+  it('actorContext 缺少 actorId 时 requestorId 为 undefined', async () => {
     let capturedRequestorId: string | undefined
     const ctrl = makeController({
       check: async (ctx: unknown) => {
@@ -460,7 +460,7 @@ describe('异常与边界场景', () => {
     assert.equal(capturedRequestorId, undefined)
   })
 
-  test('tenantContext 完全为空时 scopeId 为 platform', async () => {
+  it('tenantContext 完全为空时 scopeId 为 platform', async () => {
     let capturedScope: { scopeType: string; scopeId: string } | undefined
     const ctrl = makeController({
       check: async (ctx: unknown) => {

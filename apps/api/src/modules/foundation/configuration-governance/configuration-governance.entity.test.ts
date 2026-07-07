@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   ConfigEntryStatus,
   FeatureFlagState,
@@ -26,7 +26,7 @@ import {
 } from './configuration-governance.entity'
 
 describe('configuration-governance entity - ConfigEntryStatus', () => {
-  test('三个状态值', () => {
+  it('三个状态值', () => {
     assert.equal(ConfigEntryStatus.ACTIVE, 'ACTIVE')
     assert.equal(ConfigEntryStatus.DRAFT, 'DRAFT')
     assert.equal(ConfigEntryStatus.ARCHIVED, 'ARCHIVED')
@@ -34,7 +34,7 @@ describe('configuration-governance entity - ConfigEntryStatus', () => {
 })
 
 describe('configuration-governance entity - FeatureFlagState', () => {
-  test('四个状态值', () => {
+  it('四个状态值', () => {
     assert.equal(FeatureFlagState.DRAFT, 'DRAFT')
     assert.equal(FeatureFlagState.ACTIVE, 'ACTIVE')
     assert.equal(FeatureFlagState.PAUSED, 'PAUSED')
@@ -43,7 +43,7 @@ describe('configuration-governance entity - FeatureFlagState', () => {
 })
 
 describe('configuration-governance entity - SecretKind', () => {
-  test('三种密钥类型', () => {
+  it('三种密钥类型', () => {
     assert.equal(SecretKind.ApiKey, 'api-key')
     assert.equal(SecretKind.WebhookSigning, 'webhook-signing')
     assert.equal(SecretKind.Certificate, 'certificate')
@@ -51,7 +51,7 @@ describe('configuration-governance entity - SecretKind', () => {
 })
 
 describe('configuration-governance entity - SecretProviderKind', () => {
-  test('四种供应商', () => {
+  it('四种供应商', () => {
     assert.equal(SecretProviderKind.DATABASE, 'DATABASE')
     assert.equal(SecretProviderKind.VAULT, 'VAULT')
     assert.equal(SecretProviderKind.KMS, 'KMS')
@@ -60,7 +60,7 @@ describe('configuration-governance entity - SecretProviderKind', () => {
 })
 
 describe('configuration-governance entity - ConfigLayer', () => {
-  test('五层配置', () => {
+  it('五层配置', () => {
     assert.equal(ConfigLayer.Platform, 'platform')
     assert.equal(ConfigLayer.Market, 'market')
     assert.equal(ConfigLayer.Tenant, 'tenant')
@@ -70,7 +70,7 @@ describe('configuration-governance entity - ConfigLayer', () => {
 })
 
 describe('configuration-governance entity - ConfigFragment type', () => {
-  test('符合 ConfigFragment 结构 - 完整', () => {
+  it('符合 ConfigFragment 结构 - 完整', () => {
     const fragment: ConfigFragment = {
       locale: 'zh-CN',
       currency: 'CNY',
@@ -98,7 +98,7 @@ describe('configuration-governance entity - ConfigFragment type', () => {
     assert.deepEqual(fragment.checkout!.paymentChannels, ['wechat-pay', 'alipay'])
   })
 
-  test('符合 ConfigFragment 结构 - 部分', () => {
+  it('符合 ConfigFragment 结构 - 部分', () => {
     const fragment: ConfigFragment = {
       locale: 'en-SG',
       currency: 'SGD'
@@ -111,7 +111,7 @@ describe('configuration-governance entity - ConfigFragment type', () => {
 })
 
 describe('configuration-governance entity - FeatureFlagDefinition type', () => {
-  test('符合 FeatureFlagDefinition 结构', () => {
+  it('符合 FeatureFlagDefinition 结构', () => {
     const flag: FeatureFlagDefinition = {
       key: 'new-checkout',
       name: '新版结账',
@@ -132,7 +132,7 @@ describe('configuration-governance entity - FeatureFlagDefinition type', () => {
     assert.equal(flag.rules[0].rolloutPercentage, 100)
   })
 
-  test('FeatureFlagDefinition - 多规则', () => {
+  it('FeatureFlagDefinition - 多规则', () => {
     const rules: FeatureFlagRule[] = [
       { scope: { tenantId: 't1' }, enabled: true, rolloutPercentage: 20, note: '小流量' },
       { scope: { brandId: 'b1' }, enabled: true, rolloutPercentage: 50, note: '半量' },
@@ -151,7 +151,7 @@ describe('configuration-governance entity - FeatureFlagDefinition type', () => {
 })
 
 describe('configuration-governance entity - FeatureFlagEvaluation type', () => {
-  test('符合 FeatureFlagEvaluation 结构 - in-memory 来源', () => {
+  it('符合 FeatureFlagEvaluation 结构 - in-memory 来源', () => {
     const evalResult: FeatureFlagEvaluation = {
       key: 'new-checkout',
       name: '新版结账',
@@ -168,7 +168,7 @@ describe('configuration-governance entity - FeatureFlagEvaluation type', () => {
     assert.equal(evalResult.source, 'in-memory')
   })
 
-  test('符合 FeatureFlagEvaluation 结构 - persisted 来源', () => {
+  it('符合 FeatureFlagEvaluation 结构 - persisted 来源', () => {
     const evalResult: FeatureFlagEvaluation = {
       key: 'member-import-v2',
       name: '会员导入 V2',
@@ -188,7 +188,7 @@ describe('configuration-governance entity - FeatureFlagEvaluation type', () => {
 })
 
 describe('configuration-governance entity - ConfigEntryResult type', () => {
-  test('符合 ConfigEntryResult 结构', () => {
+  it('符合 ConfigEntryResult 结构', () => {
     const entry: ConfigEntryResult = {
       id: 'entry-001',
       namespace: 'checkout',
@@ -221,7 +221,7 @@ describe('configuration-governance entity - ConfigEntryResult type', () => {
     assert.deepEqual(entry.tags, ['payment', 'market'])
   })
 
-  test('ConfigEntryResult - 无修订记录', () => {
+  it('ConfigEntryResult - 无修订记录', () => {
     const entry: ConfigEntryResult = {
       id: 'entry-002',
       namespace: 'login',
@@ -248,7 +248,7 @@ describe('configuration-governance entity - ConfigEntryResult type', () => {
 })
 
 describe('configuration-governance entity - SecretRecord type', () => {
-  test('符合 SecretRecord 结构', () => {
+  it('符合 SecretRecord 结构', () => {
     const versions: SecretVersionRecord[] = [
       {
         version: 1,
@@ -286,7 +286,7 @@ describe('configuration-governance entity - SecretRecord type', () => {
     assert.equal(secret.versions.length, 2)
   })
 
-  test('SecretRecord - rotation-due', () => {
+  it('SecretRecord - rotation-due', () => {
     const secret: SecretRecord = {
       name: 'payment-api-key',
       type: 'api-key',
@@ -314,7 +314,7 @@ describe('configuration-governance entity - SecretRecord type', () => {
 })
 
 describe('configuration-governance entity - CertificateRecord type', () => {
-  test('符合 CertificateRecord 结构', () => {
+  it('符合 CertificateRecord 结构', () => {
     const cert: CertificateRecord = {
       name: 'lyt-callback-cert',
       secretName: 'lyt-webhook-signing-secret',
@@ -337,7 +337,7 @@ describe('configuration-governance entity - CertificateRecord type', () => {
     assert.equal(cert.status, 'active')
   })
 
-  test('CertificateRecord - expiring-soon', () => {
+  it('CertificateRecord - expiring-soon', () => {
     const cert: CertificateRecord = {
       name: 'payment-gateway-cert',
       secretName: 'payment-provider-api-key',
@@ -359,7 +359,7 @@ describe('configuration-governance entity - CertificateRecord type', () => {
 })
 
 describe('configuration-governance entity - ConfigSnapshot type', () => {
-  test('符合 ConfigSnapshot 结构', () => {
+  it('符合 ConfigSnapshot 结构', () => {
     const context: ConfigSnapshotContext = {
       tenantId: 'tenant-demo',
       brandId: 'brand-premium',
@@ -387,7 +387,7 @@ describe('configuration-governance entity - ConfigSnapshot type', () => {
 })
 
 describe('configuration-governance entity - SecretsCertificatePosture type', () => {
-  test('符合 SecretsCertificatePosture 结构', () => {
+  it('符合 SecretsCertificatePosture 结构', () => {
     const attentionItems: AttentionItem[] = [
       { type: 'secret', key: 'payment-api-key', status: 'rotation-due', expiresAt: '2026-07-10T04:00:00.000Z' },
       { type: 'certificate', key: 'payment-gateway-cert', status: 'expiring-soon', expiresAt: '2026-06-28T00:00:00.000Z', linkedSecret: 'payment-provider-api-key' }
@@ -408,7 +408,7 @@ describe('configuration-governance entity - SecretsCertificatePosture type', () 
 })
 
 describe('configuration-governance entity - ConfigurationGovernanceResult type', () => {
-  test('符合 ConfigurationGovernanceResult 结构 - 配置创建', () => {
+  it('符合 ConfigurationGovernanceResult 结构 - 配置创建', () => {
     const result: ConfigurationGovernanceResult = {
       status: 'created',
       entry: {
@@ -441,7 +441,7 @@ describe('configuration-governance entity - ConfigurationGovernanceResult type',
     assert.equal(result.entry!.namespace, 'checkout')
   })
 
-  test('符合 ConfigurationGovernanceResult 结构 - 秘密轮换', () => {
+  it('符合 ConfigurationGovernanceResult 结构 - 秘密轮换', () => {
     const result: ConfigurationGovernanceResult = {
       status: 'rotated',
       secretName: 'lyt-webhook-signing-secret'
@@ -452,7 +452,7 @@ describe('configuration-governance entity - ConfigurationGovernanceResult type',
 })
 
 describe('configuration-governance entity - GovernanceMetadata type', () => {
-  test('符合 GovernanceMetadata 结构', () => {
+  it('符合 GovernanceMetadata 结构', () => {
     const meta: GovernanceMetadata = {
       operation: 'config-entry.write',
       rbac: {
@@ -488,7 +488,7 @@ describe('configuration-governance entity - GovernanceMetadata type', () => {
     assert.equal(meta.approval.required, false)
   })
 
-  test('GovernanceMetadata - 审批已通过', () => {
+  it('GovernanceMetadata - 审批已通过', () => {
     const meta: GovernanceMetadata = {
       operation: 'secret.rotate',
       rbac: {
@@ -525,7 +525,7 @@ describe('configuration-governance entity - GovernanceMetadata type', () => {
 })
 
 describe('configuration-governance entity - GovernanceBaseline type', () => {
-  test('符合 GovernanceBaseline 结构', () => {
+  it('符合 GovernanceBaseline 结构', () => {
     const baseline: GovernanceBaseline = {
       key: 'secrets-certificate-rotation',
       name: 'Secrets 与证书轮换',
@@ -545,7 +545,7 @@ describe('configuration-governance entity - GovernanceBaseline type', () => {
 })
 
 describe('configuration-governance entity - ModuleCapability type', () => {
-  test('符合 ModuleCapability 结构', () => {
+  it('符合 ModuleCapability 结构', () => {
     const cap: ModuleCapability = {
       key: 'config-center',
       name: '配置中心入口',
@@ -561,7 +561,7 @@ describe('configuration-governance entity - ModuleCapability type', () => {
 })
 
 describe('configuration-governance entity - FoundationModuleDescriptor type', () => {
-  test('符合 FoundationModuleDescriptor 结构', () => {
+  it('符合 FoundationModuleDescriptor 结构', () => {
     const desc: FoundationModuleDescriptor = {
       key: 'configuration-governance',
       name: 'Configuration Governance Module',

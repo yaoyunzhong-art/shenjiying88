@@ -1,10 +1,10 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-recommend] [A] entity 测试
  * 类型契约测试：Recommendation, UserProfile, ItemScore, RecommendationStrategy, GenerateRecommendationsInput/Output
  */
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import type {
   Recommendation,
   UserProfile,
@@ -22,7 +22,7 @@ import type {
 
 // ── RecommendType ──
 describe('ai-recommend.entity: RecommendType', () => {
-  test('supports all 5 recommendation types', () => {
+  it('supports all 5 recommendation types', () => {
     const types: RecommendType[] = ['game', 'product', 'activity', 'coupon', 'svip']
     assert.equal(types.length, 5)
     for (const t of types) {
@@ -30,7 +30,7 @@ describe('ai-recommend.entity: RecommendType', () => {
     }
   })
 
-  test('rejects invalid recommend type at type level', () => {
+  it('rejects invalid recommend type at type level', () => {
     const valid: RecommendType = 'game'
     assert.equal(valid, 'game')
     // @ts-expect-error - invalid type should be rejected
@@ -41,12 +41,12 @@ describe('ai-recommend.entity: RecommendType', () => {
 
 // ── RecommendationStatus ──
 describe('ai-recommend.entity: RecommendationStatus', () => {
-  test('supports all 4 statuses', () => {
+  it('supports all 4 statuses', () => {
     const statuses: RecommendationStatus[] = ['active', 'clicked', 'converted', 'expired']
     assert.equal(statuses.length, 4)
   })
 
-  test('active is default status', () => {
+  it('active is default status', () => {
     const status: RecommendationStatus = 'active'
     assert.equal(status, 'active')
   })
@@ -54,7 +54,7 @@ describe('ai-recommend.entity: RecommendationStatus', () => {
 
 // ── VisitFrequency ──
 describe('ai-recommend.entity: VisitFrequency', () => {
-  test('supports all 4 frequencies', () => {
+  it('supports all 4 frequencies', () => {
     const freqs: VisitFrequency[] = ['daily', 'weekly', 'monthly', 'occasional']
     assert.equal(freqs.length, 4)
   })
@@ -62,7 +62,7 @@ describe('ai-recommend.entity: VisitFrequency', () => {
 
 // ── InteractionType ──
 describe('ai-recommend.entity: InteractionType', () => {
-  test('supports all 4 interaction types', () => {
+  it('supports all 4 interaction types', () => {
     const types: InteractionType[] = ['view', 'click', 'purchase', 'play']
     assert.equal(types.length, 4)
   })
@@ -70,7 +70,7 @@ describe('ai-recommend.entity: InteractionType', () => {
 
 // ── ScoreItemType ──
 describe('ai-recommend.entity: ScoreItemType', () => {
-  test('supports all 3 score item types', () => {
+  it('supports all 3 score item types', () => {
     const types: ScoreItemType[] = ['game', 'product', 'activity']
     assert.equal(types.length, 3)
   })
@@ -78,7 +78,7 @@ describe('ai-recommend.entity: ScoreItemType', () => {
 
 // ── Recommendation ──
 describe('ai-recommend.entity: Recommendation', () => {
-  test('creates valid Recommendation with all required fields', () => {
+  it('creates valid Recommendation with all required fields', () => {
     const rec: Recommendation = {
       id: 'rec-001',
       tenantId: 'tenant-1',
@@ -106,7 +106,7 @@ describe('ai-recommend.entity: Recommendation', () => {
     assert.equal(rec.createdAt, '2026-06-24T00:00:00.000Z')
   })
 
-  test('creates Recommendation with optional storeId and memberId', () => {
+  it('creates Recommendation with optional storeId and memberId', () => {
     const rec: Recommendation = {
       id: 'rec-002',
       tenantId: 'tenant-1',
@@ -128,7 +128,7 @@ describe('ai-recommend.entity: Recommendation', () => {
     assert.equal(rec.status, 'clicked')
   })
 
-  test('supports all status transitions', () => {
+  it('supports all status transitions', () => {
     const active: Recommendation['status'] = 'active'
     const clicked: Recommendation['status'] = 'clicked'
     const converted: Recommendation['status'] = 'converted'
@@ -159,7 +159,7 @@ describe('ai-recommend.entity: Recommendation', () => {
     assert.equal(expiredRec.status, 'expired')
   })
 
-  test('score is number between 0-100', () => {
+  it('score is number between 0-100', () => {
     const rec: Recommendation = {
       id: 'rec-score',
       tenantId: 't1',
@@ -177,7 +177,7 @@ describe('ai-recommend.entity: Recommendation', () => {
     assert.ok(rec.score >= 0 && rec.score <= 100)
   })
 
-  test('supports coupon type recommendation', () => {
+  it('supports coupon type recommendation', () => {
     const rec: Recommendation = {
       id: 'rec-coupon',
       tenantId: 't1',
@@ -199,7 +199,7 @@ describe('ai-recommend.entity: Recommendation', () => {
 
 // ── UserProfile ──
 describe('ai-recommend.entity: UserProfile', () => {
-  test('creates valid UserProfile with nested preferences', () => {
+  it('creates valid UserProfile with nested preferences', () => {
     const profile: UserProfile = {
       id: 'profile-001',
       memberId: 'member-001',
@@ -225,7 +225,7 @@ describe('ai-recommend.entity: UserProfile', () => {
     assert.ok(profile.behaviorTags.includes('game-enthusiast'))
   })
 
-  test('supports minimal profile with empty arrays', () => {
+  it('supports minimal profile with empty arrays', () => {
     const profile: UserProfile = {
       id: 'profile-min',
       memberId: 'member-min',
@@ -246,7 +246,7 @@ describe('ai-recommend.entity: UserProfile', () => {
     assert.equal(profile.preferences.avgSpend, 0)
   })
 
-  test('supports all visit frequencies', () => {
+  it('supports all visit frequencies', () => {
     const freqs: VisitFrequency[] = ['daily', 'weekly', 'monthly', 'occasional']
     for (const freq of freqs) {
       const profile: UserProfile = {
@@ -270,7 +270,7 @@ describe('ai-recommend.entity: UserProfile', () => {
 
 // ── ItemScore ──
 describe('ai-recommend.entity: ItemScore', () => {
-  test('creates valid ItemScore', () => {
+  it('creates valid ItemScore', () => {
     const score: ItemScore = {
       id: 'score-001',
       memberId: 'member-001',
@@ -288,7 +288,7 @@ describe('ai-recommend.entity: ItemScore', () => {
     assert.equal(score.itemType, 'game')
   })
 
-  test('supports all interaction types', () => {
+  it('supports all interaction types', () => {
     const interactions: InteractionType[] = ['view', 'click', 'purchase', 'play']
     for (const interaction of interactions) {
       const score: ItemScore = {
@@ -305,7 +305,7 @@ describe('ai-recommend.entity: ItemScore', () => {
     }
   })
 
-  test('rating is between 1 and 5', () => {
+  it('rating is between 1 and 5', () => {
     const score: ItemScore = {
       id: 'score-rating',
       memberId: 'm-1',
@@ -322,7 +322,7 @@ describe('ai-recommend.entity: ItemScore', () => {
 
 // ── StrategyWeightFactor ──
 describe('ai-recommend.entity: StrategyWeightFactor', () => {
-  test('creates valid weight factor with factor name and weight', () => {
+  it('creates valid weight factor with factor name and weight', () => {
     const factor: StrategyWeightFactor = {
       factor: 'popularity',
       weight: 0.5
@@ -331,7 +331,7 @@ describe('ai-recommend.entity: StrategyWeightFactor', () => {
     assert.equal(factor.weight, 0.5)
   })
 
-  test('weight is between 0 and 1', () => {
+  it('weight is between 0 and 1', () => {
     const factors: StrategyWeightFactor[] = [
       { factor: 'a', weight: 0 },
       { factor: 'b', weight: 0.5 },
@@ -342,7 +342,7 @@ describe('ai-recommend.entity: StrategyWeightFactor', () => {
     }
   })
 
-  test('factor can be any descriptive string', () => {
+  it('factor can be any descriptive string', () => {
     const factor: StrategyWeightFactor = {
       factor: 'seasonality',
       weight: 0.4
@@ -353,7 +353,7 @@ describe('ai-recommend.entity: StrategyWeightFactor', () => {
 
 // ── RecommendationStrategy ──
 describe('ai-recommend.entity: RecommendationStrategy', () => {
-  test('creates valid RecommendationStrategy with config', () => {
+  it('creates valid RecommendationStrategy with config', () => {
     const strategy: RecommendationStrategy = {
       id: 'strategy-hybrid-v1',
       name: 'hybrid',
@@ -383,7 +383,7 @@ describe('ai-recommend.entity: RecommendationStrategy', () => {
     assert.equal(strategy.isEnabled, true)
   })
 
-  test('supports strategy with optional fields omitted', () => {
+  it('supports strategy with optional fields omitted', () => {
     const strategy: RecommendationStrategy = {
       id: 'strategy-simple-v1',
       name: 'simple',
@@ -402,7 +402,7 @@ describe('ai-recommend.entity: RecommendationStrategy', () => {
     assert.equal(strategy.config.maxResults, undefined)
   })
 
-  test('supports disabled strategy', () => {
+  it('supports disabled strategy', () => {
     const strategy: RecommendationStrategy = {
       id: 'strategy-disabled',
       name: 'test-disabled',
@@ -416,7 +416,7 @@ describe('ai-recommend.entity: RecommendationStrategy', () => {
     assert.equal(strategy.isEnabled, false)
   })
 
-  test('supports all target types', () => {
+  it('supports all target types', () => {
     const types: RecommendType[] = ['game', 'product', 'activity', 'coupon', 'svip']
     for (const t of types) {
       const strategy: RecommendationStrategy = {
@@ -436,7 +436,7 @@ describe('ai-recommend.entity: RecommendationStrategy', () => {
 
 // ── GenerateRecommendationsInput ──
 describe('ai-recommend.entity: GenerateRecommendationsInput', () => {
-  test('requires strategyId only', () => {
+  it('requires strategyId only', () => {
     const input: GenerateRecommendationsInput = {
       strategyId: 'strategy-popularity-v1'
     }
@@ -445,7 +445,7 @@ describe('ai-recommend.entity: GenerateRecommendationsInput', () => {
     assert.equal(input.limit, undefined)
   })
 
-  test('accepts optional memberId, storeId, type, limit', () => {
+  it('accepts optional memberId, storeId, type, limit', () => {
     const input: GenerateRecommendationsInput = {
       strategyId: 'strategy-hybrid-v1',
       memberId: 'member-001',
@@ -462,7 +462,7 @@ describe('ai-recommend.entity: GenerateRecommendationsInput', () => {
 
 // ── GenerateRecommendationsOutput ──
 describe('ai-recommend.entity: GenerateRecommendationsOutput', () => {
-  test('creates valid output with required fields', () => {
+  it('creates valid output with required fields', () => {
     const output: GenerateRecommendationsOutput = {
       strategy: 'hybrid',
       items: [],
@@ -475,7 +475,7 @@ describe('ai-recommend.entity: GenerateRecommendationsOutput', () => {
     assert.ok(!isNaN(Date.parse(output.timestamp)))
   })
 
-  test('includes optional fallbackStrategy', () => {
+  it('includes optional fallbackStrategy', () => {
     const output: GenerateRecommendationsOutput = {
       strategy: 'content-based',
       fallbackStrategy: 'strategy-popularity-v1',
@@ -502,7 +502,7 @@ describe('ai-recommend.entity: GenerateRecommendationsOutput', () => {
     assert.equal(output.items[0].id, 'rec-fallback')
   })
 
-  test('executionTimeMs is non-negative', () => {
+  it('executionTimeMs is non-negative', () => {
     const output: GenerateRecommendationsOutput = {
       strategy: 'popularity',
       items: [],
@@ -515,7 +515,7 @@ describe('ai-recommend.entity: GenerateRecommendationsOutput', () => {
 
 // ── Cross-type composition ──
 describe('ai-recommend.entity: cross-type composition', () => {
-  test('Recommendation can store svip type items', () => {
+  it('Recommendation can store svip type items', () => {
     const rec: Recommendation = {
       id: 'rec-svip',
       tenantId: 't1',
@@ -534,7 +534,7 @@ describe('ai-recommend.entity: cross-type composition', () => {
     assert.equal(rec.itemName, 'SVIP 黄金会员')
   })
 
-  test('Recommendation can store coupon type items', () => {
+  it('Recommendation can store coupon type items', () => {
     const rec: Recommendation = {
       id: 'rec-coupon-x',
       tenantId: 't1',
@@ -553,7 +553,7 @@ describe('ai-recommend.entity: cross-type composition', () => {
     assert.equal(rec.score, 65)
   })
 
-  test('StrategyWeightFactor can be reused across strategies', () => {
+  it('StrategyWeightFactor can be reused across strategies', () => {
     const weight: StrategyWeightFactor = { factor: 'recency', weight: 0.2 }
     const strategyA: RecommendationStrategy = {
       id: 'strat-a',

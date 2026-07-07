@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# .githooks/commit-msg · 神机营 SaaS
+# 触发条件: git commit 写入 message 后,commit 生效前
+# 功能: 调用 scripts/commit-lint.sh 校验 commit message 规范
+#
+# 安装: scripts/install-hooks.sh
+# 跳过: git commit --no-verify
+
+set -u
+
+COMMIT_MSG_FILE="$1"
+if [ -z "$COMMIT_MSG_FILE" ] || [ ! -f "$COMMIT_MSG_FILE" ]; then
+  echo "❌ commit-msg hook: 未提供 commit message 文件" >&2
+  exit 1
+fi
+
+# 找到仓库根目录 (从 .githooks 反推)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# .githooks/ 在仓库根目录下,上一级就是仓库根
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+LINT_SCRIPT="$REPO_ROOT/scripts/commit-lint.sh"
+if [ ! -f "$LINT_SCRIPT" ]; then
+  echo "⚠️  未找到 $LINT_SCRIPT,跳过 commit message 校验" >&2
+  exit 0
+fi
+
+echo ""
+echo "============================================"
+echo "🪝 commit-msg hook · 神机营 SaaS"
+echo "============================================"
+echo "📝 校验 commit message: $COMMIT_MSG_FILE"
+echo ""
+
+if bash "$LINT_SCRIPT" "$COMMIT_MSG_FILE"; then
+  echo ""
+  echo "✅ commit message 校验通过"
+  echo "============================================"
+  exit 0
+else
+  echo ""
+  echo "❌ commit message 校验失败"
+  echo ""
+  echo "参考规范: knowledge/best-practices/commit.md"
+  echo "如需跳过 (不推荐): git commit --no-verify"
+  echo "============================================"
+  exit 1
+fi

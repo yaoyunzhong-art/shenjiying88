@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe, beforeEach } from 'node:test'
 import { AiDiagnosisController } from './ai-diagnosis.controller'
 import { AiDiagnosisService } from './ai-diagnosis.service'
 import { NotFoundException } from '@nestjs/common'
@@ -18,7 +18,7 @@ describe('AiDiagnosisController', () => {
   // ── POST / ──
 
   describe('POST /ai-diagnosis', () => {
-    test('should create a diagnosis and return 201', () => {
+    it('should create a diagnosis and return 201', () => {
       const dto = {
         engineId: 'engine-001',
         scenarioId: 'scenario-001',
@@ -31,7 +31,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.diagnosis.status, 'PENDING')
     })
 
-    test('should return diagnosis with unique id', () => {
+    it('should return diagnosis with unique id', () => {
       const r1 = controller.create({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -51,13 +51,13 @@ describe('AiDiagnosisController', () => {
   // ── GET / ──
 
   describe('GET /ai-diagnosis', () => {
-    test('should return empty list', () => {
+    it('should return empty list', () => {
       const result = controller.list({})
       assert.equal(result.total, 0)
       assert.deepEqual(result.diagnoses, [])
     })
 
-    test('should list created diagnoses', () => {
+    it('should list created diagnoses', () => {
       controller.create({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -75,7 +75,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.total, 2)
     })
 
-    test('should filter by status', () => {
+    it('should filter by status', () => {
       const d = controller.create({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -88,7 +88,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.total, 1)
     })
 
-    test('should filter by engineId', () => {
+    it('should filter by engineId', () => {
       controller.create({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -110,7 +110,7 @@ describe('AiDiagnosisController', () => {
   // ── GET /:diagnosisId ──
 
   describe('GET /ai-diagnosis/:diagnosisId', () => {
-    test('should return diagnosis by id', () => {
+    it('should return diagnosis by id', () => {
       const created = controller.create({
         engineId: 'engine-001',
         scenarioId: 'scenario-001',
@@ -121,7 +121,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.diagnosis.diagnosisId, created.diagnosis.diagnosisId)
     })
 
-    test('should throw NotFoundException for missing diagnosis', () => {
+    it('should throw NotFoundException for missing diagnosis', () => {
       assert.throws(
         () => controller.get('non-existent'),
         (err: any) => err.message === 'Diagnosis non-existent not found'
@@ -132,7 +132,7 @@ describe('AiDiagnosisController', () => {
   // ── PATCH /:diagnosisId ──
 
   describe('PATCH /ai-diagnosis/:diagnosisId', () => {
-    test('should update diagnosis status', () => {
+    it('should update diagnosis status', () => {
       const created = controller.create({
         engineId: 'engine-001',
         scenarioId: 'scenario-001',
@@ -151,7 +151,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.diagnosis.recommendation, 'Done')
     })
 
-    test('should throw NotFoundException for missing diagnosis', () => {
+    it('should throw NotFoundException for missing diagnosis', () => {
       assert.throws(
         () => controller.update('non-existent', { status: 'COMPLETED' }),
         (err: any) => err.message === 'Diagnosis non-existent not found'
@@ -162,7 +162,7 @@ describe('AiDiagnosisController', () => {
   // ── DELETE /:diagnosisId ──
 
   describe('DELETE /ai-diagnosis/:diagnosisId', () => {
-    test('should delete diagnosis', () => {
+    it('should delete diagnosis', () => {
       const created = controller.create({
         engineId: 'engine-001',
         scenarioId: 'scenario-001',
@@ -178,7 +178,7 @@ describe('AiDiagnosisController', () => {
       )
     })
 
-    test('should throw NotFoundException for missing diagnosis', () => {
+    it('should throw NotFoundException for missing diagnosis', () => {
       assert.throws(
         () => controller.remove('non-existent'),
         (err: any) => err.message === 'Diagnosis non-existent not found'
@@ -189,7 +189,7 @@ describe('AiDiagnosisController', () => {
   // ── POST /batch ──
 
   describe('POST /ai-diagnosis/batch', () => {
-    test('should create a batch', () => {
+    it('should create a batch', () => {
       const result = controller.createBatch({
         engineId: 'engine-001',
         scenarioIds: ['s1', 's2', 's3'],
@@ -202,7 +202,7 @@ describe('AiDiagnosisController', () => {
       assert.ok(result.batch.batchId.startsWith('batch-'))
     })
 
-    test('should auto-complete all diagnoses', () => {
+    it('should auto-complete all diagnoses', () => {
       const result = controller.createBatch({
         engineId: 'engine-001',
         scenarioIds: ['s1', 's2'],
@@ -214,7 +214,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.batch.riskDistribution.low, 2)
     })
 
-    test('should detect critical scenarios', () => {
+    it('should detect critical scenarios', () => {
       const result = controller.createBatch({
         engineId: 'engine-001',
         scenarioIds: ['critical-scenario'],
@@ -230,7 +230,7 @@ describe('AiDiagnosisController', () => {
   // ── GET /batch/:batchId ──
 
   describe('GET /ai-diagnosis/batch/:batchId', () => {
-    test('should return batch by id', () => {
+    it('should return batch by id', () => {
       const created = controller.createBatch({
         engineId: 'engine-001',
         scenarioIds: ['s1'],
@@ -242,7 +242,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.batch.batchId, created.batch.batchId)
     })
 
-    test('should throw NotFoundException for missing batch', () => {
+    it('should throw NotFoundException for missing batch', () => {
       assert.throws(
         () => controller.getBatch('non-existent'),
         (err: any) => err.message.includes('not found')
@@ -253,7 +253,7 @@ describe('AiDiagnosisController', () => {
   // ── GET /batch ──
 
   describe('GET /ai-diagnosis/batch', () => {
-    test('should list all batches', () => {
+    it('should list all batches', () => {
       controller.createBatch({
         engineId: 'engine-001',
         scenarioIds: ['s1'],
@@ -271,7 +271,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.length, 2)
     })
 
-    test('should filter by engineId', () => {
+    it('should filter by engineId', () => {
       controller.createBatch({
         engineId: 'engine-001',
         scenarioIds: ['s1'],
@@ -293,7 +293,7 @@ describe('AiDiagnosisController', () => {
   // ── GET /report/risk ──
 
   describe('GET /ai-diagnosis/report/risk', () => {
-    test('should generate risk report', () => {
+    it('should generate risk report', () => {
       const d = controller.create({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -313,7 +313,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(report.topRecommendations.length, 1)
     })
 
-    test('should filter report by engineId', () => {
+    it('should filter report by engineId', () => {
       controller.create({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -325,14 +325,14 @@ describe('AiDiagnosisController', () => {
       assert.equal(report.totalEvaluated, 1)
     })
 
-    test('should handle empty dataset', () => {
+    it('should handle empty dataset', () => {
       const report = controller.riskReport()
       assert.equal(report.totalEvaluated, 0)
       assert.deepEqual(report.topRecommendations, [])
       assert.equal(report.averageEvaluationDurationMs, 0)
     })
 
-    test('should include averageEvaluationDurationMs in report', () => {
+    it('should include averageEvaluationDurationMs in report', () => {
       const d1 = controller.create({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -358,7 +358,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(report.averageEvaluationDurationMs, 150)
     })
 
-    test('should sort high-risk recommendations first', () => {
+    it('should sort high-risk recommendations first', () => {
       const d1 = controller.create({
         engineId: 'engine-001',
         scenarioId: 'critical-s1',
@@ -394,7 +394,7 @@ describe('AiDiagnosisController', () => {
   // ── 边界与错误处理 ──
 
   describe('boundary & error handling', () => {
-    test('should handle update with empty patch (no-op)', () => {
+    it('should handle update with empty patch (no-op)', () => {
       const d = controller.create({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -406,7 +406,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.diagnosis.status, 'PENDING') // unchanged
     })
 
-    test('should update diagnosis to IN_PROGRESS status', () => {
+    it('should update diagnosis to IN_PROGRESS status', () => {
       const d = controller.create({
         engineId: 'engine-001',
         scenarioId: 'scenario-001',
@@ -419,7 +419,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.diagnosis.status, 'IN_PROGRESS')
     })
 
-    test('should update diagnosis to FAILED status', () => {
+    it('should update diagnosis to FAILED status', () => {
       const d = controller.create({
         engineId: 'engine-001',
         scenarioId: 'scenario-001',
@@ -432,7 +432,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result.diagnosis.status, 'FAILED')
     })
 
-    test('should throw NotFoundException when updating deleted diagnosis', () => {
+    it('should throw NotFoundException when updating deleted diagnosis', () => {
       const d = controller.create({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -447,7 +447,7 @@ describe('AiDiagnosisController', () => {
       )
     })
 
-    test('should throw NotFoundException when getting deleted diagnosis', () => {
+    it('should throw NotFoundException when getting deleted diagnosis', () => {
       const d = controller.create({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -462,7 +462,7 @@ describe('AiDiagnosisController', () => {
       )
     })
 
-    test('should handle delete returning 204 (void return)', () => {
+    it('should handle delete returning 204 (void return)', () => {
       const d = controller.create({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -473,12 +473,12 @@ describe('AiDiagnosisController', () => {
       assert.equal(result, undefined) // 204 NO_CONTENT returns void
     })
 
-    test('should list empty batch when no batches created', () => {
+    it('should list empty batch when no batches created', () => {
       const batches = controller.listBatches()
       assert.deepEqual(batches, [])
     })
 
-    test('should filter batches by tenantId', () => {
+    it('should filter batches by tenantId', () => {
       controller.createBatch({
         engineId: 'engine-001',
         scenarioIds: ['s1'],
@@ -497,7 +497,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(result[0].tenantId, 'T001')
     })
 
-    test('should filter report by tenantId', () => {
+    it('should filter report by tenantId', () => {
       controller.create({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -515,7 +515,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(report.totalEvaluated, 1)
     })
 
-    test('should create diagnosis with optional promptSummary and inputSnapshot', () => {
+    it('should create diagnosis with optional promptSummary and inputSnapshot', () => {
       const inputSnapshot = { deviceId: 'dev-001', cpuUsage: 95 }
       const dto = {
         engineId: 'engine-001',
@@ -530,7 +530,7 @@ describe('AiDiagnosisController', () => {
       assert.deepEqual(result.diagnosis.inputSnapshot, inputSnapshot)
     })
 
-    test('should persist created diagnosis in list after creation', () => {
+    it('should persist created diagnosis in list after creation', () => {
       controller.create({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -550,7 +550,7 @@ describe('AiDiagnosisController', () => {
       assert.equal(list2.total, 2)
     })
 
-    test('should filter diagnosis by riskLevel', () => {
+    it('should filter diagnosis by riskLevel', () => {
       const d1 = controller.create({
         engineId: 'engine-001',
         scenarioId: 'low-s1',

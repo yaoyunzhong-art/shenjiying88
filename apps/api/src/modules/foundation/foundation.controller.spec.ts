@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [foundation] [D] controller spec 补全
  *
@@ -9,13 +10,12 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { FoundationController } from './foundation.controller'
 import { FoundationService } from './foundation.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import type { CurrentActorValue } from './identity-access/identity-access.decorator'
 
-/* eslint-disable @typescript-eslint/no-extraneous-class */
+ 
 
 // ── Mock —─
 
@@ -224,7 +224,7 @@ class MockFoundationService {
   }
 }
 
-/* eslint-enable @typescript-eslint/no-extraneous-class */
+ 
 
 type MockSvc = MockFoundationService & FoundationService
 
@@ -265,89 +265,89 @@ describe('FoundationController', () => {
   // ── Route metadata ──
 
   describe('route metadata (NestJS @Controller/@Get/@Post decorators)', () => {
-    test('controller should be mounted at /foundation', () => {
+    it('controller should be mounted at /foundation', () => {
       const path = Reflect.getMetadata('path', FoundationController)
       assert.equal(path, 'foundation')
     })
 
-    test('getBootstrap → GET /bootstrap', () => {
+    it('getBootstrap → GET /bootstrap', () => {
       const method = Reflect.getMetadata('method', FoundationController.prototype.getBootstrap)
       const path = Reflect.getMetadata('path', FoundationController.prototype.getBootstrap)
       assert.equal(method, 0) // GET
       assert.equal(path, 'bootstrap')
     })
 
-    test('getModules → GET /modules', () => {
+    it('getModules → GET /modules', () => {
       const method = Reflect.getMetadata('method', FoundationController.prototype.getModules)
       const path = Reflect.getMetadata('path', FoundationController.prototype.getModules)
       assert.equal(method, 0)
       assert.equal(path, 'modules')
     })
 
-    test('getOperationsOverview → GET /overview', () => {
+    it('getOperationsOverview → GET /overview', () => {
       const method = Reflect.getMetadata('method', FoundationController.prototype.getOperationsOverview)
       const path = Reflect.getMetadata('path', FoundationController.prototype.getOperationsOverview)
       assert.equal(method, 0)
       assert.equal(path, 'overview')
     })
 
-    test('getOperationsAlerts → GET /overview/alerts', () => {
+    it('getOperationsAlerts → GET /overview/alerts', () => {
       const method = Reflect.getMetadata('method', FoundationController.prototype.getOperationsAlerts)
       const path = Reflect.getMetadata('path', FoundationController.prototype.getOperationsAlerts)
       assert.equal(method, 0)
       assert.equal(path, 'overview/alerts')
     })
 
-    test('getOperationsAlertsCatalog → GET /overview/alerts/catalog', () => {
+    it('getOperationsAlertsCatalog → GET /overview/alerts/catalog', () => {
       const method = Reflect.getMetadata('method', FoundationController.prototype.getOperationsAlertsCatalog)
       const path = Reflect.getMetadata('path', FoundationController.prototype.getOperationsAlertsCatalog)
       assert.equal(method, 0)
       assert.equal(path, 'overview/alerts/catalog')
     })
 
-    test('getOperationsAlertDrilldown → GET /overview/alerts/:code/drilldown', () => {
+    it('getOperationsAlertDrilldown → GET /overview/alerts/:code/drilldown', () => {
       const method = Reflect.getMetadata('method', FoundationController.prototype.getOperationsAlertDrilldown)
       const path = Reflect.getMetadata('path', FoundationController.prototype.getOperationsAlertDrilldown)
       assert.equal(method, 0)
       assert.equal(path, 'overview/alerts/:code/drilldown')
     })
 
-    test('acknowledgeOperationsAlert → POST /overview/alerts/:code/ack', () => {
+    it('acknowledgeOperationsAlert → POST /overview/alerts/:code/ack', () => {
       const method = Reflect.getMetadata('method', FoundationController.prototype.acknowledgeOperationsAlert)
       const path = Reflect.getMetadata('path', FoundationController.prototype.acknowledgeOperationsAlert)
       assert.equal(method, 1) // POST
       assert.equal(path, 'overview/alerts/:code/ack')
     })
 
-    test('muteOperationsAlert → POST /overview/alerts/:code/mute', () => {
+    it('muteOperationsAlert → POST /overview/alerts/:code/mute', () => {
       const method = Reflect.getMetadata('method', FoundationController.prototype.muteOperationsAlert)
       const path = Reflect.getMetadata('path', FoundationController.prototype.muteOperationsAlert)
       assert.equal(method, 1)
       assert.equal(path, 'overview/alerts/:code/mute')
     })
 
-    test('unmuteOperationsAlert → POST /overview/alerts/:code/unmute', () => {
+    it('unmuteOperationsAlert → POST /overview/alerts/:code/unmute', () => {
       const method = Reflect.getMetadata('method', FoundationController.prototype.unmuteOperationsAlert)
       const path = Reflect.getMetadata('path', FoundationController.prototype.unmuteOperationsAlert)
       assert.equal(method, 1)
       assert.equal(path, 'overview/alerts/:code/unmute')
     })
 
-    test('getOperationsModuleDetail → GET /overview/modules/:moduleKey', () => {
+    it('getOperationsModuleDetail → GET /overview/modules/:moduleKey', () => {
       const method = Reflect.getMetadata('method', FoundationController.prototype.getOperationsModuleDetail)
       const path = Reflect.getMetadata('path', FoundationController.prototype.getOperationsModuleDetail)
       assert.equal(method, 0)
       assert.equal(path, 'overview/modules/:moduleKey')
     })
 
-    test('getConsumers → GET /consumers', () => {
+    it('getConsumers → GET /consumers', () => {
       const method = Reflect.getMetadata('method', FoundationController.prototype.getConsumers)
       const path = Reflect.getMetadata('path', FoundationController.prototype.getConsumers)
       assert.equal(method, 0)
       assert.equal(path, 'consumers')
     })
 
-    test('getConsumer → GET /consumers/:consumer', () => {
+    it('getConsumer → GET /consumers/:consumer', () => {
       const method = Reflect.getMetadata('method', FoundationController.prototype.getConsumer)
       const path = Reflect.getMetadata('path', FoundationController.prototype.getConsumer)
       assert.equal(method, 0)
@@ -358,7 +358,7 @@ describe('FoundationController', () => {
   // ── Bootstrap ──
 
   describe('GET /foundation/bootstrap', () => {
-    test('正例: should return bootstrap with tenant context and blueprint merged', () => {
+    it('正例: should return bootstrap with tenant context and blueprint merged', () => {
       const { ctrl, svc } = createController()
       const result = ctrl.getBootstrap(TENANT_A) as any
       assert.equal(result.tenantContext?.tenantId, 't-foundation-a')
@@ -372,7 +372,7 @@ describe('FoundationController', () => {
   // ── Modules ──
 
   describe('GET /foundation/modules', () => {
-    test('正例: should return module catalog', () => {
+    it('正例: should return module catalog', () => {
       const { ctrl, svc } = createController()
       const result = ctrl.getModules() as any[]
       assert.equal(result.length, 3)
@@ -385,7 +385,7 @@ describe('FoundationController', () => {
   // ── Overview ──
 
   describe('GET /foundation/overview', () => {
-    test('正例: should return overview for a tenant', async () => {
+    it('正例: should return overview for a tenant', async () => {
       const { ctrl, svc } = createController()
       const result = await ctrl.getOperationsOverview(TENANT_A) as any
       assert.equal(result.tenantId, 't-foundation-a')
@@ -394,7 +394,7 @@ describe('FoundationController', () => {
       assert.ok(svc.calls['getOperationsOverview']?.length === 1)
     })
 
-    test('边界: should return overview with undefined tenant context', async () => {
+    it('边界: should return overview with undefined tenant context', async () => {
       const { ctrl, svc } = createController()
       const result = await ctrl.getOperationsOverview(undefined) as any
       assert.equal(result.tenantId, 'no-tenant')
@@ -405,7 +405,7 @@ describe('FoundationController', () => {
   // ── Alerts ──
 
   describe('GET /foundation/overview/alerts', () => {
-    test('正例: should return alerts for tenant A', async () => {
+    it('正例: should return alerts for tenant A', async () => {
       const { ctrl } = createController()
       const result = await ctrl.getOperationsAlerts(TENANT_A) as any
       assert.equal(result.criticalAlerts, 1)
@@ -413,7 +413,7 @@ describe('FoundationController', () => {
       assert.equal(result.alerts.length, 2)
     })
 
-    test('租户隔离: should isolate alerts between tenants', async () => {
+    it('租户隔离: should isolate alerts between tenants', async () => {
       const { ctrl } = createController()
       const a = await ctrl.getOperationsAlerts(TENANT_A) as any
       const b = await ctrl.getOperationsAlerts(TENANT_B) as any
@@ -425,7 +425,7 @@ describe('FoundationController', () => {
   })
 
   describe('GET /foundation/overview/alerts/catalog', () => {
-    test('正例: should return alert catalog', async () => {
+    it('正例: should return alert catalog', async () => {
       const { ctrl, svc } = createController()
       const result = await ctrl.getOperationsAlertsCatalog(TENANT_A) as any
       assert.ok(Array.isArray(result.catalog))
@@ -436,7 +436,7 @@ describe('FoundationController', () => {
   })
 
   describe('GET /foundation/overview/alerts/:code/drilldown', () => {
-    test('正例: should return drilldown for known alert code', async () => {
+    it('正例: should return drilldown for known alert code', async () => {
       const { ctrl } = createController()
       const result = await ctrl.getOperationsAlertDrilldown('approvals-pending', TENANT_A) as any
       assert.equal(result.code, 'approvals-pending')
@@ -444,7 +444,7 @@ describe('FoundationController', () => {
       assert.ok(result.details?.affectedItems >= 0)
     })
 
-    test('反例: should return fallback for unknown alert code', async () => {
+    it('反例: should return fallback for unknown alert code', async () => {
       const { ctrl } = createController()
       const result = await ctrl.getOperationsAlertDrilldown('non-existent-code', TENANT_A) as any
       assert.ok(result.message?.includes('No drilldown data available'))
@@ -455,7 +455,7 @@ describe('FoundationController', () => {
   // ── Alert mutations ──
 
   describe('POST /foundation/overview/alerts/:code/ack', () => {
-    test('正例: should acknowledge with note', async () => {
+    it('正例: should acknowledge with note', async () => {
       const { ctrl, svc } = createController()
       const result = await ctrl.acknowledgeOperationsAlert('approvals-pending', TENANT_A, ACTOR, { note: '已确认处理' }) as any
       assert.equal(result.acknowledged, true)
@@ -464,13 +464,13 @@ describe('FoundationController', () => {
       assert.ok(svc.calls['acknowledgeOperationsAlert']?.length === 1)
     })
 
-    test('边界: should acknowledge without note', async () => {
+    it('边界: should acknowledge without note', async () => {
       const { ctrl } = createController()
       const result = await ctrl.acknowledgeOperationsAlert('high-risk-audits', TENANT_A, ACTOR, {}) as any
       assert.equal(result.acknowledged, true)
     })
 
-    test('反例: should handle unknown alert code gracefully', async () => {
+    it('反例: should handle unknown alert code gracefully', async () => {
       const { ctrl } = createController()
       const result = await ctrl.acknowledgeOperationsAlert('unknown-code', TENANT_A, ACTOR, { note: 'test' }) as any
       assert.ok(result.message?.includes("not recognized"))
@@ -479,7 +479,7 @@ describe('FoundationController', () => {
   })
 
   describe('POST /foundation/overview/alerts/:code/mute', () => {
-    test('正例: should mute with mutedUntil', async () => {
+    it('正例: should mute with mutedUntil', async () => {
       const { ctrl } = createController()
       const until = new Date(Date.now() + 86400000).toISOString()
       const result = await ctrl.muteOperationsAlert('approvals-pending', TENANT_A, ACTOR, { mutedUntil: until, note: '静默1天' }) as any
@@ -487,7 +487,7 @@ describe('FoundationController', () => {
       assert.equal(result.mutedUntil, until)
     })
 
-    test('边界: should mute with only note', async () => {
+    it('边界: should mute with only note', async () => {
       const { ctrl } = createController()
       const result = await ctrl.muteOperationsAlert('secret-rotation-attention', TENANT_A, ACTOR, { note: 'muted' }) as any
       assert.equal(result.muted, true)
@@ -495,7 +495,7 @@ describe('FoundationController', () => {
   })
 
   describe('POST /foundation/overview/alerts/:code/unmute', () => {
-    test('正例: should unmute a previously muted alert', async () => {
+    it('正例: should unmute a previously muted alert', async () => {
       const { ctrl } = createController()
       await ctrl.muteOperationsAlert('approvals-pending', TENANT_A, ACTOR, { note: 'mute' })
       const result = await ctrl.unmuteOperationsAlert('approvals-pending', TENANT_A, ACTOR, { note: '已恢复' }) as any
@@ -503,7 +503,7 @@ describe('FoundationController', () => {
       assert.equal(result.note, '已恢复')
     })
 
-    test('边界: should unmute with empty options', async () => {
+    it('边界: should unmute with empty options', async () => {
       const { ctrl } = createController()
       const result = await ctrl.unmuteOperationsAlert('high-risk-audits', TENANT_A, ACTOR, {}) as any
       assert.equal(result.unmuted, true)
@@ -513,7 +513,7 @@ describe('FoundationController', () => {
   // ── Module detail ──
 
   describe('GET /foundation/overview/modules/:moduleKey', () => {
-    test('正例: should return module detail', async () => {
+    it('正例: should return module detail', async () => {
       const { ctrl, svc } = createController()
       const result = await ctrl.getOperationsModuleDetail('identity-access', TENANT_A) as any
       assert.equal(result.moduleKey, 'identity-access')
@@ -522,14 +522,14 @@ describe('FoundationController', () => {
       assert.ok(svc.calls['getOperationsModuleDetail']?.length === 1)
     })
 
-    test('反例: should return fallback for unknown module key', async () => {
+    it('反例: should return fallback for unknown module key', async () => {
       const { ctrl } = createController()
       const result = await ctrl.getOperationsModuleDetail('non-existent-module', TENANT_A) as any
       assert.equal(result.moduleKey, 'non-existent-module')
       assert.equal(result.message, 'Module not found')
     })
 
-    test('边界: should work without tenant context', async () => {
+    it('边界: should work without tenant context', async () => {
       const { ctrl } = createController()
       const result = await ctrl.getOperationsModuleDetail('market', undefined) as any
       assert.equal(result.moduleKey, 'market')
@@ -539,7 +539,7 @@ describe('FoundationController', () => {
   // ── Consumers ──
 
   describe('GET /foundation/consumers', () => {
-    test('正例: should return consumer catalog', () => {
+    it('正例: should return consumer catalog', () => {
       const { ctrl, svc } = createController()
       const result = ctrl.getConsumers() as any[]
       assert.equal(result.length, 2)
@@ -549,7 +549,7 @@ describe('FoundationController', () => {
   })
 
   describe('GET /foundation/consumers/:consumer', () => {
-    test('正例: should return consumer dependency', () => {
+    it('正例: should return consumer dependency', () => {
       const { ctrl, svc } = createController()
       const result = ctrl.getConsumer('market') as any
       assert.equal(result.consumer, 'market')
@@ -558,7 +558,7 @@ describe('FoundationController', () => {
       assert.ok(svc.calls['getConsumerDependency']?.length === 1)
     })
 
-    test('反例: should return fallback for unknown consumer', () => {
+    it('反例: should return fallback for unknown consumer', () => {
       const { ctrl } = createController()
       const result = ctrl.getConsumer('non-existent-consumer') as any
       assert.ok(result.message?.includes('not found'))

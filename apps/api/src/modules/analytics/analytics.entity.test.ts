@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   AnalyticsScope,
   DiagnosticCategory,
@@ -8,7 +8,7 @@ import {
 } from './analytics.entity'
 
 describe('AnalyticsEntity', () => {
-  test('AnalyticsScope and DiagnosticSeverity enums are stable', () => {
+  it('AnalyticsScope and DiagnosticSeverity enums are stable', () => {
     assert.equal(AnalyticsScope.Tenant, 'TENANT')
     assert.equal(AnalyticsScope.Brand, 'BRAND')
     assert.equal(AnalyticsScope.Store, 'STORE')
@@ -17,7 +17,7 @@ describe('AnalyticsEntity', () => {
     assert.equal(DiagnosticSeverity.Critical, 'CRITICAL')
   })
 
-  test('DiagnosticCategory enums cover the diagnostic categories', () => {
+  it('DiagnosticCategory enums cover the diagnostic categories', () => {
     const categories = Object.values(DiagnosticCategory)
     assert.ok(categories.includes(DiagnosticCategory.PaymentHealth))
     assert.ok(categories.includes(DiagnosticCategory.CouponPerformance))

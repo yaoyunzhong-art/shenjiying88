@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E 跨模块 #14 — Observability: Prometheus /metrics + HTTP 拦截器
  *
@@ -21,7 +22,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Controller,
   Get,
@@ -71,7 +71,7 @@ async function buildApp(): Promise<BuiltCrossModuleTestApp & { metricsService: M
 // E2E: /metrics 端点返回 Prometheus 格式
 // ═══════════════════════════════════════════════════
 
-test('e2e-14: /metrics returns Prometheus text format with registered metrics', async () => {
+it('e2e-14: /metrics returns Prometheus text format with registered metrics', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/metrics')
@@ -99,7 +99,7 @@ test('e2e-14: /metrics returns Prometheus text format with registered metrics', 
 // E2E: 业务请求后 counter/histogram 自增
 // ═══════════════════════════════════════════════════
 
-test('e2e-14: business requests increment counters and histograms', async () => {
+it('e2e-14: business requests increment counters and histograms', async () => {
   const { app } = await buildApp()
   try {
     // 先打 1 次 baseline
@@ -150,7 +150,7 @@ test('e2e-14: business requests increment counters and histograms', async () => 
 // E2E: 异常请求计入 http_exceptions_total
 // ═══════════════════════════════════════════════════
 
-test('e2e-14: business exceptions increment http_exceptions_total', async () => {
+it('e2e-14: business exceptions increment http_exceptions_total', async () => {
   const { app } = await buildApp()
   try {
     try {
@@ -173,7 +173,7 @@ test('e2e-14: business exceptions increment http_exceptions_total', async () => 
 // E2E: /healthz 端点
 // ═══════════════════════════════════════════════════
 
-test('e2e-14: /healthz returns ok status and registered metric count', async () => {
+it('e2e-14: /healthz returns ok status and registered metric count', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/healthz')
@@ -189,7 +189,7 @@ test('e2e-14: /healthz returns ok status and registered metric count', async () 
 // E2E: active_connections gauge 进出平衡 (请求结束后归零)
 // ═══════════════════════════════════════════════════
 
-test('e2e-14: http_active_connections returns to zero after request completes', async () => {
+it('e2e-14: http_active_connections returns to zero after request completes', async () => {
   const { app, metricsService } = await buildApp()
   try {
     // 业务请求 → 进入时 +1, 退出时 -1 (业务请求完成)
@@ -219,7 +219,7 @@ test('e2e-14: http_active_connections returns to zero after request completes', 
 // E2E: 直接调 MetricsService API (单元级契约)
 // ═══════════════════════════════════════════════════
 
-test('e2e-14: MetricsService direct API contract', async () => {
+it('e2e-14: MetricsService direct API contract', async () => {
   const svc = new MetricsService()
   // 默认已自动注册;验证默认值存在
   assert.ok(svc.listMetrics().length >= 5)
@@ -259,7 +259,7 @@ test('e2e-14: MetricsService direct API contract', async () => {
 // E2E: 重复注册不同类型同名 metric 应抛错
 // ═══════════════════════════════════════════════════
 
-test('e2e-14: registering same metric name with different type throws', () => {
+it('e2e-14: registering same metric name with different type throws', () => {
   const svc = new MetricsService()
   assert.throws(() => svc.registerGauge('http_requests_total', 'help'), /already registered/)
 })
@@ -268,7 +268,7 @@ test('e2e-14: registering same metric name with different type throws', () => {
 // E2E: 未注册的 metric 应抛错
 // ═══════════════════════════════════════════════════
 
-test('e2e-14: unregisterred metric access throws', () => {
+it('e2e-14: unregisterred metric access throws', () => {
   const svc = new MetricsService()
   assert.throws(() => svc.incrementCounter('nope_metric_xyz'), /not registered/)
   assert.throws(() => svc.setGauge('nope_metric_xyz', {}, 1), /not registered/)

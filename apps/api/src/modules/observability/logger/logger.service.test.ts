@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * Logger Service Unit Tests
  *
@@ -10,7 +11,6 @@
  */
 
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import type { NextFunction, Request, Response } from 'express';
 import { LoggerService, LOGGER_CONFIG, LOGGER_DESTINATION } from './logger.service';
 import { attachRequestContext } from './request-context.middleware';
@@ -34,7 +34,7 @@ function makeCapturingLogger(configOverrides: Record<string, any> = {}) {
 }
 
 describe('LoggerService — 基本输出', () => {
-  test('info 输出 JSON 包含 msg + bindings', () => {
+  it('info 输出 JSON 包含 msg + bindings', () => {
     const { svc, lines } = makeCapturingLogger();
     svc.info({ userId: 'u-1', action: 'login' }, 'user logged in');
     assert.equal(lines.length, 1);
@@ -45,7 +45,7 @@ describe('LoggerService — 基本输出', () => {
     assert.equal(obj.service, 'm5-test');
   });
 
-  test('warn / error / debug 输出正确级别', () => {
+  it('warn / error / debug 输出正确级别', () => {
     const { svc, lines } = makeCapturingLogger({ level: 'trace' });
     svc.debug({ k: 1 }, 'd-msg');
     svc.info({ k: 2 }, 'i-msg');
@@ -60,7 +60,7 @@ describe('LoggerService — 基本输出', () => {
 });
 
 describe('LoggerService — child bindings', () => {
-  test('child logger 自动带上 requestId/tenantId', () => {
+  it('child logger 自动带上 requestId/tenantId', () => {
     const { svc, lines } = makeCapturingLogger();
     const child = svc.child({ requestId: 'req-1', tenantId: 't-A' });
     child.info({ orderId: 'o-1' }, 'order created');
@@ -70,7 +70,7 @@ describe('LoggerService — child bindings', () => {
     assert.equal(obj.orderId, 'o-1');
   });
 
-  test('child of child 累加 bindings', () => {
+  it('child of child 累加 bindings', () => {
     const { svc, lines } = makeCapturingLogger();
     const child = svc.child({ requestId: 'req-1' });
     const grand = child.child({ tenantId: 't-A' });
@@ -82,7 +82,7 @@ describe('LoggerService — child bindings', () => {
 });
 
 describe('LoggerService — redact', () => {
-  test('敏感字段被替换为 [REDACTED] (嵌套)', () => {
+  it('敏感字段被替换为 [REDACTED] (嵌套)', () => {
     const { svc, lines } = makeCapturingLogger({
       redactPaths: ['*.password'],
     });
@@ -92,7 +92,7 @@ describe('LoggerService — redact', () => {
     assert.equal(obj.user.id, 'u-1');
   });
 
-  test('顶层 token 也可 redact', () => {
+  it('顶层 token 也可 redact', () => {
     const { svc, lines } = makeCapturingLogger({
       redactPaths: ['token'],
     });
@@ -104,7 +104,7 @@ describe('LoggerService — redact', () => {
 });
 
 describe('LoggerService — 级别过滤', () => {
-  test('level=warn 时 debug/info 不输出', () => {
+  it('level=warn 时 debug/info 不输出', () => {
     const { svc, lines } = makeCapturingLogger({ level: 'warn' });
     svc.debug({ k: 1 }, 'd');
     svc.info({ k: 2 }, 'i');
@@ -133,7 +133,7 @@ describe('attachRequestContext — middleware', () => {
     return { res, headers };
   }
 
-  test('无入站 header 时生成 nanoid', () => {
+  it('无入站 header 时生成 nanoid', () => {
     const req = mockReq();
     const { res, headers } = mockRes();
     let nextCalled = false;
@@ -147,7 +147,7 @@ describe('attachRequestContext — middleware', () => {
     assert.equal(headers['x-request-id'], ctx.requestId, '响应 header 同步');
   });
 
-  test('入站 x-request-id 合法时被透传', () => {
+  it('入站 x-request-id 合法时被透传', () => {
     const req = mockReq({ 'x-request-id': 'inbound-1234567890' });
     const { res, headers } = mockRes();
     attachRequestContext(req, res, () => {});
@@ -156,7 +156,7 @@ describe('attachRequestContext — middleware', () => {
     assert.equal(headers['x-request-id'], 'inbound-1234567890');
   });
 
-  test('入站 x-request-id 非法时生成新的', () => {
+  it('入站 x-request-id 非法时生成新的', () => {
     const req = mockReq({ 'x-request-id': '<script>' });
     const { res } = mockRes();
     attachRequestContext(req, res, () => {});
@@ -165,7 +165,7 @@ describe('attachRequestContext — middleware', () => {
     assert.ok(ctx.requestId!.length >= 12);
   });
 
-  test('W3C traceparent header 被解析', () => {
+  it('W3C traceparent header 被解析', () => {
     const req = mockReq({ traceparent: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01' });
     const { res } = mockRes();
     attachRequestContext(req, res, () => {});
@@ -173,7 +173,7 @@ describe('attachRequestContext — middleware', () => {
     assert.equal(ctx.traceId, '0af7651916cd43dd8448eb211c80319c');
   });
 
-  test('非法 traceparent 被忽略', () => {
+  it('非法 traceparent 被忽略', () => {
     const req = mockReq({ traceparent: 'garbage' });
     const { res } = mockRes();
     attachRequestContext(req, res, () => {});

@@ -1,7 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 describe('lyt.entity', () => {
   const {
     LytDeviceType,
@@ -13,7 +12,7 @@ describe('lyt.entity', () => {
   } = require('./lyt.entity')
 
   describe('LytDeviceType', () => {
-    test('has all expected enum values', () => {
+    it('has all expected enum values', () => {
       const values = Object.values(LytDeviceType)
       assert.ok(values.includes('GATE_READER'))
       assert.ok(values.includes('PRIZE_MACHINE'))
@@ -24,7 +23,7 @@ describe('lyt.entity', () => {
   })
 
   describe('LytDeviceStatus', () => {
-    test('has online, offline, maintenance values', () => {
+    it('has online, offline, maintenance values', () => {
       const values = Object.values(LytDeviceStatus)
       assert.ok(values.includes('ONLINE'))
       assert.ok(values.includes('OFFLINE'))
@@ -33,15 +32,15 @@ describe('lyt.entity', () => {
   })
 
   describe('isDeviceOnline', () => {
-    test('returns true for ONLINE status', () => {
+    it('returns true for ONLINE status', () => {
       assert.equal(isDeviceOnline(LytDeviceStatus.Online), true)
     })
 
-    test('returns false for OFFLINE status', () => {
+    it('returns false for OFFLINE status', () => {
       assert.equal(isDeviceOnline(LytDeviceStatus.Offline), false)
     })
 
-    test('returns false for MAINTENANCE status', () => {
+    it('returns false for MAINTENANCE status', () => {
       assert.equal(isDeviceOnline(LytDeviceStatus.Maintenance), false)
     })
   })
@@ -49,7 +48,7 @@ describe('lyt.entity', () => {
   describe('isDeviceAnomalous', () => {
     const tenantContext = { storeId: 'store-1', tenantId: 't1', userId: 'u1', role: 'operator' }
 
-    test('returns false for online device', () => {
+    it('returns false for online device', () => {
       const device = {
         deviceId: 'd1',
         tenantContext,
@@ -62,7 +61,7 @@ describe('lyt.entity', () => {
       assert.equal(isDeviceAnomalous(device), false)
     })
 
-    test('returns true for offline device without heartbeat', () => {
+    it('returns true for offline device without heartbeat', () => {
       const device = {
         deviceId: 'd2',
         tenantContext,
@@ -75,7 +74,7 @@ describe('lyt.entity', () => {
       assert.equal(isDeviceAnomalous(device), true)
     })
 
-    test('returns false for recently offline device within threshold', () => {
+    it('returns false for recently offline device within threshold', () => {
       const now = new Date()
       const device = {
         deviceId: 'd3',
@@ -90,7 +89,7 @@ describe('lyt.entity', () => {
       assert.equal(isDeviceAnomalous(device, 5), false)
     })
 
-    test('returns true for long-offline device exceeding threshold', () => {
+    it('returns true for long-offline device exceeding threshold', () => {
       const tenMinutesAgo = new Date(Date.now() - 10 * 60_000)
       const device = {
         deviceId: 'd4',
@@ -105,7 +104,7 @@ describe('lyt.entity', () => {
       assert.equal(isDeviceAnomalous(device, 5), true)
     })
 
-    test('maintenance device is anomalous when heartbeat expired', () => {
+    it('maintenance device is anomalous when heartbeat expired', () => {
       const twentyMinutesAgo = new Date(Date.now() - 20 * 60_000)
       const device = {
         deviceId: 'd5',
@@ -122,7 +121,7 @@ describe('lyt.entity', () => {
   })
 
   describe('makeLytBootstrap', () => {
-    test('returns default bootstrap with tenantContext', () => {
+    it('returns default bootstrap with tenantContext', () => {
       const ctx = { storeId: 's1', tenantId: 't1', userId: 'u1', role: 'operator' }
       const result = makeLytBootstrap(ctx)
       assert.equal(result.tenantContext, ctx)
@@ -133,13 +132,13 @@ describe('lyt.entity', () => {
       assert.equal(result.phase, 'scaffold')
     })
 
-    test('allows capability overrides', () => {
+    it('allows capability overrides', () => {
       const ctx = { storeId: 's2', tenantId: 't2', userId: 'u2', role: 'admin' }
       const result = makeLytBootstrap(ctx, { capabilities: ['custom-feature'] })
       assert.deepStrictEqual(result.capabilities, ['custom-feature'])
     })
 
-    test('allows phase override', () => {
+    it('allows phase override', () => {
       const ctx = { storeId: 's3', tenantId: 't3', userId: 'u3', role: 'admin' }
       const result = makeLytBootstrap(ctx, { phase: 'production' })
       assert.equal(result.phase, 'production')
@@ -159,7 +158,7 @@ describe('lyt.entity', () => {
       ...(overrides.lastHeartbeatAt !== undefined ? { lastHeartbeatAt: overrides.lastHeartbeatAt } : {})
     })
 
-    test('empty device list returns 100% health', () => {
+    it('empty device list returns 100% health', () => {
       const result = computeDeviceHealthSummary([])
       assert.equal(result.total, 0)
       assert.equal(result.online, 0)
@@ -169,7 +168,7 @@ describe('lyt.entity', () => {
       assert.equal(result.healthRate, 100)
     })
 
-    test('all online devices give 100% health rate', () => {
+    it('all online devices give 100% health rate', () => {
       const devices = [
         makeDevice({ deviceId: 'd1', deviceType: LytDeviceType.GateReader, status: LytDeviceStatus.Online }),
         makeDevice({ deviceId: 'd2', deviceType: LytDeviceType.Camera, status: LytDeviceStatus.Online }),
@@ -182,7 +181,7 @@ describe('lyt.entity', () => {
       assert.equal(result.anomalous, 0)
     })
 
-    test('mixed status devices compute correct health rate', () => {
+    it('mixed status devices compute correct health rate', () => {
       const devices = [
         makeDevice({ deviceId: 'd1', deviceType: LytDeviceType.GateReader, status: LytDeviceStatus.Online }),
         makeDevice({ deviceId: 'd2', deviceType: LytDeviceType.PrizeMachine, status: LytDeviceStatus.Offline, lastHeartbeatAt: new Date(Date.now() - 10 * 60_000).toISOString() }),
@@ -198,7 +197,7 @@ describe('lyt.entity', () => {
       assert.ok(result.anomalous >= 1)
     })
 
-    test('deviceTypeBreakdown has correct per-type counts', () => {
+    it('deviceTypeBreakdown has correct per-type counts', () => {
       const devices = [
         makeDevice({ deviceId: 'g1', deviceType: LytDeviceType.GateReader, status: LytDeviceStatus.Online }),
         makeDevice({ deviceId: 'g2', deviceType: LytDeviceType.GateReader, status: LytDeviceStatus.Offline, lastHeartbeatAt: new Date(Date.now() - 20 * 60_000).toISOString() }),
@@ -217,7 +216,7 @@ describe('lyt.entity', () => {
       assert.equal(result.deviceTypeBreakdown[LytDeviceType.CastScreen].total, 0)
     })
 
-    test('anomalous devices detected beyond threshold', () => {
+    it('anomalous devices detected beyond threshold', () => {
       const ancientHeartbeat = new Date(Date.now() - 60 * 60_000).toISOString()
       const devices = [
         makeDevice({ deviceId: 'd1', deviceType: LytDeviceType.GateReader, status: LytDeviceStatus.Online }),

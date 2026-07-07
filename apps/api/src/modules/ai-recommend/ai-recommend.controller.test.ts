@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-recommend] [D] controller spec 补全
  *
@@ -14,7 +15,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { AiRecommendController } from './ai-recommend.controller'
 import { AiRecommendService } from './ai-recommend.service'
 
@@ -29,7 +29,7 @@ function makeCtrl() {
 // ── GET /recommendations/popular ──
 
 describe('AiRecommendController - 热门推荐', () => {
-  test('无查询参数返回默认 10 条推荐', () => {
+  it('无查询参数返回默认 10 条推荐', () => {
     const { controller } = makeCtrl()
     const result = controller.getPopular({} as any)
     assert.ok(Array.isArray(result))
@@ -37,19 +37,19 @@ describe('AiRecommendController - 热门推荐', () => {
     assert.ok(result.length <= 10)
   })
 
-  test('指定 limit 返回指定数量', () => {
+  it('指定 limit 返回指定数量', () => {
     const { controller } = makeCtrl()
     const result = controller.getPopular({ storeId: 's-1', type: 'game', limit: 3 } as any)
     assert.equal(result.length, 3)
   })
 
-  test('结果 strategy 为 popularity', () => {
+  it('结果 strategy 为 popularity', () => {
     const { controller } = makeCtrl()
     const result = controller.getPopular({ limit: 2 } as any)
     for (const r of result) assert.equal(r.strategy, 'popularity')
   })
 
-  test('不同 type 返回不同推荐', () => {
+  it('不同 type 返回不同推荐', () => {
     const { controller } = makeCtrl()
     const games = controller.getPopular({ type: 'game', limit: 5 } as any)
     const products = controller.getPopular({ type: 'product', limit: 5 } as any)
@@ -57,13 +57,13 @@ describe('AiRecommendController - 热门推荐', () => {
     for (const r of products) assert.equal(r.type, 'product')
   })
 
-  test('limit=0 返回空数组', () => {
+  it('limit=0 返回空数组', () => {
     const { controller } = makeCtrl()
     const result = controller.getPopular({ limit: 0 } as any)
     assert.deepStrictEqual(result, [])
   })
 
-  test('limit 负值确保不抛出异常（边界）', () => {
+  it('limit 负值确保不抛出异常（边界）', () => {
     const { controller } = makeCtrl()
     // 负值应返回空数组或非负结果
     const result = controller.getPopular({ limit: -1 } as any)
@@ -74,7 +74,7 @@ describe('AiRecommendController - 热门推荐', () => {
 // ── GET /recommendations/personalized ──
 
 describe('AiRecommendController - 个性化推荐', () => {
-  test('有 memberId 返回个性化推荐列表', () => {
+  it('有 memberId 返回个性化推荐列表', () => {
     const { controller } = makeCtrl()
     const result = controller.getPersonalized({
       memberId: 'member-001',
@@ -88,7 +88,7 @@ describe('AiRecommendController - 个性化推荐', () => {
     }
   })
 
-  test('memberId 缺失抛出错误', () => {
+  it('memberId 缺失抛出错误', () => {
     const { controller } = makeCtrl()
     assert.throws(
       () => controller.getPersonalized({ type: 'game', limit: 5 } as any),
@@ -96,7 +96,7 @@ describe('AiRecommendController - 个性化推荐', () => {
     )
   })
 
-  test('无画像 memberId 冷启动回退热门推荐', () => {
+  it('无画像 memberId 冷启动回退热门推荐', () => {
     const { controller } = makeCtrl()
     const result = controller.getPersonalized({
       memberId: 'new-member-no-profile',
@@ -110,14 +110,14 @@ describe('AiRecommendController - 个性化推荐', () => {
     }
   })
 
-  test('不同 memberId 返回不同的推荐内容', () => {
+  it('不同 memberId 返回不同的推荐内容', () => {
     const { controller } = makeCtrl()
     const r1 = controller.getPersonalized({ memberId: 'member-001', limit: 5 } as any)
     const r2 = controller.getPersonalized({ memberId: 'member-002', limit: 5 } as any)
     assert.notDeepStrictEqual(r1, r2)
   })
 
-  test('limit 限制推荐数量', () => {
+  it('limit 限制推荐数量', () => {
     const { controller } = makeCtrl()
     const result = controller.getPersonalized({ memberId: 'member-001', limit: 2 } as any)
     assert.ok(result.length <= 2)
@@ -127,27 +127,27 @@ describe('AiRecommendController - 个性化推荐', () => {
 // ── GET /recommendations ──
 
 describe('AiRecommendController - 推荐历史查询', () => {
-  test('仅 storeId 返回该门店推荐', () => {
+  it('仅 storeId 返回该门店推荐', () => {
     const { controller } = makeCtrl()
     const result = controller.getRecommendations({ storeId: 's-1', limit: 10 } as any)
     assert.ok(Array.isArray(result))
     for (const r of result) assert.equal(r.storeId, 's-1')
   })
 
-  test('指定 memberId 过滤', () => {
+  it('指定 memberId 过滤', () => {
     const { controller } = makeCtrl()
     const result = controller.getRecommendations({ memberId: 'member-001', limit: 10 } as any)
     assert.ok(Array.isArray(result))
     for (const r of result) assert.equal(r.memberId, 'member-001')
   })
 
-  test('指定 type 过滤', () => {
+  it('指定 type 过滤', () => {
     const { controller } = makeCtrl()
     const result = controller.getRecommendations({ type: 'game', limit: 10 } as any)
     for (const r of result) assert.equal(r.type, 'game')
   })
 
-  test('同时 memberId+type+storeId 复合过滤', () => {
+  it('同时 memberId+type+storeId 复合过滤', () => {
     const { controller } = makeCtrl()
     const result = controller.getRecommendations({
       memberId: 'member-001',
@@ -162,7 +162,7 @@ describe('AiRecommendController - 推荐历史查询', () => {
     }
   })
 
-  test('不传任何参数返回空数组（无种子推荐在 recommendations 中）', () => {
+  it('不传任何参数返回空数组（无种子推荐在 recommendations 中）', () => {
     const { controller } = makeCtrl()
     const result = controller.getRecommendations({} as any)
     assert.ok(Array.isArray(result))
@@ -173,7 +173,7 @@ describe('AiRecommendController - 推荐历史查询', () => {
 // ── POST /generate ──
 
 describe('AiRecommendController - 推荐生成', () => {
-  test('使用 hybrid 策略成功生成', () => {
+  it('使用 hybrid 策略成功生成', () => {
     const { controller } = makeCtrl()
     const result = controller.generateRecommendations({
       strategyId: 'strategy-hybrid-v1',
@@ -187,7 +187,7 @@ describe('AiRecommendController - 推荐生成', () => {
     assert.ok(result.timestamp)
   })
 
-  test('使用 popularity 策略生成', () => {
+  it('使用 popularity 策略生成', () => {
     const { controller } = makeCtrl()
     const result = controller.generateRecommendations({
       strategyId: 'strategy-popularity-v1',
@@ -196,7 +196,7 @@ describe('AiRecommendController - 推荐生成', () => {
     assert.equal(result.strategy, 'popularity')
   })
 
-  test('使用 content-based 策略生成', () => {
+  it('使用 content-based 策略生成', () => {
     const { controller } = makeCtrl()
     const result = controller.generateRecommendations({
       strategyId: 'strategy-content-v1',
@@ -206,7 +206,7 @@ describe('AiRecommendController - 推荐生成', () => {
     assert.equal(result.strategy, 'content-based')
   })
 
-  test('storeId 透传到推荐项', () => {
+  it('storeId 透传到推荐项', () => {
     const { controller } = makeCtrl()
     const result = controller.generateRecommendations({
       strategyId: 'strategy-popularity-v1',
@@ -216,7 +216,7 @@ describe('AiRecommendController - 推荐生成', () => {
     for (const item of result.items) assert.equal(item.storeId, 'store-shanghai')
   })
 
-  test('type 覆盖默认推荐类型', () => {
+  it('type 覆盖默认推荐类型', () => {
     const { controller } = makeCtrl()
     const result = controller.generateRecommendations({
       strategyId: 'strategy-popularity-v1',
@@ -226,7 +226,7 @@ describe('AiRecommendController - 推荐生成', () => {
     for (const item of result.items) assert.equal(item.type, 'product')
   })
 
-  test('不存在的 strategyId 抛出异常', () => {
+  it('不存在的 strategyId 抛出异常', () => {
     const { controller } = makeCtrl()
     assert.throws(
       () => controller.generateRecommendations({
@@ -241,7 +241,7 @@ describe('AiRecommendController - 推荐生成', () => {
 // ── POST /strategies ──
 
 describe('AiRecommendController - 创建策略', () => {
-  test('创建基本策略成功', () => {
+  it('创建基本策略成功', () => {
     const { controller } = makeCtrl()
     const result = controller.createStrategy({
       name: 'test-strategy-unit',
@@ -257,7 +257,7 @@ describe('AiRecommendController - 创建策略', () => {
     assert.ok(result.createdAt)
   })
 
-  test('创建策略后可在列表中查到', () => {
+  it('创建策略后可在列表中查到', () => {
     const { controller } = makeCtrl()
     controller.createStrategy({
       name: 'list-verify',
@@ -271,7 +271,7 @@ describe('AiRecommendController - 创建策略', () => {
     assert.ok(names.includes('list-verify'))
   })
 
-  test('创建最小配置策略（仅必填字段）', () => {
+  it('创建最小配置策略（仅必填字段）', () => {
     const { controller } = makeCtrl()
     const result = controller.createStrategy({
       name: 'minimal',
@@ -287,14 +287,14 @@ describe('AiRecommendController - 创建策略', () => {
 // ── GET /strategies（列表）──
 
 describe('AiRecommendController - 获取策略列表', () => {
-  test('默认至少 4 个种子策略', () => {
+  it('默认至少 4 个种子策略', () => {
     const { controller } = makeCtrl()
     const result = controller.getStrategies()
     assert.ok(Array.isArray(result))
     assert.ok(result.length >= 4)
   })
 
-  test('所有策略是 RecommendationStrategy 结构', () => {
+  it('所有策略是 RecommendationStrategy 结构', () => {
     const { controller } = makeCtrl()
     const result = controller.getStrategies()
     for (const s of result) {
@@ -305,7 +305,7 @@ describe('AiRecommendController - 获取策略列表', () => {
     }
   })
 
-  test('各策略 ID 唯一', () => {
+  it('各策略 ID 唯一', () => {
     const { controller } = makeCtrl()
     const result = controller.getStrategies()
     const ids = result.map(s => s.id)
@@ -316,20 +316,20 @@ describe('AiRecommendController - 获取策略列表', () => {
 // ── GET /strategies/:id ──
 
 describe('AiRecommendController - 获取指定策略', () => {
-  test('存在 ID 返回策略对象', () => {
+  it('存在 ID 返回策略对象', () => {
     const { controller } = makeCtrl()
     const result = controller.getStrategy('strategy-hybrid-v1')
     assert.ok(result)
     assert.equal(result!.name, 'hybrid')
   })
 
-  test('不存在 ID 返回 undefined', () => {
+  it('不存在 ID 返回 undefined', () => {
     const { controller } = makeCtrl()
     const result = controller.getStrategy('not-exist')
     assert.equal(result, undefined)
   })
 
-  test('空字符串 ID 返回 undefined', () => {
+  it('空字符串 ID 返回 undefined', () => {
     const { controller } = makeCtrl()
     const result = controller.getStrategy('')
     assert.equal(result, undefined)
@@ -339,7 +339,7 @@ describe('AiRecommendController - 获取指定策略', () => {
 // ── PUT /strategies/:id ──
 
 describe('AiRecommendController - 更新策略', () => {
-  test('更新策略名称和描述', () => {
+  it('更新策略名称和描述', () => {
     const { controller } = makeCtrl()
     const updated = controller.updateStrategy('strategy-hybrid-v1', {
       name: 'hybrid-v2',
@@ -349,7 +349,7 @@ describe('AiRecommendController - 更新策略', () => {
     assert.equal(updated.description, 'Updated hybrid strategy')
   })
 
-  test('更新后可通过 getStrategy 验证', () => {
+  it('更新后可通过 getStrategy 验证', () => {
     const { controller } = makeCtrl()
     controller.updateStrategy('strategy-popularity-v1', {
       name: 'popularity-v2'
@@ -358,7 +358,7 @@ describe('AiRecommendController - 更新策略', () => {
     assert.equal(result!.name, 'popularity-v2')
   })
 
-  test('覆盖 config 字段（合并权重）', () => {
+  it('覆盖 config 字段（合并权重）', () => {
     const { controller } = makeCtrl()
     const updated = controller.updateStrategy('strategy-hybrid-v1', {
       weights: [{ factor: 'popularity', weight: 0.5 }],
@@ -370,7 +370,7 @@ describe('AiRecommendController - 更新策略', () => {
     assert.equal(updated.config.maxResults, 20)
   })
 
-  test('更新不存在的策略抛出异常', () => {
+  it('更新不存在的策略抛出异常', () => {
     const { controller } = makeCtrl()
     assert.throws(
       () => controller.updateStrategy('strategy-ghost', { name: 'ghost' }),
@@ -382,20 +382,20 @@ describe('AiRecommendController - 更新策略', () => {
 // ── PATCH /strategies/:id/enable /disable ──
 
 describe('AiRecommendController - 启用/禁用策略', () => {
-  test('禁用策略后 isEnabled=false', () => {
+  it('禁用策略后 isEnabled=false', () => {
     const { controller } = makeCtrl()
     const result = controller.disableStrategy('strategy-hybrid-v1')
     assert.equal(result.isEnabled, false)
   })
 
-  test('启用策略后 isEnabled=true', () => {
+  it('启用策略后 isEnabled=true', () => {
     const { controller } = makeCtrl()
     controller.disableStrategy('strategy-hybrid-v1')
     const result = controller.enableStrategy('strategy-hybrid-v1')
     assert.equal(result.isEnabled, true)
   })
 
-  test('禁用不存在的策略抛出异常', () => {
+  it('禁用不存在的策略抛出异常', () => {
     const { controller } = makeCtrl()
     assert.throws(
       () => controller.disableStrategy('strategy-nonexistent'),
@@ -403,7 +403,7 @@ describe('AiRecommendController - 启用/禁用策略', () => {
     )
   })
 
-  test('启用不存在的策略抛出异常', () => {
+  it('启用不存在的策略抛出异常', () => {
     const { controller } = makeCtrl()
     assert.throws(
       () => controller.enableStrategy('strategy-nonexistent'),
@@ -415,7 +415,7 @@ describe('AiRecommendController - 启用/禁用策略', () => {
 // ── GET /profiles/:memberId ──
 
 describe('AiRecommendController - 获取画像', () => {
-  test('已存在画像返回完整 UserProfile（通过 updateProfile 创建后）', () => {
+  it('已存在画像返回完整 UserProfile（通过 updateProfile 创建后）', () => {
     const { controller } = makeCtrl()
     // 先创建一个画像
     controller.updateProfile('member-001', {
@@ -434,7 +434,7 @@ describe('AiRecommendController - 获取画像', () => {
     assert.ok(result!.preferences)
   })
 
-  test('不存在画像返回 undefined', () => {
+  it('不存在画像返回 undefined', () => {
     const { controller } = makeCtrl()
     const result = controller.getProfile('ghost-member')
     assert.equal(result, undefined)
@@ -444,7 +444,7 @@ describe('AiRecommendController - 获取画像', () => {
 // ── PUT /profiles/:memberId ──
 
 describe('AiRecommendController - 创建/更新画像', () => {
-  test('创建新画像成功', () => {
+  it('创建新画像成功', () => {
     const { controller } = makeCtrl()
     const result = controller.updateProfile('member-new', {
       preferences: {
@@ -460,7 +460,7 @@ describe('AiRecommendController - 创建/更新画像', () => {
     assert.deepStrictEqual(result.preferences.gameTypes, ['puzzle', 'strategy'])
   })
 
-  test('更新已有画像', () => {
+  it('更新已有画像', () => {
     const { controller } = makeCtrl()
     controller.updateProfile('member-001', {
       preferences: {
@@ -477,7 +477,7 @@ describe('AiRecommendController - 创建/更新画像', () => {
     assert.ok(profile!.behaviorTags.includes('vip'))
   })
 
-  test('仅传部分字段保留已有字段（由 service 处理合并）', () => {
+  it('仅传部分字段保留已有字段（由 service 处理合并）', () => {
     const { controller } = makeCtrl()
     const result = controller.updateProfile('member-001', {
       behaviorTags: ['updated-tag']
@@ -485,7 +485,7 @@ describe('AiRecommendController - 创建/更新画像', () => {
     assert.ok(result.behaviorTags.includes('updated-tag'))
   })
 
-  test('空 behaviorTags 创建', () => {
+  it('空 behaviorTags 创建', () => {
     const { controller } = makeCtrl()
     const result = controller.updateProfile('member-tags-empty', {
       preferences: {
@@ -504,7 +504,7 @@ describe('AiRecommendController - 创建/更新画像', () => {
 // ── POST /interactions/score ──
 
 describe('AiRecommendController - 记录评分', () => {
-  test('记录游戏评分成功', () => {
+  it('记录游戏评分成功', () => {
     const { controller } = makeCtrl()
     const result = controller.recordScore({
       memberId: 'member-001',
@@ -520,7 +520,7 @@ describe('AiRecommendController - 记录评分', () => {
     assert.equal(result.interaction, 'purchase')
   })
 
-  test('记录低评分', () => {
+  it('记录低评分', () => {
     const { controller } = makeCtrl()
     const result = controller.recordScore({
       memberId: 'member-002',
@@ -533,7 +533,7 @@ describe('AiRecommendController - 记录评分', () => {
     assert.equal(result.rating, 1)
   })
 
-  test('不同类型物品评分', () => {
+  it('不同类型物品评分', () => {
     const { controller } = makeCtrl()
     const result = controller.recordScore({
       memberId: 'member-001',
@@ -550,7 +550,7 @@ describe('AiRecommendController - 记录评分', () => {
 // ── POST /interactions（简化版）──
 
 describe('AiRecommendController - 记录交互（简化版）', () => {
-  test('view 交互自动映射 weight=0.3 rating=3', () => {
+  it('view 交互自动映射 weight=0.3 rating=3', () => {
     const { controller } = makeCtrl()
     const result = controller.recordInteraction({
       memberId: 'member-001',
@@ -562,7 +562,7 @@ describe('AiRecommendController - 记录交互（简化版）', () => {
     assert.equal(result.rating, 3)
   })
 
-  test('purchase 交互自动映射 weight=1.0 rating=5', () => {
+  it('purchase 交互自动映射 weight=1.0 rating=5', () => {
     const { controller } = makeCtrl()
     const result = controller.recordInteraction({
       memberId: 'member-001',
@@ -574,7 +574,7 @@ describe('AiRecommendController - 记录交互（简化版）', () => {
     assert.equal(result.rating, 5)
   })
 
-  test('play 交互自动映射 weight=0.8 rating=4', () => {
+  it('play 交互自动映射 weight=0.8 rating=4', () => {
     const { controller } = makeCtrl()
     const result = controller.recordInteraction({
       memberId: 'member-002',
@@ -586,7 +586,7 @@ describe('AiRecommendController - 记录交互（简化版）', () => {
     assert.equal(result.rating, 4)
   })
 
-  test('未知交互类型回退 weight=0.5 rating=3', () => {
+  it('未知交互类型回退 weight=0.5 rating=3', () => {
     const { controller } = makeCtrl()
     const result = controller.recordInteraction({
       memberId: 'member-003',
@@ -602,7 +602,7 @@ describe('AiRecommendController - 记录交互（简化版）', () => {
 // ── POST /conversions ──
 
 describe('AiRecommendController - 记录转化', () => {
-  test('推荐转化成功返回更新后的推荐', () => {
+  it('推荐转化成功返回更新后的推荐', () => {
     const { controller } = makeCtrl()
     // 通过 generate 生成推荐 items 在返回中，但 recordConversion 查 this.recommendations
     // 先生成推荐
@@ -621,13 +621,13 @@ describe('AiRecommendController - 记录转化', () => {
     assert.equal(generated.items[0].strategy, 'popularity')
   })
 
-  test('转化不存在的推荐 ID 返回 undefined', () => {
+  it('转化不存在的推荐 ID 返回 undefined', () => {
     const { controller } = makeCtrl()
     const result = controller.recordConversion({ recommendationId: 'rec-ghost' })
     assert.equal(result, undefined)
   })
 
-  test('转化可从未转化的 active 推荐执行', () => {
+  it('转化可从未转化的 active 推荐执行', () => {
     const { controller } = makeCtrl()
     const generated = controller.generateRecommendations({
       strategyId: 'strategy-popularity-v1',

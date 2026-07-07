@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { ConfigurationGovernanceService } from './configuration-governance.service'
 
 type StoredRevision = {
@@ -186,7 +186,7 @@ function createConfigurationPrismaMock() {
   }
 }
 
-test('contract: config entry persists versioned revisions on update', async () => {
+it('contract: config entry persists versioned revisions on update', async () => {
   const { prisma, entries } = createConfigurationPrismaMock()
   const audits: string[] = []
   const service = new ConfigurationGovernanceService(prisma as never, {

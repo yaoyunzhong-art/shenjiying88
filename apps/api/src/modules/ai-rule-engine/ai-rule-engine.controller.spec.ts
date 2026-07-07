@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * AiRuleEngineController 单元测试 (node:test)
  *
@@ -6,7 +7,6 @@
  */
 
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
 
 // ── Entity mirrors (avoid NestJS DI) ───────────────────────────
 function makeMemberLevelInput(overrides: Record<string, unknown> = {}) {
@@ -209,6 +209,24 @@ class AiRuleEngineController {
   runSimulatorBatch(input: Record<string, unknown>) {
     return this.aiRuleEngineService.runSimulatorBatch(input)
   }
+
+  getEngineDetail(id: string) {
+    const detail = this.aiRuleEngineService.getEngineDetail(id)
+    if (!detail) throw new Error(`Engine ${id} not found`)
+    return detail
+  }
+
+  updateEngineConfig(id: string, config: Record<string, unknown>) {
+    const detail = this.aiRuleEngineService.updateEngineConfig(id, config)
+    if (!detail) throw new Error(`Engine ${id} not found`)
+    return detail
+  }
+
+  resetEngine(id: string) {
+    const detail = this.aiRuleEngineService.resetEngine(id)
+    if (!detail) throw new Error(`Engine ${id} not found`)
+    return detail
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -229,6 +247,9 @@ function makeMockService(overrides: Record<string, any> = {}) {
     getSimulator: () => undefined,
     runSimulator: () => makeSimulatorResult(),
     runSimulatorBatch: () => makeSimulatorSummary(),
+    getEngineDetail: () => undefined,
+    updateEngineConfig: () => undefined,
+    resetEngine: () => undefined,
     ...overrides,
   }
 }
@@ -296,6 +317,143 @@ function makeMockServiceWithData() {
       const rounds = input.rounds ?? 100
       return makeSimulatorSummary({ totalRuns: rounds, matchedRuns: Math.floor(rounds * 0.65) })
     },
+    getEngineDetail: (_id: string) => {
+      if (_id === 'non-existent-engine') return undefined
+      const isMemberLevel = _id === 'member-level-v1'
+      const memberConditions = [
+        { id: 'cond-high-spend', field: 'totalSpend', operator: 'GTE', value: 10000, weight: 0.4, description: '累计消费 >= 10000' },
+        { id: 'cond-high-points', field: 'totalPoints', operator: 'GTE', value: 5000, weight: 0.3, description: '积分 >= 5000' },
+        { id: 'cond-frequent-visit', field: 'visitCount', operator: 'GTE', value: 20, weight: 0.3, description: '到访次数 >= 20' }
+      ]
+      const deviceConditions = [
+        { id: 'cond-cpu-high', field: 'cpuUsage', operator: 'GTE', value: 90, weight: 0.25, description: 'CPU >= 90%' },
+        { id: 'cond-memory-high', field: 'memoryUsage', operator: 'GTE', value: 85, weight: 0.25, description: '内存 >= 85%' },
+        { id: 'cond-disk-high', field: 'diskUsage', operator: 'GTE', value: 90, weight: 0.2, description: '磁盘 >= 90%' },
+        { id: 'cond-network-slow', field: 'networkLatencyMs', operator: 'GTE', value: 500, weight: 0.15, description: '网络 >= 500ms' },
+        { id: 'cond-error-high', field: 'errorRate', operator: 'GTE', value: 5, weight: 0.15, description: '错误率 >= 5%' }
+      ]
+      const memberActions = [
+        { id: 'act-assign-svip', type: 'ASSIGN_LEVEL', params: { level: 'SVIP' }, priority: 1, description: '分配 SVIP' },
+        { id: 'act-assign-vip', type: 'ASSIGN_LEVEL', params: { level: 'VIP' }, priority: 2, description: '分配 VIP' },
+        { id: 'act-assign-regular', type: 'ASSIGN_LEVEL', params: { level: 'REGULAR' }, priority: 3, description: '分配 REGULAR' }
+      ]
+      const deviceActions = [
+        { id: 'act-flag-critical', type: 'FLAG_ANOMALY', params: { severity: 'CRITICAL' }, priority: 1, description: '严重异常' },
+        { id: 'act-escalate', type: 'ESCALATE', params: { channel: 'ops-team' }, priority: 2, description: '升级运维' }
+      ]
+      return {
+        engineId: _id,
+        engineName: isMemberLevel ? 'Member Level Evaluator' : 'Device Anomaly Detector',
+        conditionsCount: isMemberLevel ? 3 : 5,
+        actionsCount: isMemberLevel ? 3 : 2,
+        matchStrategy: isMemberLevel ? 'ALL' : 'ANY',
+        status: 'SUCCEEDED',
+        enabled: true,
+        provider: 'openai',
+        model: 'gpt-4',
+        conditions: isMemberLevel ? memberConditions : deviceConditions,
+        actions: isMemberLevel ? memberActions : deviceActions
+      }
+    },
+    updateEngineConfig: (_id: string, config: any) => {
+      if (_id === 'non-existent') return undefined
+      const isMemberLevel = _id === 'member-level-v1'
+      const memberConditions = [
+        { id: 'cond-high-spend', field: 'totalSpend', operator: 'GTE', value: 10000, weight: 0.4, description: '累计消费 >= 10000' },
+        { id: 'cond-high-points', field: 'totalPoints', operator: 'GTE', value: 5000, weight: 0.3, description: '积分 >= 5000' },
+        { id: 'cond-frequent-visit', field: 'visitCount', operator: 'GTE', value: 20, weight: 0.3, description: '到访次数 >= 20' }
+      ]
+      const deviceConditions = [
+        { id: 'cond-cpu-high', field: 'cpuUsage', operator: 'GTE', value: 90, weight: 0.25, description: 'CPU >= 90%' },
+        { id: 'cond-memory-high', field: 'memoryUsage', operator: 'GTE', value: 85, weight: 0.25, description: '内存 >= 85%' },
+        { id: 'cond-disk-high', field: 'diskUsage', operator: 'GTE', value: 90, weight: 0.2, description: '磁盘 >= 90%' },
+        { id: 'cond-network-slow', field: 'networkLatencyMs', operator: 'GTE', value: 500, weight: 0.15, description: '网络 >= 500ms' },
+        { id: 'cond-error-high', field: 'errorRate', operator: 'GTE', value: 5, weight: 0.15, description: '错误率 >= 5%' }
+      ]
+      const memberActions = [
+        { id: 'act-assign-svip', type: 'ASSIGN_LEVEL', params: { level: 'SVIP' }, priority: 1, description: '分配 SVIP' },
+        { id: 'act-assign-vip', type: 'ASSIGN_LEVEL', params: { level: 'VIP' }, priority: 2, description: '分配 VIP' },
+        { id: 'act-assign-regular', type: 'ASSIGN_LEVEL', params: { level: 'REGULAR' }, priority: 3, description: '分配 REGULAR' }
+      ]
+      const deviceActions = [
+        { id: 'act-flag-critical', type: 'FLAG_ANOMALY', params: { severity: 'CRITICAL' }, priority: 1, description: '严重异常' },
+        { id: 'act-escalate', type: 'ESCALATE', params: { channel: 'ops-team' }, priority: 2, description: '升级运维' }
+      ]
+      const conditions = isMemberLevel ? [...memberConditions] : [...deviceConditions]
+      const actions = isMemberLevel ? [...memberActions] : [...deviceActions]
+      const detail: any = {
+        engineId: _id,
+        engineName: isMemberLevel ? 'Member Level Evaluator' : 'Device Anomaly Detector',
+        conditionsCount: isMemberLevel ? 3 : 5,
+        actionsCount: isMemberLevel ? 3 : 2,
+        matchStrategy: isMemberLevel ? 'ALL' : 'ANY',
+        status: 'SUCCEEDED',
+        enabled: true,
+        provider: 'openai',
+        model: 'gpt-4',
+        conditions,
+        actions
+      }
+      if (config.enabled !== undefined) {
+        detail.enabled = config.enabled
+        detail.status = config.enabled ? 'SUCCEEDED' : 'FAILED'
+      }
+      if (config.matchStrategy !== undefined) {
+        detail.matchStrategy = config.matchStrategy
+      }
+      if (config.description !== undefined) {
+        detail.description = config.description
+      }
+      if (config.conditionOverrides) {
+        for (const override of config.conditionOverrides) {
+          const cond = detail.conditions.find((c: any) => c.id === override.conditionId)
+          if (cond) {
+            if (override.value !== undefined) cond.value = override.value
+            if (override.weight !== undefined) cond.weight = override.weight
+            if (override.field !== undefined) cond.field = override.field
+          }
+        }
+      }
+      return detail
+    },
+    resetEngine: (_id: string) => {
+      if (_id === 'non-existent-engine') return undefined
+      const isMemberLevel = _id === 'member-level-v1'
+      return {
+        engineId: _id,
+        engineName: isMemberLevel ? 'Member Level Evaluator' : 'Device Anomaly Detector',
+        conditionsCount: isMemberLevel ? 3 : 5,
+        actionsCount: isMemberLevel ? 3 : 2,
+        matchStrategy: isMemberLevel ? 'ALL' : 'ANY',
+        status: 'SUCCEEDED',
+        enabled: true,
+        provider: 'openai',
+        model: 'gpt-4',
+        conditions: isMemberLevel
+          ? [
+              { id: 'cond-high-spend', field: 'totalSpend', operator: 'GTE', value: 10000, weight: 0.4 },
+              { id: 'cond-high-points', field: 'totalPoints', operator: 'GTE', value: 5000, weight: 0.3 },
+              { id: 'cond-frequent-visit', field: 'visitCount', operator: 'GTE', value: 20, weight: 0.3 }
+            ]
+          : [
+              { id: 'cond-cpu-high', field: 'cpuUsage', operator: 'GTE', value: 90, weight: 0.25 },
+              { id: 'cond-memory-high', field: 'memoryUsage', operator: 'GTE', value: 85, weight: 0.25 },
+              { id: 'cond-disk-high', field: 'diskUsage', operator: 'GTE', value: 90, weight: 0.2 },
+              { id: 'cond-network-slow', field: 'networkLatencyMs', operator: 'GTE', value: 500, weight: 0.15 },
+              { id: 'cond-error-high', field: 'errorRate', operator: 'GTE', value: 5, weight: 0.15 }
+            ],
+        actions: isMemberLevel
+          ? [
+              { id: 'act-assign-svip', type: 'ASSIGN_LEVEL', params: { level: 'SVIP' }, priority: 1 },
+              { id: 'act-assign-vip', type: 'ASSIGN_LEVEL', params: { level: 'VIP' }, priority: 2 },
+              { id: 'act-assign-regular', type: 'ASSIGN_LEVEL', params: { level: 'REGULAR' }, priority: 3 }
+            ]
+          : [
+              { id: 'act-flag-critical', type: 'FLAG_ANOMALY', params: { severity: 'CRITICAL' }, priority: 1 },
+              { id: 'act-escalate', type: 'ESCALATE', params: { channel: 'ops-team' }, priority: 2 }
+            ]
+      }
+    },
   })
 }
 
@@ -304,7 +462,7 @@ describe('AiRuleEngineController', () => {
 
   // ── POST /ai-rule-engine/evaluate ──────────────────────────
   describe('evaluate()', () => {
-    test('evaluates member level and returns formatted response', () => {
+    it('evaluates member level and returns formatted response', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const input = makeMemberLevelInput()
@@ -320,7 +478,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.confidence, 0.9)
     })
 
-    test('evaluates device anomaly and returns formatted response', () => {
+    it('evaluates device anomaly and returns formatted response', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const input = makeDeviceAnomalyInput()
@@ -334,7 +492,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.severity, 'HIGH')
     })
 
-    test('returns regular level when member does not meet criteria', () => {
+    it('returns regular level when member does not meet criteria', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const input = makeMemberLevelInput({ totalPoints: 100, totalSpend: 200, visitCount: 2 })
@@ -346,7 +504,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.confidence, 0.3)
     })
 
-    test('returns no anomaly for healthy device metrics', () => {
+    it('returns no anomaly for healthy device metrics', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const input = makeDeviceAnomalyInput({
@@ -360,7 +518,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.triggeredRules.length, 0)
     })
 
-    test('throws for unsupported evaluation type', () => {
+    it('throws for unsupported evaluation type', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       assert.throws(
@@ -372,7 +530,7 @@ describe('AiRuleEngineController', () => {
 
   // ── POST /ai-rule-engine/evaluate/member-level ────────────
   describe('evaluateMemberLevel()', () => {
-    test('returns SVIP for high-value member', () => {
+    it('returns SVIP for high-value member', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const input = makeMemberLevelInput()
@@ -383,7 +541,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.suggestedLevel, 'SVIP')
     })
 
-    test('returns REGULAR for zero-spend member', () => {
+    it('returns REGULAR for zero-spend member', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const input = makeMemberLevelInput({ totalPoints: 0, totalSpend: 0, visitCount: 0 })
@@ -394,7 +552,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.confidence, 0.3)
     })
 
-    test('handles missing fields gracefully via service defaults', () => {
+    it('handles missing fields gracefully via service defaults', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const response = controller.evaluateMemberLevel({
@@ -412,7 +570,7 @@ describe('AiRuleEngineController', () => {
 
   // ── POST /ai-rule-engine/evaluate/device-anomaly ──────────
   describe('detectDeviceAnomaly()', () => {
-    test('detects CPU anomaly for high CPU usage', () => {
+    it('detects CPU anomaly for high CPU usage', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const input = makeDeviceAnomalyInput()
@@ -424,7 +582,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.anomalyType, 'CPU_SPIKE')
     })
 
-    test('returns no anomaly for low metrics', () => {
+    it('returns no anomaly for low metrics', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const input = makeDeviceAnomalyInput({
@@ -437,7 +595,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.recommendations[0], 'All metrics within normal range')
     })
 
-    test('handles zero metrics input', () => {
+    it('handles zero metrics input', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const input = makeDeviceAnomalyInput({
@@ -452,7 +610,7 @@ describe('AiRuleEngineController', () => {
 
   // ── POST /ai-rule-engine/evaluate/batch ───────────────────
   describe('evaluateBatch()', () => {
-    test('evaluates multiple member levels in batch', () => {
+    it('evaluates multiple member levels in batch', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const response = controller.evaluateBatch({
@@ -470,7 +628,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(response.items[1].inputId, 'batch-002')
     })
 
-    test('evaluates mixed member and device types in batch', () => {
+    it('evaluates mixed member and device types in batch', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const response = controller.evaluateBatch({
@@ -485,7 +643,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(response.items[1].type, 'device-anomaly')
     })
 
-    test('handles empty batch request', () => {
+    it('handles empty batch request', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const response = controller.evaluateBatch({ items: [] })
@@ -496,7 +654,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(response.items.length, 0)
     })
 
-    test('handles single item batch', () => {
+    it('handles single item batch', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const response = controller.evaluateBatch({
@@ -511,7 +669,7 @@ describe('AiRuleEngineController', () => {
 
   // ── POST /ai-rule-engine/evaluate/risk-score ──────────────
   describe('evaluateRiskScore()', () => {
-    test('returns CRITICAL risk for high refund member', () => {
+    it('returns CRITICAL risk for high refund member', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const response = controller.evaluateRiskScore({
@@ -528,7 +686,7 @@ describe('AiRuleEngineController', () => {
       assert.ok(result.reasons.length > 0)
     })
 
-    test('returns LOW risk for clean subject', () => {
+    it('returns LOW risk for clean subject', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const response = controller.evaluateRiskScore({
@@ -544,7 +702,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(result.triggeredRules.length, 0)
     })
 
-    test('handles minimal metrics input', () => {
+    it('handles minimal metrics input', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const response = controller.evaluateRiskScore({
@@ -562,7 +720,7 @@ describe('AiRuleEngineController', () => {
 
   // ── GET /ai-rule-engine/engines ────────────────────────────
   describe('getEngines()', () => {
-    test('returns all engine statuses', () => {
+    it('returns all engine statuses', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const engines = controller.getEngines()
@@ -573,7 +731,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(engines[2].engineId, 'risk-score-v1')
     })
 
-    test('each engine status has required fields', () => {
+    it('each engine status has required fields', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const engines = controller.getEngines()
@@ -591,7 +749,7 @@ describe('AiRuleEngineController', () => {
 
   // ── GET /ai-rule-engine/simulators ────────────────────────
   describe('listSimulators()', () => {
-    test('returns all simulators', () => {
+    it('returns all simulators', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const sims = controller.listSimulators()
@@ -601,7 +759,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(sims[1].id, 'sim-device-anomaly-v1')
     })
 
-    test('simulators have required schema', () => {
+    it('simulators have required schema', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const sims = controller.listSimulators()
@@ -618,7 +776,7 @@ describe('AiRuleEngineController', () => {
 
   // ── GET /ai-rule-engine/simulators/:id ────────────────────
   describe('getSimulator()', () => {
-    test('returns simulator by id', () => {
+    it('returns simulator by id', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const sim = controller.getSimulator('sim-member-level-v1')
@@ -628,7 +786,7 @@ describe('AiRuleEngineController', () => {
       assert.equal(sim.name, 'Member Level Simulator')
     })
 
-    test('returns undefined for unknown simulator id', () => {
+    it('returns undefined for unknown simulator id', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const sim = controller.getSimulator('non-existent-sim')
@@ -639,7 +797,7 @@ describe('AiRuleEngineController', () => {
 
   // ── POST /ai-rule-engine/simulators/run ───────────────────
   describe('runSimulator()', () => {
-    test('runs simulator and returns result with matched=true', () => {
+    it('runs simulator and returns result with matched=true', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const result = controller.runSimulator({
@@ -654,7 +812,7 @@ describe('AiRuleEngineController', () => {
       assert.ok(typeof result.executionTimeMs === 'number')
     })
 
-    test('includes triggered conditions and actions when matched', () => {
+    it('includes triggered conditions and actions when matched', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const result = controller.runSimulator({
@@ -671,7 +829,7 @@ describe('AiRuleEngineController', () => {
 
   // ── POST /ai-rule-engine/simulators/run-batch ─────────────
   describe('runSimulatorBatch()', () => {
-    test('runs batch simulator and returns summary', () => {
+    it('runs batch simulator and returns summary', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const summary = controller.runSimulatorBatch({
@@ -690,7 +848,7 @@ describe('AiRuleEngineController', () => {
       assert.ok(summary.p95ExecutionTimeMs > 0)
     })
 
-    test('returns summary with most triggered conditions', () => {
+    it('returns summary with most triggered conditions', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const summary = controller.runSimulatorBatch({
@@ -704,7 +862,7 @@ describe('AiRuleEngineController', () => {
       assert.ok(typeof summary.recommendation === 'string')
     })
 
-    test('uses default rounds when not specified', () => {
+    it('uses default rounds when not specified', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       const summary = controller.runSimulatorBatch({
@@ -719,7 +877,7 @@ describe('AiRuleEngineController', () => {
 
   // ── Error handling ──────────────────────────────────────────
   describe('error handling', () => {
-    test('throws when unsupported type passed to evaluate', () => {
+    it('throws when unsupported type passed to evaluate', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       assert.throws(
@@ -728,7 +886,7 @@ describe('AiRuleEngineController', () => {
       )
     })
 
-    test('runSimulator throws when simulatorId is missing', () => {
+    it('runSimulator throws when simulatorId is missing', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       assert.throws(
@@ -737,12 +895,166 @@ describe('AiRuleEngineController', () => {
       )
     })
 
-    test('evaluate throws for completely empty body type', () => {
+    it('evaluate throws for completely empty body type', () => {
       const mockService = makeMockServiceWithData()
       const controller = new AiRuleEngineController(mockService)
       assert.throws(
         () => controller.evaluate({ type: '', data: {} }),
         /Unsupported evaluation type/
+      )
+    })
+  })
+
+  // ── GET /ai-rule-engine/engines/:id ─────────────────────────
+  describe('getEngineDetail()', () => {
+    it('returns full engine detail for known id', () => {
+      const mockService = makeMockServiceWithData()
+      const controller = new AiRuleEngineController(mockService)
+      const detail = controller.getEngineDetail('member-level-v1') as any
+
+      assert.equal(detail.engineId, 'member-level-v1')
+      assert.equal(detail.engineName, 'Member Level Evaluator')
+      assert.equal(detail.conditionsCount, 3)
+      assert.equal(detail.actionsCount, 3)
+      assert.equal(detail.matchStrategy, 'ALL')
+      assert.equal(detail.enabled, true)
+      assert.ok(typeof detail.provider === 'string')
+      assert.ok(typeof detail.model === 'string')
+      assert.ok(Array.isArray(detail.conditions))
+      assert.ok(Array.isArray(detail.actions))
+    })
+
+    it('throws for unknown engine id', () => {
+      const mockService = makeMockServiceWithData()
+      const controller = new AiRuleEngineController(mockService)
+      assert.throws(
+        () => controller.getEngineDetail('non-existent-engine'),
+        /Engine non-existent-engine not found/
+      )
+    })
+
+    it('returns all condition and action details', () => {
+      const mockService = makeMockServiceWithData()
+      const controller = new AiRuleEngineController(mockService)
+      const detail = controller.getEngineDetail('member-level-v1') as any
+
+      assert.equal(detail.conditions.length, 3)
+      assert.equal(detail.conditions[0].id, 'cond-high-spend')
+      assert.equal(detail.conditions[0].field, 'totalSpend')
+      assert.ok(typeof detail.conditions[0].value !== 'undefined')
+      assert.ok(typeof detail.conditions[0].weight === 'number')
+
+      assert.equal(detail.actions.length, 3)
+      assert.equal(detail.actions[0].id, 'act-assign-svip')
+      assert.equal(detail.actions[0].type, 'ASSIGN_LEVEL')
+      assert.ok(typeof detail.actions[0].priority === 'number')
+    })
+
+    it('returns device-anomaly engine detail with 5 conditions', () => {
+      const mockService = makeMockServiceWithData()
+      const controller = new AiRuleEngineController(mockService)
+      const detail = controller.getEngineDetail('device-anomaly-v1') as any
+
+      assert.equal(detail.engineId, 'device-anomaly-v1')
+      assert.equal(detail.conditionsCount, 5)
+      assert.equal(detail.actionsCount, 2)
+      assert.equal(detail.matchStrategy, 'ANY')
+    })
+  })
+
+  // ── POST /ai-rule-engine/engines/:id/config ─────────────────
+  describe('updateEngineConfig()', () => {
+    it('disables engine when enabled=false', () => {
+      const mockService = makeMockServiceWithData()
+      const controller = new AiRuleEngineController(mockService)
+      const result = controller.updateEngineConfig('member-level-v1', { enabled: false }) as any
+
+      assert.equal(result.engineId, 'member-level-v1')
+      assert.equal(result.enabled, false)
+    })
+
+    it('changes match strategy', () => {
+      const mockService = makeMockServiceWithData()
+      const controller = new AiRuleEngineController(mockService)
+      const result = controller.updateEngineConfig('device-anomaly-v1', { matchStrategy: 'ALL' }) as any
+
+      assert.equal(result.matchStrategy, 'ALL')
+    })
+
+    it('re-enables disabled engine', () => {
+      const mockService = makeMockServiceWithData()
+      const controller = new AiRuleEngineController(mockService)
+      // disable first
+      controller.updateEngineConfig('member-level-v1', { enabled: false })
+      // re-enable
+      const result = controller.updateEngineConfig('member-level-v1', { enabled: true }) as any
+
+      assert.equal(result.enabled, true)
+    })
+
+    it('throws for unknown engine id', () => {
+      const mockService = makeMockServiceWithData()
+      const controller = new AiRuleEngineController(mockService)
+      assert.throws(
+        () => controller.updateEngineConfig('non-existent', { enabled: false }),
+        /Engine non-existent not found/
+      )
+    })
+
+    it('updates condition threshold via overrides', () => {
+      const mockService = makeMockServiceWithData()
+      const controller = new AiRuleEngineController(mockService)
+      const result = controller.updateEngineConfig('member-level-v1', {
+        conditionOverrides: [
+          { conditionId: 'cond-high-spend', value: 5000 }
+        ]
+      }) as any
+
+      const cond = result.conditions.find((c: any) => c.id === 'cond-high-spend')
+      assert.ok(cond)
+      assert.equal(cond.value, 5000)
+    })
+
+    it('updates multiple conditions simultaneously', () => {
+      const mockService = makeMockServiceWithData()
+      const controller = new AiRuleEngineController(mockService)
+      const result = controller.updateEngineConfig('device-anomaly-v1', {
+        conditionOverrides: [
+          { conditionId: 'cond-cpu-high', value: 85 },
+          { conditionId: 'cond-memory-high', value: 80, weight: 0.3 }
+        ]
+      }) as any
+
+      const cpuCond = result.conditions.find((c: any) => c.id === 'cond-cpu-high')
+      assert.equal(cpuCond.value, 85)
+
+      const memCond = result.conditions.find((c: any) => c.id === 'cond-memory-high')
+      assert.equal(memCond.value, 80)
+      assert.equal(memCond.weight, 0.3)
+    })
+  })
+
+  // ── POST /ai-rule-engine/engines/:id/reset ──────────────────
+  describe('resetEngine()', () => {
+    it('resets engine after disable and config changes', () => {
+      const mockService = makeMockServiceWithData()
+      const controller = new AiRuleEngineController(mockService)
+      // disable engine
+      controller.updateEngineConfig('member-level-v1', { enabled: false })
+      // reset
+      const result = controller.resetEngine('member-level-v1') as any
+
+      assert.equal(result.engineId, 'member-level-v1')
+      assert.equal(result.enabled, true)
+      assert.equal(result.matchStrategy, 'ALL')
+    })
+
+    it('throws for unknown engine id on reset', () => {
+      const mockService = makeMockServiceWithData()
+      const controller = new AiRuleEngineController(mockService)
+      assert.throws(
+        () => controller.resetEngine('non-existent-engine'),
+        /Engine non-existent-engine not found/
       )
     })
   })

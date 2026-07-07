@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   CampaignActionKind,
   CampaignActionStatus,
@@ -12,7 +12,7 @@ import {
 } from './campaign.entity'
 
 describe('CampaignEntity', () => {
-  test('campaign trigger and status enums are stable', () => {
+  it('campaign trigger and status enums are stable', () => {
     assert.equal(CampaignTrigger.PaymentSuccess, 'payment.success')
     assert.equal(CampaignTrigger.MemberProfileSynced, 'member.profile-synced')
     assert.equal(CampaignStatus.Draft, 'DRAFT')
@@ -26,14 +26,14 @@ describe('CampaignEntity', () => {
     assert.equal(CampaignActionStatus.Pending, 'PENDING')
   })
 
-  test('campaign action and condition enums cover full matrix', () => {
+  it('campaign action and condition enums cover full matrix', () => {
     const actionKinds = Object.values(CampaignActionKind)
     assert.deepEqual(actionKinds.sort(), ['AWARD_POINTS', 'ISSUE_BLINDBOX', 'ISSUE_COUPON', 'RECOMMEND_TAG'])
     const conditionTypes = Object.values(CampaignConditionType)
     assert.deepEqual(conditionTypes.sort(), ['BRAND_SCOPE', 'MEMBER_LEVEL', 'MIN_ORDER_AMOUNT', 'STORE_SCOPE'])
   })
 
-  test('campaign condition and action types can be expressed structurally', () => {
+  it('campaign condition and action types can be expressed structurally', () => {
     const condition: CampaignCondition = {
       type: CampaignConditionType.MinOrderAmount,
       value: 100

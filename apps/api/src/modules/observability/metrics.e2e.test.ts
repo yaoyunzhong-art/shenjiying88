@@ -1,3 +1,4 @@
+import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 /**
  * E2E: Metrics 可观测性 HTTP 链路
  *
@@ -12,7 +13,6 @@
 
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { MetricsService } from './metrics.service';
@@ -31,7 +31,7 @@ async function createTestApp() {
 
 // ── 基本路由 ──
 
-test('E2E: GET /healthz 返回 200 和健康状态', async () => {
+it('E2E: GET /healthz 返回 200 和健康状态', async () => {
   const app = await createTestApp();
   const httpServer = app.getHttpServer();
 
@@ -44,7 +44,7 @@ test('E2E: GET /healthz 返回 200 和健康状态', async () => {
   await app.close();
 });
 
-test('E2E: GET /healthz 重复调用始终返回同一格式', async () => {
+it('E2E: GET /healthz 重复调用始终返回同一格式', async () => {
   const app = await createTestApp();
   const httpServer = app.getHttpServer();
 
@@ -61,7 +61,7 @@ test('E2E: GET /healthz 重复调用始终返回同一格式', async () => {
 
 // ── /metrics Prometheus 格式 ──
 
-test('E2E: GET /metrics 返回 text/plain 格式', async () => {
+it('E2E: GET /metrics 返回 text/plain 格式', async () => {
   const app = await createTestApp();
   const httpServer = app.getHttpServer();
 
@@ -78,7 +78,7 @@ test('E2E: GET /metrics 返回 text/plain 格式', async () => {
   await app.close();
 });
 
-test('E2E: /metrics 包含全部 5 个默认指标', async () => {
+it('E2E: /metrics 包含全部 5 个默认指标', async () => {
   const app = await createTestApp();
   const httpServer = app.getHttpServer();
 
@@ -101,7 +101,7 @@ test('E2E: /metrics 包含全部 5 个默认指标', async () => {
   await app.close();
 });
 
-test('E2E: /metrics 初始时无数据行 (仅 HELP/TYPE)', async () => {
+it('E2E: /metrics 初始时无数据行 (仅 HELP/TYPE)', async () => {
   const app = await createTestApp();
   const httpServer = app.getHttpServer();
 
@@ -114,7 +114,7 @@ test('E2E: /metrics 初始时无数据行 (仅 HELP/TYPE)', async () => {
   await app.close();
 });
 
-test('E2E: /metrics 内容以换行结尾', async () => {
+it('E2E: /metrics 内容以换行结尾', async () => {
   const app = await createTestApp();
   const httpServer = app.getHttpServer();
 
@@ -126,7 +126,7 @@ test('E2E: /metrics 内容以换行结尾', async () => {
 
 // ── 服务操作影响 ──
 
-test('E2E: reset() 后 getHealth 返回 metrics=0', async () => {
+it('E2E: reset() 后 getHealth 返回 metrics=0', async () => {
   const app = await createTestApp();
   const httpServer = app.getHttpServer();
 
@@ -139,7 +139,7 @@ test('E2E: reset() 后 getHealth 返回 metrics=0', async () => {
   await app.close();
 });
 
-test('E2E: reset + registerDefaultMetrics 后恢复 5 个指标', async () => {
+it('E2E: reset + registerDefaultMetrics 后恢复 5 个指标', async () => {
   const app = await createTestApp();
   const httpServer = app.getHttpServer();
 
@@ -161,7 +161,7 @@ test('E2E: reset + registerDefaultMetrics 后恢复 5 个指标', async () => {
 
 // ── 无认证 ──
 
-test('E2E: 健康检查和 metrics 端点无需认证', async () => {
+it('E2E: 健康检查和 metrics 端点无需认证', async () => {
   const app = await createTestApp();
   const httpServer = app.getHttpServer();
 
@@ -173,7 +173,7 @@ test('E2E: 健康检查和 metrics 端点无需认证', async () => {
 
 // ── 注入 metrics 后直接验证 ──
 
-test('E2E: 手动构造数据后 /metrics 输出值行', async () => {
+it('E2E: 手动构造数据后 /metrics 输出值行', async () => {
   const app = await createTestApp();
   const httpServer = app.getHttpServer();
 

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🦞 跨模块 E2E 测试链 #1: 管理端创建 → API存储 → B端展示 → C端消费
  *
@@ -13,8 +14,6 @@
  */
 
 import assert from 'node:assert/strict';
-import test from 'node:test';
-
 // ---- 测试数据结构定义（模拟 chain） ----
 
 interface TenantContext {
@@ -252,7 +251,7 @@ function toMiniappBootstrapSnapshot(portal: PortalBootstrapResponse): MiniappBoo
 
 // ---- 测试链 #1: 管理端 → API → B端 → C端 ----
 
-test('E2E链#1 正例: CN市场 tenant创建 → B端portal输出 → C端miniapp snapshot 全链路数据一致', () => {
+it('E2E链#1 正例: CN市场 tenant创建 → B端portal输出 → C端miniapp snapshot 全链路数据一致', () => {
   // Step 1: 管理端创建 tenant (admin-web → API)
   const ctx = createTenantContext('cn-mainland');
   const foundation = createFoundationBootstrap(ctx);
@@ -286,7 +285,7 @@ test('E2E链#1 正例: CN市场 tenant创建 → B端portal输出 → C端miniap
   assert.ok(snapshot.supportedSurfaces.includes('APP'));
 });
 
-test('E2E链#1 反例: 缺失 tenantContext 时应安全降级', () => {
+it('E2E链#1 反例: 缺失 tenantContext 时应安全降级', () => {
   // 模拟 tenant context 为空的情况
   const emptyCtx: TenantContext = { tenantId: '', marketCode: '' };
 
@@ -300,7 +299,7 @@ test('E2E链#1 反例: 缺失 tenantContext 时应安全降级', () => {
   assert.equal(fallbackMarket.currency.currencyCode, 'USD');
 });
 
-test('E2E链#1 跨市场: US市场与CN市场 portal 输出应保持独立', () => {
+it('E2E链#1 跨市场: US市场与CN市场 portal 输出应保持独立', () => {
   const usCtx = createTenantContext('us-default');
   const usMarket = createMarketProfile('us-default');
   const usPortal = createPortalBootstrap(usCtx, usMarket);
@@ -326,7 +325,7 @@ test('E2E链#1 跨市场: US市场与CN市场 portal 输出应保持独立', () 
   assert.notEqual(usSnapshot.marketCode, cnSnapshot.marketCode);
 });
 
-test('E2E链#1 边界: supportedSurfaces 应包含全部6个端', () => {
+it('E2E链#1 边界: supportedSurfaces 应包含全部6个端', () => {
   const ctx = createTenantContext();
   const market = createMarketProfile('cn-mainland');
   const portal = createPortalBootstrap(ctx, market);
@@ -340,7 +339,7 @@ test('E2E链#1 边界: supportedSurfaces 应包含全部6个端', () => {
   }
 });
 
-test('E2E链#1 边界: tenant/brand/store 三层 portal 的 primaryDomain 应有层级关系', () => {
+it('E2E链#1 边界: tenant/brand/store 三层 portal 的 primaryDomain 应有层级关系', () => {
   const ctx = createTenantContext('cn-mainland');
   const market = createMarketProfile('cn-mainland');
   const portal = createPortalBootstrap(ctx, market);

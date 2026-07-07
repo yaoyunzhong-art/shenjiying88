@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { HealthController } from './health.controller'
 import {
   PERMISSIONS_METADATA_KEY,
@@ -65,7 +65,7 @@ const baseReadinessArgs = [
 
 // ──────────── 👔店长 ────────────
 describe(`${ROLES.TenantAdmin} health 角色测试`, () => {
-  test('店长可调用 readiness 获取系统完整健康信息', async () => {
+  it('店长可调用 readiness 获取系统完整健康信息', async () => {
     const { controller } = createHealthController()
     const result = await controller.getReadiness(
       { tenantId: 't-01', brandId: 'b-01' },
@@ -80,7 +80,7 @@ describe(`${ROLES.TenantAdmin} health 角色测试`, () => {
     assert.equal(result.lytMode, 'mock')
   })
 
-  test('店长无 governance.read 权限时 readiness 元数据不匹配（权限边界）', () => {
+  it('店长无 governance.read 权限时 readiness 元数据不匹配（权限边界）', () => {
     const permittedRoles = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     const permittedPerms = Reflect.getMetadata(PERMISSIONS_METADATA_KEY, HealthController.prototype.getReadiness)
 
@@ -93,7 +93,7 @@ describe(`${ROLES.TenantAdmin} health 角色测试`, () => {
 
 // ──────────── 🛒前台 ────────────
 describe(`${ROLES.Reception} health 角色测试`, () => {
-  test('前台可通过 ping 获取轻量存活信息', async () => {
+  it('前台可通过 ping 获取轻量存活信息', async () => {
     const { controller } = createHealthController()
     const result = await controller.getPing()
 
@@ -101,7 +101,7 @@ describe(`${ROLES.Reception} health 角色测试`, () => {
     assert.ok(typeof result.timestamp === 'string')
   })
 
-  test('前台不在 readiness 允许角色列表中（权限边界）', () => {
+  it('前台不在 readiness 允许角色列表中（权限边界）', () => {
     const roles = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     assert.ok(!roles.includes('RECEPTION'))
     assert.ok(!roles.includes('FRONT_DESK'))
@@ -110,7 +110,7 @@ describe(`${ROLES.Reception} health 角色测试`, () => {
 
 // ──────────── 👥HR ────────────
 describe(`${ROLES.HR} health 角色测试`, () => {
-  test('HR 不在 readiness 白名单中，仅能通过 ping 确认服务存活', async () => {
+  it('HR 不在 readiness 白名单中，仅能通过 ping 确认服务存活', async () => {
     const { controller } = createHealthController()
 
     const pingResult = await controller.getPing()
@@ -122,7 +122,7 @@ describe(`${ROLES.HR} health 角色测试`, () => {
     assert.ok(!roles.includes('HR'))
   })
 
-  test('HR 调用 ping 返回标准格式的时间戳', async () => {
+  it('HR 调用 ping 返回标准格式的时间戳', async () => {
     const { controller } = createHealthController()
     const r1 = await controller.getPing()
     const r2 = await controller.getPing()
@@ -137,7 +137,7 @@ describe(`${ROLES.HR} health 角色测试`, () => {
 
 // ──────────── 🔧安监 ────────────
 describe(`${ROLES.Safety} health 角色测试`, () => {
-  test('安监 (SECURITY_ADMIN) 可调用 readiness 检查系统安全状态', async () => {
+  it('安监 (SECURITY_ADMIN) 可调用 readiness 检查系统安全状态', async () => {
     const { controller } = createHealthController()
     const result = await controller.getReadiness(
       { tenantId: 't-safety', brandId: 'b-safety' },
@@ -151,7 +151,7 @@ describe(`${ROLES.Safety} health 角色测试`, () => {
     assert.ok(result.components.find((c: { name: string }) => c.name === 'lyt-adapter') !== undefined)
   })
 
-  test('安监调用 readiness 需同时具备 SECURITY_ADMIN 角色和 governance.read 权限（双因素边界）', () => {
+  it('安监调用 readiness 需同时具备 SECURITY_ADMIN 角色和 governance.read 权限（双因素边界）', () => {
     const roles = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     const permissions = Reflect.getMetadata(PERMISSIONS_METADATA_KEY, HealthController.prototype.getReadiness)
 
@@ -162,7 +162,7 @@ describe(`${ROLES.Safety} health 角色测试`, () => {
 
 // ──────────── 🎮导玩员 ────────────
 describe(`${ROLES.Guide} health 角色测试`, () => {
-  test('导玩员通过根 health 端点获取基础健康信息', async () => {
+  it('导玩员通过根 health 端点获取基础健康信息', async () => {
     const { controller } = createHealthController()
     const result = await controller.getHealth()
 
@@ -170,7 +170,7 @@ describe(`${ROLES.Guide} health 角色测试`, () => {
     assert.ok(typeof result.timestamp === 'string')
   })
 
-  test('导玩员无权访问 readiness 详细健康数据（只读边界）', () => {
+  it('导玩员无权访问 readiness 详细健康数据（只读边界）', () => {
     const roles = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     assert.ok(!roles.includes('GUIDE'))
     assert.ok(!roles.includes('GAME_HOST'))
@@ -179,7 +179,7 @@ describe(`${ROLES.Guide} health 角色测试`, () => {
 
 // ──────────── 🎯运行专员 ────────────
 describe(`${ROLES.Ops} health 角色测试`, () => {
-  test('运行专员 (OPERATIONS) 可调用 readiness 获取运维监控数据', async () => {
+  it('运行专员 (OPERATIONS) 可调用 readiness 获取运维监控数据', async () => {
     const { controller } = createHealthController()
     const result = await controller.getReadiness(
       { tenantId: 't-ops', brandId: 'b-ops' },
@@ -192,7 +192,7 @@ describe(`${ROLES.Ops} health 角色测试`, () => {
     assert.ok(result.components.every((c: { latencyMs: number }) => c.latencyMs >= 0))
   })
 
-  test('运行专员调用 readiness 时可观察到 lyt 模式', async () => {
+  it('运行专员调用 readiness 时可观察到 lyt 模式', async () => {
     const { controller } = createHealthController()
     const result = await controller.getReadiness(
       { tenantId: 't-ops', brandId: 'b-ops' },
@@ -207,7 +207,7 @@ describe(`${ROLES.Ops} health 角色测试`, () => {
 
 // ──────────── 🤝团建 ────────────
 describe(`${ROLES.Teambuilding} health 角色测试`, () => {
-  test('团建通过 getHealth 确认系统可用后开展活动', async () => {
+  it('团建通过 getHealth 确认系统可用后开展活动', async () => {
     const { controller } = createHealthController()
     const result = await controller.getHealth()
 
@@ -215,7 +215,7 @@ describe(`${ROLES.Teambuilding} health 角色测试`, () => {
     assert.ok(result.timestamp)
   })
 
-  test('团建无权访问 readiness 内部组件详情（隔离边界）', () => {
+  it('团建无权访问 readiness 内部组件详情（隔离边界）', () => {
     const roles = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     assert.ok(!roles.includes('TEAMBUILDING'))
     assert.ok(!roles.includes('TEAMBUILD'))
@@ -224,7 +224,7 @@ describe(`${ROLES.Teambuilding} health 角色测试`, () => {
 
 // ──────────── 📢营销 ────────────
 describe(`${ROLES.Marketing} health 角色测试`, () => {
-  test('营销通过 ping 确认系统存活以便触达活动', async () => {
+  it('营销通过 ping 确认系统存活以便触达活动', async () => {
     const { controller } = createHealthController()
     const result = await controller.getPing()
 
@@ -232,7 +232,7 @@ describe(`${ROLES.Marketing} health 角色测试`, () => {
     assert.ok(result.timestamp)
   })
 
-  test('营销不在 readiness 允许角色中，无权查看系统内部组件（权限边界）', () => {
+  it('营销不在 readiness 允许角色中，无权查看系统内部组件（权限边界）', () => {
     const roles = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     assert.ok(!roles.includes('MARKETING'))
     assert.ok(!roles.includes('PROMOTION'))
@@ -241,7 +241,7 @@ describe(`${ROLES.Marketing} health 角色测试`, () => {
 
 // ──────────── 元数据回归 ────────────
 describe('health 角色元数据回归', () => {
-  test('readiness 端点要求 4 个特定角色 + 1 个权限', () => {
+  it('readiness 端点要求 4 个特定角色 + 1 个权限', () => {
     const roles = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     const permissions = Reflect.getMetadata(PERMISSIONS_METADATA_KEY, HealthController.prototype.getReadiness)
     const tenantScope = Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, HealthController.prototype.getReadiness)
@@ -251,7 +251,7 @@ describe('health 角色元数据回归', () => {
     assert.deepEqual(tenantScope, {})
   })
 
-  test('ping 和根端点无角色/权限限制', () => {
+  it('ping 和根端点无角色/权限限制', () => {
     for (const method of ['getPing', 'getHealth'] as const) {
       const roles = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype[method])
       const permissions = Reflect.getMetadata(PERMISSIONS_METADATA_KEY, HealthController.prototype[method])
@@ -261,7 +261,7 @@ describe('health 角色元数据回归', () => {
     }
   })
 
-  test('所有允许角色在 readiness 白名单中确保运营连续性', () => {
+  it('所有允许角色在 readiness 白名单中确保运营连续性', () => {
     const roles: string[] = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
 
     // 运维三剑客 + 超级管理员

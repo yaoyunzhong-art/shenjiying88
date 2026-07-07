@@ -1060,3 +1060,103 @@ test('sdk: foundation alert panel access exposes ack/mute/unmute wrappers', asyn
     { action: 'UNMUTE', code: 'alert-unmute', note: 'panel unmute wrapper', cache: undefined },
   ]);
 });
+
+test('sdk: putData sends PUT request with JSON body', async () => {
+  const requests: Array<{ url: string; method: string; headers: Record<string, string | undefined>; body?: string }> = [];
+
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    requests.push({
+      url: String(input),
+      method: String(init?.method ?? 'GET'),
+      headers: (init?.headers ?? {}) as Record<string, string | undefined>,
+      body: typeof init?.body === 'string' ? init.body : undefined
+    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: { receiptCode: 'updated-001' },
+        timestamp: '2026-06-25T00:00:00.000Z'
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+  }) as typeof fetch;
+
+  const client = new ApiClient({
+    baseUrl: 'http://localhost:3001/api/v1',
+    tenantId: 'tenant-demo'
+  });
+
+  const result = await client.putData<{ receiptCode: string }>('/runtime-governance/receipts/rc-001', {
+    nextStep: 'PROCEED'
+  });
+
+  assert.equal(result.receiptCode, 'updated-001');
+  assert.equal(requests[0]?.url, 'http://localhost:3001/api/v1/runtime-governance/receipts/rc-001');
+  assert.equal(requests[0]?.method, 'PUT');
+  assert.match(requests[0]?.body ?? '', /PROCEED/);
+  assert.equal(requests[0]?.headers?.['content-type'], 'application/json');
+  assert.equal(requests[0]?.headers?.['x-tenant-id'], 'tenant-demo');
+});
+
+test('sdk: patchData sends PATCH request with JSON body', async () => {
+  const requests: Array<{ url: string; method: string; body?: string }> = [];
+
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    requests.push({
+      url: String(input),
+      method: String(init?.method ?? 'GET'),
+      body: typeof init?.body === 'string' ? init.body : undefined
+    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: { updated: true },
+        timestamp: '2026-06-25T00:00:00.000Z'
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+  }) as typeof fetch;
+
+  const client = new ApiClient({ baseUrl: 'http://localhost:3001/api/v1', brandId: 'brand-demo' });
+
+  const result = await client.patchData<{ updated: boolean }>('/configuration-governance/config-entries/ns/key-1', {
+    value: 'new-value'
+  });
+
+  assert.equal(result.updated, true);
+  assert.equal(requests[0]?.url, 'http://localhost:3001/api/v1/configuration-governance/config-entries/ns/key-1');
+  assert.equal(requests[0]?.method, 'PATCH');
+  assert.match(requests[0]?.body ?? '', /new-value/);
+});
+
+test('sdk: deleteData sends DELETE request without body', async () => {
+  const requests: Array<{ url: string; method: string; body?: string }> = [];
+
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    requests.push({
+      url: String(input),
+      method: String(init?.method ?? 'GET'),
+      body: typeof init?.body === 'string' ? init.body : undefined
+    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: { deleted: true },
+        timestamp: '2026-06-25T00:00:00.000Z'
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+  }) as typeof fetch;
+
+  const client = new ApiClient({ baseUrl: 'http://localhost:3001/api/v1', storeId: 'store-001' });
+
+  const result = await client.deleteData<{ deleted: boolean }>('/identity-access/credentials/cred-001');
+
+  assert.equal(result.deleted, true);
+  assert.equal(requests[0]?.url, 'http://localhost:3001/api/v1/identity-access/credentials/cred-001');
+  assert.equal(requests[0]?.method, 'DELETE');
+  assert.equal(requests[0]?.body, undefined);
+});

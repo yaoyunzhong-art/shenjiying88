@@ -1,10 +1,10 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-insight] [D] entity 测试
  * 类型契约测试：InsightReport, TrendItem, AnomalyItem, KPI, Anomaly, Trend, ForecastPoint, DashboardSummary, SummaryPeriod
  */
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import type {
   InsightReport,
   TrendItem,
@@ -19,7 +19,7 @@ import type {
 
 // ── InsightReport ──
 describe('ai-insight.entity: InsightReport', () => {
-  test('creates valid InsightReport with all required fields', () => {
+  it('creates valid InsightReport with all required fields', () => {
     const report: InsightReport = {
       id: 'report-001',
       tenantId: 'tenant-1',
@@ -47,7 +47,7 @@ describe('ai-insight.entity: InsightReport', () => {
     assert.equal(report.periodEnd, '2026-06-07')
   })
 
-  test('creates InsightReport with optional brandId and storeId', () => {
+  it('creates InsightReport with optional brandId and storeId', () => {
     const report: InsightReport = {
       id: 'report-002',
       tenantId: 'tenant-1',
@@ -73,7 +73,7 @@ describe('ai-insight.entity: InsightReport', () => {
     assert.equal(report.data.anomalies.length, 1)
   })
 
-  test('supports all 5 report types', () => {
+  it('supports all 5 report types', () => {
     const types: InsightReport['type'][] = ['revenue', 'member', 'attendance', 'game', 'kpi']
     for (const type of types) {
       const report: InsightReport = {
@@ -95,7 +95,7 @@ describe('ai-insight.entity: InsightReport', () => {
 
 // ── TrendItem ──
 describe('ai-insight.entity: TrendItem', () => {
-  test('creates valid TrendItem with positive change', () => {
+  it('creates valid TrendItem with positive change', () => {
     const item: TrendItem = {
       name: '日营收',
       current: 15000,
@@ -109,7 +109,7 @@ describe('ai-insight.entity: TrendItem', () => {
     assert.equal(item.changePercent, 25)
   })
 
-  test('creates TrendItem with negative change', () => {
+  it('creates TrendItem with negative change', () => {
     const item: TrendItem = {
       name: '投诉率',
       current: 0.8,
@@ -121,7 +121,7 @@ describe('ai-insight.entity: TrendItem', () => {
     assert.ok(item.current < item.previous)
   })
 
-  test('creates TrendItem with zero change', () => {
+  it('creates TrendItem with zero change', () => {
     const item: TrendItem = {
       name: '设备使用率',
       current: 72,
@@ -135,7 +135,7 @@ describe('ai-insight.entity: TrendItem', () => {
 
 // ── AnomalyItem ──
 describe('ai-insight.entity: AnomalyItem', () => {
-  test('creates valid AnomalyItem', () => {
+  it('creates valid AnomalyItem', () => {
     const item: AnomalyItem = {
       metric: '日营收',
       value: 6500,
@@ -149,7 +149,7 @@ describe('ai-insight.entity: AnomalyItem', () => {
     assert.equal(item.severity, 'high')
   })
 
-  test('supports all 3 severity levels', () => {
+  it('supports all 3 severity levels', () => {
     const severities: AnomalyItem['severity'][] = ['low', 'medium', 'high']
     for (const severity of severities) {
       const item: AnomalyItem = {
@@ -165,7 +165,7 @@ describe('ai-insight.entity: AnomalyItem', () => {
 
 // ── KPI ──
 describe('ai-insight.entity: KPI', () => {
-  test('creates valid KPI with all fields', () => {
+  it('creates valid KPI with all fields', () => {
     const kpi: KPI = {
       id: 'kpi-001',
       tenantId: 'tenant-1',
@@ -189,7 +189,7 @@ describe('ai-insight.entity: KPI', () => {
     assert.equal(kpi.period, 'daily')
   })
 
-  test('creates KPI with optional storeId', () => {
+  it('creates KPI with optional storeId', () => {
     const kpi: KPI = {
       id: 'kpi-002',
       tenantId: 'tenant-1',
@@ -208,7 +208,7 @@ describe('ai-insight.entity: KPI', () => {
     assert.equal(kpi.trend, 'stable')
   })
 
-  test('supports all 5 categories', () => {
+  it('supports all 5 categories', () => {
     const categories: KPI['category'][] = ['revenue', 'member', 'attendance', 'game', 'operation']
     for (const category of categories) {
       const kpi: KPI = {
@@ -227,7 +227,7 @@ describe('ai-insight.entity: KPI', () => {
     }
   })
 
-  test('supports all 3 trend directions', () => {
+  it('supports all 3 trend directions', () => {
     const trends: KPI['trend'][] = ['up', 'down', 'stable']
     for (const trend of trends) {
       const kpi: KPI = {
@@ -249,7 +249,7 @@ describe('ai-insight.entity: KPI', () => {
 
 // ── Anomaly ──
 describe('ai-insight.entity: Anomaly', () => {
-  test('creates valid open Anomaly', () => {
+  it('creates valid open Anomaly', () => {
     const anomaly: Anomaly = {
       id: 'anomaly-001',
       tenantId: 'tenant-1',
@@ -272,7 +272,7 @@ describe('ai-insight.entity: Anomaly', () => {
     assert.equal(anomaly.resolvedAt, undefined)
   })
 
-  test('creates resolved Anomaly with resolvedAt', () => {
+  it('creates resolved Anomaly with resolvedAt', () => {
     const anomaly: Anomaly = {
       id: 'anomaly-002',
       tenantId: 'tenant-1',
@@ -291,7 +291,7 @@ describe('ai-insight.entity: Anomaly', () => {
     assert.equal(anomaly.severity, 'critical')
   })
 
-  test('supports all 4 severity levels', () => {
+  it('supports all 4 severity levels', () => {
     const severities: Anomaly['severity'][] = ['low', 'medium', 'high', 'critical']
     for (const severity of severities) {
       const anomaly: Anomaly = {
@@ -309,7 +309,7 @@ describe('ai-insight.entity: Anomaly', () => {
     }
   })
 
-  test('supports all 3 status values', () => {
+  it('supports all 3 status values', () => {
     const statuses: Anomaly['status'][] = ['open', 'acknowledged', 'resolved']
     for (const status of statuses) {
       const anomaly: Anomaly = {
@@ -327,7 +327,7 @@ describe('ai-insight.entity: Anomaly', () => {
     }
   })
 
-  test('creates Anomaly with optional storeId', () => {
+  it('creates Anomaly with optional storeId', () => {
     const anomaly: Anomaly = {
       id: 'anomaly-003',
       tenantId: 'tenant-1',
@@ -347,7 +347,7 @@ describe('ai-insight.entity: Anomaly', () => {
 
 // ── Trend ──
 describe('ai-insight.entity: Trend', () => {
-  test('creates valid Trend forecast', () => {
+  it('creates valid Trend forecast', () => {
     const trend: Trend = {
       id: 'trend-001',
       tenantId: 'tenant-1',
@@ -368,7 +368,7 @@ describe('ai-insight.entity: Trend', () => {
     assert.ok(trend.confidence >= 0 && trend.confidence <= 1)
   })
 
-  test('creates Trend with optional storeId', () => {
+  it('creates Trend with optional storeId', () => {
     const trend: Trend = {
       id: 'trend-002',
       tenantId: 'tenant-1',
@@ -383,7 +383,7 @@ describe('ai-insight.entity: Trend', () => {
     assert.equal(trend.forecast.length, 1)
   })
 
-  test('confidence is clamped between 0 and 1 in type system', () => {
+  it('confidence is clamped between 0 and 1 in type system', () => {
     // TypeScript number allows 0-1 range; verify contract
     const t1: Trend = {
       id: 't-min',
@@ -409,7 +409,7 @@ describe('ai-insight.entity: Trend', () => {
 
 // ── ForecastPoint ──
 describe('ai-insight.entity: ForecastPoint', () => {
-  test('creates valid ForecastPoint', () => {
+  it('creates valid ForecastPoint', () => {
     const point: ForecastPoint = {
       date: '2026-06-24',
       value: 15200
@@ -419,7 +419,7 @@ describe('ai-insight.entity: ForecastPoint', () => {
     assert.equal(point.value, 15200)
   })
 
-  test('supports zero and negative values (for metrics like change rates)', () => {
+  it('supports zero and negative values (for metrics like change rates)', () => {
     const zero: ForecastPoint = { date: '2026-06-24', value: 0 }
     assert.equal(zero.value, 0)
 
@@ -430,7 +430,7 @@ describe('ai-insight.entity: ForecastPoint', () => {
 
 // ── DashboardSummary ──
 describe('ai-insight.entity: DashboardSummary', () => {
-  test('creates valid DashboardSummary', () => {
+  it('creates valid DashboardSummary', () => {
     const summary: DashboardSummary = {
       tenantId: 'tenant-1',
       today: {
@@ -477,7 +477,7 @@ describe('ai-insight.entity: DashboardSummary', () => {
     assert.equal(summary.reportCount, 12)
   })
 
-  test('creates DashboardSummary with optional storeId', () => {
+  it('creates DashboardSummary with optional storeId', () => {
     const summary: DashboardSummary = {
       tenantId: 'tenant-1',
       storeId: 'store-01',
@@ -506,7 +506,7 @@ describe('ai-insight.entity: DashboardSummary', () => {
 
 // ── SummaryPeriod ──
 describe('ai-insight.entity: SummaryPeriod', () => {
-  test('creates valid SummaryPeriod', () => {
+  it('creates valid SummaryPeriod', () => {
     const period: SummaryPeriod = {
       label: '今日',
       start: '2026-06-23',
@@ -528,7 +528,7 @@ describe('ai-insight.entity: SummaryPeriod', () => {
     assert.deepEqual(period.kpis, [])
   })
 
-  test('SummaryPeriod with KPI children', () => {
+  it('SummaryPeriod with KPI children', () => {
     const kpis: KPI[] = [{
       id: 'kpi-001', tenantId: 't', name: '日营收',
       category: 'revenue', value: 15000, target: 20000,

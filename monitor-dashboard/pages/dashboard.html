@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>仪表盘 - Monitor Pro</title>
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">MP</div>
+        <div class="brand-text">
+          <h1>Monitor Pro</h1>
+          <p>v2.0.0</p>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">概览</div>
+          <a href="dashboard.html" class="nav-item active">
+            <span class="nav-icon">📊</span>
+            <span>仪表盘</span>
+          </a>
+        </div>
+        
+        <div class="nav-section">
+          <div class="nav-section-title">监控</div>
+          <a href="performance.html" class="nav-item">
+            <span class="nav-icon">🖥️</span>
+            <span>性能监控</span>
+          </a>
+          <a href="logs.html" class="nav-item">
+            <span class="nav-icon">📋</span>
+            <span>日志监控</span>
+          </a>
+          <a href="alerts.html" class="nav-item">
+            <span class="nav-icon">🔔</span>
+            <span>告警管理</span>
+          </a>
+        </div>
+        
+        <div class="nav-section">
+          <div class="nav-section-title">分析</div>
+          <a href="users.html" class="nav-item">
+            <span class="nav-icon">👥</span>
+            <span>用户分析</span>
+          </a>
+        </div>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          <span>系统正常运行</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+      <!-- 顶部栏 -->
+      <header class="top-bar">
+        <div class="page-title">
+          <h2>仪表盘</h2>
+          <p>实时监控和关键指标概览</p>
+        </div>
+        <div class="top-actions">
+          <div class="live-indicator">
+            <span class="live-dot"></span>
+            <span>实时</span>
+          </div>
+          <button class="btn btn-secondary" onclick="refreshDashboard()">
+            <span>🔄</span>
+            <span>刷新</span>
+          </button>
+          <button class="theme-toggle" onclick="toggleTheme()">
+            <span id="theme-icon">🌙</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- 内容区域 -->
+      <div class="content-area">
+        <!-- 统计卡片 -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">CPU 使用率</span>
+              <div class="stat-icon success">🖥️</div>
+            </div>
+            <div class="stat-value" id="cpu-value">45.2%</div>
+            <div class="stat-change positive">
+              <span>↓</span>
+              <span>2.1% 较上小时</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">内存使用</span>
+              <div class="stat-icon info">💾</div>
+            </div>
+            <div class="stat-value" id="memory-value">12.4 GB</div>
+            <div class="stat-change positive">
+              <span>↓</span>
+              <span>0.8 GB 较上小时</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">请求总数</span>
+              <div class="stat-icon warning">🌐</div>
+            </div>
+            <div class="stat-value" id="requests-value">1.23M</div>
+            <div class="stat-change positive">
+              <span>↑</span>
+              <span>5.2% 较上小时</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">平均响应时间</span>
+              <div class="stat-icon success">⚡</div>
+            </div>
+            <div class="stat-value" id="latency-value">45ms</div>
+            <div class="stat-change positive">
+              <span>↓</span>
+              <span>3ms 较上小时</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">系统性能趋势</h3>
+            <div class="chart-actions">
+              <div class="time-range">
+                <button class="time-btn active" data-range="1h">1小时</button>
+                <button class="time-btn" data-range="6h">6小时</button>
+                <button class="time-btn" data-range="24h">24小时</button>
+                <button class="time-btn" data-range="7d">7天</button>
+              </div>
+            </div>
+          </div>
+          <div class="chart-body">
+            <canvas id="performance-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- 告警和日志表格 -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <!-- 最近告警 -->
+          <div class="data-table-container">
+            <div class="table-header">
+              <h3 class="table-title">最近告警</h3>
+              <a href="alerts.html" class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px;">查看全部</a>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>级别</th>
+                  <th>消息</th>
+                  <th>时间</th>
+                </tr>
+              </thead>
+              <tbody id="alerts-tbody">
+                <!-- 动态生成 -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 最近日志 -->
+          <div class="data-table-container">
+            <div class="table-header">
+              <h3 class="table-title">最近日志</h3>
+              <a href="logs.html" class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px;">查看全部</a>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>级别</th>
+                  <th>服务</th>
+                  <th>消息</th>
+                  <th>时间</th>
+                </tr>
+              </thead>
+              <tbody id="logs-tbody">
+                <!-- 动态生成 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/app.js"></script>
+  <script src="../js/mock-api.js"></script>
+  <script>
+    // 初始化
+    let performanceChart = null;
+    let realtimeSubscription = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 初始化主题
+      initTheme();
+      
+      // 初始化图表
+      initPerformanceChart();
+      
+      // 加载数据
+      await loadDashboardData();
+      
+      // 订阅实时数据
+      subscribeRealtime();
+      
+      // 设置时间范围按钮事件
+      setupTimeRangeButtons();
+    });
+
+    // 初始化主题
+    function initTheme() {
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      updateThemeIcon(theme);
+    }
+
+    // 切换主题
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
+    }
+
+    // 更新主题图标
+    function updateThemeIcon(theme) {
+      const icon = document.getElementById('theme-icon');
+      if (icon) {
+        icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+      }
+    }
+
+    // 初始化性能图表
+    function initPerformanceChart() {
+      const ctx = document.getElementById('performance-chart');
+      if (!ctx) return;
+
+      const labels = Array(60).fill(0).map((_, i) => {
+        const d = new Date(Date.now() - (60 - i) * 60000);
+        return `${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
+      });
+
+      performanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'CPU 使用率',
+              data: Array(60).fill(0).map(() => 30 + Math.random() * 40),
+              borderColor: '#00d4ff',
+              backgroundColor: 'rgba(0, 212, 255, 0.1)',
+              tension: 0.4,
+              fill: true
+            },
+            {
+              label: '内存使用',
+              data: Array(60).fill(0).map(() => 35 + Math.random() * 20),
+              borderColor: '#7000ff',
+              backgroundColor: 'rgba(112, 0, 255, 0.1)',
+              tension: 0.4,
+              fill: true
+            },
+            {
+              label: '请求数',
+              data: Array(60).fill(0).map(() => 100 + Math.random() * 100),
+              borderColor: '#00ff88',
+              backgroundColor: 'rgba(0, 255, 136, 0.1)',
+              tension: 0.4,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          },
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                color: '#8888a0',
+                usePointStyle: true,
+                padding: 20
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(26, 26, 37, 0.95)',
+              titleColor: '#e0e0ff',
+              bodyColor: '#8888a0',
+              borderColor: '#2a2a3a',
+              borderWidth: 1,
+              padding: 12,
+              displayColors: true
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                color: 'rgba(42, 42, 58, 0.5)',
+                drawBorder: false
+              },
+              ticks: {
+                color: '#8888a0',
+                maxTicksLimit: 10
+              }
+            },
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              grid: {
+                color: 'rgba(42, 42, 58, 0.5)',
+                drawBorder: false
+              },
+              ticks: {
+                color: '#8888a0',
+                callback: function(value) {
+                  return value + '%';
+                }
+              }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              grid: {
+                drawOnChartArea: false
+              },
+              ticks: {
+                color: '#8888a0'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 加载仪表盘数据
+    async function loadDashboardData() {
+      try {
+        const response = await MockAPI.getDashboardData();
+        if (response.success) {
+          updateDashboardUI(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+      }
+    }
+
+    // 更新仪表盘UI
+    function updateDashboardUI(data) {
+      // 更新统计卡片
+      if (data.metrics) {
+        const cpuEl = document.getElementById('cpu-value');
+        const memEl = document.getElementById('memory-value');
+        
+        if (cpuEl) cpuEl.textContent = data.metrics.cpu.usage.toFixed(1) + '%';
+        if (memEl) memEl.textContent = data.metrics.memory.used.toFixed(1) + ' GB';
+      }
+
+      // 更新告警表格
+      if (data.alerts) {
+        const tbody = document.getElementById('alerts-tbody');
+        if (tbody) {
+          tbody.innerHTML = data.alerts.map(alert => `
+            <tr>
+              <td><span class="status-badge status-${alert.severity}">${alert.severity}</span></td>
+              <td>${alert.message}</td>
+              <td>${new Date(alert.created_at).toLocaleString('zh-CN')}</td>
+            </tr>
+          `).join('');
+        }
+      }
+
+      // 更新日志表格
+      if (data.recentLogs) {
+        const tbody = document.getElementById('logs-tbody');
+        if (tbody) {
+          tbody.innerHTML = data.recentLogs.map(log => `
+            <tr>
+              <td><span class="status-badge status-${log.level}">${log.level}</span></td>
+              <td>${log.service}</td>
+              <td>${log.message}</td>
+              <td>${new Date(log.timestamp).toLocaleString('zh-CN')}</td>
+            </tr>
+          `).join('');
+        }
+      }
+    }
+
+    // 订阅实时数据
+    function subscribeRealtime() {
+      realtimeSubscription = MockAPI.subscribeRealtime((data) => {
+        // 更新实时数据到UI
+        const cpuEl = document.getElementById('cpu-value');
+        const memEl = document.getElementById('memory-value');
+        
+        if (cpuEl) {
+          cpuEl.textContent = data.metrics.cpu.usage.toFixed(1) + '%';
+        }
+        if (memEl) {
+          memEl.textContent = (data.metrics.memory.usage / 100 * 32).toFixed(1) + ' GB';
+        }
+      });
+    }
+
+    // 设置时间范围按钮事件
+    function setupTimeRangeButtons() {
+      const buttons = document.querySelectorAll('.time-btn');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', async () => {
+          buttons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          const range = btn.dataset.range;
+          // 重新加载对应时间范围的数据
+          await loadPerformanceData(range);
+        });
+      });
+    }
+
+    // 加载性能数据
+    async function loadPerformanceData(timeRange) {
+      try {
+        const response = await MockAPI.getSystemMetrics(timeRange);
+        if (response.success && performanceChart) {
+          // 更新图表数据
+          const data = response.data;
+          performanceChart.data.labels = data.cpu.history.map(h => {
+            const d = new Date(h.timestamp);
+            return `${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
+          });
+          performanceChart.data.datasets[0].data = data.cpu.history.map(h => h.value);
+          performanceChart.data.datasets[1].data = data.memory.history.map(h => h.value);
+          performanceChart.update('none');
+        }
+      } catch (error) {
+        console.error('Failed to load performance data:', error);
+      }
+    }
+
+    // 刷新仪表盘
+    async function refreshDashboard() {
+      const btn = document.querySelector('.top-actions .btn');
+      if (btn) {
+        btn.style.animation = 'spin 1s linear';
+        setTimeout(() => btn.style.animation = '', 1000);
+      }
+      await loadDashboardData();
+    }
+
+    // 页面卸载时清理
+    window.addEventListener('beforeunload', () => {
+      if (realtimeSubscription) {
+        realtimeSubscription();
+      }
+      if (performanceChart) {
+        performanceChart.destroy();
+      }
+    });
+  </script>
+</body>
+</html>

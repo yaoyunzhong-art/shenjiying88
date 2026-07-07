@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E-level: Loyalty 积分会员 service 层测试
  *
@@ -21,7 +22,6 @@
  */
 
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { LoyaltyService } from './loyalty.service'
 import { LoyaltyPlanStatus, CouponDiscountType } from './loyalty.entity'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -48,28 +48,28 @@ function createService(): LoyaltyService {
 
 // ========== 列表 ==========
 
-test('e2e: listPointsLedger is empty initially', () => {
+it('e2e: listPointsLedger is empty initially', () => {
   const svc = createService()
   const res = svc.listPointsLedger('tenant-A')
   assert.ok(Array.isArray(res))
   assert.equal(res.length, 0)
 })
 
-test('e2e: listCouponRedemptions is empty initially', () => {
+it('e2e: listCouponRedemptions is empty initially', () => {
   const svc = createService()
   const res = svc.listCouponRedemptions('tenant-A')
   assert.ok(Array.isArray(res))
   assert.equal(res.length, 0)
 })
 
-test('e2e: listBlindboxFulfillments is empty initially', () => {
+it('e2e: listBlindboxFulfillments is empty initially', () => {
   const svc = createService()
   const res = svc.listBlindboxFulfillments('tenant-A')
   assert.ok(Array.isArray(res))
   assert.equal(res.length, 0)
 })
 
-test('e2e: listSettlements is empty initially', () => {
+it('e2e: listSettlements is empty initially', () => {
   const svc = createService()
   const res = svc.listSettlements('tenant-A')
   assert.ok(Array.isArray(res))
@@ -78,7 +78,7 @@ test('e2e: listSettlements is empty initially', () => {
 
 // ========== Coupon Plan ==========
 
-test('e2e: registerCouponPlan then listCouponPlans returns it', () => {
+it('e2e: registerCouponPlan then listCouponPlans returns it', () => {
   const svc = createService()
   const ctx = makeTenant('tenant-1')
   svc.registerCouponPlan({
@@ -97,7 +97,7 @@ test('e2e: registerCouponPlan then listCouponPlans returns it', () => {
   assert.equal(plans[0].code, 'CPN-NEWYEAR')
 })
 
-test('e2e: getCouponPlan returns the correct plan', () => {
+it('e2e: getCouponPlan returns the correct plan', () => {
   const svc = createService()
   const ctx = makeTenant('tenant-2')
   const plan = svc.registerCouponPlan({
@@ -117,7 +117,7 @@ test('e2e: getCouponPlan returns the correct plan', () => {
   assert.equal(found!.discountValue, 15)
 })
 
-test('e2e: activateCouponPlan changes status', () => {
+it('e2e: activateCouponPlan changes status', () => {
   const svc = createService()
   const ctx = makeTenant('tenant-3')
   const plan = svc.registerCouponPlan({
@@ -136,7 +136,7 @@ test('e2e: activateCouponPlan changes status', () => {
   assert.equal(updated.status, LoyaltyPlanStatus.Active)
 })
 
-test('e2e: issueCouponFromPlan reduces remaining quota', () => {
+it('e2e: issueCouponFromPlan reduces remaining quota', () => {
   const svc = createService()
   const ctx = makeTenant('tenant-4')
   const plan = svc.registerCouponPlan({
@@ -165,7 +165,7 @@ test('e2e: issueCouponFromPlan reduces remaining quota', () => {
 
 // ========== Blindbox Plan ==========
 
-test('e2e: registerBlindboxPlan then listBlindboxPlans returns it', () => {
+it('e2e: registerBlindboxPlan then listBlindboxPlans returns it', () => {
   const svc = createService()
   const ctx = makeTenant('tenant-5')
   svc.registerBlindboxPlan({
@@ -186,7 +186,7 @@ test('e2e: registerBlindboxPlan then listBlindboxPlans returns it', () => {
   assert.equal(plans[0].blindboxPlanId, 'BB-MYSTERY')
 })
 
-test('e2e: getBlindboxPlan returns correct plan', () => {
+it('e2e: getBlindboxPlan returns correct plan', () => {
   const svc = createService()
   const ctx = makeTenant('tenant-6')
   const plan = svc.registerBlindboxPlan({
@@ -204,7 +204,7 @@ test('e2e: getBlindboxPlan returns correct plan', () => {
   assert.equal(found!.unitPrice, 199)
 })
 
-test('e2e: activateBlindboxPlan changes status', () => {
+it('e2e: activateBlindboxPlan changes status', () => {
   const svc = createService()
   const ctx = makeTenant('tenant-7')
   const plan = svc.registerBlindboxPlan({
@@ -224,7 +224,7 @@ test('e2e: activateBlindboxPlan changes status', () => {
 
 // ========== Tenant isolation ==========
 
-test('e2e: tenant isolation - plan not visible in other tenant', () => {
+it('e2e: tenant isolation - plan not visible in other tenant', () => {
   const svc = createService()
   svc.registerCouponPlan({
     tenantContext: makeTenant('tenant-A'),
@@ -245,7 +245,7 @@ test('e2e: tenant isolation - plan not visible in other tenant', () => {
 
 // ========== settlePaidOrder ==========
 
-test('e2e: settlePaidOrder creates points ledger entry', async () => {
+it('e2e: settlePaidOrder creates points ledger entry', async () => {
   const svc = createService()
   const ctx = makeTenant('tenant-settle')
   // settlePaidOrder 需要 CashierOrder/CashierPayment 形状
@@ -273,7 +273,7 @@ test('e2e: settlePaidOrder creates points ledger entry', async () => {
   assert.equal(ledger[0].memberId, 'member-001')
 })
 
-test('e2e: settlePaidOrder is idempotent for same order', async () => {
+it('e2e: settlePaidOrder is idempotent for same order', async () => {
   const svc = createService()
   const ctx = makeTenant('tenant-idem')
   const order = { tenantContext: ctx, orderId: 'order-idem', memberId: 'member-002' } as any
@@ -293,7 +293,7 @@ test('e2e: settlePaidOrder is idempotent for same order', async () => {
 
 // ========== settleFailedOrder ==========
 
-test('e2e: settleFailedOrder creates CouponRedemption with Released status', async () => {
+it('e2e: settleFailedOrder creates CouponRedemption with Released status', async () => {
   const svc = createService()
   const ctx = makeTenant('tenant-fail')
   await svc.settleFailedOrder(
@@ -313,13 +313,13 @@ test('e2e: settleFailedOrder creates CouponRedemption with Released status', asy
 
 // ========== 边界 ==========
 
-test('e2e: getCouponPlan with non-existent planId returns undefined', () => {
+it('e2e: getCouponPlan with non-existent planId returns undefined', () => {
   const svc = createService()
   const result = svc.getCouponPlan('non-existent-plan', 'tenant-1')
   assert.equal(result, undefined)
 })
 
-test('e2e: settlePaidOrder without memberId throws', async () => {
+it('e2e: settlePaidOrder without memberId throws', async () => {
   const svc = createService()
   const ctx = makeTenant('tenant-err')
   await assert.rejects(() =>
@@ -330,7 +330,7 @@ test('e2e: settlePaidOrder without memberId throws', async () => {
   )
 })
 
-test('e2e: issueCoupon beyond perMemberLimit throws', () => {
+it('e2e: issueCoupon beyond perMemberLimit throws', () => {
   const svc = createService()
   const ctx = makeTenant('tenant-limit')
   const plan = svc.registerCouponPlan({

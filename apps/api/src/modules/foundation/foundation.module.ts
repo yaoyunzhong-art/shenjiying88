@@ -8,6 +8,7 @@ import { IntegrationOrchestrationModule } from './integration-orchestration/inte
 import { ResilienceOperationsModule } from './resilience-operations/resilience-operations.module'
 import { RuntimeGovernanceModule } from './runtime-governance/runtime-governance.module'
 import { TrustGovernanceModule } from './trust-governance/trust-governance.module'
+import { OutboxModule } from './outbox/outbox.module'
 
 @Global()
 @Module({
@@ -18,7 +19,8 @@ import { TrustGovernanceModule } from './trust-governance/trust-governance.modul
     TrustGovernanceModule,
     ResilienceOperationsModule,
     RuntimeGovernanceModule,
-    GovernanceApprovalModule
+    GovernanceApprovalModule,
+    OutboxModule
   ],
   controllers: [FoundationController],
   providers: [FoundationService],

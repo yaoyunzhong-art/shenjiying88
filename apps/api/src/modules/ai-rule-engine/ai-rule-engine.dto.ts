@@ -1,19 +1,21 @@
 import {
   IsString,
   IsNumber,
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
   IsEnum,
-  ValidateNested,
   Min,
   Max,
-  IsNotEmpty,
-  IsOptional
+  ValidateNested,
+  IsArray,
+  ArrayMinSize
 } from 'class-validator'
 import { Type } from 'class-transformer'
 import 'reflect-metadata'
 
-/**
- * 设备指标数据
- */
+// ─── Device Metrics ────────────────────────────────────────────
+
 export class DeviceMetricsDto {
   @IsNumber()
   @Min(0)
@@ -38,14 +40,14 @@ export class DeviceMetricsDto {
   @Min(0)
   errorRate!: number
 
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  uptimeHours!: number
+  uptimeHours?: number
 }
 
-/**
- * 成员等级评估输入 DTO
- */
+// ─── Member Level Input ────────────────────────────────────────
+
 export class MemberLevelInputDto {
   @IsString()
   @IsNotEmpty()
@@ -68,9 +70,8 @@ export class MemberLevelInputDto {
   tenantId!: string
 }
 
-/**
- * 设备异常检测输入 DTO
- */
+// ─── Device Anomaly Input ──────────────────────────────────────
+
 export class DeviceAnomalyInputDto {
   @IsString()
   @IsNotEmpty()
@@ -89,9 +90,8 @@ export class DeviceAnomalyInputDto {
   tenantId!: string
 }
 
-/**
- * AI 规则引擎评估请求 DTO
- */
+// ─── Evaluate Request ──────────────────────────────────────────
+
 export class EvaluateRequestDto {
   @IsString()
   @IsEnum(['member-level', 'device-anomaly'])
@@ -101,9 +101,8 @@ export class EvaluateRequestDto {
   data!: Record<string, unknown>
 }
 
-/**
- * 批量评估单项请求
- */
+// ─── Batch Evaluate ────────────────────────────────────────────
+
 export class BatchEvaluateItemDto {
   @IsString()
   @IsEnum(['member-level', 'device-anomaly'])
@@ -113,18 +112,16 @@ export class BatchEvaluateItemDto {
   data!: Record<string, unknown>
 }
 
-/**
- * 批量评估请求 DTO
- */
 export class BatchEvaluateRequestDto {
   @ValidateNested({ each: true })
   @Type(() => BatchEvaluateItemDto)
+  @IsArray()
+  @ArrayMinSize(1)
   items!: BatchEvaluateItemDto[]
 }
 
-/**
- * 风险评分指标 DTO（所有字段可选）
- */
+// ─── Risk Score ────────────────────────────────────────────────
+
 export class RiskMetricsDto {
   @IsOptional()
   @IsNumber()
@@ -162,9 +159,6 @@ export class RiskMetricsDto {
   recentTransactionAmount?: number
 }
 
-/**
- * 风险评分输入 DTO
- */
 export class RiskScoreInputDto {
   @IsString()
   @IsNotEmpty()
@@ -183,9 +177,8 @@ export class RiskScoreInputDto {
   tenantId!: string
 }
 
-/**
- * 条件覆盖项 DTO
- */
+// ─── Condition Override ────────────────────────────────────────
+
 export class ConditionOverrideDto {
   @IsString()
   @IsNotEmpty()
@@ -195,9 +188,8 @@ export class ConditionOverrideDto {
   value!: unknown
 }
 
-/**
- * 模拟运行输入 DTO
- */
+// ─── Simulator Run Input ───────────────────────────────────────
+
 export class SimulatorRunInputDto {
   @IsString()
   @IsNotEmpty()
@@ -216,5 +208,53 @@ export class SimulatorRunInputDto {
   data!: Record<string, unknown>
 
   @IsOptional()
+  @IsBoolean()
   verbose?: boolean
+}
+
+// ─── Condition Override Config (for engine config update) ──────
+
+export class ConditionOverrideConfigDto {
+  @IsString()
+  @IsNotEmpty()
+  conditionId!: string
+
+  @IsOptional()
+  @IsString()
+  field?: string
+
+  @IsOptional()
+  value?: unknown
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  weight?: number
+
+  @IsOptional()
+  @IsString()
+  operator?: string
+}
+
+// ─── Engine Config Update ──────────────────────────────────────
+
+export class EngineConfigUpdateDto {
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean
+
+  @IsOptional()
+  @IsString()
+  @IsEnum(['ALL', 'ANY'])
+  matchStrategy?: 'ALL' | 'ANY'
+
+  @IsOptional()
+  @IsString()
+  description?: string
+
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => ConditionOverrideConfigDto)
+  conditionOverrides?: ConditionOverrideConfigDto[]
 }

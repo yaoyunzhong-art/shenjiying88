@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   QueueType,
   QueueStatus,
@@ -15,13 +15,13 @@ import {
 
 // ── QueueType enum contract ─────────────────────────────────────────────
 describe('queue.contract: QueueType', () => {
-  test('QueueType has 3 stable enum values', () => {
+  it('QueueType has 3 stable enum values', () => {
     assert.equal(QueueType.Booking, 'booking')
     assert.equal(QueueType.Waiting, 'waiting')
     assert.equal(QueueType.Service, 'service')
   })
 
-  test('QueueType enum keys are stable wire values', () => {
+  it('QueueType enum keys are stable wire values', () => {
     const types = Object.values(QueueType)
     assert.deepEqual(types.sort(), ['booking', 'service', 'waiting'])
   })
@@ -29,7 +29,7 @@ describe('queue.contract: QueueType', () => {
 
 // ── QueueStatus enum contract ──────────────────────────────────────────
 describe('queue.contract: QueueStatus', () => {
-  test('QueueStatus has 6 stable enum values', () => {
+  it('QueueStatus has 6 stable enum values', () => {
     assert.equal(QueueStatus.Waiting, 'waiting')
     assert.equal(QueueStatus.Called, 'called')
     assert.equal(QueueStatus.Serving, 'serving')
@@ -38,7 +38,7 @@ describe('queue.contract: QueueStatus', () => {
     assert.equal(QueueStatus.NoShow, 'no_show')
   })
 
-  test('QueueStatus enum keys cover all 6 states', () => {
+  it('QueueStatus enum keys cover all 6 states', () => {
     const statuses = Object.values(QueueStatus)
     assert.deepEqual(statuses.sort(), [
       'called',
@@ -50,22 +50,22 @@ describe('queue.contract: QueueStatus', () => {
     ])
   })
 
-  test('QUEUE_STATUS_TRANSITIONS allows Waiting→Called/Cancelled only', () => {
+  it('QUEUE_STATUS_TRANSITIONS allows Waiting→Called/Cancelled only', () => {
     const allowed = QUEUE_STATUS_TRANSITIONS[QueueStatus.Waiting]
     assert.deepEqual(allowed.sort(), ['called', 'cancelled'])
   })
 
-  test('QUEUE_STATUS_TRANSITIONS allows Called→Serving/NoShow/Cancelled', () => {
+  it('QUEUE_STATUS_TRANSITIONS allows Called→Serving/NoShow/Cancelled', () => {
     const allowed = QUEUE_STATUS_TRANSITIONS[QueueStatus.Called]
     assert.deepEqual(allowed.sort(), ['cancelled', 'no_show', 'serving'])
   })
 
-  test('QUEUE_STATUS_TRANSITIONS allows Serving→Completed/Cancelled only', () => {
+  it('QUEUE_STATUS_TRANSITIONS allows Serving→Completed/Cancelled only', () => {
     const allowed = QUEUE_STATUS_TRANSITIONS[QueueStatus.Serving]
     assert.deepEqual(allowed.sort(), ['cancelled', 'completed'])
   })
 
-  test('QUEUE_STATUS_TRANSITIONS blocks Completed/Cancelled/NoShow (terminal)', () => {
+  it('QUEUE_STATUS_TRANSITIONS blocks Completed/Cancelled/NoShow (terminal)', () => {
     assert.deepEqual(QUEUE_STATUS_TRANSITIONS[QueueStatus.Completed], [])
     assert.deepEqual(QUEUE_STATUS_TRANSITIONS[QueueStatus.Cancelled], [])
     assert.deepEqual(QUEUE_STATUS_TRANSITIONS[QueueStatus.NoShow], [])
@@ -74,7 +74,7 @@ describe('queue.contract: QueueStatus', () => {
 
 // ── QueueEntity shape contract ──────────────────────────────────────────
 describe('queue.contract: QueueEntity', () => {
-  test('QueueEntity accepts all required fields with proper types', () => {
+  it('QueueEntity accepts all required fields with proper types', () => {
     const entity: QueueEntity = {
       id: 'queue-1',
       tenantId: 'tenant-1',
@@ -98,7 +98,7 @@ describe('queue.contract: QueueEntity', () => {
     assert.equal(typeof entity.createdAt, 'object')
   })
 
-  test('QueueEntity accepts optional fields (phone, calledAt, servedAt, etc)', () => {
+  it('QueueEntity accepts optional fields (phone, calledAt, servedAt, etc)', () => {
     const entity: QueueEntity = {
       id: 'q',
       tenantId: 't',
@@ -131,7 +131,7 @@ describe('queue.contract: QueueEntity', () => {
 
 // ── QueueEntryContract shape contract ──────────────────────────────────
 describe('queue.contract: QueueEntryContract', () => {
-  test('toQueueEntryContract serializes Date fields to ISO strings', () => {
+  it('toQueueEntryContract serializes Date fields to ISO strings', () => {
     const entity: QueueEntity = {
       id: 'queue-iso',
       tenantId: 't',
@@ -157,7 +157,7 @@ describe('queue.contract: QueueEntryContract', () => {
     assert.equal(contract.servedAt, '2026-06-23T00:10:00.000Z')
   })
 
-  test('toQueueEntryContract returns undefined for missing optional Date fields', () => {
+  it('toQueueEntryContract returns undefined for missing optional Date fields', () => {
     const entity: QueueEntity = {
       id: 'queue-min',
       tenantId: 't',
@@ -180,7 +180,7 @@ describe('queue.contract: QueueEntryContract', () => {
     assert.equal(contract.actualWaitMin, undefined)
   })
 
-  test('toQueueEntryContract preserves wire-stable enum values', () => {
+  it('toQueueEntryContract preserves wire-stable enum values', () => {
     const entity: QueueEntity = {
       id: 'queue-enum',
       tenantId: 't',
@@ -203,7 +203,7 @@ describe('queue.contract: QueueEntryContract', () => {
 
 // ── QueueStatsContract shape contract ──────────────────────────────────
 describe('queue.contract: QueueStatsContract', () => {
-  test('QueueStatsContract covers 7 required metrics', () => {
+  it('QueueStatsContract covers 7 required metrics', () => {
     const stats: QueueStatsContract = {
       total: 10,
       waitingCount: 3,

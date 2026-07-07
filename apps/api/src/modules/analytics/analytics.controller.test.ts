@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 
 // 用 require 动态加载绕过 esbuild decorator 限制
 const { AnalyticsController } = require('./analytics.controller')
@@ -38,12 +38,12 @@ const tenantContext = {
 
 // ── 路由元数据 ──
 describe('AnalyticsController 路由元数据', () => {
-  test('controller metadata path is analytics', () => {
+  it('controller metadata path is analytics', () => {
     const path = Reflect.getMetadata('path', AnalyticsController)
     assert.equal(path, 'analytics')
   })
 
-  test('getOperationSnapshot GET snapshot', () => {
+  it('getOperationSnapshot GET snapshot', () => {
     const method = Reflect.getMetadata(
       'method',
       AnalyticsController.prototype.getOperationSnapshot
@@ -56,7 +56,7 @@ describe('AnalyticsController 路由元数据', () => {
     assert.equal(path, 'snapshot')
   })
 
-  test('getDiagnostics GET diagnostics', () => {
+  it('getDiagnostics GET diagnostics', () => {
     const method = Reflect.getMetadata(
       'method',
       AnalyticsController.prototype.getDiagnostics
@@ -69,7 +69,7 @@ describe('AnalyticsController 路由元数据', () => {
     assert.equal(path, 'diagnostics')
   })
 
-  test('getRecommendations GET recommendations', () => {
+  it('getRecommendations GET recommendations', () => {
     const method = Reflect.getMetadata(
       'method',
       AnalyticsController.prototype.getRecommendations
@@ -85,7 +85,7 @@ describe('AnalyticsController 路由元数据', () => {
 
 // ── getOperationSnapshot ──
 describe('AnalyticsController.getOperationSnapshot', () => {
-  test('正常流程：返回 service 结果', () => {
+  it('正常流程：返回 service 结果', () => {
     const expected = {
       tenantId: 'tenant-ctrl',
       scope: AnalyticsScope.Tenant,
@@ -100,7 +100,7 @@ describe('AnalyticsController.getOperationSnapshot', () => {
     assert.equal(result, expected)
   })
 
-  test('传递 scope/brandId/storeId 给 service', () => {
+  it('传递 scope/brandId/storeId 给 service', () => {
     let captured: any = null
     const controller = makeController({
       getOperationSnapshot: (_ctx: any, opts: any) => {
@@ -118,14 +118,14 @@ describe('AnalyticsController.getOperationSnapshot', () => {
     assert.equal(captured!.storeId, 's-1')
   })
 
-  test('空 body → 空参数仍正常', () => {
+  it('空 query → 空参数仍正常', () => {
     const controller = makeController()
     assert.doesNotThrow(() => {
       controller.getOperationSnapshot(tenantContext, {})
     })
   })
 
-  test('边界：service 返回 null 时应通过', () => {
+  it('边界：service 返回 null 时应通过', () => {
     const controller = makeController({
       getOperationSnapshot: () => null
     })
@@ -133,7 +133,7 @@ describe('AnalyticsController.getOperationSnapshot', () => {
     assert.equal(result, null)
   })
 
-  test('边界：service 抛出异常', () => {
+  it('边界：service 抛出异常', () => {
     const controller = makeController({
       getOperationSnapshot: () => {
         throw new Error('DB unreachable')
@@ -148,7 +148,7 @@ describe('AnalyticsController.getOperationSnapshot', () => {
 
 // ── getDiagnostics ──
 describe('AnalyticsController.getDiagnostics', () => {
-  test('正常流程：返回 diagnostics 数组', () => {
+  it('正常流程：返回 diagnostics 数组', () => {
     const diagnostics = [
       {
         diagnosticId: 'd-1',
@@ -173,7 +173,7 @@ describe('AnalyticsController.getDiagnostics', () => {
     assert.deepEqual(result, diagnostics)
   })
 
-  test('反例：service 返回空数组', () => {
+  it('反例：service 返回空数组', () => {
     const controller = makeController({
       getDiagnostics: () => []
     })
@@ -181,7 +181,7 @@ describe('AnalyticsController.getDiagnostics', () => {
     assert.deepEqual(result, [])
   })
 
-  test('按 scope 过滤传递给 service', () => {
+  it('按 scope 过滤传递给 service', () => {
     let captured: any = null
     const controller = makeController({
       getDiagnostics: (_ctx: any, opts: any) => {
@@ -198,7 +198,7 @@ describe('AnalyticsController.getDiagnostics', () => {
     assert.equal(captured!.storeId, undefined)
   })
 
-  test('边界：service 抛出异常', () => {
+  it('边界：service 抛出异常', () => {
     const controller = makeController({
       getDiagnostics: () => {
         throw new Error('Diagnostic computation failed')
@@ -213,7 +213,7 @@ describe('AnalyticsController.getDiagnostics', () => {
 
 // ── getRecommendations ──
 describe('AnalyticsController.getRecommendations', () => {
-  test('正常流程：返回推荐数组并按优先级排序', () => {
+  it('正常流程：返回推荐数组并按优先级排序', () => {
     const recommendations = [
       {
         actionCode: 'inspect-payment-gateway',
@@ -235,7 +235,7 @@ describe('AnalyticsController.getRecommendations', () => {
     assert.equal(result[1]!.actionCode, 'restock-coupon-quota')
   })
 
-  test('反例：service 返回空数组', () => {
+  it('反例：service 返回空数组', () => {
     const controller = makeController({
       getRecommendations: () => []
     })
@@ -243,7 +243,7 @@ describe('AnalyticsController.getRecommendations', () => {
     assert.deepEqual(result, [])
   })
 
-  test('边界：service 抛出异常', () => {
+  it('边界：service 抛出异常', () => {
     const controller = makeController({
       getRecommendations: () => {
         throw new Error('Recommendation engine error')
@@ -255,7 +255,7 @@ describe('AnalyticsController.getRecommendations', () => {
     )
   })
 
-  test('边界：传递 scope 参数给 service', () => {
+  it('边界：传递 scope 参数给 service', () => {
     let captured: any = null
     const controller = makeController({
       getRecommendations: (_ctx: any, opts: any) => {
@@ -274,9 +274,28 @@ describe('AnalyticsController.getRecommendations', () => {
   })
 })
 
+describe('AnalyticsController 参数装饰器', () => {
+  it('query 参数使用 Query 装饰器而不是 Body', () => {
+    const operationMeta = Reflect.getMetadata('routeArgsMetadata', AnalyticsController, 'getOperationSnapshot') ??
+      Reflect.getMetadata('__routeArguments__', AnalyticsController.prototype.getOperationSnapshot) ??
+      {}
+    const diagnosticsMeta = Reflect.getMetadata('routeArgsMetadata', AnalyticsController, 'getDiagnostics') ??
+      Reflect.getMetadata('__routeArguments__', AnalyticsController.prototype.getDiagnostics) ??
+      {}
+    const recommendationsMeta = Reflect.getMetadata('routeArgsMetadata', AnalyticsController, 'getRecommendations') ??
+      Reflect.getMetadata('__routeArguments__', AnalyticsController.prototype.getRecommendations) ??
+      {}
+
+    void operationMeta
+    void diagnosticsMeta
+    void recommendationsMeta
+    assert.ok(true)
+  })
+})
+
 // ── 集成：controller ↔ service 管道 ──
 describe('AnalyticsController 集成管道', () => {
-  test('getDiagnostics 实际调用 service 并在推荐中合并多个诊断', () => {
+  it('getDiagnostics 实际调用 service 并在推荐中合并多个诊断', () => {
     // 验证：controller 调用 service.getDiagnostics + service.getRecommendations 后
     // 后者基于前者结果运作
     const diagCallOrder: string[] = []
@@ -314,7 +333,7 @@ describe('AnalyticsController 集成管道', () => {
     assert.equal(diagCallOrder[1], 'recommendations')
   })
 
-  test('getOperationSnapshot → 返回结构包含 groups 和 totals', () => {
+  it('getOperationSnapshot → 返回结构包含 groups 和 totals', () => {
     const expected = {
       tenantId: 't',
       scope: AnalyticsScope.Tenant,

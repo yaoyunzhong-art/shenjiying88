@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🦞 跨模块 E2E 测试链 #3: 身份认证 → 治理审批 → 运行时回调
  *
@@ -14,8 +15,6 @@
  */
 
 import assert from 'node:assert/strict';
-import test from 'node:test';
-
 // ---- 类型定义 ----
 
 interface TenantContext {
@@ -256,7 +255,7 @@ class RuntimeGovernanceService {
 
 // ---- 测试链 #3 ----
 
-test('E2E链#3 正例: 身份认证 → 审批提交 → 审批通过 → 执行 → 审计完整链', () => {
+it('E2E链#3 正例: 身份认证 → 审批提交 → 审批通过 → 执行 → 审计完整链', () => {
   const guard = new IdentityGuard();
   const trust = new TrustGovernanceService();
 
@@ -292,7 +291,7 @@ test('E2E链#3 正例: 身份认证 → 审批提交 → 审批通过 → 执行
   assert.equal(allAudits[2].action, 'approval-executed');
 });
 
-test('E2E链#3 反例: 无权限角色无法通过 identity guard', () => {
+it('E2E链#3 反例: 无权限角色无法通过 identity guard', () => {
   const guard = new IdentityGuard();
   const ctx: TenantContext = { tenantId: 'demo', marketCode: 'cn-mainland', role: 'GUIDE' };
 
@@ -301,7 +300,7 @@ test('E2E链#3 反例: 无权限角色无法通过 identity guard', () => {
   assert.ok(guard.authorize(ctx, ['GUIDE', 'STORE_MANAGER']));
 });
 
-test('E2E链#3 反例: 已被拒绝的审批不能再次执行', () => {
+it('E2E链#3 反例: 已被拒绝的审批不能再次执行', () => {
   const trust = new TrustGovernanceService();
   const payload = { secretKey: 'sk-xxx', rotationDays: 90 };
 
@@ -314,7 +313,7 @@ test('E2E链#3 反例: 已被拒绝的审批不能再次执行', () => {
   );
 });
 
-test('E2E链#3 反例: payload 不匹配应拒绝执行（防重放）', () => {
+it('E2E链#3 反例: payload 不匹配应拒绝执行（防重放）', () => {
   const trust = new TrustGovernanceService();
   const originalPayload = { secretKey: 'sk-xxx', rotationDays: 90 };
 
@@ -328,7 +327,7 @@ test('E2E链#3 反例: payload 不匹配应拒绝执行（防重放）', () => {
   );
 });
 
-test('E2E链#3 正例: runtime submit → sync → callback → replay 全生命周期', () => {
+it('E2E链#3 正例: runtime submit → sync → callback → replay 全生命周期', () => {
   const runtime = new RuntimeGovernanceService();
 
   // submit
@@ -351,7 +350,7 @@ test('E2E链#3 正例: runtime submit → sync → callback → replay 全生命
   assert.equal(replayed.retryCount, 1);
 });
 
-test('E2E链#3 反例: runtime 重复 sync 应拒绝', () => {
+it('E2E链#3 反例: runtime 重复 sync 应拒绝', () => {
   const runtime = new RuntimeGovernanceService();
   const receipt = runtime.submit('coupon-claim', 'tenant:demo:STORE_MANAGER', {});
   runtime.sync(receipt.receiptCode);
@@ -362,7 +361,7 @@ test('E2E链#3 反例: runtime 重复 sync 应拒绝', () => {
   );
 });
 
-test('E2E链#3 反例: callback-stalled 检测与告警', () => {
+it('E2E链#3 反例: callback-stalled 检测与告警', () => {
   const runtime = new RuntimeGovernanceService();
   const receipt = runtime.submit('booking-submit', 'tenant:demo:STORE_MANAGER', {});
   runtime.sync(receipt.receiptCode);
@@ -384,14 +383,14 @@ test('E2E链#3 反例: callback-stalled 检测与告警', () => {
   assert.equal(recovered.status, 'completed');
 });
 
-test('E2E链#3 边界: identity guard 空 context 拒绝', () => {
+it('E2E链#3 边界: identity guard 空 context 拒绝', () => {
   const guard = new IdentityGuard();
   const emptyCtx: TenantContext = { tenantId: '', marketCode: '', role: '' };
 
   assert.equal(guard.authorize(emptyCtx, ['TENANT_ADMIN']), false);
 });
 
-test('E2E链#3 边界: 审批单不应同时被两个决定者处理', () => {
+it('E2E链#3 边界: 审批单不应同时被两个决定者处理', () => {
   const trust = new TrustGovernanceService();
   const payload = { quota: 100 };
   const approval = trust.submitApproval('quota-ledger.reset', 'quota', 'q-001', payload, 'demo');
@@ -405,7 +404,7 @@ test('E2E链#3 边界: 审批单不应同时被两个决定者处理', () => {
   );
 });
 
-test('E2E链#3 边界: runtime receipt 幂等性 - duplicate submit 应返回独立 receipt', () => {
+it('E2E链#3 边界: runtime receipt 幂等性 - duplicate submit 应返回独立 receipt', () => {
   const runtime = new RuntimeGovernanceService();
   
   const r1 = runtime.submit('payment-submit', 'tenant:demo:GUIDE', { amount: 100 });
@@ -417,7 +416,7 @@ test('E2E链#3 边界: runtime receipt 幂等性 - duplicate submit 应返回独
   assert.equal(r1.tenantScope, r2.tenantScope);
 });
 
-test('E2E链#3 端到端完整体验: 审批驱动的 runtime action', () => {
+it('E2E链#3 端到端完整体验: 审批驱动的 runtime action', () => {
   const guard = new IdentityGuard();
   const trust = new TrustGovernanceService();
   const runtime = new RuntimeGovernanceService();

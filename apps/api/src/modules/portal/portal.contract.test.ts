@@ -1,12 +1,12 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   createStorePortalFixture,
   createTenantPortalFixture
 } from '../../testing/bootstrap-fixtures'
 import { toStorePortalContract, toTobPortalContract } from './portal.contract'
 
-test('contract mapper: portal contracts preserve provided primaryDomain', () => {
+it('contract mapper: portal contracts preserve provided primaryDomain', () => {
   const tenantPortal = toTobPortalContract(createTenantPortalFixture() as never)
   const storePortal = toStorePortalContract(createStorePortalFixture() as never)
 
@@ -14,7 +14,7 @@ test('contract mapper: portal contracts preserve provided primaryDomain', () => 
   assert.equal(storePortal.primaryDomain, 'store-001.brand-demo.tenant-demo.cn-mainland.local')
 })
 
-test('contract mapper: portal contracts backfill missing primaryDomain', () => {
+it('contract mapper: portal contracts backfill missing primaryDomain', () => {
   const storePortal = toStorePortalContract({
     ...createStorePortalFixture(),
     primaryDomain: undefined

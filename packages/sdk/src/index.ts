@@ -63,7 +63,17 @@ import type {
   RuntimeGovernanceRiskLevel,
   RuntimeGovernanceSubmitRequest,
   RuntimeGovernanceSyncRequest,
-  WorkbenchBootstrapResponse
+  WorkbenchBootstrapResponse,
+  AgentConfig,
+  AgentSession,
+  AgentExecution,
+  SessionExecutionResult,
+  CreateSessionRequest,
+  BatchAgentRequest,
+  BatchAgentResponse,
+  QualityEvaluation,
+  AgentStats,
+  AgentSessionEvent
 } from '@m5/types';
 
 export interface ApiClientOptions {
@@ -769,6 +779,40 @@ export class ApiClient {
     return result.data;
   }
 
+  async putData<T>(path: string, body: unknown, init: RequestInit = {}) {
+    const result = await this.request<T>(path, {
+      ...init,
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+        ...(init.headers ?? {})
+      },
+      body: JSON.stringify(body)
+    });
+    return result.data;
+  }
+
+  async patchData<T>(path: string, body: unknown, init: RequestInit = {}) {
+    const result = await this.request<T>(path, {
+      ...init,
+      method: 'PATCH',
+      headers: {
+        'content-type': 'application/json',
+        ...(init.headers ?? {})
+      },
+      body: JSON.stringify(body)
+    });
+    return result.data;
+  }
+
+  async deleteData<T>(path: string, init: RequestInit = {}) {
+    const result = await this.request<T>(path, {
+      ...init,
+      method: 'DELETE'
+    });
+    return result.data;
+  }
+
   async getMarketBootstrap(init: RequestInit = {}) {
     return this.getData<MarketBootstrapResponse>('/markets/bootstrap', init);
   }
@@ -1219,4 +1263,358 @@ export class ApiClient {
       init
     );
   }
+
+  // ── Agent & Knowledge V2 (Phase-23/24 — 后端 entity 镜像) ──
+
+  /** 列出所有 Agent 配置 */
+  async listAgentConfigs(init: RequestInit = {}) {
+    return this.getData<AgentConfig[]>('/agent/configs', init);
+  }
+
+  /** 获取单个 Agent 配置 */
+  async getAgentConfig(id: string, init: RequestInit = {}) {
+    return this.getData<AgentConfig>(`/agent/configs/${id}`, init);
+  }
+
+  /** 创建 Agent 配置 */
+  async createAgentConfig(body: AgentConfig, init: RequestInit = {}) {
+    return this.postData<AgentConfig>('/agent/configs', body, init);
+  }
+
+  /** 更新 Agent 配置 */
+  async updateAgentConfig(id: string, body: Partial<AgentConfig>, init: RequestInit = {}) {
+    return this.putData<AgentConfig>(`/agent/configs/${id}`, body, init);
+  }
+
+  /** 删除 Agent 配置 */
+  async deleteAgentConfig(id: string, init: RequestInit = {}) {
+    return this.deleteData<{ deleted: boolean }>(`/agent/configs/${id}`, init);
+  }
+
+  /** 创建并运行 Agent 会话 */
+  async runAgentSession(body: CreateSessionRequest, init: RequestInit = {}) {
+    return this.postData<SessionExecutionResult>('/agent/sessions/run', body, init);
+  }
+
+  /**
+   * 运行 Agent 会话并订阅实时事件流 (Phase-27 SSE)
+   *
+   * 后端 SSE 端点: POST /agent/sessions/run-stream
+   * 返回: text/event-stream,每个事件格式 `data: {AgentSessionEvent JSON}\n\n`
+   *
+   * 用法:
+   * ```ts
+   * for await (const ev of client.runAgentSessionStream({ configId, userInput, ... })) {
+   *   switch (ev.type) {
+   *     case 'step_progress': console.log(`Step ${ev.step}/${ev.maxSteps}`); break;
+   *     case 'message_added': appendMessage(ev.message); break;
+   *     case 'session_completed': finalize(ev.session, ev.execution); break;
+   *   }
+   * }
+   * ```
+   */
+  async *runAgentSessionStream(
+    body: CreateSessionRequest,
+    init: RequestInit = {}
+  ): AsyncGenerator<AgentSessionEvent, void, undefined> {
+    const url = `${normalizeBaseUrl(this.options.baseUrl)}${normalizePath('/agent/sessions/run-stream')}`;
+    const response = await fetch(url, {
+      ...init,
+      method: 'POST',
+      headers: buildHeaders(this.options, init.headers),
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Stream request failed with status ${response.status}`);
+    }
+    if (!response.body) {
+      throw new Error('Stream response has no body');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // SSE 事件以 \n\n 分隔,每块多行 `key: value`
+        let sepIdx = buffer.indexOf('\n\n');
+        while (sepIdx !== -1) {
+          const block = buffer.slice(0, sepIdx);
+          buffer = buffer.slice(sepIdx + 2);
+          const dataLine = block
+            .split('\n')
+            .find((line) => line.startsWith('data: '));
+          if (dataLine) {
+            const json = dataLine.slice('data: '.length).trim();
+            if (json && json !== '[DONE]') {
+              try {
+                const event = JSON.parse(json);
+                yield event;
+              } catch {
+                // 忽略解析失败的帧
+              }
+            }
+          }
+          sepIdx = buffer.indexOf('\n\n');
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  /** 批量运行 Agent */
+  async batchRunAgent(body: BatchAgentRequest, init: RequestInit = {}) {
+    return this.postData<BatchAgentResponse>('/agent/sessions/batch', body, init);
+  }
+
+  /** 列出所有 Agent 会话 */
+  async listAgentSessions(init: RequestInit = {}) {
+    return this.getData<AgentSession[]>('/agent/sessions', init);
+  }
+
+  /** 获取单个 Agent 会话 */
+  async getAgentSession(id: string, init: RequestInit = {}) {
+    return this.getData<AgentSession>(`/agent/sessions/${id}`, init);
+  }
+
+  /** 获取会话执行记录 */
+  async getAgentExecution(id: string, init: RequestInit = {}) {
+    return this.getData<AgentExecution>(`/agent/sessions/${id}/execution`, init);
+  }
+
+  /** 获取会话质量评估 */
+  async getSessionEvaluation(id: string, init: RequestInit = {}) {
+    return this.getData<QualityEvaluation>(`/agent/sessions/${id}/evaluation`, init);
+  }
+
+  /** 列出所有质量评估 */
+  async listQualityEvaluations(init: RequestInit = {}) {
+    return this.getData<QualityEvaluation[]>('/agent/evaluations', init);
+  }
+
+  /** 获取 Agent 统计 */
+  async getAgentStats(init: RequestInit = {}) {
+    return this.getData<AgentStats>('/agent/stats', init);
+  }
+
+  /** 列出可用工具(后端返回 unknown,前端按 ToolDefinition 解读) */
+  async listAgentTools(init: RequestInit = {}) {
+    return this.getData<unknown[]>('/agent/tools', init);
+  }
+}
+
+// ── Phase-32: Stream 重连 + Last-Event-ID 续传 ──
+
+/** SSE 订阅状态 */
+export type SseSubscribeStatus = 'connecting' | 'open' | 'reconnecting' | 'closed'
+
+/** SSE 订阅选项 (Phase-32 扩展) */
+export interface SseSubscribeOptions {
+  /** Agent 会话请求 */
+  body: CreateSessionRequest
+  /** 每条事件回调 */
+  onEvent: (event: AgentSessionEvent, meta: { id: number; raw: string }) => void
+  /** 错误回调 (网络断 / 重试耗尽 / 410) */
+  onError?: (err: Error, context: { attempts: number; willRetry: boolean }) => void
+  /** 状态变化回调 */
+  onStatusChange?: (status: SseSubscribeStatus) => void
+  /** 重连配置 */
+  reconnect?: {
+    /** 是否启用,默认 true */
+    enabled?: boolean
+    /** 最大重试次数,默认 3 */
+    maxRetries?: number
+    /** 初始延迟 ms,默认 1000 */
+    initialDelayMs?: number
+    /** 退避倍数,默认 2 (1s → 2s → 4s) */
+    backoffMultiplier?: number
+  }
+  /** 外部注入的最后事件 id (用于断连后 resume) */
+  initialLastEventId?: string
+}
+
+/** SSE 订阅句柄 */
+export interface SseSubscription {
+  /** 主动取消订阅 */
+  unsubscribe: () => void
+  /** 当前状态 */
+  getStatus: () => SseSubscribeStatus
+  /** 最近收到的事件 id (用于下次 resume) */
+  getLastEventId: () => string | undefined
+}
+
+/**
+ * 订阅 Agent SSE 流 (Phase-32: 带指数退避 + Last-Event-ID 续传)
+ *
+ * - 默认 maxRetries=3, backoff = 1s → 2s → 4s
+ * - 每次重连自动携带 Last-Event-ID,服务端 replay
+ * - 410 Gone (事件过期) 触发 onError 并停止重试
+ *
+ * 用法:
+ * ```ts
+ * const sub = subscribeStream(client, {
+ *   body: { configId, userInput, ... },
+ *   onEvent: (ev) => console.log(ev),
+ *   onError: (err) => console.error(err),
+ *   reconnect: { maxRetries: 3 }
+ * })
+ * // 后续可用 sub.getLastEventId() 持久化,重连时传入 initialLastEventId
+ * ```
+ */
+export function subscribeStream(
+  client: ApiClient,
+  opts: SseSubscribeOptions
+): SseSubscription {
+  const reconnectConfig = {
+    enabled: opts.reconnect?.enabled ?? true,
+    maxRetries: opts.reconnect?.maxRetries ?? 3,
+    initialDelayMs: opts.reconnect?.initialDelayMs ?? 1000,
+    backoffMultiplier: opts.reconnect?.backoffMultiplier ?? 2
+  }
+
+  let status: SseSubscribeStatus = 'connecting'
+  let lastEventId: string | undefined = opts.initialLastEventId
+  let cancelled = false
+  let attempt = 0
+  let currentAbort: AbortController | null = null
+
+  function setStatus(next: SseSubscribeStatus) {
+    if (status === next) return
+    status = next
+    opts.onStatusChange?.(next)
+  }
+
+  function computeDelay(attemptNum: number): number {
+    return reconnectConfig.initialDelayMs * Math.pow(reconnectConfig.backoffMultiplier, attemptNum - 1)
+  }
+
+  async function runOnce(signal: AbortSignal): Promise<void> {
+    const headers: Record<string, string> = {}
+    if (lastEventId) {
+      headers['Last-Event-ID'] = lastEventId
+    }
+
+    const generator = client.runAgentSessionStream(opts.body, { signal, headers })
+
+    for await (const event of generator) {
+      // 事件 id 提取: 从 event 自身的 id 字段 (服务端会在 Phase-32 T145 中注入)
+      const evAny = event as AgentSessionEvent & { id?: number }
+      if (typeof evAny.id === 'number') {
+        lastEventId = String(evAny.id)
+      }
+
+      // meta.id 透传给 onEvent,便于客户端去重 / 持久化
+      opts.onEvent(event, {
+        id: typeof evAny.id === 'number' ? evAny.id : -1,
+        raw: JSON.stringify(event)
+      })
+    }
+  }
+
+  async function loop(): Promise<void> {
+    while (!cancelled) {
+      // 已超过最大重试 → 放弃
+      if (attempt > reconnectConfig.maxRetries) {
+        setStatus('closed')
+        const err = new Error(`SSE reconnect exhausted after ${reconnectConfig.maxRetries} attempts`)
+        opts.onError?.(err, { attempts: attempt, willRetry: false })
+        return
+      }
+
+      // 第 N 次尝试前先 backoff
+      if (attempt > 0) {
+        if (!reconnectConfig.enabled) {
+          setStatus('closed')
+          return
+        }
+        setStatus('reconnecting')
+        const delay = computeDelay(attempt)
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(resolve, delay)
+          if (currentAbort) {
+            currentAbort.signal.addEventListener('abort', () => {
+              clearTimeout(timer)
+              resolve()
+            })
+          }
+        })
+        if (cancelled) return
+      }
+
+      // 执行一次
+      attempt += 1
+      currentAbort = new AbortController()
+      try {
+        setStatus(attempt === 1 ? 'connecting' : 'reconnecting')
+        await runOnce(currentAbort.signal)
+        // 正常完成 (服务端 complete)
+        setStatus('closed')
+        return
+      } catch (err) {
+        if (cancelled) return
+
+        const error = err instanceof Error ? err : new Error(String(err))
+        const isHttp410 = error.message.includes('410')
+        const isAbort = error.name === 'AbortError'
+
+        if (isAbort) {
+          // 主动取消
+          setStatus('closed')
+          return
+        }
+
+        if (isHttp410) {
+          // 事件过期,不再重试
+          setStatus('closed')
+          opts.onError?.(error, { attempts: attempt, willRetry: false })
+          return
+        }
+
+        // 网络错误 → 触发重试
+        const willRetry = attempt <= reconnectConfig.maxRetries && reconnectConfig.enabled
+        opts.onError?.(error, { attempts: attempt, willRetry })
+
+        if (!willRetry) {
+          setStatus('closed')
+          return
+        }
+        // 继续循环 → backoff → 重试
+      }
+    }
+  }
+
+  // 异步启动,不阻塞调用方
+  void loop()
+
+  return {
+    unsubscribe: () => {
+      cancelled = true
+      currentAbort?.abort()
+      setStatus('closed')
+    },
+    getStatus: () => status,
+    getLastEventId: () => lastEventId
+  }
+}
+
+/** 计算下次 backoff 延迟 (供测试与 UI 共享)
+ *  - attemptNum = 1 → initialDelayMs (第一次重试前)
+ *  - attemptNum = 2 → initialDelayMs * multiplier
+ *  - attemptNum = 0 → initialDelayMs (视为第一次)
+ *  - 等价公式: initialDelayMs * multiplier^max(0, attemptNum-1)
+ */
+export function computeBackoffDelay(
+  attemptNum: number,
+  initialDelayMs = 1000,
+  backoffMultiplier = 2
+): number {
+  const safeAttempt = Math.max(0, attemptNum - 1)
+  return initialDelayMs * Math.pow(backoffMultiplier, safeAttempt)
 }

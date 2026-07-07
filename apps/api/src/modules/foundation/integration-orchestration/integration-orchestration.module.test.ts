@@ -1,7 +1,7 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { IntegrationOrchestrationModule } from './integration-orchestration.module'
 import { IntegrationOrchestrationController } from './integration-orchestration.controller'
 import { IntegrationOrchestrationService } from './integration-orchestration.service'
@@ -32,7 +32,7 @@ const stubTrustGovernanceService = {
 describe('IntegrationOrchestrationModule', () => {
   let moduleRef: TestingModule
 
-  test('should compile and instantiate', async () => {
+  it('should compile and instantiate', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [IntegrationOrchestrationModule],
     })
@@ -45,7 +45,7 @@ describe('IntegrationOrchestrationModule', () => {
     assert.ok(moduleRef)
   })
 
-  test('should provide IntegrationOrchestrationController', async () => {
+  it('should provide IntegrationOrchestrationController', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [IntegrationOrchestrationModule],
     })
@@ -62,7 +62,7 @@ describe('IntegrationOrchestrationModule', () => {
     assert.ok(controller instanceof IntegrationOrchestrationController)
   })
 
-  test('should provide IntegrationOrchestrationService', async () => {
+  it('should provide IntegrationOrchestrationService', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [IntegrationOrchestrationModule],
     })

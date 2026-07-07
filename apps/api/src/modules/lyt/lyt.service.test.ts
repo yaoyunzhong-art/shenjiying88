@@ -1,13 +1,13 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { BadRequestException } from '@nestjs/common'
 
 describe('LytService', () => {
   const { LytService } = require('./lyt.service')
   const { toLytStandardizedWebhookEventContract } = require('./lyt.contract')
 
-  test('getAdapter returns the injected adapter instance', () => {
+  it('getAdapter returns the injected adapter instance', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ name: 'mock-adapter', adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -27,7 +27,7 @@ describe('LytService', () => {
     assert.equal(result.adapterName, 'MockLytAdapter')
   })
 
-  test('getConnection delegates to scoped connection manager', async () => {
+  it('getConnection delegates to scoped connection manager', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -56,7 +56,7 @@ describe('LytService', () => {
     assert.equal(result.endpoint, 'https://lyt.example.com')
   })
 
-  test('getAdapterSelection returns resolved adapter info for store connection', async () => {
+  it('getAdapterSelection returns resolved adapter info for store connection', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({
@@ -109,7 +109,7 @@ describe('LytService', () => {
     assert.equal(result.resolutionLevel, 'brand')
   })
 
-  test('getConnectionCapabilityReadiness returns scoped capability readiness for a store', async () => {
+  it('getConnectionCapabilityReadiness returns scoped capability readiness for a store', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -162,7 +162,7 @@ describe('LytService', () => {
     assert.ok(result.recommendedNextActions.some((item: string) => item.includes('继承上级连接')))
   })
 
-  test('getConnectionGovernanceSummary aggregates readiness across scoped stores', async () => {
+  it('getConnectionGovernanceSummary aggregates readiness across scoped stores', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -258,7 +258,7 @@ describe('LytService', () => {
     assert.equal(result.stores[2]?.storeId, 'store-ready')
   })
 
-  test('getConnectionGovernanceAlerts returns structured governance alerts', async () => {
+  it('getConnectionGovernanceAlerts returns structured governance alerts', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -345,7 +345,7 @@ describe('LytService', () => {
     assert.ok(result.alerts.some((item: { code: string }) => item.code === 'capability-pending-stores'))
   })
 
-  test('getStoreCapabilityAccessView maps readiness to frontend access states', async () => {
+  it('getStoreCapabilityAccessView maps readiness to frontend access states', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -396,7 +396,7 @@ describe('LytService', () => {
     assert.ok(result.recommendedNextActions.some((item: string) => item.includes('健康检查')))
   })
 
-  test('getFixtures returns first-batch LYT fixture catalog', () => {
+  it('getFixtures returns first-batch LYT fixture catalog', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -416,7 +416,7 @@ describe('LytService', () => {
     assert.deepEqual(result[2].missingSampleFields, [])
   })
 
-  test('getFixtures supports transport filter and returns checklist metadata', () => {
+  it('getFixtures supports transport filter and returns checklist metadata', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -445,7 +445,7 @@ describe('LytService', () => {
     })
   })
 
-  test('getFixture returns a single fixture by key', () => {
+  it('getFixture returns a single fixture by key', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -465,7 +465,7 @@ describe('LytService', () => {
     assert.ok(result.requiredRawFields.includes('gateId'))
   })
 
-  test('getFixtureSummary returns checklist rollout summary', () => {
+  it('getFixtureSummary returns checklist rollout summary', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -491,7 +491,7 @@ describe('LytService', () => {
     assert.ok(result.recommendedNextActions.some((item: string) => item.includes('headers/query checklist')))
   })
 
-  test('getFixtureSummary reports blocked fixtures and exact missing checklist items', () => {
+  it('getFixtureSummary reports blocked fixtures and exact missing checklist items', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -510,7 +510,7 @@ describe('LytService', () => {
     assert.deepEqual(result.fixtures[0]?.missingChecklistItems, [])
   })
 
-  test('compareFixtureInput returns required and recommended gap report', () => {
+  it('compareFixtureInput returns required and recommended gap report', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -554,7 +554,7 @@ describe('LytService', () => {
     assert.ok(result.recommendedNextActions.some((item: string) => item.includes('unknown risky')))
   })
 
-  test('previewFixtureImport returns merged sample suggestion and readiness after import', () => {
+  it('previewFixtureImport returns merged sample suggestion and readiness after import', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -600,7 +600,7 @@ describe('LytService', () => {
     assert.equal(result.compareReport.readiness, 'ready')
   })
 
-  test('planFixtureImport returns blocked decision when required fields remain missing after import', () => {
+  it('planFixtureImport returns blocked decision when required fields remain missing after import', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -625,7 +625,7 @@ describe('LytService', () => {
     assert.ok(result.recommendedNextActions.some((item: string) => item.includes('required')))
   })
 
-  test('planFixtureImport returns needs-review when risky extras require manual review', () => {
+  it('planFixtureImport returns needs-review when risky extras require manual review', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -668,7 +668,7 @@ describe('LytService', () => {
     assert.equal(result.preview.compareReport.payload.riskyExtraObserved[0], 'customField')
   })
 
-  test('planFixtureImport returns ready-to-promote when import is complete and stable', () => {
+  it('planFixtureImport returns ready-to-promote when import is complete and stable', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -713,7 +713,7 @@ describe('LytService', () => {
     assert.ok(result.recommendedNextActions.some((item: string) => item.includes('safe extra')))
   })
 
-  test('drillWebhook returns dry-run standardized preview without publishing', async () => {
+  it('drillWebhook returns dry-run standardized preview without publishing', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -747,7 +747,7 @@ describe('LytService', () => {
     assert.equal(publishCalled, false)
   })
 
-  test('drillWebhook can build payload from fixtureKey and archive the rehearsal payload', async () => {
+  it('drillWebhook can build payload from fixtureKey and archive the rehearsal payload', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -769,7 +769,7 @@ describe('LytService', () => {
     assert.equal(result.archiveRecord.requestId, 'req-pay-001')
   })
 
-  test('replayWebhookFixture reuses callback pipeline and tags archive fixtureKey', async () => {
+  it('replayWebhookFixture reuses callback pipeline and tags archive fixtureKey', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -818,7 +818,7 @@ describe('LytService', () => {
     assert.equal((result.standardizedEvent as Record<string, unknown>).standardizedEventName, 'cashier.payment-succeeded')
   })
 
-  test('replayWebhookFixture rejects missing required fields when strictValidation is enabled', async () => {
+  it('replayWebhookFixture rejects missing required fields when strictValidation is enabled', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -846,7 +846,7 @@ describe('LytService', () => {
     )
   })
 
-  test('drillWebhook publishes standardized event when dryRun is false', async () => {
+  it('drillWebhook publishes standardized event when dryRun is false', async () => {
     const mockAdapter = {}
     const mockFoundation = { getDependencySummary: () => null }
     const mockConnections = { getConnectionForStore: async () => ({}) }
@@ -876,7 +876,7 @@ describe('LytService', () => {
     assert.equal(result.standardizedPublicationStatus, 'accepted')
   })
 
-  test('getBootstrap returns adapter name and foundation dependencies', () => {
+  it('getBootstrap returns adapter name and foundation dependencies', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -909,7 +909,7 @@ describe('LytService', () => {
     assert.equal(result.selectionStrategy, 'connection-driven: mock -> sandbox -> real')
   })
 
-  test('getBootstrap handles null foundation dependency', () => {
+  it('getBootstrap handles null foundation dependency', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -931,7 +931,7 @@ describe('LytService', () => {
     assert.deepStrictEqual(result.foundationContracts, [])
   })
 
-  test('getBootstrap handles undefined dependsOn and handoffContracts', () => {
+  it('getBootstrap handles undefined dependsOn and handoffContracts', () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -953,7 +953,7 @@ describe('LytService', () => {
     assert.deepStrictEqual(result.foundationContracts, [])
   })
 
-  test('acceptWebhook standardizes accepted lyt webhook into internal event', async () => {
+  it('acceptWebhook standardizes accepted lyt webhook into internal event', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -1011,7 +1011,7 @@ describe('LytService', () => {
     assert.equal(result.standardizedPublicationStatus, 'accepted')
   })
 
-  test('acceptWebhook skips standardized publication for duplicate raw webhook', async () => {
+  it('acceptWebhook skips standardized publication for duplicate raw webhook', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -1053,7 +1053,7 @@ describe('LytService', () => {
     assert.equal(publishCalled, false)
   })
 
-  test('acceptWebhook attaches accepted webhook to runtime-governance receipt chain', async () => {
+  it('acceptWebhook attaches accepted webhook to runtime-governance receipt chain', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -1138,7 +1138,7 @@ describe('LytService', () => {
     assert.equal((result.runtimeReceipt as Record<string, unknown>).state, 'callback-recorded')
   })
 
-  test('acceptWebhook reuses runtime-governance receipt chain for duplicate webhook', async () => {
+  it('acceptWebhook reuses runtime-governance receipt chain for duplicate webhook', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -1213,7 +1213,7 @@ describe('LytService', () => {
     assert.equal((result.runtimeReceipt as Record<string, unknown>).state, 'callback-recorded')
   })
 
-  test('acceptWebhook syncs member snapshot when member profile standardized event is accepted', async () => {
+  it('acceptWebhook syncs member snapshot when member profile standardized event is accepted', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -1330,7 +1330,7 @@ describe('LytService', () => {
     )
   })
 
-  test('acceptWebhook syncs order and payment snapshots for standardized LYT transaction events', async () => {
+  it('acceptWebhook syncs order and payment snapshots for standardized LYT transaction events', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -1575,7 +1575,7 @@ describe('LytService', () => {
     )
   })
 
-  test('acceptWebhook keeps fixtureKey in callback archive record when present', async () => {
+  it('acceptWebhook keeps fixtureKey in callback archive record when present', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -1606,7 +1606,7 @@ describe('LytService', () => {
     assert.equal((result.archiveRecord as Record<string, unknown>).fixtureKey, 'gate-pass-webhook')
   })
 
-  test('acceptWebhook emits lyt.webhook.accepted audit when TrustGovernanceService is provided', async () => {
+  it('acceptWebhook emits lyt.webhook.accepted audit when TrustGovernanceService is provided', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -1674,7 +1674,7 @@ describe('LytService', () => {
     assert.equal(auditCalls[0]?.context?.riskLevel, 'high')
   })
 
-  test('acceptWebhook emits low-risk audit on duplicate webhook path', async () => {
+  it('acceptWebhook emits low-risk audit on duplicate webhook path', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -1734,7 +1734,7 @@ describe('LytService', () => {
     assert.equal(auditCalls[0]?.context?.riskLevel, 'low')
   })
 
-  test('acceptWebhook no-ops when TrustGovernanceService is not provided', async () => {
+  it('acceptWebhook no-ops when TrustGovernanceService is not provided', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
@@ -1768,7 +1768,7 @@ describe('LytService', () => {
     assert.equal((result.standardizedEvent as Record<string, unknown>).aggregateId, 'evt-noop')
   })
 
-  test('replayWebhookFixture emits lyt.fixture.replayed audit after delegating to acceptWebhook', async () => {
+  it('replayWebhookFixture emits lyt.fixture.replayed audit after delegating to acceptWebhook', async () => {
     const mockAdapterRegistry = {
       getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
       resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),

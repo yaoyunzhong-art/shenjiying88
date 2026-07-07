@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E 跨模块 #13 — 日清结算: 1 天营业周期端到端
  *
@@ -23,7 +24,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -33,10 +33,8 @@ import {
   Post,
   Req
 } from '@nestjs/common'
-import { Test } from '@nestjs/testing'
 import request from 'supertest'
-import type { NextFunction, Request, Response } from 'express'
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import type { Request } from 'express'
 import { FinanceService, resetFinanceServiceTestState } from '../finance/finance.service'
 import {
   LedgerType,
@@ -44,17 +42,7 @@ import {
   AccountType
 } from '../finance/finance.entity'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
-
-function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
-  ctx.tenantContext = {
-    tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
-    brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
-    storeId: (req.header('x-store-id') as string | undefined) ?? 'store-001',
-    marketCode: (req.header('x-market-code') as string | undefined) ?? 'cn-mainland'
-  }
-  next()
-}
+import { buildCrossModuleTestApp } from './test-helpers'
 
 // ─── TestController ───
 
@@ -128,15 +116,11 @@ class TestController {
 async function buildApp() {
   resetFinanceServiceTestState()
   const financeService = new FinanceService()
-  const moduleRef = await Test.createTestingModule({
+  const { app, moduleRef } = await buildCrossModuleTestApp({
     controllers: [TestController],
-    providers: [{ provide: FinanceService, useValue: financeService }]
-  }).compile()
-  const app = moduleRef.createNestApplication()
-  app.use(attachTenantContext)
-  app.useGlobalInterceptors(new ResponseInterceptor())
-  await app.init()
-  return { app, financeService }
+    providers: [{ provide: FinanceService, useValue: financeService }],
+  })
+  return { app, moduleRef, financeService }
 }
 
 const TENANT_A = {
@@ -154,7 +138,7 @@ const TENANT_B = {
 // E2E: 完整 1 天营业周期 (开班 → 营业 → 关班 → 结算)
 // ═══════════════════════════════════════════════════
 
-test('e2e-13: full business day cycle - open, transactions, close, settle', async () => {
+it('e2e-13: full business day cycle - open, transactions, close, settle', async () => {
   const { app } = await buildApp()
   try {
     // ── 09:00 开班: 创建现金账户 (期初余额 2000) ──
@@ -279,7 +263,7 @@ test('e2e-13: full business day cycle - open, transactions, close, settle', asyn
 // E2E: 多日连续结算 (day-1, day-2 互不干扰)
 // ═══════════════════════════════════════════════════
 
-test('e2e-13: multi-day settlements are isolated by date range', async () => {
+it('e2e-13: multi-day settlements are isolated by date range', async () => {
   const { app } = await buildApp()
   try {
     // 注: ledger.recordedAt = new Date().toISOString() (实际运行时)
@@ -334,7 +318,7 @@ test('e2e-13: multi-day settlements are isolated by date range', async () => {
 // E2E: 对账异常 (DISPUTED 流程)
 // ═══════════════════════════════════════════════════
 
-test('e2e-13: disputed settlement workflow', async () => {
+it('e2e-13: disputed settlement workflow', async () => {
   const { app } = await buildApp()
   try {
     // 准备: 一笔异常的退款 (假设对账发现金额不对)
@@ -373,7 +357,7 @@ test('e2e-13: disputed settlement workflow', async () => {
 // E2E: 跨租户日清隔离
 // ═══════════════════════════════════════════════════
 
-test('e2e-13: cross-tenant day-end isolation', async () => {
+it('e2e-13: cross-tenant day-end isolation', async () => {
   const { app } = await buildApp()
   try {
     // 今日 ± 1 小时窗口
@@ -423,7 +407,7 @@ test('e2e-13: cross-tenant day-end isolation', async () => {
 // E2E: 空日结算 (零交易日的结算仍可创建,total=0)
 // ═══════════════════════════════════════════════════
 
-test('e2e-13: empty day settlement - zero revenue/expense but valid', async () => {
+it('e2e-13: empty day settlement - zero revenue/expense but valid', async () => {
   const { app } = await buildApp()
   try {
     // 不创建任何 ledger (今日 ± 1 小时窗口)

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [finance] [C] 角色测试
  * 
@@ -10,7 +11,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe, beforeEach } from 'node:test'
 import { FinanceController } from './finance.controller'
 import { FinanceService, resetFinanceServiceTestState } from './finance.service'
 import { 
@@ -65,7 +65,7 @@ async function seedLedgers(ctrl: FinanceController, ctx: RequestTenantContext) {
 // 👔店长 (StoreManager)
 // ═══════════════════════════════════════════════════════
 describe(`${ROLES.StoreManager} finance 角色测试`, () => {
-  test('店长创建账户并查询余额（正常流程）', async () => {
+  it('店长创建账户并查询余额（正常流程）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -85,7 +85,7 @@ describe(`${ROLES.StoreManager} finance 角色测试`, () => {
     assert.equal(balance.status, AccountStatus.Active)
   })
 
-  test('店长生成月度营收汇总（管理决策数据）', async () => {
+  it('店长生成月度营收汇总（管理决策数据）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
     await seedLedgers(ctrl, ctx)
@@ -102,7 +102,7 @@ describe(`${ROLES.StoreManager} finance 角色测试`, () => {
     assert.equal(summary.transactionCount, 5)
   })
 
-  test('店长冻结异常账户（权限边界：二次冻结报错）', async () => {
+  it('店长冻结异常账户（权限边界：二次冻结报错）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -122,7 +122,7 @@ describe(`${ROLES.StoreManager} finance 角色测试`, () => {
     )
   })
 
-  test('店长查看全部记账流水并按类型筛选', async () => {
+  it('店长查看全部记账流水并按类型筛选', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
     await seedLedgers(ctrl, ctx)
@@ -146,7 +146,7 @@ describe(`${ROLES.StoreManager} finance 角色测试`, () => {
 // 🛒前台 (FrontDesk)
 // ═══════════════════════════════════════════════════════
 describe(`${ROLES.FrontDesk} finance 角色测试`, () => {
-  test('前台记录单笔交易收入（正常收银流程）', async () => {
+  it('前台记录单笔交易收入（正常收银流程）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -164,7 +164,7 @@ describe(`${ROLES.FrontDesk} finance 角色测试`, () => {
     assert.ok(ledger.balance >= 0)
   })
 
-  test('前台处理客户退款（正常退款流程）', async () => {
+  it('前台处理客户退款（正常退款流程）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -188,7 +188,7 @@ describe(`${ROLES.FrontDesk} finance 角色测试`, () => {
     assert.equal(refund.orderId, 'order-cash-002')
   })
 
-  test('前台查询与订单关联的发票（边界：查询不存在的发票返回空列表）', async () => {
+  it('前台查询与订单关联的发票（边界：查询不存在的发票返回空列表）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -198,7 +198,7 @@ describe(`${ROLES.FrontDesk} finance 角色测试`, () => {
     assert.equal(invoices.length, 0)
   })
 
-  test('前台查看当日收入（日结对账）', async () => {
+  it('前台查看当日收入（日结对账）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -227,7 +227,7 @@ describe(`${ROLES.FrontDesk} finance 角色测试`, () => {
 // 👥HR (Human Resources)
 // ═══════════════════════════════════════════════════════
 describe(`${ROLES.HR} finance 角色测试`, () => {
-  test('HR 记录员工薪资支出（正常记账流程）', async () => {
+  it('HR 记录员工薪资支出（正常记账流程）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -244,7 +244,7 @@ describe(`${ROLES.HR} finance 角色测试`, () => {
     assert.ok(salary.balance < 0 || salary.balance >= 0)
   })
 
-  test('HR 查看人工成本支出（权限边界：按 category=labor 筛选）', async () => {
+  it('HR 查看人工成本支出（权限边界：按 category=labor 筛选）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -263,7 +263,7 @@ describe(`${ROLES.HR} finance 角色测试`, () => {
     laborExpenses.forEach(l => assert.equal(l.category, 'labor'))
   })
 
-  test('HR 创建工资账户（专用账户管理）', async () => {
+  it('HR 创建工资账户（专用账户管理）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -281,7 +281,7 @@ describe(`${ROLES.HR} finance 角色测试`, () => {
     assert.equal(queried.id, acct.id)
   })
 
-  test('HR 获取不存在的账户 => 抛出异常', async () => {
+  it('HR 获取不存在的账户 => 抛出异常', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -296,7 +296,7 @@ describe(`${ROLES.HR} finance 角色测试`, () => {
 // 🔧安监 (Security / Safety)
 // ═══════════════════════════════════════════════════════
 describe(`${ROLES.Security} finance 角色测试`, () => {
-  test('安监记录安全设备采购支出（正常记账）', async () => {
+  it('安监记录安全设备采购支出（正常记账）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -312,7 +312,7 @@ describe(`${ROLES.Security} finance 角色测试`, () => {
     assert.equal(expense.amount, 28000)
   })
 
-  test('安监检查退款异常（高额退款安全审计）', async () => {
+  it('安监检查退款异常（高额退款安全审计）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -328,7 +328,7 @@ describe(`${ROLES.Security} finance 角色测试`, () => {
     assert.equal(totalRefund, 13000)
   })
 
-  test('安监关闭问题账户（安全处置流程）', async () => {
+  it('安监关闭问题账户（安全处置流程）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -346,7 +346,7 @@ describe(`${ROLES.Security} finance 角色测试`, () => {
     )
   })
 
-  test('安监不存在的记账ID查询 => 抛出（边界）', async () => {
+  it('安监不存在的记账ID查询 => 抛出（边界）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -361,7 +361,7 @@ describe(`${ROLES.Security} finance 角色测试`, () => {
 // 🎮导玩员 (Guide / Game Director)
 // ═══════════════════════════════════════════════════════
 describe(`${ROLES.Guide} finance 角色测试`, () => {
-  test('导玩员记录活动设备收入（活动记账）', async () => {
+  it('导玩员记录活动设备收入（活动记账）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -377,7 +377,7 @@ describe(`${ROLES.Guide} finance 角色测试`, () => {
     assert.equal(ledger.category, 'vr-experience')
   })
 
-  test('导玩员查询活动期间的总收入（对特定类别汇总）', async () => {
+  it('导玩员查询活动期间的总收入（对特定类别汇总）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -391,7 +391,7 @@ describe(`${ROLES.Guide} finance 角色测试`, () => {
     assert.equal(vrTotal, 1600)
   })
 
-  test('导玩员查询跨租户隔离（边界：其他门店数据不可见）', async () => {
+  it('导玩员查询跨租户隔离（边界：其他门店数据不可见）', async () => {
     const ctrl = createController()
     const ctxA = createTenantContext({ tenantId: 't-store-A', storeId: 's-A' })
     const ctxB = createTenantContext({ tenantId: 't-store-B', storeId: 's-B' })
@@ -413,7 +413,7 @@ describe(`${ROLES.Guide} finance 角色测试`, () => {
 // 🎯运行专员 (Operations)
 // ═══════════════════════════════════════════════════════
 describe(`${ROLES.Operations} finance 角色测试`, () => {
-  test('运行专员生成门店月度结算（正常结算流程）', async () => {
+  it('运行专员生成门店月度结算（正常结算流程）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
     await seedLedgers(ctrl, ctx)
@@ -431,7 +431,7 @@ describe(`${ROLES.Operations} finance 角色测试`, () => {
     assert.equal(settlement.settlementStatus, SettlementStatus.Pending)
   })
 
-  test('运行专员确认结算并生成明细（结算确认流程）', async () => {
+  it('运行专员确认结算并生成明细（结算确认流程）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
     await seedLedgers(ctrl, ctx)
@@ -451,7 +451,7 @@ describe(`${ROLES.Operations} finance 角色测试`, () => {
     assert.ok(detail.ledgers.length >= 5)
   })
 
-  test('运行专员对已确认的结算重复确认 => 报错', async () => {
+  it('运行专员对已确认的结算重复确认 => 报错', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
     await seedLedgers(ctrl, ctx)
@@ -469,7 +469,7 @@ describe(`${ROLES.Operations} finance 角色测试`, () => {
     )
   })
 
-  test('运行专员获取每日净收入（日维度汇总）', async () => {
+  it('运行专员获取每日净收入（日维度汇总）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -492,7 +492,7 @@ describe(`${ROLES.Operations} finance 角色测试`, () => {
 // 🤝团建 (Teambuilding)
 // ═══════════════════════════════════════════════════════
 describe(`${ROLES.Teambuilding} finance 角色测试`, () => {
-  test('团建记录团建活动费用（正常支出记账）', async () => {
+  it('团建记录团建活动费用（正常支出记账）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -508,7 +508,7 @@ describe(`${ROLES.Teambuilding} finance 角色测试`, () => {
     assert.equal(expense.category, 'teambuilding')
   })
 
-  test('团建评估活动返回率（查看团建期间营收和退款）', async () => {
+  it('团建评估活动返回率（查看团建期间营收和退款）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -526,7 +526,7 @@ describe(`${ROLES.Teambuilding} finance 角色测试`, () => {
     assert.equal(teamExpenses[0].amount, 15000)
   })
 
-  test('团建查询不同门店的结算状态 => 过滤边界', async () => {
+  it('团建查询不同门店的结算状态 => 过滤边界', async () => {
     const ctrl = createController()
     const ctxA = createTenantContext({ storeId: 's-store-A' })
     const ctxB = createTenantContext({ storeId: 's-store-B' })
@@ -542,7 +542,7 @@ describe(`${ROLES.Teambuilding} finance 角色测试`, () => {
     assert.equal(listB.length, 1)
   })
 
-  test('团建对有异议结算提出争议（结算边界流程）', async () => {
+  it('团建对有异议结算提出争议（结算边界流程）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -568,7 +568,7 @@ describe(`${ROLES.Teambuilding} finance 角色测试`, () => {
 // 📢营销 (Marketing)
 // ═══════════════════════════════════════════════════════
 describe(`${ROLES.Marketing} finance 角色测试`, () => {
-  test('营销记录推广活动支出（营销费用记账）', async () => {
+  it('营销记录推广活动支出（营销费用记账）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -584,7 +584,7 @@ describe(`${ROLES.Marketing} finance 角色测试`, () => {
     assert.equal(expense.category, 'marketing')
   })
 
-  test('营销创建并开具发票（正常开票流程）', async () => {
+  it('营销创建并开具发票（正常开票流程）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -613,7 +613,7 @@ describe(`${ROLES.Marketing} finance 角色测试`, () => {
     assert.ok(issued.issuedAt)
   })
 
-  test('营销查询已开发票列表（营销活动发票管理）', async () => {
+  it('营销查询已开发票列表（营销活动发票管理）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -630,7 +630,7 @@ describe(`${ROLES.Marketing} finance 角色测试`, () => {
     assert.equal(issuedInvoices[0].id, inv.id)
   })
 
-  test('营销取消发票（边界：重复取消失败）', async () => {
+  it('营销取消发票（边界：重复取消失败）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 
@@ -649,7 +649,7 @@ describe(`${ROLES.Marketing} finance 角色测试`, () => {
     )
   })
 
-  test('营销计算营销投入产出比（ROI 视角的营收汇总）', async () => {
+  it('营销计算营销投入产出比（ROI 视角的营收汇总）', async () => {
     const ctrl = createController()
     const ctx = createTenantContext()
 

@@ -1,30 +1,30 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { CrossModuleQueryDto, CrossModuleValidateDto, CrossModuleChainStatusDto, CrossModuleValidationResultDto } from './cross-module.dto'
 
 // ── CrossModuleQueryDto ──
 describe('CrossModuleQueryDto', () => {
-  test('all fields are optional', () => {
+  it('all fields are optional', () => {
     const dto = new CrossModuleQueryDto()
     assert.equal(dto.chainName, undefined)
     assert.equal(dto.verbose, undefined)
     assert.equal(dto.status, undefined)
   })
 
-  test('can set chainName filter', () => {
+  it('can set chainName filter', () => {
     const dto = new CrossModuleQueryDto()
     dto.chainName = 'admin-to-consumer'
     assert.equal(dto.chainName, 'admin-to-consumer')
   })
 
-  test('can set verbose flag', () => {
+  it('can set verbose flag', () => {
     const dto = new CrossModuleQueryDto()
     dto.verbose = true
     assert.equal(dto.verbose, true)
   })
 
-  test('can set status filter', () => {
+  it('can set status filter', () => {
     const dto = new CrossModuleQueryDto()
     dto.status = 'verified'
     assert.equal(dto.status, 'verified')
@@ -33,7 +33,7 @@ describe('CrossModuleQueryDto', () => {
 
 // ── CrossModuleValidateDto ──
 describe('CrossModuleValidateDto', () => {
-  test('all fields are optional', () => {
+  it('all fields are optional', () => {
     const dto = new CrossModuleValidateDto()
     assert.equal(dto.chainNames, undefined)
     assert.equal(dto.tenantId, undefined)
@@ -41,13 +41,13 @@ describe('CrossModuleValidateDto', () => {
     assert.equal(dto.marketCode, undefined)
   })
 
-  test('can set chain names for validation', () => {
+  it('can set chain names for validation', () => {
     const dto = new CrossModuleValidateDto()
     dto.chainNames = ['admin-to-consumer', 'sdk-to-api']
     assert.deepEqual(dto.chainNames, ['admin-to-consumer', 'sdk-to-api'])
   })
 
-  test('can set tenant context', () => {
+  it('can set tenant context', () => {
     const dto = new CrossModuleValidateDto()
     dto.tenantId = 'tenant-001'
     dto.marketCode = 'default'
@@ -58,7 +58,7 @@ describe('CrossModuleValidateDto', () => {
 
 // ── CrossModuleChainStatusDto ──
 describe('CrossModuleChainStatusDto', () => {
-  test('can create chain status DTO', () => {
+  it('can create chain status DTO', () => {
     const dto: CrossModuleChainStatusDto = {
       chains: [
         { name: 'chain-1', modules: ['m1', 'm2'], status: 'defined' }
@@ -70,7 +70,7 @@ describe('CrossModuleChainStatusDto', () => {
     assert.equal(dto.runtime, 'cross-module-e2e')
   })
 
-  test('chain status DTO with lastVerifiedAt', () => {
+  it('chain status DTO with lastVerifiedAt', () => {
     const dto: CrossModuleChainStatusDto = {
       chains: [
         {
@@ -86,7 +86,7 @@ describe('CrossModuleChainStatusDto', () => {
     assert.equal(dto.chains[0].lastVerifiedAt, '2025-01-01T00:00:00Z')
   })
 
-  test('chain status DTO with brokenNodes', () => {
+  it('chain status DTO with brokenNodes', () => {
     const dto: CrossModuleChainStatusDto = {
       chains: [
         {
@@ -105,7 +105,7 @@ describe('CrossModuleChainStatusDto', () => {
 
 // ── CrossModuleValidationResultDto ──
 describe('CrossModuleValidationResultDto', () => {
-  test('can create validation result DTO', () => {
+  it('can create validation result DTO', () => {
     const dto: CrossModuleValidationResultDto = {
       chainName: 'admin-to-consumer',
       passed: true,
@@ -120,7 +120,7 @@ describe('CrossModuleValidationResultDto', () => {
     assert.equal(dto.stages.length, 1)
   })
 
-  test('failed validation result DTO', () => {
+  it('failed validation result DTO', () => {
     const dto: CrossModuleValidationResultDto = {
       chainName: 'sdk-to-api',
       passed: false,

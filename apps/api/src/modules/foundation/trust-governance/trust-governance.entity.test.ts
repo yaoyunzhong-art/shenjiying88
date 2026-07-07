@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   AuditRiskLevel,
   AiReviewVerdict,
@@ -15,35 +15,35 @@ import {
 } from './trust-governance.entity'
 
 describe('trust-governance entity - AuditRiskLevel', () => {
-  test('Low 等于 "low"', () => {
+  it('Low 等于 "low"', () => {
     assert.equal(AuditRiskLevel.Low, 'low')
   })
 
-  test('Medium 等于 "medium"', () => {
+  it('Medium 等于 "medium"', () => {
     assert.equal(AuditRiskLevel.Medium, 'medium')
   })
 
-  test('High 等于 "high"', () => {
+  it('High 等于 "high"', () => {
     assert.equal(AuditRiskLevel.High, 'high')
   })
 })
 
 describe('trust-governance entity - AiReviewVerdict', () => {
-  test('Approved 等于 "approved"', () => {
+  it('Approved 等于 "approved"', () => {
     assert.equal(AiReviewVerdict.Approved, 'approved')
   })
 
-  test('ApprovedWithGuardrails 等于 "approved-with-guardrails"', () => {
+  it('ApprovedWithGuardrails 等于 "approved-with-guardrails"', () => {
     assert.equal(AiReviewVerdict.ApprovedWithGuardrails, 'approved-with-guardrails')
   })
 
-  test('ManualReview 等于 "manual-review"', () => {
+  it('ManualReview 等于 "manual-review"', () => {
     assert.equal(AiReviewVerdict.ManualReview, 'manual-review')
   })
 })
 
 describe('trust-governance entity - RateLimitDecision type', () => {
-  test('符合 RateLimitDecision 结构', () => {
+  it('符合 RateLimitDecision 结构', () => {
     const decision: RateLimitDecision = {
       allowed: true,
       scopeKey: 'tenant-demo:user-1',
@@ -65,7 +65,7 @@ describe('trust-governance entity - RateLimitDecision type', () => {
     assert.equal(decision.retryAfterSeconds, 0)
   })
 
-  test('RateLimitDecision - 封禁场景', () => {
+  it('RateLimitDecision - 封禁场景', () => {
     const state: RateLimitState = {
       count: 101,
       remaining: 0,
@@ -89,7 +89,7 @@ describe('trust-governance entity - RateLimitDecision type', () => {
 })
 
 describe('trust-governance entity - RateLimitPolicyRecord type', () => {
-  test('符合 RateLimitPolicyRecord 结构', () => {
+  it('符合 RateLimitPolicyRecord 结构', () => {
     const policy: RateLimitPolicyRecord = {
       id: 'policy-001',
       code: 'api-default',
@@ -114,7 +114,7 @@ describe('trust-governance entity - RateLimitPolicyRecord type', () => {
     assert.deepEqual(policy.dimensionKeys, ['scopeKey'])
   })
 
-  test('RateLimitPolicyRecord - 品牌级别策略', () => {
+  it('RateLimitPolicyRecord - 品牌级别策略', () => {
     const policy: RateLimitPolicyRecord = {
       id: 'policy-002',
       code: 'brand-premium-api',
@@ -139,7 +139,7 @@ describe('trust-governance entity - RateLimitPolicyRecord type', () => {
 })
 
 describe('trust-governance entity - QuotaLedgerRecord type', () => {
-  test('符合 QuotaLedgerRecord 结构', () => {
+  it('符合 QuotaLedgerRecord 结构', () => {
     const ledger: QuotaLedgerRecord = {
       id: 'ledger-001',
       subjectKey: 'tenant-demo',
@@ -164,7 +164,7 @@ describe('trust-governance entity - QuotaLedgerRecord type', () => {
     assert.equal(ledger.policy.limit, 60)
   })
 
-  test('QuotaLedgerRecord - 配额耗尽', () => {
+  it('QuotaLedgerRecord - 配额耗尽', () => {
     const ledger: QuotaLedgerRecord = {
       id: 'ledger-exhausted',
       subjectKey: 'heavy-user',
@@ -187,7 +187,7 @@ describe('trust-governance entity - QuotaLedgerRecord type', () => {
 })
 
 describe('trust-governance entity - AuditRecord type', () => {
-  test('符合 AuditRecord 结构', () => {
+  it('符合 AuditRecord 结构', () => {
     const record: AuditRecord = {
       auditId: 'audit-001',
       eventType: 'foundation.approval.approved',
@@ -210,7 +210,7 @@ describe('trust-governance entity - AuditRecord type', () => {
     assert.ok(record.details.approvalTicket)
   })
 
-  test('AuditRecord - 高风险审计', () => {
+  it('AuditRecord - 高风险审计', () => {
     const record: AuditRecord = {
       auditId: 'audit-high-001',
       eventType: 'foundation.approval.execution-failed',
@@ -230,7 +230,7 @@ describe('trust-governance entity - AuditRecord type', () => {
 })
 
 describe('trust-governance entity - AiReviewResult type', () => {
-  test('符合 AiReviewResult 结构 - approved', () => {
+  it('符合 AiReviewResult 结构 - approved', () => {
     const result: AiReviewResult = {
       modelCode: 'gpt-4',
       tenantId: 'tenant-demo',
@@ -251,7 +251,7 @@ describe('trust-governance entity - AiReviewResult type', () => {
     assert.equal(result.budget.remainingTokens, 45000)
   })
 
-  test('符合 AiReviewResult 结构 - manual-review', () => {
+  it('符合 AiReviewResult 结构 - manual-review', () => {
     const result: AiReviewResult = {
       modelCode: 'gpt-4',
       tenantId: 'tenant-demo',
@@ -274,7 +274,7 @@ describe('trust-governance entity - AiReviewResult type', () => {
 })
 
 describe('trust-governance entity - GovernanceOperationResult type', () => {
-  test('符合 GovernanceOperationResult 结构 - 成功', () => {
+  it('符合 GovernanceOperationResult 结构 - 成功', () => {
     const result: GovernanceOperationResult = {
       status: 'reset-single',
       count: 1,
@@ -284,7 +284,7 @@ describe('trust-governance entity - GovernanceOperationResult type', () => {
     assert.equal(result.count, 1)
   })
 
-  test('符合 GovernanceOperationResult 结构 - 审批拒绝', () => {
+  it('符合 GovernanceOperationResult 结构 - 审批拒绝', () => {
     const result: GovernanceOperationResult = {
       status: 'approval-rejected',
       count: 0,
@@ -297,7 +297,7 @@ describe('trust-governance entity - GovernanceOperationResult type', () => {
 })
 
 describe('trust-governance entity - AuditSummary type', () => {
-  test('符合 AuditSummary 结构', () => {
+  it('符合 AuditSummary 结构', () => {
     const summary: AuditSummary = {
       total: 150,
       byAction: {
@@ -328,7 +328,7 @@ describe('trust-governance entity - AuditSummary type', () => {
 })
 
 describe('trust-governance entity - GovernanceOverview type', () => {
-  test('符合 GovernanceOverview 结构', () => {
+  it('符合 GovernanceOverview 结构', () => {
     const overview: GovernanceOverview = {
       generatedAt: '2026-06-14T11:00:00.000Z',
       approvals: {

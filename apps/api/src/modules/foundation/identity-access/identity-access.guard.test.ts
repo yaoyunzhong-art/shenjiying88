@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe, mock } from 'node:test'
 import {
   ForbiddenException,
   UnauthorizedException,
@@ -54,7 +54,7 @@ const makeContext = (req: any = makeReq()) =>
 
 describe('IdentityAccessGuard', () => {
   describe('canActivate', () => {
-    test('returns true when no roles, permissions, or tenant scope metadata set', () => {
+    it('returns true when no roles, permissions, or tenant scope metadata set', () => {
       const reflector = makeReflector()
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)
@@ -64,7 +64,7 @@ describe('IdentityAccessGuard', () => {
       assert.equal(result, true)
     })
 
-    test('throws UnauthorizedException when actorContext is missing', () => {
+    it('throws UnauthorizedException when actorContext is missing', () => {
       const reflector = makeReflector(['tenant-admin'])
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)
@@ -82,7 +82,7 @@ describe('IdentityAccessGuard', () => {
       )
     })
 
-    test('throws UnauthorizedException when actorContext is not authenticated', () => {
+    it('throws UnauthorizedException when actorContext is not authenticated', () => {
       const reflector = makeReflector(['tenant-admin'])
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)
@@ -95,7 +95,7 @@ describe('IdentityAccessGuard', () => {
       )
     })
 
-    test('throws ForbiddenException when required role not satisfied', () => {
+    it('throws ForbiddenException when required role not satisfied', () => {
       const reflector = makeReflector(['super-admin'])
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)
@@ -111,7 +111,7 @@ describe('IdentityAccessGuard', () => {
       )
     })
 
-    test('returns true when actor has required role', () => {
+    it('returns true when actor has required role', () => {
       const reflector = makeReflector(['tenant-admin'])
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)
@@ -120,7 +120,7 @@ describe('IdentityAccessGuard', () => {
       assert.equal(guard.canActivate(context), true)
     })
 
-    test('throws ForbiddenException when required permission not satisfied', () => {
+    it('throws ForbiddenException when required permission not satisfied', () => {
       const reflector = makeReflector([], ['identity-access:write'])
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)
@@ -136,7 +136,7 @@ describe('IdentityAccessGuard', () => {
       )
     })
 
-    test('returns true when actor has required permission', () => {
+    it('returns true when actor has required permission', () => {
       const reflector = makeReflector([], ['tenant:read'])
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)
@@ -145,7 +145,7 @@ describe('IdentityAccessGuard', () => {
       assert.equal(guard.canActivate(context), true)
     })
 
-    test('passes scope check when tenantScopeMeta has tenantIdParam but params empty (undefined skips check)', () => {
+    it('passes scope check when tenantScopeMeta has tenantIdParam but params empty (undefined skips check)', () => {
       const reflector = makeReflector(['tenant-admin'], [], { tenantIdParam: 'tenantId' })
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)
@@ -165,7 +165,7 @@ describe('IdentityAccessGuard', () => {
       assert.equal(guard.canActivate(context), true)
     })
 
-    test('throws ForbiddenException when tenant scope validation fails with mismatched tenantIdParam', () => {
+    it('throws ForbiddenException when tenant scope validation fails with mismatched tenantIdParam', () => {
       const reflector = makeReflector(['tenant-admin'], [], { tenantIdParam: 'tenantId' })
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)
@@ -182,7 +182,7 @@ describe('IdentityAccessGuard', () => {
       )
     })
 
-    test('returns true when tenant scope matches via params', () => {
+    it('returns true when tenant scope matches via params', () => {
       const reflector = makeReflector(['tenant-admin'], [], { tenantIdParam: 'tenantId' })
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)
@@ -203,7 +203,7 @@ describe('IdentityAccessGuard', () => {
       assert.equal(guard.canActivate(context), true)
     })
 
-    test('returns true when actor is privileged (platform-admin) for scope-only metadata', () => {
+    it('returns true when actor is privileged (platform-admin) for scope-only metadata', () => {
       const reflector = makeReflector(['platform-admin'], [], { tenantIdParam: 'tenantId' })
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)

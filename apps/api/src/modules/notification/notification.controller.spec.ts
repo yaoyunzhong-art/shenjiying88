@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [notification] [D] controller spec 补全
  *
@@ -9,7 +10,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe, before, after } from 'node:test'
 import { NotificationController } from './notification.controller'
 import { NotificationService, resetNotificationServiceTestState } from './notification.service'
 import {
@@ -73,7 +73,7 @@ function makeSendBody(overrides: Record<string, unknown> = {}) {
 
 describe('NotificationController - Template - Positive', () => {
 
-  test('registerTemplate returns a valid template', () => {
+  it('registerTemplate returns a valid template', () => {
     const { ctrl } = createController()
     const result = ctrl.registerTemplate(TENANT_A, makeTemplateBody())
     assert.ok(result, 'should return a template')
@@ -83,7 +83,7 @@ describe('NotificationController - Template - Positive', () => {
     assert.ok(result.createdAt, 'should have createdAt')
   })
 
-  test('listTemplates returns all templates for tenant', () => {
+  it('listTemplates returns all templates for tenant', () => {
     const { ctrl } = createController()
     ctrl.registerTemplate(TENANT_A, makeTemplateBody())
     ctrl.registerTemplate(TENANT_A, makeTemplateBody({ code: 'promo-sms', bodyTemplate: '促销 {name}' }))
@@ -92,7 +92,7 @@ describe('NotificationController - Template - Positive', () => {
     assert.equal(list.length, 2)
   })
 
-  test('listTemplates filters by channel', () => {
+  it('listTemplates filters by channel', () => {
     const { ctrl } = createController()
     ctrl.registerTemplate(TENANT_A, makeTemplateBody())
     ctrl.registerTemplate(TENANT_A, makeTemplateBody({
@@ -106,7 +106,7 @@ describe('NotificationController - Template - Positive', () => {
     assert.equal(smsList[0].channel, NotificationChannelType.Sms)
   })
 
-  test('getTemplate returns template by id', () => {
+  it('getTemplate returns template by id', () => {
     const { ctrl } = createController()
     const created = ctrl.registerTemplate(TENANT_A, makeTemplateBody())
     const fetched = ctrl.getTemplate(created.id)
@@ -115,7 +115,7 @@ describe('NotificationController - Template - Positive', () => {
     assert.equal(fetched!.code, 'welcome-sms')
   })
 
-  test('updateTemplate modifies template fields', () => {
+  it('updateTemplate modifies template fields', () => {
     const { ctrl } = createController()
     const created = ctrl.registerTemplate(TENANT_A, makeTemplateBody())
 
@@ -132,13 +132,13 @@ describe('NotificationController - Template - Positive', () => {
 // ── 模板管理 → 反例 ──
 
 describe('NotificationController - Template - Negative', () => {
-  test('getTemplate with non-existent id returns null', () => {
+  it('getTemplate with non-existent id returns null', () => {
     const { ctrl } = createController()
     const result = ctrl.getTemplate('non-existent-id')
     assert.equal(result, null)
   })
 
-  test('updateTemplate with non-existent id returns null', () => {
+  it('updateTemplate with non-existent id returns null', () => {
     const { ctrl } = createController()
     const result = ctrl.updateTemplate('non-existent-id', { enabled: false })
     assert.equal(result, null)
@@ -148,7 +148,7 @@ describe('NotificationController - Template - Negative', () => {
 // ── 消息发送 → 正例 ──
 
 describe('NotificationController - Dispatch - Positive', () => {
-  test('send dispatches a notification and returns dispatch record', () => {
+  it('send dispatches a notification and returns dispatch record', () => {
     const { ctrl } = createController()
     // Register template first
     ctrl.registerTemplate(TENANT_A, makeTemplateBody())
@@ -160,7 +160,7 @@ describe('NotificationController - Dispatch - Positive', () => {
     assert.ok(result.sentAt || result.status === NotificationStatus.Sent, 'should be processed')
   })
 
-  test('send with non-fail recipient gets Sent status', () => {
+  it('send with non-fail recipient gets Sent status', () => {
     const { ctrl } = createController()
     ctrl.registerTemplate(TENANT_A, makeTemplateBody())
     const result = ctrl.send(TENANT_A, makeSendBody({ recipient: '13900139000' }))
@@ -168,7 +168,7 @@ describe('NotificationController - Dispatch - Positive', () => {
     assert.ok(result.providerResponse)
   })
 
-  test('listDispatches returns all dispatches', () => {
+  it('listDispatches returns all dispatches', () => {
     const { ctrl } = createController()
     ctrl.registerTemplate(TENANT_A, makeTemplateBody())
     ctrl.send(TENANT_A, makeSendBody({ recipient: '13900139001' }))
@@ -178,7 +178,7 @@ describe('NotificationController - Dispatch - Positive', () => {
     assert.equal(list.length, 2)
   })
 
-  test('listDispatches filters by status', () => {
+  it('listDispatches filters by status', () => {
     const { ctrl } = createController()
     ctrl.registerTemplate(TENANT_A, makeTemplateBody())
     ctrl.send(TENANT_A, makeSendBody({ recipient: '13900139003' }))
@@ -188,7 +188,7 @@ describe('NotificationController - Dispatch - Positive', () => {
     sentList.forEach(d => assert.equal(d.status, NotificationStatus.Sent))
   })
 
-  test('getDispatch returns dispatch by id', () => {
+  it('getDispatch returns dispatch by id', () => {
     const { ctrl } = createController()
     ctrl.registerTemplate(TENANT_A, makeTemplateBody())
     const sent = ctrl.send(TENANT_A, makeSendBody({ recipient: '13900139004' }))
@@ -197,7 +197,7 @@ describe('NotificationController - Dispatch - Positive', () => {
     assert.equal(fetched!.id, sent.id)
   })
 
-  test('retryDispatch retries a failed dispatch', () => {
+  it('retryDispatch retries a failed dispatch', () => {
     const { ctrl } = createController()
     ctrl.registerTemplate(TENANT_A, makeTemplateBody())
     // Recipient containing "fail" simulates failure
@@ -211,7 +211,7 @@ describe('NotificationController - Dispatch - Positive', () => {
     assert.ok(retried!.retryCount >= 1)
   })
 
-  test('cancelDispatch cancels a pending dispatch', () => {
+  it('cancelDispatch cancels a pending dispatch', () => {
     const { ctrl } = createController()
     ctrl.registerTemplate(TENANT_A, makeTemplateBody())
     // Send without a template code to get scheduled-only behavior
@@ -230,26 +230,26 @@ describe('NotificationController - Dispatch - Positive', () => {
 // ── 消息发送 → 反例 ──
 
 describe('NotificationController - Dispatch - Negative', () => {
-  test('getDispatch with non-existent id returns null', () => {
+  it('getDispatch with non-existent id returns null', () => {
     const { ctrl } = createController()
     const result = ctrl.getDispatch('non-existent-dispatch')
     assert.equal(result, null)
   })
 
-  test('retryDispatch on non-existent id returns undefined', () => {
+  it('retryDispatch on non-existent id returns undefined', () => {
     const { ctrl } = createController()
     // The method returns undefined (not null) for missing dispatch
     const result = ctrl.retryDispatch('non-existent-dispatch')
     assert.equal(result, null)
   })
 
-  test('cancelDispatch on non-existent id returns undefined', () => {
+  it('cancelDispatch on non-existent id returns undefined', () => {
     const { ctrl } = createController()
     const result = ctrl.cancelDispatch('non-existent-dispatch')
     assert.equal(result, null)
   })
 
-  test('send with recipient containing "fail" gets Failed status', () => {
+  it('send with recipient containing "fail" gets Failed status', () => {
     const { ctrl } = createController()
     ctrl.registerTemplate(TENANT_A, makeTemplateBody())
     const result = ctrl.send(TENANT_A, makeSendBody({ recipient: 'fail-test-user' }))
@@ -261,7 +261,7 @@ describe('NotificationController - Dispatch - Negative', () => {
 // ── 跨租户隔离 ──
 
 describe('NotificationController - Tenant Isolation', () => {
-  test('listTemplates only returns own tenant templates', () => {
+  it('listTemplates only returns own tenant templates', () => {
     const { ctrl } = createController()
     ctrl.registerTemplate(TENANT_A, makeTemplateBody({ code: 'tenant-a-tpl' }))
     ctrl.registerTemplate(TENANT_B, makeTemplateBody({ code: 'tenant-b-tpl' }))
@@ -273,7 +273,7 @@ describe('NotificationController - Tenant Isolation', () => {
     bList.forEach(t => assert.equal(t.tenantId, TENANT_B.tenantId))
   })
 
-  test('listDispatches respects tenant isolation via tenant context', () => {
+  it('listDispatches respects tenant isolation via tenant context', () => {
     const { ctrl } = createController()
     ctrl.registerTemplate(TENANT_A, makeTemplateBody({ code: 'shared-tpl-a' }))
     ctrl.registerTemplate(TENANT_B, makeTemplateBody({ code: 'shared-tpl-b' }))
@@ -296,27 +296,27 @@ describe('NotificationController - Tenant Isolation', () => {
 // ── 边界场景 ──
 
 describe('NotificationController - Edge Cases', () => {
-  test('listTemplates with empty store returns empty list', () => {
+  it('listTemplates with empty store returns empty list', () => {
     resetNotificationServiceTestState()
     const { ctrl } = createController()
     const list = ctrl.listTemplates(TENANT_A, undefined, undefined, undefined)
     assert.deepEqual(list, [])
   })
 
-  test('listDispatches with empty store returns empty list', () => {
+  it('listDispatches with empty store returns empty list', () => {
     resetNotificationServiceTestState()
     const { ctrl } = createController()
     const list = ctrl.listDispatches(TENANT_A, undefined, undefined, undefined)
     assert.deepEqual(list, [])
   })
 
-  test('registerTemplate without tenantId uses tenant context', () => {
+  it('registerTemplate without tenantId uses tenant context', () => {
     const { ctrl } = createController()
     const result = ctrl.registerTemplate(TENANT_A, makeTemplateBody({ tenantId: undefined }))
     assert.equal(result.tenantId, TENANT_A.tenantId)
   })
 
-  test('send without tenantId uses tenant context', () => {
+  it('send without tenantId uses tenant context', () => {
     const { ctrl } = createController()
     ctrl.registerTemplate(TENANT_A, makeTemplateBody({ code: 'no-tenant-send' }))
     const result = ctrl.send(TENANT_A, makeSendBody({
@@ -326,7 +326,7 @@ describe('NotificationController - Edge Cases', () => {
     assert.equal(result.tenantId, TENANT_A.tenantId)
   })
 
-  test('listDispatches filters by recipient', () => {
+  it('listDispatches filters by recipient', () => {
     const { ctrl } = createController()
     ctrl.registerTemplate(TENANT_A, makeTemplateBody({ code: 'filter-test' }))
     ctrl.send(TENANT_A, makeSendBody({ templateCode: 'filter-test', recipient: 'user-1' }))

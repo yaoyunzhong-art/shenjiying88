@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { RuntimeGovernanceService } from './runtime-governance.service'
 
 function createRuntimeGovernanceHarness() {
@@ -95,7 +95,7 @@ function createRuntimeGovernanceHarness() {
   }
 }
 
-test('contract: runtime governance service persists submit -> sync -> callback -> replay chain', async () => {
+it('contract: runtime governance service persists submit -> sync -> callback -> replay chain', async () => {
   const { service, audits, rateLimitScopes } = createRuntimeGovernanceHarness()
 
   const submitted = await service.submitAction({
@@ -171,7 +171,7 @@ test('contract: runtime governance service persists submit -> sync -> callback -
   )
 })
 
-test('contract: runtime governance service keeps challenge replay policy on shared source', async () => {
+it('contract: runtime governance service keeps challenge replay policy on shared source', async () => {
   const { service } = createRuntimeGovernanceHarness()
 
   const challenged = await service.submitAction({
@@ -194,7 +194,7 @@ test('contract: runtime governance service keeps challenge replay policy on shar
   assert.equal(challenged.retry.escalationAction, 'REFRESH_TICKET')
 })
 
-test('contract: runtime governance operations overview applies callback stall timeout by tenant', async () => {
+it('contract: runtime governance operations overview applies callback stall timeout by tenant', async () => {
   const { service } = createRuntimeGovernanceHarness()
 
   const tenantReceipt = await service.submitAction({
@@ -261,7 +261,7 @@ test('contract: runtime governance operations overview applies callback stall ti
   )
 })
 
-test('contract: runtime governance submit returns stable receipt on duplicate idempotency key', async () => {
+it('contract: runtime governance submit returns stable receipt on duplicate idempotency key', async () => {
   const { service, audits } = createRuntimeGovernanceHarness()
 
   const first = await service.submitAction({
@@ -300,7 +300,7 @@ test('contract: runtime governance submit returns stable receipt on duplicate id
   )
 })
 
-test('contract: runtime governance callback keeps duplicate audit and timeline visibility', async () => {
+it('contract: runtime governance callback keeps duplicate audit and timeline visibility', async () => {
   const { service, audits } = createRuntimeGovernanceHarness()
 
   const submitted = await service.submitAction({
@@ -348,7 +348,7 @@ test('contract: runtime governance callback keeps duplicate audit and timeline v
   )
 })
 
-test('contract: runtime governance service supports admin-web submit and replay source', async () => {
+it('contract: runtime governance service supports admin-web submit and replay source', async () => {
   const { service, audits, rateLimitScopes } = createRuntimeGovernanceHarness()
 
   const submitted = await service.submitAction({
@@ -388,7 +388,7 @@ test('contract: runtime governance service supports admin-web submit and replay 
   )
 })
 
-test('contract: runtime governance service supports tob-web and storefront-web submit sources', async () => {
+it('contract: runtime governance service supports tob-web and storefront-web submit sources', async () => {
   const { service } = createRuntimeGovernanceHarness()
 
   const tobReceipt = await service.submitAction({

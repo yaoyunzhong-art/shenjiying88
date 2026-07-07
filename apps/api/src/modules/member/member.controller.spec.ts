@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [member] [D] Controller spec 补全
  *
@@ -8,7 +9,6 @@
 
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 
 // ── Lightweight inline service mock ─────────────────────────────
 interface MemberProfile {
@@ -164,13 +164,13 @@ class MemberController {
 describe('MemberController', () => {
   let controller: MemberController;
 
-  test.beforeEach(() => {
+  beforeEach(() => {
     controller = new MemberController(new InlineMemberService());
   });
 
   // ── getBootstrap ──
   describe('getBootstrap()', () => {
-    test('should return tenantContext', () => {
+    it('should return tenantContext', () => {
       const result = controller.getBootstrap();
       assert.deepStrictEqual(result.tenantContext, {
         tenantId: 'T-001',
@@ -178,7 +178,7 @@ describe('MemberController', () => {
       });
     });
 
-    test('should return expected capabilities', () => {
+    it('should return expected capabilities', () => {
       const result = controller.getBootstrap();
       assert.deepStrictEqual(result.capabilities, [
         'member-center',
@@ -188,12 +188,12 @@ describe('MemberController', () => {
       ]);
     });
 
-    test('should return phase "scaffold"', () => {
+    it('should return phase "scaffold"', () => {
       const result = controller.getBootstrap();
       assert.equal(result.phase, 'scaffold');
     });
 
-    test('should return a well-shaped bootstrap response', () => {
+    it('should return a well-shaped bootstrap response', () => {
       const result = controller.getBootstrap();
       assert.ok('tenantContext' in result);
       assert.ok('capabilities' in result);
@@ -204,7 +204,7 @@ describe('MemberController', () => {
 
   // ── getProfile (正例 + 反例) ──
   describe('getProfile()', () => {
-    test('should return member profile for existing member (正例)', () => {
+    it('should return member profile for existing member (正例)', () => {
       const result = controller.getProfile('mem-001');
       assert.equal(result.memberId, 'mem-001');
       assert.equal(result.nickname, 'Alice');
@@ -213,7 +213,7 @@ describe('MemberController', () => {
       assert.equal(result.points, 5000);
     });
 
-    test('should return bronze member profile', () => {
+    it('should return bronze member profile', () => {
       const result = controller.getProfile('mem-002');
       assert.equal(result.memberId, 'mem-002');
       assert.equal(result.nickname, 'Bob');
@@ -221,37 +221,37 @@ describe('MemberController', () => {
       assert.equal(result.points, 300);
     });
 
-    test('should throw error for non-existent member (反例)', () => {
+    it('should throw error for non-existent member (反例)', () => {
       assert.throws(
         () => controller.getProfile('mem-999'),
         /Member mem-999 not found/
       );
     });
 
-    test('should throw error for empty memberId (边界)', () => {
+    it('should throw error for empty memberId (边界)', () => {
       assert.throws(
         () => controller.getProfile(''),
-        /Member  not found/
+        /Member {2}not found/
       );
     });
   });
 
   // ── listProfiles ──
   describe('listProfiles()', () => {
-    test('should return array of member profiles', () => {
+    it('should return array of member profiles', () => {
       const result = controller.listProfiles();
       assert.ok(Array.isArray(result));
       assert.equal(result.length, 2);
     });
 
-    test('should contain expected members', () => {
+    it('should contain expected members', () => {
       const result = controller.listProfiles();
       const ids = result.map((p: MemberProfile) => p.memberId);
       assert.ok(ids.includes('mem-001'));
       assert.ok(ids.includes('mem-002'));
     });
 
-    test('should return members with required fields', () => {
+    it('should return members with required fields', () => {
       const result = controller.listProfiles();
       for (const profile of result) {
         assert.ok('memberId' in profile);
@@ -265,7 +265,7 @@ describe('MemberController', () => {
 
   // ── register ──
   describe('register()', () => {
-    test('should register a new member with default BRONZE level (正例)', () => {
+    it('should register a new member with default BRONZE level (正例)', () => {
       const result = controller.register(null, {
         memberId: 'new-mem-001',
         nickname: 'Charlie',
@@ -277,7 +277,7 @@ describe('MemberController', () => {
       assert.equal(result.points, 0);
     });
 
-    test('should accept registration with empty nickname (边界)', () => {
+    it('should accept registration with empty nickname (边界)', () => {
       const result = controller.register(null, {
         memberId: 'new-mem-002',
         nickname: '',
@@ -286,7 +286,7 @@ describe('MemberController', () => {
       assert.equal(result.nickname, '');
     });
 
-    test('should include valid ISO timestamp in registeredAt', () => {
+    it('should include valid ISO timestamp in registeredAt', () => {
       const result = controller.register(null, {
         memberId: 'new-mem-003',
         nickname: 'Diana',
@@ -295,7 +295,7 @@ describe('MemberController', () => {
       assert.doesNotThrow(() => new Date(result.registeredAt));
     });
 
-    test('should persist registered member so getProfile works (边界: 注册后可查)', () => {
+    it('should persist registered member so getProfile works (边界: 注册后可查)', () => {
       controller.register(null, {
         memberId: 'new-mem-004',
         nickname: 'Eve',
@@ -308,25 +308,25 @@ describe('MemberController', () => {
 
   // ── addPoints (正例 + 反例) ──
   describe('addPoints()', () => {
-    test('should add points to existing member (正例)', () => {
+    it('should add points to existing member (正例)', () => {
       const result = controller.addPoints('mem-001', { points: 500 });
       assert.equal(result.memberId, 'mem-001');
       assert.equal(result.points, 5500);
     });
 
-    test('should add large amount of points', () => {
+    it('should add large amount of points', () => {
       const result = controller.addPoints('mem-001', { points: 10000 });
       assert.equal(result.points, 15000);
     });
 
-    test('should throw error for non-existent member (反例)', () => {
+    it('should throw error for non-existent member (反例)', () => {
       assert.throws(
         () => controller.addPoints('mem-999', { points: 100 }),
         /Member mem-999 not found/
       );
     });
 
-    test('should accept zero points and keep same balance (边界)', () => {
+    it('should accept zero points and keep same balance (边界)', () => {
       const result = controller.addPoints('mem-001', { points: 0 });
       assert.equal(result.points, 5000);
     });
@@ -334,7 +334,7 @@ describe('MemberController', () => {
 
   // ── checkUpgrade ──
   describe('checkUpgrade()', () => {
-    test('should check upgrade for high-points member', () => {
+    it('should check upgrade for high-points member', () => {
       const result = controller.checkUpgrade('mem-001');
       assert.ok('eligible' in result);
       assert.ok('suggestedLevel' in result);
@@ -342,12 +342,12 @@ describe('MemberController', () => {
       assert.equal(typeof result.suggestedLevel, 'string');
     });
 
-    test('should return eligible false for low-points member (边界)', () => {
+    it('should return eligible false for low-points member (边界)', () => {
       const result = controller.checkUpgrade('mem-002');
       assert.equal(result.eligible, false);
     });
 
-    test('should throw error for non-existent member (反例)', () => {
+    it('should throw error for non-existent member (反例)', () => {
       assert.throws(
         () => controller.checkUpgrade('mem-999'),
         /Member mem-999 not found/
@@ -357,24 +357,24 @@ describe('MemberController', () => {
 
   // ── getSession ──
   describe('getSession()', () => {
-    test('should return session for valid token (正例)', () => {
+    it('should return session for valid token (正例)', () => {
       const result = controller.getSession('sess-valid');
       assert.equal(result.sessionToken, 'sess-valid');
       assert.equal(result.memberId, 'mem-001');
       assert.equal(result.status, 'ACTIVE');
     });
 
-    test('should throw error for invalid session token (反例)', () => {
+    it('should throw error for invalid session token (反例)', () => {
       assert.throws(
         () => controller.getSession('sess-invalid'),
         /Member session sess-invalid not found/
       );
     });
 
-    test('should throw error for empty session token (边界)', () => {
+    it('should throw error for empty session token (边界)', () => {
       assert.throws(
         () => controller.getSession(''),
-        /Member session  not found/
+        /Member session {2}not found/
       );
     });
   });

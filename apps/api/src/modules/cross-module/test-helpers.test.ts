@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * cross-module/test-helpers 单元测试
  *
@@ -15,7 +16,6 @@
 
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import {
   CallHandler,
   Controller,
@@ -50,7 +50,7 @@ describe('attachTenantContextFromHeaders', () => {
     } as unknown as Request;
   }
 
-  test('从 headers 提取 tenant / brand / store / market', () => {
+  it('从 headers 提取 tenant / brand / store / market', () => {
     const req = makeReq({
       'x-tenant-id': 'tenant-X',
       'x-brand-id': 'brand-X',
@@ -70,13 +70,13 @@ describe('attachTenantContextFromHeaders', () => {
     });
   });
 
-  test('headers 缺失 → 用默认值', () => {
+  it('headers 缺失 → 用默认值', () => {
     const req = makeReq({}) as TenantAwareRequest;
     attachTenantContextFromHeaders(req, {} as Response, () => {});
     assert.deepEqual(req.tenantContext, DEFAULT_TENANT_CONTEXT);
   });
 
-  test('headers 存在但值为空字符串 → 用默认值(不传空字符串到下游)', () => {
+  it('headers 存在但值为空字符串 → 用默认值(不传空字符串到下游)', () => {
     const req = makeReq({
       'x-tenant-id': '',
       'x-brand-id': '',
@@ -86,7 +86,7 @@ describe('attachTenantContextFromHeaders', () => {
     assert.equal(req.tenantContext?.brandId, 'brand-A');
   });
 
-  test('部分 headers 提供 → 已提供字段取 header,未提供字段用默认', () => {
+  it('部分 headers 提供 → 已提供字段取 header,未提供字段用默认', () => {
     const req = makeReq({
       'x-tenant-id': 'tenant-mix',
     }) as TenantAwareRequest;
@@ -96,7 +96,7 @@ describe('attachTenantContextFromHeaders', () => {
     assert.equal(req.tenantContext?.storeId, 'store-A'); // 默认
   });
 
-  test('DEFAULT_TENANT_CONTEXT 是稳定快照', () => {
+  it('DEFAULT_TENANT_CONTEXT 是稳定快照', () => {
     assert.deepEqual(DEFAULT_TENANT_CONTEXT, {
       tenantId: 'tenant-A',
       brandId: 'brand-A',
@@ -124,7 +124,7 @@ describe('buildCrossModuleTestApp', () => {
     }
   }
 
-  test('最小配置: controllers + providers 启动并响应', async () => {
+  it('最小配置: controllers + providers 启动并响应', async () => {
     const { app } = await buildCrossModuleTestApp({
       controllers: [StubController],
       providers: [StubService],
@@ -138,7 +138,7 @@ describe('buildCrossModuleTestApp', () => {
     }
   });
 
-  test('applyTenantContext=false → 不挂租户中间件 (自定义场景)', async () => {
+  it('applyTenantContext=false → 不挂租户中间件 (自定义场景)', async () => {
     @Controller('no-tenant')
     class NoTenantController {
       constructor(@Inject(StubService) public readonly service: StubService) {}
@@ -162,8 +162,8 @@ describe('buildCrossModuleTestApp', () => {
     }
   });
 
-  test('extraMiddlewares 顺序正确 (在 tenant 上下文之后)', async () => {
-    let order: string[] = [];
+  it('extraMiddlewares 顺序正确 (在 tenant 上下文之后)', async () => {
+    const order: string[] = [];
     const trackingMw: (req: Request, _res: Response, next: NextFunction) => void = (
       req,
       _res,
@@ -213,7 +213,7 @@ describe('buildCrossModuleTestApp', () => {
     }
   });
 
-  test('applyResponseInterceptor=false → 响应是裸数据', async () => {
+  it('applyResponseInterceptor=false → 响应是裸数据', async () => {
     @Controller('raw')
     class RawController {
       @Get('hello')
@@ -237,7 +237,7 @@ describe('buildCrossModuleTestApp', () => {
     }
   });
 
-  test('extraGlobalInterceptors → 业务 interceptor 被调用 (counter)', async () => {
+  it('extraGlobalInterceptors → 业务 interceptor 被调用 (counter)', async () => {
     let counter = 0;
 
     @Injectable()
@@ -269,7 +269,7 @@ describe('buildCrossModuleTestApp', () => {
     }
   });
 
-  test('extraGlobalPipes → pipe 在 controller 之前处理参数', async () => {
+  it('extraGlobalPipes → pipe 在 controller 之前处理参数', async () => {
     class UppercasePipe implements PipeTransform<string, string> {
       transform(value: string): string {
         return value.toUpperCase();
@@ -305,7 +305,7 @@ describe('buildCrossModuleTestApp', () => {
 });
 
 describe('TestController 装饰器', () => {
-  test('打 is_test_controller metadata (便于 grep)', () => {
+  it('打 is_test_controller metadata (便于 grep)', () => {
     @TestController()
     class DummyController {}
 
@@ -313,7 +313,7 @@ describe('TestController 装饰器', () => {
     assert.equal(flags, true, 'should set is_test_controller=true metadata');
   });
 
-  test('不影响 @Controller 装饰器共存', () => {
+  it('不影响 @Controller 装饰器共存', () => {
     @TestController()
     @Controller('coexist')
     class CoexistController {}

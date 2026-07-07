@@ -11,12 +11,10 @@
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": [
     "node_modules",
-    ".next/types/**/* [0-9].ts",
-    ".next/types/cache-life.d 2.ts",
-    ".next/types/cache-life.d 3.ts",
-    ".next/types/routes.d 2.ts",
-    ".next/types/routes.d 3.ts",
-    ".next/types/validator 2.ts",
-    ".next/types/validator 3.ts"
+    ".next",
+    "app/**/*.test.ts",
+    "app/**/*.test.tsx",
+    "app/license-renewal/**/*.ts",
+    "app/license-renewal/**/*.tsx"
   ]
 }

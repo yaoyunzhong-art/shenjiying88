@@ -69,9 +69,9 @@ test('app contract: auth envelope has correct scheme', () => {
   const sync = buildNativeAppHandlerSyncContract(outcome);
   const auth = buildNativeAppAuthEnvelope(sync);
 
-  assert.equal(auth.audience, 'app-handler-sync');
+  assert.equal(auth.audience, 'native-app-handler-sync');
   assert.equal(auth.authScheme, 'M5-HMAC-SHA256');
-  assert.ok(auth.authorization.includes('APP-MEMBER-LOGIN-PROCEED-HANDLER'));
+  assert.ok(auth.authorization.includes('NATIVE-MEMBER-LOGIN-PROCEED-HANDLER'));
 });
 
 test('app contract: callback receipt has awaiting status', () => {

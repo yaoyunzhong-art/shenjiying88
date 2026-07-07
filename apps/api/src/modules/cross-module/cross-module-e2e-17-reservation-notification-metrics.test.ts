@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E 跨模块 #17 — 预约管理 → 通知派发 → Metrics 指标追踪 联动
  *
@@ -16,12 +17,8 @@
 
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import type { NextFunction, Request, Response } from 'express';
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor';
 import { ReservationService } from '../reservation/reservation.service';
 import { ReservationStatus, ReservationType } from '../reservation/reservation.entity';
 import { NotificationService } from '../notification/notification.service';
@@ -31,6 +28,7 @@ import {
   NotificationStatus,
 } from '../notification/notification.entity';
 import { MetricsService } from '../observability/metrics.service';
+import { buildCrossModuleTestApp } from './test-helpers';
 
 @Controller()
 class TestController {
@@ -121,20 +119,15 @@ class TestController {
 
 async function buildApp() {
   const metricsService = new MetricsService(false);
-  const module = await Test.createTestingModule({
+  const { app, moduleRef } = await buildCrossModuleTestApp({
     controllers: [TestController],
     providers: [
       ReservationService,
       NotificationService,
       { provide: MetricsService, useValue: metricsService },
     ],
-  }).compile();
-
-  const app = module.createNestApplication();
-  app.use((_r: Request, _s: Response, n: NextFunction) => n());
-  app.useGlobalInterceptors(new ResponseInterceptor());
-  await app.init();
-  return { app, metricsService };
+  });
+  return { app, moduleRef, metricsService };
 }
 
 function getData(res: request.Response) {
@@ -143,7 +136,7 @@ function getData(res: request.Response) {
 
 // ── Tests ──
 
-test('跨模块链#17 正例: 预约创建→确认→完成→通知→Metrics', async () => {
+it('跨模块链#17 正例: 预约创建→确认→完成→通知→Metrics', async () => {
   const { app } = await buildApp();
   const srv = app.getHttpServer();
   const tenantId = 't17-1';
@@ -232,7 +225,7 @@ test('跨模块链#17 正例: 预约创建→确认→完成→通知→Metrics'
   }
 });
 
-test('跨模块链#17 正例: 预约取消→通知', async () => {
+it('跨模块链#17 正例: 预约取消→通知', async () => {
   const { app } = await buildApp();
   const srv = app.getHttpServer();
   const tenantId = 't17-cancel';
@@ -273,7 +266,7 @@ test('跨模块链#17 正例: 预约取消→通知', async () => {
   }
 });
 
-test('跨模块链#17 反例: 已取消预约不能再次取消', async () => {
+it('跨模块链#17 反例: 已取消预约不能再次取消', async () => {
   const { app } = await buildApp();
   const srv = app.getHttpServer();
   const tenantId = 't17-dc';
@@ -309,7 +302,7 @@ test('跨模块链#17 反例: 已取消预约不能再次取消', async () => {
   }
 });
 
-test('跨模块链#17 边界: 通知失败→retry→成功', async () => {
+it('跨模块链#17 边界: 通知失败→retry→成功', async () => {
   const { app } = await buildApp();
   const srv = app.getHttpServer();
   const tenantId = 't17-retry';
@@ -338,7 +331,7 @@ test('跨模块链#17 边界: 通知失败→retry→成功', async () => {
   }
 });
 
-test('跨模块链#17 反例: 跨租户隔离', async () => {
+it('跨模块链#17 反例: 跨租户隔离', async () => {
   const { app } = await buildApp();
   const srv = app.getHttpServer();
   const now = new Date();

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-recommend] E2E 基础测试
  *
@@ -16,7 +17,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   Controller,
   Get,
@@ -179,7 +179,7 @@ async function buildApp() {
 // ========== E2E: 热门推荐 ==========
 
 describe('E2E: 热门推荐流程', () => {
-  test('GET /ai-recommend/recommendations/popular 返回热门列表', async () => {
+  it('GET /ai-recommend/recommendations/popular 返回热门列表', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -197,7 +197,7 @@ describe('E2E: 热门推荐流程', () => {
     }
   })
 
-  test('GET /ai-recommend/recommendations/popular?type=product 切换类型', async () => {
+  it('GET /ai-recommend/recommendations/popular?type=product 切换类型', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -209,7 +209,7 @@ describe('E2E: 热门推荐流程', () => {
     }
   })
 
-  test('GET /ai-recommend/recommendations/popular?storeId=store-X 透传', async () => {
+  it('GET /ai-recommend/recommendations/popular?storeId=store-X 透传', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -225,7 +225,7 @@ describe('E2E: 热门推荐流程', () => {
 // ========== E2E: 个性化推荐 ==========
 
 describe('E2E: 个性化推荐流程', () => {
-  test('GET /ai-recommend/recommendations/personalized 缺 memberId 返回 400', async () => {
+  it('GET /ai-recommend/recommendations/personalized 缺 memberId 返回 400', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -236,7 +236,7 @@ describe('E2E: 个性化推荐流程', () => {
     }
   })
 
-  test('GET /ai-recommend/recommendations/personalized 无画像 → 冷启动回退', async () => {
+  it('GET /ai-recommend/recommendations/personalized 无画像 → 冷启动回退', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -250,7 +250,7 @@ describe('E2E: 个性化推荐流程', () => {
     }
   })
 
-  test('GET /ai-recommend/recommendations/personalized 有画像 → 内容匹配', async () => {
+  it('GET /ai-recommend/recommendations/personalized 有画像 → 内容匹配', async () => {
     const { app } = await buildApp()
     try {
       // 先创建画像
@@ -279,7 +279,7 @@ describe('E2E: 个性化推荐流程', () => {
 // ========== E2E: 推荐生成 ==========
 
 describe('E2E: 推荐生成流程', () => {
-  test('POST /ai-recommend/generate popularity 策略', async () => {
+  it('POST /ai-recommend/generate popularity 策略', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -294,7 +294,7 @@ describe('E2E: 推荐生成流程', () => {
     }
   })
 
-  test('POST /ai-recommend/generate hybrid 策略 + memberId', async () => {
+  it('POST /ai-recommend/generate hybrid 策略 + memberId', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -312,7 +312,7 @@ describe('E2E: 推荐生成流程', () => {
     }
   })
 
-  test('POST /ai-recommend/generate 策略不存在返回 500', async () => {
+  it('POST /ai-recommend/generate 策略不存在返回 500', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -324,7 +324,7 @@ describe('E2E: 推荐生成流程', () => {
     }
   })
 
-  test('POST /ai-recommend/generate 禁用策略返回 500', async () => {
+  it('POST /ai-recommend/generate 禁用策略返回 500', async () => {
     const { app } = await buildApp()
     try {
       await request(app.getHttpServer())
@@ -338,7 +338,7 @@ describe('E2E: 推荐生成流程', () => {
     }
   })
 
-  test('POST /ai-recommend/generate fallback 触发', async () => {
+  it('POST /ai-recommend/generate fallback 触发', async () => {
     const { app } = await buildApp()
     try {
       // 创建一个会 fallback 的策略
@@ -371,7 +371,7 @@ describe('E2E: 推荐生成流程', () => {
 // ========== E2E: 策略管理 ==========
 
 describe('E2E: 策略管理流程', () => {
-  test('POST /ai-recommend/strategies 创建自定义策略', async () => {
+  it('POST /ai-recommend/strategies 创建自定义策略', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -392,7 +392,7 @@ describe('E2E: 策略管理流程', () => {
     }
   })
 
-  test('GET /ai-recommend/strategies 列表', async () => {
+  it('GET /ai-recommend/strategies 列表', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -406,7 +406,7 @@ describe('E2E: 策略管理流程', () => {
     }
   })
 
-  test('GET /ai-recommend/strategies/:id 详情', async () => {
+  it('GET /ai-recommend/strategies/:id 详情', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -418,7 +418,7 @@ describe('E2E: 策略管理流程', () => {
     }
   })
 
-  test('GET /ai-recommend/strategies/:id 不存在返回 404', async () => {
+  it('GET /ai-recommend/strategies/:id 不存在返回 404', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -429,7 +429,7 @@ describe('E2E: 策略管理流程', () => {
     }
   })
 
-  test('PUT /ai-recommend/strategies/:id 更新策略', async () => {
+  it('PUT /ai-recommend/strategies/:id 更新策略', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -443,7 +443,7 @@ describe('E2E: 策略管理流程', () => {
     }
   })
 
-  test('PATCH /ai-recommend/strategies/:id/disable 禁用', async () => {
+  it('PATCH /ai-recommend/strategies/:id/disable 禁用', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -455,7 +455,7 @@ describe('E2E: 策略管理流程', () => {
     }
   })
 
-  test('PATCH /ai-recommend/strategies/:id/enable 启用', async () => {
+  it('PATCH /ai-recommend/strategies/:id/enable 启用', async () => {
     const { app } = await buildApp()
     try {
       // 先禁用
@@ -474,7 +474,7 @@ describe('E2E: 策略管理流程', () => {
 // ========== E2E: 用户画像 ==========
 
 describe('E2E: 用户画像流程', () => {
-  test('PUT /ai-recommend/profiles/:memberId 创建画像', async () => {
+  it('PUT /ai-recommend/profiles/:memberId 创建画像', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -496,7 +496,7 @@ describe('E2E: 用户画像流程', () => {
     }
   })
 
-  test('GET /ai-recommend/profiles/:memberId 获取画像', async () => {
+  it('GET /ai-recommend/profiles/:memberId 获取画像', async () => {
     const { app } = await buildApp()
     try {
       await request(app.getHttpServer())
@@ -519,7 +519,7 @@ describe('E2E: 用户画像流程', () => {
     }
   })
 
-  test('GET /ai-recommend/profiles/:memberId 不存在返回 404', async () => {
+  it('GET /ai-recommend/profiles/:memberId 不存在返回 404', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -530,7 +530,7 @@ describe('E2E: 用户画像流程', () => {
     }
   })
 
-  test('PUT /ai-recommend/profiles/:memberId 增量更新', async () => {
+  it('PUT /ai-recommend/profiles/:memberId 增量更新', async () => {
     const { app } = await buildApp()
     try {
       // 创建
@@ -560,7 +560,7 @@ describe('E2E: 用户画像流程', () => {
 // ========== E2E: 反馈收集 ==========
 
 describe('E2E: 反馈收集流程', () => {
-  test('POST /ai-recommend/interactions/score 记录评分', async () => {
+  it('POST /ai-recommend/interactions/score 记录评分', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -580,7 +580,7 @@ describe('E2E: 反馈收集流程', () => {
     }
   })
 
-  test('POST /ai-recommend/interactions 简化版 → 自动计算 rating/weight', async () => {
+  it('POST /ai-recommend/interactions 简化版 → 自动计算 rating/weight', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -599,7 +599,7 @@ describe('E2E: 反馈收集流程', () => {
     }
   })
 
-  test('POST /ai-recommend/interactions 自动创建画像', async () => {
+  it('POST /ai-recommend/interactions 自动创建画像', async () => {
     const { app } = await buildApp()
     try {
       await request(app.getHttpServer())
@@ -619,7 +619,7 @@ describe('E2E: 反馈收集流程', () => {
     }
   })
 
-  test('POST /ai-recommend/conversions 不存在返回 404', async () => {
+  it('POST /ai-recommend/conversions 不存在返回 404', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -635,7 +635,7 @@ describe('E2E: 反馈收集流程', () => {
 // ========== E2E: 推荐历史 ==========
 
 describe('E2E: 推荐历史查询', () => {
-  test('GET /ai-recommend/recommendations 列表 (默认空)', async () => {
+  it('GET /ai-recommend/recommendations 列表 (默认空)', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -647,7 +647,7 @@ describe('E2E: 推荐历史查询', () => {
     }
   })
 
-  test('GET /ai-recommend/recommendations?type=game 过滤', async () => {
+  it('GET /ai-recommend/recommendations?type=game 过滤', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -659,7 +659,7 @@ describe('E2E: 推荐历史查询', () => {
     }
   })
 
-  test('GET /ai-recommend/recommendations?limit=3 限制', async () => {
+  it('GET /ai-recommend/recommendations?limit=3 限制', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())

@@ -1,137 +1,136 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 describe('LytController', () => {
    
   const { LytController } = require('./lyt.controller')
 
   // ── 元数据测试 ──
-  test('controller path metadata is set to "lyt"', () => {
+  it('controller path metadata is set to "lyt"', () => {
     const path = Reflect.getMetadata('path', LytController)
     assert.equal(path, 'lyt')
   })
 
-  test('getBootstrap route has GET metadata', () => {
+  it('getBootstrap route has GET metadata', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.getBootstrap)
     const path = Reflect.getMetadata('path', LytController.prototype.getBootstrap)
     assert.equal(method, 0) // GET
     assert.equal(path, 'bootstrap')
   })
 
-  test('getFixtures route has GET metadata', () => {
+  it('getFixtures route has GET metadata', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.getFixtures)
     const path = Reflect.getMetadata('path', LytController.prototype.getFixtures)
     assert.equal(method, 0)
     assert.equal(path, 'fixtures')
   })
 
-  test('getFixture route has GET metadata', () => {
+  it('getFixture route has GET metadata', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.getFixture)
     const path = Reflect.getMetadata('path', LytController.prototype.getFixture)
     assert.equal(method, 0)
     assert.equal(path, 'fixtures/:key')
   })
 
-  test('compareFixture route has POST metadata', () => {
+  it('compareFixture route has POST metadata', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.compareFixture)
     const path = Reflect.getMetadata('path', LytController.prototype.compareFixture)
     assert.equal(method, 1)
     assert.equal(path, 'fixtures/:key/compare')
   })
 
-  test('importFixturePreview route has POST metadata', () => {
+  it('importFixturePreview route has POST metadata', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.importFixturePreview)
     const path = Reflect.getMetadata('path', LytController.prototype.importFixturePreview)
     assert.equal(method, 1)
     assert.equal(path, 'fixtures/:key/import-preview')
   })
 
-  test('importFixturePlan route has POST metadata', () => {
+  it('importFixturePlan route has POST metadata', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.importFixturePlan)
     const path = Reflect.getMetadata('path', LytController.prototype.importFixturePlan)
     assert.equal(method, 1)
     assert.equal(path, 'fixtures/:key/import-plan')
   })
 
-  test('getFixtureSummary route has GET metadata', () => {
+  it('getFixtureSummary route has GET metadata', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.getFixtureSummary)
     const path = Reflect.getMetadata('path', LytController.prototype.getFixtureSummary)
     assert.equal(method, 0)
     assert.equal(path, 'fixtures/summary')
   })
 
-  test('getConnection route has GET metadata with :storeId param', () => {
+  it('getConnection route has GET metadata with :storeId param', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.getConnection)
     const path = Reflect.getMetadata('path', LytController.prototype.getConnection)
     assert.equal(method, 0)
     assert.equal(path, 'connection/:storeId')
   })
 
-  test('getConnectionCapabilityReadiness route has GET metadata with :storeId param', () => {
+  it('getConnectionCapabilityReadiness route has GET metadata with :storeId param', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.getConnectionCapabilityReadiness)
     const path = Reflect.getMetadata('path', LytController.prototype.getConnectionCapabilityReadiness)
     assert.equal(method, 0)
     assert.equal(path, 'connection/:storeId/readiness')
   })
 
-  test('getStoreCapabilityAccessView route has GET metadata with :storeId param', () => {
+  it('getStoreCapabilityAccessView route has GET metadata with :storeId param', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.getStoreCapabilityAccessView)
     const path = Reflect.getMetadata('path', LytController.prototype.getStoreCapabilityAccessView)
     assert.equal(method, 0)
     assert.equal(path, 'connection/:storeId/access-view')
   })
 
-  test('getAdapterSelection route has GET metadata with :storeId param', () => {
+  it('getAdapterSelection route has GET metadata with :storeId param', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.getAdapterSelection)
     const path = Reflect.getMetadata('path', LytController.prototype.getAdapterSelection)
     assert.equal(method, 0)
     assert.equal(path, 'connection/:storeId/adapter')
   })
 
-  test('getConnectionGovernanceSummary route has GET metadata', () => {
+  it('getConnectionGovernanceSummary route has GET metadata', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.getConnectionGovernanceSummary)
     const path = Reflect.getMetadata('path', LytController.prototype.getConnectionGovernanceSummary)
     assert.equal(method, 0)
     assert.equal(path, 'connection/governance-summary')
   })
 
-  test('getConnectionGovernanceAlerts route has GET metadata', () => {
+  it('getConnectionGovernanceAlerts route has GET metadata', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.getConnectionGovernanceAlerts)
     const path = Reflect.getMetadata('path', LytController.prototype.getConnectionGovernanceAlerts)
     assert.equal(method, 0)
     assert.equal(path, 'connection/governance-alerts')
   })
 
-  test('getDeviceHealthSummary route has POST metadata', () => {
+  it('getDeviceHealthSummary route has POST metadata', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.getDeviceHealthSummary)
     const path = Reflect.getMetadata('path', LytController.prototype.getDeviceHealthSummary)
     assert.equal(method, 1)
     assert.equal(path, 'devices/health-summary')
   })
 
-  test('getDeviceStatus route has GET metadata with :deviceId param', () => {
+  it('getDeviceStatus route has GET metadata with :deviceId param', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.getDeviceStatus)
     const path = Reflect.getMetadata('path', LytController.prototype.getDeviceStatus)
     assert.equal(method, 0)
     assert.equal(path, 'devices/:deviceId/status')
   })
 
-  test('acceptWebhook route has POST metadata', () => {
+  it('acceptWebhook route has POST metadata', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.acceptWebhook)
     const path = Reflect.getMetadata('path', LytController.prototype.acceptWebhook)
     assert.equal(method, 1) // POST
     assert.equal(path, 'webhooks/callback')
   })
 
-  test('drillWebhook route has POST metadata', () => {
+  it('drillWebhook route has POST metadata', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.drillWebhook)
     const path = Reflect.getMetadata('path', LytController.prototype.drillWebhook)
     assert.equal(method, 1)
     assert.equal(path, 'webhooks/drill')
   })
 
-  test('replayWebhookFixture route has POST metadata', () => {
+  it('replayWebhookFixture route has POST metadata', () => {
     const method = Reflect.getMetadata('method', LytController.prototype.replayWebhookFixture)
     const path = Reflect.getMetadata('path', LytController.prototype.replayWebhookFixture)
     assert.equal(method, 1)
@@ -139,7 +138,7 @@ describe('LytController', () => {
   })
 
   // ── getBootstrap 正例 ──
-  test('getBootstrap delegates to LytService.getBootstrap', () => {
+  it('getBootstrap delegates to LytService.getBootstrap', () => {
     const mockLytService = {
       getBootstrap: () => ({
         adapter: 'MockLytAdapter',
@@ -156,7 +155,7 @@ describe('LytController', () => {
     assert.deepStrictEqual(result.foundationContracts, ['lyt-adapter:v1'])
   })
 
-  test('getFixtures delegates to LytService.getFixtures', () => {
+  it('getFixtures delegates to LytService.getFixtures', () => {
     const mockLytService = {
       getFixtures: (filters?: { transport?: string; capability?: string }) => [
         {
@@ -177,7 +176,7 @@ describe('LytController', () => {
     assert.deepEqual(result[0].filters, { transport: 'webhook', capability: 'payment' })
   })
 
-  test('getFixtureSummary delegates to LytService.getFixtureSummary', () => {
+  it('getFixtureSummary delegates to LytService.getFixtureSummary', () => {
     const mockLytService = {
       getFixtureSummary: (filters?: { transport?: string; capability?: string }) => ({
         totalFixtures: 2,
@@ -194,7 +193,7 @@ describe('LytController', () => {
     assert.deepEqual(result.filters, { transport: 'webhook', capability: 'payment' })
   })
 
-  test('getFixture delegates to LytService.getFixture', () => {
+  it('getFixture delegates to LytService.getFixture', () => {
     const mockLytService = {
       getFixture: (key: string) => ({
         key,
@@ -212,7 +211,7 @@ describe('LytController', () => {
     assert.equal(result.eventType, 'gate.pass')
   })
 
-  test('compareFixture delegates to LytService.compareFixtureInput', () => {
+  it('compareFixture delegates to LytService.compareFixtureInput', () => {
     const mockLytService = {
       compareFixtureInput: (key: string, body: Record<string, unknown>) => ({
         fixtureKey: key,
@@ -235,7 +234,7 @@ describe('LytController', () => {
     })
   })
 
-  test('importFixturePreview delegates to LytService.previewFixtureImport', () => {
+  it('importFixturePreview delegates to LytService.previewFixtureImport', () => {
     const mockLytService = {
       previewFixtureImport: (key: string, body: Record<string, unknown>) => ({
         fixtureKey: key,
@@ -258,7 +257,7 @@ describe('LytController', () => {
     })
   })
 
-  test('importFixturePlan delegates to LytService.planFixtureImport', () => {
+  it('importFixturePlan delegates to LytService.planFixtureImport', () => {
     const mockLytService = {
       planFixtureImport: (key: string, body: Record<string, unknown>) => ({
         fixtureKey: key,
@@ -282,7 +281,7 @@ describe('LytController', () => {
   })
 
   // ── getBootstrap 边界：空依赖 ──
-  test('getBootstrap handles empty dependency arrays', () => {
+  it('getBootstrap handles empty dependency arrays', () => {
     const mockLytService = {
       getBootstrap: () => ({
         adapter: 'MockLytAdapter',
@@ -300,7 +299,7 @@ describe('LytController', () => {
   })
 
   // ── getBootstrap 边界：缺失字段 ──
-  test('getBootstrap returns undefined for missing dependency metadata', () => {
+  it('getBootstrap returns undefined for missing dependency metadata', () => {
     const mockLytService = {
       getBootstrap: () => ({
         adapter: 'MockLytAdapter'
@@ -317,7 +316,7 @@ describe('LytController', () => {
   })
 
   // ── getConnection 正例 ──
-  test('getConnection delegates scoped lookup to LytService', async () => {
+  it('getConnection delegates scoped lookup to LytService', async () => {
     const mockConnection = {
       tenantId: 'tenant-1',
       brandId: 'brand-1',
@@ -345,7 +344,7 @@ describe('LytController', () => {
     assert.equal(result.endpoint, 'https://lyt-store-1.example.com')
   })
 
-  test('getAdapterSelection delegates scoped lookup to LytService', async () => {
+  it('getAdapterSelection delegates scoped lookup to LytService', async () => {
     const mockLytService = {
       getAdapterSelection: async () => ({
         adapterName: 'SandboxLytAdapter',
@@ -373,7 +372,7 @@ describe('LytController', () => {
     assert.deepStrictEqual(result.capabilities, ['member', 'payment'])
   })
 
-  test('getConnectionCapabilityReadiness delegates scoped lookup to LytService', async () => {
+  it('getConnectionCapabilityReadiness delegates scoped lookup to LytService', async () => {
     const mockLytService = {
       getConnectionCapabilityReadiness: async () => ({
         storeId: 'store-1',
@@ -393,7 +392,7 @@ describe('LytController', () => {
     assert.deepStrictEqual(result.enabledCapabilities, ['member', 'payment'])
   })
 
-  test('getStoreCapabilityAccessView delegates scoped lookup to LytService', async () => {
+  it('getStoreCapabilityAccessView delegates scoped lookup to LytService', async () => {
     const mockLytService = {
       getStoreCapabilityAccessView: async () => ({
         storeId: 'store-1',
@@ -412,7 +411,7 @@ describe('LytController', () => {
     assert.equal(result.accessByCapability[0]?.access, 'enabled')
   })
 
-  test('getConnectionGovernanceSummary delegates to LytService', async () => {
+  it('getConnectionGovernanceSummary delegates to LytService', async () => {
     const mockLytService = {
       getConnectionGovernanceSummary: async () => ({
         totalStores: 2,
@@ -431,7 +430,7 @@ describe('LytController', () => {
     assert.deepStrictEqual(result.recommendedNextActions, ['action-1'])
   })
 
-  test('getConnectionGovernanceAlerts delegates to LytService', async () => {
+  it('getConnectionGovernanceAlerts delegates to LytService', async () => {
     const mockLytService = {
       getConnectionGovernanceAlerts: async () => ({
         alerts: [{ code: 'pending-configuration-stores', severity: 'high', count: 1 }]
@@ -448,7 +447,7 @@ describe('LytController', () => {
   })
 
   // ── getConnection 边界：无 tenantContext ──
-  test('getConnection handles undefined tenantContext', async () => {
+  it('getConnection handles undefined tenantContext', async () => {
     const mockConnection = {
       tenantId: 'tenant-1',
       storeId: 'store-2',
@@ -473,7 +472,7 @@ describe('LytController', () => {
   })
 
   // ── getConnection 边界：空字符串 storeId ──
-  test('getConnection forwards empty storeId to service', async () => {
+  it('getConnection forwards empty storeId to service', async () => {
     let capturedStoreId = ''
     const mockLytService = {
       getConnection: async (storeId: string) => {
@@ -491,7 +490,7 @@ describe('LytController', () => {
   })
 
   // ── getDeviceStatus 正例 ──
-  test('getDeviceStatus delegates to adapter.getDeviceStatus', async () => {
+  it('getDeviceStatus delegates to adapter.getDeviceStatus', async () => {
     const mockAdapter = {
       getDeviceStatus: (deviceId: string) => Promise.resolve({ deviceId, status: 'ONLINE' as const })
     }
@@ -503,7 +502,7 @@ describe('LytController', () => {
   })
 
   // ── getDeviceStatus 反例：设备离线 ──
-  test('getDeviceStatus returns OFFLINE status', async () => {
+  it('getDeviceStatus returns OFFLINE status', async () => {
     const mockAdapter = {
       getDeviceStatus: (deviceId: string) => Promise.resolve({ deviceId, status: 'OFFLINE' as const })
     }
@@ -516,7 +515,7 @@ describe('LytController', () => {
   })
 
   // ── getDeviceStatus 反例：设备维护中 ──
-  test('getDeviceStatus returns MAINTENANCE status', async () => {
+  it('getDeviceStatus returns MAINTENANCE status', async () => {
     const mockAdapter = {
       getDeviceStatus: (deviceId: string) => Promise.resolve({ deviceId, status: 'MAINTENANCE' as const })
     }
@@ -529,7 +528,7 @@ describe('LytController', () => {
   })
 
   // ── getDeviceStatus 边界：空 deviceId ──
-  test('getDeviceStatus forwards empty deviceId', async () => {
+  it('getDeviceStatus forwards empty deviceId', async () => {
     let capturedId = ''
     const mockAdapter = {
       getDeviceStatus: (deviceId: string) => {
@@ -546,7 +545,7 @@ describe('LytController', () => {
   })
 
   // ── getDeviceStatus 边界：特殊字符 deviceId ──
-  test('getDeviceStatus handles special character deviceId', async () => {
+  it('getDeviceStatus handles special character deviceId', async () => {
     const deviceId = 'lyt://gate-reader/floor-1/entrance-A'
     const mockAdapter = {
       getDeviceStatus: (id: string) => Promise.resolve({ deviceId: id, status: 'ONLINE' as const })
@@ -560,7 +559,7 @@ describe('LytController', () => {
   })
 
   // ── getDeviceHealthSummary 正例 ──
-  test('getDeviceHealthSummary delegates devices to service', () => {
+  it('getDeviceHealthSummary delegates devices to service', () => {
     const sampleDevices = [
       { deviceId: 'd1', tenantContext: {} as any, storeId: 's1', deviceType: 'GATE_READER', name: 'G1', status: 'ONLINE', registeredAt: '2025-01-01T00:00:00Z' },
       { deviceId: 'd2', tenantContext: {} as any, storeId: 's1', deviceType: 'CAMERA', name: 'C1', status: 'OFFLINE', registeredAt: '2025-01-01T00:00:00Z' }
@@ -576,7 +575,7 @@ describe('LytController', () => {
   })
 
   // ── getDeviceHealthSummary 正例：传入 thresholdMinutes ──
-  test('getDeviceHealthSummary forwards thresholdMinutes', () => {
+  it('getDeviceHealthSummary forwards thresholdMinutes', () => {
     let capturedThreshold: number | undefined
     const mockLytService = {
       getDeviceHealthSummary: (_devices: any[], thresholdMinutes?: number) => {
@@ -590,7 +589,7 @@ describe('LytController', () => {
   })
 
   // ── getDeviceHealthSummary 反例：空设备列表 ──
-  test('getDeviceHealthSummary returns 100% for empty device list', () => {
+  it('getDeviceHealthSummary returns 100% for empty device list', () => {
     const mockLytService = {
       getDeviceHealthSummary: () => ({ total: 0, online: 0, offline: 0, maintenance: 0, anomalous: 0, healthRate: 100, deviceTypeBreakdown: {} })
     }
@@ -601,7 +600,7 @@ describe('LytController', () => {
   })
 
   // ── getDeviceHealthSummary 边界：不传 thresholdMinutes ──
-  test('getDeviceHealthSummary defaults thresholdMinutes', () => {
+  it('getDeviceHealthSummary defaults thresholdMinutes', () => {
     let capturedThreshold: number | undefined
     const mockLytService = {
       getDeviceHealthSummary: (_devices: any[], thresholdMinutes?: number) => {
@@ -614,7 +613,7 @@ describe('LytController', () => {
     assert.equal(capturedThreshold, undefined)
   })
 
-  test('acceptWebhook delegates to LytService.acceptWebhook', async () => {
+  it('acceptWebhook delegates to LytService.acceptWebhook', async () => {
     const payload = {
       eventId: 'evt-1',
       eventType: 'payment.success',
@@ -637,7 +636,7 @@ describe('LytController', () => {
     assert.deepStrictEqual(result.received, payload)
   })
 
-  test('drillWebhook delegates to LytService.drillWebhook', async () => {
+  it('drillWebhook delegates to LytService.drillWebhook', async () => {
     const payload = {
       eventId: 'drill-001',
       eventType: 'payment.success',
@@ -660,7 +659,7 @@ describe('LytController', () => {
     assert.deepStrictEqual(result.received, payload)
   })
 
-  test('replayWebhookFixture delegates to LytService.replayWebhookFixture', async () => {
+  it('replayWebhookFixture delegates to LytService.replayWebhookFixture', async () => {
     const payload = {
       fixtureKey: 'payment-success-webhook',
       eventId: 'fixture-run-001'

@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   ProductStatus,
   StockRecordType,
@@ -8,20 +8,20 @@ import {
 } from './inventory.entity'
 
 describe('Inventory Entity — Enums', () => {
-  test('ProductStatus has correct values', () => {
+  it('ProductStatus has correct values', () => {
     assert.equal(ProductStatus.Active, 'active')
     assert.equal(ProductStatus.Inactive, 'inactive')
     assert.equal(ProductStatus.Discontinued, 'discontinued')
   })
 
-  test('StockRecordType has all expected values', () => {
+  it('StockRecordType has all expected values', () => {
     assert.equal(StockRecordType.Inbound, 'inbound')
     assert.equal(StockRecordType.Outbound, 'outbound')
     assert.equal(StockRecordType.Return, 'return')
     assert.equal(StockRecordType.Adjustment, 'adjustment')
   })
 
-  test('PurchaseOrderStatus has all expected values', () => {
+  it('PurchaseOrderStatus has all expected values', () => {
     assert.equal(PurchaseOrderStatus.Draft, 'draft')
     assert.equal(PurchaseOrderStatus.Submitted, 'submitted')
     assert.equal(PurchaseOrderStatus.Confirmed, 'confirmed')
@@ -31,7 +31,7 @@ describe('Inventory Entity — Enums', () => {
 })
 
 describe('Inventory Entity — Type shapes', () => {
-  test('Product interface can be constructed', () => {
+  it('Product interface can be constructed', () => {
     const product = {
       id: 'prod-1',
       tenantId: 't-1',
@@ -53,7 +53,7 @@ describe('Inventory Entity — Type shapes', () => {
     assert.equal(product.price, 99)
   })
 
-  test('StockRecord interface can be constructed', () => {
+  it('StockRecord interface can be constructed', () => {
     const record = {
       id: 'sr-1',
       productId: 'prod-1',
@@ -70,7 +70,7 @@ describe('Inventory Entity — Type shapes', () => {
     assert.equal(record.afterStock, 60)
   })
 
-  test('Supplier interface can be constructed', () => {
+  it('Supplier interface can be constructed', () => {
     const supplier = {
       id: 's-1',
       tenantId: 't-1',
@@ -84,7 +84,7 @@ describe('Inventory Entity — Type shapes', () => {
     assert.equal(supplier.name, 'Toy Factory')
   })
 
-  test('PurchaseOrder interface can be constructed', () => {
+  it('PurchaseOrder interface can be constructed', () => {
     const order = {
       id: 'po-1',
       tenantId: 't-1',
@@ -105,7 +105,7 @@ describe('Inventory Entity — Type shapes', () => {
     assert.equal(order.items[0]?.totalPrice, 50)
   })
 
-  test('StockAlert interface can be constructed', () => {
+  it('StockAlert interface can be constructed', () => {
     const product = {
       id: 'p-1', tenantId: 't-1', name: 'Low', sku: 'L-1',
       unit: 'pcs', price: 10, cost: 5, minStock: 20, maxStock: 100,

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Queue 排队模块 HTTP 链路
  *
@@ -19,7 +20,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { before, beforeEach } from 'node:test'
 import {
   Controller,
   Body,
@@ -117,7 +117,7 @@ class TestQueueController {
  * concurrently by default, we run all queue tests with --test-concurrency=1
  * which guarantees serial execution and isolated state per test.
  */
-before(() => {
+beforeAll(() => {
   const svc = new QueueService()
   svc.resetQueueStoresForTests()
 })
@@ -142,7 +142,7 @@ async function buildApp() {
 // joinQueue
 // =============================================================================
 
-test('e2e: POST /queue/join creates entry with Waiting status', async () => {
+it('e2e: POST /queue/join creates entry with Waiting status', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -164,7 +164,7 @@ test('e2e: POST /queue/join creates entry with Waiting status', async () => {
   }
 })
 
-test('e2e: POST /queue/join increments queue number per type', async () => {
+it('e2e: POST /queue/join increments queue number per type', async () => {
   const { app } = await buildApp()
   try {
     const r1 = await request(app.getHttpServer())
@@ -182,7 +182,7 @@ test('e2e: POST /queue/join increments queue number per type', async () => {
   }
 })
 
-test('e2e: POST /queue/join rejects invalid queueType (validation pipe)', async () => {
+it('e2e: POST /queue/join rejects invalid queueType (validation pipe)', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -197,7 +197,7 @@ test('e2e: POST /queue/join rejects invalid queueType (validation pipe)', async 
   }
 })
 
-test('e2e: POST /queue/join with empty memberId is rejected or normalized', async () => {
+it('e2e: POST /queue/join with empty memberId is rejected or normalized', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -219,7 +219,7 @@ test('e2e: POST /queue/join with empty memberId is rejected or normalized', asyn
 // leaveQueue / markNoShow
 // =============================================================================
 
-test('e2e: POST /queue/:entryId/leave cancels entry', async () => {
+it('e2e: POST /queue/:entryId/leave cancels entry', async () => {
   const { app } = await buildApp()
   try {
     const joined = await request(app.getHttpServer())
@@ -242,7 +242,7 @@ test('e2e: POST /queue/:entryId/leave cancels entry', async () => {
 // callNext + position
 // =============================================================================
 
-test('e2e: POST /queue/call-next picks the next waiting entry', async () => {
+it('e2e: POST /queue/call-next picks the next waiting entry', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -266,7 +266,7 @@ test('e2e: POST /queue/call-next picks the next waiting entry', async () => {
   }
 })
 
-test('e2e: GET /queue/position returns 1 for first waiter', async () => {
+it('e2e: GET /queue/position returns 1 for first waiter', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -291,7 +291,7 @@ test('e2e: GET /queue/position returns 1 for first waiter', async () => {
   }
 })
 
-test('e2e: GET /queue/position returns -1 for missing memberId/resourceId', async () => {
+it('e2e: GET /queue/position returns -1 for missing memberId/resourceId', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -305,7 +305,7 @@ test('e2e: GET /queue/position returns -1 for missing memberId/resourceId', asyn
   }
 })
 
-test('e2e: GET /queue/position returns -1 for member not in queue', async () => {
+it('e2e: GET /queue/position returns -1 for member not in queue', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -323,7 +323,7 @@ test('e2e: GET /queue/position returns -1 for member not in queue', async () => 
 // getQueueStatus
 // =============================================================================
 
-test('e2e: GET /queue/status/:resourceId returns queue stats', async () => {
+it('e2e: GET /queue/status/:resourceId returns queue stats', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -347,7 +347,7 @@ test('e2e: GET /queue/status/:resourceId returns queue stats', async () => {
   }
 })
 
-test('e2e: GET /queue/status/:resourceId returns zero stats for unknown resource', async () => {
+it('e2e: GET /queue/status/:resourceId returns zero stats for unknown resource', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -365,7 +365,7 @@ test('e2e: GET /queue/status/:resourceId returns zero stats for unknown resource
 // Full lifecycle flow
 // =============================================================================
 
-test('e2e: full lifecycle join→call-next→start→complete', async () => {
+it('e2e: full lifecycle join→call-next→start→complete', async () => {
   const { app } = await buildApp()
   try {
     const joined = await request(app.getHttpServer())
@@ -396,7 +396,7 @@ test('e2e: full lifecycle join→call-next→start→complete', async () => {
   }
 })
 
-test('e2e: full lifecycle join→call-next→mark-no-show', async () => {
+it('e2e: full lifecycle join→call-next→mark-no-show', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -421,7 +421,7 @@ test('e2e: full lifecycle join→call-next→mark-no-show', async () => {
 // Tenant isolation
 // =============================================================================
 
-test('e2e: queue numbers are scoped per tenant', async () => {
+it('e2e: queue numbers are scoped per tenant', async () => {
   const { app } = await buildApp()
   try {
     const a = await request(app.getHttpServer())
@@ -439,7 +439,7 @@ test('e2e: queue numbers are scoped per tenant', async () => {
   }
 })
 
-test('e2e: position endpoint is scoped per tenant', async () => {
+it('e2e: position endpoint is scoped per tenant', async () => {
   const { app } = await buildApp()
   try {
     // tenant-A joins
@@ -471,7 +471,7 @@ test('e2e: position endpoint is scoped per tenant', async () => {
   }
 })
 
-test('e2e: status endpoint is scoped per tenant', async () => {
+it('e2e: status endpoint is scoped per tenant', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())

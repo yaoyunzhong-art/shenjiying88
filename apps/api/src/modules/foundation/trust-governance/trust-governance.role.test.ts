@@ -1,7 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 // ── Helpers ──
 function mockTrustGovService() {
   return {
@@ -44,38 +43,38 @@ const ROLES = {
 
 // ── 🔧安监 ──
 describe(`${ROLES.Security} trust-governance 角色测试`, () => {
-  test('安监可以查看审批列表', async () => {
+  it('安监可以查看审批列表', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.getApprovals({})
     assert.ok(result.approvals)
   })
 
-  test('安监可以 approve 审批', async () => {
+  it('安监可以 approve 审批', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.approveApproval('AP-001', { decidedBy: 'sec-admin', note: '安全审核通过' })
     assert.equal(result.status, 'APPROVED')
   })
 
-  test('安监可以 reject 审批', async () => {
+  it('安监可以 reject 审批', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.rejectApproval('AP-002', { decidedBy: 'sec-admin', note: '安全不合规' })
     assert.equal(result.status, 'REJECTED')
   })
 
-  test('安监可以查看审计记录', async () => {
+  it('安监可以查看审计记录', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.getAudit({ limit: 20 })
     assert.ok(result.records)
     assert.equal(result.total, 50)
   })
 
-  test('安监可以查看 rate-limit policies', async () => {
+  it('安监可以查看 rate-limit policies', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.getRateLimitPolicies({})
     assert.ok(result.policies)
   })
 
-  test('安监可以 reset quota ledgers', async () => {
+  it('安监可以 reset quota ledgers', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.resetQuotaLedgers({ scopeIds: ['tenant-1'], resetBy: 'sec-admin' })
     assert.ok(result.reset)
@@ -84,31 +83,31 @@ describe(`${ROLES.Security} trust-governance 角色测试`, () => {
 
 // ── 👔店长 ──
 describe(`${ROLES.TenantAdmin} trust-governance 角色测试`, () => {
-  test('店长可以查看 management-metadata', () => {
+  it('店长可以查看 management-metadata', () => {
     const ctrl = createTrustGovController()
     const result = ctrl.getManagementMetadata()
     assert.ok(result)
   })
 
-  test('店长可以查看审批摘要', async () => {
+  it('店长可以查看审批摘要', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.getApprovalSummary({})
     assert.ok(result.byStatus)
   })
 
-  test('店长可以查看审批详情', async () => {
+  it('店长可以查看审批详情', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.getApprovalDetail('AP-001')
     assert.equal(result.ticket, 'AP-001')
   })
 
-  test('店长可以查看审计摘要', async () => {
+  it('店长可以查看审计摘要', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.getAuditSummary({ limit: 10 })
     assert.ok(result.byRiskLevel)
   })
 
-  test('店长可以写 rate-limit policies', async () => {
+  it('店长可以写 rate-limit policies', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.saveRateLimitPolicy({ scope: 'api', maxRequests: 200 })
     assert.ok(result.policy)
@@ -117,25 +116,25 @@ describe(`${ROLES.TenantAdmin} trust-governance 角色测试`, () => {
 
 // ── 🎯运行专员 ──
 describe(`${ROLES.Operations} trust-governance 角色测试`, () => {
-  test('运营专员可以查看 overview', async () => {
+  it('运营专员可以查看 overview', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.getOperationsOverview()
     assert.ok(result)
   })
 
-  test('运营专员可以查看审批 timeline', async () => {
+  it('运营专员可以查看审批 timeline', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.getApprovalTimeline('AP-001', { limit: 10 })
     assert.ok(result.timeline)
   })
 
-  test('运营专员可以 cancel 审批', async () => {
+  it('运营专员可以 cancel 审批', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.cancelApproval('AP-003', { cancelledBy: 'ops-user', reason: '不再需要' })
     assert.equal(result.status, 'CANCELLED')
   })
 
-  test('运营专员可以 resubmit 审批', async () => {
+  it('运营专员可以 resubmit 审批', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.resubmitApproval('AP-004', { resubmittedBy: 'ops-user', reason: '补充材料后重新提交' })
     assert.ok(result)
@@ -144,27 +143,27 @@ describe(`${ROLES.Operations} trust-governance 角色测试`, () => {
 
 // ── 📢营销 ──
 describe(`${ROLES.Marketing} trust-governance 角色测试`, () => {
-  test('营销可以进行 AI review', () => {
+  it('营销可以进行 AI review', () => {
     const ctrl = createTrustGovController()
     const result = ctrl.reviewAi({ modelCode: 'gpt-4', tenantId: 't-marketing', purpose: '文案生成', prompt: '生成营销文案', estimatedTokens: 500 })
     assert.ok(result.allowed)
     assert.equal(result.riskLevel, 'low')
   })
 
-  test('营销可以进行 PII mask', () => {
+  it('营销可以进行 PII mask', () => {
     const ctrl = createTrustGovController()
     const result = ctrl.maskPii({ payload: '用户手机号 13800138000', fields: ['phone'] })
     assert.ok(result.masked)
   })
 
-  test('营销可以 check rate limit', async () => {
+  it('营销可以 check rate limit', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.checkRateLimit({ scope: 'marketing-api', actorId: 'user-marketing' })
     assert.ok(result.allowed)
     assert.equal(result.remaining, 99)
   })
 
-  test('营销可以 record audit（记录操作日志）', async () => {
+  it('营销可以 record audit（记录操作日志）', async () => {
     const ctrl = createTrustGovController()
     const result = await ctrl.recordAudit({ eventType: 'campaign-create', details: { campaignId: 'c-001' }, tenantId: 't-marketing', actorId: 'user-marketing', source: 'admin-web', riskLevel: 'low' })
     assert.ok(result.recorded)

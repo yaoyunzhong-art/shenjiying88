@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { LedgerType, AccountType, SettlementStatus, InvoiceType, InvoiceStatus } from './finance.entity'
 import {
   CreateLedgerDto,
@@ -15,7 +15,7 @@ import {
 
 // ── CreateLedgerDto ──
 describe('CreateLedgerDto', () => {
-  test('标准记账 DTO：必填 type + amount + description', () => {
+  it('标准记账 DTO：必填 type + amount + description', () => {
     const dto = Object.assign(new CreateLedgerDto(), {
       type: LedgerType.Revenue,
       amount: 100,
@@ -27,7 +27,7 @@ describe('CreateLedgerDto', () => {
     assert.equal(dto.description, '台球桌费')
   })
 
-  test('支出记账 DTO', () => {
+  it('支出记账 DTO', () => {
     const dto = Object.assign(new CreateLedgerDto(), {
       type: LedgerType.Expense,
       amount: 50,
@@ -38,7 +38,7 @@ describe('CreateLedgerDto', () => {
     assert.equal(dto.amount, 50)
   })
 
-  test('退款记账 DTO', () => {
+  it('退款记账 DTO', () => {
     const dto = Object.assign(new CreateLedgerDto(), {
       type: LedgerType.Refund,
       amount: 30,
@@ -48,7 +48,7 @@ describe('CreateLedgerDto', () => {
     assert.equal(dto.type, LedgerType.Refund)
   })
 
-  test('调账记账 DTO', () => {
+  it('调账记账 DTO', () => {
     const dto = Object.assign(new CreateLedgerDto(), {
       type: LedgerType.Adjustment,
       amount: 200,
@@ -60,7 +60,7 @@ describe('CreateLedgerDto', () => {
     assert.equal(dto.category, 'adjustment')
   })
 
-  test('带可选字段 orderId + transactionId', () => {
+  it('带可选字段 orderId + transactionId', () => {
     const dto = Object.assign(new CreateLedgerDto(), {
       type: LedgerType.Revenue,
       amount: 88,
@@ -73,7 +73,7 @@ describe('CreateLedgerDto', () => {
     assert.equal(dto.transactionId, 'txn-456')
   })
 
-  test('带 recordedAt 自定义记账日期', () => {
+  it('带 recordedAt 自定义记账日期', () => {
     const dto = Object.assign(new CreateLedgerDto(), {
       type: LedgerType.Revenue,
       amount: 200,
@@ -87,27 +87,27 @@ describe('CreateLedgerDto', () => {
 
 // ── LedgerQueryDto ──
 describe('LedgerQueryDto', () => {
-  test('空查询 DTO', () => {
+  it('空查询 DTO', () => {
     const dto = Object.assign(new LedgerQueryDto(), {})
     assert.equal(dto.type, undefined)
     assert.equal(dto.limit, undefined)
   })
 
-  test('按类型过滤', () => {
+  it('按类型过滤', () => {
     const dto = Object.assign(new LedgerQueryDto(), {
       type: LedgerType.Revenue
     })
     assert.equal(dto.type, LedgerType.Revenue)
   })
 
-  test('按门店过滤', () => {
+  it('按门店过滤', () => {
     const dto = Object.assign(new LedgerQueryDto(), {
       storeId: 'store-1'
     })
     assert.equal(dto.storeId, 'store-1')
   })
 
-  test('按时间范围 + 分页', () => {
+  it('按时间范围 + 分页', () => {
     const dto = Object.assign(new LedgerQueryDto(), {
       recordedAfter: '2026-06-01T00:00:00.000Z',
       recordedBefore: '2026-06-30T23:59:59.999Z',
@@ -122,7 +122,7 @@ describe('LedgerQueryDto', () => {
 
 // ── CreateAccountDto ──
 describe('CreateAccountDto', () => {
-  test('标准创建账户 DTO', () => {
+  it('标准创建账户 DTO', () => {
     const dto = Object.assign(new CreateAccountDto(), {
       name: '微信支付账户',
       type: AccountType.Wechat
@@ -132,7 +132,7 @@ describe('CreateAccountDto', () => {
     assert.equal(dto.type, AccountType.Wechat)
   })
 
-  test('带初始余额', () => {
+  it('带初始余额', () => {
     const dto = Object.assign(new CreateAccountDto(), {
       name: '银行账户',
       type: AccountType.Bank,
@@ -142,7 +142,7 @@ describe('CreateAccountDto', () => {
     assert.equal(dto.initialBalance, 10000)
   })
 
-  test('带门店 ID', () => {
+  it('带门店 ID', () => {
     const dto = Object.assign(new CreateAccountDto(), {
       name: '门店现金账户',
       type: AccountType.Cash,
@@ -152,7 +152,7 @@ describe('CreateAccountDto', () => {
     assert.equal(dto.storeId, 'store-2')
   })
 
-  test('现金账户初始余额为 0', () => {
+  it('现金账户初始余额为 0', () => {
     const dto = Object.assign(new CreateAccountDto(), {
       name: '零钱账户',
       type: AccountType.Cash,
@@ -165,7 +165,7 @@ describe('CreateAccountDto', () => {
 
 // ── CreateSettlementDto ──
 describe('CreateSettlementDto', () => {
-  test('标准结算 DTO：必填 startDate + endDate', () => {
+  it('标准结算 DTO：必填 startDate + endDate', () => {
     const dto = Object.assign(new CreateSettlementDto(), {
       startDate: '2026-06-01T00:00:00.000Z',
       endDate: '2026-06-30T23:59:59.999Z'
@@ -175,7 +175,7 @@ describe('CreateSettlementDto', () => {
     assert.equal(dto.endDate, '2026-06-30T23:59:59.999Z')
   })
 
-  test('手动指定 totalRevenue + totalExpense', () => {
+  it('手动指定 totalRevenue + totalExpense', () => {
     const dto = Object.assign(new CreateSettlementDto(), {
       startDate: '2026-06-01T00:00:00.000Z',
       endDate: '2026-06-30T23:59:59.999Z',
@@ -187,7 +187,7 @@ describe('CreateSettlementDto', () => {
     assert.equal(dto.totalExpense, 2000)
   })
 
-  test('带门店 ID 的结算', () => {
+  it('带门店 ID 的结算', () => {
     const dto = Object.assign(new CreateSettlementDto(), {
       storeId: 'store-3',
       startDate: '2026-06-01T00:00:00.000Z',
@@ -200,14 +200,14 @@ describe('CreateSettlementDto', () => {
 
 // ── SettlementQueryDto ──
 describe('SettlementQueryDto', () => {
-  test('按状态过滤', () => {
+  it('按状态过滤', () => {
     const dto = Object.assign(new SettlementQueryDto(), {
       settlementStatus: SettlementStatus.Pending
     })
     assert.equal(dto.settlementStatus, SettlementStatus.Pending)
   })
 
-  test('按时间范围过滤', () => {
+  it('按时间范围过滤', () => {
     const dto = Object.assign(new SettlementQueryDto(), {
       startAfter: '2026-06-01T00:00:00.000Z',
       endBefore: '2026-07-01T00:00:00.000Z',
@@ -221,7 +221,7 @@ describe('SettlementQueryDto', () => {
 
 // ── CreateInvoiceDto ──
 describe('CreateInvoiceDto', () => {
-  test('标准发票 DTO：必填 type + amount', () => {
+  it('标准发票 DTO：必填 type + amount', () => {
     const dto = Object.assign(new CreateInvoiceDto(), {
       type: InvoiceType.Regular,
       amount: 500
@@ -231,7 +231,7 @@ describe('CreateInvoiceDto', () => {
     assert.equal(dto.amount, 500)
   })
 
-  test('增值税发票', () => {
+  it('增值税发票', () => {
     const dto = Object.assign(new CreateInvoiceDto(), {
       type: InvoiceType.Vat,
       amount: 1000,
@@ -243,7 +243,7 @@ describe('CreateInvoiceDto', () => {
     assert.equal(dto.taxAmount, 130)
   })
 
-  test('带 orderId + buyerInfo', () => {
+  it('带 orderId + buyerInfo', () => {
     const dto = Object.assign(new CreateInvoiceDto(), {
       type: InvoiceType.Regular,
       amount: 300,
@@ -255,7 +255,7 @@ describe('CreateInvoiceDto', () => {
     assert.deepEqual(dto.buyerInfo, { name: '张三', taxId: '91110000' })
   })
 
-  test('不含税金的发票', () => {
+  it('不含税金的发票', () => {
     const dto = Object.assign(new CreateInvoiceDto(), {
       type: InvoiceType.Regular,
       amount: 200
@@ -267,14 +267,14 @@ describe('CreateInvoiceDto', () => {
 
 // ── InvoiceQueryDto ──
 describe('InvoiceQueryDto', () => {
-  test('按类型过滤', () => {
+  it('按类型过滤', () => {
     const dto = Object.assign(new InvoiceQueryDto(), {
       type: InvoiceType.Vat
     })
     assert.equal(dto.type, InvoiceType.Vat)
   })
 
-  test('按状态 + 时间范围过滤', () => {
+  it('按状态 + 时间范围过滤', () => {
     const dto = Object.assign(new InvoiceQueryDto(), {
       status: InvoiceStatus.Issued,
       issuedAfter: '2026-06-01T00:00:00.000Z',
@@ -288,13 +288,13 @@ describe('InvoiceQueryDto', () => {
 
 // ── RevenueSummaryQueryDto ──
 describe('RevenueSummaryQueryDto', () => {
-  test('空查询', () => {
+  it('空查询', () => {
     const dto = Object.assign(new RevenueSummaryQueryDto(), {})
     assert.equal(dto.storeId, undefined)
     assert.equal(dto.startDate, undefined)
   })
 
-  test('按门店 + 时间范围查询', () => {
+  it('按门店 + 时间范围查询', () => {
     const dto = Object.assign(new RevenueSummaryQueryDto(), {
       storeId: 'store-1',
       startDate: '2026-06-01T00:00:00.000Z',
@@ -307,14 +307,14 @@ describe('RevenueSummaryQueryDto', () => {
 
 // ── DailyRevenueQueryDto ──
 describe('DailyRevenueQueryDto', () => {
-  test('必填 date', () => {
+  it('必填 date', () => {
     const dto = Object.assign(new DailyRevenueQueryDto(), {
       date: '2026-06-23'
     })
     assert.equal(dto.date, '2026-06-23')
   })
 
-  test('带门店 ID + date', () => {
+  it('带门店 ID + date', () => {
     const dto = Object.assign(new DailyRevenueQueryDto(), {
       date: '2026-06-23',
       storeId: 'store-2'

@@ -18,6 +18,8 @@ export interface DataTableColumn<T> {
 interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
   rows?: T[];
+  /** @deprecated Use `rows` instead */
+  data?: T[];
   items?: T[];
   rowKey: (row: T) => string;
   loading?: boolean;
@@ -33,6 +35,7 @@ interface DataTableProps<T> {
 export function DataTable<T>({
   columns,
   rows,
+  data,
   items,
   rowKey,
   loading = false,
@@ -42,7 +45,7 @@ export function DataTable<T>({
   striped = false,
   compact = false,
 }: DataTableProps<T>) {
-  const resolvedRows = rows ?? items ?? [];
+  const resolvedRows = rows ?? data ?? items ?? [];
 
   if (loading) {
     return (

@@ -1,7 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 // ── Helpers ──
 function mockResilienceOpsService() {
   return {
@@ -31,25 +30,25 @@ const ROLES = {
 
 // ── 👔店长 ──
 describe(`${ROLES.TenantAdmin} resilience-operations 角色测试`, () => {
-  test('店长可以获取 management-metadata', () => {
+  it('店长可以获取 management-metadata', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.getManagementMetadata()
     assert.ok(result)
   })
 
-  test('店长可以查看 overview', () => {
+  it('店长可以查看 overview', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.getOperationsOverview()
     assert.ok(result)
   })
 
-  test('店长可以查看 observability signals', () => {
+  it('店长可以查看 observability signals', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.getObservabilitySignals({})
     assert.ok(result)
   })
 
-  test('店长可以查看 recovery plans', () => {
+  it('店长可以查看 recovery plans', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.getRecoveryPlans({})
     assert.ok(result.plans)
@@ -58,27 +57,27 @@ describe(`${ROLES.TenantAdmin} resilience-operations 角色测试`, () => {
 
 // ── 🎯运行专员 ──
 describe(`${ROLES.Operations} resilience-operations 角色测试`, () => {
-  test('运营专员可以查看 retry policies', () => {
+  it('运营专员可以查看 retry policies', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.getRetryPolicies({})
     assert.ok(result.policies)
   })
 
-  test('运营专员可以查看 recovery plan 详情', () => {
+  it('运营专员可以查看 recovery plan 详情', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.getRecoveryPlan('booking-db')
     assert.equal(result.resource, 'booking-db')
     assert.ok(result.steps)
   })
 
-  test('运营专员可以 stage edge replay', () => {
+  it('运营专员可以 stage edge replay', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.stageEdgeReplay({ storeId: 'store-001', operationCount: 10 })
     assert.ok(result.staged)
     assert.equal(result.storeId, 'store-001')
   })
 
-  test('运营专员可以查看 overview', () => {
+  it('运营专员可以查看 overview', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.getOperationsOverview()
     assert.ok(result)
@@ -87,19 +86,19 @@ describe(`${ROLES.Operations} resilience-operations 角色测试`, () => {
 
 // ── 🔧安监 ──
 describe(`${ROLES.Security} resilience-operations 角色测试`, () => {
-  test('安监可以获取 management-metadata', () => {
+  it('安监可以获取 management-metadata', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.getManagementMetadata()
     assert.ok(result)
   })
 
-  test('安监可以查看 observability signals（审计视角）', () => {
+  it('安监可以查看 observability signals（审计视角）', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.getObservabilitySignals({ limit: 20 })
     assert.ok(result)
   })
 
-  test('安监可以查看 recovery plans（合规视角）', () => {
+  it('安监可以查看 recovery plans（合规视角）', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.getRecoveryPlans({})
     assert.ok(result.plans)
@@ -108,19 +107,19 @@ describe(`${ROLES.Security} resilience-operations 角色测试`, () => {
 
 // ── 👥HR ──
 describe(`${ROLES.HR} resilience-operations 角色测试`, () => {
-  test('HR可以获取 management-metadata', () => {
+  it('HR可以获取 management-metadata', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.getManagementMetadata()
     assert.ok(result)
   })
 
-  test('HR可以查看 overview', () => {
+  it('HR可以查看 overview', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.getOperationsOverview()
     assert.ok(result)
   })
 
-  test('HR查看 retry policies 时返回数据正确', () => {
+  it('HR查看 retry policies 时返回数据正确', () => {
     const ctrl = createResilienceOpsController()
     const result = ctrl.getRetryPolicies({ resource: 'booking-service' })
     assert.ok(result.policies)

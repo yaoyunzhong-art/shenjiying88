@@ -33,6 +33,8 @@ export interface FormPageField<T = Record<string, unknown>> {
   options?: { label: string; value: string }[];
   /** 验证规则 */
   rules?: FormPageFieldRule[];
+  /** 是否禁用该字段 */
+  disabled?: boolean;
 }
 
 /** 表单页标题 & 描述区域 */
@@ -51,6 +53,7 @@ export interface FormPageScaffoldMeta {
 export interface FormPageSubmitResult<T = Record<string, unknown>> {
   data: T;
   message?: string;
+  error?: boolean;
 }
 
 export interface FormPageScaffoldProps<T extends Record<string, unknown> = Record<string, unknown>> {
@@ -70,6 +73,8 @@ export interface FormPageScaffoldProps<T extends Record<string, unknown> = Recor
   submitVariant?: SubmitButtonVariant;
   /** 返回路径 */
   backUrl?: string;
+  /** 取消链接（若未设置则回退到 backUrl） */
+  cancelHref?: string;
   /** 页面最大宽度 */
   maxWidth?: number;
   /** 自定义样式 */
@@ -244,6 +249,7 @@ export function FormPageScaffold<T extends Record<string, unknown> = Record<stri
   submitLabel = '保存',
   submitVariant = 'brand',
   backUrl,
+  cancelHref,
   maxWidth = 720,
   className,
   footer,
@@ -372,7 +378,7 @@ export function FormPageScaffold<T extends Record<string, unknown> = Record<stri
                 field={field as unknown as FormPageField<Record<string, unknown>>}
                 value={values[field.key]}
                 onChange={(v) => handleFieldChange(field.key, v)}
-                disabled={disabled}
+                disabled={disabled || !!field.disabled}
               />
 
               {field.helper && !errors[field.key] && (
@@ -422,9 +428,9 @@ export function FormPageScaffold<T extends Record<string, unknown> = Record<stri
               type="submit"
             />
 
-            {backUrl && (
+            {(cancelHref || backUrl) && (
               <a
-                href={backUrl}
+                href={cancelHref || backUrl}
                 style={{
                   padding: '10px 14px',
                   borderRadius: 10,

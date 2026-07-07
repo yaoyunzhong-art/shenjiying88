@@ -1,25 +1,25 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-insight] [D] module 测试
  * AiInsightModule 的模块注册和导出验证
  */
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { AiInsightModule } from './ai-insight.module'
 import { AiInsightController } from './ai-insight.controller'
 import { AiInsightService } from './ai-insight.service'
 
 describe('AiInsightModule', () => {
-  test('should be defined', () => {
+  it('should be defined', () => {
     assert.ok(AiInsightModule)
   })
 
-  test('should be instantiable', () => {
+  it('should be instantiable', () => {
     const instance = new AiInsightModule()
     assert.ok(instance instanceof AiInsightModule)
   })
 
-  test('module metadata has controllers', () => {
+  it('module metadata has controllers', () => {
     const controllers = Reflect.getMetadata('controllers', AiInsightModule) as unknown[]
     // NestJS 装饰器注入的元数据
     if (controllers) {
@@ -27,7 +27,7 @@ describe('AiInsightModule', () => {
     }
   })
 
-  test('module metadata has providers/exports', () => {
+  it('module metadata has providers/exports', () => {
     const providers = Reflect.getMetadata('providers', AiInsightModule) as unknown[]
     if (providers) {
       const hasService = providers.some(
@@ -40,7 +40,7 @@ describe('AiInsightModule', () => {
     }
   })
 
-  test('controller has expected methods', () => {
+  it('controller has expected methods', () => {
     const proto = AiInsightController.prototype
     // KPI
     assert.equal(typeof proto.getKPIs, 'function')
@@ -60,7 +60,7 @@ describe('AiInsightModule', () => {
     assert.equal(typeof proto.getDashboardSummary, 'function')
   })
 
-  test('service has expected methods', () => {
+  it('service has expected methods', () => {
     const proto = AiInsightService.prototype
     // KPI
     assert.equal(typeof proto.getKPIs, 'function')
@@ -80,7 +80,7 @@ describe('AiInsightModule', () => {
     assert.equal(typeof proto.getDashboardSummary, 'function')
   })
 
-  test('service and controller use same contract', () => {
+  it('service and controller use same contract', () => {
     const ctrlProto = AiInsightController.prototype
     const svcProto = AiInsightService.prototype
 

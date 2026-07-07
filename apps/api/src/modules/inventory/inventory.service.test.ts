@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe, beforeEach } from 'node:test'
 import {
   ProductStatus,
   StockRecordType,
@@ -17,7 +17,7 @@ const tenantCtx = {
 describe('InventoryService — Product CRUD', () => {
   beforeEach(() => resetInventoryServiceTestState())
 
-  test('createProduct returns a product with generated id', () => {
+  it('createProduct returns a product with generated id', () => {
     const svc = new InventoryService()
     const product = svc.createProduct(tenantCtx, {
       name: 'Bear Plush',
@@ -35,7 +35,7 @@ describe('InventoryService — Product CRUD', () => {
     assert.equal(product.tenantId, 'tenant-001')
   })
 
-  test('createProduct respects optional status', () => {
+  it('createProduct respects optional status', () => {
     const svc = new InventoryService()
     const product = svc.createProduct(tenantCtx, {
       name: 'Old Toy',
@@ -51,7 +51,7 @@ describe('InventoryService — Product CRUD', () => {
     assert.equal(product.status, ProductStatus.Discontinued)
   })
 
-  test('getProduct returns the created product', () => {
+  it('getProduct returns the created product', () => {
     const svc = new InventoryService()
     const p = svc.createProduct(tenantCtx, {
       name: 'Ball', sku: 'B-1', unit: 'pcs',
@@ -62,7 +62,7 @@ describe('InventoryService — Product CRUD', () => {
     assert.equal(fetched.name, 'Ball')
   })
 
-  test('getProduct throws for non-existent product', () => {
+  it('getProduct throws for non-existent product', () => {
     const svc = new InventoryService()
     assert.throws(
       () => svc.getProduct('nonexistent', tenantCtx),
@@ -70,7 +70,7 @@ describe('InventoryService — Product CRUD', () => {
     )
   })
 
-  test('getProduct throws for product from different tenant', () => {
+  it('getProduct throws for product from different tenant', () => {
     const svc = new InventoryService()
     const p = svc.createProduct(tenantCtx, {
       name: 'Isolated', sku: 'ISO-1', unit: 'pcs',
@@ -82,7 +82,7 @@ describe('InventoryService — Product CRUD', () => {
     )
   })
 
-  test('updateProduct modifies allowed fields', () => {
+  it('updateProduct modifies allowed fields', () => {
     const svc = new InventoryService()
     const p = svc.createProduct(tenantCtx, {
       name: 'Old Name', sku: 'SKU-OLD', unit: 'pcs',
@@ -97,7 +97,7 @@ describe('InventoryService — Product CRUD', () => {
     assert.equal(updated.sku, 'SKU-OLD') // unchanged
   })
 
-  test('updateProduct throws for non-existent product', () => {
+  it('updateProduct throws for non-existent product', () => {
     const svc = new InventoryService()
     assert.throws(
       () => svc.updateProduct('nonexistent', tenantCtx, { name: 'X' }),
@@ -105,7 +105,7 @@ describe('InventoryService — Product CRUD', () => {
     )
   })
 
-  test('listProducts returns all products for tenant', () => {
+  it('listProducts returns all products for tenant', () => {
     const svc = new InventoryService()
     svc.createProduct(tenantCtx, {
       name: 'A', sku: 'A-1', unit: 'pcs',
@@ -119,7 +119,7 @@ describe('InventoryService — Product CRUD', () => {
     assert.equal(products.length, 2)
   })
 
-  test('listProducts filters by category', () => {
+  it('listProducts filters by category', () => {
     const svc = new InventoryService()
     svc.createProduct(tenantCtx, {
       name: 'A', sku: 'A-1', category: 'toys', unit: 'pcs',
@@ -134,7 +134,7 @@ describe('InventoryService — Product CRUD', () => {
     assert.equal(toys[0]?.name, 'A')
   })
 
-  test('listProducts filters by keyword', () => {
+  it('listProducts filters by keyword', () => {
     const svc = new InventoryService()
     svc.createProduct(tenantCtx, {
       name: 'Bear Plush', sku: 'SKU-BP', unit: 'pcs',
@@ -149,7 +149,7 @@ describe('InventoryService — Product CRUD', () => {
     assert.equal(bear[0]?.name, 'Bear Plush')
   })
 
-  test('listProducts supports pagination', () => {
+  it('listProducts supports pagination', () => {
     const svc = new InventoryService()
     for (let i = 1; i <= 5; i++) {
       svc.createProduct(tenantCtx, {
@@ -163,7 +163,7 @@ describe('InventoryService — Product CRUD', () => {
     assert.equal(page2.length, 2)
   })
 
-  test('listProducts isolates tenants', () => {
+  it('listProducts isolates tenants', () => {
     const svc = new InventoryService()
     svc.createProduct(tenantCtx, {
       name: 'TenantA', sku: 'TA-1', unit: 'pcs',
@@ -177,7 +177,7 @@ describe('InventoryService — Product CRUD', () => {
 describe('InventoryService — Stock Operations', () => {
   beforeEach(() => resetInventoryServiceTestState())
 
-  test('stockIn increases product stock and creates record', () => {
+  it('stockIn increases product stock and creates record', () => {
     const svc = new InventoryService()
     const p = svc.createProduct(tenantCtx, {
       name: 'Plush', sku: 'P-1', unit: 'pcs',
@@ -193,7 +193,7 @@ describe('InventoryService — Stock Operations', () => {
     assert.equal(record.batchNo, 'BATCH-001')
   })
 
-  test('stockOut decreases product stock when sufficient', () => {
+  it('stockOut decreases product stock when sufficient', () => {
     const svc = new InventoryService()
     const p = svc.createProduct(tenantCtx, {
       name: 'Plush', sku: 'P-2', unit: 'pcs',
@@ -207,7 +207,7 @@ describe('InventoryService — Stock Operations', () => {
     assert.equal(record.reason, 'sold')
   })
 
-  test('stockOut throws when insufficient stock', () => {
+  it('stockOut throws when insufficient stock', () => {
     const svc = new InventoryService()
     const p = svc.createProduct(tenantCtx, {
       name: 'Rare Item', sku: 'R-1', unit: 'pcs',
@@ -219,7 +219,7 @@ describe('InventoryService — Stock Operations', () => {
     )
   })
 
-  test('adjustStock sets exact quantity regardless of current', () => {
+  it('adjustStock sets exact quantity regardless of current', () => {
     const svc = new InventoryService()
     const p = svc.createProduct(tenantCtx, {
       name: 'Adjustable', sku: 'ADJ-1', unit: 'pcs',
@@ -235,7 +235,7 @@ describe('InventoryService — Stock Operations', () => {
     assert.equal(record.afterStock, 100)
   })
 
-  test('checkStock returns true when sufficient', () => {
+  it('checkStock returns true when sufficient', () => {
     const svc = new InventoryService()
     const p = svc.createProduct(tenantCtx, {
       name: 'Check', sku: 'CK-1', unit: 'pcs',
@@ -245,7 +245,7 @@ describe('InventoryService — Stock Operations', () => {
     assert.equal(ok, true)
   })
 
-  test('checkStock throws when insufficient', () => {
+  it('checkStock throws when insufficient', () => {
     const svc = new InventoryService()
     const p = svc.createProduct(tenantCtx, {
       name: 'Check', sku: 'CK-2', unit: 'pcs',
@@ -257,7 +257,7 @@ describe('InventoryService — Stock Operations', () => {
     )
   })
 
-  test('getLowStockProducts returns products below minStock', () => {
+  it('getLowStockProducts returns products below minStock', () => {
     const svc = new InventoryService()
     svc.createProduct(tenantCtx, {
       name: 'Low Stock', sku: 'LOW-1', unit: 'pcs',
@@ -279,7 +279,7 @@ describe('InventoryService — Stock Operations', () => {
     assert.equal(oosAlert.status, 'out_of_stock')
   })
 
-  test('getLowStockProducts accepts custom threshold', () => {
+  it('getLowStockProducts accepts custom threshold', () => {
     const svc = new InventoryService()
     svc.createProduct(tenantCtx, {
       name: 'Custom', sku: 'CUST-1', unit: 'pcs',
@@ -294,7 +294,7 @@ describe('InventoryService — Stock Operations', () => {
     assert.equal(customAlerts[0]?.status, 'low')
   })
 
-  test('getStockRecords returns records filtered by productId and type', () => {
+  it('getStockRecords returns records filtered by productId and type', () => {
     const svc = new InventoryService()
     const p = svc.createProduct(tenantCtx, {
       name: 'Recorder', sku: 'REC-1', unit: 'pcs',
@@ -317,7 +317,7 @@ describe('InventoryService — Stock Operations', () => {
 describe('InventoryService — Supplier CRUD', () => {
   beforeEach(() => resetInventoryServiceTestState())
 
-  test('createSupplier creates with generated id', () => {
+  it('createSupplier creates with generated id', () => {
     const svc = new InventoryService()
     const supplier = svc.createSupplier(tenantCtx, {
       name: 'Toy Factory',
@@ -329,7 +329,7 @@ describe('InventoryService — Supplier CRUD', () => {
     assert.equal(supplier.tenantId, 'tenant-001')
   })
 
-  test('listSuppliers returns all for tenant', () => {
+  it('listSuppliers returns all for tenant', () => {
     const svc = new InventoryService()
     svc.createSupplier(tenantCtx, { name: 'Supplier A' })
     svc.createSupplier(tenantCtx, { name: 'Supplier B' })
@@ -339,7 +339,7 @@ describe('InventoryService — Supplier CRUD', () => {
     assert.deepEqual(names, ['Supplier A', 'Supplier B'])
   })
 
-  test('listSuppliers isolates tenants', () => {
+  it('listSuppliers isolates tenants', () => {
     const svc = new InventoryService()
     svc.createSupplier(tenantCtx, { name: 'Only A' })
     const bSuppliers = svc.listSuppliers({ tenantId: 'tenant-B' })
@@ -350,7 +350,7 @@ describe('InventoryService — Supplier CRUD', () => {
 describe('InventoryService — Purchase Orders', () => {
   beforeEach(() => resetInventoryServiceTestState())
 
-  test('createPurchaseOrder creates in Draft status', () => {
+  it('createPurchaseOrder creates in Draft status', () => {
     const svc = new InventoryService()
     const order = svc.createPurchaseOrder(tenantCtx, {
       supplierId: 's-1',
@@ -366,7 +366,7 @@ describe('InventoryService — Purchase Orders', () => {
     assert.equal(order.items[0]?.quantity, 10)
   })
 
-  test('confirmOrder transitions Draft to Confirmed', () => {
+  it('confirmOrder transitions Draft to Confirmed', () => {
     const svc = new InventoryService()
     const order = svc.createPurchaseOrder(tenantCtx, {
       items: [{
@@ -380,7 +380,7 @@ describe('InventoryService — Purchase Orders', () => {
     assert.ok(confirmed.orderedAt)
   })
 
-  test('confirmOrder rejects non-Draft/Submitted status', () => {
+  it('confirmOrder rejects non-Draft/Submitted status', () => {
     const svc = new InventoryService()
     const order = svc.createPurchaseOrder(tenantCtx, {
       items: [{ productId: 'p-1', productName: 'B', sku: 'B-1', quantity: 1, unitPrice: 1, totalPrice: 1 }],
@@ -394,7 +394,7 @@ describe('InventoryService — Purchase Orders', () => {
     )
   })
 
-  test('receiveOrder transitions Confirmed to Received and stocks-in items', () => {
+  it('receiveOrder transitions Confirmed to Received and stocks-in items', () => {
     const svc = new InventoryService()
     const p = svc.createProduct(tenantCtx, {
       name: 'Ball', sku: 'B-1', unit: 'pcs',
@@ -417,7 +417,7 @@ describe('InventoryService — Purchase Orders', () => {
     assert.equal(updatedProduct.currentStock, 20)
   })
 
-  test('receiveOrder rejects non-Confirmed status', () => {
+  it('receiveOrder rejects non-Confirmed status', () => {
     const svc = new InventoryService()
     const order = svc.createPurchaseOrder(tenantCtx, {
       items: [{ productId: 'p-1', productName: 'B', sku: 'B-1', quantity: 1, unitPrice: 1, totalPrice: 1 }],
@@ -429,7 +429,7 @@ describe('InventoryService — Purchase Orders', () => {
     )
   })
 
-  test('listPurchaseOrders filters by status and supplier', () => {
+  it('listPurchaseOrders filters by status and supplier', () => {
     const svc = new InventoryService()
     const o1 = svc.createPurchaseOrder(tenantCtx, {
       supplierId: 's-A',
@@ -454,7 +454,7 @@ describe('InventoryService — Purchase Orders', () => {
     assert.equal(supplierA.length, 1)
   })
 
-  test('listPurchaseOrders isolates tenants', () => {
+  it('listPurchaseOrders isolates tenants', () => {
     const svc = new InventoryService()
     svc.createPurchaseOrder(tenantCtx, {
       items: [{ productId: 'p-1', productName: 'A', sku: 'A-1', quantity: 1, unitPrice: 1, totalPrice: 1 }],

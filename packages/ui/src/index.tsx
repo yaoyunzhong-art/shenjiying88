@@ -1,6 +1,17 @@
 // --------------- @m5/ui shared component library ---------------
+export { ConfigurationVersionDiff } from './components/ConfigurationVersionDiff';
+export type { ConfigurationVersionDiffProps, DiffEntry, DiffChangeType } from './components/ConfigurationVersionDiff';
+
+export { Divider } from './components/Divider';
+export type { DividerProps, DividerOrientation, DividerVariant } from './components/Divider';
+
+export { ReceiptPreview } from './components/ReceiptPreview';
+export type { ReceiptPreviewProps, ReceiptData, ReceiptHeader, ReceiptLineItem, ReceiptPayment, PaymentMethod as ReceiptPaymentMethod } from './components/ReceiptPreview';
+
 export { Badge } from './components/Badge';
 export type { BadgeProps, BadgeVariant, BadgePlacement, BadgeSize } from './components/Badge';
+export { Chip } from './components/Chip';
+export type { ChipProps, ChipVariant, ChipSize } from './components/Chip';
 export { DescriptionList } from './components/DescriptionList';
 export type { DescriptionListProps, DescriptionItem } from './components/DescriptionList';
 
@@ -12,8 +23,14 @@ export { Accordion } from './components/Accordion';
 export type { AccordionItem, AccordionProps } from './components/Accordion';
 export { Breadcrumb } from './components/Breadcrumb';
 export type { BreadcrumbItem, BreadcrumbProps } from './components/Breadcrumb';
+export { BreadcrumbPageHeader } from './components/BreadcrumbPageHeader';
+export type { BreadcrumbPageHeaderProps, BreadcrumbPageHeaderAction } from './components/BreadcrumbPageHeader';
 export { Calendar } from './components/Calendar';
 export type { CalendarProps, CalendarMarker } from './components/Calendar';
+export { Cascader } from './components/Cascader';
+export type { CascaderOption, CascaderProps } from './components/Cascader';
+export { ColorPicker } from './components/ColorPicker';
+export type { ColorPickerProps, PresetColor, HSBColor, RGBColor, ColorValue } from './components/ColorPicker';
 export { Carousel } from './components/Carousel';
 export type { CarouselProps, CarouselSlide } from './components/Carousel';
 export { WorkspaceBreadcrumb } from './components/WorkspaceBreadcrumb';
@@ -33,24 +50,130 @@ export { Chart } from './components/Chart';
 export type { ChartProps, ChartDataPoint, ChartType } from './components/Chart';
 export { GaugeChart } from './components/GaugeChart';
 export type { GaugeChartProps, GaugeSegment } from './components/GaugeChart';
-export { AIDecisionPanel } from './components/AIDecisionPanel';
+export { FunnelChart } from './components/FunnelChart';
+export type { FunnelChartProps, FunnelStep } from './components/FunnelChart';
+export { AIDecisionPanel } from './components/AiDecisionPanel';
 export type {
-  AIDecisionPanelProps,
+  AiDecisionPanelProps,
+  DecisionRuleResult,
+  DecisionPanelConfig,
   RuleExecutionResult,
   RuleExecutionStatus,
   RuleExecutionSummary,
-} from './components/AIDecisionPanel';
+} from './components/AiDecisionPanel';
 export { HeatmapChart } from './components/HeatmapChart';
 export type { HeatmapChartProps, HeatmapCell, HeatmapColorScheme } from './components/HeatmapChart';
+export { AIAgentThinkingPanel } from './components/AIAgentThinkingPanel';
+export type {
+  AIAgentThinkingPanelProps,
+  ReasoningStep,
+  ReasoningStepStatus,
+  AgentConclusion,
+} from './components/AIAgentThinkingPanel';
+export { AIAnalysisInsightsPanel } from './components/AIAnalysisInsightsPanel';
+export type {
+  AIAnalysisInsightsPanelProps,
+  AnalysisInsight,
+  InsightCategory,
+  InsightSeverity,
+} from './components/AIAnalysisInsightsPanel';
+export { AIAgentChatPanel } from './components/AIAgentChatPanel';
+export type {
+  AIAgentChatPanelProps,
+  ChatMessage,
+  ChatMessageRole,
+  ChatMessageStatus,
+} from './components/AIAgentChatPanel';
+export { AIAgentWorkloadDistributionPanel } from './components/AIAgentWorkloadDistributionPanel';
+export type {
+  AIAgentWorkloadDistributionPanelProps,
+  AgentWorkload,
+} from './components/AIAgentWorkloadDistributionPanel';
+export { AIAgentToolCallPanel } from './components/AIAgentToolCallPanel';
+export type {
+  AIAgentToolCallPanelProps,
+  ToolCallRecord,
+  ToolCallStatus,
+  ToolCallParameter,
+} from './components/AIAgentToolCallPanel';
+export { AISmartInsightPanel } from './components/AISmartInsightPanel';
+export type {
+  AISmartInsightPanelProps,
+  SmartInsight,
+  SmartInsightPriority,
+  SmartInsightCategory,
+} from './components/AISmartInsightPanel';
+export { AIScenarioSimulator } from './components/AIScenarioSimulator';
+export type {
+  AIScenarioSimulatorProps,
+  ScenarioVariable,
+  SimulationResult,
+} from './components/AIScenarioSimulator';
+export { AIDemandForecastPanel } from './components/AIDemandForecastPanel';
+export type {
+  AIDemandForecastPanelProps,
+  DemandForecastEntry,
+  DemandForecastDimension,
+  ForecastModelMeta,
+} from './components/AIDemandForecastPanel';
+
+export { AIExperimentOptimizationPanel } from './components/AIExperimentOptimizationPanel';
+export type {
+  AIExperimentOptimizationPanelProps,
+  ExperimentEntry,
+  ExperimentVariant,
+  ExperimentStatus,
+  OptimizationSuggestion,
+} from './components/AIExperimentOptimizationPanel';
+
+export { AIDeviceFaultPredictionPanel } from './components/AIDeviceFaultPredictionPanel';
+export type {
+  AIDeviceFaultPredictionPanelProps,
+  DeviceFaultPrediction,
+  FaultPredictionSummary,
+  FaultSeverity,
+  PredictionStatus,
+  DeviceCategory,
+} from './components/AIDeviceFaultPredictionPanel';
+
+export { AICompetitiveAnalysisPanel } from './components/AICompetitiveAnalysisPanel';
+export type {
+  AICompetitiveAnalysisPanelProps,
+  CompetitorEntry,
+  CompetitorDimension,
+  CompetitorMetric,
+  AICompetitiveSuggestion,
+} from './components/AICompetitiveAnalysisPanel';
+
+export { AIExecutionAuditPanel } from './components/AIExecutionAuditPanel';
+export type {
+  AIExecutionAuditPanelProps,
+  AIExecutionRecord,
+  ExecutionStatus,
+} from './components/AIExecutionAuditPanel';
 export { AnomalyAlertPanel } from './components/AnomalyAlertPanel';
 export type {
   AnomalyAlertPanelProps,
   AnomalyAlert,
   AnomalySeverity,
-  AnomalySource,
-  AnomalySummary,
 } from './components/AnomalyAlertPanel';
 export { StoreManagerDashboard } from './components/StoreManagerDashboard';
+export { TrainingManagerDashboard } from './components/TrainingManagerDashboard';
+export { RegionalManagerDashboard } from './components/RegionalManagerDashboard';
+export type {
+  RegionalManagerDashboardProps,
+  RegionalSummary,
+  RegionStoreSnapshot,
+  RegionalQuickAction,
+  MonthlyTarget,
+} from './components/RegionalManagerDashboard';
+export { InspectionChecklist } from './components/InspectionChecklist';
+export type {
+  InspectionChecklistProps,
+  InspectionItem,
+  InspectionItemStatus,
+  InspectionResult,
+} from './components/InspectionChecklist';
 export type {
   StoreManagerDashboardProps,
   StoreDailyMetrics,
@@ -58,6 +181,19 @@ export type {
   DeviceStatusSummary,
   QuickAction,
 } from './components/StoreManagerDashboard';
+export type {
+  TrainingManagerDashboardProps,
+  TrainingDailyMetrics,
+  TrainingSession,
+  PendingCertification,
+  TrainingNeed,
+} from './components/TrainingManagerDashboard';
+export { StaffShiftSchedulePanel } from './components/StaffShiftSchedulePanel';
+export type {
+  StaffShiftSchedulePanelProps,
+  ShiftAssignment,
+  ShiftSlot,
+} from './components/StaffShiftSchedulePanel';
 export { MemberMarketerDashboard } from './components/MemberMarketerDashboard';
 export type {
   MemberMarketerDashboardProps,
@@ -67,6 +203,7 @@ export type {
   MarketerQuickAction,
 } from './components/MemberMarketerDashboard';
 export { FrontDeskPanel } from './components/FrontDeskPanel';
+export { FrontDeskSupervisorDashboard } from './components/FrontDeskSupervisorDashboard';
 export type {
   FrontDeskPanelProps,
   BasketItem,
@@ -75,6 +212,13 @@ export type {
   QuickFnButton,
   PaymentMethod,
 } from './components/FrontDeskPanel';
+export type {
+  FrontDeskSupervisorDashboardProps,
+  StaffShiftInfo,
+  QueueOverview,
+  FrontDeskMetrics,
+  ServiceRecord,
+} from './components/FrontDeskSupervisorDashboard';
 export { SalesClerkTool } from './components/SalesClerkTool';
 export type {
   SalesClerkToolProps,
@@ -83,6 +227,21 @@ export type {
   SalesScript,
   MemberQuickLookup,
 } from './components/SalesClerkTool';
+export { AppointmentBookingPanel } from './components/AppointmentBookingPanel';
+export type {
+  AppointmentBookingPanelProps,
+  ServiceItem,
+  TimeSlot,
+  Appointment,
+  AppointmentStatus,
+  BookingParams,
+} from './components/AppointmentBookingPanel';
+export { SalesConversionFunnel } from './components/SalesConversionFunnel';
+export type {
+  SalesConversionFunnelProps,
+  FunnelStage,
+} from './components/SalesConversionFunnel';
+
 export { OperationsManagerDashboard } from './components/OperationsManagerDashboard';
 export type {
   OperationsManagerDashboardProps,
@@ -103,12 +262,18 @@ export type {
 export { StatusBadge, StatusBadgeGroup } from './components/StatusBadge';
 export { Tag, TagGroup } from './components/Tag';
 export type { TagProps, TagVariant } from './components/Tag';
+export { TagInput } from './components/TagInput';
+export type { TagInputProps } from './components/TagInput';
 export { DateTimePicker } from './components/DateTimePicker';
 export type { DateTimePickerMode, DateTimePickerProps } from './components/DateTimePicker';
 export { TimePicker } from './components/TimePicker';
 export type { TimePickerProps } from './components/TimePicker';
+export { MonthPicker } from './components/MonthPicker';
+export type { MonthPickerProps } from './components/MonthPicker';
 export { Card } from './components/Card';
 export { StatCard } from './components/StatCard';
+export { Statistic } from './components/Statistic';
+export type { StatisticProps, StatisticVariant, StatisticSize, StatisticLayout } from './components/Statistic';
 export { QuickStats } from './components/QuickStats';
 export type { QuickStatItem, QuickStatsProps } from './components/QuickStats';
 export { DataTable } from './components/DataTable';
@@ -124,13 +289,25 @@ export { PaginatedDataTableCard } from './components/PaginatedDataTableCard';
 export { Pagination, usePagination } from './components/Pagination';
 export { Progress } from './components/Progress';
 export type { ProgressProps } from './components/Progress';
+export { ProgressRing } from './components/ProgressRing';
+export type { ProgressRingProps } from './components/ProgressRing';
+
+export { TreeSelect } from './components/TreeSelect';
+export type { TreeSelectProps, TreeSelectNode } from './components/TreeSelect';
+
+export { ProgressCard } from './components/ProgressCard';
+export type { ProgressCardProps } from './components/ProgressCard';
 export { ScrollArea } from './components/ScrollArea';
 export type { ScrollAreaProps } from './components/ScrollArea';
 export { PageShell } from './components/PageShell';
 export { DetailShell } from './components/DetailShell';
 export type { DetailShellAction } from './components/DetailShell';
 export { EmptyState } from './components/EmptyState';
+export { Label } from './components/Label';
+export type { LabelProps, LabelSize, LabelWeight, LabelColor } from './components/Label';
 export { LoadingSkeleton } from './components/LoadingSkeleton';
+export { Skeleton } from './components/Skeleton';
+export type { SkeletonProps } from './components/Skeleton';
 export { Tabs } from './components/Tabs';
 export { FilterBar } from './components/FilterBar';
 export { ListToolbar } from './components/ListToolbar';
@@ -225,10 +402,12 @@ export { InfoRow, ConfirmDialog } from './components/InfoRow';
 export { Alert, useAlert } from './components/Alert';
 export type { AlertProps, AlertVariant, AlertState, UseAlertOptions } from './components/Alert';
 export { CopyToClipboard } from './components/CopyToClipboard';
+export { CodeBlock } from './components/CodeBlock';
+export type { CodeBlockProps } from './components/CodeBlock';
 export { VirtualizedList } from './components/VirtualizedList';
 export type { VirtualizedListProps, VirtualizedListRow } from './components/VirtualizedList';
 export { FileUpload } from './components/FileUpload';
-export type { FileUploadProps, UploadedFile } from './components/FileUpload';
+export type { FileUploadProps, UploadFile } from './components/FileUpload';
 export { Switch } from './components/Switch';
 export type { SwitchProps, SwitchSize } from './components/Switch';
 export { RadioGroup } from './components/RadioGroup';
@@ -302,6 +481,7 @@ export type {
   GovernanceQuickViewSectionProps,
 } from './components/FoundationConsumerSections';
 export type { PortalConsumerGovernanceSectionProps } from './components/PortalConsumerGovernanceSection';
+export type { ProcurementManagerDashboardProps, ProcurementSummary, PurchaseOrderSnapshot, SupplierOverview } from './components/ProcurementManagerDashboard';
 export type {
   FoundationAlertLinkedOverviewCardDefinition,
   FoundationAlertLinkedOverviewStatsPreset,
@@ -369,8 +549,12 @@ export { Stepper } from './components/Stepper';
 export type { StepperProps, StepperStep } from './components/Stepper';
 export { Input } from './components/Input';
 export type { InputProps, InputSize, InputVariant } from './components/Input';
+export { TextArea } from './components/TextArea';
+export type { TextAreaProps, TextAreaSize, TextAreaResize } from './components/TextArea';
 export { Checkbox } from './components/Checkbox';
 export type { CheckboxProps, CheckboxSize } from './components/Checkbox';
+export { Collapse } from './components/Collapse';
+export type { CollapseProps, CollapseSize, CollapseVariant } from './components/Collapse';
 export { Combobox } from './components/Combobox';
 export type { ComboboxProps, ComboboxOption } from './components/Combobox';
 export { ContentSwitcher } from './components/ContentSwitcher';
@@ -388,6 +572,10 @@ export type {
   DateRangeValue,
   DateRangePreset,
 } from './components/DateRangePicker';
+export { default as DatePicker } from './components/DatePicker';
+export type {
+  DatePickerProps,
+} from './components/DatePicker';
 export { MemberTierDistribution } from './components/MemberTierDistribution';
 export type { MemberTierDistributionProps, MemberTier } from './components/MemberTierDistribution';
 export { NotificationCenter, useNotificationSummary } from './components/NotificationCenter';
@@ -422,6 +610,15 @@ export { InputNumber } from './components/InputNumber';
 export type { InputNumberProps, InputNumberSize } from './components/InputNumber';
 export { PasswordInput } from './components/PasswordInput';
 export type { PasswordInputProps } from './components/PasswordInput';
+export { ProcurementManagerDashboard } from './components/ProcurementManagerDashboard';
+export { MarketingManagerDashboard } from './components/MarketingManagerDashboard';
+export type {
+  MarketingManagerDashboardProps,
+  MarketingGrowthMetrics,
+  ChannelEffectiveness,
+  MarketingQuickAction,
+} from './components/MarketingManagerDashboard';
+export type { CampaignSnapshot as MarketingCampaignSnapshot } from './components/MarketingManagerDashboard';
 export { ErrorBoundary } from './components/ErrorBoundary';
 export type {
   ErrorBoundaryProps,
@@ -442,17 +639,48 @@ export type {
 } from './components/DeviceStatusPanel';
 export { DeviceInspectionPanel } from './components/DeviceInspectionPanel';
 export type {
-  InspectionItem,
+  InspectionItem as DeviceInspectionItem,
   InspectionMetrics,
   InspectionAlert,
   InspectionSummary,
   DeviceInspectionPanelProps,
 } from './components/DeviceInspectionPanel';
+export { MemberFollowUpTaskPanel } from './components/MemberFollowUpTaskPanel';
+export type {
+  MemberFollowUpTaskPanelProps,
+  FollowUpRecord,
+  FollowUpPriority,
+  FollowUpTaskStatus,
+  FollowUpCategory,
+} from './components/MemberFollowUpTaskPanel';
+
 export { MemberLevelDistribution } from './components/MemberLevelDistribution';
+export { MemberRechargePanel } from './components/MemberRechargePanel';
+export type {
+  MemberRechargePanelProps,
+  RechargePlan,
+  RechargeRecord,
+  RechargePaymentMethod,
+} from './components/MemberRechargePanel';
 export type {
   MemberLevel,
   MemberLevelDistributionProps,
 } from './components/MemberLevelDistribution';
+export { MemberRFMAnalysisPanel } from './components/MemberRFMAnalysisPanel';
+export type {
+  RFMRecord,
+  RFMSegment,
+  RFMSegmentInfo,
+  MemberRFMAnalysisPanelProps,
+} from './components/MemberRFMAnalysisPanel';
+export { AIMemberChurnPredictionPanel } from './components/AIMemberChurnPredictionPanel';
+export type {
+  AIMemberChurnPredictionPanelProps,
+  ChurnPrediction,
+  ChurnRiskLevel,
+  ChurnSignalFactor,
+  RetentionAction,
+} from './components/AIMemberChurnPredictionPanel';
 export { AISummaryCard } from './components/AISummaryCard';
 export type {
   AISummaryCardProps,
@@ -460,10 +688,25 @@ export type {
   InsightItem,
   TrendDirection,
 } from './components/AISummaryCard';
+export { AIPricingRecommendationPanel } from './components/AIPricingRecommendationPanel';
+export type {
+  AIPricingRecommendationPanelProps,
+  PricingRecommendation,
+  PricingSummary,
+} from './components/AIPricingRecommendationPanel';
 export { Rating } from './components/Rating';
 export type { RatingProps } from './components/Rating';
 export { BranchSelector, findNodeById, collectLeafIds } from './components/BranchSelector';
 export type { BranchSelectorNode, BranchSelectorProps } from './components/BranchSelector';
+
+export { RuleRecommendationPanel } from './components/RuleRecommendationPanel';
+export type {
+  RuleRecommendationPanelProps,
+  RuleRecommendation,
+  RecommendationConfidence,
+  RecommendationCategory,
+  RecommendationSummary,
+} from './components/RuleRecommendationPanel';
 
 export { SalesForecastPanel } from './components/SalesForecastPanel';
 export type {
@@ -483,10 +726,410 @@ export type {
 export { SideNavigation } from './components/SideNavigation';
 export type { SideNavigationProps, SideNavItem } from './components/SideNavigation';
 
+export { AssistantManagerDashboard } from './components/AssistantManagerDashboard';
+export type {
+  AssistantManagerDashboardProps,
+  StaffScheduleEntry,
+  TrainingProgress,
+  QualityMetrics,
+  ShiftHandover,
+  HandoverItem,
+  AsstQuickAction,
+} from './components/AssistantManagerDashboard';
+
+export { CustomerServiceDashboard } from './components/CustomerServiceDashboard';
+export type {
+  CustomerServiceDashboardProps,
+  ServiceTicket,
+  ServiceQualityMetrics,
+  AgentStatusSummary,
+} from './components/CustomerServiceDashboard';
+
 export { Button } from './components/Button';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './components/Button';
+
+export { Spinner } from './components/Spinner';
+export type { SpinnerProps, SpinnerSize, SpinnerVariant } from './components/Spinner';
+
+export { Steps } from './components/Steps';
+export type { StepsProps, StepItem, StepStatus, StepsSize, StepsOrientation } from './components/Steps';
+
+export { SplitPane } from './components/SplitPane';
+export type { SplitPaneProps, SplitDirection } from './components/SplitPane';
+
+export { SmartTrendAnalysisPanel } from './components/SmartTrendAnalysisPanel';
+export type {
+  SmartTrendAnalysisPanelProps,
+  TrendAnalysis,
+  ForecastPoint,
+} from './components/SmartTrendAnalysisPanel';
+export type { TrendDirection as TrendAnalysisDirection } from './components/SmartTrendAnalysisPanel';
+
+export { UsageMetricsPanel } from './components/UsageMetricsPanel';
+export type {
+  UsageMetricsPanelProps,
+  UsageMetric,
+} from './components/UsageMetricsPanel';
 
 export { SmartTrendChart } from './SmartTrendChart';
 export type { SmartTrendChartProps, TrendDataPoint } from './SmartTrendChart';
 export { TierDistributionChart } from './TierDistributionChart';
 export type { TierDistributionChartProps, TierData } from './TierDistributionChart';
+
+export { ExportButton, serializeToCsv } from './components/ExportButton';
+export type { ExportButtonProps, ExportFormat } from './components/ExportButton';
+export { MetricsDashboardGrid } from './components/MetricsDashboardGrid';
+export type { MetricsDashboardGridProps, MetricTile } from './components/MetricsDashboardGrid';
+
+export { StatTrend } from './components/StatTrend';
+export type { StatTrendProps, TrendDirection as TrendIndicatorDirection } from './components/StatTrend';
+
+export { AutoComplete } from './components/AutoComplete';
+export type { AutoCompleteProps, AutoCompleteOption } from './components/AutoComplete';
+
+export { DrilldownTrendCard } from './components/DrilldownTrendCard';
+export type {
+  DrilldownTrendCardProps,
+  SparklinePoint,
+  DrilldownDetail,
+  DrilldownDetailItem,
+  TrendDirection as DrilldownTrendDirection,
+} from './components/DrilldownTrendCard';
+
+export { KanbanBoard } from './components/KanbanBoard';
+export type { KanbanBoardProps, KanbanColumn, KanbanCard } from './components/KanbanBoard';
+
+export { AnomalyFrequencyTimeline } from './components/AnomalyFrequencyTimeline';
+export type { AnomalyFrequencyTimelineProps, AnomalyTimeBucket } from './components/AnomalyFrequencyTimeline';
+
+export { AnomalyPatternPanel } from './components/AnomalyPatternPanel';
+export type {
+  AnomalyPatternPanelProps,
+  AnomalyPattern,
+  AnomalyPatternType,
+  PatternSeverity,
+} from './components/AnomalyPatternPanel';
+
+export { AISmartSchedulingPanel } from './components/AISmartSchedulingPanel';
+export type {
+  AISmartSchedulingPanelProps,
+  StaffPreference,
+  ScheduleSlot,
+  SchedulingRecommendation,
+  SchedulingConstraint,
+  SchedulingConstraintType,
+} from './components/AISmartSchedulingPanel';
+
+export { StrategyConfigPanel } from './components/StrategyConfigPanel';
+export type {
+  StrategyConfigPanelProps,
+  StrategyConfig,
+  StrategyParamDef,
+  StrategyParamType,
+  StrategyParamOption,
+  StrategyCondition,
+} from './components/StrategyConfigPanel';
+
+export { ComparisonBreakdownChart } from './components/ComparisonBreakdownChart';
+
+export { ScenarioComparisonPanel } from './components/ScenarioComparisonPanel';
+export type {
+  ScenarioComparisonPanelProps,
+  ScenarioItem,
+  ScenarioMetric,
+} from './components/ScenarioComparisonPanel';
+export type {
+  ComparisonBreakdownChartProps,
+  ComparisonItem,
+} from './components/ComparisonBreakdownChart';
+
+export { Typography, Heading, Text, Paragraph, Caption } from './components/Typography';
+export type { TypographyProps, TextVariant, TextColor, TextWeight, TextAlign, TextTransform } from './components/Typography';
+
+export { ReconnectingBadge } from './components/ReconnectingBadge';
+export type { ReconnectingBadgeProps, ReconnectingState } from './components/ReconnectingBadge';
+
+export { EntertainmentGuideDashboard } from './components/EntertainmentGuideDashboard';
+export type {
+  EntertainmentGuideDashboardProps,
+  GuideDailyMetrics,
+  GuestTask,
+  AreaStatus,
+  PropRental,
+} from './components/EntertainmentGuideDashboard';
+
+export { QuickActionBar } from './components/QuickActionBar';
+export type { QuickActionBarProps, QuickAction as QuickActionBarAction } from './components/QuickActionBar';
+
+export { CampaignPerformancePanel } from './CampaignPerformancePanel';
+export type {
+  CampaignPerformancePanelProps,
+  CampaignMetric,
+  CampaignDataPoint,
+  CampaignInsight,
+} from './CampaignPerformancePanel';
+
+export { CampaignTrendForecast } from './CampaignTrendForecast';
+export type {
+  CampaignTrendForecastProps,
+  CampaignTrendForecastPoint,
+  CampaignTrendHistoricalPoint,
+  CampaignTrendModelInfo,
+  CampaignTrendImpactFactor,
+} from './CampaignTrendForecast';
+
+export { ReconciliationDiffPanel } from './components/ReconciliationDiffPanel';
+export type {
+  ReconciliationDiffPanelProps,
+  ReconciliationDiff,
+  DiffSeverity,
+} from './components/ReconciliationDiffPanel';
+
+export { Result } from './components/Result';
+export type { ResultProps, ResultStatus } from './components/Result';
+
+export { RealTimeRevenueDisplay } from './components/RealTimeRevenueDisplay';
+export type {
+  RealTimeRevenueDisplayProps,
+  RevenueSnapshot,
+  RevenueTrendPoint,
+  RevenueByCategory,
+} from './components/RealTimeRevenueDisplay';
+
+export { CoachDashboard } from './components/CoachDashboard';
+export type { CoachDailyMetrics, FollowUpMember, PromoTask, CoachDashboardProps } from './components/CoachDashboard';
+
+export { OTPInput } from './components/OTPInput';
+export type { OTPInputSize, OTPInputVariant, OTPInputProps } from './components/OTPInput';
+
+export { QRCodeDisplay } from './components/QRCodeDisplay';
+export type { QRCodeDisplayProps, QRCodeType } from './components/QRCodeDisplay';
+
+export { ShiftHandoverPanel } from './components/ShiftHandoverPanel';
+export type {
+  ShiftHandoverPanelProps,
+  ShiftSummary,
+  ShiftHandoverEntry,
+  HandoverCategory,
+} from './components/ShiftHandoverPanel';
+
+export { SegmentedControl } from './components/SegmentedControl';
+export type { SegmentedOption, SegmentedControlProps } from './components/SegmentedControl';
+
+export { Transfer } from './components/Transfer';
+export type { TransferItem, TransferProps } from './components/Transfer';
+
+export { Masonry, WaterfallMasonry } from './components/Masonry';
+export type { MasonryProps, WaterfallMasonryProps } from './components/Masonry';
+
+export { BottomNavigation } from './components/BottomNavigation';
+export type { BottomNavItem, BottomNavigationProps } from './components/BottomNavigation';
+
+export { Collapsible } from './components/Collapsible';
+export type { CollapsibleProps } from './components/Collapsible';
+
+export { CountUp } from './components/CountUp';
+export type { CountUpProps } from './components/CountUp';
+
+export { Countdown, useCountdown } from './components/Countdown';
+export type { CountdownProps, CountdownStatus } from './components/Countdown';
+
+export { ToggleGroup, ToggleButton } from './components/ToggleGroup';
+export type {
+  ToggleGroupProps,
+  ToggleGroupVariant,
+  ToggleGroupSize,
+  ToggleOption,
+  ToggleButtonProps,
+} from './components/ToggleGroup';
+
+export { InventoryKeeperDashboard } from './components/InventoryKeeperDashboard';
+export type {
+  InventoryKeeperDashboardProps,
+  WarehouseMetrics,
+  StockAlert,
+  InboundTask,
+  OutboundTask,
+  KeeperQuickAction,
+} from './components/InventoryKeeperDashboard';
+
+export { CashierPanel } from './components/CashierPanel';
+export type {
+  CashierPanelProps,
+  CashierStatus,
+  ShiftType,
+  ShiftInfo,
+  CashierShiftMetrics,
+  TransactionLog,
+  TillStatus,
+} from './components/CashierPanel';
+
+export { SalesGuideTool } from './components/SalesGuideTool';
+export type {
+  SalesGuideToolProps,
+  CustomerProfile,
+  RecommendedProduct,
+  DailyPerformance,
+  GuideAlert,
+} from './components/SalesGuideTool';
+
+export { CouponRedemptionPanel } from './components/CouponRedemptionPanel';
+export type {
+  CouponRedemptionPanelProps,
+  CouponEntry,
+  CouponType,
+  CouponStatus,
+  RedemptionRequest,
+  RedemptionResult,
+  RedemptionSummary,
+} from './components/CouponRedemptionPanel';
+
+export { ViewModelProvider, useViewModel, useTenantId, useUserId } from './providers/ViewModelProvider';
+export type { ViewModelContextValue, ViewModelProviderProps } from './providers/ViewModelProvider';
+
+export { SpeedDial } from './components/SpeedDial';
+export type { SpeedDialProps, SpeedDialAction } from './components/SpeedDial';
+
+export { SortableList } from './components/SortableList';
+export type { SortableListProps, SortableItem } from './components/SortableList';
+
+export { NumberFormat, Currency, Percent, Compact } from './components/NumberFormat';
+export type { NumberFormatProps, NumberFormatType, NumberFormatSize } from './components/NumberFormat';
+
+export { SparklineChart } from './components/SparklineChart';
+export type { SparklineChartProps, SparklineDataPoint } from './components/SparklineChart';
+
+export { ConfirmActionDialog } from './components/ConfirmActionDialog';
+export type { ConfirmActionDialogProps } from './components/ConfirmActionDialog';
+
+export { PredictionAnalysisPanel } from './components/PredictionAnalysisPanel';
+export type {
+  PredictionAnalysisPanelProps,
+  PredictionPoint,
+  PredictionSummary,
+  ConfidenceInterval,
+} from './components/PredictionAnalysisPanel';
+
+export { ScrollToTop } from './components/ScrollToTop';
+export type { ScrollToTopProps } from './components/ScrollToTop';
+
+export { AIMetricGoalPanel } from './components/AIMetricGoalPanel';
+export type {
+  AIMetricGoalPanelProps,
+  MetricGoal,
+  MetricTrend,
+  MetricMode,
+} from './components/AIMetricGoalPanel';
+
+export { AIModelPerformancePanel } from './components/AIModelPerformancePanel';
+export type {
+  AIModelPerformancePanelProps,
+  ModelPerformanceData,
+  ModelPerformanceMetric,
+} from './components/AIModelPerformancePanel';
+
+export { NavigationMenu } from './components/NavigationMenu';
+export type { NavigationMenuProps, NavMenuItem } from './components/NavigationMenu';
+
+export { HoverCard } from './components/HoverCard';
+export type { HoverCardProps, HoverCardPlacement } from './components/HoverCard';
+
+export { AnnouncementBanner } from './components/AnnouncementBanner';
+export type { AnnouncementBannerProps, AnnouncementSeverity, AnnouncementVariant, AnnouncementBannerAction } from './components/AnnouncementBanner';
+
+export { AIDecisionTimeline } from './components/AIDecisionTimeline';
+export type { AIDecisionTimelineProps, DecisionEvent, TimelineNodeStatus } from './components/AIDecisionTimeline';
+
+export { CustomerSessionPanel } from './components/CustomerSessionPanel';
+export type {
+  CustomerSessionPanelProps,
+  CustomerInfo,
+  SessionStatus,
+  SessionAction,
+} from './components/CustomerSessionPanel';
+
+export { AnomalyDiagnosisReport } from './components/AnomalyDiagnosisReport';
+export type { AnomalyDiagnosisReportProps, DiagnosisFinding } from './components/AnomalyDiagnosisReport';
+
+export { StoreTransferOrderPanel } from './components/StoreTransferOrderPanel';
+export type {
+  StoreTransferOrderPanelProps,
+  TransferOrder,
+  TransferStatus,
+} from './components/StoreTransferOrderPanel';
+
+export { MemberActivityCard } from './components/MemberActivityCard';
+export type { MemberActivityCardProps, MemberActivity, ActivityType } from './components/MemberActivityCard';
+
+export { Space } from './components/Space';
+export type { SpaceProps, SpaceDirection, SpaceSize } from './components/Space';
+
+export { Empty } from './components/Empty';
+export type { EmptyProps } from './components/Empty';
+
+export { AIDecisionComparisonPanel } from './components/AIDecisionComparisonPanel';
+export type { AIDecisionComparisonPanelProps, DecisionComparisonItem } from './components/AIDecisionComparisonPanel';
+
+export { ResourceOptimizationPanel } from './components/ResourceOptimizationPanel'
+export type { ResourceOptimizationPanelProps, ResourceOptimizationSuggestion } from './components/ResourceOptimizationPanel'
+
+export { Mentions } from './components/Mentions';
+export type { MentionsProps, MentionOption, MentionItem } from './components/Mentions';
+
+export { CommentList } from './components/CommentList';
+export type { CommentListProps, CommentItem, CommentAuthor } from './components/CommentList';
+
+export { RealtimeKpiStrip } from './components/RealtimeKpiStrip';
+export type { RealtimeKpiStripProps, KpiItem } from './components/RealtimeKpiStrip';
+
+export { AttachmentList } from './components/AttachmentList';
+export type { AttachmentListProps, AttachmentItem, AttachmentStatus } from './components/AttachmentList';
+
+export { StoreComparisonPanel } from './components/StoreComparisonPanel';
+export type {
+  StoreComparisonPanelProps,
+  StoreComparisonItem,
+  StoreComparisonMetric,
+} from './components/StoreComparisonPanel';
+
+export { BulkEditPanel } from './components/BulkEditPanel';
+export type {
+  BulkEditPanelProps,
+  BulkEditEntry,
+  BulkEditField,
+} from './components/BulkEditPanel';
+
+export { Watermark } from './components/Watermark';
+export type { WatermarkProps, WatermarkContent } from './components/Watermark';
+
+export { Spin } from './components/Spin';
+export type { SpinProps, SpinSize } from './components/Spin';
+
+// --------------- AI 决策规则链 ---------------
+export { AIDecisionRuleChain } from './components/AIDecisionRuleChain';
+export type {
+  AIDecisionRuleChainProps,
+  RuleChainNode,
+  RuleNodeStatus,
+  DecisionSummary,
+} from './components/AIDecisionRuleChain';
+
+// --------------- AI A/B Test Comparison ---------------
+export { AiABTestComparisonPanel, useAiABTestComparison } from './ai-ab-test-comparison';
+export type {
+  AiABTestComparisonPanelProps,
+  ABTestComparison,
+  VariantStats,
+  ABTestRecord,
+  TestVariant,
+} from './ai-ab-test-comparison';
+
+// --------------- AI 推荐反馈面板 ---------------
+export { AIRecommendationFeedbackPanel } from './components/AIRecommendationFeedbackPanel';
+export type {
+  AIRecommendationFeedbackPanelProps,
+  FeedbackSource,
+  FeedbackAggregate,
+  FeedbackRating,
+  UserFeedbackItem,
+} from './components/AIRecommendationFeedbackPanel';

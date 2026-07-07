@@ -1,8 +1,8 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { toRegionalConfigOverrideContract } from './market.contract'
 
-test('contract mapper: regional override omits undefined nested keys', () => {
+it('contract mapper: regional override omits undefined nested keys', () => {
   const contract = toRegionalConfigOverrideContract({
     scopeType: 'TENANT' as never,
     scopeCode: 'tenant-demo',

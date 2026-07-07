@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 
 // Ensure types are importable and structurally sound
  
@@ -7,14 +7,14 @@ const types = require('./tenant.types')
 
 describe('tenant types', () => {
   describe('ActorType', () => {
-    test('is a string union type (resolved from module)', () => {
+    it('is a string union type (resolved from module)', () => {
       // ActorType is a type, runtime check that module loads without error
       assert.ok(types)
     })
   })
 
   describe('RequestTenantContext shape', () => {
-    test('can construct with required fields', () => {
+    it('can construct with required fields', () => {
       const ctx: { tenantId: string; brandId?: string; storeId?: string; marketCode?: string } = {
         tenantId: 't-001',
         brandId: 'b-001',
@@ -27,7 +27,7 @@ describe('tenant types', () => {
       assert.equal(ctx.marketCode, 'CN')
     })
 
-    test('can construct with only tenantId', () => {
+    it('can construct with only tenantId', () => {
       const ctx: { tenantId: string; brandId?: string; storeId?: string; marketCode?: string } = {
         tenantId: 't-minimal',
       }
@@ -37,7 +37,7 @@ describe('tenant types', () => {
   })
 
   describe('RequestActorContext shape', () => {
-    test('can construct a minimal authenticated actor', () => {
+    it('can construct a minimal authenticated actor', () => {
       const actor: {
         actorId: string
         actorType: string
@@ -62,7 +62,7 @@ describe('tenant types', () => {
       assert.equal(actor.source, 'headers')
     })
 
-    test('can construct an actor with tenant/brand/store context', () => {
+    it('can construct an actor with tenant/brand/store context', () => {
       const actor: {
         actorId: string
         actorType: string
@@ -89,7 +89,7 @@ describe('tenant types', () => {
       assert.equal(actor.storeId, 's-001')
     })
 
-    test('actorType supports all defined union values', () => {
+    it('actorType supports all defined union values', () => {
       const validTypes = [
         'platform-user',
         'tenant-user',
@@ -113,14 +113,14 @@ describe('tenant types', () => {
   })
 
   describe('TenantScopeRequirement shape', () => {
-    test('can be constructed empty', () => {
+    it('can be constructed empty', () => {
       const req: { tenantId?: string; brandId?: string; storeId?: string } = {}
       assert.equal(req.tenantId, undefined)
       assert.equal(req.brandId, undefined)
       assert.equal(req.storeId, undefined)
     })
 
-    test('can be constructed with all fields', () => {
+    it('can be constructed with all fields', () => {
       const req: { tenantId?: string; brandId?: string; storeId?: string } = {
         tenantId: 't-001',
         brandId: 'b-001',
@@ -133,7 +133,7 @@ describe('tenant types', () => {
   })
 
   describe('RequestRateLimitDecision shape', () => {
-    test('can construct with applied=false', () => {
+    it('can construct with applied=false', () => {
       const d: {
         applied: boolean
         scopeKey?: string
@@ -146,7 +146,7 @@ describe('tenant types', () => {
       assert.equal(d.allowed, undefined)
     })
 
-    test('can construct with full rate-limit applied state', () => {
+    it('can construct with full rate-limit applied state', () => {
       const d: {
         applied: boolean
         scopeKey?: string
@@ -170,7 +170,7 @@ describe('tenant types', () => {
       assert.equal(d.retryAfterSeconds, 0)
     })
 
-    test('can construct rate-limit exceeding state', () => {
+    it('can construct rate-limit exceeding state', () => {
       const d: {
         applied: boolean
         allowed?: boolean
@@ -193,7 +193,7 @@ describe('tenant types', () => {
   })
 
   describe('RequestGovernanceContext shape', () => {
-    test('can construct with minimal fields', () => {
+    it('can construct with minimal fields', () => {
       const ctx: { requestId: string; startedAt: number } = {
         requestId: 'req-001',
         startedAt: Date.now(),
@@ -202,7 +202,7 @@ describe('tenant types', () => {
       assert.ok(typeof ctx.startedAt === 'number')
     })
 
-    test('can construct with rateLimit attached', () => {
+    it('can construct with rateLimit attached', () => {
       const ctx: {
         requestId: string
         startedAt: number
@@ -228,7 +228,7 @@ describe('tenant types', () => {
   })
 
   describe('ResolvedActorContext shape', () => {
-    test('can construct a fully resolved actor context', () => {
+    it('can construct a fully resolved actor context', () => {
       const resolved: {
         authenticated: boolean
         actor: { actorId: string; actorType: string; roles: string[]; permissions: string[]; authenticated: boolean; source: 'headers' } | null
@@ -269,7 +269,7 @@ describe('tenant types', () => {
       assert.deepStrictEqual(resolved.permissions, ['*'])
     })
 
-    test('can construct an unauthenticated resolved context', () => {
+    it('can construct an unauthenticated resolved context', () => {
       const resolved: {
         authenticated: boolean
         actor: null
@@ -295,7 +295,7 @@ describe('tenant types', () => {
   })
 
   describe('TenantAwareRequest augmentation', () => {
-    test('extends Request with tenant context fields', () => {
+    it('extends Request with tenant context fields', () => {
       // Structural assertion: object must have the tenant-specific fields
       const req: {
         tenantContext: { tenantId: string }
@@ -317,7 +317,7 @@ describe('tenant types', () => {
       assert.equal(req.actorContext!.source, 'headers')
     })
 
-    test('TenantAwareRequest omits optional actorContext', () => {
+    it('TenantAwareRequest omits optional actorContext', () => {
       const req: {
         tenantContext: { tenantId: string }
         actorContext?: unknown

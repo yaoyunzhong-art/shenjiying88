@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { FoundationController } from './foundation.controller'
 import { FoundationService } from './foundation.service'
 
@@ -31,7 +31,7 @@ function createModuleDescriptor(
   }
 }
 
-test('contract: foundation bootstrap shape stays aligned with shared source of truth', () => {
+it('contract: foundation bootstrap shape stays aligned with shared source of truth', () => {
   const service = new FoundationService(
     {
       getDescriptor: () => createModuleDescriptor('identity-access')
@@ -141,7 +141,7 @@ test('contract: foundation bootstrap shape stays aligned with shared source of t
   assert.equal(bootstrap.modules.every((module) => module.capabilities.every((capability) => capability.status === 'active')), true)
 })
 
-test('contract: foundation modules endpoint exposes ordered active module catalog', () => {
+it('contract: foundation modules endpoint exposes ordered active module catalog', () => {
   const service = new FoundationService(
     {
       getDescriptor: () => createModuleDescriptor('identity-access')
@@ -186,7 +186,7 @@ test('contract: foundation modules endpoint exposes ordered active module catalo
   assert.equal(modules.every((module) => module.capabilities.every((capability) => capability.status === 'active')), true)
 })
 
-test('contract: foundation consumers endpoints expose catalog and unknown fallback', () => {
+it('contract: foundation consumers endpoints expose catalog and unknown fallback', () => {
   const service = new FoundationService(
     {
       getDescriptor: () => createModuleDescriptor('identity-access')

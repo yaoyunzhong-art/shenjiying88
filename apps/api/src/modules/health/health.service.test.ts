@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { HealthService } from './health.service'
 import { HealthStatus } from './health.entity'
 
@@ -29,14 +29,14 @@ describe('HealthService', () => {
     return service
   }
 
-  test('can be instantiated', () => {
+  it('can be instantiated', () => {
     service = createService()
     assert.ok(service)
     assert.ok(service instanceof HealthService)
   })
 
   describe('check()', () => {
-    test('returns OK status for default components', async () => {
+    it('returns OK status for default components', async () => {
       service = createService()
       const result = await service.check()
 
@@ -47,7 +47,7 @@ describe('HealthService', () => {
       assert.equal(result.lytMode, 'mock')
     })
 
-    test('returns components array with required entries', async () => {
+    it('returns components array with required entries', async () => {
       service = createService()
       const result = await service.check()
 
@@ -57,7 +57,7 @@ describe('HealthService', () => {
       assert.ok(result.components.some((c) => c.name === 'lyt-adapter'))
     })
 
-    test('each component has status and latencyMs', async () => {
+    it('each component has status and latencyMs', async () => {
       service = createService()
       const result = await service.check()
 
@@ -68,7 +68,7 @@ describe('HealthService', () => {
       }
     })
 
-    test('verbose mode includes more components', async () => {
+    it('verbose mode includes more components', async () => {
       service = createService()
       ;(service as any).pingRedis = async () => 'PONG'
       const result = await service.check({ scope: { scopeType: 'TENANT' } as any, verbose: true })
@@ -80,7 +80,7 @@ describe('HealthService', () => {
       assert.equal(result.sampleMember?.memberId, 'seed-member-001')
     })
 
-    test('non-verbose mode excludes extra components', async () => {
+    it('non-verbose mode excludes extra components', async () => {
       service = createService()
       const result = await service.check()
 
@@ -91,7 +91,7 @@ describe('HealthService', () => {
       assert.equal(result.sampleMember, undefined)
     })
 
-    test('returns valid ISO date for checkedAt', async () => {
+    it('returns valid ISO date for checkedAt', async () => {
       service = createService()
       const result = await service.check()
 
@@ -100,7 +100,7 @@ describe('HealthService', () => {
   })
 
   describe('ping()', () => {
-    test('returns alive=true for healthy system', async () => {
+    it('returns alive=true for healthy system', async () => {
       service = createService()
       const result = await service.ping()
 
@@ -109,7 +109,7 @@ describe('HealthService', () => {
       assert.ok(!isNaN(Date.parse(result.timestamp)))
     })
 
-    test('returns alive=true even when readiness dependencies are unavailable', async () => {
+    it('returns alive=true even when readiness dependencies are unavailable', async () => {
       service = createService()
       ;(service as any).prismaService.$queryRaw = async () => {
         throw new Error('database down')
@@ -123,7 +123,7 @@ describe('HealthService', () => {
   })
 
   describe('checkComponent()', () => {
-    test('database returns OK with detail', async () => {
+    it('database returns OK with detail', async () => {
       let queryCalls = 0
       service = createService()
       ;(service as any).prismaService.$queryRaw = async () => {
@@ -143,7 +143,7 @@ describe('HealthService', () => {
       assert.equal(queryCalls, 1)
     })
 
-    test('redis returns OK with detail', async () => {
+    it('redis returns OK with detail', async () => {
       const originalHost = process.env.REDIS_HOST
       const originalPort = process.env.REDIS_PORT
       process.env.REDIS_HOST = 'redis.internal'
@@ -167,7 +167,7 @@ describe('HealthService', () => {
       }
     })
 
-    test('lyt-adapter returns mock mode', async () => {
+    it('lyt-adapter returns mock mode', async () => {
       service = createService()
       const result = await service.checkComponent('lyt-adapter')
 
@@ -178,7 +178,7 @@ describe('HealthService', () => {
       assert.equal(result.detail!.adapter, 'MockLytAdapter')
     })
 
-    test('memory returns OK with detail', async () => {
+    it('memory returns OK with detail', async () => {
       service = createService()
       const result = await service.checkComponent('memory')
 
@@ -190,7 +190,7 @@ describe('HealthService', () => {
       assert.ok(typeof result.detail!.usagePercent === 'number')
     })
 
-    test('disk returns OK with detail', async () => {
+    it('disk returns OK with detail', async () => {
       service = createService()
       const result = await service.checkComponent('disk')
 
@@ -202,7 +202,7 @@ describe('HealthService', () => {
       assert.ok(typeof result.detail!.usagePercent === 'number')
     })
 
-    test('database returns Unavailable when prisma probe fails', async () => {
+    it('database returns Unavailable when prisma probe fails', async () => {
       service = createService()
       ;(service as any).prismaService.$queryRaw = async () => {
         throw new Error('database down')
@@ -214,7 +214,7 @@ describe('HealthService', () => {
       assert.equal(result.detail!.error, 'database down')
     })
 
-    test('redis returns Unavailable when ping fails', async () => {
+    it('redis returns Unavailable when ping fails', async () => {
       service = createService()
       ;(service as any).pingRedis = async () => {
         throw new Error('redis down')
@@ -226,7 +226,7 @@ describe('HealthService', () => {
       assert.equal(result.detail!.error, 'redis down')
     })
 
-    test('unknown component returns Unavailable', async () => {
+    it('unknown component returns Unavailable', async () => {
       service = createService()
       const result = await service.checkComponent('unknown-component')
 
@@ -237,7 +237,7 @@ describe('HealthService', () => {
   })
 
   describe('uptime tracking', () => {
-    test('uptimeSeconds is non-negative and increases', async () => {
+    it('uptimeSeconds is non-negative and increases', async () => {
       service = createService()
       const result1 = await service.check()
 

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * cashier.controller.spec.ts
  *
@@ -6,10 +7,9 @@
  */
 
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 
 // ── 精简版 Controller / 装饰器 模拟（避免 NestJS 反射依赖） ──
-let lastRegisteredRoute: { method: string; path: string } | null = null
+const lastRegisteredRoute: { method: string; path: string } | null = null
 const routes: { method: string; path: string; handler: string }[] = []
 
 function collectRoute(method: string, path: string) {
@@ -142,46 +142,46 @@ function makeController(overrides: Partial<MockService> = {}) {
 //  路由元数据
 // ═══════════════════════════════════════════════════════════════
 describe('CashierController 路由定义', () => {
-  test('应注册 6 条路由', () => {
+  it('应注册 6 条路由', () => {
     assert.equal(routes.length, 6)
   })
 
-  test('listOrders → GET /orders', () => {
+  it('listOrders → GET /orders', () => {
     const r = routes.find((x) => x.handler === 'listOrders')
     assert.ok(r)
     assert.equal(r.method, 'GET')
     assert.equal(r.path, '')
   })
 
-  test('getOrder → GET /orders/:orderId', () => {
+  it('getOrder → GET /orders/:orderId', () => {
     const r = routes.find((x) => x.handler === 'getOrder')
     assert.ok(r)
     assert.equal(r.method, 'GET')
     assert.equal(r.path, ':orderId')
   })
 
-  test('createOrder → POST /orders', () => {
+  it('createOrder → POST /orders', () => {
     const r = routes.find((x) => x.handler === 'createOrder')
     assert.ok(r)
     assert.equal(r.method, 'POST')
     assert.equal(r.path, '')
   })
 
-  test('createPayment → POST /orders/:orderId/payments', () => {
+  it('createPayment → POST /orders/:orderId/payments', () => {
     const r = routes.find((x) => x.handler === 'createPayment')
     assert.ok(r)
     assert.equal(r.method, 'POST')
     assert.equal(r.path, ':orderId/payments')
   })
 
-  test('listPayments → GET /payments', () => {
+  it('listPayments → GET /payments', () => {
     const r = routes.find((x) => x.handler === 'listPayments')
     assert.ok(r)
     assert.equal(r.method, 'GET')
     assert.equal(r.path, '')
   })
 
-  test('applyPaymentCallback → POST /payments/standardized-callback', () => {
+  it('applyPaymentCallback → POST /payments/standardized-callback', () => {
     const r = routes.find((x) => x.handler === 'applyPaymentCallback')
     assert.ok(r)
     assert.equal(r.method, 'POST')
@@ -193,7 +193,7 @@ describe('CashierController 路由定义', () => {
 //  正例
 // ═══════════════════════════════════════════════════════════════
 describe('CashierController 正例', () => {
-  test('listOrders 委托 service 并返回订单列表', () => {
+  it('listOrders 委托 service 并返回订单列表', () => {
     const orders = [
       { orderId: 'o-a', memberId: 'm-1', totalAmount: 100 },
       { orderId: 'o-b', memberId: 'm-2', totalAmount: 200 }
@@ -214,7 +214,7 @@ describe('CashierController 正例', () => {
     assert.equal(capturedCtx?.tenantId, 't-cashier')
   })
 
-  test('getOrder 找到订单返回详情', () => {
+  it('getOrder 找到订单返回详情', () => {
     const order = { orderId: 'o-found', memberId: 'm-f', totalAmount: 500 }
     let capturedId = ''
     const controller = makeController({
@@ -230,7 +230,7 @@ describe('CashierController 正例', () => {
     assert.equal(capturedId, 'o-found')
   })
 
-  test('createOrder 创建订单返回结果', () => {
+  it('createOrder 创建订单返回结果', () => {
     const created = { orderId: 'o-new', status: 'PENDING', totalAmount: 300 }
     let capturedBody: CreateCashierOrderDto | undefined
     const controller = makeController({
@@ -254,7 +254,7 @@ describe('CashierController 正例', () => {
     assert.equal(capturedBody?.currency, 'CNY')
   })
 
-  test('createPayment 为订单创建支付', () => {
+  it('createPayment 为订单创建支付', () => {
     const payment = { paymentId: 'p-new', channel: 'wechat-pay', status: 'PENDING' }
     let capturedOrderId = ''
     let capturedBody: CreateCashierPaymentDto | undefined
@@ -278,7 +278,7 @@ describe('CashierController 正例', () => {
     assert.equal(capturedBody?.externalPaymentId, 'ext-001')
   })
 
-  test('listPayments 委托 service 并返回支付列表', () => {
+  it('listPayments 委托 service 并返回支付列表', () => {
     const payments = [
       { paymentId: 'p-1', status: 'SUCCEEDED', channel: 'wechat-pay' },
       { paymentId: 'p-2', status: 'FAILED', channel: 'alipay' }
@@ -297,7 +297,7 @@ describe('CashierController 正例', () => {
     assert.equal(capturedCtx?.tenantId, 't-cashier')
   })
 
-  test('applyPaymentCallback 成功回调返回更新结果', () => {
+  it('applyPaymentCallback 成功回调返回更新结果', () => {
     const callbackResult = { payment: { status: 'SUCCEEDED', transactionNo: 'txn-ok' }, pointsLedger: [] }
     let captured: CashierPaymentCallbackDto | undefined
     const controller = makeController({
@@ -327,7 +327,7 @@ describe('CashierController 正例', () => {
 //  反例
 // ═══════════════════════════════════════════════════════════════
 describe('CashierController 反例', () => {
-  test('getOrder 查询不存在的订单应抛出 Error', () => {
+  it('getOrder 查询不存在的订单应抛出 Error', () => {
     const controller = makeController({
       getOrder: () => undefined
     })
@@ -338,7 +338,7 @@ describe('CashierController 反例', () => {
     )
   })
 
-  test('getOrder 跨租户返回 undefined → 抛出', () => {
+  it('getOrder 跨租户返回 undefined → 抛出', () => {
     const controller = makeController({
       getOrder: (id, ctx) => {
         if (ctx.tenantId !== 't-expected') return undefined
@@ -352,7 +352,7 @@ describe('CashierController 反例', () => {
     )
   })
 
-  test('createOrder 空 items 被 service 拒绝 → 错误冒泡', () => {
+  it('createOrder 空 items 被 service 拒绝 → 错误冒泡', () => {
     const controller = makeController({
       createOrder: () => {
         throw new Error('Order must include at least one item')
@@ -365,7 +365,7 @@ describe('CashierController 反例', () => {
     )
   })
 
-  test('createPayment 无效 channel → 错误冒泡', () => {
+  it('createPayment 无效 channel → 错误冒泡', () => {
     const controller = makeController({
       createPayment: () => {
         throw new Error('Unsupported payment channel: crypto')
@@ -378,7 +378,7 @@ describe('CashierController 反例', () => {
     )
   })
 
-  test('applyPaymentCallback 失败回调 → service 更新状态', () => {
+  it('applyPaymentCallback 失败回调 → service 更新状态', () => {
     const failResult = { payment: { status: 'FAILED', reason: 'insufficient-funds' } }
     const controller = makeController({
       applyPaymentCallback: () => failResult
@@ -399,7 +399,7 @@ describe('CashierController 反例', () => {
 //  边界值
 // ═══════════════════════════════════════════════════════════════
 describe('CashierController 边界值', () => {
-  test('listOrders 空租户返回空数组', () => {
+  it('listOrders 空租户返回空数组', () => {
     const controller = makeController({ listOrders: () => [] })
 
     const result = controller.listOrders(createContext('t-empty'))
@@ -408,7 +408,7 @@ describe('CashierController 边界值', () => {
     assert.equal(result.length, 0)
   })
 
-  test('listPayments 空租户返回空数组', () => {
+  it('listPayments 空租户返回空数组', () => {
     const controller = makeController({ listPayments: () => [] })
 
     const result = controller.listPayments(createContext('t-no-pay'))
@@ -417,7 +417,7 @@ describe('CashierController 边界值', () => {
     assert.equal(result.length, 0)
   })
 
-  test('createOrder 单商品 0 元价格', () => {
+  it('createOrder 单商品 0 元价格', () => {
     const created = { orderId: 'o-zero', totalAmount: 0 }
     const controller = makeController({ createOrder: () => created })
 
@@ -430,7 +430,7 @@ describe('CashierController 边界值', () => {
     assert.equal(result.totalAmount, 0)
   })
 
-  test('createOrder 多商品大单 (10 items)', () => {
+  it('createOrder 多商品大单 (10 items)', () => {
     const items = Array.from({ length: 10 }, (_, i) => ({
       skuId: `sku-${i}`,
       quantity: 1,
@@ -453,7 +453,7 @@ describe('CashierController 边界值', () => {
     assert.equal(capturedItems?.length, 10)
   })
 
-  test('applyPaymentCallback 带 payload 扩展字段', () => {
+  it('applyPaymentCallback 带 payload 扩展字段', () => {
     let captured: CashierPaymentCallbackDto | undefined
     const controller = makeController({
       applyPaymentCallback: (body) => {
@@ -478,7 +478,7 @@ describe('CashierController 边界值', () => {
 //  租户隔离
 // ═══════════════════════════════════════════════════════════════
 describe('CashierController 租户隔离', () => {
-  test('listOrders 仅返回当前租户数据', () => {
+  it('listOrders 仅返回当前租户数据', () => {
     const allOrders = [
       { orderId: 'o-t1', memberId: 'm-1', tenantId: 't-alpha' },
       { orderId: 'o-t2', memberId: 'm-2', tenantId: 't-beta' }
@@ -496,7 +496,7 @@ describe('CashierController 租户隔离', () => {
     assert.equal(t2[0].orderId, 'o-t2')
   })
 
-  test('getOrder 跨租户不可见', () => {
+  it('getOrder 跨租户不可见', () => {
     const controller = makeController({
       getOrder: (id, ctx) => {
         if (ctx.tenantId === 't-privileged') return { orderId: id }
@@ -509,7 +509,7 @@ describe('CashierController 租户隔离', () => {
     assert.equal(ok.orderId, 'secret-order')
   })
 
-  test('listPayments 租户 B 看不到租户 A 的支付', () => {
+  it('listPayments 租户 B 看不到租户 A 的支付', () => {
     const payments = [
       { paymentId: 'pay-a', tenantId: 't-alpha' },
       { paymentId: 'pay-b', tenantId: 't-beta' }

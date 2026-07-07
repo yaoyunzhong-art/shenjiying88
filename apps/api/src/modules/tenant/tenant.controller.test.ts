@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { TenantController } from './tenant.controller'
 import type {
   RequestTenantContext,
@@ -57,19 +57,19 @@ function makeReq(overrides: Partial<TenantAwareRequest> = {}): TenantAwareReques
 
 // ──────────── 路由元数据 ────────────
 describe('tenant controller 路由元数据', () => {
-  test('controller path 为 tenant', () => {
+  it('controller path 为 tenant', () => {
     const path = Reflect.getMetadata('path', TenantController)
     assert.equal(path, 'tenant')
   })
 
-  test('resolveTenant 为 GET /resolve', () => {
+  it('resolveTenant 为 GET /resolve', () => {
     const method = Reflect.getMetadata('method', TenantController.prototype.resolveTenant)
     const path = Reflect.getMetadata('path', TenantController.prototype.resolveTenant)
     assert.equal(method, 0) // GET
     assert.equal(path, 'resolve')
   })
 
-  test('resolveTenant 的 @Req() 参数装饰器已设置', () => {
+  it('resolveTenant 的 @Req() 参数装饰器已设置', () => {
     // @Req() 在 NestJS 中对应参数索引 0，元数据 key 为 __routeArguments__
     const routeArgs = Reflect.getMetadata(
       '__routeArguments__',
@@ -84,7 +84,7 @@ describe('tenant controller 路由元数据', () => {
 
 // ──────────── 正常解析场景 ────────────
 describe('resolveTenant 正常解析', () => {
-  test('完整 actor + tenant + governance 合并', () => {
+  it('完整 actor + tenant + governance 合并', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant(
       makeReq({
@@ -124,7 +124,7 @@ describe('resolveTenant 正常解析', () => {
     assert.equal(result.source, 'tenant-module')
   })
 
-  test('无 actor 时返回 null actor', () => {
+  it('无 actor 时返回 null actor', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant(
       makeReq({
@@ -141,7 +141,7 @@ describe('resolveTenant 正常解析', () => {
     assert.equal(result.actor, null)
   })
 
-  test('actor tenantId 未设置时回退到 tenantContext', () => {
+  it('actor tenantId 未设置时回退到 tenantContext', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant(
       makeReq({
@@ -159,7 +159,7 @@ describe('resolveTenant 正常解析', () => {
     assert.equal(result.effectiveStoreId, 's-from-actor')
   })
 
-  test('tenantContext 无 tenantId 时回退到默认值', () => {
+  it('tenantContext 无 tenantId 时回退到默认值', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant(
       makeReq({
@@ -171,7 +171,7 @@ describe('resolveTenant 正常解析', () => {
     assert.equal(result.effectiveTenantId, 'tenant-demo')
   })
 
-  test('actor.authenticated 为 false 时仍返回 actor 信息', () => {
+  it('actor.authenticated 为 false 时仍返回 actor 信息', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant(
       makeReq({
@@ -186,7 +186,7 @@ describe('resolveTenant 正常解析', () => {
     assert.equal(result.actor?.actorName, 'unauthenticated-user')
   })
 
-  test('空 roles 和 permissions 的 actor', () => {
+  it('空 roles 和 permissions 的 actor', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant(
       makeReq({
@@ -201,7 +201,7 @@ describe('resolveTenant 正常解析', () => {
 
 // ──────────── 边界场景 ────────────
 describe('resolveTenant 边界场景', () => {
-  test('无 tenantContext 无 actorContext 时的绝对回退', () => {
+  it('无 tenantContext 无 actorContext 时的绝对回退', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant({
       tenantContext: undefined,
@@ -215,7 +215,7 @@ describe('resolveTenant 边界场景', () => {
     assert.equal(result.source, 'tenant-module')
   })
 
-  test('partial tenantContext 只有 tenantId', () => {
+  it('partial tenantContext 只有 tenantId', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant({
       tenantContext: { tenantId: 't-minimal-client' },
@@ -229,7 +229,7 @@ describe('resolveTenant 边界场景', () => {
     assert.equal(result.effectiveStoreId, undefined)
   })
 
-  test('governanceContext 有 rateLimit 信息', () => {
+  it('governanceContext 有 rateLimit 信息', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant(
       makeReq({
@@ -249,7 +249,7 @@ describe('resolveTenant 边界场景', () => {
     assert.ok(result.effectiveTenantId)
   })
 
-  test('长 actorId 和 tenantId 的处理', () => {
+  it('长 actorId 和 tenantId 的处理', () => {
     const controller = new TenantController()
     const longId = 'a'.repeat(200)
     const result = controller.resolveTenant(
@@ -263,7 +263,7 @@ describe('resolveTenant 边界场景', () => {
     assert.equal(result.actor?.actorId, longId)
   })
 
-  test('特殊字符在 actorName 和 marketCode 中', () => {
+  it('特殊字符在 actorName 和 marketCode 中', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant(
       makeReq({
@@ -345,7 +345,7 @@ describe('resolveTenant 角色视角解析', () => {
   ]
 
   for (const scenario of roleScenarios) {
-    test(`${scenario.roleLabel} 角色解析正确`, () => {
+    it(`${scenario.roleLabel} 角色解析正确`, () => {
       const controller = new TenantController()
       const result = controller.resolveTenant(
         makeReq({
@@ -382,7 +382,7 @@ describe('resolveTenant 角色视角解析', () => {
 
 // ──────────── 租户级别解析 ────────────
 describe('resolveTenant 多级租户解析', () => {
-  test('Platform 级 actor (无 tenant)', () => {
+  it('Platform 级 actor (无 tenant)', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant(
       makeReq({
@@ -405,7 +405,7 @@ describe('resolveTenant 多级租户解析', () => {
     assert.equal(result.actor?.actorType, 'platform-user')
   })
 
-  test('Brand 级 actor 重写 tenantContext 的 brandId', () => {
+  it('Brand 级 actor 重写 tenantContext 的 brandId', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant(
       makeReq({
@@ -430,7 +430,7 @@ describe('resolveTenant 多级租户解析', () => {
     assert.equal(result.effectiveStoreId, 's-default') // actor 没有 storeId
   })
 
-  test('Store 级 actor 直接绑定门店', () => {
+  it('Store 级 actor 直接绑定门店', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant(
       makeReq({
@@ -456,7 +456,7 @@ describe('resolveTenant 多级租户解析', () => {
     assert.equal(result.effectiveTenantId, 't-chain')
   })
 
-  test('Service Account actor', () => {
+  it('Service Account actor', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant(
       makeReq({
@@ -479,7 +479,7 @@ describe('resolveTenant 多级租户解析', () => {
 
 // ──────────── 幂等性验证 ────────────
 describe('resolveTenant 幂等性与一致性', () => {
-  test('相同输入多次调用返回相同结果', () => {
+  it('相同输入多次调用返回相同结果', () => {
     const controller = new TenantController()
     const req = makeReq()
 
@@ -491,7 +491,7 @@ describe('resolveTenant 幂等性与一致性', () => {
     assert.deepStrictEqual(result2, result3)
   })
 
-  test('不同输入返回不同结果的同时结构保持稳定', () => {
+  it('不同输入返回不同结果的同时结构保持稳定', () => {
     const controller = new TenantController()
 
     const reqA = makeReq({
@@ -511,7 +511,7 @@ describe('resolveTenant 幂等性与一致性', () => {
     }
   })
 
-  test('source 字段始终为 tenant-module', () => {
+  it('source 字段始终为 tenant-module', () => {
     const controller = new TenantController()
 
     const withActor = controller.resolveTenant(makeReq())
@@ -528,7 +528,7 @@ describe('resolveTenant 幂等性与一致性', () => {
 
 // ──────────── 精确保留字段 ────────────
 describe('resolveTenant 精确保留 actor 原始字段', () => {
-  test('actor 的所有字段被保留', () => {
+  it('actor 的所有字段被保留', () => {
     const controller = new TenantController()
     const result = controller.resolveTenant(
       makeReq({

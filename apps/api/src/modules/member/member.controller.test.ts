@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [member] [A] 模块补全 — controller spec 增强
  *
@@ -7,7 +8,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe, beforeEach } from 'node:test'
 import { MemberController } from './member.controller'
 import { MemberService } from './member.service'
 import type {
@@ -89,77 +89,75 @@ function createLoginResultFixture(overrides: Partial<MemberLoginResult> = {}): M
 
 // ── metadata assertions ──
 
-test('member controller path metadata is set', () => {
+it('member controller path metadata is set', () => {
   const path = Reflect.getMetadata('path', MemberController)
   assert.equal(path, 'members')
 })
 
-test('member controller getBootstrap route has GET metadata', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { MemberController: Ctrl } = require('./member.controller')
-  const method = Reflect.getMetadata('method', Ctrl.prototype.getBootstrap)
-  const path = Reflect.getMetadata('path', Ctrl.prototype.getBootstrap)
+it('member controller getBootstrap route has GET metadata', () => {
+  const method = Reflect.getMetadata('method', MemberController.prototype.getBootstrap)
+  const path = Reflect.getMetadata('path', MemberController.prototype.getBootstrap)
   assert.equal(method, 0)
   assert.equal(path, 'bootstrap')
 })
 
-test('member controller registerPersistent route has POST metadata', () => {
+it('member controller registerPersistent route has POST metadata', () => {
   const method = Reflect.getMetadata('method', MemberController.prototype.registerPersistent)
   const path = Reflect.getMetadata('path', MemberController.prototype.registerPersistent)
   assert.equal(method, 1)
   assert.equal(path, 'persistent/register')
 })
 
-test('member controller listPersistentMutationHistory route has GET metadata', () => {
+it('member controller listPersistentMutationHistory route has GET metadata', () => {
   const method = Reflect.getMetadata('method', MemberController.prototype.listPersistentMutationHistory)
   const path = Reflect.getMetadata('path', MemberController.prototype.listPersistentMutationHistory)
   assert.equal(method, 0)
   assert.equal(path, 'persistent/:memberId/history')
 })
 
-test('member controller updatePersistentProfile route has POST metadata', () => {
+it('member controller updatePersistentProfile route has POST metadata', () => {
   const method = Reflect.getMetadata('method', MemberController.prototype.updatePersistentProfile)
   const path = Reflect.getMetadata('path', MemberController.prototype.updatePersistentProfile)
   assert.equal(method, 1)
   assert.equal(path, 'persistent/:memberId/profile')
 })
 
-test('member controller awardPersistentPoints route has POST metadata', () => {
+it('member controller awardPersistentPoints route has POST metadata', () => {
   const method = Reflect.getMetadata('method', MemberController.prototype.awardPersistentPoints)
   const path = Reflect.getMetadata('path', MemberController.prototype.awardPersistentPoints)
   assert.equal(method, 1)
   assert.equal(path, 'persistent/:memberId/points/award')
 })
 
-test('member controller rollbackPersistentPoints route has POST metadata', () => {
+it('member controller rollbackPersistentPoints route has POST metadata', () => {
   const method = Reflect.getMetadata('method', MemberController.prototype.rollbackPersistentPoints)
   const path = Reflect.getMetadata('path', MemberController.prototype.rollbackPersistentPoints)
   assert.equal(method, 1)
   assert.equal(path, 'persistent/:memberId/points/rollback')
 })
 
-test('member controller updatePersistentStatus route has POST metadata', () => {
+it('member controller updatePersistentStatus route has POST metadata', () => {
   const method = Reflect.getMetadata('method', MemberController.prototype.updatePersistentStatus)
   const path = Reflect.getMetadata('path', MemberController.prototype.updatePersistentStatus)
   assert.equal(method, 1)
   assert.equal(path, 'persistent/:memberId/status')
 })
 
-test('member controller overridePersistentLevel route has POST metadata', () => {
+it('member controller overridePersistentLevel route has POST metadata', () => {
   const method = Reflect.getMetadata('method', MemberController.prototype.overridePersistentLevel)
   const path = Reflect.getMetadata('path', MemberController.prototype.overridePersistentLevel)
   assert.equal(method, 1)
   assert.equal(path, 'persistent/:memberId/level')
 })
 
-test('member controller recordPersistentPaymentActivity route has POST metadata', () => {
+it('member controller recordPersistentPaymentActivity route has POST metadata', () => {
   const method = Reflect.getMetadata('method', MemberController.prototype.recordPersistentPaymentActivity)
   const path = Reflect.getMetadata('path', MemberController.prototype.recordPersistentPaymentActivity)
   assert.equal(method, 1)
   assert.equal(path, 'persistent/:memberId/payment-activity')
 })
 
-test('member controller login route has POST metadata', () => {
+it('member controller login route has POST metadata', () => {
   const method = Reflect.getMetadata('method', MemberController.prototype.login)
   const path = Reflect.getMetadata('path', MemberController.prototype.login)
   assert.equal(method, 1)
@@ -169,7 +167,7 @@ test('member controller login route has POST metadata', () => {
 // ── getBootstrap ──
 
 describe('GET /members/bootstrap', () => {
-  test('returns scaffold bootstrap with expected shape', () => {
+  it('returns scaffold bootstrap with expected shape', () => {
     const ctrl = freshController()
     const result = ctrl.getBootstrap(createContext())
 
@@ -178,7 +176,7 @@ describe('GET /members/bootstrap', () => {
     assert.equal(result.tenantContext.tenantId, 't-001')
   })
 
-  test('passes minimal context through', () => {
+  it('passes minimal context through', () => {
     const ctrl = freshController()
     const result = ctrl.getBootstrap({ tenantId: 'min-t' } as RequestTenantContext)
 
@@ -190,7 +188,7 @@ describe('GET /members/bootstrap', () => {
 // ── POST /members/register ──
 
 describe('POST /members/register', () => {
-  test('registers a new member and returns full profile', () => {
+  it('registers a new member and returns full profile', () => {
     const ctrl = freshController()
     const profile = ctrl.register(createContext(), {
       memberId: 'alice',
@@ -206,7 +204,7 @@ describe('POST /members/register', () => {
     assert.equal(profile.tenantContext.tenantId, 't-001')
   })
 
-  test('throws on duplicate registration (反例)', () => {
+  it('throws on duplicate registration (反例)', () => {
     const ctrl = freshController()
     ctrl.register(createContext(), { memberId: 'bob', nickname: 'Bob' })
 
@@ -220,7 +218,7 @@ describe('POST /members/register', () => {
 // ── GET /members/:memberId ──
 
 describe('GET /members/:memberId', () => {
-  test('retrieves registered member profile (正例)', () => {
+  it('retrieves registered member profile (正例)', () => {
     const ctrl = freshController()
     ctrl.register(createContext(), { memberId: 'charlie', nickname: 'Charlie' })
 
@@ -229,7 +227,7 @@ describe('GET /members/:memberId', () => {
     assert.equal(profile.nickname, 'Charlie')
   })
 
-  test('throws for unknown member (反例)', () => {
+  it('throws for unknown member (反例)', () => {
     const ctrl = freshController()
     assert.throws(
       () => ctrl.getProfile('ghost'),
@@ -237,7 +235,7 @@ describe('GET /members/:memberId', () => {
     )
   })
 
-  test('handles special characters in memberId (边界)', () => {
+  it('handles special characters in memberId (边界)', () => {
     const ctrl = freshController()
     ctrl.register(createContext(), { memberId: 'user@org.com', nickname: 'Email User' })
 
@@ -249,13 +247,13 @@ describe('GET /members/:memberId', () => {
 // ── GET /members ──
 
 describe('GET /members', () => {
-  test('listProfiles returns an array (边界)', () => {
+  it('listProfiles returns an array (边界)', () => {
     const ctrl = freshController()
     const list = ctrl.listProfiles()
     assert.ok(Array.isArray(list))
   })
 
-  test('registered members appear in list (正例)', () => {
+  it('registered members appear in list (正例)', () => {
     const ctrl = freshController()
     const uid = `d-${Date.now()}`
     ctrl.register(createContext(), { memberId: uid + '-1', nickname: 'D1' })
@@ -269,7 +267,7 @@ describe('GET /members', () => {
 })
 
 describe('persistent member routes', () => {
-  test('registerPersistent delegates to service', async () => {
+  it('registerPersistent delegates to service', async () => {
     const mockService = {
       registerPersistent: async ({ mobile, nickname }: { mobile: string; nickname: string }) =>
         createProfileFixture({
@@ -290,7 +288,7 @@ describe('persistent member routes', () => {
     assert.equal(result.persisted, true)
   })
 
-  test('listPersistentMutationHistory delegates to service', async () => {
+  it('listPersistentMutationHistory delegates to service', async () => {
     const mockService = {
       listPersistentMutationHistory: async (memberId: string, tenantContext: RequestTenantContext) => [
         createHistoryEntryFixture({
@@ -306,7 +304,7 @@ describe('persistent member routes', () => {
     assert.equal(result[0]?.tenantContext.tenantId, 't-001')
   })
 
-  test('updatePersistentProfile delegates to service', async () => {
+  it('updatePersistentProfile delegates to service', async () => {
     const mockService = {
       updatePersistentProfile: async ({
         memberId,
@@ -353,7 +351,7 @@ describe('persistent member routes', () => {
     assert.equal(result.tenantContext.tenantId, 't-001')
   })
 
-  test('login delegates to service and returns session token', async () => {
+  it('login delegates to service and returns session token', async () => {
     const mockService = {
       login: async ({ mobile }: { mobile: string }) =>
         createLoginResultFixture({
@@ -370,7 +368,7 @@ describe('persistent member routes', () => {
     assert.equal(result.session.sessionToken, 'sess-1')
   })
 
-  test('awardPersistentPoints delegates to service', async () => {
+  it('awardPersistentPoints delegates to service', async () => {
     let capturedApprovalTicket: string | undefined
     const mockService = {
       awardPoints: async (
@@ -400,7 +398,7 @@ describe('persistent member routes', () => {
     assert.equal(result.tenantContext.tenantId, 't-001')
   })
 
-  test('rollbackPersistentPoints delegates to service', async () => {
+  it('rollbackPersistentPoints delegates to service', async () => {
     let capturedApprovalTicket: string | undefined
     const mockService = {
       rollbackPoints: async (
@@ -430,7 +428,7 @@ describe('persistent member routes', () => {
     assert.equal(result.tenantContext.tenantId, 't-001')
   })
 
-  test('updatePersistentStatus delegates to service', async () => {
+  it('updatePersistentStatus delegates to service', async () => {
     let capturedApprovalTicket: string | undefined
     const mockService = {
       updatePersistentStatus: async (
@@ -460,7 +458,7 @@ describe('persistent member routes', () => {
     assert.equal(result.tenantContext.tenantId, 't-001')
   })
 
-  test('overridePersistentLevel delegates to service', async () => {
+  it('overridePersistentLevel delegates to service', async () => {
     let capturedApprovalTicket: string | undefined
     const mockService = {
       overridePersistentLevel: async (
@@ -490,7 +488,7 @@ describe('persistent member routes', () => {
     assert.equal(result.tenantContext.tenantId, 't-001')
   })
 
-  test('recordPersistentPaymentActivity delegates full payload to service', async () => {
+  it('recordPersistentPaymentActivity delegates full payload to service', async () => {
     let capturedInput:
       | {
           memberId: string
@@ -741,7 +739,7 @@ describe('controller ↔ service ↔ Prisma MemberProfileExtension integration',
     }
   }
 
-  test('POST /members/persistent/:memberId/profile persists email/address/notes to MemberProfileExtension', async () => {
+  it('POST /members/persistent/:memberId/profile persists email/address/notes to MemberProfileExtension', async () => {
     const harness = buildPrismaStubWithExtensionStorage()
     const service = new RealMemberService(harness.prisma as any)
     const ctrl = new MemberController(service)
@@ -800,7 +798,7 @@ describe('controller ↔ service ↔ Prisma MemberProfileExtension integration',
 // ── POST /members/:memberId/add-points ──
 
 describe('POST /members/:memberId/add-points', () => {
-  test('adds points and auto-computes level (正例)', () => {
+  it('adds points and auto-computes level (正例)', () => {
     const ctrl = freshController()
     ctrl.register(createContext(), { memberId: 'eve', nickname: 'Eve' })
 
@@ -809,7 +807,7 @@ describe('POST /members/:memberId/add-points', () => {
     assert.equal(updated.level, MemberLevel.Silver)
   })
 
-  test('accumulates points across calls', () => {
+  it('accumulates points across calls', () => {
     const ctrl = freshController()
     ctrl.register(createContext(), { memberId: 'frank', nickname: 'Frank' })
 
@@ -821,7 +819,7 @@ describe('POST /members/:memberId/add-points', () => {
     assert.equal(final.level, MemberLevel.Gold) // >= 2000
   })
 
-  test('throws for non-existent member (反例)', () => {
+  it('throws for non-existent member (反例)', () => {
     const ctrl = freshController()
     assert.throws(
       () => ctrl.addPoints('no-one', { points: 100 }),
@@ -829,7 +827,7 @@ describe('POST /members/:memberId/add-points', () => {
     )
   })
 
-  test('throws for negative points (反例/边界)', () => {
+  it('throws for negative points (反例/边界)', () => {
     const ctrl = freshController()
     ctrl.register(createContext(), { memberId: 'grace', nickname: 'Grace' })
 
@@ -839,7 +837,7 @@ describe('POST /members/:memberId/add-points', () => {
     )
   })
 
-  test('to Diamond level at exact 50000 (边界)', () => {
+  it('to Diamond level at exact 50000 (边界)', () => {
     const ctrl = freshController()
     ctrl.register(createContext(), { memberId: 'hank', nickname: 'Hank' })
 
@@ -851,7 +849,7 @@ describe('POST /members/:memberId/add-points', () => {
 // ── GET /members/:memberId/upgrade-check ──
 
 describe('GET /members/:memberId/upgrade-check', () => {
-  test('Bronze cannot upgrade with low points (边界)', () => {
+  it('Bronze cannot upgrade with low points (边界)', () => {
     const ctrl = freshController()
     ctrl.register(createContext(), { memberId: 'iris', nickname: 'Iris' })
     ctrl.addPoints('iris', { points: 100 })
@@ -861,7 +859,7 @@ describe('GET /members/:memberId/upgrade-check', () => {
     assert.equal(result.currentLevel, MemberLevel.Bronze)
   })
 
-  test('Bronze member can check upgrade before adding points (正例)', () => {
+  it('Bronze member can check upgrade before adding points (正例)', () => {
     // checkUpgrade uses canUpgrade(currentLevel, currentPoints)
     // Bronze + 600 points => computeMemberLevel(600) = Silver > Bronze => true
     const ctrl = freshController()
@@ -876,7 +874,7 @@ describe('GET /members/:memberId/upgrade-check', () => {
     assert.equal(result.canUpgrade, false)
   })
 
-  test('Diamond shows no upgrade path (边界)', () => {
+  it('Diamond shows no upgrade path (边界)', () => {
     const ctrl = freshController()
     ctrl.register(createContext(), { memberId: 'kate', nickname: 'Kate' })
     ctrl.addPoints('kate', { points: 60000 })
@@ -888,7 +886,7 @@ describe('GET /members/:memberId/upgrade-check', () => {
     assert.equal(result.pointsNeeded, 0)
   })
 
-  test('throws for non-existent member (反例)', () => {
+  it('throws for non-existent member (反例)', () => {
     const ctrl = freshController()
     assert.throws(
       () => ctrl.checkUpgrade('no-such-member'),

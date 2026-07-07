@@ -1,7 +1,7 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { CrossModuleModule } from './cross-module.module'
 import { CrossModuleController } from './cross-module.controller'
 import { CrossModuleService } from './cross-module.service'
@@ -9,7 +9,7 @@ import { CrossModuleService } from './cross-module.service'
 describe('CrossModuleModule', () => {
   let moduleRef: TestingModule
 
-  test('should compile and instantiate', async () => {
+  it('should compile and instantiate', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [CrossModuleModule],
     }).compile()
@@ -17,7 +17,7 @@ describe('CrossModuleModule', () => {
     assert.ok(moduleRef)
   })
 
-  test('should provide CrossModuleController', async () => {
+  it('should provide CrossModuleController', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [CrossModuleModule],
     }).compile()
@@ -27,7 +27,7 @@ describe('CrossModuleModule', () => {
     assert.ok(controller instanceof CrossModuleController)
   })
 
-  test('should provide CrossModuleService', async () => {
+  it('should provide CrossModuleService', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [CrossModuleModule],
     }).compile()

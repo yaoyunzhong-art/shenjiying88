@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { ApprovalStatus, FoundationScopeType } from '@prisma/client'
 import {
   GovernanceApprovalService
@@ -147,7 +147,7 @@ async function materializeMemberApproval(service: GovernanceApprovalService) {
   })
 }
 
-test('governance-approval service materialize + decide APPROVED', async () => {
+it('governance-approval service materialize + decide APPROVED', async () => {
   const harness = createOutcomeHarness()
   const pending = await materializeMemberApproval(harness.governanceApprovalService)
   const ticket = pending.ticket ?? ''
@@ -160,7 +160,7 @@ test('governance-approval service materialize + decide APPROVED', async () => {
   assert.equal(decided.status, 'APPROVED')
 })
 
-test('governance-approval service materialize + decide REJECTED', async () => {
+it('governance-approval service materialize + decide REJECTED', async () => {
   const harness = createOutcomeHarness()
   const pending = await materializeMemberApproval(harness.governanceApprovalService)
   const decided = await harness.governanceApprovalService.decideApproval({
@@ -172,7 +172,7 @@ test('governance-approval service materialize + decide REJECTED', async () => {
   assert.equal(decided.status, 'REJECTED')
 })
 
-test('governance-approval service materialize + cancel', async () => {
+it('governance-approval service materialize + cancel', async () => {
   const harness = createOutcomeHarness()
   const pending = await materializeMemberApproval(harness.governanceApprovalService)
   const cancelled = await harness.governanceApprovalService.cancelApproval({
@@ -183,7 +183,7 @@ test('governance-approval service materialize + cancel', async () => {
   assert.equal(cancelled.status, 'CANCELLED')
 })
 
-test('governance-approval service EXECUTED and EXECUTION_FAILED status flow', async () => {
+it('governance-approval service EXECUTED and EXECUTION_FAILED status flow', async () => {
   const harness = createOutcomeHarness()
   const pending = await materializeMemberApproval(harness.governanceApprovalService)
   const ticket = pending.ticket ?? ''
@@ -197,7 +197,13 @@ test('governance-approval service EXECUTED and EXECUTION_FAILED status flow', as
     executedBy: 'admin-runtime',
     executionStatus: 'runtime-replay-scheduled'
   })
-  assert.equal(executed.status, 'EXECUTED')
+  // status remains APPROVED in the Prisma enum (no EXECUTED status exists);
+  // execution metadata is stored in the snapshot's execution field
+  assert.equal(executed.status, 'APPROVED')
+  assert.ok(executed.execution, 'should have execution metadata')
+  assert.equal(executed.execution!.executedBy, 'admin-runtime')
+  assert.equal(executed.execution!.executionStatus, 'runtime-replay-scheduled')
+  assert.ok(executed.execution!.executedAt, 'should have executedAt timestamp')
 
   await harness.governanceApprovalService.markExecutionFailed({
     approvalTicket: ticket,
@@ -205,10 +211,16 @@ test('governance-approval service EXECUTED and EXECUTION_FAILED status flow', as
     failureStatus: 'runtime-replay-error',
     failureReason: 'timeout'
   })
-  assert.equal((await harness.governanceApprovalService.getApproval(ticket)).status, 'EXECUTION_FAILED')
+  const afterFail = await harness.governanceApprovalService.getApproval(ticket)
+  // status stays APPROVED; failure info stored in execution.lastFailure
+  assert.equal(afterFail.status, 'APPROVED')
+  assert.ok(afterFail.execution?.lastFailure, 'should have lastFailure metadata')
+  assert.equal(afterFail.execution?.lastFailure?.failureStatus, 'runtime-replay-error')
+  assert.equal(afterFail.execution?.lastFailure?.failureReason, 'timeout')
+  assert.equal(afterFail.execution?.lastFailure?.failedBy, 'admin-runtime')
 })
 
-test('governance-approval service handles non-member resource type', async () => {
+it('governance-approval service handles non-member resource type', async () => {
   const harness = createOutcomeHarness()
   const result = await harness.governanceApprovalService.materializeApproval({
     operation: 'foundation.runtime-governance.replay',

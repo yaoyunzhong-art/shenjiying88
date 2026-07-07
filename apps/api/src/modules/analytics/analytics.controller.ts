@@ -1,4 +1,4 @@
-import { Body, Controller, Get } from '@nestjs/common'
+import { Controller, Get, Query } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { GetDiagnosticsDto, GetOperationSnapshotDto, GetRecommendationsDto } from './analytics.dto'
@@ -11,36 +11,36 @@ export class AnalyticsController {
   @Get('snapshot')
   getOperationSnapshot(
     @TenantContext() tenantContext: RequestTenantContext,
-    @Body() body: GetOperationSnapshotDto
+    @Query() query: GetOperationSnapshotDto
   ) {
     return this.analyticsService.getOperationSnapshot(tenantContext, {
-      scope: body.scope,
-      brandId: body.brandId,
-      storeId: body.storeId
+      scope: query.scope,
+      brandId: query.brandId,
+      storeId: query.storeId
     })
   }
 
   @Get('diagnostics')
   getDiagnostics(
     @TenantContext() tenantContext: RequestTenantContext,
-    @Body() body: GetDiagnosticsDto
+    @Query() query: GetDiagnosticsDto
   ) {
     return this.analyticsService.getDiagnostics(tenantContext, {
-      scope: body.scope,
-      brandId: body.brandId,
-      storeId: body.storeId
+      scope: query.scope,
+      brandId: query.brandId,
+      storeId: query.storeId
     })
   }
 
   @Get('recommendations')
   getRecommendations(
     @TenantContext() tenantContext: RequestTenantContext,
-    @Body() body: GetRecommendationsDto
+    @Query() query: GetRecommendationsDto
   ) {
     return this.analyticsService.getRecommendations(tenantContext, {
-      scope: body.scope,
-      brandId: body.brandId,
-      storeId: body.storeId
+      scope: query.scope,
+      brandId: query.brandId,
+      storeId: query.storeId
     })
   }
 }

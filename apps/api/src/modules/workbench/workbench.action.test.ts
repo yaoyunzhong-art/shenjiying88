@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   PERMISSIONS_METADATA_KEY,
   ROLES_METADATA_KEY,
@@ -10,7 +10,7 @@ import { WorkbenchController } from './workbench.controller'
 import { WorkbenchService } from './workbench.service'
 
 describe('workbench action controller metadata', () => {
-  test('approval, replay and handler routes expose protected runtime action endpoints', () => {
+  it('approval, replay and handler routes expose protected runtime action endpoints', () => {
     assert.equal(Reflect.getMetadata('path', WorkbenchController.prototype.executeApproval), 'approvals/execute')
     assert.equal(Reflect.getMetadata('path', WorkbenchController.prototype.submitRuntimeReplay), 'actions/runtime-replay')
     assert.equal(Reflect.getMetadata('path', WorkbenchController.prototype.getActionReceipt), 'actions/:receiptCode')
@@ -25,7 +25,7 @@ describe('workbench action controller metadata', () => {
     assert.equal(Reflect.getMetadata('path', WorkbenchController.prototype.replayActionReceipt), 'actions/:receiptCode/replay')
   })
 
-  test('workbench action endpoints require tenant scope with runtime-governance permissions', () => {
+  it('workbench action endpoints require tenant scope with runtime-governance permissions', () => {
     const writeHandlers = [
       WorkbenchController.prototype.executeApproval,
       WorkbenchController.prototype.rotateSecret,
@@ -52,7 +52,7 @@ describe('workbench action controller metadata', () => {
 })
 
 describe('workbench action controller behavior', () => {
-  test('executeApproval delegates to service with tenant and actor context', async () => {
+  it('executeApproval delegates to service with tenant and actor context', async () => {
     let capturedArgs: unknown[] = []
     const controller = new WorkbenchController({
       submitApprovalExecution: async (...args: unknown[]) => {
@@ -73,7 +73,7 @@ describe('workbench action controller behavior', () => {
     assert.equal((capturedArgs[2] as { actorId: string }).actorId, 'ops-001')
   })
 
-  test('sync/replay endpoints delegate to service using receipt and handler params', async () => {
+  it('sync/replay endpoints delegate to service using receipt and handler params', async () => {
     const calls: Array<{ kind: string; args: unknown[] }> = []
     const controller = new WorkbenchController({
       syncHandlerReceipt: async (...args: unknown[]) => {
@@ -125,7 +125,7 @@ describe('workbench action service', () => {
     )
   }
 
-  test('submitApprovalExecution builds admin-web challenge request', async () => {
+  it('submitApprovalExecution builds admin-web challenge request', async () => {
     let captured: Record<string, unknown> | undefined
     const service = createService({
       submitAction: async (input: Record<string, unknown>) => {
@@ -152,7 +152,7 @@ describe('workbench action service', () => {
     assert.equal(captured?.brandId, 'brand-001')
   })
 
-  test('submitSecretRotation and runtime replay map to runtime governance defaults', async () => {
+  it('submitSecretRotation and runtime replay map to runtime governance defaults', async () => {
     const inputs: Record<string, unknown>[] = []
     const service = createService({
       submitAction: async (input: Record<string, unknown>) => {
@@ -182,7 +182,7 @@ describe('workbench action service', () => {
     assert.equal((inputs[1]?.payload as { sourceReceiptCode: string }).sourceReceiptCode, 'REC-OLD-001')
   })
 
-  test('sync/callback/replay delegate to runtime governance service with enriched context', async () => {
+  it('sync/callback/replay delegate to runtime governance service with enriched context', async () => {
     const captured: Array<{ kind: string; receiptCode: string; input: Record<string, unknown> }> = []
     const service = createService({
       syncAction: async (receiptCode: string, input: Record<string, unknown>) => {

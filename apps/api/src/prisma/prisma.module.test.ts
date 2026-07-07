@@ -1,7 +1,7 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { PrismaModule } from './prisma.module'
 import { PrismaService } from './prisma.service'
 
@@ -13,7 +13,7 @@ const mockPrismaService = {
 describe('PrismaModule', () => {
   let moduleRef: TestingModule
 
-  test('should compile and instantiate', async () => {
+  it('should compile and instantiate', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [PrismaModule],
     })
@@ -24,7 +24,7 @@ describe('PrismaModule', () => {
     assert.ok(moduleRef)
   })
 
-  test('should provide and export PrismaService', async () => {
+  it('should provide and export PrismaService', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [PrismaModule],
     })
@@ -37,7 +37,7 @@ describe('PrismaModule', () => {
     assert.equal(service, mockPrismaService)
   })
 
-  test('PrismaModule should be decorated with @Global()', () => {
+  it('PrismaModule should be decorated with @Global()', () => {
     const metadata = Reflect.getMetadata('__module:global__', PrismaModule)
     assert.ok(metadata !== undefined)
   })

@@ -1,14 +1,14 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { IdentityAccessController } from './identity-access.controller'
 
-test('identity-access controller path metadata is set', () => {
+it('identity-access controller path metadata is set', () => {
   const path = Reflect.getMetadata('path', IdentityAccessController)
   assert.equal(path, 'identity-access')
 })
 
-test('identity-access controller getContext route has GET metadata', () => {
+it('identity-access controller getContext route has GET metadata', () => {
   const method = Reflect.getMetadata('method', IdentityAccessController.prototype.getContext)
   const path = Reflect.getMetadata('path', IdentityAccessController.prototype.getContext)
 
@@ -16,7 +16,7 @@ test('identity-access controller getContext route has GET metadata', () => {
   assert.equal(path, 'context')
 })
 
-test('identity-access controller validateRole route has GET metadata', () => {
+it('identity-access controller validateRole route has GET metadata', () => {
   const method = Reflect.getMetadata('method', IdentityAccessController.prototype.validateRole)
   const path = Reflect.getMetadata('path', IdentityAccessController.prototype.validateRole)
 
@@ -24,7 +24,7 @@ test('identity-access controller validateRole route has GET metadata', () => {
   assert.equal(path, 'validate/role')
 })
 
-test('identity-access controller validatePermission route has GET metadata', () => {
+it('identity-access controller validatePermission route has GET metadata', () => {
   const method = Reflect.getMetadata('method', IdentityAccessController.prototype.validatePermission)
   const path = Reflect.getMetadata('path', IdentityAccessController.prototype.validatePermission)
 
@@ -32,7 +32,7 @@ test('identity-access controller validatePermission route has GET metadata', () 
   assert.equal(path, 'validate/permission')
 })
 
-test('identity-access controller validateTenantScope route has GET metadata', () => {
+it('identity-access controller validateTenantScope route has GET metadata', () => {
   const method = Reflect.getMetadata('method', IdentityAccessController.prototype.validateTenantScope)
   const path = Reflect.getMetadata('path', IdentityAccessController.prototype.validateTenantScope)
 

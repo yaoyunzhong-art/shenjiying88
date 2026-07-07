@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { Body, Controller, Get, Inject, Param, Post, Query, ValidationPipe } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
@@ -55,7 +55,7 @@ class TestResilienceOperationsController {
   }
 }
 
-test('e2e: resilience operations exposes observability, retry policies, and recovery plans', async () => {
+it('e2e: resilience operations exposes observability, retry policies, and recovery plans', async () => {
   const moduleRef = await Test.createTestingModule({
     controllers: [TestResilienceOperationsController],
     providers: [ResilienceOperationsService]

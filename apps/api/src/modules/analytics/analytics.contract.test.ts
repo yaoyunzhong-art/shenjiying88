@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
 import {
   toOperationSnapshotContract,
   toDiagnosticContract,
@@ -59,7 +59,7 @@ describe('toOperationSnapshotContract()', () => {
     ]
   }
 
-  test('maps full OperationSnapshot to contract', () => {
+  it('maps full OperationSnapshot to contract', () => {
     const contract = toOperationSnapshotContract(fullSnapshot)
 
     assert.equal(contract.tenantId, 't-001')
@@ -69,7 +69,7 @@ describe('toOperationSnapshotContract()', () => {
     assert.equal(contract.generatedAt, '2026-06-23T06:00:00Z')
   })
 
-  test('maps groups correctly', () => {
+  it('maps groups correctly', () => {
     const contract = toOperationSnapshotContract(fullSnapshot)
 
     assert.equal(contract.groups.length, 1)
@@ -80,14 +80,14 @@ describe('toOperationSnapshotContract()', () => {
     assert.equal(contract.groups[0].metrics[0].value, 120)
   })
 
-  test('preserves metric optional fields (ratio, trend)', () => {
+  it('preserves metric optional fields (ratio, trend)', () => {
     const contract = toOperationSnapshotContract(fullSnapshot)
 
     assert.equal(contract.groups[0].metrics[1].ratio, 98.5)
     assert.equal(contract.groups[0].metrics[1].trend, 'UP')
   })
 
-  test('maps totals correctly', () => {
+  it('maps totals correctly', () => {
     const contract = toOperationSnapshotContract(fullSnapshot)
 
     assert.equal(contract.totals.length, 1)
@@ -96,7 +96,7 @@ describe('toOperationSnapshotContract()', () => {
     assert.equal(contract.totals[0].trend, 'UP')
   })
 
-  test('contract returns independent copy (not same reference)', () => {
+  it('contract returns independent copy (not same reference)', () => {
     const contract1 = toOperationSnapshotContract(fullSnapshot)
     const contract2 = toOperationSnapshotContract(fullSnapshot)
 
@@ -104,7 +104,7 @@ describe('toOperationSnapshotContract()', () => {
     assert.deepStrictEqual(contract1, contract2)
   })
 
-  test('maps minimal snapshot (no optional fields)', () => {
+  it('maps minimal snapshot (no optional fields)', () => {
     const minimal: OperationSnapshot = {
       tenantId: 't-min',
       scope: AnalyticsScope.Brand,
@@ -136,7 +136,7 @@ describe('toOperationSnapshotContract()', () => {
     assert.equal(contract.totals.length, 0)
   })
 
-  test('maps Store scope snapshot', () => {
+  it('maps Store scope snapshot', () => {
     const storeSnapshot: OperationSnapshot = {
       tenantId: 't-store',
       scope: AnalyticsScope.Store,
@@ -174,7 +174,7 @@ describe('toOperationSnapshotContract()', () => {
     assert.equal(contract.totals.length, 1)
   })
 
-  test('handles DOWN trend metric', () => {
+  it('handles DOWN trend metric', () => {
     const snapshot: OperationSnapshot = {
       tenantId: 't-down',
       scope: AnalyticsScope.Tenant,
@@ -203,7 +203,7 @@ describe('toOperationSnapshotContract()', () => {
     assert.equal(contract.groups[0].metrics[0].value, -500)
   })
 
-  test('handles FLAT trend metric', () => {
+  it('handles FLAT trend metric', () => {
     const snapshot: OperationSnapshot = {
       tenantId: 't-flat',
       scope: AnalyticsScope.Tenant,
@@ -269,7 +269,7 @@ describe('toDiagnosticContract()', () => {
     generatedAt: '2026-06-23T06:00:00Z'
   }
 
-  test('maps full Diagnostic to DiagnosticContract', () => {
+  it('maps full Diagnostic to DiagnosticContract', () => {
     const contract = toDiagnosticContract(fullDiagnostic)
 
     assert.equal(contract.diagnosticId, 'diag-payment-low-t-001-2026-06-23T06:00:00Z')
@@ -285,7 +285,7 @@ describe('toDiagnosticContract()', () => {
     assert.equal(contract.generatedAt, '2026-06-23T06:00:00Z')
   })
 
-  test('flattens tenantContext into top-level tenantId/brandId/storeId', () => {
+  it('flattens tenantContext into top-level tenantId/brandId/storeId', () => {
     const contract = toDiagnosticContract(fullDiagnostic)
 
     // tenantContext nesting is gone in the contract
@@ -295,7 +295,7 @@ describe('toDiagnosticContract()', () => {
     assert.equal(contract.storeId, 's-001')
   })
 
-  test('maps evidence as-is', () => {
+  it('maps evidence as-is', () => {
     const contract = toDiagnosticContract(fullDiagnostic)
 
     assert.deepEqual(contract.evidence, {
@@ -305,7 +305,7 @@ describe('toDiagnosticContract()', () => {
     })
   })
 
-  test('maps recommendations', () => {
+  it('maps recommendations', () => {
     const contract = toDiagnosticContract(fullDiagnostic)
 
     assert.equal(contract.recommendations.length, 2)
@@ -316,7 +316,7 @@ describe('toDiagnosticContract()', () => {
     assert.equal(contract.recommendations[1].suggestedCampaignKind, 'BLINDBOX_PROMO')
   })
 
-  test('maps diagnostic with minimal tenantContext (tenantId only)', () => {
+  it('maps diagnostic with minimal tenantContext (tenantId only)', () => {
     const minimalDiag: Diagnostic = {
       diagnosticId: 'diag-minimal-001',
       ruleId: 'no-settlement-activity',
@@ -347,7 +347,7 @@ describe('toDiagnosticContract()', () => {
     assert.equal(contract.recommendations[0].suggestedCampaignKind, 'RE_ENGAGEMENT')
   })
 
-  test('maps WARNING severity diagnostic', () => {
+  it('maps WARNING severity diagnostic', () => {
     const warningDiag: Diagnostic = {
       diagnosticId: 'diag-coupon-low',
       ruleId: 'coupon-quota-near-exhaustion',
@@ -378,7 +378,7 @@ describe('toDiagnosticContract()', () => {
     assert.equal(contract.scope, AnalyticsScope.Brand)
   })
 
-  test('maps INFO severity diagnostic', () => {
+  it('maps INFO severity diagnostic', () => {
     const infoDiag: Diagnostic = {
       diagnosticId: 'diag-info',
       ruleId: 'member-activity-thinning',
@@ -410,7 +410,7 @@ describe('toDiagnosticContract()', () => {
 // ─── toDiagnosticRecommendationContract ───
 
 describe('toDiagnosticRecommendationContract()', () => {
-  test('maps full recommendation', () => {
+  it('maps full recommendation', () => {
     const rec: DiagnosticRecommendation = {
       actionCode: 'inspect-payment-gateway',
       description: '检查 LYT 网关连通性与签名校验失败计数',
@@ -425,7 +425,7 @@ describe('toDiagnosticRecommendationContract()', () => {
     assert.equal(contract.suggestedCampaignKind, undefined)
   })
 
-  test('maps recommendation with campaign kind', () => {
+  it('maps recommendation with campaign kind', () => {
     const rec: DiagnosticRecommendation = {
       actionCode: 'launch-blindbox-promo',
       description: '为转化偏低的盲盒 SKU 上线专项促销',
@@ -440,7 +440,7 @@ describe('toDiagnosticRecommendationContract()', () => {
     assert.equal(contract.priority, 80)
   })
 
-  test('maps RE_ENGAGEMENT campaign kind', () => {
+  it('maps RE_ENGAGEMENT campaign kind', () => {
     const rec: DiagnosticRecommendation = {
       actionCode: 'launch-re-engagement',
       description: '对最近无结算的活跃会员发起回流激励活动',
@@ -453,7 +453,7 @@ describe('toDiagnosticRecommendationContract()', () => {
     assert.equal(contract.suggestedCampaignKind, 'RE_ENGAGEMENT')
   })
 
-  test('maps POINTS_AWARD campaign kind', () => {
+  it('maps POINTS_AWARD campaign kind', () => {
     const rec: DiagnosticRecommendation = {
       actionCode: 'increase-touchpoint-frequency',
       description: '增加导购触达节奏',
@@ -466,7 +466,7 @@ describe('toDiagnosticRecommendationContract()', () => {
     assert.equal(contract.suggestedCampaignKind, 'POINTS_AWARD')
   })
 
-  test('maps COUPON_ISSUE campaign kind', () => {
+  it('maps COUPON_ISSUE campaign kind', () => {
     const rec: DiagnosticRecommendation = {
       actionCode: 'restock-coupon-quota',
       description: '为额度告急的券计划补充配额',
@@ -541,7 +541,7 @@ describe('toAnalyticsBootstrapContract()', () => {
     }
   ]
 
-  test('combines snapshot, diagnostics, and recommendations', () => {
+  it('combines snapshot, diagnostics, and recommendations', () => {
     const contract = toAnalyticsBootstrapContract({
       snapshot,
       diagnostics,
@@ -554,7 +554,7 @@ describe('toAnalyticsBootstrapContract()', () => {
     assert.equal(contract.generatedAt, '2026-06-23T06:00:00Z')
   })
 
-  test('snapshot is mapped via toOperationSnapshotContract', () => {
+  it('snapshot is mapped via toOperationSnapshotContract', () => {
     const contract = toAnalyticsBootstrapContract({
       snapshot,
       diagnostics,
@@ -566,7 +566,7 @@ describe('toAnalyticsBootstrapContract()', () => {
     assert.equal(contract.snapshot.totals.length, 1)
   })
 
-  test('diagnostics are mapped via toDiagnosticContract', () => {
+  it('diagnostics are mapped via toDiagnosticContract', () => {
     const contract = toAnalyticsBootstrapContract({
       snapshot,
       diagnostics,
@@ -578,7 +578,7 @@ describe('toAnalyticsBootstrapContract()', () => {
     assert.equal(contract.diagnostics[0].tenantId, 't-001')
   })
 
-  test('recommendations are mapped via toDiagnosticRecommendationContract', () => {
+  it('recommendations are mapped via toDiagnosticRecommendationContract', () => {
     const contract = toAnalyticsBootstrapContract({
       snapshot,
       diagnostics,
@@ -590,7 +590,7 @@ describe('toAnalyticsBootstrapContract()', () => {
     assert.equal(contract.recommendations[0].priority, 100)
   })
 
-  test('handles empty diagnostics', () => {
+  it('handles empty diagnostics', () => {
     const contract = toAnalyticsBootstrapContract({
       snapshot,
       diagnostics: [],
@@ -601,7 +601,7 @@ describe('toAnalyticsBootstrapContract()', () => {
     assert.equal(contract.recommendations.length, 0)
   })
 
-  test('handles multiple diagnostics', () => {
+  it('handles multiple diagnostics', () => {
     const multiDiags: Diagnostic[] = [
       {
         diagnosticId: 'diag-1',
@@ -646,7 +646,7 @@ describe('toAnalyticsBootstrapContract()', () => {
     assert.equal(contract.diagnostics[1].diagnosticId, 'diag-2')
   })
 
-  test('handles multiple recommendations from different diagnostics', () => {
+  it('handles multiple recommendations from different diagnostics', () => {
     const multiDiags: Diagnostic[] = [
       {
         diagnosticId: 'diag-1',

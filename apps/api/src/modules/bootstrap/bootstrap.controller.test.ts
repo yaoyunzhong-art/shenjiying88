@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [bootstrap] [D] controller spec 补全
  * 
@@ -14,7 +15,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   BootstrapPhase,
   toBootstrapHealth,
@@ -29,18 +29,18 @@ import type {
 
 // ── BootstrapPhase 枚举 ──
 describe('BootstrapPhase 枚举', () => {
-  test('包含 scaffold / provision / handoff / ready', () => {
+  it('包含 scaffold / provision / handoff / ready', () => {
     assert.equal(BootstrapPhase.Scaffold, 'scaffold')
     assert.equal(BootstrapPhase.Provision, 'provision')
     assert.equal(BootstrapPhase.Handoff, 'handoff')
     assert.equal(BootstrapPhase.Ready, 'ready')
   })
 
-  test('共 4 个枚举值', () => {
+  it('共 4 个枚举值', () => {
     assert.equal(Object.values(BootstrapPhase).length, 4)
   })
 
-  test('枚举值均为不同字符串', () => {
+  it('枚举值均为不同字符串', () => {
     const values = Object.values(BootstrapPhase)
     const unique = new Set(values)
     assert.equal(unique.size, values.length)
@@ -49,7 +49,7 @@ describe('BootstrapPhase 枚举', () => {
 
 // ── toBootstrapHealth factory ──
 describe('toBootstrapHealth factory', () => {
-  test('默认构造：status=ok, phase=Scaffold, uptime≥0, checkedAt 合法 ISO', () => {
+  it('默认构造：status=ok, phase=Scaffold, uptime≥0, checkedAt 合法 ISO', () => {
     const health = toBootstrapHealth()
     assert.equal(health.status, 'ok')
     assert.equal(health.phase, BootstrapPhase.Scaffold)
@@ -59,32 +59,32 @@ describe('toBootstrapHealth factory', () => {
     assert.ok(new Date(health.checkedAt).getTime() > 0)
   })
 
-  test('覆盖 status=degraded', () => {
+  it('覆盖 status=degraded', () => {
     const health = toBootstrapHealth({ status: 'degraded' })
     assert.equal(health.status, 'degraded')
     assert.equal(health.phase, BootstrapPhase.Scaffold)
   })
 
-  test('覆盖 status=error', () => {
+  it('覆盖 status=error', () => {
     const health = toBootstrapHealth({ status: 'error' })
     assert.equal(health.status, 'error')
   })
 
-  test('覆盖 phase=Ready', () => {
+  it('覆盖 phase=Ready', () => {
     const health = toBootstrapHealth({ phase: BootstrapPhase.Ready })
     assert.equal(health.phase, BootstrapPhase.Ready)
   })
 
-  test('覆盖 uptime', () => {
+  it('覆盖 uptime', () => {
     assert.equal(toBootstrapHealth({ uptime: 9999 }).uptime, 9999)
   })
 
-  test('覆盖 checkedAt', () => {
+  it('覆盖 checkedAt', () => {
     const custom = '2025-01-01T00:00:00.000Z'
     assert.equal(toBootstrapHealth({ checkedAt: custom }).checkedAt, custom)
   })
 
-  test('多次调用返回独立对象', () => {
+  it('多次调用返回独立对象', () => {
     const a = toBootstrapHealth()
     const b = toBootstrapHealth({ status: 'degraded' })
     assert.notStrictEqual(a, b)
@@ -94,7 +94,7 @@ describe('toBootstrapHealth factory', () => {
 
 // ── toBootstrapMetadata factory ──
 describe('toBootstrapMetadata factory', () => {
-  test('默认构造：空依赖、空契约、Scaffold、有 generatedAt', () => {
+  it('默认构造：空依赖、空契约、Scaffold、有 generatedAt', () => {
     const meta = toBootstrapMetadata({ tenantId: 't-meta' })
     assert.equal(meta.tenantContext.tenantId, 't-meta')
     assert.deepStrictEqual(meta.foundationDependencies, [])
@@ -103,7 +103,7 @@ describe('toBootstrapMetadata factory', () => {
     assert.ok(meta.generatedAt)
   })
 
-  test('覆盖依赖列表', () => {
+  it('覆盖依赖列表', () => {
     const deps = ['identity-access', 'configuration-governance'] as any[]
     const meta = toBootstrapMetadata(
       { tenantId: 't-deps' },
@@ -113,7 +113,7 @@ describe('toBootstrapMetadata factory', () => {
     assert.ok(meta.foundationDependencies.includes('identity-access' as any))
   })
 
-  test('覆盖契约列表', () => {
+  it('覆盖契约列表', () => {
     const contracts = ['identity.contract', 'config.contract']
     const meta = toBootstrapMetadata(
       { tenantId: 't-contracts' },
@@ -123,7 +123,7 @@ describe('toBootstrapMetadata factory', () => {
     assert.equal(meta.foundationContracts[0], 'identity.contract')
   })
 
-  test('覆盖 phase=Ready', () => {
+  it('覆盖 phase=Ready', () => {
     const meta = toBootstrapMetadata(
       { tenantId: 't-phase' },
       { phase: BootstrapPhase.Ready },
@@ -131,7 +131,7 @@ describe('toBootstrapMetadata factory', () => {
     assert.equal(meta.phase, BootstrapPhase.Ready)
   })
 
-  test('覆盖 generatedAt', () => {
+  it('覆盖 generatedAt', () => {
     const meta = toBootstrapMetadata(
       { tenantId: 't-time' },
       { generatedAt: '2026-06-23T06:00:00.000Z' },
@@ -139,7 +139,7 @@ describe('toBootstrapMetadata factory', () => {
     assert.equal(meta.generatedAt, '2026-06-23T06:00:00.000Z')
   })
 
-  test('完整 tenantContext 透传', () => {
+  it('完整 tenantContext 透传', () => {
     const fullCtx = {
       tenantId: 't-full',
       brandId: 'b-full',
@@ -153,7 +153,7 @@ describe('toBootstrapMetadata factory', () => {
     assert.equal(meta.tenantContext.marketCode, 'jp-east')
   })
 
-  test('最小 tenantContext（仅 tenantId）brandId/storeId 为 undefined', () => {
+  it('最小 tenantContext（仅 tenantId）brandId/storeId 为 undefined', () => {
     const meta = toBootstrapMetadata({ tenantId: 't-min' })
     assert.equal(meta.tenantContext.tenantId, 't-min')
     assert.equal(meta.tenantContext.brandId, undefined)
@@ -163,7 +163,7 @@ describe('toBootstrapMetadata factory', () => {
 
 // ── 实体接口类型验证 ──
 describe('Bootstrap 实体接口类型验证', () => {
-  test('BootstrapHealth 满足接口契约', () => {
+  it('BootstrapHealth 满足接口契约', () => {
     const health: BootstrapHealth = {
       status: 'ok',
       uptime: 12345.67,
@@ -176,7 +176,7 @@ describe('Bootstrap 实体接口类型验证', () => {
     assert.ok(typeof health.checkedAt === 'string')
   })
 
-  test('BootstrapMetadata 满足接口契约', () => {
+  it('BootstrapMetadata 满足接口契约', () => {
     const metadata: BootstrapMetadata = {
       tenantContext: {
         tenantId: 't-cn',
@@ -194,7 +194,7 @@ describe('Bootstrap 实体接口类型验证', () => {
     assert.equal(metadata.phase, 'handoff')
   })
 
-  test('RegionalLoginPolicy 满足接口契约', () => {
+  it('RegionalLoginPolicy 满足接口契约', () => {
     const policy: RegionalLoginPolicy = {
       defaultLoginPath: '/auth/login',
       ssoEnabled: true,
@@ -205,7 +205,7 @@ describe('Bootstrap 实体接口类型验证', () => {
     assert.equal(policy.supportedMarkets.length, 2)
   })
 
-  test('BootstrapConsumerDependency 满足接口契约', () => {
+  it('BootstrapConsumerDependency 满足接口契约', () => {
     const dep: BootstrapConsumerDependency = {
       consumerName: 'portal',
       dependsOn: ['identity-access', 'configuration-governance'] as any[],
@@ -221,7 +221,7 @@ describe('Bootstrap 实体接口类型验证', () => {
 
 // ── BootstrapService ──
 describe('BootstrapService', () => {
-  test('getHealth 返回 ok / scaffold / 数字 uptime', () => {
+  it('getHealth 返回 ok / scaffold / 数字 uptime', () => {
     const { BootstrapService } = require('./bootstrap.service')
     const service = new BootstrapService()
 
@@ -231,7 +231,7 @@ describe('BootstrapService', () => {
     assert.equal(typeof result.uptime, 'number')
   })
 
-  test('getBootstrapMetadata 委托到 entity 逻辑', () => {
+  it('getBootstrapMetadata 委托到 entity 逻辑', () => {
     const { BootstrapService } = require('./bootstrap.service')
     const service = new BootstrapService()
 
@@ -243,7 +243,7 @@ describe('BootstrapService', () => {
     assert.equal(result.phase, 'scaffold')
   })
 
-  test('getBootstrapMetadata 缺失字段为 undefined', () => {
+  it('getBootstrapMetadata 缺失字段为 undefined', () => {
     const { BootstrapService } = require('./bootstrap.service')
     const service = new BootstrapService()
 
@@ -253,7 +253,7 @@ describe('BootstrapService', () => {
     assert.equal(result.foundationDependencies.length, 0)
   })
 
-  test('getHealth uptime 递增', () => {
+  it('getHealth uptime 递增', () => {
     const { BootstrapService } = require('./bootstrap.service')
     const service = new BootstrapService()
 
@@ -265,14 +265,14 @@ describe('BootstrapService', () => {
 
 // ── bootstrap.contract ──
 describe('bootstrap.contract', () => {
-  test('toBootstrapFoundationMetadata 空输入返回空数组', () => {
+  it('toBootstrapFoundationMetadata 空输入返回空数组', () => {
     const { toBootstrapFoundationMetadata } = require('./bootstrap.contract')
     const result = toBootstrapFoundationMetadata(undefined)
     assert.deepStrictEqual(result.foundationDependencies, [])
     assert.deepStrictEqual(result.foundationContracts, [])
   })
 
-  test('toBootstrapFoundationMetadata 传入依赖/契约', () => {
+  it('toBootstrapFoundationMetadata 传入依赖/契约', () => {
     const { toBootstrapFoundationMetadata } = require('./bootstrap.contract')
     const input = {
       dependsOn: ['identity-access'] as any[],
@@ -283,7 +283,7 @@ describe('bootstrap.contract', () => {
     assert.deepStrictEqual(result.foundationContracts, ['identity.contract'])
   })
 
-  test('toBootstrapFoundationMetadata 不含 phase 属性', () => {
+  it('toBootstrapFoundationMetadata 不含 phase 属性', () => {
     const { toBootstrapFoundationMetadata } = require('./bootstrap.contract')
     const result = toBootstrapFoundationMetadata(undefined)
     assert.ok('foundationDependencies' in result)
@@ -291,14 +291,14 @@ describe('bootstrap.contract', () => {
     assert.ok(!('phase' in result))
   })
 
-  test('toRegionalLoginPolicyContract 正常构造', () => {
+  it('toRegionalLoginPolicyContract 正常构造', () => {
     const { toRegionalLoginPolicyContract } = require('./bootstrap.contract')
     const result = toRegionalLoginPolicyContract('/login/sso', true)
     assert.equal(result.defaultLoginPath, '/login/sso')
     assert.equal(result.ssoEnabled, true)
   })
 
-  test('toRegionalLoginPolicyContract ssoDisabled', () => {
+  it('toRegionalLoginPolicyContract ssoDisabled', () => {
     const { toRegionalLoginPolicyContract } = require('./bootstrap.contract')
     const result = toRegionalLoginPolicyContract('/login/basic', false)
     assert.equal(result.defaultLoginPath, '/login/basic')

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 跨模块 E2E 测试链 #5: Loyalty + Campaign + Analytics 联动
  *
@@ -15,7 +16,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -213,7 +213,7 @@ function makePayment(paymentId: string, orderId: string, amount: number): Cashie
   }
 }
 
-test('cross-module e2e: payment.success triggers campaign award-points → member profile updated and analytics aggregates settlement inflow', async () => {
+it('cross-module e2e: payment.success triggers campaign award-points → member profile updated and analytics aggregates settlement inflow', async () => {
   const { app, memberService, loyaltyService, campaignService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   campaignService.resetCampaignStoresForTests()
@@ -276,7 +276,7 @@ test('cross-module e2e: payment.success triggers campaign award-points → membe
   }
 })
 
-test('cross-module e2e: campaign IssueCoupon action drains coupon plan and analytics tracks redemption', async () => {
+it('cross-module e2e: campaign IssueCoupon action drains coupon plan and analytics tracks redemption', async () => {
   const { app, memberService, loyaltyService, campaignService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   campaignService.resetCampaignStoresForTests()
@@ -353,7 +353,7 @@ test('cross-module e2e: campaign IssueCoupon action drains coupon plan and analy
   }
 })
 
-test('cross-module e2e: settlePaidOrder + campaign AwardPoints accumulate points visible in analytics', async () => {
+it('cross-module e2e: settlePaidOrder + campaign AwardPoints accumulate points visible in analytics', async () => {
   const { app, memberService, loyaltyService, campaignService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   campaignService.resetCampaignStoresForTests()
@@ -421,7 +421,7 @@ test('cross-module e2e: settlePaidOrder + campaign AwardPoints accumulate points
   }
 })
 
-test('cross-module e2e: tenant-B cannot consume tenant-A coupon plan nor see its analytics', async () => {
+it('cross-module e2e: tenant-B cannot consume tenant-A coupon plan nor see its analytics', async () => {
   const { app, memberService, loyaltyService, campaignService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   campaignService.resetCampaignStoresForTests()
@@ -510,7 +510,7 @@ test('cross-module e2e: tenant-B cannot consume tenant-A coupon plan nor see its
   }
 })
 
-test('e2e xm3-ext: member points ledger accumulates across multiple campaign triggers', async () => {
+it('e2e xm3-ext: member points ledger accumulates across multiple campaign triggers', async () => {
   const { app, memberService, loyaltyService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   memberService.register({
@@ -564,7 +564,7 @@ test('e2e xm3-ext: member points ledger accumulates across multiple campaign tri
   }
 })
 
-test('e2e xm3-ext: campaign priorities determine dispatch order across multiple matching campaigns', async () => {
+it('e2e xm3-ext: campaign priorities determine dispatch order across multiple matching campaigns', async () => {
   const { app, memberService, campaignService, loyaltyService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
   loyaltyService.resetLoyaltyStoresForTests()
@@ -621,7 +621,7 @@ test('e2e xm3-ext: campaign priorities determine dispatch order across multiple 
   }
 })
 
-test('e2e xm3-ext: cross-tenant analytics — tenant B sees empty snapshot when tenant A has data', async () => {
+it('e2e xm3-ext: cross-tenant analytics — tenant B sees empty snapshot when tenant A has data', async () => {
   const { app, memberService, loyaltyService } = await buildApp()
   loyaltyService.resetLoyaltyStoresForTests()
   memberService.register({ memberId: 'm-1', tenantContext: tenantContext(), nickname: 'Alice' })
@@ -645,7 +645,7 @@ test('e2e xm3-ext: cross-tenant analytics — tenant B sees empty snapshot when 
   }
 })
 
-test('e2e xm3-ext: campaign inactive status does not match', async () => {
+it('e2e xm3-ext: campaign inactive status does not match', async () => {
   const { app, memberService, campaignService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
   memberService.register({ memberId: 'm-1', tenantContext: tenantContext(), nickname: 'Alice' })

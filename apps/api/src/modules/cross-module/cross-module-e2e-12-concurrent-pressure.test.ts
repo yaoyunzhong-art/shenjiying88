@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E 跨模块 #12 — 并发压测: 预约争抢 / 支付回调幂等 / 库存 race
  *
@@ -23,7 +24,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -33,10 +33,8 @@ import {
   Post,
   Req
 } from '@nestjs/common'
-import { Test } from '@nestjs/testing'
 import request from 'supertest'
-import type { NextFunction, Request, Response } from 'express'
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import type { Request } from 'express'
 import { ReservationService } from '../reservation/reservation.service'
 import { ReservationStatus } from '../reservation/reservation.entity'
 import { CashierService } from '../cashier/cashier.service'
@@ -47,17 +45,7 @@ import {
   resetInventoryServiceTestState
 } from '../inventory/inventory.service'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
-
-function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
-  ctx.tenantContext = {
-    tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
-    brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
-    storeId: (req.header('x-store-id') as string | undefined) ?? 'store-001',
-    marketCode: (req.header('x-market-code') as string | undefined) ?? 'cn-mainland'
-  }
-  next()
-}
+import { buildCrossModuleTestApp } from './test-helpers'
 
 // ─── TestController ───
 
@@ -131,21 +119,16 @@ async function buildApp() {
     }
   }
 
-  const moduleRef = await Test.createTestingModule({
+  const { app, moduleRef } = await buildCrossModuleTestApp({
     controllers: [TestController],
     providers: [
       { provide: MemberService, useValue: memberService },
       { provide: CashierService, useValue: cashierService },
       { provide: ReservationService, useValue: reservationService },
       { provide: InventoryService, useValue: inventoryService }
-    ]
-  }).compile()
-
-  const app = moduleRef.createNestApplication()
-  app.use(attachTenantContext)
-  app.useGlobalInterceptors(new ResponseInterceptor())
-  await app.init()
-  return { app, memberService, cashierService, reservationService, inventoryService }
+    ],
+  })
+  return { app, moduleRef, memberService, cashierService, reservationService, inventoryService }
 }
 
 const TENANT_A_CTX = {
@@ -167,7 +150,7 @@ const CONCURRENCY = 50
 // E2E: 50 并发预约争抢同一 resource (直接调 service)
 // ═══════════════════════════════════════════════════
 
-test('e2e-12: 50 concurrent reservations on same resource - only one wins', async () => {
+it('e2e-12: 50 concurrent reservations on same resource - only one wins', async () => {
   const { reservationService } = await buildApp()
 
   const startTime = new Date(Date.now() + 60_000).toISOString()
@@ -232,7 +215,7 @@ test('e2e-12: 50 concurrent reservations on same resource - only one wins', asyn
 // E2E: 50 并发支付回调同一 order (幂等性)
 // ═══════════════════════════════════════════════════
 
-test('e2e-12: 50 concurrent payment callbacks on same order - idempotent', async () => {
+it('e2e-12: 50 concurrent payment callbacks on same order - idempotent', async () => {
   const { app, memberService, cashierService } = await buildApp()
   try {
     // 用 no-op loyalty service 替换,避免 50 并发时 settlePaidOrder 内部
@@ -326,7 +309,7 @@ test('e2e-12: 50 concurrent payment callbacks on same order - idempotent', async
 // E2E: 50 并发库存扣减 (race condition 业务规则验证)
 // ═══════════════════════════════════════════════════
 
-test('e2e-12: 50 concurrent stockOut on limited stock - no oversell', async () => {
+it('e2e-12: 50 concurrent stockOut on limited stock - no oversell', async () => {
   const { inventoryService } = await buildApp()
 
   const INITIAL_STOCK = 30
@@ -381,7 +364,7 @@ test('e2e-12: 50 concurrent stockOut on limited stock - no oversell', async () =
 // E2E: 50 并发混合大小批量出库 (无负库存)
 // ═══════════════════════════════════════════════════
 
-test('e2e-12: 50 concurrent mixed-size stockOut - final stock never negative', async () => {
+it('e2e-12: 50 concurrent mixed-size stockOut - final stock never negative', async () => {
   const { inventoryService } = await buildApp()
 
   const INITIAL_STOCK = 100

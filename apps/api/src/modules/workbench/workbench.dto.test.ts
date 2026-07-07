@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { validate } from 'class-validator'
 import { plainToInstance } from 'class-transformer'
 import 'reflect-metadata'
@@ -20,13 +20,13 @@ import {
 
 describe('Workbench DTOs', () => {
   describe('NavItemQueryDto', () => {
-    test('validates with optional fields', async () => {
+    it('validates with optional fields', async () => {
       const dto = plainToInstance(NavItemQueryDto, {})
       const errors = await validate(dto)
       assert.equal(errors.length, 0, 'empty dto should be valid (all fields optional)')
     })
 
-    test('accepts role and channel filter', async () => {
+    it('accepts role and channel filter', async () => {
       const dto = plainToInstance(NavItemQueryDto, {
         role: 'GUIDE',
         channel: 'PAD'
@@ -35,7 +35,7 @@ describe('Workbench DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('accepts marketCode and capability', async () => {
+    it('accepts marketCode and capability', async () => {
       const dto = plainToInstance(NavItemQueryDto, {
         marketCode: 'cn-mainland',
         capability: 'member-crm'
@@ -46,13 +46,13 @@ describe('Workbench DTOs', () => {
   })
 
   describe('WorkbenchQueryDto', () => {
-    test('validates with optional fields', async () => {
+    it('validates with optional fields', async () => {
       const dto = plainToInstance(WorkbenchQueryDto, {})
       const errors = await validate(dto)
       assert.equal(errors.length, 0)
     })
 
-    test('accepts boolean initialized', async () => {
+    it('accepts boolean initialized', async () => {
       const dto = plainToInstance(WorkbenchQueryDto, {
         role: 'SUPER_ADMIN',
         initialized: true
@@ -63,14 +63,14 @@ describe('Workbench DTOs', () => {
   })
 
   describe('TenantContextDto', () => {
-    test('requires tenantId', async () => {
+    it('requires tenantId', async () => {
       const dto = plainToInstance(TenantContextDto, {})
       const errors = await validate(dto)
       assert.ok(errors.length > 0)
       assert.ok(errors.some(e => e.property === 'tenantId'))
     })
 
-    test('accepts full tenant context', async () => {
+    it('accepts full tenant context', async () => {
       const dto = plainToInstance(TenantContextDto, {
         tenantId: 't-1',
         brandId: 'b-1',
@@ -81,7 +81,7 @@ describe('Workbench DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('accepts minimal tenant context (only tenantId)', async () => {
+    it('accepts minimal tenant context (only tenantId)', async () => {
       const dto = plainToInstance(TenantContextDto, {
         tenantId: 't-minimal'
       })
@@ -91,13 +91,13 @@ describe('Workbench DTOs', () => {
   })
 
   describe('WorkbenchBootstrapRequestDto', () => {
-    test('requires nested tenantContext', async () => {
+    it('requires nested tenantContext', async () => {
       const dto = plainToInstance(WorkbenchBootstrapRequestDto, {})
       const errors = await validate(dto)
       assert.ok(errors.length > 0)
     })
 
-    test('validates nested tenantContext', async () => {
+    it('validates nested tenantContext', async () => {
       const dto = plainToInstance(WorkbenchBootstrapRequestDto, {
         tenantContext: { tenantId: 't-99' }
       })
@@ -107,7 +107,7 @@ describe('Workbench DTOs', () => {
   })
 
   describe('CapabilityCheckDto', () => {
-    test('requires role and capability', async () => {
+    it('requires role and capability', async () => {
       const dto = plainToInstance(CapabilityCheckDto, {})
       const errors = await validate(dto)
       assert.equal(errors.length, 2)
@@ -115,7 +115,7 @@ describe('Workbench DTOs', () => {
       assert.ok(errors.some(e => e.property === 'capability'))
     })
 
-    test('validates with both fields', async () => {
+    it('validates with both fields', async () => {
       const dto = plainToInstance(CapabilityCheckDto, {
         role: 'GUIDE',
         capability: 'member-crm'
@@ -126,7 +126,7 @@ describe('Workbench DTOs', () => {
   })
 
   describe('CapabilityBatchCheckDto', () => {
-    test('requires role and capabilities array', async () => {
+    it('requires role and capabilities array', async () => {
       const dto = plainToInstance(CapabilityBatchCheckDto, {})
       const errors = await validate(dto)
       assert.equal(errors.length, 2)
@@ -134,7 +134,7 @@ describe('Workbench DTOs', () => {
       assert.ok(errors.some(e => e.property === 'capabilities'))
     })
 
-    test('validates batch check payload', async () => {
+    it('validates batch check payload', async () => {
       const dto = plainToInstance(CapabilityBatchCheckDto, {
         role: 'STORE_MANAGER',
         capabilities: ['daily-report', 'field-scheduling']
@@ -143,7 +143,7 @@ describe('Workbench DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('accepts capabilities array with valid strings', async () => {
+    it('accepts capabilities array with valid strings', async () => {
       const dto = plainToInstance(CapabilityBatchCheckDto, {
         role: 'GUIDE',
         capabilities: ['member-crm', 'promo-conversion']
@@ -152,7 +152,7 @@ describe('Workbench DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('accepts empty capabilities array', async () => {
+    it('accepts empty capabilities array', async () => {
       const dto = plainToInstance(CapabilityBatchCheckDto, {
         role: 'GUIDE',
         capabilities: []
@@ -163,7 +163,7 @@ describe('Workbench DTOs', () => {
   })
 
   describe('Workbench action DTOs', () => {
-    test('approval execute dto requires approvalCode and idempotencyKey', async () => {
+    it('approval execute dto requires approvalCode and idempotencyKey', async () => {
       const dto = plainToInstance(WorkbenchApprovalExecuteDto, {
         approvalCode: 'APP-001',
         idempotencyKey: 'approval:001'
@@ -172,7 +172,7 @@ describe('Workbench DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('secret rotation dto validates secret name and idempotency key', async () => {
+    it('secret rotation dto validates secret name and idempotency key', async () => {
       const dto = plainToInstance(WorkbenchSecretRotationDto, {
         secretName: 'db-password',
         idempotencyKey: 'secret:001',
@@ -182,7 +182,7 @@ describe('Workbench DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('runtime replay submit dto requires source receipt code', async () => {
+    it('runtime replay submit dto requires source receipt code', async () => {
       const dto = plainToInstance(WorkbenchRuntimeReplaySubmitDto, {
         sourceReceiptCode: 'REC-001',
         idempotencyKey: 'runtime:001'
@@ -191,7 +191,7 @@ describe('Workbench DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('handler sync dto requires ticket and idempotency key', async () => {
+    it('handler sync dto requires ticket and idempotency key', async () => {
       const dto = plainToInstance(WorkbenchHandlerSyncDto, {
         ticketCode: 'TICKET-001',
         idempotencyKey: 'sync:001'
@@ -200,7 +200,7 @@ describe('Workbench DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('handler callback dto validates runtime callback enums', async () => {
+    it('handler callback dto validates runtime callback enums', async () => {
       const dto = plainToInstance(WorkbenchHandlerCallbackDto, {
         callbackStatus: 'callback-recorded',
         ackToken: 'ACK-001',
@@ -212,7 +212,7 @@ describe('Workbench DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('action replay dto validates replay source enum', async () => {
+    it('action replay dto validates replay source enum', async () => {
       const dto = plainToInstance(WorkbenchActionReplayDto, {
         ledgerKey: 'LEDGER-001',
         requestedFrom: 'ADMIN_WEB_RUNTIME',

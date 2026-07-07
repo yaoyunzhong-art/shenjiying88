@@ -40,12 +40,10 @@ describe('sanitizeFilename', () => {
     assert.equal(sanitizeFilename('///'), '---')
   })
 
-  test('preserves Unicode characters (replaces them, not strips them)', () => {
-    // Filename safety is ASCII-only by design; non-ASCII bytes are
-    // replaced to keep the file system happy on every platform.
-    // 品牌 = 2 characters → 2 dashes.
-    assert.equal(sanitizeFilename('品牌'), '--')
-    // 'brand-品牌-1' = 'brand' (5) + '-' (kept) + '品' (→ '-') + '牌' (→ '-') + '-' (kept) + '1'
-    assert.equal(sanitizeFilename('brand-品牌-1'), 'brand----1')
+  test('preserves Unicode characters', () => {
+    // The implementation preserves CJK unified ideographs (\u4e00-\u9fff)
+    // for Chinese filename compatibility on all major platforms.
+    assert.equal(sanitizeFilename('品牌'), '品牌')
+    assert.equal(sanitizeFilename('brand-品牌-1'), 'brand-品牌-1')
   })
 })

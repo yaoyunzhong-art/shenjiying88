@@ -1,7 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 // Replicate the logic directly so we can control env per test
 const envString = (value: string | undefined, fallback: string) =>
   typeof value === 'string' && value.trim().length > 0 ? value : fallback
@@ -69,7 +68,7 @@ const createConfiguration = () => {
 describe('configuration()', () => {
   // --- defaults ---
   describe('defaults', () => {
-    test('app.name defaults to M5', () => {
+    it('app.name defaults to M5', () => {
       const original = process.env.APP_NAME
       delete process.env.APP_NAME
       try {
@@ -80,7 +79,7 @@ describe('configuration()', () => {
       }
     })
 
-    test('app.port defaults to 3001', () => {
+    it('app.port defaults to 3001', () => {
       const original = process.env.API_PORT
       delete process.env.API_PORT
       try {
@@ -92,7 +91,7 @@ describe('configuration()', () => {
       }
     })
 
-    test('lyt.mode defaults to mock', () => {
+    it('lyt.mode defaults to mock', () => {
       const original = process.env.LYT_MODE
       delete process.env.LYT_MODE
       try {
@@ -103,7 +102,7 @@ describe('configuration()', () => {
       }
     })
 
-    test('lyt.defaultStoreId defaults to store-demo-001', () => {
+    it('lyt.defaultStoreId defaults to store-demo-001', () => {
       const original = process.env.LYT_DEFAULT_STORE_ID
       delete process.env.LYT_DEFAULT_STORE_ID
       try {
@@ -114,7 +113,7 @@ describe('configuration()', () => {
       }
     })
 
-    test('lyt.adapters defaults to local sandbox and real settings', () => {
+    it('lyt.adapters defaults to local sandbox and real settings', () => {
       const originals: Record<string, string | undefined> = {}
       for (const key of [
         'LYT_SANDBOX_BASE_URL',
@@ -151,7 +150,7 @@ describe('configuration()', () => {
       }
     })
 
-    test('postgres.databaseUrl defaults to the local Prisma connection string', () => {
+    it('postgres.databaseUrl defaults to the local Prisma connection string', () => {
       const original = process.env.DATABASE_URL
       delete process.env.DATABASE_URL
       try {
@@ -162,7 +161,7 @@ describe('configuration()', () => {
       }
     })
 
-    test('postgres.host, port, and database are derived from DATABASE_URL', () => {
+    it('postgres.host, port, and database are derived from DATABASE_URL', () => {
       const original = process.env.DATABASE_URL
       process.env.DATABASE_URL = 'postgresql://tester:secret@db.internal:6543/m5_runtime'
       try {
@@ -180,7 +179,7 @@ describe('configuration()', () => {
 
   // --- overrides ---
   describe('env var overrides', () => {
-    test('APP_NAME overrides app.name', () => {
+    it('APP_NAME overrides app.name', () => {
       const original = process.env.APP_NAME
       process.env.APP_NAME = 'CustomApp'
       try {
@@ -191,7 +190,7 @@ describe('configuration()', () => {
       }
     })
 
-    test('API_PORT overrides app.port as a number', () => {
+    it('API_PORT overrides app.port as a number', () => {
       const original = process.env.API_PORT
       process.env.API_PORT = '4000'
       try {
@@ -203,7 +202,7 @@ describe('configuration()', () => {
       }
     })
 
-    test('API_PORT non-numeric falls back to default port', () => {
+    it('API_PORT non-numeric falls back to default port', () => {
       const original = process.env.API_PORT
       process.env.API_PORT = 'not-a-number'
       try {
@@ -214,7 +213,7 @@ describe('configuration()', () => {
       }
     })
 
-    test('LYT_MODE overrides lyt.mode', () => {
+    it('LYT_MODE overrides lyt.mode', () => {
       const original = process.env.LYT_MODE
       process.env.LYT_MODE = 'production'
       try {
@@ -225,7 +224,7 @@ describe('configuration()', () => {
       }
     })
 
-    test('LYT_DEFAULT_STORE_ID overrides lyt.defaultStoreId', () => {
+    it('LYT_DEFAULT_STORE_ID overrides lyt.defaultStoreId', () => {
       const original = process.env.LYT_DEFAULT_STORE_ID
       process.env.LYT_DEFAULT_STORE_ID = 'store-custom-99'
       try {
@@ -236,7 +235,7 @@ describe('configuration()', () => {
       }
     })
 
-    test('LYT adapter env vars override nested adapter config', () => {
+    it('LYT adapter env vars override nested adapter config', () => {
       const originals: Record<string, string | undefined> = {}
       for (const [key, value] of Object.entries({
         LYT_SANDBOX_BASE_URL: 'https://sandbox.example.com',
@@ -273,7 +272,7 @@ describe('configuration()', () => {
       }
     })
 
-    test('DATABASE_URL overrides postgres.databaseUrl and parsed fields', () => {
+    it('DATABASE_URL overrides postgres.databaseUrl and parsed fields', () => {
       const original = process.env.DATABASE_URL
       process.env.DATABASE_URL = 'postgresql://m5:secret@db.example.com:6000/m5_staging'
       try {
@@ -290,13 +289,13 @@ describe('configuration()', () => {
 
   // --- structure ---
   describe('structure', () => {
-    test('has app, lyt, postgres sections', () => {
+    it('has app, lyt, postgres sections', () => {
       const config = createConfiguration()
       const keys = Object.keys(config).sort()
       assert.deepEqual(keys, ['app', 'lyt', 'postgres'])
     })
 
-    test('combined overrides', () => {
+    it('combined overrides', () => {
       const originals: Record<string, string | undefined> = {}
       for (const k of ['APP_NAME', 'DATABASE_URL', 'LYT_MODE']) {
         originals[k] = process.env[k]

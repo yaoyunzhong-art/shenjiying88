@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { RuntimeGovernanceController } from './runtime-governance.controller'
 import {
   PERMISSIONS_METADATA_KEY,
@@ -8,7 +8,7 @@ import {
   TENANT_SCOPE_METADATA_KEY
 } from '../identity-access/identity-access.decorator'
 
-test('runtime governance controller enforces tenant scope and access metadata', () => {
+it('runtime governance controller enforces tenant scope and access metadata', () => {
   const controllerScope = Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, RuntimeGovernanceController)
   assert.deepEqual(controllerScope, {})
 

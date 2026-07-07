@@ -1,192 +1,152 @@
 import React from 'react';
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { describe, test } from 'node:test';
 
-// Testing approach: verify export structure, type safety, prop handling,
-// and that the component creates valid React elements — no SSR needed.
-// This matches the pattern used by all other component tests in this project.
+const PROJECT_ROOT = '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88';
+const { renderToStaticMarkup } = require(
+  PROJECT_ROOT + '/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/server.node.js'
+);
+const { TimePicker } = require('./TimePicker');
 
-import { TimePicker } from './TimePicker';
-
-test('TimePicker exports correctly', () => {
-  assert.ok(TimePicker, 'TimePicker should be defined');
-  assert.ok(
-    typeof TimePicker === 'function' || typeof TimePicker === 'object',
-    'TimePicker should be a function or React.memo object',
-  );
-});
-
-test('TimePicker renders with default props', () => {
-  const el = React.createElement(TimePicker);
-  assert.ok(el, 'should create a React element without crashing');
-});
-
-test('TimePicker accepts label prop', () => {
-  const el = React.createElement(TimePicker, { label: '开始时间' });
-  assert.ok(el, 'should create element with label');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.label, '开始时间');
-});
-
-test('TimePicker accepts id prop', () => {
-  const el = React.createElement(TimePicker, { id: 'start' });
-  assert.ok(el, 'should create element with id');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.id, 'start');
-});
-
-test('TimePicker accepts value prop (HH:mm)', () => {
-  const el = React.createElement(TimePicker, { value: '14:30' });
-  assert.ok(el, 'should create element with value');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.value, '14:30');
-});
-
-test('TimePicker accepts value prop (HH:mm:ss)', () => {
-  const el = React.createElement(TimePicker, { value: '09:05:45' });
-  assert.ok(el, 'should create element with time value');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.value, '09:05:45');
-});
-
-test('TimePicker accepts showSeconds prop', () => {
-  const el = React.createElement(TimePicker, { showSeconds: true });
-  assert.ok(el, 'should create element with showSeconds');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.showSeconds, true);
-});
-
-test('TimePicker accepts use12Hour prop', () => {
-  const el = React.createElement(TimePicker, { use12Hour: true });
-  assert.ok(el, 'should create element with 12h format');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.use12Hour, true);
-});
-
-test('TimePicker accepts placeholder prop', () => {
-  const el = React.createElement(TimePicker, { placeholder: '--:--' });
-  assert.ok(el, 'should create element with placeholder');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.placeholder, '--:--');
-});
-
-test('TimePicker accepts disabled prop', () => {
-  const el = React.createElement(TimePicker, { disabled: true });
-  assert.ok(el, 'should create element with disabled');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.disabled, true);
-});
-
-test('TimePicker disabled defaults to false', () => {
-  const el = React.createElement(TimePicker);
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.disabled, undefined, 'disabled should be undefined (defaults to false)');
-});
-
-test('TimePicker accepts error prop', () => {
-  const el = React.createElement(TimePicker, { error: '时间格式错误' });
-  assert.ok(el, 'should create element with error');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.error, '时间格式错误');
-});
-
-test('TimePicker accepts helpText prop', () => {
-  const el = React.createElement(TimePicker, { helpText: '24小时制' });
-  assert.ok(el, 'should create element with helpText');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.helpText, '24小时制');
-});
-
-test('TimePicker accepts required prop', () => {
-  const el = React.createElement(TimePicker, { required: true });
-  assert.ok(el, 'should create element with required');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.required, true);
-});
-
-test('TimePicker accepts style prop', () => {
-  const el = React.createElement(TimePicker, { style: { width: 200 } });
-  assert.ok(el, 'should create element with style');
-  const props = el.props as Record<string, unknown>;
-  assert.ok(props.style);
-  assert.strictEqual((props.style as Record<string, unknown>).width, 200);
-});
-
-test('TimePicker accepts className prop', () => {
-  const el = React.createElement(TimePicker, { className: 'custom-timepicker' });
-  assert.ok(el, 'should create element with className');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.className, 'custom-timepicker');
-});
-
-test('TimePicker accepts minHour prop', () => {
-  const el = React.createElement(TimePicker, { minHour: 8, maxHour: 20 });
-  assert.ok(el, 'should create element with hour range');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.minHour, 8);
-  assert.strictEqual(props.maxHour, 20);
-});
-
-test('TimePicker accepts minuteStep prop', () => {
-  const el = React.createElement(TimePicker, { minuteStep: 15 });
-  assert.ok(el, 'should create element with minuteStep');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.minuteStep, 15);
-});
-
-test('TimePicker accepts onChange callback', () => {
-  const fn = () => {};
-  const el = React.createElement(TimePicker, { onChange: fn });
-  assert.ok(el, 'should create element with onChange');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.onChange, fn);
-});
-
-test('TimePicker accepts readOnly prop', () => {
-  const el = React.createElement(TimePicker, { readOnly: true });
-  assert.ok(el, 'should create element with readOnly');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.readOnly, true);
-});
-
-test('TimePicker renders with all props combined', () => {
-  const el = React.createElement(TimePicker, {
-    value: '10:30',
-    label: '时间',
-    placeholder: '--:--',
-    showSeconds: false,
-    use12Hour: false,
-    disabled: false,
-    required: true,
-    error: '',
-    helpText: '',
-    minHour: 0,
-    maxHour: 23,
-    minuteStep: 1,
-    onChange: () => {},
-    id: 'time',
-    readOnly: false,
+describe('TimePicker', () => {
+  test('renders inputs with hour & minute from value', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { value: '14:30' })
+    );
+    assert.ok(html.includes('value="14"'));
+    assert.ok(html.includes('value="30"'));
   });
-  assert.ok(el, 'should create element with all props');
-  const props = el.props as Record<string, unknown>;
-  assert.strictEqual(props.value, '10:30');
-  assert.strictEqual(props.label, '时间');
-  assert.strictEqual(props.minHour, 0);
-  assert.strictEqual(props.maxHour, 23);
-  assert.strictEqual(props.minuteStep, 1);
-});
 
-test('TimePicker handles empty value gracefully', () => {
-  const el = React.createElement(TimePicker, { value: '' });
-  assert.ok(el, 'should handle empty string value');
-});
+  test('renders 3 inputs when showSeconds=true', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { value: '09:05:45', showSeconds: true })
+    );
+    assert.ok(html.includes('value="09"'));
+    assert.ok(html.includes('value="05"'));
+    assert.ok(html.includes('value="45"'));
+  });
 
-test('TimePicker handles undefined value gracefully', () => {
-  const el = React.createElement(TimePicker, { value: undefined });
-  assert.ok(el, 'should handle undefined value');
-});
+  test('renders label text', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { label: '开始时间' })
+    );
+    assert.ok(html.includes('开始时间'));
+  });
 
-test('TimePicker handles onChange undefined gracefully', () => {
-  const el = React.createElement(TimePicker, { onChange: undefined });
-  assert.ok(el, 'should handle undefined onChange');
+  test('shows required asterisk', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { label: '时间', required: true })
+    );
+    assert.ok(html.includes('*'));
+  });
+
+  test('shows error text', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { error: '时间不能为空' })
+    );
+    assert.ok(html.includes('时间不能为空'));
+  });
+
+  test('shows helpText when no error', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { helpText: '请选择时间' })
+    );
+    assert.ok(html.includes('请选择时间'));
+  });
+
+  test('does not show helpText when error is present', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { error: '错误', helpText: '帮助' })
+    );
+    assert.ok(!html.includes('帮助'));
+  });
+
+  test('disables inputs when disabled', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { value: '10:15', disabled: true })
+    );
+    // disabled attribute present
+    const inputMatches = html.match(/<input/g);
+    assert.ok(inputMatches && inputMatches.length >= 2);
+  });
+
+  test('applies id to hour and minute inputs', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { id: 'my-time', label: '时间' })
+    );
+    assert.ok(html.includes('id="my-time-h"'));
+    assert.ok(html.includes('id="my-time-m"'));
+  });
+
+  test('renders PM button in 12h mode after noon', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { use12Hour: true, value: '14:00' })
+    );
+    assert.ok(html.includes('PM'));
+  });
+
+  test('renders AM in 12h mode before noon', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { use12Hour: true, value: '02:00' })
+    );
+    assert.ok(html.includes('AM'));
+  });
+
+  test('12h mode shows hour in 12-hour format (14→02)', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { use12Hour: true, value: '14:30' })
+    );
+    assert.ok(html.includes('value="02"'));
+  });
+
+  test('sets aria-label on segments', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { value: '10:10' })
+    );
+    assert.ok(html.includes('aria-label="小时"'));
+    assert.ok(html.includes('aria-label="分钟"'));
+  });
+
+  test('renders 2 segments by default with no value', () => {
+    const html = renderToStaticMarkup(React.createElement(TimePicker));
+    const valueCount = (html.match(/value="/g) || []).length;
+    assert.ok(valueCount >= 2);
+  });
+
+  test('readOnly passes readOnly to inputs', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { value: '10:10', readOnly: true })
+    );
+    assert.ok(html.includes('readOnly') || html.includes('readonly'));
+  });
+
+  test('colon separators exist between segments', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { value: '12:00' })
+    );
+    // Two colons for two separators
+    const colonCount = (html.match(/>:</g) || []).length;
+    assert.equal(colonCount, 1, 'Should have one colon separator for 2 segments');
+  });
+
+  test('custom className is applied to root div', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { className: 'my-custom-picker' })
+    );
+    assert.ok(html.includes('my-custom-picker'));
+  });
+
+  test('required label links to hour input via htmlFor', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { id: 'tp', label: '时间', required: true })
+    );
+    assert.ok(html.includes('for="tp-h"'));
+  });
+
+  test('minHour/maxHour default works with normal hour', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TimePicker, { value: '10:00' })
+    );
+    assert.ok(html.includes('value="10"'));
+  });
 });

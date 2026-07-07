@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Campaign 编排引擎 HTTP 链路
  *
@@ -16,7 +17,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -191,7 +191,7 @@ function tenantContextX() {
   return { tenantId: 'tenant-A', brandId: 'brand-X', storeId: 'store-X', marketCode: 'cn-mainland' }
 }
 
-test('e2e: campaign register → list → get → status lifecycle', async () => {
+it('e2e: campaign register → list → get → status lifecycle', async () => {
   const { app, campaignService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
 
@@ -239,7 +239,7 @@ test('e2e: campaign register → list → get → status lifecycle', async () =>
   }
 })
 
-test('e2e: campaign dispatches by planId', async () => {
+it('e2e: campaign dispatches by planId', async () => {
   const { app, campaignService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
 
@@ -284,7 +284,7 @@ test('e2e: campaign dispatches by planId', async () => {
   }
 })
 
-test('e2e: evaluateTriggers is idempotent on planId+actionIndex+memberId+orderId', async () => {
+it('e2e: evaluateTriggers is idempotent on planId+actionIndex+memberId+orderId', async () => {
   const { app, campaignService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
 
@@ -331,7 +331,7 @@ test('e2e: evaluateTriggers is idempotent on planId+actionIndex+memberId+orderId
   }
 })
 
-test('e2e: evaluateTriggers respects MinOrderAmount condition', async () => {
+it('e2e: evaluateTriggers respects MinOrderAmount condition', async () => {
   const { app, campaignService, memberService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
   memberService.register({
@@ -383,7 +383,7 @@ test('e2e: evaluateTriggers respects MinOrderAmount condition', async () => {
   }
 })
 
-test('e2e: evaluateTriggers respects BrandScope and auto-derives brand from tenantContext', async () => {
+it('e2e: evaluateTriggers respects BrandScope and auto-derives brand from tenantContext', async () => {
   const { app, campaignService, memberService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
   memberService.register({
@@ -435,7 +435,7 @@ test('e2e: evaluateTriggers respects BrandScope and auto-derives brand from tena
   }
 })
 
-test('e2e: PAUSED campaign does not dispatch', async () => {
+it('e2e: PAUSED campaign does not dispatch', async () => {
   const { app, campaignService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
 
@@ -470,7 +470,7 @@ test('e2e: PAUSED campaign does not dispatch', async () => {
   }
 })
 
-test('e2e: scheduledStart/End window is enforced', async () => {
+it('e2e: scheduledStart/End window is enforced', async () => {
   const { app, campaignService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
 
@@ -508,7 +508,7 @@ test('e2e: scheduledStart/End window is enforced', async () => {
   }
 })
 
-test('e2e: priority ordering — higher priority dispatches first', async () => {
+it('e2e: priority ordering — higher priority dispatches first', async () => {
   const { app, campaignService, memberService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
   memberService.register({
@@ -571,7 +571,7 @@ test('e2e: priority ordering — higher priority dispatches first', async () => 
   }
 })
 
-test('e2e: dispatches are tenant-scoped', async () => {
+it('e2e: dispatches are tenant-scoped', async () => {
   const { app, campaignService, memberService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
   memberService.register({
@@ -614,7 +614,7 @@ test('e2e: dispatches are tenant-scoped', async () => {
   }
 })
 
-test('e2e: IssueCoupon action issues a coupon to the member', async () => {
+it('e2e: IssueCoupon action issues a coupon to the member', async () => {
   const { app, campaignService, loyaltyService, memberService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
   loyaltyService.resetLoyaltyStoresForTests()
@@ -672,7 +672,7 @@ test('e2e: IssueCoupon action issues a coupon to the member', async () => {
   }
 })
 
-test('e2e: list dispatches filtered by memberId', async () => {
+it('e2e: list dispatches filtered by memberId', async () => {
   const { app, campaignService, memberService, loyaltyService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
   memberService.register({ memberId: 'm-disp-1', tenantContext: tenantContextA(), nickname: 'Disp1' })
@@ -727,7 +727,7 @@ test('e2e: list dispatches filtered by memberId', async () => {
   }
 })
 
-test('e2e: campaign list filtered by status', async () => {
+it('e2e: campaign list filtered by status', async () => {
   const { app, campaignService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
 
@@ -763,7 +763,7 @@ test('e2e: campaign list filtered by status', async () => {
   }
 })
 
-test('e2e: campaign plan trigger event filter', async () => {
+it('e2e: campaign plan trigger event filter', async () => {
   const { app, campaignService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
 
@@ -789,7 +789,7 @@ test('e2e: campaign plan trigger event filter', async () => {
   }
 })
 
-test('e2e: get unknown campaign returns null', async () => {
+it('e2e: get unknown campaign returns null', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/campaigns/unknown-plan-id').set(TENANT_A)
@@ -800,7 +800,7 @@ test('e2e: get unknown campaign returns null', async () => {
   }
 })
 
-test('e2e: get dispatches for unknown plan returns empty', async () => {
+it('e2e: get dispatches for unknown plan returns empty', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/campaigns/unknown-plan/dispatches').set(TENANT_A)
@@ -811,7 +811,7 @@ test('e2e: get dispatches for unknown plan returns empty', async () => {
   }
 })
 
-test('e2e: cross-tenant campaigns isolated', async () => {
+it('e2e: cross-tenant campaigns isolated', async () => {
   const { app, campaignService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
 
@@ -840,7 +840,7 @@ test('e2e: cross-tenant campaigns isolated', async () => {
   }
 })
 
-test('e2e: campaign priorities determine order in dispatches', async () => {
+it('e2e: campaign priorities determine order in dispatches', async () => {
   const { app, campaignService, memberService, loyaltyService } = await buildApp()
   campaignService.resetCampaignStoresForTests()
   memberService.register({ memberId: 'm-prio-1', tenantContext: tenantContextA(), nickname: 'P1' })

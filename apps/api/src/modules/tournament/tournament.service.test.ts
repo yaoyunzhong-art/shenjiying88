@@ -1,10 +1,10 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [tournament] [D] service 测试
  */
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe, beforeEach, afterEach } from 'node:test'
 import { TournamentService } from './tournament.service'
 import {
   TournamentStatus,
@@ -46,7 +46,7 @@ describe('TournamentService', () => {
   // ── CRUD ──
 
   describe('createTournament', () => {
-    test('should create a tournament with DRAFT status', () => {
+    it('should create a tournament with DRAFT status', () => {
       const t = createTestTournament()
 
       assert.equal(t.name, 'Test Tournament')
@@ -60,7 +60,7 @@ describe('TournamentService', () => {
       assert.ok(t.updatedAt)
     })
 
-    test('should create tournament with optional fields', () => {
+    it('should create tournament with optional fields', () => {
       const t = service.createTournament({
         tenantId: TENANT,
         name: 'Rich Tournament',
@@ -88,19 +88,19 @@ describe('TournamentService', () => {
   })
 
   describe('getTournament', () => {
-    test('should return tournament by id', () => {
+    it('should return tournament by id', () => {
       const t = createTestTournament()
       const found = service.getTournament(t.id, TENANT)
       assert.ok(found)
       assert.equal(found?.id, t.id)
     })
 
-    test('should return undefined for non-existent tournament', () => {
+    it('should return undefined for non-existent tournament', () => {
       const found = service.getTournament('nonexistent', TENANT)
       assert.equal(found, undefined)
     })
 
-    test('should return undefined for wrong tenant', () => {
+    it('should return undefined for wrong tenant', () => {
       const t = createTestTournament()
       const found = service.getTournament(t.id, 'wrong-tenant')
       assert.equal(found, undefined)
@@ -108,7 +108,7 @@ describe('TournamentService', () => {
   })
 
   describe('listTournaments', () => {
-    test('should list all tournaments for tenant', () => {
+    it('should list all tournaments for tenant', () => {
       createTestTournament({ name: 'T1' })
       createTestTournament({ name: 'T2' })
 
@@ -116,7 +116,7 @@ describe('TournamentService', () => {
       assert.equal(list.length, 2)
     })
 
-    test('should filter by status', () => {
+    it('should filter by status', () => {
       createTestTournament({ name: 'T1' })
       const t2 = createTestTournament({ name: 'T2' })
       service.updateTournamentStatus(t2.id, TournamentStatus.Open, TENANT)
@@ -126,7 +126,7 @@ describe('TournamentService', () => {
       assert.equal(open[0].status, TournamentStatus.Open)
     })
 
-    test('should filter by type', () => {
+    it('should filter by type', () => {
       createTestTournament({ name: 'SE', type: TournamentType.SingleElimination })
       createTestTournament({ name: 'RR', type: TournamentType.RoundRobin })
 
@@ -135,7 +135,7 @@ describe('TournamentService', () => {
       assert.equal(rr[0].name, 'RR')
     })
 
-    test('should filter by storeId', () => {
+    it('should filter by storeId', () => {
       createTestTournament({ name: 'S1', storeId: 'store-1' })
       createTestTournament({ name: 'S2', storeId: 'store-2' })
 
@@ -143,7 +143,7 @@ describe('TournamentService', () => {
       assert.equal(s1.length, 1)
     })
 
-    test('should return empty for wrong tenant', () => {
+    it('should return empty for wrong tenant', () => {
       createTestTournament()
       const list = service.listTournaments('wrong-tenant')
       assert.equal(list.length, 0)
@@ -151,7 +151,7 @@ describe('TournamentService', () => {
   })
 
   describe('updateTournament', () => {
-    test('should update tournament fields', () => {
+    it('should update tournament fields', () => {
       const t = createTestTournament()
       const updated = service.updateTournament(t.id, TENANT, {
         name: 'Updated Name',
@@ -162,14 +162,14 @@ describe('TournamentService', () => {
       assert.equal(updated.maxParticipants, 64)
     })
 
-    test('should throw for non-existent tournament', () => {
+    it('should throw for non-existent tournament', () => {
       assert.throws(
         () => service.updateTournament('nonexistent', TENANT, { name: 'X' }),
         /Tournament not found/
       )
     })
 
-    test('should throw for wrong tenant', () => {
+    it('should throw for wrong tenant', () => {
       const t = createTestTournament()
       assert.throws(
         () => service.updateTournament(t.id, 'wrong-tenant', { name: 'X' }),
@@ -181,26 +181,26 @@ describe('TournamentService', () => {
   // ── Status transitions ──
 
   describe('updateTournamentStatus', () => {
-    test('should transition Draft → Open', () => {
+    it('should transition Draft → Open', () => {
       const t = createTestTournament()
       const updated = service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       assert.equal(updated.status, TournamentStatus.Open)
     })
 
-    test('should transition Draft → Cancelled', () => {
+    it('should transition Draft → Cancelled', () => {
       const t = createTestTournament()
       const updated = service.updateTournamentStatus(t.id, TournamentStatus.Cancelled, TENANT)
       assert.equal(updated.status, TournamentStatus.Cancelled)
     })
 
-    test('should transition Open → Ongoing', () => {
+    it('should transition Open → Ongoing', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       const updated = service.updateTournamentStatus(t.id, TournamentStatus.Ongoing, TENANT)
       assert.equal(updated.status, TournamentStatus.Ongoing)
     })
 
-    test('should transition Ongoing → Completed', () => {
+    it('should transition Ongoing → Completed', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.updateTournamentStatus(t.id, TournamentStatus.Ongoing, TENANT)
@@ -208,14 +208,14 @@ describe('TournamentService', () => {
       assert.equal(updated.status, TournamentStatus.Completed)
     })
 
-    test('should transition Cancelled → Draft (reopen)', () => {
+    it('should transition Cancelled → Draft (reopen)', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Cancelled, TENANT)
       const updated = service.updateTournamentStatus(t.id, TournamentStatus.Draft, TENANT)
       assert.equal(updated.status, TournamentStatus.Draft)
     })
 
-    test('should reject invalid transition: Draft → Completed', () => {
+    it('should reject invalid transition: Draft → Completed', () => {
       const t = createTestTournament()
       assert.throws(
         () => service.updateTournamentStatus(t.id, TournamentStatus.Completed, TENANT),
@@ -223,7 +223,7 @@ describe('TournamentService', () => {
       )
     })
 
-    test('should reject invalid transition: Completed → Open', () => {
+    it('should reject invalid transition: Completed → Open', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.updateTournamentStatus(t.id, TournamentStatus.Ongoing, TENANT)
@@ -238,7 +238,7 @@ describe('TournamentService', () => {
   // ── Registration ──
 
   describe('registerParticipant', () => {
-    test('should register a participant when tournament is OPEN', () => {
+    it('should register a participant when tournament is OPEN', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       const updated = service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -246,7 +246,7 @@ describe('TournamentService', () => {
       assert.equal(updated.currentParticipants, 1)
     })
 
-    test('should throw when tournament is not OPEN', () => {
+    it('should throw when tournament is not OPEN', () => {
       const t = createTestTournament()
       assert.throws(
         () => service.registerParticipant(t.id, 'mem-001', TENANT),
@@ -254,7 +254,7 @@ describe('TournamentService', () => {
       )
     })
 
-    test('should throw when max participants reached', () => {
+    it('should throw when max participants reached', () => {
       const t = createTestTournament({ maxParticipants: 2 })
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -266,7 +266,7 @@ describe('TournamentService', () => {
       )
     })
 
-    test('should throw for duplicate registration', () => {
+    it('should throw for duplicate registration', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -277,7 +277,7 @@ describe('TournamentService', () => {
       )
     })
 
-    test('should throw for wrong tenant', () => {
+    it('should throw for wrong tenant', () => {
       const t = createTestTournament()
       assert.throws(
         () => service.registerParticipant(t.id, 'mem-001', 'wrong-tenant'),
@@ -289,7 +289,7 @@ describe('TournamentService', () => {
   // ── Team registration ──
 
   describe('registerTeam', () => {
-    test('should register a team when tournament is OPEN', () => {
+    it('should register a team when tournament is OPEN', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
 
@@ -305,7 +305,7 @@ describe('TournamentService', () => {
       assert.ok(reg.id.startsWith('teamreg-'))
     })
 
-    test('should throw when tournament is not OPEN', () => {
+    it('should throw when tournament is not OPEN', () => {
       const t = createTestTournament()
       assert.throws(
         () => service.registerTeam({
@@ -320,7 +320,7 @@ describe('TournamentService', () => {
   })
 
   describe('approveTeam / rejectTeam', () => {
-    test('should approve a team registration', () => {
+    it('should approve a team registration', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       const reg = service.registerTeam({
@@ -331,7 +331,7 @@ describe('TournamentService', () => {
       assert.equal(approved.status, TeamRegistrationStatus.Approved)
     })
 
-    test('should reject a team registration', () => {
+    it('should reject a team registration', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       const reg = service.registerTeam({
@@ -342,14 +342,14 @@ describe('TournamentService', () => {
       assert.equal(rejected.status, TeamRegistrationStatus.Rejected)
     })
 
-    test('should throw for non-existent team', () => {
+    it('should throw for non-existent team', () => {
       assert.throws(
         () => service.approveTeam('nonexistent', TENANT),
         /Team registration not found/
       )
     })
 
-    test('should verify tenant when approving', () => {
+    it('should verify tenant when approving', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       const reg = service.registerTeam({
@@ -364,7 +364,7 @@ describe('TournamentService', () => {
   })
 
   describe('listTeamRegistrations', () => {
-    test('should list team registrations for a tournament', () => {
+    it('should list team registrations for a tournament', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerTeam({ tournamentId: t.id, teamName: 'A', captainId: 'm1', memberIds: ['m1'] }, TENANT)
@@ -378,7 +378,7 @@ describe('TournamentService', () => {
   // ── Bracket & Matches ──
 
   describe('generateBracket', () => {
-    test('should generate bracket when tournament is OPEN and has participants', () => {
+    it('should generate bracket when tournament is OPEN and has participants', () => {
       const t = createTestTournament({ type: TournamentType.SingleElimination })
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -393,7 +393,7 @@ describe('TournamentService', () => {
       assert.equal(updated?.status, TournamentStatus.Ongoing)
     })
 
-    test('should throw if less than 2 participants', () => {
+    it('should throw if less than 2 participants', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -404,7 +404,7 @@ describe('TournamentService', () => {
       )
     })
 
-    test('should throw if tournament is not OPEN', () => {
+    it('should throw if tournament is not OPEN', () => {
       const t = createTestTournament()
       assert.throws(
         () => service.generateBracket(t.id, TENANT),
@@ -412,7 +412,7 @@ describe('TournamentService', () => {
       )
     })
 
-    test('should generate round-robin matches', () => {
+    it('should generate round-robin matches', () => {
       const t = createTestTournament({ type: TournamentType.RoundRobin })
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -426,7 +426,7 @@ describe('TournamentService', () => {
   })
 
   describe('recordMatchResult', () => {
-    test('should record match result and update rankings', () => {
+    it('should record match result and update rankings', () => {
       const t = createTestTournament({ type: TournamentType.RoundRobin })
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -443,14 +443,14 @@ describe('TournamentService', () => {
       assert.ok(updated.playedAt)
     })
 
-    test('should throw for non-existent match', () => {
+    it('should throw for non-existent match', () => {
       assert.throws(
         () => service.recordMatchResult('nonexistent', 2, 1, TENANT),
         /Match not found/
       )
     })
 
-    test('should throw for already completed match', () => {
+    it('should throw for already completed match', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -465,7 +465,7 @@ describe('TournamentService', () => {
       )
     })
 
-    test('should throw for wrong tenant', () => {
+    it('should throw for wrong tenant', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -480,7 +480,7 @@ describe('TournamentService', () => {
   })
 
   describe('setDisputed', () => {
-    test('should set match status to Disputed', () => {
+    it('should set match status to Disputed', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -492,7 +492,7 @@ describe('TournamentService', () => {
       assert.equal(disputed.status, MatchStatus.Disputed)
     })
 
-    test('should throw for non-existent match', () => {
+    it('should throw for non-existent match', () => {
       assert.throws(
         () => service.setDisputed('nonexistent', TENANT),
         /Match not found/
@@ -501,7 +501,7 @@ describe('TournamentService', () => {
   })
 
   describe('getMatch / listMatches', () => {
-    test('should get a match by id', () => {
+    it('should get a match by id', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -514,12 +514,12 @@ describe('TournamentService', () => {
       assert.equal(match?.id, matches[0].id)
     })
 
-    test('should return undefined for non-existent match', () => {
+    it('should return undefined for non-existent match', () => {
       const match = service.getMatch('nonexistent', TENANT)
       assert.equal(match, undefined)
     })
 
-    test('should return undefined for wrong tenant', () => {
+    it('should return undefined for wrong tenant', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -530,7 +530,7 @@ describe('TournamentService', () => {
       assert.equal(match, undefined)
     })
 
-    test('should list matches with filter', () => {
+    it('should list matches with filter', () => {
       const t = createTestTournament({ type: TournamentType.RoundRobin })
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -544,7 +544,7 @@ describe('TournamentService', () => {
   })
 
   describe('getUpcomingMatches', () => {
-    test('should return upcoming matches for a member', () => {
+    it('should return upcoming matches for a member', () => {
       const t = createTestTournament()
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)
@@ -555,14 +555,14 @@ describe('TournamentService', () => {
       assert.ok(upcoming.length > 0)
     })
 
-    test('should return empty for non-participant', () => {
+    it('should return empty for non-participant', () => {
       const upcoming = service.getUpcomingMatches('mem-999')
       assert.equal(upcoming.length, 0)
     })
   })
 
   describe('getLiveMatches', () => {
-    test('should return live matches for a store', () => {
+    it('should return live matches for a store', () => {
       const live = service.getLiveMatches(STORE)
       assert.equal(live.length, 0)
     })
@@ -571,13 +571,13 @@ describe('TournamentService', () => {
   // ── Rankings ──
 
   describe('getRankings', () => {
-    test('should return empty rankings for tournament with no matches', () => {
+    it('should return empty rankings for tournament with no matches', () => {
       const t = createTestTournament()
       const rankings = service.getRankings(t.id, TENANT)
       assert.equal(rankings.length, 0)
     })
 
-    test('should return ranked players after matches', () => {
+    it('should return ranked players after matches', () => {
       const t = createTestTournament({ type: TournamentType.RoundRobin })
       service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
       service.registerParticipant(t.id, 'mem-001', TENANT)

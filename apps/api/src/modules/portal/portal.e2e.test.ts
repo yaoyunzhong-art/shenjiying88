@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Portal 门户管理 HTTP 链路
  *
@@ -12,7 +13,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { Controller, Get, Inject, Req } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
@@ -95,7 +95,7 @@ const TENANT_US = {
   'x-market-code': 'us-default'
 }
 
-test('e2e: portal bootstrap returns three scope portals', async () => {
+it('e2e: portal bootstrap returns three scope portals', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
@@ -111,7 +111,7 @@ test('e2e: portal bootstrap returns three scope portals', async () => {
   }
 })
 
-test('e2e: tenant portal has scopeCode from headers', async () => {
+it('e2e: tenant portal has scopeCode from headers', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
@@ -123,7 +123,7 @@ test('e2e: tenant portal has scopeCode from headers', async () => {
   }
 })
 
-test('e2e: marketProfile embedded in portal bootstrap', async () => {
+it('e2e: marketProfile embedded in portal bootstrap', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
@@ -134,7 +134,7 @@ test('e2e: marketProfile embedded in portal bootstrap', async () => {
   }
 })
 
-test('e2e: US tenant portal uses LA timezone', async () => {
+it('e2e: US tenant portal uses LA timezone', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_US)
@@ -145,7 +145,7 @@ test('e2e: US tenant portal uses LA timezone', async () => {
   }
 })
 
-test('e2e: regionalOverrides contain all 3 scope types', async () => {
+it('e2e: regionalOverrides contain all 3 scope types', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
@@ -158,7 +158,7 @@ test('e2e: regionalOverrides contain all 3 scope types', async () => {
   }
 })
 
-test('e2e: portal bootstrap contains foundation dependency', async () => {
+it('e2e: portal bootstrap contains foundation dependency', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
@@ -169,7 +169,7 @@ test('e2e: portal bootstrap contains foundation dependency', async () => {
   }
 })
 
-test('e2e: default headers produce tenant-001', async () => {
+it('e2e: default headers produce tenant-001', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/portal/bootstrap')
@@ -180,7 +180,7 @@ test('e2e: default headers produce tenant-001', async () => {
   }
 })
 
-test('e2e: portal identifiers vary across tenants', async () => {
+it('e2e: portal identifiers vary across tenants', async () => {
   const { app } = await buildApp()
   try {
     const a = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
@@ -192,7 +192,7 @@ test('e2e: portal identifiers vary across tenants', async () => {
   }
 })
 
-test('e2e: portal heroTitle and brand code are derived from tenant context', async () => {
+it('e2e: portal heroTitle and brand code are derived from tenant context', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
@@ -205,7 +205,7 @@ test('e2e: portal heroTitle and brand code are derived from tenant context', asy
   }
 })
 
-test('e2e: portal store portal surfaces cover all 6 storefront surfaces', async () => {
+it('e2e: portal store portal surfaces cover all 6 storefront surfaces', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
@@ -223,7 +223,7 @@ test('e2e: portal store portal surfaces cover all 6 storefront surfaces', async 
   }
 })
 
-test('e2e: portal supportedLanguages differ for cn vs us markets', async () => {
+it('e2e: portal supportedLanguages differ for cn vs us markets', async () => {
   const { app } = await buildApp()
   try {
     const cn = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
@@ -239,7 +239,7 @@ test('e2e: portal supportedLanguages differ for cn vs us markets', async () => {
   }
 })
 
-test('e2e: portal login paths follow marketCode/tenantId/brandId pattern', async () => {
+it('e2e: portal login paths follow marketCode/tenantId/brandId pattern', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
@@ -255,7 +255,7 @@ test('e2e: portal login paths follow marketCode/tenantId/brandId pattern', async
   }
 })
 
-test('e2e: portal primaryDomain embeds scope code and market code', async () => {
+it('e2e: portal primaryDomain embeds scope code and market code', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)

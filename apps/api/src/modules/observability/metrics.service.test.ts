@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * metrics.service.test.ts — MetricsService 单元测试
  *
@@ -9,7 +10,6 @@
  */
 
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { MetricsService, registerDefaultMetrics } from './metrics.service'
 
 function freshService() {
@@ -21,7 +21,7 @@ function freshService() {
 }
 
 describe('MetricsService — 注册', () => {
-  test('registerCounter 注册并返回 counter', () => {
+  it('registerCounter 注册并返回 counter', () => {
     const svc = freshService()
     const counter = svc.registerCounter('test_counter', 'Test counter help')
     assert.ok(counter)
@@ -29,14 +29,14 @@ describe('MetricsService — 注册', () => {
     assert.equal(counter.name, 'test_counter')
   })
 
-  test('registerGauge 注册并返回 gauge', () => {
+  it('registerGauge 注册并返回 gauge', () => {
     const svc = freshService()
     const gauge = svc.registerGauge('test_gauge', 'Test gauge help')
     assert.ok(gauge)
     assert.equal(gauge.type, 'gauge')
   })
 
-  test('registerHistogram 注册并返回 histogram', () => {
+  it('registerHistogram 注册并返回 histogram', () => {
     const svc = freshService()
     const hist = svc.registerHistogram('test_hist', 'Test histogram help')
     assert.ok(hist)
@@ -44,26 +44,26 @@ describe('MetricsService — 注册', () => {
     assert.ok(hist.buckets.length >= 5)
   })
 
-  test('registerHistogram 支持自定义桶', () => {
+  it('registerHistogram 支持自定义桶', () => {
     const svc = freshService()
     const hist = svc.registerHistogram('custom_hist', 'Custom buckets', [1, 10, 100])
     assert.deepEqual(hist.buckets, [1, 10, 100])
   })
 
-  test('重复注册同名的相同类型返回现有实例', () => {
+  it('重复注册同名的相同类型返回现有实例', () => {
     const svc = freshService()
     const c1 = svc.registerCounter('dup', 'help')
     const c2 = svc.registerCounter('dup', 'help')
     assert.equal(c1, c2)
   })
 
-  test('重复注册同名的不同类型抛出错误', () => {
+  it('重复注册同名的不同类型抛出错误', () => {
     const svc = freshService()
     svc.registerCounter('conflict', 'first')
     assert.throws(() => svc.registerGauge('conflict', 'second'), /already registered as/)
   })
 
-  test('registerDefaultMetrics 注册 5 个默认指标', () => {
+  it('registerDefaultMetrics 注册 5 个默认指标', () => {
     const svc = freshService()
     registerDefaultMetrics(svc)
     const names = svc.listMetrics()
@@ -77,7 +77,7 @@ describe('MetricsService — 注册', () => {
 })
 
 describe('MetricsService — Counter 操作', () => {
-  test('incrementCounter 默认步长为 1', () => {
+  it('incrementCounter 默认步长为 1', () => {
     const svc = freshService()
     svc.registerCounter('req', 'requests')
     svc.incrementCounter('req', { method: 'GET' })
@@ -85,7 +85,7 @@ describe('MetricsService — Counter 操作', () => {
     assert.ok(render.includes('req{method="GET"} 1'))
   })
 
-  test('incrementCounter 支持自定义步长', () => {
+  it('incrementCounter 支持自定义步长', () => {
     const svc = freshService()
     svc.registerCounter('req', 'requests')
     svc.incrementCounter('req', { method: 'POST' }, 5)
@@ -94,14 +94,14 @@ describe('MetricsService — Counter 操作', () => {
     assert.ok(render.includes('req{method="POST"} 8'))
   })
 
-  test('未注册 counter 抛错', () => {
+  it('未注册 counter 抛错', () => {
     const svc = freshService()
     assert.throws(() => svc.incrementCounter('nope'), /not registered/)
   })
 })
 
 describe('MetricsService — Gauge 操作', () => {
-  test('setGauge 设置值', () => {
+  it('setGauge 设置值', () => {
     const svc = freshService()
     svc.registerGauge('conn', 'connections')
     svc.setGauge('conn', {}, 42)
@@ -109,7 +109,7 @@ describe('MetricsService — Gauge 操作', () => {
     assert.ok(render.includes('conn 42'))
   })
 
-  test('setGauge 覆盖值', () => {
+  it('setGauge 覆盖值', () => {
     const svc = freshService()
     svc.registerGauge('conn', 'connections')
     svc.setGauge('conn', { pool: 'main' }, 10)
@@ -118,14 +118,14 @@ describe('MetricsService — Gauge 操作', () => {
     assert.ok(render.includes('conn{pool="main"} 20'))
   })
 
-  test('未注册 gauge 抛错', () => {
+  it('未注册 gauge 抛错', () => {
     const svc = freshService()
     assert.throws(() => svc.setGauge('nope', {}, 0), /not registered/)
   })
 })
 
 describe('MetricsService — Histogram 操作', () => {
-  test('observeHistogram 记录值', () => {
+  it('observeHistogram 记录值', () => {
     const svc = freshService()
     svc.registerHistogram('latency', 'latency help')
     svc.observeHistogram('latency', 12, { path: '/foo' })
@@ -135,7 +135,7 @@ describe('MetricsService — Histogram 操作', () => {
     assert.ok(render.includes('latency_sum{path="/foo"} 12'), `render:\n${render}`)
   })
 
-  test('observeHistogram 多值汇总', () => {
+  it('observeHistogram 多值汇总', () => {
     const svc = freshService()
     svc.registerHistogram('latency', 'latency help')
     svc.observeHistogram('latency', 5, { method: 'GET', path: '/bar' })
@@ -145,7 +145,7 @@ describe('MetricsService — Histogram 操作', () => {
     assert.ok(render.includes('latency_sum{method="GET",path="/bar"} 20'), `render:\n${render}`)
   })
 
-  test('buckets 分桶正确', () => {
+  it('buckets 分桶正确', () => {
     const svc = freshService()
     svc.registerHistogram('latency', 'latency', [5, 10, 25])
     svc.observeHistogram('latency', 3, {})
@@ -161,14 +161,14 @@ describe('MetricsService — Histogram 操作', () => {
     assert.match(bucketInf!, / 2$/)
   })
 
-  test('未注册 histogram 抛错', () => {
+  it('未注册 histogram 抛错', () => {
     const svc = freshService()
     assert.throws(() => svc.observeHistogram('nope', 1), /not registered/)
   })
 })
 
 describe('MetricsService — render 输出格式', () => {
-  test('HELP 和 TYPE 行正确', () => {
+  it('HELP 和 TYPE 行正确', () => {
     const svc = freshService()
     svc.registerCounter('c', 'counter help')
     const render = svc.render()
@@ -176,13 +176,13 @@ describe('MetricsService — render 输出格式', () => {
     assert.ok(render.includes('# TYPE c counter'))
   })
 
-  test('空 metrics 渲染仅为换行', () => {
+  it('空 metrics 渲染仅为换行', () => {
     const svc = freshService()
     const render = svc.render()
     assert.equal(render, '\n')
   })
 
-  test('换行符结尾', () => {
+  it('换行符结尾', () => {
     const svc = freshService()
     svc.registerCounter('c', 'help')
     const render = svc.render()
@@ -191,7 +191,7 @@ describe('MetricsService — render 输出格式', () => {
 })
 
 describe('MetricsService — 管理方法', () => {
-  test('listMetrics 返回已注册指标名称', () => {
+  it('listMetrics 返回已注册指标名称', () => {
     const svc = freshService()
     svc.registerCounter('a', 'help a')
     svc.registerGauge('b', 'help b')
@@ -201,7 +201,7 @@ describe('MetricsService — 管理方法', () => {
     assert.equal(names.length, 2)
   })
 
-  test('reset 清空所有指标', () => {
+  it('reset 清空所有指标', () => {
     const svc = freshService()
     svc.registerCounter('a', 'help')
     svc.reset()
@@ -210,7 +210,7 @@ describe('MetricsService — 管理方法', () => {
 })
 
 describe('MetricsService — 标签编码', () => {
-  test('标签值中特殊字符正确转义', () => {
+  it('标签值中特殊字符正确转义', () => {
     const svc = freshService()
     svc.registerCounter('test', 'test help')
     svc.incrementCounter('test', { path: '/a"b\nc\\d' })
@@ -218,7 +218,7 @@ describe('MetricsService — 标签编码', () => {
     assert.ok(render.includes('path="/a\\"b\\nc\\\\d"'))
   })
 
-  test('空 labels 渲染时不带花括号', () => {
+  it('空 labels 渲染时不带花括号', () => {
     const svc = freshService()
     svc.registerGauge('g', 'help')
     svc.setGauge('g', {}, 1)

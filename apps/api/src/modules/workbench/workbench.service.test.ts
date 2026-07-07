@@ -1,7 +1,7 @@
 // @ts-nocheck
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { ClientChannel, UserRole } from '@m5/domain'
 import { defaultRoleWorkbenchContracts } from '@m5/types'
 
@@ -25,7 +25,7 @@ describe('WorkbenchService', () => {
   const { WorkbenchService } = require('./workbench.service')
 
   describe('getRoleWorkbenches', () => {
-    test('returns 6 role workbenches', () => {
+    it('returns 6 role workbenches', () => {
       const mockMarket = {} as any
       const mockPortal = {} as any
       const mockFoundation = { getDependencySummary: () => null } as any
@@ -35,7 +35,7 @@ describe('WorkbenchService', () => {
       assert.equal(workbenches.length, 10)
     })
 
-    test('uses shared default workbench registry as source of truth', () => {
+    it('uses shared default workbench registry as source of truth', () => {
       const mockMarket = {} as any
       const mockPortal = {} as any
       const mockFoundation = { getDependencySummary: () => null } as any
@@ -44,16 +44,16 @@ describe('WorkbenchService', () => {
       const workbenches = service.getRoleWorkbenches()
 
       assert.deepEqual(
-        workbenches.map((item) => item.role),
-        defaultRoleWorkbenchContracts.map((item) => item.role)
+        workbenches.map((item: any) => item.role),
+        defaultRoleWorkbenchContracts.map((item: any) => item.role)
       )
       assert.deepEqual(
-        workbenches.find((item) => item.role === UserRole.TenantAdmin)?.navItems.map((item) => item.key),
-        defaultRoleWorkbenchContracts.find((item) => item.role === 'TENANT_ADMIN')?.navItems.map((item) => item.key)
+        workbenches.find((item) => item.role === UserRole.TenantAdmin)?.navItems.map((item: any) => item.key),
+        defaultRoleWorkbenchContracts.find((item) => item.role === 'TENANT_ADMIN')?.navItems.map((item: any) => item.key)
       )
     })
 
-    test('each workbench has role, channel, title, description and navItems', () => {
+    it('each workbench has role, channel, title, description and navItems', () => {
       const mockMarket = {} as any
       const mockPortal = {} as any
       const mockFoundation = { getDependencySummary: () => null } as any
@@ -70,7 +70,7 @@ describe('WorkbenchService', () => {
       }
     })
 
-    test('SuperAdmin workbench targets Pc channel with correct navItems', () => {
+    it('SuperAdmin workbench targets Pc channel with correct navItems', () => {
       const mockMarket = {} as any
       const mockPortal = {} as any
       const mockFoundation = { getDependencySummary: () => null } as any
@@ -87,7 +87,7 @@ describe('WorkbenchService', () => {
       )
     })
 
-    test('Guide workbench targets Pad channel', () => {
+    it('Guide workbench targets Pad channel', () => {
       const mockMarket = {} as any
       const mockPortal = {} as any
       const mockFoundation = { getDependencySummary: () => null } as any
@@ -101,7 +101,7 @@ describe('WorkbenchService', () => {
       assert.ok(guide!.navItems.some(i => i.key === 'promo'))
     })
 
-    test('Cashier workbench has offline navItem for weak-network support', () => {
+    it('Cashier workbench has offline navItem for weak-network support', () => {
       const mockMarket = {} as any
       const mockPortal = {} as any
       const mockFoundation = { getDependencySummary: () => null } as any
@@ -116,7 +116,7 @@ describe('WorkbenchService', () => {
   })
 
   describe('getBootstrap', () => {
-    test('returns workbench bootstrap with tenant context', () => {
+    it('returns workbench bootstrap with tenant context', () => {
       const mockMarket = {
         getMergedProfile: () => mockMarketProfile()
       } as any
@@ -152,7 +152,7 @@ describe('WorkbenchService', () => {
       assert.equal(result.tenantContext.marketCode, 'zh-cn')
     })
 
-    test('returns 10 workbenches in bootstrap response', () => {
+    it('returns 10 workbenches in bootstrap response', () => {
       const mockMarket = {
         getMergedProfile: () => mockMarketProfile()
       } as any
@@ -175,7 +175,7 @@ describe('WorkbenchService', () => {
       assert.equal(result.workbenches.length, 10)
     })
 
-    test('includes supportedLocales from market profile', () => {
+    it('includes supportedLocales from market profile', () => {
       const mockMarket = {
         getMergedProfile: () => mockMarketProfile({ locale: { defaultLanguage: 'zh-CN', supportedLanguages: ['zh-CN', 'en-US', 'ja-JP'] } })
       } as any
@@ -195,7 +195,7 @@ describe('WorkbenchService', () => {
       assert.deepStrictEqual(result.supportedLocales, ['zh-CN', 'en-US', 'ja-JP'])
     })
 
-    test('regionalLoginPolicies derived from portal login entry', () => {
+    it('regionalLoginPolicies derived from portal login entry', () => {
       const mockMarket = {
         getMergedProfile: () => mockMarketProfile()
       } as any

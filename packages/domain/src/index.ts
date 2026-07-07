@@ -237,6 +237,16 @@ export interface LytMemberProfile {
 export interface LytOrderPayload {
   storeId: string;
   memberId?: string;
+  /** 业务侧预生成的订单 ID (cashier orderId), 用于 LYT 端对账 */
+  lytOrderId?: string;
+  /** cashier 端订单 ID (兼容老字段, 优先 lytOrderId) */
+  orderId?: string;
+  totalCents?: number;
+  paidAt?: string;
+  providerTxnId?: string;
+  method?: string;
+  coinProductId?: string;
+  coinQuantity?: number;
   items: Array<{
     skuId: string;
     quantity: number;

@@ -1,9 +1,8 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 describe('GovernanceApproval entity types', () => {
   describe('GovernanceApprovalStatus', () => {
-    test('has all six status values', () => {
+    it('has all six status values', () => {
       const validStatuses = [
         'NOT_REQUIRED',
         'PENDING',
@@ -20,7 +19,7 @@ describe('GovernanceApproval entity types', () => {
       })
     })
 
-    test('PENDING is the default in-progress state', () => {
+    it('PENDING is the default in-progress state', () => {
       const pending = 'PENDING'
       assert.equal(pending, 'PENDING')
       // PENDING 不应等于终态
@@ -28,7 +27,7 @@ describe('GovernanceApproval entity types', () => {
       assert.notEqual(pending, 'REJECTED')
     })
 
-    test('terminal statuses include APPROVED, REJECTED, CANCELLED, SUPERSEDED', () => {
+    it('terminal statuses include APPROVED, REJECTED, CANCELLED, SUPERSEDED', () => {
       const terminalStatuses = ['APPROVED', 'REJECTED', 'CANCELLED', 'SUPERSEDED']
       terminalStatuses.forEach((status) => {
         // 终态不能是 PENDING 或 NOT_REQUIRED
@@ -39,7 +38,7 @@ describe('GovernanceApproval entity types', () => {
   })
 
   describe('GovernanceApprovalGroupBy', () => {
-    test('has expected group-by dimensions', () => {
+    it('has expected group-by dimensions', () => {
       const dimensions = ['operation', 'resourceType', 'status', 'executionStatus', 'failureStatus', 'requestedBy']
       assert.equal(dimensions.length, 6)
       assert.ok(dimensions.includes('operation'))
@@ -47,7 +46,7 @@ describe('GovernanceApproval entity types', () => {
       assert.ok(dimensions.includes('requestedBy'))
     })
 
-    test('all dimensions are non-empty strings', () => {
+    it('all dimensions are non-empty strings', () => {
       const dimensions = ['operation', 'resourceType', 'status', 'executionStatus', 'failureStatus', 'requestedBy']
       dimensions.forEach((dim) => {
         assert.equal(typeof dim, 'string')
@@ -57,7 +56,7 @@ describe('GovernanceApproval entity types', () => {
   })
 
   describe('GovernanceApprovalSnapshot shape', () => {
-    test('creates a valid snapshot with required fields', () => {
+    it('creates a valid snapshot with required fields', () => {
       const snapshot = {
         approvalId: 'apr-001',
         required: true,
@@ -91,7 +90,7 @@ describe('GovernanceApproval entity types', () => {
       assert.equal(snapshot.summary, null)
     })
 
-    test('snapshot with optional fields populated', () => {
+    it('snapshot with optional fields populated', () => {
       const snapshot = {
         approvalId: 'apr-002',
         operation: 'create-user',
@@ -127,7 +126,7 @@ describe('GovernanceApproval entity types', () => {
   })
 
   describe('GovernanceApprovalExecution', () => {
-    test('creates execution with no failures', () => {
+    it('creates execution with no failures', () => {
       const execution = {
         attempts: 1,
         executed: true,
@@ -142,7 +141,7 @@ describe('GovernanceApproval entity types', () => {
       assert.equal(execution.lastFailure, null)
     })
 
-    test('creates execution with failure info', () => {
+    it('creates execution with failure info', () => {
       const execution = {
         attempts: 3,
         executed: false,
@@ -166,7 +165,7 @@ describe('GovernanceApproval entity types', () => {
   })
 
   describe('MaterializeGovernanceApprovalInput', () => {
-    test('creates input with minimal required fields', () => {
+    it('creates input with minimal required fields', () => {
       const input = {
         operation: 'create',
         resourceType: 'store',
@@ -180,7 +179,7 @@ describe('GovernanceApproval entity types', () => {
       assert.equal(input.approvalRequired, false)
     })
 
-    test('creates input with all optional fields', () => {
+    it('creates input with all optional fields', () => {
       const input = {
         operation: 'update',
         resourceType: 'brand',
@@ -206,7 +205,7 @@ describe('GovernanceApproval entity types', () => {
   })
 
   describe('GovernanceApprovalDecisionInput', () => {
-    test('valid APPROVED input', () => {
+    it('valid APPROVED input', () => {
       const input = {
         approvalTicket: 'APR-TEST-XX123',
         decidedBy: 'manager',
@@ -218,7 +217,7 @@ describe('GovernanceApproval entity types', () => {
       assert.equal(input.status, 'APPROVED')
     })
 
-    test('valid REJECTED input with decisionNote', () => {
+    it('valid REJECTED input with decisionNote', () => {
       const input = {
         approvalTicket: 'APR-TEST-YY456',
         decidedBy: 'supervisor',
@@ -230,7 +229,7 @@ describe('GovernanceApproval entity types', () => {
       assert.ok(input.decisionNote && input.decisionNote.length > 0)
     })
 
-    test('decision input with expectedVersion', () => {
+    it('decision input with expectedVersion', () => {
       const input = {
         approvalTicket: 'APR-TEST-ZZ789',
         decidedBy: 'admin',
@@ -243,7 +242,7 @@ describe('GovernanceApproval entity types', () => {
   })
 
   describe('GovernanceApprovalCancelInput', () => {
-    test('creates cancel input with reason', () => {
+    it('creates cancel input with reason', () => {
       const input = {
         approvalTicket: 'APR-CANCEL-TEST',
         cancelledBy: 'requester',
@@ -257,7 +256,7 @@ describe('GovernanceApproval entity types', () => {
   })
 
   describe('GovernanceApprovalResubmitInput', () => {
-    test('creates resubmit input', () => {
+    it('creates resubmit input', () => {
       const input = {
         approvalTicket: 'APR-RESUBMIT-TEST',
         resubmittedBy: 'requester',
@@ -271,7 +270,7 @@ describe('GovernanceApproval entity types', () => {
   })
 
   describe('GovernanceApprovalExecutionInput', () => {
-    test('creates execution input', () => {
+    it('creates execution input', () => {
       const input = {
         approvalTicket: 'APR-EXEC-TEST',
         executedBy: 'worker',
@@ -285,7 +284,7 @@ describe('GovernanceApproval entity types', () => {
   })
 
   describe('GovernanceApprovalExecutionFailureInput', () => {
-    test('creates execution failure input', () => {
+    it('creates execution failure input', () => {
       const input = {
         approvalTicket: 'APR-FAIL-TEST',
         failedBy: 'scheduler',
@@ -301,7 +300,7 @@ describe('GovernanceApproval entity types', () => {
   })
 
   describe('GovernanceApprovalMetrics', () => {
-    test('metrics have zero-initialized counters', () => {
+    it('metrics have zero-initialized counters', () => {
       const statuses: Record<string, number> = {
         NOT_REQUIRED: 0,
         PENDING: 0,
@@ -334,13 +333,13 @@ describe('GovernanceApproval entity types', () => {
   })
 
   describe('GovernanceApprovalQueryInput', () => {
-    test('empty query input is valid', () => {
+    it('empty query input is valid', () => {
       const input = {}
       assert.deepStrictEqual(input, {})
       assert.equal(Object.keys(input).length, 0)
     })
 
-    test('query with status filter', () => {
+    it('query with status filter', () => {
       const input = {
         status: 'PENDING' as const,
         limit: 50
@@ -350,7 +349,7 @@ describe('GovernanceApproval entity types', () => {
       assert.equal(input.limit, 50)
     })
 
-    test('query with execution filters', () => {
+    it('query with execution filters', () => {
       const input = {
         executed: true,
         executionStatus: 'SUCCESS',
@@ -364,7 +363,7 @@ describe('GovernanceApproval entity types', () => {
   })
 
   describe('GovernanceApprovalRecord', () => {
-    test('creates a prisma record shape', () => {
+    it('creates a prisma record shape', () => {
       const record = {
         id: 'rec-001',
         approvalTicket: 'APR-TEST-ABC',

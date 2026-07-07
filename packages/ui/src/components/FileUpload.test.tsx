@@ -1,4 +1,5 @@
 import React from 'react';
+import type { UploadFile } from './FileUpload';
 
 const assert = require('node:assert/strict');
 const { describe, test } = require('node:test');
@@ -7,275 +8,255 @@ const PROJECT_ROOT = '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88';
 const { renderToStaticMarkup } = require(
   PROJECT_ROOT + '/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/server.node.js'
 );
-
 const { FileUpload } = require('./FileUpload');
 
 describe('FileUpload', () => {
-  test('renders drop zone with placeholder text', () => {
+  // ========== 基础渲染 ==========
+  test('renders upload button when drag=false', () => {
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, { placeholder: '拖拽文件到此处' })
+      React.createElement(FileUpload),
     );
-    assert.match(html, /拖拽文件到此处/);
-    assert.match(html, /fileupload-dropzone/);
+    assert.match(html, /选择文件/);
+    assert.match(html, /\u{1F4E4}/u);
   });
 
-  test('renders default placeholder when none provided', () => {
-    const html = renderToStaticMarkup(React.createElement(FileUpload, null));
-    assert.match(html, /拖拽文件到此处，或点击上传/);
-  });
-
-  test('renders hidden file input', () => {
-    const html = renderToStaticMarkup(React.createElement(FileUpload, null));
-    assert.match(html, /type="file"/);
-    assert.match(html, /fileupload-input/);
-    assert.match(html, /display:none/);
-  });
-
-  test('accept prop is applied to input', () => {
+  test('renders drop zone when drag=true', () => {
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, { accept: '.pdf,.docx' })
+      React.createElement(FileUpload, { drag: true }),
     );
-    assert.match(html, /accept="\.pdf,\.docx"/);
-    assert.match(html, /支持: \.pdf,\.docx/);
+    assert.match(html, /点击或拖拽文件/);
+    assert.match(html, /\u{1F4C1}/u);
   });
 
-  test('multiple prop enables multiple attribute', () => {
+  test('renders with custom placeholder in drag mode', () => {
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, { multiple: true })
+      React.createElement(FileUpload, { drag: true, placeholder: '\u8BF7\u4E0A\u4F20\u8D44\u8D28\u6587\u4EF6' }),
     );
-    assert.match(html, /multiple/);
+    assert.ok(html.includes('请上传资质文件'));
   });
 
-  test('disabled state sets aria-disabled and not-allowed cursor', () => {
+  test('renders file list with controlled fileList', () => {
+    const fileList: UploadFile[] = [
+      { uid: '1', name: 'test.png', size: 1024, type: 'image/png', status: 'done' },
+    ];
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, { disabled: true })
+      React.createElement(FileUpload, { fileList }),
     );
-    assert.match(html, /aria-disabled="true"/);
-    assert.match(html, /not-allowed/);
+    assert.ok(html.includes('test.png'));
+    assert.ok(html.includes('1.0 KB'));
+    assert.ok(html.includes('\u2705'));
   });
 
-  test('disabled input is disabled', () => {
+  // ========== aria label ==========
+  test('renders with aria-label', () => {
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, { disabled: true })
+      React.createElement(FileUpload, { 'aria-label': '\u4E0A\u4F20\u5408\u540C\u6587\u4EF6' }),
     );
-    assert.match(html, /disabled/);
+    assert.ok(html.includes('上传合同文件'));
   });
 
-  test('handles data-testid prop', () => {
+  // ========== 禁用状态 ==========
+  test('renders disabled button state', () => {
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, { 'data-testid': 'my-upload' })
+      React.createElement(FileUpload, { disabled: true }),
     );
-    assert.match(html, /data-testid="my-upload"/);
+    assert.ok(html.includes('disabled'));
   });
 
-  test('renders empty file list element when no files', () => {
-    const html = renderToStaticMarkup(React.createElement(FileUpload, null));
-    assert.doesNotMatch(html, /fileupload-list/);
-  });
-
-  test('renders file items when controlled files provided', () => {
+  test('renders disabled drop zone without crash', () => {
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, {
-        files: [
-          {
-            id: 'f1',
-            name: 'report.pdf',
-            size: 102400,
-            type: 'application/pdf',
-            progress: 100,
-          },
-        ],
-      })
+      React.createElement(FileUpload, { drag: true, disabled: true }),
     );
-    assert.match(html, /report\.pdf/);
-    assert.match(html, /fileupload-list/);
-    assert.match(html, /fileupload-item-f1/);
-    // Should show formatted size
-    assert.match(html, /100\.0 KB/);
+    assert.match(html, /\u{1F4C1}/u);
   });
 
-  test('renders image preview when preview URL is present', () => {
+  // ========== accept / maxSize ==========
+  test('renders with accept prop', () => {
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, {
-        files: [
-          {
-            id: 'img1',
-            name: 'photo.jpg',
-            size: 50000,
-            type: 'image/jpeg',
-            progress: 100,
-            preview: 'blob:photo1',
-          },
-        ],
-      })
+      React.createElement(FileUpload, { accept: 'image/*,.pdf' }),
     );
-    assert.match(html, /fileupload-preview-img1/);
-    assert.match(html, /blob:photo1/);
+    assert.ok(html.includes('image/*,.pdf'));
   });
 
-  test('renders file icon when no preview', () => {
+  test('renders with maxSize and shows file size hint', () => {
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, {
-        files: [
-          {
-            id: 'doc1',
-            name: 'data.csv',
-            size: 2000,
-            type: 'text/csv',
-            progress: 100,
-          },
-        ],
-      })
+      React.createElement(FileUpload, { maxSize: 5 * 1024 * 1024 }),
     );
-    assert.match(html, /fileupload-icon-doc1/);
-    assert.match(html, /📄/);
+    assert.ok(html.includes('5.00 MB'));
   });
 
-  test('renders error text for failed files', () => {
+  // ========== 多种文件状态渲染 ==========
+  test('renders uploading file with progress', () => {
+    const fileList: UploadFile[] = [
+      { uid: '1', name: 'video.mp4', size: 1024 * 1024 * 5, type: 'video/mp4', status: 'uploading', percent: 45 },
+    ];
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, {
-        files: [
-          {
-            id: 'err1',
-            name: 'big.zip',
-            size: 50 * 1024 * 1024,
-            type: 'application/zip',
-            progress: -1,
-            error: '文件大小 50.0 MB 超过限制 10.0 MB',
-          },
-        ],
-      })
+      React.createElement(FileUpload, { fileList }),
     );
-    assert.match(html, /big\.zip/);
-    assert.match(html, /fileupload-error-err1/);
-    assert.match(html, /超过限制/);
+    assert.ok(html.includes('video.mp4'));
+    assert.ok(html.includes('5.00 MB'));
+    assert.ok(html.includes('上传中'));
   });
 
-  test('renders progress bar when progress is between 0 and 99', () => {
+  test('renders error file with error message', () => {
+    const fileList: UploadFile[] = [
+      { uid: '1', name: 'fail.doc', size: 2048, type: 'application/msword', status: 'error', error: '\u7F51\u7EDC\u8D85\u65F6' },
+    ];
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, {
-        files: [
-          {
-            id: 'up1',
-            name: 'uploading.bin',
-            size: 5000000,
-            type: 'application/octet-stream',
-            progress: 45,
-          },
-        ],
-      })
+      React.createElement(FileUpload, { fileList }),
     );
-    assert.match(html, /上传中 45%/);
+    assert.ok(html.includes('fail.doc'));
+    assert.ok(html.includes('网络超时'));
   });
 
-  test('does not show progress bar when progress is 100', () => {
+  test('renders pending file', () => {
+    const fileList: UploadFile[] = [
+      { uid: '1', name: 'pending.zip', size: 500, type: 'application/zip', status: 'pending' },
+    ];
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, {
-        files: [
-          {
-            id: 'done1',
-            name: 'done.bin',
-            size: 1000,
-            type: 'application/octet-stream',
-            progress: 100,
-          },
-        ],
-      })
+      React.createElement(FileUpload, { fileList }),
     );
-    assert.doesNotMatch(html, /上传中/);
+    assert.ok(html.includes('pending.zip'));
+    assert.ok(html.includes('等待上传'));
   });
 
-  test('renders remove button for each file', () => {
+  // ========== 图片预览 ==========
+  test('renders image with thumbnail', () => {
+    const fileList: UploadFile[] = [
+      { uid: '1', name: 'photo.jpg', size: 1024, type: 'image/jpeg', url: 'blob:test', status: 'done' },
+    ];
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, {
-        files: [
-          {
-            id: 'rm1',
-            name: 'delete-me.txt',
-            size: 100,
-            type: 'text/plain',
-            progress: 100,
-          },
-        ],
-      })
+      React.createElement(FileUpload, { fileList }),
     );
-    assert.match(html, /fileupload-remove-rm1/);
-    assert.match(html, /✕/);
+    assert.ok(html.includes('photo.jpg'));
+    assert.ok(html.includes('src="blob'));
   });
 
-  test('renders multiple files', () => {
+  // ========== multiple 属性 ==========
+  test('renders multiple file input attribute', () => {
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, {
-        files: [
-          { id: 'a', name: 'a.pdf', size: 100, type: 'application/pdf', progress: 100 },
-          { id: 'b', name: 'b.pdf', size: 200, type: 'application/pdf', progress: 100 },
-          { id: 'c', name: 'c.pdf', size: 300, type: 'application/pdf', progress: 100 },
-        ],
-      })
+      React.createElement(FileUpload, { multiple: true }),
     );
-    assert.match(html, /fileupload-item-a/);
-    assert.match(html, /fileupload-item-b/);
-    assert.match(html, /fileupload-item-c/);
+    assert.ok(html.includes('multiple'));
   });
 
-  test('compact variant uses smaller styles', () => {
+  test('renders single file mode by default', () => {
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, { variant: 'compact' })
+      React.createElement(FileUpload),
     );
-    assert.match(html, /12px 16px/);
+    assert.equal(html.includes('multiple'), false);
   });
 
-  test('default variant uses larger padding', () => {
+  // ========== 空文件列表 ==========
+  test('does not render file list when empty', () => {
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, { variant: 'default' })
+      React.createElement(FileUpload, { fileList: [] }),
     );
-    assert.match(html, /28px 24px/);
+    assert.equal(html.includes('listitem'), false);
   });
 
-  test('renders upload icon SVG', () => {
-    const html = renderToStaticMarkup(React.createElement(FileUpload, null));
-    assert.match(html, /svg/);
-    assert.match(html, /viewBox="0 0 24 24"/);
-  });
-
-  test('has drag-over handler attributes', () => {
-    const html = renderToStaticMarkup(React.createElement(FileUpload, null));
-    assert.match(html, /role="button"/);
-    assert.match(html, /tabindex="0"/);
-  });
-
-  test('disabled has tabindex -1', () => {
+  test('renders file list when files exist', () => {
+    const fileList: UploadFile[] = [
+      { uid: '1', name: 'a.txt', size: 100, type: 'text/plain', status: 'done' },
+    ];
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, { disabled: true })
+      React.createElement(FileUpload, { fileList }),
     );
-    assert.match(html, /tabindex="-1"/);
+    assert.ok(html.includes('listitem'));
   });
 
-  test('accepts maxFiles and maxSize props without crash', () => {
+  // ========== 音频/视频文件图标渲染 ==========
+  test('renders audio file with audio icon', () => {
+    const fileList: UploadFile[] = [
+      { uid: '1', name: 'song.mp3', size: 3000, type: 'audio/mpeg', status: 'done' },
+    ];
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, { maxFiles: 5, maxSize: 50 * 1024 * 1024 })
+      React.createElement(FileUpload, { fileList }),
     );
+    assert.match(html, /\u{1F3B5}/u);
+  });
+
+  test('renders video file with video icon', () => {
+    const fileList: UploadFile[] = [
+      { uid: '1', name: 'clip.mp4', size: 10000, type: 'video/mp4', status: 'done' },
+    ];
+    const html = renderToStaticMarkup(
+      React.createElement(FileUpload, { fileList }),
+    );
+    assert.match(html, /\u{1F3AC}/u);
+  });
+
+  test('renders PDF file with PDF icon', () => {
+    const fileList: UploadFile[] = [
+      { uid: '1', name: 'report.pdf', size: 500, type: 'application/pdf', status: 'done' },
+    ];
+    const html = renderToStaticMarkup(
+      React.createElement(FileUpload, { fileList }),
+    );
+    assert.match(html, /\u{1F4C4}/u);
+  });
+
+  // ========== delete button rendering ==========
+  test('renders delete button for each file', () => {
+    const fileList: UploadFile[] = [
+      { uid: '1', name: 'file.txt', size: 100, type: 'text/plain', status: 'done' },
+    ];
+    const html = renderToStaticMarkup(
+      React.createElement(FileUpload, { fileList }),
+    );
+    assert.match(html, /\u{1F5D1}\uFE0F/u);
+    assert.ok(html.includes('删除'));
+  });
+
+  // ========== retry button rendering ==========
+  test('renders retry button for error file when customRequest is set', () => {
+    const fileList: UploadFile[] = [
+      { uid: '1', name: 'bad.pdf', size: 200, type: 'application/pdf', status: 'error', error: 'timeout' },
+    ];
+    const html = renderToStaticMarkup(
+      React.createElement(FileUpload, { fileList }),
+    );
+    assert.ok(html.includes('timeout'));
+  });
+
+  // ========== className / style ==========
+  test('accepts custom className', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(FileUpload, { className: 'my-upload' }),
+    );
+    assert.ok(html.includes('my-upload'));
+  });
+
+  test('accepts custom style', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(FileUpload, { style: { width: 400 } }),
+    );
+    assert.ok(html.includes('400'));
+  });
+
+  // ========== 无参数 ==========
+  test('renders without any props without crash', () => {
+    const html = renderToStaticMarkup(React.createElement(FileUpload));
     assert.ok(html.length > 0);
   });
 
-  test('showPreview false still renders without preview container', () => {
+  // ========== 组件类型检查 ==========
+  test('FileUpload is a function', () => {
+    assert.strictEqual(typeof FileUpload, 'function');
+  });
+
+  test('FileUpload has display name or is named function', () => {
+    assert.strictEqual(FileUpload.name, 'FileUpload');
+  });
+
+  // ========== 边界：文件名为空时 ==========
+  test('renders empty file name gracefully', () => {
+    const fileList: UploadFile[] = [
+      { uid: '1', name: '', size: 0, type: 'text/plain', status: 'done' },
+    ];
     const html = renderToStaticMarkup(
-      React.createElement(FileUpload, {
-        showPreview: false,
-        files: [
-          {
-            id: 'np1',
-            name: 'no-preview.jpg',
-            size: 1000,
-            type: 'image/jpeg',
-            progress: 100,
-            preview: 'blob:nopreview',
-          },
-        ],
-      })
+      React.createElement(FileUpload, { fileList }),
     );
-    // Preview may still render because we pass it externally; the prop only
-    // controls whether the component generates previews internally.
-    assert.match(html, /no-preview\.jpg/);
+    assert.ok(html.length > 0);
   });
 });

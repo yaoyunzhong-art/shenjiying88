@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { validate } from 'class-validator'
 import { plainToInstance } from 'class-transformer'
 import 'reflect-metadata'
@@ -15,7 +15,7 @@ import {
 
 describe('GovernanceApproval DTOs', () => {
   describe('MaterializeGovernanceApprovalDto', () => {
-    test('validates minimal required fields', async () => {
+    it('validates minimal required fields', async () => {
       const dto = plainToInstance(MaterializeGovernanceApprovalDto, {
         operation: 'create',
         resourceType: 'store',
@@ -26,7 +26,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('validates with all optional fields', async () => {
+    it('validates with all optional fields', async () => {
       const dto = plainToInstance(MaterializeGovernanceApprovalDto, {
         operation: 'update',
         resourceType: 'brand',
@@ -44,7 +44,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('rejects missing operation', async () => {
+    it('rejects missing operation', async () => {
       const dto = plainToInstance(MaterializeGovernanceApprovalDto, {
         resourceType: 'store',
         resourceKey: 'store-1'
@@ -56,7 +56,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.ok(opError, 'Expected validation error for operation')
     })
 
-    test('rejects missing resourceType', async () => {
+    it('rejects missing resourceType', async () => {
       const dto = plainToInstance(MaterializeGovernanceApprovalDto, {
         operation: 'create',
         resourceKey: 'key-1'
@@ -68,7 +68,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.ok(rtError, 'Expected validation error for resourceType')
     })
 
-    test('rejects missing resourceKey', async () => {
+    it('rejects missing resourceKey', async () => {
       const dto = plainToInstance(MaterializeGovernanceApprovalDto, {
         operation: 'create',
         resourceType: 'store'
@@ -80,7 +80,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.ok(rkError, 'Expected validation error for resourceKey')
     })
 
-    test('rejects invalid approvalStatus', async () => {
+    it('rejects invalid approvalStatus', async () => {
       const dto = plainToInstance(MaterializeGovernanceApprovalDto, {
         operation: 'create',
         resourceType: 'store',
@@ -93,7 +93,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.ok(statusError, 'Expected validation error for invalid approvalStatus')
     })
 
-    test('accepts valid approvalStatus values', async () => {
+    it('accepts valid approvalStatus values', async () => {
       const validStatuses = ['NOT_REQUIRED', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'SUPERSEDED']
       for (const status of validStatuses) {
         const dto = plainToInstance(MaterializeGovernanceApprovalDto, {
@@ -108,7 +108,7 @@ describe('GovernanceApproval DTOs', () => {
       }
     })
 
-    test('operation cannot be empty', async () => {
+    it('operation cannot be empty', async () => {
       const dto = plainToInstance(MaterializeGovernanceApprovalDto, {
         operation: '',
         resourceType: 'store',
@@ -121,13 +121,13 @@ describe('GovernanceApproval DTOs', () => {
   })
 
   describe('GovernanceApprovalQueryDto', () => {
-    test('empty query dto is valid', async () => {
+    it('empty query dto is valid', async () => {
       const dto = plainToInstance(GovernanceApprovalQueryDto, {})
       const errors = await validate(dto)
       assert.equal(errors.length, 0)
     })
 
-    test('validates with all query fields', async () => {
+    it('validates with all query fields', async () => {
       const dto = plainToInstance(GovernanceApprovalQueryDto, {
         limit: 50,
         approvalTicket: 'APR-TEST',
@@ -143,7 +143,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('rejects limit less than 1', async () => {
+    it('rejects limit less than 1', async () => {
       const dto = plainToInstance(GovernanceApprovalQueryDto, { limit: 0 })
       const errors = await validate(dto)
       assert.ok(errors.length > 0)
@@ -151,13 +151,13 @@ describe('GovernanceApproval DTOs', () => {
       assert.ok(limitError, 'Expected validation error for limit < 1')
     })
 
-    test('accepts limit 1', async () => {
+    it('accepts limit 1', async () => {
       const dto = plainToInstance(GovernanceApprovalQueryDto, { limit: 1 })
       const errors = await validate(dto)
       assert.equal(errors.length, 0)
     })
 
-    test('accepts limit 100', async () => {
+    it('accepts limit 100', async () => {
       const dto = plainToInstance(GovernanceApprovalQueryDto, { limit: 100 })
       const errors = await validate(dto)
       assert.equal(errors.length, 0)
@@ -165,7 +165,7 @@ describe('GovernanceApproval DTOs', () => {
   })
 
   describe('GovernanceApprovalDecisionDto', () => {
-    test('validates APPROVED decision', async () => {
+    it('validates APPROVED decision', async () => {
       const dto = plainToInstance(GovernanceApprovalDecisionDto, {
         approvalTicket: 'APR-DECIDE-TEST',
         decidedBy: 'manager',
@@ -176,7 +176,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('validates REJECTED decision with note', async () => {
+    it('validates REJECTED decision with note', async () => {
       const dto = plainToInstance(GovernanceApprovalDecisionDto, {
         approvalTicket: 'APR-DECIDE-REJECT',
         decidedBy: 'supervisor',
@@ -188,7 +188,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('rejects invalid status value', async () => {
+    it('rejects invalid status value', async () => {
       const dto = plainToInstance(GovernanceApprovalDecisionDto, {
         approvalTicket: 'APR-TEST',
         decidedBy: 'manager',
@@ -201,7 +201,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.ok(statusError, 'Expected validation error for PENDING (not valid for decision)')
     })
 
-    test('rejects missing approvalTicket', async () => {
+    it('rejects missing approvalTicket', async () => {
       const dto = plainToInstance(GovernanceApprovalDecisionDto, {
         decidedBy: 'manager',
         status: 'APPROVED'
@@ -213,7 +213,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.ok(ticketError)
     })
 
-    test('rejects missing decidedBy', async () => {
+    it('rejects missing decidedBy', async () => {
       const dto = plainToInstance(GovernanceApprovalDecisionDto, {
         approvalTicket: 'APR-TEST',
         status: 'APPROVED'
@@ -225,7 +225,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.ok(byError)
     })
 
-    test('rejects missing status', async () => {
+    it('rejects missing status', async () => {
       const dto = plainToInstance(GovernanceApprovalDecisionDto, {
         approvalTicket: 'APR-TEST',
         decidedBy: 'manager'
@@ -239,7 +239,7 @@ describe('GovernanceApproval DTOs', () => {
   })
 
   describe('GovernanceApprovalCancelDto', () => {
-    test('validates cancel input with reason', async () => {
+    it('validates cancel input with reason', async () => {
       const dto = plainToInstance(GovernanceApprovalCancelDto, {
         approvalTicket: 'APR-CANCEL',
         cancelledBy: 'requester',
@@ -250,7 +250,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('validates cancel input without reason', async () => {
+    it('validates cancel input without reason', async () => {
       const dto = plainToInstance(GovernanceApprovalCancelDto, {
         approvalTicket: 'APR-CANCEL',
         cancelledBy: 'requester'
@@ -260,7 +260,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('rejects missing approvalTicket', async () => {
+    it('rejects missing approvalTicket', async () => {
       const dto = plainToInstance(GovernanceApprovalCancelDto, {
         cancelledBy: 'requester'
       })
@@ -269,7 +269,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.ok(errors.length > 0)
     })
 
-    test('rejects missing cancelledBy', async () => {
+    it('rejects missing cancelledBy', async () => {
       const dto = plainToInstance(GovernanceApprovalCancelDto, {
         approvalTicket: 'APR-CANCEL'
       })
@@ -280,7 +280,7 @@ describe('GovernanceApproval DTOs', () => {
   })
 
   describe('GovernanceApprovalResubmitDto', () => {
-    test('validates resubmit input', async () => {
+    it('validates resubmit input', async () => {
       const dto = plainToInstance(GovernanceApprovalResubmitDto, {
         approvalTicket: 'APR-RESUBMIT',
         resubmittedBy: 'requester',
@@ -291,7 +291,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('validates resubmit without reason', async () => {
+    it('validates resubmit without reason', async () => {
       const dto = plainToInstance(GovernanceApprovalResubmitDto, {
         approvalTicket: 'APR-RESUBMIT',
         resubmittedBy: 'requester'
@@ -301,7 +301,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('rejects missing approvalTicket', async () => {
+    it('rejects missing approvalTicket', async () => {
       const dto = plainToInstance(GovernanceApprovalResubmitDto, {
         resubmittedBy: 'requester'
       })
@@ -312,7 +312,7 @@ describe('GovernanceApproval DTOs', () => {
   })
 
   describe('GovernanceApprovalExecutionDto', () => {
-    test('validates execution input', async () => {
+    it('validates execution input', async () => {
       const dto = plainToInstance(GovernanceApprovalExecutionDto, {
         approvalTicket: 'APR-EXEC',
         executedBy: 'worker',
@@ -323,7 +323,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('validates execution with expectedVersion', async () => {
+    it('validates execution with expectedVersion', async () => {
       const dto = plainToInstance(GovernanceApprovalExecutionDto, {
         approvalTicket: 'APR-EXEC',
         executedBy: 'worker',
@@ -335,7 +335,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('rejects missing executionStatus', async () => {
+    it('rejects missing executionStatus', async () => {
       const dto = plainToInstance(GovernanceApprovalExecutionDto, {
         approvalTicket: 'APR-EXEC',
         executedBy: 'worker'
@@ -345,7 +345,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.ok(errors.length > 0)
     })
 
-    test('rejects missing executedBy', async () => {
+    it('rejects missing executedBy', async () => {
       const dto = plainToInstance(GovernanceApprovalExecutionDto, {
         approvalTicket: 'APR-EXEC',
         executionStatus: 'SUCCESS'
@@ -357,7 +357,7 @@ describe('GovernanceApproval DTOs', () => {
   })
 
   describe('GovernanceApprovalExecutionFailureDto', () => {
-    test('validates execution failure input', async () => {
+    it('validates execution failure input', async () => {
       const dto = plainToInstance(GovernanceApprovalExecutionFailureDto, {
         approvalTicket: 'APR-FAIL',
         failedBy: 'scheduler',
@@ -369,7 +369,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.equal(errors.length, 0)
     })
 
-    test('rejects missing failureReason', async () => {
+    it('rejects missing failureReason', async () => {
       const dto = plainToInstance(GovernanceApprovalExecutionFailureDto, {
         approvalTicket: 'APR-FAIL',
         failedBy: 'scheduler',
@@ -384,7 +384,7 @@ describe('GovernanceApproval DTOs', () => {
   })
 
   describe('DTO metadata (decorator usage)', () => {
-    test('MaterializeGovernanceApprovalDto has correct fields', () => {
+    it('MaterializeGovernanceApprovalDto has correct fields', () => {
       const instance = plainToInstance(MaterializeGovernanceApprovalDto, {
         operation: 'create',
         resourceType: 'store',
@@ -396,7 +396,7 @@ describe('GovernanceApproval DTOs', () => {
       assert.equal(instance.resourceKey, 'store-1')
     })
 
-    test('GovernanceApprovalDecisionDto has correct fields', () => {
+    it('GovernanceApprovalDecisionDto has correct fields', () => {
       const instance = plainToInstance(GovernanceApprovalDecisionDto, {
         approvalTicket: 'APR-TEST',
         decidedBy: 'manager',

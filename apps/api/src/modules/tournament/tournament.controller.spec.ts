@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [tournament] [D] controller spec 补全
  *
@@ -6,13 +7,12 @@
  */
 
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import type { RequestTenantContext } from '../tenant/tenant.types';
 
 // ── 模拟装饰器 ──
 
 function Controller(prefix: string) {
-  return (target: Function & { __prefix?: string }) => {
+  return (target: { new (...args: any[]): unknown; __prefix?: string }) => {
     target.__prefix = prefix;
     return target;
   };
@@ -360,12 +360,12 @@ const mockCtx: RequestTenantContext = {
 // ══════════════════════════════════════════════════
 
 describe('TournamentController 路由元数据', () => {
-  test('Controller prefix 是 tournaments', () => {
+  it('Controller prefix 是 tournaments', () => {
     // @Controller('tournaments') — 验证方法
     assert.ok(true, '路由前缀由 @Controller("tournaments") 装饰器定义');
   });
 
-  test('createTournament → POST /', () => {
+  it('createTournament → POST /', () => {
     resetRegistrations();
     const decorator = Post('');
     decorator(TournamentController.prototype, 'createTournament');
@@ -373,7 +373,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(postRegistrations[0], 'createTournament:');
   });
 
-  test('listTournaments → GET /', () => {
+  it('listTournaments → GET /', () => {
     resetRegistrations();
     const decorator = Get('');
     decorator(TournamentController.prototype, 'listTournaments');
@@ -381,7 +381,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(getRegistrations[0], 'listTournaments:');
   });
 
-  test('getTournament → GET :tournamentId', () => {
+  it('getTournament → GET :tournamentId', () => {
     resetRegistrations();
     const decorator = Get(':tournamentId');
     decorator(TournamentController.prototype, 'getTournament');
@@ -389,7 +389,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(getRegistrations[0], 'getTournament::tournamentId');
   });
 
-  test('updateTournament → PATCH :tournamentId', () => {
+  it('updateTournament → PATCH :tournamentId', () => {
     resetRegistrations();
     const decorator = Patch(':tournamentId');
     decorator(TournamentController.prototype, 'updateTournament');
@@ -397,7 +397,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(patchRegistrations[0], 'updateTournament::tournamentId');
   });
 
-  test('updateTournamentStatus → PATCH :tournamentId/status', () => {
+  it('updateTournamentStatus → PATCH :tournamentId/status', () => {
     resetRegistrations();
     const decorator = Patch(':tournamentId/status');
     decorator(TournamentController.prototype, 'updateTournamentStatus');
@@ -405,7 +405,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(patchRegistrations[0], 'updateTournamentStatus::tournamentId/status');
   });
 
-  test('registerParticipant → POST :tournamentId/register', () => {
+  it('registerParticipant → POST :tournamentId/register', () => {
     resetRegistrations();
     const decorator = Post(':tournamentId/register');
     decorator(TournamentController.prototype, 'registerParticipant');
@@ -413,7 +413,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(postRegistrations[0], 'registerParticipant::tournamentId/register');
   });
 
-  test('registerTeam → POST :tournamentId/teams', () => {
+  it('registerTeam → POST :tournamentId/teams', () => {
     resetRegistrations();
     const decorator = Post(':tournamentId/teams');
     decorator(TournamentController.prototype, 'registerTeam');
@@ -421,7 +421,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(postRegistrations[0], 'registerTeam::tournamentId/teams');
   });
 
-  test('listTeamRegistrations → GET :tournamentId/teams', () => {
+  it('listTeamRegistrations → GET :tournamentId/teams', () => {
     resetRegistrations();
     const decorator = Get(':tournamentId/teams');
     decorator(TournamentController.prototype, 'listTeamRegistrations');
@@ -429,7 +429,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(getRegistrations[0], 'listTeamRegistrations::tournamentId/teams');
   });
 
-  test('approveTeam → PATCH :tournamentId/teams/approve', () => {
+  it('approveTeam → PATCH :tournamentId/teams/approve', () => {
     resetRegistrations();
     const decorator = Patch(':tournamentId/teams/approve');
     decorator(TournamentController.prototype, 'approveTeam');
@@ -437,7 +437,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(patchRegistrations[0], 'approveTeam::tournamentId/teams/approve');
   });
 
-  test('rejectTeam → PATCH :tournamentId/teams/reject', () => {
+  it('rejectTeam → PATCH :tournamentId/teams/reject', () => {
     resetRegistrations();
     const decorator = Patch(':tournamentId/teams/reject');
     decorator(TournamentController.prototype, 'rejectTeam');
@@ -445,7 +445,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(patchRegistrations[0], 'rejectTeam::tournamentId/teams/reject');
   });
 
-  test('generateBracket → POST :tournamentId/bracket/generate', () => {
+  it('generateBracket → POST :tournamentId/bracket/generate', () => {
     resetRegistrations();
     const decorator = Post(':tournamentId/bracket/generate');
     decorator(TournamentController.prototype, 'generateBracket');
@@ -453,7 +453,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(postRegistrations[0], 'generateBracket::tournamentId/bracket/generate');
   });
 
-  test('listMatches → GET :tournamentId/matches', () => {
+  it('listMatches → GET :tournamentId/matches', () => {
     resetRegistrations();
     const decorator = Get(':tournamentId/matches');
     decorator(TournamentController.prototype, 'listMatches');
@@ -461,7 +461,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(getRegistrations[0], 'listMatches::tournamentId/matches');
   });
 
-  test('getMatch → GET matches/:matchId', () => {
+  it('getMatch → GET matches/:matchId', () => {
     resetRegistrations();
     const decorator = Get('matches/:matchId');
     decorator(TournamentController.prototype, 'getMatch');
@@ -469,7 +469,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(getRegistrations[0], 'getMatch:matches/:matchId');
   });
 
-  test('recordMatchResult → PATCH matches/:matchId/result', () => {
+  it('recordMatchResult → PATCH matches/:matchId/result', () => {
     resetRegistrations();
     const decorator = Patch('matches/:matchId/result');
     decorator(TournamentController.prototype, 'recordMatchResult');
@@ -477,7 +477,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(patchRegistrations[0], 'recordMatchResult:matches/:matchId/result');
   });
 
-  test('setDisputed → PATCH matches/:matchId/dispute', () => {
+  it('setDisputed → PATCH matches/:matchId/dispute', () => {
     resetRegistrations();
     const decorator = Patch('matches/:matchId/dispute');
     decorator(TournamentController.prototype, 'setDisputed');
@@ -485,7 +485,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(patchRegistrations[0], 'setDisputed:matches/:matchId/dispute');
   });
 
-  test('getRankings → GET :tournamentId/rankings', () => {
+  it('getRankings → GET :tournamentId/rankings', () => {
     resetRegistrations();
     const decorator = Get(':tournamentId/rankings');
     decorator(TournamentController.prototype, 'getRankings');
@@ -493,7 +493,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(getRegistrations[0], 'getRankings::tournamentId/rankings');
   });
 
-  test('getUpcomingMatches → GET members/:memberId/upcoming', () => {
+  it('getUpcomingMatches → GET members/:memberId/upcoming', () => {
     resetRegistrations();
     const decorator = Get('members/:memberId/upcoming');
     decorator(TournamentController.prototype, 'getUpcomingMatches');
@@ -501,7 +501,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(getRegistrations[0], 'getUpcomingMatches:members/:memberId/upcoming');
   });
 
-  test('getLiveMatches → GET stores/:storeId/live', () => {
+  it('getLiveMatches → GET stores/:storeId/live', () => {
     resetRegistrations();
     const decorator = Get('stores/:storeId/live');
     decorator(TournamentController.prototype, 'getLiveMatches');
@@ -509,7 +509,7 @@ describe('TournamentController 路由元数据', () => {
     assert.equal(getRegistrations[0], 'getLiveMatches:stores/:storeId/live');
   });
 
-  test('端点数量正确 — 8 GET, 4 POST, 6 PATCH', () => {
+  it('端点数量正确 — 8 GET, 4 POST, 6 PATCH', () => {
     const methodNames = Object.getOwnPropertyNames(TournamentController.prototype)
       .filter((m) => m !== 'constructor' && typeof (TournamentController.prototype as any)[m] === 'function');
     // 18 个公开端点方法
@@ -533,7 +533,7 @@ describe('TournamentController 路由元数据', () => {
 describe('createTournament', () => {
   const controller = new TournamentController();
 
-  test('正例: 创建单败淘汰赛返回 Draft 状态', () => {
+  it('正例: 创建单败淘汰赛返回 Draft 状态', () => {
     const result: any = controller.createTournament(mockCtx, {
       name: 'Summer Cup',
       type: TournamentType.SingleElimination,
@@ -550,7 +550,7 @@ describe('createTournament', () => {
     assert.equal(result.currentParticipants, 0);
   });
 
-  test('正例: 创建循环赛含可选字段', () => {
+  it('正例: 创建循环赛含可选字段', () => {
     const result: any = controller.createTournament(mockCtx, {
       name: 'Chess League',
       type: TournamentType.RoundRobin,
@@ -566,7 +566,7 @@ describe('createTournament', () => {
     assert.equal(result.type, TournamentType.RoundRobin);
   });
 
-  test('边界: 缺席字段使用默认值', () => {
+  it('边界: 缺席字段使用默认值', () => {
     const result: any = controller.createTournament(mockCtx, {
       name: 'Minimal',
       type: TournamentType.DoubleElimination,
@@ -585,20 +585,20 @@ describe('createTournament', () => {
 describe('listTournaments / getTournament', () => {
   const controller = new TournamentController();
 
-  test('正例: listTournaments 返回数组', () => {
+  it('正例: listTournaments 返回数组', () => {
     const results: any = controller.listTournaments(mockCtx, {});
     assert.ok(Array.isArray(results));
     assert.equal(results.length, 1);
     assert.ok(results[0].id);
   });
 
-  test('正例: listTournaments 按 status 过滤', () => {
+  it('正例: listTournaments 按 status 过滤', () => {
     const results: any = controller.listTournaments(mockCtx, { status: TournamentStatus.Open });
     assert.ok(Array.isArray(results));
     assert.equal(results[0].status, TournamentStatus.Open);
   });
 
-  test('正例: getTournament 返回单个赛事', () => {
+  it('正例: getTournament 返回单个赛事', () => {
     const result: any = controller.getTournament(mockCtx, 'tournament-abc-123');
     assert.equal(result.id, 'tournament-abc-123');
     assert.equal(result.tenantId, mockCtx.tenantId);
@@ -613,7 +613,7 @@ describe('listTournaments / getTournament', () => {
 describe('updateTournament / updateTournamentStatus', () => {
   const controller = new TournamentController();
 
-  test('正例: updateTournament 局部更新名称', () => {
+  it('正例: updateTournament 局部更新名称', () => {
     const result: any = controller.updateTournament(mockCtx, 'tournament-001', {
       name: 'Updated Cup',
     });
@@ -621,7 +621,7 @@ describe('updateTournament / updateTournamentStatus', () => {
     assert.equal(result.name, 'Updated Cup');
   });
 
-  test('正例: updateTournamentStatus 切换状态', () => {
+  it('正例: updateTournamentStatus 切换状态', () => {
     const result: any = controller.updateTournamentStatus(mockCtx, 'tournament-001', {
       status: TournamentStatus.Open,
     });
@@ -629,7 +629,7 @@ describe('updateTournament / updateTournamentStatus', () => {
     assert.equal(result.status, TournamentStatus.Open);
   });
 
-  test('边界: 状态变为 Cancelled', () => {
+  it('边界: 状态变为 Cancelled', () => {
     const result: any = controller.updateTournamentStatus(mockCtx, 'tournament-001', {
       status: TournamentStatus.Cancelled,
     });
@@ -644,7 +644,7 @@ describe('updateTournament / updateTournamentStatus', () => {
 describe('registerParticipant / registerTeam / approveTeam / rejectTeam', () => {
   const controller = new TournamentController();
 
-  test('正例: 注册个人参赛者', () => {
+  it('正例: 注册个人参赛者', () => {
     const result: any = controller.registerParticipant(mockCtx, 'tournament-001', {
       memberId: 'member-alice',
     });
@@ -653,7 +653,7 @@ describe('registerParticipant / registerTeam / approveTeam / rejectTeam', () => 
     assert.equal(result.tournamentId, 'tournament-001');
   });
 
-  test('正例: 注册队伍', () => {
+  it('正例: 注册队伍', () => {
     const result: any = controller.registerTeam(mockCtx, 'tournament-001', {
       teamName: 'Team Alpha',
       captainId: 'member-cap',
@@ -664,25 +664,25 @@ describe('registerParticipant / registerTeam / approveTeam / rejectTeam', () => 
     assert.ok(result.teamRegId);
   });
 
-  test('正例: 查询队伍注册列表', () => {
+  it('正例: 查询队伍注册列表', () => {
     const results: any = controller.listTeamRegistrations(mockCtx, 'tournament-001');
     assert.ok(Array.isArray(results));
     assert.equal(results[0].tournamentId, 'tournament-001');
   });
 
-  test('正例: 审批通过队伍', () => {
+  it('正例: 审批通过队伍', () => {
     const result: any = controller.approveTeam(mockCtx, { teamRegId: 'team-reg-1' });
     assert.equal(result.teamRegId, 'team-reg-1');
     assert.equal(result.status, 'APPROVED');
   });
 
-  test('正例: 驳回队伍', () => {
+  it('正例: 驳回队伍', () => {
     const result: any = controller.rejectTeam(mockCtx, { teamRegId: 'team-reg-2' });
     assert.equal(result.teamRegId, 'team-reg-2');
     assert.equal(result.status, 'REJECTED');
   });
 
-  test('边界: 审批传入不存在的 teamRegId 不应崩溃', () => {
+  it('边界: 审批传入不存在的 teamRegId 不应崩溃', () => {
     const result: any = controller.approveTeam(mockCtx, { teamRegId: '' });
     assert.ok(result.updatedAt);
   });
@@ -695,7 +695,7 @@ describe('registerParticipant / registerTeam / approveTeam / rejectTeam', () => 
 describe('generateBracket / listMatches / getMatch / recordMatchResult / setDisputed', () => {
   const controller = new TournamentController();
 
-  test('正例: 生成赛程支架', () => {
+  it('正例: 生成赛程支架', () => {
     const result: any = controller.generateBracket(mockCtx, 'tournament-001');
     assert.equal(result.tournamentId, 'tournament-001');
     assert.ok(result.bracket);
@@ -703,25 +703,25 @@ describe('generateBracket / listMatches / getMatch / recordMatchResult / setDisp
     assert.equal(result.bracket.round1.length, 2);
   });
 
-  test('正例: 列出比赛', () => {
+  it('正例: 列出比赛', () => {
     const results: any = controller.listMatches(mockCtx, 'tournament-001', {});
     assert.ok(Array.isArray(results));
     assert.equal(results.length, 2);
   });
 
-  test('正例: 按轮次过滤比赛', () => {
+  it('正例: 按轮次过滤比赛', () => {
     const results: any = controller.listMatches(mockCtx, 'tournament-001', { round: 1 });
     assert.ok(results.every((m: any) => m.round === 1));
   });
 
-  test('正例: 按状态过滤比赛', () => {
+  it('正例: 按状态过滤比赛', () => {
     const results: any = controller.listMatches(mockCtx, 'tournament-001', {
       status: MatchStatus.Pending,
     });
     assert.ok(results.every((m: any) => m.status === MatchStatus.Pending));
   });
 
-  test('正例: 获取单场比赛', () => {
+  it('正例: 获取单场比赛', () => {
     const result: any = controller.getMatch(mockCtx, 'match-abc');
     assert.equal(result.matchId, 'match-abc');
     assert.ok(result.player1);
@@ -729,7 +729,7 @@ describe('generateBracket / listMatches / getMatch / recordMatchResult / setDisp
     assert.ok(result.scheduledAt);
   });
 
-  test('正例: 记录比赛结果', () => {
+  it('正例: 记录比赛结果', () => {
     const result: any = controller.recordMatchResult(mockCtx, 'match-abc', {
       score1: 3,
       score2: 1,
@@ -740,13 +740,13 @@ describe('generateBracket / listMatches / getMatch / recordMatchResult / setDisp
     assert.equal(result.status, MatchStatus.Completed);
   });
 
-  test('正例: 标记争议', () => {
+  it('正例: 标记争议', () => {
     const result: any = controller.setDisputed(mockCtx, 'match-abc');
     assert.equal(result.matchId, 'match-abc');
     assert.equal(result.status, MatchStatus.Disputed);
   });
 
-  test('边界: 比分为 0:0 的平局', () => {
+  it('边界: 比分为 0:0 的平局', () => {
     const result: any = controller.recordMatchResult(mockCtx, 'match-xyz', {
       score1: 0,
       score2: 0,
@@ -764,7 +764,7 @@ describe('generateBracket / listMatches / getMatch / recordMatchResult / setDisp
 describe('getRankings', () => {
   const controller = new TournamentController();
 
-  test('正例: 返回完整排行', () => {
+  it('正例: 返回完整排行', () => {
     const results: any = controller.getRankings(mockCtx, 'tournament-001', {});
     assert.ok(Array.isArray(results));
     assert.equal(results.length, 3);
@@ -772,12 +772,12 @@ describe('getRankings', () => {
     assert.equal(results[0].displayName, 'Alice');
   });
 
-  test('正例: limit 截断排行', () => {
+  it('正例: limit 截断排行', () => {
     const results: any = controller.getRankings(mockCtx, 'tournament-001', { limit: 2 });
     assert.equal(results.length, 2);
   });
 
-  test('边界: limit 为 0 返回空数组', () => {
+  it('边界: limit 为 0 返回空数组', () => {
     const results: any = controller.getRankings(mockCtx, 'tournament-001', { limit: 0 });
     assert.equal(results.length, 0);
   });
@@ -790,7 +790,7 @@ describe('getRankings', () => {
 describe('getUpcomingMatches / getLiveMatches', () => {
   const controller = new TournamentController();
 
-  test('正例: 获取会员即将开始的比赛', () => {
+  it('正例: 获取会员即将开始的比赛', () => {
     const results: any = controller.getUpcomingMatches('member-alice');
     assert.ok(Array.isArray(results));
     assert.equal(results.length, 1);
@@ -798,7 +798,7 @@ describe('getUpcomingMatches / getLiveMatches', () => {
     assert.ok(results[0].opponent);
   });
 
-  test('正例: 获取门店实时比赛', () => {
+  it('正例: 获取门店实时比赛', () => {
     const results: any = controller.getLiveMatches('store-001');
     assert.ok(Array.isArray(results));
     assert.equal(results.length, 1);
@@ -806,7 +806,7 @@ describe('getUpcomingMatches / getLiveMatches', () => {
     assert.equal(results[0].status, MatchStatus.Ongoing);
   });
 
-  test('边界: 空 memberId 应返回格式化数据', () => {
+  it('边界: 空 memberId 应返回格式化数据', () => {
     const results: any = controller.getUpcomingMatches('');
     assert.ok(Array.isArray(results));
     assert.equal(results.length, 1);

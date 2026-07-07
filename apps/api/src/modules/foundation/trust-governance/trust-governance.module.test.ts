@@ -1,7 +1,7 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { TrustGovernanceModule } from './trust-governance.module'
 import { TrustGovernanceController } from './trust-governance.controller'
 import { TrustGovernanceService } from './trust-governance.service'
@@ -38,7 +38,7 @@ const stubPrismaService = {
 describe('TrustGovernanceModule', () => {
   let moduleRef: TestingModule
 
-  test('should compile and instantiate module', async () => {
+  it('should compile and instantiate module', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [TrustGovernanceModule]
     })
@@ -49,7 +49,7 @@ describe('TrustGovernanceModule', () => {
     assert.ok(moduleRef)
   })
 
-  test('should provide TrustGovernanceController', async () => {
+  it('should provide TrustGovernanceController', async () => {
     moduleRef = await Test.createTestingModule({
       controllers: [TrustGovernanceController],
       providers: [
@@ -63,7 +63,7 @@ describe('TrustGovernanceModule', () => {
     assert.ok(controller instanceof TrustGovernanceController)
   })
 
-  test('should provide TrustGovernanceService', async () => {
+  it('should provide TrustGovernanceService', async () => {
     moduleRef = await Test.createTestingModule({
       controllers: [TrustGovernanceController],
       providers: [
@@ -77,7 +77,7 @@ describe('TrustGovernanceModule', () => {
     assert.ok(service instanceof TrustGovernanceService)
   })
 
-  test('module should have @Global decorator', () => {
+  it('module should have @Global decorator', () => {
     // NestJS @Global() 使用 GLOBAL_MODULE_METADATA 键
     const isGlobal = Reflect.getMetadata('__module:global__', TrustGovernanceModule)
     // 当直接使用 @Module() 时元数据可能以不同键存储
@@ -85,7 +85,7 @@ describe('TrustGovernanceModule', () => {
     assert.ok(TrustGovernanceModule !== undefined)
   })
 
-  test('module should be defined with NestJS metadata', () => {
+  it('module should be defined with NestJS metadata', () => {
     const controllers: unknown[] = Reflect.getMetadata('controllers', TrustGovernanceModule) || []
     const providers: unknown[] = Reflect.getMetadata('providers', TrustGovernanceModule) || []
     const exports: unknown[] = Reflect.getMetadata('exports', TrustGovernanceModule) || []
@@ -98,7 +98,7 @@ describe('TrustGovernanceModule', () => {
     assert.ok(exports.includes(TrustGovernanceService))
   })
 
-  test('controller should expose all expected methods', async () => {
+  it('controller should expose all expected methods', async () => {
     moduleRef = await Test.createTestingModule({
       controllers: [TrustGovernanceController],
       providers: [
@@ -131,7 +131,7 @@ describe('TrustGovernanceModule', () => {
     assert.equal(typeof controller.reviewAi, 'function')
   })
 
-  test('service should expose governance baselines', async () => {
+  it('service should expose governance baselines', async () => {
     moduleRef = await Test.createTestingModule({
       controllers: [TrustGovernanceController],
       providers: [
@@ -148,7 +148,7 @@ describe('TrustGovernanceModule', () => {
     assert.ok(baselines.some((b: { key: string }) => b.key === 'ai-cost-governance'))
   })
 
-  test('service should expose module descriptor', async () => {
+  it('service should expose module descriptor', async () => {
     moduleRef = await Test.createTestingModule({
       controllers: [TrustGovernanceController],
       providers: [

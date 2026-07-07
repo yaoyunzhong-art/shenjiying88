@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [notification] [D] controller 测试补全
  * 覆盖: metadata 路由定义 + route handler 运行行为 + 正例 + 反例 + 边界
@@ -5,7 +6,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { NotificationController } from './notification.controller'
 import type { NotificationService } from './notification.service'
 import {
@@ -27,68 +27,68 @@ const sampleCtx: RequestTenantContext = {
 // ── Metadata 测试 ──
 
 describe('NotificationController 路由 metadata', () => {
-  test('controller path = "notifications"', () => {
+  it('controller path = "notifications"', () => {
     const path = Reflect.getMetadata('path', NotificationController)
     assert.equal(path, 'notifications')
   })
 
-  test('POST templates 路由', () => {
+  it('POST templates 路由', () => {
     const method = Reflect.getMetadata('method', NotificationController.prototype.registerTemplate)
     const path = Reflect.getMetadata('path', NotificationController.prototype.registerTemplate)
     assert.equal(method, 1) // POST
     assert.equal(path, 'templates')
   })
 
-  test('GET templates 路由', () => {
+  it('GET templates 路由', () => {
     const method = Reflect.getMetadata('method', NotificationController.prototype.listTemplates)
     const path = Reflect.getMetadata('path', NotificationController.prototype.listTemplates)
     assert.equal(method, 0) // GET
     assert.equal(path, 'templates')
   })
 
-  test('GET templates/:id 路由', () => {
+  it('GET templates/:id 路由', () => {
     const method = Reflect.getMetadata('method', NotificationController.prototype.getTemplate)
     const path = Reflect.getMetadata('path', NotificationController.prototype.getTemplate)
     assert.equal(method, 0) // GET
     assert.equal(path, 'templates/:id')
   })
 
-  test('PATCH templates/:id 路由', () => {
+  it('PATCH templates/:id 路由', () => {
     const method = Reflect.getMetadata('method', NotificationController.prototype.updateTemplate)
     const path = Reflect.getMetadata('path', NotificationController.prototype.updateTemplate)
     assert.equal(method, 4) // PATCH = 4 in NestJS RequestMethod
     assert.equal(path, 'templates/:id')
   })
 
-  test('POST send 路由', () => {
+  it('POST send 路由', () => {
     const method = Reflect.getMetadata('method', NotificationController.prototype.send)
     const path = Reflect.getMetadata('path', NotificationController.prototype.send)
     assert.equal(method, 1) // POST
     assert.equal(path, 'send')
   })
 
-  test('GET dispatches 路由', () => {
+  it('GET dispatches 路由', () => {
     const method = Reflect.getMetadata('method', NotificationController.prototype.listDispatches)
     const path = Reflect.getMetadata('path', NotificationController.prototype.listDispatches)
     assert.equal(method, 0) // GET
     assert.equal(path, 'dispatches')
   })
 
-  test('GET dispatches/:id 路由', () => {
+  it('GET dispatches/:id 路由', () => {
     const method = Reflect.getMetadata('method', NotificationController.prototype.getDispatch)
     const path = Reflect.getMetadata('path', NotificationController.prototype.getDispatch)
     assert.equal(method, 0) // GET
     assert.equal(path, 'dispatches/:id')
   })
 
-  test('POST dispatches/:id/retry 路由', () => {
+  it('POST dispatches/:id/retry 路由', () => {
     const method = Reflect.getMetadata('method', NotificationController.prototype.retryDispatch)
     const path = Reflect.getMetadata('path', NotificationController.prototype.retryDispatch)
     assert.equal(method, 1) // POST
     assert.equal(path, 'dispatches/:id/retry')
   })
 
-  test('POST dispatches/:id/cancel 路由', () => {
+  it('POST dispatches/:id/cancel 路由', () => {
     const method = Reflect.getMetadata('method', NotificationController.prototype.cancelDispatch)
     const path = Reflect.getMetadata('path', NotificationController.prototype.cancelDispatch)
     assert.equal(method, 1) // POST
@@ -99,7 +99,7 @@ describe('NotificationController 路由 metadata', () => {
 // ── 行为测试 - Template ──
 
 describe('NotificationController - registerTemplate()', () => {
-  test('注册模板返回 contract', () => {
+  it('注册模板返回 contract', () => {
     const mockService = {
       registerTemplate: () => toNotificationTemplate({
         code: 'welcome',
@@ -124,7 +124,7 @@ describe('NotificationController - registerTemplate()', () => {
     assert.equal(result.enabled, true)
   })
 
-  test('service 抛出异常向上传播', () => {
+  it('service 抛出异常向上传播', () => {
     const mockService = {
       registerTemplate: () => { throw new Error('code already exists') }
     }
@@ -137,7 +137,7 @@ describe('NotificationController - registerTemplate()', () => {
 })
 
 describe('NotificationController - listTemplates()', () => {
-  test('返回模板列表 contract', () => {
+  it('返回模板列表 contract', () => {
     const mockService = {
       listTemplates: () => [
         toNotificationTemplate({
@@ -164,14 +164,14 @@ describe('NotificationController - listTemplates()', () => {
     assert.equal(result[1].code, 't2')
   })
 
-  test('空列表返回 []', () => {
+  it('空列表返回 []', () => {
     const mockService = { listTemplates: () => [] }
     const ctrl = new NotificationController(mockService as unknown as NotificationService)
     const result = ctrl.listTemplates(sampleCtx)
     assert.deepStrictEqual(result, [])
   })
 
-  test('传递 query 参数', () => {
+  it('传递 query 参数', () => {
     const calls: any[] = []
     const mockService = {
       listTemplates: (filters: any) => {
@@ -187,7 +187,7 @@ describe('NotificationController - listTemplates()', () => {
     assert.equal(calls[0].enabled, true)
   })
 
-  test('enabled 参数 false', () => {
+  it('enabled 参数 false', () => {
     const calls: any[] = []
     const mockService = {
       listTemplates: (filters: any) => { calls.push(filters); return [] }
@@ -199,7 +199,7 @@ describe('NotificationController - listTemplates()', () => {
 })
 
 describe('NotificationController - getTemplate()', () => {
-  test('返回存在的模板', () => {
+  it('返回存在的模板', () => {
     const tpl = toNotificationTemplate({
       code: 'exists',
       channel: NotificationChannelType.Push,
@@ -214,7 +214,7 @@ describe('NotificationController - getTemplate()', () => {
     assert.equal(result!.code, 'exists')
   })
 
-  test('返回 null 对不存在的模板', () => {
+  it('返回 null 对不存在的模板', () => {
     const mockService = { getTemplate: () => undefined }
     const ctrl = new NotificationController(mockService as unknown as NotificationService)
     assert.equal(ctrl.getTemplate('nope'), null)
@@ -222,7 +222,7 @@ describe('NotificationController - getTemplate()', () => {
 })
 
 describe('NotificationController - updateTemplate()', () => {
-  test('更新模板返回 contract', () => {
+  it('更新模板返回 contract', () => {
     const tpl = toNotificationTemplate({
       code: 'to_update',
       channel: NotificationChannelType.InApp,
@@ -240,7 +240,7 @@ describe('NotificationController - updateTemplate()', () => {
     assert.equal(result!.enabled, false)
   })
 
-  test('不存在的模板返回 null', () => {
+  it('不存在的模板返回 null', () => {
     const mockService = { updateTemplate: () => undefined }
     const ctrl = new NotificationController(mockService as unknown as NotificationService)
     assert.equal(ctrl.updateTemplate('nope', { enabled: false } as any), null)
@@ -250,7 +250,7 @@ describe('NotificationController - updateTemplate()', () => {
 // ── 行为测试 - Dispatch ──
 
 describe('NotificationController - send()', () => {
-  test('发送通知返回 dispatch contract', () => {
+  it('发送通知返回 dispatch contract', () => {
     const dispatch = toNotificationDispatch({
       channel: NotificationChannelType.Sms,
       scopeType: FoundationScopeType.Store,
@@ -274,7 +274,7 @@ describe('NotificationController - send()', () => {
     assert.equal(result.status, 'SENT')
   })
 
-  test('发送失败时返回 FAILED 状态', () => {
+  it('发送失败时返回 FAILED 状态', () => {
     const dispatch = toNotificationDispatch({
       channel: NotificationChannelType.Email,
       scopeType: FoundationScopeType.Tenant,
@@ -299,7 +299,7 @@ describe('NotificationController - send()', () => {
     assert.ok(result.providerResponse)
   })
 
-  test('service 抛出异常向上传播', () => {
+  it('service 抛出异常向上传播', () => {
     const mockService = { send: () => { throw new Error('Rate limit exceeded') } }
     const ctrl = new NotificationController(mockService as unknown as NotificationService)
     assert.throws(
@@ -310,7 +310,7 @@ describe('NotificationController - send()', () => {
 })
 
 describe('NotificationController - listDispatches()', () => {
-  test('返回 dispatch 列表', () => {
+  it('返回 dispatch 列表', () => {
     const d1 = toNotificationDispatch({
       channel: NotificationChannelType.Sms,
       scopeType: FoundationScopeType.Store,
@@ -334,7 +334,7 @@ describe('NotificationController - listDispatches()', () => {
     assert.equal(result.length, 2)
   })
 
-  test('传递过滤参数', () => {
+  it('传递过滤参数', () => {
     const calls: any[] = []
     const mockService = {
       listDispatches: (filters: any) => { calls.push(filters); return [] }
@@ -349,7 +349,7 @@ describe('NotificationController - listDispatches()', () => {
 })
 
 describe('NotificationController - getDispatch()', () => {
-  test('返回存在的 dispatch', () => {
+  it('返回存在的 dispatch', () => {
     const d = toNotificationDispatch({
       channel: NotificationChannelType.Push,
       scopeType: FoundationScopeType.Store,
@@ -363,7 +363,7 @@ describe('NotificationController - getDispatch()', () => {
     assert.equal(result!.id, d.id)
   })
 
-  test('返回 null 对不存在 dispatch', () => {
+  it('返回 null 对不存在 dispatch', () => {
     const mockService = { getDispatch: () => undefined }
     const ctrl = new NotificationController(mockService as unknown as NotificationService)
     assert.equal(ctrl.getDispatch('nope'), null)
@@ -371,7 +371,7 @@ describe('NotificationController - getDispatch()', () => {
 })
 
 describe('NotificationController - retryDispatch()', () => {
-  test('重试失败 dispatch', () => {
+  it('重试失败 dispatch', () => {
     const d = toNotificationDispatch({
       channel: NotificationChannelType.Email,
       scopeType: FoundationScopeType.Tenant,
@@ -393,7 +393,7 @@ describe('NotificationController - retryDispatch()', () => {
     assert.equal(result!.retryCount, 1)
   })
 
-  test('不存在 dispatch 返回 null', () => {
+  it('不存在 dispatch 返回 null', () => {
     const mockService = { retryDispatch: () => undefined }
     const ctrl = new NotificationController(mockService as unknown as NotificationService)
     assert.equal(ctrl.retryDispatch('nope'), null)
@@ -401,7 +401,7 @@ describe('NotificationController - retryDispatch()', () => {
 })
 
 describe('NotificationController - cancelDispatch()', () => {
-  test('取消 dispatch', () => {
+  it('取消 dispatch', () => {
     const d = toNotificationDispatch({
       channel: NotificationChannelType.Webhook,
       scopeType: FoundationScopeType.Tenant,
@@ -421,7 +421,7 @@ describe('NotificationController - cancelDispatch()', () => {
     assert.equal(result!.status, 'CANCELLED')
   })
 
-  test('不存在 dispatch 返回 null', () => {
+  it('不存在 dispatch 返回 null', () => {
     const mockService = { cancelDispatch: () => undefined }
     const ctrl = new NotificationController(mockService as unknown as NotificationService)
     assert.equal(ctrl.cancelDispatch('nope'), null)
@@ -431,7 +431,7 @@ describe('NotificationController - cancelDispatch()', () => {
 // ── 边界条件 ──
 
 describe('NotificationController - 边界条件', () => {
-  test('tenantContext 正确传递给模板注册', () => {
+  it('tenantContext 正确传递给模板注册', () => {
     const calls: any[] = []
     const mockService = {
       registerTemplate: (input: any) => {
@@ -453,7 +453,7 @@ describe('NotificationController - 边界条件', () => {
     assert.equal(calls[0].storeId, 's-1')
   })
 
-  test('body 中的 tenantId 覆盖 tenantContext', () => {
+  it('body 中的 tenantId 覆盖 tenantContext', () => {
     const calls: any[] = []
     const mockService = {
       registerTemplate: (input: any) => {

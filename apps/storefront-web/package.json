@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint app next.config.mjs --ext .ts,.tsx,.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test 'app/**/*.test.ts'"
+    "test": "node --import tsx --test 'app/**/*.test.ts' 'app/**/*.test.tsx'"
   },
   "dependencies": {
     "@m5/domain": "workspace:*",

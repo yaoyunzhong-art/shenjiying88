@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * Tenant Simulator Test
  *
@@ -24,7 +25,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   createDefaultTenantContext,
   createEmptyResolvedActorContext,
@@ -164,7 +164,7 @@ function makeActor(scenario: (typeof ROLE_SCENARIOS)[keyof typeof ROLE_SCENARIOS
 // ─── 核心解析测试 ───
 
 describe('Tenant Simulator - 核心解析', () => {
-  test('完整租户上下文解析 (tenant + brand + store)', () => {
+  it('完整租户上下文解析 (tenant + brand + store)', () => {
     const req: SimulatedTenantRequest = {
       tenantContext: {
         tenantId: 'tenant-001',
@@ -184,7 +184,7 @@ describe('Tenant Simulator - 核心解析', () => {
     assert.equal(result.actor, null)
   })
 
-  test('租户 ID 优先级: actor > tenant > 默认', () => {
+  it('租户 ID 优先级: actor > tenant > 默认', () => {
     const req: SimulatedTenantRequest = {
       tenantContext: {
         tenantId: 'tenant-from-header',
@@ -207,7 +207,7 @@ describe('Tenant Simulator - 核心解析', () => {
     assert.equal(result.effectiveTenantId, 'tenant-from-actor')
   })
 
-  test('缺失 actor 时回退到 tenantContext', () => {
+  it('缺失 actor 时回退到 tenantContext', () => {
     const req: SimulatedTenantRequest = {
       tenantContext: {
         tenantId: 'tenant-from-header',
@@ -229,7 +229,7 @@ describe('Tenant Simulator - 核心解析', () => {
     assert.equal(result.effectiveTenantId, 'tenant-from-header')
   })
 
-  test('全部缺失时使用默认值', () => {
+  it('全部缺失时使用默认值', () => {
     const req: SimulatedTenantRequest = {
       tenantContext: {
         tenantId: '',
@@ -246,7 +246,7 @@ describe('Tenant Simulator - 核心解析', () => {
     assert.equal(result.effectiveMarketCode, '')
   })
 
-  test('品牌 ID 优先 actor 再 tenant', () => {
+  it('品牌 ID 优先 actor 再 tenant', () => {
     const req: SimulatedTenantRequest = {
       tenantContext: {
         tenantId: 'tenant-001',
@@ -269,7 +269,7 @@ describe('Tenant Simulator - 核心解析', () => {
     assert.equal(result.effectiveBrandId, 'brand-from-actor')
   })
 
-  test('门店 ID 仅从 actor 获取', () => {
+  it('门店 ID 仅从 actor 获取', () => {
     const req: SimulatedTenantRequest = {
       tenantContext: {
         tenantId: 'tenant-001',
@@ -296,7 +296,7 @@ describe('Tenant Simulator - 核心解析', () => {
 // ─── 作用域匹配测试 ───
 
 describe('Tenant Simulator - 作用域匹配', () => {
-  test('完全匹配: tenant + brand + store', () => {
+  it('完全匹配: tenant + brand + store', () => {
     const result = simulateResolveTenant({
       tenantContext: {
         tenantId: 'tenant-001',
@@ -315,7 +315,7 @@ describe('Tenant Simulator - 作用域匹配', () => {
     assert.equal(matches, true)
   })
 
-  test('仅 tenant 匹配', () => {
+  it('仅 tenant 匹配', () => {
     const result = simulateResolveTenant({
       tenantContext: {
         tenantId: 'tenant-001',
@@ -330,7 +330,7 @@ describe('Tenant Simulator - 作用域匹配', () => {
     assert.equal(matches, true)
   })
 
-  test('tenant 不匹配', () => {
+  it('tenant 不匹配', () => {
     const result = simulateResolveTenant({
       tenantContext: {
         tenantId: 'tenant-001',
@@ -343,7 +343,7 @@ describe('Tenant Simulator - 作用域匹配', () => {
     assert.equal(matches, false)
   })
 
-  test('brand 不匹配', () => {
+  it('brand 不匹配', () => {
     const result = simulateResolveTenant({
       tenantContext: {
         tenantId: 'tenant-001',
@@ -360,7 +360,7 @@ describe('Tenant Simulator - 作用域匹配', () => {
     assert.equal(matches, false)
   })
 
-  test('store 不匹配', () => {
+  it('store 不匹配', () => {
     const result = simulateResolveTenant({
       tenantContext: {
         tenantId: 'tenant-001',
@@ -377,7 +377,7 @@ describe('Tenant Simulator - 作用域匹配', () => {
     assert.equal(matches, false)
   })
 
-  test('空 requirement 始终匹配', () => {
+  it('空 requirement 始终匹配', () => {
     const result = simulateResolveTenant({
       tenantContext: {
         tenantId: 'tenant-001',
@@ -394,7 +394,7 @@ describe('Tenant Simulator - 作用域匹配', () => {
 // ─── 演员认证测试 ───
 
 describe('Tenant Simulator - 演员认证', () => {
-  test('已认证演员', () => {
+  it('已认证演员', () => {
     const req: SimulatedTenantRequest = {
       tenantContext: {
         tenantId: 'tenant-001',
@@ -417,7 +417,7 @@ describe('Tenant Simulator - 演员认证', () => {
     assert.equal(result.roles[0], 'ADMIN')
   })
 
-  test('未认证演员', () => {
+  it('未认证演员', () => {
     const req: SimulatedTenantRequest = {
       tenantContext: {
         tenantId: 'tenant-001',
@@ -439,7 +439,7 @@ describe('Tenant Simulator - 演员认证', () => {
     assert.ok(result.actor)
   })
 
-  test('无演员时的认证状态', () => {
+  it('无演员时的认证状态', () => {
     const result = simulateResolveTenant({
       tenantContext: {
         tenantId: 'tenant-001',
@@ -457,7 +457,7 @@ describe('Tenant Simulator - 演员认证', () => {
 // ─── 演员摘要测试 ───
 
 describe('Tenant Simulator - 演员摘要', () => {
-  test('格式化带名字和角色的演员', () => {
+  it('格式化带名字和角色的演员', () => {
     const summary = actorSummary({
       actorId: 'user-001',
       actorType: 'tenant-user',
@@ -471,7 +471,7 @@ describe('Tenant Simulator - 演员摘要', () => {
     assert.equal(summary, '张三 [tenant-user] roles:ADMIN,MANAGER')
   })
 
-  test('无名字时显示类型和角色', () => {
+  it('无名字时显示类型和角色', () => {
     const summary = actorSummary({
       actorId: 'svc-001',
       actorType: 'service-account',
@@ -485,7 +485,7 @@ describe('Tenant Simulator - 演员摘要', () => {
     assert.equal(summary, '[service-account] roles:SYSTEM')
   })
 
-  test('null 演员返回 null', () => {
+  it('null 演员返回 null', () => {
     const summary = actorSummary(undefined)
     assert.equal(summary, null)
   })
@@ -497,7 +497,7 @@ describe('Tenant Simulator - 8 角色视角', () => {
   for (const [key, scenario] of Object.entries(ROLE_SCENARIOS)) {
     const actor = makeActor(scenario)
 
-    test(`${scenario.emoji} (${scenario.role}) - 租户解析含有角色`, () => {
+    it(`${scenario.emoji} (${scenario.role}) - 租户解析含有角色`, () => {
       const req: SimulatedTenantRequest = {
         tenantContext: {
           tenantId: actor.tenantId ?? 'tenant-default',
@@ -516,7 +516,7 @@ describe('Tenant Simulator - 8 角色视角', () => {
       assert.ok(result.permissions.length > 0, `${scenario.role} should have permissions`)
     })
 
-    test(`${scenario.emoji} (${scenario.role}) - 作用域匹配自身门店/品牌/租户`, () => {
+    it(`${scenario.emoji} (${scenario.role}) - 作用域匹配自身门店/品牌/租户`, () => {
       const req: SimulatedTenantRequest = {
         tenantContext: {
           tenantId: actor.tenantId ?? 'tenant-default',
@@ -543,7 +543,7 @@ describe('Tenant Simulator - 8 角色视角', () => {
 // ─── 边界与异常测试 ───
 
 describe('Tenant Simulator - 边界与异常', () => {
-  test('空 tenantContext 时空字符串穿透', () => {
+  it('空 tenantContext 时空字符串穿透', () => {
     const result = simulateResolveTenant({
       tenantContext: { tenantId: '', marketCode: '' } as RequestTenantContext
     })
@@ -553,7 +553,7 @@ describe('Tenant Simulator - 边界与异常', () => {
     assert.equal(result.effectiveMarketCode, '')
   })
 
-  test('跨租户访问被拒绝', () => {
+  it('跨租户访问被拒绝', () => {
     const result = simulateResolveTenant({
       tenantContext: {
         tenantId: 'tenant-A',
@@ -578,7 +578,7 @@ describe('Tenant Simulator - 边界与异常', () => {
     assert.equal(matches, false, '跨租户访问应被拒绝')
   })
 
-  test('同一租户不同门店访问控制', () => {
+  it('同一租户不同门店访问控制', () => {
     const result = simulateResolveTenant({
       tenantContext: {
         tenantId: 'tenant-001',
@@ -597,7 +597,7 @@ describe('Tenant Simulator - 边界与异常', () => {
     assert.equal(matches, false, '不同门店应被隔离')
   })
 
-  test('platform-user 无租户时 tenantContext 优先', () => {
+  it('platform-user 无租户时 tenantContext 优先', () => {
     const result = simulateResolveTenant({
       tenantContext: {
         tenantId: 'tenant-from-ctx',
@@ -618,7 +618,7 @@ describe('Tenant Simulator - 边界与异常', () => {
     assert.equal(result.effectiveMarketCode, 'zh-CN')
   })
 
-  test('roles 和 permissions 透传正确', () => {
+  it('roles 和 permissions 透传正确', () => {
     const actor: RequestActorContext = {
       actorId: 'multi-role-user',
       actorType: 'employee-user',
@@ -647,14 +647,14 @@ describe('Tenant Simulator - 边界与异常', () => {
 // ─── 工厂函数测试 ───
 
 describe('Tenant Simulator - 工厂函数', () => {
-  test('createDefaultTenantContext 使用默认值', () => {
+  it('createDefaultTenantContext 使用默认值', () => {
     const ctx = createDefaultTenantContext()
 
     assert.equal(ctx.tenantId, DEFAULT_TENANT_ID)
     assert.equal(ctx.marketCode, DEFAULT_MARKET_CODE)
   })
 
-  test('createDefaultTenantContext 支持局部覆盖', () => {
+  it('createDefaultTenantContext 支持局部覆盖', () => {
     const ctx = createDefaultTenantContext({
       tenantId: 'custom-tenant',
       brandId: 'custom-brand'
@@ -665,7 +665,7 @@ describe('Tenant Simulator - 工厂函数', () => {
     assert.equal(ctx.marketCode, DEFAULT_MARKET_CODE)
   })
 
-  test('createEmptyResolvedActorContext 使用默认值', () => {
+  it('createEmptyResolvedActorContext 使用默认值', () => {
     const ctx = createEmptyResolvedActorContext()
 
     assert.equal(ctx.authenticated, false)
@@ -675,7 +675,7 @@ describe('Tenant Simulator - 工厂函数', () => {
     assert.deepStrictEqual(ctx.roles, [])
   })
 
-  test('createEmptyResolvedActorContext 支持局部覆盖', () => {
+  it('createEmptyResolvedActorContext 支持局部覆盖', () => {
     const ctx = createEmptyResolvedActorContext({
       authenticated: true,
       effectiveTenantId: 'custom-tenant',

@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { CashierOrderItemDto } from '../cashier/cashier.dto'
 import {
   BatchAssignTransactionRefundsDto,
@@ -17,7 +17,7 @@ import {
 } from './transactions.dto'
 
 describe('transactions.dto', () => {
-  test('CreateTransactionCheckoutDto accepts member, items, and payment channel', () => {
+  it('CreateTransactionCheckoutDto accepts member, items, and payment channel', () => {
     const dto = new CreateTransactionCheckoutDto()
     dto.memberId = 'mem-1'
     dto.paymentChannel = 'wechat-pay'
@@ -33,7 +33,7 @@ describe('transactions.dto', () => {
     assert.equal(dto.items[0].quantity, 2)
   })
 
-  test('CreateTransactionCheckoutDto supports optional blindbox fields', () => {
+  it('CreateTransactionCheckoutDto supports optional blindbox fields', () => {
     const dto = new CreateTransactionCheckoutDto()
     dto.memberId = 'mem-2'
     dto.paymentChannel = 'alipay'
@@ -45,7 +45,7 @@ describe('transactions.dto', () => {
     assert.equal(dto.blindboxQuantity, 5)
   })
 
-  test('CreateTransactionCheckoutDto supports optional amount and externalPaymentId', () => {
+  it('CreateTransactionCheckoutDto supports optional amount and externalPaymentId', () => {
     const dto = new CreateTransactionCheckoutDto()
     dto.memberId = 'mem-3'
     dto.paymentChannel = 'bank-transfer'
@@ -57,12 +57,12 @@ describe('transactions.dto', () => {
     assert.equal(dto.externalPaymentId, 'ext-tx-001')
   })
 
-  test('CreateTransactionCheckoutDto is a class instance', () => {
+  it('CreateTransactionCheckoutDto is a class instance', () => {
     const dto = new CreateTransactionCheckoutDto()
     assert.ok(dto instanceof CreateTransactionCheckoutDto)
   })
 
-  test('RequestTransactionRefundDto supports optional amount and operator', () => {
+  it('RequestTransactionRefundDto supports optional amount and operator', () => {
     const dto = new RequestTransactionRefundDto()
     dto.reason = 'customer-request'
     dto.refundAmount = 88
@@ -73,7 +73,7 @@ describe('transactions.dto', () => {
     assert.equal(dto.operator, 'cashier-1')
   })
 
-  test('ReviewTransactionRefundDto supports optional operator and note', () => {
+  it('ReviewTransactionRefundDto supports optional operator and note', () => {
     const dto = new ReviewTransactionRefundDto()
     dto.operator = 'ops-reviewer'
     dto.note = 'risk-cleared'
@@ -82,7 +82,7 @@ describe('transactions.dto', () => {
     assert.equal(dto.note, 'risk-cleared')
   })
 
-  test('BatchReviewTransactionRefundsDto supports refundIds plus review fields', () => {
+  it('BatchReviewTransactionRefundsDto supports refundIds plus review fields', () => {
     const dto = new BatchReviewTransactionRefundsDto()
     dto.refundIds = ['refund-1', 'refund-2']
     dto.operator = 'ops-batch'
@@ -94,7 +94,7 @@ describe('transactions.dto', () => {
     assert.equal(dto.note, 'batched')
   })
 
-  test('BatchAssignTransactionRefundsDto supports suggestedOwner, assignee, and filters', () => {
+  it('BatchAssignTransactionRefundsDto supports suggestedOwner, assignee, and filters', () => {
     const dto = new BatchAssignTransactionRefundsDto()
     dto.refundIds = ['refund-10']
     dto.suggestedOwner = 'refund-ops-manager'
@@ -111,7 +111,7 @@ describe('transactions.dto', () => {
     assert.equal(dto.dispatchQueueLimit, 5)
   })
 
-  test('BatchClaimTransactionRefundsDto supports suggestedOwner and operator', () => {
+  it('BatchClaimTransactionRefundsDto supports suggestedOwner and operator', () => {
     const dto = new BatchClaimTransactionRefundsDto()
     dto.suggestedOwner = 'refund-team-lead'
     dto.operator = 'ops-claimer'
@@ -124,7 +124,7 @@ describe('transactions.dto', () => {
     assert.equal(dto.limit, 2)
   })
 
-  test('RequestTransactionTimeoutCloseDto supports optional reason and operator', () => {
+  it('RequestTransactionTimeoutCloseDto supports optional reason and operator', () => {
     const dto = new RequestTransactionTimeoutCloseDto()
     dto.reason = 'payment-timeout'
     dto.operator = 'system-cron'
@@ -133,7 +133,7 @@ describe('transactions.dto', () => {
     assert.equal(dto.operator, 'system-cron')
   })
 
-  test('RequestTransactionManualCloseDto supports optional reason and operator', () => {
+  it('RequestTransactionManualCloseDto supports optional reason and operator', () => {
     const dto = new RequestTransactionManualCloseDto()
     dto.reason = 'customer-cancelled'
     dto.operator = 'ops-a'
@@ -142,7 +142,7 @@ describe('transactions.dto', () => {
     assert.equal(dto.operator, 'ops-a')
   })
 
-  test('ListTransactionOrdersQueryDto supports filter fields', () => {
+  it('ListTransactionOrdersQueryDto supports filter fields', () => {
     const dto = new ListTransactionOrdersQueryDto()
     dto.memberId = 'mem-1'
     dto.status = 'CLOSED'
@@ -159,7 +159,7 @@ describe('transactions.dto', () => {
     assert.equal(dto.limit, 20)
   })
 
-  test('ListTransactionRefundsQueryDto supports refund filter fields', () => {
+  it('ListTransactionRefundsQueryDto supports refund filter fields', () => {
     const dto = new ListTransactionRefundsQueryDto()
     dto.memberId = 'mem-9'
     dto.orderId = 'order-9'
@@ -184,7 +184,7 @@ describe('transactions.dto', () => {
     assert.equal(dto.limit, 5)
   })
 
-  test('GetTransactionRefundDashboardQueryDto supports refund filters and recentReviewLimit', () => {
+  it('GetTransactionRefundDashboardQueryDto supports refund filters and recentReviewLimit', () => {
     const dto = new GetTransactionRefundDashboardQueryDto()
     dto.status = 'PENDING'
     dto.reviewedBy = 'ops-1'
@@ -209,7 +209,7 @@ describe('transactions.dto', () => {
     assert.equal(dto.asOfTime, '2026-06-16T00:00:00.000Z')
   })
 
-  test('BatchTimeoutCloseOrdersDto supports batch selectors', () => {
+  it('BatchTimeoutCloseOrdersDto supports batch selectors', () => {
     const dto = new BatchTimeoutCloseOrdersDto()
     dto.orderIds = ['order-1', 'order-2']
     dto.memberId = 'mem-2'

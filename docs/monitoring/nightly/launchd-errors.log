@@ -1,0 +1,6 @@
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/nightly-jobs.sh: Operation not permitted
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/nightly-jobs.sh: Operation not permitted
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/nightly-jobs.sh: Operation not permitted

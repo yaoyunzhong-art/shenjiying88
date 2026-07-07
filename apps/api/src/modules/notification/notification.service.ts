@@ -1,4 +1,12 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable, OnModuleInit, Optional } from '@nestjs/common'
+import {
+  CACHE_SERVICE,
+  type CacheService
+} from '../../infrastructure/cache/cache.module'
+import {
+  EVENT_BUS_SERVICE,
+  type EventBusService
+} from '../../infrastructure/event-bus/event-bus.module'
 import {
   FoundationScopeType,
   NotificationChannelType,
@@ -8,9 +16,21 @@ import {
   type NotificationDispatch,
   type NotificationTemplate
 } from './notification.entity'
+import { MetricsService } from '../observability/metrics.service'
 
 const templateStore = new Map<string, NotificationTemplate>()
 const dispatchStore = new Map<string, NotificationDispatch>()
+
+/**
+ * Cache 持久化 TTL — 30 天
+ * 通知模板 + dispatch 记录,跨进程重启需要持久化
+ */
+const NOTIFICATION_CACHE_TTL_SECONDS = 30 * 24 * 3600
+
+/** EventBus event name for async notification dispatch */
+export const NOTIFICATION_REQUESTED_EVENT = 'NotificationRequested'
+export const NOTIFICATION_COMPLETED_EVENT = 'NotificationCompleted'
+export const NOTIFICATION_FAILED_EVENT = 'NotificationFailed'
 
 export function resetNotificationServiceTestState() {
   templateStore.clear()
@@ -18,7 +38,87 @@ export function resetNotificationServiceTestState() {
 }
 
 @Injectable()
-export class NotificationService {
+export class NotificationService implements OnModuleInit {
+  private asyncSubscribed = false
+
+  constructor(
+    @Optional() @Inject(CACHE_SERVICE) private readonly cache?: CacheService,
+    @Optional() @Inject(EVENT_BUS_SERVICE) private readonly eventBus?: EventBusService,
+    @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService
+  ) {
+    this.registerMetrics()
+  }
+
+  onModuleInit(): void {
+    if (this.eventBus && !this.asyncSubscribed) {
+      this.eventBus.subscribe<{
+        templateCode?: string
+        channel: NotificationChannelType
+        scopeType: FoundationScopeType
+        tenantId?: string
+        brandId?: string
+        storeId?: string
+        recipient: string
+        payload: Record<string, unknown>
+        scheduledAt?: string
+      }>(NOTIFICATION_REQUESTED_EVENT, (payload) => {
+        this.executeAsyncSend(payload)
+      })
+      this.asyncSubscribed = true
+    }
+  }
+
+  private registerMetrics(): void {
+    if (!this.metrics) return
+    this.metrics.registerCounter(
+      'notification_dispatches_total',
+      'Total number of notification dispatch attempts, labeled by channel and status.'
+    )
+    this.metrics.registerCounter(
+      'notification_enqueued_total',
+      'Total number of notification dispatches enqueued, labeled by channel.'
+    )
+    this.metrics.registerHistogram(
+      'notification_dispatch_duration_ms',
+      'Notification dispatch latency in milliseconds, labeled by channel and status.'
+    )
+  }
+
+  private recordDispatchMetrics(dispatch: NotificationDispatch, startedAt: number): void {
+    if (!this.metrics) return
+    const labels = {
+      channel: dispatch.channel,
+      status: dispatch.status,
+      tenantId: dispatch.tenantId ?? 'unknown'
+    }
+    this.metrics.incrementCounter('notification_dispatches_total', labels)
+    this.metrics.observeHistogram(
+      'notification_dispatch_duration_ms',
+      Math.max(Date.now() - startedAt, 0),
+      labels
+    )
+  }
+
+  /** 将 template 同步到 cache (write-through) */
+  private async persistTemplateToCache(template: NotificationTemplate): Promise<void> {
+    if (!this.cache) return
+    try {
+      await this.cache.set(`notification:template:${template.id}`, template, NOTIFICATION_CACHE_TTL_SECONDS)
+    } catch {
+      // 持久化失败不影响主流程
+    }
+  }
+
+  /** 将 dispatch 同步到 cache (write-through) */
+  private async persistDispatchToCache(dispatch: NotificationDispatch): Promise<void> {
+    if (!this.cache) return
+    try {
+      await this.cache.set(`notification:dispatch:${dispatch.id}`, dispatch, NOTIFICATION_CACHE_TTL_SECONDS)
+    } catch {
+      // 持久化失败不影响主流程
+    }
+  }
+
   // ── Template management ──
 
   registerTemplate(input: {
@@ -37,6 +137,7 @@ export class NotificationService {
   }): NotificationTemplate {
     const template = toNotificationTemplate(input)
     templateStore.set(template.id, template)
+    void this.persistTemplateToCache(template)
     return template
   }
 
@@ -79,11 +180,15 @@ export class NotificationService {
       updatedAt: new Date().toISOString()
     }
     templateStore.set(id, updated)
+    void this.persistTemplateToCache(updated)
     return updated
   }
 
   // ── Dispatch management ──
 
+  /**
+   * 同步发送:立即触发 simulateSend
+   */
   send(input: {
     templateCode?: string
     channel: NotificationChannelType
@@ -95,6 +200,7 @@ export class NotificationService {
     payload: Record<string, unknown>
     scheduledAt?: string
   }): NotificationDispatch {
+    const startedAt = Date.now()
     let templateId: string | undefined
     if (input.templateCode) {
       const tpl = this.findTemplateByCode(input.templateCode)
@@ -115,7 +221,135 @@ export class NotificationService {
 
     dispatchStore.set(dispatch.id, dispatch)
     this.simulateSend(dispatch)
-    return dispatchStore.get(dispatch.id)!
+    const updated = dispatchStore.get(dispatch.id)!
+    this.recordDispatchMetrics(updated, startedAt)
+    void this.persistDispatchToCache(updated)
+    return updated
+  }
+
+  /**
+   * 异步发送 (Phase-13 task 10):publish 到 EventBus,handler 在后台调度。
+   * - 有 EventBus 时:publish 后立即返回 Pending 状态,handler 异步触发 simulateSend
+   * - 无 EventBus 时:fallback 到同步 send() (保持向后兼容)
+   */
+  enqueue(input: {
+    templateCode?: string
+    channel: NotificationChannelType
+    scopeType: FoundationScopeType
+    tenantId?: string
+    brandId?: string
+    storeId?: string
+    recipient: string
+    payload: Record<string, unknown>
+    scheduledAt?: string
+  }): NotificationDispatch {
+    if (!this.eventBus) {
+      // 无 EventBus,fallback 同步 send
+      return this.send(input)
+    }
+
+    let templateId: string | undefined
+    if (input.templateCode) {
+      const tpl = this.findTemplateByCode(input.templateCode)
+      templateId = tpl?.id
+    }
+
+    const dispatch = toNotificationDispatch({
+      templateId,
+      channel: input.channel,
+      scopeType: input.scopeType,
+      tenantId: input.tenantId,
+      brandId: input.brandId,
+      storeId: input.storeId,
+      recipient: input.recipient,
+      payload: input.payload,
+      scheduledAt: input.scheduledAt,
+      status: NotificationStatus.Pending
+    })
+
+    dispatchStore.set(dispatch.id, dispatch)
+    void this.persistDispatchToCache(dispatch)
+    this.metrics?.incrementCounter('notification_enqueued_total', {
+      channel: input.channel,
+      tenantId: input.tenantId ?? 'unknown'
+    })
+
+    void this.eventBus.publish(NOTIFICATION_REQUESTED_EVENT, { ...input, dispatchId: dispatch.id }, {
+      tenantId: input.tenantId
+    })
+
+    return dispatch
+  }
+
+  /**
+   * EventBus handler:执行实际的发送逻辑 (复用 enqueue 时创建的 dispatch id)
+   */
+  private executeAsyncSend(input: {
+    templateCode?: string
+    channel: NotificationChannelType
+    scopeType: FoundationScopeType
+    tenantId?: string
+    brandId?: string
+    storeId?: string
+    recipient: string
+    payload: Record<string, unknown>
+    scheduledAt?: string
+    dispatchId?: string
+  }): void {
+    const startedAt = Date.now()
+    const existingId = input.dispatchId
+    let templateId: string | undefined
+    if (input.templateCode) {
+      const tpl = this.findTemplateByCode(input.templateCode)
+      templateId = tpl?.id
+    }
+
+    let dispatch: NotificationDispatch
+    if (existingId) {
+      // 复用 enqueue 时创建的 Pending dispatch,直接更新
+      const existing = dispatchStore.get(existingId)
+      if (existing) {
+        dispatch = { ...existing, updatedAt: new Date().toISOString() }
+      } else {
+        dispatch = toNotificationDispatch({
+          templateId,
+          channel: input.channel,
+          scopeType: input.scopeType,
+          tenantId: input.tenantId,
+          brandId: input.brandId,
+          storeId: input.storeId,
+          recipient: input.recipient,
+          payload: input.payload,
+          scheduledAt: input.scheduledAt
+        })
+      }
+    } else {
+      dispatch = toNotificationDispatch({
+        templateId,
+        channel: input.channel,
+        scopeType: input.scopeType,
+        tenantId: input.tenantId,
+        brandId: input.brandId,
+        storeId: input.storeId,
+        recipient: input.recipient,
+        payload: input.payload,
+        scheduledAt: input.scheduledAt
+      })
+    }
+
+    dispatchStore.set(dispatch.id, dispatch)
+    this.simulateSend(dispatch)
+    const updated = dispatchStore.get(dispatch.id)!
+    this.recordDispatchMetrics(updated, startedAt)
+    void this.persistDispatchToCache(updated)
+
+    const completedEvent = updated.status === NotificationStatus.Sent
+      ? NOTIFICATION_COMPLETED_EVENT
+      : NOTIFICATION_FAILED_EVENT
+    void this.eventBus?.publish(completedEvent, updated, {
+      tenantId: input.tenantId,
+      dispatchId: dispatch.id
+    })
   }
 
   getDispatch(id: string): NotificationDispatch | undefined {
@@ -148,8 +382,12 @@ export class NotificationService {
       updatedAt: new Date().toISOString()
     }
     dispatchStore.set(id, updated)
+    const startedAt = Date.now()
     this.simulateSend(updated)
-    return dispatchStore.get(id)!
+    const finalDispatch = dispatchStore.get(id)!
+    this.recordDispatchMetrics(finalDispatch, startedAt)
+    void this.persistDispatchToCache(finalDispatch)
+    return finalDispatch
   }
 
   cancelDispatch(id: string): NotificationDispatch | undefined {
@@ -163,13 +401,75 @@ export class NotificationService {
       updatedAt: new Date().toISOString()
     }
     dispatchStore.set(id, updated)
+    void this.persistDispatchToCache(updated)
     return updated
+  }
+
+  // ── Renewal Notifications ──
+
+  sendRenewalSuccessNotification(input: {
+    tenantId: string;
+    licenseId: string;
+    packageName: string;
+    newExpireAt: Date;
+  }): void {
+    this.send({
+      channel: NotificationChannelType.Email,
+      scopeType: FoundationScopeType.Tenant,
+      tenantId: input.tenantId,
+      recipient: `${input.tenantId}-admin`,
+      payload: {
+        type: 'renewal_success',
+        licenseId: input.licenseId,
+        packageName: input.packageName,
+        newExpireAt: input.newExpireAt.toISOString(),
+      },
+    });
+  }
+
+  sendRenewalFailureNotification(input: {
+    tenantId: string;
+    licenseId: string;
+    packageName: string;
+    errorMessage: string;
+  }): void {
+    this.send({
+      channel: NotificationChannelType.Email,
+      scopeType: FoundationScopeType.Tenant,
+      tenantId: input.tenantId,
+      recipient: `${input.tenantId}-admin`,
+      payload: {
+        type: 'renewal_failure',
+        licenseId: input.licenseId,
+        packageName: input.packageName,
+        errorMessage: input.errorMessage,
+      },
+    });
+  }
+
+  sendRenewalReminderNotification(input: {
+    tenantId: string;
+    licenseId: string;
+    daysBeforeExpiration: number;
+    expireAt: Date;
+  }): void {
+    this.send({
+      channel: NotificationChannelType.Email,
+      scopeType: FoundationScopeType.Tenant,
+      tenantId: input.tenantId,
+      recipient: `${input.tenantId}-admin`,
+      payload: {
+        type: 'renewal_reminder',
+        licenseId: input.licenseId,
+        daysBeforeExpiration: input.daysBeforeExpiration,
+        expireAt: input.expireAt.toISOString(),
+      },
+    });
   }
 
   // ── Internal ──
 
   private simulateSend(dispatch: NotificationDispatch): void {
-    // Simulate async sending: mark as sent after small delay, or failed randomly
     const shouldFail = dispatch.recipient.includes('fail')
     const updated: NotificationDispatch = {
       ...dispatch,
@@ -181,5 +481,6 @@ export class NotificationService {
       updatedAt: new Date().toISOString()
     }
     dispatchStore.set(dispatch.id, updated)
+    void this.persistDispatchToCache(updated)
   }
 }

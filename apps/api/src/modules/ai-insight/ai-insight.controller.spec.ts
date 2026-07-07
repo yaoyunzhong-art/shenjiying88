@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-insight] [D] controller spec 补全
  * AiInsightController 单元测试 (node:test)
@@ -8,8 +9,6 @@
  */
 
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
-
 // ── Entity mirrors ───────────────────────────────────────────
 function makeKPI(overrides: Record<string, unknown> = {}) {
   return {
@@ -63,16 +62,16 @@ function makeDashboardSummary(overrides: Record<string, unknown> = {}) {
 
 // ── Mock Service Factory ─────────────────────────────────────
 function makeMockService(initialKPIs?: any[]) {
-  let kpis = initialKPIs ?? [makeKPI()]
+  const kpis = initialKPIs ?? [makeKPI()]
 
-  let anomalies: any[] = [
+  const anomalies: any[] = [
     makeAnomaly({ id: 'anomaly-open-1', status: 'open' }),
     makeAnomaly({ id: 'anomaly-ack-1', status: 'acknowledged' }),
     makeAnomaly({ id: 'anomaly-resolved-1', status: 'resolved', resolvedAt: new Date().toISOString() }),
   ]
 
-  let reports: any[] = []
-  let trends: any[] = []
+  const reports: any[] = []
+  const trends: any[] = []
 
   return {
     getKPIs: (tenantId: string, storeId?: string, category?: string) => {
@@ -197,7 +196,7 @@ class AiInsightController {
 describe('AiInsightController', () => {
   // ── KPI 看板 ──
   describe('getKPIs()', () => {
-    test('returns KPIs for tenant', () => {
+    it('returns KPIs for tenant', () => {
       const ctrl = new AiInsightController(makeMockService())
       const result = ctrl.getKPIs('t-001', {})
       assert.ok(Array.isArray(result))
@@ -205,20 +204,20 @@ describe('AiInsightController', () => {
       assert.equal(result[0].name, '日营收')
     })
 
-    test('filters by storeId and category', () => {
+    it('filters by storeId and category', () => {
       const ctrl = new AiInsightController(makeMockService())
       const result = ctrl.getKPIs('t-001', { storeId: 'store-01', category: 'revenue' })
       assert.ok(result.length > 0)
     })
 
-    test('returns empty for non-existent tenant', () => {
+    it('returns empty for non-existent tenant', () => {
       const ctrl = new AiInsightController(makeMockService())
       assert.equal(ctrl.getKPIs('ghost', {}).length, 0)
     })
   })
 
   describe('getKPIDetail()', () => {
-    test('returns a KPI by id', () => {
+    it('returns a KPI by id', () => {
       const ctrl = new AiInsightController(makeMockService())
       const detail = ctrl.getKPIDetail('kpi-test-01')
       assert.ok(detail)
@@ -226,7 +225,7 @@ describe('AiInsightController', () => {
       assert.equal(detail.name, '日营收')
     })
 
-    test('returns undefined for non-existent id', () => {
+    it('returns undefined for non-existent id', () => {
       const ctrl = new AiInsightController(makeMockService())
       assert.equal(ctrl.getKPIDetail('no-such-kpi'), undefined)
     })
@@ -234,7 +233,7 @@ describe('AiInsightController', () => {
 
   // ── 洞察报告 ──
   describe('generateReport()', () => {
-    test('generates a revenue report', () => {
+    it('generates a revenue report', () => {
       const ctrl = new AiInsightController(makeMockService())
       const report = ctrl.generateReport('t-001', {
         type: 'revenue', storeId: 'store-01',
@@ -245,7 +244,7 @@ describe('AiInsightController', () => {
       assert.equal(report.tenantId, 't-001')
     })
 
-    test('generates report without storeId', () => {
+    it('generates report without storeId', () => {
       const ctrl = new AiInsightController(makeMockService())
       const report = ctrl.generateReport('t-001', {
         type: 'member',
@@ -257,19 +256,19 @@ describe('AiInsightController', () => {
   })
 
   describe('getReports()', () => {
-    test('returns empty when no reports exist', () => {
+    it('returns empty when no reports exist', () => {
       const ctrl = new AiInsightController(makeMockService())
       assert.equal(ctrl.getReports('t-001', {}).length, 0)
     })
 
-    test('returns reports after generation', () => {
+    it('returns reports after generation', () => {
       const ctrl = new AiInsightController(makeMockService())
       ctrl.generateReport('t-001', { type: 'revenue', periodStart: '2026-06-01', periodEnd: '2026-06-07' })
       ctrl.generateReport('t-001', { type: 'member', periodStart: '2026-06-01', periodEnd: '2026-06-07' })
       assert.equal(ctrl.getReports('t-001', {}).length, 2)
     })
 
-    test('filters by type', () => {
+    it('filters by type', () => {
       const ctrl = new AiInsightController(makeMockService())
       ctrl.generateReport('t-001', { type: 'revenue', periodStart: '2026-06-01', periodEnd: '2026-06-07' })
       ctrl.generateReport('t-001', { type: 'member', periodStart: '2026-06-01', periodEnd: '2026-06-07' })
@@ -278,7 +277,7 @@ describe('AiInsightController', () => {
       assert.equal(revenue[0].type, 'revenue')
     })
 
-    test('limits results', () => {
+    it('limits results', () => {
       const ctrl = new AiInsightController(makeMockService())
       for (let i = 0; i < 5; i++) {
         ctrl.generateReport('t-001', { type: 'kpi', periodStart: '2026-06-01', periodEnd: '2026-06-07' })
@@ -286,7 +285,7 @@ describe('AiInsightController', () => {
       assert.ok(ctrl.getReports('t-001', { limit: 3 }).length <= 3)
     })
 
-    test('returns empty for non-existent tenant', () => {
+    it('returns empty for non-existent tenant', () => {
       const ctrl = new AiInsightController(makeMockService())
       assert.equal(ctrl.getReports('ghost', {}).length, 0)
     })
@@ -294,7 +293,7 @@ describe('AiInsightController', () => {
 
   // ── 异常检测 ──
   describe('detectAnomalies()', () => {
-    test('detects anomalies', () => {
+    it('detects anomalies', () => {
       const ctrl = new AiInsightController(makeMockService())
       const result = ctrl.detectAnomalies('t-001', {})
       assert.ok(Array.isArray(result))
@@ -304,13 +303,13 @@ describe('AiInsightController', () => {
   })
 
   describe('getAnomalies()', () => {
-    test('returns all anomalies for tenant', () => {
+    it('returns all anomalies for tenant', () => {
       const ctrl = new AiInsightController(makeMockService())
       const result = ctrl.getAnomalies('t-001', {})
       assert.equal(result.length, 3)
     })
 
-    test('filters by status', () => {
+    it('filters by status', () => {
       const ctrl = new AiInsightController(makeMockService())
       const open = ctrl.getAnomalies('t-001', { status: 'open' })
       assert.ok(open.every((a: any) => a.status === 'open'))
@@ -318,26 +317,26 @@ describe('AiInsightController', () => {
       assert.ok(resolved.every((a: any) => a.status === 'resolved'))
     })
 
-    test('returns empty for non-existent tenant', () => {
+    it('returns empty for non-existent tenant', () => {
       const ctrl = new AiInsightController(makeMockService())
       assert.equal(ctrl.getAnomalies('ghost', {}).length, 0)
     })
   })
 
   describe('acknowledgeAnomaly()', () => {
-    test('acknowledges an open anomaly', () => {
+    it('acknowledges an open anomaly', () => {
       const ctrl = new AiInsightController(makeMockService())
       const result = ctrl.acknowledgeAnomaly('anomaly-open-1')
       assert.ok(result)
       assert.equal(result.status, 'acknowledged')
     })
 
-    test('returns undefined for non-existent anomaly', () => {
+    it('returns undefined for non-existent anomaly', () => {
       const ctrl = new AiInsightController(makeMockService())
       assert.equal(ctrl.acknowledgeAnomaly('non-existent'), undefined)
     })
 
-    test('does not change already resolved anomaly', () => {
+    it('does not change already resolved anomaly', () => {
       const ctrl = new AiInsightController(makeMockService())
       const result = ctrl.acknowledgeAnomaly('anomaly-resolved-1')
       assert.ok(result)
@@ -346,7 +345,7 @@ describe('AiInsightController', () => {
   })
 
   describe('resolveAnomaly()', () => {
-    test('resolves an open anomaly', () => {
+    it('resolves an open anomaly', () => {
       const ctrl = new AiInsightController(makeMockService())
       const result = ctrl.resolveAnomaly('anomaly-open-1', { anomalyId: 'anomaly-open-1' })
       assert.ok(result)
@@ -354,14 +353,14 @@ describe('AiInsightController', () => {
       assert.ok(result.resolvedAt)
     })
 
-    test('resolves an acknowledged anomaly', () => {
+    it('resolves an acknowledged anomaly', () => {
       const ctrl = new AiInsightController(makeMockService())
       const result = ctrl.resolveAnomaly('anomaly-ack-1', { anomalyId: 'anomaly-ack-1' })
       assert.ok(result)
       assert.equal(result.status, 'resolved')
     })
 
-    test('returns undefined for non-existent anomaly', () => {
+    it('returns undefined for non-existent anomaly', () => {
       const ctrl = new AiInsightController(makeMockService())
       assert.equal(ctrl.resolveAnomaly('ghost', { anomalyId: 'ghost' }), undefined)
     })
@@ -369,7 +368,7 @@ describe('AiInsightController', () => {
 
   // ── 趋势预测 ──
   describe('generateForecast()', () => {
-    test('generates forecast', () => {
+    it('generates forecast', () => {
       const ctrl = new AiInsightController(makeMockService())
       const trend = ctrl.generateForecast('t-001', { metric: '日营收', period: 'daily' })
       assert.ok(trend)
@@ -379,7 +378,7 @@ describe('AiInsightController', () => {
       assert.ok(trend.confidence > 0)
     })
 
-    test('generates forecast for any metric', () => {
+    it('generates forecast for any metric', () => {
       const ctrl = new AiInsightController(makeMockService())
       const trend = ctrl.generateForecast('t-001', { metric: 'unknown-metric', period: 'daily' })
       assert.ok(trend)
@@ -388,7 +387,7 @@ describe('AiInsightController', () => {
   })
 
   describe('getForecast()', () => {
-    test('returns forecast by id', () => {
+    it('returns forecast by id', () => {
       const ctrl = new AiInsightController(makeMockService())
       const created = ctrl.generateForecast('t-001', { metric: '日营收', period: 'daily' })
       const found = ctrl.getForecast(created.id)
@@ -396,7 +395,7 @@ describe('AiInsightController', () => {
       assert.equal(found.id, created.id)
     })
 
-    test('returns undefined for non-existent trend', () => {
+    it('returns undefined for non-existent trend', () => {
       const ctrl = new AiInsightController(makeMockService())
       assert.equal(ctrl.getForecast('non-existent'), undefined)
     })
@@ -404,7 +403,7 @@ describe('AiInsightController', () => {
 
   // ── 仪表盘 ──
   describe('getDashboardSummary()', () => {
-    test('returns dashboard summary for tenant', () => {
+    it('returns dashboard summary for tenant', () => {
       const ctrl = new AiInsightController(makeMockService())
       const db = ctrl.getDashboardSummary('t-001', {})
       assert.ok(db)
@@ -415,12 +414,12 @@ describe('AiInsightController', () => {
       assert.equal(typeof db.activeAnomalies, 'number')
     })
 
-    test('includes storeId when provided', () => {
+    it('includes storeId when provided', () => {
       const ctrl = new AiInsightController(makeMockService())
       assert.equal(ctrl.getDashboardSummary('t-001', { storeId: 'store-01' }).storeId, 'store-01')
     })
 
-    test('returns valid SummaryPeriod shape', () => {
+    it('returns valid SummaryPeriod shape', () => {
       const ctrl = new AiInsightController(makeMockService())
       const db = ctrl.getDashboardSummary('t-001', {})
       for (const period of [db.today, db.thisWeek, db.thisMonth]) {

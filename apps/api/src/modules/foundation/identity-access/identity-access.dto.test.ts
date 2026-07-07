@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { validateSync } from 'class-validator'
 import {
   AuthorizeActionDto,
@@ -14,7 +14,7 @@ import {
 } from './identity-access.dto'
 
 // ── AuthorizeActionDto ──────────────────────────────────────────
-test('AuthorizeActionDto accepts valid payload', () => {
+it('AuthorizeActionDto accepts valid payload', () => {
   const dto = Object.assign(new AuthorizeActionDto(), {
     action: 'identity-access:read',
     tenantId: 't-001',
@@ -24,26 +24,26 @@ test('AuthorizeActionDto accepts valid payload', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('AuthorizeActionDto accepts action only (all scope fields optional)', () => {
+it('AuthorizeActionDto accepts action only (all scope fields optional)', () => {
   const dto = Object.assign(new AuthorizeActionDto(), { action: 'tenant:read' })
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('AuthorizeActionDto rejects missing action', () => {
+it('AuthorizeActionDto rejects missing action', () => {
   const dto = Object.assign(new AuthorizeActionDto(), { tenantId: 't-001' })
   const errors = validateSync(dto)
   assert.equal(errors.length > 0, true)
   assert.equal(errors[0].property, 'action')
 })
 
-test('AuthorizeActionDto rejects non-string action', () => {
+it('AuthorizeActionDto rejects non-string action', () => {
   const dto = Object.assign(new AuthorizeActionDto(), { action: 123 })
   const errors = validateSync(dto)
   assert.equal(errors.length > 0, true)
 })
 
 // ── ValidateTenantScopeDto ──────────────────────────────────────
-test('ValidateTenantScopeDto accepts valid payload', () => {
+it('ValidateTenantScopeDto accepts valid payload', () => {
   const dto = Object.assign(new ValidateTenantScopeDto(), {
     tenantId: 't-001',
     brandId: 'b-001',
@@ -52,67 +52,67 @@ test('ValidateTenantScopeDto accepts valid payload', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('ValidateTenantScopeDto rejects missing tenantId', () => {
+it('ValidateTenantScopeDto rejects missing tenantId', () => {
   const dto = Object.assign(new ValidateTenantScopeDto(), { brandId: 'b-001' })
   const errors = validateSync(dto)
   assert.equal(errors.length > 0, true)
   assert.equal(errors[0].property, 'tenantId')
 })
 
-test('ValidateTenantScopeDto accepts tenantId only', () => {
+it('ValidateTenantScopeDto accepts tenantId only', () => {
   const dto = Object.assign(new ValidateTenantScopeDto(), { tenantId: 't-001' })
   assert.equal(validateSync(dto).length, 0)
 })
 
 // ── ValidateRoleDto ─────────────────────────────────────────────
-test('ValidateRoleDto accepts valid roles array', () => {
+it('ValidateRoleDto accepts valid roles array', () => {
   const dto = Object.assign(new ValidateRoleDto(), {
     roles: ['tenant-admin', 'platform-admin']
   })
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('ValidateRoleDto rejects missing roles', () => {
+it('ValidateRoleDto rejects missing roles', () => {
   const dto = Object.assign(new ValidateRoleDto(), {})
   const errors = validateSync(dto)
   assert.equal(errors.length > 0, true)
   assert.equal(errors[0].property, 'roles')
 })
 
-test('ValidateRoleDto rejects non-string array elements', () => {
+it('ValidateRoleDto rejects non-string array elements', () => {
   const dto = Object.assign(new ValidateRoleDto(), { roles: [123, 456] })
   const errors = validateSync(dto)
   assert.equal(errors.length > 0, true)
 })
 
-test('ValidateRoleDto accepts empty roles array', () => {
+it('ValidateRoleDto accepts empty roles array', () => {
   const dto = Object.assign(new ValidateRoleDto(), { roles: [] })
   assert.equal(validateSync(dto).length, 0)
 })
 
 // ── ValidatePermissionDto ───────────────────────────────────────
-test('ValidatePermissionDto accepts valid permissions array', () => {
+it('ValidatePermissionDto accepts valid permissions array', () => {
   const dto = Object.assign(new ValidatePermissionDto(), {
     permissions: ['identity-access:read', 'tenant:admin']
   })
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('ValidatePermissionDto rejects missing permissions', () => {
+it('ValidatePermissionDto rejects missing permissions', () => {
   const dto = Object.assign(new ValidatePermissionDto(), {})
   const errors = validateSync(dto)
   assert.equal(errors.length > 0, true)
   assert.equal(errors[0].property, 'permissions')
 })
 
-test('ValidatePermissionDto rejects non-string array elements', () => {
+it('ValidatePermissionDto rejects non-string array elements', () => {
   const dto = Object.assign(new ValidatePermissionDto(), { permissions: [true, false] })
   const errors = validateSync(dto)
   assert.equal(errors.length > 0, true)
 })
 
 // ── AuthorizationDecisionResponseDto ────────────────────────────
-test('AuthorizationDecisionResponseDto accepts allowed status', () => {
+it('AuthorizationDecisionResponseDto accepts allowed status', () => {
   const dto = Object.assign(new AuthorizationDecisionResponseDto(), {
     status: 'allowed',
     action: 'identity-access:read',
@@ -123,7 +123,7 @@ test('AuthorizationDecisionResponseDto accepts allowed status', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('AuthorizationDecisionResponseDto accepts denied status', () => {
+it('AuthorizationDecisionResponseDto accepts denied status', () => {
   const dto = Object.assign(new AuthorizationDecisionResponseDto(), {
     status: 'denied',
     action: 'tenant:admin',
@@ -133,7 +133,7 @@ test('AuthorizationDecisionResponseDto accepts denied status', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('AuthorizationDecisionResponseDto rejects invalid status value', () => {
+it('AuthorizationDecisionResponseDto rejects invalid status value', () => {
   const dto = Object.assign(new AuthorizationDecisionResponseDto(), {
     status: 'unknown',
     action: 'read',
@@ -145,7 +145,7 @@ test('AuthorizationDecisionResponseDto rejects invalid status value', () => {
   assert.equal(errors[0].property, 'status')
 })
 
-test('AuthorizationDecisionResponseDto rejects non-boolean flags', () => {
+it('AuthorizationDecisionResponseDto rejects non-boolean flags', () => {
   const dto = Object.assign(new AuthorizationDecisionResponseDto(), {
     status: 'allowed',
     action: 'read',
@@ -157,7 +157,7 @@ test('AuthorizationDecisionResponseDto rejects non-boolean flags', () => {
 })
 
 // ── ResolvedActorContextResponseDto ─────────────────────────────
-test('ResolvedActorContextResponseDto accepts authenticated actor', () => {
+it('ResolvedActorContextResponseDto accepts authenticated actor', () => {
   const dto = Object.assign(new ResolvedActorContextResponseDto(), {
     authenticated: true,
     effectiveTenantId: 't-001',
@@ -170,7 +170,7 @@ test('ResolvedActorContextResponseDto accepts authenticated actor', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('ResolvedActorContextResponseDto accepts unauthenticated actor', () => {
+it('ResolvedActorContextResponseDto accepts unauthenticated actor', () => {
   const dto = Object.assign(new ResolvedActorContextResponseDto(), {
     authenticated: false,
     roles: [],
@@ -179,7 +179,7 @@ test('ResolvedActorContextResponseDto accepts unauthenticated actor', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('ResolvedActorContextResponseDto rejects missing required fields', () => {
+it('ResolvedActorContextResponseDto rejects missing required fields', () => {
   const dto = Object.assign(new ResolvedActorContextResponseDto(), {
     authenticated: true
   })
@@ -191,7 +191,7 @@ test('ResolvedActorContextResponseDto rejects missing required fields', () => {
 })
 
 // ── IdentityAccessDescriptorResponseDto ─────────────────────────
-test('IdentityAccessDescriptorResponseDto accepts valid descriptor', () => {
+it('IdentityAccessDescriptorResponseDto accepts valid descriptor', () => {
   const dto = Object.assign(new IdentityAccessDescriptorResponseDto(), {
     key: 'identity-access',
     name: 'Identity Access Module',
@@ -202,7 +202,7 @@ test('IdentityAccessDescriptorResponseDto accepts valid descriptor', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('IdentityAccessDescriptorResponseDto rejects missing key', () => {
+it('IdentityAccessDescriptorResponseDto rejects missing key', () => {
   const dto = Object.assign(new IdentityAccessDescriptorResponseDto(), {
     name: 'Test',
     purpose: 'Test purpose',
@@ -215,7 +215,7 @@ test('IdentityAccessDescriptorResponseDto rejects missing key', () => {
 })
 
 // ── AuthenticationStatusResponseDto ─────────────────────────────
-test('AuthenticationStatusResponseDto accepts authenticated actor', () => {
+it('AuthenticationStatusResponseDto accepts authenticated actor', () => {
   const dto = Object.assign(new AuthenticationStatusResponseDto(), {
     authenticated: true,
     actorId: 'user-001',
@@ -226,7 +226,7 @@ test('AuthenticationStatusResponseDto accepts authenticated actor', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('AuthenticationStatusResponseDto accepts unauthenticated actor', () => {
+it('AuthenticationStatusResponseDto accepts unauthenticated actor', () => {
   const dto = Object.assign(new AuthenticationStatusResponseDto(), {
     authenticated: false,
     roles: [],
@@ -235,7 +235,7 @@ test('AuthenticationStatusResponseDto accepts unauthenticated actor', () => {
   assert.equal(validateSync(dto).length, 0)
 })
 
-test('AuthenticationStatusResponseDto rejects missing permissions', () => {
+it('AuthenticationStatusResponseDto rejects missing permissions', () => {
   const dto = Object.assign(new AuthenticationStatusResponseDto(), {
     authenticated: true,
     roles: []

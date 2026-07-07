@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [reservation] E2E 基础测试
  *
@@ -15,7 +16,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   Controller,
   Get,
@@ -172,7 +172,7 @@ async function createReservation(
 // ========== E2E: Reservation CRUD ==========
 
 describe('E2E: Reservation CRUD', () => {
-  test('POST → GET :id → PUT → GET 完整生命周期', async () => {
+  it('POST → GET :id → PUT → GET 完整生命周期', async () => {
     const { app } = await buildApp()
     try {
       const createRes = await createReservation(app)
@@ -204,7 +204,7 @@ describe('E2E: Reservation CRUD', () => {
     }
   })
 
-  test('GET /reservation 列表 + type 过滤', async () => {
+  it('GET /reservation 列表 + type 过滤', async () => {
     const { app } = await buildApp()
     try {
       await createReservation(app, { type: ReservationType.Venue })
@@ -220,7 +220,7 @@ describe('E2E: Reservation CRUD', () => {
     }
   })
 
-  test('GET /reservation/:id 不存在返回 404', async () => {
+  it('GET /reservation/:id 不存在返回 404', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -232,7 +232,7 @@ describe('E2E: Reservation CRUD', () => {
     }
   })
 
-  test('POST 时间倒序 → 服务抛错 → 500', async () => {
+  it('POST 时间倒序 → 服务抛错 → 500', async () => {
     const { app } = await buildApp()
     try {
       const res = await createReservation(app, {
@@ -249,7 +249,7 @@ describe('E2E: Reservation CRUD', () => {
 // ========== E2E: 状态机 ==========
 
 describe('E2E: 状态机转换', () => {
-  test('Pending → Confirmed → InProgress → Completed 完整链路', async () => {
+  it('Pending → Confirmed → InProgress → Completed 完整链路', async () => {
     const { app } = await buildApp()
     try {
       const create = await createReservation(app)
@@ -277,7 +277,7 @@ describe('E2E: 状态机转换', () => {
     }
   })
 
-  test('Pending 不可直接 InProgress', async () => {
+  it('Pending 不可直接 InProgress', async () => {
     const { app } = await buildApp()
     try {
       const create = await createReservation(app)
@@ -291,7 +291,7 @@ describe('E2E: 状态机转换', () => {
     }
   })
 
-  test('Confirmed 不可回退 Pending', async () => {
+  it('Confirmed 不可回退 Pending', async () => {
     const { app } = await buildApp()
     try {
       const create = await createReservation(app)
@@ -309,7 +309,7 @@ describe('E2E: 状态机转换', () => {
     }
   })
 
-  test('Completed 不可再转换', async () => {
+  it('Completed 不可再转换', async () => {
     const { app } = await buildApp()
     try {
       const create = await createReservation(app)
@@ -337,7 +337,7 @@ describe('E2E: 状态机转换', () => {
 // ========== E2E: 取消 ==========
 
 describe('E2E: 取消流程', () => {
-  test('Pending → Cancelled + cancelledReason', async () => {
+  it('Pending → Cancelled + cancelledReason', async () => {
     const { app } = await buildApp()
     try {
       const create = await createReservation(app)
@@ -355,7 +355,7 @@ describe('E2E: 取消流程', () => {
     }
   })
 
-  test('Confirmed 也可取消', async () => {
+  it('Confirmed 也可取消', async () => {
     const { app } = await buildApp()
     try {
       const create = await createReservation(app)
@@ -378,7 +378,7 @@ describe('E2E: 取消流程', () => {
 // ========== E2E: 冲突检测 ==========
 
 describe('E2E: 资源冲突检测', () => {
-  test('同一 resource 同时段 → 第二次 confirm 失败', async () => {
+  it('同一 resource 同时段 → 第二次 confirm 失败', async () => {
     const { app } = await buildApp()
     try {
       const r1 = await createReservation(app, { resourceId: 'res-A' })
@@ -400,7 +400,7 @@ describe('E2E: 资源冲突检测', () => {
     }
   })
 
-  test('不同 resource 不冲突', async () => {
+  it('不同 resource 不冲突', async () => {
     const { app } = await buildApp()
     try {
       const r1 = await createReservation(app, { resourceId: 'res-A' })
@@ -417,7 +417,7 @@ describe('E2E: 资源冲突检测', () => {
     }
   })
 
-  test('相邻时段不冲突', async () => {
+  it('相邻时段不冲突', async () => {
     const { app } = await buildApp()
     try {
       const r1 = await createReservation(app, {
@@ -444,7 +444,7 @@ describe('E2E: 资源冲突检测', () => {
     }
   })
 
-  test('GET /reservation/check/conflict 冲突检测 API', async () => {
+  it('GET /reservation/check/conflict 冲突检测 API', async () => {
     const { app } = await buildApp()
     try {
       const r1 = await createReservation(app, { resourceId: 'res-A' })
@@ -464,7 +464,7 @@ describe('E2E: 资源冲突检测', () => {
     }
   })
 
-  test('GET /reservation/check/conflict 无冲突', async () => {
+  it('GET /reservation/check/conflict 无冲突', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -483,7 +483,7 @@ describe('E2E: 资源冲突检测', () => {
 // ========== E2E: 跨租户隔离 ==========
 
 describe('E2E: 跨租户隔离', () => {
-  test('tenant-B 看不到 tenant-A 的 reservation', async () => {
+  it('tenant-B 看不到 tenant-A 的 reservation', async () => {
     const { app } = await buildApp()
     try {
       const create = await createReservation(app, {}, TENANT_HEADERS)
@@ -497,7 +497,7 @@ describe('E2E: 跨租户隔离', () => {
     }
   })
 
-  test('tenant-B 列表只返回自己的', async () => {
+  it('tenant-B 列表只返回自己的', async () => {
     const { app } = await buildApp()
     try {
       await createReservation(app, { userName: 'A-User' }, TENANT_HEADERS)
@@ -515,7 +515,7 @@ describe('E2E: 跨租户隔离', () => {
     }
   })
 
-  test('tenant-B 无法 confirm tenant-A 的 reservation', async () => {
+  it('tenant-B 无法 confirm tenant-A 的 reservation', async () => {
     const { app } = await buildApp()
     try {
       const create = await createReservation(app, {}, TENANT_HEADERS)

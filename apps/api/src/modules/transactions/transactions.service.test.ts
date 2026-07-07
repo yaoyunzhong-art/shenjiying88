@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { beforeEach, describe } from 'node:test'
 import { BlindboxFulfillmentStatus } from '../loyalty/loyalty.entity'
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { MemberService } from '../member/member.service'
@@ -25,7 +25,7 @@ beforeEach(() => {
 })
 
 describe('TransactionsService', () => {
-  test('syncLytOrderSnapshot stores standard order snapshot for tenant', async () => {
+  it('syncLytOrderSnapshot stores standard order snapshot for tenant', async () => {
     const memberService = new MemberService()
     const loyaltyService = new LoyaltyService(memberService)
     const cashierService = new CashierService(memberService, loyaltyService)
@@ -60,7 +60,7 @@ describe('TransactionsService', () => {
     assert.equal(stored?.blindboxQuantity, 2)
   })
 
-  test('syncLytPaymentSnapshot stores standard payment snapshot for tenant', async () => {
+  it('syncLytPaymentSnapshot stores standard payment snapshot for tenant', async () => {
     const memberService = new MemberService()
     const loyaltyService = new LoyaltyService(memberService)
     const cashierService = new CashierService(memberService, loyaltyService)
@@ -88,7 +88,7 @@ describe('TransactionsService', () => {
     assert.equal(stored?.paymentChannel, 'wechat-pay')
   })
 
-  test('startCheckout creates order + payment and returns aggregate', async () => {
+  it('startCheckout creates order + payment and returns aggregate', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-1',
@@ -112,7 +112,7 @@ describe('TransactionsService', () => {
     assert.equal(aggregate.payment?.channel, 'wechat-pay')
   })
 
-  test('getOrderTransaction returns aggregate for existing order', async () => {
+  it('getOrderTransaction returns aggregate for existing order', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-2',
@@ -136,7 +136,7 @@ describe('TransactionsService', () => {
     assert.ok(aggregate.payment)
   })
 
-  test('getOrderTransaction throws for non-existent order', () => {
+  it('getOrderTransaction throws for non-existent order', () => {
     const memberService = new MemberService()
     const loyaltyService = new LoyaltyService(memberService)
     const cashierService = new CashierService(memberService, loyaltyService)
@@ -148,7 +148,7 @@ describe('TransactionsService', () => {
     )
   })
 
-  test('listOrderTransactions filters by status, close reason and refund flag', async () => {
+  it('listOrderTransactions filters by status, close reason and refund flag', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-list-1',
@@ -199,7 +199,7 @@ describe('TransactionsService', () => {
     assert.equal(refundedOrders.some((entry) => entry.refunds.length > 0), true)
   })
 
-  test('batchTimeoutCloseOrders closes only eligible orders and returns processed ids', async () => {
+  it('batchTimeoutCloseOrders closes only eligible orders and returns processed ids', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-batch-1',
@@ -247,7 +247,7 @@ describe('TransactionsService', () => {
     assert.equal(result.orders.every((entry) => entry.order.closeReason === 'PAYMENT_TIMEOUT'), true)
   })
 
-  test('timeoutCloseOrder closes pending payment order and updates timeline close reason', async () => {
+  it('timeoutCloseOrder closes pending payment order and updates timeline close reason', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-timeout-1',
@@ -279,7 +279,7 @@ describe('TransactionsService', () => {
     assert.ok(timeline[0]?.closedAt)
   })
 
-  test('timeoutCloseOrder rejects paid order', async () => {
+  it('timeoutCloseOrder rejects paid order', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-timeout-2',
@@ -312,7 +312,7 @@ describe('TransactionsService', () => {
     )
   })
 
-  test('manualCloseOrder closes pending payment order and exposes audit fields in timeline', async () => {
+  it('manualCloseOrder closes pending payment order and exposes audit fields in timeline', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-manual-1',
@@ -350,7 +350,7 @@ describe('TransactionsService', () => {
     assert.equal(timeline[0]?.closeNote, 'customer-cancelled')
   })
 
-  test('manualCloseOrder rejects paid order', async () => {
+  it('manualCloseOrder rejects paid order', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-manual-2',
@@ -386,7 +386,7 @@ describe('TransactionsService', () => {
     )
   })
 
-  test('applyPaymentCallback updates order and returns aggregate', async () => {
+  it('applyPaymentCallback updates order and returns aggregate', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-3',
@@ -419,7 +419,7 @@ describe('TransactionsService', () => {
     assert.ok(result.pointsLedger.length >= 1)
   })
 
-  test('listMemberTransactions returns sorted timeline for member', async () => {
+  it('listMemberTransactions returns sorted timeline for member', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-4',
@@ -453,7 +453,7 @@ describe('TransactionsService', () => {
     }
   })
 
-  test('listMemberTransactions returns empty for member with no orders', () => {
+  it('listMemberTransactions returns empty for member with no orders', () => {
     const memberService = new MemberService()
     const loyaltyService = new LoyaltyService(memberService)
     const cashierService = new CashierService(memberService, loyaltyService)
@@ -464,7 +464,7 @@ describe('TransactionsService', () => {
     assert.equal(timeline.length, 0)
   })
 
-  test('requestRefund creates pending refund and keeps paid order unchanged before review', async () => {
+  it('requestRefund creates pending refund and keeps paid order unchanged before review', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-1',
@@ -518,7 +518,7 @@ describe('TransactionsService', () => {
     assert.equal(timeline[0]?.blindboxStatus, BlindboxFulfillmentStatus.Fulfilled)
   })
 
-  test('approveRefund completes full refund and closes paid order', async () => {
+  it('approveRefund completes full refund and closes paid order', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-approve-1',
@@ -588,7 +588,7 @@ describe('TransactionsService', () => {
     assert.equal(timeline[0]?.blindboxStatus, BlindboxFulfillmentStatus.Revoked)
   })
 
-  test('approveRefund supports partial refund and keeps order paid', async () => {
+  it('approveRefund supports partial refund and keeps order paid', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-2',
@@ -646,7 +646,7 @@ describe('TransactionsService', () => {
     )
   })
 
-  test('rejectRefund marks pending refund as rejected without loyalty rollback', async () => {
+  it('rejectRefund marks pending refund as rejected without loyalty rollback', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-reject-1',
@@ -697,7 +697,7 @@ describe('TransactionsService', () => {
     assert.equal(timeline[0]?.refundStatus, TransactionRefundStatus.Rejected)
   })
 
-  test('requestRefund rejects over-refund amount', async () => {
+  it('requestRefund rejects over-refund amount', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-3',
@@ -734,7 +734,7 @@ describe('TransactionsService', () => {
     )
   })
 
-  test('listRefunds filters by member, operator and status', async () => {
+  it('listRefunds filters by member, operator and status', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-list-1',
@@ -799,7 +799,7 @@ describe('TransactionsService', () => {
     assert.equal(filtered[0]?.status, TransactionRefundStatus.Pending)
   })
 
-  test('listRefunds filters by reviewedBy after approval', async () => {
+  it('listRefunds filters by reviewedBy after approval', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-reviewed-1',
@@ -842,7 +842,7 @@ describe('TransactionsService', () => {
     assert.equal(filtered[0]?.reviewedBy, 'ops-reviewer-a')
   })
 
-  test('listPendingRefunds returns pending queue sorted by requestedAt asc', async () => {
+  it('listPendingRefunds returns pending queue sorted by requestedAt asc', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-pending-queue-1',
@@ -904,7 +904,7 @@ describe('TransactionsService', () => {
     assert.ok(firstIndex < secondIndex)
   })
 
-  test('listRefunds filters by requestedAt and reviewedAt windows', async () => {
+  it('listRefunds filters by requestedAt and reviewedAt windows', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-window-1',
@@ -955,7 +955,7 @@ describe('TransactionsService', () => {
     assert.equal(reviewedWindow.some((entry) => entry.refundId === refund.refundId), true)
   })
 
-  test('batchApproveRefunds processes pending refunds and skips invalid targets', async () => {
+  it('batchApproveRefunds processes pending refunds and skips invalid targets', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-batch-approve-1',
@@ -1025,7 +1025,7 @@ describe('TransactionsService', () => {
     assert.ok(result.auditSummary.processedAt)
   })
 
-  test('batchRejectRefunds processes pending refunds and skips already reviewed ones', async () => {
+  it('batchRejectRefunds processes pending refunds and skips already reviewed ones', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-batch-reject-1',
@@ -1097,7 +1097,7 @@ describe('TransactionsService', () => {
     assert.ok(result.auditSummary.processedAt)
   })
 
-  test('getRefundDashboard summarizes statuses, pending queue, and recent reviewers', async () => {
+  it('getRefundDashboard summarizes statuses, pending queue, and recent reviewers', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-dashboard-1',
@@ -1200,7 +1200,7 @@ describe('TransactionsService', () => {
     assert.equal(dashboard.riskSummary.lowCount, 1)
   })
 
-  test('getRefundDashboard builds aging buckets and priority queue risk order', async () => {
+  it('getRefundDashboard builds aging buckets and priority queue risk order', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-priority-1',
@@ -1291,7 +1291,7 @@ describe('TransactionsService', () => {
     assert.equal(dashboard.riskSummary.lowCount, 1)
   })
 
-  test('getRefundDashboard builds escalation summary and dispatch queue', async () => {
+  it('getRefundDashboard builds escalation summary and dispatch queue', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-dispatch-1',
@@ -1389,7 +1389,7 @@ describe('TransactionsService', () => {
     assert.equal(dashboard.escalationSummary.noneCount, 1)
   })
 
-  test('getRefundDashboard supports configurable SLA thresholds, owner summaries, and escalation trail', async () => {
+  it('getRefundDashboard supports configurable SLA thresholds, owner summaries, and escalation trail', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-sla-1',
@@ -1483,7 +1483,7 @@ describe('TransactionsService', () => {
     assert.equal(dashboard.recentEscalationTrail[1]?.refundId, leadRefund.refunds[0]!.refundId)
   })
 
-  test('batchAssignRefunds assigns pending refunds by suggested owner', async () => {
+  it('batchAssignRefunds assigns pending refunds by suggested owner', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-assign-1',
@@ -1565,7 +1565,7 @@ describe('TransactionsService', () => {
     assert.equal(assignedItem?.dispatchReason, TransactionRefundDispatchReason.SlaBreachedOrMediumRisk)
   })
 
-  test('batchClaimRefunds claims pending refunds by suggested owner', async () => {
+  it('batchClaimRefunds claims pending refunds by suggested owner', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-claim-1',
@@ -1613,7 +1613,7 @@ describe('TransactionsService', () => {
     assert.equal(result.assignmentSummary.assignee, 'ops-claimer')
   })
 
-  test('listRefunds respects orderId and limit', async () => {
+  it('listRefunds respects orderId and limit', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-refund-list-3',
@@ -1659,7 +1659,7 @@ describe('TransactionsService', () => {
     assert.equal(refunds[0]?.operator, 'ops-limit')
   })
 
-  test('startCheckout with coupon and blindbox includes them in aggregate', async () => {
+  it('startCheckout with coupon and blindbox includes them in aggregate', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'mem-tx-5',

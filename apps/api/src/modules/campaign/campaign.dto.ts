@@ -1,5 +1,8 @@
 import {
   IsArray,
+  IsDefined,
+  IsNumber,
+  IsObject,
   IsEnum,
   IsISO8601,
   IsInt,
@@ -74,4 +77,43 @@ export class RegisterCampaignDto {
 export class UpdateCampaignStatusDto {
   @IsEnum(CampaignStatus)
   status!: CampaignStatus
+}
+
+export class EvaluateCampaignDto {
+  @IsDefined()
+  @IsString()
+  eventName!: string
+
+  @IsString()
+  @IsOptional()
+  memberId?: string
+
+  @IsString()
+  @IsOptional()
+  orderId?: string
+
+  @IsString()
+  @IsOptional()
+  paymentId?: string
+
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  orderAmount?: number
+
+  @IsString()
+  @IsOptional()
+  memberLevel?: string
+
+  @IsString()
+  @IsOptional()
+  storeId?: string
+
+  @IsString()
+  @IsOptional()
+  brandId?: string
+
+  @IsObject()
+  @IsOptional()
+  payload?: Record<string, unknown>
 }

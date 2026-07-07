@@ -1,7 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 // ── Helpers ──
 function mockPortalService(overrides: any = {}) {
   return {
@@ -38,7 +37,7 @@ const ROLES = {
 
 // ── 📢营销 ──
 describe(`${ROLES.Marketing} portal 角色测试`, () => {
-  test('营销可以获取 portal bootstrap（含 Tenant/Brand/Store Portal）', () => {
+  it('营销可以获取 portal bootstrap（含 Tenant/Brand/Store Portal）', () => {
     const portal = mockPortalService()
     const ctrl = createPortalController(portal)
     const result = ctrl.getBootstrap(tenantCtx)
@@ -47,7 +46,7 @@ describe(`${ROLES.Marketing} portal 角色测试`, () => {
     assert.ok(result.storePortal)
   })
 
-  test('营销获取 portal — tenantPortal 信息完整', () => {
+  it('营销获取 portal — tenantPortal 信息完整', () => {
     const portal = mockPortalService()
     const ctrl = createPortalController(portal)
     const result = ctrl.getBootstrap(tenantCtx)
@@ -57,7 +56,7 @@ describe(`${ROLES.Marketing} portal 角色测试`, () => {
     assert.ok(result.tenantPortal.loginEntry)
   })
 
-  test('营销获取 portal — brandPortal 含登录入口', () => {
+  it('营销获取 portal — brandPortal 含登录入口', () => {
     const portal = mockPortalService()
     const ctrl = createPortalController(portal)
     const result = ctrl.getBootstrap(tenantCtx)
@@ -65,7 +64,7 @@ describe(`${ROLES.Marketing} portal 角色测试`, () => {
     assert.equal(result.brandPortal.loginEntry.ssoEnabled, true)
   })
 
-  test('营销获取 portal — marketProfile 可用', () => {
+  it('营销获取 portal — marketProfile 可用', () => {
     const portal = mockPortalService()
     const ctrl = createPortalController(portal)
     const result = ctrl.getBootstrap(tenantCtx)
@@ -76,7 +75,7 @@ describe(`${ROLES.Marketing} portal 角色测试`, () => {
 
 // ── 🎯运行专员 ──
 describe(`${ROLES.Operations} portal 角色测试`, () => {
-  test('运营专员可以获取 portal bootstrap', () => {
+  it('运营专员可以获取 portal bootstrap', () => {
     const portal = mockPortalService()
     const ctrl = createPortalController(portal)
     const result = ctrl.getBootstrap(tenantCtx)
@@ -85,7 +84,7 @@ describe(`${ROLES.Operations} portal 角色测试`, () => {
     assert.ok(result.storePortal)
   })
 
-  test('运营专员获取 portal — storePortal 含 supportedSurfaces', () => {
+  it('运营专员获取 portal — storePortal 含 supportedSurfaces', () => {
     const portal = mockPortalService()
     const ctrl = createPortalController(portal)
     const result = ctrl.getBootstrap(tenantCtx)
@@ -93,7 +92,7 @@ describe(`${ROLES.Operations} portal 角色测试`, () => {
     assert.ok(result.storePortal.supportedSurfaces.includes('OfficialSite'))
   })
 
-  test('运营专员获取 portal — regionalOverrides 为数组', () => {
+  it('运营专员获取 portal — regionalOverrides 为数组', () => {
     const portal = mockPortalService()
     const ctrl = createPortalController(portal)
     const result = ctrl.getBootstrap(tenantCtx)
@@ -103,7 +102,7 @@ describe(`${ROLES.Operations} portal 角色测试`, () => {
 
 // ── 👔店长 ──
 describe(`${ROLES.TenantAdmin} portal 角色测试`, () => {
-  test('店长可以获取 portal bootstrap（全部门户视图）', () => {
+  it('店长可以获取 portal bootstrap（全部门户视图）', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(result.tenantPortal)
@@ -112,13 +111,13 @@ describe(`${ROLES.TenantAdmin} portal 角色测试`, () => {
     assert.ok(result.marketProfile)
   })
 
-  test('店长获取 portal — tenantPortal domain 正确', () => {
+  it('店长获取 portal — tenantPortal domain 正确', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(result.tenantPortal.primaryDomain)
   })
 
-  test('店长获取 portal — storePortal audience 为 ToC', () => {
+  it('店长获取 portal — storePortal audience 为 ToC', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.equal(result.storePortal.audience, 'ToC')
@@ -127,20 +126,20 @@ describe(`${ROLES.TenantAdmin} portal 角色测试`, () => {
 
 // ── 🛒前台 ──
 describe(`${ROLES.Reception} portal 角色测试`, () => {
-  test('前台可以获取 portal bootstrap（前台视角）', () => {
+  it('前台可以获取 portal bootstrap（前台视角）', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(result.storePortal)
     assert.ok(result.marketProfile)
   })
 
-  test('前台获取 portal — storePortal 含门店门户名称', () => {
+  it('前台获取 portal — storePortal 含门店门户名称', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(result.storePortal.name)
   })
 
-  test('前台获取 portal — foundationDependencies 存在', () => {
+  it('前台获取 portal — foundationDependencies 存在', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(Array.isArray(result.foundationDependencies))
@@ -149,7 +148,7 @@ describe(`${ROLES.Reception} portal 角色测试`, () => {
 
 // ── 👥HR ──
 describe(`${ROLES.HR} portal 角色测试`, () => {
-  test('HR 可以获取 portal bootstrap（用于员工门户入口配置）', () => {
+  it('HR 可以获取 portal bootstrap（用于员工门户入口配置）', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(result.tenantPortal)
@@ -157,7 +156,7 @@ describe(`${ROLES.HR} portal 角色测试`, () => {
     assert.ok(result.tenantPortal.loginEntry)
   })
 
-  test('HR 获取 portal — tenantPortal 包含 SSO 登录入口（权限边界：HR 不直接管理品牌门户）', () => {
+  it('HR 获取 portal — tenantPortal 包含 SSO 登录入口（权限边界：HR 不直接管理品牌门户）', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     // HR 视角主要关注 tenantPortal 层级信息
@@ -168,7 +167,7 @@ describe(`${ROLES.HR} portal 角色测试`, () => {
     assert.ok(result.storePortal)
   })
 
-  test('HR 获取 portal — 验证 regionalOverrides 和 foundation 数据可用', () => {
+  it('HR 获取 portal — 验证 regionalOverrides 和 foundation 数据可用', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(Array.isArray(result.regionalOverrides))
@@ -179,7 +178,7 @@ describe(`${ROLES.HR} portal 角色测试`, () => {
 
 // ── 🔧安监 ──
 describe(`${ROLES.SafetyInspector} portal 角色测试`, () => {
-  test('安监可以获取 portal bootstrap（用于门店合规检查）', () => {
+  it('安监可以获取 portal bootstrap（用于门店合规检查）', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(result.storePortal)
@@ -188,7 +187,7 @@ describe(`${ROLES.SafetyInspector} portal 角色测试`, () => {
     assert.ok(result.storePortal.supportedSurfaces.includes('OfficialSite'))
   })
 
-  test('安监获取 portal — 权限边界：门店 storeName 可查看但不可修改', () => {
+  it('安监获取 portal — 权限边界：门店 storeName 可查看但不可修改', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     // 安监可读门店门户全量信息
@@ -199,7 +198,7 @@ describe(`${ROLES.SafetyInspector} portal 角色测试`, () => {
     assert.equal(result.marketProfile.marketCode, 'cn-mainland')
   })
 
-  test('安监获取 portal — tenantPortal 和 brandPortal 也能读取（安全审计用途）', () => {
+  it('安监获取 portal — tenantPortal 和 brandPortal 也能读取（安全审计用途）', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(result.tenantPortal.name)
@@ -211,14 +210,14 @@ describe(`${ROLES.SafetyInspector} portal 角色测试`, () => {
 
 // ── 🎮导玩员 ──
 describe(`${ROLES.GameInstructor} portal 角色测试`, () => {
-  test('导玩员可以获取 portal bootstrap（用于查看门店运营门户）', () => {
+  it('导玩员可以获取 portal bootstrap（用于查看门店运营门户）', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(result.storePortal)
     assert.ok(result.marketProfile)
   })
 
-  test('导玩员获取 portal — 权限边界：关注 storePortal 终端的 supportedSurfaces', () => {
+  it('导玩员获取 portal — 权限边界：关注 storePortal 终端的 supportedSurfaces', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     // 导玩员场景需要确认多终端支持
@@ -228,7 +227,7 @@ describe(`${ROLES.GameInstructor} portal 角色测试`, () => {
     assert.ok(result.brandPortal)
   })
 
-  test('导玩员获取 portal — foundationContracts 可用于配置检查', () => {
+  it('导玩员获取 portal — foundationContracts 可用于配置检查', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(Array.isArray(result.foundationContracts))
@@ -238,7 +237,7 @@ describe(`${ROLES.GameInstructor} portal 角色测试`, () => {
 
 // ── 🤝团建 ──
 describe(`${ROLES.TeamBuilding} portal 角色测试`, () => {
-  test('团建可以获取 portal bootstrap（用于活动门户配置）', () => {
+  it('团建可以获取 portal bootstrap（用于活动门户配置）', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(result.tenantPortal)
@@ -247,7 +246,7 @@ describe(`${ROLES.TeamBuilding} portal 角色测试`, () => {
     assert.ok(result.marketProfile)
   })
 
-  test('团建获取 portal — 权限边界：可通过 marketProfile 获取市场信息安排团建活动', () => {
+  it('团建获取 portal — 权限边界：可通过 marketProfile 获取市场信息安排团建活动', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(result.marketProfile.marketCode)
@@ -257,7 +256,7 @@ describe(`${ROLES.TeamBuilding} portal 角色测试`, () => {
     assert.ok(result.brandPortal.solutionTags)
   })
 
-  test('团建获取 portal — 登录入口信息用于活动参与引导', () => {
+  it('团建获取 portal — 登录入口信息用于活动参与引导', () => {
     const ctrl = createPortalController()
     const result = ctrl.getBootstrap(tenantCtx)
     assert.ok(result.tenantPortal.loginEntry.loginPath)
@@ -280,7 +279,7 @@ function makePortalControllerWithMocks(overrides: any = {}) {
 }
 
 describe(`${ROLES.TenantAdmin} portal 独立 endpoint 角色测试`, () => {
-  test('店长可独立获取租户门户', () => {
+  it('店长可独立获取租户门户', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getTenantPortal(tenantCtx)
     assert.equal(result.audience, 'ToB')
@@ -288,7 +287,7 @@ describe(`${ROLES.TenantAdmin} portal 独立 endpoint 角色测试`, () => {
     assert.ok(result.loginEntry.ssoEnabled)
   })
 
-  test('店长可独立获取品牌门户', () => {
+  it('店长可独立获取品牌门户', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getBrandPortal(tenantCtx)
     assert.equal(result.brandCode, 'b-portal')
@@ -297,7 +296,7 @@ describe(`${ROLES.TenantAdmin} portal 独立 endpoint 角色测试`, () => {
 })
 
 describe(`${ROLES.Reception} portal 独立 endpoint 角色测试`, () => {
-  test('前台可独立获取门店门户（ToC）', () => {
+  it('前台可独立获取门店门户（ToC）', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getStorePortal(tenantCtx)
     assert.equal(result.audience, 'ToC')
@@ -305,7 +304,7 @@ describe(`${ROLES.Reception} portal 独立 endpoint 角色测试`, () => {
     assert.ok(result.supportedSurfaces.includes('MINI_APP'))
   })
 
-  test('前台 — 门店门户含 supportedSurfaces 确认多终端', () => {
+  it('前台 — 门店门户含 supportedSurfaces 确认多终端', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getStorePortal(tenantCtx)
     assert.ok(result.supportedSurfaces.length >= 2)
@@ -313,13 +312,13 @@ describe(`${ROLES.Reception} portal 独立 endpoint 角色测试`, () => {
 })
 
 describe(`${ROLES.Marketing} portal 独立 endpoint 角色测试`, () => {
-  test('营销获取品牌门户 — heroTitle 满足品牌营销需求', () => {
+  it('营销获取品牌门户 — heroTitle 满足品牌营销需求', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getBrandPortal(tenantCtx)
     assert.equal(result.heroTitle, '品牌经营官网')
   })
 
-  test('营销 — 权限边界：不能通过 endpoint 获取非自有能力', () => {
+  it('营销 — 权限边界：不能通过 endpoint 获取非自有能力', () => {
     // getStorePortal 是可公开的 ToC 信息，营销也应该能访问
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getStorePortal(tenantCtx)
@@ -328,14 +327,14 @@ describe(`${ROLES.Marketing} portal 独立 endpoint 角色测试`, () => {
 })
 
 describe(`${ROLES.Operations} portal 独立 endpoint 角色测试`, () => {
-  test('运营专员独立获取租户门户配置', () => {
+  it('运营专员独立获取租户门户配置', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getTenantPortal(tenantCtx)
     assert.ok(result.primaryDomain)
     assert.ok(result.supportedLanguages.length > 0)
   })
 
-  test('运营专员独立获取门店门户 — 检查 storeName', () => {
+  it('运营专员独立获取门店门户 — 检查 storeName', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getStorePortal(tenantCtx)
     assert.ok(result.storeName)
@@ -343,13 +342,13 @@ describe(`${ROLES.Operations} portal 独立 endpoint 角色测试`, () => {
 })
 
 describe(`${ROLES.Security} portal 独立 endpoint 角色测试`, () => {
-  test('安监查看租户门户 — 确认 ssoEnabled', () => {
+  it('安监查看租户门户 — 确认 ssoEnabled', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getTenantPortal(tenantCtx)
     assert.equal(result.loginEntry.ssoEnabled, true)
   })
 
-  test('安监查看品牌门户 — 确认 loginPath 存在', () => {
+  it('安监查看品牌门户 — 确认 loginPath 存在', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getBrandPortal(tenantCtx)
     assert.ok(result.loginEntry.loginPath)
@@ -357,13 +356,13 @@ describe(`${ROLES.Security} portal 独立 endpoint 角色测试`, () => {
 })
 
 describe(`${ROLES.GameInstructor} portal 独立 endpoint 角色测试`, () => {
-  test('导玩员获取门店门户 — supportedSurfaces 含 MINI_APP', () => {
+  it('导玩员获取门店门户 — supportedSurfaces 含 MINI_APP', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getStorePortal(tenantCtx)
     assert.ok(result.supportedSurfaces.includes('MINI_APP'))
   })
 
-  test('导玩员获取租户门户 — 权限边界：只读', () => {
+  it('导玩员获取租户门户 — 权限边界：只读', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getTenantPortal(tenantCtx)
     assert.ok(result.name)
@@ -371,14 +370,14 @@ describe(`${ROLES.GameInstructor} portal 独立 endpoint 角色测试`, () => {
 })
 
 describe(`${ROLES.TeamBuilding} portal 独立 endpoint 角色测试`, () => {
-  test('团建获取品牌门户用于活动配置', () => {
+  it('团建获取品牌门户用于活动配置', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getBrandPortal(tenantCtx)
     assert.ok(result.name)
     assert.ok(result.primaryDomain)
   })
 
-  test('团建获取门店门户 — 确认 audience ToC', () => {
+  it('团建获取门店门户 — 确认 audience ToC', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getStorePortal(tenantCtx)
     assert.equal(result.audience, 'ToC')
@@ -386,14 +385,14 @@ describe(`${ROLES.TeamBuilding} portal 独立 endpoint 角色测试`, () => {
 })
 
 describe(`${ROLES.HR} portal 独立 endpoint 角色测试`, () => {
-  test('HR 获取租户门户配置', () => {
+  it('HR 获取租户门户配置', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getTenantPortal(tenantCtx)
     assert.ok(result.name)
     assert.ok(result.primaryDomain)
   })
 
-  test('HR — 权限边界：门店门户 audience 为 ToC', () => {
+  it('HR — 权限边界：门店门户 audience 为 ToC', () => {
     const ctrl = makePortalControllerWithMocks()
     const result = ctrl.getStorePortal(tenantCtx)
     assert.equal(result.audience, 'ToC')

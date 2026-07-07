@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [market] [C] 角色测试
  * 
@@ -9,7 +10,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { MarketController } from './market.controller'
 
 // ── 角色定义 ──
@@ -75,7 +75,7 @@ function mockMarketService(overrides: Partial<MockService> = {}): MockService {
 
 // ── 👔店长 ──
 describe(`${ROLES.StoreManager} market 角色测试`, () => {
-  test('店长可以查看中国大陆 market bootstrap', () => {
+  it('店长可以查看中国大陆 market bootstrap', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const result = ctrl.getBootstrap()
@@ -83,7 +83,7 @@ describe(`${ROLES.StoreManager} market 角色测试`, () => {
     assert.ok(Array.isArray(result.supportedMarkets))
   })
 
-  test('店长可以获取 tenant 级别的 scoped market（含 overrides）', () => {
+  it('店长可以获取 tenant 级别的 scoped market（含 overrides）', () => {
     const overrides = [
       { scopeType: 'TENANT', scopeCode: 't-cn', inheritanceMode: 'TENANT_DEFAULT', marketCode: 'cn-mainland', email: { fromName: 't-cn HQ' } },
     ]
@@ -95,7 +95,7 @@ describe(`${ROLES.StoreManager} market 角色测试`, () => {
     assert.equal(result.overrides.length, 1)
   })
 
-  test('店长可以查看不同 market 的 portal 视图', () => {
+  it('店长可以查看不同 market 的 portal 视图', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const result = ctrl.getScopedPortalMarket('tenant', 't-us', usTenantCtx)
@@ -107,7 +107,7 @@ describe(`${ROLES.StoreManager} market 角色测试`, () => {
 
 // ── 🛒前台 ──
 describe(`${ROLES.FrontDesk} market 角色测试`, () => {
-  test('前台可以查看门店 portal market 配置（用于 POS 终端）', () => {
+  it('前台可以查看门店 portal market 配置（用于 POS 终端）', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const result = ctrl.getScopedPortalMarket('store', 's-cn', cnTenantCtx)
@@ -116,7 +116,7 @@ describe(`${ROLES.FrontDesk} market 角色测试`, () => {
     assert.equal(result.tax.taxRate, 6)
   })
 
-  test('前台只能看到当前门店 scope 的 market，不能跨门店访问', () => {
+  it('前台只能看到当前门店 scope 的 market，不能跨门店访问', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     // 前台 scope 应为 store
@@ -130,7 +130,7 @@ describe(`${ROLES.FrontDesk} market 角色测试`, () => {
 
 // ── 👥HR ──
 describe(`${ROLES.HR} market 角色测试`, () => {
-  test('HR 可以查看 market 配置确定员工时区/语言（用于排班）', () => {
+  it('HR 可以查看 market 配置确定员工时区/语言（用于排班）', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const result = ctrl.getScopedPortalMarket('tenant', 't-cn', cnTenantCtx)
@@ -138,7 +138,7 @@ describe(`${ROLES.HR} market 角色测试`, () => {
     assert.ok(result.locale.defaultLanguage)
   })
 
-  test('HR 可以看到所有支持的 market 列表', () => {
+  it('HR 可以看到所有支持的 market 列表', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const result = ctrl.getBootstrap()
@@ -148,7 +148,7 @@ describe(`${ROLES.HR} market 角色测试`, () => {
     assert.ok(marketCodes.includes('us-default'))
   })
 
-  test('HR 无法修改 market 配置（只读权限边界）', () => {
+  it('HR 无法修改 market 配置（只读权限边界）', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     // MarketController 只有 @Get 路由，无 POST/PUT/PATCH
@@ -164,7 +164,7 @@ describe(`${ROLES.HR} market 角色测试`, () => {
 
 // ── 🔧安监 ──
 describe(`${ROLES.Security} market 角色测试`, () => {
-  test('安监可以查看 market 的网络配置（安全审计需要）', () => {
+  it('安监可以查看 market 的网络配置（安全审计需要）', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const result = ctrl.getScopedPortalMarket('tenant', 't-cn', cnTenantCtx)
@@ -172,7 +172,7 @@ describe(`${ROLES.Security} market 角色测试`, () => {
     assert.equal(result.network.networkRegion, 'MAINLAND_CHINA')
   })
 
-  test('安监可以验证不同 market 的数据隔离（CN vs US）', () => {
+  it('安监可以验证不同 market 的数据隔离（CN vs US）', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const cnResult = ctrl.getScopedPortalMarket('tenant', 't-cn', cnTenantCtx)
@@ -181,7 +181,7 @@ describe(`${ROLES.Security} market 角色测试`, () => {
     assert.notEqual(cnResult.marketCode, usResult.marketCode)
   })
 
-  test('安监可以确认 email 服务商符合合规要求', () => {
+  it('安监可以确认 email 服务商符合合规要求', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const cnResult = ctrl.getScopedPortalMarket('tenant', 't-cn', cnTenantCtx)
@@ -191,7 +191,7 @@ describe(`${ROLES.Security} market 角色测试`, () => {
 
 // ── 🎮导玩员 ──
 describe(`${ROLES.Guide} market 角色测试`, () => {
-  test('导玩员可以查看门店 market 配置（用于接待引导）', () => {
+  it('导玩员可以查看门店 market 配置（用于接待引导）', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const result = ctrl.getScopedMarket('store', 's-cn', cnTenantCtx)
@@ -199,14 +199,14 @@ describe(`${ROLES.Guide} market 角色测试`, () => {
     assert.equal(result.marketProfile.currency.symbol, '¥')
   })
 
-  test('导玩员可以获取 portal 级别的营销社媒配置', () => {
+  it('导玩员可以获取 portal 级别的营销社媒配置', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const result = ctrl.getScopedPortalMarket('store', 's-cn', cnTenantCtx)
     assert.ok(result.social.primaryPlatforms.length > 0)
   })
 
-  test('导玩员在多 market 环境中能看到正确的市场代码标识', () => {
+  it('导玩员在多 market 环境中能看到正确的市场代码标识', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const usResult = ctrl.getScopedPortalMarket('store', 's-us', usTenantCtx)
@@ -217,7 +217,7 @@ describe(`${ROLES.Guide} market 角色测试`, () => {
 
 // ── 🎯运行专员 ──
 describe(`${ROLES.Operations} market 角色测试`, () => {
-  test('运行专员可以获取 bootstrap 查看所有 market 状态', () => {
+  it('运行专员可以获取 bootstrap 查看所有 market 状态', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const result = ctrl.getBootstrap()
@@ -225,7 +225,7 @@ describe(`${ROLES.Operations} market 角色测试`, () => {
     assert.ok(result.foundationDependencies)
   })
 
-  test('运行专员可以对比不同 market 的税率配置', () => {
+  it('运行专员可以对比不同 market 的税率配置', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const cnResult = ctrl.getScopedPortalMarket('tenant', 't-cn', cnTenantCtx)
@@ -235,7 +235,7 @@ describe(`${ROLES.Operations} market 角色测试`, () => {
     assert.notEqual(cnResult.tax.taxMode, usResult.tax.taxMode)
   })
 
-  test('运行专员可以查看所有 supported markets 的数量', () => {
+  it('运行专员可以查看所有 supported markets 的数量', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const result = ctrl.getBootstrap()
@@ -245,21 +245,21 @@ describe(`${ROLES.Operations} market 角色测试`, () => {
 
 // ── 🤝团建 ──
 describe(`${ROLES.Teambuilding} market 角色测试`, () => {
-  test('团建可以查看 market 配置确定活动策划语言', () => {
+  it('团建可以查看 market 配置确定活动策划语言', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const cnResult = ctrl.getScopedPortalMarket('tenant', 't-cn', cnTenantCtx)
     assert.equal(cnResult.locale.defaultLanguage, 'zh-CN')
   })
 
-  test('团建策划时可以看到社媒平台列表（分享/宣传渠道）', () => {
+  it('团建策划时可以看到社媒平台列表（分享/宣传渠道）', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const usResult = ctrl.getScopedPortalMarket('brand', 'b-us', usTenantCtx)
     assert.ok(usResult.social.supportPlatforms.includes('LINKEDIN' as any))
   })
 
-  test('团建不能获取不存在的 market 配置（边界：非法 marketCode）', () => {
+  it('团建不能获取不存在的 market 配置（边界：非法 marketCode）', () => {
     const svc = mockMarketService({
       getMergedProfile: () => {
         throw new Error('Market not found')
@@ -275,7 +275,7 @@ describe(`${ROLES.Teambuilding} market 角色测试`, () => {
 
 // ── 📢营销 ──
 describe(`${ROLES.Marketing} market 角色测试`, () => {
-  test('营销可以查看市场社媒配置（制定营销策略）', () => {
+  it('营销可以查看市场社媒配置（制定营销策略）', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const cnResult = ctrl.getScopedPortalMarket('brand', 'b-cn', cnTenantCtx)
@@ -283,7 +283,7 @@ describe(`${ROLES.Marketing} market 角色测试`, () => {
     assert.ok(cnResult.social.primaryPlatforms.includes('XIAOHONGSHU' as any))
   })
 
-  test('营销可以对比中美市场的社媒差异', () => {
+  it('营销可以对比中美市场的社媒差异', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const cnSocial = ctrl.getScopedPortalMarket('brand', 'b-cn', cnTenantCtx).social
@@ -293,7 +293,7 @@ describe(`${ROLES.Marketing} market 角色测试`, () => {
     assert.ok(!cnSocial.primaryPlatforms.includes('LINKEDIN' as any))
   })
 
-  test('营销可以看到 market 的邮件配置（EDM 营销需要）', () => {
+  it('营销可以看到 market 的邮件配置（EDM 营销需要）', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const result = ctrl.getScopedPortalMarket('tenant', 't-us', usTenantCtx)
@@ -301,7 +301,7 @@ describe(`${ROLES.Marketing} market 角色测试`, () => {
     assert.equal(result.email.fromAddress, 'hello-us@m5.local')
   })
 
-  test('营销视角: bootstrap 应包含完整的 foundation 元数据', () => {
+  it('营销视角: bootstrap 应包含完整的 foundation 元数据', () => {
     const svc = mockMarketService()
     const ctrl = new MarketController(svc as any)
     const result = ctrl.getBootstrap()

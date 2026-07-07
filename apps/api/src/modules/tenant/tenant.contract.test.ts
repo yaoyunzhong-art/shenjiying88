@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   toTenantResolveContract,
   toTenantContextContract,
@@ -17,7 +17,7 @@ import type {
 /*  toTenantResolveContract                                             */
 /* ------------------------------------------------------------------ */
 
-test('toTenantResolveContract maps full context with actor', () => {
+it('toTenantResolveContract maps full context with actor', () => {
   const ctx: ResolvedActorContext = {
     authenticated: true,
     actor: {
@@ -60,7 +60,7 @@ test('toTenantResolveContract maps full context with actor', () => {
   assert.equal(contract.actor!.source, 'headers')
 })
 
-test('toTenantResolveContract maps context with null actor (unauthenticated)', () => {
+it('toTenantResolveContract maps context with null actor (unauthenticated)', () => {
   const ctx: ResolvedActorContext = {
     authenticated: false,
     actor: null,
@@ -83,7 +83,7 @@ test('toTenantResolveContract maps context with null actor (unauthenticated)', (
   assert.equal(contract.effectiveStoreId, undefined)
 })
 
-test('toTenantResolveContract maps actor without name', () => {
+it('toTenantResolveContract maps actor without name', () => {
   const ctx: ResolvedActorContext = {
     authenticated: true,
     actor: {
@@ -116,7 +116,7 @@ test('toTenantResolveContract maps actor without name', () => {
 /*  toTenantContextContract                                             */
 /* ------------------------------------------------------------------ */
 
-test('toTenantContextContract maps full tenant context', () => {
+it('toTenantContextContract maps full tenant context', () => {
   const ctx: RequestTenantContext = {
     tenantId: 'tenant-001',
     brandId: 'brand-001',
@@ -132,7 +132,7 @@ test('toTenantContextContract maps full tenant context', () => {
   assert.equal(contract.marketCode, 'zh-CN')
 })
 
-test('toTenantContextContract maps minimal tenant context', () => {
+it('toTenantContextContract maps minimal tenant context', () => {
   const ctx: RequestTenantContext = {
     tenantId: 'tenant-min',
     marketCode: 'default'
@@ -150,7 +150,7 @@ test('toTenantContextContract maps minimal tenant context', () => {
 /*  toTenantActorContract                                               */
 /* ------------------------------------------------------------------ */
 
-test('toTenantActorContract maps valid actor', () => {
+it('toTenantActorContract maps valid actor', () => {
   const actor: RequestActorContext = {
     actorId: 'emp-001',
     actorType: 'employee-user',
@@ -176,12 +176,12 @@ test('toTenantActorContract maps valid actor', () => {
   assert.equal(contract!.source, 'headers')
 })
 
-test('toTenantActorContract returns null for null input', () => {
+it('toTenantActorContract returns null for null input', () => {
   const contract = toTenantActorContract(null)
   assert.equal(contract, null)
 })
 
-test('toTenantActorContract handles actor with empty roles/permissions', () => {
+it('toTenantActorContract handles actor with empty roles/permissions', () => {
   const actor: RequestActorContext = {
     actorId: 'guest-001',
     actorType: 'platform-user',
@@ -200,7 +200,7 @@ test('toTenantActorContract handles actor with empty roles/permissions', () => {
   assert.equal(contract!.authenticated, false)
 })
 
-test('toTenantActorContract strips internal fields (tenantId/brandId/storeId)', () => {
+it('toTenantActorContract strips internal fields (tenantId/brandId/storeId)', () => {
   const actor: RequestActorContext = {
     actorId: 'emp-002',
     actorType: 'store-user',
@@ -233,7 +233,7 @@ test('toTenantActorContract strips internal fields (tenantId/brandId/storeId)', 
 /*  toTenantScopeCheckContract                                          */
 /* ------------------------------------------------------------------ */
 
-test('toTenantScopeCheckContract matches all requirements', () => {
+it('toTenantScopeCheckContract matches all requirements', () => {
   const ctx: ResolvedActorContext = {
     authenticated: true,
     actor: null,
@@ -259,7 +259,7 @@ test('toTenantScopeCheckContract matches all requirements', () => {
   assert.equal(contract.requiredStoreId, 'store-001')
 })
 
-test('toTenantScopeCheckContract mismatches on tenant', () => {
+it('toTenantScopeCheckContract mismatches on tenant', () => {
   const ctx: ResolvedActorContext = {
     authenticated: true,
     actor: null,
@@ -277,7 +277,7 @@ test('toTenantScopeCheckContract mismatches on tenant', () => {
   assert.equal(contract.matches, false)
 })
 
-test('toTenantScopeCheckContract mismatches on brand', () => {
+it('toTenantScopeCheckContract mismatches on brand', () => {
   const ctx: ResolvedActorContext = {
     authenticated: true,
     actor: null,
@@ -295,7 +295,7 @@ test('toTenantScopeCheckContract mismatches on brand', () => {
   assert.equal(contract.matches, false)
 })
 
-test('toTenantScopeCheckContract mismatches on store', () => {
+it('toTenantScopeCheckContract mismatches on store', () => {
   const ctx: ResolvedActorContext = {
     authenticated: true,
     actor: null,
@@ -318,7 +318,7 @@ test('toTenantScopeCheckContract mismatches on store', () => {
   assert.equal(contract.matches, false)
 })
 
-test('toTenantScopeCheckContract matches with partial requirements', () => {
+it('toTenantScopeCheckContract matches with partial requirements', () => {
   const ctx: ResolvedActorContext = {
     authenticated: true,
     actor: null,
@@ -337,7 +337,7 @@ test('toTenantScopeCheckContract matches with partial requirements', () => {
   assert.equal(contract.matches, true)
 })
 
-test('toTenantScopeCheckContract with no requirements always matches', () => {
+it('toTenantScopeCheckContract with no requirements always matches', () => {
   const ctx: ResolvedActorContext = {
     authenticated: true,
     actor: null,
@@ -362,7 +362,7 @@ test('toTenantScopeCheckContract with no requirements always matches', () => {
 /*  toTenantControllerResponseToContract                                */
 /* ------------------------------------------------------------------ */
 
-test('toTenantControllerResponseToContract maps controller response', () => {
+it('toTenantControllerResponseToContract maps controller response', () => {
   const response = {
     requestId: 'req-001',
     effectiveTenantId: 'tenant-abc',
@@ -390,7 +390,7 @@ test('toTenantControllerResponseToContract maps controller response', () => {
   assert.equal(contract.actor!.actorId, 'user-001')
 })
 
-test('toTenantControllerResponseToContract maps response with null actor', () => {
+it('toTenantControllerResponseToContract maps response with null actor', () => {
   const response = {
     requestId: 'req-002',
     effectiveTenantId: 'tenant-demo',
@@ -408,7 +408,7 @@ test('toTenantControllerResponseToContract maps response with null actor', () =>
   assert.equal(contract.effectiveTenantId, 'tenant-demo')
 })
 
-test('toTenantControllerResponseToContract defaults source when missing', () => {
+it('toTenantControllerResponseToContract defaults source when missing', () => {
   const response = {
     effectiveTenantId: 'tenant-abc',
     actor: null
@@ -424,7 +424,7 @@ test('toTenantControllerResponseToContract defaults source when missing', () => 
 /*  Contract type structural conformance                               */
 /* ------------------------------------------------------------------ */
 
-test('TenantResolveContract fields match expected shape', () => {
+it('TenantResolveContract fields match expected shape', () => {
   const ctx: ResolvedActorContext = {
     authenticated: true,
     actor: {
@@ -454,7 +454,7 @@ test('TenantResolveContract fields match expected shape', () => {
   assert.ok(keys.includes('source'))
 })
 
-test('TenantContextContract fields match expected shape', () => {
+it('TenantContextContract fields match expected shape', () => {
   const ctx: RequestTenantContext = { tenantId: 't1', marketCode: 'zh-CN' }
   const contract = toTenantContextContract(ctx)
   const keys = Object.keys(contract).sort()
@@ -462,7 +462,7 @@ test('TenantContextContract fields match expected shape', () => {
   assert.deepStrictEqual(keys, ['brandId', 'marketCode', 'storeId', 'tenantId'])
 })
 
-test('TenantScopeCheckContract fields match expected shape', () => {
+it('TenantScopeCheckContract fields match expected shape', () => {
   const ctx: ResolvedActorContext = {
     authenticated: true,
     actor: null,

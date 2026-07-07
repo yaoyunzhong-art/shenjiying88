@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-rule-engine] [C] 角色测试
  * 
@@ -9,7 +10,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { AiRuleEngineController } from './ai-rule-engine.controller'
 import { AiRuleEngineService } from './ai-rule-engine.service'
 import type { MemberLevelInput, DeviceAnomalyInput } from './ai-rule-engine.entity'
@@ -86,7 +86,7 @@ const normalDeviceData: DeviceAnomalyInput = {
 
 // ── 👔店长 ──
 describe(`${ROLES.StoreManager} ai-rule-engine 角色测试`, () => {
-  test('店长可评估高价值会员等级 => SVIP', () => {
+  it('店长可评估高价值会员等级 => SVIP', () => {
     const ctrl = createController()
     const res = ctrl.evaluateMemberLevel(svipMemberData)
     const result = res.result as { suggestedLevel: string; triggeredRules: string[]; confidence: number }
@@ -98,7 +98,7 @@ describe(`${ROLES.StoreManager} ai-rule-engine 角色测试`, () => {
     assert.ok(Date.parse(res.timestamp) > 0)
   })
 
-  test('店长查看普通会员评估 => REGULAR', () => {
+  it('店长查看普通会员评估 => REGULAR', () => {
     const ctrl = createController()
     const res = ctrl.evaluateMemberLevel(regularMemberData)
     const result = res.result as { suggestedLevel: string; confidence: number }
@@ -107,14 +107,14 @@ describe(`${ROLES.StoreManager} ai-rule-engine 角色测试`, () => {
     assert.ok(result.confidence <= 0.5)
   })
 
-  test('店长批量评估全体会员等级（管理决策辅助）', () => {
+  it('店长批量评估全体会员等级（管理决策辅助）', () => {
     const ctrl = createController()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const result = ctrl.evaluateBatch({
       items: [
-        { type: 'member-level', data: svipMemberData },
-        { type: 'member-level', data: vipMemberData },
-        { type: 'member-level', data: regularMemberData }
+        { type: 'member-level', data: svipMemberData as unknown as Record<string, unknown> as unknown as Record<string, unknown> },
+        { type: 'member-level', data: vipMemberData as unknown as Record<string, unknown> },
+        { type: 'member-level', data: regularMemberData as unknown as Record<string, unknown> }
       ]
     } as any)
 
@@ -126,7 +126,7 @@ describe(`${ROLES.StoreManager} ai-rule-engine 角色测试`, () => {
     assert.deepEqual(levels, ['SVIP', 'REGULAR', 'REGULAR'])
   })
 
-  test('店长查看规则引擎配置状态（运维可见性）', () => {
+  it('店长查看规则引擎配置状态（运维可见性）', () => {
     const ctrl = createController()
     const engines = ctrl.getEngines()
 
@@ -149,7 +149,7 @@ describe(`${ROLES.StoreManager} ai-rule-engine 角色测试`, () => {
     assert.equal(riskEngine!.conditionsCount, 5)
   })
 
-  test('店长对高退款门店做风险评分（风控视角）', () => {
+  it('店长对高退款门店做风险评分（风控视角）', () => {
     const ctrl = createController()
     const res = ctrl.evaluateRiskScore({
       subjectId: 'store-risky-001',
@@ -179,7 +179,7 @@ describe(`${ROLES.StoreManager} ai-rule-engine 角色测试`, () => {
 
 // ── 🛒前台 ──
 describe(`${ROLES.FrontDesk} ai-rule-engine 角色测试`, () => {
-  test('前台为新会员查询等级建议 => REGULAR（边界：零消费零积分）', () => {
+  it('前台为新会员查询等级建议 => REGULAR（边界：零消费零积分）', () => {
     const ctrl = createController()
     const res = ctrl.evaluateMemberLevel({
       memberId: 'new-member-001',
@@ -195,7 +195,7 @@ describe(`${ROLES.FrontDesk} ai-rule-engine 角色测试`, () => {
     assert.equal(result.confidence, 0.3)
   })
 
-  test('前台通过通用 evaluate 端点查询会员等级', () => {
+  it('前台通过通用 evaluate 端点查询会员等级', () => {
     const ctrl = createController()
     const res = ctrl.evaluate({
       type: 'member-level',
@@ -214,9 +214,9 @@ describe(`${ROLES.FrontDesk} ai-rule-engine 角色测试`, () => {
     assert.ok(result.triggeredRules.length < 3) // 只有部分条件触发
   })
 
-  test('前台批量评估多会员（快速结账排队时的批量查询）', () => {
+  it('前台批量评估多会员（快速结账排队时的批量查询）', () => {
     const ctrl = createController()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const result = ctrl.evaluateBatch({
       items: [
         { type: 'member-level', data: { memberId: 'cashier-q-01', totalPoints: 500, totalSpend: 1000, visitCount: 5, tenantId: 't-001' } },
@@ -226,7 +226,7 @@ describe(`${ROLES.FrontDesk} ai-rule-engine 角色测试`, () => {
 
     assert.equal(result.total, 2)
     assert.equal(result.succeeded, 2)
-    const items = result.items as import('./ai-rule-engine.entity').BatchEvaluateItem[]
+    const items = result.items as import('./ai-rule-engine.entity').BatchEvaluateResponseItem[]
     assert.equal(items[0].inputId, 'cashier-q-01')
     assert.equal(items[1].inputId, 'cashier-q-02')
   })
@@ -234,7 +234,7 @@ describe(`${ROLES.FrontDesk} ai-rule-engine 角色测试`, () => {
 
 // ── 👥HR ──
 describe(`${ROLES.HR} ai-rule-engine 角色测试`, () => {
-  test('HR 评估员工会员等级 => 触发2条件但 ALL 不满足 => REGULAR', () => {
+  it('HR 评估员工会员等级 => 触发2条件但 ALL 不满足 => REGULAR', () => {
     const ctrl = createController()
     const res = ctrl.evaluateMemberLevel(vipMemberData)
     const result = res.result as { suggestedLevel: string; confidence: number; triggeredRules: string[] }
@@ -247,7 +247,7 @@ describe(`${ROLES.HR} ai-rule-engine 角色测试`, () => {
     assert.equal(result.triggeredRules.length, 0) // isMatch=false => []
   })
 
-  test('HR 通用端点输入错误类型 => 抛出异常（边界：类型不匹配）', () => {
+  it('HR 通用端点输入错误类型 => 抛出异常（边界：类型不匹配）', () => {
     const ctrl = createController()
     assert.throws(
       () =>
@@ -259,9 +259,9 @@ describe(`${ROLES.HR} ai-rule-engine 角色测试`, () => {
     )
   })
 
-  test('HR 批量评估新入职员工关联会员（批量入职场景）', () => {
+  it('HR 批量评估新入职员工关联会员（批量入职场景）', () => {
     const ctrl = createController()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const result = ctrl.evaluateBatch({
       items: [
         { type: 'member-level', data: { memberId: 'hr-new-01', totalPoints: 0, totalSpend: 0, visitCount: 0, tenantId: 't-001' } },
@@ -279,7 +279,7 @@ describe(`${ROLES.HR} ai-rule-engine 角色测试`, () => {
 
 // ── 🔧安监 ──
 describe(`${ROLES.Security} ai-rule-engine 角色测试`, () => {
-  test('安监检测设备严重异常 => CRITICAL', () => {
+  it('安监检测设备严重异常 => CRITICAL', () => {
     const ctrl = createController()
     const res = ctrl.detectDeviceAnomaly(criticalAnomalyData)
     const result = res.result as {
@@ -297,7 +297,7 @@ describe(`${ROLES.Security} ai-rule-engine 角色测试`, () => {
     assert.ok(result.recommendations.length >= 3)
   })
 
-  test('安监检查健康设备正常 => 无异常', () => {
+  it('安监检查健康设备正常 => 无异常', () => {
     const ctrl = createController()
     const res = ctrl.detectDeviceAnomaly(normalDeviceData)
     const result = res.result as { isAnomaly: boolean; severity: string; recommendations: string[] }
@@ -307,7 +307,7 @@ describe(`${ROLES.Security} ai-rule-engine 角色测试`, () => {
     assert.deepStrictEqual(result.recommendations, ['All metrics within normal range'])
   })
 
-  test('安监对投诉多的会员做风险评分 => HIGH', () => {
+  it('安监对投诉多的会员做风险评分 => HIGH', () => {
     const ctrl = createController()
     const res = ctrl.evaluateRiskScore({
       subjectId: 'member-complaint-001',
@@ -333,13 +333,13 @@ describe(`${ROLES.Security} ai-rule-engine 角色测试`, () => {
     assert.ok(result.triggeredRules.includes('cond-complaints'))
   })
 
-  test('安监批量评估可疑设备群（安全巡检批量）', () => {
+  it('安监批量评估可疑设备群（安全巡检批量）', () => {
     const ctrl = createController()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const result = ctrl.evaluateBatch({
       items: [
-        { type: 'device-anomaly', data: criticalAnomalyData },
-        { type: 'device-anomaly', data: normalDeviceData },
+        { type: 'device-anomaly', data: criticalAnomalyData as unknown as Record<string, unknown> },
+        { type: 'device-anomaly', data: normalDeviceData as unknown as Record<string, unknown> },
         { type: 'device-anomaly', data: { deviceId: 'dev-security-01', storeId: 'store-001', metrics: { cpuUsage: 91, memoryUsage: 87, diskUsage: 50, networkLatencyMs: 100, errorRate: 2, uptimeHours: 300 }, tenantId: 't-001' } }
       ]
     } as any)
@@ -364,7 +364,7 @@ describe(`${ROLES.Security} ai-rule-engine 角色测试`, () => {
 
 // ── 🎮导玩员 ──
 describe(`${ROLES.Guide} ai-rule-engine 角色测试`, () => {
-  test('导玩员通过通用端点检测设备异常 => CPU_SPIKE', () => {
+  it('导玩员通过通用端点检测设备异常 => CPU_SPIKE', () => {
     const ctrl = createController()
     const res = ctrl.evaluate({
       type: 'device-anomaly',
@@ -389,7 +389,7 @@ describe(`${ROLES.Guide} ai-rule-engine 角色测试`, () => {
     assert.equal(result.severity, 'MEDIUM')
   })
 
-  test('导玩员查看高积分会员评估 => 不满足 ALL 回退 REGULAR（边界：高积分低消费）', () => {
+  it('导玩员查看高积分会员评估 => 不满足 ALL 回退 REGULAR（边界：高积分低消费）', () => {
     const ctrl = createController()
     const res = ctrl.evaluateMemberLevel({
       memberId: 'mem-guide-001',
@@ -407,7 +407,7 @@ describe(`${ROLES.Guide} ai-rule-engine 角色测试`, () => {
     assert.equal(result.confidence, 0.3)
   })
 
-  test('导玩员对游客设备做异常检测（游客无会员体系但需安检）', () => {
+  it('导玩员对游客设备做异常检测（游客无会员体系但需安检）', () => {
     const ctrl = createController()
     const res = ctrl.evaluate({
       type: 'device-anomaly',
@@ -430,7 +430,7 @@ describe(`${ROLES.Guide} ai-rule-engine 角色测试`, () => {
     assert.equal(result.severity, 'LOW')
   })
 
-  test('导玩员对高频退款设备做风险排查', () => {
+  it('导玩员对高频退款设备做风险排查', () => {
     const ctrl = createController()
     const res = ctrl.evaluateRiskScore({
       subjectId: 'device-risky-guide',
@@ -456,7 +456,7 @@ describe(`${ROLES.Guide} ai-rule-engine 角色测试`, () => {
 
 // ── 🎯运行专员 ──
 describe(`${ROLES.Operations} ai-rule-engine 角色测试`, () => {
-  test('运行专员检测内存泄漏设备 => MEMORY_LEAK', () => {
+  it('运行专员检测内存泄漏设备 => MEMORY_LEAK', () => {
     const ctrl = createController()
     const res = ctrl.detectDeviceAnomaly({
       deviceId: 'dev-ops-001',
@@ -484,7 +484,7 @@ describe(`${ROLES.Operations} ai-rule-engine 角色测试`, () => {
     assert.ok(result.recommendations.some(r => r.includes('内存')))
   })
 
-  test('运行专员检测网络延迟设备 => NETWORK_LATENCY', () => {
+  it('运行专员检测网络延迟设备 => NETWORK_LATENCY', () => {
     const ctrl = createController()
     const res = ctrl.detectDeviceAnomaly({
       deviceId: 'dev-ops-002',
@@ -506,7 +506,7 @@ describe(`${ROLES.Operations} ai-rule-engine 角色测试`, () => {
     assert.equal(result.severity, 'MEDIUM')
   })
 
-  test('运行专员查看引擎状态（运维监控日常排查）', () => {
+  it('运行专员查看引擎状态（运维监控日常排查）', () => {
     const ctrl = createController()
     const engines = ctrl.getEngines()
 
@@ -522,7 +522,7 @@ describe(`${ROLES.Operations} ai-rule-engine 角色测试`, () => {
     })
   })
 
-  test('运行专员对设备密集门店做风险评分 => MEDIUM', () => {
+  it('运行专员对设备密集门店做风险评分 => MEDIUM', () => {
     const ctrl = createController()
     const res = ctrl.evaluateRiskScore({
       subjectId: 'store-dev-heavy',
@@ -548,7 +548,7 @@ describe(`${ROLES.Operations} ai-rule-engine 角色测试`, () => {
 
 // ── 🤝团建 ──
 describe(`${ROLES.Teambuilding} ai-rule-engine 角色测试`, () => {
-  test('团建评估团队高活跃会员 => SVIP（边界：最高临界值）', () => {
+  it('团建评估团队高活跃会员 => SVIP（边界：最高临界值）', () => {
     const ctrl = createController()
     const res = ctrl.evaluateMemberLevel({
       memberId: 'mem-team-001',
@@ -563,7 +563,7 @@ describe(`${ROLES.Teambuilding} ai-rule-engine 角色测试`, () => {
     assert.equal(result.confidence, 1.0)
   })
 
-  test('团建检测磁盘满设备 => DISK_FULL', () => {
+  it('团建检测磁盘满设备 => DISK_FULL', () => {
     const ctrl = createController()
     const res = ctrl.detectDeviceAnomaly({
       deviceId: 'dev-team-001',
@@ -586,7 +586,7 @@ describe(`${ROLES.Teambuilding} ai-rule-engine 角色测试`, () => {
     assert.equal(result.severity, 'MEDIUM')
   })
 
-  test('团建活动前对场地做风险评分（活动安全前置检查）', () => {
+  it('团建活动前对场地做风险评分（活动安全前置检查）', () => {
     const ctrl = createController()
     const res = ctrl.evaluateRiskScore({
       subjectId: 'venue-team-001',
@@ -608,7 +608,7 @@ describe(`${ROLES.Teambuilding} ai-rule-engine 角色测试`, () => {
     assert.ok(result.recommendations.some(r => r.includes('设备')))
   })
 
-  test('团建查看引擎状态确认活动可用性', () => {
+  it('团建查看引擎状态确认活动可用性', () => {
     const ctrl = createController()
     const engines = ctrl.getEngines()
 
@@ -622,7 +622,7 @@ describe(`${ROLES.Teambuilding} ai-rule-engine 角色测试`, () => {
 
 // ── 📢营销 ──
 describe(`${ROLES.Marketing} ai-rule-engine 角色测试`, () => {
-  test('营销评估潜在升级会员 => ALL不满足退回 REGULAR（边界：仅高到访）', () => {
+  it('营销评估潜在升级会员 => ALL不满足退回 REGULAR（边界：仅高到访）', () => {
     const ctrl = createController()
     const res = ctrl.evaluateMemberLevel({
       memberId: 'mem-mkt-001',
@@ -640,7 +640,7 @@ describe(`${ROLES.Marketing} ai-rule-engine 角色测试`, () => {
     assert.equal(result.confidence, 0.3)
   })
 
-  test('营销检测多指标异常设备（边界：错误率高 + CPU 高）', () => {
+  it('营销检测多指标异常设备（边界：错误率高 + CPU 高）', () => {
     const ctrl = createController()
     const res = ctrl.detectDeviceAnomaly({
       deviceId: 'dev-mkt-001',
@@ -663,9 +663,9 @@ describe(`${ROLES.Marketing} ai-rule-engine 角色测试`, () => {
     assert.equal(result.triggeredRules.length, 2)
   })
 
-  test('营销批量评估活动会员 + 场地设备（批量端点）', () => {
+  it('营销批量评估活动会员 + 场地设备（批量端点）', () => {
     const ctrl = createController()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const result = ctrl.evaluateBatch({
       items: [
         { type: 'member-level', data: { memberId: 'mkt-batch-01', totalPoints: 8000, totalSpend: 20000, visitCount: 50, tenantId: 't-001' } },
@@ -694,7 +694,7 @@ describe(`${ROLES.Marketing} ai-rule-engine 角色测试`, () => {
     assert.ok(Date.parse(result.timestamp) > 0)
   })
 
-  test('营销通过通用端点评估风险（批量活动前的风险排查）', () => {
+  it('营销通过通用端点评估风险（批量活动前的风险排查）', () => {
     const ctrl = createController()
     const res = ctrl.evaluateRiskScore({
       subjectId: 'mkt-campaign-001',
@@ -720,5 +720,164 @@ describe(`${ROLES.Marketing} ai-rule-engine 角色测试`, () => {
     assert.ok(result.reasons.length >= 2)
     assert.ok(result.recommendations.length >= 2)
     assert.ok(Date.parse(result.evaluatedAt) > 0)
+  })
+})
+
+// ── 🎯运行专员 模拟器拓展测试 ──
+describe(`${ROLES.Operations} ai-rule-engine 模拟器拓展测试`, () => {
+  it('运行专员列出所有模拟器（运维管理视角）', () => {
+    const ctrl = createController()
+    const sims = ctrl.listSimulators()
+
+    assert.ok(Array.isArray(sims))
+    assert.equal(sims.length, 2)
+
+    const memberSim = sims.find(s => s.id === 'sim-member-level-v1')
+    assert.ok(memberSim)
+    assert.equal(memberSim!.name, 'Member Level Simulator')
+    assert.equal(memberSim!.rounds, 100)
+    assert.equal(memberSim!.timeoutMs, 5000)
+    assert.equal(memberSim!.enableMutation, false)
+
+    const deviceSim = sims.find(s => s.id === 'sim-device-anomaly-v1')
+    assert.ok(deviceSim)
+    assert.equal(deviceSim!.name, 'Device Anomaly Simulator')
+    assert.equal(deviceSim!.rounds, 50)
+    assert.ok(deviceSim!.enableMutation) // 设备模拟器启用变异
+  })
+
+  it('运行专员通过 ID 查找特定模拟器', () => {
+    const ctrl = createController()
+    const sim = ctrl.getSimulator('sim-device-anomaly-v1')
+
+    assert.ok(sim)
+    assert.equal(sim!.id, 'sim-device-anomaly-v1')
+    assert.equal(sim!.engineId, 'device-anomaly-v1')
+    assert.equal(sim!.name, 'Device Anomaly Simulator')
+    assert.equal(sim!.rounds, 50)
+    assert.equal(sim!.enableMutation, true)
+    assert.ok(Date.parse(sim!.createdAt) > 0)
+  })
+
+  it('运行专员查找不存在的模拟器返回 undefined（边界）', () => {
+    const ctrl = createController()
+    const sim = ctrl.getSimulator('sim-non-existent')
+    assert.equal(sim, undefined)
+  })
+
+  it('运行专员对 SVIP 候选用例运行单次模拟（正常流程）', () => {
+    const ctrl = createController()
+    const result = ctrl.runSimulator({
+      simulatorId: 'sim-member-level-v1',
+      dataType: 'member-level',
+      data: svipMemberData as unknown as Record<string, unknown> as unknown as Record<string, unknown>
+    })
+
+    assert.equal(result.simulatorId, 'sim-member-level-v1')
+    assert.equal(result.simulatorName, 'Member Level Simulator')
+    assert.equal(result.matched, true)
+    assert.ok(result.triggeredConditions.length >= 2)
+    assert.ok(result.triggeredActions.includes('act-assign-svip') || result.triggeredActions.includes('act-assign-vip'))
+    assert.ok(result.matchScore > 0.5)
+    assert.ok(result.executionTimeMs >= 0)
+    assert.ok(Date.parse(result.timestamp) > 0)
+  })
+
+  it('运行专员对正常设备运行单次模拟不应匹配（边界：正常数据不触发异常规则）', () => {
+    const ctrl = createController()
+    const result = ctrl.runSimulator({
+      simulatorId: 'sim-device-anomaly-v1',
+      dataType: 'device-anomaly',
+      data: normalDeviceData as unknown as Record<string, unknown>
+    })
+
+    assert.equal(result.simulatorId, 'sim-device-anomaly-v1')
+    assert.equal(result.matched, false)
+    assert.equal(result.triggeredConditions.length, 0)
+    assert.equal(result.triggeredActions.length, 0)
+    assert.equal(result.matchScore, 0)
+  })
+
+  it('运行专员批量模拟 SVIP 会员等级评估（批量运行）', () => {
+    const ctrl = createController()
+    const summary = ctrl.runSimulatorBatch({
+      simulatorId: 'sim-member-level-v1',
+      dataType: 'member-level',
+      data: svipMemberData as unknown as Record<string, unknown> as unknown as Record<string, unknown>,
+      rounds: 20
+    })
+
+    assert.equal(summary.simulatorId, 'sim-member-level-v1')
+    assert.equal(summary.totalRuns, 20)
+    assert.ok(summary.matchedRuns >= 0)
+    assert.ok(summary.totalRuns >= summary.matchedRuns)
+    assert.ok(summary.avgExecutionTimeMs >= 0)
+    assert.ok(summary.p50ExecutionTimeMs >= 0)
+    assert.ok(summary.p95ExecutionTimeMs >= 0)
+    assert.ok(summary.p99ExecutionTimeMs >= 0)
+    assert.ok(Array.isArray(summary.mostTriggeredConditions))
+    assert.ok(typeof summary.recommendation === 'string')
+  })
+
+  it('运行专员批量模拟时使用默认轮次（不传 rounds）', () => {
+    const ctrl = createController()
+    const summary = ctrl.runSimulatorBatch({
+      simulatorId: 'sim-member-level-v1',
+      dataType: 'member-level',
+      data: svipMemberData as unknown as Record<string, unknown> as unknown as Record<string, unknown>
+    })
+
+    assert.equal(summary.totalRuns, 100) // 默认 100 轮
+    assert.ok(summary.matchRate > 0)
+  })
+})
+
+// ── 👔店长 模拟器管理测试 ──
+describe(`${ROLES.StoreManager} ai-rule-engine 模拟器管理测试`, () => {
+  it('店长列出所有可用的模拟器（管理决策支持）', () => {
+    const ctrl = createController()
+    const sims = ctrl.listSimulators()
+
+    assert.ok(sims.length >= 2)
+    for (const sim of sims) {
+      assert.ok(typeof sim.id === 'string')
+      assert.ok(typeof sim.name === 'string')
+      assert.ok(typeof sim.engineId === 'string')
+      assert.ok(typeof sim.rounds === 'number' && sim.rounds > 0)
+      assert.ok(typeof sim.timeoutMs === 'number' && sim.timeoutMs > 0)
+      assert.ok(typeof sim.enableMutation === 'boolean')
+      assert.ok(Date.parse(sim.createdAt) > 0)
+    }
+  })
+
+  it('店长对低活跃会员批量模拟等级变化趋势', () => {
+    const ctrl = createController()
+    const summary = ctrl.runSimulatorBatch({
+      simulatorId: 'sim-member-level-v1',
+      dataType: 'member-level',
+      data: regularMemberData as unknown as Record<string, unknown>,
+      rounds: 30
+    })
+
+    assert.equal(summary.totalRuns, 30)
+    assert.ok(summary.mostTriggeredConditions.length >= 0)
+    assert.ok(summary.matchRate >= 0 && summary.matchRate <= 1)
+    assert.ok(typeof summary.recommendation === 'string')
+  })
+
+  it('店长检查模拟器诊断报告中包含详细结果', () => {
+    const ctrl = createController()
+    const summary = ctrl.runSimulatorBatch({
+      simulatorId: 'sim-device-anomaly-v1',
+      dataType: 'device-anomaly',
+      data: criticalAnomalyData as unknown as Record<string, unknown>,
+      rounds: 5
+    })
+
+    assert.equal(summary.totalRuns, 5)
+    assert.ok(Array.isArray(summary.results))
+    assert.equal(summary.results.length, 5)
+    // 严重异常的设备应在多轮变异后仍有高匹配率
+    assert.ok(summary.matchRate >= 0.5)
   })
 })

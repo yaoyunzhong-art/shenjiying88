@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe, beforeEach } from 'node:test'
 import { AiDiagnosisService } from './ai-diagnosis.service'
 
 describe('AiDiagnosisService', () => {
@@ -14,7 +14,7 @@ describe('AiDiagnosisService', () => {
   // ── createDiagnosis ──
 
   describe('createDiagnosis', () => {
-    test('should create a diagnosis with PENDING status', () => {
+    it('should create a diagnosis with PENDING status', () => {
       const result = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 'scenario-001',
@@ -33,7 +33,7 @@ describe('AiDiagnosisService', () => {
       assert.ok(result.diagnosisId)
     })
 
-    test('should create a diagnosis with optional fields', () => {
+    it('should create a diagnosis with optional fields', () => {
       const result = service.createDiagnosis({
         engineId: 'engine-002',
         scenarioId: 'scenario-002',
@@ -47,7 +47,7 @@ describe('AiDiagnosisService', () => {
       assert.deepEqual(result.inputSnapshot, { key: 'value' })
     })
 
-    test('should create unique diagnosisIds per call', () => {
+    it('should create unique diagnosisIds per call', () => {
       const r1 = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -68,7 +68,7 @@ describe('AiDiagnosisService', () => {
   // ── getDiagnosis ──
 
   describe('getDiagnosis', () => {
-    test('should return created diagnosis', () => {
+    it('should return created diagnosis', () => {
       const created = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 'scenario-001',
@@ -81,7 +81,7 @@ describe('AiDiagnosisService', () => {
       assert.deepEqual(found, created)
     })
 
-    test('should return undefined for non-existent diagnosis', () => {
+    it('should return undefined for non-existent diagnosis', () => {
       const found = service.getDiagnosis('non-existent')
       assert.equal(found, undefined)
     })
@@ -90,13 +90,13 @@ describe('AiDiagnosisService', () => {
   // ── listDiagnoses ──
 
   describe('listDiagnoses', () => {
-    test('should return empty list when no diagnoses exist', () => {
+    it('should return empty list when no diagnoses exist', () => {
       const result = service.listDiagnoses()
       assert.equal(result.total, 0)
       assert.deepEqual(result.diagnoses, [])
     })
 
-    test('should list all created diagnoses', () => {
+    it('should list all created diagnoses', () => {
       service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -115,7 +115,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(result.diagnoses.length, 2)
     })
 
-    test('should filter by engineId', () => {
+    it('should filter by engineId', () => {
       service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -134,7 +134,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(result.diagnoses[0]!.engineId, 'engine-001')
     })
 
-    test('should filter by status', () => {
+    it('should filter by status', () => {
       const d1 = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -161,7 +161,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(completed.total, 1)
     })
 
-    test('should filter by riskLevel', () => {
+    it('should filter by riskLevel', () => {
       const d1 = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -174,7 +174,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(highRisk.total, 1)
     })
 
-    test('should filter by tenantId', () => {
+    it('should filter by tenantId', () => {
       service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -192,7 +192,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(t1results.total, 1)
     })
 
-    test('should return results sorted by createdAt desc', async () => {
+    it('should return results sorted by createdAt desc', async () => {
       const d1 = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 'first',
@@ -217,7 +217,7 @@ describe('AiDiagnosisService', () => {
   // ── updateDiagnosis ──
 
   describe('updateDiagnosis', () => {
-    test('should update diagnosis status', () => {
+    it('should update diagnosis status', () => {
       const d = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -238,7 +238,7 @@ describe('AiDiagnosisService', () => {
       assert.ok(updated.completedAt)
     })
 
-    test('should set completedAt when status transitions to COMPLETED', () => {
+    it('should set completedAt when status transitions to COMPLETED', () => {
       const d = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -251,7 +251,7 @@ describe('AiDiagnosisService', () => {
       assert.ok(updated?.completedAt)
     })
 
-    test('should set completedAt when status transitions to FAILED', () => {
+    it('should set completedAt when status transitions to FAILED', () => {
       const d = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -263,7 +263,7 @@ describe('AiDiagnosisService', () => {
       assert.ok(updated?.completedAt)
     })
 
-    test('should preserve completedAt when transitioning from COMPLETED to IN_PROGRESS', () => {
+    it('should preserve completedAt when transitioning from COMPLETED to IN_PROGRESS', () => {
       const d = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -277,12 +277,12 @@ describe('AiDiagnosisService', () => {
       assert.equal(updated?.completedAt, completedAt)
     })
 
-    test('should return undefined for non-existent diagnosis', () => {
+    it('should return undefined for non-existent diagnosis', () => {
       const result = service.updateDiagnosis('non-existent', { status: 'COMPLETED' })
       assert.equal(result, undefined)
     })
 
-    test('should update matchedRuleIds and triggeredActionIds', () => {
+    it('should update matchedRuleIds and triggeredActionIds', () => {
       const d = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -307,7 +307,7 @@ describe('AiDiagnosisService', () => {
   // ── deleteDiagnosis ──
 
   describe('deleteDiagnosis', () => {
-    test('should delete existing diagnosis', () => {
+    it('should delete existing diagnosis', () => {
       const d = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -320,7 +320,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(service.getDiagnosis(d.diagnosisId), undefined)
     })
 
-    test('should return false for non-existent diagnosis', () => {
+    it('should return false for non-existent diagnosis', () => {
       const deleted = service.deleteDiagnosis('non-existent')
       assert.equal(deleted, false)
     })
@@ -329,7 +329,7 @@ describe('AiDiagnosisService', () => {
   // ── createDiagnosisBatch ──
 
   describe('createDiagnosisBatch', () => {
-    test('should create a batch with multiple diagnoses', () => {
+    it('should create a batch with multiple diagnoses', () => {
       const batch = service.createDiagnosisBatch({
         engineId: 'engine-001',
         scenarioIds: ['s1', 's2', 's3'],
@@ -345,7 +345,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(batch.tenantId, 'T001')
     })
 
-    test('should auto-complete all diagnoses in batch', () => {
+    it('should auto-complete all diagnoses in batch', () => {
       const batch = service.createDiagnosisBatch({
         engineId: 'engine-001',
         scenarioIds: ['s1', 's2'],
@@ -359,7 +359,7 @@ describe('AiDiagnosisService', () => {
       }
     })
 
-    test('should mark critical scenario as high risk', () => {
+    it('should mark critical scenario as high risk', () => {
       const batch = service.createDiagnosisBatch({
         engineId: 'engine-001',
         scenarioIds: ['critical-scenario-1', 'normal-scenario'],
@@ -374,7 +374,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(normalDiag?.riskLevel, 'low')
     })
 
-    test('should calculate match rate correctly', () => {
+    it('should calculate match rate correctly', () => {
       const batch = service.createDiagnosisBatch({
         engineId: 'engine-001',
         scenarioIds: ['critical-1', 'high-1', 'normal-1'],
@@ -387,7 +387,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(batch.matchRate, 2 / 3)
     })
 
-    test('should compute risk distribution', () => {
+    it('should compute risk distribution', () => {
       const batch = service.createDiagnosisBatch({
         engineId: 'engine-001',
         scenarioIds: ['critical-1', 'high-2', 'normal-1', 'normal-2'],
@@ -401,7 +401,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(batch.riskDistribution.critical, 0)
     })
 
-    test('should handle empty scenarioIds gracefully', () => {
+    it('should handle empty scenarioIds gracefully', () => {
       const batch = service.createDiagnosisBatch({
         engineId: 'engine-001',
         scenarioIds: [],
@@ -418,7 +418,7 @@ describe('AiDiagnosisService', () => {
   // ── getDiagnosisBatch ──
 
   describe('getDiagnosisBatch', () => {
-    test('should return created batch', () => {
+    it('should return created batch', () => {
       const created = service.createDiagnosisBatch({
         engineId: 'engine-001',
         scenarioIds: ['s1'],
@@ -431,7 +431,7 @@ describe('AiDiagnosisService', () => {
       assert.deepEqual(found, created)
     })
 
-    test('should return undefined for non-existent batch', () => {
+    it('should return undefined for non-existent batch', () => {
       const found = service.getDiagnosisBatch('non-existent')
       assert.equal(found, undefined)
     })
@@ -440,7 +440,7 @@ describe('AiDiagnosisService', () => {
   // ── listDiagnosisBatches ──
 
   describe('listDiagnosisBatches', () => {
-    test('should list all created batches', () => {
+    it('should list all created batches', () => {
       service.createDiagnosisBatch({
         engineId: 'engine-001',
         scenarioIds: ['s1'],
@@ -458,7 +458,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(batches.length, 2)
     })
 
-    test('should filter by engineId', () => {
+    it('should filter by engineId', () => {
       service.createDiagnosisBatch({
         engineId: 'engine-001',
         scenarioIds: ['s1'],
@@ -481,7 +481,7 @@ describe('AiDiagnosisService', () => {
   // ── generateRiskReport ──
 
   describe('generateRiskReport', () => {
-    test('should return empty report when no diagnoses exist', () => {
+    it('should return empty report when no diagnoses exist', () => {
       const report = service.generateRiskReport()
       assert.equal(report.totalEvaluated, 0)
       assert.deepEqual(report.riskDistribution, { low: 0, medium: 0, high: 0, critical: 0 })
@@ -489,7 +489,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(report.averageEvaluationDurationMs, 0)
     })
 
-    test('should calculate risk distribution correctly', () => {
+    it('should calculate risk distribution correctly', () => {
       const d1 = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -513,7 +513,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(report.riskDistribution.medium, 0)
     })
 
-    test('should return top recommendations sorted by risk', () => {
+    it('should return top recommendations sorted by risk', () => {
       const d1 = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -535,7 +535,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(report.topRecommendations[1]!.riskLevel, 'high')
     })
 
-    test('should only include high and critical in top recommendations', () => {
+    it('should only include high and critical in top recommendations', () => {
       for (let i = 0; i < 5; i++) {
         const d = service.createDiagnosis({
           engineId: 'engine-001',
@@ -551,7 +551,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(report.totalEvaluated, 5)
     })
 
-    test('should filter report by engineId', () => {
+    it('should filter report by engineId', () => {
       const d1 = service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',
@@ -572,7 +572,7 @@ describe('AiDiagnosisService', () => {
       assert.equal(report.riskDistribution.high, 1)
     })
 
-    test('should filter report by tenantId', () => {
+    it('should filter report by tenantId', () => {
       service.createDiagnosis({
         engineId: 'engine-001',
         scenarioId: 's1',

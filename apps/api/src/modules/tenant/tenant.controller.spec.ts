@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * TenantController 单元测试 (node:test)
  *
@@ -5,7 +6,6 @@
  */
 
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
 
 // ── Type mirror ─────────────────────────────────────────────────
 interface TenantAwareRequest {
@@ -76,13 +76,13 @@ describe('TenantController', () => {
   const controller = new TenantController()
 
   describe('resolveTenant()', () => {
-    test('returns source "tenant-module"', () => {
+    it('returns source "tenant-module"', () => {
       const req = buildReq()
       const result = controller.resolveTenant(req as any)
       assert.strictEqual(result.source, 'tenant-module')
     })
 
-    test('uses tenantContext.tenantId when no actorContext.tenantId', () => {
+    it('uses tenantContext.tenantId when no actorContext.tenantId', () => {
       const req = buildReq({
         tenantContext: { tenantId: 't-ctx' },
       })
@@ -90,7 +90,7 @@ describe('TenantController', () => {
       assert.strictEqual(result.effectiveTenantId, 't-ctx')
     })
 
-    test('prefers actorContext.tenantId over tenantContext.tenantId', () => {
+    it('prefers actorContext.tenantId over tenantContext.tenantId', () => {
       const req = buildReq({
         actorContext: { tenantId: 't-actor' },
         tenantContext: { tenantId: 't-ctx' },
@@ -99,13 +99,13 @@ describe('TenantController', () => {
       assert.strictEqual(result.effectiveTenantId, 't-actor')
     })
 
-    test('falls back to "tenant-demo" when no tenantId is set anywhere', () => {
+    it('falls back to "tenant-demo" when no tenantId is set anywhere', () => {
       const req = buildReq()
       const result = controller.resolveTenant(req as any)
       assert.strictEqual(result.effectiveTenantId, 'tenant-demo')
     })
 
-    test('forwards governanceContext.requestId', () => {
+    it('forwards governanceContext.requestId', () => {
       const req = buildReq({
         governanceContext: { requestId: 'req-123' },
       })
@@ -113,7 +113,7 @@ describe('TenantController', () => {
       assert.strictEqual(result.requestId, 'req-123')
     })
 
-    test('prefers actorContext.brandId over tenantContext.brandId', () => {
+    it('prefers actorContext.brandId over tenantContext.brandId', () => {
       const req = buildReq({
         actorContext: { brandId: 'b-actor' },
         tenantContext: { brandId: 'b-ctx' },
@@ -122,13 +122,13 @@ describe('TenantController', () => {
       assert.strictEqual(result.effectiveBrandId, 'b-actor')
     })
 
-    test('effectiveBrandId is undefined when neither context provides it', () => {
+    it('effectiveBrandId is undefined when neither context provides it', () => {
       const req = buildReq()
       const result = controller.resolveTenant(req as any)
       assert.strictEqual(result.effectiveBrandId, undefined)
     })
 
-    test('prefers actorContext.storeId over tenantContext.storeId', () => {
+    it('prefers actorContext.storeId over tenantContext.storeId', () => {
       const req = buildReq({
         actorContext: { storeId: 's-actor' },
         tenantContext: { storeId: 's-ctx' },
@@ -137,7 +137,7 @@ describe('TenantController', () => {
       assert.strictEqual(result.effectiveStoreId, 's-actor')
     })
 
-    test('effectiveMarketCode comes from tenantContext', () => {
+    it('effectiveMarketCode comes from tenantContext', () => {
       const req = buildReq({
         tenantContext: { marketCode: 'zh-cn' },
       })
@@ -145,7 +145,7 @@ describe('TenantController', () => {
       assert.strictEqual(result.effectiveMarketCode, 'zh-cn')
     })
 
-    test('returns full actor details when actorContext is present', () => {
+    it('returns full actor details when actorContext is present', () => {
       const req = buildReq({
         actorContext: {
           actorId: 'u-1',
@@ -167,13 +167,13 @@ describe('TenantController', () => {
       })
     })
 
-    test('returns null actor when actorContext is undefined', () => {
+    it('returns null actor when actorContext is undefined', () => {
       const req = buildReq()
       const result = controller.resolveTenant(req as any)
       assert.strictEqual(result.actor, null)
     })
 
-    test('returns undefined requestId when governanceContext is empty', () => {
+    it('returns undefined requestId when governanceContext is empty', () => {
       const req = buildReq()
       const result = controller.resolveTenant(req as any)
       assert.strictEqual(result.requestId, undefined)

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [loyalty] [D] entity spec 补全
  * 
@@ -7,7 +8,6 @@
  */
 
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   BlindboxFulfillmentStatus,
   CouponRedemptionStatus,
@@ -24,15 +24,15 @@ const nowISO = '2026-06-14T10:00:00.000Z'
 
 // ── LoyaltySettlementStatus 枚举 ──
 describe('LoyaltySettlementStatus enum', () => {
-  test('Succeeded = "SUCCEEDED"', () => {
+  it('Succeeded = "SUCCEEDED"', () => {
     assert.equal(LoyaltySettlementStatus.Succeeded, 'SUCCEEDED')
   })
 
-  test('Failed = "FAILED"', () => {
+  it('Failed = "FAILED"', () => {
     assert.equal(LoyaltySettlementStatus.Failed, 'FAILED')
   })
 
-  test('only has 2 members', () => {
+  it('only has 2 members', () => {
     const keys = Object.keys(LoyaltySettlementStatus).filter(k => isNaN(Number(k)))
     assert.equal(keys.length, 2)
   })
@@ -40,34 +40,34 @@ describe('LoyaltySettlementStatus enum', () => {
 
 // ── CouponRedemptionStatus 枚举 ──
 describe('CouponRedemptionStatus enum', () => {
-  test('Redeemed = "REDEEMED"', () => {
+  it('Redeemed = "REDEEMED"', () => {
     assert.equal(CouponRedemptionStatus.Redeemed, 'REDEEMED')
   })
 
-  test('Released = "RELEASED"', () => {
+  it('Released = "RELEASED"', () => {
     assert.equal(CouponRedemptionStatus.Released, 'RELEASED')
   })
 
-  test('Redeemed and Released are distinct', () => {
+  it('Redeemed and Released are distinct', () => {
     assert.notEqual(CouponRedemptionStatus.Redeemed, CouponRedemptionStatus.Released)
   })
 })
 
 // ── BlindboxFulfillmentStatus 枚举 ──
 describe('BlindboxFulfillmentStatus enum', () => {
-  test('Fulfilled = "FULFILLED"', () => {
+  it('Fulfilled = "FULFILLED"', () => {
     assert.equal(BlindboxFulfillmentStatus.Fulfilled, 'FULFILLED')
   })
 
-  test('Skipped = "SKIPPED"', () => {
+  it('Skipped = "SKIPPED"', () => {
     assert.equal(BlindboxFulfillmentStatus.Skipped, 'SKIPPED')
   })
 
-  test('Revoked = "REVOKED"', () => {
+  it('Revoked = "REVOKED"', () => {
     assert.equal(BlindboxFulfillmentStatus.Revoked, 'REVOKED')
   })
 
-  test('all 3 values are distinct', () => {
+  it('all 3 values are distinct', () => {
     const vals = [BlindboxFulfillmentStatus.Fulfilled, BlindboxFulfillmentStatus.Skipped, BlindboxFulfillmentStatus.Revoked]
     assert.equal(new Set(vals).size, 3)
   })
@@ -75,7 +75,7 @@ describe('BlindboxFulfillmentStatus enum', () => {
 
 // ── PointsLedgerEntry 接口 ──
 describe('PointsLedgerEntry', () => {
-  test('正积分（获赠积分）形状', () => {
+  it('正积分（获赠积分）形状', () => {
     const entry: PointsLedgerEntry = {
       entryId: 'points-entry-1',
       tenantContext: tenantCtx,
@@ -92,7 +92,7 @@ describe('PointsLedgerEntry', () => {
     assert.equal(entry.tenantContext.tenantId, 'tenant-test')
   })
 
-  test('负积分（退款扣回）形状', () => {
+  it('负积分（退款扣回）形状', () => {
     const entry: PointsLedgerEntry = {
       entryId: 'points-entry-2',
       tenantContext: tenantCtx,
@@ -107,7 +107,7 @@ describe('PointsLedgerEntry', () => {
     assert.equal(entry.reason, 'transaction.refund-completed')
   })
 
-  test('字段完备性（共 8 字段）', () => {
+  it('字段完备性（共 8 字段）', () => {
     const entry: PointsLedgerEntry = {
       entryId: 'entry-id',
       tenantContext: tenantCtx,
@@ -125,7 +125,7 @@ describe('PointsLedgerEntry', () => {
     assert.ok(keys.includes('reason'))
   })
 
-  test('不同类型 tenant context 可分配', () => {
+  it('不同类型 tenant context 可分配', () => {
     const ctxWithMarket = { ...tenantCtx, marketCode: 'cn-mainland' }
     const entry: PointsLedgerEntry = {
       entryId: 'entry-with-market',
@@ -143,7 +143,7 @@ describe('PointsLedgerEntry', () => {
 
 // ── CouponRedemption 接口 ──
 describe('CouponRedemption', () => {
-  test('REDEEMED 状态', () => {
+  it('REDEEMED 状态', () => {
     const cr: CouponRedemption = {
       redemptionId: 'coupon-red-1',
       tenantContext: tenantCtx,
@@ -159,7 +159,7 @@ describe('CouponRedemption', () => {
     assert.equal(cr.memberId, 'member-1')
   })
 
-  test('RELEASED 状态', () => {
+  it('RELEASED 状态', () => {
     const cr: CouponRedemption = {
       redemptionId: 'coupon-red-2',
       tenantContext: tenantCtx,
@@ -174,7 +174,7 @@ describe('CouponRedemption', () => {
     assert.equal(cr.redemptionId, 'coupon-red-2')
   })
 
-  test('字段完备性（共 8 字段）', () => {
+  it('字段完备性（共 8 字段）', () => {
     const cr: CouponRedemption = {
       redemptionId: 'id',
       tenantContext: tenantCtx,
@@ -188,7 +188,7 @@ describe('CouponRedemption', () => {
     assert.equal(Object.keys(cr).length, 8)
   })
 
-  test('同 order 可以有多个 coupon（不同 couponCode）', () => {
+  it('同 order 可以有多个 coupon（不同 couponCode）', () => {
     const cr1: CouponRedemption = {
       redemptionId: 'r1', tenantContext: tenantCtx,
       orderId: 'order-shared', paymentId: 'p1', memberId: 'm1',
@@ -207,7 +207,7 @@ describe('CouponRedemption', () => {
 
 // ── BlindboxFulfillment 接口 ──
 describe('BlindboxFulfillment', () => {
-  test('FULFILLED 状态', () => {
+  it('FULFILLED 状态', () => {
     const bf: BlindboxFulfillment = {
       fulfillmentId: 'bf-1',
       tenantContext: tenantCtx,
@@ -225,7 +225,7 @@ describe('BlindboxFulfillment', () => {
     assert.equal(bf.blindboxPlanId, 'blindbox-basic')
   })
 
-  test('SKIPPED 状态', () => {
+  it('SKIPPED 状态', () => {
     const bf: BlindboxFulfillment = {
       fulfillmentId: 'bf-2',
       tenantContext: tenantCtx,
@@ -242,7 +242,7 @@ describe('BlindboxFulfillment', () => {
     assert.equal(bf.quantity, 2)
   })
 
-  test('REVOKED 状态（含 relatedFulfillmentId + reason）', () => {
+  it('REVOKED 状态（含 relatedFulfillmentId + reason）', () => {
     const bf: BlindboxFulfillment = {
       fulfillmentId: 'bf-3',
       tenantContext: tenantCtx,
@@ -262,7 +262,7 @@ describe('BlindboxFulfillment', () => {
     assert.equal(bf.reason, 'transaction.full-refund')
   })
 
-  test('可选字段 relatedFulfillmentId / reason 可缺省', () => {
+  it('可选字段 relatedFulfillmentId / reason 可缺省', () => {
     const bf: BlindboxFulfillment = {
       fulfillmentId: 'bf-4',
       tenantContext: tenantCtx,
@@ -282,7 +282,7 @@ describe('BlindboxFulfillment', () => {
 
 // ── LoyaltyOrderSettlement 接口 ──
 describe('LoyaltyOrderSettlement', () => {
-  test('SUCCEEDED 结算', () => {
+  it('SUCCEEDED 结算', () => {
     const s: LoyaltyOrderSettlement = {
       settlementId: 'settlement-1',
       tenantContext: tenantCtx,
@@ -301,7 +301,7 @@ describe('LoyaltyOrderSettlement', () => {
     assert.equal(s.createdAt, s.updatedAt)
   })
 
-  test('FAILED 结算', () => {
+  it('FAILED 结算', () => {
     const s: LoyaltyOrderSettlement = {
       settlementId: 'settlement-2',
       tenantContext: tenantCtx,
@@ -319,7 +319,7 @@ describe('LoyaltyOrderSettlement', () => {
     assert.equal(s.blindboxPlanId, undefined)
   })
 
-  test('可选字段 couponCode / blindboxPlanId 可缺省', () => {
+  it('可选字段 couponCode / blindboxPlanId 可缺省', () => {
     const s: LoyaltyOrderSettlement = {
       settlementId: 'settlement-3',
       tenantContext: tenantCtx,
@@ -335,7 +335,7 @@ describe('LoyaltyOrderSettlement', () => {
     assert.equal(s.blindboxPlanId, undefined)
   })
 
-  test('createdAt / updatedAt 可不同（重结算场景）', () => {
+  it('createdAt / updatedAt 可不同（重结算场景）', () => {
     const s: LoyaltyOrderSettlement = {
       settlementId: 'settlement-4',
       tenantContext: tenantCtx,
@@ -350,7 +350,7 @@ describe('LoyaltyOrderSettlement', () => {
     assert.notEqual(s.createdAt, s.updatedAt)
   })
 
-  test('字段完备性（最多 11 字段含可选）', () => {
+  it('字段完备性（最多 11 字段含可选）', () => {
     const s: LoyaltyOrderSettlement = {
       settlementId: 'sid', tenantContext: tenantCtx,
       orderId: 'oid', paymentId: 'pid', memberId: 'mid',

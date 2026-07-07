@@ -8,21 +8,27 @@
     "start": "next start",
     "lint": "eslint app next.config.mjs --ext .ts,.tsx,.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test app/*.test.ts"
+    "test": "node --import tsx --require ./.test-setup.cjs --test $(find app -type f -name '*.test.ts' -o -name '*.test.tsx' | sort)"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.3.2",
     "@m5/domain": "workspace:*",
     "@m5/sdk": "workspace:*",
     "@m5/types": "workspace:*",
     "@m5/ui": "workspace:*",
+    "antd": "^6.5.0",
+    "dayjs": "^1.11.21",
     "next": "^15.3.5",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
+    "happy-dom": "^20.10.6",
     "typescript": "^5.8.3"
   }
 }

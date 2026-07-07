@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [notification] [C] 角色测试
  *
@@ -9,7 +10,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { NotificationController } from './notification.controller'
 import { NotificationService } from './notification.service'
 import {
@@ -93,7 +93,7 @@ function sendNotification(
 // ═══════════════════════════════════════════
 
 describe(`${ROLES.StoreManager} notification 角色测试`, () => {
-  test('店长注册门店级别的推送模板', () => {
+  it('店长注册门店级别的推送模板', () => {
     const ctrl = createController()
     const ctx = storeCtx()
 
@@ -108,7 +108,7 @@ describe(`${ROLES.StoreManager} notification 角色测试`, () => {
     assert.equal(result.enabled, true)
   })
 
-  test('店长发送营销通知给指定会员', () => {
+  it('店长发送营销通知给指定会员', () => {
     const ctrl = createController()
     const ctx = storeCtx()
 
@@ -123,7 +123,7 @@ describe(`${ROLES.StoreManager} notification 角色测试`, () => {
     assert.ok(dispatch.sentAt)
   })
 
-  test('店长查看门店所有通知发送记录（边界：按 tenantId 过滤）', () => {
+  it('店长查看门店所有通知发送记录（边界：按 tenantId 过滤）', () => {
     const ctrl = createController()
     // 使用独立 tenant 来隔离
     const ctx = { tenantId: 't-empty-999' }
@@ -134,7 +134,7 @@ describe(`${ROLES.StoreManager} notification 角色测试`, () => {
     assert.ok(dispatches.every(d => d.tenantId === 't-empty-999'))
   })
 
-  test('店长取消待发送的通知（权限边界：已发送的不可取消）', () => {
+  it('店长取消待发送的通知（权限边界：已发送的不可取消）', () => {
     const ctrl = createController()
     const ctx = storeCtx()
 
@@ -156,7 +156,7 @@ describe(`${ROLES.StoreManager} notification 角色测试`, () => {
 // ═══════════════════════════════════════════
 
 describe(`${ROLES.FrontDesk} notification 角色测试`, () => {
-  test('前台注册到店提醒模板（门店范围）', () => {
+  it('前台注册到店提醒模板（门店范围）', () => {
     const ctrl = createController()
     const ctx = storeCtx('store-front-001')
 
@@ -171,7 +171,7 @@ describe(`${ROLES.FrontDesk} notification 角色测试`, () => {
     assert.equal(result.channel, NotificationChannelType.Push)
   })
 
-  test('前台触发到店推送通知', () => {
+  it('前台触发到店推送通知', () => {
     const ctrl = createController()
     const ctx = storeCtx()
 
@@ -183,7 +183,7 @@ describe(`${ROLES.FrontDesk} notification 角色测试`, () => {
     assert.equal(dispatch.recipient, 'frontdesk-tablet-001')
   })
 
-  test('前台尝试查看品牌级通知列表（边界：应有门店隔离）', () => {
+  it('前台尝试查看品牌级通知列表（边界：应有门店隔离）', () => {
     const ctrl = createController()
     const ctxA = storeCtx('store-A')
     const ctxB = storeCtx('store-B')
@@ -209,7 +209,7 @@ describe(`${ROLES.FrontDesk} notification 角色测试`, () => {
 // ═══════════════════════════════════════════
 
 describe(`${ROLES.HR} notification 角色测试`, () => {
-  test('HR 注册品牌级排班通知模板', () => {
+  it('HR 注册品牌级排班通知模板', () => {
     const ctrl = createController()
     const ctx = brandCtx()
 
@@ -225,7 +225,7 @@ describe(`${ROLES.HR} notification 角色测试`, () => {
     assert.equal(result.channel, NotificationChannelType.Sms)
   })
 
-  test('HR 发送排班变更通知给员工', () => {
+  it('HR 发送排班变更通知给员工', () => {
     const ctrl = createController()
     const ctx = brandCtx()
 
@@ -239,7 +239,7 @@ describe(`${ROLES.HR} notification 角色测试`, () => {
     assert.equal(dispatch.status, NotificationStatus.Sent)
   })
 
-  test('HR 查看品牌下所有 SMS 通知（边界：按渠道过滤）', () => {
+  it('HR 查看品牌下所有 SMS 通知（边界：按渠道过滤）', () => {
     const ctrl = createController()
     const ctx = brandCtx()
 
@@ -268,7 +268,7 @@ describe(`${ROLES.HR} notification 角色测试`, () => {
 // ═══════════════════════════════════════════
 
 describe(`${ROLES.Security} notification 角色测试`, () => {
-  test('安监注册安全告警通知模板', () => {
+  it('安监注册安全告警通知模板', () => {
     const ctrl = createController()
     const ctx = tenantCtx()
 
@@ -284,7 +284,7 @@ describe(`${ROLES.Security} notification 角色测试`, () => {
     assert.equal(result.enabled, true)
   })
 
-  test('安监发送安全告警（含异常设备信息）', () => {
+  it('安监发送安全告警（含异常设备信息）', () => {
     const ctrl = createController()
     const ctx = tenantCtx()
 
@@ -302,7 +302,7 @@ describe(`${ROLES.Security} notification 角色测试`, () => {
     assert.ok(dispatch.providerResponse)
   })
 
-  test('安监重试失败的通知（边界：仅可重试 FAILED 状态）', () => {
+  it('安监重试失败的通知（边界：仅可重试 FAILED 状态）', () => {
     const ctrl = createController()
     const ctx = tenantCtx()
 
@@ -325,7 +325,7 @@ describe(`${ROLES.Security} notification 角色测试`, () => {
     assert.equal(retried!.status, NotificationStatus.Failed)
   })
 
-  test('安监查看已发送的安全通知（边界：按状态过滤）', () => {
+  it('安监查看已发送的安全通知（边界：按状态过滤）', () => {
     const ctrl = createController()
     const ctx = tenantCtx()
 
@@ -348,7 +348,7 @@ describe(`${ROLES.Security} notification 角色测试`, () => {
 // ═══════════════════════════════════════════
 
 describe(`${ROLES.Guide} notification 角色测试`, () => {
-  test('导玩员注册游戏活动提醒模板', () => {
+  it('导玩员注册游戏活动提醒模板', () => {
     const ctrl = createController()
     const ctx = storeCtx('store-game-001')
 
@@ -363,7 +363,7 @@ describe(`${ROLES.Guide} notification 角色测试`, () => {
     assert.equal(result.storeId, 'store-game-001')
   })
 
-  test('导玩员发送游戏开始通知给在场会员', () => {
+  it('导玩员发送游戏开始通知给在场会员', () => {
     const ctrl = createController()
     const ctx = storeCtx()
 
@@ -375,7 +375,7 @@ describe(`${ROLES.Guide} notification 角色测试`, () => {
     assert.equal(dispatch.recipient, 'member-player-001')
   })
 
-  test('导玩员尝试发送品牌级通知（边界：应受限到门店）', () => {
+  it('导玩员尝试发送品牌级通知（边界：应受限到门店）', () => {
     const ctrl = createController()
     const ctx = storeCtx('store-guide-only')
 
@@ -397,7 +397,7 @@ describe(`${ROLES.Guide} notification 角色测试`, () => {
 // ═══════════════════════════════════════════
 
 describe(`${ROLES.Operations} notification 角色测试`, () => {
-  test('运行专员注册系统运维通知模板', () => {
+  it('运行专员注册系统运维通知模板', () => {
     const ctrl = createController()
     const ctx = tenantCtx()
 
@@ -413,7 +413,7 @@ describe(`${ROLES.Operations} notification 角色测试`, () => {
     assert.equal(result.scopeType, FoundationScopeType.Tenant)
   })
 
-  test('运行专员发送全平台维护通知', () => {
+  it('运行专员发送全平台维护通知', () => {
     const ctrl = createController()
     const ctx = tenantCtx()
 
@@ -428,7 +428,7 @@ describe(`${ROLES.Operations} notification 角色测试`, () => {
     assert.equal(dispatch.scopeType, FoundationScopeType.Tenant)
   })
 
-  test('运行专员管理模板启用/禁用（边界切换）', () => {
+  it('运行专员管理模板启用/禁用（边界切换）', () => {
     const ctrl = createController()
     const ctx = tenantCtx()
 
@@ -447,7 +447,7 @@ describe(`${ROLES.Operations} notification 角色测试`, () => {
     assert.equal(enabled!.enabled, true)
   })
 
-  test('运行专员取消定时通知（边界：已发送的不可取消）', () => {
+  it('运行专员取消定时通知（边界：已发送的不可取消）', () => {
     const ctrl = createController()
     const ctx = tenantCtx()
 
@@ -470,7 +470,7 @@ describe(`${ROLES.Operations} notification 角色测试`, () => {
 // ═══════════════════════════════════════════
 
 describe(`${ROLES.Teambuilding} notification 角色测试`, () => {
-  test('团建专员注册团建活动通知模板', () => {
+  it('团建专员注册团建活动通知模板', () => {
     const ctrl = createController()
     const ctx = brandCtx()
 
@@ -485,7 +485,7 @@ describe(`${ROLES.Teambuilding} notification 角色测试`, () => {
     assert.equal(result.scopeType, FoundationScopeType.Brand)
   })
 
-  test('团建专员向团队成员发送活动提醒', () => {
+  it('团建专员向团队成员发送活动提醒', () => {
     const ctrl = createController()
     const ctx = brandCtx()
 
@@ -498,7 +498,7 @@ describe(`${ROLES.Teambuilding} notification 角色测试`, () => {
     assert.equal(dispatch.recipient, 'team-alpha-member-001')
   })
 
-  test('团建专员查看品牌下所有推送通知', () => {
+  it('团建专员查看品牌下所有推送通知', () => {
     const ctrl = createController()
     const ctx = brandCtx()
 
@@ -523,7 +523,7 @@ describe(`${ROLES.Teambuilding} notification 角色测试`, () => {
 // ═══════════════════════════════════════════
 
 describe(`${ROLES.Marketing} notification 角色测试`, () => {
-  test('营销专员注册多变量营销模板', () => {
+  it('营销专员注册多变量营销模板', () => {
     const ctrl = createController()
     const ctx = brandCtx()
 
@@ -539,7 +539,7 @@ describe(`${ROLES.Marketing} notification 角色测试`, () => {
     assert.deepEqual(result.variables, ['campaignName', 'discount', 'deadline'])
   })
 
-  test('营销专员批量发送促销通知', () => {
+  it('营销专员批量发送促销通知', () => {
     const ctrl = createController()
     const ctx = brandCtx()
 
@@ -563,7 +563,7 @@ describe(`${ROLES.Marketing} notification 角色测试`, () => {
     })
   })
 
-  test('营销专员注册多语言模板（边界：zh-CN / en 双 locale）', () => {
+  it('营销专员注册多语言模板（边界：zh-CN / en 双 locale）', () => {
     const ctrl = createController()
     const ctx = brandCtx()
 
@@ -584,7 +584,7 @@ describe(`${ROLES.Marketing} notification 角色测试`, () => {
     assert.equal(en.locale, 'en')
   })
 
-  test('营销专员查看模板并更新内容（边界：不存在 ID 返回 null）', () => {
+  it('营销专员查看模板并更新内容（边界：不存在 ID 返回 null）', () => {
     const ctrl = createController()
     const ctx = brandCtx()
 
@@ -609,7 +609,7 @@ describe(`${ROLES.Marketing} notification 角色测试`, () => {
     assert.equal(notFound, null)
   })
 
-  test('营销专员使用 Webhook 渠道发送通知（边界：多渠道支持）', () => {
+  it('营销专员使用 Webhook 渠道发送通知（边界：多渠道支持）', () => {
     const ctrl = createController()
     const ctx = brandCtx()
 
@@ -627,7 +627,7 @@ describe(`${ROLES.Marketing} notification 角色测试`, () => {
 // ── 跨角色边界测试 ──
 
 describe('跨角色 notification 边界测试', () => {
-  test('不同渠道类型全部可用', () => {
+  it('不同渠道类型全部可用', () => {
     const ctrl = createController()
     const ctx = tenantCtx()
 
@@ -641,7 +641,7 @@ describe('跨角色 notification 边界测试', () => {
     })
   })
 
-  test('不同 scope 层次正确隔离', () => {
+  it('不同 scope 层次正确隔离', () => {
     const ctrl = createController()
 
     registerTemplate(ctrl, tenantCtx(), {

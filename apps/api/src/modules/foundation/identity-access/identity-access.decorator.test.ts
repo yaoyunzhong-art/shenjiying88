@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   RequireRoles,
   RequirePermissions,
@@ -20,7 +20,7 @@ function getMetadataFromDecorator(key: string, target: any, propertyKey: string)
 
 describe('identity-access.decorator', () => {
   describe('RequireRoles', () => {
-    test('should set ROLES_METADATA_KEY on descriptor.value', () => {
+    it('should set ROLES_METADATA_KEY on descriptor.value', () => {
       const target: Record<string, any> = {}
       const method = () => {}
       target['testMethod'] = method
@@ -31,7 +31,7 @@ describe('identity-access.decorator', () => {
       assert.deepEqual(metadata, ['admin', 'operator'])
     })
 
-    test('should handle single role', () => {
+    it('should handle single role', () => {
       const target: Record<string, any> = {}
       const method = () => {}
       target['singleRole'] = method
@@ -42,7 +42,7 @@ describe('identity-access.decorator', () => {
       assert.deepEqual(metadata, ['admin'])
     })
 
-    test('should handle empty roles array', () => {
+    it('should handle empty roles array', () => {
       const target: Record<string, any> = {}
       const method = () => {}
       target['noRoles'] = method
@@ -55,7 +55,7 @@ describe('identity-access.decorator', () => {
   })
 
   describe('RequirePermissions', () => {
-    test('should set PERMISSIONS_METADATA_KEY on descriptor.value', () => {
+    it('should set PERMISSIONS_METADATA_KEY on descriptor.value', () => {
       const target: Record<string, any> = {}
       const method = () => {}
       target['permMethod'] = method
@@ -66,7 +66,7 @@ describe('identity-access.decorator', () => {
       assert.deepEqual(metadata, ['read:users', 'write:users'])
     })
 
-    test('should handle single permission', () => {
+    it('should handle single permission', () => {
       const target: Record<string, any> = {}
       const method = () => {}
       target['singlePerm'] = method
@@ -79,7 +79,7 @@ describe('identity-access.decorator', () => {
   })
 
   describe('RequireTenantScope', () => {
-    test('should set TENANT_SCOPE_METADATA_KEY with default empty object', () => {
+    it('should set TENANT_SCOPE_METADATA_KEY with default empty object', () => {
       const target: Record<string, any> = {}
       const method = () => {}
       target['scopeMethod'] = method
@@ -90,7 +90,7 @@ describe('identity-access.decorator', () => {
       assert.deepEqual(metadata, {})
     })
 
-    test('should set TENANT_SCOPE_METADATA_KEY with provided metadata', () => {
+    it('should set TENANT_SCOPE_METADATA_KEY with provided metadata', () => {
       const target: Record<string, any> = {}
       const method = () => {}
       target['scopedMethod'] = method
@@ -102,7 +102,7 @@ describe('identity-access.decorator', () => {
       assert.deepEqual(metadata, scopeMeta)
     })
 
-    test('should set TENANT_SCOPE_METADATA_KEY with full metadata', () => {
+    it('should set TENANT_SCOPE_METADATA_KEY with full metadata', () => {
       const target: Record<string, any> = {}
       const method = () => {}
       target['fullScope'] = method
@@ -124,15 +124,15 @@ describe('identity-access.decorator', () => {
   })
 
   describe('metadata key constants', () => {
-    test('ROLES_METADATA_KEY should be identity-access:roles', () => {
+    it('ROLES_METADATA_KEY should be identity-access:roles', () => {
       assert.equal(ROLES_METADATA_KEY, 'identity-access:roles')
     })
 
-    test('PERMISSIONS_METADATA_KEY should be identity-access:permissions', () => {
+    it('PERMISSIONS_METADATA_KEY should be identity-access:permissions', () => {
       assert.equal(PERMISSIONS_METADATA_KEY, 'identity-access:permissions')
     })
 
-    test('TENANT_SCOPE_METADATA_KEY should be identity-access:tenant-scope', () => {
+    it('TENANT_SCOPE_METADATA_KEY should be identity-access:tenant-scope', () => {
       assert.equal(TENANT_SCOPE_METADATA_KEY, 'identity-access:tenant-scope')
     })
   })

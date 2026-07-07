@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * CampaignController 单元测试 (node:test)
  *
@@ -6,7 +7,6 @@
  */
 
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
 
 // ── Entity mirrors (avoid NestJS DI) ───────────────────────────
 const CampaignStatus = {
@@ -236,7 +236,7 @@ describe('CampaignController', () => {
 
   // ── POST /campaigns ───────────────────────────────────────
   describe('registerCampaign()', () => {
-    test('returns CampaignPlanContract on successful registration', () => {
+    it('returns CampaignPlanContract on successful registration', () => {
       const mockService = makeMockServiceWithData()
       const controller = new CampaignController(mockService)
       const ctx = makeTenantContext()
@@ -254,7 +254,7 @@ describe('CampaignController', () => {
       assert.strictEqual(result.status, CampaignStatus.Draft)
     })
 
-    test('passes all body fields to service', () => {
+    it('passes all body fields to service', () => {
       let capturedInput: any = null
       const mockService = makeMockService({
         registerCampaign: (input: any) => {
@@ -285,7 +285,7 @@ describe('CampaignController', () => {
       assert.strictEqual(capturedInput.actions[0].params.points, 500)
     })
 
-    test('handles empty conditions and actions arrays', () => {
+    it('handles empty conditions and actions arrays', () => {
       const mockService = makeMockServiceWithData()
       const controller = new CampaignController(mockService)
       const ctx = makeTenantContext()
@@ -305,7 +305,7 @@ describe('CampaignController', () => {
 
   // ── GET /campaigns ────────────────────────────────────────
   describe('listCampaigns()', () => {
-    test('returns empty array when no campaigns exist', () => {
+    it('returns empty array when no campaigns exist', () => {
       const mockService = makeMockService()
       const controller = new CampaignController(mockService)
       const ctx = makeTenantContext()
@@ -313,7 +313,7 @@ describe('CampaignController', () => {
       assert.deepStrictEqual(result, [])
     })
 
-    test('returns all campaigns when no filters applied', () => {
+    it('returns all campaigns when no filters applied', () => {
       const mockService = makeMockServiceWithData()
       const controller = new CampaignController(mockService)
       const ctx = makeTenantContext()
@@ -323,7 +323,7 @@ describe('CampaignController', () => {
       assert.strictEqual(result[1].planId, 'plan-002')
     })
 
-    test('filters by status', () => {
+    it('filters by status', () => {
       let capturedFilters: any = null
       const mockService = makeMockService({
         listCampaigns: (_tenantId: string, filters: any) => {
@@ -337,7 +337,7 @@ describe('CampaignController', () => {
       assert.strictEqual(capturedFilters.status, CampaignStatus.Active)
     })
 
-    test('filters by triggerEvent', () => {
+    it('filters by triggerEvent', () => {
       let capturedFilters: any = null
       const mockService = makeMockService({
         listCampaigns: (_tenantId: string, filters: any) => {
@@ -353,7 +353,7 @@ describe('CampaignController', () => {
       assert.strictEqual(capturedFilters.triggerEvent, CampaignTrigger.OrderCreated)
     })
 
-    test('filters by both status and triggerEvent', () => {
+    it('filters by both status and triggerEvent', () => {
       let capturedFilters: any = null
       const mockService = makeMockService({
         listCampaigns: (_tenantId: string, filters: any) => {
@@ -374,7 +374,7 @@ describe('CampaignController', () => {
 
   // ── GET /campaigns/:planId ────────────────────────────────
   describe('getCampaign()', () => {
-    test('returns plan contract for existing campaign', () => {
+    it('returns plan contract for existing campaign', () => {
       const mockService = makeMockServiceWithData()
       const controller = new CampaignController(mockService)
       const ctx = makeTenantContext()
@@ -384,7 +384,7 @@ describe('CampaignController', () => {
       assert.strictEqual(result!.code, 'CP001')
     })
 
-    test('returns null for non-existing campaign', () => {
+    it('returns null for non-existing campaign', () => {
       const mockService = makeMockServiceWithData()
       const controller = new CampaignController(mockService)
       const ctx = makeTenantContext()
@@ -392,7 +392,7 @@ describe('CampaignController', () => {
       assert.strictEqual(result, null)
     })
 
-    test('returns null when service returns undefined', () => {
+    it('returns null when service returns undefined', () => {
       const mockService = makeMockService({
         getCampaign: () => undefined,
       })
@@ -402,7 +402,7 @@ describe('CampaignController', () => {
       assert.strictEqual(result, null)
     })
 
-    test('forwards tenantId to service', () => {
+    it('forwards tenantId to service', () => {
       let capturedTenantId: string | null = null
       const mockService = makeMockService({
         getCampaign: (planId: string, tenantId: string) => {
@@ -419,7 +419,7 @@ describe('CampaignController', () => {
 
   // ── PATCH /campaigns/:planId/status ───────────────────────
   describe('updateCampaignStatus()', () => {
-    test('updates status to Active', () => {
+    it('updates status to Active', () => {
       let capturedPlanId: string | null = null
       let capturedStatus: string | null = null
       const mockService = makeMockService({
@@ -439,7 +439,7 @@ describe('CampaignController', () => {
       assert.strictEqual(result.status, CampaignStatus.Active)
     })
 
-    test('updates status to Paused', () => {
+    it('updates status to Paused', () => {
       const mockService = makeMockService({
         updateCampaignStatus: (planId: string, status: string) =>
           makeCampaignPlan({ planId, status }),
@@ -452,7 +452,7 @@ describe('CampaignController', () => {
       assert.strictEqual(result.status, CampaignStatus.Paused)
     })
 
-    test('updates status to Completed', () => {
+    it('updates status to Completed', () => {
       const mockService = makeMockServiceWithData()
       const controller = new CampaignController(mockService)
       const ctx = makeTenantContext()
@@ -462,7 +462,7 @@ describe('CampaignController', () => {
       assert.strictEqual(result.status, CampaignStatus.Completed)
     })
 
-    test('passes tenantId to service', () => {
+    it('passes tenantId to service', () => {
       let capturedTenantId: string | null = null
       const mockService = makeMockService({
         updateCampaignStatus: (planId: string, status: string, tenantId: string) => {
@@ -481,7 +481,7 @@ describe('CampaignController', () => {
 
   // ── GET /campaigns/:planId/dispatches ─────────────────────
   describe('listPlanDispatches()', () => {
-    test('returns empty array when no dispatches for plan', () => {
+    it('returns empty array when no dispatches for plan', () => {
       const mockService = makeMockService()
       const controller = new CampaignController(mockService)
       const ctx = makeTenantContext()
@@ -489,7 +489,7 @@ describe('CampaignController', () => {
       assert.deepStrictEqual(result, [])
     })
 
-    test('returns dispatches for a given plan', () => {
+    it('returns dispatches for a given plan', () => {
       let capturedFilters: any = null
       const disp = makeCampaignDispatch()
       const mockService = makeMockService({
@@ -507,7 +507,7 @@ describe('CampaignController', () => {
       assert.strictEqual(capturedFilters.memberId, undefined)
     })
 
-    test('multiple dispatches mapped to contracts', () => {
+    it('multiple dispatches mapped to contracts', () => {
       const mockService = makeMockServiceWithData()
       const controller = new CampaignController(mockService)
       const ctx = makeTenantContext()
@@ -520,7 +520,7 @@ describe('CampaignController', () => {
 
   // ── GET /campaigns/dispatches/list ────────────────────────
   describe('listDispatches()', () => {
-    test('returns all dispatches with no filters', () => {
+    it('returns all dispatches with no filters', () => {
       let capturedFilters: any = null
       const mockService = makeMockService({
         listDispatches: (tenantId: string, filters: any) => {
@@ -536,7 +536,7 @@ describe('CampaignController', () => {
       assert.strictEqual(capturedFilters.status, undefined)
     })
 
-    test('filters by memberId', () => {
+    it('filters by memberId', () => {
       let capturedFilters: any = null
       const mockService = makeMockService({
         listDispatches: (tenantId: string, filters: any) => {
@@ -550,7 +550,7 @@ describe('CampaignController', () => {
       assert.strictEqual(capturedFilters.memberId, 'mem-filter')
     })
 
-    test('filters by status', () => {
+    it('filters by status', () => {
       let capturedFilters: any = null
       const mockService = makeMockService({
         listDispatches: (tenantId: string, filters: any) => {
@@ -564,7 +564,7 @@ describe('CampaignController', () => {
       assert.strictEqual(capturedFilters.status, CampaignActionStatus.Failed)
     })
 
-    test('filters by both memberId and status', () => {
+    it('filters by both memberId and status', () => {
       let capturedFilters: any = null
       const mockService = makeMockService({
         listDispatches: (tenantId: string, filters: any) => {
@@ -585,7 +585,7 @@ describe('CampaignController', () => {
 
   // ── POST /campaigns/evaluate ──────────────────────────────
   describe('evaluateTriggers()', () => {
-    test('returns evaluation result with no matches', () => {
+    it('returns evaluation result with no matches', () => {
       const mockService = makeMockService()
       const controller = new CampaignController(mockService)
       const ctx = makeTenantContext()
@@ -599,7 +599,7 @@ describe('CampaignController', () => {
       assert.deepStrictEqual(result.dispatches, [])
     })
 
-    test('returns evaluation result with matches and dispatches', () => {
+    it('returns evaluation result with matches and dispatches', () => {
       const mockService = makeMockServiceWithData()
       const controller = new CampaignController(mockService)
       const ctx = makeTenantContext()
@@ -617,7 +617,7 @@ describe('CampaignController', () => {
       assert.strictEqual(result.dispatches[0].dispatchId, 'disp-001')
     })
 
-    test('forwards tenantContext to service', () => {
+    it('forwards tenantContext to service', () => {
       let capturedInput: any = null
       const mockService = makeMockService({
         evaluateTriggers: (input: any) => {
@@ -636,7 +636,7 @@ describe('CampaignController', () => {
       assert.strictEqual(capturedInput.memberId, 'mem-eval')
     })
 
-    test('forwards full payload to service', () => {
+    it('forwards full payload to service', () => {
       let capturedInput: any = null
       const mockService = makeMockService({
         evaluateTriggers: (input: any) => {
@@ -665,7 +665,7 @@ describe('CampaignController', () => {
 
   // ── Edge cases ────────────────────────────────────────────
   describe('edge cases', () => {
-    test('registerCampaign with undefined optional fields', () => {
+    it('registerCampaign with undefined optional fields', () => {
       let capturedInput: any = null
       const mockService = makeMockService({
         registerCampaign: (input: any) => {
@@ -690,7 +690,7 @@ describe('CampaignController', () => {
       assert.strictEqual(capturedInput.scheduledEnd, undefined)
     })
 
-    test('listPlanDispatches for plan with no dispatches returns empty', () => {
+    it('listPlanDispatches for plan with no dispatches returns empty', () => {
       const mockService = makeMockService({
         listDispatches: () => [],
       })

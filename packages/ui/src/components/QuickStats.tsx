@@ -13,6 +13,8 @@ export interface QuickStatItem {
   helper?: string;
   /** 主值颜色覆盖 */
   valueColor?: string;
+  /** 趋势值 (正数上升, 负数下降, 0保持不变) */
+  trend?: number;
 }
 
 export interface QuickStatsProps {

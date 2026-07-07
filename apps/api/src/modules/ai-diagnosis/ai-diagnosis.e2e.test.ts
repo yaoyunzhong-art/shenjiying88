@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-diagnosis] E2E 基础测试
  *
@@ -15,7 +16,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { Controller, Get, Post, Patch, Delete, Param, Query, Body, HttpCode, HttpStatus, NotFoundException, Inject } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
@@ -171,7 +171,7 @@ async function buildApp() {
 // ========== E2E: 完整诊断流程 ==========
 
 describe('E2E: 完整诊断流程', () => {
-  test('POST /ai-diagnosis → GET /ai-diagnosis/:id → PATCH → GET → DELETE 完整 CRUD 流程', async () => {
+  it('POST /ai-diagnosis → GET /ai-diagnosis/:id → PATCH → GET → DELETE 完整 CRUD 流程', async () => {
     const { app } = await buildApp()
     try {
       // 1. 创建诊断
@@ -231,7 +231,7 @@ describe('E2E: 完整诊断流程', () => {
     }
   })
 
-  test('E2E: GET /ai-diagnosis 返回诊断列表及分页信息', async () => {
+  it('E2E: GET /ai-diagnosis 返回诊断列表及分页信息', async () => {
     const { app } = await buildApp()
     try {
       // 创建 3 个诊断
@@ -260,7 +260,7 @@ describe('E2E: 完整诊断流程', () => {
     }
   })
 
-  test('E2E: POST /ai-diagnosis 缺失必填字段应 400', async () => {
+  it('E2E: POST /ai-diagnosis 缺失必填字段应 400', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -279,7 +279,7 @@ describe('E2E: 完整诊断流程', () => {
 // ========== E2E: 批量诊断流程 ==========
 
 describe('E2E: 批量诊断流程', () => {
-  test('POST /ai-diagnosis/batch → GET /batch/:id → 批量结果完整流程', async () => {
+  it('POST /ai-diagnosis/batch → GET /batch/:id → 批量结果完整流程', async () => {
     const { app } = await buildApp()
     try {
       // 1. 创建批量诊断
@@ -325,7 +325,7 @@ describe('E2E: 批量诊断流程', () => {
     }
   })
 
-  test('E2E: GET /ai-diagnosis/batch-list 列出所有批量', async () => {
+  it('E2E: GET /ai-diagnosis/batch-list 列出所有批量', async () => {
     const { app } = await buildApp()
     try {
       // 创建 2 个批量
@@ -349,7 +349,7 @@ describe('E2E: 批量诊断流程', () => {
     }
   })
 
-  test('E2E: GET /ai-diagnosis/batch-list?engineId=xxx 过滤批量', async () => {
+  it('E2E: GET /ai-diagnosis/batch-list?engineId=xxx 过滤批量', async () => {
     const { app } = await buildApp()
     try {
       await request(app.getHttpServer())
@@ -372,7 +372,7 @@ describe('E2E: 批量诊断流程', () => {
     }
   })
 
-  test('E2E: GET /ai-diagnosis/batch/:id 不存在的批量返回 404', async () => {
+  it('E2E: GET /ai-diagnosis/batch/:id 不存在的批量返回 404', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -388,7 +388,7 @@ describe('E2E: 批量诊断流程', () => {
 // ========== E2E: 风险报告流程 ==========
 
 describe('E2E: 风险报告流程', () => {
-  test('E2E: GET /ai-diagnosis/report/risk 生成风险报告 — 完整标记', async () => {
+  it('E2E: GET /ai-diagnosis/report/risk 生成风险报告 — 完整标记', async () => {
     const { app } = await buildApp()
     try {
       // 创建诊断并更新为 COMPLETED + high
@@ -431,7 +431,7 @@ describe('E2E: 风险报告流程', () => {
     }
   })
 
-  test('E2E: GET /ai-diagnosis/report/risk?tenantId=xxx 按租户过滤报告', async () => {
+  it('E2E: GET /ai-diagnosis/report/risk?tenantId=xxx 按租户过滤报告', async () => {
     const { app } = await buildApp()
     try {
       // T001
@@ -459,7 +459,7 @@ describe('E2E: 风险报告流程', () => {
     }
   })
 
-  test('E2E: GET /ai-diagnosis/report/risk 空数据集返回空报告', async () => {
+  it('E2E: GET /ai-diagnosis/report/risk 空数据集返回空报告', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -474,7 +474,7 @@ describe('E2E: 风险报告流程', () => {
     }
   })
 
-  test('E2E: GET /ai-diagnosis/report/risk 高风险排序 — critical 优先', async () => {
+  it('E2E: GET /ai-diagnosis/report/risk 高风险排序 — critical 优先', async () => {
     const { app } = await buildApp()
     try {
       const inputs = [
@@ -507,7 +507,7 @@ describe('E2E: 风险报告流程', () => {
 // ========== E2E: 响应格式一致性 ==========
 
 describe('E2E: 响应格式一致性', () => {
-  test('所有成功响应包含 success + data + timestamp', async () => {
+  it('所有成功响应包含 success + data + timestamp', async () => {
     const { app } = await buildApp()
     try {
       const createRes = await request(app.getHttpServer())
@@ -525,7 +525,7 @@ describe('E2E: 响应格式一致性', () => {
     }
   })
 
-  test('POST 返回 201, GET 返回 200', async () => {
+  it('POST 返回 201, GET 返回 200', async () => {
     const { app } = await buildApp()
     try {
       const createRes = await request(app.getHttpServer())
@@ -548,7 +548,7 @@ describe('E2E: 响应格式一致性', () => {
     }
   })
 
-  test('404 响应格式不通过通用 ResponseInterceptor', async () => {
+  it('404 响应格式不通过通用 ResponseInterceptor', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -566,7 +566,7 @@ describe('E2E: 响应格式一致性', () => {
 // ========== E2E: 诊断+规则引擎联动 ==========
 
 describe('E2E: 诊断+规则引擎联动', () => {
-  test('诊断发现风险 → matchedRuleIds 填充 → 匹配规则', async () => {
+  it('诊断发现风险 → matchedRuleIds 填充 → 匹配规则', async () => {
     const { app } = await buildApp()
     try {
       // 批量诊断中 critical/high 场景会自动匹配规则
@@ -595,7 +595,7 @@ describe('E2E: 诊断+规则引擎联动', () => {
     }
   })
 
-  test('诊断完成 → triggeredActionIds 填充 → 告警动作生成', async () => {
+  it('诊断完成 → triggeredActionIds 填充 → 告警动作生成', async () => {
     const { app } = await buildApp()
     try {
       const batchRes = await request(app.getHttpServer())
@@ -621,7 +621,7 @@ describe('E2E: 诊断+规则引擎联动', () => {
     }
   })
 
-  test('诊断完成 → outputSnapshot 含风险分 → 规则引擎结果', async () => {
+  it('诊断完成 → outputSnapshot 含风险分 → 规则引擎结果', async () => {
     const { app } = await buildApp()
     try {
       const batchRes = await request(app.getHttpServer())
@@ -647,7 +647,7 @@ describe('E2E: 诊断+规则引擎联动', () => {
 // ========== E2E: 8 角色 HTTP 访问 ==========
 
 for (const role of EIGHT_ROLES) {
-  test(`E2E: ${role.name} 可 GET /ai-diagnosis`, async () => {
+  it(`E2E: ${role.name} 可 GET /ai-diagnosis`, async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -665,7 +665,7 @@ for (const role of EIGHT_ROLES) {
 }
 
 for (const role of EIGHT_ROLES) {
-  test(`E2E: ${role.name} 可 GET /ai-diagnosis/report/risk`, async () => {
+  it(`E2E: ${role.name} 可 GET /ai-diagnosis/report/risk`, async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -685,7 +685,7 @@ for (const role of EIGHT_ROLES) {
 // ========== E2E: 边界测试 ==========
 
 describe('E2E: 边界测试', () => {
-  test('未知诊断 ID GET 返回 404', async () => {
+  it('未知诊断 ID GET 返回 404', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -697,7 +697,7 @@ describe('E2E: 边界测试', () => {
     }
   })
 
-  test('未知诊断 ID PATCH 返回 404', async () => {
+  it('未知诊断 ID PATCH 返回 404', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -710,7 +710,7 @@ describe('E2E: 边界测试', () => {
     }
   })
 
-  test('未知诊断 ID DELETE 返回 404', async () => {
+  it('未知诊断 ID DELETE 返回 404', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -722,7 +722,7 @@ describe('E2E: 边界测试', () => {
     }
   })
 
-  test('DELETE 成功返回 204 无 body', async () => {
+  it('DELETE 成功返回 204 无 body', async () => {
     const { app } = await buildApp()
     try {
       const createRes = await request(app.getHttpServer())
@@ -739,7 +739,7 @@ describe('E2E: 边界测试', () => {
     }
   })
 
-  test('GET /ai-diagnosis?status=COMPLETED 过滤状态', async () => {
+  it('GET /ai-diagnosis?status=COMPLETED 过滤状态', async () => {
     const { app } = await buildApp()
     try {
       // 创建 PENDING

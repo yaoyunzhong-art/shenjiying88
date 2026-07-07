@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { HealthStatus } from './health.entity'
 import {
   toHealthCheckContract,
@@ -11,7 +11,7 @@ import {
 /*  toHealthCheckContract                                              */
 /* ------------------------------------------------------------------ */
 
-test('toHealthCheckContract maps healthy result with all components ok', () => {
+it('toHealthCheckContract maps healthy result with all components ok', () => {
   const result = {
     status: HealthStatus.Ok,
     checkedAt: '2026-06-23T08:00:00.000Z',
@@ -38,7 +38,7 @@ test('toHealthCheckContract maps healthy result with all components ok', () => {
   assert.equal(contract.lytMode, 'mock')
 })
 
-test('toHealthCheckContract maps degraded result with mixed statuses', () => {
+it('toHealthCheckContract maps degraded result with mixed statuses', () => {
   const result = {
     status: HealthStatus.Degraded,
     checkedAt: '2026-06-23T08:05:00.000Z',
@@ -63,7 +63,7 @@ test('toHealthCheckContract maps degraded result with mixed statuses', () => {
   assert.equal(contract.lytMode, 'platform-mock')
 })
 
-test('toHealthCheckContract maps unavailable result with all components down', () => {
+it('toHealthCheckContract maps unavailable result with all components down', () => {
   const result = {
     status: HealthStatus.Unavailable,
     checkedAt: '2026-06-23T08:10:00.000Z',
@@ -84,7 +84,7 @@ test('toHealthCheckContract maps unavailable result with all components down', (
   assert.equal(contract.lytMode, undefined)
 })
 
-test('toHealthCheckContract handles empty component list', () => {
+it('toHealthCheckContract handles empty component list', () => {
   const result = {
     status: HealthStatus.Ok,
     checkedAt: '2026-06-23T08:00:00.000Z',
@@ -102,7 +102,7 @@ test('toHealthCheckContract handles empty component list', () => {
   assert.deepStrictEqual(contract.unavailableComponents, [])
 })
 
-test('toHealthCheckContract preserves lytMode when set', () => {
+it('toHealthCheckContract preserves lytMode when set', () => {
   const result = {
     status: HealthStatus.Ok,
     checkedAt: '2026-06-23T09:00:00.000Z',
@@ -121,7 +121,7 @@ test('toHealthCheckContract preserves lytMode when set', () => {
 /*  toComponentHealthContract                                          */
 /* ------------------------------------------------------------------ */
 
-test('toComponentHealthContract maps component without detail', () => {
+it('toComponentHealthContract maps component without detail', () => {
   const component = {
     name: 'database',
     status: HealthStatus.Ok,
@@ -136,7 +136,7 @@ test('toComponentHealthContract maps component without detail', () => {
   assert.equal(contract.hasDetail, false)
 })
 
-test('toComponentHealthContract maps component with detail', () => {
+it('toComponentHealthContract maps component with detail', () => {
   const component = {
     name: 'redis',
     status: HealthStatus.Degraded,
@@ -152,7 +152,7 @@ test('toComponentHealthContract maps component with detail', () => {
   assert.equal(contract.hasDetail, true)
 })
 
-test('toComponentHealthContract maps unavailable component with error detail', () => {
+it('toComponentHealthContract maps unavailable component with error detail', () => {
   const component = {
     name: 'lyt-adapter',
     status: HealthStatus.Unavailable,
@@ -172,7 +172,7 @@ test('toComponentHealthContract maps unavailable component with error detail', (
 /*  toHealthPingContract                                               */
 /* ------------------------------------------------------------------ */
 
-test('toHealthPingContract maps alive ping', () => {
+it('toHealthPingContract maps alive ping', () => {
   const result = { alive: true, timestamp: '2026-06-23T08:00:00.000Z' }
 
   const contract = toHealthPingContract(result)
@@ -181,7 +181,7 @@ test('toHealthPingContract maps alive ping', () => {
   assert.equal(contract.timestamp, '2026-06-23T08:00:00.000Z')
 })
 
-test('toHealthPingContract maps dead ping (edge case — should not happen in practice)', () => {
+it('toHealthPingContract maps dead ping (edge case — should not happen in practice)', () => {
   const result = { alive: false, timestamp: '2026-06-23T08:00:00.000Z' }
 
   const contract = toHealthPingContract(result)
@@ -190,7 +190,7 @@ test('toHealthPingContract maps dead ping (edge case — should not happen in pr
   assert.equal(contract.timestamp, '2026-06-23T08:00:00.000Z')
 })
 
-test('toHealthPingContract round-trips identity', () => {
+it('toHealthPingContract round-trips identity', () => {
   const input = { alive: true, timestamp: new Date().toISOString() }
   const contract = toHealthPingContract(input)
 
@@ -202,7 +202,7 @@ test('toHealthPingContract round-trips identity', () => {
 /*  Contract type structural conformance                               */
 /* ------------------------------------------------------------------ */
 
-test('HealthCheckContract fields match expected shape', () => {
+it('HealthCheckContract fields match expected shape', () => {
   const result = {
     status: HealthStatus.Ok,
     checkedAt: '2026-06-23T08:00:00.000Z',
@@ -231,7 +231,7 @@ test('HealthCheckContract fields match expected shape', () => {
   ])
 })
 
-test('ComponentHealthContract fields match expected shape', () => {
+it('ComponentHealthContract fields match expected shape', () => {
   const component = { name: 'disk', status: HealthStatus.Ok, latencyMs: 3 }
   const contract = toComponentHealthContract(component)
 
@@ -239,7 +239,7 @@ test('ComponentHealthContract fields match expected shape', () => {
   assert.deepStrictEqual(keys, ['hasDetail', 'latencyMs', 'name', 'status'])
 })
 
-test('toHealthCheckContract degrades do not duplicate names', () => {
+it('toHealthCheckContract degrades do not duplicate names', () => {
   const result = {
     status: HealthStatus.Degraded,
     checkedAt: '2026-06-23T08:00:00.000Z',

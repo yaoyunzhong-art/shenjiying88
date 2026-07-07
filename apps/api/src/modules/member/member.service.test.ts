@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe, beforeEach } from 'node:test'
 
 import { PrismaService } from '../../prisma/prisma.service'
 import { MemberService, resetMemberServiceTestState } from './member.service'
@@ -18,6 +18,7 @@ import {
   MEMBER_LEVEL_THRESHOLDS
 } from './member.entity'
 import type { RequestTenantContext } from '../tenant/tenant.types'
+import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
 
 type TestPrisma = ReturnType<typeof createPrismaStub>
 
@@ -29,17 +30,6 @@ type TestPrisma = ReturnType<typeof createPrismaStub>
  */
 function asPrismaService(prisma: TestPrisma): PrismaService {
   return prisma as unknown as PrismaService
-}
-
-function createRuntimeGovernanceStub(): RuntimeGovernanceService {
-  return {
-    replayAction: async () => {
-      throw new Error('runtime replay should not be triggered for member profile approval')
-    },
-    getActionReceipt: async () => {
-      throw new Error('not implemented in test stub')
-    }
-  } as unknown as RuntimeGovernanceService
 }
 
 function createTestMemberService(prisma?: TestPrisma, runtimeGovernanceService?: unknown) {
@@ -58,6 +48,9 @@ function createApprovalClosureHarness(prisma: TestPrisma) {
     asPrismaService(prisma),
     governanceApprovalService
   )
+
+  // 注册 outcome hook，使 recorder 能监听 governance approval 事件
+  recorder.onModuleInit()
 
   return { governanceApprovalService, recorder }
 }
@@ -672,50 +665,50 @@ beforeEach(() => {
 
 // ── Original MemberService contract tests ──────────────────────
 describe('member service contract (via controller)', () => {
-  test('getBootstrap returns tenantContext unchanged', () => {
+  it('getBootstrap returns tenantContext unchanged', () => {
     const ctrl = createMemberController()
     const ctx = createContext()
     const result = ctrl.getBootstrap(ctx)
     assert.deepStrictEqual(result.tenantContext, ctx)
   })
 
-  test('getBootstrap always returns scaffold phase', () => {
+  it('getBootstrap always returns scaffold phase', () => {
     const ctrl = createMemberController()
     const result = ctrl.getBootstrap(createContext())
     assert.equal(result.phase, 'scaffold')
   })
 
-  test('getBootstrap exposes member-center capability', () => {
+  it('getBootstrap exposes member-center capability', () => {
     const ctrl = createMemberController()
     const result = ctrl.getBootstrap(createContext())
     assert.ok(result.capabilities.includes('member-center'))
   })
 
-  test('getBootstrap exposes points capability', () => {
+  it('getBootstrap exposes points capability', () => {
     const ctrl = createMemberController()
     const result = ctrl.getBootstrap(createContext())
     assert.ok(result.capabilities.includes('points'))
   })
 
-  test('getBootstrap exposes svip capability', () => {
+  it('getBootstrap exposes svip capability', () => {
     const ctrl = createMemberController()
     const result = ctrl.getBootstrap(createContext())
     assert.ok(result.capabilities.includes('svip'))
   })
 
-  test('getBootstrap exposes blind-box capability', () => {
+  it('getBootstrap exposes blind-box capability', () => {
     const ctrl = createMemberController()
     const result = ctrl.getBootstrap(createContext())
     assert.ok(result.capabilities.includes('blind-box'))
   })
 
-  test('getBootstrap capabilities length is 4', () => {
+  it('getBootstrap capabilities length is 4', () => {
     const ctrl = createMemberController()
     const result = ctrl.getBootstrap(createContext())
     assert.equal(result.capabilities.length, 4)
   })
 
-  test('getBootstrap with minimal context preserves tenantId', () => {
+  it('getBootstrap with minimal context preserves tenantId', () => {
     const ctrl = createMemberController()
     const result = ctrl.getBootstrap({
       tenantId: 'min-tenant',
@@ -723,7 +716,7 @@ describe('member service contract (via controller)', () => {
     assert.equal(result.tenantContext.tenantId, 'min-tenant')
   })
 
-  test('getBootstrap with full context preserves brandId and storeId', () => {
+  it('getBootstrap with full context preserves brandId and storeId', () => {
     const ctrl = createMemberController()
     const ctx = createContext({
       brandId: 'brand-x',
@@ -734,7 +727,7 @@ describe('member service contract (via controller)', () => {
     assert.equal(result.tenantContext.storeId, 'store-y')
   })
 
-  test('getBootstrap with different marketCode preserves it', () => {
+  it('getBootstrap with different marketCode preserves it', () => {
     const ctrl = createMemberController()
     const ctx = createContext({ marketCode: 'en-global' })
     const result = ctrl.getBootstrap(ctx)
@@ -745,19 +738,19 @@ describe('member service contract (via controller)', () => {
 // ── MemberService direct unit tests ─────────────────────────────
 
 describe('MemberService direct instantiation', () => {
-  test('MemberService is instantiable without dependencies', () => {
+  it('MemberService is instantiable without dependencies', () => {
     const service = createTestMemberService()
     assert.ok(service instanceof MemberService)
   })
 
-  test('getBootstrap returns consistent phase', () => {
+  it('getBootstrap returns consistent phase', () => {
     const service = createTestMemberService()
     const ctx = createContext()
     const result = service.getBootstrap(ctx)
     assert.equal(result.phase, 'scaffold')
   })
 
-  test('getBootstrap with empty tenantId still returns scaffold', () => {
+  it('getBootstrap with empty tenantId still returns scaffold', () => {
     const service = createTestMemberService()
     const result = service.getBootstrap({
       tenantId: '',
@@ -770,7 +763,7 @@ describe('MemberService direct instantiation', () => {
     assert.deepStrictEqual(result.capabilities, ['member-center', 'points', 'svip', 'blind-box'])
   })
 
-  test('getBootstrap capabilities are immutable across calls', () => {
+  it('getBootstrap capabilities are immutable across calls', () => {
     const service = createTestMemberService()
     const r1 = service.getBootstrap(createContext())
     const r2 = service.getBootstrap(createContext({ tenantId: 'different' }))
@@ -778,7 +771,7 @@ describe('MemberService direct instantiation', () => {
     assert.deepStrictEqual(r1.capabilities, r2.capabilities)
   })
 
-  test('getBootstrap preserves all context fields when fully populated', () => {
+  it('getBootstrap preserves all context fields when fully populated', () => {
     const service = createTestMemberService()
     const ctx: RequestTenantContext = {
       tenantId: 't-full',
@@ -795,7 +788,7 @@ describe('MemberService direct instantiation', () => {
 })
 
 describe('MemberService vs MemberController consistency', () => {
-  test('service and controller produce identical results for same input', () => {
+  it('service and controller produce identical results for same input', () => {
     const service = createTestMemberService()
     const controller = createMemberController(service)
     const ctx = createContext()
@@ -806,7 +799,7 @@ describe('MemberService vs MemberController consistency', () => {
     assert.deepStrictEqual(svcResult, ctrlResult)
   })
 
-  test('service and controller both handle undefined optional fields', () => {
+  it('service and controller both handle undefined optional fields', () => {
     const service = createTestMemberService()
     const controller = createMemberController(service)
     const ctx: RequestTenantContext = { tenantId: 't-only' } as RequestTenantContext
@@ -820,26 +813,26 @@ describe('MemberService vs MemberController consistency', () => {
 })
 
 describe('MemberService edge cases', () => {
-  test('getBootstrap with very long tenantId', () => {
+  it('getBootstrap with very long tenantId', () => {
     const service = createTestMemberService()
     const longId = 't-' + 'a'.repeat(200)
     const result = service.getBootstrap({ tenantId: longId } as RequestTenantContext)
     assert.equal(result.tenantContext.tenantId, longId)
   })
 
-  test('getBootstrap with unicode tenantId', () => {
+  it('getBootstrap with unicode tenantId', () => {
     const service = createTestMemberService()
     const result = service.getBootstrap({ tenantId: '租户-テスト-тест' } as RequestTenantContext)
     assert.equal(result.tenantContext.tenantId, '租户-テスト-тест')
   })
 
-  test('getBootstrap with special characters in tenantId', () => {
+  it('getBootstrap with special characters in tenantId', () => {
     const service = createTestMemberService()
     const result = service.getBootstrap({ tenantId: 't_123-abc.def@org' } as RequestTenantContext)
     assert.equal(result.tenantContext.tenantId, 't_123-abc.def@org')
   })
 
-  test('getBootstrap returned object is a new reference each call', () => {
+  it('getBootstrap returned object is a new reference each call', () => {
     const service = createTestMemberService()
     const ctx = createContext()
     const r1 = service.getBootstrap(ctx)
@@ -852,7 +845,7 @@ describe('MemberService edge cases', () => {
 // ── NEW: register + getProfile + listProfiles ───────────────────
 
 describe('MemberService.register()', () => {
-  test('registers a new bronze-level member', () => {
+  it('registers a new bronze-level member', () => {
     const service = createTestMemberService()
     const profile = service.register({
       memberId: uid('mem'),
@@ -869,7 +862,7 @@ describe('MemberService.register()', () => {
     assert.ok(profile.lastActiveAt)
   })
 
-  test('throws when registering duplicate memberId', () => {
+  it('throws when registering duplicate memberId', () => {
     const service = createTestMemberService()
     const dupId = uid('dup')
     service.register({
@@ -888,7 +881,7 @@ describe('MemberService.register()', () => {
     )
   })
 
-  test('registered member is retrievable via getProfile', () => {
+  it('registered member is retrievable via getProfile', () => {
     const service = createTestMemberService()
     const mid = uid('mem')
     service.register({
@@ -902,12 +895,12 @@ describe('MemberService.register()', () => {
     assert.equal(profile!.nickname, 'Diana')
   })
 
-  test('getProfile returns undefined for unknown member', () => {
+  it('getProfile returns undefined for unknown member', () => {
     const service = createTestMemberService()
     assert.equal(service.getProfile(uid('ghost')), undefined)
   })
 
-  test('preserves tenant context in profile', () => {
+  it('preserves tenant context in profile', () => {
     const service = createTestMemberService()
     const mid = uid('ctx')
     const ctx = createContext({ tenantId: 't-special', brandId: 'b-special' })
@@ -923,7 +916,7 @@ describe('MemberService.register()', () => {
 })
 
 describe('MemberService persistent member flow', () => {
-  test('registerPersistent creates user-bound persistent member profile', async () => {
+  it('registerPersistent creates user-bound persistent member profile', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
 
@@ -943,7 +936,7 @@ describe('MemberService persistent member flow', () => {
     assert.ok(profile.userId)
   })
 
-  test('login returns session and auto-hydrated persistent member', async () => {
+  it('login returns session and auto-hydrated persistent member', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
     await service.registerPersistent({
@@ -968,7 +961,7 @@ describe('MemberService persistent member flow', () => {
     assert.deepStrictEqual(storedSession, result.session)
   })
 
-  test('getPersistentProfile resolves persisted member by id', async () => {
+  it('getPersistentProfile resolves persisted member by id', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
     const created = await service.registerPersistent({
@@ -983,7 +976,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(result?.mobile, '13700000000')
   })
 
-  test('awardPoints updates persisted member points and level below approval threshold', async () => {
+  it('awardPoints updates persisted member points and level below approval threshold', async () => {
     const prisma: any = createPrismaStub()
     prisma.memberProfile.update = async ({ where, data }: any) => {
       const target = await prisma.memberProfile.findUnique({ where })
@@ -1010,7 +1003,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(updated.level, MemberLevel.Gold)
   })
 
-  test('awardPoints returns approval result for high-risk bonus', async () => {
+  it('awardPoints returns approval result for high-risk bonus', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
     const created = await service.registerPersistent({
@@ -1031,7 +1024,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(profile?.points, 100)
   })
 
-  test('rollbackPoints deducts persisted member points and level safely', async () => {
+  it('rollbackPoints deducts persisted member points and level safely', async () => {
     const prisma: any = createPrismaStub()
     prisma.memberProfile.update = async ({ where, data }: any) => {
       const target = await prisma.memberProfile.findUnique({ where })
@@ -1058,7 +1051,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(updated.level, MemberLevel.Bronze)
   })
 
-  test('rollbackPoints returns approval result for high-risk deduction', async () => {
+  it('rollbackPoints returns approval result for high-risk deduction', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
     const created = await service.registerPersistent({
@@ -1078,7 +1071,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(profile?.points, 1800)
   })
 
-  test('updatePersistentStatus persists non-risk status override through snapshot hydration', async () => {
+  it('updatePersistentStatus persists non-risk status override through snapshot hydration', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
     const created = await service.registerPersistent({
@@ -1096,7 +1089,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(profile?.status, MemberStatus.Frozen)
   })
 
-  test('updatePersistentStatus returns approval result for blacklist action', async () => {
+  it('updatePersistentStatus returns approval result for blacklist action', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
     const created = await service.registerPersistent({
@@ -1116,7 +1109,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(profile?.status, MemberStatus.Active)
   })
 
-  test('updatePersistentProfile persists nickname and extension fields through snapshot hydration', async () => {
+  it('updatePersistentProfile persists nickname and extension fields through snapshot hydration', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
     const created = await service.registerPersistent({
@@ -1149,7 +1142,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(profile?.notes, '高净值会员')
   })
 
-  test('listPersistentMutationHistory returns recent member audits', async () => {
+  it('listPersistentMutationHistory returns recent member audits', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
     const created = await service.registerPersistent({
@@ -1174,7 +1167,7 @@ describe('MemberService persistent member flow', () => {
     assert.ok(history.some((entry) => entry.action === 'status-updated'))
   })
 
-  test('listPersistentMutationHistory merges approval outcome audit entries', async () => {
+  it('listPersistentMutationHistory merges approval outcome audit entries', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
     const created = await service.registerPersistent({
@@ -1226,7 +1219,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(approvalEntry?.operatorId, 'ops.approver')
   })
 
-  test('high-risk awardPoints -> governance approval -> approved -> AuditLog closure loop', async () => {
+  it('high-risk awardPoints -> governance approval -> approved -> AuditLog closure loop', async () => {
     const prisma = createPrismaStub()
     const { governanceApprovalService } = createApprovalClosureHarness(prisma)
     const service = createTestMemberService(prisma)
@@ -1263,7 +1256,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(approvalEntry?.operatorId, 'ops.approver-closure')
   })
 
-  test('high-risk rollbackPoints rejection -> AuditLog reflects approval.rejected entry', async () => {
+  it('high-risk rollbackPoints rejection -> AuditLog reflects approval.rejected entry', async () => {
     const prisma = createPrismaStub()
     const { governanceApprovalService } = createApprovalClosureHarness(prisma)
     const service = createTestMemberService(prisma)
@@ -1293,7 +1286,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(rejected?.operatorId, 'ops.reviewer')
   })
 
-  test('blacklist status approval cancellation writes approval.cancelled audit entry', async () => {
+  it('blacklist status approval cancellation writes approval.cancelled audit entry', async () => {
     const prisma = createPrismaStub()
     const { governanceApprovalService } = createApprovalClosureHarness(prisma)
     const service = createTestMemberService(prisma)
@@ -1327,7 +1320,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(cancelled?.operatorId, 'ops.requester')
   })
 
-  test('overridePersistentLevel persists level override through snapshot hydration', async () => {
+  it('overridePersistentLevel persists level override through snapshot hydration', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
     const created = await service.registerPersistent({
@@ -1345,7 +1338,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(profile?.level, MemberLevel.Platinum)
   })
 
-  test('overridePersistentLevel returns approval result for manual downgrade', async () => {
+  it('overridePersistentLevel returns approval result for manual downgrade', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
     const created = await service.registerPersistent({
@@ -1365,7 +1358,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(profile?.level, MemberLevel.Platinum)
   })
 
-  test('syncLytMemberSnapshot creates standard snapshot and persistent business profile', async () => {
+  it('syncLytMemberSnapshot creates standard snapshot and persistent business profile', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
 
@@ -1399,7 +1392,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(snapshot?.levelCode, 'VIP')
   })
 
-  test('getPersistentProfile hydrates snapshot nickname and mobile when user is absent', async () => {
+  it('getPersistentProfile hydrates snapshot nickname and mobile when user is absent', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
 
@@ -1417,7 +1410,7 @@ describe('MemberService persistent member flow', () => {
     assert.equal(profile?.lastActiveAt, '2026-06-14T12:10:00.000Z')
   })
 
-  test('recordPaymentActivity enriches lifecycle stage and tags on persistent profile', async () => {
+  it('recordPaymentActivity enriches lifecycle stage and tags on persistent profile', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
 
@@ -1455,7 +1448,7 @@ describe('MemberService persistent member flow', () => {
     assert.ok(tasks.some((task) => task.sourceOrderId === 'lyt-order-003'))
   })
 
-  test('getOperationsProfile derives audience segments and recommended actions from enriched profile', async () => {
+  it('getOperationsProfile derives audience segments and recommended actions from enriched profile', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
 
@@ -1491,7 +1484,7 @@ describe('MemberService persistent member flow', () => {
     )
   })
 
-  test('enqueueOperationsTasks queues deduped execution tasks from operations profile', async () => {
+  it('enqueueOperationsTasks queues deduped execution tasks from operations profile', async () => {
     const prisma = createPrismaStub()
     const service = createTestMemberService(prisma)
 
@@ -1540,7 +1533,7 @@ describe('MemberService persistent member flow', () => {
     assert.ok(receipts.length >= 1)
   })
 
-  test('enqueueOperationsTasks records runtime governance receipt and supports replay', async () => {
+  it('enqueueOperationsTasks records runtime governance receipt and supports replay', async () => {
     const prisma = createPrismaStub()
     const runtimeCalls: string[] = []
     const mockRuntimeGovernanceService = {
@@ -1626,7 +1619,36 @@ describe('MemberService persistent member flow', () => {
     assert.deepEqual(runtimeCalls, ['submit', 'sync', 'callback', 'replay'])
   })
 
-  test('enqueueOperationsTasks persists tasks and receipts across service instances', async () => {
+  it('recordPaymentActivity auto-writes coupon + notification marketing metrics by tenant', async () => {
+    const prisma = createPrismaStub()
+    const metrics = new MarketingMetricsService()
+    const service = new MemberService(asPrismaService(prisma), undefined, metrics)
+
+    const result = await service.syncLytMemberSnapshot({
+      tenantContext: createContext(),
+      externalMemberId: 'lyt-member-008',
+      nickname: 'Metrics Ops User',
+      points: 2400,
+      growthValue: 2800,
+      updatedAt: '2026-06-15T10:00:00.000Z'
+    })
+
+    await service.recordPaymentActivity({
+      memberId: result.profile.memberId,
+      tenantContext: createContext(),
+      orderId: 'lyt-order-008',
+      amount: 288,
+      paidAt: '2026-06-15T10:05:00.000Z',
+      channel: 'wechat-pay',
+      source: 'lyt-snapshot'
+    })
+
+    const snapshot = metrics.snapshot(createContext().tenantId)
+    assert.equal(snapshot.couponIssuedTotal, 1)
+    assert.equal(snapshot.notificationDispatchTotal, 2)
+  })
+
+  it('enqueueOperationsTasks persists tasks and receipts across service instances', async () => {
     const prisma = createPrismaStub()
     const firstService = createTestMemberService(prisma)
 
@@ -1668,13 +1690,13 @@ describe('MemberService persistent member flow', () => {
 })
 
 describe('MemberService.listProfiles()', () => {
-  test('listProfiles returns an array', () => {
+  it('listProfiles returns an array', () => {
     const service = createTestMemberService()
     const profiles = service.listProfiles()
     assert.ok(Array.isArray(profiles))
   })
 
-  test('newly registered members appear in list', () => {
+  it('newly registered members appear in list', () => {
     const service = createTestMemberService()
     const idA = uid('la')
     const idB = uid('lb')
@@ -1699,7 +1721,7 @@ describe('MemberService.listProfiles()', () => {
 // ── NEW: addPoints + level computation ──────────────────────────
 
 describe('MemberService.addPoints()', () => {
-  test('adds points and Bronze stays Bronze with small amount', () => {
+  it('adds points and Bronze stays Bronze with small amount', () => {
     const service = createTestMemberService()
     const mid = uid('pts')
     service.register({
@@ -1713,7 +1735,7 @@ describe('MemberService.addPoints()', () => {
     assert.equal(updated.level, MemberLevel.Bronze) // 300 < 500
   })
 
-  test('adds points and upgrades to Silver when crossing 500', () => {
+  it('adds points and upgrades to Silver when crossing 500', () => {
     const service = createTestMemberService()
     const mid = uid('up')
     service.register({
@@ -1727,7 +1749,7 @@ describe('MemberService.addPoints()', () => {
     assert.equal(updated.level, MemberLevel.Silver) // 600 >= 500
   })
 
-  test('adds points and upgrades to Gold when crossing 2000', () => {
+  it('adds points and upgrades to Gold when crossing 2000', () => {
     const service = createTestMemberService()
     const mid = uid('gold')
     service.register({
@@ -1741,7 +1763,7 @@ describe('MemberService.addPoints()', () => {
     assert.equal(updated.level, MemberLevel.Gold) // 2500 >= 2000
   })
 
-  test('upgrades to Platinum at 10000 points', () => {
+  it('upgrades to Platinum at 10000 points', () => {
     const service = createTestMemberService()
     const mid = uid('plat')
     service.register({
@@ -1755,7 +1777,7 @@ describe('MemberService.addPoints()', () => {
     assert.equal(updated.level, MemberLevel.Platinum)
   })
 
-  test('upgrades to Diamond at 50000 points', () => {
+  it('upgrades to Diamond at 50000 points', () => {
     const service = createTestMemberService()
     const mid = uid('dia')
     service.register({
@@ -1769,7 +1791,7 @@ describe('MemberService.addPoints()', () => {
     assert.equal(updated.level, MemberLevel.Diamond)
   })
 
-  test('accumulates points over multiple addPoints calls', () => {
+  it('accumulates points over multiple addPoints calls', () => {
     const service = createTestMemberService()
     const mid = uid('acc')
     service.register({
@@ -1786,7 +1808,7 @@ describe('MemberService.addPoints()', () => {
     assert.equal(updated.level, MemberLevel.Silver) // 1000 >= 500, < 2000
   })
 
-  test('updates lastActiveAt on addPoints', () => {
+  it('updates lastActiveAt on addPoints', () => {
     const service = createTestMemberService()
     const mid = uid('act')
     service.register({
@@ -1802,7 +1824,7 @@ describe('MemberService.addPoints()', () => {
     assert.ok(updated.lastActiveAt! >= before)
   })
 
-  test('throws for unknown member', () => {
+  it('throws for unknown member', () => {
     const service = createTestMemberService()
     assert.throws(
       () => service.addPoints(uid('ghost'), 100),
@@ -1810,7 +1832,7 @@ describe('MemberService.addPoints()', () => {
     )
   })
 
-  test('throws for non-positive points', () => {
+  it('throws for non-positive points', () => {
     const service = createTestMemberService()
     const mid = uid('zero')
     service.register({
@@ -1829,7 +1851,7 @@ describe('MemberService.addPoints()', () => {
     )
   })
 
-  test('revokePoints deducts points and recalculates level', () => {
+  it('revokePoints deducts points and recalculates level', () => {
     const service = createTestMemberService()
     const mid = uid('revoke')
     service.register({
@@ -1844,7 +1866,7 @@ describe('MemberService.addPoints()', () => {
     assert.equal(updated.level, MemberLevel.Bronze)
   })
 
-  test('revokePoints floors at zero', () => {
+  it('revokePoints floors at zero', () => {
     const service = createTestMemberService()
     const mid = uid('revoke-floor')
     service.register({
@@ -1863,7 +1885,7 @@ describe('MemberService.addPoints()', () => {
 // ── NEW: checkUpgrade ───────────────────────────────────────────
 
 describe('MemberService.checkUpgrade()', () => {
-  test('Bronze member with 300 points cannot upgrade', () => {
+  it('Bronze member with 300 points cannot upgrade', () => {
     const service = createTestMemberService()
     const mid = uid('chk')
     service.register({
@@ -1878,7 +1900,7 @@ describe('MemberService.checkUpgrade()', () => {
     assert.equal(result.currentLevel, MemberLevel.Bronze)
   })
 
-  test('Bronze member with 0 points cannot upgrade', () => {
+  it('Bronze member with 0 points cannot upgrade', () => {
     const service = createTestMemberService()
     const mid = uid('chk2')
     service.register({
@@ -1893,7 +1915,7 @@ describe('MemberService.checkUpgrade()', () => {
     assert.equal(result.nextLevel, null)
   })
 
-  test('Platinum member with enough points can upgrade to Diamond', () => {
+  it('Platinum member with enough points can upgrade to Diamond', () => {
     const service = createTestMemberService()
     const mid = uid('chk3')
     service.register({
@@ -1911,7 +1933,7 @@ describe('MemberService.checkUpgrade()', () => {
     assert.equal(result.pointsNeeded, 0)
   })
 
-  test('Diamond member cannot upgrade further', () => {
+  it('Diamond member cannot upgrade further', () => {
     const service = createTestMemberService()
     const mid = uid('max')
     service.register({
@@ -1928,7 +1950,7 @@ describe('MemberService.checkUpgrade()', () => {
     assert.equal(result.pointsNeeded, 0)
   })
 
-  test('throws for unknown member', () => {
+  it('throws for unknown member', () => {
     const service = createTestMemberService()
     assert.throws(
       () => service.checkUpgrade(uid('phant')),
@@ -1940,27 +1962,27 @@ describe('MemberService.checkUpgrade()', () => {
 // ── Entity pure function tests ──────────────────────────────────
 
 describe('computeMemberLevel (pure)', () => {
-  test('returns Bronze for 0 points', () => {
+  it('returns Bronze for 0 points', () => {
     assert.equal(computeMemberLevel(0), MemberLevel.Bronze)
   })
 
-  test('returns Silver at exact 500', () => {
+  it('returns Silver at exact 500', () => {
     assert.equal(computeMemberLevel(500), MemberLevel.Silver)
   })
 
-  test('returns Gold at exact 2000', () => {
+  it('returns Gold at exact 2000', () => {
     assert.equal(computeMemberLevel(2000), MemberLevel.Gold)
   })
 
-  test('returns Platinum at exact 10000', () => {
+  it('returns Platinum at exact 10000', () => {
     assert.equal(computeMemberLevel(10000), MemberLevel.Platinum)
   })
 
-  test('returns Diamond at exact 50000', () => {
+  it('returns Diamond at exact 50000', () => {
     assert.equal(computeMemberLevel(50000), MemberLevel.Diamond)
   })
 
-  test('all thresholds are monotonic', () => {
+  it('all thresholds are monotonic', () => {
     const levels = Object.values(MemberLevel)
     for (let i = 1; i < levels.length; i++) {
       assert.ok(
@@ -1972,19 +1994,19 @@ describe('computeMemberLevel (pure)', () => {
 })
 
 describe('canUpgrade (pure)', () => {
-  test('Bronze + 600 points => can upgrade', () => {
+  it('Bronze + 600 points => can upgrade', () => {
     assert.equal(canUpgrade(MemberLevel.Bronze, 600), true)
   })
 
-  test('Bronze + 100 points => cannot upgrade', () => {
+  it('Bronze + 100 points => cannot upgrade', () => {
     assert.equal(canUpgrade(MemberLevel.Bronze, 100), false)
   })
 
-  test('Diamond + 99999 points => cannot upgrade', () => {
+  it('Diamond + 99999 points => cannot upgrade', () => {
     assert.equal(canUpgrade(MemberLevel.Diamond, 99999), false)
   })
 
-  test('Gold at 12000 points can upgrade to Platinum', () => {
+  it('Gold at 12000 points can upgrade to Platinum', () => {
     // computeMemberLevel(12000) = Platinum > Gold => true
     assert.equal(canUpgrade(MemberLevel.Gold, 12000), true)
   })

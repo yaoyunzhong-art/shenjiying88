@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E 跨模块 #9 — 采购 → 入库 → 应付账款 全链路
  *
@@ -19,12 +20,9 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { Body, Controller, Inject, Param, Post, Req } from '@nestjs/common'
-import { Test } from '@nestjs/testing'
 import request from 'supertest'
-import type { NextFunction, Request, Response } from 'express'
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import type { Request } from 'express'
 import { FinanceService, resetFinanceServiceTestState } from '../finance/finance.service'
 import { LedgerType } from '../finance/finance.entity'
 import {
@@ -32,17 +30,7 @@ import {
   resetInventoryServiceTestState
 } from '../inventory/inventory.service'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
-
-function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
-  ctx.tenantContext = {
-    tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-A',
-    brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-A',
-    storeId: (req.header('x-store-id') as string | undefined) ?? 'store-A',
-    marketCode: (req.header('x-market-code') as string | undefined) ?? 'cn-mainland'
-  }
-  next()
-}
+import { buildCrossModuleTestApp } from './test-helpers'
 
 // ─── TestController ───
 
@@ -110,19 +98,14 @@ async function buildApp() {
   const inventoryService = new InventoryService()
   const financeService = new FinanceService()
 
-  const moduleRef = await Test.createTestingModule({
+  const { app, moduleRef } = await buildCrossModuleTestApp({
     controllers: [TestController],
     providers: [
       { provide: InventoryService, useValue: inventoryService },
       { provide: FinanceService, useValue: financeService }
-    ]
-  }).compile()
-
-  const app = moduleRef.createNestApplication()
-  app.use(attachTenantContext)
-  app.useGlobalInterceptors(new ResponseInterceptor())
-  await app.init()
-  return { app, inventoryService, financeService }
+    ],
+  })
+  return { app, moduleRef, inventoryService, financeService }
 }
 
 const TENANT_A = {
@@ -146,7 +129,7 @@ function ctxB(): RequestTenantContext {
 
 // ═══════════════════════════════════════════════════
 
-test('e2e-9: full procurement → stock-in → payable ledger lifecycle', async () => {
+it('e2e-9: full procurement → stock-in → payable ledger lifecycle', async () => {
   const { app } = await buildApp()
 
   try {
@@ -215,7 +198,7 @@ test('e2e-9: full procurement → stock-in → payable ledger lifecycle', async 
   }
 })
 
-test('e2e-9: PO state machine - cannot receive Draft PO directly', async () => {
+it('e2e-9: PO state machine - cannot receive Draft PO directly', async () => {
   const { app } = await buildApp()
 
   try {
@@ -245,7 +228,7 @@ test('e2e-9: PO state machine - cannot receive Draft PO directly', async () => {
   }
 })
 
-test('e2e-9: PO state machine - cannot confirm twice', async () => {
+it('e2e-9: PO state machine - cannot confirm twice', async () => {
   const { app } = await buildApp()
 
   try {
@@ -280,7 +263,7 @@ test('e2e-9: PO state machine - cannot confirm twice', async () => {
   }
 })
 
-test('e2e-9: finance ledger balance: revenue 1000 - expense 300 = 700', async () => {
+it('e2e-9: finance ledger balance: revenue 1000 - expense 300 = 700', async () => {
   const { app, financeService } = await buildApp()
 
   try {
@@ -316,7 +299,7 @@ test('e2e-9: finance ledger balance: revenue 1000 - expense 300 = 700', async ()
   }
 })
 
-test('e2e-9: cross-tenant isolation - Tenant B cannot see Tenant A inventory/ledger', async () => {
+it('e2e-9: cross-tenant isolation - Tenant B cannot see Tenant A inventory/ledger', async () => {
   const { app, inventoryService, financeService } = await buildApp()
 
   try {
@@ -362,7 +345,7 @@ test('e2e-9: cross-tenant isolation - Tenant B cannot see Tenant A inventory/led
   }
 })
 
-test('e2e-9: low stock alert when stockOut brings stock below threshold', async () => {
+it('e2e-9: low stock alert when stockOut brings stock below threshold', async () => {
   const { app, inventoryService } = await buildApp()
 
   try {
@@ -397,7 +380,7 @@ test('e2e-9: low stock alert when stockOut brings stock below threshold', async 
   }
 })
 
-test('e2e-9: out-of-stock alert when stock reaches 0', async () => {
+it('e2e-9: out-of-stock alert when stock reaches 0', async () => {
   const { app, inventoryService } = await buildApp()
 
   try {
@@ -431,7 +414,7 @@ test('e2e-9: out-of-stock alert when stock reaches 0', async () => {
   }
 })
 
-test('e2e-9: cannot stockOut more than current stock', async () => {
+it('e2e-9: cannot stockOut more than current stock', async () => {
   const { app } = await buildApp()
 
   try {
@@ -458,7 +441,7 @@ test('e2e-9: cannot stockOut more than current stock', async () => {
   }
 })
 
-test('e2e-9: PO receive automatically updates product stock (50 + 100 = 150)', async () => {
+it('e2e-9: PO receive automatically updates product stock (50 + 100 = 150)', async () => {
   const { app, inventoryService } = await buildApp()
 
   try {
@@ -496,7 +479,7 @@ test('e2e-9: PO receive automatically updates product stock (50 + 100 = 150)', a
   }
 })
 
-test('e2e-9: stock records history preserved across multiple operations', async () => {
+it('e2e-9: stock records history preserved across multiple operations', async () => {
   const { app, inventoryService } = await buildApp()
 
   try {

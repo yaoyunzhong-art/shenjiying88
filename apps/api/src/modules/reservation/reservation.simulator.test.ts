@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import { ReservationService, type CreateReservationInput } from './reservation.service';
 import { ReservationEntity, ReservationStatus, ReservationType } from './reservation.entity';
 
@@ -47,7 +47,7 @@ describe('Reservation - Simulator', () => {
     return service.confirm(r.id, input.tenantId);
   }
 
-  test.beforeEach(() => {
+  beforeEach(() => {
     service = new ReservationService();
   });
 
@@ -56,7 +56,7 @@ describe('Reservation - Simulator', () => {
   // ═════════════════════════════════════════════════════════════════
 
   describe('Scenario A — 场地预约完整生命周期', () => {
-    test('A1: 创建预约 → 确认 → 开始 → 完成', () => {
+    it('A1: 创建预约 → 确认 → 开始 → 完成', () => {
       const input = makeReservation();
 
       // 1. 创建（待确认）
@@ -80,7 +80,7 @@ describe('Reservation - Simulator', () => {
       assert.equal(completed.status, ReservationStatus.Completed);
     });
 
-    test('A2: 创建后可立即取消（未确认取消）', () => {
+    it('A2: 创建后可立即取消（未确认取消）', () => {
       const input = makeReservation();
       const created = service.create(input);
 
@@ -90,7 +90,7 @@ describe('Reservation - Simulator', () => {
       assert.ok(cancelled.cancelledAt);
     });
 
-    test('A3: 确认后取消 — 押金不退场景', () => {
+    it('A3: 确认后取消 — 押金不退场景', () => {
       const input = makeReservation({ deposit: 100, price: 300 });
       const confirmed = createAndConfirm(input);
 
@@ -99,7 +99,7 @@ describe('Reservation - Simulator', () => {
       assert.equal(cancelled.cancelledReason, '超时未到店');
     });
 
-    test('A4: 已完成预约不可取消', () => {
+    it('A4: 已完成预约不可取消', () => {
       const input = makeReservation();
       const created = service.create(input);
       const confirmed = service.confirm(created.id, TENANT);
@@ -118,7 +118,7 @@ describe('Reservation - Simulator', () => {
   // ═════════════════════════════════════════════════════════════════
 
   describe('Scenario B — 资源冲突检测', () => {
-    test('B1: 同一场地同一时段冲突', () => {
+    it('B1: 同一场地同一时段冲突', () => {
       // 张三预约了 10:00-12:00 VIP包间A
       const zhang = createAndConfirm(
         makeReservation({
@@ -142,7 +142,7 @@ describe('Reservation - Simulator', () => {
       );
     });
 
-    test('B2: 相邻时段不冲突（10:00-12:00 vs 12:00-14:00）', () => {
+    it('B2: 相邻时段不冲突（10:00-12:00 vs 12:00-14:00）', () => {
       // 张三 10:00-12:00
       createAndConfirm(
         makeReservation({
@@ -164,7 +164,7 @@ describe('Reservation - Simulator', () => {
       assert.equal(liConfirmed.status, ReservationStatus.Confirmed);
     });
 
-    test('B3: 不同资源同时间段不冲突', () => {
+    it('B3: 不同资源同时间段不冲突', () => {
       createAndConfirm(makeReservation({ resourceId: 'venue-01' }));
 
       const other = makeReservation({
@@ -178,7 +178,7 @@ describe('Reservation - Simulator', () => {
       assert.equal(confirmed.status, ReservationStatus.Confirmed);
     });
 
-    test('B4: 自己更新预约不与自己冲突', () => {
+    it('B4: 自己更新预约不与自己冲突', () => {
       const r = createAndConfirm(
         makeReservation({
           startTime: '2026-06-25T10:00:00.000Z',
@@ -194,7 +194,7 @@ describe('Reservation - Simulator', () => {
       // 没有冲突
     });
 
-    test('B5: 跨租户不冲突', () => {
+    it('B5: 跨租户不冲突', () => {
       // 租户A预约 venue-01
       createAndConfirm(makeReservation({ tenantId: TENANT, resourceId: 'venue-01' }));
 
@@ -211,7 +211,7 @@ describe('Reservation - Simulator', () => {
   // ═════════════════════════════════════════════════════════════════
 
   describe('Scenario C — 多资源类型预约混用', () => {
-    test('C1: 四种类型预约同时运作', () => {
+    it('C1: 四种类型预约同时运作', () => {
       // 场地预约
       const venue = service.create(makeReservation({ type: ReservationType.Venue }));
       service.confirm(venue.id, TENANT);
@@ -272,7 +272,7 @@ describe('Reservation - Simulator', () => {
   // ═════════════════════════════════════════════════════════════════
 
   describe('Scenario D — 查询与搜索', () => {
-    test('D1: 按时间段查找预约', () => {
+    it('D1: 按时间段查找预约', () => {
       // 创建三个不同时间的预约
       createAndConfirm(
         makeReservation({
@@ -305,7 +305,7 @@ describe('Reservation - Simulator', () => {
       assert.equal(result.length, 2); // 6/26 和 6/27
     });
 
-    test('D2: 按用户查找', () => {
+    it('D2: 按用户查找', () => {
       service.create(
         makeReservation({
           userId: 'user-zhang',
@@ -336,7 +336,7 @@ describe('Reservation - Simulator', () => {
       assert.equal(liRes.length, 1);
     });
 
-    test('D3: 按资源查找', () => {
+    it('D3: 按资源查找', () => {
       createAndConfirm(makeReservation({ resourceId: 'venue-vip' }));
       createAndConfirm(
         makeReservation({
@@ -368,7 +368,7 @@ describe('Reservation - Simulator', () => {
   // ═════════════════════════════════════════════════════════════════
 
   describe('Scenario E — 统计聚合', () => {
-    test('E1: 多样状态下的统计', () => {
+    it('E1: 多样状态下的统计', () => {
       // 2 个待确认
       service.create(makeReservation());
       service.create(makeReservation({ userId: 'user-li', userName: '李四' }));
@@ -446,7 +446,7 @@ describe('Reservation - Simulator', () => {
   // ═════════════════════════════════════════════════════════════════
 
   describe('Scenario F — 边界与异常', () => {
-    test('F1: 创建预约 endTime < startTime 报错', () => {
+    it('F1: 创建预约 endTime < startTime 报错', () => {
       assert.throws(
         () =>
           service.create(
@@ -459,12 +459,12 @@ describe('Reservation - Simulator', () => {
       );
     });
 
-    test('F2: 查询不存在的预约返回 undefined', () => {
+    it('F2: 查询不存在的预约返回 undefined', () => {
       const found = service.findOne('non-existent-reservation', TENANT);
       assert.equal(found, undefined);
     });
 
-    test('F3: 操作其他租户的预约报错', () => {
+    it('F3: 操作其他租户的预约报错', () => {
       const r = service.create(makeReservation({ tenantId: TENANT }));
 
       // 其他租户 findOne 返回 undefined（非抛出异常）
@@ -475,7 +475,7 @@ describe('Reservation - Simulator', () => {
       assert.throws(() => service.cancel(r.id, TENANT_B), /Reservation not found/);
     });
 
-    test('F4: 无效状态转移', () => {
+    it('F4: 无效状态转移', () => {
       const r = service.create(makeReservation());
       service.confirm(r.id, TENANT);
       service.startProgress(r.id, TENANT);
@@ -485,14 +485,14 @@ describe('Reservation - Simulator', () => {
       assert.throws(() => service.confirm(r.id, TENANT), /Invalid reservation status transition/);
     });
 
-    test('F5: 已取消不能再次取消', () => {
+    it('F5: 已取消不能再次取消', () => {
       const r = service.create(makeReservation());
       service.cancel(r.id, TENANT);
 
       assert.throws(() => service.cancel(r.id, TENANT), /Invalid reservation status transition/);
     });
 
-    test('F6: 待确认的预约未确认时与其他已确认预约不冲突', () => {
+    it('F6: 待确认的预约未确认时与其他已确认预约不冲突', () => {
       // 已确认预约
       createAndConfirm(
         makeReservation({
@@ -515,7 +515,7 @@ describe('Reservation - Simulator', () => {
       assert.throws(() => service.confirm(pending.id, TENANT), /already booked/);
     });
 
-    test('F7: checkConflict 返回是否冲突', () => {
+    it('F7: checkConflict 返回是否冲突', () => {
       createAndConfirm(
         makeReservation({
           startTime: '2026-06-25T10:00:00.000Z',
@@ -551,7 +551,7 @@ describe('Reservation - Simulator', () => {
   // ═════════════════════════════════════════════════════════════════
 
   describe('Scenario G — 运营批量场景', () => {
-    test('G1: 团建包场 — 批量预约 + 取消释放资源', () => {
+    it('G1: 团建包场 — 批量预约 + 取消释放资源', () => {
       // 团建预约：6人同时预约不同资源
       const partyMembers = [
         { userId: 'party-a', userName: '团建-阿花' },
@@ -599,7 +599,7 @@ describe('Reservation - Simulator', () => {
       assert.equal(all.filter((r) => r.status === ReservationStatus.Cancelled).length, 2);
     });
 
-    test('G2: 导玩员日程排班 — 服务类预约不可重叠', () => {
+    it('G2: 导玩员日程排班 — 服务类预约不可重叠', () => {
       // 导玩员 coach-yoda 在 10:00-12:00 有课
       const session1 = service.create(
         makeReservation({
@@ -632,7 +632,7 @@ describe('Reservation - Simulator', () => {
       assert.throws(() => service.confirm(session2.id, TENANT), /already booked/);
     });
 
-    test('G3: 批量注入 — 大量预约性能验证', () => {
+    it('G3: 批量注入 — 大量预约性能验证', () => {
       const count = 100;
       for (let i = 0; i < count; i++) {
         service.create(

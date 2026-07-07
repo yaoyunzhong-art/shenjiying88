@@ -1,7 +1,7 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { MarketModule } from './market.module'
 import { MarketController } from './market.controller'
 import { MarketService } from './market.service'
@@ -27,7 +27,7 @@ const stubPrismaService = {
 describe('MarketModule', () => {
   let moduleRef: TestingModule
 
-  test('should compile and instantiate', async () => {
+  it('should compile and instantiate', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [MarketModule],
     })
@@ -40,7 +40,7 @@ describe('MarketModule', () => {
     assert.ok(moduleRef)
   })
 
-  test('should provide MarketController', async () => {
+  it('should provide MarketController', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [MarketModule],
     })
@@ -55,7 +55,7 @@ describe('MarketModule', () => {
     assert.ok(controller instanceof MarketController)
   })
 
-  test('should provide MarketService', async () => {
+  it('should provide MarketService', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [MarketModule],
     })

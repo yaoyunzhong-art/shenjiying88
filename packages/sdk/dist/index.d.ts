@@ -1,4 +1,4 @@
-import { ApiResult, MarketBootstrapResponse, FoundationBootstrapResponse, PortalBootstrapResponse, WorkbenchBootstrapResponse, AuditTrailQuery, AuditRecordContract, AuditTrailSummary, ConfigurationOverviewQuery, ConfigurationOverview, ConfigurationFeatureFlag, ConfigurationConfigEntry, ConfigurationSecretMetadata, ConfigurationCertificateMetadata, ConfigurationGovernanceMetadataEntry, ResilienceOverview, ObservabilitySignalContract, RetryPolicyContract, RecoveryPlanContract, EdgeReplayStageRequest, EdgeReplayStageContract, RateLimitWorkspaceQuery, RateLimitPolicyRecord, QuotaLedgerRecord, RateLimitWorkspace, IdentityAccessWorkspaceQuery, IdentityAccessResolvedContext, IdentityAccessValidationResult, IntegrationWebhookSourceContract, IntegrationOrchestrationWorkspaceQuery, IntegrationEventEnvelopeContract, IntegrationIdempotencyRecordContract, IntegrationPublishEventRequest, IntegrationPublishEventResponse, IntegrationWebhookIngestRequest, IntegrationWebhookIngestResponse, IntegrationOrchestrationWorkspace, FoundationConsumerDescriptor, FoundationAlertCatalogResponse, RuntimeGovernanceOverviewFilter, FoundationOperationsOverviewResponse, FoundationAlertDrilldownResponse, FoundationAlertMutationResponse, RuntimeGovernanceSubmitRequest, RuntimeGovernanceReceipt, RuntimeGovernanceSyncRequest, RuntimeGovernanceCallbackRequest, RuntimeGovernanceReplayRequest, RuntimeGovernanceBatchReplayRequest, RuntimeGovernanceBatchReplayResponse, FoundationClientApp, RuntimeGovernanceReplaySource, RuntimeGovernanceActionKey, RuntimeGovernanceNextStep, RuntimeGovernanceRiskLevel, RuntimeGovernanceRecommendedAction, RuntimeGovernanceClientApp, FoundationAlertCatalogItem, FoundationOperationsOverviewSummary, FoundationOperationsAlert, AppBootstrapWiring, FoundationAlertMutationKind, FoundationConsumerKey } from '@m5/types';
+import { ApiResult, MarketBootstrapResponse, FoundationBootstrapResponse, PortalBootstrapResponse, WorkbenchBootstrapResponse, AuditTrailQuery, AuditRecordContract, AuditTrailSummary, ConfigurationOverviewQuery, ConfigurationOverview, ConfigurationFeatureFlag, ConfigurationConfigEntry, ConfigurationSecretMetadata, ConfigurationCertificateMetadata, ConfigurationGovernanceMetadataEntry, ResilienceOverview, ObservabilitySignalContract, RetryPolicyContract, RecoveryPlanContract, EdgeReplayStageRequest, EdgeReplayStageContract, RateLimitWorkspaceQuery, RateLimitPolicyRecord, QuotaLedgerRecord, RateLimitWorkspace, IdentityAccessWorkspaceQuery, IdentityAccessResolvedContext, IdentityAccessValidationResult, IntegrationWebhookSourceContract, IntegrationOrchestrationWorkspaceQuery, IntegrationEventEnvelopeContract, IntegrationIdempotencyRecordContract, IntegrationPublishEventRequest, IntegrationPublishEventResponse, IntegrationWebhookIngestRequest, IntegrationWebhookIngestResponse, IntegrationOrchestrationWorkspace, FoundationConsumerDescriptor, FoundationAlertCatalogResponse, RuntimeGovernanceOverviewFilter, FoundationOperationsOverviewResponse, FoundationAlertDrilldownResponse, FoundationAlertMutationResponse, RuntimeGovernanceSubmitRequest, RuntimeGovernanceReceipt, RuntimeGovernanceSyncRequest, RuntimeGovernanceCallbackRequest, RuntimeGovernanceReplayRequest, RuntimeGovernanceBatchReplayRequest, RuntimeGovernanceBatchReplayResponse, AgentConfig, CreateSessionRequest, SessionExecutionResult, AgentSessionEvent, BatchAgentRequest, BatchAgentResponse, AgentSession, AgentExecution, QualityEvaluation, AgentStats, FoundationClientApp, RuntimeGovernanceReplaySource, RuntimeGovernanceActionKey, RuntimeGovernanceNextStep, RuntimeGovernanceRiskLevel, RuntimeGovernanceRecommendedAction, RuntimeGovernanceClientApp, FoundationAlertCatalogItem, FoundationOperationsOverviewSummary, FoundationOperationsAlert, AppBootstrapWiring, FoundationAlertMutationKind, FoundationConsumerKey } from '@m5/types';
 
 interface ApiClientOptions {
     baseUrl: string;
@@ -170,6 +170,9 @@ declare class ApiClient {
     get<T>(path: string, init?: RequestInit): Promise<ApiResult<T>>;
     getData<T>(path: string, init?: RequestInit): Promise<T>;
     postData<T>(path: string, body: unknown, init?: RequestInit): Promise<T>;
+    putData<T>(path: string, body: unknown, init?: RequestInit): Promise<T>;
+    patchData<T>(path: string, body: unknown, init?: RequestInit): Promise<T>;
+    deleteData<T>(path: string, init?: RequestInit): Promise<T>;
     getMarketBootstrap(init?: RequestInit): Promise<MarketBootstrapResponse>;
     getFoundationBootstrap(init?: RequestInit): Promise<FoundationBootstrapResponse>;
     getPortalBootstrap(init?: RequestInit): Promise<PortalBootstrapResponse>;
@@ -273,6 +276,121 @@ declare class ApiClient {
     recordRuntimeGovernanceCallback(receiptCode: string, body: RuntimeGovernanceCallbackRequest, init?: RequestInit): Promise<RuntimeGovernanceReceipt>;
     replayRuntimeGovernanceAction(receiptCode: string, body: RuntimeGovernanceReplayRequest, init?: RequestInit): Promise<RuntimeGovernanceReceipt>;
     batchReplayRuntimeGovernanceActions(body: RuntimeGovernanceBatchReplayRequest, init?: RequestInit): Promise<RuntimeGovernanceBatchReplayResponse>;
+    /** 列出所有 Agent 配置 */
+    listAgentConfigs(init?: RequestInit): Promise<AgentConfig[]>;
+    /** 获取单个 Agent 配置 */
+    getAgentConfig(id: string, init?: RequestInit): Promise<AgentConfig>;
+    /** 创建 Agent 配置 */
+    createAgentConfig(body: AgentConfig, init?: RequestInit): Promise<AgentConfig>;
+    /** 更新 Agent 配置 */
+    updateAgentConfig(id: string, body: Partial<AgentConfig>, init?: RequestInit): Promise<AgentConfig>;
+    /** 删除 Agent 配置 */
+    deleteAgentConfig(id: string, init?: RequestInit): Promise<{
+        deleted: boolean;
+    }>;
+    /** 创建并运行 Agent 会话 */
+    runAgentSession(body: CreateSessionRequest, init?: RequestInit): Promise<SessionExecutionResult>;
+    /**
+     * 运行 Agent 会话并订阅实时事件流 (Phase-27 SSE)
+     *
+     * 后端 SSE 端点: POST /agent/sessions/run-stream
+     * 返回: text/event-stream,每个事件格式 `data: {AgentSessionEvent JSON}\n\n`
+     *
+     * 用法:
+     * ```ts
+     * for await (const ev of client.runAgentSessionStream({ configId, userInput, ... })) {
+     *   switch (ev.type) {
+     *     case 'step_progress': console.log(`Step ${ev.step}/${ev.maxSteps}`); break;
+     *     case 'message_added': appendMessage(ev.message); break;
+     *     case 'session_completed': finalize(ev.session, ev.execution); break;
+     *   }
+     * }
+     * ```
+     */
+    runAgentSessionStream(body: CreateSessionRequest, init?: RequestInit): AsyncGenerator<AgentSessionEvent, void, undefined>;
+    /** 批量运行 Agent */
+    batchRunAgent(body: BatchAgentRequest, init?: RequestInit): Promise<BatchAgentResponse>;
+    /** 列出所有 Agent 会话 */
+    listAgentSessions(init?: RequestInit): Promise<AgentSession[]>;
+    /** 获取单个 Agent 会话 */
+    getAgentSession(id: string, init?: RequestInit): Promise<AgentSession>;
+    /** 获取会话执行记录 */
+    getAgentExecution(id: string, init?: RequestInit): Promise<AgentExecution>;
+    /** 获取会话质量评估 */
+    getSessionEvaluation(id: string, init?: RequestInit): Promise<QualityEvaluation>;
+    /** 列出所有质量评估 */
+    listQualityEvaluations(init?: RequestInit): Promise<QualityEvaluation[]>;
+    /** 获取 Agent 统计 */
+    getAgentStats(init?: RequestInit): Promise<AgentStats>;
+    /** 列出可用工具(后端返回 unknown,前端按 ToolDefinition 解读) */
+    listAgentTools(init?: RequestInit): Promise<unknown[]>;
 }
+/** SSE 订阅状态 */
+type SseSubscribeStatus = 'connecting' | 'open' | 'reconnecting' | 'closed';
+/** SSE 订阅选项 (Phase-32 扩展) */
+interface SseSubscribeOptions {
+    /** Agent 会话请求 */
+    body: CreateSessionRequest;
+    /** 每条事件回调 */
+    onEvent: (event: AgentSessionEvent, meta: {
+        id: number;
+        raw: string;
+    }) => void;
+    /** 错误回调 (网络断 / 重试耗尽 / 410) */
+    onError?: (err: Error, context: {
+        attempts: number;
+        willRetry: boolean;
+    }) => void;
+    /** 状态变化回调 */
+    onStatusChange?: (status: SseSubscribeStatus) => void;
+    /** 重连配置 */
+    reconnect?: {
+        /** 是否启用,默认 true */
+        enabled?: boolean;
+        /** 最大重试次数,默认 3 */
+        maxRetries?: number;
+        /** 初始延迟 ms,默认 1000 */
+        initialDelayMs?: number;
+        /** 退避倍数,默认 2 (1s → 2s → 4s) */
+        backoffMultiplier?: number;
+    };
+    /** 外部注入的最后事件 id (用于断连后 resume) */
+    initialLastEventId?: string;
+}
+/** SSE 订阅句柄 */
+interface SseSubscription {
+    /** 主动取消订阅 */
+    unsubscribe: () => void;
+    /** 当前状态 */
+    getStatus: () => SseSubscribeStatus;
+    /** 最近收到的事件 id (用于下次 resume) */
+    getLastEventId: () => string | undefined;
+}
+/**
+ * 订阅 Agent SSE 流 (Phase-32: 带指数退避 + Last-Event-ID 续传)
+ *
+ * - 默认 maxRetries=3, backoff = 1s → 2s → 4s
+ * - 每次重连自动携带 Last-Event-ID,服务端 replay
+ * - 410 Gone (事件过期) 触发 onError 并停止重试
+ *
+ * 用法:
+ * ```ts
+ * const sub = subscribeStream(client, {
+ *   body: { configId, userInput, ... },
+ *   onEvent: (ev) => console.log(ev),
+ *   onError: (err) => console.error(err),
+ *   reconnect: { maxRetries: 3 }
+ * })
+ * // 后续可用 sub.getLastEventId() 持久化,重连时传入 initialLastEventId
+ * ```
+ */
+declare function subscribeStream(client: ApiClient, opts: SseSubscribeOptions): SseSubscription;
+/** 计算下次 backoff 延迟 (供测试与 UI 共享)
+ *  - attemptNum = 1 → initialDelayMs (第一次重试前)
+ *  - attemptNum = 2 → initialDelayMs * multiplier
+ *  - attemptNum = 0 → initialDelayMs (视为第一次)
+ *  - 等价公式: initialDelayMs * multiplier^max(0, attemptNum-1)
+ */
+declare function computeBackoffDelay(attemptNum: number, initialDelayMs?: number, backoffMultiplier?: number): number;
 
-export { ApiClient, type ApiClientOptions, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type WebFoundationAlertPanelApp, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel };
+export { ApiClient, type ApiClientOptions, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type WebFoundationAlertPanelApp, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };

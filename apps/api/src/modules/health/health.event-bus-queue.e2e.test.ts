@@ -1,0 +1,208 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+/**
+ * E2E: HealthService + EventBus + QueueProducer 集成 (Phase-14 task 3)
+ *
+ * 验证 HealthService.check() 中:
+ *   - EventBus 组件探测成功
+ *   - QueueProducer 组件探测成功
+ *   - 无 EventBus/Queue 注入时,probe unavailable
+ *   - verbose=true 时返回所有 component (含 event-bus/queue-producer)
+ */
+
+import 'reflect-metadata'
+import assert from 'node:assert/strict'
+import { Test, type TestingModule } from '@nestjs/testing'
+import { HealthService } from './health.service'
+import { LytService } from '../lyt/lyt.service'
+import { PrismaService } from '../../prisma/prisma.service'
+import {
+  EVENT_BUS_SERVICE,
+  EventBusModule,
+  InMemoryEventBus,
+  type EventBusService
+} from '../../infrastructure/event-bus/event-bus.module'
+import {
+  QUEUE_PRODUCER_SERVICE,
+  QueueModule,
+  InMemoryQueueProducer,
+  type QueueProducerService
+} from '../../infrastructure/queue/queue.module'
+import { HealthStatus } from './health.entity'
+
+function makeMockLytService(): LytService {
+  return {
+    getBootstrap: () => ({
+      adapter: 'mock',
+      foundationDependencies: {},
+      foundationContracts: {}
+    })
+  } as unknown as LytService
+}
+
+function makeMockPrismaService(): PrismaService {
+  return {
+    $queryRaw: async () => [{ '?column?': 1 }]
+  } as unknown as PrismaService
+}
+
+async function buildAppWithInfra(): Promise<{
+  moduleRef: TestingModule
+  health: HealthService
+  bus: InMemoryEventBus
+  queue: InMemoryQueueProducer
+}> {
+  const moduleRef = await Test.createTestingModule({
+    imports: [EventBusModule.forRootInMemory(), QueueModule.forRootInMemory()],
+    providers: [
+      { provide: LytService, useValue: makeMockLytService() },
+      { provide: PrismaService, useValue: makeMockPrismaService() },
+      {
+        provide: HealthService,
+        useFactory: (
+          lyt: LytService,
+          prisma: PrismaService,
+          eventBus: EventBusService | undefined,
+          queueProducer: QueueProducerService | undefined
+        ) => new HealthService(lyt, prisma, undefined, eventBus, queueProducer),
+        inject: [
+          LytService,
+          PrismaService,
+          { token: EVENT_BUS_SERVICE, optional: true },
+          { token: QUEUE_PRODUCER_SERVICE, optional: true }
+        ]
+      }
+    ]
+  }).compile()
+
+  const health = moduleRef.get(HealthService)
+  const bus = moduleRef.get<EventBusService>(EVENT_BUS_SERVICE) as InMemoryEventBus
+  const queue = moduleRef.get<QueueProducerService>(QUEUE_PRODUCER_SERVICE) as InMemoryQueueProducer
+  return { moduleRef, health, bus, queue }
+}
+
+async function buildAppMinimal(): Promise<{
+  moduleRef: TestingModule
+  health: HealthService
+}> {
+  const moduleRef = await Test.createTestingModule({
+    providers: [
+      { provide: LytService, useValue: makeMockLytService() },
+      { provide: PrismaService, useValue: makeMockPrismaService() },
+      HealthService
+    ]
+  }).compile()
+
+  const health = moduleRef.get(HealthService)
+  return { moduleRef, health }
+}
+
+it('e2e: EventBus 组件探测返回 connected=true', async () => {
+  const { moduleRef, health } = await buildAppWithInfra()
+  try {
+    const component = await health.checkComponent('event-bus')
+    assert.equal(component.status, HealthStatus.Ok)
+    assert.ok(component.detail)
+    assert.equal((component.detail as { connected: boolean }).connected, true)
+    assert.equal((component.detail as { backend: string }).backend, 'memory')
+  } finally {
+    await moduleRef.close()
+  }
+})
+
+it('e2e: QueueProducer 组件探测返回 connected=true 含 jobs 统计', async () => {
+  const { moduleRef, health } = await buildAppWithInfra()
+  try {
+    const component = await health.checkComponent('queue-producer')
+    assert.equal(component.status, HealthStatus.Ok)
+    assert.ok(component.detail)
+    assert.equal((component.detail as { connected: boolean }).connected, true)
+    const jobs = (component.detail as { jobs: Record<string, number> }).jobs
+    assert.equal(typeof jobs.pending, 'number')
+    assert.equal(typeof jobs.completed, 'number')
+    assert.equal(typeof jobs.failed, 'number')
+  } finally {
+    await moduleRef.close()
+  }
+})
+
+it('e2e: 无 EventBus 注入时 probeEventBus 返回 Unavailable', async () => {
+  const { moduleRef, health } = await buildAppMinimal()
+  try {
+    const component = await health.checkComponent('event-bus')
+    assert.equal(component.status, HealthStatus.Unavailable)
+  } finally {
+    await moduleRef.close()
+  }
+})
+
+it('e2e: 无 QueueProducer 注入时 probeQueueProducer 返回 Unavailable', async () => {
+  const { moduleRef, health } = await buildAppMinimal()
+  try {
+    const component = await health.checkComponent('queue-producer')
+    assert.equal(component.status, HealthStatus.Unavailable)
+  } finally {
+    await moduleRef.close()
+  }
+})
+
+it('e2e: check(verbose=true) 包含 event-bus 和 queue-producer 组件', async () => {
+  const { moduleRef, health } = await buildAppWithInfra()
+  try {
+    const result = await health.check({ scope: { scopeType: 'TENANT' } as never, verbose: true })
+    const names = result.components.map((c) => c.name)
+    assert.ok(names.includes('event-bus'), `components should include event-bus: ${names.join(',')}`)
+    assert.ok(names.includes('queue-producer'), `components should include queue-producer: ${names.join(',')}`)
+  } finally {
+    await moduleRef.close()
+  }
+})
+
+it('e2e: check() 默认模式也包含 event-bus 和 queue-producer', async () => {
+  const { moduleRef, health } = await buildAppWithInfra()
+  try {
+    const result = await health.check()
+    const names = result.components.map((c) => c.name)
+    assert.ok(names.includes('event-bus'))
+    assert.ok(names.includes('queue-producer'))
+  } finally {
+    await moduleRef.close()
+  }
+})
+
+it('e2e: check() 返回包含 event-bus/queue-producer 的 components', async () => {
+  const { moduleRef, health } = await buildAppWithInfra()
+  try {
+    const result = await health.check()
+    const eventBus = result.components.find((c) => c.name === 'event-bus')
+    const queue = result.components.find((c) => c.name === 'queue-producer')
+    assert.ok(eventBus)
+    assert.ok(queue)
+    // 注入正常时,connected=true
+    assert.equal((eventBus!.detail as { connected: boolean }).connected, true)
+    assert.equal((queue!.detail as { connected: boolean }).connected, true)
+  } finally {
+    await moduleRef.close()
+  }
+})
+
+it('e2e: 注入 broken EventBus (ping 失败) 时 detail.connected=false', async () => {
+  // 用正确的 Symbol token 注入 broken mock
+  const moduleRef = await Test.createTestingModule({
+    providers: [
+      { provide: LytService, useValue: makeMockLytService() },
+      { provide: PrismaService, useValue: makeMockPrismaService() },
+      { provide: EVENT_BUS_SERVICE, useValue: { ping: async () => false, backend: 'memory' as const } },
+      HealthService
+    ]
+  }).compile()
+
+  try {
+    const health = moduleRef.get(HealthService)
+    const component = await health.checkComponent('event-bus')
+    // broken EventBus 的 ping 返回 false,但 probeEventBus 不抛错,所以 status=Ok + detail.connected=false
+    assert.equal(component.status, HealthStatus.Ok)
+    assert.equal((component.detail as { connected: boolean }).connected, false)
+  } finally {
+    await moduleRef.close()
+  }
+})

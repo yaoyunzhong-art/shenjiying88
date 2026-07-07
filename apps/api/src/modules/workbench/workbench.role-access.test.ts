@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 10-Role Access Test Suite for Workbench Bootstrap
  *
@@ -11,7 +12,6 @@
  */
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { UserRole } from '@m5/domain'
 
 // ---------------------------------------------------------------------------
@@ -78,7 +78,7 @@ describe('Workbench 10-Role Access', () => {
   for (const cfg of ROLE_CONFIG) {
     describe(`${cfg.emoji} ${cfg.name} (${cfg.roleKey})`, () => {
       // --- 1) Normal-flow: role is present OR documented as future extension ---
-      test('normal-flow: role appears in bootstrap workbenches', () => {
+      it('normal-flow: role appears in bootstrap workbenches', () => {
         const svc = makeService()
         const wbs = svc.getRoleWorkbenches()
         const found = wbs.find((wb: any) => wb.role === cfg.roleKey)
@@ -91,7 +91,7 @@ describe('Workbench 10-Role Access', () => {
       })
 
       // --- 2) Permission-boundary: role key is NOT another role ---
-      test('permission-boundary: role key matches only itself', () => {
+      it('permission-boundary: role key matches only itself', () => {
         const svc = makeService()
         const wbs = svc.getRoleWorkbenches()
         const allRoles = wbs.map((wb: any) => wb.role)
@@ -104,7 +104,7 @@ describe('Workbench 10-Role Access', () => {
 
   // --- StoreManager (👔 店长) additional tests ---
   describe('👔 店长 StoreManager', () => {
-    test('normal-flow: channel is PC with nav items daily + service', () => {
+    it('normal-flow: channel is PC with nav items daily + service', () => {
       const svc = makeService()
       const wb = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.StoreManager)!
       assert.equal(wb.channel, 'PC', '店长 workbench should target PC channel')
@@ -115,7 +115,7 @@ describe('Workbench 10-Role Access', () => {
       assert.equal(wb.title, '店长经营台')
     })
 
-    test('permission-boundary: 店长 should NOT see SuperAdmin nav items', () => {
+    it('permission-boundary: 店长 should NOT see SuperAdmin nav items', () => {
       const svc = makeService()
       const storeMgr = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.StoreManager)!
       const superAdmin = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.SuperAdmin)!
@@ -130,7 +130,7 @@ describe('Workbench 10-Role Access', () => {
 
   // --- Cashier (🛒 前台) additional tests ---
   describe('🛒 前台 Cashier', () => {
-    test('normal-flow: channel is PAD with offline mode support', () => {
+    it('normal-flow: channel is PAD with offline mode support', () => {
       const svc = makeService()
       const wb = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.Cashier)!
       assert.equal(wb.channel, 'PAD', '前台 workbench should target PAD')
@@ -138,7 +138,7 @@ describe('Workbench 10-Role Access', () => {
       assert.ok(wb.navItems.some((i: any) => i.key === 'checkout'), '前台 should support checkout')
     })
 
-    test('permission-boundary: 前台 should NOT see CRM or promo nav items', () => {
+    it('permission-boundary: 前台 should NOT see CRM or promo nav items', () => {
       const svc = makeService()
       const cashier = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.Cashier)!
       const keys = new Set(cashier.navItems.map((i: any) => i.key))
@@ -149,7 +149,7 @@ describe('Workbench 10-Role Access', () => {
 
   // --- HR (👥 Operations) additional tests ---
   describe('👥 HR (Operations)', () => {
-    test('normal-flow: HR role exists in service if defined', () => {
+    it('normal-flow: HR role exists in service if defined', () => {
       const svc = makeService()
       const wbs = svc.getRoleWorkbenches()
       const hrWb = wbs.find((wb: any) => wb.role === UserRole.Operations)
@@ -163,7 +163,7 @@ describe('Workbench 10-Role Access', () => {
       }
     })
 
-    test('permission-boundary: HR should not overlap with 店长 daily operations', () => {
+    it('permission-boundary: HR should not overlap with 店长 daily operations', () => {
       const svc = makeService()
       const hrWb = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.Operations)
       const storeMgr = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.StoreManager)!
@@ -180,7 +180,7 @@ describe('Workbench 10-Role Access', () => {
 
   // --- 安监 (🔧 SuperAdmin) additional tests ---
   describe('🔧 安监 SuperAdmin', () => {
-    test('normal-flow: has audit and tenants nav items', () => {
+    it('normal-flow: has audit and tenants nav items', () => {
       const svc = makeService()
       const wb = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.SuperAdmin)!
       assert.equal(wb.channel, 'PC')
@@ -191,7 +191,7 @@ describe('Workbench 10-Role Access', () => {
       assert.ok(keys.includes('markets'), '安监 should see markets')
     })
 
-    test('permission-boundary: 安监 has no PAD-channel access', () => {
+    it('permission-boundary: 安监 has no PAD-channel access', () => {
       const svc = makeService()
       const wb = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.SuperAdmin)!
       assert.notEqual(wb.channel, 'PAD', '安监 should NOT be on PAD channel')
@@ -201,7 +201,7 @@ describe('Workbench 10-Role Access', () => {
 
   // --- 导玩员 (🎮 Guide) additional tests ---
   describe('🎮 导玩员 Guide', () => {
-    test('normal-flow: has CRM and promo on PAD', () => {
+    it('normal-flow: has CRM and promo on PAD', () => {
       const svc = makeService()
       const wb = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.Guide)!
       assert.equal(wb.channel, 'PAD')
@@ -211,7 +211,7 @@ describe('Workbench 10-Role Access', () => {
       assert.ok(keys.includes('promo'))
     })
 
-    test('permission-boundary: 导玩员 should NOT see audit or tenants', () => {
+    it('permission-boundary: 导玩员 should NOT see audit or tenants', () => {
       const svc = makeService()
       const guide = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.Guide)!
       const keys = new Set(guide.navItems.map((i: any) => i.key))
@@ -223,7 +223,7 @@ describe('Workbench 10-Role Access', () => {
 
   // --- 运行专员 (🎯 TenantAdmin) additional tests ---
   describe('🎯 运行专员 TenantAdmin', () => {
-    test('normal-flow: has brand, channel, tob, regional nav items', () => {
+    it('normal-flow: has brand, channel, tob, regional nav items', () => {
       const svc = makeService()
       const wb = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.TenantAdmin)!
       assert.equal(wb.channel, 'PC')
@@ -235,7 +235,7 @@ describe('Workbench 10-Role Access', () => {
       assert.ok(keys.includes('regional'))
     })
 
-    test('permission-boundary: 运行专员 should NOT see 安监 audit', () => {
+    it('permission-boundary: 运行专员 should NOT see 安监 audit', () => {
       const svc = makeService()
       const tenantAdmin = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.TenantAdmin)!
       const keys = new Set(tenantAdmin.navItems.map((i: any) => i.key))
@@ -246,7 +246,7 @@ describe('Workbench 10-Role Access', () => {
 
   // --- 团建 (🤝 Coach) additional tests ---
   describe('🤝 团建 Coach', () => {
-    test('normal-flow: Coach role exists or is provisionable', () => {
+    it('normal-flow: Coach role exists or is provisionable', () => {
       const svc = makeService()
       const wbs = svc.getRoleWorkbenches()
       const coachWb = wbs.find((wb: any) => wb.role === UserRole.Coach)
@@ -258,7 +258,7 @@ describe('Workbench 10-Role Access', () => {
       }
     })
 
-    test('permission-boundary: 团建 should not overlap with 店长 service scheduling', () => {
+    it('permission-boundary: 团建 should not overlap with 店长 service scheduling', () => {
       const svc = makeService()
       const coachWb = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.Coach)
       const storeMgr = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.StoreManager)!
@@ -271,7 +271,7 @@ describe('Workbench 10-Role Access', () => {
 
   // --- 营销 (📢 BrandManager) additional tests ---
   describe('📢 营销 BrandManager', () => {
-    test('normal-flow: has members, campaigns, brandPortal, marketPolicy on PC', () => {
+    it('normal-flow: has members, campaigns, brandPortal, marketPolicy on PC', () => {
       const svc = makeService()
       const wb = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.BrandManager)!
       assert.equal(wb.channel, 'PC')
@@ -283,7 +283,7 @@ describe('Workbench 10-Role Access', () => {
       assert.ok(keys.includes('marketPolicy'), '营销 should have marketPolicy')
     })
 
-    test('permission-boundary: 营销 should NOT see 安监 audit or offline modes', () => {
+    it('permission-boundary: 营销 should NOT see 安监 audit or offline modes', () => {
       const svc = makeService()
       const brandMgr = svc.getRoleWorkbenches().find((wb: any) => wb.role === UserRole.BrandManager)!
       const keys = new Set(brandMgr.navItems.map((i: any) => i.key))
@@ -296,7 +296,7 @@ describe('Workbench 10-Role Access', () => {
 
 // =========================================================================
 describe('Workbench 10-Role Bootstrap Controller Integration', () => {
-  test('controller returns bootstrap with all defined roles', () => {
+  it('controller returns bootstrap with all defined roles', () => {
     const svc = makeService()
     const ctx = { tenantId: 't-role-1', brandId: 'b-role-1', storeId: 's-role-1', marketCode: 'zh-cn' }
     const result = svc.getBootstrap(ctx as any)
@@ -314,7 +314,7 @@ describe('Workbench 10-Role Bootstrap Controller Integration', () => {
     }
   })
 
-  test('bootstrap tenantContext is preserved for all roles', () => {
+  it('bootstrap tenantContext is preserved for all roles', () => {
     const svc = makeService()
     const ctx = { tenantId: 't-ctx-validation', brandId: 'b-v', storeId: 's-v', marketCode: 'en-us' }
     const result = svc.getBootstrap(ctx as any)

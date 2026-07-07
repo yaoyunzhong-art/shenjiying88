@@ -1,7 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 const { InventoryController } = require('./inventory.controller')
 const { InventoryService, resetInventoryServiceTestState } = require('./inventory.service')
 
@@ -50,117 +49,117 @@ function makeController(overrides: MockServiceOverrides = {}) {
 const tenantCtx = { tenantId: 't-1', brandId: 'b-1', storeId: 's-1' }
 
 describe('InventoryController — Route metadata', () => {
-  test('controller path is inventory', () => {
+  it('controller path is inventory', () => {
     const path = Reflect.getMetadata('path', InventoryController)
     assert.equal(path, 'inventory')
   })
 
-  test('createProduct POST products', () => {
+  it('createProduct POST products', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.createProduct)
     const path = Reflect.getMetadata('path', InventoryController.prototype.createProduct)
     assert.equal(method, 1) // 0=GET, 1=POST
     assert.equal(path, 'products')
   })
 
-  test('updateProduct PUT products/:productId', () => {
+  it('updateProduct PUT products/:productId', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.updateProduct)
     const path = Reflect.getMetadata('path', InventoryController.prototype.updateProduct)
     assert.equal(method, 2) // 2=PUT
     assert.equal(path, 'products/:productId')
   })
 
-  test('getProduct GET products/:productId', () => {
+  it('getProduct GET products/:productId', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.getProduct)
     const path = Reflect.getMetadata('path', InventoryController.prototype.getProduct)
     assert.equal(method, 0)
     assert.equal(path, 'products/:productId')
   })
 
-  test('listProducts GET products', () => {
+  it('listProducts GET products', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.listProducts)
     const path = Reflect.getMetadata('path', InventoryController.prototype.listProducts)
     assert.equal(method, 0)
     assert.equal(path, 'products')
   })
 
-  test('stockIn POST stock/in', () => {
+  it('stockIn POST stock/in', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.stockIn)
     const path = Reflect.getMetadata('path', InventoryController.prototype.stockIn)
     assert.equal(method, 1)
     assert.equal(path, 'stock/in')
   })
 
-  test('stockOut POST stock/out', () => {
+  it('stockOut POST stock/out', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.stockOut)
     const path = Reflect.getMetadata('path', InventoryController.prototype.stockOut)
     assert.equal(method, 1)
     assert.equal(path, 'stock/out')
   })
 
-  test('adjustStock POST stock/adjust', () => {
+  it('adjustStock POST stock/adjust', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.adjustStock)
     const path = Reflect.getMetadata('path', InventoryController.prototype.adjustStock)
     assert.equal(method, 1)
     assert.equal(path, 'stock/adjust')
   })
 
-  test('checkStock GET stock/check/:productId', () => {
+  it('checkStock GET stock/check/:productId', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.checkStock)
     const path = Reflect.getMetadata('path', InventoryController.prototype.checkStock)
     assert.equal(method, 0)
     assert.equal(path, 'stock/check/:productId')
   })
 
-  test('getLowStockProducts GET stock/low-products', () => {
+  it('getLowStockProducts GET stock/low-products', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.getLowStockProducts)
     const path = Reflect.getMetadata('path', InventoryController.prototype.getLowStockProducts)
     assert.equal(method, 0)
     assert.equal(path, 'stock/low-products')
   })
 
-  test('getStockRecords GET stock/records', () => {
+  it('getStockRecords GET stock/records', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.getStockRecords)
     const path = Reflect.getMetadata('path', InventoryController.prototype.getStockRecords)
     assert.equal(method, 0)
     assert.equal(path, 'stock/records')
   })
 
-  test('createSupplier POST suppliers', () => {
+  it('createSupplier POST suppliers', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.createSupplier)
     const path = Reflect.getMetadata('path', InventoryController.prototype.createSupplier)
     assert.equal(method, 1)
     assert.equal(path, 'suppliers')
   })
 
-  test('listSuppliers GET suppliers', () => {
+  it('listSuppliers GET suppliers', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.listSuppliers)
     const path = Reflect.getMetadata('path', InventoryController.prototype.listSuppliers)
     assert.equal(method, 0)
     assert.equal(path, 'suppliers')
   })
 
-  test('createPurchaseOrder POST purchase-orders', () => {
+  it('createPurchaseOrder POST purchase-orders', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.createPurchaseOrder)
     const path = Reflect.getMetadata('path', InventoryController.prototype.createPurchaseOrder)
     assert.equal(method, 1)
     assert.equal(path, 'purchase-orders')
   })
 
-  test('confirmOrder POST purchase-orders/:orderId/confirm', () => {
+  it('confirmOrder POST purchase-orders/:orderId/confirm', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.confirmOrder)
     const path = Reflect.getMetadata('path', InventoryController.prototype.confirmOrder)
     assert.equal(method, 1)
     assert.equal(path, 'purchase-orders/:orderId/confirm')
   })
 
-  test('receiveOrder POST purchase-orders/:orderId/receive', () => {
+  it('receiveOrder POST purchase-orders/:orderId/receive', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.receiveOrder)
     const path = Reflect.getMetadata('path', InventoryController.prototype.receiveOrder)
     assert.equal(method, 1)
     assert.equal(path, 'purchase-orders/:orderId/receive')
   })
 
-  test('listPurchaseOrders GET purchase-orders', () => {
+  it('listPurchaseOrders GET purchase-orders', () => {
     const method = Reflect.getMetadata('method', InventoryController.prototype.listPurchaseOrders)
     const path = Reflect.getMetadata('path', InventoryController.prototype.listPurchaseOrders)
     assert.equal(method, 0)
@@ -169,7 +168,7 @@ describe('InventoryController — Route metadata', () => {
 })
 
 describe('InventoryController — Delegation', () => {
-  test('createProduct delegates to service with tenant context and body', () => {
+  it('createProduct delegates to service with tenant context and body', () => {
     let captured: any = null
     const ctrl = makeController({
       createProduct: (ctx: any, body: any) => {
@@ -184,7 +183,7 @@ describe('InventoryController — Delegation', () => {
     assert.equal(captured.body.name, 'Test')
   })
 
-  test('updateProduct delegates with productId param', () => {
+  it('updateProduct delegates with productId param', () => {
     let captured: any = null
     const ctrl = makeController({
       updateProduct: (id: string, ctx: any, body: any) => {
@@ -197,7 +196,7 @@ describe('InventoryController — Delegation', () => {
     assert.equal(captured.id, 'prod-X')
   })
 
-  test('getProduct delegates with productId', () => {
+  it('getProduct delegates with productId', () => {
     const ctrl = makeController({
       getProduct: (id: string) => ({ id })
     })
@@ -205,7 +204,7 @@ describe('InventoryController — Delegation', () => {
     assert.equal(result.id, 'prod-P')
   })
 
-  test('listProducts delegates with query', () => {
+  it('listProducts delegates with query', () => {
     let captured: any = null
     const ctrl = makeController({
       listProducts: (ctx: any, query: any) => {
@@ -219,7 +218,7 @@ describe('InventoryController — Delegation', () => {
     assert.equal(captured.query.category, 'toys')
   })
 
-  test('stockIn delegates with tenant context and body', () => {
+  it('stockIn delegates with tenant context and body', () => {
     let captured: any = null
     const ctrl = makeController({
       stockIn: (ctx: any, body: any) => {
@@ -232,7 +231,7 @@ describe('InventoryController — Delegation', () => {
     assert.equal(captured.body.quantity, 5)
   })
 
-  test('stockOut delegates with tenant context and body', () => {
+  it('stockOut delegates with tenant context and body', () => {
     const ctrl = makeController({
       stockOut: () => ({ product: { currentStock: 40 }, record: {} })
     })
@@ -240,7 +239,7 @@ describe('InventoryController — Delegation', () => {
     assert.equal(result.product.currentStock, 40)
   })
 
-  test('getLowStockProducts delegates with optional threshold', () => {
+  it('getLowStockProducts delegates with optional threshold', () => {
     let capturedThreshold: any = undefined
     const ctrl = makeController({
       getLowStockProducts: (_ctx: any, threshold?: number) => {
@@ -255,7 +254,7 @@ describe('InventoryController — Delegation', () => {
     assert.equal(capturedThreshold, 30)
   })
 
-  test('checkStock delegates with productId and qty', () => {
+  it('checkStock delegates with productId and qty', () => {
     const ctrl = makeController({
       checkStock: (_id: string, qty: number) => qty <= 50
     })
@@ -266,7 +265,7 @@ describe('InventoryController — Delegation', () => {
     assert.deepEqual(result2, { productId: 'p-1', requiredQty: 100, sufficient: false })
   })
 
-  test('createSupplier delegates', () => {
+  it('createSupplier delegates', () => {
     const ctrl = makeController({
       createSupplier: () => ({ id: 's-new', name: 'Acme' })
     })
@@ -274,7 +273,7 @@ describe('InventoryController — Delegation', () => {
     assert.equal(result.id, 's-new')
   })
 
-  test('listSuppliers delegates', () => {
+  it('listSuppliers delegates', () => {
     const ctrl = makeController({
       listSuppliers: () => [{ id: 's-1' }, { id: 's-2' }]
     })
@@ -282,7 +281,7 @@ describe('InventoryController — Delegation', () => {
     assert.equal(result.length, 2)
   })
 
-  test('createPurchaseOrder delegates', () => {
+  it('createPurchaseOrder delegates', () => {
     const ctrl = makeController({
       createPurchaseOrder: () => ({ id: 'po-new', status: 'draft' })
     })
@@ -293,7 +292,7 @@ describe('InventoryController — Delegation', () => {
     assert.equal(result.id, 'po-new')
   })
 
-  test('confirmOrder delegates with orderId', () => {
+  it('confirmOrder delegates with orderId', () => {
     let capturedId: string | null = null
     const ctrl = makeController({
       confirmOrder: (id: string) => { capturedId = id; return { id, status: 'confirmed' } }
@@ -303,7 +302,7 @@ describe('InventoryController — Delegation', () => {
     assert.equal(capturedId, 'po-abc')
   })
 
-  test('receiveOrder delegates with orderId', () => {
+  it('receiveOrder delegates with orderId', () => {
     const ctrl = makeController({
       receiveOrder: (id: string) => ({ id, status: 'received' })
     })
@@ -311,7 +310,7 @@ describe('InventoryController — Delegation', () => {
     assert.equal(result.status, 'received')
   })
 
-  test('listPurchaseOrders delegates with query', () => {
+  it('listPurchaseOrders delegates with query', () => {
     let capturedQuery: any = null
     const ctrl = makeController({
       listPurchaseOrders: (_ctx: any, query: any) => { capturedQuery = query; return [] }
@@ -322,7 +321,7 @@ describe('InventoryController — Delegation', () => {
 })
 
 describe('InventoryController — Error propagation', () => {
-  test('getProduct propagates service error', () => {
+  it('getProduct propagates service error', () => {
     const ctrl = makeController({
       getProduct: () => { throw new Error('Product not found') }
     })
@@ -332,7 +331,7 @@ describe('InventoryController — Error propagation', () => {
     )
   })
 
-  test('stockOut propagates insufficient stock error', () => {
+  it('stockOut propagates insufficient stock error', () => {
     const ctrl = makeController({
       stockOut: () => { throw new Error('Insufficient stock') }
     })
@@ -342,7 +341,7 @@ describe('InventoryController — Error propagation', () => {
     )
   })
 
-  test('confirmOrder propagates invalid transition error', () => {
+  it('confirmOrder propagates invalid transition error', () => {
     const ctrl = makeController({
       confirmOrder: () => { throw new Error('cannot be confirmed') }
     })

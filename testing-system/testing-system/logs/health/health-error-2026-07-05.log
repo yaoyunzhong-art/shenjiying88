@@ -1,0 +1,246 @@
+[2026-07-05 00:09:25] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 00:09:25] ERROR: PostgreSQL未运行
+[2026-07-05 00:09:28] ERROR: PostgreSQL恢复失败
+[2026-07-05 00:09:28] ERROR: Redis未运行
+[2026-07-05 00:09:30] ERROR: Redis恢复失败
+[2026-07-05 00:09:31] ERROR: 部分检查失败,请关注
+[2026-07-05 00:19:33] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 00:19:33] ERROR: PostgreSQL未运行
+[2026-07-05 00:19:37] ERROR: PostgreSQL恢复失败
+[2026-07-05 00:19:37] ERROR: Redis未运行
+[2026-07-05 00:19:39] ERROR: Redis恢复失败
+[2026-07-05 00:19:40] ERROR: 部分检查失败,请关注
+[2026-07-05 00:29:40] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 00:29:40] ERROR: PostgreSQL未运行
+[2026-07-05 00:29:43] ERROR: PostgreSQL恢复失败
+[2026-07-05 00:29:43] ERROR: Redis未运行
+[2026-07-05 00:29:46] ERROR: Redis恢复失败
+[2026-07-05 00:29:47] ERROR: 部分检查失败,请关注
+[2026-07-05 00:39:47] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 00:39:47] ERROR: PostgreSQL未运行
+[2026-07-05 00:39:50] ERROR: PostgreSQL恢复失败
+[2026-07-05 00:39:50] ERROR: Redis未运行
+[2026-07-05 00:39:52] ERROR: Redis恢复失败
+[2026-07-05 00:39:53] ERROR: 部分检查失败,请关注
+[2026-07-05 00:49:59] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 00:49:59] ERROR: PostgreSQL未运行
+[2026-07-05 00:50:02] ERROR: PostgreSQL恢复失败
+[2026-07-05 00:50:02] ERROR: Redis未运行
+[2026-07-05 00:50:04] ERROR: Redis恢复失败
+[2026-07-05 00:50:05] ERROR: 部分检查失败,请关注
+[2026-07-05 01:01:16] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 01:01:16] ERROR: PostgreSQL未运行
+[2026-07-05 01:01:20] ERROR: PostgreSQL恢复失败
+[2026-07-05 01:01:20] ERROR: Redis未运行
+[2026-07-05 01:01:22] ERROR: Redis恢复失败
+[2026-07-05 01:01:24] ERROR: 部分检查失败,请关注
+[2026-07-05 01:11:24] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 01:11:24] ERROR: PostgreSQL未运行
+[2026-07-05 01:11:27] ERROR: PostgreSQL恢复失败
+[2026-07-05 01:11:28] ERROR: Redis未运行
+[2026-07-05 01:11:30] ERROR: Redis恢复失败
+[2026-07-05 01:11:30] ERROR: 部分检查失败,请关注
+[2026-07-05 01:21:31] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 01:21:31] ERROR: PostgreSQL未运行
+[2026-07-05 01:21:34] ERROR: PostgreSQL恢复失败
+[2026-07-05 01:21:34] ERROR: Redis未运行
+[2026-07-05 01:21:36] ERROR: Redis恢复失败
+[2026-07-05 01:21:37] ERROR: 部分检查失败,请关注
+[2026-07-05 01:31:37] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 01:31:37] ERROR: PostgreSQL未运行
+[2026-07-05 01:31:40] ERROR: PostgreSQL恢复失败
+[2026-07-05 01:31:40] ERROR: Redis未运行
+[2026-07-05 01:31:42] ERROR: Redis恢复失败
+[2026-07-05 01:31:43] ERROR: 部分检查失败,请关注
+[2026-07-05 01:41:43] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 01:41:43] ERROR: PostgreSQL未运行
+[2026-07-05 01:41:46] ERROR: PostgreSQL恢复失败
+[2026-07-05 01:41:46] ERROR: Redis未运行
+[2026-07-05 01:41:48] ERROR: Redis恢复失败
+[2026-07-05 01:41:49] ERROR: 部分检查失败,请关注
+[2026-07-05 01:51:49] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 01:51:49] ERROR: PostgreSQL未运行
+[2026-07-05 01:51:52] ERROR: PostgreSQL恢复失败
+[2026-07-05 01:51:52] ERROR: Redis未运行
+[2026-07-05 01:51:54] ERROR: Redis恢复失败
+[2026-07-05 01:51:55] ERROR: 部分检查失败,请关注
+[2026-07-05 02:01:55] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 02:01:56] ERROR: PostgreSQL未运行
+[2026-07-05 02:01:59] ERROR: PostgreSQL恢复失败
+[2026-07-05 02:01:59] ERROR: Redis未运行
+[2026-07-05 02:02:01] ERROR: Redis恢复失败
+[2026-07-05 02:02:02] ERROR: 部分检查失败,请关注
+[2026-07-05 02:12:02] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 02:12:02] ERROR: PostgreSQL未运行
+[2026-07-05 02:12:05] ERROR: PostgreSQL恢复失败
+[2026-07-05 02:12:05] ERROR: Redis未运行
+[2026-07-05 02:12:07] ERROR: Redis恢复失败
+[2026-07-05 02:12:08] ERROR: 部分检查失败,请关注
+[2026-07-05 02:22:08] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 02:22:08] ERROR: PostgreSQL未运行
+[2026-07-05 02:22:12] ERROR: PostgreSQL恢复失败
+[2026-07-05 02:22:12] ERROR: Redis未运行
+[2026-07-05 02:22:14] ERROR: Redis恢复失败
+[2026-07-05 02:22:14] ERROR: 部分检查失败,请关注
+[2026-07-05 02:32:15] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 02:32:15] ERROR: PostgreSQL未运行
+[2026-07-05 02:32:18] ERROR: PostgreSQL恢复失败
+[2026-07-05 02:32:18] ERROR: Redis未运行
+[2026-07-05 02:32:20] ERROR: Redis恢复失败
+[2026-07-05 02:32:21] ERROR: 部分检查失败,请关注
+[2026-07-05 02:42:21] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 02:42:21] ERROR: PostgreSQL未运行
+[2026-07-05 02:42:24] ERROR: PostgreSQL恢复失败
+[2026-07-05 02:42:24] ERROR: Redis未运行
+[2026-07-05 02:42:26] ERROR: Redis恢复失败
+[2026-07-05 02:42:27] ERROR: 部分检查失败,请关注
+[2026-07-05 02:52:27] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 02:52:27] ERROR: PostgreSQL未运行
+[2026-07-05 02:52:30] ERROR: PostgreSQL恢复失败
+[2026-07-05 02:52:30] ERROR: Redis未运行
+[2026-07-05 02:52:32] ERROR: Redis恢复失败
+[2026-07-05 02:52:33] ERROR: 部分检查失败,请关注
+[2026-07-05 03:02:33] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 03:02:33] ERROR: PostgreSQL未运行
+[2026-07-05 03:02:36] ERROR: PostgreSQL恢复失败
+[2026-07-05 03:02:36] ERROR: Redis未运行
+[2026-07-05 03:02:38] ERROR: Redis恢复失败
+[2026-07-05 03:02:39] ERROR: 部分检查失败,请关注
+[2026-07-05 03:12:40] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 03:12:40] ERROR: PostgreSQL未运行
+[2026-07-05 03:12:43] ERROR: PostgreSQL恢复失败
+[2026-07-05 03:12:43] ERROR: Redis未运行
+[2026-07-05 03:12:45] ERROR: Redis恢复失败
+[2026-07-05 03:12:45] ERROR: 部分检查失败,请关注
+[2026-07-05 03:22:46] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 03:22:46] ERROR: PostgreSQL未运行
+[2026-07-05 03:22:49] ERROR: PostgreSQL恢复失败
+[2026-07-05 03:22:49] ERROR: Redis未运行
+[2026-07-05 03:22:51] ERROR: Redis恢复失败
+[2026-07-05 03:22:52] ERROR: 部分检查失败,请关注
+[2026-07-05 03:32:52] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 03:32:52] ERROR: PostgreSQL未运行
+[2026-07-05 03:32:55] ERROR: PostgreSQL恢复失败
+[2026-07-05 03:32:55] ERROR: Redis未运行
+[2026-07-05 03:32:57] ERROR: Redis恢复失败
+[2026-07-05 03:32:58] ERROR: 部分检查失败,请关注
+[2026-07-05 03:42:58] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 03:42:58] ERROR: PostgreSQL未运行
+[2026-07-05 03:43:01] ERROR: PostgreSQL恢复失败
+[2026-07-05 03:43:01] ERROR: Redis未运行
+[2026-07-05 03:43:03] ERROR: Redis恢复失败
+[2026-07-05 03:43:04] ERROR: 部分检查失败,请关注
+[2026-07-05 03:53:04] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 03:53:04] ERROR: PostgreSQL未运行
+[2026-07-05 03:53:07] ERROR: PostgreSQL恢复失败
+[2026-07-05 03:53:08] ERROR: Redis未运行
+[2026-07-05 03:53:10] ERROR: Redis恢复失败
+[2026-07-05 03:53:10] ERROR: 部分检查失败,请关注
+[2026-07-05 04:03:11] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 04:03:11] ERROR: PostgreSQL未运行
+[2026-07-05 04:03:14] ERROR: PostgreSQL恢复失败
+[2026-07-05 04:03:14] ERROR: Redis未运行
+[2026-07-05 04:03:16] ERROR: Redis恢复失败
+[2026-07-05 04:03:17] ERROR: 部分检查失败,请关注
+[2026-07-05 04:13:17] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 04:13:17] ERROR: PostgreSQL未运行
+[2026-07-05 04:13:20] ERROR: PostgreSQL恢复失败
+[2026-07-05 04:13:20] ERROR: Redis未运行
+[2026-07-05 04:13:22] ERROR: Redis恢复失败
+[2026-07-05 04:13:23] ERROR: 部分检查失败,请关注
+[2026-07-05 04:23:23] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 04:23:23] ERROR: PostgreSQL未运行
+[2026-07-05 04:23:26] ERROR: PostgreSQL恢复失败
+[2026-07-05 04:23:26] ERROR: Redis未运行
+[2026-07-05 04:23:28] ERROR: Redis恢复失败
+[2026-07-05 04:23:29] ERROR: 部分检查失败,请关注
+[2026-07-05 04:33:29] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 04:33:29] ERROR: PostgreSQL未运行
+[2026-07-05 04:33:33] ERROR: PostgreSQL恢复失败
+[2026-07-05 04:33:33] ERROR: Redis未运行
+[2026-07-05 04:33:35] ERROR: Redis恢复失败
+[2026-07-05 04:33:35] ERROR: 部分检查失败,请关注
+[2026-07-05 04:43:36] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 04:43:36] ERROR: PostgreSQL未运行
+[2026-07-05 04:43:39] ERROR: PostgreSQL恢复失败
+[2026-07-05 04:43:39] ERROR: Redis未运行
+[2026-07-05 04:43:41] ERROR: Redis恢复失败
+[2026-07-05 04:43:42] ERROR: 部分检查失败,请关注
+[2026-07-05 04:53:42] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 04:53:42] ERROR: PostgreSQL未运行
+[2026-07-05 04:53:45] ERROR: PostgreSQL恢复失败
+[2026-07-05 04:53:45] ERROR: Redis未运行
+[2026-07-05 04:53:47] ERROR: Redis恢复失败
+[2026-07-05 04:53:48] ERROR: 部分检查失败,请关注
+[2026-07-05 05:03:48] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 05:03:48] ERROR: PostgreSQL未运行
+[2026-07-05 05:03:51] ERROR: PostgreSQL恢复失败
+[2026-07-05 05:03:51] ERROR: Redis未运行
+[2026-07-05 05:03:53] ERROR: Redis恢复失败
+[2026-07-05 05:03:54] ERROR: 部分检查失败,请关注
+[2026-07-05 05:13:55] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 05:13:55] ERROR: PostgreSQL未运行
+[2026-07-05 05:13:58] ERROR: PostgreSQL恢复失败
+[2026-07-05 05:13:58] ERROR: Redis未运行
+[2026-07-05 05:14:00] ERROR: Redis恢复失败
+[2026-07-05 05:14:01] ERROR: 部分检查失败,请关注
+[2026-07-05 05:24:01] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 05:24:01] ERROR: PostgreSQL未运行
+[2026-07-05 05:24:04] ERROR: PostgreSQL恢复失败
+[2026-07-05 05:24:04] ERROR: Redis未运行
+[2026-07-05 05:24:06] ERROR: Redis恢复失败
+[2026-07-05 05:24:07] ERROR: 部分检查失败,请关注
+[2026-07-05 05:34:07] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 05:34:07] ERROR: PostgreSQL未运行
+[2026-07-05 05:34:10] ERROR: PostgreSQL恢复失败
+[2026-07-05 05:34:10] ERROR: Redis未运行
+[2026-07-05 05:34:12] ERROR: Redis恢复失败
+[2026-07-05 05:34:13] ERROR: 部分检查失败,请关注
+[2026-07-05 05:44:13] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 05:44:13] ERROR: PostgreSQL未运行
+[2026-07-05 05:44:16] ERROR: PostgreSQL恢复失败
+[2026-07-05 05:44:16] ERROR: Redis未运行
+[2026-07-05 05:44:18] ERROR: Redis恢复失败
+[2026-07-05 05:44:19] ERROR: 部分检查失败,请关注
+[2026-07-05 05:54:19] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 05:54:20] ERROR: PostgreSQL未运行
+[2026-07-05 05:54:23] ERROR: PostgreSQL恢复失败
+[2026-07-05 05:54:23] ERROR: Redis未运行
+[2026-07-05 05:54:25] ERROR: Redis恢复失败
+[2026-07-05 05:54:25] ERROR: 部分检查失败,请关注
+[2026-07-05 06:04:26] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 06:04:26] ERROR: PostgreSQL未运行
+[2026-07-05 06:04:29] ERROR: PostgreSQL恢复失败
+[2026-07-05 06:04:29] ERROR: Redis未运行
+[2026-07-05 06:04:31] ERROR: Redis恢复失败
+[2026-07-05 06:04:32] ERROR: 部分检查失败,请关注
+[2026-07-05 06:14:32] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 06:14:32] ERROR: PostgreSQL未运行
+[2026-07-05 06:14:35] ERROR: PostgreSQL恢复失败
+[2026-07-05 06:14:35] ERROR: Redis未运行
+[2026-07-05 06:14:37] ERROR: Redis恢复失败
+[2026-07-05 06:14:38] ERROR: 部分检查失败,请关注
+[2026-07-05 06:24:38] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 06:24:38] ERROR: PostgreSQL未运行
+[2026-07-05 06:24:41] ERROR: PostgreSQL恢复失败
+[2026-07-05 06:24:41] ERROR: Redis未运行
+[2026-07-05 06:24:43] ERROR: Redis恢复失败
+[2026-07-05 06:24:44] ERROR: 部分检查失败,请关注
+[2026-07-05 06:34:45] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 06:34:45] ERROR: PostgreSQL未运行
+[2026-07-05 06:34:48] ERROR: PostgreSQL恢复失败
+[2026-07-05 06:34:48] ERROR: Redis未运行
+[2026-07-05 06:34:50] ERROR: Redis恢复失败
+[2026-07-05 06:34:51] ERROR: 部分检查失败,请关注
+[2026-07-05 06:44:51] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 06:44:51] ERROR: PostgreSQL未运行
+[2026-07-05 06:44:54] ERROR: PostgreSQL恢复失败
+[2026-07-05 06:44:54] ERROR: Redis未运行
+[2026-07-05 06:44:56] ERROR: Redis恢复失败
+[2026-07-05 06:44:57] ERROR: 部分检查失败,请关注
+[2026-07-05 06:54:57] ERROR: API服务无响应: http://localhost:3000/health
+[2026-07-05 06:54:57] ERROR: PostgreSQL未运行
+[2026-07-05 06:55:00] ERROR: PostgreSQL恢复失败
+[2026-07-05 06:55:00] ERROR: Redis未运行
+[2026-07-05 06:55:02] ERROR: Redis恢复失败
+[2026-07-05 06:55:03] ERROR: 部分检查失败,请关注

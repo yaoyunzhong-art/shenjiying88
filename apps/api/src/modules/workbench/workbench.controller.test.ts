@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [workbench] [C] 角色测试编写
  * 
@@ -19,7 +20,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   PERMISSIONS_METADATA_KEY,
   ROLES_METADATA_KEY,
@@ -68,40 +68,40 @@ describe('workbench controller metadata', () => {
     'SECURITY_ADMIN',
   ]
 
-  test('controller path is "workbenches"', () => {
+  it('controller path is "workbenches"', () => {
     const path = Reflect.getMetadata('path', WorkbenchController)
     assert.equal(path, 'workbenches')
   })
 
-  test('getBootstrap route: GET /workbenches/bootstrap', () => {
+  it('getBootstrap route: GET /workbenches/bootstrap', () => {
     const method = Reflect.getMetadata('method', WorkbenchController.prototype.getBootstrap)
     const path = Reflect.getMetadata('path', WorkbenchController.prototype.getBootstrap)
     assert.equal(method, 0) // GET
     assert.equal(path, 'bootstrap')
   })
 
-  test('getWorkbenches route: GET /workbenches', () => {
+  it('getWorkbenches route: GET /workbenches', () => {
     const method = Reflect.getMetadata('method', WorkbenchController.prototype.getWorkbenches)
     const path = Reflect.getMetadata('path', WorkbenchController.prototype.getWorkbenches)
     assert.equal(method, 0) // GET
     assert.equal(path, '/')
   })
 
-  test('getNavItems route: GET /workbenches/nav-items', () => {
+  it('getNavItems route: GET /workbenches/nav-items', () => {
     const method = Reflect.getMetadata('method', WorkbenchController.prototype.getNavItems)
     const path = Reflect.getMetadata('path', WorkbenchController.prototype.getNavItems)
     assert.equal(method, 0) // GET
     assert.equal(path, 'nav-items')
   })
 
-  test('checkCapability route: GET /workbenches/capability-check', () => {
+  it('checkCapability route: GET /workbenches/capability-check', () => {
     const method = Reflect.getMetadata('method', WorkbenchController.prototype.checkCapability)
     const path = Reflect.getMetadata('path', WorkbenchController.prototype.checkCapability)
     assert.equal(method, 0) // GET
     assert.equal(path, 'capability-check')
   })
 
-  test('all read endpoints require tenant scope, workbench roles and workbench.read permission', () => {
+  it('all read endpoints require tenant scope, workbench roles and workbench.read permission', () => {
     const protectedHandlers = [
       WorkbenchController.prototype.getBootstrap,
       WorkbenchController.prototype.getWorkbenches,
@@ -122,7 +122,7 @@ describe('workbench controller metadata', () => {
 // ══════════════════════════════════════════════════
 
 describe('getWorkbenches', () => {
-  test('[正例] 无参数返回全部 10 个工作台', () => {
+  it('[正例] 无参数返回全部 10 个工作台', () => {
     const controller = createController()
     const result: any = controller.getWorkbenches({})
     assert.ok(Array.isArray(result.workbenches))
@@ -130,14 +130,14 @@ describe('getWorkbenches', () => {
     assert.equal(result.workbenches.length, 10)
   })
 
-  test('[正例] 按角色筛选 STORE_MANAGER', () => {
+  it('[正例] 按角色筛选 STORE_MANAGER', () => {
     const controller = createController()
     const result: any = controller.getWorkbenches({ role: 'STORE_MANAGER' })
     assert.equal(result.total, 1)
     assert.equal(result.workbenches[0].title, '店长经营台')
   })
 
-  test('[正例] 按渠道筛选 PAD（收银台 + 导购工作台 + 教练）', () => {
+  it('[正例] 按渠道筛选 PAD（收银台 + 导购工作台 + 教练）', () => {
     const controller = createController()
     const result: any = controller.getWorkbenches({ channel: 'PAD' })
     assert.equal(result.total, 3)
@@ -146,7 +146,7 @@ describe('getWorkbenches', () => {
     })
   })
 
-  test('[正例] 按渠道筛选 PC', () => {
+  it('[正例] 按渠道筛选 PC', () => {
     const controller = createController()
     const result: any = controller.getWorkbenches({ channel: 'PC' })
     // SUPER_ADMIN / TENANT_ADMIN / BRAND_MANAGER / STORE_MANAGER +
@@ -157,47 +157,47 @@ describe('getWorkbenches', () => {
     })
   })
 
-  test('[反例] 不存在的角色返回空', () => {
+  it('[反例] 不存在的角色返回空', () => {
     const controller = createController()
     const result: any = controller.getWorkbenches({ role: 'NON_EXISTENT' })
     assert.equal(result.total, 0)
     assert.deepEqual(result.workbenches, [])
   })
 
-  test('[反例] 不存在的渠道返回空', () => {
+  it('[反例] 不存在的渠道返回空', () => {
     const controller = createController()
     const result: any = controller.getWorkbenches({ channel: 'VR_HEADSET' })
     assert.equal(result.total, 0)
     assert.deepEqual(result.workbenches, [])
   })
 
-  test('[反例] initialized=false 返回空数组（模拟未初始化）', () => {
+  it('[反例] initialized=false 返回空数组（模拟未初始化）', () => {
     const controller = createController()
     const result: any = controller.getWorkbenches({ initialized: false })
     assert.equal(result.total, 0)
     assert.deepEqual(result.workbenches, [])
   })
 
-  test('[边界] initialized=true 返回全量', () => {
+  it('[边界] initialized=true 返回全量', () => {
     const controller = createController()
     const result: any = controller.getWorkbenches({ initialized: true })
     assert.equal(result.total, 10)
   })
 
-  test('[边界] 同时筛选 role=GUIDE + channel=PAD', () => {
+  it('[边界] 同时筛选 role=GUIDE + channel=PAD', () => {
     const controller = createController()
     const result: any = controller.getWorkbenches({ role: 'GUIDE', channel: 'PAD' })
     assert.equal(result.total, 1)
     assert.equal(result.workbenches[0].title, '导购工作台')
   })
 
-  test('[边界] role + channel 冲突时返回空（STORE_MANAGER 用 PC，查 PAD）', () => {
+  it('[边界] role + channel 冲突时返回空（STORE_MANAGER 用 PC，查 PAD）', () => {
     const controller = createController()
     const result: any = controller.getWorkbenches({ role: 'STORE_MANAGER', channel: 'PAD' })
     assert.equal(result.total, 0)
   })
 
-  test('[边界] 每个角色筛选结果都有完整字段', () => {
+  it('[边界] 每个角色筛选结果都有完整字段', () => {
     const controller = createController()
     const allRoles = ['SUPER_ADMIN', 'TENANT_ADMIN', 'BRAND_MANAGER', 'STORE_MANAGER', 'GUIDE', 'CASHIER', 'OPERATIONS', 'FINANCE', 'WAREHOUSE', 'COACH']
     allRoles.forEach(role => {
@@ -213,7 +213,7 @@ describe('getWorkbenches', () => {
     })
   })
 
-  test('[边界] undefined role 不影响结果', () => {
+  it('[边界] undefined role 不影响结果', () => {
     const controller = createController()
     // 传入 role 为 undefined 的 query，不过滤
     const result: any = controller.getWorkbenches({ role: undefined as any })
@@ -226,7 +226,7 @@ describe('getWorkbenches', () => {
 // ══════════════════════════════════════════════════
 
 describe('getNavItems', () => {
-  test('[正例] 无参数返回全部导航项（含 role/channel/marketCodes 元数据）', () => {
+  it('[正例] 无参数返回全部导航项（含 role/channel/marketCodes 元数据）', () => {
     const controller = createController()
     const result: any = controller.getNavItems({})
     assert.ok(Array.isArray(result.navItems))
@@ -243,7 +243,7 @@ describe('getNavItems', () => {
     })
   })
 
-  test('[正例] 按角色筛选 STORE_MANAGER', () => {
+  it('[正例] 按角色筛选 STORE_MANAGER', () => {
     const controller = createController()
     const result: any = controller.getNavItems({ role: 'STORE_MANAGER' })
     assert.ok(result.total > 0)
@@ -252,7 +252,7 @@ describe('getNavItems', () => {
     })
   })
 
-  test('[正例] 按渠道筛选 PAD', () => {
+  it('[正例] 按渠道筛选 PAD', () => {
     const controller = createController()
     const result: any = controller.getNavItems({ channel: 'PAD' })
     assert.ok(result.total > 0)
@@ -261,7 +261,7 @@ describe('getNavItems', () => {
     })
   })
 
-  test('[正例] 按市场筛选 cn-mainland', () => {
+  it('[正例] 按市场筛选 cn-mainland', () => {
     const controller = createController()
     const result: any = controller.getNavItems({ marketCode: 'cn-mainland' })
     assert.ok(result.total > 0)
@@ -270,7 +270,7 @@ describe('getNavItems', () => {
     })
   })
 
-  test('[正例] 按市场筛选 us-default', () => {
+  it('[正例] 按市场筛选 us-default', () => {
     const controller = createController()
     const result: any = controller.getNavItems({ marketCode: 'us-default' })
     assert.ok(result.total > 0)
@@ -279,7 +279,7 @@ describe('getNavItems', () => {
     })
   })
 
-  test('[正例] 按能力筛选 promo-conversion 返回所有具备该能力的角色导航项', () => {
+  it('[正例] 按能力筛选 promo-conversion 返回所有具备该能力的角色导航项', () => {
     const controller = createController()
     const result: any = controller.getNavItems({ capability: 'promo-conversion' })
     // GUIDE (2 navItems) + COACH (4 navItems) = 6
@@ -290,27 +290,27 @@ describe('getNavItems', () => {
     assert.equal(coachNav.length, 4)
   })
 
-  test('[反例] 不存在角色返回空', () => {
+  it('[反例] 不存在角色返回空', () => {
     const controller = createController()
     const result: any = controller.getNavItems({ role: 'GHOST_ROLE' })
     assert.equal(result.total, 0)
     assert.deepEqual(result.navItems, [])
   })
 
-  test('[反例] 不存在市场代码返回空', () => {
+  it('[反例] 不存在市场代码返回空', () => {
     const controller = createController()
     const result: any = controller.getNavItems({ marketCode: 'mars-colony' })
     assert.equal(result.total, 0)
   })
 
-  test('[反例] 不存在能力返回空', () => {
+  it('[反例] 不存在能力返回空', () => {
     const controller = createController()
     const result: any = controller.getNavItems({ capability: 'time-travel' })
     assert.equal(result.total, 0)
     assert.deepEqual(result.navItems, [])
   })
 
-  test('[边界] role=GUIDE + channel=PAD + marketCode=cn-mainland 联合筛选', () => {
+  it('[边界] role=GUIDE + channel=PAD + marketCode=cn-mainland 联合筛选', () => {
     const controller = createController()
     const result: any = controller.getNavItems({
       role: 'GUIDE',
@@ -325,13 +325,13 @@ describe('getNavItems', () => {
     })
   })
 
-  test('[边界] role=GUIDE + channel=PC 返回空（GUIDE 只用 PAD）', () => {
+  it('[边界] role=GUIDE + channel=PC 返回空（GUIDE 只用 PAD）', () => {
     const controller = createController()
     const result: any = controller.getNavItems({ role: 'GUIDE', channel: 'PC' })
     assert.equal(result.total, 0)
   })
 
-  test('[边界] 每个角色的导航项数量合理', () => {
+  it('[边界] 每个角色的导航项数量合理', () => {
     const controller = createController()
     const roleCounts: Record<string, number> = {}
     const all: any = controller.getNavItems({})
@@ -344,7 +344,7 @@ describe('getNavItems', () => {
     })
   })
 
-  test('[边界] undefined 参数不过滤', () => {
+  it('[边界] undefined 参数不过滤', () => {
     const controller = createController()
     const result: any = controller.getNavItems({ role: undefined as any, channel: undefined as any })
     assert.ok(result.total > 10)
@@ -356,7 +356,7 @@ describe('getNavItems', () => {
 // ══════════════════════════════════════════════════
 
 describe('checkCapability', () => {
-  test('[正例] SUPER_ADMIN 拥有 tenant-management', () => {
+  it('[正例] SUPER_ADMIN 拥有 tenant-management', () => {
     const controller = createController()
     const result: any = controller.checkCapability({
       role: 'SUPER_ADMIN',
@@ -367,7 +367,7 @@ describe('checkCapability', () => {
     assert.equal(result.has, true)
   })
 
-  test('[正例] STORE_MANAGER 拥有 daily-report', () => {
+  it('[正例] STORE_MANAGER 拥有 daily-report', () => {
     const controller = createController()
     const result: any = controller.checkCapability({
       role: 'STORE_MANAGER',
@@ -376,7 +376,7 @@ describe('checkCapability', () => {
     assert.equal(result.has, true)
   })
 
-  test('[正例] CASHIER 拥有 checkout-nuclear', () => {
+  it('[正例] CASHIER 拥有 checkout-nuclear', () => {
     const controller = createController()
     const result: any = controller.checkCapability({
       role: 'CASHIER',
@@ -385,7 +385,7 @@ describe('checkCapability', () => {
     assert.equal(result.has, true)
   })
 
-  test('[反例] GUIDE 不拥有 tenant-management', () => {
+  it('[反例] GUIDE 不拥有 tenant-management', () => {
     const controller = createController()
     const result: any = controller.checkCapability({
       role: 'GUIDE',
@@ -394,7 +394,7 @@ describe('checkCapability', () => {
     assert.equal(result.has, false)
   })
 
-  test('[反例] 不存在角色返回 false', () => {
+  it('[反例] 不存在角色返回 false', () => {
     const controller = createController()
     const result: any = controller.checkCapability({
       role: 'UNKNOWN_ROLE',
@@ -403,7 +403,7 @@ describe('checkCapability', () => {
     assert.equal(result.has, false)
   })
 
-  test('[反例] 不存在能力返回 false', () => {
+  it('[反例] 不存在能力返回 false', () => {
     const controller = createController()
     const result: any = controller.checkCapability({
       role: 'SUPER_ADMIN',
@@ -412,7 +412,7 @@ describe('checkCapability', () => {
     assert.equal(result.has, false)
   })
 
-  test('[边界] 大小写必须严格匹配（小写角色返回 false）', () => {
+  it('[边界] 大小写必须严格匹配（小写角色返回 false）', () => {
     const controller = createController()
     const result1: any = controller.checkCapability({
       role: 'super_admin',
@@ -427,7 +427,7 @@ describe('checkCapability', () => {
     assert.equal(result2.has, true)
   })
 
-  test('[边界] BRAND_MANAGER 拥有 3 个能力', () => {
+  it('[边界] BRAND_MANAGER 拥有 3 个能力', () => {
     const controller = createController()
     const caps = ['member-crm', 'campaign-execution', 'regional-config']
     caps.forEach(cap => {
@@ -436,7 +436,7 @@ describe('checkCapability', () => {
     })
   })
 
-  test('[边界] SUPERA_ADMIN 拥有 3 个能力', () => {
+  it('[边界] SUPERA_ADMIN 拥有 3 个能力', () => {
     const controller = createController()
     const caps = ['tenant-management', 'audit-center', 'market-governance']
     caps.forEach(cap => {
@@ -445,7 +445,7 @@ describe('checkCapability', () => {
     })
   })
 
-  test('[正例] TENANT_ADMIN 拥有品牌矩阵', () => {
+  it('[正例] TENANT_ADMIN 拥有品牌矩阵', () => {
     const controller = createController()
     const result: any = controller.checkCapability({
       role: 'TENANT_ADMIN',
@@ -468,7 +468,7 @@ describe('@RequireRoles 装饰器：端点角色权限矩阵', () => {
   const SECRET_ROTATION_ROLES_EXPECTED = ['SUPER_ADMIN', 'SECURITY_ADMIN']
 
   // read 端点角色检查
-  const readHandlers: Array<{ name: string; handler: Function }> = [
+  const readHandlers: Array<{ name: string; handler: (...args: any[]) => unknown }> = [
     { name: 'getBootstrap', handler: WorkbenchController.prototype.getBootstrap },
     { name: 'getWorkbenches', handler: WorkbenchController.prototype.getWorkbenches },
     { name: 'getNavItems', handler: WorkbenchController.prototype.getNavItems },
@@ -476,14 +476,14 @@ describe('@RequireRoles 装饰器：端点角色权限矩阵', () => {
   ]
 
   readHandlers.forEach(({ name, handler }) => {
-    test(`read 端点 ${name} @RequireRoles 包含 8 角色`, () => {
+    it(`read 端点 ${name} @RequireRoles 包含 8 角色`, () => {
       const roles = Reflect.getMetadata(ROLES_METADATA_KEY, handler)
       assert.deepEqual(roles, READ_ROLES_EXPECTED)
     })
   })
 
   // action 端点角色检查
-  const actionHandlers: Array<{ name: string; handler: Function }> = [
+  const actionHandlers: Array<{ name: string; handler: (...args: never[]) => unknown }> = [
     { name: 'executeApproval', handler: WorkbenchController.prototype.executeApproval },
     { name: 'submitRuntimeReplay', handler: WorkbenchController.prototype.submitRuntimeReplay },
     { name: 'getActionReceipt', handler: WorkbenchController.prototype.getActionReceipt },
@@ -493,14 +493,14 @@ describe('@RequireRoles 装饰器：端点角色权限矩阵', () => {
   ]
 
   actionHandlers.forEach(({ name, handler }) => {
-    test(`action 端点 ${name} @RequireRoles 仅限 4 管理员角色`, () => {
+    it(`action 端点 ${name} @RequireRoles 仅限 4 管理员角色`, () => {
       const roles = Reflect.getMetadata(ROLES_METADATA_KEY, handler)
       assert.deepEqual(roles, ACTION_ROLES_EXPECTED)
     })
   })
 
   // secret-rotation 端点角色检查
-  test('secret-rotation 端点 @RequireRoles 仅限 SUPER_ADMIN + SECURITY_ADMIN', () => {
+  it('secret-rotation 端点 @RequireRoles 仅限 SUPER_ADMIN + SECURITY_ADMIN', () => {
     const roles = Reflect.getMetadata(ROLES_METADATA_KEY, WorkbenchController.prototype.rotateSecret)
     assert.deepEqual(roles, SECRET_ROTATION_ROLES_EXPECTED)
   })
@@ -536,14 +536,14 @@ describe('8 角色视角', () => {
   const controller = createController()
 
   // ── 👔 店长 ──
-  test('👔店长: 可见店长经营台 (PC 渠道)', () => {
+  it('👔店长: 可见店长经营台 (PC 渠道)', () => {
     const r: any = controller.getWorkbenches({ role: roleToDomainRole['👔店长'] })
     assert.equal(r.total, 1)
     assert.equal(r.workbenches[0].title, '店长经营台')
     assert.equal(r.workbenches[0].channel, 'PC')
     assert.equal(r.workbenches[0].role, 'STORE_MANAGER')
   })
-  test('👔店长: 拥有 daily-report 和 field-scheduling 能力', () => {
+  it('👔店长: 拥有 daily-report 和 field-scheduling 能力', () => {
     assert.equal(
       controller.checkCapability({ role: 'STORE_MANAGER', capability: 'daily-report' }).has,
       true
@@ -553,7 +553,7 @@ describe('8 角色视角', () => {
       true
     )
   })
-  test('👔店长: 不拥有 audit-center (权限边界)', () => {
+  it('👔店长: 不拥有 audit-center (权限边界)', () => {
     assert.equal(
       controller.checkCapability({ role: 'STORE_MANAGER', capability: 'audit-center' }).has,
       false
@@ -561,14 +561,14 @@ describe('8 角色视角', () => {
   })
 
   // ── 🛒 前台 ──
-  test('🛒前台: 使用 PAD 收银台', () => {
+  it('🛒前台: 使用 PAD 收银台', () => {
     const r: any = controller.getWorkbenches({ role: roleToDomainRole['🛒前台'] })
     assert.equal(r.total, 1)
     assert.equal(r.workbenches[0].channel, 'PAD')
     assert.equal(r.workbenches[0].title, '收银台')
     assert.equal(r.workbenches[0].role, 'CASHIER')
   })
-  test('🛒前台: 拥有 checkout-nuclear + offline-fallback', () => {
+  it('🛒前台: 拥有 checkout-nuclear + offline-fallback', () => {
     assert.equal(
       controller.checkCapability({ role: 'CASHIER', capability: 'checkout-nuclear' }).has,
       true
@@ -578,7 +578,7 @@ describe('8 角色视角', () => {
       true
     )
   })
-  test('🛒前台: 不拥有 member-crm (前台不接触会员运营)', () => {
+  it('🛒前台: 不拥有 member-crm (前台不接触会员运营)', () => {
     assert.equal(
       controller.checkCapability({ role: 'CASHIER', capability: 'member-crm' }).has,
       false
@@ -586,13 +586,13 @@ describe('8 角色视角', () => {
   })
 
   // ── 👥 HR (TENANT_ADMIN) ──
-  test('👥HR: 访问租户经营台 (PC)', () => {
+  it('👥HR: 访问租户经营台 (PC)', () => {
     const r: any = controller.getWorkbenches({ role: roleToDomainRole['👥HR'] })
     assert.equal(r.workbenches[0].title, '租户经营台')
     assert.equal(r.workbenches[0].channel, 'PC')
     assert.equal(r.workbenches[0].role, 'TENANT_ADMIN')
   })
-  test('👥HR: 拥有品牌矩阵+渠道编排+portal管理能力', () => {
+  it('👥HR: 拥有品牌矩阵+渠道编排+portal管理能力', () => {
     assert.equal(
       controller.checkCapability({ role: 'TENANT_ADMIN', capability: 'brand-matrix' }).has,
       true
@@ -606,7 +606,7 @@ describe('8 角色视角', () => {
       true
     )
   })
-  test('👥HR: 不拥有 checkout-nuclear (不懂收银)', () => {
+  it('👥HR: 不拥有 checkout-nuclear (不懂收银)', () => {
     assert.equal(
       controller.checkCapability({ role: 'TENANT_ADMIN', capability: 'checkout-nuclear' }).has,
       false
@@ -614,13 +614,13 @@ describe('8 角色视角', () => {
   })
 
   // ── 🔧 安监 (SUPER_ADMIN) ──
-  test('🔧安监: 访问总部总控台 (PC)', () => {
+  it('🔧安监: 访问总部总控台 (PC)', () => {
     const r: any = controller.getWorkbenches({ role: roleToDomainRole['🔧安监'] })
     assert.equal(r.workbenches[0].title, '总部总控台')
     assert.equal(r.workbenches[0].channel, 'PC')
     assert.equal(r.workbenches[0].role, 'SUPER_ADMIN')
   })
-  test('🔧安监: 拥有 ternary 审计/治理/租户管理能力', () => {
+  it('🔧安监: 拥有 ternary 审计/治理/租户管理能力', () => {
     assert.equal(
       controller.checkCapability({ role: 'SUPER_ADMIN', capability: 'audit-center' }).has,
       true
@@ -634,7 +634,7 @@ describe('8 角色视角', () => {
       true
     )
   })
-  test('🔧安监: 有 secret-rotation 端点权限 (与 SECURITY_ADMIN 共享)', () => {
+  it('🔧安监: 有 secret-rotation 端点权限 (与 SECURITY_ADMIN 共享)', () => {
     // 元数据验证: rotateSecret 只允许 SUPER_ADMIN + SECURITY_ADMIN
     const roles = Reflect.getMetadata(ROLES_METADATA_KEY, WorkbenchController.prototype.rotateSecret)
     assert.ok(roles.includes('SUPER_ADMIN'))
@@ -643,13 +643,13 @@ describe('8 角色视角', () => {
   })
 
   // ── 🎮 导玩员 ──
-  test('🎮导玩员: 使用 PAD 导购工作台', () => {
+  it('🎮导玩员: 使用 PAD 导购工作台', () => {
     const r: any = controller.getWorkbenches({ role: roleToDomainRole['🎮导玩员'] })
     assert.equal(r.workbenches[0].title, '导购工作台')
     assert.equal(r.workbenches[0].channel, 'PAD')
     assert.equal(r.workbenches[0].role, 'GUIDE')
   })
-  test('🎮导玩员: 有 member-crm + promo-conversion 推广能力', () => {
+  it('🎮导玩员: 有 member-crm + promo-conversion 推广能力', () => {
     assert.equal(
       controller.checkCapability({ role: 'GUIDE', capability: 'member-crm' }).has,
       true
@@ -659,19 +659,19 @@ describe('8 角色视角', () => {
       true
     )
   })
-  test('🎮导玩员: 不能使用 PC 渠道工作台', () => {
+  it('🎮导玩员: 不能使用 PC 渠道工作台', () => {
     const r: any = controller.getWorkbenches({ role: 'GUIDE', channel: 'PC' })
     assert.equal(r.total, 0)
   })
 
   // ── 🎯 运行专员 (OPERATIONS) ──
-  test('🎯运行专员: 访问运行中心 (PC)', () => {
+  it('🎯运行专员: 访问运行中心 (PC)', () => {
     const r: any = controller.getWorkbenches({ role: roleToDomainRole['🎯运行专员'] })
     assert.equal(r.total, 1)
     assert.equal(r.workbenches[0].channel, 'PC')
     assert.equal(r.workbenches[0].role, 'OPERATIONS')
   })
-  test('🎯运行专员: 拥有治理/调度/租户/审计四合一能力', () => {
+  it('🎯运行专员: 拥有治理/调度/租户/审计四合一能力', () => {
     assert.equal(
       controller.checkCapability({ role: 'OPERATIONS', capability: 'market-governance' }).has,
       true
@@ -689,7 +689,7 @@ describe('8 角色视角', () => {
       true
     )
   })
-  test('🎯运行专员: 不拥有 checkout-nuclear (非收银角色)', () => {
+  it('🎯运行专员: 不拥有 checkout-nuclear (非收银角色)', () => {
     assert.equal(
       controller.checkCapability({ role: 'OPERATIONS', capability: 'checkout-nuclear' }).has,
       false
@@ -697,13 +697,13 @@ describe('8 角色视角', () => {
   })
 
   // ── 🤝 团建 (TEAM_BUILDING: 不在 WORKBENCH_READ_ROLES 中, 无任何端点访问权限) ──
-  test('🤝团建: 系统无此角色工作台 → 返回空', () => {
+  it('🤝团建: 系统无此角色工作台 → 返回空', () => {
     // TEAM_BUILDING 不在 ROLE_CAPABILITY_MAP 也不在 defaultRoleWorkbenchContracts 中
     const r: any = controller.getWorkbenches({ role: roleToDomainRole['🤝团建'] })
     assert.equal(r.total, 0)
     assert.deepEqual(r.workbenches, [])
   })
-  test('🤝团建: 无任何能力（capability check 返回 false）', () => {
+  it('🤝团建: 无任何能力（capability check 返回 false）', () => {
     assert.equal(
       controller.checkCapability({ role: 'TEAM_BUILDING', capability: 'member-crm' }).has,
       false
@@ -717,7 +717,7 @@ describe('8 角色视角', () => {
       false
     )
   })
-  test('🤝团建: 不在任何 @RequireRoles 端点允许列表中（权限边界）', () => {
+  it('🤝团建: 不在任何 @RequireRoles 端点允许列表中（权限边界）', () => {
     // 验证所有 read handler 都不包含 TEAM_BUILDING
     const readHandlers = [
       WorkbenchController.prototype.getBootstrap,
@@ -730,19 +730,19 @@ describe('8 角色视角', () => {
       assert.ok(!roles.includes('TEAM_BUILDING'), `${handler.name} should not allow TEAM_BUILDING`)
     })
   })
-  test('🤝团建: navItems 中无任何可访问项', () => {
+  it('🤝团建: navItems 中无任何可访问项', () => {
     const r: any = controller.getNavItems({ role: 'TEAM_BUILDING' })
     assert.equal(r.total, 0)
     assert.deepEqual(r.navItems, [])
   })
 
   // ── 📢 营销 (MARKETING: 不在 WORKBENCH_READ_ROLES 中, 无任何端点访问权限) ──
-  test('📢营销: 系统无此角色工作台 → 返回空', () => {
+  it('📢营销: 系统无此角色工作台 → 返回空', () => {
     const r: any = controller.getWorkbenches({ role: roleToDomainRole['📢营销'] })
     assert.equal(r.total, 0)
     assert.deepEqual(r.workbenches, [])
   })
-  test('📢营销: 无任何能力（capability check 返回 false）', () => {
+  it('📢营销: 无任何能力（capability check 返回 false）', () => {
     assert.equal(
       controller.checkCapability({ role: 'MARKETING', capability: 'campaign-execution' }).has,
       false
@@ -756,7 +756,7 @@ describe('8 角色视角', () => {
       false
     )
   })
-  test('📢营销: 不在任何 @RequireRoles 端点允许列表中（权限边界）', () => {
+  it('📢营销: 不在任何 @RequireRoles 端点允许列表中（权限边界）', () => {
     const actionHandlers = [
       WorkbenchController.prototype.executeApproval,
       WorkbenchController.prototype.submitRuntimeReplay,
@@ -768,7 +768,7 @@ describe('8 角色视角', () => {
       assert.ok(!roles.includes('MARKETING'), `${handler.name} should not allow MARKETING`)
     })
   })
-  test('📢营销: navItems 中无任何可访问项', () => {
+  it('📢营销: navItems 中无任何可访问项', () => {
     const r: any = controller.getNavItems({ role: 'MARKETING' })
     assert.equal(r.total, 0)
     assert.deepEqual(r.navItems, [])
@@ -780,7 +780,7 @@ describe('8 角色视角', () => {
 // ══════════════════════════════════════════════════
 
 describe('角色与装饰器权限边界', () => {
-  test('READ 端点允许 GUIDE/CASHIER/STORE_MANAGER 但 action 端点不允许', () => {
+  it('READ 端点允许 GUIDE/CASHIER/STORE_MANAGER 但 action 端点不允许', () => {
     // read handler getBootstrap: 含 GUIDE/CASHIER/STORE_MANAGER
     const readRoles = Reflect.getMetadata(ROLES_METADATA_KEY, WorkbenchController.prototype.getBootstrap) as string[]
     assert.ok(readRoles.includes('GUIDE'))
@@ -794,7 +794,7 @@ describe('角色与装饰器权限边界', () => {
     assert.ok(!actionRoles.includes('STORE_MANAGER'), 'STORE_MANAGER should NOT be in action roles')
   })
 
-  test('SUPER_ADMIN / TENANT_ADMIN / OPERATIONS / SECURITY_ADMIN 可以访问 read + action 端点; secret-rotation 仅 SUPER_ADMIN + SECURITY_ADMIN', () => {
+  it('SUPER_ADMIN / TENANT_ADMIN / OPERATIONS / SECURITY_ADMIN 可以访问 read + action 端点; secret-rotation 仅 SUPER_ADMIN + SECURITY_ADMIN', () => {
     const regularHandlers = [
       { name: 'getBootstrap', handler: WorkbenchController.prototype.getBootstrap },
       { name: 'executeApproval', handler: WorkbenchController.prototype.executeApproval },
@@ -816,7 +816,7 @@ describe('角色与装饰器权限边界', () => {
     assert.ok(!secretRoles.includes('OPERATIONS'), 'OPERATIONS must NOT rotate secrets')
   })
 
-  test('SECURITY_ADMIN 有 secret-rotation 权限但 GUIDE 没有', () => {
+  it('SECURITY_ADMIN 有 secret-rotation 权限但 GUIDE 没有', () => {
     const secretRoles = Reflect.getMetadata(ROLES_METADATA_KEY, WorkbenchController.prototype.rotateSecret)
     assert.ok(secretRoles.includes('SECURITY_ADMIN'))
     assert.ok(!secretRoles.includes('GUIDE'), 'GUIDE must NOT rotate secrets')
@@ -824,7 +824,7 @@ describe('角色与装饰器权限边界', () => {
     assert.ok(!secretRoles.includes('STORE_MANAGER'), 'STORE_MANAGER must NOT rotate secrets')
   })
 
-  test('所有 action 端点仅限 4 个管理员角色', () => {
+  it('所有 action 端点仅限 4 个管理员角色', () => {
     const actionOnlyHandlers = [
       WorkbenchController.prototype.executeApproval,
       WorkbenchController.prototype.rotateSecret,
@@ -847,7 +847,7 @@ describe('角色与装饰器权限边界', () => {
     })
   })
 
-  test('read 端点允许 8 个角色, action 端点仅 4 个, secret-rotation 端点仅 2 个', () => {
+  it('read 端点允许 8 个角色, action 端点仅 4 个, secret-rotation 端点仅 2 个', () => {
     const readCount = (Reflect.getMetadata(ROLES_METADATA_KEY, WorkbenchController.prototype.getBootstrap) as string[]).length
     const actionCount = (Reflect.getMetadata(ROLES_METADATA_KEY, WorkbenchController.prototype.executeApproval) as string[]).length
     const secretCount = (Reflect.getMetadata(ROLES_METADATA_KEY, WorkbenchController.prototype.rotateSecret) as string[]).length

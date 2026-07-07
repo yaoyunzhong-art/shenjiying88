@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { Get, Controller, Inject, Query, ValidationPipe } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
@@ -106,7 +106,7 @@ class TestAuditManagementController {
   }
 }
 
-test('e2e: filters audit records by actor risk level and time window', async () => {
+it('e2e: filters audit records by actor risk level and time window', async () => {
   const { prisma } = createAuditManagementPrismaMock()
 
   const moduleRef = await Test.createTestingModule({

@@ -1,7 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 describe('lyt.dto', () => {
   const {
     LytDeviceQueryDto,
@@ -19,7 +18,7 @@ describe('lyt.dto', () => {
   const { LytDeviceType, LytDeviceStatus } = require('./lyt.entity')
 
   describe('LytDeviceQueryDto', () => {
-    test('can be instantiated with no params', () => {
+    it('can be instantiated with no params', () => {
       const dto = new LytDeviceQueryDto()
       assert.equal(dto.deviceType, undefined)
       assert.equal(dto.status, undefined)
@@ -27,7 +26,7 @@ describe('lyt.dto', () => {
       assert.equal(dto.keyword, undefined)
     })
 
-    test('accepts all optional query fields', () => {
+    it('accepts all optional query fields', () => {
       const dto = new LytDeviceQueryDto()
       dto.deviceType = LytDeviceType.GateReader
       dto.status = LytDeviceStatus.Online
@@ -46,7 +45,7 @@ describe('lyt.dto', () => {
   })
 
   describe('LytDeviceCreateDto', () => {
-    test('has required fields', () => {
+    it('has required fields', () => {
       const dto = new LytDeviceCreateDto()
       dto.deviceType = LytDeviceType.Camera
       dto.name = 'Camera 1'
@@ -57,7 +56,7 @@ describe('lyt.dto', () => {
       assert.equal(dto.storeId, 'store-1')
     })
 
-    test('firmwareVersion is optional', () => {
+    it('firmwareVersion is optional', () => {
       const dto = new LytDeviceCreateDto()
       dto.deviceType = LytDeviceType.Camera
       dto.name = 'Camera 2'
@@ -71,14 +70,14 @@ describe('lyt.dto', () => {
   })
 
   describe('LytDeviceUpdateDto', () => {
-    test('all fields are optional', () => {
+    it('all fields are optional', () => {
       const dto = new LytDeviceUpdateDto()
       assert.equal(dto.name, undefined)
       assert.equal(dto.status, undefined)
       assert.equal(dto.firmwareVersion, undefined)
     })
 
-    test('partial update sets only provided fields', () => {
+    it('partial update sets only provided fields', () => {
       const dto = new LytDeviceUpdateDto()
       dto.name = 'Renamed Device'
       dto.status = LytDeviceStatus.Maintenance
@@ -90,7 +89,7 @@ describe('lyt.dto', () => {
   })
 
   describe('LytGateVerifyDto', () => {
-    test('has required passCode and storeId', () => {
+    it('has required passCode and storeId', () => {
       const dto = new LytGateVerifyDto()
       dto.passCode = 'PASS-1234'
       dto.storeId = 'store-1'
@@ -101,7 +100,7 @@ describe('lyt.dto', () => {
   })
 
   describe('LytBootstrapResponseDto', () => {
-    test('has expected shape', () => {
+    it('has expected shape', () => {
       const dto = new LytBootstrapResponseDto()
       dto.tenantContext = { tenantId: 't1' }
       dto.capabilities = ['device-management']
@@ -114,7 +113,7 @@ describe('lyt.dto', () => {
   })
 
   describe('LytWebhookIngestDto', () => {
-    test('has required webhook signature, timestamp, and payload', () => {
+    it('has required webhook signature, timestamp, and payload', () => {
       const dto = new LytWebhookIngestDto()
       dto.signature = 'sha256=test'
       dto.timestamp = '1718234567890'
@@ -125,7 +124,7 @@ describe('lyt.dto', () => {
       assert.deepStrictEqual(dto.payload, { orderId: 'order-1' })
     })
 
-    test('optional event metadata can be assigned', () => {
+    it('optional event metadata can be assigned', () => {
       const dto = new LytWebhookIngestDto()
       dto.eventId = 'evt-1'
       dto.eventType = 'payment.success'
@@ -143,7 +142,7 @@ describe('lyt.dto', () => {
   })
 
   describe('LytWebhookDrillDto', () => {
-    test('supports drill preview payload with optional dryRun flag', () => {
+    it('supports drill preview payload with optional dryRun flag', () => {
       const dto = new LytWebhookDrillDto()
       dto.eventId = 'drill-1'
       dto.eventType = 'payment.success'
@@ -156,7 +155,7 @@ describe('lyt.dto', () => {
       assert.deepStrictEqual(dto.payload, { orderId: 'order-1' })
     })
 
-    test('supports optional fixtureKey without requiring payload', () => {
+    it('supports optional fixtureKey without requiring payload', () => {
       const dto = new LytWebhookDrillDto()
       dto.fixtureKey = 'payment-success-webhook'
       dto.dryRun = true
@@ -167,7 +166,7 @@ describe('lyt.dto', () => {
   })
 
   describe('LytWebhookFixtureReplayDto', () => {
-    test('supports fixture replay input with optional overrides', () => {
+    it('supports fixture replay input with optional overrides', () => {
       const dto = new LytWebhookFixtureReplayDto()
       dto.fixtureKey = 'gate-pass-webhook'
       dto.eventId = 'fixture-run-001'
@@ -186,7 +185,7 @@ describe('lyt.dto', () => {
   })
 
   describe('LytFixtureCompareDto', () => {
-    test('supports payload headers and query compare input', () => {
+    it('supports payload headers and query compare input', () => {
       const dto = new LytFixtureCompareDto()
       dto.payload = { paymentId: 'payment-001' }
       dto.headers = { signature: 'fixture:test' }
@@ -199,7 +198,7 @@ describe('lyt.dto', () => {
   })
 
   describe('LytFixtureImportPreviewDto', () => {
-    test('supports captured sample import preview input', () => {
+    it('supports captured sample import preview input', () => {
       const dto = new LytFixtureImportPreviewDto()
       dto.payload = { paymentId: 'payment-001' }
       dto.headers = { signature: 'fixture:test' }
@@ -212,7 +211,7 @@ describe('lyt.dto', () => {
   })
 
   describe('LytFixtureImportPlanDto', () => {
-    test('supports fixture import plan input', () => {
+    it('supports fixture import plan input', () => {
       const dto = new LytFixtureImportPlanDto()
       dto.payload = { paymentId: 'payment-001' }
       dto.headers = { 'x-lyt-source': 'captured-sample' }

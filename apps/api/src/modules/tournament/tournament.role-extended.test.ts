@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 扩展角色测试: tournament 模块
  *
@@ -13,7 +14,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { TournamentController } from './tournament.controller'
 import { TournamentService } from './tournament.service'
 import {
@@ -65,7 +65,7 @@ function createDraftTournament(ctrl: TournamentController, overrides: Partial<{
 // 🎮导玩员 — 创建和报名赛事 (guide creating & registering tournaments)
 // ──────────────────────────────────────────────────────────────────────
 describe('🎮导玩员 — 赛事创建与报名视角', () => {
-  test('成功创建赛事并设置基本信息 (create tournament)', () => {
+  it('成功创建赛事并设置基本信息 (create tournament)', () => {
     const ctrl = createController()
 
     const t = createDraftTournament(ctrl)
@@ -78,7 +78,7 @@ describe('🎮导玩员 — 赛事创建与报名视角', () => {
     assert(t.id.startsWith('tournament-'))
   })
 
-  test('报名开放后参赛者可以注册 (register participant)', () => {
+  it('报名开放后参赛者可以注册 (register participant)', () => {
     const ctrl = createController()
     const t = createDraftTournament(ctrl)
 
@@ -94,7 +94,7 @@ describe('🎮导玩员 — 赛事创建与报名视角', () => {
     assert.equal(afterReg2.currentParticipants, 2)
   })
 
-  test('参赛者满员后拒绝报名 (max participants exceeded)', () => {
+  it('参赛者满员后拒绝报名 (max participants exceeded)', () => {
     const ctrl = createController()
     const t = createDraftTournament(ctrl, { maxParticipants: 2 })
 
@@ -115,7 +115,7 @@ describe('🎮导玩员 — 赛事创建与报名视角', () => {
 // 🎯运行专员 — 安排赛程 (operations scheduling events)
 // ──────────────────────────────────────────────────────────────────────
 describe('🎯运行专员 — 赛程安排视角', () => {
-  test('生成单败淘汰赛赛程 (generate bracket)', () => {
+  it('生成单败淘汰赛赛程 (generate bracket)', () => {
     const ctrl = createController()
     const t = createDraftTournament(ctrl, { type: TournamentType.SingleElimination, maxParticipants: 4 })
 
@@ -135,7 +135,7 @@ describe('🎯运行专员 — 赛程安排视角', () => {
     assert.equal(tournament.status, TournamentStatus.Ongoing)
   })
 
-  test('记录比赛结果并更新排名 (record match result)', () => {
+  it('记录比赛结果并更新排名 (record match result)', () => {
     const ctrl = createController()
     const t = createDraftTournament(ctrl, { type: TournamentType.League, maxParticipants: 4 })
 
@@ -166,7 +166,7 @@ describe('🎯运行专员 — 赛程安排视角', () => {
     assert(winnerRank.points >= 3)
   })
 
-  test('重复记录已完成的比赛报错 (double result entry)', () => {
+  it('重复记录已完成的比赛报错 (double result entry)', () => {
     const ctrl = createController()
     const t = createDraftTournament(ctrl, { maxParticipants: 2 })
     ctrl.updateTournamentStatus(tenantCtx, t.id, { status: TournamentStatus.Open })
@@ -188,7 +188,7 @@ describe('🎯运行专员 — 赛程安排视角', () => {
 // 👔店长 — 查看赛事统计 (shop manager viewing tournament stats)
 // ──────────────────────────────────────────────────────────────────────
 describe('👔店长 — 赛事统计视角', () => {
-  test('获取排名列表 (rankings)', () => {
+  it('获取排名列表 (rankings)', () => {
     const ctrl = createController()
     const t = createDraftTournament(ctrl, { type: TournamentType.League, maxParticipants: 3 })
 
@@ -213,7 +213,7 @@ describe('👔店长 — 赛事统计视角', () => {
     }
   })
 
-  test('筛选状态查询赛事列表 (filter by status)', () => {
+  it('筛选状态查询赛事列表 (filter by status)', () => {
     const ctrl = createController()
 
     const t1 = createDraftTournament(ctrl, { name: '周赛' })
@@ -231,7 +231,7 @@ describe('👔店长 — 赛事统计视角', () => {
     assert.equal(drafts[0].name, '月赛')
   })
 
-  test('查询不存在的赛事返回错误 (non-existent tournament)', () => {
+  it('查询不存在的赛事返回错误 (non-existent tournament)', () => {
     const ctrl = createController()
 
     assert.throws(
@@ -245,7 +245,7 @@ describe('👔店长 — 赛事统计视角', () => {
 // 📢营销 — 推广赛事活动 (marketing promoting tournaments)
 // ──────────────────────────────────────────────────────────────────────
 describe('📢营销 — 赛事推广视角', () => {
-  test('查看已开放的赛事列表用于推广 (list open tournaments)', () => {
+  it('查看已开放的赛事列表用于推广 (list open tournaments)', () => {
     const ctrl = createController()
 
     const campaignTournament = createDraftTournament(ctrl, { name: '暑期争霸赛' })
@@ -256,7 +256,7 @@ describe('📢营销 — 赛事推广视角', () => {
     assert(openTournaments.some((t: any) => t.name === '暑期争霸赛'))
   })
 
-  test('查看赛事详情获取宣传素材 (get tournament details)', () => {
+  it('查看赛事详情获取宣传素材 (get tournament details)', () => {
     const ctrl = createController()
 
     const t = createDraftTournament(ctrl, {
@@ -273,7 +273,7 @@ describe('📢营销 — 赛事推广视角', () => {
     assert(detail.rules.matchFormat, '赛事应有规则设置')
   })
 
-  test('按游戏名称筛选赛事 (filter by game)', () => {
+  it('按游戏名称筛选赛事 (filter by game)', () => {
     const ctrl = createController()
 
     createDraftTournament(ctrl, { name: '街霸赛', gameName: '街霸6' })

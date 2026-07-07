@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   TenantResolveQueryDto,
   TenantResolveResponseDto,
@@ -9,31 +9,31 @@ import {
 } from './tenant.dto'
 
 describe('tenant.dto: TenantResolveQueryDto', () => {
-  test('default properties are undefined', () => {
+  it('default properties are undefined', () => {
     const dto = new TenantResolveQueryDto()
     assert.equal(dto.verbose, undefined)
     assert.equal(dto.scope, undefined)
   })
 
-  test('can set verbose=true', () => {
+  it('can set verbose=true', () => {
     const dto = new TenantResolveQueryDto()
     dto.verbose = true
     assert.equal(dto.verbose, true)
   })
 
-  test('can set verbose=false', () => {
+  it('can set verbose=false', () => {
     const dto = new TenantResolveQueryDto()
     dto.verbose = false
     assert.equal(dto.verbose, false)
   })
 
-  test('can set scope string', () => {
+  it('can set scope string', () => {
     const dto = new TenantResolveQueryDto()
     dto.scope = 'tenant-platform'
     assert.equal(dto.scope, 'tenant-platform')
   })
 
-  test('can set both verbose and scope', () => {
+  it('can set both verbose and scope', () => {
     const dto = new TenantResolveQueryDto()
     dto.verbose = true
     dto.scope = 'tenant-scope'
@@ -41,14 +41,14 @@ describe('tenant.dto: TenantResolveQueryDto', () => {
     assert.equal(dto.scope, 'tenant-scope')
   })
 
-  test('instanceof check', () => {
+  it('instanceof check', () => {
     const dto = new TenantResolveQueryDto()
     assert.ok(dto instanceof TenantResolveQueryDto)
   })
 })
 
 describe('tenant.dto: TenantActorDto', () => {
-  test('default properties are undefined', () => {
+  it('default properties are undefined', () => {
     const dto = new TenantActorDto()
     assert.equal(dto.actorId, undefined)
     assert.equal(dto.actorType, undefined)
@@ -58,7 +58,7 @@ describe('tenant.dto: TenantActorDto', () => {
     assert.equal(dto.authenticated, undefined)
   })
 
-  test('can construct complete actor', () => {
+  it('can construct complete actor', () => {
     const dto = new TenantActorDto()
     dto.actorId = 'a-001'
     dto.actorType = 'tenant-user'
@@ -75,7 +75,7 @@ describe('tenant.dto: TenantActorDto', () => {
     assert.equal(dto.authenticated, true)
   })
 
-  test('can construct unauthenticated actor', () => {
+  it('can construct unauthenticated actor', () => {
     const dto = new TenantActorDto()
     dto.actorId = 'a-002'
     dto.actorType = 'service-account'
@@ -88,14 +88,14 @@ describe('tenant.dto: TenantActorDto', () => {
     assert.deepEqual(dto.permissions, [])
   })
 
-  test('instanceof check', () => {
+  it('instanceof check', () => {
     const dto = new TenantActorDto()
     assert.ok(dto instanceof TenantActorDto)
   })
 })
 
 describe('tenant.dto: TenantResolveResponseDto', () => {
-  test('default properties are undefined', () => {
+  it('default properties are undefined', () => {
     const dto = new TenantResolveResponseDto()
     assert.equal(dto.effectiveTenantId, undefined)
     assert.equal(dto.source, undefined)
@@ -106,7 +106,7 @@ describe('tenant.dto: TenantResolveResponseDto', () => {
     assert.equal(dto.requestId, undefined)
   })
 
-  test('can construct complete response', () => {
+  it('can construct complete response', () => {
     const actor = new TenantActorDto()
     actor.actorId = 'a-001'
     actor.actorType = 'tenant-user'
@@ -133,7 +133,7 @@ describe('tenant.dto: TenantResolveResponseDto', () => {
     assert.equal(dto.source, 'tenant-module')
   })
 
-  test('supports actor as null', () => {
+  it('supports actor as null', () => {
     const dto = new TenantResolveResponseDto()
     dto.effectiveTenantId = 'tenant-demo'
     dto.source = 'tenant-module'
@@ -142,14 +142,14 @@ describe('tenant.dto: TenantResolveResponseDto', () => {
     assert.equal(dto.actor, null)
   })
 
-  test('instanceof check', () => {
+  it('instanceof check', () => {
     const dto = new TenantResolveResponseDto()
     assert.ok(dto instanceof TenantResolveResponseDto)
   })
 })
 
 describe('tenant.dto: TenantContextSetDto', () => {
-  test('default properties are undefined', () => {
+  it('default properties are undefined', () => {
     const dto = new TenantContextSetDto()
     assert.equal(dto.tenantId, undefined)
     assert.equal(dto.brandId, undefined)
@@ -157,7 +157,7 @@ describe('tenant.dto: TenantContextSetDto', () => {
     assert.equal(dto.marketCode, undefined)
   })
 
-  test('can set partial context', () => {
+  it('can set partial context', () => {
     const dto = new TenantContextSetDto()
     dto.tenantId = 'tenant-custom'
     dto.marketCode = 'cn-sh'
@@ -168,7 +168,7 @@ describe('tenant.dto: TenantContextSetDto', () => {
     assert.equal(dto.storeId, undefined)
   })
 
-  test('can set full context', () => {
+  it('can set full context', () => {
     const dto = new TenantContextSetDto()
     dto.tenantId = 'tenant-001'
     dto.brandId = 'brand-001'
@@ -181,7 +181,7 @@ describe('tenant.dto: TenantContextSetDto', () => {
     assert.equal(dto.marketCode, 'cn-bj')
   })
 
-  test('instanceof check', () => {
+  it('instanceof check', () => {
     const dto = new TenantContextSetDto()
     assert.ok(dto instanceof TenantContextSetDto)
   })

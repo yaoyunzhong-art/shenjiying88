@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [inventory] E2E 基础测试
  *
@@ -16,7 +17,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   Controller,
   Get,
@@ -189,7 +189,7 @@ async function createProduct(app: any, overrides: any = {}, headers: any = TENAN
 // ========== E2E: Product CRUD ==========
 
 describe('E2E: Product CRUD', () => {
-  test('POST → GET :id → PUT → GET 完整生命周期', async () => {
+  it('POST → GET :id → PUT → GET 完整生命周期', async () => {
     const { app } = await buildApp()
     try {
       const createRes = await createProduct(app)
@@ -223,7 +223,7 @@ describe('E2E: Product CRUD', () => {
     }
   })
 
-  test('GET /inventory/products 列表 + category 过滤', async () => {
+  it('GET /inventory/products 列表 + category 过滤', async () => {
     const { app } = await buildApp()
     try {
       await createProduct(app, { name: '可乐', sku: 'C-1', category: '饮料' })
@@ -239,7 +239,7 @@ describe('E2E: Product CRUD', () => {
     }
   })
 
-  test('GET /inventory/products?keyword= 关键词搜索', async () => {
+  it('GET /inventory/products?keyword= 关键词搜索', async () => {
     const { app } = await buildApp()
     try {
       await createProduct(app, { name: '可口可乐', sku: 'COKE-001' })
@@ -256,7 +256,7 @@ describe('E2E: Product CRUD', () => {
     }
   })
 
-  test('GET /inventory/products/:id 不存在返回 500', async () => {
+  it('GET /inventory/products/:id 不存在返回 500', async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -272,7 +272,7 @@ describe('E2E: Product CRUD', () => {
 // ========== E2E: 库存操作 ==========
 
 describe('E2E: 库存操作', () => {
-  test('stockIn + stockOut + adjustStock 完整链路', async () => {
+  it('stockIn + stockOut + adjustStock 完整链路', async () => {
     const { app } = await buildApp()
     try {
       const create = await createProduct(app, { currentStock: 50 })
@@ -307,7 +307,7 @@ describe('E2E: 库存操作', () => {
     }
   })
 
-  test('stockOut 超量 → 500', async () => {
+  it('stockOut 超量 → 500', async () => {
     const { app } = await buildApp()
     try {
       const create = await createProduct(app, { currentStock: 5 })
@@ -322,7 +322,7 @@ describe('E2E: 库存操作', () => {
     }
   })
 
-  test('GET /inventory/stock-records 按 type 过滤', async () => {
+  it('GET /inventory/stock-records 按 type 过滤', async () => {
     const { app } = await buildApp()
     try {
       const create = await createProduct(app, { currentStock: 50 })
@@ -351,7 +351,7 @@ describe('E2E: 库存操作', () => {
 // ========== E2E: 库存预警 ==========
 
 describe('E2E: 库存预警', () => {
-  test('低库存预警: currentStock <= minStock', async () => {
+  it('低库存预警: currentStock <= minStock', async () => {
     const { app } = await buildApp()
     try {
       await createProduct(app, {
@@ -374,7 +374,7 @@ describe('E2E: 库存预警', () => {
     }
   })
 
-  test('缺货预警: currentStock = 0 → out_of_stock', async () => {
+  it('缺货预警: currentStock = 0 → out_of_stock', async () => {
     const { app } = await buildApp()
     try {
       await createProduct(app, {
@@ -399,7 +399,7 @@ describe('E2E: 库存预警', () => {
 // ========== E2E: 供应商 & 采购订单 ==========
 
 describe('E2E: 供应商和采购订单', () => {
-  test('POST supplier → GET 列表 + 创建 PO', async () => {
+  it('POST supplier → GET 列表 + 创建 PO', async () => {
     const { app } = await buildApp()
     try {
       // 1. 创建供应商
@@ -444,7 +444,7 @@ describe('E2E: 供应商和采购订单', () => {
     }
   })
 
-  test('PO 状态机: Draft → Confirmed → Received (自动入库)', async () => {
+  it('PO 状态机: Draft → Confirmed → Received (自动入库)', async () => {
     const { app } = await buildApp()
     try {
       // 创建供应商 + 产品
@@ -500,7 +500,7 @@ describe('E2E: 供应商和采购订单', () => {
     }
   })
 
-  test('Draft 状态不可直接 receive', async () => {
+  it('Draft 状态不可直接 receive', async () => {
     const { app } = await buildApp()
     try {
       const supplier = await request(app.getHttpServer())
@@ -539,7 +539,7 @@ describe('E2E: 供应商和采购订单', () => {
 // ========== E2E: 跨租户隔离 ==========
 
 describe('E2E: 跨租户隔离', () => {
-  test('tenant-B 看不到 tenant-A 的产品', async () => {
+  it('tenant-B 看不到 tenant-A 的产品', async () => {
     const { app } = await buildApp()
     try {
       const create = await createProduct(app, {}, TENANT_HEADERS)
@@ -554,7 +554,7 @@ describe('E2E: 跨租户隔离', () => {
     }
   })
 
-  test('tenant-B 列表只返回自己的产品', async () => {
+  it('tenant-B 列表只返回自己的产品', async () => {
     const { app } = await buildApp()
     try {
       await createProduct(app, { name: 'A-Product', sku: 'A-1' }, TENANT_HEADERS)
@@ -575,7 +575,7 @@ describe('E2E: 跨租户隔离', () => {
     }
   })
 
-  test('tenant-B 无法修改 tenant-A 的产品', async () => {
+  it('tenant-B 无法修改 tenant-A 的产品', async () => {
     const { app } = await buildApp()
     try {
       const create = await createProduct(app, {}, TENANT_HEADERS)

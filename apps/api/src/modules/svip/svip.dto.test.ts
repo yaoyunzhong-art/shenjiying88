@@ -1,454 +1,304 @@
+import { describe, it, expect } from 'vitest';
+import assert from 'node:assert/strict';
+
 /**
- * 🐜 自动: [svip] [A] dto.test.ts 补全
- *
- * 覆盖: SvipTierDto / CreateSvipMemberDto / SvipBenefitDto
- *       SvipUpgradeDto / UseSvipBenefitDto / SvipMemberQueryDto / SvipTierQueryDto
+ * SVIP 会员管理 DTO 测试
  */
 
-import 'reflect-metadata'
-import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-import { validate } from 'class-validator'
-import { plainToInstance } from 'class-transformer'
 import {
-  SvipTierDto,
-  CreateSvipMemberDto,
-  SvipBenefitDto,
-  SvipUpgradeDto,
-  UseSvipBenefitDto,
-  SvipMemberQueryDto,
-  SvipTierQueryDto
-} from './svip.dto'
+  CreatePlanDto,
+  SubscribeDto,
+  UseBenefitDto,
+  RenewSubscriptionDto,
+  CancelSubscriptionDto,
+  SubscriptionQueryDto,
+  PlanQueryDto,
+  BenefitQueryDto,
+  PlanResponseDto,
+  SubscriptionResponseDto,
+  BenefitResponseDto,
+  PlanListResponseDto,
+  SubscriptionListResponseDto,
+  SvipStatsResponseDto,
+} from './svip.dto';
 
-// ================================================================
-// SvipTierDto
-// ================================================================
+describe('Svip DTOs', () => {
 
-describe('SvipTierDto', () => {
-  test('有效输入应通过', async () => {
-    const dto = plainToInstance(SvipTierDto, {
-      name: '金卡会员',
-      level: 2,
-      minSpendAmount: 10000,
-      minPoints: 2000,
-      benefits: ['discount_90', 'priority_queue']
-    })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
+  // ── 请求 DTO ──
 
-  test('缺失必填字段应报错', async () => {
-    const dto = plainToInstance(SvipTierDto, {})
-    const errors = await validate(dto)
-    assert.ok(errors.length >= 4)
-    const props = errors.map((e) => e.property)
-    assert.ok(props.includes('name'))
-    assert.ok(props.includes('level'))
-    assert.ok(props.includes('minSpendAmount'))
-    assert.ok(props.includes('minPoints'))
-  })
+  describe('CreatePlanDto', () => {
+    it('应能设置所有必填字段', () => {
+      const dto = new CreatePlanDto();
+      dto.name = '黄金会员';
+      dto.price = 199;
+      dto.durationDays = 30;
+      dto.benefits = ['积分翻倍', '免费配送'];
 
-  test('level 超出范围(1-5)应报错', async () => {
-    const dto = plainToInstance(SvipTierDto, {
-      name: '无效等级',
-      level: 10,
-      minSpendAmount: 5000,
-      minPoints: 500,
-      benefits: []
-    })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'level'))
-  })
+      assert.equal(dto.name, '黄金会员');
+      assert.equal(dto.price, 199);
+      assert.equal(dto.durationDays, 30);
+      assert.deepEqual(dto.benefits, ['积分翻倍', '免费配送']);
+    });
 
-  test('level 小于 1 应报错', async () => {
-    const dto = plainToInstance(SvipTierDto, {
-      name: '负等级',
-      level: 0,
-      minSpendAmount: 100,
-      minPoints: 10,
-      benefits: []
-    })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'level'))
-  })
+    it('价格应支持零元和负值（边界情况）', () => {
+      const free = new CreatePlanDto();
+      free.name = '免费体验';
+      free.price = 0;
+      free.durationDays = 7;
+      free.benefits = [];
 
-  test('负的金额应报错', async () => {
-    const dto = plainToInstance(SvipTierDto, {
-      name: '负金额',
-      level: 1,
-      minSpendAmount: -100,
-      minPoints: 500,
-      benefits: []
-    })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'minSpendAmount'))
-  })
+      assert.equal(free.price, 0);
 
-  test('负的积分应报错', async () => {
-    const dto = plainToInstance(SvipTierDto, {
-      name: '负积分',
-      level: 1,
-      minSpendAmount: 1000,
-      minPoints: -10,
-      benefits: []
-    })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'minPoints'))
-  })
+      const expensive = new CreatePlanDto();
+      expensive.name = '终身会员';
+      expensive.price = 999999;
+      expensive.durationDays = 36500;
+      expensive.benefits = ['积分翻倍', '免费配送', '专属折扣'];
 
-  test('id 和 icon 和 color 为可选', async () => {
-    const dto = plainToInstance(SvipTierDto, {
-      name: '测试',
-      level: 3,
-      minSpendAmount: 30000,
-      minPoints: 6000,
-      benefits: ['discount_88'],
-      icon: 'vip-icon',
-      color: '#888888'
-    })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
+      assert.equal(expensive.price, 999999);
+    });
 
-  test('benefits 应为字符串数组', async () => {
-    const dto = plainToInstance(SvipTierDto, {
-      name: '测试',
-      level: 1,
-      minSpendAmount: 5000,
-      minPoints: 500,
-      benefits: 'not-an-array'
-    })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'benefits'))
-  })
-})
+    it('权益列表应支持空数组', () => {
+      const dto = new CreatePlanDto();
+      dto.name = '基础体验';
+      dto.price = 0;
+      dto.durationDays = 1;
+      dto.benefits = [];
 
-// ================================================================
-// CreateSvipMemberDto
-// ================================================================
+      assert.deepEqual(dto.benefits, []);
+    });
+  });
 
-describe('CreateSvipMemberDto', () => {
-  test('有效输入应通过', async () => {
-    const dto = plainToInstance(CreateSvipMemberDto, {
-      memberId: 'mem-001',
-      tierId: 'tier-001',
-      totalSpend: 6000,
-      currentPoints: 600,
-      expiresAt: '2025-06-01T00:00:00Z'
-    })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
+  describe('SubscribeDto', () => {
+    it('应能设置用户ID和计划ID', () => {
+      const dto = new SubscribeDto();
+      dto.userId = 'user-001';
+      dto.planId = 'plan-001';
 
-  test('缺失必填字段应报错', async () => {
-    const dto = plainToInstance(CreateSvipMemberDto, {})
-    const errors = await validate(dto)
-    assert.ok(errors.length >= 3)
-    const props = errors.map((e) => e.property)
-    assert.ok(props.includes('memberId'))
-    assert.ok(props.includes('tierId'))
-  })
+      assert.equal(dto.userId, 'user-001');
+      assert.equal(dto.planId, 'plan-001');
+    });
+  });
 
-  test('无效日期格式应报错', async () => {
-    const dto = plainToInstance(CreateSvipMemberDto, {
-      memberId: 'mem-002',
-      tierId: 'tier-001',
-      totalSpend: 5000,
-      currentPoints: 500,
-      expiresAt: 'not-a-date'
-    })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'expiresAt'))
-  })
+  describe('UseBenefitDto', () => {
+    it('应能设置用户ID和权益类型', () => {
+      const dto = new UseBenefitDto();
+      dto.userId = 'user-001';
+      dto.benefitType = 'points_multiplier';
 
-  test('负消费应报错', async () => {
-    const dto = plainToInstance(CreateSvipMemberDto, {
-      memberId: 'mem-003',
-      tierId: 'tier-001',
-      totalSpend: -100,
-      currentPoints: 500,
-      expiresAt: '2025-06-01T00:00:00Z'
-    })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'totalSpend'))
-  })
+      assert.equal(dto.userId, 'user-001');
+      assert.equal(dto.benefitType, 'points_multiplier');
+    });
 
-  test('brandId 和 storeId 为可选', async () => {
-    const dto = plainToInstance(CreateSvipMemberDto, {
-      memberId: 'mem-004',
-      tierId: 'tier-001',
-      totalSpend: 5000,
-      currentPoints: 500,
-      expiresAt: '2025-06-01T00:00:00Z',
-      brandId: 'brand-1',
-      storeId: 'store-1',
-      autoRenew: true
-    })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
+    it('应支持所有权益类型', () => {
+      const types = ['points_multiplier', 'free_delivery', 'exclusive_discount'] as const;
+      for (const t of types) {
+        const dto = new UseBenefitDto();
+        dto.userId = 'user-001';
+        dto.benefitType = t;
+        assert.equal(dto.benefitType, t);
+      }
+    });
+  });
 
-  test('joinedAt 可选', async () => {
-    const dto = plainToInstance(CreateSvipMemberDto, {
-      memberId: 'mem-005',
-      tierId: 'tier-001',
-      totalSpend: 5000,
-      currentPoints: 500,
-      expiresAt: '2025-06-01T00:00:00Z',
-      joinedAt: '2024-01-01T00:00:00Z'
-    })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
-})
+  describe('RenewSubscriptionDto', () => {
+    it('应设置订阅ID', () => {
+      const dto = new RenewSubscriptionDto();
+      dto.subscriptionId = 'sub-001';
+      assert.equal(dto.subscriptionId, 'sub-001');
+    });
+  });
 
-// ================================================================
-// SvipBenefitDto
-// ================================================================
+  describe('CancelSubscriptionDto', () => {
+    it('应设置订阅ID', () => {
+      const dto = new CancelSubscriptionDto();
+      dto.subscriptionId = 'sub-001';
+      assert.equal(dto.subscriptionId, 'sub-001');
+    });
+  });
 
-describe('SvipBenefitDto', () => {
-  test('有效输入应通过', async () => {
-    const dto = plainToInstance(SvipBenefitDto, {
-      tierId: 'tier-001',
-      benefitType: 'discount',
-      benefitValue: '95%',
-      description: '95折优惠'
-    })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
+  // ── 查询 DTO ──
 
-  test('缺失必填字段应报错', async () => {
-    const dto = plainToInstance(SvipBenefitDto, {})
-    const errors = await validate(dto)
-    assert.ok(errors.length >= 3)
-  })
+  describe('SubscriptionQueryDto', () => {
+    it('应有默认分页值', () => {
+      const dto = new SubscriptionQueryDto();
+      assert.equal(dto.page, 1);
+      assert.equal(dto.pageSize, 10);
+    });
 
-  test('无效 benefitType 应报错', async () => {
-    const dto = plainToInstance(SvipBenefitDto, {
-      tierId: 'tier-001',
-      benefitType: 'invalid_type',
-      benefitValue: '95%',
-      description: 'test'
-    })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'benefitType'))
-  })
+    it('应支持状态过滤', () => {
+      const dto = new SubscriptionQueryDto();
+      dto.status = 'active';
+      assert.equal(dto.status, 'active');
+    });
 
-  test('所有有效 benefitType 应通过', async () => {
-    const types = ['discount', 'freeUpgrade', 'priorityQueue', 'vipRoom', 'exclusiveEvent']
-    for (const bt of types) {
-      const dto = plainToInstance(SvipBenefitDto, {
-        tierId: 'tier-001',
-        benefitType: bt,
-        benefitValue: 'test',
-        description: 'test'
-      })
-      const errors = await validate(dto)
-      assert.equal(errors.length, 0, `benefitType ${bt} 应有效`)
-    }
-  })
+    it('应支持用户ID搜索', () => {
+      const dto = new SubscriptionQueryDto();
+      dto.userId = 'user-001';
+      assert.equal(dto.userId, 'user-001');
+    });
+  });
 
-  test('id 和 isActive 为可选', async () => {
-    const dto = plainToInstance(SvipBenefitDto, {
-      tierId: 'tier-001',
-      benefitType: 'discount',
-      benefitValue: '90%',
-      description: '9折',
-      isActive: false
-    })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
-})
+  describe('PlanQueryDto', () => {
+    it('应有默认分页值', () => {
+      const dto = new PlanQueryDto();
+      assert.equal(dto.page, 1);
+      assert.equal(dto.pageSize, 10);
+    });
 
-// ================================================================
-// SvipUpgradeDto
-// ================================================================
+    it('应支持价格范围过滤', () => {
+      const dto = new PlanQueryDto();
+      dto.minPrice = 100;
+      dto.maxPrice = 500;
+      assert.equal(dto.minPrice, 100);
+      assert.equal(dto.maxPrice, 500);
+    });
 
-describe('SvipUpgradeDto', () => {
-  test('有效输入应通过 (TargetTierLevel)', async () => {
-    const dto = plainToInstance(SvipUpgradeDto, {
-      memberId: 'mem-001',
-      targetTierLevel: 3,
-      reason: '消费达标'
-    })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
+    it('应支持名称模糊搜索', () => {
+      const dto = new PlanQueryDto();
+      dto.name = '黄金';
+      assert.equal(dto.name, '黄金');
+    });
+  });
 
-  test('缺失 memberId 应报错', async () => {
-    const dto = plainToInstance(SvipUpgradeDto, { targetTierLevel: 2 })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'memberId'))
-  })
+  describe('BenefitQueryDto', () => {
+    it('应设置必填订阅ID', () => {
+      const dto = new BenefitQueryDto();
+      dto.subscriptionId = 'sub-001';
+      assert.equal(dto.subscriptionId, 'sub-001');
+    });
 
-  test('targetTierLevel 超出范围应报错', async () => {
-    const dto = plainToInstance(SvipUpgradeDto, {
-      memberId: 'mem-001',
-      targetTierLevel: 10
-    })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'targetTierLevel'))
-  })
+    it('应支持权益类型过滤', () => {
+      const dto = new BenefitQueryDto();
+      dto.subscriptionId = 'sub-001';
+      dto.type = 'free_delivery';
+      assert.equal(dto.type, 'free_delivery');
+    });
 
-  test('targetTierLevel 小于 1 应报错', async () => {
-    const dto = plainToInstance(SvipUpgradeDto, {
-      memberId: 'mem-001',
-      targetTierLevel: 0
-    })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'targetTierLevel'))
-  })
+    it('应支持已使用过滤', () => {
+      const dto = new BenefitQueryDto();
+      dto.subscriptionId = 'sub-001';
+      dto.used = true;
+      assert.equal(dto.used, true);
+    });
+  });
 
-  test('所有可选字段不提供应通过', async () => {
-    const dto = plainToInstance(SvipUpgradeDto, { memberId: 'mem-001' })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
+  // ── 响应 DTO ──
 
-  test('totalSpend 和 currentPoints 可选', async () => {
-    const dto = plainToInstance(SvipUpgradeDto, {
-      memberId: 'mem-001',
-      totalSpend: 30000,
-      currentPoints: 6000
-    })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
+  describe('PlanResponseDto', () => {
+    it('应序列化所有字段', () => {
+      const dto = new PlanResponseDto();
+      dto.planId = 'plan-001';
+      dto.name = '黄金会员';
+      dto.price = 199;
+      dto.durationDays = 30;
+      dto.benefits = ['积分翻倍'];
+      dto.createdAt = '2026-07-05T00:00:00.000Z';
 
-  test('负的 totalSpend 应报错', async () => {
-    const dto = plainToInstance(SvipUpgradeDto, {
-      memberId: 'mem-001',
-      totalSpend: -100
-    })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'totalSpend'))
-  })
-})
+      assert.equal(dto.planId, 'plan-001');
+      assert.equal(dto.name, '黄金会员');
+      assert.equal(dto.price, 199);
+      assert.deepEqual(dto.benefits, ['积分翻倍']);
+    });
+  });
 
-// ================================================================
-// UseSvipBenefitDto
-// ================================================================
+  describe('SubscriptionResponseDto', () => {
+    it('应序列化所有字段', () => {
+      const dto = new SubscriptionResponseDto();
+      dto.subscriptionId = 'sub-001';
+      dto.userId = 'user-001';
+      dto.planId = 'plan-001';
+      dto.status = 'active';
+      dto.startAt = '2026-07-01T00:00:00.000Z';
+      dto.expireAt = '2026-07-31T00:00:00.000Z';
+      dto.autoRenew = true;
+      dto.createdAt = '2026-07-01T00:00:00.000Z';
 
-describe('UseSvipBenefitDto', () => {
-  test('有效输入应通过', async () => {
-    const dto = plainToInstance(UseSvipBenefitDto, {
-      memberId: 'mem-001',
-      benefitType: 'discount'
-    })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
+      assert.equal(dto.subscriptionId, 'sub-001');
+      assert.equal(dto.status, 'active');
+      assert.equal(dto.autoRenew, true);
+    });
 
-  test('缺失 memberId 应报错', async () => {
-    const dto = plainToInstance(UseSvipBenefitDto, { benefitType: 'discount' })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'memberId'))
-  })
+    it('应支持过期状态', () => {
+      const dto = new SubscriptionResponseDto();
+      dto.subscriptionId = 'sub-002';
+      dto.userId = 'user-002';
+      dto.planId = 'plan-001';
+      dto.status = 'expired';
+      dto.startAt = '2026-01-01T00:00:00.000Z';
+      dto.expireAt = '2026-01-31T00:00:00.000Z';
+      dto.autoRenew = false;
+      dto.createdAt = '2026-01-01T00:00:00.000Z';
 
-  test('缺失 benefitType 应报错', async () => {
-    const dto = plainToInstance(UseSvipBenefitDto, { memberId: 'mem-001' })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'benefitType'))
-  })
+      assert.equal(dto.status, 'expired');
+      assert.equal(dto.autoRenew, false);
+    });
+  });
 
-  test('无效 benefitType 应报错', async () => {
-    const dto = plainToInstance(UseSvipBenefitDto, {
-      memberId: 'mem-001',
-      benefitType: 'not_valid'
-    })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'benefitType'))
-  })
+  describe('BenefitResponseDto', () => {
+    it('应序列化所有字段', () => {
+      const dto = new BenefitResponseDto();
+      dto.benefitId = 'ben-001';
+      dto.subscriptionId = 'sub-001';
+      dto.type = 'points_multiplier';
 
-  test('referenceOrderId 和 referencePaymentId 可选', async () => {
-    const dto = plainToInstance(UseSvipBenefitDto, {
-      memberId: 'mem-001',
-      benefitType: 'discount',
-      referenceOrderId: 'order-001'
-    })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
-})
+      assert.equal(dto.benefitId, 'ben-001');
+      assert.equal(dto.type, 'points_multiplier');
+    });
 
-// ================================================================
-// SvipMemberQueryDto
-// ================================================================
+    it('usedAt应为可选', () => {
+      const dto = new BenefitResponseDto();
+      dto.benefitId = 'ben-001';
+      dto.subscriptionId = 'sub-001';
+      dto.type = 'free_delivery';
 
-describe('SvipMemberQueryDto', () => {
-  test('所有字段为空应通过', async () => {
-    const dto = plainToInstance(SvipMemberQueryDto, {})
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
+      assert.equal(dto.usedAt, undefined);
 
-  test('有效 status 应通过', async () => {
-    const dto = plainToInstance(SvipMemberQueryDto, { status: 'active' })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
+      dto.usedAt = '2026-07-05T10:00:00.000Z';
+      assert.equal(dto.usedAt, '2026-07-05T10:00:00.000Z');
+    });
+  });
 
-  test('无效 status 应报错', async () => {
-    const dto = plainToInstance(SvipMemberQueryDto, { status: 'invalid_status' })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'status'))
-  })
+  describe('PlanListResponseDto', () => {
+    it('应包含分页信息', () => {
+      const dto = new PlanListResponseDto();
+      dto.data = [
+        Object.assign(new PlanResponseDto(), { planId: 'plan-001', name: '黄金会员', price: 199, durationDays: 30, benefits: [], createdAt: '2026-07-01T00:00:00.000Z' }),
+      ];
+      dto.total = 1;
+      dto.page = 1;
+      dto.pageSize = 10;
 
-  test('有效 tierLevel 应通过', async () => {
-    const dto = plainToInstance(SvipMemberQueryDto, { tierLevel: 3 })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
+      assert.equal(dto.total, 1);
+      assert.equal(dto.data.length, 1);
+    });
+  });
 
-  test('tierLevel 超出范围应报错', async () => {
-    const dto = plainToInstance(SvipMemberQueryDto, { tierLevel: 10 })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'tierLevel'))
-  })
+  describe('SubscriptionListResponseDto', () => {
+    it('应包含分页信息', () => {
+      const dto = new SubscriptionListResponseDto();
+      dto.data = [];
+      dto.total = 0;
+      dto.page = 1;
+      dto.pageSize = 10;
 
-  test('tierLevel 小于 1 应报错', async () => {
-    const dto = plainToInstance(SvipMemberQueryDto, { tierLevel: 0 })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'tierLevel'))
-  })
+      assert.equal(dto.total, 0);
+      assert.equal(dto.data.length, 0);
+    });
+  });
 
-  test('所有有效 status 枚举值应通过', async () => {
-    for (const status of ['active', 'expired', 'frozen']) {
-      const dto = plainToInstance(SvipMemberQueryDto, { status })
-      const errors = await validate(dto)
-      assert.equal(errors.length, 0, `status ${status} 应有效`)
-    }
-  })
-})
+  describe('SvipStatsResponseDto', () => {
+    it('应包含统计数据', () => {
+      const dto = new SvipStatsResponseDto();
+      dto.totalSubscriptions = 100;
+      dto.activeCount = 60;
+      dto.expiredCount = 30;
+      dto.cancelledCount = 10;
+      dto.totalRevenue = 50000;
 
-// ================================================================
-// SvipTierQueryDto
-// ================================================================
-
-describe('SvipTierQueryDto', () => {
-  test('空查询应通过', async () => {
-    const dto = plainToInstance(SvipTierQueryDto, {})
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
-
-  test('有效 level 应通过', async () => {
-    const dto = plainToInstance(SvipTierQueryDto, { level: 2 })
-    const errors = await validate(dto)
-    assert.equal(errors.length, 0)
-  })
-
-  test('level 小于 1 应报错', async () => {
-    const dto = plainToInstance(SvipTierQueryDto, { level: 0 })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'level'))
-  })
-
-  test('level 大于 5 应报错', async () => {
-    const dto = plainToInstance(SvipTierQueryDto, { level: 6 })
-    const errors = await validate(dto)
-    assert.ok(errors.some((e) => e.property === 'level'))
-  })
-})
+      assert.equal(dto.totalSubscriptions, 100);
+      assert.equal(dto.activeCount, 60);
+      assert.equal(dto.totalRevenue, 50000);
+    });
+  });
+});

@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
 import { createHmac } from 'node:crypto'
-import test from 'node:test'
 import { IntegrationOrchestrationService } from './integration-orchestration.service'
 
 function makePrisma(overrides: Record<string, unknown> = {}) {
@@ -37,7 +37,7 @@ function makeSignature(source: string, timestamp: string, payload: Record<string
   return `sha256=${createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex')}`
 }
 
-test('generateSignature produces valid hmac-sha256 signature', () => {
+it('generateSignature produces valid hmac-sha256 signature', () => {
   const prisma = makePrisma()
   const trustGov = makeTrustGovernance()
   const service = new IntegrationOrchestrationService(prisma as never, trustGov as never)
@@ -47,7 +47,7 @@ test('generateSignature produces valid hmac-sha256 signature', () => {
   assert.equal(signature.length, 71) // "sha256=" prefix + 64 hex chars
 })
 
-test('acceptWebhook rejects missing signature', async () => {
+it('acceptWebhook rejects missing signature', async () => {
   const prisma = makePrisma()
   const trustGov = makeTrustGovernance()
   const service = new IntegrationOrchestrationService(prisma as never, trustGov as never)
@@ -61,7 +61,7 @@ test('acceptWebhook rejects missing signature', async () => {
   )
 })
 
-test('acceptWebhook rejects invalid timestamp format', async () => {
+it('acceptWebhook rejects invalid timestamp format', async () => {
   const prisma = makePrisma()
   const trustGov = makeTrustGovernance()
   const service = new IntegrationOrchestrationService(prisma as never, trustGov as never)
@@ -76,7 +76,7 @@ test('acceptWebhook rejects invalid timestamp format', async () => {
   )
 })
 
-test('acceptWebhook rejects expired timestamp', async () => {
+it('acceptWebhook rejects expired timestamp', async () => {
   const prisma = makePrisma()
   const trustGov = makeTrustGovernance()
   const service = new IntegrationOrchestrationService(prisma as never, trustGov as never)
@@ -92,7 +92,7 @@ test('acceptWebhook rejects expired timestamp', async () => {
   )
 })
 
-test('acceptWebhook rejects wrong signature', async () => {
+it('acceptWebhook rejects wrong signature', async () => {
   const prisma = makePrisma()
   const trustGov = makeTrustGovernance()
   const service = new IntegrationOrchestrationService(prisma as never, trustGov as never)
@@ -108,7 +108,7 @@ test('acceptWebhook rejects wrong signature', async () => {
   )
 })
 
-test('acceptWebhook rejects unknown source', async () => {
+it('acceptWebhook rejects unknown source', async () => {
   const prisma = makePrisma()
   const trustGov = makeTrustGovernance()
   const service = new IntegrationOrchestrationService(prisma as never, trustGov as never)
@@ -125,7 +125,7 @@ test('acceptWebhook rejects unknown source', async () => {
   )
 })
 
-test('acceptWebhook handles duplicate webhook (existing idempotency record)', async () => {
+it('acceptWebhook handles duplicate webhook (existing idempotency record)', async () => {
   const now = new Date()
   const existingEvent = {
     id: 'evt_dup',
@@ -165,7 +165,7 @@ test('acceptWebhook handles duplicate webhook (existing idempotency record)', as
   assert.equal(trustGov.audits[0], 'foundation.webhook.duplicate')
 })
 
-test('acceptWebhook accepts valid first-time webhook', async () => {
+it('acceptWebhook accepts valid first-time webhook', async () => {
   const now = new Date()
   let createdEvent: Record<string, unknown> | null = null
   const prisma = makePrisma({
@@ -199,7 +199,7 @@ test('acceptWebhook accepts valid first-time webhook', async () => {
   assert.ok(trustGov.audits.length >= 2) // publish event audit + webhook accepted audit
 })
 
-test('publishEvent creates domain event and returns accepted envelope', async () => {
+it('publishEvent creates domain event and returns accepted envelope', async () => {
   const prisma = makePrisma()
   const trustGov = makeTrustGovernance()
   const service = new IntegrationOrchestrationService(prisma as never, trustGov as never)
@@ -218,7 +218,7 @@ test('publishEvent creates domain event and returns accepted envelope', async ()
   assert.equal(trustGov.audits[0], 'foundation.domain-event.published')
 })
 
-test('getWebhookSourceCatalog returns known sources', () => {
+it('getWebhookSourceCatalog returns known sources', () => {
   const prisma = makePrisma()
   const trustGov = makeTrustGovernance()
   const service = new IntegrationOrchestrationService(prisma as never, trustGov as never)
@@ -236,7 +236,7 @@ test('getWebhookSourceCatalog returns known sources', () => {
   })
 })
 
-test('getIdempotencyRecords filters by source', async () => {
+it('getIdempotencyRecords filters by source', async () => {
   const now = new Date()
   const events = [
     {
@@ -268,7 +268,7 @@ test('getIdempotencyRecords filters by source', async () => {
   assert.equal(lytOnly[0].source, 'lyt')
 })
 
-test('getEventEnvelopes filters by source', async () => {
+it('getEventEnvelopes filters by source', async () => {
   const now = new Date()
   const events = [
     {
@@ -302,7 +302,7 @@ test('getEventEnvelopes filters by source', async () => {
   assert.equal(marketOnly[0].eventName, 'order.created')
 })
 
-test('getDescriptor returns valid foundation module descriptor', () => {
+it('getDescriptor returns valid foundation module descriptor', () => {
   const prisma = makePrisma()
   const trustGov = makeTrustGovernance()
   const service = new IntegrationOrchestrationService(prisma as never, trustGov as never)

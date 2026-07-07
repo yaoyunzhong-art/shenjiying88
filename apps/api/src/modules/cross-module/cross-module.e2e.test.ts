@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Cross-Module 跨模块验证 HTTP 链路
  *
@@ -15,7 +16,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Controller,
   Get,
@@ -144,7 +144,7 @@ async function buildApp() {
 
 // ========== 基础 E2E 测试 ==========
 
-test('e2e: GET /cross-module/chain-status returns 4 chains', async () => {
+it('e2e: GET /cross-module/chain-status returns 4 chains', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -162,7 +162,7 @@ test('e2e: GET /cross-module/chain-status returns 4 chains', async () => {
   }
 })
 
-test('e2e: GET /cross-module/chain-status each chain has required fields', async () => {
+it('e2e: GET /cross-module/chain-status each chain has required fields', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -186,7 +186,7 @@ test('e2e: GET /cross-module/chain-status each chain has required fields', async
   }
 })
 
-test('e2e: POST /cross-module/validate validates all chains by default', async () => {
+it('e2e: POST /cross-module/validate validates all chains by default', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -205,7 +205,7 @@ test('e2e: POST /cross-module/validate validates all chains by default', async (
   }
 })
 
-test('e2e: POST /cross-module/validate with specific chain names', async () => {
+it('e2e: POST /cross-module/validate with specific chain names', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -224,7 +224,7 @@ test('e2e: POST /cross-module/validate with specific chain names', async () => {
   }
 })
 
-test('e2e: POST /cross-module/validate?chainName=sdk-to-api validates single chain', async () => {
+it('e2e: POST /cross-module/validate?chainName=sdk-to-api validates single chain', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -240,7 +240,7 @@ test('e2e: POST /cross-module/validate?chainName=sdk-to-api validates single cha
   }
 })
 
-test('e2e: validation result has expected structure', async () => {
+it('e2e: validation result has expected structure', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -268,7 +268,7 @@ test('e2e: validation result has expected structure', async () => {
   }
 })
 
-test('e2e: GET /cross-module/summary returns summary stats', async () => {
+it('e2e: GET /cross-module/summary returns summary stats', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -286,7 +286,7 @@ test('e2e: GET /cross-module/summary returns summary stats', async () => {
   }
 })
 
-test('e2e: POST /cross-module/validate with empty chainNames array validates nothing', async () => {
+it('e2e: POST /cross-module/validate with empty chainNames array validates nothing', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -301,7 +301,7 @@ test('e2e: POST /cross-module/validate with empty chainNames array validates not
   }
 })
 
-test('e2e: POST /cross-module/validate with unknown chain name results empty', async () => {
+it('e2e: POST /cross-module/validate with unknown chain name results empty', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -315,7 +315,7 @@ test('e2e: POST /cross-module/validate with unknown chain name results empty', a
   }
 })
 
-test('e2e: GET /cross-module/chain-status response is consistent across calls', async () => {
+it('e2e: GET /cross-module/chain-status response is consistent across calls', async () => {
   const { app } = await buildApp()
   try {
     const res1 = await request(app.getHttpServer())
@@ -334,7 +334,7 @@ test('e2e: GET /cross-module/chain-status response is consistent across calls', 
 // ========== 8 角色权限测试 ==========
 
 for (const role of EIGHT_ROLES) {
-  test(`e2e: role ${role.name} can GET /cross-module/chain-status`, async () => {
+  it(`e2e: role ${role.name} can GET /cross-module/chain-status`, async () => {
     const { app } = await buildApp()
     try {
       // 为每个角色建独立 app
@@ -350,7 +350,7 @@ for (const role of EIGHT_ROLES) {
 }
 
 for (const role of EIGHT_ROLES) {
-  test(`e2e: role ${role.name} can POST /cross-module/validate`, async () => {
+  it(`e2e: role ${role.name} can POST /cross-module/validate`, async () => {
     const { app } = await buildApp()
     try {
       const res = await request(app.getHttpServer())
@@ -367,7 +367,7 @@ for (const role of EIGHT_ROLES) {
 
 // ========== 边界测试 ==========
 
-test('e2e: GET /cross-module/chain-status without tenant headers still works', async () => {
+it('e2e: GET /cross-module/chain-status without tenant headers still works', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -379,7 +379,7 @@ test('e2e: GET /cross-module/chain-status without tenant headers still works', a
   }
 })
 
-test('e2e: POST /cross-module/validate without body returns all chains', async () => {
+it('e2e: POST /cross-module/validate without body returns all chains', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -393,7 +393,7 @@ test('e2e: POST /cross-module/validate without body returns all chains', async (
   }
 })
 
-test('e2e: response uses correct status for POST (201) and GET (200)', async () => {
+it('e2e: response uses correct status for POST (201) and GET (200)', async () => {
   const { app } = await buildApp()
   try {
     const getRes = await request(app.getHttpServer())
@@ -411,7 +411,7 @@ test('e2e: response uses correct status for POST (201) and GET (200)', async () 
   }
 })
 
-test('e2e: governance-chain has 5 modules => 4 stages', async () => {
+it('e2e: governance-chain has 5 modules => 4 stages', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -426,7 +426,7 @@ test('e2e: governance-chain has 5 modules => 4 stages', async () => {
   }
 })
 
-test('e2e: multi-client-consistency chain has 5 modules => 4 stages', async () => {
+it('e2e: multi-client-consistency chain has 5 modules => 4 stages', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -441,7 +441,7 @@ test('e2e: multi-client-consistency chain has 5 modules => 4 stages', async () =
   }
 })
 
-test('e2e: validation updates chain status after validate', async () => {
+it('e2e: validation updates chain status after validate', async () => {
   const { app, crossModuleService } = await buildApp()
   try {
     // 初始状态：所有 defined

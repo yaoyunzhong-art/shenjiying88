@@ -1,33 +1,33 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants'
 
  
 const { TenantContext } = require('./tenant.decorator')
 
 describe('TenantContext param decorator', () => {
-  test('is a function (returned by createParamDecorator)', () => {
+  it('is a function (returned by createParamDecorator)', () => {
     assert.equal(typeof TenantContext, 'function')
   })
 
-  test('called with no arguments returns a ParameterDecorator function', () => {
+  it('called with no arguments returns a ParameterDecorator function', () => {
     const decorator = TenantContext()
     assert.equal(typeof decorator, 'function')
   })
 
-  test('called with data returns a ParameterDecorator function', () => {
+  it('called with data returns a ParameterDecorator function', () => {
     const decorator = TenantContext('custom-key')
     assert.equal(typeof decorator, 'function')
   })
 
-  test('returns different decorator instances per call', () => {
+  it('returns different decorator instances per call', () => {
     const d1 = TenantContext()
     const d2 = TenantContext()
     assert.notEqual(d1, d2)
   })
 
-  test('sets ROUTE_ARGS_METADATA on controller method parameter index 0', () => {
+  it('sets ROUTE_ARGS_METADATA on controller method parameter index 0', () => {
     const decorator = TenantContext()
     class TestController {
        
@@ -48,7 +48,7 @@ describe('TenantContext param decorator', () => {
     assert.ok(paramEntry, 'param at index 0 should have metadata entry')
   })
 
-  test('sets metadata on different parameter index', () => {
+  it('sets metadata on different parameter index', () => {
     const decorator = TenantContext()
     class TestController {
        
@@ -63,7 +63,7 @@ describe('TenantContext param decorator', () => {
     assert.ok(paramEntry, 'param at index 1 should have metadata entry')
   })
 
-  test('sets metadata for multiple parameters on same method', () => {
+  it('sets metadata for multiple parameters on same method', () => {
     const d0 = TenantContext()
     const d1 = TenantContext()
     class TestController {
@@ -78,7 +78,7 @@ describe('TenantContext param decorator', () => {
     assert.ok(keys.length >= 2, `Expected at least 2 param entries, got ${keys.length}`)
   })
 
-  test('does not throw when applied to different methods', () => {
+  it('does not throw when applied to different methods', () => {
     const decorator = TenantContext()
     class TestController {
       handleA() {}
@@ -88,7 +88,7 @@ describe('TenantContext param decorator', () => {
     assert.doesNotThrow(() => decorator(TestController.prototype, 'handleB', 0))
   })
 
-  test('metadata entry includes index and empty pipes array', () => {
+  it('metadata entry includes index and empty pipes array', () => {
     const decorator = TenantContext()
     class TestController {
        

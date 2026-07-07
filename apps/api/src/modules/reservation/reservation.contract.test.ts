@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [reservation] [A] contract.test.ts 补全
  *
@@ -8,7 +9,6 @@
  */
 
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { ReservationType, ReservationStatus, ReservationEntity } from './reservation.entity'
 import { toReservationContract, toReservationStatsContract } from './reservation.contract'
 
@@ -38,7 +38,7 @@ function makeReservation(overrides?: Partial<ReservationEntity>): ReservationEnt
 // ──────────── toReservationContract ────────────
 
 describe('toReservationContract', () => {
-  test('完整预约转换：日期转 ISO 字符串', () => {
+  it('完整预约转换：日期转 ISO 字符串', () => {
     const entity = makeReservation()
     const contract = toReservationContract(entity)
 
@@ -60,7 +60,7 @@ describe('toReservationContract', () => {
     assert.equal(contract.updatedAt, '2026-06-23T08:05:00.000Z')
   })
 
-  test('已取消预约转换', () => {
+  it('已取消预约转换', () => {
     const entity = makeReservation({
       id: 'res-002',
       status: ReservationStatus.Cancelled
@@ -70,7 +70,7 @@ describe('toReservationContract', () => {
     assert.equal(contract.status, ReservationStatus.Cancelled)
   })
 
-  test('进行中预约转换', () => {
+  it('进行中预约转换', () => {
     const entity = makeReservation({
       id: 'res-003',
       status: ReservationStatus.InProgress
@@ -80,14 +80,14 @@ describe('toReservationContract', () => {
     assert.equal(contract.status, ReservationStatus.InProgress)
   })
 
-  test('remark 为可选', () => {
+  it('remark 为可选', () => {
     const entity = makeReservation({ remark: undefined })
     const contract = toReservationContract(entity)
 
     assert.equal(contract.remark, undefined)
   })
 
-  test('设备预约类型', () => {
+  it('设备预约类型', () => {
     const entity = makeReservation({
       type: ReservationType.Equipment,
       resourceId: 'eq-001',
@@ -102,7 +102,7 @@ describe('toReservationContract', () => {
     assert.equal(contract.resourceName, 'PS5 游戏机')
   })
 
-  test('服务预约类型', () => {
+  it('服务预约类型', () => {
     const entity = makeReservation({
       type: ReservationType.Service,
       resourceId: 'svc-001',
@@ -115,7 +115,7 @@ describe('toReservationContract', () => {
     assert.equal(contract.duration, 45)
   })
 
-  test('课程预约类型', () => {
+  it('课程预约类型', () => {
     const entity = makeReservation({
       type: ReservationType.Class,
       resourceId: 'cls-001',
@@ -127,7 +127,7 @@ describe('toReservationContract', () => {
     assert.equal(contract.resourceName, '街舞入门课')
   })
 
-  test('三小时长预约', () => {
+  it('三小时长预约', () => {
     const entity = makeReservation({
       duration: 180,
       price: 500,
@@ -140,14 +140,14 @@ describe('toReservationContract', () => {
     assert.equal(contract.deposit, 100)
   })
 
-  test('零押金预约', () => {
+  it('零押金预约', () => {
     const entity = makeReservation({ deposit: 0 })
     const contract = toReservationContract(entity)
 
     assert.equal(contract.deposit, 0)
   })
 
-  test('所有预约状态类型均可转换', () => {
+  it('所有预约状态类型均可转换', () => {
     const statuses = Object.values(ReservationStatus)
     for (const s of statuses) {
       const entity = makeReservation({ status: s as ReservationStatus })
@@ -160,7 +160,7 @@ describe('toReservationContract', () => {
 // ──────────── toReservationStatsContract ────────────
 
 describe('toReservationStatsContract', () => {
-  test('空列表统计', () => {
+  it('空列表统计', () => {
     const stats = toReservationStatsContract([])
     assert.equal(stats.total, 0)
     assert.equal(stats.pendingCount, 0)
@@ -170,7 +170,7 @@ describe('toReservationStatsContract', () => {
     assert.equal(stats.cancelledCount, 0)
   })
 
-  test('多种状态混排统计', () => {
+  it('多种状态混排统计', () => {
     const reservations = [
       makeReservation({ id: 'r1', status: ReservationStatus.Confirmed }),
       makeReservation({ id: 'r2', status: ReservationStatus.InProgress }),
@@ -189,7 +189,7 @@ describe('toReservationStatsContract', () => {
     assert.equal(stats.cancelledCount, 1)
   })
 
-  test('全已完成统计', () => {
+  it('全已完成统计', () => {
     const reservations = [
       makeReservation({ id: 'r1', status: ReservationStatus.Completed }),
       makeReservation({ id: 'r2', status: ReservationStatus.Completed })
@@ -202,7 +202,7 @@ describe('toReservationStatsContract', () => {
     assert.equal(stats.inProgressCount, 0)
   })
 
-  test('已取消预约不影响其他统计', () => {
+  it('已取消预约不影响其他统计', () => {
     const reservations = [
       makeReservation({ id: 'r1', status: ReservationStatus.Cancelled }),
       makeReservation({ id: 'r2', status: ReservationStatus.Cancelled }),

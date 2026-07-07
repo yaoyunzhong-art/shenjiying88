@@ -1,12 +1,12 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict';
-import test from 'node:test';
 import { ConfigService } from '@nestjs/config';
 import { MockLytAdapter } from './adapters/mock-lyt.adapter';
 import { RealLytAdapter } from './adapters/real-lyt.adapter';
 import { SandboxLytAdapter } from './adapters/sandbox-lyt.adapter';
 import { LytAdapterRegistry } from './lyt-adapter.registry';
 
-test('LytAdapterRegistry resolves mock adapter for fallback connection', () => {
+it('LytAdapterRegistry resolves mock adapter for fallback connection', () => {
   const configService = new ConfigService();
   const registry = new LytAdapterRegistry(new MockLytAdapter(), new SandboxLytAdapter(configService), new RealLytAdapter(configService));
 
@@ -28,7 +28,7 @@ test('LytAdapterRegistry resolves mock adapter for fallback connection', () => {
   assert.equal(selection.adapterMode, 'mock');
 });
 
-test('LytAdapterRegistry resolves sandbox adapter for sandbox endpoint', () => {
+it('LytAdapterRegistry resolves sandbox adapter for sandbox endpoint', () => {
   const configService = new ConfigService();
   const registry = new LytAdapterRegistry(new MockLytAdapter(), new SandboxLytAdapter(configService), new RealLytAdapter(configService));
 
@@ -50,7 +50,7 @@ test('LytAdapterRegistry resolves sandbox adapter for sandbox endpoint', () => {
   assert.equal(selection.adapterMode, 'sandbox');
 });
 
-test('LytAdapterRegistry resolves real adapter for production endpoint', () => {
+it('LytAdapterRegistry resolves real adapter for production endpoint', () => {
   const configService = new ConfigService();
   const registry = new LytAdapterRegistry(new MockLytAdapter(), new SandboxLytAdapter(configService), new RealLytAdapter(configService));
 

@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   BootstrapPhase,
   toBootstrapHealth,
@@ -12,7 +12,7 @@ import {
 } from './bootstrap.entity'
 
 describe('BootstrapPhase enum', () => {
-  test('has four phases', () => {
+  it('has four phases', () => {
     assert.equal(BootstrapPhase.Scaffold, 'scaffold')
     assert.equal(BootstrapPhase.Provision, 'provision')
     assert.equal(BootstrapPhase.Handoff, 'handoff')
@@ -21,7 +21,7 @@ describe('BootstrapPhase enum', () => {
 })
 
 describe('toBootstrapHealth', () => {
-  test('returns default healthy scaffold state', () => {
+  it('returns default healthy scaffold state', () => {
     const health = toBootstrapHealth()
     assert.equal(health.status, 'ok')
     assert.equal(health.phase, BootstrapPhase.Scaffold)
@@ -30,20 +30,20 @@ describe('toBootstrapHealth', () => {
     assert.ok(new Date(health.checkedAt).getTime() > 0)
   })
 
-  test('accepts overrides', () => {
+  it('accepts overrides', () => {
     const health = toBootstrapHealth({ status: 'error', phase: BootstrapPhase.Ready })
     assert.equal(health.status, 'error')
     assert.equal(health.phase, BootstrapPhase.Ready)
   })
 
-  test('preserves uptime when not overridden', () => {
+  it('preserves uptime when not overridden', () => {
     const health = toBootstrapHealth({ status: 'degraded' })
     assert.equal(health.status, 'degraded')
     assert.equal(health.phase, BootstrapPhase.Scaffold)
     assert.ok(health.uptime >= 0)
   })
 
-  test('satisfies BootstrapHealth interface', () => {
+  it('satisfies BootstrapHealth interface', () => {
     const health: BootstrapHealth = toBootstrapHealth()
     assert.equal(typeof health.checkedAt, 'string')
     assert.equal(health.status, 'ok')
@@ -51,7 +51,7 @@ describe('toBootstrapHealth', () => {
 })
 
 describe('toBootstrapMetadata', () => {
-  test('returns metadata with given tenant context', () => {
+  it('returns metadata with given tenant context', () => {
     const ctx = { tenantId: 't-1', brandId: 'b-1', storeId: 's-1', marketCode: 'cn' }
     const meta = toBootstrapMetadata(ctx)
     assert.deepStrictEqual(meta.tenantContext, ctx)
@@ -61,7 +61,7 @@ describe('toBootstrapMetadata', () => {
     assert.ok(new Date(meta.generatedAt).getTime() > 0)
   })
 
-  test('accepts overrides for dependencies', () => {
+  it('accepts overrides for dependencies', () => {
     const ctx = { tenantId: 't-2' }
     const meta = toBootstrapMetadata(ctx, {
       foundationDependencies: ['foundation' as any],
@@ -73,14 +73,14 @@ describe('toBootstrapMetadata', () => {
     assert.equal(meta.phase, BootstrapPhase.Ready)
   })
 
-  test('satisfies BootstrapMetadata interface', () => {
+  it('satisfies BootstrapMetadata interface', () => {
     const ctx = { tenantId: 't-3' }
     const meta: BootstrapMetadata = toBootstrapMetadata(ctx)
     assert.equal(typeof meta.generatedAt, 'string')
     assert.equal(meta.phase, BootstrapPhase.Scaffold)
   })
 
-  test('handles minimal tenant context', () => {
+  it('handles minimal tenant context', () => {
     const ctx = { tenantId: 'min-t' } as any
     const meta = toBootstrapMetadata(ctx)
     assert.equal(meta.tenantContext.tenantId, 'min-t')
@@ -89,7 +89,7 @@ describe('toBootstrapMetadata', () => {
 })
 
 describe('RegionalLoginPolicy type', () => {
-  test('constructs valid policy object', () => {
+  it('constructs valid policy object', () => {
     const policy: RegionalLoginPolicy = {
       defaultLoginPath: '/login',
       ssoEnabled: true,
@@ -100,7 +100,7 @@ describe('RegionalLoginPolicy type', () => {
     assert.deepStrictEqual(policy.supportedMarkets, ['cn-mainland', 'en-global'])
   })
 
-  test('allows empty supported markets', () => {
+  it('allows empty supported markets', () => {
     const policy: RegionalLoginPolicy = {
       defaultLoginPath: '/sso',
       ssoEnabled: false,
@@ -113,7 +113,7 @@ describe('RegionalLoginPolicy type', () => {
 })
 
 describe('BootstrapConsumerDependency type', () => {
-  test('constructs valid dependency object', () => {
+  it('constructs valid dependency object', () => {
     const dep: BootstrapConsumerDependency = {
       consumerName: 'market',
       dependsOn: ['foundation' as any],

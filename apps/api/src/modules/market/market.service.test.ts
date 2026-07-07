@@ -1,11 +1,10 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 describe('MarketService', () => {
   const { MarketService } = require('./market.service')
 
-  test('getBootstrap returns bootstrap with supported markets and foundation metadata', () => {
+  it('getBootstrap returns bootstrap with supported markets and foundation metadata', () => {
     const mockFoundation = {
       getDependencySummary: () => ({
         consumer: 'market',
@@ -27,7 +26,7 @@ describe('MarketService', () => {
     assert.deepStrictEqual(result.foundationContracts, ['market:v1'])
   })
 
-  test('getBootstrap handles null foundation dependency', () => {
+  it('getBootstrap handles null foundation dependency', () => {
     const mockFoundation = { getDependencySummary: () => null }
     const service = new MarketService(mockFoundation as never)
 
@@ -38,7 +37,7 @@ describe('MarketService', () => {
     assert.ok(Array.isArray(result.supportedMarkets))
   })
 
-  test('getByMarketCode returns cn-mainland profile', () => {
+  it('getByMarketCode returns cn-mainland profile', () => {
     const mockFoundation = { getDependencySummary: () => null }
     const service = new MarketService(mockFoundation as never)
 
@@ -52,7 +51,7 @@ describe('MarketService', () => {
     assert.equal(result.network.networkRegion, 'MAINLAND_CHINA')
   })
 
-  test('getByMarketCode returns us-default profile', () => {
+  it('getByMarketCode returns us-default profile', () => {
     const mockFoundation = { getDependencySummary: () => null }
     const service = new MarketService(mockFoundation as never)
 
@@ -66,7 +65,7 @@ describe('MarketService', () => {
     assert.equal(result.network.networkRegion, 'NORTH_AMERICA')
   })
 
-  test('getByMarketCode falls back to us-default for unknown marketCode', () => {
+  it('getByMarketCode falls back to us-default for unknown marketCode', () => {
     const mockFoundation = { getDependencySummary: () => null }
     const service = new MarketService(mockFoundation as never)
 
@@ -76,7 +75,7 @@ describe('MarketService', () => {
     assert.equal(result.marketCode, 'us-default')
   })
 
-  test('getOverrides returns tenant/brand/store overrides for cn-mainland', () => {
+  it('getOverrides returns tenant/brand/store overrides for cn-mainland', () => {
     const mockFoundation = { getDependencySummary: () => null }
     const service = new MarketService(mockFoundation as never)
 
@@ -102,7 +101,7 @@ describe('MarketService', () => {
     assert.equal(result[2].timezone.timezone, 'Asia/Shanghai')
   })
 
-  test('getOverrides uses us-default platforms and timezone for non-cn market', () => {
+  it('getOverrides uses us-default platforms and timezone for non-cn market', () => {
     const mockFoundation = { getDependencySummary: () => null }
     const service = new MarketService(mockFoundation as never)
 
@@ -120,7 +119,7 @@ describe('MarketService', () => {
     assert.equal(result[2].timezone.timezone, 'America/Los_Angeles')
   })
 
-  test('getOverrides defaults to us-default when no marketCode', () => {
+  it('getOverrides defaults to us-default when no marketCode', () => {
     const mockFoundation = { getDependencySummary: () => null }
     const service = new MarketService(mockFoundation as never)
 
@@ -137,7 +136,7 @@ describe('MarketService', () => {
     assert.deepStrictEqual(result[1].social.primaryPlatforms, ['LINKEDIN', 'INSTAGRAM'])
   })
 
-  test('getOverrides uses default brand and store when not provided', () => {
+  it('getOverrides uses default brand and store when not provided', () => {
     const mockFoundation = { getDependencySummary: () => null }
     const service = new MarketService(mockFoundation as never)
 
@@ -154,7 +153,7 @@ describe('MarketService', () => {
     assert.equal(result[2].scopeCode, 'store-001')
   })
 
-  test('getMergedProfile returns base profile merged with overrides for cn-mainland', () => {
+  it('getMergedProfile returns base profile merged with overrides for cn-mainland', () => {
     const mockFoundation = { getDependencySummary: () => null }
     const service = new MarketService(mockFoundation as never)
 
@@ -177,7 +176,7 @@ describe('MarketService', () => {
     assert.deepStrictEqual(result.social.primaryPlatforms, ['WECHAT', 'DOUYIN'])
   })
 
-  test('getMergedProfile returns us-default with overrides', () => {
+  it('getMergedProfile returns us-default with overrides', () => {
     const mockFoundation = { getDependencySummary: () => null }
     const service = new MarketService(mockFoundation as never)
 

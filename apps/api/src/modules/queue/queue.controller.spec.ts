@@ -1,13 +1,13 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import type { RequestTenantContext } from '../tenant/tenant.types';
 import { QueueType, QueueStatus } from './queue.entity';
 import { toQueueEntryContract } from './queue.contract';
 
 // ── Mock NestJS decorators ──────────────────────────────────────────
 function Controller(prefix: string) {
-  return (target: Function & { __prefix?: string }) => {
+  return (target: { new (...args: any[]): unknown; __prefix?: string }) => {
     target.__prefix = prefix;
     return target;
   };
@@ -380,7 +380,7 @@ describe('QueueController', () => {
   let controller: MockQueueController;
   let mockService: MockQueueService;
 
-  test.beforeEach(() => {
+  beforeEach(() => {
     // Reset registrations so each describe block runs with a clean slate
     // (node:test runs suites sequentially within a file, but beforeEach
     //  is per-test; we rely on the top-level registration above being static)
@@ -390,19 +390,19 @@ describe('QueueController', () => {
 
   // ── Decorator metadata ─────────────────────────────────────────
   describe('decorator metadata', () => {
-    test('registers @Controller("queue") prefix', () => {
+    it('registers @Controller("queue") prefix', () => {
       assert.equal(
         (MockQueueController as typeof MockQueueController & { __prefix?: string }).__prefix,
         'queue',
       );
     });
 
-    test('registers 8 endpoints (6 POST + 2 GET)', () => {
+    it('registers 8 endpoints (6 POST + 2 GET)', () => {
       assert.equal(postRegistrations.length, 6);
       assert.equal(getRegistrations.length, 2);
     });
 
-    test('registers POST endpoints with correct paths', () => {
+    it('registers POST endpoints with correct paths', () => {
       assert.ok(postRegistrations.includes('joinQueue:join'));
       assert.ok(postRegistrations.includes('leaveQueue::entryId/leave'));
       assert.ok(postRegistrations.includes('callNext:call-next'));
@@ -411,12 +411,12 @@ describe('QueueController', () => {
       assert.ok(postRegistrations.includes('markNoShow::entryId/no-show'));
     });
 
-    test('registers GET endpoints with correct paths', () => {
+    it('registers GET endpoints with correct paths', () => {
       assert.ok(getRegistrations.includes('getQueueStatus:status/:resourceId'));
       assert.ok(getRegistrations.includes('getMyPosition:position'));
     });
 
-    test('registers TenantContext on all endpoints', () => {
+    it('registers TenantContext on all endpoints', () => {
       [
         'joinQueue',
         'leaveQueue',
@@ -434,23 +434,23 @@ describe('QueueController', () => {
       });
     });
 
-    test('registers @Param("entryId") on leave/start/complete/no-show', () => {
+    it('registers @Param("entryId") on leave/start/complete/no-show', () => {
       assert.ok(paramRegistrations.includes('leaveQueue:entryId:1'));
       assert.ok(paramRegistrations.includes('startService:entryId:1'));
       assert.ok(paramRegistrations.includes('completeService:entryId:1'));
       assert.ok(paramRegistrations.includes('markNoShow:entryId:1'));
     });
 
-    test('registers @Param("resourceId") on getQueueStatus', () => {
+    it('registers @Param("resourceId") on getQueueStatus', () => {
       assert.ok(paramRegistrations.includes('getQueueStatus:resourceId:1'));
     });
 
-    test('registers @Body on joinQueue and callNext', () => {
+    it('registers @Body on joinQueue and callNext', () => {
       assert.ok(bodyRegistrations.includes('joinQueue::1'));
       assert.ok(bodyRegistrations.includes('callNext::1'));
     });
 
-    test('registers @Query on getMyPosition', () => {
+    it('registers @Query on getMyPosition', () => {
       assert.ok(queryRegistrations.includes('getMyPosition::1'));
     });
   });
@@ -459,7 +459,7 @@ describe('QueueController', () => {
   describe('joinQueue() — positive', () => {
     const tenantCtx: RequestTenantContext = { tenantId: 't-test', marketCode: 'cn-mainland' };
 
-    test('returns queue entry with waiting status', () => {
+    it('returns queue entry with waiting status', () => {
       const result = controller.joinQueue(tenantCtx, {
         queueType: QueueType.Waiting,
         memberId: 'member-new',
@@ -473,7 +473,7 @@ describe('QueueController', () => {
       assert.equal(result.userName, '新用户');
     });
 
-    test('returns queue entry with queue number', () => {
+    it('returns queue entry with queue number', () => {
       const result = controller.joinQueue(tenantCtx, {
         queueType: QueueType.Waiting,
         memberId: 'member-q',
@@ -483,7 +483,7 @@ describe('QueueController', () => {
       assert.ok(result.queueNumber.length > 0);
     });
 
-    test('assigns estimated wait time', () => {
+    it('assigns estimated wait time', () => {
       const result = controller.joinQueue(tenantCtx, {
         queueType: QueueType.Booking,
         memberId: 'member-booking',
@@ -493,7 +493,7 @@ describe('QueueController', () => {
       assert.ok(result.estimatedWaitMin >= 0);
     });
 
-    test('assigns unique entry ID', () => {
+    it('assigns unique entry ID', () => {
       const result = controller.joinQueue(tenantCtx, {
         queueType: QueueType.Waiting,
         memberId: 'member-unique',
@@ -505,7 +505,7 @@ describe('QueueController', () => {
   describe('joinQueue() — edge / boundary', () => {
     const tenantCtx: RequestTenantContext = { tenantId: 't-edge', marketCode: 'cn-mainland' };
 
-    test('works with minimal fields (only queueType + memberId)', () => {
+    it('works with minimal fields (only queueType + memberId)', () => {
       const result = controller.joinQueue(tenantCtx, {
         queueType: QueueType.Service,
         memberId: 'minimal-member',
@@ -514,7 +514,7 @@ describe('QueueController', () => {
       assert.equal(result.userId, 'minimal-member');
     });
 
-    test('accepts optional remark', () => {
+    it('accepts optional remark', () => {
       const result = controller.joinQueue(tenantCtx, {
         queueType: QueueType.Waiting,
         memberId: 'member-remark',
@@ -523,7 +523,7 @@ describe('QueueController', () => {
       assert.equal(result.remark, '请优先安排');
     });
 
-    test('accepts priority field', () => {
+    it('accepts priority field', () => {
       const result = controller.joinQueue(tenantCtx, {
         queueType: QueueType.Waiting,
         memberId: 'member-vip',
@@ -537,13 +537,13 @@ describe('QueueController', () => {
   describe('leaveQueue() — positive', () => {
     const tenantCtx: RequestTenantContext = { tenantId: 't-leave', marketCode: 'cn-mainland' };
 
-    test('returns entry with cancelled status', () => {
+    it('returns entry with cancelled status', () => {
       const result = controller.leaveQueue(tenantCtx, 'queue-leave-001');
       assert.equal(result.status, 'cancelled');
       assert.equal(result.id, 'queue-leave-001');
     });
 
-    test('keeps original userId', () => {
+    it('keeps original userId', () => {
       const result = controller.leaveQueue(tenantCtx, 'queue-leave-002');
       assert.equal(result.userId, 'member-1');
     });
@@ -553,20 +553,20 @@ describe('QueueController', () => {
   describe('callNext() — positive', () => {
     const tenantCtx: RequestTenantContext = { tenantId: 't-call', marketCode: 'cn-mainland' };
 
-    test('returns called entry', () => {
+    it('returns called entry', () => {
       const result = controller.callNext(tenantCtx, { resourceId: 'machine-1' });
       assert.ok(result !== null);
       assert.equal(result!.status, 'called');
       assert.equal(result!.resourceId, 'machine-1');
     });
 
-    test('returns non-null entry when queue has waiting members', () => {
+    it('returns non-null entry when queue has waiting members', () => {
       const result = controller.callNext(tenantCtx, { resourceId: 'machine-1' });
       assert.ok(result !== null);
       assert.equal(typeof result!.queueNumber, 'string');
     });
 
-    test('includes actualWaitMin on called entry', () => {
+    it('includes actualWaitMin on called entry', () => {
       const result = controller.callNext(tenantCtx, { resourceId: 'machine-1' });
       assert.ok(result !== null);
       assert.equal(typeof result!.actualWaitMin, 'number');
@@ -578,18 +578,18 @@ describe('QueueController', () => {
   describe('startService() — positive', () => {
     const tenantCtx: RequestTenantContext = { tenantId: 't-svc', marketCode: 'cn-mainland' };
 
-    test('returns entry with serving status', () => {
+    it('returns entry with serving status', () => {
       const result = controller.startService(tenantCtx, 'queue-svc-001');
       assert.equal(result.status, 'serving');
       assert.equal(result.id, 'queue-svc-001');
     });
 
-    test('includes servedAt timestamp', () => {
+    it('includes servedAt timestamp', () => {
       const result = controller.startService(tenantCtx, 'queue-svc-002');
       assert.ok(typeof result.servedAt === 'string');
     });
 
-    test('keeps userId and resourceId', () => {
+    it('keeps userId and resourceId', () => {
       const result = controller.startService(tenantCtx, 'queue-svc-003');
       assert.equal(result.userId, 'member-served');
       assert.equal(result.resourceId, 'machine-1');
@@ -600,12 +600,12 @@ describe('QueueController', () => {
   describe('completeService() — positive', () => {
     const tenantCtx: RequestTenantContext = { tenantId: 't-done', marketCode: 'cn-mainland' };
 
-    test('returns entry with completed status', () => {
+    it('returns entry with completed status', () => {
       const result = controller.completeService(tenantCtx, 'queue-done-001');
       assert.equal(result.status, 'completed');
     });
 
-    test('includes completedAt timestamp', () => {
+    it('includes completedAt timestamp', () => {
       const result = controller.completeService(tenantCtx, 'queue-done-002');
       assert.ok(typeof result.completedAt === 'string');
     });
@@ -615,12 +615,12 @@ describe('QueueController', () => {
   describe('markNoShow() — positive', () => {
     const tenantCtx: RequestTenantContext = { tenantId: 't-noshow', marketCode: 'cn-mainland' };
 
-    test('returns entry with no_show status', () => {
+    it('returns entry with no_show status', () => {
       const result = controller.markNoShow(tenantCtx, 'queue-noshow-001');
       assert.equal(result.status, 'no_show');
     });
 
-    test('handles after callNext timing', () => {
+    it('handles after callNext timing', () => {
       const result = controller.markNoShow(tenantCtx, 'queue-noshow-002');
       assert.equal(result.status, 'no_show');
       assert.ok(typeof result.calledAt === 'string');
@@ -631,7 +631,7 @@ describe('QueueController', () => {
   describe('getQueueStatus() — positive', () => {
     const tenantCtx: RequestTenantContext = { tenantId: 't-stats', marketCode: 'cn-mainland' };
 
-    test('returns queue statistics', () => {
+    it('returns queue statistics', () => {
       const result = controller.getQueueStatus(tenantCtx, 'machine-1');
       assert.equal(typeof result.total, 'number');
       assert.equal(typeof result.waitingCount, 'number');
@@ -639,12 +639,12 @@ describe('QueueController', () => {
       assert.equal(typeof result.servingCount, 'number');
     });
 
-    test('returns avgWaitMin as number', () => {
+    it('returns avgWaitMin as number', () => {
       const result = controller.getQueueStatus(tenantCtx, 'machine-1');
       assert.equal(typeof result.avgWaitMin, 'number');
     });
 
-    test('all status fields sum to total', () => {
+    it('all status fields sum to total', () => {
       const result = controller.getQueueStatus(tenantCtx, 'machine-1');
       const subTotal =
         result.waitingCount +
@@ -661,7 +661,7 @@ describe('QueueController', () => {
   describe('getMyPosition() — positive', () => {
     const tenantCtx: RequestTenantContext = { tenantId: 't-pos', marketCode: 'cn-mainland' };
 
-    test('returns position for member in queue', () => {
+    it('returns position for member in queue', () => {
       const result = controller.getMyPosition(tenantCtx, {
         memberId: 'member-inqueue',
         resourceId: 'machine-2',
@@ -671,7 +671,7 @@ describe('QueueController', () => {
       assert.ok(result.entry !== null);
     });
 
-    test('returns entry details for member in queue', () => {
+    it('returns entry details for member in queue', () => {
       const result = controller.getMyPosition(tenantCtx, {
         memberId: 'member-inqueue',
         resourceId: 'machine-2',
@@ -685,7 +685,7 @@ describe('QueueController', () => {
   describe('getMyPosition() — edge / boundary', () => {
     const tenantCtx: RequestTenantContext = { tenantId: 't-pos-edge', marketCode: 'cn-mainland' };
 
-    test('returns position -1 when member not in queue', () => {
+    it('returns position -1 when member not in queue', () => {
       const result = controller.getMyPosition(tenantCtx, {
         memberId: 'member-not-in-queue',
         resourceId: 'machine-1',
@@ -695,13 +695,13 @@ describe('QueueController', () => {
       assert.equal(result.entry, null);
     });
 
-    test('returns position -1 when memberId is empty', () => {
+    it('returns position -1 when memberId is empty', () => {
       const result = controller.getMyPosition(tenantCtx, { memberId: '', resourceId: 'machine-1' });
       assert.equal(result.position, -1);
       assert.equal(result.entry, null);
     });
 
-    test('returns position -1 when resourceId is empty', () => {
+    it('returns position -1 when resourceId is empty', () => {
       const result = controller.getMyPosition(tenantCtx, {
         memberId: 'member-inqueue',
         resourceId: '',
@@ -710,13 +710,13 @@ describe('QueueController', () => {
       assert.equal(result.entry, null);
     });
 
-    test('returns position -1 when memberId is undefined', () => {
+    it('returns position -1 when memberId is undefined', () => {
       const result = controller.getMyPosition(tenantCtx, { resourceId: 'machine-1' });
       assert.equal(result.position, -1);
       assert.equal(result.entry, null);
     });
 
-    test('returns position -1 when resourceId is undefined', () => {
+    it('returns position -1 when resourceId is undefined', () => {
       const result = controller.getMyPosition(tenantCtx, { memberId: 'member-inqueue' });
       assert.equal(result.position, -1);
       assert.equal(result.entry, null);
@@ -727,7 +727,7 @@ describe('QueueController', () => {
   describe('joinQueue() — negative', () => {
     const tenantCtx: RequestTenantContext = { tenantId: 't-neg', marketCode: 'cn-mainland' };
 
-    test('defaults memberName to memberId when not provided', () => {
+    it('defaults memberName to memberId when not provided', () => {
       const result = controller.joinQueue(tenantCtx, {
         queueType: QueueType.Waiting,
         memberId: 'no-name-member',
@@ -735,7 +735,7 @@ describe('QueueController', () => {
       assert.equal(result.userName, 'no-name-member');
     });
 
-    test('handles all three queue types', () => {
+    it('handles all three queue types', () => {
       for (const qt of [QueueType.Booking, QueueType.Waiting, QueueType.Service]) {
         const result = controller.joinQueue(tenantCtx, {
           queueType: qt,
@@ -749,7 +749,7 @@ describe('QueueController', () => {
   describe('callNext() — negative', () => {
     const tenantCtx: RequestTenantContext = { tenantId: 't-call-neg', marketCode: 'cn-mainland' };
 
-    test('returns entry anyway (stub always returns entry)', () => {
+    it('returns entry anyway (stub always returns entry)', () => {
       // Per our stub, callNext always returns an entry — this tests stub behavior.
       // The real service would return null if queue is empty.
       const result = controller.callNext(tenantCtx, { resourceId: 'empty-resource' });

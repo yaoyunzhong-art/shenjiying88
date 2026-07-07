@@ -1,15 +1,14 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 describe('MarketController — decorator metadata', () => {
-  test('controller path metadata is set to "markets"', () => {
+  it('controller path metadata is set to "markets"', () => {
     const { MarketController } = require('./market.controller')
     const path = Reflect.getMetadata('path', MarketController)
     assert.equal(path, 'markets')
   })
 
-  test('getBootstrap route has GET metadata on "bootstrap" path', () => {
+  it('getBootstrap route has GET metadata on "bootstrap" path', () => {
     const { MarketController } = require('./market.controller')
     const method = Reflect.getMetadata('method', MarketController.prototype.getBootstrap)
     const path = Reflect.getMetadata('path', MarketController.prototype.getBootstrap)
@@ -18,7 +17,7 @@ describe('MarketController — decorator metadata', () => {
     assert.equal(path, 'bootstrap')
   })
 
-  test('getScopedMarket route has GET metadata on parameterized path', () => {
+  it('getScopedMarket route has GET metadata on parameterized path', () => {
     const { MarketController } = require('./market.controller')
     const method = Reflect.getMetadata('method', MarketController.prototype.getScopedMarket)
     const path = Reflect.getMetadata('path', MarketController.prototype.getScopedMarket)
@@ -27,7 +26,7 @@ describe('MarketController — decorator metadata', () => {
     assert.equal(path, ':scopeType/:scopeCode')
   })
 
-  test('getScopedPortalMarket route has GET metadata on portal sub-path', () => {
+  it('getScopedPortalMarket route has GET metadata on portal sub-path', () => {
     const { MarketController } = require('./market.controller')
     const method = Reflect.getMetadata('method', MarketController.prototype.getScopedPortalMarket)
     const path = Reflect.getMetadata('path', MarketController.prototype.getScopedPortalMarket)
@@ -38,7 +37,7 @@ describe('MarketController — decorator metadata', () => {
 })
 
 describe('MarketController — getBootstrap()', () => {
-  test('returns scaffold bootstrap from service', () => {
+  it('returns scaffold bootstrap from service', () => {
     const { MarketController } = require('./market.controller')
 
     const mockBootstrap = {
@@ -60,7 +59,7 @@ describe('MarketController — getBootstrap()', () => {
     assert.deepStrictEqual(result, mockBootstrap)
   })
 
-  test('returns supportedMarkets from service', () => {
+  it('returns supportedMarkets from service', () => {
     const { MarketController } = require('./market.controller')
 
     const mockBootstrap = {
@@ -88,7 +87,7 @@ describe('MarketController — getBootstrap()', () => {
     assert.equal(result.defaultInternationalMarketCode, 'us-default')
   })
 
-  test('does not require tenantContext parameter', () => {
+  it('does not require tenantContext parameter', () => {
     const { MarketController } = require('./market.controller')
 
     const mockService = {
@@ -109,7 +108,7 @@ describe('MarketController — getBootstrap()', () => {
 })
 
 describe('MarketController — getScopedMarket()', () => {
-  test('returns scope info with merged profile and overrides', () => {
+  it('returns scope info with merged profile and overrides', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = { marketCode: 'cn-mainland', marketName: '中国大陆' }
@@ -132,7 +131,7 @@ describe('MarketController — getScopedMarket()', () => {
     assert.deepStrictEqual(result.overrides, mockOverrides)
   })
 
-  test('handles store-level scope with storeId in context', () => {
+  it('handles store-level scope with storeId in context', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = { marketCode: 'us-default', marketName: 'United States' }
@@ -157,7 +156,7 @@ describe('MarketController — getScopedMarket()', () => {
     assert.equal(result.overrides[0].scopeCode, 's-99')
   })
 
-  test('handles brand-level scope with brandId in context', () => {
+  it('handles brand-level scope with brandId in context', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = { marketCode: 'cn-mainland', marketName: '中国大陆' }
@@ -179,7 +178,7 @@ describe('MarketController — getScopedMarket()', () => {
     assert.deepStrictEqual(result.overrides, [])
   })
 
-  test('handles empty tenantContext correctly', () => {
+  it('handles empty tenantContext correctly', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = { marketCode: 'us-default', marketName: 'United States' }
@@ -203,7 +202,7 @@ describe('MarketController — getScopedMarket()', () => {
 })
 
 describe('MarketController — getScopedPortalMarket()', () => {
-  test('returns slim portal market snapshot for brand scope', () => {
+  it('returns slim portal market snapshot for brand scope', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = {
@@ -238,7 +237,7 @@ describe('MarketController — getScopedPortalMarket()', () => {
     assert.equal(result.email.fromName, 'M5 US')
   })
 
-  test('returns cn-mainland portal market with China-specific fields', () => {
+  it('returns cn-mainland portal market with China-specific fields', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = {
@@ -278,7 +277,7 @@ describe('MarketController — getScopedPortalMarket()', () => {
     assert.deepStrictEqual(result.social.primaryPlatforms, ['WECHAT', 'XIAOHONGSHU'])
   })
 
-  test('returns all social and network fields populated', () => {
+  it('returns all social and network fields populated', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = {
@@ -310,7 +309,7 @@ describe('MarketController — getScopedPortalMarket()', () => {
     assert.equal(result.email.replyTo, 'support-jp@m5.local')
   })
 
-  test('returns only portal-relevant fields (no full profile leak)', () => {
+  it('returns only portal-relevant fields (no full profile leak)', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = {
@@ -351,7 +350,7 @@ describe('MarketController — getScopedPortalMarket()', () => {
     assert.equal(result.social.primaryPlatforms.length, 1)
   })
 
-  test('returns portal market with empty social and email fields gracefully', () => {
+  it('returns portal market with empty social and email fields gracefully', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = {
@@ -382,7 +381,7 @@ describe('MarketController — getScopedPortalMarket()', () => {
     assert.equal(result.social.primaryPlatforms.length, 0)
   })
 
-  test('can handle scopeType with special characters (boundary)', () => {
+  it('can handle scopeType with special characters (boundary)', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = { marketCode: 'cn-mainland', marketName: '中国大陆' }
@@ -403,7 +402,7 @@ describe('MarketController — getScopedPortalMarket()', () => {
 })
 
 describe('MarketController — error and boundary behavior', () => {
-  test('getScopedMarket propagates service errors (no profile crash)', () => {
+  it('getScopedMarket propagates service errors (no profile crash)', () => {
     const { MarketController } = require('./market.controller')
 
     const mockService = {
@@ -422,7 +421,7 @@ describe('MarketController — error and boundary behavior', () => {
     )
   })
 
-  test('getScopedMarket propagates getOverrides errors', () => {
+  it('getScopedMarket propagates getOverrides errors', () => {
     const { MarketController } = require('./market.controller')
 
     const mockService = {
@@ -441,7 +440,7 @@ describe('MarketController — error and boundary behavior', () => {
     )
   })
 
-  test('getScopedPortalMarket handles service returning undefined locale fields (boundary)', () => {
+  it('getScopedPortalMarket handles service returning undefined locale fields (boundary)', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = {
@@ -470,7 +469,7 @@ describe('MarketController — error and boundary behavior', () => {
     assert.equal(result.tax, null)
   })
 
-  test('getScopedMarket with very long scopeType and scopeCode strings (boundary)', () => {
+  it('getScopedMarket with very long scopeType and scopeCode strings (boundary)', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = { marketCode: 'us-default', marketName: 'United States' }
@@ -489,7 +488,7 @@ describe('MarketController — error and boundary behavior', () => {
     assert.equal(result.scopeCode.length, 500)
   })
 
-  test('getScopedPortalMarket returns store-level portal with surface hints', () => {
+  it('getScopedPortalMarket returns store-level portal with surface hints', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = {
@@ -518,7 +517,7 @@ describe('MarketController — error and boundary behavior', () => {
     assert.equal(result.email.fromAddress, 'store@m5.local')
   })
 
-  test('getScopedMarket returns empty overrides array when no overrides exist', () => {
+  it('getScopedMarket returns empty overrides array when no overrides exist', () => {
     const { MarketController } = require('./market.controller')
 
     const mockProfile = { marketCode: 'eu-default', marketName: 'Europe' }
@@ -536,7 +535,7 @@ describe('MarketController — error and boundary behavior', () => {
     assert.equal(result.marketProfile.marketCode, 'eu-default')
   })
 
-  test('getScopedMarket preserves override ordering from service', () => {
+  it('getScopedMarket preserves override ordering from service', () => {
     const { MarketController } = require('./market.controller')
 
     const mockOverrides = [

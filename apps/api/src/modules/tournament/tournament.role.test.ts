@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [tournament] [C] 角色测试
  * 
@@ -9,7 +10,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { TournamentService } from './tournament.service'
 import {
   TournamentStatus,
@@ -58,7 +58,7 @@ function createAndOpenTournament(
 
 // ── 👔店长 ──
 describe(`${ROLES.StoreManager} tournament 角色测试`, () => {
-  test('店长可创建比赛并发布', () => {
+  it('店长可创建比赛并发布', () => {
     const svc = createService()
     const t = svc.createTournament({
       tenantId: TENANT,
@@ -84,7 +84,7 @@ describe(`${ROLES.StoreManager} tournament 角色测试`, () => {
     assert.equal(opened.status, TournamentStatus.Open)
   })
 
-  test('店长不可直接跳到 Completed', () => {
+  it('店长不可直接跳到 Completed', () => {
     const svc = createService()
     const t = svc.createTournament({
       tenantId: TENANT,
@@ -102,7 +102,7 @@ describe(`${ROLES.StoreManager} tournament 角色测试`, () => {
     )
   })
 
-  test('店长可查看自己店的比赛列表', () => {
+  it('店长可查看自己店的比赛列表', () => {
     const svc = createService()
     svc.resetTournamentStoresForTests()
     createAndOpenTournament(svc, { name: 'T1', storeId: 'store-001' })
@@ -115,7 +115,7 @@ describe(`${ROLES.StoreManager} tournament 角色测试`, () => {
 
 // ── 🛒前台 ──
 describe(`${ROLES.FrontDesk} tournament 角色测试`, () => {
-  test('前台可为顾客报名比赛', () => {
+  it('前台可为顾客报名比赛', () => {
     const svc = createService()
     const t = createAndOpenTournament(svc)
 
@@ -123,7 +123,7 @@ describe(`${ROLES.FrontDesk} tournament 角色测试`, () => {
     assert.equal(updated.currentParticipants, 1)
   })
 
-  test('前台不可为未开放比赛报名', () => {
+  it('前台不可为未开放比赛报名', () => {
     const svc = createService()
     const t = svc.createTournament({
       tenantId: TENANT,
@@ -141,7 +141,7 @@ describe(`${ROLES.FrontDesk} tournament 角色测试`, () => {
     )
   })
 
-  test('前台可查看现场比赛', () => {
+  it('前台可查看现场比赛', () => {
     const svc = createService()
     const live = svc.getLiveMatches('store-001')
     assert.ok(Array.isArray(live))
@@ -150,7 +150,7 @@ describe(`${ROLES.FrontDesk} tournament 角色测试`, () => {
 
 // ── 👥HR ──
 describe(`${ROLES.HR} tournament 角色测试`, () => {
-  test('HR可组织团队报名团建比赛', () => {
+  it('HR可组织团队报名团建比赛', () => {
     const svc = createService()
     const t = createAndOpenTournament(svc, { type: TournamentType.League })
 
@@ -166,7 +166,7 @@ describe(`${ROLES.HR} tournament 角色测试`, () => {
     assert.equal(reg.memberIds.length, 3)
   })
 
-  test('HR不可为其他门店比赛报名', () => {
+  it('HR不可为其他门店比赛报名', () => {
     const svc = createService()
     const t = svc.createTournament({
       tenantId: TENANT,
@@ -188,7 +188,7 @@ describe(`${ROLES.HR} tournament 角色测试`, () => {
 
 // ── 🔧安监 ──
 describe(`${ROLES.Security} tournament 角色测试`, () => {
-  test('安监可标记比赛争议', () => {
+  it('安监可标记比赛争议', () => {
     const svc = createService()
     const t = createAndOpenTournament(svc, { type: TournamentType.RoundRobin })
     svc.registerParticipant(t.id, 'p1', TENANT)
@@ -199,7 +199,7 @@ describe(`${ROLES.Security} tournament 角色测试`, () => {
     assert.equal(disputed.status, MatchStatus.Disputed)
   })
 
-  test('安监标记不存在比赛应报错', () => {
+  it('安监标记不存在比赛应报错', () => {
     const svc = createService()
     assert.throws(
       () => svc.setDisputed('nonexistent-match', TENANT),
@@ -207,7 +207,7 @@ describe(`${ROLES.Security} tournament 角色测试`, () => {
     )
   })
 
-  test('安监可因安全问题取消比赛', () => {
+  it('安监可因安全问题取消比赛', () => {
     const svc = createService()
     const t = createAndOpenTournament(svc)
     const cancelled = svc.updateTournamentStatus(t.id, TournamentStatus.Cancelled, TENANT)
@@ -217,7 +217,7 @@ describe(`${ROLES.Security} tournament 角色测试`, () => {
 
 // ── 🎮导玩员 ──
 describe(`${ROLES.Guide} tournament 角色测试`, () => {
-  test('导玩员可查看会员即将到来的比赛', () => {
+  it('导玩员可查看会员即将到来的比赛', () => {
     const svc = createService()
     const t = createAndOpenTournament(svc, { type: TournamentType.RoundRobin })
     svc.registerParticipant(t.id, 'guide-p1', TENANT)
@@ -229,7 +229,7 @@ describe(`${ROLES.Guide} tournament 角色测试`, () => {
     assert.ok(upcoming.length > 0)
   })
 
-  test('导玩员可查看比赛排名', () => {
+  it('导玩员可查看比赛排名', () => {
     const svc = createService()
     const t = createAndOpenTournament(svc, { type: TournamentType.RoundRobin })
     svc.registerParticipant(t.id, 'guide-p1', TENANT)
@@ -246,7 +246,7 @@ describe(`${ROLES.Guide} tournament 角色测试`, () => {
 
 // ── 🎯运行专员 ──
 describe(`${ROLES.Operations} tournament 角色测试`, () => {
-  test('运行专员可生成淘汰赛对阵表', () => {
+  it('运行专员可生成淘汰赛对阵表', () => {
     const svc = createService()
     const t = createAndOpenTournament(svc, { type: TournamentType.SingleElimination })
     svc.registerParticipant(t.id, 'ops-p1', TENANT)
@@ -260,7 +260,7 @@ describe(`${ROLES.Operations} tournament 角色测试`, () => {
     assert.equal(updatedT?.status, TournamentStatus.Ongoing)
   })
 
-  test('运行专员可录入比赛结果', () => {
+  it('运行专员可录入比赛结果', () => {
     const svc = createService()
     const t = createAndOpenTournament(svc, { type: TournamentType.RoundRobin })
     svc.registerParticipant(t.id, 'ops-p1', TENANT)
@@ -272,7 +272,7 @@ describe(`${ROLES.Operations} tournament 角色测试`, () => {
     assert.equal(result.winnerId, matches[0].player1Id)
   })
 
-  test('运行专员不可重复录入比赛结果', () => {
+  it('运行专员不可重复录入比赛结果', () => {
     const svc = createService()
     const t = createAndOpenTournament(svc, { type: TournamentType.RoundRobin })
     svc.registerParticipant(t.id, 'ops-p1', TENANT)
@@ -290,7 +290,7 @@ describe(`${ROLES.Operations} tournament 角色测试`, () => {
 
 // ── 🤝团建 ──
 describe(`${ROLES.Teambuilding} tournament 角色测试`, () => {
-  test('团建可审批团队报名', () => {
+  it('团建可审批团队报名', () => {
     const svc = createService()
     const t = createAndOpenTournament(svc, { type: TournamentType.League })
     const reg = svc.registerTeam({
@@ -304,7 +304,7 @@ describe(`${ROLES.Teambuilding} tournament 角色测试`, () => {
     assert.equal(approved.status, 'APPROVED')
   })
 
-  test('团建可拒绝团队报名', () => {
+  it('团建可拒绝团队报名', () => {
     const svc = createService()
     const t = createAndOpenTournament(svc, { type: TournamentType.League })
     const reg = svc.registerTeam({
@@ -318,7 +318,7 @@ describe(`${ROLES.Teambuilding} tournament 角色测试`, () => {
     assert.equal(rejected.status, 'REJECTED')
   })
 
-  test('团建可查看报名团队列表', () => {
+  it('团建可查看报名团队列表', () => {
     const svc = createService()
     const t = createAndOpenTournament(svc)
     svc.registerTeam({ tournamentId: t.id, teamName: 'A', captainId: 'm1', memberIds: ['m1'] }, TENANT)
@@ -331,7 +331,7 @@ describe(`${ROLES.Teambuilding} tournament 角色测试`, () => {
 
 // ── 📢营销 ──
 describe(`${ROLES.Marketing} tournament 角色测试`, () => {
-  test('营销可创建营销活动比赛', () => {
+  it('营销可创建营销活动比赛', () => {
     const svc = createService()
     const t = svc.createTournament({
       tenantId: TENANT,
@@ -356,7 +356,7 @@ describe(`${ROLES.Marketing} tournament 角色测试`, () => {
     assert.equal(t.status, TournamentStatus.Draft)
   })
 
-  test('营销可查看所有类型比赛的排名用于宣传', () => {
+  it('营销可查看所有类型比赛的排名用于宣传', () => {
     const svc = createService()
     const t = createAndOpenTournament(svc, { type: TournamentType.RoundRobin })
     svc.registerParticipant(t.id, 'mkt-p1', TENANT)
@@ -384,7 +384,7 @@ describe(`${ROLES.Marketing} tournament 角色测试`, () => {
     }
   })
 
-  test('营销不可操作其他租户的比赛', () => {
+  it('营销不可操作其他租户的比赛', () => {
     const svc = createService()
     const t = svc.createTournament({
       tenantId: TENANT,

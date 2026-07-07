@@ -1,0 +1,68 @@
+# docker-compose.dev.yml · Phase-19 RAG 基础设施
+#
+# 用途:
+#   本地启动 Qdrant 向量数据库,为 Phase-19 AI Code Reviewer / RAG 检索服务提供向量存储。
+#   与 infra/docker/docker-compose.dev.yml (postgres / redis / rabbitmq / minio) 并列存在,
+#   命名空间 `shenjiying-*` 避免与主 monorepo 容器冲突。
+#
+# 启动:
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml down       # 停止 + 保留 volume
+#   docker compose -f docker-compose.dev.yml down -v    # 停止 + 删 volume (重置索引)
+#
+# 健康检查:
+#   curl http://localhost:6333/healthz   # 期望返回 {"status":"ok"}
+#   curl http://localhost:6333/          # 列出 collections
+#
+# 端口说明:
+#   6333 - HTTP REST API (NestJS RetrievalService 调用此端口)
+#   6334 - gRPC API (内部使用,本次脚手架未启用)
+#
+# ⚠️  注意: 当前 Pulse-19 仅创建脚手架,实际 docker compose up 由 Pulse-71 ~ Pulse-72 执行。
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.10.0
+    container_name: shenjiying-qdrant
+    restart: unless-stopped
+    # 仅监听本地,避免公网暴露 (参见 rag-architecture.md §8 安全)
+    ports:
+      - "127.0.0.1:6333:6333"   # REST API
+      - "127.0.0.1:6334:6334"   # gRPC API
+    environment:
+      # Qdrant 关键配置: 启用 telemetry 关闭 (避免外发数据) + 启用调试日志可选
+      QDRANT__SERVICE__ENABLE_TELEMETRY: "false"
+      QDRANT__LOG_LEVEL: "INFO"
+      # 集合预创建 (Pulse-71 后由 NestJS 启动 hook 创建)
+      QDRANT__COLLECTION__NAME: "shenjiying_code_chunks"
+    volumes:
+      - qdrant_storage:/qdrant/storage          # 向量数据 + HNSW 索引
+      - qdrant_snapshots:/qdrant/snapshots      # 快照备份 (Phase-22 增量索引用)
+    # 资源限制 (开发环境保守值,生产由 K8s 管控)
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+    healthcheck:
+      # Qdrant 1.10+ 自带 /healthz 端点
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:6333/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    networks:
+      - shenjiying-rag-net
+
+volumes:
+  qdrant_storage:
+    name: shenjiying_qdrant_storage
+    driver: local
+  qdrant_snapshots:
+    name: shenjiying_qdrant_snapshots
+    driver: local
+
+networks:
+  shenjiying-rag-net:
+    name: shenjiying-rag-net
+    driver: bridge

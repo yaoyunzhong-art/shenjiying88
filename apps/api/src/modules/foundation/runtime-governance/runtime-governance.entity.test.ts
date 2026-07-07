@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [runtime-governance] [D] entity 测试补全
  *
@@ -6,7 +7,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import type {
   RuntimeGovernanceReceipt,
   RuntimeGovernanceActionState,
@@ -29,7 +29,7 @@ import type {
 } from './runtime-governance.entity'
 
 describe('runtime-governance entity type exports', () => {
-  test('RuntimeGovernanceReceipt 类型可被构造', () => {
+  it('RuntimeGovernanceReceipt 类型可被构造', () => {
     const receipt: RuntimeGovernanceReceipt = {
       receiptCode: 'test-001',
       app: 'admin-web',
@@ -53,12 +53,12 @@ describe('runtime-governance entity type exports', () => {
     assert.equal(receipt.receiptCode, 'test-001')
   })
 
-  test('RuntimeGovernanceReceipt state 枚举值被正确推断', () => {
+  it('RuntimeGovernanceReceipt state 枚举值被正确推断', () => {
     const states: RuntimeGovernanceActionState[] = ['submitted', 'blocked', 'challenge-issued', 'callback-recorded', 'replay-scheduled']
     assert.ok(states.length === 5)
   })
 
-  test('RuntimeGovernanceApproval 类型可被构造', () => {
+  it('RuntimeGovernanceApproval 类型可被构造', () => {
     const approval: RuntimeGovernanceApproval = {
       required: true,
       ticket: 'APR-001',
@@ -73,7 +73,7 @@ describe('runtime-governance entity type exports', () => {
     assert.equal(approval.status, 'PENDING')
   })
 
-  test('RuntimeGovernanceEventRecord 类型可被构造', () => {
+  it('RuntimeGovernanceEventRecord 类型可被构造', () => {
     const event: RuntimeGovernanceEventRecord = {
       eventType: 'runtime-governance.action.submitted',
       status: 'accepted',
@@ -85,7 +85,7 @@ describe('runtime-governance entity type exports', () => {
     assert.equal(event.eventType, 'runtime-governance.action.submitted')
   })
 
-  test('RuntimeGovernanceSubmitRequest 类型可被构造', () => {
+  it('RuntimeGovernanceSubmitRequest 类型可被构造', () => {
     const req: RuntimeGovernanceSubmitRequest = {
       app: 'admin-web',
       action: 'runtime-replay',
@@ -102,7 +102,7 @@ describe('runtime-governance entity type exports', () => {
     assert.equal(req.app, 'admin-web')
   })
 
-  test('RuntimeGovernanceSyncRequest 类型可被构造', () => {
+  it('RuntimeGovernanceSyncRequest 类型可被构造', () => {
     const req: RuntimeGovernanceSyncRequest = {
       handlerName: 'test-handler',
       ticketCode: 'T-001',
@@ -111,7 +111,7 @@ describe('runtime-governance entity type exports', () => {
     assert.equal(req.handlerName, 'test-handler')
   })
 
-  test('RuntimeGovernanceCallbackRequest 类型可被构造', () => {
+  it('RuntimeGovernanceCallbackRequest 类型可被构造', () => {
     const req: RuntimeGovernanceCallbackRequest = {
       callbackStatus: 'callback-recorded',
       ackToken: 'ack-001',
@@ -122,7 +122,7 @@ describe('runtime-governance entity type exports', () => {
     assert.equal(req.callbackStatus, 'callback-recorded')
   })
 
-  test('RuntimeGovernanceReplayRequest 类型可被构造', () => {
+  it('RuntimeGovernanceReplayRequest 类型可被构造', () => {
     const req: RuntimeGovernanceReplayRequest = {
       ledgerKey: 'ledger:001',
       requestedFrom: 'TOB_WEB_RUNTIME',
@@ -132,7 +132,7 @@ describe('runtime-governance entity type exports', () => {
     assert.equal(req.requestedFrom, 'TOB_WEB_RUNTIME')
   })
 
-  test('RuntimeGovernanceCallbackStallDetail 类型可被构造', () => {
+  it('RuntimeGovernanceCallbackStallDetail 类型可被构造', () => {
     const detail: RuntimeGovernanceCallbackStallDetail = {
       receiptCode: 'rcpt-001',
       app: 'admin-web',
@@ -155,7 +155,7 @@ describe('runtime-governance entity type exports', () => {
     assert.equal(detail.receiptCode, 'rcpt-001')
   })
 
-  test('RuntimeGovernanceOperationsOverviewSummary 类型可被构造', () => {
+  it('RuntimeGovernanceOperationsOverviewSummary 类型可被构造', () => {
     const summary: RuntimeGovernanceOperationsOverviewSummary = {
       backlog: 10,
       stalledCallbacks: 3,
@@ -165,7 +165,7 @@ describe('runtime-governance entity type exports', () => {
     assert.equal(summary.backlog, 10)
   })
 
-  test('RuntimeGovernanceOperationsOverview 类型可被构造', () => {
+  it('RuntimeGovernanceOperationsOverview 类型可被构造', () => {
     const overview: RuntimeGovernanceOperationsOverview = {
       generatedAt: new Date().toISOString(),
       appliedFilter: {} as RuntimeGovernanceOverviewFilter,
@@ -186,7 +186,7 @@ describe('runtime-governance entity type exports', () => {
     assert.equal(overview.batchSummary.filteredReceipts, 0)
   })
 
-  test('RuntimeGovernanceRateLimitDecision 类型可被构造', () => {
+  it('RuntimeGovernanceRateLimitDecision 类型可被构造', () => {
     const decision: RuntimeGovernanceRateLimitDecision = {
       allowed: true,
       limit: 12,

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [health] [C] 角色测试扩展编写
  *
@@ -11,7 +12,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { HealthController } from './health.controller'
 import { HealthStatus, type HealthCheckResult, type ComponentHealth } from './health.entity'
 import {
@@ -77,7 +77,7 @@ function defaultComponents(): ComponentHealth[] {
 // 👔 店长 — 全局运维监管
 // ════════════════════════════════════════════════════════════════
 describe(`${ROLES.TenantAdmin} health 扩展角色测试`, () => {
-  test('店长查看完整 readiness 含 verbose 模式下的额外组件', async () => {
+  it('店长查看完整 readiness 含 verbose 模式下的额外组件', async () => {
     const { controller } = createHealthControllerWithComponents([
       ...defaultComponents(),
       { name: 'redis', status: HealthStatus.Ok, latencyMs: 10, detail: { connected: true } },
@@ -100,7 +100,7 @@ describe(`${ROLES.TenantAdmin} health 扩展角色测试`, () => {
     assert.ok(result.components.some((c: ComponentHealth) => c.name === 'disk'))
   })
 
-  test('店长查看降级状态 — 数据库不可用时整体状态为 DEGRADED', async () => {
+  it('店长查看降级状态 — 数据库不可用时整体状态为 DEGRADED', async () => {
     const { controller } = createHealthControllerWithComponents([
       { name: 'database', status: HealthStatus.Unavailable, latencyMs: 5000, detail: { error: 'connection refused' } },
       { name: 'lyt-adapter', status: HealthStatus.Ok, latencyMs: 2, detail: { mode: 'mock' } }
@@ -119,7 +119,7 @@ describe(`${ROLES.TenantAdmin} health 扩展角色测试`, () => {
     assert.equal(dbComponent.status, HealthStatus.Unavailable)
   })
 
-  test('店长查看 uptime 语义合理性 — 不为负值且大于 0', async () => {
+  it('店长查看 uptime 语义合理性 — 不为负值且大于 0', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents(), { uptimeSeconds: 86400 })
 
     const result = await controller.getReadiness(
@@ -138,7 +138,7 @@ describe(`${ROLES.TenantAdmin} health 扩展角色测试`, () => {
 // 🛒 前台 — 日常接待确认系统可用
 // ════════════════════════════════════════════════════════════════
 describe(`${ROLES.Reception} health 扩展角色测试`, () => {
-  test('前台连续调用 ping 确认系统稳定', async () => {
+  it('前台连续调用 ping 确认系统稳定', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents())
 
     for (let i = 0; i < 3; i++) {
@@ -150,7 +150,7 @@ describe(`${ROLES.Reception} health 扩展角色测试`, () => {
     }
   })
 
-  test('前台通过 getHealth 获取基础健康状态 — 根路径同 ping', async () => {
+  it('前台通过 getHealth 获取基础健康状态 — 根路径同 ping', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents())
 
     const result = await controller.getHealth()
@@ -158,7 +158,7 @@ describe(`${ROLES.Reception} health 扩展角色测试`, () => {
     assert.ok(result.timestamp)
   })
 
-  test('前台无权访问 readiness — 元数据验证角色白名单不包含', () => {
+  it('前台无权访问 readiness — 元数据验证角色白名单不包含', () => {
     const roles = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     // 前台人员角色通常为 RECEPTION / FRONT_DESK / CASHIER
     assert.ok(!roles.includes('RECEPTION'))
@@ -171,7 +171,7 @@ describe(`${ROLES.Reception} health 扩展角色测试`, () => {
 // 👥 HR — 员工数据确认系统可用
 // ════════════════════════════════════════════════════════════════
 describe(`${ROLES.HR} health 扩展角色测试`, () => {
-  test('HR 多次调用 ping 时间戳递增', async () => {
+  it('HR 多次调用 ping 时间戳递增', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents())
 
     const r1 = await controller.getPing()
@@ -183,14 +183,14 @@ describe(`${ROLES.HR} health 扩展角色测试`, () => {
     assert.ok(ts2 >= ts1)
   })
 
-  test('HR 调用 getHealth 返回 alive=true', async () => {
+  it('HR 调用 getHealth 返回 alive=true', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents())
 
     const result = await controller.getHealth()
     assert.deepStrictEqual(result, { alive: true, timestamp: result.timestamp })
   })
 
-  test('HR 无 readiness 权限 — 角色不在白名单', () => {
+  it('HR 无 readiness 权限 — 角色不在白名单', () => {
     const roles: string[] = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     const hasHR = roles.some((r) => r.toLowerCase().includes('hr') || r.includes('HUMAN_RESOURCES'))
     assert.equal(hasHR, false)
@@ -201,7 +201,7 @@ describe(`${ROLES.HR} health 扩展角色测试`, () => {
 // 🔧 安监 — 安全合规检查，关注系统完整性和异常检测
 // ════════════════════════════════════════════════════════════════
 describe(`${ROLES.Safety} health 扩展角色测试`, () => {
-  test('安监检查组件延迟合理性 — 无负值延迟', async () => {
+  it('安监检查组件延迟合理性 — 无负值延迟', async () => {
     const { controller } = createHealthControllerWithComponents([
       { name: 'database', status: HealthStatus.Ok, latencyMs: 12, detail: { connected: true } },
       { name: 'lyt-adapter', status: HealthStatus.Ok, latencyMs: 5, detail: { mode: 'mock' } },
@@ -219,7 +219,7 @@ describe(`${ROLES.Safety} health 扩展角色测试`, () => {
     }
   })
 
-  test('安监检查唯一状态约束 — 组件状态只能是 Ok/Degraded/Unavailable', async () => {
+  it('安监检查唯一状态约束 — 组件状态只能是 Ok/Degraded/Unavailable', async () => {
     const { controller } = createHealthControllerWithComponents([
       { name: 'database', status: HealthStatus.Ok, latencyMs: 3, detail: {} },
       { name: 'lyt-adapter', status: HealthStatus.Ok, latencyMs: 1, detail: {} }
@@ -238,7 +238,7 @@ describe(`${ROLES.Safety} health 扩展角色测试`, () => {
     }
   })
 
-  test('安监检查 lytMode 始终是字符串类型', async () => {
+  it('安监检查 lytMode 始终是字符串类型', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents(), { lytMode: 'mock' })
 
     const result = await controller.getReadiness(
@@ -256,7 +256,7 @@ describe(`${ROLES.Safety} health 扩展角色测试`, () => {
 // 🎮 导玩员 — 游戏设备区服务可用性确认
 // ════════════════════════════════════════════════════════════════
 describe(`${ROLES.Guide} health 扩展角色测试`, () => {
-  test('导玩员调用 getHealth 确认服务可用后再引导顾客', async () => {
+  it('导玩员调用 getHealth 确认服务可用后再引导顾客', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents())
 
     const result = await controller.getHealth()
@@ -264,14 +264,14 @@ describe(`${ROLES.Guide} health 扩展角色测试`, () => {
     assert.ok(result.timestamp)
   })
 
-  test('导玩员调用 ping 确认对接正常', async () => {
+  it('导玩员调用 ping 确认对接正常', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents())
 
     const result = await controller.getPing()
     assert.equal(result.alive, true)
   })
 
-  test('导玩员无法绕过权限访问 readiness — 元数据角色白名单验证', () => {
+  it('导玩员无法绕过权限访问 readiness — 元数据角色白名单验证', () => {
     const roles: string[] = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     assert.ok(!roles.includes('GUIDE'))
     assert.ok(!roles.includes('GAME_HOST'))
@@ -283,7 +283,7 @@ describe(`${ROLES.Guide} health 扩展角色测试`, () => {
 // 🎯 运行专员 — 运维排障，关注组件明细与耗时
 // ════════════════════════════════════════════════════════════════
 describe(`${ROLES.Ops} health 扩展角色测试`, () => {
-  test('运行专员查看 readiness 时所有组件含 detail', async () => {
+  it('运行专员查看 readiness 时所有组件含 detail', async () => {
     const { controller } = createHealthControllerWithComponents([
       { name: 'database', status: HealthStatus.Ok, latencyMs: 7, detail: { connected: true, poolSize: 10 } },
       { name: 'lyt-adapter', status: HealthStatus.Ok, latencyMs: 2, detail: { mode: 'mock', contracts: 3 } },
@@ -302,7 +302,7 @@ describe(`${ROLES.Ops} health 扩展角色测试`, () => {
     }
   })
 
-  test('运行专员按组件排序验证 — 组件顺序稳定', async () => {
+  it('运行专员按组件排序验证 — 组件顺序稳定', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents())
 
     const r1 = await controller.getReadiness(
@@ -322,7 +322,7 @@ describe(`${ROLES.Ops} health 扩展角色测试`, () => {
     }
   })
 
-  test('运行专员查看空 verbose 时组件数量为 2（database + lyt-adapter）', async () => {
+  it('运行专员查看空 verbose 时组件数量为 2（database + lyt-adapter）', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents())
 
     const result = await controller.getReadiness(
@@ -340,7 +340,7 @@ describe(`${ROLES.Ops} health 扩展角色测试`, () => {
 // 🤝 团建 — 团队活动系统可用性确认
 // ════════════════════════════════════════════════════════════════
 describe(`${ROLES.Teambuilding} health 扩展角色测试`, () => {
-  test('团建调用 getHealth/ping 均可确认系统可用', async () => {
+  it('团建调用 getHealth/ping 均可确认系统可用', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents())
 
     const h = await controller.getHealth()
@@ -350,7 +350,7 @@ describe(`${ROLES.Teambuilding} health 扩展角色测试`, () => {
     assert.equal(h.timestamp, p.timestamp)
   })
 
-  test('团建重复调用 ping 返回一致格式', async () => {
+  it('团建重复调用 ping 返回一致格式', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents())
 
     for (let i = 0; i < 5; i++) {
@@ -361,7 +361,7 @@ describe(`${ROLES.Teambuilding} health 扩展角色测试`, () => {
     }
   })
 
-  test('团建无权访问 readiness — 元数据验证不包含 TEAMBUILDING', () => {
+  it('团建无权访问 readiness — 元数据验证不包含 TEAMBUILDING', () => {
     const roles: string[] = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     assert.ok(!roles.includes('TEAMBUILDING'))
     assert.ok(!roles.includes('TEAMBUILD'))
@@ -372,21 +372,21 @@ describe(`${ROLES.Teambuilding} health 扩展角色测试`, () => {
 // 📢 营销 — 活动推广前确认系统稳定
 // ════════════════════════════════════════════════════════════════
 describe(`${ROLES.Marketing} health 扩展角色测试`, () => {
-  test('营销通过 ping 确认系统可用以执行推送活动', async () => {
+  it('营销通过 ping 确认系统可用以执行推送活动', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents())
 
     const result = await controller.getPing()
     assert.equal(result.alive, true)
   })
 
-  test('营销通过 getHealth 确认后开展线上活动', async () => {
+  it('营销通过 getHealth 确认后开展线上活动', async () => {
     const { controller } = createHealthControllerWithComponents(defaultComponents())
 
     const result = await controller.getHealth()
     assert.equal(result.alive, true)
   })
 
-  test('营销无 readiness 角色 — 元数据验证不包含 MARKETING/PROMOTION', () => {
+  it('营销无 readiness 角色 — 元数据验证不包含 MARKETING/PROMOTION', () => {
     const roles: string[] = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     assert.ok(!roles.includes('MARKETING'))
     assert.ok(!roles.includes('PROMOTION'))
@@ -397,7 +397,7 @@ describe(`${ROLES.Marketing} health 扩展角色测试`, () => {
 // 🌐 元数据深度回归 — 涵盖角色+权限+scope 三要素
 // ════════════════════════════════════════════════════════════════
 describe('health 元数据深度回归', () => {
-  test('readiness 端点明确要求 4 个运维角色', () => {
+  it('readiness 端点明确要求 4 个运维角色', () => {
     const roles: string[] = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     assert.deepStrictEqual(
       [...roles].sort(),
@@ -405,12 +405,12 @@ describe('health 元数据深度回归', () => {
     )
   })
 
-  test('readiness 端点要求 foundation.governance.read 权限', () => {
+  it('readiness 端点要求 foundation.governance.read 权限', () => {
     const permissions = Reflect.getMetadata(PERMISSIONS_METADATA_KEY, HealthController.prototype.getReadiness)
     assert.deepStrictEqual(permissions, ['foundation.governance.read'])
   })
 
-  test('getHealth / getPing 无角色与权限元数据', () => {
+  it('getHealth / getPing 无角色与权限元数据', () => {
     for (const method of ['getHealth', 'getPing'] as const) {
       const roles = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype[method])
       const permissions = Reflect.getMetadata(PERMISSIONS_METADATA_KEY, HealthController.prototype[method])
@@ -419,12 +419,12 @@ describe('health 元数据深度回归', () => {
     }
   })
 
-  test('tenantScope 元数据存在且为空对象', () => {
+  it('tenantScope 元数据存在且为空对象', () => {
     const scope = Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, HealthController.prototype.getReadiness)
     assert.deepStrictEqual(scope, {})
   })
 
-  test('所有允许角色的 actor 均应携带 foundation.governance.read 权限', () => {
+  it('所有允许角色的 actor 均应携带 foundation.governance.read 权限', () => {
     const roles: string[] = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     const permissions: string[] = Reflect.getMetadata(PERMISSIONS_METADATA_KEY, HealthController.prototype.getReadiness)
 
@@ -433,7 +433,7 @@ describe('health 元数据深度回归', () => {
     assert.equal(permissions.length, 1)
   })
 
-  test('不允许的角色即使携带权限也无法通过元数据检查', () => {
+  it('不允许的角色即使携带权限也无法通过元数据检查', () => {
     const roles: string[] = Reflect.getMetadata(ROLES_METADATA_KEY, HealthController.prototype.getReadiness)
     // GUIDE 不在白名单
     assert.ok(!roles.includes('GUIDE'))

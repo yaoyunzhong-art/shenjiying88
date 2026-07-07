@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   ReservationType,
   ReservationStatus,
@@ -8,14 +8,14 @@ import {
 } from './reservation.entity'
 
 describe('reservation.entity enums', () => {
-  test('ReservationType 包含 Venue / Equipment / Service / Class', () => {
+  it('ReservationType 包含 Venue / Equipment / Service / Class', () => {
     assert.equal(ReservationType.Venue, 'venue')
     assert.equal(ReservationType.Equipment, 'equipment')
     assert.equal(ReservationType.Service, 'service')
     assert.equal(ReservationType.Class, 'class')
   })
 
-  test('ReservationStatus 包含 5 种状态', () => {
+  it('ReservationStatus 包含 5 种状态', () => {
     assert.equal(ReservationStatus.Pending, 'pending')
     assert.equal(ReservationStatus.Confirmed, 'confirmed')
     assert.equal(ReservationStatus.InProgress, 'in_progress')
@@ -25,43 +25,43 @@ describe('reservation.entity enums', () => {
 })
 
 describe('reservation.entity RESERVATION_STATUS_TRANSITIONS', () => {
-  test('Pending → Confirmed / Cancelled', () => {
+  it('Pending → Confirmed / Cancelled', () => {
     assert.deepEqual(RESERVATION_STATUS_TRANSITIONS[ReservationStatus.Pending], [
       ReservationStatus.Confirmed,
       ReservationStatus.Cancelled
     ])
   })
 
-  test('Confirmed → InProgress / Cancelled', () => {
+  it('Confirmed → InProgress / Cancelled', () => {
     assert.deepEqual(RESERVATION_STATUS_TRANSITIONS[ReservationStatus.Confirmed], [
       ReservationStatus.InProgress,
       ReservationStatus.Cancelled
     ])
   })
 
-  test('InProgress → Completed / Cancelled', () => {
+  it('InProgress → Completed / Cancelled', () => {
     assert.deepEqual(RESERVATION_STATUS_TRANSITIONS[ReservationStatus.InProgress], [
       ReservationStatus.Completed,
       ReservationStatus.Cancelled
     ])
   })
 
-  test('Completed — 不可再转换', () => {
+  it('Completed — 不可再转换', () => {
     assert.deepEqual(RESERVATION_STATUS_TRANSITIONS[ReservationStatus.Completed], [])
   })
 
-  test('Cancelled — 不可再转换', () => {
+  it('Cancelled — 不可再转换', () => {
     assert.deepEqual(RESERVATION_STATUS_TRANSITIONS[ReservationStatus.Cancelled], [])
   })
 
-  test('Completed 和 Cancelled 都不允许任何后续转移', () => {
+  it('Completed 和 Cancelled 都不允许任何后续转移', () => {
     assert.equal(RESERVATION_STATUS_TRANSITIONS[ReservationStatus.Completed].length, 0)
     assert.equal(RESERVATION_STATUS_TRANSITIONS[ReservationStatus.Cancelled].length, 0)
   })
 })
 
 describe('reservation.entity ReservationEntity class', () => {
-  test('ReservationEntity 实例包含所有字段', () => {
+  it('ReservationEntity 实例包含所有字段', () => {
     const now = new Date('2026-06-23T12:00:00.000Z')
     const later = new Date('2026-06-23T14:00:00.000Z')
     const entity = Object.assign(new ReservationEntity(), {
@@ -99,7 +99,7 @@ describe('reservation.entity ReservationEntity class', () => {
     assert.equal(entity.remark, '靠窗')
   })
 
-  test('ReservationEntity 可选字段可为 undefined', () => {
+  it('ReservationEntity 可选字段可为 undefined', () => {
     const entity = Object.assign(new ReservationEntity(), {
       id: 'reservation-test-2',
       tenantId: 'tenant-1',

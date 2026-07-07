@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { TenantService } from './tenant.service'
 import type {
   RequestTenantContext,
@@ -45,7 +45,7 @@ function makeGovernanceContext(
 describe('TenantService.resolveTenantContext()', () => {
   const tenantService = new TenantService()
 
-  test('merges actor and tenant contexts correctly', () => {
+  it('merges actor and tenant contexts correctly', () => {
     const result = tenantService.resolveTenantContext(
       makeTenantContext({ tenantId: 't-1', brandId: undefined, storeId: undefined }),
       makeActorContext({ tenantId: undefined, brandId: 'b-1', storeId: undefined }),
@@ -64,7 +64,7 @@ describe('TenantService.resolveTenantContext()', () => {
     assert.deepStrictEqual(result.permissions, ['read'])
   })
 
-  test('returns null actor when no actor context', () => {
+  it('returns null actor when no actor context', () => {
     const result = tenantService.resolveTenantContext(
       makeTenantContext({ tenantId: 't-2', marketCode: 'us-default' }),
       undefined,
@@ -79,7 +79,7 @@ describe('TenantService.resolveTenantContext()', () => {
     assert.deepStrictEqual(result.permissions, [])
   })
 
-  test('falls back to default tenant when no tenant info', () => {
+  it('falls back to default tenant when no tenant info', () => {
     const result = tenantService.resolveTenantContext(
       makeTenantContext({ tenantId: undefined }),
       undefined
@@ -89,7 +89,7 @@ describe('TenantService.resolveTenantContext()', () => {
     assert.equal(result.effectiveMarketCode, 'cn-mainland')
   })
 
-  test('falls back to default marketCode when not provided', () => {
+  it('falls back to default marketCode when not provided', () => {
     const result = tenantService.resolveTenantContext(
       { tenantId: 't-3' } as RequestTenantContext,
       undefined
@@ -98,7 +98,7 @@ describe('TenantService.resolveTenantContext()', () => {
     assert.equal(result.effectiveMarketCode, 'default')
   })
 
-  test('actor tenant takes priority over context tenant', () => {
+  it('actor tenant takes priority over context tenant', () => {
     const result = tenantService.resolveTenantContext(
       makeTenantContext({ tenantId: 't-ctx' }),
       makeActorContext({ tenantId: 't-actor' })
@@ -107,7 +107,7 @@ describe('TenantService.resolveTenantContext()', () => {
     assert.equal(result.effectiveTenantId, 't-actor')
   })
 
-  test('actor brand and store override tenant context', () => {
+  it('actor brand and store override tenant context', () => {
     const result = tenantService.resolveTenantContext(
       makeTenantContext({ brandId: 'b-ctx', storeId: 's-ctx' }),
       makeActorContext({ brandId: 'b-actor', storeId: 's-actor' })
@@ -117,7 +117,7 @@ describe('TenantService.resolveTenantContext()', () => {
     assert.equal(result.effectiveStoreId, 's-actor')
   })
 
-  test('actor without roles/permissions defaults to empty arrays', () => {
+  it('actor without roles/permissions defaults to empty arrays', () => {
     const result = tenantService.resolveTenantContext(
       makeTenantContext(),
       makeActorContext({
@@ -130,7 +130,7 @@ describe('TenantService.resolveTenantContext()', () => {
     assert.deepStrictEqual(result.permissions, [])
   })
 
-  test('actor with tenantId preserves other fields', () => {
+  it('actor with tenantId preserves other fields', () => {
     const result = tenantService.resolveTenantContext(
       makeTenantContext(),
       makeActorContext({ tenantId: 't-x', storeId: 's-5' })

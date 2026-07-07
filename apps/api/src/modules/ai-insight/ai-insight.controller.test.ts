@@ -1,10 +1,10 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-insight] [D] controller 测试
  * AiInsightController 单元测试：正例 + 反例 + 边界
  */
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { AiInsightController } from './ai-insight.controller'
 import { AiInsightService } from './ai-insight.service'
 
@@ -18,7 +18,7 @@ function createController(): AiInsightController {
 
 // ── KPI 看板 ──
 describe('AiInsightController: KPI endpoints', () => {
-  test('GET /kpis returns KPI list', () => {
+  it('GET /kpis returns KPI list', () => {
     const ctrl = createController()
     const result = ctrl.getKPIs(TENANT_ID, { storeId: STORE_ID, category: 'revenue' })
 
@@ -29,13 +29,13 @@ describe('AiInsightController: KPI endpoints', () => {
     }
   })
 
-  test('GET /kpis with no category returns all', () => {
+  it('GET /kpis with no category returns all', () => {
     const ctrl = createController()
     const result = ctrl.getKPIs(TENANT_ID, {})
     assert.ok(result.length > 0)
   })
 
-  test('GET /kpis with category=operation', () => {
+  it('GET /kpis with category=operation', () => {
     const ctrl = createController()
     const result = ctrl.getKPIs(TENANT_ID, { category: 'operation' })
     for (const kpi of result) {
@@ -43,7 +43,7 @@ describe('AiInsightController: KPI endpoints', () => {
     }
   })
 
-  test('GET /kpis/:kpiId returns KPI detail', () => {
+  it('GET /kpis/:kpiId returns KPI detail', () => {
     const ctrl = createController()
     const kpis = ctrl.getKPIs(TENANT_ID, {})
     const result = ctrl.getKPIDetail(kpis[0].id)
@@ -51,13 +51,13 @@ describe('AiInsightController: KPI endpoints', () => {
     assert.equal(result.id, kpis[0].id)
   })
 
-  test('GET /kpis/:kpiId returns undefined for non-existent', () => {
+  it('GET /kpis/:kpiId returns undefined for non-existent', () => {
     const ctrl = createController()
     const result = ctrl.getKPIDetail('no-such-id')
     assert.equal(result, undefined)
   })
 
-  test('GET /kpis with empty storeId returns all stores', () => {
+  it('GET /kpis with empty storeId returns all stores', () => {
     const ctrl = createController()
     const result = ctrl.getKPIs(TENANT_ID, {})
     // 至少应有 3 * 10 = 30 条 KPI（3个门店 × 10个指标）
@@ -67,7 +67,7 @@ describe('AiInsightController: KPI endpoints', () => {
 
 // ── 洞察报告 ──
 describe('AiInsightController: Report endpoints', () => {
-  test('POST /reports generates report', () => {
+  it('POST /reports generates report', () => {
     const ctrl = createController()
     const report = ctrl.generateReport(TENANT_ID, {
       type: 'revenue',
@@ -82,7 +82,7 @@ describe('AiInsightController: Report endpoints', () => {
     assert.ok(report.summary.length > 0)
   })
 
-  test('POST /reports generates member report', () => {
+  it('POST /reports generates member report', () => {
     const ctrl = createController()
     const report = ctrl.generateReport(TENANT_ID, {
       type: 'member',
@@ -94,7 +94,7 @@ describe('AiInsightController: Report endpoints', () => {
     assert.ok(report.data.metrics)
   })
 
-  test('POST /reports generates all 5 types', () => {
+  it('POST /reports generates all 5 types', () => {
     const ctrl = createController()
     const types = ['revenue', 'member', 'attendance', 'game', 'kpi'] as const
     for (const type of types) {
@@ -107,7 +107,7 @@ describe('AiInsightController: Report endpoints', () => {
     }
   })
 
-  test('GET /reports lists generated reports', () => {
+  it('GET /reports lists generated reports', () => {
     const ctrl = createController()
     ctrl.generateReport(TENANT_ID, {
       type: 'revenue',
@@ -124,7 +124,7 @@ describe('AiInsightController: Report endpoints', () => {
     assert.ok(reports.length >= 2)
   })
 
-  test('GET /reports filters by type', () => {
+  it('GET /reports filters by type', () => {
     const ctrl = createController()
     ctrl.generateReport(TENANT_ID, {
       type: 'revenue',
@@ -143,7 +143,7 @@ describe('AiInsightController: Report endpoints', () => {
     }
   })
 
-  test('GET /reports with limit=1 returns at most 1', () => {
+  it('GET /reports with limit=1 returns at most 1', () => {
     const ctrl = createController()
     ctrl.generateReport(TENANT_ID, {
       type: 'kpi',
@@ -158,14 +158,14 @@ describe('AiInsightController: Report endpoints', () => {
 
 // ── 异常检测 ──
 describe('AiInsightController: Anomaly endpoints', () => {
-  test('GET /anomalies lists anomalies', () => {
+  it('GET /anomalies lists anomalies', () => {
     const ctrl = createController()
     const result = ctrl.getAnomalies(TENANT_ID, { limit: 10 })
     assert.ok(Array.isArray(result))
     assert.ok(result.length > 0)
   })
 
-  test('GET /anomalies filters by status=open', () => {
+  it('GET /anomalies filters by status=open', () => {
     const ctrl = createController()
     const result = ctrl.getAnomalies(TENANT_ID, { status: 'open' })
     for (const a of result) {
@@ -173,7 +173,7 @@ describe('AiInsightController: Anomaly endpoints', () => {
     }
   })
 
-  test('GET /anomalies filters by severity=high', () => {
+  it('GET /anomalies filters by severity=high', () => {
     const ctrl = createController()
     const result = ctrl.getAnomalies(TENANT_ID, { severity: 'high' })
     for (const a of result) {
@@ -181,13 +181,13 @@ describe('AiInsightController: Anomaly endpoints', () => {
     }
   })
 
-  test('GET /anomalies with limit', () => {
+  it('GET /anomalies with limit', () => {
     const ctrl = createController()
     const result = ctrl.getAnomalies(TENANT_ID, { limit: 2 })
     assert.ok(result.length <= 2)
   })
 
-  test('POST /anomalies/detect detects anomalies', () => {
+  it('POST /anomalies/detect detects anomalies', () => {
     const ctrl = createController()
     const detected = ctrl.detectAnomalies(TENANT_ID, { storeId: STORE_ID })
     assert.ok(Array.isArray(detected))
@@ -197,7 +197,7 @@ describe('AiInsightController: Anomaly endpoints', () => {
     }
   })
 
-  test('PUT /anomalies/:id/acknowledge acknowledges anomaly', () => {
+  it('PUT /anomalies/:id/acknowledge acknowledges anomaly', () => {
     const ctrl = createController()
     const anomalies = ctrl.getAnomalies(TENANT_ID, { status: 'open', limit: 10 })
     assert.ok(anomalies.length > 0)
@@ -207,7 +207,7 @@ describe('AiInsightController: Anomaly endpoints', () => {
     assert.equal(result.status, 'acknowledged')
   })
 
-  test('PUT /anomalies/:id/resolve resolves anomaly', () => {
+  it('PUT /anomalies/:id/resolve resolves anomaly', () => {
     const ctrl = createController()
     const anomalies = ctrl.getAnomalies(TENANT_ID, { status: 'open', limit: 10 })
     if (anomalies.length > 0) {
@@ -218,7 +218,7 @@ describe('AiInsightController: Anomaly endpoints', () => {
     }
   })
 
-  test('acknowledge non-existent anomaly returns undefined', () => {
+  it('acknowledge non-existent anomaly returns undefined', () => {
     const ctrl = createController()
     const result = ctrl.acknowledgeAnomaly('not-real')
     assert.equal(result, undefined)
@@ -227,7 +227,7 @@ describe('AiInsightController: Anomaly endpoints', () => {
 
 // ── 趋势预测 ──
 describe('AiInsightController: Forecast endpoints', () => {
-  test('POST /forecasts generates forecast', () => {
+  it('POST /forecasts generates forecast', () => {
     const ctrl = createController()
     const trend = ctrl.generateForecast(TENANT_ID, { metric: '日营收', period: 'week' })
 
@@ -237,7 +237,7 @@ describe('AiInsightController: Forecast endpoints', () => {
     assert.ok(trend.confidence >= 0 && trend.confidence <= 1)
   })
 
-  test('POST /forecasts with different metrics', () => {
+  it('POST /forecasts with different metrics', () => {
     const ctrl = createController()
     const metrics = ['日营收', '到店人数', '游戏局数']
 
@@ -248,7 +248,7 @@ describe('AiInsightController: Forecast endpoints', () => {
     }
   })
 
-  test('GET /forecasts/:id retrieves forecast', () => {
+  it('GET /forecasts/:id retrieves forecast', () => {
     const ctrl = createController()
     const created = ctrl.generateForecast(TENANT_ID, { metric: '日营收', period: 'week' })
     const fetched = ctrl.getForecast(created.id)
@@ -258,7 +258,7 @@ describe('AiInsightController: Forecast endpoints', () => {
     assert.equal(fetched.metric, '日营收')
   })
 
-  test('GET /forecasts/:id returns undefined for non-existent', () => {
+  it('GET /forecasts/:id returns undefined for non-existent', () => {
     const ctrl = createController()
     const result = ctrl.getForecast('invalid-id')
     assert.equal(result, undefined)
@@ -267,7 +267,7 @@ describe('AiInsightController: Forecast endpoints', () => {
 
 // ── 仪表盘 ──
 describe('AiInsightController: Dashboard endpoint', () => {
-  test('GET /dashboard returns summary', () => {
+  it('GET /dashboard returns summary', () => {
     const ctrl = createController()
     const dashboard = ctrl.getDashboardSummary(TENANT_ID, { storeId: STORE_ID })
 
@@ -280,7 +280,7 @@ describe('AiInsightController: Dashboard endpoint', () => {
     assert.ok(typeof dashboard.reportCount === 'number')
   })
 
-  test('GET /dashboard without storeId returns tenant-level', () => {
+  it('GET /dashboard without storeId returns tenant-level', () => {
     const ctrl = createController()
     const dashboard = ctrl.getDashboardSummary(TENANT_ID, {})
 
@@ -288,7 +288,7 @@ describe('AiInsightController: Dashboard endpoint', () => {
     assert.equal(dashboard.storeId, undefined)
   })
 
-  test('GET /dashboard includes numeric values for all periods', () => {
+  it('GET /dashboard includes numeric values for all periods', () => {
     const ctrl = createController()
     const dashboard = ctrl.getDashboardSummary(TENANT_ID, { storeId: STORE_ID })
 
@@ -304,19 +304,19 @@ describe('AiInsightController: Dashboard endpoint', () => {
 
 // ── 边界测试 ──
 describe('AiInsightController: Edge cases', () => {
-  test('handles empty storeId query', () => {
+  it('handles empty storeId query', () => {
     const ctrl = createController()
     const result = ctrl.getKPIs(TENANT_ID, { storeId: undefined })
     assert.ok(result.length > 0)
   })
 
-  test('handles empty category query', () => {
+  it('handles empty category query', () => {
     const ctrl = createController()
     const result = ctrl.getKPIs(TENANT_ID, { category: undefined })
     assert.ok(result.length > 0)
   })
 
-  test('handles generateReport without storeId', () => {
+  it('handles generateReport without storeId', () => {
     const ctrl = createController()
     const report = ctrl.generateReport(TENANT_ID, {
       type: 'kpi',
@@ -327,13 +327,13 @@ describe('AiInsightController: Edge cases', () => {
     assert.ok(report.data.metrics)
   })
 
-  test('handles large limit gracefully', () => {
+  it('handles large limit gracefully', () => {
     const ctrl = createController()
     const result = ctrl.getReports(TENANT_ID, { limit: 100 })
     assert.ok(Array.isArray(result))
   })
 
-  test('multiple reports without data corruption', () => {
+  it('multiple reports without data corruption', () => {
     const ctrl = createController()
     const r1 = ctrl.generateReport(TENANT_ID, {
       type: 'revenue',

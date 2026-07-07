@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable, Optional } from '@nestjs/common'
 import {
   hasCapability,
   getRoleBootstrapConfig,
@@ -32,6 +32,10 @@ import { toMarketProfileContract } from '../market/market.contract'
 import { PortalService } from '../portal/portal.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
+  EVENT_BUS_SERVICE,
+  type EventBusService
+} from '../../infrastructure/event-bus/event-bus.module'
+import {
   type WorkbenchActionReplayDto,
   type WorkbenchApprovalExecuteDto,
   type WorkbenchHandlerCallbackDto,
@@ -41,13 +45,45 @@ import {
 } from './workbench.dto'
 import { toRoleWorkbenchContract, toTenantContextContract } from './workbench.contract'
 
+/** EventBus event:receipt 已生成(供 notification 订阅发通知) */
+export const RECEIPT_COMPLETED_EVENT = 'ReceiptCompleted'
+export const RECEIPT_FAILED_EVENT = 'ReceiptFailed'
+
+/** Phase-13 task 12:publish receipt event to EventBus if available */
+async function publishReceiptEvent(
+  bus: EventBusService | undefined,
+  receipt: RuntimeGovernanceReceipt,
+  tenantContext: RequestTenantContext | undefined,
+  actorContext: CurrentActorValue | undefined,
+  status: 'completed' | 'failed'
+): Promise<void> {
+  if (!bus) return
+  const eventName = status === 'completed' ? RECEIPT_COMPLETED_EVENT : RECEIPT_FAILED_EVENT
+  try {
+    await bus.publish(eventName, {
+      receiptCode: receipt.receiptCode,
+      state: receipt.state,
+      tenantId: tenantContext?.tenantId,
+      brandId: tenantContext?.brandId,
+      storeId: tenantContext?.storeId,
+      actorId: actorContext?.actorId
+    }, {
+      tenantId: tenantContext?.tenantId,
+      receiptCode: receipt.receiptCode
+    })
+  } catch {
+    // 不阻断主流程
+  }
+}
+
 @Injectable()
 export class WorkbenchService {
   constructor(
     private readonly marketService: MarketService,
     private readonly portalService: PortalService,
     private readonly foundationService: FoundationService,
-    private readonly runtimeGovernanceService: RuntimeGovernanceService
+    private readonly runtimeGovernanceService: RuntimeGovernanceService,
+    @Optional() @Inject(EVENT_BUS_SERVICE) private readonly eventBus?: EventBusService
   ) {}
 
   getRoleWorkbenches(): RoleWorkbench[] {
@@ -109,7 +145,10 @@ export class WorkbenchService {
         tenantContext,
         actorContext
       )
-    )
+    ).then(async (receipt) => {
+      await publishReceiptEvent(this.eventBus, receipt, tenantContext, actorContext, 'completed')
+      return receipt
+    })
   }
 
   submitSecretRotation(
@@ -138,7 +177,10 @@ export class WorkbenchService {
         tenantContext,
         actorContext
       )
-    )
+    ).then(async (receipt) => {
+      await publishReceiptEvent(this.eventBus, receipt, tenantContext, actorContext, 'completed')
+      return receipt
+    })
   }
 
   submitRuntimeReplay(
@@ -166,7 +208,10 @@ export class WorkbenchService {
         tenantContext,
         actorContext
       )
-    )
+    ).then(async (receipt) => {
+      await publishReceiptEvent(this.eventBus, receipt, tenantContext, actorContext, 'completed')
+      return receipt
+    })
   }
 
   getActionReceipt(receiptCode: string) {

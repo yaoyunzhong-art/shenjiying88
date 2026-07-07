@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { PortalController } from './portal.controller'
 import type { PortalService } from './portal.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -8,12 +8,12 @@ import { LanguageCode, PortalAudience, PortalChannel, PortalScopeType, Storefron
 
 // ---- metadata assertions ----
 
-test('portal controller path metadata is set', () => {
+it('portal controller path metadata is set', () => {
   const path = Reflect.getMetadata('path', PortalController)
   assert.equal(path, 'portals')
 })
 
-test('portal controller getBootstrap route has GET metadata', () => {
+it('portal controller getBootstrap route has GET metadata', () => {
   const method = Reflect.getMetadata('method', PortalController.prototype.getBootstrap)
   const path = Reflect.getMetadata('path', PortalController.prototype.getBootstrap)
 
@@ -21,21 +21,21 @@ test('portal controller getBootstrap route has GET metadata', () => {
   assert.equal(path, 'bootstrap')
 })
 
-test('portal controller getTenantPortal route metadata', () => {
+it('portal controller getTenantPortal route metadata', () => {
   const method = Reflect.getMetadata('method', PortalController.prototype.getTenantPortal)
   const path = Reflect.getMetadata('path', PortalController.prototype.getTenantPortal)
   assert.equal(method, 0)
   assert.equal(path, 'tenant-portal')
 })
 
-test('portal controller getBrandPortal route metadata', () => {
+it('portal controller getBrandPortal route metadata', () => {
   const method = Reflect.getMetadata('method', PortalController.prototype.getBrandPortal)
   const path = Reflect.getMetadata('path', PortalController.prototype.getBrandPortal)
   assert.equal(method, 0)
   assert.equal(path, 'brand-portal')
 })
 
-test('portal controller getStorePortal route metadata', () => {
+it('portal controller getStorePortal route metadata', () => {
   const method = Reflect.getMetadata('method', PortalController.prototype.getStorePortal)
   const path = Reflect.getMetadata('path', PortalController.prototype.getStorePortal)
   assert.equal(method, 0)
@@ -117,7 +117,7 @@ describe('getBootstrap() – happy path', () => {
     marketCode: 'cn-mainland'
   }
 
-  test('returns expected shape from service delegate', () => {
+  it('returns expected shape from service delegate', () => {
     const mockService = {
       getBootstrap: (ctx: RequestTenantContext) => ({ ...mockBootstrapResponse })
     }
@@ -138,7 +138,7 @@ describe('getBootstrap() – happy path', () => {
     assert.equal(result.storePortal.storeName, 's-1 门店')
   })
 
-  test('passes tenantContext through to service', () => {
+  it('passes tenantContext through to service', () => {
     let capturedCtx: RequestTenantContext | undefined
     const mockService = {
       getBootstrap: (ctx: RequestTenantContext) => {
@@ -153,7 +153,7 @@ describe('getBootstrap() – happy path', () => {
     assert.deepStrictEqual(capturedCtx, fullContext)
   })
 
-  test('returns foundationDependencies array', () => {
+  it('returns foundationDependencies array', () => {
     const mockService = {
       getBootstrap: () => ({ ...mockBootstrapResponse })
     }
@@ -164,7 +164,7 @@ describe('getBootstrap() – happy path', () => {
     assert.ok(Array.isArray(result.foundationDependencies))
   })
 
-  test('returns regionalOverrides array', () => {
+  it('returns regionalOverrides array', () => {
     const mockService = {
       getBootstrap: () => ({ ...mockBootstrapResponse })
     }
@@ -179,7 +179,7 @@ describe('getBootstrap() – happy path', () => {
 // ---- boundary / edge-case tests ----
 
 describe('getBootstrap() – boundary cases', () => {
-  test('handles minimal tenant context (tenantId only)', () => {
+  it('handles minimal tenant context (tenantId only)', () => {
     const mockService = {
       getBootstrap: (ctx: RequestTenantContext) => ({
         tenantPortal: { scopeCode: ctx.tenantId },
@@ -199,7 +199,7 @@ describe('getBootstrap() – boundary cases', () => {
     assert.equal(result.tenantPortal.scopeCode, 'min-t-1')
   })
 
-  test('handles undefined brandId in context (portal service uses fallback)', () => {
+  it('handles undefined brandId in context (portal service uses fallback)', () => {
     // The controller simply delegates, so it should not throw when brandId is missing
     const mockService = {
       getBootstrap: (ctx: RequestTenantContext) => ({
@@ -220,7 +220,7 @@ describe('getBootstrap() – boundary cases', () => {
     assert.doesNotThrow(() => controller.getBootstrap(contextWithoutBrand))
   })
 
-  test('handles international market context (en-US)', () => {
+  it('handles international market context (en-US)', () => {
     const mockService = {
       getBootstrap: (ctx: RequestTenantContext) => ({
         tenantPortal: { scopeCode: ctx.tenantId, supportedLanguages: [LanguageCode.EnUs] },
@@ -246,7 +246,7 @@ describe('getBootstrap() – boundary cases', () => {
     assert.equal(result.marketProfile.marketCode, 'us-default')
   })
 
-  test('returns consistent ToB audience for tenant and brand portals', () => {
+  it('returns consistent ToB audience for tenant and brand portals', () => {
     const mockService = {
       getBootstrap: () => ({
         tenantPortal: { audience: PortalAudience.ToB },
@@ -268,7 +268,7 @@ describe('getBootstrap() – boundary cases', () => {
     assert.equal(result.storePortal.audience, PortalAudience.ToC)
   })
 
-  test('handle empty regional overrides', () => {
+  it('handle empty regional overrides', () => {
     const mockService = {
       getBootstrap: () => ({
         tenantPortal: {},
@@ -288,7 +288,7 @@ describe('getBootstrap() – boundary cases', () => {
     assert.equal(result.regionalOverrides.length, 0)
   })
 
-  test('handle populated regional overrides', () => {
+  it('handle populated regional overrides', () => {
     const mockOverrides = [
       { scopeType: 'TENANT', scopeCode: 't-1', inheritanceMode: 'TENANT_DEFAULT', marketCode: 'cn-mainland' }
     ]
@@ -312,7 +312,7 @@ describe('getBootstrap() – boundary cases', () => {
     assert.equal(result.regionalOverrides[0].scopeType, 'TENANT')
   })
 
-  test('returns foundationContracts array', () => {
+  it('returns foundationContracts array', () => {
     const mockService = {
       getBootstrap: () => ({
         tenantPortal: {},
@@ -337,7 +337,7 @@ describe('getBootstrap() – boundary cases', () => {
 // ---- error / negative path ----
 
 describe('getBootstrap() – negative cases', () => {
-  test('throws when service.getBootstrap throws', () => {
+  it('throws when service.getBootstrap throws', () => {
     const mockService = {
       getBootstrap: () => {
         throw new Error('Market not found for context')
@@ -353,7 +353,7 @@ describe('getBootstrap() – negative cases', () => {
     )
   })
 
-  test('does not mutate input tenantContext reference', () => {
+  it('does not mutate input tenantContext reference', () => {
     const original: RequestTenantContext = Object.freeze({
       tenantId: 't-immutable',
       brandId: 'b-immutable'
@@ -387,7 +387,7 @@ const independentCtx: RequestTenantContext = {
 }
 
 describe('getTenantPortal() – happy path', () => {
-  test('返回租户 ToB 门户信息', () => {
+  it('返回租户 ToB 门户信息', () => {
     const mockService = {
       resolveTenantPortal: (ctx: RequestTenantContext) => ({
         audience: PortalAudience.ToB,
@@ -411,7 +411,7 @@ describe('getTenantPortal() – happy path', () => {
     assert.ok(result.loginEntry.ssoEnabled)
   })
 
-  test('租户门户不包含 brandCode / storeCode', () => {
+  it('租户门户不包含 brandCode / storeCode', () => {
     const mockService = {
       resolveTenantPortal: (ctx: RequestTenantContext) => ({
         audience: PortalAudience.ToB,
@@ -434,7 +434,7 @@ describe('getTenantPortal() – happy path', () => {
 })
 
 describe('getBrandPortal() – happy path', () => {
-  test('返回品牌 ToB 门户信息', () => {
+  it('返回品牌 ToB 门户信息', () => {
     const mockService = {
       resolveBrandPortal: (ctx: RequestTenantContext) => ({
         audience: PortalAudience.ToB,
@@ -458,7 +458,7 @@ describe('getBrandPortal() – happy path', () => {
     assert.equal(result.brandCode, 'b-indep')
   })
 
-  test('品牌门户 heroTitle 非空', () => {
+  it('品牌门户 heroTitle 非空', () => {
     const mockService = {
       resolveBrandPortal: () => ({
         audience: PortalAudience.ToB,
@@ -483,7 +483,7 @@ describe('getBrandPortal() – happy path', () => {
 })
 
 describe('getStorePortal() – happy path', () => {
-  test('返回门店 ToC 门户信息', () => {
+  it('返回门店 ToC 门户信息', () => {
     const mockService = {
       resolveStorePortal: (ctx: RequestTenantContext) => ({
         audience: PortalAudience.ToC,
@@ -509,7 +509,7 @@ describe('getStorePortal() – happy path', () => {
     assert.ok(result.storeName)
   })
 
-  test('门店门户含 supportedSurfaces', () => {
+  it('门店门户含 supportedSurfaces', () => {
     const mockService = {
       resolveStorePortal: () => ({
         audience: PortalAudience.ToC,
@@ -542,7 +542,7 @@ describe('getStorePortal() – happy path', () => {
 // ---- new endpoints: boundary / negative cases ----
 
 describe('新 endpoint – 边界和错误场景', () => {
-  test('getTenantPortal 在 service 抛出时向上传播', () => {
+  it('getTenantPortal 在 service 抛出时向上传播', () => {
     const mockService = {
       resolveTenantPortal: () => { throw new Error('Tenant not found') }
     }
@@ -550,7 +550,7 @@ describe('新 endpoint – 边界和错误场景', () => {
     assert.throws(() => ctrl.getTenantPortal(independentCtx), /Tenant not found/)
   })
 
-  test('getBrandPortal 在缺少 brandId 时仍正常工作（由 service 兜底）', () => {
+  it('getBrandPortal 在缺少 brandId 时仍正常工作（由 service 兜底）', () => {
     const mockService = {
       resolveBrandPortal: (ctx: RequestTenantContext) => ({
         audience: PortalAudience.ToB,
@@ -572,7 +572,7 @@ describe('新 endpoint – 边界和错误场景', () => {
     assert.equal(result.brandCode, 'brand-demo')
   })
 
-  test('getStorePortal 国际化市场返回英文', () => {
+  it('getStorePortal 国际化市场返回英文', () => {
     const mockService = {
       resolveStorePortal: () => ({
         audience: PortalAudience.ToC,

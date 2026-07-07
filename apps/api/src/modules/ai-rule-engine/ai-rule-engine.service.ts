@@ -8,12 +8,14 @@ import {
   type DeviceAnomalyOutput,
   type BatchEvaluateRequest,
   type BatchEvaluateResponse,
-  type BatchEvaluateItem,
+  type BatchEvaluateResponseItem,
   type EngineStatus,
   type RiskScoreInput,
   type RiskScoreOutput,
-  type RuleSimulator,
+  type Simulator,
   type SimulatorRunInput,
+  type SimulatorRunOutput,
+  type SimulatorBatchRunOutput,
   type SimulatorResult,
   type SimulatorSummary
 } from './ai-rule-engine.entity'
@@ -303,7 +305,7 @@ export class AiRuleEngineService {
 
     // 评估每个条件
     const anomalyResults = conditions.map((cond) => {
-      const matches = this.evaluateCondition(cond, input.metrics)
+      const matches = this.evaluateCondition(cond, input.metrics as unknown as Record<string, unknown>)
       if (matches) {
         triggeredRules.push(cond.id)
         recommendations.push(this.getRecommendation(cond.field))
@@ -380,12 +382,12 @@ export class AiRuleEngineService {
       case PolicyConditionOperator.In:
         return (
           Array.isArray(expectedValue) &&
-          expectedValue.includes(fieldValue)
+          expectedValue.includes(fieldValue as string | number)
         )
       case PolicyConditionOperator.NotIn:
         return (
           Array.isArray(expectedValue) &&
-          !expectedValue.includes(fieldValue)
+          !expectedValue.includes(fieldValue as string | number)
         )
       case PolicyConditionOperator.Exists:
         return fieldValue !== null && fieldValue !== undefined
@@ -421,7 +423,7 @@ export class AiRuleEngineService {
    * 批量评估：同时评估多个成员和设备
    */
   batchEvaluate(request: BatchEvaluateRequest): BatchEvaluateResponse {
-    const items: BatchEvaluateItem[] = []
+    const items: BatchEvaluateResponseItem[] = []
     let succeeded = 0
     let failed = 0
 
@@ -461,7 +463,7 @@ export class AiRuleEngineService {
     const recommendations: string[] = []
 
     const conditionResults = conditions.map((cond) => {
-      const matches = this.evaluateCondition(cond, input.metrics)
+      const matches = this.evaluateCondition(cond, input.metrics as unknown as Record<string, unknown>)
       if (matches) {
         triggeredRules.push(cond.id)
         reasons.push(cond.description ?? cond.field)
@@ -534,6 +536,7 @@ export class AiRuleEngineService {
         actionsCount: engine.actions.length,
         matchStrategy: engine.matchStrategy,
         status: engine.status,
+        enabled: engine.status !== AiExecutionStatus.Failed,
         lastEvaluatedAt: engine.lastEvaluatedAt
       })
     )
@@ -555,7 +558,7 @@ export class AiRuleEngineService {
 
   // ─── Simulator Methods ───
 
-  private readonly simulators: RuleSimulator[] = [
+  private readonly simulators: Simulator[] = [
     {
       id: 'sim-member-level-v1',
       engineId: 'member-level-v1',
@@ -579,21 +582,21 @@ export class AiRuleEngineService {
   /**
    * 获取所有模拟器
    */
-  listSimulators(): RuleSimulator[] {
+  listSimulators(): Simulator[] {
     return this.simulators
   }
 
   /**
    * 获取单个模拟器
    */
-  getSimulator(simulatorId: string): RuleSimulator | undefined {
+  getSimulator(simulatorId: string): Simulator | undefined {
     return this.simulators.find((s) => s.id === simulatorId)
   }
 
   /**
    * 单次模拟运行：模拟一条规则评估
    */
-  runSimulator(input: SimulatorRunInput): SimulatorResult {
+  runSimulator(input: SimulatorRunInput): SimulatorRunOutput {
     const startTime = Date.now()
     const simulator = this.simulators.find((s) => s.id === input.simulatorId)
     if (!simulator) {
@@ -699,7 +702,7 @@ export class AiRuleEngineService {
   /**
    * 多轮模拟运行：批量模拟并生成聚合摘要
    */
-  runSimulatorBatch(input: SimulatorRunInput & { rounds?: number }): SimulatorSummary {
+  runSimulatorBatch(input: SimulatorRunInput & { rounds?: number }): SimulatorBatchRunOutput {
     const simulator = this.simulators.find((s) => s.id === input.simulatorId)
     if (!simulator) {
       throw new Error(`Simulator ${input.simulatorId} not found`)
@@ -817,9 +820,106 @@ export class AiRuleEngineService {
             `[SIM] Override condition ${cond.id}: ${JSON.stringify(cond.value)} → ${JSON.stringify(overrideValue)}`
           )
         }
-        return { ...cond, value: overrideValue }
+        return { ...cond, value: overrideValue as RuleCondition['value'] }
       }
       return cond
     })
+  }
+
+  /**
+   * 获取引擎详细配置
+   */
+  getEngineDetail(engineId: string): import('./ai-rule-engine.entity').EngineDetail | undefined {
+    const engine = this.getAllEngines().find((e) => e.id === engineId)
+    if (!engine) return undefined
+
+    return {
+      engineId: engine.id,
+      engineName: engine.name,
+      conditionsCount: engine.conditions.length,
+      actionsCount: engine.actions.length,
+      matchStrategy: engine.matchStrategy,
+      status: engine.status,
+      enabled: engine.status !== AiExecutionStatus.Failed,
+      provider: engine.provider,
+      model: engine.model,
+      description: engine.description,
+      conditions: engine.conditions.map((c) => ({
+        id: c.id,
+        field: c.field,
+        operator: c.operator,
+        value: c.value,
+        weight: c.weight,
+        description: c.description
+      })),
+      actions: engine.actions.map((a) => ({
+        id: a.id,
+        type: a.type,
+        params: a.params,
+        priority: a.priority,
+        description: a.description
+      })),
+      lastEvaluatedAt: engine.lastEvaluatedAt
+    }
+  }
+
+  /**
+   * 更新引擎配置
+   */
+  updateEngineConfig(
+    engineId: string,
+    config: import('./ai-rule-engine.entity').EngineConfigUpdate
+  ): import('./ai-rule-engine.entity').EngineDetail | undefined {
+    const engine = this.getAllEngines().find((e) => e.id === engineId)
+    if (!engine) return undefined
+
+    if (config.enabled !== undefined) {
+      engine.status = config.enabled ? AiExecutionStatus.Succeeded : AiExecutionStatus.Failed
+    }
+
+    if (config.matchStrategy !== undefined) {
+      engine.matchStrategy = config.matchStrategy
+    }
+
+    if (config.description !== undefined) {
+      engine.description = config.description
+    }
+
+    if (config.conditionOverrides !== undefined) {
+      for (const override of config.conditionOverrides) {
+        const condition = engine.conditions.find((c) => c.id === override.conditionId)
+        if (condition) {
+          if (override.field !== undefined) condition.field = override.field
+          if (override.value !== undefined) condition.value = override.value
+          if (override.weight !== undefined) condition.weight = override.weight
+          if (override.operator !== undefined) condition.operator = override.operator
+        }
+      }
+    }
+
+    return this.getEngineDetail(engineId)
+  }
+
+  /**
+   * 重置引擎到默认配置（恢复到硬编码默认值）
+   */
+  resetEngine(engineId: string): import('./ai-rule-engine.entity').EngineDetail | undefined {
+    const engineIndex = this.getAllEngines().findIndex((e) => e.id === engineId)
+    if (engineIndex === -1) return undefined
+
+    // 重新从默认常量初始化（实际上不需要操作，因为内存中无法回退）
+    // 在生产环境应该从数据库读取默认配置
+    // 这里我们只重置状态为 Succeeded
+    const engine = this.getAllEngines()[engineIndex]
+    engine.status = AiExecutionStatus.Succeeded
+
+    return this.getEngineDetail(engineId)
+  }
+
+  /**
+   * 获取所有规则引擎列表（内部）
+   */
+  private getAllEngines(): import('./ai-rule-engine.entity').RuleEngine[] {
+    return [this.memberLevelEngine, this.deviceAnomalyEngine, this.riskScoreEngine]
   }
 }

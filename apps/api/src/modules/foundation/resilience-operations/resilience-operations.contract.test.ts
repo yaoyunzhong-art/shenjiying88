@@ -1,8 +1,8 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { ResilienceOperationsService } from './resilience-operations.service'
 
-test('contract: resilience operations exposes observability, retry, and recovery overview', () => {
+it('contract: resilience operations exposes observability, retry, and recovery overview', () => {
   const service = new ResilienceOperationsService()
   const overview = service.getOperationsOverview() as {
     observability: { totalSignals: number; degradedSignals: number; signals: Array<{ signal: string }> }

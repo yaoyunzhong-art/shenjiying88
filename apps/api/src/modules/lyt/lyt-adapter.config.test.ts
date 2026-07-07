@@ -1,9 +1,9 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { ConfigService } from '@nestjs/config'
 import { resolveLytHttpAdapterConfig } from './lyt-adapter.config'
 
-test('resolveLytHttpAdapterConfig returns sandbox defaults without config service', () => {
+it('resolveLytHttpAdapterConfig returns sandbox defaults without config service', () => {
   assert.deepEqual(resolveLytHttpAdapterConfig('sandbox'), {
     baseUrl: 'https://sandbox.lyt.local',
     signingSecret: 'sandbox-lyt-secret',
@@ -12,7 +12,7 @@ test('resolveLytHttpAdapterConfig returns sandbox defaults without config servic
   })
 })
 
-test('resolveLytHttpAdapterConfig returns real defaults without config service', () => {
+it('resolveLytHttpAdapterConfig returns real defaults without config service', () => {
   assert.deepEqual(resolveLytHttpAdapterConfig('real'), {
     baseUrl: 'https://api.lyt.local',
     signingSecret: 'real-lyt-secret',
@@ -21,7 +21,7 @@ test('resolveLytHttpAdapterConfig returns real defaults without config service',
   })
 })
 
-test('resolveLytHttpAdapterConfig uses nested ConfigService overrides', () => {
+it('resolveLytHttpAdapterConfig uses nested ConfigService overrides', () => {
   const config = new ConfigService({
     lyt: {
       adapters: {
@@ -43,7 +43,7 @@ test('resolveLytHttpAdapterConfig uses nested ConfigService overrides', () => {
   })
 })
 
-test('resolveLytHttpAdapterConfig falls back when overrides are blank or invalid', () => {
+it('resolveLytHttpAdapterConfig falls back when overrides are blank or invalid', () => {
   const config = new ConfigService({
     lyt: {
       adapters: {

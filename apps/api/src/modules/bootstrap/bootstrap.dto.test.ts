@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   BootstrapHealthQueryDto,
   BootstrapMetadataQueryDto,
@@ -9,18 +9,18 @@ import {
 } from './bootstrap.dto'
 
 describe('BootstrapHealthQueryDto', () => {
-  test('verbose defaults to undefined', () => {
+  it('verbose defaults to undefined', () => {
     const dto = new BootstrapHealthQueryDto()
     assert.equal(dto.verbose, undefined)
   })
 
-  test('accepts verbose=true', () => {
+  it('accepts verbose=true', () => {
     const dto = new BootstrapHealthQueryDto()
     dto.verbose = true
     assert.equal(dto.verbose, true)
   })
 
-  test('accepts verbose=false', () => {
+  it('accepts verbose=false', () => {
     const dto = new BootstrapHealthQueryDto()
     dto.verbose = false
     assert.equal(dto.verbose, false)
@@ -28,23 +28,23 @@ describe('BootstrapHealthQueryDto', () => {
 })
 
 describe('BootstrapMetadataQueryDto', () => {
-  test('moduleKey defaults to undefined', () => {
+  it('moduleKey defaults to undefined', () => {
     const dto = new BootstrapMetadataQueryDto()
     assert.equal(dto.moduleKey, undefined)
   })
 
-  test('accepts moduleKey filter', () => {
+  it('accepts moduleKey filter', () => {
     const dto = new BootstrapMetadataQueryDto()
     dto.moduleKey = 'foundation'
     assert.equal(dto.moduleKey, 'foundation')
   })
 
-  test('includeContracts defaults to undefined', () => {
+  it('includeContracts defaults to undefined', () => {
     const dto = new BootstrapMetadataQueryDto()
     assert.equal(dto.includeContracts, undefined)
   })
 
-  test('accepts includeContracts=true', () => {
+  it('accepts includeContracts=true', () => {
     const dto = new BootstrapMetadataQueryDto()
     dto.includeContracts = true
     assert.equal(dto.includeContracts, true)
@@ -52,7 +52,7 @@ describe('BootstrapMetadataQueryDto', () => {
 })
 
 describe('BootstrapHealthResponseDto', () => {
-  test('constructs valid response', () => {
+  it('constructs valid response', () => {
     const dto = new BootstrapHealthResponseDto()
     dto.status = 'ok'
     dto.uptime = 123.45
@@ -65,7 +65,7 @@ describe('BootstrapHealthResponseDto', () => {
     assert.equal(dto.checkedAt, '2026-01-15T00:00:00.000Z')
   })
 
-  test('accepts degraded status', () => {
+  it('accepts degraded status', () => {
     const dto = new BootstrapHealthResponseDto()
     dto.status = 'degraded'
     dto.uptime = 0
@@ -77,7 +77,7 @@ describe('BootstrapHealthResponseDto', () => {
 })
 
 describe('BootstrapMetadataResponseDto', () => {
-  test('constructs valid metadata response', () => {
+  it('constructs valid metadata response', () => {
     const dto = new BootstrapMetadataResponseDto()
     dto.tenantContext = { tenantId: 't-1', brandId: 'b-1' }
     dto.foundationDependencies = ['foundation']
@@ -92,7 +92,7 @@ describe('BootstrapMetadataResponseDto', () => {
     assert.equal(dto.generatedAt, '2026-01-15T00:00:00.000Z')
   })
 
-  test('accepts empty dependencies', () => {
+  it('accepts empty dependencies', () => {
     const dto = new BootstrapMetadataResponseDto()
     dto.tenantContext = {}
     dto.foundationDependencies = []

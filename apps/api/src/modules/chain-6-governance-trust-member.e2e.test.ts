@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 跨模块链 #6: governance-approval ↔ trust-governance ↔ member
  *
@@ -22,7 +23,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { randomUUID } from 'node:crypto'
 import { Test } from '@nestjs/testing'
 import { ApprovalStatus, FoundationScopeType } from '@prisma/client'
@@ -272,7 +272,7 @@ function pickTicketAndVersion(snapshot: GovernanceApprovalSnapshot): { ticket: s
 
 // ── Tests ────────────────────────────────────────────────────────────────
 
-test('chain #6: APPROVED member approval writes APPROVED audit log via member recorder', async () => {
+it('chain #6: APPROVED member approval writes APPROVED audit log via member recorder', async () => {
   const h = await buildChainHarness()
   try {
     const ticket = await materialize(h.approvalService, {
@@ -307,7 +307,7 @@ test('chain #6: APPROVED member approval writes APPROVED audit log via member re
   }
 })
 
-test('chain #6: REJECTED member approval writes REJECTED audit log with decision note', async () => {
+it('chain #6: REJECTED member approval writes REJECTED audit log with decision note', async () => {
   const h = await buildChainHarness()
   try {
     const ticket = await materialize(h.approvalService, {
@@ -334,7 +334,7 @@ test('chain #6: REJECTED member approval writes REJECTED audit log with decision
   }
 })
 
-test('chain #6: CANCELLED member approval writes CANCELLED audit log', async () => {
+it('chain #6: CANCELLED member approval writes CANCELLED audit log', async () => {
   const h = await buildChainHarness()
   try {
     const ticket = await materialize(h.approvalService, {
@@ -359,7 +359,7 @@ test('chain #6: CANCELLED member approval writes CANCELLED audit log', async () 
   }
 })
 
-test('chain #6: resubmit superseded approval writes SUPERSEDED + RESUBMITTED audit pair', async () => {
+it('chain #6: resubmit superseded approval writes SUPERSEDED + RESUBMITTED audit pair', async () => {
   const h = await buildChainHarness()
   try {
     const original = await materialize(h.approvalService, {
@@ -396,7 +396,7 @@ test('chain #6: resubmit superseded approval writes SUPERSEDED + RESUBMITTED aud
   }
 })
 
-test('chain #6: APPROVED + EXECUTED writes EXECUTED audit log with operator resolved to requester', async () => {
+it('chain #6: APPROVED + EXECUTED writes EXECUTED audit log with operator resolved to requester', async () => {
   const h = await buildChainHarness()
   try {
     const ticket = await materialize(h.approvalService, {
@@ -428,7 +428,7 @@ test('chain #6: APPROVED + EXECUTED writes EXECUTED audit log with operator reso
   }
 })
 
-test('chain #6: APPROVED + EXECUTION_FAILED writes audit log carrying failureReason', async () => {
+it('chain #6: APPROVED + EXECUTION_FAILED writes audit log carrying failureReason', async () => {
   const h = await buildChainHarness()
   try {
     const ticket = await materialize(h.approvalService, {
@@ -461,7 +461,7 @@ test('chain #6: APPROVED + EXECUTION_FAILED writes audit log carrying failureRea
   }
 })
 
-test('chain #6: member recorder does NOT consume non-member-profile resource types', async () => {
+it('chain #6: member recorder does NOT consume non-member-profile resource types', async () => {
   const h = await buildChainHarness()
   try {
     const ticket = await materialize(h.approvalService, {
@@ -486,7 +486,7 @@ test('chain #6: member recorder does NOT consume non-member-profile resource typ
   }
 })
 
-test('chain #6: disposing member recorder stops further audit writes', async () => {
+it('chain #6: disposing member recorder stops further audit writes', async () => {
   const h = await buildChainHarness()
   h.dispose()
   const ticket = await materialize(h.approvalService, {
@@ -508,7 +508,7 @@ test('chain #6: disposing member recorder stops further audit writes', async () 
 
 
 
-test('chain #6: trust-governance getAuditRecords can find audit by approvalTicket', async () => {
+it('chain #6: trust-governance getAuditRecords can find audit by approvalTicket', async () => {
   const h = await buildChainHarness()
   try {
     const ticket = await materialize(h.approvalService, {
@@ -547,7 +547,7 @@ test('chain #6: trust-governance getAuditRecords can find audit by approvalTicke
   }
 })
 
-test('chain #6: audit log tenantId mirrors approval tenantId across full lifecycle', async () => {
+it('chain #6: audit log tenantId mirrors approval tenantId across full lifecycle', async () => {
   const h = await buildChainHarness()
   try {
     const ticket1 = await materialize(h.approvalService, {
@@ -590,7 +590,7 @@ test('chain #6: audit log tenantId mirrors approval tenantId across full lifecyc
   }
 })
 
-test('chain #6: auditLog.findMany by resourceType/resourceId supports trust-governance audit query shape', async () => {
+it('chain #6: auditLog.findMany by resourceType/resourceId supports trust-governance audit query shape', async () => {
   const h = await buildChainHarness()
   try {
     const ticket = await materialize(h.approvalService, {
@@ -625,7 +625,7 @@ test('chain #6: auditLog.findMany by resourceType/resourceId supports trust-gove
 // Phase-5 Wave-2 🐜5 补强：chain-6 governance-approval↔trust↔member +7 跨模块路径
 // ──────────────────────────────────────────────────────────────────────────
 
-test('e2e phase-5 chain-6: REJECTED approval surfaces in audit records', async () => {
+it('e2e phase-5 chain-6: REJECTED approval surfaces in audit records', async () => {
   const h = await buildChainHarness()
   try {
     const snapshot = await h.approvalService.materializeApproval({
@@ -652,7 +652,7 @@ test('e2e phase-5 chain-6: REJECTED approval surfaces in audit records', async (
   }
 })
 
-test('e2e phase-5 chain-6: trust-governance summarizeAuditRecords counts chain approval events', async () => {
+it('e2e phase-5 chain-6: trust-governance summarizeAuditRecords counts chain approval events', async () => {
   const h = await buildChainHarness()
   try {
     const snapshot = await h.approvalService.materializeApproval({
@@ -677,7 +677,7 @@ test('e2e phase-5 chain-6: trust-governance summarizeAuditRecords counts chain a
   }
 })
 
-test('e2e phase-5 chain-6: member recorder captures audit entry for approval submit', async () => {
+it('e2e phase-5 chain-6: member recorder captures audit entry for approval submit', async () => {
   const h = await buildChainHarness()
   try {
     const snapshot = await h.approvalService.materializeApproval({
@@ -704,7 +704,7 @@ test('e2e phase-5 chain-6: member recorder captures audit entry for approval sub
   }
 })
 
-test('e2e phase-5 chain-6: approval listApprovals returns chain-injected approval', async () => {
+it('e2e phase-5 chain-6: approval listApprovals returns chain-injected approval', async () => {
   const h = await buildChainHarness()
   try {
     await h.approvalService.materializeApproval({
@@ -724,7 +724,7 @@ test('e2e phase-5 chain-6: approval listApprovals returns chain-injected approva
   }
 })
 
-test('e2e phase-5 chain-6: approval service summarizeApprovals groups by member operations', async () => {
+it('e2e phase-5 chain-6: approval service summarizeApprovals groups by member operations', async () => {
   const h = await buildChainHarness()
   try {
     await h.approvalService.materializeApproval({
@@ -752,7 +752,7 @@ test('e2e phase-5 chain-6: approval service summarizeApprovals groups by member 
   }
 })
 
-test('e2e phase-5 chain-6: trust-governance getManagementMetadata returns approval operations with chain-required roles', async () => {
+it('e2e phase-5 chain-6: trust-governance getManagementMetadata returns approval operations with chain-required roles', async () => {
   const h = await buildChainHarness()
   try {
     const { TrustGovernanceService } = await import('./foundation/trust-governance/trust-governance.service')
@@ -767,7 +767,7 @@ test('e2e phase-5 chain-6: trust-governance getManagementMetadata returns approv
   }
 })
 
-test('e2e phase-5 chain-6: approval lifecycle CANCELLED generates audit and removes from pending list', async () => {
+it('e2e phase-5 chain-6: approval lifecycle CANCELLED generates audit and removes from pending list', async () => {
   const h = await buildChainHarness()
   try {
     const snapshot = await h.approvalService.materializeApproval({

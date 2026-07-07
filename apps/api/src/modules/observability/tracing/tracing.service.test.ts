@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * TracingService Unit Tests
  *
@@ -11,7 +12,6 @@
  */
 
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import { trace } from '@opentelemetry/api';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import {
@@ -32,7 +32,7 @@ function findSpan(spans: ReadableSpan[], name: string): ReadableSpan | undefined
 }
 
 describe('TracingService — withSpan 异步', () => {
-  test('正常返回: span 记录 OK 状态', async () => {
+  it('正常返回: span 记录 OK 状态', async () => {
     const svc = new TracingService('test-svc');
     const result = await svc.withSpan('test.op', async (span) => {
       span.setAttribute('tenantId', 't-A');
@@ -46,7 +46,7 @@ describe('TracingService — withSpan 异步', () => {
     assert.equal(testSpan.attributes.tenantId, 't-A');
   });
 
-  test('抛错: span 记录 ERROR + exception + 重新抛', async () => {
+  it('抛错: span 记录 ERROR + exception + 重新抛', async () => {
     const svc = new TracingService('test-svc');
     await assert.rejects(
       svc.withSpan('test.err', async () => {
@@ -62,7 +62,7 @@ describe('TracingService — withSpan 异步', () => {
     assert.ok(errSpan.events.some((e) => e.name === 'exception'));
   });
 
-  test('业务正常完成: span attributes + events 透传', async () => {
+  it('业务正常完成: span attributes + events 透传', async () => {
     const svc = new TracingService('test-svc');
     await svc.withSpan('cashier.createOrder', async (span) => {
       span.setAttribute('orderId', 'o-1');
@@ -82,7 +82,7 @@ describe('TracingService — withSpan 异步', () => {
 });
 
 describe('TracingService — withSpanSync 同步', () => {
-  test('正常返回', () => {
+  it('正常返回', () => {
     const svc = new TracingService('test-svc');
     const result = svc.withSpanSync('sync.op', () => 'done');
     assert.equal(result, 'done');
@@ -93,7 +93,7 @@ describe('TracingService — withSpanSync 同步', () => {
     );
   });
 
-  test('抛错捕获并重新抛', () => {
+  it('抛错捕获并重新抛', () => {
     const svc = new TracingService('test-svc');
     assert.throws(
       () =>
@@ -110,13 +110,13 @@ describe('TracingService — withSpanSync 同步', () => {
 });
 
 describe('TracingService — currentSpan API', () => {
-  test('无 active span 时返回 noop span (不抛错)', () => {
+  it('无 active span 时返回 noop span (不抛错)', () => {
     const svc = new TracingService('test-svc');
     const span = svc.currentSpan();
     assert.ok(span, 'currentSpan 应返回非空 Span (即使 noop)');
   });
 
-  test('active span 内 currentSpan 返回真实 span context', async () => {
+  it('active span 内 currentSpan 返回真实 span context', async () => {
     const svc = new TracingService('test-svc');
     let capturedHasContext = false;
     await svc.withSpan('outer.span', async () => {
@@ -128,7 +128,7 @@ describe('TracingService — currentSpan API', () => {
 });
 
 describe('TRACING_CONFIG', () => {
-  test('应包含 service/version/env/exporter 字段', async () => {
+  it('应包含 service/version/env/exporter 字段', async () => {
     const mod = await import('./tracing');
     const cfg = mod.TRACING_CONFIG;
     assert.equal(typeof cfg.serviceName, 'string');
@@ -138,14 +138,14 @@ describe('TRACING_CONFIG', () => {
     assert.equal(typeof cfg.otlpEndpoint, 'string');
   });
 
-  test('initTracing 幂等且不抛错', async () => {
+  it('initTracing 幂等且不抛错', async () => {
     const mod = await import('./tracing');
     mod.initTracing();
     mod.initTracing();
     // 不抛错即为通过
   });
 
-  test('shutdownTracing 安全调用 (无 SDK)', async () => {
+  it('shutdownTracing 安全调用 (无 SDK)', async () => {
     const mod = await import('./tracing');
     await mod.shutdownTracing();
     assert.ok(true, 'shutdownTracing 在无 SDK 时应直接返回');

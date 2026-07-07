@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: LYT 连接编排引擎 HTTP 链路
  *
@@ -18,7 +19,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -378,7 +378,7 @@ async function buildApp() {
 // Fixtures 端点
 // ---------------------------------------------------------------------------
 
-test('e2e: get fixtures returns all fixture catalog items', async () => {
+it('e2e: get fixtures returns all fixture catalog items', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/lyt/fixtures').set(TENANT_A)
@@ -396,7 +396,7 @@ test('e2e: get fixtures returns all fixture catalog items', async () => {
   }
 })
 
-test('e2e: get fixtures filtered by transport api', async () => {
+it('e2e: get fixtures filtered by transport api', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/lyt/fixtures?transport=api').set(TENANT_A)
@@ -409,7 +409,7 @@ test('e2e: get fixtures filtered by transport api', async () => {
   }
 })
 
-test('e2e: get fixtures filtered by capability', async () => {
+it('e2e: get fixtures filtered by capability', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/lyt/fixtures?capability=member').set(TENANT_A)
@@ -422,7 +422,7 @@ test('e2e: get fixtures filtered by capability', async () => {
   }
 })
 
-test('e2e: get fixture summary returns checklist', async () => {
+it('e2e: get fixture summary returns checklist', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/lyt/fixtures/summary').set(TENANT_A)
@@ -436,7 +436,7 @@ test('e2e: get fixture summary returns checklist', async () => {
   }
 })
 
-test('e2e: get single fixture by valid key', async () => {
+it('e2e: get single fixture by valid key', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/lyt/fixtures/member-query').set(TENANT_A)
@@ -448,7 +448,7 @@ test('e2e: get single fixture by valid key', async () => {
   }
 })
 
-test('e2e: get fixture by unknown key returns 400+', async () => {
+it('e2e: get fixture by unknown key returns 400+', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/lyt/fixtures/nonexistent-key-xyz').set(TENANT_A)
@@ -458,7 +458,7 @@ test('e2e: get fixture by unknown key returns 400+', async () => {
   }
 })
 
-test('e2e: compare fixture returns compare report', async () => {
+it('e2e: compare fixture returns compare report', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -473,7 +473,7 @@ test('e2e: compare fixture returns compare report', async () => {
   }
 })
 
-test('e2e: import fixture preview returns preview contract', async () => {
+it('e2e: import fixture preview returns preview contract', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -488,7 +488,7 @@ test('e2e: import fixture preview returns preview contract', async () => {
   }
 })
 
-test('e2e: import fixture plan returns plan contract', async () => {
+it('e2e: import fixture plan returns plan contract', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -507,7 +507,7 @@ test('e2e: import fixture plan returns plan contract', async () => {
 // Bootstrap
 // ---------------------------------------------------------------------------
 
-test('e2e: bootstrap returns adapter name and foundation info', async () => {
+it('e2e: bootstrap returns adapter name and foundation info', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/lyt/bootstrap').set(TENANT_A)
@@ -525,7 +525,7 @@ test('e2e: bootstrap returns adapter name and foundation info', async () => {
 // Connection 端点
 // ---------------------------------------------------------------------------
 
-test('e2e: get connection for store returns resolved connection', async () => {
+it('e2e: get connection for store returns resolved connection', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/lyt/connection/store-001').set(TENANT_A)
@@ -539,7 +539,7 @@ test('e2e: get connection for store returns resolved connection', async () => {
   }
 })
 
-test('e2e: different tenants get different connections for same store', async () => {
+it('e2e: different tenants get different connections for same store', async () => {
   const { app } = await buildApp()
   try {
     const resA = await request(app.getHttpServer()).get('/lyt/connection/store-001').set(TENANT_A)
@@ -554,7 +554,7 @@ test('e2e: different tenants get different connections for same store', async ()
   }
 })
 
-test('e2e: get connection readiness for store', async () => {
+it('e2e: get connection readiness for store', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -568,7 +568,7 @@ test('e2e: get connection readiness for store', async () => {
   }
 })
 
-test('e2e: get store capability access view', async () => {
+it('e2e: get store capability access view', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -581,7 +581,7 @@ test('e2e: get store capability access view', async () => {
   }
 })
 
-test('e2e: get adapter selection for store', async () => {
+it('e2e: get adapter selection for store', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -598,7 +598,7 @@ test('e2e: get adapter selection for store', async () => {
 // Governance 端点
 // ---------------------------------------------------------------------------
 
-test('e2e: get governance summary', async () => {
+it('e2e: get governance summary', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -611,7 +611,7 @@ test('e2e: get governance summary', async () => {
   }
 })
 
-test('e2e: get governance alerts returns alert contract', async () => {
+it('e2e: get governance alerts returns alert contract', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -629,7 +629,7 @@ test('e2e: get governance alerts returns alert contract', async () => {
 // Device 端点
 // ---------------------------------------------------------------------------
 
-test('e2e: get device status returns online (mock adapter)', async () => {
+it('e2e: get device status returns online (mock adapter)', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/lyt/devices/dev-001/status').set(TENANT_A)
@@ -641,7 +641,7 @@ test('e2e: get device status returns online (mock adapter)', async () => {
   }
 })
 
-test('e2e: get device status for different device', async () => {
+it('e2e: get device status for different device', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/lyt/devices/gate-main/status').set(TENANT_A)
@@ -656,7 +656,7 @@ test('e2e: get device status for different device', async () => {
 // Webhook 端点
 // ---------------------------------------------------------------------------
 
-test('e2e: webhook callback accepts valid payload', async () => {
+it('e2e: webhook callback accepts valid payload', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -676,7 +676,7 @@ test('e2e: webhook callback accepts valid payload', async () => {
   }
 })
 
-test('e2e: webhook callback with empty body still processed (DTO is lenient)', async () => {
+it('e2e: webhook callback with empty body still processed (DTO is lenient)', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -690,7 +690,7 @@ test('e2e: webhook callback with empty body still processed (DTO is lenient)', a
   }
 })
 
-test('e2e: webhook drill dryRun=true returns drill contract', async () => {
+it('e2e: webhook drill dryRun=true returns drill contract', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -709,7 +709,7 @@ test('e2e: webhook drill dryRun=true returns drill contract', async () => {
   }
 })
 
-test('e2e: webhook drill dryRun=false still works', async () => {
+it('e2e: webhook drill dryRun=false still works', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -728,7 +728,7 @@ test('e2e: webhook drill dryRun=false still works', async () => {
   }
 })
 
-test('e2e: webhook replay fixture with valid key', async () => {
+it('e2e: webhook replay fixture with valid key', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -747,7 +747,7 @@ test('e2e: webhook replay fixture with valid key', async () => {
   }
 })
 
-test('e2e: webhook replay fixture strict validation', async () => {
+it('e2e: webhook replay fixture strict validation', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -770,7 +770,7 @@ test('e2e: webhook replay fixture strict validation', async () => {
 // 边界测试
 // ---------------------------------------------------------------------------
 
-test('e2e: no tenant headers still works with defaults', async () => {
+it('e2e: no tenant headers still works with defaults', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/lyt/bootstrap')
@@ -781,7 +781,7 @@ test('e2e: no tenant headers still works with defaults', async () => {
   }
 })
 
-test('e2e: fixtures filter with both transport and capability', async () => {
+it('e2e: fixtures filter with both transport and capability', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -797,7 +797,7 @@ test('e2e: fixtures filter with both transport and capability', async () => {
   }
 })
 
-test('e2e: multiple webhook callbacks are idempotent', async () => {
+it('e2e: multiple webhook callbacks are idempotent', async () => {
   const { app } = await buildApp()
   try {
     const payload = {

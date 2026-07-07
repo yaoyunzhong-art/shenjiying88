@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Member 会员 HTTP 链路
  *
@@ -19,7 +20,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   Body,
   Controller,
@@ -225,7 +225,7 @@ void tenantContextA
 // 现有测试 (13 tests)
 // ──────────────────────────────────────
 
-test('e2e: bootstrap returns member config for tenant', async () => {
+it('e2e: bootstrap returns member config for tenant', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/members/bootstrap').set(TENANT_A)
@@ -240,7 +240,7 @@ test('e2e: bootstrap returns member config for tenant', async () => {
   }
 })
 
-test('e2e: register new member → fetch profile → list shows it', async () => {
+it('e2e: register new member → fetch profile → list shows it', async () => {
   const { app } = await buildApp()
   try {
     const reg = await request(app.getHttpServer())
@@ -266,7 +266,7 @@ test('e2e: register new member → fetch profile → list shows it', async () =>
   }
 })
 
-test('e2e: add points accumulates member balance', async () => {
+it('e2e: add points accumulates member balance', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -290,7 +290,7 @@ test('e2e: add points accumulates member balance', async () => {
   }
 })
 
-test('e2e: upgrade check reports eligibility based on points', async () => {
+it('e2e: upgrade check reports eligibility based on points', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -314,7 +314,7 @@ test('e2e: upgrade check reports eligibility based on points', async () => {
   }
 })
 
-test('e2e: register same memberId twice throws already exists', async () => {
+it('e2e: register same memberId twice throws already exists', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -331,7 +331,7 @@ test('e2e: register same memberId twice throws already exists', async () => {
   }
 })
 
-test('e2e: register member persists tenantContext from headers', async () => {
+it('e2e: register member persists tenantContext from headers', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -347,7 +347,7 @@ test('e2e: register member persists tenantContext from headers', async () => {
   }
 })
 
-test('e2e: members from different tenants coexist in store', async () => {
+it('e2e: members from different tenants coexist in store', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -373,7 +373,7 @@ test('e2e: members from different tenants coexist in store', async () => {
   }
 })
 
-test('e2e: get non-existent member returns 500 (sanitized)', async () => {
+it('e2e: get non-existent member returns 500 (sanitized)', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/members/non-existent')
@@ -383,7 +383,7 @@ test('e2e: get non-existent member returns 500 (sanitized)', async () => {
   }
 })
 
-test('e2e: in-memory mode does not support persistent login route', async () => {
+it('e2e: in-memory mode does not support persistent login route', async () => {
   const { app } = await buildApp()
   try {
     // Without PrismaService injection, MemberService methods that require
@@ -401,7 +401,7 @@ test('e2e: in-memory mode does not support persistent login route', async () => 
   }
 })
 
-test('e2e: get unknown session returns 500', async () => {
+it('e2e: get unknown session returns 500', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/members/sessions/unknown-token')
@@ -411,7 +411,7 @@ test('e2e: get unknown session returns 500', async () => {
   }
 })
 
-test('e2e: add points to non-existent member throws', async () => {
+it('e2e: add points to non-existent member throws', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -423,7 +423,7 @@ test('e2e: add points to non-existent member throws', async () => {
   }
 })
 
-test('e2e: register multiple members and verify list ordering', async () => {
+it('e2e: register multiple members and verify list ordering', async () => {
   const { app } = await buildApp()
   try {
     for (let i = 0; i < 5; i++) {
@@ -440,7 +440,7 @@ test('e2e: register multiple members and verify list ordering', async () => {
   }
 })
 
-test('e2e: add points with positive value increments balance', async () => {
+it('e2e: add points with positive value increments balance', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -461,7 +461,7 @@ test('e2e: add points with positive value increments balance', async () => {
 // 补强测试 (+8 tests): member filter, search, stats, update, tags, tenant isolation
 // ──────────────────────────────────────
 
-test('e2e: GET /members?planId=xxx filters members by plan', async () => {
+it('e2e: GET /members?planId=xxx filters members by plan', async () => {
   const { app } = await buildApp()
   try {
     // Register members with planId in memberId to simulate plan-based grouping
@@ -489,7 +489,7 @@ test('e2e: GET /members?planId=xxx filters members by plan', async () => {
   }
 })
 
-test('e2e: GET /members?memberName=xxx searches members by nickname', async () => {
+it('e2e: GET /members?memberName=xxx searches members by nickname', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -517,7 +517,7 @@ test('e2e: GET /members?memberName=xxx searches members by nickname', async () =
   }
 })
 
-test('e2e: POST /members/register duplicate memberId returns 400', async () => {
+it('e2e: POST /members/register duplicate memberId returns 400', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -535,7 +535,7 @@ test('e2e: POST /members/register duplicate memberId returns 400', async () => {
   }
 })
 
-test('e2e: GET /members/stats returns member statistics', async () => {
+it('e2e: GET /members/stats returns member statistics', async () => {
   const { app } = await buildApp()
   try {
     // Create members at different levels
@@ -571,7 +571,7 @@ test('e2e: GET /members/stats returns member statistics', async () => {
   }
 })
 
-test('e2e: PATCH /members/:id updates member profile fields', async () => {
+it('e2e: PATCH /members/:id updates member profile fields', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -597,7 +597,7 @@ test('e2e: PATCH /members/:id updates member profile fields', async () => {
   }
 })
 
-test('e2e: PATCH /members/:id with wrong tenant returns 500', async () => {
+it('e2e: PATCH /members/:id with wrong tenant returns 500', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -616,7 +616,7 @@ test('e2e: PATCH /members/:id with wrong tenant returns 500', async () => {
   }
 })
 
-test('e2e: member tags add/remove operations', async () => {
+it('e2e: member tags add/remove operations', async () => {
   const { app } = await buildApp()
   try {
     await request(app.getHttpServer())
@@ -660,7 +660,7 @@ test('e2e: member tags add/remove operations', async () => {
   }
 })
 
-test('e2e: non-existent memberId returns 404-like behavior (500 sanitized)', async () => {
+it('e2e: non-existent memberId returns 404-like behavior (500 sanitized)', async () => {
   const { app } = await buildApp()
   try {
     // GET non-existent should fail

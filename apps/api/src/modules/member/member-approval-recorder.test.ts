@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   MemberApprovalOutcomeRecorder,
   MEMBER_APPROVAL_OUTCOME_RESOURCE_TYPE
@@ -55,7 +55,7 @@ function buildEvent(overrides: Partial<ApprovalOutcomeEvent> = {}): ApprovalOutc
   }
 }
 
-test('member-approval recorder writes auditLog on APPROVED', async () => {
+it('member-approval recorder writes auditLog on APPROVED', async () => {
   const harness = createRecorderHarness()
   await harness.recorder.recordOutcome(buildEvent())
   assert.equal(harness.auditEntries.length, 1)
@@ -75,7 +75,7 @@ test('member-approval recorder writes auditLog on APPROVED', async () => {
   assert.equal(metadata.summary, '审批通过：member.points.award')
 })
 
-test('member-approval recorder writes auditLog on REJECTED with requestedBy fallback operator', async () => {
+it('member-approval recorder writes auditLog on REJECTED with requestedBy fallback operator', async () => {
   const harness = createRecorderHarness()
   await harness.recorder.recordOutcome(
     buildEvent({
@@ -92,7 +92,7 @@ test('member-approval recorder writes auditLog on REJECTED with requestedBy fall
   assert.equal(payload.previousStatus, 'PENDING')
 })
 
-test('member-approval recorder writes auditLog on CANCELLED with decisionNote from cancelReason', async () => {
+it('member-approval recorder writes auditLog on CANCELLED with decisionNote from cancelReason', async () => {
   const harness = createRecorderHarness()
   await harness.recorder.recordOutcome(
     buildEvent({
@@ -106,7 +106,7 @@ test('member-approval recorder writes auditLog on CANCELLED with decisionNote fr
   assert.equal(metadata.summary, '审批撤销：member.points.award')
 })
 
-test('member-approval recorder writes auditLog on EXECUTION_FAILED', async () => {
+it('member-approval recorder writes auditLog on EXECUTION_FAILED', async () => {
   const harness = createRecorderHarness()
   await harness.recorder.recordOutcome(
     buildEvent({
@@ -124,7 +124,7 @@ test('member-approval recorder writes auditLog on EXECUTION_FAILED', async () =>
   assert.equal(metadata.summary, '审批动作执行失败：member.points.award')
 })
 
-test('member-approval recorder skips non member-profile resourceType', async () => {
+it('member-approval recorder skips non member-profile resourceType', async () => {
   const harness = createRecorderHarness()
   await harness.recorder.recordOutcome(
     buildEvent({ resourceType: 'runtime-receipt' })
@@ -132,13 +132,13 @@ test('member-approval recorder skips non member-profile resourceType', async () 
   assert.equal(harness.auditEntries.length, 0)
 })
 
-test('member-approval recorder skips entries without tenantId', async () => {
+it('member-approval recorder skips entries without tenantId', async () => {
   const harness = createRecorderHarness()
-  await harness.recorder.recordOutcome(buildEvent({ tenantId: null }))
+  await harness.recorder.recordOutcome(buildEvent({ tenantId: undefined }))
   assert.equal(harness.auditEntries.length, 0)
 })
 
-test('member-approval recorder handles missing auditLog model gracefully', async () => {
+it('member-approval recorder handles missing auditLog model gracefully', async () => {
   const recorder = new MemberApprovalOutcomeRecorder(
     {} as never,
     {} as never

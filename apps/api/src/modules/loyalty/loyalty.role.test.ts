@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [loyalty] [C] 角色测试
  * 
@@ -9,7 +10,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { LoyaltyController } from './loyalty.controller'
 import {
   LoyaltyService,
@@ -38,7 +38,7 @@ const ROLES = {
 
 // ── 测试数据工厂 ──
 
-function createMockService(overrides: Partial<Record<keyof LoyaltyService, Function>> = {}) {
+function createMockService(overrides: Partial<Record<keyof LoyaltyService, (...args: never[]) => unknown>> = {}) {
   return {
     listPointsLedger: (_tenantId: string): PointsLedgerEntry[] => [],
     listCouponRedemptions: (_tenantId: string): CouponRedemption[] => [],
@@ -48,7 +48,7 @@ function createMockService(overrides: Partial<Record<keyof LoyaltyService, Funct
   } as unknown as LoyaltyService
 }
 
-function createController(serviceOverrides?: Partial<Record<keyof LoyaltyService, Function>>) {
+function createController(serviceOverrides?: Partial<Record<keyof LoyaltyService, (...args: never[]) => unknown>>) {
   return new LoyaltyController(createMockService(serviceOverrides))
 }
 
@@ -131,7 +131,7 @@ const mockSettlements: LoyaltyOrderSettlement[] = [
 
 // ── 👔店长 ──
 describe(`${ROLES.StoreManager} loyalty 角色测试`, () => {
-  test('店长查看当前店铺积分台账列表 => 有数据', () => {
+  it('店长查看当前店铺积分台账列表 => 有数据', () => {
     const ctrl = createController({
       listPointsLedger: (tenantId: string) => {
         assert.equal(tenantId, 't-001')
@@ -147,7 +147,7 @@ describe(`${ROLES.StoreManager} loyalty 角色测试`, () => {
     assert.equal(result[2].points, -300)
   })
 
-  test('店长查看结算列表确认收益 => 含优惠券和盲盒信息', () => {
+  it('店长查看结算列表确认收益 => 含优惠券和盲盒信息', () => {
     const ctrl = createController({
       listSettlements: (tenantId: string) => {
         assert.equal(tenantId, 't-store-01')
@@ -164,7 +164,7 @@ describe(`${ROLES.StoreManager} loyalty 角色测试`, () => {
     assert.equal(result[0].blindboxPlanId, 'bb-plan-001')
   })
 
-  test('店长查看空数据店铺积分台账 => 空数组（边界：无数据）', () => {
+  it('店长查看空数据店铺积分台账 => 空数组（边界：无数据）', () => {
     const ctrl = createController({
       listPointsLedger: () => [],
     })
@@ -173,7 +173,7 @@ describe(`${ROLES.StoreManager} loyalty 角色测试`, () => {
     assert.equal(result.length, 0)
   })
 
-  test('店长查看跨租户数据隔离 => 不应看到其他店铺数据', () => {
+  it('店长查看跨租户数据隔离 => 不应看到其他店铺数据', () => {
     const ctrl = createController({
       listCouponRedemptions: (tenantId: string) => {
         if (tenantId === 't-001') return mockCouponRedemptions
@@ -192,7 +192,7 @@ describe(`${ROLES.StoreManager} loyalty 角色测试`, () => {
 
 // ── 🛒前台 ──
 describe(`${ROLES.FrontDesk} loyalty 角色测试`, () => {
-  test('前台查看盲盒履约列表 => 确认发货状态', () => {
+  it('前台查看盲盒履约列表 => 确认发货状态', () => {
     const ctrl = createController({
       listBlindboxFulfillments: (tenantId: string) => {
         assert.equal(tenantId, 't-front-01')
@@ -208,7 +208,7 @@ describe(`${ROLES.FrontDesk} loyalty 角色测试`, () => {
     assert.equal(result[0].rewardSku, 'bb-plan-001-reward-2')
   })
 
-  test('前台查看积分台账 => 了解会员消费积分（边界：付款成功与退款的混合数据）', () => {
+  it('前台查看积分台账 => 了解会员消费积分（边界：付款成功与退款的混合数据）', () => {
     const ctrl = createController({
       listPointsLedger: () => mockPointsEntries,
     })
@@ -221,7 +221,7 @@ describe(`${ROLES.FrontDesk} loyalty 角色测试`, () => {
     assert.equal(negativeEntries.length, 1)
   })
 
-  test('前台查看无盲盒履约的店铺 => 空数组', () => {
+  it('前台查看无盲盒履约的店铺 => 空数组', () => {
     const ctrl = createController({
       listBlindboxFulfillments: () => [],
     })
@@ -233,7 +233,7 @@ describe(`${ROLES.FrontDesk} loyalty 角色测试`, () => {
 
 // ── 👥HR ──
 describe(`${ROLES.HR} loyalty 角色测试`, () => {
-  test('HR 查看结算列表了解运营健康度 => Succeeded 状态', () => {
+  it('HR 查看结算列表了解运营健康度 => Succeeded 状态', () => {
     const ctrl = createController({
       listSettlements: () => mockSettlements,
     })
@@ -244,7 +244,7 @@ describe(`${ROLES.HR} loyalty 角色测试`, () => {
     assert.equal(result[0].awardedPoints, 500)
   })
 
-  test('HR 查看优惠券核销记录 => 统计营销投入', () => {
+  it('HR 查看优惠券核销记录 => 统计营销投入', () => {
     const multiCoupons: CouponRedemption[] = [
       {
         redemptionId: 'coupon-hr-001',
@@ -281,7 +281,7 @@ describe(`${ROLES.HR} loyalty 角色测试`, () => {
     assert.equal(released.length, 1)
   })
 
-  test('HR 查看无结算的店铺 => 空数组（边界：新店无数据）', () => {
+  it('HR 查看无结算的店铺 => 空数组（边界：新店无数据）', () => {
     const ctrl = createController({
       listSettlements: () => [],
     })
@@ -293,7 +293,7 @@ describe(`${ROLES.HR} loyalty 角色测试`, () => {
 
 // ── 🔧安监 ──
 describe(`${ROLES.Security} loyalty 角色测试`, () => {
-  test('安监查看积分台账确认无异常扣分 => 数据完整性检查', () => {
+  it('安监查看积分台账确认无异常扣分 => 数据完整性检查', () => {
     const ctrl = createController({
       listPointsLedger: () => mockPointsEntries,
     })
@@ -305,7 +305,7 @@ describe(`${ROLES.Security} loyalty 角色测试`, () => {
     assert.ok(result.every(e => Date.parse(e.createdAt) > 0))
   })
 
-  test('安监查看盲盒履约记录确认合规 => 无 SKIPPED 状态异常', () => {
+  it('安监查看盲盒履约记录确认合规 => 无 SKIPPED 状态异常', () => {
     const ctrl = createController({
       listBlindboxFulfillments: () => mockBlindboxFulfillments,
     })
@@ -317,7 +317,7 @@ describe(`${ROLES.Security} loyalty 角色测试`, () => {
     assert.equal(skipped.length, 0)
   })
 
-  test('安监查看违约态优惠券 => Released 状态（边界：退款释放的优惠券）', () => {
+  it('安监查看违约态优惠券 => Released 状态（边界：退款释放的优惠券）', () => {
     const releasedCoupons: CouponRedemption[] = [
       {
         redemptionId: 'coupon-sec-001',
@@ -344,7 +344,7 @@ describe(`${ROLES.Security} loyalty 角色测试`, () => {
 
 // ── 🎮导玩员 ──
 describe(`${ROLES.Guide} loyalty 角色测试`, () => {
-  test('导玩员查看会员积分台账 => 检查会员消费活动', () => {
+  it('导玩员查看会员积分台账 => 检查会员消费活动', () => {
     const ctrl = createController({
       listPointsLedger: () => [
         {
@@ -367,7 +367,7 @@ describe(`${ROLES.Guide} loyalty 角色测试`, () => {
     assert.equal(result[0].reason, 'cashier.payment-succeeded')
   })
 
-  test('导玩员查看盲盒履约 => 确认奖品发放（边界：多个奖品计划）', () => {
+  it('导玩员查看盲盒履约 => 确认奖品发放（边界：多个奖品计划）', () => {
     const multiBlindboxes: BlindboxFulfillment[] = [
       {
         fulfillmentId: 'bb-guide-001',
@@ -405,7 +405,7 @@ describe(`${ROLES.Guide} loyalty 角色测试`, () => {
     assert.equal(result[1].quantity, 3)
   })
 
-  test('导玩员查看低频会员积分 => 空数据（边界：新会员无消费记录）', () => {
+  it('导玩员查看低频会员积分 => 空数据（边界：新会员无消费记录）', () => {
     const ctrl = createController({
       listPointsLedger: () => [],
     })
@@ -417,7 +417,7 @@ describe(`${ROLES.Guide} loyalty 角色测试`, () => {
 
 // ── 🎯运行专员 ──
 describe(`${ROLES.Operations} loyalty 角色测试`, () => {
-  test('运行专员监控结算状态 => 检查成功/失败分布', () => {
+  it('运行专员监控结算状态 => 检查成功/失败分布', () => {
     const multiSettlements: LoyaltyOrderSettlement[] = [
       {
         settlementId: 'settlement-ops-001',
@@ -458,7 +458,7 @@ describe(`${ROLES.Operations} loyalty 角色测试`, () => {
     assert.equal(failed[0].couponCode, 'COUPON-EXPIRED')
   })
 
-  test('运行专员查看优惠券核销系统健康度 => 全部端点为 GET', () => {
+  it('运行专员查看优惠券核销系统健康度 => 全部端点为 GET', () => {
     // 验证 controller 路由完整性
     const path = Reflect.getMetadata('path', LoyaltyController)
     assert.equal(path, 'loyalty')
@@ -473,7 +473,7 @@ describe(`${ROLES.Operations} loyalty 角色测试`, () => {
 
 // ── 🤝团建 ──
 describe(`${ROLES.Teambuilding} loyalty 角色测试`, () => {
-  test('团建查看活动相关积分台账 => 团建活动积分', () => {
+  it('团建查看活动相关积分台账 => 团建活动积分', () => {
     const ctrl = createController({
       listPointsLedger: () => [
         {
@@ -494,7 +494,7 @@ describe(`${ROLES.Teambuilding} loyalty 角色测试`, () => {
     assert.equal(result[0].points, 800)
   })
 
-  test('团建查看盲盒履约列表 => 团建奖励发放（边界：批量发放）', () => {
+  it('团建查看盲盒履约列表 => 团建奖励发放（边界：批量发放）', () => {
     const batchFulfillments: BlindboxFulfillment[] = Array.from({ length: 5 }, (_, i) => ({
       fulfillmentId: `bb-team-${String(i + 1).padStart(3, '0')}`,
       tenantContext: { tenantId: 't-team-01' },
@@ -523,7 +523,7 @@ describe(`${ROLES.Teambuilding} loyalty 角色测试`, () => {
 
 // ── 📢营销 ──
 describe(`${ROLES.Marketing} loyalty 角色测试`, () => {
-  test('营销查看优惠券核销效果 => 统计核销率', () => {
+  it('营销查看优惠券核销效果 => 统计核销率', () => {
     const campaignCoupons: CouponRedemption[] = [
       {
         redemptionId: 'coupon-mkt-001',
@@ -571,7 +571,7 @@ describe(`${ROLES.Marketing} loyalty 角色测试`, () => {
     assert.equal(released, 1)
   })
 
-  test('营销查看积分台账分析消费趋势 => 总积分统计', () => {
+  it('营销查看积分台账分析消费趋势 => 总积分统计', () => {
     const ctrl = createController({
       listPointsLedger: () => mockPointsEntries,
     })
@@ -590,7 +590,7 @@ describe(`${ROLES.Marketing} loyalty 角色测试`, () => {
     assert.equal(totalPositive + totalNegative, 400)
   })
 
-  test('营销查看营销活动结算（边界：仅结算无盲盒无优惠券的订单）', () => {
+  it('营销查看营销活动结算（边界：仅结算无盲盒无优惠券的订单）', () => {
     const plainSettlements: LoyaltyOrderSettlement[] = [
       {
         settlementId: 'settlement-plain-001',

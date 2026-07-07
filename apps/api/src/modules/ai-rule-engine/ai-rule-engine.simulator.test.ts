@@ -1,29 +1,29 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { AiRuleEngineService } from './ai-rule-engine.service'
 import type {
   SimulatorRunInput,
-  SimulatorSummary
+  SimulatorBatchRunOutput
 } from './ai-rule-engine.entity'
 
 describe('AiRuleEngine - Simulator', () => {
   let service: AiRuleEngineService
 
-  test.beforeEach(() => {
+  beforeEach(() => {
     service = new AiRuleEngineService()
   })
 
   // ─── Simulator listing ───
 
   describe('listSimulators', () => {
-    test('should return all simulators', () => {
+    it('should return all simulators', () => {
       const simulators = service.listSimulators()
       assert.ok(Array.isArray(simulators))
       assert.ok(simulators.length >= 2)
     })
 
-    test('should return simulators with required fields', () => {
+    it('should return simulators with required fields', () => {
       const simulators = service.listSimulators()
       for (const sim of simulators) {
         assert.equal(typeof sim.id, 'string')
@@ -35,14 +35,14 @@ describe('AiRuleEngine - Simulator', () => {
   })
 
   describe('getSimulator', () => {
-    test('should return a simulator by valid id', () => {
+    it('should return a simulator by valid id', () => {
       const sim = service.getSimulator('sim-member-level-v1')
       assert.ok(sim)
       assert.equal(sim.id, 'sim-member-level-v1')
       assert.equal(sim.name, 'Member Level Simulator')
     })
 
-    test('should return undefined for non-existent simulator id', () => {
+    it('should return undefined for non-existent simulator id', () => {
       const sim = service.getSimulator('non-existent-sim')
       assert.equal(sim, undefined)
     })
@@ -75,7 +75,7 @@ describe('AiRuleEngine - Simulator', () => {
   }
 
   describe('runSimulator - member-level', () => {
-    test('should match high-value member', () => {
+    it('should match high-value member', () => {
       const result = service.runSimulator(highValueInput)
       assert.equal(result.simulatorId, 'sim-member-level-v1')
       assert.equal(result.simulatorName, 'Member Level Simulator')
@@ -83,13 +83,13 @@ describe('AiRuleEngine - Simulator', () => {
       assert.ok(result.triggeredConditions.length >= 2)
     })
 
-    test('should not match low-value member', () => {
+    it('should not match low-value member', () => {
       const result = service.runSimulator(lowValueInput)
       assert.equal(result.matched, false)
       assert.equal(result.triggeredConditions.length, 0)
     })
 
-    test('should return triggered actions when matched', () => {
+    it('should return triggered actions when matched', () => {
       const result = service.runSimulator(highValueInput)
       assert.ok(result.triggeredActions.length > 0)
       const actions = result.triggeredActions
@@ -134,13 +134,13 @@ describe('AiRuleEngine - Simulator', () => {
       }
     }
 
-    test('should detect anomaly for abnormal device', () => {
+    it('should detect anomaly for abnormal device', () => {
       const result = service.runSimulator(anomalyInput)
       assert.equal(result.matched, true)
       assert.ok(result.triggeredConditions.length >= 1)
     })
 
-    test('should not detect anomaly for normal device', () => {
+    it('should not detect anomaly for normal device', () => {
       const result = service.runSimulator(normalInput)
       assert.equal(result.matched, false)
       assert.equal(result.triggeredConditions.length, 0)
@@ -165,7 +165,7 @@ describe('AiRuleEngine - Simulator', () => {
       }
     }
 
-    test('should correctly evaluate risk score', () => {
+    it('should correctly evaluate risk score', () => {
       const result = service.runSimulator(riskInput)
       assert.ok(result)
       assert.equal(result.simulatorId, 'sim-member-level-v1')
@@ -176,7 +176,7 @@ describe('AiRuleEngine - Simulator', () => {
   // ─── Verbose mode ───
 
   describe('runSimulator - verbose mode', () => {
-    test('should include logs when verbose is true', () => {
+    it('should include logs when verbose is true', () => {
       const input: SimulatorRunInput = {
         simulatorId: 'sim-member-level-v1',
         dataType: 'member-level',
@@ -195,7 +195,7 @@ describe('AiRuleEngine - Simulator', () => {
       assert.ok(result.logs!.length > 0)
     })
 
-    test('should not include logs when verbose is false', () => {
+    it('should not include logs when verbose is false', () => {
       const input: SimulatorRunInput = {
         simulatorId: 'sim-member-level-v1',
         dataType: 'member-level',
@@ -216,7 +216,7 @@ describe('AiRuleEngine - Simulator', () => {
   // ─── Condition override ───
 
   describe('runSimulator - condition overrides', () => {
-    test('should override condition values and affect matching', () => {
+    it('should override condition values and affect matching', () => {
       const input: SimulatorRunInput = {
         simulatorId: 'sim-member-level-v1',
         dataType: 'member-level',
@@ -260,7 +260,7 @@ describe('AiRuleEngine - Simulator', () => {
       verbose: false
     }
 
-    test('should run multiple rounds and return summary', () => {
+    it('should run multiple rounds and return summary', () => {
       const summary = service.runSimulatorBatch(batchInput)
       assert.equal(summary.simulatorId, 'sim-member-level-v1')
       assert.equal(summary.simulatorName, 'Member Level Simulator')
@@ -272,20 +272,20 @@ describe('AiRuleEngine - Simulator', () => {
       assert.equal(summary.results.length, 10)
     })
 
-    test('should return valid percentiles', () => {
+    it('should return valid percentiles', () => {
       const summary = service.runSimulatorBatch(batchInput)
       assert.ok(summary.p50ExecutionTimeMs >= 0)
       assert.ok(summary.p95ExecutionTimeMs >= summary.p50ExecutionTimeMs)
       assert.ok(summary.p99ExecutionTimeMs >= summary.p95ExecutionTimeMs)
     })
 
-    test('should include most triggered conditions', () => {
+    it('should include most triggered conditions', () => {
       const summary = service.runSimulatorBatch(batchInput)
       assert.ok(summary.mostTriggeredConditions)
       assert.ok(Array.isArray(summary.mostTriggeredConditions))
     })
 
-    test('should include recommendation text', () => {
+    it('should include recommendation text', () => {
       const summary = service.runSimulatorBatch(batchInput)
       assert.ok(typeof summary.recommendation === 'string')
       assert.ok(summary.recommendation.length > 0)
@@ -315,8 +315,8 @@ describe('AiRuleEngine - Simulator', () => {
       verbose: false
     }
 
-    test('should produce varied results with mutation enabled', () => {
-      const summary: SimulatorSummary = service.runSimulatorBatch(input)
+    it('should produce varied results with mutation enabled', () => {
+      const summary: SimulatorBatchRunOutput = service.runSimulatorBatch(input)
       assert.ok(summary.totalRuns >= 1)
       // mutation should create some variation
       const matchedValues = summary.results.map((r: any) => r.matched)
@@ -327,7 +327,7 @@ describe('AiRuleEngine - Simulator', () => {
   // ─── Error handling ───
 
   describe('runSimulator - error handling', () => {
-    test('should throw for non-existent simulator', () => {
+    it('should throw for non-existent simulator', () => {
       const input: SimulatorRunInput = {
         simulatorId: 'non-existent-sim',
         dataType: 'member-level',
@@ -336,7 +336,7 @@ describe('AiRuleEngine - Simulator', () => {
       assert.throws(() => service.runSimulator(input), /not found/)
     })
 
-    test('should throw for unknown dataType', () => {
+    it('should throw for unknown dataType', () => {
       const input: SimulatorRunInput = {
         simulatorId: 'sim-member-level-v1',
         dataType: 'unknown-type' as any,
@@ -347,7 +347,7 @@ describe('AiRuleEngine - Simulator', () => {
   })
 
   describe('runSimulatorBatch - error handling', () => {
-    test('should throw for non-existent simulator', () => {
+    it('should throw for non-existent simulator', () => {
       assert.throws(
         () =>
           service.runSimulatorBatch({

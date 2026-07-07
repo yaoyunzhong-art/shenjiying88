@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   DEFAULT_TENANT_ID,
   DEFAULT_MARKET_CODE,
@@ -22,17 +22,17 @@ import type {
 } from './tenant.types'
 
 describe('tenant.entity: constants', () => {
-  test('DEFAULT_TENANT_ID equals tenant-demo', () => {
+  it('DEFAULT_TENANT_ID equals tenant-demo', () => {
     assert.equal(DEFAULT_TENANT_ID, 'tenant-demo')
   })
 
-  test('DEFAULT_MARKET_CODE equals default', () => {
+  it('DEFAULT_MARKET_CODE equals default', () => {
     assert.equal(DEFAULT_MARKET_CODE, 'default')
   })
 })
 
 describe('tenant.entity: ActorTypes', () => {
-  test('contains all six actor types', () => {
+  it('contains all six actor types', () => {
     assert.equal(ActorTypes.PlatformUser, 'platform-user')
     assert.equal(ActorTypes.TenantUser, 'tenant-user')
     assert.equal(ActorTypes.BrandUser, 'brand-user')
@@ -41,7 +41,7 @@ describe('tenant.entity: ActorTypes', () => {
     assert.equal(ActorTypes.ServiceAccount, 'service-account')
   })
 
-  test('all values are correct actor types', () => {
+  it('all values are correct actor types', () => {
     const values = Object.values(ActorTypes)
     assert.equal(values.length, 6)
     assert.ok(values.every(v => typeof v === 'string'))
@@ -49,7 +49,7 @@ describe('tenant.entity: ActorTypes', () => {
 })
 
 describe('tenant.entity: createDefaultTenantContext', () => {
-  test('returns defaults when no overrides', () => {
+  it('returns defaults when no overrides', () => {
     const ctx = createDefaultTenantContext()
     assert.equal(ctx.tenantId, DEFAULT_TENANT_ID)
     assert.equal(ctx.marketCode, DEFAULT_MARKET_CODE)
@@ -57,13 +57,13 @@ describe('tenant.entity: createDefaultTenantContext', () => {
     assert.equal(ctx.storeId, undefined)
   })
 
-  test('accepts tenantId override', () => {
+  it('accepts tenantId override', () => {
     const ctx = createDefaultTenantContext({ tenantId: 'tenant-custom' })
     assert.equal(ctx.tenantId, 'tenant-custom')
     assert.equal(ctx.marketCode, DEFAULT_MARKET_CODE)
   })
 
-  test('accepts brandId override', () => {
+  it('accepts brandId override', () => {
     const ctx = createDefaultTenantContext({ brandId: 'brand-01', storeId: 'store-01' })
     assert.equal(ctx.brandId, 'brand-01')
     assert.equal(ctx.storeId, 'store-01')
@@ -71,7 +71,7 @@ describe('tenant.entity: createDefaultTenantContext', () => {
 })
 
 describe('tenant.entity: createEmptyResolvedActorContext', () => {
-  test('returns unauthenticated context with defaults', () => {
+  it('returns unauthenticated context with defaults', () => {
     const ctx = createEmptyResolvedActorContext()
     assert.equal(ctx.authenticated, false)
     assert.equal(ctx.actor, null)
@@ -83,7 +83,7 @@ describe('tenant.entity: createEmptyResolvedActorContext', () => {
     assert.equal(ctx.effectiveStoreId, undefined)
   })
 
-  test('accepts partial overrides', () => {
+  it('accepts partial overrides', () => {
     const ctx = createEmptyResolvedActorContext({
       authenticated: true,
       effectiveTenantId: 'tenant-custom',
@@ -94,7 +94,7 @@ describe('tenant.entity: createEmptyResolvedActorContext', () => {
     assert.deepEqual(ctx.roles, ['manager'])
   })
 
-  test('tenantContext is created with defaults', () => {
+  it('tenantContext is created with defaults', () => {
     const ctx = createEmptyResolvedActorContext()
     assert.ok(ctx.tenantContext)
     assert.equal(ctx.tenantContext.tenantId, DEFAULT_TENANT_ID)
@@ -102,7 +102,7 @@ describe('tenant.entity: createEmptyResolvedActorContext', () => {
 })
 
 describe('tenant.entity: resolveEffectiveTenantId', () => {
-  test('actorContext takes priority', () => {
+  it('actorContext takes priority', () => {
     const actor: RequestActorContext = {
       actorId: 'a1', actorType: 'tenant-user',
       roles: [], permissions: [], authenticated: true,
@@ -112,18 +112,18 @@ describe('tenant.entity: resolveEffectiveTenantId', () => {
     assert.equal(resolveEffectiveTenantId(actor, tenant), 'actor-tenant')
   })
 
-  test('falls back to tenantContext', () => {
+  it('falls back to tenantContext', () => {
     const tenant = createDefaultTenantContext({ tenantId: 'tenant-ctx' })
     assert.equal(resolveEffectiveTenantId(undefined, tenant), 'tenant-ctx')
   })
 
-  test('falls back to default when both undefined', () => {
+  it('falls back to default when both undefined', () => {
     assert.equal(resolveEffectiveTenantId(undefined, undefined), DEFAULT_TENANT_ID)
   })
 })
 
 describe('tenant.entity: resolveEffectiveBrandId', () => {
-  test('actorContext takes priority', () => {
+  it('actorContext takes priority', () => {
     const actor: RequestActorContext = {
       actorId: 'a1', actorType: 'brand-user',
       roles: [], permissions: [], authenticated: true,
@@ -133,18 +133,18 @@ describe('tenant.entity: resolveEffectiveBrandId', () => {
     assert.equal(resolveEffectiveBrandId(actor, tenant), 'actor-brand')
   })
 
-  test('falls back to tenantContext', () => {
+  it('falls back to tenantContext', () => {
     const tenant = createDefaultTenantContext({ brandId: 'tenant-brand' })
     assert.equal(resolveEffectiveBrandId(undefined, tenant), 'tenant-brand')
   })
 
-  test('returns undefined when both undefined', () => {
+  it('returns undefined when both undefined', () => {
     assert.equal(resolveEffectiveBrandId(undefined, undefined), undefined)
   })
 })
 
 describe('tenant.entity: resolveEffectiveStoreId', () => {
-  test('actorContext takes priority', () => {
+  it('actorContext takes priority', () => {
     const actor: RequestActorContext = {
       actorId: 'a1', actorType: 'store-user',
       roles: [], permissions: [], authenticated: true,
@@ -154,24 +154,24 @@ describe('tenant.entity: resolveEffectiveStoreId', () => {
     assert.equal(resolveEffectiveStoreId(actor, tenant), 'actor-store')
   })
 
-  test('falls back to default undefined', () => {
+  it('falls back to default undefined', () => {
     assert.equal(resolveEffectiveStoreId(undefined, undefined), undefined)
   })
 })
 
 describe('tenant.entity: resolveEffectiveMarketCode', () => {
-  test('reads from tenantContext', () => {
+  it('reads from tenantContext', () => {
     const tenant = createDefaultTenantContext({ marketCode: 'cn-sh' })
     assert.equal(resolveEffectiveMarketCode(tenant), 'cn-sh')
   })
 
-  test('defaults when no tenantContext', () => {
+  it('defaults when no tenantContext', () => {
     assert.equal(resolveEffectiveMarketCode(undefined), DEFAULT_MARKET_CODE)
   })
 })
 
 describe('tenant.entity: isActorAuthenticated', () => {
-  test('returns true when authenticated', () => {
+  it('returns true when authenticated', () => {
     const actor: RequestActorContext = {
       actorId: 'a1', actorType: 'tenant-user',
       roles: [], permissions: [], authenticated: true,
@@ -180,7 +180,7 @@ describe('tenant.entity: isActorAuthenticated', () => {
     assert.equal(isActorAuthenticated(actor), true)
   })
 
-  test('returns false when not authenticated', () => {
+  it('returns false when not authenticated', () => {
     const actor: RequestActorContext = {
       actorId: 'a1', actorType: 'tenant-user',
       roles: [], permissions: [], authenticated: false,
@@ -189,17 +189,17 @@ describe('tenant.entity: isActorAuthenticated', () => {
     assert.equal(isActorAuthenticated(actor), false)
   })
 
-  test('returns false when undefined', () => {
+  it('returns false when undefined', () => {
     assert.equal(isActorAuthenticated(undefined), false)
   })
 })
 
 describe('tenant.entity: actorSummary', () => {
-  test('returns null when no actor', () => {
+  it('returns null when no actor', () => {
     assert.equal(actorSummary(undefined), null)
   })
 
-  test('returns actorId when no name/type', () => {
+  it('returns actorId when no name/type', () => {
     const actor: RequestActorContext = {
       actorId: 'a1', actorType: 'tenant-user',
       roles: [], permissions: [], authenticated: true,
@@ -210,7 +210,7 @@ describe('tenant.entity: actorSummary', () => {
     assert.ok(summary.includes('tenant-user'))
   })
 
-  test('returns name and type and roles', () => {
+  it('returns name and type and roles', () => {
     const actor: RequestActorContext = {
       actorId: 'a2', actorType: 'employee-user',
       actorName: '张三',
@@ -225,7 +225,7 @@ describe('tenant.entity: actorSummary', () => {
     assert.ok(summary.includes('staff'))
   })
 
-  test('returns actorId as fallback when no name and no type', () => {
+  it('returns actorId as fallback when no name and no type', () => {
     const actor: RequestActorContext = {
       actorId: 'bare-id', actorType: 'tenant-user',
       roles: [], permissions: [], authenticated: false,
@@ -238,22 +238,22 @@ describe('tenant.entity: actorSummary', () => {
 })
 
 describe('tenant.entity: matchesTenantScope', () => {
-  test('returns true when no requirement', () => {
+  it('returns true when no requirement', () => {
     const ctx = createEmptyResolvedActorContext({ effectiveTenantId: 't1' })
     assert.equal(matchesTenantScope(ctx, undefined), true)
   })
 
-  test('returns true when tenantId matches', () => {
+  it('returns true when tenantId matches', () => {
     const ctx = createEmptyResolvedActorContext({ effectiveTenantId: 't1' })
     assert.equal(matchesTenantScope(ctx, { tenantId: 't1' }), true)
   })
 
-  test('returns false when tenantId mismatches', () => {
+  it('returns false when tenantId mismatches', () => {
     const ctx = createEmptyResolvedActorContext({ effectiveTenantId: 't1' })
     assert.equal(matchesTenantScope(ctx, { tenantId: 't2' }), false)
   })
 
-  test('returns true when brandId matches', () => {
+  it('returns true when brandId matches', () => {
     const ctx = createEmptyResolvedActorContext({
       effectiveTenantId: 't1',
       effectiveBrandId: 'b1'
@@ -261,7 +261,7 @@ describe('tenant.entity: matchesTenantScope', () => {
     assert.equal(matchesTenantScope(ctx, { tenantId: 't1', brandId: 'b1' }), true)
   })
 
-  test('returns false when brandId mismatches', () => {
+  it('returns false when brandId mismatches', () => {
     const ctx = createEmptyResolvedActorContext({
       effectiveTenantId: 't1',
       effectiveBrandId: 'b1'
@@ -269,7 +269,7 @@ describe('tenant.entity: matchesTenantScope', () => {
     assert.equal(matchesTenantScope(ctx, { brandId: 'b2' }), false)
   })
 
-  test('returns true when storeId matches', () => {
+  it('returns true when storeId matches', () => {
     const ctx = createEmptyResolvedActorContext({
       effectiveTenantId: 't1',
       effectiveStoreId: 's1'
@@ -277,7 +277,7 @@ describe('tenant.entity: matchesTenantScope', () => {
     assert.equal(matchesTenantScope(ctx, { storeId: 's1' }), true)
   })
 
-  test('returns false when storeId mismatches', () => {
+  it('returns false when storeId mismatches', () => {
     const ctx = createEmptyResolvedActorContext({
       effectiveTenantId: 't1',
       effectiveStoreId: 's1'

@@ -1,12 +1,12 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   evaluateLytFixtureValidation,
   getLytFixtureByKey,
   getLytFixtureCatalog
 } from './lyt-fixture.catalog'
 
-test('getLytFixtureCatalog exposes the first-batch high-priority fixtures', () => {
+it('getLytFixtureCatalog exposes the first-batch high-priority fixtures', () => {
   const catalog = getLytFixtureCatalog()
 
   assert.equal(catalog.length, 5)
@@ -16,7 +16,7 @@ test('getLytFixtureCatalog exposes the first-batch high-priority fixtures', () =
   )
 })
 
-test('getLytFixtureByKey returns webhook fixture with eventType', () => {
+it('getLytFixtureByKey returns webhook fixture with eventType', () => {
   const fixture = getLytFixtureByKey('payment-success-webhook')
 
   assert.equal(fixture?.transport, 'webhook')
@@ -31,11 +31,11 @@ test('getLytFixtureByKey returns webhook fixture with eventType', () => {
   })
 })
 
-test('getLytFixtureByKey returns null for unknown key', () => {
+it('getLytFixtureByKey returns null for unknown key', () => {
   assert.equal(getLytFixtureByKey('unknown-fixture'), null)
 })
 
-test('getLytFixtureCatalog can filter by transport and capability', () => {
+it('getLytFixtureCatalog can filter by transport and capability', () => {
   const webhooks = getLytFixtureCatalog({ transport: 'webhook' })
   const deviceOnly = getLytFixtureCatalog({ capability: 'device' })
 
@@ -46,7 +46,7 @@ test('getLytFixtureCatalog can filter by transport and capability', () => {
   assert.deepEqual(deviceOnly.map((item) => item.key), ['device-status-query'])
 })
 
-test('evaluateLytFixtureValidation marks complete fixtures as ready', () => {
+it('evaluateLytFixtureValidation marks complete fixtures as ready', () => {
   const fixture = getLytFixtureByKey('gate-pass-webhook')
   assert.ok(fixture)
 

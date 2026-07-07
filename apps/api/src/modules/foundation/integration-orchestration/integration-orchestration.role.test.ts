@@ -1,7 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
-
 // ── Helpers ──
 function mockIntegrationOrchService() {
   return {
@@ -28,20 +27,20 @@ const ROLES = {
 
 // ── 🎮导玩员 ──
 describe(`${ROLES.Guide} integration-orchestration 角色测试`, () => {
-  test('导玩员可以获取 webhook sources', () => {
+  it('导玩员可以获取 webhook sources', () => {
     const ctrl = createIntOrchController()
     const result = ctrl.getWebhookSources()
     assert.ok(Array.isArray(result))
     assert.ok(result.length >= 2)
   })
 
-  test('导玩员可以获取 events', async () => {
+  it('导玩员可以获取 events', async () => {
     const ctrl = createIntOrchController()
     const result = await ctrl.getEvents({ source: 'lyt' })
     assert.ok(result.events)
   })
 
-  test('导玩员可以 publish event（设备事件）', async () => {
+  it('导玩员可以 publish event（设备事件）', async () => {
     const svc = mockIntegrationOrchService()
     svc.publishEvent = async () => ({ eventName: 'device-online', status: 'published', idempotencyKey: 'idem-dev-001' })
     const ctrl = createIntOrchController(svc)
@@ -59,19 +58,19 @@ describe(`${ROLES.Guide} integration-orchestration 角色测试`, () => {
 
 // ── 👔店长 ──
 describe(`${ROLES.TenantAdmin} integration-orchestration 角色测试`, () => {
-  test('店长可以获取 webhook sources', () => {
+  it('店长可以获取 webhook sources', () => {
     const ctrl = createIntOrchController()
     const result = ctrl.getWebhookSources()
     assert.ok(result.length > 0)
   })
 
-  test('店长可以获取 idempotency records', async () => {
+  it('店长可以获取 idempotency records', async () => {
     const ctrl = createIntOrchController()
     const result = await ctrl.getIdempotencyRecords({ source: 'lyt' })
     assert.ok(result.records)
   })
 
-  test('店长可以 publish event', async () => {
+  it('店长可以 publish event', async () => {
     const ctrl = createIntOrchController()
     const result = await ctrl.publishEvent({
       eventName: 'tenant-config-updated',
@@ -86,13 +85,13 @@ describe(`${ROLES.TenantAdmin} integration-orchestration 角色测试`, () => {
 
 // ── 🎯运行专员 ──
 describe(`${ROLES.Operations} integration-orchestration 角色测试`, () => {
-  test('运营专员可以获取 events（监控视角）', async () => {
+  it('运营专员可以获取 events（监控视角）', async () => {
     const ctrl = createIntOrchController()
     const result = await ctrl.getEvents({ source: 'payment' })
     assert.ok(result.events)
   })
 
-  test('运营专员可以 publish event（运维事件）', async () => {
+  it('运营专员可以 publish event（运维事件）', async () => {
     const ctrl = createIntOrchController()
     const result = await ctrl.publishEvent({
       eventName: 'retry-policy-triggered',
@@ -104,7 +103,7 @@ describe(`${ROLES.Operations} integration-orchestration 角色测试`, () => {
     assert.ok(result.idempotencyKey)
   })
 
-  test('运营专员可以获取 idempotency records', async () => {
+  it('运营专员可以获取 idempotency records', async () => {
     const ctrl = createIntOrchController()
     const result = await ctrl.getIdempotencyRecords({ source: 'payment' })
     assert.ok(result.records)
@@ -113,7 +112,7 @@ describe(`${ROLES.Operations} integration-orchestration 角色测试`, () => {
 
 // ── 📢营销 ──
 describe(`${ROLES.Marketing} integration-orchestration 角色测试`, () => {
-  test('营销可以 ingest webhook（通知回调）', async () => {
+  it('营销可以 ingest webhook（通知回调）', async () => {
     const ctrl = createIntOrchController()
     const result = await ctrl.ingestWebhook('lyt', {
       event: 'notification-callback',
@@ -124,7 +123,7 @@ describe(`${ROLES.Marketing} integration-orchestration 角色测试`, () => {
     assert.equal(result.status, 'accepted')
   })
 
-  test('营销可以 publish event（营销事件）', async () => {
+  it('营销可以 publish event（营销事件）', async () => {
     const ctrl = createIntOrchController()
     const result = await ctrl.publishEvent({
       eventName: 'campaign-launched',
@@ -136,7 +135,7 @@ describe(`${ROLES.Marketing} integration-orchestration 角色测试`, () => {
     assert.ok(result)
   })
 
-  test('营销可以获取 webhook sources', () => {
+  it('营销可以获取 webhook sources', () => {
     const ctrl = createIntOrchController()
     const result = ctrl.getWebhookSources()
     assert.ok(Array.isArray(result))

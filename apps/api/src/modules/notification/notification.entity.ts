@@ -108,6 +108,7 @@ export function toNotificationDispatch(input: {
   recipient: string
   payload: Record<string, unknown>
   scheduledAt?: string
+  status?: NotificationStatus
 }): NotificationDispatch {
   const now = new Date().toISOString()
   return {
@@ -120,7 +121,7 @@ export function toNotificationDispatch(input: {
     storeId: input.storeId,
     recipient: input.recipient,
     payload: input.payload,
-    status: NotificationStatus.Pending,
+    status: input.status ?? NotificationStatus.Pending,
     scheduledAt: input.scheduledAt ?? now,
     retryCount: 0,
     createdAt: now,

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, OnModuleInit } from '@nestjs/common'
 import { GovernanceApprovalService } from '../foundation/governance-approval/governance-approval.service'
 import { PrismaService } from '../../prisma/prisma.service'
 
@@ -9,12 +9,12 @@ interface ApprovalOutcomeEvent {
   resourceKey: string
   stage: string
   approval: {
-    approvalId?: string
+    approvalId?: string | null
     operation?: string
-    resourceType: string
-    resourceKey: string
-    required?: boolean
-    version?: number
+    resourceType?: string
+    resourceKey?: string
+    required: boolean
+    version?: number | null
     requestedBy?: string | null
     ticket?: string | null
     status: string
@@ -42,11 +42,18 @@ export type { ApprovalOutcomeEvent }
  * 由 MemberModule 初始化，不依赖已移除的 outcome hook 机制。
  */
 @Injectable()
-export class MemberApprovalOutcomeRecorder {
+export class MemberApprovalOutcomeRecorder implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly governanceApprovalService: GovernanceApprovalService
   ) {}
+
+  onModuleInit(): void {
+    this.governanceApprovalService.registerApprovalOutcomeHook(
+      RESOURCE_TYPE,
+      (event) => this.recordOutcome(event)
+    )
+  }
 
   async recordOutcome(event: ApprovalOutcomeEvent): Promise<void> {
     if (event.resourceType !== RESOURCE_TYPE) {

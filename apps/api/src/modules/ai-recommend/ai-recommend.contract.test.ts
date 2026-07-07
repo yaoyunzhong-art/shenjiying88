@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-recommend] Contract 测试
  *
@@ -12,7 +13,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import type {
   Recommendation,
   UserProfile,
@@ -27,7 +27,7 @@ import { AiRecommendService } from './ai-recommend.service'
 // ========== 实体 Shape ==========
 
 describe('Contract: 实体 shape', () => {
-  test('Recommendation 必填字段', () => {
+  it('Recommendation 必填字段', () => {
     const rec: Recommendation = {
       id: 'rec-001',
       tenantId: 'default',
@@ -52,7 +52,7 @@ describe('Contract: 实体 shape', () => {
     assert.ok(['active', 'clicked', 'converted', 'expired'].includes(rec.status))
   })
 
-  test('Recommendation 可选字段 (storeId / memberId)', () => {
+  it('Recommendation 可选字段 (storeId / memberId)', () => {
     const rec: Recommendation = {
       id: 'r',
       tenantId: 't',
@@ -72,7 +72,7 @@ describe('Contract: 实体 shape', () => {
     assert.equal(rec.memberId, 'member-001')
   })
 
-  test('UserProfile 完整字段', () => {
+  it('UserProfile 完整字段', () => {
     const p: UserProfile = {
       id: 'profile-1',
       memberId: 'm-1',
@@ -93,7 +93,7 @@ describe('Contract: 实体 shape', () => {
     assert.equal(typeof p.preferences.avgSpend, 'number')
   })
 
-  test('ItemScore 完整字段', () => {
+  it('ItemScore 完整字段', () => {
     const s: ItemScore = {
       id: 'score-1',
       memberId: 'm-1',
@@ -110,7 +110,7 @@ describe('Contract: 实体 shape', () => {
     assert.ok(s.weight >= 0)
   })
 
-  test('RecommendationStrategy 完整字段', () => {
+  it('RecommendationStrategy 完整字段', () => {
     const s: RecommendationStrategy = {
       id: 'strategy-001',
       name: 'test-strategy',
@@ -132,14 +132,14 @@ describe('Contract: 实体 shape', () => {
     assert.equal(s.config.maxResults, 10)
   })
 
-  test('StrategyWeightFactor shape', () => {
+  it('StrategyWeightFactor shape', () => {
     const w: StrategyWeightFactor = { factor: 'similarity', weight: 0.7 }
     assert.equal(typeof w.factor, 'string')
     assert.equal(typeof w.weight, 'number')
     assert.ok(w.weight >= 0 && w.weight <= 1, 'weight 0-1')
   })
 
-  test('GenerateRecommendationsInput / Output shape', () => {
+  it('GenerateRecommendationsInput / Output shape', () => {
     const input: GenerateRecommendationsInput = {
       strategyId: 'strategy-popularity-v1',
       memberId: 'member-001',
@@ -163,7 +163,7 @@ describe('Contract: 实体 shape', () => {
 // ========== 默认策略 ==========
 
 describe('Contract: 默认策略配置', () => {
-  test('init 默认 4 个策略', () => {
+  it('init 默认 4 个策略', () => {
     const svc = new AiRecommendService()
     const strategies = svc.getStrategies()
     assert.ok(strategies.length >= 4)
@@ -174,7 +174,7 @@ describe('Contract: 默认策略配置', () => {
     assert.ok(names.includes('hybrid'))
   })
 
-  test('popularity 策略使用 interactionCount 权重', () => {
+  it('popularity 策略使用 interactionCount 权重', () => {
     const svc = new AiRecommendService()
     const s = svc.getStrategy('strategy-popularity-v1')
     assert.ok(s)
@@ -183,14 +183,14 @@ describe('Contract: 默认策略配置', () => {
     assert.equal(factor!.weight, 1.0)
   })
 
-  test('collaborative-filtering 策略有 fallback', () => {
+  it('collaborative-filtering 策略有 fallback', () => {
     const svc = new AiRecommendService()
     const s = svc.getStrategy('strategy-collaborative-v1')
     assert.ok(s)
     assert.equal(s!.config.fallbackStrategy, 'strategy-popularity-v1')
   })
 
-  test('hybrid 策略融合 3 个因子', () => {
+  it('hybrid 策略融合 3 个因子', () => {
     const svc = new AiRecommendService()
     const s = svc.getStrategy('strategy-hybrid-v1')
     assert.ok(s)
@@ -200,7 +200,7 @@ describe('Contract: 默认策略配置', () => {
     assert.ok(factors.includes('contentMatch'))
   })
 
-  test('每个策略 minScore + maxResults 必填', () => {
+  it('每个策略 minScore + maxResults 必填', () => {
     const svc = new AiRecommendService()
     for (const s of svc.getStrategies()) {
       assert.ok(typeof s.config.minScore === 'number', `${s.name} minScore`)
@@ -213,7 +213,7 @@ describe('Contract: 默认策略配置', () => {
 // ========== 状态机 ==========
 
 describe('Contract: 状态机 active → clicked → converted → expired', () => {
-  test('recordConversion 只能 active → converted', () => {
+  it('recordConversion 只能 active → converted', () => {
     const svc = new AiRecommendService()
     const result = svc.generateRecommendations({ strategyId: 'strategy-popularity-v1' })
     if (result.items.length === 0) return
@@ -226,7 +226,7 @@ describe('Contract: 状态机 active → clicked → converted → expired', () 
     assert.equal(convertRes, undefined)
   })
 
-  test('recordConversion 已 converted 不能再转', () => {
+  it('recordConversion 已 converted 不能再转', () => {
     const svc = new AiRecommendService()
     // 模拟: 直接构造一条 recommendation 不行(内部存储私有)
     // 改用 generateRecommendations → 不持久化,所以测试 recordConversion
@@ -241,7 +241,7 @@ describe('Contract: 状态机 active → clicked → converted → expired', () 
 // ========== 推荐类型 ==========
 
 describe('Contract: RecommendType 枚举值', () => {
-  test('5 种推荐类型', () => {
+  it('5 种推荐类型', () => {
     const types: Array<'game' | 'product' | 'activity' | 'coupon' | 'svip'> = [
       'game',
       'product',
@@ -253,7 +253,7 @@ describe('Contract: RecommendType 枚举值', () => {
     for (const t of types) assert.equal(typeof t, 'string')
   })
 
-  test('4 种状态', () => {
+  it('4 种状态', () => {
     const statuses: Array<'active' | 'clicked' | 'converted' | 'expired'> = [
       'active',
       'clicked',
@@ -263,7 +263,7 @@ describe('Contract: RecommendType 枚举值', () => {
     assert.equal(statuses.length, 4)
   })
 
-  test('4 种访问频率', () => {
+  it('4 种访问频率', () => {
     const freqs: Array<'daily' | 'weekly' | 'monthly' | 'occasional'> = [
       'daily',
       'weekly',
@@ -273,7 +273,7 @@ describe('Contract: RecommendType 枚举值', () => {
     assert.equal(freqs.length, 4)
   })
 
-  test('4 种交互类型', () => {
+  it('4 种交互类型', () => {
     const its: Array<'view' | 'click' | 'purchase' | 'play'> = [
       'view',
       'click',
@@ -283,7 +283,7 @@ describe('Contract: RecommendType 枚举值', () => {
     assert.equal(its.length, 4)
   })
 
-  test('3 种物品类型', () => {
+  it('3 种物品类型', () => {
     const items: Array<'game' | 'product' | 'activity'> = ['game', 'product', 'activity']
     assert.equal(items.length, 3)
   })
@@ -292,7 +292,7 @@ describe('Contract: RecommendType 枚举值', () => {
 // ========== 推荐分数范围 ==========
 
 describe('Contract: 推荐分数约束', () => {
-  test('score 必填 0-100', () => {
+  it('score 必填 0-100', () => {
     const svc = new AiRecommendService()
     const popular = svc.getPopularRecommendations(undefined, 'game', 5)
     for (const rec of popular) {
@@ -300,7 +300,7 @@ describe('Contract: 推荐分数约束', () => {
     }
   })
 
-  test('热门推荐按交互次数降序', () => {
+  it('热门推荐按交互次数降序', () => {
     const svc = new AiRecommendService()
     const popular = svc.getPopularRecommendations(undefined, 'game', 8)
     for (let i = 1; i < popular.length; i++) {
@@ -308,7 +308,7 @@ describe('Contract: 推荐分数约束', () => {
     }
   })
 
-  test('冷启动个性化推荐理由前缀', () => {
+  it('冷启动个性化推荐理由前缀', () => {
     const svc = new AiRecommendService()
     const pers = svc.getPersonalizedRecommendations('cold-start-user', 'game', 3)
     if (pers.length > 0) {

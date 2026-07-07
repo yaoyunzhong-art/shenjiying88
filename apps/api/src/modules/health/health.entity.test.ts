@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { LytMemberProfile } from '@m5/domain'
 import {
   HealthStatus,
@@ -23,7 +23,7 @@ function makeComponent(
 }
 
 describe('health.entity: HealthStatus enum', () => {
-  test('has three status values', () => {
+  it('has three status values', () => {
     assert.equal(HealthStatus.Ok, 'OK')
     assert.equal(HealthStatus.Degraded, 'DEGRADED')
     assert.equal(HealthStatus.Unavailable, 'UNAVAILABLE')
@@ -31,7 +31,7 @@ describe('health.entity: HealthStatus enum', () => {
 })
 
 describe('health.entity: toHealthCheckResult', () => {
-  test('aggregates all-OK components as OK', () => {
+  it('aggregates all-OK components as OK', () => {
     const components: ComponentHealth[] = [
       makeComponent({ name: 'db' }),
       makeComponent({ name: 'redis' }),
@@ -49,7 +49,7 @@ describe('health.entity: toHealthCheckResult', () => {
     assert.equal(result.version, '1.0.0')
   })
 
-  test('aggregates with DEGRADED when one component is degraded', () => {
+  it('aggregates with DEGRADED when one component is degraded', () => {
     const components: ComponentHealth[] = [
       makeComponent({ name: 'db', status: HealthStatus.Ok }),
       makeComponent({ name: 'redis', status: HealthStatus.Degraded, latencyMs: 500 }),
@@ -63,7 +63,7 @@ describe('health.entity: toHealthCheckResult', () => {
     assert.equal(result.status, HealthStatus.Degraded)
   })
 
-  test('aggregates with UNAVAILABLE when one component is unavailable', () => {
+  it('aggregates with UNAVAILABLE when one component is unavailable', () => {
     const components: ComponentHealth[] = [
       makeComponent({ name: 'db', status: HealthStatus.Ok }),
       makeComponent({ name: 'redis', status: HealthStatus.Unavailable }),
@@ -77,7 +77,7 @@ describe('health.entity: toHealthCheckResult', () => {
     assert.equal(result.status, HealthStatus.Unavailable)
   })
 
-  test('UNAVAILABLE takes priority over DEGRADED', () => {
+  it('UNAVAILABLE takes priority over DEGRADED', () => {
     const components: ComponentHealth[] = [
       makeComponent({ name: 'db', status: HealthStatus.Unavailable }),
       makeComponent({ name: 'redis', status: HealthStatus.Degraded })
@@ -90,7 +90,7 @@ describe('health.entity: toHealthCheckResult', () => {
     assert.equal(result.status, HealthStatus.Unavailable)
   })
 
-  test('sets lytMode and sampleMember when provided', () => {
+  it('sets lytMode and sampleMember when provided', () => {
     const components: ComponentHealth[] = [makeComponent()]
     const member: LytMemberProfile = {
       memberId: 'm-001',
@@ -111,7 +111,7 @@ describe('health.entity: toHealthCheckResult', () => {
     assert.equal(result.sampleMember!.levelName, 'VIP')
   })
 
-  test('checkedAt is ISO date string', () => {
+  it('checkedAt is ISO date string', () => {
     const result = toHealthCheckResult([makeComponent()], {
       uptimeSeconds: 1,
       version: '1.0.0'
@@ -120,7 +120,7 @@ describe('health.entity: toHealthCheckResult', () => {
     assert.ok(!isNaN(Date.parse(result.checkedAt)))
   })
 
-  test('empty components list yields OK', () => {
+  it('empty components list yields OK', () => {
     const result = toHealthCheckResult([], {
       uptimeSeconds: 0,
       version: '0.0.0'
@@ -132,7 +132,7 @@ describe('health.entity: toHealthCheckResult', () => {
 })
 
 describe('health.entity: isHealthy', () => {
-  test('returns true for OK status', () => {
+  it('returns true for OK status', () => {
     const result: HealthCheckResult = {
       status: HealthStatus.Ok,
       checkedAt: new Date().toISOString(),
@@ -143,7 +143,7 @@ describe('health.entity: isHealthy', () => {
     assert.equal(isHealthy(result), true)
   })
 
-  test('returns false for DEGRADED status', () => {
+  it('returns false for DEGRADED status', () => {
     const result: HealthCheckResult = {
       status: HealthStatus.Degraded,
       checkedAt: new Date().toISOString(),
@@ -154,7 +154,7 @@ describe('health.entity: isHealthy', () => {
     assert.equal(isHealthy(result), false)
   })
 
-  test('returns false for UNAVAILABLE status', () => {
+  it('returns false for UNAVAILABLE status', () => {
     const result: HealthCheckResult = {
       status: HealthStatus.Unavailable,
       checkedAt: new Date().toISOString(),
@@ -167,7 +167,7 @@ describe('health.entity: isHealthy', () => {
 })
 
 describe('health.entity: isDegraded', () => {
-  test('returns true for DEGRADED status', () => {
+  it('returns true for DEGRADED status', () => {
     const result: HealthCheckResult = {
       status: HealthStatus.Degraded,
       checkedAt: new Date().toISOString(),
@@ -178,7 +178,7 @@ describe('health.entity: isDegraded', () => {
     assert.equal(isDegraded(result), true)
   })
 
-  test('returns false for OK status', () => {
+  it('returns false for OK status', () => {
     const result: HealthCheckResult = {
       status: HealthStatus.Ok,
       checkedAt: new Date().toISOString(),
@@ -189,7 +189,7 @@ describe('health.entity: isDegraded', () => {
     assert.equal(isDegraded(result), false)
   })
 
-  test('returns false for UNAVAILABLE status', () => {
+  it('returns false for UNAVAILABLE status', () => {
     const result: HealthCheckResult = {
       status: HealthStatus.Unavailable,
       checkedAt: new Date().toISOString(),

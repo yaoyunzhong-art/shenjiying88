@@ -18,9 +18,9 @@ import type {
   RiskScoreInput,
   RiskScoreOutput,
   SimulatorRunInput,
-  SimulatorResult,
-  SimulatorSummary,
-  RuleSimulator
+  SimulatorRunOutput,
+  SimulatorBatchRunOutput,
+  Simulator
 } from './ai-rule-engine.entity'
 
 interface EvaluateRequest {
@@ -94,7 +94,7 @@ export class AiRuleEngineController {
   @Post('evaluate/batch')
   evaluateBatch(@Body() request: BatchEvaluateRequestDto): BatchEvaluateResponse {
     // DTO 在运行时经 ValidationPipe 保证结构与 BatchEvaluateRequest 一致
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return this.aiRuleEngineService.batchEvaluate(request as any as BatchEvaluateRequest)
   }
 
@@ -115,27 +115,54 @@ export class AiRuleEngineController {
     return this.aiRuleEngineService.getEngineStatus()
   }
 
+  /** 获取指定引擎详情 */
+  @Get('engines/:id')
+  getEngineDetail(@Param('id') id: string): unknown {
+    const detail = this.aiRuleEngineService.getEngineDetail(id)
+    if (!detail) throw new Error(`Engine ${id} not found`)
+    return detail
+  }
+
+  /** 更新引擎配置（开关/阈值/策略） */
+  @Post('engines/:id/config')
+  updateEngineConfig(
+    @Param('id') id: string,
+    @Body() config: import('./ai-rule-engine.dto').EngineConfigUpdateDto
+  ): unknown {
+    const detail = this.aiRuleEngineService.updateEngineConfig(id, config as any)
+    if (!detail) throw new Error(`Engine ${id} not found`)
+    return detail
+  }
+
+  /** 重置引擎到默认状态 */
+  @Post('engines/:id/reset')
+  resetEngine(@Param('id') id: string): unknown {
+    const detail = this.aiRuleEngineService.resetEngine(id)
+    if (!detail) throw new Error(`Engine ${id} not found`)
+    return detail
+  }
+
   /** 获取所有模拟器 */
   @Get('simulators')
-  listSimulators(): RuleSimulator[] {
+  listSimulators(): Simulator[] {
     return this.aiRuleEngineService.listSimulators()
   }
 
   /** 获取指定模拟器 */
   @Get('simulators/:id')
-  getSimulator(@Param('id') id: string): RuleSimulator | undefined {
+  getSimulator(@Param('id') id: string): Simulator | undefined {
     return this.aiRuleEngineService.getSimulator(id)
   }
 
   /** 单次模拟运行 */
   @Post('simulators/run')
-  runSimulator(@Body() input: SimulatorRunInputDto): SimulatorResult {
+  runSimulator(@Body() input: SimulatorRunInputDto): SimulatorRunOutput {
     return this.aiRuleEngineService.runSimulator(input as unknown as SimulatorRunInput)
   }
 
   /** 批量模拟运行 */
   @Post('simulators/run-batch')
-  runSimulatorBatch(@Body() input: SimulatorRunInputDto & { rounds?: number }): SimulatorSummary {
+  runSimulatorBatch(@Body() input: SimulatorRunInputDto & { rounds?: number }): SimulatorBatchRunOutput {
     return this.aiRuleEngineService.runSimulatorBatch(
       input as unknown as SimulatorRunInput & { rounds?: number }
     )

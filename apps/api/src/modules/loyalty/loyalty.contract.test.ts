@@ -1,5 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
+import { BlindboxRewardTier } from './loyalty.entity'
 import {
   toLoyaltySettlementContract,
   toPointsLedgerContract,
@@ -133,9 +134,9 @@ function makeBlindboxPlan(overrides?: Partial<BlindboxPlan>): BlindboxPlan {
     totalQuota: 500,
     remainingQuota: 480,
     rewardPool: [
-      { sku: 'reward-a', weight: 0.6, label: '10积分' },
-      { sku: 'reward-b', weight: 0.3, label: '优惠券5元' },
-      { sku: 'reward-c', weight: 0.1, label: '白银盲盒' },
+      { sku: 'reward-a', weight: 0.6, label: '10积分', tier: BlindboxRewardTier.Standard },
+      { sku: 'reward-b', weight: 0.3, label: '优惠券5元', tier: BlindboxRewardTier.Standard },
+      { sku: 'reward-c', weight: 0.1, label: '白银盲盒', tier: BlindboxRewardTier.Standard },
     ],
     validFrom: '2026-06-01T00:00:00.000Z',
     validUntil: '2026-12-31T23:59:59.000Z',
@@ -148,7 +149,7 @@ function makeBlindboxPlan(overrides?: Partial<BlindboxPlan>): BlindboxPlan {
 
 // ──────────── toLoyaltySettlementContract ────────────
 describe('toLoyaltySettlementContract', () => {
-  test('成功结算转换：保留核心字段、剥离 tenantContext', () => {
+  it('成功结算转换：保留核心字段、剥离 tenantContext', () => {
     const settlement = makeSettlement()
     const contract = toLoyaltySettlementContract(settlement)
 
@@ -165,7 +166,7 @@ describe('toLoyaltySettlementContract', () => {
     assert.equal(contract.tenantContext, undefined)
   })
 
-  test('失败结算转换：status 为 FAILED 且 awardedPoints 可能为 0', () => {
+  it('失败结算转换：status 为 FAILED 且 awardedPoints 可能为 0', () => {
     const settlement = makeSettlement({
       status: LoyaltySettlementStatus.Failed,
       awardedPoints: 0,
@@ -180,7 +181,7 @@ describe('toLoyaltySettlementContract', () => {
     assert.equal(contract.blindboxPlanId, undefined)
   })
 
-  test('结算合同 round-trip：转换后关键字段与原实体一致', () => {
+  it('结算合同 round-trip：转换后关键字段与原实体一致', () => {
     const settlement = makeSettlement()
     const contract = toLoyaltySettlementContract(settlement)
 
@@ -195,7 +196,7 @@ describe('toLoyaltySettlementContract', () => {
 
 // ──────────── toPointsLedgerContract ────────────
 describe('toPointsLedgerContract', () => {
-  test('积分账本条目转换：剥离 tenantContext', () => {
+  it('积分账本条目转换：剥离 tenantContext', () => {
     const entry = makePointsEntry()
     const contract = toPointsLedgerContract(entry)
 
@@ -208,7 +209,7 @@ describe('toPointsLedgerContract', () => {
     assert.equal(contract.tenantContext, undefined)
   })
 
-  test('负积分条目（积分扣减）', () => {
+  it('负积分条目（积分扣减）', () => {
     const entry = makePointsEntry({ points: -30, reason: '积分兑换扣减' })
     const contract = toPointsLedgerContract(entry)
 
@@ -216,7 +217,7 @@ describe('toPointsLedgerContract', () => {
     assert.equal(contract.reason, '积分兑换扣减')
   })
 
-  test('零积分条目（边界）', () => {
+  it('零积分条目（边界）', () => {
     const entry = makePointsEntry({ points: 0, reason: '零积分记录' })
     const contract = toPointsLedgerContract(entry)
 
@@ -226,7 +227,7 @@ describe('toPointsLedgerContract', () => {
 
 // ──────────── toCouponRedemptionContract ────────────
 describe('toCouponRedemptionContract', () => {
-  test('已核销优惠券转换', () => {
+  it('已核销优惠券转换', () => {
     const redemption = makeCouponRedemption()
     const contract = toCouponRedemptionContract(redemption)
 
@@ -238,7 +239,7 @@ describe('toCouponRedemptionContract', () => {
     assert.equal(contract.tenantContext, undefined)
   })
 
-  test('已释放优惠券转换（订单取消后退还）', () => {
+  it('已释放优惠券转换（订单取消后退还）', () => {
     const redemption = makeCouponRedemption({
       redemptionId: 'redeem-002',
       status: CouponRedemptionStatus.Released,
@@ -251,7 +252,7 @@ describe('toCouponRedemptionContract', () => {
 
 // ──────────── toBlindboxFulfillmentContract ────────────
 describe('toBlindboxFulfillmentContract', () => {
-  test('盲盒已兑现转换', () => {
+  it('盲盒已兑现转换', () => {
     const fulfillment = makeBlindboxFulfillment()
     const contract = toBlindboxFulfillmentContract(fulfillment)
 
@@ -264,7 +265,7 @@ describe('toBlindboxFulfillmentContract', () => {
     assert.equal(contract.tenantContext, undefined)
   })
 
-  test('盲盒已跳过转换（库存不足）', () => {
+  it('盲盒已跳过转换（库存不足）', () => {
     const fulfillment = makeBlindboxFulfillment({
       fulfillmentId: 'ff-002',
       rewardSku: '',
@@ -276,7 +277,7 @@ describe('toBlindboxFulfillmentContract', () => {
     assert.equal(contract.rewardSku, '')
   })
 
-  test('盲盒已撤销转换', () => {
+  it('盲盒已撤销转换', () => {
     const fulfillment = makeBlindboxFulfillment({
       fulfillmentId: 'ff-003',
       status: BlindboxFulfillmentStatus.Revoked,
@@ -289,7 +290,7 @@ describe('toBlindboxFulfillmentContract', () => {
 
 // ──────────── toCouponPlanContract ────────────
 describe('toCouponPlanContract', () => {
-  test('优惠券计划转换：保留业务字段，剥离租户上下文', () => {
+  it('优惠券计划转换：保留业务字段，剥离租户上下文', () => {
     const plan = makeCouponPlan()
     const contract = toCouponPlanContract(plan)
 
@@ -307,7 +308,7 @@ describe('toCouponPlanContract', () => {
     assert.equal(contract.tenantContext, undefined)
   })
 
-  test('百分比折扣优惠券计划', () => {
+  it('百分比折扣优惠券计划', () => {
     const plan = makeCouponPlan({
       planId: 'plan-coupon-pct',
       code: 'PCT10',
@@ -323,14 +324,14 @@ describe('toCouponPlanContract', () => {
     assert.equal(contract.minOrderAmount, undefined)
   })
 
-  test('已暂停优惠券计划', () => {
+  it('已暂停优惠券计划', () => {
     const plan = makeCouponPlan({ status: LoyaltyPlanStatus.Paused })
     const contract = toCouponPlanContract(plan)
 
     assert.equal(contract.status, LoyaltyPlanStatus.Paused)
   })
 
-  test('已过期优惠券计划', () => {
+  it('已过期优惠券计划', () => {
     const plan = makeCouponPlan({
       status: LoyaltyPlanStatus.Expired,
       remainingQuota: 0,
@@ -344,7 +345,7 @@ describe('toCouponPlanContract', () => {
 
 // ──────────── toBlindboxPlanContract ────────────
 describe('toBlindboxPlanContract', () => {
-  test('盲盒计划转换：剥离租户上下文和奖励池详情', () => {
+  it('盲盒计划转换：剥离租户上下文和奖励池详情', () => {
     const plan = makeBlindboxPlan()
     const contract = toBlindboxPlanContract(plan)
 
@@ -362,7 +363,7 @@ describe('toBlindboxPlanContract', () => {
     assert.equal(contract.rewardPool, undefined)
   })
 
-  test('草稿状态盲盒计划', () => {
+  it('草稿状态盲盒计划', () => {
     const plan = makeBlindboxPlan({ status: LoyaltyPlanStatus.Draft })
     const contract = toBlindboxPlanContract(plan)
 
@@ -372,7 +373,7 @@ describe('toBlindboxPlanContract', () => {
 
 // ──────────── toLoyaltyOrderSummaryContract ────────────
 describe('toLoyaltyOrderSummaryContract', () => {
-  test('完整订单摘要：含结算、积分、核销、盲盒', () => {
+  it('完整订单摘要：含结算、积分、核销、盲盒', () => {
     const settlement = makeSettlement()
     const summary = toLoyaltyOrderSummaryContract({
       settlement,
@@ -392,7 +393,7 @@ describe('toLoyaltyOrderSummaryContract', () => {
     assert.equal(summary.blindboxFulfillments[0].blindboxPlanId, 'bb-bronze')
   })
 
-  test('订单摘要多条目：3 条积分记录 + 2 个盲盒兑现', () => {
+  it('订单摘要多条目：3 条积分记录 + 2 个盲盒兑现', () => {
     const settlement = makeSettlement()
     const summary = toLoyaltyOrderSummaryContract({
       settlement,
@@ -413,7 +414,7 @@ describe('toLoyaltyOrderSummaryContract', () => {
     assert.equal(summary.couponRedemptions.length, 0)
   })
 
-  test('无结算时抛错', () => {
+  it('无结算时抛错', () => {
     assert.throws(
       () =>
         toLoyaltyOrderSummaryContract({
@@ -426,7 +427,7 @@ describe('toLoyaltyOrderSummaryContract', () => {
     )
   })
 
-  test('空数组也能构建摘要', () => {
+  it('空数组也能构建摘要', () => {
     const settlement = makeSettlement({ couponCode: undefined, blindboxPlanId: undefined })
     const summary = toLoyaltyOrderSummaryContract({
       settlement,

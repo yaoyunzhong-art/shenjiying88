@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
 import { createHmac } from 'node:crypto'
-import test from 'node:test'
 import { IntegrationOrchestrationService } from './integration-orchestration.service'
 
 function buildSignature(timestamp: string, payload: Record<string, unknown>) {
@@ -8,7 +8,7 @@ function buildSignature(timestamp: string, payload: Record<string, unknown>) {
   return `sha256=${createHmac('sha256', 'lyt-webhook-secret-v2').update(`${timestamp}.${rawBody}`).digest('hex')}`
 }
 
-test('contract: webhook duplicate race falls back to database unique key result', async () => {
+it('contract: webhook duplicate race falls back to database unique key result', async () => {
   const now = new Date()
   const existingEvent = {
     id: 'evt_existing',

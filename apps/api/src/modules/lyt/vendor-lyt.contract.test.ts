@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import type { LytOrderPayload } from '@m5/domain'
 import {
   LYT_VENDOR_ERROR_CODE_MAP,
@@ -13,7 +13,7 @@ import {
   toVendorGateEventRequestPayload
 } from './vendor-lyt.contract'
 
-test('toLytMemberProfileFromVendor maps vendor member payload into standard profile', () => {
+it('toLytMemberProfileFromVendor maps vendor member payload into standard profile', () => {
   const result = toLytMemberProfileFromVendor({
     member_id: 'member-001',
     mobile: '13800000000',
@@ -29,7 +29,7 @@ test('toLytMemberProfileFromVendor maps vendor member payload into standard prof
   })
 })
 
-test('toVendorCreateOrderPayload maps standard order payload into vendor lines', () => {
+it('toVendorCreateOrderPayload maps standard order payload into vendor lines', () => {
   const payload: LytOrderPayload = {
     storeId: 'store-1',
     memberId: 'member-1',
@@ -43,7 +43,7 @@ test('toVendorCreateOrderPayload maps standard order payload into vendor lines',
   })
 })
 
-test('toLytOrderResultFromVendor maps vendor status and payable amount', () => {
+it('toLytOrderResultFromVendor maps vendor status and payable amount', () => {
   const result = toLytOrderResultFromVendor({
     order_id: 'order-1',
     amount: 100,
@@ -58,7 +58,7 @@ test('toLytOrderResultFromVendor maps vendor status and payable amount', () => {
   })
 })
 
-test('vendor discount and gate helpers map to standard shapes', () => {
+it('vendor discount and gate helpers map to standard shapes', () => {
   assert.deepEqual(toVendorDiscountApplyPayload('CPN-1'), { coupon_code: 'CPN-1' })
   assert.deepEqual(toDiscountResultFromVendor({ order_id: 'order-1', coupon_code: 'CPN-1' }), {
     orderId: 'order-1',
@@ -71,7 +71,7 @@ test('vendor discount and gate helpers map to standard shapes', () => {
   })
 })
 
-test('toDeviceStatusFromVendor normalizes maintenance status into offline', () => {
+it('toDeviceStatusFromVendor normalizes maintenance status into offline', () => {
   assert.deepEqual(
     toDeviceStatusFromVendor({
       device_id: 'device-1',
@@ -84,7 +84,7 @@ test('toDeviceStatusFromVendor normalizes maintenance status into offline', () =
   )
 })
 
-test('LYT_VENDOR_ERROR_CODE_MAP exposes normalized vendor code mapping', () => {
+it('LYT_VENDOR_ERROR_CODE_MAP exposes normalized vendor code mapping', () => {
   assert.equal(LYT_VENDOR_ERROR_CODE_MAP.VALIDATION_FAILED, 'LYT_VALIDATION_ERROR')
   assert.equal(LYT_VENDOR_ERROR_CODE_MAP.TEMP_UNAVAILABLE, 'LYT_UPSTREAM_UNAVAILABLE')
 })

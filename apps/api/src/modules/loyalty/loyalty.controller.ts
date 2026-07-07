@@ -1,9 +1,11 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common'
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
   ActivateCouponPlanDto,
   ActivateBlindboxPlanDto,
+  BlindboxDrawAuditQueryDto,
+  BlindboxProbabilityOverviewQueryDto,
   IssueCouponFromPlanDto,
   IssueBlindboxFromPlanDto,
   RegisterCouponPlanDto,
@@ -28,6 +30,27 @@ export class LoyaltyController {
   @Get('blindbox-fulfillments')
   listBlindboxFulfillments(@TenantContext() tenantContext: RequestTenantContext) {
     return this.loyaltyService.listBlindboxFulfillments(tenantContext.tenantId)
+  }
+
+  @Get('blindbox-draw-records')
+  listBlindboxDrawRecords(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Query() query: BlindboxDrawAuditQueryDto
+  ) {
+    return this.loyaltyService.listBlindboxDrawAuditLogPage(tenantContext.tenantId, query)
+  }
+
+  @Get('blindbox-draw-records/integrity')
+  getBlindboxDrawRecordIntegrity(@TenantContext() tenantContext: RequestTenantContext) {
+    return this.loyaltyService.getBlindboxDrawAuditIntegrityReport(tenantContext.tenantId)
+  }
+
+  @Get('blindbox-members/:memberId/overview')
+  getBlindboxMemberOverview(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Param('memberId') memberId: string
+  ) {
+    return this.loyaltyService.getBlindboxMemberOverview(tenantContext.tenantId, memberId)
   }
 
   @Get('settlements')
@@ -108,6 +131,7 @@ export class LoyaltyController {
       unitPrice: body.unitPrice,
       totalQuota: body.totalQuota,
       rewardPool: body.rewardPool,
+      caseGuarantee: body.caseGuarantee,
       validFrom: body.validFrom,
       validUntil: body.validUntil
     })
@@ -126,6 +150,15 @@ export class LoyaltyController {
     return this.loyaltyService.getBlindboxPlan(planId, tenantContext.tenantId)
   }
 
+  @Get('blindbox-plans/:planId/probability')
+  getBlindboxProbabilityOverview(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Param('planId') planId: string,
+    @Query() query: BlindboxProbabilityOverviewQueryDto
+  ) {
+    return this.loyaltyService.getBlindboxProbabilityOverview(planId, tenantContext.tenantId, query)
+  }
+
   @Patch('blindbox-plans/:planId/status')
   activateBlindboxPlan(
     @TenantContext() tenantContext: RequestTenantContext,
@@ -140,12 +173,12 @@ export class LoyaltyController {
   }
 
   @Post('blindbox-plans/:planId/issue')
-  issueBlindbox(
+  async issueBlindbox(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('planId') planId: string,
     @Body() body: IssueBlindboxFromPlanDto
   ) {
-    return this.loyaltyService.issueBlindboxFromPlan({
+    return this.loyaltyService.issueBlindboxFromPlanAtomically({
       tenantContext,
       memberId: body.memberId,
       planId,

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-insight] [C] 合约测试
  *
@@ -6,7 +7,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { AiInsightService } from './ai-insight.service'
 import type {
   InsightReport,
@@ -26,7 +26,7 @@ function makeService(): AiInsightService {
 // ─── 实体 Shape 合约 ───────────────────────────────────
 
 describe('[ai-insight] 合约: 实体 Shape', () => {
-  test('InsightReport 必备字段齐全', () => {
+  it('InsightReport 必备字段齐全', () => {
     const svc = makeService()
     const report = svc.generateReport('default', 'store-01', 'revenue', '2026-06-01', '2026-06-07')
     assert.ok(report.id.startsWith('report-revenue-'))
@@ -45,7 +45,7 @@ describe('[ai-insight] 合约: 实体 Shape', () => {
     assert.ok(new Date(report.createdAt).toString() !== 'Invalid Date')
   })
 
-  test('InsightReport.type 仅允许 5 种', () => {
+  it('InsightReport.type 仅允许 5 种', () => {
     const svc = makeService()
     const validTypes: InsightReport['type'][] = ['revenue', 'member', 'attendance', 'game', 'kpi']
     for (const type of validTypes) {
@@ -54,7 +54,7 @@ describe('[ai-insight] 合约: 实体 Shape', () => {
     }
   })
 
-  test('KPI 必备字段齐全', () => {
+  it('KPI 必备字段齐全', () => {
     const svc = makeService()
     const kpis = svc.getKPIs('default')
     assert.ok(kpis.length > 0, 'seed data 应该预置 KPI')
@@ -71,7 +71,7 @@ describe('[ai-insight] 合约: 实体 Shape', () => {
     assert.ok(new Date(kpi.updatedAt).toString() !== 'Invalid Date')
   })
 
-  test('Anomaly 必备字段齐全', () => {
+  it('Anomaly 必备字段齐全', () => {
     const svc = makeService()
     const anomalies = svc.getAnomalies('default')
     assert.ok(anomalies.length > 0, 'seed data 应该预置 anomaly')
@@ -87,7 +87,7 @@ describe('[ai-insight] 合约: 实体 Shape', () => {
     assert.ok(['open', 'acknowledged', 'resolved'].includes(a.status))
   })
 
-  test('Trend 必备字段齐全 + forecast 是 7 天数组', () => {
+  it('Trend 必备字段齐全 + forecast 是 7 天数组', () => {
     const svc = makeService()
     const trend = svc.generateForecast('default', '日营收', 'monthly')
     assert.equal(typeof trend.id, 'string')
@@ -102,7 +102,7 @@ describe('[ai-insight] 合约: 实体 Shape', () => {
     assert.ok(trend.confidence >= 0 && trend.confidence <= 1, 'confidence ∈ [0, 1]')
   })
 
-  test('DashboardSummary 三周期完整', () => {
+  it('DashboardSummary 三周期完整', () => {
     const svc = makeService()
     const summary = svc.getDashboardSummary('default')
     assert.equal(summary.tenantId, 'default')
@@ -126,13 +126,13 @@ describe('[ai-insight] 合约: 实体 Shape', () => {
 // ─── 业务映射合约 ─────────────────────────────────────
 
 describe('[ai-insight] 合约: typeToCategory 映射', () => {
-  test('revenue → revenue', () => {
+  it('revenue → revenue', () => {
     const svc = makeService()
     const report = svc.generateReport('default', undefined, 'revenue', '2026-06-01', '2026-06-07')
     assert.ok(Object.keys(report.data.metrics).length > 0)
   })
 
-  test('member → member', () => {
+  it('member → member', () => {
     const svc = makeService()
     const report = svc.generateReport('default', undefined, 'member', '2026-06-01', '2026-06-07')
     for (const item of report.data.trends) {
@@ -140,20 +140,20 @@ describe('[ai-insight] 合约: typeToCategory 映射', () => {
     }
   })
 
-  test('kpi → 全 5 类', () => {
+  it('kpi → 全 5 类', () => {
     const svc = makeService()
     const report = svc.generateReport('default', undefined, 'kpi', '2026-06-01', '2026-06-07')
     // 综合报告应包含 ≥ 4 个 metric(覆盖多类别)
     assert.ok(Object.keys(report.data.metrics).length >= 4)
   })
 
-  test('attendance → attendance', () => {
+  it('attendance → attendance', () => {
     const svc = makeService()
     const report = svc.generateReport('default', undefined, 'attendance', '2026-06-01', '2026-06-07')
     assert.ok(report.title.includes('到店'))
   })
 
-  test('game → game', () => {
+  it('game → game', () => {
     const svc = makeService()
     const report = svc.generateReport('default', undefined, 'game', '2026-06-01', '2026-06-07')
     assert.ok(report.title.includes('游戏'))
@@ -163,7 +163,7 @@ describe('[ai-insight] 合约: typeToCategory 映射', () => {
 // ─── 状态机合约 ───────────────────────────────────────
 
 describe('[ai-insight] 合约: 异常状态机', () => {
-  test('open → acknowledged 合法', () => {
+  it('open → acknowledged 合法', () => {
     const svc = makeService()
     const anomalies = svc.getAnomalies('default', { status: 'open' })
     if (anomalies.length > 0) {
@@ -172,7 +172,7 @@ describe('[ai-insight] 合约: 异常状态机', () => {
     }
   })
 
-  test('acknowledged → resolved 合法', () => {
+  it('acknowledged → resolved 合法', () => {
     const svc = makeService()
     const anomalies = svc.getAnomalies('default', { status: 'acknowledged' })
     if (anomalies.length > 0) {
@@ -182,7 +182,7 @@ describe('[ai-insight] 合约: 异常状态机', () => {
     }
   })
 
-  test('resolved 不可再 resolve', () => {
+  it('resolved 不可再 resolve', () => {
     const svc = makeService()
     const anomalies = svc.getAnomalies('default', { status: 'resolved' })
     if (anomalies.length > 0) {
@@ -192,7 +192,7 @@ describe('[ai-insight] 合约: 异常状态机', () => {
     }
   })
 
-  test('不存在的 anomaly 返回 undefined', () => {
+  it('不存在的 anomaly 返回 undefined', () => {
     const svc = makeService()
     const a = svc.acknowledgeAnomaly('non-existent-id')
     assert.equal(a, undefined)
@@ -202,7 +202,7 @@ describe('[ai-insight] 合约: 异常状态机', () => {
 // ─── 报告列表合约 ─────────────────────────────────────
 
 describe('[ai-insight] 合约: 报告列表过滤', () => {
-  test('limit 限制返回数量', () => {
+  it('limit 限制返回数量', () => {
     const svc = makeService()
     // 先生成 3 份报告
     svc.generateReport('default', 'store-01', 'revenue', '2026-06-01', '2026-06-07')
@@ -213,7 +213,7 @@ describe('[ai-insight] 合约: 报告列表过滤', () => {
     assert.equal(reports.length, 2)
   })
 
-  test('type 过滤报告', () => {
+  it('type 过滤报告', () => {
     const svc = makeService()
     svc.generateReport('default', undefined, 'revenue', '2026-06-01', '2026-06-07')
     svc.generateReport('default', undefined, 'member', '2026-06-01', '2026-06-07')
@@ -222,7 +222,7 @@ describe('[ai-insight] 合约: 报告列表过滤', () => {
     for (const r of revenues) assert.equal(r.type, 'revenue')
   })
 
-  test('跨租户报告隔离', () => {
+  it('跨租户报告隔离', () => {
     const svc = makeService()
     svc.generateReport('tenant-A', undefined, 'revenue', '2026-06-01', '2026-06-07')
     svc.generateReport('tenant-B', undefined, 'revenue', '2026-06-01', '2026-06-07')
@@ -233,7 +233,7 @@ describe('[ai-insight] 合约: 报告列表过滤', () => {
     assert.ok(bReports.every((r) => r.tenantId === 'tenant-B'))
   })
 
-  test('storeId 过滤报告', () => {
+  it('storeId 过滤报告', () => {
     const svc = makeService()
     svc.generateReport('default', 'store-01', 'revenue', '2026-06-01', '2026-06-07')
     svc.generateReport('default', 'store-02', 'revenue', '2026-06-01', '2026-06-07')
@@ -246,26 +246,26 @@ describe('[ai-insight] 合约: 报告列表过滤', () => {
 // ─── KPI 查询合约 ─────────────────────────────────────
 
 describe('[ai-insight] 合约: KPI 过滤', () => {
-  test('category 过滤 KPI', () => {
+  it('category 过滤 KPI', () => {
     const svc = makeService()
     const revenueKPIs = svc.getKPIs('default', undefined, 'revenue')
     assert.ok(revenueKPIs.every((k) => k.category === 'revenue'))
     assert.ok(revenueKPIs.length > 0, 'seed 应预置 revenue KPI')
   })
 
-  test('storeId 过滤 KPI', () => {
+  it('storeId 过滤 KPI', () => {
     const svc = makeService()
     const s1 = svc.getKPIs('default', 'store-01')
     assert.ok(s1.every((k) => k.storeId === 'store-01' || k.storeId === undefined))
   })
 
-  test('getKPIDetail 找不到返回 undefined', () => {
+  it('getKPIDetail 找不到返回 undefined', () => {
     const svc = makeService()
     const k = svc.getKPIDetail('non-existent-kpi')
     assert.equal(k, undefined)
   })
 
-  test('getKPIDetail 找到返回 KPI', () => {
+  it('getKPIDetail 找到返回 KPI', () => {
     const svc = makeService()
     const kpis = svc.getKPIs('default')
     const k = svc.getKPIDetail(kpis[0].id)
@@ -277,14 +277,14 @@ describe('[ai-insight] 合约: KPI 过滤', () => {
 // ─── 预测合约 ─────────────────────────────────────────
 
 describe('[ai-insight] 合约: 预测', () => {
-  test('空历史数据生成 7 天默认预测', () => {
+  it('空历史数据生成 7 天默认预测', () => {
     const svc = makeService()
     const trend = svc.generateForecast('empty-tenant', '日营收', 'monthly')
     assert.equal(trend.forecast.length, 7)
     assert.ok(trend.confidence >= 0 && trend.confidence <= 1)
   })
 
-  test('getForecast 通过 id 找到', () => {
+  it('getForecast 通过 id 找到', () => {
     const svc = makeService()
     const created = svc.generateForecast('default', '日营收', 'monthly')
     const found = svc.getForecast(created.id)
@@ -292,7 +292,7 @@ describe('[ai-insight] 合约: 预测', () => {
     assert.equal(found?.id, created.id)
   })
 
-  test('getForecast 找不到返回 undefined', () => {
+  it('getForecast 找不到返回 undefined', () => {
     const svc = makeService()
     const t = svc.getForecast('non-existent-trend')
     assert.equal(t, undefined)
@@ -302,13 +302,13 @@ describe('[ai-insight] 合约: 预测', () => {
 // ─── 异常检测合约 ─────────────────────────────────────
 
 describe('[ai-insight] 合约: detectAnomalies', () => {
-  test('无 metric 参数时检测所有 metric', () => {
+  it('无 metric 参数时检测所有 metric', () => {
     const svc = makeService()
     const detected = svc.detectAnomalies('default')
     assert.ok(Array.isArray(detected))
   })
 
-  test('指定 metric 只检测该指标', () => {
+  it('指定 metric 只检测该指标', () => {
     const svc = makeService()
     const detected = svc.detectAnomalies('default', undefined, '日营收')
     if (detected.length > 0) {
@@ -318,7 +318,7 @@ describe('[ai-insight] 合约: detectAnomalies', () => {
     }
   })
 
-  test('severity 字段 ∈ {low, medium, high, critical}', () => {
+  it('severity 字段 ∈ {low, medium, high, critical}', () => {
     const svc = makeService()
     const detected = svc.detectAnomalies('default')
     const validSeverities = ['low', 'medium', 'high', 'critical']
@@ -327,13 +327,13 @@ describe('[ai-insight] 合约: detectAnomalies', () => {
     }
   })
 
-  test('severity 过滤异常', () => {
+  it('severity 过滤异常', () => {
     const svc = makeService()
     const criticals = svc.getAnomalies('default', { severity: 'critical' })
     assert.ok(criticals.every((a) => a.severity === 'critical'))
   })
 
-  test('status 过滤异常', () => {
+  it('status 过滤异常', () => {
     const svc = makeService()
     const opens = svc.getAnomalies('default', { status: 'open' })
     assert.ok(opens.every((a) => a.status === 'open'))

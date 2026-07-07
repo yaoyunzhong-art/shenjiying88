@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
 import {
   toFoundationModuleContract,
   toFoundationConsumerContract,
@@ -122,7 +122,7 @@ function makeOperationsAlert(
 // ─── toFoundationModuleContract ───
 
 describe('toFoundationModuleContract()', () => {
-  test('maps a full descriptor to contract', () => {
+  it('maps a full descriptor to contract', () => {
     const descriptor = makeModuleDescriptor()
     const contract = toFoundationModuleContract(descriptor)
 
@@ -132,7 +132,7 @@ describe('toFoundationModuleContract()', () => {
     assert.equal(contract.capabilities.length, 2)
   })
 
-  test('maps capabilities correctly', () => {
+  it('maps capabilities correctly', () => {
     const descriptor = makeModuleDescriptor()
     const contract = toFoundationModuleContract(descriptor)
 
@@ -148,7 +148,7 @@ describe('toFoundationModuleContract()', () => {
     assert.equal(rbac!.name, 'RBAC')
   })
 
-  test('handles descriptor with empty capabilities', () => {
+  it('handles descriptor with empty capabilities', () => {
     const descriptor = makeModuleDescriptor({
       capabilities: []
     })
@@ -157,7 +157,7 @@ describe('toFoundationModuleContract()', () => {
     assert.equal(contract.capabilities.length, 0)
   })
 
-  test('handles capability with missing optional fields', () => {
+  it('handles capability with missing optional fields', () => {
     const descriptor: FoundationModuleDescriptor = {
       key: 'identity-access' as FoundationModuleDescriptor['key'],
       name: 'Minimal',
@@ -187,7 +187,7 @@ describe('toFoundationModuleContract()', () => {
 // ─── toFoundationConsumerContract ───
 
 describe('toFoundationConsumerContract()', () => {
-  test('maps a full consumer descriptor', () => {
+  it('maps a full consumer descriptor', () => {
     const descriptor = makeConsumerDescriptor()
     const contract = toFoundationConsumerContract(descriptor)
 
@@ -199,7 +199,7 @@ describe('toFoundationConsumerContract()', () => {
     assert.deepEqual(contract.highRiskEntrypoints, [])
   })
 
-  test('handles consumer with empty arrays', () => {
+  it('handles consumer with empty arrays', () => {
     const descriptor = makeConsumerDescriptor({
       dependsOn: [],
       governanceTouchpoints: [],
@@ -212,7 +212,7 @@ describe('toFoundationConsumerContract()', () => {
     assert.deepEqual(contract.highRiskEntrypoints, [])
   })
 
-  test('handles high risk entrypoints', () => {
+  it('handles high risk entrypoints', () => {
     const descriptor = makeConsumerDescriptor({
       highRiskEntrypoints: ['member-login', 'payment-submit']
     })
@@ -221,7 +221,7 @@ describe('toFoundationConsumerContract()', () => {
     assert.deepEqual(contract.highRiskEntrypoints, ['member-login', 'payment-submit'])
   })
 
-  test('preserves modulePath for non-empty descriptor', () => {
+  it('preserves modulePath for non-empty descriptor', () => {
     const descriptor = makeConsumerDescriptor({ modulePath: 'src/modules/portal' })
     const contract = toFoundationConsumerContract(descriptor)
 
@@ -232,7 +232,7 @@ describe('toFoundationConsumerContract()', () => {
 // ─── toFoundationGovernanceBaselineContract ───
 
 describe('toFoundationGovernanceBaselineContract()', () => {
-  test('maps a full governance baseline', () => {
+  it('maps a full governance baseline', () => {
     const baseline = makeGovernanceBaseline()
     const contract = toFoundationGovernanceBaselineContract(baseline)
 
@@ -244,7 +244,7 @@ describe('toFoundationGovernanceBaselineContract()', () => {
     assert.deepEqual(contract.evidence, ['docs/governance-observability.md'])
   })
 
-  test('handles baseline with multiple controls', () => {
+  it('handles baseline with multiple controls', () => {
     const baseline = makeGovernanceBaseline({
       controls: ['rotation', 'audit', 'backup']
     })
@@ -253,7 +253,7 @@ describe('toFoundationGovernanceBaselineContract()', () => {
     assert.deepEqual(contract.controls, ['rotation', 'audit', 'backup'])
   })
 
-  test('handles baseline with multiple evidence entries', () => {
+  it('handles baseline with multiple evidence entries', () => {
     const baseline = makeGovernanceBaseline({
       evidence: ['docs/a.md', 'docs/b.md']
     })
@@ -266,7 +266,7 @@ describe('toFoundationGovernanceBaselineContract()', () => {
 // ─── toFoundationBootstrapContract ───
 
 describe('toFoundationBootstrapContract()', () => {
-  test('maps a full blueprint', () => {
+  it('maps a full blueprint', () => {
     const blueprint = makeBlueprint()
     const contract = toFoundationBootstrapContract(blueprint)
 
@@ -281,7 +281,7 @@ describe('toFoundationBootstrapContract()', () => {
     assert.equal(contract.baselineCount, 1)
   })
 
-  test('maps module statuses from capabilities', () => {
+  it('maps module statuses from capabilities', () => {
     const blueprint = makeBlueprint()
     const contract = toFoundationBootstrapContract(blueprint)
 
@@ -291,7 +291,7 @@ describe('toFoundationBootstrapContract()', () => {
     })
   })
 
-  test('handles blueprint with multiple modules', () => {
+  it('handles blueprint with multiple modules', () => {
     const blueprint = makeBlueprint({
       modules: [
         makeModuleDescriptor(),
@@ -322,7 +322,7 @@ describe('toFoundationBootstrapContract()', () => {
     })
   })
 
-  test('handles empty modules and consumers', () => {
+  it('handles empty modules and consumers', () => {
     const blueprint = makeBlueprint({
       modules: [],
       consumers: [],
@@ -337,21 +337,21 @@ describe('toFoundationBootstrapContract()', () => {
     assert.equal(contract.baselineCount, 0)
   })
 
-  test('handles null/undefined frontendBootstrap gracefully', () => {
+  it('handles null/undefined frontendBootstrap gracefully', () => {
     const blueprint = makeBlueprint({ frontendBootstrap: undefined })
     const contract = toFoundationBootstrapContract(blueprint)
 
     assert.equal(contract.frontendBootstrapUrl, null)
   })
 
-  test('handles numeric frontendBootstrap gracefully', () => {
+  it('handles numeric frontendBootstrap gracefully', () => {
     const blueprint = makeBlueprint({ frontendBootstrap: 42 as unknown as FoundationBlueprint['frontendBootstrap'] })
     const contract = toFoundationBootstrapContract(blueprint)
 
     assert.equal(contract.frontendBootstrapUrl, null)
   })
 
-  test('handles missing docs gracefully', () => {
+  it('handles missing docs gracefully', () => {
     const blueprint = makeBlueprint({ docs: undefined })
     const contract = toFoundationBootstrapContract(blueprint)
 
@@ -362,7 +362,7 @@ describe('toFoundationBootstrapContract()', () => {
 // ─── toFoundationOperationsAlertContract ───
 
 describe('toFoundationOperationsAlertContract()', () => {
-  test('maps a high severity alert', () => {
+  it('maps a high severity alert', () => {
     const alert = makeOperationsAlert()
     const contract = toFoundationOperationsAlertContract(alert)
 
@@ -372,7 +372,7 @@ describe('toFoundationOperationsAlertContract()', () => {
     assert.equal(contract.summary, '存在待处理审批单')
   })
 
-  test('maps a medium severity alert', () => {
+  it('maps a medium severity alert', () => {
     const alert = makeOperationsAlert({ severity: 'medium', code: 'blocked-rate-limit-ledgers', count: 1 })
     const contract = toFoundationOperationsAlertContract(alert)
 
@@ -381,7 +381,7 @@ describe('toFoundationOperationsAlertContract()', () => {
     assert.equal(contract.count, 1)
   })
 
-  test('maps a low severity alert', () => {
+  it('maps a low severity alert', () => {
     const alert = makeOperationsAlert({ severity: 'low', code: 'recovery-drill-attention', count: 0 })
     const contract = toFoundationOperationsAlertContract(alert)
 
@@ -390,7 +390,7 @@ describe('toFoundationOperationsAlertContract()', () => {
     assert.equal(contract.count, 0)
   })
 
-  test('handles zero count alert', () => {
+  it('handles zero count alert', () => {
     const alert = makeOperationsAlert({ count: 0 })
     const contract = toFoundationOperationsAlertContract(alert)
 
@@ -430,7 +430,7 @@ describe('toFoundationOperationsOverviewContract()', () => {
     ]
   }
 
-  test('maps full overview snapshot', () => {
+  it('maps full overview snapshot', () => {
     const contract = toFoundationOperationsOverviewContract(fullInput)
 
     assert.equal(contract.generatedAt, '2026-06-23T06:00:00Z')
@@ -453,7 +453,7 @@ describe('toFoundationOperationsOverviewContract()', () => {
     assert.equal(contract.lytGovernanceCounts.affectedStores, 5)
   })
 
-  test('maps alerts correctly', () => {
+  it('maps alerts correctly', () => {
     const contract = toFoundationOperationsOverviewContract(fullInput)
 
     assert.equal(contract.alerts.length, 3)
@@ -465,7 +465,7 @@ describe('toFoundationOperationsOverviewContract()', () => {
     assert.equal(contract.highRiskAlertCount, 2)
   })
 
-  test('handles empty alerts', () => {
+  it('handles empty alerts', () => {
     const input = {
       generatedAt: '2026-06-23T06:00:00Z',
       summary: {
@@ -497,7 +497,7 @@ describe('toFoundationOperationsOverviewContract()', () => {
     assert.equal(contract.approvalCounts.approvalsPending, 0)
   })
 
-  test('handles missing summary keys gracefully', () => {
+  it('handles missing summary keys gracefully', () => {
     const input = {
       generatedAt: '2026-06-23T06:00:00Z',
       summary: {} as Record<string, number>,
@@ -514,7 +514,7 @@ describe('toFoundationOperationsOverviewContract()', () => {
 // ─── toFoundationConsumerDependencyContract ───
 
 describe('toFoundationConsumerDependencyContract()', () => {
-  test('maps a found consumer', () => {
+  it('maps a found consumer', () => {
     const descriptor = makeConsumerDescriptor()
     const allNames = ['market', 'portal', 'workbench']
     const contract = toFoundationConsumerDependencyContract({
@@ -529,7 +529,7 @@ describe('toFoundationConsumerDependencyContract()', () => {
     assert.deepEqual(contract.dependsOn, ['identity-access', 'configuration-governance'])
   })
 
-  test('maps an unfound consumer', () => {
+  it('maps an unfound consumer', () => {
     const contract = toFoundationConsumerDependencyContract({
       consumer: undefined,
       consumerKey: 'unknown-consumer',
@@ -545,7 +545,7 @@ describe('toFoundationConsumerDependencyContract()', () => {
     assert.deepEqual(contract.highRiskEntrypoints, [])
   })
 
-  test('preserves found flag for existing consumer', () => {
+  it('preserves found flag for existing consumer', () => {
     const descriptor = makeConsumerDescriptor({ consumer: 'portal' })
     const contract = toFoundationConsumerDependencyContract({
       consumer: descriptor,
@@ -561,7 +561,7 @@ describe('toFoundationConsumerDependencyContract()', () => {
 // ─── toFoundationModuleCatalogContract ───
 
 describe('toFoundationModuleCatalogContract()', () => {
-  test('maps multiple modules', () => {
+  it('maps multiple modules', () => {
     const modules = [
       makeModuleDescriptor(),
       makeModuleDescriptor({
@@ -588,7 +588,7 @@ describe('toFoundationModuleCatalogContract()', () => {
     assert.equal(contract.modules[1].key, 'trust-governance')
   })
 
-  test('handles empty modules array', () => {
+  it('handles empty modules array', () => {
     const contract = toFoundationModuleCatalogContract([])
 
     assert.equal(contract.moduleCount, 0)
@@ -596,7 +596,7 @@ describe('toFoundationModuleCatalogContract()', () => {
     assert.equal(contract.modules.length, 0)
   })
 
-  test('handles single module', () => {
+  it('handles single module', () => {
     const modules = [makeModuleDescriptor()]
     const contract = toFoundationModuleCatalogContract(modules)
 
@@ -609,7 +609,7 @@ describe('toFoundationModuleCatalogContract()', () => {
 // ─── toFoundationAlertCatalogItemContract ───
 
 describe('toFoundationAlertCatalogItemContract()', () => {
-  test('maps a full alert catalog item', () => {
+  it('maps a full alert catalog item', () => {
     const item: FoundationAlertCatalogItem = {
       code: 'approvals-pending',
       defaultSummary: '存在待处理审批单',
@@ -632,7 +632,7 @@ describe('toFoundationAlertCatalogItemContract()', () => {
     assert.equal(contract.acknowledgementEnabled, true)
   })
 
-  test('handles disabled drilldown and acknowledgement', () => {
+  it('handles disabled drilldown and acknowledgement', () => {
     const item: FoundationAlertCatalogItem = {
       code: 'runtime-governance-backlog' as FoundationAlertCode,
       defaultSummary: 'summary',
@@ -651,7 +651,7 @@ describe('toFoundationAlertCatalogItemContract()', () => {
     assert.equal(contract.acknowledgementEnabled, false)
   })
 
-  test('handles single source module', () => {
+  it('handles single source module', () => {
     const item: FoundationAlertCatalogItem = {
       code: 'runtime-governance-backlog',
       defaultSummary: '存在待跟进 receipt',
@@ -673,7 +673,7 @@ describe('toFoundationAlertCatalogItemContract()', () => {
 // ─── Cross-mapper integration ───
 
 describe('contract integration', () => {
-  test('full pipeline: blueprint → bootstrap contract → consumer dependency', () => {
+  it('full pipeline: blueprint → bootstrap contract → consumer dependency', () => {
     const blueprint = makeBlueprint({
       modules: [
         makeModuleDescriptor(),
@@ -716,7 +716,7 @@ describe('contract integration', () => {
     assert.equal(depContract.consumer, 'market')
   })
 
-  test('pipeline: overview → alerts counting', () => {
+  it('pipeline: overview → alerts counting', () => {
     const overview = toFoundationOperationsOverviewContract({
       generatedAt: '2026-06-23T06:00:00Z',
       summary: {

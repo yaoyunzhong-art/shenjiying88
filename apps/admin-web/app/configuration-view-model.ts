@@ -128,8 +128,8 @@ export const FEATURE_FLAG_STATUS_VARIANT = {
   false: 'neutral'
 } as const satisfies Record<'true' | 'false', 'success' | 'neutral'>;
 
-export function featureFlagStatusLabel(flag: ConfigurationFeatureFlag): string {
-  return flag.enabled ? '启用' : '关闭';
+export function featureFlagStatusLabel(flag: ConfigurationFeatureFlag | null | undefined): string {
+  return flag?.enabled ? '启用' : '关闭';
 }
 
 export function summarizeConfigEntry(entry: ConfigurationConfigEntry): string {

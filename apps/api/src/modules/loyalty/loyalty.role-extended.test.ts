@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 扩展角色测试: loyalty 模块
  *
@@ -13,7 +14,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { LoyaltyController } from './loyalty.controller'
 import { LoyaltyService } from './loyalty.service'
 import { MemberService } from '../member/member.service'
@@ -52,7 +52,7 @@ function createController(): LoyaltyController {
 // 🛒前台 — 查询会员积分 (reception looking up member points)
 // ──────────────────────────────────────────────────────────────────────
 describe('🛒前台 — 会员积分查询视角', () => {
-  test('查询积分台账可见已有积分记录 (points ledger query)', () => {
+  it('查询积分台账可见已有积分记录 (points ledger query)', () => {
     const ctrl = createController()
 
     // 初始积分台账为空
@@ -61,7 +61,7 @@ describe('🛒前台 — 会员积分查询视角', () => {
     assert.equal(ledger.length, 0)
   })
 
-  test('结算成功后积分台账有对应积分记录 (points awarded after settlement)', async () => {
+  it('结算成功后积分台账有对应积分记录 (points awarded after settlement)', async () => {
     const ctrl = createController()
     const service = (ctrl as any).loyaltyService as LoyaltyService
 
@@ -94,7 +94,7 @@ describe('🛒前台 — 会员积分查询视角', () => {
     assert.equal(entry.reason, 'cashier.payment-succeeded')
   })
 
-  test('退款后会扣回对应积分 (points rollback on refund)', async () => {
+  it('退款后会扣回对应积分 (points rollback on refund)', async () => {
     const ctrl = createController()
     const service = (ctrl as any).loyaltyService as LoyaltyService
 
@@ -137,7 +137,7 @@ describe('🛒前台 — 会员积分查询视角', () => {
 // 📢营销 — 创建营销活动 (marketing creating campaigns)
 // ──────────────────────────────────────────────────────────────────────
 describe('📢营销 — 营销活动创建视角', () => {
-  test('创建优惠券活动计划 (create coupon plan)', () => {
+  it('创建优惠券活动计划 (create coupon plan)', () => {
     const ctrl = createController()
 
     const plan = ctrl.registerCouponPlan(tenantCtx, {
@@ -159,7 +159,7 @@ describe('📢营销 — 营销活动创建视角', () => {
     assert.equal(plan.status, LoyaltyPlanStatus.Draft)
   })
 
-  test('激活优惠券计划后可发放 (activate and issue coupon)', () => {
+  it('激活优惠券计划后可发放 (activate and issue coupon)', () => {
     const ctrl = createController()
 
     const plan = ctrl.registerCouponPlan(tenantCtx, {
@@ -189,7 +189,7 @@ describe('📢营销 — 营销活动创建视角', () => {
     assert.equal(redemption.memberId, 'mem-promo-001')
   })
 
-  test('无效的折扣比例拒绝注册 (invalid discount validation)', () => {
+  it('无效的折扣比例拒绝注册 (invalid discount validation)', () => {
     const ctrl = createController()
 
     // 百分比折扣超过 100%
@@ -213,7 +213,7 @@ describe('📢营销 — 营销活动创建视角', () => {
 // 🎯运行专员 — 管理奖品奖励 (operations managing rewards)
 // ──────────────────────────────────────────────────────────────────────
 describe('🎯运行专员 — 奖品奖励管理视角', () => {
-  test('创建盲盒计划 (create blindbox plan)', () => {
+  it('创建盲盒计划 (create blindbox plan)', () => {
     const ctrl = createController()
 
     const plan = ctrl.registerBlindboxPlan(tenantCtx, {
@@ -223,10 +223,10 @@ describe('🎯运行专员 — 奖品奖励管理视角', () => {
       unitPrice: 500, // 5 元 (分)
       totalQuota: 200,
       rewardPool: [
-        { sku: 'PRIZE-A', weight: 50, label: '徽章' },
-        { sku: 'PRIZE-B', weight: 30, label: '钥匙扣' },
-        { sku: 'PRIZE-C', weight: 15, label: '小公仔' },
-        { sku: 'PRIZE-D', weight: 5, label: '隐藏款手办' },
+        { sku: 'PRIZE-A', weight: 70, label: '徽章' },
+        { sku: 'PRIZE-B', weight: 20, label: '钥匙扣' },
+        { sku: 'PRIZE-C', weight: 8, label: '小公仔' },
+        { sku: 'PRIZE-D', weight: 2, label: '隐藏款手办' },
       ],
       validFrom: '2026-07-01T00:00:00.000Z',
       validUntil: '2026-08-31T23:59:59.999Z',
@@ -238,7 +238,7 @@ describe('🎯运行专员 — 奖品奖励管理视角', () => {
     assert.equal(plan.status, LoyaltyPlanStatus.Draft)
   })
 
-  test('激活盲盒后可从计划发放 (activate and issue blindbox)', () => {
+  it('激活盲盒后可从计划发放 (activate and issue blindbox)', async () => {
     const ctrl = createController()
 
     const plan = ctrl.registerBlindboxPlan(tenantCtx, {
@@ -260,7 +260,7 @@ describe('🎯运行专员 — 奖品奖励管理视角', () => {
     })
 
     // 发放——因为带随机性，跳过精确断言，只验证格式
-    const fulfillment = ctrl.issueBlindbox(tenantCtx, plan.planId, {
+    const fulfillment = await ctrl.issueBlindbox(tenantCtx, plan.planId, {
       memberId: 'mem-blind-001',
       quantity: 1,
     })
@@ -270,7 +270,7 @@ describe('🎯运行专员 — 奖品奖励管理视角', () => {
     assert.equal(fulfillment.quantity, 1)
   })
 
-  test('盲盒预留不足时拒绝发放 (insufficient blindbox quota)', () => {
+  it('盲盒预留不足时拒绝发放 (insufficient blindbox quota)', async () => {
     const ctrl = createController()
 
     const plan = ctrl.registerBlindboxPlan(tenantCtx, {
@@ -291,10 +291,10 @@ describe('🎯运行专员 — 奖品奖励管理视角', () => {
     })
 
     // 消耗所有配额
-    ctrl.issueBlindbox(tenantCtx, plan.planId, { memberId: 'mem-01', quantity: 2 })
+    await ctrl.issueBlindbox(tenantCtx, plan.planId, { memberId: 'mem-01', quantity: 2 })
 
     // 再发放应当拒绝
-    assert.throws(
+    await assert.rejects(
       () => ctrl.issueBlindbox(tenantCtx, plan.planId, { memberId: 'mem-02', quantity: 1 }),
       /insufficient quota/i
     )
@@ -305,7 +305,7 @@ describe('🎯运行专员 — 奖品奖励管理视角', () => {
 // 👔店长 — 查看忠诚度分析 (shop manager viewing loyalty analytics)
 // ──────────────────────────────────────────────────────────────────────
 describe('👔店长 — 忠诚度分析视角', () => {
-  test('查看结算记录列表 (settlement list)', async () => {
+  it('查看结算记录列表 (settlement list)', async () => {
     const ctrl = createController()
     const service = (ctrl as any).loyaltyService as LoyaltyService
 
@@ -336,7 +336,7 @@ describe('👔店长 — 忠诚度分析视角', () => {
     assert(s.awardedPoints > 0)
   })
 
-  test('查看优惠券核销记录 (coupon redemption list)', async () => {
+  it('查看优惠券核销记录 (coupon redemption list)', async () => {
     const ctrl = createController()
     const service = (ctrl as any).loyaltyService as LoyaltyService
 
@@ -365,7 +365,7 @@ describe('👔店长 — 忠诚度分析视角', () => {
     assert.equal(r.status, 'REDEEMED')
   })
 
-  test('查看盲盒履约列表 (blindbox fulfillment list)', () => {
+  it('查看盲盒履约列表 (blindbox fulfillment list)', async () => {
     const ctrl = createController()
 
     const plan = ctrl.registerBlindboxPlan(tenantCtx, {
@@ -380,7 +380,7 @@ describe('👔店长 — 忠诚度分析视角', () => {
       validUntil: '2026-12-31T23:59:59.999Z',
     })
     ctrl.activateBlindboxPlan(tenantCtx, plan.planId, { status: LoyaltyPlanStatus.Active })
-    ctrl.issueBlindbox(tenantCtx, plan.planId, { memberId: 'mem-box-an-001', quantity: 1 })
+    await ctrl.issueBlindbox(tenantCtx, plan.planId, { memberId: 'mem-box-an-001', quantity: 1 })
 
     const fulfillments = ctrl.listBlindboxFulfillments(tenantCtx)
     assert(fulfillments.length >= 1)

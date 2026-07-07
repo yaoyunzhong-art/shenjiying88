@@ -1,155 +1,77 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common'
-import { TenantContext } from '../tenant/tenant.decorator'
-import type { RequestTenantContext } from '../tenant/tenant.types'
-import {
-  CreateSvipMemberDto,
-  SvipBenefitDto,
-  SvipMemberQueryDto,
-  SvipTierDto,
-  SvipTierQueryDto,
-  SvipUpgradeDto,
-  UseSvipBenefitDto
-} from './svip.dto'
-import { SvipService } from './svip.service'
+import { Controller, Get, Post, Param, Body } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { SvipService } from './svip.service';
+import { SVIPPlan, SVIPSubscription, SVIPBenefit, SVIPBenefitType } from './svip.entity';
+
+interface CreatePlanDto {
+  name: string;
+  price: number;
+  durationDays: number;
+  benefits: string[];
+}
+
+interface SubscribeDto {
+  userId: string;
+  planId: string;
+}
+
+interface UseBenefitDto {
+  userId: string;
+  benefitType: SVIPBenefitType;
+}
 
 @Controller('svip')
 export class SvipController {
   constructor(private readonly svipService: SvipService) {}
 
-  // ── 等级管理 ───────────────────────────────────────────
-
-  @Post('tiers/init')
-  initDefaultTiers(@TenantContext() tenantContext: RequestTenantContext) {
-    return this.svipService.initDefaultTiers(tenantContext)
+  @Post('plans')
+  createPlan(@Body() dto: CreatePlanDto): Observable<SVIPPlan> {
+    return this.svipService.createPlan({
+      name: dto.name,
+      price: dto.price,
+      durationDays: dto.durationDays,
+      benefits: dto.benefits,
+    });
   }
 
-  @Get('tiers')
-  listTiers(
-    @TenantContext() tenantContext: RequestTenantContext,
-    @Query() query: SvipTierQueryDto
-  ) {
-    const tiers = this.svipService.listTiers(tenantContext.tenantId)
-    if (query.level !== undefined) {
-      return tiers.filter((t) => t.level === query.level)
-    }
-    return tiers
+  @Get('plans')
+  listPlans(): Observable<SVIPPlan[]> {
+    return new Observable((observer) => {
+      observer.next([]);
+      observer.complete();
+    });
   }
 
-  @Get('tiers/:tierId')
-  getTier(
-    @TenantContext() tenantContext: RequestTenantContext,
-    @Param('tierId') tierId: string
-  ) {
-    return this.svipService.getTier(tierId, tenantContext.tenantId)
+  @Post('subscribe')
+  subscribe(@Body() dto: SubscribeDto): Observable<SVIPSubscription | null> {
+    return this.svipService.subscribe(dto.userId, dto.planId);
   }
 
-  @Post('tiers')
-  upsertTier(
-    @TenantContext() tenantContext: RequestTenantContext,
-    @Body() body: SvipTierDto
-  ) {
-    return this.svipService.upsertTier(tenantContext, body)
+  @Get('subscription/:userId')
+  getSubscription(@Param('userId') userId: string): Observable<SVIPSubscription | null> {
+    return this.svipService.getSubscription(userId);
   }
 
-  // ── 会员管理 ───────────────────────────────────────────
-
-  @Post('members')
-  createMember(
-    @TenantContext() tenantContext: RequestTenantContext,
-    @Body() body: CreateSvipMemberDto
-  ) {
-    return this.svipService.createMember(tenantContext, body)
+  @Post(':subscriptionId/cancel')
+  cancel(@Param('subscriptionId') subscriptionId: string): Observable<SVIPSubscription | null> {
+    return this.svipService.cancelSubscription(subscriptionId);
   }
 
-  @Get('members')
-  listMembers(
-    @TenantContext() tenantContext: RequestTenantContext,
-    @Query() query: SvipMemberQueryDto
-  ) {
-    return this.svipService.listMembers(tenantContext.tenantId, {
-      status: query.status,
-      tierLevel: query.tierLevel
-    })
+  @Post(':subscriptionId/renew')
+  renew(@Param('subscriptionId') subscriptionId: string): Observable<SVIPSubscription | null> {
+    return this.svipService.renewSubscription(subscriptionId);
   }
 
-  @Get('members/:memberId')
-  getMemberTier(
-    @TenantContext() tenantContext: RequestTenantContext,
-    @Param('memberId') memberId: string
-  ) {
-    return this.svipService.getMemberTier(memberId, tenantContext.tenantId)
-  }
-
-  @Get('members/:memberId/benefits')
-  getMemberBenefits(
-    @TenantContext() tenantContext: RequestTenantContext,
-    @Param('memberId') memberId: string
-  ) {
-    return this.svipService.getMemberAvailableBenefits(memberId, tenantContext.tenantId)
-  }
-
-  @Post('upgrade')
-  upgradeTier(
-    @TenantContext() tenantContext: RequestTenantContext,
-    @Body() body: SvipUpgradeDto
-  ) {
-    return this.svipService.upgradeTier(tenantContext, body)
-  }
-
-  @Post('downgrade')
-  downgradeTier(
-    @TenantContext() tenantContext: RequestTenantContext,
-    @Body() body: SvipUpgradeDto
-  ) {
-    return this.svipService.downgradeTier(tenantContext, body)
-  }
-
-  @Post('members/:memberId/freeze')
-  freezeMember(
-    @TenantContext() tenantContext: RequestTenantContext,
-    @Param('memberId') memberId: string
-  ) {
-    return this.svipService.freezeMember(memberId, tenantContext.tenantId)
-  }
-
-  @Post('members/:memberId/unfreeze')
-  unfreezeMember(
-    @TenantContext() tenantContext: RequestTenantContext,
-    @Param('memberId') memberId: string
-  ) {
-    return this.svipService.unfreezeMember(memberId, tenantContext.tenantId)
-  }
-
-  @Patch('expired/check')
-  checkAndDowngradeExpired(@TenantContext() tenantContext: RequestTenantContext) {
-    return this.svipService.checkAndDowngradeExpired(tenantContext.tenantId)
-  }
-
-  // ── 权益管理 ───────────────────────────────────────────
-
-  @Get('benefits/:tierId')
-  listBenefits(@Param('tierId') tierId: string) {
-    return this.svipService.listBenefits(tierId)
-  }
-
-  @Post('benefits')
-  createBenefit(@Body() body: SvipBenefitDto) {
-    return this.svipService.createBenefit(body)
-  }
-
-  @Patch('benefits/:benefitId')
-  updateBenefit(
-    @Param('benefitId') benefitId: string,
-    @Body() body: Partial<SvipBenefitDto>
-  ) {
-    return this.svipService.updateBenefit(benefitId, body)
-  }
-
-  @Post('benefits/use')
+  @Post(':subscriptionId/benefit')
   useBenefit(
-    @TenantContext() tenantContext: RequestTenantContext,
-    @Body() body: UseSvipBenefitDto
-  ) {
-    return this.svipService.useBenefit(body.memberId, body.benefitType, tenantContext.tenantId)
+    @Param('subscriptionId') subscriptionId: string,
+    @Body() dto: UseBenefitDto,
+  ): Observable<SVIPBenefit | null> {
+    return this.svipService.useBenefit(dto.userId, dto.benefitType);
+  }
+
+  @Get(':subscriptionId/benefits')
+  getBenefits(@Param('subscriptionId') subscriptionId: string): Observable<SVIPBenefit[]> {
+    return this.svipService.getBenefits(subscriptionId);
   }
 }

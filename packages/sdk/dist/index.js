@@ -23,6 +23,7 @@ __export(index_exports, {
   ApiClient: () => ApiClient,
   buildRuntimeGovernanceReplayRequest: () => buildRuntimeGovernanceReplayRequest,
   buildRuntimeGovernanceSubmitRequest: () => buildRuntimeGovernanceSubmitRequest,
+  computeBackoffDelay: () => computeBackoffDelay,
   createFoundationAlertClient: () => createFoundationAlertClient,
   createFoundationAlertMutationExecutor: () => createFoundationAlertMutationExecutor,
   createFoundationAlertPanelClientAccess: () => createFoundationAlertPanelClientAccess,
@@ -36,7 +37,8 @@ __export(index_exports, {
   fallbackPortalConsumerDescriptor: () => fallbackPortalConsumerDescriptor,
   getDefaultApiBaseUrl: () => getDefaultApiBaseUrl,
   loadFoundationConsumerDescriptor: () => loadFoundationConsumerDescriptor,
-  loadFoundationGovernanceReadModel: () => loadFoundationGovernanceReadModel
+  loadFoundationGovernanceReadModel: () => loadFoundationGovernanceReadModel,
+  subscribeStream: () => subscribeStream
 });
 module.exports = __toCommonJS(index_exports);
 var import_types = require("@m5/types");
@@ -535,6 +537,37 @@ var ApiClient = class {
     });
     return result.data;
   }
+  async putData(path, body, init = {}) {
+    const result = await this.request(path, {
+      ...init,
+      method: "PUT",
+      headers: {
+        "content-type": "application/json",
+        ...init.headers ?? {}
+      },
+      body: JSON.stringify(body)
+    });
+    return result.data;
+  }
+  async patchData(path, body, init = {}) {
+    const result = await this.request(path, {
+      ...init,
+      method: "PATCH",
+      headers: {
+        "content-type": "application/json",
+        ...init.headers ?? {}
+      },
+      body: JSON.stringify(body)
+    });
+    return result.data;
+  }
+  async deleteData(path, init = {}) {
+    const result = await this.request(path, {
+      ...init,
+      method: "DELETE"
+    });
+    return result.data;
+  }
   async getMarketBootstrap(init = {}) {
     return this.getData("/markets/bootstrap", init);
   }
@@ -879,12 +912,239 @@ var ApiClient = class {
       init
     );
   }
+  // ── Agent & Knowledge V2 (Phase-23/24 — 后端 entity 镜像) ──
+  /** 列出所有 Agent 配置 */
+  async listAgentConfigs(init = {}) {
+    return this.getData("/agent/configs", init);
+  }
+  /** 获取单个 Agent 配置 */
+  async getAgentConfig(id, init = {}) {
+    return this.getData(`/agent/configs/${id}`, init);
+  }
+  /** 创建 Agent 配置 */
+  async createAgentConfig(body, init = {}) {
+    return this.postData("/agent/configs", body, init);
+  }
+  /** 更新 Agent 配置 */
+  async updateAgentConfig(id, body, init = {}) {
+    return this.putData(`/agent/configs/${id}`, body, init);
+  }
+  /** 删除 Agent 配置 */
+  async deleteAgentConfig(id, init = {}) {
+    return this.deleteData(`/agent/configs/${id}`, init);
+  }
+  /** 创建并运行 Agent 会话 */
+  async runAgentSession(body, init = {}) {
+    return this.postData("/agent/sessions/run", body, init);
+  }
+  /**
+   * 运行 Agent 会话并订阅实时事件流 (Phase-27 SSE)
+   *
+   * 后端 SSE 端点: POST /agent/sessions/run-stream
+   * 返回: text/event-stream,每个事件格式 `data: {AgentSessionEvent JSON}\n\n`
+   *
+   * 用法:
+   * ```ts
+   * for await (const ev of client.runAgentSessionStream({ configId, userInput, ... })) {
+   *   switch (ev.type) {
+   *     case 'step_progress': console.log(`Step ${ev.step}/${ev.maxSteps}`); break;
+   *     case 'message_added': appendMessage(ev.message); break;
+   *     case 'session_completed': finalize(ev.session, ev.execution); break;
+   *   }
+   * }
+   * ```
+   */
+  async *runAgentSessionStream(body, init = {}) {
+    const url = `${normalizeBaseUrl(this.options.baseUrl)}${normalizePath("/agent/sessions/run-stream")}`;
+    const response = await fetch(url, {
+      ...init,
+      method: "POST",
+      headers: buildHeaders(this.options, init.headers),
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) {
+      throw new Error(`Stream request failed with status ${response.status}`);
+    }
+    if (!response.body) {
+      throw new Error("Stream response has no body");
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let sepIdx = buffer.indexOf("\n\n");
+        while (sepIdx !== -1) {
+          const block = buffer.slice(0, sepIdx);
+          buffer = buffer.slice(sepIdx + 2);
+          const dataLine = block.split("\n").find((line) => line.startsWith("data: "));
+          if (dataLine) {
+            const json = dataLine.slice("data: ".length).trim();
+            if (json && json !== "[DONE]") {
+              try {
+                const event = JSON.parse(json);
+                yield event;
+              } catch {
+              }
+            }
+          }
+          sepIdx = buffer.indexOf("\n\n");
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+  /** 批量运行 Agent */
+  async batchRunAgent(body, init = {}) {
+    return this.postData("/agent/sessions/batch", body, init);
+  }
+  /** 列出所有 Agent 会话 */
+  async listAgentSessions(init = {}) {
+    return this.getData("/agent/sessions", init);
+  }
+  /** 获取单个 Agent 会话 */
+  async getAgentSession(id, init = {}) {
+    return this.getData(`/agent/sessions/${id}`, init);
+  }
+  /** 获取会话执行记录 */
+  async getAgentExecution(id, init = {}) {
+    return this.getData(`/agent/sessions/${id}/execution`, init);
+  }
+  /** 获取会话质量评估 */
+  async getSessionEvaluation(id, init = {}) {
+    return this.getData(`/agent/sessions/${id}/evaluation`, init);
+  }
+  /** 列出所有质量评估 */
+  async listQualityEvaluations(init = {}) {
+    return this.getData("/agent/evaluations", init);
+  }
+  /** 获取 Agent 统计 */
+  async getAgentStats(init = {}) {
+    return this.getData("/agent/stats", init);
+  }
+  /** 列出可用工具(后端返回 unknown,前端按 ToolDefinition 解读) */
+  async listAgentTools(init = {}) {
+    return this.getData("/agent/tools", init);
+  }
 };
+function subscribeStream(client, opts) {
+  const reconnectConfig = {
+    enabled: opts.reconnect?.enabled ?? true,
+    maxRetries: opts.reconnect?.maxRetries ?? 3,
+    initialDelayMs: opts.reconnect?.initialDelayMs ?? 1e3,
+    backoffMultiplier: opts.reconnect?.backoffMultiplier ?? 2
+  };
+  let status = "connecting";
+  let lastEventId = opts.initialLastEventId;
+  let cancelled = false;
+  let attempt = 0;
+  let currentAbort = null;
+  function setStatus(next) {
+    if (status === next) return;
+    status = next;
+    opts.onStatusChange?.(next);
+  }
+  function computeDelay(attemptNum) {
+    return reconnectConfig.initialDelayMs * Math.pow(reconnectConfig.backoffMultiplier, attemptNum - 1);
+  }
+  async function runOnce(signal) {
+    const headers = {};
+    if (lastEventId) {
+      headers["Last-Event-ID"] = lastEventId;
+    }
+    const generator = client.runAgentSessionStream(opts.body, { signal, headers });
+    for await (const event of generator) {
+      const evAny = event;
+      if (typeof evAny.id === "number") {
+        lastEventId = String(evAny.id);
+      }
+      opts.onEvent(event, {
+        id: typeof evAny.id === "number" ? evAny.id : -1,
+        raw: JSON.stringify(event)
+      });
+    }
+  }
+  async function loop() {
+    while (!cancelled) {
+      if (attempt > reconnectConfig.maxRetries) {
+        setStatus("closed");
+        const err = new Error(`SSE reconnect exhausted after ${reconnectConfig.maxRetries} attempts`);
+        opts.onError?.(err, { attempts: attempt, willRetry: false });
+        return;
+      }
+      if (attempt > 0) {
+        if (!reconnectConfig.enabled) {
+          setStatus("closed");
+          return;
+        }
+        setStatus("reconnecting");
+        const delay = computeDelay(attempt);
+        await new Promise((resolve) => {
+          const timer = setTimeout(resolve, delay);
+          if (currentAbort) {
+            currentAbort.signal.addEventListener("abort", () => {
+              clearTimeout(timer);
+              resolve();
+            });
+          }
+        });
+        if (cancelled) return;
+      }
+      attempt += 1;
+      currentAbort = new AbortController();
+      try {
+        setStatus(attempt === 1 ? "connecting" : "reconnecting");
+        await runOnce(currentAbort.signal);
+        setStatus("closed");
+        return;
+      } catch (err) {
+        if (cancelled) return;
+        const error = err instanceof Error ? err : new Error(String(err));
+        const isHttp410 = error.message.includes("410");
+        const isAbort = error.name === "AbortError";
+        if (isAbort) {
+          setStatus("closed");
+          return;
+        }
+        if (isHttp410) {
+          setStatus("closed");
+          opts.onError?.(error, { attempts: attempt, willRetry: false });
+          return;
+        }
+        const willRetry = attempt <= reconnectConfig.maxRetries && reconnectConfig.enabled;
+        opts.onError?.(error, { attempts: attempt, willRetry });
+        if (!willRetry) {
+          setStatus("closed");
+          return;
+        }
+      }
+    }
+  }
+  void loop();
+  return {
+    unsubscribe: () => {
+      cancelled = true;
+      currentAbort?.abort();
+      setStatus("closed");
+    },
+    getStatus: () => status,
+    getLastEventId: () => lastEventId
+  };
+}
+function computeBackoffDelay(attemptNum, initialDelayMs = 1e3, backoffMultiplier = 2) {
+  const safeAttempt = Math.max(0, attemptNum - 1);
+  return initialDelayMs * Math.pow(backoffMultiplier, safeAttempt);
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   ApiClient,
   buildRuntimeGovernanceReplayRequest,
   buildRuntimeGovernanceSubmitRequest,
+  computeBackoffDelay,
   createFoundationAlertClient,
   createFoundationAlertMutationExecutor,
   createFoundationAlertPanelClientAccess,
@@ -898,5 +1158,6 @@ var ApiClient = class {
   fallbackPortalConsumerDescriptor,
   getDefaultApiBaseUrl,
   loadFoundationConsumerDescriptor,
-  loadFoundationGovernanceReadModel
+  loadFoundationGovernanceReadModel,
+  subscribeStream
 });

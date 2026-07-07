@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E 跨模块 #15 — 赛事管理 → AI 经营洞察 → 通知派发 联动
  *
@@ -19,7 +20,6 @@
 
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test from 'node:test';
 import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
 import request from 'supertest';
 import { TournamentService } from '../tournament/tournament.service';
@@ -133,7 +133,7 @@ function getData(res: request.Response) {
 
 // ── Tests ───────────────────────────────────────────────────────────
 
-test('跨模块链#15 正例: 赛事创建 → 参与者 → 比赛完成 → 洞察 → 通知', async () => {
+it('跨模块链#15 正例: 赛事创建 → 参与者 → 比赛完成 → 洞察 → 通知', async () => {
   const { app } = await buildApp();
   const server = app.getHttpServer();
   const tenantId = 't15-1';
@@ -238,7 +238,7 @@ test('跨模块链#15 正例: 赛事创建 → 参与者 → 比赛完成 → �
   }
 });
 
-test('跨模块链#15 反例: Draft 状态注册参与者应拒绝', async () => {
+it('跨模块链#15 反例: Draft 状态注册参与者应拒绝', async () => {
   const { app } = await buildApp();
   const server = app.getHttpServer();
   const tenantId = 't15-reject';
@@ -265,7 +265,7 @@ test('跨模块链#15 反例: Draft 状态注册参与者应拒绝', async () =>
   }
 });
 
-test('跨模块链#15 反例: 跨租户隔离', async () => {
+it('跨模块链#15 反例: 跨租户隔离', async () => {
   const { app } = await buildApp();
   const server = app.getHttpServer();
   try {
@@ -290,7 +290,7 @@ test('跨模块链#15 反例: 跨租户隔离', async () => {
   }
 });
 
-test('跨模块链#15 边界: 失败通知 → retry → 成功', async () => {
+it('跨模块链#15 边界: 失败通知 → retry → 成功', async () => {
   const { app } = await buildApp();
   const server = app.getHttpServer();
   const tenantId = 't15-retry';

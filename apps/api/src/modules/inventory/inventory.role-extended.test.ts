@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 扩展角色测试: inventory 模块
  *
@@ -12,7 +13,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { InventoryController } from './inventory.controller'
 import { InventoryService, resetInventoryServiceTestState } from './inventory.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -34,7 +34,7 @@ function createController() {
 // 👔店长 — 检查库存状况 (stock lookup, availability checks)
 // ──────────────────────────────────────────────────────────────────────
 describe('👔店长 — 库存检查视角', () => {
-  test('成功查询多品类库存状况 (successful stock lookup)', () => {
+  it('成功查询多品类库存状况 (successful stock lookup)', () => {
     const ctrl = createController()
 
     ctrl.createProduct(tenantCtx, {
@@ -61,7 +61,7 @@ describe('👔店长 — 库存检查视角', () => {
     assert.equal(drinks!.currentStock, 200)
   })
 
-  test('低库存预警 — 库存低于最小阈值 (insufficient stock rejection)', () => {
+  it('低库存预警 — 库存低于最小阈值 (insufficient stock rejection)', () => {
     const ctrl = createController()
 
     ctrl.createProduct(tenantCtx, {
@@ -86,7 +86,7 @@ describe('👔店长 — 库存检查视角', () => {
     assert.equal(alert.status, 'low')
   })
 
-  test('无效商品 ID 查询返回错误 (invalid product ID)', () => {
+  it('无效商品 ID 查询返回错误 (invalid product ID)', () => {
     const ctrl = createController()
 
     // 创建正常商品
@@ -107,7 +107,7 @@ describe('👔店长 — 库存检查视角', () => {
 // 🎮导玩员 — 查看游戏奖品库存 (guide looking up game inventory)
 // ──────────────────────────────────────────────────────────────────────
 describe('🎮导玩员 — 奖品库存查询视角', () => {
-  test('查询奖品商品详情与库存余量', () => {
+  it('查询奖品商品详情与库存余量', () => {
     const ctrl = createController()
 
     const prize = ctrl.createProduct(tenantCtx, {
@@ -124,7 +124,7 @@ describe('🎮导玩员 — 奖品库存查询视角', () => {
     assert.equal(details.barcode, '6923456789999')
   })
 
-  test('兑换奖品时库存不足拒绝出库', () => {
+  it('兑换奖品时库存不足拒绝出库', () => {
     const ctrl = createController()
 
     const prize = ctrl.createProduct(tenantCtx, {
@@ -143,7 +143,7 @@ describe('🎮导玩员 — 奖品库存查询视角', () => {
     )
   })
 
-  test('按分类筛选奖品库存列表', () => {
+  it('按分类筛选奖品库存列表', () => {
     const ctrl = createController()
 
     ctrl.createProduct(tenantCtx, {
@@ -169,7 +169,7 @@ describe('🎮导玩员 — 奖品库存查询视角', () => {
 // 🎯运行专员 — 执行库存盘点 (operations running inventory check)
 // ──────────────────────────────────────────────────────────────────────
 describe('🎯运行专员 — 库存盘点视角', () => {
-  test('盘点调整 — 发现库存差异后精准修正', () => {
+  it('盘点调整 — 发现库存差异后精准修正', () => {
     const ctrl = createController()
 
     const p = ctrl.createProduct(tenantCtx, {
@@ -186,7 +186,7 @@ describe('🎯运行专员 — 库存盘点视角', () => {
     assert.equal(adjusted.currentStock, 27)
   })
 
-  test('盘点记录包含操作人和时间信息', () => {
+  it('盘点记录包含操作人和时间信息', () => {
     const ctrl = createController()
 
     const p = ctrl.createProduct(tenantCtx, {
@@ -207,7 +207,7 @@ describe('🎯运行专员 — 库存盘点视角', () => {
     assert(adj.createdAt, '调整记录应有时间戳')
   })
 
-  test('跨门店盘点隔离 — 其他门店不可见本店库存', () => {
+  it('跨门店盘点隔离 — 其他门店不可见本店库存', () => {
     const ctrl = createController()
 
     ctrl.createProduct(tenantCtx, {
@@ -225,7 +225,7 @@ describe('🎯运行专员 — 库存盘点视角', () => {
 // 📢营销 — 检查促销库存可用性 (marketing checking promotion inventory)
 // ──────────────────────────────────────────────────────────────────────
 describe('📢营销 — 促销库存视角', () => {
-  test('检查促销赠品库存是否充足', () => {
+  it('检查促销赠品库存是否充足', () => {
     const ctrl = createController()
 
     const gift = ctrl.createProduct(tenantCtx, {
@@ -246,7 +246,7 @@ describe('📢营销 — 促销库存视角', () => {
     assert.equal(afterUsage.currentStock, 250)
   })
 
-  test('促销商品库存不足时触发预警通知', () => {
+  it('促销商品库存不足时触发预警通知', () => {
     const ctrl = createController()
 
     const promo = ctrl.createProduct(tenantCtx, {
@@ -270,7 +270,7 @@ describe('📢营销 — 促销库存视角', () => {
     assert.equal(alert.status, 'low')
   })
 
-  test('按分类查询促销品库存预算', () => {
+  it('按分类查询促销品库存预算', () => {
     const ctrl = createController()
 
     ctrl.createProduct(tenantCtx, {

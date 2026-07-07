@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { Body, Controller, Get, Inject, Param, Post, ValidationPipe } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
@@ -121,7 +121,7 @@ class TestRuntimeGovernanceController {
   }
 }
 
-test('e2e: runtime governance endpoints expose submit, sync, query, callback, and replay closure', async () => {
+it('e2e: runtime governance endpoints expose submit, sync, query, callback, and replay closure', async () => {
   const harness = createRuntimeGovernanceHarness()
 
   const moduleRef = await Test.createTestingModule({

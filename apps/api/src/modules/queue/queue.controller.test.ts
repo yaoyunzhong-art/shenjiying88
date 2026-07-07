@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { QueueController } from './queue.controller'
 import { QueueStatus } from './queue.entity'
 import type { QueueService } from './queue.service'
@@ -43,61 +43,61 @@ function makeEntry(overrides: Record<string, unknown> = {}) {
 
 // ── Controller metadata ─────────────────────────────────────────────────
 describe('QueueController metadata', () => {
-  test('controller path is queue', () => {
+  it('controller path is queue', () => {
     const path = Reflect.getMetadata('path', QueueController)
     assert.equal(path, 'queue')
   })
 
-  test('joinQueue POST join', () => {
+  it('joinQueue POST join', () => {
     const method = Reflect.getMetadata('method', QueueController.prototype.joinQueue)
     const path = Reflect.getMetadata('path', QueueController.prototype.joinQueue)
     assert.equal(method, 1) // POST
     assert.equal(path, 'join')
   })
 
-  test('leaveQueue POST :entryId/leave', () => {
+  it('leaveQueue POST :entryId/leave', () => {
     const method = Reflect.getMetadata('method', QueueController.prototype.leaveQueue)
     const path = Reflect.getMetadata('path', QueueController.prototype.leaveQueue)
     assert.equal(method, 1)
     assert.equal(path, ':entryId/leave')
   })
 
-  test('callNext POST call-next', () => {
+  it('callNext POST call-next', () => {
     const method = Reflect.getMetadata('method', QueueController.prototype.callNext)
     const path = Reflect.getMetadata('path', QueueController.prototype.callNext)
     assert.equal(method, 1)
     assert.equal(path, 'call-next')
   })
 
-  test('startService POST :entryId/start-service', () => {
+  it('startService POST :entryId/start-service', () => {
     const method = Reflect.getMetadata('method', QueueController.prototype.startService)
     const path = Reflect.getMetadata('path', QueueController.prototype.startService)
     assert.equal(method, 1)
     assert.equal(path, ':entryId/start-service')
   })
 
-  test('completeService POST :entryId/complete', () => {
+  it('completeService POST :entryId/complete', () => {
     const method = Reflect.getMetadata('method', QueueController.prototype.completeService)
     const path = Reflect.getMetadata('path', QueueController.prototype.completeService)
     assert.equal(method, 1)
     assert.equal(path, ':entryId/complete')
   })
 
-  test('markNoShow POST :entryId/no-show', () => {
+  it('markNoShow POST :entryId/no-show', () => {
     const method = Reflect.getMetadata('method', QueueController.prototype.markNoShow)
     const path = Reflect.getMetadata('path', QueueController.prototype.markNoShow)
     assert.equal(method, 1)
     assert.equal(path, ':entryId/no-show')
   })
 
-  test('getQueueStatus GET status/:resourceId', () => {
+  it('getQueueStatus GET status/:resourceId', () => {
     const method = Reflect.getMetadata('method', QueueController.prototype.getQueueStatus)
     const path = Reflect.getMetadata('path', QueueController.prototype.getQueueStatus)
     assert.equal(method, 0) // GET
     assert.equal(path, 'status/:resourceId')
   })
 
-  test('getMyPosition GET position', () => {
+  it('getMyPosition GET position', () => {
     const method = Reflect.getMetadata('method', QueueController.prototype.getMyPosition)
     const path = Reflect.getMetadata('path', QueueController.prototype.getMyPosition)
     assert.equal(method, 0)
@@ -107,7 +107,7 @@ describe('QueueController metadata', () => {
 
 // ── joinQueue behavior ──────────────────────────────────────────────────
 describe('QueueController.joinQueue', () => {
-  test('translates tenantContext.tenantId to service joinQueue input', () => {
+  it('translates tenantContext.tenantId to service joinQueue input', () => {
     const captured: any[] = []
     const controller = new QueueController(makeMockService({
       joinQueue: (input: any) => {
@@ -137,7 +137,7 @@ describe('QueueController.joinQueue', () => {
     assert.equal(typeof result.createdAt, 'string')
   })
 
-  test('joins without optional fields', () => {
+  it('joins without optional fields', () => {
     const captured: any[] = []
     const controller = new QueueController(makeMockService({
       joinQueue: (input: any) => {
@@ -157,7 +157,7 @@ describe('QueueController.joinQueue', () => {
 
 // ── leaveQueue / callNext / startService / completeService / markNoShow ──
 describe('QueueController state transitions', () => {
-  test('leaveQueue passes entryId and tenantId', () => {
+  it('leaveQueue passes entryId and tenantId', () => {
     const captured: any[][] = []
     const controller = new QueueController(makeMockService({
       leaveQueue: (...args: unknown[]) => {
@@ -169,7 +169,7 @@ describe('QueueController state transitions', () => {
     assert.deepEqual(captured[0], ['entry-1', 't-A'])
   })
 
-  test('callNext passes resourceId from body, tenantId from context', () => {
+  it('callNext passes resourceId from body, tenantId from context', () => {
     const captured: any[][] = []
     const controller = new QueueController(makeMockService({
       callNext: (...args: unknown[]) => {
@@ -184,7 +184,7 @@ describe('QueueController state transitions', () => {
     assert.deepEqual(captured[0], ['r-1', 't-A'])
   })
 
-  test('startService is straightforward entryId+tenantId', () => {
+  it('startService is straightforward entryId+tenantId', () => {
     const captured: any[][] = []
     const controller = new QueueController(makeMockService({
       startService: (...args: unknown[]) => {
@@ -196,7 +196,7 @@ describe('QueueController state transitions', () => {
     assert.deepEqual(captured[0], ['e-1', 't'])
   })
 
-  test('completeService passes entryId+tenantId to alias method', () => {
+  it('completeService passes entryId+tenantId to alias method', () => {
     const captured: any[][] = []
     const controller = new QueueController(makeMockService({
       completeService: (...args: unknown[]) => {
@@ -208,7 +208,7 @@ describe('QueueController state transitions', () => {
     assert.deepEqual(captured[0], ['e-1', 't'])
   })
 
-  test('markNoShow returns the marked entry', () => {
+  it('markNoShow returns the marked entry', () => {
     const captured: any[][] = []
     const controller = new QueueController(makeMockService({
       markNoShow: (...args: unknown[]) => {
@@ -223,7 +223,7 @@ describe('QueueController state transitions', () => {
 
 // ── getQueueStatus / getMyPosition ──────────────────────────────────────
 describe('QueueController queue queries', () => {
-  test('getQueueStatus passes resourceId and tenantId', () => {
+  it('getQueueStatus passes resourceId and tenantId', () => {
     const captured: any[][] = []
     const controller = new QueueController(makeMockService({
       getQueueStatus: (...args: unknown[]) => {
@@ -236,7 +236,7 @@ describe('QueueController queue queries', () => {
     assert.equal(result.total, 5)
   })
 
-  test('getMyPosition returns -1 fallback when memberId/resourceId missing', () => {
+  it('getMyPosition returns -1 fallback when memberId/resourceId missing', () => {
     const controller = new QueueController(makeMockService())
     const result = controller.getMyPosition(
       { tenantId: 't', brandId: 'b', storeId: 's' },
@@ -246,7 +246,7 @@ describe('QueueController queue queries', () => {
     assert.equal(result.entry, null)
   })
 
-  test('getMyPosition returns real position when both ids provided', () => {
+  it('getMyPosition returns real position when both ids provided', () => {
     const controller = new QueueController(makeMockService({
       getMyPosition: (...args: unknown[]) => ({
         position: 3,
@@ -266,8 +266,8 @@ describe('QueueController queue queries', () => {
 
 // ── Controller integration with real service (light smoke) ──────────────
 describe('QueueController integration with real service', () => {
-  test('full join→leave flow returns valid contract shapes', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+  it('full join→leave flow returns valid contract shapes', () => {
+     
     const { QueueService } = require('./queue.service') as typeof import('./queue.service')
     const svc = new QueueService()
     svc.resetQueueStoresForTests()
@@ -285,8 +285,8 @@ describe('QueueController integration with real service', () => {
     assert.equal(left.status, QueueStatus.Cancelled)
   })
 
-  test('full join→call-next→start→complete flow', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+  it('full join→call-next→start→complete flow', () => {
+     
     const { QueueService } = require('./queue.service') as typeof import('./queue.service')
     const svc = new QueueService()
     svc.resetQueueStoresForTests()

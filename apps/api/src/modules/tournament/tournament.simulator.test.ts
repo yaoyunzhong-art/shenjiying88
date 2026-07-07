@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import { TournamentService } from './tournament.service';
 import {
   TournamentStatus,
@@ -49,7 +49,7 @@ function registerNParticipants(svc: TournamentService, tournamentId: string, n: 
 // ─── Simulator: Tournament lifecycle simulation ───
 
 describe('Tournament Simulator - Full Lifecycle', () => {
-  test('should simulate a complete single-elimination tournament', () => {
+  it('should simulate a complete single-elimination tournament', () => {
     const svc = createService();
     const t = createAndOpenTournament(svc, {
       name: 'Lifecycle Sim',
@@ -87,7 +87,7 @@ describe('Tournament Simulator - Full Lifecycle', () => {
     assert.ok(rankings.length > 0);
   });
 
-  test('should simulate tournament cancellation mid-way', () => {
+  it('should simulate tournament cancellation mid-way', () => {
     const svc = createService();
     const t = createAndOpenTournament(svc, {
       name: 'Cancellation Sim',
@@ -113,7 +113,7 @@ describe('Tournament Simulator - Full Lifecycle', () => {
 // ─── Simulator: Edge cases ───
 
 describe('Tournament Simulator - Edge Cases', () => {
-  test('should simulate a round-robin with draws', () => {
+  it('should simulate a round-robin with draws', () => {
     const svc = createService();
     const t = createAndOpenTournament(svc, {
       name: 'Draw Sim',
@@ -139,7 +139,7 @@ describe('Tournament Simulator - Edge Cases', () => {
     assert.ok(drawRanking, 'Should have at least one ranking entry with draws > 0');
   });
 
-  test('should handle single byes with odd participant count', () => {
+  it('should handle single byes with odd participant count', () => {
     const svc = createService();
     const t = createAndOpenTournament(svc, {
       name: 'Bye Sim',
@@ -170,7 +170,7 @@ describe('Tournament Simulator - Edge Cases', () => {
     }
   });
 
-  test('should simulate team registration and approval flow', () => {
+  it('should simulate team registration and approval flow', () => {
     const svc = createService();
     const t = createAndOpenTournament(svc, {
       name: 'Team Sim',
@@ -214,7 +214,7 @@ describe('Tournament Simulator - Edge Cases', () => {
 // ─── Simulator: Stress tests ───
 
 describe('Tournament Simulator - Stress', () => {
-  test('should handle large tournament with 64 participants', () => {
+  it('should handle large tournament with 64 participants', () => {
     const svc = createService();
     const t = svc.createTournament({
       tenantId: TENANT,
@@ -242,7 +242,7 @@ describe('Tournament Simulator - Stress', () => {
     assert.equal(tAfter?.status, TournamentStatus.Ongoing);
   });
 
-  test('should handle duplicate registration attempts', () => {
+  it('should handle duplicate registration attempts', () => {
     const svc = createService();
     const t = createAndOpenTournament(svc, { maxParticipants: 4 });
 

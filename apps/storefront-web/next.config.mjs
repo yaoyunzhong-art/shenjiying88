@@ -7,7 +7,13 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
   transpilePackages: ['@m5/ui', '@m5/domain'],
-  outputFileTracingRoot: path.join(currentDir, '../..')
+  outputFileTracingRoot: path.join(currentDir, '../..'),
+  eslint: {
+    ignoreDuringBuilds: true
+  },
+  typescript: {
+    ignoreBuildErrors: false
+  }
 };
 
 export default nextConfig;

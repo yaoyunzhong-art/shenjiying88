@@ -8,6 +8,10 @@ interface StatCardProps {
   trend?: { value: string; positive: boolean };
   icon?: React.ReactNode;
   variant?: 'default' | 'info' | 'warning' | 'error' | 'success';
+  /** @deprecated Use `variant` instead. Mapped as: neutral→default, danger→error, warning→warning, success→success */
+  tone?: 'neutral' | 'danger' | 'warning' | 'success' | string;
+  /** Optional accent color override */
+  accent?: string;
   helper?: React.ReactNode;
 }
 
@@ -19,8 +23,11 @@ const ACCENTS: Record<string, string> = {
   success: '#22c55e',
 };
 
-export function StatCard({ label, value, trend, icon, variant = 'default', helper }: StatCardProps) {
-  const accent = ACCENTS[variant] ?? ACCENTS.default;
+export function StatCard({ label, value, trend, icon, variant, tone, accent: accentProp, helper }: StatCardProps) {
+  const resolvedVariant =
+    variant ||
+    (tone === 'neutral' ? 'default' : tone === 'danger' ? 'error' : tone === 'warning' ? 'warning' : tone === 'success' ? 'success' : 'default');
+  const accent = accentProp ?? ACCENTS[resolvedVariant] ?? ACCENTS.default;
 
   return (
     <div

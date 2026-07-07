@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 扩展角色测试: notification 模块
  *
@@ -13,7 +14,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { NotificationController } from './notification.controller'
 import {
   NotificationService,
@@ -44,7 +44,7 @@ function createController(): NotificationController {
 // 👥HR — 发送全员通知 (HR sending mass notifications)
 // ──────────────────────────────────────────────────────────────────────
 describe('👥HR — 全员通知发送视角', () => {
-  test('发送邮件通知到指定员工 (send email notification)', () => {
+  it('发送邮件通知到指定员工 (send email notification)', () => {
     const ctrl = createController()
 
     // 先注册模板
@@ -75,7 +75,7 @@ describe('👥HR — 全员通知发送视角', () => {
     assert(dispatch.sentAt, '发送后应有发送时间')
   })
 
-  test('发送失败时状态标记为 FAILED (send failure handling)', () => {
+  it('发送失败时状态标记为 FAILED (send failure handling)', () => {
     const ctrl = createController()
 
     ctrl.registerTemplate(tenantCtx, {
@@ -101,7 +101,7 @@ describe('👥HR — 全员通知发送视角', () => {
     assert(dispatch.providerResponse, '失败应有 provider 响应信息')
   })
 
-  test('重试失败的通知 (retry failed dispatch)', () => {
+  it('重试失败的通知 (retry failed dispatch)', () => {
     const ctrl = createController()
 
     ctrl.registerTemplate(tenantCtx, {
@@ -133,7 +133,7 @@ describe('👥HR — 全员通知发送视角', () => {
 // 📢营销 — 发送营销推送 (marketing sending campaign alerts)
 // ──────────────────────────────────────────────────────────────────────
 describe('📢营销 — 营销推送发送视角', () => {
-  test('注册营销推送模板并发送 (send marketing push)', () => {
+  it('注册营销推送模板并发送 (send marketing push)', () => {
     const ctrl = createController()
 
     ctrl.registerTemplate(tenantCtx, {
@@ -162,7 +162,7 @@ describe('📢营销 — 营销推送发送视角', () => {
     assert.equal(dispatch.recipient, 'member-m001')
   })
 
-  test('按渠道筛选推送历史记录 (filter by channel)', () => {
+  it('按渠道筛选推送历史记录 (filter by channel)', () => {
     const ctrl = createController()
 
     ctrl.registerTemplate(tenantCtx, {
@@ -193,7 +193,7 @@ describe('📢营销 — 营销推送发送视角', () => {
     assert.equal(smsDispatches.length, 1)
   })
 
-  test('活动定时推送支持 (scheduled dispatch)', () => {
+  it('活动定时推送支持 (scheduled dispatch)', () => {
     const ctrl = createController()
 
     const scheduledTime = '2026-07-01T08:00:00.000Z'
@@ -225,7 +225,7 @@ describe('📢营销 — 营销推送发送视角', () => {
 // 🎯运行专员 — 管理通知模板 (operations managing notification templates)
 // ──────────────────────────────────────────────────────────────────────
 describe('🎯运行专员 — 通知模板管理视角', () => {
-  test('注册新的通知模板 (register template)', () => {
+  it('注册新的通知模板 (register template)', () => {
     const ctrl = createController()
 
     const template = ctrl.registerTemplate(tenantCtx, {
@@ -244,7 +244,7 @@ describe('🎯运行专员 — 通知模板管理视角', () => {
     assert(template.id, '模板应有 ID')
   })
 
-  test('更新通知模板内容 (update template)', () => {
+  it('更新通知模板内容 (update template)', () => {
     const ctrl = createController()
 
     const template = ctrl.registerTemplate(tenantCtx, {
@@ -266,7 +266,7 @@ describe('🎯运行专员 — 通知模板管理视角', () => {
     assert.equal(updated.enabled, false)
   })
 
-  test('按渠道和启用状态筛选模板 (filter templates)', () => {
+  it('按渠道和启用状态筛选模板 (filter templates)', () => {
     const ctrl = createController()
 
     ctrl.registerTemplate(tenantCtx, {
@@ -296,7 +296,7 @@ describe('🎯运行专员 — 通知模板管理视角', () => {
 // 👔店长 — 查看通知历史 (shop manager viewing notification history)
 // ──────────────────────────────────────────────────────────────────────
 describe('👔店长 — 通知历史查看视角', () => {
-  test('查询所有通知发送记录 (list dispatches)', () => {
+  it('查询所有通知发送记录 (list dispatches)', () => {
     const ctrl = createController()
 
     ctrl.registerTemplate(tenantCtx, {
@@ -327,7 +327,7 @@ describe('👔店长 — 通知历史查看视角', () => {
     assert.equal(all.length, 2)
   })
 
-  test('查询单个通知详情 (get dispatch detail)', () => {
+  it('查询单个通知详情 (get dispatch detail)', () => {
     const ctrl = createController()
 
     ctrl.registerTemplate(tenantCtx, {
@@ -353,7 +353,7 @@ describe('👔店长 — 通知历史查看视角', () => {
     assert(detail.sentAt, '已发送的通知应有发送时间')
   })
 
-  test('取消待发送通知 (cancel pending dispatch)', () => {
+  it('取消待发送通知 (cancel pending dispatch)', () => {
     const ctrl = createController()
 
     ctrl.registerTemplate(tenantCtx, {

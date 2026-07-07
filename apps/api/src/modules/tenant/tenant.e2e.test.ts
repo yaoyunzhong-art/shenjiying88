@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E: Tenant 租户上下文 HTTP 链路
  *
@@ -13,7 +14,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { Controller, Get, Req } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
@@ -60,7 +60,7 @@ async function buildApp() {
   return { app }
 }
 
-test('e2e: resolve tenant from headers', async () => {
+it('e2e: resolve tenant from headers', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -82,7 +82,7 @@ test('e2e: resolve tenant from headers', async () => {
   }
 })
 
-test('e2e: resolve tenant with default fallback when headers missing', async () => {
+it('e2e: resolve tenant with default fallback when headers missing', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/tenant/resolve')
@@ -96,7 +96,7 @@ test('e2e: resolve tenant with default fallback when headers missing', async () 
   }
 })
 
-test('e2e: resolve tenant A differs from tenant B in response', async () => {
+it('e2e: resolve tenant A differs from tenant B in response', async () => {
   const { app } = await buildApp()
   try {
     const resA = await request(app.getHttpServer())
@@ -114,7 +114,7 @@ test('e2e: resolve tenant A differs from tenant B in response', async () => {
   }
 })
 
-test('e2e: resolve tenant passes through actor context when present', async () => {
+it('e2e: resolve tenant passes through actor context when present', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -130,7 +130,7 @@ test('e2e: resolve tenant passes through actor context when present', async () =
   }
 })
 
-test('e2e: marketCode header is correctly propagated', async () => {
+it('e2e: marketCode header is correctly propagated', async () => {
   const { app } = await buildApp()
   try {
     const markets = ['cn-mainland', 'us-default', 'sg-asean']
@@ -145,7 +145,7 @@ test('e2e: marketCode header is correctly propagated', async () => {
   }
 })
 
-test('e2e: storeId header overrides default when set', async () => {
+it('e2e: storeId header overrides default when set', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -157,7 +157,7 @@ test('e2e: storeId header overrides default when set', async () => {
   }
 })
 
-test('e2e: brandId header is required to override default', async () => {
+it('e2e: brandId header is required to override default', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -169,7 +169,7 @@ test('e2e: brandId header is required to override default', async () => {
   }
 })
 
-test('e2e: completely missing headers fall back to defaults', async () => {
+it('e2e: completely missing headers fall back to defaults', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -183,7 +183,7 @@ test('e2e: completely missing headers fall back to defaults', async () => {
   }
 })
 
-test('e2e: response wraps tenant payload with ResponseInterceptor envelope', async () => {
+it('e2e: response wraps tenant payload with ResponseInterceptor envelope', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -201,7 +201,7 @@ test('e2e: response wraps tenant payload with ResponseInterceptor envelope', asy
   }
 })
 
-test('e2e: tenantId with special characters is preserved', async () => {
+it('e2e: tenantId with special characters is preserved', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -213,7 +213,7 @@ test('e2e: tenantId with special characters is preserved', async () => {
   }
 })
 
-test('e2e: tenantId header is case-sensitive (lowercase only)', async () => {
+it('e2e: tenantId header is case-sensitive (lowercase only)', async () => {
   const { app } = await buildApp()
   try {
     // HTTP headers are case-insensitive, so X-Tenant-Id should still match
@@ -226,7 +226,7 @@ test('e2e: tenantId header is case-sensitive (lowercase only)', async () => {
   }
 })
 
-test('e2e: multiple sequential requests get independent tenant contexts', async () => {
+it('e2e: multiple sequential requests get independent tenant contexts', async () => {
   const { app } = await buildApp()
   try {
     const seen: string[] = []
@@ -242,7 +242,7 @@ test('e2e: multiple sequential requests get independent tenant contexts', async 
   }
 })
 
-test('e2e: empty-string tenantId falls back to default', async () => {
+it('e2e: empty-string tenantId falls back to default', async () => {
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer())
@@ -334,7 +334,7 @@ const MARKETING_HEADERS = {
 }
 
 // 1. 👔 店长: 查看关联的 tenant（不能创建/删除）
-test('e2e: 👔 店长 查看关联的 tenant 信息', async () => {
+it('e2e: 👔 店长 查看关联的 tenant 信息', async () => {
   const { app } = await buildRoleApp()
   try {
     const res = await request(app.getHttpServer())
@@ -358,7 +358,7 @@ test('e2e: 👔 店长 查看关联的 tenant 信息', async () => {
 })
 
 // 2. 🔧 安监: 不能查看或修改任何 tenant
-test('e2e: 🔧 安监 resolve tenant 仅返回审计信息', async () => {
+it('e2e: 🔧 安监 resolve tenant 仅返回审计信息', async () => {
   const { app } = await buildRoleApp()
   try {
     const res = await request(app.getHttpServer())
@@ -380,7 +380,7 @@ test('e2e: 🔧 安监 resolve tenant 仅返回审计信息', async () => {
 })
 
 // 3. 🎯 运行专员: 只能查看，不能操作
-test('e2e: 🎯 运行专员 只能查看 tenant 不能操作', async () => {
+it('e2e: 🎯 运行专员 只能查看 tenant 不能操作', async () => {
   const { app } = await buildRoleApp()
   try {
     const res = await request(app.getHttpServer())
@@ -402,7 +402,7 @@ test('e2e: 🎯 运行专员 只能查看 tenant 不能操作', async () => {
 })
 
 // 4. 👥 HR: 只能查看 tenant 员工相关数据
-test('e2e: 👥 HR 查看 tenant 员工相关数据', async () => {
+it('e2e: 👥 HR 查看 tenant 员工相关数据', async () => {
   const { app } = await buildRoleApp()
   try {
     const res = await request(app.getHttpServer())
@@ -426,7 +426,7 @@ test('e2e: 👥 HR 查看 tenant 员工相关数据', async () => {
 })
 
 // 5. 📢 营销: 不能管理 tenant（拒绝）
-test('e2e: 📢 营销 不能管理 tenant', async () => {
+it('e2e: 📢 营销 不能管理 tenant', async () => {
   const { app } = await buildRoleApp()
   try {
     const res = await request(app.getHttpServer())
@@ -449,7 +449,7 @@ test('e2e: 📢 营销 不能管理 tenant', async () => {
 })
 
 // 6. POST /api/tenants 创建时缺少必填字段 → 400
-test('e2e: POST /api/tenants 缺少必填字段返回 400', async () => {
+it('e2e: POST /api/tenants 缺少必填字段返回 400', async () => {
   const { app } = await buildRoleApp()
   try {
     // 当前 TenantController 只有 GET /tenant/resolve 端点，
@@ -467,7 +467,7 @@ test('e2e: POST /api/tenants 缺少必填字段返回 400', async () => {
 })
 
 // 7. DELETE /api/tenants 删除确认
-test('e2e: DELETE /api/tenants 删除确认', async () => {
+it('e2e: DELETE /api/tenants 删除确认', async () => {
   const { app } = await buildRoleApp()
   try {
     const res = await request(app.getHttpServer())
@@ -482,7 +482,7 @@ test('e2e: DELETE /api/tenants 删除确认', async () => {
 })
 
 // 8. 同一 tenant 内不同角色权限校验
-test('e2e: 同一 tenant 内不同角色权限校验', async () => {
+it('e2e: 同一 tenant 内不同角色权限校验', async () => {
   const { app } = await buildRoleApp()
   try {
     const commonTenant = 'cross-role-tenant'

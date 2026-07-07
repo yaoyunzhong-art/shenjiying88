@@ -1,12 +1,12 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { beforeEach, describe } from 'node:test'
 import { QueueType, QueueStatus } from './queue.entity'
 import { QueueService } from './queue.service'
 
 beforeEach(() => {
   // Reset module-level state before each test
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   ;(QueueService as any).prototype.resetQueueStoresForTests.call(new QueueService())
   // Fallback: use the static reset
   // Use new instance for reset since stores are module-level
@@ -21,7 +21,7 @@ function makeService(): QueueService {
 }
 
 describe('QueueService: create / takeNumber', () => {
-  test('create generates queue number with type prefix', () => {
+  it('create generates queue number with type prefix', () => {
     const svc = makeService()
     const entry = svc.create({
       tenantId: 't1',
@@ -34,7 +34,7 @@ describe('QueueService: create / takeNumber', () => {
     assert.equal(entry.queueNumber, 'B001')
   })
 
-  test('create increments per-tenant per-type counter', () => {
+  it('create increments per-tenant per-type counter', () => {
     const svc = makeService()
     const e1 = svc.create({ tenantId: 't1', type: QueueType.Booking, userId: 'u1', userName: 'u', partySize: 1 })
     const e2 = svc.create({ tenantId: 't1', type: QueueType.Booking, userId: 'u2', userName: 'u', partySize: 1 })
@@ -44,7 +44,7 @@ describe('QueueService: create / takeNumber', () => {
     assert.equal(e3.queueNumber, 'A003')
   })
 
-  test('create respects tenant isolation for counter', () => {
+  it('create respects tenant isolation for counter', () => {
     const svc = makeService()
     const a1 = svc.create({ tenantId: 'tA', type: QueueType.Service, userId: 'u', userName: 'u', partySize: 1 })
     const b1 = svc.create({ tenantId: 'tB', type: QueueType.Service, userId: 'u', userName: 'u', partySize: 1 })
@@ -52,7 +52,7 @@ describe('QueueService: create / takeNumber', () => {
     assert.equal(b1.queueNumber, 'C001')
   })
 
-  test('create sets status to Waiting and partySize', () => {
+  it('create sets status to Waiting and partySize', () => {
     const svc = makeService()
     const entry = svc.create({
       tenantId: 't1',
@@ -65,7 +65,7 @@ describe('QueueService: create / takeNumber', () => {
     assert.equal(entry.partySize, 4)
   })
 
-  test('takeNumber is an alias for create', () => {
+  it('takeNumber is an alias for create', () => {
     const svc = makeService()
     const e1 = svc.takeNumber({ tenantId: 't', type: QueueType.Waiting, userId: 'u1', userName: 'Alice', partySize: 1 })
     // Both methods create an entry — assert properties match expected entry shape
@@ -77,7 +77,7 @@ describe('QueueService: create / takeNumber', () => {
     assert.ok(e1.queueNumber.startsWith('B'))
   })
 
-  test('create computes estimatedWaitMin based on ahead count', () => {
+  it('create computes estimatedWaitMin based on ahead count', () => {
     const svc = makeService()
     svc.create({ tenantId: 't', type: QueueType.Waiting, userId: 'u1', userName: 'u', partySize: 1 })
     svc.create({ tenantId: 't', type: QueueType.Waiting, userId: 'u2', userName: 'u', partySize: 1 })
@@ -87,7 +87,7 @@ describe('QueueService: create / takeNumber', () => {
 })
 
 describe('QueueService: findAll / findOne', () => {
-  test('findAll returns tenant-scoped entries sorted by queueNumber', () => {
+  it('findAll returns tenant-scoped entries sorted by queueNumber', () => {
     const svc = makeService()
     svc.create({ tenantId: 't', type: QueueType.Booking, userId: 'u1', userName: 'u', partySize: 1 })
     svc.create({ tenantId: 't', type: QueueType.Booking, userId: 'u2', userName: 'u', partySize: 1 })
@@ -99,7 +99,7 @@ describe('QueueService: findAll / findOne', () => {
     assert.equal(t1Entries[1].queueNumber, 'A002')
   })
 
-  test('findAll filters by type and status', () => {
+  it('findAll filters by type and status', () => {
     const svc = makeService()
     svc.create({ tenantId: 't', type: QueueType.Booking, userId: 'u1', userName: 'u', partySize: 1 })
     svc.create({ tenantId: 't', type: QueueType.Waiting, userId: 'u2', userName: 'u', partySize: 1 })
@@ -110,7 +110,7 @@ describe('QueueService: findAll / findOne', () => {
     assert.equal(bookingOnly[0].type, QueueType.Booking)
   })
 
-  test('findOne returns undefined for cross-tenant access', () => {
+  it('findOne returns undefined for cross-tenant access', () => {
     const svc = makeService()
     const e = svc.create({ tenantId: 't1', type: QueueType.Waiting, userId: 'u', userName: 'u', partySize: 1 })
     assert.equal(svc.findOne(e.id, 't2'), undefined)
@@ -119,7 +119,7 @@ describe('QueueService: findAll / findOne', () => {
 })
 
 describe('QueueService: update / cancel', () => {
-  test('update mutates partySize and remark only', () => {
+  it('update mutates partySize and remark only', () => {
     const svc = makeService()
     const e = svc.create({ tenantId: 't', type: QueueType.Booking, userId: 'u', userName: 'Alice', partySize: 2 })
     const updated = svc.update(e.id, 't', { partySize: 5, remark: 'VIP' })
@@ -127,28 +127,28 @@ describe('QueueService: update / cancel', () => {
     assert.equal(updated.remark, 'VIP')
   })
 
-  test('cancel transitions Waiting→Cancelled', () => {
+  it('cancel transitions Waiting→Cancelled', () => {
     const svc = makeService()
     const e = svc.create({ tenantId: 't', type: QueueType.Booking, userId: 'u', userName: 'u', partySize: 1 })
     const cancelled = svc.cancel(e.id, 't')
     assert.equal(cancelled.status, QueueStatus.Cancelled)
   })
 
-  test('cancel rejects invalid transition (Cancelled→Waiting)', () => {
+  it('cancel rejects invalid transition (Cancelled→Waiting)', () => {
     const svc = makeService()
     const e = svc.create({ tenantId: 't', type: QueueType.Booking, userId: 'u', userName: 'u', partySize: 1 })
     svc.cancel(e.id, 't')
     assert.throws(() => svc.cancel(e.id, 't'), /Invalid queue status transition/)
   })
 
-  test('update throws for unknown id', () => {
+  it('update throws for unknown id', () => {
     const svc = makeService()
     assert.throws(() => svc.update('does-not-exist', 't', { partySize: 1 }), /Queue entry not found/)
   })
 })
 
 describe('QueueService: Controller wrappers', () => {
-  test('joinQueue wraps create() with memberId mapping', () => {
+  it('joinQueue wraps create() with memberId mapping', () => {
     const svc = makeService()
     const entry = svc.joinQueue({
       tenantId: 't',
@@ -162,7 +162,7 @@ describe('QueueService: Controller wrappers', () => {
     assert.equal(entry.queueNumber, 'B001')
   })
 
-  test('joinQueue defaults partySize to 1', () => {
+  it('joinQueue defaults partySize to 1', () => {
     const svc = makeService()
     const entry = svc.joinQueue({
       tenantId: 't',
@@ -172,7 +172,7 @@ describe('QueueService: Controller wrappers', () => {
     assert.equal(entry.partySize, 1)
   })
 
-  test('joinQueue uses memberId as userName fallback when not provided', () => {
+  it('joinQueue uses memberId as userName fallback when not provided', () => {
     const svc = makeService()
     const entry = svc.joinQueue({
       tenantId: 't',
@@ -182,21 +182,21 @@ describe('QueueService: Controller wrappers', () => {
     assert.equal(entry.userName, 'm-XYZ')
   })
 
-  test('leaveQueue aliases cancel() (Waiting→Cancelled)', () => {
+  it('leaveQueue aliases cancel() (Waiting→Cancelled)', () => {
     const svc = makeService()
     const e = svc.joinQueue({ tenantId: 't', queueType: QueueType.Waiting, memberId: 'm1' })
     const left = svc.leaveQueue(e.id, 't')
     assert.equal(left.status, QueueStatus.Cancelled)
   })
 
-  test('leaveQueue rejects non-Waiting entry', () => {
+  it('leaveQueue rejects non-Waiting entry', () => {
     const svc = makeService()
     const e = svc.create({ tenantId: 't', type: QueueType.Waiting, userId: 'u', userName: 'u', partySize: 1 })
     svc.cancel(e.id, 't')
     assert.throws(() => svc.leaveQueue(e.id, 't'), /Invalid queue status transition/)
   })
 
-  test('completeService transitions Serving→Completed', () => {
+  it('completeService transitions Serving→Completed', () => {
     const svc = makeService()
     const e = svc.create({ tenantId: 't', type: QueueType.Waiting, userId: 'u', userName: 'u', partySize: 1, resourceId: 'r1' })
     svc.callNext('r1', 't')
@@ -206,7 +206,7 @@ describe('QueueService: Controller wrappers', () => {
     assert.ok(completed.completedAt instanceof Date)
   })
 
-  test('getQueueStatus returns stats scoped to a single resource', () => {
+  it('getQueueStatus returns stats scoped to a single resource', () => {
     const svc = makeService()
     svc.joinQueue({ tenantId: 't', queueType: QueueType.Waiting, memberId: 'm1', resourceId: 'r1' })
     svc.joinQueue({ tenantId: 't', queueType: QueueType.Waiting, memberId: 'm2', resourceId: 'r1' })
@@ -220,7 +220,7 @@ describe('QueueService: Controller wrappers', () => {
     assert.equal(r2Stats.total, 1)
   })
 
-  test('getMyPosition returns position 1 for first waiter', () => {
+  it('getMyPosition returns position 1 for first waiter', () => {
     const svc = makeService()
     svc.joinQueue({ tenantId: 't', queueType: QueueType.Waiting, memberId: 'm1', resourceId: 'r1' })
     const pos = svc.getMyPosition('m1', 'r1', 't')
@@ -229,7 +229,7 @@ describe('QueueService: Controller wrappers', () => {
     assert.ok(pos.entry)
   })
 
-  test('getMyPosition increments by 1 for each subsequent member', () => {
+  it('getMyPosition increments by 1 for each subsequent member', () => {
     const svc = makeService()
     svc.joinQueue({ tenantId: 't', queueType: QueueType.Waiting, memberId: 'm1', resourceId: 'r1' })
     svc.joinQueue({ tenantId: 't', queueType: QueueType.Waiting, memberId: 'm2', resourceId: 'r1' })
@@ -240,14 +240,14 @@ describe('QueueService: Controller wrappers', () => {
     assert.equal(svc.getMyPosition('m3', 'r1', 't').position, 3)
   })
 
-  test('getMyPosition returns -1 for member not in queue', () => {
+  it('getMyPosition returns -1 for member not in queue', () => {
     const svc = makeService()
     const pos = svc.getMyPosition('m-unknown', 'r1', 't')
     assert.equal(pos.position, -1)
     assert.equal(pos.entry, null)
   })
 
-  test('getMyPosition returns -1 for empty memberId/resourceId', () => {
+  it('getMyPosition returns -1 for empty memberId/resourceId', () => {
     const svc = makeService()
     assert.equal(svc.getMyPosition('', 'r1', 't').position, -1)
     assert.equal(svc.getMyPosition('m1', '', 't').position, -1)
@@ -255,7 +255,7 @@ describe('QueueService: Controller wrappers', () => {
 })
 
 describe('QueueService: callNext flow', () => {
-  test('callNext picks the highest priority first, then earliest queueNumber', () => {
+  it('callNext picks the highest priority first, then earliest queueNumber', () => {
     const svc = makeService()
     const a = svc.joinQueue({ tenantId: 't', queueType: QueueType.Waiting, memberId: 'm1', resourceId: 'r1' })
     const b = svc.joinQueue({ tenantId: 't', queueType: QueueType.Waiting, memberId: 'm2', resourceId: 'r1' })
@@ -268,13 +268,13 @@ describe('QueueService: callNext flow', () => {
     assert.ok(typeof called?.actualWaitMin === 'number')
   })
 
-  test('callNext returns null when no waiting entries', () => {
+  it('callNext returns null when no waiting entries', () => {
     const svc = makeService()
     const result = svc.callNext('r1', 't')
     assert.equal(result, null)
   })
 
-  test('callNextByTenant preserves back-compat behavior (resourceId optional)', () => {
+  it('callNextByTenant preserves back-compat behavior (resourceId optional)', () => {
     const svc = makeService()
     svc.joinQueue({ tenantId: 't', queueType: QueueType.Waiting, memberId: 'm1', resourceId: 'r1' })
     const next = svc.callNextByTenant('t')
@@ -284,7 +284,7 @@ describe('QueueService: callNext flow', () => {
 })
 
 describe('QueueService: status transitions', () => {
-  test('startService transitions Called→Serving', () => {
+  it('startService transitions Called→Serving', () => {
     const svc = makeService()
     const e = svc.create({ tenantId: 't', type: QueueType.Waiting, userId: 'u', userName: 'u', partySize: 1, resourceId: 'r1' })
     svc.callNext('r1', 't')
@@ -292,7 +292,7 @@ describe('QueueService: status transitions', () => {
     assert.equal(serving.status, QueueStatus.Serving)
   })
 
-  test('markNoShow transitions Called→NoShow', () => {
+  it('markNoShow transitions Called→NoShow', () => {
     const svc = makeService()
     const e = svc.create({ tenantId: 't', type: QueueType.Waiting, userId: 'u', userName: 'u', partySize: 1, resourceId: 'r1' })
     svc.callNext('r1', 't')
@@ -300,7 +300,7 @@ describe('QueueService: status transitions', () => {
     assert.equal(noShow.status, QueueStatus.NoShow)
   })
 
-  test('startService rejects Waiting (must be Called)', () => {
+  it('startService rejects Waiting (must be Called)', () => {
     const svc = makeService()
     const e = svc.joinQueue({ tenantId: 't', queueType: QueueType.Waiting, memberId: 'm1' })
     assert.throws(() => svc.startService(e.id, 't'), /Invalid queue status transition/)
@@ -308,7 +308,7 @@ describe('QueueService: status transitions', () => {
 })
 
 describe('QueueService: getQueueStats', () => {
-  test('getQueueStats aggregates counts across all statuses', () => {
+  it('getQueueStats aggregates counts across all statuses', () => {
     const svc = makeService()
     const a = svc.joinQueue({ tenantId: 't', queueType: QueueType.Waiting, memberId: 'a', resourceId: 'r' })
     svc.joinQueue({ tenantId: 't', queueType: QueueType.Waiting, memberId: 'b', resourceId: 'r' })
@@ -323,7 +323,7 @@ describe('QueueService: getQueueStats', () => {
     assert.equal(stats.cancelledCount, 1)
   })
 
-  test('getQueueStats returns 0 counts for empty tenant', () => {
+  it('getQueueStats returns 0 counts for empty tenant', () => {
     const svc = makeService()
     const stats = svc.getQueueStats('empty', 'r')
     assert.equal(stats.total, 0)

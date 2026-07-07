@@ -1,7 +1,7 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { PortalModule } from './portal.module'
 import { PortalController } from './portal.controller'
 import { PortalService } from './portal.service'
@@ -30,7 +30,7 @@ const stubFoundationService = {
 describe('PortalModule', () => {
   let moduleRef: TestingModule
 
-  test('should compile and instantiate', async () => {
+  it('should compile and instantiate', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [PortalModule],
     })
@@ -43,7 +43,7 @@ describe('PortalModule', () => {
     assert.ok(moduleRef)
   })
 
-  test('should provide PortalController', async () => {
+  it('should provide PortalController', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [PortalModule],
     })
@@ -58,7 +58,7 @@ describe('PortalModule', () => {
     assert.ok(controller instanceof PortalController)
   })
 
-  test('should provide PortalService', async () => {
+  it('should provide PortalService', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [PortalModule],
     })

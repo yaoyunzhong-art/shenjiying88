@@ -1,6 +1,6 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { Body, Controller, Get, Inject, Param, Post, ValidationPipe } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { Test } from '@nestjs/testing'
@@ -267,7 +267,7 @@ class TestAuthorizedRuntimeGovernanceController {
   }
 }
 
-test('e2e: runtime governance endpoints enforce read/write permissions and tenant context', async () => {
+it('e2e: runtime governance endpoints enforce read/write permissions and tenant context', async () => {
   const runtimeCalls: Array<Record<string, unknown>> = []
   const moduleRef = await Test.createTestingModule({
     controllers: [TestAuthorizedRuntimeGovernanceController],
@@ -381,7 +381,7 @@ test('e2e: runtime governance endpoints enforce read/write permissions and tenan
   }
 })
 
-test('e2e: configuration management endpoints enforce role and permission metadata', async () => {
+it('e2e: configuration management endpoints enforce role and permission metadata', async () => {
   const moduleRef = await Test.createTestingModule({
     controllers: [TestAuthorizedConfigurationController],
     providers: [
@@ -437,7 +437,7 @@ test('e2e: configuration management endpoints enforce role and permission metada
   }
 })
 
-test('e2e: trust governance management endpoints enforce role and permission metadata', async () => {
+it('e2e: trust governance management endpoints enforce role and permission metadata', async () => {
   const moduleRef = await Test.createTestingModule({
     controllers: [TestAuthorizedTrustController],
     providers: [
@@ -486,7 +486,7 @@ test('e2e: trust governance management endpoints enforce role and permission met
   }
 })
 
-test('e2e: foundation alert acknowledgement endpoints enforce role and permission metadata', async () => {
+it('e2e: foundation alert acknowledgement endpoints enforce role and permission metadata', async () => {
   const moduleRef = await Test.createTestingModule({
     controllers: [TestAuthorizedFoundationAlertsController],
     providers: [
@@ -548,7 +548,7 @@ test('e2e: foundation alert acknowledgement endpoints enforce role and permissio
   }
 })
 
-test('e2e: foundation overview aggregates trust and configuration governance modules', async () => {
+it('e2e: foundation overview aggregates trust and configuration governance modules', async () => {
   const moduleRef = await Test.createTestingModule({
     controllers: [TestFoundationOverviewController],
     providers: [

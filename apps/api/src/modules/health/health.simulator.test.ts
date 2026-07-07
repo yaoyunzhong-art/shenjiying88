@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * Health Simulator Test
  *
@@ -24,7 +25,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { HealthStatus, toHealthCheckResult, isHealthy, isDegraded } from './health.entity'
 
 // ─── Simulator scenario simulation (in-memory, no real I/O needed) ───
@@ -124,7 +124,7 @@ function simulateRoleCheck(input: RoleSimInput): {
 
 describe('Health - Simulator (entity helpers)', () => {
   describe('toHealthCheckResult', () => {
-    test('should return OK status when all components are OK', () => {
+    it('should return OK status when all components are OK', () => {
       const components = [
         { name: 'database', status: HealthStatus.Ok, latencyMs: 10, detail: {} },
         { name: 'redis', status: HealthStatus.Ok, latencyMs: 5, detail: {} }
@@ -138,7 +138,7 @@ describe('Health - Simulator (entity helpers)', () => {
       assert.equal(result.uptimeSeconds, 300)
     })
 
-    test('should return DEGRADED when one component is degraded', () => {
+    it('should return DEGRADED when one component is degraded', () => {
       const components = [
         { name: 'database', status: HealthStatus.Ok, latencyMs: 10, detail: {} },
         { name: 'redis', status: HealthStatus.Degraded, latencyMs: 500, detail: { message: 'slow response' } }
@@ -150,7 +150,7 @@ describe('Health - Simulator (entity helpers)', () => {
       assert.equal(result.status, HealthStatus.Degraded)
     })
 
-    test('should return UNAVAILABLE when any component is unavailable', () => {
+    it('should return UNAVAILABLE when any component is unavailable', () => {
       const components = [
         { name: 'database', status: HealthStatus.Ok, latencyMs: 10, detail: {} },
         { name: 'redis', status: HealthStatus.Unavailable, latencyMs: 1500, detail: {} },
@@ -165,29 +165,29 @@ describe('Health - Simulator (entity helpers)', () => {
   })
 
   describe('isHealthy', () => {
-    test('should return true for OK status', () => {
+    it('should return true for OK status', () => {
       assert.equal(isHealthy({ status: HealthStatus.Ok } as never), true)
     })
 
-    test('should return false for DEGRADED status', () => {
+    it('should return false for DEGRADED status', () => {
       assert.equal(isHealthy({ status: HealthStatus.Degraded } as never), false)
     })
 
-    test('should return false for UNAVAILABLE status', () => {
+    it('should return false for UNAVAILABLE status', () => {
       assert.equal(isHealthy({ status: HealthStatus.Unavailable } as never), false)
     })
   })
 
   describe('isDegraded', () => {
-    test('should return true for DEGRADED status', () => {
+    it('should return true for DEGRADED status', () => {
       assert.equal(isDegraded({ status: HealthStatus.Degraded } as never), true)
     })
 
-    test('should return false for OK status', () => {
+    it('should return false for OK status', () => {
       assert.equal(isDegraded({ status: HealthStatus.Ok } as never), false)
     })
 
-    test('should return false for UNAVAILABLE status', () => {
+    it('should return false for UNAVAILABLE status', () => {
       assert.equal(isDegraded({ status: HealthStatus.Unavailable } as never), false)
     })
   })
@@ -197,7 +197,7 @@ describe('Health - Simulator (entity helpers)', () => {
 
 describe('Health - Simulator (full check)', () => {
   describe('simulateHealthCheck - all healthy', () => {
-    test('should return OK when all components are healthy', () => {
+    it('should return OK when all components are healthy', () => {
       const probes = [
         createSimulatedProbe('database', HealthStatus.Ok, 12, { connected: true }),
         createSimulatedProbe('redis', HealthStatus.Ok, 8, { connected: true }),
@@ -214,7 +214,7 @@ describe('Health - Simulator (full check)', () => {
       assert.equal(result.version, '1.0.0')
     })
 
-    test('should surface database outage immediately', () => {
+    it('should surface database outage immediately', () => {
       const probes = [
         createSimulatedProbe('database', HealthStatus.Unavailable, 2000, { error: 'connection refused' }),
         createSimulatedProbe('redis', HealthStatus.Ok, 8, { connected: true }),
@@ -225,7 +225,7 @@ describe('Health - Simulator (full check)', () => {
       assert.equal(result.status, HealthStatus.Unavailable)
     })
 
-    test('should surface redis degradation', () => {
+    it('should surface redis degradation', () => {
       const probes = [
         createSimulatedProbe('database', HealthStatus.Ok, 10, { connected: true }),
         createSimulatedProbe('redis', HealthStatus.Degraded, 800, { message: 'high latency' }),
@@ -241,7 +241,7 @@ describe('Health - Simulator (full check)', () => {
   })
 
   describe('simulateHealthCheck - standard vs verbose', () => {
-    test('standard check should only include critical components', () => {
+    it('standard check should only include critical components', () => {
       const probes = [
         createSimulatedProbe('database', HealthStatus.Ok, 10, { connected: true }),
         createSimulatedProbe('lyt-adapter', HealthStatus.Ok, 15, { mode: 'mock' })
@@ -254,7 +254,7 @@ describe('Health - Simulator (full check)', () => {
       assert.ok(result.components.some((c) => c.name === 'lyt-adapter'))
     })
 
-    test('verbose check should include all components', () => {
+    it('verbose check should include all components', () => {
       const probes = [
         createSimulatedProbe('database', HealthStatus.Ok, 10, { connected: true }),
         createSimulatedProbe('redis', HealthStatus.Ok, 8, { connected: true }),
@@ -273,14 +273,14 @@ describe('Health - Simulator (full check)', () => {
 // ─── Ping simulation ───
 
 describe('Health - Simulator (ping)', () => {
-  test('should return alive with timestamp', () => {
+  it('should return alive with timestamp', () => {
     const result = simulatePing()
     assert.equal(result.alive, true)
     assert.ok(result.timestamp)
     assert.ok(new Date(result.timestamp).getTime() <= Date.now())
   })
 
-  test('should return consistent format', () => {
+  it('should return consistent format', () => {
     const r1 = simulatePing()
     const r2 = simulatePing()
 
@@ -296,7 +296,7 @@ describe('Health - Simulator (ping)', () => {
 
 describe('Health - Simulator (component probes)', () => {
   describe('database probe', () => {
-    test('should return connected true on healthy database', () => {
+    it('should return connected true on healthy database', () => {
       const probe = createSimulatedProbe('database', HealthStatus.Ok, 12, {
         connected: true,
         provider: 'prisma',
@@ -307,7 +307,7 @@ describe('Health - Simulator (component probes)', () => {
       assert.equal(probe.detail.provider, 'prisma')
     })
 
-    test('should return unavailable on connection failure', () => {
+    it('should return unavailable on connection failure', () => {
       const probe = createSimulatedProbe('database', HealthStatus.Unavailable, 2000, {
         error: 'connection refused'
       })
@@ -318,7 +318,7 @@ describe('Health - Simulator (component probes)', () => {
   })
 
   describe('redis probe', () => {
-    test('should return PONG on healthy redis', () => {
+    it('should return PONG on healthy redis', () => {
       const probe = createSimulatedProbe('redis', HealthStatus.Ok, 8, {
         connected: true,
         host: 'localhost',
@@ -329,7 +329,7 @@ describe('Health - Simulator (component probes)', () => {
       assert.equal(probe.detail.response, 'PONG')
     })
 
-    test('should be degraded on slow response', () => {
+    it('should be degraded on slow response', () => {
       const probe = createSimulatedProbe('redis', HealthStatus.Degraded, 1200, {
         connected: true,
         host: 'localhost',
@@ -340,7 +340,7 @@ describe('Health - Simulator (component probes)', () => {
       assert.equal(probe.status, HealthStatus.Degraded)
     })
 
-    test('should be unavailable on timeout', () => {
+    it('should be unavailable on timeout', () => {
       const probe = createSimulatedProbe('redis', HealthStatus.Unavailable, 1500, {
         error: 'Redis probe timeout after 1500ms',
         host: 'redis.example.com',
@@ -352,7 +352,7 @@ describe('Health - Simulator (component probes)', () => {
   })
 
   describe('lyt-adapter probe', () => {
-    test('should be available in mock mode', () => {
+    it('should be available in mock mode', () => {
       const probe = createSimulatedProbe('lyt-adapter', HealthStatus.Ok, 15, {
         mode: 'mock',
         adapter: 'MockLytAdapter',
@@ -362,7 +362,7 @@ describe('Health - Simulator (component probes)', () => {
       assert.equal(probe.detail.available, true)
     })
 
-    test('should be available in platform-mock mode', () => {
+    it('should be available in platform-mock mode', () => {
       const probe = createSimulatedProbe('lyt-adapter', HealthStatus.Ok, 15, {
         mode: 'platform-mock',
         adapter: 'PlatformMockLytAdapter',
@@ -374,7 +374,7 @@ describe('Health - Simulator (component probes)', () => {
   })
 
   describe('memory probe', () => {
-    test('should report memory usage stats', () => {
+    it('should report memory usage stats', () => {
       const probe = createSimulatedProbe('memory', HealthStatus.Ok, 3, {
         totalMB: 8192,
         usedMB: 4096,
@@ -386,7 +386,7 @@ describe('Health - Simulator (component probes)', () => {
       assert.ok((probe.detail.usagePercent as number) <= 100)
     })
 
-    test('should be degraded on high memory usage', () => {
+    it('should be degraded on high memory usage', () => {
       const probe = createSimulatedProbe('memory', HealthStatus.Degraded, 5, {
         totalMB: 8192,
         usedMB: 7782,
@@ -399,7 +399,7 @@ describe('Health - Simulator (component probes)', () => {
   })
 
   describe('disk probe', () => {
-    test('should report disk usage stats', () => {
+    it('should report disk usage stats', () => {
       const probe = createSimulatedProbe('disk', HealthStatus.Ok, 5, {
         totalGB: 256,
         usedGB: 128,
@@ -410,7 +410,7 @@ describe('Health - Simulator (component probes)', () => {
       assert.ok((probe.detail.totalGB as number) > 0)
     })
 
-    test('should be degraded on low disk space', () => {
+    it('should be degraded on low disk space', () => {
       const probe = createSimulatedProbe('disk', HealthStatus.Degraded, 5, {
         totalGB: 256,
         usedGB: 245,
@@ -422,7 +422,7 @@ describe('Health - Simulator (component probes)', () => {
   })
 
   describe('unknown component', () => {
-    test('should return unavailable for unknown component', () => {
+    it('should return unavailable for unknown component', () => {
       const probe = createSimulatedProbe('unknown-component', HealthStatus.Unavailable, 0, {
         error: 'Unknown component: unknown-component'
       })
@@ -480,7 +480,7 @@ describe('Health - Simulator (8 role checks)', () => {
 
   for (const { role, description } of allRoles) {
     describe(`${role} health check`, () => {
-      test(`should return OK for ${role} standard check`, () => {
+      it(`should return OK for ${role} standard check`, () => {
         const result = simulateRoleCheck({ role, verbose: false })
         assert.equal(result.role, role)
         assert.equal(result.status, HealthStatus.Ok)
@@ -490,7 +490,7 @@ describe('Health - Simulator (8 role checks)', () => {
         assert.ok(result.responseTimeMs >= 0)
       })
 
-      test(`should return OK for ${role} verbose check`, () => {
+      it(`should return OK for ${role} verbose check`, () => {
         const result = simulateRoleCheck({ role, verbose: true })
         assert.equal(result.role, role)
         assert.equal(result.status, HealthStatus.Ok)
@@ -502,14 +502,14 @@ describe('Health - Simulator (8 role checks)', () => {
 
   // 👔店长 - 两用例
   describe('👔店长 detailed', () => {
-    test('should see all components in verbose mode', () => {
+    it('should see all components in verbose mode', () => {
       const result = simulateRoleCheck({ role: '👔店长', verbose: true })
       assert.equal(result.role, '👔店长')
       assert.equal(result.status, HealthStatus.Ok)
       assert.ok(result.components.length >= 2)
     })
 
-    test('should only see critical components in standard mode', () => {
+    it('should only see critical components in standard mode', () => {
       const result = simulateRoleCheck({ role: '👔店长', verbose: false })
       assert.equal(result.role, '👔店长')
       assert.ok(result.components.length <= 5)
@@ -518,13 +518,13 @@ describe('Health - Simulator (8 role checks)', () => {
 
   // 🔧安监 - verbose 边界
   describe('🔧安监 detailed', () => {
-    test('should detect unhealthy component', () => {
+    it('should detect unhealthy component', () => {
       const result = simulateRoleCheck({ role: '🔧安监', verbose: true })
       assert.equal(result.role, '🔧安监')
       assert.ok(result.responseTimeMs >= 0)
     })
 
-    test('should include disk check in verbose mode', () => {
+    it('should include disk check in verbose mode', () => {
       const result = simulateRoleCheck({ role: '🔧安监', verbose: true })
       assert.ok(result.components.length >= 2)
     })
@@ -532,13 +532,13 @@ describe('Health - Simulator (8 role checks)', () => {
 
   // 🎯运行专员 - 运维监控
   describe('🎯运行专员 detailed', () => {
-    test('should run full health check with all components', () => {
+    it('should run full health check with all components', () => {
       const result = simulateRoleCheck({ role: '🎯运行专员', verbose: true })
       assert.equal(result.status, HealthStatus.Ok)
       assert.ok(result.components.length >= 2)
     })
 
-    test('should complete within reasonable time', () => {
+    it('should complete within reasonable time', () => {
       const result = simulateRoleCheck({ role: '🎯运行专员', verbose: true })
       assert.ok(result.responseTimeMs < 1000, `Response time ${result.responseTimeMs}ms exceeded 1000ms`)
     })
@@ -548,7 +548,7 @@ describe('Health - Simulator (8 role checks)', () => {
 // ─── Latency boundary tests ───
 
 describe('Health - Simulator (latency boundaries)', () => {
-  test('should handle fast probes (< 5ms)', () => {
+  it('should handle fast probes (< 5ms)', () => {
     const probes = [
       createSimulatedProbe('database', HealthStatus.Ok, 2),
       createSimulatedProbe('lyt-adapter', HealthStatus.Ok, 3)
@@ -558,7 +558,7 @@ describe('Health - Simulator (latency boundaries)', () => {
     assert.ok(result.components.every((c) => c.latencyMs <= 5))
   })
 
-  test('should handle moderate latency (100-500ms)', () => {
+  it('should handle moderate latency (100-500ms)', () => {
     const probes = [
       createSimulatedProbe('database', HealthStatus.Ok, 150),
       createSimulatedProbe('redis', HealthStatus.Degraded, 400),
@@ -568,7 +568,7 @@ describe('Health - Simulator (latency boundaries)', () => {
     assert.equal(result.status, HealthStatus.Degraded)
   })
 
-  test('should handle timeout-level latency (>1500ms)', () => {
+  it('should handle timeout-level latency (>1500ms)', () => {
     const probes = [
       createSimulatedProbe('database', HealthStatus.Ok, 50),
       createSimulatedProbe('redis', HealthStatus.Unavailable, 2000),
@@ -585,7 +585,7 @@ describe('Health - Simulator (latency boundaries)', () => {
 // ─── Version handling ───
 
 describe('Health - Simulator (version)', () => {
-  test('should include version in health check', () => {
+  it('should include version in health check', () => {
     const result = simulateHealthCheck([
       createSimulatedProbe('database', HealthStatus.Ok, 10),
       createSimulatedProbe('lyt-adapter', HealthStatus.Ok, 15)
@@ -594,7 +594,7 @@ describe('Health - Simulator (version)', () => {
     assert.ok(result.version.length > 0)
   })
 
-  test('should return default version when package.json is unavailable', () => {
+  it('should return default version when package.json is unavailable', () => {
     // Simulate fallback version
     const result = simulateHealthCheck([
       createSimulatedProbe('database', HealthStatus.Ok, 10)
@@ -607,7 +607,7 @@ describe('Health - Simulator (version)', () => {
 // ─── All components healthy scenario ───
 
 describe('Health - Simulator (all-healthy)', () => {
-  test('should return complete healthy result with all components', () => {
+  it('should return complete healthy result with all components', () => {
     const probes = [
       createSimulatedProbe('database', HealthStatus.Ok, 10, { connected: true, provider: 'prisma', dialect: 'postgresql' }),
       createSimulatedProbe('redis', HealthStatus.Ok, 8, { connected: true, host: 'localhost', port: 6379, response: 'PONG' }),
@@ -630,7 +630,7 @@ describe('Health - Simulator (all-healthy)', () => {
 // ─── Multi-component failure cascade ───
 
 describe('Health - Simulator (cascade failures)', () => {
-  test('UNAVAILABLE trumps DEGRADED trumps OK', () => {
+  it('UNAVAILABLE trumps DEGRADED trumps OK', () => {
     const probes = [
       createSimulatedProbe('database', HealthStatus.Ok, 10),
       createSimulatedProbe('redis', HealthStatus.Degraded, 400),
@@ -640,7 +640,7 @@ describe('Health - Simulator (cascade failures)', () => {
     assert.equal(result.status, HealthStatus.Unavailable)
   })
 
-  test('DEGRADED trumps OK', () => {
+  it('DEGRADED trumps OK', () => {
     const probes = [
       createSimulatedProbe('database', HealthStatus.Ok, 10),
       createSimulatedProbe('redis', HealthStatus.Degraded, 400),
@@ -650,7 +650,7 @@ describe('Health - Simulator (cascade failures)', () => {
     assert.equal(result.status, HealthStatus.Degraded)
   })
 
-  test('all degraded with no unavailable = degraded', () => {
+  it('all degraded with no unavailable = degraded', () => {
     const probes = [
       createSimulatedProbe('database', HealthStatus.Degraded, 300, { message: 'slow query' }),
       createSimulatedProbe('redis', HealthStatus.Degraded, 500, { message: 'high latency' }),
@@ -660,7 +660,7 @@ describe('Health - Simulator (cascade failures)', () => {
     assert.equal(result.status, HealthStatus.Degraded)
   })
 
-  test('multiple unavailable components', () => {
+  it('multiple unavailable components', () => {
     const probes = [
       createSimulatedProbe('database', HealthStatus.Unavailable, 2000),
       createSimulatedProbe('redis', HealthStatus.Unavailable, 1500),
@@ -678,13 +678,13 @@ describe('Health - Simulator (cascade failures)', () => {
 // ─── Empty component list ───
 
 describe('Health - Simulator (edge cases)', () => {
-  test('should return OK for empty component list', () => {
+  it('should return OK for empty component list', () => {
     const result = simulateHealthCheck([])
     assert.equal(result.status, HealthStatus.Ok)
     assert.equal(result.components.length, 0)
   })
 
-  test('should handle duplicate component names gracefully', () => {
+  it('should handle duplicate component names gracefully', () => {
     const probes = [
       createSimulatedProbe('database', HealthStatus.Ok, 10),
       createSimulatedProbe('database', HealthStatus.Ok, 12)

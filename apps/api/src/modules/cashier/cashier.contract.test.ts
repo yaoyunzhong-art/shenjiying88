@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import {
   CashierOrderCloseReason,
   CashierOrderStatus,
@@ -10,10 +10,8 @@ import {
   toCashierOrderItemContract,
   toCashierPaymentContract,
 } from './cashier.contract'
-
 const tenantCtx = { tenantId: 'tenant-demo', branchId: 'branch-demo', operatorId: 'op-1' }
-
-test('toCashierOrderContract maps order including single item and status', () => {
+it('toCashierOrderContract maps order including single item and status', () => {
   const order = {
     orderId: 'order-1',
     tenantContext: tenantCtx,
@@ -35,9 +33,7 @@ test('toCashierOrderContract maps order including single item and status', () =>
     closeNote: undefined,
     source: 'memory' as const,
   }
-
   const contract = toCashierOrderContract(order)
-
   assert.equal(contract.orderId, 'order-1')
   assert.equal(contract.tenantId, 'tenant-demo')
   assert.equal(contract.memberId, 'member-1')
@@ -62,8 +58,7 @@ test('toCashierOrderContract maps order including single item and status', () =>
   assert.equal(contract.closedBy, undefined)
   assert.equal(contract.closeNote, undefined)
 })
-
-test('toCashierOrderContract maps closed order with close details', () => {
+it('toCashierOrderContract maps closed order with close details', () => {
   const order = {
     orderId: 'order-2',
     tenantContext: tenantCtx,
@@ -85,9 +80,7 @@ test('toCashierOrderContract maps closed order with close details', () => {
     closeNote: '超时自动关闭',
     source: 'memory' as const,
   }
-
   const contract = toCashierOrderContract(order)
-
   assert.equal(contract.orderId, 'order-2')
   assert.equal(contract.status, CashierOrderStatus.Closed)
   assert.equal(contract.closedAt, '2026-06-22T11:00:00.000Z')
@@ -99,28 +92,23 @@ test('toCashierOrderContract maps closed order with close details', () => {
   assert.equal(contract.items[0].skuId, 'sku-2')
   assert.equal(contract.items[0].price, 150)
 })
-
-test('toCashierOrderItemContract maps single item', () => {
+it('toCashierOrderItemContract maps single item', () => {
   const item = { skuId: 'sku-x', title: 'T恤', quantity: 3, price: 99 }
   const contract = toCashierOrderItemContract(item)
-
   assert.equal(contract.skuId, 'sku-x')
   assert.equal(contract.title, 'T恤')
   assert.equal(contract.quantity, 3)
   assert.equal(contract.price, 99)
 })
-
-test('toCashierOrderItemContract omits title when undefined', () => {
+it('toCashierOrderItemContract omits title when undefined', () => {
   const item = { skuId: 'sku-y', quantity: 1, price: 25 }
   const contract = toCashierOrderItemContract(item)
-
   assert.equal(contract.skuId, 'sku-y')
   assert.equal(contract.title, undefined)
   assert.equal(contract.quantity, 1)
   assert.equal(contract.price, 25)
 })
-
-test('toCashierPaymentContract maps succeeded payment', () => {
+it('toCashierPaymentContract maps succeeded payment', () => {
   const payment = {
     paymentId: 'payment-1',
     orderId: 'order-1',
@@ -135,9 +123,7 @@ test('toCashierPaymentContract maps succeeded payment', () => {
     updatedAt: '2026-06-23T06:03:00.000Z',
     completedAt: '2026-06-23T06:03:00.000Z',
   }
-
   const contract = toCashierPaymentContract(payment)
-
   assert.equal(contract.paymentId, 'payment-1')
   assert.equal(contract.orderId, 'order-1')
   assert.equal(contract.externalPaymentId, 'ext-abc')
@@ -149,8 +135,7 @@ test('toCashierPaymentContract maps succeeded payment', () => {
   assert.equal(contract.failureReason, undefined)
   assert.equal(contract.completedAt, '2026-06-23T06:03:00.000Z')
 })
-
-test('toCashierPaymentContract maps failed payment with failure reason', () => {
+it('toCashierPaymentContract maps failed payment with failure reason', () => {
   const payment = {
     paymentId: 'payment-2',
     orderId: 'order-2',
@@ -165,9 +150,7 @@ test('toCashierPaymentContract maps failed payment with failure reason', () => {
     updatedAt: '2026-06-22T11:00:00.000Z',
     completedAt: '2026-06-22T11:00:00.000Z',
   }
-
   const contract = toCashierPaymentContract(payment)
-
   assert.equal(contract.paymentId, 'payment-2')
   assert.equal(contract.channel, 'alipay')
   assert.equal(contract.status, CashierPaymentStatus.Failed)
@@ -176,8 +159,7 @@ test('toCashierPaymentContract maps failed payment with failure reason', () => {
   assert.equal(contract.transactionNo, undefined)
   assert.equal(contract.sourceEventName, 'cashier.payment-failed')
 })
-
-test('toCashierPaymentContract maps pending payment', () => {
+it('toCashierPaymentContract maps pending payment', () => {
   const payment = {
     paymentId: 'payment-3',
     orderId: 'order-3',
@@ -192,9 +174,7 @@ test('toCashierPaymentContract maps pending payment', () => {
     updatedAt: '2026-06-23T07:00:00.000Z',
     completedAt: undefined,
   }
-
   const contract = toCashierPaymentContract(payment)
-
   assert.equal(contract.status, CashierPaymentStatus.Pending)
   assert.equal(contract.completedAt, undefined)
   assert.equal(contract.sourceEventName, undefined)

@@ -1,10 +1,10 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict';
-import test from 'node:test';
 import { ConfigService } from '@nestjs/config';
 import { RealLytAdapter } from './real-lyt.adapter';
 import { LytAdapterHttpError } from './http-lyt.adapter.base';
 
-test('RealLytAdapter calls production-style member endpoint', async () => {
+it('RealLytAdapter calls production-style member endpoint', async () => {
   globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
     const url = String(input);
     const headers = init?.headers as Record<string, string>;
@@ -32,7 +32,7 @@ test('RealLytAdapter calls production-style member endpoint', async () => {
   assert.equal(member.levelName, 'GOLD');
 });
 
-test('RealLytAdapter calls production-style device endpoint', async () => {
+it('RealLytAdapter calls production-style device endpoint', async () => {
   globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
     const url = String(input);
     assert.equal(url, 'https://api.lyt.local/devices/device-prod-1/status');
@@ -50,7 +50,7 @@ test('RealLytAdapter calls production-style device endpoint', async () => {
   assert.equal(status.status, 'ONLINE');
 });
 
-test('RealLytAdapter maps non-retryable http errors into LytAdapterHttpError', async () => {
+it('RealLytAdapter maps non-retryable http errors into LytAdapterHttpError', async () => {
   globalThis.fetch = (async () => {
     return new Response(JSON.stringify({ code: 'VALIDATION_FAILED', message: 'invalid coupon' }), {
       status: 422,
@@ -73,7 +73,7 @@ test('RealLytAdapter maps non-retryable http errors into LytAdapterHttpError', a
   );
 });
 
-test('RealLytAdapter maps standard order payload into vendor request and standard result', async () => {
+it('RealLytAdapter maps standard order payload into vendor request and standard result', async () => {
   globalThis.fetch = (async (_input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
     assert.deepEqual(JSON.parse(String(init?.body)), {
       store_id: 'store-1',
@@ -101,7 +101,7 @@ test('RealLytAdapter maps standard order payload into vendor request and standar
   });
 });
 
-test('RealLytAdapter maps repeated timeout failures into retryable timeout error', async () => {
+it('RealLytAdapter maps repeated timeout failures into retryable timeout error', async () => {
   let attempts = 0;
 
   globalThis.fetch = (async () => {

@@ -1,10 +1,10 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [notification] [D] contract 测试补全
  * 覆盖: toNotificationTemplateContract / toNotificationDispatchContract
  */
 
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   toNotificationDispatchContract,
   toNotificationTemplateContract
@@ -18,7 +18,7 @@ import {
 } from './notification.entity'
 
 describe('toNotificationTemplateContract()', () => {
-  test('映射所有字段到 contract', () => {
+  it('映射所有字段到 contract', () => {
     const entity = toNotificationTemplate({
       code: 'welcome_email',
       channel: NotificationChannelType.Email,
@@ -43,7 +43,7 @@ describe('toNotificationTemplateContract()', () => {
     assert.equal(contract.enabled, true)
   })
 
-  test('enabled 字段传递正确', () => {
+  it('enabled 字段传递正确', () => {
     const enabledEntity = toNotificationTemplate({
       code: 'enabled_test',
       channel: NotificationChannelType.Push,
@@ -67,7 +67,7 @@ describe('toNotificationTemplateContract()', () => {
 })
 
 describe('toNotificationDispatchContract()', () => {
-  test('映射所有字段到 contract', () => {
+  it('映射所有字段到 contract', () => {
     const entity = toNotificationDispatch({
       templateId: 'tpl-001',
       channel: NotificationChannelType.Sms,
@@ -94,7 +94,7 @@ describe('toNotificationDispatchContract()', () => {
     assert.ok(contract.sentAt)
   })
 
-  test('FAILED 状态含 providerResponse', () => {
+  it('FAILED 状态含 providerResponse', () => {
     const entity = toNotificationDispatch({
       channel: NotificationChannelType.Email,
       scopeType: FoundationScopeType.Tenant,
@@ -111,7 +111,7 @@ describe('toNotificationDispatchContract()', () => {
     assert.deepStrictEqual(contract.providerResponse, { error: 'PROVIDER_REJECTED' })
   })
 
-  test('CANCELLED 状态正确传递', () => {
+  it('CANCELLED 状态正确传递', () => {
     const entity = toNotificationDispatch({
       channel: NotificationChannelType.InApp,
       scopeType: FoundationScopeType.Store,

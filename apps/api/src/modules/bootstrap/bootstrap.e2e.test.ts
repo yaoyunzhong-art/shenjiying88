@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E-level: Bootstrap 启动引导 service 层测试
  *
@@ -18,7 +19,6 @@
  */
 
 import assert from 'node:assert/strict'
-import test from 'node:test'
 import { BootstrapService } from './bootstrap.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 
@@ -40,25 +40,25 @@ function makeTenantContext(overrides?: Partial<RequestTenantContext>): RequestTe
 
 // ========== getHealth ==========
 
-test('e2e: getHealth returns status=ok', () => {
+it('e2e: getHealth returns status=ok', () => {
   const svc = createService()
   const res = svc.getHealth()
   assert.equal(res.status, 'ok')
 })
 
-test('e2e: getHealth returns positive uptime', () => {
+it('e2e: getHealth returns positive uptime', () => {
   const svc = createService()
   const res = svc.getHealth()
   assert.ok(res.uptime > 0, 'uptime must be positive')
 })
 
-test('e2e: getHealth returns phase=scaffold', () => {
+it('e2e: getHealth returns phase=scaffold', () => {
   const svc = createService()
   const res = svc.getHealth()
   assert.equal(res.phase, 'scaffold')
 })
 
-test('e2e: getHealth is idempotent', () => {
+it('e2e: getHealth is idempotent', () => {
   const svc = createService()
   const a = svc.getHealth()
   const b = svc.getHealth()
@@ -71,14 +71,14 @@ test('e2e: getHealth is idempotent', () => {
 
 // ========== getBootstrapMetadata ==========
 
-test('e2e: getBootstrapMetadata returns tenant context', () => {
+it('e2e: getBootstrapMetadata returns tenant context', () => {
   const svc = createService()
   const ctx = makeTenantContext()
   const res = svc.getBootstrapMetadata(ctx)
   assert.deepEqual(res.tenantContext, ctx)
 })
 
-test('e2e: getBootstrapMetadata is tenant-isolated', () => {
+it('e2e: getBootstrapMetadata is tenant-isolated', () => {
   const svc = createService()
   const ctxA = makeTenantContext({ tenantId: 'tenant-A' })
   const ctxB = makeTenantContext({ tenantId: 'tenant-B' })
@@ -88,13 +88,13 @@ test('e2e: getBootstrapMetadata is tenant-isolated', () => {
   assert.equal(resB.tenantContext.tenantId, 'tenant-B')
 })
 
-test('e2e: getBootstrapMetadata returns foundationDependencies as array', () => {
+it('e2e: getBootstrapMetadata returns foundationDependencies as array', () => {
   const svc = createService()
   const res = svc.getBootstrapMetadata(makeTenantContext())
   assert.ok(Array.isArray(res.foundationDependencies))
 })
 
-test('e2e: getBootstrapMetadata returns phase=scaffold', () => {
+it('e2e: getBootstrapMetadata returns phase=scaffold', () => {
   const svc = createService()
   const res = svc.getBootstrapMetadata(makeTenantContext())
   assert.equal(res.phase, 'scaffold')
@@ -102,7 +102,7 @@ test('e2e: getBootstrapMetadata returns phase=scaffold', () => {
 
 // ========== 边界 ==========
 
-test('e2e: getBootstrapMetadata handles empty tenantId gracefully', () => {
+it('e2e: getBootstrapMetadata handles empty tenantId gracefully', () => {
   const svc = createService()
   const ctx = makeTenantContext({ tenantId: '' })
   const res = svc.getBootstrapMetadata(ctx)
@@ -110,7 +110,7 @@ test('e2e: getBootstrapMetadata handles empty tenantId gracefully', () => {
   assert.equal(res.phase, 'scaffold')
 })
 
-test('e2e: getBootstrapMetadata handles partial context', () => {
+it('e2e: getBootstrapMetadata handles partial context', () => {
   const svc = createService()
   const partialCtx: RequestTenantContext = {
     tenantId: 'only-tenant',
@@ -123,7 +123,7 @@ test('e2e: getBootstrapMetadata handles partial context', () => {
   assert.equal(res.tenantContext.brandId, undefined)
 })
 
-test('e2e: getHealth has consistent structure', () => {
+it('e2e: getHealth has consistent structure', () => {
   const svc = createService()
   const res = svc.getHealth()
   assert.ok('status' in res)

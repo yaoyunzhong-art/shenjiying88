@@ -1,0 +1,100 @@
+{
+  "title": "Champion Dashboard - Phase-18",
+  "uid": "champion-phase18",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "table",
+      "title": "Champion Ranking (Top 10)",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+      "datasource": "prometheus",
+      "targets": [
+        {
+          "expr": "champion_total_score",
+          "legendFormat": "{{champion_name}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [{"displayName": "Total Score", "desc": true}]
+      }
+    },
+    {
+      "id": 2,
+      "type": "bargauge",
+      "title": "Knowledge Contributions by Kind",
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+      "datasource": "prometheus",
+      "targets": [
+        {
+          "expr": "champion_contributions_total{kind=~\"COMMIT|REVIEW|RFC|PULSE_REVIEW|RETRO\"}",
+          "legendFormat": "{{kind}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Decision Timeline (last 90 days)",
+      "gridPos": {"x": 0, "y": 8, "w": 24, "h": 9},
+      "datasource": "prometheus",
+      "targets": [
+        {
+          "expr": "champion_decisions_total[1d]",
+          "legendFormat": "{{champion_name}} - {{kind}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"drawStyle": "points", "pointSize": 8}
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Total Champions / Score",
+      "gridPos": {"x": 0, "y": 17, "w": 8, "h": 4},
+      "datasource": "prometheus",
+      "targets": [
+        {"expr": "champion_total_count", "refId": "A"},
+        {"expr": "champion_total_score_sum", "refId": "B"}
+      ]
+    },
+    {
+      "id": 5,
+      "type": "piechart",
+      "title": "Champion Distribution by Role",
+      "gridPos": {"x": 8, "y": 17, "w": 8, "h": 4},
+      "datasource": "prometheus",
+      "targets": [
+        {
+          "expr": "champion_by_role_total",
+          "legendFormat": "{{role}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "Recent Decisions (last 30)",
+      "gridPos": {"x": 16, "y": 17, "w": 8, "h": 4},
+      "datasource": "prometheus",
+      "targets": [
+        {
+          "expr": "champion_recent_decisions",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "templating": {"list": []},
+  "time": {"from": "now-30d", "to": "now"},
+  "refresh": "5m"
+}

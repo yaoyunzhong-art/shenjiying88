@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 扩展角色测试: finance 模块
  *
@@ -13,7 +14,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import { FinanceController } from './finance.controller'
 import { FinanceService, resetFinanceServiceTestState } from './finance.service'
 import { LedgerType, AccountType, InvoiceType } from './finance.entity'
@@ -36,7 +36,7 @@ function createController() {
 // 👔店长 — 查看日营收 (manager checking daily revenue)
 // ──────────────────────────────────────────────────────────────────────
 describe('👔店长 — 日营收查看视角', () => {
-  test('成功查询当日营收汇总 (revenue query)', async () => {
+  it('成功查询当日营收汇总 (revenue query)', async () => {
     const ctrl = createController()
     const today = new Date().toISOString().slice(0, 10)
 
@@ -70,7 +70,7 @@ describe('👔店长 — 日营收查看视角', () => {
     assert.equal(summary.transactionCount, 3)
   })
 
-  test('日期范围为空时返回空数据 (date range validation)', async () => {
+  it('日期范围为空时返回空数据 (date range validation)', async () => {
     const ctrl = createController()
     const today = new Date().toISOString().slice(0, 10)
 
@@ -93,7 +93,7 @@ describe('👔店长 — 日营收查看视角', () => {
     assert.equal(summary.transactionCount, 0)
   })
 
-  test('跨店营收隔离 — 只能看到本店数据 (access control)', async () => {
+  it('跨店营收隔离 — 只能看到本店数据 (access control)', async () => {
     const ctrl = createController()
     const today = new Date().toISOString().slice(0, 10)
 
@@ -124,7 +124,7 @@ describe('👔店长 — 日营收查看视角', () => {
 // 👥HR — 查看工资记录 (HR checking payroll records)
 // ──────────────────────────────────────────────────────────────────────
 describe('👥HR — 工资查询视角', () => {
-  test('成功查询工资支出流水 (payroll lookup)', async () => {
+  it('成功查询工资支出流水 (payroll lookup)', async () => {
     const ctrl = createController()
 
     // 记录工资支出
@@ -147,7 +147,7 @@ describe('👥HR — 工资查询视角', () => {
     assert.equal(totalPayroll, 53000)
   })
 
-  test('查询不存在的流水记录报错 (access control on non-existent data)', async () => {
+  it('查询不存在的流水记录报错 (access control on non-existent data)', async () => {
     const ctrl = createController()
 
     assert.throws(
@@ -156,7 +156,7 @@ describe('👥HR — 工资查询视角', () => {
     )
   })
 
-  test('按月份筛选工资记录 (date range filtering)', async () => {
+  it('按月份筛选工资记录 (date range filtering)', async () => {
     const ctrl = createController()
     const now = new Date()
 
@@ -196,7 +196,7 @@ describe('👥HR — 工资查询视角', () => {
 // 🎯运行专员 — 检查运营成本 (operations checking running costs)
 // ──────────────────────────────────────────────────────────────────────
 describe('🎯运行专员 — 运营成本视角', () => {
-  test('查询运营成本汇总 (cost query)', async () => {
+  it('查询运营成本汇总 (cost query)', async () => {
     const ctrl = createController()
 
     await ctrl.recordLedger(tenantCtx, {
@@ -230,7 +230,7 @@ describe('🎯运行专员 — 运营成本视角', () => {
     assert.equal(totalUtility, 3500)
   })
 
-  test('费用超过设定阈值时应有记录验证', async () => {
+  it('费用超过设定阈值时应有记录验证', async () => {
     const ctrl = createController()
 
     // 模拟异常大额支出
@@ -250,7 +250,7 @@ describe('🎯运行专员 — 运营成本视角', () => {
     assert.equal(maintenance[0].amount, 100000)
   })
 
-  test('按类型筛选运营费用', async () => {
+  it('按类型筛选运营费用', async () => {
     const ctrl = createController()
 
     await ctrl.recordLedger(tenantCtx, {
@@ -274,7 +274,7 @@ describe('🎯运行专员 — 运营成本视角', () => {
 // 📢营销 — 检查活动预算 (marketing checking campaign budget)
 // ──────────────────────────────────────────────────────────────────────
 describe('📢营销 — 活动预算视角', () => {
-  test('查询活动预算支出与余额 (budget query)', async () => {
+  it('查询活动预算支出与余额 (budget query)', async () => {
     const ctrl = createController()
 
     // 市场费用预算
@@ -303,7 +303,7 @@ describe('📢营销 — 活动预算视角', () => {
     assert.equal(totalSpent, 28000)
   })
 
-  test('活动预算超出时拒绝录入大额支出', async () => {
+  it('活动预算超出时拒绝录入大额支出', async () => {
     const ctrl = createController()
 
     // 假设活动预算 50000，已用 45000
@@ -332,7 +332,7 @@ describe('📢营销 — 活动预算视角', () => {
     assert.equal(total, 55000, '超支应被记录以用于复盘')
   })
 
-  test('按日期范围筛选活动发票 (invoice validity)', async () => {
+  it('按日期范围筛选活动发票 (invoice validity)', async () => {
     const ctrl = createController()
 
     const today = new Date().toISOString().slice(0, 10)

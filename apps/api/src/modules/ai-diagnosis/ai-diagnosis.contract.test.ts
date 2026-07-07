@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [ai-diagnosis] Contract 测试
  *
@@ -11,7 +12,6 @@
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import test, { describe, beforeEach } from 'node:test'
 import type { DiagnosisEntity, DiagnosisBatch } from './ai-diagnosis.entity'
 import { AiDiagnosisService } from './ai-diagnosis.service'
 
@@ -27,7 +27,7 @@ beforeEach(() => {
 // ═══════════════════════════════════════════════════════
 
 describe('Contract: DiagnosisEntity shape', () => {
-  test('创建诊断必填字段齐全', () => {
+  it('创建诊断必填字段齐全', () => {
     const d = svc.createDiagnosis({
       engineId: 'engine-1',
       scenarioId: 'scenario-001',
@@ -52,7 +52,7 @@ describe('Contract: DiagnosisEntity shape', () => {
     assert.ok(new Date(d.createdAt).toString() !== 'Invalid Date')
   })
 
-  test('状态枚举值严格匹配', () => {
+  it('状态枚举值严格匹配', () => {
     const statuses: DiagnosisEntity['status'][] = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED']
     for (const s of statuses) {
       const d = svc.createDiagnosis({
@@ -64,7 +64,7 @@ describe('Contract: DiagnosisEntity shape', () => {
     }
   })
 
-  test('风险等级枚举值严格匹配', () => {
+  it('风险等级枚举值严格匹配', () => {
     const levels: DiagnosisEntity['riskLevel'][] = ['low', 'medium', 'high', 'critical']
     for (const rl of levels) {
       const d = svc.createDiagnosis({
@@ -76,7 +76,7 @@ describe('Contract: DiagnosisEntity shape', () => {
     }
   })
 
-  test('createDiagnosis 带可选字段', () => {
+  it('createDiagnosis 带可选字段', () => {
     const d = svc.createDiagnosis({
       engineId: 'engine-2',
       scenarioId: 'scenario-002',
@@ -92,7 +92,7 @@ describe('Contract: DiagnosisEntity shape', () => {
 })
 
 describe('Contract: DiagnosisBatch shape', () => {
-  test('批量诊断返回完整 DiagnosisBatch 结构', () => {
+  it('批量诊断返回完整 DiagnosisBatch 结构', () => {
     const batch = svc.createDiagnosisBatch({
       engineId: 'engine-batch-1',
       scenarioIds: ['scenario-a', 'scenario-b', 'scenario-high-risk'],
@@ -127,7 +127,7 @@ describe('Contract: DiagnosisBatch shape', () => {
     }
   })
 
-  test('getDiagnosisBatch 返回正确的 batch', () => {
+  it('getDiagnosisBatch 返回正确的 batch', () => {
     const created = svc.createDiagnosisBatch({
       engineId: 'e1', scenarioIds: ['s1'], tenantId: 't1', triggeredBy: 'u1'
     })
@@ -137,12 +137,12 @@ describe('Contract: DiagnosisBatch shape', () => {
     assert.equal(fetched!.diagnoses.length, 1)
   })
 
-  test('getDiagnosisBatch 不存在返回 undefined', () => {
+  it('getDiagnosisBatch 不存在返回 undefined', () => {
     const fetched = svc.getDiagnosisBatch('batch-not-exist')
     assert.equal(fetched, undefined)
   })
 
-  test('listDiagnosisBatches 按 engineId 过滤', () => {
+  it('listDiagnosisBatches 按 engineId 过滤', () => {
     svc.createDiagnosisBatch({ engineId: 'e-a', scenarioIds: ['s1'], tenantId: 't1', triggeredBy: 'u1' })
     svc.createDiagnosisBatch({ engineId: 'e-b', scenarioIds: ['s2'], tenantId: 't1', triggeredBy: 'u1' })
 
@@ -154,7 +154,7 @@ describe('Contract: DiagnosisBatch shape', () => {
     assert.equal(listB.length, 1)
   })
 
-  test('listDiagnosisBatches 按 tenantId 过滤', () => {
+  it('listDiagnosisBatches 按 tenantId 过滤', () => {
     svc.createDiagnosisBatch({ engineId: 'e1', scenarioIds: ['s1'], tenantId: 't-a', triggeredBy: 'u1' })
     svc.createDiagnosisBatch({ engineId: 'e1', scenarioIds: ['s2'], tenantId: 't-b', triggeredBy: 'u1' })
 
@@ -163,7 +163,7 @@ describe('Contract: DiagnosisBatch shape', () => {
     assert.equal(listA[0].tenantId, 't-a')
   })
 
-  test('listDiagnosisBatches 无过滤返回全部', () => {
+  it('listDiagnosisBatches 无过滤返回全部', () => {
     svc.createDiagnosisBatch({ engineId: 'e1', scenarioIds: ['s1'], tenantId: 't1', triggeredBy: 'u1' })
     svc.createDiagnosisBatch({ engineId: 'e2', scenarioIds: ['s2'], tenantId: 't1', triggeredBy: 'u1' })
 
@@ -176,7 +176,7 @@ describe('Contract: DiagnosisBatch shape', () => {
 // ═══════════════════════════════════════════════════════
 
 describe('Contract: 服务方法', () => {
-  test('getDiagnosis 存在返回诊断', () => {
+  it('getDiagnosis 存在返回诊断', () => {
     const d = svc.createDiagnosis({
       engineId: 'e1', scenarioId: 's1', tenantId: 't1', requestedBy: 'u1'
     })
@@ -185,12 +185,12 @@ describe('Contract: 服务方法', () => {
     assert.equal(fetched!.diagnosisId, d.diagnosisId)
   })
 
-  test('getDiagnosis 不存在返回 undefined', () => {
+  it('getDiagnosis 不存在返回 undefined', () => {
     const fetched = svc.getDiagnosis('diag-nonexistent')
     assert.equal(fetched, undefined)
   })
 
-  test('listDiagnoses 无过滤返回全部', () => {
+  it('listDiagnoses 无过滤返回全部', () => {
     svc.createDiagnosis({ engineId: 'e1', scenarioId: 's1', tenantId: 't1', requestedBy: 'u1' })
     svc.createDiagnosis({ engineId: 'e2', scenarioId: 's2', tenantId: 't1', requestedBy: 'u1' })
     svc.createDiagnosis({ engineId: 'e1', scenarioId: 's3', tenantId: 't1', requestedBy: 'u2' })
@@ -200,7 +200,7 @@ describe('Contract: 服务方法', () => {
     assert.equal(result.diagnoses.length, 3)
   })
 
-  test('listDiagnoses 按 engineId 过滤', () => {
+  it('listDiagnoses 按 engineId 过滤', () => {
     svc.createDiagnosis({ engineId: 'e1', scenarioId: 's1', tenantId: 't1', requestedBy: 'u1' })
     svc.createDiagnosis({ engineId: 'e2', scenarioId: 's2', tenantId: 't1', requestedBy: 'u1' })
 
@@ -209,7 +209,7 @@ describe('Contract: 服务方法', () => {
     assert.equal(result.diagnoses[0].engineId, 'e1')
   })
 
-  test('listDiagnoses 按 status 过滤', () => {
+  it('listDiagnoses 按 status 过滤', () => {
     const d1 = svc.createDiagnosis({ engineId: 'e1', scenarioId: 's1', tenantId: 't1', requestedBy: 'u1' })
     svc.createDiagnosis({ engineId: 'e2', scenarioId: 's2', tenantId: 't1', requestedBy: 'u1' })
 
@@ -220,7 +220,7 @@ describe('Contract: 服务方法', () => {
     assert.equal(result.diagnoses[0].status, 'IN_PROGRESS')
   })
 
-  test('listDiagnoses 按 riskLevel 过滤', () => {
+  it('listDiagnoses 按 riskLevel 过滤', () => {
     const d1 = svc.createDiagnosis({ engineId: 'e1', scenarioId: 's1', tenantId: 't1', requestedBy: 'u1' })
     svc.createDiagnosis({ engineId: 'e2', scenarioId: 's2', tenantId: 't1', requestedBy: 'u1' })
 
@@ -231,7 +231,7 @@ describe('Contract: 服务方法', () => {
     assert.equal(result.diagnoses[0].riskLevel, 'high')
   })
 
-  test('listDiagnoses 按 tenantId 过滤', () => {
+  it('listDiagnoses 按 tenantId 过滤', () => {
     svc.createDiagnosis({ engineId: 'e1', scenarioId: 's1', tenantId: 't-a', requestedBy: 'u1' })
     svc.createDiagnosis({ engineId: 'e1', scenarioId: 's2', tenantId: 't-b', requestedBy: 'u1' })
 
@@ -240,7 +240,7 @@ describe('Contract: 服务方法', () => {
     assert.equal(result.diagnoses[0].tenantId, 't-a')
   })
 
-  test('updateDiagnosis 更新状态并自动记录 completedAt', () => {
+  it('updateDiagnosis 更新状态并自动记录 completedAt', () => {
     const d = svc.createDiagnosis({
       engineId: 'e1', scenarioId: 's1', tenantId: 't1', requestedBy: 'u1'
     })
@@ -275,12 +275,12 @@ describe('Contract: 服务方法', () => {
     assert.ok(new Date(updated.completedAt!).toString() !== 'Invalid Date')
   })
 
-  test('updateDiagnosis 不存在的 ID 返回 undefined', () => {
+  it('updateDiagnosis 不存在的 ID 返回 undefined', () => {
     const result = svc.updateDiagnosis('diag-nonexistent', { status: 'COMPLETED' })
     assert.equal(result, undefined)
   })
 
-  test('deleteDiagnosis 删除成功返回 true', () => {
+  it('deleteDiagnosis 删除成功返回 true', () => {
     const d = svc.createDiagnosis({
       engineId: 'e1', scenarioId: 's1', tenantId: 't1', requestedBy: 'u1'
     })
@@ -289,12 +289,12 @@ describe('Contract: 服务方法', () => {
     assert.equal(svc.getDiagnosis(d.diagnosisId), undefined)
   })
 
-  test('deleteDiagnosis 不存在的 ID 返回 false', () => {
+  it('deleteDiagnosis 不存在的 ID 返回 false', () => {
     const deleted = svc.deleteDiagnosis('diag-nonexistent')
     assert.equal(deleted, false)
   })
 
-  test('listDiagnoses 按创建时间降序排列', () => {
+  it('listDiagnoses 按创建时间降序排列', () => {
     const d1 = svc.createDiagnosis({ engineId: 'e1', scenarioId: 's1', tenantId: 't1', requestedBy: 'u1' })
     // 稍微延迟确保时间差
     const d2 = svc.createDiagnosis({ engineId: 'e1', scenarioId: 's2', tenantId: 't1', requestedBy: 'u1' })
@@ -310,7 +310,7 @@ describe('Contract: 服务方法', () => {
 // ═══════════════════════════════════════════════════════
 
 describe('Contract: 风险报告 generateRiskReport', () => {
-  test('空数据返回零值报告', () => {
+  it('空数据返回零值报告', () => {
     const report = svc.generateRiskReport({ tenantId: 'no-data' })
     assert.equal(report.totalEvaluated, 0)
     assert.equal(report.averageEvaluationDurationMs, 0)
@@ -319,7 +319,7 @@ describe('Contract: 风险报告 generateRiskReport', () => {
     assert.ok(report.generatedAt)
   })
 
-  test('按 engineId 和 tenantId 过滤', () => {
+  it('按 engineId 和 tenantId 过滤', () => {
     // Engine A — 创建多个诊断并标记风险
     const d1 = svc.createDiagnosis({ engineId: 'engine-a', scenarioId: 's1', tenantId: 't1', requestedBy: 'u1' })
     const d2 = svc.createDiagnosis({ engineId: 'engine-a', scenarioId: 's2', tenantId: 't1', requestedBy: 'u1' })
@@ -347,7 +347,7 @@ describe('Contract: 风险报告 generateRiskReport', () => {
     assert.equal(reportAll.totalEvaluated, 3)
   })
 
-  test('topRecommendations 按风险等级降序排列', () => {
+  it('topRecommendations 按风险等级降序排列', () => {
     const ids: string[] = []
     for (let i = 0; i < 15; i++) {
       const d = svc.createDiagnosis({ engineId: 'e1', scenarioId: `s${i}`, tenantId: 't1', requestedBy: 'u1' })
@@ -377,7 +377,7 @@ describe('Contract: 风险报告 generateRiskReport', () => {
 // ═══════════════════════════════════════════════════════
 
 describe('Contract: 跨租户隔离', () => {
-  test('listDiagnoses 按 tenantId 过滤互不干扰', () => {
+  it('listDiagnoses 按 tenantId 过滤互不干扰', () => {
     svc.createDiagnosis({ engineId: 'e1', scenarioId: 's1', tenantId: 't-a', requestedBy: 'u1' })
     svc.createDiagnosis({ engineId: 'e1', scenarioId: 's2', tenantId: 't-b', requestedBy: 'u2' })
 
@@ -390,7 +390,7 @@ describe('Contract: 跨租户隔离', () => {
     assert.equal(resultB.diagnoses[0].tenantId, 't-b')
   })
 
-  test('generateRiskReport 按 tenant 过滤', () => {
+  it('generateRiskReport 按 tenant 过滤', () => {
     svc.createDiagnosis({ engineId: 'e1', scenarioId: 's1', tenantId: 't-a', requestedBy: 'u1' })
     svc.createDiagnosis({ engineId: 'e1', scenarioId: 's2', tenantId: 't-b', requestedBy: 'u1' })
 
@@ -401,7 +401,7 @@ describe('Contract: 跨租户隔离', () => {
     assert.equal(reportB.totalEvaluated, 1)
   })
 
-  test('listDiagnosisBatches 按 tenantId 过滤', () => {
+  it('listDiagnosisBatches 按 tenantId 过滤', () => {
     svc.createDiagnosisBatch({ engineId: 'e1', scenarioIds: ['s1'], tenantId: 't-a', triggeredBy: 'u1' })
     svc.createDiagnosisBatch({ engineId: 'e1', scenarioIds: ['s2'], tenantId: 't-b', triggeredBy: 'u1' })
 
@@ -420,7 +420,7 @@ describe('Contract: 跨租户隔离', () => {
 // ═══════════════════════════════════════════════════════
 
 describe('Contract: 边界场景', () => {
-  test('空 scenarioIds 创建空 batch', () => {
+  it('空 scenarioIds 创建空 batch', () => {
     const batch = svc.createDiagnosisBatch({
       engineId: 'e1', scenarioIds: [], tenantId: 't1', triggeredBy: 'u1'
     })
@@ -429,7 +429,7 @@ describe('Contract: 边界场景', () => {
     assert.equal(batch.matchRate, 0)
   })
 
-  test('大 promptSummary 不截断', () => {
+  it('大 promptSummary 不截断', () => {
     const longSummary = 'x'.repeat(10000)
     const d = svc.createDiagnosis({
       engineId: 'e1', scenarioId: 's1', tenantId: 't1', requestedBy: 'u1',
@@ -438,7 +438,7 @@ describe('Contract: 边界场景', () => {
     assert.equal(d.promptSummary.length, 10000)
   })
 
-  test('更新后 createdAt 不变', () => {
+  it('更新后 createdAt 不变', () => {
     const d = svc.createDiagnosis({
       engineId: 'e1', scenarioId: 's1', tenantId: 't1', requestedBy: 'u1'
     })
@@ -449,7 +449,7 @@ describe('Contract: 边界场景', () => {
     assert.equal(updated.createdAt, createdAt)
   })
 
-  test('FAILDED 状态也记录 completedAt', () => {
+  it('FAILDED 状态也记录 completedAt', () => {
     const d = svc.createDiagnosis({
       engineId: 'e1', scenarioId: 's1', tenantId: 't1', requestedBy: 'u1'
     })
@@ -459,7 +459,7 @@ describe('Contract: 边界场景', () => {
     assert.ok(updated.completedAt)
   })
 
-  test('listDiagnoses 空库返回零', () => {
+  it('listDiagnoses 空库返回零', () => {
     const result = svc.listDiagnoses()
     assert.equal(result.total, 0)
     assert.equal(result.diagnoses.length, 0)

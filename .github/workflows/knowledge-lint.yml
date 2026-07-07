@@ -1,0 +1,88 @@
+name: Knowledge Base Lint
+
+on:
+  push:
+    paths:
+      - 'knowledge/**'
+      - 'scripts/lint-knowledge.py'
+      - '.github/workflows/knowledge-lint.yml'
+  pull_request:
+    paths:
+      - 'knowledge/**'
+
+jobs:
+  lint:
+    name: Lint Knowledge Base
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # lint-knowledge.py 仅用标准库
+
+      - name: Run lint-knowledge.py
+        run: |
+          echo "=== Running knowledge base lint ==="
+          python3 scripts/lint-knowledge.py --json > lint-report.json || EXIT_CODE=$?
+          echo "Exit code: ${EXIT_CODE:-0}"
+          cat lint-report.json
+
+      - name: Run lint (verbose mode for human-readable)
+        run: |
+          python3 scripts/lint-knowledge.py || true
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: knowledge-lint-report
+          path: lint-report.json
+          retention-days: 7
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let report = {};
+            try {
+              report = JSON.parse(fs.readFileSync('lint-report.json', 'utf8'));
+            } catch (e) {
+              console.log('Failed to parse lint report:', e);
+            }
+            const body = [
+              '## 🔍 Knowledge Base Lint 失败',
+              '',
+              `- 子库数: ${report.subdirs ? Object.keys(report.subdirs).length : 'N/A'}`,
+              `- 错误数: ${Object.values(report.subdirs || {}).reduce((acc, s) => acc + (s.errors || 0), 0)}`,
+              '',
+              '### 修复方法',
+              '```bash',
+              '# 1. 看哪些文件有问题',
+              'python3 scripts/lint-knowledge.py',
+              '',
+              '# 2. 自动修复 frontmatter',
+              'python3 scripts/lint-knowledge.py --fix',
+              '',
+              '# 3. 手动修复 broken link',
+              'grep -r "broken-link-pattern" knowledge/',
+              '```',
+              '',
+              '详细规则见 [knowledge/automations/README.md](../../knowledge/automations/README.md)'
+            ].join('\n');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

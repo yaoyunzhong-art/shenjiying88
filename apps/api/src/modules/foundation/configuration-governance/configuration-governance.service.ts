@@ -396,8 +396,8 @@ export class ConfigurationGovernanceService {
       issuer: 'M5 Internal CA',
       autoRenew: true,
       issuedAt: '2026-04-01T00:00:00.000Z',
-      expiresAt: '2026-08-30T00:00:00.000Z',
-      lastValidatedAt: '2026-06-10T09:00:00.000Z',
+      expiresAt: '2026-08-05T00:00:00.000Z',
+      lastValidatedAt: '2026-07-04T09:00:00.000Z',
       rotatedBy: 'ops-cert-bot'
     },
     {
@@ -410,8 +410,8 @@ export class ConfigurationGovernanceService {
       issuer: 'Partner Payment CA',
       autoRenew: false,
       issuedAt: '2025-12-15T00:00:00.000Z',
-      expiresAt: '2026-06-28T00:00:00.000Z',
-      lastValidatedAt: '2026-06-11T08:00:00.000Z',
+      expiresAt: '2026-07-21T00:00:00.000Z',
+      lastValidatedAt: '2026-07-05T08:00:00.000Z',
       rotatedBy: 'sec-admin'
     }
   ]

@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import test, { describe } from 'node:test'
 import {
   ObservabilitySignalStatus,
   RecoveryPlanStatus,
@@ -17,31 +17,31 @@ import {
 } from './resilience-operations.entity'
 
 describe('resilience-operations entity - ObservabilitySignalStatus', () => {
-  test('Healthy 等于 "healthy"', () => {
+  it('Healthy 等于 "healthy"', () => {
     assert.equal(ObservabilitySignalStatus.Healthy, 'healthy')
   })
 
-  test('Warning 等于 "warning"', () => {
+  it('Warning 等于 "warning"', () => {
     assert.equal(ObservabilitySignalStatus.Warning, 'warning')
   })
 
-  test('Critical 等于 "critical"', () => {
+  it('Critical 等于 "critical"', () => {
     assert.equal(ObservabilitySignalStatus.Critical, 'critical')
   })
 })
 
 describe('resilience-operations entity - RecoveryPlanStatus', () => {
-  test('Ready 等于 "ready"', () => {
+  it('Ready 等于 "ready"', () => {
     assert.equal(RecoveryPlanStatus.Ready, 'ready')
   })
 
-  test('Attention 等于 "attention"', () => {
+  it('Attention 等于 "attention"', () => {
     assert.equal(RecoveryPlanStatus.Attention, 'attention')
   })
 })
 
 describe('resilience-operations entity - ObservabilitySignalRecord type', () => {
-  test('符合 ObservabilitySignalRecord 结构 - metrics', () => {
+  it('符合 ObservabilitySignalRecord 结构 - metrics', () => {
     const record: ObservabilitySignalRecord = {
       signal: 'metrics',
       status: ObservabilitySignalStatus.Healthy,
@@ -60,7 +60,7 @@ describe('resilience-operations entity - ObservabilitySignalRecord type', () => 
     assert.ok(record.evidence.length > 0)
   })
 
-  test('符合 ObservabilitySignalRecord 结构 - traces critical', () => {
+  it('符合 ObservabilitySignalRecord 结构 - traces critical', () => {
     const record: ObservabilitySignalRecord = {
       signal: 'traces',
       status: ObservabilitySignalStatus.Critical,
@@ -77,7 +77,7 @@ describe('resilience-operations entity - ObservabilitySignalRecord type', () => 
     assert.equal(record.alertRoutes.length, 2)
   })
 
-  test('ObservabilitySignalType 只接受合法值', () => {
+  it('ObservabilitySignalType 只接受合法值', () => {
     const validSignals: ObservabilitySignalType[] = ['metrics', 'logs', 'traces']
     assert.equal(validSignals.length, 3)
     validSignals.forEach((signal) => {
@@ -87,7 +87,7 @@ describe('resilience-operations entity - ObservabilitySignalRecord type', () => 
 })
 
 describe('resilience-operations entity - RetryPolicyRecord type', () => {
-  test('符合 RetryPolicyRecord 结构', () => {
+  it('符合 RetryPolicyRecord 结构', () => {
     const policy: RetryPolicyRecord = {
       key: 'edge-sync-retry',
       capability: 'edge-sync',
@@ -105,7 +105,7 @@ describe('resilience-operations entity - RetryPolicyRecord type', () => {
     assert.ok(policy.escalationTarget.length > 0)
   })
 
-  test('RetryPolicyRecord - webhook 投递策略', () => {
+  it('RetryPolicyRecord - webhook 投递策略', () => {
     const policy: RetryPolicyRecord = {
       key: 'webhook-delivery-retry',
       capability: 'webhook-delivery',
@@ -121,7 +121,7 @@ describe('resilience-operations entity - RetryPolicyRecord type', () => {
 })
 
 describe('resilience-operations entity - RecoveryPlanRecord type', () => {
-  test('符合 RecoveryPlanRecord 结构', () => {
+  it('符合 RecoveryPlanRecord 结构', () => {
     const plan: RecoveryPlanRecord = {
       resource: 'postgres-primary',
       status: RecoveryPlanStatus.Ready,
@@ -140,7 +140,7 @@ describe('resilience-operations entity - RecoveryPlanRecord type', () => {
     assert.ok(plan.runbook.startsWith('docs/'))
   })
 
-  test('RecoveryPlanRecord - attention 状态与过期天数', () => {
+  it('RecoveryPlanRecord - attention 状态与过期天数', () => {
     const plan: RecoveryPlanRecord = {
       resource: 'edge-sync-pipeline',
       status: RecoveryPlanStatus.Attention,
@@ -161,7 +161,7 @@ describe('resilience-operations entity - RecoveryPlanRecord type', () => {
 })
 
 describe('resilience-operations entity - GovernanceMetadataRecord type', () => {
-  test('符合 GovernanceMetadataRecord 结构', () => {
+  it('符合 GovernanceMetadataRecord 结构', () => {
     const meta: GovernanceMetadataRecord = {
       operation: 'observability.read',
       rbac: {
@@ -178,7 +178,7 @@ describe('resilience-operations entity - GovernanceMetadataRecord type', () => {
     assert.ok(meta.rbac.requiredPermissions.includes('foundation.governance.read'))
   })
 
-  test('GovernanceMetadataRecord - write 操作', () => {
+  it('GovernanceMetadataRecord - write 操作', () => {
     const meta: GovernanceMetadataRecord = {
       operation: 'edge-replay.write',
       rbac: {
@@ -195,7 +195,7 @@ describe('resilience-operations entity - GovernanceMetadataRecord type', () => {
 })
 
 describe('resilience-operations entity - EdgeReplayResult type', () => {
-  test('符合 EdgeReplayResult 结构', () => {
+  it('符合 EdgeReplayResult 结构', () => {
     const result: EdgeReplayResult = {
       status: 'staged',
       storeId: 'store-001',
@@ -230,7 +230,7 @@ describe('resilience-operations entity - EdgeReplayResult type', () => {
     assert.ok(result.recoveryPlan)
   })
 
-  test('EdgeReplayResult - 无匹配策略和计划', () => {
+  it('EdgeReplayResult - 无匹配策略和计划', () => {
     const result: EdgeReplayResult = {
       status: 'staged',
       storeId: 'store-unknown',
@@ -245,7 +245,7 @@ describe('resilience-operations entity - EdgeReplayResult type', () => {
 })
 
 describe('resilience-operations entity - 概览类型', () => {
-  test('符合 ObservabilityOverview 结构', () => {
+  it('符合 ObservabilityOverview 结构', () => {
     const overview: ObservabilityOverview = {
       totalSignals: 3,
       degradedSignals: 2,
@@ -271,7 +271,7 @@ describe('resilience-operations entity - 概览类型', () => {
     assert.equal(overview.maxCollectionLagSeconds, 92)
   })
 
-  test('符合 RetryPolicyOverview 结构', () => {
+  it('符合 RetryPolicyOverview 结构', () => {
     const overview: RetryPolicyOverview = {
       totalPolicies: 3,
       byCapability: { 'edge-sync': 1, 'webhook-delivery': 1, 'backup-restore': 1 },
@@ -283,7 +283,7 @@ describe('resilience-operations entity - 概览类型', () => {
     assert.equal(Object.keys(overview.byCapability).length, 3)
   })
 
-  test('符合 RecoveryPlanOverview 结构', () => {
+  it('符合 RecoveryPlanOverview 结构', () => {
     const overview: RecoveryPlanOverview = {
       totalPlans: 3,
       attentionRequired: 1,
@@ -295,7 +295,7 @@ describe('resilience-operations entity - 概览类型', () => {
     assert.equal(overview.staleDrills, 1)
   })
 
-  test('符合 OperationsOverview 完整结构', () => {
+  it('符合 OperationsOverview 完整结构', () => {
     const overview: OperationsOverview = {
       generatedAt: '2026-06-23T03:46:00.000Z',
       observability: {
@@ -331,7 +331,7 @@ describe('resilience-operations entity - 概览类型', () => {
 })
 
 describe('resilience-operations entity - RecoveryPlanDetail type', () => {
-  test('符合 RecoveryPlanDetail 结构 - 有匹配计划', () => {
+  it('符合 RecoveryPlanDetail 结构 - 有匹配计划', () => {
     const detail: RecoveryPlanDetail = {
       status: RecoveryPlanStatus.Ready,
       resource: 'postgres-primary',
@@ -353,7 +353,7 @@ describe('resilience-operations entity - RecoveryPlanDetail type', () => {
     assert.equal(detail.plan.rtoMinutes, 30)
   })
 
-  test('符合 RecoveryPlanDetail 结构 - 无匹配计划', () => {
+  it('符合 RecoveryPlanDetail 结构 - 无匹配计划', () => {
     const detail: RecoveryPlanDetail = {
       status: RecoveryPlanStatus.Attention,
       resource: 'unknown-resource',

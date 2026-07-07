@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * E2E 跨模块 #19 — 多租户隔离 (全模块越权检查)
  *
@@ -19,7 +20,6 @@
 
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import test, { describe } from 'node:test';
 import { Body, Controller, Get, Inject, Param, Patch, Post, Req } from '@nestjs/common';
 import request from 'supertest';
 import type { Request } from 'express';
@@ -253,7 +253,7 @@ function getData(res: request.Response) {
 // ═══════════════════════════════════════════════════
 
 describe('E2E #19 多租户隔离', () => {
-  test('Inventory: tenant B 不能读/扣 tenant A 的 product', async () => {
+  it('Inventory: tenant B 不能读/扣 tenant A 的 product', async () => {
     const { app } = await buildApp();
     const server = app.getHttpServer();
 
@@ -293,7 +293,7 @@ describe('E2E #19 多租户隔离', () => {
     await app.close();
   });
 
-  test('Cashier: tenant B 不能读 tenant A 的 order', async () => {
+  it('Cashier: tenant B 不能读 tenant A 的 order', async () => {
     const { app } = await buildApp();
     const server = app.getHttpServer();
 
@@ -316,7 +316,7 @@ describe('E2E #19 多租户隔离', () => {
     await app.close();
   });
 
-  test('Member: tenant A 的 member,tenant B 越权改 status 失败', async () => {
+  it('Member: tenant A 的 member,tenant B 越权改 status 失败', async () => {
     const { app } = await buildApp();
     const server = app.getHttpServer();
 
@@ -349,7 +349,7 @@ describe('E2E #19 多租户隔离', () => {
     await app.close();
   });
 
-  test('Loyalty: tenant A 的 coupon plan,tenant B 越权读 / 改 status 失败', async () => {
+  it('Loyalty: tenant A 的 coupon plan,tenant B 越权读 / 改 status 失败', async () => {
     const { app } = await buildApp();
     const server = app.getHttpServer();
 
@@ -408,7 +408,7 @@ describe('E2E #19 多租户隔离', () => {
     await app.close();
   });
 
-  test('Finance: tenant A 的 ledger / account,tenant B 越权读失败 + account 列表隔离', async () => {
+  it('Finance: tenant A 的 ledger / account,tenant B 越权读失败 + account 列表隔离', async () => {
     const { app } = await buildApp();
     const server = app.getHttpServer();
 
@@ -465,7 +465,7 @@ describe('E2E #19 多租户隔离', () => {
     await app.close();
   });
 
-  test('Header 切换攻击: 同一 resource id,tenant 切换后旧 tenant 仍可读,新 tenant 读不到', async () => {
+  it('Header 切换攻击: 同一 resource id,tenant 切换后旧 tenant 仍可读,新 tenant 读不到', async () => {
     const { app } = await buildApp();
     const server = app.getHttpServer();
 
