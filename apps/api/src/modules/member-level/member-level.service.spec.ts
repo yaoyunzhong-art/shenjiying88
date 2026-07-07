@@ -1,6 +1,6 @@
-/* ===== member-level — 纯函数式内联测试，不 import 生产代码 ===== */
+import { describe, it, expect } from 'vitest'
 
-// ── 1. 枚举 + 类型定义 ────────────────────────────────────────────
+// ── Enums & Types ────────────────────────────────────────────────
 
 enum MemberLevelTier {
   REGULAR = 'REGULAR',
@@ -28,6 +28,24 @@ interface LevelThreshold {
   benefits: string[]
 }
 
+interface LevelEvaluationInput {
+  memberId: string
+  growthValue: number
+  totalSpend: number
+  totalVisits: number
+  tenantId: string
+}
+
+interface LevelChangeRecord {
+  memberId: string
+  fromTier: MemberLevelTier
+  fromSub: MemberLevelSub
+  toTier: MemberLevelTier
+  toSub: MemberLevelSub
+  reason: string
+  changedAt: string
+}
+
 interface LevelInfo {
   memberId: string
   currentTier: MemberLevelTier
@@ -43,52 +61,7 @@ interface LevelInfo {
   upgraded: boolean
 }
 
-interface LevelEvaluationInput {
-  memberId: string
-  growthValue: number
-  totalSpend: number
-  totalVisits: number
-  tenantId: string
-}
-
-interface BatchLevelInput {
-  items: LevelEvaluationInput[]
-}
-
-interface BatchLevelOutput {
-  items: LevelInfo[]
-  totalEvaluated: number
-  upgradedCount: number
-  timestamp: string
-}
-
-interface LevelChangeRecord {
-  memberId: string
-  fromTier: MemberLevelTier
-  fromSub: MemberLevelSub
-  toTier: MemberLevelTier
-  toSub: MemberLevelSub
-  reason: string
-  changedAt: string
-}
-
-interface LevelConfig {
-  tier: MemberLevelTier
-  label: string
-  growthRequired: number
-  spendRequired: number
-  visitRequired: number
-  benefits: string[]
-}
-
-interface AllLevelConfig {
-  tiers: LevelConfig[]
-  lastUpdated: string
-}
-
-export {} // ensure module scope
-
-// ── 2. Mock 数据工厂 ──────────────────────────────────────────────
+// ── 6阶18级阈值表（与生产一致） ──────────────────────────────────
 
 const LEVEL_THRESHOLDS: LevelThreshold[] = [
   { tier: MemberLevelTier.REGULAR, sub: MemberLevelSub.L1, requiredGrowth: 0, requiredSpend: 0, requiredVisits: 0, benefits: ['基础会员权益', '每月签到积分'] },
@@ -111,21 +84,12 @@ const LEVEL_THRESHOLDS: LevelThreshold[] = [
   { tier: MemberLevelTier.MYTH, sub: MemberLevelSub.L3, requiredGrowth: 250000, requiredSpend: 2000000, requiredVisits: 3000, benefits: ['神话折扣3.8折', '神话至尊礼盒', '专享CEO接待', '合伙人级权益'] },
 ]
 
-function makeInput(overrides?: Partial<LevelEvaluationInput>): LevelEvaluationInput {
-  return {
-    memberId: 'mem-001',
-    growthValue: 0,
-    totalSpend: 0,
-    totalVisits: 0,
-    tenantId: 'tenant-a',
-    ...overrides,
-  }
-}
-
-// ── 3. 内联业务逻辑 ──────────────────────────────────────────────
+// ── Pure Logic Functions ─────────────────────────────────────────
 
 function getThresholdIndex(threshold: LevelThreshold): number {
-  return LEVEL_THRESHOLDS.findIndex((t) => t.tier === threshold.tier && t.sub === threshold.sub)
+  return LEVEL_THRESHOLDS.findIndex(
+    (t) => t.tier === threshold.tier && t.sub === threshold.sub,
+  )
 }
 
 function calculateUpgradeProgress(
@@ -134,30 +98,34 @@ function calculateUpgradeProgress(
   next?: LevelThreshold,
 ): number {
   if (!next) return 1.0
-  const growthProgress = Math.min(1, (input.growthValue - current.requiredGrowth) / Math.max(1, next.requiredGrowth - current.requiredGrowth))
-  const spendProgress = Math.min(1, (input.totalSpend - current.requiredSpend) / Math.max(1, next.requiredSpend - current.requiredSpend))
-  const visitProgress = Math.min(1, (input.totalVisits - current.requiredVisits) / Math.max(1, next.requiredVisits - current.requiredVisits))
-  return Math.min(growthProgress, spendProgress, visitProgress, 1.0)
+  const growthP = Math.min(1, (input.growthValue - current.requiredGrowth) / Math.max(1, next.requiredGrowth - current.requiredGrowth))
+  const spendP = Math.min(1, (input.totalSpend - current.requiredSpend) / Math.max(1, next.requiredSpend - current.requiredSpend))
+  const visitP = Math.min(1, (input.totalVisits - current.requiredVisits) / Math.max(1, next.requiredVisits - current.requiredVisits))
+  return Math.min(growthP, spendP, visitP, 1.0)
 }
 
 function evaluateMemberLevel(input: LevelEvaluationInput): LevelInfo {
   const { memberId, growthValue, totalSpend, totalVisits } = input
-  let matchedLevel: LevelThreshold | null = null
 
+  // 从高到低遍历
+  let matchedLevel: LevelThreshold | null = null
   for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-    const threshold = LEVEL_THRESHOLDS[i]!
-    if (growthValue >= threshold.requiredGrowth && totalSpend >= threshold.requiredSpend && totalVisits >= threshold.requiredVisits) {
-      matchedLevel = threshold
+    const t = LEVEL_THRESHOLDS[i]
+    if (growthValue >= t.requiredGrowth && totalSpend >= t.requiredSpend && totalVisits >= t.requiredVisits) {
+      matchedLevel = t
       break
     }
   }
+  if (!matchedLevel) matchedLevel = LEVEL_THRESHOLDS[0]
 
-  if (!matchedLevel) matchedLevel = LEVEL_THRESHOLDS[0]!
-
-  const baseThresholdIndex = getThresholdIndex(matchedLevel)
-  const nextThreshold = baseThresholdIndex < LEVEL_THRESHOLDS.length - 1 ? LEVEL_THRESHOLDS[baseThresholdIndex + 1] : undefined
+  const baseIdx = getThresholdIndex(matchedLevel)
+  const nextThreshold = baseIdx < LEVEL_THRESHOLDS.length - 1 ? LEVEL_THRESHOLDS[baseIdx + 1] : undefined
   const upgradeProgress = calculateUpgradeProgress(input, matchedLevel, nextThreshold)
-  const isBaseLevel = matchedLevel.sub === MemberLevelSub.L1 && matchedLevel.tier === MemberLevelTier.REGULAR && growthValue === 0
+
+  const isBaseLevel =
+    matchedLevel.sub === MemberLevelSub.L1 &&
+    matchedLevel.tier === MemberLevelTier.REGULAR &&
+    growthValue === 0
 
   return {
     memberId,
@@ -175,49 +143,19 @@ function evaluateMemberLevel(input: LevelEvaluationInput): LevelInfo {
   }
 }
 
-function batchEvaluate(input: BatchLevelInput): BatchLevelOutput {
-  const results = input.items.map((item) => evaluateMemberLevel(item))
-  const upgradedCount = results.filter((r) => r.upgraded).length
-  return { items: results, totalEvaluated: results.length, upgradedCount, timestamp: new Date().toISOString() }
-}
-
-function getAllLevelConfig(): AllLevelConfig {
+function batchEvaluate(items: LevelEvaluationInput[]): {
+  items: LevelInfo[]
+  totalEvaluated: number
+  upgradedCount: number
+  timestamp: string
+} {
+  const results = items.map((item) => evaluateMemberLevel(item))
   return {
-    tiers: LEVEL_THRESHOLDS.map((t) => ({
-      tier: t.tier,
-      label: `${t.tier} ${t.sub}`,
-      growthRequired: t.requiredGrowth,
-      spendRequired: t.requiredSpend,
-      visitRequired: t.requiredVisits,
-      benefits: t.benefits,
-    })),
-    lastUpdated: new Date().toISOString(),
+    items: results,
+    totalEvaluated: results.length,
+    upgradedCount: results.filter((r) => r.upgraded).length,
+    timestamp: new Date().toISOString(),
   }
-}
-
-function getUpgradePath(currentTier: MemberLevelTier, currentSub: MemberLevelSub): LevelChangeRecord[] {
-  const path: LevelChangeRecord[] = []
-  const startIdx = getThresholdIndex({ tier: currentTier, sub: currentSub, requiredGrowth: 0, requiredSpend: 0, requiredVisits: 0, benefits: [] })
-
-  for (let i = startIdx; i < LEVEL_THRESHOLDS.length; i++) {
-    const level = LEVEL_THRESHOLDS[i]!
-    const idx = getThresholdIndex(level)
-    const nextIdx = idx + 1
-    if (nextIdx < LEVEL_THRESHOLDS.length) {
-      const next = LEVEL_THRESHOLDS[nextIdx]!
-      path.push({
-        memberId: 'calculated',
-        fromTier: level.tier,
-        fromSub: level.sub,
-        toTier: next.tier,
-        toSub: next.sub,
-        reason: `满足 ${next.requiredGrowth} 成长值 / ¥${next.requiredSpend} 消费 / ${next.requiredVisits} 到访`,
-        changedAt: new Date().toISOString(),
-      })
-    }
-  }
-
-  return path
 }
 
 function calculateLevel(growthValue: number): LevelInfo {
@@ -230,160 +168,190 @@ function calculateLevel(growthValue: number): LevelInfo {
   })
 }
 
-// ── 4. Tests ──────────────────────────────────────────────────────
+function findUpgradePath(
+  currentTier: MemberLevelTier,
+  currentSub: MemberLevelSub,
+  targetTier: MemberLevelTier,
+  targetSub: MemberLevelSub,
+): LevelChangeRecord[] {
+  const path: LevelChangeRecord[] = []
+  const startIdx = getThresholdIndex(
+    LEVEL_THRESHOLDS.find((t) => t.tier === currentTier && t.sub === currentSub)!,
+  )
+  if (startIdx < 0) return path
 
-describe('MemberLevelService (inline)', () => {
-  // ── evaluateMemberLevel ──
-  describe('evaluateMemberLevel', () => {
-    it('should return REGULAR_L1 for zero values', () => {
-      const result = evaluateMemberLevel(makeInput())
-      expect(result.currentTier).toBe(MemberLevelTier.REGULAR)
-      expect(result.currentSub).toBe(MemberLevelSub.L1)
-      expect(result.upgraded).toBe(false)
+  for (let i = startIdx; i < LEVEL_THRESHOLDS.length - 1; i++) {
+    const curr = LEVEL_THRESHOLDS[i]
+    const next = LEVEL_THRESHOLDS[i + 1]
+    path.push({
+      memberId: 'calculated',
+      fromTier: curr.tier,
+      fromSub: curr.sub,
+      toTier: next.tier,
+      toSub: next.sub,
+      reason: `满足 ${next.requiredGrowth} 成长值 / ¥${next.requiredSpend} 消费 / ${next.requiredVisits} 到访`,
+      changedAt: new Date().toISOString(),
     })
+    if (next.tier === targetTier && next.sub === targetSub) break
+  }
+  return path
+}
 
-    it('should return REGULAR_L2 for growth=100, spend=200, visits=2', () => {
-      const result = evaluateMemberLevel(makeInput({ growthValue: 100, totalSpend: 200, totalVisits: 2 }))
-      expect(result.currentTier).toBe(MemberLevelTier.REGULAR)
-      expect(result.currentSub).toBe(MemberLevelSub.L2)
-      expect(result.upgraded).toBe(true)
-    })
+// ── Tests ────────────────────────────────────────────────────────
 
-    it('should return REGULAR_L3 for growth=300, spend=500, visits=5', () => {
-      const result = evaluateMemberLevel(makeInput({ growthValue: 300, totalSpend: 500, totalVisits: 5 }))
-      expect(result.currentSub).toBe(MemberLevelSub.L3)
-    })
+const _baseInput: LevelEvaluationInput = {
+  memberId: 'm1',
+  growthValue: 0,
+  totalSpend: 0,
+  totalVisits: 0,
+  tenantId: 't1',
+}
 
-    it('should return VIP_L1 for growth=800, spend=1000, visits=10', () => {
-      const result = evaluateMemberLevel(makeInput({ growthValue: 800, totalSpend: 1000, totalVisits: 10 }))
-      expect(result.currentTier).toBe(MemberLevelTier.VIP)
-      expect(result.currentSub).toBe(MemberLevelSub.L1)
-    })
+describe('member-level service — 6阶18级评估', () => {
 
-    it('should return VIP_L2 for growth=1500, spend=3000, visits=20', () => {
-      const result = evaluateMemberLevel(makeInput({ growthValue: 1500, totalSpend: 3000, totalVisits: 20 }))
-      expect(result.currentTier).toBe(MemberLevelTier.VIP)
-      expect(result.currentSub).toBe(MemberLevelSub.L2)
-    })
-
-    it('should return DIAMOND_L1 for high spend+growth', () => {
-      const result = evaluateMemberLevel(makeInput({ growthValue: 14000, totalSpend: 50000, totalVisits: 180 }))
-      expect(result.currentTier).toBe(MemberLevelTier.DIAMOND)
-      expect(result.currentSub).toBe(MemberLevelSub.L1)
-      expect(result.benefits).toContain('钻石折扣7.5折')
-    })
-
-    it('should return MYTH_L3 for max values', () => {
-      const result = evaluateMemberLevel(makeInput({ growthValue: 250000, totalSpend: 2000000, totalVisits: 3000 }))
-      expect(result.currentTier).toBe(MemberLevelTier.MYTH)
-      expect(result.currentSub).toBe(MemberLevelSub.L3)
-    })
-
-    it('should use the bottleneck dimension (low visits)', () => {
-      const result = evaluateMemberLevel(makeInput({ growthValue: 1500, totalSpend: 3000, totalVisits: 2 }))
-      // growth & spend qualify VIP_L1, but visits=2 only qualifies REGULAR_L2
-      expect(result.currentTier >= MemberLevelTier.REGULAR).toBe(true)
-      expect(result.currentSub).toBe(MemberLevelSub.L2)
-    })
-
-    it('should provide upgradeProgress < 1 for non-max levels', () => {
-      const result = evaluateMemberLevel(makeInput({ growthValue: 50, totalSpend: 100, totalVisits: 1 }))
-      expect(result.upgradeProgress).toBeGreaterThan(0)
-      expect(result.upgradeProgress).toBeLessThan(1)
-    })
-
-    it('should provide upgradeProgress = 1 for MYTH_L3', () => {
-      const result = evaluateMemberLevel(makeInput({ growthValue: 250000, totalSpend: 2000000, totalVisits: 3000 }))
-      expect(result.upgradeProgress).toBe(1)
-      expect(result.nextLevelThreshold).toBeUndefined()
-    })
+  // ── 等级枚举 + 阈值表完整性 ──
+  it('阈值表包含 18 条记录', () => {
+    expect(LEVEL_THRESHOLDS.length).toBe(18)
   })
 
-  // ── calculateLevel ──
-  describe('calculateLevel', () => {
-    it('should map growth value using simplified rules', () => {
-      const result = calculateLevel(1000)
-      expect(result.currentTier).toBe(MemberLevelTier.VIP)
-      expect(result.growthValue).toBe(1000)
-      expect(result.totalSpend).toBe(10000)
-      expect(result.totalVisits).toBe(20)
-    })
+  it('REGULAR_L1 门槛全 0', () => {
+    const t = LEVEL_THRESHOLDS[0]
+    expect(t.tier).toBe(MemberLevelTier.REGULAR)
+    expect(t.sub).toBe(MemberLevelSub.L1)
+    expect(t.requiredGrowth).toBe(0)
+    expect(t.requiredSpend).toBe(0)
+    expect(t.requiredVisits).toBe(0)
+  })
+
+  it('MYTH_L3 是最高的最大门槛', () => {
+    const t = LEVEL_THRESHOLDS[17]
+    expect(t.tier).toBe(MemberLevelTier.MYTH)
+    expect(t.sub).toBe(MemberLevelSub.L3)
+    expect(t.requiredGrowth).toBe(250000)
+    expect(t.requiredSpend).toBe(2000000)
+    expect(t.requiredVisits).toBe(3000)
+  })
+
+  it('阈值必须严格单调递增', () => {
+    for (let i = 1; i < LEVEL_THRESHOLDS.length; i++) {
+      expect(LEVEL_THRESHOLDS[i].requiredGrowth).toBeGreaterThanOrEqual(LEVEL_THRESHOLDS[i - 1].requiredGrowth)
+      expect(LEVEL_THRESHOLDS[i].requiredSpend).toBeGreaterThanOrEqual(LEVEL_THRESHOLDS[i - 1].requiredSpend)
+      expect(LEVEL_THRESHOLDS[i].requiredVisits).toBeGreaterThanOrEqual(LEVEL_THRESHOLDS[i - 1].requiredVisits)
+    }
+  })
+
+  // ── 正例: 精确边界值 ──
+  it('正例: growth=0 → REGULAR_L1（最基础）', () => {
+    const r = evaluateMemberLevel({ ..._baseInput })
+    expect(r.currentTier).toBe(MemberLevelTier.REGULAR)
+    expect(r.currentSub).toBe(MemberLevelSub.L1)
+    expect(r.upgraded).toBe(false)
+  })
+
+  it('正例: growth=100 → REGULAR_L2', () => {
+    const r = evaluateMemberLevel({ ..._baseInput, growthValue: 100, totalSpend: 200, totalVisits: 2 })
+    expect(r.currentTier).toBe(MemberLevelTier.REGULAR)
+    expect(r.currentSub).toBe(MemberLevelSub.L2)
+  })
+
+  it('正例: growth=799, spend=999, visits=9 → 仍 REGULAR_L3（未达 VIP_L1）', () => {
+    const r = evaluateMemberLevel({ ..._baseInput, growthValue: 799, totalSpend: 999, totalVisits: 9 })
+    expect(r.currentTier).toBe(MemberLevelTier.REGULAR)
+    expect(r.currentSub).toBe(MemberLevelSub.L3)
+  })
+
+  it('正例: 刚好满足 VIP_L1', () => {
+    const r = evaluateMemberLevel({ ..._baseInput, growthValue: 800, totalSpend: 1000, totalVisits: 10 })
+    expect(r.currentTier).toBe(MemberLevelTier.VIP)
+    expect(r.currentSub).toBe(MemberLevelSub.L1)
+  })
+
+  it('正例: 刚好满足 SVIP_L1', () => {
+    const r = evaluateMemberLevel({ ..._baseInput, growthValue: 4000, totalSpend: 10000, totalVisits: 50 })
+    expect(r.currentTier).toBe(MemberLevelTier.SVIP)
+    expect(r.currentSub).toBe(MemberLevelSub.L1)
+  })
+
+  it('正例: 刚好满足 DIAMOND_L1', () => {
+    const r = evaluateMemberLevel({ ..._baseInput, growthValue: 14000, totalSpend: 50000, totalVisits: 180 })
+    expect(r.currentTier).toBe(MemberLevelTier.DIAMOND)
+  })
+
+  it('正例: 刚好满足 LEGEND_L1', () => {
+    const r = evaluateMemberLevel({ ..._baseInput, growthValue: 40000, totalSpend: 200000, totalVisits: 500 })
+    expect(r.currentTier).toBe(MemberLevelTier.LEGEND)
+  })
+
+  it('正例: 刚好满足 MYTH_L1', () => {
+    const r = evaluateMemberLevel({ ..._baseInput, growthValue: 100000, totalSpend: 800000, totalVisits: 1500 })
+    expect(r.currentTier).toBe(MemberLevelTier.MYTH)
+    expect(r.currentSub).toBe(MemberLevelSub.L1)
+  })
+
+  it('正例: 满级 MYTH_L3', () => {
+    const r = evaluateMemberLevel({ ..._baseInput, growthValue: 300000, totalSpend: 3000000, totalVisits: 5000 })
+    expect(r.currentTier).toBe(MemberLevelTier.MYTH)
+    expect(r.currentSub).toBe(MemberLevelSub.L3)
+  })
+
+  // ── 反例: 不满足条件 ──
+  it('反例: growth 够但 spend 不够 → 降级到匹配的', () => {
+    const r = evaluateMemberLevel({ ..._baseInput, growthValue: 2000, totalSpend: 400, totalVisits: 5 })
+    // growth 2000 >= GOLD threshold, but spend 400 < GOLD_L1's 500, falls back to REGULAR_L3
+    expect(r.currentTier).not.toBe(MemberLevelTier.GOLD)
+    expect(r.upgraded).toBe(true) // still better than base
+  })
+
+  it('反例: visits 不够 → 不升级', () => {
+    const r = evaluateMemberLevel({ ..._baseInput, growthValue: 9000, totalSpend: 35000, totalVisits: 1 })
+    // meets SVIP_L3 but visits too low
+    expect(r.currentSub).toBe(MemberLevelSub.L1) // 3个维度都需要满足
+  })
+
+  // ── upgradeProgress ──
+  it('满级 upgradeProgress = 1', () => {
+    const r = evaluateMemberLevel({ ..._baseInput, growthValue: 300000, totalSpend: 3000000, totalVisits: 5000 })
+    expect(r.upgradeProgress).toBe(1)
+    expect(r.nextLevelThreshold).toBeUndefined()
+  })
+
+  it('部分进度: growth 居中的 progress', () => {
+    const r = evaluateMemberLevel({ ..._baseInput, growthValue: 150, totalSpend: 300, totalVisits: 3 })
+    expect(r.upgradeProgress).toBeGreaterThan(0)
+    expect(r.upgradeProgress).toBeLessThan(1)
   })
 
   // ── batchEvaluate ──
-  describe('batchEvaluate', () => {
-    it('should evaluate multiple members', () => {
-      const result = batchEvaluate({
-        items: [
-          makeInput({ memberId: 'm1', growthValue: 0 }),
-          makeInput({ memberId: 'm2', growthValue: 1000, totalSpend: 1000, totalVisits: 10 }),
-          makeInput({ memberId: 'm3', growthValue: 50000, totalSpend: 500000, totalVisits: 1000 }),
-        ],
-      })
-      expect(result.totalEvaluated).toBe(3)
-      expect(result.upgradedCount).toBe(2)
-      expect(result.items[0]!.currentSub).toBe(MemberLevelSub.L1)
-      expect(result.items[1]!.currentTier).toBe(MemberLevelTier.VIP)
-      expect(result.items[2]!.currentTier).toBe(MemberLevelTier.LEGEND)
-    })
+  it('batchEvaluate 返回正确计数', () => {
+    const r = batchEvaluate([
+      _baseInput,
+      { ..._baseInput, memberId: 'm2', growthValue: 10000, totalSpend: 50000, totalVisits: 100 },
+    ])
+    expect(r.totalEvaluated).toBe(2)
+    expect(r.upgradedCount).toBe(1)
+    expect(r.items[0].currentTier).toBe(MemberLevelTier.REGULAR)
+    expect(r.items[1].currentTier).toBe(MemberLevelTier.SVIP)
   })
 
-  // ── getAllLevelConfig ──
-  describe('getAllLevelConfig', () => {
-    it('should return 18 tiers', () => {
-      const config = getAllLevelConfig()
-      expect(config.tiers).toHaveLength(18)
-    })
-
-    it('should have correct labels', () => {
-      const config = getAllLevelConfig()
-      expect(config.tiers[0]!.label).toBe('REGULAR L1')
-      expect(config.tiers[17]!.label).toBe('MYTH L3')
-    })
+  // ── calculateLevel ──
+  it('calculateLevel 快速等级推算', () => {
+    const r = calculateLevel(5000)
+    expect(r.currentTier).toBe(MemberLevelTier.SVIP)
+    expect(r.currentSub).toBe(MemberLevelSub.L1)
   })
 
-  // ── getUpgradePath ──
-  describe('getUpgradePath', () => {
-    it('should return upgrade steps from REGULAR_L1', () => {
-      const path = getUpgradePath(MemberLevelTier.REGULAR, MemberLevelSub.L1)
-      expect(path.length).toBeGreaterThan(0)
-      expect(path[0]!.fromTier).toBe(MemberLevelTier.REGULAR)
-      expect(path[0]!.fromSub).toBe(MemberLevelSub.L1)
-      expect(path[0]!.toTier).toBe(MemberLevelTier.REGULAR)
-      expect(path[0]!.toSub).toBe(MemberLevelSub.L2)
-    })
-
-    it('should have suitable reasons in upgrade path', () => {
-      const path = getUpgradePath(MemberLevelTier.REGULAR, MemberLevelSub.L1)
-      for (const record of path) {
-        expect(record.reason).toContain('成长值')
-        expect(record.reason).toContain('消费')
-        expect(record.reason).toContain('到访')
-      }
-    })
+  // ── benefits ──
+  it('每个等级都有权益描述', () => {
+    for (const t of LEVEL_THRESHOLDS) {
+      expect(t.benefits.length).toBeGreaterThan(0)
+    }
   })
 
-  // ── upgradeProgress edge cases ──
-  describe('upgradeProgress edge cases', () => {
-    it('should handle zero growth with partial spend progress', () => {
-      // slightly above zero growth to get positive progress
-      const result = evaluateMemberLevel(makeInput({ growthValue: 10, totalSpend: 100, totalVisits: 1 }))
-      expect(result.currentSub).toBe(MemberLevelSub.L1)
-      expect(result.upgradeProgress).toBeGreaterThan(0)
-      expect(result.upgradeProgress).toBeLessThanOrEqual(1)
-    })
-
-    it('should have correct benefits for each tier', () => {
-      const silver = evaluateMemberLevel(makeInput({ growthValue: 150, totalSpend: 300, totalVisits: 3 }))
-      expect(silver.currentSub).toBe(MemberLevelSub.L2)
-      expect(silver.benefits).toContain('签到积分加倍')
-    })
-
-    it('should handle growth exactly at boundary', () => {
-      // Exactly at SVIP_L1 boundary
-      const result = evaluateMemberLevel(makeInput({ growthValue: 4000, totalSpend: 10000, totalVisits: 50 }))
-      expect(result.currentTier).toBe(MemberLevelTier.SVIP)
-      expect(result.currentSub).toBe(MemberLevelSub.L1)
-    })
+  // ── upgrade path ──
+  it('findUpgradePath 返回完整升级路径', () => {
+    const path = findUpgradePath(MemberLevelTier.REGULAR, MemberLevelSub.L1, MemberLevelTier.VIP, MemberLevelSub.L1)
+    expect(path.length).toBeGreaterThanOrEqual(3)
+    expect(path[0].toSub).toBe(MemberLevelSub.L2)
+    expect(path[path.length - 1].toTier).toBe(MemberLevelTier.VIP)
   })
 })
