@@ -78,14 +78,13 @@ describe('CdnCacheService', () => {
       } as CreateRuleDto)).rejects.toThrow('urlPattern 必填')
     })
 
-    it('❌ 反例: 非法 pattern 抛 BadRequest', async () => {
-      // 用无效 urlPattern 测试: 传空字符串但 name 存在,应被前面的空判断捕获
-      // 实际 regex 无法触发 BadRequestException;
-      // 改用不存在的 flagKey 测试路径
-      await expect(service.createRule({
-        name: 'bad',
-        urlPattern: '',
-      } as CreateRuleDto)).rejects.toThrow('必填')
+    it('🔲 边界: 超长 priority 规则仍正常创建', async () => {
+      const rule = await service.createRule({
+        name: 'max-priority',
+        urlPattern: '/max/*',
+        priority: 999999,
+      } as CreateRuleDto)
+      expect(rule.priority).toBe(999999)
     })
   })
 
