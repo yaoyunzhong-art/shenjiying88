@@ -17,7 +17,19 @@ import type { OpenAPISpec, EndpointInfo } from './swagger-gen.service'
 
 // ── 类型辅助 ──────────────────────────────────────────────────────
 
-type MockedService = ReturnType<typeof makeMockService>
+interface MockedService {
+  generateSpec: (info?: { title?: string; version?: string }) => OpenAPISpec;
+  exportJSON: (spec: OpenAPISpec) => string;
+  exportYAML: () => string;
+  exportRedocHTML: (spec: OpenAPISpec) => string;
+  exportPostman: () => string;
+  exportInsomnia: () => string;
+  registerEndpoint: () => void;
+  registerSchema: () => void;
+  registerSecurityScheme: () => void;
+  addTag: () => void;
+  generateIndex: (spec: OpenAPISpec) => string;
+}
 
 // ── Inline Controller ─────────────────────────────────────────────
 
