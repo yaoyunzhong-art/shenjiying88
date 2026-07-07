@@ -509,10 +509,9 @@ describe('AllianceController', () => {
 	describe('POST /alliance/order/:orderId/auto-link', () => {
 		it('【正向】🎯 运行专员 自动关联订单成功', () => {
 			mocks.orderDetector.autoLinkByRule.mockReturnValue({
-				orderId: 'ord-001',
-				linkedPartnerId: 'p-002',
-				linkStatus: 'linked',
-				matchedBy: 'location_proximity',
+				linked: true,
+				partnerId: 'p-002',
+				reason: 'location_proximity',
 			})
 			const result = controller.autoLinkOrder('ord-001')
 			expect(result.success).toBe(true)
