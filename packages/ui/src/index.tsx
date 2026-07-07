@@ -255,6 +255,14 @@ export type {
   InspectionTask,
   OpsQuickAction,
 } from './components/OperationsManagerDashboard';
+export { FinanceManagerDashboard } from './components/FinanceManagerDashboard';
+export type {
+  FinanceManagerDashboardProps,
+  FinanceSummary,
+  FinanceTransaction,
+  BudgetOverview,
+  BudgetOverviewItem,
+} from './components/FinanceManagerDashboard';
 export { ConciergePanel } from './components/ConciergePanel';
 export type {
   ConciergePanelProps,
