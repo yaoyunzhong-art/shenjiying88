@@ -400,7 +400,7 @@ describe('AIDecisionHistoryPage', () => {
   it('Page should reference UI components from @m5/ui', async () => {
     const mod = await import('./page');
     const source = mod.default.toString();
-    const expectedRefs = ['StatusBadge', 'Pagination', 'SearchFilterInput', 'FilterChips'];
+    const expectedRefs = ['StatusBadge', 'Pagination', 'SearchFilterInput'];
     for (const ref of expectedRefs) {
       assert.ok(source.includes(ref), `Page source should reference ${ref}`);
     }

@@ -585,6 +585,9 @@ export type {
 } from './components/DatePicker';
 export { MemberTierDistribution } from './components/MemberTierDistribution';
 export type { MemberTierDistributionProps, MemberTier } from './components/MemberTierDistribution';
+export { NotificationBell } from './components/NotificationBell';
+export type { NotificationBellProps, NotificationItem as NotificationBellItem } from './components/NotificationBell';
+
 export { NotificationCenter, useNotificationSummary } from './components/NotificationCenter';
 export type {
   NotificationCenterProps,

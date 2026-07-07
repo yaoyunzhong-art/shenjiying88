@@ -2,12 +2,14 @@ import { Module } from '@nestjs/common'
 import { PointsController } from './points.controller'
 import { PointsAtomicService } from './points-atomic.service'
 import { PointsRiskService, InflationMonitor, CircuitBreaker, ExpirationNotifier } from './points-risk.service'
+import { PointsService } from './points.service'
 
 @Module({
   controllers: [PointsController],
   providers: [
     PointsAtomicService,
     PointsRiskService,
+    PointsService,
     {
       provide: InflationMonitor,
       useFactory: () => new InflationMonitor()
@@ -23,7 +25,8 @@ import { PointsRiskService, InflationMonitor, CircuitBreaker, ExpirationNotifier
   ],
   exports: [
     PointsAtomicService,
-    PointsRiskService
+    PointsRiskService,
+    PointsService
   ]
 })
 export class PointsModule {}

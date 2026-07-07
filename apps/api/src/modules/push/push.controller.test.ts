@@ -20,10 +20,9 @@ import { PushPlatform, PushPriority } from './push.entity'
 
 const mockTenantContext: RequestTenantContext = {
   tenantId: 'tenant-arcade',
-  tenantName: '大玩家',
-  tenantCode: 'dwj',
-  userId: 'admin',
-  role: 'admin',
+  brandId: 'brand-arcade',
+  storeId: 'store-main',
+  marketCode: 'CN',
 }
 
 // ── Tests ──────────────────────────────────────────────────────
@@ -71,6 +70,7 @@ describe('PushController', () => {
       const result = controller.registerTemplate(mockTenantContext, {
         code: 'announcement',
         platform: PushPlatform.Android,
+        tenantId: 'tenant-arcade',
         body: '公告通知',
       })
       expect(result.tenantId).toBe('tenant-arcade')

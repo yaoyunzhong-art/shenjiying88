@@ -74,6 +74,10 @@ export class InflationMonitor {
     this.dailyRedemption.set(key, (this.dailyRedemption.get(key) ?? 0) + amount)
   }
 
+  getTotalIssuance(): number {
+    return this.totalIssuance
+  }
+
   getInflationIndex(): number {
     if (this.totalRedemption === 0) {
       return this.totalIssuance > 0 ? Infinity : 1
