@@ -72,7 +72,7 @@ describe(`${ROLES.TenantAdmin} lowcode 门店装修角色测试`, () => {
   it('店长可查询可用模板（正常流程）', () => {
     const tpl = ctrl.getTemplate('tpl-dashboard')
     assert.ok(tpl)
-    const tplObj = tpl as Record<string, unknown>
+    const tplObj = tpl as unknown as Record<string, unknown>
     assert.equal(tplObj.name, '仪表盘')
   })
 
@@ -130,7 +130,7 @@ describe(`${ROLES.Reception} lowcode 前台接待页面角色测试`, () => {
   it('前台可删除过时的接待组件（正常流程）', () => {
     const page = ctrl.createPage({ templateId: 'tpl-form', name: '旧登记表' })
     const pageDetail = ctrl.getPage(page.id)
-    const firstCompId = (pageDetail.components[0] as Record<string, unknown>).id as string
+    const firstCompId = (pageDetail.components[0] as unknown as Record<string, unknown>).id as string
     ctrl.removeComponent(page.id, firstCompId)
     const updated = ctrl.getPage(page.id)
     assert.equal(updated.components.length, 2)
@@ -190,7 +190,7 @@ describe(`${ROLES.HR} lowcode 员工管理页面角色测试`, () => {
   it('HR 删除首页（navbar）不应导致页面无剩余组件（正常流程）', () => {
     const page = ctrl.createPage({ templateId: 'tpl-blank' })
     const detail = ctrl.getPage(page.id)
-    const navbarId = (detail.components[0] as Record<string, unknown>).id as string
+    const navbarId = (detail.components[0] as unknown as Record<string, unknown>).id as string
     ctrl.removeComponent(page.id, navbarId)
     const after = ctrl.getPage(page.id)
     assert.equal(after.components.length, 0)
@@ -209,10 +209,10 @@ describe(`${ROLES.Safety} lowcode 审计与安全监控角色测试`, () => {
 
   it('安监可记录监控指标（正常流程）', () => {
     const result = ctrl.recordMetric({ name: 'error_rate', value: 0.5, tags: { env: 'prod' } })
-    const recorded = result.recorded as Record<string, unknown>
+    const recorded = result.recorded as unknown as Record<string, unknown>
     assert.equal(recorded.name, 'error_rate')
     assert.equal(recorded.value, 0.5)
-    assert.equal((recorded.tags as Record<string, string>).env, 'prod')
+    assert.equal((recorded.tags as unknown as Record<string, string>).env, 'prod')
   })
 
   it('安监可查询指标趋势（正常流程）', () => {
@@ -230,7 +230,7 @@ describe(`${ROLES.Safety} lowcode 审计与安全监控角色测试`, () => {
     ctrl.recordMetric({ name: 'latency_p99', value: 200 })
     const history = ctrl.getAlertHistory({})
     assert.ok(history.length >= 1)
-    const lastAlert = (history as Array<Record<string, unknown>>).find(
+    const lastAlert = (history as unknown as Array<Record<string, unknown>>).find(
       (a) => a.metricName === 'latency_p99',
     )
     assert.ok(lastAlert)
@@ -239,7 +239,7 @@ describe(`${ROLES.Safety} lowcode 审计与安全监控角色测试`, () => {
   it('安监可过滤告警历史按指标名（正常流程）', () => {
     ctrl.recordMetric({ name: 'error_rate', value: 5 }) // 超过阈值 2
     ctrl.recordMetric({ name: 'cpu_usage', value: 85 }) // 超过阈值 80
-    const filtered = ctrl.getAlertHistory({ metricName: 'error_rate' }) as Array<Record<string, unknown>>
+    const filtered = ctrl.getAlertHistory({ metricName: 'error_rate' }) as unknown as Array<Record<string, unknown>>
     assert.ok(filtered.length >= 1)
     assert.equal(filtered[0].metricName, 'error_rate')
   })
@@ -247,9 +247,9 @@ describe(`${ROLES.Safety} lowcode 审计与安全监控角色测试`, () => {
   it('安监记录指标时若超阈值会自动产生告警（正常流程）', () => {
     const result = ctrl.recordMetric({ name: 'error_rate', value: 10 })
     assert.ok(result.alert !== null)
-    const alert = result.alert as Record<string, unknown>
+    const alert = result.alert as unknown as Record<string, unknown>
     assert.equal(alert.metricName, 'error_rate')
-    assert.ok(alert.currentValue >= 10)
+    assert.ok((alert as any).currentValue >= 10)
   })
 
   it('安监记录指标时未超阈值不会产生告警（边界）', () => {
@@ -448,7 +448,7 @@ describe(`${ROLES.Teambuilding} lowcode 团建活动页面角色测试`, () => {
     const page = ctrl.createPage({ templateId: 'tpl-form', name: '团建组件测试' })
     const detail = ctrl.getPage(page.id)
     const before = detail.components.length
-    const firstId = (detail.components[0] as Record<string, unknown>).id as string
+    const firstId = (detail.components[0] as unknown as Record<string, unknown>).id as string
     ctrl.removeComponent(page.id, firstId)
     const after = ctrl.getPage(page.id)
     assert.equal(after.components.length, before - 1)
@@ -501,7 +501,7 @@ describe(`${ROLES.Marketing} lowcode 营销活动页面角色测试`, () => {
       tags: { campaign: 'summer', page: 'landing' },
     })
     assert.ok(result.alert !== null)
-    const alert = result.alert as Record<string, unknown>
+    const alert = result.alert as unknown as Record<string, unknown>
     assert.equal(alert.metricName, 'error_rate')
     assert.equal((alert as any).currentValue, 3)
   })
@@ -517,7 +517,7 @@ describe(`${ROLES.Marketing} lowcode 营销活动页面角色测试`, () => {
   it('营销可按指标名过滤告警历史（正常流程）', () => {
     ctrl.recordMetric({ name: 'error_rate', value: 10 })
     ctrl.recordMetric({ name: 'latency_p99', value: 1000 })
-    const filtered = ctrl.getAlertHistory({ metricName: 'latency_p99' }) as Array<Record<string, unknown>>
+    const filtered = ctrl.getAlertHistory({ metricName: 'latency_p99' }) as unknown as Array<Record<string, unknown>>
     assert.ok(filtered.every((a) => a.metricName === 'latency_p99'))
   })
 
@@ -561,8 +561,8 @@ describe('多角色低代码页面的隔离验证', () => {
     const ctrlB = new LowcodePageController(builder, audit)
 
     ctrlA.recordMetric({ name: 'error_rate', value: 5 })
-    const histA = ctrlA.getAlertHistory({}) as Array<Record<string, unknown>>
-    const histB = ctrlB.getAlertHistory({}) as Array<Record<string, unknown>>
+    const histA = ctrlA.getAlertHistory({}) as unknown as Array<Record<string, unknown>>
+    const histB = ctrlB.getAlertHistory({}) as unknown as Array<Record<string, unknown>>
 
     // 若共享同一个 audit 实例，则两个 controller 应看到相同的数据
     assert.equal(histA.length, histB.length)

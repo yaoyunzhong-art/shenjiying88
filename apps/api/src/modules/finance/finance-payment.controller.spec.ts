@@ -158,7 +158,7 @@ describe('FinancePaymentController', () => {
   it('FLOW-5: Request → Approve → Complete 完整退款流程', () => {
     // request
     const reqResult = ctrl.requestRefund('pay-mock-001', {
-      tenantId: 't1', paymentId: 'pay-mock-001', orderId: 'ord-001',
+      tenantId: 't1', orderId: 'ord-001',
       amountCents: 5000, reason: 'customer request', requestedBy: 'cs-agent',
     })
     expect(reqResult).toEqual(mockRefund)
