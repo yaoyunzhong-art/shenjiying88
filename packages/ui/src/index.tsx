@@ -1178,3 +1178,7 @@ export type {
   ToolbarPreset,
   ToolbarAction,
 } from './components/RichTextEditor';
+
+// --------------- YearPicker ---------------
+export { YearPicker } from './components/YearPicker';
+export type { YearPickerProps } from './components/YearPicker';
