@@ -13059,7 +13059,9 @@ function MemberMarketerDashboard({
   marketingKpi,
   recentCampaigns = [],
   quickActions = [],
-  managerName
+  managerName,
+  channelDistribution,
+  monthlyTrend
 }) {
   const stats = import_react34.default.useMemo(() => {
     const items = [];
@@ -13097,6 +13099,23 @@ function MemberMarketerDashboard({
     { key: "conversionRate", header: "\u8F6C\u5316\u7387", render: (c) => `${c.conversionRate.toFixed(1)}%` },
     { key: "roi", header: "ROI", render: (c) => c.roi.toFixed(2) }
   ];
+  const distData = import_react34.default.useMemo(() => {
+    if (channelDistribution) return channelDistribution;
+    const map = /* @__PURE__ */ new Map();
+    for (const c of recentCampaigns) {
+      const prev = map.get(c.channel) ?? { count: 0, cost: 0 };
+      map.set(c.channel, { count: prev.count + 1, cost: prev.cost + c.cost });
+    }
+    return Array.from(map.entries()).map(([ch, v]) => ({
+      channel: ch,
+      count: v.count,
+      totalCost: v.cost
+    }));
+  }, [recentCampaigns, channelDistribution]);
+  const channelChartData = distData.map((d) => ({
+    label: channelLabel(d.channel),
+    value: d.count
+  }));
   return /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("div", { style: { padding: 16 }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("div", { style: { marginBottom: 20 }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("div", { style: { fontSize: 20, fontWeight: 700, color: "#f1f5f9", marginBottom: 4 }, children: managerName ? `${managerName}\uFF0C\u6B22\u8FCE\u56DE\u6765` : "\u8425\u9500\u7ECF\u7406\u5DE5\u4F5C\u53F0" }),
@@ -13138,6 +13157,59 @@ function MemberMarketerDashboard({
           }
         )
       ] }, item.label)) })
+    ] }),
+    (channelChartData.length > 0 || monthlyTrend) && /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }, children: [
+      channelChartData.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("div", { style: SECTION_CARD_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("div", { style: SECTION_TITLE_STYLE3, children: "\u{1F4E1} \u6E20\u9053\u5206\u5E03" }),
+        /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("div", { style: { display: "flex", justifyContent: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
+          Chart,
+          {
+            type: "donut",
+            data: channelChartData,
+            width: 240,
+            height: 200
+          }
+        ) }),
+        distData.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("div", { style: { marginTop: 10 }, children: distData.map((d) => /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("div", { style: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "6px 0",
+          borderBottom: "1px solid rgba(148,163,184,0.06)"
+        }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: channelLabel(d.channel) }),
+          /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: [
+            d.count,
+            " \u4E2A\u6D3B\u52A8 \xB7 \xA5",
+            d.totalCost.toLocaleString()
+          ] })
+        ] }, d.channel)) })
+      ] }),
+      monthlyTrend && monthlyTrend.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("div", { style: SECTION_CARD_STYLE, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("div", { style: SECTION_TITLE_STYLE3, children: "\u{1F4C8} \u6708\u5EA6\u65B0\u589E\u8D8B\u52BF" }),
+        /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("div", { style: { display: "flex", justifyContent: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime51.jsx)(
+          Chart,
+          {
+            type: "bar",
+            data: monthlyTrend.map((m) => ({ label: m.month.slice(-2) + "\u6708", value: m.newMembers })),
+            width: 280,
+            height: 200,
+            showValues: true
+          }
+        ) }),
+        /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("div", { style: { display: "flex", justifyContent: "space-around", marginTop: 8 }, children: monthlyTrend.slice(-2).map((m) => /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("div", { style: { textAlign: "center" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("div", { style: { fontSize: 11, color: "#64748b" }, children: m.month }),
+          /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("div", { style: { fontSize: 13, fontWeight: 600, color: "#e2e8f0" }, children: [
+            "\u65B0\u589E ",
+            m.newMembers
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("div", { style: { fontSize: 11, color: "#94a3b8" }, children: [
+            "\u82B1\u8D39 \xA5",
+            (m.campaignCost / 1e3).toFixed(1),
+            "k"
+          ] })
+        ] }, m.month)) })
+      ] })
     ] }),
     recentCampaigns.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime51.jsxs)("div", { style: SECTION_CARD_STYLE, children: [
       /* @__PURE__ */ (0, import_jsx_runtime51.jsx)("div", { style: SECTION_TITLE_STYLE3, children: "\u{1F4CB} \u8FD1\u671F\u8425\u9500\u6D3B\u52A8" }),

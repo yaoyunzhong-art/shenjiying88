@@ -2324,6 +2324,26 @@ interface MarketerQuickAction {
     primary?: boolean;
     onClick?: () => void;
 }
+/** 渠道分布统计 */
+interface ChannelDistribution {
+    /** 渠道代码 */
+    channel: CampaignSnapshot$1['channel'];
+    /** 活动数量 */
+    count: number;
+    /** 总花费 (元) */
+    totalCost: number;
+}
+/** 月度趋势点 */
+interface MonthlyTrendPoint {
+    /** 月份, 如 '2026-01' */
+    month: string;
+    /** 新增会员数 */
+    newMembers: number;
+    /** 活动花费 (元) */
+    campaignCost: number;
+    /** 活动触达数 */
+    reachCount: number;
+}
 /** 营销经理工作台 Props */
 interface MemberMarketerDashboardProps {
     /** 会员增长指标 */
@@ -2336,8 +2356,12 @@ interface MemberMarketerDashboardProps {
     quickActions?: MarketerQuickAction[];
     /** 经理姓名 */
     managerName?: string;
+    /** 渠道分布 (不传则从 recentCampaigns 自动统计) */
+    channelDistribution?: ChannelDistribution[];
+    /** 月度趋势数据 */
+    monthlyTrend?: MonthlyTrendPoint[];
 }
-declare function MemberMarketerDashboard({ growthMetrics, marketingKpi, recentCampaigns, quickActions, managerName, }: MemberMarketerDashboardProps): React__default.JSX.Element;
+declare function MemberMarketerDashboard({ growthMetrics, marketingKpi, recentCampaigns, quickActions, managerName, channelDistribution, monthlyTrend, }: MemberMarketerDashboardProps): React__default.JSX.Element;
 
 /** 结账状态 */
 type CheckoutStatus = 'idle' | 'processing' | 'success' | 'failed';

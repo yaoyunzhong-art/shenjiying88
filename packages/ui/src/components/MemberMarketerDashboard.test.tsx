@@ -117,4 +117,61 @@ describe('MemberMarketerDashboard', () => {
     assert.ok(html.includes('18,420'), 'should show members');
     assert.ok(html.includes('61.2%'), 'should show active rate');
   });
+
+  // ── 新增测试: 渠道分布 ──
+
+  test('renders channel distribution section with auto-calculated data', () => {
+    const html = renderToStaticMarkup(React.createElement(MemberMarketerDashboard, BASE_PROPS));
+    assert.ok(html.includes('渠道分布'), 'should show channel distribution title');
+    assert.ok(html.includes('微信公众号'), 'should show wechat channel from campaigns');
+    assert.ok(html.includes('App推送'), 'should show app_push channel');
+    assert.ok(html.includes('短信'), 'should show sms channel');
+  });
+
+  test('renders custom channel distribution when provided', () => {
+    const html = renderToStaticMarkup(React.createElement(MemberMarketerDashboard, {
+      ...BASE_PROPS,
+      channelDistribution: [
+        { channel: 'email', count: 2, totalCost: 5000 },
+        { channel: 'wechat', count: 5, totalCost: 42000 },
+        { channel: 'sms', count: 3, totalCost: 3600 },
+      ],
+    }));
+    assert.ok(html.includes('渠道分布'), 'should show channel section');
+    assert.ok(html.includes('2 个活动 · ¥5,000'), 'should show email row');
+    assert.ok(html.includes('5 个活动 · ¥42,000'), 'should show wechat row');
+    assert.ok(html.includes('3 个活动 · ¥3,600'), 'should show sms row');
+  });
+
+  test('does not render channel section when no campaigns and no distribution', () => {
+    const html = renderToStaticMarkup(React.createElement(MemberMarketerDashboard, {
+      recentCampaigns: [],
+    }));
+    assert.ok(!html.includes('渠道分布'), 'should not render channel section');
+  });
+
+  // ── 新增测试: 月度趋势 ──
+
+  test('renders monthly trend section', () => {
+    const html = renderToStaticMarkup(React.createElement(MemberMarketerDashboard, {
+      ...BASE_PROPS,
+      monthlyTrend: [
+        { month: '2026-04', newMembers: 780, campaignCost: 45000, reachCount: 32000 },
+        { month: '2026-05', newMembers: 850, campaignCost: 52000, reachCount: 38000 },
+        { month: '2026-06', newMembers: 920, campaignCost: 58000, reachCount: 41000 },
+      ],
+    }));
+    assert.ok(html.includes('月度新增趋势'), 'should show trend title');
+    assert.ok(html.includes('04月'), 'should show apr label');
+    assert.ok(html.includes('05月'), 'should show may label');
+    assert.ok(html.includes('06月'), 'should show jun label');
+  });
+
+  test('does not render monthly trend when empty array', () => {
+    const html = renderToStaticMarkup(React.createElement(MemberMarketerDashboard, {
+      ...BASE_PROPS,
+      monthlyTrend: [],
+    }));
+    assert.ok(!html.includes('月度新增趋势'), 'should not render trend section');
+  });
 });

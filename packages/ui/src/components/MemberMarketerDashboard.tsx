@@ -6,6 +6,7 @@ import type { QuickStatItem } from './QuickStats';
 import { StatusBadge } from './StatusBadge';
 import { DataTable } from './DataTable';
 import type { DataTableColumn } from './DataTable';
+import { Chart } from './Chart';
 
 // ==================== 类型定义 ====================
 
@@ -82,6 +83,28 @@ export interface MarketerQuickAction {
   onClick?: () => void;
 }
 
+/** 渠道分布统计 */
+export interface ChannelDistribution {
+  /** 渠道代码 */
+  channel: CampaignSnapshot['channel'];
+  /** 活动数量 */
+  count: number;
+  /** 总花费 (元) */
+  totalCost: number;
+}
+
+/** 月度趋势点 */
+export interface MonthlyTrendPoint {
+  /** 月份, 如 '2026-01' */
+  month: string;
+  /** 新增会员数 */
+  newMembers: number;
+  /** 活动花费 (元) */
+  campaignCost: number;
+  /** 活动触达数 */
+  reachCount: number;
+}
+
 /** 营销经理工作台 Props */
 export interface MemberMarketerDashboardProps {
   /** 会员增长指标 */
@@ -94,6 +117,10 @@ export interface MemberMarketerDashboardProps {
   quickActions?: MarketerQuickAction[];
   /** 经理姓名 */
   managerName?: string;
+  /** 渠道分布 (不传则从 recentCampaigns 自动统计) */
+  channelDistribution?: ChannelDistribution[];
+  /** 月度趋势数据 */
+  monthlyTrend?: MonthlyTrendPoint[];
 }
 
 // ==================== 内联样式 ====================
@@ -172,6 +199,8 @@ export function MemberMarketerDashboard({
   recentCampaigns = [],
   quickActions = [],
   managerName,
+  channelDistribution,
+  monthlyTrend,
 }: MemberMarketerDashboardProps) {
   const stats: QuickStatItem[] = React.useMemo(() => {
     const items: QuickStatItem[] = [];
@@ -212,6 +241,27 @@ export function MemberMarketerDashboard({
     { key: 'conversionRate', header: '转化率', render: (c) => `${c.conversionRate.toFixed(1)}%` },
     { key: 'roi', header: 'ROI', render: (c) => c.roi.toFixed(2) },
   ];
+
+  // ===== 渠道分布自动统计 =====
+  const distData = React.useMemo(() => {
+    if (channelDistribution) return channelDistribution;
+    const map = new Map<CampaignSnapshot['channel'], { count: number; cost: number }>();
+    for (const c of recentCampaigns) {
+      const prev = map.get(c.channel) ?? { count: 0, cost: 0 };
+      map.set(c.channel, { count: prev.count + 1, cost: prev.cost + c.cost });
+    }
+    return Array.from(map.entries()).map(([ch, v]) => ({
+      channel: ch,
+      count: v.count,
+      totalCost: v.cost,
+    }));
+  }, [recentCampaigns, channelDistribution]);
+
+  // ===== 频道分布图表数据 =====
+  const channelChartData = distData.map((d) => ({
+    label: channelLabel(d.channel),
+    value: d.count,
+  }));
 
   return (
     <div style={{ padding: 16 }}>
@@ -274,6 +324,70 @@ export function MemberMarketerDashboard({
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* 渠道分布 + 月度趋势双栏布局 */}
+      {(channelChartData.length > 0 || monthlyTrend) && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+          {/* 渠道分布环形图 */}
+          {channelChartData.length > 0 && (
+            <div style={SECTION_CARD_STYLE}>
+              <div style={SECTION_TITLE_STYLE}>📡 渠道分布</div>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <Chart
+                  type="donut"
+                  data={channelChartData}
+                  width={240}
+                  height={200}
+                />
+              </div>
+              {distData.length > 0 && (
+                <div style={{ marginTop: 10 }}>
+                  {distData.map((d) => (
+                    <div key={d.channel} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '6px 0', borderBottom: '1px solid rgba(148,163,184,0.06)',
+                    }}>
+                      <span style={{ fontSize: 12, color: '#94a3b8' }}>{channelLabel(d.channel)}</span>
+                      <span style={{ fontSize: 12, color: '#cbd5e1' }}>
+                        {d.count} 个活动 · ¥{d.totalCost.toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 月度新增会员趋势 */}
+          {monthlyTrend && monthlyTrend.length > 0 && (
+            <div style={SECTION_CARD_STYLE}>
+              <div style={SECTION_TITLE_STYLE}>📈 月度新增趋势</div>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <Chart
+                  type="bar"
+                  data={monthlyTrend.map((m) => ({ label: m.month.slice(-2) + '月', value: m.newMembers }))}
+                  width={280}
+                  height={200}
+                  showValues
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 8 }}>
+                {monthlyTrend.slice(-2).map((m) => (
+                  <div key={m.month} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 11, color: '#64748b' }}>{m.month}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0' }}>
+                      新增 {m.newMembers}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                      花费 ¥{(m.campaignCost / 1000).toFixed(1)}k
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
