@@ -295,11 +295,16 @@ export class AutoRollbackService {
 
   /**
    * 同步执行模式 (测试用) - 跳过所有 sleep
+   *
+   * 行为:
+   *   - 状态 PENDING → 走完整 SNAPSHOTTING → ROLLING_BACK → VERIFYING → COMPLETED/FAILED
+   *   - 状态 SNAPSHOTTING (confirm() 已异步触发) → 接管剩余流程,避免空转
+   *   - 其他状态 → 直接 return 当前 record
    */
   async executeRollbackSync(id: string, snapshotKind: SnapshotKind = 'FULL'): Promise<RollbackRecord | undefined> {
     const record = this.records.get(id);
     if (!record) return undefined;
-    if (record.status !== 'PENDING') return record;
+    if (record.status !== 'PENDING' && record.status !== 'SNAPSHOTTING') return record;
 
     this.updateStatus(record, 'SNAPSHOTTING', `Sync ${snapshotKind} snapshot`);
     const snapshot = this.createSnapshot(snapshotKind, record.reason);

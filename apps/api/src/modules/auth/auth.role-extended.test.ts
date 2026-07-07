@@ -178,6 +178,13 @@ function createLoginSimulator() {
           existing.blocked = true
           existing.remainingSeconds = 300
         }
+        // 限流事件: 失败尝试需审计追踪, 安监可查询
+        log(
+          'system',
+          existing.blocked ? 'login.rate_limit.blocked' : 'login.rate_limit.recorded',
+          `IP ${ip} attempt #${existing.attempts}${existing.blocked ? ' (BLOCKED)' : ''}`,
+          ip,
+        )
       } else {
         existing.attempts = 0
         existing.blocked = false
@@ -410,10 +417,12 @@ describe('auth 模块 · 角色视角测试', () => {
       sim.recordLoginAttempt('10.0.0.1', false)
 
       const logs = sim.getAuditLogs()
+      console.log('DEBUG logs:', JSON.stringify(logs.map(l => ({ action: l.action, user: l.userId })), null, 2))
       assert.ok(logs.length >= 3)
 
       // 可按 action 过滤
       const cashierLogs = sim.getAuditLogs({ action: 'cashier.login.success' })
+      console.log('DEBUG cashierLogs:', cashierLogs.length, cashierLogs.map(l => l.action))
       assert.equal(cashierLogs.length, 1)
     })
 
