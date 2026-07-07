@@ -1,14 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-
-// 用 require 动态加载绕过 esbuild decorator 限制
-const { AnalyticsController } = require('./analytics.controller')
-const {
+import { AnalyticsController } from './analytics.controller'
+import {
   AnalyticsScope,
   DiagnosticCategory,
   DiagnosticSeverity
-} = require('./analytics.entity')
+} from './analytics.entity'
 
 type AnyFn = (...args: any[]) => any
 

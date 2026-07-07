@@ -3,14 +3,12 @@ import 'reflect-metadata'
 import assert from 'node:assert'
 import { validate } from 'class-validator'
 import { plainToInstance } from 'class-transformer'
-
-// 用 require 动态加载绕过 esbuild decorator 运行时问题
-const { AnalyticsScope } = require('./analytics.entity')
-const {
+import { AnalyticsScope } from './analytics.entity'
+import {
   GetOperationSnapshotDto,
   GetDiagnosticsDto,
   GetRecommendationsDto
-} = require('./analytics.dto')
+} from './analytics.dto'
 
 describe('Analytics DTOs', () => {
   // ─── GetOperationSnapshotDto ───

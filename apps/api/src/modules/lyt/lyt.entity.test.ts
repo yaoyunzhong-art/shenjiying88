@@ -1,15 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import {
+  LytDeviceType,
+  LytDeviceStatus,
+  isDeviceOnline,
+  isDeviceAnomalous,
+  makeLytBootstrap,
+  computeDeviceHealthSummary
+} from './lyt.entity'
+
 describe('lyt.entity', () => {
-  const {
-    LytDeviceType,
-    LytDeviceStatus,
-    isDeviceOnline,
-    isDeviceAnomalous,
-    makeLytBootstrap,
-    computeDeviceHealthSummary
-  } = require('./lyt.entity')
 
   describe('LytDeviceType', () => {
     it('has all expected enum values', () => {

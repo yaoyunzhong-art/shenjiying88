@@ -1,21 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import {
+  LytDeviceQueryDto,
+  LytDeviceCreateDto,
+  LytDeviceUpdateDto,
+  LytGateVerifyDto,
+  LytBootstrapResponseDto,
+  LytFixtureCompareDto,
+  LytFixtureImportPlanDto,
+  LytFixtureImportPreviewDto,
+  LytWebhookDrillDto,
+  LytWebhookFixtureReplayDto,
+  LytWebhookIngestDto
+} from './lyt.dto'
+import { LytDeviceType, LytDeviceStatus } from './lyt.entity'
+
 describe('lyt.dto', () => {
-  const {
-    LytDeviceQueryDto,
-    LytDeviceCreateDto,
-    LytDeviceUpdateDto,
-    LytGateVerifyDto,
-    LytBootstrapResponseDto,
-    LytFixtureCompareDto,
-    LytFixtureImportPlanDto,
-    LytFixtureImportPreviewDto,
-    LytWebhookDrillDto,
-    LytWebhookFixtureReplayDto,
-    LytWebhookIngestDto
-  } = require('./lyt.dto')
-  const { LytDeviceType, LytDeviceStatus } = require('./lyt.entity')
 
   describe('LytDeviceQueryDto', () => {
     it('can be instantiated with no params', () => {

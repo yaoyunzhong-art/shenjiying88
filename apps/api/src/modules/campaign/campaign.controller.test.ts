@@ -1,15 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-
-const { CampaignController } = require('./campaign.controller')
-const {
+import { CampaignController } from './campaign.controller'
+import {
   CampaignStatus,
   CampaignTrigger,
   CampaignActionKind,
   CampaignActionStatus,
   CampaignConditionType
-} = require('./campaign.entity')
+} from './campaign.entity'
 
 // ── 辅助工厂 ──
 function createContext(tenantId = 't-campaign', brandId = 'b-campaign', storeId = 's-001') {
