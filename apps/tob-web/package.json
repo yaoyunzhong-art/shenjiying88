@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint app next.config.mjs --ext .ts,.tsx,.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "next typegen && tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test 'app/**/*.test.ts'"
   },
   "dependencies": {

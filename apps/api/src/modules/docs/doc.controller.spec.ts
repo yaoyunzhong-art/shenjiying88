@@ -18,16 +18,16 @@ import type { OpenAPISpec, EndpointInfo } from './swagger-gen.service'
 // ── 类型辅助 ──────────────────────────────────────────────────────
 
 interface MockedService {
-  generateSpec: (info?: { title?: string; version?: string }) => OpenAPISpec;
+  generateSpec: (info?: { title?: string; version?: string; description?: string; servers?: string[] }) => OpenAPISpec;
   exportJSON: (spec: OpenAPISpec) => string;
-  exportYAML: () => string;
+  exportYAML: (spec: OpenAPISpec) => string;
   exportRedocHTML: (spec: OpenAPISpec) => string;
-  exportPostman: () => string;
-  exportInsomnia: () => string;
-  registerEndpoint: () => void;
-  registerSchema: () => void;
-  registerSecurityScheme: () => void;
-  addTag: () => void;
+  exportPostman: (spec: OpenAPISpec) => string;
+  exportInsomnia: (spec: OpenAPISpec) => string;
+  registerEndpoint: (controllerName: string, endpoint: Record<string, unknown>) => void;
+  registerSchema: (name: string, schema: Record<string, unknown>) => void;
+  registerSecurityScheme: (name: string, config: Record<string, unknown>) => void;
+  addTag: (name: string, description: string) => void;
   generateIndex: (spec: OpenAPISpec) => string;
 }
 
@@ -222,17 +222,17 @@ function makeMockService(overrides: Partial<MockedService> = {}): MockedService 
         },
       }),
     exportJSON: (spec: OpenAPISpec) => JSON.stringify(spec, null, 2),
-    exportYAML: () => 'openapi: "3.0.3"\ninfo:\n  title: "Test"\n',
+    exportYAML: (_spec: OpenAPISpec) => 'openapi: "3.0.3"\ninfo:\n  title: "Test"\n',
     exportRedocHTML: (spec: OpenAPISpec) =>
       `<!DOCTYPE html><html><head><title>${spec.info.title} - API Documentation</title></head><body><redoc></redoc><script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"></script></body></html>`,
-    exportPostman: () =>
+    exportPostman: (_spec: OpenAPISpec) =>
       JSON.stringify({ info: { name: 'Test API', schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json' }, item: [] }, null, 2),
-    exportInsomnia: () =>
+    exportInsomnia: (_spec: OpenAPISpec) =>
       JSON.stringify({ _type: 'export', version: '2023.1.0', resources: [] }, null, 2),
-    registerEndpoint: () => {},
-    registerSchema: () => {},
-    registerSecurityScheme: () => {},
-    addTag: () => {},
+    registerEndpoint: (_controllerName: string, _endpoint: Record<string, unknown>) => {},
+    registerSchema: (_name: string, _schema: Record<string, unknown>) => {},
+    registerSecurityScheme: (_name: string, _config: Record<string, unknown>) => {},
+    addTag: (_name: string, _description: string) => {},
     generateIndex: (spec: OpenAPISpec) =>
       `<!DOCTYPE html><html><head><title>${spec.info.title} - API Index</title></head><body><h1>${spec.info.title}</h1><p>Version: ${spec.info.version}</p></body></html>`,
     ...overrides,
