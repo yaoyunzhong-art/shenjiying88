@@ -275,6 +275,8 @@ export { TimePicker } from './components/TimePicker';
 export type { TimePickerProps } from './components/TimePicker';
 export { MonthPicker } from './components/MonthPicker';
 export type { MonthPickerProps } from './components/MonthPicker';
+export { WeekPicker } from './components/WeekPicker';
+export type { WeekPickerProps } from './components/WeekPicker';
 export { Card } from './components/Card';
 export { StatCard } from './components/StatCard';
 export { KpiSummaryCard } from './components/KpiSummaryCard';
