@@ -531,3 +531,11 @@
 - 出问题的功能要修，不是关。
 - 如果功能的核心逻辑是对的，只是某部分不工作，就跳过那部分继续跑，同时安排修复那部分。
 - 新反模式: AM-021 | 发现bug先关功能而不是修 | 2026-07-07
+
+### 2026-07-07 18:39 — pulse#177 修复
+- **新反模式: AM-022 | 导入不存在的组件名 | 2026-07-07**
+  - OrderDetailWithStatusFlow.tsx 导入 `{ Toast }` 但 Toast.tsx 只导出 `ToastContainer` 和 `useToast`，无直接 `<Toast>` 组件。
+  - 教训: 检查导入组件的导出名是否与实际文件一致，不要假设组件名与文件名相同。
+- **新反模式: AM-023 | TypeScript variant 类型不兼容 | 2026-07-07**
+  - 在 StatusBadge 的 variant 类型中，`'danger'` 在 props 声明中存在但 `orderStatusToVariant` 返回类型签名未包含 `'danger'` 导致 TS2322。
+  - 教训: 函数的返回类型签名必须与它return的所有值一致，如果StatusBadge声明接受`'danger'`但函数返回类型没有包含，先更新函数返回类型而不是改返回值。

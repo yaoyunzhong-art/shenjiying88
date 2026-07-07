@@ -11,7 +11,6 @@ import type { DescriptionItem } from './DescriptionList';
 import { Modal } from './Modal';
 import { TextArea } from './TextArea';
 import { Button } from './Button';
-import { ToastContainer } from './Toast';
 import { Spin } from './Spin';
 
 // ---- 类型定义 ----
@@ -278,36 +277,41 @@ export function OrderDetailWithStatusFlow({
 
       {/* Toast 反馈 */}
       {toast && (
-        <div style={{
-          position: 'fixed',
-          top: 20,
-          right: 20,
-          zIndex: 9999,
-          padding: '12px 20px',
-          borderRadius: 12,
-          background: toast.type === 'success' ? 'rgba(22, 101, 52, 0.65)' : 'rgba(127, 29, 29, 0.65)',
-          border: `1px solid ${toast.type === 'success' ? 'rgba(74, 222, 128, 0.35)' : 'rgba(248, 113, 113, 0.35)'}`,
-          color: toast.type === 'success' ? '#bbf7d0' : '#fecaca',
-          fontSize: 13,
-          backdropFilter: 'blur(12px)',
-          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.45)',
-          animation: 'toast-slide-in 0.25s ease-out',
-        }}
+        <div
+          style={{
+            position: 'fixed',
+            top: 20,
+            right: 20,
+            zIndex: 9999,
+            padding: '12px 20px',
+            borderRadius: 12,
+            background: toast.type === 'success' ? 'rgba(22, 101, 52, 0.65)' : 'rgba(127, 29, 29, 0.65)',
+            border: `1px solid ${toast.type === 'success' ? 'rgba(74, 222, 128, 0.35)' : 'rgba(248, 113, 113, 0.35)'}`,
+            color: toast.type === 'success' ? '#bbf7d0' : '#fecaca',
+            fontSize: 13,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.45)',
+          }}
           role="alert"
         >
-          <span>{toast.message}</span>
+          <span style={{ flex: 1, lineHeight: 1.5 }}>{toast.message}</span>
           <button
             onClick={() => setToast(null)}
             style={{
-              marginLeft: 12,
               background: 'none',
               border: 'none',
               color: 'inherit',
               cursor: 'pointer',
               fontSize: 16,
               opacity: 0.7,
+              padding: 0,
             }}
-          >×</button>
+          >
+            ×
+          </button>
         </div>
       )}
 

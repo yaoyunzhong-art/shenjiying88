@@ -381,7 +381,7 @@ describe('MemberDormancyController', () => {
   // ──────────────────────────────────────────────
   describe('端点完整性', () => {
     it('Controller 包含全部 5 个公开路由方法', () => {
-      const proto = MemberDormancyController.prototype as Record<string, unknown>
+      const proto = MemberDormancyController.prototype as unknown as Record<string, unknown>
       expect(typeof proto.reactivate).toBe('function')
       expect(typeof proto.manualScan).toBe('function')
       expect(typeof proto.stats).toBe('function')
