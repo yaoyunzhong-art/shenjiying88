@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest'
 enum MemberLevelTier {
   REGULAR = 'REGULAR',
   VIP = 'VIP',
+  GOLD = 'GOLD',
   SVIP = 'SVIP',
   DIAMOND = 'DIAMOND',
   LEGEND = 'LEGEND',

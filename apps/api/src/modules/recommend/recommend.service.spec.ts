@@ -86,7 +86,7 @@ function createInlineRecommendService(): {
   getMemberInsights: (tenantId: string, memberId: string) => { topCategory: string | null; totalSpendCents: number; orderCount: number; estimatedStage: string; recommendedStrategies: StrategyType[] }
   refreshProfile: (tenantId: string, memberId: string) => boolean
   mergeRecommendations: (results: RecommendationResult[], limit?: number) => Candidate[]
-  warmupStrategies: (tenantId: string, memberId: string, initialCategories?: string[]) => { warmed: boolean; strategiesLoaded: number }
+  warmupStrategies: (tenantId: string, memberId: string, initialCategories?: string[]) => Promise<{ warmed: boolean; strategiesLoaded: number }>
 } {
   // 内存存储模拟
   const prefStore = new Map<string, MemberPreference>()
@@ -208,7 +208,7 @@ function createInlineRecommendService(): {
       return merged.slice(0, limit)
     },
 
-    warmupStrategies(tenantId: string, memberId: string, initialCategories?: string[]) {
+    async warmupStrategies(tenantId: string, memberId: string, initialCategories?: string[]) {
       const key = `${tenantId}:${memberId}`
       if (!prefStore.has(key)) {
         prefStore.set(key, {

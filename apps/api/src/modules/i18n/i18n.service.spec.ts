@@ -10,17 +10,17 @@ import assert from 'node:assert/strict';
 // ── 1. 枚举 + 类型定义 ─────────────────────────────────────────
 
 type Locale = 'zh-CN' | 'en-US' | 'ja-JP';
-type TranslationValue = string | Record<string, TranslationValue>;
+type TranslationValue = string | { [key: string]: TranslationValue };
 type TranslationMap = Record<string, TranslationValue>;
 
 type PluralForm = 'zero' | 'one' | 'two' | 'few' | 'many' | 'other';
 
 // ── 2. mock 数据工厂 ────────────────────────────────────────────
 
-function makeTranslations(locale: Locale, map: Record<string, string | Record<string, string>>): Record<Locale, TranslationMap> {
+function makeTranslations(locale: Locale, map: Record<string, string | Record<string, string>>): Partial<Record<Locale, TranslationMap>> {
   const result: Record<string, TranslationMap> = {};
   result[locale] = map as TranslationMap;
-  return result as Record<Locale, TranslationMap>;
+  return result as Partial<Record<Locale, TranslationMap>>;
 }
 
 function nestedTranslations(): Record<string, TranslationValue> {
@@ -46,7 +46,7 @@ function registerTranslations(store: Map<Locale, TranslationMap>, locale: Locale
   store.set(locale, { ...existing, ...map } as TranslationMap);
 }
 
-function registerBulk(store: Map<Locale, TranslationMap>, maps: Record<Locale, TranslationMap>): void {
+function registerBulk(store: Map<Locale, TranslationMap>, maps: Partial<Record<Locale, TranslationMap>>): void {
   for (const [locale, map] of Object.entries(maps) as [Locale, TranslationMap][]) {
     registerTranslations(store, locale, map);
   }

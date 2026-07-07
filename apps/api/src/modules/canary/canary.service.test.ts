@@ -145,7 +145,6 @@ describe('CanaryService V10 Day 8 Phase 92', () => {
     it('recordHealth marks healthy for low error rate', () => {
       const snap = service.recordHealth({
         experimentId: 'exp-1', errorRate: 0.001, latencyP95: 100, latencyAvg: 50, totalRequests: 1000,
-      isHealthy: true,
       })
       assert.equal(snap.isHealthy, true)
     })
@@ -153,7 +152,6 @@ describe('CanaryService V10 Day 8 Phase 92', () => {
     it('recordHealth marks unhealthy for high error rate', () => {
       const snap = service.recordHealth({
         experimentId: 'exp-1', errorRate: 0.1, latencyP95: 100, latencyAvg: 50, totalRequests: 1000,
-      isHealthy: true,
       })
       assert.equal(snap.isHealthy, false)
     })
@@ -161,7 +159,6 @@ describe('CanaryService V10 Day 8 Phase 92', () => {
     it('recordHealth marks unhealthy for high latency', () => {
       const snap = service.recordHealth({
         experimentId: 'exp-1', errorRate: 0, latencyP95: 2000, latencyAvg: 1500, totalRequests: 100,
-      isHealthy: true,
       })
       assert.equal(snap.isHealthy, false)
     })
@@ -169,7 +166,6 @@ describe('CanaryService V10 Day 8 Phase 92', () => {
     it('checkAutoPromote when healthy', () => {
       service.recordHealth({
         experimentId: 'exp-seed-ai-v2', errorRate: 0.001, latencyP95: 100, latencyAvg: 50, totalRequests: 1000,
-      isHealthy: true,
       })
       const r = service.checkAutoPromote('exp-seed-ai-v2')
       assert.equal(r.shouldPromote, true)
@@ -179,7 +175,6 @@ describe('CanaryService V10 Day 8 Phase 92', () => {
     it('checkAutoPromote when unhealthy', () => {
       service.recordHealth({
         experimentId: 'exp-seed-ai-v2', errorRate: 0.5, latencyP95: 5000, latencyAvg: 2000, totalRequests: 100,
-      isHealthy: true,
       })
       const r = service.checkAutoPromote('exp-seed-ai-v2')
       assert.equal(r.shouldPromote, false)

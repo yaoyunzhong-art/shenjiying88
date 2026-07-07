@@ -64,7 +64,7 @@ describe('LicensePackageController', () => {
     })
 
     it('create 抛出 service 异常', async () => {
-      const svc = {
+      const svc: any = {
         create: () => Promise.reject(new Error('创建失败')),
         findAll: () => Promise.resolve([]),
         findOne: () => Promise.resolve({}),

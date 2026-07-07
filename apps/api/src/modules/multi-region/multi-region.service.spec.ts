@@ -51,7 +51,7 @@ class InlineMultiRegionService {
     if (parts.length !== 4) return { country: 'ZZ', region: DEFAULT_REGION, source: 'lookup' }
     const last = parseInt(parts[3], 10)
     const country = isNaN(last) ? 'ZZ' : last >= 200 ? 'US' : last >= 100 ? 'JP' : 'CN'
-    const region = { CN: 'cn', US: 'us', JP: 'jp' }[country] ?? DEFAULT_REGION as Region
+    const region: Region = ({ CN: 'cn' as Region, US: 'us' as Region, JP: 'jp' as Region } as Record<string, Region>)[country] ?? DEFAULT_REGION
     const r: GeoIPResult = { country, region, source: 'lookup' }
     this.geoCache.set(ip, r); return r
   }

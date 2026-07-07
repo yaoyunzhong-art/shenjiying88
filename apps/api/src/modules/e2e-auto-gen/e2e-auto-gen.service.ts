@@ -213,7 +213,7 @@ export class E2EAutoGenService {
   /**
    * 创建配置
    */
-  createConfig(input: Omit<E2ETestConfig, 'id' | 'enabled' | 'createdAt'>): E2ETestConfig {
+  createConfig(input: Omit<E2ETestConfig, 'id' | 'enabled' | 'createdAt' | 'outputDir' | 'testFramework' | 'enableE2E'> & { outputDir?: string; testFramework?: 'vitest' | 'jest' | 'playwright'; enableE2E?: boolean }): E2ETestConfig {
     const id = crypto.randomUUID()
     const config: E2ETestConfig = {
       id,

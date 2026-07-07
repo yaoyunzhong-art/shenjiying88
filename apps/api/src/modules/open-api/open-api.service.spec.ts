@@ -563,7 +563,7 @@ describe('🧪 open-api — 纯函数对接服务', () => {
       const payload: CommandPayload = { commandType: 'print', targetDeviceId: 'dev-001', params: {}, priority: 'normal' }
       const r = checkCommandSend('cli-test', token, payload)
       expect(r.ok).toBe(true)
-      expect(r.commandId).toMatch(/^cmd-/)
+      if (r.ok) expect(r.commandId).toMatch(/^cmd-/)
     })
   })
 
@@ -586,7 +586,7 @@ describe('🧪 open-api — 纯函数对接服务', () => {
       expect(r.ok).toBe(false)
     })
     it('无有效 scope 返回 invalid_scope', () => {
-      const r = authenticate('cli-merchant-001', secret, ['nonexistent:scope'] as OpenApiScope[], clientIndex, mockSha256)
+      const r = authenticate('cli-merchant-001', secret, ['nonexistent:scope'] as unknown as OpenApiScope[], clientIndex, mockSha256)
       expect(r.ok).toBe(false)
       if (!r.ok) expect(r.error).toBe('invalid_scope')
     })
@@ -634,14 +634,14 @@ describe('🧪 open-api — 纯函数对接服务', () => {
       const payload: CommandPayload = { commandType: 'print', targetDeviceId: 'dev-001', params: {}, priority: 'normal' }
       const r = checkCommandSend('cli-test', token, payload)
       expect(r.ok).toBe(false)
-      expect(r.error).toContain('command:send')
+      if (!r.ok) expect(r.error).toContain('command:send')
     })
     it('clientId 不匹配时拒绝', () => {
       const token = makeToken({ clientId: 'cli-other', scope: ['command:send'] })
       const payload: CommandPayload = { commandType: 'print', targetDeviceId: 'dev-001', params: {}, priority: 'normal' }
       const r = checkCommandSend('cli-merchant-001', token, payload)
       expect(r.ok).toBe(false)
-      expect(r.error).toContain('invalid_token')
+      if (!r.ok) expect(r.error).toContain('invalid_token')
     })
   })
 

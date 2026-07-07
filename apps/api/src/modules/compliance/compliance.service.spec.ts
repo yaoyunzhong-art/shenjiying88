@@ -206,7 +206,7 @@ describe('AuditQueryService', () => {
   describe('quickQuery', () => {
     it('✅ 正例: 快速查询全部', () => {
       log.append(mockAppendInput())
-      const res = query.quickQuery()
+      const res = query.quickQuery({})
       expect(res).toHaveLength(1)
     })
   })

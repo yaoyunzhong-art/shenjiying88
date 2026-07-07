@@ -88,7 +88,7 @@ class TestCanaryController {
 
   @Post(':id/health')
   recordHealth(@Param('id') id: string, @Body() body: { errorRate: number; latencyP95: number; latencyAvg: number; totalRequests: number }) {
-    const snap = this.service.recordHealth({ experimentId: id, ...body, isHealthy: false })
+    const snap = this.service.recordHealth({ experimentId: id, ...body })
     return snap
   }
 

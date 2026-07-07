@@ -428,7 +428,7 @@ describe('ImageRecognitionService [inline]', () => {
 
   it('cancelTask 终态任务抛错', () => {
     svc.createRecognition('product_recognition', 'a-end')
-    const completed = Array.from((svc as any).tasks.values())[0]
+    const completed = Array.from((svc as any).tasks.values())[0] as { id: string; status: string }
     expect(() => svc.cancelTask(completed.id)).toThrow(/终态/)
   })
 

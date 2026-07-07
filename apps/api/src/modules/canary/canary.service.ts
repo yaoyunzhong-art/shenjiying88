@@ -152,7 +152,7 @@ export class CanaryService {
 
   // ============ 4. 健康监控 ============
 
-  recordHealth(snapshot: Omit<CanaryHealthSnapshot, 'timestamp'>): CanaryHealthSnapshot {
+  recordHealth(snapshot: Omit<CanaryHealthSnapshot, 'timestamp' | 'isHealthy'>): CanaryHealthSnapshot {
     const full: CanaryHealthSnapshot = {
       ...snapshot,
       timestamp: new Date().toISOString(),

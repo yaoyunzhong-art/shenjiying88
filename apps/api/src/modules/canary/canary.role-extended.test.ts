@@ -140,7 +140,7 @@ describe(`${ROLES.Safety} 灰度发布扩展测试`, () => {
   it('安监手动配置健康阈值和错误记录', () => {
     const svc = makeSvc()
     const id = createActive(svc, { name: '安监-监控', flagKey: 'safety.monitor', healthThreshold: 0.02 })
-    svc.recordHealth({ experimentId: id, errorRate: 0.05, latencyP95: 800, latencyAvg: 200, totalRequests: 5000, isHealthy: false })
+    svc.recordHealth({ experimentId: id, errorRate: 0.05, latencyP95: 800, latencyAvg: 200, totalRequests: 5000 })
     const health = svc.getLatestHealth(id)
     assert.ok(health)
     assert.equal(health!.errorRate, 0.05)
@@ -209,7 +209,7 @@ describe(`${ROLES.Ops} 灰度发布扩展测试`, () => {
     const svc = makeSvc()
     const id = createActive(svc, { name: 'Ops-健康', flagKey: 'ops.health_exp' })
     for (let i = 0; i < 5; i++) {
-      svc.recordHealth({ experimentId: id, errorRate: 0.003, latencyP95: 150, latencyAvg: 60, totalRequests: 3000, isHealthy: true })
+      svc.recordHealth({ experimentId: id, errorRate: 0.003, latencyP95: 150, latencyAvg: 60, totalRequests: 3000 })
     }
     const history = svc.listHealth(id)
     assert.equal(history.length, 5)
@@ -219,7 +219,7 @@ describe(`${ROLES.Ops} 灰度发布扩展测试`, () => {
     const svc = makeSvc()
     const id = createActive(svc, { name: 'Ops-限数', flagKey: 'ops.limit_health' })
     for (let i = 0; i < 10; i++) {
-      svc.recordHealth({ experimentId: id, errorRate: 0.001, latencyP95: 100, latencyAvg: 50, totalRequests: 1000, isHealthy: true })
+      svc.recordHealth({ experimentId: id, errorRate: 0.001, latencyP95: 100, latencyAvg: 50, totalRequests: 1000 })
     }
     const limited = svc.listHealth(id, 3)
     assert.equal(limited.length, 3)

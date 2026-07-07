@@ -85,8 +85,8 @@ function inlineFilterLedgers(ledgers: Ledger[], tenantId: string, query?: Ledger
   if (query?.orderId) filtered = filtered.filter(l => l.orderId === query.orderId)
   if (query?.transactionId) filtered = filtered.filter(l => l.transactionId === query.transactionId)
   if (query?.category) filtered = filtered.filter(l => l.category === query.category)
-  if (query?.recordedAfter) filtered = filtered.filter(l => l.recordedAt >= query.recordedAfter)
-  if (query?.recordedBefore) filtered = filtered.filter(l => l.recordedAt <= query.recordedBefore)
+  const after = query?.recordedAfter; if (after) filtered = filtered.filter(l => l.recordedAt >= after)
+  const before = query?.recordedBefore; if (before) filtered = filtered.filter(l => l.recordedAt <= before)
   filtered.sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))
   if (query?.limit && query.limit > 0) return filtered.slice(0, query.limit)
   return filtered
@@ -102,8 +102,8 @@ function inlineFilterSettlements(settlements: Settlement[], tenantId: string, qu
   let filtered = settlements.filter(s => s.tenantId === tenantId)
   if (query?.storeId) filtered = filtered.filter(s => s.storeId === query.storeId)
   if (query?.settlementStatus) filtered = filtered.filter(s => s.settlementStatus === query.settlementStatus)
-  if (query?.startAfter) filtered = filtered.filter(s => s.startDate >= query.startAfter)
-  if (query?.endBefore) filtered = filtered.filter(s => s.endDate <= query.endBefore)
+  const startAfter = query?.startAfter; if (startAfter) filtered = filtered.filter(s => s.startDate >= startAfter)
+  const endBefore = query?.endBefore; if (endBefore) filtered = filtered.filter(s => s.endDate <= endBefore)
   filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   if (query?.limit && query.limit > 0) return filtered.slice(0, query.limit)
   return filtered
@@ -130,8 +130,8 @@ function inlineFilterInvoices(invoices: Invoice[], tenantId: string, query?: { s
   if (query?.orderId) filtered = filtered.filter(i => i.orderId === query.orderId)
   if (query?.type) filtered = filtered.filter(i => i.type === query.type)
   if (query?.status) filtered = filtered.filter(i => i.status === query.status)
-  if (query?.issuedAfter) filtered = filtered.filter(i => i.issuedAt && i.issuedAt >= query.issuedAfter)
-  if (query?.issuedBefore) filtered = filtered.filter(i => i.issuedAt && i.issuedAt <= query.issuedBefore)
+  const issuedAfter = query?.issuedAfter; if (issuedAfter) filtered = filtered.filter(i => i.issuedAt && i.issuedAt >= issuedAfter)
+  const issuedBefore = query?.issuedBefore; if (issuedBefore) filtered = filtered.filter(i => i.issuedAt && i.issuedAt <= issuedBefore)
   filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   if (query?.limit && query.limit > 0) return filtered.slice(0, query.limit)
   return filtered

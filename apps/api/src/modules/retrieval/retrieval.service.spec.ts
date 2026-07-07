@@ -27,7 +27,7 @@ import type { RetrievalQuery } from './retrieval.types'
 describe('RetrievalService (skeleton)', () => {
 
   function buildService() {
-    const mockQdrant = {
+    const mockQdrant: any = {
       healthz: async () => ({ status: 'ok' as const }),
       search: async () => [],
       hybridSearch: async () => [],
@@ -36,7 +36,7 @@ describe('RetrievalService (skeleton)', () => {
       ensureCollection: async () => undefined,
       deleteByFilePath: async () => 0,
     }
-    const mockEmbedder = {
+    const mockEmbedder: any = {
       embed: async () => new Array(3072).fill(0),
       batchEmbed: async () => [],
       sparseEmbed: async () => ({}),
@@ -44,7 +44,7 @@ describe('RetrievalService (skeleton)', () => {
       provider: 'mock',
       dimension: 3072,
     }
-    const mockConfig = {
+    const mockConfig: any = {
       qdrant: { host: '127.0.0.1', port: 6333, vectorSize: 3072 },
       embedder: { provider: 'mock', batchSize: 32 },
       chunking: { codeChunkSize: 800, codeChunkOverlap: 200 },
