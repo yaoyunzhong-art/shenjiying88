@@ -151,18 +151,24 @@ function buildColumns(
 // ---- 页面组件 ----
 
 export function HelpCenterClient({ articles }: HelpCenterClientProps) {
-  const searchFields = useMemo<(keyof HelpArticle)[]>(
-    () => ['title', 'content', 'author'],
-    [],
+  const [searchText, setSearchText] = useState('');
+  const filteredBySearch = useMemo(
+    () => !searchText
+      ? articles
+      : articles.filter(
+          (a) =>
+            a.title.toLowerCase().includes(searchText.toLowerCase()) ||
+            a.author.toLowerCase().includes(searchText.toLowerCase()) ||
+            a.content.toLowerCase().includes(searchText.toLowerCase()),
+        ),
+    [articles, searchText],
   );
-
-  const { searchTerm, setSearchTerm, filteredItems } = searchTerm(articles, searchFields);
 
   // 分类筛选
   const [categoryFilter, setCategoryFilter] = useState<HelpCategoryId | 'ALL'>('ALL');
   const categoryFiltered = useMemo(
-    () => filterArticlesByCategory(filteredItems, categoryFilter),
-    [filteredItems, categoryFilter],
+    () => filterArticlesByCategory(filteredBySearch, categoryFilter),
+    [filteredBySearch, categoryFilter],
   );
 
   // 状态筛选
@@ -201,13 +207,13 @@ export function HelpCenterClient({ articles }: HelpCenterClientProps) {
   const pagination = usePagination({ initialPageSize: 10, pageSizeOptions: [5, 10, 15, 20] });
   useEffect(() => {
     pagination.resetPage();
-  }, [searchTerm, categoryFilter, statusFilter, pagination]);
+  }, [searchText, categoryFilter, statusFilter, pagination]);
   const pageItems = pagination.paginate(sortedItems);
 
   const { actions } = useDetailActions({
     workspace: 'help-center',
     detailId: 'overview',
-    record: { items: sortedItems, categoryFilter, statusFilter, stats, searchTerm },
+    record: { items: sortedItems, categoryFilter, statusFilter, stats, searchText },
     shareTitle: '帮助中心',
     shareText: '查看帮助文档 / 筛选分类 / 搜索文档内容',
   });
@@ -231,8 +237,8 @@ export function HelpCenterClient({ articles }: HelpCenterClientProps) {
         {/* 搜索框 */}
         <div style={{ marginBottom: 12 }}>
           <SearchFilterInput
-            value={searchTerm}
-            onChange={setSearchTerm}
+            value={searchText}
+            onChange={setSearchText}
             placeholder="搜索文档标题、内容或作者..."
           />
         </div>
@@ -244,7 +250,7 @@ export function HelpCenterClient({ articles }: HelpCenterClientProps) {
               key: cat.key,
               label: `${cat.icon} ${cat.label}`,
               count: filterArticlesByCategory(
-                searchArticles(articles, searchTerm),
+                searchArticles(articles, searchText),
                 cat.key,
               ).length,
             }))}
@@ -283,18 +289,18 @@ export function HelpCenterClient({ articles }: HelpCenterClientProps) {
             ...(statusFilter !== 'ALL'
               ? [{ key: 'status' as const, label: STATUS_MAP[statusFilter]?.label ?? statusFilter, tone: (STATUS_MAP[statusFilter]?.variant ?? 'neutral') as FilterChip['tone'], count: statusFiltered.length }]
               : []),
-            ...(searchTerm.trim()
-              ? [{ key: 'search' as const, label: `搜索: "${searchTerm}"`, tone: 'neutral' as FilterChip['tone'], count: filteredItems.length }]
+            ...(searchText.trim()
+              ? [{ key: 'search' as const, label: `搜索: "${searchText}"`, tone: 'neutral' as FilterChip['tone'], count: filteredBySearch.length }]
               : []),
           ]}
           onRemove={(key) => {
             switch (key) {
               case 'category': setCategoryFilter('ALL'); break;
               case 'status': setStatusFilter('ALL'); break;
-              case 'search': setSearchTerm(''); break;
+              case 'search': setSearchText(''); break;
             }
           }}
-          onClearAll={() => { setCategoryFilter('ALL'); setStatusFilter('ALL'); setSearchTerm(''); }}
+          onClearAll={() => { setCategoryFilter('ALL'); setStatusFilter('ALL'); setSearchText(''); }}
           size="sm"
           style={{ marginBottom: 8 }}
         />
