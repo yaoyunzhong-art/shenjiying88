@@ -166,7 +166,7 @@ describe(`${ROLES.Ops} ai-content 扩展测试`, () => {
     svc.progressAnalyzer.recordMetric('mem-ops', '2024-W01', 'speed', 60)
     svc.progressAnalyzer.recordMetric('mem-ops', '2024-W02', 'speed', 80)
     svc.progressAnalyzer.recordMetric('mem-ops', '2024-W03', 'speed', 100)
-    imp = svc.progressAnalyzer.calculateImprovement('mem-ops', 'speed')
+    const imp = svc.progressAnalyzer.calculateImprovement('mem-ops', 'speed')
     expect(imp).toBeCloseTo(66.67, 0)
   })
 
