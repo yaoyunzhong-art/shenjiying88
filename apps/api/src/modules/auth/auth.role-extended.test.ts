@@ -412,17 +412,15 @@ describe('auth 模块 · 角色视角测试', () => {
 
     it('安监应能查询完整的审计日志', () => {
       const sim = createLoginSimulator()
-      sim.cashierLogin('c-001', 'pwd', 'POS-01')
+      sim.cashierLogin('c-001', 'pwd1234', 'POS-01')
       sim.createEmployeeLogin('emp-003', ROLES.FrontDesk, 't-001')
       sim.recordLoginAttempt('10.0.0.1', false)
 
       const logs = sim.getAuditLogs()
-      console.log('DEBUG logs:', JSON.stringify(logs.map(l => ({ action: l.action, user: l.userId })), null, 2))
       assert.ok(logs.length >= 3)
 
       // 可按 action 过滤
       const cashierLogs = sim.getAuditLogs({ action: 'cashier.login.success' })
-      console.log('DEBUG cashierLogs:', cashierLogs.length, cashierLogs.map(l => l.action))
       assert.equal(cashierLogs.length, 1)
     })
 

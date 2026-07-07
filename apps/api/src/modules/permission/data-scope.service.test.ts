@@ -18,7 +18,7 @@ describe('DataScopeService', () => {
         permissions: [],
       }
       const scope = service.getDataScope(context)
-      expect(scope.scopeType).toBe('PLATFORM')
+      expect(scope.scopeType).toBe('platform')
     })
 
     it('should return tenant scope for tenant admin', () => {
@@ -29,7 +29,7 @@ describe('DataScopeService', () => {
         permissions: [],
       }
       const scope = service.getDataScope(context)
-      expect(scope.scopeType).toBe('TENANT')
+      expect(scope.scopeType).toBe('tenant')
     })
 
     it('should return self scope for member', () => {
@@ -40,7 +40,7 @@ describe('DataScopeService', () => {
         permissions: [],
       }
       const scope = service.getDataScope(context)
-      expect(scope.scopeType).toBe('SELF')
+      expect(scope.scopeType).toBe('self')
     })
   })
 

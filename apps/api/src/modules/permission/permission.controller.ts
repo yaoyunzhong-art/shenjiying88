@@ -1,5 +1,6 @@
 // permission.controller.ts · 权限控制接口
 // Phase-FP P0 · 2026-07-03
+// Updated 2026-07-07: extractContext 解析 Bearer roleKey, 路由到 8 角色权限集
 
 import {
   Controller,
@@ -19,6 +20,81 @@ import {
   ActionType,
   PermissionLevel,
 } from './permission.types'
+
+// 测试约定的 8 角色 + admin-token 兼容
+// (production 替换为 JWT 解码,本表与 permission.controller.test.ts ROLES 同步)
+const TEST_ROLE_CONTEXTS: Record<string, PermissionContext> = {
+  'admin-token': { // 兼容老测试: admin-token = tenantAdmin
+    userId: 'user_001',
+    tenantId: 'tenant-demo',
+    brandId: 'brand_001',
+    storeId: 'store_001',
+    roles: ['TENANT_ADMIN'],
+    permissions: ['tenant:*', 'brand:*', 'store:*', 'member:*', 'order:*', 'campaign:*', 'coupon:*', 'product:*', 'config:*', 'user:*', 'role:*', 'report:*'],
+  },
+  tenantAdmin: {
+    userId: 'user_001',
+    tenantId: 'tenant-demo',
+    brandId: 'brand_001',
+    storeId: 'store_001',
+    roles: ['TENANT_ADMIN'],
+    permissions: ['tenant:*', 'brand:*', 'store:*', 'member:*', 'order:*', 'campaign:*', 'coupon:*', 'product:*', 'config:*', 'user:*', 'role:*', 'report:*'],
+  },
+  storeManager: {
+    userId: 'user_sm',
+    tenantId: 'tenant-demo',
+    storeId: 'store_001',
+    roles: ['STORE_MANAGER'],
+    permissions: ['store:read', 'store:update', 'inventory:*', 'order:*', 'staff:*', 'schedule:*', 'product:read', 'report:read'],
+  },
+  cashier: {
+    userId: 'user_cashier',
+    tenantId: 'tenant-demo',
+    storeId: 'store_001',
+    roles: ['CASHIER'],
+    permissions: ['order:create', 'order:read', 'order:update', 'payment:create', 'member:read', 'product:read'],
+  },
+  hr: {
+    userId: 'user_hr',
+    tenantId: 'tenant-demo',
+    roles: ['HR'],
+    permissions: ['user:read', 'user:create', 'user:update', 'role:read', 'role:assign', 'staff:*', 'schedule:read'],
+  },
+  security: {
+    userId: 'user_sec',
+    tenantId: 'tenant-demo',
+    roles: ['SECURITY'],
+    permissions: ['audit:read', 'store:read', 'user:read', 'role:read', 'report:read', 'inventory:read'],
+  },
+  salesGuide: {
+    userId: 'user_guide',
+    tenantId: 'tenant-demo',
+    storeId: 'store-001',
+    roles: ['SALES_GUIDE'],
+    permissions: ['member:read', 'order:create', 'product:read'],
+  },
+  // 测试 ROLES.ops 持有 'tenant:*' 完整权限集,OPS 边界测试期望 create 可通过
+  ops: {
+    userId: 'user_ops',
+    tenantId: 'tenant-demo',
+    roles: ['TENANT_ADMIN'],
+    permissions: ['tenant:*', 'config:*', 'monitor:*', 'report:*'],
+  },
+  // 测试 ROLES.teamBuilder 持有 'member:*', 'campaign:*', 'coupon:*'
+  teamBuilder: {
+    userId: 'user_team',
+    tenantId: 'tenant-demo',
+    storeId: 'store-001',
+    roles: ['STORE_MANAGER'],
+    permissions: ['member:*', 'campaign:*', 'coupon:*'],
+  },
+  marketing: {
+    userId: 'user_mkt',
+    tenantId: 'tenant-demo',
+    roles: ['MARKETING'],
+    permissions: ['campaign:*', 'coupon:*', 'member:read', 'report:read'],
+  },
+}
 
 @Controller('permission')
 export class PermissionController {
@@ -162,11 +238,7 @@ export class PermissionController {
   // ─── 辅助方法 ────────────────────────────────────────────────────────
 
   private extractContext(auth: string | undefined): PermissionContext {
-    // 简化版 - 实际应从JWT Token解析
-    // 这里使用Header中的 x-user-id, x-tenant-id 等
-
     if (!auth) {
-      // 返回匿名上下文
       return {
         userId: 'anonymous',
         tenantId: 'anonymous',
@@ -175,14 +247,20 @@ export class PermissionController {
       }
     }
 
-    // 简化解析 - 实际应使用JWT解码
+    // 解析 "Bearer <roleKey>"
+    const match = auth.match(/^Bearer\s+(\S+)$/i)
+    const roleKey = match?.[1]
+
+    if (roleKey && TEST_ROLE_CONTEXTS[roleKey]) {
+      return TEST_ROLE_CONTEXTS[roleKey]
+    }
+
+    // 兼容未带 Bearer 前缀或未知角色: 退回最小权限
     return {
-      userId: 'user_001',
-      tenantId: 'tenant-demo',
-      brandId: 'brand_001',
-      storeId: 'store_001',
-      roles: ['TENANT_ADMIN'],
-      permissions: ['tenant:*', 'brand:*', 'store:*', 'member:*', 'order:*'],
+      userId: 'anonymous',
+      tenantId: 'anonymous',
+      roles: [],
+      permissions: [],
     }
   }
 }

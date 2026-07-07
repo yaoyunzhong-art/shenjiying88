@@ -26,10 +26,10 @@ export class RBACRole {
   description?: string
 
   @Column({ default: 0, name: 'sort_order' })
-  sortOrder!: number // 排序，高权限优先
+  sortOrder: number = 0 // 排序，高权限优先 (TS 默认值,与 TypeORM default 保持同步)
 
   @Column({ default: true, name: 'is_system' })
-  isSystem!: boolean // 系统内置角色不可删除
+  isSystem: boolean = true // 系统内置角色不可删除 (TS 默认值)
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date
@@ -82,7 +82,7 @@ export class RBACRolePermission {
   permissionId!: string
 
   @Column({ default: false, name: 'is_denied' })
-  isDenied!: boolean // true = 显式拒绝
+  isDenied: boolean = false // true = 显式拒绝 (TS 默认值,与 TypeORM default 保持同步)
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date
