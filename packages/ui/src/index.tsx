@@ -781,6 +781,8 @@ export type { ButtonProps, ButtonVariant, ButtonSize } from './components/Button
 
 export { Spinner } from './components/Spinner';
 export type { SpinnerProps, SpinnerSize, SpinnerVariant } from './components/Spinner';
+export { LoadingOverlay } from './components/LoadingOverlay';
+export type { LoadingOverlayProps, OverlayMode } from './components/LoadingOverlay';
 
 export { Steps } from './components/Steps';
 export type { StepsProps, StepItem, StepStatus, StepsSize, StepsOrientation } from './components/Steps';
