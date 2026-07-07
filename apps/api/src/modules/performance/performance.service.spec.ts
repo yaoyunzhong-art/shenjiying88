@@ -558,8 +558,8 @@ describe('DBOptimizeService (纯内联)', () => {
     expect(a.complexity).toBe('simple')
   })
 
-  it('analyzeQuery 含 join 为 moderate', () => {
-    const a = db.analyzeQuery('SELECT * FROM users JOIN orders ON users.id = orders.user_id')
+  it('analyzeQuery 含 join 且非 SELECT * 为 moderate', () => {
+    const a = db.analyzeQuery('SELECT id FROM users JOIN orders ON users.id = orders.user_id')
     expect(a.hasJoin).toBe(true)
     expect(a.complexity).toBe('moderate')
   })
