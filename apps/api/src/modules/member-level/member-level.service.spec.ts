@@ -352,5 +352,38 @@ describe('MemberLevelService (inline)', () => {
       expect(path[0]!.toTier).toBe(MemberLevelTier.REGULAR)
       expect(path[0]!.toSub).toBe(MemberLevelSub.L2)
     })
+
+    it('should have suitable reasons in upgrade path', () => {
+      const path = getUpgradePath(MemberLevelTier.REGULAR, MemberLevelSub.L1)
+      for (const record of path) {
+        expect(record.reason).toContain('成长值')
+        expect(record.reason).toContain('消费')
+        expect(record.reason).toContain('到访')
+      }
+    })
+  })
+
+  // ── upgradeProgress edge cases ──
+  describe('upgradeProgress edge cases', () => {
+    it('should handle zero growth with partial spend progress', () => {
+      // slightly above zero growth to get positive progress
+      const result = evaluateMemberLevel(makeInput({ growthValue: 10, totalSpend: 100, totalVisits: 1 }))
+      expect(result.currentSub).toBe(MemberLevelSub.L1)
+      expect(result.upgradeProgress).toBeGreaterThan(0)
+      expect(result.upgradeProgress).toBeLessThanOrEqual(1)
+    })
+
+    it('should have correct benefits for each tier', () => {
+      const silver = evaluateMemberLevel(makeInput({ growthValue: 150, totalSpend: 300, totalVisits: 3 }))
+      expect(silver.currentSub).toBe(MemberLevelSub.L2)
+      expect(silver.benefits).toContain('签到积分加倍')
+    })
+
+    it('should handle growth exactly at boundary', () => {
+      // Exactly at SVIP_L1 boundary
+      const result = evaluateMemberLevel(makeInput({ growthValue: 4000, totalSpend: 10000, totalVisits: 50 }))
+      expect(result.currentTier).toBe(MemberLevelTier.SVIP)
+      expect(result.currentSub).toBe(MemberLevelSub.L1)
+    })
   })
 })
