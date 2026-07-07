@@ -8,7 +8,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  * 正向流程 + 边界条件 (空数据、不存在的任务、权限拒绝、重复提交、预算用尽)
  */
 
-import 'reflect-metadata'
+import { FederatedLearningController } from './federated.controller';
+import { FederatedLearningService } from './federated.service';
+import { runWithTenant } from '../../common/context/tenant-context';
 import assert from 'node:assert/strict'
 import { MockHomomorphicCipher } from './federated.entity'
 
@@ -18,9 +20,8 @@ const TENANT_C = { tenantId: 'tenant-C', userId: 'participant-C', role: 'operato
 
 describe('FederatedLearningController', () => {
   // Late require to avoid import-order problems with reflect-metadata
-  const { FederatedLearningController } = require('./federated.controller')
-  const { FederatedLearningService } = require('./federated.service')
-  const { runWithTenant } = require('../../common/context/tenant-context')
+
+
 
   interface TenantCtx { tenantId: string; storeId?: string; userId?: string; role: string }
 

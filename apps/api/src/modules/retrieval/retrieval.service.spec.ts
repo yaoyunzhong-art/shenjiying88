@@ -14,7 +14,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  *   - 异常路径 (qdrant 不可用 / embedder 超时)
  */
 
-import 'reflect-metadata'
+import { RetrievalService } from './retrieval.service';
 import assert from 'node:assert/strict'
 import type { RetrievalQuery } from './retrieval.types'
 
@@ -25,7 +25,6 @@ import type { RetrievalQuery } from './retrieval.types'
  */
 
 describe('RetrievalService (skeleton)', () => {
-  const { RetrievalService } = require('./retrieval.service')
 
   function buildService() {
     const mockQdrant = {

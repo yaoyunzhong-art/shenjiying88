@@ -26,6 +26,11 @@ import type {
   RegionalLoginPolicy,
   BootstrapConsumerDependency,
 } from './bootstrap.entity'
+import { BootstrapService } from './bootstrap.service'
+import {
+  toBootstrapFoundationMetadata,
+  toRegionalLoginPolicyContract,
+} from './bootstrap.contract'
 
 // ── BootstrapPhase 枚举 ──
 describe('BootstrapPhase 枚举', () => {
@@ -222,7 +227,6 @@ describe('Bootstrap 实体接口类型验证', () => {
 // ── BootstrapService ──
 describe('BootstrapService', () => {
   it('getHealth 返回 ok / scaffold / 数字 uptime', () => {
-    const { BootstrapService } = require('./bootstrap.service')
     const service = new BootstrapService()
 
     const result = service.getHealth()
@@ -232,7 +236,6 @@ describe('BootstrapService', () => {
   })
 
   it('getBootstrapMetadata 委托到 entity 逻辑', () => {
-    const { BootstrapService } = require('./bootstrap.service')
     const service = new BootstrapService()
 
     const ctx = { tenantId: 't-svc', brandId: 'b-svc' }
@@ -244,7 +247,6 @@ describe('BootstrapService', () => {
   })
 
   it('getBootstrapMetadata 缺失字段为 undefined', () => {
-    const { BootstrapService } = require('./bootstrap.service')
     const service = new BootstrapService()
 
     const result = service.getBootstrapMetadata({ tenantId: 't-only' })
@@ -254,7 +256,6 @@ describe('BootstrapService', () => {
   })
 
   it('getHealth uptime 递增', () => {
-    const { BootstrapService } = require('./bootstrap.service')
     const service = new BootstrapService()
 
     const first = service.getHealth()
@@ -266,14 +267,12 @@ describe('BootstrapService', () => {
 // ── bootstrap.contract ──
 describe('bootstrap.contract', () => {
   it('toBootstrapFoundationMetadata 空输入返回空数组', () => {
-    const { toBootstrapFoundationMetadata } = require('./bootstrap.contract')
     const result = toBootstrapFoundationMetadata(undefined)
     assert.deepStrictEqual(result.foundationDependencies, [])
     assert.deepStrictEqual(result.foundationContracts, [])
   })
 
   it('toBootstrapFoundationMetadata 传入依赖/契约', () => {
-    const { toBootstrapFoundationMetadata } = require('./bootstrap.contract')
     const input = {
       dependsOn: ['identity-access'] as any[],
       handoffContracts: ['identity.contract'],
@@ -284,7 +283,6 @@ describe('bootstrap.contract', () => {
   })
 
   it('toBootstrapFoundationMetadata 不含 phase 属性', () => {
-    const { toBootstrapFoundationMetadata } = require('./bootstrap.contract')
     const result = toBootstrapFoundationMetadata(undefined)
     assert.ok('foundationDependencies' in result)
     assert.ok('foundationContracts' in result)
@@ -292,14 +290,12 @@ describe('bootstrap.contract', () => {
   })
 
   it('toRegionalLoginPolicyContract 正常构造', () => {
-    const { toRegionalLoginPolicyContract } = require('./bootstrap.contract')
     const result = toRegionalLoginPolicyContract('/login/sso', true)
     assert.equal(result.defaultLoginPath, '/login/sso')
     assert.equal(result.ssoEnabled, true)
   })
 
   it('toRegionalLoginPolicyContract ssoDisabled', () => {
-    const { toRegionalLoginPolicyContract } = require('./bootstrap.contract')
     const result = toRegionalLoginPolicyContract('/login/basic', false)
     assert.equal(result.defaultLoginPath, '/login/basic')
     assert.equal(result.ssoEnabled, false)

@@ -1,3 +1,4 @@
+import { SsoController } from './sso.controller';
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * SsoController 单元测试 (node:test)
@@ -182,7 +183,7 @@ class MockSsoService {
 // ── Helper ──
 function createController() {
   const mockService = new MockSsoService()
-  const { SsoController } = require('./sso.controller')
+
   return { controller: new SsoController(mockService as any), service: mockService }
 }
 
@@ -444,7 +445,7 @@ describe('SsoController', () => {
         payload: 'dGVzdA==',
       })
       // 找到最后创建的 user ID
-      const { SsoController: _SC } = require('./sso.controller')
+
       // 需要用具体 userId 去查; service 里 completeLogin 创建了 user-mock-N
       // 但这里我们在 Mock 内部自增, 所以需要从最新 identity 反查
       // 简便方案: 先 complete, 再遍历 identities

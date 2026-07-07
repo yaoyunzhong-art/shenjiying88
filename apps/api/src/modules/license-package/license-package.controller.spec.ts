@@ -1,3 +1,4 @@
+import { LicensePackageController } from './license-package.controller';
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * license-package.controller.spec.ts
@@ -27,13 +28,13 @@ describe('LicensePackageController', () => {
 
   describe('路由注册与模块元数据', () => {
     it('Controller 有正确的路由前缀', () => {
-      const { LicensePackageController } = require('./license-package.controller')
+
       const path = Reflect.getMetadata('path', LicensePackageController)
       assert.equal(path, 'api/license-packages')
     })
 
     it('ApiTags 元数据正确', () => {
-      const { LicensePackageController } = require('./license-package.controller')
+
       const tags = Reflect.getMetadata('swagger/apiUseTags', LicensePackageController)
       assert.ok(tags)
       assert.equal(tags[0], 'License 套餐管理')
@@ -43,7 +44,7 @@ describe('LicensePackageController', () => {
   describe('POST /api/license-packages — create', () => {
     it('正常创建: 返回新套餐对象', async () => {
       const svc = createMockService()
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       const dto = { name: '黄金版', price: 1999, duration: 12, durationUnit: 'month' as const, maxUsers: 50, maxStores: 5 }
@@ -54,7 +55,7 @@ describe('LicensePackageController', () => {
     })
 
     it('create 有 swagger ApiOperation summary', () => {
-      const { LicensePackageController } = require('./license-package.controller')
+
       const meta = Reflect.getMetadata('swagger/apiOperation', LicensePackageController.prototype.create)
       assert.ok(meta)
       assert.equal(meta.summary, '创建 License 套餐')
@@ -70,7 +71,7 @@ describe('LicensePackageController', () => {
         assignToLicense: () => Promise.resolve(),
         getLicensesByPackage: () => Promise.resolve([]),
       }
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       await assert.rejects(
@@ -87,7 +88,7 @@ describe('LicensePackageController', () => {
         list: [{ id: 'pkg-001', name: 'A' }, { id: 'pkg-002', name: 'B' }],
         total: 2, page: 1, pageSize: 10,
       })) as any
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       const result = await ctrl.findAll({ page: 1, pageSize: 10 })
@@ -98,7 +99,7 @@ describe('LicensePackageController', () => {
     it('空数据: 返回空列表', async () => {
       const svc = createMockService()
       svc.findAll = () => Promise.resolve({ list: [], total: 0, page: 1, pageSize: 10 })
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       const result = await ctrl.findAll({ page: 1, pageSize: 10 })
@@ -109,7 +110,7 @@ describe('LicensePackageController', () => {
     it('分页参数被正确传递', async () => {
       const svc = createMockService()
       svc.findAll = ((q: any) => Promise.resolve({ list: [], total: 0, page: q.page, pageSize: q.pageSize })) as any
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       const result = await ctrl.findAll({ page: 2, pageSize: 5 })
@@ -121,7 +122,7 @@ describe('LicensePackageController', () => {
       let passedKeyword = ''
       const svc = createMockService()
       svc.findAll = ((q: any) => { passedKeyword = q.keyword; return Promise.resolve({ list: [], total: 0, page: 1, pageSize: 10 }) }) as any
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       await ctrl.findAll({ keyword: '黄金' })
@@ -132,7 +133,7 @@ describe('LicensePackageController', () => {
       let passedIsActive: boolean | undefined
       const svc = createMockService()
       svc.findAll = ((q: any) => { passedIsActive = q.isActive; return Promise.resolve({ list: [], total: 0, page: 1, pageSize: 10 }) }) as any
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       await ctrl.findAll({ isActive: true as any })
@@ -143,7 +144,7 @@ describe('LicensePackageController', () => {
   describe('GET /api/license-packages/:id — findOne', () => {
     it('正常查询: 返回套餐详情', async () => {
       const svc = createMockService()
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       const result = await ctrl.findOne('pkg-123')
@@ -153,7 +154,7 @@ describe('LicensePackageController', () => {
 
     it('不存在的 id: 向上抛异常', async () => {
       const svc = createMockService()
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       await assert.rejects(
@@ -165,7 +166,7 @@ describe('LicensePackageController', () => {
     it('service 内部错误传播', async () => {
       const svc = createMockService()
       svc.findOne = () => Promise.reject(new Error('数据库错误'))
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       await assert.rejects(
@@ -180,7 +181,7 @@ describe('LicensePackageController', () => {
         if (!id) return Promise.reject(new Error('ID 不能为空'))
         return Promise.resolve({ id, name: '套餐' })
       }) as any
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       await assert.rejects(
@@ -194,7 +195,7 @@ describe('LicensePackageController', () => {
     it('正常更新: 返回更新后的套餐', async () => {
       const svc = createMockService()
       svc.update = () => Promise.resolve({ id: 'pkg-001', name: '企业版 Pro', price: 5999 })
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       const result = await ctrl.update('pkg-001', { name: '企业版 Pro', price: 5999 })
@@ -203,7 +204,7 @@ describe('LicensePackageController', () => {
     })
 
     it('update swagger summary 元数据', () => {
-      const { LicensePackageController } = require('./license-package.controller')
+
       const meta = Reflect.getMetadata('swagger/apiOperation', LicensePackageController.prototype.update)
       assert.ok(meta)
       assert.equal(meta.summary, '更新套餐')
@@ -212,7 +213,7 @@ describe('LicensePackageController', () => {
     it('不存在的套餐更新抛异常', async () => {
       const svc = createMockService()
       svc.update = () => Promise.reject(new Error('套餐不存在'))
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       await assert.rejects(
@@ -225,7 +226,7 @@ describe('LicensePackageController', () => {
       let passedDto: any = null
       const svc = createMockService()
       svc.update = ((id: string, dto: any) => { passedDto = dto; return Promise.resolve({ id, name: '仅改名称', price: 100 }) }) as any
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       const result = await ctrl.update('pkg-001', { name: '仅改名称' })
@@ -238,7 +239,7 @@ describe('LicensePackageController', () => {
   describe('DELETE /api/license-packages/:id — remove', () => {
     it('正常删除: 返回 void (204)', async () => {
       const svc = createMockService()
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       const result = await ctrl.remove('pkg-001')
@@ -246,7 +247,7 @@ describe('LicensePackageController', () => {
     })
 
     it('remove 有 204 HttpCode 元数据 (NestJS __httpCode__)', () => {
-      const { LicensePackageController } = require('./license-package.controller')
+
       const code = Reflect.getMetadata('__httpCode__', LicensePackageController.prototype.remove)
       assert.equal(code, 204)
     })
@@ -254,7 +255,7 @@ describe('LicensePackageController', () => {
     it('不存在的套餐删除', async () => {
       const svc = createMockService()
       svc.remove = () => Promise.reject(new Error('套餐不存在'))
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       await assert.rejects(
@@ -266,7 +267,7 @@ describe('LicensePackageController', () => {
     it('已使用的套餐无法删除', async () => {
       const svc = createMockService()
       svc.remove = () => Promise.reject(new Error('套餐已被使用，无法删除'))
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       await assert.rejects(
@@ -279,7 +280,7 @@ describe('LicensePackageController', () => {
   describe('POST /api/license-packages/:id/assign — assignToLicense', () => {
     it('正常关联: 成功返回 void', async () => {
       const svc = createMockService()
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       await ctrl.assignToLicense('pkg-001', { licenseId: 'lic-001' })
@@ -291,7 +292,7 @@ describe('LicensePackageController', () => {
       let passedDto: any = null
       const svc = createMockService()
       svc.assignToLicense = ((pkgId: string, dto: any) => { passedPkgId = pkgId; passedDto = dto; return Promise.resolve() }) as any
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       await ctrl.assignToLicense('pkg-001', {
@@ -308,7 +309,7 @@ describe('LicensePackageController', () => {
     it('不存在的套餐关联抛异常', async () => {
       const svc = createMockService()
       svc.assignToLicense = () => Promise.reject(new Error('套餐或 License 不存在'))
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       await assert.rejects(
@@ -321,7 +322,7 @@ describe('LicensePackageController', () => {
   describe('GET /api/license-packages/:id/licenses — getLicensesByPackage', () => {
     it('正常查询: 返回关联的 License 列表', async () => {
       const svc = createMockService()
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       const result = await ctrl.getLicensesByPackage('pkg-001')
@@ -333,7 +334,7 @@ describe('LicensePackageController', () => {
     it('无关联 License: 返回空数组', async () => {
       const svc = createMockService()
       svc.getLicensesByPackage = () => Promise.resolve([])
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       const result = await ctrl.getLicensesByPackage('pkg-unused')
@@ -344,7 +345,7 @@ describe('LicensePackageController', () => {
     it('不存在的套餐查询 License', async () => {
       const svc = createMockService()
       svc.getLicensesByPackage = () => Promise.reject(new Error('套餐不存在'))
-      const { LicensePackageController } = require('./license-package.controller')
+
       const ctrl = new LicensePackageController(svc)
 
       await assert.rejects(
@@ -356,20 +357,20 @@ describe('LicensePackageController', () => {
 
   describe('Swagger ApiResponse 装饰器', () => {
     it('create 有 response 定义', () => {
-      const { LicensePackageController } = require('./license-package.controller')
+
       const responses = Reflect.getMetadata('swagger/apiResponse', LicensePackageController.prototype.create)
       assert.ok(responses)
     })
 
     it('findOne 有 404 response', () => {
-      const { LicensePackageController } = require('./license-package.controller')
+
       const responses = Reflect.getMetadata('swagger/apiResponse', LicensePackageController.prototype.findOne)
       const notFound = Object.values(responses).find((r: any) => r.description?.includes('不存在'))
       assert.ok(notFound)
     })
 
     it('remove 有 204 response', () => {
-      const { LicensePackageController } = require('./license-package.controller')
+
       const responses = Reflect.getMetadata('swagger/apiResponse', LicensePackageController.prototype.remove)
       assert.ok(responses)
     })

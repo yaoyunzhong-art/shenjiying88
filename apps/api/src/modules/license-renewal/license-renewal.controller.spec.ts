@@ -1,3 +1,5 @@
+import { LicenseRenewalService } from './license-renewal.service';
+import { LicenseRenewalController } from './license-renewal.controller';
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * license-renewal.controller.spec.ts
@@ -19,8 +21,8 @@ describe('LicenseRenewalController spec', () => {
   let service: any
 
   beforeEach(() => {
-    const { LicenseRenewalService } = require('./license-renewal.service')
-    const { LicenseRenewalController } = require('./license-renewal.controller')
+
+
     ControllerClass = LicenseRenewalController
     service = new LicenseRenewalService()
     controller = new ControllerClass(service)
