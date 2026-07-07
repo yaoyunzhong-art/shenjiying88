@@ -1244,6 +1244,12 @@ export type {
   AIModelPricingTier,
 } from './components/AIModelSelector';
 
+// --------------- QualityInspectorDashboard ---------------
+export { QualityInspectorDashboard } from './components/QualityInspectorDashboard';
+export type { QualityInspectorDashboardProps, InspectorDailyMetrics, QualityIssue, InspectionArea, IssueSeverity, InspectionCategory } from './components/QualityInspectorDashboard';
+// Re-export with unique names (avoid conflict with OperationsManagerDashboard.InspectionTask)
+export type { QualityInspectionTask, QcTaskStatus } from './components/QualityInspectorDashboard';
+
 // --------------- FeedbackList ---------------
 export { FeedbackList } from './components/FeedbackList';
 export type {

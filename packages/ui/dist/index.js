@@ -226,6 +226,7 @@ __export(index_exports, {
   ProgressCard: () => ProgressCard,
   ProgressRing: () => ProgressRing,
   QRCodeDisplay: () => QRCodeDisplay,
+  QualityInspectorDashboard: () => QualityInspectorDashboard,
   QuickActionBar: () => QuickActionBar,
   QuickStats: () => QuickStats,
   RadarChart: () => RadarChart,
@@ -63735,8 +63736,347 @@ function AIModelSelector({
   ] });
 }
 
-// src/components/FeedbackList.tsx
+// src/components/QualityInspectorDashboard.tsx
 var import_jsx_runtime251 = require("react/jsx-runtime");
+var SECTION_STYLE12 = {
+  marginBottom: 24
+};
+var SECTION_TITLE2 = {
+  fontSize: 16,
+  fontWeight: 600,
+  marginBottom: 12,
+  color: "#1a1a2e"
+};
+var CARD2 = {
+  background: "#fff",
+  borderRadius: 12,
+  boxShadow: "0 2px 8px rgba(0,0,0,.06)",
+  padding: 16
+};
+var HEADER_BAR = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: 16
+};
+var HEADER_INFO = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8
+};
+var AVATAR = {
+  width: 44,
+  height: 44,
+  borderRadius: "50%",
+  background: "linear-gradient(135deg, #43a047, #66bb6a)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "#fff",
+  fontWeight: 700,
+  fontSize: 18
+};
+var ONLINE_BADGE = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "4px 12px",
+  borderRadius: 20,
+  fontSize: 12,
+  fontWeight: 500,
+  background: "#e8f5e9",
+  color: "#2e7d32"
+};
+var TASK_CARD = {
+  ...CARD2,
+  marginBottom: 8,
+  border: "1px solid #eee"
+};
+var ISSUE_ITEM = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 12,
+  padding: "10px 0",
+  borderBottom: "1px solid #f0f0f0"
+};
+var SEVERITY_DOT = {
+  width: 10,
+  height: 10,
+  borderRadius: "50%",
+  marginTop: 6,
+  flexShrink: 0
+};
+var ACTION_BUTTON_BASE = {
+  padding: "6px 14px",
+  borderRadius: 8,
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: "default",
+  border: "none"
+};
+var PRIMARY_BTN2 = {
+  ...ACTION_BUTTON_BASE,
+  background: "#43a047",
+  color: "#fff"
+};
+var OUTLINE_BTN = {
+  ...ACTION_BUTTON_BASE,
+  background: "#f5f5f5",
+  color: "#333",
+  border: "1px solid #ddd"
+};
+var DANGER_BTN = {
+  ...ACTION_BUTTON_BASE,
+  background: "#fce4ec",
+  color: "#c62828"
+};
+var AREA_ROW = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: "10px 0",
+  borderBottom: "1px solid #f5f5f5"
+};
+var PROGRESS_BAR_OUTER2 = {
+  width: 80,
+  height: 6,
+  borderRadius: 3,
+  background: "#eee",
+  overflow: "hidden"
+};
+var SEVERITY_COLORS6 = {
+  critical: "#c62828",
+  major: "#f57c00",
+  minor: "#fdd835"
+};
+var SEVERITY_LABELS5 = {
+  critical: "\u4E25\u91CD",
+  major: "\u4E3B\u8981",
+  minor: "\u8F7B\u5FAE"
+};
+var TASK_STATUS_MAP = {
+  pending: { label: "\u5F85\u68C0\u67E5", variant: "warning" },
+  in_progress: { label: "\u68C0\u67E5\u4E2D", variant: "info" },
+  completed: { label: "\u5DF2\u5B8C\u6210", variant: "success" },
+  overdue: { label: "\u5DF2\u903E\u671F", variant: "error" }
+};
+var AREA_LABELS = {
+  environment: "\u73AF\u5883",
+  device: "\u8BBE\u5907",
+  staff: "\u4EBA\u5458",
+  safety: "\u5B89\u5168",
+  hygiene: "\u536B\u751F"
+};
+var QualityInspectorDashboard = ({
+  dailyMetrics,
+  tasks,
+  issues,
+  areas,
+  inspectorName = "\u8D28\u68C0\u5458",
+  employeeId,
+  region,
+  lastSyncAt,
+  loading = false,
+  compact = false,
+  className,
+  onStartInspection,
+  onHandleIssue,
+  onViewTaskDetail,
+  onReportIssue
+}) => {
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { padding: 16 }, className, "data-testid": "quality-inspector-dashboard-loading", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: { height: 44, background: "#f0f0f0", borderRadius: 8, marginBottom: 16 } }),
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: { height: 80, background: "#f0f0f0", borderRadius: 8, marginBottom: 12 } }),
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: { height: 80, background: "#f0f0f0", borderRadius: 8, marginBottom: 12 } }),
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: { height: 120, background: "#f0f0f0", borderRadius: 8 } })
+    ] });
+  }
+  const statItems = dailyMetrics ? [
+    { label: "\u68C0\u67E5\u95E8\u5E97", value: dailyMetrics.storeCount, trend: 0 },
+    { label: "\u68C0\u67E5\u9879", value: dailyMetrics.totalItems, trend: 0 },
+    { label: "\u901A\u8FC7", value: dailyMetrics.passedItems, trend: dailyMetrics.passRate > 90 ? dailyMetrics.passRate : -Math.abs(100 - dailyMetrics.passRate) },
+    { label: "\u4E0D\u5408\u683C", value: dailyMetrics.failedItems, trend: dailyMetrics.failedItems > 0 ? -Math.abs(dailyMetrics.failedItems) : 0 },
+    { label: "\u901A\u8FC7\u7387", value: `${Math.round(dailyMetrics.passRate)}%`, trend: 0 },
+    { label: "\u91CD\u5927\u95EE\u9898", value: dailyMetrics.criticalIssues, trend: dailyMetrics.criticalIssues > 0 ? -Math.abs(dailyMetrics.criticalIssues) : 0 }
+  ] : [];
+  const urgentTasks = tasks?.filter((t) => t.priority === "urgent" && t.status !== "completed") || [];
+  const taskColumns = [
+    { key: "storeName", header: "\u95E8\u5E97", width: compact ? "80" : "100" },
+    {
+      key: "area",
+      header: "\u533A\u57DF",
+      width: compact ? "60" : "80",
+      render: (row) => AREA_LABELS[row.area] || row.area
+    },
+    {
+      key: "status",
+      header: "\u72B6\u6001",
+      width: compact ? "60" : "80",
+      render: (row) => {
+        const s = TASK_STATUS_MAP[row.status] || { label: row.status, variant: "neutral" };
+        return /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(StatusBadge2, { variant: s.variant, label: s.label });
+      }
+    },
+    {
+      key: "checkedCount",
+      header: "\u8FDB\u5EA6",
+      width: compact ? "60" : "80",
+      render: (row) => `${row.checkedCount}/${row.totalCount}`
+    },
+    {
+      key: "deadline",
+      header: "\u622A\u6B62",
+      width: compact ? "60" : "80"
+    },
+    {
+      key: "actions",
+      header: compact ? "" : "\u64CD\u4F5C",
+      width: compact ? "50" : "120",
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { display: "flex", gap: 4 }, children: [
+        row.status === "pending" && /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("button", { style: PRIMARY_BTN2, onClick: () => onStartInspection?.(row.id), children: "\u5F00\u59CB" }),
+        row.status === "in_progress" && /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("button", { style: OUTLINE_BTN, onClick: () => onViewTaskDetail?.(row.id), children: "\u7EE7\u7EED" })
+      ] })
+    }
+  ];
+  return /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }, className, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: HEADER_BAR, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: HEADER_INFO, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: AVATAR, children: inspectorName.charAt(0) }),
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { "data-testid": "qualityinspector-title", style: { fontWeight: 600, fontSize: 16 }, children: "\u8D28\u68C0\u5458\u5DE5\u4F5C\u53F0" }),
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { fontSize: 12, color: "#999", marginTop: 2 }, children: [
+            inspectorName,
+            employeeId && ` \xB7 ${employeeId}`,
+            region && ` \xB7 ${region}`
+          ] })
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("span", { style: ONLINE_BADGE, children: "\u{1F7E2} \u5728\u5C97" }) })
+    ] }),
+    dailyMetrics && /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: SECTION_STYLE12, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: SECTION_TITLE2, children: "\u4ECA\u65E5\u8D28\u68C0\u6982\u89C8" }),
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(QuickStats, { items: statItems, columns: compact ? 2 : 3 })
+    ] }),
+    urgentTasks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: SECTION_STYLE12, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { ...SECTION_TITLE2, color: "#c62828" }, children: [
+        "\u{1F534} \u7D27\u6025\u68C0\u67E5\u4EFB\u52A1 (",
+        urgentTasks.length,
+        ")"
+      ] }),
+      urgentTasks.map((task) => /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { ...TASK_CARD, borderLeft: "3px solid #c62828" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("span", { style: { fontWeight: 600, fontSize: 14 }, children: task.storeName }),
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("span", { style: { display: "inline-flex", padding: "2px 10px", borderRadius: 12, fontSize: 11, fontWeight: 500, background: "#fce4ec", color: "#c62828" }, children: "\u7D27\u6025" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { fontSize: 13, color: "#666" }, children: [
+          AREA_LABELS[task.area] || task.area,
+          " \xB7 \u8FDB\u5EA6 ",
+          task.checkedCount,
+          "/",
+          task.totalCount
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { fontSize: 12, color: "#999", marginTop: 4 }, children: [
+          "\u622A\u6B62: ",
+          task.deadline
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { display: "flex", gap: 8, marginTop: 10 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("button", { style: PRIMARY_BTN2, onClick: () => onStartInspection?.(task.id), children: "\u5F00\u59CB\u68C0\u67E5" }),
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("button", { style: OUTLINE_BTN, onClick: () => onViewTaskDetail?.(task.id), children: "\u8BE6\u60C5" })
+        ] })
+      ] }, task.id))
+    ] }),
+    areas && areas.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: SECTION_STYLE12, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: SECTION_TITLE2, children: "\u533A\u57DF\u5DE1\u68C0\u6982\u51B5" }),
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: CARD2, children: areas.map((area) => /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: AREA_ROW, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: { fontWeight: 500, fontSize: 14 }, children: AREA_LABELS[area.name] || area.name }),
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { fontSize: 12, color: "#999", marginTop: 2 }, children: [
+            area.passed,
+            "/",
+            area.total,
+            " \u901A\u8FC7 \xB7 ",
+            area.failed,
+            " \u4E0D\u5408\u683C"
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { textAlign: "right" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: PROGRESS_BAR_OUTER2, children: /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(
+            "div",
+            {
+              style: {
+                height: "100%",
+                width: `${area.passRate}%`,
+                borderRadius: 3,
+                background: area.passRate >= 90 ? "#4caf50" : area.passRate >= 70 ? "#f57c00" : "#c62828"
+              }
+            }
+          ) }),
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { fontSize: 11, color: "#999", marginTop: 2 }, children: [
+            Math.round(area.passRate),
+            "%"
+          ] })
+        ] })
+      ] }, area.id)) })
+    ] }),
+    issues && issues.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: SECTION_STYLE12, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { ...SECTION_TITLE2, color: "#c62828" }, children: [
+        "\u5F85\u5904\u7406\u8D28\u91CF\u95EE\u9898 (",
+        issues.filter((i) => i.status === "pending" || i.status === "fail").length,
+        ")"
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: CARD2, children: issues.map((issue) => /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: ISSUE_ITEM, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: { ...SEVERITY_DOT, background: SEVERITY_COLORS6[issue.severity] } }),
+        /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("span", { style: { fontWeight: 500, fontSize: 14 }, children: issue.title }),
+            /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("span", { style: { fontSize: 11, color: SEVERITY_COLORS6[issue.severity], fontWeight: 500 }, children: SEVERITY_LABELS5[issue.severity] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { fontSize: 12, color: "#666", marginTop: 2 }, children: [
+            issue.area,
+            " \xB7 ",
+            issue.reporter,
+            " \xB7 ",
+            issue.createdAt
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { fontSize: 12, color: "#999", marginTop: 2 }, children: [
+            "\u622A\u6B62: ",
+            issue.deadline
+          ] }),
+          issue.description && /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: { fontSize: 12, color: "#555", marginTop: 4, background: "#f9f9f9", padding: "6px 8px", borderRadius: 6 }, children: issue.description }),
+          /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { display: "flex", gap: 8, marginTop: 8 }, children: [
+            issue.status === "pending" && /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("button", { style: DANGER_BTN, onClick: () => onHandleIssue?.(issue.id), children: "\u5904\u7406" }),
+            /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("button", { style: OUTLINE_BTN, onClick: () => onReportIssue?.(issue.id), children: "\u4E0A\u62A5" })
+          ] })
+        ] })
+      ] }, issue.id)) })
+    ] }),
+    tasks && tasks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: SECTION_STYLE12, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: SECTION_TITLE2, children: "\u4ECA\u65E5\u68C0\u67E5\u4EFB\u52A1" }),
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(
+        DataTable,
+        {
+          data: tasks,
+          columns: taskColumns,
+          rowKey: (task) => task.id,
+          compact
+        }
+      )
+    ] }),
+    !tasks && !issues && !dailyMetrics && /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { textAlign: "center", padding: 40, color: "#999" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: { fontSize: 48, marginBottom: 12 }, children: "\u{1F50D}" }),
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { children: "\u6682\u65E0\u8D28\u68C0\u4EFB\u52A1" }),
+      /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: { fontSize: 13, marginTop: 4 }, children: "\u4ECA\u65E5\u68C0\u67E5\u6570\u636E\u5C06\u5728\u4EFB\u52A1\u5206\u914D\u540E\u663E\u793A" })
+    ] }),
+    lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { textAlign: "center", fontSize: 11, color: "#ccc", padding: "12px 0" }, children: [
+      "\u6570\u636E\u540C\u6B65\u4E8E ",
+      lastSyncAt
+    ] })
+  ] });
+};
+
+// src/components/FeedbackList.tsx
+var import_jsx_runtime252 = require("react/jsx-runtime");
 var CATEGORY_LABELS8 = {
   service: "\u670D\u52A1",
   product: "\u4EA7\u54C1",
@@ -63752,9 +64092,9 @@ function FeedbackList({
 }) {
   const displayEntries = entries.slice(0, maxItems);
   if (displayEntries.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { role: "region", "aria-label": "\u53CD\u9988\u5217\u8868", "data-testid": "feedback-list-empty", style: { padding: 32, textAlign: "center", color: "#999", fontSize: 14 }, children: emptyText });
+    return /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("div", { role: "region", "aria-label": "\u53CD\u9988\u5217\u8868", "data-testid": "feedback-list-empty", style: { padding: 32, textAlign: "center", color: "#999", fontSize: 14 }, children: emptyText });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { role: "list", "aria-label": "\u53CD\u9988\u5217\u8868", "data-testid": "feedback-list", style: { display: "flex", flexDirection: "column", gap: 12 }, children: displayEntries.map((entry) => /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("div", { role: "list", "aria-label": "\u53CD\u9988\u5217\u8868", "data-testid": "feedback-list", style: { display: "flex", flexDirection: "column", gap: 12 }, children: displayEntries.map((entry) => /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)(
     "div",
     {
       role: "listitem",
@@ -63768,22 +64108,22 @@ function FeedbackList({
         cursor: onFeedbackClick ? "pointer" : "default"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("div", { style: { width: 28, height: 28, borderRadius: "50%", background: "#1677ff", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600 }, children: entry.userName.charAt(0) }),
-            /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("span", { style: { fontSize: 13, fontWeight: 500 }, children: entry.userName }),
-            /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("span", { style: { fontSize: 11, padding: "1px 6px", borderRadius: 4, background: "#e6f4ff", color: "#1677ff" }, children: CATEGORY_LABELS8[entry.category] }),
-            entry.resolved && /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("span", { style: { fontSize: 11, padding: "1px 6px", borderRadius: 4, background: "#f6ffed", color: "#52c41a" }, children: "\u5DF2\u5904\u7406" })
+        /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("div", { style: { width: 28, height: 28, borderRadius: "50%", background: "#1677ff", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600 }, children: entry.userName.charAt(0) }),
+            /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("span", { style: { fontSize: 13, fontWeight: 500 }, children: entry.userName }),
+            /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("span", { style: { fontSize: 11, padding: "1px 6px", borderRadius: 4, background: "#e6f4ff", color: "#1677ff" }, children: CATEGORY_LABELS8[entry.category] }),
+            entry.resolved && /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("span", { style: { fontSize: 11, padding: "1px 6px", borderRadius: 4, background: "#f6ffed", color: "#52c41a" }, children: "\u5DF2\u5904\u7406" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("span", { style: { fontSize: 13, fontWeight: 600, color: entry.rating >= 4 ? "#52c41a" : entry.rating >= 3 ? "#faad14" : "#f5222d" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)("span", { style: { fontSize: 13, fontWeight: 600, color: entry.rating >= 4 ? "#52c41a" : entry.rating >= 3 ? "#faad14" : "#f5222d" }, children: [
             "\u2605".repeat(entry.rating),
             "\u2606".repeat(5 - entry.rating)
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("p", { style: { margin: 0, fontSize: 14, lineHeight: 1.6, color: "#333" }, children: entry.content }),
-        /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("span", { style: { fontSize: 12, color: "#bbb" }, children: entry.createdAt }),
-          !entry.resolved && onResolve && /* @__PURE__ */ (0, import_jsx_runtime251.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("p", { style: { margin: 0, fontSize: 14, lineHeight: 1.6, color: "#333" }, children: entry.content }),
+        /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("span", { style: { fontSize: 12, color: "#bbb" }, children: entry.createdAt }),
+          !entry.resolved && onResolve && /* @__PURE__ */ (0, import_jsx_runtime252.jsx)(
             "button",
             {
               "data-testid": `resolve-btn-${entry.id}`,
@@ -63796,8 +64136,8 @@ function FeedbackList({
             }
           )
         ] }),
-        entry.reply && /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("div", { style: { marginTop: 8, padding: 8, background: "#fafafa", borderRadius: 6, borderLeft: "3px solid #1677ff", fontSize: 13, color: "#666" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime251.jsx)("strong", { children: "\u56DE\u590D\uFF1A" }),
+        entry.reply && /* @__PURE__ */ (0, import_jsx_runtime252.jsxs)("div", { style: { marginTop: 8, padding: 8, background: "#fafafa", borderRadius: 6, borderLeft: "3px solid #1677ff", fontSize: 13, color: "#666" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime252.jsx)("strong", { children: "\u56DE\u590D\uFF1A" }),
           " ",
           entry.reply
         ] })
@@ -64004,6 +64344,7 @@ function FeedbackList({
   ProgressCard,
   ProgressRing,
   QRCodeDisplay,
+  QualityInspectorDashboard,
   QuickActionBar,
   QuickStats,
   RadarChart,
