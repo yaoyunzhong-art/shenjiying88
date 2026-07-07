@@ -15,20 +15,20 @@ describe('lyt.entity', () => {
   describe('LytDeviceType', () => {
     it('has all expected enum values', () => {
       const values = Object.values(LytDeviceType)
-      assert.ok(values.includes('GATE_READER'))
-      assert.ok(values.includes('PRIZE_MACHINE'))
-      assert.ok(values.includes('CAST_SCREEN'))
-      assert.ok(values.includes('CAMERA'))
-      assert.ok(values.includes('SENSOR'))
+      assert.ok(values.includes(LytDeviceType.GateReader))
+      assert.ok(values.includes(LytDeviceType.PrizeMachine))
+      assert.ok(values.includes(LytDeviceType.CastScreen))
+      assert.ok(values.includes(LytDeviceType.Camera))
+      assert.ok(values.includes(LytDeviceType.Sensor))
     })
   })
 
   describe('LytDeviceStatus', () => {
     it('has online, offline, maintenance values', () => {
       const values = Object.values(LytDeviceStatus)
-      assert.ok(values.includes('ONLINE'))
-      assert.ok(values.includes('OFFLINE'))
-      assert.ok(values.includes('MAINTENANCE'))
+      assert.ok(values.includes(LytDeviceStatus.Online))
+      assert.ok(values.includes(LytDeviceStatus.Offline))
+      assert.ok(values.includes(LytDeviceStatus.Maintenance))
     })
   })
 

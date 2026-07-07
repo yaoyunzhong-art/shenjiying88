@@ -25,6 +25,7 @@ interface BootstrapHealthResponse {
 interface BootstrapMetadataResponse {
   tenantContext: RequestTenantContext
   foundationDependencies: string[]
+  foundationContracts?: string[]
   phase: 'scaffold'
 }
 
@@ -71,10 +72,12 @@ function inlineGetHealth(): BootstrapHealthResponse {
 function inlineGetBootstrapMetadata(
   tenantContext: RequestTenantContext,
   dependency?: { dependsOn?: FoundationModuleKey[]; handoffContracts?: string[] } | null,
-): BootstrapMetadataResponse {
+): BootstrapMetadataResponse & { foundationContracts?: string[] } {
+  const foundation = inlineToBootstrapFoundationMetadata(dependency);
   return {
     tenantContext,
-    ...inlineToBootstrapFoundationMetadata(dependency),
+    foundationDependencies: foundation.foundationDependencies,
+    foundationContracts: foundation.foundationContracts,
     phase: 'scaffold',
   }
 }

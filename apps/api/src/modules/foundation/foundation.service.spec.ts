@@ -20,7 +20,7 @@ interface FoundationModuleDescriptor {
   capabilities: string[]
 }
 
-interface FoundationConsumerKey extends string {}
+type FoundationConsumerKey = string
 interface FoundationConsumerDescriptor {
   consumer: string
   modulePath: string

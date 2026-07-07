@@ -10,21 +10,15 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
+import { TicketStatus } from './edge-computing.service'
 import type {
   Ticket,
-  TicketStatus,
   QueuePosition,
   CallNextResult,
   SyncResult,
   TimeSyncResult,
   ClockToleranceResult,
 } from './edge-computing.service'
-
-// ═══════════════════════════════════════════════════════════════
-// 枚举常量
-// ═══════════════════════════════════════════════════════════════
-
-const TICKET_STATUSES: TicketStatus[] = ['WAITING', 'CALLED', 'CANCELLED', 'COMPLETED']
 
 // ═══════════════════════════════════════════════════════════════
 // mock 数据工厂
@@ -35,7 +29,7 @@ function mockTicket(overrides?: Partial<Ticket>): Ticket {
     ticketId: `TK-test-001-${Math.random().toString(36).slice(2, 8)}`,
     storeId: 'store-001',
     ticketNumber: Math.floor(Math.random() * 1000) + 1,
-    status: 'WAITING' as TicketStatus,
+    status: TicketStatus.Waiting,
     issuedAt: new Date().toISOString(),
     customerId: undefined,
     priority: 0,
@@ -59,7 +53,7 @@ class MockOfflineTicketService {
       ticketId,
       storeId,
       ticketNumber,
-      status: 'WAITING',
+      status: TicketStatus.Waiting,
       issuedAt: new Date().toISOString(),
       customerId,
       priority,
@@ -72,7 +66,7 @@ class MockOfflineTicketService {
   getQueuePosition(ticketId: string): QueuePosition | null {
     const ticket = this.tickets.get(ticketId)
     if (!ticket) return null
-    if (ticket.status !== 'WAITING') {
+    if (ticket.status !== TicketStatus.Waiting) {
       return { ticketId, position: -1, estimatedWaitMinutes: 0, totalWaiting: this.getWaitingCount(ticket.storeId) }
     }
     const position = this.calculatePosition(ticket.storeId, ticketId)
@@ -85,7 +79,7 @@ class MockOfflineTicketService {
     if (waitingTickets.length === 0) return { calledTicket: null, queueAfterCall: 0, previousTicketId: null }
     const sorted = [...waitingTickets].sort((a, b) => b.priority !== a.priority ? b.priority - a.priority : a.ticketNumber - b.ticketNumber)
     const next = sorted[0]
-    next.status = 'CALLED'
+    next.status = TicketStatus.Called
     next.calledAt = new Date().toISOString()
     this.tickets.set(next.ticketId, next)
     return { calledTicket: next, queueAfterCall: this.getWaitingCount(storeId), previousTicketId: next.ticketId }
@@ -93,8 +87,8 @@ class MockOfflineTicketService {
 
   cancelTicket(ticketId: string): boolean {
     const ticket = this.tickets.get(ticketId)
-    if (!ticket || ticket.status === 'COMPLETED') return false
-    ticket.status = 'CANCELLED'
+    if (!ticket || ticket.status === TicketStatus.Completed) return false
+    ticket.status = TicketStatus.Cancelled
     this.tickets.set(ticketId, ticket)
     this.removeFromStoreQueue(ticket.storeId, ticketId)
     return true
@@ -103,7 +97,7 @@ class MockOfflineTicketService {
   completeTicket(ticketId: string): boolean {
     const ticket = this.tickets.get(ticketId)
     if (!ticket) return false
-    ticket.status = 'COMPLETED'
+    ticket.status = TicketStatus.Completed
     ticket.completedAt = new Date().toISOString()
     this.tickets.set(ticketId, ticket)
     this.removeFromStoreQueue(ticket.storeId, ticketId)
@@ -111,7 +105,7 @@ class MockOfflineTicketService {
   }
 
   syncQueueToServer(storeId: string): SyncResult {
-    const tickets = Array.from(this.tickets.values()).filter(t => t.storeId === storeId && t.status === 'WAITING')
+    const tickets = Array.from(this.tickets.values()).filter(t => t.storeId === storeId && t.status === TicketStatus.Waiting)
     return { storeId, syncedAt: new Date().toISOString(), ticketCount: tickets.length, success: true }
   }
 
@@ -120,7 +114,7 @@ class MockOfflineTicketService {
   }
 
   getWaitingTickets(storeId: string): Ticket[] {
-    return Array.from(this.tickets.values()).filter(t => t.storeId === storeId && t.status === 'WAITING')
+    return Array.from(this.tickets.values()).filter(t => t.storeId === storeId && t.status === TicketStatus.Waiting)
   }
 
   clearStoreQueue(storeId: string): void {
@@ -242,7 +236,7 @@ describe('OfflineTicketService', () => {
     const t = svc.issueTicket('store-001')
     expect(t.ticketId).toContain('TK-store-001')
     expect(t.ticketNumber).toBe(1)
-    expect(t.status).toBe('WAITING')
+    expect(t.status).toBe(TicketStatus.Waiting)
     expect(t.storeId).toBe('store-001')
   })
 
@@ -275,7 +269,7 @@ describe('OfflineTicketService', () => {
     expect(result.calledTicket).not.toBeNull()
     expect(result.calledTicket!.ticketNumber).toBe(1)
     expect(result.queueAfterCall).toBe(1)
-    expect(result.calledTicket!.status).toBe('CALLED')
+    expect(result.calledTicket!.status).toBe(TicketStatus.Called)
   })
 
   it('正例: 先叫高优先级后叫低优先级', () => {
@@ -299,7 +293,7 @@ describe('OfflineTicketService', () => {
     const t = svc.issueTicket('store-001')
     expect(svc.completeTicket(t.ticketId)).toBe(true)
     const completed = svc.getTicket(t.ticketId)!
-    expect(completed.status).toBe('COMPLETED')
+    expect(completed.status).toBe(TicketStatus.Completed)
     expect(completed.completedAt).toBeDefined()
   })
 

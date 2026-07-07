@@ -38,7 +38,7 @@ describe('FederatedLearningController', () => {
       assert.equal(path, 'federated')
     })
 
-    const ROUTES: Array<[string, string, number, string]> = [
+    const ROUTES: Array<[keyof FederatedLearningController, string, number, string]> = [
       ['createTask', 'tasks', 1, 'POST'],
       ['listTasks', 'tasks', 0, 'GET'],
       ['getTask', 'tasks/:id', 0, 'GET'],
@@ -48,13 +48,13 @@ describe('FederatedLearningController', () => {
       ['submitGradient', 'tasks/:taskId/submit', 1, 'POST'],
       ['aggregateRound', 'rounds/:roundId/aggregate', 1, 'POST'],
       ['getPrivacy', 'tasks/:taskId/privacy', 0, 'GET'],
-    ]
+    ] as const
 
-    for (const [method, path, httpCode, httpMethod] of ROUTES) {
-      it(`${httpMethod} /${path}`, () => {
-        const p = Reflect.getMetadata('path', FederatedLearningController.prototype[method]);
+    for (const [method, path] of ROUTES) {
+      it(`${method} path: ${path}`, () => {
+        const p = Reflect.getMetadata('path', (FederatedLearningController.prototype as any)[method]);
         assert.equal(p, path)
-        const m = Reflect.getMetadata('method', FederatedLearningController.prototype[method])
+        const m = Reflect.getMetadata('method', (FederatedLearningController.prototype as any)[method])
         assert.equal(typeof m, 'number')
       })
     }
@@ -71,7 +71,7 @@ describe('FederatedLearningController', () => {
         assert.equal(result.name, 'sales-forecast')
         assert.equal(result.currentRound, 0)
         assert.ok(result.id.startsWith('fed-task-'))
-        assert.equal(result.creatorTenantId, undefined) // 无这个字段
+        assert.equal(result.coordinatorTenantId, 'tenant-A')
       })
     })
 

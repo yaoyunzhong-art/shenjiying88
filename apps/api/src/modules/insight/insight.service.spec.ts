@@ -17,9 +17,11 @@ import type {
   InsightStatus,
   InsightTemplateType,
   InsightTemplate,
+} from './insight.entity'
+import type {
   GenerateInsightRequest,
   InsightResponse,
-} from './insight.service'
+} from './insight.dto'
 
 // ═══════════════════════════════════════════════════════════════
 // 枚举常量

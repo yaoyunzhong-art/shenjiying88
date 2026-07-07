@@ -208,7 +208,7 @@ function createInlineRecommendService(): {
       return merged.slice(0, limit)
     },
 
-    async warmupStrategies(tenantId: string, memberId: string, initialCategories?: string[]) {
+    warmupStrategies(tenantId: string, memberId: string, initialCategories?: string[]) {
       const key = `${tenantId}:${memberId}`
       if (!prefStore.has(key)) {
         prefStore.set(key, {

@@ -50,6 +50,7 @@ describe('RetrievalService (skeleton)', () => {
       chunking: { codeChunkSize: 800, codeChunkOverlap: 200 },
       retrieval: { defaultTopK: 10, rerankTopK: 5 },
       cache: { ttlSeconds: 3600, keyPrefix: 'rag:' },
+      llm: { provider: 'mock', model: 'gpt-4', maxTokens: 4096, temperature: 0.7 },
     }
 
     return new RetrievalService(mockConfig, mockQdrant, mockEmbedder)

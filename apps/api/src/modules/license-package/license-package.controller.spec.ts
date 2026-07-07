@@ -9,8 +9,22 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import assert from 'node:assert/strict'
 describe('LicensePackageController', () => {
   // mock service 工厂 - 每次返回干净 mock
+import { Logger } from '@nestjs/common'
+
   function createMockService() {
+    class MockRepo {
+      find = vi.fn()
+      findOne = vi.fn()
+      create = vi.fn()
+      save = vi.fn()
+      update = vi.fn()
+      delete = vi.fn()
+      count = vi.fn()
+    }
     return {
+      logger: new Logger('test'),
+      packageRepository: new MockRepo() as any,
+      checkPackageInUse: () => Promise.resolve(),
       create: () => Promise.resolve({ id: 'pkg-001', name: '企业版', price: 2999 }),
       findAll: () => Promise.resolve({ list: [], total: 0, page: 1, pageSize: 10 }),
       findOne: (id: string) => {
@@ -21,7 +35,7 @@ describe('LicensePackageController', () => {
       remove: () => Promise.resolve(),
       assignToLicense: () => Promise.resolve(),
       getLicensesByPackage: () => Promise.resolve([
-        { licenseId: 'lic-001', name: '开发环境 License' },
+        { id: 'lic-001', name: '开发环境 License' },
       ]),
     }
   }
@@ -328,7 +342,7 @@ describe('LicensePackageController', () => {
       const result = await ctrl.getLicensesByPackage('pkg-001')
       assert.ok(Array.isArray(result))
       assert.equal(result.length, 1)
-      assert.equal(result[0].licenseId, 'lic-001')
+      assert.equal(result[0].id, 'lic-001')
     })
 
     it('无关联 License: 返回空数组', async () => {
