@@ -275,6 +275,8 @@ export { MonthPicker } from './components/MonthPicker';
 export type { MonthPickerProps } from './components/MonthPicker';
 export { Card } from './components/Card';
 export { StatCard } from './components/StatCard';
+export { KpiSummaryCard } from './components/KpiSummaryCard';
+export type { KpiSummaryCardProps, KpiCardItem } from './components/KpiSummaryCard';
 export { Statistic } from './components/Statistic';
 export type { StatisticProps, StatisticVariant, StatisticSize, StatisticLayout } from './components/Statistic';
 export { QuickStats } from './components/QuickStats';
