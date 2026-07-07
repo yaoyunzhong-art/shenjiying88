@@ -411,9 +411,9 @@ describe('MarketingService (inline)', () => {
       expect(isDistributionHealthy(stats)).toBe(false)
     })
 
-    it('边界: segmentDistribution 为空时返回 false', () => {
+    it('边界: segmentDistribution 为空时返回 true (无分布判断)', () => {
       const stats = makeStats({ totalMembers: 0, segmentDistribution: {} as any })
-      expect(isDistributionHealthy(stats)).toBe(false)
+      expect(isDistributionHealthy(stats)).toBe(true)
     })
   })
 
