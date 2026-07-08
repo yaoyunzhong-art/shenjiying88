@@ -1,3 +1,8 @@
+/**
+ * products/[id]/page.tsx — 商品详情页 (Next.js App Router Page)
+ * 角色视角: 👔店长 / 📦采购 / 📋运营
+ * 功能: 商品基本信息、库存动态、编辑/操作按钮、状态流转、删除确认
+ */
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -13,6 +18,7 @@ import {
   useFormSubmit,
   type DetailShellAction,
 } from '@m5/ui';
+
 import {
   MOCK_PRODUCTS,
   PRODUCT_STATUS_MAP,
@@ -21,460 +27,311 @@ import {
   type ProductStatus,
 } from '../../products-data';
 
-// ── 帮助函数 ──
+// ── 通过 id 查找商品 ──
 
-function marginPercent(p: ProductItem): number {
-  return p.price > 0 ? ((p.price - p.cost) / p.price) * 100 : 0;
-}
-
-function marginColor(margin: number): string {
-  if (margin >= 50) return '#4ade80';
-  if (margin >= 30) return '#fbbf24';
-  return '#f87171';
-}
-
-function stockColor(stock: number): string {
-  if (stock === 0) return '#f87171';
-  if (stock < 50) return '#fbbf24';
-  return '#94a3b8';
-}
-
-function formatCurrency(amount: number): string {
-  if (amount >= 10000) return `¥${(amount / 10000).toFixed(1)}万`;
-  return `¥${amount.toLocaleString()}`;
-}
-
-const NEXT_STATUS: Partial<Record<ProductStatus, ProductStatus>> = {
-  active: 'inactive',
-  inactive: 'active',
-  discontinued: 'draft',
-  draft: 'active',
-};
-
-const STATUS_ACTION_LABELS: Partial<Record<ProductStatus, string>> = {
-  active: '下架',
-  inactive: '重新上架',
-  discontinued: '转为草稿',
-  draft: '发布',
-};
-
-// ── 编辑表单数据 ──
-
-type EditFormData = {
-  name: string;
-  price: number;
-  cost: number;
-  stock: number;
-};
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '10px 12px',
-  borderRadius: 8,
-  border: '1px solid rgba(148,163,184,0.25)',
-  background: 'rgba(15,23,42,0.6)',
-  color: '#e2e8f0',
-  fontSize: 14,
-  outline: 'none',
-  boxSizing: 'border-box',
-};
-
-const secondaryBtnStyle: React.CSSProperties = {
-  padding: '8px 16px',
-  borderRadius: 8,
-  border: '1px solid rgba(148,163,184,0.25)',
-  background: 'transparent',
-  color: '#cbd5e1',
-  cursor: 'pointer',
-  fontSize: 13,
-};
-
-// ── 编辑弹窗 ──
-
-function EditModal({
-  product,
-  open,
-  onClose,
-  onSaved,
-}: {
-  product: ProductItem;
-  open: boolean;
-  onClose: () => void;
-  onSaved: (data: EditFormData) => void;
-}) {
-  const [form, setForm] = useState<EditFormData>({
-    name: product.name,
-    price: product.price,
-    cost: product.cost,
-    stock: product.stock,
-  });
-
-  const { submitting, error, success, submit, clearError } = useFormSubmit({
-    onSubmit: async () => {
-      if (!form.name.trim()) throw new Error('商品名称不能为空');
-      if (form.price <= 0) throw new Error('售价必须大于 0');
-      if (form.cost < 0) throw new Error('成本不能为负数');
-      if (form.stock < 0) throw new Error('库存不能为负数');
-      onSaved(form);
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    submit();
-  };
-
-  return (
-    <Modal open={open} onClose={onClose} title="编辑商品">
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <FormField label="商品名称" error={!form.name.trim() ? '名称不能为空' : undefined}>
-          <input
-            data-testid="edit-name"
-            value={form.name}
-            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-            placeholder="商品名称"
-            style={inputStyle}
-          />
-        </FormField>
-        <FormField label="售价">
-          <input
-            data-testid="edit-price"
-            type="number"
-            step="0.01"
-            min="0"
-            value={form.price}
-            onChange={(e) => setForm((prev) => ({ ...prev, price: Number(e.target.value) }))}
-            style={inputStyle}
-          />
-        </FormField>
-        <FormField label="成本">
-          <input
-            data-testid="edit-cost"
-            type="number"
-            step="0.01"
-            min="0"
-            value={form.cost}
-            onChange={(e) => setForm((prev) => ({ ...prev, cost: Number(e.target.value) }))}
-            style={inputStyle}
-          />
-        </FormField>
-        <FormField label="库存">
-          <input
-            data-testid="edit-stock"
-            type="number"
-            step="1"
-            min="0"
-            value={form.stock}
-            onChange={(e) => setForm((prev) => ({ ...prev, stock: Number(e.target.value) }))}
-            style={inputStyle}
-          />
-        </FormField>
-        <FormSubmitFeedback submitting={submitting} error={error} success={success} onDismissError={clearError} />
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button type="button" onClick={onClose} style={secondaryBtnStyle}>
-            取消
-          </button>
-          <SubmitButton loading={submitting} type="submit">
-            保存
-          </SubmitButton>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-// ── 删除确认弹窗 ──
-
-function DeleteConfirmModal({
-  open,
-  onClose,
-  onConfirm,
-  itemName,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  itemName: string;
-}) {
-  const { submitting, submit } = useFormSubmit({
-    onSubmit: async () => {
-      onConfirm();
-    },
-  });
-
-  return (
-    <Modal open={open} onClose={onClose} title="确认删除">
-      <div style={{ color: '#cbd5e1', marginBottom: 16 }}>
-        确定要删除商品 <strong style={{ color: '#f87171' }}>{itemName}</strong> 吗？此操作不可撤销。
-      </div>
-      <form onSubmit={(e) => { e.preventDefault(); submit(); }}>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button type="button" onClick={onClose} style={secondaryBtnStyle}>
-            取消
-          </button>
-          <SubmitButton loading={submitting} type="submit" variant="danger">
-            删除
-          </SubmitButton>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-// ── 辅助布局组件 ──
-
-function InfoSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section
-      style={{
-        marginBottom: 16,
-        borderRadius: 12,
-        border: '1px solid rgba(148,163,184,0.12)',
-        background: 'rgba(15,23,42,0.4)',
-        padding: 20,
-      }}
-    >
-      <h3 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-        {title}
-      </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{children}</div>
-    </section>
-  );
-}
-
-function InfoRow({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', minHeight: 28 }}>
-      <span style={{ fontSize: 13, color: '#64748b' }}>{label}</span>
-      {children ?? <span style={{ fontSize: 14, color: '#e2e8f0', fontWeight: 500 }}>{value}</span>}
-    </div>
-  );
-}
-
-function StatBadge({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <div style={{ textAlign: 'center', padding: '10px 8px', borderRadius: 8, background: 'rgba(15,23,42,0.3)' }}>
-      <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 18, fontWeight: 700, color, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-    </div>
-  );
-}
-
-function today(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function getProductById(id: string): ProductItem | undefined {
+function findProduct(id: string): ProductItem | undefined {
   return MOCK_PRODUCTS.find((p) => p.id === id);
 }
 
-// ── 详情页 ──
+// ── 样式 ──
+
+const sectionStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 24,
+};
+
+const fieldGroupStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+  gap: 16,
+};
+
+const fullWidthContainer: React.CSSProperties = {
+  width: '100%',
+};
+
+// ---- 状态管理 ----
+
+type ConfirmAction = 'toggleStatus' | 'delete' | null;
 
 export default function ProductDetailPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams();
   const router = useRouter();
+  const id = typeof params.id === 'string' ? params.id : '';
 
-  const [product, setProduct] = useState<ProductItem | undefined>(() =>
-    getProductById(params.id),
-  );
-  const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleted, setDeleted] = useState(false);
+  const product = useMemo(() => findProduct(id), [id]);
 
-  // 状态流转
-  const transitionStatus = useCallback(() => {
+  // 编辑态
+  const [editMode, setEditMode] = useState(false);
+  const [editFields, setEditFields] = useState({
+    name: '',
+    price: 0,
+    stock: 0,
+    cost: 0,
+    unit: '',
+    brandName: '',
+    supplierName: '',
+  });
+
+  // 弹窗
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+  const { submitting, feedback, handleSubmit } = useFormSubmit();
+
+  // 编辑初始化
+  const startEdit = useCallback(() => {
     if (!product) return;
-    const next = NEXT_STATUS[product.status];
-    if (!next) return;
-    setProduct((prev) =>
-      prev ? { ...prev, status: next, updatedAt: today() } : prev,
-    );
+    setEditFields({
+      name: product.name,
+      price: product.price,
+      stock: product.stock,
+      cost: product.cost,
+      unit: product.unit,
+      brandName: product.brandName,
+      supplierName: product.supplierName,
+    });
+    setEditMode(true);
   }, [product]);
 
-  // 保存编辑
-  const handleSaved = useCallback((data: EditFormData) => {
-    setProduct((prev) =>
-      prev
-        ? {
-            ...prev,
-            name: data.name,
-            price: data.price,
-            cost: data.cost,
-            stock: data.stock,
-            updatedAt: today(),
-          }
-        : prev,
-    );
-    setEditOpen(false);
+  const cancelEdit = useCallback(() => {
+    setEditMode(false);
+    setEditFields({ name: '', price: 0, stock: 0, cost: 0, unit: '', brandName: '', supplierName: '' });
   }, []);
+
+  // 保存编辑
+  const saveEdit = useCallback(async () => {
+    await handleSubmit(async () => {
+      // 模拟保存 API 调用
+      await new Promise((r) => setTimeout(r, 800));
+      setEditMode(false);
+    }, { successMessage: '商品信息已更新', errorMessage: '保存失败，请重试' });
+  }, [handleSubmit]);
+
+  // 切换状态
+  const toggleStatus = useCallback(async () => {
+    setConfirmAction(null);
+    await handleSubmit(async () => {
+      await new Promise((r) => setTimeout(r, 600));
+    }, {
+      successMessage: product?.status === 'active' ? '商品已下架' : '商品已上架',
+      errorMessage: '操作失败',
+    });
+  }, [handleSubmit, product]);
 
   // 删除
-  const handleDelete = useCallback(() => {
-    setDeleted(true);
-    setDeleteOpen(false);
-  }, []);
+  const deleteProduct = useCallback(async () => {
+    setConfirmAction(null);
+    await handleSubmit(async () => {
+      await new Promise((r) => setTimeout(r, 600));
+    }, {
+      successMessage: '商品已删除',
+      errorMessage: '删除失败',
+    });
+    router.push('/products');
+  }, [handleSubmit, router]);
 
-  const detailActions: DetailShellAction[] = useMemo(
-    () => [
+  // 操作按钮
+  const actions: DetailShellAction[] = useMemo(() => {
+    if (!product) return [];
+    const result: DetailShellAction[] = [
       {
-        key: 'edit',
-        label: '编辑',
-        onClick: () => setEditOpen(true),
-        variant: 'primary',
+        label: editMode ? '取消编辑' : '编辑',
+        variant: editMode ? 'default' : 'primary',
+        onClick: editMode ? cancelEdit : startEdit,
       },
       {
-        key: 'transition',
-        label: product ? STATUS_ACTION_LABELS[product.status] ?? '状态流转' : '状态流转',
-        onClick: transitionStatus,
-        variant: 'secondary',
+        label: product.status === 'active' ? '下架' : '上架',
+        variant: 'warning',
+        onClick: () => setConfirmAction('toggleStatus'),
       },
       {
-        key: 'delete',
         label: '删除',
-        onClick: () => setDeleteOpen(true),
         variant: 'danger',
+        onClick: () => setConfirmAction('delete'),
       },
-    ],
-    [product, transitionStatus],
-  );
+    ];
+    return result;
+  }, [product, editMode, startEdit, cancelEdit]);
 
+  // 错误 / 空状态
   if (!product) {
     return (
-      <PageShell title="商品详情" description="">
-        <div style={{ textAlign: 'center', padding: 64, color: '#64748b', fontSize: 14 }}>
-          未找到商品 (ID: {params.id})
+      <PageShell>
+        <div style={{ padding: 80, textAlign: 'center', color: '#94a3b8' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+          <h2 style={{ fontSize: 20, fontWeight: 600 }}>商品未找到</h2>
+          <p style={{ marginTop: 8 }}>ID: {id}</p>
         </div>
       </PageShell>
     );
   }
 
-  if (deleted) {
-    return (
-      <PageShell title="商品详情" description="">
-        <div style={{ textAlign: 'center', padding: 64 }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🗑️</div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: '#e2e8f0', marginBottom: 8 }}>
-            商品已删除
-          </div>
-          <div style={{ fontSize: 13, color: '#64748b', marginBottom: 24 }}>
-            &ldquo;{product.name}&rdquo; 已从系统中移除。
-          </div>
-          <button
-            onClick={() => router.push('/products')}
-            style={{
-              padding: '8px 20px',
-              borderRadius: 8,
-              border: '1px solid rgba(99,102,241,0.4)',
-              background: 'rgba(99,102,241,0.12)',
-              color: '#a5b4fc',
-              cursor: 'pointer',
-              fontSize: 13,
-            }}
-          >
-            返回商品列表
-          </button>
-        </div>
-      </PageShell>
-    );
-  }
+  const statusMeta = PRODUCT_STATUS_MAP[product.status];
+  const categoryMeta = PRODUCT_CATEGORY_MAP[product.category];
 
-  const margin = marginPercent(product);
-  const s = PRODUCT_STATUS_MAP[product.status];
-  const cat = PRODUCT_CATEGORY_MAP[product.category];
-  const stockVal = product.stock;
+  // 详情字段
+  const detailRows = [
+    { label: 'SKU', value: product.sku },
+    { label: '分类', value: categoryMeta?.label ?? product.category },
+    { label: '状态', value: <StatusBadge variant={statusMeta?.variant ?? 'neutral'}>{statusMeta?.label ?? product.status}</StatusBadge> },
+    { label: '售价', value: `¥${product.price.toFixed(2)}` },
+    { label: '成本', value: `¥${product.cost.toFixed(2)}` },
+    { label: '毛利', value: `¥${(product.price - product.cost).toFixed(2)}` },
+    { label: '库存', value: `${product.stock} ${product.unit}` },
+    { label: '品牌', value: product.brandName },
+    { label: '供应商', value: product.supplierName },
+    { label: '所属门店', value: product.storeName },
+    { label: '市场区域', value: product.marketCode },
+    { label: '创建时间', value: product.createdAt },
+    { label: '更新时间', value: product.updatedAt },
+  ];
 
   return (
-    <PageShell
-      title={product.name}
-      description={`SKU: ${product.sku} · ${cat.label} · ${product.storeName}`}
-    >
+    <PageShell>
       <DetailShell
         title={product.name}
-        subtitle={`SKU: ${product.sku} · ${cat.label} · ${product.storeName}`}
-        actions={detailActions}
+        subtitle={`SKU: ${product.sku}`}
+        actions={actions}
       >
-        {/* 财务指标卡片 */}
-        <div
-          style={{
-            display: 'grid',
-            gap: 10,
-            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-            marginBottom: 20,
-          }}
-        >
-          <StatBadge label="售价" value={`¥${product.price.toFixed(2)}`} color="#93c5fd" />
-          <StatBadge label="成本" value={`¥${product.cost.toFixed(2)}`} color="#94a3b8" />
-          <StatBadge label="毛利率" value={`${margin.toFixed(1)}%`} color={marginColor(margin)} />
-          <StatBadge
-            label="库存总量"
-            value={stockVal.toLocaleString()}
-            color={stockColor(stockVal)}
-          />
+        {/* 基本信息 */}
+        <div style={sectionStyle}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f1f5f9' }}>基本信息</h3>
+          <div style={fieldGroupStyle}>
+            {detailRows.slice(0, 4).map((row) => (
+              <div key={row.label} style={fullWidthContainer}>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>{row.label}</div>
+                <div style={{ fontSize: 14, color: '#e2e8f0' }}>{row.value}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* 基本信息 */}
-        <InfoSection title="基本信息">
-          <InfoRow label="SKU" value={product.sku} />
-          <InfoRow label="商品名称" value={product.name} />
-          <InfoRow label="品类" value={cat.label} />
-          <InfoRow label="品牌" value={product.brandName} />
-          <InfoRow label="供应商" value={product.supplierName} />
-          <InfoRow label="计量单位" value={product.unit} />
-          <InfoRow label="状态">
-            <StatusBadge label={s.label} variant={s.variant} size="sm" dot />
-          </InfoRow>
-        </InfoSection>
+        {/* 价格库存 */}
+        <div style={sectionStyle}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f1f5f9' }}>价格与库存</h3>
+          <div style={fieldGroupStyle}>
+            {detailRows.slice(4, 8).map((row) => (
+              <div key={row.label} style={fullWidthContainer}>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>{row.label}</div>
+                <div style={{ fontSize: 14, color: '#e2e8f0' }}>{row.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        {/* 价格与库存 */}
-        <InfoSection title="价格与库存">
-          <InfoRow label="售价" value={`¥${product.price.toFixed(2)}`} />
-          <InfoRow label="成本" value={`¥${product.cost.toFixed(2)}`} />
-          <InfoRow label="毛利率">
-            <span style={{ color: marginColor(margin), fontWeight: 600 }}>
-              {margin.toFixed(1)}%
-            </span>
-          </InfoRow>
-          <InfoRow label="库存">
-            <span style={{ color: stockColor(stockVal), fontWeight: 600 }}>
-              {stockVal.toLocaleString()} {product.unit}
-            </span>
-          </InfoRow>
-          <InfoRow label="库存总值" value={formatCurrency(product.price * stockVal)} />
-        </InfoSection>
+        {/* 供应链 */}
+        <div style={sectionStyle}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f1f5f9' }}>供应链信息</h3>
+          <div style={fieldGroupStyle}>
+            {detailRows.slice(8, 11).map((row) => (
+              <div key={row.label} style={fullWidthContainer}>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>{row.label}</div>
+                <div style={{ fontSize: 14, color: '#e2e8f0' }}>{row.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        {/* 市场与渠道 */}
-        <InfoSection title="市场与渠道">
-          <InfoRow label="市场区域" value={product.marketCode} />
-          <InfoRow label="所属门店" value={product.storeName} />
-        </InfoSection>
+        {/* 时间 */}
+        <div style={sectionStyle}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f1f5f9' }}>时间信息</h3>
+          <div style={fieldGroupStyle}>
+            {detailRows.slice(11).map((row) => (
+              <div key={row.label} style={fullWidthContainer}>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>{row.label}</div>
+                <div style={{ fontSize: 14, color: '#e2e8f0' }}>{row.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        {/* 时间记录 */}
-        <InfoSection title="变更记录">
-          <InfoRow label="创建时间" value={product.createdAt} />
-          <InfoRow label="最近更新" value={product.updatedAt} />
-        </InfoSection>
+        {/* 编辑模式 */}
+        {editMode && (
+          <div style={sectionStyle}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f1f5f9' }}>编辑商品</h3>
+            <div style={fieldGroupStyle}>
+              {(['name', 'price', 'stock', 'cost', 'unit', 'brandName', 'supplierName'] as const).map(
+                (field) => (
+                  <FormField
+                    key={field}
+                    label={
+                      field === 'name'
+                        ? '商品名称'
+                        : field === 'price'
+                          ? '售价'
+                          : field === 'stock'
+                            ? '库存'
+                            : field === 'cost'
+                              ? '成本'
+                              : field === 'unit'
+                                ? '单位'
+                                : field === 'brandName'
+                                  ? '品牌'
+                                  : '供应商'
+                    }
+                  >
+                    <input
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: 8,
+                        border: '1px solid rgba(148,163,184,0.3)',
+                        background: '#0f172a',
+                        color: '#e2e8f0',
+                        fontSize: 14,
+                      }}
+                      value={String(editFields[field])}
+                      onChange={(e) => {
+                        const val =
+                          field === 'price' || field === 'stock' || field === 'cost'
+                            ? Number(e.target.value)
+                            : e.target.value;
+                        setEditFields((prev) => ({ ...prev, [field]: val }));
+                      }}
+                    />
+                  </FormField>
+                ),
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <SubmitButton onClick={saveEdit} submitting={submitting} variant="primary">
+                保存
+              </SubmitButton>
+              <SubmitButton onClick={cancelEdit} variant="default">
+                取消
+              </SubmitButton>
+            </div>
+          </div>
+        )}
+
+        {/* 提交反馈 */}
+        {feedback && <FormSubmitFeedback feedback={feedback} />}
       </DetailShell>
 
-      {/* 编辑弹窗 */}
-      {editOpen && (
-        <EditModal
-          product={product}
-          open={editOpen}
-          onClose={() => setEditOpen(false)}
-          onSaved={handleSaved}
-        />
-      )}
-
-      {/* 删除确认弹窗 */}
-      {deleteOpen && (
-        <DeleteConfirmModal
-          open={deleteOpen}
-          onClose={() => setDeleteOpen(false)}
-          onConfirm={handleDelete}
-          itemName={product.name}
-        />
-      )}
+      {/* 确认弹窗 */}
+      <Modal
+        open={confirmAction !== null}
+        onClose={() => setConfirmAction(null)}
+        title="确认操作"
+      >
+        <p style={{ color: '#cbd5e1', marginBottom: 20, fontSize: 14 }}>
+          {confirmAction === 'toggleStatus'
+            ? `确定${product.status === 'active' ? '下架' : '上架'}商品「${product.name}」？`
+            : `确定删除商品「${product.name}」？此操作不可撤销。`}
+        </p>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+          <SubmitButton
+            onClick={confirmAction === 'toggleStatus' ? toggleStatus : deleteProduct}
+            submitting={submitting}
+            variant={confirmAction === 'delete' ? 'danger' : 'warning'}
+          >
+            确认
+          </SubmitButton>
+          <SubmitButton onClick={() => setConfirmAction(null)} variant="default">
+            取消
+          </SubmitButton>
+        </div>
+      </Modal>
     </PageShell>
   );
 }

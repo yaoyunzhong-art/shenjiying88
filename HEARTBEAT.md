@@ -4,22 +4,22 @@
 
 | 日期 | 总测试数 | 通过 | 失败 | TSC错误 | 0-test文件 | 耗时 | 状态 |
 |---|---|---|---|---|---|---|---|
-| 2026-07-09 | 25,075 | 24,466 | 609 | 59 | 128 | 2m43s | ⚠️ full-regression false positive (609 fail 为假阳性) |
+| 2026-07-09 | 32,821 | 31,997 | 824 | 21 | — | ~2m30s | 🔴 824 fails (含 34 full-regression false positive) |
 | 2026-07-08 | 25,075 | 24,466 | 609 | 59 | 128 | 2m43s | ⚠️ full-regression false positive (609 fail 为假阳性) |
 
 ## @m5/api 详细
 
 | 日期 | 通过文件数 | 通过断言 | 失败文件数 | 失败断言 |
 |---|---|---|---|---|
-| 2026-07-09 | 1,191 | 24,466 | 85 | 609 (false positive) |
+| 2026-07-09 | 1,435 | 31,997 | 102 | 824 (含 34 FP) |
 
 ## 失败摘要 (2026-07-09)
 
 ### 🔴 P0 · 持续问题
 - **@m5/api full-regression**: 34 项模块检测全部显示"失败"但实际测试通过（false positive）。根因: Vitest 4 移除了 `test.poolOptions`，报告器代码未更新。不影响实际模块测试。
 - **@m5/api timeout**: 持续 30+ 脉冲的 TestingModule 问题
-- **@m5/api TSC errors**: 73 errors (alliance 48 + blindbox 18 + brand-custom 4 + chain 1 + currency 1 + ops-manual 1)
-- **59 TSC errors** (主要来自 spec/test 文件，非生产代码)
+- **@m5/api TSC errors**: 21 errors (webhook contract 20 + other 1)
+- **packages TSC errors**: 0 ✅
 - **128 个空测试文件**需要填充
 
 ### ✅ 模块级测试全绿

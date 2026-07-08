@@ -1,5 +1,5 @@
 /**
- * products/[id]/page.test.tsx — 商品详情页 L1 冒烟测试 (tob-web)
+ * products/[id]/page.test.tsx — 商品详情页 L1 冒烟测试
  * 覆盖: 正例·边界·防御
  */
 import assert from 'node:assert/strict';
@@ -16,57 +16,128 @@ function readSource(): string {
 }
 
 describe('products/[id] — 正例', () => {
-  it('应导出一个默认组件 ProductDetailPage', () => {
+  it('应导出一个默认组件', () => {
     const src = readSource();
-    assert.ok(src.includes('export default function ProductDetailPage'), '缺少默认导出');
+    assert.match(src, /export default function ProductDetailPage/);
   });
 
-  it('应包含 MOCK_PRODUCTS 数据集', () => {
+  it('应导入 useParams / useRouter', () => {
     const src = readSource();
-    assert.ok(src.includes('MOCK_PRODUCTS'), '缺少数据源');
+    assert.match(src, /useParams/);
+    assert.match(src, /useRouter/);
   });
 
-  it('应包含 getProductById 查找函数', () => {
+  it('应导入页面级组件', () => {
     const src = readSource();
-    assert.ok(src.includes('getProductById'), '缺少查找函数');
+    assert.match(src, /PageShell/);
+    assert.match(src, /DetailShell/);
+    assert.match(src, /Modal/);
+    assert.match(src, /SubmitButton/);
+    assert.match(src, /FormField/);
+    assert.match(src, /FormSubmitFeedback/);
+    assert.match(src, /StatusBadge/);
   });
 
-  it('getProductById 应使用 find', () => {
+  it('应导入 products-data', () => {
     const src = readSource();
-    assert.ok(src.includes('.find('), '缺少 find');
+    assert.match(src, /from ['"]\.\.\/\.\.\/products-data['"]/);
+    assert.match(src, /MOCK_PRODUCTS/);
+    assert.match(src, /PRODUCT_STATUS_MAP/);
+    assert.match(src, /PRODUCT_CATEGORY_MAP/);
+  });
+
+  it('应包含 findProduct 辅助函数', () => {
+    const src = readSource();
+    assert.match(src, /function findProduct/);
+  });
+
+  it('应包含编辑模式', () => {
+    const src = readSource();
+    assert.match(src, /editMode/);
+    assert.match(src, /setEditMode/);
+  });
+
+  it('应包含状态切换逻辑', () => {
+    const src = readSource();
+    assert.match(src, /toggleStatus/);
+    assert.match(src, /setConfirmAction/);
+  });
+
+  it('应包含删除逻辑', () => {
+    const src = readSource();
+    assert.match(src, /deleteProduct/);
+    assert.match(src, /router\.push\(['"']\/products['"]?\)/);
+  });
+
+  it('应包含错误/空状态处理', () => {
+    const src = readSource();
+    assert.match(src, /商品未找到/);
   });
 });
 
 describe('products/[id] — 边界', () => {
-  it('id 不存在时返回 undefined', () => {
+  it('应处理空 id', () => {
     const src = readSource();
-    assert.ok(src.includes('.find('), 'find 查找');
+    // 使用了 params.id，id 为空时 findProduct 返回 undefined，展示错误态
+    assert.match(src, /typeof params\.id === 'string'/);
+    assert.match(src, /product === undefined/);
   });
 
-  it('MOCK_PRODUCTS 数量统计', () => {
+  it('应使用 useFormSubmit 管理提交状态', () => {
     const src = readSource();
-    assert.ok(src.includes('MOCK_PRODUCTS'), '数据源');
+    assert.match(src, /useFormSubmit/);
+    assert.match(src, /submitting/);
+    assert.match(src, /feedback/);
+    assert.match(src, /handleSubmit/);
   });
 
-  it('商品不存在时应处理', () => {
+  it('应展示所有详情分组', () => {
     const src = readSource();
-    assert.ok(src.includes('if') || src.includes('!product') || src.includes('not found'), '不存在处理');
+    assert.match(src, /基本信息/);
+    assert.match(src, /价格与库存/);
+    assert.match(src, /供应链信息/);
+    assert.match(src, /时间信息/);
+  });
+
+  it('应展示编辑表单字段', () => {
+    const src = readSource();
+    assert.match(src, /商品名称/);
+    assert.match(src, /售价/);
+    assert.match(src, /库存/);
+    assert.match(src, /成本/);
+    assert.match(src, /品牌/);
+    assert.match(src, /供应商/);
   });
 });
 
 describe('products/[id] — 防御', () => {
-  it('应包含 use client 指令', () => {
+  it('不应硬编码商品 id', () => {
     const src = readSource();
-    assert.ok(src.includes("'use client'"), '缺少 use client');
+    // 应通过 params 动态获取
+    assert.match(src, /params\.id/);
+    // 不应有未验证的 id
+    assert.doesNotMatch(src, /id\s*===?\s*['"]tp-/);
   });
 
-  it('应包含编辑/保存功能', () => {
+  it('不应包含 eval / Function 构造函数', () => {
     const src = readSource();
-    assert.ok(src.includes('edit') || src.includes('save') || src.includes('Save'), '编辑功能');
+    assert.doesNotMatch(src, /eval\s*\(/);
+    assert.doesNotMatch(src, /new\s+Function\s*\(/);
   });
 
-  it('详情页应包含状态管理', () => {
+  it('不应使用 dangerouslySetInnerHTML', () => {
     const src = readSource();
-    assert.ok(src.includes('useState') || src.includes('useReducer'), '状态管理');
+    assert.doesNotMatch(src, /dangerouslySetInnerHTML/);
+  });
+
+  it('所有 confirmAction 分支都应提供确认文案', () => {
+    const src = readSource();
+    assert.match(src, /确定/);
+    assert.match(src, /确认操作/);
+  });
+
+  it('delete 按钮应带 danger variant', () => {
+    const src = readSource();
+    assert.match(src, /variant.*danger/);
   });
 });
