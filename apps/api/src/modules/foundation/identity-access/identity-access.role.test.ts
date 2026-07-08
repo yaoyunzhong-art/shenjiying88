@@ -22,7 +22,7 @@ function createIdentityAccessController(mockSvc = mockIdentityAccessService()) {
 }
 
 const tenantCtx = { tenantId: 't-ia', brandId: 'b-ia', storeId: 's-ia', marketCode: 'zh-cn' }
-const actorCtx = { actorId: 'a-test', actorType: 'user', actorName: 'Test', roles: ['TENANT_ADMIN'], permissions: ['*'], authenticated: true }
+const actorCtx = { actorId: 'a-test', actorType: 'tenant-user' as const, actorName: 'Test', roles: ['TENANT_ADMIN'], permissions: ['*'], authenticated: true }
 
 const ROLES = {
   TenantAdmin: '👔店长',

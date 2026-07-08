@@ -56,6 +56,7 @@ interface EdgeInferenceRequest {
 }
 
 interface EdgeInferenceResult {
+  modelId: string
   prediction: string
   confidence: number
   latencyMs: number

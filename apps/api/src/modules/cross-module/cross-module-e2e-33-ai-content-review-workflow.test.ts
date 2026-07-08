@@ -283,12 +283,13 @@ function humanReject(contentId: string, reviewer: string, reason: string): { suc
     return { success: false, error: `cannot reject content with status: ${content.status}` }
   }
 
+  const previousStatus = content.status
   content.status = 'rejected'
   content.updatedAt = new Date().toISOString()
   contentStore.set(contentId, content)
   addAuditRecord({
     contentId, action: 'reject', actor: 'human_reviewer',
-    previousStatus: content.status === 'ai_approved' ? 'ai_approved' : 'pending_human_review',
+    previousStatus: previousStatus === 'ai_approved' ? 'ai_approved' : 'pending_human_review',
     newStatus: 'rejected',
     comment: reason,
   })
@@ -311,7 +312,7 @@ function publishContent(contentId: string, publisher: string): { success: boolea
   return { success: true }
 }
 
-function reSubmitAfterRejection(contentId: string, newBody?: string): { success: boolean; error?: string } {
+function reSubmitAfterRejection(contentId: string, newBody?: string): { success: boolean; error?: string; aiResult?: AIReviewResult } {
   const content = contentStore.get(contentId)
   if (!content) return { success: false, error: 'content not found' }
   if (content.status !== 'rejected' && content.status !== 'ai_rejected') {

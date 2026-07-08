@@ -5,12 +5,23 @@ export class ObservabilityQueryDto {
   @IsOptional()
   @IsString()
   status?: string
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number
 }
 
 export class RetryPolicyQueryDto {
   @IsOptional()
   @IsString()
   capability?: string
+
+  @IsOptional()
+  @IsString()
+  resource?: string
 }
 
 export class RecoveryPlanQueryDto {

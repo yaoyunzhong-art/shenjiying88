@@ -37,7 +37,7 @@ describe(`${ROLES.Guide} integration-orchestration 角色测试`, () => {
 
   it('导玩员可以获取 events', async () => {
     const ctrl = createIntOrchController()
-    const result = await ctrl.getEvents({ source: 'lyt' })
+    const result = await ctrl.getEvents({ source: 'lyt' }) as { events: unknown[] }
     assert.ok(result.events)
   })
 
@@ -51,7 +51,7 @@ describe(`${ROLES.Guide} integration-orchestration 角色测试`, () => {
       source: 'lyt-device',
       aggregateId: 'dev-001',
       idempotencyKey: 'idem-dev-001'
-    })
+    }) as { eventName: string; status: string }
     assert.equal(result.eventName, 'device-online')
     assert.equal(result.status, 'published')
   })
@@ -67,7 +67,7 @@ describe(`${ROLES.TenantAdmin} integration-orchestration 角色测试`, () => {
 
   it('店长可以获取 idempotency records', async () => {
     const ctrl = createIntOrchController()
-    const result = await ctrl.getIdempotencyRecords({ source: 'lyt' })
+    const result = await ctrl.getIdempotencyRecords({ source: 'lyt' }) as { records: unknown[] }
     assert.ok(result.records)
   })
 
@@ -88,7 +88,7 @@ describe(`${ROLES.TenantAdmin} integration-orchestration 角色测试`, () => {
 describe(`${ROLES.Operations} integration-orchestration 角色测试`, () => {
   it('运营专员可以获取 events（监控视角）', async () => {
     const ctrl = createIntOrchController()
-    const result = await ctrl.getEvents({ source: 'payment' })
+    const result = await ctrl.getEvents({ source: 'payment' }) as { events: unknown[] }
     assert.ok(result.events)
   })
 
@@ -100,13 +100,13 @@ describe(`${ROLES.Operations} integration-orchestration 角色测试`, () => {
       source: 'resilience-ops',
       aggregateId: 'b-001',
       idempotencyKey: 'idem-retry-001'
-    })
+    }) as { idempotencyKey: string }
     assert.ok(result.idempotencyKey)
   })
 
   it('运营专员可以获取 idempotency records', async () => {
     const ctrl = createIntOrchController()
-    const result = await ctrl.getIdempotencyRecords({ source: 'payment' })
+    const result = await ctrl.getIdempotencyRecords({ source: 'payment' }) as { records: unknown[] }
     assert.ok(result.records)
   })
 })
@@ -116,10 +116,10 @@ describe(`${ROLES.Marketing} integration-orchestration 角色测试`, () => {
   it('营销可以 ingest webhook（通知回调）', async () => {
     const ctrl = createIntOrchController()
     const result = await ctrl.ingestWebhook('lyt', {
-      event: 'notification-callback',
+      eventId: 'notification-callback',
       payload: { campaignId: 'c-001', status: 'delivered' },
       signature: 'sig-001'
-    })
+    }) as { source: string; status: string }
     assert.equal(result.source, 'lyt')
     assert.equal(result.status, 'accepted')
   })
