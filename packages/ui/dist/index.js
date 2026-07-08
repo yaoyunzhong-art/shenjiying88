@@ -328,6 +328,7 @@ __export(index_exports, {
   ToggleButton: () => ToggleButton,
   ToggleGroup: () => ToggleGroup,
   Tooltip: () => Tooltip,
+  Tour: () => Tour,
   TrainingManagerDashboard: () => TrainingManagerDashboard,
   Transfer: () => Transfer,
   Tree: () => Tree,
@@ -66264,6 +66265,297 @@ function AsyncSelect({
     }
   );
 }
+
+// src/components/Tour.tsx
+var import_react181 = require("react");
+var import_jsx_runtime262 = require("react/jsx-runtime");
+function scrollIntoViewIfNeeded(selector) {
+  const el = document.querySelector(selector);
+  if (el) {
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+  return el;
+}
+var Tour = ({
+  open,
+  steps,
+  onClose,
+  onStepChange,
+  initialStep = 0,
+  maskColor = "rgba(0,0,0,0.5)",
+  className = "",
+  style,
+  showProgress = true,
+  showActions = true,
+  maskClosable = false
+}) => {
+  const [current, setCurrent] = (0, import_react181.useState)(initialStep);
+  const [targetRect, setTargetRect] = (0, import_react181.useState)(null);
+  const tooltipRef = (0, import_react181.useRef)(null);
+  const [tooltipStyle, setTooltipStyle] = (0, import_react181.useState)(
+    // SSR safe default: center the tooltip
+    { position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 10001 }
+  );
+  const [isHydrated, setIsHydrated] = (0, import_react181.useState)(false);
+  (0, import_react181.useEffect)(() => {
+    if (open) {
+      setCurrent(initialStep);
+    }
+    setIsHydrated(true);
+  }, [open, initialStep]);
+  const locateTarget = (0, import_react181.useCallback)(
+    (index) => {
+      const step2 = steps[index];
+      if (!step2) return;
+      const el = scrollIntoViewIfNeeded(step2.targetSelector);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        setTargetRect(rect);
+        setTimeout(() => {
+          if (tooltipRef.current) {
+            const tipRect = tooltipRef.current.getBoundingClientRect();
+            const placement = step2.placement ?? "bottom";
+            const gap = 12;
+            const tipW = tipRect.width;
+            const tipH = tipRect.height;
+            let top = 0;
+            let left = 0;
+            switch (placement) {
+              case "top":
+                top = rect.top - tipH - gap;
+                left = rect.left + rect.width / 2 - tipW / 2;
+                break;
+              case "bottom":
+                top = rect.bottom + gap;
+                left = rect.left + rect.width / 2 - tipW / 2;
+                break;
+              case "left":
+                top = rect.top + rect.height / 2 - tipH / 2;
+                left = rect.left - tipW - gap;
+                break;
+              case "right":
+                top = rect.top + rect.height / 2 - tipH / 2;
+                left = rect.right + gap;
+                break;
+              case "center":
+                top = window.innerHeight / 2 - tipH / 2;
+                left = window.innerWidth / 2 - tipW / 2;
+                break;
+            }
+            top = Math.max(8, Math.min(top, window.innerHeight - tipH - 8));
+            left = Math.max(8, Math.min(left, window.innerWidth - tipW - 8));
+            setTooltipStyle({
+              position: "fixed",
+              top,
+              left,
+              zIndex: 10001
+            });
+          }
+        }, 50);
+      } else {
+        setTargetRect(null);
+        setTooltipStyle({
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 10001
+        });
+      }
+    },
+    [steps]
+  );
+  (0, import_react181.useEffect)(() => {
+    if (open) {
+      setIsHydrated(true);
+      locateTarget(current);
+    }
+  }, [open, current, locateTarget]);
+  (0, import_react181.useEffect)(() => {
+    if (!open) return;
+    const handleResize = () => locateTarget(current);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [open, current, locateTarget]);
+  const handleNext = (0, import_react181.useCallback)(() => {
+    const next = current + 1;
+    if (next >= steps.length) {
+      onClose();
+    } else {
+      setCurrent(next);
+      onStepChange?.(next);
+    }
+  }, [current, steps.length, onClose, onStepChange]);
+  const handlePrev = (0, import_react181.useCallback)(() => {
+    if (current > 0) {
+      const prev = current - 1;
+      setCurrent(prev);
+      onStepChange?.(prev);
+    }
+  }, [current, onStepChange]);
+  const handleSkip = (0, import_react181.useCallback)(() => {
+    onClose();
+  }, [onClose]);
+  if (!open || steps.length === 0) return null;
+  const step = steps[current];
+  if (!step) return null;
+  const isFirst = current === 0;
+  const isLast = current === steps.length - 1;
+  return /* @__PURE__ */ (0, import_jsx_runtime262.jsxs)(import_jsx_runtime262.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime262.jsx)(
+      "div",
+      {
+        style: {
+          position: "fixed",
+          inset: 0,
+          background: maskColor,
+          zIndex: 9999,
+          cursor: maskClosable ? "pointer" : void 0
+        },
+        onClick: maskClosable ? handleSkip : void 0
+      }
+    ),
+    targetRect && /* @__PURE__ */ (0, import_jsx_runtime262.jsx)(
+      "div",
+      {
+        style: {
+          position: "fixed",
+          top: targetRect.top - 4,
+          left: targetRect.left - 4,
+          width: targetRect.width + 8,
+          height: targetRect.height + 8,
+          borderRadius: 4,
+          boxShadow: "0 0 0 9999px " + maskColor,
+          zIndex: 1e4,
+          pointerEvents: "none",
+          transition: "all 0.3s ease"
+        }
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime262.jsxs)(
+      "div",
+      {
+        ref: tooltipRef,
+        className,
+        style: {
+          ...tooltipStyle,
+          background: "#fff",
+          borderRadius: 8,
+          boxShadow: "0 8px 30px rgba(0,0,0,0.18)",
+          padding: 20,
+          maxWidth: 360,
+          minWidth: 220,
+          ...style
+        },
+        children: [
+          showProgress && /* @__PURE__ */ (0, import_jsx_runtime262.jsxs)(
+            "div",
+            {
+              style: {
+                fontSize: 12,
+                color: "#999",
+                marginBottom: 8
+              },
+              children: [
+                current + 1,
+                " / ",
+                steps.length
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime262.jsx)(
+            "h4",
+            {
+              style: {
+                margin: "0 0 8px",
+                fontSize: 16,
+                fontWeight: 600,
+                color: "#333"
+              },
+              children: step.title
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime262.jsx)(
+            "p",
+            {
+              style: {
+                margin: 0,
+                fontSize: 14,
+                lineHeight: 1.6,
+                color: "#666"
+              },
+              children: step.description
+            }
+          ),
+          showActions && /* @__PURE__ */ (0, import_jsx_runtime262.jsxs)(
+            "div",
+            {
+              style: {
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginTop: 16
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime262.jsx)("div", { children: !isFirst && /* @__PURE__ */ (0, import_jsx_runtime262.jsx)(
+                  "button",
+                  {
+                    onClick: handlePrev,
+                    style: {
+                      padding: "6px 14px",
+                      fontSize: 13,
+                      border: "1px solid #d9d9d9",
+                      borderRadius: 4,
+                      background: "#fff",
+                      cursor: "pointer",
+                      color: "#333"
+                    },
+                    children: step.prevText ?? "\u4E0A\u4E00\u6B65"
+                  }
+                ) }),
+                /* @__PURE__ */ (0, import_jsx_runtime262.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
+                  !isLast && step.showSkip !== false && /* @__PURE__ */ (0, import_jsx_runtime262.jsx)(
+                    "button",
+                    {
+                      onClick: handleSkip,
+                      style: {
+                        padding: "6px 14px",
+                        fontSize: 13,
+                        border: "none",
+                        borderRadius: 4,
+                        background: "transparent",
+                        cursor: "pointer",
+                        color: "#999"
+                      },
+                      children: "\u8DF3\u8FC7"
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime262.jsx)(
+                    "button",
+                    {
+                      onClick: handleNext,
+                      style: {
+                        padding: "6px 20px",
+                        fontSize: 13,
+                        border: "none",
+                        borderRadius: 4,
+                        background: "#1677ff",
+                        color: "#fff",
+                        cursor: "pointer",
+                        fontWeight: 500
+                      },
+                      children: isLast ? step.doneText ?? "\u5B8C\u6210" : step.nextText ?? "\u4E0B\u4E00\u6B65"
+                    }
+                  )
+                ] })
+              ]
+            }
+          )
+        ]
+      }
+    )
+  ] });
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -66564,6 +66856,7 @@ function AsyncSelect({
   ToggleButton,
   ToggleGroup,
   Tooltip,
+  Tour,
   TrainingManagerDashboard,
   Transfer,
   Tree,

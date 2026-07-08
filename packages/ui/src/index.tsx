@@ -1303,3 +1303,7 @@ export type { DonutChartProps, DonutSlice } from './components/DonutChart';
 // --------------- AsyncSelect ---------------
 export { AsyncSelect } from './components/AsyncSelect';
 export type { AsyncSelectProps } from './components/AsyncSelect';
+
+// --------------- Tour ---------------
+export { Tour } from './components/Tour';
+export type { TourProps, TourStep } from './components/Tour';
