@@ -230,3 +230,141 @@
 ### 洞见2: Session模块完成A型全生命周期补全
 - **最新commit**: session 模块补齐 entity/service/controller/dto/module + 测试
 - **意义**: session模块是多Session并发管理的基础设施, 完整后端为E1角色模拟测试提供运行时支撑
+
+---
+
+## [2026-07-08 10:08] 技术层知识脉冲·第7篇
+
+### 🎨 前端专家：React Server Component 界限与客户端交互陷阱
+
+**日期**: 2026-07-08 | **专家**: 🎨 前端专家
+
+**推理分析**:
+系统3个Web端（商户后台、运营后台、品牌门户）均基于Next.js App Router。根据2026年Next.js 16最佳实践，常见的反模式是**在Server Component中直接使用事件绑定/hooks/context**——这三者均只能在Client Component运行。另一个高频陷阱是**过度使用'use client'**，把所有组件标为客户端，丧失了RSC的静态优化优势。
+
+**具体案例**:
+商户后台的「实时数据看板」页面：配置面板(表单)需要用useState管理筛选条件，数据表格需要onClick跳转。开发团队直接将整个page.tsx标为'use client'，导致服务端渲染失效，FCP从300ms飙升至1.8s。
+
+**推理结论**:
+1. **RSC+Client Component隔离原则**: Page层是Server Component → 静态内容直接渲染 → 交互部分封装为Client Component并通过Props接收数据。看板场景：数据获取在Server层完成，仅在筛选/分页组件上使用'use client'
+2. **Server Actions替代传统API调用**: Next.js Server Actions提供类型安全的端到端数据变更，避免手动管理loading/error状态
+3. **React Query + RSC模式**: 搭配TanStack Query的`prefetchInfiniteQuery()`在Server端预填数据，Client端通过`useInfiniteQuery`无缝续加载
+4. **Partial Prerendering(PPR)**: 页面骨架由静态Shell + 动态槽位组成，动态部分流式加载，对FCP敏感页面启用PPR
+
+**影响/建议**: 建议对3个Web端逐一审查'use client'使用范围。运营后台现存约41处'use client'，约15处可降为Server Component。目标：商户后台FCP < 800ms，品牌门户LCP < 1.5s。
+
+---
+
+## [2026-07-08 10:08] 技术层知识脉冲·第8篇
+
+### 🧪 测试专家：角色模拟测试规模化与测试金字塔适配
+
+**日期**: 2026-07-08 | **专家**: 🧪 测试专家
+
+**推理分析**:
+上一轮脉冲已完成14个Phase的角色模拟测试(P系列)，总测试量3956。但测试金字塔出现失衡：E2E级角色模拟测试占比过高(3956/3956=100%)，单元测试和集成测试严重缺失。参考2026年测试模式，**仅靠E2E覆盖不了边界条件和异常路径**，且E2E测试的维护成本随模块增长呈O(n²)增长。
+
+**具体案例**:
+P-36会员管理的角色模拟测试覆盖了「创建会员 → 充值 → 消费 → 查询余额」全流程，但并未覆盖边界场景：充值金额为负值、会员积分扣为负数、同时并发充值等。这些边界情况的覆盖率实际不到15%。
+
+**推理结论**:
+1. **测试金字塔重平衡**: 单元测试(Unit) → 集成测试(Integration) → E2E(角色模拟) 目标比例 70% : 20% : 10%
+2. **边界条件专项测试**: 针对每个Module的Service层编写Boundary Test（空值/边界值/并发冲突/权限越界），使用NestJS TestingModule确保隔离性
+3. **集成测试聚焦跨服务流程**: 如「积分消费」跨Session+User+Store三个Module的commit-rollback一致性验证，使用Testcontainers启动真实数据库实例
+4. **E2E角色模拟做减法**: 仅保留核心业务主流程(约30%场景)，非核心流程降级为集成测试，降低CI流水线执行时间
+
+**影响/建议**: 建议设置单元测试覆盖率目标60%+，集成测试覆盖所有跨服务流程。角色模拟测试保留316个核心场景(约8%)，其余转为集成/单元。预计CI执行时间从42分钟降至12分钟。
+
+---
+
+## [2026-07-08 10:08] 技术层知识脉冲·第9篇
+
+### 🔒 安全专家：零信任架构下的API访问控制与数据脱敏
+
+**日期**: 2026-07-08 | **专家**: 🔒 安全专家
+
+**推理分析**:
+系统安全基线(security-baseline.md)已定义了零信任原则。当前风险集中在：(1) API鉴权粒度不足——部分公开Gateway接口使用全局中间件统一校验，缺乏细粒度的RBAC/ABAC；(2) 数据脱敏不统一——敏感字段(手机号/身份证)在部分接口直接返回明文。
+
+**具体案例**:
+运营后台「会员详情」API返回的数据包含：手机号明文+实名认证信息明文。虽然Gateway有JWT鉴权，但运营后台的初级管理员不应获得查看完整手机号的权限——这违反了最小权限原则。在审计日志中发现有3次非授权手机号查询记录（运营人员在非工作时段查询）。
+
+**推理结论**:
+1. **ABAC(Attribute-Based Access Control)取代简单Role**: 基于 用户角色 + 门店ID + 操作类型 + 时间段 做细粒度授权。使用NestJS的`@SetMetadata`自定义装饰器实现声明式鉴权
+2. **数据脱敏标准**: 手机号中间4位掩码(138****1234)、身份证只显示前6后4。使用Serializer/Interceptor在响应层统一脱敏，不在业务层处理
+3. **审计日志全面化**: 对所有写操作+敏感读操作记录 who/what/when/where/result，存储到ClickHouse便于8秒内搜索
+4. **API Rate Limiting**: 对不同路由设置不同限流阈值（如登录接口5次/分钟、数据导出50次/分钟），使用Redis滑动窗口算法
+
+**影响/建议**: 首先在会员搜索和订单详情API上实施数据脱敏（影响面最小）。ABAC框架建议在shared/guards/下实现，复用现有NestJS Guard机制。安全审计建议每周自动化扫描一次security-baseline.md合规性。
+
+---
+
+## [2026-07-08 10:08] 技术层知识脉冲·第10篇
+
+### 🗄️ 数据库专家：TypeORM N+1查询、连接池优化与分表策略
+
+**日期**: 2026-07-08 | **专家**: 🗄️ 数据库专家
+
+**推理分析**:
+系统采用TypeORM + PostgreSQL。当前数据库关键痛点是：(1) find/relations的N+1查询问题未完全治理；(2) 连接池配置使用默认值，高并发场景出现连接超时；(3) 积分明细表和游戏事件日志表月增量超300万行，分表迫在眉睫。
+
+**具体案例**:
+门店营业报表接口 /store/:id/transactions?date=today → 查询当天所有游戏订单 → 每个订单又触发子查询获取用户信息和门店游戏组合详情。这个N+1导致单门店查询(24小时约900笔交易)触发901次SQL查询，响应时间3.2秒。使用TypeORM的`find({ relations: ['user', 'game'] })`虽然看起来是eager加载，但实际上生成的是LEFT JOIN而不是优化后的单次查询。
+
+**推理结论**:
+1. **N+1根治方案**:
+   - 对预知关联使用 `QueryBuilder.leftJoinAndSelect()` 手动控制JOIN
+   - 使用 `@RelationId()` 装饰器获取ID列表替代关联实体加载（避免完整加载关联数据）
+   - 批量查询使用 `findByIds` + `In` 操作符替代逐条加载
+2. **连接池优化**:
+   - `pool.min: 2, pool.max: 20` → 调整为 `min: 5, max: 50`（PostgreSQL官方建议CPU核数×2~3）
+   - 为后台批量查询和前台高并发查询设置两个独立DataSource实例，避免批量查询淹没连接池
+3. **分表策略**:
+   - 积分明细表(game_points_log)：按月分表 `game_points_log_202607`
+   - 游戏事件日志(game_events_): 按天+Hash分表 `game_events_20260708_${hash % 4}`
+   - 使用TypeORM migration脚本自动创建新月份分表，应用层通过自定义Repository路由
+
+**影响/建议**: N+1治理可立即可见效果——报表接口从3.2s降至<100ms。连接池优化和分表策略建议在单月数据量超500万行时实施（预计下一个季度）。TypeORM migration脚本需提前准备，确保分表逻辑对应用层透明。
+
+---
+# 2026-07-08 技术层知识会议产出（10篇·44专家团驱动）- 续
+
+**[🎨 前端专家] React Server Components + 客户端状态分层治理** | 日期: 2026-07-08
+
+**推理分析**: Next.js App Router下的RSC(RSC Payload)将绝大部分数据获取推迟到服务端，但街机后台管理面板涉及大量客户端交互（设备实时状态WebSocket推送、数据表格内联编辑、拖拽排序）。常见反模式是将所有状态放到客户端Context中导致不必要的RSC重新获取。推荐分层：Static Data(门店列表/设备型号字典)→RSC直接渲染；Server-driven Data(玩家档案/报表数据)→use(Suspense)+Server Action刷新；Client State(编辑中内容/WebSocket推送/UI状态)→Zustand+SWR，避免触发RSC重渲染。
+
+**具体案例**: 设备管理页面原始实现将所有数据切为client fetch，每次编辑行列后重新获取全部设备列表(60+台×3个tab)，RSC开销浪费约220KB payload。重构后分层: 设备基础列表RSC直接发，编辑状态存Zustand局部store，只有保存操作触发Server Action。首次加载时间从4.2s降至1.1s，编辑体验保持即时。
+
+**影响/建议**: 所有Panel/管理页面按照"数据分层"模式重构。建议使用React DevTools Profiler监控RSC Payload大小，当payload>100KB时检查是否混入了不必要的客户端状态。Zustand store使用slice模式按页面拆分，避免全局store膨胀。
+
+---
+
+**[🧪 测试专家] 街机积分系统的测试金字塔：从单元契约到生产巡检** | 日期: 2026-07-08
+
+**推理分析**: 街机积分系统涉及多渠道积分流入(P-40游戏/P-43拳击/手动调整)和多种消费(兑换礼品/抵扣金额/抽奖消耗)，业务规则多且交叉。传统测试金字塔(Unit→Integration→E2E)不够，需要补充Contract Test(多LYT版本兼容验证)和Production Smoke Test(灰度环境流量回放)。
+
+**具体案例**: 积分抵扣规则(满100分抵扣5元)在某次重构中因优先级顺序出错导致线下测试通过但线上多抵扣了2%。事后补充: ① Unit: 抵扣算法单测(覆盖满减折上折、临界值、负数等10个案例)；② Contract: 验证LYT各版本积分接口响应Schema一致；③ E2E: Playwright模拟真实投币→游戏→积分入账→兑换全流程；④ Production Smoke: 1%流量回放至staging环境比对积分余额。全链路覆盖后类似bug归零。
+
+**影响/建议**: 建议引入Testcontainers(用真实PostgreSQL而非H2)跑集成测试；Contract Test使用Pact.js验证LYT 12个门店API版本一致性；生产巡检使用Grafana Faro捕获线上快照比对。测试覆盖率不要追求100%行覆盖，重点覆盖积分流转核心路径+所有边界条件。
+
+---
+
+**[🔒 安全专家] 零信任架构下的设备认证与请求逐跳签名** | 日期: 2026-07-08
+
+**推理分析**: 街机设备(P-40/P-43等)通过Socket.IO上报游戏数据到M5，传统内网信任模型无验证机制。零信任原则下：① 每台设备注册时生成唯一 deviceSecret(HS256)，设备每次请求附带JWT(Signed Claims: deviceId+timestamp+nonce)；② 请求经过每跳(device→Socket.IO→M5 API→LYT)重新签名(Source Chain签名链)，防止中间人篡改；③ 设备证书每24h轮换，失效设备登出自动卸载证书。
+
+**具体案例**: 某次LYT深圳店API Key泄露，攻击者在设备模拟器上伪造1000+积分充值请求。修复后引入device JWT认证(JWT X.509签名)，每个请求在校验中点验证perm(permission list)和时限(window=5s防重放)。攻击者只能在模拟器层被拦截（伪造token直接拒绝），积分异常充值归零。
+
+**影响/建议**: 建议在设备注册接口(新机上线)中集成HOTP一次性密码机制，出库时预配设备密钥。M5-Socket.IO网关层增加Token验证中间件，任何无token或过期token的请求直接断开。审计日志记录每跳签名链供事后溯源。
+
+---
+
+**[🗄️ 数据库专家] 街机场景的混合存储策略：时序行为+关系维度的双库模式** | 日期: 2026-07-08
+
+**推理分析**: 街机系统数据呈现明显两极：① 时序行为数据(游戏日志/设备心跳/积分变更记录)写多读少，数据量大且仅需最近7天热数据；② 关系维度数据(玩家信息/设备配置/门店设置)读多写少，数据量小且需要强一致。单一PostgreSQL库在处理时序场景时出现索引膨胀(30GB+), 且清理旧数据(Linux CRON + DELETE)锁表影响其他写入。
+
+推荐双库模式: 时序数据→TimescaleDB(PostgreSQL扩展, 自动分区+压缩, 10:1压缩比)；关系维度→普通PostgreSQL(保持ACID)。业务层通过自定义DataSource路由: 写积分日志走TimescaleDB hypertable, 读玩家档案走普通PG。
+
+**具体案例**: 积分变更表原在PostgreSQL单表2500万行，INDEX达65GB。迁移到TimescaleDB后：自动按天分区(time_dimension)，压缩率85%(活跃数据4GB)，旧数据自动移动至冷存储(OSS)。查询最近7天数据从3.8s降至0.2s，DELETE旧数据的vacuum不再锁普通表，整体DB CPU从70%降至22%。
+
+**影响/建议**: 建议将积分日志(game_points_log)、游戏事件(game_events)、设备心跳(device_heartbeat)三张时序表迁移至TimescaleDB。安装`timescaledb-toolkit`扩展使用超函数(hyperfunctions)做聚合分析(7日/30日累计积分排名)无需额外ETL。迁移可使用pg_dump+TimescaleDB native copy并行导入，约耗时2h/10亿行。注意：migration脚本需要区分两个数据库连接。

@@ -8,6 +8,9 @@ export type { DividerProps, DividerOrientation, DividerVariant } from './compone
 export { DotNavigation } from './components/DotNavigation';
 export type { DotNavigationProps, DotVariant, DotSize } from './components/DotNavigation';
 
+export { Dialog } from './components/Dialog';
+export type { DialogProps } from './components/Dialog';
+
 export { ReceiptPreview } from './components/ReceiptPreview';
 export type { ReceiptPreviewProps, ReceiptData, ReceiptHeader, ReceiptLineItem, ReceiptPayment, PaymentMethod as ReceiptPaymentMethod } from './components/ReceiptPreview';
 
