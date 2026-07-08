@@ -32,7 +32,7 @@ export interface Vulnerability {
   falsePositive: boolean
 }
 
-interface ScanTarget {
+export interface ScanTarget {
   endpoint: string
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
   parameters?: Record<string, string>

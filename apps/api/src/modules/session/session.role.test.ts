@@ -169,8 +169,6 @@ describe('🎯运行专员 session 角色测试', () => {
     ctrl.createSession({ userId: 'u1', tenantId: 't1', deviceInfo: { deviceId: 'd1', deviceType: 'web' } })
     ctrl.createSession({ userId: 'u2', tenantId: 't2', deviceInfo: { deviceId: 'd2', deviceType: 'mobile' } })
 
-    const stats = ctrl.getWSConnections ? ctrl.getWSConnections() : null
-    // session 统计数据通过 service 查询
     const u1 = svc.getUserSessions('u1').length
     const u2 = svc.getUserSessions('u2').length
     expect(u1).toBe(1)
