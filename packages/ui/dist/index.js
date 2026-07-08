@@ -38,6 +38,7 @@ __export(index_exports, {
   AICompetitiveAnalysisPanel: () => AICompetitiveAnalysisPanel,
   AIDecisionComparisonPanel: () => AIDecisionComparisonPanel,
   AIDecisionEffectivenessBoard: () => AIDecisionEffectivenessBoard,
+  AIDecisionExplainerPanel: () => AIDecisionExplainerPanel,
   AIDecisionPanel: () => AIDecisionPanel,
   AIDecisionRuleChain: () => AIDecisionRuleChain,
   AIDecisionTimeline: () => AIDecisionTimeline,
@@ -64391,6 +64392,347 @@ function FeedbackList({
     entry.id
   )) });
 }
+
+// src/components/AIDecisionExplainerPanel.tsx
+var import_react177 = __toESM(require("react"));
+var import_jsx_runtime255 = require("react/jsx-runtime");
+var FACTOR_TYPE_CONFIG = {
+  positive: { color: "#52c41a", bg: "#f6ffed", label: "\u6B63\u5411\u8D21\u732E" },
+  negative: { color: "#f5222d", bg: "#fff2f0", label: "\u8D1F\u5411\u6291\u5236" },
+  neutral: { color: "#1677ff", bg: "#e6f4ff", label: "\u4E2D\u6027\u53C2\u8003" }
+};
+var STEP_STATUS_CONFIG = {
+  completed: { icon: "\u2705", color: "#52c41a" },
+  running: { icon: "\u{1F504}", color: "#1677ff" },
+  pending: { icon: "\u23F3", color: "#8c8c8c" },
+  failed: { icon: "\u274C", color: "#f5222d" }
+};
+function ConfidenceRing({ value, size = 80 }) {
+  const radius = (size - 8) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - value);
+  const strokeColor = value >= 0.8 ? "#52c41a" : value >= 0.5 ? "#faad14" : "#f5222d";
+  return /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { position: "relative", width: size, height: size, flexShrink: 0 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("svg", { width: size, height: size, viewBox: `0 0 ${size} ${size}`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(
+        "circle",
+        {
+          cx: size / 2,
+          cy: size / 2,
+          r: radius,
+          fill: "none",
+          stroke: "#f0f0f0",
+          strokeWidth: 4
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(
+        "circle",
+        {
+          cx: size / 2,
+          cy: size / 2,
+          r: radius,
+          fill: "none",
+          stroke: strokeColor,
+          strokeWidth: 4,
+          strokeDasharray: circumference,
+          strokeDashoffset: offset,
+          strokeLinecap: "round",
+          transform: `rotate(-90 ${size / 2} ${size / 2})`,
+          style: { transition: "stroke-dashoffset 0.6s ease" }
+        }
+      )
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(
+      "div",
+      {
+        style: {
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: size > 60 ? 18 : 14,
+          fontWeight: 700,
+          color: strokeColor
+        },
+        children: [
+          (value * 100).toFixed(0),
+          "%"
+        ]
+      }
+    )
+  ] });
+}
+function FactorBar({ factor }) {
+  const cfg = FACTOR_TYPE_CONFIG[factor.type];
+  const barWidth = Math.min(Math.abs(factor.weight), 100);
+  return /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { marginBottom: 10 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }, children: [
+      factor.icon && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { style: { fontSize: 14 }, children: factor.icon }),
+      /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { style: { flex: 1, fontSize: 13, fontWeight: 500, color: "#1f1f1f" }, children: factor.name }),
+      /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("span", { style: { fontSize: 11, color: "#8c8c8c" }, children: [
+        factor.weight,
+        "%"
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(
+        "span",
+        {
+          style: {
+            fontSize: 10,
+            padding: "1px 6px",
+            borderRadius: 8,
+            background: cfg.bg,
+            color: cfg.color,
+            fontWeight: 500
+          },
+          children: cfg.label
+        }
+      )
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(
+      "div",
+      {
+        style: {
+          width: "100%",
+          height: 6,
+          borderRadius: 3,
+          background: "#f0f0f0",
+          overflow: "hidden"
+        },
+        children: /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(
+          "div",
+          {
+            style: {
+              width: `${barWidth}%`,
+              height: "100%",
+              borderRadius: 3,
+              background: cfg.color,
+              opacity: 0.8,
+              transition: "width 0.5s ease"
+            }
+          }
+        )
+      }
+    ),
+    factor.description && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { style: { fontSize: 12, color: "#8c8c8c", marginTop: 2, lineHeight: 1.4 }, children: factor.description }),
+    factor.details && factor.details.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("ul", { style: { margin: "4px 0 0", paddingLeft: 16, fontSize: 12, color: "#595959" }, children: factor.details.map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("li", { style: { marginBottom: 2 }, children: d }, i)) })
+  ] });
+}
+function CandidateCard({ candidate }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(
+    "div",
+    {
+      style: {
+        padding: 12,
+        borderRadius: 10,
+        border: `1px solid ${candidate.selected ? "#1677ff" : "#f0f0f0"}`,
+        background: candidate.selected ? "#e6f4ff" : "#fff",
+        position: "relative"
+      },
+      children: [
+        candidate.selected && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(
+          "span",
+          {
+            style: {
+              position: "absolute",
+              top: -6,
+              right: -6,
+              background: "#1677ff",
+              color: "#fff",
+              fontSize: 10,
+              padding: "1px 6px",
+              borderRadius: 8,
+              fontWeight: 600
+            },
+            children: "\u5DF2\u9009"
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { style: { fontSize: 14, fontWeight: 600, color: "#1f1f1f" }, children: candidate.label }),
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { style: { fontSize: 16, fontWeight: 700, color: candidate.score >= 70 ? "#52c41a" : "#faad14" }, children: candidate.score })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { marginBottom: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { style: { fontSize: 11, color: "#8c8c8c" }, children: "\u7F6E\u4FE1\u5EA6 " }),
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("span", { style: { fontSize: 12, fontWeight: 600, color: candidate.confidence >= 0.8 ? "#52c41a" : "#faad14" }, children: [
+            (candidate.confidence * 100).toFixed(0),
+            "%"
+          ] })
+        ] }),
+        candidate.strengths && candidate.strengths.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { marginBottom: 4 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { style: { fontSize: 11, color: "#52c41a", fontWeight: 500 }, children: "\u4F18\u52BF: " }),
+          candidate.strengths.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("span", { style: { fontSize: 11, color: "#595959" }, children: [
+            s,
+            i < candidate.strengths.length - 1 ? ", " : ""
+          ] }, i))
+        ] }),
+        candidate.weaknesses && candidate.weaknesses.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { style: { fontSize: 11, color: "#f5222d", fontWeight: 500 }, children: "\u52A3\u52BF: " }),
+          candidate.weaknesses.map((w, i) => /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("span", { style: { fontSize: 11, color: "#595959" }, children: [
+            w,
+            i < candidate.weaknesses.length - 1 ? ", " : ""
+          ] }, i))
+        ] })
+      ]
+    }
+  );
+}
+function AIDecisionExplainerPanel({
+  data,
+  title = "AI \u51B3\u7B56\u89E3\u91CA",
+  collapsible = true,
+  defaultExpanded = true,
+  variant = "pc"
+}) {
+  const [expanded, setExpanded] = import_react177.default.useState(defaultExpanded);
+  const isH5 = variant === "h5";
+  return /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(
+    "div",
+    {
+      "data-testid": "ai-decision-explainer-panel",
+      style: {
+        borderRadius: 16,
+        border: "1px solid #e8e8e8",
+        background: "#fff",
+        overflow: "hidden",
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(
+          "div",
+          {
+            "data-testid": "explainer-header",
+            onClick: () => collapsible && setExpanded(!expanded),
+            style: {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: isH5 ? "14px 16px" : "16px 20px",
+              cursor: collapsible ? "pointer" : "default",
+              borderBottom: expanded ? "1px solid #f0f0f0" : "none",
+              background: "#fafafa"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { style: { fontSize: 20 }, children: "\u{1F914}" }),
+                /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { style: { fontSize: isH5 ? 15 : 16, fontWeight: 600, color: "#1f1f1f" }, children: title }),
+                  /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { fontSize: 12, color: "#8c8c8c", marginTop: 2 }, children: [
+                    data.decisionType,
+                    " \xB7 ",
+                    data.decisionId.slice(0, 8),
+                    "..."
+                  ] })
+                ] })
+              ] }),
+              collapsible && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { style: { fontSize: 16, color: "#8c8c8c", transition: "transform 0.2s", transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }, children: "\u25BC" })
+            ]
+          }
+        ),
+        expanded && /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { padding: isH5 ? 16 : 20 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(
+            "div",
+            {
+              style: {
+                display: "flex",
+                gap: isH5 ? 12 : 20,
+                alignItems: isH5 ? "flex-start" : "center",
+                flexDirection: isH5 ? "column" : "row",
+                marginBottom: 20,
+                padding: 16,
+                borderRadius: 12,
+                background: "#fafafa"
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(ConfidenceRing, { value: data.overallConfidence, size: isH5 ? 64 : 80 }),
+                /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { flex: 1 }, children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { style: { fontSize: 20, fontWeight: 700, color: "#1f1f1f", marginBottom: 4 }, children: data.finalDecision }),
+                  /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { style: { fontSize: 13, color: "#595959", lineHeight: 1.6, marginBottom: 4 }, children: data.summary }),
+                  data.alternative && /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { fontSize: 12, color: "#faad14", background: "#fffbe6", padding: "6px 10px", borderRadius: 8, marginTop: 4 }, children: [
+                    "\u{1F4A1} \u5907\u9009\u5EFA\u8BAE: ",
+                    data.alternative
+                  ] })
+                ] })
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("section", { style: { marginBottom: 20 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("h4", { style: { fontSize: 14, fontWeight: 600, color: "#1f1f1f", margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { children: "\u{1F4CA}" }),
+              " \u5F71\u54CD\u56E0\u7D20\u5206\u6790"
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { "data-testid": "factors-section", children: data.factors.map((factor, i) => /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(FactorBar, { factor }, i)) })
+          ] }),
+          data.candidates && data.candidates.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("section", { style: { marginBottom: 20 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("h4", { style: { fontSize: 14, fontWeight: 600, color: "#1f1f1f", margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { children: "\u2696\uFE0F" }),
+              " \u5019\u9009\u65B9\u6848\u5BF9\u6BD4"
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(
+              "div",
+              {
+                "data-testid": "candidates-section",
+                style: {
+                  display: "grid",
+                  gridTemplateColumns: `repeat(${Math.min(data.candidates.length, isH5 ? 1 : 2)}, 1fr)`,
+                  gap: 10
+                },
+                children: data.candidates.map((c) => /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(CandidateCard, { candidate: c }, c.id))
+              }
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("section", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("h4", { style: { fontSize: 14, fontWeight: 600, color: "#1f1f1f", margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { children: "\u{1F50D}" }),
+              " \u51B3\u7B56\u6267\u884C\u94FE\u8DEF"
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { "data-testid": "steps-section", children: data.steps.map((step) => {
+              const cfg = STEP_STATUS_CONFIG[step.status] || { icon: "\u2753", color: "#8c8c8c" };
+              return /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    gap: 10,
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f5f5f5",
+                    alignItems: "flex-start"
+                  },
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", minWidth: 24 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { style: { fontSize: 14 }, children: cfg.icon }),
+                      step.order < data.steps.length && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { style: { width: 1, height: "100%", minHeight: 16, background: "#e8e8e8", marginTop: 4 } })
+                    ] }),
+                    /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { flex: 1 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("span", { style: { fontSize: 13, fontWeight: 500, color: "#1f1f1f" }, children: [
+                          step.order,
+                          ". ",
+                          step.name
+                        ] }),
+                        step.durationMs !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("span", { style: { fontSize: 11, color: "#8c8c8c" }, children: [
+                          step.durationMs,
+                          "ms"
+                        ] })
+                      ] }),
+                      step.output && /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { style: { fontSize: 12, color: "#595959", marginTop: 2, lineHeight: 1.5 }, children: step.output })
+                    ] })
+                  ]
+                },
+                step.order
+              );
+            }) })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)("div", { style: { marginTop: 16, textAlign: "right", fontSize: 11, color: "#bfbfbf" }, children: [
+            "\u51B3\u7B56\u65F6\u95F4: ",
+            data.timestamp,
+            " \xB7 ID: ",
+            data.decisionId
+          ] })
+        ] })
+      ]
+    }
+  );
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -64401,6 +64743,7 @@ function FeedbackList({
   AICompetitiveAnalysisPanel,
   AIDecisionComparisonPanel,
   AIDecisionEffectivenessBoard,
+  AIDecisionExplainerPanel,
   AIDecisionPanel,
   AIDecisionRuleChain,
   AIDecisionTimeline,

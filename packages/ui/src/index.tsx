@@ -1261,3 +1261,14 @@ export type {
   FeedbackListProps,
   FeedbackEntry,
 } from './components/FeedbackList';
+
+// --------------- AIDecisionExplainerPanel ---------------
+export { AIDecisionExplainerPanel } from './components/AIDecisionExplainerPanel';
+export type {
+  AIDecisionExplainerPanelProps,
+  ExplainabilityData,
+  DecisionFactor,
+  FactorType,
+  DecisionCandidate,
+  DecisionStep,
+} from './components/AIDecisionExplainerPanel';
