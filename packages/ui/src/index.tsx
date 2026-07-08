@@ -897,6 +897,9 @@ export type { TypographyProps, TextVariant, TextColor, TextWeight, TextAlign, Te
 export { ReconnectingBadge } from './components/ReconnectingBadge';
 export type { ReconnectingBadgeProps, ReconnectingState } from './components/ReconnectingBadge';
 
+export { OfflineBadge } from './components/OfflineBadge';
+export type { OfflineBadgeProps, OfflineStatus } from './components/OfflineBadge';
+
 export { EntertainmentGuideDashboard } from './components/EntertainmentGuideDashboard';
 export type {
   EntertainmentGuideDashboardProps,
