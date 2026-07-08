@@ -12,7 +12,7 @@ import {
   CampaignPlanner,
   AIMarketingCMOService,
 } from './ai-marketing-cmo.service'
-import type { ROIResult, GeneratedCopy, ReachEstimate, BudgetAllocation, TimelineMilestone } from './ai-marketing-cmo.service'
+import type { ROIResult, GeneratedCopy, ReachEstimate, BudgetAllocation, TimelineMilestone, CampaignType, CampaignConfig, CopyBrief, Channel, Locale } from './ai-marketing-cmo.service'
 
 @Injectable()
 export class AiMarketingService {
@@ -40,35 +40,21 @@ export class AiMarketingService {
   /**
    * 预测新活动 ROI
    */
-  projectROI(config: {
-    type: string
-    budget: number
-    expectedCPM?: number
-    expectedCTR?: number
-    expectedConversionRate?: number
-    averageOrderValue?: number
-  }) {
+  projectROI(config: CampaignConfig) {
     return this.roiService.projectROI(config)
   }
 
   /**
    * 获取最优预算分配
    */
-  getOptimalBudget(campaignType: string, totalBudget: number): BudgetAllocation[] {
+  getOptimalBudget(campaignType: CampaignType, totalBudget: number): BudgetAllocation[] {
     return this.roiService.getOptimalBudget(campaignType, totalBudget)
   }
 
   /**
    * 生成营销文案
    */
-  generateCopy(brief: {
-    product: string
-    goal: string
-    audience: string
-    tone?: string
-    length?: string
-    cta?: string
-  }): GeneratedCopy {
+  generateCopy(brief: CopyBrief): GeneratedCopy {
     return this.copywritingService.generateCopy(brief)
   }
 
@@ -86,34 +72,34 @@ export class AiMarketingService {
     content: { headline: string; body: string; cta: string; taglines: string[] },
     locale: string,
   ) {
-    return this.copywritingService.localizeCopy(content, locale as any)
+    return this.copywritingService.localizeCopy(content, locale as Locale)
   }
 
   /**
    * 生成 A/B 测试变体
    */
-  generateABTestVariants(brief: string, count: number): GeneratedCopy[] {
+  generateABTestVariants(brief: CopyBrief, count: number): GeneratedCopy[] {
     return this.copywritingService.abTestVariants(brief, count)
   }
 
   /**
    * 推荐活动类型
    */
-  suggestCampaignType(goal: string, budget: number, audience: number) {
-    return this.campaignPlanner.suggestCampaignType(goal, budget, audience)
+  suggestCampaignType(goal: 'awareness' | 'conversion' | 'retention' | 'brand', budget: number, audience: number) {
+    return this.campaignPlanner.suggestCampaignType(goal, budget, String(audience))
   }
 
   /**
    * 规划活动时间线
    */
   planCampaignTimeline(goal: string): TimelineMilestone[] {
-    return this.campaignPlanner.planCampaignTimeline(goal)
+    return this.campaignPlanner.planCampaignTimeline(goal as 'awareness' | 'conversion' | 'retention')
   }
 
   /**
    * 预估触达人数
    */
-  estimateReach(audience: number, channel: string): ReachEstimate {
+  estimateReach(audience: number, channel: Channel): ReachEstimate {
     return this.campaignPlanner.estimateReach(audience, channel)
   }
 
@@ -133,8 +119,8 @@ export class AiMarketingService {
       : undefined
     const reach = options?.includeReach
       ? [
-          this.campaignPlanner.estimateReach(50000, 'wechat'),
-          this.campaignPlanner.estimateReach(50000, 'douyin'),
+          this.campaignPlanner.estimateReach(50000, 'wechat' as Channel),
+          this.campaignPlanner.estimateReach(50000, 'douyin' as Channel),
         ]
       : undefined
 

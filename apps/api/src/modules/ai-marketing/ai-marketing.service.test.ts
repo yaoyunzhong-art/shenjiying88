@@ -34,7 +34,7 @@ describe('AiMarketingService', () => {
     roiService = new MarketingROIService()
     copyService = new CopywritingAssistant()
     campaignPlanner = new CampaignPlanner()
-    cmoService = new AIMarketingCMOService()
+    cmoService = new AIMarketingCMOService(roiService, copyService, campaignPlanner)
     service = new AiMarketingService(roiService, copyService, campaignPlanner, cmoService)
   })
 
