@@ -14,6 +14,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { SandboxController } from './sandbox.controller';
 import { SandboxService, ISVAppStore, SDKMultiLangService } from './sandbox-isv.service';
 import type { AppCategory, SDKLanguage, CodeLanguage } from './sandbox-isv.service';
+import { AppResponseDto, AppInstallResponseDto } from './sandbox.dto';
 
 // ── 角色定义 ──
 const ROLES = {
@@ -118,9 +119,10 @@ describe(`${ROLES.FrontDesk} ISV 应用管理`, () => {
     const app = await ctrl.publishApp({ ...sampleApp, name: '前台收银' });
 
     const install = await ctrl.installApp(app.id, { tenantId: 'store-001' });
-    expect(install.status).toBe('ACTIVE');
-    expect(install.appId).toBe(app.id);
-    expect(install.tenantId).toBe('store-001');
+    const r = install as AppInstallResponseDto;
+    expect(r.status).toBe('ACTIVE');
+    expect(r.appId).toBe(app.id);
+    expect(r.tenantId).toBe('store-001');
   });
 
   it('重复安装同一应用返回已存在记录', async () => {
@@ -128,7 +130,7 @@ describe(`${ROLES.FrontDesk} ISV 应用管理`, () => {
     await ctrl.installApp(app.id, { tenantId: 'store-002' });
     const duplicate = await ctrl.installApp(app.id, { tenantId: 'store-002' });
     // 第二次安装返回已有记录
-    expect(duplicate.status).toBe('ACTIVE');
+    expect((duplicate as AppInstallResponseDto).status).toBe('ACTIVE');
   });
 
   it('安装不存在的应用返回错误', async () => {
@@ -305,8 +307,9 @@ describe(`${ROLES.Guide} 应用评价与市场运营`, () => {
   it('首次评分后评分等于打分数', async () => {
     const app = await ctrl.publishApp({ ...sampleApp, name: '积分系统' });
     const rated = await ctrl.rateApp(app.id, { rating: 4 });
-    expect(rated.rating).toBe(4);
-    expect(rated.ratingCount).toBe(1);
+    const r = rated as AppResponseDto;
+    expect(r.rating).toBe(4);
+    expect(r.ratingCount).toBe(1);
   });
 
   it('多次评分后评分取加权平均', async () => {
@@ -314,9 +317,10 @@ describe(`${ROLES.Guide} 应用评价与市场运营`, () => {
     await ctrl.rateApp(app.id, { rating: 5 });
     await ctrl.rateApp(app.id, { rating: 3 });
     const rated = await ctrl.rateApp(app.id, { rating: 4 });
+    const r = rated as AppResponseDto;
     // (5+3+4)/3 = 4
-    expect(rated.rating).toBe(4);
-    expect(rated.ratingCount).toBe(3);
+    expect(r.rating).toBe(4);
+    expect(r.ratingCount).toBe(3);
   });
 
   it('无效评分（超出1-5范围）返回错误信息', async () => {
@@ -331,7 +335,7 @@ describe(`${ROLES.Guide} 应用评价与市场运营`, () => {
     await ctrl.installApp(app.id, { tenantId: 'store-g-02' });
 
     const getApp = await ctrl.getApp(app.id);
-    expect(getApp.installCount).toBe(2);
+    expect((getApp as AppResponseDto).installCount).toBe(2);
   });
 
   it('按分类过滤应用', async () => {

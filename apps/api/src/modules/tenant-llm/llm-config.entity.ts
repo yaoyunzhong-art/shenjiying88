@@ -84,6 +84,8 @@ export interface LLMStats {
   avgLatencyMs: number
   periodStart: string
   periodEnd: string
+  /** 成功率 (0-100), undefined when totalCalls === 0 */
+  successRate?: number
 }
 
 /** 调用日志 */

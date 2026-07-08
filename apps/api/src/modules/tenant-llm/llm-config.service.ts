@@ -220,6 +220,7 @@ export class TenantLLMService {
       totalCost,
       currency: 'USD',
       avgLatencyMs,
+      successRate: totalCalls > 0 ? Math.round((successCalls / totalCalls) * 10000) / 100 : undefined,
       periodStart: periodStart || logs[0]?.createdAt || new Date().toISOString(),
       periodEnd: periodEnd || new Date().toISOString(),
     }
