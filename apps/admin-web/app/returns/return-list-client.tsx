@@ -71,10 +71,7 @@ export function ReturnListClient({ returns }: { returns: ReturnRequest[] }) {
     ? filteredItems
     : filteredItems.filter((r) => r.status === statusFilter);
 
-  const { page, totalPages, setPage } = usePagination({
-    total: visibleReturns.length,
-    pageSize: 10,
-  });
+  const { page, totalPages, setPage } = usePagination(visibleReturns.length, 10);
 
   const paginatedReturns = visibleReturns.slice((page - 1) * 10, page * 10);
 
@@ -207,9 +204,7 @@ export function ReturnListClient({ returns }: { returns: ReturnRequest[] }) {
             <p><strong>客户：</strong>{selectedReturn.customerName} ({selectedReturn.customerPhone})</p>
             <p><strong>类型：</strong>{RETURN_TYPE_LABELS[selectedReturn.returnType]}</p>
             <p><strong>状态：</strong>
-              <StatusBadge variant={RETURN_STATUS_VARIANTS[selectedReturn.status]}>
-                {RETURN_STATUS_LABELS[selectedReturn.status]}
-              </StatusBadge>
+              <StatusBadge variant={RETURN_STATUS_VARIANTS[selectedReturn.status]} label={RETURN_STATUS_LABELS[selectedReturn.status]} />
             </p>
             <p><strong>退款金额：</strong>{formatPrice(selectedReturn.refundAmount)}</p>
             {selectedReturn.exchangeExtra !== undefined && selectedReturn.exchangeExtra > 0 && (
