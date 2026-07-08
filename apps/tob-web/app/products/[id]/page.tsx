@@ -76,7 +76,39 @@ export default function ProductDetailPage() {
 
   // 弹窗
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
-  const { submitting, feedback, handleSubmit } = useFormSubmit();
+  const [activeAction, setActiveAction] = useState<'save' | 'toggleStatus' | 'delete' | null>(null);
+
+  const saveSubmit = useFormSubmit({
+    onSubmit: async () => {
+      await new Promise((r) => setTimeout(r, 800));
+      setEditMode(false);
+    },
+    successMessage: '商品信息已更新',
+    defaultErrorMessage: '保存失败，请重试',
+  });
+
+  const toggleSubmit = useFormSubmit({
+    onSubmit: async () => {
+      await new Promise((r) => setTimeout(r, 600));
+    },
+    successMessage: product?.status === 'active' ? '商品已下架' : '商品已上架',
+    defaultErrorMessage: '操作失败',
+  });
+
+  const deleteSubmit = useFormSubmit({
+    onSubmit: async () => {
+      await new Promise((r) => setTimeout(r, 600));
+    },
+    successMessage: '商品已删除',
+    defaultErrorMessage: '删除失败',
+  });
+
+  const getActiveSubmit = () => {
+    if (activeAction === 'save') return saveSubmit;
+    if (activeAction === 'toggleStatus') return toggleSubmit;
+    if (activeAction === 'delete') return deleteSubmit;
+    return null;
+  };
 
   // 编辑初始化
   const startEdit = useCallback(() => {
@@ -100,51 +132,46 @@ export default function ProductDetailPage() {
 
   // 保存编辑
   const saveEdit = useCallback(async () => {
-    await handleSubmit(async () => {
-      // 模拟保存 API 调用
-      await new Promise((r) => setTimeout(r, 800));
-      setEditMode(false);
-    }, { successMessage: '商品信息已更新', errorMessage: '保存失败，请重试' });
-  }, [handleSubmit]);
+    setActiveAction('save');
+    await saveSubmit.submit();
+    setActiveAction(null);
+  }, [saveSubmit]);
 
   // 切换状态
   const toggleStatus = useCallback(async () => {
     setConfirmAction(null);
-    await handleSubmit(async () => {
-      await new Promise((r) => setTimeout(r, 600));
-    }, {
-      successMessage: product?.status === 'active' ? '商品已下架' : '商品已上架',
-      errorMessage: '操作失败',
-    });
-  }, [handleSubmit, product]);
+    setActiveAction('toggleStatus');
+    await toggleSubmit.submit();
+    setActiveAction(null);
+  }, [toggleSubmit]);
 
   // 删除
   const deleteProduct = useCallback(async () => {
     setConfirmAction(null);
-    await handleSubmit(async () => {
-      await new Promise((r) => setTimeout(r, 600));
-    }, {
-      successMessage: '商品已删除',
-      errorMessage: '删除失败',
-    });
+    setActiveAction('delete');
+    await deleteSubmit.submit();
+    setActiveAction(null);
     router.push('/products');
-  }, [handleSubmit, router]);
+  }, [deleteSubmit, router]);
 
   // 操作按钮
   const actions: DetailShellAction[] = useMemo(() => {
     if (!product) return [];
     const result: DetailShellAction[] = [
       {
+        key: 'edit',
         label: editMode ? '取消编辑' : '编辑',
-        variant: editMode ? 'default' : 'primary',
+        variant: editMode ? 'secondary' : 'primary',
         onClick: editMode ? cancelEdit : startEdit,
       },
       {
+        key: 'toggle',
         label: product.status === 'active' ? '下架' : '上架',
-        variant: 'warning',
+        variant: 'secondary',
         onClick: () => setConfirmAction('toggleStatus'),
       },
       {
+        key: 'delete',
         label: '删除',
         variant: 'danger',
         onClick: () => setConfirmAction('delete'),
@@ -156,7 +183,7 @@ export default function ProductDetailPage() {
   // 错误 / 空状态
   if (!product) {
     return (
-      <PageShell>
+      <PageShell title="商品未找到">
         <div style={{ padding: 80, textAlign: 'center', color: '#94a3b8' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
           <h2 style={{ fontSize: 20, fontWeight: 600 }}>商品未找到</h2>
@@ -173,7 +200,7 @@ export default function ProductDetailPage() {
   const detailRows = [
     { label: 'SKU', value: product.sku },
     { label: '分类', value: categoryMeta?.label ?? product.category },
-    { label: '状态', value: <StatusBadge variant={statusMeta?.variant ?? 'neutral'}>{statusMeta?.label ?? product.status}</StatusBadge> },
+    { label: '状态', value: <StatusBadge variant={statusMeta?.variant ?? 'neutral'} label={statusMeta?.label ?? product.status} /> },
     { label: '售价', value: `¥${product.price.toFixed(2)}` },
     { label: '成本', value: `¥${product.cost.toFixed(2)}` },
     { label: '毛利', value: `¥${(product.price - product.cost).toFixed(2)}` },
@@ -187,7 +214,7 @@ export default function ProductDetailPage() {
   ];
 
   return (
-    <PageShell>
+    <PageShell title="商品详情">
       <DetailShell
         title={product.name}
         subtitle={`SKU: ${product.sku}`}
@@ -294,10 +321,10 @@ export default function ProductDetailPage() {
               )}
             </div>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <SubmitButton onClick={saveEdit} submitting={submitting} variant="primary">
+              <SubmitButton onClick={() => void saveSubmit.submit()} loading={activeAction === 'save'} variant="primary">
                 保存
               </SubmitButton>
-              <SubmitButton onClick={cancelEdit} variant="default">
+              <SubmitButton onClick={cancelEdit} variant="secondary">
                 取消
               </SubmitButton>
             </div>
@@ -305,7 +332,12 @@ export default function ProductDetailPage() {
         )}
 
         {/* 提交反馈 */}
-        {feedback && <FormSubmitFeedback feedback={feedback} />}
+        {saveSubmit.success && <FormSubmitFeedback success={saveSubmit.success} onDismissSuccess={saveSubmit.clearSuccess} />}
+        {saveSubmit.error && <FormSubmitFeedback error={saveSubmit.error} onDismissError={saveSubmit.clearError} />}
+        {toggleSubmit.success && <FormSubmitFeedback success={toggleSubmit.success} onDismissSuccess={toggleSubmit.clearSuccess} />}
+        {toggleSubmit.error && <FormSubmitFeedback error={toggleSubmit.error} onDismissError={toggleSubmit.clearError} />}
+        {deleteSubmit.success && <FormSubmitFeedback success={deleteSubmit.success} onDismissSuccess={deleteSubmit.clearSuccess} />}
+        {deleteSubmit.error && <FormSubmitFeedback error={deleteSubmit.error} onDismissError={deleteSubmit.clearError} />}
       </DetailShell>
 
       {/* 确认弹窗 */}
@@ -322,12 +354,12 @@ export default function ProductDetailPage() {
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
           <SubmitButton
             onClick={confirmAction === 'toggleStatus' ? toggleStatus : deleteProduct}
-            submitting={submitting}
-            variant={confirmAction === 'delete' ? 'danger' : 'warning'}
+            loading={activeAction === 'toggleStatus' || activeAction === 'delete'}
+            variant={confirmAction === 'delete' ? 'danger' : 'secondary'}
           >
             确认
           </SubmitButton>
-          <SubmitButton onClick={() => setConfirmAction(null)} variant="default">
+          <SubmitButton onClick={() => setConfirmAction(null)} variant="secondary">
             取消
           </SubmitButton>
         </div>
