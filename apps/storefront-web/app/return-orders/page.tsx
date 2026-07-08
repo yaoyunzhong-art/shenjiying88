@@ -55,13 +55,13 @@ const STATUS_LABELS: Record<ReturnStatus, string> = {
   closed: '已关闭',
 };
 
-const STATUS_VARIANTS: Record<ReturnStatus, 'warning' | 'info' | 'success' | 'danger' | 'neutral' | 'purple' | 'cyan'> = {
+const STATUS_VARIANTS: Record<ReturnStatus, 'info' | 'warning' | 'success' | 'error' | 'neutral' | 'default' | 'pending' | 'danger'> = {
   pending: 'warning',
   inspecting: 'info',
   approved: 'success',
   rejected: 'danger',
-  refunded: 'purple',
-  exchanged: 'cyan',
+  refunded: 'pending',
+  exchanged: 'info',
   closed: 'neutral',
 };
 
