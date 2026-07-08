@@ -70,6 +70,7 @@ __export(index_exports, {
   AnomalyPatternPanel: () => AnomalyPatternPanel,
   AppointmentBookingPanel: () => AppointmentBookingPanel,
   AssistantManagerDashboard: () => AssistantManagerDashboard,
+  AsyncSelect: () => AsyncSelect,
   AttachmentList: () => AttachmentList,
   AutoComplete: () => AutoComplete,
   Avatar: () => Avatar,
@@ -65319,6 +65320,310 @@ function AIDecisionOutcomeCard({
     }
   );
 }
+
+// src/components/AsyncSelect.tsx
+var import_react178 = require("react");
+var import_jsx_runtime258 = require("react/jsx-runtime");
+function AsyncSelect({
+  loadOptions,
+  value,
+  onChange,
+  placeholder = "\u8BF7\u9009\u62E9",
+  searchPlaceholder = "\u8F93\u5165\u641C\u7D22...",
+  loadingText = "\u52A0\u8F7D\u4E2D...",
+  notFoundContent = "\u65E0\u5339\u914D\u7ED3\u679C",
+  minWidth = 160,
+  disabled = false,
+  allowClear = false,
+  debounceMs = 300,
+  className,
+  style,
+  name,
+  error = false,
+  loadOnOpen = true,
+  "aria-label": ariaLabel
+}) {
+  const [open, setOpen] = (0, import_react178.useState)(false);
+  const [searchText, setSearchText] = (0, import_react178.useState)("");
+  const [options, setOptions] = (0, import_react178.useState)([]);
+  const [loading, setLoading] = (0, import_react178.useState)(false);
+  const [hasLoaded, setHasLoaded] = (0, import_react178.useState)(false);
+  const [highlightIndex, setHighlightIndex] = (0, import_react178.useState)(-1);
+  const containerRef = (0, import_react178.useRef)(null);
+  const searchInputRef = (0, import_react178.useRef)(null);
+  const debounceRef = (0, import_react178.useRef)();
+  const abortRef = (0, import_react178.useRef)();
+  const selectedOption = (0, import_react178.useMemo)(
+    () => options.find((o) => o.value === value),
+    [options, value]
+  );
+  const doLoad = (0, import_react178.useCallback)(
+    async (query) => {
+      if (abortRef.current) {
+        abortRef.current.abort();
+      }
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setLoading(true);
+      try {
+        const result = await loadOptions(query);
+        if (!controller.signal.aborted) {
+          setOptions(result);
+          setHasLoaded(true);
+          setHighlightIndex(0);
+        }
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setOptions([]);
+          setHasLoaded(true);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    },
+    [loadOptions]
+  );
+  const handleSearchChange = (0, import_react178.useCallback)(
+    (text) => {
+      setSearchText(text);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        doLoad(text);
+      }, debounceMs);
+    },
+    [doLoad, debounceMs]
+  );
+  const handleOpen = (0, import_react178.useCallback)(() => {
+    if (disabled) return;
+    setOpen(true);
+    setSearchText("");
+    if (loadOnOpen && !hasLoaded) {
+      doLoad("");
+    } else if (loadOnOpen) {
+      setHighlightIndex(0);
+    }
+  }, [disabled, loadOnOpen, hasLoaded, doLoad]);
+  const handleClose = (0, import_react178.useCallback)(() => {
+    setOpen(false);
+    setSearchText("");
+    setHighlightIndex(-1);
+  }, []);
+  (0, import_react178.useEffect)(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        handleClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [handleClose]);
+  (0, import_react178.useEffect)(() => {
+    if (open && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [open]);
+  (0, import_react178.useEffect)(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (abortRef.current) abortRef.current.abort();
+    };
+  }, []);
+  const handleSelect = (0, import_react178.useCallback)(
+    (val) => {
+      onChange?.(val);
+      handleClose();
+    },
+    [onChange, handleClose]
+  );
+  const handleClear = (0, import_react178.useCallback)(
+    (e) => {
+      e.stopPropagation();
+      onChange?.("");
+      handleClose();
+    },
+    [onChange, handleClose]
+  );
+  const handleKeyDown = (0, import_react178.useCallback)(
+    (e) => {
+      if (!open && (e.key === "Enter" || e.key === "ArrowDown")) {
+        e.preventDefault();
+        handleOpen();
+        return;
+      }
+      if (!open) return;
+      switch (e.key) {
+        case "Escape":
+          e.preventDefault();
+          handleClose();
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          setHighlightIndex(
+            (prev) => prev < options.length - 1 ? prev + 1 : 0
+          );
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setHighlightIndex(
+            (prev) => prev > 0 ? prev - 1 : options.length - 1
+          );
+          break;
+        case "Enter":
+          e.preventDefault();
+          if (highlightIndex >= 0 && options[highlightIndex]) {
+            handleSelect(options[highlightIndex].value);
+          }
+          break;
+      }
+    },
+    [open, options, highlightIndex, handleOpen, handleClose, handleSelect]
+  );
+  const containerStyle6 = {
+    position: "relative",
+    display: "inline-block",
+    minWidth,
+    ...style
+  };
+  const selectorStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "6px 12px",
+    border: error ? "1px solid #ff4d4f" : "1px solid #d9d9d9",
+    borderRadius: 6,
+    backgroundColor: disabled ? "#f5f5f5" : "#fff",
+    cursor: disabled ? "not-allowed" : "pointer",
+    minHeight: 32,
+    boxSizing: "border-box",
+    transition: "border-color 0.2s",
+    opacity: disabled ? 0.6 : 1
+  };
+  const dropdownStyle = {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    right: 0,
+    marginTop: 4,
+    backgroundColor: "#fff",
+    border: "1px solid #d9d9d9",
+    borderRadius: 6,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+    zIndex: 1050,
+    maxHeight: 300,
+    overflow: "auto"
+  };
+  const searchInputStyle2 = {
+    width: "100%",
+    padding: "6px 12px",
+    border: "none",
+    borderBottom: "1px solid #f0f0f0",
+    outline: "none",
+    fontSize: 14,
+    boxSizing: "border-box"
+  };
+  const optionStyle = (opt, index) => ({
+    padding: "6px 12px",
+    cursor: opt.disabled ? "not-allowed" : "pointer",
+    backgroundColor: opt.value === value ? "#e6f7ff" : index === highlightIndex ? "#f5f5f5" : "transparent",
+    color: opt.disabled ? "#ccc" : "#333",
+    fontSize: 14,
+    transition: "background-color 0.15s"
+  });
+  return /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)(
+    "div",
+    {
+      ref: containerRef,
+      className,
+      style: containerStyle6,
+      onKeyDown: handleKeyDown,
+      role: "combobox",
+      "aria-expanded": open,
+      "aria-haspopup": "listbox",
+      "aria-label": ariaLabel,
+      tabIndex: disabled ? -1 : 0,
+      children: [
+        name && /* @__PURE__ */ (0, import_jsx_runtime258.jsx)("input", { type: "hidden", name, value: value ?? "" }),
+        /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)(
+          "div",
+          {
+            style: selectorStyle,
+            onClick: handleOpen,
+            role: "button",
+            "aria-disabled": disabled,
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+                "span",
+                {
+                  style: {
+                    flex: 1,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    color: selectedOption ? "#333" : "#bfbfbf"
+                  },
+                  children: selectedOption ? selectedOption.label : placeholder
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("span", { style: { display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }, children: [
+                allowClear && value && /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+                  "span",
+                  {
+                    style: { cursor: "pointer", color: "#999", fontSize: 14, lineHeight: 1 },
+                    onClick: handleClear,
+                    role: "button",
+                    "aria-label": "\u6E05\u9664\u9009\u62E9",
+                    children: "\u2715"
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+                  "span",
+                  {
+                    style: {
+                      fontSize: 10,
+                      color: "#999",
+                      transition: "transform 0.2s",
+                      transform: open ? "rotate(180deg)" : "rotate(0deg)"
+                    },
+                    children: "\u25BC"
+                  }
+                )
+              ] })
+            ]
+          }
+        ),
+        open && /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { style: dropdownStyle, role: "listbox", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+            "input",
+            {
+              ref: searchInputRef,
+              type: "text",
+              style: searchInputStyle2,
+              placeholder: searchPlaceholder,
+              value: searchText,
+              onChange: (e) => handleSearchChange(e.target.value),
+              onClick: (e) => e.stopPropagation(),
+              "aria-label": "\u641C\u7D22\u9009\u9879"
+            }
+          ),
+          loading ? /* @__PURE__ */ (0, import_jsx_runtime258.jsx)("div", { style: { padding: "8px 12px", color: "#999", textAlign: "center", fontSize: 14 }, children: loadingText }) : options.length === 0 && hasLoaded ? /* @__PURE__ */ (0, import_jsx_runtime258.jsx)("div", { style: { padding: "8px 12px", color: "#999", textAlign: "center", fontSize: 14 }, children: notFoundContent }) : options.map((opt, index) => /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+            "div",
+            {
+              style: optionStyle(opt, index),
+              onClick: () => handleSelect(opt.value),
+              role: "option",
+              "aria-selected": opt.value === value,
+              "aria-disabled": opt.disabled,
+              children: opt.label
+            },
+            opt.value
+          ))
+        ] })
+      ]
+    }
+  );
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -65361,6 +65666,7 @@ function AIDecisionOutcomeCard({
   AnomalyPatternPanel,
   AppointmentBookingPanel,
   AssistantManagerDashboard,
+  AsyncSelect,
   AttachmentList,
   AutoComplete,
   Avatar,

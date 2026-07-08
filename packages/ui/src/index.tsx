@@ -1289,3 +1289,7 @@ export type {
   DecisionStatus,
   ImpactMetric,
 } from './components/AIDecisionOutcomeCard';
+
+// --------------- AsyncSelect ---------------
+export { AsyncSelect } from './components/AsyncSelect';
+export type { AsyncSelectProps } from './components/AsyncSelect';
