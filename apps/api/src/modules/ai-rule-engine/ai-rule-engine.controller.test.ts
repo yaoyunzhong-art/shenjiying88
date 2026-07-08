@@ -2,9 +2,10 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 
+import { AiRuleEngineController } from './ai-rule-engine.controller'
+import { AiRuleEngineService } from './ai-rule-engine.service'
+
 describe('AiRuleEngineController', () => {
-  const { AiRuleEngineController } = require('./ai-rule-engine.controller')
-  const { AiRuleEngineService } = require('./ai-rule-engine.service')
 
   let controller: InstanceType<typeof AiRuleEngineController>
   let service: InstanceType<typeof AiRuleEngineService>

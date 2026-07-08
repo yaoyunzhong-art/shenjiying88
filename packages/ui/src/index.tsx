@@ -1272,3 +1272,11 @@ export type {
   DecisionCandidate,
   DecisionStep,
 } from './components/AIDecisionExplainerPanel';
+
+// --------------- AIDecisionOutcomeCard ---------------
+export { AIDecisionOutcomeCard } from './components/AIDecisionOutcomeCard';
+export type {
+  AIDecisionOutcomeCardProps,
+  DecisionStatus,
+  ImpactMetric,
+} from './components/AIDecisionOutcomeCard';

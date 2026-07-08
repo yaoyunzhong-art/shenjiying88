@@ -39,6 +39,7 @@ __export(index_exports, {
   AIDecisionComparisonPanel: () => AIDecisionComparisonPanel,
   AIDecisionEffectivenessBoard: () => AIDecisionEffectivenessBoard,
   AIDecisionExplainerPanel: () => AIDecisionExplainerPanel,
+  AIDecisionOutcomeCard: () => AIDecisionOutcomeCard,
   AIDecisionPanel: () => AIDecisionPanel,
   AIDecisionRuleChain: () => AIDecisionRuleChain,
   AIDecisionTimeline: () => AIDecisionTimeline,
@@ -34262,7 +34263,7 @@ function NotificationBell({
     }
     item.onClick?.(item);
   };
-  const formatTime5 = (iso) => {
+  const formatTime6 = (iso) => {
     const d = new Date(iso);
     const now = /* @__PURE__ */ new Date();
     const diffMs = now.getTime() - d.getTime();
@@ -34496,7 +34497,7 @@ function NotificationBell({
                           children: item.description
                         }
                       ),
-                      /* @__PURE__ */ (0, import_jsx_runtime134.jsx)("span", { style: { fontSize: 11, color: "#94a3b8", marginTop: 4, display: "inline-block" }, children: formatTime5(item.timestamp) })
+                      /* @__PURE__ */ (0, import_jsx_runtime134.jsx)("span", { style: { fontSize: 11, color: "#94a3b8", marginTop: 4, display: "inline-block" }, children: formatTime6(item.timestamp) })
                     ] }),
                     item.type && /* @__PURE__ */ (0, import_jsx_runtime134.jsx)(
                       "span",
@@ -35248,7 +35249,7 @@ function DecisionAuditTrail({
     setCurrentPage(1);
     onFilterChange?.(newFilter);
   };
-  const formatTime5 = (ts) => {
+  const formatTime6 = (ts) => {
     try {
       const d = new Date(ts);
       return d.toLocaleString("zh-CN", {
@@ -35552,7 +35553,7 @@ function DecisionAuditTrail({
                               textAlign: "right",
                               flexShrink: 0
                             },
-                            children: formatTime5(entry.timestamp)
+                            children: formatTime6(entry.timestamp)
                           }
                         ),
                         (entry.changes || entry.revertible || entry.entityId) && /* @__PURE__ */ (0, import_jsx_runtime137.jsx)(
@@ -64763,6 +64764,166 @@ function AIDecisionExplainerPanel({
     }
   );
 }
+
+// src/components/AIDecisionOutcomeCard.tsx
+var import_jsx_runtime256 = require("react/jsx-runtime");
+var STATUS_CONFIG6 = {
+  approved: { label: "\u5DF2\u6279\u51C6", variant: "success", icon: "\u2713" },
+  rejected: { label: "\u5DF2\u62D2\u7EDD", variant: "danger", icon: "\u2717" },
+  pending_review: { label: "\u5F85\u590D\u6838", variant: "warning", icon: "\u25CB" }
+};
+var TREND_ICON2 = {
+  up: "\u2191",
+  down: "\u2193",
+  neutral: "\u2192"
+};
+var TREND_COLOR = {
+  up: "#22c55e",
+  down: "#ef4444",
+  neutral: "#94a3b8"
+};
+function formatConfidence(value) {
+  return `${(value * 100).toFixed(1)}%`;
+}
+function formatTime5(iso) {
+  const d = new Date(iso);
+  const now = Date.now();
+  const diffMs = now - d.getTime();
+  const diffMin = Math.floor(diffMs / 6e4);
+  if (diffMin < 1) return "\u521A\u521A";
+  if (diffMin < 60) return `${diffMin}\u5206\u949F\u524D`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}\u5C0F\u65F6\u524D`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 7) return `${diffDay}\u5929\u524D`;
+  return d.toLocaleDateString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+var STYLES3 = {
+  card: {
+    border: "1px solid #e2e8f0",
+    borderRadius: 12,
+    padding: 16,
+    background: "#fff",
+    cursor: "default",
+    transition: "box-shadow 0.2s, border-color 0.2s",
+    display: "flex",
+    flexDirection: "column",
+    gap: 12
+  },
+  header: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 8
+  },
+  titleArea: { display: "flex", flexDirection: "column", gap: 4, flex: 1 },
+  title: { fontSize: 15, fontWeight: 600, color: "#1e293b", lineHeight: 1.4, margin: 0 },
+  metaRow: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  confidenceBadge: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#6366f1",
+    background: "#eef2ff",
+    padding: "2px 8px",
+    borderRadius: 6
+  },
+  timeText: { fontSize: 12, color: "#94a3b8" },
+  summary: { fontSize: 13, color: "#475569", lineHeight: 1.5, margin: 0 },
+  metricsRow: { display: "flex", gap: 16, flexWrap: "wrap" },
+  metricItem: { display: "flex", flexDirection: "column", gap: 2 },
+  metricLabel: { fontSize: 11, color: "#94a3b8" },
+  metricValue: { fontSize: 14, fontWeight: 600, color: "#1e293b", display: "flex", alignItems: "center", gap: 4 },
+  actionsSection: { display: "flex", flexDirection: "column", gap: 4 },
+  actionsLabel: { fontSize: 11, color: "#94a3b8" },
+  actionChip: {
+    display: "inline-block",
+    fontSize: 12,
+    color: "#6366f1",
+    background: "#eef2ff",
+    padding: "2px 10px",
+    borderRadius: 6
+  },
+  divider: { height: 1, background: "#f1f5f9", margin: 0 }
+};
+function AIDecisionOutcomeCard({
+  id,
+  title,
+  status,
+  confidence,
+  decidedAt,
+  decidedBy,
+  summary,
+  impactMetrics,
+  suggestedActions,
+  onClick,
+  className
+}) {
+  const cfg = STATUS_CONFIG6[status];
+  const cardBaseCss = { border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, background: "#fff", cursor: "default", transition: "box-shadow 0.2s, border-color 0.2s", display: "flex", flexDirection: "column", gap: 12 };
+  const handleClick = onClick ? () => onClick(id) : void 0;
+  const cardStyle3 = onClick ? { ...cardBaseCss, cursor: "pointer" } : cardBaseCss;
+  return /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(
+    "div",
+    {
+      className,
+      style: cardStyle3,
+      onClick: handleClick,
+      onMouseEnter: (e) => {
+        if (onClick) {
+          e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)";
+          e.currentTarget.style.borderColor = "#c7d2fe";
+        }
+      },
+      onMouseLeave: (e) => {
+        if (onClick) {
+          e.currentTarget.style.boxShadow = "none";
+          e.currentTarget.style.borderColor = "#e2e8f0";
+        }
+      },
+      role: "article",
+      "aria-label": `AI \u51B3\u7B56: ${title} \u2014 ${cfg.label}`,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { style: STYLES3.header, children: /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { style: STYLES3.titleArea, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("p", { style: STYLES3.title, children: title }),
+          /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { style: STYLES3.metaRow, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(Badge, { variant: cfg.variant, children: [
+              cfg.icon,
+              " ",
+              cfg.label
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("span", { style: STYLES3.confidenceBadge, children: [
+              "\u7F6E\u4FE1\u5EA6 ",
+              formatConfidence(confidence)
+            ] }),
+            decidedAt && /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("span", { style: STYLES3.timeText, children: formatTime5(decidedAt) }),
+            decidedBy && /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("span", { style: STYLES3.timeText, children: [
+              "by ",
+              decidedBy
+            ] })
+          ] })
+        ] }) }),
+        summary && /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("p", { style: STYLES3.summary, children: summary }),
+        impactMetrics && impactMetrics.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(import_jsx_runtime256.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { style: STYLES3.divider }),
+          /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { style: STYLES3.metricsRow, children: impactMetrics.map((m, i) => /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { style: STYLES3.metricItem, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("span", { style: STYLES3.metricLabel, children: m.label }),
+            /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("span", { style: STYLES3.metricValue, children: [
+              m.value,
+              m.trend && /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("span", { style: { color: TREND_COLOR[m.trend], fontSize: 12 }, children: TREND_ICON2[m.trend] })
+            ] })
+          ] }, i)) })
+        ] }),
+        suggestedActions && suggestedActions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(import_jsx_runtime256.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { style: STYLES3.divider }),
+          /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { style: STYLES3.actionsSection, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("span", { style: STYLES3.actionsLabel, children: "\u5EFA\u8BAE\u64CD\u4F5C" }),
+            /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" }, children: suggestedActions.map((action, i) => /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("span", { style: STYLES3.actionChip, children: action }, i)) })
+          ] })
+        ] })
+      ]
+    }
+  );
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -64774,6 +64935,7 @@ function AIDecisionExplainerPanel({
   AIDecisionComparisonPanel,
   AIDecisionEffectivenessBoard,
   AIDecisionExplainerPanel,
+  AIDecisionOutcomeCard,
   AIDecisionPanel,
   AIDecisionRuleChain,
   AIDecisionTimeline,
