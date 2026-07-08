@@ -1290,6 +1290,10 @@ export type {
   ImpactMetric,
 } from './components/AIDecisionOutcomeCard';
 
+// --------------- DonutChart ---------------
+export { DonutChart } from './components/DonutChart';
+export type { DonutChartProps, DonutSlice } from './components/DonutChart';
+
 // --------------- AsyncSelect ---------------
 export { AsyncSelect } from './components/AsyncSelect';
 export type { AsyncSelectProps } from './components/AsyncSelect';

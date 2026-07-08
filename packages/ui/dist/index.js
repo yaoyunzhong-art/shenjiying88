@@ -132,6 +132,7 @@ __export(index_exports, {
   DeviceStatusPanel: () => DeviceStatusPanel,
   Dialog: () => Dialog,
   Divider: () => Divider,
+  DonutChart: () => DonutChart2,
   DotNavigation: () => DotNavigation,
   Drawer: () => Drawer,
   DrilldownTrendCard: () => DrilldownTrendCard,
@@ -65321,9 +65322,284 @@ function AIDecisionOutcomeCard({
   );
 }
 
-// src/components/AsyncSelect.tsx
+// src/components/DonutChart.tsx
 var import_react178 = require("react");
 var import_jsx_runtime258 = require("react/jsx-runtime");
+function normalizeData(data, minPercent) {
+  const total = data.reduce((s, d) => s + Math.max(0, d.value), 0);
+  if (total <= 0) return { slices: data, others: null, total };
+  const threshold = minPercent / 100 * total;
+  const main = [];
+  const otherItems = [];
+  for (const d of data) {
+    if (d.value >= threshold) {
+      main.push(d);
+    } else {
+      otherItems.push(d);
+    }
+  }
+  let others = null;
+  if (otherItems.length > 0) {
+    const otherTotal = otherItems.reduce((s, d) => s + d.value, 0);
+    others = {
+      key: "__others__",
+      label: "\u5176\u4ED6",
+      value: otherTotal,
+      color: "#64748b"
+    };
+    main.push(others);
+  }
+  return { slices: main, others, total };
+}
+var DonutChart2 = ({
+  data,
+  size = 200,
+  thickness = 32,
+  showCenterLabel = true,
+  centerFormatter,
+  showLegend = true,
+  minPercent = 3,
+  className,
+  animationDuration = 600,
+  onSliceClick
+}) => {
+  const { slices, total } = (0, import_react178.useMemo)(
+    () => normalizeData(data, minPercent),
+    [data, minPercent]
+  );
+  const radius = size / 2;
+  const innerRadius = radius - thickness;
+  const centerRadius = (radius + innerRadius) / 2;
+  const arcs = (0, import_react178.useMemo)(() => {
+    if (total <= 0 || slices.length === 0) return [];
+    const circumference2 = 2 * Math.PI * centerRadius;
+    let cumulativePercent = 0;
+    return slices.map((slice) => {
+      const percent = slice.value / total;
+      const startPercent = cumulativePercent;
+      cumulativePercent += percent;
+      const endPercent = cumulativePercent;
+      const startAngle = startPercent * 360 - 90;
+      const endAngle = endPercent * 360 - 90;
+      const largeArc = percent > 0.5 ? 1 : 0;
+      const startRad = startAngle * Math.PI / 180;
+      const endRad = endAngle * Math.PI / 180;
+      const x1 = radius + innerRadius * Math.cos(startRad);
+      const y1 = radius + innerRadius * Math.sin(startRad);
+      const x2 = radius + radius * Math.cos(startRad);
+      const y2 = radius + radius * Math.sin(startRad);
+      const x3 = radius + radius * Math.cos(endRad);
+      const y3 = radius + radius * Math.sin(endRad);
+      const x4 = radius + innerRadius * Math.cos(endRad);
+      const y4 = radius + innerRadius * Math.sin(endRad);
+      const path = [
+        `M ${x2} ${y2}`,
+        `A ${radius} ${radius} 0 ${largeArc} 1 ${x3} ${y3}`,
+        `L ${x4} ${y4}`,
+        `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x1} ${y1}`,
+        "Z"
+      ].join(" ");
+      return {
+        key: slice.key,
+        path,
+        color: slice.color,
+        percent: percent * 100,
+        slice,
+        strokeDasharray: `${percent * circumference2}`,
+        strokeDashoffset: 0
+      };
+    });
+  }, [slices, total, radius, innerRadius, centerRadius]);
+  if (total <= 0 || slices.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+      "div",
+      {
+        style: {
+          width: size,
+          height: size,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#64748b",
+          fontSize: 13
+        },
+        children: "\u6682\u65E0\u6570\u636E"
+      }
+    );
+  }
+  const strokeWidth = thickness;
+  const svgRadius = centerRadius;
+  const circumference = 2 * Math.PI * svgRadius;
+  let cumulative = 0;
+  const circleArcs = slices.map((slice) => {
+    const percent = slice.value / total;
+    const offset = cumulative * circumference;
+    cumulative += percent;
+    return {
+      key: slice.key,
+      slice,
+      color: slice.color,
+      percent: percent * 100,
+      dashArray: `${percent * circumference} ${circumference}`,
+      dashOffset: -offset
+    };
+  });
+  return /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)(
+    "div",
+    {
+      className,
+      style: {
+        display: "inline-flex",
+        flexDirection: showLegend ? "column" : "column",
+        alignItems: "center",
+        gap: 16
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { style: { position: "relative", width: size, height: size }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)(
+            "svg",
+            {
+              width: size,
+              height: size,
+              viewBox: `0 0 ${size} ${size}`,
+              style: { transform: "rotate(-90deg)" },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+                  "circle",
+                  {
+                    cx: radius,
+                    cy: radius,
+                    r: svgRadius,
+                    fill: "none",
+                    stroke: "rgba(148,163,184,0.12)",
+                    strokeWidth
+                  }
+                ),
+                circleArcs.map((arc, i) => /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+                  "circle",
+                  {
+                    cx: radius,
+                    cy: radius,
+                    r: svgRadius,
+                    fill: "none",
+                    stroke: arc.color,
+                    strokeWidth,
+                    strokeDasharray: arc.dashArray,
+                    strokeDashoffset: arc.dashOffset,
+                    strokeLinecap: "round",
+                    style: {
+                      cursor: onSliceClick ? "pointer" : void 0,
+                      transition: `stroke-dasharray ${animationDuration}ms ease-out`
+                    },
+                    onClick: () => onSliceClick?.(arc.slice),
+                    onKeyDown: (e) => {
+                      if (e.key === "Enter" || e.key === " ") onSliceClick?.(arc.slice);
+                    },
+                    role: onSliceClick ? "button" : void 0,
+                    tabIndex: onSliceClick ? 0 : void 0,
+                    "aria-label": `${arc.slice.label}: ${arc.slice.value} (${arc.percent.toFixed(1)}%)`
+                  },
+                  arc.key
+                ))
+              ]
+            }
+          ),
+          showCenterLabel && /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+            "div",
+            {
+              style: {
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                pointerEvents: "none"
+              },
+              children: /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { style: { textAlign: "center" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+                  "div",
+                  {
+                    style: {
+                      fontSize: Math.max(size * 0.12, 18),
+                      fontWeight: 700,
+                      color: "#e2e8f0",
+                      lineHeight: 1.2
+                    },
+                    children: centerFormatter ? centerFormatter(total) : total.toLocaleString()
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+                  "div",
+                  {
+                    style: {
+                      fontSize: Math.max(size * 0.045, 10),
+                      color: "#64748b",
+                      marginTop: 2
+                    },
+                    children: "\u603B\u8BA1"
+                  }
+                )
+              ] })
+            }
+          )
+        ] }),
+        Boolean(showLegend) && /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px 16px",
+              justifyContent: "center",
+              maxWidth: size * 2
+            },
+            children: slices.map((slice, i) => /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)(
+              "div",
+              {
+                style: {
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 12,
+                  color: "#94a3b8",
+                  cursor: onSliceClick ? "pointer" : void 0
+                },
+                onClick: () => onSliceClick?.(slice),
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+                    "span",
+                    {
+                      style: {
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        backgroundColor: slice.color,
+                        flexShrink: 0
+                      }
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime258.jsx)("span", { children: slice.label }),
+                  /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("span", { style: { color: "#64748b" }, children: [
+                    (slice.value / total * 100).toFixed(1),
+                    "%"
+                  ] })
+                ]
+              },
+              slice.key
+            ))
+          }
+        )
+      ]
+    }
+  );
+};
+
+// src/components/AsyncSelect.tsx
+var import_react179 = require("react");
+var import_jsx_runtime259 = require("react/jsx-runtime");
 function AsyncSelect({
   loadOptions,
   value,
@@ -65343,21 +65619,21 @@ function AsyncSelect({
   loadOnOpen = true,
   "aria-label": ariaLabel
 }) {
-  const [open, setOpen] = (0, import_react178.useState)(false);
-  const [searchText, setSearchText] = (0, import_react178.useState)("");
-  const [options, setOptions] = (0, import_react178.useState)([]);
-  const [loading, setLoading] = (0, import_react178.useState)(false);
-  const [hasLoaded, setHasLoaded] = (0, import_react178.useState)(false);
-  const [highlightIndex, setHighlightIndex] = (0, import_react178.useState)(-1);
-  const containerRef = (0, import_react178.useRef)(null);
-  const searchInputRef = (0, import_react178.useRef)(null);
-  const debounceRef = (0, import_react178.useRef)();
-  const abortRef = (0, import_react178.useRef)();
-  const selectedOption = (0, import_react178.useMemo)(
+  const [open, setOpen] = (0, import_react179.useState)(false);
+  const [searchText, setSearchText] = (0, import_react179.useState)("");
+  const [options, setOptions] = (0, import_react179.useState)([]);
+  const [loading, setLoading] = (0, import_react179.useState)(false);
+  const [hasLoaded, setHasLoaded] = (0, import_react179.useState)(false);
+  const [highlightIndex, setHighlightIndex] = (0, import_react179.useState)(-1);
+  const containerRef = (0, import_react179.useRef)(null);
+  const searchInputRef = (0, import_react179.useRef)(null);
+  const debounceRef = (0, import_react179.useRef)();
+  const abortRef = (0, import_react179.useRef)();
+  const selectedOption = (0, import_react179.useMemo)(
     () => options.find((o) => o.value === value),
     [options, value]
   );
-  const doLoad = (0, import_react178.useCallback)(
+  const doLoad = (0, import_react179.useCallback)(
     async (query) => {
       if (abortRef.current) {
         abortRef.current.abort();
@@ -65385,7 +65661,7 @@ function AsyncSelect({
     },
     [loadOptions]
   );
-  const handleSearchChange = (0, import_react178.useCallback)(
+  const handleSearchChange = (0, import_react179.useCallback)(
     (text) => {
       setSearchText(text);
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -65395,7 +65671,7 @@ function AsyncSelect({
     },
     [doLoad, debounceMs]
   );
-  const handleOpen = (0, import_react178.useCallback)(() => {
+  const handleOpen = (0, import_react179.useCallback)(() => {
     if (disabled) return;
     setOpen(true);
     setSearchText("");
@@ -65405,12 +65681,12 @@ function AsyncSelect({
       setHighlightIndex(0);
     }
   }, [disabled, loadOnOpen, hasLoaded, doLoad]);
-  const handleClose = (0, import_react178.useCallback)(() => {
+  const handleClose = (0, import_react179.useCallback)(() => {
     setOpen(false);
     setSearchText("");
     setHighlightIndex(-1);
   }, []);
-  (0, import_react178.useEffect)(() => {
+  (0, import_react179.useEffect)(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         handleClose();
@@ -65419,25 +65695,25 @@ function AsyncSelect({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [handleClose]);
-  (0, import_react178.useEffect)(() => {
+  (0, import_react179.useEffect)(() => {
     if (open && searchInputRef.current) {
       searchInputRef.current.focus();
     }
   }, [open]);
-  (0, import_react178.useEffect)(() => {
+  (0, import_react179.useEffect)(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       if (abortRef.current) abortRef.current.abort();
     };
   }, []);
-  const handleSelect = (0, import_react178.useCallback)(
+  const handleSelect = (0, import_react179.useCallback)(
     (val) => {
       onChange?.(val);
       handleClose();
     },
     [onChange, handleClose]
   );
-  const handleClear = (0, import_react178.useCallback)(
+  const handleClear = (0, import_react179.useCallback)(
     (e) => {
       e.stopPropagation();
       onChange?.("");
@@ -65445,7 +65721,7 @@ function AsyncSelect({
     },
     [onChange, handleClose]
   );
-  const handleKeyDown = (0, import_react178.useCallback)(
+  const handleKeyDown = (0, import_react179.useCallback)(
     (e) => {
       if (!open && (e.key === "Enter" || e.key === "ArrowDown")) {
         e.preventDefault();
@@ -65531,7 +65807,7 @@ function AsyncSelect({
     fontSize: 14,
     transition: "background-color 0.15s"
   });
-  return /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)(
     "div",
     {
       ref: containerRef,
@@ -65544,8 +65820,8 @@ function AsyncSelect({
       "aria-label": ariaLabel,
       tabIndex: disabled ? -1 : 0,
       children: [
-        name && /* @__PURE__ */ (0, import_jsx_runtime258.jsx)("input", { type: "hidden", name, value: value ?? "" }),
-        /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)(
+        name && /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("input", { type: "hidden", name, value: value ?? "" }),
+        /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)(
           "div",
           {
             style: selectorStyle,
@@ -65553,7 +65829,7 @@ function AsyncSelect({
             role: "button",
             "aria-disabled": disabled,
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(
                 "span",
                 {
                   style: {
@@ -65566,8 +65842,8 @@ function AsyncSelect({
                   children: selectedOption ? selectedOption.label : placeholder
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("span", { style: { display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }, children: [
-                allowClear && value && /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)("span", { style: { display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }, children: [
+                allowClear && value && /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(
                   "span",
                   {
                     style: { cursor: "pointer", color: "#999", fontSize: 14, lineHeight: 1 },
@@ -65577,7 +65853,7 @@ function AsyncSelect({
                     children: "\u2715"
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(
                   "span",
                   {
                     style: {
@@ -65593,8 +65869,8 @@ function AsyncSelect({
             ]
           }
         ),
-        open && /* @__PURE__ */ (0, import_jsx_runtime258.jsxs)("div", { style: dropdownStyle, role: "listbox", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+        open && /* @__PURE__ */ (0, import_jsx_runtime259.jsxs)("div", { style: dropdownStyle, role: "listbox", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(
             "input",
             {
               ref: searchInputRef,
@@ -65607,7 +65883,7 @@ function AsyncSelect({
               "aria-label": "\u641C\u7D22\u9009\u9879"
             }
           ),
-          loading ? /* @__PURE__ */ (0, import_jsx_runtime258.jsx)("div", { style: { padding: "8px 12px", color: "#999", textAlign: "center", fontSize: 14 }, children: loadingText }) : options.length === 0 && hasLoaded ? /* @__PURE__ */ (0, import_jsx_runtime258.jsx)("div", { style: { padding: "8px 12px", color: "#999", textAlign: "center", fontSize: 14 }, children: notFoundContent }) : options.map((opt, index) => /* @__PURE__ */ (0, import_jsx_runtime258.jsx)(
+          loading ? /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { style: { padding: "8px 12px", color: "#999", textAlign: "center", fontSize: 14 }, children: loadingText }) : options.length === 0 && hasLoaded ? /* @__PURE__ */ (0, import_jsx_runtime259.jsx)("div", { style: { padding: "8px 12px", color: "#999", textAlign: "center", fontSize: 14 }, children: notFoundContent }) : options.map((opt, index) => /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(
             "div",
             {
               style: optionStyle(opt, index),
@@ -65728,6 +66004,7 @@ function AsyncSelect({
   DeviceStatusPanel,
   Dialog,
   Divider,
+  DonutChart,
   DotNavigation,
   Drawer,
   DrilldownTrendCard,
