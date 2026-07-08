@@ -7,7 +7,7 @@
 'use client';
 
 import { use, useCallback, useMemo, useState } from 'react';
-import { notFound, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 import {
   CombinedDetailPage,
@@ -19,12 +19,10 @@ import {
   Input,
   FormField,
   Select,
-  Spin,
   useToast,
   type DetailInfoRow,
   type DetailTab,
   type TransitionAction,
-  type DescriptionItem,
 } from '@m5/ui';
 
 // ── 类型定义 ────────────────────────────────────────────────────────
@@ -111,6 +109,8 @@ function mockRule(id: string): RuleDetail {
     '库存低于阈值时自动触发补货提醒',
     '对高风险订单进行自动风控审核',
     '会员积分到期前自动发送提醒通知',
+    '智能推荐最优优惠方案给高价值会员',
+
     '限制单用户每日推送消息频率上限',
   ];
   const conditions = [
@@ -148,15 +148,15 @@ function mockRule(id: string): RuleDetail {
     category: cats[index % 5]!,
     status: statuses[index % 4]!,
     priority: prios[index % 4]!,
-    description: descs[index % 10],
-    condition: conditions[index % 10],
-    action: actions[index % 10],
+    description: descs[index % 10]!,
+    condition: conditions[index % 10]!,
+    action: actions[index % 10]!,
     triggerCount: Math.floor(Math.random() * 5000) + 10,
     successRate: Math.round((Math.random() * 30 + 70) * 10) / 10,
     lastTriggered: `2026-07-${String((index % 28) + 1).padStart(2, '0')}T${String(8 + (index % 10)).padStart(2, '0')}:${String((index * 7) % 60).padStart(2, '0')}:00Z`,
     updatedAt: `2026-07-${String((index % 28) + 1).padStart(2, '0')}T${String(8 + (index % 10)).padStart(2, '0')}:${String((index * 7) % 60).padStart(2, '0')}:00Z`,
     createdAt: `2025-${String((index % 12) + 1).padStart(2, '0')}-${String((index % 28) + 1).padStart(2, '0')}T10:00:00Z`,
-    createdBy: creators[index % 5],
+    createdBy: creators[index % 5]!,
     version: `${Math.floor(index / 2) + 1}.${(index % 10)}.0`,
     enabled: statuses[index % 4] === 'enabled',
   };
@@ -188,55 +188,92 @@ export default function RuleDetailPage({ params }: { params: Promise<{ id: strin
     const actions: TransitionAction[] = [];
     switch (ruleState.status) {
       case 'enabled':
-        actions.push({ key: 'disable', label: '停用规则', type: 'warning' as const });
+        actions.push({
+          key: 'disable',
+          label: '停用规则',
+          variant: 'secondary' as const,
+          targetStatus: 'disabled',
+          onTransition: async () => {
+            setRuleState((prev) => ({ ...prev, status: 'disabled', enabled: false }));
+            toast('规则已停用');
+          },
+        });
         break;
       case 'disabled':
-        actions.push({ key: 'enable', label: '启用规则', type: 'primary' as const });
-        actions.push({ key: 'archive', label: '归档规则', type: 'secondary' as const });
+        actions.push({
+          key: 'enable',
+          label: '启用规则',
+          variant: 'primary' as const,
+          targetStatus: 'enabled',
+          onTransition: async () => {
+            setRuleState((prev) => ({ ...prev, status: 'enabled', enabled: true }));
+            toast('规则已启用');
+          },
+        });
+        actions.push({
+          key: 'archive',
+          label: '归档规则',
+          variant: 'secondary' as const,
+          targetStatus: 'archived',
+          onTransition: async () => {
+            setRuleState((prev) => ({ ...prev, status: 'archived', enabled: false }));
+            toast('规则已归档');
+          },
+        });
         break;
       case 'draft':
-        actions.push({ key: 'enable', label: '启用规则', type: 'primary' as const });
-        actions.push({ key: 'archive', label: '归档规则', type: 'secondary' as const });
+        actions.push({
+          key: 'enable',
+          label: '启用规则',
+          variant: 'primary' as const,
+          targetStatus: 'enabled',
+          onTransition: async () => {
+            setRuleState((prev) => ({ ...prev, status: 'enabled', enabled: true }));
+            toast('规则已启用');
+          },
+        });
+        actions.push({
+          key: 'archive',
+          label: '归档规则',
+          variant: 'secondary' as const,
+          targetStatus: 'archived',
+          onTransition: async () => {
+            setRuleState((prev) => ({ ...prev, status: 'archived', enabled: false }));
+            toast('规则已归档');
+          },
+        });
         break;
       case 'archived':
-        actions.push({ key: 'restore', label: '恢复规则', type: 'primary' as const });
+        actions.push({
+          key: 'restore',
+          label: '恢复规则',
+          variant: 'primary' as const,
+          targetStatus: 'disabled',
+          onTransition: async () => {
+            setRuleState((prev) => ({ ...prev, status: 'disabled', enabled: false }));
+            toast('规则已恢复');
+          },
+        });
         break;
     }
-    actions.push({ key: 'delete', label: '删除规则', type: 'danger' as const });
+    actions.push({
+      key: 'delete',
+      label: '删除规则',
+      variant: 'danger' as const,
+      targetStatus: 'deleted',
+      confirm: { title: '确认删除规则', message: `确定要删除规则「${ruleState.name}」吗？此操作不可撤销。` },
+      onTransition: async () => {
+        setLoading(true);
+        await new Promise((r) => setTimeout(r, 800));
+        toast('规则已删除');
+        setLoading(false);
+        setTimeout(() => {
+          router.push('/rules');
+        }, 300);
+      },
+    });
     return actions;
-  }, [ruleState.status]);
-
-  const handleTransition = useCallback(
-    async (actionKey: string) => {
-      if (actionKey === 'delete') {
-        setShowDeleteConfirm(true);
-        return;
-      }
-      setLoading(true);
-      // 模拟 API 调用
-      await new Promise((r) => setTimeout(r, 600));
-      switch (actionKey) {
-        case 'enable':
-          setRuleState((prev) => ({ ...prev, status: 'enabled', enabled: true }));
-          toast({ title: '规则已启用', description: `${ruleState.name} 已启用`, variant: 'success' });
-          break;
-        case 'disable':
-          setRuleState((prev) => ({ ...prev, status: 'disabled', enabled: false }));
-          toast({ title: '规则已停用', description: `${ruleState.name} 已停用`, variant: 'info' });
-          break;
-        case 'archive':
-          setRuleState((prev) => ({ ...prev, status: 'archived', enabled: false }));
-          toast({ title: '规则已归档', description: `${ruleState.name} 已归档`, variant: 'info' });
-          break;
-        case 'restore':
-          setRuleState((prev) => ({ ...prev, status: 'disabled', enabled: false }));
-          toast({ title: '规则已恢复', description: `${ruleState.name} 已恢复至停用状态`, variant: 'success' });
-          break;
-      }
-      setLoading(false);
-    },
-    [ruleState.name, toast],
-  );
+  }, [ruleState.status, ruleState.name, toast, router]);
 
   const handleEditSave = useCallback(async () => {
     setLoading(true);
@@ -251,51 +288,49 @@ export default function RuleDetailPage({ params }: { params: Promise<{ id: strin
       updatedAt: new Date().toISOString(),
     }));
     setShowEditModal(false);
-    toast({ title: '规则已更新', description: '规则配置修改已保存', variant: 'success' });
+    toast('规则已更新');
     setLoading(false);
   }, [editForm, toast]);
 
+  // 迁移到 TransitionAction 中内联处理，此处保留空函数避免引用错误
   const handleDeleteConfirm = useCallback(async () => {
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setShowDeleteConfirm(false);
-    toast({ title: '规则已删除', description: '规则已成功删除', variant: 'info' });
-    setLoading(false);
-    setTimeout(() => {
-      router.push('/rules');
-    }, 300);
-  }, [router, toast]);
+    // 删除逻辑已迁移至 statusTransitions 内联处理
+  }, []);
 
   // 基础信息
-  const baseInfoRows = useMemo<DescriptionItem[]>(
+  const baseInfoRows = useMemo<DetailInfoRow[]>(
     () => [
-      { label: '规则名称', value: ruleState.name },
+      { key: 'name', label: '规则名称', value: ruleState.name },
       {
+        key: 'status',
         label: '状态',
         value: <StatusBadge label={STATUS_LABELS[ruleState.status]} variant={STATUS_BADGE_VARIANT[ruleState.status]} />,
       },
       {
+        key: 'category',
         label: '分类',
         value: CATEGORY_LABELS[ruleState.category],
       },
       {
+        key: 'priority',
         label: '优先级',
         value: <span style={{ color: PRIORITY_COLORS[ruleState.priority], fontWeight: 600 }}>{PRIORITY_LABELS[ruleState.priority]}</span>,
       },
-      { label: '版本', value: `v${ruleState.version}` },
-      { label: '描述', value: ruleState.description },
-      { label: '创建人', value: ruleState.createdBy },
-      { label: '创建时间', value: new Date(ruleState.createdAt).toLocaleString('zh-CN') },
-      { label: '更新于', value: new Date(ruleState.updatedAt).toLocaleString('zh-CN') },
+      { key: 'version', label: '版本', value: `v${ruleState.version}` },
+      { key: 'description', label: '描述', value: ruleState.description },
+      { key: 'createdBy', label: '创建人', value: ruleState.createdBy },
+      { key: 'createdAt', label: '创建时间', value: new Date(ruleState.createdAt).toLocaleString('zh-CN') },
+      { key: 'updatedAt', label: '更新于', value: new Date(ruleState.updatedAt).toLocaleString('zh-CN') },
     ],
     [ruleState],
   );
 
   // 执行统计
-  const statsRows = useMemo<DescriptionItem[]>(
+  const statsRows = useMemo<DetailInfoRow[]>(
     () => [
-      { label: '触发次数', value: ruleState.triggerCount.toLocaleString() },
+      { key: 'triggerCount', label: '触发次数', value: ruleState.triggerCount.toLocaleString() },
       {
+        key: 'successRate',
         label: '成功率',
         value: (
           <span style={{ color: ruleState.successRate >= 95 ? '#4ade80' : ruleState.successRate >= 80 ? '#fbbf24' : '#f87171' }}>
@@ -303,16 +338,16 @@ export default function RuleDetailPage({ params }: { params: Promise<{ id: strin
           </span>
         ),
       },
-      { label: '最近触发', value: new Date(ruleState.lastTriggered).toLocaleString('zh-CN') },
+      { key: 'lastTriggered', label: '最近触发', value: new Date(ruleState.lastTriggered).toLocaleString('zh-CN') },
     ],
     [ruleState],
   );
 
   // 规则条件与动作
-  const logicRows = useMemo<DescriptionItem[]>(
+  const logicRows = useMemo<DetailInfoRow[]>(
     () => [
-      { label: '触发条件', value: <code style={{ background: 'rgba(15,23,42,0.6)', padding: '4px 10px', borderRadius: 6, fontSize: 13 }}>{ruleState.condition}</code> },
-      { label: '执行动作', value: <code style={{ background: 'rgba(15,23,42,0.6)', padding: '4px 10px', borderRadius: 6, fontSize: 13 }}>{ruleState.action}</code> },
+      { key: 'condition', label: '触发条件', value: <code style={{ background: 'rgba(15,23,42,0.6)', padding: '4px 10px', borderRadius: 6, fontSize: 13 }}>{ruleState.condition}</code> },
+      { key: 'action', label: '执行动作', value: <code style={{ background: 'rgba(15,23,42,0.6)', padding: '4px 10px', borderRadius: 6, fontSize: 13 }}>{ruleState.action}</code> },
     ],
     [ruleState],
   );
@@ -329,13 +364,13 @@ export default function RuleDetailPage({ params }: { params: Promise<{ id: strin
               <h3 style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 基础信息
               </h3>
-              <DescriptionList items={baseInfoRows} column={2} />
+              <DescriptionList items={baseInfoRows} columns={2} />
             </div>
             <div>
               <h3 style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 执行统计
               </h3>
-              <DescriptionList items={statsRows} column={3} />
+              <DescriptionList items={statsRows} columns={3} />
             </div>
           </div>
         ),
@@ -348,7 +383,7 @@ export default function RuleDetailPage({ params }: { params: Promise<{ id: strin
             <h3 style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               规则配置
             </h3>
-            <DescriptionList items={logicRows} column={1} />
+            <DescriptionList items={logicRows} columns={1} />
           </div>
         ),
       },
@@ -377,11 +412,11 @@ export default function RuleDetailPage({ params }: { params: Promise<{ id: strin
       <CombinedDetailPage
         title={ruleState.name}
         subtitle={`${CATEGORY_LABELS[ruleState.category]} · v${ruleState.version}`}
-        backLink={{ label: '← 返回规则列表', href: '/rules' }}
+        backHref="/rules"
+        backLabel="← 返回规则列表"
         infoRows={baseInfoRows}
         tabs={detailTabs}
-        transitionActions={statusTransitions}
-        onTransition={handleTransition}
+        transitions={statusTransitions}
         onEdit={() => {
           setEditForm({
             name: ruleState.name,
@@ -404,13 +439,13 @@ export default function RuleDetailPage({ params }: { params: Promise<{ id: strin
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '8px 0' }}>
           <FormField label="规则名称" required>
-            <Input value={editForm.name} onChange={(v) => setEditForm((p) => ({ ...p, name: v }))} />
+            <Input value={editForm.name} onChange={(v) => setEditForm((p) => ({ ...p, name: typeof v === 'string' ? v : v.target.value }))} />
           </FormField>
 
           <FormField label="描述">
             <TextArea
               value={editForm.description}
-              onChange={(v) => setEditForm((p) => ({ ...p, description: v }))}
+              onChange={(v) => setEditForm((p) => ({ ...p, description: typeof v === 'string' ? v : v.target.value }))}
               rows={3}
             />
           </FormField>
@@ -431,7 +466,7 @@ export default function RuleDetailPage({ params }: { params: Promise<{ id: strin
           <FormField label="触发条件">
             <TextArea
               value={editForm.condition}
-              onChange={(v) => setEditForm((p) => ({ ...p, condition: v }))}
+              onChange={(v) => setEditForm((p) => ({ ...p, condition: typeof v === 'string' ? v : v.target.value }))}
               rows={3}
             />
           </FormField>
@@ -439,7 +474,7 @@ export default function RuleDetailPage({ params }: { params: Promise<{ id: strin
           <FormField label="执行动作">
             <TextArea
               value={editForm.action}
-              onChange={(v) => setEditForm((p) => ({ ...p, action: v }))}
+              onChange={(v) => setEditForm((p) => ({ ...p, action: typeof v === 'string' ? v : v.target.value }))}
               rows={3}
             />
           </FormField>

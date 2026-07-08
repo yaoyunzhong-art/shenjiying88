@@ -408,3 +408,18 @@ P-36会员管理的角色模拟测试覆盖了「创建会员 → 充值 → 消
 - **测试问题**: 断言 `/违规数/` 永远是红色，因为展开需要交互（click to toggle）
 - **反模式**: 在纯静态渲染测试中 assert 依赖于 state 切换才出现的文本
 - **最佳实践**: 展开详情等交互驱动内容应在 e2e 测试中做点击后验证，单元测试只验证渲染结构存在（如 data-testid 层级正确）
+
+
+## 2026-07-08 TSC: rules/[id] page 三连类型错误
+
+### 问题
+新创建的 `rules/[id]/page.tsx` 文件出现 20+ 个 TSC 错误，原因系同一文件内使用了过时的接口字段。
+
+### 错误的 3 类类型错误
+1. **`TransitionAction` 使用 `type` 而非 `variant`**: 接口定义的是 `variant?: 'primary' | 'secondary' | 'danger'`，但编写代码时用了 `type: 'warning'`。原因是复用了旧版代码或参考了不同接口。
+2. **`toast()` 传对象而非字符串**: `useToast()` 返回的 `toast` 函数签名是 `(title: string) => void`，但代码传了 `{ title, description, variant }` 对象，这是其他 UI 库的常见模式。
+3. **`DescriptionList` 使用 `column` 而非 `columns`**: 命名拼写错误。
+
+### 规则
+- 引入新页面时，必须通过 TSC 验证再提交。auto-commit 不应跳过 typecheck。
+- 使用 `@m5/ui` 组件时，先查看接口定义，避免靠猜测使用字段名。
