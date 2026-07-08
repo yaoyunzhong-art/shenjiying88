@@ -204,7 +204,7 @@ function ActionButtons({
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <View style={{ display: 'flex', justifyContent: 'space-between', paddingVertical: 8, borderBottom: '1px solid rgba(148,163,184,0.08)' }}>
+    <View style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, paddingBottom: 8, borderBottom: '1px solid rgba(148,163,184,0.08)' }}>
       <Text style={{ fontSize: 13, color: '#94a3b8' }}>{label}</Text>
       <Text style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 500, textAlign: 'right', flex: 1 }}>{value}</Text>
     </View>
