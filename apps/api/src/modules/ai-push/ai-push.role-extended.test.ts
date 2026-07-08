@@ -129,7 +129,11 @@ describe(`${ROLES.Ops} ai-push 扩展测试`, () => {
 
   it('运行专员按生命周期分群', () => {
     const now = Date.now()
-    svc.memberSegmentService.upsertBehavior({ memberId: 'm-mat', lastActiveAt: now - 30 * dayMs, purchaseCount: 15, totalSpent: 10000, avgOrderValue: 666, sessionCount: 30, lastPurchaseAt: now - 30 * dayMs, churnDays: 30 })
+    // 满足 mature 条件: totalSpent > 5000, purchaseCount >= 10
+    // 但要跳过 growth: purchaseFreq < 1 或者 totalSpent <= 1000
+    // 设 memberAge = 365 天 -> purchaseFreq = 15 / (365/30) ≈ 1.23 >= 1 仍进入 growth
+    // 要让 age 够大使 freq < 1: 设 age=365*2=730天, freq=15/(730/30)=0.616 < 1 不进入 growth
+    svc.memberSegmentService.upsertBehavior({ memberId: 'm-mat', lastActiveAt: now - 730 * dayMs, purchaseCount: 15, totalSpent: 10000, avgOrderValue: 666, sessionCount: 30, lastPurchaseAt: now - 730 * dayMs, churnDays: 730 })
     const lc = svc.memberSegmentService.segmentByLifecycle(['m-mat'])
     expect(lc.get('m-mat')).toBe('mature')
   })
