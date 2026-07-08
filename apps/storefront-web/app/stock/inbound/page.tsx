@@ -16,7 +16,7 @@ import {
   FilterBar,
   PaginatedDataTableCard,
   QuickStats,
-  type TableColumn,
+  type DataTableColumn,
   type QuickStatItem,
 } from '@m5/ui';
 
@@ -195,7 +195,7 @@ export default function InboundListPage() {
   ];
 
   /* 列定义 */
-  const columns: TableColumn<InboundOrder>[] = [
+  const columns: DataTableColumn<InboundOrder>[] = [
     {
       key: 'orderNo',
       header: '入库单号',
@@ -265,6 +265,29 @@ export default function InboundListPage() {
     router.push(`/stock/inbound/${row.id}`);
   };
 
+  /* FilterBar chips builder */
+  const filterBarChips = useMemo(() => {
+    if (statusFilter === 'all') return [];
+    const label = statusOptions.find((o) => o.value === statusFilter)?.label ?? statusFilter;
+    return [{
+      key: 'status',
+      label,
+      active: true,
+      onClick: () => { setStatusFilter('all'); setPage(1); },
+    }];
+  }, [statusFilter, statusOptions]);
+
+  /* FilterChips items builder */
+  const filterChipsItems = useMemo(() => statusOptions
+    .filter((o) => o.value !== 'all')
+    .map((o) => ({
+      key: o.value,
+      label: o.label,
+      tone: statusFilter === o.value
+        ? (o.value === 'completed' ? 'success' as const : o.value === 'cancelled' ? 'danger' as const : 'neutral' as const)
+        : 'neutral' as const,
+    })), [statusFilter, statusOptions]);
+
   return (
     <PageShell title="入库接收">
       {/* 搜索栏 */}
@@ -286,26 +309,35 @@ export default function InboundListPage() {
         ]}
       />
 
-      {/* 状态筛选 */}
-      <FilterBar>
-        <FilterChips
-          options={statusOptions}
-          value={statusFilter}
-          onChange={(v) => { setStatusFilter(v as InboundListStatus | 'all'); setPage(1); }}
+      {/* 状态筛选 — active filter chip */}
+      {filterBarChips.length > 0 ? (
+        <FilterBar
+          chips={filterBarChips}
+          onClearAll={() => { setStatusFilter('all'); setPage(1); }}
+          activeCount={1}
         />
-      </FilterBar>
+      ) : null}
 
-      {/* 表格 */}
+      {/* 状态选项列表 */}
+      <FilterChips
+        hint="筛选状态"
+        chips={filterChipsItems}
+        onRemove={(key) => { setStatusFilter('all'); setPage(1); }}
+      />
+
+      {/* 分页表格 */}
       <PaginatedDataTableCard
         columns={columns}
-        data={paged}
-        page={page}
-        pageSize={pageSize}
-        total={filtered.length}
-        onPageChange={setPage}
-        onRowClick={handleRowClick}
-        emptyText="暂无入库记录"
-        rowKey="id"
+        rows={paged}
+        rowKey={(row) => row.id}
+        emptyTitle="暂无入库记录"
+        emptyDescription="当前筛选条件下没有入库单"
+        pagination={{
+          page,
+          totalPages,
+          total: filtered.length,
+          onPageChange: setPage,
+        }}
       />
     </PageShell>
   );

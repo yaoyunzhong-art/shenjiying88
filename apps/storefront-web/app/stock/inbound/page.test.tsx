@@ -42,7 +42,7 @@ describe('stock/inbound/page — 正例', () => {
     assert.match(src, /PaginatedDataTableCard/);
     assert.match(src, /QuickStats/);
     assert.match(src, /QuickStatItem/);
-    assert.match(src, /TableColumn/);
+    assert.match(src, /DataTableColumn/);
   });
 
   it('应使用 items 属性方式传递统计卡片', () => {
@@ -99,9 +99,9 @@ describe('stock/inbound/page — 边界', () => {
     assert.equal(found.length, 5, `缺少状态: ${['pending','inspecting','shelving','completed','cancelled'].filter(s => !found.includes(s)).join(', ')}`);
   });
 
-  it('应有 emptyText 空态文案', () => {
+  it('应有 emptyTitle/emptyDescription 空态文案', () => {
     const src = readSource();
-    assert.match(src, /emptyText/);
+    assert.match(src, /emptyTitle/);
     assert.match(src, /暂无入库记录/);
   });
 
