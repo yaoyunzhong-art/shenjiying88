@@ -24,7 +24,6 @@ import {
   PRODUCT_STATUS_MAP,
   PRODUCT_CATEGORY_MAP,
   type ProductItem,
-  type ProductStatus,
 } from '../../products-data';
 
 // ── 通过 id 查找商品 ──
@@ -102,13 +101,6 @@ export default function ProductDetailPage() {
     successMessage: '商品已删除',
     defaultErrorMessage: '删除失败',
   });
-
-  const getActiveSubmit = () => {
-    if (activeAction === 'save') return saveSubmit;
-    if (activeAction === 'toggleStatus') return toggleSubmit;
-    if (activeAction === 'delete') return deleteSubmit;
-    return null;
-  };
 
   // 编辑初始化
   const startEdit = useCallback(() => {
