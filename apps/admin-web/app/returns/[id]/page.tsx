@@ -223,7 +223,7 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
       setDetail((prev) => prev ? { ...prev, status: newStatus, handler: '当前用户' } : prev);
       setStatusMessage({ type: 'success', text: `状态已变更为 ${RETURN_STATUS_MAP[newStatus].label}` });
     } else {
-      setStatusMessage({ type: 'error', text: result.error ?? '状态变更失败' });
+      setStatusMessage({ type: 'error', text: '状态变更失败' });
     }
   }, [detail, submit]);
 
@@ -269,8 +269,8 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
   const statusConfig = RETURN_STATUS_MAP[detail.status];
 
   const shellActions: DetailShellAction[] = [
-    { label: '编辑', onClick: handleStartEdit, variant: 'secondary', icon: '✏️' },
-    { label: '删除', onClick: () => setConfirmDelete(true), variant: 'danger', icon: '🗑️' },
+    { key: 'edit', label: '编辑', onClick: handleStartEdit, variant: 'secondary' },
+    { key: 'delete', label: '删除', onClick: () => setConfirmDelete(true), variant: 'danger' },
   ];
 
   const availableTransitions = TRANSITION_ACTIONS
@@ -282,9 +282,9 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
     }));
 
   const closureLinks = [
-    { label: '退换货列表', href: '/returns' },
-    { label: '订单管理', href: '/orders' },
-    { label: '客户管理', href: '/members' },
+    { key: 'returns-list', title: '退换货列表', subtitle: '返回退换货管理工作台', href: '/returns' },
+    { key: 'orders-mgmt', title: '订单管理', subtitle: '查看订单管理模块', href: '/orders' },
+    { key: 'members-mgmt', title: '客户管理', subtitle: '查看客户管理模块', href: '/members' },
   ];
 
   return (
@@ -292,14 +292,11 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
       title={`退换单 ${detail.id}`}
       subtitle={`订单 ${detail.orderNo}`}
       actions={shellActions}
-      closureBar={<DetailClosureBar links={closureLinks} />}
     >
       {/* 状态提示 */}
       {statusMessage && (
         <FormSubmitFeedback
-          type={statusMessage.type}
-          message={statusMessage.text}
-          onDismiss={() => setStatusMessage(null)}
+          {...(statusMessage.type === 'success' ? { success: statusMessage.text, onDismissSuccess: () => setStatusMessage(null) } : { error: statusMessage.text, onDismissError: () => setStatusMessage(null) })}
         />
       )}
 
@@ -307,10 +304,10 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
 
       {/* 顶部统计卡片 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
-        <StatCard title="类型" value={RETURN_TYPE_LABELS[detail.returnType]} />
-        <StatCard title="状态" value={statusConfig.label} />
-        <StatCard title="退款金额" value={formatPrice(detail.refundAmount)} />
-        <StatCard title="商品数" value={`${detail.items.reduce((s, i) => s + i.returnQty, 0)} 件`} />
+        <StatCard label="类型" value={RETURN_TYPE_LABELS[detail.returnType]} />
+        <StatCard label="状态" value={statusConfig.label} />
+        <StatCard label="退款金额" value={formatPrice(detail.refundAmount)} />
+        <StatCard label="商品数" value={`${detail.items.reduce((s, i) => s + i.returnQty, 0)} 件`} />
       </div>
 
       {/* 客户信息 */}
@@ -358,7 +355,7 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
       {/* 备注信息 */}
       {isEditing ? (
         <div style={{ marginBottom: 16 }}>
-          <FormField label="处理人" name="handler">
+          <FormField label="处理人">
             <input
               value={editForm.handler}
               onChange={(e) => setEditForm((f) => ({ ...f, handler: e.target.value }))}
@@ -369,7 +366,7 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
               }}
             />
           </FormField>
-          <FormField label="备注" name="remark">
+          <FormField label="备注">
             <textarea
               value={editForm.remark}
               onChange={(e) => setEditForm((f) => ({ ...f, remark: e.target.value }))}
@@ -382,7 +379,7 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
             />
           </FormField>
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <SubmitButton onClick={handleSaveEdit} submitting={submitting}>保存</SubmitButton>
+            <SubmitButton onClick={handleSaveEdit} loading={submitting}>保存</SubmitButton>
             <SubmitButton variant="secondary" onClick={handleCancelEdit}>取消</SubmitButton>
           </div>
         </div>
@@ -398,7 +395,7 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
           <h3 style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginBottom: 12 }}>状态流转</h3>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {availableTransitions.map((action, idx) => (
-              <SubmitButton key={idx} onClick={action.onClick} submitting={submitting}>
+              <SubmitButton key={idx} onClick={action.onClick} loading={submitting}>
                 {action.label}
               </SubmitButton>
             ))}
@@ -406,7 +403,11 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
+      {/* 上下文闭环 */}
+      <DetailClosureBar links={closureLinks} />
+
       {/* 删除确认弹窗 */}
+
       {confirmDelete && (
         <div style={{
           position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -422,7 +423,7 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
             </p>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <SubmitButton variant="secondary" onClick={() => setConfirmDelete(false)}>取消</SubmitButton>
-              <SubmitButton onClick={handleDelete} submitting={submitting}>确认删除</SubmitButton>
+              <SubmitButton onClick={handleDelete} loading={submitting}>确认删除</SubmitButton>
             </div>
           </div>
         </div>
