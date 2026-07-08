@@ -17,8 +17,8 @@ const React = require(
 
 // ── 单元测试: 校验函数 ──
 
-import { validateCampaignForm, isFormValid, submitCampaignForm } from './page';
-import type { CampaignFormValues, CampaignFormErrors } from './page';
+import { validateCampaignForm, isFormValid, submitCampaignForm } from './lib';
+import type { CampaignFormValues, CampaignFormErrors } from './lib';
 
 describe('validateCampaignForm', () => {
   const validValues: CampaignFormValues = {

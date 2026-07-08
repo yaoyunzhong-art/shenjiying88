@@ -83,17 +83,6 @@ const STYLES: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: 12,
   },
-  filterBtn: (active: boolean): React.CSSProperties => ({
-    padding: '6px 14px',
-    fontSize: 13,
-    fontWeight: 500,
-    border: active ? '1px solid #6366f1' : '1px solid #e2e8f0',
-    borderRadius: 8,
-    background: active ? '#eef2ff' : '#fff',
-    color: active ? '#6366f1' : '#64748b',
-    cursor: 'pointer',
-    transition: 'all 0.15s',
-  }),
   refreshBtn: {
     padding: '6px 14px',
     fontSize: 13,
@@ -147,6 +136,20 @@ const STYLES: Record<string, React.CSSProperties> = {
   },
 };
 
+function getFilterBtnStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: '6px 14px',
+    fontSize: 13,
+    fontWeight: 500,
+    border: active ? '1px solid #6366f1' : '1px solid #e2e8f0',
+    borderRadius: 8,
+    background: active ? '#eef2ff' : '#fff',
+    color: active ? '#6366f1' : '#64748b',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+  };
+}
+
 // ==================== 组件 ====================
 
 export function AnomalyFrequencyClient({ initialGovernance }: AnomalyFrequencyClientProps) {
@@ -192,7 +195,7 @@ export function AnomalyFrequencyClient({ initialGovernance }: AnomalyFrequencyCl
           {(['6h', '24h', '7d', '30d'] as TimeRange[]).map((range) => (
             <button
               key={range}
-              style={STYLES.filterBtn(timeRange === range)}
+              style={getFilterBtnStyle(timeRange === range)}
               onClick={() => setTimeRange(range)}
             >
               {range === '6h' && '近6小时'}
@@ -233,7 +236,7 @@ export function AnomalyFrequencyClient({ initialGovernance }: AnomalyFrequencyCl
           <button
             key={sev}
             style={{
-              ...STYLES.filterBtn(severityFilter === sev),
+              ...getFilterBtnStyle(severityFilter === sev),
               display: 'flex',
               alignItems: 'center',
               gap: 4,

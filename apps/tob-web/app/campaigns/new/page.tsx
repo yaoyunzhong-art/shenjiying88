@@ -20,123 +20,22 @@ import {
   formatCurrency,
   type CampaignItem,
 } from '../../campaigns-data';
+import {
+  validateCampaignForm,
+  isFormValid,
+  submitCampaignForm,
+  type CampaignFormValues,
+  type CampaignFormErrors,
+  type SubmitStatus,
+} from './lib';
 
-// ── 表单类型 ──
-
-export interface CampaignFormValues {
-  name: string;
-  type: CampaignItem['type'] | '';
-  channel: CampaignItem['channel'] | '';
-  budget: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-}
-
-export interface CampaignFormErrors {
-  name?: string;
-  type?: string;
-  channel?: string;
-  budget?: string;
-  startDate?: string;
-  endDate?: string;
-}
-
-export type SubmitStatus = 'idle' | 'submitting' | 'success' | 'error';
-
-// ── 校验逻辑 ──
+// ── 常量 ──
 
 const MIN_BUDGET = 1000;
 const MAX_BUDGET = 10_000_000;
 
-export function validateCampaignForm(values: CampaignFormValues): CampaignFormErrors {
-  const errors: CampaignFormErrors = {};
-
-  if (!values.name.trim()) {
-    errors.name = '活动名称不能为空';
-  } else if (values.name.trim().length < 2) {
-    errors.name = '活动名称至少 2 个字符';
-  } else if (values.name.trim().length > 50) {
-    errors.name = '活动名称不能超过 50 个字符';
-  }
-
-  if (!values.type) {
-    errors.type = '请选择活动类型';
-  }
-
-  if (!values.channel) {
-    errors.channel = '请选择渠道';
-  }
-
-  if (!values.budget.trim()) {
-    errors.budget = '请输入预算金额';
-  } else {
-    const budgetNum = Number(values.budget);
-    if (isNaN(budgetNum) || !Number.isFinite(budgetNum)) {
-      errors.budget = '请输入有效数字';
-    } else if (budgetNum < MIN_BUDGET) {
-      errors.budget = `预算不能低于 ${formatCurrency(MIN_BUDGET)}`;
-    } else if (budgetNum > MAX_BUDGET) {
-      errors.budget = `预算不能超过 ${formatCurrency(MAX_BUDGET)}`;
-    }
-  }
-
-  if (!values.startDate) {
-    errors.startDate = '请选择开始日期';
-  }
-
-  if (!values.endDate) {
-    errors.endDate = '请选择结束日期';
-  }
-
-  if (values.startDate && values.endDate) {
-    if (values.endDate < values.startDate) {
-      errors.endDate = '结束日期不能早于开始日期';
-    }
-  }
-
-  return errors;
-}
-
-export function isFormValid(errors: CampaignFormErrors): boolean {
-  return Object.keys(errors).length === 0;
-}
-
 // ── Mock 提交 ──
 
-export async function submitCampaignForm(
-  values: CampaignFormValues,
-  signal?: AbortSignal,
-): Promise<{ ok: boolean; id?: string; error?: string }> {
-  // 模拟网络延迟 500-1500ms
-  const delay = 500 + Math.random() * 1000;
-  await new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(resolve, delay);
-    // 如果 signal 被 abort，reject
-    if (signal) {
-      if (signal.aborted) {
-        clearTimeout(timer);
-        reject(new DOMException('Aborted', 'AbortError'));
-        return;
-      }
-      signal.addEventListener(
-        'abort',
-        () => {
-          clearTimeout(timer);
-          reject(new DOMException('Aborted', 'AbortError'));
-        },
-        { once: true },
-      );
-    }
-  });
-
-  // 模拟 5% 的随机失败
-  if (Math.random() < 0.05) {
-    return { ok: false, error: '服务器繁忙，请稍后重试' };
-  }
-
-  return { ok: true, id: `cmp-${Date.now()}` };
-}
 
 // ── 表单组件 ──
 
@@ -240,8 +139,8 @@ export default function CampaignNewPage() {
 
   // 预览数据
   const preview = useMemo(() => {
-    const typeLabel = values.type ? CAMPAIGN_TYPE_MAP[values.type]?.label : '-';
-    const channelLabel = values.channel ? CAMPAIGN_CHANNEL_MAP[values.channel]?.label : '-';
+    const typeLabel = values.type ? (CAMPAIGN_TYPE_MAP as Record<string, { label: string; color: string } | undefined>)[values.type]?.label : '-';
+    const channelLabel = values.channel ? (CAMPAIGN_CHANNEL_MAP as Record<string, { label: string; color: string } | undefined>)[values.channel]?.label : '-';
     const budgetDisplay = values.budget ? formatCurrency(Number(values.budget)) : '-';
     return { typeLabel, channelLabel, budgetDisplay };
   }, [values]);

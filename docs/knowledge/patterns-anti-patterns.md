@@ -385,3 +385,18 @@ P-36会员管理的角色模拟测试覆盖了「创建会员 → 充值 → 消
 - 每个角色覆盖: 权限边界 + 数据隔离 + 跨域互斥 + 默认值
 - 角色测试采用 **三层矩阵**: role × operation × scope_data
 - 这种深度测试策略已成为 service 层安全测试的标准模板
+
+## Pulse-213 Insight: Next.js App Router page.tsx 导出限制与重构模式
+
+在 `campaigns/new/page.tsx` 中发现 `OmitWithTag` 类型约束冲突：
+- Next.js App Router 静态分析要求 page.tsx 只导出 `default` 组件及特定元数据
+- `validateCampaignForm`、`isFormValid`、`submitCampaignForm` 等工具函数的 `export` 会触发 
+  `Property ... is incompatible with index signature. Type ... is not assignable to type 'never'`
+- **最佳实践**: 将非标准导出移至 `./lib.ts` 或 `./actions.ts`，page.tsx 保持纯净的组件导出
+
+## Pulse-213 Insight: 内联样式对象中的函数属性与 `Record<string, React.CSSProperties>` 类型冲突
+
+`anomaly-frequency-client.tsx` 中 STYLES 对象类型定义为 `Record<string, React.CSSProperties>`：
+- `filterBtn: (active: boolean) => React.CSSProperties` 触发4个 TSC 错误
+- 根因: Record 的值类型推断将函数视为 CSSProperties 值的兼容类型，但调用时 TS 发现不可调用
+- **最佳实践**: 将样式生成函数从 Record 对象中分离为独立函数（如 `getFilterBtnStyle`），不要混合纯样式对象与函数
