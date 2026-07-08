@@ -646,6 +646,15 @@ export type {
   MarketingQuickAction,
 } from './components/MarketingManagerDashboard';
 export type { CampaignSnapshot as MarketingCampaignSnapshot } from './components/MarketingManagerDashboard';
+export { ProductManagerDashboard } from './components/ProductManagerDashboard';
+export type {
+  ProductManagerDashboardProps,
+  ProductGrowthMetrics,
+  ProductSnapshot,
+  CategoryStat,
+  ProductQuickAction,
+} from './components/ProductManagerDashboard';
+export type { ProductSnapshot as ProductDashboardSnapshot } from './components/ProductManagerDashboard';
 export { ErrorBoundary } from './components/ErrorBoundary';
 export type {
   ErrorBoundaryProps,
