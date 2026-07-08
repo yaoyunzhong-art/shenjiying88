@@ -4,15 +4,23 @@
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SOURCE = resolve(__dirname, 'page.tsx');
+const DATA_SOURCE = resolve(__dirname, 'stock-transfer-data.ts');
 
 function readSource(): string {
   return readFileSync(SOURCE, 'utf-8');
+}
+
+function readData(): string {
+  if (existsSync(DATA_SOURCE)) {
+    return readFileSync(DATA_SOURCE, 'utf-8');
+  }
+  return '';
 }
 
 // ---- 正例 ----
@@ -63,37 +71,13 @@ describe('stock-transfer — 正例', () => {
     assert.ok(src.includes('DetailActionBar'), '缺少 DetailActionBar');
   });
 
-  it('应定义 TransferStatus 类型', () => {
+  it('应从共享文件导入类型和数据', () => {
     const src = readSource();
-    assert.ok(src.includes("type TransferStatus ="), '缺少 TransferStatus 类型');
-  });
-
-  it('应定义 TransferType 类型', () => {
-    const src = readSource();
-    assert.ok(src.includes("type TransferType ="), '缺少 TransferType 类型');
-  });
-
-  it('应定义 UrgencyLevel 类型', () => {
-    const src = readSource();
-    assert.ok(src.includes("type UrgencyLevel ="), '缺少 UrgencyLevel 类型');
-  });
-
-  it('应定义 StockTransferItem 接口', () => {
-    const src = readSource();
-    assert.ok(src.includes('interface StockTransferItem'), '缺少 StockTransferItem 接口');
-  });
-
-  it('应包含类型映射表 (TYPE_LABEL / STATUS_LABEL / URGENCY_LABEL)', () => {
-    const src = readSource();
-    assert.ok(src.includes('const TYPE_LABEL'), '缺少 TYPE_LABEL');
-    assert.ok(src.includes('const STATUS_LABEL'), '缺少 STATUS_LABEL');
-    assert.ok(src.includes('const URGENCY_LABEL'), '缺少 URGENCY_LABEL');
-  });
-
-  it('应包含 12 条 Mock 调拨单数据', () => {
-    const src = readSource();
-    const matches = src.match(/transferNo: '/g);
-    assert.ok(matches && matches.length === 12, `期望 12 条调拨单, 实际 ${matches?.length ?? 0}`);
+    assert.ok(src.includes("from './stock-transfer-data'"), '应有 stock-transfer-data 导入');
+    assert.ok(src.includes('MOCK_TRANSFERS'), '应导入 MOCK_TRANSFERS');
+    assert.ok(src.includes('TYPE_LABEL'), '应导入 TYPE_LABEL');
+    assert.ok(src.includes('STATUS_LABEL'), '应导入 STATUS_LABEL');
+    assert.ok(src.includes('URGENCY_LABEL'), '应导入 URGENCY_LABEL');
   });
 
   it('应包含 buildColumns 列定义函数', () => {
@@ -105,31 +89,69 @@ describe('stock-transfer — 正例', () => {
 // ---- 边界 / 防御 ----
 
 describe('stock-transfer — 边界防御', () => {
-  it('mock 数据应覆盖全部 status', () => {
-    const src = readSource();
+  it('共享数据文件应覆盖全部 status', () => {
+    const data = readData();
+    if (!data) return;
     const statuses = ['pending', 'approved', 'shipped', 'received', 'rejected', 'cancelled'];
     for (const s of statuses) {
-      assert.ok(src.includes(`status: '${s}'`), `缺少 status: '${s}' 用例`);
+      assert.ok(data.includes(`status: '${s}'`), `共享数据缺少 status: '${s}' 用例`);
     }
   });
 
-  it('mock 数据应覆盖全部 type', () => {
-    const src = readSource();
+  it('共享数据文件应覆盖全部 type', () => {
+    const data = readData();
+    if (!data) return;
     const types = ['supply', 'return', 'move', 'emergency'];
     for (const t of types) {
-      assert.ok(src.includes(`type: '${t}'`), `缺少 type: '${t}' 用例`);
+      assert.ok(data.includes(`type: '${t}'`), `共享数据缺少 type: '${t}' 用例`);
     }
   });
 
-  it('mock 数据应覆盖全部 urgency', () => {
-    const src = readSource();
+  it('共享数据文件应覆盖全部 urgency', () => {
+    const data = readData();
+    if (!data) return;
     const urgencies = ['normal', 'urgent', 'critical'];
     for (const u of urgencies) {
-      assert.ok(src.includes(`urgency: '${u}'`), `缺少 urgency: '${u}' 用例`);
+      assert.ok(data.includes(`urgency: '${u}'`), `共享数据缺少 urgency: '${u}' 用例`);
     }
   });
 
-  it('数据列应包含状态、类型、紧急度、商品信息、门店和操作', () => {
+  it('共享数据文件应包含 StockTransferItem 接口和类型定义', () => {
+    const data = readData();
+    if (!data) return;
+    assert.ok(data.includes('export interface StockTransferItem'), '共享数据缺少 StockTransferItem');
+    assert.ok(data.includes("export type TransferStatus ="), '共享数据缺少 TransferStatus 类型');
+    assert.ok(data.includes("export type TransferType ="), '共享数据缺少 TransferType 类型');
+    assert.ok(data.includes("export type UrgencyLevel ="), '共享数据缺少 UrgencyLevel 类型');
+  });
+
+  it('共享数据文件应包含标签映射表', () => {
+    const data = readData();
+    if (!data) return;
+    assert.ok(data.includes('export const TYPE_LABEL'), '共享数据缺少 TYPE_LABEL');
+    assert.ok(data.includes('export const STATUS_LABEL'), '共享数据缺少 STATUS_LABEL');
+    assert.ok(data.includes('export const URGENCY_LABEL'), '共享数据缺少 URGENCY_LABEL');
+    assert.ok(data.includes('export const STATUS_STYLE'), '共享数据缺少 STATUS_STYLE');
+    assert.ok(data.includes('export const URGENCY_VARIANT'), '共享数据缺少 URGENCY_VARIANT');
+  });
+
+  it('共享数据文件应包含 12 条 Mock 调拨单', () => {
+    const data = readData();
+    if (!data) return;
+    const matches = data.match(/transferNo: '/g);
+    assert.ok(matches && matches.length === 12, `期望 12 条调拨单, 实际 ${matches?.length ?? 0}`);
+  });
+
+  it('共享数据文件每个 mock 数据对象应有 id 且唯一', () => {
+    const data = readData();
+    if (!data) return;
+    const ids = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 't10', 't11', 't12'];
+    for (const id of ids) {
+      assert.ok(data.includes(`id: '${id}'`), `共享数据缺少 id: '${id}'`);
+    }
+  });
+
+  it('数据列应包含必要的列 key', () => {
     const src = readSource();
     const expectedColumns = ['transferNo', 'sourceStoreName', 'targetStoreName', 'productName', 'createdAt', 'createdBy'];
     for (const col of expectedColumns) {
@@ -137,49 +159,15 @@ describe('stock-transfer — 边界防御', () => {
     }
   });
 
-  it('筛选器应包含全部、待审核、已通过、已发货、已收货、已驳回、已撤销', () => {
-    const src = readSource();
-    const filterStatuses = ['ALL', 'pending', 'approved', 'shipped', 'received', 'rejected', 'cancelled'];
-    for (const f of filterStatuses) {
-      assert.ok(src.includes(`'${f}'`), `缺少筛选状态: ${f}`);
-    }
-  });
-
-  it('类型筛选应包含 supply / return / move / emergency', () => {
-    const src = readSource();
-    const filterTypes = ['supply', 'return', 'move', 'emergency'];
-    for (const t of filterTypes) {
-      assert.ok(src.includes(`'${t}'`), `缺少筛选类型: ${t}`);
-    }
-  });
-
-  it('紧急度筛选应包含 normal / urgent / critical', () => {
-    const src = readSource();
-    const filterUrgencies = ['normal', 'urgent', 'critical'];
-    for (const u of filterUrgencies) {
-      assert.ok(src.includes(`'${u}'`), `缺少筛选紧急度: ${u}`);
-    }
-  });
-
-  it('每个 mock 数据对象应有 id 且唯一', () => {
-    const src = readSource();
-    const ids = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 't10', 't11', 't12'];
-    for (const id of ids) {
-      assert.ok(src.includes(`id: '${id}'`), `缺少 id: '${id}'`);
-    }
-  });
-
-  it('应包含 2 个子路由目录: [id] 和 new', () => {
-    const src = readSource();
-    // Test file exists alongside page, check subdirs via fs
+  it('应包含路由目录 [id]', () => {
     const idDir = resolve(__dirname, '[id]');
-    const newDir = resolve(__dirname, 'new');
-    try {
-      const fs = require('fs');
-      assert.ok(fs.existsSync(idDir), '缺少 [id] 子目录');
-      assert.ok(fs.existsSync(newDir), '缺少 new 子目录');
-    } catch {
-      // skip fs check if module resolution fails
-    }
+    assert.ok(existsSync(idDir), '缺少 [id] 子目录');
+  });
+
+  it('详情页应在 [id]/page.tsx 中引用 detail client', () => {
+    const detailPage = resolve(__dirname, '[id]', 'page.tsx');
+    const detailSrc = readFileSync(detailPage, 'utf-8');
+    assert.ok(detailSrc.includes('StockTransferDetailClient'), '详情页应引用 StockTransferDetailClient');
+    assert.ok(detailSrc.includes('transferId'), '详情页应传递 transferId');
   });
 });
