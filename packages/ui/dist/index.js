@@ -64585,6 +64585,36 @@ function AIDecisionExplainerPanel({
 }) {
   const [expanded, setExpanded] = import_react177.default.useState(defaultExpanded);
   const isH5 = variant === "h5";
+  if (!data) {
+    return /* @__PURE__ */ (0, import_jsx_runtime255.jsx)(
+      "div",
+      {
+        "data-testid": "ai-decision-explainer-panel",
+        style: {
+          borderRadius: 16,
+          border: "1px solid #e8e8e8",
+          background: "#fff",
+          overflow: "hidden",
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        },
+        children: /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              padding: 20,
+              background: "#fafafa"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("span", { style: { fontSize: 20, marginRight: 10 }, children: "\u{1F914}" }),
+              /* @__PURE__ */ (0, import_jsx_runtime255.jsx)("div", { style: { fontSize: 16, fontWeight: 600, color: "#1f1f1f" }, children: title })
+            ]
+          }
+        )
+      }
+    );
+  }
   return /* @__PURE__ */ (0, import_jsx_runtime255.jsxs)(
     "div",
     {

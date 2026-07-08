@@ -86,6 +86,7 @@ import { PointsModule } from './modules/points/points.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BrandCustomModule } from './modules/brand-custom/brand-custom.module';
 import { AiSalesModule } from './modules/ai-sales/ai-sales.module';
+import { AllianceModule } from './modules/alliance/alliance.module';
 import { DeployModule } from './modules/deploy/deploy.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AiPushModule } from './modules/ai-push/ai-push.module';
@@ -200,6 +201,7 @@ import { SessionModule } from './modules/session/session.module';
     AuthModule,
     BrandCustomModule,
     AiSalesModule,
+    AllianceModule,
     DeployModule,
     AuditModule,
     AiPushModule,
