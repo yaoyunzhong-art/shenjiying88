@@ -641,6 +641,8 @@ export type { InputNumberProps, InputNumberSize } from './components/InputNumber
 export { PasswordInput } from './components/PasswordInput';
 export type { PasswordInputProps } from './components/PasswordInput';
 export { ProcurementManagerDashboard } from './components/ProcurementManagerDashboard';
+export { PurchaseOrderPanel } from './components/PurchaseOrderPanel';
+export type { PurchaseOrderPanelProps, PurchaseOrderDetail, PurchaseOrderLineItem, PurchaseOrderPanelActions } from './components/PurchaseOrderPanel';
 export { MarketingManagerDashboard } from './components/MarketingManagerDashboard';
 export type {
   MarketingManagerDashboardProps,
