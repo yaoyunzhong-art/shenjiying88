@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { GovernanceApprovalController } from './governance-approval.controller'
+
 // ── governance-approval 使用 PrismaService，纯 controller 方法签名测试 ──
 const ROLES = {
   Security: '🔧安监',
@@ -9,14 +11,9 @@ const ROLES = {
   HR: '👥HR'
 }
 
-// 懒加载 controller 类用于反射测试
-let GovernanceApprovalController: any
 let controllerInstance: any
 
 function getControllerClass() {
-  if (!GovernanceApprovalController) {
-    GovernanceApprovalController = require('./governance-approval.controller').GovernanceApprovalController
-  }
   return GovernanceApprovalController
 }
 

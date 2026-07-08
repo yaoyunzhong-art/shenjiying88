@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { RuntimeGovernanceController } from './runtime-governance.controller'
+
 // ── Helpers ──
 function mockRuntimeGovService() {
   return {
@@ -16,7 +18,6 @@ function mockRuntimeGovService() {
 }
 
 function createRuntimeGovController(mockSvc = mockRuntimeGovService()) {
-  const { RuntimeGovernanceController } = require('./runtime-governance.controller')
   return new RuntimeGovernanceController(mockSvc)
 }
 

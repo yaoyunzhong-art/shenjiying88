@@ -393,11 +393,8 @@ describe('跨模块链 #34 · 故障注入 + 降级恢复 + 审计追溯', () =>
     expect(deact.error).toContain('not currently activated')
   })
 
-  it('反例: 不存在的区域健康检查返回错误', () => {
-    const check = performHealthCheck('nonexistent-region')
-    expect(check).toBeUndefined()
-    // 实际上抛异常
-    expect(() => performHealthCheck('nonexistent-region')).toThrow()
+  it('反例: 不存在的区域健康检查抛出异常', () => {
+    expect(() => performHealthCheck('nonexistent-region')).toThrow('not found')
   })
 
   it('反例: 不存在的故障 ID 无法恢复', () => {
@@ -417,10 +414,17 @@ describe('跨模块链 #34 · 故障注入 + 降级恢复 + 审计追溯', () =>
   // ─── Phase 5: 边界测试 ───
 
   it('边界: 区域状态反复切换→抖动场景', () => {
-    // 模拟网络抖动: up→down→up
+    // 模拟网络抖动: down→up→down
     setRegionStatus('region-cn-east', 'down')
-    const fault1 = detectAndRegisterFault('network_partition', 'region-cn-east', 'major')
+    const fault1 = detectAndRegisterFault('network_partition', 'region-cn-east', 'critical')
     autoRespondToFault(fault1)
+
+    // 第一次故障转移激活
+    let records = getDegradationRecords('region-cn-east')
+    expect(records.length).toBeGreaterThanOrEqual(1)
+    expect(records[0].status).toBe('activated')
+
+    // 恢复
     resolveFault(fault1.id)
     deactivateStrategy('strategy-failover', 'region-cn-east')
     setRegionStatus('region-cn-east', 'active')
@@ -431,13 +435,13 @@ describe('跨模块链 #34 · 故障注入 + 降级恢复 + 审计追溯', () =>
 
     // 再次故障
     setRegionStatus('region-cn-east', 'down')
-    const fault2 = detectAndRegisterFault('network_partition', 'region-cn-east', 'critical')
+    const fault2 = detectAndRegisterFault('region_down', 'region-cn-east', 'critical')
     autoRespondToFault(fault2)
 
     // 审计记录应累积
-    const records = getDegradationRecords('region-cn-east')
+    records = getDegradationRecords('region-cn-east')
     expect(records.length).toBeGreaterThanOrEqual(2)
-    // 第一次激活已关闭, 第二次重新激活
+    // 至少有 1 条激活和 1 条去激活记录
     expect(records.filter(r => r.status === 'activated').length).toBeGreaterThanOrEqual(1)
     expect(records.filter(r => r.status === 'deactivated').length).toBeGreaterThanOrEqual(1)
   })

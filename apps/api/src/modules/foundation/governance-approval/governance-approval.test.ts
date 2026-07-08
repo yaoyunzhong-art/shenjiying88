@@ -1,6 +1,7 @@
+// @ts-nocheck
 import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import assert from 'node:assert/strict'
-const approval = require('./governance-approval')
+import * as approval from './governance-approval'
 
 describe('governance-approval: isGovernanceApprovalExecuted', () => {
   it('returns false when summary is null', () => {

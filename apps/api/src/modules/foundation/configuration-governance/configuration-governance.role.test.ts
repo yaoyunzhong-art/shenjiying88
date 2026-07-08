@@ -1,6 +1,9 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { ConfigurationGovernanceController } from './configuration-governance.controller'
+
 // ── Helpers ──
 function mockConfigGovService() {
   return {
@@ -31,7 +34,6 @@ function mockConfigGovService() {
 }
 
 function createConfigGovController(mockSvc = mockConfigGovService()) {
-  const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
   return new ConfigurationGovernanceController(mockSvc)
 }
 

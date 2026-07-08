@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { IntegrationOrchestrationController } from './integration-orchestration.controller'
+
 // ── Helpers ──
 function mockIntegrationOrchService() {
   return {
@@ -14,7 +16,6 @@ function mockIntegrationOrchService() {
 }
 
 function createIntOrchController(mockSvc = mockIntegrationOrchService()) {
-  const { IntegrationOrchestrationController } = require('./integration-orchestration.controller')
   return new IntegrationOrchestrationController(mockSvc)
 }
 

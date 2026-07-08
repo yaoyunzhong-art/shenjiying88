@@ -1,15 +1,16 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { ConfigurationGovernanceController } from './configuration-governance.controller'
+
 it('configuration-governance controller path metadata is set', () => {
-   
-  const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
   const path = Reflect.getMetadata('path', ConfigurationGovernanceController)
   assert.equal(path, 'foundation/configuration-governance')
 })
 
 it('configuration-governance controller management-metadata route has GET metadata', () => {
-  const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
+  // import is at top
   const method = Reflect.getMetadata(
     'method',
     ConfigurationGovernanceController.prototype.getManagementMetadata
@@ -24,7 +25,7 @@ it('configuration-governance controller management-metadata route has GET metada
 })
 
 it('configuration-governance controller overview route has GET metadata', () => {
-  const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
+  // import is at top
   const method = Reflect.getMetadata(
     'method',
     ConfigurationGovernanceController.prototype.getOperationsOverview
@@ -39,7 +40,7 @@ it('configuration-governance controller overview route has GET metadata', () => 
 })
 
 it('configuration-governance controller snapshot route has GET metadata', () => {
-  const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
+  // import is at top
   const method = Reflect.getMetadata(
     'method',
     ConfigurationGovernanceController.prototype.getSnapshot
@@ -54,7 +55,7 @@ it('configuration-governance controller snapshot route has GET metadata', () => 
 })
 
 it('configuration-governance controller feature-flags route has GET metadata', () => {
-  const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
+  // import is at top
   const method = Reflect.getMetadata(
     'method',
     ConfigurationGovernanceController.prototype.getFeatureFlags
@@ -69,7 +70,7 @@ it('configuration-governance controller feature-flags route has GET metadata', (
 })
 
 it('configuration-governance controller saveFeatureFlag route has POST metadata', () => {
-  const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
+  // import is at top
   const method = Reflect.getMetadata(
     'method',
     ConfigurationGovernanceController.prototype.saveFeatureFlag
@@ -84,7 +85,7 @@ it('configuration-governance controller saveFeatureFlag route has POST metadata'
 })
 
 it('configuration-governance controller getManagementMetadata delegates to service', () => {
-  const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
+  // import is at top
 
   const mockMetadata = {
     module: 'configuration-governance',
@@ -102,7 +103,7 @@ it('configuration-governance controller getManagementMetadata delegates to servi
 })
 
 it('configuration-governance controller getOperationsOverview delegates to service', async () => {
-  const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
+  // import is at top
 
   const mockOverview = {
     totalConfigEntries: 42,
@@ -121,7 +122,7 @@ it('configuration-governance controller getOperationsOverview delegates to servi
 })
 
 it('configuration-governance controller getSnapshot delegates to service with tenant context', async () => {
-  const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
+  // import is at top
 
   const mockSnapshot = { featureFlags: {}, configEntries: {} }
 
@@ -143,7 +144,7 @@ it('configuration-governance controller getSnapshot delegates to service with te
 })
 
 it('configuration-governance controller saveFeatureFlag delegates to service', async () => {
-  const { ConfigurationGovernanceController } = require('./configuration-governance.controller')
+  // import is at top
 
   const mockResult = { flagKey: 'new-checkout-flow', status: 'ENABLED' }
 

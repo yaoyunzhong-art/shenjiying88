@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { TrustGovernanceController } from './trust-governance.controller'
+
 // ── Helpers ──
 function mockTrustGovService() {
   return {
@@ -30,7 +32,6 @@ function mockTrustGovService() {
 }
 
 function createTrustGovController(mockSvc = mockTrustGovService()) {
-  const { TrustGovernanceController } = require('./trust-governance.controller')
   return new TrustGovernanceController(mockSvc)
 }
 

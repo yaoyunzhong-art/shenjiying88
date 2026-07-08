@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { IdentityAccessController } from './identity-access.controller'
 // ── Helpers ──
 function mockIdentityAccessService() {
   return {
@@ -17,7 +18,6 @@ function mockIdentityAccessService() {
 }
 
 function createIdentityAccessController(mockSvc = mockIdentityAccessService()) {
-  const { IdentityAccessController } = require('./identity-access.controller')
   return new IdentityAccessController(mockSvc)
 }
 
@@ -95,7 +95,7 @@ describe(`${ROLES.Security} identity-access 角色测试`, () => {
   it('安监跨租户 scope validate — 边界（authorization denied）', () => {
     const svc = mockIdentityAccessService()
     svc.authorizeAction = () => ({ status: 'denied', action: 'tenant:read', permissionMatched: false, tenantScopeMatched: false, resourceScope: {}, actor: null, enforcedBy: [] })
-    const ctrl = new (require('./identity-access.controller').IdentityAccessController)(svc)
+    const ctrl = new IdentityAccessController(svc)
     const result = ctrl.validateTenantScope('t-other', tenantCtx, { ...actorCtx, roles: ['SECURITY_ADMIN'], permissions: ['audit:read'] })
     // Controller hardcodes status: 'allowed' on envelope; authorization sub-object reflects real check
     assert.equal(result.check, 'tenant-scope')
@@ -159,7 +159,7 @@ describe(`${ROLES.HR} identity-access 角色测试`, () => {
   it('HR尝试跨scope validate — 边界（authorization denied）', () => {
     const svc = mockIdentityAccessService()
     svc.authorizeAction = () => ({ status: 'denied', action: 'tenant:read', permissionMatched: false, tenantScopeMatched: false, resourceScope: {}, actor: null, enforcedBy: [] })
-    const ctrl = new (require('./identity-access.controller').IdentityAccessController)(svc)
+    const ctrl = new IdentityAccessController(svc)
     const result = ctrl.validateTenantScope('t-other', tenantCtx, { ...actorCtx, roles: ['HR'], permissions: ['member:read'] })
     assert.equal(result.check, 'tenant-scope')
     assert.equal(result.authorization.status, 'denied')

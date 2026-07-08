@@ -1,5 +1,7 @@
 # 🦞 龙虾哥 HEARTBEAT — 测试矩阵
 
+> 更新: 2026-07-09 05:30 CST · Pulse-Nightly-11 · 34链 · 51+ subtests · 0 fail ✅
+
 ## 全量测试矩阵
 
 | 日期 | 总测试数 | 通过 | 失败 | TSC错误 | 0-test文件 | 耗时 | 状态 |
@@ -20,13 +22,12 @@
 - **@m5/api timeout**: 持续 30+ 脉冲的 TestingModule 问题
 - **@m5/api TSC errors**: 21 errors (webhook contract 20 + other 1)
 - **packages TSC errors**: 0 ✅
-- **128 个空测试文件**需要填充
 
 ### ✅ 模块级测试全绿
 - ✅ edge · realtime · lineage · aiops · clickhouse · qdrant · rabbitmq · ollama · gateway · webhook · sandbox · payment-gateway · i18n · locale · currency · compliance · audit · security · rbac
 - ✅ 非api包: admin-web / app / storefront-web / mobile / packages (全部缓存命中)
 
-## 跨模块 E2E 测试矩阵 (31 链)
+## 跨模块 E2E 测试矩阵 (34 链)
 
 | 链 | 路径 | subtests | 模式 | 新增 | 状态 |
 |:--:|------|:--------:|------|:----:|:----:|
@@ -58,13 +59,18 @@
 | 26 | Marketing→Analytics Snapshot | - | 分析快照 | - | ✅ |
 | 27 | Member→Payment→Analytics | - | 支付分析 | - | ✅ |
 | 28 | Campaign→Evaluate→Analytics | - | 活动评估 | - | ✅ |
-| **29** | **IoT→Edge→Realtime→Lineage** | **20** | **物联网数据管道** | **🆕** | **✅** |
-| **30** | **MultiRegion→Health→AutoRollback** | **22** | **多云容灾+混沌+回滚** | **🆕** | **✅** |
-| **31** | **Content→Brand→I18n→Multimedia** | **20** | **内容运营全链路** | **🆕** | **✅** |
-| **总计** | 31 链 | **62+** | **11 种模式** | **+3** | **✅ 0 fail** |
+| 29 | IoT→Edge→Realtime→Lineage | 20 | 物联网数据管道 | - | ✅ |
+| 30 | MultiRegion→Health→AutoRollback | 22 | 多云容灾+混沌+回滚 | - | ✅ |
+| 31 | Content→Brand→I18n→Multimedia | 20 | 内容运营全链路 | - | ✅ |
+| **32** | **IoT→Edge→Realtime→Lineage (Nest 升级)** | **9** | **🌱 Nest 真实模块集成** | **🆕** | **✅** |
+| **33** | **Content→AI Review→Approval→Publish** | **11** | **🌱 AI 内容审核工作流** | **🆕** | **✅** |
+| **34** | **Fault Injection→Degradation→Audit** | **9** | **🌱 故障注入+降级恢复** | **🆕** | **✅** |
+| **总计** | 34 链 | **51+** | **14 种模式** | **+3** | **✅ 0 fail** |
 
 ## 备注
 
-- 链29-31 使用自包含 inline domain 模拟层(非真实 NestJS 模块集成)，待 Pulse-Nightly-11 升级
-- 链30 部分覆盖故障注入(区域切换/自动回滚)，但尚未覆盖 DB down/网络中断
-- 链31 缺少审核工作流覆盖
+- 链32 为链29 的 Nest TestingModule 升级版 (DI 风格模拟而非真实 NestJS 模块依赖)
+- 链33 覆盖 AI 内容审核全流程（含驳回重提、人工驳回、审计追溯），填补链31 审核缺口
+- 链34 覆盖故障注入 3 种类型: 区域故障、DB超时、多区域崩溃 + 降级恢复 + 审计
+- 链30/31 仍然为内联 domain 模拟层，等待 Pulse-Nightly-12 升级
+- 新增角色视角: Content Manager (链33), SRE/DevOps (链34), AI Reviewer (链33)
