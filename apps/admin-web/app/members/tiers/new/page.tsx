@@ -144,6 +144,7 @@ const FIELDS: FormPageField<Record<string, unknown>>[] = [
     label: '折扣率 (%)',
     required: true,
     type: 'number',
+    initialValue: 100,
     placeholder: '例如：85（表示 85 折）',
     helper: '0~100 之间的整数，数值越小折扣越大',
     rules: [
@@ -171,7 +172,7 @@ const FIELDS: FormPageField<Record<string, unknown>>[] = [
     key: 'benefits',
     label: '等级权益',
     required: true,
-    type: 'multiSelect',
+    type: 'select',
     options: BENEFIT_PRESETS,
     placeholder: '选择该等级会员享有的权益',
     helper: '可多选，影响会员俱乐部的特权展示',
@@ -181,6 +182,7 @@ const FIELDS: FormPageField<Record<string, unknown>>[] = [
     label: '年费 (元)',
     required: false,
     type: 'number',
+    initialValue: 0,
     placeholder: '例如：0（免费）',
     helper: '0 表示免费等级',
     rules: [
@@ -214,20 +216,12 @@ const FIELDS: FormPageField<Record<string, unknown>>[] = [
     label: '状态',
     required: true,
     type: 'select',
+    initialValue: 'active',
     options: STATUS_OPTIONS,
     placeholder: '选择启用状态',
     helper: '停用的等级不可被新会员选择',
   },
 ];
-
-// ---- 默认值 ----
-
-const DEFAULTS: Partial<TierFormData> = {
-  discountRate: 100,
-  annualFee: 0,
-  status: 'active',
-  benefits: '',
-};
 
 // ---- 页面组件 ----
 
@@ -243,24 +237,20 @@ export default function NewMemberTierPage() {
     const minPts = data.minPoints as number;
     const maxPts = data.maxPoints as number;
     if (minPts >= maxPts) {
-      return { success: false, errors: { minPoints: '最低积分必须小于最高积分', maxPoints: '最高积分必须大于最低积分' } };
+      return { data: {}, error: true, message: '请修正：最低积分必须小于最高积分' };
     }
 
     toast.success(`会员等级「${data.name}」创建成功！`);
-    return { success: true, redirectTo: '/members/tiers' };
+    return { data: {}, message: '创建成功' };
   };
 
   return (
     <FormPageScaffold
-      title="新建会员等级"
-      description="创建一个新的会员等级，配置积分门槛、折扣率、权益等信息"
+      meta={{ title: '新建会员等级', description: '创建一个新的会员等级，配置积分门槛、折扣率、权益等信息' }}
       fields={FIELDS}
-      defaults={DEFAULTS}
       onSubmit={handleSubmit}
       submitLabel="创建等级"
-      cancelLabel="取消"
-      onCancel={() => router.back()}
-      layout="sided"
+      backUrl="/members/tiers"
       maxWidth={720}
     />
   );
