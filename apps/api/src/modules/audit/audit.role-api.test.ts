@@ -55,7 +55,7 @@ describe(`${ROLES.StoreManager} — audit controller API`, () => {
         actorType: 'user',
         resourceType: 'order',
         riskLevel: 'low',
-      } as CreateAuditLogDto)
+      } as unknown as CreateAuditLogDto)
     }
     const result = await ctrl.findAll({ limit: 10 } as any)
     expect(result.total).toBe(3)
@@ -70,7 +70,7 @@ describe(`${ROLES.StoreManager} — audit controller API`, () => {
         actorId: 'manager_01',
         actorType: 'user',
         riskLevel: 'low',
-      } as CreateAuditLogDto)
+      } as unknown as CreateAuditLogDto)
     }
     const risk = await ctrl.computeRiskScore('manager_01')
     expect(risk).toHaveProperty('score')
@@ -101,15 +101,15 @@ describe(`${ROLES.FrontDesk} — audit controller API`, () => {
       actorType: 'user',
       resourceType: 'order',
       riskLevel: 'low',
-    } as CreateAuditLogDto)
+    } as unknown as CreateAuditLogDto)
     expect(result).toHaveProperty('id')
     expect(result.id).toMatch(/^audit_\d+_\d+$/)
   })
 
   it('🔲 边界: 前台批量记录时部分数据缺失', async () => {
     const dtos: CreateAuditLogDto[] = [
-      { eventType: 'order.paid', actorId: 'cashier_02', actorType: 'user', riskLevel: 'low' } as CreateAuditLogDto,
-      { eventType: 'order.refund', actorId: 'cashier_02', actorType: 'user', resourceType: 'order', resourceId: 'ord_002', riskLevel: 'medium' } as CreateAuditLogDto,
+      { eventType: 'order.paid', actorId: 'cashier_02', actorType: 'user', riskLevel: 'low' } as unknown as CreateAuditLogDto,
+      { eventType: 'order.refund', actorId: 'cashier_02', actorType: 'user', resourceType: 'order', resourceId: 'ord_002', riskLevel: 'medium' } as unknown as CreateAuditLogDto,
     ]
     const result = await ctrl.createBatch(dtos)
     expect(result.ids).toHaveLength(2)
@@ -209,7 +209,7 @@ describe(`${ROLES.Safety} — audit controller API`, () => {
       settlementId: 'settle_001',
       amount: 1500,
       eventType: 'created',
-    } as SettlementAuditLogDto)
+    } as unknown as SettlementAuditLogDto)
 
     const trail = await ctrl.getSettlementAuditTrail('settle_001')
     expect(trail).toHaveLength(1)
@@ -240,7 +240,7 @@ describe(`${ROLES.Guide} — audit controller API`, () => {
       resourceType: 'game',
       resourceId: 'game_guitar_01',
       riskLevel: 'low',
-    } as CreateAuditLogDto)
+    } as unknown as CreateAuditLogDto)
     expect(result).toHaveProperty('id')
   })
 
@@ -270,7 +270,7 @@ describe(`${ROLES.Operations} — audit controller API`, () => {
       resourceId: `dev_${i + 1}`,
       riskLevel: 'low',
       metadata: { cpu: 45 + i * 5, mem: 60 },
-    } as CreateAuditLogDto))
+    } as unknown as CreateAuditLogDto))
     const result = await ctrl.createBatch(dtos)
     expect(result.ids).toHaveLength(5)
   })
@@ -313,7 +313,7 @@ describe(`${ROLES.Teambuilding} — audit controller API`, () => {
       amount: 5000,
       eventType: 'settlement.created',
       metadata: { teamSize: 20, activityType: 'escape_room' },
-    } as SettlementAuditLogDto)
+    } as unknown as SettlementAuditLogDto)
     expect(result).toHaveProperty('id')
   })
 
