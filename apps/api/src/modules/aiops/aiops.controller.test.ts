@@ -262,7 +262,7 @@ describe('AIOpsController', () => {
       const result = controller.getHealth()
       const found = result.data.find((h: any) => h.systemId === 'health-sys')
       expect(found).toBeDefined()
-      expect(['healthy', 'degraded', 'critical', 'unknown']).toContain(found.status)
+      expect(['healthy', 'degraded', 'critical', 'unknown']).toContain(found!.status)
     })
 
     it('正例: 多个自愈系统都在健康列表中', async () => {
