@@ -400,3 +400,11 @@ P-36会员管理的角色模拟测试覆盖了「创建会员 → 充值 → 消
 - `filterBtn: (active: boolean) => React.CSSProperties` 触发4个 TSC 错误
 - 根因: Record 的值类型推断将函数视为 CSSProperties 值的兼容类型，但调用时 TS 发现不可调用
 - **最佳实践**: 将样式生成函数从 Record 对象中分离为独立函数（如 `getFilterBtnStyle`），不要混合纯样式对象与函数
+
+## Pulse-219 Insight: 静态渲染测试中无法验证动态展开/收起的UI内容
+
+`SLACompliancePanel` 中 `breachCount` 展开详情的文字（`违规数`、`总请求数`、`达标数`、`达标率`）仅在 `expanded=true` 的 state 下渲染。
+- 静态 render (SSR/SSG/renderToStaticMarkup) 拿不到这些文字，因为 state 初始为 false
+- **测试问题**: 断言 `/违规数/` 永远是红色，因为展开需要交互（click to toggle）
+- **反模式**: 在纯静态渲染测试中 assert 依赖于 state 切换才出现的文本
+- **最佳实践**: 展开详情等交互驱动内容应在 e2e 测试中做点击后验证，单元测试只验证渲染结构存在（如 data-testid 层级正确）
