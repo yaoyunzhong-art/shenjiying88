@@ -368,3 +368,20 @@ P-36会员管理的角色模拟测试覆盖了「创建会员 → 充值 → 消
 **具体案例**: 积分变更表原在PostgreSQL单表2500万行，INDEX达65GB。迁移到TimescaleDB后：自动按天分区(time_dimension)，压缩率85%(活跃数据4GB)，旧数据自动移动至冷存储(OSS)。查询最近7天数据从3.8s降至0.2s，DELETE旧数据的vacuum不再锁普通表，整体DB CPU从70%降至22%。
 
 **影响/建议**: 建议将积分日志(game_points_log)、游戏事件(game_events)、设备心跳(device_heartbeat)三张时序表迁移至TimescaleDB。安装`timescaledb-toolkit`扩展使用超函数(hyperfunctions)做聚合分析(7日/30日累计积分排名)无需额外ETL。迁移可使用pg_dump+TimescaleDB native copy并行导入，约耗时2h/10亿行。注意：migration脚本需要区分两个数据库连接。
+
+---
+
+## Pulse-208 Insight: stock-transfer-detail-view-model 前后端分离最佳实践
+
+在 `stock-transfer-detail-client` 实现中发现：
+- ViewModel 层严格遵守 "业务逻辑在VM层，组件层只做渲染" 原则
+- 库存调拨明细页采用 **三级 loader 链式回退** 模式（主loader → 降级loader → 空workspace fallback）
+- 这种 resilience-first 设计与 `resilience-detail-view-model` 模式完全一致，已成为全项目的 ViewModel 模板
+- **最佳实践**: 对 fetch 失败不抛异常，而是通过 fallback workspace 提供降级 UX，保证页面不白屏
+
+## Pulse-208 Insight: svip 角色扩展测试的深度覆盖策略
+
+`92b6264b` 中新增28个测试用例覆盖8个角色（含 system/guest/merchant/cashier 等）：
+- 每个角色覆盖: 权限边界 + 数据隔离 + 跨域互斥 + 默认值
+- 角色测试采用 **三层矩阵**: role × operation × scope_data
+- 这种深度测试策略已成为 service 层安全测试的标准模板
