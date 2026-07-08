@@ -227,6 +227,8 @@ export class PermissionController {
         context: {
           userId: context.userId,
           tenantId: context.tenantId,
+          brandId: context.brandId,
+          storeId: context.storeId,
           roles: context.roles,
         },
         permissions,
