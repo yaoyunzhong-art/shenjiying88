@@ -5,7 +5,7 @@ import {
   InternationalEmailService,
 } from './omnichannel.service'
 import type { ReachResult, SMSDeliveryStatus, EmailDeliveryStatus } from './omnichannel.service'
-import type { Channel, ChannelStatus, Locale } from './omnichannel.entity'
+import type { ChannelType as Channel, ChannelStatus, Locale } from './omnichannel.entity'
 
 /**
  * 🐜 自动: [omnichannel] [C] 8角色扩展测试补全
