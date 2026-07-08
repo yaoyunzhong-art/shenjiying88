@@ -1,4 +1,7 @@
 // --------------- @m5/ui shared component library ---------------
+export { ArcadeRevenueCard } from './components/ArcadeRevenueCard';
+export type { ArcadeRevenueCardProps, MachineStats, MachineStatus } from './components/ArcadeRevenueCard';
+
 export { ConfigurationVersionDiff } from './components/ConfigurationVersionDiff';
 export type { ConfigurationVersionDiffProps, DiffEntry, DiffChangeType } from './components/ConfigurationVersionDiff';
 
