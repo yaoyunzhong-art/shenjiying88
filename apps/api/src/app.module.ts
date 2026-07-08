@@ -103,6 +103,11 @@ import { SandboxModule } from './modules/sandbox/sandbox.module';
 import { DocModule } from './modules/docs/doc.module';
 import { ContentModule } from './modules/content/content.module';
 import { SessionModule } from './modules/session/session.module';
+import { RunbookModule } from './modules/runbook/runbook.module';
+import { RBACModule } from './modules/rbac/rbac.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
+import { PaymentGatewayModule } from './modules/payment-gateway/payment-gateway.module';
+import { ReportModule as ReportModuleStandalone } from './modules/report/report.module';
 
 @Module({
   imports: [
@@ -218,6 +223,11 @@ import { SessionModule } from './modules/session/session.module';
     DocModule,
     ContentModule,
     SessionModule,
+    RunbookModule,
+    RBACModule,
+    RealtimeModule,
+    PaymentGatewayModule,
+    ReportModuleStandalone,
   ],
   providers: [
     RequestGovernanceService,
