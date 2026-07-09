@@ -656,3 +656,20 @@
 2. 23:00自进化改用systemEvent注入主session
 3. @m5/api每周"失血止血"专线
 4. 知识库更新cron每天2次自动检查
+
+## 2026-07-10 07:47: 脉冲#262洞察
+
+### 核心发现: cache mask陷阱 — @m5/app 4个fail被缓存掩盖
+- **问题**: `pnpm turbo test --filter='!@m5/api'` 的 cached run 显示15/15全部通过，但 `--force` 模式暴露 @m5/app 有4个 Transform 错误
+- **陷阱**: 所有项目整体 task success (15/15) ≠ 模块级0 fail。缓存让项目级汇总掩盖了模块内部失败
+- **教训**: 验收脉冲必须对每个模块单独 force-run 或 grep 每个模块的 `ℹ fail 0/1`，不能只看 Tasks: 15 successful
+
+### 新反模式
+| ID | 反模式 | 发现日期 |
+|----|--------|----------|
+| AM-009 | Turbo cache隐藏子模块fail — 整体task success掩码 | 2026-07-10 |
+
+### 改进措施
+1. 验收脉冲改为 force-run （`--force`）或逐模块grep `ℹ fail`，不能依赖 cached task-level summary
+2. 在 HEARTBEAT 表头增加 Force Run 状态列，区分 cached 与 force-run 结果
+3. esbuild 版本锁定 — 将 tsx 的 esbuild 依赖 pin 到 ~0.27.7，防止第三方工具链升级引入未知 JSX 破坏
