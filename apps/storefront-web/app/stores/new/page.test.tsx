@@ -5,6 +5,7 @@
  * - 不依赖 jsdom/React 渲染 (storefront-web 测试用 node --test)
  * - 通过源码分析验证字段定义完整性
  * - 验证字段验证规则完备性
+ * - 验证 SuccessGuide 组件引导逻辑
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -64,6 +65,30 @@ const FIELDS: FormPageField[] = [
   { key: 'description', label: '门店简介', type: 'textarea' },
 ];
 
+// ---- SuccessGuide 引导链接测试 (镜像 page.tsx SuccessGuide 组件逻辑) ----
+
+interface SuccessGuideLink {
+  label: string;
+  href?: string;
+  action?: () => void;
+}
+
+function buildSuccessGuideLinks(onReset: () => void): SuccessGuideLink[] {
+  return [
+    { label: '查看门店列表', href: '/stores' },
+    { label: '对比门店绩效', href: '/stores/compare' },
+    { label: '继续创建门店', action: onReset },
+  ];
+}
+
+function isActionLink(link: SuccessGuideLink): boolean {
+  return 'action' in link && typeof link.action === 'function';
+}
+
+function isNavLink(link: SuccessGuideLink): boolean {
+  return 'href' in link && typeof link.href === 'string';
+}
+
 // ---- 验证函数 (与 page.tsx 逻辑一致) ----
 
 function validateField(key: string, value: string): string | null {
@@ -109,6 +134,15 @@ function validateField(key: string, value: string): string | null {
     default:
       return null;
   }
+}
+
+/** 模拟提交逻辑，返回 { success, message } */
+function submitForm(values: Record<string, string>): { success: boolean; message: string } {
+  // 编码冲突检测
+  if (values.code === 'SZ-NS-001' || values.code === 'BJ-CY-001') {
+    return { success: false, message: '编码冲突，请更换' };
+  }
+  return { success: true, message: `门店「${values.name}」创建成功！` };
 }
 
 // ---- 测试 ----
@@ -181,6 +215,10 @@ describe('stores/new — 创建门店页面', () => {
       assert.equal(validateField('name', 'A'.repeat(51)), '门店名称不超过50个字符');
     });
 
+    it('should accept name = 50 chars boundary', () => {
+      assert.equal(validateField('name', 'A'.repeat(50)), null);
+    });
+
     it('should reject empty code', () => {
       assert.equal(validateField('code', ''), '编码至少3个字符');
     });
@@ -199,6 +237,14 @@ describe('stores/new — 创建门店页面', () => {
 
     it('should reject conflicting code BJ-CY-001', () => {
       assert.notEqual(validateField('code', 'BJ-CY-001'), null);
+    });
+
+    it('should reject code too short (< 3)', () => {
+      assert.equal(validateField('code', 'AB'), '编码至少3个字符');
+    });
+
+    it('should reject code too long (> 20)', () => {
+      assert.equal(validateField('code', 'A'.repeat(21)), '编码不超过20个字符');
     });
 
     it('should reject invalid phone format', () => {
@@ -257,6 +303,10 @@ describe('stores/new — 创建门店页面', () => {
       assert.equal(validateField('areaSqm', '200'), null);
     });
 
+    it('should accept area = 9999 boundary', () => {
+      assert.equal(validateField('areaSqm', '9999'), null);
+    });
+
     it('should reject empty manager name', () => {
       assert.equal(validateField('managerName', '张'), '姓名至少2个字符');
     });
@@ -271,13 +321,44 @@ describe('stores/new — 创建门店页面', () => {
   });
 
   describe('提交逻辑', () => {
-    it('should return null for conflicting code SZ-NS-001 on submit', async () => {
-      const values = { code: 'SZ-NS-001', name: '测试门店' };
-      const codeErr = validateField('code', values.code as string);
-      assert.notEqual(codeErr, null);
+    it('should return success for valid submission', () => {
+      const result = submitForm({
+        name: '新门店', code: 'NEW-001',
+      });
+      assert.equal(result.success, true);
+      assert.match(result.message, /创建成功/);
     });
 
-    it('should return success data for valid submission', async () => {
+    it('should return failure for conflicting code SZ-NS-001', () => {
+      const result = submitForm({
+        name: '冲突门店', code: 'SZ-NS-001',
+      });
+      assert.equal(result.success, false);
+    });
+
+    it('should return failure for conflicting code BJ-CY-001', () => {
+      const result = submitForm({
+        name: '冲突门店', code: 'BJ-CY-001',
+      });
+      assert.equal(result.success, false);
+    });
+
+    it('should return success for non-conflicting code', () => {
+      const result = submitForm({
+        name: '广州新店', code: 'GZ-TH-001',
+      });
+      assert.equal(result.success, true);
+    });
+
+    it('should return null for conflicting code SZ-NS-001 on submit', async () => {
+      const values = { code: 'SZ-NS-001', name: '测试门店' };
+      const codeErr = validateField('code', values.code);
+      assert.notEqual(codeErr, null);
+      const submitResult = submitForm(values);
+      assert.equal(submitResult.success, false);
+    });
+
+    it('should return success data for valid submission with all fields', async () => {
       const values = {
         name: '新门店',
         code: 'NEW-001',
@@ -296,15 +377,81 @@ describe('stores/new — 创建门店页面', () => {
       // validate all fields
       const errors: string[] = [];
       for (const field of FIELDS) {
-        const err = validateField(field.key, values[field.key as keyof typeof values] ?? '');
-        if (err) errors.push(`${field.key}: ${err}`);
+        const val = values[field.key as keyof typeof values] ?? '';
+        if (typeof val === 'string') {
+          const err = validateField(field.key, val);
+          if (err) errors.push(`${field.key}: ${err}`);
+        }
       }
       assert.equal(errors.length, 0, `Should have no validation errors: ${errors.join(', ')}`);
 
       // simulate submit success
-      const result = { data: values, message: `门店「${values.name}」创建成功！` };
-      assert.ok(result.data);
+      const result = submitForm(values);
+      assert.equal(result.success, true);
       assert.match(result.message!, /创建成功/);
+    });
+  });
+
+  describe('SuccessGuide 引导组件逻辑', () => {
+    it('should build 3 guide links', () => {
+      const onReset = () => {};
+      const links = buildSuccessGuideLinks(onReset);
+      assert.equal(links.length, 3);
+    });
+
+    it('should have correct link labels', () => {
+      const onReset = () => {};
+      const links = buildSuccessGuideLinks(onReset);
+      assert.deepEqual(links.map((l) => l.label), [
+        '查看门店列表',
+        '对比门店绩效',
+        '继续创建门店',
+      ]);
+    });
+
+    it('first two links should be nav links with href', () => {
+      const onReset = () => {};
+      const links = buildSuccessGuideLinks(onReset);
+      assert.equal(isNavLink(links[0]), true);
+      assert.equal(links[0].href, '/stores');
+      assert.equal(isNavLink(links[1]), true);
+      assert.equal(links[1].href, '/stores/compare');
+    });
+
+    it('third link should be action link (not nav)', () => {
+      const onReset = () => {};
+      const links = buildSuccessGuideLinks(onReset);
+      assert.equal(isActionLink(links[2]), true);
+      assert.equal(isNavLink(links[2]), false);
+    });
+
+    it('action link should call onReset when invoked', () => {
+      let resetCalled = false;
+      const onReset = () => { resetCalled = true; };
+      const links = buildSuccessGuideLinks(onReset);
+      (links[2].action as () => void)();
+      assert.equal(resetCalled, true);
+    });
+
+    it('should not have any undefined labels', () => {
+      const onReset = () => {};
+      const links = buildSuccessGuideLinks(onReset);
+      for (const link of links) {
+        assert.ok(link.label.length > 0);
+      }
+    });
+
+    it('nav links should not have action property', () => {
+      const onReset = () => {};
+      const links = buildSuccessGuideLinks(onReset);
+      assert.equal('action' in links[0], false);
+      assert.equal('action' in links[1], false);
+    });
+
+    it('action link should not have href property', () => {
+      const onReset = () => {};
+      const links = buildSuccessGuideLinks(onReset);
+      assert.equal('href' in links[2], false);
     });
   });
 });

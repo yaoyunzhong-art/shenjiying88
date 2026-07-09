@@ -1,13 +1,16 @@
 /**
  * 创建门店页 — Store Create Page (Next.js App Router Page)
- * 功能: 门店创建表单，含字段验证、提交、错误处理
- * 类型: B-表单页 (含验证/提交/错误处理)
+ * 功能: 门店创建表单，含字段验证、提交、成功引导
+ * 类型: B-表单页 (含验证/提交/错误处理/成功引导)
  */
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 
 import {
+  Card,
+  Button,
   FormPageScaffold,
   type FormPageField,
 } from '@m5/ui';
@@ -183,29 +186,72 @@ const FIELDS: FormPageField<Record<string, unknown>>[] = [
   },
 ];
 
+// ---- 提交后成功引导组件 ----
+
+/**
+ * SuccessGuide — 门店创建成功后的下一步引导卡片 (内部组件，不导出)
+ */
+function SuccessGuide({ storeName, onReset }: { storeName: string; onReset: () => void }) {
+  const links = useMemo(
+    () => [
+      { label: '查看门店列表', href: '/stores' },
+      { label: '对比门店绩效', href: '/stores/compare' },
+      { label: '继续创建门店', action: onReset },
+    ],
+    [onReset],
+  );
+
+  return (
+    <Card className="mb-6 border border-green-200 bg-green-50 p-6">
+      <div className="mb-4 text-center">
+        <div className="text-3xl">✅</div>
+        <h3 className="mt-2 text-lg font-semibold text-green-800">门店创建成功</h3>
+        <p className="mt-1 text-sm text-green-600">{storeName}</p>
+      </div>
+      <div className="mt-4 flex flex-wrap justify-center gap-3">
+        {links.map((link) =>
+          'action' in link ? (
+            <Button key={link.label} variant="outline" onClick={link.action}>
+              {link.label}
+            </Button>
+          ) : (
+            <Link key={link.label} href={link.href}>
+              <Button variant="outline">{link.label}</Button>
+            </Link>
+          ),
+        )}
+      </div>
+    </Card>
+  );
+}
+
 // ---- 主页面 ----
 
 export default function NewStorePage() {
   const [submitting, setSubmitting] = useState(false);
+  const [successData, setSuccessData] = useState<{ storeName: string } | null>(null);
 
   const handleSubmit = useCallback(
     async (values: Record<string, unknown>): Promise<{ data: Record<string, unknown>; message?: string } | null> => {
       setSubmitting(true);
       try {
-        const data = values as unknown as NewStoreFormData;
         // 模拟 API 提交
         await new Promise((resolve) => setTimeout(resolve, 1200));
+
+        const data = values as unknown as NewStoreFormData;
 
         // mock 冲突检测：编码冲突
         if (data.code === 'SZ-NS-001' || data.code === 'BJ-CY-001') {
           return null; // null = 失败
         }
 
+        setSuccessData({ storeName: data.name });
         return {
           data: values,
           message: `门店「${data.name}」创建成功！`,
         };
       } catch {
+        setSuccessData(null);
         return null;
       } finally {
         setSubmitting(false);
@@ -214,8 +260,16 @@ export default function NewStorePage() {
     [],
   );
 
+  const handleReset = useCallback(() => {
+    setSuccessData(null);
+  }, []);
+
   return (
     <div className="mx-auto max-w-3xl">
+      {successData && (
+        <SuccessGuide storeName={successData.storeName} onReset={handleReset} />
+      )}
+
       <FormPageScaffold
         meta={{
           title: '创建门店',
