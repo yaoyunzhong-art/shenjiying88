@@ -64,6 +64,7 @@ __export(index_exports, {
   Accordion: () => Accordion,
   AiABTestComparisonPanel: () => AiABTestComparisonPanel,
   Alert: () => Alert,
+  AlertCorrelationDashboard: () => AlertCorrelationDashboard,
   AnnouncementBanner: () => AnnouncementBanner,
   AnomalyAlertPanel: () => AnomalyAlertPanel,
   AnomalyAlertTrendPanel: () => AnomalyAlertTrendPanel,
@@ -128,6 +129,7 @@ __export(index_exports, {
   DateRangePicker: () => DateRangePicker_default,
   DateTimePicker: () => DateTimePicker,
   DecisionAuditTrail: () => DecisionAuditTrail,
+  DeliveryPersonDashboard: () => DeliveryPersonDashboard,
   DescriptionList: () => DescriptionList,
   DetailActionBar: () => DetailActionBar,
   DetailClosureBar: () => DetailClosureBar,
@@ -194,6 +196,7 @@ __export(index_exports, {
   InputNumber: () => InputNumber,
   InspectionChecklist: () => InspectionChecklist,
   InventoryKeeperDashboard: () => InventoryKeeperDashboard,
+  InventoryManagerDashboard: () => InventoryManagerDashboard,
   KanbanBoard: () => KanbanBoard,
   KpiSummaryCard: () => KpiSummaryCard,
   Label: () => Label,
@@ -35212,7 +35215,7 @@ function NotificationBell({
     }
     item.onClick?.(item);
   };
-  const formatTime6 = (iso) => {
+  const formatTime7 = (iso) => {
     const d = new Date(iso);
     const now = /* @__PURE__ */ new Date();
     const diffMs = now.getTime() - d.getTime();
@@ -35446,7 +35449,7 @@ function NotificationBell({
                           children: item.description
                         }
                       ),
-                      /* @__PURE__ */ (0, import_jsx_runtime137.jsx)("span", { style: { fontSize: 11, color: "#94a3b8", marginTop: 4, display: "inline-block" }, children: formatTime6(item.timestamp) })
+                      /* @__PURE__ */ (0, import_jsx_runtime137.jsx)("span", { style: { fontSize: 11, color: "#94a3b8", marginTop: 4, display: "inline-block" }, children: formatTime7(item.timestamp) })
                     ] }),
                     item.type && /* @__PURE__ */ (0, import_jsx_runtime137.jsx)(
                       "span",
@@ -36198,7 +36201,7 @@ function DecisionAuditTrail({
     setCurrentPage(1);
     onFilterChange?.(newFilter);
   };
-  const formatTime6 = (ts) => {
+  const formatTime7 = (ts) => {
     try {
       const d = new Date(ts);
       return d.toLocaleString("zh-CN", {
@@ -36502,7 +36505,7 @@ function DecisionAuditTrail({
                               textAlign: "right",
                               flexShrink: 0
                             },
-                            children: formatTime6(entry.timestamp)
+                            children: formatTime7(entry.timestamp)
                           }
                         ),
                         (entry.changes || entry.revertible || entry.entityId) && /* @__PURE__ */ (0, import_jsx_runtime140.jsx)(
@@ -68255,6 +68258,1094 @@ function ChartExportPanel({
     }
   );
 }
+
+// src/components/AlertCorrelationDashboard.tsx
+var import_react185 = require("react");
+var import_jsx_runtime270 = require("react/jsx-runtime");
+var SEVERITY_CONFIG3 = {
+  critical: { label: "\u4E25\u91CD", dot: "#ef4444", bg: "rgba(239,68,68,0.10)" },
+  high: { label: "\u9AD8", dot: "#f97316", bg: "rgba(249,115,22,0.10)" },
+  medium: { label: "\u4E2D", dot: "#eab308", bg: "rgba(234,179,8,0.10)" },
+  low: { label: "\u4F4E", dot: "#22c55e", bg: "rgba(34,197,94,0.08)" }
+};
+var CONFIDENCE_CONFIG = {
+  high: { label: "\u9AD8\u7F6E\u4FE1\u5EA6", color: "#16a34a" },
+  medium: { label: "\u4E2D\u7F6E\u4FE1\u5EA6", color: "#ca8a04" },
+  low: { label: "\u4F4E\u7F6E\u4FE1\u5EA6", color: "#dc2626" }
+};
+var SOURCE_LABELS3 = {
+  device: "\u8BBE\u5907",
+  member: "\u4F1A\u5458",
+  transaction: "\u4EA4\u6613",
+  system: "\u7CFB\u7EDF",
+  network: "\u7F51\u7EDC"
+};
+function ConfidenceBadge3({ level }) {
+  const cfg = CONFIDENCE_CONFIG[level];
+  return /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+    "span",
+    {
+      "data-testid": `confidence-badge-${level}`,
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "2px 8px",
+        borderRadius: 12,
+        fontSize: 11,
+        fontWeight: 600,
+        color: "#fff",
+        backgroundColor: cfg.color
+      },
+      children: cfg.label
+    }
+  );
+}
+function SeverityDot({ severity }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+    "span",
+    {
+      "data-testid": `severity-dot-${severity}`,
+      style: {
+        display: "inline-block",
+        width: 8,
+        height: 8,
+        borderRadius: "50%",
+        backgroundColor: SEVERITY_CONFIG3[severity].dot,
+        marginRight: 4
+      }
+    }
+  );
+}
+function SeverityLabel({ severity }) {
+  const cfg = SEVERITY_CONFIG3[severity];
+  return /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+    "span",
+    {
+      "data-testid": `severity-label-${severity}`,
+      style: {
+        fontSize: 12,
+        color: cfg.dot,
+        fontWeight: 500
+      },
+      children: cfg.label
+    }
+  );
+}
+function formatTime6(iso) {
+  try {
+    const d = new Date(iso);
+    const pad4 = (n) => String(n).padStart(2, "0");
+    return `${d.getMonth() + 1}/${pad4(d.getDate())} ${pad4(d.getHours())}:${pad4(d.getMinutes())}`;
+  } catch {
+    return iso;
+  }
+}
+function CorrelationGroupCard({
+  group,
+  alerts,
+  onAcknowledgeGroup,
+  onExecuteAction,
+  onViewDetail
+}) {
+  const groupAlerts = (0, import_react185.useMemo)(
+    () => alerts.filter((a) => group.alertIds.includes(a.id)),
+    [alerts, group.alertIds]
+  );
+  const maxSeverity = (0, import_react185.useMemo)(() => {
+    const order = ["critical", "high", "medium", "low"];
+    for (const s of order) {
+      if (groupAlerts.some((a) => a.severity === s)) return s;
+    }
+    return "low";
+  }, [groupAlerts]);
+  const allAcknowledged = groupAlerts.every((a) => a.acknowledged);
+  return /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)(
+    "div",
+    {
+      "data-testid": `correlation-group-${group.groupId}`,
+      style: {
+        border: `1px solid ${allAcknowledged ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.2)"}`,
+        borderRadius: 8,
+        padding: 16,
+        marginBottom: 12,
+        backgroundColor: SEVERITY_CONFIG3[maxSeverity].bg
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, flex: 1 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(SeverityDot, { severity: maxSeverity }),
+            /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("span", { style: { fontWeight: 600, fontSize: 14, lineHeight: 1.4, flex: 1 }, children: group.rootCause })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(ConfidenceBadge3, { level: group.confidence })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: { display: "flex", gap: 16, marginBottom: 8, fontSize: 12, color: "#666" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("span", { "data-testid": `impact-${group.groupId}`, children: [
+            "\u{1F4CA} \u5F71\u54CD: ",
+            group.impact
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("span", { "data-testid": `eta-${group.groupId}`, children: [
+            "\u23F1 \u9884\u4F30\u6062\u590D: ",
+            group.estimatedResolutionMin,
+            "min"
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)(
+          "div",
+          {
+            "data-testid": `recommendation-${group.groupId}`,
+            style: {
+              padding: "6px 10px",
+              backgroundColor: "rgba(22,119,255,0.08)",
+              borderRadius: 4,
+              fontSize: 12,
+              color: "#1677ff",
+              marginBottom: 8
+            },
+            children: [
+              "\u{1F916} AI\u63A8\u8350: ",
+              group.recommendedAction
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("div", { style: { marginBottom: 8 }, children: groupAlerts.map((alert) => /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)(
+          "div",
+          {
+            "data-testid": `group-alert-${alert.id}`,
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "4px 0",
+              fontSize: 12,
+              color: alert.acknowledged ? "#999" : "#333",
+              textDecoration: alert.acknowledged ? "line-through" : "none"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(SeverityDot, { severity: alert.severity }),
+              /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(SeverityLabel, { severity: alert.severity }),
+              /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("span", { style: { minWidth: 60, color: SEVERITY_CONFIG3[alert.severity].dot }, children: [
+                "[",
+                SOURCE_LABELS3[alert.source],
+                "]"
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("span", { style: { flex: 1 }, children: alert.title }),
+              /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("span", { style: { color: "#999" }, children: formatTime6(alert.timestamp) }),
+              alert.acknowledged && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("span", { style: { color: "#22c55e" }, children: "\u2713" })
+            ]
+          },
+          alert.id
+        )) }),
+        /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" }, children: [
+          !allAcknowledged && onAcknowledgeGroup && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+            "button",
+            {
+              "data-testid": `ack-group-${group.groupId}`,
+              onClick: () => onAcknowledgeGroup(group.groupId),
+              style: {
+                padding: "4px 12px",
+                borderRadius: 4,
+                border: "1px solid #22c55e",
+                backgroundColor: "transparent",
+                color: "#22c55e",
+                cursor: "pointer",
+                fontSize: 12
+              },
+              children: "\u786E\u8BA4\u5173\u8054\u7EC4"
+            }
+          ),
+          onExecuteAction && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+            "button",
+            {
+              "data-testid": `execute-${group.groupId}`,
+              onClick: () => onExecuteAction(group.groupId),
+              style: {
+                padding: "4px 12px",
+                borderRadius: 4,
+                border: "none",
+                backgroundColor: "#1677ff",
+                color: "#fff",
+                cursor: "pointer",
+                fontSize: 12
+              },
+              children: "\u6267\u884C\u63A8\u8350"
+            }
+          ),
+          onViewDetail && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+            "button",
+            {
+              "data-testid": `detail-${group.groupId}`,
+              onClick: () => onViewDetail(group.groupId),
+              style: {
+                padding: "4px 12px",
+                borderRadius: 4,
+                border: "1px solid #d9d9d9",
+                backgroundColor: "#fff",
+                cursor: "pointer",
+                fontSize: 12,
+                color: "#333"
+              },
+              children: "\u67E5\u770B\u8BE6\u60C5"
+            }
+          )
+        ] })
+      ]
+    }
+  );
+}
+function AlertCorrelationDashboard({
+  alerts,
+  correlationGroups,
+  title = "AI \u544A\u8B66\u5173\u8054\u5206\u6790",
+  onAcknowledgeAlert,
+  onAcknowledgeGroup,
+  onExecuteAction,
+  onViewDetail,
+  className
+}) {
+  const [filterSeverity, setFilterSeverity] = (0, import_react185.useState)("all");
+  const [filterAcknowledged, setFilterAcknowledged] = (0, import_react185.useState)(null);
+  const unacknowledgedCount = (0, import_react185.useMemo)(
+    () => alerts.filter((a) => !a.acknowledged).length,
+    [alerts]
+  );
+  const severityCounts = (0, import_react185.useMemo)(() => {
+    const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+    alerts.forEach((a) => {
+      counts[a.severity]++;
+    });
+    return counts;
+  }, [alerts]);
+  const filteredAlerts = (0, import_react185.useMemo)(() => {
+    return alerts.filter((a) => {
+      if (filterSeverity !== "all" && a.severity !== filterSeverity) return false;
+      if (filterAcknowledged === true && !a.acknowledged) return false;
+      if (filterAcknowledged === false && a.acknowledged) return false;
+      return true;
+    });
+  }, [alerts, filterSeverity, filterAcknowledged]);
+  const filteredGroups = (0, import_react185.useMemo)(() => {
+    return correlationGroups.filter((g) => {
+      const groupAlertIds = new Set(g.alertIds);
+      return filteredAlerts.some((a) => groupAlertIds.has(a.id));
+    });
+  }, [correlationGroups, filteredAlerts]);
+  const severityOrder = ["critical", "high", "medium", "low"];
+  return /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)(
+    "div",
+    {
+      "data-testid": "alert-correlation-dashboard",
+      className,
+      style: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("h2", { style: { margin: 0, fontSize: 18, fontWeight: 600 }, children: title }),
+          /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("span", { "data-testid": "unacknowledged-count", style: { fontSize: 13, color: unacknowledgedCount > 0 ? "#ef4444" : "#22c55e" }, children: unacknowledgedCount > 0 ? `\u26A0 ${unacknowledgedCount} \u6761\u672A\u786E\u8BA4` : "\u2705 \u5168\u90E8\u5DF2\u786E\u8BA4" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: { display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }, children: [
+          severityOrder.map((s) => /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)(
+            "span",
+            {
+              "data-testid": `severity-stat-${s}`,
+              style: {
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "2px 8px",
+                borderRadius: 4,
+                fontSize: 12,
+                backgroundColor: SEVERITY_CONFIG3[s].bg,
+                color: SEVERITY_CONFIG3[s].dot,
+                cursor: "pointer",
+                border: filterSeverity === s ? `1px solid ${SEVERITY_CONFIG3[s].dot}` : "1px solid transparent"
+              },
+              onClick: () => setFilterSeverity(filterSeverity === s ? "all" : s),
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(SeverityDot, { severity: s }),
+                " ",
+                SEVERITY_CONFIG3[s].label,
+                ": ",
+                severityCounts[s]
+              ]
+            },
+            s
+          )),
+          filterSeverity !== "all" && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+            "button",
+            {
+              "data-testid": "clear-severity-filter",
+              onClick: () => setFilterSeverity("all"),
+              style: {
+                padding: "2px 8px",
+                borderRadius: 4,
+                border: "1px solid #d9d9d9",
+                backgroundColor: "#fff",
+                cursor: "pointer",
+                fontSize: 11,
+                color: "#999"
+              },
+              children: "\u6E05\u9664\u7B5B\u9009"
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("div", { "data-testid": "correlation-groups-list", children: filteredGroups.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("div", { style: { textAlign: "center", padding: 40, color: "#999", fontSize: 14 }, children: "\u6682\u65E0\u5173\u8054\u544A\u8B66\u5206\u7EC4" }) : filteredGroups.map((group) => /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+          CorrelationGroupCard,
+          {
+            group,
+            alerts,
+            onAcknowledgeGroup,
+            onExecuteAction,
+            onViewDetail
+          },
+          group.groupId
+        )) })
+      ]
+    }
+  );
+}
+
+// src/components/DeliveryPersonDashboard.tsx
+var import_jsx_runtime271 = require("react/jsx-runtime");
+var SECTION_STYLE13 = {
+  marginBottom: 24
+};
+var SECTION_TITLE3 = {
+  fontSize: 16,
+  fontWeight: 600,
+  marginBottom: 12,
+  color: "#1a1a2e"
+};
+var CARD3 = {
+  background: "#fff",
+  borderRadius: 12,
+  boxShadow: "0 2px 8px rgba(0,0,0,.06)",
+  padding: 16
+};
+var DRIVER_HEADER = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: 16
+};
+var DRIVER_INFO = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8
+};
+var DRIVER_AVATAR = {
+  width: 44,
+  height: 44,
+  borderRadius: "50%",
+  background: "linear-gradient(135deg, #667eea, #764ba2)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "#fff",
+  fontWeight: 700,
+  fontSize: 18
+};
+var BADGE_CONTAINER = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "4px 12px",
+  borderRadius: 20,
+  fontSize: 12,
+  fontWeight: 500
+};
+var LIVE_BADGE = {
+  ...BADGE_CONTAINER,
+  background: "#e8f5e9",
+  color: "#2e7d32"
+};
+var URGENT_BADGE = {
+  ...BADGE_CONTAINER,
+  background: "#fce4ec",
+  color: "#c62828"
+};
+var ORDER_CARD = {
+  ...CARD3,
+  marginBottom: 8,
+  border: "1px solid #eee"
+};
+var ORDER_HEADER = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 8
+};
+var ORDER_NUMBER_STYLE = {
+  fontWeight: 600,
+  fontSize: 14,
+  color: "#1a1a2e"
+};
+var CUSTOMER_INFO = {
+  fontSize: 13,
+  color: "#666",
+  lineHeight: 1.6
+};
+var ACTIONS_ROW = {
+  display: "flex",
+  gap: 8,
+  marginTop: 10,
+  flexWrap: "wrap"
+};
+var ACTION_BUTTON_BASE2 = {
+  padding: "6px 14px",
+  borderRadius: 8,
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: "default",
+  border: "none"
+};
+var PRIMARY_BUTTON = {
+  ...ACTION_BUTTON_BASE2,
+  background: "#667eea",
+  color: "#fff"
+};
+var DANGER_BUTTON = {
+  ...ACTION_BUTTON_BASE2,
+  background: "#fce4ec",
+  color: "#c62828"
+};
+var OUTLINE_BUTTON = {
+  ...ACTION_BUTTON_BASE2,
+  background: "#f5f5f5",
+  color: "#333",
+  border: "1px solid #ddd"
+};
+var ROUTE_LIST = {
+  listStyle: "none",
+  padding: 0,
+  margin: 0
+};
+var ROUTE_ITEM = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 12,
+  padding: "10px 0",
+  borderBottom: "1px solid #f0f0f0"
+};
+var ROUTE_DOT = {
+  width: 12,
+  height: 12,
+  borderRadius: "50%",
+  marginTop: 4,
+  flexShrink: 0
+};
+var STATUS_MAP3 = {
+  pending: { label: "\u5F85\u53D6\u4EF6", variant: "warning" },
+  picked_up: { label: "\u5DF2\u53D6\u4EF6", variant: "info" },
+  in_transit: { label: "\u914D\u9001\u4E2D", variant: "info" },
+  delivered: { label: "\u5DF2\u9001\u8FBE", variant: "success" },
+  failed: { label: "\u914D\u9001\u5931\u8D25", variant: "error" },
+  cancelled: { label: "\u5DF2\u53D6\u6D88", variant: "neutral" }
+};
+var ROUTE_STATUS_LABELS = {
+  pending: "\u5F85\u5230\u8FBE",
+  arrived: "\u5DF2\u5230\u8FBE",
+  delivered: "\u5DF2\u9001\u8FBE",
+  skipped: "\u5DF2\u8DF3\u8FC7"
+};
+var DeliveryPersonDashboard = ({
+  dailyStats,
+  orders,
+  route,
+  driverName = "\u914D\u9001\u5458",
+  driverId,
+  vehicleId,
+  lastSyncAt,
+  loading = false,
+  compact = false,
+  className,
+  onStartDelivery,
+  onCompleteDelivery,
+  onReportIssue,
+  onNavigate
+}) => {
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { padding: 16 }, className, "data-testid": "delivery-person-dashboard-loading", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { height: 44, background: "#f0f0f0", borderRadius: 8, marginBottom: 16 } }),
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { height: 80, background: "#f0f0f0", borderRadius: 8, marginBottom: 12 } }),
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { height: 80, background: "#f0f0f0", borderRadius: 8, marginBottom: 12 } }),
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { height: 80, background: "#f0f0f0", borderRadius: 8 } })
+    ] });
+  }
+  const statItems = dailyStats ? [
+    { label: "\u4ECA\u65E5\u8BA2\u5355", value: dailyStats.totalOrders, trend: 0 },
+    { label: "\u5DF2\u5B8C\u6210", value: dailyStats.completedOrders, trend: 0 },
+    { label: "\u914D\u9001\u4E2D", value: dailyStats.inTransitOrders, trend: 0 },
+    { label: "\u5EF6\u8FDF", value: dailyStats.delayedOrders, trend: dailyStats.delayedOrders > 0 ? -Math.abs(dailyStats.delayedOrders) : 0 },
+    { label: "\u91CC\u7A0B(km)", value: Math.round(dailyStats.totalDistance * 10) / 10, trend: 0 },
+    { label: "\u8BC4\u5206", value: dailyStats.avgRating.toFixed(1), trend: 0 }
+  ] : [];
+  const orderColumns = [
+    { key: "orderNumber", header: "\u8BA2\u5355\u53F7", width: compact ? "90" : "120" },
+    {
+      key: "customerName",
+      header: "\u5BA2\u6237",
+      width: compact ? "70" : "100",
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { children: row.customerName }),
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontSize: 11, color: "#999" }, children: row.customerPhone })
+      ] })
+    },
+    {
+      key: "address",
+      header: "\u5730\u5740",
+      width: compact ? "100" : "180",
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontSize: 12, color: "#666", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: compact ? 100 : 180 }, children: row.address })
+    },
+    {
+      key: "status",
+      header: "\u72B6\u6001",
+      width: compact ? "60" : "80",
+      render: (row) => {
+        const s = STATUS_MAP3[row.status] || { label: row.status, variant: "neutral" };
+        return /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(StatusBadge2, { variant: s.variant, label: s.label });
+      }
+    },
+    {
+      key: "estimatedTime",
+      header: "\u9884\u8BA1",
+      width: compact ? "70" : "90"
+    },
+    {
+      key: "actions",
+      header: compact ? "" : "\u64CD\u4F5C",
+      width: compact ? "60" : "160",
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { display: "flex", gap: 4 }, children: [
+        row.status === "picked_up" && /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
+          "button",
+          {
+            style: PRIMARY_BUTTON,
+            onClick: (e) => {
+              e.stopPropagation();
+              onStartDelivery?.(row.id);
+            },
+            children: "\u51FA\u53D1"
+          }
+        ),
+        row.status === "in_transit" && /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
+          "button",
+          {
+            style: { ...ACTION_BUTTON_BASE2, background: "#e8f5e9", color: "#2e7d32" },
+            onClick: (e) => {
+              e.stopPropagation();
+              onCompleteDelivery?.(row.id);
+            },
+            children: "\u9001\u8FBE"
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
+          "button",
+          {
+            style: { ...OUTLINE_BUTTON, padding: "6px 8px", fontSize: 12 },
+            onClick: (e) => {
+              e.stopPropagation();
+              onNavigate?.(row.id, row.address);
+            },
+            children: "\u{1F9ED}"
+          }
+        )
+      ] })
+    }
+  ];
+  const urgentOrders = orders?.filter((o) => o.priority === "urgent" && o.status !== "delivered" && o.status !== "cancelled") || [];
+  const currentStop = route?.find((s) => s.status === "pending" || s.status === "arrived");
+  return /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }, className, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: DRIVER_HEADER, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: DRIVER_INFO, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: DRIVER_AVATAR, children: driverName.charAt(0) }),
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontWeight: 600, fontSize: 16 }, children: driverName }),
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { fontSize: 12, color: "#999", marginTop: 2 }, children: [
+            driverId && `\u5DE5\u53F7 ${driverId}`,
+            vehicleId && ` \xB7 ${vehicleId}`
+          ] })
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("span", { style: LIVE_BADGE, children: "\u{1F7E2} \u5728\u7EBF" }) })
+    ] }),
+    currentStop && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { ...CARD3, marginBottom: 16, border: "1px solid #667eea", background: "#f8f9ff" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { fontSize: 13, color: "#667eea", fontWeight: 500, marginBottom: 4 }, children: [
+        "\u5F53\u524D\u4EFB\u52A1 #",
+        currentStop.sequence
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontWeight: 600, fontSize: 15 }, children: currentStop.customerName }),
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontSize: 13, color: "#666", marginTop: 4 }, children: currentStop.address }),
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { fontSize: 12, color: "#999", marginTop: 4 }, children: [
+        "ETA: ",
+        currentStop.eta
+      ] })
+    ] }),
+    dailyStats && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: SECTION_STYLE13, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: SECTION_TITLE3, children: "\u4ECA\u65E5\u6982\u89C8" }),
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(QuickStats, { items: statItems, columns: compact ? 2 : 3 })
+    ] }),
+    urgentOrders.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: SECTION_STYLE13, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { ...SECTION_TITLE3, color: "#c62828" }, children: [
+        "\u{1F534} \u7D27\u6025\u8BA2\u5355 (",
+        urgentOrders.length,
+        ")"
+      ] }),
+      urgentOrders.map((order) => /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { ...ORDER_CARD, borderLeft: "3px solid #c62828" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: ORDER_HEADER, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("span", { style: ORDER_NUMBER_STYLE, children: order.orderNumber }),
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("span", { style: URGENT_BADGE, children: "\u7D27\u6025" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: CUSTOMER_INFO, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { children: [
+            order.customerName,
+            " \xB7 ",
+            order.customerPhone
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { children: order.address }),
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { marginTop: 4 }, children: [
+            "\u9884\u8BA1: ",
+            order.estimatedTime
+          ] }),
+          order.note && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { marginTop: 4, color: "#f57c00", fontSize: 12 }, children: [
+            "\u{1F4DD} ",
+            order.note
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: ACTIONS_ROW, children: [
+          order.status === "picked_up" && /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("button", { style: PRIMARY_BUTTON, onClick: () => onStartDelivery?.(order.id), children: "\u5F00\u59CB\u914D\u9001" }),
+          order.status === "in_transit" && /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("button", { style: { ...ACTION_BUTTON_BASE2, background: "#e8f5e9", color: "#2e7d32" }, onClick: () => onCompleteDelivery?.(order.id), children: "\u786E\u8BA4\u9001\u8FBE" }),
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("button", { style: DANGER_BUTTON, onClick: () => onReportIssue?.(order.id), children: "\u5F02\u5E38\u4E0A\u62A5" }),
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("button", { style: OUTLINE_BUTTON, onClick: () => onNavigate?.(order.id, order.address), children: "\u5BFC\u822A" })
+        ] })
+      ] }, order.id))
+    ] }),
+    orders && orders.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: SECTION_STYLE13, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: SECTION_TITLE3, children: "\u914D\u9001\u8BA2\u5355" }),
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
+        DataTable,
+        {
+          data: orders,
+          columns: orderColumns,
+          rowKey: (order) => order.id,
+          compact
+        }
+      )
+    ] }),
+    route && route.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: SECTION_STYLE13, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: SECTION_TITLE3, children: [
+        "\u8DEF\u7EBF\u89C4\u5212",
+        lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("span", { style: { fontSize: 12, color: "#999", fontWeight: 400, marginLeft: 8 }, children: [
+          "\u6700\u540E\u540C\u6B65 ",
+          lastSyncAt
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: CARD3, children: /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("ul", { style: ROUTE_LIST, children: route.map((stop) => {
+        const dotColor = stop.status === "delivered" ? "#4caf50" : stop.status === "arrived" ? "#667eea" : stop.status === "skipped" ? "#bbb" : "#e0e0e0";
+        return /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("li", { style: ROUTE_ITEM, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { ...ROUTE_DOT, background: dotColor } }),
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { flex: 1 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("span", { style: { fontWeight: 500, fontSize: 14 }, children: [
+                "#",
+                stop.sequence,
+                " ",
+                stop.customerName
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("span", { style: { fontSize: 12, color: "#999" }, children: ROUTE_STATUS_LABELS[stop.status] || stop.status })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontSize: 12, color: "#666", marginTop: 2 }, children: stop.address }),
+            /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { fontSize: 12, color: "#999", marginTop: 2 }, children: [
+              "ETA: ",
+              stop.eta
+            ] })
+          ] })
+        ] }, stop.stopId);
+      }) }) })
+    ] }),
+    !orders && !route && !dailyStats && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { textAlign: "center", padding: 40, color: "#999" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontSize: 48, marginBottom: 12 }, children: "\u{1F4E6}" }),
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { children: "\u6682\u65E0\u914D\u9001\u4EFB\u52A1" }),
+      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontSize: 13, marginTop: 4 }, children: "\u4ECA\u65E5\u914D\u9001\u6570\u636E\u5C06\u5728\u63A5\u5355\u540E\u663E\u793A" })
+    ] }),
+    lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { textAlign: "center", fontSize: 11, color: "#ccc", padding: "12px 0" }, children: [
+      "\u6570\u636E\u540C\u6B65\u4E8E ",
+      lastSyncAt
+    ] })
+  ] });
+};
+
+// src/components/InventoryManagerDashboard.tsx
+var import_jsx_runtime272 = require("react/jsx-runtime");
+var SECTION_STYLE14 = {
+  marginBottom: 24
+};
+var SECTION_HEADER_STYLE8 = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 14
+};
+var SECTION_TITLE_STYLE11 = {
+  fontSize: 16,
+  fontWeight: 600,
+  color: "#f1f5f9"
+};
+var CATEGORY_BAR_CONTAINER = {
+  padding: 16,
+  borderRadius: 12,
+  background: "rgba(15,23,42,0.28)",
+  border: "1px solid rgba(148,163,184,0.10)"
+};
+var CATEGORY_ROW_STYLE = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  padding: "8px 0"
+};
+var CATEGORY_BAR_TRACK = {
+  flex: 1,
+  height: 8,
+  borderRadius: 4,
+  background: "rgba(148,163,184,0.12)",
+  overflow: "hidden"
+};
+var CATEGORY_BAR_FILL = {
+  height: "100%",
+  borderRadius: 4,
+  transition: "width 0.4s ease"
+};
+var CATEGORY_LABEL_STYLE = {
+  fontSize: 12,
+  color: "#94a3b8",
+  minWidth: 60
+};
+var CATEGORY_VALUE_STYLE = {
+  fontSize: 12,
+  color: "#e2e8f0",
+  minWidth: 60,
+  textAlign: "right"
+};
+var CATEGORY_PCT_STYLE = {
+  fontSize: 11,
+  color: "#64748b",
+  minWidth: 40,
+  textAlign: "right"
+};
+function fmtCurrency9(value) {
+  if (Math.abs(value) >= 1e4) {
+    return (value / 1e4).toFixed(1) + "\u4E07";
+  }
+  return value.toLocaleString("zh-CN");
+}
+function fmtTrend8(delta) {
+  const sign = delta > 0 ? "+" : "";
+  return `${sign}${delta.toFixed(1)}%`;
+}
+function suggestionLabel(s) {
+  const map = {
+    promote: "\u4FC3\u9500",
+    transfer: "\u8C03\u62E8",
+    return: "\u9000\u8D27",
+    writeoff: "\u62A5\u5E9F"
+  };
+  return map[s] ?? s;
+}
+function suggestionVariant(s) {
+  const map = {
+    promote: "warning",
+    transfer: "neutral",
+    return: "error",
+    writeoff: "error"
+  };
+  return map[s] ?? "neutral";
+}
+function gradeColor(grade) {
+  const map = {
+    A: "#4ade80",
+    B: "#60a5fa",
+    C: "#fbbf24",
+    D: "#f87171"
+  };
+  return map[grade] ?? "#94a3b8";
+}
+var CATEGORY_COLORS3 = [
+  "#60a5fa",
+  "#4ade80",
+  "#fbbf24",
+  "#f87171",
+  "#a78bfa",
+  "#34d399",
+  "#f472b6",
+  "#fb923c",
+  "#22d3ee",
+  "#e879f9"
+];
+var SLOW_COLUMNS = [
+  { key: "sku", header: "SKU", width: "100px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: r.sku }) },
+  { key: "name", header: "\u5546\u54C1\u540D", width: "160px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: r.name }) },
+  { key: "currentQty", header: "\u5E93\u5B58", width: "60px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: r.currentQty }) },
+  { key: "sales30d", header: "\u8FD130\u5929\u9500\u91CF", width: "80px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: r.sales30d }) },
+  { key: "daysInStock", header: "\u5E93\u5B58\u5929\u6570", width: "70px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color: r.daysInStock > 90 ? "#f87171" : "#fbbf24" }, children: [
+    r.daysInStock,
+    "d"
+  ] }) },
+  {
+    key: "capitalLocked",
+    header: "\u5360\u7528\u8D44\u91D1",
+    width: "90px",
+    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: [
+      "\xA5",
+      fmtCurrency9(r.capitalLocked)
+    ] })
+  },
+  {
+    key: "suggestion",
+    header: "\u5EFA\u8BAE",
+    width: "70px",
+    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(StatusBadge2, { label: suggestionLabel(r.suggestion), variant: suggestionVariant(r.suggestion), size: "sm" })
+  }
+];
+var SUPPLIER_COLUMNS = [
+  { key: "name", header: "\u4F9B\u5E94\u5546", width: "120px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: r.name }) },
+  {
+    key: "onTimeRate",
+    header: "\u51C6\u65F6\u4EA4\u4ED8\u7387",
+    width: "90px",
+    render: (r) => {
+      const color = r.onTimeRate >= 0.95 ? "#4ade80" : r.onTimeRate >= 0.85 ? "#fbbf24" : "#f87171";
+      return /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color }, children: [
+        (r.onTimeRate * 100).toFixed(0),
+        "%"
+      ] });
+    }
+  },
+  {
+    key: "qualityRate",
+    header: "\u5408\u683C\u7387",
+    width: "80px",
+    render: (r) => {
+      const color = r.qualityRate >= 0.98 ? "#4ade80" : r.qualityRate >= 0.92 ? "#fbbf24" : "#f87171";
+      return /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color }, children: [
+        (r.qualityRate * 100).toFixed(0),
+        "%"
+      ] });
+    }
+  },
+  { key: "avgLeadDays", header: "\u5E73\u5747\u5230\u8D27\u5929\u6570", width: "90px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: [
+    r.avgLeadDays,
+    "d"
+  ] }) },
+  {
+    key: "monthlyPurchase",
+    header: "\u6708\u91C7\u8D2D\u989D",
+    width: "90px",
+    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: [
+      "\xA5",
+      fmtCurrency9(r.monthlyPurchase)
+    ] })
+  },
+  {
+    key: "grade",
+    header: "\u8BC4\u7EA7",
+    width: "50px",
+    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+      "span",
+      {
+        style: {
+          fontSize: 13,
+          fontWeight: 700,
+          color: gradeColor(r.grade)
+        },
+        children: r.grade
+      }
+    )
+  }
+];
+function InventoryManagerDashboard({
+  metrics,
+  slowMovingItems,
+  supplierPerformances,
+  categoryBreakdown,
+  title,
+  lastUpdatedAt,
+  loading = false,
+  className
+}) {
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { className, style: { padding: 24 }, "data-testid": "inventory-mgr-loading", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+        "div",
+        {
+          style: {
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: 14,
+            marginBottom: 24
+          },
+          children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+            "div",
+            {
+              style: {
+                height: 88,
+                borderRadius: 12,
+                background: "rgba(15,23,42,0.3)",
+                border: "1px solid rgba(148,163,184,0.08)",
+                animation: "pulse 1.5s ease-in-out infinite"
+              }
+            },
+            i
+          ))
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { textAlign: "center", color: "#64748b", fontSize: 13 }, children: "\u6B63\u5728\u52A0\u8F7D\u5E93\u5B58\u5206\u6790\u6570\u636E..." })
+    ] });
+  }
+  const metricItems = metrics ? [
+    {
+      label: "\u603B\u5E93\u5B58\u91D1\u989D",
+      value: `\xA5${fmtCurrency9(metrics.totalStockValue)}`,
+      helper: `\u73AF\u6BD4 ${fmtTrend8(metrics.valueTrend)}`,
+      valueColor: metrics.valueTrend >= 0 ? "#4ade80" : "#f87171"
+    },
+    {
+      label: "SKU \u603B\u6570",
+      value: metrics.totalSku.toLocaleString(),
+      helper: `\u73AF\u6BD4 ${fmtTrend8(metrics.skuTrend)}`,
+      valueColor: metrics.skuTrend >= 0 ? "#4ade80" : "#f87171"
+    },
+    {
+      label: "\u5E93\u5B58\u5468\u8F6C\u5929\u6570",
+      value: `${metrics.turnoverDays}d`,
+      helper: `\u73AF\u6BD4 ${fmtTrend8(metrics.turnoverTrend)}`,
+      valueColor: metrics.turnoverTrend <= 0 ? "#4ade80" : "#f87171"
+    },
+    {
+      label: "\u7F3A\u8D27\u7387",
+      value: `${(metrics.stockoutRate * 100).toFixed(1)}%`,
+      helper: `\u73AF\u6BD4 ${fmtTrend8(metrics.stockoutTrend)}`,
+      valueColor: metrics.stockoutTrend <= 0 ? "#4ade80" : "#f87171"
+    }
+  ] : [
+    { label: "\u5E93\u5B58\u91D1\u989D", value: "--" },
+    { label: "SKU \u6570", value: "--" },
+    { label: "\u5468\u8F6C\u5929\u6570", value: "--" },
+    { label: "\u7F3A\u8D27\u7387", value: "--" }
+  ];
+  const renderCategoryBreakdown = () => {
+    if (!categoryBreakdown || categoryBreakdown.length === 0) return null;
+    return /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: CATEGORY_BAR_CONTAINER, children: categoryBreakdown.map((cat, index) => /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: CATEGORY_ROW_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: CATEGORY_LABEL_STYLE, children: cat.category }),
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: CATEGORY_BAR_TRACK, children: /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+        "div",
+        {
+          style: {
+            ...CATEGORY_BAR_FILL,
+            width: `${cat.percentage}%`,
+            background: CATEGORY_COLORS3[index % CATEGORY_COLORS3.length]
+          }
+        }
+      ) }),
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: CATEGORY_VALUE_STYLE, children: [
+        "\xA5",
+        fmtCurrency9(cat.totalValue)
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: CATEGORY_PCT_STYLE, children: [
+        cat.percentage.toFixed(1),
+        "%"
+      ] })
+    ] }, cat.category)) });
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)(
+    "div",
+    {
+      className,
+      style: { padding: 24, color: "#f8fafc" },
+      "data-testid": "inventory-mgr-root",
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              marginBottom: 18,
+              flexWrap: "wrap",
+              gap: 10
+            },
+            children: /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+                "h2",
+                {
+                  style: {
+                    margin: 0,
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: "#f8fafc"
+                  },
+                  "data-testid": "inventory-mgr-title",
+                  children: title ?? "\u5E93\u5B58\u7ECF\u7406\u5DE5\u4F5C\u53F0"
+                }
+              ),
+              lastUpdatedAt && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)(
+                "span",
+                {
+                  style: {
+                    fontSize: 11,
+                    color: "#475569",
+                    marginTop: 4,
+                    display: "inline-block"
+                  },
+                  children: [
+                    "\u6570\u636E\u66F4\u65B0: ",
+                    lastUpdatedAt
+                  ]
+                }
+              )
+            ] })
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: SECTION_STYLE14, children: /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(QuickStats, { items: metricItems, columns: 4, gap: 14, padding: 18 }) }),
+        categoryBreakdown && categoryBreakdown.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-category", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: SECTION_TITLE_STYLE11, children: "\u54C1\u7C7B\u5E93\u5B58\u5206\u5E03" }) }),
+          renderCategoryBreakdown()
+        ] }),
+        slowMovingItems && slowMovingItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-slow", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: SECTION_TITLE_STYLE11, children: [
+            "\u6EDE\u9500 / \u79EF\u538B\u5546\u54C1",
+            /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 8 }, children: [
+              "(",
+              slowMovingItems.length,
+              ")"
+            ] })
+          ] }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+            DataTable,
+            {
+              columns: SLOW_COLUMNS,
+              rows: slowMovingItems,
+              rowKey: (r) => r.id,
+              compact: true,
+              emptyText: "\u6682\u65E0\u6EDE\u9500\u5546\u54C1"
+            }
+          )
+        ] }),
+        supplierPerformances && supplierPerformances.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-suppliers", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: SECTION_TITLE_STYLE11, children: "\u4F9B\u5E94\u5546\u7EE9\u6548" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+            DataTable,
+            {
+              columns: SUPPLIER_COLUMNS,
+              rows: supplierPerformances,
+              rowKey: (r) => r.id,
+              compact: true,
+              emptyText: "\u6682\u65E0\u4F9B\u5E94\u5546\u6570\u636E"
+            }
+          )
+        ] })
+      ]
+    }
+  );
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -68291,6 +69382,7 @@ function ChartExportPanel({
   Accordion,
   AiABTestComparisonPanel,
   Alert,
+  AlertCorrelationDashboard,
   AnnouncementBanner,
   AnomalyAlertPanel,
   AnomalyAlertTrendPanel,
@@ -68355,6 +69447,7 @@ function ChartExportPanel({
   DateRangePicker,
   DateTimePicker,
   DecisionAuditTrail,
+  DeliveryPersonDashboard,
   DescriptionList,
   DetailActionBar,
   DetailClosureBar,
@@ -68421,6 +69514,7 @@ function ChartExportPanel({
   InputNumber,
   InspectionChecklist,
   InventoryKeeperDashboard,
+  InventoryManagerDashboard,
   KanbanBoard,
   KpiSummaryCard,
   Label,

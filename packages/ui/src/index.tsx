@@ -1340,3 +1340,15 @@ export type { TourProps, TourStep } from './components/Tour';
 // --------------- ChartExportPanel ---------------
 export { ChartExportPanel } from './components/ChartExportPanel';
 export type { ChartExportPanelProps, TimeRangeOption } from './components/ChartExportPanel';
+
+// --------------- AlertCorrelationDashboard ---------------
+export { AlertCorrelationDashboard } from './components/AlertCorrelationDashboard';
+export type { AlertCorrelationDashboardProps, CorrelatedAlert, AlertCorrelationGroup, AlertSeverity, AlertSource, ConfidenceLevel } from './components/AlertCorrelationDashboard';
+
+// --------------- DeliveryPersonDashboard ---------------
+export { DeliveryPersonDashboard } from './components/DeliveryPersonDashboard';
+export type { DeliveryPersonDashboardProps, DeliveryDailyStats, DeliveryOrder, RouteStop } from './components/DeliveryPersonDashboard';
+
+// --------------- InventoryManagerDashboard ---------------
+export { InventoryManagerDashboard } from './components/InventoryManagerDashboard';
+export type { InventoryManagerDashboardProps, InventoryMetrics, SlowMovingItem, SupplierPerformance, CategoryBreakdown } from './components/InventoryManagerDashboard';
