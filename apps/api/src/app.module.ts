@@ -112,6 +112,7 @@ import { LicensePackageModule } from './modules/license-package/license-package.
 import { InsightModule } from './modules/insight/insight.module';
 import { WebhookModule } from './modules/webhook/webhook.module';
 import { PermissionModule } from './modules/permission/permission.module';
+import { CurrencyModule } from './modules/currency/currency.module';
 
 @Module({
   imports: [
@@ -236,6 +237,7 @@ import { PermissionModule } from './modules/permission/permission.module';
     InsightModule,
     WebhookModule,
     PermissionModule,
+    CurrencyModule,
   ],
   providers: [
     RequestGovernanceService,
