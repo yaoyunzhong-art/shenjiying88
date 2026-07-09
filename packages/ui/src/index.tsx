@@ -28,6 +28,9 @@ export { Avatar, AvatarGroup } from './components/Avatar';
 export type { AvatarProps, AvatarGroupProps, AvatarSize, AvatarStatus } from './components/Avatar';
 export { BatchSelectionBar } from './components/BatchSelectionBar';
 export type { BatchSelectionBarProps, BatchAction } from './components/BatchSelectionBar';
+export { ActionPanel } from './components/ActionPanel';
+export type { ActionPanelProps, ActionPanelAction } from './components/ActionPanel';
+
 export { Accordion } from './components/Accordion';
 export type { AccordionItem, AccordionProps } from './components/Accordion';
 export { Breadcrumb } from './components/Breadcrumb';
