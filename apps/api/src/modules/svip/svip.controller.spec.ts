@@ -95,9 +95,7 @@ describe('SvipController', () => {
       expect(plans.length).toBe(0)
     })
 
-    // listPlans 当前实现返回硬编码空数组（Controller stub），标记为待补充
-  // 当 service.listPlans 完成后放开此测试
-  it.skip('创建多个计划后应能全部列出（等待Service实现）', async () => {
+    it('创建多个计划后应能全部列出', async () => {
     await subscribeTo(controller.createPlan({ name: 'P1', price: 100, durationDays: 30, benefits: ['B1'] }))
     await subscribeTo(controller.createPlan({ name: 'P2', price: 200, durationDays: 60, benefits: ['B2'] }))
     await subscribeTo(controller.createPlan({ name: 'P3', price: 300, durationDays: 90, benefits: ['B3'] }))

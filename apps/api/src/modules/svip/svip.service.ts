@@ -26,6 +26,10 @@ export class SvipService {
   private readonly benefits: Map<string, SVIPBenefit[]> = new Map();
   private readonly userSubscriptions: Map<string, string> = new Map();
 
+  listPlans(): Observable<SVIPPlan[]> {
+    return of(Array.from(this.plans.values()))
+  }
+
   createPlan(input: CreatePlanInput): Observable<SVIPPlan> {
     const planId = this.generateId();
     const plan: SVIPPlan = {

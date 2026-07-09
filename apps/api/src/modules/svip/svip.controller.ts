@@ -36,10 +36,7 @@ export class SvipController {
 
   @Get('plans')
   listPlans(): Observable<SVIPPlan[]> {
-    return new Observable((observer) => {
-      observer.next([]);
-      observer.complete();
-    });
+    return this.svipService.listPlans();
   }
 
   @Post('subscribe')
