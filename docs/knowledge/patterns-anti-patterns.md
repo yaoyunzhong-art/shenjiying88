@@ -424,6 +424,24 @@ P-36会员管理的角色模拟测试覆盖了「创建会员 → 充值 → 消
 - 引入新页面时，必须通过 TSC 验证再提交。auto-commit 不应跳过 typecheck。
 - 使用 `@m5/ui` 组件时，先查看接口定义，避免靠猜测使用字段名。
 
+## Pulse-233 Insight: Props API 不匹配 — 页面组件接口契约陷阱
+
+### 场景
+tier-distribution/page.tsx 出现12个TSC错误 + 1个测试失败，根因是页面使用了错误Props调用UI组件：
+1. **KpiSummaryCard**: 传了 `value`/`unit`/`trend`扁平属性，实际接口需 `items: KpiCardItem[]` (每项含label/value/trend/helper/variant)
+2. **PageShell**: 传了 `breadcrumbs` 数组，实际接口只有 `breadcrumb?: React.ReactNode` (单节点)
+3. **Card**: 使用了 `bordered` 属性，不存在。应使用 `variant` 控制外观
+4. **DonutSlice**: 使用了 `name` 字段，但需要 `key` + `label`
+5. **SparklineChart**: 使用了 `showArea`/`showLabels`，实际接口用 `fillColor` + `showDots`
+
+### 根因
+页面编写时直接推断组件prop命名(如假设KpiSummaryCard像普通卡片接受value/unit/trend)，未先读组件interface定义。测试mock也使用了相同的错误命名→测试通过但TSC拦截了真正的类型不匹配。
+
+### 规则
+1. 新页面用UI组件前→先读该组件的interface定义文件(通常在packages/ui/src/components/xxx.tsx的interface XxxProps)
+2. 测试mock的prop名必须与真实组件props完全一致(可直接从interface复制prop签名)
+3. KpiSummaryCard是新封装的指标卡片组件(依赖StatCard)，其API已从扁平prop转为`items[]`数组模式
+
 ---
 
 **[🎨 前端专家] Server Action + Client Component的Streaming SSR水合边界优化** | 日期: 2026-07-09
