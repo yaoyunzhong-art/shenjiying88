@@ -47,7 +47,8 @@ const MOCK_TREND_DATA = [
 ];
 
 const MOCK_DONUT_DATA = MOCK_TIERS.map((t) => ({
-  name: t.tier,
+  key: t.key,
+  label: t.tier,
   value: t.count,
   color: t.color,
 }));
@@ -70,57 +71,67 @@ export default function MemberTierDistributionPage() {
     <PageShell
       title="会员等级分布"
       subtitle="可视化分析会员结构，洞察高价值人群分布趋势"
-      breadcrumbs={[
-        { label: '首页', href: '/' },
-        { label: '会员管理', href: '/members' },
-        { label: '等级分布', href: '/members/tier-distribution' },
-      ]}
     >
       {/* 统计卡片区 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <KpiSummaryCard
           title="总会员数"
-          value={totalMembers.toLocaleString()}
-          unit="人"
-          trend={5.2}
+          items={[
+            {
+              label: '总会员数',
+              value: `${totalMembers.toLocaleString()} 人`,
+              trend: { value: '5.2%', positive: true },
+            },
+          ]}
         />
         <KpiSummaryCard
           title="高价值会员"
-          value={highValueMembers.toLocaleString()}
-          unit="人"
-          trend={8.7}
-          description="钻石 + 铂金"
+          items={[
+            {
+              label: '高价值会员',
+              value: `${highValueMembers.toLocaleString()} 人`,
+              helper: '钻石 + 铂金',
+              trend: { value: '8.7%', positive: true },
+            },
+          ]}
         />
         <KpiSummaryCard
           title="黄金会员"
-          value={MOCK_TIERS[2].count.toLocaleString()}
-          unit="人"
-          trend={-3.0}
-          description="环比下降"
+          items={[
+            {
+              label: '黄金会员',
+              value: `${MOCK_TIERS[2].count.toLocaleString()} 人`,
+              helper: '环比下降',
+              trend: { value: '3.0%', positive: false },
+            },
+          ]}
         />
         <KpiSummaryCard
           title="本月新增"
-          value={23}
-          unit="人"
-          trend={15.3}
-          description="预估"
+          items={[
+            {
+              label: '本月新增',
+              value: '23 人',
+              helper: '预估',
+              trend: { value: '15.3%', positive: true },
+            },
+          ]}
         />
       </div>
 
       {/* 分布图表区 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <Card title="等级分布（饼图）" bordered>
+        <Card title="等级分布（饼图）">
           <DonutChart
             data={MOCK_DONUT_DATA}
-            width={320}
-            height={280}
+            size={280}
             showLegend
-            showPercent
-            innerRadius={60}
+            showCenterLabel
+            thickness={40}
           />
         </Card>
 
-        <Card title="等级分布（柱状图）" bordered>
+        <Card title="等级分布（柱状图）">
           <MemberTierDistribution
             tiers={MOCK_TIERS}
             width={400}
@@ -136,7 +147,7 @@ export default function MemberTierDistributionPage() {
 
       {/* 第二行：等级柱状 + 趋势 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <Card title="等级占比（水平柱状）" bordered>
+        <Card title="等级占比（水平柱状）">
           <MemberLevelDistribution
             data={MOCK_LEVELS}
             width={400}
@@ -146,20 +157,19 @@ export default function MemberTierDistributionPage() {
           />
         </Card>
 
-        <Card title="高价值会员增长趋势" bordered>
+        <Card title="高价值会员增长趋势">
           <SparklineChart
             data={MOCK_TREND_DATA}
             width={400}
             height={280}
             color="#3b82f6"
-            showArea
-            showLabels
+            fillColor="rgba(59,130,246,0.12)"
           />
         </Card>
       </div>
 
       {/* 等级构成分析 */}
-      <Card title="等级构成分析" bordered>
+      <Card title="等级构成分析">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

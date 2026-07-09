@@ -11,18 +11,17 @@ jest.mock('@m5/ui', () => {
   const actual = jest.requireActual('@m5/ui');
   return {
     ...actual,
-    DonutChart: ({ data, showLegend, showPercent }: any) => (
-      <div data-testid="donut-chart" data-data={JSON.stringify(data)} data-legend={showLegend} data-percent={showPercent}>
+    DonutChart: ({ data, showLegend, showCenterLabel }: any) => (
+      <div data-testid="donut-chart" data-data={JSON.stringify(data)} data-legend={showLegend} data-percent={showCenterLabel}>
         DonutChart Mock
       </div>
     ),
-    SparklineChart: ({ data, color, showArea, showLabels }: any) => (
+    SparklineChart: ({ data, color, fillColor }: any) => (
       <div
         data-testid="sparkline-chart"
         data-count={data?.length}
         data-color={color}
-        data-area={showArea}
-        data-labels={showLabels}
+        data-fill-color={fillColor}
       >
         SparklineChart Mock
       </div>
@@ -42,19 +41,22 @@ jest.mock('@m5/ui', () => {
         MemberLevelDistribution Mock
       </div>
     ),
-    KpiSummaryCard: ({ title, value, unit }: any) => (
-      <div data-testid="kpi-card" data-title={title}>
-        {title}: {value}{unit}
-      </div>
-    ),
-    Card: ({ title, children, bordered }: any) => (
-      <div data-testid={`card-${title?.replace(/\s+/g, '-')}`} data-bordered={bordered}>
+    KpiSummaryCard: ({ title, items }: any) => {
+      const kpiCards = (items || []).map((item: any, i: number) => (
+        <div key={i} data-testid="kpi-card" data-title={title}>
+          {title}: {item.value}
+        </div>
+      ));
+      return <>{kpiCards}</>;
+    },
+    Card: ({ title, children }: any) => (
+      <div data-testid={`card-${title?.replace(/\s+/g, '-')}`}>
         <h3>{title}</h3>
         {children}
       </div>
     ),
-    PageShell: ({ title, subtitle, breadcrumbs, children }: any) => (
-      <div data-testid="page-shell" data-title={title} data-subtitle={subtitle} data-breadcrumbs={breadcrumbs?.length}>
+    PageShell: ({ title, subtitle, children }: any) => (
+      <div data-testid="page-shell" data-title={title} data-subtitle={subtitle}>
         <h1>{title}</h1>
         <p>{subtitle}</p>
         {children}
@@ -71,7 +73,6 @@ describe('MemberTierDistributionPage', () => {
     const shell = screen.getByTestId('page-shell');
     expect(shell).toHaveAttribute('data-title', '会员等级分布');
     expect(shell).toHaveAttribute('data-subtitle', expect.stringContaining('可视化'));
-    expect(shell).toHaveAttribute('data-breadcrumbs', '3');
   });
 
   it('renders 4 KPI summary cards', () => {
@@ -88,7 +89,8 @@ describe('MemberTierDistributionPage', () => {
     expect(donut).toBeInTheDocument();
     const data = JSON.parse(donut.getAttribute('data-data') || '[]');
     expect(data).toHaveLength(5);
-    expect(data[0].name).toBe('钻石会员');
+    expect(data[0].key).toBe('diamond');
+    expect(data[0].label).toBe('钻石会员');
     expect(data[0].value).toBe(86);
     expect(donut.getAttribute('data-legend')).toBe('true');
     expect(donut.getAttribute('data-percent')).toBe('true');
@@ -113,8 +115,7 @@ describe('MemberTierDistributionPage', () => {
     const sparkline = screen.getByTestId('sparkline-chart');
     expect(sparkline).toHaveAttribute('data-count', '6');
     expect(sparkline.getAttribute('data-color')).toBe('#3b82f6');
-    expect(sparkline.getAttribute('data-area')).toBe('true');
-    expect(sparkline.getAttribute('data-labels')).toBe('true');
+    expect(sparkline.getAttribute('data-fill-color')).toBe('rgba(59,130,246,0.12)');
   });
 
   it('renders tier analysis table with correct data', () => {
