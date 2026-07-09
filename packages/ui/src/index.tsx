@@ -1375,3 +1375,14 @@ export type { TierUpgradePanelProps, TierInfo } from './components/TierUpgradePa
 // --------------- InventoryManagerDashboard ---------------
 export { InventoryManagerDashboard } from './components/InventoryManagerDashboard';
 export type { InventoryManagerDashboardProps, InventoryMetrics, SlowMovingItem, SupplierPerformance, CategoryBreakdown } from './components/InventoryManagerDashboard';
+
+// --------------- SalespersonToolPanel ---------------
+export { SalespersonToolPanel } from './components/SalespersonToolPanel';
+export type {
+  SalespersonToolPanelProps,
+  CustomerBrief,
+  CustomerPreference,
+  ProductRecommendation,
+  SalesTask,
+  PerformanceCard,
+} from './components/SalespersonToolPanel';

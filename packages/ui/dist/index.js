@@ -291,6 +291,7 @@ __export(index_exports, {
   SalesConversionFunnel: () => SalesConversionFunnel,
   SalesForecastPanel: () => SalesForecastPanel,
   SalesGuideTool: () => SalesGuideTool,
+  SalespersonToolPanel: () => SalespersonToolPanel,
   ScenarioComparisonPanel: () => ScenarioComparisonPanel,
   ScrollArea: () => ScrollArea,
   ScrollToTop: () => ScrollToTop,
@@ -70285,6 +70286,497 @@ function InventoryManagerDashboard({
     }
   );
 }
+
+// src/components/SalespersonToolPanel.tsx
+var import_react189 = require("react");
+var import_jsx_runtime277 = require("react/jsx-runtime");
+var PANEL_STYLE4 = {
+  backgroundColor: "#0f172a",
+  color: "#e2e8f0",
+  borderRadius: 12,
+  padding: 20,
+  fontFamily: "system-ui, -apple-system, sans-serif"
+};
+var INPUT_STYLE = {
+  width: "100%",
+  backgroundColor: "#1e293b",
+  border: "1px solid #334155",
+  borderRadius: 8,
+  padding: "10px 14px",
+  color: "#e2e8f0",
+  fontSize: 14,
+  outline: "none",
+  boxSizing: "border-box"
+};
+var PRIMARY_BUTTON2 = {
+  padding: "8px 16px",
+  backgroundColor: "#3b82f6",
+  color: "white",
+  border: "none",
+  borderRadius: 6,
+  cursor: "pointer",
+  fontWeight: 600,
+  fontSize: 13
+};
+var SECONDARY_BUTTON = {
+  padding: "8px 16px",
+  backgroundColor: "#1e293b",
+  color: "#94a3b8",
+  border: "1px solid #334155",
+  borderRadius: 6,
+  cursor: "pointer",
+  fontWeight: 500,
+  fontSize: 13
+};
+var CARD_STYLE4 = {
+  backgroundColor: "#1e293b",
+  borderRadius: 10,
+  padding: 14,
+  marginBottom: 10
+};
+var MEMBERSHIP_COLORS = {
+  regular: "#94a3b8",
+  silver: "#c0c0c0",
+  gold: "#f59e0b",
+  diamond: "#6366f1"
+};
+var PRIORITY_COLORS5 = {
+  high: "#ef4444",
+  medium: "#f59e0b",
+  low: "#64748b"
+};
+function CustomerInfoCard({ customer }) {
+  const tags = customer.tags ?? [];
+  return /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: CARD_STYLE4, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 10 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+          "div",
+          {
+            style: {
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: "#334155",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 16,
+              fontWeight: 600,
+              color: "#f1f5f9"
+            },
+            children: customer.name.charAt(0)
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { style: { fontWeight: 600, fontSize: 15 }, children: customer.name }),
+          /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { style: { fontSize: 12, color: "#64748b" }, children: customer.phone })
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+        "span",
+        {
+          style: {
+            display: "inline-block",
+            padding: "2px 10px",
+            borderRadius: 12,
+            backgroundColor: MEMBERSHIP_COLORS[customer.membership] + "22",
+            color: MEMBERSHIP_COLORS[customer.membership],
+            fontSize: 12,
+            fontWeight: 600
+          },
+          children: customer.membership.toUpperCase()
+        }
+      ) })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { display: "flex", gap: 16, fontSize: 13, color: "#94a3b8", marginBottom: 8 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("span", { children: [
+        "\u7D2F\u8BA1\u6D88\u8D39: ",
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("strong", { style: { color: "#22c55e" }, children: [
+          "\xA5",
+          customer.totalSpent.toFixed(0)
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("span", { children: [
+        "\u4E0A\u6B21\u5230\u5E97: ",
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("strong", { children: customer.lastVisit })
+      ] })
+    ] }),
+    tags.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" }, children: tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+      "span",
+      {
+        style: {
+          padding: "2px 8px",
+          borderRadius: 10,
+          backgroundColor: "#334155",
+          color: "#94a3b8",
+          fontSize: 11
+        },
+        children: tag
+      },
+      tag
+    )) })
+  ] });
+}
+function PreferenceBar({ label, score }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { marginBottom: 8 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("span", { children: label }),
+      /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("span", { style: { color: "#64748b" }, children: [
+        score,
+        "%"
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+      "div",
+      {
+        style: {
+          height: 6,
+          backgroundColor: "#1e293b",
+          borderRadius: 3,
+          overflow: "hidden"
+        },
+        children: /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+          "div",
+          {
+            style: {
+              height: "100%",
+              width: `${score}%`,
+              backgroundColor: score > 70 ? "#22c55e" : score > 40 ? "#f59e0b" : "#3b82f6",
+              borderRadius: 3,
+              transition: "width 0.3s ease"
+            }
+          }
+        )
+      }
+    )
+  ] });
+}
+function RecommendationCard({
+  item,
+  onAddToCart,
+  onShare
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)(
+    "div",
+    {
+      style: {
+        ...CARD_STYLE4,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { style: { fontWeight: 600, fontSize: 14, marginBottom: 2 }, children: item.name }),
+          /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { color: "#94a3b8", fontSize: 12, marginBottom: 4 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("span", { style: { color: "#22c55e", fontWeight: 600 }, children: [
+              "\xA5",
+              item.price
+            ] }),
+            " \xB7 ",
+            "\u5E93\u5B58: ",
+            item.stock
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { style: { fontSize: 12, color: "#64748b", fontStyle: "italic" }, children: item.reason })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 6 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("button", { style: PRIMARY_BUTTON2, onClick: onAddToCart, children: "\u52A0\u8D2D" }),
+          /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("button", { style: SECONDARY_BUTTON, onClick: onShare, children: "\u5206\u4EAB" })
+        ] })
+      ]
+    }
+  );
+}
+function TaskItem({
+  task,
+  onComplete
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)(
+    "div",
+    {
+      style: {
+        ...CARD_STYLE4,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        opacity: task.completed ? 0.5 : 1
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { flex: 1 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+              "span",
+              {
+                style: {
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: task.completed ? "#22c55e" : PRIORITY_COLORS5[task.priority],
+                  display: "inline-block"
+                }
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+              "span",
+              {
+                style: {
+                  fontWeight: 600,
+                  fontSize: 13,
+                  textDecoration: task.completed ? "line-through" : "none"
+                },
+                children: task.title
+              }
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { fontSize: 12, color: "#64748b", marginLeft: 16 }, children: [
+            task.targetCustomer,
+            " \xB7 \u622A\u6B62 ",
+            task.dueDate
+          ] })
+        ] }),
+        !task.completed && /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+          "button",
+          {
+            style: {
+              ...PRIMARY_BUTTON2,
+              backgroundColor: "#22c55e",
+              fontSize: 12,
+              padding: "6px 12px"
+            },
+            onClick: onComplete,
+            children: "\u5B8C\u6210"
+          }
+        )
+      ]
+    }
+  );
+}
+function SalespersonToolPanel({
+  salespersonName = "\u5BFC\u8D2D\u5458",
+  currentCustomer,
+  preferences = [],
+  recommendations = [],
+  tasks = [],
+  performance: performance2,
+  loading = false,
+  onSearchCustomer,
+  onAddToCart,
+  onShareProduct,
+  onCompleteTask,
+  onScan,
+  className
+}) {
+  const [searchKeyword, setSearchKeyword] = (0, import_react189.useState)("");
+  const [activeTab, setActiveTab] = (0, import_react189.useState)("customer");
+  const handleSearch = () => {
+    if (searchKeyword.trim() && onSearchCustomer) {
+      onSearchCustomer(searchKeyword.trim());
+    }
+  };
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: PANEL_STYLE4, className, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)(
+      "div",
+      {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("h2", { style: { fontSize: 18, fontWeight: 700, margin: 0, color: "#f1f5f9" }, children: salespersonName }),
+            /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("p", { style: { fontSize: 12, color: "#64748b", margin: "2px 0 0 0" }, children: "\u5BFC\u8D2D\u5458\u5DE5\u4F5C\u53F0" })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)(
+            "button",
+            {
+              style: {
+                ...PRIMARY_BUTTON2,
+                backgroundColor: "#6366f1",
+                padding: "8px 14px",
+                display: "flex",
+                alignItems: "center",
+                gap: 6
+              },
+              onClick: onScan,
+              children: [
+                "\u{1F4F7} ",
+                /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("span", { children: "\u626B\u7801" })
+              ]
+            }
+          )
+        ]
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { display: "flex", gap: 8, marginBottom: 16 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+        "input",
+        {
+          type: "text",
+          placeholder: "\u{1F50D} \u641C\u7D22\u5BA2\u6237\u59D3\u540D/\u624B\u673A\u53F7...",
+          value: searchKeyword,
+          onChange: (e) => setSearchKeyword(e.target.value),
+          onKeyDown: handleKeyDown,
+          style: { ...INPUT_STYLE, flex: 1 }
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+        "button",
+        {
+          style: {
+            ...PRIMARY_BUTTON2,
+            whiteSpace: "nowrap"
+          },
+          onClick: handleSearch,
+          children: "\u641C\u7D22"
+        }
+      )
+    ] }),
+    currentCustomer && /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(CustomerInfoCard, { customer: currentCustomer }),
+    /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+      "div",
+      {
+        style: {
+          display: "flex",
+          gap: 4,
+          marginBottom: 14,
+          borderBottom: "1px solid #1e293b",
+          paddingBottom: 8
+        },
+        children: [
+          { key: "customer", label: "\u5BA2\u6237\u504F\u597D", badge: preferences.length },
+          { key: "recommend", label: "\u63A8\u8350\u5546\u54C1", badge: recommendations.length },
+          { key: "tasks", label: "\u5F85\u529E\u4EFB\u52A1", badge: tasks.filter((t) => !t.completed).length },
+          { key: "stats", label: "\u7EE9\u6548", badge: void 0 }
+        ].map((tab) => /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)(
+          "button",
+          {
+            onClick: () => setActiveTab(tab.key),
+            style: {
+              padding: "6px 12px",
+              backgroundColor: "transparent",
+              color: activeTab === tab.key ? "#3b82f6" : "#64748b",
+              border: "none",
+              borderBottom: activeTab === tab.key ? "2px solid #3b82f6" : "2px solid transparent",
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: activeTab === tab.key ? 600 : 400,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              marginBottom: -8
+            },
+            children: [
+              tab.label,
+              tab.badge !== void 0 && tab.badge > 0 && /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+                "span",
+                {
+                  style: {
+                    backgroundColor: "#3b82f6",
+                    color: "white",
+                    fontSize: 10,
+                    borderRadius: 8,
+                    padding: "1px 6px",
+                    fontWeight: 600
+                  },
+                  children: tab.badge
+                }
+              )
+            ]
+          },
+          tab.key
+        ))
+      }
+    ),
+    loading ? /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { textAlign: "center", padding: 40, color: "#64748b" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { style: { fontSize: 24, marginBottom: 8 }, children: "\u23F3" }),
+      /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { children: "\u52A0\u8F7D\u4E2D..." })
+    ] }) : /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)(import_jsx_runtime277.Fragment, { children: [
+      activeTab === "customer" && /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { children: preferences.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { style: { textAlign: "center", padding: 30, color: "#64748b", fontSize: 13 }, children: currentCustomer ? "\u6682\u65E0\u8BE5\u5BA2\u6237\u7684\u504F\u597D\u6570\u636E" : "\u8BF7\u5148\u641C\u7D22\u6216\u626B\u7801\u9009\u62E9\u5BA2\u6237" }) : preferences.map((p) => /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(PreferenceBar, { label: p.label, score: p.score }, p.category)) }),
+      activeTab === "recommend" && /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { children: recommendations.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { style: { textAlign: "center", padding: 30, color: "#64748b", fontSize: 13 }, children: currentCustomer ? "\u6682\u65E0\u63A8\u8350\u5546\u54C1" : "\u8BF7\u5148\u9009\u62E9\u5BA2\u6237\u4EE5\u83B7\u53D6\u4E2A\u6027\u5316\u63A8\u8350" }) : recommendations.map((item) => /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+        RecommendationCard,
+        {
+          item,
+          onAddToCart: () => onAddToCart?.(item.id),
+          onShare: () => onShareProduct?.(item.id)
+        },
+        item.id
+      )) }),
+      activeTab === "tasks" && /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { children: tasks.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { style: { textAlign: "center", padding: 30, color: "#64748b", fontSize: 13 }, children: "\u6682\u65E0\u5F85\u529E\u4EFB\u52A1" }) : tasks.map((task) => /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+        TaskItem,
+        {
+          task,
+          onComplete: () => onCompleteTask?.(task.id)
+        },
+        task.id
+      )) }),
+      activeTab === "stats" && /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { children: !performance2 ? /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { style: { textAlign: "center", padding: 30, color: "#64748b", fontSize: 13 }, children: "\u6682\u65E0\u7EE9\u6548\u6570\u636E" }) : /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(StatCard2, { label: "\u4ECA\u65E5\u9500\u552E\u989D", value: `\xA5${performance2.dailySales.toFixed(0)}`, color: "#22c55e" }),
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(StatCard2, { label: "\u672C\u6708\u9500\u552E\u989D", value: `\xA5${performance2.monthlySales.toFixed(0)}`, color: "#3b82f6" }),
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(StatCard2, { label: "\u670D\u52A1\u5BA2\u6237", value: `${performance2.customersServed}\u4EBA`, color: "#f59e0b" }),
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(StatCard2, { label: "\u8F6C\u5316\u7387", value: `${(performance2.conversionRate * 100).toFixed(1)}%`, color: "#6366f1" }),
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)(
+          "div",
+          {
+            style: {
+              gridColumn: "1 / -1",
+              ...CARD_STYLE4
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("div", { style: { fontSize: 13, marginBottom: 8, color: "#94a3b8" }, children: [
+                "\u6708\u76EE\u6807\u8FDB\u5EA6: ",
+                /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)("strong", { style: { color: "#f1f5f9" }, children: [
+                  performance2.targetProgress,
+                  "%"
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { style: { height: 10, backgroundColor: "#0f172a", borderRadius: 5, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime277.jsx)(
+                "div",
+                {
+                  style: {
+                    height: "100%",
+                    width: `${Math.min(performance2.targetProgress, 100)}%`,
+                    backgroundColor: performance2.targetProgress >= 80 ? "#22c55e" : performance2.targetProgress >= 50 ? "#f59e0b" : "#3b82f6",
+                    borderRadius: 5,
+                    transition: "width 0.5s ease"
+                  }
+                }
+              ) })
+            ]
+          }
+        )
+      ] }) })
+    ] })
+  ] });
+}
+function StatCard2({
+  label,
+  value,
+  color
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime277.jsxs)(
+    "div",
+    {
+      style: {
+        backgroundColor: "#1e293b",
+        borderRadius: 10,
+        padding: 14,
+        textAlign: "center"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 4 }, children: label }),
+        /* @__PURE__ */ (0, import_jsx_runtime277.jsx)("div", { style: { fontSize: 20, fontWeight: 700, color }, children: value })
+      ]
+    }
+  );
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -70548,6 +71040,7 @@ function InventoryManagerDashboard({
   SalesConversionFunnel,
   SalesForecastPanel,
   SalesGuideTool,
+  SalespersonToolPanel,
   ScenarioComparisonPanel,
   ScrollArea,
   ScrollToTop,
