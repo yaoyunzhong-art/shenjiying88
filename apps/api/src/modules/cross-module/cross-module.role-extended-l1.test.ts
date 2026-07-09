@@ -71,9 +71,9 @@ describe('🛒前台 跨模块角色测试', () => {
     const status = ctrl.getChainStatus()
     const chain = status.chains.find((c: any) => c.name === 'admin-to-consumer')
     expect(chain).toBeDefined()
-    expect(chain.modules).toHaveLength(6)
-    expect(chain.modules).toContain('portal')
-    expect(chain.modules).toContain('miniapp')
+    expect(chain!.modules).toHaveLength(6)
+    expect(chain!.modules).toContain('portal')
+    expect(chain!.modules).toContain('miniapp')
   })
 
   it('正例: 执行链路验证后状态应更新', async () => {
@@ -126,8 +126,8 @@ describe('🔧安监 跨模块角色测试', () => {
     const status = ctrl.getChainStatus()
     const gov = status.chains.find((c: any) => c.name === 'governance-chain')
     expect(gov).toBeDefined()
-    expect(gov.modules).toContain('identity-access')
-    expect(gov.modules).toContain('runtime-governance')
+    expect(gov!.modules).toContain('identity-access')
+    expect(gov!.modules).toContain('runtime-governance')
   })
 
   it('正例: 验证前 has-broken 为 false', () => {
@@ -154,9 +154,9 @@ describe('🎮导玩员 跨模块角色测试', () => {
     const status = ctrl.getChainStatus()
     const chain = status.chains.find((c: any) => c.name === 'sdk-to-api')
     expect(chain).toBeDefined()
-    expect(chain.modules).toContain('sdk')
-    expect(chain.modules).toContain('api')
-    expect(chain.modules).toContain('member')
+    expect(chain!.modules).toContain('sdk')
+    expect(chain!.modules).toContain('api')
+    expect(chain!.modules).toContain('member')
   })
 
   it('正例: 验证单条链路并返回结果', async () => {
@@ -183,11 +183,11 @@ describe('🎯运行专员 跨模块角色测试', () => {
     const status = ctrl.getChainStatus()
     const chain = status.chains.find((c: any) => c.name === 'multi-client-consistency')
     expect(chain).toBeDefined()
-    expect(chain.modules).toContain('admin-web')
-    expect(chain.modules).toContain('tob-web')
-    expect(chain.modules).toContain('storefront-web')
-    expect(chain.modules).toContain('miniapp')
-    expect(chain.modules).toContain('api')
+    expect(chain!.modules).toContain('admin-web')
+    expect(chain!.modules).toContain('tob-web')
+    expect(chain!.modules).toContain('storefront-web')
+    expect(chain!.modules).toContain('miniapp')
+    expect(chain!.modules).toContain('api')
   })
 
   it('正例: resetAll 后 all-verified 为 false', () => {
@@ -246,7 +246,7 @@ describe('📢营销 跨模块角色测试', () => {
     await ctrl.validate({ chainNames: ['admin-to-consumer'], ...defaultCtx })
     const status = ctrl.getChainStatus()
     const chain = status.chains.find((c: any) => c.name === 'admin-to-consumer')
-    expect(chain.status).toBe(ChainStatus.Verified)
+    expect(chain!.status).toBe(ChainStatus.Verified)
   })
 
   it('反例: 重置后链路不再验证', () => {
