@@ -61,7 +61,7 @@ describe(`${ROLES.Guide} integration-orchestration 角色测试`, () => {
 describe(`${ROLES.TenantAdmin} integration-orchestration 角色测试`, () => {
   it('店长可以获取 webhook sources', () => {
     const ctrl = createIntOrchController()
-    const result = ctrl.getWebhookSources()
+    const result = ctrl.getWebhookSources() as Array<{source: string; handler: string}>
     assert.ok(result.length > 0)
   })
 
@@ -118,7 +118,8 @@ describe(`${ROLES.Marketing} integration-orchestration 角色测试`, () => {
     const result = await ctrl.ingestWebhook('lyt', {
       eventId: 'notification-callback',
       payload: { campaignId: 'c-001', status: 'delivered' },
-      signature: 'sig-001'
+      signature: 'sig-001',
+      timestamp: new Date().toISOString()
     }) as { source: string; status: string }
     assert.equal(result.source, 'lyt')
     assert.equal(result.status, 'accepted')

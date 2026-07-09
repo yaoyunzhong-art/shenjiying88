@@ -36,10 +36,7 @@ import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
 import { ImageRecognitionService } from './image-recognition.service'
-import {
-  runWithTenant,
-  TenantContextInterceptor,
-} from '../../common/context/tenant-context'
+import { runWithTenant } from '../../common/context/tenant-context'
 
 // ─── Test Controller (模拟真实路由) ───
 
@@ -112,7 +109,7 @@ const ANOTHER_TENANT = {
 
 describe('ImageRecognition E2E (HTTP → Controller → Service)', () => {
   let app: any
-  let http: request.SuperTest<request.Test>
+  let http: request.Agent
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({

@@ -22,7 +22,7 @@ function createIdentityAccessController(mockSvc = mockIdentityAccessService()) {
 }
 
 const tenantCtx = { tenantId: 't-ia', brandId: 'b-ia', storeId: 's-ia', marketCode: 'zh-cn' }
-const actorCtx = { actorId: 'a-test', actorType: 'tenant-user' as const, actorName: 'Test', roles: ['TENANT_ADMIN'], permissions: ['*'], authenticated: true }
+const actorCtx = { actorId: 'a-test', actorType: 'tenant-user' as const, actorName: 'Test', roles: ['TENANT_ADMIN'], permissions: ['*'], authenticated: true, source: 'headers' as const }
 
 const ROLES = {
   TenantAdmin: '👔店长',
@@ -80,7 +80,7 @@ describe(`${ROLES.Security} identity-access 角色测试`, () => {
       permissions: ['audit:read']
     })
     const ctrl = createIdentityAccessController(svc)
-    const result = ctrl.getContext(tenantCtx, { ...actorCtx, roles: ['SECURITY_ADMIN'], permissions: ['audit:read'] })
+    const result = ctrl.getContext(tenantCtx, { ...actorCtx, roles: ['SECURITY_ADMIN'], permissions: ['audit:read'], source: 'headers' as const })
     assert.ok(result.roles.includes('SECURITY_ADMIN'))
   })
 
@@ -96,7 +96,7 @@ describe(`${ROLES.Security} identity-access 角色测试`, () => {
     const svc = mockIdentityAccessService()
     svc.authorizeAction = () => ({ status: 'denied', action: 'tenant:read', permissionMatched: false, tenantScopeMatched: false, resourceScope: {}, actor: null, enforcedBy: [] })
     const ctrl = new IdentityAccessController(svc)
-    const result = ctrl.validateTenantScope('t-other', tenantCtx, { ...actorCtx, roles: ['SECURITY_ADMIN'], permissions: ['audit:read'] })
+    const result = ctrl.validateTenantScope('t-other', tenantCtx, { ...actorCtx, roles: ['SECURITY_ADMIN'], permissions: ['audit:read'], source: 'headers' as const })
     // Controller hardcodes status: 'allowed' on envelope; authorization sub-object reflects real check
     assert.equal(result.check, 'tenant-scope')
     assert.equal(result.authorization.status, 'denied')
@@ -116,7 +116,7 @@ describe(`${ROLES.Operations} identity-access 角色测试`, () => {
       permissions: ['foundation.operations.alerts.write']
     })
     const ctrl = createIdentityAccessController(svc)
-    const result = ctrl.getContext(tenantCtx, { ...actorCtx, roles: ['OPERATIONS'], permissions: ['foundation.operations.alerts.write'] })
+    const result = ctrl.getContext(tenantCtx, { ...actorCtx, roles: ['OPERATIONS'], permissions: ['foundation.operations.alerts.write'], source: 'headers' as const })
     assert.ok(result)
   })
 
@@ -145,14 +145,14 @@ describe(`${ROLES.HR} identity-access 角色测试`, () => {
       permissions: ['member:read']
     })
     const ctrl = createIdentityAccessController(svc)
-    const result = ctrl.getContext(tenantCtx, { ...actorCtx, roles: ['HR'], permissions: ['member:read'] })
+    const result = ctrl.getContext(tenantCtx, { ...actorCtx, roles: ['HR'], permissions: ['member:read'], source: 'headers' as const })
     assert.ok(result.authenticated)
   })
 
   it('HR可以 validate role', () => {
     const svc = mockIdentityAccessService()
     const ctrl = createIdentityAccessController(svc)
-    const result = ctrl.validateRole(tenantCtx, { ...actorCtx, roles: ['HR'] })
+    const result = ctrl.validateRole(tenantCtx, { ...actorCtx, roles: ['HR'], source: 'headers' as const })
     assert.equal(result.status, 'allowed')
   })
 
@@ -160,7 +160,7 @@ describe(`${ROLES.HR} identity-access 角色测试`, () => {
     const svc = mockIdentityAccessService()
     svc.authorizeAction = () => ({ status: 'denied', action: 'tenant:read', permissionMatched: false, tenantScopeMatched: false, resourceScope: {}, actor: null, enforcedBy: [] })
     const ctrl = new IdentityAccessController(svc)
-    const result = ctrl.validateTenantScope('t-other', tenantCtx, { ...actorCtx, roles: ['HR'], permissions: ['member:read'] })
+    const result = ctrl.validateTenantScope('t-other', tenantCtx, { ...actorCtx, roles: ['HR'], permissions: ['member:read'], source: 'headers' as const })
     assert.equal(result.check, 'tenant-scope')
     assert.equal(result.authorization.status, 'denied')
     assert.equal(result.authorization.permissionMatched, false)

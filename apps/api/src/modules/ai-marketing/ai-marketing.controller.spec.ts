@@ -193,7 +193,7 @@ describe('AiMarketingController (spec)', () => {
   describe('POST /ai-marketing/roi/project', () => {
     it('should project ROI with valid config', () => {
       const result = controller.projectROI({
-        type: 'performance',
+        type: CampaignTypeEnum.PERFORMANCE,
         budget: 10000,
         expectedCPM: 50,
         expectedCTR: 3.5,
@@ -207,7 +207,7 @@ describe('AiMarketingController (spec)', () => {
 
     it('边界: 零预算返回 min/max/expected', () => {
       const result = controller.projectROI({
-        type: 'performance',
+        type: CampaignTypeEnum.PERFORMANCE,
         budget: 0,
         expectedCPM: 50,
         expectedCTR: 3.5,
@@ -221,7 +221,7 @@ describe('AiMarketingController (spec)', () => {
 
     it('边界: 极低预算 ROI 预测', () => {
       const result = controller.projectROI({
-        type: 'performance',
+        type: CampaignTypeEnum.PERFORMANCE,
         budget: 1,
         expectedCPM: 50,
         expectedCTR: 3.5,
@@ -235,7 +235,7 @@ describe('AiMarketingController (spec)', () => {
 
   describe('POST /ai-marketing/roi/budget-allocation', () => {
     it('should return budget allocations for valid campaign type', () => {
-      const result = controller.getBudgetAllocation({ campaignType: 'kOL', totalBudget: 50000 })
+      const result = controller.getBudgetAllocation({ campaignType: CampaignTypeEnum.KOL, totalBudget: 50000 })
       expect(result.success).toBe(true)
       expect(result.data.length).toBeGreaterThan(0)
       const totalAllocated = result.data.reduce((s: number, a: { amount: number }) => s + a.amount, 0)
@@ -243,7 +243,7 @@ describe('AiMarketingController (spec)', () => {
     })
 
     it('边界: 零预算分配返回金额为零的分配', () => {
-      const result = controller.getBudgetAllocation({ campaignType: 'kOL', totalBudget: 0 })
+      const result = controller.getBudgetAllocation({ campaignType: CampaignTypeEnum.KOL, totalBudget: 0 })
       expect(result.success).toBe(true)
       // 渠道分配仍然返回，但每个金额为 0
       const total = result.data.reduce((s: number, a: { amount: number }) => s + a.amount, 0)
@@ -329,19 +329,19 @@ describe('AiMarketingController (spec)', () => {
 
   describe('POST /ai-marketing/copy/ab-test', () => {
     it('should generate requested number of variants', () => {
-      const result = controller.generateABTest({ brief: '盲盒新品促销', count: 3 })
+      const result = controller.generateABTest({ brief: { product: '盲盒新品促销', goal: 'awareness' as const, audience: '年轻人' }, count: 3 })
       expect(result.success).toBe(true)
       expect(result.data.variants).toHaveLength(3)
     })
 
     it('边界: count=1 返回单一变体', () => {
-      const result = controller.generateABTest({ brief: '测试', count: 1 })
+      const result = controller.generateABTest({ brief: { product: '测试', goal: 'conversion' as const, audience: '所有人' }, count: 1 })
       expect(result.success).toBe(true)
       expect(result.data.variants).toHaveLength(1)
     })
 
     it('边界: count=0 返回空数组', () => {
-      const result = controller.generateABTest({ brief: '测试', count: 0 })
+      const result = controller.generateABTest({ brief: { product: '测试', goal: 'conversion' as const, audience: '所有人' }, count: 0 })
       expect(result.success).toBe(true)
       expect(result.data.variants).toEqual([])
     })
@@ -405,15 +405,15 @@ describe('AiMarketingController (spec)', () => {
 
   describe('POST /ai-marketing/campaign/reach-estimate', () => {
     it('should estimate reach for wechat', () => {
-      const result = controller.estimateReach({ audience: 50000, channel: 'wechat' })
+      const result = controller.estimateReach({ audience: 50000, channel: ChannelEnum.WECHAT })
       expect(result.success).toBe(true)
       expect(result.data.reach).toBeGreaterThan(0)
       expect(result.data.channel).toBe('wechat')
     })
 
     it('不同渠道返回不同触达估算', () => {
-      const wechat = controller.estimateReach({ audience: 50000, channel: 'wechat' })
-      const douyin = controller.estimateReach({ audience: 50000, channel: 'douyin' })
+      const wechat = controller.estimateReach({ audience: 50000, channel: ChannelEnum.WECHAT })
+      const douyin = controller.estimateReach({ audience: 50000, channel: ChannelEnum.DOUYIN })
       expect(wechat.data.cpm).not.toBe(douyin.data.cpm)
     })
   })
@@ -468,7 +468,7 @@ describe('AiMarketingController (spec)', () => {
     })
 
     it('正例: 获取预算分配概览', () => {
-      const result = controller.getBudgetAllocation({ campaignType: 'kOL', totalBudget: 100000 })
+      const result = controller.getBudgetAllocation({ campaignType: CampaignTypeEnum.KOL, totalBudget: 100000 })
       expect(result.success).toBe(true)
       expect(result.data.length).toBeGreaterThan(0)
       const total = result.data.reduce((s: number, a: { amount: number }) => s + a.amount, 0)
@@ -542,7 +542,7 @@ describe('AiMarketingController (spec)', () => {
     })
 
     it('正例: A/B 测试不同活动文案', () => {
-      const result = controller.generateABTest({ brief: '充值送盲盒', count: 2 })
+      const result = controller.generateABTest({ brief: { product: '充值送盲盒', goal: 'conversion' as const, audience: '玩家' }, count: 2 })
       expect(result.success).toBe(true)
       expect(result.data.variants).toHaveLength(2)
       expect(result.data.variants[0].headline).not.toBe(result.data.variants[1].headline)
@@ -553,7 +553,7 @@ describe('AiMarketingController (spec)', () => {
   describe('🎯 运行专员 - 活动规划视角', () => {
     it('正例: 预测新活动 ROI 辅助季度规划', () => {
       const result = controller.projectROI({
-        type: 'performance',
+        type: CampaignTypeEnum.PERFORMANCE,
         budget: 50000,
         expectedCPM: 60,
         expectedCTR: 4.0,
@@ -592,8 +592,8 @@ describe('AiMarketingController (spec)', () => {
   // ===== 📢 营销视角 =====
   describe('📢 营销 - 多渠道视角', () => {
     it('正例: 预估多渠道触达', () => {
-      const wechat = controller.estimateReach({ audience: 100000, channel: 'wechat' })
-      const douyin = controller.estimateReach({ audience: 100000, channel: 'douyin' })
+      const wechat = controller.estimateReach({ audience: 100000, channel: ChannelEnum.WECHAT })
+      const douyin = controller.estimateReach({ audience: 100000, channel: ChannelEnum.DOUYIN })
       expect(wechat.success).toBe(true)
       expect(douyin.success).toBe(true)
     })
@@ -621,10 +621,10 @@ describe('AiMarketingController (spec)', () => {
     })
 
     it('跨多类型 ROI 预测返回合理范围', () => {
-      const types = ['performance', 'brand', 'social', 'email', 'promotion', 'kOL'] as const
+      const types: CampaignTypeEnum[] = [CampaignTypeEnum.PERFORMANCE, CampaignTypeEnum.BRAND, CampaignTypeEnum.SOCIAL, CampaignTypeEnum.EMAIL, CampaignTypeEnum.PROMOTION, CampaignTypeEnum.KOL]
       for (const type of types) {
         const result = controller.projectROI({
-          type,
+          type: type as CampaignTypeEnum,
           budget: 10000,
           expectedCPM: 50,
           expectedCTR: 3.5,
