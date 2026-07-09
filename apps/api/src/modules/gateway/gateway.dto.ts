@@ -75,3 +75,25 @@ export class RevokeApiKeyDto {
   @IsNotEmpty()
   keyId!: string
 }
+
+export class AnalyticsQueryDto {
+  @IsOptional()
+  @IsNumber()
+  startTime?: number
+
+  @IsOptional()
+  @IsNumber()
+  endTime?: number
+
+  @IsOptional()
+  @IsString()
+  resolution?: '1m' | '5m' | '1h' | '1d'
+
+  @IsOptional()
+  @IsString()
+  endpoint?: string
+
+  @IsOptional()
+  @IsString()
+  clientId?: string
+}

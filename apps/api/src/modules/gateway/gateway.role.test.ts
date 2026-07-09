@@ -11,6 +11,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 import 'reflect-metadata'
 import { APIGateway, RateLimiterService, APIKeyManager } from './gateway.service'
+import { GatewayAnalyticsService } from './gateway-analytics.service'
 import { GatewayController } from './gateway.controller'
 import type { GatewayRequest } from './gateway.entity'
 
@@ -31,7 +32,8 @@ function createServices() {
   const rateLimiter = new RateLimiterService()
   const apiKeyManager = new APIKeyManager()
   const gateway = new APIGateway(rateLimiter, apiKeyManager)
-  const controller = new GatewayController(gateway, rateLimiter, apiKeyManager)
+  const analytics = new GatewayAnalyticsService()
+  const controller = new GatewayController(gateway, rateLimiter, apiKeyManager, analytics)
   return { rateLimiter, apiKeyManager, gateway, controller }
 }
 

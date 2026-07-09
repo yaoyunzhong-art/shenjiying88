@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { NotFoundException } from '@nestjs/common'
 import { GatewayController } from './gateway.controller'
 import { APIGateway, RateLimiterService, APIKeyManager } from './gateway.service'
+import { GatewayAnalyticsService } from './gateway-analytics.service'
 import type { APIKey, AuthResult, RateLimitResult, QuotaStatus, GatewayLogEntry } from './gateway.entity'
 
 describe('GatewayController', () => {
@@ -15,7 +16,8 @@ describe('GatewayController', () => {
     rateLimiter = new RateLimiterService()
     apiKeyManager = new APIKeyManager()
     apiGateway = new APIGateway(rateLimiter, apiKeyManager)
-    controller = new GatewayController(apiGateway, rateLimiter, apiKeyManager)
+    const analytics = new GatewayAnalyticsService()
+    controller = new GatewayController(apiGateway, rateLimiter, apiKeyManager, analytics)
   })
 
   // ── routeLookup ──
