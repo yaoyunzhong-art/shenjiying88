@@ -115,6 +115,7 @@ import { PermissionModule } from './modules/permission/permission.module';
 import { CurrencyModule } from './modules/currency/currency.module';
 import { AiMarketingModule } from './modules/ai-marketing/ai-marketing.module';
 import { OpenAPIModule } from './modules/openapi/openapi.module';
+import { LocaleModule } from './modules/locale/locale.module';
 
 @Module({
   imports: [
@@ -242,6 +243,7 @@ import { OpenAPIModule } from './modules/openapi/openapi.module';
     CurrencyModule,
     AiMarketingModule,
     OpenAPIModule,
+    LocaleModule,
   ],
   providers: [
     RequestGovernanceService,
