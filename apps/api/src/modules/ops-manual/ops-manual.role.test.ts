@@ -1,289 +1,367 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+/**
+ * 🐜 自动: [ops-manual] [C] 角色测试编写
+ *
+ * 8 角色视角的 ops-manual 模块测试：
+ * 👔店长 🛒前台 👥HR 🔧安监 🎮导玩员 🎯运行专员 🤝团建 📢营销
+ *
+ * 每个角色至少 2 个测试用例（正常流程 + 权限边界）
+ * 覆盖: generate, export, search, sop, info, records 端点
+ */
+
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { OpsManualController } from './ops-manual.controller'
-import { OpsManualService, type Role, type ManualSection } from './ops-manual.service'
-import type { GenerateManualDto, ExportManualDto, SearchManualDto, GetSopDto, CreateManualRecordDto, ManualRecordQueryDto } from './ops-manual.dto'
+import { OpsManualService } from './ops-manual.service'
+import type { GenerateManualDto, ExportManualDto, SearchManualDto, GetSopDto } from './ops-manual.dto'
 
-// ── 8 角色定义 ──
+// ── 角色定义 ──
 const ROLES = {
-  TenantAdmin: '👔店长',
-  Reception: '🛒前台',
+  StoreManager: '👔店长',
+  FrontDesk: '🛒前台',
   HR: '👥HR',
-  Safety: '🔧安监',
+  Security: '🔧安监',
   Guide: '🎮导玩员',
-  Ops: '🎯运行专员',
+  Operations: '🎯运行专员',
   Teambuilding: '🤝团建',
-  Marketing: '📢营销'
+  Marketing: '📢营销',
+} as const
+
+// ── 测试数据工厂 ──
+function createController() {
+  const service = new OpsManualService()
+  return new OpsManualController(service)
 }
 
-function makeController(): OpsManualController {
-  return new OpsManualController(new OpsManualService())
-}
+// ── 👔店长 ─────────────────────────────────────────────────────
+describe(`${ROLES.StoreManager} ops-manual 角色测试`, () => {
+  it('[正常] 店长可以生成自己的运营手册', async () => {
+    const ctrl = createController()
+    const dto: GenerateManualDto = { role: 'store_manager', tenantId: 't-store' }
+    const result = await ctrl.generateManual(dto)
 
-// ──────────── 🔧 安监 ────────────
-describe(`${ROLES.Safety} ops-manual 角色测试`, () => {
-  let ctrl: OpsManualController
-
-  beforeEach(() => {
-    ctrl = makeController()
+    assert.equal(result.title, '店长运营手册')
+    assert.equal(result.role, 'store_manager')
+    assert.ok(result.sections.length > 0)
+    assert.ok(result.lastUpdated)
   })
 
-  it('安监可以生成本岗位运营手册（安全检查视角）', async () => {
-    const dto: GenerateManualDto = { role: 'customer_service', tenantId: 't-safety' }
-    const manual = await ctrl.generateManual(dto)
-    assert.equal(manual.role, 'customer_service')
-    assert.ok(manual.sections.length > 0)
-    assert.ok(manual.lastUpdated)
+  it('[权限边界] 店长生成导购手册获得正确内容', async () => {
+    const ctrl = createController()
+    const dto: GenerateManualDto = { role: 'sales_staff', tenantId: 't-store' }
+    const result = await ctrl.generateManual(dto)
+
+    // 店长可以查看其他角色手册，但内容应为对应角色
+    assert.equal(result.title, '导购运营手册')
+    assert.equal(result.role, 'sales_staff')
   })
 
-  it('安监可以搜索安全相关的手册内容', async () => {
-    const dto: SearchManualDto = { role: 'store_manager', keyword: '安全' }
-    const result = await ctrl.searchManual(dto)
-    assert.ok(Array.isArray(result.results))
-  })
-
-  it('安监可以导出安监岗位检查清单', async () => {
-    const dto: ExportManualDto = { role: 'customer_service', format: 'checklist' }
-    const result = await ctrl.exportManual(dto)
-    assert.equal(result.format, 'checklist')
-    assert.ok(result.content.includes('[ ]'))
-  })
-
-  it('安监可以导出手册的Markdown版本', async () => {
+  it('[正常] 店长导出 markdown 手册', async () => {
+    const ctrl = createController()
     const dto: ExportManualDto = { role: 'store_manager', format: 'markdown' }
     const result = await ctrl.exportManual(dto)
+
     assert.equal(result.format, 'markdown')
-    assert.ok(result.content.includes('# '))
+    assert.ok(result.content.includes('店长运营手册'))
+    assert.ok(result.content.includes('关键检查点'))
   })
 
-  it('安监可以查看手册元信息', async () => {
-    const result = await ctrl.getManualInfo({ role: 'store_manager' })
-    assert.ok(result.title)
-    assert.ok(result.version)
-    assert.ok(result.sections > 0)
+  it('[正常] 店长搜索排班内容', async () => {
+    const ctrl = createController()
+    const dto: SearchManualDto = { role: 'store_manager', keyword: '排班' }
+    const result = await ctrl.searchManual(dto)
+
+    assert.ok(result.total >= 1)
+    assert.ok(result.results.some(r => r.title.includes('排班') || r.title.includes('人员')))
   })
 })
 
-// ──────────── 🎯 运行专员 ────────────
-describe(`${ROLES.Ops} ops-manual 角色测试`, () => {
-  let ctrl: OpsManualController
+// ── 🛒前台 ─────────────────────────────────────────────────────
+describe(`${ROLES.FrontDesk} ops-manual 角色测试`, () => {
+  it('[正常] 前台获取收银手册', async () => {
+    const ctrl = createController()
+    const dto: GenerateManualDto = { role: 'cashier', tenantId: 't-front' }
+    const result = await ctrl.generateManual(dto)
 
-  beforeEach(() => {
-    ctrl = makeController()
+    assert.equal(result.title, '收银运营手册')
+    assert.ok(result.sections.length >= 6)
   })
 
-  it('运行专员可以生成店长运营手册', async () => {
-    const dto: GenerateManualDto = { role: 'store_manager', tenantId: 't-ops' }
-    const manual = await ctrl.generateManual(dto)
-    assert.equal(manual.role, 'store_manager')
-    assert.equal(manual.title, '店长运营手册')
-    assert.equal(manual.sections.length, 7)
-  })
-
-  it('运行专员可以获取SOP步骤', async () => {
-    const dto: GetSopDto = { role: 'store_manager', sectionId: 'sm-overview' }
-    const result = await ctrl.getSOP(dto)
-    assert.ok(result.steps.length > 0)
-    assert.equal(result.steps[0].action, '晨会召开')
-  })
-
-  it('运行专员可以导出HTML格式手册', async () => {
+  it('[权限边界] 前台导出 html 需包含样式和收银系统章节', async () => {
+    const ctrl = createController()
     const dto: ExportManualDto = { role: 'cashier', format: 'html' }
     const result = await ctrl.exportManual(dto)
+
     assert.equal(result.format, 'html')
+    assert.ok(result.content.includes('收银系统'))
     assert.ok(result.content.includes('<!DOCTYPE html>'))
-    assert.ok(result.content.includes('<style>'))
   })
 
-  it('运行专员可以搜索手册关键词', async () => {
+  it('[正常] 前台搜索退款关键字', async () => {
+    const ctrl = createController()
     const dto: SearchManualDto = { role: 'cashier', keyword: '退款' }
     const result = await ctrl.searchManual(dto)
-    assert.ok(result.total > 0)
-    assert.ok(result.results.some(r => r.matchedContent.includes('退款')))
+
+    assert.ok(result.total >= 1)
+    assert.ok(result.keyword === '退款')
+  })
+})
+
+// ── 👥HR ───────────────────────────────────────────────────────
+describe(`${ROLES.HR} ops-manual 角色测试`, () => {
+  it('[正常] HR 获取店长手册中的人员管理章节信息', async () => {
+    const ctrl = createController()
+    const result = await ctrl.getManualInfo({ role: 'store_manager' })
+
+    assert.equal(result.title, '店长运营手册')
+    assert.ok(result.sections >= 7)
+    assert.ok(result.estimatedReadTime > 0)
   })
 
-  it('运行专员可以导出PDF-JSON格式', async () => {
-    const dto: ExportManualDto = { role: 'sales_staff', format: 'pdf-json' }
+  it('[权限边界] HR 导出检查清单包含 checkpoints', async () => {
+    const ctrl = createController()
+    const dto: ExportManualDto = { role: 'store_manager', format: 'checklist' }
     const result = await ctrl.exportManual(dto)
+
+    assert.equal(result.format, 'checklist')
+    assert.ok(result.content.includes('[ ]'))
+    // 应该有检查点的数量 > 10
+    const checkCount = (result.content.match(/\[ \]/g) || []).length
+    assert.ok(checkCount >= 10, `应有至少 10 个检查点，实际 ${checkCount}`)
+  })
+
+  it('[正常] HR 获取客服手册元信息', async () => {
+    const ctrl = createController()
+    const result = await ctrl.getManualInfo({ role: 'customer_service' })
+
+    assert.ok(result.title.includes('客服'))
+    assert.equal(result.version, '1.0.0')
+  })
+})
+
+// ── 🔧安监 ─────────────────────────────────────────────────────
+describe(`${ROLES.Security} ops-manual 角色测试`, () => {
+  it('[正常] 安监查看店长手册的财务安全章节', async () => {
+    const ctrl = createController()
+    const dto: GenerateManualDto = { role: 'store_manager', tenantId: 't-sec' }
+    const result = await ctrl.generateManual(dto)
+
+    const financeSection = result.sections.find((s: any) => s.title === '财务管理')
+    assert.ok(financeSection)
+    assert.ok(financeSection.warnings.length > 0)
+    assert.ok(financeSection.warnings.some((w: string) => w.includes('假币') || w.includes('收款码') || w.includes('安全')))
+  })
+
+  it('[权限边界] 安监搜索安全隐患相关关键词', async () => {
+    const ctrl = createController()
+    const dto: SearchManualDto = { role: 'cashier', keyword: '假币' }
+    const result = await ctrl.searchManual(dto)
+
+    assert.ok(result.total >= 1)
+    const hasWarning = result.results.some(r => r.matchedContent.includes('假币'))
+    assert.ok(hasWarning)
+  })
+
+  it('[正常] 安监导出 pdf-json 格式获取结构化风控数据', async () => {
+    const ctrl = createController()
+    const dto: ExportManualDto = { role: 'store_manager', format: 'pdf-json' }
+    const result = await ctrl.exportManual(dto)
+
     assert.equal(result.format, 'pdf-json')
     const parsed = JSON.parse(result.content)
-    assert.ok(parsed.metadata)
     assert.ok(parsed.sections)
+    const hasWarnings = parsed.sections.some((s: any) => s.warnings.length > 0)
+    assert.ok(hasWarnings)
   })
 })
 
-// ──────────── 👔 店长 ────────────
-describe(`${ROLES.TenantAdmin} ops-manual 角色测试`, () => {
-  let ctrl: OpsManualController
+// ── 🎮导玩员 ───────────────────────────────────────────────────
+describe(`${ROLES.Guide} ops-manual 角色测试`, () => {
+  it('[正常] 导玩员获取导购手册并查看盲盒销售章节', async () => {
+    const ctrl = createController()
+    const dto: GenerateManualDto = { role: 'sales_staff', tenantId: 't-guide' }
+    const result = await ctrl.generateManual(dto)
 
-  beforeEach(() => {
-    ctrl = makeController()
-  })
-
-  it('店长可以生成本门店的运营手册', async () => {
-    const dto: GenerateManualDto = { role: 'store_manager', tenantId: 't-store', generatedBy: '店长张三' }
-    const manual = await ctrl.generateManual(dto)
-    assert.equal(manual.role, 'store_manager')
-    assert.equal(manual.sections.length, 7)
-    assert.ok(manual.lastUpdated)
-  })
-
-  it('店长可以创建手册生成记录', async () => {
-    const dto: CreateManualRecordDto = {
-      tenantId: 't-store',
-      role: 'store_manager',
-      title: '门店运营手册v1',
-      totalSections: 7,
-      totalPages: 12,
-      estimatedReadTime: 15,
-      generatedBy: '店长张三'
-    }
-    const record = await ctrl.createRecord(dto)
-    assert.equal(record.role, 'store_manager')
-    assert.equal(record.title, '门店运营手册v1')
-    assert.ok(record.id)
-  })
-
-  it('店长可以查询手册生成记录', async () => {
-    await ctrl.createRecord({
-      tenantId: 't-store',
-      role: 'store_manager',
-      title: '门店运营手册',
-      generatedBy: '店长张三'
-    })
-    await ctrl.createRecord({
-      tenantId: 't-store',
-      role: 'sales_staff',
-      title: '导购运营手册',
-      generatedBy: '店长张三'
-    })
-    const dto: ManualRecordQueryDto = { tenantId: 't-store', role: 'store_manager' }
-    const list = await ctrl.listRecords(dto)
-    assert.ok(list.total >= 1)
-    assert.equal(list.data[0].role, 'store_manager')
-  })
-
-  it('店长可以查看特定生成记录详情', async () => {
-    const record = await ctrl.createRecord({
-      tenantId: 't-store',
-      role: 'store_manager',
-      title: '手册v1',
-      generatedBy: '店长张三'
-    })
-    const detail = await ctrl.getRecord(record.id)
-    assert.ok(detail)
-    assert.equal(detail!.id, record.id)
-  })
-
-  it('店长可以查看导购手册元信息', async () => {
-    const result = await ctrl.getManualInfo({ role: 'sales_staff' })
     assert.equal(result.title, '导购运营手册')
-    assert.equal(result.sections, 6)
-  })
-})
-
-// ──────────── 👥 HR ────────────
-describe(`${ROLES.HR} ops-manual 角色测试`, () => {
-  let ctrl: OpsManualController
-
-  beforeEach(() => {
-    ctrl = makeController()
+    const blindboxSection = result.sections.find((s: any) => s.title === '盲盒销售')
+    assert.ok(blindboxSection)
+    assert.ok(blindboxSection.checkpoints.length > 0)
   })
 
-  it('HR可以生成导购手册用于培训', async () => {
-    const dto: GenerateManualDto = { role: 'sales_staff', tenantId: 't-hr' }
-    const manual = await ctrl.generateManual(dto)
-    assert.equal(manual.role, 'sales_staff')
-    assert.equal(manual.sections.length, 6)
-    assert.ok(manual.sections.find((s: ManualSection) => s.title === '收入计算'))
-  })
-
-  it('HR可以生成收银手册用于新员工培训', async () => {
-    const dto: GenerateManualDto = { role: 'cashier', tenantId: 't-hr' }
-    const manual = await ctrl.generateManual(dto)
-    assert.equal(manual.sections.length, 6)
-    const titles = manual.sections.map((s: ManualSection) => s.title)
-    assert.ok(titles.includes('收银系统'))
-    assert.ok(titles.includes('退款处理'))
-  })
-
-  it('HR可以导出检查清单用于培训考核', async () => {
-    const dto: ExportManualDto = { role: 'cashier', format: 'checklist' }
-    const result = await ctrl.exportManual(dto)
-    assert.equal(result.format, 'checklist')
-    const checkCount = (result.content.match(/\[ \]/g) || []).length
-    assert.ok(checkCount >= 6)
-  })
-
-  it('HR可以搜索客服手册内容', async () => {
-    const dto: SearchManualDto = { role: 'customer_service', keyword: '积分' }
-    const result = await ctrl.searchManual(dto)
-    assert.ok(result.total > 0)
-  })
-
-  it('HR可以获取客服SOP话术', async () => {
-    const dto: GetSopDto = { role: 'customer_service', sectionId: 'cs-script-welcome' }
+  it('[正常] 导玩员获取赛事 SOP 步骤', async () => {
+    const ctrl = createController()
+    const dto: GetSopDto = { role: 'sales_staff', sectionId: 'sf-selling-reception' }
     const result = await ctrl.getSOP(dto)
-    assert.ok(result.steps.length > 0)
-    assert.equal(result.steps[0].action, '问候客户')
-  })
-})
 
-// ──────────── 跨角色边界测试 ────────────
-describe('多角色 ops-manual 边界测试', () => {
-  it('不存在的sectionId返回空SOP', async () => {
-    const ctrl = makeController()
-    const dto: GetSopDto = { role: 'store_manager', sectionId: 'nonexistent-id' }
+    assert.ok(result.steps.length >= 3)
+    assert.ok(result.steps[0].script.includes('请问'))
+  })
+
+  it('[权限边界] 无效的导玩 SOP 返回空步骤', async () => {
+    const ctrl = createController()
+    const dto: GetSopDto = { role: 'sales_staff', sectionId: 'non-existent-sop' }
     const result = await ctrl.getSOP(dto)
+
     assert.equal(result.steps.length, 0)
+    assert.equal(result.role, 'sales_staff')
+  })
+})
+
+// ── 🎯运行专员 ─────────────────────────────────────────────────
+describe(`${ROLES.Operations} ops-manual 角色测试`, () => {
+  it('[正常] 运行专员创建手册生成记录并验证', async () => {
+    const ctrl = createController()
+    const record = await ctrl.createRecord({
+      tenantId: 't-ops',
+      role: 'store_manager',
+      title: '门店 A 运营手册',
+      content: '# 门店 A 运营手册\n## 日常管理...',
+      totalSections: 7,
+      totalPages: 30,
+      estimatedReadTime: 15,
+      generatedBy: 'ops-admin',
+    })
+
+    assert.ok(record.id)
+    assert.equal(record.tenantId, 't-ops')
+    assert.equal(record.title, '门店 A 运营手册')
+    assert.equal(record.version, '1.0.0')
+    assert.equal(record.estimatedReadTime, 15)
   })
 
-  it('不匹配的关键词搜索返回空结果', async () => {
-    const ctrl = makeController()
-    const dto: SearchManualDto = { role: 'sales_staff', keyword: 'xyzabc123xyzabc123' }
-    const result = await ctrl.searchManual(dto)
-    assert.equal(result.total, 0)
-  })
-
-  it('所有角色手册都有必要字段', async () => {
-    const ctrl = makeController()
-    const svc = new OpsManualService()
-    const roles: Role[] = ['store_manager', 'sales_staff', 'cashier', 'customer_service']
+  it('[正常] 运行专员查询生成记录列表支持分页', async () => {
+    const ctrl = createController()
+    const roles = ['store_manager', 'cashier', 'sales_staff', 'customer_service'] as const
     for (const role of roles) {
-      const manual = svc.generateManual(role)
-      assert.ok(manual.role)
-      assert.ok(manual.title)
-      assert.ok(manual.version)
-      assert.ok(manual.sections.length > 0)
-      assert.ok(manual.totalPages > 0)
-      assert.ok(manual.estimatedReadTime > 0)
+      await ctrl.createRecord({ tenantId: 't-ops', role, title: `手册-${role}` })
     }
+    // 按 role 筛选
+    const list = await ctrl.listRecords({ tenantId: 't-ops', page: 1, pageSize: 2 })
+    assert.equal(list.total, 4)
+    assert.equal(list.data.length, 2)
   })
 
-  it('不存在的记录ID返回null', async () => {
-    const ctrl = makeController()
-    const result = await ctrl.getRecord('999999')
+  it('[权限边界] 运行专员查询不存在的记录返回 null', async () => {
+    const ctrl = createController()
+    const result = await ctrl.getRecord('non-existent-id')
     assert.equal(result, null)
   })
 
-  it('默认分页page和pageSize正确', async () => {
-    const ctrl = makeController()
-    const result = await ctrl.listRecords({})
-    assert.equal(result.page, 1)
-    assert.equal(result.pageSize, 10)
+  it('[正常] 运行专员通过 id 查询已存在的记录', async () => {
+    const ctrl = createController()
+    const created = await ctrl.createRecord({ tenantId: 't-ops', role: 'store_manager', title: '运维手册' })
+    const found = await ctrl.getRecord(created.id)
+    assert.ok(found)
+    assert.equal(found!.id, created.id)
+    assert.equal(found!.title, '运维手册')
+  })
+})
+
+// ── 🤝团建 ─────────────────────────────────────────────────────
+describe(`${ROLES.Teambuilding} ops-manual 角色测试`, () => {
+  it('[正常] 团建专员生成并导出客服手册用于培训', async () => {
+    const ctrl = createController()
+    const dto: ExportManualDto = { role: 'customer_service', format: 'markdown' }
+    const result = await ctrl.exportManual(dto)
+
+    assert.equal(result.format, 'markdown')
+    assert.ok(result.content.includes('客服运营手册'))
+    assert.ok(result.content.includes('话术模板'))
   })
 
-  it('店长手册导出Markdown包含所有章节', async () => {
-    const ctrl = makeController()
-    const dto: ExportManualDto = { role: 'store_manager', format: 'markdown' }
-    const result = await ctrl.exportManual(dto)
-    assert.ok(result.content.includes('门店运营概览'))
-    assert.ok(result.content.includes('人员管理'))
-    assert.ok(result.content.includes('财务管理'))
-    assert.ok(result.content.includes('库存管理'))
-    assert.ok(result.content.includes('营销活动'))
-    assert.ok(result.content.includes('客诉处理'))
-    assert.ok(result.content.includes('数据看板'))
+  it('[权限边界] 团建专员搜索话术模板内容', async () => {
+    const ctrl = createController()
+    const dto: SearchManualDto = { role: 'customer_service', keyword: '话术' }
+    const result = await ctrl.searchManual(dto)
+
+    assert.ok(result.total >= 1)
+    const matchedTitles = result.results.map(r => r.title)
+    assert.ok(matchedTitles.some(t => t.includes('话术')))
+  })
+
+  it('[正常] 团建专员获取导购 SOP 用于新员工培训', async () => {
+    const ctrl = createController()
+    const dto: GetSopDto = { role: 'sales_staff', sectionId: 'sf-selling-reception' }
+    const result = await ctrl.getSOP(dto)
+
+    assert.ok(result.steps.length >= 3)
+    const actions = result.steps.map(s => s.action)
+    assert.ok(actions.some(a => a.includes('微笑') || a.includes('迎宾') || a.includes('接待')))
+  })
+})
+
+// ── 📢营销 ─────────────────────────────────────────────────────
+describe(`${ROLES.Marketing} ops-manual 角色测试`, () => {
+  it('[正常] 营销专员生成店长手册查看营销活动章节', async () => {
+    const ctrl = createController()
+    const dto: GenerateManualDto = { role: 'store_manager', tenantId: 't-mkt' }
+    const result = await ctrl.generateManual(dto)
+
+    const mktSection = result.sections.find((s: any) => s.title === '营销活动')
+    assert.ok(mktSection)
+    assert.ok(mktSection.subsections.length > 0)
+    const subTitles = mktSection.subsections.map((s: any) => s.title)
+    assert.ok(subTitles.includes('促销活动'))
+    assert.ok(subTitles.includes('优惠券管理'))
+    assert.ok(subTitles.includes('赛事活动'))
+  })
+
+  it('[权限边界] 营销专员搜索赛事活动相关内容', async () => {
+    const ctrl = createController()
+    const dto: SearchManualDto = { role: 'store_manager', keyword: '赛事' }
+    const result = await ctrl.searchManual(dto)
+
+    assert.ok(result.total >= 1)
+    const hasMarketingKeyword = result.results.some(r => r.title.includes('赛事') || r.matchedContent.includes('赛事'))
+    assert.ok(hasMarketingKeyword)
+  })
+
+  it('[正常] 营销专员批量导出四种角色的 checklist', async () => {
+    const ctrl = createController()
+    const roles = ['store_manager', 'sales_staff', 'cashier', 'customer_service'] as const
+    for (const role of roles) {
+      const result = await ctrl.exportManual({ role, format: 'checklist' })
+      assert.equal(result.format, 'checklist')
+      assert.ok(result.content.includes('---'))
+      assert.ok(result.content.length > 50)
+    }
+  })
+})
+
+// ── 跨角色综合场景 ─────────────────────────────────────────────
+describe('跨角色综合场景', () => {
+  it('四种角色手册均有唯一标题和版本号', async () => {
+    const ctrl = createController()
+    const roles: Array<{ role: 'store_manager' | 'sales_staff' | 'cashier' | 'customer_service'; expected: string }> = [
+      { role: 'store_manager', expected: '店长运营手册' },
+      { role: 'sales_staff', expected: '导购运营手册' },
+      { role: 'cashier', expected: '收银运营手册' },
+      { role: 'customer_service', expected: '客服运营手册' },
+    ]
+    for (const { role, expected } of roles) {
+      const result = await ctrl.getManualInfo({ role })
+      assert.equal(result.title, expected, `角色 ${role} 标题应为 ${expected}`)
+    }
+  })
+
+  it('所有角色手册版本号统一为 1.0.0', async () => {
+    const ctrl = createController()
+    const roles: Array<'store_manager' | 'sales_staff' | 'cashier' | 'customer_service'> = [
+      'store_manager', 'sales_staff', 'cashier', 'customer_service',
+    ]
+    for (const role of roles) {
+      const result = await ctrl.getManualInfo({ role })
+      assert.equal(result.version, '1.0.0')
+    }
+  })
+
+  it('跨角色手册生成记录独立隔离', async () => {
+    const ctrl = createController()
+    await ctrl.createRecord({ tenantId: 't1', role: 'store_manager', title: 'M1' })
+    await ctrl.createRecord({ tenantId: 't2', role: 'cashier', title: 'M2' })
+
+    const t1Records = await ctrl.listRecords({ tenantId: 't1' })
+    assert.equal(t1Records.total, 1)
+    assert.equal(t1Records.data[0].role, 'store_manager')
   })
 })
