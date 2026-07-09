@@ -16,7 +16,7 @@ import { InventoryController } from './inventory.controller'
 import { ProductStatus, StockRecordType, PurchaseOrderStatus } from './inventory.entity'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 
-const TENANT: RequestTenantContext = {
+const TENANT = {
   tenantId: 'stress-tenant',
   storeId: 'stress-store',
   userId: 'stress-user',
