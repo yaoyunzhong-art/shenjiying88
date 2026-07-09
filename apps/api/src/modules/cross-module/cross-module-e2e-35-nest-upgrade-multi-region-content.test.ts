@@ -147,6 +147,7 @@ class ContentStore {
   ]
 
   private draftSeq = 0
+  nextSeq(): number { return this.draftSeq++ }
   addDraft(draft: ContentDraft): void { this.drafts.push(draft) }
   getDraft(id: string): ContentDraft | undefined { return this.drafts.find(d => d.id === id) }
   updateDraft(id: string, update: Partial<ContentDraft>): boolean {
@@ -278,7 +279,7 @@ class BrandContentPipelineService {
   constructor(private contentStore: ContentStore) {}
 
   createDraft(title: string, body: string, brandId: string, locale: string): ContentDraft {
-    const seq = this.contentStore.draftSeq++
+    const seq = this.contentStore.nextSeq()
     const draft: ContentDraft = {
       id: `draft-${seq}-${Date.now()}`,
       title, body, brandId, locale,
