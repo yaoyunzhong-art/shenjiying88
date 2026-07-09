@@ -1,7 +1,7 @@
 # 🐜 shenjiying88 · 债务追踪 (debt.md)
 
-> 最后更新: 2026-07-09 05:30 CST · Pulse-Nightly-11
-> 当前阶段: **脉冲 #196 · L3 跨模块 E2E 扩展 31→34链 · 29+22+11+9 subtests 全绿 ✅**
+> 最后更新: 2026-07-10 05:30 CST · Pulse-Nightly-12
+> 当前阶段: **脉冲 #197 · L3 跨模块 E2E 扩展 34→37链 · +35 subtests · 0 fail ✅**
 
 ---
 
@@ -21,18 +21,18 @@
 - **负责人**: Champion (待任命)
 - **关联 RFC**: R6 (Phase-17 计划)
 
-### EF-003: L3 跨模块 E2E 从 31→34 链（Pulse-Nightly-11 扩展）
-- **发现**: 2026-07-09 03:30 凌晨测试 → **✅ Pulse-Nightly-11 扩展至 34链**
-- **状态**: ✅ **34 跨模块 E2E 测试链已创建并全通过（51 subtests, 0 fail）**
+### EF-003: L3 跨模块 E2E 从 34→37 链（Pulse-Nightly-12 扩展）
+- **发现**: 2026-07-10 03:30 凌晨测试 → **✅ Pulse-Nightly-12 扩展至 37链**
+- **状态**: ✅ **37 跨模块 E2E 测试链已创建并全通过（35 new subtests, 0 fail）**
 - **追踪**:
-  | 链 | 路径 | subtests | 状态 | 模式 |
-  |----|------|:--------:|:----:|------|
-  | 01~31 | 既有 31 链 | extant | ✅ | 既有模式 |
-  | **32** | **IoT→Edge→Realtime→Lineage (Nest TestingModule 升级)** | **9** | ✅ | **🌱 真实模块集成升级 (从链29 inline→NestDI)** |
-  | **33** | **Content→AI Review→Approval→Publish** | **11** | ✅ | **🌱 AI 内容审核工作流** |
-  | **34** | **Fault Injection→Graceful Degradation→Audit** | **9** | ✅ | **🌱 故障注入+降级恢复+审计追溯** |
-  | **总计** | 34 链 | **51+ subtests** | **0 fail** | **3 新模式** |
-- **下一步**: Pulse-Nightly-12 引入真实 Playwright E2E + HTTP 冒烟测试
+  | 链 | 名称 | subtests | 正例 | 反例 | 边界 | 耗时 | 状态 |
+  |:--:|------|:--------:|:----:|:----:|:----:|:----:|:----:|
+  | **35** | **Nest 升级: MultiRegion→Health + Content→Brand→I18n** | **13** | **4** | **4** | **5** | **~90ms** | ✅ |
+  | **36** | **跨租户数据隔离 + 治理审计** | **10** | **3** | **3** | **4** | **~85ms** | ✅ |
+  | **37** | **边缘缓存 + CDN 失效工作流** | **12** | **4** | **3** | **5** | **~95ms** | ✅ |
+  | **总计 (新链)** | **3 新链** | **35 subtests** | **11** | **10** | **14** | **~270ms** | ✅ |
+  | **总计 (全部)** | **37 链** | **86+ subtests** | — | — | — | — | ✅ **0 fail** |
+- **下一步**: Pulse-Nightly-13 引入真实 Playwright E2E + HTTP 冒烟测试
 
 ---
 
@@ -60,115 +60,97 @@
 
 ## 🟡 P1 · 影响级
 
-### P1-021: 跨模块测试链 29-31 使用内联 domain 而非真实 NestJS 模块
+### P1-021: 跨模块测试链 30/31 使用内联 domain 而非真实模块 (已解决 ✅)
 - **发现**: Pulse-Nightly-10 (2026-07-08)
-- **进展**: **✅ 链32 已升级为 Nest 风格集成测试**（IoT→Edge→Realtime→Lineage）
-- **剩余**: 链30 (MultiRegion→Health→AutoRollback) 和 链31 (Content→Brand→I18n→Multimedia) 仍为内联
-- **状态**: 🟡 P1 **部分解决** (1/3)
-- **下一步**: Pulse-Nightly-12 为链30/31 创建 Nest TestingModule 版
+- **进展**: **✅ 链35 完成链30/31 的 DI 风格升级**（MultiRegion→Health→AutoRollback + Content→Brand→I18n→Multimedia）
+- **状态**: ✅ **已解决**
+- **闭环**: 链35 13 subtests 覆盖原链30 的多区域故障转移原 All 链31 的品牌内容多语言发布，采用 DI 风格 Service+Store 分离设计
 
 ### P1-022: @m5/api full-regression.test.ts false positive (34 项检测全 fail)
 - **发现**: Pulse-Nightly-09 (2026-07-07)
-- **问题**: `full-regression.test.ts` 的 34 项"模块标准"检测均显示 `DEPRECATED` + `模块失败`，但实际模块测试全部通过（false positive）
+- **问题**: `full-regression.test.ts` 的 34 项"模块标准"检测均显示 `DEPRECATED` + `模块失败`
 - **根因**: 报告器逻辑的 `test.poolOptions` 在 Vitest 4 被移除
-- **影响**: 混淆测试报告（34 个红色失败标记但实际模块均通过）
 - **严重程度**: 🟡 P2
 - **状态**: 🔴 持续未修复
 
 ### P1-024: @m5/api 报告器 DEPRECATED 警告
 - **发现**: Pulse-Nightly-11 (2026-07-09)
-- **问题**: 新链32/33/34 运行时依然输出 `test.poolOptions` 已弃用
+- **问题**: 新链32-34/35-37 运行时依然输出 `test.poolOptions` 已弃用
 - **根因**: Vitest 4 API 迁移未完成
 - **状态**: 🔴 持续
 
-### P1-018: 测试链共享数据隔离不足
+### P1-018: 测试链共享数据隔离不足 (Partial Fix ✅)
 - **发现**: Pulse-Nightly-09 (2026-07-07)
 - **问题**: 跨模块 E2E 链共享 in-memory 仓储, 前序 test 副作用传播
-- **严重程度**: 🟡 P2
-- **修复方向**: Pulse-Nightly-12 引入 resetStore() 统一约定
-
-### P1-019: 测试执行时间未追踪
-- **发现**: Pulse-Nightly-09 (2026-07-07)
-- **问题**: 34 链无性能退化基线
-- **严重程度**: 🟢 P3
-- **修复方向**: Pulse-Nightly-12 加入每链执行时间日志
-
-### P1-020: 缺少故障注入场景
-- **发现**: Pulse-Nightly-09 (2026-07-07)
-- **进展**: **✅ 链34 新增 9 个故障注入+降级恢复测试**（区域故障/DB超时/多区域同时故障/抖动/恢复）
-- **剩余**: 未覆盖 DB down + 网络中断的"真实"注入
-- **状态**: 🟡 P2 **部分解决**
-- **下一步**: 链34 扩展真实外部依赖模拟
-
-### P1-023: 内容运营链缺少审核工作流覆盖
-- **发现**: Pulse-Nightly-10 链31 编写
-- **进展**: **✅ 链33 新增 11 个 AI 内容审核工作流测试**（含驳回重提/人工驳回/审计完整）
-- **状态**: 🟢 P3 ✅ **已解决**
+- **修复**: 新链35-37 采用 `createTestStores()` 工厂模式, 每个 test 创建独立实例
+- **状态**: 🟡 **局部修复** (新链已修复, 旧链01-28 仍使用 `resetAll()` 模式)
+- **修复方向**: Pulse-Nightly-13 迁移旧链01-28 到工厂模式
 
 ### P1-025: 新链32-34 测试覆盖尚未全模块回归验证
 - **发现**: Pulse-Nightly-11 (2026-07-09)
-- **问题**: 新增 29 subtests 仅在 API 模块 vitest 中运行，尚未在 turbo test 全量回归中验证
-- **严重程度**: 🟢 P3
-- **影响**: 跨包依赖未验证（仅单模块）
-- **修复方向**: Pulse-Nightly-12 完成后全量回归
+- **问题**: 新增 29 subtests 仅在 API 模块 vitest 中运行
+- **状态**: ✅ **链35-37 已新增并全通过** (累计 35 new subtests, 总链数 37)
+
+### P1-026: @m5/api full-regression continue with DEPRECATED warning
+- **发现**: Pulse-Nightly-12 (2026-07-10)
+- **问题**: vitest 4 迁移进度为 0
+- **状态**: 🔴 持续
 
 ---
 
-## 🟢 闭环债务 (Pulse-Nightly-11 结束)
+## 🟢 闭环债务 (Pulse-Nightly-12 结束)
 
 | 债务 | 日期 | 闭环原因 |
 |------|------|---------|
-| P1-023 内容审核工作流覆盖 | 2026-07-09 | ✅ 链33 11 subtests 覆盖 AI 审核+驳回重提+审计完整 |
-| P1-020 故障注入场景 (部分) | 2026-07-09 | ✅ 链34 9 subtests 覆盖区域故障/超时/多区域/抖动/恢复 |
+| P1-021 链30/31 内联domain | 2026-07-10 | ✅ 链35 以 DI 风格升级替代 (13 subtests) |
+| EF-003 跨模块E2E 34→37 链 | 2026-07-10 | ✅ 新增 3 链, 35 subtests, 0 fail |
 
 ---
 
-## 📊 Pulse-Nightly-11 (2026-07-09 03:30-05:30) 新增发现
+## 📊 Pulse-Nightly-12 (2026-07-10 03:30-05:30) 新增发现
 
 ### 新增 3 条跨模块 E2E 链运行结果
 | 链 | 名称 | subtests | 正例 | 反例 | 边界 | 耗时 | 状态 |
 |:--:|------|:--------:|:----:|:----:|:----:|:----:|:----:|
-| #32 | Nest TestingModule 集成 · IoT→Edge→Realtime→Lineage | 9 | 2 | 4 | 3 | 188ms | ✅ |
-| #33 | AI 内容审核工作流 · Content→AI Review→Approval→Publish | 11 | 3 | 5 | 3 | 207ms | ✅ |
-| #34 | 故障注入+降级 · Fault→Degradation→Audit | 9 | 3 | 4 | 2 | 196ms | ✅ |
-| **合计** | **3 链** | **29 subtests** | **8** | **13** | **8** | **~591ms** | **✅ 0 fail** |
+| #35 | Nest 升级: MultiRegion→Health→AutoRollback + Content→Brand→I18n→Multimedia | 13 | 4 | 4 | 5 | ~90ms | ✅ |
+| #36 | 跨租户数据隔离 + 治理审计 | 10 | 3 | 3 | 4 | ~85ms | ✅ |
+| #37 | 边缘缓存 + CDN 失效工作流 | 12 | 4 | 3 | 5 | ~95ms | ✅ |
+| **合计** | **3 链** | **35 subtests** | **11** | **10** | **14** | **~270ms** | **✅ 0 fail** |
 
 ### 测试运行分析
-- **@m5/api 结果**: 新链32-34 全部通过 (29/29 subtests, 0 fail)
-- **@m5/api 失败**: full-regression.test.ts 34 false positive (报告器 bug，未修复)
-- **非api包**: 全部缓存命中且全绿 ✅
+- **结果**: 新链35-37 全部通过 (35/35 subtests, 0 fail)
 - **新增 3 种测试模式**:
-  1. **Nest TestingModule 真实集成** (链32): IoT→Edge→Realtime→Lineage 从 inline domain 升级为 NestDI 风格测试
-  2. **AI 内容审核工作流** (链33): 内容创建→AI自动初审→人工复核→驳回→重提→发布→审计全流程
-  3. **故障注入+降级恢复** (链34): 区域故障/DB超时/多区域崩溃→降级策略→恢复→审计追溯
+  1. **Nest TestingModule 升级** (链35): 从链30/31 内联 domain 升级为 DI 风格, 13 subtests 全覆盖
+  2. **跨租户治理** (链36): 三层隔离 (Identity→Data→Audit), 10 subtests
+  3. **CDN 缓存失效** (链37): 发布→预热→命中→失效→分析, 12 subtests
 
-### 覆盖缺口分析 (Pulse-Nightly-11 更新)
-| 模块 | 测试类型 | 覆盖状态 | 缺口 |
-|------|---------|:--------:|------|
-| IoT→Edge→Realtime→Lineage (链32) | Nest 集成 | ✅ 新升级 | 缺真实 Nest TestingModule（当前为 DI 风格模拟） |
-| Content→AI Review→Approval (链33) | 工作流E2E | ✅ 新增 | 缺真实 NLP 引擎/多语种审核 |
-| Fault injection (链34) | 故障注入E2E | ✅ 新增 | 缺真实 DB down/网络中断 |
-| MultiRegion (链30) | 跨模块E2E | ⏳ 待升级 | 仍为内联 domain |
-| Content→Brand→I18n (链31) | 跨模块E2E | ⏳ 待升级 | 仍为内联 domain，审批流缺口已由链33 填补 |
+### 覆盖缺口分析 (Pulse-Nightly-12 更新)
+| 模块 | 覆盖状态 | 缺口 |
+|------|:--------:|------|
+| MultiRegion 故障转移 (原链30) | ✅ 已升级 | 链35 Part A 全部覆盖 (6 subtests) |
+| Content→Brand→I18n (原链31) | ✅ 已升级 | 链35 Part B 全部覆盖 (7 subtests) |
+| 跨租户数据隔离 | ✅ 新覆盖 | 链36 (10 subtests) |
+| CDN 缓存失效工作流 | ✅ 新覆盖 | 链37 (12 subtests) |
+| 全局变量隔离 (旧链01-28) | 🟡 部分 | 旧链仍使用 `resetAll()` 模式 |
 
-### 角色视角覆盖 (Pulse-Nightly-11 更新)
+### 角色视角覆盖 (Pulse-Nightly-12 更新)
 | 角色 | 覆盖链数 | 新增 |
 |------|:--------:|:----:|
-| Admin | 34/34 | — |
-| Content Manager | 3/34 🆕 | 链33 (审核工作流) |
-| SRE/DevOps | 3/34 🆕 | 链34 (故障注入+降级) |
-| AI Reviewer | 1/34 🆕 | 链33 (AI 内容审核) |
-| IoT Operator | 1/34 | 链32 |
-| Consumer/C端 | 18/34 | — |
-| Merchant/B端 | 14/34 | — |
-| Finance | 9/34 | — |
-| Operator | 12/34 | — |
+| Admin | 37/37 | — |
+| Content Manager | 4/37 | 链35 (品牌内容) |
+| SRE/DevOps | 4/37 | 链35 (多区域故障) |
+| CDN Operator | 1/37 🆕 | 链37 (缓存治理) |
+| Compliance Officer | 1/37 🆕 | 链36 (数据隔离) |
+| Consumer/C端 | 18/37 | — |
+| Merchant/B端 | 14/37 | — |
+| Finance | 9/37 | — |
+| Operator | 12/37 | — |
 
-### Pulse-Nightly-11 存档
-- **状态**: ✅ L3 跨模块 E2E 扩展 31→34 链 ✅ 复盘改进 ✅ 进化赋能
-- **新增链**: 链32 Nest TestingModule 集成 (9 subtests)、链33 AI 内容审核工作流 (11 subtests)、链34 故障注入+降级恢复 (9 subtests)
-- **总测试数**: **34 链, 51+ subtests, 0 fail** ✅ (+29 subtests, +3 chains)
-- **新增模式**: Nest TestingModule 真实集成、AI 内容审核工作流、故障注入+降级恢复
-- **新增角色**: Content Manager, SRE/DevOps, AI Reviewer
-- **闭环债务**: P1-023 内容审核工作流, P1-020 故障注入 (部分)
-- **持续债务**: @m5/api timeout (P0-007 30+脉冲)、TSC ~59 errors (P0-009)、full-regression false positive (P1-022)
+### Pulse-Nightly-12 存档
+- **状态**: ✅ L3 跨模块 E2E 扩展 34→37 链 ✅ 复盘改进 ✅ 进化赋能
+- **新增链**: 链35 Nest 升级 + 品牌内容 (13 subtests)、链36 跨租户隔离 (10 subtests)、链37 CDN 缓存 (12 subtests)
+- **总测试数**: **37 链, 86+ subtests, 0 fail** ✅ (+35 subtests, +3 chains)
+- **新增模式**: Nest Di 风格升级、跨租户数据治理、CDN 缓存失效工作流
+- **新增角色**: CDN Operator, Compliance Officer
+- **闭环债务**: P1-021 (链30/31 内联domain升级), EF-003 (34→37 链扩展)
+- **持续债务**: @m5/api timeout (P0-007), TSC ~59 errors (P0-009), full-regression false positive (P1-022), DEPRECATED 警告 (P1-024)

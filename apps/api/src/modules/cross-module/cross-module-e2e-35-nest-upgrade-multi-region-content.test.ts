@@ -146,6 +146,7 @@ class ContentStore {
     { brandId: 'brand-b', defaultLocale: 'en-US', supportedLocales: ['en-US', 'de-DE', 'fr-FR'], multimediaBucket: 'media-brand-b' },
   ]
 
+  private draftSeq = 0
   addDraft(draft: ContentDraft): void { this.drafts.push(draft) }
   getDraft(id: string): ContentDraft | undefined { return this.drafts.find(d => d.id === id) }
   updateDraft(id: string, update: Partial<ContentDraft>): boolean {
@@ -277,8 +278,9 @@ class BrandContentPipelineService {
   constructor(private contentStore: ContentStore) {}
 
   createDraft(title: string, body: string, brandId: string, locale: string): ContentDraft {
+    const seq = this.contentStore.draftSeq++
     const draft: ContentDraft = {
-      id: `draft-${Date.now()}`,
+      id: `draft-${seq}-${Date.now()}`,
       title, body, brandId, locale,
       multimedia: [],
       status: 'draft',
@@ -322,108 +324,101 @@ class BrandContentPipelineService {
 // ============================================================
 // 全局重置
 // ============================================================
-let regionStore: RegionStore
-let healthStore: HealthStore
-let contentStore: ContentStore
-let multiRegionService: MultiRegionService
-let healthService: HealthService
-let autoRollbackService: AutoRollbackService
-let brandPipeline: BrandContentPipelineService
-
-function resetAllStores(): void {
-  regionStore = new RegionStore()
-  healthStore = new HealthStore()
-  contentStore = new ContentStore()
-  multiRegionService = new MultiRegionService(regionStore)
-  healthService = new HealthService(regionStore, healthStore)
-  autoRollbackService = new AutoRollbackService()
-  brandPipeline = new BrandContentPipelineService(contentStore)
+function createServices() {
+  const rs = new RegionStore()
+  const hs = new HealthStore()
+  const cs = new ContentStore()
+  return {
+    regionStore: rs,
+    healthStore: hs,
+    contentStore: cs,
+    multiRegionService: new MultiRegionService(rs),
+    healthService: new HealthService(rs, hs),
+    autoRollbackService: new AutoRollbackService(),
+    brandPipeline: new BrandContentPipelineService(cs),
+  }
 }
+
+type Services = ReturnType<typeof createServices>
 
 // ============================================================
 // 测试
 // ============================================================
 
 describe('#35: Nest TestingModule 升级 · MultiRegion→Health→AutoRollback + Content→Brand→I18n→Multimedia', () => {
-  afterEach(() => resetAllStores())
-
   // ── Part A: MultiRegion→Health→AutoRollback ──
 
   describe('A: MultiRegion → Health → AutoRollback', () => {
     it('A1 [正例]: 单区域故障→健康检查检测→自动故障转移完成', () => {
+      const svc = createServices()
       // 故障注入: 华东1区 down
-      regionStore.setStatus('cn-east-1', 'down')
-      const health = healthService.pingRegion('cn-east-1')
+      svc.regionStore.setStatus('cn-east-1', 'down')
+      const health = svc.healthService.pingRegion('cn-east-1')
       assert.equal(health.healthy, false)
       assert.equal(health.latencyMs, 9999)
 
       // 故障转移
-      const plan = autoRollbackService.createPlan('cn-east-1', 'cn-south-1')
+      const plan = svc.autoRollbackService.createPlan('cn-east-1', 'cn-south-1')
       assert.ok(plan)
       assert.equal(plan.status, 'pending')
 
-      const failoverOk = multiRegionService.failover('cn-south-1', 'cn-east-1')
+      const failoverOk = svc.multiRegionService.failover('cn-south-1', 'cn-east-1')
       assert.equal(failoverOk, true)
 
-      const dist = multiRegionService.getTrafficDistribution()
+      const dist = svc.multiRegionService.getTrafficDistribution()
       const south = dist.find(d => d.regionId === 'cn-south-1')
       assert.ok(south)
       assert.equal(south!.weight, 70) // 40(原) + 30(原)
       const east = dist.find(d => d.regionId === 'cn-east-1')
       assert.equal(east!.weight, 0)
 
-      autoRollbackService.executePlan(plan.id)
+      svc.autoRollbackService.executePlan(plan.id)
       assert.equal(plan.status, 'completed')
     })
 
     it('A2 [正例]: 区域恢复后重新均衡流量分配', () => {
-      // 模拟: cn-east-1 down → failover → 恢复 → rebalance
-      regionStore.setStatus('cn-east-1', 'down')
-      multiRegionService.failover('cn-south-1', 'cn-east-1')
-
-      // 恢复
-      regionStore.setStatus('cn-east-1', 'active')
-      const rebalanceOk = multiRegionService.rebalance(['cn-east-1', 'cn-south-1', 'us-west-2', 'eu-west-1'])
+      const svc = createServices()
+      svc.regionStore.setStatus('cn-east-1', 'down')
+      svc.multiRegionService.failover('cn-south-1', 'cn-east-1')
+      svc.regionStore.setStatus('cn-east-1', 'active')
+      const rebalanceOk = svc.multiRegionService.rebalance(['cn-east-1', 'cn-south-1', 'us-west-2', 'eu-west-1'])
       assert.equal(rebalanceOk, true)
-
-      const dist = multiRegionService.getTrafficDistribution()
-      // 四等分: 25 each
+      const dist = svc.multiRegionService.getTrafficDistribution()
       dist.forEach(d => {
         assert.ok(d.weight >= 25, `Region ${d.regionId} weight ${d.weight} should be ≥25`)
       })
     })
 
     it('A3 [反例]: 目标区域非 active 时故障转移失败', () => {
-      regionStore.setStatus('cn-east-1', 'down')
-      regionStore.setStatus('cn-south-1', 'down')
-
-      const failoverOk = multiRegionService.failover('cn-south-1', 'cn-east-1')
-      assert.equal(failoverOk, false)
+      const svc = createServices()
+      svc.regionStore.setStatus('cn-east-1', 'down')
+      svc.regionStore.setStatus('cn-south-1', 'down')
+      assert.equal(svc.multiRegionService.failover('cn-south-1', 'cn-east-1'), false)
     })
 
     it('A4 [反例]: 对不存在的区域执行健康检查', () => {
-      const health = healthService.pingRegion('nonexistent-region')
+      const svc = createServices()
+      const health = svc.healthService.pingRegion('nonexistent-region')
       assert.equal(health.healthy, false)
       assert.equal(health.message, 'region not found')
     })
 
     it('A5 [反例]: 从已 down 的区域创建回滚计划后再执行', () => {
-      regionStore.setStatus('cn-east-1', 'down')
-      const plan = autoRollbackService.createPlan('cn-east-1', 'cn-south-1')
+      const svc = createServices()
+      svc.regionStore.setStatus('cn-east-1', 'down')
+      const plan = svc.autoRollbackService.createPlan('cn-east-1', 'cn-south-1')
       assert.ok(plan)
-
-      autoRollbackService.executePlan(plan.id)
+      svc.autoRollbackService.executePlan(plan.id)
       assert.equal(plan.status, 'completed')
-
-      // 重复提升不应重复
-      autoRollbackService.executePlan(plan.id)
-      assert.equal(plan.status, 'completed') // 幂等
+      svc.autoRollbackService.executePlan(plan.id)
+      assert.equal(plan.status, 'completed')
     })
 
     it('A6 [边界]: 区域已降级但仍可分配部分流量', () => {
-      regionStore.setStatus('cn-east-1', 'degraded')
-      const health = healthService.pingRegion('cn-east-1')
-      assert.equal(health.healthy, true) // degraded 仍算 healthy
+      const svc = createServices()
+      svc.regionStore.setStatus('cn-east-1', 'degraded')
+      const health = svc.healthService.pingRegion('cn-east-1')
+      assert.equal(health.healthy, true)
       assert.equal(health.errorRate, 0.3)
       assert.ok(health.latencyMs >= 2000)
       assert.ok(health.message.includes('degraded'))
@@ -434,22 +429,16 @@ describe('#35: Nest TestingModule 升级 · MultiRegion→Health→AutoRollback 
 
   describe('B: Content → Brand → I18n → Multimedia', () => {
     it('B1 [正例]: 内容创建 → 品牌适配 → 多语言翻译 → 发布全链路', () => {
-      // 创建内容
+      const { brandPipeline } = createServices()
       const draft = brandPipeline.createDraft('夏日促销活动', '夏季大促 全场8折 会员专享', 'brand-a', 'zh-CN')
       assert.equal(draft.status, 'draft')
-
-      // 翻译
       const translated1 = brandPipeline.translateContent(draft.id, 'en-US')
       assert.equal(translated1, true)
       const translated2 = brandPipeline.translateContent(draft.id, 'ja-JP')
       assert.equal(translated2, true)
-
-      // 发布
       const published = brandPipeline.publishContent(draft.id)
       assert.equal(published, true)
       assert.equal(brandPipeline.getContentStatus(draft.id), 'published')
-
-      // 验证翻译记录
       const translations = brandPipeline.getTranslations(draft.id)
       assert.equal(translations.length, 2)
       translations.forEach(t => {
@@ -459,68 +448,59 @@ describe('#35: Nest TestingModule 升级 · MultiRegion→Health→AutoRollback 
     })
 
     it('B2 [正例]: 跨品牌多语言内容管理', () => {
-      const d1 = brandPipeline.createDraft('Summer Sale', 'Big summer sale 50% off', 'brand-b', 'en-US')
-      brandPipeline.translateContent(d1.id, 'de-DE')
-      brandPipeline.translateContent(d1.id, 'fr-FR')
-      brandPipeline.publishContent(d1.id)
-
-      const d2 = brandPipeline.createDraft('秋日新品', '2026秋冬新款上线', 'brand-a', 'zh-CN')
-      brandPipeline.translateContent(d2.id, 'en-US')
-      brandPipeline.translateContent(d2.id, 'ko-KR')
-
-      assert.equal(brandPipeline.getContentStatus(d1.id), 'published')
-      assert.equal(brandPipeline.getContentStatus(d2.id), 'draft')
-      assert.equal(brandPipeline.getTranslations(d1.id).length, 2)
-      assert.equal(brandPipeline.getTranslations(d2.id).length, 2)
+      const { brandPipeline: bp } = createServices()
+      const d1 = bp.createDraft('Summer Sale', 'Big summer sale 50% off', 'brand-b', 'en-US')
+      bp.translateContent(d1.id, 'de-DE')
+      bp.translateContent(d1.id, 'fr-FR')
+      bp.publishContent(d1.id)
+      const d2 = bp.createDraft('秋日新品', '2026秋冬新款上线', 'brand-a', 'zh-CN')
+      bp.translateContent(d2.id, 'en-US')
+      bp.translateContent(d2.id, 'ko-KR')
+      assert.equal(bp.getContentStatus(d1.id), 'published')
+      assert.equal(bp.getContentStatus(d2.id), 'draft')
+      assert.equal(bp.getTranslations(d1.id).length, 2)
+      assert.equal(bp.getTranslations(d2.id).length, 2)
     })
 
     it('B3 [反例]: 翻译目标语言不在品牌支持列表内', () => {
+      const { brandPipeline } = createServices()
       const draft = brandPipeline.createDraft('Test', 'Hello', 'brand-a', 'zh-CN')
-      const translated = brandPipeline.translateContent(draft.id, 'ar-SA') // brand-a 不支持阿拉伯语
+      const translated = brandPipeline.translateContent(draft.id, 'ar-SA')
       assert.equal(translated, false)
     })
 
     it('B4 [反例]: 对不存在的内容进行翻译', () => {
-      const translated = brandPipeline.translateContent('nonexistent-draft', 'en-US')
-      assert.equal(translated, false)
+      const { brandPipeline } = createServices()
+      assert.equal(brandPipeline.translateContent('nonexistent-draft', 'en-US'), false)
     })
 
     it('B5 [反例]: 内容创建时 brandId 不匹配任何品牌配置', () => {
+      const { brandPipeline } = createServices()
       const draft = brandPipeline.createDraft('Orphan', 'Content', 'nonexistent-brand', 'zh-CN')
       assert.equal(draft.status, 'draft')
-      // 发布仍可成功（只改状态）
-      const published = brandPipeline.publishContent(draft.id)
-      assert.equal(published, true)
+      assert.equal(brandPipeline.publishContent(draft.id), true)
     })
 
     it('B6 [边界]: 大量翻译请求的批量处理', () => {
-      // 批量创建10个内容并全部翻译
+      const { brandPipeline } = createServices()
       const drafts: ContentDraft[] = []
       for (let i = 0; i < 10; i++) {
-        const d = brandPipeline.createDraft(`Content-${i}`, `Body text for ${i}`, 'brand-a', 'zh-CN')
-        drafts.push(d)
+        drafts.push(brandPipeline.createDraft(`Content-${i}`, `Body text for ${i}`, 'brand-a', 'zh-CN'))
       }
-
-      // 每个译为 en-US 和 ja-JP
-      let totalTranslated = 0
+      let total = 0
       for (const d of drafts) {
-        const ok1 = brandPipeline.translateContent(d.id, 'en-US')
-        const ok2 = brandPipeline.translateContent(d.id, 'ja-JP')
-        if (ok1) totalTranslated++
-        if (ok2) totalTranslated++
+        if (brandPipeline.translateContent(d.id, 'en-US')) total++
+        if (brandPipeline.translateContent(d.id, 'ja-JP')) total++
       }
-      assert.equal(totalTranslated, 20) // 10 drafts × 2 translations
+      assert.equal(total, 20)
     })
 
     it('B7 [边界]: 翻译质量评分稳定在可接受范围', () => {
+      const { brandPipeline } = createServices()
       const draft = brandPipeline.createDraft('Quality Test', 'This is a test content for translation quality verification.', 'brand-b', 'en-US')
-
-      // 翻译多次，检查质量分数
       for (const locale of ['de-DE', 'fr-FR']) {
-        const ok = brandPipeline.translateContent(draft.id, locale)
-        assert.equal(ok, true)
+        assert.equal(brandPipeline.translateContent(draft.id, locale), true)
       }
-
       const translations = brandPipeline.getTranslations(draft.id)
       translations.forEach(t => {
         assert.ok(t.qualityScore >= 0.80, `Quality score ${t.qualityScore} should be ≥0.80`)
