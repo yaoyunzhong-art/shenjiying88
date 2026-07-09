@@ -1,180 +1,249 @@
 /**
  * 会员等级分布页面测试 — Member Tier Distribution Page Test
+ * 兼容项目 node --import tsx --test 运行方式
+ * 使用 jsdom + react-dom/client 渲染，不依赖 @testing-library/react
  */
+import assert from 'node:assert/strict';
+import { describe, it, before } from 'node:test';
 import React from 'react';
-import { render, screen, within } from '@testing-library/react';
-import '@testing-library/jest-dom';
+
+// ====== 1. 在组件导入前，先设置 @m5/ui mock ======
+const Module = require('module');
+const origResolve = Module._resolveFilename;
+
+const MOCK_UI_PATH = '\0m5-ui-mock';
+const MOCK_UI_RESOLVED = require.resolve('@m5/ui');
+
+// 创建 mock 组件工厂
+function makeEl(tag: string, attrs: Record<string, any>, children?: any) {
+  return React.createElement(tag, attrs, children);
+}
+
+const mockUiModule = {
+  exports: {
+    DonutChart: (props: any) =>
+      makeEl('div', {
+        'data-testid': 'donut-chart',
+        'data-data': JSON.stringify(props.data),
+        'data-legend': String(props.showLegend),
+        'data-percent': String(props.showCenterLabel),
+      }, 'DonutChart Mock'),
+
+    SparklineChart: (props: any) =>
+      makeEl('div', {
+        'data-testid': 'sparkline-chart',
+        'data-count': props.data?.length,
+        'data-color': props.color,
+        'data-fill-color': props.fillColor,
+      }, 'SparklineChart Mock'),
+
+    MemberTierDistribution: (props: any) =>
+      makeEl('div', {
+        'data-testid': 'member-tier-distribution',
+        'data-tier-count': props.tiers?.length,
+      }, 'MemberTierDistribution Mock'),
+
+    MemberLevelDistribution: (props: any) =>
+      makeEl('div', {
+        'data-testid': 'member-level-distribution',
+        'data-level-count': props.data?.length,
+        'data-values': String(props.showValues),
+        'data-percent': String(props.showPercentage),
+      }, 'MemberLevelDistribution Mock'),
+
+    KpiSummaryCard: ({ title, items }: any) => {
+      const cards = (items || []).map((item: any, i: number) =>
+        makeEl('div', { key: i, 'data-testid': 'kpi-card', 'data-title': title },
+          `${title}: ${item.value}`
+        )
+      );
+      return makeEl(React.Fragment, null, ...cards);
+    },
+
+    Card: ({ title, children }: any) =>
+      makeEl('div', { 'data-testid': `card-${(title || '').replace(/\s+/g, '-')}` },
+        makeEl('h3', null, title), children
+      ),
+
+    PageShell: ({ title, subtitle, children }: any) =>
+      makeEl('div', { 'data-testid': 'page-shell', 'data-title': title, 'data-subtitle': subtitle },
+        makeEl('h1', null, title),
+        subtitle ? makeEl('p', null, subtitle) : null,
+        children
+      ),
+
+    EmptyState: () => makeEl('div', { 'data-testid': 'empty-state' }, 'Empty'),
+    LoadingSkeleton: () => makeEl('div', { 'data-testid': 'loading-skeleton' }, 'Loading'),
+  },
+};
+
+// Hook into module resolution
+Module._resolveFilename = function (request: string, parent: any, ...rest: any[]) {
+  if (request === '@m5/ui') return MOCK_UI_PATH;
+  return origResolve.call(this, request, parent, ...rest);
+};
+
+Module._cache[MOCK_UI_PATH] = mockUiModule;
+Module._cache[MOCK_UI_RESOLVED] = mockUiModule;
+
+// ====== 2. 导入被测试组件 ======
 import MemberTierDistributionPage from './page';
 
-// Mock @m5/ui 组件
-jest.mock('@m5/ui', () => {
-  const actual = jest.requireActual('@m5/ui');
-  return {
-    ...actual,
-    DonutChart: ({ data, showLegend, showCenterLabel }: any) => (
-      <div data-testid="donut-chart" data-data={JSON.stringify(data)} data-legend={showLegend} data-percent={showCenterLabel}>
-        DonutChart Mock
-      </div>
-    ),
-    SparklineChart: ({ data, color, fillColor }: any) => (
-      <div
-        data-testid="sparkline-chart"
-        data-count={data?.length}
-        data-color={color}
-        data-fill-color={fillColor}
-      >
-        SparklineChart Mock
-      </div>
-    ),
-    MemberTierDistribution: ({ tiers, onTierClick }: any) => (
-      <div data-testid="member-tier-distribution" data-tier-count={tiers?.length}>
-        MemberTierDistribution Mock
-      </div>
-    ),
-    MemberLevelDistribution: ({ data, showValues, showPercentage }: any) => (
-      <div
-        data-testid="member-level-distribution"
-        data-level-count={data?.length}
-        data-values={showValues}
-        data-percent={showPercentage}
-      >
-        MemberLevelDistribution Mock
-      </div>
-    ),
-    KpiSummaryCard: ({ title, items }: any) => {
-      const kpiCards = (items || []).map((item: any, i: number) => (
-        <div key={i} data-testid="kpi-card" data-title={title}>
-          {title}: {item.value}
-        </div>
-      ));
-      return <>{kpiCards}</>;
-    },
-    Card: ({ title, children }: any) => (
-      <div data-testid={`card-${title?.replace(/\s+/g, '-')}`}>
-        <h3>{title}</h3>
-        {children}
-      </div>
-    ),
-    PageShell: ({ title, subtitle, children }: any) => (
-      <div data-testid="page-shell" data-title={title} data-subtitle={subtitle}>
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
-        {children}
-      </div>
-    ),
-    EmptyState: () => <div data-testid="empty-state">Empty</div>,
-    LoadingSkeleton: () => <div data-testid="loading-skeleton">Loading</div>,
-  };
-});
+// 恢复原有 resolve
+Module._resolveFilename = origResolve;
 
+// ====== 3. 设置 jsdom 环境 ======
+import { JSDOM } from 'jsdom';
+
+interface GlobalWithDOM {
+  window: any;
+  document: any;
+  HTMLElement: any;
+  HTMLInputElement: any;
+  Node: any;
+  Element: any;
+  CSS: any;
+  MutationObserver: any;
+  requestAnimationFrame: any;
+  cancelAnimationFrame: any;
+}
+
+let jsdom: JSDOM | null = null;
+
+function setupJsdom() {
+  jsdom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+    url: 'http://localhost',
+    pretendToBeVisual: true,
+  });
+
+  const g = globalThis as unknown as GlobalWithDOM;
+  g.window = jsdom.window;
+  g.document = jsdom.window.document;
+  g.HTMLElement = jsdom.window.HTMLElement;
+  g.HTMLInputElement = jsdom.window.HTMLInputElement;
+  g.Node = jsdom.window.Node;
+  g.Element = jsdom.window.Element;
+  g.CSS = { supports: () => false };
+  g.MutationObserver = jsdom.window.MutationObserver;
+  g.requestAnimationFrame = (cb: any) => setTimeout(cb, 0);
+  g.cancelAnimationFrame = (id: any) => clearTimeout(id);
+}
+
+// ====== 4. 渲染函数 ======
+function renderPage(): HTMLElement {
+  const container = jsdom!.window.document.createElement('div');
+  container.id = 'root';
+  jsdom!.window.document.body.innerHTML = '';
+  jsdom!.window.document.body.appendChild(container);
+
+  const ReactDOM = require('react-dom/client');
+  const root = ReactDOM.createRoot(container);
+  root.render(React.createElement(MemberTierDistributionPage));
+
+  return container;
+}
+
+// ====== 5. 测试套件 ======
 describe('MemberTierDistributionPage', () => {
+  let container: HTMLElement;
+
+  before(() => {
+    setupJsdom();
+  });
+
   it('renders page shell with correct title and subtitle', () => {
-    render(<MemberTierDistributionPage />);
-    const shell = screen.getByTestId('page-shell');
-    expect(shell).toHaveAttribute('data-title', '会员等级分布');
-    expect(shell).toHaveAttribute('data-subtitle', expect.stringContaining('可视化'));
+    container = renderPage();
+    const shell = container.querySelector('[data-testid="page-shell"]');
+    assert.ok(shell, 'page-shell should exist');
+    assert.equal(shell?.getAttribute('data-title'), '会员等级分布');
+    assert.ok(shell?.getAttribute('data-subtitle')?.includes('可视化'));
   });
 
   it('renders 4 KPI summary cards', () => {
-    render(<MemberTierDistributionPage />);
-    const kpiCards = screen.getAllByTestId('kpi-card');
-    expect(kpiCards).toHaveLength(4);
-    expect(kpiCards[0]).toHaveAttribute('data-title', '总会员数');
-    expect(kpiCards[1]).toHaveAttribute('data-title', '高价值会员');
+    container = renderPage();
+    const kpiCards = container.querySelectorAll('[data-testid="kpi-card"]');
+    assert.equal(kpiCards.length, 4);
+    assert.equal(kpiCards[0]?.getAttribute('data-title'), '总会员数');
+    assert.equal(kpiCards[1]?.getAttribute('data-title'), '高价值会员');
   });
 
   it('renders DonutChart with correct data', () => {
-    render(<MemberTierDistributionPage />);
-    const donut = screen.getByTestId('donut-chart');
-    expect(donut).toBeInTheDocument();
-    const data = JSON.parse(donut.getAttribute('data-data') || '[]');
-    expect(data).toHaveLength(5);
-    expect(data[0].key).toBe('diamond');
-    expect(data[0].label).toBe('钻石会员');
-    expect(data[0].value).toBe(86);
-    expect(donut.getAttribute('data-legend')).toBe('true');
-    expect(donut.getAttribute('data-percent')).toBe('true');
+    container = renderPage();
+    const donut = container.querySelector('[data-testid="donut-chart"]');
+    assert.ok(donut, 'donut-chart should exist');
+    const data = JSON.parse(donut?.getAttribute('data-data') || '[]');
+    assert.equal(data.length, 5);
+    assert.equal(data[0].key, 'diamond');
+    assert.equal(data[0].label, '钻石会员');
+    assert.equal(data[0].value, 86);
+    assert.equal(donut?.getAttribute('data-legend'), 'true');
+    assert.equal(donut?.getAttribute('data-percent'), 'true');
   });
 
   it('renders MemberTierDistribution with correct tier count', () => {
-    render(<MemberTierDistributionPage />);
-    const tierDist = screen.getByTestId('member-tier-distribution');
-    expect(tierDist).toHaveAttribute('data-tier-count', '5');
+    container = renderPage();
+    const el = container.querySelector('[data-testid="member-tier-distribution"]');
+    assert.equal(el?.getAttribute('data-tier-count'), '5');
   });
 
   it('renders MemberLevelDistribution with correct level count', () => {
-    render(<MemberTierDistributionPage />);
-    const levelDist = screen.getByTestId('member-level-distribution');
-    expect(levelDist).toHaveAttribute('data-level-count', '5');
-    expect(levelDist.getAttribute('data-values')).toBe('true');
-    expect(levelDist.getAttribute('data-percent')).toBe('true');
+    container = renderPage();
+    const el = container.querySelector('[data-testid="member-level-distribution"]');
+    assert.equal(el?.getAttribute('data-level-count'), '5');
+    assert.equal(el?.getAttribute('data-values'), 'true');
+    assert.equal(el?.getAttribute('data-percent'), 'true');
   });
 
   it('renders SparklineChart with 6 data points', () => {
-    render(<MemberTierDistributionPage />);
-    const sparkline = screen.getByTestId('sparkline-chart');
-    expect(sparkline).toHaveAttribute('data-count', '6');
-    expect(sparkline.getAttribute('data-color')).toBe('#3b82f6');
-    expect(sparkline.getAttribute('data-fill-color')).toBe('rgba(59,130,246,0.12)');
+    container = renderPage();
+    const el = container.querySelector('[data-testid="sparkline-chart"]');
+    assert.equal(el?.getAttribute('data-count'), '6');
+    assert.equal(el?.getAttribute('data-color'), '#3b82f6');
+    assert.equal(el?.getAttribute('data-fill-color'), 'rgba(59,130,246,0.12)');
   });
 
   it('renders tier analysis table with correct data', () => {
-    render(<MemberTierDistributionPage />);
-    // 表应该有5行数据（不含表头）
-    const rows = document.querySelectorAll('tbody tr');
-    expect(rows).toHaveLength(5);
-
-    // 第一行应该是钻石会员（按MOCK_TIERS顺序）
-    const firstRow = rows[0];
-    expect(firstRow.textContent).toContain('钻石会员');
-    expect(firstRow.textContent).toContain('86');
-    expect(firstRow.textContent).toContain('高价值');
-
-    // 黄金会员显示"中价值"
-    const goldRow = rows[2];
-    expect(goldRow.textContent).toContain('黄金会员');
-    expect(goldRow.textContent).toContain('中价值');
+    container = renderPage();
+    const rows = container.querySelectorAll('tbody tr');
+    assert.equal(rows.length, 5);
+    assert.ok(rows[0]?.textContent?.includes('钻石会员'));
+    assert.ok(rows[0]?.textContent?.includes('86'));
+    assert.ok(rows[0]?.textContent?.includes('高价值'));
+    assert.ok(rows[2]?.textContent?.includes('黄金会员'));
+    assert.ok(rows[2]?.textContent?.includes('中价值'));
   });
 
   it('renders all 5 Card titles correctly', () => {
-    render(<MemberTierDistributionPage />);
-    // KPI cards 和 chart cards 都有对应的 test ids
-    expect(screen.getByTestId('card-等级分布（饼图）')).toBeInTheDocument();
-    expect(screen.getByTestId('card-等级分布（柱状图）')).toBeInTheDocument();
-    expect(screen.getByTestId('card-等级占比（水平柱状）')).toBeInTheDocument();
-    expect(screen.getByTestId('card-高价值会员增长趋势')).toBeInTheDocument();
-    expect(screen.getByTestId('card-等级构成分析')).toBeInTheDocument();
+    container = renderPage();
+    assert.ok(container.querySelector('[data-testid="card-等级分布（饼图）"]'));
+    assert.ok(container.querySelector('[data-testid="card-等级分布（柱状图）"]'));
+    assert.ok(container.querySelector('[data-testid="card-等级占比（水平柱状）"]'));
+    assert.ok(container.querySelector('[data-testid="card-高价值会员增长趋势"]'));
+    assert.ok(container.querySelector('[data-testid="card-等级构成分析"]'));
   });
 
   it('calculates totalMembers correctly (86+215+378+425+182=1286)', () => {
-    render(<MemberTierDistributionPage />);
-    const kpiCards = screen.getAllByTestId('kpi-card');
-    expect(kpiCards[0].textContent).toContain('1,286');
+    container = renderPage();
+    const cards = container.querySelectorAll('[data-testid="kpi-card"]');
+    assert.ok(cards[0]?.textContent?.includes('1,286'));
   });
 
   it('calculates highValueMembers correctly (86+215=301)', () => {
-    render(<MemberTierDistributionPage />);
-    const kpiCards = screen.getAllByTestId('kpi-card');
-    expect(kpiCards[1].textContent).toContain('301');
+    container = renderPage();
+    const cards = container.querySelectorAll('[data-testid="kpi-card"]');
+    assert.ok(cards[1]?.textContent?.includes('301'));
   });
 
   it('has responsive grid layout classes', () => {
-    render(<MemberTierDistributionPage />);
-    // 查找 grid 容器
-    const grids = document.querySelectorAll('.grid');
-    expect(grids.length).toBeGreaterThanOrEqual(3); // KPI + 图表行 + 第二行
+    container = renderPage();
+    const grids = container.querySelectorAll('.grid');
+    assert.ok(grids.length >= 3);
   });
 
   it('renders tier analysis with correct percentage values', () => {
-    render(<MemberTierDistributionPage />);
-    const rows = document.querySelectorAll('tbody tr');
-
-    // 钻石会员 86/1286 ≈ 6.7%
-    const diamondRow = rows[0];
-    expect(diamondRow.textContent).toContain('6.7%');
-
-    // 银卡会员 425/1286 ≈ 33.0%
-    const silverRow = rows[3];
-    expect(silverRow.textContent).toContain('33.0');
+    container = renderPage();
+    const rows = container.querySelectorAll('tbody tr');
+    assert.ok(rows[0]?.textContent?.includes('6.7%'));
+    assert.ok(rows[3]?.textContent?.includes('33.0'));
   });
 });
