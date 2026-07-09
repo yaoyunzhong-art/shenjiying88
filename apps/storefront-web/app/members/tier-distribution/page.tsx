@@ -100,7 +100,7 @@ export default function MemberTierDistributionPage() {
           items={[
             {
               label: '黄金会员',
-              value: `${MOCK_TIERS[2].count.toLocaleString()} 人`,
+              value: `${(MOCK_TIERS[2]?.count ?? 0).toLocaleString()} 人`,
               helper: '环比下降',
               trend: { value: '3.0%', positive: false },
             },
