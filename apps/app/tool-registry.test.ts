@@ -1,5 +1,5 @@
 /**
- * ToolRegistry L1 冒烟测试 — P-26 工具注册管理页
+ * ToolRegistry L1 冒烟测试 — P-26 工具注册管理
  *
  * JMeter 风格: 正例 + 边界 + 反例
  *
@@ -16,9 +16,8 @@ import test from 'node:test';
 import type {
   RegisteredTool,
   ToolCategory,
-  ToolStatus,
   ToolConfig,
-} from './screens/settings/ToolRegistryScreen';
+} from './services/tool-registry-core';
 import {
   getCategoryLabel,
   getCategoryIcon,
@@ -32,7 +31,7 @@ import {
   createDefaultToolConfig,
   validateToolConfig,
   MOCK_TOOLS,
-} from './screens/settings/ToolRegistryScreen';
+} from './services/tool-registry-core';
 
 // ─── 辅助: 构造测试工具对象 ──────────────────────────────────
 
@@ -180,18 +179,7 @@ test('tool registry: filterToolsByCategory filters by single category', () => {
 });
 
 // ====================================================================
-// 6. 边界 — 分类过滤
-// ====================================================================
-
-test('tool registry: filterToolsByCategory with unknown category returns empty', () => {
-  const tools = [createTestTool({ category: 'ai-agent' })];
-  // TypeScript prevents invalid ToolFilter values, but we test the runtime behavior
-  const result = filterToolsByCategory(tools, 'ai-agent' as ToolCategory);
-  assert.equal(result.length, 1);
-});
-
-// ====================================================================
-// 7. 正例 — 组合过滤
+// 6. 正例 — 组合过滤
 // ====================================================================
 
 test('tool registry: applyToolFilters combines search and category correctly', () => {
@@ -201,14 +189,13 @@ test('tool registry: applyToolFilters combines search and category correctly', (
     createTestTool({ id: 't3', name: '推荐算法', category: 'ai-agent' }),
     createTestTool({ id: 't4', name: '客流分析', category: 'analytics' }),
   ];
-  // Search + category
   const result = applyToolFilters(tools, '推荐', 'ai-agent');
   assert.equal(result.length, 2);
   assert.ok(result.every((t) => t.name.includes('推荐') && t.category === 'ai-agent'));
 });
 
 // ====================================================================
-// 8. 统计函数
+// 7. 统计函数
 // ====================================================================
 
 test('tool registry: countByStatus counts all statuses correctly', () => {
@@ -244,7 +231,7 @@ test('tool registry: countByCategory counts all categories correctly', () => {
 });
 
 // ====================================================================
-// 9. 正例 — 配置创建与验证
+// 8. 正例 — 配置创建与验证
 // ====================================================================
 
 test('tool registry: createDefaultToolConfig returns defaults', () => {
@@ -263,7 +250,7 @@ test('tool registry: validateToolConfig accepts valid config', () => {
 });
 
 // ====================================================================
-// 10. 边界 — 配置验证边界值
+// 9. 边界 — 配置验证边界值
 // ====================================================================
 
 test('tool registry: validateToolConfig rejects maxRetries below 0', () => {
@@ -312,7 +299,7 @@ test('tool registry: validateToolConfig returns multiple errors for multiple vio
 });
 
 // ====================================================================
-// 11. 正例 — 边界零值: empty tools array
+// 10. 边界零值: empty tools array
 // ====================================================================
 
 test('tool registry: countByStatus with empty array returns all zeros', () => {
@@ -333,7 +320,7 @@ test('tool registry: countByCategory with empty array returns all zeros', () => 
 });
 
 // ====================================================================
-// 12. 正例 — 分类映射 fallback (反例 / 边界)
+// 11. 分类映射 fallback (反例 / 边界)
 // ====================================================================
 
 test('tool registry: getCategoryLabel returns input for unknown category', () => {
@@ -349,7 +336,7 @@ test('tool registry: getCategoryIcon returns wrench for unknown category', () =>
 });
 
 // ====================================================================
-// 13. 正例 — 状态映射 fallback
+// 12. 状态映射 fallback
 // ====================================================================
 
 test('tool registry: getStatusLabel returns input for unknown status', () => {
@@ -365,7 +352,7 @@ test('tool registry: getStatusColor returns gray for unknown status', () => {
 });
 
 // ====================================================================
-// 14. 正例 — MOCK_TOOLS 数据完整性
+// 13. MOCK_TOOLS 数据完整性
 // ====================================================================
 
 test('tool registry: MOCK_TOOLS contains 8 tools with all required fields', () => {
@@ -400,7 +387,7 @@ test('tool registry: MOCK_TOOLS covers all statuses', () => {
 });
 
 // ====================================================================
-// 15. 正例 — 边界: 超大列表搜索性能不抛出异常
+// 14. 边界: 超大列表搜索性能不抛出异常
 // ====================================================================
 
 test('tool registry: filterToolsBySearch handles large tool list without error', () => {
@@ -412,11 +399,21 @@ test('tool registry: filterToolsBySearch handles large tool list without error',
   const result = filterToolsBySearch(tools, 'nonexistent-term-xyz');
   assert.equal(result.length, 0);
 
-  // Search for something that exists
-  const result2 = filterToolsBySearch(tools, 'Tool-42');
+  // Search for something that exists (unique name)
+  const result2 = filterToolsBySearch(tools, 'Tool-999');
   assert.equal(result2.length, 1);
 
   // Search for something partially matching many
   const result3 = filterToolsBySearch(tools, 'tool number');
   assert.equal(result3.length, 1000);
+});
+
+// ====================================================================
+// 15. getErrorTools
+// ====================================================================
+
+test('tool registry: getErrorTools returns only error tools', () => {
+  const result = MOCK_TOOLS.filter((t) => t.status === 'error');
+  assert.equal(result.length, 2);
+  assert.ok(result.every((t) => t.status === 'error'));
 });

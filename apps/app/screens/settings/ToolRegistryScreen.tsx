@@ -28,15 +28,9 @@ import {
   MOCK_TOOLS,
 } from '../../services/tool-registry-core';
 
-// ─── 类型导出 ─────────────────────────────────────────────────
+// ─── 类型和函数导出 (已被 screen 使用者引用) ─────────────────
 
 export type { ToolCategory, ToolStatus, RegisteredTool, ToolConfig, ToolFilter } from '../../services/tool-registry-core';
-
-// ─── 模拟数据 ─────────────────────────────────────────────────
-
-export { MOCK_TOOLS } from '../../services/tool-registry-core';
-
-// ─── 工具函数导出 ─────────────────────────────────────────────
 
 export {
   getCategoryLabel,
@@ -50,118 +44,15 @@ export {
   countByCategory,
   createDefaultToolConfig,
   validateToolConfig,
+  MOCK_TOOLS,
 } from '../../services/tool-registry-core';
 
-// ─── 模拟数据 ─────────────────────────────────────────────────
-
-export const SCREEN_MOCK_TOOLS: RegisteredTool[] = MOCK_TOOLS;
-
 // ─── 屏幕组件 ─────────────────────────────────────────────────
 
 interface ToolRegistryScreenProps {
   /** 外部注入的工具列表，用于测试和 DI */
   tools?: RegisteredTool[];
-  /** 过滤回调，用于导航参数 */
-  initialFilter?: ToolFilter;
-}
-
-export function ToolRegistryScreen({
-  {
-    id: 'tool-001',
-    name: '智能推荐引擎',
-    description: '基于用户行为的商品推荐算法，支持实时个性化推荐',
-    category: 'ai-agent',
-    status: 'active',
-    configurable: true,
-    lastHeartbeat: '刚刚',
-    endpointUrl: 'https://ai-api.m5.local/recommend',
-    version: '2.3.1',
-  },
-  {
-    id: 'tool-002',
-    name: '数据同步管道',
-    description: '门店数据与云端实时同步，支持离线队列',
-    category: 'data-pipeline',
-    status: 'active',
-    configurable: true,
-    lastHeartbeat: '1分钟前',
-    endpointUrl: 'wss://sync.m5.local/pipeline',
-    version: '1.8.0',
-  },
-  {
-    id: 'tool-003',
-    name: '支付网关',
-    description: '多平台支付集成，支持微信/支付宝/银行卡',
-    category: 'integration',
-    status: 'active',
-    configurable: false,
-    lastHeartbeat: '2分钟前',
-    version: '3.0.2',
-  },
-  {
-    id: 'tool-004',
-    name: '库存预警规则引擎',
-    description: '自动检测低库存并生成补货建议',
-    category: 'automation',
-    status: 'error',
-    configurable: true,
-    lastHeartbeat: '30分钟前',
-    endpointUrl: 'https://automation.m5.local/inventory-alert',
-    version: '1.2.0',
-    errorMessage: '数据库连接超时: 连接池耗尽',
-  },
-  {
-    id: 'tool-005',
-    name: '客流热度分析',
-    description: '基于摄像头数据的实时客流统计与热力图',
-    category: 'analytics',
-    status: 'active',
-    configurable: true,
-    lastHeartbeat: '刚刚',
-    endpointUrl: 'https://analytics.m5.local/traffic',
-    version: '2.0.1',
-  },
-  {
-    id: 'tool-006',
-    name: '智能客服代理',
-    description: 'AI 自动回复常见客户咨询，支持多轮对话',
-    category: 'ai-agent',
-    status: 'inactive',
-    configurable: true,
-    lastHeartbeat: '1天前',
-    endpointUrl: 'https://ai-api.m5.local/chatbot',
-    version: '1.5.3',
-  },
-  {
-    id: 'tool-007',
-    name: '短信通知服务',
-    description: '交易确认、促销活动等短信推送',
-    category: 'integration',
-    status: 'pending',
-    configurable: false,
-    lastHeartbeat: '5分钟前',
-    version: '1.0.0',
-  },
-  {
-    id: 'tool-008',
-    name: '会员标签计算器',
-    description: '基于消费行为的会员标签自动生成',
-    category: 'analytics',
-    status: 'error',
-    configurable: true,
-    lastHeartbeat: '1小时前',
-    endpointUrl: 'https://analytics.m5.local/member-tag',
-    version: '1.4.0',
-    errorMessage: '数据源接口返回 503',
-  },
-];
-
-// ─── 屏幕组件 ─────────────────────────────────────────────────
-
-interface ToolRegistryScreenProps {
-  /** 外部注入的工具列表，用于测试和 DI */
-  tools?: RegisteredTool[];
-  /** 过滤回调，用于导航参数 */
+  /** 初始分类过滤 */
   initialFilter?: ToolFilter;
 }
 
@@ -173,8 +64,6 @@ export function ToolRegistryScreen({
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<ToolFilter>(initialFilter);
   const [expandedToolId, setExpandedToolId] = useState<string | null>(null);
-  const [showConfigPanel, setShowConfigPanel] = useState(false);
-  const [configToolId, setConfigToolId] = useState<string | null>(null);
 
   const filteredTools = applyToolFilters(tools, searchQuery, categoryFilter);
   const statusCounts = countByStatus(tools);
@@ -190,7 +79,6 @@ export function ToolRegistryScreen({
   ];
 
   const handleToggleTool = useCallback((toolId: string, newStatus: ToolStatus) => {
-    // In a real app, this would call an API
     Alert.alert(
       newStatus === 'active' ? '启用工具' : '停用工具',
       newStatus === 'active' ? '确定启用该工具？' : '确定停用该工具？',
@@ -200,16 +88,6 @@ export function ToolRegistryScreen({
 
   const handleRetryTool = useCallback((toolId: string) => {
     Alert.alert('重试', '正在重新连接异常工具...');
-  }, []);
-
-  const handleConfigTool = useCallback((toolId: string) => {
-    setConfigToolId(toolId);
-    setShowConfigPanel(true);
-  }, []);
-
-  const handleCloseConfig = useCallback(() => {
-    setShowConfigPanel(false);
-    setConfigToolId(null);
   }, []);
 
   const handleSearchChange = useCallback((text: string) => {
@@ -222,6 +100,8 @@ export function ToolRegistryScreen({
 
   const errorTools = tools.filter((t) => t.status === 'error');
 
+  const statusKeys: ToolStatus[] = ['active', 'inactive', 'error', 'pending'];
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
@@ -232,12 +112,12 @@ export function ToolRegistryScreen({
 
       {/* 状态概览卡片 */}
       <View style={styles.statusSummary}>
-        {(Object.keys(STATUS_LABELS) as ToolStatus[]).map((status) => (
+        {statusKeys.map((status) => (
           <View key={status} style={styles.statusCard}>
-            <Text style={[styles.statusCount, { color: STATUS_COLORS[status] }]}>
+            <Text style={[styles.statusCount, { color: getStatusColor(status) }]}>
               {statusCounts[status]}
             </Text>
-            <Text style={styles.statusLabel}>{STATUS_LABELS[status]}</Text>
+            <Text style={styles.statusLabel}>{getStatusLabel(status)}</Text>
           </View>
         ))}
       </View>
@@ -433,7 +313,9 @@ export function ToolRegistryScreen({
                     {tool.configurable && (
                       <TouchableOpacity
                         style={[styles.actionBtn, styles.actionPrimary]}
-                        onPress={() => handleConfigTool(tool.id)}
+                        onPress={() => {
+                          Alert.alert('配置', `打开 ${tool.name} 配置面板`);
+                        }}
                       >
                         <Text style={styles.actionBtnTextPrimary}>配置</Text>
                       </TouchableOpacity>
