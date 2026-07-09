@@ -48,8 +48,8 @@ describe('auth E2E: 认证全流程', () => {
     })
 
     it('同一手机号二次登录返回同样用户', async () => {
-      const r1 = await authService.loginBySms('13900139000', '123456')
-      const r2 = await authService.loginBySms('13900139000', '123456')
+      const r1 = await authService.loginBySms('13900139000', '123456', { deviceId: 'dev-phone2', deviceType: 'mobile', ip: '192.168.1.101' })
+      const r2 = await authService.loginBySms('13900139000', '123456', { deviceId: 'dev-phone2', deviceType: 'mobile', ip: '192.168.1.101' })
 
       expect(r1.success).toBe(true)
       expect(r2.success).toBe(true)
@@ -107,6 +107,7 @@ describe('auth E2E: 认证全流程', () => {
         'nobody@nowhere.com',
         'password123',
         LoginType.EMAIL_PASSWORD,
+        { deviceId: 'dev-nonexist', deviceType: 'web' },
       )
 
       expect(result.success).toBe(false)
@@ -141,7 +142,7 @@ describe('auth E2E: 认证全流程', () => {
   // ─── 正向: Token 刷新 ──────────────────────────────────────────
   describe('Token 刷新', () => {
     it('使用有效 refreshToken 刷新成功', async () => {
-      const loginResult = await authService.loginBySms('13800138000', '123456')
+      const loginResult = await authService.loginBySms('13800138000', '123456', { deviceId: 'dev-refresh', deviceType: 'mobile', ip: '192.168.1.100' })
       expect(loginResult.success).toBe(true)
 
       const refreshResult = await authService.refreshTokens(loginResult.tokens!.refreshToken)
@@ -151,7 +152,7 @@ describe('auth E2E: 认证全流程', () => {
     })
 
     it('刷新后旧 token 被作废', async () => {
-      const loginResult = await authService.loginBySms('13800138000', '123456')
+      const loginResult = await authService.loginBySms('13800138000', '123456', { deviceId: 'dev-refresh-old', deviceType: 'mobile', ip: '192.168.1.100' })
       const oldRefresh = loginResult.tokens!.refreshToken
 
       // 第一次刷新成功
@@ -172,7 +173,7 @@ describe('auth E2E: 认证全流程', () => {
     })
 
     it('登出所有会话成功', async () => {
-      const loginResult = await authService.loginBySms('13800138000', '123456')
+      const loginResult = await authService.loginBySms('13800138000', '123456', { deviceId: 'dev-logout', deviceType: 'mobile', ip: '192.168.1.100' })
       expect(loginResult.success).toBe(true)
 
       await authService.logout(loginResult.user!.userId, undefined, true)
@@ -183,7 +184,7 @@ describe('auth E2E: 认证全流程', () => {
   // ─── 正向: Token 验证 ──────────────────────────────────────────
   describe('Token 验证', () => {
     it('有效 accessToken 可获取用户信息', async () => {
-      const loginResult = await authService.loginBySms('13800138000', '123456')
+      const loginResult = await authService.loginBySms('13800138000', '123456', { deviceId: 'dev-validate', deviceType: 'mobile', ip: '192.168.1.100' })
       expect(loginResult.success).toBe(true)
 
       const user = await authService.validateToken(loginResult.tokens!.accessToken)
@@ -200,7 +201,7 @@ describe('auth E2E: 认证全流程', () => {
   // ─── 反例: 认证失败场景 ────────────────────────────────────────
   describe('反例: 认证失败', () => {
     it('错误短信验证码登录失败', async () => {
-      const result = await authService.loginBySms('13800138000', 'wrong-code')
+      const result = await authService.loginBySms('13800138000', 'wrong-code', { deviceId: 'dev-wrong', deviceType: 'mobile', ip: '192.168.1.100' })
 
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
@@ -214,6 +215,7 @@ describe('auth E2E: 认证全流程', () => {
         undefined,
         'wrongPassword',
         LoginType.MOBILE_PASSWORD,
+        { deviceId: 'dev-wrong-pwd', deviceType: 'web' },
       )
 
       expect(result.success).toBe(false)
@@ -222,7 +224,7 @@ describe('auth E2E: 认证全流程', () => {
     })
 
     it('空验证码登录失败', async () => {
-      const result = await authService.loginBySms('13800138000', '')
+      const result = await authService.loginBySms('13800138000', '', { deviceId: 'dev-empty-code', deviceType: 'mobile', ip: '192.168.1.100' })
 
       expect(result.success).toBe(false)
       expect(result.error!.code).toBe('AUTH_008')

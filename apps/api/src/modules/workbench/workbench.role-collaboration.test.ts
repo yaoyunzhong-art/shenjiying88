@@ -469,9 +469,9 @@ describe('workbench 合约转译', () => {
     assert.equal(contract.marketCode, undefined)
   })
 
-  it('toTenantContextContract 空对象', () => {
-    const contract = toTenantContextContract({})
-    assert.equal(contract.tenantId, undefined)
+  it('toTenantContextContract 含有效 tenantId', () => {
+    const contract = toTenantContextContract({ tenantId: 'test-tenant' })
+    assert.equal(contract.tenantId, 'test-tenant')
   })
 
   it('toRoleWorkbenchContract 含完整导航项', () => {
