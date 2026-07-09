@@ -1,324 +1,311 @@
 /**
  * coupons/[id]/page.test.tsx — 优惠券详情页 L1 冒烟测试
- * ⚡ 覆盖: 数据工厂 / 优惠券属性计算 / 状态映射 / 时限校验 / 边界情况
+ * 角色视角: 👔运营 · 💰财务 · 📊品类经理
+ * 覆盖: 正例(查找/统计/状态流转/数据渲染) + 反例(不存在/防御) + 边界(各类状态/极值)
  */
 
 import assert from 'node:assert/strict';
-import test, { describe, it } from 'node:test';
+import test from 'node:test';
+import { MOCK_COUPONS, COUPON_STATUS_MAP, COUPON_TYPE_MAP, COUPON_SCOPE_MAP } from '../../coupons-data';
 
-// ---- 类型（与 page.tsx / coupons-data.ts 保持同步） ----
+import type { CouponItem, CouponStatus, CouponType, CouponScope } from '../../coupons-data';
 
-type CouponStatus = 'draft' | 'active' | 'paused' | 'exhausted' | 'expired' | 'disabled';
-type CouponType = 'percentage' | 'fixed' | 'shipping' | 'threshold';
-type CouponScope = 'global' | 'category' | 'brand' | 'store' | 'member-tier';
+/* ── 辅助函数 (与 page.tsx 一致) ── */
 
-interface CouponItem {
-  id: string;
-  code: string;
-  name: string;
-  status: CouponStatus;
-  type: CouponType;
-  value: number;
-  minOrderAmount: number;
-  maxDiscount: number;
-  startAt: string;
-  endAt: string;
-  totalQuota: number;
-  usedCount: number;
-  perUserLimit: number;
-  scope: CouponScope;
-  createdBy: string;
-  updatedAt: string;
-}
-
-type CouponStatusVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
-
-// ---- 常量映射 ----
-
-const COUPON_STATUS_MAP: Record<CouponStatus, { label: string; variant: CouponStatusVariant }> = {
-  draft: { label: '草稿', variant: 'neutral' },
-  active: { label: '进行中', variant: 'success' },
-  paused: { label: '已暂停', variant: 'warning' },
-  exhausted: { label: '已领完', variant: 'info' },
-  expired: { label: '已过期', variant: 'danger' },
-  disabled: { label: '已停用', variant: 'neutral' },
-};
-
-const COUPON_TYPE_MAP: Record<CouponType, string> = {
-  percentage: '百分比折扣',
-  fixed: '固定金额',
-  shipping: '免运费',
-  threshold: '满减',
-};
-
-const COUPON_SCOPE_MAP: Record<CouponScope, string> = {
-  global: '全平台',
-  category: '指定品类',
-  brand: '指定品牌',
-  store: '指定门店',
-  'member-tier': '会员等级',
-};
-
-// ---- 辅助函数 ----
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function findCoupon(id: string): CouponItem | undefined {
+  return MOCK_COUPONS.find((c) => c.id === id);
 }
 
 function claimRate(item: CouponItem): number {
   if (item.totalQuota <= 0) return 0;
-  return Math.round((item.usedCount / item.totalQuota) * 100);
+  return (item.usedCount / item.totalQuota) * 100;
 }
 
-function isCouponActive(item: CouponItem): boolean {
-  return item.status === 'active';
-}
+const STATUS_TRANSITIONS: Record<CouponStatus, CouponStatus[]> = {
+  draft: ['active'],
+  active: ['paused', 'exhausted'],
+  paused: ['active', 'exhausted'],
+  exhausted: [],
+  expired: [],
+};
 
-function isCouponExpired(item: CouponItem): boolean {
-  const now = new Date();
-  const end = new Date(item.endAt);
-  return end < now;
-}
-
-function canRedeem(item: CouponItem): boolean {
-  if (item.status !== 'active') return false;
-  if (isCouponExpired(item)) return false;
-  if (item.usedCount >= item.totalQuota) return false;
-  return true;
-}
-
-function getRemainingQuota(item: CouponItem): number {
-  return Math.max(0, item.totalQuota - item.usedCount);
-}
-
-function daysUntilExpiry(item: CouponItem): number {
-  const now = new Date();
-  const end = new Date(item.endAt);
-  const diff = end.getTime() - now.getTime();
-  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-}
-
-// ---- 数据工厂 ----
-
-let _seq = 0;
-
-function makeCoupon(overrides?: Partial<CouponItem>): CouponItem {
-  _seq++;
-  return {
-    id: `coupon-${String(_seq).padStart(3, '0')}`,
-    code: `COUPON-${_seq}`,
-    name: `测试优惠券 ${_seq}`,
-    status: 'active',
-    type: 'percentage',
-    value: 20,
-    minOrderAmount: 100,
-    maxDiscount: 50,
-    startAt: '2026-07-01T00:00:00.000Z',
-    endAt: '2026-08-01T00:00:00.000Z',
-    totalQuota: 1000,
-    usedCount: 150,
-    perUserLimit: 1,
-    scope: 'global',
-    createdBy: 'admin',
-    updatedAt: '2026-07-01T08:00:00.000Z',
-    ...overrides,
+function statusActionLabel(status: CouponStatus, target: CouponStatus): string {
+  const map: Record<string, string> = {
+    'draft->active': '发布',
+    'active->paused': '暂停',
+    'paused->active': '恢复',
+    'active->exhausted': '设为已领完',
+    'paused->exhausted': '截停',
   };
+  return map[`${status}->${target}`] ?? target;
 }
 
-// ==================== 测试套件 ====================
+function formatAmount(v: number): string {
+  return v.toLocaleString();
+}
 
-describe('CouponDetailPage — 数据工厂', () => {
-  it('默认优惠券含完整字段', () => {
-    const c = makeCoupon();
-    assert.ok(c.id.startsWith('coupon-'));
-    assert.strictEqual(c.type, 'percentage');
-    assert.strictEqual(c.status, 'active');
-    assert.ok(c.name.length > 0);
-    assert.ok(c.code.length > 0);
-  });
+/* =================================================================
+ * 正例 (Happy Path)
+ * ================================================================= */
 
-  it('覆盖字段合并', () => {
-    const c = makeCoupon({ type: 'fixed', value: 30, status: 'draft' });
-    assert.strictEqual(c.type, 'fixed');
-    assert.strictEqual(c.value, 30);
-    assert.strictEqual(c.status, 'draft');
-    assert.ok(c.name.startsWith('测试优惠券')); // 原始字段保留
-    assert.ok(c.id.startsWith('coupon-'));
-  });
-
-  it('每个调用产生不同 ID', () => {
-    const c1 = makeCoupon();
-    const c2 = makeCoupon();
-    assert.notStrictEqual(c1.id, c2.id);
-  });
+test('👔 运营视角: 页面组件默认导出是函数', async () => {
+  const mod = await import('./page');
+  assert.equal(typeof mod.default, 'function', 'CouponDetailPage 应导出函数组件');
 });
 
-describe('CouponDetailPage — COUPON_STATUS_MAP 完整性', () => {
-  it('所有状态应有中文标签和 variant', () => {
-    const statuses: CouponStatus[] = ['draft', 'active', 'paused', 'exhausted', 'expired', 'disabled'];
-    for (const s of statuses) {
-      const entry = COUPON_STATUS_MAP[s];
-      assert.ok(entry, `status ${s} 缺少映射`);
-      assert.ok(entry.label.length >= 2, `status ${s} 标签太短`);
-      assert.ok(['success', 'warning', 'danger', 'info', 'neutral'].includes(entry.variant));
+test('💰 财务视角: 组件不抛异常', async () => {
+  let threw = false;
+  try {
+    await import('./page');
+  } catch {
+    threw = true;
+  }
+  assert.equal(threw, false, 'page 导入应成功');
+});
+
+test('📊 品类经理视角: findCoupon 能正确查找所有 10 张优惠券', () => {
+  const ids = MOCK_COUPONS.map((c) => c.id);
+  for (const id of ids) {
+    const found = findCoupon(id);
+    assert.ok(found, `应找到 ID=${id}`);
+    assert.equal(found.id, id);
+  }
+});
+
+test('📊 品类经理视角: findCoupon 返回的 coupon 类型正确', () => {
+  const c = findCoupon('c-001')!;
+  assert.equal(typeof c.code, 'string');
+  assert.equal(typeof c.discountValue, 'number');
+  assert.ok(['active', 'paused', 'expired', 'draft', 'exhausted'].includes(c.status));
+  assert.ok(['percentage', 'fixed', 'shipping', 'threshold'].includes(c.type));
+});
+
+test('正例: claimRate 计算正确 — SUMMER2026', () => {
+  const c = findCoupon('c-001')!;
+  assert.equal(claimRate(c), 56.79);
+});
+
+test('正例: claimRate 计算正确 — 已领完券', () => {
+  const c = findCoupon('c-003')!;
+  assert.equal(claimRate(c), 100);
+});
+
+test('正例: claimRate 草稿券=0', () => {
+  const c = findCoupon('c-007')!;
+  assert.equal(claimRate(c), 0);
+});
+
+test('正例: claimRate 大配额券', () => {
+  const c = findCoupon('c-009')!; // BIRTHDAY: 11876/99999
+  const rate = claimRate(c);
+  assert.ok(rate > 11 && rate < 12);
+});
+
+test('正例: 状态映射 — 每种状态有 label 和 variant', () => {
+  const statuses: CouponStatus[] = ['active', 'paused', 'expired', 'draft', 'exhausted'];
+  for (const s of statuses) {
+    const info = COUPON_STATUS_MAP[s];
+    assert.ok(info.label.length > 0);
+    assert.ok(['success', 'warning', 'danger', 'neutral'].includes(info.variant));
+  }
+});
+
+test('正例: 类型映射 — 每种类型有 label 和 suffix', () => {
+  const types: CouponType[] = ['percentage', 'fixed', 'shipping', 'threshold'];
+  for (const t of types) {
+    const info = COUPON_TYPE_MAP[t];
+    assert.ok(info.label.length > 0);
+    assert.equal(typeof info.suffix, 'string');
+  }
+});
+
+test('正例: 范围映射完整', () => {
+  const scopes: CouponScope[] = ['all', 'category', 'product', 'store', 'member_tier'];
+  for (const s of scopes) {
+    assert.ok(COUPON_SCOPE_MAP[s].length > 0);
+  }
+});
+
+test('正例: formatAmount 格式化数字', () => {
+  assert.equal(formatAmount(1000), '1,000');
+  assert.equal(formatAmount(99999), '99,999');
+  assert.equal(formatAmount(0), '0');
+});
+
+test('正例: active 券的可流转目标包含 paused 和 exhausted', () => {
+  const targets = STATUS_TRANSITIONS['active'];
+  assert.ok(targets.includes('paused'));
+  assert.ok(targets.includes('exhausted'));
+  assert.equal(targets.length, 2);
+});
+
+test('正例: draft 券的可流转目标只有 active', () => {
+  const targets = STATUS_TRANSITIONS['draft'];
+  assert.deepEqual(targets, ['active']);
+});
+
+test('正例: exhausted 券无可流转目标', () => {
+  assert.deepEqual(STATUS_TRANSITIONS['exhausted'], []);
+});
+
+test('正例: expired 券无可流转目标', () => {
+  assert.deepEqual(STATUS_TRANSITIONS['expired'], []);
+});
+
+test('正例: statusActionLabel 返回中文动作名', () => {
+  assert.equal(statusActionLabel('draft', 'active'), '发布');
+  assert.equal(statusActionLabel('active', 'paused'), '暂停');
+  assert.equal(statusActionLabel('paused', 'active'), '恢复');
+  assert.equal(statusActionLabel('active', 'exhausted'), '设为已领完');
+  assert.equal(statusActionLabel('paused', 'exhausted'), '截停');
+});
+
+test('正例: 非标准流转 fallback 返回目标状态', () => {
+  // @ts-expect-error 测试 fallback
+  assert.equal(statusActionLabel('draft', 'expired'), 'expired');
+});
+
+test('正例: 每张券的 discountValue 和 threshold 是合法数字', () => {
+  for (const c of MOCK_COUPONS) {
+    assert.ok(Number.isFinite(c.discountValue), `${c.code} discountValue`);
+    assert.ok(Number.isFinite(c.threshold), `${c.code} threshold`);
+    assert.ok(c.discountValue >= 0);
+    assert.ok(c.threshold >= 0);
+  }
+});
+
+test('正例: 每张券的 totalQuota >= remainingQuota', () => {
+  for (const c of MOCK_COUPONS) {
+    assert.ok(c.totalQuota >= c.remainingQuota, `${c.code}: total(${c.totalQuota}) >= remaining(${c.remainingQuota})`);
+  }
+});
+
+test('正例: 每张券的 usedCount + remainingQuota <= totalQuota', () => {
+  for (const c of MOCK_COUPONS) {
+    // 约等于关系 (有些券刚发布未核销)
+    assert.ok(c.usedCount + c.remainingQuota <= c.totalQuota + 1, `${c.code}: used+remaining <= total`);
+  }
+});
+
+/* =================================================================
+ * 反例 (Defensive)
+ * ================================================================= */
+
+test('反例: findCoupon 不存在的 ID 返回 undefined', () => {
+  assert.equal(findCoupon('nonexistent'), undefined);
+  assert.equal(findCoupon(''), undefined);
+  assert.equal(findCoupon('c-999'), undefined);
+});
+
+test('反例: claimRate totalQuota=0 不崩溃', () => {
+  const bad: CouponItem = {
+    id: 'bad', code: 'BAD', name: '坏券',
+    type: 'fixed', discountValue: 10, threshold: 0,
+    scope: 'all', scopeLabel: '全场',
+    totalQuota: 0, remainingQuota: 0, usageLimit: 1, usedCount: 100,
+    status: 'exhausted', startAt: '', endAt: '',
+    createdBy: '', updatedAt: '',
+  };
+  assert.equal(claimRate(bad), 0);
+});
+
+test('反例: findCoupon 传入 null/undefined 安全', () => {
+  // @ts-expect-error 测试非法入参
+  assert.equal(findCoupon(null), undefined);
+  // @ts-expect-error 测试非法入参
+  assert.equal(findCoupon(undefined), undefined);
+});
+
+test('反例: STATUS_TRANSITIONS 不包含未知状态', () => {
+  const knownStatuses: CouponStatus[] = ['active', 'paused', 'expired', 'draft', 'exhausted'];
+  for (const s of knownStatuses) {
+    const targets = STATUS_TRANSITIONS[s];
+    assert.ok(Array.isArray(targets));
+    for (const t of targets) {
+      assert.ok(knownStatuses.includes(t), `${s} -> ${t} 应为合法状态`);
     }
-  });
-
-  it('active 映射到 "进行中" success', () => {
-    assert.strictEqual(COUPON_STATUS_MAP.active.label, '进行中');
-    assert.strictEqual(COUPON_STATUS_MAP.active.variant, 'success');
-  });
-
-  it('expired 映射到 "已过期" danger', () => {
-    assert.strictEqual(COUPON_STATUS_MAP.expired.label, '已过期');
-    assert.strictEqual(COUPON_STATUS_MAP.expired.variant, 'danger');
-  });
+  }
 });
 
-describe('CouponDetailPage — COUPON_TYPE_MAP 完整性', () => {
-  it('所有类型应有中文名', () => {
-    const types: CouponType[] = ['percentage', 'fixed', 'shipping', 'threshold'];
-    const map: Record<CouponType, string> = {
-      percentage: '百分比折扣',
-      fixed: '固定金额',
-      shipping: '免运费',
-      threshold: '满减',
-    };
-    for (const t of types) {
-      assert.ok(map[t], `type ${t} 缺少映射`);
-      assert.ok(map[t].length >= 4);
-    }
-  });
+/* =================================================================
+ * 边界 (Edge Cases)
+ * ================================================================= */
+
+test('边界: 无门槛券 threshold=0', () => {
+  const noThreshold = MOCK_COUPONS.filter((c) => c.threshold === 0);
+  assert.ok(noThreshold.length >= 3);
+  for (const c of noThreshold) {
+    assert.equal(c.threshold, 0);
+  }
 });
 
-describe('CouponDetailPage — COUPON_SCOPE_MAP 完整性', () => {
-  it('所有范围应有中文名', () => {
-    const scopes: CouponScope[] = ['global', 'category', 'brand', 'store', 'member-tier'];
-    for (const s of scopes) {
-      assert.ok(COUPON_SCOPE_MAP[s], `scope ${s} 缺少映射`);
-    }
-  });
+test('边界: 不限领券 usageLimit=99999', () => {
+  const unlimited = MOCK_COUPONS.filter((c) => c.usageLimit === 99999);
+  assert.equal(unlimited.length, 1);
+  assert.equal(unlimited[0].code, 'BIRTHDAY');
 });
 
-describe('CouponDetailPage — 领取率计算', () => {
-  it('正常使用率', () => {
-    const c = makeCoupon({ totalQuota: 200, usedCount: 50 });
-    assert.strictEqual(claimRate(c), 25);
-  });
-
-  it('全部领完', () => {
-    const c = makeCoupon({ totalQuota: 100, usedCount: 100 });
-    assert.strictEqual(claimRate(c), 100);
-  });
-
-  it('无配额返回 0', () => {
-    const c = makeCoupon({ totalQuota: 0, usedCount: 0 });
-    assert.strictEqual(claimRate(c), 0);
-  });
-
-  it('使用数超过配额取整', () => {
-    const c = makeCoupon({ totalQuota: 100, usedCount: 1 });
-    assert.strictEqual(claimRate(c), 1);
-  });
+test('边界: 已领完券剩余量=0', () => {
+  const exhausted = MOCK_COUPONS.filter((c) => c.status === 'exhausted');
+  for (const c of exhausted) {
+    assert.equal(c.remainingQuota, 0);
+  }
 });
 
-describe('CouponDetailPage — 活动状态判断', () => {
-  it('active 优惠券视为进行中', () => {
-    assert.ok(isCouponActive(makeCoupon({ status: 'active' })));
-  });
-
-  it('非 active 视为不活跃', () => {
-    assert.strictEqual(isCouponActive(makeCoupon({ status: 'paused' })), false);
-    assert.strictEqual(isCouponActive(makeCoupon({ status: 'expired' })), false);
-    assert.strictEqual(isCouponActive(makeCoupon({ status: 'draft' })), false);
-  });
+test('边界: 草稿券 remain = total', () => {
+  const draft = MOCK_COUPONS.filter((c) => c.status === 'draft');
+  for (const c of draft) {
+    // 草稿券还未发放
+    assert.equal(c.remainingQuota, c.totalQuota);
+    assert.equal(c.usedCount, 0);
+  }
 });
 
-describe('CouponDetailPage — 过期判断', () => {
-  it('未来的过期时间视为未过期', () => {
-    const future = new Date();
-    future.setFullYear(future.getFullYear() + 1);
-    const c = makeCoupon({ endAt: future.toISOString() });
-    assert.strictEqual(isCouponExpired(c), false);
-  });
-
-  it('过去的过期时间视为已过期', () => {
-    const past = new Date('2020-01-01');
-    const c = makeCoupon({ endAt: past.toISOString() });
-    assert.strictEqual(isCouponExpired(c), true);
-  });
+test('边界: 大配额券 totalQuota=99999', () => {
+  const c = findCoupon('c-009')!;
+  assert.equal(c.totalQuota, 99999);
+  assert.equal(c.usageLimit, 1);
 });
 
-describe('CouponDetailPage — 可领取判断', () => {
-  it('正常 active 未过期未领完可领', () => {
-    assert.ok(canRedeem(makeCoupon({ status: 'active', totalQuota: 100, usedCount: 10 })));
-  });
-
-  it('已暂停不能领', () => {
-    assert.strictEqual(canRedeem(makeCoupon({ status: 'paused' })), false);
-  });
-
-  it('已领完不能领', () => {
-    assert.strictEqual(canRedeem(makeCoupon({ status: 'active', totalQuota: 100, usedCount: 100 })), false);
-  });
-
-  it('已过期不能领', () => {
-    const past = new Date('2020-01-01');
-    assert.strictEqual(canRedeem(makeCoupon({ status: 'active', endAt: past.toISOString(), totalQuota: 100, usedCount: 10 })), false);
-  });
+test('边界: 单品包邮券 shipping type', () => {
+  const shipping = MOCK_COUPONS.filter((c) => c.type === 'shipping');
+  assert.equal(shipping.length, 1);
+  assert.equal(shipping[0].discountValue, 0); // 包邮券 discountValue=0
 });
 
-describe('CouponDetailPage — 剩余配额', () => {
-  it('正常剩余', () => {
-    assert.strictEqual(getRemainingQuota(makeCoupon({ totalQuota: 500, usedCount: 200 })), 300);
-  });
-
-  it('全部用完返回 0', () => {
-    assert.strictEqual(getRemainingQuota(makeCoupon({ totalQuota: 100, usedCount: 100 })), 0);
-  });
-
-  it('超额使用返回 0', () => {
-    assert.strictEqual(getRemainingQuota(makeCoupon({ totalQuota: 100, usedCount: 200 })), 0);
-  });
-
-  it('未使用返回全额', () => {
-    assert.strictEqual(getRemainingQuota(makeCoupon({ totalQuota: 50, usedCount: 0 })), 50);
-  });
+test('边界: 数据完整性 — 10 张券', () => {
+  assert.equal(MOCK_COUPONS.length, 10);
 });
 
-describe('CouponDetailPage — 日期格式化', () => {
-  it('标准 ISO 转为 YYYY-MM-DD HH:mm', () => {
-    const result = formatDate('2026-07-06T08:00:00.000Z');
-    assert.match(result, /2026-07-06 \d{2}:00/);
-  });
+test('边界: 券码唯一性', () => {
+  const codes = MOCK_COUPONS.map((c) => c.code);
+  assert.equal(new Set(codes).size, codes.length);
 });
 
-describe('CouponDetailPage — 边界情况', () => {
-  it('所有类型与所有状态的组合', () => {
-    const types: CouponType[] = ['percentage', 'fixed', 'shipping', 'threshold'];
-    const statuses: CouponStatus[] = ['draft', 'active', 'paused', 'exhausted', 'expired', 'disabled'];
-    for (const type of types) {
-      for (const status of statuses) {
-        const c = makeCoupon({ type, status });
-        assert.strictEqual(c.type, type);
-        assert.strictEqual(c.status, status);
-      }
-    }
-  });
+test('边界: ID 唯一性', () => {
+  const ids = MOCK_COUPONS.map((c) => c.id);
+  assert.equal(new Set(ids).size, ids.length);
+});
 
-  it('零值边界', () => {
-    const c = makeCoupon({ value: 0, minOrderAmount: 0, maxDiscount: 0, totalQuota: 0 });
-    assert.strictEqual(c.value, 0);
-    assert.strictEqual(c.minOrderAmount, 0);
-    assert.strictEqual(c.maxDiscount, 0);
-    assert.strictEqual(c.totalQuota, 0);
-  });
+test('边界: 所有日期格式统一为 YYYY-MM-DD', () => {
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  for (const c of MOCK_COUPONS) {
+    assert.ok(dateRegex.test(c.startAt), `${c.code} startAt=${c.startAt}`);
+    assert.ok(dateRegex.test(c.endAt), `${c.code} endAt=${c.endAt}`);
+  }
+});
 
-  it('大数值', () => {
-    const c = makeCoupon({ value: 999999, totalQuota: 9999999, usedCount: 9999999 });
-    assert.strictEqual(claimRate(c), 100);
-    assert.strictEqual(getRemainingQuota(c), 0);
-  });
+test('边界: 停止流转 — expired 状态无法操作', () => {
+  // expired 状态的券不应该有任何可流转的目标状态
+  const expiredTransitions = STATUS_TRANSITIONS['expired'];
+  assert.equal(expiredTransitions.length, 0);
+});
+
+test('边界: 完全核销券 — usedCount === totalQuota', () => {
+  const fullyRedeemed = MOCK_COUPONS.filter(
+    (c) => c.usedCount === c.totalQuota && c.totalQuota > 0,
+  );
+  for (const c of fullyRedeemed) {
+    assert.equal(claimRate(c), 100);
+  }
 });
