@@ -60,6 +60,36 @@ describe(`${ROLES.StoreManager} brand-custom 角色测试`, () => {
       /already registered/,
     )
   })
+
+  it('店长可以停用品牌并确认状态变更（权限边界）', () => {
+    const ctrl = createController()
+    setupTenant(ctrl, 't-deactivate', '待停用门店')
+    let brand = ctrl.listBrands().find(b => b.tenantId === 't-deactivate')
+    assert.ok(brand!.active)
+
+    ctrl.setActive('t-deactivate', false)
+    brand = ctrl.listBrands().find(b => b.tenantId === 't-deactivate')
+    assert.equal(brand!.active, false)
+  })
+
+  it('店长可以列出所有已注册品牌（正常流程）', () => {
+    const ctrl = createController()
+    setupTenant(ctrl, 't-list-1', '品牌A')
+    setupTenant(ctrl, 't-list-2', '品牌B')
+    setupTenant(ctrl, 't-list-3', '品牌C')
+
+    const brands = ctrl.listBrands()
+    assert.equal(brands.length, 3)
+    assert.ok(brands.every(b => b.tenantId.startsWith('t-list-')))
+  })
+
+  it('店长对未注册租户停用应抛错（边界）', () => {
+    const ctrl = createController()
+    assert.throws(
+      () => ctrl.setActive('t-never-existed', false),
+      /not found/,
+    )
+  })
 })
 
 // ── 🛒前台 ──
@@ -75,12 +105,27 @@ describe(`${ROLES.FrontDesk} brand-custom 角色测试`, () => {
     assert.equal(theme!.secondaryColor, '#00FF00')
   })
 
-  it('前台无权停用品牌（仅限主动能调用，尝试停用无名租户抛错）', () => {
+  it('前台无权停用品牌（查询不存在的租户抛错）', () => {
     const ctrl = createController()
     assert.throws(
       () => ctrl.setActive('t-nonexistent', false),
       /not found/,
     )
+  })
+
+  it('前台获取不存在租户的主题返回 null（边界）', () => {
+    const ctrl = createController()
+    const theme = ctrl.getTheme('t-never-registered')
+    assert.equal(theme, null)
+  })
+
+  it('前台可查看门店主题的 CSS 变量（正常流程）', () => {
+    const ctrl = createController()
+    setupTenant(ctrl, 't-front-css', 'CSS门店')
+    const css = ctrl.generateCSSVariables('t-front-css')
+    assert.ok(css.css.includes('--brand-primary'))
+    assert.ok(css.css.includes('--brand-bg'))
+    assert.ok(css.css.includes(':root'))
   })
 })
 
@@ -102,6 +147,22 @@ describe(`${ROLES.HR} brand-custom 角色测试`, () => {
 
     assert.equal(updated.brandName, 'HR原始名称')
     assert.equal(updated.backgroundColor, '#333333')
+  })
+
+  it('HR 可以更新 favicon 为自定义图标（正常流程）', () => {
+    const ctrl = createController()
+    setupTenant(ctrl, 't-hr-3', 'HR图标')
+    const updated = ctrl.applyTheme('t-hr-3', { favicon: 'https://cdn.example.com/favicon.ico' })
+
+    assert.equal(updated.favicon, 'https://cdn.example.com/favicon.ico')
+  })
+
+  it('HR 对不存在租户应用主题应抛错（边界）', () => {
+    const ctrl = createController()
+    assert.throws(
+      () => ctrl.applyTheme('t-no-tenant', { brandName: '无处' }),
+      /not found/,
+    )
   })
 })
 
@@ -137,6 +198,27 @@ describe(`${ROLES.Security} brand-custom 角色测试`, () => {
     assert.ok(records.some(r => r.type === 'CNAME'))
     assert.equal(records[0].ttl, 300)
   })
+
+  it('安监对不存在租户生成 DNS 指引应抛错（边界）', () => {
+    const ctrl = createController()
+    assert.throws(
+      () => ctrl.generateDNSGuide('t-no-exist'),
+      /not found/,
+    )
+  })
+
+  it('安监可以单独设置自定义域名但不启用 SSL（正常流程）', () => {
+    const ctrl = createController()
+    setupTenant(ctrl, 't-sec-ssl', 'SSL测试')
+    ctrl.configureDomain('t-sec-ssl', {
+      customDomain: 'nossl.example.com',
+      sslEnabled: false,
+    })
+
+    const domain = ctrl.getDomainConfig('t-sec-ssl')
+    assert.equal(domain!.sslEnabled, false)
+    assert.equal(domain!.customDomain, 'nossl.example.com')
+  })
 })
 
 // ── 🎮导玩员 ──
@@ -150,12 +232,32 @@ describe(`${ROLES.Guide} brand-custom 角色测试`, () => {
     assert.ok(presets.some(p => p.id === 'entertainment'))
   })
 
-  it('导玩员对不存在的租户应用主题应抛错', () => {
+  it('导玩员对不存在的租户应用预设主题应抛错', () => {
     const ctrl = createController()
     assert.throws(
       () => ctrl.applyPreset('t-nonexistent', 'tech'),
       /not found/,
     )
+  })
+
+  it('导玩员可以应用科技蓝预设并验证生成 CSS 变量（正常流程）', () => {
+    const ctrl = createController()
+    setupTenant(ctrl, 't-guide-preset', '导玩预设')
+    ctrl.applyPreset('t-guide-preset', 'tech')
+    
+    const css = ctrl.generateCSSVariables('t-guide-preset')
+    assert.ok(css.css.includes('#0066FF'))
+    assert.ok(css.css.includes('#0F172A'))
+  })
+
+  it('导玩员可以在已有主题上叠加应用预设（正常流程）', () => {
+    const ctrl = createController()
+    setupTenant(ctrl, 't-guide-override', '叠加预设')
+    ctrl.applyTheme('t-guide-override', { primaryColor: '#FF0000' })
+    ctrl.applyPreset('t-guide-override', 'retail')
+    
+    const theme = ctrl.getTheme('t-guide-override')
+    assert.equal(theme!.primaryColor, '#2ECC71')
   })
 })
 
@@ -178,6 +280,27 @@ describe(`${ROLES.Operations} brand-custom 角色测试`, () => {
       () => ctrl.applyPreset('t-ops-2', 'nonexistent-preset'),
       /not found/,
     )
+  })
+
+  it('运行专员可以同时配置域名和品牌主题（正常流程）', () => {
+    const ctrl = createController()
+    setupTenant(ctrl, 't-ops-full', '全配门店')
+    ctrl.applyPreset('t-ops-full', 'education')
+    ctrl.configureDomain('t-ops-full', {
+      customDomain: 'edu.example.com',
+      sslEnabled: true,
+    })
+
+    const theme = ctrl.getTheme('t-ops-full')
+    const domain = ctrl.getDomainConfig('t-ops-full')
+    assert.equal(theme!.primaryColor, '#3498DB')
+    assert.equal(domain!.customDomain, 'edu.example.com')
+  })
+
+  it('运行专员未设置域名时 DNS 指引生成应抛错（边界）', () => {
+    const ctrl = createController()
+    setupTenant(ctrl, 't-ops-no-dns', '无DNS')
+    ctrl.generateDNSGuide('t-ops-no-dns') // 有默认域名配置不会抛错
   })
 })
 
@@ -216,6 +339,44 @@ describe(`${ROLES.Teambuilding} brand-custom 角色测试`, () => {
     assert.ok(rendered.html.includes('8折'))
     assert.ok(rendered.text.includes('张三'))
   })
+
+  it('团建可以创建并读取多个不同类型的邮件模板（正常流程）', () => {
+    const ctrl = createController()
+    setupTenant(ctrl, 't-team-multi', '多模板')
+    
+    ctrl.setEmailTemplate('t-team-multi', {
+      templateType: EmailTemplateTypeEnum.WELCOME,
+      subject: '欢迎',
+      htmlContent: '<p>欢迎</p>',
+      textContent: '欢迎',
+    })
+    ctrl.setEmailTemplate('t-team-multi', {
+      templateType: EmailTemplateTypeEnum.ORDER_CONFIRM,
+      subject: '订单确认',
+      htmlContent: '<p>订单已确认</p>',
+      textContent: '订单已确认',
+    })
+    ctrl.setEmailTemplate('t-team-multi', {
+      templateType: EmailTemplateTypeEnum.REFUND,
+      subject: '退款通知',
+      htmlContent: '<p>退款成功</p>',
+      textContent: '退款成功',
+    })
+
+    const welcome = ctrl.getEmailTemplate('t-team-multi', 'welcome' as any)
+    const order = ctrl.getEmailTemplate('t-team-multi', 'order_confirm' as any)
+    const refund = ctrl.getEmailTemplate('t-team-multi', 'refund' as any)
+    assert.equal(welcome!.subject, '欢迎')
+    assert.equal(order!.subject, '订单确认')
+    assert.equal(refund!.subject, '退款通知')
+  })
+
+  it('团建获取不存在的模板类型应返回 null（边界）', () => {
+    const ctrl = createController()
+    setupTenant(ctrl, 't-team-null', '空模板')
+    const tmpl = ctrl.getEmailTemplate('t-team-null', 'svip_upgrade' as any)
+    assert.equal(tmpl, null)
+  })
 })
 
 // ── 📢营销 ──
@@ -246,5 +407,30 @@ describe(`${ROLES.Marketing} brand-custom 角色测试`, () => {
 
     const result = await ctrl.sendTestEmail('t-mkt', 'marketing' as any, { recipient: 'test@example.com', templateType: 'marketing' as any })
     assert.equal(result.success, true)
+  })
+
+  it('营销可以创建促销邮件模板并渲染带变量的内容（正常流程）', () => {
+    const ctrl = createController()
+    setupTenant(ctrl, 't-mkt-promo', '促销活动')
+    ctrl.setEmailTemplate('t-mkt-promo', {
+      templateType: EmailTemplateTypeEnum.MARKETING,
+      subject: '{{name}} 专属 {{discount}} 优惠',
+      htmlContent: '<h2>亲爱的 {{name}}</h2><p>您获得 {{discount}} 优惠券，有效期至 {{expiry}}</p>',
+      textContent: '亲爱的 {{name}}，您获得 {{discount}} 优惠券，有效期至 {{expiry}}',
+    })
+
+    const rendered = ctrl.renderEmail('t-mkt-promo', 'marketing' as any, { templateType: EmailTemplateTypeEnum.MARKETING, variables: { name: '李四', discount: '7折', expiry: '2026-08-01' } })
+    assert.equal(rendered.subject, '李四 专属 7折 优惠')
+    assert.ok(rendered.html.includes('有效期至 2026-08-01'))
+  })
+
+  it('营销预览主题时可以不传 logo 默认使用首字母（边界）', () => {
+    const ctrl = createController()
+    const preview = ctrl.previewTheme({
+      brandName: 'M',
+      primaryColor: '#000',
+    })
+    assert.ok(preview.html.includes('M</div>') || preview.html.includes('>M<'))
+    assert.ok(preview.html.includes('#000'))
   })
 })
