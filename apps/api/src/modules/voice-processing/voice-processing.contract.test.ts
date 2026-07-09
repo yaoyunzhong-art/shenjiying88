@@ -21,6 +21,7 @@ import type {
 import type {
   CreateTtsTaskDto, CreateSttTaskDto, CloneVoiceDto,
   EnrollVoiceprintDto, IdentifySpeakerDto,
+  TtsTaskResponse, SttTaskResponse,
 } from './voice-processing.dto'
 import { runWithTenant } from '../../common/context/tenant-context'
 
@@ -395,7 +396,7 @@ describe('[voice-processing] 合约: STT 转写', () => {
 
     const items = await runWithTenant(TENANT, () =>
       svc.listSttTasks({}),
-    ) as SttTask[]
+    ) as SttTaskResponse[]
 
     assert.ok(items.length >= 2)
     for (const item of items) {
@@ -688,7 +689,7 @@ describe('[voice-processing] 合约: 引擎与音色查询', () => {
       assert.equal(v.engine, 'mock-aliyun-tts')
     }
 
-    const nonexistent = svc.listVoices('mock-fake-engine')
+    const nonexistent = svc.listVoices('mock-fake-engine' as unknown as import('./voice-processing.entity').TtsEngine)
     assert.equal(nonexistent.length, 0)
   })
 })
@@ -786,14 +787,14 @@ describe('[voice-processing] 合约: 租户隔离', () => {
 
     const itemsA = await runWithTenant(TENANT, () =>
       svc.listSttTasks({}),
-    ) as SttTask[]
+    ) as SttTaskResponse[]
     for (const item of itemsA) {
       assert.equal(item.tenantId, TENANT.tenantId)
     }
 
     const itemsB = await runWithTenant(OTHER_TENANT, () =>
       svc.listSttTasks({}),
-    ) as SttTask[]
+    ) as SttTaskResponse[]
     for (const item of itemsB) {
       assert.equal(item.tenantId, OTHER_TENANT.tenantId)
     }

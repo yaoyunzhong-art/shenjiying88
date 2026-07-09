@@ -1,5 +1,21 @@
 # 🦞 龙虾哥验收记录
 
+## 2026-07-10 07:17 — 验收脉冲 #259
+
+### 状态
+- **HEAD**: `b7dce0ccc8` 🐜 [前端] HomeScreen/SettingsScreen 配置层+数据层测试
+- **@m5/app build**: ✅
+- **@m5/app tests**: 222/222 ✅ (新增35个)
+- **新增**: 2 test files, 35 test cases
+  - home-screen.test.ts: 18 tests（角色配置/快捷操作/统计/任务/公告）
+  - settings-screen.test.ts: 17 tests（AppReducer状态管理/设置项配置）
+
+### 闭环检查
+✅ 全绿，无回归
+
+HEARTBEAT_OK — 07:17 GMT+8 ✅ #259
+# 🦞 龙虾哥验收记录
+
 ## 2026-07-10 05:42 — 验收脉冲 #258
 
 ### 状态

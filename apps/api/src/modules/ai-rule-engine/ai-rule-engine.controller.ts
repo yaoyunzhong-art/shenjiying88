@@ -20,7 +20,8 @@ import type {
   SimulatorRunInput,
   SimulatorRunOutput,
   SimulatorBatchRunOutput,
-  Simulator
+  Simulator,
+  EngineDetail
 } from './ai-rule-engine.entity'
 
 interface EvaluateRequest {
@@ -117,7 +118,7 @@ export class AiRuleEngineController {
 
   /** 获取指定引擎详情 */
   @Get('engines/:id')
-  getEngineDetail(@Param('id') id: string): unknown {
+  getEngineDetail(@Param('id') id: string): EngineDetail {
     const detail = this.aiRuleEngineService.getEngineDetail(id)
     if (!detail) throw new Error(`Engine ${id} not found`)
     return detail
@@ -128,7 +129,7 @@ export class AiRuleEngineController {
   updateEngineConfig(
     @Param('id') id: string,
     @Body() config: import('./ai-rule-engine.dto').EngineConfigUpdateDto
-  ): unknown {
+  ): EngineDetail {
     const detail = this.aiRuleEngineService.updateEngineConfig(id, config as any)
     if (!detail) throw new Error(`Engine ${id} not found`)
     return detail
@@ -136,7 +137,7 @@ export class AiRuleEngineController {
 
   /** 重置引擎到默认状态 */
   @Post('engines/:id/reset')
-  resetEngine(@Param('id') id: string): unknown {
+  resetEngine(@Param('id') id: string): EngineDetail {
     const detail = this.aiRuleEngineService.resetEngine(id)
     if (!detail) throw new Error(`Engine ${id} not found`)
     return detail
