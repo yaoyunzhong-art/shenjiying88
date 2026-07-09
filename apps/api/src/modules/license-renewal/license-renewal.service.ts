@@ -154,7 +154,7 @@ export class LicenseRenewalService {
    * 查询续费记录列表
    */
   async listRecords(queryDto: RenewalRecordQueryDto): Promise<RenewalRecordListResponseDto> {
-    const { page = 1, pageSize = 10, licenseId, tenantId, status, startDate, endDate } = queryDto
+    const { page = 1, pageSize = 10, licenseId, tenantId, status, startDate, endDate, packageName } = queryDto
 
     let filtered = [...this.records]
 
@@ -168,6 +168,9 @@ export class LicenseRenewalService {
     if (endDate) {
       const end = new Date(endDate)
       filtered = filtered.filter((r) => r.createdAt <= end)
+    }
+    if (packageName) {
+      filtered = filtered.filter((r) => r.packageName === packageName)
     }
 
     // Sort by newest first

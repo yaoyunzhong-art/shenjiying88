@@ -29,6 +29,7 @@ export class RenewalRecordQueryDto {
   status?: 'pending' | 'success' | 'failed'
   startDate?: string
   endDate?: string
+  packageName?: string
 }
 
 export class RenewalRecordResponseDto {

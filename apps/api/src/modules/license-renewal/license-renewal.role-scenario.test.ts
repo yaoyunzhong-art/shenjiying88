@@ -164,8 +164,9 @@ class LicenseRenewalMockService {
     status?: string
     startDate?: string
     endDate?: string
+    packageName?: string
   }): Promise<{ data: RenewalRecord[]; total: number; page: number; pageSize: number }> {
-    const { page = 1, pageSize = 10, licenseId, tenantId, status, startDate, endDate } = query
+    const { page = 1, pageSize = 10, licenseId, tenantId, status, startDate, endDate, packageName } = query
     let filtered = [...this.records]
     if (licenseId) filtered = filtered.filter((r) => r.licenseId === licenseId)
     if (tenantId) filtered = filtered.filter((r) => r.tenantId === tenantId)
@@ -177,6 +178,9 @@ class LicenseRenewalMockService {
     if (endDate) {
       const end = new Date(endDate)
       filtered = filtered.filter((r) => r.createdAt <= end)
+    }
+    if (packageName) {
+      filtered = filtered.filter((r) => r.packageName === packageName)
     }
     filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     const total = filtered.length
