@@ -1133,6 +1133,9 @@ export type { SpaceProps, SpaceDirection, SpaceSize } from './components/Space';
 export { InfoCard } from './components/InfoCard';
 export type { InfoCardProps, InfoCardItem } from './components/InfoCard';
 
+export { SectionHeader } from './components/SectionHeader';
+export type { SectionHeaderProps, SectionHeaderAction } from './components/SectionHeader';
+
 export { Empty } from './components/Empty';
 export type { EmptyProps } from './components/Empty';
 
