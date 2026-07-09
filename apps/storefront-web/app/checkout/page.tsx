@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   PageShell,
   FormField,
@@ -10,6 +10,9 @@ import {
   Button,
   SubmitButton,
   FormSubmitFeedback,
+  InputNumber,
+  RadioGroup,
+  Divider,
 } from '@m5/ui';
 
 // ==================== 类型定义 ====================
@@ -20,6 +23,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   image?: string;
+  category?: string;
 }
 
 export interface CheckoutFormData {
@@ -32,26 +36,50 @@ export interface CheckoutFormData {
   paymentMethod: string;
   agreeTerms: boolean;
   remark: string;
+  couponCode: string;
 }
 
+export type PaymentMethodValue = 'wechat' | 'alipay' | 'cash' | 'member_card';
+
+// ==================== 默认数据和常量 ====================
+
 const defaultCart: CartItem[] = [
-  { id: 'p1', name: '基础护肤套装', price: 299, quantity: 1 },
-  { id: 'p2', name: '深层清洁面膜（5片装）', price: 89, quantity: 2 },
-  { id: 'p3', name: '防晒霜 SPF50+', price: 139, quantity: 1 },
+  { id: 'p1', name: '基础护肤套装', price: 299, quantity: 1, category: '护肤品' },
+  { id: 'p2', name: '深层清洁面膜（5片装）', price: 89, quantity: 2, category: '面膜' },
+  { id: 'p3', name: '防晒霜 SPF50+', price: 139, quantity: 1, category: '防晒' },
+  { id: 'p4', name: '舒缓保湿喷雾', price: 59, quantity: 1, category: '护肤品' },
+  { id: 'p5', name: '卸妆油（200ml）', price: 79, quantity: 0, category: '清洁' },
 ];
 
 const deliveryOptions = [
   { label: '标准配送（3-5天）', value: 'standard' },
-  { label: '加急配送（1-2天）', value: 'express' },
+  { label: '加急配送（1-2天）', value: 'express', extra: '¥10.00' },
   { label: '门店自提', value: 'pickup' },
 ];
 
-const paymentOptions = [
-  { label: '微信支付', value: 'wechat' },
-  { label: '支付宝', value: 'alipay' },
-  { label: '银行卡', value: 'card' },
-  { label: '到店支付', value: 'store' },
+const FREE_SHIPPING_THRESHOLD = 199;
+const EXPRESS_FEE = 10;
+
+interface PaymentOption {
+  value: PaymentMethodValue;
+  label: string;
+  icon: string;
+  description: string;
+}
+
+const paymentOptions: PaymentOption[] = [
+  { value: 'wechat', label: '微信支付', icon: '💳', description: '微信扫码支付' },
+  { value: 'alipay', label: '支付宝', icon: '🔵', description: '支付宝扫码支付' },
+  { value: 'cash', label: '现金', icon: '💵', description: '到店付款' },
+  { value: 'member_card', label: '会员卡', icon: '🎫', description: '余额/积分支付' },
 ];
+
+// 优惠券模拟
+const VALID_COUPONS: Record<string, { label: string; discount: number; minAmount: number }> = {
+  'WELCOME10': { label: '新客首单立减', discount: 10, minAmount: 0 },
+  'SAVE20': { label: '满200减20', discount: 20, minAmount: 200 },
+  'VIP50': { label: 'VIP专属满减', discount: 50, minAmount: 500 },
+};
 
 // ==================== 验证规则 ====================
 
@@ -60,20 +88,206 @@ function validateForm(data: CheckoutFormData): Partial<Record<keyof CheckoutForm
 
   if (!data.name.trim()) errors.name = '请输入收件人姓名';
   if (!data.phone.trim()) errors.phone = '请输入手机号';
-  else if (!/^1\d{10}$/.test(data.phone.trim())) errors.phone = '手机号格式不正确';
+  else if (!/^1\d{10}$/.test(data.phone.trim())) errors.phone = '手机号格式不正确（11位数字）';
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.email = '邮箱格式不正确';
   if (!data.address.trim()) errors.address = '请输入收货地址';
   if (!data.city.trim()) errors.city = '请输入所在城市';
   if (!data.deliveryMethod) errors.deliveryMethod = '请选择配送方式';
   if (!data.paymentMethod) errors.paymentMethod = '请选择支付方式';
-  if (!data.agreeTerms) errors.agreeTerms = '请同意服务条款';
+  if (!data.agreeTerms) errors.agreeTerms = '请先同意服务条款';
 
   return errors;
 }
 
-// ==================== 组件 ====================
+// ==================== 子组件 ====================
+
+/** 数量调整器 */
+function QuantityAdjuster({
+  itemId,
+  quantity,
+  onQuantityChange,
+}: {
+  itemId: string;
+  quantity: number;
+  onQuantityChange: (id: string, delta: number) => void;
+}) {
+  return (
+    <div
+      data-testid={`qty-adjuster-${itemId}`}
+      style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+    >
+      <button
+        data-testid={`qty-minus-${itemId}`}
+        type="button"
+        disabled={quantity <= 1}
+        onClick={() => onQuantityChange(itemId, -1)}
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: 6,
+          border: '1px solid rgba(148,163,184,0.25)',
+          background: quantity <= 1 ? 'rgba(148,163,184,0.08)' : 'rgba(148,163,184,0.12)',
+          color: quantity <= 1 ? '#64748b' : '#e2e8f0',
+          cursor: quantity <= 1 ? 'not-allowed' : 'pointer',
+          fontSize: 14,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          lineHeight: 1,
+        }}
+      >
+        −
+      </button>
+      <span
+        data-testid={`qty-value-${itemId}`}
+        style={{
+          minWidth: 24,
+          textAlign: 'center',
+          fontSize: 13,
+          fontWeight: 600,
+          color: '#e2e8f0',
+        }}
+      >
+        {quantity}
+      </span>
+      <button
+        data-testid={`qty-plus-${itemId}`}
+        type="button"
+        onClick={() => onQuantityChange(itemId, 1)}
+        disabled={quantity >= 99}
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: 6,
+          border: '1px solid rgba(148,163,184,0.25)',
+          background: 'rgba(59,130,246,0.15)',
+          color: '#60a5fa',
+          cursor: 'pointer',
+          fontSize: 14,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          lineHeight: 1,
+        }}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+/** 支付方式卡片 */
+function PaymentMethodCard({
+  option,
+  selected,
+  onSelect,
+}: {
+  option: PaymentOption;
+  selected: boolean;
+  onSelect: (value: PaymentMethodValue) => void;
+}) {
+  return (
+    <button
+      data-testid={`payment-${option.value}`}
+      type="button"
+      onClick={() => onSelect(option.value)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        width: '100%',
+        padding: '10px 14px',
+        borderRadius: 10,
+        border: selected
+          ? '2px solid #60a5fa'
+          : '1px solid rgba(148,163,184,0.15)',
+        background: selected
+          ? 'rgba(59,130,246,0.08)'
+          : 'rgba(15,23,42,0.4)',
+        cursor: 'pointer',
+        textAlign: 'left',
+        transition: 'all 0.15s',
+        color: selected ? '#e2e8f0' : '#94a3b8',
+        fontWeight: selected ? 600 : 400,
+      }}
+    >
+      <span style={{ fontSize: 22, lineHeight: 1 }}>{option.icon}</span>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 14, color: selected ? '#f1f5f9' : '#cbd5e1' }}>
+          {option.label}
+        </div>
+        <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>
+          {option.description}
+        </div>
+      </div>
+      {selected && (
+        <span style={{ color: '#60a5fa', fontSize: 16 }}>✓</span>
+      )}
+    </button>
+  );
+}
+
+/** 购物车商品行 */
+function CartItemRow({
+  item,
+  onQuantityChange,
+}: {
+  item: CartItem;
+  onQuantityChange: (id: string, delta: number) => void;
+}) {
+  const lineTotal = item.price * item.quantity;
+  return (
+    <div
+      data-testid={`cart-item-${item.id}`}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '10px 0',
+        borderBottom: '1px solid rgba(148,163,184,0.08)',
+      }}
+    >
+      {/* 商品信息 */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 500, marginBottom: 2 }}>
+          {item.name}
+        </div>
+        <div style={{ fontSize: 12, color: '#64748b' }}>
+          ¥{item.price.toFixed(2)} / 件
+        </div>
+      </div>
+      {/* 数量调整 */}
+      <QuantityAdjuster
+        itemId={item.id}
+        quantity={item.quantity}
+        onQuantityChange={onQuantityChange}
+      />
+      {/* 小计 */}
+      <div
+        data-testid={`line-total-${item.id}`}
+        style={{
+          minWidth: 70,
+          textAlign: 'right',
+          fontSize: 13,
+          fontWeight: 600,
+          color: '#f1f5f9',
+        }}
+      >
+        ¥{lineTotal.toFixed(2)}
+      </div>
+    </div>
+  );
+}
+
+// ==================== 主页面组件 ====================
 
 export default function CheckoutPage() {
+  // ---- 商品列表（可编辑） ----
+  const [cartItems, setCartItems] = useState<CartItem[]>(
+    defaultCart.filter((i) => i.quantity > 0),
+  );
+
+  // ---- 表单数据 ----
   const [formData, setFormData] = useState<CheckoutFormData>({
     name: '',
     phone: '',
@@ -84,15 +298,48 @@ export default function CheckoutPage() {
     paymentMethod: '',
     agreeTerms: false,
     remark: '',
+    couponCode: '',
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof CheckoutFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message?: string } | null>(null);
+  const [couponStatus, setCouponStatus] = useState<{ valid: boolean; message: string; discount?: number } | null>(null);
 
-  const totalPrice = defaultCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const itemCount = defaultCart.reduce((sum, item) => sum + item.quantity, 0);
+  // ---- 计算金额 ----
+  const activeItems = useMemo(() => cartItems.filter((i) => i.quantity > 0), [cartItems]);
+  const itemCount = useMemo(
+    () => activeItems.reduce((s, i) => s + i.quantity, 0),
+    [activeItems],
+  );
+  const subtotal = useMemo(
+    () => activeItems.reduce((s, i) => s + i.price * i.quantity, 0),
+    [activeItems],
+  );
 
+  const shippingFee = useMemo(() => {
+    if (formData.deliveryMethod === 'pickup') return 0;
+    if (formData.deliveryMethod === 'express') return EXPRESS_FEE;
+    if (subtotal >= FREE_SHIPPING_THRESHOLD) return 0;
+    return 15;
+  }, [formData.deliveryMethod, subtotal]);
+
+  const couponDiscount = useMemo(() => {
+    if (couponStatus?.valid && couponStatus.discount) return couponStatus.discount;
+    return 0;
+  }, [couponStatus]);
+
+  const total = useMemo(
+    () => Math.max(0, subtotal + shippingFee - couponDiscount),
+    [subtotal, shippingFee, couponDiscount],
+  );
+
+  const canCheckout = useMemo(
+    () => activeItems.length > 0,
+    [activeItems],
+  );
+
+  // ---- 回调 ----
   const updateField = useCallback(<K extends keyof CheckoutFormData>(
     key: K,
     value: CheckoutFormData[K],
@@ -108,7 +355,63 @@ export default function CheckoutPage() {
     });
   }, []);
 
+  const handleQuantityChange = useCallback((id: string, delta: number) => {
+    setCartItems((prev) =>
+      prev
+        .map((item) =>
+          item.id === id
+            ? { ...item, quantity: Math.max(0, Math.min(99, item.quantity + delta)) }
+            : item,
+        )
+        .filter((item) => item.quantity > 0),
+    );
+  }, []);
+
+  const handlePaymentSelect = useCallback((value: PaymentMethodValue) => {
+    setFormData((prev) => ({ ...prev, paymentMethod: value }));
+    setErrors((prev) => {
+      if (prev.paymentMethod) {
+        const next = { ...prev };
+        delete next.paymentMethod;
+        return next;
+      }
+      return prev;
+    });
+  }, []);
+
+  const handleApplyCoupon = useCallback(() => {
+    const code = formData.couponCode.trim().toUpperCase();
+    if (!code) {
+      setCouponStatus({ valid: false, message: '请输入优惠券码' });
+      return;
+    }
+    const coupon = VALID_COUPONS[code];
+    if (!coupon) {
+      setCouponStatus({ valid: false, message: '无效的优惠券码' });
+      return;
+    }
+    if (subtotal < coupon.minAmount) {
+      setCouponStatus({
+        valid: false,
+        message: `需满 ¥${coupon.minAmount} 才能使用此券`,
+      });
+      return;
+    }
+    setCouponStatus({
+      valid: true,
+      message: `${coupon.label} -¥${coupon.discount}`,
+      discount: coupon.discount,
+    });
+  }, [formData.couponCode, subtotal]);
+
+  const handleRemoveCoupon = useCallback(() => {
+    setCouponStatus(null);
+    setFormData((prev) => ({ ...prev, couponCode: '' }));
+  }, []);
+
   const handleSubmit = useCallback(async () => {
+    if (!canCheckout) return;
+
     const validationErrors = validateForm(formData);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -120,9 +423,13 @@ export default function CheckoutPage() {
     setSubmitResult(null);
 
     try {
-      // Mock submit — 模拟 API 调用
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      setSubmitResult({ success: true, message: '订单已提交成功！' });
+      setSubmitResult({
+        success: true,
+        message: `订单已提交成功！订单金额 ¥${total.toFixed(2)}，支付方式：${
+          paymentOptions.find((p) => p.value === formData.paymentMethod)?.label ?? formData.paymentMethod
+        }`,
+      });
     } catch (err) {
       setSubmitResult({
         success: false,
@@ -131,7 +438,7 @@ export default function CheckoutPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData]);
+  }, [formData, total, canCheckout]);
 
   const handleReset = useCallback(() => {
     setFormData({
@@ -144,18 +451,29 @@ export default function CheckoutPage() {
       paymentMethod: '',
       agreeTerms: false,
       remark: '',
+      couponCode: '',
     });
+    setCartItems(defaultCart.filter((i) => i.quantity > 0));
     setErrors({});
     setSubmitResult(null);
+    setCouponStatus(null);
   }, []);
 
+  // ---- 渲染 ----
   return (
     <PageShell
-      title="结算"
-      description="确认商品信息并提交订单"
+      title="收银台"
+      description="确认商品信息、选择支付方式并提交订单"
     >
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 24, alignItems: 'start' }}>
-        {/* ===== 左侧：表单区域 ===== */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 380px',
+          gap: 24,
+          alignItems: 'start',
+        }}
+      >
+        {/* ==================== 左侧：表单区域 ==================== */}
         <div
           data-testid="checkout-form-section"
           style={{
@@ -165,6 +483,7 @@ export default function CheckoutPage() {
             padding: 24,
           }}
         >
+          {/* ---- 收件信息 ---- */}
           <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 600, color: '#e2e8f0' }}>
             收件信息
           </h3>
@@ -172,6 +491,7 @@ export default function CheckoutPage() {
           <FormField label="收件人姓名" htmlFor="checkout-name" required error={errors.name}>
             <Input
               id="checkout-name"
+              data-testid="input-name"
               value={formData.name}
               onChange={(e) => updateField('name', e.target.value)}
               placeholder="请输入收件人姓名"
@@ -182,6 +502,7 @@ export default function CheckoutPage() {
             <FormField label="手机号" htmlFor="checkout-phone" required error={errors.phone}>
               <Input
                 id="checkout-phone"
+                data-testid="input-phone"
                 value={formData.phone}
                 onChange={(e) => updateField('phone', e.target.value)}
                 placeholder="请输入手机号"
@@ -190,6 +511,7 @@ export default function CheckoutPage() {
             <FormField label="邮箱" htmlFor="checkout-email" error={errors.email}>
               <Input
                 id="checkout-email"
+                data-testid="input-email"
                 value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
                 placeholder="选填"
@@ -200,6 +522,7 @@ export default function CheckoutPage() {
           <FormField label="收货地址" htmlFor="checkout-address" required error={errors.address}>
             <Input
               id="checkout-address"
+              data-testid="input-address"
               value={formData.address}
               onChange={(e) => updateField('address', e.target.value)}
               placeholder="请输入详细地址"
@@ -209,18 +532,23 @@ export default function CheckoutPage() {
           <FormField label="所在城市" htmlFor="checkout-city" required error={errors.city}>
             <Input
               id="checkout-city"
+              data-testid="input-city"
               value={formData.city}
               onChange={(e) => updateField('city', e.target.value)}
               placeholder="请输入城市名"
             />
           </FormField>
 
-          <h3 style={{ margin: '24px 0 16px', fontSize: 16, fontWeight: 600, color: '#e2e8f0' }}>
-            配送 &amp; 支付
+          {/* ---- 配送 & 支付 ---- */}
+          <Divider style={{ margin: '20px 0 16px' }} />
+
+          <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#e2e8f0' }}>
+            配送方式
           </h3>
 
           <FormField label="配送方式" required error={errors.deliveryMethod}>
             <Select
+              data-testid="select-delivery"
               value={formData.deliveryMethod}
               onChange={(v) => updateField('deliveryMethod', v)}
               options={deliveryOptions}
@@ -228,17 +556,40 @@ export default function CheckoutPage() {
             />
           </FormField>
 
-          <FormField label="支付方式" required error={errors.paymentMethod}>
-            <Select
-              value={formData.paymentMethod}
-              onChange={(v) => updateField('paymentMethod', v)}
-              options={paymentOptions}
-              placeholder="请选择支付方式"
-            />
-          </FormField>
+          {/* ---- 支付方式 ---- */}
+          <Divider style={{ margin: '20px 0 16px' }} />
 
+          <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 600, color: '#e2e8f0' }}>
+            支付方式
+          </h3>
+
+          <div
+            data-testid="payment-methods"
+            style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}
+          >
+            {paymentOptions.map((opt) => (
+              <PaymentMethodCard
+                key={opt.value}
+                option={opt}
+                selected={formData.paymentMethod === opt.value}
+                onSelect={handlePaymentSelect}
+              />
+            ))}
+          </div>
+          {errors.paymentMethod && (
+            <p
+              data-testid="payment-error"
+              style={{ fontSize: 12, color: '#fca5a5', margin: '4px 0 0' }}
+            >
+              {errors.paymentMethod}
+            </p>
+          )}
+
+          {/* ---- 备注 ---- */}
+          <Divider style={{ margin: '20px 0 16px' }} />
           <FormField label="备注" helper="选填，不超过200字">
             <textarea
+              data-testid="textarea-remark"
               value={formData.remark}
               onChange={(e) => updateField('remark', e.target.value)}
               placeholder="订单备注..."
@@ -259,8 +610,10 @@ export default function CheckoutPage() {
             />
           </FormField>
 
-          <div style={{ margin: '12px 0 20px' }}>
+          {/* ---- 同意条款 ---- */}
+          <div style={{ margin: '12px 0' }}>
             <Checkbox
+              data-testid="checkbox-terms"
               checked={formData.agreeTerms}
               onChange={(checked) => updateField('agreeTerms', checked)}
               label="我已阅读并同意服务条款和隐私政策"
@@ -272,6 +625,7 @@ export default function CheckoutPage() {
             )}
           </div>
 
+          {/* ---- 提交反馈 ---- */}
           {submitResult && (
             <div style={{ marginBottom: 16 }}>
               <FormSubmitFeedback
@@ -281,26 +635,54 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          <SubmitButton
-            onClick={handleSubmit}
-            loading={isSubmitting}
-            disabled={isSubmitting}
-            variant="primary"
-            style={{ width: '100%' }}
-          >
-            {isSubmitting ? '正在提交...' : `提交订单 (¥${totalPrice.toFixed(2)})`}
-          </SubmitButton>
+          {/* ---- 提交按钮 ---- */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <SubmitButton
+              data-testid="btn-submit"
+              onClick={handleSubmit}
+              loading={isSubmitting}
+              disabled={isSubmitting || !canCheckout}
+              variant="primary"
+              style={{ flex: 1 }}
+            >
+              {isSubmitting ? '正在提交...' : `确认支付 ¥${total.toFixed(2)}`}
+            </SubmitButton>
+
+            <Button
+              data-testid="btn-reset"
+              onClick={handleReset}
+              variant="ghost"
+              size="sm"
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              重置
+            </Button>
+          </div>
+
+          {!canCheckout && (
+            <p
+              data-testid="empty-cart-hint"
+              style={{
+                fontSize: 12,
+                color: '#fbbf24',
+                margin: '8px 0 0',
+                textAlign: 'center',
+              }}
+            >
+              购物车为空，请先添加商品
+            </p>
+          )}
 
           {submitResult?.success && (
             <div style={{ marginTop: 12, textAlign: 'center' }}>
-              <Button onClick={handleReset} variant="ghost" size="sm">
+              <Button onClick={handleReset} variant="outline" size="sm">
                 继续购物
               </Button>
             </div>
           )}
         </div>
 
-        {/* ===== 右侧：订单摘要 ===== */}
+        {/* ==================== 右侧：订单摘要 ==================== */}
         <div
           data-testid="checkout-summary-section"
           style={{
@@ -312,53 +694,122 @@ export default function CheckoutPage() {
             top: 16,
           }}
         >
-          <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#e2e8f0' }}>
-            订单摘要
+          <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 600, color: '#e2e8f0' }}>
+            商品清单
           </h3>
+          <p
+            data-testid="cart-item-count"
+            style={{ fontSize: 12, color: '#64748b', margin: '0 0 12px' }}
+          >
+            共 {activeItems.length} 种商品 / {itemCount} 件
+          </p>
 
-          <div style={{ marginBottom: 16, maxHeight: 320, overflowY: 'auto' }}>
-            {defaultCart.map((item) => (
+          {/* ---- 可编辑商品列表 ---- */}
+          <div style={{ marginBottom: 16, maxHeight: 360, overflowY: 'auto' }}>
+            {activeItems.length === 0 ? (
               <div
-                key={item.id}
+                data-testid="cart-empty"
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '8px 0',
-                  borderBottom: '1px solid rgba(148,163,184,0.08)',
+                  padding: 24,
+                  textAlign: 'center',
+                  color: '#64748b',
+                  fontSize: 13,
                 }}
               >
-                <div>
-                  <span style={{ fontSize: 13, color: '#e2e8f0' }}>{item.name}</span>
-                  <span style={{ fontSize: 12, color: '#64748b', marginLeft: 8 }}>
-                    x{item.quantity}
-                  </span>
-                </div>
-                <span style={{ fontSize: 13, fontWeight: 500, color: '#f1f5f9' }}>
-                  ¥{(item.price * item.quantity).toFixed(2)}
-                </span>
+                购物车为空
               </div>
-            ))}
+            ) : (
+              activeItems.map((item) => (
+                <CartItemRow
+                  key={item.id}
+                  item={item}
+                  onQuantityChange={handleQuantityChange}
+                />
+              ))
+            )}
           </div>
 
+          {/* ---- 优惠券 ---- */}
+          <Divider style={{ margin: '8px 0 12px' }} />
+          <div data-testid="coupon-section" style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <Input
+                data-testid="input-coupon"
+                value={formData.couponCode}
+                onChange={(e) => updateField('couponCode', e.target.value)}
+                placeholder="输入优惠券码"
+                style={{ flex: 1 }}
+                size="sm"
+              />
+              {couponStatus?.valid ? (
+                <Button
+                  data-testid="btn-remove-coupon"
+                  onClick={handleRemoveCoupon}
+                  variant="ghost"
+                  size="sm"
+                  style={{ color: '#f87171', whiteSpace: 'nowrap' }}
+                >
+                  移除
+                </Button>
+              ) : (
+                <Button
+                  data-testid="btn-apply-coupon"
+                  onClick={handleApplyCoupon}
+                  variant="outline"
+                  size="sm"
+                  disabled={!formData.couponCode.trim()}
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  使用
+                </Button>
+              )}
+            </div>
+            {couponStatus && (
+              <p
+                data-testid="coupon-status"
+                style={{
+                  fontSize: 11,
+                  margin: '4px 0 0',
+                  color: couponStatus.valid ? '#4ade80' : '#fca5a5',
+                }}
+              >
+                {couponStatus.valid ? '✓ ' : '✗ '}
+                {couponStatus.message}
+              </p>
+            )}
+          </div>
+
+          {/* ---- 金额汇总 ---- */}
+          <Divider style={{ margin: '8px 0 12px' }} />
           <div
-            style={{
-              padding: '12px 0',
-              borderTop: '1px solid rgba(148,163,184,0.12)',
-            }}
+            data-testid="price-summary"
+            style={{ display: 'flex', flexDirection: 'column', gap: 6 }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#94a3b8', marginBottom: 4 }}>
-              <span>商品数量</span>
-              <span>{itemCount} 件</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#94a3b8', marginBottom: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#94a3b8' }}>
               <span>商品小计</span>
-              <span>¥{totalPrice.toFixed(2)}</span>
+              <span data-testid="subtotal-amount">¥{subtotal.toFixed(2)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#94a3b8', marginBottom: 8 }}>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#94a3b8' }}>
               <span>配送费</span>
-              <span>{totalPrice >= 199 ? '免运费' : '¥15.00'}</span>
+              <span data-testid="shipping-fee">
+                {formData.deliveryMethod === 'pickup'
+                  ? '免运费（自提）'
+                  : shippingFee === 0
+                    ? '免运费'
+                    : `¥${shippingFee.toFixed(2)}`}
+              </span>
             </div>
+
+            {couponDiscount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#4ade80' }}>
+                <span>优惠减免</span>
+                <span data-testid="coupon-discount" style={{ fontWeight: 500 }}>
+                  -¥{couponDiscount.toFixed(2)}
+                </span>
+              </div>
+            )}
+
             <div
               style={{
                 display: 'flex',
@@ -366,12 +817,13 @@ export default function CheckoutPage() {
                 fontSize: 16,
                 fontWeight: 700,
                 color: '#fbbf24',
-                paddingTop: 8,
-                borderTop: '1px solid rgba(148,163,184,0.12)',
+                paddingTop: 10,
+                marginTop: 4,
+                borderTop: '1px solid rgba(148,163,184,0.15)',
               }}
             >
               <span>合计</span>
-              <span>¥{(totalPrice >= 199 ? totalPrice : totalPrice + 15).toFixed(2)}</span>
+              <span data-testid="total-amount">¥{total.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -379,4 +831,3 @@ export default function CheckoutPage() {
     </PageShell>
   );
 }
-
