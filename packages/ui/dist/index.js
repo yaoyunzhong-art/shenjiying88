@@ -332,6 +332,7 @@ __export(index_exports, {
   Text: () => Text,
   TextArea: () => TextArea,
   TierDistributionChart: () => TierDistributionChart,
+  TierUpgradePanel: () => TierUpgradePanel,
   TimePicker: () => TimePicker,
   Timeline: () => Timeline,
   ToastContainer: () => ToastContainer,
@@ -69251,8 +69252,214 @@ var DeliveryPersonDashboard = ({
   ] });
 };
 
-// src/components/InventoryManagerDashboard.tsx
+// src/components/TierUpgradePanel.tsx
 var import_jsx_runtime273 = require("react/jsx-runtime");
+var CARD_STYLES = {
+  default: {
+    background: "rgba(15, 23, 42, 0.35)",
+    border: "1px solid rgba(148, 163, 184, 0.18)"
+  },
+  elevated: {
+    background: "rgba(15, 23, 42, 0.5)",
+    border: "1px solid rgba(148, 163, 184, 0.16)",
+    boxShadow: "0 4px 24px rgba(0, 0, 0, 0.25)"
+  },
+  outlined: {
+    background: "transparent",
+    border: "1px solid rgba(148, 163, 184, 0.2)"
+  },
+  ghost: {
+    background: "transparent",
+    border: "none"
+  }
+};
+function formatNumber7(n) {
+  if (n >= 1e4) return (n / 1e4).toFixed(1) + "\u4E07";
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + "k";
+  return n.toLocaleString();
+}
+function TierUpgradePanel({
+  currentTier,
+  nextTier,
+  currentValue,
+  unit = "\u79EF\u5206",
+  estimatedDays,
+  metric = "points",
+  variant = "default",
+  style,
+  "data-testid": dataTestId
+}) {
+  const cardStyle3 = CARD_STYLES[variant] ?? CARD_STYLES.default;
+  const isMaxLevel = nextTier === null;
+  const progress = isMaxLevel ? 100 : Math.min(100, Math.round(currentValue / nextTier.threshold * 100));
+  const remaining = isMaxLevel ? 0 : Math.max(0, nextTier.threshold - currentValue);
+  return /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)(
+    "div",
+    {
+      "data-testid": dataTestId,
+      style: {
+        borderRadius: 16,
+        padding: 20,
+        ...cardStyle3,
+        ...style
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: { fontSize: 14, fontWeight: 600, color: "#94a3b8", marginBottom: 12 }, children: "\u4F1A\u5458\u7B49\u7EA7" }),
+        /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
+            "div",
+            {
+              "data-testid": "tier-current-badge",
+              style: {
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                background: currentTier.color,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 18,
+                fontWeight: 800,
+                color: "#fff"
+              },
+              children: currentTier.name.charAt(0)
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: { fontSize: 16, fontWeight: 700, color: "#f8fafc" }, children: currentTier.name }),
+            /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { style: { fontSize: 12, color: "#64748b", marginTop: 2 }, children: [
+              formatNumber7(currentValue),
+              " ",
+              unit
+            ] })
+          ] })
+        ] }),
+        !isMaxLevel && nextTier ? /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { "data-testid": "tier-upgrade-progress", style: { marginBottom: 12 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)(
+            "div",
+            {
+              style: {
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 12,
+                color: "#94a3b8",
+                marginBottom: 6
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { children: "\u5347\u7EA7\u8FDB\u5EA6" }),
+                /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { children: [
+                  progress,
+                  "%"
+                ] })
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
+            "div",
+            {
+              style: {
+                height: 8,
+                borderRadius: 4,
+                background: "rgba(148, 163, 184, 0.15)",
+                overflow: "hidden"
+              },
+              children: /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
+                "div",
+                {
+                  "data-testid": "tier-progress-bar",
+                  style: {
+                    height: "100%",
+                    borderRadius: 4,
+                    width: `${progress}%`,
+                    background: `linear-gradient(90deg, ${currentTier.color}, ${nextTier.color})`,
+                    transition: "width 0.6s ease"
+                  }
+                }
+              )
+            }
+          )
+        ] }) : null,
+        isMaxLevel ? /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
+          "div",
+          {
+            "data-testid": "tier-max-level",
+            style: {
+              padding: "10px 14px",
+              borderRadius: 10,
+              background: "rgba(34, 197, 94, 0.1)",
+              border: "1px solid rgba(34, 197, 94, 0.25)",
+              color: "#4ade80",
+              fontSize: 13,
+              fontWeight: 500
+            },
+            children: "\u5DF2\u8FBE\u6700\u9AD8\u7B49\u7EA7 \u{1F389}"
+          }
+        ) : nextTier ? /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { "data-testid": "tier-next-info", style: { marginBottom: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 14px",
+              borderRadius: 10,
+              background: "rgba(148, 163, 184, 0.08)"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
+                "div",
+                {
+                  style: {
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: nextTier.color,
+                    flexShrink: 0
+                  }
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 13, color: "#cbd5e1" }, children: [
+                  "\u8DDD ",
+                  /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("strong", { style: { color: nextTier.color }, children: nextTier.name })
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { style: { fontSize: 12, color: "#64748b", marginTop: 2 }, children: [
+                  "\u8FD8\u9700 ",
+                  formatNumber7(remaining),
+                  " ",
+                  unit
+                ] })
+              ] })
+            ]
+          }
+        ) }) : null,
+        estimatedDays !== void 0 && !isMaxLevel ? /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)(
+          "div",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 12,
+              color: "#64748b"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { children: "\u{1F4C5}" }),
+              /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { children: [
+                "\u9884\u8BA1\u5347\u7EA7\u65F6\u95F4\uFF1A\u7EA6 ",
+                /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("strong", { style: { color: "#f8fafc" }, children: estimatedDays }),
+                " \u5929\u540E"
+              ] })
+            ]
+          }
+        ) : null
+      ]
+    }
+  );
+}
+
+// src/components/InventoryManagerDashboard.tsx
+var import_jsx_runtime274 = require("react/jsx-runtime");
 var SECTION_STYLE14 = {
   marginBottom: 24
 };
@@ -69358,11 +69565,11 @@ var CATEGORY_COLORS4 = [
   "#e879f9"
 ];
 var SLOW_COLUMNS = [
-  { key: "sku", header: "SKU", width: "100px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: r.sku }) },
-  { key: "name", header: "\u5546\u54C1\u540D", width: "160px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: r.name }) },
-  { key: "currentQty", header: "\u5E93\u5B58", width: "60px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: r.currentQty }) },
-  { key: "sales30d", header: "\u8FD130\u5929\u9500\u91CF", width: "80px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: r.sales30d }) },
-  { key: "daysInStock", header: "\u5E93\u5B58\u5929\u6570", width: "70px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color: r.daysInStock > 90 ? "#f87171" : "#fbbf24" }, children: [
+  { key: "sku", header: "SKU", width: "100px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: r.sku }) },
+  { key: "name", header: "\u5546\u54C1\u540D", width: "160px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: r.name }) },
+  { key: "currentQty", header: "\u5E93\u5B58", width: "60px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: r.currentQty }) },
+  { key: "sales30d", header: "\u8FD130\u5929\u9500\u91CF", width: "80px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: r.sales30d }) },
+  { key: "daysInStock", header: "\u5E93\u5B58\u5929\u6570", width: "70px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("span", { style: { fontSize: 12, color: r.daysInStock > 90 ? "#f87171" : "#fbbf24" }, children: [
     r.daysInStock,
     "d"
   ] }) },
@@ -69370,7 +69577,7 @@ var SLOW_COLUMNS = [
     key: "capitalLocked",
     header: "\u5360\u7528\u8D44\u91D1",
     width: "90px",
-    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: [
+    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: [
       "\xA5",
       fmtCurrency9(r.capitalLocked)
     ] })
@@ -69379,18 +69586,18 @@ var SLOW_COLUMNS = [
     key: "suggestion",
     header: "\u5EFA\u8BAE",
     width: "70px",
-    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(StatusBadge2, { label: suggestionLabel(r.suggestion), variant: suggestionVariant(r.suggestion), size: "sm" })
+    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime274.jsx)(StatusBadge2, { label: suggestionLabel(r.suggestion), variant: suggestionVariant(r.suggestion), size: "sm" })
   }
 ];
 var SUPPLIER_COLUMNS = [
-  { key: "name", header: "\u4F9B\u5E94\u5546", width: "120px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: r.name }) },
+  { key: "name", header: "\u4F9B\u5E94\u5546", width: "120px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: r.name }) },
   {
     key: "onTimeRate",
     header: "\u51C6\u65F6\u4EA4\u4ED8\u7387",
     width: "90px",
     render: (r) => {
       const color = r.onTimeRate >= 0.95 ? "#4ade80" : r.onTimeRate >= 0.85 ? "#fbbf24" : "#f87171";
-      return /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color }, children: [
+      return /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("span", { style: { fontSize: 12, color }, children: [
         (r.onTimeRate * 100).toFixed(0),
         "%"
       ] });
@@ -69402,13 +69609,13 @@ var SUPPLIER_COLUMNS = [
     width: "80px",
     render: (r) => {
       const color = r.qualityRate >= 0.98 ? "#4ade80" : r.qualityRate >= 0.92 ? "#fbbf24" : "#f87171";
-      return /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color }, children: [
+      return /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("span", { style: { fontSize: 12, color }, children: [
         (r.qualityRate * 100).toFixed(0),
         "%"
       ] });
     }
   },
-  { key: "avgLeadDays", header: "\u5E73\u5747\u5230\u8D27\u5929\u6570", width: "90px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: [
+  { key: "avgLeadDays", header: "\u5E73\u5747\u5230\u8D27\u5929\u6570", width: "90px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: [
     r.avgLeadDays,
     "d"
   ] }) },
@@ -69416,7 +69623,7 @@ var SUPPLIER_COLUMNS = [
     key: "monthlyPurchase",
     header: "\u6708\u91C7\u8D2D\u989D",
     width: "90px",
-    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: [
+    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: [
       "\xA5",
       fmtCurrency9(r.monthlyPurchase)
     ] })
@@ -69425,7 +69632,7 @@ var SUPPLIER_COLUMNS = [
     key: "grade",
     header: "\u8BC4\u7EA7",
     width: "50px",
-    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
+    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime274.jsx)(
       "span",
       {
         style: {
@@ -69449,8 +69656,8 @@ function InventoryManagerDashboard({
   className
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { className, style: { padding: 24 }, "data-testid": "inventory-mgr-loading", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("div", { className, style: { padding: 24 }, "data-testid": "inventory-mgr-loading", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime274.jsx)(
         "div",
         {
           style: {
@@ -69459,7 +69666,7 @@ function InventoryManagerDashboard({
             gap: 14,
             marginBottom: 24
           },
-          children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
+          children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime274.jsx)(
             "div",
             {
               style: {
@@ -69474,7 +69681,7 @@ function InventoryManagerDashboard({
           ))
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: { textAlign: "center", color: "#64748b", fontSize: 13 }, children: "\u6B63\u5728\u52A0\u8F7D\u5E93\u5B58\u5206\u6790\u6570\u636E..." })
+      /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("div", { style: { textAlign: "center", color: "#64748b", fontSize: 13 }, children: "\u6B63\u5728\u52A0\u8F7D\u5E93\u5B58\u5206\u6790\u6570\u636E..." })
     ] });
   }
   const metricItems = metrics ? [
@@ -69510,9 +69717,9 @@ function InventoryManagerDashboard({
   ];
   const renderCategoryBreakdown = () => {
     if (!categoryBreakdown || categoryBreakdown.length === 0) return null;
-    return /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: CATEGORY_BAR_CONTAINER, children: categoryBreakdown.map((cat, index) => /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { style: CATEGORY_ROW_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: CATEGORY_LABEL_STYLE, children: cat.category }),
-      /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: CATEGORY_BAR_TRACK, children: /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("div", { style: CATEGORY_BAR_CONTAINER, children: categoryBreakdown.map((cat, index) => /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("div", { style: CATEGORY_ROW_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("span", { style: CATEGORY_LABEL_STYLE, children: cat.category }),
+      /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("div", { style: CATEGORY_BAR_TRACK, children: /* @__PURE__ */ (0, import_jsx_runtime274.jsx)(
         "div",
         {
           style: {
@@ -69522,24 +69729,24 @@ function InventoryManagerDashboard({
           }
         }
       ) }),
-      /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: CATEGORY_VALUE_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("span", { style: CATEGORY_VALUE_STYLE, children: [
         "\xA5",
         fmtCurrency9(cat.totalValue)
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: CATEGORY_PCT_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("span", { style: CATEGORY_PCT_STYLE, children: [
         cat.percentage.toFixed(1),
         "%"
       ] })
     ] }, cat.category)) });
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)(
     "div",
     {
       className,
       style: { padding: 24, color: "#f8fafc" },
       "data-testid": "inventory-mgr-root",
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime274.jsx)(
           "div",
           {
             style: {
@@ -69550,8 +69757,8 @@ function InventoryManagerDashboard({
               flexWrap: "wrap",
               gap: 10
             },
-            children: /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
+            children: /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime274.jsx)(
                 "h2",
                 {
                   style: {
@@ -69564,7 +69771,7 @@ function InventoryManagerDashboard({
                   children: title ?? "\u5E93\u5B58\u7ECF\u7406\u5DE5\u4F5C\u53F0"
                 }
               ),
-              lastUpdatedAt && /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)(
+              lastUpdatedAt && /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)(
                 "span",
                 {
                   style: {
@@ -69582,21 +69789,21 @@ function InventoryManagerDashboard({
             ] })
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: SECTION_STYLE14, children: /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(QuickStats, { items: metricItems, columns: 4, gap: 14, padding: 18 }) }),
-        categoryBreakdown && categoryBreakdown.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-category", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: SECTION_TITLE_STYLE11, children: "\u54C1\u7C7B\u5E93\u5B58\u5206\u5E03" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("div", { style: SECTION_STYLE14, children: /* @__PURE__ */ (0, import_jsx_runtime274.jsx)(QuickStats, { items: metricItems, columns: 4, gap: 14, padding: 18 }) }),
+        categoryBreakdown && categoryBreakdown.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-category", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("span", { style: SECTION_TITLE_STYLE11, children: "\u54C1\u7C7B\u5E93\u5B58\u5206\u5E03" }) }),
           renderCategoryBreakdown()
         ] }),
-        slowMovingItems && slowMovingItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-slow", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: SECTION_TITLE_STYLE11, children: [
+        slowMovingItems && slowMovingItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-slow", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("span", { style: SECTION_TITLE_STYLE11, children: [
             "\u6EDE\u9500 / \u79EF\u538B\u5546\u54C1",
-            /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 8 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 8 }, children: [
               "(",
               slowMovingItems.length,
               ")"
             ] })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime274.jsx)(
             DataTable,
             {
               columns: SLOW_COLUMNS,
@@ -69607,9 +69814,9 @@ function InventoryManagerDashboard({
             }
           )
         ] }),
-        supplierPerformances && supplierPerformances.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-suppliers", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: SECTION_TITLE_STYLE11, children: "\u4F9B\u5E94\u5546\u7EE9\u6548" }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
+        supplierPerformances && supplierPerformances.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime274.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-suppliers", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime274.jsx)("span", { style: SECTION_TITLE_STYLE11, children: "\u4F9B\u5E94\u5546\u7EE9\u6548" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime274.jsx)(
             DataTable,
             {
               columns: SUPPLIER_COLUMNS,
@@ -69928,6 +70135,7 @@ function InventoryManagerDashboard({
   Text,
   TextArea,
   TierDistributionChart,
+  TierUpgradePanel,
   TimePicker,
   Timeline,
   ToastContainer,

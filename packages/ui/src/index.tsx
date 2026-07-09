@@ -1357,6 +1357,10 @@ export type { AlertCorrelationDashboardProps, CorrelatedAlert, AlertCorrelationG
 export { DeliveryPersonDashboard } from './components/DeliveryPersonDashboard';
 export type { DeliveryPersonDashboardProps, DeliveryDailyStats, DeliveryOrder, RouteStop } from './components/DeliveryPersonDashboard';
 
+// --------------- TierUpgradePanel ---------------
+export { TierUpgradePanel } from './components/TierUpgradePanel';
+export type { TierUpgradePanelProps, TierInfo } from './components/TierUpgradePanel';
+
 // --------------- InventoryManagerDashboard ---------------
 export { InventoryManagerDashboard } from './components/InventoryManagerDashboard';
 export type { InventoryManagerDashboardProps, InventoryMetrics, SlowMovingItem, SupplierPerformance, CategoryBreakdown } from './components/InventoryManagerDashboard';
