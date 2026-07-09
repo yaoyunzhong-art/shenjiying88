@@ -289,7 +289,7 @@ export function StoreManagerDetail({ detail }: StoreManagerDetailProps) {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {detail.recentAlerts.map((alert) => {
-                const alertVar = ALERT_VARIANTS[alert.severity] || ALERT_VARIANTS.info;
+                const alertVar = (ALERT_VARIANTS[alert.severity] || ALERT_VARIANTS.info)!;
                 return (
                   <div
                     key={alert.id}
