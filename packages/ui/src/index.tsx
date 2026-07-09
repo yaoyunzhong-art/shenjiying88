@@ -170,6 +170,7 @@ export type {
   TrendGranularity,
 } from './components/AnomalyAlertTrendPanel';
 export { StoreManagerDashboard } from './components/StoreManagerDashboard';
+export { FranchiseOperationsDashboard } from './components/FranchiseOperationsDashboard';
 export { TrainingManagerDashboard } from './components/TrainingManagerDashboard';
 export { RegionalManagerDashboard } from './components/RegionalManagerDashboard';
 export type {
@@ -193,6 +194,11 @@ export type {
   DeviceStatusSummary,
   QuickAction,
 } from './components/StoreManagerDashboard';
+export type {
+  FranchiseOperationsDashboardProps,
+  FranchiseStore,
+  FranchiseOverviewMetrics,
+} from './components/FranchiseOperationsDashboard';
 export type {
   TrainingManagerDashboardProps,
   TrainingDailyMetrics,
