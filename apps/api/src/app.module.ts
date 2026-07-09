@@ -114,6 +114,7 @@ import { WebhookModule } from './modules/webhook/webhook.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { CurrencyModule } from './modules/currency/currency.module';
 import { AiMarketingModule } from './modules/ai-marketing/ai-marketing.module';
+import { OpenAPIModule } from './modules/openapi/openapi.module';
 
 @Module({
   imports: [
@@ -240,6 +241,7 @@ import { AiMarketingModule } from './modules/ai-marketing/ai-marketing.module';
     PermissionModule,
     CurrencyModule,
     AiMarketingModule,
+    OpenAPIModule,
   ],
   providers: [
     RequestGovernanceService,

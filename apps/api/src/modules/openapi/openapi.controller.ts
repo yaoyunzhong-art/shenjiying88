@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Param, Injectable } from '@nestjs/common'
+import { Controller, Get, Post, Delete, Body, Query, Param, Injectable, NotFoundException, HttpCode } from '@nestjs/common'
 import { APIKeyService } from './services/api-key.service'
 import { WebhookService } from './services/webhook.service'
 import { SandboxService } from './services/sandbox.service'
@@ -13,9 +13,16 @@ import type {
 } from './openapi.entity'
 
 /**
- * Phase-44 T174: OpenAPIController (开放 API 网关)
+ * Phase-44 T174 / P-44: OpenAPIController (开放 API 网关)
  *
- * 14 endpoint:
+ * P-44 补全端点:
+ *  GET    /openapi/docs             开放 API 规范文档
+ *  POST   /openapi/keys             创建 API Key (新式路径)
+ *  GET    /openapi/keys             列出 API Key
+ *  DELETE /openapi/keys/:id         删除/撤销 API Key
+ *  GET    /openapi/usage            使用统计
+ *
+ * 已有端点:
  *  API Key:
  *  POST /openapi/key/create        创建 API Key
  *  GET  /openapi/key/list          列出 API Key
@@ -57,6 +64,52 @@ export class OpenAPIController {
     private readonly usageSvc: UsageService,
     private readonly signValidator: SignValidator
   ) {}
+
+  // ─── P-44 开放 API 规范文档 ───
+
+  @Get('docs')
+  getDocs() {
+    const spec = this.buildOpenAPISpec()
+    return spec
+  }
+
+  // ─── P-44 Keys 新式路径 (代理到已有实现) ───
+
+  @Post('keys')
+  @HttpCode(201)
+  createKeyV2(@Body() body: {
+    tenantId: TenantId
+    environment: APIKeyEnvironment
+    name: string
+    scopes: APIKeyScope[]
+    expiresAt?: string
+    createdBy?: string
+  }) {
+    return this.apiKeySvc.create({
+      ...body,
+      createdBy: body.createdBy || 'admin'
+    })
+  }
+
+  @Get('keys')
+  listKeysV2(@Query('tenantId') tenantId: TenantId, @Query('environment') environment?: APIKeyEnvironment) {
+    return { keys: this.apiKeySvc.list(tenantId, environment) }
+  }
+
+  @Delete('keys/:id')
+  @HttpCode(204)
+  deleteKeyV2(@Query('tenantId') tenantId: TenantId, @Param('id') id: string) {
+    const result = this.apiKeySvc.revoke(tenantId, id, 'deleted_via_api')
+    if (!result) {
+      throw new NotFoundException(`API Key ${id} not found for tenant ${tenantId}`)
+    }
+    return
+  }
+
+  @Get('usage')
+  getUsageV2(@Query('tenantId') tenantId: TenantId) {
+    return this.usageSvc.report(tenantId)
+  }
 
   // ─── API Key ───
 
@@ -221,5 +274,87 @@ export class OpenAPIController {
   @Post('sign/verify')
   verifySignature(@Body() body: { secret: string; request: any }) {
     return this.signValidator.validate({ secret: body.secret, request: body.request })
+  }
+
+  // ─── 内部: 构建 OpenAPI 规范文档 ───
+
+  private buildOpenAPISpec() {
+    return {
+      openapi: '3.1.0',
+      info: {
+        title: '开放 API 网关',
+        version: '1.0.0',
+        description: 'ShenJiYing OpenAPI Gateway — 商户 API Key 管理、Webhook 事件投递、沙箱环境、使用统计',
+      },
+      servers: [
+        { url: '/', description: '当前环境' },
+      ],
+      paths: {
+        '/openapi/docs': { get: { summary: '开放 API 规范文档', tags: ['开放平台'] } },
+        '/openapi/keys': {
+          post: { summary: '创建 API Key', tags: ['API Key'] },
+          get: { summary: '列出 API Key', tags: ['API Key'] },
+        },
+        '/openapi/keys/{id}': { delete: { summary: '删除 API Key', tags: ['API Key'] } },
+        '/openapi/key/create': { post: { summary: '创建 API Key (旧路径)', tags: ['API Key'] } },
+        '/openapi/key/list': { get: { summary: '列出 API Key (旧路径)', tags: ['API Key'] } },
+        '/openapi/key/{keyId}': { get: { summary: '查询单个 API Key', tags: ['API Key'] } },
+        '/openapi/key/revoke': { post: { summary: '撤销 API Key', tags: ['API Key'] } },
+        '/openapi/key/stats': { get: { summary: 'API Key 统计', tags: ['API Key'] } },
+        '/openapi/webhook/subscribe': { post: { summary: '创建 Webhook 订阅', tags: ['Webhook'] } },
+        '/openapi/webhook/list': { get: { summary: '列出 Webhook 订阅', tags: ['Webhook'] } },
+        '/openapi/webhook/pause': { post: { summary: '暂停 Webhook', tags: ['Webhook'] } },
+        '/openapi/webhook/resume': { post: { summary: '恢复 Webhook', tags: ['Webhook'] } },
+        '/openapi/webhook/dispatch': { post: { summary: '投递 Webhook 事件', tags: ['Webhook'] } },
+        '/openapi/webhook/deliveries': { get: { summary: '投递日志', tags: ['Webhook'] } },
+        '/openapi/webhook/dead-letter': { get: { summary: '死信队列', tags: ['Webhook'] } },
+        '/openapi/webhook/retry/{id}': { post: { summary: '重试投递', tags: ['Webhook'] } },
+        '/openapi/webhook/stats': { get: { summary: 'Webhook 统计', tags: ['Webhook'] } },
+        '/openapi/sandbox/create': { post: { summary: '创建沙箱', tags: ['沙箱'] } },
+        '/openapi/sandbox/list': { get: { summary: '列出沙箱', tags: ['沙箱'] } },
+        '/openapi/sandbox/check/{id}': { get: { summary: '查询沙箱', tags: ['沙箱'] } },
+        '/openapi/sandbox/status': { post: { summary: '设置沙箱状态', tags: ['沙箱'] } },
+        '/openapi/sandbox/cleanup': { post: { summary: '清理过期沙箱', tags: ['沙箱'] } },
+        '/openapi/usage': { get: { summary: '使用统计', tags: ['用量'] } },
+        '/openapi/usage/bucket': { post: { summary: '创建限流桶', tags: ['用量'] } },
+        '/openapi/usage/check': { post: { summary: '检查配额', tags: ['用量'] } },
+        '/openapi/usage/report': { get: { summary: '用量报表', tags: ['用量'] } },
+        '/openapi/usage/buckets': { get: { summary: '列出限流桶', tags: ['用量'] } },
+        '/openapi/sign/verify': { post: { summary: '验证签名', tags: ['签名'] } },
+      },
+      components: {
+        securitySchemes: {
+          ApiKeyAuth: {
+            type: 'apiKey',
+            in: 'header',
+            name: 'X-API-Key',
+            description: 'API Key 认证，格式: sk_live_xxx 或 sk_test_xxx',
+          },
+        },
+        schemas: {
+          APIKey: {
+            type: 'object',
+            properties: {
+              keyId: { type: 'string', example: 'sk_live_abc123' },
+              name: { type: 'string' },
+              environment: { type: 'string', enum: ['LIVE', 'TEST', 'SANDBOX'] },
+              status: { type: 'string', enum: ['ACTIVE', 'REVOKED', 'EXPIRED'] },
+              scopes: { type: 'array', items: { type: 'string' } },
+              createdAt: { type: 'string', format: 'date-time' },
+              expiresAt: { type: 'string', format: 'date-time', nullable: true },
+            },
+          },
+          WebhookSubscription: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              url: { type: 'string', format: 'uri' },
+              events: { type: 'array', items: { type: 'string' } },
+              status: { type: 'string', enum: ['ACTIVE', 'PAUSED', 'DISABLED'] },
+            },
+          },
+        },
+      },
+    }
   }
 }
