@@ -11,6 +11,43 @@
 
 import type { RetrievalCollection, AstChunkType } from './retrieval.types'
 
+// ============ 跨模块合约补全 ============
+
+/**
+ * 检索结果合约实体 (跨模块安全子集)
+ * 注意: 与 retrieval.types.ts 中的 RetrievalResult (单条命中) 不同
+ */
+export interface RetrievalResult {
+  query: string
+  results: DocumentChunk[]
+  totalHits: number
+  strategy: RetrievalStrategy
+  took: number
+}
+
+/**
+ * 检索查询合约实体 (跨模块安全子集)
+ */
+export interface RetrievalQuery {
+  query: string
+  collection?: RetrievalCollection
+  topK?: number
+  threshold?: number
+}
+
+/** 文档 Chunk 合约实体 (跨模块安全子集) */
+export interface DocumentChunk {
+  chunkId: string
+  filePath: string
+  symbolName: string
+  lineRange: [number, number]
+  content: string
+  score?: number
+}
+
+/** 检索策略 (跨模块合约) */
+export type RetrievalStrategy = 'dense' | 'sparse' | 'hybrid'
+
 /**
  * 索引记录实体
  * 记录每个 chunk 的索引状态,用于增量索引 / 重索引判断。

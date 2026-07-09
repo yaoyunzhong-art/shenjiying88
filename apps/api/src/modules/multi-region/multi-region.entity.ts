@@ -3,6 +3,36 @@
  * 用途: 多区域实体类型定义
  */
 
+// ============ 跨模块合约补全 ============
+
+/** 区域配置合约实体 (跨模块安全子集) */
+export interface RegionConfig {
+  regionId: string
+  regionName: string
+  endpoint: string
+  isActive: boolean
+  priority: number
+}
+
+/** 区域部署合约实体 (跨模块安全子集) */
+export interface RegionDeployment {
+  deploymentId: string
+  regionId: string
+  status: string
+  deployedAt: string
+  version: string
+}
+
+/** 区域健康合约实体 (跨模块安全子集) */
+export interface RegionHealth {
+  regionId: string
+  status: 'healthy' | 'degraded' | 'down'
+  latency: number
+  lastChecked: string
+}
+
+// ============ 原始定义 ============
+
 export type Region = 'cn' | 'us' | 'eu' | 'jp';
 export const ALL_REGIONS: Region[] = ['cn', 'us', 'eu', 'jp'];
 export const DEFAULT_REGION: Region = 'cn';

@@ -171,9 +171,9 @@ describe(`${ROLES.Safety} CDN 缓存角色扩展测试`, () => {
     service.addCacheEntryForTesting({
       key: '/compromised.js', ruleId: 'r-sec', edgeNodeId: 'e1',
       url: '/compromised.js', statusCode: 200, sizeBytes: 100,
-      cachedAt: new Date().toISOString(),
+      cachedAt: Date.now(),
       expiresAt: new Date(Date.now() + 3600000).toISOString(),
-      hitCount: 10,
+      hitCount: 10, ttl: 3600, nodeName: "edge-test",
     })
     const inv = await runWithTenant(TENANT, () =>
       controller.invalidate({ mode: 'url', target: '/compromised.js' }),
@@ -187,16 +187,16 @@ describe(`${ROLES.Safety} CDN 缓存角色扩展测试`, () => {
     service.addCacheEntryForTesting({
       key: '/sensitive/user-data.json', ruleId: 'r-sec-2', edgeNodeId: 'e1',
       url: '/sensitive/user-data.json', statusCode: 200, sizeBytes: 500,
-      cachedAt: new Date().toISOString(),
+      cachedAt: Date.now(),
       expiresAt: new Date(Date.now() + 3600000).toISOString(),
-      hitCount: 5,
+      hitCount: 5, ttl: 3600, nodeName: "edge-test",
     })
     service.addCacheEntryForTesting({
       key: '/sensitive/config.yml', ruleId: 'r-sec-2', edgeNodeId: 'e1',
       url: '/sensitive/config.yml', statusCode: 200, sizeBytes: 200,
-      cachedAt: new Date().toISOString(),
+      cachedAt: Date.now(),
       expiresAt: new Date(Date.now() + 3600000).toISOString(),
-      hitCount: 2,
+      hitCount: 2, ttl: 3600, nodeName: "edge-test",
     })
     const inv = await runWithTenant(TENANT, () =>
       controller.invalidate({ mode: 'pattern', target: '/sensitive/*' }),

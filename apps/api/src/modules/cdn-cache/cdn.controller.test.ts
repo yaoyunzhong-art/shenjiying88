@@ -325,9 +325,9 @@ describe('CdnCacheController — 补全测试', () => {
         url: '/api/img/logo.png',
         statusCode: 200,
         sizeBytes: 5000,
-        cachedAt: new Date().toISOString(),
+        cachedAt: Date.now(),
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        hitCount: 3,
+        hitCount: 3, ttl: 3600, nodeName: "edge-test",
       })
       const inv = await runWithTenant(TENANT_A, () =>
         controller.invalidate({ mode: 'url', target: '/api/img/logo.png' }),
@@ -344,20 +344,20 @@ describe('CdnCacheController — 补全测试', () => {
       service.addCacheEntryForTesting({
         key: '/api/img/a.jpg', ruleId: 'r1', edgeNodeId: 'e1',
         url: '/api/img/a.jpg', statusCode: 200, sizeBytes: 100,
-        cachedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        hitCount: 1,
+        cachedAt: Date.now(), expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        hitCount: 1, ttl: 3600, nodeName: "edge-test",
       })
       service.addCacheEntryForTesting({
         key: '/api/img/b.png', ruleId: 'r1', edgeNodeId: 'e1',
         url: '/api/img/b.png', statusCode: 200, sizeBytes: 200,
-        cachedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        hitCount: 2,
+        cachedAt: Date.now(), expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        hitCount: 2, ttl: 3600, nodeName: "edge-test",
       })
       service.addCacheEntryForTesting({
         key: '/api/doc/c.pdf', ruleId: 'r2', edgeNodeId: 'e2',
         url: '/api/doc/c.pdf', statusCode: 200, sizeBytes: 300,
-        cachedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        hitCount: 0,
+        cachedAt: Date.now(), expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        hitCount: 0, ttl: 3600, nodeName: "edge-test",
       })
       const inv = await runWithTenant(TENANT_A, () =>
         controller.invalidate({ mode: 'pattern', target: '/api/img/*' }),

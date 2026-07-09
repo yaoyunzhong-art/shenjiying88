@@ -15,6 +15,30 @@
 
 import type { TenantRole } from '../../common/context/tenant-context'
 
+// ============ 跨模块合约补全 ============
+
+/** 租户配置合约实体 (跨模块安全子集) */
+export interface TenantConfig {
+  tenantId: string
+  features: TenantFeature[]
+  updatedAt: Date
+}
+
+/** 租户特性合约实体 (跨模块安全子集) */
+export interface TenantFeature {
+  key: string
+  enabled: boolean
+  config?: Record<string, unknown>
+}
+
+/** 配置值合约实体 (跨模块安全子集) */
+export interface ConfigValue {
+  key: string
+  value: string | number | boolean | null
+  type: ConfigValueType
+  encrypted: boolean
+}
+
 // ============ 配置级别 (V9 需求 4 三级) ============
 
 export type ConfigLevel = 'store' | 'tenant' | 'brand'

@@ -203,6 +203,9 @@ export class CdnCacheService {
       edgeNodeIds: targetNodeIds,
       status: 'pending',
       affectedEntries: 0,
+      pattern: dto.target,
+      reason: '',
+      createdAt: now,
       triggeredAt: now,
       triggeredBy: ctx.userId ?? 'system',
     }

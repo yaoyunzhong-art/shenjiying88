@@ -112,9 +112,11 @@ describe('[cdn-cache] 合约: CdnCacheEntry 实体', () => {
       url: '/static/js/app.js',
       statusCode: 200,
       sizeBytes: 102400,
-      cachedAt: '2026-06-30T00:00:00Z',
+      cachedAt: 1756900000000,
       expiresAt: '2026-06-30T01:00:00Z',
       hitCount: 42,
+      ttl: 3600,
+      nodeName: 'edge-01',
       etag: 'W/"abc123"',
     }
     assert.equal(entry.key, '/static/js/app.js')
@@ -132,6 +134,9 @@ describe('[cdn-cache] 合约: CacheInvalidation 实体', () => {
       edgeNodeIds: ['edge-01', 'edge-02'],
       status: 'completed',
       affectedEntries: 5,
+      pattern: '/static/js/app.js',
+      reason: 'test',
+      createdAt: '2026-06-30T00:00:00Z',
       triggeredAt: '2026-06-30T00:00:00Z',
       completedAt: '2026-06-30T00:00:01Z',
       triggeredBy: 'admin',

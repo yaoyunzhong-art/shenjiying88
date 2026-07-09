@@ -7,6 +7,48 @@
  * OcrEngine/DocumentParser: 引擎与解析器抽象
  */
 
+// ============ 跨模块合约补全 ============
+
+/** OCR 结果合约实体 (跨模块安全子集) */
+export interface OcrResult {
+  requestId: string
+  text: string
+  confidence: number
+  blocks: TextBlock[]
+  language: RecognitionLanguage
+  processedAt: Date
+}
+
+/** OCR 请求合约实体 (跨模块安全子集) */
+export interface OcrRequest {
+  sourceAssetId: string
+  language?: RecognitionLanguage
+  enableLayoutAnalysis?: boolean
+  enableTableDetection?: boolean
+}
+
+/** OCR 配置合约实体 (跨模块安全子集) */
+export interface OcrConfig {
+  defaultLanguage: RecognitionLanguage
+  enableLayoutAnalysis: boolean
+  enableTableDetection: boolean
+  maxRetries: number
+}
+
+/** 识别语言 (跨模块合约) */
+export type RecognitionLanguage = OcrLanguage
+
+/** 文本块合约实体 (跨模块合约) */
+export interface TextBlock {
+  id: string
+  text: string
+  confidence: number
+  bbox: { x: number; y: number; width: number; height: number }
+  page: number
+}
+
+// ============ 原始定义 ============
+
 export type OcrLanguage = 'zh-CN' | 'en-US' | 'ja-JP' | 'ko-KR' | 'auto' | 'mixed'
 
 export type DocumentFormat = 'pdf' | 'docx' | 'xlsx' | 'pptx' | 'csv' | 'txt' | 'rtf' | 'md'

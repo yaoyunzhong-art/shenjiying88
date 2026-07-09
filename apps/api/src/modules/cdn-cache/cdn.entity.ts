@@ -91,7 +91,11 @@ export interface CdnCacheEntry {
   /** 缓存内容大小 (字节) */
   sizeBytes: number
   /** 缓存时间 */
-  cachedAt: string
+  cachedAt: number
+  /** TTL (秒) */
+  ttl: number
+  /** 边缘节点名称 */
+  nodeName: string
   /** 过期时间 */
   expiresAt: string
   /** 命中次数 */
@@ -109,6 +113,12 @@ export interface CacheInvalidation {
   mode: 'url' | 'pattern'
   /** 目标 (URL 或 pattern) */
   target: string
+  /** URL pattern (contract 兼容) */
+  pattern: string
+  /** 失效原因 (contract 兼容) */
+  reason: string
+  /** 创建时间 (contract 兼容) */
+  createdAt: string
   /** 触发的边缘节点 */
   edgeNodeIds: string[]
   /** 状态 */

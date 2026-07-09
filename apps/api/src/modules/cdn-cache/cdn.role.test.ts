@@ -414,9 +414,9 @@ describe('🎯 CDN 缓存模块 · 8 角色场景测试', () => {
         url: '/banner/summer-2026.jpg',
         statusCode: 200,
         sizeBytes: 50000,
-        cachedAt: new Date().toISOString(),
+        cachedAt: Date.now(),
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        hitCount: 10,
+        hitCount: 10, ttl: 3600, nodeName: "edge-test",
         etag: 'W/"abc123"',
       })
 

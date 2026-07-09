@@ -4,6 +4,30 @@
  * 关联: audit.service.ts, tenant-validator.ts
  */
 
+// ============ 跨模块合约补全 ============
+
+/** 分页结果合约实体 (跨模块安全子集) */
+export interface PaginatedResult<T> {
+  data: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+/** API 响应合约实体 (跨模块安全子集) */
+export interface ApiResponse<T> {
+  success: boolean
+  data?: T
+  error?: string
+  errorCode?: string
+  timestamp: string
+}
+
+/** 排序方向 (跨模块合约) */
+export type SortDirection = 'asc' | 'desc'
+
+// ============ 原始定义 ============
+
 /**
  * 审计操作类型
  */

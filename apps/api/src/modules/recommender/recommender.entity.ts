@@ -5,6 +5,33 @@
  * 关联: phase-19-intelligence/spec.md §Phase 3
  */
 
+// ============ 跨模块合约补全 ============
+
+/** 推荐结果合约实体 (跨模块安全子集) */
+export interface Recommendation {
+  id: string
+  name: string
+  score: number
+  reason: string
+  strategy: RecommendationStrategy
+  expiresAt?: Date
+}
+
+/** 推荐请求合约实体 (跨模块安全子集) */
+export interface RecommendationRequest {
+  module: string
+  context?: {
+    files?: string[]
+    description?: string
+  }
+  topK?: number
+}
+
+/** 推荐策略 (跨模块合约) */
+export type RecommendationStrategy = 'semantic' | 'recency' | 'champion_affinity' | 'hybrid'
+
+// ============ 原始定义 ============
+
 /** Champion 角色 */
 export type ChampionRole = 'CHAMPION' | 'APPROVER'
 

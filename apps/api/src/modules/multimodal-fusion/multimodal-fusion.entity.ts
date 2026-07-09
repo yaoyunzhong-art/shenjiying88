@@ -8,6 +8,29 @@
  * - 趋势洞察
  */
 
+// ============ 跨模块合约补全 ============
+
+/** 融合结果合约实体 (跨模块安全子集) */
+export interface FusionResult {
+  requestId: string
+  confidence: number
+  summary: string
+  modalities: ModalityType[]
+  processedAt: Date
+}
+
+/** 融合请求合约实体 (跨模块安全子集) */
+export interface FusionRequest {
+  sources: FusionSource[]
+  taskType?: FusionTaskType
+  maxWaitMs?: number
+}
+
+/** 模态类型 (跨模块合约) */
+export type ModalityType = FusionSource
+
+// ============ 原始定义 ============
+
 export type FusionSource =
   | 'image'           // 图像识别 (Phase 101)
   | 'document'        // OCR + 文档 (Phase 100)

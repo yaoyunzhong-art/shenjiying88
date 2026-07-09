@@ -404,9 +404,9 @@ describe('E2E: POST /cdn/invalidate', () => {
       service.addCacheEntryForTesting({
         key: 'url1', ruleId: 'rule-1', edgeNodeId: 'edge-1',
         url: '/static/js/legacy.js', statusCode: 200, sizeBytes: 500,
-        cachedAt: new Date().toISOString(),
+        cachedAt: Date.now(),
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        hitCount: 5,
+        hitCount: 5, ttl: 3600, nodeName: "edge-test",
       })
 
       const res = await request(app.getHttpServer())
@@ -429,16 +429,16 @@ describe('E2E: POST /cdn/invalidate', () => {
       service.addCacheEntryForTesting({
         key: 'old1', ruleId: 'rule-2', edgeNodeId: 'edge-1',
         url: '/old-assets/img1.png', statusCode: 200, sizeBytes: 300,
-        cachedAt: new Date().toISOString(),
+        cachedAt: Date.now(),
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        hitCount: 3,
+        hitCount: 3, ttl: 3600, nodeName: "edge-test",
       })
       service.addCacheEntryForTesting({
         key: 'old2', ruleId: 'rule-2', edgeNodeId: 'edge-1',
         url: '/old-assets/img2.png', statusCode: 200, sizeBytes: 400,
-        cachedAt: new Date().toISOString(),
+        cachedAt: Date.now(),
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        hitCount: 7,
+        hitCount: 7, ttl: 3600, nodeName: "edge-test",
       })
 
       const res = await request(app.getHttpServer())

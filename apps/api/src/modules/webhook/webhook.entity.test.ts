@@ -121,14 +121,15 @@ describe('webhook.entity: WebhookDelivery', () => {
       eventType: 'monitoring.alert.fired',
       payload: { alertId: 'alert-123', severity: 'critical' },
       body: '{"alertId":"alert-123"}',
-      status: 'pending',
+      status: 'active',
       attempt: 0,
       maxAttempts: 3,
+      attemptedAt: new Date(),
       createdAt: '2026-06-15T08:00:00.000Z',
     }
 
     assert.equal(d.id, 'del-001')
-    assert.equal(d.status, 'pending')
+    assert.equal(d.status, 'active')
     assert.equal(d.attempt, 0)
     assert.equal(d.maxAttempts, 3)
     assert.equal(d.eventType, 'monitoring.alert.fired')
@@ -145,9 +146,10 @@ describe('webhook.entity: WebhookDelivery', () => {
       body: '{"key":"theme"}',
       responseStatus: 200,
       responseBody: '{"code":0}',
-      status: 'success',
+      status: 'active',
       attempt: 1,
       maxAttempts: 3,
+      attemptedAt: new Date(),
       error: undefined,
       createdAt: '2026-06-15T08:01:00.000Z',
       completedAt: '2026-06-15T08:01:01.000Z',
@@ -172,9 +174,10 @@ describe('webhook.entity: WebhookDelivery', () => {
       body: '{}',
       responseStatus: 500,
       responseBody: 'Internal Server Error',
-      status: 'dead_letter',
+      status: 'disabled',
       attempt: 3,
       maxAttempts: 3,
+      attemptedAt: new Date(),
       nextRetryAt: undefined,
       error: 'All 3 retries failed with 5xx',
       createdAt: '2026-06-15T08:02:00.000Z',
@@ -189,12 +192,13 @@ describe('webhook.entity: WebhookDelivery', () => {
   })
 
   it('supports all delivery status values', () => {
-    const statuses: WebhookDeliveryStatus[] = ['pending', 'success', 'failed', 'retrying', 'dead_letter']
+    const statuses: WebhookStatus[] = ['active', 'paused', 'disabled']
     for (const s of statuses) {
       const d: WebhookDelivery = {
         id: `del-${s}`, endpointId: 'wh-x', tenantId: 't1',
         eventType: 'insight.generated', payload: {}, body: '{}',
         status: s, attempt: 0, maxAttempts: 3,
+        attemptedAt: new Date(),
         createdAt: new Date().toISOString(),
       }
       assert.equal(d.status, s)
@@ -209,9 +213,10 @@ describe('webhook.entity: WebhookDelivery', () => {
       eventType: 'tenant.config.updated',
       payload: {},
       body: '{}',
-      status: 'pending',
+      status: 'active',
       attempt: 0,
       maxAttempts: 3,
+      attemptedAt: new Date(),
       createdAt: '2026-06-15T08:00:00.000Z',
     }
 

@@ -22,7 +22,6 @@ import type {
   WebhookEventPayload,
   WebhookPlatform,
   WebhookStatus,
-  WebhookDeliveryStatus,
 } from './webhook.entity'
 import { BUILTIN_WEBHOOK_EVENTS, defaultHeaders } from './webhook.entity'
 
@@ -62,23 +61,24 @@ describe('[webhook] 契约: 实体 Shape', () => {
   })
 
   it('WebhookDelivery 必须包含必要字段', () => {
-    const dl = {
+    const dl: WebhookDelivery = {
       id: 'dl-001',
       endpointId: 'ep-001',
       tenantId: 't-001',
       eventType: 'license.expired' as WebhookDelivery['eventType'],
       payload: { orderId: 'ord-001' },
       body: JSON.stringify({ orderId: 'ord-001' }),
-      status: 'success' as WebhookDeliveryStatus,
+      status: 'active',
       attempt: 1,
       maxAttempts: 3,
+      attemptedAt: new Date(),
       createdAt: '2026-01-01T00:00:00Z',
     }
     const delivery: WebhookDelivery = dl
     assert.equal(typeof delivery.id, 'string')
     assert.equal(typeof delivery.endpointId, 'string')
     assert.equal(typeof delivery.eventType, 'string')
-    assert.ok(['pending', 'success', 'failed', 'retrying', 'dead_letter'].includes(delivery.status))
+    assert.ok(['active', 'paused', 'disabled'].includes(delivery.status))
     assert.equal(typeof delivery.attempt, 'number')
     assert.equal(typeof delivery.maxAttempts, 'number')
   })

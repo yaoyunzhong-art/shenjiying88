@@ -152,9 +152,11 @@ describe('cdn.entity: CdnCacheEntry', () => {
       url: '/api/images/logo.png?v=1',
       statusCode: 200,
       sizeBytes: 45_000,
-      cachedAt: '2026-06-29T00:00:00.000Z',
+      cachedAt: 1756800000000,
       expiresAt: '2026-06-29T02:00:00.000Z',
       hitCount: 42,
+      ttl: 3600,
+      nodeName: 'edge-cn-shanghai-01',
       etag: 'W/"abc123def456"',
     }
 
@@ -168,8 +170,8 @@ describe('cdn.entity: CdnCacheEntry', () => {
       key: '/api/data',
       ruleId: 'r1', edgeNodeId: 'e1',
       url: '/api/data', statusCode: 404,
-      sizeBytes: 100, cachedAt: '', expiresAt: '',
-      hitCount: 0,
+      sizeBytes: 100, cachedAt: 0, expiresAt: '',
+      hitCount: 0, ttl: 0, nodeName: '',
     }
 
     assert.equal(entry.etag, undefined)
@@ -187,6 +189,9 @@ describe('cdn.entity: CacheInvalidation', () => {
       edgeNodeIds: ['edge-cn-shanghai-01', 'edge-cn-beijing-01'],
       status: 'pending',
       affectedEntries: 0,
+      pattern: '/api/images/logo.png',
+      reason: 'manual invalidation',
+      createdAt: '2026-06-29T00:00:00.000Z',
       triggeredAt: '2026-06-29T00:00:00.000Z',
       triggeredBy: 'admin',
     }
@@ -205,6 +210,9 @@ describe('cdn.entity: CacheInvalidation', () => {
       edgeNodeIds: ['edge-1'],
       status: 'completed',
       affectedEntries: 15,
+      pattern: '/api/images/*',
+      reason: 'bulk invalidation',
+      createdAt: '2026-06-29T00:00:00.000Z',
       triggeredAt: '2026-06-29T00:00:00.000Z',
       completedAt: '2026-06-29T00:00:05.000Z',
       triggeredBy: 'system',
@@ -222,7 +230,9 @@ describe('cdn.entity: CacheInvalidation', () => {
       for (const s of statuses) {
         const inv: CacheInvalidation = {
           id: 'i1', mode: m, target: '/t', edgeNodeIds: ['e1'],
-          status: s, affectedEntries: 0, triggeredAt: '', triggeredBy: '',
+          status: s, affectedEntries: 0,
+          pattern: '', reason: '', createdAt: '',
+          triggeredAt: '', triggeredBy: '',
         }
         assert.equal(inv.mode, m)
         assert.equal(inv.status, s)

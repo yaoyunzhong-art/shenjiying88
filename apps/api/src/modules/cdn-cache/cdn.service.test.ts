@@ -165,14 +165,14 @@ describe('Phase 98 CDN (V10 Sprint 2 Day 29)', () => {
       SHARED_CDN.addCacheEntryForTesting({
         key: '/api/reports/rpt-001', ruleId: 'r1', edgeNodeId: 'e1',
         url: '/api/reports/rpt-001', statusCode: 200, sizeBytes: 1024,
-        cachedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-        hitCount: 0,
+        cachedAt: Date.now(), expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+        hitCount: 0, ttl: 3600, nodeName: "edge-test",
       })
       SHARED_CDN.addCacheEntryForTesting({
         key: '/api/reports/rpt-002', ruleId: 'r1', edgeNodeId: 'e1',
         url: '/api/reports/rpt-002', statusCode: 200, sizeBytes: 1024,
-        cachedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-        hitCount: 0,
+        cachedAt: Date.now(), expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+        hitCount: 0, ttl: 3600, nodeName: "edge-test",
       })
       const inv = await runWithTenant(TENANT_A, async () =>
         SHARED_CDN.invalidate({ mode: 'url', target: '/api/reports/rpt-001' }),
@@ -188,14 +188,14 @@ describe('Phase 98 CDN (V10 Sprint 2 Day 29)', () => {
       SHARED_CDN.addCacheEntryForTesting({
         key: '/api/stores/s001/reports', ruleId: 'r1', edgeNodeId: 'e1',
         url: '/api/stores/s001/reports', statusCode: 200, sizeBytes: 100,
-        cachedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-        hitCount: 0,
+        cachedAt: Date.now(), expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+        hitCount: 0, ttl: 3600, nodeName: "edge-test",
       })
       SHARED_CDN.addCacheEntryForTesting({
         key: '/api/stores/s001/insights', ruleId: 'r1', edgeNodeId: 'e1',
         url: '/api/stores/s001/insights', statusCode: 200, sizeBytes: 100,
-        cachedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-        hitCount: 0,
+        cachedAt: Date.now(), expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+        hitCount: 0, ttl: 3600, nodeName: "edge-test",
       })
       const inv = await runWithTenant(TENANT_A, async () =>
         SHARED_CDN.invalidate({ mode: 'pattern', target: '/api/stores/s001/*' }),

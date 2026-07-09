@@ -190,8 +190,8 @@ describe('CdnCacheController', () => {
       service.addCacheEntryForTesting({
         key: '/api/img/1', ruleId: 'r1', edgeNodeId: 'e1',
         url: '/api/img/1', statusCode: 200, sizeBytes: 100,
-        cachedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        hitCount: 0,
+        cachedAt: Date.now(), expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        hitCount: 0, ttl: 3600, nodeName: "edge-test",
       })
       const inv = await runWithTenant(TENANT, () =>
         controller.invalidate({ mode: 'url', target: '/api/img/1' }),

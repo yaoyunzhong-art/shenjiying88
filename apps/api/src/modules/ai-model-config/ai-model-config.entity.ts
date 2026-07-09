@@ -8,6 +8,43 @@
  * - 多租户隔离 (store_id 关联)
  */
 
+// ============ 跨模块合约补全 (V11) ============
+
+/**
+ * AI 模型配置合约实体 (跨模块安全子集)
+ * 与 ai-model-config.contract.ts 中的 toAiModelConfigContract 配合
+ */
+export interface AiModelConfig {
+  /** 配置 ID */
+  configId: string
+  /** 门店 ID */
+  storeId: string
+  /** 提供商 */
+  provider: AiModelProvider
+  /** 模型名 */
+  modelName: string
+  /** 温度系数 */
+  temperature: number
+  /** 最大生成长度 */
+  maxTokens: number
+  /** 行业适配类型 */
+  industryType: IndustryType
+  /** 是否启用 */
+  isActive: boolean
+}
+
+/**
+ * 配置快照合约类型 (跨模块安全子集)
+ */
+export interface ConfigSnapshot {
+  snapshotId: string
+  configId: string
+  createdAt: string
+  changeType: string
+}
+
+// ============ 以下为原始定义 ============
+
 /** AI 模型提供商 */
 export type AiModelProvider =
   | 'openai'      // GPT-4o / GPT-4-turbo
@@ -49,6 +86,12 @@ export interface AiModelPreset {
   defaultParams: AiModelDefaultParams
   /** 行业适配 */
   industry: IndustryType
+  /** 预设 ID 别名 (contract 兼容) */
+  presetId: string
+  /** 显示名称别名 (contract 兼容) */
+  name: string
+  /** 行业类型别名 (contract 兼容) */
+  industryType: IndustryType
   /** 是否启用 */
   isActive: boolean
   /** 描述 */
