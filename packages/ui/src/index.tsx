@@ -1337,6 +1337,14 @@ export type { AsyncSelectProps } from './components/AsyncSelect';
 export { Tour } from './components/Tour';
 export type { TourProps, TourStep } from './components/Tour';
 
+// --------------- AI 决策分布统计面板 ---------------
+export { AIDecisionDistributionPanel } from './components/AIDecisionDistributionPanel';
+export type {
+  AIDecisionDistributionPanelProps,
+  DecisionDistributionItem,
+  DecisionCategory,
+} from './components/AIDecisionDistributionPanel';
+
 // --------------- ChartExportPanel ---------------
 export { ChartExportPanel } from './components/ChartExportPanel';
 export type { ChartExportPanelProps, TimeRangeOption } from './components/ChartExportPanel';

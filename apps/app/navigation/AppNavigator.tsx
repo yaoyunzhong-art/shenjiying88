@@ -26,6 +26,7 @@ import { SettingsScreen } from '../screens/settings/SettingsScreen';
 import { BiometricSettingsScreen } from '../screens/settings/BiometricSettingsScreen';
 import { NotificationSettingsScreen } from '../screens/settings/NotificationSettingsScreen';
 import { LanguageSettingsScreen } from '../screens/settings/LanguageSettingsScreen';
+import { ToolRegistryScreen } from '../screens/settings/ToolRegistryScreen';
 import { ReportDashboardScreen } from '../screens/report/ReportDashboardScreen';
 import { DeviceMonitorScreen } from '../screens/device/DeviceMonitorScreen';
 import { MarketingScreen } from '../screens/marketing/MarketingScreen';
@@ -40,6 +41,7 @@ export type SettingsStackParamList = {
   BiometricSettings: undefined;
   NotificationSettings: undefined;
   LanguageSettings: undefined;
+  ToolRegistry: { initialFilter?: import('../screens/settings/ToolRegistryScreen').ToolFilter } | undefined;
 };
 
 // Tab types
@@ -299,6 +301,11 @@ function SettingsNavigator() {
         name="LanguageSettings"
         component={LanguageSettingsScreen}
         options={{ headerShown: true, title: '语言设置' }}
+      />
+      <SettingsStack.Screen
+        name="ToolRegistry"
+        component={ToolRegistryScreen}
+        options={{ headerShown: true, title: '工具注册管理' }}
       />
     </SettingsStack.Navigator>
   );

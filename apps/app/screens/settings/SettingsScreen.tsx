@@ -178,6 +178,14 @@ export function SettingsScreen() {
         <Text style={styles.sectionTitle}>通用设置</Text>
         <Card style={styles.settingsCard}>
           {renderSettingItem(
+            '🛠️',
+            '工具注册管理',
+            'AI 工具注册与运行状态',
+            <Text style={styles.settingArrow}>›</Text>,
+            () => navigation.navigate('ToolRegistry', undefined)
+          )}
+          <View style={styles.divider} />
+          {renderSettingItem(
             '🗑️',
             '清除缓存',
             '释放存储空间',

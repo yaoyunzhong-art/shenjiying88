@@ -37,6 +37,7 @@ __export(index_exports, {
   AIAnalysisInsightsPanel: () => AIAnalysisInsightsPanel,
   AICompetitiveAnalysisPanel: () => AICompetitiveAnalysisPanel,
   AIDecisionComparisonPanel: () => AIDecisionComparisonPanel,
+  AIDecisionDistributionPanel: () => AIDecisionDistributionPanel,
   AIDecisionEffectivenessBoard: () => AIDecisionEffectivenessBoard,
   AIDecisionExplainerPanel: () => AIDecisionExplainerPanel,
   AIDecisionOutcomeCard: () => AIDecisionOutcomeCard,
@@ -68033,9 +68034,286 @@ var Tour = ({
   ] });
 };
 
-// src/components/ChartExportPanel/ChartExportPanel.tsx
+// src/components/AIDecisionDistributionPanel.tsx
 var import_react184 = require("react");
 var import_jsx_runtime269 = require("react/jsx-runtime");
+var CATEGORY_LABELS9 = {
+  pricing: "\u5B9A\u4EF7\u51B3\u7B56",
+  inventory: "\u5E93\u5B58\u51B3\u7B56",
+  promotion: "\u4FC3\u9500\u51B3\u7B56",
+  staff_scheduling: "\u6392\u73ED\u51B3\u7B56",
+  customer_service: "\u5BA2\u670D\u51B3\u7B56",
+  content_generation: "\u5185\u5BB9\u751F\u6210",
+  member_retention: "\u4F1A\u5458\u7559\u5B58",
+  anomaly_response: "\u5F02\u5E38\u54CD\u5E94"
+};
+var CATEGORY_ICONS3 = {
+  pricing: "\u{1F4B0}",
+  inventory: "\u{1F4E6}",
+  promotion: "\u{1F3AF}",
+  staff_scheduling: "\u{1F4C5}",
+  customer_service: "\u{1F4AC}",
+  content_generation: "\u270D\uFE0F",
+  member_retention: "\u{1F464}",
+  anomaly_response: "\u26A0\uFE0F"
+};
+var CATEGORY_COLORS3 = {
+  pricing: "#4f46e5",
+  inventory: "#0891b2",
+  promotion: "#d97706",
+  staff_scheduling: "#7c3aed",
+  customer_service: "#059669",
+  content_generation: "#dc2626",
+  member_retention: "#2563eb",
+  anomaly_response: "#ca8a04"
+};
+var DEFAULT_EMPTY2 = "\u6682\u65E0\u51B3\u7B56\u5206\u5E03\u6570\u636E";
+function getDecisionRateColor(rate) {
+  if (rate >= 0.8) return "success";
+  if (rate >= 0.5) return "warning";
+  return "danger";
+}
+function formatPercent3(value) {
+  return `${(value * 100).toFixed(1)}%`;
+}
+function DistributionBar({
+  label,
+  approved,
+  rejected,
+  pending,
+  total,
+  color,
+  icon,
+  maxTotal,
+  onClick
+}) {
+  const approveRate = total > 0 ? approved / total : 0;
+  const rejectRate = total > 0 ? rejected / total : 0;
+  const pendingRate = total > 0 ? pending / total : 0;
+  const ratio = maxTotal > 0 ? total / maxTotal : 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)(
+    "div",
+    {
+      role: "button",
+      tabIndex: 0,
+      onClick,
+      onKeyDown: (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick?.();
+        }
+      },
+      className: "aidist-item",
+      style: { cursor: onClick ? "pointer" : "default" },
+      "data-testid": `aidist-item-${label}`,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("div", { className: "aidist-item-header", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("span", { className: "aidist-item-icon", "data-testid": `aidist-icon-${label}`, children: icon }),
+          /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("span", { className: "aidist-item-label", "data-testid": `aidist-label-${label}`, children: label }),
+          /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)(Badge, { variant: getDecisionRateColor(approveRate), size: "sm", children: [
+            formatPercent3(approveRate),
+            " \u901A\u8FC7"
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("span", { className: "aidist-item-total", "data-testid": `aidist-total-${label}`, children: [
+            total,
+            " \u6B21"
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("div", { className: "aidist-bar-track", "data-testid": `aidist-bar-${label}`, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime269.jsx)(
+            "div",
+            {
+              className: "aidist-bar-segment aidist-bar-approved",
+              style: { width: `${approveRate * 100}%`, backgroundColor: color },
+              title: `\u901A\u8FC7: ${approved}`
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime269.jsx)(
+            "div",
+            {
+              className: "aidist-bar-segment aidist-bar-rejected",
+              style: { width: `${rejectRate * 100}%`, backgroundColor: "#f87171" },
+              title: `\u62D2\u7EDD: ${rejected}`
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime269.jsx)(
+            "div",
+            {
+              className: "aidist-bar-segment aidist-bar-pending",
+              style: { width: `${pendingRate * 100}%`, backgroundColor: "#d1d5db" },
+              title: `\u5F85\u5BA1: ${pending}`
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("div", { className: "aidist-bar-footer", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("span", { className: "aidist-bar-metrics", "data-testid": `aidist-metrics-${label}`, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("span", { style: { color }, children: [
+              "\u2713 ",
+              approved
+            ] }),
+            " \xB7 ",
+            /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("span", { style: { color: "#f87171" }, children: [
+              "\u2717 ",
+              rejected
+            ] }),
+            " \xB7 ",
+            /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("span", { style: { color: "#9ca3af" }, children: [
+              "\u25CE ",
+              pending
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime269.jsx)(
+            "span",
+            {
+              className: "aidist-bar-scale",
+              style: { width: `${ratio * 100}%`, opacity: 0.15, backgroundColor: color }
+            }
+          )
+        ] })
+      ]
+    }
+  );
+}
+function AIDecisionDistributionPanel({
+  items,
+  title = "AI \u51B3\u7B56\u5206\u5E03\u7EDF\u8BA1",
+  loading = false,
+  emptyText = DEFAULT_EMPTY2,
+  filterCategory = "all",
+  onCategoryFilter,
+  onItemClick,
+  className = "",
+  "data-testid": dataTestId = "aidist-panel"
+}) {
+  const filtered = (0, import_react184.useMemo)(() => {
+    if (filterCategory === "all") return items;
+    return items.filter((i) => i.category === filterCategory);
+  }, [items, filterCategory]);
+  const maxTotal = (0, import_react184.useMemo)(() => {
+    if (filtered.length === 0) return 0;
+    return Math.max(...filtered.map((i) => i.total));
+  }, [filtered]);
+  const summary = (0, import_react184.useMemo)(() => {
+    const total = items.reduce((s, i) => s + i.total, 0);
+    const totalApproved = items.reduce((s, i) => s + i.approved, 0);
+    const totalRejected = items.reduce((s, i) => s + i.rejected, 0);
+    const totalPending = items.reduce((s, i) => s + i.pending, 0);
+    const avgConf = total > 0 ? items.reduce((s, i) => s + i.avgConfidence * i.total, 0) / total : 0;
+    return { total, totalApproved, totalRejected, totalPending, avgConf };
+  }, [items]);
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)(Card, { className: `aidist-panel ${className}`, "data-testid": `${dataTestId}-loading`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("div", { className: "aidist-header", children: /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("h3", { className: "aidist-title", children: title }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("div", { className: "aidist-loading", "data-testid": "aidist-loading", children: [1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("div", { className: "aidist-skeleton", "data-testid": `aidist-skeleton-${i}`, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("div", { className: "aidist-skeleton-line", style: { width: `${60 + i * 10}%` } }),
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("div", { className: "aidist-skeleton-bar" })
+      ] }, i)) })
+    ] });
+  }
+  if (items.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)(Card, { className: `aidist-panel ${className}`, "data-testid": `${dataTestId}-empty`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("div", { className: "aidist-header", children: /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("h3", { className: "aidist-title", children: title }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("div", { className: "aidist-empty", "data-testid": "aidist-empty-text", children: emptyText })
+    ] });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)(Card, { className: `aidist-panel ${className}`, "data-testid": dataTestId, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("div", { className: "aidist-header", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("h3", { className: "aidist-title", children: title }),
+      onCategoryFilter && /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)(
+        "select",
+        {
+          className: "aidist-filter",
+          value: filterCategory,
+          onChange: (e) => onCategoryFilter(e.target.value),
+          "data-testid": "aidist-category-filter",
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("option", { value: "all", children: "\u5168\u90E8\u5206\u7C7B" }),
+            Object.entries(CATEGORY_LABELS9).map(([key, label]) => /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("option", { value: key, children: label }, key))
+          ]
+        }
+      )
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("div", { className: "aidist-summary", "data-testid": "aidist-summary", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("div", { className: "aidist-stat", "data-testid": "aidist-stat-total", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("span", { className: "aidist-stat-value", children: summary.total }),
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("span", { className: "aidist-stat-label", children: "\u603B\u51B3\u7B56\u6570" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("div", { className: "aidist-stat", "data-testid": "aidist-stat-approved", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("span", { className: "aidist-stat-value", style: { color: "#16a34a" }, children: summary.totalApproved }),
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("span", { className: "aidist-stat-label", children: "\u5DF2\u901A\u8FC7" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("div", { className: "aidist-stat", "data-testid": "aidist-stat-rejected", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("span", { className: "aidist-stat-value", style: { color: "#dc2626" }, children: summary.totalRejected }),
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("span", { className: "aidist-stat-label", children: "\u5DF2\u62D2\u7EDD" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("div", { className: "aidist-stat", "data-testid": "aidist-stat-pending", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("span", { className: "aidist-stat-value", style: { color: "#ca8a04" }, children: summary.totalPending }),
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("span", { className: "aidist-stat-label", children: "\u5F85\u5BA1\u6838" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("div", { className: "aidist-stat", "data-testid": "aidist-stat-confidence", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("span", { className: "aidist-stat-value", children: formatPercent3(summary.avgConf) }),
+        /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("span", { className: "aidist-stat-label", children: "\u5E73\u5747\u7F6E\u4FE1\u5EA6" })
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("div", { className: "aidist-list", "data-testid": "aidist-list", children: filtered.length === 0 && filterCategory !== "all" ? /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("div", { className: "aidist-empty", "data-testid": "aidist-filter-empty", children: "\u8BE5\u5206\u7C7B\u6682\u65E0\u6570\u636E" }) : filtered.map((item) => /* @__PURE__ */ (0, import_jsx_runtime269.jsx)(
+      DistributionBar,
+      {
+        label: item.label || CATEGORY_LABELS9[item.category],
+        approved: item.approved,
+        rejected: item.rejected,
+        pending: item.pending,
+        total: item.total,
+        color: CATEGORY_COLORS3[item.category],
+        icon: item.icon || CATEGORY_ICONS3[item.category],
+        maxTotal,
+        onClick: onItemClick ? () => onItemClick(item.category) : void 0
+      },
+      item.category
+    )) }),
+    /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("style", { children: `
+        .aidist-panel { padding: 16px; font-size: 14px; line-height: 1.5; }
+        .aidist-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .aidist-title { margin: 0; font-size: 16px; font-weight: 600; }
+        .aidist-filter { padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; }
+        .aidist-filter:focus { outline: 2px solid #3b82f6; outline-offset: 1px; }
+
+        .aidist-summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
+        .aidist-stat { background: #f9fafb; border-radius: 8px; padding: 12px 8px; text-align: center; }
+        .aidist-stat-value { display: block; font-size: 20px; font-weight: 700; line-height: 1.2; }
+        .aidist-stat-label { display: block; font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+        .aidist-list { display: flex; flex-direction: column; gap: 12px; }
+        .aidist-item { padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
+        .aidist-item:last-child { border-bottom: none; }
+        .aidist-item-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .aidist-item-icon { font-size: 16px; width: 24px; text-align: center; }
+        .aidist-item-label { flex: 1; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .aidist-item-total { font-size: 13px; color: #6b7280; white-space: nowrap; }
+
+        .aidist-bar-track { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: #f3f4f6; }
+        .aidist-bar-segment { transition: width 0.3s ease; height: 100%; }
+        .aidist-bar-approved { border-radius: 4px 0 0 4px; }
+        .aidist-bar-rejected { }
+        .aidist-bar-pending { border-radius: 0 4px 4px 0; }
+
+        .aidist-bar-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; position: relative; }
+        .aidist-bar-metrics { font-size: 12px; color: #6b7280; }
+        .aidist-bar-scale { position: absolute; bottom: 0; left: 0; height: 2px; border-radius: 1px; }
+
+        .aidist-loading { display: flex; flex-direction: column; gap: 16px; }
+        .aidist-skeleton { display: flex; flex-direction: column; gap: 6px; }
+        .aidist-skeleton-line { height: 12px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: aidist-shimmer 1.5s infinite; border-radius: 4px; }
+        .aidist-skeleton-bar { height: 8px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: aidist-shimmer 1.5s infinite; border-radius: 4px; }
+        @keyframes aidist-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .aidist-empty { color: #9ca3af; text-align: center; padding: 32px 16px; font-size: 14px; }
+      ` })
+  ] });
+}
+
+// src/components/ChartExportPanel/ChartExportPanel.tsx
+var import_react185 = require("react");
+var import_jsx_runtime270 = require("react/jsx-runtime");
 var styles9 = {
   wrapper: {
     border: "1px solid #e5e7eb",
@@ -68161,8 +68439,8 @@ function ActionButton3({
   children,
   onClick
 }) {
-  const [hover, setHover] = (0, import_react184.useState)(false);
-  return /* @__PURE__ */ (0, import_jsx_runtime269.jsx)(
+  const [hover, setHover] = (0, import_react185.useState)(false);
+  return /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
     "button",
     {
       type: "button",
@@ -68190,24 +68468,24 @@ function ChartExportPanel({
   extraActions,
   className
 }) {
-  const [isFullscreen, setIsFullscreen] = (0, import_react184.useState)(false);
-  const chartRef = (0, import_react184.useRef)(null);
-  const handleExportCSV = (0, import_react184.useCallback)(() => {
+  const [isFullscreen, setIsFullscreen] = (0, import_react185.useState)(false);
+  const chartRef = (0, import_react185.useRef)(null);
+  const handleExportCSV = (0, import_react185.useCallback)(() => {
     if (!csvData || csvData.length === 0) return;
     downloadCSV(csvData, csvFilename);
   }, [csvData, csvFilename]);
-  const handleExportPNG = (0, import_react184.useCallback)(() => {
+  const handleExportPNG = (0, import_react185.useCallback)(() => {
     if (!chartRef.current) return;
     downloadImage(chartRef.current, csvFilename);
   }, [csvFilename]);
-  const handleToggleFullscreen = (0, import_react184.useCallback)(() => {
+  const handleToggleFullscreen = (0, import_react185.useCallback)(() => {
     if (!enableFullscreen) return;
     setIsFullscreen((prev) => !prev);
   }, [enableFullscreen]);
-  const handleRefresh = (0, import_react184.useCallback)(() => {
+  const handleRefresh = (0, import_react185.useCallback)(() => {
     onRefresh?.();
   }, [onRefresh]);
-  return /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)(
     "div",
     {
       className,
@@ -68216,22 +68494,22 @@ function ChartExportPanel({
         ...isFullscreen ? { position: "fixed", inset: 0, zIndex: 9999, borderRadius: 0 } : {}
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("div", { style: styles9.header, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("h3", { style: styles9.title, children: title }),
-          /* @__PURE__ */ (0, import_jsx_runtime269.jsxs)("div", { style: styles9.actions, children: [
-            timeRange && timeRange.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime269.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: styles9.header, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("h3", { style: styles9.title, children: title }),
+          /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: styles9.actions, children: [
+            timeRange && timeRange.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
               "select",
               {
                 value: activeTimeRange ?? (timeRange[0] ? timeRange[0].value : ""),
                 onChange: (e) => onTimeRangeChange?.(e.target.value),
                 style: styles9.select,
-                children: timeRange.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime269.jsx)("option", { value: opt.value, children: opt.label }, opt.value))
+                children: timeRange.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("option", { value: opt.value, children: opt.label }, opt.value))
               }
             ),
-            enableRefresh && /* @__PURE__ */ (0, import_jsx_runtime269.jsx)(ActionButton3, { label: "\u5237\u65B0\u6570\u636E", onClick: handleRefresh, children: "\u{1F504}" }),
-            csvData && csvData.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime269.jsx)(ActionButton3, { label: "\u5BFC\u51FA CSV", onClick: handleExportCSV, children: "\u{1F4CA}" }),
-            /* @__PURE__ */ (0, import_jsx_runtime269.jsx)(ActionButton3, { label: "\u5BFC\u51FA\u56FE\u7247", onClick: handleExportPNG, children: "\u{1F5BC}\uFE0F" }),
-            enableFullscreen && /* @__PURE__ */ (0, import_jsx_runtime269.jsx)(
+            enableRefresh && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(ActionButton3, { label: "\u5237\u65B0\u6570\u636E", onClick: handleRefresh, children: "\u{1F504}" }),
+            csvData && csvData.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(ActionButton3, { label: "\u5BFC\u51FA CSV", onClick: handleExportCSV, children: "\u{1F4CA}" }),
+            /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(ActionButton3, { label: "\u5BFC\u51FA\u56FE\u7247", onClick: handleExportPNG, children: "\u{1F5BC}\uFE0F" }),
+            enableFullscreen && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
               ActionButton3,
               {
                 label: isFullscreen ? "\u9000\u51FA\u5168\u5C4F" : "\u5168\u5C4F\u67E5\u770B",
@@ -68239,11 +68517,11 @@ function ChartExportPanel({
                 children: "\u26F6"
               }
             ),
-            isFullscreen && /* @__PURE__ */ (0, import_jsx_runtime269.jsx)(ActionButton3, { label: "\u5173\u95ED\u5168\u5C4F", onClick: () => setIsFullscreen(false), children: "\u2715" }),
+            isFullscreen && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(ActionButton3, { label: "\u5173\u95ED\u5168\u5C4F", onClick: () => setIsFullscreen(false), children: "\u2715" }),
             extraActions
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime269.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
           "div",
           {
             ref: chartRef,
@@ -68260,8 +68538,8 @@ function ChartExportPanel({
 }
 
 // src/components/AlertCorrelationDashboard.tsx
-var import_react185 = require("react");
-var import_jsx_runtime270 = require("react/jsx-runtime");
+var import_react186 = require("react");
+var import_jsx_runtime271 = require("react/jsx-runtime");
 var SEVERITY_CONFIG3 = {
   critical: { label: "\u4E25\u91CD", dot: "#ef4444", bg: "rgba(239,68,68,0.10)" },
   high: { label: "\u9AD8", dot: "#f97316", bg: "rgba(249,115,22,0.10)" },
@@ -68282,7 +68560,7 @@ var SOURCE_LABELS3 = {
 };
 function ConfidenceBadge3({ level }) {
   const cfg = CONFIDENCE_CONFIG[level];
-  return /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
     "span",
     {
       "data-testid": `confidence-badge-${level}`,
@@ -68302,7 +68580,7 @@ function ConfidenceBadge3({ level }) {
   );
 }
 function SeverityDot({ severity }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
     "span",
     {
       "data-testid": `severity-dot-${severity}`,
@@ -68319,7 +68597,7 @@ function SeverityDot({ severity }) {
 }
 function SeverityLabel({ severity }) {
   const cfg = SEVERITY_CONFIG3[severity];
-  return /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
     "span",
     {
       "data-testid": `severity-label-${severity}`,
@@ -68348,11 +68626,11 @@ function CorrelationGroupCard({
   onExecuteAction,
   onViewDetail
 }) {
-  const groupAlerts = (0, import_react185.useMemo)(
+  const groupAlerts = (0, import_react186.useMemo)(
     () => alerts.filter((a) => group.alertIds.includes(a.id)),
     [alerts, group.alertIds]
   );
-  const maxSeverity = (0, import_react185.useMemo)(() => {
+  const maxSeverity = (0, import_react186.useMemo)(() => {
     const order = ["critical", "high", "medium", "low"];
     for (const s of order) {
       if (groupAlerts.some((a) => a.severity === s)) return s;
@@ -68360,7 +68638,7 @@ function CorrelationGroupCard({
     return "low";
   }, [groupAlerts]);
   const allAcknowledged = groupAlerts.every((a) => a.acknowledged);
-  return /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)(
     "div",
     {
       "data-testid": `correlation-group-${group.groupId}`,
@@ -68372,25 +68650,25 @@ function CorrelationGroupCard({
         backgroundColor: SEVERITY_CONFIG3[maxSeverity].bg
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, flex: 1 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(SeverityDot, { severity: maxSeverity }),
-            /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("span", { style: { fontWeight: 600, fontSize: 14, lineHeight: 1.4, flex: 1 }, children: group.rootCause })
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, flex: 1 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(SeverityDot, { severity: maxSeverity }),
+            /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("span", { style: { fontWeight: 600, fontSize: 14, lineHeight: 1.4, flex: 1 }, children: group.rootCause })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(ConfidenceBadge3, { level: group.confidence })
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(ConfidenceBadge3, { level: group.confidence })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: { display: "flex", gap: 16, marginBottom: 8, fontSize: 12, color: "#666" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("span", { "data-testid": `impact-${group.groupId}`, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { display: "flex", gap: 16, marginBottom: 8, fontSize: 12, color: "#666" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("span", { "data-testid": `impact-${group.groupId}`, children: [
             "\u{1F4CA} \u5F71\u54CD: ",
             group.impact
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("span", { "data-testid": `eta-${group.groupId}`, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("span", { "data-testid": `eta-${group.groupId}`, children: [
             "\u23F1 \u9884\u4F30\u6062\u590D: ",
             group.estimatedResolutionMin,
             "min"
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)(
           "div",
           {
             "data-testid": `recommendation-${group.groupId}`,
@@ -68408,7 +68686,7 @@ function CorrelationGroupCard({
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("div", { style: { marginBottom: 8 }, children: groupAlerts.map((alert) => /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { marginBottom: 8 }, children: groupAlerts.map((alert) => /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)(
           "div",
           {
             "data-testid": `group-alert-${alert.id}`,
@@ -68422,22 +68700,22 @@ function CorrelationGroupCard({
               textDecoration: alert.acknowledged ? "line-through" : "none"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(SeverityDot, { severity: alert.severity }),
-              /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(SeverityLabel, { severity: alert.severity }),
-              /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("span", { style: { minWidth: 60, color: SEVERITY_CONFIG3[alert.severity].dot }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(SeverityDot, { severity: alert.severity }),
+              /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(SeverityLabel, { severity: alert.severity }),
+              /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("span", { style: { minWidth: 60, color: SEVERITY_CONFIG3[alert.severity].dot }, children: [
                 "[",
                 SOURCE_LABELS3[alert.source],
                 "]"
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("span", { style: { flex: 1 }, children: alert.title }),
-              /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("span", { style: { color: "#999" }, children: formatTime6(alert.timestamp) }),
-              alert.acknowledged && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("span", { style: { color: "#22c55e" }, children: "\u2713" })
+              /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("span", { style: { flex: 1 }, children: alert.title }),
+              /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("span", { style: { color: "#999" }, children: formatTime6(alert.timestamp) }),
+              alert.acknowledged && /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("span", { style: { color: "#22c55e" }, children: "\u2713" })
             ]
           },
           alert.id
         )) }),
-        /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" }, children: [
-          !allAcknowledged && onAcknowledgeGroup && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" }, children: [
+          !allAcknowledged && onAcknowledgeGroup && /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
             "button",
             {
               "data-testid": `ack-group-${group.groupId}`,
@@ -68454,7 +68732,7 @@ function CorrelationGroupCard({
               children: "\u786E\u8BA4\u5173\u8054\u7EC4"
             }
           ),
-          onExecuteAction && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+          onExecuteAction && /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
             "button",
             {
               "data-testid": `execute-${group.groupId}`,
@@ -68471,7 +68749,7 @@ function CorrelationGroupCard({
               children: "\u6267\u884C\u63A8\u8350"
             }
           ),
-          onViewDetail && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+          onViewDetail && /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
             "button",
             {
               "data-testid": `detail-${group.groupId}`,
@@ -68503,20 +68781,20 @@ function AlertCorrelationDashboard({
   onViewDetail,
   className
 }) {
-  const [filterSeverity, setFilterSeverity] = (0, import_react185.useState)("all");
-  const [filterAcknowledged, setFilterAcknowledged] = (0, import_react185.useState)(null);
-  const unacknowledgedCount = (0, import_react185.useMemo)(
+  const [filterSeverity, setFilterSeverity] = (0, import_react186.useState)("all");
+  const [filterAcknowledged, setFilterAcknowledged] = (0, import_react186.useState)(null);
+  const unacknowledgedCount = (0, import_react186.useMemo)(
     () => alerts.filter((a) => !a.acknowledged).length,
     [alerts]
   );
-  const severityCounts = (0, import_react185.useMemo)(() => {
+  const severityCounts = (0, import_react186.useMemo)(() => {
     const counts = { critical: 0, high: 0, medium: 0, low: 0 };
     alerts.forEach((a) => {
       counts[a.severity]++;
     });
     return counts;
   }, [alerts]);
-  const filteredAlerts = (0, import_react185.useMemo)(() => {
+  const filteredAlerts = (0, import_react186.useMemo)(() => {
     return alerts.filter((a) => {
       if (filterSeverity !== "all" && a.severity !== filterSeverity) return false;
       if (filterAcknowledged === true && !a.acknowledged) return false;
@@ -68524,26 +68802,26 @@ function AlertCorrelationDashboard({
       return true;
     });
   }, [alerts, filterSeverity, filterAcknowledged]);
-  const filteredGroups = (0, import_react185.useMemo)(() => {
+  const filteredGroups = (0, import_react186.useMemo)(() => {
     return correlationGroups.filter((g) => {
       const groupAlertIds = new Set(g.alertIds);
       return filteredAlerts.some((a) => groupAlertIds.has(a.id));
     });
   }, [correlationGroups, filteredAlerts]);
   const severityOrder = ["critical", "high", "medium", "low"];
-  return /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)(
     "div",
     {
       "data-testid": "alert-correlation-dashboard",
       className,
       style: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("h2", { style: { margin: 0, fontSize: 18, fontWeight: 600 }, children: title }),
-          /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("span", { "data-testid": "unacknowledged-count", style: { fontSize: 13, color: unacknowledgedCount > 0 ? "#ef4444" : "#22c55e" }, children: unacknowledgedCount > 0 ? `\u26A0 ${unacknowledgedCount} \u6761\u672A\u786E\u8BA4` : "\u2705 \u5168\u90E8\u5DF2\u786E\u8BA4" })
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("h2", { style: { margin: 0, fontSize: 18, fontWeight: 600 }, children: title }),
+          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("span", { "data-testid": "unacknowledged-count", style: { fontSize: 13, color: unacknowledgedCount > 0 ? "#ef4444" : "#22c55e" }, children: unacknowledgedCount > 0 ? `\u26A0 ${unacknowledgedCount} \u6761\u672A\u786E\u8BA4` : "\u2705 \u5168\u90E8\u5DF2\u786E\u8BA4" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)("div", { style: { display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }, children: [
-          severityOrder.map((s) => /* @__PURE__ */ (0, import_jsx_runtime270.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }, children: [
+          severityOrder.map((s) => /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)(
             "span",
             {
               "data-testid": `severity-stat-${s}`,
@@ -68561,7 +68839,7 @@ function AlertCorrelationDashboard({
               },
               onClick: () => setFilterSeverity(filterSeverity === s ? "all" : s),
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(SeverityDot, { severity: s }),
+                /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(SeverityDot, { severity: s }),
                 " ",
                 SEVERITY_CONFIG3[s].label,
                 ": ",
@@ -68570,7 +68848,7 @@ function AlertCorrelationDashboard({
             },
             s
           )),
-          filterSeverity !== "all" && /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+          filterSeverity !== "all" && /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
             "button",
             {
               "data-testid": "clear-severity-filter",
@@ -68588,7 +68866,7 @@ function AlertCorrelationDashboard({
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("div", { "data-testid": "correlation-groups-list", children: filteredGroups.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime270.jsx)("div", { style: { textAlign: "center", padding: 40, color: "#999", fontSize: 14 }, children: "\u6682\u65E0\u5173\u8054\u544A\u8B66\u5206\u7EC4" }) : filteredGroups.map((group) => /* @__PURE__ */ (0, import_jsx_runtime270.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { "data-testid": "correlation-groups-list", children: filteredGroups.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { textAlign: "center", padding: 40, color: "#999", fontSize: 14 }, children: "\u6682\u65E0\u5173\u8054\u544A\u8B66\u5206\u7EC4" }) : filteredGroups.map((group) => /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
           CorrelationGroupCard,
           {
             group,
@@ -68605,7 +68883,7 @@ function AlertCorrelationDashboard({
 }
 
 // src/components/DeliveryPersonDashboard.tsx
-var import_jsx_runtime271 = require("react/jsx-runtime");
+var import_jsx_runtime272 = require("react/jsx-runtime");
 var SECTION_STYLE13 = {
   marginBottom: 24
 };
@@ -68764,11 +69042,11 @@ var DeliveryPersonDashboard = ({
   onNavigate
 }) => {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { padding: 16 }, className, "data-testid": "delivery-person-dashboard-loading", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { height: 44, background: "#f0f0f0", borderRadius: 8, marginBottom: 16 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { height: 80, background: "#f0f0f0", borderRadius: 8, marginBottom: 12 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { height: 80, background: "#f0f0f0", borderRadius: 8, marginBottom: 12 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { height: 80, background: "#f0f0f0", borderRadius: 8 } })
+    return /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { padding: 16 }, className, "data-testid": "delivery-person-dashboard-loading", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { height: 44, background: "#f0f0f0", borderRadius: 8, marginBottom: 16 } }),
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { height: 80, background: "#f0f0f0", borderRadius: 8, marginBottom: 12 } }),
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { height: 80, background: "#f0f0f0", borderRadius: 8, marginBottom: 12 } }),
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { height: 80, background: "#f0f0f0", borderRadius: 8 } })
     ] });
   }
   const statItems = dailyStats ? [
@@ -68785,16 +69063,16 @@ var DeliveryPersonDashboard = ({
       key: "customerName",
       header: "\u5BA2\u6237",
       width: compact ? "70" : "100",
-      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { children: row.customerName }),
-        /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontSize: 11, color: "#999" }, children: row.customerPhone })
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { children: row.customerName }),
+        /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { fontSize: 11, color: "#999" }, children: row.customerPhone })
       ] })
     },
     {
       key: "address",
       header: "\u5730\u5740",
       width: compact ? "100" : "180",
-      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontSize: 12, color: "#666", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: compact ? 100 : 180 }, children: row.address })
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { fontSize: 12, color: "#666", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: compact ? 100 : 180 }, children: row.address })
     },
     {
       key: "status",
@@ -68802,7 +69080,7 @@ var DeliveryPersonDashboard = ({
       width: compact ? "60" : "80",
       render: (row) => {
         const s = STATUS_MAP3[row.status] || { label: row.status, variant: "neutral" };
-        return /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(StatusBadge2, { variant: s.variant, label: s.label });
+        return /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(StatusBadge2, { variant: s.variant, label: s.label });
       }
     },
     {
@@ -68814,8 +69092,8 @@ var DeliveryPersonDashboard = ({
       key: "actions",
       header: compact ? "" : "\u64CD\u4F5C",
       width: compact ? "60" : "160",
-      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { display: "flex", gap: 4 }, children: [
-        row.status === "picked_up" && /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { display: "flex", gap: 4 }, children: [
+        row.status === "picked_up" && /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
           "button",
           {
             style: PRIMARY_BUTTON,
@@ -68826,7 +69104,7 @@ var DeliveryPersonDashboard = ({
             children: "\u51FA\u53D1"
           }
         ),
-        row.status === "in_transit" && /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
+        row.status === "in_transit" && /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
           "button",
           {
             style: { ...ACTION_BUTTON_BASE2, background: "#e8f5e9", color: "#2e7d32" },
@@ -68837,7 +69115,7 @@ var DeliveryPersonDashboard = ({
             children: "\u9001\u8FBE"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
           "button",
           {
             style: { ...OUTLINE_BUTTON, padding: "6px 8px", fontSize: 12 },
@@ -68853,74 +69131,74 @@ var DeliveryPersonDashboard = ({
   ];
   const urgentOrders = orders?.filter((o) => o.priority === "urgent" && o.status !== "delivered" && o.status !== "cancelled") || [];
   const currentStop = route?.find((s) => s.status === "pending" || s.status === "arrived");
-  return /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }, className, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: DRIVER_HEADER, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: DRIVER_INFO, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: DRIVER_AVATAR, children: driverName.charAt(0) }),
-        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontWeight: 600, fontSize: 16 }, children: driverName }),
-          /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { fontSize: 12, color: "#999", marginTop: 2 }, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }, className, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: DRIVER_HEADER, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: DRIVER_INFO, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: DRIVER_AVATAR, children: driverName.charAt(0) }),
+        /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { fontWeight: 600, fontSize: 16 }, children: driverName }),
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { fontSize: 12, color: "#999", marginTop: 2 }, children: [
             driverId && `\u5DE5\u53F7 ${driverId}`,
             vehicleId && ` \xB7 ${vehicleId}`
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("span", { style: LIVE_BADGE, children: "\u{1F7E2} \u5728\u7EBF" }) })
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: LIVE_BADGE, children: "\u{1F7E2} \u5728\u7EBF" }) })
     ] }),
-    currentStop && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { ...CARD3, marginBottom: 16, border: "1px solid #667eea", background: "#f8f9ff" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { fontSize: 13, color: "#667eea", fontWeight: 500, marginBottom: 4 }, children: [
+    currentStop && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { ...CARD3, marginBottom: 16, border: "1px solid #667eea", background: "#f8f9ff" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { fontSize: 13, color: "#667eea", fontWeight: 500, marginBottom: 4 }, children: [
         "\u5F53\u524D\u4EFB\u52A1 #",
         currentStop.sequence
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontWeight: 600, fontSize: 15 }, children: currentStop.customerName }),
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontSize: 13, color: "#666", marginTop: 4 }, children: currentStop.address }),
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { fontSize: 12, color: "#999", marginTop: 4 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { fontWeight: 600, fontSize: 15 }, children: currentStop.customerName }),
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { fontSize: 13, color: "#666", marginTop: 4 }, children: currentStop.address }),
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { fontSize: 12, color: "#999", marginTop: 4 }, children: [
         "ETA: ",
         currentStop.eta
       ] })
     ] }),
-    dailyStats && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: SECTION_STYLE13, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: SECTION_TITLE3, children: "\u4ECA\u65E5\u6982\u89C8" }),
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(QuickStats, { items: statItems, columns: compact ? 2 : 3 })
+    dailyStats && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: SECTION_STYLE13, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: SECTION_TITLE3, children: "\u4ECA\u65E5\u6982\u89C8" }),
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(QuickStats, { items: statItems, columns: compact ? 2 : 3 })
     ] }),
-    urgentOrders.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: SECTION_STYLE13, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { ...SECTION_TITLE3, color: "#c62828" }, children: [
+    urgentOrders.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: SECTION_STYLE13, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { ...SECTION_TITLE3, color: "#c62828" }, children: [
         "\u{1F534} \u7D27\u6025\u8BA2\u5355 (",
         urgentOrders.length,
         ")"
       ] }),
-      urgentOrders.map((order) => /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { ...ORDER_CARD, borderLeft: "3px solid #c62828" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: ORDER_HEADER, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("span", { style: ORDER_NUMBER_STYLE, children: order.orderNumber }),
-          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("span", { style: URGENT_BADGE, children: "\u7D27\u6025" })
+      urgentOrders.map((order) => /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { ...ORDER_CARD, borderLeft: "3px solid #c62828" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: ORDER_HEADER, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: ORDER_NUMBER_STYLE, children: order.orderNumber }),
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: URGENT_BADGE, children: "\u7D27\u6025" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: CUSTOMER_INFO, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: CUSTOMER_INFO, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { children: [
             order.customerName,
             " \xB7 ",
             order.customerPhone
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { children: order.address }),
-          /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { marginTop: 4 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { children: order.address }),
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { marginTop: 4 }, children: [
             "\u9884\u8BA1: ",
             order.estimatedTime
           ] }),
-          order.note && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { marginTop: 4, color: "#f57c00", fontSize: 12 }, children: [
+          order.note && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { marginTop: 4, color: "#f57c00", fontSize: 12 }, children: [
             "\u{1F4DD} ",
             order.note
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: ACTIONS_ROW, children: [
-          order.status === "picked_up" && /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("button", { style: PRIMARY_BUTTON, onClick: () => onStartDelivery?.(order.id), children: "\u5F00\u59CB\u914D\u9001" }),
-          order.status === "in_transit" && /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("button", { style: { ...ACTION_BUTTON_BASE2, background: "#e8f5e9", color: "#2e7d32" }, onClick: () => onCompleteDelivery?.(order.id), children: "\u786E\u8BA4\u9001\u8FBE" }),
-          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("button", { style: DANGER_BUTTON, onClick: () => onReportIssue?.(order.id), children: "\u5F02\u5E38\u4E0A\u62A5" }),
-          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("button", { style: OUTLINE_BUTTON, onClick: () => onNavigate?.(order.id, order.address), children: "\u5BFC\u822A" })
+        /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: ACTIONS_ROW, children: [
+          order.status === "picked_up" && /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("button", { style: PRIMARY_BUTTON, onClick: () => onStartDelivery?.(order.id), children: "\u5F00\u59CB\u914D\u9001" }),
+          order.status === "in_transit" && /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("button", { style: { ...ACTION_BUTTON_BASE2, background: "#e8f5e9", color: "#2e7d32" }, onClick: () => onCompleteDelivery?.(order.id), children: "\u786E\u8BA4\u9001\u8FBE" }),
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("button", { style: DANGER_BUTTON, onClick: () => onReportIssue?.(order.id), children: "\u5F02\u5E38\u4E0A\u62A5" }),
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("button", { style: OUTLINE_BUTTON, onClick: () => onNavigate?.(order.id, order.address), children: "\u5BFC\u822A" })
         ] })
       ] }, order.id))
     ] }),
-    orders && orders.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: SECTION_STYLE13, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: SECTION_TITLE3, children: "\u914D\u9001\u8BA2\u5355" }),
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)(
+    orders && orders.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: SECTION_STYLE13, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: SECTION_TITLE3, children: "\u914D\u9001\u8BA2\u5355" }),
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
         DataTable,
         {
           data: orders,
@@ -68930,30 +69208,30 @@ var DeliveryPersonDashboard = ({
         }
       )
     ] }),
-    route && route.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: SECTION_STYLE13, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: SECTION_TITLE3, children: [
+    route && route.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: SECTION_STYLE13, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: SECTION_TITLE3, children: [
         "\u8DEF\u7EBF\u89C4\u5212",
-        lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("span", { style: { fontSize: 12, color: "#999", fontWeight: 400, marginLeft: 8 }, children: [
+        lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color: "#999", fontWeight: 400, marginLeft: 8 }, children: [
           "\u6700\u540E\u540C\u6B65 ",
           lastSyncAt
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: CARD3, children: /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("ul", { style: ROUTE_LIST, children: route.map((stop) => {
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: CARD3, children: /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("ul", { style: ROUTE_LIST, children: route.map((stop) => {
         const dotColor = stop.status === "delivered" ? "#4caf50" : stop.status === "arrived" ? "#667eea" : stop.status === "skipped" ? "#bbb" : "#e0e0e0";
-        return /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("li", { style: ROUTE_ITEM, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { ...ROUTE_DOT, background: dotColor } }),
-          /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { flex: 1 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("span", { style: { fontWeight: 500, fontSize: 14 }, children: [
+        return /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("li", { style: ROUTE_ITEM, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { ...ROUTE_DOT, background: dotColor } }),
+          /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { flex: 1 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontWeight: 500, fontSize: 14 }, children: [
                 "#",
                 stop.sequence,
                 " ",
                 stop.customerName
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("span", { style: { fontSize: 12, color: "#999" }, children: ROUTE_STATUS_LABELS[stop.status] || stop.status })
+              /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: { fontSize: 12, color: "#999" }, children: ROUTE_STATUS_LABELS[stop.status] || stop.status })
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontSize: 12, color: "#666", marginTop: 2 }, children: stop.address }),
-            /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { fontSize: 12, color: "#999", marginTop: 2 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { fontSize: 12, color: "#666", marginTop: 2 }, children: stop.address }),
+            /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { fontSize: 12, color: "#999", marginTop: 2 }, children: [
               "ETA: ",
               stop.eta
             ] })
@@ -68961,12 +69239,12 @@ var DeliveryPersonDashboard = ({
         ] }, stop.stopId);
       }) }) })
     ] }),
-    !orders && !route && !dailyStats && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { textAlign: "center", padding: 40, color: "#999" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontSize: 48, marginBottom: 12 }, children: "\u{1F4E6}" }),
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { children: "\u6682\u65E0\u914D\u9001\u4EFB\u52A1" }),
-      /* @__PURE__ */ (0, import_jsx_runtime271.jsx)("div", { style: { fontSize: 13, marginTop: 4 }, children: "\u4ECA\u65E5\u914D\u9001\u6570\u636E\u5C06\u5728\u63A5\u5355\u540E\u663E\u793A" })
+    !orders && !route && !dailyStats && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { textAlign: "center", padding: 40, color: "#999" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { fontSize: 48, marginBottom: 12 }, children: "\u{1F4E6}" }),
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { children: "\u6682\u65E0\u914D\u9001\u4EFB\u52A1" }),
+      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { fontSize: 13, marginTop: 4 }, children: "\u4ECA\u65E5\u914D\u9001\u6570\u636E\u5C06\u5728\u63A5\u5355\u540E\u663E\u793A" })
     ] }),
-    lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime271.jsxs)("div", { style: { textAlign: "center", fontSize: 11, color: "#ccc", padding: "12px 0" }, children: [
+    lastSyncAt && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: { textAlign: "center", fontSize: 11, color: "#ccc", padding: "12px 0" }, children: [
       "\u6570\u636E\u540C\u6B65\u4E8E ",
       lastSyncAt
     ] })
@@ -68974,7 +69252,7 @@ var DeliveryPersonDashboard = ({
 };
 
 // src/components/InventoryManagerDashboard.tsx
-var import_jsx_runtime272 = require("react/jsx-runtime");
+var import_jsx_runtime273 = require("react/jsx-runtime");
 var SECTION_STYLE14 = {
   marginBottom: 24
 };
@@ -69067,7 +69345,7 @@ function gradeColor(grade) {
   };
   return map[grade] ?? "#94a3b8";
 }
-var CATEGORY_COLORS3 = [
+var CATEGORY_COLORS4 = [
   "#60a5fa",
   "#4ade80",
   "#fbbf24",
@@ -69080,11 +69358,11 @@ var CATEGORY_COLORS3 = [
   "#e879f9"
 ];
 var SLOW_COLUMNS = [
-  { key: "sku", header: "SKU", width: "100px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: r.sku }) },
-  { key: "name", header: "\u5546\u54C1\u540D", width: "160px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: r.name }) },
-  { key: "currentQty", header: "\u5E93\u5B58", width: "60px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: r.currentQty }) },
-  { key: "sales30d", header: "\u8FD130\u5929\u9500\u91CF", width: "80px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: r.sales30d }) },
-  { key: "daysInStock", header: "\u5E93\u5B58\u5929\u6570", width: "70px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color: r.daysInStock > 90 ? "#f87171" : "#fbbf24" }, children: [
+  { key: "sku", header: "SKU", width: "100px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: r.sku }) },
+  { key: "name", header: "\u5546\u54C1\u540D", width: "160px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: r.name }) },
+  { key: "currentQty", header: "\u5E93\u5B58", width: "60px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: r.currentQty }) },
+  { key: "sales30d", header: "\u8FD130\u5929\u9500\u91CF", width: "80px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: r.sales30d }) },
+  { key: "daysInStock", header: "\u5E93\u5B58\u5929\u6570", width: "70px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color: r.daysInStock > 90 ? "#f87171" : "#fbbf24" }, children: [
     r.daysInStock,
     "d"
   ] }) },
@@ -69092,7 +69370,7 @@ var SLOW_COLUMNS = [
     key: "capitalLocked",
     header: "\u5360\u7528\u8D44\u91D1",
     width: "90px",
-    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: [
+    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: [
       "\xA5",
       fmtCurrency9(r.capitalLocked)
     ] })
@@ -69101,18 +69379,18 @@ var SLOW_COLUMNS = [
     key: "suggestion",
     header: "\u5EFA\u8BAE",
     width: "70px",
-    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(StatusBadge2, { label: suggestionLabel(r.suggestion), variant: suggestionVariant(r.suggestion), size: "sm" })
+    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(StatusBadge2, { label: suggestionLabel(r.suggestion), variant: suggestionVariant(r.suggestion), size: "sm" })
   }
 ];
 var SUPPLIER_COLUMNS = [
-  { key: "name", header: "\u4F9B\u5E94\u5546", width: "120px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: r.name }) },
+  { key: "name", header: "\u4F9B\u5E94\u5546", width: "120px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: r.name }) },
   {
     key: "onTimeRate",
     header: "\u51C6\u65F6\u4EA4\u4ED8\u7387",
     width: "90px",
     render: (r) => {
       const color = r.onTimeRate >= 0.95 ? "#4ade80" : r.onTimeRate >= 0.85 ? "#fbbf24" : "#f87171";
-      return /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color }, children: [
+      return /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color }, children: [
         (r.onTimeRate * 100).toFixed(0),
         "%"
       ] });
@@ -69124,13 +69402,13 @@ var SUPPLIER_COLUMNS = [
     width: "80px",
     render: (r) => {
       const color = r.qualityRate >= 0.98 ? "#4ade80" : r.qualityRate >= 0.92 ? "#fbbf24" : "#f87171";
-      return /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color }, children: [
+      return /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color }, children: [
         (r.qualityRate * 100).toFixed(0),
         "%"
       ] });
     }
   },
-  { key: "avgLeadDays", header: "\u5E73\u5747\u5230\u8D27\u5929\u6570", width: "90px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: [
+  { key: "avgLeadDays", header: "\u5E73\u5747\u5230\u8D27\u5929\u6570", width: "90px", render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color: "#94a3b8" }, children: [
     r.avgLeadDays,
     "d"
   ] }) },
@@ -69138,7 +69416,7 @@ var SUPPLIER_COLUMNS = [
     key: "monthlyPurchase",
     header: "\u6708\u91C7\u8D2D\u989D",
     width: "90px",
-    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: [
+    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color: "#cbd5e1" }, children: [
       "\xA5",
       fmtCurrency9(r.monthlyPurchase)
     ] })
@@ -69147,7 +69425,7 @@ var SUPPLIER_COLUMNS = [
     key: "grade",
     header: "\u8BC4\u7EA7",
     width: "50px",
-    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+    render: (r) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
       "span",
       {
         style: {
@@ -69171,8 +69449,8 @@ function InventoryManagerDashboard({
   className
 }) {
   if (loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { className, style: { padding: 24 }, "data-testid": "inventory-mgr-loading", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { className, style: { padding: 24 }, "data-testid": "inventory-mgr-loading", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
         "div",
         {
           style: {
@@ -69181,7 +69459,7 @@ function InventoryManagerDashboard({
             gap: 14,
             marginBottom: 24
           },
-          children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+          children: Array.from({ length: 4 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
             "div",
             {
               style: {
@@ -69196,7 +69474,7 @@ function InventoryManagerDashboard({
           ))
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: { textAlign: "center", color: "#64748b", fontSize: 13 }, children: "\u6B63\u5728\u52A0\u8F7D\u5E93\u5B58\u5206\u6790\u6570\u636E..." })
+      /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: { textAlign: "center", color: "#64748b", fontSize: 13 }, children: "\u6B63\u5728\u52A0\u8F7D\u5E93\u5B58\u5206\u6790\u6570\u636E..." })
     ] });
   }
   const metricItems = metrics ? [
@@ -69232,36 +69510,36 @@ function InventoryManagerDashboard({
   ];
   const renderCategoryBreakdown = () => {
     if (!categoryBreakdown || categoryBreakdown.length === 0) return null;
-    return /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: CATEGORY_BAR_CONTAINER, children: categoryBreakdown.map((cat, index) => /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: CATEGORY_ROW_STYLE, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: CATEGORY_LABEL_STYLE, children: cat.category }),
-      /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: CATEGORY_BAR_TRACK, children: /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: CATEGORY_BAR_CONTAINER, children: categoryBreakdown.map((cat, index) => /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { style: CATEGORY_ROW_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: CATEGORY_LABEL_STYLE, children: cat.category }),
+      /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: CATEGORY_BAR_TRACK, children: /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
         "div",
         {
           style: {
             ...CATEGORY_BAR_FILL,
             width: `${cat.percentage}%`,
-            background: CATEGORY_COLORS3[index % CATEGORY_COLORS3.length]
+            background: CATEGORY_COLORS4[index % CATEGORY_COLORS4.length]
           }
         }
       ) }),
-      /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: CATEGORY_VALUE_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: CATEGORY_VALUE_STYLE, children: [
         "\xA5",
         fmtCurrency9(cat.totalValue)
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: CATEGORY_PCT_STYLE, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: CATEGORY_PCT_STYLE, children: [
         cat.percentage.toFixed(1),
         "%"
       ] })
     ] }, cat.category)) });
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)(
     "div",
     {
       className,
       style: { padding: 24, color: "#f8fafc" },
       "data-testid": "inventory-mgr-root",
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
           "div",
           {
             style: {
@@ -69272,8 +69550,8 @@ function InventoryManagerDashboard({
               flexWrap: "wrap",
               gap: 10
             },
-            children: /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+            children: /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
                 "h2",
                 {
                   style: {
@@ -69286,7 +69564,7 @@ function InventoryManagerDashboard({
                   children: title ?? "\u5E93\u5B58\u7ECF\u7406\u5DE5\u4F5C\u53F0"
                 }
               ),
-              lastUpdatedAt && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)(
+              lastUpdatedAt && /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)(
                 "span",
                 {
                   style: {
@@ -69304,21 +69582,21 @@ function InventoryManagerDashboard({
             ] })
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: SECTION_STYLE14, children: /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(QuickStats, { items: metricItems, columns: 4, gap: 14, padding: 18 }) }),
-        categoryBreakdown && categoryBreakdown.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-category", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: SECTION_TITLE_STYLE11, children: "\u54C1\u7C7B\u5E93\u5B58\u5206\u5E03" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: SECTION_STYLE14, children: /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(QuickStats, { items: metricItems, columns: 4, gap: 14, padding: 18 }) }),
+        categoryBreakdown && categoryBreakdown.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-category", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: SECTION_TITLE_STYLE11, children: "\u54C1\u7C7B\u5E93\u5B58\u5206\u5E03" }) }),
           renderCategoryBreakdown()
         ] }),
-        slowMovingItems && slowMovingItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-slow", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: SECTION_TITLE_STYLE11, children: [
+        slowMovingItems && slowMovingItems.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-slow", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: SECTION_TITLE_STYLE11, children: [
             "\u6EDE\u9500 / \u79EF\u538B\u5546\u54C1",
-            /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 8 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("span", { style: { fontSize: 12, color: "#64748b", marginLeft: 8 }, children: [
               "(",
               slowMovingItems.length,
               ")"
             ] })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
             DataTable,
             {
               columns: SLOW_COLUMNS,
@@ -69329,9 +69607,9 @@ function InventoryManagerDashboard({
             }
           )
         ] }),
-        supplierPerformances && supplierPerformances.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime272.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-suppliers", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime272.jsx)("span", { style: SECTION_TITLE_STYLE11, children: "\u4F9B\u5E94\u5546\u7EE9\u6548" }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
+        supplierPerformances && supplierPerformances.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { style: SECTION_STYLE14, "data-testid": "inventory-mgr-suppliers", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("div", { style: SECTION_HEADER_STYLE8, children: /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { style: SECTION_TITLE_STYLE11, children: "\u4F9B\u5E94\u5546\u7EE9\u6548" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
             DataTable,
             {
               columns: SUPPLIER_COLUMNS,
@@ -69355,6 +69633,7 @@ function InventoryManagerDashboard({
   AIAnalysisInsightsPanel,
   AICompetitiveAnalysisPanel,
   AIDecisionComparisonPanel,
+  AIDecisionDistributionPanel,
   AIDecisionEffectivenessBoard,
   AIDecisionExplainerPanel,
   AIDecisionOutcomeCard,
