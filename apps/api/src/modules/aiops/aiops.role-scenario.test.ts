@@ -396,7 +396,7 @@ describe(`${ROLES.Marketing} 营销活动场景`, () => {
     const h = createHealing()
     detector = h.detector
     healer = h.healer
-    predictionService = new AIOpsPredictionService()
+    predictionService = new AIOpsPredictionService(detector, healer)
   })
 
   it('✅ [正常] 营销日常流量正常', () => {
