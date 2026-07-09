@@ -195,6 +195,7 @@ __export(index_exports, {
   HeatmapChart: () => HeatmapChart,
   HoverCard: () => HoverCard,
   ImagePreview: () => ImagePreview,
+  InfiniteScroll: () => InfiniteScroll,
   InfoCard: () => InfoCard,
   InfoRow: () => InfoRow,
   Input: () => Input,
@@ -71090,6 +71091,110 @@ function OverviewCell({
     /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("div", { className: `text-lg font-bold tabular-nums ${danger ? "text-red-600 dark:text-red-400" : highlight ? "text-amber-600 dark:text-amber-400" : "text-gray-900 dark:text-gray-100"}`, children: value })
   ] });
 }
+
+// src/components/InfiniteScroll.tsx
+var import_react191 = __toESM(require("react"));
+var import_jsx_runtime280 = require("react/jsx-runtime");
+function InfiniteScroll({
+  hasMore,
+  onLoadMore,
+  loading = false,
+  loadingText = "\u52A0\u8F7D\u4E2D...",
+  endText = "\u6CA1\u6709\u66F4\u591A\u4E86",
+  threshold = 120,
+  disabled = false,
+  loader,
+  empty,
+  children,
+  className = "",
+  style,
+  direction = "vertical"
+}) {
+  const sentinelRef = (0, import_react191.useRef)(null);
+  const observerRef = (0, import_react191.useRef)(null);
+  const loadingRef = (0, import_react191.useRef)(loading);
+  const disabledRef = (0, import_react191.useRef)(disabled);
+  loadingRef.current = loading;
+  disabledRef.current = disabled;
+  const handleIntersect = (0, import_react191.useCallback)(
+    (entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      if (entry.isIntersecting && hasMore && !loadingRef.current && !disabledRef.current) {
+        onLoadMore();
+      }
+    },
+    [hasMore, onLoadMore]
+  );
+  (0, import_react191.useEffect)(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    observerRef.current?.disconnect();
+    observerRef.current = new IntersectionObserver(handleIntersect, {
+      rootMargin: direction === "horizontal" ? `0px ${threshold}px 0px 0px` : `0px 0px ${threshold}px 0px`,
+      threshold: 0
+    });
+    observerRef.current.observe(sentinel);
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, [handleIntersect, threshold, direction]);
+  const isEmpty = !loading && !hasMore && import_react191.default.Children.count(children) === 0;
+  const isHorizontal = direction === "horizontal";
+  return /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)(
+    "div",
+    {
+      className,
+      style: {
+        overflow: "auto",
+        display: "flex",
+        flexDirection: isHorizontal ? "row" : "column",
+        ...style
+      },
+      role: "feed",
+      "aria-busy": loading,
+      children: [
+        isEmpty && empty ? empty : children,
+        /* @__PURE__ */ (0, import_jsx_runtime280.jsx)(
+          "div",
+          {
+            ref: sentinelRef,
+            style: {
+              width: isHorizontal ? 1 : "100%",
+              height: isHorizontal ? "100%" : 1,
+              flexShrink: 0
+            },
+            "aria-hidden": true
+          }
+        ),
+        loading && (loader ?? /* @__PURE__ */ (0, import_jsx_runtime280.jsx)(
+          "div",
+          {
+            style: {
+              padding: "16px 0",
+              textAlign: "center",
+              color: "#94a3b8",
+              fontSize: 14
+            },
+            children: loadingText
+          }
+        )),
+        !hasMore && !loading && !isEmpty && /* @__PURE__ */ (0, import_jsx_runtime280.jsx)(
+          "div",
+          {
+            style: {
+              padding: "16px 0",
+              textAlign: "center",
+              color: "#64748b",
+              fontSize: 13
+            },
+            children: endText
+          }
+        )
+      ]
+    }
+  );
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -71257,6 +71362,7 @@ function OverviewCell({
   HeatmapChart,
   HoverCard,
   ImagePreview,
+  InfiniteScroll,
   InfoCard,
   InfoRow,
   Input,

@@ -1397,3 +1397,7 @@ export type {
   DriftOverview,
   DriftFeature,
 } from './components/DataDriftMonitorPanel';
+
+// --------------- InfiniteScroll ---------------
+export { InfiniteScroll } from './components/InfiniteScroll';
+export type { InfiniteScrollProps } from './components/InfiniteScroll';
