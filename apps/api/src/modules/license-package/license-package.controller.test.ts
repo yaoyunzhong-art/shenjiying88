@@ -137,7 +137,7 @@ describe('LicensePackageController', () => {
     })
 
     it('边界: ID 为特殊字符', async () => {
-      mockService.findOne.mockResolvedValueOnce({ id: 'pkg@special', name: '特殊ID套餐' })
+      mockService.findOne.mockResolvedValueOnce({ id: 'pkg@special', name: '特殊ID套餐', price: 999, isActive: true })
       const result = await controller.findOne('pkg@special')
       assert.equal(result.id, 'pkg@special')
     })

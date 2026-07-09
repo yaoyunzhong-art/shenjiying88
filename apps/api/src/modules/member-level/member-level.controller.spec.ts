@@ -106,7 +106,7 @@ describe('MemberLevelController — POST /evaluate — 正例', () => {
     assert.equal(result.data.currentTier, MemberLevelTier.VIP)
     assert.equal(result.data.currentSub, MemberLevelSub.L2)
     assert.equal(result.data.currentLevelKey, 'VIP_L2')
-    assert(result.data.upgraded, true)
+    assert(result.data.upgraded)
   })
 
   it('评估 SVIP L2 会员', () => {
