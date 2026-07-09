@@ -8,6 +8,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { TenantController } from './tenant.controller'
+import { TenantService } from './tenant.service'
+import { TenantQuotaService } from './tenant-quota.service'
+import { TenantLifecycleService } from './tenant-lifecycle.service'
 
 function makeReq(overrides: any = {}) {
   return {
@@ -40,7 +43,7 @@ const ROLES = {
 // ════════════ 👔店长 ════════════
 describe(`${ROLES.TenantAdmin} tenant扩展角色测试`, () => {
   it('店长跨门店 resolve 时返回正确 brandId', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       tenantContext: { tenantId: 't-mall', brandId: 'b-mall', storeId: 's-mall-a', marketCode: 'zh-cn' },
       actorContext: {
@@ -60,7 +63,7 @@ describe(`${ROLES.TenantAdmin} tenant扩展角色测试`, () => {
 // ════════════ 🛒前台 ════════════
 describe(`${ROLES.Reception} tenant扩展角色测试`, () => {
   it('前台 resolve 时 tenantContext.storeId 被保留', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       tenantContext: { tenantId: 't-rec', brandId: 'b-rec', storeId: 's-counter-01', marketCode: 'zh-cn' },
       actorContext: {
@@ -75,7 +78,7 @@ describe(`${ROLES.Reception} tenant扩展角色测试`, () => {
   })
 
   it('前台带多个 marketCode 也能 resolve', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       tenantContext: { tenantId: 't-multi', brandId: 'b-multi', storeId: 's-multi', marketCode: 'en-hk' },
       actorContext: {
@@ -92,7 +95,7 @@ describe(`${ROLES.Reception} tenant扩展角色测试`, () => {
 // ════════════ 👥HR ════════════
 describe(`${ROLES.HR} tenant扩展角色测试`, () => {
   it('HR 无 tenantContext 时使用 actorContext 的 tenantId', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       tenantContext: undefined,
       actorContext: {
@@ -108,7 +111,7 @@ describe(`${ROLES.HR} tenant扩展角色测试`, () => {
   })
 
   it('HR 带 storeId 也能 resolve', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       tenantContext: { tenantId: 't-hr', brandId: 'b-hr', storeId: 's-hr-office', marketCode: 'zh-cn' },
       actorContext: {
@@ -125,7 +128,7 @@ describe(`${ROLES.HR} tenant扩展角色测试`, () => {
 // ════════════ 🔧安监 ════════════
 describe(`${ROLES.Safety} tenant扩展角色测试`, () => {
   it('安监 actorContext 全缺时回退 tenantContext', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       actorContext: undefined,
       tenantContext: { tenantId: 't-safety-only', brandId: 'b-safety', storeId: 's-camera-01', marketCode: 'zh-cn' },
@@ -136,7 +139,7 @@ describe(`${ROLES.Safety} tenant扩展角色测试`, () => {
   })
 
   it('安监有 storeId 未认证也可 resolve', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       actorContext: {
         actorId: 'sensor-01',
@@ -156,7 +159,7 @@ describe(`${ROLES.Safety} tenant扩展角色测试`, () => {
 // ════════════ 🎮导玩员 ════════════
 describe(`${ROLES.Guide} tenant扩展角色测试`, () => {
   it('导玩员 actor.actorName 包含中文', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       tenantContext: { tenantId: 't-game', brandId: 'b-game', storeId: 's-arcade', marketCode: 'zh-cn' },
       actorContext: {
@@ -171,7 +174,7 @@ describe(`${ROLES.Guide} tenant扩展角色测试`, () => {
   })
 
   it('导玩员带 platform-user 类型也能 resolve', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       actorContext: {
         ...makeReq().actorContext,
@@ -187,7 +190,7 @@ describe(`${ROLES.Guide} tenant扩展角色测试`, () => {
 // ════════════ 🎯运行专员 ════════════
 describe(`${ROLES.Ops} tenant扩展角色测试`, () => {
   it('运行专员 actorContext.tenantId 与 tenantContext 不同时优先 actorContext', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       tenantContext: { tenantId: 't-common', brandId: 'b-c', storeId: 's-c', marketCode: 'zh-cn' },
       actorContext: {
@@ -203,7 +206,7 @@ describe(`${ROLES.Ops} tenant扩展角色测试`, () => {
   })
 
   it('运行专员无 governanceContext 也能 resolve', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({ governanceContext: undefined })
     const r = ctrl.resolveTenant(req)
     assert.equal(r.requestId, undefined)
@@ -213,7 +216,7 @@ describe(`${ROLES.Ops} tenant扩展角色测试`, () => {
 // ════════════ 🤝团建 ════════════
 describe(`${ROLES.Teambuilding} tenant扩展角色测试`, () => {
   it('团建 tenantContext 全空时回退 actorContext', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       tenantContext: undefined,
       actorContext: {
@@ -228,7 +231,7 @@ describe(`${ROLES.Teambuilding} tenant扩展角色测试`, () => {
   })
 
   it('团建 brandId 优先 actorContext', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       tenantContext: { tenantId: 't-tb', brandId: 'b-tenant-tb', storeId: 's-tb', marketCode: 'zh-cn' },
       actorContext: {
@@ -245,7 +248,7 @@ describe(`${ROLES.Teambuilding} tenant扩展角色测试`, () => {
 // ════════════ 📢营销 ════════════
 describe(`${ROLES.Marketing} tenant扩展角色测试`, () => {
   it('营销跨品牌 resolve 时 brandId 使用 actorContext', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       tenantContext: { tenantId: 't-mkt', brandId: 'b-mkt-base', storeId: 's-mkt', marketCode: 'zh-cn' },
       actorContext: {
@@ -260,7 +263,7 @@ describe(`${ROLES.Marketing} tenant扩展角色测试`, () => {
   })
 
   it('营销 actor.roles 为空数组仍可 resolve', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       actorContext: {
         ...makeReq().actorContext,
@@ -273,7 +276,7 @@ describe(`${ROLES.Marketing} tenant扩展角色测试`, () => {
   })
 
   it('营销 service-account 也能正确 resolve', () => {
-    const ctrl = new TenantController()
+    const ctrl = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq({
       actorContext: {
         ...makeReq().actorContext,

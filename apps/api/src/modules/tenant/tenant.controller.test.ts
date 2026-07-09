@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { TenantController } from './tenant.controller'
+import { TenantService } from './tenant.service'
+import { TenantQuotaService } from './tenant-quota.service'
+import { TenantLifecycleService } from './tenant-lifecycle.service'
 import type {
   RequestTenantContext,
   RequestActorContext,
@@ -77,7 +80,7 @@ describe('tenant controller 路由元数据', () => {
       'resolveTenant'
     )
     // 即使没有显式设置，也至少 verify controller 实例化正常
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     assert.ok(controller instanceof TenantController)
   })
 })
@@ -85,7 +88,7 @@ describe('tenant controller 路由元数据', () => {
 // ──────────── 正常解析场景 ────────────
 describe('resolveTenant 正常解析', () => {
   it('完整 actor + tenant + governance 合并', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant(
       makeReq({
         tenantContext: makeTenantContext({
@@ -125,7 +128,7 @@ describe('resolveTenant 正常解析', () => {
   })
 
   it('无 actor 时返回 null actor', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant(
       makeReq({
         tenantContext: makeTenantContext({
@@ -142,7 +145,7 @@ describe('resolveTenant 正常解析', () => {
   })
 
   it('actor tenantId 未设置时回退到 tenantContext', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant(
       makeReq({
         tenantContext: makeTenantContext({ tenantId: 't-base' }),
@@ -160,7 +163,7 @@ describe('resolveTenant 正常解析', () => {
   })
 
   it('tenantContext 无 tenantId 时回退到默认值', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant(
       makeReq({
         tenantContext: makeTenantContext({ tenantId: undefined as unknown as string }),
@@ -172,7 +175,7 @@ describe('resolveTenant 正常解析', () => {
   })
 
   it('actor.authenticated 为 false 时仍返回 actor 信息', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant(
       makeReq({
         actorContext: makeActorContext({
@@ -187,7 +190,7 @@ describe('resolveTenant 正常解析', () => {
   })
 
   it('空 roles 和 permissions 的 actor', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant(
       makeReq({
         actorContext: makeActorContext({ roles: [], permissions: [] })
@@ -202,7 +205,7 @@ describe('resolveTenant 正常解析', () => {
 // ──────────── 边界场景 ────────────
 describe('resolveTenant 边界场景', () => {
   it('无 tenantContext 无 actorContext 时的绝对回退', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant({
       tenantContext: undefined,
       actorContext: undefined,
@@ -216,7 +219,7 @@ describe('resolveTenant 边界场景', () => {
   })
 
   it('partial tenantContext 只有 tenantId', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant({
       tenantContext: { tenantId: 't-minimal-client' },
       actorContext: undefined,
@@ -230,7 +233,7 @@ describe('resolveTenant 边界场景', () => {
   })
 
   it('governanceContext 有 rateLimit 信息', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant(
       makeReq({
         governanceContext: makeGovernanceContext({
@@ -250,7 +253,7 @@ describe('resolveTenant 边界场景', () => {
   })
 
   it('长 actorId 和 tenantId 的处理', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const longId = 'a'.repeat(200)
     const result = controller.resolveTenant(
       makeReq({
@@ -264,7 +267,7 @@ describe('resolveTenant 边界场景', () => {
   })
 
   it('特殊字符在 actorName 和 marketCode 中', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant(
       makeReq({
         tenantContext: makeTenantContext({ marketCode: 'ar-ae/🇦🇪' }),
@@ -346,7 +349,7 @@ describe('resolveTenant 角色视角解析', () => {
 
   for (const scenario of roleScenarios) {
     it(`${scenario.roleLabel} 角色解析正确`, () => {
-      const controller = new TenantController()
+      const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
       const result = controller.resolveTenant(
         makeReq({
           actorContext: makeActorContext({
@@ -383,7 +386,7 @@ describe('resolveTenant 角色视角解析', () => {
 // ──────────── 租户级别解析 ────────────
 describe('resolveTenant 多级租户解析', () => {
   it('Platform 级 actor (无 tenant)', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant(
       makeReq({
         tenantContext: makeTenantContext({ tenantId: 't-platform-demo' }),
@@ -406,7 +409,7 @@ describe('resolveTenant 多级租户解析', () => {
   })
 
   it('Brand 级 actor 重写 tenantContext 的 brandId', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant(
       makeReq({
         tenantContext: makeTenantContext({
@@ -431,7 +434,7 @@ describe('resolveTenant 多级租户解析', () => {
   })
 
   it('Store 级 actor 直接绑定门店', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant(
       makeReq({
         tenantContext: makeTenantContext({
@@ -457,7 +460,7 @@ describe('resolveTenant 多级租户解析', () => {
   })
 
   it('Service Account actor', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant(
       makeReq({
         tenantContext: makeTenantContext({ tenantId: 't-automation' }),
@@ -480,7 +483,7 @@ describe('resolveTenant 多级租户解析', () => {
 // ──────────── 幂等性验证 ────────────
 describe('resolveTenant 幂等性与一致性', () => {
   it('相同输入多次调用返回相同结果', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const req = makeReq()
 
     const result1 = controller.resolveTenant(req)
@@ -492,7 +495,7 @@ describe('resolveTenant 幂等性与一致性', () => {
   })
 
   it('不同输入返回不同结果的同时结构保持稳定', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
 
     const reqA = makeReq({
       tenantContext: makeTenantContext({ tenantId: 't-a' })
@@ -512,7 +515,7 @@ describe('resolveTenant 幂等性与一致性', () => {
   })
 
   it('source 字段始终为 tenant-module', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
 
     const withActor = controller.resolveTenant(makeReq())
     const withoutActor = controller.resolveTenant({
@@ -529,7 +532,7 @@ describe('resolveTenant 幂等性与一致性', () => {
 // ──────────── 精确保留字段 ────────────
 describe('resolveTenant 精确保留 actor 原始字段', () => {
   it('actor 的所有字段被保留', () => {
-    const controller = new TenantController()
+    const controller = new TenantController(new TenantService(), new TenantQuotaService(), new TenantLifecycleService())
     const result = controller.resolveTenant(
       makeReq({
         actorContext: makeActorContext({
@@ -558,5 +561,180 @@ describe('resolveTenant 精确保留 actor 原始字段', () => {
     assert.deepStrictEqual(result.actor?.permissions, ['x', 'y', 'z'])
     assert.equal(result.actor?.authenticated, true)
     // source 在 controller 输出的 actor 中不暴露，仅在 actorContext 原始数据中存在
+  })
+})
+
+// ──────────── 配额管理端点 ────────────
+describe('quota 管理端点', () => {
+  function createController(): TenantController {
+    return new TenantController(
+      new TenantService(),
+      new TenantQuotaService(),
+      new TenantLifecycleService(),
+    )
+  }
+
+  it('initQuota 初始化租户配额', () => {
+    const ctrl = createController()
+    const result = ctrl.initQuota({ tenantId: 't-quota1', tier: 'PRO' as any })
+    assert.equal(result.data.tenantId, 't-quota1')
+    assert.equal(result.data.tier, 'PRO')
+    assert.ok(result.data.maxBrands > 0)
+  })
+
+  it('getQuota 返回已有配额', () => {
+    const ctrl = createController()
+    ctrl.initQuota({ tenantId: 't-q2' })
+    const result = ctrl.getQuota('t-q2')
+    assert.ok(result.data !== null)
+    assert.equal(result.data!.tenantId, 't-q2')
+  })
+
+  it('getQuota 未初始化返回 null', () => {
+    const ctrl = createController()
+    const result = ctrl.getQuota('t-nonexistent')
+    assert.strictEqual(result.data, null)
+  })
+
+  it('setTier 修改配额层级', () => {
+    const ctrl = createController()
+    ctrl.initQuota({ tenantId: 't-tier' })
+    const result = ctrl.setTier({ tenantId: 't-tier', tier: 'ENTERPRISE' as any })
+    assert.equal(result.data.tier, 'ENTERPRISE')
+    assert.ok(result.data.maxMembers > 100)
+  })
+
+  it('checkQuota 返回配额检查结果', () => {
+    const ctrl = createController()
+    ctrl.initQuota({ tenantId: 't-check' })
+    const result = ctrl.checkQuota({ tenantId: 't-check', resource: 'BRAND' as any })
+    assert.equal(typeof result.data.allowed, 'boolean')
+    assert.equal(result.data.resource, 'BRAND')
+  })
+
+  it('reserveQuota 预留资源并增加 usage', () => {
+    const ctrl = createController()
+    ctrl.initQuota({ tenantId: 't-reserve' })
+    const before = ctrl.getUsage('t-reserve')
+    const brandsBefore = before.data.brands
+    const result = ctrl.reserveQuota({ tenantId: 't-reserve', resource: 'BRAND' as any })
+    assert.equal(result.data.allowed, true)
+    const after = ctrl.getUsage('t-reserve')
+    assert.equal(after.data.brands, brandsBefore + 1)
+  })
+
+  it('overrideQuota 自定义配额覆盖', () => {
+    const ctrl = createController()
+    ctrl.initQuota({ tenantId: 't-override' })
+    const result = ctrl.overrideQuota({
+      tenantId: 't-override',
+      overrides: { maxBrands: 99, maxStores: 199 }
+    })
+    assert.equal(result.data.maxBrands, 99)
+    assert.equal(result.data.maxStores, 199)
+  })
+
+  it('getDefaultTierQuotas 返回各 tier 默认值', () => {
+    const ctrl = createController()
+    const result = ctrl.getDefaultTierQuotas()
+    assert.ok(result.data.length >= 3)
+    const tiers = result.data.map(d => d.tier)
+    assert.ok(tiers.includes('FREE' as any))
+    assert.ok(tiers.includes('PRO' as any))
+    assert.ok(tiers.includes('ENTERPRISE' as any))
+  })
+})
+
+// ──────────── 生命周期管理端点 ────────────
+describe('lifecycle 管理端点', () => {
+  function createController(): TenantController {
+    return new TenantController(
+      new TenantService(),
+      new TenantQuotaService(),
+      new TenantLifecycleService(),
+    )
+  }
+
+  beforeEach(() => {
+    // 每次测试前清除状态
+    vi.restoreAllMocks()
+  })
+
+  it('initLifecycle 初始化生命周期', () => {
+    const ctrl = createController()
+    const result = ctrl.initLifecycle({ tenantId: 't-life1' })
+    assert.equal(result.data.tenantId, 't-life1')
+    assert.equal(result.data.status, 'ACTIVE')
+    assert.ok(result.data.statusChangedAt) // 生命周期记录有时间戳
+  })
+
+  it('getLifecycle 返回已有生命周期', () => {
+    const ctrl = createController()
+    ctrl.initLifecycle({ tenantId: 't-life2' })
+    const result = ctrl.getLifecycle('t-life2')
+    assert.ok(result.data !== null)
+    assert.equal(result.data!.tenantId, 't-life2')
+  })
+
+  it('getLifecycle 未初始化返回 null', () => {
+    const ctrl = createController()
+    const result = ctrl.getLifecycle('t-nonexistent')
+    assert.strictEqual(result.data, null)
+  })
+
+  it('getStatus 返回活跃状态', () => {
+    const ctrl = createController()
+    ctrl.initLifecycle({ tenantId: 't-st1' })
+    const result = ctrl.getStatus('t-st1')
+    assert.equal(result.data.status, 'ACTIVE')
+  })
+
+  it('getStatus 未初始化返回 ACTIVE 默认', () => {
+    const ctrl = createController()
+    const result = ctrl.getStatus('t-st2')
+    assert.equal(result.data.status, 'ACTIVE')
+  })
+
+  it('suspend 暂停租户', () => {
+    const ctrl = createController()
+    ctrl.initLifecycle({ tenantId: 't-sus' })
+    const result = ctrl.suspend({ tenantId: 't-sus', actorId: 'admin-1', note: '欠费' })
+    assert.equal(result.data.status, 'SUSPENDED')
+    assert.ok(result.data.history.length >= 2) // 创建 + 暂停
+  })
+
+  it('reactivate 恢复租户', () => {
+    const ctrl = createController()
+    ctrl.initLifecycle({ tenantId: 't-re' })
+    ctrl.suspend({ tenantId: 't-re' })
+    const result = ctrl.reactivate({ tenantId: 't-re', actorId: 'admin-1' })
+    assert.equal(result.data.status, 'ACTIVE')
+  })
+
+  it('softDelete 软删除租户', () => {
+    const ctrl = createController()
+    ctrl.initLifecycle({ tenantId: 't-del' })
+    const result = ctrl.softDelete({ tenantId: 't-del', reason: 'ADMIN_DELETE' as any, note: '租户注销' })
+    assert.equal(result.data.status, 'DELETED')
+  })
+
+  it('listActive 列出活跃租户', () => {
+    const ctrl = createController()
+    ctrl.initLifecycle({ tenantId: 't-la1' })
+    ctrl.initLifecycle({ tenantId: 't-la2' })
+    ctrl.suspend({ tenantId: 't-la2' })
+    const result = ctrl.listActive()
+    assert.ok(result.data.length >= 1)
+    assert.equal(result.data.every(l => l.status === 'ACTIVE'), true)
+  })
+
+  it('listSuspended 列出已暂停租户', () => {
+    const ctrl = createController()
+    ctrl.initLifecycle({ tenantId: 't-ls1' })
+    ctrl.initLifecycle({ tenantId: 't-ls2' })
+    ctrl.suspend({ tenantId: 't-ls2' })
+    const result = ctrl.listSuspended()
+    assert.ok(result.data.length >= 1)
+    assert.equal(result.data.every(l => l.status === 'SUSPENDED'), true)
   })
 })
