@@ -1076,6 +1076,8 @@ export type {
 
 export { ScrollToTop } from './components/ScrollToTop';
 export type { ScrollToTopProps } from './components/ScrollToTop';
+export { FloatingActionButton } from './components/FloatingActionButton';
+export type { FloatingActionButtonProps, FabPosition, FabSize } from './components/FloatingActionButton';
 
 export { AIMetricGoalPanel } from './components/AIMetricGoalPanel';
 export type {
