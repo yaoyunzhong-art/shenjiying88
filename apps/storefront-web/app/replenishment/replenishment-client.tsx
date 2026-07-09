@@ -62,25 +62,25 @@ const COLUMNS: DataTableColumn<ReplenishmentOrder>[] = [
     key: 'itemCount',
     header: '商品种类',
     sortable: true,
-    render: (val: unknown) => `${val} 种`,
+    render: (row: ReplenishmentOrder) => `${row.itemCount} 种`,
   },
   {
     key: 'totalEstimatedQty',
     header: '预估数量',
     sortable: true,
-    render: (val: unknown) => `${val} 件`,
+    render: (row: ReplenishmentOrder) => `${row.totalEstimatedQty} 件`,
   },
   {
     key: 'urgent',
     header: '紧急',
     sortable: false,
-    render: (val: unknown) => (val ? <StatusBadge variant="danger" label="紧急" /> : <StatusBadge variant="neutral" label="常规" />),
+    render: (row: ReplenishmentOrder) => (row.urgent ? <StatusBadge variant="danger" label="紧急" /> : <StatusBadge variant="neutral" label="常规" />),  
   },
   {
     key: 'status',
     header: '状态',
     sortable: true,
-    render: (_: unknown, row: ReplenishmentOrder) => {
+    render: (row: ReplenishmentOrder) => {
       const cfg = STATUS_CONFIG[row.status];
       return <StatusBadge variant={cfg.variant} label={cfg.label} />;
     },
@@ -113,20 +113,16 @@ interface ReplenishmentListClientProps {
 export function ReplenishmentListClient({ orders }: ReplenishmentListClientProps) {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
 
-  const { search, setSearch, filteredItems: searchedItems } = useSearchFilter({
-    items: orders,
-    fields: ['orderNo', 'storeName', 'applicant', 'reason'] as (keyof ReplenishmentOrder)[],
-  });
+  const { searchTerm: search, setSearchTerm: setSearch, filteredItems: searchedItems } = useSearchFilter(orders, ['orderNo', 'storeName', 'applicant', 'reason']);
 
   const statusFiltered = useMemo(() => {
     if (activeTab === 'all') return searchedItems;
     return searchedItems.filter(o => o.status === activeTab);
   }, [searchedItems, activeTab]);
 
-  const { page, pageSize, setPage, setPageSize, totalPages, pageItems } = usePagination({
-    items: statusFiltered,
-    defaultPageSize: 8,
-  });
+  const pagination = usePagination({ initialPageSize: 8 });
+  const { page, pageSize, setPage, setPageSize, totalPages } = pagination;
+  const pageItems = pagination.paginate(statusFiltered);
 
   const stats = useMemo(() => computeStats(orders), [orders]);
 
@@ -134,10 +130,10 @@ export function ReplenishmentListClient({ orders }: ReplenishmentListClientProps
     <PageShell title="补货申请" subtitle="查看和管理门店补货申请单">
       {/* 统计卡片 */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-        <StatCard title="全部申请" value={stats.total} />
-        <StatCard title="待审批" value={stats.pendingApproval} variant="info" />
-        <StatCard title="已发货" value={stats.shipped} variant="warning" />
-        <StatCard title="已完成" value={stats.completed} variant="success" />
+        <StatCard label="全部申请" value={stats.total} />
+        <StatCard label="待审批" value={stats.pendingApproval} variant="info" />
+        <StatCard label="已发货" value={stats.shipped} variant="warning" />
+        <StatCard label="已完成" value={stats.completed} variant="success" />
       </div>
 
       {/* 搜索 + 新建按钮 */}
@@ -146,7 +142,7 @@ export function ReplenishmentListClient({ orders }: ReplenishmentListClientProps
           value={search}
           onChange={setSearch}
           placeholder="搜索补货单号/门店/申请人/原因..."
-          style={{ width: 360 }}
+          width={360}
         />
         <Button variant="primary" onClick={() => window.location.href = '/replenishment/new'}>
           + 新建补货申请
@@ -155,7 +151,7 @@ export function ReplenishmentListClient({ orders }: ReplenishmentListClientProps
 
       {/* 筛选 Tabs */}
       <Tabs
-        tabs={FILTER_TABS.map(t => ({ key: t.key, label: `${t.label} (${activeTab === 'all' ? orders.length : orders.filter(o => t.key === 'all' || o.status === t.key).length})` }))}
+        items={FILTER_TABS.map(t => ({ key: t.key, label: `${t.label} (${activeTab === 'all' ? orders.length : orders.filter(o => t.key === 'all' || o.status === t.key).length})` }))}
         activeKey={activeTab}
         onChange={k => { setActiveTab(k as FilterTab); setPage(1); }}
       />
@@ -177,6 +173,7 @@ export function ReplenishmentListClient({ orders }: ReplenishmentListClientProps
         </span>
         <Pagination
           page={page}
+          total={statusFiltered.length}
           totalPages={totalPages}
           pageSize={pageSize}
           onPageChange={setPage}
