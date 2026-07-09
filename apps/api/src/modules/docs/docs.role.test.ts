@@ -10,6 +10,13 @@ import { DocController } from './doc.controller'
 import { SwaggerGenService } from './swagger-gen.service'
 import { DocExportFormatEnum } from './doc.dto'
 
+/**
+ * 🐜 自动增强: [docs] [C-角色补全] 新增 🛒前台 🎯运行专员 📢营销 角色测试
+ * 
+ * 原文件仅覆盖 5 角色(👥HR 🎮导玩员 🔧安监 🤝团建 👔店长)
+ * 本次补全缺失的 3 角色，实现 8 角色全覆盖
+ */
+
 // ── 角色定义 ──
 const ROLES = {
   HR: '👥HR',
@@ -17,6 +24,13 @@ const ROLES = {
   Safety: '🔧安监',
   Teambuilding: '🤝团建',
   TenantAdmin: '👔店长',
+}
+
+/** 新增角色映射（原文件仅覆盖 5 角色，本次补全剩余 3 角色实现 8 角色全覆盖） */
+const ROLES_EXTRA = {
+  Reception: '🛒前台',
+  Ops: '🎯运行专员',
+  Marketing: '📢营销',
 }
 
 // ── 辅助函数 ──
@@ -473,5 +487,259 @@ describe(`${ROLES.TenantAdmin} docs 门店管理文档角色测试`, () => {
       () => ctrl.getEndpointByPath('store/nonexistent'),
       /not found/,
     )
+  })
+})
+
+// ═══════════════════════════════════════════════════════════
+// 🛒 前台 · 收银/客诉相关的文档查阅
+// ═══════════════════════════════════════════════════════════
+describe(`${ROLES_EXTRA.Reception} docs 前台文档查阅角色测试`, () => {
+  let ctrl: DocController
+
+  beforeEach(() => {
+    ctrl = makeController()
+  })
+
+  it('前台可以查看已注册的收银相关 API 端点列表（正常流程）', () => {
+    ctrl.registerEndpoint({ controllerName: 'CashierController', method: 'POST', path: '/cashier/checkout', summary: '收银结账' })
+    ctrl.registerEndpoint({ controllerName: 'CashierController', method: 'GET', path: '/cashier/payment-methods', summary: '支付方式列表' })
+
+    const endpoints = ctrl.listEndpoints()
+    assert.ok(endpoints.length >= 2)
+    assert.ok(endpoints.some((e: any) => e.path === '/cashier/checkout'))
+    assert.ok(endpoints.some((e: any) => e.path === '/cashier/payment-methods'))
+  })
+
+  it('前台可以生成收银模块的 HTML 文档供门店培训使用（正常流程）', () => {
+    ctrl.registerEndpoint({ controllerName: 'CashierController', method: 'POST', path: '/cashier/checkout', summary: '收银结账', description: '前台收银台结账操作' })
+
+    const doc = ctrl.generate({
+      title: '收银操作手册',
+      version: '1.0.0',
+      format: DocExportFormatEnum.REDOC_HTML,
+      description: '前台收银指南',
+    })
+    assert.equal(doc.title, '收银操作手册')
+    assert.equal(doc.format, DocExportFormatEnum.REDOC_HTML)
+    assert.ok(doc.sizeBytes > 0)
+  })
+
+  it('前台可以查看文档索引页快速定位需要的操作手册（正常流程）', () => {
+    const index = ctrl.getIndexPage('前台操作手册合集', '1.0.0')
+    assert.ok(index.html.length > 0)
+    assert.ok(index.generatedAt)
+  })
+
+  it('前台可以查询已注册的特定端点路径（正常流程）', () => {
+    ctrl.registerEndpoint({ controllerName: 'CashierController', method: 'GET', path: '/cashier/refund', summary: '退款' })
+
+    const ep = ctrl.getEndpointByPath('cashier/refund')
+    assert.equal(ep.path, '/cashier/refund')
+    assert.equal(ep.summary, '退款')
+  })
+
+  it('前台查询不存在的端点路径应抛出 not found 错误（边界）', () => {
+    assert.throws(
+      () => ctrl.getEndpointByPath('cashier/nonexistent-op'),
+      /not found/,
+    )
+  })
+
+  it('前台可以用 POSTMAN Collection 导出端点供收银系统集成测试（边界）', () => {
+    ctrl.registerEndpoint({ controllerName: 'CashierController', method: 'POST', path: '/cashier/checkout', summary: '结账' })
+
+    const doc = ctrl.generate({
+      title: '收银 POSTMAN 集合',
+      version: '1.0.0',
+      format: DocExportFormatEnum.POSTMAN_COLLECTION,
+    })
+    assert.equal(doc.format, DocExportFormatEnum.POSTMAN_COLLECTION)
+    assert.ok(doc.content.length > 0)
+  })
+})
+
+// ═══════════════════════════════════════════════════════════
+// 🎯 运行专员 · 运维监控文档查阅
+// ═══════════════════════════════════════════════════════════
+describe(`${ROLES_EXTRA.Ops} docs 运行专员运维文档角色测试`, () => {
+  let ctrl: DocController
+
+  beforeEach(() => {
+    ctrl = makeController()
+  })
+
+  it('运行专员可以注册运维相关的 API 端点（正常流程）', () => {
+    const result = ctrl.registerEndpoint({
+      controllerName: 'OpsController',
+      method: 'GET',
+      path: '/ops/metrics',
+      summary: '获取系统指标',
+      description: '运行专员查看系统 CPU/内存等监控指标',
+    })
+    assert.equal(result.success, true)
+    assert.equal(result.endpoint.controllerName, 'OpsController')
+    assert.equal(result.endpoint.path, '/ops/metrics')
+  })
+
+  it('运行专员可以注册运维 Schema 用于监控告警文档（正常流程）', () => {
+    const result = ctrl.registerSchema({
+      name: 'MetricsResponse',
+      schema: {
+        type: 'object',
+        properties: {
+          cpuUsage: { type: 'number' },
+          memoryUsage: { type: 'number' },
+          uptime: { type: 'number' },
+          activeConnections: { type: 'integer' },
+        },
+      },
+    })
+    assert.equal(result.success, true)
+    assert.equal(result.name, 'MetricsResponse')
+  })
+
+  it('运行专员可以生成运维 API 文档（正常流程）', () => {
+    ctrl.registerEndpoint({ controllerName: 'OpsController', method: 'GET', path: '/ops/health', summary: '健康检查' })
+    ctrl.registerEndpoint({ controllerName: 'OpsController', method: 'GET', path: '/ops/metrics', summary: '系统指标' })
+
+    const doc = ctrl.generate({
+      title: '运维 API 文档',
+      version: '2.1.0',
+      format: DocExportFormatEnum.OPENAPI_JSON,
+      description: '运维监控相关接口',
+    })
+    assert.equal(doc.title, '运维 API 文档')
+    assert.equal(doc.version, '2.1.0')
+    assert.ok(doc.content.length > 0)
+  })
+
+  it('运行专员可以查看文档统计了解运维模块覆盖率（正常流程）', () => {
+    ctrl.registerEndpoint({ controllerName: 'OpsController', method: 'GET', path: '/ops/health', summary: '健康检查' })
+    ctrl.registerEndpoint({ controllerName: 'OpsController', method: 'GET', path: '/ops/metrics', summary: '指标' })
+    ctrl.registerSchema({ name: 'HealthResponse', schema: { type: 'object' } })
+
+    const stats = ctrl.getStats()
+    assert.equal(stats.totalEndpoints, 2)
+    assert.equal(stats.totalSchemas, 1)
+    assert.ok(stats.endpointMethods.GET === 2)
+  })
+
+  it('运行专员可以注册安全方案用于运维接口鉴权文档（边界）', () => {
+    const result = ctrl.registerSecurityScheme({
+      name: 'ops-bearer-token',
+      type: 'http',
+      scheme: 'bearer',
+      description: '运维监控 API 使用 Bearer Token 鉴权',
+    })
+    assert.equal(result.success, true)
+    assert.equal(result.name, 'ops-bearer-token')
+  })
+
+  it('运行专员可以注册废弃端点标记（边界）', () => {
+    const result = ctrl.registerEndpoint({
+      controllerName: 'OpsController',
+      method: 'GET',
+      path: '/ops/v1/health',
+      summary: '旧版健康检查（已废弃）',
+      deprecated: true,
+    })
+    assert.equal(result.success, true)
+    assert.equal(result.endpoint.deprecated, true)
+  })
+})
+
+// ═══════════════════════════════════════════════════════════
+// 📢 营销 · 营销活动文档管理
+// ═══════════════════════════════════════════════════════════
+describe(`${ROLES_EXTRA.Marketing} docs 营销活动文档角色测试`, () => {
+  let ctrl: DocController
+
+  beforeEach(() => {
+    ctrl = makeController()
+  })
+
+  it('营销可以注册营销活动相关的 API 端点（正常流程）', () => {
+    const result = ctrl.registerEndpoint({
+      controllerName: 'MarketingController',
+      method: 'POST',
+      path: '/marketing/campaign',
+      summary: '创建营销活动',
+      description: '营销人员创建新的促销活动',
+    })
+    assert.equal(result.success, true)
+    assert.equal(result.endpoint.controllerName, 'MarketingController')
+    assert.equal(result.endpoint.method, 'POST')
+  })
+
+  it('营销可以注册营销 Schema 用于活动文档生成（正常流程）', () => {
+    const result = ctrl.registerSchema({
+      name: 'MarketingCampaign',
+      schema: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' },
+          type: { type: 'string', enum: ['discount', 'coupon', 'gift'] },
+          budget: { type: 'number' },
+          startDate: { type: 'string', format: 'date' },
+          endDate: { type: 'string', format: 'date' },
+        },
+      },
+    })
+    assert.equal(result.success, true)
+    assert.equal(result.name, 'MarketingCampaign')
+  })
+
+  it('营销可以生成多种格式的文档供不同团队使用（正常流程）', () => {
+    ctrl.registerEndpoint({ controllerName: 'MarketingController', method: 'GET', path: '/marketing/campaigns', summary: '活动列表' })
+
+    const jsonDoc = ctrl.generate({
+      title: '营销活动文档',
+      version: '1.0.0',
+      format: DocExportFormatEnum.OPENAPI_JSON,
+      description: '营销活动相关 API',
+    })
+    assert.equal(jsonDoc.format, DocExportFormatEnum.OPENAPI_JSON)
+
+    const yamlDoc = ctrl.generate({
+      title: '营销活动文档',
+      version: '1.0.0',
+      format: DocExportFormatEnum.OPENAPI_YAML,
+    })
+    assert.equal(yamlDoc.format, DocExportFormatEnum.OPENAPI_YAML)
+
+    const insomniaDoc = ctrl.generate({
+      title: '营销活动文档',
+      version: '1.0.0',
+      format: DocExportFormatEnum.INSOMNIA_EXPORT,
+    })
+    assert.equal(insomniaDoc.format, DocExportFormatEnum.INSOMNIA_EXPORT)
+  })
+
+  it('营销可以添加活动 Tag 分类方便文档组织（正常流程）', () => {
+    const result = ctrl.addTag({ name: '营销活动', description: '市场推广相关的 API 接口' })
+    assert.equal(result.success, true)
+    assert.equal(result.name, '营销活动')
+  })
+
+  it('营销可以用自定义服务器地址生成文档（边界）', () => {
+    ctrl.registerEndpoint({ controllerName: 'MarketingController', method: 'GET', path: '/marketing/banners', summary: 'Banner列表' })
+
+    const doc = ctrl.generate({
+      title: '营销文档-生产环境',
+      version: '1.0.0',
+      format: DocExportFormatEnum.OPENAPI_JSON,
+      servers: ['https://api.shenjiying.com/marketing'],
+    })
+    assert.equal(doc.title, '营销文档-生产环境')
+    assert.ok(doc.content.length > 0)
+  })
+
+  it('营销可以更新文档配置并查看配置状态（边界）', () => {
+    const updateResult = ctrl.updateConfig({
+      title: '营销 API 文档更新版',
+      description: '含最新的促销活动接口',
+    })
+    assert.equal(updateResult.success, true)
   })
 })
