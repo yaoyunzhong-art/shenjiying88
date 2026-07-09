@@ -108,6 +108,10 @@ import { RBACModule } from './modules/rbac/rbac.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { PaymentGatewayModule } from './modules/payment-gateway/payment-gateway.module';
 import { ReportModule as ReportModuleStandalone } from './modules/report/report.module';
+import { LicensePackageModule } from './modules/license-package/license-package.module';
+import { InsightModule } from './modules/insight/insight.module';
+import { WebhookModule } from './modules/webhook/webhook.module';
+import { PermissionModule } from './modules/permission/permission.module';
 
 @Module({
   imports: [
@@ -228,6 +232,10 @@ import { ReportModule as ReportModuleStandalone } from './modules/report/report.
     RealtimeModule,
     PaymentGatewayModule,
     ReportModuleStandalone,
+    LicensePackageModule,
+    InsightModule,
+    WebhookModule,
+    PermissionModule,
   ],
   providers: [
     RequestGovernanceService,
