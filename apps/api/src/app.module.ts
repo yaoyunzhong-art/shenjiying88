@@ -113,6 +113,7 @@ import { InsightModule } from './modules/insight/insight.module';
 import { WebhookModule } from './modules/webhook/webhook.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { CurrencyModule } from './modules/currency/currency.module';
+import { AiMarketingModule } from './modules/ai-marketing/ai-marketing.module';
 
 @Module({
   imports: [
@@ -238,6 +239,7 @@ import { CurrencyModule } from './modules/currency/currency.module';
     WebhookModule,
     PermissionModule,
     CurrencyModule,
+    AiMarketingModule,
   ],
   providers: [
     RequestGovernanceService,
