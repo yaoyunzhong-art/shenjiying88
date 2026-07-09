@@ -423,3 +423,43 @@ P-36会员管理的角色模拟测试覆盖了「创建会员 → 充值 → 消
 ### 规则
 - 引入新页面时，必须通过 TSC 验证再提交。auto-commit 不应跳过 typecheck。
 - 使用 `@m5/ui` 组件时，先查看接口定义，避免靠猜测使用字段名。
+
+---
+
+**[🎨 前端专家] Server Action + Client Component的Streaming SSR水合边界优化** | 日期: 2026-07-09
+
+**推理分析**: Next.js App Router下，Server Component是默认渲染层，但交互密集型页面(如盲盒抽奖动画、实时开奖结果)需要Client Component处理水合(Hydration)。反模式：将整个页面标记为`'use client'`导致Server Action失效、JS Bundle膨胀。最佳实践：按"交互区域"粒度拆分——只在需要`useState`/`useEffect`/事件监听的叶子组件使用`'use client'`，而数据获取、布局、服务端逻辑保持Server Component。Server Action用于表单提交和数据变更，Client Component只做UI反馈和动画控制。
+
+**具体案例**: 盲盒购买页面原本整个page.tsx标记为`'use client'`，JS Bundle 186KB，FCP(First Contentful Paint) 2.4s。重构后：`BuyPage`(Server Component)负责获取盲盒列表+用户余额→直接渲染HTML；`BlindboxLottery`(Client Component)用`'use client'`独立分包，只包含抽奖动画和结果弹窗。JS Bundle降到42KB(仅交互动画部分)，FCP缩至0.8s。Server Action处理购买请求，无需额外API路由。
+
+**影响/建议**: 在架构中推广"Server-first, Client-leaf"模式：布局/数据获取/SEO内容走Server Component；弹窗/表单输入/动画走独立的Client Component leaf。使用`next/dynamic` + `ssr: false`延迟加载首屏不可见的Client交互区域。
+
+---
+
+**[🧪 测试专家] 分层测试策略：从单元到E2E的覆盖率金字塔重构** | 日期: 2026-07-09
+
+**推理分析**: 团队当前测试集中在E2E(Playwright 120+条)与手动测试，单元测试覆盖率仅18%。E2E慢(CI耗时22min)、脆(随机失败率8%)、不定位问题。基于Test Trophy金字塔重构：Layer1(Unit·50%)——Service纯逻辑/Transformer/Adapter、Utility函数用vitest覆盖，不做UI组件shallow render；Layer2(Integration·30%)——NestJS的`@nestjs/testing` TestModule启动最小模块，验证Controller+Service+Repository的完整请求链路；Layer3(E2E·15%)——只覆盖关键用户流程(登录→购买→结算→退款)，放弃80%的边界E2E场景；Layer4(Manual·5%)——视觉回归、多浏览器兼容等自动化cover不了的部分。
+
+**具体案例**: 之前一个积分兑换Bug(阈值计算少一位小数)，E2E通过"正常"场景没触发，生产事故。引入Layer2集成测试后：用`Test.createTestingModule`启动`PointsModule`，注入MockRepository，测试验证`redeem(amount=150, rate=0.6, max=100)`应返回90而非94。该测试25ms跑完，CI阶段5s内发现问题。E2E仅保留1条积分兑换核心流程验证。生产Bug从月均3起降为0。
+
+**影响/建议**: 设定CI阶段：Layer1(Unit) < 2min → Layer2(Integration) < 5min → Layer3(E2E) < 8min。使用vitest的`--changed`模式只跑变更文件关联的测试。E2E建议使用Playwright的Sharding(spilt 120条→3个worker×40条)。Layer2集成测试需要+`globalSetup`初始化测试DB(使用testcontainers/postgres)。
+
+---
+
+**[🔒 安全专家] 零信任API网关中的JWT短生命周期+Refresh Token轮换策略** | 日期: 2026-07-09
+
+**推理分析**: 街机系统涉及两种客户端：门店设备(嵌入式Linux/C++)和玩家移动端(微信小程序/H5)。零信任原则下，所有API请求都必须经过认证且最小权限。JWT安全核心在于生命周期控制：Access Token设15min过期(即使泄露影响范围有限)，Refresh Token用30天+轮换(Rotation)策略——每次刷新发新Refresh Token的同时使旧Token失效。Token存储在HttpOnly Cookie中(防XSS窃取)，移动端存Keychain(不存localStorage)。API Gateway层做Token验证+解密，只透传`userId`和`role`到下游Service。
+
+**具体案例**: 门店设备API Token原设计2小时过期，某门店收银电脑中恶意软件窃取Token后模拟提现接口批量退款，损失￥2800。修复后改用15min JWT + Refresh Token轮换：窃取者即使拿到Token也只能在15分钟内操作；同时引入设备指纹(deviceFingerprint: UA+屏幕尺寸+公网IP)作为Token绑定的额外因子，token在不同指纹请求时强制下线。
+
+**影响/建议**: ① 使用`jwks-rsa`实现JWKS(JSON Web Key Set)的公钥轮换；② Access Token payload中只含`sub(userId)`、`role`、`deviceFingerprint hash`，不含敏感信息；③ 使用NestJS Guard在Gateway层统一校验，Service层不再做Token验证；④ Refresh Token用Redis存储(7天TTL)，防重放通过每次刷新生成新token并标记旧token为used。
+
+---
+
+**[🗄️ 数据库专家] 积分流水表的时序分区策略与分表触发器治理** | 日期: 2026-07-09
+
+**推理分析**: 积分流水表(`points_transactions`)月增约1200万行，单表超过500万行后查询性能显著下降(索引深度增加、脏页率上升)。采用PostgreSQL原生分区表(PARTITION BY RANGE)按月分区：`points_transactions_202607`分区存当前月热数据(持续写入)，历史分区转为只读(可压缩pg_repack)。热分区在`(player_id, created_at)`上建立复合索引，冷分区只保留`player_id`索引。归档策略：6个月前的分区detach后转为列存(`cstore_fdw`或PG17内置列存)，用于报表查询时大幅减少IO。
+
+**具体案例**: 玩家积分流水查询原始SQL `SELECT * FROM points_transactions WHERE player_id = 'xxx' ORDER BY created_at DESC LIMIT 50`，单月数据量180万行时耗时220ms。按月分区后，查询只扫描7月分区(80万行)，耗时降至18ms。历史数据迁移：前8个月的分区detach为只读表，pg_repack回收空间从12GB降到4.2GB。
+
+**影响/建议**: ① 建议在8月前完成分区迁移(当前7月数据量已达百万)，使用pg_partman自动管理每月新分区；② 跨月查询(如当月+上月积分汇总)走UNION ALL查询，每个分区独立扫描；③ 写操作注意：TypeORM Entity需要指定分区键`@PrimaryGeneratedColumn('uuid')` + `@Index(['playerId', 'createdAt'])`，触发器不在分区父表上创建而是在每个分区上单独创建；④ 不允许跨分区UPDATE(PostgreSQL限制)，积分流水只INSERT不回滚的日志类数据不接受UPDATE。

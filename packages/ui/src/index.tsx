@@ -1309,3 +1309,7 @@ export type { AsyncSelectProps } from './components/AsyncSelect';
 // --------------- Tour ---------------
 export { Tour } from './components/Tour';
 export type { TourProps, TourStep } from './components/Tour';
+
+// --------------- ChartExportPanel ---------------
+export { ChartExportPanel } from './components/ChartExportPanel';
+export type { ChartExportPanelProps, TimeRangeOption } from './components/ChartExportPanel';

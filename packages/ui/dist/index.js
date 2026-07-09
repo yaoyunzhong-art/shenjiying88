@@ -93,6 +93,7 @@ __export(index_exports, {
   Cascader: () => Cascader,
   CashierPanel: () => CashierPanel,
   Chart: () => Chart,
+  ChartExportPanel: () => ChartExportPanel,
   Checkbox: () => Checkbox,
   Chip: () => Chip,
   CoachDashboard: () => CoachDashboard,
@@ -29309,7 +29310,7 @@ var Timeline = ({ items, "data-testid": testId }) => {
       children: items.map((item, idx) => {
         const isLast = idx === items.length - 1;
         const variant = item.pending ? "default" : item.variant ?? "default";
-        const styles9 = VARIANT_STYLES7[variant];
+        const styles10 = VARIANT_STYLES7[variant];
         return /* @__PURE__ */ (0, import_jsx_runtime118.jsxs)(
           "div",
           {
@@ -29335,8 +29336,8 @@ var Timeline = ({ items, "data-testid": testId }) => {
                           width: item.pending ? 10 : 12,
                           height: item.pending ? 10 : 12,
                           borderRadius: "50%",
-                          backgroundColor: item.pending ? "transparent" : styles9.dot,
-                          border: item.pending ? `2px dashed ${styles9.dot}` : "none",
+                          backgroundColor: item.pending ? "transparent" : styles10.dot,
+                          border: item.pending ? `2px dashed ${styles10.dot}` : "none",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -29352,7 +29353,7 @@ var Timeline = ({ items, "data-testid": testId }) => {
                         style: {
                           width: 0,
                           flex: 1,
-                          borderLeft: styles9.line,
+                          borderLeft: styles10.line,
                           minHeight: 12
                         }
                       }
@@ -29379,7 +29380,7 @@ var Timeline = ({ items, "data-testid": testId }) => {
                         style: {
                           fontSize: 13,
                           fontWeight: 600,
-                          color: item.pending ? "#64748b" : styles9.heading,
+                          color: item.pending ? "#64748b" : styles10.heading,
                           opacity: item.pending ? 0.6 : 1
                         },
                         children: item.heading
@@ -56231,7 +56232,7 @@ var PredictionAnalysisPanel = ({
     );
   }
   const maxPrediction = Math.max(...predictions.map((p) => p.predictedValue), 1);
-  const styles9 = {
+  const styles10 = {
     container: {
       border: "1px solid #e5e7eb",
       borderRadius: 8,
@@ -56279,16 +56280,16 @@ var PredictionAnalysisPanel = ({
       transition: "width 0.6s ease"
     })
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className, style: styles9.container, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { style: styles9.header, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("h3", { style: styles9.title, children: title }),
+  return /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { className, style: styles10.container, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { style: styles10.header, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("h3", { style: styles10.title, children: title }),
       summary && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { style: {
-        ...styles9.chip,
+        ...styles10.chip,
         ...RISK_CONFIG[summary.riskLevel],
         color: RISK_CONFIG[summary.riskLevel].color
       }, children: RISK_CONFIG[summary.riskLevel].label })
     ] }),
-    summary && /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { style: styles9.summaryCard, children: [
+    summary && /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { style: styles10.summaryCard, children: [
       /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { children: [
           /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { style: { fontSize: 12, color: "#6b7280" }, children: "\u6700\u4F73\u9884\u6D4B\uFF1A" }),
@@ -56335,7 +56336,7 @@ var PredictionAnalysisPanel = ({
             trendInfo && /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { style: { color: trendInfo.color, fontSize: 13 }, children: trendInfo.icon })
           ] })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { style: styles9.barOuter, children: /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { style: styles9.barInner(barPct, "#3b82f6") }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { style: styles10.barOuter, children: /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("div", { style: styles10.barInner(barPct, "#3b82f6") }) }),
         /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", marginTop: 2 }, children: [
           p.actualValue !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime219.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [
             /* @__PURE__ */ (0, import_jsx_runtime219.jsx)("span", { style: { fontSize: 11, color: "#9ca3af" }, children: "\u5B9E\u9645:" }),
@@ -66821,6 +66822,232 @@ var Tour = ({
     )
   ] });
 };
+
+// src/components/ChartExportPanel/ChartExportPanel.tsx
+var import_react182 = require("react");
+var import_jsx_runtime264 = require("react/jsx-runtime");
+var styles9 = {
+  wrapper: {
+    border: "1px solid #e5e7eb",
+    borderRadius: 8,
+    background: "#fff",
+    overflow: "hidden"
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "12px 16px",
+    borderBottom: "1px solid #f3f4f6",
+    gap: 8
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: 600,
+    color: "#1f2937",
+    margin: 0,
+    whiteSpace: "nowrap"
+  },
+  actions: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "wrap"
+  },
+  body: {
+    padding: 16,
+    position: "relative"
+  },
+  bodyFullscreen: {
+    padding: 24
+  },
+  select: {
+    padding: "4px 8px",
+    borderRadius: 4,
+    border: "1px solid #d1d5db",
+    fontSize: 13,
+    background: "#fff",
+    cursor: "pointer",
+    color: "#374151"
+  },
+  iconBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 28,
+    height: 28,
+    border: "none",
+    borderRadius: 4,
+    background: "transparent",
+    cursor: "pointer",
+    fontSize: 14,
+    lineHeight: 1,
+    color: "#6b7280",
+    transition: "background 0.15s"
+  },
+  iconBtnHover: {
+    background: "#f3f4f6"
+  }
+};
+function downloadCSV(data, filename) {
+  if (!data.length) return;
+  const first = data[0];
+  const headers = Object.keys(first);
+  const csvRows = [headers.join(",")];
+  for (const row of data) {
+    csvRows.push(
+      headers.map((h) => {
+        const val = row[h];
+        const str = String(val ?? "");
+        return str.includes(",") || str.includes('"') ? `"${str.replace(/"/g, '""')}"` : str;
+      }).join(",")
+    );
+  }
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filename}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+var _html2canvas = null;
+async function getHtml2canvas() {
+  if (_html2canvas) return _html2canvas;
+  try {
+    const mod = await Function('return import("html2canvas")')();
+    _html2canvas = mod.default || mod;
+    return _html2canvas;
+  } catch {
+    return null;
+  }
+}
+async function downloadImage(element, filename) {
+  const h2c = await getHtml2canvas();
+  if (!h2c) {
+    console.warn("[ChartExportPanel] html2canvas not available, PNG export skipped");
+    return;
+  }
+  try {
+    const canvas = await h2c(element, {
+      backgroundColor: "#ffffff",
+      scale: 2,
+      useCORS: true,
+      logging: false
+    });
+    const link = document.createElement("a");
+    link.download = `${filename}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  } catch {
+    console.warn("[ChartExportPanel] PNG export failed");
+  }
+}
+function ActionButton3({
+  label,
+  children,
+  onClick
+}) {
+  const [hover, setHover] = (0, import_react182.useState)(false);
+  return /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(
+    "button",
+    {
+      type: "button",
+      "aria-label": label,
+      title: label,
+      onClick,
+      onMouseEnter: () => setHover(true),
+      onMouseLeave: () => setHover(false),
+      style: hover ? { ...styles9.iconBtn, ...styles9.iconBtnHover } : styles9.iconBtn,
+      children
+    }
+  );
+}
+function ChartExportPanel({
+  title,
+  children,
+  csvData,
+  csvFilename = "chart-export",
+  enableFullscreen = true,
+  enableRefresh = true,
+  timeRange,
+  activeTimeRange,
+  onTimeRangeChange,
+  onRefresh,
+  extraActions,
+  className
+}) {
+  const [isFullscreen, setIsFullscreen] = (0, import_react182.useState)(false);
+  const chartRef = (0, import_react182.useRef)(null);
+  const handleExportCSV = (0, import_react182.useCallback)(() => {
+    if (!csvData || csvData.length === 0) return;
+    downloadCSV(csvData, csvFilename);
+  }, [csvData, csvFilename]);
+  const handleExportPNG = (0, import_react182.useCallback)(() => {
+    if (!chartRef.current) return;
+    downloadImage(chartRef.current, csvFilename);
+  }, [csvFilename]);
+  const handleToggleFullscreen = (0, import_react182.useCallback)(() => {
+    if (!enableFullscreen) return;
+    setIsFullscreen((prev) => !prev);
+  }, [enableFullscreen]);
+  const handleRefresh = (0, import_react182.useCallback)(() => {
+    onRefresh?.();
+  }, [onRefresh]);
+  return /* @__PURE__ */ (0, import_jsx_runtime264.jsxs)(
+    "div",
+    {
+      className,
+      style: {
+        ...styles9.wrapper,
+        ...isFullscreen ? { position: "fixed", inset: 0, zIndex: 9999, borderRadius: 0 } : {}
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime264.jsxs)("div", { style: styles9.header, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime264.jsx)("h3", { style: styles9.title, children: title }),
+          /* @__PURE__ */ (0, import_jsx_runtime264.jsxs)("div", { style: styles9.actions, children: [
+            timeRange && timeRange.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(
+              "select",
+              {
+                value: activeTimeRange ?? (timeRange[0] ? timeRange[0].value : ""),
+                onChange: (e) => onTimeRangeChange?.(e.target.value),
+                style: styles9.select,
+                children: timeRange.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime264.jsx)("option", { value: opt.value, children: opt.label }, opt.value))
+              }
+            ),
+            enableRefresh && /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(ActionButton3, { label: "\u5237\u65B0\u6570\u636E", onClick: handleRefresh, children: "\u{1F504}" }),
+            csvData && csvData.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(ActionButton3, { label: "\u5BFC\u51FA CSV", onClick: handleExportCSV, children: "\u{1F4CA}" }),
+            /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(ActionButton3, { label: "\u5BFC\u51FA\u56FE\u7247", onClick: handleExportPNG, children: "\u{1F5BC}\uFE0F" }),
+            enableFullscreen && /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(
+              ActionButton3,
+              {
+                label: isFullscreen ? "\u9000\u51FA\u5168\u5C4F" : "\u5168\u5C4F\u67E5\u770B",
+                onClick: handleToggleFullscreen,
+                children: "\u26F6"
+              }
+            ),
+            isFullscreen && /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(ActionButton3, { label: "\u5173\u95ED\u5168\u5C4F", onClick: () => setIsFullscreen(false), children: "\u2715" }),
+            extraActions
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(
+          "div",
+          {
+            ref: chartRef,
+            style: {
+              ...styles9.body,
+              ...isFullscreen ? styles9.bodyFullscreen : {}
+            },
+            children
+          }
+        )
+      ]
+    }
+  );
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -66886,6 +67113,7 @@ var Tour = ({
   Cascader,
   CashierPanel,
   Chart,
+  ChartExportPanel,
   Checkbox,
   Chip,
   CoachDashboard,
