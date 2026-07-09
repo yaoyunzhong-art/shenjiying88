@@ -5,22 +5,25 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { DocController } from './doc.controller'
+import { DocService } from './doc.service'
 import { SwaggerGenService } from './swagger-gen.service'
 import { DocExportFormatEnum } from './doc.dto'
 import { NotFoundException } from '@nestjs/common'
 
 describe('DocController', () => {
   let controller: DocController
-  let service: SwaggerGenService
+  let docService: DocService
+  let swaggerService: SwaggerGenService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [DocController],
-      providers: [SwaggerGenService],
+      providers: [SwaggerGenService, DocService],
     }).compile()
 
     controller = module.get<DocController>(DocController)
-    service = module.get<SwaggerGenService>(SwaggerGenService)
+    docService = module.get<DocService>(DocService)
+    swaggerService = module.get<SwaggerGenService>(SwaggerGenService)
   })
 
   describe('POST /docs/generate', () => {

@@ -15,6 +15,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common'
+import { DocService } from './doc.service'
 import { SwaggerGenService } from './swagger-gen.service'
 import {
   DocGenerateRequestDto,
@@ -33,55 +34,22 @@ import type {
 @Controller('docs')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class DocController {
-  private configs: Map<string, DocConfig> = new Map()
-  private endpoints: DocEndpointInfo[] = []
-  private schemas: Map<string, Record<string, unknown>> = new Map()
-  private lastGeneratedAt?: string
-
-  constructor(private readonly swaggerGenService: SwaggerGenService) {}
+  constructor(
+    private readonly docService: DocService,
+    private readonly swaggerGenService: SwaggerGenService,
+  ) {}
 
   /** 生成文档（可指定格式） */
   @Post('generate')
   generate(@Body() body: DocGenerateRequestDto): DocGenerateResponse {
-    const spec = this.swaggerGenService.generateSpec({
-      title: body.title,
-      version: body.version,
-      description: body.description,
-      servers: body.servers,
-    })
-
-    let content: string
-    switch (body.format) {
-      case 'openapi-json':
-        content = this.swaggerGenService.exportJSON(spec)
-        break
-      case 'openapi-yaml':
-        content = this.swaggerGenService.exportYAML(spec)
-        break
-      case 'redoc-html':
-        content = this.swaggerGenService.exportRedocHTML(spec)
-        break
-      case 'postman-collection':
-        content = this.swaggerGenService.exportPostman(spec)
-        break
-      case 'insomnia-export':
-        content = this.swaggerGenService.exportInsomnia(spec)
-        break
-      default:
-        // Fallback to JSON
-        content = this.swaggerGenService.exportJSON(spec)
-    }
-
-    this.lastGeneratedAt = new Date().toISOString()
-
-    return {
-      title: body.title,
-      version: body.version,
-      format: body.format,
-      content,
-      generatedAt: this.lastGeneratedAt,
-      sizeBytes: Buffer.byteLength(content, 'utf-8'),
-    }
+    return this.docService.generate(
+      body.title,
+      body.version,
+      body.format,
+      body.description,
+      body.servers,
+      body.tags,
+    )
   }
 
   /** 注册端点 */
@@ -99,17 +67,7 @@ export class DocController {
       deprecated: body.deprecated,
     }
 
-    this.endpoints.push(endpointInfo)
-
-    this.swaggerGenService.registerEndpoint(body.controllerName, {
-      method: body.method,
-      path: body.path,
-      summary: body.summary,
-      description: body.description,
-      responses: [{ statusCode: 200, description: 'Success' }],
-      tags: [body.controllerName],
-      deprecated: body.deprecated,
-    })
+    this.docService.registerEndpoint(endpointInfo)
 
     return { success: true, endpoint: endpointInfo }
   }
@@ -117,8 +75,7 @@ export class DocController {
   /** 注册 Schema */
   @Post('schemas')
   registerSchema(@Body() body: RegisterSchemaRequestDto): { success: true; name: string } {
-    this.schemas.set(body.name, body.schema)
-    this.swaggerGenService.registerSchema(body.name, body.schema)
+    this.docService.registerSchema(body.name, body.schema)
     return { success: true, name: body.name }
   }
 
@@ -145,33 +102,19 @@ export class DocController {
   /** 获取文档统计 */
   @Get('stats')
   getStats(): DocStats {
-    const methodCounts: Record<string, number> = {}
-    for (const ep of this.endpoints) {
-      methodCounts[ep.method] = (methodCounts[ep.method] || 0) + 1
-    }
-
-    return {
-      totalEndpoints: this.endpoints.length,
-      totalSchemas: this.schemas.size,
-      totalTags: 0,
-      endpointMethods: methodCounts,
-      generatedFormats: this.lastGeneratedAt
-        ? ['openapi-json', 'openapi-yaml', 'redoc-html', 'postman-collection', 'insomnia-export']
-        : [],
-      lastGeneratedAt: this.lastGeneratedAt,
-    }
+    return this.docService.getStats()
   }
 
   /** 列出所有端点 */
   @Get('endpoints')
   listEndpoints(): DocEndpointInfo[] {
-    return this.endpoints
+    return this.docService.listEndpoints()
   }
 
   /** 根据路径查询端点 */
   @Get('endpoints/:path')
   getEndpointByPath(@Param('path') path: string): DocEndpointInfo {
-    const ep = this.endpoints.find((e) => e.path === '/' + path)
+    const ep = this.docService.getEndpointByPath(path)
     if (!ep) {
       throw new NotFoundException(`Endpoint with path /${path} not found`)
     }
@@ -181,14 +124,13 @@ export class DocController {
   /** 获取文档配置 */
   @Get('config')
   getConfig(): DocConfig | null {
-    // 返回默认配置（简化版，无持久化）
-    return null
+    return this.docService.getConfig()
   }
 
   /** 更新文档配置 */
   @Post('config')
   updateConfig(@Body() _body: DocConfigUpdateDto): { success: true; message: string } {
-    return { success: true, message: 'Config updated (in-memory)' }
+    return this.docService.updateConfig()
   }
 
   /** 生成文档索引页 HTML */
@@ -199,12 +141,7 @@ export class DocController {
   ): { html: string; generatedAt: string } {
     const configTitle = title || 'API Documentation Index'
     const configVersion = version || '1.0.0'
-    const spec = this.swaggerGenService.generateSpec({
-      title: configTitle,
-      version: configVersion,
-    })
-    const html = this.swaggerGenService.generateIndex(spec)
-    return { html, generatedAt: new Date().toISOString() }
+    return this.docService.generateIndex(configTitle, configVersion)
   }
 
   /** 健康检查 */

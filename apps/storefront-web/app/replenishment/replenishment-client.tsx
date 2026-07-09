@@ -55,9 +55,9 @@ function computeStats(orders: ReplenishmentOrder[]): ReplenishmentStats {
 // ============================================================
 
 const COLUMNS: DataTableColumn<ReplenishmentOrder>[] = [
-  { key: 'orderNo', header: '补货单号', sortable: true },
-  { key: 'storeName', header: '门店', sortable: true },
-  { key: 'applicant', header: '申请人', sortable: true },
+  { key: 'orderNo', header: '补货单号', dataKey: 'orderNo', sortable: true },
+  { key: 'storeName', header: '门店', dataKey: 'storeName', sortable: true },
+  { key: 'applicant', header: '申请人', dataKey: 'applicant', sortable: true },
   {
     key: 'itemCount',
     header: '商品种类',
@@ -85,7 +85,7 @@ const COLUMNS: DataTableColumn<ReplenishmentOrder>[] = [
       return <StatusBadge variant={cfg.variant} label={cfg.label} />;
     },
   },
-  { key: 'createdAt', header: '创建时间', sortable: true },
+  { key: 'createdAt', header: '创建时间', dataKey: 'createdAt', sortable: true },
 ];
 
 // ============================================================
@@ -159,8 +159,8 @@ export function ReplenishmentListClient({ orders }: ReplenishmentListClientProps
       {/* 数据表格 */}
       <DataTable
         columns={COLUMNS}
-        data={pageItems}
-        rowKey="id"
+        rows={pageItems}
+        rowKey={(r: ReplenishmentOrder) => r.id}
         onRowClick={(row: ReplenishmentOrder) => {
           window.location.href = `/replenishment/${row.id}`;
         }}

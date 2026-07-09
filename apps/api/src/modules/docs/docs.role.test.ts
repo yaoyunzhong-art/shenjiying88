@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import assert from 'node:assert/strict'
 import { DocController } from './doc.controller'
+import { DocService } from './doc.service'
 import { SwaggerGenService } from './swagger-gen.service'
 import { DocExportFormatEnum } from './doc.dto'
 
@@ -35,7 +36,9 @@ const ROLES_EXTRA = {
 
 // ── 辅助函数 ──
 function makeController(): DocController {
-  return new DocController(new SwaggerGenService())
+  const swagger = new SwaggerGenService()
+  const docService = new DocService(swagger)
+  return new DocController(docService, swagger)
 }
 
 // ──────────────────── 👥 HR · 员工培训文档 ────────────────────

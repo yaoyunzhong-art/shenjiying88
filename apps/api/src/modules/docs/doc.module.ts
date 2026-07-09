@@ -5,11 +5,12 @@
 
 import { Module } from '@nestjs/common'
 import { DocController } from './doc.controller'
+import { DocService } from './doc.service'
 import { SwaggerGenService } from './swagger-gen.service'
 
 @Module({
   controllers: [DocController],
-  providers: [SwaggerGenService],
-  exports: [SwaggerGenService],
+  providers: [SwaggerGenService, DocService],
+  exports: [SwaggerGenService, DocService],
 })
 export class DocModule {}
