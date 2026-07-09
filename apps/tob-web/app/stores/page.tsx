@@ -1,234 +1,208 @@
+/**
+ * stores/page.tsx — 门店管理列表页 (ToB 门店管理)
+ */
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { PageShell, StatusBadge } from '@m5/ui';
-import { storeService, type Store } from '../../lib/store-service';
+import React, { useMemo, useState } from 'react';
+import {
+  DataTable,
+  StatusBadge,
+  Badge,
+  SearchFilterInput,
+  Pagination,
+  StatCard,
+  LoadingSkeleton,
+} from '@m5/ui';
+
+import type { DataTableColumn } from '@m5/ui';
+import {
+  MOCK_STORES,
+  STORE_STATUS_MAP,
+  REGIONS,
+  type StoreItem,
+  type StoreStatus,
+  formatCurrency,
+} from '../stores-data';
+
+const STORES_PER_PAGE = 10;
 
 export default function StoresPage() {
-  const router = useRouter();
-  const [stores, setStores] = useState<Store[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [keyword, setKeyword] = useState('');
-  const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StoreStatus | 'all'>('all');
+  const [regionFilter, setRegionFilter] = useState<string>('all');
+  const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // 检查登录状态
-    const token = localStorage.getItem('enterprise_access_token');
-    if (!token) {
-      router.push('/enterprise/login');
-      return;
-    }
-    fetchStores();
-  }, [router, page, keyword]);
-
-  async function fetchStores() {
+  useMemo(() => {
     setLoading(true);
-    try {
-      const result = await storeService.listStores({
-        page,
-        pageSize,
-        keyword: keyword || undefined,
-      });
+    const t = setTimeout(() => setLoading(false), 80);
+    return () => clearTimeout(t);
+  }, []);
 
-      if (result.success && result.data) {
-        setStores(result.data.stores);
-        setTotal(result.data.total);
-      }
-    } finally {
-      setLoading(false);
+  const filtered = useMemo(() => {
+    let items = MOCK_STORES;
+
+    if (searchTerm.trim()) {
+      const lower = searchTerm.toLowerCase();
+      const fields: (keyof StoreItem)[] = ['storeName', 'storeCode', 'managerName', 'city', 'address'];
+      items = items.filter((s) =>
+        fields.some((f) => String(s[f]).toLowerCase().includes(lower)),
+      );
     }
-  }
 
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    setPage(1);
-    fetchStores();
-  }
-
-  function getStatusVariant(status: Store['status']): 'success' | 'warning' | 'error' {
-    switch (status) {
-      case 'active':
-        return 'success';
-      case 'inactive':
-        return 'warning';
-      case 'suspended':
-        return 'error';
-      default:
-        return 'warning';
+    if (statusFilter !== 'all') {
+      items = items.filter((s) => s.status === statusFilter);
     }
-  }
 
-  function getStatusLabel(status: Store['status']): string {
-    switch (status) {
-      case 'active':
-        return '营业中';
-      case 'inactive':
-        return '休息中';
-      case 'suspended':
-        return '已停业';
-      default:
-        return status;
+    if (regionFilter !== 'all') {
+      items = items.filter((s) => s.region === regionFilter);
     }
-  }
+
+    return items;
+  }, [searchTerm, statusFilter, regionFilter]);
+
+  const paged = useMemo(() => {
+    const start = page * STORES_PER_PAGE;
+    return filtered.slice(start, start + STORES_PER_PAGE);
+  }, [filtered, page]);
+
+  const totalPages = Math.ceil(filtered.length / STORES_PER_PAGE);
+
+  // Stats
+  const stats = useMemo(() => {
+    const total = MOCK_STORES.length;
+    const active = MOCK_STORES.filter((s) => s.status === 'active').length;
+    const totalRevenue = MOCK_STORES.reduce((s, c) => s + c.monthlyRevenue, 0);
+    const totalTraffic = MOCK_STORES.reduce((s, c) => s + c.dailyTraffic, 0);
+    return { total, active, totalRevenue, totalTraffic };
+  }, []);
+
+  const columns: DataTableColumn<StoreItem>[] = [
+    {
+      key: 'storeName',
+      header: '门店名称',
+      render: (item) => (
+        <div>
+          <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{item.storeName}</span>
+          <div style={{ fontSize: 12, color: '#64748b' }}>{item.storeCode}</div>
+        </div>
+      ),
+    },
+    { key: 'city', header: '城市' },
+    { key: 'managerName', header: '店长' },
+    {
+      key: 'employeeCount',
+      header: '员工数',
+      render: (item) => `${item.employeeCount}人`,
+    },
+    {
+      key: 'status',
+      header: '状态',
+      render: (item) => {
+        const info = STORE_STATUS_MAP[item.status];
+        return <StatusBadge variant={info.variant} label={info.label} />;
+      },
+    },
+    {
+      key: 'monthlyRevenue',
+      header: '月营收',
+      render: (item) =>
+        item.status === 'active' ? (
+          <span style={{ color: '#4ade80' }}>{formatCurrency(item.monthlyRevenue)}</span>
+        ) : (
+          <span style={{ color: '#64748b' }}>--</span>
+        ),
+    },
+    {
+      key: 'dailyTraffic',
+      header: '日客流',
+      render: (item) =>
+        item.status === 'active' ? (
+          <span>{item.dailyTraffic.toLocaleString()}人</span>
+        ) : (
+          <span style={{ color: '#64748b' }}>--</span>
+        ),
+    },
+    {
+      key: 'lastInspection',
+      header: '最近巡检',
+      render: (item) => item.lastInspection,
+    },
+  ];
 
   return (
-    <PageShell
-      title="门店管理"
-      subtitle={`共 ${total} 家门店`}
-      actions={
-        <Link
-          href="/stores/new"
+    <div style={{ padding: '24px 32px', color: '#e2e8f0' }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>门店管理</h1>
+
+      {/* Stats */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+        <StatCard label="总门店数" value={stats.total.toString()} />
+        <StatCard label="营业中" value={stats.active.toString()} />
+        <StatCard label="月总营收" value={formatCurrency(stats.totalRevenue)} />
+        <StatCard label="日总客流" value={`${(stats.totalTraffic / 1000).toFixed(1)}K`} />
+      </div>
+
+      {/* Filters */}
+      <div style={{
+        display: 'flex', gap: 12, marginBottom: 16,
+        alignItems: 'center', flexWrap: 'wrap',
+      }}>
+        <SearchFilterInput
+          placeholder="搜索门店名称/编号/店长..."
+          value={searchTerm}
+          onChange={(v) => { setSearchTerm(v); setPage(0); }}
+        />
+
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value as StoreStatus | 'all'); setPage(0); }}
           style={{
-            padding: '10px 20px',
-            borderRadius: 8,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            border: 'none',
-            color: '#fff',
-            fontSize: 14,
-            fontWeight: 500,
-            cursor: 'pointer',
-            textDecoration: 'none',
+            padding: '8px 12px', borderRadius: 8,
+            border: '1px solid rgba(148,163,184,0.25)',
+            background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', fontSize: 14,
           }}
         >
-          + 添加门店
-        </Link>
-      }
-    >
-      {/* 搜索栏 */}
-      <div style={{ marginBottom: 24 }}>
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: 12 }}>
-          <input
-            type="text"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="搜索门店名称、编号或地址..."
-            style={{
-              flex: 1,
-              padding: '10px 14px',
-              borderRadius: 8,
-              background: 'rgba(15, 23, 42, 0.6)',
-              border: '1px solid rgba(148, 163, 184, 0.2)',
-              color: '#f8fafc',
-              fontSize: 14,
-              outline: 'none',
-            }}
-          />
-          <button
-            type="submit"
-            style={{
-              padding: '10px 20px',
-              borderRadius: 8,
-              background: 'rgba(102, 126, 234, 0.2)',
-              border: '1px solid rgba(102, 126, 234, 0.4)',
-              color: '#a5b4fc',
-              fontSize: 14,
-              cursor: 'pointer',
-            }}
-          >
-            搜索
-          </button>
-        </form>
+          <option value="all">全部状态</option>
+          {(['active', 'inactive', 'maintenance'] as const).map((s) => (
+            <option key={s} value={s}>{STORE_STATUS_MAP[s].label}</option>
+          ))}
+        </select>
+
+        <select
+          value={regionFilter}
+          onChange={(e) => { setRegionFilter(e.target.value); setPage(0); }}
+          style={{
+            padding: '8px 12px', borderRadius: 8,
+            border: '1px solid rgba(148,163,184,0.25)',
+            background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', fontSize: 14,
+          }}
+        >
+          <option value="all">全部区域</option>
+          {REGIONS.map((r) => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
+
+        <span style={{ fontSize: 13, color: '#94a3b8', marginLeft: 8 }}>
+          共 {filtered.length} 条结果
+        </span>
       </div>
 
-      {/* 门店列表 */}
-      <div style={{ background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(148, 163, 184, 0.12)', borderRadius: 12, overflow: 'hidden' }}>
-        {loading ? (
-          <div style={{ padding: 48, textAlign: 'center', color: '#94a3b8' }}>加载中...</div>
-        ) : stores.length === 0 ? (
-          <div style={{ padding: 48, textAlign: 'center', color: '#94a3b8' }}>暂无门店数据</div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: 'rgba(15, 23, 42, 0.8)', borderBottom: '1px solid rgba(148, 163, 184, 0.12)' }}>
-                <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: 13, fontWeight: 500, color: '#94a3b8' }}>门店编号</th>
-                <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: 13, fontWeight: 500, color: '#94a3b8' }}>门店名称</th>
-                <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: 13, fontWeight: 500, color: '#94a3b8' }}>地区/城市</th>
-                <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: 13, fontWeight: 500, color: '#94a3b8' }}>店长</th>
-                <th style={{ padding: '14px 16px', textAlign: 'center', fontSize: 13, fontWeight: 500, color: '#94a3b8' }}>员工数</th>
-                <th style={{ padding: '14px 16px', textAlign: 'center', fontSize: 13, fontWeight: 500, color: '#94a3b8' }}>状态</th>
-                <th style={{ padding: '14px 16px', textAlign: 'right', fontSize: 13, fontWeight: 500, color: '#94a3b8' }}>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stores.map((store, index) => (
-                <tr
-                  key={store.id}
-                  style={{
-                    borderBottom: index < stores.length - 1 ? '1px solid rgba(148, 163, 184, 0.08)' : 'none',
-                    transition: 'background 0.15s',
-                  }}
-                >
-                  <td style={{ padding: '16px', fontSize: 13, color: '#94a3b8', fontFamily: 'monospace' }}>{store.storeCode}</td>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ fontSize: 14, color: '#f8fafc', fontWeight: 500 }}>{store.storeName}</div>
-                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{store.address}</div>
-                  </td>
-                  <td style={{ padding: '16px', fontSize: 13, color: '#cbd5e1' }}>{store.region} / {store.city}</td>
-                  <td style={{ padding: '16px', fontSize: 13, color: '#cbd5e1' }}>
-                    <div>{store.managerName}</div>
-                    <div style={{ color: '#64748b', fontSize: 12 }}>{store.managerMobile}</div>
-                  </td>
-                  <td style={{ padding: '16px', textAlign: 'center', fontSize: 13, color: '#cbd5e1' }}>{store.employeeCount}</td>
-                  <td style={{ padding: '16px', textAlign: 'center' }}>
-                    <StatusBadge label={getStatusLabel(store.status)} variant={getStatusVariant(store.status)} size="sm" />
-                  </td>
-                  <td style={{ padding: '16px', textAlign: 'right' }}>
-                    <Link
-                      href={`/stores/${store.id}`}
-                      style={{ fontSize: 13, color: '#667eea', textDecoration: 'none' }}
-                    >
-                      查看详情
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* 分页 */}
-      {total > pageSize && (
-        <div style={{ marginTop: 20, display: 'flex', justifyContent: 'center', gap: 8 }}>
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            style={{
-              padding: '8px 16px',
-              borderRadius: 6,
-              background: page === 1 ? 'rgba(148, 163, 184, 0.1)' : 'rgba(102, 126, 234, 0.2)',
-              border: '1px solid rgba(148, 163, 184, 0.2)',
-              color: page === 1 ? '#64748b' : '#a5b4fc',
-              fontSize: 13,
-              cursor: page === 1 ? 'not-allowed' : 'pointer',
-            }}
-          >
-            上一页
-          </button>
-          <span style={{ padding: '8px 16px', fontSize: 13, color: '#94a3b8' }}>
-            第 {page} / {Math.ceil(total / pageSize)} 页
-          </span>
-          <button
-            onClick={() => setPage((p) => p + 1)}
-            disabled={page >= Math.ceil(total / pageSize)}
-            style={{
-              padding: '8px 16px',
-              borderRadius: 6,
-              background: page >= Math.ceil(total / pageSize) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(102, 126, 234, 0.2)',
-              border: '1px solid rgba(148, 163, 184, 0.2)',
-              color: page >= Math.ceil(total / pageSize) ? '#64748b' : '#a5b4fc',
-              fontSize: 13,
-              cursor: page >= Math.ceil(total / pageSize) ? 'not-allowed' : 'pointer',
-            }}
-          >
-            下一页
-          </button>
-        </div>
+      {/* Table */}
+      {loading ? (
+        <LoadingSkeleton rows={5} />
+      ) : (
+        <DataTable columns={columns} rows={paged} rowKey={(s: StoreItem) => s.id} />
       )}
-    </PageShell>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          page={page}
+          total={filtered.length}
+          onPageChange={setPage}
+        />
+      )}
+    </div>
   );
 }

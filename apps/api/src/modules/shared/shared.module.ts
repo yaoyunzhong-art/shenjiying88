@@ -6,6 +6,7 @@
 
 import { Module, Global } from '@nestjs/common'
 import { SharedController } from './shared.controller'
+import { SharedService } from './shared.service'
 import { AuditService } from './audit.service'
 import { ViewModelService } from './view-model.service'
 import { AgentModule } from '../agent/agent.module'
@@ -20,7 +21,7 @@ import { AgentModule } from '../agent/agent.module'
 @Module({
   imports: [AgentModule],
   controllers: [SharedController],
-  providers: [AuditService, ViewModelService],
-  exports: [AuditService, ViewModelService],
+  providers: [AuditService, ViewModelService, SharedService],
+  exports: [AuditService, ViewModelService, SharedService],
 })
 export class SharedModule {}

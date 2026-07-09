@@ -27,6 +27,8 @@ export default [
       '@next/next/no-html-link-for-pages': 'off',
       // allow lexical declarations in switch case blocks
       'no-case-declarations': 'off',
+      // allow console.error for logging (intentional in service layers)
+      'no-console': 'off',
     },
   },
 ];
