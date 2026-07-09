@@ -1201,6 +1201,14 @@ export type {
   StageTransitionAdvice,
 } from './components/AIMemberLifecycleForecastPanel';
 
+// --------------- AI 会员分群分析面板 ---------------
+export { AIMemberSegmentationPanel } from './components/AIMemberSegmentationPanel';
+export type {
+  AIMemberSegmentationPanelProps,
+  MemberSegment,
+  SegmentAnalysis,
+} from './components/AIMemberSegmentationPanel';
+
 // --------------- AI 决策规则链 ---------------
 export { AIDecisionRuleChain } from './components/AIDecisionRuleChain';
 export type {
