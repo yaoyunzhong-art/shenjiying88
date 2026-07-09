@@ -1,6 +1,7 @@
 /**
  * 报表状态/类型标签组件 — ReportStatusBadge
  */
+import React from 'react';
 
 export type ReportStatus = 'generated' | 'generating' | 'failed' | 'expired';
 export type ReportType = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'custom';
