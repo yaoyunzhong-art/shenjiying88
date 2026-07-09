@@ -163,6 +163,12 @@ export type {
   AnomalyAlert,
   AnomalySeverity,
 } from './components/AnomalyAlertPanel';
+export { AnomalyAlertTrendPanel } from './components/AnomalyAlertTrendPanel';
+export type {
+  AnomalyAlertTrendPanelProps,
+  AlertTrendDataPoint,
+  TrendGranularity,
+} from './components/AnomalyAlertTrendPanel';
 export { StoreManagerDashboard } from './components/StoreManagerDashboard';
 export { TrainingManagerDashboard } from './components/TrainingManagerDashboard';
 export { RegionalManagerDashboard } from './components/RegionalManagerDashboard';
