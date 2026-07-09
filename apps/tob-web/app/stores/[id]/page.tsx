@@ -7,12 +7,10 @@ import React, { useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   StatusBadge,
-  Badge,
   StatCard,
   LoadingSkeleton,
   Button,
   DetailActionBar,
-  DetailClosureBar,
 } from '@m5/ui';
 
 import {
@@ -93,13 +91,14 @@ export default function StoreDetailPage() {
       {/* Action Bar */}
       <DetailActionBar
         actions={[
-          { label: '编辑门店', onClick: handleEdit, variant: 'primary' },
+          { key: 'edit', label: '编辑门店', onClick: handleEdit, variant: 'primary' },
           {
+            key: 'toggle-status',
             label: store.status === 'active' ? '暂停营业' : '恢复营业',
             onClick: handleToggleStatus,
-            variant: 'secondary',
+            variant: 'default' as const,
           },
-          { label: '删除门店', onClick: handleDelete, variant: 'danger' },
+          { key: 'delete', label: '删除门店', onClick: handleDelete, variant: 'danger' },
         ]}
       />
 
@@ -142,8 +141,12 @@ export default function StoreDetailPage() {
         </div>
       </div>
 
-      {/* Closure Bar */}
-      <DetailClosureBar onBack={() => router.push('/stores')} />
+      {/* Back button */}
+      <div style={{ marginTop: 24 }}>
+        <Button variant="ghost" onClick={() => router.push('/stores')}>
+          ← 返回门店列表
+        </Button>
+      </div>
     </div>
   );
 }
