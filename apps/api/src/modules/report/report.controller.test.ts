@@ -20,6 +20,7 @@ import type { ReportPeriod, ReportMetric, ReportDimension, ReportDataPoint } fro
 const ROUTES: Array<{ method: number; path: string; handler: string; verb: string }> = [
   { method: 0, path: 'list',                    handler: 'listReports',      verb: 'GET'  },
   { method: 0, path: ':id',                      handler: 'getReport',       verb: 'GET'  },
+  { method: 3, path: ':id',                      handler: 'deleteReport',    verb: 'DELETE' },
   { method: 1, path: 'create',                   handler: 'createReport',    verb: 'POST' },
   { method: 1, path: 'query',                    handler: 'query',           verb: 'POST' },
   { method: 1, path: 'ingest',                   handler: 'ingest',          verb: 'POST' },
@@ -45,7 +46,7 @@ describe('路由元数据验证', () => {
     })
   }
 
-  it('所有 10 个路由都注册了元数据', () => {
+  it('所有 11 个路由都注册了元数据', () => {
     const methods = ROUTES.map((r) => r.handler)
     for (const handler of methods) {
       const method = Reflect.getMetadata('method', ReportController.prototype[handler as keyof ReportController])

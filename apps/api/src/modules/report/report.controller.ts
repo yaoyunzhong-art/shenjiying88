@@ -3,7 +3,7 @@
  */
 
 import {
-  Controller, Get, Post, Body, Param, Query, BadRequestException,
+  Controller, Get, Post, Delete, Body, Param, Query, BadRequestException,
 } from '@nestjs/common'
 import { ReportService } from './report.service'
 import type {
@@ -68,6 +68,13 @@ export class ReportController {
   @Post('dashboard/create')
   createDashboard(@Body() body: Omit<DashboardLayout, 'id' | 'createdAt' | 'updatedAt'>): DashboardLayout {
     return this.service.createDashboard(body)
+  }
+
+  @Delete(':id')
+  deleteReport(@Param('id') id: string): { success: boolean; id: string } {
+    const deleted = this.service.deleteReport(id)
+    if (!deleted) throw new BadRequestException(`Report ${id} not found`)
+    return { success: true, id }
   }
 
   @Post('dashboard/update/:id')

@@ -7,6 +7,7 @@
  * 端点列表:
  *   GET    /report/list                    → listReports
  *   GET    /report/:id                     → getReport
+ *   DELETE /report/:id                     → deleteReport
  *   POST   /report/create                  → createReport
  *   POST   /report/query                   → query
  *   POST   /report/ingest                  → ingest
@@ -39,6 +40,11 @@ describe('ReportController', () => {
         const r: ReportDefinition = { ...input, id, createdAt: now, updatedAt: now }
         reports.set(id, r)
         return r
+      },
+      deleteReport: (id: string) => {
+        const existed = reports.has(id)
+        reports.delete(id)
+        return existed
       },
       query: (req: any) => {
         const report = reports.get(req.reportId)
@@ -152,7 +158,7 @@ describe('ReportController', () => {
       )
     })
 
-    it('边界: 创建再删除后的计数', () => {
+    it('边界: 创建再删除后计数归零', () => {
       const svc = createMockService()
       const ctrl = new ReportController(svc)
       const rptName = '临时报表'
@@ -160,9 +166,18 @@ describe('ReportController', () => {
       const beforeDelete = ctrl.listReports()
       expect(beforeDelete.total).toBe(1)
 
-      // 直接操作 service 删除
-      svc.deleteReport?.(created.id)
-      // 对于无 delete API 的 controller, 我们只验证 create→list 一致性
+      // 通过 controller DELETE 删除
+      const result = ctrl.deleteReport(created.id)
+      expect(result.success).toBe(true)
+      expect(result.id).toBe(created.id)
+
+      const afterDelete = ctrl.listReports()
+      expect(afterDelete.total).toBe(0)
+    })
+
+    it('边界: 删除不存在的报表应抛异常', () => {
+      const ctrl = new ReportController(createMockService())
+      expect(() => ctrl.deleteReport('nonexistent-id')).toThrow()
     })
   })
 

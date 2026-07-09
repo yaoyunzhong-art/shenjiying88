@@ -50,6 +50,13 @@ export class ReportService {
     return Array.from(this.reports.values())
   }
 
+  /** 删除报表 */
+  deleteReport(id: string): boolean {
+    const existed = this.reports.has(id)
+    this.reports.delete(id)
+    return existed
+  }
+
   // ============ 2. 数据查询 (聚合 + 缓存) ============
 
   async query(req: ReportQueryRequest): Promise<ReportQueryResponse> {
