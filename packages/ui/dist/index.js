@@ -127,6 +127,7 @@ __export(index_exports, {
   Currency: () => Currency,
   CustomerServiceDashboard: () => CustomerServiceDashboard,
   CustomerSessionPanel: () => CustomerSessionPanel,
+  DataDriftMonitorPanel: () => DataDriftMonitorPanel,
   DataTable: () => DataTable,
   DatePicker: () => DatePicker_default,
   DateRangePicker: () => DateRangePicker_default,
@@ -70934,6 +70935,161 @@ function StatCard2({
     }
   );
 }
+
+// src/components/DataDriftMonitorPanel.tsx
+var import_react190 = require("react");
+var import_jsx_runtime279 = require("react/jsx-runtime");
+var SEVERITY_CONFIG4 = {
+  low: { label: "\u6B63\u5E38", bar: "bg-emerald-500", text: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
+  medium: { label: "\u8F7B\u5FAE", bar: "bg-amber-500", text: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/30" },
+  high: { label: "\u663E\u8457", bar: "bg-orange-500", text: "text-orange-700 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-950/30" },
+  critical: { label: "\u4E25\u91CD", bar: "bg-red-500", text: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/30" }
+};
+function driftBarColor(score) {
+  if (score >= 0.7) return "bg-red-500";
+  if (score >= 0.4) return "bg-orange-500";
+  if (score >= 0.2) return "bg-amber-500";
+  return "bg-emerald-500";
+}
+function formatPct2(v) {
+  return `${(v * 100).toFixed(1)}%`;
+}
+function formatCount(n) {
+  if (n == null) return "--";
+  if (n >= 1e4) return `${(n / 1e4).toFixed(1)}\u4E07`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}k`;
+  return n.toLocaleString();
+}
+function DriftFeatureRow({
+  feature,
+  onClick,
+  warningThreshold = 0.3
+}) {
+  const sev = SEVERITY_CONFIG4[feature.severity];
+  const isAlert = feature.driftScore >= warningThreshold;
+  return /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)(
+    "div",
+    {
+      className: `px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 last:border-b-0
+        ${onClick ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" : ""}`,
+      onClick: () => onClick?.(feature),
+      role: onClick ? "button" : void 0,
+      tabIndex: onClick ? 0 : void 0,
+      onKeyDown: onClick ? (e) => {
+        if (e.key === "Enter") onClick(feature);
+      } : void 0,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)("div", { className: "flex items-center justify-between mb-2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)("div", { className: "flex items-center gap-2 min-w-0", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("span", { className: "text-sm font-medium text-gray-900 dark:text-gray-100 truncate", children: feature.name }),
+            /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("span", { className: `text-xs px-1.5 py-0.5 rounded-full ${sev.bg} ${sev.text}`, children: sev.label }),
+            isAlert && /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("span", { className: "text-xs text-red-500 font-medium", title: "\u8D85\u8FC7\u544A\u8B66\u9608\u503C", children: "\u26A0" })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("span", { className: `text-sm font-semibold tabular-nums ml-3 shrink-0 ${isAlert ? "text-red-600 dark:text-red-400" : "text-gray-600 dark:text-gray-300"}`, children: formatPct2(feature.driftScore) })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("div", { className: "w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden mb-2", children: /* @__PURE__ */ (0, import_jsx_runtime279.jsx)(
+          "div",
+          {
+            className: `h-full rounded-full transition-all ${driftBarColor(feature.driftScore)}`,
+            style: { width: `${Math.min(feature.driftScore * 100, 100)}%` }
+          }
+        ) }),
+        /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)("div", { className: "flex items-center justify-between text-xs text-gray-500 dark:text-gray-400", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)("span", { className: "truncate mr-2", title: `\u5F53\u524D: ${feature.currentDistribution ?? "--"} (n=${formatCount(feature.currentCount)})`, children: [
+            "\u5F53\u524D: ",
+            feature.currentDistribution ?? "--"
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("span", { className: "shrink-0 mx-1 text-gray-300 dark:text-gray-600", children: "|" }),
+          /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)("span", { className: "truncate ml-2", title: `\u57FA\u7EBF: ${feature.baselineDistribution ?? "--"} (n=${formatCount(feature.baselineCount)})`, children: [
+            "\u57FA\u7EBF: ",
+            feature.baselineDistribution ?? "--"
+          ] })
+        ] })
+      ]
+    }
+  );
+}
+function DataDriftMonitorPanel({
+  overview,
+  features,
+  title = "\u6570\u636E\u6F02\u79FB\u76D1\u63A7",
+  loading = false,
+  emptyText = "\u6682\u65E0\u6F02\u79FB\u6570\u636E",
+  warningThreshold = 0.3,
+  onFeatureClick,
+  className = "",
+  style
+}) {
+  const safeFeatures = features || [];
+  const severityBreakdown = (0, import_react190.useMemo)(() => {
+    const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+    safeFeatures.forEach((f) => {
+      if (counts[f.severity] !== void 0) counts[f.severity]++;
+    });
+    return counts;
+  }, [safeFeatures]);
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("div", { className: `rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 ${className}`, style, children: /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)("div", { className: "animate-pulse space-y-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("div", { className: "h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded" }),
+      /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("div", { className: "grid grid-cols-4 gap-3", children: [1, 2, 3, 4].map((i) => /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("div", { className: "h-14 bg-gray-100 dark:bg-gray-800 rounded-lg" }, i)) }),
+      [1, 2, 3].map((i) => /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("div", { className: "h-16 bg-gray-100 dark:bg-gray-800 rounded-lg" }, i))
+    ] }) });
+  }
+  if (!overview || safeFeatures.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)("div", { className: `rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-10 text-center ${className}`, style, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("div", { className: "text-4xl mb-3", children: "\u{1F4CA}" }),
+      /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("p", { className: "text-gray-500 dark:text-gray-400", children: emptyText })
+    ] });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)("div", { className: `rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 ${className}`, style, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)("div", { className: "flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("h3", { className: "text-base font-semibold text-gray-900 dark:text-gray-100", children: title }),
+      /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)("span", { className: "text-xs text-gray-400 dark:text-gray-500", children: [
+        overview.dataSource,
+        " \xB7 ",
+        overview.timeWindow
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)("div", { className: "grid grid-cols-4 gap-px bg-gray-100 dark:bg-gray-800", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime279.jsx)(OverviewCell, { label: "\u603B\u7279\u5F81\u6570", value: String(overview.totalFeatures) }),
+      /* @__PURE__ */ (0, import_jsx_runtime279.jsx)(
+        OverviewCell,
+        {
+          label: "\u6F02\u79FB\u7279\u5F81",
+          value: String(overview.driftedFeatures),
+          highlight: overview.driftedFeatures > 0
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime279.jsx)(OverviewCell, { label: "\u6700\u9AD8\u6F02\u79FB", value: formatPct2(overview.maxDriftScore), danger: overview.maxDriftScore >= warningThreshold }),
+      /* @__PURE__ */ (0, import_jsx_runtime279.jsx)(OverviewCell, { label: "\u5E73\u5747\u6F02\u79FB", value: formatPct2(overview.avgDriftScore), danger: overview.avgDriftScore >= warningThreshold * 0.7 })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("div", { className: "flex items-center gap-4 px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30", children: ["critical", "high", "medium", "low"].map((sev) => /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)("span", { className: "text-xs text-gray-500 dark:text-gray-400", children: [
+      SEVERITY_CONFIG4[sev].label,
+      ": ",
+      /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("span", { className: `font-medium ${SEVERITY_CONFIG4[sev].text}`, children: severityBreakdown[sev] })
+    ] }, sev)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("div", { className: "divide-y divide-gray-100 dark:divide-gray-800", children: safeFeatures.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("div", { className: "px-5 py-8 text-center text-sm text-gray-400 dark:text-gray-500", children: emptyText }) : safeFeatures.map((feature) => /* @__PURE__ */ (0, import_jsx_runtime279.jsx)(
+      DriftFeatureRow,
+      {
+        feature,
+        onClick: onFeatureClick,
+        warningThreshold
+      },
+      feature.key
+    )) })
+  ] });
+}
+function OverviewCell({
+  label,
+  value,
+  highlight,
+  danger
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime279.jsxs)("div", { className: "bg-white dark:bg-gray-900 px-4 py-3 text-center", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("div", { className: "text-xs text-gray-500 dark:text-gray-400 mb-1", children: label }),
+    /* @__PURE__ */ (0, import_jsx_runtime279.jsx)("div", { className: `text-lg font-bold tabular-nums ${danger ? "text-red-600 dark:text-red-400" : highlight ? "text-amber-600 dark:text-amber-400" : "text-gray-900 dark:text-gray-100"}`, children: value })
+  ] });
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -71033,6 +71189,7 @@ function StatCard2({
   Currency,
   CustomerServiceDashboard,
   CustomerSessionPanel,
+  DataDriftMonitorPanel,
   DataTable,
   DatePicker,
   DateRangePicker,

@@ -1389,3 +1389,11 @@ export type {
   SalesTask,
   PerformanceCard,
 } from './components/SalespersonToolPanel';
+
+// --------------- DataDriftMonitorPanel ---------------
+export { DataDriftMonitorPanel } from './components/DataDriftMonitorPanel';
+export type {
+  DataDriftMonitorPanelProps,
+  DriftOverview,
+  DriftFeature,
+} from './components/DataDriftMonitorPanel';
