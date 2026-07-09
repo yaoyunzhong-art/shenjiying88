@@ -120,10 +120,10 @@ describe('llm.config.ts · 配置工厂', () => {
     process.env = { ...origEnv }
   })
 
-  it('默认配置 uses claude + $1000 hard limit', () => {
+  it('默认配置 uses claude + $1000 hard limit', async () => {
     delete process.env.LLM_DEFAULT_PROVIDER
     delete process.env.LLM_MONTHLY_HARD_LIMIT_USD
-    const cfg = llmConfig()
+    const cfg = await llmConfig()
     assert.equal(cfg.defaultProvider, 'claude')
     assert.equal(cfg.monthlyHardLimitUsd, 1000)
     assert.equal(cfg.monthlySoftLimitUsd, 800)
@@ -131,13 +131,13 @@ describe('llm.config.ts · 配置工厂', () => {
     assert.equal(cfg.enablePromptCache, true)
   })
 
-  it('环境变量覆盖', () => {
+  it('环境变量覆盖', async () => {
     process.env.LLM_DEFAULT_PROVIDER = 'openai'
     process.env.LLM_MONTHLY_HARD_LIMIT_USD = '2000'
     process.env.LLM_MONTHLY_SOFT_LIMIT_USD = '1500'
     process.env.LLM_ALERT_THRESHOLD = '0.9'
     process.env.LLM_ENABLE_PROMPT_CACHE = 'false'
-    const cfg = llmConfig()
+    const cfg = await llmConfig()
     assert.equal(cfg.defaultProvider, 'openai')
     assert.equal(cfg.monthlyHardLimitUsd, 2000)
     assert.equal(cfg.monthlySoftLimitUsd, 1500)
@@ -145,25 +145,25 @@ describe('llm.config.ts · 配置工厂', () => {
     assert.equal(cfg.enablePromptCache, false)
   })
 
-  it('fallbackChain 默认 deepseek,openai,claude', () => {
+  it('fallbackChain 默认 deepseek,openai,claude', async () => {
     delete process.env.LLM_FALLBACK_CHAIN
-    const cfg = llmConfig()
+    const cfg = await llmConfig()
     assert.deepEqual(cfg.fallbackChain, ['deepseek', 'openai', 'claude'])
   })
 
-  it('provider 默认模型', () => {
+  it('provider 默认模型', async () => {
     delete process.env.LLM_CLAUDE_MODEL
     delete process.env.LLM_OPENAI_MODEL
     delete process.env.LLM_DEEPSEEK_MODEL
-    const cfg = llmConfig()
+    const cfg = await llmConfig()
     assert.equal(cfg.claude.model, 'claude-sonnet-4-6')
     assert.equal(cfg.openai.model, 'gpt-4o-mini')
     assert.equal(cfg.deepseek.model, 'deepseek-chat')
   })
 
-  it('API keys 默认空', () => {
+  it('API keys 默认空', async () => {
     delete process.env.LLM_CLAUDE_API_KEY
-    const cfg = llmConfig()
+    const cfg = await llmConfig()
     assert.equal(cfg.claude.apiKey, '')
     assert.equal(cfg.openai.apiKey, '')
   })
@@ -488,7 +488,7 @@ describe('cost-tracker.service.ts · 成本追踪', () => {
 
   it('prompt 缓存: error 响应不缓存', () => {
     const tracker = new CostTrackerService(mockConfig, storage)
-    const response = {
+    const response: LLMResponse = {
       content: 'error',
       provider: 'claude',
       model: 'claude-sonnet-4-6',
