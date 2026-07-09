@@ -1,22 +1,22 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 /**
- * 🐜 自动: [license-renewal] [C] 角色场景测试
+ * 🐜 自动: [license-renewal] [C] 角色场景测试扩展
  *
- * 8 角色视角的 License 续费管理模块业务场景测试：
- * 👔店长 🛒前台 👥HR 🔧安监 🎮导玩员 🎯运行专员 🤝团建 📢营销
+ * 8 角色深度业务场景测试：
+ * 👔店长 -> 续费策略全局监控与异常干预
+ * 🛒前台 -> 客户续费引导与状态查询
+ * 👥HR -> 续费权限合规审计
+ * 🔧安监 -> 续费失败安全降级与数据完整性
+ * 🎮导玩员 -> 游戏设备License过期预警
+ * 🎯运行专员 -> 批量续费调度与任务编排
+ * 🤝团建 -> 团建License续费资源预留
+ * 📢营销 -> 到期客户营销续费推荐
  *
- * 每个角色至少 2 个测试用例（正常流程 + 权限边界）
- * 使用 Service 层 in-memory 存储模拟业务逻辑
+ * 每个角色至少覆盖 2 个场景（正常流程 + 降级/边界）
  */
-
-import assert from 'node:assert/strict'
-
-class NotFoundError extends Error {
-  constructor() {
-    super('Not Found')
-    this.name = 'NotFoundException'
-  }
-}
+import { LicenseRenewalService } from './license-renewal.service'
+import { LicenseRenewalController } from './license-renewal.controller'
+import type { CreateRenewalRecordDto } from './license-renewal.dto'
 
 // ── 角色定义 ──
 const ROLES = {
@@ -30,540 +30,289 @@ const ROLES = {
   Marketing: '📢营销',
 } as const
 
-// ── 数据模型 ──
-interface RenewalRecord {
-  id: string
-  licenseId: string
-  tenantId: string
-  packageId?: string
-  packageName?: string
-  previousExpireAt?: Date
-  newExpireAt?: Date
-  price: number
-  status: 'pending' | 'success' | 'failed'
-  errorMessage?: string
-  paymentId?: string
-  paidAt?: Date
-  createdAt: Date
-  updatedAt: Date
+// ── 测试工厂 ──
+function createController() {
+  const service = new LicenseRenewalService()
+  const controller = new LicenseRenewalController(service)
+  return { service, controller }
 }
 
-interface RenewalNotification {
-  id: string
-  licenseId: string
-  tenantId: string
-  type: 'reminder' | 'success' | 'failure'
-  reminderDays?: number
-  sentAt: Date
-  createdAt: Date
+const sampleCreateDto: CreateRenewalRecordDto = {
+  licenseId: 'lic-arcade-gw-001',
+  tenantId: 't-store-sz-001',
+  packageId: 'pkg-vip-annual',
+  packageName: 'VIP年卡系列',
+  price: 9999.00,
+  status: 'pending',
 }
 
-// ── 模拟 Service ──
-class LicenseRenewalMockService {
-  private records: RenewalRecord[] = []
-  private notifications: RenewalNotification[] = []
-  private seq = 100
+// ═══════════════════════════════════════════════════════════════
+// 👔 店长 — 续费策略全局监控与异常干预
+// ═══════════════════════════════════════════════════════════════
+describe(`${ROLES.StoreManager} 店长续费策略场景`, () => {
+  let controller: LicenseRenewalController
 
-  constructor() {
-    this.seed()
-  }
+  beforeEach(() => {
+    controller = createController().controller
+  })
 
-  private nextId(type: 'record' | 'notif' = 'record'): string {
-    return `${type === 'record' ? 'renewal' : 'notif'}-${++this.seq}`
-  }
+  it('🎯 [正常] 店长查看全店License续费统计概览', async () => {
+    // 先创建几条不同状态的续费记录
+    await controller.createRecord({ ...sampleCreateDto, licenseId: 'lic-stats-1', status: 'success' })
+    await controller.createRecord({ ...sampleCreateDto, licenseId: 'lic-stats-2', status: 'pending' })
+    await controller.createRecord({ ...sampleCreateDto, licenseId: 'lic-stats-3', status: 'failed' })
 
-  private seed() {
-    const now = new Date()
-    const d = (days: number) => new Date(now.getTime() + days * 24 * 3600 * 1000)
+    const stats = await controller.getStats('t-store-sz-001')
+    expect(stats).toBeDefined()
+    expect(typeof stats.totalRenewals).toBe('number')
+    expect(typeof stats.pendingCount).toBe('number')
+    expect(typeof stats.successCount).toBe('number')
+    expect(typeof stats.failedCount).toBe('number')
+    expect(typeof stats.totalRevenue).toBe('number')
+    expect(stats.totalRenewals).toBeGreaterThanOrEqual(3)
+  })
 
-    this.records.push({
-      id: 'renewal-seed-active',
-      licenseId: 'lic-store-001',
-      tenantId: 'tenant-shanghai',
-      packageId: 'pkg-enterprise',
-      packageName: '企业版',
-      previousExpireAt: d(-30),
-      newExpireAt: d(335),
-      price: 2999,
-      status: 'success',
-      paymentId: 'pay-seed-001',
-      paidAt: d(-30),
-      createdAt: d(-30),
-      updatedAt: d(-30),
+  it('⚠️ [边界] 店长查看空门店统计应返回零值而非报错', async () => {
+    const stats = await controller.getStats('t-empty-store-999')
+    expect(stats).toBeDefined()
+    expect(stats.totalRenewals).toBe(0)
+    expect(stats.totalRevenue).toBe(0)
+    expect(stats.pendingCount).toBe(0)
+    expect(stats.successCount).toBe(0)
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════
+// 🛒 前台 — 客户续费引导与状态查询
+// ═══════════════════════════════════════════════════════════════
+describe(`${ROLES.FrontDesk} 前台续费引导场景`, () => {
+  let controller: LicenseRenewalController
+
+  beforeEach(() => {
+    controller = createController().controller
+  })
+
+  it('🎯 [正常] 前台为客户创建续费记录并返回正确状态', async () => {
+    const record = await controller.createRecord(sampleCreateDto)
+    expect(record).toBeDefined()
+    expect(record.licenseId).toBe('lic-arcade-gw-001')
+    expect(record.tenantId).toBe('t-store-sz-001')
+    expect(record.status).toBe('pending')
+    expect(record.id).toBeTruthy()
+  })
+
+  it('⚠️ [边界] 前台查询不存在的续费记录应抛出错误', async () => {
+    await expect(
+      controller.getRecord('non-existent-id-999999'),
+    ).rejects.toThrow()
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════
+// 👥 HR — 续费权限合规审计
+// ═══════════════════════════════════════════════════════════════
+describe(`${ROLES.HR} HR续费合规审计场景`, () => {
+  let controller: LicenseRenewalController
+
+  beforeEach(() => {
+    controller = createController().controller
+  })
+
+  it('🎯 [正常] HR查看所有失败续费记录用于审计追溯', async () => {
+    // 创建一条失败续费
+    await controller.createRecord({
+      ...sampleCreateDto,
+      licenseId: 'lic-fail-audit-001',
+      status: 'failed',
     })
 
-    this.records.push({
-      id: 'renewal-seed-pending',
-      licenseId: 'lic-store-002',
-      tenantId: 'tenant-beijing',
-      previousExpireAt: d(-5),
-      newExpireAt: d(360),
-      price: 1999,
+    const result = await controller.listRecords({
+      status: 'failed',
+      page: 1,
+      pageSize: 10,
+    } as any)
+    expect(result).toBeDefined()
+    expect(Array.isArray(result.data)).toBe(true)
+    expect(result.data.length).toBeGreaterThanOrEqual(1)
+    expect(result.data.every((r: any) => r.status === 'failed')).toBe(true)
+  })
+
+  it('⚠️ [边界] HR禁止通过状态更新伪造支付成功（不存在记录应报错）', async () => {
+    await expect(
+      controller.updateStatus('fake-id-999', { status: 'success' }),
+    ).rejects.toThrow()
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════
+// 🔧 安监 — 续费失败安全降级与数据完整性
+// ═══════════════════════════════════════════════════════════════
+describe(`${ROLES.Security} 安监续费安全场景`, () => {
+  let controller: LicenseRenewalController
+
+  beforeEach(() => {
+    controller = createController().controller
+  })
+
+  it('🎯 [正常] 安监标记设备续费失败后状态更新正确', async () => {
+    const record = await controller.createRecord({
+      ...sampleCreateDto,
+      licenseId: 'lic-security-cam-001',
       status: 'pending',
-      createdAt: d(-5),
-      updatedAt: d(-5),
     })
+    expect(record.status).toBe('pending')
 
-    this.records.push({
-      id: 'renewal-seed-failed',
-      licenseId: 'lic-store-003',
-      tenantId: 'tenant-guangzhou',
-      price: 999,
+    // 模拟支付失败
+    const updated = await controller.updateStatus(record.id, {
       status: 'failed',
-      errorMessage: '支付超时',
-      createdAt: d(-10),
-      updatedAt: d(-10),
+      errorMessage: '支付网关超时',
     })
-
-    this.notifications.push({
-      id: 'notif-seed-001',
-      licenseId: 'lic-store-001',
-      tenantId: 'tenant-shanghai',
-      type: 'reminder',
-      reminderDays: 7,
-      sentAt: d(-20),
-      createdAt: d(-20),
-    })
-  }
-
-  async createRecord(props: {
-    licenseId: string
-    tenantId: string
-    packageId?: string
-    packageName?: string
-    previousExpireAt?: string
-    newExpireAt?: string
-    price: number
-    status?: 'pending' | 'success' | 'failed'
-    errorMessage?: string
-  }): Promise<RenewalRecord> {
-    const now = new Date()
-    const record: RenewalRecord = {
-      id: this.nextId('record'),
-      licenseId: props.licenseId,
-      tenantId: props.tenantId,
-      packageId: props.packageId,
-      packageName: props.packageName,
-      previousExpireAt: props.previousExpireAt ? new Date(props.previousExpireAt) : undefined,
-      newExpireAt: props.newExpireAt ? new Date(props.newExpireAt) : undefined,
-      price: props.price,
-      status: props.status ?? 'pending',
-      errorMessage: props.errorMessage,
-      createdAt: now,
-      updatedAt: now,
-    }
-    this.records.push(record)
-    return { ...record }
-  }
-
-  async listRecords(query: {
-    page?: number
-    pageSize?: number
-    licenseId?: string
-    tenantId?: string
-    status?: string
-    startDate?: string
-    endDate?: string
-    packageName?: string
-  }): Promise<{ data: RenewalRecord[]; total: number; page: number; pageSize: number }> {
-    const { page = 1, pageSize = 10, licenseId, tenantId, status, startDate, endDate, packageName } = query
-    let filtered = [...this.records]
-    if (licenseId) filtered = filtered.filter((r) => r.licenseId === licenseId)
-    if (tenantId) filtered = filtered.filter((r) => r.tenantId === tenantId)
-    if (status) filtered = filtered.filter((r) => r.status === status)
-    if (startDate) {
-      const start = new Date(startDate)
-      filtered = filtered.filter((r) => r.createdAt >= start)
-    }
-    if (endDate) {
-      const end = new Date(endDate)
-      filtered = filtered.filter((r) => r.createdAt <= end)
-    }
-    if (packageName) {
-      filtered = filtered.filter((r) => r.packageName === packageName)
-    }
-    filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    const total = filtered.length
-    const start = (page - 1) * pageSize
-    const paged = filtered.slice(start, start + pageSize)
-    return { data: paged, total, page, pageSize }
-  }
-
-  async getRecord(id: string): Promise<RenewalRecord> {
-    const rec = this.records.find((r) => r.id === id)
-    if (!rec) throw new NotFoundError()
-    return { ...rec }
-  }
-
-  async updateStatus(
-    id: string,
-    dto: { status: 'pending' | 'success' | 'failed'; errorMessage?: string; paymentId?: string; paidAt?: string },
-  ): Promise<RenewalRecord> {
-    const rec = this.records.find((r) => r.id === id)
-    if (!rec) throw new NotFoundError()
-    rec.status = dto.status
-    rec.errorMessage = dto.errorMessage ?? rec.errorMessage
-    rec.paymentId = dto.paymentId ?? rec.paymentId
-    rec.paidAt = dto.paidAt ? new Date(dto.paidAt) : dto.status === 'success' ? new Date() : rec.paidAt
-    rec.updatedAt = new Date()
-    return { ...rec }
-  }
-
-  async createNotification(props: {
-    licenseId: string
-    tenantId: string
-    type: 'reminder' | 'success' | 'failure'
-    reminderDays?: number
-    sentAt: string
-  }): Promise<RenewalNotification> {
-    const now = new Date()
-    const notif: RenewalNotification = {
-      id: this.nextId('notif'),
-      licenseId: props.licenseId,
-      tenantId: props.tenantId,
-      type: props.type,
-      reminderDays: props.reminderDays,
-      sentAt: new Date(props.sentAt),
-      createdAt: now,
-    }
-    this.notifications.push(notif)
-    return { ...notif }
-  }
-
-  async listNotifications(
-    licenseId?: string,
-    tenantId?: string,
-  ): Promise<{ data: RenewalNotification[]; total: number }> {
-    let filtered = [...this.notifications]
-    if (licenseId) filtered = filtered.filter((n) => n.licenseId === licenseId)
-    if (tenantId) filtered = filtered.filter((n) => n.tenantId === tenantId)
-    filtered.sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime())
-    return { data: filtered, total: filtered.length }
-  }
-
-  async getStats(tenantId?: string): Promise<{
-    totalRenewals: number
-    successCount: number
-    failedCount: number
-    pendingCount: number
-    successRate: number
-    totalRevenue: number
-  }> {
-    let filtered = [...this.records]
-    if (tenantId) filtered = filtered.filter((r) => r.tenantId === tenantId)
-    const totalRenewals = filtered.length
-    const successCount = filtered.filter((r) => r.status === 'success').length
-    const failedCount = filtered.filter((r) => r.status === 'failed').length
-    const pendingCount = filtered.filter((r) => r.status === 'pending').length
-    const totalRevenue = filtered.filter((r) => r.status === 'success').reduce((s, r) => s + r.price, 0)
-    const successRate = totalRenewals > 0 ? Math.round((successCount / totalRenewals) * 10000) / 100 : 0
-    return { totalRenewals, successCount, failedCount, pendingCount, successRate, totalRevenue }
-  }
-
-  // Test helper
-  reset() {
-    this.records = []
-    this.notifications = []
-    this.seq = 100
-    this.seed()
-  }
-}
-
-// ── 工厂函数 ──
-function createService() {
-  return new LicenseRenewalMockService()
-}
-
-// ── 测试套件 ──
-
-// ── 👔 店长 ──
-describe(`${ROLES.StoreManager} license-renewal 角色场景测试`, () => {
-  it('店长查看门店续费记录列表，了解续费历史', async () => {
-    const svc = createService()
-    const result = await svc.listRecords({ page: 1, pageSize: 50 })
-    assert.ok(result.total >= 3, '应有至少 3 条续费记录')
-    assert.ok(result.data.some((r) => r.packageName === '企业版'), '应有企业版套餐的续费')
+    expect(updated.status).toBe('failed')
+    expect(updated.errorMessage).toContain('支付')
   })
 
-  it('店长发起门店 License 续费申请', async () => {
-    const svc = createService()
-    const record = await svc.createRecord({
-      licenseId: 'lic-store-new',
-      tenantId: 'tenant-shanghai',
-      packageId: 'pkg-premium',
-      packageName: '高级版',
-      newExpireAt: new Date(Date.now() + 365 * 86400000).toISOString(),
-      price: 3999,
-    })
-    assert.equal(record.status, 'pending', '新建续费记录默认待处理')
-    assert.equal(record.price, 3999)
-    assert.equal(record.packageName, '高级版')
-  })
-
-  it('店长尝试续费已过期的 License，确认系统正常处理', async () => {
-    const svc = createService()
-    const past = new Date(Date.now() - 30 * 86400000).toISOString()
-    const record = await svc.createRecord({
-      licenseId: 'lic-expired',
-      tenantId: 'tenant-shanghai',
-      previousExpireAt: past,
-      price: 2999,
-    })
-    assert.ok(record.previousExpireAt !== undefined, '应记录之前到期时间')
-    assert.equal(record.status, 'pending')
+  it('⚠️ [边界] 安监检查无续费记录的设备应抛出错误', async () => {
+    await expect(
+      controller.getRecord('lic-security-nonexist'),
+    ).rejects.toThrow()
   })
 })
 
-// ── 🛒 前台 ──
-describe(`${ROLES.FrontDesk} license-renewal 角色场景测试`, () => {
-  it('前台查询某 License 的续费状态，便于告知顾客', async () => {
-    const svc = createService()
-    const result = await svc.listRecords({ licenseId: 'lic-store-001' })
-    assert.ok(result.total >= 1, '应有续费记录')
-    const record = result.data[0]
-    assert.equal(record.licenseId, 'lic-store-001')
+// ═══════════════════════════════════════════════════════════════
+// 🎮 导玩员 — 游戏设备License过期预警
+// ═══════════════════════════════════════════════════════════════
+describe(`${ROLES.Guide} 导玩员设备License场景`, () => {
+  let controller: LicenseRenewalController
+
+  beforeEach(() => {
+    controller = createController().controller
   })
 
-  it('前台查看续费失败详情以便向顾客解释', async () => {
-    const svc = createService()
-    const result = await svc.listRecords({ status: 'failed' })
-    assert.ok(result.total >= 1)
-    const failed = result.data[0]
-    assert.equal(failed.status, 'failed')
-    // 失败记录应有原因
-    assert.ok(failed.errorMessage !== undefined || true, '应记录失败原因')
-  })
-
-  it('前台尝试发起续费操作以验证权限边界', async () => {
-    const svc = createService()
-    // 前台理论上不应有发起续费的权限，验证业务层允许通过（权限在 API 路由层）
-    const record = await svc.createRecord({
-      licenseId: 'lic-frontdesk-test',
-      tenantId: 'tenant-front',
-      price: 1999,
+  it('🎯 [正常] 导玩员查询特定游戏设备的续费记录', async () => {
+    await controller.createRecord({
+      ...sampleCreateDto,
+      licenseId: 'lic-vr-booth-003',
     })
-    assert.ok(record.id.startsWith('renewal-'))
-    assert.equal(record.status, 'pending')
+
+    const result = await controller.listRecords({
+      licenseId: 'lic-vr-booth-003',
+      page: 1,
+      pageSize: 10,
+    } as any)
+    expect(result).toBeDefined()
+    expect(result.data.some((r: any) => r.licenseId === 'lic-vr-booth-003')).toBe(true)
+  })
+
+  it('⚠️ [边界] 导玩员查询已过期设备无续费记录应返回空列表', async () => {
+    const result = await controller.listRecords({
+      licenseId: 'lic-old-machine-outdated',
+      page: 1,
+      pageSize: 10,
+    } as any)
+    expect(result.data.length).toBe(0)
+    expect(result.total).toBe(0)
   })
 })
 
-// ── 👥 HR ──
-describe(`${ROLES.HR} license-renewal 角色场景测试`, () => {
-  it('HR 查看续费统计了解整体 License 续费健康度', async () => {
-    const svc = createService()
-    const stats = await svc.getStats()
-    assert.ok(typeof stats.totalRenewals === 'number')
-    assert.ok(typeof stats.successRate === 'number')
-    assert.ok(stats.successRate >= 0 && stats.successRate <= 100)
+// ═══════════════════════════════════════════════════════════════
+// 🎯 运行专员 — 批量续费调度与任务编排
+// ═══════════════════════════════════════════════════════════════
+describe(`${ROLES.Operations} 运行专员批量续费场景`, () => {
+  let controller: LicenseRenewalController
+
+  beforeEach(() => {
+    controller = createController().controller
   })
 
-  it('HR 按租户过滤查看特定门店的续费统计', async () => {
-    const svc = createService()
-    const stats = await svc.getStats('tenant-shanghai')
-    assert.ok(stats.totalRenewals >= 1, '上海门店应有续费记录')
-    // 上海门店只有 1 条记录且为 success
-    assert.equal(stats.successCount, 1)
-    assert.equal(stats.failedCount, 0)
+  it('🎯 [正常] 运行专员创建多条续费记录并分页查询', async () => {
+    for (let i = 0; i < 5; i++) {
+      await controller.createRecord({
+        ...sampleCreateDto,
+        licenseId: `lic-batch-${i}`,
+        status: i % 2 === 0 ? 'success' : 'pending',
+      })
+    }
+
+    const result = await controller.listRecords({ page: 1, pageSize: 3 } as any)
+    expect(result.data.length).toBeLessThanOrEqual(3)
+    expect(result.total).toBeGreaterThanOrEqual(5)
+    expect(result.page).toBe(1)
+    expect(result.pageSize).toBe(3)
   })
 
-  it('HR 查询空的租户统计返回零值', async () => {
-    const svc = createService()
-    const stats = await svc.getStats('tenant-nonexistent')
-    assert.equal(stats.totalRenewals, 0)
-    assert.equal(stats.successRate, 0)
-    assert.equal(stats.totalRevenue, 0)
+  it('⚠️ [边界] 运行专员查询超大页码应返回空数据而非报错', async () => {
+    const result = await controller.listRecords({ page: 999, pageSize: 100 } as any)
+    expect(result).toBeDefined()
+    expect(Array.isArray(result.data)).toBe(true)
+    expect(result.data.length).toBe(0)
   })
 })
 
-// ── 🔧 安监 ──
-describe(`${ROLES.Security} license-renewal 角色场景测试`, () => {
-  it('安监审查续费失败记录，排查支付异常', async () => {
-    const svc = createService()
-    const result = await svc.listRecords({ status: 'failed' })
-    assert.ok(result.total >= 1)
-    // 审查失败原因
-    const failed = result.data[0]
-    assert.equal(failed.status, 'failed')
-    if (failed.errorMessage) {
-      assert.ok(typeof failed.errorMessage === 'string')
-    }
+// ═══════════════════════════════════════════════════════════════
+// 🤝 团建 — 团建License续费资源预留
+// ═══════════════════════════════════════════════════════════════
+describe(`${ROLES.Teambuilding} 团建License续费场景`, () => {
+  let controller: LicenseRenewalController
+
+  beforeEach(() => {
+    controller = createController().controller
   })
 
-  it('安监确认所有续费记录有正确的 tenantId 归属', async () => {
-    const svc = createService()
-    const result = await svc.listRecords({ pageSize: 100 })
-    for (const record of result.data) {
-      assert.ok(record.tenantId, `记录 ${record.id} 应有 tenantId`)
-    }
+  it('🎯 [正常] 团建专员为团建场地创建License续费', async () => {
+    const record = await controller.createRecord({
+      ...sampleCreateDto,
+      licenseId: 'lic-team-building-hall-001',
+      packageName: '团建场地月卡',
+      price: 2999.00,
+    })
+    expect(record.licenseId).toBe('lic-team-building-hall-001')
+    expect(record.packageName).toBe('团建场地月卡')
+    expect(record.price).toBe(2999.00)
   })
 
-  it('安监检查通知发送记录，确认未过度发送', async () => {
-    const svc = createService()
-    const notifs = await svc.listNotifications()
-    assert.ok(Array.isArray(notifs.data))
-    // 每条通知应有类型
-    for (const n of notifs.data) {
-      assert.ok(['reminder', 'success', 'failure'].includes(n.type))
-    }
+  it('⚠️ [边界] 团建查询已有续费记录确认资源可用', async () => {
+    await controller.createRecord({
+      ...sampleCreateDto,
+      licenseId: 'lic-team-building-hall-002',
+    })
+    const result = await controller.listRecords({
+      licenseId: 'lic-team-building-hall-002',
+      page: 1,
+      pageSize: 10,
+    } as any)
+    expect(result.data.length).toBeGreaterThanOrEqual(1)
   })
 })
 
-// ── 🎮 导玩员 ──
-describe(`${ROLES.Guide} license-renewal 角色场景测试`, () => {
-  it('导玩员查询自己门店的 License 到期提醒', async () => {
-    const svc = createService()
-    const notifs = await svc.listNotifications(undefined, 'tenant-shanghai')
-    assert.ok(notifs.data.length >= 1)
-    assert.ok(notifs.data.every((n) => n.tenantId === 'tenant-shanghai'))
+// ═══════════════════════════════════════════════════════════════
+// 📢 营销 — 到期客户营销续费推荐
+// ═══════════════════════════════════════════════════════════════
+describe(`${ROLES.Marketing} 营销续费推荐场景`, () => {
+  let controller: LicenseRenewalController
+
+  beforeEach(() => {
+    controller = createController().controller
   })
 
-  it('导玩员查看待处理续费，了解是否有需要协助的操作', async () => {
-    const svc = createService()
-    const result = await svc.listRecords({ status: 'pending' })
-    assert.ok(result.total >= 1)
-    assert.ok(result.data.every((r) => r.status === 'pending'))
-  })
-})
-
-// ── 🎯 运行专员 ──
-describe(`${ROLES.Operations} license-renewal 角色场景测试`, () => {
-  it('运行专员手动创建续费记录并支付成功', async () => {
-    const svc = createService()
-    const record = await svc.createRecord({
-      licenseId: 'lic-ops-001',
-      tenantId: 'tenant-ops',
-      packageId: 'pkg-enterprise',
-      packageName: '企业版',
-      newExpireAt: new Date(Date.now() + 365 * 86400000).toISOString(),
-      price: 2999,
+  it('🎯 [正常] 营销查询所有待续费记录导出营销清单', async () => {
+    await controller.createRecord({
+      ...sampleCreateDto,
+      licenseId: 'lic-marketing-target-001',
+      status: 'pending',
     })
-    assert.equal(record.status, 'pending')
-
-    // 运行专员操作付款
-    const updated = await svc.updateStatus(record.id, {
-      status: 'success',
-      paymentId: 'pay-ops-001',
-    })
-    assert.equal(updated.status, 'success')
-    assert.equal(updated.paymentId, 'pay-ops-001')
-    assert.ok(updated.paidAt !== undefined)
+    const result = await controller.listRecords({
+      status: 'pending',
+      page: 1,
+      pageSize: 100,
+    } as any)
+    expect(result.data.some((r: any) => r.status === 'pending')).toBe(true)
   })
 
-  it('运行专员处理续费失败重试', async () => {
-    const svc = createService()
-    // 先创建一个失败记录
-    const record = await svc.createRecord({
-      licenseId: 'lic-retry',
-      tenantId: 'tenant-retry',
-      price: 1999,
-      status: 'failed',
-      errorMessage: '银行卡余额不足',
-    })
-    assert.equal(record.status, 'failed')
+  it('⚠️ [边界] 营销查看门店续费统计数据完整性', async () => {
+    await controller.createRecord({ ...sampleCreateDto, licenseId: 'lic-mkt-1', status: 'success' })
+    await controller.createRecord({ ...sampleCreateDto, licenseId: 'lic-mkt-2', status: 'pending' })
 
-    // 重试 - 更新状态为 pending 并重新处理
-    const retried = await svc.updateStatus(record.id, {
-      status: 'success',
-      paymentId: 'pay-retry-001',
-    })
-    assert.equal(retried.status, 'success')
-  })
-
-  it('运行专员查询即将到期的 License，批量发送提醒', async () => {
-    const svc = createService()
-    const notif = await svc.createNotification({
-      licenseId: 'lic-store-002',
-      tenantId: 'tenant-beijing',
-      type: 'reminder',
-      reminderDays: 7,
-      sentAt: new Date().toISOString(),
-    })
-    assert.equal(notif.type, 'reminder')
-    assert.equal(notif.reminderDays, 7)
-  })
-
-  it('运行专员尝试更新不存在的续费记录以验证错误处理', async () => {
-    const svc = createService()
-    try {
-      await svc.updateStatus('nonexistent-id', { status: 'success' })
-      assert.fail('应抛出 NotFoundException')
-    } catch (e: any) {
-      assert.ok(e instanceof NotFoundError || e.name === 'NotFoundException', '应返回 NotFoundException')
-    }
-  })
-})
-
-// ── 🤝 团建 ──
-describe(`${ROLES.Teambuilding} license-renewal 角色场景测试`, () => {
-  it('团建查询企业版套餐 License 续费记录，确认团建预算覆盖', async () => {
-    const svc = createService()
-    const result = await svc.listRecords({ packageName: '企业版' })
-    // 企业版续费记录在种子数据中
-    const enterpriseRecords = result.data.filter((r) => r.packageName === '企业版')
-    // 如果过滤不生效，检查 seed 中包含的
-    if (enterpriseRecords.length > 0) {
-      assert.equal(enterpriseRecords[0].price, 2999)
-    }
-  })
-
-  it('团建查看续费通知列表了解最近发送状态', async () => {
-    const svc = createService()
-    const notifs = await svc.listNotifications()
-    assert.ok(Array.isArray(notifs.data))
-    // 检查通知按 sentAt 降序排列
-    for (let i = 1; i < notifs.data.length; i++) {
-      assert.ok(
-        notifs.data[i - 1].sentAt.getTime() >= notifs.data[i].sentAt.getTime(),
-      )
-    }
-  })
-})
-
-// ── 📢 营销 ──
-describe(`${ROLES.Marketing} license-renewal 角色场景测试`, () => {
-  it('营销查询续费统计报表，分析增购/续费转化率', async () => {
-    const svc = createService()
-    const stats = await svc.getStats()
-    assert.ok(stats.totalRenewals > 0)
-    assert.equal(stats.successCount + stats.failedCount + stats.pendingCount, stats.totalRenewals)
-  })
-
-  it('营销创建促销价续费记录用于限时活动', async () => {
-    const svc = createService()
-    const record = await svc.createRecord({
-      licenseId: 'lic-promo-001',
-      tenantId: 'tenant-promo',
-      packageId: 'pkg-basic',
-      packageName: '基础版',
-      previousExpireAt: new Date(Date.now() - 10 * 86400000).toISOString(),
-      newExpireAt: new Date(Date.now() + 365 * 86400000).toISOString(),
-      price: 799, // 促销价
-      status: 'success',
-    })
-    assert.equal(record.price, 799)
-    assert.equal(record.status, 'success')
-  })
-
-  it('营销验证更新续费状态可以回退 pending', async () => {
-    const svc = createService()
-    const record = await svc.createRecord({
-      licenseId: 'lic-marketing-rollback',
-      tenantId: 'tenant-marketing',
-      price: 1500,
-    })
-    assert.equal(record.status, 'pending')
-
-    // 先设置为 success
-    await svc.updateStatus(record.id, { status: 'success', paymentId: 'pay-mkt-001' })
-    // 再回退（正常业务不可能，但验证 API 不阻拦）
-    const rolled = await svc.updateStatus(record.id, { status: 'pending' })
-    assert.equal(rolled.status, 'pending')
-  })
-
-  it('营销查看某 License 的续费提醒历史', async () => {
-    const svc = createService()
-    const notifs = await svc.listNotifications('lic-store-001')
-    assert.ok(notifs.data.length >= 1)
-    assert.ok(notifs.data.every((n) => n.licenseId === 'lic-store-001'))
+    const stats = await controller.getStats('t-store-sz-001')
+    expect(stats.pendingCount + stats.successCount + stats.failedCount).toBe(stats.totalRenewals)
   })
 })
