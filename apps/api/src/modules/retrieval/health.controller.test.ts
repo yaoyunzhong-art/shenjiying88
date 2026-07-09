@@ -13,15 +13,20 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { RetrievalHealthController } from './health.controller'
-import { RetrievalService } from './retrieval.service'
 
 describe('RetrievalHealthController', () => {
   let controller: RetrievalHealthController
-  let service: RetrievalService
+  /** Mock service 只实现 getComponentHealth 方法 */
+  const mockService = {
+    getComponentHealth: () => Promise.resolve({
+      qdrant: 'unavailable' as const,
+      embedder: 'unavailable' as const,
+      lastIndexAt: null as string | null,
+    }),
+  }
 
   beforeEach(() => {
-    service = new RetrievalService()
-    controller = new RetrievalHealthController(service)
+    controller = new RetrievalHealthController(mockService as any)
   })
 
   // ─── 路由元数据 ────────────────────────────────────────────────────────
