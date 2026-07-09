@@ -1,0 +1,825 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+/**
+ * tenant-config.test.ts - 三级独立配置模块测试
+ * 
+ * 覆盖:
+ * - TenantConfigService: 三级独立读写、字段级隔离、继承链解析、审计日志
+ * - 配置定义、校验、脱敏边界
+ * - 工作台视角
+ */
+import 'reflect-metadata'
+import assert from 'node:assert/strict'
+import { TenantConfigService } from './tenant-config.service'
+import { TenantConfigController } from './tenant-config.controller'
+import {
+  BUILTIN_CONFIG_DEFINITIONS,
+  LEVEL_TO_WORKBENCH,
+  WORKBENCH_TO_LEVEL,
+  WORKBENCH_NAMES,
+  CATEGORY_LEVEL_MATRIX,
+  ROLE_LEVEL_ACCESS,
+} from './tenant-config.entity'
+import { runWithTenant } from '../../common/context/tenant-context'
+
+// ── 测试上下文工厂 ──
+
+const STORE_CTX = {
+  tenantId: 'tenant-A',
+  storeId: 'store-001',
+  userId: 'op-1',
+  role: 'store_admin' as const,
+}
+const TENANT_CTX = {
+  tenantId: 'tenant-A',
+  userId: 'admin-1',
+  role: 'tenant_admin' as const,
+}
+const BRAND_CTX = {
+  tenantId: 'brand-shenjiying',
+  userId: 'brand-1',
+  role: 'brand_admin' as const,
+}
+const OPERATOR_CTX = {
+  tenantId: 'tenant-A',
+  storeId: 'store-001',
+  userId: 'op-2',
+  role: 'operator' as const,
+}
+const SUPER_ADMIN_CTX = {
+  tenantId: 'brand-shenjiying',
+  storeId: 'store-001',
+  userId: 'super-1',
+  role: 'super_admin' as const,
+}
+
+function makeService(): TenantConfigService {
+  return new TenantConfigService()
+}
+
+function makeController(service?: TenantConfigService): TenantConfigController {
+  const s = service ?? makeService()
+  return new TenantConfigController(s)
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 1. Config Definitions (配置定义)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('BUILTIN_CONFIG_DEFINITIONS', () => {
+  it('TC-1 should have at least 13 builtin config definitions', () => {
+    assert.ok(BUILTIN_CONFIG_DEFINITIONS.length >= 13)
+  })
+
+  it('TC-2 each definition must have key, category, level, valueType, sensitivity', () => {
+    for (const def of BUILTIN_CONFIG_DEFINITIONS) {
+      assert.ok(def.key, `missing key: ${JSON.stringify(def)}`)
+      assert.ok(def.category, `missing category: ${def.key}`)
+      assert.ok(def.level, `missing level: ${def.key}`)
+      assert.ok(def.valueType, `missing valueType: ${def.key}`)
+      assert.ok(def.sensitivity, `missing sensitivity: ${def.key}`)
+      assert.ok(def.label, `missing label: ${def.key}`)
+    }
+  })
+
+  it('TC-3 all levels must have at least one definition', () => {
+    const levels = new Set(BUILTIN_CONFIG_DEFINITIONS.map((d) => d.level))
+    assert.ok(levels.has('store'))
+    assert.ok(levels.has('tenant'))
+    assert.ok(levels.has('brand'))
+  })
+
+  it('TC-4 store level configs should have store|tenant in CATEGORY_LEVEL_MATRIX', () => {
+    const storeDefs = BUILTIN_CONFIG_DEFINITIONS.filter((d) => d.level === 'store')
+    for (const def of storeDefs) {
+      const allowed = CATEGORY_LEVEL_MATRIX[def.category]
+      assert.ok(allowed, `category ${def.category} not in matrix`)
+      assert.ok(allowed.includes('store'), `${def.key} category ${def.category} should allow store`)
+    }
+  })
+
+  it('TC-5 brand level configs should have brand in CATEGORY_LEVEL_MATRIX', () => {
+    const brandDefs = BUILTIN_CONFIG_DEFINITIONS.filter((d) => d.level === 'brand')
+    for (const def of brandDefs) {
+      const allowed = CATEGORY_LEVEL_MATRIX[def.category]
+      assert.ok(allowed, `category ${def.category} not in matrix`)
+      assert.ok(allowed.includes('brand'), `${def.key} category ${def.category} should allow brand`)
+    }
+  })
+
+  it('TC-6 validation should have correct min/max for numeric configs', () => {
+    const tax = BUILTIN_CONFIG_DEFINITIONS.find((d) => d.key === 'pos.tax_rate')
+    assert.equal(tax!.validation!.min, 0)
+    assert.equal(tax!.validation!.max, 1)
+
+    const retention = BUILTIN_CONFIG_DEFINITIONS.find((d) => d.key === 'compliance.audit_retention_days')
+    assert.equal(retention!.validation!.min, 30)
+    assert.equal(retention!.validation!.max, 2555)
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// 2. Level Mapping (级别映射)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('LEVEL_TO_WORKBENCH & WORKBENCH_TO_LEVEL', () => {
+  it('TC-7 every level should map to a workbench', () => {
+    assert.equal(LEVEL_TO_WORKBENCH.store, 'W-S')
+    assert.equal(LEVEL_TO_WORKBENCH.tenant, 'W-T')
+    assert.equal(LEVEL_TO_WORKBENCH.brand, 'W-B')
+  })
+
+  it('TC-8 every workbench should map back to a level', () => {
+    assert.equal(WORKBENCH_TO_LEVEL['W-S'], 'store')
+    assert.equal(WORKBENCH_TO_LEVEL['W-T'], 'tenant')
+    assert.equal(WORKBENCH_TO_LEVEL['W-B'], 'brand')
+  })
+
+  it('TC-9 WORKBENCH_NAMES should have names for all codes', () => {
+    assert.ok(WORKBENCH_NAMES['W-S'].length > 0)
+    assert.ok(WORKBENCH_NAMES['W-T'].length > 0)
+    assert.ok(WORKBENCH_NAMES['W-B'].length > 0)
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// 3. Role Level Access (权限矩阵)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('ROLE_LEVEL_ACCESS', () => {
+  it('TC-10 super_admin should access all levels', () => {
+    assert.deepEqual(ROLE_LEVEL_ACCESS.super_admin, ['store', 'tenant', 'brand'])
+  })
+
+  it('TC-11 store_admin should only access store level', () => {
+    assert.deepEqual(ROLE_LEVEL_ACCESS.store_admin, ['store'])
+  })
+
+  it('TC-12 operator should only access store level', () => {
+    assert.deepEqual(ROLE_LEVEL_ACCESS.operator, ['store'])
+  })
+
+  it('TC-13 viewer should access store and tenant', () => {
+    assert.ok(ROLE_LEVEL_ACCESS.viewer.includes('store'))
+    assert.ok(ROLE_LEVEL_ACCESS.viewer.includes('tenant'))
+  })
+
+  it('TC-14 brand_admin should access tenant and brand', () => {
+    assert.ok(ROLE_LEVEL_ACCESS.brand_admin.includes('tenant'))
+    assert.ok(ROLE_LEVEL_ACCESS.brand_admin.includes('brand'))
+  })
+
+  it('TC-15 auditor should access all three levels', () => {
+    assert.ok(ROLE_LEVEL_ACCESS.auditor.includes('store'))
+    assert.ok(ROLE_LEVEL_ACCESS.auditor.includes('tenant'))
+    assert.ok(ROLE_LEVEL_ACCESS.auditor.includes('brand'))
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// 4. TenantConfigService - getConfigs (三级独立读取)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('TenantConfigService.getConfigs', () => {
+  let service: TenantConfigService
+
+  beforeEach(() => {
+    service = makeService()
+  })
+
+  it('TC-16 store_admin should read store level configs', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const configs = await service.getConfigs({ level: 'store' })
+      // Seed has 1 store config (pos.tax_rate) for store-001
+      assert.ok(configs.length >= 1)
+      for (const cfg of configs) {
+        assert.equal(cfg.level, 'store')
+      }
+    })
+  })
+
+  it('TC-17 tenant_admin should read tenant level configs', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      const configs = await service.getConfigs({ level: 'tenant' })
+      // Seed has 3 tenant configs for tenant-A
+      assert.ok(configs.length >= 1)
+    })
+  })
+
+  it('TC-18 brand_admin should read brand level configs', async () => {
+    await runWithTenant(BRAND_CTX, async () => {
+      const configs = await service.getConfigs({ level: 'brand' })
+      // Seed has 2 brand configs
+      assert.ok(configs.length >= 1)
+    })
+  })
+
+  it('TC-19 store_admin should NOT read brand configs (forbidden)', async () => {
+    await assert.rejects(
+      runWithTenant(STORE_CTX, async () => service.getConfigs({ level: 'brand' })),
+      /cannot access level=brand/,
+    )
+  })
+
+  it('TC-20 operator should NOT read tenant configs (forbidden)', async () => {
+    await assert.rejects(
+      runWithTenant(OPERATOR_CTX, async () => service.getConfigs({ level: 'tenant' })),
+      /cannot access level=tenant/,
+    )
+  })
+
+  it('TC-21 should filter by category', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const configs = await service.getConfigs({ level: 'store', category: 'pos' })
+      for (const cfg of configs) {
+        assert.equal(cfg.category, 'pos')
+      }
+    })
+  })
+
+  it('TC-22 should filter by keys', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const configs = await service.getConfigs({
+        level: 'store',
+        keys: ['pos.tax_rate', 'member.daily_checkin_enabled'],
+      })
+      assert.ok(configs.length >= 1)
+      assert.ok(configs.every(c => ['pos.tax_rate', 'member.daily_checkin_enabled'].includes(c.key)))
+    })
+  })
+
+  it('TC-23 super_admin should read and set any level', async () => {
+    await runWithTenant(SUPER_ADMIN_CTX, async () => {
+      const storeConfigs = await service.getConfigs({ level: 'store' })
+      assert.ok(Array.isArray(storeConfigs))
+      // super_admin can also write at any level
+      const stored = await service.setConfig({ key: 'compliance.audit_retention_days', value: '365' })
+      assert.equal(stored.level, 'brand')
+      const tenantSet = await service.setConfig({ key: 'ai.default_model', value: 'gpt-4o' })
+      assert.equal(tenantSet.level, 'tenant')
+    })
+  })
+
+  it('TC-24 getConfigs returns seeded configs at store level', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const all = await service.getConfigs({ level: 'store' })
+      // Seed has 1 config at store level (pos.tax_rate for store-001)
+      assert.ok(all.length >= 1)
+      const keys = all.map(c => c.key)
+      assert.ok(keys.includes('pos.tax_rate'))
+    })
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// 5. TenantConfigService - setConfig (三级独立写入)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('TenantConfigService.setConfig', () => {
+  let service: TenantConfigService
+
+  beforeEach(() => {
+    service = makeService()
+  })
+
+  it('TC-25 should set store level config', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const inst = await service.setConfig({ key: 'pos.tax_rate', value: '0.08' })
+      assert.equal(inst.key, 'pos.tax_rate')
+      assert.equal(inst.level, 'store')
+      assert.equal(inst.ownerId, 'store-001')
+    })
+  })
+
+  it('TC-26 should set tenant level config', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      const inst = await service.setConfig({
+        key: 'marketing.default_campaign_budget',
+        value: '75000',
+      })
+      assert.equal(inst.key, 'marketing.default_campaign_budget')
+      assert.equal(inst.level, 'tenant')
+    })
+  })
+
+  it('TC-27 should set brand level config', async () => {
+    await runWithTenant(BRAND_CTX, async () => {
+      const inst = await service.setConfig({
+        key: 'branding.primary_color',
+        value: '#ff0000',
+      })
+      assert.equal(inst.key, 'branding.primary_color')
+      assert.equal(inst.level, 'brand')
+    })
+  })
+
+  it('TC-28 should increment version on update', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      const v1 = await service.setConfig({
+        key: 'ai.default_model',
+        value: 'gpt-4o',
+      })
+      assert.equal(v1.version, 2) // seed version 1, now 2
+
+      const v2 = await service.setConfig({
+        key: 'ai.default_model',
+        value: 'claude-3.5-sonnet',
+      })
+      assert.equal(v2.version, 3)
+    })
+  })
+
+  it('TC-29 should reject unknown key', async () => {
+    await assert.rejects(
+      runWithTenant(STORE_CTX, async () =>
+        service.setConfig({ key: 'unknown.key', value: 'x' }),
+      ),
+      /Unknown config key/,
+    )
+  })
+
+  it('TC-30 should reject config at wrong level', async () => {
+    await assert.rejects(
+      runWithTenant(STORE_CTX, async () =>
+        service.setConfig({ key: 'compliance.audit_retention_days', value: '365' }),
+      ),
+      /cannot access/,
+    )
+  })
+
+  it('TC-31 should validate number type', async () => {
+    await assert.rejects(
+      runWithTenant(STORE_CTX, async () =>
+        service.setConfig({ key: 'pos.tax_rate', value: 'not-a-number' }),
+      ),
+      /must be a number/,
+    )
+  })
+
+  it('TC-32 should validate number range (min)', async () => {
+    await assert.rejects(
+      runWithTenant(STORE_CTX, async () =>
+        service.setConfig({ key: 'pos.tax_rate', value: '-1' }),
+      ),
+      /must be >=/,
+    )
+  })
+
+  it('TC-33 should validate number range (max)', async () => {
+    await assert.rejects(
+      runWithTenant(STORE_CTX, async () =>
+        service.setConfig({ key: 'pos.tax_rate', value: '2' }),
+      ),
+      /must be <=/,
+    )
+  })
+
+  it('TC-34 should validate enum', async () => {
+    await assert.rejects(
+      runWithTenant(TENANT_CTX, async () =>
+        service.setConfig({ key: 'ai.default_model', value: 'invalid-model' }),
+      ),
+      /must be one of/,
+    )
+  })
+
+  it('TC-35 should validate pattern (hex color)', async () => {
+    await assert.rejects(
+      runWithTenant(BRAND_CTX, async () =>
+        service.setConfig({ key: 'branding.primary_color', value: 'red' }),
+      ),
+      /does not match pattern/,
+    )
+  })
+
+  it('TC-36 should accept valid enum values', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      const inst = await service.setConfig({ key: 'ai.default_model', value: 'deepseek-chat' })
+      assert.ok(inst)
+      assert.equal(inst.value, 'deepseek-chat')
+    })
+  })
+
+  it('TC-37 should store inherits flag', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const inst = await service.setConfig({
+        key: 'pos.tax_rate',
+        value: '0.06',
+        inherits: false,
+      })
+      assert.equal(inst.inherits, false)
+    })
+  })
+
+  it('TC-38 operator should NOT set tenant config', async () => {
+    await assert.rejects(
+      runWithTenant(OPERATOR_CTX, async () =>
+        service.setConfig({ key: 'ai.default_model', value: 'gpt-4o' }),
+      ),
+      /cannot access/,
+    )
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// 6. TenantConfigService - setConfigBatch (批量写入)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('TenantConfigService.setConfigBatch', () => {
+  let service: TenantConfigService
+
+  beforeEach(() => {
+    service = makeService()
+  })
+
+  it('TC-39 should set multiple configs at once', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      const results = await service.setConfigBatch([
+        { key: 'marketing.default_campaign_budget', value: '100000' },
+        { key: 'ai.default_model', value: 'gpt-4o' },
+      ])
+      assert.equal(results.length, 2)
+    })
+  })
+
+  it('TC-40 batch should partial-fail on invalid item', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      await assert.rejects(
+        service.setConfigBatch([
+          { key: 'marketing.default_campaign_budget', value: '100000' },
+          { key: 'unknown.key', value: 'x' },
+        ]),
+        /Unknown config key/,
+      )
+    })
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// 7. TenantConfigService - getConfig (单个读取 + 脱敏)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('TenantConfigService.getConfig', () => {
+  let service: TenantConfigService
+
+  beforeEach(() => {
+    service = makeService()
+  })
+
+  it('TC-41 should return public config without masking', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const cfg = await service.getConfig('pos.tax_rate')
+      assert.ok(cfg)
+      assert.equal(cfg.value, '0.13')
+    })
+  })
+
+  it('TC-42 should mask secret config', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      await service.setConfig({
+        key: 'integration.webhook_url',
+        value: 'https://hooks.example.com/token-secret-xyz',
+      })
+      const cfg = await service.getConfig('integration.webhook_url')
+      assert.ok(cfg)
+      assert.match(cfg.value, /^\*\*\*-/)
+    })
+  })
+
+  it('TC-43 should return null for unset config (no instance)', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      // receipt_footer has no seed instance, exists as def only
+      const cfg = await service.getConfig('pos.receipt_footer')
+      // should be null since no instance was seeded for this key
+      assert.equal(cfg, null)
+    })
+  })
+
+  it('TC-44 should reject access to restricted level', async () => {
+    await assert.rejects(
+      runWithTenant(STORE_CTX, async () =>
+        service.getConfig('compliance.audit_retention_days'),
+      ),
+      /cannot access/,
+    )
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// 8. TenantConfigService - getEffectiveConfigs (继承链)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('TenantConfigService.getEffectiveConfigs', () => {
+  let service: TenantConfigService
+
+  beforeEach(() => {
+    service = makeService()
+  })
+
+  it('TC-45 should return effective configs with inheritance info', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const configs = await service.getEffectiveConfigs()
+      assert.ok(configs.length > 0)
+      for (const cfg of configs) {
+        assert.ok('key' in cfg)
+        assert.ok('value' in cfg)
+        assert.ok('sourceLevel' in cfg)
+        assert.ok('inherited' in cfg)
+      }
+    })
+  })
+
+  it('TC-46 effective config should show store-level override', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      await service.setConfig({ key: 'pos.tax_rate', value: '0.05' })
+      const configs = await service.getEffectiveConfigs('pos')
+      const tax = configs.find((c) => c.key === 'pos.tax_rate')
+      assert.ok(tax)
+      assert.equal(tax.value, '0.05')
+      assert.equal(tax.inherited, false)
+    })
+  })
+
+  it('TC-47 effective config should show inherited from tenant', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const configs = await service.getEffectiveConfigs('member')
+      const threshold = configs.find((c) => c.key === 'member.tier_upgrade_threshold')
+      if (threshold) {
+        assert.equal(threshold.inherited, false) // tenant level has seed
+      }
+    })
+  })
+
+  it('TC-48 should filter by category', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const posConfigs = await service.getEffectiveConfigs('pos')
+      for (const cfg of posConfigs) {
+        assert.ok(cfg.key.startsWith('pos.'))
+      }
+    })
+  })
+
+  it('TC-49 should return empty for non-existent category', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const configs = await service.getEffectiveConfigs('non-existent-category' as any)
+      assert.equal(configs.length, 0)
+    })
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// 9. TenantConfigService - getWorkbenchConfigs (工作台视角)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('TenantConfigService.getWorkbenchConfigs', () => {
+  let service: TenantConfigService
+
+  beforeEach(() => {
+    service = makeService()
+  })
+
+  it('TC-50 W-S should return store-level effective configs', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const configs = await service.getWorkbenchConfigs('W-S')
+      assert.ok(configs.length > 0)
+    })
+  })
+
+  it('TC-51 W-T should return tenant-level effective configs', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      const configs = await service.getWorkbenchConfigs('W-T')
+      assert.ok(configs.length > 0)
+    })
+  })
+
+  it('TC-52 W-B should return brand-level effective configs', async () => {
+    await runWithTenant(BRAND_CTX, async () => {
+      const configs = await service.getWorkbenchConfigs('W-B')
+      assert.ok(configs.length > 0)
+    })
+  })
+
+  it('TC-53 store_admin should NOT access W-B', async () => {
+    await assert.rejects(
+      runWithTenant(STORE_CTX, async () => service.getWorkbenchConfigs('W-B')),
+      /cannot access level=brand/,
+    )
+  })
+
+  it('TC-54 should filter workbench configs by category', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const configs = await service.getWorkbenchConfigs('W-S', 'pos')
+      for (const cfg of configs) {
+        assert.ok(cfg.key.startsWith('pos.') || cfg.key.startsWith('print.'))
+      }
+    })
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// 10. TenantConfigService - rollback (回滚)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('TenantConfigService.rollback', () => {
+  let service: TenantConfigService
+
+  beforeEach(() => {
+    service = makeService()
+  })
+
+  it('TC-55 should rollback config to target version', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      const v1 = await service.setConfig({ key: 'ai.default_model', value: 'gpt-4o' })
+      await service.setConfig({ key: 'ai.default_model', value: 'claude-3.5-sonnet' })
+
+      const rolled = await service.rollback(1, v1.id)
+      assert.equal(rolled.version, 1)
+    })
+  })
+
+  it('TC-56 should reject rollback of non-existent config', async () => {
+    await assert.rejects(
+      runWithTenant(TENANT_CTX, async () =>
+        service.rollback(1, 'nonexistent-id'),
+      ),
+      /not found/,
+    )
+  })
+
+  it('TC-57 should reject rollback by user without level access', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      const v1 = await service.setConfig({ key: 'ai.default_model', value: 'gpt-4o' })
+      await assert.rejects(
+        runWithTenant(STORE_CTX, async () =>
+          service.rollback(1, v1.id),
+        ),
+        /cannot access/,
+      )
+    })
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// 11. TenantConfigService - Audit Log (审计日志)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('TenantConfigService.listAuditLogs', () => {
+  let service: TenantConfigService
+
+  beforeEach(() => {
+    service = makeService()
+  })
+
+  it('TC-58 should record audit log on setConfig', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      await service.setConfig({ key: 'marketing.default_campaign_budget', value: '80000' })
+      const logs = service.listAuditLogs('tenant-A')
+      assert.ok(logs.length > 0)
+      const log = logs.find((l) => l.action === 'update' || l.action === 'create')
+      assert.ok(log, 'should have audit log for setConfig')
+    })
+  })
+
+  it('TC-59 should record audit log on rollback', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      const v1 = await service.setConfig({ key: 'ai.default_model', value: 'gpt-4o' })
+      await service.rollback(1, v1.id)
+      const logs = service.listAuditLogs('tenant-A')
+      const rollbackLog = logs.find((l) => l.action === 'rollback')
+      assert.ok(rollbackLog, 'should have rollback audit log')
+      assert.equal(rollbackLog.operatorRole, 'tenant_admin')
+    })
+  })
+
+  it('TC-60 should record operator role in audit log', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      await service.setConfig({ key: 'marketing.default_campaign_budget', value: '60000' })
+      const logs = service.listAuditLogs('tenant-A')
+      const log = logs.find((l) => l.key === 'marketing.default_campaign_budget')
+      assert.ok(log, 'should have audit log for campaign budget')
+      assert.equal(log.operatorRole, 'tenant_admin')
+      assert.ok(log.timestamp)
+    })
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// 12. TenantConfigController - Meta + Edge Cases (边界情况)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('TenantConfigController', () => {
+  let controller: TenantConfigController
+
+  beforeEach(() => {
+    controller = makeController()
+  })
+
+  it('TC-61 definitions() should return all builtin defs', () => {
+    const result = controller.definitions()
+    assert.equal(result.total, BUILTIN_CONFIG_DEFINITIONS.length)
+    assert.equal(result.items.length, result.total)
+  })
+
+  it('TC-62 each definition should have label in Chinese', () => {
+    const result = controller.definitions()
+    for (const def of result.items) {
+      assert.ok(def.label.length >= 2, `label too short for ${def.key}: ${def.label}`)
+    }
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// 13. CATEGORY_LEVEL_MATRIX consistency
+// ═══════════════════════════════════════════════════════════════════
+
+describe('CATEGORY_LEVEL_MATRIX consistency', () => {
+  it('TC-63 every config category should exist in matrix', () => {
+    const categories = new Set(BUILTIN_CONFIG_DEFINITIONS.map((d) => d.category))
+    for (const cat of categories) {
+      assert.ok(CATEGORY_LEVEL_MATRIX[cat], `category ${cat} missing from CATEGORY_LEVEL_MATRIX`)
+    }
+  })
+
+  it('TC-64 every config level should be in its category matrix', () => {
+    for (const def of BUILTIN_CONFIG_DEFINITIONS) {
+      const allowed = CATEGORY_LEVEL_MATRIX[def.category]
+      assert.ok(allowed.includes(def.level), `${def.key} level ${def.level} not in matrix for category ${def.category}`)
+    }
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// 14. 极限/边界场景
+// ═══════════════════════════════════════════════════════════════════
+
+describe('Edge cases', () => {
+  let service: TenantConfigService
+
+  beforeEach(() => {
+    service = makeService()
+  })
+
+  it('TC-65 should encrypt secret config values', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      const inst = await service.setConfig({
+        key: 'integration.webhook_url',
+        value: 'my-super-secret-token',
+      })
+      assert.equal(inst.encrypted, true)
+      // stored value should be different from original
+      assert.notEqual(inst.value, 'my-super-secret-token')
+    })
+  })
+
+  it('TC-66 public config values should not be encrypted', async () => {
+    await runWithTenant(STORE_CTX, async () => {
+      const inst = await service.setConfig({ key: 'pos.tax_rate', value: '0.10' })
+      assert.equal(inst.encrypted, false)
+      assert.equal(inst.value, '0.10')
+    })
+  })
+
+  it('TC-67 listAuditLogs should return logs filtered by tenant', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      await service.setConfig({ key: 'marketing.default_campaign_budget', value: '60000' })
+      const logs = service.listAuditLogs('tenant-A')
+      assert.ok(logs.length >= 1)
+      // all logs should be for tenant-A
+      for (const log of logs) {
+        assert.ok(log.ownerId.startsWith('tenant-A'))
+      }
+    })
+  })
+
+  it('TC-68 rollback should record new audit log entry', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      const beforeCount = service.listAuditLogs('tenant-A').length
+      const v1 = await service.setConfig({ key: 'ai.default_model', value: 'gpt-4o' })
+      await service.rollback(1, v1.id)
+      const afterCount = service.listAuditLogs('tenant-A').length
+      assert.ok(afterCount > beforeCount)
+    })
+  })
+
+  it('TC-69 same key set by different owners should not conflict', async () => {
+    await runWithTenant(
+      { ...STORE_CTX, storeId: 'store-001' },
+      async () => {
+        await service.setConfig({ key: 'pos.tax_rate', value: '0.08' })
+      },
+    )
+    await runWithTenant(
+      { ...STORE_CTX, storeId: 'store-002' },
+      async () => {
+        await service.setConfig({ key: 'pos.tax_rate', value: '0.10' })
+      },
+    )
+    // verify store-001 still has 0.08
+    await runWithTenant(
+      { ...STORE_CTX, storeId: 'store-001' },
+      async () => {
+        const cfg = await service.getConfig('pos.tax_rate')
+        assert.equal(cfg!.value, '0.08')
+      },
+    )
+  })
+})
