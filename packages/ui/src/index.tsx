@@ -231,6 +231,14 @@ export type {
   FrontDeskMetrics,
   ServiceRecord,
 } from './components/FrontDeskSupervisorDashboard';
+export { VenueSupervisorDashboard } from './components/VenueSupervisorDashboard';
+export type {
+  VenueSupervisorDashboardProps,
+  ZoneDeviceStatus,
+  VenueTraffic,
+  VenueRevenue,
+  VenueAlert,
+} from './components/VenueSupervisorDashboard';
 export { SalesClerkTool } from './components/SalesClerkTool';
 export type {
   SalesClerkToolProps,
