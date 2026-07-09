@@ -22,6 +22,8 @@ export default defineConfig({
     // pg 包未实际安装 (workspace 阻塞), vitest 测试时用 mock 替身
     alias: {
       'pg': path.resolve(__dirname, 'src/__mocks__/pg.ts'),
+      // tenant.guard 实际只 export TenantGuard, 但 llm-config 用 @ts-ignore 引入了 TenantScopeGuard
+      '../../agent/tenant.guard': path.resolve(__dirname, 'src/__mocks__/tenant.guard.ts'),
     },
   },
   resolve: {
