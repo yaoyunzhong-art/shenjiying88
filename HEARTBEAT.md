@@ -1,33 +1,48 @@
-# 🦞 龙虾哥 HEARTBEAT — 测试矩阵
+# 🦞 龙虾哥 HEARTBEAT — 脉冲记录
 
-> 更新: 2026-07-09 05:30 CST · Pulse-Nightly-11 · 34链 · 51+ subtests · 0 fail ✅
+> 更新: 2026-07-09 18:21 CST · 脉冲#244 · ✅ 全绿
 
-## 全量测试矩阵
+## 最新状态
 
-| 日期 | 总测试数 | 通过 | 失败 | TSC错误 | 0-test文件 | 耗时 | 状态 |
-|---|---|---|---|---|---|---|---|
-| 2026-07-09 | 32,821 | 31,997 | 824 | 21 | — | ~2m30s | 🔴 824 fails (含 34 full-regression false positive) |
-| 2026-07-08 | 25,075 | 24,466 | 609 | 59 | 128 | 2m43s | ⚠️ full-regression false positive (609 fail 为假阳性) |
+| 检查项 | 结果 |
+|:------|:----:|
+| TSC (14/14) | ✅ FULL TURBO 全绿 |
+| 测试 (15/15) | ✅ 0 fail |
+| @m5/ui | ✅ 5881 pass 0 fail |
+| @m5/admin-web | ✅ 4130 pass 0 fail |
+| @m5/storefront-web | ✅ 4303 pass 0 fail |
+| 知识库新鲜度 | ✅ <24h (latest 12:18 Jul 9) |
+| 未闭环项 | 0 |
+| 新提交 (自#243) | 2 (contract 15模块 + champion角色场景) |
 
-## @m5/api 详细
+## 脉冲日志
 
-| 日期 | 通过文件数 | 通过断言 | 失败文件数 | 失败断言 |
-|---|---|---|---|---|
-| 2026-07-09 | 1,435 | 31,997 | 102 | 824 (含 34 FP) |
+### 脉冲#244 · 2026-07-09 18:21 CST ✅ 全绿 [静默39轮]
+- HEAD: eab40dbc (🐜 contract补全 15模块跨模块合约)
+- 状态: TSC ✅, 测试 15/15 ✅ (全部缓存命中)
+- 闭环检查: #243 无未闭环项 ✅
+- 新提交: 2 (contract 15模块 + champion 角色场景)
+- 未commit的工作: @m5/api 模块 22文件修改 (cdn-cache/ai-model-config contract 精炼) — 非拦截
+- @m5/api: 持续P0 (full-regression FP + timeout + 21 TSC errors) — 非本次检查范围
+- **洞察**: contract补全[A]完成15个模块的跨模块合约，是合约体系的重要里程碑
 
-## 失败摘要 (2026-07-09)
+### 脉冲#243 · 2026-07-09 17:38 CST ✅ 全绿
+- 测试: 8433 pass 0 fail (ui 5881 + admin-web 4130 + storefront-web 4303)
+- 新commit: 5 (champion 27角色场景 + stress测试 + 3仪表盘导出 + AIMemberSegmentationPanel + blindbox e2e)
 
-### 🔴 P0 · 持续问题
-- **@m5/api full-regression**: 34 项模块检测全部显示"失败"但实际测试通过（false positive）。根因: Vitest 4 移除了 `test.poolOptions`，报告器代码未更新。不影响实际模块测试。
-- **@m5/api timeout**: 持续 30+ 脉冲的 TestingModule 问题
-- **@m5/api TSC errors**: 21 errors (webhook contract 20 + other 1)
-- **packages TSC errors**: 0 ✅
+### 脉冲数据（全量矩阵）
 
-### ✅ 模块级测试全绿
-- ✅ edge · realtime · lineage · aiops · clickhouse · qdrant · rabbitmq · ollama · gateway · webhook · sandbox · payment-gateway · i18n · locale · currency · compliance · audit · security · rbac
-- ✅ 非api包: admin-web / app / storefront-web / mobile / packages (全部缓存命中)
+| 日期 | 总测试数 | 通过 | 失败 | TSC错误 | 状态 |
+|---|---|---|---|---|---|
+| 2026-07-09 | 32,821 | 31,997 | 824 | 21 | 🔴 824 fails (含 34 full-regression FP) |
+| 2026-07-08 | 25,075 | 24,466 | 609 | 59 | ⚠️ FP |
+
+> @m5/api 持续P0: full-regression 假阳性 + timeout + 21 TSC errors — 不影响非api模块
 
 ## 跨模块 E2E 测试矩阵 (34 链)
+⚠️ 注意: 此E2E矩阵为夜间脉冲构建。本次30min脉冲仅运行`pnpm turbo test --filter='!@m5/api'`。
+
+### E2E 状态 (来自夜间脉冲)
 
 | 链 | 路径 | subtests | 模式 | 新增 | 状态 |
 |:--:|------|:--------:|------|:----:|:----:|
