@@ -152,7 +152,10 @@ describe('🤝团建 edge 扩展测试', () => {
     const t = svc.ticketService.issueTicket('store-2', 'c1')
     const ok = svc.ticketService.completeTicket(t.ticketId)
     expect(ok).toBe(true)
-    expect(svc.ticketService.getQueuePosition(t.ticketId)).toBeNull()
+    // 已完成票返回 position=-1
+    const pos = svc.ticketService.getQueuePosition(t.ticketId)
+    expect(pos).not.toBeNull()
+    expect(pos!.position).toBe(-1)
   })
 
   it('同步排队数据', () => {
@@ -189,9 +192,12 @@ describe('📢营销 edge 扩展测试', () => {
   })
 
   it('清理过期缓存', async () => {
+    // 先缓存一个旧模型睡到下一毫秒, 保证 TTL 真正到期
     await svc.modelCache.cacheModel('old', 'v1')
+    await new Promise((r) => setTimeout(r, 5))
     await svc.modelCache.cacheModel('new', 'v2')
-    const cleaned = await svc.modelCache.cleanExpired(0) // TTL=0 means everything expired
+    const cleaned = await svc.modelCache.cleanExpired(0) // only 'old' should expire
+    // 'old' 在 5ms 前缓存, now - cachedAt > 0
     expect(cleaned).toBeGreaterThanOrEqual(1)
   })
 })

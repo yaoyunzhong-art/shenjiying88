@@ -17,6 +17,7 @@ import {
   OmnichannelReachService,
   SMSDualChannelService,
   InternationalEmailService,
+  type SMSDeliveryStatus,
 } from './omnichannel.service'
 import type { ReachRequest, SendEmailRequest, SetChannelStatusRequest } from './omnichannel.dto'
 import { DEFAULT_CHANNEL_CONFIGS } from './omnichannel.entity'
@@ -89,9 +90,9 @@ describe('🎯【场景 S2】运行专员维护短信双通道: 主通道故障 
     expect(result.channel).toBe('primary')
 
     // 验证投递状态
-    const status = await ctrl.getSmsStatus(result.messageId)
-    expect(status.status).toBe('sent')
-    expect(status.channel).toBe('primary')
+    const raw = await ctrl.getSmsStatus(result.messageId)
+    expect(raw.status).toBe('sent')
+    expect((raw as SMSDeliveryStatus).channel).toBe('primary')
   })
 
   it('S2-备用通道发送', async () => {
