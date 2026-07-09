@@ -4,29 +4,15 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  *
  * LicensePackage 实体单元测试。
  * TypeORM @Entity/@Column 装饰器在 tsx/node:test 上下文无法反射元数据，
- * 这里直接测试实体类的纯 JS 属性赋值/类型/序列化。
+ * 这里直接测试实体类的纯 JS 属性赋值/类型/序列化,
+ * 同时也从实际实体导入确认类型一致性。
  */
 
 import assert from 'node:assert/strict'
-interface LicensePackageLike {
-  id?: string
-  name?: string
-  description?: string
-  price?: number
-  duration?: number
-  durationUnit?: string
-  maxUsers?: number
-  maxStores?: number
-  features?: string[]
-  isActive?: boolean
-  isDeleted?: boolean
-  createdBy?: string
-  updatedBy?: string
-  deletedBy?: string
-  deletedAt?: Date
-  createdAt?: Date
-  updatedAt?: Date
-}
+import type { LicensePackage } from './entities/license-package.entity'
+import { LicensePackage as LicensePackageClass } from './entities/license-package.entity'
+
+type LicensePackageLike = Partial<LicensePackage>
 
 describe('LicensePackage entity shape', () => {
   const createPkg = (overrides: Partial<LicensePackageLike> = {}): LicensePackageLike => ({
@@ -72,8 +58,8 @@ describe('LicensePackage entity shape', () => {
 
     assert.equal(pkg.name, '基础版')
     assert.equal(pkg.price, 999)
-    assert.equal(pkg.id, undefined) // 非必填
-    assert.equal(pkg.isDeleted, undefined) // 默认 false 由数据库填充
+    assert.equal(pkg.id, undefined)
+    assert.equal(pkg.isDeleted, undefined)
   })
 
   it('边界: 零价格套餐', () => {
@@ -95,11 +81,50 @@ describe('LicensePackage entity shape', () => {
 
     assert.equal(pkg.isDeleted, true)
     assert.equal(pkg.deletedBy, 'admin-001')
-    assert.equal(pkg.deletedAt!.toISOString(), '2026-06-30T12:00:00.000Z')
+    assert.equal((pkg.deletedAt as Date).toISOString(), '2026-06-30T12:00:00.000Z')
   })
 
   it('反例: description 可为 undefined', () => {
     const pkg = createPkg({ description: undefined })
     assert.equal(pkg.description, undefined)
+  })
+
+  it('边界: 大数值价格 (decimal precision)', () => {
+    const pkg = createPkg({ price: 99999.99 })
+    assert.equal(pkg.price, 99999.99)
+  })
+
+  it('正例: 以实体类创建实例', () => {
+    const pkg = new LicensePackageClass()
+    pkg.name = '实体创建测试'
+    pkg.price = 199
+    pkg.duration = 3
+    pkg.durationUnit = 'month'
+
+    assert.equal(pkg.name, '实体创建测试')
+    assert.equal(pkg.price, 199)
+    assert.equal(pkg.duration, 3)
+    assert.equal(pkg.isActive, undefined) // 未赋值
+  })
+
+  it('边界: 扩展功能列表', () => {
+    const pkg = createPkg({
+      features: ['basic', 'analytics', 'ai', 'multi-tenant', 'custom-branding'],
+    })
+    assert.equal(pkg.features?.length, 5)
+    assert.ok(pkg.features?.includes('ai'))
+    assert.ok(pkg.features?.includes('custom-branding'))
+  })
+
+  it('正例: 新建套餐默认未删除', () => {
+    const pkg = createPkg()
+    assert.equal(pkg.isDeleted, false)
+    assert.equal(pkg.deletedBy, undefined)
+    assert.equal(pkg.deletedAt, undefined)
+  })
+
+  it('反例: 价格不能为负数 (运行时)', () => {
+    const pkg = createPkg({ price: -100 })
+    assert.equal(pkg.price, -100) // entity 层不做校验, 由 DTO 负责
   })
 })
