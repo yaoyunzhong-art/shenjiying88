@@ -33,7 +33,13 @@ async function buildApp(): Promise<{
 
   const moduleRef = await Test.createTestingModule({
     imports: [CacheModule.forRootInMemory(), EventBusModule.forRootInMemory()],
-    providers: [MetricsService, NotificationService]
+    providers: [
+      {
+        provide: MetricsService,
+        useFactory: () => new MetricsService(false),
+      },
+      NotificationService,
+    ],
   }).compile()
 
   const notification = moduleRef.get(NotificationService)

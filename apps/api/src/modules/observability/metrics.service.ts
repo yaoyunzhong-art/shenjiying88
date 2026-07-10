@@ -13,7 +13,7 @@
  *   metricsService.setGauge('active_connections', 42)
  */
 
-import { Injectable } from '@nestjs/common'
+import { Injectable, Optional } from '@nestjs/common'
 
 interface Counter {
   type: 'counter'

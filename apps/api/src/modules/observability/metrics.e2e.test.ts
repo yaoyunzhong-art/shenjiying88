@@ -21,7 +21,12 @@ import { MetricsController } from './metrics.controller';
 async function createTestApp() {
   const moduleRef = await Test.createTestingModule({
     controllers: [MetricsController],
-    providers: [MetricsService],
+    providers: [
+      {
+        provide: MetricsService,
+        useFactory: () => new MetricsService(false),
+      },
+    ],
   }).compile();
 
   const app = moduleRef.createNestApplication();

@@ -32,14 +32,34 @@ describe('MarketingService (main)', () => {
     const experiment = new ExperimentAdapter()
     const coupon = new CouponAdapter()
 
+    // Seed test data for RFM computation
+    member.seed([{
+      id: 'm1',
+      tenantId: 't1',
+      level: 'GOLD',
+      lifecycleStage: 'ACTIVE',
+      totalSpendCents: 50000,
+      orderCount: 10,
+      lastActiveAt: new Date().toISOString(),
+      createdAt: new Date(Date.now() - 365 * 86400000).toISOString(),
+    }])
+    order.seed([{
+      id: 'o1',
+      tenantId: 't1',
+      memberId: 'm1',
+      status: 'COMPLETED',
+      totalCents: 5000,
+      createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+    }])
+
     rfm = new RFMCalculator(rfmAdapter, member, order)
-    abTest = new ABTestEngine(rfmAdapter, experiment)
+    abTest = new ABTestEngine(experiment)
     couponIssuer = new CouponIssuer(coupon, rfmAdapter)
     attribution = new AttributionEngine()
     segment = new SegmentService(rfmAdapter, rfm)
-    freqCap = new FrequencyCapService()
+    freqCap = new FrequencyCapService(coupon)
     roiCalc = new ROICalculator()
-    channelRouter = new ChannelRouter(rfmAdapter, member)
+    channelRouter = new ChannelRouter()
 
     svc = new MarketingService(rfm, abTest, couponIssuer, attribution, segment, freqCap, roiCalc, channelRouter)
   })
