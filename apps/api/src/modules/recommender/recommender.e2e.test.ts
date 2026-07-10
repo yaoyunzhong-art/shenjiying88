@@ -20,15 +20,15 @@ describe('Phase-19 T31-T33 推荐引擎', () => {
   // AC-1: Champion context 构建 (T31)
   it('AC-1 context builder infers module + relations', () => {
     const alice = {
-      championId: 'c1', name: 'Alice', role: 'CHAMPION', totalScore: 100,
+      championId: 'c1', name: 'Alice', role: 'CHAMPION' as const, totalScore: 100,
       topModules: ['coupon', 'tenant'],
       recentContributions: [
-        { kind: 'COMMIT', refId: 'c-001', occurredAt: '2026-06-25', weight: 2 },
-        { kind: 'RFC', refId: 'DR-005', occurredAt: '2026-06-20', weight: 8 },
+        { kind: 'COMMIT' as const, refId: 'c-001', occurredAt: '2026-06-25', weight: 2 },
+        { kind: 'RFC' as const, refId: 'DR-005', occurredAt: '2026-06-20', weight: 8 },
       ],
     };
     const bob = {
-      championId: 'c2', name: 'Bob', role: 'APPROVER', totalScore: 80,
+      championId: 'c2', name: 'Bob', role: 'APPROVER' as const, totalScore: 80,
       topModules: ['coupon'],
       recentContributions: [],
     };
@@ -61,7 +61,7 @@ describe('Phase-19 T31-T33 推荐引擎', () => {
     });
 
     const champion = {
-      championId: 'c1', name: 'Alice', role: 'CHAMPION', totalScore: 100,
+      championId: 'c1', name: 'Alice', role: 'CHAMPION' as const, totalScore: 100,
       topModules: ['coupon'],
       recentContributions: [],
     };
@@ -84,7 +84,7 @@ describe('Phase-19 T31-T33 推荐引擎', () => {
       kind: 'spec',
     });
     const champion = {
-      championId: 'c1', name: 'Alice', role: 'CHAMPION', totalScore: 100,
+      championId: 'c1', name: 'Alice', role: 'CHAMPION' as const, totalScore: 100,
       topModules: ['coupon'],
       recentContributions: [],
     };
@@ -107,7 +107,7 @@ describe('Phase-19 T31-T33 推荐引擎', () => {
       kind: 'doc',
     });
     const champion = {
-      championId: 'c1', name: 'Alice', role: 'CHAMPION', totalScore: 0,
+      championId: 'c1', name: 'Alice', role: 'CHAMPION' as const, totalScore: 0,
       topModules: [],
       recentContributions: [],
     };
@@ -124,7 +124,7 @@ describe('Phase-19 T31-T33 推荐引擎', () => {
   // AC-5: 空索引 fallback
   it('AC-5 empty index fallback', () => {
     const champion = {
-      championId: 'c1', name: 'Alice', role: 'CHAMPION', totalScore: 0,
+      championId: 'c1', name: 'Alice', role: 'CHAMPION' as const, totalScore: 0,
       topModules: [],
       recentContributions: [],
     };

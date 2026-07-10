@@ -3,14 +3,16 @@
 // 关联: phase-19-intelligence/spec.md §Phase 3
 import { Injectable } from '@nestjs/common';
 
+import type { ChampionRole } from './recommender.entity';
+
 export interface ChampionSummary {
   championId: string;
   name: string;
-  role: string;
+  role: ChampionRole;
   totalScore: number;
   topModules: string[];
   recentContributions: Array<{
-    kind: string;
+    kind: import('./recommender.entity').ContributionKind;
     refId: string;
     occurredAt: string;
     weight: number;
