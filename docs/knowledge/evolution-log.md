@@ -673,3 +673,8 @@
 1. 验收脉冲改为 force-run （`--force`）或逐模块grep `ℹ fail`，不能依赖 cached task-level summary
 2. 在 HEARTBEAT 表头增加 Force Run 状态列，区分 cached 与 force-run 结果
 3. esbuild 版本锁定 — 将 tsx 的 esbuild 依赖 pin 到 ~0.27.7，防止第三方工具链升级引入未知 JSX 破坏
+
+## 2026-07-10 13:20 验收脉冲#270 — 洞察: Turbo缓存@m5/app typecheck误报
+- **现象**: `@m5/app` typecheck 因 `tsconfig.json` 的 `include` 范围窄，远小于文件集，但turbo缓存了某次旧状态的失败记录，导致 `--force` 通过而 `--cached` 失败
+- **教训**: `react-native` 0.74.5 自带 types (`"types": "types"`) 无需 `@types/react-native`；但 `tsconfig.json` 的 `include` 不包含大量组件/页面文件，typecheck实际覆盖率极低
+- **行动**: 遇到typecheck失败时先用 `--force` 确认是否为缓存误报；若确认误报则删除缓存而非直接修复
