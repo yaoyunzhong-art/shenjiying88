@@ -21,6 +21,7 @@ export interface SocialChannel {
 export interface RegionConfig {
   regionCode: string
   regionName: string
+  regionNameEn?: string
   language: SupportedLanguage
   currency: SupportedCurrency
   timezone: string
@@ -37,6 +38,7 @@ export const REGION_CONFIGS: Record<string, RegionConfig> = {
   'CN': {
     regionCode: 'CN',
     regionName: '中国大陆',
+    regionNameEn: 'China',
     language: 'zh-CN',
     currency: 'CNY',
     timezone: 'Asia/Shanghai',
@@ -52,6 +54,7 @@ export const REGION_CONFIGS: Record<string, RegionConfig> = {
   'HK': {
     regionCode: 'HK',
     regionName: '中国香港',
+    regionNameEn: 'Hong Kong',
     language: 'zh-TW',
     currency: 'HKD',
     timezone: 'Asia/Hong_Kong',
@@ -66,6 +69,7 @@ export const REGION_CONFIGS: Record<string, RegionConfig> = {
   'TW': {
     regionCode: 'TW',
     regionName: '中国台湾',
+    regionNameEn: 'Taiwan',
     language: 'zh-TW',
     currency: 'TWD',
     timezone: 'Asia/Taipei',
@@ -80,6 +84,7 @@ export const REGION_CONFIGS: Record<string, RegionConfig> = {
   'US': {
     regionCode: 'US',
     regionName: '美国',
+    regionNameEn: 'United States',
     language: 'en-US',
     currency: 'USD',
     timezone: 'America/New_York',
@@ -94,6 +99,7 @@ export const REGION_CONFIGS: Record<string, RegionConfig> = {
   'JP': {
     regionCode: 'JP',
     regionName: '日本',
+    regionNameEn: 'Japan',
     language: 'ja-JP',
     currency: 'JPY',
     timezone: 'Asia/Tokyo',
@@ -107,6 +113,7 @@ export const REGION_CONFIGS: Record<string, RegionConfig> = {
   'KR': {
     regionCode: 'KR',
     regionName: '韩国',
+    regionNameEn: 'Korea',
     language: 'ko-KR',
     currency: 'KRW',
     timezone: 'Asia/Seoul',
@@ -120,6 +127,7 @@ export const REGION_CONFIGS: Record<string, RegionConfig> = {
   'SG': {
     regionCode: 'SG',
     regionName: '新加坡',
+    regionNameEn: 'Singapore',
     language: 'en-US',
     currency: 'SGD',
     timezone: 'Asia/Singapore',
@@ -133,6 +141,7 @@ export const REGION_CONFIGS: Record<string, RegionConfig> = {
   'DEFAULT': {
     regionCode: 'DEFAULT',
     regionName: '国际',
+    regionNameEn: 'International',
     language: 'en-US',
     currency: 'USD',
     timezone: 'UTC',

@@ -76,8 +76,10 @@ export class I18nGeoService {
    * 根据国家码获取locale映射 (便捷方法)
    */
   getIPLocaleMapping(countryCode: string): string {
-    const config = REGION_CONFIGS[countryCode] || REGION_CONFIGS['DEFAULT']
-    return `${config.language}-${countryCode}`
+    if (countryCode === 'UNKNOWN' || !(countryCode in REGION_CONFIGS)) {
+      return 'zh-CN'
+    }
+    return REGION_CONFIGS[countryCode].language
   }
 
   /**
@@ -194,7 +196,7 @@ export class I18nGeoService {
       }
     }
 
-    return 'DEFAULT'
+    return 'UNKNOWN'
   }
 
   // ── Missing methods for test compatibility ──
@@ -221,15 +223,15 @@ export class I18nGeoService {
   }
 
   isSupportedLocale(locale: string): boolean {
-    const supported = this.getSupportedLanguages()
-    return supported.some(l => l.code === locale)
+    const allowed = ['zh-CN', 'en-US', 'ja-JP', 'ko-KR', 'zh-TW', 'es-ES', 'fr-FR', 'de-DE']
+    return allowed.includes(locale)
   }
 
   getLocaleForRegion(regionName: string): string {
     for (const [, raw] of Object.entries(REGION_CONFIGS)) {
       const config = raw as any
-      if (config.regionName === regionName) {
-        return `${config.language}-${config.regionCode}`
+      if (config.regionName === regionName || config.regionNameEn === regionName) {
+        return config.language
       }
     }
     return 'zh-CN'
