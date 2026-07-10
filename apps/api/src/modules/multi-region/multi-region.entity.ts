@@ -76,6 +76,14 @@ export interface FailoverEvent {
   reason: string;
 }
 
+/** 端点信息（角色测试中使用） */
+export interface EndpointInfo {
+  region: Region;
+  baseUrl: string;
+  latencyMs?: number;
+  enabled: boolean;
+}
+
 export interface TenantRegionPin {
   tenantId: string;
   region: Region;
