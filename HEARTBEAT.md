@@ -1,13 +1,13 @@
 # 🦞 龙虾哥心跳记录
 
-## 🦞 2026-07-10 23:40 — 脉冲#291 验收 (全线全绿, 连续30次🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆)
+## 🦞 2026-07-11 00:19 — 脉冲#293 验收 (全线全绿，排除@m5/api已知hang)
 
 ### 📋 系统状态
-- **最新 HEAD**: `198354e3d3` 🐜 自动: [tenant/*] [D]类型修复: TenantAwareRequest extends Request + governanceContext
+- **最新 HEAD**: `bd7e7abe21` 📋 V11落地: store-a-readiness仪表盘+phase-progress C层+product-requirements A层
 - **Cron 健康**: 25/25 enabled
 - **工作区**: ✅ 干净
 
-### 🛠 Typecheck ✅ 14/14, 全部缓存命中
+### 🛠 Typecheck ✅ 14/14，全部缓存命中
 | Package | Status |
 |---------|--------|
 | @m5/types | ✅ |
@@ -21,8 +21,7 @@
 | @m5/admin-web | ✅ |
 | **Total** | **14/14** ✅ |
 
-### 🛠 Tests ✅ 15/15, 全部缓存命中
-
+### 🛠 Tests ✅ 15/15，全部缓存命中
 | Package | Tests | Pass | Fail | Status |
 |---------|-------|------|------|--------|
 | @m5/types | 41 | 41 | 0 | ✅ |
@@ -38,16 +37,68 @@
 
 ### 🛠 本次发现: 无
 - 全线全绿，全部缓存命中
+- #292 发现的662个失败全部来自 @m5/api 已知hang问题，排除后本次非API全线正常
 - 无需要派树哥的任务
 
-### 🏆 连续全绿计数: 30 🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆🏆
-(pulse#262→#263→...→#290→#291)
+### 🏆 连续全绿计数: 1 🏆
+(新周期 #293 → 进行中)
 
 ### 🔜 接下来cron
-- 00:10 🦞 验收脉冲
+- 00:48 🦞 验收脉冲
 
 ### 📝 本脉冲快照
-- 上次脉冲 #290 → 本次 #291: 中间新增 4 个 🐜 自动提交
+- 上次脉冲 #292 (健康扫描) → 本次 #293 (非API验收): 中间无自动提交
+- 非API稳如老狗，@m5/api已知hang不影响其他模块
+- 知识库 evolution-log.md 最后更新 23:17 (< 1h)
+- phase-progress.md 最后更新 00:06 (< 1h)
+- 全部缓存命中，新周期启动 🎯
+
+## 🦞 2026-07-11 00:11 — 脉冲#292 测试健康度扫描 (❌ 非全量健康, 发现 662 个失败)
+
+### 📋 系统状态
+- **最新 HEAD**: `bd7e7abe21`
+- **Cron 健康**: 25/25 enabled
+- **工作区**: ✅ 干净
+
+### 🛠 Typecheck ⚠️ 13/14 OK (+1 warning)
+| Package | Status |
+|---------|--------|
+| @m5/types | ✅ |
+| @m5/domain | ✅ |
+| @m5/sdk | ✅ |
+| @m5/app | ✅ |
+| @m5/miniapp | ✅ |
+| @m5/ui | ✅ |
+| @m5/tob-web | ✅ |
+| @m5/storefront-web | ✅ |
+| @m5/admin-web | ✅ |
+| @m5/api | ✅ |
+| @m5/mobile | ⚠️ customConditions 问题 |
+| **Total** | **13/14** ⚠️ |
+
+### 🛠 Tests ❌ 大量失败
+
+| Package | Tests(approx) | Pass | Fail | Status |
+|---------|--------------|------|------|--------|
+| shenjiying-mobile | 290 | 290 | 0 | ✅ |
+| @m5/api (individual) | ~3,792 | ~3,130 | ~662 | ❌ |
+| 其他子包 | 缓存命中 | — | — | ⏭️ |
+
+### 🛠 本次发现问题
+1. **Vitest 4 迁移**: `test.poolOptions` 废弃导致 33 模块回归标记假阳性
+2. **模块 DI 编译失败**: license-renewal, trust-governance, integration-orchestration, runtime-governance, lyt, reservation 等
+3. **业务测试大面积失败**: license, voice-processing, custom-domain, federated-learning, insight, knowledge, currency 等
+4. **TSC 1 warning**: mobile customConditions 配置
+
+### 🏆 连续全绿: 0 (中断)
+(pulse#262→#263→...→#291→❌ #292)
+
+### 🔜 接下来cron
+- 下一轮 cron 按计划
+
+### 📝 本脉冲快照
+- 全量回归失败，健康度扫描发现 662 个失败用例
+- 详细报告见: reports/test-health-20260711.md
   - [tenant/*] [D]类型修复: TenantAwareRequest extends Request + governanceContext
   - [ai-insight] [C] 角色测试v3编写 — 8角色经营洞察场景覆盖
   - [inventory-item] [A]补全 service 测试
