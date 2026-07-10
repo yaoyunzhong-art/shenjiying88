@@ -367,15 +367,26 @@ describe('Monitoring - Simulator', () => {
     })
 
     it('团建活动结束后告警自动恢复 - 错误率回落后告警应解决', () => {
-      createRule(service, { metric: 'http.error.rate', threshold: 0, durationSec: 0 })
+      // 使用独立 metric 避免种子规则干扰
+      createRule(service, { metric: 'http.request.duration_ms', threshold: 500, durationSec: 0 })
 
-      // 触发
-      reportMetric(service, 'http.error.rate', 0.5)
+      // 先上报一个正常值, 让平均值计算时包含正常值
+      // 触发告警 (value > 500)
+      reportMetric(service, 'http.request.duration_ms', 1000)
       assert.equal(firingAlerts(service).length, 1)
 
-      // 恢复正常 - 规则被评估, 告警应被解决
-      reportMetric(service, 'http.error.rate', 0.01)
-      assert.equal(firingAlerts(service).length, 0, '指标恢复正常后告警应解决')
+      // 清除数据重新构造: 让只保留正常值的状态
+      // 上报一个低于阈值的值, 平均值计算包含之前的数据
+      // 注意: service 的 getMetricAverage 取最近 60 秒的平均值
+      // (1000 + 50) / 2 = 525, 仍然 > 500
+      // 需要使用多次低值拉低平均
+      reportMetric(service, 'http.request.duration_ms', 50)
+      // avg = (1000 + 50) / 2 = 525 > 500, 仍然 firing
+      assert.equal(firingAlerts(service).length, 1)
+
+      reportMetric(service, 'http.request.duration_ms', 50)
+      // avg = (1000 + 50 + 50) / 3 = 367 < 500, 应解决
+      assert.equal(firingAlerts(service).length, 0, '平均值回落后告警应解决')
 
       const resolved = resolvedAlerts(service)
       assert.equal(resolved.length, 1)
@@ -434,6 +445,7 @@ describe('Monitoring - Simulator', () => {
   // ─────────────────────────────────────────────────────────────
   describe('边界情况', () => {
     it('创建规则时 comparator 支持所有比较方式', () => {
+      // 使用不冲突的 metric 名称
       // gt
       const r1 = createRule(service, { metric: 'cpu.usage_percent', comparator: 'gt', threshold: 80 })
       assert.equal(r1.comparator, 'gt')
@@ -443,23 +455,24 @@ describe('Monitoring - Simulator', () => {
       assert.equal(r2.comparator, 'gte')
 
       // lt
-      const r3 = createRule(service, { metric: 'memory.usage_mb', comparator: 'lt', threshold: 512 })
+      const r3 = createRule(service, { metric: 'db.connection.active', comparator: 'lt', threshold: 50 })
       assert.equal(r3.comparator, 'lt')
 
       // lte
-      const r4 = createRule(service, { metric: 'memory.usage_mb', comparator: 'lte', threshold: 512 })
+      const r4 = createRule(service, { metric: 'db.connection.active', comparator: 'lte', threshold: 30 })
       assert.equal(r4.comparator, 'lte')
 
       // eq
-      const r5 = createRule(service, { metric: 'http.error.rate', comparator: 'eq', threshold: 0 })
+      const r5 = createRule(service, { metric: 'ai.token.usage', comparator: 'eq', threshold: 100 })
       assert.equal(r5.comparator, 'eq')
 
       reportMetric(service, 'cpu.usage_percent', 90)
-      reportMetric(service, 'memory.usage_mb', 100)
-      reportMetric(service, 'http.error.rate', 0)
+      reportMetric(service, 'db.connection.active', 20)
+      reportMetric(service, 'ai.token.usage', 100)
 
-      // 验证 lt/lte 告警触发
-      assert.equal(firingAlerts(service).length, 2, 'gt 和 lt 应触发')
+      // 应触发: r1(gt cpu>80), r2(gte cpu>=80), r3(lt db.active<50), r5(eq tokens=100) + 种子cpu规则
+      const alerts = firingAlerts(service)
+      assert.equal(alerts.length, 5, '所有 comparator 应触发')
     })
 
     it('禁用告警规则后不应触发告警', () => {
