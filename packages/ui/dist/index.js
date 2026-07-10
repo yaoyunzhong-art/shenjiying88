@@ -219,6 +219,7 @@ __export(index_exports, {
   MemberFollowUpTaskPanel: () => MemberFollowUpTaskPanel,
   MemberLevelDistribution: () => MemberLevelDistribution,
   MemberMarketerDashboard: () => MemberMarketerDashboard,
+  MemberPointHistory: () => MemberPointHistory,
   MemberRFMAnalysisPanel: () => MemberRFMAnalysisPanel,
   MemberRechargePanel: () => MemberRechargePanel,
   MemberTierDistribution: () => MemberTierDistribution,
@@ -72723,6 +72724,156 @@ function MemberUpgradePath({
     )
   ] });
 }
+
+// src/components/MemberPointHistory.tsx
+var import_jsx_runtime288 = require("react/jsx-runtime");
+var TYPE_LABELS3 = {
+  earn_purchase: "\u6D88\u8D39\u83B7\u5F97",
+  earn_signin: "\u7B7E\u5230\u5956\u52B1",
+  earn_review: "\u8BC4\u4EF7\u5956\u52B1",
+  earn_referral: "\u63A8\u8350\u5956\u52B1",
+  earn_promotion: "\u6D3B\u52A8\u5956\u52B1",
+  spend_redeem: "\u79EF\u5206\u5151\u6362",
+  spend_upgrade: "\u7B49\u7EA7\u5347\u7EA7",
+  expire: "\u8FC7\u671F\u6263\u9664",
+  admin_adjust: "\u7BA1\u7406\u5458\u8C03\u6574"
+};
+var TYPE_BADGE_COLORS = {
+  earn_purchase: "bg-green-100 text-green-800",
+  earn_signin: "bg-blue-100 text-blue-800",
+  earn_review: "bg-purple-100 text-purple-800",
+  earn_referral: "bg-pink-100 text-pink-800",
+  earn_promotion: "bg-yellow-100 text-yellow-800",
+  spend_redeem: "bg-red-100 text-red-800",
+  spend_upgrade: "bg-orange-100 text-orange-800",
+  expire: "bg-gray-100 text-gray-800",
+  admin_adjust: "bg-cyan-100 text-cyan-800"
+};
+function formatDate4(iso) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+function formatAmount4(n) {
+  if (n === 0) return "0";
+  return n > 0 ? `+${n}` : `${n}`;
+}
+function StatCard3({ label, value, color }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)("div", { className: "rounded-lg border border-gray-200 bg-white p-4 shadow-sm", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime288.jsx)("p", { className: "text-sm text-gray-500", children: label }),
+    /* @__PURE__ */ (0, import_jsx_runtime288.jsx)("p", { className: "mt-1 text-2xl font-bold", style: { color }, children: value })
+  ] });
+}
+function FilterTab({
+  label,
+  active,
+  onClick
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime288.jsx)(
+    "button",
+    {
+      type: "button",
+      onClick,
+      className: `whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${active ? "bg-blue-600 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`,
+      children: label
+    }
+  );
+}
+function MemberPointHistory({
+  records,
+  totalPoints,
+  totalEarnedThisMonth,
+  totalSpentThisMonth,
+  expiringSoon,
+  className = "",
+  onFilterChange,
+  activeFilter = "all",
+  isLoading = false
+}) {
+  const filterOptions2 = [
+    { key: "all", label: "\u5168\u90E8" },
+    { key: "earn_purchase", label: "\u6D88\u8D39\u83B7\u5F97" },
+    { key: "earn_signin", label: "\u7B7E\u5230" },
+    { key: "spend_redeem", label: "\u5151\u6362" },
+    { key: "expire", label: "\u8FC7\u671F" }
+  ];
+  if (isLoading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)("div", { className: `space-y-4 ${className}`, "data-testid": "member-point-history-loading", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime288.jsx)("div", { className: "grid grid-cols-2 gap-4 lg:grid-cols-4", children: [1, 2, 3, 4].map((i) => /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)("div", { className: "animate-pulse rounded-lg bg-gray-100 p-4", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime288.jsx)("div", { className: "h-3 w-16 rounded bg-gray-200" }),
+        /* @__PURE__ */ (0, import_jsx_runtime288.jsx)("div", { className: "mt-2 h-6 w-24 rounded bg-gray-200" })
+      ] }, i)) }),
+      /* @__PURE__ */ (0, import_jsx_runtime288.jsx)("div", { className: "animate-pulse space-y-3", children: [1, 2, 3, 4].map((i) => /* @__PURE__ */ (0, import_jsx_runtime288.jsx)("div", { className: "h-16 rounded bg-gray-100" }, i)) })
+    ] });
+  }
+  const filteredRecords = activeFilter === "all" ? records : records.filter((r) => r.type === activeFilter);
+  return /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)("div", { className: `space-y-5 ${className}`, "data-testid": "member-point-history", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)("div", { className: "grid grid-cols-2 gap-4 lg:grid-cols-4", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime288.jsx)(StatCard3, { label: "\u5F53\u524D\u79EF\u5206", value: totalPoints.toLocaleString(), color: "#2563eb" }),
+      /* @__PURE__ */ (0, import_jsx_runtime288.jsx)(StatCard3, { label: "\u672C\u6708\u83B7\u5F97", value: `+${totalEarnedThisMonth.toLocaleString()}`, color: "#16a34a" }),
+      /* @__PURE__ */ (0, import_jsx_runtime288.jsx)(StatCard3, { label: "\u672C\u6708\u6D88\u8017", value: `-${totalSpentThisMonth.toLocaleString()}`, color: "#dc2626" }),
+      expiringSoon !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime288.jsx)(
+        StatCard3,
+        {
+          label: "\u5373\u5C06\u8FC7\u671F",
+          value: expiringSoon > 0 ? `${expiringSoon.toLocaleString()} \u5206` : "\u65E0",
+          color: expiringSoon > 0 ? "#ea580c" : "#6b7280"
+        }
+      )
+    ] }),
+    onFilterChange && /* @__PURE__ */ (0, import_jsx_runtime288.jsx)("div", { className: "flex flex-wrap gap-2", "data-testid": "point-filter-bar", children: filterOptions2.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime288.jsx)(
+      FilterTab,
+      {
+        label: opt.label,
+        active: activeFilter === opt.key,
+        onClick: () => onFilterChange(opt.key)
+      },
+      opt.key
+    )) }),
+    /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)("div", { className: "space-y-2", "data-testid": "point-record-list", children: [
+      filteredRecords.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime288.jsx)("div", { className: "py-8 text-center text-gray-400", children: activeFilter === "all" ? "\u6682\u65E0\u79EF\u5206\u8BB0\u5F55" : "\u8BE5\u7C7B\u578B\u6682\u65E0\u8BB0\u5F55" }),
+      filteredRecords.map((record) => {
+        const isEarn = record.amount > 0;
+        return /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)(
+          "div",
+          {
+            className: "flex items-center justify-between rounded-lg border border-gray-100 bg-white px-4 py-3 shadow-sm transition-shadow hover:shadow-md",
+            "data-testid": "point-record-row",
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)("div", { className: "flex items-center gap-3", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime288.jsx)(
+                  "span",
+                  {
+                    className: `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${TYPE_BADGE_COLORS[record.type]}`,
+                    children: TYPE_LABELS3[record.type]
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)("div", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime288.jsx)("p", { className: "text-sm text-gray-800", children: record.description }),
+                  /* @__PURE__ */ (0, import_jsx_runtime288.jsx)("p", { className: "text-xs text-gray-400", children: formatDate4(record.createdAt) })
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)("div", { className: "text-right", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime288.jsx)(
+                  "p",
+                  {
+                    className: `text-sm font-bold ${isEarn ? "text-green-600" : "text-red-500"}`,
+                    "data-testid": "point-amount",
+                    children: formatAmount4(record.amount)
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)("p", { className: "text-xs text-gray-400", children: [
+                  "\u4F59\u989D ",
+                  record.balanceAfter.toLocaleString()
+                ] })
+              ] })
+            ]
+          },
+          record.id
+        );
+      })
+    ] })
+  ] });
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -72914,6 +73065,7 @@ function MemberUpgradePath({
   MemberFollowUpTaskPanel,
   MemberLevelDistribution,
   MemberMarketerDashboard,
+  MemberPointHistory,
   MemberRFMAnalysisPanel,
   MemberRechargePanel,
   MemberTierDistribution,

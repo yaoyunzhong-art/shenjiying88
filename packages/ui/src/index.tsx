@@ -1434,3 +1434,7 @@ export type { InfiniteScrollProps } from './components/InfiniteScroll';
 // --------------- MemberUpgradePath ---------------
 export { MemberUpgradePath } from './components/MemberUpgradePath';
 export type { MemberUpgradePathProps, UpgradeTierNode, UpgradeCondition } from './components/MemberUpgradePath';
+
+// --------------- MemberPointHistory ---------------
+export { MemberPointHistory } from './components/MemberPointHistory';
+export type { MemberPointHistoryProps, PointRecord, PointChangeType } from './components/MemberPointHistory';
