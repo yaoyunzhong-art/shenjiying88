@@ -33,3 +33,4 @@
 | 2026-07-11 | #301 | 非API全包 + storefront-web正则修复 | ✅ | ✅ | ✅ | ✅ | 9️⃣ |
 | 2026-07-11 | #302 | 非API全包 | ✅ | ✅ | ✅ | ✅ | 🔟 |
 | 2026-07-11 | #303 | 非API全包 (sports-ants, svip, tenant+inventory) | ✅ | ✅ | ✅ | ✅ | 11🏆 |
+| 2026-07-11 | #304 | 非API全包 (采购表单, tenant-config e2e, e2e-auto-gen, 设备巡检表单) | ✅ | ✅ | ✅ | ✅ | 12🏆 |
