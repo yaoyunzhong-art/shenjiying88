@@ -33,6 +33,10 @@ function makeController(): OpsManualController {
 const ALL_ROLES: Role[] = ['store_manager', 'sales_staff', 'cashier', 'customer_service']
 const FORMATS: string[] = ['markdown', 'html', 'pdf-json', 'checklist']
 
+// ── 手册返回辅助类型 ──
+interface SectionLike { title: string; content?: string; checkpoints?: string[]; warnings?: string[] }
+interface ManualLike { title: string; role: string; version: string; sections: SectionLike[]; totalPages: number; estimatedReadTime: number; lastUpdated: string }
+
 // =================================================================
 // 场景一：手册生成 → 多格式导出 → 内容一致性验证
 // =================================================================
@@ -241,17 +245,17 @@ describe('场景四：跨角色手册内容差异化', () => {
     assert.notEqual(sm.sections.length, 0)
     assert.notEqual(sf.sections.length, 0)
     // 店长手册有财务管理章节
-    assert.ok(sm.sections.some(s => s.title.includes('财务')))
+    assert.ok((sm as ManualLike).sections.some((s: SectionLike) => s.title.includes('财务')))
     // 导购手册有盲盒销售章节
-    assert.ok(sf.sections.some(s => s.title.includes('盲盒')))
+    assert.ok((sf as ManualLike).sections.some((s: SectionLike) => s.title.includes('盲盒')))
   })
 
   it('[正常] 客服手册含有话术模板, 收银手册含有收款方式', async () => {
     const cs = await ctrl.generateManual({ role: 'customer_service', tenantId: 't-006' })
     const cr = await ctrl.generateManual({ role: 'cashier', tenantId: 't-006' })
 
-    assert.ok(cs.sections.some(s => s.title.includes('话术')), '客服手册应有话术模板')
-    assert.ok(cr.sections.some(s => s.title.includes('收款')), '收银手册应有收款方式')
+    assert.ok((cs as ManualLike).sections.some((s: SectionLike) => s.title.includes('话术')), '客服手册应有话术模板')
+    assert.ok((cr as ManualLike).sections.some((s: SectionLike) => s.title.includes('收款')), '收银手册应有收款方式')
   })
 
   it('[边界] 所有手册导出版本号统一为 1.0.0', async () => {

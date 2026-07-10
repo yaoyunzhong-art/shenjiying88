@@ -765,11 +765,11 @@ describe('CashierController 边界值', () => {
 
   it('createRefund 大额退款正常创建', () => {
     const controller = makeController({
-      createRefund: (orderId, body) => ({
+      createRefund: (orderId, body, _ctx): RefundLike => ({
         refundId: 'ref-large',
         orderId,
         status: 'PENDING',
-        amount: (body as Record<string, unknown>).amount
+        amount: (body as Record<string, unknown>).amount as number | undefined
       })
     })
 

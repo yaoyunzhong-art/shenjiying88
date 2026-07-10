@@ -48,7 +48,7 @@ function createHealthController(overrides: {
       checkDegraded: () => Promise.resolve({ status: 'DEGRADED' as const, components: degradedComponents, uptimeSeconds: 3600, version: '1.0.0', lytMode: 'mock' }),
       ping: () => Promise.resolve({ alive: true, timestamp: new Date().toISOString() })
     } as never),
-    degradedResult: { status: 'DEGRADED' as const, components: degradedComponents, uptimeSeconds: 3600, version: '1.0.0', lytMode: 'mock' }
+    degradedResult: { status: 'DEGRADED' as const, components: degradedComponents as any, uptimeSeconds: 3600, version: '1.0.0', lytMode: 'mock' } as Partial<import('./health.entity').HealthCheckResult>
   }
 }
 
@@ -86,6 +86,7 @@ describe(`${ROLES.TenantAdmin} health 角色测试`, () => {
     // 店长关心数据库连接详情
     const db = result.components.find((c: { name: string }) => c.name === 'database')
     assert.ok(db)
+    assert.ok(db.detail)
     assert.equal(db.detail.connected, true)
     assert.equal(result.lytMode, 'mock')
   })
@@ -233,7 +234,7 @@ describe(`${ROLES.Safety} health 角色测试`, () => {
     // 如果服务返回降级, 安监需要能看到详细错误
     const lyt = result.components.find((c: { name: string }) => c.name === 'lyt-adapter')
     // lyt-adapter 如果 down 应当包含错误细节
-    if (lyt && lyt.status === 'DOWN') {
+    if (lyt && (lyt.status as string) === 'DOWN') {
       assert.ok(lyt.detail)
     }
   })
