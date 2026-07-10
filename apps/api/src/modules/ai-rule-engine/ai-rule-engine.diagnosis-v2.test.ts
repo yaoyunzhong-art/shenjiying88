@@ -75,7 +75,7 @@ describe(`${ROLES.StoreManager} 诊断视角`, () => {
     assert.equal(entity.matchedRuleIds.length, 2)
     assert.equal(entity.riskLevel, 'high')
     assert.ok(entity.completedAt)
-    assert.ok(entity.inputSnapshot.amount !== undefined)
+    assert.ok(entity.inputSnapshot!.amount !== undefined)
   })
 
   it('店长查看零异常门店的诊断统计：全部 LOW', () => {
@@ -124,7 +124,7 @@ describe(`${ROLES.FrontDesk} 诊断视角`, () => {
     }
     assert.equal(entity.riskLevel, 'critical')
     assert.equal(entity.scenarioId, 'scenario-cashier-anomaly')
-    assert.equal(entity.inputSnapshot.refundAmount, 12000)
+    assert.equal(entity.inputSnapshot!.refundAmount, 12000)
     assert.equal(entity.matchedRuleIds.length, 1)
   })
 
@@ -256,7 +256,7 @@ describe(`${ROLES.Safety} 诊断视角`, () => {
     assert.equal(entity.riskLevel, 'critical')
     assert.equal(entity.matchedRuleIds.length, 3)
     assert.equal(entity.triggeredActionIds.length, 2)
-    assert.ok(entity.recommendation.includes('隔离'))
+    assert.ok(entity.recommendation!.includes('隔离'))
   })
 
   it('安监批量诊断全店设备：异常率超过 50%', () => {
@@ -459,8 +459,8 @@ describe(`${ROLES.Teambuilding} 诊断视角`, () => {
       requestedBy: 'teambuilding-ops',
     }
     assert.equal(entity.riskLevel, 'medium')
-    assert.equal(entity.recommendation.includes('重启'), true)
-    assert.equal(entity.inputSnapshot.cpu, 93)
+    assert.equal(entity.recommendation!.includes('重启'), true)
+    assert.equal(entity.inputSnapshot!.cpu, 93)
   })
 
   it('团建专员评估团队支付风险诊断：无异常', () => {
@@ -485,7 +485,7 @@ describe(`${ROLES.Teambuilding} 诊断视角`, () => {
     }
     assert.equal(entity.matchedRuleIds.length, 0)
     assert.equal(entity.riskLevel, 'low')
-    assert.equal(entity.inputSnapshot.avgPerPerson, 120)
+    assert.equal(entity.inputSnapshot!.avgPerPerson, 120)
   })
 })
 
@@ -514,8 +514,8 @@ describe(`${ROLES.Marketing} 诊断视角`, () => {
       requestedBy: 'campaign-system',
     }
     assert.equal(entity.riskLevel, 'medium')
-    assert.equal(entity.inputSnapshot.couponCount, 10)
-    assert.equal(entity.recommendation.includes('核查'), true)
+    assert.equal(entity.inputSnapshot!.couponCount, 10)
+    assert.equal(entity.recommendation!.includes('核查'), true)
     assert.equal(entity.matchedRuleIds[0], 'rule-coupon-abuse')
   })
 
@@ -541,7 +541,7 @@ describe(`${ROLES.Marketing} 诊断视角`, () => {
     }
     assert.equal(entity.matchedRuleIds.length, 0)
     assert.equal(entity.riskLevel, 'low')
-    assert.equal(entity.outputSnapshot.score, 2)
+    assert.equal(entity.outputSnapshot!.score, 2)
   })
 
   it('营销专员诊断活动门店设备批量风险：多店汇总', () => {
@@ -702,6 +702,6 @@ describe('诊断生命周期边界场景', () => {
     }
     assert.equal(entity.requestedBy, 'system')
     assert.equal(entity.triggeredActionIds[0], 'action-auto-cleanup')
-    assert.equal(entity.outputSnapshot.cleanupTriggered, true)
+    assert.equal(entity.outputSnapshot!.cleanupTriggered, true)
   })
 })
