@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AIOpsController } from './aiops.controller'
+import { AIOpsService } from "./aiops.service"
 import { AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService } from './aiops-prediction.service'
 import type { TimeSeriesPoint } from './aiops-prediction.service'
 
@@ -20,7 +21,7 @@ describe('AIOpsController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AIOpsController],
-      providers: [AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
+      providers: [AIOpsService, AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
     }).compile()
 
     controller = module.get<AIOpsController>(AIOpsController)

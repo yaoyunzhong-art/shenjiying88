@@ -1,6 +1,7 @@
 // aiops.controller.ts - 自动补全
-// 用途: AIOps 控制器 - POST /aiops/detect /predict /attack /heal + GET /status
+// 用途: AIOps 控制器 - POST /aiops/detect /predict /attack /heal + GET /status, /health
 import { Controller, Post, Get, Body, UsePipes, ValidationPipe } from '@nestjs/common'
+import { AIOpsService } from './aiops.service'
 import { AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService } from './aiops-prediction.service'
 import {
   AnomalyDetectRequestDto,
@@ -13,46 +14,45 @@ import {
   HealingActionResultDto,
   AIOpsEngineStatusDto,
 } from './aiops.dto'
-import type {
-  AnomalyDetectInput,
-  AnomalyDetectResult,
-  PredictInput,
-  PredictResult,
-  AttackDetectInput,
-  AttackDetectResult,
-  HealInput,
-  HealingActionResult,
-  AIOpsEngineStatus,
-} from './aiops.entity'
 
 @Controller('aiops')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class AIOpsController {
   constructor(
-    private readonly aiopsService: AIOpsPredictionService,
+    private readonly aiopsService: AIOpsService,
+    private readonly aiopsPredictionService: AIOpsPredictionService,
     private readonly anomalyDetector: TimeSeriesAnomalyDetector,
     private readonly selfHealingService: SelfHealingService,
   ) {}
 
   @Post('detect')
   async detect(@Body() body: AnomalyDetectRequestDto): Promise<{ data: AnomalyDetectResultDto }> {
-    // 先注入数据
-    for (const point of body.history) {
-      this.anomalyDetector.recordDataPoint(body.metricName, point)
-    }
-    // 再注入当前值
-    this.anomalyDetector.recordDataPoint(body.metricName, {
-      timestamp: body.timestamp || new Date().toISOString(),
+    const result = await this.aiopsService.detectAnomaly({
+      metricName: body.metricName,
       value: body.value,
+      history: body.history.map((h) => ({ timestamp: h.timestamp, value: h.value })),
+      timestamp: body.timestamp,
     })
 
-    const result = this.anomalyDetector.detectAnomaly(body.metricName)
-    return { data: this.toResultDto(result) }
+    return {
+      data: {
+        metricName: result.metricName,
+        isAnomaly: result.isAnomaly,
+        anomalyScore: result.anomalyScore,
+        anomalyType: result.anomalyType,
+        severity: result.severity,
+        baseline: result.baseline,
+        deviation: result.deviation,
+        detectedAt: result.detectedAt,
+        details: result.details,
+      },
+    }
   }
 
   @Post('predict')
   predict(@Body() body: PredictRequestDto): { data: PredictResultDto } {
-    const result = this.anomalyDetector.predictNext(body.metricName, body.horizon)
+    const result = this.aiopsService.predict({ metricName: body.metricName, horizon: body.horizon })
+
     return {
       data: {
         metricName: result.metricName,
@@ -66,7 +66,8 @@ export class AIOpsController {
 
   @Post('attack')
   detectAttack(@Body() body: AttackDetectRequestDto): { data: AttackDetectResultDto } {
-    const result = this.anomalyDetector.isUnderAttack(body.metricName)
+    const result = this.aiopsService.detectAttack({ metricName: body.metricName })
+
     return {
       data: {
         metricName: result.metricName,
@@ -81,78 +82,46 @@ export class AIOpsController {
 
   @Post('heal')
   async heal(@Body() body: HealRequestDto): Promise<{ data: HealingActionResultDto }> {
-    const result = await this.selfHealingService.triggerHealing(body.targetSystem)
-    return { data: this.toHealingDto(result) }
+    const result = await this.aiopsService.heal({ targetSystem: body.targetSystem })
+
+    return {
+      data: {
+        id: result.id,
+        targetSystem: result.targetSystem,
+        action: result.action,
+        status: result.status,
+        triggeredAt: result.triggeredAt,
+        completedAt: result.completedAt,
+        result: result.result,
+      },
+    }
   }
 
   @Get('status')
   getStatus(): { data: AIOpsEngineStatusDto } {
-    const healthSystems = this.selfHealingService.getAllSystemHealth()
-    const healedCount = healthSystems.filter((h) => h.status !== 'critical').length
+    const status = this.aiopsService.getEngineStatus()
 
     return {
       data: {
-        engineName: 'AIOpsPredictionService',
-        anomalyRulesCount: 3,
-        attackRulesCount: 4,
-        healedSystemsCount: healedCount,
-        status: 'ACTIVE',
-        lastDetectedAt: new Date().toISOString(),
+        engineName: status.engineName,
+        anomalyRulesCount: status.anomalyRulesCount,
+        attackRulesCount: status.attackRulesCount,
+        healedSystemsCount: status.healedSystemsCount,
+        status: status.status,
+        lastDetectedAt: status.lastDetectedAt,
       },
     }
   }
 
   @Get('health')
   getHealth(): { data: { systemId: string; status: string }[] } {
-    const allHealth = this.selfHealingService.getAllSystemHealth()
+    const allHealth = this.aiopsService.getAllSystemHealth()
+
     return {
       data: allHealth.map((h) => ({
         systemId: h.systemId,
         status: h.status,
       })),
-    }
-  }
-
-  private toResultDto(result: {
-    metricName: string
-    isAnomaly: boolean
-    anomalyScore: number
-    anomalyType?: 'spike' | 'drop' | 'trend' | 'seasonal'
-    detectedAt: string
-    details?: string
-  }): AnomalyDetectResultDto {
-    return {
-      metricName: result.metricName,
-      isAnomaly: result.isAnomaly,
-      anomalyScore: result.anomalyScore,
-      anomalyType: result.anomalyType,
-      severity: result.isAnomaly
-        ? result.anomalyScore > 0.8 ? 'CRITICAL' : result.anomalyScore > 0.5 ? 'WARNING' : 'NORMAL'
-        : 'NORMAL',
-      baseline: 0,
-      deviation: 0,
-      detectedAt: result.detectedAt,
-      details: result.details,
-    }
-  }
-
-  private toHealingDto(result: {
-    id: string
-    targetSystem: string
-    action: 'restart' | 'rollback' | 'scale' | 'isolate'
-    status: 'pending' | 'running' | 'completed' | 'failed'
-    triggeredAt: string
-    completedAt?: string
-    result?: string
-  }): HealingActionResultDto {
-    return {
-      id: result.id,
-      targetSystem: result.targetSystem,
-      action: result.action,
-      status: result.status,
-      triggeredAt: result.triggeredAt,
-      completedAt: result.completedAt,
-      result: result.result,
     }
   }
 }

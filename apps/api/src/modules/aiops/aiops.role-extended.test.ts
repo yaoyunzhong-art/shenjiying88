@@ -9,6 +9,7 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AIOpsController } from './aiops.controller'
+import { AIOpsService } from './aiops.service'
 import { AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService } from './aiops-prediction.service'
 import type { TimeSeriesPoint } from './aiops-prediction.service'
 
@@ -37,7 +38,7 @@ describe(`${ROLES.StoreManager} aiops 角色扩展 - 店长视角`, () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AIOpsController],
-      providers: [AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
+      providers: [AIOpsService, AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
     }).compile()
 
     controller = module.get<AIOpsController>(AIOpsController)
@@ -78,7 +79,7 @@ describe(`${ROLES.FrontDesk} aiops 角色扩展 - 前台视角`, () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AIOpsController],
-      providers: [AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
+      providers: [AIOpsService, AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
     }).compile()
 
     controller = module.get<AIOpsController>(AIOpsController)
@@ -123,7 +124,7 @@ describe(`${ROLES.HR} aiops 角色扩展 - HR 视角`, () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AIOpsController],
-      providers: [AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
+      providers: [AIOpsService, AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
     }).compile()
 
     controller = module.get<AIOpsController>(AIOpsController)
@@ -164,7 +165,7 @@ describe(`${ROLES.Safety} aiops 角色扩展 - 安监视角`, () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AIOpsController],
-      providers: [AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
+      providers: [AIOpsService, AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
     }).compile()
 
     controller = module.get<AIOpsController>(AIOpsController)
@@ -210,7 +211,7 @@ describe(`${ROLES.Guide} aiops 角色扩展 - 导玩员视角`, () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AIOpsController],
-      providers: [AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
+      providers: [AIOpsService, AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
     }).compile()
 
     controller = module.get<AIOpsController>(AIOpsController)
@@ -254,7 +255,7 @@ describe(`${ROLES.Ops} aiops 角色扩展 - 运行专员视角`, () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AIOpsController],
-      providers: [AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
+      providers: [AIOpsService, AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
     }).compile()
 
     controller = module.get<AIOpsController>(AIOpsController)
@@ -316,7 +317,7 @@ describe(`${ROLES.Teambuilding} aiops 角色扩展 - 团建视角`, () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AIOpsController],
-      providers: [AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
+      providers: [AIOpsService, AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
     }).compile()
 
     controller = module.get<AIOpsController>(AIOpsController)
@@ -361,7 +362,7 @@ describe(`${ROLES.Marketing} aiops 角色扩展 - 营销视角`, () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AIOpsController],
-      providers: [AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
+      providers: [AIOpsService, AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
     }).compile()
 
     controller = module.get<AIOpsController>(AIOpsController)

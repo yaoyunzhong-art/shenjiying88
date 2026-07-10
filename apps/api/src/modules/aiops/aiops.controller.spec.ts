@@ -2,6 +2,7 @@ import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll,
 // 8角色视角 + 边界测试: 👔店长 🛒前台 👥HR 🔧安监 🎮导玩员 🎯运行专员 🤝团建 📢营销
 import { Test, TestingModule } from '@nestjs/testing'
 import { AIOpsController } from './aiops.controller'
+import { AIOpsService } from './aiops.service'
 import { AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService } from './aiops-prediction.service'
 
 function makeHistory(values: number[]): { timestamp: string; value: number }[] {
@@ -18,7 +19,7 @@ describe('AIOpsController (spec)', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AIOpsController],
-      providers: [AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
+      providers: [AIOpsService, AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService],
     }).compile()
 
     controller = module.get<AIOpsController>(AIOpsController)

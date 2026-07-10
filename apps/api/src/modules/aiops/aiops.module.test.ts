@@ -2,6 +2,7 @@ import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll,
 import { Test } from '@nestjs/testing'
 import { AIOpsModule } from './aiops.module'
 import { AIOpsController } from './aiops.controller'
+import { AIOpsService } from './aiops.service'
 import { AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService } from './aiops-prediction.service'
 
 describe('AIOpsModule', () => {
@@ -12,20 +13,24 @@ describe('AIOpsModule', () => {
 
     expect(module).toBeDefined()
     expect(module.get(AIOpsController)).toBeInstanceOf(AIOpsController)
+    expect(module.get(AIOpsService)).toBeInstanceOf(AIOpsService)
     expect(module.get(AIOpsPredictionService)).toBeInstanceOf(AIOpsPredictionService)
     expect(module.get(TimeSeriesAnomalyDetector)).toBeInstanceOf(TimeSeriesAnomalyDetector)
     expect(module.get(SelfHealingService)).toBeInstanceOf(SelfHealingService)
   })
 
-  it('should export AIOpsPredictionService', async () => {
+  it('should export AIOpsService', async () => {
     const module = await Test.createTestingModule({
       imports: [AIOpsModule],
     }).compile()
 
-    const service = module.get(AIOpsPredictionService)
-    expect(service.getAnomalyDetector).toBeTypeOf('function')
-    expect(service.getSelfHealingService).toBeTypeOf('function')
+    const service = module.get(AIOpsService)
+    expect(service.detectAnomaly).toBeTypeOf('function')
+    expect(service.predict).toBeTypeOf('function')
+    expect(service.detectAttack).toBeTypeOf('function')
+    expect(service.heal).toBeTypeOf('function')
     expect(service.detectAndHeal).toBeTypeOf('function')
+    expect(service.getEngineStatus).toBeTypeOf('function')
   })
 
   it('should detect anomaly via compiled module controller', async () => {
