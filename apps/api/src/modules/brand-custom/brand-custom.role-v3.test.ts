@@ -13,6 +13,7 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { BrandCustomController } from './brand-custom.controller'
 import { BrandCustomService } from './brand-custom.service'
+import { EmailTemplateTypeEnum, SendTestEmailDto } from './brand-custom.dto'
 
 const ROLES = {
   StoreManager: '👔店长',
@@ -145,7 +146,7 @@ describe(`${ROLES.HR} brand-custom v3 深度场景`, () => {
     setup(ctrl, 't-hr', 'HR门店')
 
     ctrl.setEmailTemplate('t-hr', {
-      templateType: 'welcome',
+      templateType: EmailTemplateTypeEnum.WELCOME,
       subject: '欢迎加入 {{storeName}}',
       htmlContent: '<h1>欢迎</h1>',
       textContent: '欢迎正文',
@@ -163,7 +164,7 @@ describe(`${ROLES.HR} brand-custom v3 深度场景`, () => {
     setup(ctrl, 't-render', '渲染测试')
 
     ctrl.setEmailTemplate('t-render', {
-      templateType: 'reset_password',
+      templateType: EmailTemplateTypeEnum.RESET_PASSWORD,
       subject: '重置密码',
       htmlContent: '<p>您好 {{name}}，请重置密码</p>',
       textContent: '您好 {{name}}，请重置密码',
@@ -194,13 +195,13 @@ describe(`${ROLES.HR} brand-custom v3 深度场景`, () => {
     const ctrl = createController()
     setup(ctrl, 't-send-test', '测试店')
     ctrl.setEmailTemplate('t-send-test', {
-      templateType: 'marketing',
+      templateType: EmailTemplateTypeEnum.MARKETING,
       subject: '促销通知',
       htmlContent: '<p>优惠</p>',
       textContent: '优惠',
     })
-    const result = ctrl.sendTestEmail('t-send-test', 'marketing', 'test@example.com')
-    assert.ok(await result)
+    const result = await ctrl.sendTestEmail('t-send-test', EmailTemplateTypeEnum.MARKETING, { templateType: EmailTemplateTypeEnum.MARKETING, recipient: 'test@example.com' })
+    assert.ok(result)
   })
 })
 
@@ -380,7 +381,7 @@ describe(`${ROLES.Teambuilding} brand-custom v3 深度场景`, () => {
     setup(ctrl, 't-team-mail', '团建活动')
 
     ctrl.setEmailTemplate('t-team-mail', {
-      templateType: 'marketing',
+      templateType: EmailTemplateTypeEnum.MARKETING,
       subject: '团建活动邀请',
       htmlContent: '<h1>团建活动通知</h1><p>时间: {{date}}</p>',
       textContent: '团建活动通知\n时间: {{date}}',
@@ -465,7 +466,7 @@ describe(`${ROLES.Marketing} brand-custom v3 深度场景`, () => {
     const ctrl = createController()
     assert.throws(
       () => ctrl.setEmailTemplate('ghost-mkt', {
-        templateType: 'marketing',
+        templateType: EmailTemplateTypeEnum.MARKETING,
         subject: 'test',
         htmlContent: '<p>test</p>',
         textContent: 'test',
