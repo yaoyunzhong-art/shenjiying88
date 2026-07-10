@@ -11,7 +11,6 @@ import {
   InventoryKeeperDashboard,
   PageShell,
   DetailActionBar,
-  useDetailActions,
   type InventoryKeeperDashboardProps,
   type WarehouseMetrics,
   type StockAlert,
@@ -19,6 +18,7 @@ import {
   type OutboundTask,
   type KeeperQuickAction,
 } from '@m5/ui';
+import { useDetailActions } from '../../components/use-detail-actions';
 
 // ============================================================
 // Mock 数据
@@ -59,7 +59,7 @@ const MOCK_INBOUND_TASKS: InboundTask[] = [
 const MOCK_OUTBOUND_TASKS: OutboundTask[] = [
   { id: 'o1', orderNo: 'SO-2026-0711-023', destination: '门店A-旗舰店', skuCount: 10, totalQty: 320, priority: 'high', status: 'picking', createdAt: '2026-07-11 06:00' },
   { id: 'o2', orderNo: 'SO-2026-0711-022', destination: '门店B-社区店', skuCount: 5, totalQty: 150, priority: 'high', status: 'pending', createdAt: '2026-07-11 05:30', deadline: '2026-07-11 12:00' },
-  { id: 'o3', orderNo: 'SO-2026-0710-089', destination: '线上订单仓', skuCount: 18, totalQty: 520, priority: 'medium', status: 'packing', createdAt: '2026-07-10 18:00', operator: '赵六' },
+  { id: 'o3', orderNo: 'SO-2026-0710-089', destination: '线上订单仓', skuCount: 18, totalQty: 520, priority: 'medium', status: 'packing', createdAt: '2026-07-10 18:00' },
   { id: 'o4', orderNo: 'SO-2026-0710-088', destination: '门店C-标准店', skuCount: 8, totalQty: 200, priority: 'low', status: 'pending', createdAt: '2026-07-10 20:00', deadline: '2026-07-12 10:00' },
   { id: 'o5', orderNo: 'SO-2026-0711-021', destination: '门店D-便利店', skuCount: 3, totalQty: 80, priority: 'high', status: 'pending', createdAt: '2026-07-11 04:00', deadline: '2026-07-11 10:00' },
 ];
@@ -102,8 +102,6 @@ export default function InventoryKeeperWorkbenchPage() {
       <div style={{ marginBottom: 16 }}>
         <DetailActionBar
           actions={actions}
-          onRefresh={handleRefresh}
-          refreshing={loading}
         />
       </div>
 

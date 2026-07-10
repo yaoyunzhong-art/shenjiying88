@@ -2,6 +2,9 @@
 export { ArcadeRevenueCard } from './components/ArcadeRevenueCard';
 export type { ArcadeRevenueCardProps, MachineStats, MachineStatus } from './components/ArcadeRevenueCard';
 
+export { AuditTimeline } from './components/AuditTimeline';
+export type { AuditTimelineProps, AuditEvent } from './components/AuditTimeline';
+
 export { ConfigurationVersionDiff } from './components/ConfigurationVersionDiff';
 export type { ConfigurationVersionDiffProps, DiffEntry, DiffChangeType } from './components/ConfigurationVersionDiff';
 
