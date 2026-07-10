@@ -81,6 +81,14 @@ export type {
   ReasoningStepStatus,
   AgentConclusion,
 } from './components/AIAgentThinkingPanel';
+export { AIAgentPerformancePanel } from './components/AIAgentPerformancePanel';
+export type {
+  AIAgentPerformancePanelProps,
+  AgentPerformanceMetric,
+  AgentPerformanceSummary,
+  AgentLatencyBucket,
+} from './components/AIAgentPerformancePanel';
+
 export { AIAnalysisInsightsPanel } from './components/AIAnalysisInsightsPanel';
 export type {
   AIAnalysisInsightsPanelProps,

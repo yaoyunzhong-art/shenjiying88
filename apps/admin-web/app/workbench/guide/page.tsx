@@ -579,7 +579,7 @@ export default function GuideWorkbenchPage(): React.ReactElement {
                 }}
               >
                 <StatusBadge
-                  label={PRIORITY_LABEL[alert.priority]}
+                  label={PRIORITY_LABEL[alert.priority] ?? alert.priority}
                   variant={(PRIORITY_VARIANT[alert.priority] ?? 'neutral') as 'error' | 'warning' | 'neutral'}
                   size="sm"
                   dot
