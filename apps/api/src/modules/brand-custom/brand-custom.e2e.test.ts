@@ -60,7 +60,7 @@ describe('brand-custom E2E', () => {
     expect(emailTemplate.subject).toContain('{{name}}')
 
     // Step 6: 渲染邮件
-    const rendered = controller.renderEmail('e2e-tenant-001', 'welcome', { variables: { name: '张三' } })
+    const rendered = controller.renderEmail('e2e-tenant-001', 'welcome', { templateType: EmailTemplateTypeEnum.WELCOME, variables: { name: '张三' } })
     expect(rendered.subject).toBe('欢迎 张三 加入!')
     expect(rendered.html).toContain('张三')
     expect(rendered.text).toContain('张三')
