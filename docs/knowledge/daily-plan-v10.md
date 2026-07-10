@@ -143,7 +143,7 @@ maxConcurrentRuns:
 | 日期 | 版本 | 核心变更 |
 |:----:|:----:|----------|
 | 2026-07-10 | V10 | ①根治5大问题 ②cron全部verify ③isolated仅2个 ④maxConcurrentRuns=3 ⑤V10唯一权威 V8/V9归档 |
-| 2026-07-10 21:48 | V10验证 | ①08:00/14:00补回cron ②maxConcurrentRuns从8→3 ③V8/V9归档 ④夜间测试时间修正 ⑤总cron数25 |
+| 2026-07-10 21:48 | V10验证 | ①08:00/14:00补回cron ②maxConcurrentRuns从8→3 ③V8/V9归档 ④夜间测试时间修正 ⑤总cron数28 |
 
 ---
 
@@ -175,12 +175,12 @@ maxConcurrentRuns:
 2. **14:00 🧠午学**：原本完全缺失，已添加 systemEvent cron ✅
 3. **maxConcurrentRuns=8→3**：使用 `openclaw config patch` 修改，需 restart 生效 ✅
 4. **V8/V9归档**：从 `docs/knowledge/` 移至 `docs/knowledge/archive/` ✅
-5. **计划文档修正**：夜间测试时间(02:30→01:30, 04:30→03:30, 06:50→05:50)与实际cron对齐，总cron数24→25 ✅
+5. **计划文档修正**：夜间测试时间(02:30→01:30, 04:30→03:30, 06:50→05:50)与实际cron对齐，总cron数25→28 ✅
 
 ### ⚠️ 需关注
 
 - maxConcurrentRuns=3 配置已 apply，需要 **gateway restart** 才能真正生效
-- 实际cron总数25（比计划24多1个，因为08:00+14:00+原有19个+nightly+frontend的修正计数）
+- 实际cron总数28（按V10最终版统计：3会议+2isolated+5every+7夜间+8日间短锚点+修正计数）
 - 24/7夜间脉冲使用 every 16min（非 every 8min），和V10原计划有微小差异但功能正常
 
 ### 📋 Git提交
