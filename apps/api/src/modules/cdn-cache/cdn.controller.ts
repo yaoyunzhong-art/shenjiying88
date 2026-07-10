@@ -14,7 +14,8 @@ import type {
 
 @Controller('cdn')
 export class CdnCacheController {
-  constructor(private readonly service: CdnCacheService) {}
+  /** @internal exposed as public for testing */
+  constructor(readonly service: CdnCacheService) {}
 
   // ============ 规则管理 ============
   @Post('rules')

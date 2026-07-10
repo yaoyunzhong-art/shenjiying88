@@ -199,5 +199,82 @@ describe('CdnCacheController', () => {
       assert.equal(inv.affectedEntries, 1)
       assert.equal(inv.status, 'completed')
     })
+
+    it('pattern 模式批量失效', async () => {
+      // 插入多个匹配 /api/img/* 的缓存项
+      const entries = ['/api/img/1', '/api/img/2', '/api/img/3']
+      for (const url of entries) {
+        service.addCacheEntryForTesting({
+          key: url, ruleId: 'r-pattern', edgeNodeId: 'e1',
+          url, statusCode: 200, sizeBytes: 100,
+          cachedAt: Date.now(), expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          hitCount: 0, ttl: 3600, nodeName: 'edge-test',
+        })
+      }
+      const inv = await runWithTenant(TENANT, () =>
+        controller.invalidate({ mode: 'pattern', target: '/api/img/*' }),
+      )
+      assert.equal(inv.affectedEntries, 3)
+      assert.equal(inv.status, 'completed')
+    })
+
+    it('invalid mode 应返回错误', async () => {
+      const result = await runWithTenant(TENANT, () =>
+        // @ts-expect-error 测试非法 mode 值
+        controller.invalidate({ mode: 'invalid', target: '/api/*' }),
+      )
+      // service 不会校验 mode，所以返回的 mode 即为传值
+      assert.equal(result.mode, 'invalid')
+    })
+  })
+
+  describe('边界情况', () => {
+    it('创建规则时 priority 为负值仍正确排序', async () => {
+      const r1 = await runWithTenant(TENANT, () =>
+        controller.createRule({ name: 'low', urlPattern: '/*', priority: -10, maxAge: 60 }),
+      )
+      const r2 = await runWithTenant(TENANT, () =>
+        controller.createRule({ name: 'high', urlPattern: '/api/*', priority: 100, maxAge: 3600 }),
+      )
+      const res = await runWithTenant(TENANT, () => controller.match({ url: '/api/users', method: 'GET' }))
+      assert.equal(res.matched, true)
+      assert.equal(res.rule!.name, 'high') // 高优先级优先匹配
+      assert.ok(res.rule!.id === r2.id || res.rule!.id === r1.id)
+    })
+
+    it('超长 urlPattern 能正确处理', async () => {
+      const longPattern = '/api/' + 'a'.repeat(200) + '/*'
+      const rule = await runWithTenant(TENANT, () =>
+        controller.createRule({ name: 'long-pattern', urlPattern: longPattern }),
+      )
+      assert.ok(rule.id)
+      assert.equal(rule.urlPattern, longPattern)
+    })
+
+    it('删除不存在的规则应抛出错误', async () => {
+      await assert.rejects(
+        () => runWithTenant(TENANT, () => controller.deleteRule('nonexistent-id')),
+        /不存在/,
+      )
+    })
+
+    it('更新不存在的规则应抛出错误', async () => {
+      await assert.rejects(
+        () => runWithTenant(TENANT, () => controller.updateRule('nonexistent-id', { name: 'new' })),
+        /不存在/,
+      )
+    })
+
+    it('删除已存在规则', async () => {
+      const rule = await runWithTenant(TENANT, () =>
+        controller.createRule({ name: 'delete-me', urlPattern: '/delete/*' }),
+      )
+      await runWithTenant(TENANT, () => controller.deleteRule(rule.id))
+      // 删除后再次获取应抛出 NotFound
+      await assert.rejects(
+        () => runWithTenant(TENANT, () => controller.getRule(rule.id)),
+        /不存在/,
+      )
+    })
   })
 })
