@@ -130,6 +130,10 @@ export class UpsertConfigEntryDto extends ConfigurationScopeDto {
 
   @IsOptional()
   @IsString()
+  updatedBy?: string
+
+  @IsOptional()
+  @IsString()
   requestedBy?: string
 
   @IsOptional()
@@ -191,6 +195,17 @@ export class PersistFeatureFlagDto extends ConfigurationScopeDto {
 
   @IsOptional()
   @IsString()
+  updatedBy?: string
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  rolloutPercentage?: number
+
+  @IsOptional()
+  @IsString()
   startsAt?: string
 
   @IsOptional()
@@ -213,6 +228,10 @@ export class PersistFeatureFlagDto extends ConfigurationScopeDto {
 export class RegisterSecretDto extends ConfigurationScopeDto {
   @IsString()
   key!: string
+
+  @IsOptional()
+  @IsString()
+  name?: string
 
   @IsIn(['api-key', 'webhook-signing', 'certificate'])
   type!: 'api-key' | 'webhook-signing' | 'certificate'
