@@ -172,7 +172,8 @@ describe(`${ROLES.FrontDesk} device-adapter 角色测试`, () => {
     const tx = await svc.posTransaction('pos-001', 200, 'CNY')
 
     // 前台执行退款
-    const refund = await svc.posRefund('pos-001', tx.data!.transactionId as string, 200)
+    const txData = tx.data as Record<string, unknown> | null
+    const refund = await svc.posRefund('pos-001', txData?.transactionId as string ?? '', 200)
     expect(refund.success).toBe(true)
     expect(refund.data).toHaveProperty('refundId')
 
