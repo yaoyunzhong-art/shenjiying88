@@ -101,7 +101,7 @@ describe(`${ROLES.StoreManager} Champion 角色测试`, () => {
     const ctrl = new ChampionController(svc)
     const ids = seedChampions(svc)
 
-    const ranking = ctrl.getRanking()
+    const ranking = ctrl.getRanking({} as any)
     expect(ranking).toHaveLength(4)
     // Alex (Rfc=8 + Review=3=11) 应排第一
     expect(ranking[0].name).toBe('Alex')
@@ -254,7 +254,7 @@ describe(`${ROLES.Guide} Champion 角色测试`, () => {
     svc.recordContribution({ championId: gd.id, kind: ContributionKind.Commit, refId: 'GUIDE-COM-RANK', occurredAt: '2025-06-02T00:00:00Z' })
     svc.recordContribution({ championId: gd.id, kind: ContributionKind.PulseReview, refId: 'GUIDE-PULSE-RANK', occurredAt: '2025-06-03T00:00:00Z' })
 
-    const ranking = ctrl.getRanking()
+    const ranking = ctrl.getRanking({} as any)
     // Guide: 2+4=6, SM: 8, 所以 Guide排第二
     const guideEntry = ranking.find(e => e.name === 'GamingGuide')
     expect(guideEntry).toBeDefined()

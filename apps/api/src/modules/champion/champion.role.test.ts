@@ -291,12 +291,13 @@ describe('champion 通用边界测试', () => {
     expect(champ.totalScore).toBe(2 + 3 + 8 + 4 + 6);
   });
 
-  it('多次记录同一 refId 允许 — 无去重要求', () => {
+  it('多次记录同一 refId 幂等更新 — 不新增条目, 仅更新描述', () => {
     const { ctrl } = makeController();
     const champ = ctrl.registerChampion({ name: '重复提交', role: 'CHAMPION' } as any);
-    ctrl.recordContribution({ championId: champ.id, kind: 'COMMIT', refId: 'same-ref' } as any);
-    ctrl.recordContribution({ championId: champ.id, kind: 'COMMIT', refId: 'same-ref' } as any);
-    expect(champ.contributions).toHaveLength(2);
+    ctrl.recordContribution({ championId: champ.id, kind: 'COMMIT', refId: 'same-ref', description: '初始' } as any);
+    ctrl.recordContribution({ championId: champ.id, kind: 'COMMIT', refId: 'same-ref', description: '更新' } as any);
+    expect(champ.contributions).toHaveLength(1); // 幂等: 相同refId不新增
+    expect(champ.totalScore).toBe(2); // 分数不变
   });
 
   it('贡献总分为整数 — 无浮点精度问题', () => {
