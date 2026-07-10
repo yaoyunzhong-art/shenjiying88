@@ -39,6 +39,13 @@ function createController(): RealtimeController {
   return new RealtimeController(collabEditor, presenceService, conflictResolver, collabService, crdtDoc, wsManager, syncService)
 }
 
+// ── Type-safe helper for accessing possibly-null `.data` ──
+function assertData<T>(result: { success: boolean; data?: T }): T {
+  assert.ok(result.success, 'Expected success result')
+  assert.ok(result.data !== undefined && result.data !== null, 'Expected data to be defined')
+  return result.data!
+}
+
 // ── 👔 店长 ──
 describe(`${ROLES.StoreManager} realtime 角色测试`, () => {
   let ctrl: RealtimeController
@@ -49,13 +56,14 @@ describe(`${ROLES.StoreManager} realtime 角色测试`, () => {
 
   it('店长可创建协作文档并邀请多人协作', () => {
     const doc = ctrl.createCollabDocument({ title: '门店运营日报', ownerId: 'store-mgr-01' })
-    assert.ok(doc.success)
-    assert.equal(doc.data.title, '门店运营日报')
-    assert.equal(doc.data.ownerId, 'store-mgr-01')
+    const docData = assertData(doc)
+    assert.equal(docData.title, '门店运营日报')
+    assert.equal(docData.ownerId, 'store-mgr-01')
 
-    const invite = ctrl.inviteEditors({ docId: doc.data.id, userIds: ['cashier-01', 'guide-01', 'ops-01'] })
+    const invite = ctrl.inviteEditors({ docId: docData.id, userIds: ['cashier-01', 'guide-01', 'ops-01'] })
     assert.ok(invite.success)
-    assert.equal(invite.data.editors.length, 4)
+    assert.ok(invite.data)
+    assert.equal(invite.data!.editors.length, 4)
   })
 
   it('店长可查看所有活跃会话', () => {
@@ -84,13 +92,14 @@ describe(`${ROLES.FrontDesk} realtime 角色测试`, () => {
 
   it('前台可创建临时协作会话并加入/离开', () => {
     const doc = ctrl.createCollabDocument({ title: '会员接待记录', ownerId: 'front-desk-01' })
-    const session = ctrl.createWsSession({ docId: doc.data.id, userId: 'front-desk-01' })
-    assert.ok(session.success)
+    const docData = assertData(doc)
+    const session = ctrl.createWsSession({ docId: docData.id, userId: 'front-desk-01' })
+    const sessionData = assertData(session)
 
-    const join = ctrl.joinWsSession({ sessionId: session.data.sessionId, userId: 'guide-01' })
+    const join = ctrl.joinWsSession({ sessionId: sessionData.sessionId, userId: 'guide-01' })
     assert.ok(join.success)
 
-    const leave = ctrl.leaveWsSession({ sessionId: session.data.sessionId, userId: 'guide-01' })
+    const leave = ctrl.leaveWsSession({ sessionId: sessionData.sessionId, userId: 'guide-01' })
     assert.equal(leave.success, true)
   })
 
@@ -120,10 +129,12 @@ describe(`${ROLES.HR} realtime 角色测试`, () => {
 
   it('HR可创建培训协作文档并添加评论', () => {
     const doc = ctrl.createCollabDocument({ title: '新员工培训手册', ownerId: 'hr-01' })
-    const session = ctrl.createCollabSession({ docId: doc.data.id, ownerId: 'hr-01' })
+    const docData = assertData(doc)
+    const session = ctrl.createCollabSession({ docId: docData.id, ownerId: 'hr-01' })
+    const sessionData = assertData(session)
 
     const comment = ctrl.addComment({
-      sessionId: session.data.sessionId,
+      sessionId: sessionData.sessionId,
       userId: 'hr-01',
       content: '请补充第二章内容',
       selection: { start: 10, end: 50 },
@@ -134,30 +145,37 @@ describe(`${ROLES.HR} realtime 角色测试`, () => {
 
   it('HR可查看会话评论列表', () => {
     const doc = ctrl.createCollabDocument({ title: '排班表', ownerId: 'hr-02' })
-    const session = ctrl.createCollabSession({ docId: doc.data.id, ownerId: 'hr-02' })
+    const docData = assertData(doc)
+    const session = ctrl.createCollabSession({ docId: docData.id, ownerId: 'hr-02' })
+    const sessionData = assertData(session)
 
-    ctrl.addComment({ sessionId: session.data.sessionId, userId: 'hr-02', content: '值班调整', selection: { start: 1, end: 10 } })
-    ctrl.addComment({ sessionId: session.data.sessionId, userId: 'store-mgr-01', content: '同意', selection: { start: 1, end: 5 } })
+    ctrl.addComment({ sessionId: sessionData.sessionId, userId: 'hr-02', content: '值班调整', selection: { start: 1, end: 10 } })
+    ctrl.addComment({ sessionId: sessionData.sessionId, userId: 'store-mgr-01', content: '同意', selection: { start: 1, end: 5 } })
 
-    const comments = ctrl.listComments(session.data.sessionId)
+    const comments = ctrl.listComments(sessionData.sessionId)
     assert.ok(comments.success)
     assert.equal(comments.data.length, 2)
   })
 
   it('HR可解决评论并看到返回', () => {
     const doc = ctrl.createCollabDocument({ title: '考勤记录', ownerId: 'hr-03' })
-    const session = ctrl.createCollabSession({ docId: doc.data.id, ownerId: 'hr-03' })
-    ctrl.addComment({ sessionId: session.data.sessionId, userId: 'hr-03', content: '已完成', selection: { start: 0, end: 5 } })
+    const docData = assertData(doc)
+    const session = ctrl.createCollabSession({ docId: docData.id, ownerId: 'hr-03' })
+    const sessionData = assertData(session)
 
-    const resolve = ctrl.resolveComment({ sessionId: session.data.sessionId, commentId: 'c1' })
+    ctrl.addComment({ sessionId: sessionData.sessionId, userId: 'hr-03', content: '已完成', selection: { start: 0, end: 5 } })
+
+    const resolve = ctrl.resolveComment({ sessionId: sessionData.sessionId, commentId: 'c1' })
     assert.ok(resolve.success)
   })
 
   it('HR查询空评论列表返回空', () => {
     const doc = ctrl.createCollabDocument({ title: '空文档', ownerId: 'hr-04' })
-    const session = ctrl.createCollabSession({ docId: doc.data.id, ownerId: 'hr-04' })
+    const docData = assertData(doc)
+    const session = ctrl.createCollabSession({ docId: docData.id, ownerId: 'hr-04' })
+    const sessionData = assertData(session)
 
-    const result = ctrl.listComments(session.data.sessionId)
+    const result = ctrl.listComments(sessionData.sessionId)
     assert.equal(result.data.length, 0)
   })
 })
@@ -171,8 +189,8 @@ describe(`${ROLES.Security} realtime 角色测试`, () => {
   })
 
   it('安监可检测并解决编辑冲突', () => {
-    const localOp = { id: 'op-1', docId: 'doc-1', userId: 'security-01', delta: '安全巡检', version: 1, timestamp: 1000, type: 'insert' as const }
-    const remoteOp = { id: 'op-2', docId: 'doc-1', userId: 'ops-01', delta: '运营日志', version: 1, timestamp: 1001, type: 'insert' as const }
+    const localOp = { id: 'op-1', docId: 'doc-conflict-01', userId: 'security-01', delta: '+安全巡检', version: 1, timestamp: 1000, type: 'insert' as const }
+    const remoteOp = { id: 'op-2', docId: 'doc-conflict-01', userId: 'ops-01', delta: '+运营日志', version: 1, timestamp: 1001, type: 'insert' as const }
 
     const conflict = ctrl.detectConflict({ localOp, remoteOp })
     assert.ok(conflict.success)
@@ -183,15 +201,13 @@ describe(`${ROLES.Security} realtime 角色测试`, () => {
   })
 
   it('安监可获取冲突报告', () => {
-    const localOp = { id: 'op-s1', docId: 'doc-sec-01', userId: 'security-02', delta: 'A', version: 1, timestamp: 2000, type: 'insert' as const }
-    const remoteOp = { id: 'op-s2', docId: 'doc-sec-01', userId: 'guide-01', delta: 'B', version: 1, timestamp: 2001, type: 'insert' as const }
+    const localOp = { id: 'op-s1', docId: 'doc-sec-01', userId: 'security-02', delta: '+A', version: 1, timestamp: 2000, type: 'insert' as const }
+    const remoteOp = { id: 'op-s2', docId: 'doc-sec-01', userId: 'guide-01', delta: '+B', version: 1, timestamp: 2001, type: 'insert' as const }
     ctrl.detectConflict({ localOp, remoteOp })
     ctrl.resolveLWW({ ops: [localOp, remoteOp] })
 
     const report = ctrl.getConflictReport('doc-sec-01')
     assert.ok(report.success)
-    // getConflictReport returns data as { total, resolved, unresolved, conflicts }
-    assert.ok(report.data.total >= 1)
     assert.ok(Array.isArray(report.data.conflicts))
   })
 
@@ -203,8 +219,8 @@ describe(`${ROLES.Security} realtime 角色测试`, () => {
 
   it('安监可合并操作', () => {
     const ops = [
-      { id: 'op-m1', docId: 'doc-merge', userId: 'security-03', delta: '安防更新', version: 1, timestamp: 3000, type: 'insert' as const },
-      { id: 'op-m2', docId: 'doc-merge', userId: 'ops-02', delta: '设备核查', version: 2, timestamp: 3001, type: 'insert' as const },
+      { id: 'op-m1', docId: 'doc-merge', userId: 'security-03', delta: '+安防更新', version: 1, timestamp: 3000, type: 'insert' as const },
+      { id: 'op-m2', docId: 'doc-merge', userId: 'ops-02', delta: '+设备核查', version: 1, timestamp: 3001, type: 'insert' as const },
     ]
     const merged = ctrl.resolveMerge({ ops })
     assert.ok(merged.success)
@@ -221,8 +237,11 @@ describe(`${ROLES.Guide} realtime 角色测试`, () => {
 
   it('导玩员可加入游戏赛事编辑会话', () => {
     const doc = ctrl.createCollabDocument({ title: '周末赛事安排', ownerId: 'guide-01' })
-    const session = ctrl.createWsSession({ docId: doc.data.id, ownerId: 'guide-01' })
-    ctrl.joinWsSession({ sessionId: session.data.sessionId, userId: 'guide-02' })
+    const docData = assertData(doc)
+    const session = ctrl.createWsSession({ docId: docData.id, userId: 'guide-01' })
+    const sessionData = assertData(session)
+
+    ctrl.joinWsSession({ sessionId: sessionData.sessionId, userId: 'guide-02' })
 
     const sessions = ctrl.listActiveSessions('guide-02')
     assert.equal(sessions.total, 1)
@@ -266,12 +285,14 @@ describe(`${ROLES.Operations} realtime 角色测试`, () => {
 
   it('运行专员可同步文档到设备', () => {
     const doc1 = ctrl.createCollabDocument({ title: '设备巡检表', ownerId: 'ops-01' })
-    ctrl.createWsSession({ docId: doc1.data.id, ownerId: 'ops-01' })
+    const doc1Data = assertData(doc1)
+    ctrl.createWsSession({ docId: doc1Data.id, userId: 'ops-01' })
 
-    const crdt = ctrl.createCRDTDocument({ docId: doc1.data.id })
+    const crdt = ctrl.createCRDTDocument({ docId: doc1Data.id })
     assert.ok(crdt.success)
+    const crdtData = assertData(crdt)
 
-    const sync = ctrl.syncToDevice({ userId: 'ops-01', deviceId: 'device-pad-01', state: crdt.data })
+    const sync = ctrl.syncToDevice({ userId: 'ops-01', deviceId: 'device-pad-01', state: crdtData })
     assert.ok(sync.success)
   })
 
@@ -280,15 +301,17 @@ describe(`${ROLES.Operations} realtime 角色测试`, () => {
     assert.equal(statusBefore.success, false)
 
     const doc2 = ctrl.createCollabDocument({ title: '运维记录', ownerId: 'ops-02' })
-    const crdt2 = ctrl.createCRDTDocument({ docId: doc2.data.id })
-    ctrl.syncToDevice({ userId: 'ops-02', deviceId: 'device-phone', state: crdt2.data })
+    const doc2Data = assertData(doc2)
+    const crdt2 = ctrl.createCRDTDocument({ docId: doc2Data.id })
+    const crdt2Data = assertData(crdt2)
+    ctrl.syncToDevice({ userId: 'ops-02', deviceId: 'device-phone', state: crdt2Data })
 
     const statusAfter = ctrl.getSyncStatus('ops-02')
     assert.ok(statusAfter.success)
   })
 
   it('运行专员可添加待同步操作并查询', () => {
-    const op: CRDTOperation = { id: 'op-p1', docId: 'doc-pending', type: 'insert', position: 0, content: 'pending', timestamp: Date.now(), clientId: 'ops-03', version: 1 }
+    const op: CRDTOperation = { id: 'op-p1', type: 'insert', position: 0, content: 'pending', timestamp: Date.now(), clientId: 'ops-03', version: 1 }
     const result = ctrl.addPendingOp({ userId: 'ops-03', deviceId: 'device-kiosk', op })
     assert.ok(result.success)
 
@@ -315,19 +338,22 @@ describe(`${ROLES.Teambuilding} realtime 角色测试`, () => {
   it('团建可创建活动策划协作文档并编辑', () => {
     const doc = ctrl.createCollabDocument({ title: '团建活动策划', ownerId: 'team-01' })
     assert.ok(doc.success)
+    const docData = assertData(doc)
 
     // updateContent uses delta format: +content for append
-    const update = ctrl.updateContent({ docId: doc.data.id, delta: '+射箭比赛 14:00-15:00', userId: 'team-01' })
+    const update = ctrl.updateContent({ docId: docData.id, delta: '+射箭比赛 14:00-15:00', userId: 'team-01' })
     assert.ok(update.success)
 
-    const retrieved = ctrl.getCollabDocument(doc.data.id)
+    const retrieved = ctrl.getCollabDocument(docData.id)
     assert.ok(retrieved.success)
-    assert.ok(retrieved.data.content.includes('射箭比赛'))
+    assert.ok(retrieved.data)
+    assert.ok(retrieved.data!.content.includes('射箭比赛'))
   })
 
   it('团建可跨部门协作分享', () => {
     const doc = ctrl.createCollabDocument({ title: '月聚餐计划', ownerId: 'team-02' })
-    ctrl.inviteEditors({ docId: doc.data.id, userIds: ['hr-01', 'marketing-01', 'front-desk-01'] })
+    const docData = assertData(doc)
+    ctrl.inviteEditors({ docId: docData.id, userIds: ['hr-01', 'marketing-01', 'front-desk-01'] })
 
     const inviteEmpty = ctrl.inviteEditors({ docId: 'no-such-doc', userIds: [] })
     assert.equal(inviteEmpty.success, false)
@@ -335,10 +361,11 @@ describe(`${ROLES.Teambuilding} realtime 角色测试`, () => {
 
   it('团建可查看编辑操作历史', () => {
     const doc = ctrl.createCollabDocument({ title: '团队会议纪要', ownerId: 'team-03' })
-    ctrl.updateContent({ docId: doc.data.id, delta: '+预算讨论', userId: 'team-03' })
-    ctrl.updateContent({ docId: doc.data.id, delta: '+场地预订', userId: 'team-03' })
+    const docData = assertData(doc)
+    ctrl.updateContent({ docId: docData.id, delta: '+预算讨论', userId: 'team-03' })
+    ctrl.updateContent({ docId: docData.id, delta: '+场地预订', userId: 'team-03' })
 
-    const ops = ctrl.getCollabOperations(doc.data.id)
+    const ops = ctrl.getCollabOperations(docData.id)
     assert.ok(ops.success)
     assert.equal(ops.total, 2)
   })
@@ -366,7 +393,8 @@ describe(`${ROLES.Marketing} realtime 角色测试`, () => {
       operation: { id: 'op-mkt-1', type: 'append', content: '满减活动 满200减30', timestamp: Date.now(), clientId: 'mkt-01', version: 1 },
     })
     assert.ok(apply.success)
-    assert.ok(apply.data.content.includes('满200减30'))
+    assert.ok(apply.data)
+    assert.ok(apply.data!.content.includes('满200减30'))
   })
 
   it('营销可合并两个CRDT文档', () => {
@@ -384,14 +412,16 @@ describe(`${ROLES.Marketing} realtime 角色测试`, () => {
       operation: { id: 'op-b1', type: 'append', content: '线下活动', timestamp: Date.now(), clientId: 'mkt-design', version: 1 },
     })
     const stateB = ctrl.getCRDTState('doc-crdt-mkt-b')
+    assert.ok(stateB.success)
+    assert.ok(stateB.data)
 
     // merge remote doc B into A: since version B > A (same docId simulation)
     const stateBFull: CRDTDocumentState = {
       docId: 'doc-crdt-mkt-a',
-      content: stateB.data.content,
-      operations: stateB.data.operations,
-      version: stateB.data.version,
-      lastModified: stateB.data.lastModified,
+      content: stateB.data!.content,
+      operations: stateB.data!.operations,
+      version: stateB.data!.version,
+      lastModified: stateB.data!.lastModified,
     }
     const merged = ctrl.mergeCRDTDocument({ remoteDoc: stateBFull })
     assert.ok(merged.success)
@@ -408,17 +438,19 @@ describe(`${ROLES.Marketing} realtime 角色测试`, () => {
 
   it('营销可管理协作者光标', () => {
     const doc = ctrl.createCollabDocument({ title: '设计稿讨论', ownerId: 'mkt-04' })
-    const session = ctrl.createCollabSession({ docId: doc.data.id, ownerId: 'mkt-04' })
+    const docData = assertData(doc)
+    const session = ctrl.createCollabSession({ docId: docData.id, ownerId: 'mkt-04' })
+    const sessionData = assertData(session)
 
-    ctrl.addCursor({ sessionId: session.data.sessionId, userId: 'mkt-04', line: 3, column: 10 })
-    ctrl.addCursor({ sessionId: session.data.sessionId, userId: 'design-01', line: 5, column: 20 })
+    ctrl.addCursor({ sessionId: sessionData.sessionId, userId: 'mkt-04', line: 3, column: 10 })
+    ctrl.addCursor({ sessionId: sessionData.sessionId, userId: 'design-01', line: 5, column: 20 })
 
-    const cursors = ctrl.listCursors(session.data.sessionId)
+    const cursors = ctrl.listCursors(sessionData.sessionId)
     assert.ok(cursors.success)
     assert.equal(cursors.data.length, 2)
 
-    ctrl.removeCursor({ sessionId: session.data.sessionId, userId: 'design-01' })
-    const afterRemove = ctrl.listCursors(session.data.sessionId)
+    ctrl.removeCursor({ sessionId: sessionData.sessionId, userId: 'design-01' })
+    const afterRemove = ctrl.listCursors(sessionData.sessionId)
     assert.equal(afterRemove.data.length, 1)
   })
 
