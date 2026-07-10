@@ -33,7 +33,7 @@ const ROLES = {
 function createController() {
   const toolRegistry = new ToolRegistry()
   const agentService = new AgentService(toolRegistry)
-  const eventBuffer = new EventBufferService(100)
+  const eventBuffer = new EventBufferService()
   return new AgentController(agentService, eventBuffer)
 }
 
