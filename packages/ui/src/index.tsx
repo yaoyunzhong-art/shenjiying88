@@ -348,6 +348,8 @@ export type { TreeSelectProps, TreeSelectNode } from './components/TreeSelect';
 
 export { ProgressCard } from './components/ProgressCard';
 export type { ProgressCardProps } from './components/ProgressCard';
+export { ProgressSegments } from './components/ProgressSegments';
+export type { ProgressSegmentsProps, ProgressSegment } from './components/ProgressSegments';
 export { ScrollArea } from './components/ScrollArea';
 export type { ScrollAreaProps } from './components/ScrollArea';
 export { PageShell } from './components/PageShell';
