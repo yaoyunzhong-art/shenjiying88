@@ -25,6 +25,7 @@ export interface CreateQueueInput {
   partySize: number
   resourceId?: string
   resourceName?: string
+  priority?: number
   remark?: string
 }
 
@@ -106,7 +107,7 @@ export class QueueService {
     entry.resourceId = input.resourceId
     entry.resourceName = input.resourceName
     entry.status = QueueStatus.Waiting
-    entry.priority = 0
+    entry.priority = input.priority ?? 0
     entry.estimatedWaitMin = estimatedWaitMin
     entry.remark = input.remark
     entry.createdAt = now
@@ -256,6 +257,7 @@ export class QueueService {
       partySize: 1,
       resourceId: input.resourceId,
       resourceName: input.resourceName,
+      priority: input.priority,
       remark: input.remark
     })
   }
