@@ -298,6 +298,31 @@ export class InsightService {
     return pruned
   }
 
+  // ============ 5. 删除洞察 ============
+
+  /** 删除指定洞察 */
+  deleteInsight(id: string): { deleted: boolean } {
+    const ctx = requireTenantContext()
+    const report = this.reports.get(id)
+    if (!report) {
+      throw new NotFoundException(`Insight ${id} not found`)
+    }
+    if (report.tenantId !== ctx.tenantId) {
+      throw new NotFoundException(`Insight ${id} not found`)
+    }
+    this.reports.delete(id)
+
+    // 同时清理关联的缓存条目
+    for (const [key, val] of this.cache.entries()) {
+      if (val.reportId === id) {
+        this.cache.delete(key)
+        break
+      }
+    }
+
+    return { deleted: true }
+  }
+
   /** 状态计数 (测试用) */
   countByStatus(): Record<InsightStatus, number> {
     const counts: Record<InsightStatus, number> = {

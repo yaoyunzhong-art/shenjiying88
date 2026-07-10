@@ -244,7 +244,7 @@ describe(`${ROLES.Guide} gateway 角色场景`, () => {
 // ================================================================
 // 🎯 运行专员 (Operations) — 网关可用性, 路由健康, 限流策略调整
 // ================================================================
-describe(`${ROLES.Ops} gateway 角色场景`, () => {
+describe(`${ROLES.Operations} gateway 角色场景`, () => {
   it('🎯 运行专员: 可以查看全部已注册服务路由表', async () => {
     const { gateway } = createServices()
 

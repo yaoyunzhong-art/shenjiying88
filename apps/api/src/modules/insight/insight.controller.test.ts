@@ -10,6 +10,7 @@ import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll,
  * - GET  /insight/list            列表查询
  * - GET  /insight/templates       模板列表
  * - GET  /insight/:id             按 ID 查询
+ * - DELETE /insight/:id           删除洞察
  * - POST /insight/cache/prune     清理过期缓存
  */
 
@@ -91,6 +92,14 @@ class MockInsightService {
 
   pruneExpiredCache(): number {
     return 3
+  }
+
+  deleteInsight(id: string): { deleted: boolean } {
+    if (!this.insights.has(id)) {
+      throw new Error(`Insight ${id} not found`)
+    }
+    this.insights.delete(id)
+    return { deleted: true }
   }
 }
 
@@ -333,6 +342,49 @@ describe('[D] InsightController 单元测试', () => {
       assert.equal(r1.pruned, 3)
       assert.equal(r2.pruned, 3)
       assert.ok(typeof r1.ts === 'string')
+    })
+  })
+
+  // ── DELETE /insight/:id ────────────────────────────────────────
+  describe('DELETE /insight/:id', () => {
+    it('正向: 删除已存在的洞察', async () => {
+      const { controller, mockService } = ctx
+      const created = await mockService.generate({
+        templateType: 'sales',
+        sources: [{
+          type: 'report', refId: 'rpt-001', dataSnapshot: {}, period: { from: 'a', to: 'b' },
+        }],
+      })
+      const result = await controller.delete(created.id)
+      assert.ok(result.deleted, 'delete should return deleted: true')
+
+      // 确认已删除
+      await assert.rejects(
+        () => controller.getById(created.id),
+        { message: /not found/ },
+      )
+    })
+
+    it('反例: 删除不存在的洞察抛错', async () => {
+      const { controller } = ctx
+      await assert.rejects(
+        () => controller.delete('non-existent-id'),
+        { message: /not found/ },
+      )
+    })
+
+    it('反向: 删除后列表不再包含该洞察', async () => {
+      const { controller, mockService } = ctx
+      const created = await mockService.generate({
+        templateType: 'inventory',
+        sources: [{
+          type: 'report', refId: 'rpt-002', dataSnapshot: {}, period: { from: 'a', to: 'b' },
+        }],
+      })
+      await controller.delete(created.id)
+      const list = await controller.list('inventory')
+      const ids = list.items.map((i: any) => i.id)
+      assert.ok(!ids.includes(created.id), 'deleted insight should not appear in list')
     })
   })
 })

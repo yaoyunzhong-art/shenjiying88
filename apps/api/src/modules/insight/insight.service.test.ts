@@ -280,7 +280,7 @@ describe('Phase 94 Insight 智能分析 (V10 Sprint 2 Day 16-17)', () => {
     })
   })
 
-  // ============ 7. 列表查询 ============
+  // ============ 7. 列表/详情 ============
   describe('7. 列表/详情', () => {
     it('list 按 tenant 过滤 + 状态计数', async () => {
       const list = await runWithTenant(TENANT_CTX, async () =>
@@ -289,6 +289,68 @@ describe('Phase 94 Insight 智能分析 (V10 Sprint 2 Day 16-17)', () => {
       assert.ok(list.total >= 1)
       const counts = SHARED_INSIGHT_SERVICE.countByStatus()
       assert.ok(counts.completed >= 1)
+    })
+  })
+
+  // ============ 8. 删除洞察 ============
+  describe('8. 删除洞察', () => {
+    it('deleteInsight 删除已存在的洞察', async () => {
+      await runWithTenant(TENANT_CTX, async () => {
+        // 先创建一个洞察
+        const created = await SHARED_INSIGHT_SERVICE.generate({
+          templateType: 'sales',
+          sources: [{
+            type: 'report',
+            refId: 'rpt-delete-001',
+            dataSnapshot: { revenue: 5000 },
+            period: { from: '2026-06-01', to: '2026-06-28' },
+          }],
+        })
+        assert.ok(created.id, 'insight should be created')
+
+        // 执行删除
+        const result = SHARED_INSIGHT_SERVICE.deleteInsight(created.id)
+        assert.ok(result.deleted, 'deleteInsight should return deleted: true')
+
+        // 确认已删除
+        await assert.rejects(
+          () => SHARED_INSIGHT_SERVICE.getById(created.id),
+          { message: /not found/i },
+        )
+      })
+    })
+
+    it('deleteInsight 删除不存在的洞察抛 NotFoundException', async () => {
+      await runWithTenant(TENANT_CTX, async () => {
+        assert.throws(
+          () => SHARED_INSIGHT_SERVICE.deleteInsight('non-existent-id'),
+          { message: /not found/i },
+        )
+      })
+    })
+
+    it('deleteInsight 跨 tenant 不可见', async () => {
+      // 在 tenant-A 下创建
+      let createdId = ''
+      await runWithTenant(TENANT_CTX, async () => {
+        const created = await SHARED_INSIGHT_SERVICE.generate({
+          templateType: 'inventory',
+          sources: [{
+            type: 'report', refId: 'rpt-delete-002', dataSnapshot: { items: 100 },
+            period: { from: '2026-06-01', to: '2026-06-28' },
+          }],
+        })
+        createdId = created.id
+      })
+
+      // 在 tenant-B 下尝试删除
+      const otherTenant = { tenantId: 'tenant-other', storeId: 'store-other', userId: 'user-other', role: 'store_admin' as const }
+      await runWithTenant(otherTenant, async () => {
+        assert.throws(
+          () => SHARED_INSIGHT_SERVICE.deleteInsight(createdId),
+          { message: /not found/i },
+        )
+      })
     })
   })
 })

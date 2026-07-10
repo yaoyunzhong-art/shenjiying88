@@ -13,6 +13,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Param,
   Body,
   Query,
@@ -69,5 +70,11 @@ export class InsightController {
   async pruneCache() {
     const pruned = this.service.pruneExpiredCache()
     return { pruned, ts: new Date().toISOString() }
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  async delete(@Param('id') id: string): Promise<{ deleted: boolean }> {
+    return this.service.deleteInsight(id)
   }
 }
