@@ -26,6 +26,8 @@ export interface SubmitButtonProps {
   className?: string;
   /** Children content (overrides label/loading when provided) */
   children?: React.ReactNode;
+  /** Whether to render as block-level element (100% width) */
+  block?: boolean;
 }
 
 // ---- 预设样式 ----
@@ -64,6 +66,7 @@ export const SubmitButton = React.forwardRef<HTMLButtonElement, SubmitButtonProp
       style,
       className,
       children,
+      block = false,
     },
     ref
   ) {
@@ -81,6 +84,7 @@ export const SubmitButton = React.forwardRef<HTMLButtonElement, SubmitButtonProp
           marginTop: 4,
           borderRadius: 10,
           padding: '12px 16px',
+          ...(block ? { width: '100%' } : {}),
           color: '#f8fafc',
           fontSize: 15,
           fontWeight: 700,

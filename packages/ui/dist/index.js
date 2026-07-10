@@ -28908,7 +28908,8 @@ var SubmitButton = import_react69.default.forwardRef(
     type = "submit",
     style,
     className,
-    children
+    children,
+    block = false
   }, ref) {
     const variantStyle2 = VARIANT_STYLES6[variant];
     const isDisabled3 = disabled || loading;
@@ -28924,6 +28925,7 @@ var SubmitButton = import_react69.default.forwardRef(
           marginTop: 4,
           borderRadius: 10,
           padding: "12px 16px",
+          ...block ? { width: "100%" } : {},
           color: "#f8fafc",
           fontSize: 15,
           fontWeight: 700,

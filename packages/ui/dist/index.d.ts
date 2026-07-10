@@ -6342,6 +6342,8 @@ interface SubmitButtonProps {
     className?: string;
     /** Children content (overrides label/loading when provided) */
     children?: React__default.ReactNode;
+    /** Whether to render as block-level element (100% width) */
+    block?: boolean;
 }
 declare const SubmitButton: React__default.ForwardRefExoticComponent<SubmitButtonProps & React__default.RefAttributes<HTMLButtonElement>>;
 

@@ -264,7 +264,7 @@ Form.Item = function FormItem({
   const errorMsg = errors[name];
 
   const cloneChild = React.isValidElement(children)
-    ? React.cloneElement(children as React.ReactElement<{ id?: string; disabled?: boolean; 'data-size'?: string }>, {
+    ? React.cloneElement(children as React.ReactElement<{ id?: string; name?: string; disabled?: boolean; 'data-size'?: string }>, {
         id: name,
         name,
         disabled: disabled || (children as React.ReactElement).props.disabled,
@@ -310,7 +310,6 @@ Form.Submit = function FormSubmit({ children, block = true }: FormSubmitProps) {
       <SubmitButton
         type="submit"
         disabled={disabled}
-        size={sizeMap[size] ?? 'md'}
         block={block}
       >
         {children ?? '提交'}
