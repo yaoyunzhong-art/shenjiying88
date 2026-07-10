@@ -11,6 +11,7 @@ export interface BootstrapHealthResponse {
 export interface BootstrapMetadataResponse {
   tenantContext: RequestTenantContext;
   foundationDependencies: string[];
+  foundationContracts: string[];
   phase: 'scaffold';
 }
 
@@ -35,9 +36,10 @@ export class BootstrapService {
   getBootstrapMetadata(
     tenantContext: RequestTenantContext
   ): BootstrapMetadataResponse {
+    const foundation = toBootstrapFoundationMetadata(undefined);
     return {
       tenantContext,
-      ...toBootstrapFoundationMetadata(undefined),
+      ...foundation,
       phase: 'scaffold'
     };
   }

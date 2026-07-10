@@ -30,8 +30,7 @@ function makeTenantContext(overrides: Partial<RequestTenantContext> = {}): Reque
     tenantId: 't-bootstrap',
     brandId: 'b-main',
     storeId: 's-001',
-    region: 'cn-east',
-    timezone: 'Asia/Shanghai',
+    marketCode: 'cn-east',
     ...overrides,
   }
 }
@@ -65,6 +64,7 @@ describe(`${ROLES.StoreManager} bootstrap 角色测试`, () => {
     expect(metadata.tenantContext.brandId).toBe('b-arcade')
     expect(metadata.phase).toBe(BootstrapPhase.Scaffold)
     expect(Array.isArray(metadata.foundationDependencies)).toBe(true)
+    expect(Array.isArray(metadata.foundationContracts)).toBe(true)
   })
 
   it('店长查看不同门店元数据返回正确孤立环境（边界）', () => {
@@ -192,9 +192,9 @@ describe(`${ROLES.Guide} bootstrap 角色测试`, () => {
   })
 
   it('导玩员查看门店元数据内的区域标识（正常流程）', () => {
-    const ctx = makeTenantContext({ tenantId: 't-guide-zone', region: 'cn-east', storeId: 's-gaming' })
+    const ctx = makeTenantContext({ tenantId: 't-guide-zone', marketCode: 'cn-east', storeId: 's-gaming' })
     const metadata = svc.getBootstrapMetadata(ctx)
-    expect(metadata.tenantContext.region).toBe('cn-east')
+    expect(metadata.tenantContext.marketCode).toBe('cn-east')
     expect(metadata.tenantContext.storeId).toBe('s-gaming')
   })
 })
@@ -219,6 +219,7 @@ describe(`${ROLES.Ops} bootstrap 角色测试`, () => {
     const metadata = svc.getBootstrapMetadata(ctx)
     expect(Array.isArray(metadata.foundationContracts)).toBe(true)
     // scaffold 阶段各子模块尚未注册
+    // foundationContracts 使用 BootstrapMetadata.foundationContracts（来自 Bootstrap entity）
   })
 
   it('运行专员获取多门店健康确认互不干扰（边界）', () => {
@@ -246,10 +247,10 @@ describe(`${ROLES.Teambuilding} bootstrap 角色测试`, () => {
   })
 
   it('团建负责人查看元数据确认租户上下文完整（正常流程）', () => {
-    const ctx = makeTenantContext({ tenantId: 't-teambuilding', timezone: 'Asia/Shanghai' })
+    const ctx = makeTenantContext({ tenantId: 't-teambuilding', marketCode: 'sh' })
     const metadata = svc.getBootstrapMetadata(ctx)
     expect(metadata.tenantContext.tenantId).toBe('t-teambuilding')
-    expect(metadata.tenantContext.timezone).toBe('Asia/Shanghai')
+    expect(metadata.tenantContext.marketCode).toBe('sh')
   })
 
   it('团建负责人带上 brandId 获取正确的品牌信息（边界）', () => {
