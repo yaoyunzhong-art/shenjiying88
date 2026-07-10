@@ -1,5 +1,51 @@
 # 🦞 龙虾哥心跳记录
 
+## 🦞 2026-07-11 02:23 — 脉冲#297 验收 (全线全绿，非API稳态5连🏆🏆🏆🏆🏆)
+
+### 📋 系统状态
+- **最新 HEAD**: `3df16d93e9` 🐜 自动: [前端] [C-品牌网站] 品牌网站组件测试
+- **Cron 健康**: ✓
+- **工作区**: 🔧 2修复 (mobile .ts→.tsx + admin-web guide/page.tsx vitest→nativetest)
+
+### 🛠 Typecheck ✅ 14/14 (全部缓存命中)
+| Package | Status |
+|---------|--------|
+| @m5/types, domain, sdk, app, miniapp, ui, tob-web, storefront-web, admin-web | ✅ |
+| **Total** | **14/14** ✅ |
+
+### 🛠 Tests ✅ 28 files / 314 tests (shenjiying-mobile), 15/15 packages
+| Package | Status |
+|---------|--------|
+| @m5/types | ✅ 41/0 (缓存) |
+| @m5/domain | ✅ 95/0 (缓存) |
+| @m5/sdk | ✅ 19/0 (缓存) |
+| @m5/app | ✅ 222/0 (缓存) |
+| @m5/miniapp | ✅ 451/0 (缓存) |
+| @m5/ui | ✅ 6066/0 (缓存) |
+| @m5/tob-web | ✅ 1504/0 (缓存) |
+| @m5/storefront-web | ✅ 4554/0 (缓存) |
+| @m5/admin-web | ✅ 4299/0 (缓存) |
+| shenjiying-mobile | ✅ **314/0** (1修复) |
+| **Total** | **~17,512** ✅ |
+
+### 🛠 本次发现 → 派树哥修复 ✅
+1. **admin-web: `app/workbench/guide/page.test.tsx`** ❌ vitest 导入
+   - 根因: 原测试使用 vitest (`describe, it, expect, vi`，但 admin-web 测试体系为 `node:test` + `@testing-library/react`（通过 `.test-setup.cjs` 加载），vitest 未安装
+   - 修复: 重写为 28 条 node:test 风格的 L1 冒烟测试
+   - 连带修复: page.tsx 补充 `import React` (自动 JSX 转换在 tsx runner 下需要显式 React)
+   - 结果: 4327 tests / 0 fail ✅
+
+### 🏆 连续全绿计数: 5 🏆🏆🏆🏆🏆
+(pulse#293→#294→#295→#296→#297)
+
+### 📝 本脉冲快照
+- 上次脉冲 #296 → 本次 #297: 中间新增 2 个 🐜 自动提交
+  - [前端] [C-品牌网站] 品牌网站组件测试
+  - [queue] [C]角色测试 v4 + priority fix
+- 🐜 auto 提交引入新 fail: admin-web guide/page.test.tsx vitest→nativetest → 已修复闭环
+- 知识库 evolution-log < 24h ✅
+- phase-progress.md 已回写 #297 ✅
+
 ## 🦞 2026-07-11 01:53 — 脉冲#296 验收 (全线全绿，非API稳态4连🏆🏆🏆🏆)
 
 ### 📋 系统状态
@@ -45,8 +91,6 @@
 - 🐜 auto 提交引入新 fail: mobile role-journey-jmeter .ts→.tsx → 已修复闭环
 - 知识库 evolution-log 2.7h前更新 (< 24h) ✅
 - phase-progress.md 已回写 #296 ✅
-
-## 🦞 2026-07-11 01:19 — 脉冲#295 验收 (全线全绿，非API稳态3连🏆🏆🏆)
 
 ### 📋 系统状态
 - **最新 HEAD**: `8a9f722fe3` 🐜 自动: [前端] [B-表单页] [StocktakingNew-新建盘点单]

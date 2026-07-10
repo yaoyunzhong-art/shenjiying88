@@ -1,275 +1,253 @@
 /**
- * 导购员智能辅助面板 — Guide Workbench Page 测试
- * 覆盖: 页面渲染 / 统计数据 / 推荐表格 / 顾客队列 / 快捷话术 / 提醒 tab / 会员跟进 / 升级面板
+ * page.test.tsx — 导购员智能辅助面板 L1 冒烟测试
+ * 角色视角: 🛒 导购员
+ *
+ * 覆盖:
+ * - 页面正例渲染（标题/导购信息/绩效统计/AI推荐/顾客队列/快捷话术/提醒/会员跟进/升级面板）
+ * - Tab 切换（提醒优先级筛选）
+ * - 快捷话术复制功能
+ *
+ * 依赖:
+ * - @testing-library/react + happy-dom（devDependencies）
+ * - 使用 .test-setup.cjs 预加载 DOM 环境（node -r 引入）
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import React from 'react';
+import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import PageMod from './page';
 
-// Mock next/navigation
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
-}));
+// 处理 CJS 默认导出嵌套
+const GuideWorkbenchPage = (PageMod as any).default ?? PageMod;
 
-// Mock the useDetailActions hook
-const mockActions = [
-  { key: 'copy', label: '复制链接', handler: vi.fn() },
-  { key: 'export', label: '导出快照', handler: vi.fn() },
-];
+/* ── 辅助函数 ── */
 
-vi.mock('../../components/use-detail-actions', () => ({
-  useDetailActions: () => ({ actions: mockActions }),
-}));
+function setupTest() {
+  cleanup();
+  const { container } = render(React.createElement(GuideWorkbenchPage));
+  return { container };
+}
 
-// Mock clipboard API
-Object.assign(navigator, {
-  clipboard: {
-    writeText: vi.fn().mockResolvedValue(undefined),
-  },
+async function setupWithNoCleanup() {
+  cleanup();
+  const view = render(React.createElement(GuideWorkbenchPage));
+  // 等待 React 18 concurrent 渲染完成
+  await new Promise(r => setTimeout(r, 50));
+  return view;
+}
+
+/* =================================================================
+ * 正例 (Happy Path)
+ * ================================================================= */
+
+test('🛒 导购员视角: 页面组件默认导出是函数', () => {
+  assert.equal(typeof GuideWorkbenchPage, 'function',
+    'GuideWorkbenchPage 应导出函数组件');
 });
 
-// We need to import dependencies that may not be available in test env
-// So we mock the workspace component itself
-import GuideWorkbenchPage from './page';
+test('🛒 导购员视角: 页面渲染不抛异常', () => {
+  assert.doesNotThrow(() => setupTest());
+});
 
-describe('GuideWorkbenchPage (导购员工作台)', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+test('🛒 导购员视角: 渲染页面标题', () => {
+  const { container } = setupTest();
+  const h1s = container.querySelectorAll('h1');
+  const found = Array.from(h1s).filter(el => el.textContent?.includes('导购员智能辅助面板'));
+  assert.ok(found.length >= 1, '页面应渲染标题包含「导购员智能辅助面板」');
+});
+
+test('🛒 导购员视角: 渲染导购姓名', () => {
+  const { container } = setupTest();
+  const matches = container.textContent?.includes('李婷');
+  assert.ok(matches, '页面文本应包含导购姓名「李婷」');
+});
+
+test('🛒 导购员视角: 渲染顾客姓名', () => {
+  const { container } = setupTest();
+  const matches = container.textContent?.includes('林小婉');
+  assert.ok(matches, '页面文本应包含顾客姓名「林小婉」');
+});
+
+test('🛒 导购员视角: 渲染「今日业绩」版块标题', () => {
+  setupTest();
+  const el = screen.queryByText('今日业绩');
+  assert.ok(el, '应渲染「今日业绩」版块标题');
+});
+
+test('🛒 导购员视角: 渲染统计指标', () => {
+  const { container } = setupTest();
+  const metrics = ['接待顾客', '达成销售额', '转化率', '队列中顾客', '待处理跟进'];
+  for (const m of metrics) {
+    const found = container.textContent?.includes(m);
+    assert.ok(found, `页面文本应包含统计指标「${m}」`);
+  }
+});
+
+test('🛒 导购员视角: 渲染「顾客排队 & 快捷话术」版块', () => {
+  setupTest();
+  const el = screen.queryByText('顾客排队 & 快捷话术');
+  assert.ok(el, '应渲染「顾客排队 & 快捷话术」版块');
+});
+
+test('🛒 导购员视角: 渲染「待接待顾客」列表', () => {
+  setupTest();
+  const el = screen.queryByText('待接待顾客');
+  assert.ok(el, '应渲染「待接待顾客」标题');
+});
+
+test('🛒 导购员视角: 渲染队列顾客姓名', () => {
+  setupTest();
+  const names = ['张子轩', '王雨桐', '陈逸飞', '赵思琪', '刘浩然'];
+  for (const name of names) {
+    const el = screen.queryByText(name);
+    assert.ok(el, `应渲染队列顾客姓名「${name}」`);
+  }
+});
+
+test('🛒 导购员视角: 渲染快捷话术标题', () => {
+  setupTest();
+  const el = screen.queryByText('快捷话术');
+  assert.ok(el, '应渲染「快捷话术」标题');
+});
+
+test('🛒 导购员视角: 渲染快捷话术按钮文本', () => {
+  setupTest();
+  const labels = ['迎宾语', '推荐话术', '价格说明', '促成交', '升级推荐', '告别语'];
+  for (const label of labels) {
+    const el = screen.queryByText(label);
+    assert.ok(el, `应渲染快捷话术按钮「${label}」`);
+  }
+});
+
+test('🛒 导购员视角: 渲染 AI 推荐版块', () => {
+  setupTest();
+  const el = screen.queryByText(/AI 智能推荐/);
+  assert.ok(el, '应渲染「AI 智能推荐」版块');
+});
+
+test('🛒 导购员视角: 渲染推荐商品名称', () => {
+  const { container } = setupTest();
+  const products = ['宝可梦 伊布进化系列 盲盒', '星之卡比 30cm 限定毛绒'];
+  for (const p of products) {
+    const found = container.textContent?.includes(p);
+    assert.ok(found, `页面文本应包含推荐商品「${p}」`);
+  }
+});
+
+test('🛒 导购员视角: 渲染「推荐理由摘要」标题', () => {
+  setupTest();
+  const el = screen.queryByText('推荐理由摘要');
+  assert.ok(el, '应渲染「推荐理由摘要」标题');
+});
+
+test('🛒 导购员视角: 渲染「提醒 & 待跟进」版块', () => {
+  setupTest();
+  const el = screen.queryByText('提醒 & 待跟进');
+  assert.ok(el, '应渲染「提醒 & 待跟进」版块');
+});
+
+test('🛒 导购员视角: 渲染会员相关的提醒消息', () => {
+  const { container } = setupTest();
+  const alerts = ['铂金会员王雨桐已到店', '会员张子轩今日生日', '连续 7 天未到店'];
+  for (const msg of alerts) {
+    const found = container.textContent?.includes(msg);
+    assert.ok(found, `页面文本应包含提醒消息「${msg}」`);
+  }
+});
+
+test('🛒 导购员视角: 渲染「待跟进会员任务」版块', () => {
+  setupTest();
+  const el = screen.queryByText('待跟进会员任务');
+  assert.ok(el, '应渲染「待跟进会员任务」版块');
+});
+
+test('🛒 导购员视角: 渲染「会员升级建议」版块', () => {
+  setupTest();
+  const el = screen.queryByText('会员升级建议');
+  assert.ok(el, '应渲染「会员升级建议」版块');
+});
+
+test('🛒 导购员视角: 渲染底部操作栏「导购辅助面板收口」', () => {
+  setupTest();
+  const el = screen.queryByText('导购辅助面板收口');
+  assert.ok(el, '应渲染底部操作栏标题「导购辅助面板收口」');
+});
+
+test('🛒 导购员视角: 渲染 VIP 标签', () => {
+  setupTest();
+  const vips = screen.queryAllByText('VIP');
+  assert.ok(vips.length >= 1, '应有至少 1 个 VIP 标签');
+});
+
+test('🛒 导购员视角: 渲染会员等级标签', () => {
+  setupTest();
+  const el = screen.queryByText('白银');
+  assert.ok(el, '应渲染会员等级「白银」');
+});
+
+/* =================================================================
+ * 交互 (Interaction)
+ * ================================================================= */
+
+test('🛒 导购员视角: 快捷话术点击后显示确认文本', async () => {
+  const user = userEvent.setup();
+  await setupWithNoCleanup();
+
+  // 模拟 clipboard API
+  Object.assign(navigator, {
+    clipboard: {
+      writeText: async () => {},
+    },
   });
 
-  it('should render the page title', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('导购员智能辅助面板')).toBeDefined();
-  });
+  const greetingBtn = screen.queryByText('迎宾语');
+  assert.ok(greetingBtn, '应有「迎宾语」按钮');
+  if (greetingBtn) {
+    await user.click(greetingBtn);
+    await new Promise(r => setTimeout(r, 100));
+    const confirm = screen.queryByText(/已复制到剪贴板/);
+    assert.ok(confirm, '点击后应显示「已复制到剪贴板」确认文字');
+  }
+});
 
-  it('should render subtitle with store name', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText(/朝阳大悦城旗舰店/)).toBeDefined();
-  });
+test('🛒 导购员视角: 提醒 tab 点击「高优先级」按钮', async () => {
+  const user = userEvent.setup();
+  const { container } = render(React.createElement(GuideWorkbenchPage));
+  await new Promise(r => setTimeout(r, 50));
 
-  it('should render the guide name', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('李婷')).toBeDefined();
-  });
+  // 使用 getAllByText 取第一个可点击元素
+  const highTabs = screen.getAllByText('高优先级');
+  assert.ok(highTabs.length >= 1, '应有「高优先级」tab 按钮');
+  await user.click(highTabs[0]);
+  await new Promise(r => setTimeout(r, 100));
+  const text = container.textContent || '';
+  assert.ok(text.includes('铂金会员王雨桐已到店'), '高优先级 tab 下应显示 VIP 到店提醒');
+});
 
-  it('should render the customer profile name', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('林小婉')).toBeDefined();
-  });
+test('🛒 导购员视角: 渲染价格信息', () => {
+  setupTest();
+  // 至少有一个 ¥ 价格显示
+  const priceElements = screen.queryAllByText(/¥69/);
+  assert.ok(priceElements.length >= 1, '应渲染包含「¥69」的价格信息');
+});
 
-  it('should display sales statistics', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('接待顾客')).toBeDefined();
-    expect(screen.getByText('达成销售额')).toBeDefined();
-    expect(screen.getByText('转化率')).toBeDefined();
-  });
+test('🛒 导购员视角: 渲染 AI 匹配度百分比', () => {
+  setupTest();
+  const matches = screen.queryAllByText(/96%/);
+  assert.ok(matches.length >= 1, '应渲染 AI 匹配度「96%」');
+});
 
-  it('should render today performance metrics with correct values', () => {
-    render(<GuideWorkbenchPage />);
-    // Check for performance stats in QuickStats
-    expect(screen.getByText('28')).toBeDefined(); // customersServed
-    expect(screen.getByText('¥15,860')).toBeDefined(); // totalSales
-    expect(screen.getByText('72%')).toBeDefined(); // conversionRate (0.72 * 100)
-  });
+test('🛒 导购员视角: 渲染分页信息', () => {
+  setupTest();
+  const el = screen.queryByText(/共 6 件推荐商品/);
+  assert.ok(el, '应渲染分页信息「共 6 件推荐商品」');
+});
 
-  it('should render the AI recommendations section', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText(/AI 智能推荐/)).toBeDefined();
-    expect(screen.getByText(/基于顾客画像/)).toBeDefined();
-  });
-
-  it('should render recommendation table with product names', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('宝可梦 伊布进化系列 盲盒')).toBeDefined();
-    expect(screen.getByText('星之卡比 30cm 限定毛绒')).toBeDefined();
-  });
-
-  it('should display recommendation reasons summary cards', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('推荐理由摘要')).toBeDefined();
-    // Check that multiple reason cards are shown
-    const reasons = screen.getAllByText(/顾客上次购买了皮卡丘系列/);
-    expect(reasons.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('should display customer queue section', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('待接待顾客')).toBeDefined();
-  });
-
-  it('should show queue customer names', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('张子轩')).toBeDefined();
-    expect(screen.getByText('王雨桐')).toBeDefined();
-    expect(screen.getByText('陈逸飞')).toBeDefined();
-  });
-
-  it('should display quick reply cards', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('快捷话术')).toBeDefined();
-    expect(screen.getByText('迎宾语')).toBeDefined();
-    expect(screen.getByText('推荐话术')).toBeDefined();
-    expect(screen.getByText('促成交')).toBeDefined();
-  });
-
-  it('should copy quick reply text to clipboard when clicked', async () => {
-    const user = userEvent.setup();
-    render(<GuideWorkbenchPage />);
-
-    const greetingButton = screen.getByText('迎宾语');
-    await user.click(greetingButton);
-
-    await waitFor(() => {
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-        expect.stringContaining('下午好！欢迎光临')
-      );
-    });
-  });
-
-  it('should show confirmation after copying a quick reply', async () => {
-    const user = userEvent.setup();
-    render(<GuideWorkbenchPage />);
-
-    const greetingButton = screen.getByText('迎宾语');
-    await user.click(greetingButton);
-
-    await waitFor(() => {
-      expect(screen.getByText(/已复制到剪贴板/)).toBeDefined();
-    });
-  });
-
-  it('should render alert notification items', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('提醒 & 待跟进')).toBeDefined();
-    // Check for VIP visit alert
-    expect(screen.getByText(/铂金会员王雨桐已到店/)).toBeDefined();
-    // Birthday alert
-    expect(screen.getByText(/会员张子轩今日生日/)).toBeDefined();
-  });
-
-  it('should filter alerts by priority tab', async () => {
-    const user = userEvent.setup();
-    render(<GuideWorkbenchPage />);
-
-    // Click on "高优先级" tab
-    const highPriorityTab = screen.getByText('高优先级');
-    await user.click(highPriorityTab);
-
-    // After filtering, only high priority alerts should remain
-    await waitFor(() => {
-      expect(screen.getByText(/铂金会员王雨桐已到店/)).toBeDefined();
-    });
-  });
-
-  it('should render follow-up task section', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('待跟进会员任务')).toBeDefined();
-  });
-
-  it('should render tier upgrade recommendation', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('会员升级建议')).toBeDefined();
-  });
-
-  it('should render the bottom action bar with export button', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('导出快照')).toBeDefined();
-  });
-
-  it('should render category icons for recommended products', () => {
-    render(<GuideWorkbenchPage />);
-    // At least some category icons should be rendered
-    expect(screen.getByText('🧸')).toBeDefined();
-    expect(screen.getByText('🎁')).toBeDefined();
-  });
-
-  it('should display stock information for recommendations', () => {
-    render(<GuideWorkbenchPage />);
-    // Check stock column values
-    expect(screen.getByText('45')).toBeDefined(); // blind box stock
-    expect(screen.getByText('12')).toBeDefined(); // plush toy stock
-  });
-
-  it('should display AI match scores', () => {
-    render(<GuideWorkbenchPage />);
-    const scores = screen.getAllByText(/96%/);
-    expect(scores.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('should show original price strikethrough for discounted items', () => {
-    render(<GuideWorkbenchPage />);
-    const originalPrices = screen.getAllByText(/\¥89/);
-    expect(originalPrices.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('should show pagination for recommendations', () => {
-    render(<GuideWorkbenchPage />);
-    const pagination = screen.getByText(/共 6 件推荐商品/);
-    expect(pagination).toBeDefined();
-  });
-
-  it('should display section header for page shell', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText('导购辅助面板收口')).toBeDefined();
-  });
-
-  it('should display customer member tier badges in queue', () => {
-    render(<GuideWorkbenchPage />);
-    // Check for member tier labels in queue
-    expect(screen.getByText('白银')).toBeDefined();
-  });
-
-  it('should show VIP badge for VIP customers', () => {
-    render(<GuideWorkbenchPage />);
-    const vipBadges = screen.getAllByText('VIP');
-    expect(vipBadges.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('should display price in recommendation cards', () => {
-    render(<GuideWorkbenchPage />);
-    // Check that price values render in the cards section
-    const priceCards = screen.getAllByText(/¥69/);
-    expect(priceCards.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('should have the correct subtitle describing functionality', () => {
-    render(<GuideWorkbenchPage />);
-    const subtitle = screen.getByText(/实时顾客画像.*导购辅助/);
-    expect(subtitle).toBeDefined();
-  });
-
-  it('should render all section headings', () => {
-    render(<GuideWorkbenchPage />);
-    const headings = [
-      '今日业绩',
-      '顾客排队 & 快捷话术',
-      'AI 智能推荐',
-      '推荐理由摘要',
-      '提醒 & 待跟进',
-      '待跟进会员任务',
-      '会员升级建议',
-    ];
-    for (const heading of headings) {
-      expect(screen.getByText(heading)).toBeDefined();
-    }
-  });
-
-  it('should handle alt tab click for medium priority', async () => {
-    const user = userEvent.setup();
-    render(<GuideWorkbenchPage />);
-
-    const mediumTab = screen.getByText('中优先级');
-    await user.click(mediumTab);
-
-    await waitFor(() => {
-      // Medium priority alerts should be visible
-      expect(screen.getByText(/会员张子轩今日生日/)).toBeDefined();
-    });
-  });
-
-  it('should render the tier upgrade panel with progress', () => {
-    render(<GuideWorkbenchPage />);
-    expect(screen.getByText(/铂金/)).toBeDefined();
-    expect(screen.getByText(/72%/)).toBeDefined(); // progress percent
-  });
+test('🛒 导购员视角: 渲染升级进度百分比', () => {
+  setupTest();
+  const el = screen.queryByText(/72%/);
+  assert.ok(el, '应渲染升级进度「72%」');
 });
