@@ -678,3 +678,19 @@
 - **现象**: `@m5/app` typecheck 因 `tsconfig.json` 的 `include` 范围窄，远小于文件集，但turbo缓存了某次旧状态的失败记录，导致 `--force` 通过而 `--cached` 失败
 - **教训**: `react-native` 0.74.5 自带 types (`"types": "types"`) 无需 `@types/react-native`；但 `tsconfig.json` 的 `include` 不包含大量组件/页面文件，typecheck实际覆盖率极低
 - **行动**: 遇到typecheck失败时先用 `--force` 确认是否为缓存误报；若确认误报则删除缓存而非直接修复
+
+## 2026-07-10 V10闭环复盘 (pulse#262→#284)
+
+### 关键修改
+1. cron.maxConcurrentRuns = 3 (从8降)
+2. 5个会议cron: 3个改回systemEvent + 2个isolated(11:00+23:00)
+3. 预算法则硬编码进所有cron prompt
+4. 知识库T1+T2分层完成, 日常读3.5K tokens (原103KB)
+5. 08:00晨学+14:00午学cron补充(子agent发现)
+6. V8/V9归档, V10唯一权威
+7. 今天缺的晨学午学专家产出补录
+
+### 新增反模式
+AM-011: 终端长期运行后context爆炸→显示损坏, 根治: 每12h/900k context重启
+AM-012: 计划文档写了但没建cron, 根治: cron必须手动verify
+AM-013: 改了文档没改配置(maxConcurrentRuns), 根治: 改文档必同步改配置
