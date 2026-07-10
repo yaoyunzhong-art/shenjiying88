@@ -155,7 +155,9 @@ describe('👥 HR · leads 招商场景测试', () => {
     // 验证每个销售分配了 2 条
     const counts: Record<string, number> = {}
     for (const lead of list.leads) {
-      counts[lead.assigneeUserId] = (counts[lead.assigneeUserId] ?? 0) + 1
+      if (lead.assigneeUserId) {
+        counts[lead.assigneeUserId] = (counts[lead.assigneeUserId] ?? 0) + 1
+      }
     }
     expect(counts['sales-a']).toBe(2)
     expect(counts['sales-b']).toBe(2)
@@ -222,7 +224,7 @@ describe('🔧 安监 · leads 招商场景测试', () => {
     })
     // 创建一个线索并立即跟进
     const lead = controller.ingestWebhook({ source: 'douyin', contactName: '快速跟进线索' })
-    controller.followUp(lead.leadId, 'sales-fast', '及时联系', 'contacted')
+    controller.followUp({ leadId: lead.leadId, authorUserId: 'sales-fast', content: '及时联系', newStage: 'contacted' })
 
     // 即使时间过去，已跟进的不触发 SLA
     const oldLead = service.getLead(lead.leadId)
