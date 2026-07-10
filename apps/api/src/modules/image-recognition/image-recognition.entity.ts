@@ -285,6 +285,30 @@ export function iou(
 }
 
 /**
+ * 引擎运行状态
+ */
+export interface EngineStatus {
+  engineName: RecognitionEngine
+  status: 'ACTIVE' | 'DEGRADED' | 'STOPPED'
+  tasksRunning: number
+  tasksQueued: number
+  /** 当前模型版本 */
+  modelVersion: string
+  /** 累计识别次数 */
+  totalTasks: number
+  /** 成功率 (0..1) */
+  successRate: number
+  /** 平均耗时 (ms) */
+  avgLatencyMs: number
+  /** 最后活跃时间 */
+  lastActiveAt: string
+  /** 错误率 (0..1) */
+  errorRate?: number
+  /** 内存使用量 (MB) */
+  memoryUsageMb?: number
+}
+
+/**
  * 引擎元信息
  */
 export const ENGINE_META: Record<RecognitionEngine, {
