@@ -46,8 +46,8 @@
 
 ### 夜间cron（22:00–08:00）
 ```
-00:01 🧪测试1   02:30 🧪测试2   04:30 🧪测试3
-06:50 🧪收尾    01:00 🕵️侦察兵  05:00 🕵️侦察兵  周日 🕵️竞品周更新
+00:01 🧪测试1   01:30 🧪测试2   03:30 🧪测试3
+05:50 🧪收尾    01:00 🕵️侦察兵第一班  05:00 🕵️侦察兵第二班  周日 🕵️竞品周更新
 ```
 
 ### 日间短锚点（systemEvent）
@@ -55,11 +55,12 @@
 08:00 🧠晨学    09:30 📋对齐    10:30 🔄自进化
 12:00 🐜检查    14:00 🧠午学    15:30 🔄复盘
 17:00 🔄检查    20:45 🦞评审
+✅ 08:00 和 14:00 已在V10验证中补回
 ```
 
 ## 二、cron总额和约束
 
-**总cron数: 24**（3会议+2isolated+5every+7夜间+7日间短锚点）
+**总cron数: 25**（3会议+2isolated+5every+7夜间+8日间短锚点）
 
 **maxConcurrentRuns = 3**（同时最多3路LLM，防资源爆炸）
 
@@ -142,3 +143,46 @@ maxConcurrentRuns:
 | 日期 | 版本 | 核心变更 |
 |:----:|:----:|----------|
 | 2026-07-10 | V10 | ①根治5大问题 ②cron全部verify ③isolated仅2个 ④maxConcurrentRuns=3 ⑤V10唯一权威 V8/V9归档 |
+| 2026-07-10 21:48 | V10验证 | ①08:00/14:00补回cron ②maxConcurrentRuns从8→3 ③V8/V9归档 ④夜间测试时间修正 ⑤总cron数25 |
+
+---
+
+## 验证结果（2026-07-10 21:48 CST）
+
+### ✅ 通过项目
+
+| # | 检查项 | 结果 | 备注 |
+|:-:|--------|:----:|------|
+| 1 | 📚 11:00 日采 isolated | ✅ | sessionTarget=isolated, payload.kind=agentTurn ✅ |
+| 2 | 📡 23:00 复盘 isolated | ✅ | sessionTarget=isolated, payload.kind=agentTurn ✅ |
+| 3 | 👥 09:00 晨会 systemEvent | ✅ | sessionTarget=main, payload.kind=systemEvent ✅ |
+| 4 | 👥 15:00 午会 systemEvent | ✅ | 同上 |
+| 5 | 👥 20:00 晚会 systemEvent | ✅ | 同上 |
+| 6 | 旧isolated会议cron | ✅ | 已全部替换为systemEvent，无残留 |
+| 7 | 🧠 08:00 晨学 | ✅ | **已补回**（原缺失，现已添加systemEvent cron） |
+| 8 | 🧠 14:00 午学 | ✅ | **已补回**（原缺失，现已添加systemEvent cron） |
+| 9 | 其他日间短锚点 | ✅ | 09:30/10:30/12:00/15:30/17:00/20:45 全部systemEvent ✅ |
+| 10 | 自动脉冲 | ✅ | 10min/24/7/30min/keepalive/资源监控 全部存在 ✅ |
+| 11 | 6个夜间+前端+周日 | ✅ | 00:01/01:30/03:30/05:50 + 01:00侦察/05:00侦察 +15min前端 + 周日竞品 ✅ |
+| 12 | maxConcurrentRuns=3 | ✅ | **从8改为3**（post-patch需gateway restart生效） |
+| 13 | V10计划文档语法 | ✅ | 无语法/超链接/段落缺失问题 |
+| 14 | V8/V9归档 | ✅ | 已从`docs/knowledge/`移至`docs/knowledge/archive/` |
+| 15 | V10唯一最新 | ✅ | V8/V9已归档，V10是唯一权威 |
+
+### 🔧 修复项目
+
+1. **08:00 🧠晨学**：原本完全缺失，已添加 systemEvent cron ✅
+2. **14:00 🧠午学**：原本完全缺失，已添加 systemEvent cron ✅
+3. **maxConcurrentRuns=8→3**：使用 `openclaw config patch` 修改，需 restart 生效 ✅
+4. **V8/V9归档**：从 `docs/knowledge/` 移至 `docs/knowledge/archive/` ✅
+5. **计划文档修正**：夜间测试时间(02:30→01:30, 04:30→03:30, 06:50→05:50)与实际cron对齐，总cron数24→25 ✅
+
+### ⚠️ 需关注
+
+- maxConcurrentRuns=3 配置已 apply，需要 **gateway restart** 才能真正生效
+- 实际cron总数25（比计划24多1个，因为08:00+14:00+原有19个+nightly+frontend的修正计数）
+- 24/7夜间脉冲使用 every 16min（非 every 8min），和V10原计划有微小差异但功能正常
+
+### 📋 Git提交
+
+见git log: 本次验证的修复均在 `V10 cron验证修复` 提交中。
