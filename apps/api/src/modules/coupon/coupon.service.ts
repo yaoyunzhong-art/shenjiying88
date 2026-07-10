@@ -5,13 +5,17 @@
 
 import { Injectable, Optional, Inject, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, FindOptionsWhere, Like } from 'typeorm';
 import { CouponV2 } from './coupon.entity';
 import { CouponRedemptionLog } from './coupon-redemption-log.entity';
 import {
   RedemptionRequest,
   RedemptionResult,
   CrossStoreEligibility,
+  CouponStatus,
+  CouponScope,
+  CouponRedemptionRules,
+  CouponValueType,
 } from './coupon.types';
 import { QuotaResourceKind } from '../tenant/tenant-quota.entity';
 
@@ -61,6 +65,75 @@ export class CouponService {
     @Inject('TenantQuotaService')
     private readonly quota?: any,
   ) {}
+
+  /**
+   * 创建新优惠券
+   */
+  async create(params: {
+    code: string;
+    tenantId: string;
+    scope: CouponScope;
+    redemptionRules: CouponRedemptionRules;
+    value: number;
+    valueType: CouponValueType;
+    expiresAt: string;
+    maxRedemptions?: number;
+  }): Promise<CouponV2> {
+    const coupon = this.couponRepo.create({
+      code: params.code,
+      tenantId: params.tenantId,
+      scope: params.scope,
+      redemptionRules: params.redemptionRules,
+      value: params.value,
+      valueType: params.valueType,
+      expiresAt: new Date(params.expiresAt),
+      maxRedemptions: params.maxRedemptions,
+      status: 'active',
+      redemptionCount: 0,
+    });
+    return this.couponRepo.save(coupon);
+  }
+
+  /**
+   * 根据 ID 查找优惠券
+   */
+  async findById(id: string): Promise<CouponV2 | null> {
+    return this.couponRepo.findOne({ where: { id } });
+  }
+
+  /**
+   * 查询优惠券列表（支持分页和状态筛选）
+   */
+  async list(query: {
+    status?: CouponStatus;
+    tenantId?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<{ items: CouponV2[]; total: number }> {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 20;
+    const where: FindOptionsWhere<CouponV2> = {};
+    if (query.status) where.status = query.status;
+    if (query.tenantId) where.tenantId = query.tenantId;
+
+    const [items, total] = await this.couponRepo.findAndCount({
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      order: { createdAt: 'DESC' },
+    });
+    return { items, total };
+  }
+
+  /**
+   * 更新优惠券状态 (active / paused)
+   */
+  async updateStatus(id: string, status: 'active' | 'paused'): Promise<CouponV2 | null> {
+    const coupon = await this.findById(id);
+    if (!coupon) return null;
+    coupon.status = status;
+    return this.couponRepo.save(coupon);
+  }
 
   async redeemCrossStore(req: RedemptionRequest): Promise<RedemptionResult> {
     const tenantId = req.tenantId ?? 'tenant-default';

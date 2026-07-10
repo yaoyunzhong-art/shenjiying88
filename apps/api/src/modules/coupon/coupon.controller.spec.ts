@@ -19,21 +19,22 @@ import type { CouponV2 } from './coupon.entity'
 // ─── Mock 工厂 ──────────────────────────────────────────────────────────
 
 function makeMockCoupon(overrides: Partial<CouponV2> = {}): CouponV2 {
-  return {
+  const base = {
     id: 'coupon-1',
     tenantId: 'tenant-default',
     code: 'PROMO-2026',
-    scope: { type: 'tenant-wide', storeIds: ['store-1', 'store-2'], includeSubordinates: false },
+    scope: { type: 'tenant-wide' as const, storeIds: ['store-1', 'store-2'], includeSubordinates: false },
     redemptionRules: { minAmount: 50, userSegments: ['vip', 'new'] },
     value: 20,
-    valueType: 'fixed',
+    valueType: 'fixed' as const,
     expiresAt: new Date('2027-12-31'),
-    status: 'active',
+    status: 'active' as const,
     redemptionCount: 0,
     maxRedemptions: 100,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-06-01'),
-  } as CouponV2
+  }
+  return { ...base, ...overrides } as CouponV2
 }
 
 const SUCCESS_REDEEM: RedemptionResult = {
@@ -90,6 +91,10 @@ describe('CouponController', () => {
           matchedScope: 'tenant-wide',
           matchedStoreIds: ['store-1'],
         } as CrossStoreEligibility),
+        create: vi.fn().mockImplementation((params: any) => Promise.resolve(makeMockCoupon({ code: params.code }))),
+        list: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+        findById: vi.fn().mockResolvedValue(null),
+        updateStatus: vi.fn().mockImplementation((id: string, status: string) => Promise.resolve(makeMockCoupon({ status: status as any }))),
         ...mocks,
       },
     }
@@ -135,10 +140,13 @@ describe('CouponController', () => {
         expiresAt: '2027-01-01T00:00:00.000Z',
         maxRedemptions: 500,
       }
-      await expect(controller.create(createDto as any)).rejects.toThrow('NOT_IMPLEMENTED')
+      const result = await controller.create(createDto)
+      expect(result.code).toBe('NEW-YEAR-2027')
+      expect(service.create).toHaveBeenCalled()
     })
 
     it('AC-2 [店长]: 查询优惠券列表 — 分页参数正常', async () => {
+      vi.mocked(service.list).mockResolvedValueOnce({ items: [], total: 0 })
       const result = await controller.list({ page: 2, pageSize: 10 })
       expect(result.page).toBe(2)
       expect(result.pageSize).toBe(10)
@@ -147,28 +155,34 @@ describe('CouponController', () => {
     })
 
     it('AC-3 [店长]: 按状态过滤优惠券列表', async () => {
+      vi.mocked(service.list).mockResolvedValueOnce({ items: [], total: 0 })
       const result = await controller.list({ status: 'active' })
       expect(result.page).toBe(1)
       expect(result.coupons).toHaveLength(0)
     })
 
     it('AC-4 [店长]: 查看单个优惠券 — 不存在返回 null', async () => {
+      vi.mocked(service.findById).mockResolvedValueOnce(null)
       const result = await controller.get('non-existent')
       expect(result).toBeNull()
     })
 
     it('AC-5 [店长]: 暂停优惠券 — PATCH status active→paused', async () => {
-      await expect(
-        controller.updateStatus('coupon-1', { status: 'paused' }),
-      ).rejects.toThrow('NOT_IMPLEMENTED')
+      vi.mocked(service.findById).mockResolvedValueOnce(makeMockCoupon())
+      vi.mocked(service.updateStatus).mockResolvedValueOnce(makeMockCoupon({ status: 'paused' }))
+      const result = await controller.updateStatus('coupon-1', { status: 'paused' })
+      expect(result.status).toBe('paused')
+      expect(service.updateStatus).toHaveBeenCalledWith('coupon-1', 'paused')
     })
 
     it('AC-6 [店长][边界]: 分页参数 page=1 默认返回第一页', async () => {
+      vi.mocked(service.list).mockResolvedValueOnce({ items: [], total: 0 })
       const result = await controller.list({})
       expect(result.page).toBe(1)
     })
 
     it('AC-7 [店长][边界]: 空列表时 pageSize 使用默认值 20', async () => {
+      vi.mocked(service.list).mockResolvedValueOnce({ items: [], total: 0 })
       const result = await controller.list({})
       expect(result.pageSize).toBe(20)
     })
@@ -350,8 +364,10 @@ describe('CouponController', () => {
   // =============================================================
   describe('🎮 导玩员 Game Guide', () => {
     it('AC-19 [导玩员]: 获取单个优惠券详情', async () => {
+      vi.mocked(service.findById).mockResolvedValueOnce(makeMockCoupon())
       const result = await controller.get('coupon-1')
-      expect(result).toBeNull()
+      expect(result).not.toBeNull()
+      expect(result!.id).toBe('coupon-1')
     })
 
     it('AC-20 [导玩员]: 批量核销结果包含统计字段', async () => {
@@ -518,29 +534,32 @@ describe('CouponController', () => {
   // (B) 路由完整性与边界场景
   // =============================================================
   describe('(B) 路由完整性 & 自定义', () => {
-    it('B-1: POST /coupons/create 抛出 NOT_IMPLEMENTED', async () => {
-      await expect(
-        controller.create({
-          code: 'NEW',
-          tenantId: 't1',
-          scope: { type: 'multi-store', storeIds: ['s1'], includeSubordinates: false },
-          redemptionRules: {},
-          value: 50,
-          valueType: 'fixed',
-          expiresAt: '2027-01-01T00:00:00.000Z',
-        } as any),
-      ).rejects.toThrow('NOT_IMPLEMENTED')
+    it('B-1: POST /coupons/create 成功创建', async () => {
+      const result = await controller.create({
+        code: 'NEW',
+        tenantId: 't1',
+        scope: { type: 'multi-store', storeIds: ['s1'], includeSubordinates: false },
+        redemptionRules: {},
+        value: 50,
+        valueType: 'fixed',
+        expiresAt: '2027-01-01T00:00:00.000Z',
+      })
+      expect(result.code).toBe('NEW')
+      expect(service.create).toHaveBeenCalled()
     })
 
-    it('B-2: PATCH /coupons/:id/status 抛出 NOT_IMPLEMENTED', async () => {
-      await expect(
-        controller.updateStatus('coupon-1', { status: 'paused' }),
-      ).rejects.toThrow('NOT_IMPLEMENTED')
+    it('B-2: PATCH /coupons/:id/status 更新成功', async () => {
+      vi.mocked(service.findById).mockResolvedValueOnce(makeMockCoupon())
+      vi.mocked(service.updateStatus).mockResolvedValueOnce(makeMockCoupon({ status: 'paused' }))
+      const result = await controller.updateStatus('coupon-1', { status: 'paused' })
+      expect(result.status).toBe('paused')
     })
 
-    it('B-3: GET /coupons/:id 返回 null (未实现)', async () => {
+    it('B-3: GET /coupons/:id 返回详情', async () => {
+      vi.mocked(service.findById).mockResolvedValueOnce(makeMockCoupon())
       const result = await controller.get('any-id')
-      expect(result).toBeNull()
+      expect(result).not.toBeNull()
+      expect(result!.id).toBe('coupon-1')
     })
   })
 
@@ -564,6 +583,7 @@ describe('CouponController', () => {
     })
 
     it('C-3: list 响应可 JSON 序列化', async () => {
+      vi.mocked(service.list).mockResolvedValueOnce({ items: [], total: 0 })
       const result = await controller.list({})
       expect(() => JSON.stringify(result)).not.toThrow()
     })

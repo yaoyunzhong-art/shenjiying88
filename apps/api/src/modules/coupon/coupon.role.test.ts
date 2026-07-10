@@ -25,12 +25,20 @@ const ROLES = {
 // ─── 测试工厂 ───────────────────────────────────────────────────────────
 
 function makeController() {
+  const mockCouponRepo = {
+    create: vi.fn((d: any) => d),
+    save: vi.fn((d: any) => Promise.resolve({ ...d, id: 'c-role', createdAt: new Date(), updatedAt: new Date() })),
+    findOne: vi.fn(),
+    findAndCount: vi.fn().mockResolvedValue([[], 0]),
+    find: vi.fn(),
+    update: vi.fn(),
+  }
   const service = new CouponService(
-    {} as any, // couponRepo
-    {} as any, // redemptionRepo
-    { transaction: async (cb: any) => cb({ getRepository: () => ({}) }) } as any, // dataSource (Pulse-68)
-    undefined, // lifecycle
-    undefined, // quota
+    mockCouponRepo as any,
+    {} as any,
+    { transaction: async (cb: any) => cb({ getRepository: () => ({}) }) } as any,
+    undefined,
+    undefined,
   )
   vi.spyOn(service, 'redeemCrossStore').mockResolvedValue({
     success: true,
@@ -40,14 +48,17 @@ function makeController() {
   })
   vi.spyOn(service, 'batchRedeem').mockResolvedValue([])
   vi.spyOn(service, 'checkCrossStoreEligibility').mockImplementation(
-    (_coupon: any, storeId: string) => ({
-      eligible: storeId !== 'store-blocked',
-      reason: storeId === 'store-blocked' ? 'blacklisted' : undefined,
-      matchedScope: 'multi-store' as const,
-      matchedStoreIds: ['store-1', 'store-2'],
-    }),
+    (coupon: any, storeId: string) => {
+      const matched = coupon?.scope?.storeIds?.includes(storeId) ?? false
+      return {
+        eligible: matched && storeId !== 'store-blocked',
+        reason: !matched ? `storeId ${storeId} not in scope.storeIds [${(coupon?.scope?.storeIds ?? []).join(', ')}]` : storeId === 'store-blocked' ? 'blacklisted' : undefined,
+        matchedScope: coupon?.scope?.type ?? 'multi-store',
+        matchedStoreIds: coupon?.scope?.storeIds ?? [],
+      }
+    },
   )
-  return { controller: new CouponController(service), service }
+  return { controller: new CouponController(service), service, mockCouponRepo }
 }
 
 // ──────────── 👔店长 ────────────
@@ -195,15 +206,25 @@ describe(`${ROLES.Guide} 优惠券角色测试`, () => {
 // ──────────── 🎯运行专员 ────────────
 describe(`${ROLES.Ops} 优惠券角色测试`, () => {
   it('运行专员暂停优惠券活动（正常流程）', async () => {
-    const { controller } = makeController()
-    // updateStatus 目前未实现，验证抛出预期错误
-    await expect(
-      controller.updateStatus('coupon-001', { status: 'paused' }),
-    ).rejects.toThrow('NOT_IMPLEMENTED')
+    const { controller, mockCouponRepo } = makeController()
+    const mockCoupon = {
+      id: 'coupon-001', tenantId: 't-1', code: 'OPS-CTRL',
+      scope: { type: 'multi-store', storeIds: ['s1', 's2'], includeSubordinates: false },
+      redemptionRules: {}, value: 10, valueType: 'fixed',
+      expiresAt: new Date('2027-01-01'), status: 'active',
+      redemptionCount: 0, createdAt: new Date(), updatedAt: new Date(),
+    }
+    mockCouponRepo.findOne.mockResolvedValue(mockCoupon)
+    mockCouponRepo.save.mockImplementation((d: any) => Promise.resolve({ ...d, updatedAt: new Date() }))
+
+    const result = await controller.updateStatus('coupon-001', { status: 'paused' })
+    expect(result.status).toBe('paused')
+    expect(result.id).toBe('coupon-001')
   })
 
   it('运行专员查询优惠券详情（边界：不存在 ID 返回 null）', async () => {
-    const { controller } = makeController()
+    const { controller, mockCouponRepo } = makeController()
+    mockCouponRepo.findOne.mockResolvedValue(null)
     const result = await controller.get('non-existent-id')
     expect(result).toBeNull()
   })
@@ -252,14 +273,23 @@ describe(`${ROLES.Teambuilding} 优惠券角色测试`, () => {
 // ──────────── 📢营销 ────────────
 describe(`${ROLES.Marketing} 优惠券角色测试`, () => {
   it('营销人员查询优惠券列表查看发放情况（正常流程）', async () => {
-    const { controller } = makeController()
+    const { controller, mockCouponRepo } = makeController()
+    const mockList = [
+      { id: 'c-1', code: 'MARKET-50', tenantId: 't-1', value: 50, valueType: 'fixed' as const, status: 'active' as const, redemptionCount: 0, scope: { type: 'single-store' as const, storeIds: ['s1'], includeSubordinates: false }, redemptionRules: {}, expiresAt: new Date('2027-01-01'), createdAt: new Date(), updatedAt: new Date() },
+    ]
+    mockCouponRepo.findAndCount.mockResolvedValue([mockList, 1])
+
     const result = await controller.list({ page: 1, pageSize: 20 })
     expect(result.page).toBe(1)
     expect(result.pageSize).toBe(20)
+    expect(result.total).toBe(1)
+    expect(result.coupons).toHaveLength(1)
+    expect(result.coupons[0].code).toBe('MARKET-50')
   })
 
   it('营销人员查询不存在的优惠券详情返回 null（权限边界）', async () => {
-    const { controller } = makeController()
+    const { controller, mockCouponRepo } = makeController()
+    mockCouponRepo.findOne.mockResolvedValue(null)
     const result = await controller.get('marketing-campaign-nonexistent')
     expect(result).toBeNull()
   })

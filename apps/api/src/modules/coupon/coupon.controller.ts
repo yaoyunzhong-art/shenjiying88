@@ -52,10 +52,17 @@ export class CouponController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() body: CreateCouponDto): Promise<CouponContract> {
-    // TODO: Pulse-68 创建逻辑
-    // const entity = this.couponService.create(body);
-    // return toCouponContract(entity);
-    throw new Error('NOT_IMPLEMENTED · Pulse-68 T2')
+    const entity = await this.couponService.create({
+      code: body.code,
+      tenantId: body.tenantId,
+      scope: body.scope,
+      redemptionRules: body.redemptionRules,
+      value: body.value,
+      valueType: body.valueType,
+      expiresAt: body.expiresAt,
+      maxRedemptions: body.maxRedemptions,
+    })
+    return toCouponContract(entity)
   }
 
   /**
@@ -64,10 +71,13 @@ export class CouponController {
    */
   @Get()
   async list(@Query() query: ListCouponDto): Promise<CouponListContract> {
-    // TODO: Pulse-68 查询逻辑
-    // const { items, total } = await this.couponService.list(query);
-    // return toCouponListContract(items, total, query.page ?? 1, query.pageSize ?? 20);
-    return toCouponListContract([], 0, query.page ?? 1, query.pageSize ?? 20)
+    const { items, total } = await this.couponService.list({
+      status: query.status,
+      tenantId: query.tenantId,
+      page: query.page,
+      pageSize: query.pageSize,
+    })
+    return toCouponListContract(items, total, query.page ?? 1, query.pageSize ?? 20)
   }
 
   /**
@@ -76,10 +86,8 @@ export class CouponController {
    */
   @Get(':id')
   async get(@Param('id') id: string): Promise<CouponContract | null> {
-    // TODO: Pulse-68 详情查询
-    // const entity = await this.couponService.findById(id);
-    // return entity ? toCouponContract(entity) : null;
-    return null
+    const entity = await this.couponService.findById(id)
+    return entity ? toCouponContract(entity) : null
   }
 
   /**
@@ -91,10 +99,11 @@ export class CouponController {
     @Param('id') id: string,
     @Body() body: UpdateCouponStatusDto,
   ): Promise<CouponContract> {
-    // TODO: Pulse-68 状态更新逻辑
-    // const entity = await this.couponService.updateStatus(id, body.status);
-    // return toCouponContract(entity);
-    throw new Error('NOT_IMPLEMENTED · Pulse-68 T2')
+    const entity = await this.couponService.updateStatus(id, body.status)
+    if (!entity) {
+      throw new Error(`Coupon ${id} not found`)
+    }
+    return toCouponContract(entity)
   }
 
   /**
