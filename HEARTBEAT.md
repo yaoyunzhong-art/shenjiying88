@@ -1,5 +1,61 @@
 # 🦞 龙虾哥心跳记录
 
+## 🦞 2026-07-11 05:30 — Pulse-Nightly-13 晨间收尾 (✅ 40链·121+ subtests·3新模式·跨模块E2E扩展37→40)
+
+### 📋 系统状态
+- **最新 HEAD**: `e1e366c748` (同脉冲#298) 
+- **Pulse-Nightly**: #13 (03:30-05:30)
+- **Cron 健康**: ✓
+- **工作区**: ✅ 干净
+
+### 🏁 本段完成项 (Pulse-Nightly-13 第3段)
+
+#### 跨模块 E2E 扩展 37→40 链 ✅
+| 链 | 模式 | subtests | 正例 | 反例 | 边界 | 耗时 | 状态 |
+|:--:|------|:--------:|:----:|:----:|:----:|:----:|:----:|
+| #38 | AI客服→会话→推送→反馈 | 12 | 4 | 4 | 4 | ~9ms | ✅ |
+| #39 | 联邦学习→边缘AI→图像识别 | 11 | 3 | 3 | 5 | ~5ms | ✅ |
+| #40 | 许可证→安全审计→工作台 | 12 | 3 | 4 | 5 | ~16ms | ✅ |
+| **合计** | **3 新模式** | **35** | **10** | **11** | **14** | **~30ms** | **✅ 0 fail** |
+
+**首次覆盖15个模块**: ai-cs, agent, session, federated-learning, edge, image-recognition, device-adapter, license-package, license-renewal, security, workbench, svip
+
+#### 复盘分析 ✅
+- **@m5/api 失败数**: 662 fail (📈 520→662, +27%), 主要分布在 full-regression(34), lyt(11), runtime-governance(4)
+- **链38 N4 Bug 修复**: sentimentPriority 累积逻辑, 已闭环
+- **债务更新**: debt.md 新增 P1-N13-001~003
+- **知识更新**: 
+  - expert-insights E35 (insight-2026-07-11.md) 🆕
+  - lessons-learned pulse-nightly-13.md 🆕
+  - e2e-pattern.md +3 新模式 (#17情感累积/#18联邦学习OTA/#19许可证矩阵) 🆕
+  - INDEX.md 更新快照
+
+#### 文档产出 ✅
+- [x] reports/nightly-test-20260711.md — 完整凌晨测试报告
+- [x] debt.md — 债务追踪更新
+- [x] MEMORY.md — 长期知识更新
+- [x] knowledge/expert-insights/ — E35 专家洞察
+- [x] knowledge/lessons-learned/ — pulse-nightly-13
+- [x] knowledge/best-practices/e2e-pattern.md — +3新模式
+- [x] HEARTBEAT.md — 本段记录
+
+### 🛠 非API稳态计数: 6 🏆🏆🏆🏆🏆🏆
+(pulse#293→#294→#295→#296→#297→#298)
+
+### 🐜 3 条新链路径
+```
+apps/api/src/modules/cross-module/
+  cross-module-e2e-38-ai-cs-session-push-member.test.ts        # 链38
+  cross-module-e2e-39-federated-learning-edge-image-recognition.test.ts  # 链39
+  cross-module-e2e-40-license-security-audit-workbench.test.ts  # 链40
+```
+
+### 📝 Pulse-Nightly-13 快照
+- 完成: L3 跨模块 E2E 扩展 37→40 ✅ | 复盘+知识库 ✅ | 赋能 ✅
+- 本段新增 35 subtests, 全部 0 fail ✅
+- @m5/api 仍需人工介入修复 (662 fail, 持续恶化)
+- 下一段/下一轮: Pulse-Nightly-14 目标 40→43 链
+
 ## 🦞 2026-07-11 03:19 — 脉冲#298 验收 (全线全绿，非API稳态6连🏆🏆🏆🏆🏆🏆)
 
 ### 📋 系统状态

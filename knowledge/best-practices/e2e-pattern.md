@@ -873,6 +873,68 @@ describe('Phase 1: IoT 数据采集', () => {
 3. 每个子场景覆盖正例·反例·边界三元组
 4. 全链路 Phase 需 sequentially 调用多个 domain 函数
 
+### 17. 情感累积优先级模式 (Pulse-Nightly-13 新增, 链38)
+
+**适用场景**: 测试状态机中需要保留历史状态的优先级逻辑
+
+**设计模式**:
+```
+// 定义优先级: negative > positive > neutral
+const sentimentPriority: Record<string, number> = {
+  negative: 2,
+  positive: 1,
+  neutral: 0,
+}
+
+// 累积逻辑: 仅升级不降级
+const finalSentiment = sentimentPriority[newSentiment] >= sentimentPriority[currentSentiment]
+  ? newSentiment
+  : currentSentiment
+```
+
+**测试要点**:
+- 确认累积逻辑不降级: 先设置 high priority, 再设置 low priority, 结果不变
+- 反之: 先 low, 再 high, 结果升级
+- 边界: 相同优先级保持原值
+- 反例: 空输入、无效值
+
+**适用原则**:
+1. 优先级定义需与业务逻辑一致
+2. 明确是否允许降级(正向抵消)
+3. 状态机中的每个状态转换节点都需要有正例+反例+边界三件套
+
+### 18. 联邦学习/OTA 全生命周期模式 (Pulse-Nightly-13 新增, 链39)
+
+**适用场景**: AI模型训练→分发→推理→设备更新→回退
+
+**测试要点**:
+- 多轮联邦学习后精度逐步提升验证
+- 版本升级时: OTA 成功(设备版本更新) + OTA 失败(回退到旧版本)
+- 边界: 大量并发推理请求(100+)、精度上限约束(≤0.99)
+- 反例: 向不存在设备分发、空识别结果
+
+### 19. 许可证驱动功能矩阵模式 (Pulse-Nightly-13 新增, 链40)
+
+**适用场景**: SaaS 多租户 feature-gating 测试
+
+**实现要点**:
+```
+// 许可证等级→功能可见性映射
+const tierLevels = { free: 0, basic: 1, pro: 2, enterprise: 3, svip: 4 }
+const userTierLevel = tierLevels[license.tier]
+const requiredTierLevel = tierLevels[module.requiredTier]
+
+if (userTierLevel < requiredTierLevel) → 'hidden'
+else if (module.requiredFeature NOT in license.features) → 'restricted'
+else → 'full'
+```
+
+**测试要点**:
+- 正例: 高等级许可证访问所有模块
+- 反例: 过期/暂停许可证全部隐藏
+- 边界: 功能特性缺失→restricted(非 hidden)、不存在的功能特性不影响其他模块
+- 数据量: 大规模审计日志(100条)、大量并发请求
+
 ## 关联文档
 - [patterns/quota-guard.md](../patterns/quota-guard.md) · 业务实现
 - [patterns/reserve-rollback.md](../patterns/reserve-rollback.md) · 回滚模式
