@@ -133,7 +133,7 @@ describe('CouponController', () => {
       const createDto = {
         code: 'NEW-YEAR-2027',
         tenantId: 'store-bj-001',
-        scope: { type: 'tenant-wide', storeIds: ['store-bj-001'], includeSubordinates: true },
+        scope: { type: 'tenant-wide' as const, storeIds: ['store-bj-001'], includeSubordinates: true },
         redemptionRules: { minAmount: 100, userSegments: ['vip'] },
         value: 50,
         valueType: 'fixed' as const,
@@ -538,7 +538,7 @@ describe('CouponController', () => {
       const result = await controller.create({
         code: 'NEW',
         tenantId: 't1',
-        scope: { type: 'multi-store', storeIds: ['s1'], includeSubordinates: false },
+        scope: { type: 'multi-store' as const, storeIds: ['s1'], includeSubordinates: false },
         redemptionRules: {},
         value: 50,
         valueType: 'fixed',
