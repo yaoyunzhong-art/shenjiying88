@@ -452,6 +452,8 @@ export { FormSubmitFeedback, useFormSubmit } from './components/FormSubmitFeedba
 export { SubmitButton } from './components/SubmitButton';
 export type { SubmitButtonProps, SubmitButtonVariant } from './components/SubmitButton';
 export { InfoRow, ConfirmDialog } from './components/InfoRow';
+export { InlineNotification } from './components/InlineNotification';
+export type { InlineNotificationProps, InlineNotificationType } from './components/InlineNotification';
 export { Alert, useAlert } from './components/Alert';
 export type { AlertProps, AlertVariant, AlertState, UseAlertOptions } from './components/Alert';
 export { CopyToClipboard } from './components/CopyToClipboard';
