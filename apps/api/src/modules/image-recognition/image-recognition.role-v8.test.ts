@@ -102,9 +102,9 @@ describe('👥HR image-recognition', () => {
 
   it('HR 角色不可提交识别任务（无权限模拟）', async () => {
     const ctrl = controller()
-    const hrTenant = { tenantId: 't-hr', storeId: 'store-hr', userId: 'hr-user', role: 'hr' as const }
+    const hrTenant = { tenantId: 't-hr', storeId: 'store-hr', userId: 'hr-user', role: 'auditor' as const }
     // HR 用受限角色提交
-    const hrRoleTenant = { ...hrTenant, role: 'hr' as const }
+    const hrRoleTenant = { ...hrTenant, role: 'auditor' as const }
     await expect(
       runWithTenant(hrRoleTenant, () =>
         ctrl.createRecognition({
@@ -168,7 +168,7 @@ describe('🎮导玩员 image-recognition', () => {
 
   it('导玩员列表中只能查看自己创建的识别任务', async () => {
     const ctrl = controller()
-    const guideTenant = { tenantId: 't-guide-a', storeId: 'store-arcade', userId: 'guide-user', role: 'guide' as const }
+    const guideTenant = { tenantId: 't-guide-a', storeId: 'store-arcade', userId: 'guide-user', role: 'viewer' as const }
     await runWithTenant(guideTenant, () =>
       ctrl.createRecognition({ taskType: 'product_recognition', sourceAssetId: 'guide-item' } as CreateRecognitionDto),
     )
@@ -184,7 +184,7 @@ describe('🎮导玩员 image-recognition', () => {
 describe('🎯运行专员 image-recognition', () => {
   it('获取识别统计用于运营日报', async () => {
     const ctrl = controller()
-    const opsTenant = { tenantId: 't-ops', storeId: 'store-arcade', userId: 'ops-user', role: 'operations' as const }
+    const opsTenant = { tenantId: 't-ops', storeId: 'store-arcade', userId: 'ops-user', role: 'operator' as const }
     await runWithTenant(opsTenant, () =>
       ctrl.createRecognition({ taskType: 'product_recognition', sourceAssetId: 'ops-item-1' } as CreateRecognitionDto),
     )
@@ -199,7 +199,7 @@ describe('🎯运行专员 image-recognition', () => {
 
   it('取消已完成任务拒绝', async () => {
     const ctrl = controller()
-    const opsTenant = { tenantId: 't-ops2', storeId: 'store-arcade', userId: 'ops-user2', role: 'operations' as const }
+    const opsTenant = { tenantId: 't-ops2', storeId: 'store-arcade', userId: 'ops-user2', role: 'operator' as const }
     const result = await runWithTenant(opsTenant, () =>
       ctrl.createRecognition({ taskType: 'product_recognition', sourceAssetId: 'ops-item-cancel' } as CreateRecognitionDto),
     ) as any
@@ -242,7 +242,7 @@ describe('🤝团建 image-recognition', () => {
 describe('📢营销 image-recognition', () => {
   it('列表所有完成的任务用于营销素材分析', async () => {
     const ctrl = controller()
-    const mktTenant = { tenantId: 't-mkt', storeId: 'store-marketing', userId: 'mkt-user', role: 'marketing' as const }
+    const mktTenant = { tenantId: 't-mkt', storeId: 'store-marketing', userId: 'mkt-user', role: 'viewer' as const }
     await runWithTenant(mktTenant, () =>
       ctrl.createRecognition({ taskType: 'product_recognition', sourceAssetId: 'mkt-asset-1' } as CreateRecognitionDto),
     )
@@ -258,7 +258,7 @@ describe('📢营销 image-recognition', () => {
 
   it('营销角色不可取消他人处理中的任务', async () => {
     const ctrl = controller()
-    const mktTenant = { tenantId: 't-mkt-no-cancel', storeId: 'store-mkt', userId: 'mkt-user', role: 'marketing' as const }
+    const mktTenant = { tenantId: 't-mkt-no-cancel', storeId: 'store-mkt', userId: 'mkt-user', role: 'viewer' as const }
     await expect(
       runWithTenant(mktTenant, () => ctrl.cancelTask('non-existent-task-id')),
     ).rejects.toThrow()
