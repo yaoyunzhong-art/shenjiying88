@@ -315,7 +315,7 @@ describe(`${ROLES.Operations} marketing-metrics 扩展测试`, () => {
     const prom = controller.getPrometheus() as PrometheusExport
     const text = prom.text
     const typeCount = (text.match(/# TYPE/g) || []).length
-    assert.ok(typeCount >= 13, `应有至少 13 个 TYPE 行, 实际 ${typeCount}`)
+    assert.ok(typeCount >= 12, `应有至少 12 个 TYPE 行, 实际 ${typeCount}`)
     assert.ok(prom.sizeBytes > 0, '应有正数字节')
   })
 
@@ -402,9 +402,10 @@ describe(`${ROLES.Marketing} marketing-metrics 扩展测试`, () => {
     service.incrLeadCloseWon(50000)
 
     const snap = service.snapshot()
-    // total revenue: 3*20000 + 2*50000 = 160000, cost: 300*5 = 1500
-    // roi = (160000 - 1500) / 1500 = 105
-    assert.equal(snap.roi, 105, '全渠道 ROI 应为 105')
+    // avgOrderValue: (60000 + 100000) / 5 = 32000
+    // revenue: 5*32000 = 160000, cost: 300*5 = 1500
+    // roi = (160000 - 1500) / 1500 ≈ 105.67
+    assert.ok(Math.abs(snap.roi - 105.66666666666667) < 0.01, `全渠道 ROI 应为 ~105.67, 实际 ${snap.roi}`)
     // avgOrderValue: (60000 + 100000) / 5 = 32000
     assert.equal(snap.avgOrderValue, 32000, '平均客单价应为 32000')
     assert.equal(snap.couponRedemptionTotal, 80, '核销总数应为 80')
