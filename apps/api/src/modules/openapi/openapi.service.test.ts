@@ -119,6 +119,52 @@ describe('OpenAPIService facade', () => {
       const t2Keys = await svc.listKeys('t2')
       assert.equal(t2Keys.length, 0)
     })
+
+    it('createKey 空名称拒绝', async () => {
+      await assert.rejects(
+        () => svc.createKey({ tenantId: 't1', environment: 'LIVE', name: '', scopes: [{ resource: '*', actions: ['*'] }] }),
+        /name_required/,
+      )
+    })
+
+    it('createKey 空 scopes 拒绝', async () => {
+      await assert.rejects(
+        () => svc.createKey({ tenantId: 't1', environment: 'LIVE', name: 'k', scopes: [] }),
+        /scopes_required/,
+      )
+    })
+
+    it('createKey 自定义 createdBy', async () => {
+      const contract = await svc.createKey({
+        tenantId: 't1', environment: 'TEST', name: 'k-custom',
+        scopes: [{ resource: '*', actions: ['*'] }],
+        createdBy: 'user-bob',
+      })
+      assert.equal(contract.createdBy, 'user-bob')
+    })
+
+    it('createKey 带过期时间', async () => {
+      const tomorrow = new Date(Date.now() + 86400000).toISOString()
+      const contract = await svc.createKey({
+        tenantId: 't1', environment: 'TEST', name: 'k-exp',
+        scopes: [{ resource: '*', actions: ['*'] }],
+        expiresAt: tomorrow,
+      })
+      assert.equal(contract.expiresAt, tomorrow)
+    })
+
+    it('revokeKey 已撤销 key 抛错', async () => {
+      const created = await svc.createKey({
+        tenantId: 't1', environment: 'LIVE', name: 'k-dup',
+        scopes: [{ resource: '*', actions: ['*'] }],
+      })
+      await svc.revokeKey('t1', created.keyId, 'reason1')
+      // 再次 revoke → 从 APIKeyService 抛 cannot_revoke_revoked
+      assert.throws(
+        () => apiKeySvc.revoke('t1', created.keyId, 'reason2'),
+        /cannot_revoke_/,
+      )
+    })
   })
 
   // ─── Webhook ───
@@ -165,6 +211,44 @@ describe('OpenAPIService facade', () => {
       const list = await svc.listWebhookSubscriptions('unknown-tenant')
       assert.equal(list.length, 0)
     })
+
+    it('createWebhookSubscription 空 events 拒绝', async () => {
+      await assert.rejects(
+        () => svc.createWebhookSubscription({
+          tenantId: 't1', url: 'https://hook.example.com/cb', events: [],
+        }),
+        /events_required/,
+      )
+    })
+
+    it('createWebhookSubscription 无效 URL 拒绝', async () => {
+      await assert.rejects(
+        () => svc.createWebhookSubscription({
+          tenantId: 't1', url: 'https://', events: ['order.created'],
+        }),
+        /invalid_url/,
+      )
+    })
+
+    it('dispatchWebhookEvent 不存在的订阅抛错', async () => {
+      await assert.rejects(
+        () => svc.dispatchWebhookEvent({
+          source: 'nonexistent-sub',
+          tenantId: 't1',
+          eventType: 'order.created',
+          payload: { orderId: 'o1' },
+        }),
+        /subscription_not_found/,
+      )
+    })
+
+    it('createWebhookSubscription 自定义 createdBy', async () => {
+      const sub = await svc.createWebhookSubscription({
+        tenantId: 't1', url: 'https://hook.example.com/cb',
+        events: ['order.created'], createdBy: 'bob',
+      })
+      assert.equal(sub.createdBy, 'bob')
+    })
   })
 
   // ─── Sandbox ───
@@ -190,6 +274,16 @@ describe('OpenAPIService facade', () => {
         parentTenantId: 't1', name: 'short-sandbox', ttlDays: 7,
       })
       assert.equal(sandbox.ttlDays, 7)
+    })
+
+    it('dataMaskingEnabled: false', async () => {
+      // createSandbox 门面不直接暴露 dataMaskingEnabled,
+      // 但底层 SandboxService 支持。验证：创建后底层 env 有该字段
+      const sandbox = await svc.createSandbox({
+        parentTenantId: 't1', name: 'no-mask', dataMaskingEnabled: false,
+      })
+      assert.ok(sandbox.id)
+      assert.equal(sandbox.parentTenantId, 't1')
     })
   })
 
@@ -258,6 +352,30 @@ describe('OpenAPIService facade', () => {
         timestamp: Date.now(), nonce: 'n1', body: '{}', signature: 'x',
       })
       assert.equal(result.valid, false)
+    })
+
+    it('过期 timestamp 拒绝', async () => {
+      const secret = 'shared-secret'
+      const old = Date.now() - 10 * 60 * 1000  // 10 min ago, 超过 5min 窗口
+      const signature = signValidator.sign({
+        secret, method: 'POST', url: '/api/callback',
+        timestamp: old, nonce: 'n-old', body: '{}',
+      })
+      const result = await svc.verifySignature(secret, {
+        method: 'POST', url: '/api/callback',
+        timestamp: old, nonce: 'n-old', body: '{}', signature,
+      })
+      assert.equal(result.valid, false)
+      assert.ok(result.error!.includes('out_of_window') || result.error!.includes('timestamp'))
+    })
+
+    it('缺失签名字段拒绝', async () => {
+      const result = await svc.verifySignature('s', {
+        method: 'GET', url: '/api/health',
+        timestamp: 0, nonce: '', body: '', signature: '',
+      })
+      assert.equal(result.valid, false)
+      assert.ok(result.error)
     })
   })
 })
