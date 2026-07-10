@@ -129,3 +129,19 @@ describe('TierDistributionChart', () => {
     assert.equal(html.includes('tier-dist-chart'), false);
   });
 });
+
+describe('TierDistributionChart types and mock exports', () => {
+  it('exports mock tier data with correct total', () => {
+    // Verify mock data is importable and totals are correct
+    const { MOCK_TIER_DATA, MOCK_TIER_TOTAL } = require('./useTierDistribution.mock');
+    assert.ok(Array.isArray(MOCK_TIER_DATA));
+    assert.ok(MOCK_TIER_DATA.length > 0);
+    const sum = MOCK_TIER_DATA.reduce((s: number, t: { count: number }) => s + t.count, 0);
+    assert.strictEqual(MOCK_TIER_TOTAL, sum);
+  });
+
+  it('exports fetchMockTierDistribution as a function', () => {
+    const { fetchMockTierDistribution } = require('./useTierDistribution.mock');
+    assert.strictEqual(typeof fetchMockTierDistribution, 'function');
+  });
+});

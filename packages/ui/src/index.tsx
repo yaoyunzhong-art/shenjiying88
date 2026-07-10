@@ -863,8 +863,9 @@ export type {
 
 export { SmartTrendChart } from './SmartTrendChart';
 export type { SmartTrendChartProps, TrendDataPoint } from './SmartTrendChart';
-export { TierDistributionChart } from './TierDistributionChart';
-export type { TierDistributionChartProps, TierData } from './TierDistributionChart';
+export { TierDistributionChart, useTierDistribution } from './TierDistributionChart';
+export type { TierDistributionChartProps, TierData, TierSummary, TierLevel, TierDistributionParams } from './TierDistributionChart';
+export { MOCK_TIER_DATA, MOCK_TIER_TOTAL } from './TierDistributionChart';
 
 export { ExportButton, serializeToCsv } from './components/ExportButton';
 export type { ExportButtonProps, ExportFormat } from './components/ExportButton';
