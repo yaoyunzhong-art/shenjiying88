@@ -75,6 +75,7 @@ describe(`${ROLES.StoreManager} analytics-v2 角色 V3 测试`, () => {
 
     // 产生 CDC 事件 (显式提供递增 watermark)
     const r1 = controller.applyCDC({
+      id: 'cdc-ev-1', timestamp: new Date().toISOString(),
       tenantId: 't1', tableName: 'members', recordId: 'mem-001',
       eventType: 'CREATED', eventId: 'cdc-1', watermark: 1,
       after: { name: '张三', level: 'gold' },
@@ -82,6 +83,7 @@ describe(`${ROLES.StoreManager} analytics-v2 角色 V3 测试`, () => {
     assert.ok(r1.accepted, 'CDC 创建应被接受')
 
     const r2 = controller.applyCDC({
+      id: 'cdc-ev-2', timestamp: new Date().toISOString(),
       tenantId: 't1', tableName: 'members', recordId: 'mem-001',
       eventType: 'UPDATED', eventId: 'cdc-2', watermark: 2,
       before: { level: 'gold' },
@@ -95,7 +97,13 @@ describe(`${ROLES.StoreManager} analytics-v2 角色 V3 测试`, () => {
     assert.ok(status.currentWatermark > 0, 'currentWatermark 应大于 0')
 
     // 回放 (replay 单条返回 {accepted, replayed})
-    const replayed = controller.replayCDC({ tenantId: 't1', fromWatermark: 0 })
+    const replayed = controller.replayCDC({
+      id: 'replay-1', timestamp: new Date().toISOString(),
+      tenantId: 't1', tableName: 'members', recordId: 'mem-001',
+      eventType: 'UPDATED', eventId: 'replay-cdc', watermark: 2,
+      before: { level: 'gold' },
+      after: { name: '张三', level: 'platinum' },
+    })
     assert.ok(replayed.accepted, '回放应被接受')
     assert.ok(replayed.replayed, '回放结果应有数据')
 
@@ -108,13 +116,15 @@ describe(`${ROLES.StoreManager} analytics-v2 角色 V3 测试`, () => {
     const { controller } = ctx
 
     controller.applyCDC({
+      id: 'cdc-a1', timestamp: new Date().toISOString(),
       tenantId: 'store-a', tableName: 'inventory', recordId: 'item-x',
-      eventType: 'UPDATED', eventId: 'cdc-a1',
+      eventType: 'UPDATED', eventId: 'cdc-a1', watermark: 1,
       after: { stock: 10 },
     })
     controller.applyCDC({
+      id: 'cdc-b1', timestamp: new Date().toISOString(),
       tenantId: 'store-b', tableName: 'inventory', recordId: 'item-x',
-      eventType: 'UPDATED', eventId: 'cdc-b1',
+      eventType: 'UPDATED', eventId: 'cdc-b1', watermark: 1,
       after: { stock: 5 },
     })
 
@@ -237,7 +247,7 @@ describe(`${ROLES.Security} analytics-v2 角色 V3 测试`, () => {
       who: 'u', when: new Date().toISOString(),
       where: {}, what: { name: 'test' }, properties: {}, timestamp: new Date().toISOString(),
     })
-    cdcAdapter.apply({ eventId: 'health-cdc1', tenantId: 't1', tableName: 'members', recordId: 'r1', eventType: 'CREATED', watermark: Date.now() })
+    cdcAdapter.apply({ id: 'health-cdc1', timestamp: new Date().toISOString(), eventId: 'health-cdc1', tenantId: 't1', tableName: 'members', recordId: 'r1', eventType: 'CREATED', watermark: Date.now() })
     cohortAdapter.save({ id: 'c1', tenantId: 't1', period: 'MONTHLY', periodKey: '2026-01', cohortSize: 10, registrationDate: new Date('2026-01-01'), memberCount: 1, retention: [0.5], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as any)
 
     const health = controller.metricsHealth('t1')
