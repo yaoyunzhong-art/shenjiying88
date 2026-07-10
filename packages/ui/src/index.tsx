@@ -70,6 +70,8 @@ export { AIDecisionPanel } from './components/AiDecisionPanel';
 export type { DecisionRuleResult, DecisionPanelConfig, RuleExecutionStatus } from './components/AiDecisionPanel';
 export { HeatmapChart } from './components/HeatmapChart';
 export type { HeatmapChartProps, HeatmapCell, HeatmapColorScheme } from './components/HeatmapChart';
+export { WordCloudChart } from './components/WordCloudChart';
+export type { WordCloudChartProps, WordCloudItem, WordCloudFontStrategy, WordCloudLayout } from './components/WordCloudChart';
 export { RadarChart } from './components/RadarChart';
 export type { RadarChartProps, RadarDimension, RadarSeries } from './components/RadarChart';
 export { AIAgentThinkingPanel } from './components/AIAgentThinkingPanel';
