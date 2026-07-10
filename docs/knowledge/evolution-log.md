@@ -694,3 +694,31 @@
 AM-011: 终端长期运行后context爆炸→显示损坏, 根治: 每12h/900k context重启
 AM-012: 计划文档写了但没建cron, 根治: cron必须手动verify
 AM-013: 改了文档没改配置(maxConcurrentRuns), 根治: 改文档必同步改配置
+
+## 2026-07-10 23:15 心跳 — 自我进化检查发现
+
+### 发现1: V10缺2个cron (AM-007已记录)
+- V10计划写了28cron但实际只有26个——07:50🤖AI简报和08:30🐜派单从未创建
+- 教训已记录为 AM-007: 计划文档和cron配置存在代差，cron必须list verify
+
+### 发现2: 23:00 isolated cron报channel错误 (新反模式AM-006)
+- delivery.mode=announce + 无channel配置 → 必报错
+- 修复: 改为 sessionTarget=main + payload.kind=systemEvent，delivery.mode=none
+- 教训: 无外发channel时，所有announce模式cron都不可用，应统一用systemEvent注入主session
+
+### 新增反模式
+| ID | 反模式 | 发现日期 |
+|----|--------|----------|
+| AM-006 | isolated cron+announce+无channel=必败 | 2026-07-10 |
+| AM-007 | 计划文档和cron配置之间的代差 | 2026-07-10 |
+
+### 正向模式
+| ID | 模式 | 效果 |
+|----|------|------|
+| PP-006 | 心跳触发→自动执行23:00自我进化检查 | 发现并修复2个cron问题 |
+| PP-007 | systemEvent替代isolated+announce | 无需channel也能注入主session |
+
+### 后续行动
+- V11草案已产: 重点修复配置代差+转向功能交付(店A倒计时22天)
+- 28cron已全部对齐V10计划
+- 本心跳产出: HEARTBEAT.md #291 + evolution-log更新
