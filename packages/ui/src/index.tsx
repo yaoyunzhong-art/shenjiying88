@@ -700,6 +700,8 @@ export type {
   ProductQuickAction,
 } from './components/ProductManagerDashboard';
 export type { ProductSnapshot as ProductDashboardSnapshot } from './components/ProductManagerDashboard';
+export { ProfitMarginPanel } from './components/ProfitMarginPanel';
+export type { ProfitMarginPanelProps, ProfitMarginRecord, CostBreakdownItem } from './components/ProfitMarginPanel';
 export { ErrorBoundary } from './components/ErrorBoundary';
 export type {
   ErrorBoundaryProps,
