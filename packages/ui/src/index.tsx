@@ -1425,3 +1425,7 @@ export type {
 // --------------- InfiniteScroll ---------------
 export { InfiniteScroll } from './components/InfiniteScroll';
 export type { InfiniteScrollProps } from './components/InfiniteScroll';
+
+// --------------- MemberUpgradePath ---------------
+export { MemberUpgradePath } from './components/MemberUpgradePath';
+export type { MemberUpgradePathProps, UpgradeTierNode, UpgradeCondition } from './components/MemberUpgradePath';

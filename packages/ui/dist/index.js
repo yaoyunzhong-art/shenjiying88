@@ -220,6 +220,7 @@ __export(index_exports, {
   MemberRFMAnalysisPanel: () => MemberRFMAnalysisPanel,
   MemberRechargePanel: () => MemberRechargePanel,
   MemberTierDistribution: () => MemberTierDistribution,
+  MemberUpgradePath: () => MemberUpgradePath,
   Mentions: () => Mentions,
   MetricsDashboardGrid: () => MetricsDashboardGrid,
   Modal: () => Modal,
@@ -72211,6 +72212,255 @@ function InfiniteScroll({
     }
   );
 }
+
+// src/components/MemberUpgradePath.tsx
+var import_react194 = __toESM(require("react"));
+var import_jsx_runtime285 = require("react/jsx-runtime");
+function MemberUpgradePath({
+  tiers,
+  currentTierKey,
+  subtitle
+}) {
+  if (!tiers || tiers.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime285.jsx)(
+      "div",
+      {
+        "data-testid": "member-upgrade-path-empty",
+        style: {
+          padding: 32,
+          textAlign: "center",
+          color: "#9ca3af",
+          fontSize: 14
+        },
+        children: "\u6682\u65E0\u4F1A\u5458\u7B49\u7EA7\u6570\u636E"
+      }
+    );
+  }
+  const currentIdx = currentTierKey ? tiers.findIndex((t) => t.key === currentTierKey) : -1;
+  return /* @__PURE__ */ (0, import_jsx_runtime285.jsxs)("div", { "data-testid": "member-upgrade-path", style: { padding: 20 }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime285.jsxs)("div", { style: { marginBottom: 24 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime285.jsx)(
+        "h2",
+        {
+          "data-testid": "upgrade-path-title",
+          style: { fontSize: 18, fontWeight: 700, margin: 0 },
+          children: "\u2B06 \u4F1A\u5458\u5347\u7EA7\u8DEF\u5F84"
+        }
+      ),
+      subtitle && /* @__PURE__ */ (0, import_jsx_runtime285.jsx)(
+        "p",
+        {
+          "data-testid": "upgrade-path-subtitle",
+          style: { margin: "4px 0 0", fontSize: 13, color: "#6b7280" },
+          children: subtitle
+        }
+      )
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime285.jsx)(
+      "div",
+      {
+        "data-testid": "tier-steps",
+        style: {
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 8,
+          overflowX: "auto",
+          paddingBottom: 12
+        },
+        children: tiers.map((tier, idx) => {
+          const isCurrent = idx === currentIdx;
+          const isPassed = currentIdx >= 0 && idx < currentIdx;
+          const isNext = currentIdx >= 0 && idx === currentIdx + 1;
+          return /* @__PURE__ */ (0, import_jsx_runtime285.jsxs)(import_react194.default.Fragment, { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime285.jsxs)(
+              "div",
+              {
+                "data-testid": `tier-node-${tier.key}`,
+                "data-current": isCurrent ? "true" : void 0,
+                "data-passed": isPassed ? "true" : void 0,
+                style: {
+                  minWidth: 180,
+                  maxWidth: 220,
+                  flexShrink: 0,
+                  borderRadius: 12,
+                  border: `2px solid ${isCurrent ? tier.color : "#e5e7eb"}`,
+                  background: isCurrent ? `${tier.color}10` : "#fff",
+                  padding: 16,
+                  position: "relative",
+                  boxShadow: isCurrent ? `0 0 0 2px ${tier.color}40, 0 4px 12px rgba(0,0,0,0.08)` : "0 1px 3px rgba(0,0,0,0.06)",
+                  opacity: isPassed ? 0.6 : 1,
+                  transition: "all 0.2s ease"
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime285.jsx)(
+                    "div",
+                    {
+                      style: {
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        backgroundColor: isPassed ? "#d1d5db" : tier.color,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#fff",
+                        fontWeight: 700,
+                        fontSize: 14,
+                        marginBottom: 10
+                      },
+                      children: tier.name.charAt(0).toUpperCase()
+                    }
+                  ),
+                  /* @__PURE__ */ (0, import_jsx_runtime285.jsxs)(
+                    "div",
+                    {
+                      style: {
+                        fontSize: 16,
+                        fontWeight: 700,
+                        color: isCurrent ? tier.color : "#111827",
+                        marginBottom: 4
+                      },
+                      children: [
+                        tier.name,
+                        isCurrent && /* @__PURE__ */ (0, import_jsx_runtime285.jsx)(
+                          "span",
+                          {
+                            style: {
+                              display: "inline-block",
+                              marginLeft: 6,
+                              fontSize: 11,
+                              backgroundColor: tier.color,
+                              color: "#fff",
+                              borderRadius: 4,
+                              padding: "1px 6px"
+                            },
+                            children: "\u5F53\u524D"
+                          }
+                        )
+                      ]
+                    }
+                  ),
+                  tier.requiredValue && /* @__PURE__ */ (0, import_jsx_runtime285.jsxs)("div", { style: { fontSize: 12, color: "#6b7280", marginBottom: 8 }, children: [
+                    "\u9700 ",
+                    tier.requiredValue
+                  ] }),
+                  tier.conditions && tier.conditions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime285.jsx)("div", { style: { marginTop: 8 }, children: tier.conditions.map((cond, ci) => /* @__PURE__ */ (0, import_jsx_runtime285.jsxs)(
+                    "div",
+                    {
+                      "data-testid": `condition-${tier.key}-${ci}`,
+                      style: {
+                        fontSize: 12,
+                        color: cond.met ? "#16a34a" : "#9ca3af",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        marginBottom: 2
+                      },
+                      children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime285.jsx)("span", { children: cond.met ? "\u2705" : "\u2B1C" }),
+                        /* @__PURE__ */ (0, import_jsx_runtime285.jsx)("span", { children: cond.label })
+                      ]
+                    },
+                    ci
+                  )) }),
+                  isNext && /* @__PURE__ */ (0, import_jsx_runtime285.jsx)(
+                    "div",
+                    {
+                      "data-testid": "next-tier-hint",
+                      style: {
+                        position: "absolute",
+                        bottom: -28,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        fontSize: 11,
+                        color: tier.color,
+                        whiteSpace: "nowrap",
+                        fontWeight: 600
+                      },
+                      children: "\u25BC \u4E0B\u4E00\u76EE\u6807"
+                    }
+                  )
+                ]
+              }
+            ),
+            idx < tiers.length - 1 && /* @__PURE__ */ (0, import_jsx_runtime285.jsx)(
+              "div",
+              {
+                "data-testid": `arrow-${tier.key}-to-${tiers[idx + 1].key}`,
+                style: {
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  paddingTop: 20,
+                  color: "#d1d5db",
+                  fontSize: 20
+                },
+                children: "\u2192"
+              }
+            )
+          ] }, tier.key);
+        })
+      }
+    ),
+    tiers.some((t) => t.benefits && t.benefits.length > 0) && /* @__PURE__ */ (0, import_jsx_runtime285.jsxs)(
+      "div",
+      {
+        "data-testid": "benefits-section",
+        style: {
+          marginTop: 32,
+          padding: 16,
+          backgroundColor: "#f9fafb",
+          borderRadius: 8
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime285.jsx)(
+            "h3",
+            {
+              "data-testid": "benefits-title",
+              style: { fontSize: 14, fontWeight: 600, margin: "0 0 12px" },
+              children: "\u{1F381} \u5F53\u524D\u7B49\u7EA7\u6743\u76CA"
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime285.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: (currentIdx >= 0 ? tiers.slice(0, currentIdx + 1) : tiers).map(
+            (tier) => tier.benefits && tier.benefits.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime285.jsxs)(
+              "div",
+              {
+                "data-testid": `benefit-tier-${tier.key}`,
+                style: {
+                  flex: "1 1 180px",
+                  padding: 12,
+                  borderRadius: 8,
+                  backgroundColor: "#fff",
+                  border: `1px solid ${tier.color}30`
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime285.jsx)("div", { style: { fontWeight: 600, fontSize: 13, color: tier.color, marginBottom: 6 }, children: tier.name }),
+                  tier.benefits.map((b, bi) => /* @__PURE__ */ (0, import_jsx_runtime285.jsxs)(
+                    "div",
+                    {
+                      style: {
+                        fontSize: 12,
+                        color: "#374151",
+                        marginBottom: 2,
+                        paddingLeft: 8
+                      },
+                      children: [
+                        "\u2022 ",
+                        b
+                      ]
+                    },
+                    bi
+                  ))
+                ]
+              },
+              tier.key
+            )
+          ) })
+        ]
+      }
+    )
+  ] });
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -72403,6 +72653,7 @@ function InfiniteScroll({
   MemberRFMAnalysisPanel,
   MemberRechargePanel,
   MemberTierDistribution,
+  MemberUpgradePath,
   Mentions,
   MetricsDashboardGrid,
   Modal,
