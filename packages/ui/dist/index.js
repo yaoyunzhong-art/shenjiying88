@@ -250,6 +250,7 @@ __export(index_exports, {
   PortalConsumerGovernanceSection: () => PortalConsumerGovernanceSection,
   PortalList: () => PortalList,
   PredictionAnalysisPanel: () => PredictionAnalysisPanel,
+  PrizeRedemptionCounter: () => PrizeRedemptionCounter,
   ProcurementManagerDashboard: () => ProcurementManagerDashboard,
   ProductManagerDashboard: () => ProductManagerDashboard,
   Progress: () => Progress,
@@ -72931,6 +72932,365 @@ function MemberPointHistory({
     ] })
   ] });
 }
+
+// src/components/PrizeRedemptionCounter.tsx
+var import_react197 = require("react");
+var import_jsx_runtime289 = require("react/jsx-runtime");
+var CATEGORY_LABELS10 = {
+  toy: "\u73A9\u5177",
+  plush: "\u6BDB\u7ED2\u516C\u4ED4",
+  figure: "\u624B\u529E\u6A21\u578B",
+  card: "\u5361\u724C",
+  snack: "\u96F6\u98DF",
+  other: "\u5176\u4ED6"
+};
+var CATEGORY_ICONS4 = {
+  toy: "\u{1F9F8}",
+  plush: "\u{1F43B}",
+  figure: "\u{1F38E}",
+  card: "\u{1F0CF}",
+  snack: "\u{1F37F}",
+  other: "\u{1F381}"
+};
+function formatPoints2(n) {
+  return n.toLocaleString();
+}
+function PrizeCard({ prize, selectedQty, availablePoints, onAdd, onRemove }) {
+  const canAfford = prize.points <= availablePoints;
+  const disabled = !canAfford || prize.stock <= 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)(
+    "div",
+    {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "12px 16px",
+        borderRadius: 10,
+        background: prize.popular ? "rgba(251,191,36,0.08)" : "rgba(30,41,59,0.6)",
+        border: `1px solid ${prize.popular ? "rgba(251,191,36,0.25)" : "rgba(148,163,184,0.15)"}`,
+        transition: "border 0.2s"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime289.jsx)(
+          "div",
+          {
+            style: {
+              width: 48,
+              height: 48,
+              borderRadius: 8,
+              background: "rgba(148,163,184,0.1)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 24,
+              flexShrink: 0
+            },
+            children: prize.imageUrl ? /* @__PURE__ */ (0, import_jsx_runtime289.jsx)("img", { src: prize.imageUrl, alt: prize.name, style: { width: 48, height: 48, borderRadius: 8, objectFit: "cover" } }) : CATEGORY_ICONS4[prize.category]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime289.jsx)("span", { style: { fontWeight: 600, fontSize: 14, color: "#e2e8f0" }, children: prize.name }),
+            prize.popular && /* @__PURE__ */ (0, import_jsx_runtime289.jsx)("span", { style: { fontSize: 11, padding: "1px 6px", borderRadius: 4, background: "rgba(251,191,36,0.2)", color: "#fbbf24" }, children: "\u70ED\u95E8" })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)("div", { style: { display: "flex", gap: 12, marginTop: 4, fontSize: 12, color: "#94a3b8" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)("span", { children: [
+              formatPoints2(prize.points),
+              " \u79EF\u5206"
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)("span", { children: [
+              "\u5E93\u5B58: ",
+              prize.stock
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime289.jsx)("span", { children: CATEGORY_LABELS10[prize.category] })
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime289.jsx)(
+            "button",
+            {
+              onClick: () => onRemove(prize.id),
+              disabled: selectedQty <= 0,
+              style: {
+                width: 28,
+                height: 28,
+                borderRadius: 6,
+                border: "1px solid rgba(148,163,184,0.25)",
+                background: "rgba(15,23,42,0.5)",
+                color: selectedQty > 0 ? "#e2e8f0" : "#475569",
+                cursor: selectedQty > 0 ? "pointer" : "not-allowed",
+                fontSize: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              },
+              children: "\u2212"
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime289.jsx)("span", { style: { minWidth: 24, textAlign: "center", fontWeight: 600, color: "#e2e8f0" }, children: selectedQty }),
+          /* @__PURE__ */ (0, import_jsx_runtime289.jsx)(
+            "button",
+            {
+              onClick: () => onAdd(prize.id),
+              disabled: disabled || selectedQty >= prize.stock,
+              style: {
+                width: 28,
+                height: 28,
+                borderRadius: 6,
+                border: "1px solid rgba(99,102,241,0.4)",
+                background: "rgba(99,102,241,0.15)",
+                color: disabled || selectedQty >= prize.stock ? "#475569" : "#818cf8",
+                cursor: disabled || selectedQty >= prize.stock ? "not-allowed" : "pointer",
+                fontSize: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              },
+              children: "+"
+            }
+          )
+        ] })
+      ]
+    }
+  );
+}
+function PrizeRedemptionCounter({
+  availablePoints,
+  prizes,
+  selected,
+  onSelectionChange,
+  onRedeem,
+  searchKeyword = "",
+  categoryFilter = "ALL",
+  isProcessing = false,
+  emptyText = "\u6682\u65E0\u53EF\u7528\u5956\u54C1"
+}) {
+  const [search, setSearch] = (0, import_react197.useState)(searchKeyword);
+  const [category, setCategory] = (0, import_react197.useState)(categoryFilter);
+  const filteredPrizes = (0, import_react197.useMemo)(() => {
+    let list = prizes;
+    if (category !== "ALL") {
+      list = list.filter((p) => p.category === category);
+    }
+    if (search.trim()) {
+      const kw = search.trim().toLowerCase();
+      list = list.filter((p) => p.name.toLowerCase().includes(kw));
+    }
+    return list;
+  }, [prizes, category, search]);
+  const totalSelectedPoints = (0, import_react197.useMemo)(() => {
+    let sum2 = 0;
+    for (const [id, qty] of selected.entries()) {
+      const prize = prizes.find((p) => p.id === id);
+      if (prize) sum2 += prize.points * qty;
+    }
+    return sum2;
+  }, [selected, prizes]);
+  const remaining = availablePoints - totalSelectedPoints;
+  const canRedeem = totalSelectedPoints > 0 && remaining >= 0 && !isProcessing;
+  const handleAdd = (0, import_react197.useCallback)(
+    (id) => {
+      const next = new Map(selected);
+      next.set(id, (next.get(id) || 0) + 1);
+      onSelectionChange(next);
+    },
+    [selected, onSelectionChange]
+  );
+  const handleRemove = (0, import_react197.useCallback)(
+    (id) => {
+      const next = new Map(selected);
+      const cur = next.get(id) || 0;
+      if (cur <= 1) {
+        next.delete(id);
+      } else {
+        next.set(id, cur - 1);
+      }
+      onSelectionChange(next);
+    },
+    [selected, onSelectionChange]
+  );
+  const handleRedeem = (0, import_react197.useCallback)(() => {
+    const records = [];
+    for (const [id, qty] of selected.entries()) {
+      const prize = prizes.find((p) => p.id === id);
+      if (prize && qty > 0) {
+        records.push({
+          prizeId: id,
+          prizeName: prize.name,
+          points: prize.points,
+          quantity: qty,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        });
+      }
+    }
+    if (records.length > 0) {
+      onRedeem(records);
+    }
+  }, [selected, prizes, onRedeem]);
+  const categories = [
+    { key: "ALL", label: "\u5168\u90E8" },
+    ...["toy", "plush", "figure", "card", "snack", "other"].map((k) => ({
+      key: k,
+      label: CATEGORY_LABELS10[k]
+    }))
+  ];
+  return /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)(
+    "div",
+    {
+      role: "region",
+      "aria-label": "\u79EF\u5206\u5151\u6362\u5956\u54C1",
+      style: {
+        borderRadius: 12,
+        border: "1px solid rgba(148,163,184,0.2)",
+        background: "rgba(15,23,42,0.4)",
+        overflow: "hidden"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)(
+          "div",
+          {
+            style: {
+              padding: "16px 20px",
+              borderBottom: "1px solid rgba(148,163,184,0.15)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 12
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime289.jsx)("h3", { style: { margin: 0, fontSize: 16, fontWeight: 600, color: "#e2e8f0" }, children: "\u{1F381} \u79EF\u5206\u5151\u6362" }),
+                /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)("p", { style: { margin: "4px 0 0", fontSize: 13, color: "#94a3b8" }, children: [
+                  "\u53EF\u7528\u79EF\u5206: ",
+                  /* @__PURE__ */ (0, import_jsx_runtime289.jsx)("strong", { style: { color: "#fbbf24" }, children: formatPoints2(availablePoints) }),
+                  totalSelectedPoints > 0 && /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)("span", { children: [
+                    " \xB7 \u5DF2\u9009: ",
+                    /* @__PURE__ */ (0, import_jsx_runtime289.jsx)("strong", { style: { color: "#818cf8" }, children: formatPoints2(totalSelectedPoints) })
+                  ] }),
+                  remaining >= 0 && totalSelectedPoints > 0 && /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)("span", { children: [
+                    " \xB7 \u5269\u4F59: ",
+                    /* @__PURE__ */ (0, import_jsx_runtime289.jsx)("strong", { style: { color: remaining > 0 ? "#4ade80" : "#f87171" }, children: formatPoints2(remaining) })
+                  ] })
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime289.jsx)(
+                "button",
+                {
+                  onClick: handleRedeem,
+                  disabled: !canRedeem,
+                  style: {
+                    padding: "10px 24px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: canRedeem ? "linear-gradient(135deg, #6366f1, #8b5cf6)" : "rgba(148,163,184,0.15)",
+                    color: canRedeem ? "#fff" : "#475569",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: canRedeem ? "pointer" : "not-allowed",
+                    transition: "opacity 0.2s",
+                    whiteSpace: "nowrap"
+                  },
+                  children: isProcessing ? "\u5151\u6362\u4E2D..." : `\u786E\u8BA4\u5151\u6362 (${[...selected.values()].reduce((a, b) => a + b, 0)} \u4EF6)`
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime289.jsxs)(
+          "div",
+          {
+            style: {
+              padding: "12px 20px",
+              borderBottom: "1px solid rgba(148,163,184,0.1)",
+              display: "flex",
+              gap: 12,
+              flexWrap: "wrap",
+              alignItems: "center"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime289.jsx)("div", { style: { display: "flex", gap: 4, flexWrap: "wrap" }, children: categories.map((c) => /* @__PURE__ */ (0, import_jsx_runtime289.jsx)(
+                "button",
+                {
+                  onClick: () => setCategory(c.key),
+                  style: {
+                    padding: "4px 12px",
+                    borderRadius: 20,
+                    border: "1px solid",
+                    borderColor: category === c.key ? "rgba(99,102,241,0.5)" : "rgba(148,163,184,0.2)",
+                    background: category === c.key ? "rgba(99,102,241,0.15)" : "transparent",
+                    color: category === c.key ? "#818cf8" : "#94a3b8",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    transition: "all 0.15s"
+                  },
+                  children: c.label
+                },
+                c.key
+              )) }),
+              /* @__PURE__ */ (0, import_jsx_runtime289.jsx)(
+                "input",
+                {
+                  "aria-label": "\u641C\u7D22\u5956\u54C1",
+                  placeholder: "\u641C\u7D22\u5956\u54C1\u540D\u79F0...",
+                  value: search,
+                  onChange: (e) => setSearch(e.target.value),
+                  style: {
+                    flex: 1,
+                    minWidth: 180,
+                    padding: "6px 12px",
+                    borderRadius: 8,
+                    border: "1px solid rgba(148,163,184,0.2)",
+                    background: "rgba(15,23,42,0.5)",
+                    color: "#e2e8f0",
+                    fontSize: 13,
+                    outline: "none"
+                  }
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime289.jsx)(
+          "div",
+          {
+            style: {
+              padding: 16,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8
+            },
+            role: "list",
+            "aria-label": "\u5956\u54C1\u5217\u8868",
+            children: filteredPrizes.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime289.jsx)(
+              "div",
+              {
+                style: {
+                  padding: 32,
+                  textAlign: "center",
+                  color: "#64748b",
+                  fontSize: 14
+                },
+                children: emptyText
+              }
+            ) : filteredPrizes.map((prize) => /* @__PURE__ */ (0, import_jsx_runtime289.jsx)(
+              PrizeCard,
+              {
+                prize,
+                selectedQty: selected.get(prize.id) || 0,
+                availablePoints: remaining,
+                onAdd: handleAdd,
+                onRemove: handleRemove
+              },
+              prize.id
+            ))
+          }
+        )
+      ]
+    }
+  );
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -73153,6 +73513,7 @@ function MemberPointHistory({
   PortalConsumerGovernanceSection,
   PortalList,
   PredictionAnalysisPanel,
+  PrizeRedemptionCounter,
   ProcurementManagerDashboard,
   ProductManagerDashboard,
   Progress,

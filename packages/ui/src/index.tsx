@@ -1439,3 +1439,12 @@ export type { MemberUpgradePathProps, UpgradeTierNode, UpgradeCondition } from '
 // --------------- MemberPointHistory ---------------
 export { MemberPointHistory } from './components/MemberPointHistory';
 export type { MemberPointHistoryProps, PointRecord, PointChangeType } from './components/MemberPointHistory';
+
+// --------------- PrizeRedemptionCounter ---------------
+export { PrizeRedemptionCounter } from './components/PrizeRedemptionCounter';
+export type {
+  PrizeRedemptionCounterProps,
+  PrizeItem,
+  PrizeCategory,
+  RedemptionRecord,
+} from './components/PrizeRedemptionCounter';
