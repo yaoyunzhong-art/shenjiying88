@@ -107,7 +107,7 @@ describe(`${ROLES.StoreManager} queue v3 角色测试`, () => {
     enqueue(controller, 't-smgr2', 'm-202', resourceId)
 
     // 叫号第一个
-    const called = controller.callNext(ctx, { resourceId })
+    const called = controller.callNext(ctx, { resourceId })!
     assert.ok(called, '叫号应返回排队的会员')
     assert.ok(called.queueNumber.startsWith('A'), '排队号应以 A 开头')
 
@@ -120,7 +120,7 @@ describe(`${ROLES.StoreManager} queue v3 角色测试`, () => {
     assert.equal(done.status, QueueStatus.Completed)
 
     // 叫号下一个
-    const called2 = controller.callNext(ctx, { resourceId })
+    const called2 = controller.callNext(ctx, { resourceId })!
     assert.ok(called2, '应可叫第二个')
   })
 
@@ -132,7 +132,7 @@ describe(`${ROLES.StoreManager} queue v3 角色测试`, () => {
     const e1 = enqueue(controller, 't-smgr3', 'm-301', resourceId)
     enqueue(controller, 't-smgr3', 'm-302', resourceId)
 
-    const called = controller.callNext(ctx, { resourceId })
+    const called = controller.callNext(ctx, { resourceId })!
     assert.ok(called)
 
     // no-show
@@ -140,7 +140,7 @@ describe(`${ROLES.StoreManager} queue v3 角色测试`, () => {
     assert.equal(noshow.status, QueueStatus.NoShow)
 
     // 恢复叫号第二个
-    const called2 = controller.callNext(ctx, { resourceId })
+    const called2 = controller.callNext(ctx, { resourceId })!
     assert.ok(called2)
     assert.notEqual(called2.id, called.id, '叫号 ID 不同')
   })
@@ -200,11 +200,11 @@ describe(`${ROLES.HR} queue v3 角色测试`, () => {
       enqueue(controller, 't-hr', `m-hr-${i + 1}`, resourceId)
     }
     // 叫号处理部分
-    let called = controller.callNext(ctx, { resourceId })
+    let called = controller.callNext(ctx, { resourceId })!
     controller.startService(ctx, called.id)
     controller.completeService(ctx, called.id)
 
-    called = controller.callNext(ctx, { resourceId })
+    called = controller.callNext(ctx, { resourceId })!
     controller.startService(ctx, called.id)
     controller.completeService(ctx, called.id)
 
@@ -268,11 +268,11 @@ describe(`${ROLES.Safety} queue v3 角色测试`, () => {
     enqueue(controller, 't-safety-b', 'm-sb-1', resourceId)
 
     // 各自叫号只能叫到自己的人
-    const calledA = controller.callNext(ctxA, { resourceId })
+    const calledA = controller.callNext(ctxA, { resourceId })!
     assert.equal(calledA.userId, 'm-sa-1', '租户 A 叫号应叫到 A 的会员')
 
     // 租户 B 叫号也正常
-    const calledB = controller.callNext(ctxB, { resourceId })
+    const calledB = controller.callNext(ctxB, { resourceId })!
     assert.equal(calledB.userId, 'm-sb-1', '租户 B 叫号应叫到 B 的会员')
   })
 
@@ -290,12 +290,12 @@ describe(`${ROLES.Safety} queue v3 角色测试`, () => {
     controller.completeService(ctx, e1.id)
 
     // 叫号第二个
-    const called2 = controller.callNext(ctx, { resourceId })
+    const called2 = controller.callNext(ctx, { resourceId })!
     // 被叫后 no-show
     controller.markNoShow(ctx, called2.id)
 
     // 没有更多排队，返回 null
-    const noMore = controller.callNext(ctx, { resourceId })
+    const noMore = controller.callNext(ctx, { resourceId })!
     assert.strictEqual(noMore, null, '排队已清空')
   })
 })
@@ -319,7 +319,7 @@ describe(`${ROLES.Guide} queue v3 角色测试`, () => {
     })
     assert.equal(pos2.position, 2, '第二个排队')
 
-    const called = controller.callNext(ctx, { resourceId })
+    const called = controller.callNext(ctx, { resourceId })!
     assert.equal(called.userId, 'm-gd-1', '先排的先叫号')
   })
 
@@ -329,7 +329,7 @@ describe(`${ROLES.Guide} queue v3 角色测试`, () => {
     const resourceId = 'machine-guide-02'
 
     enqueue(controller, 't-guide2', 'm-gd-c1', resourceId)
-    const called = controller.callNext(ctx, { resourceId })
+    const called = controller.callNext(ctx, { resourceId })!
     controller.startService(ctx, called.id)
     controller.completeService(ctx, called.id)
 
@@ -350,7 +350,7 @@ describe(`${ROLES.Ops} queue v3 角色测试`, () => {
     const e = enqueue(controller, 't-ops1', 'm-ops-1', resourceId)
     assert.equal(e.status, QueueStatus.Waiting)
 
-    const called = controller.callNext(ctx, { resourceId })
+    const called = controller.callNext(ctx, { resourceId })!
     assert.equal(called.status, QueueStatus.Called)
 
     const serving = controller.startService(ctx, called.id)
@@ -368,11 +368,11 @@ describe(`${ROLES.Ops} queue v3 角色测试`, () => {
     enqueue(controller, 't-ops2', 'm-ops-m2', 'machine-b')
     enqueue(controller, 't-ops2', 'm-ops-m3', 'machine-c')
 
-    const aCalled = controller.callNext(ctx, { resourceId: 'machine-a' })
+    const aCalled = controller.callNext(ctx, { resourceId: 'machine-a' })!
     assert.ok(aCalled, 'A 资源应被叫号')
     assert.equal(aCalled.userId, 'm-ops-m1')
 
-    const bCalled = controller.callNext(ctx, { resourceId: 'machine-b' })
+    const bCalled = controller.callNext(ctx, { resourceId: 'machine-b' })!
     assert.ok(bCalled, 'B 资源应被叫号')
     assert.equal(bCalled.userId, 'm-ops-m2')
   })
@@ -417,13 +417,13 @@ describe(`${ROLES.Teambuilding} queue v3 角色测试`, () => {
     assert.equal(status.waitingCount, 2, '离开后剩 2 人')
 
     // 叫号第一个
-    const called = controller.callNext(ctx, { resourceId })
+    const called = controller.callNext(ctx, { resourceId })!
     assert.equal(called.userId, 't-leave')
     controller.startService(ctx, called.id)
     controller.completeService(ctx, called.id)
 
     // 叫号下一个（跳过了离开的 t-stay）
-    const called2 = controller.callNext(ctx, { resourceId })
+    const called2 = controller.callNext(ctx, { resourceId })!
     assert.equal(called2.userId, 't-late', '离开者不占位置')
   })
 })

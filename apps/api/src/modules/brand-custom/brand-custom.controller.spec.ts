@@ -12,6 +12,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import 'reflect-metadata'
 import { BrandCustomController } from './brand-custom.controller'
 import { BrandCustomService } from './brand-custom.service'
+import { EmailTemplateTypeEnum } from './brand-custom.dto'
 
 describe('BrandCustomController', () => {
   let controller: BrandCustomController
@@ -400,12 +401,12 @@ describe('BrandCustomController', () => {
     it('正例: 创建欢迎邮件模板', () => {
       controller.registerTenant({ tenantId: 't1', brandName: '品牌' })
       const tmpl = controller.setEmailTemplate('t1', {
-        templateType: 'welcome',
+        templateType: EmailTemplateTypeEnum.WELCOME,
         subject: '欢迎 {{name}}',
         htmlContent: '<p>Hi {{name}}</p>',
         textContent: 'Hi {{name}}',
       })
-      expect(tmpl.templateType).toBe('welcome')
+      expect(tmpl.templateType).toBe(EmailTemplateTypeEnum.WELCOME)
       expect(tmpl.subject).toBe('欢迎 {{name}}')
       expect(tmpl.brandId).toBeTruthy()
     })
@@ -413,13 +414,13 @@ describe('BrandCustomController', () => {
     it('正例: 覆盖已有模板', () => {
       controller.registerTenant({ tenantId: 't1', brandName: '品牌' })
       controller.setEmailTemplate('t1', {
-        templateType: 'welcome',
+        templateType: EmailTemplateTypeEnum.WELCOME,
         subject: '原主题',
         htmlContent: '<p>旧</p>',
         textContent: '旧',
       })
       const updated = controller.setEmailTemplate('t1', {
-        templateType: 'welcome',
+        templateType: EmailTemplateTypeEnum.WELCOME,
         subject: '新主题',
         htmlContent: '<p>新</p>',
         textContent: '新',
@@ -430,7 +431,7 @@ describe('BrandCustomController', () => {
     it('反例: 不存在的租户应抛错', () => {
       expect(() =>
         controller.setEmailTemplate('nonexistent', {
-          templateType: 'welcome',
+          templateType: EmailTemplateTypeEnum.WELCOME,
           subject: 'S',
           htmlContent: 'H',
           textContent: 'T',
@@ -446,24 +447,24 @@ describe('BrandCustomController', () => {
     it('正例: 获取已创建的模板', () => {
       controller.registerTenant({ tenantId: 't1', brandName: '品牌' })
       controller.setEmailTemplate('t1', {
-        templateType: 'welcome',
+        templateType: EmailTemplateTypeEnum.WELCOME,
         subject: '欢迎',
         htmlContent: '<p>欢迎</p>',
         textContent: '欢迎',
       })
-      const tmpl = controller.getEmailTemplate('t1', 'welcome')
+      const tmpl = controller.getEmailTemplate('t1', EmailTemplateTypeEnum.WELCOME)
       expect(tmpl).not.toBeNull()
       expect(tmpl!.subject).toBe('欢迎')
     })
 
     it('反例: 获取不存在的模板类型返回 null', () => {
       controller.registerTenant({ tenantId: 't1', brandName: '品牌' })
-      const tmpl = controller.getEmailTemplate('t1', 'refund')
+      const tmpl = controller.getEmailTemplate('t1', EmailTemplateTypeEnum.REFUND)
       expect(tmpl).toBeNull()
     })
 
     it('反例: 不存在的租户应抛错', () => {
-      expect(() => controller.getEmailTemplate('nonexistent', 'welcome')).toThrow(
+      expect(() => controller.getEmailTemplate('nonexistent', EmailTemplateTypeEnum.WELCOME)).toThrow(
         /not found/i
       )
     })
@@ -476,13 +477,13 @@ describe('BrandCustomController', () => {
     it('正例: 渲染模板替换变量', () => {
       controller.registerTenant({ tenantId: 't1', brandName: '品牌' })
       controller.setEmailTemplate('t1', {
-        templateType: 'welcome',
+        templateType: EmailTemplateTypeEnum.WELCOME,
         subject: 'Hi {{name}}',
         htmlContent: '<p>Hello {{name}}, welcome to {{store}}</p>',
         textContent: 'Hello {{name}}',
       })
-      const rendered = controller.renderEmail('t1', 'welcome', {
-        templateType: 'welcome',
+      const rendered = controller.renderEmail('t1', EmailTemplateTypeEnum.WELCOME, {
+        templateType: EmailTemplateTypeEnum.WELCOME,
         variables: { name: 'Alice', store: 'Store#1' },
       })
       expect(rendered.subject).toBe('Hi Alice')
@@ -493,8 +494,8 @@ describe('BrandCustomController', () => {
 
     it('反例: 不存在的租户应抛错', () => {
       expect(() =>
-        controller.renderEmail('nonexistent', 'welcome', {
-          templateType: 'welcome',
+        controller.renderEmail('nonexistent', EmailTemplateTypeEnum.WELCOME, {
+          templateType: EmailTemplateTypeEnum.WELCOME,
           variables: {},
         })
       ).toThrow(/not found/i)
@@ -503,13 +504,13 @@ describe('BrandCustomController', () => {
     it('边界: 变量未提供时保留占位符', () => {
       controller.registerTenant({ tenantId: 't1', brandName: '品牌' })
       controller.setEmailTemplate('t1', {
-        templateType: 'welcome',
+        templateType: EmailTemplateTypeEnum.WELCOME,
         subject: 'Hello {{name}}',
         htmlContent: '<p>{{missing}}</p>',
         textContent: '{{missing}}',
       })
-      const rendered = controller.renderEmail('t1', 'welcome', {
-        templateType: 'welcome',
+      const rendered = controller.renderEmail('t1', EmailTemplateTypeEnum.WELCOME, {
+        templateType: EmailTemplateTypeEnum.WELCOME,
         variables: {},
       })
       expect(rendered.subject).toBe('Hello {{name}}')
@@ -519,13 +520,13 @@ describe('BrandCustomController', () => {
     it('边界: 特殊字符在模板变量中', () => {
       controller.registerTenant({ tenantId: 't1', brandName: '品牌' })
       controller.setEmailTemplate('t1', {
-        templateType: 'welcome',
+        templateType: EmailTemplateTypeEnum.WELCOME,
         subject: 'Hello {{name}}',
         htmlContent: '<p>{{name}}</p>',
         textContent: '{{name}}',
       })
-      const rendered = controller.renderEmail('t1', 'welcome', {
-        templateType: 'welcome',
+      const rendered = controller.renderEmail('t1', EmailTemplateTypeEnum.WELCOME, {
+        templateType: EmailTemplateTypeEnum.WELCOME,
         variables: { name: '<script>alert("xss")</script>' },
       })
       expect(rendered.subject).toContain('<script>')
@@ -539,13 +540,13 @@ describe('BrandCustomController', () => {
     it('正例: 发送测试邮件到有效收件人', async () => {
       controller.registerTenant({ tenantId: 't1', brandName: '品牌' })
       controller.setEmailTemplate('t1', {
-        templateType: 'welcome',
+        templateType: EmailTemplateTypeEnum.WELCOME,
         subject: 'Test',
         htmlContent: '<p>Test</p>',
         textContent: 'Test',
       })
-      const result = await controller.sendTestEmail('t1', 'welcome', {
-        templateType: 'welcome',
+      const result = await controller.sendTestEmail('t1', EmailTemplateTypeEnum.WELCOME, {
+        templateType: EmailTemplateTypeEnum.WELCOME,
         recipient: 'test@example.com',
       })
       expect(result.success).toBe(true)
@@ -553,8 +554,8 @@ describe('BrandCustomController', () => {
 
     it('反例: 模板不存在时返回 false', async () => {
       controller.registerTenant({ tenantId: 't1', brandName: '品牌' })
-      const result = await controller.sendTestEmail('t1', 'welcome', {
-        templateType: 'welcome',
+      const result = await controller.sendTestEmail('t1', EmailTemplateTypeEnum.WELCOME, {
+        templateType: EmailTemplateTypeEnum.WELCOME,
         recipient: 'test@example.com',
       })
       expect(result.success).toBe(false)
