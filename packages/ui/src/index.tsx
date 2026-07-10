@@ -1398,6 +1398,18 @@ export type {
   DriftFeature,
 } from './components/DataDriftMonitorPanel';
 
+// --------------- AIAutomationSuggestionPanel ---------------
+export { AIAutomationSuggestionPanel } from './components/AIAutomationSuggestionPanel';
+export type {
+  AIAutomationSuggestionPanelProps,
+  AutomationSuggestion,
+  TriggerCondition,
+  TriggerConditionType,
+  AutomationAction,
+  SuggestionStatus,
+  ExpectedBenefit,
+} from './components/AIAutomationSuggestionPanel';
+
 // --------------- InfiniteScroll ---------------
 export { InfiniteScroll } from './components/InfiniteScroll';
 export type { InfiniteScrollProps } from './components/InfiniteScroll';

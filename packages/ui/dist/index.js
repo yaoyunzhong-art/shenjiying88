@@ -35,6 +35,7 @@ __export(index_exports, {
   AIAgentToolCallPanel: () => AIAgentToolCallPanel,
   AIAgentWorkloadDistributionPanel: () => AIAgentWorkloadDistributionPanel,
   AIAnalysisInsightsPanel: () => AIAnalysisInsightsPanel,
+  AIAutomationSuggestionPanel: () => AIAutomationSuggestionPanel,
   AICompetitiveAnalysisPanel: () => AICompetitiveAnalysisPanel,
   AIDecisionComparisonPanel: () => AIDecisionComparisonPanel,
   AIDecisionDistributionPanel: () => AIDecisionDistributionPanel,
@@ -616,8 +617,8 @@ function ArcadeRevenueCard({
   className
 }) {
   const onlineCount = machines.filter((m) => m.status === "online" || m.status === "full").length;
-  const totalTodayRevenue = machines.reduce((s, m) => s + m.todayRevenue, 0);
-  const totalTodayPlays = machines.reduce((s, m) => s + m.todayPlays, 0);
+  const totalTodayRevenue = machines.reduce((s2, m) => s2 + m.todayRevenue, 0);
+  const totalTodayPlays = machines.reduce((s2, m) => s2 + m.todayPlays, 0);
   const targetPct = dailyRevenueTarget && dailyRevenueTarget > 0 ? totalTodayRevenue / dailyRevenueTarget * 100 : 0;
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
     "div",
@@ -696,7 +697,7 @@ function ArcadeRevenueCard({
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
             "7\u65E5\u603B: ",
-            formatCurrency(machines.reduce((s, m) => s + m.weekRevenue, 0))
+            formatCurrency(machines.reduce((s2, m) => s2 + m.weekRevenue, 0))
           ] })
         ] }),
         footer && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: footerDivider, children: footer })
@@ -1232,10 +1233,10 @@ function ReceiptPreview({
 }) {
   const receiptRef = (0, import_react4.useRef)(null);
   const [printing, setPrinting] = (0, import_react4.useState)(false);
-  const subtotal = data.items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
-  const totalDiscount = data.items.reduce((s, it) => s + (it.discount ?? 0), 0);
+  const subtotal = data.items.reduce((s2, it) => s2 + it.unitPrice * it.quantity, 0);
+  const totalDiscount = data.items.reduce((s2, it) => s2 + (it.discount ?? 0), 0);
   const total = subtotal - totalDiscount;
-  const paidTotal = data.payments.reduce((s, p) => s + p.amount, 0);
+  const paidTotal = data.payments.reduce((s2, p) => s2 + p.amount, 0);
   const handlePrint = () => {
     setPrinting(true);
     setTimeout(() => {
@@ -3215,12 +3216,12 @@ function rgbToHsb(r, g, b) {
     else if (max === gg) h = ((bb - rr) / d + 2) * 60;
     else h = ((rr - gg) / d + 4) * 60;
   }
-  const s = max === 0 ? 0 : d / max * 100;
+  const s2 = max === 0 ? 0 : d / max * 100;
   const bv = max * 100;
-  return { h: Math.round(h), s: Math.round(s), b: Math.round(bv) };
+  return { h: Math.round(h), s: Math.round(s2), b: Math.round(bv) };
 }
-function hsbToRgb(h, s, bv) {
-  const sNorm = s / 100, bNorm = bv / 100;
+function hsbToRgb(h, s2, bv) {
+  const sNorm = s2 / 100, bNorm = bv / 100;
   const c = bNorm * sNorm;
   const hh = h / 60;
   const x = c * (1 - Math.abs(hh % 2 - 1));
@@ -3340,9 +3341,9 @@ function ColorPicker({
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-    const s = Math.round(x * 100);
+    const s2 = Math.round(x * 100);
     const bv = Math.round((1 - y) * 100);
-    const rgb = hsbToRgb(hsb.h, s, bv);
+    const rgb = hsbToRgb(hsb.h, s2, bv);
     onChange?.(rgbToHex(rgb.r, rgb.g, rgb.b));
   }, [disabled, hsb.h, onChange]);
   const handleHueChange = (0, import_react11.useCallback)((e) => {
@@ -5032,7 +5033,7 @@ function GaugeChart({
   const radius = size / 2 - arcWidth;
   const valueAngle = startAngle + normalizedValue / 100 * arcSpan;
   const activeColor = (0, import_react15.useMemo)(() => {
-    const seg = segments.find((s) => normalizedValue >= s.from && normalizedValue <= s.to) ?? segments[segments.length - 1];
+    const seg = segments.find((s2) => normalizedValue >= s2.from && normalizedValue <= s2.to) ?? segments[segments.length - 1];
     return seg?.color ?? "#94a3b8";
   }, [normalizedValue, segments]);
   const needleTip = polarToCartesian(cx, cy, radius - arcWidth / 2, valueAngle);
@@ -5227,13 +5228,13 @@ function FunnelChart({
 }) {
   const processedSteps = (0, import_react16.useMemo)(() => {
     if (!steps || steps.length === 0) return [];
-    const maxVal = Math.max(...steps.map((s) => s.value));
-    if (maxVal === 0) return steps.map((s, i) => ({ ...s, percent: 0, widthPct: 0, color: s.color ?? DEFAULT_PALETTE2[i % DEFAULT_PALETTE2.length] }));
-    return steps.map((s, i) => ({
-      ...s,
-      percent: s.value > 0 ? s.value / steps[0].value * 100 : 0,
-      widthPct: s.value > 0 ? s.value / maxVal * 100 : 0,
-      color: s.color ?? DEFAULT_PALETTE2[i % DEFAULT_PALETTE2.length]
+    const maxVal = Math.max(...steps.map((s2) => s2.value));
+    if (maxVal === 0) return steps.map((s2, i) => ({ ...s2, percent: 0, widthPct: 0, color: s2.color ?? DEFAULT_PALETTE2[i % DEFAULT_PALETTE2.length] }));
+    return steps.map((s2, i) => ({
+      ...s2,
+      percent: s2.value > 0 ? s2.value / steps[0].value * 100 : 0,
+      widthPct: s2.value > 0 ? s2.value / maxVal * 100 : 0,
+      color: s2.color ?? DEFAULT_PALETTE2[i % DEFAULT_PALETTE2.length]
     }));
   }, [steps]);
   const chartHeight = (0, import_react16.useMemo)(() => {
@@ -6658,7 +6659,7 @@ function RadarChart({
   style
 }) {
   const sideCount = dimensions.length;
-  const hasData = dimensions.length > 2 && series.length > 0 && series.every((s) => s.data.length === sideCount);
+  const hasData = dimensions.length > 2 && series.length > 0 && series.every((s2) => s2.data.length === sideCount);
   const padding = 50;
   const legendHeight = showLegend && series.length > 1 ? 32 : 0;
   const titleHeight = title ? 24 : 0;
@@ -6976,17 +6977,17 @@ function AIAgentThinkingPanel({
 }) {
   const [expandedSteps, setExpandedSteps] = (0, import_react20.useState)(() => {
     const map = {};
-    steps.forEach((s) => {
-      map[s.id] = defaultExpanded;
+    steps.forEach((s2) => {
+      map[s2.id] = defaultExpanded;
     });
     return map;
   });
   const toggleStep = (id) => {
     setExpandedSteps((prev) => ({ ...prev, [id]: !prev[id] }));
   };
-  const completedCount = steps.filter((s) => s.status === "completed").length;
-  const errorCount = steps.filter((s) => s.status === "error").length;
-  const avgConfidence = steps.filter((s) => s.confidence != null).reduce((acc, s) => acc + (s.confidence ?? 0), 0) / Math.max(steps.filter((s) => s.confidence != null).length, 1);
+  const completedCount = steps.filter((s2) => s2.status === "completed").length;
+  const errorCount = steps.filter((s2) => s2.status === "error").length;
+  const avgConfidence = steps.filter((s2) => s2.confidence != null).reduce((acc, s2) => acc + (s2.confidence ?? 0), 0) / Math.max(steps.filter((s2) => s2.confidence != null).length, 1);
   if (!thinking && steps.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
       "div",
@@ -7891,12 +7892,12 @@ function SuggestionChips({ suggestions, onSelect, disabled }) {
         flexWrap: "wrap",
         padding: "8px 0 4px"
       },
-      children: suggestions.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(
+      children: suggestions.map((s2, i) => /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(
         "button",
         {
           type: "button",
           disabled,
-          onClick: () => onSelect(s),
+          onClick: () => onSelect(s2),
           "data-testid": `suggestion-${i}`,
           style: {
             border: "1px solid #334155",
@@ -7910,7 +7911,7 @@ function SuggestionChips({ suggestions, onSelect, disabled }) {
             whiteSpace: "nowrap",
             transition: "background 0.15s"
           },
-          children: s
+          children: s2
         },
         i
       ))
@@ -8020,8 +8021,8 @@ function AIAgentChatPanel({
     [handleSend]
   );
   const handleSuggestionClick = (0, import_react22.useCallback)(
-    (s) => {
-      setInput(s);
+    (s2) => {
+      setInput(s2);
       if (inputRef.current) {
         inputRef.current.focus();
       }
@@ -8379,10 +8380,10 @@ function AIAgentWorkloadDistributionPanel(props) {
     const online = agents.filter((a) => a.status === "online").length;
     const busy = agents.filter((a) => a.status === "busy").length;
     const away = agents.filter((a) => a.status === "away").length;
-    const activeSum = agents.reduce((s, a) => s + a.activeTasks, 0);
-    const pendingSum = agents.reduce((s, a) => s + a.pendingTasks, 0);
-    const completedSum = agents.reduce((s, a) => s + a.completedToday, 0);
-    const avgSatisfaction = total > 0 ? agents.reduce((s, a) => s + a.satisfactionRate, 0) / total : 0;
+    const activeSum = agents.reduce((s2, a) => s2 + a.activeTasks, 0);
+    const pendingSum = agents.reduce((s2, a) => s2 + a.pendingTasks, 0);
+    const completedSum = agents.reduce((s2, a) => s2 + a.completedToday, 0);
+    const avgSatisfaction = total > 0 ? agents.reduce((s2, a) => s2 + a.satisfactionRate, 0) / total : 0;
     return { total, online, busy, away, activeSum, pendingSum, completedSum, avgSatisfaction };
   }, [agents]);
   const sorted = (0, import_react23.useMemo)(
@@ -8569,20 +8570,20 @@ function LoadingState({ compact }) {
   )) });
 }
 function StatusBadge({ status }) {
-  const s = statusStyle(status);
+  const s2 = statusStyle(status);
   return /* @__PURE__ */ (0, import_jsx_runtime35.jsx)(
     "span",
     {
       style: {
         fontSize: 11,
         fontWeight: 600,
-        color: s.color,
-        background: s.bg,
+        color: s2.color,
+        background: s2.bg,
         padding: "2px 8px",
         borderRadius: 4,
         whiteSpace: "nowrap"
       },
-      children: s.label
+      children: s2.label
     }
   );
 }
@@ -10378,8 +10379,8 @@ var AIDemandForecastPanel = ({
   "data-testid": testId
 }) => {
   const displayTitle = title ?? `AI ${DIMENSION_LABELS[dimension]}`;
-  const computedTotal = totalForecast ?? entries.reduce((s, e) => s + e.forecastValue, 0);
-  const computedChange = totalChangePercent ?? (entries.length > 0 ? entries.reduce((s, e) => s + e.changePercent, 0) / entries.length : 0);
+  const computedTotal = totalForecast ?? entries.reduce((s2, e) => s2 + e.forecastValue, 0);
+  const computedChange = totalChangePercent ?? (entries.length > 0 ? entries.reduce((s2, e) => s2 + e.changePercent, 0) / entries.length : 0);
   const totalTrend = getTrend(computedChange);
   const isEmpty = entries.length === 0;
   const confidenceStats = (0, import_react29.useMemo)(() => {
@@ -10466,20 +10467,20 @@ var AIDemandForecastPanel = ({
                       { count: confidenceStats.high, color: "#22c55e", label: "\u9AD8" },
                       { count: confidenceStats.mid, color: "#f59e0b", label: "\u4E2D" },
                       { count: confidenceStats.low, color: "#ef4444", label: "\u4F4E" }
-                    ].filter((s) => s.count > 0).map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
+                    ].filter((s2) => s2.count > 0).map((s2, i) => /* @__PURE__ */ (0, import_jsx_runtime44.jsxs)(
                       "span",
                       {
                         style: {
                           fontSize: 10,
                           padding: "1px 5px",
                           borderRadius: 4,
-                          background: `${s.color}15`,
-                          color: s.color,
+                          background: `${s2.color}15`,
+                          color: s2.color,
                           fontWeight: 500
                         },
                         children: [
-                          s.count,
-                          s.label
+                          s2.count,
+                          s2.label
                         ]
                       },
                       i
@@ -10759,7 +10760,7 @@ function AIExperimentOptimizationPanel({
         suggestions.length,
         ")"
       ] }),
-      suggestions.map((s) => /* @__PURE__ */ (0, import_jsx_runtime45.jsx)(SuggestionCard, { suggestion: s }, s.id))
+      suggestions.map((s2) => /* @__PURE__ */ (0, import_jsx_runtime45.jsx)(SuggestionCard, { suggestion: s2 }, s2.id))
     ] })
   ] });
 }
@@ -11223,13 +11224,13 @@ function AICompetitiveAnalysisPanel({
       dim.key
     )) }) }),
     /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(Card, { title: "\u5BF9\u624B\u52A8\u6001", children: /* @__PURE__ */ (0, import_jsx_runtime47.jsx)("div", { style: styles2.entries, children: sortedEntries.map((entry, idx) => /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(CompetitorEntryCard, { entry }, `${entry.name}-${idx}`)) }) }),
-    suggestions && suggestions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(Card, { title: "AI \u7B56\u7565\u5EFA\u8BAE", children: /* @__PURE__ */ (0, import_jsx_runtime47.jsx)("div", { style: styles2.suggestions, children: suggestions.map((s) => /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(
+    suggestions && suggestions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(Card, { title: "AI \u7B56\u7565\u5EFA\u8BAE", children: /* @__PURE__ */ (0, import_jsx_runtime47.jsx)("div", { style: styles2.suggestions, children: suggestions.map((s2) => /* @__PURE__ */ (0, import_jsx_runtime47.jsx)(
       SuggestionCard2,
       {
-        suggestion: s,
+        suggestion: s2,
         onClick: onSuggestionClick
       },
-      s.id
+      s2.id
     )) }) })
   ] });
 }
@@ -11268,7 +11269,7 @@ function formatTime2(iso) {
   }
 }
 function StatusBadge3({ status }) {
-  const s = STATUS_MAP[status];
+  const s2 = STATUS_MAP[status];
   return /* @__PURE__ */ (0, import_jsx_runtime48.jsxs)(
     "span",
     {
@@ -11280,8 +11281,8 @@ function StatusBadge3({ status }) {
         borderRadius: 4,
         fontSize: 12,
         fontWeight: 500,
-        color: s.color,
-        backgroundColor: s.bg,
+        color: s2.color,
+        backgroundColor: s2.bg,
         whiteSpace: "nowrap"
       },
       children: [
@@ -11289,10 +11290,10 @@ function StatusBadge3({ status }) {
           width: 6,
           height: 6,
           borderRadius: "50%",
-          backgroundColor: s.color,
+          backgroundColor: s2.color,
           flexShrink: 0
         } }),
-        s.label
+        s2.label
       ]
     }
   );
@@ -11327,8 +11328,8 @@ function SummaryBar({ records }) {
     const failure = records.filter((r) => r.status === "failure").length;
     const partial = records.filter((r) => r.status === "partial").length;
     const skipped = records.filter((r) => r.status === "skipped").length;
-    const avgDuration = total2 > 0 ? Math.round(records.reduce((s, r) => s + r.durationMs, 0) / total2) : 0;
-    const totalAffected = records.reduce((s, r) => s + r.affectedCount, 0);
+    const avgDuration = total2 > 0 ? Math.round(records.reduce((s2, r) => s2 + r.durationMs, 0) / total2) : 0;
+    const totalAffected = records.reduce((s2, r) => s2 + r.affectedCount, 0);
     return { total: total2, success, failure, partial, skipped, avgDuration, totalAffected };
   }, [records]);
   if (records.length === 0) return null;
@@ -11337,8 +11338,8 @@ function SummaryBar({ records }) {
     { label: "\u90E8\u5206", count: stats.partial, color: "#f59e0b" },
     { label: "\u5931\u8D25", count: stats.failure, color: "#ef4444" },
     { label: "\u8DF3\u8FC7", count: stats.skipped, color: "#9ca3af" }
-  ].filter((s) => s.count > 0);
-  const total = segments.reduce((s, seg) => s + seg.count, 0) || 1;
+  ].filter((s2) => s2.count > 0);
+  const total = segments.reduce((s2, seg) => s2 + seg.count, 0) || 1;
   return /* @__PURE__ */ (0, import_jsx_runtime48.jsxs)("div", { style: {
     display: "flex",
     alignItems: "center",
@@ -11973,13 +11974,13 @@ function AnomalyAlertPanel({
   const [severityFilter, setSeverityFilter] = (0, import_react34.useState)("all");
   const [sourceFilter, setSourceFilter] = (0, import_react34.useState)("all");
   const summary = (0, import_react34.useMemo)(() => {
-    const s = { total: 0, unacknowledged: 0, critical: 0, high: 0, medium: 0, low: 0 };
+    const s2 = { total: 0, unacknowledged: 0, critical: 0, high: 0, medium: 0, low: 0 };
     for (const a of alerts) {
-      s.total++;
-      if (!a.acknowledged) s.unacknowledged++;
-      s[a.severity]++;
+      s2.total++;
+      if (!a.acknowledged) s2.unacknowledged++;
+      s2[a.severity]++;
     }
-    return s;
+    return s2;
   }, [alerts]);
   const filtered = (0, import_react34.useMemo)(() => {
     let list = [...alerts];
@@ -12316,9 +12317,9 @@ var StatSummary = ({ data }) => {
   const prev = data.length > 1 ? data[data.length - 2] : null;
   const stats = (0, import_react35.useMemo)(() => {
     if (!last) return [];
-    const totalAvg = Math.round(data.reduce((s, d) => s + d.total, 0) / data.length);
-    const criticalTotal = data.reduce((s, d) => s + d.critical, 0);
-    const resolvedTotal = data.reduce((s, d) => s + d.resolved, 0);
+    const totalAvg = Math.round(data.reduce((s2, d) => s2 + d.total, 0) / data.length);
+    const criticalTotal = data.reduce((s2, d) => s2 + d.critical, 0);
+    const resolvedTotal = data.reduce((s2, d) => s2 + d.resolved, 0);
     const resolutionRate = totalAvg > 0 ? Math.round(resolvedTotal / (data.length * totalAvg) * 100) : 0;
     const totalDelta = prev && prev.total > 0 ? ((last.total - prev.total) / prev.total * 100).toFixed(1) : null;
     const items = [
@@ -12440,12 +12441,12 @@ var AnomalyAlertTrendPanel = ({
         if (chunk.length === 0) continue;
         weeks.push({
           date: chunk[0].date,
-          total: chunk.reduce((s, d) => s + d.total, 0),
-          critical: chunk.reduce((s, d) => s + d.critical, 0),
-          high: chunk.reduce((s, d) => s + d.high, 0),
-          medium: chunk.reduce((s, d) => s + d.medium, 0),
-          low: chunk.reduce((s, d) => s + d.low, 0),
-          resolved: chunk.reduce((s, d) => s + d.resolved, 0)
+          total: chunk.reduce((s2, d) => s2 + d.total, 0),
+          critical: chunk.reduce((s2, d) => s2 + d.critical, 0),
+          high: chunk.reduce((s2, d) => s2 + d.high, 0),
+          medium: chunk.reduce((s2, d) => s2 + d.medium, 0),
+          low: chunk.reduce((s2, d) => s2 + d.low, 0),
+          resolved: chunk.reduce((s2, d) => s2 + d.resolved, 0)
         });
       }
       return weeks;
@@ -12461,12 +12462,12 @@ var AnomalyAlertTrendPanel = ({
       for (const [key, items] of monthMap) {
         months.push({
           date: key,
-          total: items.reduce((s, d) => s + d.total, 0),
-          critical: items.reduce((s, d) => s + d.critical, 0),
-          high: items.reduce((s, d) => s + d.high, 0),
-          medium: items.reduce((s, d) => s + d.medium, 0),
-          low: items.reduce((s, d) => s + d.low, 0),
-          resolved: items.reduce((s, d) => s + d.resolved, 0)
+          total: items.reduce((s2, d) => s2 + d.total, 0),
+          critical: items.reduce((s2, d) => s2 + d.critical, 0),
+          high: items.reduce((s2, d) => s2 + d.high, 0),
+          medium: items.reduce((s2, d) => s2 + d.medium, 0),
+          low: items.reduce((s2, d) => s2 + d.low, 0),
+          resolved: items.reduce((s2, d) => s2 + d.resolved, 0)
         });
       }
       return months;
@@ -13172,17 +13173,17 @@ function urgencyMeta(u) {
       return { label: "\u4F4E", variant: "neutral" };
   }
 }
-function supportStatusLabel(s) {
+function supportStatusLabel(s2) {
   const map = {
     open: "\u5F85\u5904\u7406",
     processing: "\u5904\u7406\u4E2D",
     resolved: "\u5DF2\u89E3\u51B3",
     closed: "\u5DF2\u5173\u95ED"
   };
-  return map[s];
+  return map[s2];
 }
-function inspectionStatusMeta(s) {
-  switch (s) {
+function inspectionStatusMeta(s2) {
+  switch (s2) {
     case "pending":
       return { label: "\u5F85\u6267\u884C", variant: "warning" };
     case "in_progress":
@@ -13240,7 +13241,7 @@ function FranchiseOperationsDashboard({
   const filteredStores = (0, import_react36.useMemo)(() => {
     if (!stores) return [];
     if (regionFilter === "all") return stores;
-    return stores.filter((s) => s.region === regionFilter);
+    return stores.filter((s2) => s2.region === regionFilter);
   }, [stores, regionFilter]);
   const storeColumns = (0, import_react36.useMemo)(() => [
     { key: "name", header: "\u95E8\u5E97\u540D\u79F0", width: "auto", render: (row) => /* @__PURE__ */ (0, import_jsx_runtime54.jsx)("span", { style: { fontSize: 13, color: "#e2e8f0" }, children: row.name }) },
@@ -13708,7 +13709,7 @@ function TrainingManagerDashboard({
             {
               columns: compact ? compactSessionColumns : sessionColumns,
               data: todaySessions,
-              rowKey: (s) => s.id,
+              rowKey: (s2) => s2.id,
               compact
             }
           )
@@ -14161,7 +14162,7 @@ function RegionalManagerDashboard({
       {
         columns: STORE_COLUMNS,
         rows: stores,
-        rowKey: (s) => s.id,
+        rowKey: (s2) => s2.id,
         compact: true,
         emptyText: "\u6682\u65E0\u95E8\u5E97\u6570\u636E"
       }
@@ -14746,7 +14747,7 @@ function StaffShiftSchedulePanel({
               /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
                 StatusBadge2,
                 {
-                  label: shifts.reduce((acc, s) => acc + s.assignments.length, 0) + " \u4E2A\u73ED\u6B21",
+                  label: shifts.reduce((acc, s2) => acc + s2.assignments.length, 0) + " \u4E2A\u73ED\u6B21",
                   variant: "info",
                   size: "sm"
                 }
@@ -14795,12 +14796,12 @@ function StaffShiftSchedulePanel({
                     onChange: (e) => setSelectedStaffId(e.target.value),
                     disabled: operating,
                     style: selectStyle,
-                    children: availableStaff.map((s) => /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("option", { value: s.id, children: [
-                      s.name,
+                    children: availableStaff.map((s2) => /* @__PURE__ */ (0, import_jsx_runtime58.jsxs)("option", { value: s2.id, children: [
+                      s2.name,
                       " (",
-                      s.role,
+                      s2.role,
                       ")"
-                    ] }, s.id))
+                    ] }, s2.id))
                   }
                 ),
                 /* @__PURE__ */ (0, import_jsx_runtime58.jsx)(
@@ -16812,11 +16813,11 @@ function AppointmentBookingPanel({
   const [submitError, setSubmitError] = (0, import_react42.useState)(null);
   const [bookSuccess, setBookSuccess] = (0, import_react42.useState)(false);
   const selectedServiceDetail = (0, import_react42.useMemo)(
-    () => services.find((s) => s.id === selectedService),
+    () => services.find((s2) => s2.id === selectedService),
     [services, selectedService]
   );
   const availableTimeSlots = (0, import_react42.useMemo)(
-    () => availableSlots.filter((s) => s.available),
+    () => availableSlots.filter((s2) => s2.available),
     [availableSlots]
   );
   const stats = (0, import_react42.useMemo)(() => {
@@ -16836,7 +16837,7 @@ function AppointmentBookingPanel({
       setSubmitError("\u9884\u7EA6\u529F\u80FD\u4E0D\u53EF\u7528");
       return;
     }
-    const slot = availableSlots.find((s) => s.startTime === selectedSlot);
+    const slot = availableSlots.find((s2) => s2.startTime === selectedSlot);
     if (!slot) {
       setSubmitError("\u6240\u9009\u65F6\u6BB5\u65E0\u6548");
       return;
@@ -17112,14 +17113,14 @@ function AppointmentBookingPanel({
             },
             children: [
               /* @__PURE__ */ (0, import_jsx_runtime65.jsx)("option", { value: "", children: "\u8BF7\u9009\u62E9\u670D\u52A1" }),
-              services.filter((s) => s.available).map((s) => /* @__PURE__ */ (0, import_jsx_runtime65.jsxs)("option", { value: s.id, children: [
-                s.name,
+              services.filter((s2) => s2.available).map((s2) => /* @__PURE__ */ (0, import_jsx_runtime65.jsxs)("option", { value: s2.id, children: [
+                s2.name,
                 " (",
-                s.duration,
+                s2.duration,
                 "\u5206\u949F / \xA5",
-                s.price,
+                s2.price,
                 ")"
-              ] }, s.id))
+              ] }, s2.id))
             ]
           }
         ),
@@ -17297,7 +17298,7 @@ function SalesConversionFunnel({
   className = "",
   "data-testid": dataTestId = "sales-conversion-funnel"
 }) {
-  const maxValue = (0, import_react43.useMemo)(() => Math.max(...stages.map((s) => s.value), 1), [stages]);
+  const maxValue = (0, import_react43.useMemo)(() => Math.max(...stages.map((s2) => s2.value), 1), [stages]);
   const processedStages = (0, import_react43.useMemo)(() => {
     return stages.map((stage, idx) => {
       const percent = maxValue > 0 ? stage.value / maxValue * 100 : 0;
@@ -17722,7 +17723,7 @@ function OperationsManagerDashboard({
       {
         columns: STORE_COLUMNS2,
         rows: stores,
-        rowKey: (s) => s.id,
+        rowKey: (s2) => s2.id,
         compact: true,
         emptyText: "\u6682\u65E0\u95E8\u5E97\u6570\u636E"
       }
@@ -18602,7 +18603,7 @@ function TagInput({
   const handlePaste = (0, import_react45.useCallback)(
     (e) => {
       const text = e.clipboardData.getData("text");
-      const parts = text.split(/[,;\n\r]+/).map((s) => s.trim()).filter(Boolean);
+      const parts = text.split(/[,;\n\r]+/).map((s2) => s2.trim()).filter(Boolean);
       if (parts.length > 1) {
         e.preventDefault();
         let newTags = [...tags];
@@ -18730,8 +18731,8 @@ function pad(n) {
 function formatDateValue(y, m, d) {
   return `${y}-${pad(m + 1)}-${pad(d)}`;
 }
-function formatTimeValue(h, min, s) {
-  return `${pad(h)}:${pad(min)}:${pad(s)}`;
+function formatTimeValue(h, min, s2) {
+  return `${pad(h)}:${pad(min)}:${pad(s2)}`;
 }
 function parseDateParts(dateStr) {
   if (!dateStr) return null;
@@ -18760,9 +18761,9 @@ function parseTimeParts(dateStr) {
   const h = parseInt(p0, 10);
   const m = parseInt(p1, 10);
   const p2 = parts.length >= 3 ? parts[2] : void 0;
-  const s = p2 ? parseInt(p2, 10) : 0;
-  if (isNaN(h) || isNaN(m) || isNaN(s)) return null;
-  return { h, m, s };
+  const s2 = p2 ? parseInt(p2, 10) : 0;
+  if (isNaN(h) || isNaN(m) || isNaN(s2)) return null;
+  return { h, m, s: s2 };
 }
 function isDateDisabled(dateStr, min, max) {
   if (!dateStr) return false;
@@ -19096,7 +19097,7 @@ function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
               {
                 type: "button",
                 style: spinBtnStyle,
-                onClick: () => setSecond((s) => (s + 1) % 60),
+                onClick: () => setSecond((s2) => (s2 + 1) % 60),
                 children: "\u25B2"
               }
             ),
@@ -19106,7 +19107,7 @@ function TimePopover({ selectedTime, onChange, onClose, anchorRect }) {
               {
                 type: "button",
                 style: spinBtnStyle,
-                onClick: () => setSecond((s) => (s - 1 + 60) % 60),
+                onClick: () => setSecond((s2) => (s2 - 1 + 60) % 60),
                 children: "\u25BC"
               }
             )
@@ -19389,13 +19390,13 @@ function parseTime(value) {
   if (parts.length < 2 || parts.length > 3) return null;
   const h = parseInt(parts[0], 10);
   const m = parseInt(parts[1], 10);
-  const s = parts[2] !== void 0 ? parseInt(parts[2], 10) : 0;
-  if (isNaN(h) || isNaN(m) || isNaN(s)) return null;
-  if (h < 0 || h > 23 || m < 0 || m > 59 || s < 0 || s > 59) return null;
-  return { h, m, s };
+  const s2 = parts[2] !== void 0 ? parseInt(parts[2], 10) : 0;
+  if (isNaN(h) || isNaN(m) || isNaN(s2)) return null;
+  if (h < 0 || h > 23 || m < 0 || m > 59 || s2 < 0 || s2 > 59) return null;
+  return { h, m, s: s2 };
 }
-function formatTime3(h, m, s, showSeconds) {
-  if (showSeconds) return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+function formatTime3(h, m, s2, showSeconds) {
+  if (showSeconds) return `${pad2(h)}:${pad2(m)}:${pad2(s2)}`;
   return `${pad2(h)}:${pad2(m)}`;
 }
 var styles3 = {
@@ -19510,12 +19511,12 @@ var TimePicker = ({
   }, [value, parsed]);
   const clampHour = (h) => Math.max(minHour, Math.min(maxHour, h));
   const clampMinute = (m) => Math.max(0, Math.min(59, Math.round(m / minuteStep) * minuteStep));
-  const clampSecond = (s) => Math.max(0, Math.min(59, s));
+  const clampSecond = (s2) => Math.max(0, Math.min(59, s2));
   const emit = (0, import_react47.useCallback)(
-    (h, m, s) => {
+    (h, m, s2) => {
       const hh = clampHour(h);
       const mm = clampMinute(m);
-      const ss = clampSecond(s);
+      const ss = clampSecond(s2);
       onChange?.(formatTime3(hh, mm, ss, showSeconds));
     },
     [onChange, showSeconds, clampHour, clampMinute, clampSecond]
@@ -25688,10 +25689,10 @@ function useFormSubmit({
     }
   }, [defaultErrorMessage, onSubmit, successMessage]);
   const clearError = (0, import_react64.useCallback)(() => {
-    setState((s) => ({ ...s, errorMessage: void 0 }));
+    setState((s2) => ({ ...s2, errorMessage: void 0 }));
   }, []);
   const clearSuccess = (0, import_react64.useCallback)(() => {
-    setState((s) => ({ ...s, successMessage: void 0 }));
+    setState((s2) => ({ ...s2, successMessage: void 0 }));
   }, []);
   const reset = (0, import_react64.useCallback)(() => {
     setState({ isSubmitting: false });
@@ -32377,7 +32378,7 @@ var COLOR_ERROR = "#ef4444";
 var COLOR_PENDING = "rgba(148, 163, 184, 0.4)";
 var COLOR_TEXT = "#e2e8f0";
 var COLOR_TEXT_MUTED = "#94a3b8";
-function stepIndicator(step, index, isActive, isCompleted, hasError, disabled, s) {
+function stepIndicator(step, index, isActive, isCompleted, hasError, disabled, s2) {
   let bg = COLOR_PENDING;
   let fg = COLOR_TEXT;
   if (hasError) {
@@ -32395,15 +32396,15 @@ function stepIndicator(step, index, isActive, isCompleted, hasError, disabled, s
       "div",
       {
         style: {
-          width: s.circle,
-          height: s.circle,
+          width: s2.circle,
+          height: s2.circle,
           borderRadius: "50%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           background: bg,
           color: fg,
-          fontSize: s.font,
+          fontSize: s2.font,
           fontWeight: 700,
           flexShrink: 0,
           opacity: disabled ? 0.45 : 1,
@@ -32418,15 +32419,15 @@ function stepIndicator(step, index, isActive, isCompleted, hasError, disabled, s
       "div",
       {
         style: {
-          width: s.circle,
-          height: s.circle,
+          width: s2.circle,
+          height: s2.circle,
           borderRadius: "50%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           background: bg,
           color: fg,
-          fontSize: s.font,
+          fontSize: s2.font,
           fontWeight: 700,
           flexShrink: 0,
           opacity: disabled ? 0.45 : 1,
@@ -32440,15 +32441,15 @@ function stepIndicator(step, index, isActive, isCompleted, hasError, disabled, s
     "div",
     {
       style: {
-        width: s.circle,
-        height: s.circle,
+        width: s2.circle,
+        height: s2.circle,
         borderRadius: "50%",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         background: bg,
         color: fg,
-        fontSize: s.font,
+        fontSize: s2.font,
         fontWeight: 700,
         flexShrink: 0,
         border: !isActive && !hasError ? "2px solid rgba(148, 163, 184, 0.35)" : void 0,
@@ -32473,7 +32474,7 @@ function Stepper({
   className,
   style
 }) {
-  const s = getSize(size);
+  const s2 = getSize(size);
   if (variant === "dots") {
     return /* @__PURE__ */ (0, import_jsx_runtime127.jsx)(
       "div",
@@ -32486,7 +32487,7 @@ function Stepper({
           display: "flex",
           flexDirection: orientation === "vertical" ? "column" : "row",
           alignItems: "center",
-          gap: s.gap,
+          gap: s2.gap,
           ...style
         },
         children: steps.map((step, i) => {
@@ -32508,8 +32509,8 @@ function Stepper({
                 if (!disabled && onStepClick) onStepClick(i);
               },
               style: {
-                width: s.circle * 0.5,
-                height: s.circle * 0.5,
+                width: s2.circle * 0.5,
+                height: s2.circle * 0.5,
                 borderRadius: "50%",
                 border: "none",
                 padding: 0,
@@ -32537,7 +32538,7 @@ function Stepper({
         style: {
           display: "flex",
           flexDirection: "column",
-          gap: s.gap,
+          gap: s2.gap,
           width: "100%",
           ...style
         },
@@ -32548,8 +32549,8 @@ function Stepper({
               "data-testid": dataTestId ? `${dataTestId}-progress-track` : void 0,
               style: {
                 width: "100%",
-                height: s.circle * 0.25,
-                borderRadius: s.circle * 0.125,
+                height: s2.circle * 0.25,
+                borderRadius: s2.circle * 0.125,
                 background: "rgba(148, 163, 184, 0.15)",
                 overflow: "hidden"
               },
@@ -32560,7 +32561,7 @@ function Stepper({
                   style: {
                     height: "100%",
                     width: `${pct}%`,
-                    borderRadius: s.circle * 0.125,
+                    borderRadius: s2.circle * 0.125,
                     background: COLOR_ACTIVE,
                     transition: "width 0.3s ease"
                   }
@@ -32574,7 +32575,7 @@ function Stepper({
               style: {
                 display: "flex",
                 justifyContent: "space-between",
-                fontSize: s.font,
+                fontSize: s2.font,
                 color: COLOR_TEXT_MUTED
               },
               children: [
@@ -32620,7 +32621,7 @@ function Stepper({
                 display: "flex",
                 flexDirection: isVertical ? "row" : "column",
                 alignItems: "center",
-                gap: s.gap,
+                gap: s2.gap,
                 flex: isVertical ? void 0 : "0 0 auto"
               },
               children: [
@@ -32648,7 +32649,7 @@ function Stepper({
                       cursor: disabled ? "not-allowed" : "pointer",
                       lineHeight: 1
                     },
-                    children: stepIndicator(step, i, isActive, isCompleted, hasError, disabled, s)
+                    children: stepIndicator(step, i, isActive, isCompleted, hasError, disabled, s2)
                   }
                 ),
                 /* @__PURE__ */ (0, import_jsx_runtime127.jsxs)(
@@ -32667,7 +32668,7 @@ function Stepper({
                         {
                           "data-testid": dataTestId ? `${dataTestId}-label-${i}` : void 0,
                           style: {
-                            fontSize: s.font,
+                            fontSize: s2.font,
                             fontWeight: isActive ? 700 : 500,
                             color: hasError ? COLOR_ERROR : isActive ? COLOR_ACTIVE : isCompleted ? COLOR_COMPLETED : COLOR_TEXT_MUTED,
                             lineHeight: 1.3,
@@ -32681,7 +32682,7 @@ function Stepper({
                         {
                           "data-testid": dataTestId ? `${dataTestId}-desc-${i}` : void 0,
                           style: {
-                            fontSize: s.font * 0.85,
+                            fontSize: s2.font * 0.85,
                             color: COLOR_TEXT_MUTED,
                             marginTop: 2,
                             lineHeight: 1.3
@@ -32700,12 +32701,12 @@ function Stepper({
             {
               "data-testid": dataTestId ? `${dataTestId}-connector-${i}` : void 0,
               style: {
-                flex: isVertical ? `0 0 ${s.circle + s.gap * 2}px` : "1 1 0",
+                flex: isVertical ? `0 0 ${s2.circle + s2.gap * 2}px` : "1 1 0",
                 [isVertical ? "height" : "width"]: isVertical ? void 0 : "100%",
                 [isVertical ? "width" : "height"]: 2,
-                minWidth: isVertical ? 2 : s.circle,
-                minHeight: isVertical ? s.circle : 2,
-                margin: isVertical ? `0 0 0 ${s.circle / 2 - 1}px` : void 0,
+                minWidth: isVertical ? 2 : s2.circle,
+                minHeight: isVertical ? s2.circle : 2,
+                margin: isVertical ? `0 0 0 ${s2.circle / 2 - 1}px` : void 0,
                 background: i < activeStep ? COLOR_COMPLETED : "rgba(148, 163, 184, 0.2)",
                 transition: "background 0.3s"
               }
@@ -34583,9 +34584,9 @@ function isSameDay2(a, b) {
 }
 function isInRange(ymd, range) {
   const d = new Date(ymd.year, ymd.month, ymd.day);
-  const s = new Date(range.start.year, range.start.month, range.start.day);
+  const s2 = new Date(range.start.year, range.start.month, range.start.day);
   const e = new Date(range.end.year, range.end.month, range.end.day);
-  return d >= s && d <= e;
+  return d >= s2 && d <= e;
 }
 function today() {
   const d = /* @__PURE__ */ new Date();
@@ -34669,9 +34670,9 @@ var DateRangePicker = ({
         setSelecting("end");
       } else {
         const currentStart = value?.start || clickedDate;
-        const s = parseDate(currentStart);
-        if (s) {
-          const startDt = new Date(s.year, s.month, s.day);
+        const s2 = parseDate(currentStart);
+        if (s2) {
+          const startDt = new Date(s2.year, s2.month, s2.day);
           const clickedDt = new Date(year, month, day);
           if (clickedDt < startDt) {
             const newValue = {
@@ -35732,7 +35733,7 @@ function NotificationBell({
   const ref = (0, import_react93.useRef)(null);
   const unreadCount = items.filter((i) => !i.read).length;
   const displayItems = items.slice(0, maxListCount);
-  const s = sizeMap3[size];
+  const s2 = sizeMap3[size];
   const handleClickOutside = (0, import_react93.useCallback)((e) => {
     if (ref.current && !ref.current.contains(e.target)) {
       setOpen(false);
@@ -35767,8 +35768,8 @@ function NotificationBell({
   const bellIcon = /* @__PURE__ */ (0, import_jsx_runtime139.jsxs)(
     "svg",
     {
-      width: s.bell,
-      height: s.bell,
+      width: s2.bell,
+      height: s2.bell,
       viewBox: "0 0 24 24",
       fill: "none",
       stroke: "currentColor",
@@ -35817,9 +35818,9 @@ function NotificationBell({
               position: "absolute",
               top: -4,
               right: -4,
-              minWidth: s.badge,
-              height: s.badge,
-              borderRadius: s.badge / 2,
+              minWidth: s2.badge,
+              height: s2.badge,
+              borderRadius: s2.badge / 2,
               background: "#ef4444",
               color: "#fff",
               fontSize: fontSizeMap[size],
@@ -35930,8 +35931,8 @@ function NotificationBell({
                       "span",
                       {
                         style: {
-                          width: s.dot,
-                          height: s.dot,
+                          width: s2.dot,
+                          height: s2.dot,
                           borderRadius: "50%",
                           background: typeColors[item.type || "info"],
                           flexShrink: 0,
@@ -35940,7 +35941,7 @@ function NotificationBell({
                         "data-testid": "unread-dot"
                       }
                     ),
-                    item.read && /* @__PURE__ */ (0, import_jsx_runtime139.jsx)("span", { style: { width: s.dot, flexShrink: 0 } }),
+                    item.read && /* @__PURE__ */ (0, import_jsx_runtime139.jsx)("span", { style: { width: s2.dot, flexShrink: 0 } }),
                     /* @__PURE__ */ (0, import_jsx_runtime139.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
                       /* @__PURE__ */ (0, import_jsx_runtime139.jsxs)(
                         "div",
@@ -39871,12 +39872,12 @@ var NODE_HEIGHT = { sm: 28, md: 34 };
 var FONT_SIZE = { sm: 13, md: 14 };
 var CHEVRON_SIZE = { sm: 8, md: 10 };
 function ChevronIcon({ expanded, size = "md" }) {
-  const s = CHEVRON_SIZE[size];
+  const s2 = CHEVRON_SIZE[size];
   return /* @__PURE__ */ (0, import_jsx_runtime152.jsx)(
     "svg",
     {
-      width: s,
-      height: s,
+      width: s2,
+      height: s2,
       viewBox: "0 0 10 10",
       style: {
         transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
@@ -42867,7 +42868,7 @@ function RFMRecordRow({ record, index }) {
   );
 }
 function SegmentDistribution({ segments }) {
-  const total = segments.reduce((s, g) => s + g.count, 0) || 1;
+  const total = segments.reduce((s2, g) => s2 + g.count, 0) || 1;
   return /* @__PURE__ */ (0, import_jsx_runtime159.jsx)("div", { className: "space-y-2", "data-testid": "rfm-segment-distribution", children: segments.map((seg) => /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("div", { className: "flex items-center gap-2", children: [
     /* @__PURE__ */ (0, import_jsx_runtime159.jsx)(
       "span",
@@ -42905,15 +42906,15 @@ function MemberRFMAnalysisPanel({
   "data-testid": dataTestId = "member-rfm-analysis"
 }) {
   const avgR = (0, import_react104.useMemo)(
-    () => data.length > 0 ? data.reduce((s, d) => s + d.recency, 0) / data.length : 0,
+    () => data.length > 0 ? data.reduce((s2, d) => s2 + d.recency, 0) / data.length : 0,
     [data]
   );
   const avgF = (0, import_react104.useMemo)(
-    () => data.length > 0 ? data.reduce((s, d) => s + d.frequency, 0) / data.length : 0,
+    () => data.length > 0 ? data.reduce((s2, d) => s2 + d.frequency, 0) / data.length : 0,
     [data]
   );
   const avgM = (0, import_react104.useMemo)(
-    () => data.length > 0 ? data.reduce((s, d) => s + d.monetary, 0) / data.length : 0,
+    () => data.length > 0 ? data.reduce((s2, d) => s2 + d.monetary, 0) / data.length : 0,
     [data]
   );
   const segments = (0, import_react104.useMemo)(() => {
@@ -42991,7 +42992,7 @@ function MemberRFMAnalysisPanel({
           segments.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("span", { children: [
             "\u9AD8\u4EF7\u503C\u4F1A\u5458\u5360\u6BD4\uFF1A",
             /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)("strong", { style: { color: SEGMENT_COLORS["\u9AD8\u4EF7\u503C"] }, children: [
-              ((segments.find((s) => s.label === "\u9AD8\u4EF7\u503C")?.count || 0) / data.length * 100).toFixed(0),
+              ((segments.find((s2) => s2.label === "\u9AD8\u4EF7\u503C")?.count || 0) / data.length * 100).toFixed(0),
               "%"
             ] })
           ] })
@@ -45695,8 +45696,8 @@ function priorityTagMeta(p) {
       return { label: "\u666E\u901A", variant: "default" };
   }
 }
-function trainingStatusMeta(s) {
-  switch (s) {
+function trainingStatusMeta(s2) {
+  switch (s2) {
     case "in_progress":
       return { label: "\u8FDB\u884C\u4E2D", variant: "info" };
     case "pending":
@@ -47682,8 +47683,8 @@ function serializeToCsv(records) {
   if (records.length === 0) return "";
   const headers = Array.from(new Set(records.flatMap((r) => Object.keys(r))));
   const escape = (v) => {
-    const s = v == null ? "" : String(v);
-    return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+    const s2 = v == null ? "" : String(v);
+    return s2.includes(",") || s2.includes('"') || s2.includes("\n") ? `"${s2.replace(/"/g, '""')}"` : s2;
   };
   const lines = [headers.map(escape).join(",")];
   for (const record of records) {
@@ -49509,7 +49510,7 @@ function AISmartSchedulingPanel({
                   ] }),
                   /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }, children: [
                     rec.recommendedStaff.map((name) => {
-                      const s = staff.find((st) => st.staffId === name);
+                      const s2 = staff.find((st) => st.staffId === name);
                       return /* @__PURE__ */ (0, import_jsx_runtime186.jsx)(
                         "span",
                         {
@@ -49521,18 +49522,18 @@ function AISmartSchedulingPanel({
                             fontSize: 12,
                             padding: "2px 8px",
                             borderRadius: 4,
-                            background: s?.avatarColor ? `${s.avatarColor}18` : "#eef2ff",
-                            color: s?.avatarColor ?? "#6366f1",
+                            background: s2?.avatarColor ? `${s2.avatarColor}18` : "#eef2ff",
+                            color: s2?.avatarColor ?? "#6366f1",
                             fontWeight: 500
                           },
-                          children: s?.staffName ?? name
+                          children: s2?.staffName ?? name
                         },
                         name
                       );
                     }),
                     rec.alternates && rec.alternates.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("span", { style: { fontSize: 11, color: "#9ca3af", marginLeft: 4 }, children: [
                       "\u5907\u9009: ",
-                      rec.alternates.map((a) => staff.find((s) => s.staffId === a)?.staffName ?? a).join(", ")
+                      rec.alternates.map((a) => staff.find((s2) => s2.staffId === a)?.staffName ?? a).join(", ")
                     ] })
                   ] }),
                   rec.rationale && /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("p", { style: { margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }, children: [
@@ -49582,14 +49583,14 @@ function AISmartSchedulingPanel({
             },
             children: [
               /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("div", { style: { fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 8 }, children: "\u5458\u5DE5\u5DE5\u65F6\u6982\u89C8" }),
-              /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" }, children: staff.map((s) => {
-                const scheduled = staffHoursMap.get(s.staffId) ?? 0;
-                const pct = Math.round(scheduled / s.availableWeeklyHours * 100);
-                const isOver = scheduled > s.availableWeeklyHours;
+              /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" }, children: staff.map((s2) => {
+                const scheduled = staffHoursMap.get(s2.staffId) ?? 0;
+                const pct = Math.round(scheduled / s2.availableWeeklyHours * 100);
+                const isOver = scheduled > s2.availableWeeklyHours;
                 return /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)(
                   "div",
                   {
-                    "data-testid": `staff-hours-${s.staffId}`,
+                    "data-testid": `staff-hours-${s2.staffId}`,
                     style: {
                       display: "flex",
                       alignItems: "center",
@@ -49607,15 +49608,15 @@ function AISmartSchedulingPanel({
                             width: 8,
                             height: 8,
                             borderRadius: "50%",
-                            background: s.avatarColor ?? "#6366f1"
+                            background: s2.avatarColor ?? "#6366f1"
                           }
                         }
                       ),
-                      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("span", { style: { fontWeight: 500, color: "#374151" }, children: s.staffName }),
+                      /* @__PURE__ */ (0, import_jsx_runtime186.jsx)("span", { style: { fontWeight: 500, color: "#374151" }, children: s2.staffName }),
                       /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("span", { style: { color: isOver ? "#ef4444" : "#6b7280" }, children: [
                         scheduled,
                         "/",
-                        s.availableWeeklyHours,
+                        s2.availableWeeklyHours,
                         "h"
                       ] }),
                       /* @__PURE__ */ (0, import_jsx_runtime186.jsxs)("span", { style: { color: isOver ? "#ef4444" : "#22c55e", fontSize: 11 }, children: [
@@ -49624,7 +49625,7 @@ function AISmartSchedulingPanel({
                       ] })
                     ]
                   },
-                  s.staffId
+                  s2.staffId
                 );
               }) })
             ]
@@ -50681,8 +50682,8 @@ function ScenarioComparisonPanel({
     const map = {};
     for (const label of metricLabels) {
       map[label] = Math.max(
-        ...scenarios.map((s) => {
-          const m = s.metrics.find((x) => x.label === label);
+        ...scenarios.map((s2) => {
+          const m = s2.metrics.find((x) => x.label === label);
           return m ? Math.abs(m.value) : 0;
         }),
         1
@@ -52322,7 +52323,7 @@ function ReconciliationDiffPanel({
   const stats = (0, import_react132.useMemo)(() => {
     const total = diffs.length;
     const unresolved = diffs.filter((d) => !d.resolved).length;
-    const totalDiff = diffs.reduce((s, d) => s + d.diffAmount, 0);
+    const totalDiff = diffs.reduce((s2, d) => s2 + d.diffAmount, 0);
     const criticalCount = diffs.filter((d) => d.severity === "critical" && !d.resolved).length;
     return { total, unresolved, totalDiff, criticalCount };
   }, [diffs]);
@@ -53569,7 +53570,7 @@ var TYPE_ICONS = {
   generic: "\u{1F4F7}"
 };
 function qrPlaceholderSvg(size, payload) {
-  const seed = payload.split("").reduce((s, c) => s + c.charCodeAt(0), 0);
+  const seed = payload.split("").reduce((s2, c) => s2 + c.charCodeAt(0), 0);
   const cells = 11;
   const cellSize = Math.floor(size / cells);
   const actualSize = cellSize * cells;
@@ -54808,8 +54809,8 @@ function pad3(n) {
 }
 function defaultFormat(remaining) {
   const m = Math.floor(remaining / 60);
-  const s = remaining % 60;
-  return `${pad3(m)}:${pad3(s)}`;
+  const s2 = remaining % 60;
+  return `${pad3(m)}:${pad3(s2)}`;
 }
 var Countdown = ({
   seconds,
@@ -55686,11 +55687,11 @@ function CashierPanel({
         { label: "\u94B1\u7BB1", ok: !tillStatus.cashDrawerOpen },
         { label: "\u626B\u7801\u67AA", ok: tillStatus.scannerOnline },
         { label: "\u7F51\u7EDC", ok: tillStatus.networkOnline }
-      ].map((s) => /* @__PURE__ */ (0, import_jsx_runtime213.jsxs)("div", { style: STATUS_BOX, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("div", { style: s.ok ? STATUS_DOT_ONLINE : STATUS_DOT_OFFLINE }),
-        /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("span", { children: s.label }),
-        /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("span", { style: { color: s.ok ? "#4ade80" : "#f87171", marginLeft: "auto", fontWeight: 600 }, children: s.ok ? "\u6B63\u5E38" : "\u5F02\u5E38" })
-      ] }, s.label)) })
+      ].map((s2) => /* @__PURE__ */ (0, import_jsx_runtime213.jsxs)("div", { style: STATUS_BOX, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("div", { style: s2.ok ? STATUS_DOT_ONLINE : STATUS_DOT_OFFLINE }),
+        /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("span", { children: s2.label }),
+        /* @__PURE__ */ (0, import_jsx_runtime213.jsx)("span", { style: { color: s2.ok ? "#4ade80" : "#f87171", marginLeft: "auto", fontWeight: 600 }, children: s2.ok ? "\u6B63\u5E38" : "\u5F02\u5E38" })
+      ] }, s2.label)) })
     ] });
   };
   const renderActions = () => /* @__PURE__ */ (0, import_jsx_runtime213.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
@@ -56239,7 +56240,7 @@ function ReturnGoodsProcessingPanel({
   const [remark, setRemark] = (0, import_react145.useState)("");
   const stats = (0, import_react145.useMemo)(() => {
     const pending = safeRequests.filter((r) => r.status === "pending_review").length;
-    const totalRefund = safeRequests.reduce((s, r) => s + r.refundAmount, 0);
+    const totalRefund = safeRequests.reduce((s2, r) => s2 + r.refundAmount, 0);
     const toShip = safeRequests.filter((r) => r.status === "approved" && r.returnType === "exchange").length;
     return [
       { label: "\u5F85\u5BA1\u6838", value: pending, color: pending > 0 ? "#f59e0b" : "#94a3b8" },
@@ -58012,7 +58013,7 @@ function AIModelPerformancePanel({
   const summary = (0, import_react153.useMemo)(() => {
     const total = safeModels.length;
     const online = safeModels.filter((m) => m.status === "online").length;
-    const totalReqs24h = safeModels.reduce((s, m) => s + m.requestCount24h, 0);
+    const totalReqs24h = safeModels.reduce((s2, m) => s2 + m.requestCount24h, 0);
     return { total, online, totalReqs24h };
   }, [safeModels]);
   if (loading) {
@@ -59292,7 +59293,7 @@ function CustomerSessionPanel({
                 /* @__PURE__ */ (0, import_jsx_runtime232.jsx)("span", { children: "\u670D\u52A1\u9879\u76EE" }),
                 /* @__PURE__ */ (0, import_jsx_runtime232.jsxs)("span", { style: { color: "#94a3b8", fontWeight: 400 }, children: [
                   "\u5408\u8BA1 \xA5",
-                  selectedServices.reduce((s, i) => s + i.price, 0).toFixed(2)
+                  selectedServices.reduce((s2, i) => s2 + i.price, 0).toFixed(2)
                 ] })
               ]
             }
@@ -60596,8 +60597,8 @@ function AIDecisionComparisonPanel({
     const total = items.length;
     const adopted = items.filter((i) => i.adopted).length;
     const succeeded = items.filter((i) => i.status === "success").length;
-    const avgConfidence = items.reduce((s, i) => s + i.confidence, 0) / (total || 1);
-    const avgDeviation = items.filter((i) => i.deviationScore !== null).reduce((s, i) => s + (i.deviationScore ?? 0), 0) / (items.filter((i) => i.deviationScore !== null).length || 1);
+    const avgConfidence = items.reduce((s2, i) => s2 + i.confidence, 0) / (total || 1);
+    const avgDeviation = items.filter((i) => i.deviationScore !== null).reduce((s2, i) => s2 + (i.deviationScore ?? 0), 0) / (items.filter((i) => i.deviationScore !== null).length || 1);
     return { total, adopted, succeeded, avgConfidence, avgDeviation };
   }, [items]);
   return /* @__PURE__ */ (0, import_jsx_runtime240.jsxs)("div", { style: { fontFamily: "system-ui, sans-serif" }, children: [
@@ -61966,7 +61967,7 @@ var StoreComparisonPanel = ({
   if (!stores || stores.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime246.jsx)("div", { "data-testid": testId, style: { border: "1px solid #e5e7eb", borderRadius: 12, backgroundColor: "#fff" }, children: /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(EmptyState4, {}) });
   }
-  const metricsList = stores.map((s) => s.metrics);
+  const metricsList = stores.map((s2) => s2.metrics);
   const totalRevenue = sum(metricsList.map((m) => m.revenue));
   const avgRevenue = avg(metricsList.map((m) => m.revenue));
   const avgOrderCount = avg(metricsList.map((m) => m.orderCount));
@@ -61974,7 +61975,7 @@ var StoreComparisonPanel = ({
   const totalMembers = sum(metricsList.map((m) => m.activeMembers));
   const avgUtilization = avg(metricsList.map((m) => m.deviceUtilization));
   const avgSatisfaction = avg(metricsList.map((m) => m.customerSatisfaction));
-  const onlineCount = stores.filter((s) => s.status === "online").length;
+  const onlineCount = stores.filter((s2) => s2.status === "online").length;
   const COLORS3 = ["#3b82f6", "#8b5cf6", "#f59e0b", "#22c55e", "#ef4444", "#ec4899"];
   const overviewCards = [
     { label: "\u603B\u8425\u6536", value: formatCurrency6(totalRevenue) },
@@ -62040,10 +62041,10 @@ var StoreComparisonPanel = ({
           /* @__PURE__ */ (0, import_jsx_runtime246.jsx)(
             BarChart2,
             {
-              data: stores.map((s, i) => ({
-                label: s.name,
-                value: s.metrics.revenue,
-                color: s.id === baselineStoreId ? "#f59e0b" : COLORS3[i % COLORS3.length]
+              data: stores.map((s2, i) => ({
+                label: s2.name,
+                value: s2.metrics.revenue,
+                color: s2.id === baselineStoreId ? "#f59e0b" : COLORS3[i % COLORS3.length]
               }))
             }
           )
@@ -63168,7 +63169,7 @@ function AIMemberSegmentationPanel({
           /* @__PURE__ */ (0, import_jsx_runtime251.jsxs)("span", { style: { fontSize: 13, color: "rgba(255,255,255,0.4)" }, children: [
             segments.length,
             " \u4E2A\u5206\u7FA4 \xB7 ",
-            segments.reduce((s, g) => s + g.memberCount, 0).toLocaleString(),
+            segments.reduce((s2, g) => s2 + g.memberCount, 0).toLocaleString(),
             " \u4F1A\u5458"
           ] })
         ] }),
@@ -65445,8 +65446,8 @@ function StoreSelector({
   const filteredItems = (0, import_react176.useMemo)(() => {
     const search = searchText.trim().toLowerCase();
     if (!search) return null;
-    const allItems = stores.filter((s) => {
-      return s.label.toLowerCase().includes(search) || s.city.toLowerCase().includes(search) || (s.region ?? "").toLowerCase().includes(search) || (s.address ?? "").toLowerCase().includes(search);
+    const allItems = stores.filter((s2) => {
+      return s2.label.toLowerCase().includes(search) || s2.city.toLowerCase().includes(search) || (s2.region ?? "").toLowerCase().includes(search) || (s2.address ?? "").toLowerCase().includes(search);
     });
     if (groupBy) {
       const filteredMap = /* @__PURE__ */ new Map();
@@ -65472,14 +65473,14 @@ function StoreSelector({
   const isAllSelected = (0, import_react176.useMemo)(
     () => {
       if (!isMultiple || stores.length === 0) return false;
-      const selectable = stores.filter((s) => !s.disabled);
-      return selectable.length > 0 && selectable.every((s) => selectedValues.includes(s.id));
+      const selectable = stores.filter((s2) => !s2.disabled);
+      return selectable.length > 0 && selectable.every((s2) => selectedValues.includes(s2.id));
     },
     [isMultiple, stores, selectedValues]
   );
   const handleToggleStore = (0, import_react176.useCallback)(
     (id) => {
-      const store = stores.find((s) => s.id === id);
+      const store = stores.find((s2) => s2.id === id);
       if (!store || store.disabled || disabled) return;
       if (isMultiple) {
         const current = [...selectedValues];
@@ -65498,11 +65499,11 @@ function StoreSelector({
   );
   const handleSelectAll = (0, import_react176.useCallback)(() => {
     if (!isMultiple || disabled) return;
-    const selectable = stores.filter((s) => !s.disabled);
+    const selectable = stores.filter((s2) => !s2.disabled);
     if (isAllSelected) {
       onChange?.([]);
     } else {
-      onChange?.(selectable.map((s) => s.id));
+      onChange?.(selectable.map((s2) => s2.id));
     }
   }, [isMultiple, stores, disabled, isAllSelected, onChange]);
   const handleClearAll = (0, import_react176.useCallback)(() => {
@@ -65511,7 +65512,7 @@ function StoreSelector({
   }, [isMultiple, disabled, onChange]);
   const selectedTags = (0, import_react176.useMemo)(() => {
     if (!isMultiple || selectedValues.length === 0) return null;
-    const labels = selectedValues.map((id) => stores.find((s) => s.id === id)?.label).filter(Boolean);
+    const labels = selectedValues.map((id) => stores.find((s2) => s2.id === id)?.label).filter(Boolean);
     if (labels.length <= maxTagCount) {
       return labels.join(", ");
     }
@@ -65519,8 +65520,8 @@ function StoreSelector({
   }, [isMultiple, selectedValues, stores, maxTagCount]);
   const selectedLabel = (0, import_react176.useMemo)(() => {
     if (selectedValues.length === 0) return null;
-    const s = stores.find((st) => st.id === selectedValues[0]);
-    return s?.label ?? null;
+    const s2 = stores.find((st) => st.id === selectedValues[0]);
+    return s2?.label ?? null;
   }, [selectedValues, stores]);
   const handleClose = (0, import_react176.useCallback)(() => {
     setOpen(false);
@@ -65785,7 +65786,7 @@ function StoreSelector({
                 }
               ),
               groupBy && displayGroups.length > 0 && displayGroups.map((group) => {
-                const groupSelectedCount = group.stores.filter((s) => isSelected(s.id)).length;
+                const groupSelectedCount = group.stores.filter((s2) => isSelected(s2.id)).length;
                 return /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)("div", { "data-testid": `store-group-${group.key}`, children: [
                   /* @__PURE__ */ (0, import_jsx_runtime260.jsxs)(
                     "div",
@@ -65886,11 +65887,11 @@ function AIDecisionEffectivenessBoard({
     if (items.length === 0) {
       return { totalDecisions: 0, totalExecutions: 0, overallSuccessRate: 0, avgResponseMs: 0, avgLiftPercent: 0 };
     }
-    const totalExecutions = items.reduce((s, i) => s + i.executionCount, 0);
-    const totalSuccess = items.reduce((s, i) => s + i.successCount, 0);
-    const totalResponseMs = items.reduce((s, i) => s + i.avgResponseMs, 0);
+    const totalExecutions = items.reduce((s2, i) => s2 + i.executionCount, 0);
+    const totalSuccess = items.reduce((s2, i) => s2 + i.successCount, 0);
+    const totalResponseMs = items.reduce((s2, i) => s2 + i.avgResponseMs, 0);
     const itemsWithLift = items.filter((i) => i.liftPercent != null);
-    const totalLift = itemsWithLift.reduce((s, i) => s + (i.liftPercent ?? 0), 0);
+    const totalLift = itemsWithLift.reduce((s2, i) => s2 + (i.liftPercent ?? 0), 0);
     return {
       totalDecisions: items.length,
       totalExecutions,
@@ -65974,22 +65975,22 @@ function AIDecisionEffectivenessBoard({
     }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { style: { display: "flex", gap: 4, alignItems: "center" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime261.jsx)("span", { style: { fontSize: 11, color: "#64748b", marginRight: 4 }, children: "\u6765\u6E90:" }),
-        ["all", "rule", "model", "hybrid"].map((s) => /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(
+        ["all", "rule", "model", "hybrid"].map((s2) => /* @__PURE__ */ (0, import_jsx_runtime261.jsx)(
           "button",
           {
-            onClick: () => setSourceFilter(s),
+            onClick: () => setSourceFilter(s2),
             style: {
               padding: "3px 8px",
               borderRadius: 6,
-              border: `1px solid ${sourceFilter === s ? SOURCE_TAG_COLORS[sourceFilter === "all" ? "rule" : sourceFilter] : "rgba(148,163,184,0.15)"}`,
-              background: sourceFilter === s ? "rgba(59,130,246,0.15)" : "transparent",
-              color: sourceFilter === s ? "#93c5fd" : "#64748b",
+              border: `1px solid ${sourceFilter === s2 ? SOURCE_TAG_COLORS[sourceFilter === "all" ? "rule" : sourceFilter] : "rgba(148,163,184,0.15)"}`,
+              background: sourceFilter === s2 ? "rgba(59,130,246,0.15)" : "transparent",
+              color: sourceFilter === s2 ? "#93c5fd" : "#64748b",
               fontSize: 11,
               cursor: "pointer"
             },
-            children: s === "all" ? "\u5168\u90E8" : SOURCE_LABELS2[s]
+            children: s2 === "all" ? "\u5168\u90E8" : SOURCE_LABELS2[s2]
           },
-          s
+          s2
         ))
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime261.jsxs)("div", { style: { display: "flex", gap: 4, alignItems: "center" }, children: [
@@ -66935,8 +66936,8 @@ var QualityInspectorDashboard = ({
       header: "\u72B6\u6001",
       width: compact ? "60" : "80",
       render: (row) => {
-        const s = TASK_STATUS_MAP[row.status] || { label: row.status, variant: "neutral" };
-        return /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(StatusBadge2, { variant: s.variant, label: s.label });
+        const s2 = TASK_STATUS_MAP[row.status] || { label: row.status, variant: "neutral" };
+        return /* @__PURE__ */ (0, import_jsx_runtime264.jsx)(StatusBadge2, { variant: s2.variant, label: s2.label });
       }
     },
     {
@@ -67335,8 +67336,8 @@ function CandidateCard({ candidate }) {
         ] }),
         candidate.strengths && candidate.strengths.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime266.jsxs)("div", { style: { marginBottom: 4 }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime266.jsx)("span", { style: { fontSize: 11, color: "#52c41a", fontWeight: 500 }, children: "\u4F18\u52BF: " }),
-          candidate.strengths.map((s, i) => /* @__PURE__ */ (0, import_jsx_runtime266.jsxs)("span", { style: { fontSize: 11, color: "#595959" }, children: [
-            s,
+          candidate.strengths.map((s2, i) => /* @__PURE__ */ (0, import_jsx_runtime266.jsxs)("span", { style: { fontSize: 11, color: "#595959" }, children: [
+            s2,
             i < candidate.strengths.length - 1 ? ", " : ""
           ] }, i))
         ] }),
@@ -67703,7 +67704,7 @@ function AIDecisionOutcomeCard({
 var import_react182 = require("react");
 var import_jsx_runtime268 = require("react/jsx-runtime");
 function normalizeData(data, minPercent) {
-  const total = data.reduce((s, d) => s + Math.max(0, d.value), 0);
+  const total = data.reduce((s2, d) => s2 + Math.max(0, d.value), 0);
   if (total <= 0) return { slices: data, others: null, total };
   const threshold = minPercent / 100 * total;
   const main = [];
@@ -67717,7 +67718,7 @@ function normalizeData(data, minPercent) {
   }
   let others = null;
   if (otherItems.length > 0) {
-    const otherTotal = otherItems.reduce((s, d) => s + d.value, 0);
+    const otherTotal = otherItems.reduce((s2, d) => s2 + d.value, 0);
     others = {
       key: "__others__",
       label: "\u5176\u4ED6",
@@ -68729,11 +68730,11 @@ function AIDecisionDistributionPanel({
     return Math.max(...filtered.map((i) => i.total));
   }, [filtered]);
   const summary = (0, import_react185.useMemo)(() => {
-    const total = items.reduce((s, i) => s + i.total, 0);
-    const totalApproved = items.reduce((s, i) => s + i.approved, 0);
-    const totalRejected = items.reduce((s, i) => s + i.rejected, 0);
-    const totalPending = items.reduce((s, i) => s + i.pending, 0);
-    const avgConf = total > 0 ? items.reduce((s, i) => s + i.avgConfidence * i.total, 0) / total : 0;
+    const total = items.reduce((s2, i) => s2 + i.total, 0);
+    const totalApproved = items.reduce((s2, i) => s2 + i.approved, 0);
+    const totalRejected = items.reduce((s2, i) => s2 + i.rejected, 0);
+    const totalPending = items.reduce((s2, i) => s2 + i.pending, 0);
+    const avgConf = total > 0 ? items.reduce((s2, i) => s2 + i.avgConfidence * i.total, 0) / total : 0;
     return { total, totalApproved, totalRejected, totalPending, avgConf };
   }, [items]);
   if (loading) {
@@ -69167,8 +69168,8 @@ function CorrelationGroupCard({
   );
   const maxSeverity = (0, import_react187.useMemo)(() => {
     const order = ["critical", "high", "medium", "low"];
-    for (const s of order) {
-      if (groupAlerts.some((a) => a.severity === s)) return s;
+    for (const s2 of order) {
+      if (groupAlerts.some((a) => a.severity === s2)) return s2;
     }
     return "low";
   }, [groupAlerts]);
@@ -69356,10 +69357,10 @@ function AlertCorrelationDashboard({
           /* @__PURE__ */ (0, import_jsx_runtime273.jsx)("span", { "data-testid": "unacknowledged-count", style: { fontSize: 13, color: unacknowledgedCount > 0 ? "#ef4444" : "#22c55e" }, children: unacknowledgedCount > 0 ? `\u26A0 ${unacknowledgedCount} \u6761\u672A\u786E\u8BA4` : "\u2705 \u5168\u90E8\u5DF2\u786E\u8BA4" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)("div", { style: { display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }, children: [
-          severityOrder.map((s) => /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)(
+          severityOrder.map((s2) => /* @__PURE__ */ (0, import_jsx_runtime273.jsxs)(
             "span",
             {
-              "data-testid": `severity-stat-${s}`,
+              "data-testid": `severity-stat-${s2}`,
               style: {
                 display: "inline-flex",
                 alignItems: "center",
@@ -69367,21 +69368,21 @@ function AlertCorrelationDashboard({
                 padding: "2px 8px",
                 borderRadius: 4,
                 fontSize: 12,
-                backgroundColor: SEVERITY_CONFIG3[s].bg,
-                color: SEVERITY_CONFIG3[s].dot,
+                backgroundColor: SEVERITY_CONFIG3[s2].bg,
+                color: SEVERITY_CONFIG3[s2].dot,
                 cursor: "pointer",
-                border: filterSeverity === s ? `1px solid ${SEVERITY_CONFIG3[s].dot}` : "1px solid transparent"
+                border: filterSeverity === s2 ? `1px solid ${SEVERITY_CONFIG3[s2].dot}` : "1px solid transparent"
               },
-              onClick: () => setFilterSeverity(filterSeverity === s ? "all" : s),
+              onClick: () => setFilterSeverity(filterSeverity === s2 ? "all" : s2),
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(SeverityDot, { severity: s }),
+                /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(SeverityDot, { severity: s2 }),
                 " ",
-                SEVERITY_CONFIG3[s].label,
+                SEVERITY_CONFIG3[s2].label,
                 ": ",
-                severityCounts[s]
+                severityCounts[s2]
               ]
             },
-            s
+            s2
           )),
           filterSeverity !== "all" && /* @__PURE__ */ (0, import_jsx_runtime273.jsx)(
             "button",
@@ -69694,8 +69695,8 @@ var DeliveryPersonDashboard = ({
       header: "\u72B6\u6001",
       width: compact ? "60" : "80",
       render: (row) => {
-        const s = STATUS_MAP3[row.status] || { label: row.status, variant: "neutral" };
-        return /* @__PURE__ */ (0, import_jsx_runtime275.jsx)(StatusBadge2, { variant: s.variant, label: s.label });
+        const s2 = STATUS_MAP3[row.status] || { label: row.status, variant: "neutral" };
+        return /* @__PURE__ */ (0, import_jsx_runtime275.jsx)(StatusBadge2, { variant: s2.variant, label: s2.label });
       }
     },
     {
@@ -69745,7 +69746,7 @@ var DeliveryPersonDashboard = ({
     }
   ];
   const urgentOrders = orders?.filter((o) => o.priority === "urgent" && o.status !== "delivered" && o.status !== "cancelled") || [];
-  const currentStop = route?.find((s) => s.status === "pending" || s.status === "arrived");
+  const currentStop = route?.find((s2) => s2.status === "pending" || s2.status === "arrived");
   return /* @__PURE__ */ (0, import_jsx_runtime275.jsxs)("div", { style: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }, className, children: [
     /* @__PURE__ */ (0, import_jsx_runtime275.jsxs)("div", { style: DRIVER_HEADER, children: [
       /* @__PURE__ */ (0, import_jsx_runtime275.jsxs)("div", { style: DRIVER_INFO, children: [
@@ -70139,23 +70140,23 @@ function fmtTrend9(delta) {
   const sign = delta > 0 ? "+" : "";
   return `${sign}${delta.toFixed(1)}%`;
 }
-function suggestionLabel(s) {
+function suggestionLabel(s2) {
   const map = {
     promote: "\u4FC3\u9500",
     transfer: "\u8C03\u62E8",
     return: "\u9000\u8D27",
     writeoff: "\u62A5\u5E9F"
   };
-  return map[s] ?? s;
+  return map[s2] ?? s2;
 }
-function suggestionVariant(s) {
+function suggestionVariant(s2) {
   const map = {
     promote: "warning",
     transfer: "neutral",
     return: "error",
     writeoff: "error"
   };
-  return map[s] ?? "neutral";
+  return map[s2] ?? "neutral";
 }
 function gradeColor(grade) {
   const map = {
@@ -71092,9 +71093,322 @@ function OverviewCell({
   ] });
 }
 
+// src/components/AIAutomationSuggestionPanel.tsx
+var import_jsx_runtime280 = require("react/jsx-runtime");
+var s = {
+  container: {
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    borderRadius: 12,
+    border: "1px solid #e5e7eb",
+    background: "#fff",
+    overflow: "hidden"
+  },
+  header: {
+    padding: "16px 20px",
+    borderBottom: "1px solid #f3f4f6",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: 600,
+    color: "#111827",
+    margin: 0
+  },
+  headerBadge: {
+    background: "#eef2ff",
+    color: "#4338ca",
+    borderRadius: 999,
+    padding: "2px 10px",
+    fontSize: 12,
+    fontWeight: 500
+  },
+  list: {
+    padding: "8px 0"
+  },
+  card: {
+    padding: "14px 20px",
+    borderBottom: "1px solid #f9fafb",
+    cursor: "pointer",
+    transition: "background 0.15s"
+  },
+  cardTopRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 6
+  },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#111827",
+    margin: 0,
+    lineHeight: "20px"
+  },
+  description: {
+    fontSize: 13,
+    color: "#6b7280",
+    lineHeight: "18px",
+    marginBottom: 8
+  },
+  metaRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 12,
+    alignItems: "center",
+    fontSize: 12,
+    color: "#9ca3af",
+    marginBottom: 8
+  },
+  metaItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4
+  },
+  confidenceBar: {
+    width: "100%",
+    height: 4,
+    background: "#f3f4f6",
+    borderRadius: 2,
+    overflow: "hidden",
+    marginBottom: 4
+  },
+  benefitGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 8,
+    marginTop: 8,
+    padding: 10,
+    background: "#f9fafb",
+    borderRadius: 8
+  },
+  benefitItem: {
+    textAlign: "center"
+  },
+  benefitLabel: {
+    fontSize: 11,
+    color: "#6b7280"
+  },
+  benefitValue: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#111827"
+  },
+  actionBar: {
+    display: "flex",
+    gap: 8,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTop: "1px solid #f3f4f6"
+  },
+  primaryBtn: {
+    padding: "6px 16px",
+    background: "#4f46e5",
+    color: "#fff",
+    border: "none",
+    borderRadius: 6,
+    fontSize: 13,
+    fontWeight: 500,
+    cursor: "pointer"
+  },
+  secondaryBtn: {
+    padding: "6px 16px",
+    background: "#fff",
+    color: "#6b7280",
+    border: "1px solid #e5e7eb",
+    borderRadius: 6,
+    fontSize: 13,
+    fontWeight: 500,
+    cursor: "pointer"
+  },
+  emptyState: {
+    textAlign: "center",
+    padding: "40px 20px",
+    color: "#9ca3af",
+    fontSize: 14
+  },
+  triggerTag: {
+    fontSize: 11,
+    color: "#6366f1",
+    background: "#eef2ff",
+    borderRadius: 4,
+    padding: "1px 6px"
+  },
+  loadingPlaceholder: {
+    padding: 40,
+    textAlign: "center",
+    color: "#d1d5db",
+    fontSize: 14
+  }
+};
+var getStatusBadgeStyle = (color, bg) => ({
+  fontSize: 11,
+  fontWeight: 500,
+  color,
+  background: bg,
+  borderRadius: 999,
+  padding: "1px 8px",
+  whiteSpace: "nowrap",
+  flexShrink: 0,
+  marginLeft: 8
+});
+var getConfidenceFillStyle = (value) => ({
+  height: "100%",
+  width: `${value}%`,
+  borderRadius: 2,
+  background: value >= 80 ? "#22c55e" : value >= 60 ? "#f59e0b" : "#ef4444",
+  transition: "width 0.3s"
+});
+var getEffortChipStyle = (color, bg) => ({
+  fontSize: 11,
+  color,
+  background: bg,
+  borderRadius: 4,
+  padding: "1px 6px"
+});
+var StatusBadge4 = ({ status }) => {
+  const map = {
+    pending: { label: "\u5F85\u5904\u7406", color: "#92400e", bg: "#fffbeb" },
+    applied: { label: "\u5DF2\u5E94\u7528", color: "#166534", bg: "#f0fdf4" },
+    dismissed: { label: "\u5DF2\u5FFD\u7565", color: "#6b7280", bg: "#f3f4f6" },
+    in_progress: { label: "\u6267\u884C\u4E2D", color: "#1e40af", bg: "#eff6ff" }
+  };
+  const { label, color, bg } = map[status];
+  return /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("span", { style: getStatusBadgeStyle(color, bg), children: label });
+};
+var EffortChip = ({ effort }) => {
+  const map = {
+    low: { label: "\u4F4E", color: "#166534", bg: "#f0fdf4" },
+    medium: { label: "\u4E2D", color: "#92400e", bg: "#fffbeb" },
+    high: { label: "\u9AD8", color: "#991b1b", bg: "#fef2f2" }
+  };
+  const { label, color, bg } = map[effort];
+  return /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("span", { style: getEffortChipStyle(color, bg), children: [
+    "\u6295\u5165:",
+    label
+  ] });
+};
+var TriggerLabel = ({ type }) => {
+  const map = {
+    threshold: "\u9608\u503C",
+    pattern: "\u6A21\u5F0F",
+    schedule: "\u5B9A\u65F6",
+    anomaly: "\u5F02\u5E38",
+    composite: "\u590D\u5408"
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("span", { style: s.triggerTag, children: map[type] });
+};
+var AIAutomationSuggestionPanel = ({
+  suggestions,
+  title = "AI \u81EA\u52A8\u5316\u5EFA\u8BAE",
+  emptyText = "\u6682\u65E0\u5F85\u5904\u7406\u7684\u81EA\u52A8\u5316\u5EFA\u8BAE",
+  onApply,
+  onDismiss,
+  onViewDetail,
+  className,
+  loading = false
+}) => {
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("div", { style: s.container, className, children: /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("div", { style: s.loadingPlaceholder, children: "\u23F3 \u6B63\u5728\u5206\u6790\u6570\u636E\uFF0C\u751F\u6210\u5EFA\u8BAE\u2026" }) });
+  }
+  const pendingCount = suggestions.filter((s2) => s2.status === "pending").length;
+  return /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("div", { style: s.container, className, "data-testid": "ai-automation-suggestion-panel", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("div", { style: s.header, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("h3", { style: s.headerTitle, children: title }),
+      pendingCount > 0 && /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("span", { style: s.headerBadge, children: [
+        pendingCount,
+        " \u6761\u5F85\u5904\u7406"
+      ] })
+    ] }),
+    suggestions.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("div", { style: s.emptyState, children: emptyText }) : /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("div", { style: s.list, children: suggestions.map((suggestion) => /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)(
+      "div",
+      {
+        style: s.card,
+        onClick: () => onViewDetail?.(suggestion),
+        "data-testid": `suggestion-card-${suggestion.id}`,
+        onMouseEnter: (e) => {
+          e.currentTarget.style.background = "#f9fafb";
+        },
+        onMouseLeave: (e) => {
+          e.currentTarget.style.background = "";
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("div", { style: s.cardTopRow, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("h4", { style: s.cardTitle, children: suggestion.title }),
+            /* @__PURE__ */ (0, import_jsx_runtime280.jsx)(StatusBadge4, { status: suggestion.status })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("p", { style: s.description, children: suggestion.description }),
+          /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("div", { style: s.metaRow, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("span", { style: s.metaItem, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime280.jsx)(TriggerLabel, { type: suggestion.trigger.type }),
+              /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("span", { children: suggestion.trigger.label })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("span", { style: s.metaItem, children: /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("span", { children: [
+              "\u{1F3AF} ",
+              suggestion.action.label
+            ] }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime280.jsx)(EffortChip, { effort: suggestion.estimatedEffort }),
+            /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("span", { style: s.metaItem, children: [
+              "\u{1F550} ",
+              suggestion.createdAt
+            ] }),
+            suggestion.executedAt && /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("span", { style: s.metaItem, children: [
+              "\u2705 \u6267\u884C\u65F6\u95F4: ",
+              suggestion.executedAt
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("div", { title: `\u7F6E\u4FE1\u5EA6: ${suggestion.confidence}%`, children: /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("div", { style: s.confidenceBar, children: /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("div", { style: getConfidenceFillStyle(suggestion.confidence) }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("div", { style: s.benefitGrid, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("div", { style: s.benefitItem, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("div", { style: s.benefitLabel, children: "\u5F53\u524D" }),
+              /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("div", { style: s.benefitValue, children: suggestion.benefit.current })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("div", { style: s.benefitItem, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("div", { style: s.benefitLabel, children: "\u4F18\u5316\u540E" }),
+              /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("div", { style: s.benefitValue, children: suggestion.benefit.projected })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("div", { style: s.benefitItem, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("div", { style: s.benefitLabel, children: "\u63D0\u5347" }),
+              /* @__PURE__ */ (0, import_jsx_runtime280.jsx)("div", { style: { ...s.benefitValue, color: "#16a34a" }, children: suggestion.benefit.improvement })
+            ] })
+          ] }),
+          suggestion.status === "pending" && /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)("div", { style: s.actionBar, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime280.jsx)(
+              "button",
+              {
+                style: s.primaryBtn,
+                onClick: (e) => {
+                  e.stopPropagation();
+                  onApply?.(suggestion);
+                },
+                "data-testid": `apply-btn-${suggestion.id}`,
+                children: "\u5E94\u7528\u5EFA\u8BAE"
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime280.jsx)(
+              "button",
+              {
+                style: s.secondaryBtn,
+                onClick: (e) => {
+                  e.stopPropagation();
+                  onDismiss?.(suggestion.id);
+                },
+                "data-testid": `dismiss-btn-${suggestion.id}`,
+                children: "\u5FFD\u7565"
+              }
+            )
+          ] })
+        ]
+      },
+      suggestion.id
+    )) })
+  ] });
+};
+
 // src/components/InfiniteScroll.tsx
 var import_react191 = __toESM(require("react"));
-var import_jsx_runtime280 = require("react/jsx-runtime");
+var import_jsx_runtime281 = require("react/jsx-runtime");
 function InfiniteScroll({
   hasMore,
   onLoadMore,
@@ -71141,7 +71455,7 @@ function InfiniteScroll({
   }, [handleIntersect, threshold, direction]);
   const isEmpty = !loading && !hasMore && import_react191.default.Children.count(children) === 0;
   const isHorizontal = direction === "horizontal";
-  return /* @__PURE__ */ (0, import_jsx_runtime280.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime281.jsxs)(
     "div",
     {
       className,
@@ -71155,7 +71469,7 @@ function InfiniteScroll({
       "aria-busy": loading,
       children: [
         isEmpty && empty ? empty : children,
-        /* @__PURE__ */ (0, import_jsx_runtime280.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime281.jsx)(
           "div",
           {
             ref: sentinelRef,
@@ -71167,7 +71481,7 @@ function InfiniteScroll({
             "aria-hidden": true
           }
         ),
-        loading && (loader ?? /* @__PURE__ */ (0, import_jsx_runtime280.jsx)(
+        loading && (loader ?? /* @__PURE__ */ (0, import_jsx_runtime281.jsx)(
           "div",
           {
             style: {
@@ -71179,7 +71493,7 @@ function InfiniteScroll({
             children: loadingText
           }
         )),
-        !hasMore && !loading && !isEmpty && /* @__PURE__ */ (0, import_jsx_runtime280.jsx)(
+        !hasMore && !loading && !isEmpty && /* @__PURE__ */ (0, import_jsx_runtime281.jsx)(
           "div",
           {
             style: {
@@ -71202,6 +71516,7 @@ function InfiniteScroll({
   AIAgentToolCallPanel,
   AIAgentWorkloadDistributionPanel,
   AIAnalysisInsightsPanel,
+  AIAutomationSuggestionPanel,
   AICompetitiveAnalysisPanel,
   AIDecisionComparisonPanel,
   AIDecisionDistributionPanel,
