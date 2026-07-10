@@ -53,7 +53,7 @@ import {
 // ── Middleware ──
 
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest;
+  const ctx = req as unknown as TenantAwareRequest;
   ctx.tenantContext = {
     tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
     brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
@@ -72,7 +72,7 @@ class TestFinanceController {
   @Post('ledgers')
   recordLedger(@Req() req: Request, @Body() body: CreateLedgerDto) {
     return this.fs.recordLedger(
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
       body,
     );
   }
@@ -80,20 +80,20 @@ class TestFinanceController {
   @Get('ledgers')
   listLedgers(@Req() req: Request, @Query() query: LedgerQueryDto = {} as LedgerQueryDto) {
     return this.fs.listLedgers(
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
       query,
     );
   }
 
   @Get('ledgers/:id')
   getLedger(@Req() req: Request, @Param('id') id: string) {
-    return this.fs.getLedger(id, (req as TenantAwareRequest).tenantContext as RequestTenantContext);
+    return this.fs.getLedger(id, (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext);
   }
 
   @Post('accounts')
   createAccount(@Req() req: Request, @Body() body: CreateAccountDto) {
     return this.fs.createAccount(
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
       body,
     );
   }
@@ -101,7 +101,7 @@ class TestFinanceController {
   @Get('accounts')
   listAccounts(@Req() req: Request, @Query('storeId') storeId?: string) {
     return this.fs.listAccounts(
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
       storeId,
     );
   }
@@ -110,7 +110,7 @@ class TestFinanceController {
   getAccount(@Req() req: Request, @Param('id') id: string) {
     return this.fs.getAccount(
       id,
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
     );
   }
 
@@ -118,7 +118,7 @@ class TestFinanceController {
   getAccountBalance(@Req() req: Request, @Param('id') id: string) {
     return this.fs.getAccountBalance(
       id,
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
     );
   }
 
@@ -126,7 +126,7 @@ class TestFinanceController {
   freezeAccount(@Req() req: Request, @Param('id') id: string) {
     return this.fs.freezeAccount(
       id,
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
     );
   }
 
@@ -134,14 +134,14 @@ class TestFinanceController {
   closeAccount(@Req() req: Request, @Param('id') id: string) {
     return this.fs.closeAccount(
       id,
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
     );
   }
 
   @Post('settlements')
   createSettlement(@Req() req: Request, @Body() body: CreateSettlementDto) {
     return this.fs.createSettlement(
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
       body,
     );
   }
@@ -152,7 +152,7 @@ class TestFinanceController {
     @Query() query: SettlementQueryDto = {} as SettlementQueryDto,
   ) {
     return this.fs.listSettlements(
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
       query,
     );
   }
@@ -161,7 +161,7 @@ class TestFinanceController {
   getSettlement(@Req() req: Request, @Param('id') id: string) {
     return this.fs.getSettlement(
       id,
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
     );
   }
 
@@ -169,7 +169,7 @@ class TestFinanceController {
   getSettlementDetail(@Req() req: Request, @Param('id') id: string) {
     return this.fs.getSettlementDetail(
       id,
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
     );
   }
 
@@ -177,7 +177,7 @@ class TestFinanceController {
   confirmSettlement(@Req() req: Request, @Param('id') id: string) {
     return this.fs.confirmSettlement(
       id,
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
     );
   }
 
@@ -185,14 +185,14 @@ class TestFinanceController {
   disputeSettlement(@Req() req: Request, @Param('id') id: string) {
     return this.fs.disputeSettlement(
       id,
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
     );
   }
 
   @Post('invoices')
   createInvoice(@Req() req: Request, @Body() body: CreateInvoiceDto) {
     return this.fs.createInvoice(
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
       body,
     );
   }
@@ -200,7 +200,7 @@ class TestFinanceController {
   @Get('invoices')
   listInvoices(@Req() req: Request, @Query() query: InvoiceQueryDto = {} as InvoiceQueryDto) {
     return this.fs.listInvoices(
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
       query,
     );
   }
@@ -209,7 +209,7 @@ class TestFinanceController {
   getInvoice(@Req() req: Request, @Param('id') id: string) {
     return this.fs.getInvoice(
       id,
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
     );
   }
 
@@ -217,7 +217,7 @@ class TestFinanceController {
   issueInvoice(@Req() req: Request, @Param('id') id: string) {
     return this.fs.issueInvoice(
       id,
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
     );
   }
 
@@ -225,7 +225,7 @@ class TestFinanceController {
   cancelInvoice(@Req() req: Request, @Param('id') id: string) {
     return this.fs.cancelInvoice(
       id,
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
     );
   }
 
@@ -235,7 +235,7 @@ class TestFinanceController {
     @Query() query: RevenueSummaryQueryDto = {} as RevenueSummaryQueryDto,
   ) {
     return this.fs.getRevenueSummary(
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
       query,
     );
   }
@@ -243,7 +243,7 @@ class TestFinanceController {
   @Get('revenue/daily')
   getDailyRevenue(@Req() req: Request, @Query() query: DailyRevenueQueryDto) {
     return this.fs.getDailyRevenue(
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
       query,
     );
   }
@@ -261,7 +261,7 @@ class TestFinanceController {
     },
   ) {
     return this.fs.recordTransactionRevenue(
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
       body,
     );
   }
@@ -272,7 +272,7 @@ class TestFinanceController {
     @Body() body: { orderId: string; transactionId: string; amount: number; description: string },
   ) {
     return this.fs.recordTransactionRefund(
-      (req as TenantAwareRequest).tenantContext as RequestTenantContext,
+      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
       body,
     );
   }

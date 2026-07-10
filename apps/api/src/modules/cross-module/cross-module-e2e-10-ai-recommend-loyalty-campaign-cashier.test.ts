@@ -65,7 +65,7 @@ class TestController {
 
   @Post('members')
   registerMember(@Req() req: Request, @Body() body: { memberId: string; nickname?: string }) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.memberService.register({
       memberId: body.memberId,
       tenantContext: tc,
@@ -80,7 +80,7 @@ class TestController {
 
   @Post('cashier/orders')
   createOrder(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.cashierService.createOrder(tc, body)
   }
 
@@ -105,7 +105,7 @@ class TestController {
 
   @Post('ai/recommend')
   recommend(@Req() req: Request, @Body() body: { memberId?: string; strategyId?: string; type?: string; limit?: number; minScore?: number }) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.aiRecommendService.generateRecommendations({
       memberId: body.memberId,
       strategyId: body.strategyId ?? 'strategy-hybrid-v1',
@@ -117,13 +117,13 @@ class TestController {
 
   @Post('campaigns')
   registerCampaign(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignService.registerCampaign({ tenantContext: tc, ...body })
   }
 
   @Post('campaigns/:planId/activate')
   activateCampaign(@Req() req: Request, @Param('planId') planId: string) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignService.updateCampaignStatus(planId, CampaignStatus.Active, tc.tenantId)
   }
 
@@ -132,7 +132,7 @@ class TestController {
     @Req() req: Request,
     @Body() body: { eventName: string; memberId: string; orderId?: string; paymentId?: string; orderAmount?: number; payload?: Record<string, unknown> }
   ) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignService.evaluateTriggers({
       eventName: body.eventName as any,
       tenantContext: tc,

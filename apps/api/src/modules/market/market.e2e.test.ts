@@ -30,7 +30,7 @@ import { FoundationService } from '../foundation/foundation.service'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
 
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
+  const ctx = req as unknown as TenantAwareRequest
   ctx.tenantContext = {
     tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
     brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
@@ -53,7 +53,7 @@ class TestMarketController {
 
   @Get(':scopeType/:scopeCode')
   scopedMarket(@Req() req: Request, @Param('scopeType') scopeType: string, @Param('scopeCode') scopeCode: string) {
-    const ctx = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const ctx = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return {
       scopeType,
       scopeCode,
@@ -64,7 +64,7 @@ class TestMarketController {
 
   @Get(':scopeType/:scopeCode/portal')
   portalMarket(@Req() req: Request, @Param('scopeType') scopeType: string, @Param('scopeCode') scopeCode: string) {
-    const ctx = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const ctx = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     const profile = this.marketService.getMergedProfile(ctx)
     return {
       scopeType,

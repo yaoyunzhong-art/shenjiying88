@@ -40,7 +40,7 @@ import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.
 import { CampaignService } from './campaign.service'
 
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
+  const ctx = req as unknown as TenantAwareRequest
   ctx.tenantContext = {
     tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
     brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
@@ -56,7 +56,7 @@ class TestCampaignController {
 
   @Post()
   register(@Req() req: Request, @Body() body: Record<string, unknown>) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignService.registerCampaign({
       tenantContext,
       code: body.code as string,
@@ -73,13 +73,13 @@ class TestCampaignController {
 
   @Get()
   list(@Req() req: Request) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignService.listCampaigns(tenantContext.tenantId)
   }
 
   @Get(':planId')
   get(@Req() req: Request, @Param('planId') planId: string) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     const plan = this.campaignService.getCampaign(planId, tenantContext.tenantId)
     return plan ?? null
   }
@@ -90,7 +90,7 @@ class TestCampaignController {
     @Param('planId') planId: string,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignService.updateCampaignStatus(
       planId,
       body.status as any,
@@ -104,7 +104,7 @@ class TestCampaignController {
     @Param('planId') planId: string,
     @Query('limit') limit?: string
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     const dispatches = this.campaignService.listDispatches(tenantContext.tenantId, {
       planId
     })
@@ -114,7 +114,7 @@ class TestCampaignController {
 
   @Get('dispatches/all')
   listAllDispatches(@Req() req: Request, @Query('limit') limit?: string) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     const dispatches = this.campaignService.listDispatches(tenantContext.tenantId, {})
     const n = limit ? Number.parseInt(limit, 10) : undefined
     return n ? dispatches.slice(0, n) : dispatches
@@ -126,7 +126,7 @@ class TestCampaignController {
     @Query('memberId') memberId?: string,
     @Query('status') status?: string
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignService.listDispatches(tenantContext.tenantId, {
       memberId,
       status: status as any

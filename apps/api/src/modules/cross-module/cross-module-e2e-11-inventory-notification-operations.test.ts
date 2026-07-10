@@ -67,25 +67,25 @@ class TestController {
 
   @Post('inventory/products')
   createProduct(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.inventoryService.createProduct(tc, body)
   }
 
   @Post('inventory/stock-in')
   stockIn(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.inventoryService.stockIn(tc, body)
   }
 
   @Post('inventory/stock-out')
   stockOut(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.inventoryService.stockOut(tc, body)
   }
 
   @Get('inventory/alerts')
   getAlerts(@Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.inventoryService.getLowStockProducts(tc)
   }
 
@@ -96,7 +96,7 @@ class TestController {
 
   @Post('notifications/send')
   sendNotification(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.notificationService.send({
       ...body,
       tenantId: body.tenantId ?? tc.tenantId,
@@ -125,7 +125,7 @@ class TestController {
 
   @Get('notifications/dispatches')
   listDispatches(@Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     const status = req.header('x-status') as NotificationStatus | undefined
     return this.notificationService.listDispatches({
       tenantId: tc.tenantId,

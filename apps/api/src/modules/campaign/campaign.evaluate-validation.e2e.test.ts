@@ -12,7 +12,7 @@ import { CampaignService } from './campaign.service'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
 
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
+  const ctx = req as unknown as TenantAwareRequest
   ctx.tenantContext = {
     tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-eval',
     brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-eval',
@@ -46,7 +46,7 @@ let campaignControllerRef: CampaignController
 class TestCampaignEvaluateController {
   @Post('evaluate')
   evaluate(@Req() req: Request, @Body() body: EvaluateCampaignDto) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return campaignControllerRef.evaluateTriggers(tenantContext, body)
   }
 }

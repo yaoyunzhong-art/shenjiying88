@@ -56,7 +56,7 @@ describe('attachTenantContextFromHeaders', () => {
       'x-brand-id': 'brand-X',
       'x-store-id': 'store-X',
       'x-market-code': 'us-west',
-    }) as TenantAwareRequest;
+    }) as unknown as TenantAwareRequest;
     let nextCalled = false;
     attachTenantContextFromHeaders(req, {} as Response, () => {
       nextCalled = true;
@@ -71,7 +71,7 @@ describe('attachTenantContextFromHeaders', () => {
   });
 
   it('headers 缺失 → 用默认值', () => {
-    const req = makeReq({}) as TenantAwareRequest;
+    const req = makeReq({}) as unknown as TenantAwareRequest;
     attachTenantContextFromHeaders(req, {} as Response, () => {});
     assert.deepEqual(req.tenantContext, DEFAULT_TENANT_CONTEXT);
   });
@@ -80,7 +80,7 @@ describe('attachTenantContextFromHeaders', () => {
     const req = makeReq({
       'x-tenant-id': '',
       'x-brand-id': '',
-    }) as TenantAwareRequest;
+    }) as unknown as TenantAwareRequest;
     attachTenantContextFromHeaders(req, {} as Response, () => {});
     assert.equal(req.tenantContext?.tenantId, 'tenant-A');
     assert.equal(req.tenantContext?.brandId, 'brand-A');
@@ -89,7 +89,7 @@ describe('attachTenantContextFromHeaders', () => {
   it('部分 headers 提供 → 已提供字段取 header,未提供字段用默认', () => {
     const req = makeReq({
       'x-tenant-id': 'tenant-mix',
-    }) as TenantAwareRequest;
+    }) as unknown as TenantAwareRequest;
     attachTenantContextFromHeaders(req, {} as Response, () => {});
     assert.equal(req.tenantContext?.tenantId, 'tenant-mix');
     assert.equal(req.tenantContext?.brandId, 'brand-A'); // 默认
@@ -171,7 +171,7 @@ describe('buildCrossModuleTestApp', () => {
     ) => {
       order.push('extra-after-tenant');
       // 校验 tenant context 已经被 attachTenantContextFromHeaders 挂上
-      const ctx = (req as TenantAwareRequest).tenantContext;
+      const ctx = (req as unknown as TenantAwareRequest).tenantContext;
       if (ctx?.tenantId === 'tenant-from-headers') {
         order.push('tenant-already-set');
       }

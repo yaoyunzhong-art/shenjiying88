@@ -61,7 +61,7 @@ export function toTenantResolveContract(
   const actor: TenantActorContract | null = ctx.actor
     ? {
         actorId: ctx.actor.actorId,
-        actorType: ctx.actor.actorType,
+        actorType: ctx.actor.actorType as ActorType,
         actorName: ctx.actor.actorName,
         roles: ctx.actor.roles,
         permissions: ctx.actor.permissions,
@@ -103,7 +103,7 @@ export function toTenantActorContract(
   if (!actor) return null
   return {
     actorId: actor.actorId,
-    actorType: actor.actorType,
+    actorType: actor.actorType as ActorType,
     actorName: actor.actorName,
     roles: actor.roles,
     permissions: actor.permissions,

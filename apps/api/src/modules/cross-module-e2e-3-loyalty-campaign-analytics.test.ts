@@ -48,7 +48,7 @@ import { AnalyticsService } from './analytics/analytics.service'
 import type { RequestTenantContext, TenantAwareRequest } from './tenant/tenant.types'
 
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
+  const ctx = req as unknown as TenantAwareRequest
   ctx.tenantContext = {
     tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
     brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
@@ -68,7 +68,7 @@ class TestIntegrationController {
 
   @Post('coupon-plans')
   registerCouponPlan(@Req() req: Request, @Body() body: Record<string, unknown>) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.registerCouponPlan({
       tenantContext,
       code: body.code as string,
@@ -88,7 +88,7 @@ class TestIntegrationController {
     @Param('planId') planId: string,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.updateCouponPlanStatus(
       planId,
       body.status as LoyaltyPlanStatus,
@@ -98,7 +98,7 @@ class TestIntegrationController {
 
   @Post('campaigns')
   registerCampaign(@Req() req: Request, @Body() body: Record<string, unknown>) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignService.registerCampaign({
       tenantContext,
       code: body.code as string,
@@ -116,7 +116,7 @@ class TestIntegrationController {
     @Param('planId') planId: string,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignService.updateCampaignStatus(
       planId,
       body.status as any,
@@ -137,7 +137,7 @@ class TestIntegrationController {
 
   @Get('analytics/snapshot')
   snapshot(@Req() req: Request) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.analyticsService.getOperationSnapshot(tenantContext)
   }
 }

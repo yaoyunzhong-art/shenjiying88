@@ -35,7 +35,7 @@ import { LoyaltyService } from '../loyalty/loyalty.service'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
 import { CashierService } from './cashier.service'
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
+  const ctx = req as unknown as TenantAwareRequest
   ctx.tenantContext = {
     tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
     brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
@@ -53,19 +53,19 @@ class TestCashierController {
   ) {}
   @Get('orders')
   listOrders(@Req() req: Request) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.cashierService.listOrders(tenantContext)
   }
   @Get('orders/:orderId')
   getOrder(@Req() req: Request, @Param('orderId') orderId: string) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     const order = this.cashierService.getOrder(orderId, tenantContext)
     if (!order) throw new Error(`Cashier order ${orderId} not found`)
     return order
   }
   @Post('orders')
   createOrder(@Req() req: Request, @Body() body: Record<string, unknown>) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.cashierService.createOrder(tenantContext, body as any)
   }
   @Post('orders/:orderId/payments')
@@ -78,7 +78,7 @@ class TestCashierController {
   }
   @Get('payments')
   listPayments(@Req() req: Request) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.cashierService.listPayments(tenantContext)
   }
   @Post('payments/standardized-callback')
@@ -91,12 +91,12 @@ class TestCashierController {
     @Param('orderId') orderId: string,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.cashierService.closeOrder(orderId, tenantContext, body as any)
   }
   @Post('orders/:orderId/timeout-close')
   timeoutClose(@Req() req: Request, @Param('orderId') orderId: string) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.cashierService.closeTimedOutOrder(orderId, tenantContext)
   }
 }

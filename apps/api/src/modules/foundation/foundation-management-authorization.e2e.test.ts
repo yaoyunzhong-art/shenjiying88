@@ -295,7 +295,7 @@ it('e2e: runtime governance endpoints enforce read/write permissions and tenant 
 
   const app = moduleRef.createNestApplication()
   app.use((req: unknown, _res: Response, next: NextFunction) => {
-    attachRequestContext(req as TenantAwareRequest)
+    attachRequestContext(req as unknown as TenantAwareRequest)
     next()
   })
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -398,7 +398,7 @@ it('e2e: configuration management endpoints enforce role and permission metadata
 
   const app = moduleRef.createNestApplication()
   app.use((req: unknown, _res: Response, next: NextFunction) => {
-    attachRequestContext(req as TenantAwareRequest)
+    attachRequestContext(req as unknown as TenantAwareRequest)
     next()
   })
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -454,7 +454,7 @@ it('e2e: trust governance management endpoints enforce role and permission metad
 
   const app = moduleRef.createNestApplication()
   app.use((req: unknown, _res: Response, next: NextFunction) => {
-    attachRequestContext(req as TenantAwareRequest)
+    attachRequestContext(req as unknown as TenantAwareRequest)
     next()
   })
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -505,7 +505,7 @@ it('e2e: foundation alert acknowledgement endpoints enforce role and permission 
 
   const app = moduleRef.createNestApplication()
   app.use((req: unknown, _res: Response, next: NextFunction) => {
-    attachRequestContext(req as TenantAwareRequest)
+    attachRequestContext(req as unknown as TenantAwareRequest)
     next()
   })
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))

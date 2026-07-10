@@ -37,7 +37,7 @@ import { HealthQueryDto } from './health.dto'
 import { FoundationScopeType } from '@m5/domain'
 
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
+  const ctx = req as unknown as TenantAwareRequest
   ctx.tenantContext = {
     tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
     brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
@@ -95,7 +95,7 @@ class TestHealthController {
     @Req() req: Request,
     @Query() query: HealthQueryDto
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     const actorContext = (req as any).actorContext
     return this.healthService.check({
       scope: {

@@ -54,7 +54,7 @@ class TestMarketingAnalyticsController {
     @Req() req: Request,
     @Query() query: { scope?: 'TENANT' | 'BRAND' | 'STORE'; brandId?: string; storeId?: string }
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.analyticsController.getOperationSnapshot(tenantContext, query as any)
   }
 }

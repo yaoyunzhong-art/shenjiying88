@@ -79,7 +79,7 @@ class TestController {
   // ── Referral ──
   @Post('referrals')
   createReferral(@Req() req: Request, @Body() body: { referrerId: string; refereeId: string; code?: string }) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return (this.referralService as any).createReferral(tc, body.referrerId, body.refereeId, body.code)
   }
 
@@ -90,7 +90,7 @@ class TestController {
 
   @Get('referrals/funnel')
   getFunnel(@Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return (this.referralService as any).getFunnelMetrics(tc)
   }
 
@@ -106,7 +106,7 @@ class TestController {
 
   @Get('referrals/referrer/:referrerId')
   getReferrerReferrals(@Req() req: Request, @Param('referrerId') referrerId: string) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return (this.referralService as any).getReferrerReferrals(referrerId, tc)
   }
 

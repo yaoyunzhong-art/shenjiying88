@@ -37,7 +37,7 @@ import { BlindboxProbabilityOverviewQueryDto } from './loyalty.dto'
 
 import { BlindboxRewardTier, CouponDiscountType, LoyaltyPlanStatus } from './loyalty.entity'
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
+  const ctx = req as unknown as TenantAwareRequest
   ctx.tenantContext = {
     tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
     brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
@@ -56,7 +56,7 @@ class TestLoyaltyController {
     @Req() req: Request,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.registerCouponPlan({
       tenantContext,
       code: body.code as string,
@@ -74,13 +74,13 @@ class TestLoyaltyController {
 
   @Get('coupon-plans')
   listCouponPlans(@Req() req: Request) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.listCouponPlans(tenantContext.tenantId)
   }
 
   @Get('coupon-plans/:planId')
   getCouponPlan(@Req() req: Request, @Param('planId') planId: string) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.getCouponPlan(planId, tenantContext.tenantId)
   }
 
@@ -90,7 +90,7 @@ class TestLoyaltyController {
     @Param('planId') planId: string,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.updateCouponPlanStatus(
       planId,
       body.status as LoyaltyPlanStatus,
@@ -104,7 +104,7 @@ class TestLoyaltyController {
     @Param('planId') planId: string,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.issueCouponFromPlan({
       tenantContext,
       memberId: body.memberId as string,
@@ -118,7 +118,7 @@ class TestLoyaltyController {
     @Req() req: Request,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.registerBlindboxPlan({
       tenantContext,
       blindboxPlanId: body.blindboxPlanId as string,
@@ -139,7 +139,7 @@ class TestLoyaltyController {
 
   @Get('blindbox-plans')
   listBlindboxPlans(@Req() req: Request) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.listBlindboxPlans(tenantContext.tenantId)
   }
 
@@ -149,7 +149,7 @@ class TestLoyaltyController {
     @Param('blindboxPlanId') blindboxPlanId: string,
     @Query() query: BlindboxProbabilityOverviewQueryDto
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.getBlindboxProbabilityOverview(blindboxPlanId, tenantContext.tenantId, query)
   }
 
@@ -159,7 +159,7 @@ class TestLoyaltyController {
     @Param('blindboxPlanId') blindboxPlanId: string,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.updateBlindboxPlanStatus(
       blindboxPlanId,
       body.status as LoyaltyPlanStatus,
@@ -173,7 +173,7 @@ class TestLoyaltyController {
     @Param('blindboxPlanId') blindboxPlanId: string,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.issueBlindboxFromPlanAtomically({
       tenantContext,
       memberId: body.memberId as string,
@@ -184,7 +184,7 @@ class TestLoyaltyController {
 
   @Get('blindbox-fulfillments')
   listBlindboxFulfillments(@Req() req: Request) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.listBlindboxFulfillments(tenantContext.tenantId)
   }
 
@@ -193,7 +193,7 @@ class TestLoyaltyController {
     @Req() req: Request,
     @Query() query: Record<string, string | undefined>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.listBlindboxDrawAuditLogPage(tenantContext.tenantId, {
       memberId: query.memberId,
       planId: query.planId,
@@ -205,13 +205,13 @@ class TestLoyaltyController {
 
   @Get('blindbox-draw-records/integrity')
   getBlindboxDrawRecordIntegrity(@Req() req: Request) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.getBlindboxDrawAuditIntegrityReport(tenantContext.tenantId)
   }
 
   @Get('blindbox-members/:memberId/overview')
   getBlindboxMemberOverview(@Req() req: Request, @Param('memberId') memberId: string) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.getBlindboxMemberOverview(tenantContext.tenantId, memberId)
   }
 }

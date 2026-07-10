@@ -45,7 +45,7 @@ class TestPortalController {
 
   @Get('bootstrap')
   getBootstrap(@Req() req: Request) {
-    return this.portalService.getBootstrap((req as TenantAwareRequest).tenantContext as RequestTenantContext)
+    return this.portalService.getBootstrap((req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext)
   }
 }
 
@@ -55,7 +55,7 @@ class TestWorkbenchController {
 
   @Get('bootstrap')
   getBootstrap(@Req() req: Request) {
-    return this.workbenchService.getBootstrap((req as TenantAwareRequest).tenantContext as RequestTenantContext)
+    return this.workbenchService.getBootstrap((req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext)
   }
 }
 
@@ -102,7 +102,7 @@ it('e2e: bootstrap consumers expose stable api result envelopes', async () => {
 
   const app = moduleRef.createNestApplication()
   app.use((req: unknown, _res: Response, next: NextFunction) => {
-    attachRequestContext(req as TenantAwareRequest)
+    attachRequestContext(req as unknown as TenantAwareRequest)
     next()
   })
   app.useGlobalInterceptors(new ResponseInterceptor())
@@ -275,7 +275,7 @@ async function buildBootstrapApp() {
   }).compile()
   const app = moduleRef.createNestApplication()
   app.use((req: unknown, _res: Response, next: NextFunction) => {
-    attachRequestContext(req as TenantAwareRequest)
+    attachRequestContext(req as unknown as TenantAwareRequest)
     next()
   })
   app.useGlobalInterceptors(new ResponseInterceptor())

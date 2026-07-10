@@ -43,49 +43,49 @@ class TestController {
 
   @Post('inventory/products')
   createProduct(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.inventoryService.createProduct(tc, body)
   }
 
   @Post('inventory/stock-in')
   stockIn(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.inventoryService.stockIn(tc, body)
   }
 
   @Post('inventory/stock-out')
   stockOut(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.inventoryService.stockOut(tc, body)
   }
 
   @Post('inventory/purchase-orders')
   createPO(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.inventoryService.createPurchaseOrder(tc, body)
   }
 
   @Post('inventory/purchase-orders/:poId/confirm')
   confirmPO(@Req() req: Request, @Param('poId') poId: string) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.inventoryService.confirmOrder(poId, tc)
   }
 
   @Post('inventory/purchase-orders/:poId/receive')
   receivePO(@Req() req: Request, @Param('poId') poId: string) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.inventoryService.receiveOrder(poId, tc)
   }
 
   @Post('finance/ledgers')
   async recordLedger(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.financeService.recordLedger(tc, body)
   }
 
   @Post('finance/revenue')
   async recordRevenue(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.financeService.recordTransactionRevenue(tc, body)
   }
 }

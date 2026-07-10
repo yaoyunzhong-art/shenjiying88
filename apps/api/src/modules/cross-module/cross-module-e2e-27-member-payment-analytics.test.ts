@@ -40,7 +40,7 @@ class TestMemberPaymentAnalyticsController {
 
   @Post('members/register')
   registerMember(@Req() req: Request, @Body() body: { memberId: string; nickname: string }) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.memberService.register({
       memberId: body.memberId,
       tenantContext,
@@ -61,7 +61,7 @@ class TestMemberPaymentAnalyticsController {
       source?: 'cashier' | 'lyt-snapshot'
     }
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.memberService.recordPaymentActivity({
       memberId,
       tenantContext,
@@ -78,7 +78,7 @@ class TestMemberPaymentAnalyticsController {
     @Req() req: Request,
     @Query() query: { scope?: 'TENANT' | 'BRAND' | 'STORE'; brandId?: string; storeId?: string }
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.analyticsController.getOperationSnapshot(tenantContext, query as any)
   }
 }

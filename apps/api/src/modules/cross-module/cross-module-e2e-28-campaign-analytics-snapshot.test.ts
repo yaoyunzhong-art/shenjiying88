@@ -42,7 +42,7 @@ class TestCampaignAnalyticsController {
 
   @Post('campaigns')
   registerCampaign(@Req() req: Request, @Body() body: Record<string, unknown>) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignController.registerCampaign(tenantContext, body as any)
   }
 
@@ -52,13 +52,13 @@ class TestCampaignAnalyticsController {
     @Param('planId') planId: string,
     @Body() body: { status: string }
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignController.updateCampaignStatus(tenantContext, planId, body as any)
   }
 
   @Post('campaigns/evaluate')
   evaluateCampaign(@Req() req: Request, @Body() body: Record<string, unknown>) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignController.evaluateTriggers(tenantContext, body as any)
   }
 
@@ -67,7 +67,7 @@ class TestCampaignAnalyticsController {
     @Req() req: Request,
     @Query() query: { scope?: 'TENANT' | 'BRAND' | 'STORE'; brandId?: string; storeId?: string }
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.analyticsController.getOperationSnapshot(tenantContext, query as any)
   }
 }

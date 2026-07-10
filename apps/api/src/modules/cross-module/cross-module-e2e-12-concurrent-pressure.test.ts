@@ -60,7 +60,7 @@ class TestController {
 
   @Post('members')
   registerMember(@Req() req: Request, @Body() body: { memberId: string }) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.memberService.register({
       memberId: body.memberId,
       tenantContext: tc,
@@ -70,7 +70,7 @@ class TestController {
 
   @Post('cashier/orders')
   createOrder(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.cashierService.createOrder(tc, body)
   }
 
@@ -86,7 +86,7 @@ class TestController {
 
   @Get('cashier/orders/:orderId')
   getOrder(@Req() req: Request, @Param('orderId') orderId: string) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     const order = this.cashierService.getOrder(orderId, tc)
     if (!order) throw new Error(`Order ${orderId} not found`)
     return order

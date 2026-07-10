@@ -43,7 +43,7 @@ import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.
 import { AnalyticsService } from './analytics.service'
 
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
+  const ctx = req as unknown as TenantAwareRequest
   ctx.tenantContext = {
     tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
     brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
@@ -62,7 +62,7 @@ class TestAnalyticsController {
     @Req() req: Request,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.analyticsService.getOperationSnapshot(tenantContext, {
       scope: body.scope as any,
       brandId: body.brandId as string | undefined,
@@ -72,7 +72,7 @@ class TestAnalyticsController {
 
   @Get('diagnostics')
   getDiagnostics(@Req() req: Request, @Body() body: Record<string, unknown>) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.analyticsService.getDiagnostics(tenantContext, {
       scope: body.scope as any,
       brandId: body.brandId as string | undefined,
@@ -82,7 +82,7 @@ class TestAnalyticsController {
 
   @Get('recommendations')
   getRecommendations(@Req() req: Request, @Body() body: Record<string, unknown>) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.analyticsService.getRecommendations(tenantContext, {
       scope: body.scope as any,
       brandId: body.brandId as string | undefined,

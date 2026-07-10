@@ -45,7 +45,7 @@ class TestController {
   ) {}
 
   private getCtx(req: Request): RequestTenantContext {
-    return (req as TenantAwareRequest).tenantContext as RequestTenantContext;
+    return (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext;
   }
 
   // ── Member ──

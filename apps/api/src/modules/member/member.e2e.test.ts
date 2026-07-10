@@ -41,7 +41,7 @@ import { type MemberLevel, type MemberStatus, MemberLevel as ML, MemberStatus as
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
 
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
+  const ctx = req as unknown as TenantAwareRequest
   ctx.tenantContext = {
     tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
     brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
@@ -57,7 +57,7 @@ class TestMemberController {
 
   @Get('bootstrap')
   bootstrap(@Req() req: Request) {
-    const ctx = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const ctx = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.memberService.getBootstrap(ctx)
   }
 
@@ -96,7 +96,7 @@ class TestMemberController {
 
   @Post('register')
   register(@Req() req: Request, @Body() body: { memberId: string; nickname: string }) {
-    const ctx = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const ctx = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.memberService.register({ memberId: body.memberId, tenantContext: ctx, nickname: body.nickname })
   }
 
@@ -115,7 +115,7 @@ class TestMemberController {
     @Param('memberId') memberId: string,
     @Body() body: { nickname?: string; email?: string; address?: string; notes?: string }
   ) {
-    const ctx = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const ctx = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     const profile = this.memberService.getProfile(memberId)
     if (!profile) {
       throw new Error(`Member ${memberId} not found`)

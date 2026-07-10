@@ -52,7 +52,7 @@ class TestController {
 
   @Post('members')
   register(@Req() req: Request, @Body() body: { memberId: string; nickname?: string }) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.memberService.register({
       memberId: body.memberId,
       tenantContext: tc,
@@ -62,7 +62,7 @@ class TestController {
 
   @Post('reservations')
   createReservation(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.reservationService.create({
       tenantId: tc.tenantId,
       type: body.type as ReservationType,
@@ -80,31 +80,31 @@ class TestController {
 
   @Post('reservations/:id/confirm')
   confirmReservation(@Req() req: Request, @Param('id') id: string) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.reservationService.confirm(id, tc.tenantId)
   }
 
   @Post('reservations/:id/start-progress')
   startProgress(@Req() req: Request, @Param('id') id: string) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.reservationService.startProgress(id, tc.tenantId)
   }
 
   @Post('reservations/:id/complete')
   completeReservation(@Req() req: Request, @Param('id') id: string) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.reservationService.complete(id, tc.tenantId)
   }
 
   @Post('reservations/:id/cancel')
   cancelReservation(@Req() req: Request, @Param('id') id: string) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.reservationService.cancel(id, tc.tenantId)
   }
 
   @Post('queues/join')
   joinQueue(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.queueService.create({
       tenantId: tc.tenantId,
       type: body.type ?? QueueType.Waiting,
@@ -119,31 +119,31 @@ class TestController {
 
   @Post('queues/:id/complete')
   completeQueue(@Req() req: Request, @Param('id') id: string) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.queueService.complete(id, tc.tenantId)
   }
 
   @Post('queues/:id/start-service')
   startService(@Req() req: Request, @Param('id') id: string) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.queueService.startService(id, tc.tenantId)
   }
 
   @Post('queues/call-next')
   callNextQueue(@Req() req: Request, @Body() body: { resourceId: string }) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.queueService.callNext(body.resourceId, tc.tenantId)
   }
 
   @Post('queues/:id/cancel')
   cancelQueue(@Req() req: Request, @Param('id') id: string) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.queueService.cancel(id, tc.tenantId)
   }
 
   @Post('cashier/orders')
   createOrder(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.cashierService.createOrder(tc, body)
   }
 

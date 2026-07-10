@@ -52,61 +52,61 @@ class TestController {
 
   @Post('finance/accounts')
   createAccount(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.financeService.createAccount(tc, body)
   }
 
   @Post('finance/ledgers')
   recordLedger(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.financeService.recordLedger(tc, body)
   }
 
   @Post('finance/revenue')
   recordRevenue(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.financeService.recordTransactionRevenue(tc, body)
   }
 
   @Post('finance/refund')
   recordRefund(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.financeService.recordTransactionRefund(tc, body)
   }
 
   @Get('finance/ledgers')
   listLedgers(@Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.financeService.listLedgers(tc)
   }
 
   @Post('finance/settlements')
   createSettlement(@Req() req: Request, @Body() body: any) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.financeService.createSettlement(tc, body)
   }
 
   @Post('finance/settlements/:id/confirm')
   confirmSettlement(@Param('id') id: string, @Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.financeService.confirmSettlement(id, tc)
   }
 
   @Post('finance/settlements/:id/dispute')
   disputeSettlement(@Param('id') id: string, @Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.financeService.disputeSettlement(id, tc)
   }
 
   @Get('finance/settlements/:id')
   getSettlementDetail(@Param('id') id: string, @Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.financeService.getSettlementDetail(id, tc)
   }
 
   @Get('finance/settlements')
   listSettlements(@Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.financeService.listSettlements(tc)
   }
 }

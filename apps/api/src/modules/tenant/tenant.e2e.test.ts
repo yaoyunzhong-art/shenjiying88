@@ -22,7 +22,7 @@ import { ResponseInterceptor } from '../../common/interceptors/response.intercep
 import type { TenantAwareRequest } from './tenant.types'
 
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
+  const ctx = req as unknown as TenantAwareRequest
   ctx.tenantContext = {
     tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-demo',
     brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-demo',

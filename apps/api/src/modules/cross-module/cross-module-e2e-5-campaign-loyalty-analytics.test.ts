@@ -37,7 +37,7 @@ class TestCampaignController {
 
   @Post()
   register(@Req() req: Request, @Body() body: Record<string, unknown>) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignService.registerCampaign({
       tenantContext: tc,
       code: body.code as string,
@@ -56,7 +56,7 @@ class TestCampaignController {
     @Param('planId') planId: string,
     @Body() body: Record<string, unknown>
   ) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignService.updateCampaignStatus(planId, body.status as any, tc.tenantId)
   }
 
@@ -82,13 +82,13 @@ class TestLoyaltyController {
 
   @Get('points-ledger')
   listPointsLedger(@Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.listPointsLedger(tc.tenantId)
   }
 
   @Get('coupon-redemptions')
   listCouponRedemptions(@Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.loyaltyService.listCouponRedemptions(tc.tenantId)
   }
 }
@@ -99,13 +99,13 @@ class TestAnalyticsController {
 
   @Get('snapshot')
   snapshot(@Req() req: Request, @Query() query: { scope: 'TENANT' | 'BRAND' | 'STORE'; brandId?: string; storeId?: string }) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.analyticsService.getOperationSnapshot(tc, { scope: query.scope as any })
   }
 
   @Get('diagnostics')
   diagnostics(@Req() req: Request, @Query() query: { scope: 'TENANT' | 'BRAND' | 'STORE' }) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.analyticsService.getDiagnostics(tc, { scope: query.scope as any })
   }
 }

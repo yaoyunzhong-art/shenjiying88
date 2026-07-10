@@ -45,7 +45,7 @@ import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.
 import { TransactionsService, resetTransactionsServiceTestState } from './transactions.service'
 
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
+  const ctx = req as unknown as unknown as TenantAwareRequest
   ctx.tenantContext = {
     tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
     brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',
@@ -68,13 +68,13 @@ class TestTransactionsController {
 
   @Get('orders/:orderId')
   getOrder(@Req() req: Request, @Param('orderId') orderId: string) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.transactionsService.getOrderTransaction(orderId, tenantContext)
   }
 
   @Get('orders')
   listOrders(@Req() req: Request) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.transactionsService.listOrderTransactions(tenantContext)
   }
 
@@ -84,25 +84,25 @@ class TestTransactionsController {
     @Param('orderId') orderId: string,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.transactionsService.requestRefund(orderId, tenantContext, body as any)
   }
 
   @Get('refunds/dashboard')
   dashboard(@Req() req: Request) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.transactionsService.getRefundDashboard(tenantContext)
   }
 
   @Get('refunds/:refundId')
   getRefund(@Req() req: Request, @Param('refundId') refundId: string) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.transactionsService.getRefund(refundId, tenantContext)
   }
 
   @Get('refunds')
   listRefunds(@Req() req: Request) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.transactionsService.listRefunds(tenantContext)
   }
 
@@ -112,7 +112,7 @@ class TestTransactionsController {
     @Param('refundId') refundId: string,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.transactionsService.approveRefund(refundId, tenantContext, body as any)
   }
 
@@ -122,19 +122,19 @@ class TestTransactionsController {
     @Param('refundId') refundId: string,
     @Body() body: Record<string, unknown>
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.transactionsService.rejectRefund(refundId, tenantContext, body as any)
   }
 
   @Get('members/:memberId')
   listMember(@Req() req: Request, @Param('memberId') memberId: string) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.transactionsService.listMemberTransactions(memberId, tenantContext)
   }
 
   @Get()
   listTransactions(@Req() req: Request, @Query() query: Record<string, unknown>) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     const type = query.type as string | undefined
     const dateFrom = query.dateFrom as string | undefined
     const dateTo = query.dateTo as string | undefined
@@ -170,7 +170,7 @@ class TestTransactionsController {
 
   @Get('stats')
   getStats(@Req() req: Request) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     const orders = this.transactionsService.listOrderTransactions(tenantContext, {
       limit: undefined
     })
@@ -198,7 +198,7 @@ class TestTransactionsController {
     @Req() req: Request,
     @Body() body: { orders: Array<{ memberId: string; items: Array<{ skuId: string; title: string; quantity: number; price: number }>; amount: number; externalPaymentId: string }> }
   ) {
-    const tenantContext = (req as TenantAwareRequest).tenantContext as RequestTenantContext
+    const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     const cashierService = (this.transactionsService as any).cashierService as CashierService
     const results: unknown[] = []
     for (const o of body.orders ?? []) {

@@ -55,7 +55,7 @@ function makeReq(overrides: Partial<TenantAwareRequest> = {}): TenantAwareReques
     actorContext: makeActorContext(),
     governanceContext: makeGovernanceContext(),
     ...overrides
-  } as TenantAwareRequest
+  } as unknown as TenantAwareRequest
 }
 
 // ──────────── 路由元数据 ────────────
@@ -136,7 +136,7 @@ describe('resolveTenant 正常解析', () => {
           marketCode: 'us-default'
         }),
         actorContext: undefined
-      } as TenantAwareRequest)
+      } as unknown as TenantAwareRequest)
     )
 
     assert.equal(result.effectiveTenantId, 't-public')
@@ -168,7 +168,7 @@ describe('resolveTenant 正常解析', () => {
       makeReq({
         tenantContext: makeTenantContext({ tenantId: undefined as unknown as string }),
         actorContext: undefined
-      } as TenantAwareRequest)
+      } as unknown as TenantAwareRequest)
     )
 
     assert.equal(result.effectiveTenantId, 'tenant-demo')
@@ -210,7 +210,7 @@ describe('resolveTenant 边界场景', () => {
       tenantContext: undefined,
       actorContext: undefined,
       governanceContext: undefined
-    } as unknown as TenantAwareRequest)
+    } as unknown as unknown as TenantAwareRequest)
 
     assert.equal(result.effectiveTenantId, 'tenant-demo')
     assert.equal(result.actor, null)
@@ -224,7 +224,7 @@ describe('resolveTenant 边界场景', () => {
       tenantContext: { tenantId: 't-minimal-client' },
       actorContext: undefined,
       governanceContext: undefined
-    } as unknown as TenantAwareRequest)
+    } as unknown as unknown as TenantAwareRequest)
 
     assert.equal(result.effectiveTenantId, 't-minimal-client')
     assert.equal(result.effectiveMarketCode, undefined)
@@ -522,7 +522,7 @@ describe('resolveTenant 幂等性与一致性', () => {
       tenantContext: makeTenantContext(),
       actorContext: undefined,
       governanceContext: undefined
-    } as unknown as TenantAwareRequest)
+    } as unknown as unknown as TenantAwareRequest)
 
     assert.equal(withActor.source, 'tenant-module')
     assert.equal(withoutActor.source, 'tenant-module')

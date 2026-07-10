@@ -97,37 +97,37 @@ class TestLytController {
 
   @Get('connection/:storeId')
   async getConnection(@Param('storeId') storeId: string, @Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext | undefined
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext | undefined
     return this.lytService.getConnection(storeId, tc)
   }
 
   @Get('connection/:storeId/readiness')
   async getConnectionCapabilityReadiness(@Param('storeId') storeId: string, @Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext | undefined
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext | undefined
     return this.lytService.getConnectionCapabilityReadiness(storeId, tc)
   }
 
   @Get('connection/:storeId/access-view')
   async getStoreCapabilityAccessView(@Param('storeId') storeId: string, @Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext | undefined
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext | undefined
     return this.lytService.getStoreCapabilityAccessView(storeId, tc)
   }
 
   @Get('connection/:storeId/adapter')
   async getAdapterSelection(@Param('storeId') storeId: string, @Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext | undefined
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext | undefined
     return this.lytService.getAdapterSelection(storeId, tc)
   }
 
   @Get('connection/governance-summary')
   async getConnectionGovernanceSummary(@Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext | undefined
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext | undefined
     return this.lytService.getConnectionGovernanceSummary(tc)
   }
 
   @Get('connection/governance-alerts')
   async getConnectionGovernanceAlerts(@Req() req: Request) {
-    const tc = (req as TenantAwareRequest).tenantContext as RequestTenantContext | undefined
+    const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext | undefined
     return this.lytService.getConnectionGovernanceAlerts(tc)
   }
 
@@ -157,7 +157,7 @@ class TestLytController {
 // ---------------------------------------------------------------------------
 
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
-  const ctx = req as TenantAwareRequest
+  const ctx = req as unknown as TenantAwareRequest
   ctx.tenantContext = {
     tenantId: (req.header('x-tenant-id') as string | undefined) ?? 'tenant-001',
     brandId: (req.header('x-brand-id') as string | undefined) ?? 'brand-001',

@@ -5,6 +5,8 @@
 // 无法解析 *.ts, 我们这里使用 `export type` 显式 re-export, 配合
 // 运行时占位让 require('./tenant.types') 拿到 module object.
 
+import type { Request } from 'express'
+
 export type ActorType =
   | 'platform-user'
   | 'tenant-user'
@@ -55,13 +57,14 @@ export interface RequestGovernanceContext {
     applied: boolean
     scopeKey?: string
     allowed?: boolean
+    retryAfterSeconds?: number
   }
 }
 
 export interface ResolvedActorContext {
   authenticated: boolean
   actor: RequestActorContext | null
-  tenantContext: { tenantId: string }
+  tenantContext: RequestTenantContext
   effectiveTenantId: string
   effectiveBrandId?: string
   effectiveStoreId?: string
@@ -70,9 +73,10 @@ export interface ResolvedActorContext {
   permissions: string[]
 }
 
-export interface TenantAwareRequest {
+export interface TenantAwareRequest extends Request {
   tenantContext: RequestTenantContext
   actorContext?: RequestActorContext
+  governanceContext?: RequestGovernanceContext
 }
 
 // 运行时占位对象 (满足 require('./tenant.types') 返回非空 module)
