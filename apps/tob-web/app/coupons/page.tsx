@@ -21,34 +21,8 @@ import {
   type DataTableSortConfig,
 } from '@m5/ui';
 
-// ---- 类型 ----
-
-type CouponType = 'discount' | 'cash' | 'free_shipping' | 'voucher';
-type CouponStatus = 'active' | 'expired' | 'disabled';
-
-interface Coupon {
-  id: string;
-  name: string;
-  type: CouponType;
-  value: string;
-  minAmount: string;
-  maxAmount: string;
-  totalIssued: number;
-  usedCount: number;
-  validFrom: string;
-  validTo: string;
-  marketCode: string;
-  brandCode: string;
-  status: CouponStatus;
-  createdBy: string;
-}
-
-const TYPE_LABELS: Record<CouponType, string> = {
-  discount: '打折券',
-  cash: '代金券',
-  free_shipping: '免运费',
-  voucher: '礼品券',
-};
+import type { Coupon, CouponType, CouponStatus } from './coupons-data';
+import { MOCK_COUPONS, TYPE_LABELS, STATUS_LABELS } from './coupons-data';
 
 const TYPE_VARIANTS: Record<CouponType, 'success' | 'warning' | 'info' | 'danger'> = {
   discount: 'success',
@@ -57,79 +31,11 @@ const TYPE_VARIANTS: Record<CouponType, 'success' | 'warning' | 'info' | 'danger
   voucher: 'danger',
 };
 
-const STATUS_LABELS: Record<CouponStatus, string> = {
-  active: '进行中',
-  expired: '已过期',
-  disabled: '已停用',
-};
-
 const STATUS_VARIANTS: Record<CouponStatus, 'success' | 'neutral' | 'warning'> = {
   active: 'success',
   expired: 'neutral',
   disabled: 'warning',
 };
-
-const MARKETS = ['CN-SH', 'CN-BJ', 'CN-GD', 'CN-SC', 'CN-ZJ'];
-const BRANDS = ['M5', 'M5-PRO', 'M5-LITE'];
-const SALESPERSONS = ['张三', '李四', '王五', '赵六'];
-
-// ---- Mock 数据 ----
-
-function createMockCoupons(): Coupon[] {
-  const now = new Date('2026-06-26');
-  const names = [
-    '新客首单8折', '满300减50', '会员专享免运费', '夏季狂欢9折',
-    '端午节礼券', '满500减80', '年终特惠8.5折', '开业庆代价券',
-    '复购有礼', '好友邀请券', '周末促销', '超值套餐券',
-    '店庆大促', '跨店满减', '会员日专享', '批量采购优惠',
-    '新品首发折扣', '积分兑换券', '老客回馈', '季度满减',
-  ];
-  const types: CouponType[] = ['discount', 'cash', 'free_shipping', 'voucher'];
-  const statuses: CouponStatus[] = ['active', 'active', 'active', 'expired', 'disabled'];
-
-  return names.map((name, i) => {
-    const type = types[i % types.length]!;
-    const status = statuses[i % statuses.length]!;
-    const totalIssued = Math.floor(Math.random() * 2000) + 100;
-    const usedCount = Math.floor(Math.random() * totalIssued);
-    const startDays = Math.floor(Math.random() * 60) + 1;
-    const endDays = Math.floor(Math.random() * 180) + 30;
-
-    const valueMap: Record<CouponType, string> = {
-      discount: `${[8, 8.5, 9, 7, 6.5][i % 5]}折`,
-      cash: `¥${[20, 30, 50, 80, 100, 200][i % 6]}`,
-      free_shipping: '免运费',
-      voucher: `¥${[30, 50, 100, 200][i % 4]}`,
-    };
-    const minAmount = (() => {
-      switch(type) {
-        case 'discount': return ['满0元', '满200元', '满0元'][i % 3];
-        case 'cash': return ['满100元', '满300元', '满500元', '满600元'][i % 4];
-        case 'free_shipping': return ['满99元', '满0元'][i % 2];
-        case 'voucher': return ['满100元', '满200元'][i % 2];
-      }
-    })();
-
-    return {
-      id: `tob-cpn-${String(i + 1).padStart(3, '0')}`,
-      name,
-      type,
-      value: valueMap[type],
-      minAmount: minAmount as string,
-      maxAmount: type === 'discount' || type === 'cash' ? `¥200` : '',
-      totalIssued,
-      usedCount,
-      validFrom: new Date(now.getTime() - startDays * 86400000).toISOString().slice(0, 10),
-      validTo: new Date(now.getTime() + endDays * 86400000).toISOString().slice(0, 10),
-      marketCode: MARKETS[i % MARKETS.length]!,
-      brandCode: BRANDS[i % BRANDS.length]!,
-      status,
-      createdBy: SALESPERSONS[i % SALESPERSONS.length]!,
-    };
-  });
-}
-
-const MOCK_COUPONS = createMockCoupons();
 
 // ---- 统计子组件 ----
 

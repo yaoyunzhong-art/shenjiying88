@@ -21,15 +21,13 @@ describe('coupons — 正例', () => {
     assert.ok(src.includes('export default function CouponsListPage'), '缺少默认导出');
   });
 
-  it('应包含 Coupon 接口定义', () => {
+  it('应从 coupons-data 导入 Coupon 类型', () => {
     const src = readSource();
-    assert.ok(src.includes('interface Coupon'), '缺少 Coupon 接口');
+    assert.ok(src.includes('coupons-data'), '应引用共享数据层');
+    assert.ok(src.includes('MOCK_COUPONS'), '应引用 MOCK_COUPONS');
   });
 
-  it('应包含 MOCK_COUPONS 数据集', () => {
-    const src = readSource();
-    assert.ok(src.includes('MOCK_COUPONS'), '缺少 MOCK_COUPONS');
-  });
+
 
   it('应计算 total / active / totalIssued / totalUsed', () => {
     const src = readSource();
