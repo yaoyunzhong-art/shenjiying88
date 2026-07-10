@@ -56,9 +56,8 @@ function reportMetric(
   name: string,
   value: number,
   labels: Record<string, string> = {},
-  timestamp?: string,
 ): void {
-  svc.recordMetric({ name, value, labels, timestamp })
+  svc.recordMetric({ name, value, labels })
 }
 
 /** 获取 firing 状态的告警列表 */
