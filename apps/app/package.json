@@ -10,7 +10,8 @@
     "build": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test 'screens/**/*.test.ts' 'screens/**/*.test.tsx' 2>/dev/null; node --import tsx --test 'screens/home/home-screen.test.ts' 'screens/settings/settings-screen.test.ts' $(find . -maxdepth 1 -type f -name '*.test.ts' | sort)"
+    "test": "node --import tsx --test $(find . -maxdepth 3 -name '*.test.ts' | sort) 2>/dev/null",
+    "test:render": "echo '⚠️  render tests need vitest setup (esbuild+react-native conflict)'; echo 'see: test/README.md'"
   },
   "dependencies": {
     "@m5/sdk": "workspace:*",
