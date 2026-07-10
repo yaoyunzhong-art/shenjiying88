@@ -40,10 +40,11 @@ const EXCHANGE_RATES: Record<SupportedCurrency, number> = {
 const COUNTRY_IP_PREFIX: Record<string, string> = {
   '1.0.1': 'CN', '1.0.2': 'CN', '36.152': 'CN', '42.176': 'CN',
   '27.115': 'CN', '58.14': 'CN', '116.52': 'CN',
-  '103.0': 'JP', '106.0': 'JP', '114.1': 'JP', '125.0': 'JP',
+  '112.80': 'CN', '112.81': 'CN', '112.82': 'CN', '223.71': 'CN',
+  '103.0': 'JP', '103.5': 'JP', '106.0': 'JP', '114.1': 'JP', '125.0': 'JP',
   '175.0': 'KR', '210.0': 'KR',
   '14.0': 'SG', '27.0': 'SG',
-  '52.0': 'US', '54.0': 'US', '104.0': 'US', '172.0': 'US',
+  '8.8': 'US', '52.0': 'US', '54.0': 'US', '104.0': 'US', '172.0': 'US',
   '202.0': 'TW', '220.0': 'TW',
 }
 
@@ -223,14 +224,18 @@ export class I18nGeoService {
   }
 
   isSupportedLocale(locale: string): boolean {
-    const allowed = ['zh-CN', 'en-US', 'ja-JP', 'ko-KR', 'zh-TW', 'es-ES', 'fr-FR', 'de-DE']
+    const allowed = ['zh-CN', 'en-US', 'ja-JP', 'ko-KR', 'zh-TW', 'es-ES', 'de-DE']
     return allowed.includes(locale)
   }
 
   getLocaleForRegion(regionName: string): string {
     for (const [, raw] of Object.entries(REGION_CONFIGS)) {
       const config = raw as any
-      if (config.regionName === regionName || config.regionNameEn === regionName) {
+      if (
+        config.regionCode === regionName ||
+        config.regionName === regionName ||
+        config.regionNameEn === regionName
+      ) {
         return config.language
       }
     }

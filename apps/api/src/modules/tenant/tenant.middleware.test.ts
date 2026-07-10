@@ -2,9 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
-
- 
-const { TenantMiddleware } = require('./tenant.middleware')
+import { TenantMiddleware } from './tenant.middleware'
 
 function makeReq(headers: Record<string, string> = {}): Record<string, any> {
   const headerMap = new Map(Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v]))

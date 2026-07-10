@@ -2,9 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants'
-
- 
-const { TenantContext } = require('./tenant.decorator')
+import { TenantContext } from './tenant.decorator'
 
 describe('TenantContext param decorator', () => {
   it('is a function (returned by createParamDecorator)', () => {

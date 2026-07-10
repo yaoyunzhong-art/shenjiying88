@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-
 // Ensure types are importable and structurally sound
- 
-const types = require('./tenant.types')
+import * as types from './tenant.types'
 
 describe('tenant types', () => {
   describe('ActorType', () => {
