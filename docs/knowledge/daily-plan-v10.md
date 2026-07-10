@@ -60,7 +60,7 @@
 
 ## 二、cron总额和约束
 
-**总cron数: 25**（3会议+2isolated+5every+7夜间+8日间短锚点）
+**总cron数: 28**（3会议+2isolated+5every+7夜间+8日间短锚点）
 
 **maxConcurrentRuns = 3**（同时最多3路LLM，防资源爆炸）
 
