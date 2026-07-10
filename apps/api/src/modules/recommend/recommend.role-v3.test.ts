@@ -25,6 +25,11 @@ import { RecommendCacheService } from './recommend-cache.service'
 import { ProductAdapter } from './datasources/product.adapter'
 import { PurchaseHistoryAdapter } from './datasources/purchase-history.adapter'
 import { MemberPreferenceAdapter } from './datasources/member-preference.adapter'
+import { ItemCFStrategy } from './strategies/item-cf.strategy'
+import { UserCFStrategy } from './strategies/user-cf.strategy'
+import { PopularStrategy } from './strategies/popular.strategy'
+import { RecentlyViewedStrategy } from './strategies/recently-viewed.strategy'
+import { PersonalizedStrategy } from './strategies/personalized.strategy'
 
 // ── 角色定义 ──
 const ROLES = {
@@ -68,14 +73,24 @@ function createController(options: { seedData?: boolean } = {}): RecommendContro
   const scoringService = new ScoringService()
   const divService = new DiversificationService()
   const coldStart = new ColdStartService()
+  const itemCF = new ItemCFStrategy()
+  const userCF = new UserCFStrategy()
+  const popular = new PopularStrategy()
+  const recentlyViewed = new RecentlyViewedStrategy()
+  const personalized = new PersonalizedStrategy()
   const engine = new RecommendationEngine(
     scoringService,
     divService,
     coldStart,
+    cache,
     productAdapter,
     purchaseAdapter,
     prefAdapter,
-    cache,
+    itemCF,
+    userCF,
+    popular,
+    recentlyViewed,
+    personalized,
   )
   return new RecommendController(engine, cache, productAdapter, purchaseAdapter, prefAdapter)
 }
