@@ -31,9 +31,9 @@ describe('ai-experiments/[id]/page — 正例', () => {
     assert.match(src, /DetailShell/);
   });
 
-  it('应引用 DetailActionBar 操作栏', () => {
+  it('应使用 DetailShellAction 操作栏模式', () => {
     const src = readSource();
-    assert.match(src, /DetailActionBar/);
+    assert.match(src, /DetailShellAction/);
   });
 
   it('应引用 DetailClosureBar 关闭结论栏', () => {
@@ -46,9 +46,9 @@ describe('ai-experiments/[id]/page — 正例', () => {
     assert.match(src, /ComparisonBreakdownChart/);
   });
 
-  it('应引用 DrilldownTrendCard 趋势卡片', () => {
+  it('应引用 OptimizationSuggestion 优化建议', () => {
     const src = readSource();
-    assert.match(src, /DrilldownTrendCard/);
+    assert.match(src, /OptimizationSuggestion/);
   });
 
   it('应包含 4 个 mock 实验数据 (exp-001 ~ exp-004)', () => {
@@ -92,9 +92,9 @@ describe('ai-experiments/[id]/page — 正例', () => {
     assert.match(src, /handleExport/);
   });
 
-  it('应包含趋势数据 trendData', () => {
+  it('应包含 suggestions 优化建议数据', () => {
     const src = readSource();
-    assert.match(src, /trendData/);
+    assert.match(src, /suggestions/);
   });
 
   it('应包含 breakdownData 指标对比', () => {
@@ -164,10 +164,11 @@ describe('ai-experiments/[id]/page — 边界用例', () => {
 
   it('应包含 statusColor 完整映射 (5种状态)', () => {
     const src = readSource();
-    const statusEntries = src.match(/'[a-z]+':\s*'[a-z]+'/g);
-    const statusCount = statusEntries?.filter(s =>
-      /running|completed|draft|paused|failed/.test(s)
-    ).length ?? 0;
+    const statusEntries = src.match(/statusColor[\s\S]*?\};/);
+    const statusKeys = statusEntries ? statusEntries[0].match(/[a-z]+(?=:)/g) ?? [] : [];
+    const statusCount = statusKeys.filter(k =>
+      /running|completed|draft|paused|failed/.test(k)
+    ).length;
     assert.ok(statusCount >= 5, `期望 ≥5 种状态映射, 实际 ${statusCount}`);
   });
 
@@ -179,9 +180,10 @@ describe('ai-experiments/[id]/page — 边界用例', () => {
     }
   });
 
-  it('completed 实验应显示结论栏', () => {
+  it('应通过 DetailClosureBar 渲染实验结论', () => {
     const src = readSource();
-    assert.match(src, /实验结论/);
+    assert.match(src, /DetailClosureBar/);
+    assert.match(src, /ComparisonBreakdownChart/);
   });
 
   it('应包含 AI 推荐气泡', () => {
