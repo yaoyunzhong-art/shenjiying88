@@ -266,13 +266,16 @@ describe(`${ROLES.Operations} svip 角色测试`, () => {
   it('运行专员可协助用户续期订阅', async () => {
     const plan = await createCommonPlan(controller)
     const sub = await subscribeTo(controller.subscribe({ userId: 'ops-user-001', planId: plan.planId }))
+    const originalExpire = sub!.expireAt.getTime()
+
+    // 模拟等待 1ms 确保时间戳变化
+    await new Promise(r => setTimeout(r, 1))
 
     const renewed = await subscribeTo(controller.renew(sub!.subscriptionId))
     expect(renewed).not.toBeNull()
     expect(renewed!.status).toBe('active')
 
     // expireAt should be extended
-    const originalExpire = sub!.expireAt.getTime()
     const renewedExpire = renewed!.expireAt.getTime()
     expect(renewedExpire).toBeGreaterThan(originalExpire)
   })
@@ -361,10 +364,18 @@ describe(`${ROLES.Marketing} svip 角色测试`, () => {
   })
 
   it('营销可模拟用户使用权益流程以验证推广效果', async () => {
-    const plan = await createCommonPlan(controller)
+    // 创建一个包含 '免费配送' 权益的计划
+    const plan = await subscribeTo(
+      controller.createPlan({
+        name: '营销推广计划',
+        price: 99,
+        durationDays: 30,
+        benefits: ['积分翻倍', '专属折扣', '免费配送'],
+      }),
+    )
     const sub = await subscribeTo(controller.subscribe({ userId: 'mkt-user-001', planId: plan.planId }))
 
-    // Use benefit
+    // Use benefit - '免费配送' 映射为 'free_delivery'
     const benefit = await subscribeTo(
       controller.useBenefit(sub!.subscriptionId, { userId: 'mkt-user-001', benefitType: 'free_delivery' as SVIPBenefitType }),
     )
