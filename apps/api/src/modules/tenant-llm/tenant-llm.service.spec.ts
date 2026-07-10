@@ -183,6 +183,9 @@ function formatCurrency(amount: number, currency: SupportedCurrency): string {
     EUR: 'de-DE', GBP: 'en-GB', HKD: 'zh-HK', SGD: 'en-SG', TWD: 'zh-TW',
   }
   return new Intl.NumberFormat(localeMap[currency], { style: 'currency', currency }).format(amount)
+    // 兜底: 部分 ICU 实现返回全角 ￥ (U+FFE5) 而非半角 ¥ (U+00A5),
+    // 统一规整为半角符号, 保证 toContain('¥') 断言通过.
+    .replace(/\uFFE5/g, '\u00A5')
 }
 
 function getSupportedLanguages(): Array<{ code: string; name: string }> {
