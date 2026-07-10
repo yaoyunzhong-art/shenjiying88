@@ -4,7 +4,8 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@m5/sdk": ["../../packages/sdk/src/index.ts"]
+      "@m5/sdk": ["../../packages/sdk/src/index.ts"],
+      "expo-camera": ["./types/expo-camera.d.ts"]
     }
   },
   "include": ["App.tsx", "market-bootstrap.ts", "market-bootstrap.test.ts", "types/**/*.d.ts", "services/**/*.ts"]
