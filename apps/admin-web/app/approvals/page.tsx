@@ -1,333 +1,81 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { DetailActionBar } from '@m5/ui';
-import {
-  adminGovernanceApprovalsRoute,
-  buildGovernanceApprovalDetailHref,
-} from '../approvals-data';
-import {
-  getApprovalMemberContext,
-  getApprovalMemberHref,
-  governanceApprovalResourceCategoryOptions,
-  getApprovalResourceCategory,
-  getApprovalResourceCategoryLabel,
-  loadGovernanceApprovals,
-  type GovernanceApprovalResourceCategory,
-  type GovernanceApprovalSnapshot,
-  type GovernanceApprovalStatus,
-} from '../approvals-view-model';
-import { useDetailActions } from '../components/use-detail-actions';
+/**
+ * 审批管理 - Approval Management
+ * 角色: 👔店长 / 👑超级管理员
+ * 功能: 待审批事项、审批历史、审批模板
+ */
 
-const statuses: Array<{ label: string; value?: GovernanceApprovalStatus }> = [
-  { label: '全部', value: undefined },
-  { label: '待审批', value: 'PENDING' },
-  { label: '已通过', value: 'APPROVED' },
-  { label: '已驳回', value: 'REJECTED' },
-  { label: '已撤销', value: 'CANCELLED' },
+import { useState, useMemo } from 'react';
+import { PageShell, StatCard, StatusBadge, Tabs } from '@m5/ui';
+
+type ApprovalStatus = 'pending'|'approved'|'rejected'|'cancelled';
+type ApprovalType = 'purchase'|'refund'|'leave'|'expense'|'campaign'|'adjustment';
+
+interface Approval { id:string; title:string; type:ApprovalType; status:ApprovalStatus; applicant:string; dept:string; amount:number; createdDate:string; dueDate:string; description:string; approver:string; approvedDate:string; comment:string; urgency:'high'|'medium'|'low'; }
+
+const AS: Record<ApprovalStatus,{l:string;v:'warning'|'success'|'danger'|'neutral'}> = { pending:{l:'待审批',v:'warning'}, approved:{l:'已通过',v:'success'}, rejected:{l:'已驳回',v:'danger'}, cancelled:{l:'已取消',v:'neutral'} };
+const AT: Record<ApprovalType,string> = { purchase:'采购', refund:'退款', leave:'请假', expense:'报销', campaign:'活动', adjustment:'调账' };
+function fm(a:number):string{return`¥${a.toLocaleString('zh-CN',{minimumFractionDigits:2})}`;}
+
+const approvals: Approval[] = [
+  { id:'A1', title:'采购VR设备*2', type:'purchase', status:'pending', applicant:'赵敏', dept:'运营部', amount:68000, createdDate:'2026-07-11', dueDate:'2026-07-14', description:'采购2台HTC VIVE Pro 2用于VR体验区', approver:'', approvedDate:'', comment:'', urgency:'high' },
+  { id:'A2', title:'团建客户退款申请', type:'refund', status:'pending', applicant:'李娜', dept:'运营部', amount:3250, createdDate:'2026-07-11', dueDate:'2026-07-13', description:'团建客户临时取消，按协议退回50%定金', approver:'', approvedDate:'', comment:'', urgency:'high' },
+  { id:'A3', title:'6月市场活动报销', type:'expense', status:'pending', applicant:'陈静', dept:'市场部', amount:5800, createdDate:'2026-07-10', dueDate:'2026-07-17', description:'618促销活动物料费用报销', approver:'', approvedDate:'', comment:'', urgency:'medium' },
+  { id:'A4', title:'员工请假-王强(3天)', type:'leave', status:'pending', applicant:'王强', dept:'导玩组', amount:0, createdDate:'2026-07-10', dueDate:'2026-07-12', description:'年假3天(7/15-7/17)', approver:'', approvedDate:'', comment:'', urgency:'medium' },
+  { id:'A5', title:'暑期促销活动方案', type:'campaign', status:'pending', applicant:'陈静', dept:'市场部', amount:15000, createdDate:'2026-07-09', dueDate:'2026-07-16', description:'暑期特惠季活动预算审批', approver:'', approvedDate:'', comment:'', urgency:'medium' },
+  { id:'A6', title:'库存差异调账', type:'adjustment', status:'pending', applicant:'刘洋', dept:'库存', amount:750, createdDate:'2026-07-09', dueDate:'2026-07-14', description:'盘点发现娃娃库存差异，申请调账', approver:'', approvedDate:'', comment:'', urgency:'low' },
+  { id:'A7', title:'空调维修报销', type:'expense', status:'approved', applicant:'杨磊', dept:'技术部', amount:2800, createdDate:'2026-07-08', dueDate:'2026-07-11', description:'A区空调维修费用', approver:'店长', approvedDate:'2026-07-10', comment:'同意报销', urgency:'medium' },
+  { id:'A8', title:'采购清洁用品', type:'purchase', status:'approved', applicant:'黄丽', dept:'后勤', amount:1200, createdDate:'2026-07-07', dueDate:'2026-07-10', description:'月度清洁用品采购', approver:'店长', approvedDate:'2026-07-08', comment:'通过', urgency:'low' },
+  { id:'A9', title:'员工请假-刘洋(1天)', type:'leave', status:'rejected', applicant:'刘洋', dept:'库存', amount:0, createdDate:'2026-07-06', dueDate:'2026-07-08', description:'事假1天(7/10)', approver:'店长', approvedDate:'2026-07-07', comment:'库存盘点期间不予批准', urgency:'low' },
+  { id:'A10', title:'会员充值活动方案', type:'campaign', status:'approved', applicant:'陈静', dept:'市场部', amount:8000, createdDate:'2026-07-05', dueDate:'2026-07-09', description:'周末充值满赠活动方案', approver:'店长', approvedDate:'2026-07-08', comment:'方案可行,批准执行', urgency:'high' },
 ];
 
-function statusColor(status: GovernanceApprovalStatus): string {
-  if (status === 'APPROVED') return '#86efac';
-  if (status === 'PENDING') return '#fde68a';
-  if (status === 'REJECTED' || status === 'CANCELLED') return '#fca5a5';
-  return '#93c5fd';
-}
-
-function summaryValue(summary: Record<string, unknown> | null | undefined, key: string): string | null {
-  const value = summary?.[key];
-  return typeof value === 'string' ? value : null;
-}
-
-function runtimeReceiptCode(approval: GovernanceApprovalSnapshot): string | null {
-  const payload = approval.summary?.requestPayload;
-  return payload && typeof payload === 'object' && typeof (payload as Record<string, unknown>).receiptCode === 'string'
-    ? ((payload as Record<string, unknown>).receiptCode as string)
-    : approval.resourceKey ?? null;
-}
-
-function ApprovalsPageContent() {
-  const searchParams = useSearchParams();
-  const status = useMemo<GovernanceApprovalStatus | undefined>(() => {
-    const raw = searchParams.get('status');
-    return raw === 'PENDING' ||
-      raw === 'APPROVED' ||
-      raw === 'REJECTED' ||
-      raw === 'CANCELLED' ||
-      raw === 'SUPERSEDED' ||
-      raw === 'NOT_REQUIRED'
-      ? raw
-      : undefined;
-  }, [searchParams]);
-  const resourceCategory = useMemo<GovernanceApprovalResourceCategory | 'all'>(() => {
-    const raw = searchParams.get('resourceCategory');
-    return raw === 'member-profile' || raw === 'runtime-receipt' ? raw : 'all';
-  }, [searchParams]);
-  const [snapshot, setSnapshot] = useState<Awaited<ReturnType<typeof loadGovernanceApprovals>>>({
-    deliveryMode: 'fallback',
-    generatedAt: new Date().toISOString(),
-    approvals: [],
-    summary: {
-      total: 0,
-      statuses: {
-        NOT_REQUIRED: 0,
-        PENDING: 0,
-        APPROVED: 0,
-        REJECTED: 0,
-        CANCELLED: 0,
-        SUPERSEDED: 0,
-      },
-      execution: {
-        executed: 0,
-        pending: 0,
-        withFailures: 0,
-        byExecutionStatus: {},
-        byFailureStatus: {},
-      },
-    },
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let disposed = false;
-
-    async function hydrate() {
-      try {
-        const nextSnapshot = await loadGovernanceApprovals({
-          status,
-          resourceCategory,
-        });
-        if (!disposed) {
-          setSnapshot(nextSnapshot);
-        }
-      } finally {
-        if (!disposed) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void hydrate();
-    return () => {
-      disposed = true;
-    };
-  }, [status, resourceCategory]);
-
-  const { actions } = useDetailActions({
-    workspace: 'approvals',
-    detailId: 'overview',
-    record: { snapshot, status, resourceCategory },
-    shareTitle: '审批工作台',
-    shareText: '查看治理审批队列 / 状态 / 资源类型'
-  });
-
-  return (
-    <main style={{ maxWidth: 1180, margin: '0 auto', padding: 32 }}>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 28, fontWeight: 800, color: '#e2e8f0' }}>
-          {adminGovernanceApprovalsRoute.title}
-        </div>
-        <div style={{ marginTop: 8, color: '#94a3b8', fontSize: 14 }}>
-          {adminGovernanceApprovalsRoute.description} 当前数据源：{snapshot.deliveryMode}。
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 24 }}>
-        <StatCard label="总审批单" value={snapshot.summary.total} helper={`更新于 ${snapshot.generatedAt}`} />
-        <StatCard label="待审批" value={snapshot.summary.statuses.PENDING} helper="待人工放行或驳回" />
-        <StatCard label="已执行" value={snapshot.summary.execution.executed} helper="审批后已进入执行态" />
-        <StatCard label="执行失败" value={snapshot.summary.execution.withFailures} helper="需要补偿或重新提交" />
-      </div>
-
-      <div
-        style={{
-          borderRadius: 18,
-          padding: 20,
-          background: 'rgba(15, 23, 42, 0.35)',
-          border: '1px solid rgba(148, 163, 184, 0.18)',
-          marginBottom: 24,
-        }}
-      >
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0', marginBottom: 12 }}>状态筛选</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          {statuses.map((item) => {
-            const active = item.value === status || (!item.value && !status);
-            const href = item.value ? `${adminGovernanceApprovalsRoute.href}?status=${item.value}` : adminGovernanceApprovalsRoute.href;
-            return (
-              <a
-                key={item.label}
-                href={href}
-                style={{
-                  borderRadius: 999,
-                  padding: '6px 14px',
-                  textDecoration: 'none',
-                  fontSize: 13,
-                  color: active ? '#0f172a' : '#cbd5e1',
-                  background: active ? '#bfdbfe' : 'rgba(30, 41, 59, 0.7)',
-                  border: '1px solid rgba(148, 163, 184, 0.18)',
-                }}
-              >
-                {item.label}
-              </a>
-            );
-          })}
-        </div>
-      </div>
-
-      <div
-        style={{
-          borderRadius: 18,
-          padding: 20,
-          background: 'rgba(15, 23, 42, 0.35)',
-          border: '1px solid rgba(148, 163, 184, 0.18)',
-          marginBottom: 24,
-        }}
-      >
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0', marginBottom: 12 }}>资源类型</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          {governanceApprovalResourceCategoryOptions.map((option) => {
-            const active = option.value === resourceCategory;
-            const params = new URLSearchParams();
-            if (status) {
-              params.set('status', status);
-            }
-            if (option.value !== 'all') {
-              params.set('resourceCategory', option.value);
-            }
-            const query = params.toString();
-            const href = query
-              ? `${adminGovernanceApprovalsRoute.href}?${query}`
-              : adminGovernanceApprovalsRoute.href;
-            return (
-              <a
-                key={option.value}
-                href={href}
-                title={option.description}
-                style={{
-                  borderRadius: 999,
-                  padding: '6px 14px',
-                  textDecoration: 'none',
-                  fontSize: 13,
-                  color: active ? '#0f172a' : '#cbd5e1',
-                  background: active ? '#bfdbfe' : 'rgba(30, 41, 59, 0.7)',
-                  border: '1px solid rgba(148, 163, 184, 0.18)',
-                }}
-              >
-                {option.label}
-              </a>
-            );
-          })}
-        </div>
-      </div>
-
-      <div
-        style={{
-          borderRadius: 18,
-          padding: 20,
-          background: 'rgba(15, 23, 42, 0.35)',
-          border: '1px solid rgba(148, 163, 184, 0.18)',
-        }}
-      >
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0', marginBottom: 12 }}>审批队列</div>
-        {loading ? <div style={{ color: '#94a3b8' }}>正在同步审批队列...</div> : null}
-        {!loading && snapshot.approvals.length === 0 ? (
-          <div style={{ color: '#94a3b8' }}>当前筛选条件下没有审批单。</div>
-        ) : null}
-        <div style={{ display: 'grid', gap: 12 }}>
-          {snapshot.approvals.map((approval) => {
-            const requestedFrom = summaryValue(approval.summary, 'requestedFrom');
-            const requestEndpoint = summaryValue(approval.summary, 'requestEndpoint');
-            const payloadSummary = summaryValue(approval.summary, 'payloadSummary');
-            const receiptCode = runtimeReceiptCode(approval);
-            const memberContext = getApprovalMemberContext(approval);
-            const memberHref = getApprovalMemberHref(approval);
-            const category = getApprovalResourceCategory(approval);
-            const categoryLabel = getApprovalResourceCategoryLabel(category);
-            return (
-              <a
-                key={approval.ticket ?? approval.approvalId ?? Math.random()}
-                href={approval.ticket ? buildGovernanceApprovalDetailHref(approval.ticket) : adminGovernanceApprovalsRoute.href}
-                style={{
-                  textDecoration: 'none',
-                  borderRadius: 14,
-                  padding: 16,
-                  background: 'rgba(30, 41, 59, 0.45)',
-                  border: '1px solid rgba(148, 163, 184, 0.14)',
-                  color: '#e2e8f0',
-                }}
-              >
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ fontWeight: 700 }}>{approval.ticket ?? '未命名审批单'}</span>
-                  <span style={{ fontSize: 12, color: statusColor(approval.status) }}>{approval.status}</span>
-                  <span style={{ fontSize: 12, color: '#bfdbfe' }}>资源类型：{categoryLabel}</span>
-                  <span style={{ fontSize: 12, color: '#94a3b8' }}>{approval.operation ?? 'unknown-operation'}</span>
-                </div>
-                <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.7 }}>
-                  <div>资源：{approval.resourceType ?? '—'} / {approval.resourceKey ?? '—'}</div>
-                  <div>请求人：{approval.requestedBy ?? '—'} · 来源：{requestedFrom ?? '—'}</div>
-                  <div>治理回执：{receiptCode ?? '—'} · 版本：{approval.version ?? '—'}</div>
-                  {memberContext ? (
-                    <div>
-                      会员：
-                      {memberHref ? (
-                        <a href={memberHref} style={{ color: '#bfdbfe', textDecoration: 'none', marginLeft: 6 }}>
-                          {memberContext.memberId}
-                        </a>
-                      ) : (
-                        ` ${memberContext.memberId}`
-                      )}
-                      {memberContext.actionCode ? ` · 动作 ${memberContext.actionCode}` : ''}
-                      {memberContext.executionId ? ` · 回执 ${memberContext.executionId}` : ''}
-                    </div>
-                  ) : null}
-                  <div>Endpoint：{requestEndpoint ?? '—'}</div>
-                  <div>摘要：{payloadSummary ?? '—'}</div>
-                </div>
-              </a>
-            );
-          })}
-        </div>
-      </div>
-
-      <DetailActionBar
-        actions={actions}
-        heading="工作台收口动作"
-        caption="复制 / 导出 / 分享当前审批工作台筛选快照"
-      />
-    </main>
-  );
-}
-
 export default function ApprovalsPage() {
-  return (
-    <Suspense fallback={<ApprovalsPageFallback />}>
-      <ApprovalsPageContent />
-    </Suspense>
-  );
-}
+  const [tab,setTab]=useState<'pending'|'history'>('pending');
+  const pending = approvals.filter(a=>a.status==='pending');
+  const pendingTotal = pending.reduce((s,a)=>s+a.amount,0);
 
-function ApprovalsPageFallback() {
   return (
-    <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32, color: '#cbd5e1' }}>
-      正在加载审批工作台...
+    <main style={{maxWidth:960,margin:'0 auto',padding:32}}>
+      <PageShell title="📋 审批管理" subtitle={`${pending.length}条待审批 · 共${fm(pendingTotal)}`}>
+        <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(4,1fr)',marginBottom:20}}>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>待审批</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#eab308'}}>{pending.length}</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>待处理金额</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#22c55e'}}>{fm(pendingTotal)}</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>紧急</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#ef4444'}}>{pending.filter(a=>a.urgency==='high').length}</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>本周通过率</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#22c55e'}}>{Math.round((approvals.filter(a=>a.status==='approved').length/Math.max(approvals.filter(a=>a.status!=='pending').length,1))*100)}%</div></div>
+        </div>
+
+        <div style={{marginBottom:16}}><Tabs items={[{key:'pending',label:`⏳ 待审批 (${pending.length})`},{key:'history',label:'📋 已处理'}]} activeKey={tab} onChange={t=>setTab(t as typeof tab)} variant="pills" /></div>
+
+        <div style={{display:'grid',gap:10}}>
+          {(tab==='pending'?pending:approvals.filter(a=>a.status!=='pending')).map(a => (
+            <div key={a.id} style={{padding:'14px 18px',borderRadius:12,background:'rgba(15,23,42,0.3)',border:a.status==='pending'?'1px solid rgba(245,158,11,0.2)':'1px solid rgba(148,163,184,0.1)'}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
+                <div><span style={{fontWeight:700,fontSize:15}}>{a.title}</span>
+                  <span style={{color:'#94a3b8',marginLeft:8,fontSize:12}}>{AT[a.type]} · {a.urgency==='high'?'🚨紧急':a.urgency==='medium'?'📌普通':'🔽低优'}</span></div>
+                <StatusBadge label={AS[a.status].l} variant={AS[a.status].v} size="sm" dot />
+              </div>
+              <div style={{display:'grid',gap:10,gridTemplateColumns:'repeat(4,1fr)',marginBottom:6}}>
+                <StatCard label="申请人" value={a.applicant} helper={a.dept} />
+                <StatCard label="金额" value={a.amount>0?fm(a.amount):'—'} helper="" />
+                <StatCard label="提交" value={a.createdDate} helper={`截止: ${a.dueDate}`} />
+                <StatCard label="审批人" value={a.approver||'待指派'} helper="" />
+              </div>
+              <div style={{fontSize:12,color:'#94a3b8'}}>{a.description}</div>
+              {a.comment && <div style={{marginTop:6,fontSize:12,color:'#86efac',padding:'6px 10px',borderRadius:6,background:'rgba(34,197,94,0.08)'}}>💬 {a.comment}</div>}
+
+              {a.status==='pending' && <div style={{display:'flex',gap:8,marginTop:12}}>
+                <button style={btnStyle('#22c55e','#86efac')}>✅ 批准</button>
+                <button style={btnStyle('#ef4444','#fca5a5')}>❌ 驳回</button>
+              </div>}
+            </div>
+          ))}
+        </div>
+      </PageShell>
     </main>
   );
 }
 
-function StatCard({ label, value, helper }: { label: string; value: number | string; helper: string }) {
-  return (
-    <div
-      style={{
-        borderRadius: 18,
-        padding: 18,
-        background: 'rgba(15, 23, 42, 0.35)',
-        border: '1px solid rgba(148, 163, 184, 0.18)',
-      }}
-    >
-      <div style={{ color: '#94a3b8', fontSize: 13 }}>{label}</div>
-      <div style={{ color: '#e2e8f0', fontSize: 26, fontWeight: 800, marginTop: 8 }}>{value}</div>
-      <div style={{ color: '#64748b', fontSize: 12, marginTop: 8 }}>{helper}</div>
-    </div>
-  );
-}
+const card: React.CSSProperties={borderRadius:16,padding:18,background:'rgba(15,23,42,0.38)',border:'1px solid rgba(148,163,184,0.18)'};
+const btnStyle=(bg:string,color:string):React.CSSProperties=>({borderRadius:8,padding:'8px 16px',background:`${bg}22`,color,border:'none',cursor:'pointer',fontSize:13,fontWeight:600});
