@@ -1,0 +1,46 @@
+# ═══════════════════════════════════════════════════════════════
+# M5 — ResourceQuota + LimitRange (租户资源隔离)
+# ═══════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: m5-quota
+  namespace: m5
+  labels:
+    app.kubernetes.io/part-of: shenjiying
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: "16Gi"
+    limits.cpu: "16"
+    limits.memory: "32Gi"
+    persistentvolumeclaims: "10"
+    requests.storage: "200Gi"
+    count/deployments.apps: "10"
+    count/statefulsets.apps: "5"
+    count/services: "15"
+    count/configmaps: "20"
+    count/secrets: "15"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: m5-limits
+  namespace: m5
+  labels:
+    app.kubernetes.io/part-of: shenjiying
+spec:
+  limits:
+    - default:
+        cpu: "1"
+        memory: "1Gi"
+      defaultRequest:
+        cpu: "250m"
+        memory: "256Mi"
+      max:
+        cpu: "4"
+        memory: "4Gi"
+      min:
+        cpu: "50m"
+        memory: "64Mi"
+      type: Container

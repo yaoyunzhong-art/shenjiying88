@@ -1,0 +1,294 @@
+# ═══════════════════════════════════════════════════════════════
+# M5 Monorepo — Deploy Pipeline
+#
+# 触发条件: tag push (v*) 或手动 workflow_dispatch
+# 职责:
+#   - 构建 Docker 镜像并推送至 GHCR
+#   - 通过 SSH 部署至生产服务器
+#   - 执行数据库迁移
+#   - 健康检查验证
+# ═══════════════════════════════════════════════════════════════
+
+name: Deploy
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: '部署环境'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      run_migration:
+        description: '执行数据库迁移'
+        required: true
+        default: true
+        type: boolean
+
+env:
+  PNPM_VERSION: 10.14.0
+  NODE_VERSION: 22
+  TURBO_TELEMETRY_DISABLED: 1
+  REGISTRY: ghcr.io
+
+jobs:
+
+  # ─── 1. 单元测试 & Lint ──────────────────────────────
+  quality:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @m5/api prisma:generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: TypeCheck
+        run: pnpm typecheck
+
+  # ─── 2. 构建 Docker 镜像 ──────────────────────────────
+  build:
+    name: Build & Push Docker Images
+    needs: [quality]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: api
+            target: api-prod
+            port: 3001
+          - name: admin-web
+            target: admin-prod
+            port: 3002
+          - name: storefront-web
+            target: storefront-prod
+            port: 3003
+          - name: tob-web
+            target: tob-prod
+            port: 3011
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: ${{ matrix.service.target }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service.name }}:${{ steps.version.outputs.VERSION }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service.name }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.version.outputs.VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─── 3. 部署至目标环境 ────────────────────────────────
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || 'staging' }}
+    needs: [build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure deployment variables
+        id: config
+        run: |
+          if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+            echo "SSH_HOST=${{ secrets.PROD_SSH_HOST }}" >> "$GITHUB_OUTPUT"
+            echo "SSH_PORT=${{ secrets.PROD_SSH_PORT || 22 }}" >> "$GITHUB_OUTPUT"
+            echo "SSH_USER=${{ secrets.PROD_SSH_USER }}" >> "$GITHUB_OUTPUT"
+            echo "DEPLOY_DIR=/opt/m5" >> "$GITHUB_OUTPUT"
+            echo "DOMAIN=api.m5.local" >> "$GITHUB_OUTPUT"
+            echo "COMPOSE_FILE=docker-compose.yml" >> "$GITHUB_OUTPUT"
+          else
+            echo "SSH_HOST=${{ secrets.STAGING_SSH_HOST || secrets.PROD_SSH_HOST }}" >> "$GITHUB_OUTPUT"
+            echo "SSH_PORT=${{ secrets.STAGING_SSH_PORT || 22 }}" >> "$GITHUB_OUTPUT"
+            echo "SSH_USER=${{ secrets.STAGING_SSH_USER || secrets.PROD_SSH_USER }}" >> "$GITHUB_OUTPUT"
+            echo "DEPLOY_DIR=/opt/m5-staging" >> "$GITHUB_OUTPUT"
+            echo "DOMAIN=staging-api.m5.local" >> "$GITHUB_OUTPUT"
+            echo "COMPOSE_FILE=docker-compose.staging.yml" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          known_hosts: ${{ steps.config.outputs.SSH_HOST }}
+
+      - name: Copy docker-compose and configs
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+            -p ${{ steps.config.outputs.SSH_PORT }} \
+            ${{ steps.config.outputs.SSH_USER }}@${{ steps.config.outputs.SSH_HOST }} \
+            "mkdir -p ${{ steps.config.outputs.DEPLOY_DIR }}/{nginx/conf.d,nginx/ssl,scripts,data}"
+
+          scp -o StrictHostKeyChecking=no \
+            -P ${{ steps.config.outputs.SSH_PORT }} \
+            docker-compose.yml \
+            ${{ steps.config.outputs.SSH_USER }}@${{ steps.config.outputs.SSH_HOST }}:${{ steps.config.outputs.DEPLOY_DIR }}/${{ steps.config.outputs.COMPOSE_FILE }}
+
+          scp -o StrictHostKeyChecking=no \
+            -P ${{ steps.config.outputs.SSH_PORT }} \
+            -r nginx/nginx.conf \
+            ${{ steps.config.outputs.SSH_USER }}@${{ steps.config.outputs.SSH_HOST }}:${{ steps.config.outputs.DEPLOY_DIR }}/nginx/
+
+          scp -o StrictHostKeyChecking=no \
+            -P ${{ steps.config.outputs.SSH_PORT }} \
+            -r scripts/entrypoint-*.sh scripts/wait-for-it.sh \
+            ${{ steps.config.outputs.SSH_USER }}@${{ steps.config.outputs.SSH_HOST }}:${{ steps.config.outputs.DEPLOY_DIR }}/scripts/
+
+      - name: Deploy with docker compose
+        run: |
+          SSH_DEST="${{ steps.config.outputs.SSH_USER }}@${{ steps.config.outputs.SSH_HOST }}"
+          SSH_PORT="${{ steps.config.outputs.SSH_PORT }}"
+          DEPLOY_DIR="${{ steps.config.outputs.DEPLOY_DIR }}"
+          COMPOSE_FILE="${{ steps.config.outputs.COMPOSE_FILE }}"
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          REGISTRY="${{ env.REGISTRY }}"
+
+          ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_DEST" "
+            set -e
+
+            # 登录 GHCR
+            echo '${{ secrets.GITHUB_TOKEN }}' | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+
+            cd $DEPLOY_DIR
+
+            # 设置版本环境变量
+            export BUILD_TAG=\${VERSION:-latest}
+
+            # 拉取最新镜像
+            docker compose -f \$COMPOSE_FILE pull
+
+            # 重启服务 (滚动更新)
+            docker compose -f \$COMPOSE_FILE up -d --no-deps --remove-orphans
+
+            # 等待服务健康
+            echo '等待服务就绪...'
+            sleep 15
+
+            # 健康检查
+            for i in 1 2 3 4 5; do
+              if curl -sf http://localhost:3001/api/v1/health/ping; then
+                echo 'API 健康检查通过'
+                break
+              fi
+              echo \"等待 API 就绪 (attempt \$i/5)...\"
+              sleep 5
+            done
+
+            # 清理旧镜像
+            docker image prune -f
+
+            echo '部署完成'
+          "
+
+  # ─── 4. 数据库迁移 ──────────────────────────────────
+  migrate:
+    name: Database Migration
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.event.inputs.run_migration != 'false' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run migration on server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ github.event.inputs.environment == 'production' && secrets.PROD_SSH_HOST || secrets.STAGING_SSH_HOST }}
+          username: ${{ github.event.inputs.environment == 'production' && secrets.PROD_SSH_USER || secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ github.event.inputs.environment == 'production' && secrets.PROD_SSH_PORT || secrets.STAGING_SSH_PORT || 22 }}
+          script: |
+            DEPLOY_DIR="${{ github.event.inputs.environment == 'production' && '/opt/m5' || '/opt/m5-staging' }}"
+            cd "$DEPLOY_DIR"
+
+            # 在 API 容器内执行迁移
+            docker exec m5-api npx prisma migrate deploy --schema ./prisma/schema.prisma
+
+            echo '数据库迁移完成'
+
+  # ─── 5. 健康检查通知 ────────────────────────────────
+  notify:
+    name: Deployment Notification
+    needs: [deploy, migrate]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Check deployment status
+        id: status
+        run: |
+          if [[ "${{ needs.deploy.result }}" == "success" ]]; then
+            echo "Deploy: ✅ Success"
+          else
+            echo "Deploy: ❌ Failed"
+          fi
+          if [[ "${{ needs.migrate.result }}" == "success" ]]; then
+            echo "Migrate: ✅ Success"
+          elif [[ "${{ needs.migrate.result }}" == "skipped" ]]; then
+            echo "Migrate: ⏭️ Skipped"
+          else
+            echo "Migrate: ❌ Failed"
+          fi
+
+      - name: Send notification (placeholder)
+        run: |
+          echo "::notice::部署完成: ${{ github.event.inputs.environment || 'staging' }} - version ${{ steps.version.outputs.VERSION }}"

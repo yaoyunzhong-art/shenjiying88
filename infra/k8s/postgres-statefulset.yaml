@@ -1,0 +1,189 @@
+# ═══════════════════════════════════════════════════════════════
+# M5 — PostgreSQL StatefulSet
+#
+# 高可用建议:
+#   生产环境建议使用 Cloud SQL (GCP) / RDS (AWS) / Aiven 等托管服务
+#   或部署 Patroni + pg_auto_failover 实现 HA
+# ═══════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: Service
+metadata:
+  name: m5-postgres
+  namespace: m5
+  labels:
+    app: m5-postgres
+    app.kubernetes.io/part-of: shenjiying
+    app.kubernetes.io/component: database
+    app.kubernetes.io/name: postgresql
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: m5-postgres
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: m5-postgres
+  namespace: m5
+  labels:
+    app: m5-postgres
+    app.kubernetes.io/part-of: shenjiying
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: m5-postgres
+  namespace: m5
+  labels:
+    app: m5-postgres
+    app.kubernetes.io/part-of: shenjiying
+    app.kubernetes.io/component: database
+    app.kubernetes.io/name: postgresql
+spec:
+  serviceName: m5-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: m5-postgres
+  template:
+    metadata:
+      labels:
+        app: m5-postgres
+        app.kubernetes.io/part-of: shenjiying
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
+    spec:
+      serviceAccountName: m5-postgres
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              value: "m5"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: m5-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              value: "m5"
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums --encoding=UTF8"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - m5
+                - -d
+                - m5
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - m5
+                - -d
+                - m5
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: postgresql-conf
+              mountPath: /etc/postgresql/postgresql.conf
+              subPath: postgresql.conf
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+      volumes:
+        - name: postgresql-conf
+          configMap:
+            name: m5-postgres-config
+            items:
+              - key: postgresql.conf
+                path: postgresql.conf
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app: m5-postgres
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 20Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: m5-postgres-config
+  namespace: m5
+  labels:
+    app: m5-postgres
+    app.kubernetes.io/part-of: shenjiying
+data:
+  postgresql.conf: |
+    # ─── PostgreSQL 生产配置 ───────────────────────────
+    max_connections = 200
+    shared_buffers = 512MB
+    effective_cache_size = 1536MB
+    work_mem = 8MB
+    maintenance_work_mem = 128MB
+    random_page_cost = 1.1
+    effective_io_concurrency = 200
+    wal_level = replica
+    max_wal_size = 2GB
+    min_wal_size = 1GB
+    checkpoint_completion_target = 0.9
+    wal_buffers = 16MB
+    default_statistics_target = 100
+    seq_page_cost = 1.0
+    random_page_cost = 4.0
+    parallel_tuple_cost = 0.1
+    parallel_setup_cost = 1000
+    min_parallel_table_scan_size = 8MB
+    min_parallel_index_scan_size = 512kB
+    max_parallel_workers_per_gather = 2
+    max_parallel_workers = 4
+    log_min_duration_statement = 1000
+    log_checkpoints = on
+    log_connections = on
+    log_disconnections = on
+    log_lock_waits = on
+    log_temp_files = 0
+    log_autovacuum_min_duration = 0
+    autovacuum = on
+    autovacuum_max_workers = 3
+    autovacuum_naptime = 1min
+    autovacuum_vacuum_threshold = 50
+    autovacuum_vacuum_scale_factor = 0.2
+    autovacuum_vacuum_cost_limit = 200
+    timezone = 'Asia/Shanghai'
+    lc_messages = 'en_US.UTF-8'
