@@ -407,8 +407,8 @@ describe(`${ROLES.Operations} — 运营配置管理`, () => {
     const plan = plans.find((p: CouponPlan) => p.code === 'DETAIL-TEST')!
 
     const detail = ctrl.getCouponPlan(TENANT_CTX, plan.planId)
-    assert.equal(detail.code, 'DETAIL-TEST')
-    assert.equal(detail.totalQuota, 1000)
+    assert.equal(detail!.code, 'DETAIL-TEST')
+    assert.equal(detail!.totalQuota, 1000)
   })
 
   it('运行专员查看概率总览 => 各奖池概率正确分配', () => {
@@ -652,10 +652,10 @@ describe('loyalty 路由元数据验证', () => {
 
     // getCouponPlan 应返回完整计划对象
     const detail = ctrl.getCouponPlan(TENANT_CTX, plan.planId)
-    assert.ok('planId' in detail)
-    assert.ok('code' in detail)
-    assert.ok('status' in detail)
-    assert.ok('createdAt' in detail)
-    assert.ok('updatedAt' in detail)
+    assert.ok('planId' in detail!)
+    assert.ok('code' in detail!)
+    assert.ok('status' in detail!)
+    assert.ok('createdAt' in detail!)
+    assert.ok('updatedAt' in detail!)
   })
 })
