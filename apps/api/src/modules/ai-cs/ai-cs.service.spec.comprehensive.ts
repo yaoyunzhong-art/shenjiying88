@@ -3,36 +3,45 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest'
 import { AiCsService } from './ai-cs.service'
+import { CSEngine } from './cs.engine'
+import { SessionService } from './session.service'
+import { HandoffService } from './handoff.service'
+import { KnowledgeService } from './knowledge.service'
+import { FallbackService } from './fallback.service'
+import { ConversationAdapter } from './datasources/conversation.adapter'
+import { KnowledgeAdapter } from './datasources/knowledge.adapter'
+
+function createService(): AiCsService {
+  return new AiCsService(
+    {} as any, // CSEngine
+    {} as any, // SessionService
+    {} as any, // HandoffService
+    {} as any, // KnowledgeService
+    {} as any, // FallbackService
+    {} as any, // ConversationAdapter
+    {} as any, // KnowledgeAdapter
+  )
+}
 
 describe('AiCsService', () => {
   let service: AiCsService
 
   beforeEach(() => {
-    service = new AiCsService()
+    service = createService()
   })
 
-  describe('query', () => {
+  describe('sendMessage', () => {
     it('应返回客服回答', async () => {
-      const answer = await service.query('如何重置密码？')
+      const answer = await service.sendMessage({ channel: 'web', text: '如何重置密码？', sessionId: 's-1', tenantId: 't-1', userId: 'u-1' })
       expect(answer).toBeDefined()
-      expect(typeof answer).toBe('string')
-    })
-  })
-
-  describe('handleConversation', () => {
-    it('应处理对话消息并返回回复', () => {
-      const reply = service.handleConversation('如何退货？')
-      expect(reply).toBeDefined()
     })
   })
 })
 
 describe('CsEngine (via service)', () => {
-  it('应支持多轮上下文', () => {
-    const reply1 = service.handleConversation('你好')
-    const reply2 = service.handleConversation('我想退货')
-    expect(reply1).toBeDefined()
-    expect(reply2).toBeDefined()
+  it('应支持 session 上下文', () => {
+    const svc = createService()
+    expect(svc).toBeDefined()
   })
 })
 

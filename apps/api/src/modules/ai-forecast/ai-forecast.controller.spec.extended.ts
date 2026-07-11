@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import 'reflect-metadata'
 import { AiForecastController } from './ai-forecast.controller'
 import { DemandForecastService, InventoryOptimizer, TransferRecommendationService } from './ai-forecast.service'
+import { ForecastQueryDto, ReorderQueryDto } from './ai-forecast.dto'
 
 describe('AiForecastController (spec)', () => {
   let controller: AiForecastController
@@ -31,13 +32,18 @@ describe('AiForecastController (spec)', () => {
   })
 
   it('forecast endpoint should return forecast data', () => {
-    const result = controller.forecastSales('prod-001', 14)
+    const query = new ForecastQueryDto()
+    query.productId = 'prod-001'
+    query.daysAhead = 14
+    const result = controller.forecastSales(query)
     expect(result).toBeDefined()
     expect(result.daysAhead).toBe(14)
   })
 
   it('reorder endpoint should return reorder suggestion', () => {
-    const result = controller.suggestReorder({ productId: 'prod-001' })
+    const query = new ReorderQueryDto()
+    query.productId = 'prod-001'
+    const result = controller.suggestReorder(query)
     expect(result).toBeDefined()
     expect(result.suggestedQuantity).toBeGreaterThan(0)
   })
