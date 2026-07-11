@@ -438,7 +438,7 @@ describe('正例 | updateTransactionStatus', () => {
 describe('正例 | daily / monthly summary', () => {
   beforeEach(() => {
     resetStores()
-    const today = '2026-07-09'
+    const today = new Date().toISOString().slice(0, 10)
     createTransaction(makeTxnInput({
       orderId: 'order-s1', tenantId: 'tenant-demo', storeId: 'store-001',
       channel: 'wechat_pay', amount: 100, operatorId: 'cashier-a',
@@ -458,28 +458,32 @@ describe('正例 | daily / monthly summary', () => {
   })
 
   it('日结统计汇总金额和笔数', () => {
-    const summary = computeDailySummary('tenant-demo', 'store-001', '2026-07-09')
+    const today = new Date().toISOString().slice(0, 10)
+    const summary = computeDailySummary('tenant-demo', 'store-001', today)
     expect(summary.totalTransactionCount).toBe(3)
     expect(summary.totalAmount).toBe(350)
   })
 
   it('日结按支付通道分组', () => {
-    const summary = computeDailySummary('tenant-demo', 'store-001', '2026-07-09')
+    const today = new Date().toISOString().slice(0, 10)
+    const summary = computeDailySummary('tenant-demo', 'store-001', today)
     expect(summary.byChannel['wechat_pay']).toEqual({ count: 2, amount: 150 })
     expect(summary.byChannel['alipay']).toEqual({ count: 1, amount: 200 })
   })
 
   it('日结按收银员分组', () => {
-    const summary = computeDailySummary('tenant-demo', 'store-001', '2026-07-09')
+    const today = new Date().toISOString().slice(0, 10)
+    const summary = computeDailySummary('tenant-demo', 'store-001', today)
     expect(summary.byOperator['cashier-a']).toEqual({ count: 2, amount: 300 })
     expect(summary.byOperator['cashier-b']).toEqual({ count: 1, amount: 50 })
   })
 
   it('月结统计正常', () => {
-    const summary = computeMonthlySummary('tenant-demo', 'store-001', '2026-07')
+    const today = new Date().toISOString().slice(0, 7)
+    const summary = computeMonthlySummary('tenant-demo', 'store-001', today)
     expect(summary.totalTransactionCount).toBe(3)
     expect(summary.totalAmount).toBe(350)
-    expect(summary.yearMonth).toBe('2026-07')
+    expect(summary.yearMonth).toBe(today)
   })
 })
 

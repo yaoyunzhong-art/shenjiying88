@@ -357,8 +357,8 @@ describe('WorkbenchController — GET /workbenches/nav-items', () => {
 
     assert.equal(result.navItems[0].role, 'STORE_MANAGER')
     assert.equal(mockService.checkCapability.mock.calls.length, 1)
-    assert.equal(mockService.checkCapability.mock.calls[0].arguments[0], 'STORE_MANAGER')
-    assert.equal(mockService.checkCapability.mock.calls[0].arguments[1], 'view_sales')
+    assert.equal(mockService.checkCapability.mock.calls[0][0], 'STORE_MANAGER')
+    assert.equal(mockService.checkCapability.mock.calls[0][1], 'view_sales')
   })
 
   it('能力不满足时返回空', () => {
@@ -456,7 +456,7 @@ describe('WorkbenchController — GET /workbenches/actions/:receiptCode', () => 
     assert.equal(result.receiptCode, 'r-001')
     assert.equal(result.status, 'SUCCEEDED')
     assert.equal(mockService.getActionReceipt.mock.calls.length, 1)
-    assert.equal(mockService.getActionReceipt.mock.calls[0].arguments[0], 'r-001')
+    assert.equal(mockService.getActionReceipt.mock.calls[0][0], 'r-001')
   })
 })
 
@@ -473,8 +473,8 @@ describe('WorkbenchController — POST /workbenches/handlers/:handlerName/receip
 
     assert.equal(result.status, 'SYNCED')
     assert.equal(mockService.syncHandlerReceipt.mock.calls.length, 1)
-    assert.equal(mockService.syncHandlerReceipt.mock.calls[0].arguments[0], 'r-001')
-    assert.equal(mockService.syncHandlerReceipt.mock.calls[0].arguments[1], 'notify')
+    assert.equal(mockService.syncHandlerReceipt.mock.calls[0][0], 'r-001')
+    assert.equal(mockService.syncHandlerReceipt.mock.calls[0][1], 'notify')
   })
 })
 
