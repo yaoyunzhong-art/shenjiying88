@@ -22,6 +22,7 @@ export interface StoredDocument {
   id: string
   collection: string
   title?: string
+  text: string
   chunks: DocumentChunk[]
   metadata: Record<string, unknown>
   createdAt: string
@@ -61,6 +62,7 @@ export class KnowledgeBaseManager {
     const stored: StoredDocument = {
       id: docId,
       collection,
+      text: doc.content,
       chunks,
       metadata: doc.metadata ?? {},
       createdAt: new Date().toISOString(),

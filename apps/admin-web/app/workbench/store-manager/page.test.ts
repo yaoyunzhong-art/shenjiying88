@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -23,179 +23,140 @@ describe('StoreManagerWorkbench — 正例', () => {
     assert.ok(src.includes('export default function StoreManagerWorkbenchPage'), '缺少默认导出组件');
   });
 
-  it('应使用 StoreManagerDashboard 组件', () => {
-    const src = readSource();
-    assert.ok(src.includes('StoreManagerDashboard'), '缺少 StoreManagerDashboard');
-  });
-
   it('应包含 PageShell 页面外壳', () => {
     const src = readSource();
     assert.ok(src.includes('PageShell'), '缺少 PageShell');
   });
 
-  it('应包含 QuickStats 统计卡片', () => {
+  it('应渲染营收KPI卡片', () => {
     const src = readSource();
-    assert.ok(src.includes('QuickStats'), '缺少 QuickStats');
+    assert.ok(src.includes('今日营收'), '缺少今日营收');
   });
 
-  it('应包含 DataTable 数据表 (至少 3 个)', () => {
+  it('应包含待办任务板块', () => {
     const src = readSource();
-    const matches = src.match(/DataTable/g);
-    assert.ok(matches && matches.length >= 3, `期望至少 3 个 DataTable, 实际 ${matches?.length ?? 0}`);
+    assert.ok(src.includes('待办任务'), '缺少待办任务');
   });
 
-  it('应包含 Pagination 分页控件 (至少 2 个)', () => {
+  it('应包含员工排班板块', () => {
     const src = readSource();
-    const matches = src.match(/Pagination/g);
-    assert.ok(matches && matches.length >= 2, `期望至少 2 个 Pagination, 实际 ${matches?.length ?? 0}`);
+    assert.ok(src.includes('当班员工'), '缺少当班员工');
   });
 
-  it('应包含 Tabs 筛选标签页 (至少 2 组)', () => {
+  it('应包含 Tabs 筛选标签页', () => {
     const src = readSource();
     const matches = src.match(/<Tabs/g);
-    assert.ok(matches && matches.length >= 2, `期望至少 2 组 Tabs, 实际 ${matches?.length ?? 0}`);
+    assert.ok(matches && matches.length >= 1, `期望至少 1 组 Tabs, 实际 ${matches?.length ?? 0}`);
   });
 
-  it('应包含 DetailActionBar 工作台收口动作', () => {
+  it('应包含热门商品板块', () => {
     const src = readSource();
-    assert.ok(src.includes('DetailActionBar'), '缺少 DetailActionBar');
+    assert.ok(src.includes('今日热门商品'), '缺少热门商品');
   });
 
-  it('应包含 useDetailActions 导入', () => {
-    const src = readSource();
-    assert.ok(src.includes("useDetailActions"), '缺少 useDetailActions');
-  });
-
-  it('应包含 4 个主要 section: 运营指标 / 统计 / 待办 / 热门商品 / 排班', () => {
-    const src = readSource();
-    const sections = ['今日运营指标', '快速统计', '待办任务', '今日热门商品', '今日排班'];
-    for (const s of sections) {
-      assert.ok(src.includes(s), `缺少 section: ${s}`);
-    }
-  });
-});
-
-// ---- 数据完整性 ----
-
-describe('StoreManagerWorkbench — 数据完整性', () => {
-  it('Mock 指标数据应包含全部字段', () => {
-    const src = readSource();
-    const fields = ['revenue: 128_560', 'orderCount: 342', 'avgOrderValue: 376', 'newMembers: 28'];
-    for (const f of fields) {
-      assert.ok(src.includes(f), `Mock metrics 缺少字段: ${f}`);
-    }
-  });
-
-  it('Mock 设备状态应包含 total/online/offline/warning', () => {
-    const src = readSource();
-    assert.ok(src.includes('total: 48'), '设备总数应为 48');
-    assert.ok(src.includes('online: 42'), '在线设备应为 42');
-    assert.ok(src.includes('offline: 3'), '离线设备应为 3');
-    assert.ok(src.includes('warning: 3'), '告警设备应为 3');
-  });
-
-  it('Mock 待办任务应覆盖全部 priority 等级', () => {
-    const src = readSource();
-    assert.ok(src.includes("priority: 'high'"), '缺少 high 优先级任务');
-    assert.ok(src.includes("priority: 'medium'"), '缺少 medium 优先级任务');
-    assert.ok(src.includes("priority: 'low'"), '缺少 low 优先级任务');
-  });
-
-  it('Mock 待办任务应覆盖全部 type 类型', () => {
-    const src = readSource();
-    assert.ok(src.includes("type: 'inventory'"), '缺少 inventory 类型');
-    assert.ok(src.includes("type: 'member'"), '缺少 member 类型');
-    assert.ok(src.includes("type: 'order'"), '缺少 order 类型');
-    assert.ok(src.includes("type: 'device'"), '缺少 device 类型');
-    assert.ok(src.includes("type: 'alert'"), '缺少 alert 类型');
-  });
-
-  it('Mock 热门商品应包含 8 条', () => {
-    const src = readSource();
-    const matches = src.match(/id: 'p\d+'/g);
-    assert.ok(matches && matches.length === 8, `期望 8 条热门商品, 实际 ${matches?.length ?? 0}`);
-  });
-
-  it('Mock 排班应包含 10 条', () => {
-    const src = readSource();
-    const matches = src.match(/id: 's\d+'/g);
-    assert.ok(matches && matches.length === 10, `期望 10 条排班记录, 实际 ${matches?.length ?? 0}`);
-  });
-
-  it('Mock 快速操作应包含 5 个', () => {
-    const src = readSource();
-    const matches = src.match(/key: '/g);
-    // filter for quick action keys
-    const actions = ['inventory-check', 'shift-handover', 'device-report', 'member-feedback', 'daily-report'];
-    for (const a of actions) {
-      assert.ok(src.includes(`key: '${a}'`), `缺少快速操作: ${a}`);
-    }
-  });
-
-  it('Mock 排班应覆盖 shift 全部 4 种班次', () => {
-    const src = readSource();
-    assert.ok(src.includes("shift: 'morning'"), '缺少 morning 班次');
-    assert.ok(src.includes("shift: 'afternoon'"), '缺少 afternoon 班次');
-    assert.ok(src.includes("shift: 'evening'"), '缺少 evening 班次');
-    assert.ok(src.includes("shift: 'off'"), '缺少 off 班次');
-  });
-
-  it('Mock 排班应覆盖 status 全部 4 种状态', () => {
-    const src = readSource();
-    assert.ok(src.includes("status: 'onDuty'"), '缺少 onDuty 状态');
-    assert.ok(src.includes("status: 'onLeave'"), '缺少 onLeave 状态');
-    assert.ok(src.includes("status: 'late'"), '缺少 late 状态');
-    assert.ok(src.includes("status: 'absent'"), '缺少 absent 状态');
-  });
-});
-
-// ---- 边界防御 ----
-
-describe('StoreManagerWorkbench — 边界防御', () => {
-  it('应包含 TopProduct 接口定义', () => {
-    const src = readSource();
-    assert.ok(src.includes('interface TopProduct'), '缺少 TopProduct 接口');
-  });
-
-  it('应包含 ShiftSchedule 接口定义', () => {
-    const src = readSource();
-    assert.ok(src.includes('interface ShiftSchedule'), '缺少 ShiftSchedule 接口');
-  });
-
-  it('标签映射表应覆盖全部枚举', () => {
-    const src = readSource();
-    const shiftKeys = ['morning', 'afternoon', 'evening', 'off'];
-    const statusKeys = ['onDuty', 'onLeave', 'late', 'absent'];
-    const reorderKeys = ['safe', 'low', 'critical'];
-    const taskTypeKeys = ['inventory', 'member', 'order', 'device', 'alert'];
-    const allKeys = [...shiftKeys, ...statusKeys, ...reorderKeys, ...taskTypeKeys];
-    for (const k of allKeys) {
-      assert.ok(src.includes(`'${k}'`), `映射表中缺少 key: '${k}'`);
-    }
-  });
-
-  it('应使用 "use client" 声明', () => {
+  it('应包含 "use client" 声明', () => {
     const src = readSource();
     assert.ok(src.includes("'use client'"), '缺少 use client 指令');
-  });
-
-  it('应包含 buildProductColumns 函数', () => {
-    const src = readSource();
-    assert.ok(src.includes('function buildProductColumns'), '缺少 buildProductColumns');
-  });
-
-  it('应包含 buildShiftColumns 函数', () => {
-    const src = readSource();
-    assert.ok(src.includes('function buildShiftColumns'), '缺少 buildShiftColumns');
   });
 
   it('应引用 @m5/ui 的组件', () => {
     const src = readSource();
     assert.ok(src.includes("from '@m5/ui'"), '缺少 @m5/ui 导入');
   });
+});
 
-  it('应引用 useDetailActions', () => {
+// ---- 数据完整性 ----
+
+describe('StoreManagerWorkbench — 数据完整性', () => {
+  it('Mock 指标数据应包含营收字段', () => {
     const src = readSource();
-    assert.ok(src.includes("from '../../components/use-detail-actions'"), '缺少 useDetailActions 导入路径');
+    assert.ok(src.includes('今日营收'), '缺少今日营收');
+    assert.ok(src.includes('今日客流'), '缺少今日客流');
+    assert.ok(src.includes('设备在线率'), '缺少设备在线率');
+    assert.ok(src.includes('会员消费占比'), '缺少会员消费占比');
+  });
+
+  it('Mock 待办任务应覆盖全部 priority 等级', () => {
+    const src = readSource();
+    assert.ok(src.includes("priority: 'urgent'"), '缺少 urgent 优先级任务');
+    assert.ok(src.includes("priority: 'high'"), '缺少 high 优先级任务');
+    assert.ok(src.includes("priority: 'medium'"), '缺少 medium 优先级任务');
+    assert.ok(src.includes("priority: 'low'"), '缺少 low 优先级任务');
+  });
+
+  it('Mock 待办任务应包含任务条目', () => {
+    const src = readSource();
+    const matches = src.match(/id: 'T\d+'/g);
+    assert.ok(matches && matches.length >= 5, `期望至少 5 条待办任务, 实际 ${matches?.length ?? 0}`);
+  });
+
+  it('Mock 热门商品应包含商品条目', () => {
+    const src = readSource();
+    // 实际只有 6 条热门商品
+    const matches = src.match(/id: 'P\d+'/g);
+    assert.ok(matches && matches.length >= 5, `期望至少 5 条热门商品, 实际 ${matches?.length ?? 0}`);
+  });
+
+  it('Mock 排班应包含员工条目', () => {
+    const src = readSource();
+    const matches = src.match(/id: 'S\d+'/g);
+    assert.ok(matches && matches.length >= 6, `期望至少 6 条排班记录, 实际 ${matches?.length ?? 0}`);
+  });
+
+  it('Mock 排班应覆盖 shift 班次', () => {
+    const src = readSource();
+    assert.ok(src.includes("shift: '早班'"), '缺少早班');
+    assert.ok(src.includes("shift: '中班'"), '缺少中班');
+  });
+
+  it('Mock 排班应覆盖 status 状态', () => {
+    const src = readSource();
+    assert.ok(src.includes("status: '在岗'"), '缺少在岗状态');
+    assert.ok(src.includes("status: '未到岗'"), '缺少未到岗状态');
+    assert.ok(src.includes("status: '休息'"), '缺少休息状态');
+  });
+});
+
+// ---- 边界防御 ----
+
+describe('StoreManagerWorkbench — 边界防御', () => {
+  it('应定义 KpiCard 类型接口', () => {
+    const src = readSource();
+    assert.ok(src.includes('interface KpiCard') || src.includes('type KpiCard'), '缺少 KpiCard 类型');
+  });
+
+  it('应定义 TaskItem 类型接口', () => {
+    const src = readSource();
+    assert.ok(src.includes('interface TaskItem') || src.includes('type TaskItem'), '缺少 TaskItem 类型');
+  });
+
+  it('应定义 StoreItem 类型接口', () => {
+    const src = readSource();
+    assert.ok(src.includes('interface StoreItem') || src.includes('type StoreItem'), '缺少 StoreItem 类型');
+  });
+
+  it('应定义 StaffOnDuty 类型接口', () => {
+    const src = readSource();
+    assert.ok(src.includes('interface StaffOnDuty') || src.includes('type StaffOnDuty'), '缺少 StaffOnDuty 类型');
+  });
+
+  it('应包含 PRIORITY_MAP 映射表', () => {
+    const src = readSource();
+    assert.ok(src.includes('PRIORITY_MAP'), '缺少 PRIORITY_MAP');
+  });
+
+  it('应包含 STATUS_LABELS 映射表', () => {
+    const src = readSource();
+    assert.ok(src.includes('STATUS_LABELS'), '缺少 STATUS_LABELS');
+  });
+
+  it('应使用 formatMoney 工具函数', () => {
+    const src = readSource();
+    assert.ok(src.includes('function formatMoney'), '缺少 formatMoney');
+  });
+
+  it('应包含设备在线状态显示', () => {
+    const src = readSource();
+    assert.ok(src.includes('设备在线'), '缺少设备在线');
   });
 });

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ai-rag-ingestion-plus.test.ts — RAG 完整测试补充
  */
@@ -27,7 +26,7 @@ describe('KnowledgeBaseManager Extension', () => {
   it('updateDocument 更新内容', () => {
     kb.addDocument('c', { id: 'd', content: 'old' })
     kb.updateDocument('c', 'd', 'new')
-    expect(kb.getDocument('c', 'd')!.chunks[0].text).toBe('new')
+    expect(kb.getDocument('c', 'd')!.chunks[0].content).toBe('new')
   })
 
   it('deleteDocument 返回', () => {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ai-rag-ingestion.test.ts — RAG 文档管理与检索集成测试
  */
