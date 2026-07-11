@@ -5,18 +5,21 @@ import {
   ObjectionHandler,
   FollowUpScheduler
 } from './ai-sales-copilot.service'
+import { AiSalesService } from './ai-sales.service'
 
 @Module({
   controllers: [AiSalesController],
   providers: [
     ProductRecommendationEngine,
     ObjectionHandler,
-    FollowUpScheduler
+    FollowUpScheduler,
+    AiSalesService,
   ],
   exports: [
     ProductRecommendationEngine,
     ObjectionHandler,
-    FollowUpScheduler
+    FollowUpScheduler,
+    AiSalesService,
   ]
 })
 export class AiSalesModule {}
