@@ -115,14 +115,14 @@ function generateMockTransactions(): TransactionRecord[] {
   for (let i = 0; i < 12; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const type = typesList[i % 4];
+    const type = typesList[i % 4]!;
     records.push({
       id: `txn-${1000 + i}`,
       type,
       amount: type === 'refund' || type === 'payment' ? -(Math.floor(Math.random() * 500) + 30) : Math.floor(Math.random() * 1000) + 100,
       method: ['wechat', 'alipay', 'bankcard', 'wechat', 'alipay', 'wechat'][i % 6] as PaymentMethodType,
-      methodLabel: ['微信支付', '支付宝', '招商银行', '微信支付', '支付宝', '微信支付'][i % 6],
-      description: descriptions[i],
+      methodLabel: ['微信支付', '支付宝', '招商银行', '微信支付', '支付宝', '微信支付'][i % 6]!,
+      description: descriptions[i]!,
       status: i === 3 ? 'pending' : i === 7 ? 'failed' : i === 9 ? 'refunded' : 'success',
       createdAt: d.toISOString().split('T')[0] + ' ' + String(10 + i).padStart(2, '0') + ':' + String(30 + i).padStart(2, '0'),
       orderNo: `ORD${20260601000 + i}`,
@@ -532,7 +532,7 @@ export default function PaymentSettingsPage() {
       accountNumber: newAccountNumber.replace(/\d(?=\d{4})/g, '*').slice(-12).padStart(12, '') || '****',
       icon: NEW_METHODS.find(m => m.type === newMethodType)?.icon || '💳',
       isDefault: payments.length === 0,
-      boundAt: new Date().toISOString().split('T')[0],
+      boundAt: new Date().toISOString().split('T')[0]!,
     };
     setPayments(prev => [...prev, newPmt]);
     setShowAddPayment(false);
