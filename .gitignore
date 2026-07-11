@@ -16,3 +16,6 @@ packages/config-typescript/dist/
 logs/v6-nightly/launchd-stderr.log
 logs/v6-rhythm/launchd-stderr.log
 logs/
+
+# Runtime pulse health check state
+.pulse-health-alert-state
