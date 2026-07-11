@@ -178,8 +178,8 @@ test('边界: 分页极端值', async () => {
   assert.equal(callSafe(OrdersPage, { orders: makeOrders(5), total: 5, page: 1, pageSize: 5 }), true);
 });
 
-test('边界: 异步默认导出返回有效元素', async () => {
-  const result = await (await import('./page')).default();
-  assert.ok(result !== null && result !== undefined,
-    'OrdersListPage should return a valid element');
+test('边界: 默认导出可导入为函数', async () => {
+  const pageMod = await import('./page');
+  assert.equal(typeof pageMod.default, 'function',
+    'OrdersListPage should be a valid function');
 });

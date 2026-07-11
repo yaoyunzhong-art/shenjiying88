@@ -28,7 +28,7 @@ const pos: PurchaseOrder[] = Array.from({length:25}, (_,i) => {
   const statuses: POStatus[] = ['received','received','received','received','received','partial','ordered','approved','pending','draft','cancelled'];
   return {
     id: `PO-${String(i+1).padStart(4,'0')}`,
-    date: d.toISOString().split('T')[0],
+    date: d.toISOString().split('T')[0] as string,
     type: (['regular','regular','regular','urgent','auto','seasonal'] as POType[])[Math.floor(Math.random()*6)]!,
     supplier: ['广州礼品总汇','上海游乐设备','深圳电子配件','北京保洁','义乌小商品','本地食品'][Math.floor(Math.random()*6)]!,
     items: 2+Math.floor(Math.random()*10),
@@ -36,12 +36,12 @@ const pos: PurchaseOrder[] = Array.from({length:25}, (_,i) => {
     status: statuses[Math.floor(Math.random()*statuses.length)]!,
     requester: ['刘洋','陈静','杨磊'][Math.floor(Math.random()*3)]!,
     approver: Math.random()>0.3?'店长':'',
-    eta: new Date(d.getTime()+Math.floor(Math.random()*7)*86400000).toISOString().split('T')[0],
+    eta: new Date(d.getTime()+Math.floor(Math.random()*7)*86400000).toISOString().split('T')[0] as string,
     warehouse: ['主仓库','备用仓'][Math.floor(Math.random()*2)]!,
     priority: (['high','medium','low'] as const)[Math.floor(Math.random()*3)]!,
     note: Math.random()>0.8?'供应商缺货调整':'',
   };
-}).sort((a,b)=>b.date.localeCompare(a.date));
+}).sort((a,b)=>(b.date ?? '').localeCompare(a.date ?? ''));
 
 const supplierEvals: SupplierEval[] = [
   { id:'SE1', supplier:'广州礼品总汇', date:'2026-07-10', rating:4, delivery:true, quality:true, service:true, price:false, comment:'质量好但价格稍高' },

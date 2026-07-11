@@ -33,7 +33,7 @@ const notifications: Notification[] = [
     content: `这是${['系统升级通知','设备故障告警','库存预警','新员工入职通知','审批待处理','促销活动提醒','交接班提醒','安全巡检通知','会员活动通知','月度报表已生成'][i%10]}的详细内容，请及时查看处理。`,
     type: (['announcement','alert','alert','task','approval','announcement','task','alert','announcement','system','system','task','alert','announcement','announcement','system','alert','alert','announcement','system'] as NotifType[])[i%20]!,
     priority: (['urgent','high','medium','low'] as NotifPriority[])[i%4]!,
-    status: i < 8 ? 'unread' : i < 18 ? 'read' : 'archived',
+    status: (i < 8 ? 'unread' : i < 18 ? 'read' : 'archived') as NotifStatus,
     sender: ['系统','店长','运营中心','后台','管理员'][i%5]!,
     createdAt: new Date(Date.now()-i*3600000).toISOString(),
     readAt: i >= 8 ? new Date(Date.now()-i*3600000+3600000).toISOString() : null,
@@ -53,7 +53,7 @@ function formatTime(iso: string): string {
 
 function buildColumns(): DataTableColumn<Notification>[] {
   return [
-    { key: 'status', title: '', width: 40, sortable: true, sortValue: i => i.status,
+    { key: 'status', title: '', width: '40px', sortable: true, sortValue: i => i.status,
       render: i => i.status === 'unread' ? <span style={{display:'inline-block',width:8,height:8,borderRadius:4,background:'#3b82f6'}} /> : null },
     { key: 'title', title: '标题', dataKey:'title', sortable:true,
       render: i => <span style={{color:i.status==='unread'?'#f1f5f9':'#94a3b8',fontWeight:i.status==='unread'?700:400}}>{i.title}</span> },

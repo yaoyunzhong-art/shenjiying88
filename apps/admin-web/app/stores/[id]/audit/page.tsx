@@ -35,9 +35,9 @@ const auditLogs: AuditLog[] = Array.from({length:60}, (_,i) => {
     operator: ['张三','李四','王五','赵六','店长','系统'][Math.floor(Math.random()*6)]!,
     detail: `${AL[action]}${AT[targets[Math.floor(Math.random()*targets.length)]!]}记录`,
     ip: `192.168.1.${100+Math.floor(Math.random()*50)}`,
-    level: action==='delete'?'critical':action==='login'?'info':action==='reject'?'warning':'info',
+    level: (action==='delete'?'critical':action==='login'?'info':action==='reject'?'warning':'info') as AuditLevel,
     duration: Math.floor(Math.random()*5000),
-    status: Math.random()>0.1?'success':Math.random()>0.5?'failure':'blocked',
+    status: (Math.random()>0.1?'success':Math.random()>0.5?'failure':'blocked') as 'success' | 'failure' | 'blocked',
   };
 }).sort((a,b)=>new Date(b.time).getTime()-new Date(a.time).getTime());
 
@@ -55,7 +55,7 @@ function buildColumns(): DataTableColumn<AuditLog>[] {
     {key:'operator',title:'操作人',dataKey:'operator',sortable:true},
     {key:'detail',title:'详情',dataKey:'detail',sortable:false,render:i=><span style={{color:'#cbd5e1',fontSize:12}}>{i.detail}</span>},
     {key:'level',title:'级别',sortable:true,sortValue:i=>i.level,render:i=><StatusBadge label={i.level==='critical'?'严重':i.level==='warning'?'警告':'一般'} variant={i.level==='critical'?'danger':i.level==='warning'?'warning':'info'} size="sm" />},
-    {key:'status',title:'状态',sortable:true,sortValue:i=>i.status,render:i=><StatusBadge label={ALS[i.status].l} variant={ALS[i.status].v} size="sm" dot />},
+    {key:'status',title:'状态',sortable:true,sortValue:i=>i.status,render:i=><StatusBadge label={ALS[i.status]!.l} variant={ALS[i.status]!.v} size="sm" dot />},
     {key:'ip',title:'IP',dataKey:'ip',sortable:true,render:i=><span style={{fontSize:11,color:'#94a3b8'}}>{i.ip}</span>},
   ];
 }

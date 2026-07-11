@@ -25,7 +25,7 @@ const reconciliations: Reconciliation[] = [
   { id:'REC-002', date:'2026-07-11', shift:'中班', cashier:'王强', openingBalance:5485,
     cashRevenue:4200, cardRevenue:3150, onlineRevenue:7420, memberCardRevenue:980, refundAmount:210,
     expectedTotal:4200+3150+7420+980-210, actualTotal:4200+3150+7420+980-210, difference:0,
-    status:'balanced', cashCount:{'100':15,'50':20,'20':35,'10':55,'5':70,'1':100},
+    status:'balanced' as const, cashCount:{'100':15,'50':20,'20':35,'10':55,'5':70,'1':100},
     notes:'' },
   { id:'REC-003', date:'2026-07-10', shift:'晚班', cashier:'李四', openingBalance:15570,
     cashRevenue:3800, cardRevenue:1950, onlineRevenue:5120, memberCardRevenue:650, refundAmount:480,
@@ -40,7 +40,7 @@ const reconciliations: Reconciliation[] = [
   { id:'REC-005', date:'2026-07-09', shift:'中班', cashier:'陈七', openingBalance:10980,
     cashRevenue:5100, cardRevenue:2650, onlineRevenue:6850, memberCardRevenue:1400, refundAmount:320,
     expectedTotal:5100+2650+6850+1400-320, actualTotal:5100+2650+6850+1400-320, difference:0,
-    status:'balanced', cashCount:{'100':18,'50':22,'20':40,'10':60,'5':90,'1':150},
+    status:'balanced' as const, cashCount:{'100':18,'50':22,'20':40,'10':60,'5':90,'1':150},
     notes:'平账' },
 ];
 
@@ -79,7 +79,7 @@ export default function CashierReconciliationPage() {
             <div key={r.id} style={{padding:'14px 18px',borderRadius:12,background:'rgba(15,23,42,0.3)',border:r.difference!==0?'1px solid rgba(245,158,11,0.2)':'1px solid rgba(148,163,184,0.1)'}}>
               <div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}>
                 <div><span style={{fontWeight:700,fontSize:15}}>{r.date} {r.shift}</span><span style={{color:'#94a3b8',marginLeft:8}}>{r.cashier}</span></div>
-                <StatusBadge label={RS[r.status].l} variant={RS[r.status].v} size="sm" dot />
+                <StatusBadge label={RS[r.status]!.l} variant={RS[r.status]!.v} size="sm" dot />
               </div>
               <div style={{display:'grid',gap:10,gridTemplateColumns:'repeat(4,1fr)',marginBottom:8}}>
                 <StatCard label="现金" value={fm(r.cashRevenue)} />
@@ -109,7 +109,7 @@ export default function CashierReconciliationPage() {
                 <div style={{fontSize:12,color:'#94a3b8'}}>{h.date} {h.time} · 交易{h.receipts}笔 · 现金{fm(h.cashBalance)}</div>
               </div>
               <div style={{textAlign:'right'}}>
-                <StatusBadge label={HS[h.status].l} variant={HS[h.status].v} size="sm" dot />
+                <StatusBadge label={HS[h.status]!.l} variant={HS[h.status]!.v} size="sm" dot />
                 {h.notes && <div style={{fontSize:11,color:'#fca5a5',marginTop:2}}>{h.notes}</div>}
               </div>
             </div>

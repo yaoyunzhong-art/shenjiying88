@@ -33,7 +33,7 @@ const schedule: ScheduleSlot[] = staff.flatMap((name,si) => {
     const t = templates.find(t => t.name === sn);
     if (t) {
       slots.push({
-        id: `SCH-${si}-${day}`, date: d.toISOString().split('T')[0],
+        id: `SCH-${si}-${day}`, date: d.toISOString().split('T')[0] as string,
         staffName: name, role: roles[si % roles.length]!,
         shiftName: sn, start: t.start, end: t.end,
         status: statuses[Math.floor(Math.random()*statuses.length)]!,
@@ -50,7 +50,7 @@ const attendance: AttendanceStat[] = staff.map((name, i) => ({
   score: 70+Math.floor(Math.random()*30),
 }));
 
-const today = new Date().toISOString().split('T')[0];
+const today = new Date().toISOString().split('T')[0] as string;
 const todaySchedule = schedule.filter(s => s.date === today);
 
 export default function SchedulingPage() {
@@ -64,11 +64,11 @@ export default function SchedulingPage() {
   }, [weekOffset]);
 
   const weekDays = useMemo(() => {
-    const days = [];
+    const days: {date:string;label:string}[] = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStart);
       d.setDate(d.getDate() + i);
-      days.push({ date: d.toISOString().split('T')[0], label: ['日','一','二','三','四','五','六'][d.getDay()]! });
+      days.push({ date: d.toISOString().split('T')[0]!, label: ['日','一','二','三','四','五','六'][d.getDay()]! });
     }
     return days;
   }, [weekStart]);
@@ -120,11 +120,11 @@ export default function SchedulingPage() {
                         <td key={`${name}-${d.date}`} style={{...td,textAlign:'center',padding:'8px 6px',
                           background:slot ? (slot.status==='absent'?'rgba(239,68,68,0.1)':slot.status==='swap_requested'?'rgba(245,158,11,0.1)':'transparent'):'rgba(107,114,128,0.05)'}}>
                           {slot ? <>
-                            <span style={{color:slot.shiftName==='休息'?'#6b7280':templates.find(t=>t.name===slot.shiftName)?.color??'#94a3b8',fontWeight:600,fontSize:13}}>
+                            <span style={{color:slot.shiftName==='休息'?'#6b7280':(templates.find(t=>t.name===slot.shiftName)?.color ?? '#94a3b8'),fontWeight:600,fontSize:13}}>
                               {slot.shiftName}
                             </span>
                             <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>
-                              {slot.start}-{slot.end}
+                              {slot.start}-{slot.end!}
                             </div>
                           </> : <span style={{color:'#6b7280'}}>—</span>}
                         </td>

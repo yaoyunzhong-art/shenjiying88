@@ -25,9 +25,9 @@ const ops: StockOp[] = Array.from({length:45}, (_,i) => {
   const d = new Date(Date.now()-Math.floor(Math.random()*30)*86400000);
   return {
     id: `STK-OP-${String(i+1).padStart(3,'0')}`,
-    date: d.toISOString().split('T')[0],
+    date: d.toISOString().split('T')[0] as string,
     type: types[Math.floor(Math.random()*types.length)]!,
-    refNo: `REF-${d.toISOString().split('T')[0].replace(/-/g,'')}-${String(1000+i).slice(-4)}`,
+    refNo: `REF-${d.toISOString().split('T')[0]!.replace(/-/g,'')}-${String(1000+i).slice(-4)}`,
     items: 1+Math.floor(Math.random()*8),
     totalQty: 5+Math.floor(Math.random()*95),
     totalCost: Math.round((100+Math.random()*5000)*100)/100,
@@ -37,7 +37,7 @@ const ops: StockOp[] = Array.from({length:45}, (_,i) => {
     note: '',
     warehouse: ['主仓库','备用仓','前厅'][Math.floor(Math.random()*3)]!,
   };
-}).sort((a,b)=>b.date.localeCompare(a.date));
+}).sort((a,b)=>(b.date ?? '').localeCompare(a.date ?? ''));
 
 function buildColumns(): DataTableColumn<StockOp>[] {
   return [
@@ -67,7 +67,7 @@ export default function StockOperationsPage() {
 
   const stats=useMemo(()=>({
     total:allOps.length, pending:allOps.filter(o=>o.status==='pending_approval'||o.status==='draft').length,
-    completed:allOps.filter(o=>o.status==='completed').length, totalCost:allOps.reduce((s,o)=>s+o.totalCost,0),
+    completed:allOps.filter(o=>o.status==='completed').length, totalCost:allOps.reduce((s,o)=>s+(o.totalCost??0),0),
     inCount:allOps.filter(o=>o.type.includes('in')).length, outCount:allOps.filter(o=>o.type.includes('out')).length,
   }),[allOps]);
 
