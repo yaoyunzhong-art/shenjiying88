@@ -16,8 +16,8 @@ describe('AiForecastController (spec)', () => {
 
   beforeEach(() => {
     forecastService = new DemandForecastService()
-    inventoryOptimizer = new InventoryOptimizer()
-    transferService = new TransferRecommendationService()
+    inventoryOptimizer = new InventoryOptimizer(forecastService)
+    transferService = new TransferRecommendationService(inventoryOptimizer)
     controller = new AiForecastController(forecastService, inventoryOptimizer, transferService)
   })
 
@@ -31,19 +31,14 @@ describe('AiForecastController (spec)', () => {
   })
 
   it('forecast endpoint should return forecast data', () => {
-    const result = controller.forecast({ sku: 'prod-001', days: 14 })
+    const result = controller.forecastSales('prod-001', 14)
     expect(result).toBeDefined()
-    expect(result.predictions).toBeDefined()
-    expect(result.predictions.length).toBe(14)
+    expect(result.daysAhead).toBe(14)
   })
 
   it('reorder endpoint should return reorder suggestion', () => {
-    const result = controller.suggestReorder({
-      sku: 'prod-001',
-      currentStock: 50,
-      leadTimeDays: 7,
-    })
+    const result = controller.suggestReorder({ productId: 'prod-001' })
     expect(result).toBeDefined()
-    expect(result.reorderQuantity).toBeGreaterThan(0)
+    expect(result.suggestedQuantity).toBeGreaterThan(0)
   })
 })

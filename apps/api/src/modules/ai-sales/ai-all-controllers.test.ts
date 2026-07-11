@@ -5,14 +5,37 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import 'reflect-metadata'
 import { AiSalesController } from './ai-sales.controller'
 import { AiSalesService } from './ai-sales.service'
+import {
+  ProductRecommendationEngine,
+  ObjectionHandler,
+  FollowUpScheduler,
+} from './ai-sales-copilot.service'
+
+function createMockRecommendationEngine(): ProductRecommendationEngine {
+  return new ProductRecommendationEngine()
+}
+
+function createMockObjectionHandler(): ObjectionHandler {
+  return new ObjectionHandler()
+}
+
+function createMockFollowUpScheduler(): FollowUpScheduler {
+  return new FollowUpScheduler()
+}
 
 describe('AiSalesController (Complete)', () => {
   let controller: AiSalesController
   let service: AiSalesService
+  let mockRecEngine: ProductRecommendationEngine
+  let mockObjHandler: ObjectionHandler
+  let mockFUScheduler: FollowUpScheduler
 
   beforeEach(() => {
-    service = new AiSalesService()
-    controller = new AiSalesController(service)
+    mockRecEngine = createMockRecommendationEngine()
+    mockObjHandler = createMockObjectionHandler()
+    mockFUScheduler = createMockFollowUpScheduler()
+    service = new AiSalesService(mockRecEngine, mockObjHandler, mockFUScheduler)
+    controller = new AiSalesController(mockRecEngine, mockObjHandler, mockFUScheduler)
   })
 
   it('should be defined', () => { expect(controller).toBeDefined() })
@@ -21,16 +44,24 @@ describe('AiSalesController (Complete)', () => {
   })
 
   it('POST /recommend should return recommendations', () => {
-    const result = controller.getRecommendations({ customerId: 'cust-001' })
+    const result = controller.recommend({ customerId: 'cust-001' })
     expect(result).toBeDefined()
     expect(result.recommendations).toBeDefined()
   })
 
-  it('POST /objection-handler should handle objections', () => {
-    const result = controller.handleObjection({
+  it('POST /objection/classify should handle objections', () => {
+    const result = controller.classifyObjection({
+      customerReply: '价格太贵了',
+    })
+    expect(result.type).toBeTruthy()
+  })
+
+  it('POST /objection/respond should handle objections', () => {
+    const result = controller.generateResponse({
       customerId: 'cust-001',
       productId: 'prod-001',
       objectionType: 'price',
+      conversationHistory: [],
     })
     expect(result.response).toBeTruthy()
   })
@@ -42,11 +73,11 @@ describe('AiSalesController (Complete)', () => {
       scheduledAt: new Date().toISOString(),
       message: '生日快乐',
     })
-    expect(result.reminderId).toBeTruthy()
+    expect(result.id).toBeTruthy()
   })
 
-  it('GET /knowledge should return knowledge', () => {
-    const result = controller.getKnowledgeBase({} as any, { query: '价格' } as any)
+  it('GET /products should return products', () => {
+    const result = controller.getAllProducts()
     expect(result).toBeDefined()
   })
 })
@@ -54,9 +85,9 @@ describe('AiSalesController (Complete)', () => {
 /**
  * ai-push.controller.comprehensive.test.ts — AI 推送 Controller 完整测试
  */
-import { AiPushController } from './ai-push.controller'
-import { PushTaskService } from './ai-push-task.service'
-import { MemberSegmentationService, OptimalTimingService, ABTestService } from './ai-push.service'
+import { AiPushController } from '../ai-push/ai-push.controller'
+import { PushTaskService } from '../ai-push/ai-push-task.service'
+import { MemberSegmentationService, OptimalTimingService, ABTestService } from '../ai-push/ai-push.service'
 
 describe('AiPushController (Complete)', () => {
   let controller: AiPushController
@@ -137,8 +168,8 @@ describe('AiPushController (Complete)', () => {
 /**
  * ai-insight.controller.comprehensive.test.ts — AI 洞察 Controller 完整测试
  */
-import { AiInsightController } from './ai-insight.controller'
-import { AiInsightService } from './ai-insight.service'
+import { AiInsightController } from '../ai-insight/ai-insight.controller'
+import { AiInsightService } from '../ai-insight/ai-insight.service'
 
 describe('AiInsightController', () => {
   let controller: AiInsightController
