@@ -1,18 +1,227 @@
-FROM node:24-alpine AS base
-WORKDIR /app
-COPY pnpm-lock.yaml ./
-COPY package.json ./
-RUN corepack enable && pnpm fetch --frozen-lockfile
+# ═══════════════════════════════════════════════════════════════
+# M5 Monorepo — 根 Dockerfile (多阶段构建)
+#
+# 构建产物:
+#   docker build --target=api-prod    -t m5-api:latest .
+#   docker build --target=admin-prod  -t m5-admin:latest .
+#   docker build --target=storefront-prod -t m5-storefront:latest .
+#   docker build --target=tob-prod    -t m5-tob:latest .
+#
+# 开发镜像:
+#   docker build --target=api-dev     -t m5-api:dev .
+# ═══════════════════════════════════════════════════════════════
 
-FROM base AS build
-COPY . .
-RUN corepack enable && pnpm install --frozen-lockfile --offline
+# ─── 基础镜像 ─────────────────────────────────────────────
+FROM node:22-alpine AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+ENV NODE_ENV=production
+
+RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
+RUN apk add --no-cache openssl tini curl wget
+
+WORKDIR /workspace
+
+# ─── 依赖层 ──────────────────────────────────────────────
+FROM base AS deps
+
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json turbo.json ./
+
+# 复制所有 apps/package.json (结构声明,不含源码)
+COPY apps/api/package.json         apps/api/
+COPY apps/admin-web/package.json   apps/admin-web/
+COPY apps/storefront-web/package.json apps/storefront-web/
+COPY apps/tob-web/package.json     apps/tob-web/
+COPY apps/app/package.json         apps/app/
+COPY apps/mobile/package.json      apps/mobile/
+COPY apps/miniapp/package.json     apps/miniapp/
+
+# 复制所有 packages/*/package.json
+COPY packages/domain/package.json   packages/domain/
+COPY packages/sdk/package.json     packages/sdk/
+COPY packages/types/package.json   packages/types/
+COPY packages/ui/package.json      packages/ui/
+COPY packages/config-typescript/package.json packages/config-typescript/
+
+# API 特有的 prisma schema (用于 generate)
+COPY apps/api/prisma                apps/api/prisma
+
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# Prisma generate (需要 schema + client 依赖)
+RUN pnpm --filter @m5/api prisma:generate
+
+# ─── 构建层 ──────────────────────────────────────────────
+FROM deps AS build
+
+COPY tsconfig.base.json turbo.json ./
+
+# 复制全部源码 (monorepo 构建需要)
+COPY packages/domain/src           packages/domain/src
+COPY packages/domain/tsconfig.json packages/domain/
+COPY packages/sdk/src              packages/sdk/src
+COPY packages/sdk/tsconfig.json    packages/sdk/
+COPY packages/types/src            packages/types/src
+COPY packages/types/tsconfig.json  packages/types/
+COPY packages/ui/src               packages/ui/src
+COPY packages/ui/tsconfig.json     packages/ui/
+COPY packages/config-typescript/   packages/config-typescript/
+
+COPY apps/api/src                  apps/api/src
+COPY apps/api/tsconfig.json        apps/api/
+COPY apps/api/tsconfig.build.json  apps/api/
+COPY apps/api/nest-cli.json        apps/api/ 2>/dev/null || true
+
+COPY apps/admin-web/               apps/admin-web/
+COPY apps/storefront-web/          apps/storefront-web/
+COPY apps/tob-web/                 apps/tob-web/
+
+# 构建全部 monorepo turbo 任务
 RUN pnpm build
 
-FROM node:24-alpine AS production
+# ──────────────────────────────────────────────────────────
+# 🎯 目标: api-prod
+# ──────────────────────────────────────────────────────────
+FROM base AS api-prod
+
 WORKDIR /app
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/apps/api/dist ./apps/api/dist
-COPY --from=build /app/package.json ./
-EXPOSE 3000
-CMD ["node", "apps/api/dist/main.js"]
+
+RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
+
+# 使用 pnpm deploy 提取最小生产依赖
+RUN --mount=type=bind,from=deps,source=/workspace,target=/deps \
+    cp -r /deps/node_modules ./node_modules && \
+    cp -r /deps/packages ./packages
+
+RUN --mount=type=bind,from=build,source=/workspace,target=/build \
+    cp -r /build/apps/api/dist ./dist && \
+    cp -r /build/apps/api/prisma ./prisma && \
+    cp /build/apps/api/package.json ./
+
+ENV NODE_ENV=production
+ENV API_PORT=3001
+
+USER app
+
+EXPOSE 3001
+
+ENTRYPOINT ["/sbin/tini", "--"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3001/api/v1/health/ping || exit 1
+
+CMD ["node", "dist/main.js"]
+
+# ──────────────────────────────────────────────────────────
+# 🎯 目标: admin-prod
+# ──────────────────────────────────────────────────────────
+FROM base AS admin-prod
+
+WORKDIR /app
+
+RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
+
+RUN --mount=type=bind,from=build,source=/workspace/apps/admin-web,target=/src \
+    cp -r /src/.next ./.next && \
+    cp -r /src/public ./public 2>/dev/null || true && \
+    cp /src/package.json ./ && \
+    cp /src/next.config.mjs ./ && \
+    cp /src/next-env.d.ts ./ 2>/dev/null || true && \
+    mkdir -p .next/standalone
+
+# Next.js standalone output stitching
+RUN --mount=type=bind,from=build,source=/workspace,target=/ws \
+    if [ -d /ws/apps/admin-web/.next/standalone ]; then \
+      cp -r /ws/apps/admin-web/.next/standalone/. ./ ; \
+    fi && \
+    if [ -f /ws/apps/admin-web/.next/server/pages-manifest.json ]; then \
+      mkdir -p .next/server && \
+      cp /ws/apps/admin-web/.next/server/pages-manifest.json .next/server/ ; \
+    fi
+
+ENV NODE_ENV=production
+ENV PORT=3002
+
+USER app
+
+EXPOSE 3002
+
+ENTRYPOINT ["/sbin/tini", "--"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3002/api/health || exit 1
+
+CMD ["node", ".next/standalone/apps/admin-web/server.js"]
+
+# ──────────────────────────────────────────────────────────
+# 🎯 目标: storefront-prod
+# ──────────────────────────────────────────────────────────
+FROM base AS storefront-prod
+
+WORKDIR /app
+
+RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
+
+RUN --mount=type=bind,from=build,source=/workspace/apps/storefront-web,target=/src \
+    cp -r /src/.next ./.next && \
+    cp -r /src/public ./public 2>/dev/null || true && \
+    cp /src/package.json ./ && \
+    cp /src/next.config.mjs ./ && \
+    cp /src/next-env.d.ts ./ 2>/dev/null || true && \
+    mkdir -p .next/standalone
+
+RUN --mount=type=bind,from=build,source=/workspace,target=/ws \
+    if [ -d /ws/apps/storefront-web/.next/standalone ]; then \
+      cp -r /ws/apps/storefront-web/.next/standalone/. ./ ; \
+    fi
+
+ENV NODE_ENV=production
+ENV PORT=3003
+
+USER app
+
+EXPOSE 3003
+
+ENTRYPOINT ["/sbin/tini", "--"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3003/api/health || exit 1
+
+CMD ["node", ".next/standalone/apps/storefront-web/server.js"]
+
+# ──────────────────────────────────────────────────────────
+# 🎯 目标: tob-prod
+# ──────────────────────────────────────────────────────────
+FROM base AS tob-prod
+
+WORKDIR /app
+
+RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
+
+RUN --mount=type=bind,from=build,source=/workspace/apps/tob-web,target=/src \
+    cp -r /src/.next ./.next && \
+    cp -r /src/public ./public 2>/dev/null || true && \
+    cp /src/package.json ./ && \
+    cp /src/next.config.mjs ./ && \
+    cp /src/next-env.d.ts ./ 2>/dev/null || true && \
+    mkdir -p .next/standalone
+
+RUN --mount=type=bind,from=build,source=/workspace,target=/ws \
+    if [ -d /ws/apps/tob-web/.next/standalone ]; then \
+      cp -r /ws/apps/tob-web/.next/standalone/. ./ ; \
+    fi
+
+ENV NODE_ENV=production
+ENV PORT=3011
+
+USER app
+
+EXPOSE 3011
+
+ENTRYPOINT ["/sbin/tini", "--"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3011/api/health || exit 1
+
+CMD ["node", ".next/standalone/apps/tob-web/server.js"]
