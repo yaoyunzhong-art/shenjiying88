@@ -15,6 +15,19 @@ import { Type } from 'class-transformer'
 import 'reflect-metadata'
 
 /**
+ * 价格区间 DTO
+ */
+export class PriceRangeDto {
+  @IsNumber()
+  @Min(0)
+  min!: number
+
+  @IsNumber()
+  @Min(0)
+  max!: number
+}
+
+/**
  * 用户偏好设置 DTO
  */
 export class PreferencesDto {
@@ -37,19 +50,6 @@ export class PreferencesDto {
   @IsString()
   @IsNotEmpty()
   favoriteTimeSlot!: string
-}
-
-/**
- * 价格区间 DTO
- */
-export class PriceRangeDto {
-  @IsNumber()
-  @Min(0)
-  min!: number
-
-  @IsNumber()
-  @Min(0)
-  max!: number
 }
 
 /**
