@@ -9,27 +9,27 @@ describe('PushTaskService Extended', () => {
   beforeEach(() => { s = new PushTaskService() })
 
   it('创建带优先级', () => {
-    const t = s.createTask({ title: 'Hi', content: 'Msg', channel: 'push', priority: 'high' })
+    const t = s.createTask({ title: 'Hi', content: 'Msg', channel: 'push', targetMemberIds: [], priority: 'high' })
     expect(t.priority).toBe('high')
   })
 
   it('创建默认优先级', () => {
-    const t = s.createTask({ title: 'Hi', content: 'Msg', channel: 'push' })
+    const t = s.createTask({ title: 'Hi', content: 'Msg', channel: 'push', targetMemberIds: [] })
     expect(t.priority).toBe('normal')
   })
 
   it('创建带模板ID', () => {
-    const t = s.createTask({ title: 'Hi', content: 'Msg', channel: 'push', templateId: 'tpl-1' })
+    const t = s.createTask({ title: 'Hi', content: 'Msg', channel: 'push', targetMemberIds: [], templateId: 'tpl-1' })
     expect(t.templateId).toBe('tpl-1')
   })
 
   it('创建带个性化配置', () => {
-    const t = s.createTask({ title: 'Hi', content: 'Msg', channel: 'push', personalization: { name: '张三' } })
+    const t = s.createTask({ title: 'Hi', content: 'Msg', channel: 'push', targetMemberIds: [], personalization: { name: '张三' } })
     expect(t.personalization).toEqual({ name: '张三' })
   })
 
   it('获取任务', () => {
-    const t = s.createTask({ title: 'T', content: 'C', channel: 'push' })
+    const t = s.createTask({ title: 'T', content: 'C', channel: 'push', targetMemberIds: [] })
     expect(s.getTask(t.id)!.id).toBe(t.id)
   })
 
@@ -38,7 +38,7 @@ describe('PushTaskService Extended', () => {
   })
 
   it('取消存在的任务', () => {
-    const t = s.createTask({ title: 'T', content: 'C', channel: 'push' })
+    const t = s.createTask({ title: 'T', content: 'C', channel: 'push', targetMemberIds: [] })
     const result = s.cancelTask(t.id)
     expect(typeof result).toBe('boolean')
   })
@@ -52,7 +52,7 @@ describe('PushTaskService Extended', () => {
   })
 
   it('统计信息', () => {
-    s.createTask({ title: 'T', content: 'C', channel: 'push' })
+    s.createTask({ title: 'T', content: 'C', channel: 'push', targetMemberIds: [] })
     const stats = s.getStats()
     expect(stats.totalTasks).toBe(1)
     expect(stats.totalTargetCount).toBe(0)

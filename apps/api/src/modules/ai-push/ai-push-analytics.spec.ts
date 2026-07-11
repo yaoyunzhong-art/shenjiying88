@@ -3,8 +3,8 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest'
 import { PushAnalyticsService } from './ai-push-analytics.service'
-import { AdvancedRAGService } from './ai-rag-advanced.service'
-import { KnowledgeBaseManager } from './ai-rag.service'
+import { AdvancedRAGService } from '../ai-rag/ai-rag-advanced.service'
+import { KnowledgeBaseManager } from '../ai-rag/ai-rag.service'
 
 describe('PushAnalyticsService', () => {
   let service: PushAnalyticsService
@@ -108,7 +108,7 @@ describe('AdvancedRAGService', () => {
   it('hybridSearch 应返回有序的检索结果', () => {
     const results = service.hybridSearch({ text: '价格是多少', topK: 5 })
     expect(results.length).toBeGreaterThan(0)
-    results.forEach((r, idx) => {
+    results.forEach((r: { rank: number; score: number }, idx: number) => {
       expect(r.rank).toBe(idx + 1)
       expect(r.score).toBeGreaterThan(0)
     })
@@ -118,14 +118,14 @@ describe('AdvancedRAGService', () => {
     const results = service.hybridSearch({ text: '智能营销系统', topK: 5 })
     const reranked = service.rerank('智能营销系统功能', results)
     expect(reranked.length).toBe(results.length)
-    reranked.forEach(r => {
+    reranked.forEach((r: { finalScore: number }) => {
       expect(r.finalScore).toBeGreaterThanOrEqual(0)
     })
   })
 
   it('getQuerySuggestions 应返回多种建议类型', () => {
     const suggestions = service.getQuerySuggestions('价格')
-    const types = suggestions.map(s => s.type)
+    const types = suggestions.map((s: { type: string }) => s.type)
     expect(new Set(types).size).toBeGreaterThanOrEqual(2)
   })
 

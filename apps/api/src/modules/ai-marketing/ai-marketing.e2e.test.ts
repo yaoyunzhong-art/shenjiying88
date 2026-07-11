@@ -7,6 +7,8 @@ import {
   CampaignPlanner,
   AIMarketingCMOService,
 } from './ai-marketing-cmo.service'
+import { MarketingAnalyticsService } from './ai-marketing-analytics.service'
+import { CampaignOptimizerService } from './ai-marketing-campaign-optimizer.service'
 
 /**
  * ai-marketing 端到端测试
@@ -19,8 +21,10 @@ describe('ai-marketing E2E', () => {
     const roiService = new MarketingROIService()
     const copywritingService = new CopywritingAssistant()
     const campaignPlanner = new CampaignPlanner()
+    const analyticsService = new MarketingAnalyticsService()
+    const optimizerService = new CampaignOptimizerService()
     const cmoService = new AIMarketingCMOService(roiService, copywritingService, campaignPlanner)
-    controller = new AiMarketingController(roiService, copywritingService, campaignPlanner, cmoService)
+    controller = new AiMarketingController(roiService, copywritingService, campaignPlanner, cmoService, analyticsService, optimizerService)
   })
 
   // ─── ROI 全流程 ─────────────────────────────────────────────

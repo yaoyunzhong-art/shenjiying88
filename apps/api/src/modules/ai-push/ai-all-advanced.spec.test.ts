@@ -2,7 +2,7 @@
  * ai-push-analytics.service.spec.ts — 推送分析服务完整测试
  */
 import { describe, it, expect } from 'vitest'
-import { aiPushAnalyticsService } from './ai-push-analytics.service'
+import { PushAnalyticsService } from './ai-push-analytics.service'
 
 describe('PushAnalyticsService', () => {
   const service = new PushAnalyticsService()
@@ -16,7 +16,7 @@ describe('PushAnalyticsService', () => {
 
   it('compareChannels 应包含所有主要渠道', () => {
     const channels = service.compareChannels()
-    const names = channels.map(c => c.channel)
+    const names = channels.map((c: { channel: string }) => c.channel)
     expect(names).toContain('push')
     expect(names).toContain('sms')
     expect(names).toContain('email')
@@ -29,7 +29,7 @@ describe('PushAnalyticsService', () => {
 
   it('getOptimalPushTimes 应推荐最佳时段', () => {
     const times = service.getOptimalPushTimes()
-    expect(times.some(t => t.isRecommended)).toBe(true)
+    expect(times.some((t: { isRecommended: boolean }) => t.isRecommended)).toBe(true)
   })
 
   it('analyzeABTestResults 应包含获胜组', () => {
@@ -94,7 +94,7 @@ describe('AdvancedDiagnosisService', () => {
   it('generateSuggestions 应返回建议', () => {
     const s = service.generateSuggestions(mockDiagnosis)
     expect(s.length).toBeGreaterThan(0)
-    s.forEach(x => {
+    s.forEach((x: { category: string; priority: string }) => {
       expect(x.category).toBeTruthy()
       expect(x.priority).toBeTruthy()
     })

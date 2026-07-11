@@ -211,7 +211,7 @@ export class AdvancedReviewService {
     const criticalCount = vulnerabilities.filter(v => v.severity === 'critical').length
     const highCount = vulnerabilities.filter(v => v.severity === 'high').length
     const mediumCount = vulnerabilities.filter(v => v.severity === 'medium').length
-    const lowCount = vulnerabilities.filter(v => v.severity === 'low').length
+    const lowCount = vulnerabilities.filter((v: { severity: string }) => v.severity === 'low').length
 
     return {
       vulnerabilities,

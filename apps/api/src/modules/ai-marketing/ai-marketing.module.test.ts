@@ -6,6 +6,8 @@ import {
   CampaignPlanner,
   AIMarketingCMOService,
 } from './ai-marketing-cmo.service'
+import { MarketingAnalyticsService } from './ai-marketing-analytics.service'
+import { CampaignOptimizerService } from './ai-marketing-campaign-optimizer.service'
 
 /**
  * AiMarketingModule 测试
@@ -23,7 +25,7 @@ describe('AiMarketingModule', () => {
     copywritingService = new CopywritingAssistant()
     campaignPlanner = new CampaignPlanner()
     cmoService = new AIMarketingCMOService(roiService, copywritingService, campaignPlanner)
-    controller = new AiMarketingController(roiService, copywritingService, campaignPlanner, cmoService)
+    controller = new AiMarketingController(roiService, copywritingService, campaignPlanner, cmoService, {} as any, {} as any)
   })
 
   it('should compile the module (controller instantiated)', () => {
