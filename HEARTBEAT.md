@@ -1,41 +1,40 @@
 # 🦞 HEARTBEAT — shenjiying88 验收脉冲
 
 > 自动验收脉冲 | 每30min | 龙虾哥验收员
-> 当前时间: 2026-07-12 02:04 (Asia/Shanghai)
+> 当前时间: 2026-07-12 02:33 (Asia/Shanghai)
 
 ---
 
 ### 📋 系统状态
-- **最新 HEAD**: `828d39bea` 🐜 侦察兵全国扩展30城+DB+知识库同步
-- **上次脉冲**: pulse#337 ✅ 全绿验收 (缓存掩盖)
-- **本次脉冲**: pulse#338 ⚠️ 缓存过期，揭示真实状态
+- **最新 HEAD**: `1274b1b06` 🦞 全国场管数据关联文件对齐更新
+- **上次脉冲**: pulse#338 ⚠️ 缓存过期揭示35fail状态
+- **本次脉冲**: pulse#339 🔍 强制跑消除缓存假象 — app 21fail实为0 ✅
 - **Cron 健康**: ✓
 - **工作区**: clean
 
-### 🛠 Typecheck ✅ 全绿 (14/14)
+### 🛠 Typecheck ✅ 全绿 (14/14, --force 真实)
 | Package | Status | Change |
 |---------|--------|--------|
-| @m5/types, domain, sdk, app, miniapp, ui, tob-web, storefront-web | ✅ (cached) | — |
-| @m5/admin-web | ✅ **0 errors (cached)** | ✅ **tree fix confirmed** |
-| **Total** | **14/14 全绿 (全缓存)** | ✅ |
+| @m5/types, domain, sdk, app, miniapp, ui, tob-web, storefront-web | ✅ (forced) | ✅ 真实全绿 |
+| @m5/admin-web | ✅ **0 errors (forced)** | ✅ 维持 |
+| **Total** | **14/14 全绿 (--force 真实)** | ✅ |
 
-### 🛠 Tests ⚠️ 35 fails — 缓存过期揭示真实状态
+### 🛠 Tests — --force 真实结果
 | Package | Status | Pass/Fail | Change |
 |---------|--------|-----------|--------|
-| @m5/admin-web | ✅ (cached) | **4344 pass, 0 fail** | ✅ **tree fix confirmed solid** |
-| @m5/storefront-web | ❌ **6 fail** | — | 🔻 26→6 改善 (tree fix部分生效) |
-| @m5/app | ❌ **21 fail** | NavigationContainer | ↔️ 持平原状 (缓存掩盖) |
-| @m5/miniapp | ❌ **4 fail** | — | ↔️ 持平原状 (缓存掩盖) |
-| @m5/tob-web | ❌ **4 fail** | 含sports-ants | ↔️ 持平原状 (缓存掩盖) |
-| @m5/ui/@m5/types/domain/sdk/shenjiying-mobile | ✅ pass | 0 fail | ✅ |
-| **Total** | **基座全绿, web/app 35 fails** | ⚠️ | — |
+| @m5/admin-web | ✅ | **4344 pass, 0 fail (forced)** | ✅ 维持P0解除 |
+| @m5/app | ✅ **0 fail (forced)** | **222 pass** | 🔥 **21→0 缓存污染排除！** |
+| @m5/storefront-web | ❌ **6 fail** | — | ↔️ 持平 (会员/产品/门店/洞察空状态) |
+| @m5/tob-web | ❌ **4 fail** | 1581 pass, 4 fail | ↔️ 持平 (customers/空/sports-ants) |
+| @m5/miniapp | ❌ **4 fail** | 490 pass, 4 fail | ↔️ 持平 (积分/等级/空任务/空客户) |
+| @m5/ui/@m5/types/domain/sdk | ✅ pass | 0 fail (forced) | ✅ |
+| **Total** | **14 fails** (store6+tob4+mini4) | 🔍 | **真实状态 — app排除缓存污染** |
 
-### 🔍 分析: 缓存掩盖的真相
-- **#336 (00:33) "全绿"**: 仅 admin-web+storefront 实际跑过，app/tob-web/miniapp 缓存掩盖
-- **#337 (01:03) "全绿延续"**: 全缓存无变更
-- **#338 (02:04) 真实**: cache过期后揭示35 fail，但admin-web ✅ + storefront 26→6 ✅ 改善确认真实
-- **结论**: P0闭环有效，但其他模块需要修复
-- **无需升级P0**: 非新回退，属缓存掩盖揭示
+### 🔍 关键发现: 缓存污染
+- pulse#338 声称"35 fail" = app 21(缓存污染) + storefront 6 + tob 4 + miniapp 4
+- **pulse#339 --force证实**: app = 0 fail ✅
+- **真实待修**: 仅14 fail (store6 + tob4 + miniapp4)
+- 所有fail均为脉冲#331~332期间遗留，**无新回退**
 
 ### 📋 树哥派遣闭环记录
 | Pulse | 派遣 | 结果 |
@@ -45,6 +44,7 @@
 | #333 | **P0-管理员**: admin-web TSC + storefront | ❌ 次脉冲无变化|
 | #334 | P0持续 — 重派 + C-level干预 | ❌ 无变化 |
 | #335 | 管理员介入修复 | ✅ **闭环！** |
+| #338 | 🆕 派树哥修app 21+storefront 6+tob 4+mini 4 | ⚠️ pulse#339订正: app 0 ✅ 已排除 |
 
 ### 📊 连续记录
 - 最长连续全绿: 38🏆 (pulse#293→#330) ✅
@@ -54,6 +54,7 @@
 - pulse#334: ⛔ P0持续 — 持平原状
 - pulse#335: ⛔ P0持续 — 持平原状
 - **pulse#336**: ✅ **P0解除 — admin-web 0err + storefront 0fail** 🚀
-- **pulse#337**: ⚠️ 全缓存掩盖 (当时虚假全绿)
-- **pulse#338**: ⚠️ 35 fail揭示 (基座✅ web/app待修)
+- **pulse#337**: ⚠️ 全缓存掩盖
+- **pulse#338**: ⚠️ 缓存过期揭示 (含app污染)"
+- **pulse#339**: 📊 强制跑 — 真实14 fail (app 0✅ 排除污染)
 - **当前连续**: 0🏆 (新周期重新计数)
