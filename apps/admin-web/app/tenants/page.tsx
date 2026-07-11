@@ -12,7 +12,7 @@ import { PageShell, StatCard, StatusBadge, Tabs, SearchFilterInput, DataTable, P
 type TenantTier = 'free'|'starter'|'business'|'enterprise'|'premium';
 type TenantStatus = 'active'|'trial'|'suspended'|'expired';
 
-interface Tenant { id: string; name: string; code: string; tier: TenantTier; status: TenantStatus; contactName: string; contactEmail: string; contactPhone: string; stores: number; users: number; revenue: number; createdDate: string; expiryDate: string; lastActive: string; region: string; industry: string; }
+interface Tenant { id: string; name: string; code: string; tier: TenantTier; status: TenantStatus; contactName: string; contactEmail: string; contactPhone: string; stores: number; users: number; revenue: number; createdDate?: string; expiryDate: string; lastActive: string; region: string; industry: string; }
 
 const TIER_LABELS: Record<TenantTier,string> = { free:'免费版', starter:'入门版', business:'商业版', enterprise:'企业版', premium:'旗舰版' };
 const TIER_COLORS: Record<TenantTier,string> = { free:'#6b7280', starter:'#94a3b8', business:'#3b82f6', enterprise:'#8b5cf6', premium:'#eab308' };

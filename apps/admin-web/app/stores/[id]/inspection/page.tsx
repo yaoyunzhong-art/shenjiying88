@@ -32,10 +32,10 @@ function generateInspects(): InspItem[] {
     items.push({
       id: `INSP-${String(i+1).padStart(3,'0')}`,
       date: d.toISOString().split('T')[0],
-      device: devices[Math.floor(Math.random()*devices.length)]!,
-      location: locations[Math.floor(Math.random()*locations.length)]!,
-      type: (['daily','daily','daily','daily','weekly','monthly','seasonal'] as InspType[])[Math.floor(Math.random()*7)]!,
-      inspector: ['张三','李四','王五','赵六','设备供应商'][Math.floor(Math.random()*5)]!,
+      device: devices[Math.floor(Math.random()*devices.length)]!!,
+      location: locations[Math.floor(Math.random()*locations.length)]!!,
+      type: (['daily','daily','daily','daily','weekly','monthly','seasonal'] as InspType[])[Math.floor(Math.random()*7)]!!,
+      inspector: ['张三','李四','王五','赵六','设备供应商'][Math.floor(Math.random()*5)]!!,
       status: failedItems > 1 ? 'failed' : failedItems > 0 ? 'warn' : 'passed',
       items: checkedItems,
       score: Math.round((passedCount/checkedItems.length)*100),
@@ -53,10 +53,10 @@ function buildColumns(): DataTableColumn<InspItem>[] {
     { key: 'date', title: '日期', dataKey: 'date', sortable: true },
     { key: 'device', title: '设备', dataKey: 'device', sortable: true },
     { key: 'location', title: '位置', dataKey: 'location', sortable: true },
-    { key: 'type', title: '类型', sortable: true, sortValue: i=>i.type, render: i=>TYPE_LABELS[i.type] },
+    { key: 'type', title: '类型', sortable: true, sortValue: i=>i.type, render: i=>TYPE_LABELS[i.type]! },
     { key: 'inspector', title: '检查人', dataKey: 'inspector', sortable: true },
     { key: 'score', title: '评分', dataKey: 'score', sortable: true, align: 'right', render: i => <span style={{color:i.score>=90?'#22c55e':i.score>=70?'#eab308':'#ef4444',fontWeight:600}}>{i.score}%</span> },
-    { key: 'status', title: '结果', sortable: true, sortValue: i=>i.status, render: i => <StatusBadge label={STATUS_MAP[i.status].l} variant={STATUS_MAP[i.status].v} size="sm" dot /> },
+    { key: 'status', title: '结果', sortable: true, sortValue: i=>i.status, render: i => <StatusBadge label={STATUS_MAP[i.status].l} variant={STATUS_MAP[i.status]!.v} size="sm" dot /> },
     { key: 'nextDate', title: '下次检查', dataKey: 'nextDate', sortable: true },
   ];
 }
