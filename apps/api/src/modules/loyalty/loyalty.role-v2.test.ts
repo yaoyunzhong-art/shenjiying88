@@ -23,8 +23,8 @@ import {
   type BlindboxDrawAuditLog,
   type BlindboxRewardResult,
   BlindboxRewardTier,
-  type RequestTenantContext,
 } from './loyalty.entity'
+import type { RequestTenantContext } from '../tenant/tenant.types'
 import { LoyaltyService } from './loyalty.service'
 import type { LevelEvaluationInput } from '../member-level/member-level.entity'
 import type { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'

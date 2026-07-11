@@ -23,8 +23,8 @@ describe('AiPushController Final', () => {
   it('getOptimalTiming', () => expect(ctrl().getOptimalTiming('push').length).toBeGreaterThan(0))
 })
 
-import { AiRagController } from './ai-rag.controller'
-import { KnowledgeBaseManager, RAGPipeline, SalesScriptGenerator } from './ai-rag.service'
+import { AiRagController } from '../ai-rag/ai-rag.controller'
+import { KnowledgeBaseManager, RAGPipeline, SalesScriptGenerator } from '../ai-rag/ai-rag.service'
 
 describe('AiRagController Final', () => {
   const kb = new KnowledgeBaseManager()
@@ -42,8 +42,8 @@ describe('AiRagController Final', () => {
   it('generateFollowUpScript', () => expect(ctrl.generateFollowUpScript({ customerId: 'cust-001' })).toBeTruthy())
 })
 
-import { AiForecastController } from './ai-forecast.controller'
-import { DemandForecastService, InventoryOptimizer, TransferRecommendationService } from './ai-forecast.service'
+import { AiForecastController } from '../ai-forecast/ai-forecast.controller'
+import { DemandForecastService, InventoryOptimizer, TransferRecommendationService } from '../ai-forecast/ai-forecast.service'
 
 describe('AiForecastController Final', () => {
   const ctrl = new AiForecastController(new DemandForecastService(), new InventoryOptimizer(), new TransferRecommendationService())

@@ -65,7 +65,7 @@ describe('PushAnalyticsService', () => {
 /**
  * ai-diagnosis-advanced.spec.ts — 诊断高级服务测试
  */
-import { AdvancedDiagnosisService } from './ai-diagnosis-advanced.service'
+import { AdvancedDiagnosisService } from '../ai-diagnosis/ai-diagnosis-advanced.service'
 
 describe('AdvancedDiagnosisService', () => {
   const service = new AdvancedDiagnosisService()
