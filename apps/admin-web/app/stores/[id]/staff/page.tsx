@@ -6,7 +6,7 @@
  * 功能: 门店员工清单、排班管理、考勤统计、培训记录
  */
 
-import { useState, useMemo, useCallback, use } from 'react';
+import { useState, useMemo, useCallback, useEffect, use } from 'react';
 
 import {
   DataTable,
@@ -24,6 +24,7 @@ import {
   StatCard,
   CopyToClipboard,
   DetailClosureBar,
+  WorkspaceBreadcrumb,
   type FilterChip,
   type DataTableColumn,
   type DataTableSortConfig,
@@ -168,19 +169,19 @@ function generateStaff(): StaffMember[] {
       id: `EMP-${String(idx + 1).padStart(3, '0')}`,
       name,
       employeeNo: `M5-${String(1000 + idx)}`,
-      role: roles[idx],
-      status: statuses[idx],
+      role: roles[idx]!,
+      status: statuses[idx]!,
       phone: `1${3 + Math.floor(Math.random() * 7)}8${String(Math.floor(Math.random() * 10000000)).padStart(7, '0')}`,
       email: `${name.toLowerCase()}@m5store.com`,
-      department: departments[idx],
-      position: STAFF_ROLE_LABELS[roles[idx]],
+      department: departments[idx]!,
+      position: STAFF_ROLE_LABELS[roles[idx]!],
       hireDate: d.toISOString().split('T')[0],
       lastWorkDate: new Date().toISOString().split('T')[0],
-      shiftToday: shifts[idx],
+      shiftToday: shifts[idx]!,
       attendance: {
         late: Math.floor(Math.random() * 5),
         early: Math.floor(Math.random() * 3),
-        absent: statuses[idx] === 'active' ? 0 : Math.floor(Math.random() * 10),
+        absent: statuses[idx]! === 'active' ? 0 : Math.floor(Math.random() * 10),
         overtime: Math.floor(Math.random() * 15),
       },
       performance: 50 + Math.floor(Math.random() * 50),
@@ -250,11 +251,11 @@ function generateTrainingRecords(staffList: StaffMember[]): TrainingRecord[] {
         id: `TRN-${String(si + 1).padStart(2, '0')}-${i}`,
         staffId: staff.id,
         staffName: staff.name,
-        courseName: courses[Math.floor(Math.random() * courses.length)],
-        trainer: trainers[Math.floor(Math.random() * trainers.length)],
+        courseName: courses[Math.floor(Math.random() * courses.length)]!,
+        trainer: trainers[Math.floor(Math.random() * trainers.length)]!,
         date: d.toISOString().split('T')[0],
         duration: 1 + Math.floor(Math.random() * 8),
-        status: statuses[Math.floor(Math.random() * statuses.length)],
+        status: statuses[Math.floor(Math.random() * statuses.length)]!,
         score: Math.random() > 0.3 ? 60 + Math.floor(Math.random() * 40) : null,
         certificateIssued: Math.random() > 0.6,
       });

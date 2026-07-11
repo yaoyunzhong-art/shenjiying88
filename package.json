@@ -20,6 +20,21 @@
     "docker:down": "docker compose -f infra/docker/docker-compose.dev.yml down",
     "docker:down:ops": "docker compose -f infra/docker/docker-compose.dev.yml -f infra/docker/docker-compose.ops.yml down",
     "docker:logs": "docker compose -f infra/docker/docker-compose.dev.yml logs -f --tail=100",
+
+    # ─── Production Docker ────────────────────────────
+    "docker:build": "docker compose build --parallel",
+    "docker:build:api": "docker build --target=api-prod -t m5-api:latest .",
+    "docker:build:admin": "docker build --target=admin-prod -t m5-admin:latest .",
+    "docker:build:storefront": "docker build --target=storefront-prod -t m5-storefront:latest .",
+    "docker:build:tob": "docker build --target=tob-prod -t m5-tob:latest .",
+    "docker:prod:up": "docker compose -f docker-compose.yml up -d",
+    "docker:prod:down": "docker compose -f docker-compose.yml down",
+    "docker:prod:logs": "docker compose -f docker-compose.yml logs -f --tail=100",
+    "docker:prod:ps": "docker compose -f docker-compose.yml ps",
+    "docker:prod:restart": "docker compose -f docker-compose.yml restart",
+    "docker:prod:pull": "docker compose -f docker-compose.yml pull",
+    "docker:clean": "docker compose -f docker-compose.yml down -v --remove-orphans",
+    "docker:prune": "docker system prune -af --volumes",
     "clean": "turbo clean",
     "prepare": "husky"
   },

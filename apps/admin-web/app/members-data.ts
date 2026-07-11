@@ -181,6 +181,76 @@ export const MOCK_MEMBERS: MemberItem[] = [
   { id: 'm020', code: 'MEM-020', name: 'Tom Harris', phone: '+44-20-555-4001', tier: 'standard', status: 'cancelled', points: 600, totalSpent: 1200, storeName: 'London Oxford Street', marketCode: 'uk-default', registeredAt: '2025-11-01', lastVisitAt: '2026-03-01', visitCount: 15, avgOrderValue: 80, tags: [] },
 ];
 
+// ---- 会员导入记录 ----
+
+export interface MemberImportRecord {
+  importId: string;
+  fileName: string;
+  totalRecords: number;
+  successRecords: number;
+  failedRecords: number;
+  status: 'completed' | 'partial' | 'failed' | 'processing';
+  importedBy: string;
+  importedAt: string;
+  errors: string[];
+}
+
+export const MOCK_IMPORT_RECORDS: MemberImportRecord[] = [
+  { importId: 'imp-001', fileName: 'members_batch_20260601.csv', totalRecords: 120, successRecords: 118, failedRecords: 2, status: 'completed', importedBy: 'admin@example.com', importedAt: '2026-06-01T10:30:00Z', errors: ['第15行手机号格式错误：1380000', '第78行姓名为空'] },
+  { importId: 'imp-002', fileName: 'vip_members_20260615.xlsx', totalRecords: 45, successRecords: 44, failedRecords: 1, status: 'completed', importedBy: 'ops@example.com', importedAt: '2026-06-15T14:20:00Z', errors: ['第33行等级值无效：platinum'] },
+  { importId: 'imp-003', fileName: 'us_market_batch.csv', totalRecords: 80, successRecords: 80, failedRecords: 0, status: 'completed', importedBy: 'admin@example.com', importedAt: '2026-06-20T09:15:00Z', errors: [] },
+  { importId: 'imp-004', fileName: 'promo_registrations_202607.csv', totalRecords: 200, successRecords: 0, failedRecords: 0, status: 'processing', importedBy: 'system', importedAt: '2026-07-10T08:00:00Z', errors: [] },
+  { importId: 'imp-005', fileName: 'bulk_update_tiers.csv', totalRecords: 15, successRecords: 12, failedRecords: 3, status: 'partial', importedBy: 'ops@example.com', importedAt: '2026-06-25T16:45:00Z', errors: ['第2条会员ID不存在：m999', '第7条会员ID不存在：m998', '第11条等级值无效'] },
+];
+
+// ---- 会员报表月度趋势 ----
+
+export interface MemberMonthlyTrend {
+  month: string;
+  newMembers: number;
+  churnedMembers: number;
+  activeMembers: number;
+  totalMembers: number;
+  newMemberRevenue: number;
+  retentionRate: number;
+}
+
+export const MOCK_MEMBER_TRENDS: MemberMonthlyTrend[] = [
+  { month: '2026-01', newMembers: 112, churnedMembers: 38, activeMembers: 1780, totalMembers: 2200, newMemberRevenue: 168000, retentionRate: 0.58 },
+  { month: '2026-02', newMembers: 95, churnedMembers: 42, activeMembers: 1810, totalMembers: 2250, newMemberRevenue: 142500, retentionRate: 0.60 },
+  { month: '2026-03', newMembers: 118, churnedMembers: 35, activeMembers: 1840, totalMembers: 2280, newMemberRevenue: 188800, retentionRate: 0.61 },
+  { month: '2026-04', newMembers: 130, churnedMembers: 40, activeMembers: 1855, totalMembers: 2305, newMemberRevenue: 221000, retentionRate: 0.63 },
+  { month: '2026-05', newMembers: 125, churnedMembers: 38, activeMembers: 1865, totalMembers: 2325, newMemberRevenue: 212500, retentionRate: 0.62 },
+  { month: '2026-06', newMembers: 128, churnedMembers: 45, activeMembers: 1850, totalMembers: 2340, newMemberRevenue: 217600, retentionRate: 0.62 },
+];
+
+// ---- 会员报表导出配置 ----
+
+export interface ReportExportConfig {
+  format: 'csv' | 'xlsx' | 'pdf';
+  includeCharts: boolean;
+  dateRange: 'last-30-days' | 'last-quarter' | 'last-year' | 'all';
+  includeMarkets: string[];
+  groupBy: 'market' | 'tier' | 'lifecycle' | 'none';
+}
+
+export const DEFAULT_REPORT_EXPORT_CONFIG: ReportExportConfig = {
+  format: 'csv',
+  includeCharts: false,
+  dateRange: 'last-30-days',
+  includeMarkets: [],
+  groupBy: 'none',
+};
+
+export const CHURN_REASONS = [
+  { reason: '价格因素', count: 85, percentage: 0.28 },
+  { reason: '质量不满意', count: 62, percentage: 0.20 },
+  { reason: '服务体验差', count: 48, percentage: 0.16 },
+  { reason: '竞品吸引', count: 55, percentage: 0.18 },
+  { reason: '需求变化', count: 38, percentage: 0.12 },
+  { reason: '其他', count: 18, percentage: 0.06 },
+];
+
 export const MOCK_MEMBER_DETAILS: Record<string, MemberDetail> = {
   m001: { id: 'm001', code: 'MEM-001', name: '张伟', phone: '+86-138-0001-0001', tier: 'diamond', status: 'active', points: 185000, totalSpent: 367800, storeName: '朝阳大悦城旗舰店', marketCode: 'cn-mainland', registeredAt: '2022-03-15', lastVisitAt: '2026-06-13', visitCount: 412, avgOrderValue: 893, tags: ['高净值', '母婴', '数码'], email: 'zhangwei@example.com', gender: 'male', birthday: '1988-05-12', wechatId: 'zhangwei_wx', address: '北京市朝阳区建国路88号SOHO现代城A座1205', referralCode: 'REF-ZW001', referredBy: null, notes: 'VIP客户，季度回访重点。偏好高端数码产品和进口母婴用品，对价格敏感度低，注重品质。', coupons: 5, favoriteCategories: ['数码', '母婴', '家居'], lastOrderAt: '2026-06-13', lifecycleStage: 'loyal' },
   m002: { id: 'm002', code: 'MEM-002', name: '李娜', phone: '+86-138-0001-0002', tier: 'gold', status: 'active', points: 92000, totalSpent: 184500, storeName: '上海陆家嘴中心店', marketCode: 'cn-mainland', registeredAt: '2022-07-20', lastVisitAt: '2026-06-12', visitCount: 286, avgOrderValue: 645, tags: ['美妆', '时尚'], email: 'lina@example.com', gender: 'female', birthday: '1991-11-08', wechatId: 'lina_beauty', address: '上海市浦东新区世纪大道100号环球金融中心88层', referralCode: 'REF-LN002', referredBy: 'm001', notes: '美妆时尚达人，社交影响力强。有多次复购记录，推荐发展成KOC。', coupons: 3, favoriteCategories: ['美妆', '时尚', '珠宝'], lastOrderAt: '2026-06-12', lifecycleStage: 'loyal' },

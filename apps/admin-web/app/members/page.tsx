@@ -823,6 +823,60 @@ function MembersPageContent() {
           onPageSizeChange={pagination.setPageSize}
         />
 
+        {/* 快速操作入口 */}
+        <section
+          style={{
+            marginTop: 24,
+            marginBottom: 24,
+            borderRadius: 16,
+            padding: 20,
+            background: 'rgba(15, 23, 42, 0.38)',
+            border: '1px solid rgba(148, 163, 184, 0.18)',
+          }}
+        >
+          <div style={{ fontSize: 15, fontWeight: 600, color: '#e2e8f0', marginBottom: 14 }}>
+            快捷操作
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <QuickActionLink
+              href="/members/create"
+              icon="➕"
+              label="新增会员"
+              description="创建新的会员档案"
+            />
+            <QuickActionLink
+              href="/members/import"
+              icon="📥"
+              label="批量导入"
+              description="通过文件批量导入"
+            />
+            <QuickActionLink
+              href="/members/levels"
+              icon="🏆"
+              label="等级管理"
+              description="配置会员等级体系"
+            />
+            <QuickActionLink
+              href="/members/cards"
+              icon="💳"
+              label="会员卡管理"
+              description="管理所有会员卡"
+            />
+            <QuickActionLink
+              href="/members/reports"
+              icon="📊"
+              label="会员报表"
+              description="数据分析与报表"
+            />
+            <QuickActionLink
+              href="/operations"
+              icon="⚙️"
+              label="运营工作台"
+              description="批量营销触达"
+            />
+          </div>
+        </section>
+
         <DetailActionBar
           actions={actions}
           heading="工作台收口动作"
@@ -830,6 +884,56 @@ function MembersPageContent() {
         />
       </PageShell>
     </main>
+  );
+}
+
+// ---- 快捷操作子组件 ----
+
+function QuickActionLink({
+  href,
+  icon,
+  label,
+  description,
+}: {
+  href: string;
+  icon: string;
+  label: string;
+  description: string;
+}) {
+  return (
+    <a
+      href={href}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '12px 18px',
+        borderRadius: 12,
+        background: 'rgba(30, 41, 59, 0.45)',
+        border: '1px solid rgba(148, 163, 184, 0.14)',
+        textDecoration: 'none',
+        transition: 'all 0.15s ease',
+        minWidth: 180,
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'rgba(30, 41, 59, 0.7)';
+        e.currentTarget.style.borderColor = 'rgba(96, 165, 250, 0.3)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'rgba(30, 41, 59, 0.45)';
+        e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.14)';
+      }}
+    >
+      <span style={{ fontSize: 20 }}>{icon}</span>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>
+          {label}
+        </div>
+        <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 1 }}>
+          {description}
+        </div>
+      </div>
+    </a>
   );
 }
 
@@ -843,8 +947,14 @@ export default function MembersPage() {
 
 function MembersPageFallback() {
   return (
-    <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32, color: '#cbd5e1' }}>
-      正在加载会员治理视图...
+    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32, color: '#cbd5e1' }}>
+      <div style={{ textAlign: 'center', padding: 64 }}>
+        <div style={{ fontSize: 36, marginBottom: 16 }}>👥</div>
+        <div style={{ fontSize: 16, fontWeight: 600 }}>正在加载会员治理视图...</div>
+        <div style={{ fontSize: 13, color: '#64748b', marginTop: 8 }}>
+          同步会员档案、等级数据和能力矩阵
+        </div>
+      </div>
     </main>
   );
 }

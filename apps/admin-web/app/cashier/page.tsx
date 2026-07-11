@@ -34,7 +34,7 @@ export interface ConsumptionRecord {
 
 // ---- 模拟 API 调用 (后续对接真实后端) ----
 
-async function searchMember(query: string): Promise<MemberProfile | null> {
+export async function searchMember(query: string): Promise<MemberProfile | null> {
   // DEV: 模拟返回，后续替换为真实 API 调用
   await new Promise((r) => setTimeout(r, 300));
   if (!query.trim()) return null;
@@ -52,7 +52,7 @@ async function searchMember(query: string): Promise<MemberProfile | null> {
   ) ?? null;
 }
 
-async function fetchConsumptionHistory(memberId: string): Promise<ConsumptionRecord[]> {
+export async function fetchConsumptionHistory(memberId: string): Promise<ConsumptionRecord[]> {
   await new Promise((r) => setTimeout(r, 200));
   // 模拟消费记录
   return [
