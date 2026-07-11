@@ -68,7 +68,7 @@ interface StoreFormValues {
   contactPhone: string;
   contactEmail: string;
   floorArea: string;
-  status: string;
+  status?: string;
   riskLevel: string;
   brandCount: string;
   description: string;

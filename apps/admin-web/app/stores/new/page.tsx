@@ -26,7 +26,7 @@ interface StoreFormData {
   contactEmail: string;
   floorArea: string;
   description: string;
-  status: string;
+  status?: string;
   riskLevel: string;
   city: string;
   brandCount: string;
