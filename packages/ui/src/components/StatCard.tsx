@@ -4,7 +4,7 @@ import React from 'react';
 
 interface StatCardProps {
   label: string;
-  value: string | number;
+  value: React.ReactNode;
   trend?: { value: string; positive: boolean };
   icon?: React.ReactNode;
   variant?: 'default' | 'info' | 'warning' | 'error' | 'success';

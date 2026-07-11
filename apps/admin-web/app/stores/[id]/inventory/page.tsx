@@ -117,11 +117,11 @@ interface SupplierInfo {
 const CATEGORIES = ['游戏币/代币', '娃娃/礼品', '零食饮料', '清洁用品', '办公用品', '设备配件', '促销物料', '会员礼品', '其他'];
 const SUPPLIER_NAMES = ['广州礼品总汇', '上海游乐设备', '深圳电子配件', '北京保洁用品', '义乌小商品', '本地食品批发', '美泰玩具', '孩之宝中国', '官方配件商', '活动物料公司'];
 
-const INVENTORY_STATUS_MAP: Record<InventoryStatus, { label: string; variant: 'success' | 'neutral' | 'warning' | 'danger' | 'info' }> = {
+const INVENTORY_STATUS_MAP: Record<InventoryStatus, { label: string; variant: 'success' | 'neutral' | 'warning' | 'danger' }> = {
   in_stock: { label: '库存充足', variant: 'success' },
   low_stock: { label: '库存偏低', variant: 'warning' },
   out_of_stock: { label: '缺货', variant: 'danger' },
-  overstock: { label: '库存过多', variant: 'info' },
+  overstock: { label: '库存过多', variant: 'neutral' },
   damaged: { label: '已损坏', variant: 'danger' },
   expired: { label: '已过期', variant: 'neutral' },
 };

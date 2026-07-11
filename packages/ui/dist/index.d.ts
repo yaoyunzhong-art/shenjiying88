@@ -3854,7 +3854,7 @@ declare function Card({ title, subtitle, headerActions, children, variant, paddi
 
 interface StatCardProps {
     label: string;
-    value: string | number;
+    value: React__default.ReactNode;
     trend?: {
         value: string;
         positive: boolean;

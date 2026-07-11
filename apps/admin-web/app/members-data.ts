@@ -132,6 +132,73 @@ export type MemberTierVariant = 'success' | 'warning' | 'neutral' | 'danger';
 export type MemberStatusVariant = 'success' | 'warning' | 'danger' | 'neutral';
 export type MemberLifecycleVariant = 'success' | 'warning' | 'danger' | 'neutral';
 
+// ---- 会员卡数据类型 ----
+
+export interface MemberCard {
+  id: string;
+  memberId: string;
+  memberName: string;
+  cardNumber: string;
+  cardType: 'physical' | 'virtual' | 'digital';
+  status: 'active' | 'frozen' | 'expired' | 'cancelled';
+  issuedAt: string;
+  activatedAt: string | null;
+  expiresAt: string | null;
+  balance: number;
+  pointsMultiplier: number;
+  designatedStore: string | null;
+  linkedWechat: boolean;
+  notes: string;
+}
+
+export const MEMBER_CARD_TYPE_MAP: Record<MemberCard['cardType'], { label: string; variant: string }> = {
+  physical: { label: '实体卡', variant: 'success' },
+  virtual: { label: '虚拟卡', variant: 'info' },
+  digital: { label: '数字卡', variant: 'warning' },
+};
+
+export const MEMBER_CARD_STATUS_MAP: Record<MemberCard['status'], { label: string; variant: string }> = {
+  active: { label: '正常', variant: 'success' },
+  frozen: { label: '已冻结', variant: 'warning' },
+  expired: { label: '已过期', variant: 'danger' },
+  cancelled: { label: '已注销', variant: 'neutral' },
+};
+
+export const MOCK_MEMBER_CARDS: MemberCard[] = [
+  { id: 'mc-001', memberId: 'm001', memberName: '张伟', cardNumber: 'VIP-20260001', cardType: 'physical', status: 'active', issuedAt: '2026-01-15', activatedAt: '2026-01-16', expiresAt: '2028-01-15', balance: 58000, pointsMultiplier: 2, designatedStore: '朝阳大悦城旗舰店', linkedWechat: true, notes: 'VIP实体卡' },
+  { id: 'mc-002', memberId: 'm002', memberName: '李娜', cardNumber: 'VIP-20260002', cardType: 'virtual', status: 'active', issuedAt: '2026-02-01', activatedAt: '2026-02-01', expiresAt: '2027-02-01', balance: 32000, pointsMultiplier: 1.5, designatedStore: null, linkedWechat: true, notes: '' },
+  { id: 'mc-003', memberId: 'm004', memberName: '赵敏', cardNumber: 'VIP-20260003', cardType: 'digital', status: 'active', issuedAt: '2024-11-20', activatedAt: '2024-11-20', expiresAt: null, balance: 120000, pointsMultiplier: 2.5, designatedStore: '成都太古里体验店', linkedWechat: true, notes: '数字钻石卡' },
+  { id: 'mc-004', memberId: 'm006', memberName: '陈静', cardNumber: 'VIP-20260004', cardType: 'physical', status: 'frozen', issuedAt: '2025-05-10', activatedAt: '2025-05-12', expiresAt: '2027-05-10', balance: 8500, pointsMultiplier: 1, designatedStore: '广州天河城店', linkedWechat: false, notes: '因争议订单冻结' },
+  { id: 'mc-005', memberId: 'm007', memberName: '杨帆', cardNumber: 'VIP-20260005', cardType: 'virtual', status: 'expired', issuedAt: '2024-03-01', activatedAt: '2024-03-01', expiresAt: '2026-03-01', balance: 1200, pointsMultiplier: 1, designatedStore: null, linkedWechat: true, notes: '已过期未续费' },
+  { id: 'mc-006', memberId: 'm010', memberName: '郑丽', cardNumber: 'VIP-20260006', cardType: 'physical', status: 'active', issuedAt: '2025-08-15', activatedAt: '2025-08-16', expiresAt: '2028-08-15', balance: 95000, pointsMultiplier: 3, designatedStore: 'San Francisco Union Square', linkedWechat: true, notes: '全球VIP实体卡' },
+];
+
+// ---- 会员等级配置类型 ----
+
+export interface MemberLevelConfig {
+  id: string;
+  key: string;
+  name: string;
+  level: number;
+  minPoints: number;
+  maxPoints: number;
+  discountRate: number;
+  annualFee: number;
+  benefits: string[];
+  memberCount: number;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const MOCK_MEMBER_LEVEL_CONFIGS: MemberLevelConfig[] = [
+  { id: 'lv-1', key: 'diamond', name: '钻石卡', level: 5, minPoints: 150000, maxPoints: 999999, discountRate: 0.8, annualFee: 888, benefits: ['专属客服', '免费停车', '生日礼包', '双倍积分', '新品优先'], memberCount: 120, status: 'active', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'lv-2', key: 'gold', name: '金卡', level: 4, minPoints: 80000, maxPoints: 149999, discountRate: 0.85, annualFee: 388, benefits: ['免费停车', '生日礼包', '积分加速'], memberCount: 350, status: 'active', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'lv-3', key: 'silver', name: '银卡', level: 3, minPoints: 30000, maxPoints: 79999, discountRate: 0.9, annualFee: 0, benefits: ['生日礼包', '积分加速'], memberCount: 680, status: 'active', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'lv-4', key: 'bronze', name: '铜卡', level: 2, minPoints: 5000, maxPoints: 29999, discountRate: 0.95, annualFee: 0, benefits: ['基础积分'], memberCount: 890, status: 'active', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'lv-5', key: 'standard', name: '标准', level: 1, minPoints: 0, maxPoints: 4999, discountRate: 1, annualFee: 0, benefits: [], memberCount: 300, status: 'inactive', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+];
+
 export const MEMBER_TIER_MAP: Record<MemberTier, { label: string; variant: MemberTierVariant }> = {
   diamond: { label: '钻石卡', variant: 'success' },
   gold: { label: '金卡', variant: 'success' },

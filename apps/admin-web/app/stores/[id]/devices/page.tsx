@@ -24,11 +24,12 @@ import {
   InfoRow,
   StatCard,
   DetailClosureBar,
+  WorkspaceBreadcrumb,
   type FilterChip,
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
-
+import { useEffect } from 'react';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../../components/detail-workspace-registry';
 
 // ---- 类型定义 ----

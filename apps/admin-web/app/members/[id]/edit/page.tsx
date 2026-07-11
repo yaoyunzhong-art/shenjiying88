@@ -11,7 +11,7 @@ import {
   SubmitButton,
   WorkspaceBreadcrumb,
   StatusBadge,
-  useDetailFormSubmit,
+  useFormSubmit,
 } from '@m5/ui';
 
 import {
@@ -300,10 +300,8 @@ export default function EditMemberPage({ params }: { params: Promise<{ id: strin
       <WorkspaceBreadcrumb
         workspaceLabel="会员管理"
         workspaceHref="/members"
-        extraSegments={[
-          { label: member.name, href: `/members/${id}` },
-          { label: '编辑资料' },
-        ]}
+        intermediateLabel={member.name}
+        detailLabel="编辑资料"
       />
 
       <PageShell
