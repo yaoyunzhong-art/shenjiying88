@@ -120,7 +120,7 @@ describe('AdvancedDiagnosisService', () => {
   it('generateSuggestions 应生成诊断建议', () => {
     const suggestions = service.generateSuggestions(mockDiagnosis)
     expect(suggestions.length).toBeGreaterThan(0)
-    suggestions.forEach(s => {
+    suggestions.forEach((s: any) => {
       expect(s.category).toBeTruthy()
       expect(s.priority).toBeTruthy()
     })

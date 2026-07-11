@@ -37,7 +37,7 @@ describe('AiMarketingService Final', () => {
 /**
  * ai-insight-service-test.ts — 洞察 Service 额外测试
  */
-import { AiInsightService } from './ai-insight.service'
+import { AiInsightService } from '../ai-insight/ai-insight.service'
 
 describe('AiInsightService Final', () => {
   const s = new AiInsightService()

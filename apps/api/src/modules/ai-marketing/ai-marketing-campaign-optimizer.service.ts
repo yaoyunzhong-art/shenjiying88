@@ -392,14 +392,4 @@ export class CampaignOptimizerService {
   }
 }
 
-// Export types for use in entity files
-export {
-  CampaignPerformance,
-  BidOptimizationResult,
-  AudienceSegmentRecommendation,
-  CreativePerformance,
-  FrequencyCapRecommendation,
-  BudgetPacing,
-  RealTimeBidAdvice,
-  ChannelFrequencyReport,
-}
+

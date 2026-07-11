@@ -9,19 +9,25 @@ import {
   CampaignPlanner,
   AIMarketingCMOService,
 } from './ai-marketing-cmo.service'
+import { MarketingAnalyticsService } from './ai-marketing-analytics.service'
+import { CampaignOptimizerService } from './ai-marketing-campaign-optimizer.service'
 
 describe('AiMarketingController (spec)', () => {
   let controller: AiMarketingController
   let roiService: MarketingROIService
   let copywritingService: CopywritingAssistant
   let campaignPlanner: CampaignPlanner
+  let analyticsService: MarketingAnalyticsService
+  let optimizerService: CampaignOptimizerService
 
   beforeEach(() => {
     roiService = new MarketingROIService()
     copywritingService = new CopywritingAssistant()
     campaignPlanner = new CampaignPlanner()
+    analyticsService = new MarketingAnalyticsService()
+    optimizerService = new CampaignOptimizerService()
     const cmoService = new AIMarketingCMOService(roiService, copywritingService, campaignPlanner)
-    controller = new AiMarketingController(roiService, copywritingService, campaignPlanner, cmoService)
+    controller = new AiMarketingController(roiService, copywritingService, campaignPlanner, cmoService, analyticsService, optimizerService)
   })
 
   it('should be defined', () => {

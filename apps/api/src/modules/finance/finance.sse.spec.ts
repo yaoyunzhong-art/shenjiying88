@@ -19,9 +19,14 @@ type FinanceEventPayload =
   | { type: 'reconciliation.started'; tenantId: string; batchId: string; batchNo: string; channel: string; totalTransactions: number; timestamp: string }
   | { type: 'reconciliation.progress'; tenantId: string; batchId: string; processed: number; total: number; progress: number; timestamp: string }
   | { type: 'reconciliation.completed'; tenantId: string; batchId: string; matched: number; mismatched: number; totalDifference: number; timestamp: string }
+  | { type: 'reconciliation.mismatch'; tenantId: string; batchId: string; transactionId: string; difference: number; timestamp: string }
   | { type: 'report.generating'; tenantId: string; reportId: string; reportType: string; timestamp: string }
   | { type: 'report.completed'; tenantId: string; reportId: string; status: string; timestamp: string }
   | { type: 'report.failed'; tenantId: string; reportId: string; error: string; timestamp: string }
+  | { type: 'account.created'; tenantId: string; accountId: string; accountName: string; accountType: string; timestamp: string }
+  | { type: 'account.frozen'; tenantId: string; accountId: string; timestamp: string }
+  | { type: 'account.closed'; tenantId: string; accountId: string; timestamp: string }
+  | { type: 'settlement.created'; tenantId: string; settlementId: string; totalRevenue: number; totalExpense: number; netProfit: number; timestamp: string }
 
 interface FinanceMessageEvent {
   id: string

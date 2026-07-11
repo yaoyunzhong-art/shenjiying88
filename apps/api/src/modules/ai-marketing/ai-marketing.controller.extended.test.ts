@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import 'reflect-metadata'
 import { AiMarketingController } from './ai-marketing.controller'
+import { CampaignTypeEnum } from './ai-marketing.dto'
 import { MarketingROIService, CopywritingAssistant, CampaignPlanner, AIMarketingCMOService } from './ai-marketing-cmo.service'
 import { MarketingAnalyticsService } from './ai-marketing-analytics.service'
 import { CampaignOptimizerService } from './ai-marketing-campaign-optimizer.service'
@@ -51,13 +52,13 @@ describe('AiMarketingController (Extended)', () => {
     })
 
     it('POST /roi/project', () => {
-      const result = controller.projectROI({ type: 'performance', budget: 50000 })
+      const result = controller.projectROI({ type: CampaignTypeEnum.PERFORMANCE, budget: 50000 })
       expect(result.success).toBe(true)
-      expect(result.data.expectedROI).toBeDefined()
+      expect(result.data!.expectedROI).toBeDefined()
     })
 
     it('POST /roi/budget-allocation', () => {
-      const result = controller.getBudgetAllocation({ campaignType: 'performance', totalBudget: 100000 })
+      const result = controller.getBudgetAllocation({ campaignType: CampaignTypeEnum.PERFORMANCE, totalBudget: 100000 })
       expect(result.success).toBe(true)
       expect(result.data.length).toBeGreaterThan(0)
     })
@@ -190,7 +191,7 @@ describe('AiMarketingController (Extended)', () => {
     it('GET /optimizer/performance/:id', () => {
       const result = controller.getCampaignPerformance('camp-001')
       expect(result.success).toBe(true)
-      expect(result.data.optimizationScore).toBeGreaterThan(0)
+      expect(result.data!.optimizationScore).toBeGreaterThan(0)
     })
 
     it('POST /optimizer/bid', () => {

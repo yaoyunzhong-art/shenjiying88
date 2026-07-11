@@ -62,7 +62,7 @@ describe('SalesInsightService (All Methods)', () => {
 /**
  * ai-review-advanced-plus.test.ts — 审查高级额外测试
  */
-import { AdvancedReviewService } from './ai-review-advanced.service'
+import { AdvancedReviewService } from '../ai-review/ai-review-advanced.service'
 
 describe('AdvancedReviewService (All Methods)', () => {
   const s = new AdvancedReviewService()
