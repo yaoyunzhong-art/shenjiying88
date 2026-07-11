@@ -327,7 +327,7 @@ describe('DbKnowledgeController (边界条件)', () => {
   it('getRecentPulses 不传 limit 取默认 20', async () => {
     const svc = makeMockService(true)
     const spy: { calledWith: number } = { calledWith: 0 }
-    svc.getRecentPulses = (l: number) => {
+    svc.getRecentPulses = (limit?: number) => {
       spy.calledWith = l
       return Promise.resolve([])
     }
