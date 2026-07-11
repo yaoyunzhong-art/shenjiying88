@@ -18,7 +18,7 @@ type OrderStatus = 'completed' | 'pending' | 'cancelled' | 'refunded' | 'partial
 type PaymentMethod = 'cash' | 'wechat' | 'alipay' | 'card' | 'member_card' | 'unionpay';
 
 interface Order { id: string; orderNo: string; date?: string; time: string; status: OrderStatus; items: string[]; totalAmount: number; discount: number; finalAmount: number; paymentMethod: PaymentMethod; memberName: string; memberNo: string; operator: string; device: string; note: string; }
-interface Refund { id: string; orderNo: string; date: string; amount: number; reason: string; status: 'completed' | 'pending' | 'rejected'; operator: string; approvedBy: string; }
+interface Refund { id: string; orderNo: string; date?: string; amount: number; reason: string; status: 'completed' | 'pending' | 'rejected'; operator: string; approvedBy: string; }
 
 const STATUS_MAP: Record<OrderStatus, { label: string; variant: 'success' | 'warning' | 'danger' | 'neutral' | 'info' }> = {
   completed: { label: '已完成', variant: 'success' }, pending: { label: '待支付', variant: 'warning' },
@@ -41,12 +41,12 @@ function generateOrders(n: number): Order[] {
       id: `ORD-${String(i+1).padStart(5,'0')}`,
       orderNo: `M5${d.toISOString().split('T')[0].replace(/-/g,'')}${String(1000+i).slice(-4)}`,
       date: d.toISOString().split('T')[0], time: `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`,
-      status: (['completed','completed','completed','completed','pending','cancelled','refunded','partial_refund'] as OrderStatus[])[Math.floor(Math.random()*8)]!,
+      status: (['completed','completed','completed','completed','pending','cancelled','refunded','partial_refund'] as OrderStatus[])[Math.floor(Math.random()*8)]!!,
       items, totalAmount: total, discount: disc, finalAmount: Math.round((total-disc)*100)/100,
-      paymentMethod: (['cash','wechat','alipay','card','member_card','unionpay'] as PaymentMethod[])[Math.floor(Math.random()*6)]!,
+      paymentMethod: (['cash','wechat','alipay','card','member_card','unionpay'] as PaymentMethod[])[Math.floor(Math.random()*6)]!!,
       memberName: Math.random()>0.3 ? ['张明','李华','王芳','赵强','陈静','刘洋'][Math.floor(Math.random()*6)]! : '散客',
       memberNo: Math.random()>0.3 ? `M5-${String(1000+Math.floor(Math.random()*9000))}` : '',
-      operator: ['张三','李四','王五','赵六'][Math.floor(Math.random()*4)]!, device: ITEMS_POOL[Math.floor(Math.random()*ITEMS_POOL.length)]!.split('*')[0]!,
+      operator: ['张三','李四','王五','赵六'][Math.floor(Math.random()*4)]!, device: ITEMS_POOL[Math.floor(Math.random()*ITEMS_POOL.length)]!!.split('*')[0]!,
       note: Math.random()>0.9 ? '客户要求换货' : '',
     };
   }).sort((a, b) => b.date < a.date ? -1 : b.date > a.date ? 1 : 0);
@@ -58,7 +58,7 @@ function generateRefunds(orders: Order[]): Refund[] {
     id: `RF-${String(i+1).padStart(3,'0')}`, orderNo: o.orderNo,
     date: o.date, amount: Math.round(o.finalAmount*(0.3+Math.random()*0.7)*100)/100,
     reason: ['商品质量问题','客户不想要','重复支付','设备故障','误操作'][Math.floor(Math.random()*5)]!,
-    status: (['completed','completed','completed','pending','rejected'] as Refund['status'][])[Math.floor(Math.random()*5)]!,
+    status: (['completed','completed','completed','pending','rejected'] as Refund['status'][])[Math.floor(Math.random()*5)]!!,
     operator: o.operator, approvedBy: ['店长','运营经理'][Math.floor(Math.random()*2)]!,
   }));
 }
@@ -124,7 +124,7 @@ export default function StoreOrdersPage({ params }: { params: Promise<{ id: stri
           <><SearchFilterInput value={searchTerm} onChange={setSearchTerm} placeholder="搜索订单号/会员/收银员..." />
           <div style={{marginTop:12}}><Tabs items={[
             {key:'ALL',label:'全部',count:filteredItems.length},
-            ...(['completed','pending','cancelled','refunded','partial_refund'] as OrderStatus[]).map(s=>({key:s,label:STATUS_MAP[s].label,count:filteredItems.filter(o=>o.status===s).length})),
+            ...(['completed','pending','cancelled','refunded','partial_refund'] as OrderStatus[]).map(s=>({key:s,label: STATUS_MAP[s]!.label,count:filteredItems.filter(o=>o.status===s).length})),
           ]} activeKey={statusFilter} onChange={setStatusFilter} variant="pills" size="sm" /></div>
           <DataTable title={`订单 (${sorted.length})`} columns={columns} items={pageItems} rowKey={i=>i.id} sort={sortConfig} onSortChange={setSortConfig} striped compact />
           <Pagination page={pagination.page} pageSize={pagination.pageSize} total={sorted.length} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} /></>

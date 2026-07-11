@@ -32,9 +32,9 @@ function generateInspects(): InspItem[] {
     items.push({
       id: `INSP-${String(i+1).padStart(3,'0')}`,
       date: d.toISOString().split('T')[0],
-      device: devices[Math.floor(Math.random()*devices.length)]!!,
-      location: locations[Math.floor(Math.random()*locations.length)]!!,
-      type: (['daily','daily','daily','daily','weekly','monthly','seasonal'] as InspType[])[Math.floor(Math.random()*7)]!!,
+      device: devices[Math.floor(Math.random()*devices.length)]!!!,
+      location: locations[Math.floor(Math.random()*locations.length)]!!!,
+      type: (['daily','daily','daily','daily','weekly','monthly','seasonal'] as InspType[])[Math.floor(Math.random()*7)]!!!,
       inspector: ['张三','李四','王五','赵六','设备供应商'][Math.floor(Math.random()*5)]!!,
       status: failedItems > 1 ? 'failed' : failedItems > 0 ? 'warn' : 'passed',
       items: checkedItems,
@@ -95,7 +95,7 @@ export default function DeviceInspectionPage() {
         <SearchFilterInput value={searchTerm} onChange={setSearchTerm} placeholder="搜索设备/位置/检查人..." />
         <div style={{marginTop:12}}><Tabs items={[
           {key:'ALL',label:'全部',count:filteredItems.length},
-          ...(['passed','failed','warn','pending'] as InspStatus[]).map(s=>({key:s,label:STATUS_MAP[s].l,count:filteredItems.filter(i=>i.status===s).length})),
+          ...(['passed','failed','warn','pending'] as InspStatus[]).map(s=>({key:s,label: STATUS_MAP[s]!.l,count:filteredItems.filter(i=>i.status===s).length})),
         ]} activeKey={statusFilter} onChange={setStatusFilter} variant="pills" size="sm" /></div>
 
         <div style={{marginTop:16,display:'flex',gap:10}}>

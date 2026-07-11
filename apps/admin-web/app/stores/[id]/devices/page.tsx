@@ -180,17 +180,17 @@ function generateDevices(): DeviceItem[] {
       type: tpl.type,
       model: tpl.model,
       serialNumber: `SN-${tpl.type.toUpperCase()}-${String(1000 + idx)}`,
-      status: statuses[idx % statuses.length]!,
+      status: statuses[idx % statuses.length]!!,
       ipAddress: `192.168.1.${100 + idx}`,
-      location: locations[idx % locations.length]!!,
+      location: locations[idx % locations.length]!!!,
       installDate: installDate.toISOString().split('T')[0],
       lastMaintenance: lastMaintenance.toISOString().split('T')[0],
       nextMaintenance: nextMaintenance.toISOString().split('T')[0],
       warrantyExpiry: warrantyExpiry.toISOString().split('T')[0],
       uptime: `${uptimeHours}h ${Math.floor(Math.random() * 60)}m`,
       temperature: temperature,
-      errorCount: statuses[idx % statuses.length]! === 'error' ? 3 + Math.floor(Math.random() * 10) : Math.floor(Math.random() * 3),
-      maintenancePriority: statuses[idx % statuses.length]! === 'error' ? 'critical' : priorities[Math.floor(Math.random() * parseInt('4'))]!,
+      errorCount: statuses[idx % statuses.length]!! === 'error' ? 3 + Math.floor(Math.random() * 10) : Math.floor(Math.random() * 3),
+      maintenancePriority: statuses[idx % statuses.length]!! === 'error' ? 'critical' : priorities[Math.floor(Math.random() * parseInt('4'))]!,
       notes: '',
       firmwareVersion: `v2.${1 + Math.floor(Math.random() * 5)}.${Math.floor(Math.random() * 10)}`,
       lastPing: new Date(Date.now() - Math.floor(Math.random() * 300) * 1000).toISOString(),
@@ -199,8 +199,8 @@ function generateDevices(): DeviceItem[] {
 }
 
 function generateMaintenanceRecords(deviceIds: string[]): MaintenanceRecord[] {
-  const types: MaintenanceRecord['type'][] = ['inspection', 'repair', 'replacement', 'upgrade', 'cleaning'];
-  const statuses: MaintenanceRecord['status'][] = ['completed', 'completed', 'completed', 'completed', 'in-progress', 'scheduled'];
+  const types: MaintenanceRecord['type']![] = ['inspection', 'repair', 'replacement', 'upgrade', 'cleaning'];
+  const statuses: MaintenanceRecord['status']![] = ['completed', 'completed', 'completed', 'completed', 'in-progress', 'scheduled'];
   const technicians = ['张三', '李四', '王五', '赵六', '陈七', '设备供应商'];
   const partsList = ['螺丝包', '电源适配器', '散热风扇', '显示屏面板', '按键模组', '主板', '传感器模块', '线缆套装'];
   const records: MaintenanceRecord[] = [];
@@ -216,11 +216,11 @@ function generateMaintenanceRecords(deviceIds: string[]): MaintenanceRecord[] {
       id: `MR-${String(i + 1).padStart(3, '0')}`,
       deviceId,
       deviceName: device?.name ?? deviceId,
-      type: types[Math.floor(Math.random() * types.length)]!,
+      type: types[Math.floor(Math.random() * types.length)]!!,
       date: date.toISOString().split('T')[0],
-      technician: technicians[Math.floor(Math.random() * technicians.length)]!,
+      technician: technicians[Math.floor(Math.random() * technicians.length)]!!,
       cost: Math.floor(Math.random() * 5000) + 100,
-      status: statuses[Math.floor(Math.random() * statuses.length)]!,
+      status: statuses[Math.floor(Math.random() * statuses.length)]!!,
       description: `${MAINTENANCE_TYPE_LABELS[types[Math.floor(Math.random() * types.length)]!]}操作 - 例行检查`,
       parts: [partsList[Math.floor(Math.random() * partsList.length)]!],
       nextDate: nextDays ? new Date(Date.now() + nextDays * 86400000).toISOString().split('T')[0] : null,
@@ -710,7 +710,7 @@ export default function StoreDevicesPage({ params }: { params: Promise<{ id: str
                 { key: 'ALL', label: '全部', count: typeFiltered.length },
                 ...(['online', 'offline', 'error', 'maintenance', 'pending'] as DeviceStatus[]).map(s => ({
                   key: s,
-                  label: DEVICE_STATUS_MAP[s].label,
+                  label: DEVICE_STATUS_MAP[s]!.label,
                   count: typeFiltered.filter(d => d.status === s).length,
                 })),
               ]}
@@ -726,10 +726,10 @@ export default function StoreDevicesPage({ params }: { params: Promise<{ id: str
           hint="已筛选："
           chips={[
             ...(typeFilter !== 'ALL'
-              ? [{ key: 'type' as const, label: DEVICE_TYPE_LABELS[typeFilter as DeviceType] ?? typeFilter, tone: 'neutral' as FilterChip['tone'] }]
+              ? [{ key: 'type' as const, label: DEVICE_TYPE_LABELS[typeFilter as DeviceType]! ?? typeFilter, tone: 'neutral' as FilterChip['tone'] }]
               : []),
             ...(statusFilter !== 'ALL'
-              ? [{ key: 'status' as const, label: DEVICE_STATUS_MAP[statusFilter as DeviceStatus]?.label ?? statusFilter, tone: (DEVICE_STATUS_MAP[statusFilter as DeviceStatus]?.variant === 'danger' ? 'danger' : DEVICE_STATUS_MAP[statusFilter as DeviceStatus]?.variant === 'warning' ? 'warning' : 'neutral') as FilterChip['tone'] }]
+              ? [{ key: 'status' as const, label: DEVICE_STATUS_MAP[statusFilter as DeviceStatus]!?.label ?? statusFilter, tone: (DEVICE_STATUS_MAP[statusFilter as DeviceStatus]?.variant === 'danger' ? 'danger' : DEVICE_STATUS_MAP[statusFilter as DeviceStatus]?.variant === 'warning' ? 'warning' : 'neutral') as FilterChip['tone'] }]
               : []),
           ]}
           onRemove={(key) => {

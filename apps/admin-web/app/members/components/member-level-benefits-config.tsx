@@ -174,9 +174,10 @@ export function BenefitsConfigDialog({
   );
   const [errors, setErrors] = useState<LevelBenefitsErrors>({});
   const [submitFeedback, setSubmitFeedback] = useState<{
+    isSubmitting: boolean;
     errorMessage?: string;
     successMessage?: string;
-  }>({});
+  }>({ isSubmitting: false });
 
   // 初始化
   React.useEffect(() => {
@@ -186,7 +187,7 @@ export function BenefitsConfigDialog({
         ...initialData,
       });
       setErrors({});
-      setSubmitFeedback({});
+      setSubmitFeedback({ isSubmitting: false });
     }
   }, [open, initialData]);
 
@@ -232,12 +233,13 @@ export function BenefitsConfigDialog({
       return;
     }
 
-    setSubmitFeedback({});
+    setSubmitFeedback({ isSubmitting: true });
     try {
       await onSave(formData);
-      setSubmitFeedback({ successMessage: '权益配置已保存' });
+      setSubmitFeedback({ isSubmitting: false, successMessage: '权益配置已保存' });
     } catch (error) {
       setSubmitFeedback({
+        isSubmitting: false,
         errorMessage: error instanceof Error ? error.message : '保存失败',
       });
     }

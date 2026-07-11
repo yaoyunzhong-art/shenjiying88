@@ -29,14 +29,14 @@ export default function CashierWorkbenchPage() {
 
   return (
     <main style={{maxWidth:1200,margin:'0 auto',padding:24}}>
-      <PageShell title="💳 收银工作台" subtitle={SHIFT_STATUS[session.status].l}>
+      <PageShell title="💳 收银工作台" subtitle={SHIFT_STATUS[session.status]?.l ?? ''}>
         <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(4,1fr)',marginBottom:20}}>
           <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>当班营收</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#22c55e'}}>{fm(session.expectedTotal)}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>{session.transactionCount}笔</div></div>
           <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>现金</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#eab308'}}>{fm(session.cashRevenue)}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>开柜: {fm(session.openingBalance)}</div></div>
           <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>线上收款</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#3b82f6'}}>{fm(session.onlineRevenue)}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>微信+支付宝</div></div>
           <div style={{...card, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
             <div><div style={{fontSize:13,color:'#cbd5e1'}}>差异</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:session.difference===0?'#22c55e':'#eab308'}}>{fm(session.difference)}</div></div>
-            <StatusBadge label={SHIFT_STATUS[session.status].l} variant={SHIFT_STATUS[session.status].v} size="md" dot />
+            <StatusBadge label={SHIFT_STATUS[session.status]?.l ?? ''} variant={SHIFT_STATUS[session.status]?.v ?? 'warning' as const} size="md" dot />
           </div>
         </div>
 

@@ -191,7 +191,7 @@ function generateInventory(): InventoryItem[] {
       id: `INV-${String(idx + 1).padStart(4, '0')}`,
       sku: `SKU-${String(1000 + idx)}`,
       name,
-      category: categories[idx % categories.length]!,
+      category: categories[idx % categories.length]!!,
       brand: ['自有', '可口可乐', '乐事', '德芙', '3M', '得力', '小米'][Math.floor(Math.random() * 7)],
       unit: ['个', '箱', '袋', '瓶', '卷', '盒', '套'][Math.floor(Math.random() * 7)],
       totalQty: current,
@@ -207,7 +207,7 @@ function generateInventory(): InventoryItem[] {
               current < min ? 'low_stock' :
               current > max * 0.9 ? 'overstock' : 'in_stock',
       location: ['A区', 'B区', 'C区', 'D区', '仓库A', '仓库B', '前厅'][Math.floor(Math.random() * 7)],
-      supplier: SUPPLIER_NAMES[Math.floor(Math.random() * SUPPLIER_NAMES.length)]!,
+      supplier: SUPPLIER_NAMES[Math.floor(Math.random() * SUPPLIER_NAMES.length)]!!,
       batchNo: batch,
       expiryDate: Math.random() > 0.7 ? new Date(Date.now() + Math.floor(Math.random() * 365) * 86400000).toISOString().split('T')[0] : null,
       lastStockTake: new Date(Date.now() - Math.floor(Math.random() * 30) * 86400000).toISOString().split('T')[0],
@@ -272,7 +272,7 @@ function generateStockChecks(): StockCheck[] {
       id: `CHK-${String(i + 1).padStart(3, '0')}`,
       date: date.toISOString().split('T')[0],
       checker: ['王五', '赵六', '张三', '李四'][Math.floor(Math.random() * 4)]!,
-      area: areas[Math.floor(Math.random() * areas.length)]!,
+      area: areas[Math.floor(Math.random() * areas.length)]!!,
       itemCount,
       expectedCount: expected,
       actualCount: actual,
@@ -292,7 +292,7 @@ function generateSuppliers(): SupplierInfo[] {
     contactPerson: ['张经理', '李总', '王总监', '赵主管', '陈先生', '林老板', '黄总', '刘经理', '周女士', '吴经理'][idx]!,
     phone: `1${3 + Math.floor(Math.random() * 7)}8${String(Math.floor(Math.random() * 10000000)).padStart(7, '0')}`,
     email: `supplier${idx + 1}@example.com`,
-    category: CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)]!,
+    category: CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)]!!,
     status: Math.random() > 0.15 ? 'active' : Math.random() > 0.5 ? 'inactive' : 'pending_review',
     rating: 3 + Math.floor(Math.random() * 3),
     totalOrders: 5 + Math.floor(Math.random() * 50),
@@ -466,7 +466,7 @@ export default function StoreInventoryPage({ params }: { params: Promise<{ id: s
                 <Tabs items={[
                   { key: 'ALL', label: '全部', count: catFiltered.length },
                   ...(['in_stock', 'low_stock', 'out_of_stock', 'overstock', 'damaged'] as InventoryStatus[]).map(s => ({
-                    key: s, label: INVENTORY_STATUS_MAP[s].label, count: catFiltered.filter(i => i.status === s).length,
+                    key: s, label: INVENTORY_STATUS_MAP[s]!.label, count: catFiltered.filter(i => i.status === s).length,
                   })),
                 ]} activeKey={statusFilter} onChange={setStatusFilter} variant="pills" size="sm" />
               </div>

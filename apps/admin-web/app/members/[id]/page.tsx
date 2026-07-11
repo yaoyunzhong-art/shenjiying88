@@ -56,8 +56,8 @@ function mockVisits() {
 export default function MemberDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const member = useMemo(() => mockMember(id), [id]);
-  const points = useMemo(() => mockPoints(), []);
-  const recharges = useMemo(() => mockRecharges(), []);
+  const points = useMemo(() => mockPoints(), []) as PointRecord[];
+  const recharges = useMemo(() => mockRecharges(), []) as RechargeRecord[];
   const visits = useMemo(() => mockVisits(), []);
   const [tab, setTab] = useState<'overview'|'points'|'recharge'|'visits'>('overview');
 

@@ -41,7 +41,7 @@ const enrollments: Enrollment[] = Array.from({length:30}, (_,i) => {
     dept:['运营部','收银组','导玩组','技术部','后勤部'][Math.floor(Math.random()*5)]!,
     course:c.name, enrollDate:new Date(Date.now()-Math.floor(Math.random()*30)*86400000).toISOString().split('T')[0],
     completionDate:Math.random()>0.4?new Date(Date.now()-Math.floor(Math.random()*15)*86400000).toISOString().split('T')[0]:'',
-    status:statuses[Math.floor(Math.random()*statuses.length)]!,
+    status: statuses[Math.floor(Math.random()*statuses.length)]!!,
     score:Math.random()>0.3?60+Math.floor(Math.random()*40):null,
     attempts:1+Math.floor(Math.random()*2), certificateIssued:Math.random()>0.5,
   };

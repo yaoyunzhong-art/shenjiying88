@@ -112,7 +112,7 @@ export function CardActivityTable({
         title: '时间',
         dataKey: 'createdAt',
         sortable: true,
-        width: 160,
+        width: '160px',
         render: (item) => (
           <span style={{ color: '#94a3b8', fontSize: 12 }}>{formatDateTime(item.createdAt)}</span>
         ),

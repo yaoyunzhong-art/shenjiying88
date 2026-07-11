@@ -65,7 +65,7 @@ interface DeviceUtilization {
   downtimeMinutes: number;
   popularityScore: number; // 1-10
   peakTimes: string[];
-  ageGroupPreference: string;
+  ageGroupPreference?: string;
 }
 
 interface MemberAnalysis {
@@ -378,7 +378,7 @@ export default function StoreReportsPage({ params }: { params: Promise<{ id: str
       avg[name]!.sum += t.totalVisitors;
       avg[name]!.count++;
     });
-    return week.map(w => ({ day: w, avg: avg[w] ? Math.round(avg[w]!.sum / avg[w]!.count) : 0 }));
+    return week.map(w => ({ day: w, avg: avg[w]! ? Math.round(avg[w]!.sum / avg[w]!.count) : 0 }));
   }, [traffic]);
 
   const monthlyTraffic = useMemo(() => {
@@ -589,7 +589,7 @@ export default function StoreReportsPage({ params }: { params: Promise<{ id: str
                   const idx = ['0-12', '13-18', '19-25', '26-35', '36-50', '50+'].indexOf(age);
                   return (
                     <div key={age} style={{ textAlign: 'center', padding: 16, borderRadius: 12, background: 'rgba(15,23,42,0.3)' }}>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: colors[idx] ?? '#94a3b8' }}>{avg.toFixed(1)}%</div>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: colors[idx]! ?? '#94a3b8' }}>{avg.toFixed(1)}%</div>
                       <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>{age} 岁</div>
                     </div>
                   );

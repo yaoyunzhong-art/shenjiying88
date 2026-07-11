@@ -123,7 +123,10 @@ export default function MemberLevelsPage() {
     [levels, statusFilter]
   );
 
-  const { filteredItems } = useSearchFilter(statusFiltered, searchFields, searchTerm);
+    const { searchTerm: filteredSearchTerm, setSearchTerm: setFilteredSearchTerm, filteredItems } = useSearchFilter(
+    statusFiltered,
+    searchFields
+  );
 
   // 排序和分页
   const columns: DataTableColumn<MemberLevelConfig>[] = useMemo(
@@ -454,8 +457,8 @@ export default function MemberLevelsPage() {
         >
           <div style={{ flex: 1, maxWidth: 320 }}>
             <SearchFilterInput
-              value={searchTerm}
-              onChange={setSearchTerm}
+              value={filteredSearchTerm}
+              onChange={setFilteredSearchTerm}
               placeholder="搜索等级名称或标识..."
             />
           </div>

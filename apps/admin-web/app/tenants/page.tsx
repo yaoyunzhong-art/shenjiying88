@@ -30,7 +30,7 @@ const tenants: Tenant[] = Array.from({length:32}, (_,i) => {
     id:`TNT-${String(i+1).padStart(3,'0')}`,
     name: ['欢乐谷电玩城','星际联盟','潮玩部落','乐动空间','极速竞界','梦幻乐园','时空隧道','数字浪潮','星河漫游','未来玩家','嗨玩天地','酷炫基地','童趣乐园','电玩新天地','竞界风云','超级玩家'][i%16]! + (i>=16?'(分店)':'旗舰店'),
     code: `TENANT-${String(1000+i+1)}`,
-    tier, status: statuses[Math.floor(Math.random()*statuses.length)]!,
+    tier, status: statuses[Math.floor(Math.random()*statuses.length)]!!,
     contactName: ['张三','李四','王五','赵六','陈七','刘八'][Math.floor(Math.random()*6)]!,
     contactEmail: `contact${i+1}@example.com`,
     contactPhone: `1${3+Math.floor(Math.random()*7)}8${String(Math.floor(Math.random()*10000000)).padStart(7,'0')}`,
@@ -39,8 +39,8 @@ const tenants: Tenant[] = Array.from({length:32}, (_,i) => {
     createdDate: new Date(2024,Math.floor(Math.random()*18),1+Math.floor(Math.random()*28)).toISOString().split('T')[0],
     expiryDate: new Date(2026,Math.floor(Math.random()*8),1+Math.floor(Math.random()*28)).toISOString().split('T')[0],
     lastActive: new Date(Date.now()-Math.floor(Math.random()*7)*86400000).toISOString().split('T')[0],
-    region: REGIONS[Math.floor(Math.random()*REGIONS.length)]!,
-    industry: INDUSTRIES[Math.floor(Math.random()*INDUSTRIES.length)]!,
+    region: REGIONS[Math.floor(Math.random()*REGIONS.length)]!!,
+    industry: INDUSTRIES[Math.floor(Math.random()*INDUSTRIES.length)]!!,
   };
 }).sort((a,b)=>b.createdDate.localeCompare(a.createdDate));
 
@@ -48,7 +48,7 @@ function buildColumns(): DataTableColumn<Tenant>[] {
   return [
     {key:'name',title:'租户名称',dataKey:'name',sortable:true,render:i=><span style={{color:'#93c5fd',fontWeight:600}}>{i.name}</span>},
     {key:'code',title:'编码',dataKey:'code',sortable:true},
-    {key:'tier',title:'版本',sortable:true,sortValue:i=>i.tier,render:i=><span style={{color:TIER_COLORS[i.tier],fontWeight:600}}>{TIER_LABELS[i.tier]}</span>},
+    {key:'tier',title:'版本',sortable:true,sortValue:i=>i.tier,render:i=><span style={{color: TIER_COLORS[i.tier]!,fontWeight:600}}>{TIER_LABELS[i.tier]}</span>},
     {key:'status',title:'状态',sortable:true,sortValue:i=>i.status,render:i=><StatusBadge label={TS[i.status].l} variant={TS[i.status].v} size="sm" dot />},
     {key:'stores',title:'门店',dataKey:'stores',sortable:true,align:'right'},
     {key:'users',title:'用户',dataKey:'users',sortable:true,align:'right'},
@@ -95,7 +95,7 @@ export default function TenantsPage() {
           <SearchFilterInput value={searchTerm} onChange={setSearchTerm} placeholder="搜索租户名称/编码/联系人/区域..." />
           <div style={{marginTop:12}}><Tabs items={[
             {key:'ALL',label:'全部',count:filteredItems.length},
-            ...(['active','trial','suspended','expired'] as TenantStatus[]).map(s=>({key:s,label:TS[s].l,count:filteredItems.filter(t=>t.status===s).length})),
+            ...(['active','trial','suspended','expired'] as TenantStatus[]).map(s=>({key:s,label: TS[s]!.l,count:filteredItems.filter(t=>t.status===s).length})),
           ]} activeKey={statusFilter} onChange={setStatusFilter} variant="pills" size="sm" /></div>
           <DataTable title={`租户列表 (${sorted.length})`} columns={columns} items={pageItems} rowKey={i=>i.id} sort={sortConfig} onSortChange={setSortConfig} striped compact />
           <Pagination page={pagination.page} pageSize={pagination.pageSize} total={sorted.length} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
@@ -104,10 +104,10 @@ export default function TenantsPage() {
         {tab==='analytics' && <>
           <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(3,1fr)',marginBottom:20}}>
             {stats.byTier.map(t=><div key={t.tier} style={card}>
-              <div style={{fontSize:13,color:TIER_COLORS[t.tier]}}>{TIER_LABELS[t.tier]}</div>
+              <div style={{fontSize:13,color: TIER_COLORS[t.tier]!}}>{TIER_LABELS[t.tier]}</div>
               <div style={{marginTop:6,fontSize:28,fontWeight:700}}>{t.count}</div>
               <div style={{marginTop:4,height:6,borderRadius:3,background:'rgba(148,163,184,0.12)',overflow:'hidden'}}>
-                <div style={{height:'100%',width:`${(t.count/stats.total)*100}%`,borderRadius:3,background:TIER_COLORS[t.tier]}} />
+                <div style={{height:'100%',width:`${(t.count/stats.total)*100}%`,borderRadius:3,background: TIER_COLORS[t.tier]!}} />
               </div>
             </div>)}
           </div>

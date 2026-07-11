@@ -7,7 +7,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { PageShell, StatCard, StatusBadge, Tabs, DataTable, Pagination, usePagination, type DataTableColumn } from '@m5/ui';
+import { PageShell, StatCard, StatusBadge, Tabs, DataTable, Pagination, usePagination, type DataTableColumn } , type DataTableSortConfig } from '@m5/ui';
 
 type OpsTaskStatus = 'todo'|'in_progress'|'done'|'cancelled';
 type OpsTaskType = 'approval'|'inspection'|'onboarding'|'report'|'event'|'issue';

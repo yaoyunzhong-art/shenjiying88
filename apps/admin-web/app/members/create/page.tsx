@@ -234,7 +234,7 @@ export default function CreateMemberPage() {
       <WorkspaceBreadcrumb
         workspaceLabel="会员管理"
         workspaceHref="/members"
-        extraSegments={[{ label: '新增会员' }]}
+        detailLabel="新增会员"
       />
 
       <PageShell

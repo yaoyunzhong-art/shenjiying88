@@ -130,9 +130,10 @@ export function LevelDetailForm({
   const [formData, setFormData] = useState<LevelFormData>(initialData);
   const [errors, setErrors] = useState<LevelFormErrors>({});
   const [submitFeedback, setSubmitFeedback] = useState<{
+    isSubmitting: boolean;
     errorMessage?: string;
     successMessage?: string;
-  }>({});
+  }>({ isSubmitting: false });
 
   const getFieldError = (field: keyof LevelFormErrors): string | undefined => errors[field];
 
@@ -157,12 +158,13 @@ export function LevelDetailForm({
       return;
     }
 
-    setSubmitFeedback({});
+    setSubmitFeedback({ isSubmitting: true });
     try {
       await onSubmit(formData);
-      setSubmitFeedback({ successMessage: '等级配置已保存' });
+      setSubmitFeedback({ isSubmitting: false, successMessage: '等级配置已保存' });
     } catch (error) {
       setSubmitFeedback({
+        isSubmitting: false,
         errorMessage: error instanceof Error ? error.message : '保存失败',
       });
     }

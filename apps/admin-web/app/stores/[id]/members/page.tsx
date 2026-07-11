@@ -26,7 +26,7 @@ const storeMembers: StoreMember[] = Array.from({length:85}, (_,i) => {
     id:`SM-${String(i+1).padStart(3,'0')}`,
     name:['张伟','李娜','王强','赵敏','刘洋','陈静','杨磊','黄丽','周杰','吴芳','徐明','孙燕','马超','朱婷','胡波','郭峰'][i%16]!,
     phone:`1${3+Math.floor(Math.random()*7)}8${String(Math.floor(Math.random()*10000000)).padStart(7,'0')}`,
-    tier:tiers[Math.floor(Math.random()*tiers.length)]!, status:statuses[Math.floor(Math.random()*statuses.length)]!,
+    tier: tiers[Math.floor(Math.random()*tiers.length)]!!, status: statuses[Math.floor(Math.random()*statuses.length)]!!,
     points:Math.floor(Math.random()*5000), balance:Math.round((50+Math.random()*500)*100)/100,
     spend30d:Math.round((0+Math.random()*2000)*100)/100, visit30d:Math.floor(Math.random()*8),
     lastVisit:new Date(Date.now()-Math.floor(Math.random()*30)*86400000).toISOString().split('T')[0],
@@ -38,7 +38,7 @@ const storeMembers: StoreMember[] = Array.from({length:85}, (_,i) => {
 function buildColumns(): DataTableColumn<StoreMember>[] {
   return [
     {key:'name',title:'姓名',dataKey:'name',sortable:true,render:i=><span style={{color:'#93c5fd',fontWeight:600}}>{i.name}</span>},
-    {key:'tier',title:'等级',sortable:true,sortValue:i=>i.tier,render:i=><span style={{color:TIER_COLORS[i.tier],fontWeight:600}}>{TIER_LABELS[i.tier]}</span>},
+    {key:'tier',title:'等级',sortable:true,sortValue:i=>i.tier,render:i=><span style={{color: TIER_COLORS[i.tier]!,fontWeight:600}}>{TIER_LABELS[i.tier]}</span>},
     {key:'status',title:'状态',sortable:true,sortValue:i=>i.status,render:i=><StatusBadge label={MS[i.status].l} variant={MS[i.status].v} size="sm" dot />},
     {key:'points',title:'积分',dataKey:'points',sortable:true,align:'right'},
     {key:'balance',title:'余额',dataKey:'balance',sortable:true,align:'right',render:i=><span style={{color:'#22c55e',fontWeight:600}}>{fm(i.balance)}</span>},
@@ -92,11 +92,11 @@ export default function StoreMembersPage() {
           <div style={{marginTop:12,display:'flex',gap:16,flexWrap:'wrap'}}>
             <div><div style={{fontSize:12,color:'#94a3b8',marginBottom:6}}>等级</div><Tabs items={[
               {key:'ALL',label:'全部',count:filteredItems.length},
-              ...(['normal','silver','gold','diamond','platinum'] as MemberTier[]).map(t=>({key:t,label:TIER_LABELS[t],count:filteredItems.filter(m=>m.tier===t).length})),
+              ...(['normal','silver','gold','diamond','platinum'] as MemberTier[]).map(t=>({key:t,label: TIER_LABELS[t]!,count:filteredItems.filter(m=>m.tier===t).length})),
             ]} activeKey={tierFilter} onChange={setTierFilter} variant="pills" size="sm" /></div>
             <div><div style={{fontSize:12,color:'#94a3b8',marginBottom:6}}>状态</div><Tabs items={[
               {key:'ALL',label:'全部',count:tierFiltered.length},
-              ...(['active','sleeping','lost','new'] as MemberStatus[]).map(s=>({key:s,label:MS[s].l,count:tierFiltered.filter(m=>m.status===s).length})),
+              ...(['active','sleeping','lost','new'] as MemberStatus[]).map(s=>({key:s,label: MS[s]!.l,count:tierFiltered.filter(m=>m.status===s).length})),
             ]} activeKey={statusFilter} onChange={setStatusFilter} variant="pills" size="sm" /></div>
           </div>
           <DataTable title={`会员 (${sorted.length})`} columns={columns} items={pageItems} rowKey={i=>i.id} sort={sortConfig} onSortChange={setSortConfig} striped compact />

@@ -40,13 +40,12 @@ export function ImportHistoryTable({
   const data = records ?? MOCK_IMPORT_RECORDS;
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null);
   const [expandedImport, setExpandedImport] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const searchFields = useMemo<(keyof MemberImportRecord)[]>(
     () => ['fileName', 'importedBy', 'importId'] as (keyof MemberImportRecord)[],
     []
   );
 
-  const { filteredItems } = useSearchFilter(data, searchFields, searchTerm);
+  const { filteredItems, searchTerm, setSearchTerm } = useSearchFilter(data, searchFields);
 
   const columns: DataTableColumn<MemberImportRecord>[] = useMemo(
     () => [
@@ -139,7 +138,7 @@ export function ImportHistoryTable({
             {
               key: 'actions',
               title: '操作',
-              width: 100,
+              width: '100px',
               render: (item: MemberImportRecord) => (
                 <button
                   type="button"

@@ -127,9 +127,6 @@ export default function ImportMemberPage() {
     pageSizeOptions: [5, 10, 20, 50],
   });
 
-  const sortedItems = useSortedItems(filteredItems, previewColumns, sortConfig);
-  const pageItems = pagination.paginate(sortedItems);
-
   // 表格列定义
   const columns: DataTableColumn<ImportRecord>[] = useMemo(
     () => [
