@@ -3,104 +3,104 @@
 /**
  * 门店培训管理 - Store Training Management
  * 角色: 📚培训师 / 👥HR
- * 功能: 培训课程、学习记录、考核管理、培训统计
+ * 功能: 培训计划、培训记录、考核成绩、证书管理
  */
 
 import { useState, useMemo } from 'react';
 import { PageShell, StatCard, StatusBadge, Tabs } from '@m5/ui';
 
-type CourseStatus = 'active'|'draft'|'archived';
-type CourseCategory = 'service'|'device'|'safety'|'management'|'sales'|'compliance';
-type EnrollStatus = 'completed'|'in_progress'|'pending'|'failed';
+type TrainingStatus = 'planned'|'in_progress'|'completed'|'cancelled';
+type TrainingCategory = 'onboarding'|'safety'|'service'|'operation'|'device'|'sales';
+type ExamResult = 'pass'|'fail'|'excellent'|'pending';
 
-interface Course { id:string; name:string; category:CourseCategory; status:CourseStatus; instructor:string; duration:number; enrolled:number; completed:number; passRate:number; startDate:string; endDate:string; description:string; credits:number; examRequired:boolean; }
-interface Enrollment { id:string; employee:string; dept:string; course:string; enrollDate?:string; completionDate?:string; status:EnrollStatus; score:number|null; attempts:number; certificateIssued:boolean; }
+interface TrainingPlan { id:string; name:string; category:TrainingCategory; trainer:string; date:string; duration:number; participants:number; completedCount:number; status:TrainingStatus; location:string; materials:string[]; description:string; }
+interface TrainingRecord { id:string; staffName:string; courseName:string; category:TrainingCategory; trainer:string; date:string; score:number; result:ExamResult; certificateIssued:boolean; duration:number; }
 
-const CC: Record<CourseCategory,string> = { service:'服务培训', device:'设备操作', safety:'安全培训', management:'管理培训', sales:'销售技巧', compliance:'合规培训' };
-const CS: Record<CourseStatus,{l:string;v:'success'|'neutral'|'warning'}>={active:{l:'进行中',v:'success'},draft:{l:'草稿',v:'warning'},archived:{l:'已归档',v:'neutral'}};
-const ES: Record<EnrollStatus,{l:string;v:'success'|'warning'|'neutral'|'danger'}>={completed:{l:'已完成',v:'success'},in_progress:{l:'进行中',v:'warning'},pending:{l:'待开始',v:'neutral'},failed:{l:'未通过',v:'danger'}};
-function fm(a:number):string{return`¥${a.toLocaleString('zh-CN',{minimumFractionDigits:2})}`;}
+const TC: Record<TrainingCategory, string> = { onboarding:'入职培训', safety:'安全培训', service:'服务培训', operation:'运营培训', device:'设备培训', sales:'销售培训' };
+const TS: Record<TrainingStatus, {l:string;v:'success'|'warning'|'neutral'|'danger'}> = { planned:{l:'已计划',v:'neutral'}, in_progress:{l:'进行中',v:'warning'}, completed:{l:'已完成',v:'success'}, cancelled:{l:'已取消',v:'danger'} };
+const ER: Record<ExamResult, {l:string;v:'success'|'danger'|'info'|'neutral'}> = { pass:{l:'通过',v:'success'}, fail:{l:'未通过',v:'danger'}, excellent:{l:'优秀',v:'info'}, pending:{l:'待考核',v:'neutral'} };
 
-const courses: Course[] = [
-  { id:'C1', name:'新人入职培训', category:'service', status:'active', instructor:'周讲', duration:4, enrolled:45, completed:38, passRate:95, startDate:'2026-07-01', endDate:'2026-08-31', description:'新员工入职基础知识与服务规范', credits:2, examRequired:true },
-  { id:'C2', name:'收银系统操作', category:'device', status:'active', instructor:'钱教练', duration:3, enrolled:32, completed:28, passRate:92, startDate:'2026-07-05', endDate:'2026-08-15', description:'收银终端操作与异常处理', credits:1.5, examRequired:true },
-  { id:'C3', name:'游戏机维护进阶', category:'device', status:'active', instructor:'孙主管', duration:8, enrolled:18, completed:15, passRate:88, startDate:'2026-07-10', endDate:'2026-09-10', description:'街机、VR、模拟器故障诊断与维修', credits:4, examRequired:true },
-  { id:'C4', name:'消防安全培训', category:'safety', status:'active', instructor:'消防教官', duration:3, enrolled:60, completed:55, passRate:98, startDate:'2026-07-01', endDate:'2026-07-15', description:'消防器材使用、逃生演练', credits:1, examRequired:true },
-  { id:'C5', name:'客户服务技巧', category:'service', status:'active', instructor:'李经理', duration:6, enrolled:40, completed:30, passRate:85, startDate:'2026-07-08', endDate:'2026-09-01', description:'投诉处理、沟通技巧、满意度提升', credits:3, examRequired:false },
-  { id:'C6', name:'门店管理实战', category:'management', status:'draft', instructor:'', duration:12, enrolled:0, completed:0, passRate:0, startDate:'2026-09-01', endDate:'2026-11-30', description:'门店运营管理全流程（待启动）', credits:6, examRequired:true },
-  { id:'C7', name:'反欺诈培训', category:'compliance', status:'active', instructor:'合规部', duration:2, enrolled:48, completed:42, passRate:96, startDate:'2026-07-05', endDate:'2026-08-30', description:'欺诈识别与防范', credits:1, examRequired:true },
-  { id:'C8', name:'销售话术进阶', category:'sales', status:'active', instructor:'销售总监', duration:4, enrolled:28, completed:20, passRate:82, startDate:'2026-07-15', endDate:'2026-09-15', description:'充值转化、会员推荐、套餐销售', credits:2, examRequired:false },
+const plans: TrainingPlan[] = [
+  { id:'TP-001', name:'新员工入职培训(7月)', category:'onboarding', trainer:'周杰', date:'2026-07-05', duration:4, participants:8, completedCount:8, status:'completed', location:'培训室A', materials:['员工手册','系统操作指南'], description:'新员工入职基础培训' },
+  { id:'TP-002', name:'消防安全培训(夏季)', category:'safety', trainer:'赵敏', date:'2026-07-12', duration:2, participants:12, completedCount:5, status:'in_progress', location:'大厅', materials:['消防手册'], description:'夏季消防安全专项培训' },
+  { id:'TP-003', name:'客户服务提升课程', category:'service', trainer:'周杰', date:'2026-07-15', duration:3, participants:10, completedCount:0, status:'planned', location:'培训室A', materials:['服务标准手册'], description:'提升服务意识和沟通技巧' },
+  { id:'TP-004', name:'新游戏设备操作培训', category:'device', trainer:'厂商代表', date:'2026-07-08', duration:2, participants:6, completedCount:6, status:'completed', location:'B区', materials:['设备说明书'], description:'VR设备操作培训' },
+  { id:'TP-005', name:'收银系统操作培训', category:'operation', trainer:'李娜', date:'2026-07-10', duration:3, participants:5, completedCount:5, status:'completed', location:'收银台', materials:['操作手册'], description:'新收银系统操作' },
+  { id:'TP-006', name:'会员营销技巧培训', category:'sales', trainer:'市场部', date:'2026-07-20', duration:2, participants:15, completedCount:0, status:'planned', location:'培训室A', materials:['营销资料'], description:'会员推荐和积分销售技巧' },
+  { id:'TP-007', name:'设备日常维护培训', category:'device', trainer:'杨磊', date:'2026-07-18', duration:1, participants:8, completedCount:0, status:'planned', location:'设备区', materials:['维护手册'], description:'日常巡检和维护要点' },
 ];
 
-const enrollments: Enrollment[] = Array.from({length:30}, (_,i) => {
-  const statuses: EnrollStatus[] = ['completed','completed','in_progress','pending','failed'];
-  const c = courses[Math.floor(Math.random()*courses.length)]!;
-  return {
-    id:`ENR-${i+1}`,
-    employee:['张伟','李娜','王强','赵敏','刘洋','陈静','杨磊','黄丽','周杰','吴芳'][Math.floor(Math.random()*10)]!,
-    dept:['运营部','收银组','导玩组','技术部','后勤部'][Math.floor(Math.random()*5)]!,
-    course:c.name, enrollDate:new Date(Date.now()-Math.floor(Math.random()*30)*86400000).toISOString().split('T')[0],
-    completionDate:Math.random()>0.4?new Date(Date.now()-Math.floor(Math.random()*15)*86400000).toISOString().split('T')[0]:'',
-    status: statuses[Math.floor(Math.random()*statuses.length)]!!,
-    score:Math.random()>0.3?60+Math.floor(Math.random()*40):null,
-    attempts:1+Math.floor(Math.random()*2), certificateIssued:Math.random()>0.5,
-  };
-});
+const records: TrainingRecord[] = [
+  { id:'TR-001', staffName:'张伟', courseName:'新员工入职培训(7月)', category:'onboarding', trainer:'周杰', date:'2026-07-05', score:88, result:'excellent', certificateIssued:true, duration:4 },
+  { id:'TR-002', staffName:'李娜', courseName:'收银系统操作培训', category:'operation', trainer:'李娜', date:'2026-07-10', score:95, result:'excellent', certificateIssued:true, duration:3 },
+  { id:'TR-003', staffName:'王强', courseName:'消防安全培训(夏季)', category:'safety', trainer:'赵敏', date:'2026-07-12', score:75, result:'pass', certificateIssued:true, duration:2 },
+  { id:'TR-004', staffName:'赵敏', courseName:'新游戏设备操作培训', category:'device', trainer:'厂商代表', date:'2026-07-08', score:92, result:'excellent', certificateIssued:true, duration:2 },
+  { id:'TR-005', staffName:'刘洋', courseName:'新员工入职培训(7月)', category:'onboarding', trainer:'周杰', date:'2026-07-05', score:62, result:'pass', certificateIssued:true, duration:4 },
+  { id:'TR-006', staffName:'陈静', courseName:'新员工入职培训(7月)', category:'onboarding', trainer:'周杰', date:'2026-07-05', score:45, result:'fail', certificateIssued:false, duration:4 },
+  { id:'TR-007', staffName:'杨磊', courseName:'新游戏设备操作培训', category:'device', trainer:'厂商代表', date:'2026-07-08', score:85, result:'excellent', certificateIssued:true, duration:2 },
+  { id:'TR-008', staffName:'黄丽', courseName:'消防安全培训(夏季)', category:'safety', trainer:'赵敏', date:'2026-07-12', score:70, result:'pass', certificateIssued:false, duration:2 },
+  { id:'TR-009', staffName:'周杰', courseName:'客户服务提升课程', category:'service', trainer:'周杰', date:'2026-07-05', score:0, result:'pending', certificateIssued:false, duration:3 },
+  { id:'TR-010', staffName:'吴芳', courseName:'新员工入职培训(7月)', category:'onboarding', trainer:'周杰', date:'2026-07-05', score:78, result:'pass', certificateIssued:true, duration:4 },
+];
 
 export default function TrainingPage() {
-  const [tab,setTab]=useState<'courses'|'enrollments'>('courses');
-  const stats=useMemo(()=>({
-    total:courses.length,active:courses.filter(c=>c.status==='active').length,
-    enrollments:enrollments.length,completed:enrollments.filter(e=>e.status==='completed').length,
-    avgPassRate:Math.round(courses.filter(c=>c.passRate>0).reduce((s,c)=>s+c.passRate,0)/Math.max(courses.filter(c=>c.passRate>0).length,1)),
-    credits:enrollments.reduce((s,e)=>s+(e.status==='completed'?2:0),0),
-  }),[courses]);
+  const [tab,setTab]=useState<'plans'|'records'>('plans');
+  const stats = useMemo(()=>({
+    total:plans.length, completed:plans.filter(p=>p.status==='completed').length,
+    planned:plans.filter(p=>p.status==='planned').length, inProgress:plans.filter(p=>p.status==='in_progress').length,
+    totalParticipants:plans.reduce((s,p)=>s+p.participants,0),
+    avgScore:Math.round(records.filter(r=>r.score>0).reduce((s,r)=>s+r.score,0)/Math.max(records.filter(r=>r.score>0).length,1)),
+    certificated:records.filter(r=>r.certificateIssued).length,
+  }),[plans,records]);
 
   return (
     <main style={{maxWidth:1200,margin:'0 auto',padding:32}}>
-      <PageShell title="📚 培训管理" subtitle="课程管理·学习记录·考核统计">
+      <PageShell title="📚 培训管理" subtitle="培训计划·考核记录·证书管理">
         <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(4,1fr)',marginBottom:20}}>
-          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>课程总数</div><div style={{marginTop:6,fontSize:28,fontWeight:700}}>{stats.total}</div><div style={{marginTop:4,fontSize:12,color:'#22c55e'}}>进行中: {stats.active}</div></div>
-          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>总学习人次</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#3b82f6'}}>{stats.enrollments}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>已完成: {stats.completed}</div></div>
-          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>平均通过率</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:stats.avgPassRate>90?'#22c55e':'#eab308'}}>{stats.avgPassRate}%</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>考核通过比例</div></div>
-          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>总学分</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#8b5cf6'}}>{courses.reduce((s,c)=>s+c.credits,0)}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>可获取</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>培训计划</div><div style={{marginTop:6,fontSize:28,fontWeight:700}}>{stats.total}</div><div style={{marginTop:4,fontSize:12,color:'#22c55e'}}>已完: {stats.completed}</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>待进行</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#eab308'}}>{stats.planned}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>进行中: {stats.inProgress}</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>受训人次</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#3b82f6'}}>{stats.totalParticipants}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>平均分: {stats.avgScore}</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>已发证书</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#22c55e'}}>{stats.certificated}</div></div>
         </div>
 
-        <div style={{marginBottom:16}}><Tabs items={[{key:'courses',label:`📋 课程 (${courses.length})`},{key:'enrollments',label:`👥 学员 (${enrollments.length})`}]} activeKey={tab} onChange={t=>setTab(t as typeof tab)} variant="pills" /></div>
+        <div style={{marginBottom:16}}><Tabs items={[
+          {key:'plans',label:`📋 培训计划 (${plans.length})`},{key:'records',label:`📊 培训记录 (${records.length})`},
+        ]} activeKey={tab} onChange={t=>setTab(t as typeof tab)} variant="pills" /></div>
 
-        {tab==='courses' && <div style={{display:'grid',gap:10}}>
-          {courses.map(c => (
-            <div key={c.id} style={{padding:'14px 18px',borderRadius:12,background:'rgba(15,23,42,0.3)',border:'1px solid rgba(148,163,184,0.1)'}}>
-              <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
-                <div><span style={{fontWeight:700,fontSize:15}}>{c.name}</span><span style={{color:'#94a3b8',marginLeft:8,fontSize:12}}>{CC[c.category]} · {c.instructor||'待指派'}</span></div>
-                <StatusBadge label={CS[c.status].l} variant={CS[c.status].v} size="sm" dot />
+        {tab==='plans' && <div style={{display:'grid',gap:10}}>
+          {plans.map(p => (
+            <div key={p.id} style={{padding:'14px 18px',borderRadius:12,background:'rgba(15,23,42,0.3)',border:p.status==='planned'?'1px solid rgba(148,163,184,0.1)':'1px solid rgba(148,163,184,0.1)'}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
+                <div><span style={{fontWeight:700,fontSize:14}}>{p.name}</span><span style={{color:'#94a3b8',marginLeft:8,fontSize:12}}>{TC[p.category]} · {p.trainer}</span></div>
+                <StatusBadge label={TS[p.status].l} variant={TS[p.status].v} size="sm" dot />
               </div>
-              <div style={{display:'grid',gap:10,gridTemplateColumns:'repeat(4,1fr)',marginBottom:6}}>
-                <StatCard label="学时" value={`${c.duration}h`} helper={`${c.credits}学分`} />
-                <StatCard label="报名/完成" value={`${c.enrolled}/${c.completed}`} />
-                <StatCard label="通过率" value={c.passRate>0?`${c.passRate}%`:'—'} helper={c.passRate>0?'':''} />
-                <StatCard label="考试" value={c.examRequired?'需要':'无须'} />
+              <div style={{fontSize:12,color:'#cbd5e1',display:'flex',gap:16}}>
+                <span>📅 {p.date}</span><span>⏱ {p.duration}天</span>
+                <span>👥 {p.completedCount}/{p.participants}人</span><span>📍 {p.location}</span>
               </div>
-              <div style={{fontSize:12,color:'#94a3b8'}}>{c.description} · {c.startDate}~{c.endDate}</div>
             </div>
           ))}
         </div>}
 
-        {tab==='enrollments' && <table style={{width:'100%',borderCollapse:'collapse'}}>
-          <thead><tr><th style={th}>员工</th><th style={th}>部门</th><th style={th}>课程</th><th style={th}>报名</th><th style={th}>完成</th><th style={th}>成绩</th><th style={th}>状态</th><th style={th}>证书</th></tr></thead>
-          <tbody>{enrollments.slice(0,20).map(e => (
-            <tr key={e.id}>
-              <td style={td}>{e.employee}</td>
-              <td style={td}>{e.dept}</td>
-              <td style={td}>{e.course}</td>
-              <td style={td}>{e.enrollDate}</td>
-              <td style={td}>{e.completionDate||'—'}</td>
-              <td style={{...td,color:e.score&&e.score>=80?'#22c55e':e.score&&e.score>=60?'#eab308':'#ef4444',fontWeight:600}}>{e.score??'—'}</td>
-              <td style={td}><StatusBadge label={ES[e.status].l} variant={ES[e.status].v} size="sm" /></td>
-              <td style={td}>{e.certificateIssued?'✅':'—'}</td>
-            </tr>
-          ))}</tbody>
-        </table>}
+        {tab==='records' && <>
+          <table style={{width:'100%',borderCollapse:'collapse'}}>
+            <thead><tr>
+              <th style={th}>员工</th><th style={th}>课程</th><th style={th}>讲师</th><th style={th}>日期</th>
+              <th style={th}>成绩</th><th style={th}>结果</th><th style={th}>证书</th>
+            </tr></thead>
+            <tbody>{records.map(r => (
+              <tr key={r.id}>
+                <td style={td}>{r.staffName}</td>
+                <td style={td}>{r.courseName}</td>
+                <td style={td}>{r.trainer}</td>
+                <td style={td}>{r.date}</td>
+                <td style={{...td,fontWeight:600,color:r.score>=80?'#22c55e':r.score>=60?'#eab308':r.score===0?'#6b7280':'#ef4444'}}>{r.score||'—'}</td>
+                <td style={td}><StatusBadge label={ER[r.result].l} variant={ER[r.result].v} size="sm" /></td>
+                <td style={td}>{r.certificateIssued?'✅':'—'}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </>}
       </PageShell>
     </main>
   );

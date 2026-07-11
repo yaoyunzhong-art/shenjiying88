@@ -49,9 +49,9 @@ const TENANT_CTX: RequestTenantContext = {
 
 // ── Mock Helper: 使用 LoyaltyService + Mock MemberService ──
 class MockMemberService implements Partial<MemberService> {
-  async awardPoints() { return undefined }
-  async rollbackPoints() { return undefined }
-  async recordPaymentActivity() { return undefined }
+  async awardPoints(_memberId: string, _points: number, _ctx: any, _ticket?: string): Promise<any> { return undefined }
+  async rollbackPoints(_memberId: string, _points: number, _ctx: any, _reason?: string): Promise<any> { return undefined }
+  async recordPaymentActivity(_input: any): Promise<any> { return undefined }
 }
 
 function createFreshController(): LoyaltyController {
@@ -219,7 +219,7 @@ describe(`${ROLES.FrontDesk} — 会员优惠和盲盒发放查询`, () => {
 
     assert.ok(result)
     assert.equal(result.memberId, 'mem-front-001')
-    assert.equal(result.planId, 'bb-plan-summer-2026')
+    assert.equal(result.blindboxPlanId, 'bb-plan-summer-2026')
     assert.equal(result.quantity, 1)
     assert.ok(result.rewards)
     assert.ok(result.rewards.length >= 1)
@@ -418,9 +418,9 @@ describe(`${ROLES.Operations} — 运营配置管理`, () => {
 
     const probOverview = ctrl.getBlindboxProbabilityOverview(TENANT_CTX, 'bb-prob-ops', {})
     assert.ok(probOverview)
-    assert.ok(probOverview.rewards.length >= 4)
+    assert.ok(probOverview.probabilityDisclosure.length >= 4)
     // 所有概率之和应接近 1 (100%)
-    const totalProb = probOverview.rewards.reduce((sum: number, r: { probability: number }) => sum + r.probability, 0)
+    const totalProb = probOverview.probabilityDisclosure.reduce((sum: number, r: { probability: number }) => sum + r.probability, 0)
     assert.ok(Math.abs(totalProb - 1) < 0.001)
   })
 })
