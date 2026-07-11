@@ -14,6 +14,8 @@ import {
   CampaignPlanner,
   AIMarketingCMOService,
 } from './ai-marketing-cmo.service'
+import { MarketingAnalyticsService } from './ai-marketing-analytics.service'
+import { CampaignOptimizerService } from './ai-marketing-campaign-optimizer.service'
 import {
   ROIAnalysisDto,
   CompareROIDto,
@@ -28,6 +30,15 @@ import {
   PlanTimelineDto,
   MarketingAnalysisDto,
   BatchCopyGenerationDto,
+  AttributionAnalysisDto,
+  FunnelAnalysisDto,
+  BudgetSimulationDto,
+  CohortAnalysisDto,
+  CompetitiveAnalysisDto,
+  CreativePerformanceDto,
+  BidOptimizeDto,
+  BudgetPacingDto,
+  CPADto,
 } from './ai-marketing.dto'
 
 @Controller('ai-marketing')
@@ -38,6 +49,8 @@ export class AiMarketingController {
     private readonly copywritingService: CopywritingAssistant,
     private readonly campaignPlanner: CampaignPlanner,
     private readonly cmoService: AIMarketingCMOService,
+    private readonly analyticsService: MarketingAnalyticsService,
+    private readonly optimizerService: CampaignOptimizerService,
   ) {}
 
   // ─── ROI Analysis ────────────────────────────────────────────
@@ -239,8 +252,190 @@ export class AiMarketingController {
     }
   }
 
+  /**
+   * 归因分析
+   * POST /ai-marketing/analytics/attribution
+   */
+  @Post('analytics/attribution')
+  attributionAnalysis(@Body() body: AttributionAnalysisDto) {
+    const results = this.analyticsService.attributionAnalysis(body.campaignIds ?? [])
+    return { success: true, data: results }
+  }
+
+  /**
+   * 漏斗分析
+   * POST /ai-marketing/analytics/funnel
+   */
+  @Post('analytics/funnel')
+  funnelAnalysis(@Body() body: FunnelAnalysisDto) {
+    const result = this.analyticsService.funnelAnalysis(body.campaignIds ?? [])
+    return { success: true, data: result }
+  }
+
+  /**
+   * 预算分配模拟
+   * POST /ai-marketing/analytics/budget-simulation
+   */
+  @Post('analytics/budget-simulation')
+  simulateBudget(@Body() body: BudgetSimulationDto) {
+    const result = this.analyticsService.simulateBudgetAllocation(
+      body.totalBudget,
+      body.types ?? []
+    )
+    return { success: true, data: result }
+  }
+
+  /**
+   * 同群分析
+   * GET /ai-marketing/analytics/cohort
+   */
+  @Get('analytics/cohort')
+  cohortAnalysis(@Query() query: CohortAnalysisDto) {
+    const result = this.analyticsService.cohortAnalysis(query.count ?? 6)
+    return { success: true, data: result }
+  }
+
+  /**
+   * 竞争对手分析
+   * GET /ai-marketing/analytics/competitive
+   */
+  @Get('analytics/competitive')
+  competitiveAnalysis(@Query() query: CompetitiveAnalysisDto) {
+    const result = this.analyticsService.competitiveAnalysis(query.market ?? '')
+    return { success: true, data: result }
+  }
+
+  /**
+   * 季节性趋势
+   * GET /ai-marketing/analytics/seasonal-trends
+   */
+  @Get('analytics/seasonal-trends')
+  seasonalTrends() {
+    return { success: true, data: this.analyticsService.seasonalTrends() }
+  }
+
+  /**
+   * AI 营销建议
+   * GET /ai-marketing/analytics/suggestions
+   */
+  @Get('analytics/suggestions')
+  getSuggestions() {
+    return { success: true, data: this.analyticsService.generateAISuggestions() }
+  }
+
+  // ═══ Campaign Optimizer Endpoints ═══
+
+  /**
+   * 活动性能概览
+   * GET /ai-marketing/optimizer/performance/:campaignId
+   */
+  @Get('optimizer/performance/:campaignId')
+  getCampaignPerformance(@Param('campaignId') campaignId: string) {
+    return {
+      success: true,
+      data: this.optimizerService.getCampaignPerformance(campaignId),
+    }
+  }
+
+  /**
+   * 智能竞价优化
+   * POST /ai-marketing/optimizer/bid
+   */
+  @Post('optimizer/bid')
+  optimizeBid(@Body() body: BidOptimizeDto) {
+    const result = this.optimizerService.optimizeBid(
+      body.campaignId,
+      body.currentBid,
+      body.dailyBudget,
+      body.targetCPA
+    )
+    return { success: true, data: result }
+  }
+
+  /**
+   * 受众分群推荐
+   * GET /ai-marketing/optimizer/audience-segments/:campaignId
+   */
+  @Get('optimizer/audience-segments/:campaignId')
+  recommendAudience(@Param('campaignId') campaignId: string) {
+    return {
+      success: true,
+      data: this.optimizerService.recommendAudienceSegments(campaignId),
+    }
+  }
+
+  /**
+   * 创意素材性能
+   * POST /ai-marketing/optimizer/creative-performance
+   */
+  @Post('optimizer/creative-performance')
+  getCreativePerformance(@Body() body: CreativePerformanceDto) {
+    return {
+      success: true,
+      data: this.optimizerService.getCreativePerformance(body.creativeIds),
+    }
+  }
+
+  /**
+   * 频控建议
+   * GET /ai-marketing/optimizer/frequency-cap/:campaignId
+   */
+  @Get('optimizer/frequency-cap/:campaignId')
+  getFrequencyCap(@Param('campaignId') campaignId: string) {
+    return {
+      success: true,
+      data: this.optimizerService.recommendFrequencyCap(campaignId),
+    }
+  }
+
+  /**
+   * 预算节奏分析
+   * POST /ai-marketing/optimizer/budget-pacing
+   */
+  @Post('optimizer/budget-pacing')
+  analyzeBudgetPacing(@Body() body: BudgetPacingDto) {
+    return {
+      success: true,
+      data: this.optimizerService.analyzeBudgetPacing(
+        body.totalBudget,
+        body.startDate,
+        body.endDate,
+        body.spentToDate,
+        body.elapsedDays
+      ),
+    }
+  }
+
+  /**
+   * CPA 优化
+   * POST /ai-marketing/optimizer/cpa
+   */
+  @Post('optimizer/cpa')
+  optimizeCPA(@Body() body: CPADto) {
+    return {
+      success: true,
+      data: this.optimizerService.optimizeCPA(
+        body.currentCPA,
+        body.targetCPA,
+        body.conversionRate,
+        body.averageOrderValue
+      ),
+    }
+  }
+
+  /**
+   * 跨渠道频控报告
+   * POST /ai-marketing/optimizer/channel-frequency
+   */
+  @Post('optimizer/channel-frequency')
+  getChannelFrequency(@Body() body: { channels: string[] }) {
+    return {
+      success: true,
+      data: this.optimizerService.getChannelFrequencyReport(body.channels),
+    }
+  }
+
   private getKnownCampaignIds(): string[] {
-    // 只需知道 mock 数据中的 ID 列表即可
     return ['camp-001', 'camp-002', 'camp-003', 'camp-004', 'camp-005']
   }
 

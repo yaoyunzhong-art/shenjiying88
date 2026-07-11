@@ -6,6 +6,8 @@ import {
   CampaignPlanner,
   AIMarketingCMOService,
 } from './ai-marketing-cmo.service'
+import { MarketingAnalyticsService } from './ai-marketing-analytics.service'
+import { CampaignOptimizerService } from './ai-marketing-campaign-optimizer.service'
 
 @Module({
   controllers: [AiMarketingController],
@@ -14,12 +16,16 @@ import {
     CopywritingAssistant,
     CampaignPlanner,
     AIMarketingCMOService,
+    MarketingAnalyticsService,
+    CampaignOptimizerService,
   ],
   exports: [
     MarketingROIService,
     CopywritingAssistant,
     CampaignPlanner,
     AIMarketingCMOService,
+    MarketingAnalyticsService,
+    CampaignOptimizerService,
   ],
 })
 export class AiMarketingModule {}
