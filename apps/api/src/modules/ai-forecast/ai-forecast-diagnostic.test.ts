@@ -10,26 +10,28 @@ describe('Forecast Full Integration', () => {
   let insightService: ForecastInsightService
   let inventoryService: InventoryOptimizer
   let transferService: TransferRecommendationService
+  let demandForecast: DemandForecastService
 
   beforeEach(() => {
     forecastService = new DemandForecastService()
     insightService = new ForecastInsightService()
-    inventoryService = new InventoryOptimizer()
-    transferService = new TransferRecommendationService()
+    demandForecast = new DemandForecastService()
+    inventoryService = new InventoryOptimizer(demandForecast)
+    transferService = new TransferRecommendationService(inventoryService)
   })
 
   it('需求预测 → 库存推荐 → 调拨建议完整链路', () => {
     // 1. 需求预测
-    const forecast = forecastService.forecast('prod-001', 30)
-    expect(forecast.predictions.length).toBe(30)
+    const forecast = forecastService.forecastSales('prod-001', 30)
+    expect(forecast.daysAhead).toBe(30)
 
     // 2. 库存补货
-    const reorder = inventoryService.suggestReorder('prod-001', 100, 7)
-    expect(reorder.reorderQuantity).toBeGreaterThan(0)
+    const reorder = inventoryService.suggestReorder('prod-001')
+    expect(reorder.suggestedQuantity).toBeGreaterThan(0)
 
     // 3. 调拨建议
-    const transfers = transferService.getRecommendations('store-a', ['store-b', 'store-c'])
-    expect(transfers).toBeInstanceOf(Array)
+    const transfer = transferService.suggestTransfer('store-a', 'store-b', 'prod-001')
+    expect(transfer).toBeDefined()
   })
 
   it('场景模拟 → 敏感性分析 → 置信度评估', () => {

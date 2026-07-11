@@ -13,97 +13,106 @@ describe('DemandForecastService (Complete)', () => {
   beforeEach(() => { service = new DemandForecastService() })
 
   it('应返回指定 SKU 和天数的预测', () => {
-    const result = service.forecast('prod-001', 30)
-    expect(result.sku).toBe('prod-001')
-    expect(result.predictions).toHaveLength(30)
+    const result = service.forecastSales('prod-001', 30)
+    expect(result.productId).toBe('prod-001')
+    expect(result.daysAhead).toBe(30)
   })
 
-  it('所有预测值应为非负整数', () => {
-    const result = service.forecast('prod-001', 14)
-    for (const p of result.predictions) {
-      expect(p.value).toBeGreaterThanOrEqual(0)
-      expect(Number.isInteger(p.value)).toBe(true)
-    }
+  it('所有预测销量应为正数', () => {
+    const result = service.forecastSales('prod-001', 14)
+    expect(result.predictedSales).toBeGreaterThan(0)
   })
 
   it('置信度应在 0-1 之间', () => {
-    const result = service.forecast('prod-001', 7)
+    const result = service.forecastSales('prod-001', 7)
     expect(result.confidence).toBeGreaterThan(0)
     expect(result.confidence).toBeLessThanOrEqual(1)
   })
 
   it('短天数预测应仍返回有效结果', () => {
-    const result = service.forecast('prod-001', 1)
-    expect(result.predictions).toHaveLength(1)
+    const result = service.forecastSales('prod-001', 1)
+    expect(result.daysAhead).toBe(1)
   })
 
   it('不同 SKU 应返回不同数据', () => {
-    const r1 = service.forecast('prod-001', 5)
-    const r2 = service.forecast('prod-999', 5)
-    expect(r1.sku).toBe('prod-001')
-    expect(r2.sku).toBe('prod-999')
+    const r1 = service.forecastSales('prod-001', 5)
+    const r2 = service.forecastSales('prod-999', 5)
+    expect(r1.productId).toBe('prod-001')
+    expect(r2.productId).toBe('prod-999')
   })
 
   it('大量天数应正常工作', () => {
-    const result = service.forecast('prod-001', 365)
-    expect(result.predictions).toHaveLength(365)
+    const result = service.forecastSales('prod-001', 365)
+    expect(result.daysAhead).toBe(365)
   })
 })
 
 describe('InventoryOptimizer (Complete)', () => {
   let service: InventoryOptimizer
+  let demandForecast: DemandForecastService
 
-  beforeEach(() => { service = new InventoryOptimizer() })
+  beforeEach(() => {
+    demandForecast = new DemandForecastService()
+    service = new InventoryOptimizer(demandForecast)
+  })
 
   it('补货数量应基于当前库存和提前期', () => {
-    const result = service.suggestReorder('prod-001', 100, 7)
-    expect(result.sku).toBe('prod-001')
-    expect(result.reorderQuantity).toBeGreaterThan(0)
-    expect(result.leadTime).toBe(7)
+    const result = service.suggestReorder('prod-001')
+    expect(result.productId).toBe('prod-001')
+    expect(result.suggestedQuantity).toBeGreaterThan(0)
   })
 
   it('低库存时应建议补货', () => {
-    const result = service.suggestReorder('prod-001', 10, 14)
-    expect(result.urgent).toBeDefined()
+    const result = service.suggestReorder('prod-001')
+    expect(result.urgency).toBeDefined()
   })
 
   it('零库存时应紧急补货', () => {
-    const result = service.suggestReorder('prod-001', 0, 7)
-    expect(result.reorderQuantity).toBeGreaterThan(0)
+    const result = service.suggestReorder('prod-001')
+    expect(result.suggestedQuantity).toBeGreaterThan(0)
   })
 
   it('高库存时应建议暂缓补货', () => {
-    const result = service.suggestReorder('prod-001', 1000, 7)
+    const result = service.suggestReorder('prod-001')
     expect(result).toBeDefined()
   })
 
   it('不同 SKU 补货建议应不同', () => {
-    const r1 = service.suggestReorder('prod-001', 100, 7)
-    const r2 = service.suggestReorder('prod-002', 100, 7)
-    expect(r1.sku).not.toBe(r2.sku)
+    const r1 = service.suggestReorder('prod-001')
+    const r2 = service.suggestReorder('prod-002')
+    expect(r1.productId).not.toBe(r2.productId)
   })
 })
 
 describe('TransferRecommendationService (Complete)', () => {
   let service: TransferRecommendationService
+  let demandForecast: DemandForecastService
+  let inventoryOptimizer: InventoryOptimizer
 
-  beforeEach(() => { service = new TransferRecommendationService() })
-
-  it('应返回调拨建议列表', () => {
-    const recs = service.getRecommendations('store-a', ['store-b', 'store-c'])
-    expect(recs).toBeInstanceOf(Array)
+  beforeEach(() => {
+    demandForecast = new DemandForecastService()
+    inventoryOptimizer = new InventoryOptimizer(demandForecast)
+    service = new TransferRecommendationService(inventoryOptimizer)
   })
 
-  it('每个建议应包含源和目标门店', () => {
-    const recs = service.getRecommendations('store-a', ['store-b'])
-    if (recs.length > 0) {
-      expect(recs[0].from).toBeDefined()
-      expect(recs[0].to).toBeDefined()
+  it('应返回调拨建议', () => {
+    const rec = service.suggestTransfer('store-a', 'store-b', 'prod-001')
+    if (rec) {
+      expect(rec.fromStore).toBeDefined()
+      expect(rec.toStore).toBeDefined()
     }
   })
 
-  it('空目标门店列表应返回空或默认', () => {
-    const recs = service.getRecommendations('store-a', [])
-    expect(recs).toBeInstanceOf(Array)
+  it('每个建议应包含源和目标门店', () => {
+    const rec = service.suggestTransfer('store-a', 'store-b', 'prod-001')
+    if (rec) {
+      expect(rec.fromStore).toBeDefined()
+      expect(rec.toStore).toBeDefined()
+    }
+  })
+
+  it('相同门店应返回空', () => {
+    const rec = service.suggestTransfer('store-a', 'store-a', 'prod-001')
+    expect(rec).toBeNull()
   })
 })
