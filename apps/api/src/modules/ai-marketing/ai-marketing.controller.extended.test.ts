@@ -37,7 +37,7 @@ describe('AiMarketingController (Extended)', () => {
     it('POST /roi/calculate', () => {
       const result = controller.calculateROI({ campaignId: 'camp-001' })
       expect(result.success).toBe(true)
-      expect(result.data.campaignId).toBe('camp-001')
+      expect(result.data!.campaignId).toBe('camp-001')
     })
 
     it('POST /roi/calculate - 不存在活动', () => {
