@@ -1,91 +1,111 @@
 'use client';
 
 /**
- * 通知公告 - Notifications & Announcements
- * 角色: 👑超级管理员 / 👔店长
- * 功能: 系统通知、公告发布、站内信
+ * 门店通知管理 - Store Notifications
+ * 角色: 👔店长 / 📢营销
+ * 功能: 通知列表、公告管理、系统消息、推送记录
  */
 
 import { useState, useMemo } from 'react';
-import { PageShell, StatCard, StatusBadge, Tabs } from '@m5/ui';
+import { PageShell, StatCard, StatusBadge, Tabs, SearchFilterInput, DataTable, Pagination, usePagination, useSearchFilter, useSortedItems, type DataTableColumn, type DataTableSortConfig } from '@m5/ui';
 
-type NotifType = 'system'|'maintenance'|'update'|'alert'|'info';
-type NotifPriority = 'urgent'|'high'|'normal'|'low';
+type NotifType = 'announcement' | 'system' | 'alert' | 'task' | 'approval';
+type NotifPriority = 'urgent' | 'high' | 'medium' | 'low';
+type NotifStatus = 'unread' | 'read' | 'archived';
 
-interface Notification { id:string; title:string; content:string; type:NotifType; priority:NotifPriority; date:string; read:boolean; sender:string; target:string; actionUrl:string; }
+interface Notification { id: string; title: string; content: string; type: NotifType; priority: NotifPriority; status: NotifStatus; sender: string; createdAt: string; readAt: string | null; actionUrl: string; category: string; }
 
-const NT: Record<NotifType,{l:string;v:'success'|'warning'|'danger'|'neutral'|'info'}> = {
-  system:{l:'系统',v:'info'}, maintenance:{l:'维护',v:'warning'}, update:{l:'更新',v:'success'}, alert:{l:'告警',v:'danger'}, info:{l:'通知',v:'neutral'} };
-const NP: Record<NotifPriority,{l:string;v:'danger'|'warning'|'neutral'}> = { urgent:{l:'紧急',v:'danger'}, high:{l:'重要',v:'warning'}, normal:{l:'普通',v:'neutral'}, low:{l:'低',v:'neutral'} };
+const NT: Record<NotifType, { l: string; v: 'success'|'warning'|'danger'|'info'|'neutral' }> = {
+  announcement: { l: '公告', v: 'success' }, system: { l: '系统', v: 'neutral' },
+  alert: { l: '告警', v: 'danger' }, task: { l: '任务', v: 'warning' }, approval: { l: '审批', v: 'info' },
+};
+const NP: Record<NotifPriority, { l: string; v: 'danger'|'warning'|'neutral' }> = {
+  urgent: { l: '紧急', v: 'danger' }, high: { l: '高', v: 'warning' }, medium: { l: '中', v: 'neutral' }, low: { l: '低', v: 'neutral' },
+};
+const NS: Record<NotifStatus, { l: string; v: 'success'|'neutral'|'warning' }> = {
+  unread: { l: '未读', v: 'success' }, read: { l: '已读', v: 'neutral' }, archived: { l: '已归档', v: 'warning' },
+};
 
 const notifications: Notification[] = [
-  { id:'N1', title:'系统将于今晚3:00-5:00停机维护', content:'为提升系统性能，计划于今晚凌晨进行数据库升级，届时系统暂停访问。', type:'maintenance', priority:'urgent', date:'2026-07-11 14:00', read:false, sender:'系统管理员', target:'全员', actionUrl:'' },
-  { id:'N2', title:'新版本v3.8.0已发布', content:'新版本包括：会员管理优化、报表导出增强、修复已知bug。请及时更新。', type:'update', priority:'high', date:'2026-07-10 10:00', read:false, sender:'产品部', target:'全员', actionUrl:'/updates' },
-  { id:'N3', title:'设备巡检提醒', content:'本周设备巡检（周检）尚未完成，请各店安排人员完成巡检。', type:'system', priority:'high', date:'2026-07-10 09:00', read:true, sender:'运营系统', target:'各门店', actionUrl:'' },
-  { id:'N4', title:'夏季营业时间调整', content:'即日起，门店营业时间调整为08:00-02:00，请各岗位做好排班安排。', type:'info', priority:'normal', date:'2026-07-09 16:00', read:false, sender:'运营部', target:'全员', actionUrl:'' },
-  { id:'N5', title:'7月促销活动审批通知', content:'"暑期特惠季"活动已通过审批，请各门店在7月12日前完成活动物料准备。', type:'info', priority:'normal', date:'2026-07-09 14:00', read:true, sender:'市场部', target:'各门店', actionUrl:'' },
-  { id:'N6', title:'朝阳大悦城店设备异常告警', content:'娃娃机(大)连续3次出现抓取故障，请安排技术员排查。', type:'alert', priority:'urgent', date:'2026-07-08 18:30', read:false, sender:'设备监控', target:'朝阳店', actionUrl:'' },
-  { id:'N7', title:'库存盘点即将截止', content:'月度库存盘点截止日期为7月15日，尚未完成的门店请尽快安排。', type:'system', priority:'high', date:'2026-07-08 10:00', read:true, sender:'库存系统', target:'各门店', actionUrl:'' },
-  { id:'N8', title:'消防安全培训通知', content:'消防培训定于7月15日（周三）14:00在培训室举行，请各门店派代表参加。', type:'info', priority:'normal', date:'2026-07-07 15:00', read:false, sender:'安全部', target:'各门店', actionUrl:'' },
-  { id:'N9', title:'新员工入职培训报名', content:'7月份新员工入职培训开始报名，截止日期7月20日。', type:'info', priority:'low', date:'2026-07-07 11:00', read:true, sender:'HR', target:'全员', actionUrl:'' },
-  { id:'N10', title:'会员日系统维护', content:'因会员日活动报名人数超出预期，临时增加服务器资源，系统已恢复正常。', type:'maintenance', priority:'normal', date:'2026-07-06 20:00', read:true, sender:'技术部', target:'全员', actionUrl:'' },
+  ...Array.from({length:28}, (_,i) => ({
+    id: `NOTIF-${String(i+1).padStart(3,'0')}`,
+    title: ['系统升级通知','设备故障告警','库存预警','新员工入职通知','审批待处理','促销活动提醒','交接班提醒','安全巡检通知','会员活动通知','月度报表已生成','薪资发放通知','设备保养提醒','门店卫生检查通知','新游戏上线通知','重要通知:营业时间调整','会员等级调整通知','消防检查通知','用电安全提醒','团建活动通知','供应商结算通知'][i%20]!,
+    content: `这是${['系统升级通知','设备故障告警','库存预警','新员工入职通知','审批待处理','促销活动提醒','交接班提醒','安全巡检通知','会员活动通知','月度报表已生成'][i%10]}的详细内容，请及时查看处理。`,
+    type: (['announcement','alert','alert','task','approval','announcement','task','alert','announcement','system','system','task','alert','announcement','announcement','system','alert','alert','announcement','system'] as NotifType[])[i%20]!,
+    priority: (['urgent','high','medium','low'] as NotifPriority[])[i%4]!,
+    status: i < 8 ? 'unread' : i < 18 ? 'read' : 'archived',
+    sender: ['系统','店长','运营中心','后台','管理员'][i%5]!,
+    createdAt: new Date(Date.now()-i*3600000).toISOString(),
+    readAt: i >= 8 ? new Date(Date.now()-i*3600000+3600000).toISOString() : null,
+    actionUrl: ['/stores/staff','/stores/devices','/stores/inventory','/stores/orders','/approvals'][i%5]!,
+    category: ['运营','设备','库存','人事','财务','营销','安全'][i%7]!,
+  })),
 ];
 
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = now.getTime() - d.getTime();
+  if (diff < 3600000) return `${Math.floor(diff/60000)}分钟前`;
+  if (diff < 86400000) return `${Math.floor(diff/3600000)}小时前`;
+  return d.toLocaleDateString('zh-CN');
+}
+
+function buildColumns(): DataTableColumn<Notification>[] {
+  return [
+    { key: 'status', title: '', width: 40, sortable: true, sortValue: i => i.status,
+      render: i => i.status === 'unread' ? <span style={{display:'inline-block',width:8,height:8,borderRadius:4,background:'#3b82f6'}} /> : null },
+    { key: 'title', title: '标题', dataKey:'title', sortable:true,
+      render: i => <span style={{color:i.status==='unread'?'#f1f5f9':'#94a3b8',fontWeight:i.status==='unread'?700:400}}>{i.title}</span> },
+    { key: 'type', title: '类型', sortable:true, sortValue:i=>i.type, render: i => <StatusBadge label={NT[i.type].l} variant={NT[i.type].v} size="sm" /> },
+    { key: 'priority', title: '优先级', sortable:true, sortValue:i=>i.priority, render: i => <StatusBadge label={NP[i.priority].l} variant={NP[i.priority].v} size="sm" /> },
+    { key: 'sender', title: '发送人', dataKey:'sender', sortable:true },
+    { key: 'createdAt', title: '时间', sortable:true, sortValue:i=>i.createdAt, render: i => <span style={{color:'#94a3b8'}}>{formatTime(i.createdAt)}</span> },
+    { key: 'category', title: '分类', dataKey:'category', sortable:true },
+  ];
+}
+
 export default function NotificationsPage() {
-  const [tab,setTab]=useState<'all'|'unread'|'important'>('all');
-  const unread = notifications.filter(n=>!n.read);
-  const important = notifications.filter(n=>n.priority==='urgent'||n.priority==='high');
-  const displayList = tab==='unread'?unread:tab==='important'?important:notifications;
+  const notifs = useMemo(()=>notifications,[]);
+  const stats = useMemo(()=>({
+    total:notifs.length, unread:notifs.filter(n=>n.status==='unread').length,
+    alerts:notifs.filter(n=>n.type==='alert').length,
+    urgent:notifs.filter(n=>n.priority==='urgent').length,
+  }),[notifs]);
+
+  const searchFields=useMemo<(keyof Notification)[]>(()=>['title','content','sender','category'],[]);
+  const {searchTerm,setSearchTerm,filteredItems}=useSearchFilter(notifs,searchFields);
+  const [typeFilter,setTypeFilter]=useState<string>('ALL');
+  const typeFiltered=useMemo(()=>typeFilter==='ALL'?filteredItems:filteredItems.filter(n=>n.type===typeFilter),[filteredItems,typeFilter]);
+  const [sortConfig,setSortConfig]=useState<DataTableSortConfig|null>(null);
+  const columns=useMemo(()=>buildColumns(),[]);
+  const sorted=useSortedItems(typeFiltered,columns,sortConfig);
+  const pagination=usePagination({initialPageSize:10});
+  const pageItems=pagination.paginate(sorted);
 
   return (
     <main style={{maxWidth:960,margin:'0 auto',padding:32}}>
-      <PageShell title="🔔 通知公告" subtitle={`${notifications.length}条通知 · ${unread.length}条未读`}>
+      <PageShell title="🔔 通知中心" subtitle={`${stats.unread}条未读 · 共${stats.total}条`}>
         <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(4,1fr)',marginBottom:20}}>
-          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>通知总数</div><div style={{marginTop:6,fontSize:28,fontWeight:700}}>{notifications.length}</div></div>
-          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>未读</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#ef4444'}}>{unread.length}</div></div>
-          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>紧急</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#ef4444'}}>{notifications.filter(n=>n.priority==='urgent').length}</div></div>
-          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>系统/更新</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#3b82f6'}}>{notifications.filter(n=>n.type==='system'||n.type==='update').length}</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>总通知</div><div style={{marginTop:6,fontSize:28,fontWeight:700}}>{stats.total}</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>未读</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#3b82f6'}}>{stats.unread}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>需阅读</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>紧急</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#ef4444'}}>{stats.urgent}</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>告警</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#eab308'}}>{stats.alerts}</div></div>
         </div>
 
-        <div style={{marginBottom:16}}><Tabs items={[
-          {key:'all',label:'📋 全部',count:notifications.length},
-          {key:'unread',label:'🔴 未读',count:unread.length},
-          {key:'important',label:'🚨 重要',count:important.length},
-        ]} activeKey={tab} onChange={t=>setTab(t as typeof tab)} variant="pills" /></div>
+        <SearchFilterInput value={searchTerm} onChange={setSearchTerm} placeholder="搜索通知标题/内容/发送人..." />
+        <div style={{marginTop:12}}><Tabs items={[
+          {key:'ALL',label:'全部',count:filteredItems.length},
+          ...(['announcement','alert','system','task','approval'] as NotifType[]).map(t=>({key:t,label:NT[t].l,count:filteredItems.filter(n=>n.type===t).length})),
+        ]} activeKey={typeFilter} onChange={setTypeFilter} variant="pills" size="sm" /></div>
 
-        <div style={{display:'grid',gap:8}}>
-          {displayList.map(n => (
-            <div key={n.id} style={{
-              padding:'14px 18px',borderRadius:12,
-              background:!n.read?'rgba(59,130,246,0.06)':'rgba(15,23,42,0.3)',
-              border:!n.read?'1px solid rgba(59,130,246,0.2)':'1px solid rgba(148,163,184,0.1)',
-            }}>
-              <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
-                <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                  {!n.read && <div style={{width:8,height:8,borderRadius:4,background:'#3b82f6'}} />}
-                  <span style={{fontWeight:!n.read?700:600,fontSize:14}}>{n.title}</span>
-                </div>
-                <div style={{display:'flex',gap:6}}>
-                  <StatusBadge label={NT[n.type].l} variant={NT[n.type].v} size="sm" />
-                  <StatusBadge label={NP[n.priority].l} variant={NP[n.priority].v} size="sm" />
-                </div>
-              </div>
-              <div style={{fontSize:13,color:'#cbd5e1',lineHeight:1.6,marginBottom:6}}>{n.content}</div>
-              <div style={{fontSize:11,color:'#94a3b8',display:'flex',gap:12}}>
-                <span>{n.date}</span><span>发送: {n.sender}</span><span>范围: {n.target}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{display:'flex',gap:10,marginTop:16}}>
-          <button style={btnStyle('#3b82f6','#93c5fd')}>📝 发布通知</button>
-          <button style={btnStyle('#22c55e','#86efac')}>✅ 全部标记已读</button>
-        </div>
+        <DataTable title={`通知 (${sorted.length})`} columns={columns} items={pageItems} rowKey={i=>i.id}
+          sort={sortConfig} onSortChange={setSortConfig} striped compact />
+        <Pagination page={pagination.page} pageSize={pagination.pageSize} total={sorted.length}
+          onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
       </PageShell>
     </main>
   );
 }
 
 const card: React.CSSProperties={borderRadius:16,padding:18,background:'rgba(15,23,42,0.38)',border:'1px solid rgba(148,163,184,0.18)'};
-const btnStyle=(bg:string,color:string):React.CSSProperties=>({borderRadius:10,padding:'10px 18px',background:`${bg}22`,color,border:'none',cursor:'pointer',fontSize:14,fontWeight:600});
