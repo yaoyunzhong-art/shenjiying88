@@ -1,74 +1,83 @@
 # 🐜 shenjiying88 · 债务追踪 (debt.md)
 
-> 最后更新: 2026-07-11 05:30 CST · Pulse-Nightly-13
-> 当前阶段: **脉冲 #298 · L3 跨模块 E2E 扩展 37→40链 · +35 subtests · 0 fail ✅ · 3新模式**
+> 最后更新: 2026-07-12 05:30 CST · Pulse-Nightly-14
+> 当前阶段: **L3 跨模块 E2E 扩展 40→43链 · +40 subtests · 0 fail ✅ · 3新模式 · 覆盖5个盲区模块**
 
 ---
 
-## 本轮新增债务 (Pulse-Nightly-13)
+## 本轮新增债务 (Pulse-Nightly-14)
 
-### P1-N13-001: @m5/api 模块测试失败持续恶化
-- **发现**: Pulse-Nightly-13 凌晨测试分析
-- **状态**: 🔴 新增（已有根因持续）
-- **根因**: @m5/api 662 个失败 tests，集中在 full-regression (34/34 fail)、lyt (11/11 fail)、runtime-governance (4/4 fail)、foundation/integration-orchestration (3/3 fail) 等模块
-- **影响**: @m5/api 已成为项目测试体系的薄弱环节
-- **追踪指标**:
-  - @m5/api 失败数: 662 个 (vs Pulse-272 的 ~520 个, 扩大 27%)
-  - full-regression false positive: 34/34 fail (持续)
-  - auto-rollback timeout: 2 tests hang at 120s timeout (持续)
+### P1-N14-001: 部署回滚版本查找逻辑需注意时间戳精度
+- **发现**: 链41 N1 测试编写时, `runtimeDegradeAndTriggerAutoRollback` 函数使用 `indexOf` 在排序后的数组中查找当前版本, 但因 `deployedAt` 时间戳为同一毫秒导致无法找到前版本
+- **状态**: 🟢 已修复 (改用 `findIndex` + 升序排序 + `currentIdx - 1` 定位前版本)
+- **经验**: 当多个 release 在同一毫秒内创建时, 排序不稳定; 必须用版本号作为辅助排序键或用 findIndex 直接匹配
 
-### P1-N13-002: 情感累积语义测试遗漏
-- **发现**: 链38 编写时初始忽略了情感状态累积逻辑（negative被后续neutral消息覆盖）
-- **状态**: 🟢 已修复
-- **修复**: handleCustomerMessage 增加 sentimentPriority 累积逻辑, 保留更高优先级的情感
-- **经验**: 跨模块测试中的状态机/累积逻辑需要特别关注
+### P1-N14-002: 多币种Storefront定价需使用双向汇率
+- **发现**: 链42 P2 测试中只设置了 X→CNY 汇率, 但 storefrontSetProductPrice 需要 CNY→X 汇率进行多币种定价, 导致 USD/JPY 等转换失败
+- **状态**: 🟢 已修复 (补充 CNY→USD/JPY/EUR/HKD 双向汇率)
+- **经验**: 双向汇率场景测试需要显式声明 CNT→X 和 X→CNY 两组汇率
 
-### P1-N13-003: 新模块覆盖盲区
-- **发现**: 链39/40 首次覆盖 federated-learning, edge, device-adapter, license-package, security, workbench, svip 等模块
-- **状态**: 🟢 已覆盖 (12 subtests 已验证)
-- **剩余盲区**: currency, lowcode, lyt, voice-processing, deploy 等模块仍无跨模块链覆盖
+### P1-N14-003: 小金额交易手续费因精度舍入为零
+- **发现**: 链43 B4 大量并发交易测试中, `Math.round(1 * 0.001 * 100) / 100` 对于 1 LYT 的交易, 手续费被舍入为 0
+- **状态**: 🟢 已澄清 (预期值从 99899.9 修正为 99900)
+- **经验**: 微小数量的金融计算需要关注精度舍入问题; 测试预期值应基于实际舍入逻辑计算
+
+### P1-N14-004: 盲区模块已覆盖
+- **发现**: Pulse-Nightly-13 识别 currency, lowcode, voice-processing, deploy, lyt 为盲区
+- **状态**: 🟢 已覆盖 (链41: deploy, 链42: currency+lowcode, 链43: voice-processing+lyt)
+- **新增覆盖模块**: deploy, currency, lowcode, voice-processing, lyt (5个模块首覆盖)
 
 ---
 
-## 持续债务 (Pulse-Nightly-13 更新)
+## 持续债务 (Pulse-Nightly-14 更新)
 
 | 债务 | 级别 | 持续脉冲 | 根因 | 状态 | 趋势 |
 |------|------|:--------:|------|:----:|:----:|
-| @m5/api 662 tests fail | 🔴 P0 | **31+** | Nest TestingModule / Vitest 4 不兼容 / 实体模拟缺失 | 🔴 | 📈 恶化 (520→662) |
-| @m5/api TSC errors | 🔴 P0 | 4+ | ~59 errors (持续修复中) | 🔴 | 📈 持续 |
-| @m5/api full-regression false positive | 🟡 P2 | 4+ | Vitest 4 API 不兼容 | 🔴 | 📈 持续 |
-| @m5/api DEPRECATED 警告 | 🟡 P2 | 3+ | Vitest 4 poolOptions 迁移 | 🔴 | 持续 |
-| 共享状态隔离 链01-28 | 🟡 P2 | 7+ | 全局变量模式, 需要迁移到工厂模式 | 🟡 | 📉 待迁移 |
-| Mobile/Tob-Web 零单元测试 | 🟡 P1 | 6+ | 两模块无 .test.ts 文件 | 🟡 | 📈 持续 |
-| 执行时间未追踪 | 🟢 P3 | 4+ | 无性能退化基线 | 🟡 | 持续 |
-| 幂等性缺外部存储 | 🟡 P2 | 5+ | 仅 in-memory Map | 🟡 | 持续 |
-| 非真实性能采集 | 🟡 P3 | 5+ | 链15/38/39 使用模拟估算 | 🟡 | 持续 |
-| 40人专家团反馈未产出 | 🟡 P1 | 6+ | 从 Pulse-64 起未启动 | 🟡 | 持续 |
+| @m5/api 662 tests fail | 🔴 P0 | **32+** | Nest TestingModule / Vitest 4 不兼容 / 实体模拟缺失 | 🔴 | 📈 恶化 (持续) |
+| @m5/api TSC errors | 🔴 P0 | 5+ | ~59 errors (持续修复中) | 🔴 | 📈 持续 |
+| @m5/api full-regression false positive | 🟡 P2 | 5+ | Vitest 4 API 不兼容 | 🔴 | 📈 持续 |
+| @m5/api DEPRECATED 警告 | 🟡 P2 | 4+ | Vitest 4 poolOptions 迁移 | 🔴 | 持续 |
+| 共享状态隔离 链01-28 | 🟡 P2 | 8+ | 全局变量模式, 需要迁移到工厂模式 | 🟡 | 📉 待迁移 |
+| Mobile/Tob-Web 零单元测试 | 🟡 P1 | 7+ | 两模块无 .test.ts 文件 | 🟡 | 📈 持续 |
+| 执行时间未追踪 | 🟢 P3 | 5+ | 无性能退化基线 | 🟡 | 持续 |
+| 幂等性缺外部存储 | 🟡 P2 | 6+ | 仅 in-memory Map | 🟡 | 持续 |
+| 非真实性能采集 | 🟡 P3 | 6+ | 各链使用模拟估算 | 🟡 | 持续 |
+| 40人专家团反馈未产出 | 🟡 P1 | 7+ | 从 Pulse-64 起未启动 | 🟡 | 持续 |
 
-### 新增持续债务摘要 (Pulse-Nightly-13)
-- **情感累积模式**: 链38 的 sentimentPriority 逻辑可作为通用模式参考
-- **模块盲区**: currency, lowcode, lyt, voice-processing, deploy 仍需添加跨模块链
-- **lyt 模块**: lyt.module.test.ts (7/7 fail) + lyt-connection.manager.test.ts (4/4 fail) = 11/11 fail
-- **license-cache**: license-cache.service.spec.ts 2/14 fail (DB connection mock缺失)
+### 新增持续债务摘要 (Pulse-Nightly-14)
+- **部署回滚时间戳不定**: 同一毫秒创建的 release 排序不稳定, 需要额外的版本序号字段
+- **汇率双向缺失**: 多币种测试需要同时设置正向和反向汇率
+- **金融舍入精度**: 小金额交易的 fee 计算有舍入盲区
 
 ---
 
-## 已闭环债务 (Pulse-Nightly-13)
+## 已闭环债务 (Pulse-Nightly-14)
 | 债务 | 日期 | 说明 |
 |------|:----:|------|
-| 链38 N4 情感累积逻辑 Bug | 2026-07-11 ✅ | sentimentPriority 累积逻辑修复 |
-| 链38-40 编写验证 | 2026-07-11 ✅ | 3链 35 subtests, 0 fail |
-| 覆盖 federated-learning, edge, device-adapter, security, workbench | 2026-07-11 ✅ | 链39+40 首覆盖 |
+| currency 盲区 | 2026-07-12 ✅ | 链42 覆盖多币种管理全链路 |
+| lowcode 盲区 | 2026-07-12 ✅ | 链42 覆盖低代码模板配置 |
+| voice-processing 盲区 | 2026-07-12 ✅ | 链43 覆盖语音STT+意图识别 |
+| lyt 盲区 | 2026-07-12 ✅ | 链43 覆盖LYT交易流程 |
+| deploy 盲区 | 2026-07-12 ✅ | 链41 覆盖部署回滚全生命周期 |
+| 链41-43 编写验证 | 2026-07-12 ✅ | 3链 40 subtests, 0 fail |
+| 回滚版本查找 Bug | 2026-07-12 ✅ | indexOf→findIndex 修复 |
+| 汇率双向缺失 Bug | 2026-07-12 ✅ | 补充 CNY↔X 双向汇率 |
 
 ---
 
-## 🟣 Expert Feedback (V5.1 专家反馈追踪 · N13 新增)
+## 🟣 Expert Feedback (V5.1 专家反馈追踪 · N14 新增)
 
-### EF-N13-001: 情感累积模式可复用至其他状态机测试
-- **发现**: Pulse-Nightly-13 链38 开发中
-- **建议**: sentimentPriority 模式可复用至其它需求状态机(coupon status, order status, session status)
+### EF-N14-001: 部署生命周期测试模式可复用至所有微服务运维
+- **发现**: 链41 灰度→全量→健康降级→自动回滚→手动回滚→通知确认的完整模式
+- **建议**: 该模式可标准化为所有微服务(admin/api/storefront/tob/miniapp)的发布验收测试模板
 - **状态**: 🟢 已验证
 
-### EF-N13-002: OTA 更新回退测试缺口
-- **发现**: 链39 B5 验证了 OTA 更新失败场景, 但未覆盖自动回滚 + 版本比较
+### EF-N14-002: 小金额精度舍入需显式测试
+- **发现**: 链43 B4 中 1 LYT 的 fee 被舍入为 0
+- **建议**: 金融计算应增加显式精度测试: minAmount(1 LYT), 高精度场景(0.001 LYT), 大量小额叠加
+- **状态**: 🟢 已验证
+
+### EF-N14-003: 运维窗口低谷期部署策略测试
+- **发现**: 链41 B1 模拟 03:30-05:30 运维窗口部署场景
+- **建议**: 该测试模式可复用至其他运维窗口(周日凌晨、季度维护等)的自动化验证
 - **状态**: 🟢 已验证

@@ -935,7 +935,87 @@ else → 'full'
 - 边界: 功能特性缺失→restricted(非 hidden)、不存在的功能特性不影响其他模块
 - 数据量: 大规模审计日志(100条)、大量并发请求
 
-## 关联文档
+### 20. 部署生命周期 + 灰度 + 自动回滚模式 (Pulse-Nightly-14 新增, 链41)
+
+**适用场景**: 微服务发布 → 灰度 → 健康监控 → 自动/手动回滚 → 通知
+
+```
+Admin(部署管控: 创建release→灰度→全量)
+→ Runtime(监控: healthy→degraded→down)
+→ API(回滚: 自动health检查回滚/手动版本异常回滚)
+→ Storefront(版本验证: 当前版本+健康状态)
+→ Tob-Web(通知: 部署成功/失败/回滚通知→ack确认)
+```
+
+**实现要点**:
+```
+// 版本查找用 findIndex + 升序排序, 避免同一毫秒 indexOf 不稳定
+const sorted = releases.sort((a, b) => a.deployedAt - b.deployedAt);
+const currentIdx = sorted.findIndex(r => r.version === mon.version);
+if (currentIdx <= 0) return { reason: 'no_previous_stable' };
+const prevRelease = sorted[currentIdx - 1];
+```
+
+**测试要点**:
+- 灰度10% → 全量发布 → 版本验证成功
+- 多个微服务并行部署各自版本独立
+- 部署历史全量查询
+- 健康检查失败 → 自动回滚到前版本
+- 手动回滚(版本异常/发现bug) → 版本恢复
+- 对不存在的版本执行部署/回滚 → 拒绝
+- 运维窗口 03:30-05:30 低谷期部署场景
+- 灰度0%=全量, 灰度100%=全量
+- 多次回滚历史记录可追溯
+- 通知批量确认
+
+### 21. 多币种 + 低代码配置模式 (Pulse-Nightly-14 新增, 链42)
+
+**适用场景**: 跨境支付 / 多币种结算 / 低代码模板配置
+
+```
+Admin(低代码模板: 支付/主题/结账配置)
+→ Currency(币种管理: 创建货币/汇率设置/转换)
+→ Storefront(多币种定价: 商品价格换算/展示)
+→ Miniapp(结算: 跨境支付/汇率锁定/结算单)
+```
+
+**设计要点**:
+- 双向汇率: 必须同时设置 `CNY→USD` 和 `USD→CNY` 两组汇率
+- 小数位精度: 不同货币(decimalPlaces)不同, JPY 0位, CNY/USD 2位
+- 汇率锁定: lockExpiresAt 期间不变
+- 低代码模板: 按类别(category)隔离, 更新后 updatedAt 变化
+- 跨境结算: 源币种→目标币种→1.5%手续费→净额
+
+**测试要点**:
+- 正例: 低代码模板→创建币种→设置汇率→商品多币种定价→跨境结算
+- 正例: 多币种(CNY/USD/JPY/EUR/HKD)同时并存分别正确转换
+- 反例: 重复创建币种被拒绝、不存在的币种无法转换
+- 反例: 不存在低代码模板无法更新、未创建商品查询返回错误
+- 反例: 无汇率支持的币种查询不可用
+- 边界: 汇率锁定期间不变、0汇率转换(实际业务禁止)
+- 边界: 同币种转换1:1、小数位精度(JPY 0位)、批量多订单独立
+
+### 22. 语音 + LYT + AI聊天 + 多语言 + 监控模式 (Pulse-Nightly-14 新增, 链43)
+
+**适用场景**: 语音交互交易 / AI客服多语言 / 全链路调用链监控
+
+```
+Voice(STT识别→意图分类)
+→ LYT(交易发起→签名→清算→确认)
+→ AI Chat(多轮FAQ→多语言回复→客服转接)
+→ I18n(多语言响应)
+→ Monitor(调用链打点→耗时统计)
+```
+
+**设计要点**:
+- 语音意图识别: 关键字匹配(中文/英文/日文), 不匹配→faq降级
+- LYT交易: 创建→pending→completed, fee=amount*0.001(舍入关注)
+- AI Chat FAQ: 中/英/日三语回复, 投诉→自动转人工
+- 监控打点: 每个服务环节 `monitorAddSpan()`, 支持按service统计平均耗时
+- 取消交易: 余额回退精确验证
+
+**测试要点**:
+- 正例: 语音
 - [patterns/quota-guard.md](../patterns/quota-guard.md) · 业务实现
 - [patterns/reserve-rollback.md](../patterns/reserve-rollback.md) · 回滚模式
 - [anti-patterns/quota-increment-then-check.md](../anti-patterns/quota-increment-then-check.md)

@@ -203,6 +203,29 @@ describe('test', () => {
 - ❌ mock 所有 (测试等于无)
 - ❌ 共享状态 (测试顺序依赖)
 - ❌ sleep / setTimeout (改用 vi.useFakeTimers)
+- ❌ 同一毫秒内创建多个版本时用 indexOf 定位(改用 findIndex)
+- ❌ 仅设置单向汇率(双向汇率必须同时设置)
+- ❌ 小金额 fee 舍入忽略(0.001 * 1 = 0.001 → Math.round 导致 0)
+
+### Pulse-Nightly-14 新增最佳实践
+
+#### 8.1 部署回滚测试 (链41)
+1. `findIndex` 替代 `indexOf` 避免时间戳精度问题
+2. release 排序: 升序(旧→新) + findIndex 定位: `prev = sorted[currentIdx - 1]`
+3. 运维窗口测试: 健康降级(degraded) → 进一步恶化(down) → 触发自动回滚
+4. 通知确认闭环: 部署状态变更 → 通知 → ack
+
+#### 8.2 多币种测试 (链42)
+1. 必设双向汇率: `CNY→USD` + `USD→CNY` 均需设置
+2. 不同货币 decimalPlaces 不同: JPY=0, CNY/USD=2
+3. 汇率锁定期测试: locked + lockExpiresAt
+4. 跨境结算: 源→手续费(1.5%)→净额
+
+#### 8.3 语音+金融+AI chat (链43)
+1. 语音意图匹配: 关键字按中/英/日文分别定义
+2. 小金额 fee 舍入: `Math.round(amount * 0.001 * 100) / 100`
+3. AI FAQ: 多语言独立回复, 投诉→自动转人工
+4. 监控打点: 每个service环节 `monitorAddSpan()`
 
 ---
 
