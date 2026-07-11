@@ -69,3 +69,4 @@
 | 2026-07-12 00:17 | pulse#335 | ⛔P0持续 全库(非api) [admin-web20err+storefront11fail+app21fail] | Base❌20err/Service✅/Controller✅/CTest❌32fail | ❌连续5次→P0持续 |
 | 2026-07-12 00:33 | pulse#336 | 全库(非api) [P0解除-全绿回归] | Base✅/Service✅/Controller✅/C级测试✅ | 1🏆(新周期) |
 | 2026-07-12 01:03 | pulse#337 | 全库(非api) [全缓存无变更-全绿延续] | Base✅/Service✅/Controller✅/C级测试✅ | 2🏆 |
+| 2026-07-12 02:04 | pulse#338 | 全库(非api) [缓存过期揭示真实状态] | Base✅/Service✅/Controller⚠️(Cache揭示35fail)/CTest⚠️(app21/tob4/store6/mini4) | 0🏆(新周期重计) |
