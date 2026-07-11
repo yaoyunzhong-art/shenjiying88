@@ -11,7 +11,7 @@ import { PageShell, StatCard, StatusBadge, Tabs, SearchFilterInput, DataTable, P
 
 type MemberTier = 'normal'|'silver'|'gold'|'diamond'|'platinum';
 type MemberStatus = 'active'|'sleeping'|'lost'|'new';
-interface StoreMember { id:string; name:string; phone:string; tier:MemberTier; status:MemberStatus; points:number; balance:number; spend30d:number; visit30d:number; lastVisit:string; joinDate:string; tags:string[]; }
+interface StoreMember { id:string; name:string; phone:string; tier:MemberTier; status:MemberStatus; points:number; balance:number; spend30d:number; visit30d:number; lastVisit?:string; joinDate?:string; tags:string[]; }
 
 const TIER_LABELS: Record<MemberTier,string>={normal:'普通',silver:'银卡',gold:'金卡',diamond:'钻石',platinum:'至尊'};
 const TIER_COLORS: Record<MemberTier,string>={normal:'#6b7280',silver:'#94a3b8',gold:'#eab308',diamond:'#3b82f6',platinum:'#8b5cf6'};

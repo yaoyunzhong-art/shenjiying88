@@ -12,7 +12,7 @@ import { PageShell, StatCard, StatusBadge, Tabs } from '@m5/ui';
 interface CashierSession { id: string; date: string; startTime: string; endTime: string; openingBalance: number; cashRevenue: number; cardRevenue: number; onlineRevenue: number; refundAmount: number; expectedTotal: number; actualTotal: number; difference: number; transactionCount: number; status: 'open' | 'closed' | 'pending_review'; }
 interface RecentTransaction { id: string; time: string; type: 'sale' | 'recharge' | 'refund'; amount: number; method: string; customer: string; }
 
-const SHIFT_STATUS: Record<string,{l:string;v:'success'|'warning'|'danger'}> = { open: { l: '营业中', v: 'success' }, closed: { l: '已结班', v: 'neutral' }, pending_review: { l: '待审核', v: 'warning' } };
+const SHIFT_STATUS: Record<string,{l:string;v:'success'|'warning'|'danger'}> = { open: { l: '营业中', v: 'success' }, closed: { l: '已结班', v: 'warning' }, pending_review: { l: '待审核', v: 'warning' } };
 const TXN_TYPE = { sale: '销售', recharge: '充值', refund: '退款' };
 const TXN_COLOR = { sale: '#22c55e', recharge: '#3b82f6', refund: '#ef4444' };
 function fm(a:number):string{return`¥${a.toLocaleString('zh-CN',{minimumFractionDigits:2})}`;}

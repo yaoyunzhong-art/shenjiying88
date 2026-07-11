@@ -17,7 +17,7 @@ import { buildStandardBreadcrumb } from '../../../components/detail-workspace-re
 type OrderStatus = 'completed' | 'pending' | 'cancelled' | 'refunded' | 'partial_refund';
 type PaymentMethod = 'cash' | 'wechat' | 'alipay' | 'card' | 'member_card' | 'unionpay';
 
-interface Order { id: string; orderNo: string; date: string; time: string; status: OrderStatus; items: string[]; totalAmount: number; discount: number; finalAmount: number; paymentMethod: PaymentMethod; memberName: string; memberNo: string; operator: string; device: string; note: string; }
+interface Order { id: string; orderNo: string; date?: string; time: string; status: OrderStatus; items: string[]; totalAmount: number; discount: number; finalAmount: number; paymentMethod: PaymentMethod; memberName: string; memberNo: string; operator: string; device: string; note: string; }
 interface Refund { id: string; orderNo: string; date: string; amount: number; reason: string; status: 'completed' | 'pending' | 'rejected'; operator: string; approvedBy: string; }
 
 const STATUS_MAP: Record<OrderStatus, { label: string; variant: 'success' | 'warning' | 'danger' | 'neutral' | 'info' }> = {

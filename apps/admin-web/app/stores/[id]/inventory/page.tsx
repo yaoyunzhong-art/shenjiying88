@@ -106,7 +106,7 @@ interface SupplierInfo {
   rating: number;
   totalOrders: number;
   totalAmount: number;
-  lastOrderDate: string;
+  lastOrderDate?: string;
   paymentTerms: string;
   deliveryDays: number;
   notes: string;

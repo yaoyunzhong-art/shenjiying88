@@ -19,6 +19,7 @@ import {
   FilterChips,
   usePagination,
   useSearchFilter,
+  WorkspaceBreadcrumb,
   useSortedItems,
   InfoRow,
   StatCard,
@@ -43,8 +44,8 @@ interface Campaign {
   name: string;
   type: CampaignType;
   status: CampaignStatus;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
   budget: number;
   spent: number;
   revenue: number;
@@ -70,8 +71,8 @@ interface Coupon {
   totalUsed: number;
   usageRate: number;
   status: CouponStatus;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
   applicableProducts: string[];
   perUserLimit: number;
   description: string;

@@ -14,7 +14,7 @@ type CourseCategory = 'service'|'device'|'safety'|'management'|'sales'|'complian
 type EnrollStatus = 'completed'|'in_progress'|'pending'|'failed';
 
 interface Course { id:string; name:string; category:CourseCategory; status:CourseStatus; instructor:string; duration:number; enrolled:number; completed:number; passRate:number; startDate:string; endDate:string; description:string; credits:number; examRequired:boolean; }
-interface Enrollment { id:string; employee:string; dept:string; course:string; enrollDate:string; completionDate:string; status:EnrollStatus; score:number|null; attempts:number; certificateIssued:boolean; }
+interface Enrollment { id:string; employee:string; dept:string; course:string; enrollDate?:string; completionDate?:string; status:EnrollStatus; score:number|null; attempts:number; certificateIssued:boolean; }
 
 const CC: Record<CourseCategory,string> = { service:'服务培训', device:'设备操作', safety:'安全培训', management:'管理培训', sales:'销售技巧', compliance:'合规培训' };
 const CS: Record<CourseStatus,{l:string;v:'success'|'neutral'|'warning'}>={active:{l:'进行中',v:'success'},draft:{l:'草稿',v:'warning'},archived:{l:'已归档',v:'neutral'}};
