@@ -234,3 +234,112 @@ export class BatchCopyGenerationDto {
   @Type(() => BatchCopyItemDto)
   items!: BatchCopyItemDto[]
 }
+
+// ═══ Analytics DTOs ═══
+
+export class AttributionAnalysisDto {
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  campaignIds?: string[]
+}
+
+export class FunnelAnalysisDto {
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  campaignIds?: string[]
+}
+
+export class BudgetSimulationDto {
+  @IsNumber()
+  @Min(0)
+  totalBudget!: number
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  types?: string[]
+}
+
+export class CohortAnalysisDto {
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(24)
+  @Type(() => Number)
+  count?: number
+}
+
+export class CompetitiveAnalysisDto {
+  @IsOptional()
+  @IsString()
+  market?: string
+}
+
+// ═══ Optimizer DTOs ═══
+
+export class CreativePerformanceDto {
+  @IsArray()
+  @IsString({ each: true })
+  creativeIds!: string[]
+}
+
+export class BidOptimizeDto {
+  @IsString()
+  @IsNotEmpty()
+  campaignId!: string
+
+  @IsNumber()
+  @Min(0.01)
+  currentBid!: number
+
+  @IsNumber()
+  @Min(0)
+  dailyBudget!: number
+
+  @IsNumber()
+  @Min(0)
+  targetCPA!: number
+}
+
+export class BudgetPacingDto {
+  @IsNumber()
+  @Min(0)
+  totalBudget!: number
+
+  @IsString()
+  @IsNotEmpty()
+  startDate!: string
+
+  @IsString()
+  @IsNotEmpty()
+  endDate!: string
+
+  @IsNumber()
+  @Min(0)
+  spentToDate!: number
+
+  @IsNumber()
+  @Min(0)
+  elapsedDays!: number
+}
+
+export class CPADto {
+  @IsNumber()
+  @Min(0)
+  currentCPA!: number
+
+  @IsNumber()
+  @Min(0)
+  targetCPA!: number
+
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  conversionRate!: number
+
+  @IsNumber()
+  @Min(0)
+  averageOrderValue!: number
+}
