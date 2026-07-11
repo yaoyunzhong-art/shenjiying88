@@ -15,6 +15,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { DocController } from './doc.controller'
 import { DocService } from './doc.service'
 import { SwaggerGenService } from './swagger-gen.service'
+import { DocExportFormatEnum } from './doc.dto'
 
 // ── 测试工厂 ─────────────────────────────────────────────────────────────
 
@@ -40,7 +41,7 @@ describe('docs 文档生成 e2e', () => {
     const result = ctx.controller.generate({
       title: '游戏机管理 API',
       version: '1.0.0',
-      format: 'openapi-json',
+      format: DocExportFormatEnum.OPENAPI_JSON,
       description: '门店设备管理接口',
       servers: ['https://api.example.com'],
       tags: ['设备管理', '游戏管理'],
@@ -48,7 +49,7 @@ describe('docs 文档生成 e2e', () => {
 
     expect(result.title).toBe('游戏机管理 API')
     expect(result.version).toBe('1.0.0')
-    expect(result.format).toBe('openapi-json')
+    expect(result.format).toBe(DocExportFormatEnum.OPENAPI_JSON)
     expect(result.content).toBeTruthy()
     expect(result.sizeBytes).toBeGreaterThan(100)
     expect(result.generatedAt).toBeTruthy()
@@ -65,10 +66,10 @@ describe('docs 文档生成 e2e', () => {
     const result = ctx.controller.generate({
       title: '会员 API',
       version: '2.0.0',
-      format: 'openapi-yaml',
+      format: DocExportFormatEnum.OPENAPI_YAML,
     })
 
-    expect(result.format).toBe('openapi-yaml')
+    expect(result.format).toBe(DocExportFormatEnum.OPENAPI_YAML)
     expect(result.content).toContain('openapi:')
     expect(result.content).toContain('"会员 API"')
   })
@@ -77,10 +78,10 @@ describe('docs 文档生成 e2e', () => {
     const result = ctx.controller.generate({
       title: 'Redoc 文档',
       version: '1.0.0',
-      format: 'redoc-html',
+      format: DocExportFormatEnum.REDOC_HTML,
     })
 
-    expect(result.format).toBe('redoc-html')
+    expect(result.format).toBe(DocExportFormatEnum.REDOC_HTML)
     expect(result.content).toContain('<!DOCTYPE html>')
     expect(result.content).toContain('redoc')
     expect(result.sizeBytes).toBeGreaterThan(200)
@@ -90,10 +91,10 @@ describe('docs 文档生成 e2e', () => {
     const result = ctx.controller.generate({
       title: 'Postman 测试',
       version: '1.0.0',
-      format: 'postman-collection',
+      format: DocExportFormatEnum.POSTMAN_COLLECTION,
     })
 
-    expect(result.format).toBe('postman-collection')
+    expect(result.format).toBe(DocExportFormatEnum.POSTMAN_COLLECTION)
     const parsed = JSON.parse(result.content)
     expect(parsed.info.name).toBe('Postman 测试')
   })
@@ -102,10 +103,10 @@ describe('docs 文档生成 e2e', () => {
     const result = ctx.controller.generate({
       title: 'Insomnia 导出',
       version: '1.0.0',
-      format: 'insomnia-export',
+      format: DocExportFormatEnum.INSOMNIA_EXPORT,
     })
 
-    expect(result.format).toBe('insomnia-export')
+    expect(result.format).toBe(DocExportFormatEnum.INSOMNIA_EXPORT)
     const parsed = JSON.parse(result.content)
     expect(parsed._type).toBeTruthy()
   })
@@ -114,7 +115,7 @@ describe('docs 文档生成 e2e', () => {
     const result = ctx.controller.generate({
       title: '最小化文档',
       version: '0.1.0',
-      format: 'openapi-json',
+      format: DocExportFormatEnum.OPENAPI_JSON,
     })
 
     expect(result.title).toBe('最小化文档')
