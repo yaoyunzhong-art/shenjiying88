@@ -54,14 +54,14 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   refunded: '已退款',
 };
 
-const STATUS_VARIANTS: Record<OrderStatus, 'error' | 'warning' | 'success' | 'default' | 'neutral' | 'info'> = {
+const STATUS_VARIANTS: Record<OrderStatus, 'error' | 'warning' | 'success' | 'default' | 'info'> = {
   pending_payment: 'warning',
   paid: 'info',
   processing: 'default',
   shipped: 'default',
   delivered: 'success',
   completed: 'success',
-  cancelled: 'neutral',
+  cancelled: 'default',
   refunded: 'error',
 };
 
@@ -97,7 +97,7 @@ const generateOrderItems = () => {
     let idx: number;
     do { idx = Math.floor(Math.random() * itemPool.length); } while (selected.has(idx));
     selected.add(idx);
-    const item = itemPool[idx];
+    const item = itemPool[idx]!;
     items.push({ name: item.name, qty: Math.floor(Math.random() * 2) + 1, price: item.price });
   }
   return items;
@@ -130,19 +130,19 @@ const generateMockOrders = (count: number): OrderItem[] => {
     orders.push({
       id: `ORD-${String(i).padStart(6, '0')}`,
       orderNo: `ORD${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}${String(i).padStart(6, '0')}`,
-      memberName: names[Math.floor(Math.random() * names.length)],
-      memberPhone: phones[Math.floor(Math.random() * phones.length)],
+      memberName: names[Math.floor(Math.random() * names.length)]!,
+      memberPhone: phones[Math.floor(Math.random() * phones.length)]!,
       items,
       total: totalBeforeDiscount,
       discount,
       actualAmount,
-      paymentMethod: payments[Math.floor(Math.random() * payments.length)],
-      status,
-      storeName: stores[Math.floor(Math.random() * stores.length)],
+      paymentMethod: payments[Math.floor(Math.random() * payments.length)]!,
+      status: statuses[Math.floor(Math.random() * statuses.length)]!,
+      storeName: stores[Math.floor(Math.random() * stores.length)]!,
       createdAt: date.toISOString(),
       paidAt,
       completedAt,
-      remark: remarks[Math.floor(Math.random() * remarks.length)],
+      remark: remarks[Math.floor(Math.random() * remarks.length)]!,
     });
   }
   return orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -466,7 +466,7 @@ export default function OrdersListPage() {
         <StatCard label="总订单数" value={stats.total} variant="info" />
         <StatCard label="待支付" value={stats.pending} variant="warning" />
         <StatCard label="已完成" value={stats.completed} variant="success" />
-        <StatCard label="已取消" value={stats.cancelled} variant="neutral" />
+        <StatCard label="已取消" value={stats.cancelled} variant="default" />
         <StatCard label="总收入" value={formatCurrency(stats.revenue)} variant="info" />
       </div>
 

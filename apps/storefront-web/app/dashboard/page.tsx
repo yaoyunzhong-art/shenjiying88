@@ -209,7 +209,7 @@ export default function DashboardPage() {
       description="Shenjiying 旗舰店 · 今日运营概览"
       actions={
         <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="default" size="sm" onClick={() => alert('数据刷新中...')}>
+          <Button variant="secondary" size="sm" onClick={() => alert('数据刷新中...')}>
             🔄 刷新
           </Button>
           <Button variant="primary" size="sm"
@@ -231,7 +231,6 @@ export default function DashboardPage() {
         onChange={(key) => setPeriod(key as Period)}
         variant="pills"
         size="sm"
-        style={{ marginBottom: 20 }}
       />
 
       {/* 核心指标 */}

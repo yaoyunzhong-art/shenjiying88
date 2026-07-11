@@ -120,7 +120,7 @@ const generateProducts = (count: number): Product[] => {
         id: `PROD-${String(id).padStart(4, '0')}`,
         name,
         category,
-        subCategory: subCatgs[Math.floor(Math.random() * subCatgs.length)],
+        subCategory: subCatgs[Math.floor(Math.random() * subCatgs.length)]!,
         description: `${name} - 适合各阶段健身爱好者，品质保证。`,
         price: hasOriginalPrice ? basePrice - Math.floor(basePrice * (Math.random() * 0.3 + 0.1)) : basePrice,
         originalPrice: hasOriginalPrice ? basePrice : basePrice,
@@ -185,7 +185,7 @@ const COLUMNS: DataTableColumn<Product>[] = [
           <span style={{ fontWeight: 600, fontSize: 14, color: '#e2e8f0' }}>{item.name}</span>
           <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
             {item.tags.map((t) => (
-              <Tag key={t} label={t} variant={t === '热销' ? 'danger' : t === '新品' ? 'success' : 'info'} size="xs" />
+              <Tag key={t} label={t} variant={t === '热销' ? 'error' : t === '新品' ? 'success' : 'info'} size="sm" />
             ))}
           </div>
         </div>
@@ -246,7 +246,7 @@ const COLUMNS: DataTableColumn<Product>[] = [
     header: '评分',
     render: (item) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        <Rating value={item.rating} max={5} size="sm" readonly />
+        <Rating value={item.rating} max={5} size={14} readonly />
         <span style={{ fontSize: 12, color: '#94a3b8' }}>({item.reviewCount})</span>
       </div>
     ),
@@ -406,7 +406,7 @@ function ProductDetailDialog({ productId, onClose }: { productId: string | null;
               </select>
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
-              <Button variant="default" size="sm" onClick={() => setEditMode(false)}>取消</Button>
+              <Button variant="secondary" size="sm" onClick={() => setEditMode(false)}>取消</Button>
               <Button variant="primary" size="sm" onClick={handleSave}>保存修改</Button>
             </div>
           </div>
@@ -433,7 +433,7 @@ function ProductDetailDialog({ productId, onClose }: { productId: string | null;
                   <StatusBadge label={CATEGORY_LABELS[product.category]} variant="default" size="sm" />
                   <StatusBadge label={STATUS_LABELS[product.status]} variant={STATUS_VARIANTS[product.status]} size="sm" />
                   {product.tags.map((t) => (
-                    <Tag key={t} label={t} variant={t === '热销' ? 'danger' : t === '新品' ? 'success' : 'info'} size="xs" />
+                    <Tag key={t} label={t} variant={t === '热销' ? 'error' : t === '新品' ? 'success' : 'info'} size="sm" />
                   ))}
                 </div>
                 <div style={{ fontSize: 22, fontWeight: 700, color: '#60a5fa' }}>
@@ -452,7 +452,7 @@ function ProductDetailDialog({ productId, onClose }: { productId: string | null;
               <div style={{ borderRadius: 8, background: 'rgba(30,41,59,0.4)', padding: '10px 12px', textAlign: 'center' }}>
                 <div style={{ fontSize: 11, color: '#64748b', marginBottom: 2 }}>评分</div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                  <Rating value={product.rating} max={5} size="sm" readonly />
+                  <Rating value={product.rating} max={5} size={14} readonly />
                   <span style={{ fontSize: 13, color: '#e2e8f0' }}>{product.rating}</span>
                 </div>
                 <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{product.reviewCount} 条评价</div>
@@ -500,7 +500,7 @@ function ProductDetailDialog({ productId, onClose }: { productId: string | null;
 
             {/* 操作按钮 */}
             <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end', borderTop: '1px solid rgba(148,163,184,0.1)', paddingTop: 16 }}>
-              <Button variant="default" size="sm" onClick={openEdit}>✏️ 编辑</Button>
+              <Button variant="secondary" size="sm" onClick={openEdit}>✏️ 编辑</Button>
               <Button variant={product.status === 'on_sale' ? 'danger' : 'primary'} size="sm">
                 {product.status === 'on_sale' ? '下架' : '上架'}
               </Button>
@@ -732,7 +732,7 @@ export default function ProductsListPage() {
               </div>
               <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
                 {p.tags.map((t) => (
-                  <Tag key={t} label={t} variant={t === '热销' ? 'danger' : t === '新品' ? 'success' : 'info'} size="xs" />
+                  <Tag key={t} label={t} variant={t === '热销' ? 'error' : t === '新品' ? 'success' : 'info'} size="sm" />
                 ))}
               </div>
             </div>

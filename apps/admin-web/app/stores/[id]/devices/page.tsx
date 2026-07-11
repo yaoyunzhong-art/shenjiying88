@@ -62,17 +62,17 @@ interface DeviceItem {
 }
 
 interface MaintenanceRecord {
-  id: string;
-  deviceId: string;
-  deviceName: string;
-  type?: 'inspection' | 'repair' | 'replacement' | 'upgrade' | 'cleaning';
-  date?: string;
-  technician?: string;
-  cost: number;
-  status?: 'completed' | 'in-progress' | 'scheduled' | 'cancelled';
-  description?: string;
-  parts: string[];
-  nextDate: string | null | undefined;
+  id?: string;
+  deviceId?: string;
+  deviceName?: string;
+  type??: 'inspection' | 'repair' | 'replacement' | 'upgrade' | 'cleaning';
+  date??: string;
+  technician??: string;
+  cost?: number;
+  status??: 'completed' | 'in-progress' | 'scheduled' | 'cancelled';
+  description??: string;
+  parts?: string[];
+  nextDate?: string | null | undefined;
 }
 
 // ---- 常量 ----
