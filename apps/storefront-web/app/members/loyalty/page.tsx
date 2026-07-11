@@ -151,7 +151,7 @@ export default function LoyaltyPage() {
                   <p className="text-sm text-white">{r.name}</p>
                   <p className="text-xs text-gray-500">{r.date}</p>
                 </div>
-                <StatusBadge status={r.status === '已领取' ? 'info' : r.status === '已使用' ? 'default' : 'warning'}>{r.status}</StatusBadge>
+                <StatusBadge label={r.status} variant={r.status === '已领取' ? 'info' : r.status === '已使用' ? 'default' : 'warning'} />
               </div>
             ))}
           </div>

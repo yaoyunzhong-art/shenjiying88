@@ -46,7 +46,7 @@ interface MockServiceFn<T> {
 
 interface MockCallContext {
   callCount(): number
-  calls: Array<{ arguments: any[] }>
+  calls: any[][]
 }
 
 // Wrap vi.fn into a properly typed mock service function
