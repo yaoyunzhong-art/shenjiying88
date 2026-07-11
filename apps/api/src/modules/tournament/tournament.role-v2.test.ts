@@ -367,15 +367,17 @@ describe(`${ROLES.Guide} tournament 角色测试`, () => {
     svc.registerParticipant(t.id, 'p1', TENANT_A)
     svc.registerParticipant(t.id, 'p2', TENANT_A)
     const matches = svc.generateBracket(t.id, TENANT_A)
+    // generateBracket 会 shuffle, 所以 player1Id 不一定是 p1
+    // 我们基于 score1=3 > score2=1 推断 winnerId 应为 player1Id
     const recorded = svc.recordMatchResult(matches[0].id, 3, 1, TENANT_A)
     assert.equal(recorded.score1, 3)
     assert.equal(recorded.score2, 1)
-    assert.equal(recorded.winnerId, 'p1')
+    assert.equal(recorded.winnerId, matches[0].player1Id)
     assert.equal(recorded.status, MatchStatus.Completed)
 
-    // 验证排名更新
+    // 验证排名更新 — winner 是 player1Id (score1=3)
     const rankings = svc.getRankings(t.id, TENANT_A)
-    const winnerRank = rankings.find((r) => r.memberId === 'p1')
+    const winnerRank = rankings.find((r) => r.memberId === matches[0].player1Id)
     assert.ok(winnerRank)
     assert.equal(winnerRank!.points, 3)
     assert.equal(winnerRank!.wins, 1)

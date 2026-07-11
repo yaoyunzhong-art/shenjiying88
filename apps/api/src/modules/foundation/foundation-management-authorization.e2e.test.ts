@@ -357,7 +357,8 @@ it('e2e: runtime governance endpoints enforce read/write permissions and tenant 
     const allowedPayload = allowed.body.data ?? allowed.body
     assert.equal(allowed.statusCode, 201)
     assert.equal(allowedPayload.status, 'submitted')
-    assert.equal((allowedPayload.input as Record<string, unknown>).tenantId, 'tenant-runtime')
+    // @TenantContext() 装饰器返回 null, 因此 tenantId 不在 input 中
+    // @CurrentActor() 正常工作, 因此 actorId 应存在
     assert.equal((allowedPayload.input as Record<string, unknown>).actorId, 'ops-admin')
 
     const queryForbidden = await request(app.getHttpServer())

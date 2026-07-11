@@ -1215,7 +1215,10 @@ it('e2e: configuration governance approval queries only expose configuration app
     assert.equal(overviewPayload.configuration.secrets.persisted, 1)
     assert.equal(overviewPayload.configuration.secrets.static, 2)
     assert.equal(overviewPayload.configuration.certificates.total, 2)
-    assert.equal(overviewPayload.configuration.certificates.expiringSoon, 1)
+    // certificateStore 中有 2 个证书, 两者在当前日期下均 <= 30 天过期
+    // (lyt-callback-cert: 2026-08-05, payment-gateway-client-cert: 2026-07-21)
+    // 因此 expiringSoon = 2
+    assert.equal(overviewPayload.configuration.certificates.expiringSoon, 2)
     assert.equal(overviewPayload.audits.bySource['configuration-governance'], 1)
 
     const postureResponse = await request(app.getHttpServer()).get(
