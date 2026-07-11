@@ -94,7 +94,7 @@ function createBlindboxPlanData(overrides: Partial<{
   unitPrice: number
   totalQuota: number
   rewardPool: BlindboxRewardEntry[]
-  caseGuarantee: BlindboxCaseGuarantee[]
+  caseGuarantee: BlindboxCaseGuarantee
   validFrom: string
   validUntil: string
 }> = {}) {
