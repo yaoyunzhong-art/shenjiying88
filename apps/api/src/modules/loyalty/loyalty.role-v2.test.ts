@@ -420,8 +420,8 @@ describe(`${ROLES.Operations} — 运营配置管理`, () => {
     assert.ok(probOverview)
     assert.ok(probOverview.probabilityDisclosure.length >= 4)
     // 所有概率之和应接近 1 (100%)
-    const totalProb = probOverview.probabilityDisclosure.reduce((sum: number, r: { probability: number }) => sum + r.probability, 0)
-    assert.ok(Math.abs(totalProb - 1) < 0.001)
+    const totalProb = probOverview.probabilityDisclosure.reduce((sum: number, r: { probabilityPct: number }) => sum + r.probabilityPct, 0)
+    assert.ok(Math.abs(totalProb - 100) < 0.001)
   })
 })
 
