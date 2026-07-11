@@ -24,6 +24,7 @@ import {
   VideoDeduplicationService,
   ProgressAnalyzer,
 } from './ai-content.service'
+import { ContentTypeEnum } from './ai-content.dto'
 
 // ── 角色定义 ──
 const ROLES = {
@@ -45,9 +46,9 @@ function createController() {
   const progressAnalyzer = new ProgressAnalyzer()
 
   // 预存内容供 flag/review 流程使用
-  moderationService.storeContent('front-flagged-content', '玩家留言：手感很好', 'text')
-  moderationService.storeContent('safety-flagged-001', '我要退款！垃圾机台！', 'text')
-  moderationService.storeContent('mkt-spam-001', '扫码加微信领大奖', 'text')
+  moderationService.storeContent('front-flagged-content', '玩家留言：手感很好', ContentTypeEnum.TEXT)
+  moderationService.storeContent('safety-flagged-001', '我要退款！垃圾机台！', ContentTypeEnum.TEXT)
+  moderationService.storeContent('mkt-spam-001', '扫码加微信领大奖', ContentTypeEnum.TEXT)
 
   return new AiContentController(
     reportGenerator,
@@ -68,27 +69,33 @@ describe(`${ROLES.StoreManager} ai-content 角色 v3 测试`, () => {
     // 1) 生成团建报告（使用预定义的事件 ID）
     const genRes = await ctrl.generateReport({ eventId: 'evt-001' })
     assert.equal(genRes.success, true)
-    assert.ok(genRes.data.report.eventId === 'evt-001')
-    assert.ok(genRes.data.report.stats.participationRate > 0)
+    assert.ok(genRes.data)
+    assert.ok(genRes.data!.report.eventId === 'evt-001')
+    assert.ok(genRes.data!.report.stats.participationRate > 0)
 
     // 2) getReport 根据 eventId 查找
     const getRes = ctrl.getReport('evt-001')
     assert.equal(getRes.success, true)
-    assert.equal(getRes.data.eventId, 'evt-001')
+    assert.ok(getRes.data)
+    assert.equal(getRes.data!.eventId, 'evt-001')
 
     // 3) 添加亮点
-    const highlightRes = ctrl.addHighlights(getRes.data.id, {
+    assert.ok(getRes.data)
+    const highlightRes = ctrl.addHighlights(getRes.data!.id, {
       highlights: ['团队默契提升 30%', '新人融入率 100%'],
     })
     assert.equal(highlightRes.success, true)
-    assert.ok(highlightRes.data.highlights.length >= 2)
+    assert.ok(highlightRes.data)
+    assert.ok(highlightRes.data!.highlights.length >= 2)
 
     // 4) 分享报告
-    const shareRes = ctrl.shareReport(getRes.data.id, {
+    assert.ok(getRes.data)
+    const shareRes = ctrl.shareReport(getRes.data!.id, {
       recipients: ['assistant@store-1'],
     })
     assert.equal(shareRes.success, true)
-    assert.ok(shareRes.data.sharedWith.length >= 1)
+    assert.ok(shareRes.data)
+    assert.ok(shareRes.data!.sharedWith.length >= 1)
   })
 
   it('[店长] 查看不存在的报告 — 优雅失败', () => {
@@ -102,8 +109,9 @@ describe(`${ROLES.StoreManager} ai-content 角色 v3 测试`, () => {
     const ctrl = createController()
     const queue = ctrl.getReviewQueue()
     assert.equal(queue.success, true)
-    assert.ok(Array.isArray(queue.data.queue))
-    assert.equal(typeof queue.data.size, 'number')
+    assert.ok(queue.data)
+    assert.ok(Array.isArray(queue.data!.queue))
+    assert.equal(typeof queue.data!.size, 'number')
   })
 })
 
@@ -116,29 +124,31 @@ describe(`${ROLES.FrontDesk} ai-content 角色 v3 测试`, () => {
     const ctrl = createController()
     const res = ctrl.moderateContent({
       content: '今天游戏很好玩！',
-      type: 'text',
+      type: ContentTypeEnum.TEXT,
     })
     assert.equal(res.success, true)
-    assert.equal(res.data.passed, true)
-    assert.equal(res.data.flagged, false)
-    assert.equal(res.data.violations.length, 0)
+    assert.ok(res.data)
+    assert.equal(res.data!.passed, true)
+    assert.equal(res.data!.flagged, false)
+    assert.equal(res.data!.violations.length, 0)
   })
 
   it('[前台] 批量审核多条内容 — 返回每条结果', () => {
     const ctrl = createController()
     const res = ctrl.batchModerate({
       items: [
-        { id: 'msg-01', content: '高手玩家，太厉害了', type: 'text' },
-        { id: 'msg-02', content: '机台故障，请处理', type: 'text' },
+        { id: 'msg-01', content: '高手玩家，太厉害了', type: ContentTypeEnum.TEXT },
+        { id: 'msg-02', content: '机台故障，请处理', type: ContentTypeEnum.TEXT },
       ],
     })
     assert.equal(res.success, true)
-    assert.equal(res.data.results.length, 2)
-    assert.equal(res.data.results[0].id, 'msg-01')
-    assert.equal(res.data.results[1].id, 'msg-02')
+    assert.ok(res.data)
+    assert.equal(res.data!.results.length, 2)
+    assert.equal(res.data!.results[0].id, 'msg-01')
+    assert.equal(res.data!.results[1].id, 'msg-02')
     // 两条都无违规
-    assert.equal(res.data.results[0].passed, true)
-    assert.equal(res.data.results[1].passed, true)
+    assert.equal(res.data!.results[0].passed, true)
+    assert.equal(res.data!.results[1].passed, true)
   })
 
   it('[前台] 存储内容后标记待审核再通过 — 完整审核流程', () => {
@@ -167,10 +177,11 @@ describe(`${ROLES.HR} ai-content 角色 v3 测试`, () => {
       value: 85,
     })
     assert.equal(recRes.success, true)
-    assert.equal(recRes.data.memberId, 'emp-hr-001')
-    assert.equal(recRes.data.metric, 'score')
+    assert.ok(recRes.data)
+    assert.equal(recRes.data!.memberId, 'emp-hr-001')
+    assert.equal(recRes.data!.metric, 'score')
     // calculateImprovement 直接调用 service 的逻辑
-    assert.equal(typeof recRes.data.improvement, 'number')
+    assert.equal(typeof recRes.data!.improvement, 'number')
   })
 
   it('[HR] 比较员工两期绩效 — 有足够数据', () => {
@@ -185,7 +196,8 @@ describe(`${ROLES.HR} ai-content 角色 v3 测试`, () => {
       afterPeriod: '2026-Q2',
     })
     assert.equal(compareRes.success, true)
-    assert.ok(typeof compareRes.data.improvement === 'number')
+    assert.ok(compareRes.data)
+    assert.ok(typeof compareRes.data!.improvement === 'number')
   })
 
   it('[HR] 比较数据不足的两期 — 优雅失败', () => {
@@ -210,14 +222,15 @@ describe(`${ROLES.Safety} ai-content 角色 v3 测试`, () => {
     const ctrl = createController()
     const res = ctrl.moderateContent({
       content: '打架斗殴是暴力行为',
-      type: 'text',
+      type: ContentTypeEnum.TEXT,
     })
     assert.equal(res.success, true)
+    assert.ok(res.data)
     // 应该检测到暴力违规（medium 级别，flagged=true）
-    assert.equal(res.data.passed, false)
-    assert.equal(res.data.flagged, true)
-    assert.ok(res.data.violations.length > 0)
-    const violenceViolations = res.data.violations.filter((v: { type: string }) => v.type === 'violence')
+    assert.equal(res.data!.passed, false)
+    assert.equal(res.data!.flagged, true)
+    assert.ok(res.data!.violations.length > 0)
+    const violenceViolations = res.data!.violations.filter((v: { type: string }) => v.type === 'violence')
     assert.ok(violenceViolations.length > 0)
   })
 
@@ -225,11 +238,12 @@ describe(`${ROLES.Safety} ai-content 角色 v3 测试`, () => {
     const ctrl = createController()
     const res = ctrl.moderateContent({
       content: '这个机台好好玩，下次再来',
-      type: 'text',
+      type: ContentTypeEnum.TEXT,
     })
     assert.equal(res.success, true)
-    assert.equal(res.data.passed, true)
-    assert.equal(res.data.flagged, false)
+    assert.ok(res.data)
+    assert.equal(res.data!.passed, true)
+    assert.equal(res.data!.flagged, false)
   })
 
   it('[安监] 拒绝违规内容 — content rejected 流程', () => {
@@ -251,32 +265,37 @@ describe(`${ROLES.Guide} ai-content 角色 v3 测试`, () => {
     const ctrl = createController()
     const res = ctrl.computeFingerprint({ videoId: 'gameplay-highlight-001' })
     assert.equal(res.success, true)
-    assert.ok(typeof res.data.hash === 'string')
-    assert.ok(res.data.hash.length > 0)
-    assert.ok(typeof res.data.duration === 'number')
-    assert.ok(Array.isArray(res.data.frames))
+    assert.ok(res.data)
+    assert.ok(typeof res.data!.hash === 'string')
+    assert.ok(res.data!.hash.length > 0)
+    assert.ok(typeof res.data!.duration === 'number')
+    assert.ok(Array.isArray(res.data!.frames))
   })
 
   it('[导玩员] 检测重复视频 — 无重复时返回空数组', () => {
     const ctrl = createController()
     const res = ctrl.detectDuplicates({ videoId: 'unique-video-abc' })
     assert.equal(res.success, true)
-    assert.equal(res.data.videoId, 'unique-video-abc')
-    assert.ok(Array.isArray(res.data.duplicates))
-    assert.equal(res.data.duplicates.length, 0)
+    assert.ok(res.data)
+    assert.equal(res.data!.videoId, 'unique-video-abc')
+    assert.ok(Array.isArray(res.data!.duplicates))
+    assert.equal(res.data!.duplicates.length, 0)
   })
 
   it('[导玩员] 比较两个视频指纹的相似度', () => {
     const ctrl = createController()
     const fp1Res = ctrl.computeFingerprint({ videoId: 'vid-a' })
     const fp2Res = ctrl.computeFingerprint({ videoId: 'vid-b' })
+    assert.ok(fp1Res.data)
+    assert.ok(fp2Res.data)
     const compareRes = ctrl.compareVideos({
-      fingerprint1: fp1Res.data.hash,
-      fingerprint2: fp2Res.data.hash,
+      fingerprint1: fp1Res.data!.hash,
+      fingerprint2: fp2Res.data!.hash,
     })
     assert.equal(compareRes.success, true)
-    assert.ok(typeof compareRes.data.similarity === 'number')
-    assert.ok(compareRes.data.similarity >= 0 && compareRes.data.similarity <= 1)
+    assert.ok(compareRes.data)
+    assert.ok(typeof compareRes.data!.similarity === 'number')
+    assert.ok(compareRes.data!.similarity >= 0 && compareRes.data!.similarity <= 1)
   })
 })
 
@@ -297,7 +316,8 @@ describe(`${ROLES.Ops} ai-content 角色 v3 测试`, () => {
     await ctrl.generateReport({ eventId: 'evt-001' })
     const readRes = ctrl.getReport('evt-001')
     assert.equal(readRes.success, true)
-    assert.equal(readRes.data.eventId, 'evt-001')
+    assert.ok(readRes.data)
+    assert.equal(readRes.data!.eventId, 'evt-001')
   })
 
   it('[运行专员] 记录进步指标为零值 — 边界处理', () => {
@@ -309,7 +329,8 @@ describe(`${ROLES.Ops} ai-content 角色 v3 测试`, () => {
       value: 0,
     })
     assert.equal(res.success, true)
-    assert.equal(typeof res.data.improvement, 'number')
+    assert.ok(res.data)
+    assert.equal(typeof res.data!.improvement, 'number')
   })
 })
 
@@ -322,40 +343,46 @@ describe(`${ROLES.Teambuilding} ai-content 角色 v3 测试`, () => {
     const ctrl = createController()
     const genRes = await ctrl.generateReport({ eventId: 'evt-001' })
     assert.equal(genRes.success, true)
-    assert.ok(genRes.data.report.stats.participationRate > 0)
-    assert.ok(genRes.data.report.stats.teamScore === undefined || genRes.data.report.stats.topActivity.length > 0)
+    assert.ok(genRes.data)
+    assert.ok(genRes.data!.report.stats.participationRate > 0)
+    assert.ok(typeof genRes.data!.report.stats.topActivity === 'string' && genRes.data!.report.stats.topActivity.length > 0)
 
     // 获取报告并验证内容
     const getRes = ctrl.getReport('evt-001')
     assert.equal(getRes.success, true)
-    assert.ok(getRes.data.stats.participationRate > 0)
+    assert.ok(getRes.data)
+    assert.ok(getRes.data!.stats.participationRate > 0)
   })
 
   it('[团建] 为报告添加多条亮点 — 亮点追加成功', async () => {
     const ctrl = createController()
     await ctrl.generateReport({ eventId: 'evt-001' })
     const getRes = ctrl.getReport('evt-001')
-    const reportId = getRes.data.id
+    assert.ok(getRes.data)
+    const reportId = getRes.data!.id
 
     const res = ctrl.addHighlights(reportId, {
       highlights: ['气氛活跃', '团队协作提升', '优秀个人表彰', '新纪录诞生'],
     })
     assert.equal(res.success, true)
-    assert.ok(res.data.highlights.length >= 4)
+    assert.ok(res.data)
+    assert.ok(res.data!.highlights.length >= 4)
   })
 
   it('[团建] 分享报告给多人 — sharedWith 被正确更新', async () => {
     const ctrl = createController()
     await ctrl.generateReport({ eventId: 'evt-001' })
     const getRes = ctrl.getReport('evt-001')
-    const reportId = getRes.data.id
+    assert.ok(getRes.data)
+    const reportId = getRes.data!.id
 
     const res = ctrl.shareReport(reportId, {
       recipients: ['manager@arcade', 'hr@arcade'],
     })
     assert.equal(res.success, true)
-    assert.ok(res.data.sharedWith.includes('manager@arcade'))
-    assert.ok(res.data.sharedWith.includes('hr@arcade'))
+    assert.ok(res.data)
+    assert.ok(res.data!.sharedWith.includes('manager@arcade'))
+    assert.ok(res.data!.sharedWith.includes('hr@arcade'))
   })
 })
 
@@ -368,15 +395,16 @@ describe(`${ROLES.Marketing} ai-content 角色 v3 测试`, () => {
     const ctrl = createController()
     const res = ctrl.batchModerate({
       items: [
-        { id: 'ad-001', content: '新用户充值送100积分！', type: 'text' },
-        { id: 'ad-002', content: '本周六电竞赛报名', type: 'text' },
-        { id: 'ad-003', content: '点击链接领取大奖', type: 'text' },
+        { id: 'ad-001', content: '新用户充值送100积分！', type: ContentTypeEnum.TEXT },
+        { id: 'ad-002', content: '本周六电竞赛报名', type: ContentTypeEnum.TEXT },
+        { id: 'ad-003', content: '点击链接领取大奖', type: ContentTypeEnum.TEXT },
       ],
     })
     assert.equal(res.success, true)
-    assert.equal(res.data.results.length, 3)
+    assert.ok(res.data)
+    assert.equal(res.data!.results.length, 3)
     // 营销文案可能触发广告检测
-    res.data.results.forEach((r: { id: string; passed: boolean }) => {
+    res.data!.results.forEach((r: { id: string; passed: boolean }) => {
       assert.ok(typeof r.passed === 'boolean')
     })
   })
@@ -392,7 +420,8 @@ describe(`${ROLES.Marketing} ai-content 角色 v3 测试`, () => {
       afterPeriod: '2026-Q2',
     })
     assert.equal(compareRes.success, true)
-    assert.ok(typeof compareRes.data.improvement === 'number')
+    assert.ok(compareRes.data)
+    assert.ok(typeof compareRes.data!.improvement === 'number')
   })
 
   it('[营销] 标记并拒绝不当营销内容', () => {
