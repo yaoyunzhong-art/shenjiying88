@@ -21,7 +21,6 @@
     "docker:down:ops": "docker compose -f infra/docker/docker-compose.dev.yml -f infra/docker/docker-compose.ops.yml down",
     "docker:logs": "docker compose -f infra/docker/docker-compose.dev.yml logs -f --tail=100",
 
-    # ─── Production Docker ────────────────────────────
     "docker:build": "docker compose build --parallel",
     "docker:build:api": "docker build --target=api-prod -t m5-api:latest .",
     "docker:build:admin": "docker build --target=admin-prod -t m5-admin:latest .",
