@@ -117,6 +117,7 @@ import { AiMarketingModule } from './modules/ai-marketing/ai-marketing.module';
 import { OpenAPIModule } from './modules/openapi/openapi.module';
 import { LocaleModule } from './modules/locale/locale.module';
 import { DbKnowledgeModule } from './modules/db-knowledge/db-knowledge.module';
+import { ScoutModule } from './modules/scout/scout.module';
 
 @Module({
   imports: [
@@ -246,6 +247,7 @@ import { DbKnowledgeModule } from './modules/db-knowledge/db-knowledge.module';
     OpenAPIModule,
     LocaleModule,
     DbKnowledgeModule,
+    ScoutModule,
   ],
   providers: [
     RequestGovernanceService,
