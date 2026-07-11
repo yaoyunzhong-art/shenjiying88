@@ -185,7 +185,7 @@ describe('FinanceReconciliationController', () => {
     })
 
     it('createTransaction should delegate', () => {
-      const input = { channel: 'WECHAT', internalTransactionId: 1000, channelFee: 0, type: 'PAYMENT' }
+      const input = { channel: 'WECHAT',.internalTransactionId: 1000, channelFee: 0, type: 'PAYMENT' }
       const result = controller.createTransaction(ctx, input)
       expect(result.internalTransactionId).toBe(1000)
     })

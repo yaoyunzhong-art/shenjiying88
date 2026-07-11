@@ -147,7 +147,7 @@ describe(`${ROLES.FrontDesk} 收银异常数据监控`, () => {
   it('前台检测零数据点 — 历史不足 3 个时不触发假阳性', () => {
     const { controller } = createController()
     const shortHistory: TimeSeriesPoint[] = [
-      { timestamp: new Date().toISOString(), value: 10 },
+  // labels removed
     ]
     const result = controller.detect({
       metricKey: 'new.metric',
