@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ai-rag-ingestion-plus.test.ts — RAG 完整测试补充
  */

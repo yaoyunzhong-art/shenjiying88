@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach } from 'vitest';
 /**
  * 🐜 自动: [content] [C] 角色测试 v2

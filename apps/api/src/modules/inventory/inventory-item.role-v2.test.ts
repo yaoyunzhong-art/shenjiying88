@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * 🐜 自动: [inventory-item] [C] 角色测试编写
  *

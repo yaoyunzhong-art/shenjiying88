@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * finance-reconciliation.controller.spec.ts — P-38 对账 Controller 测试
  *

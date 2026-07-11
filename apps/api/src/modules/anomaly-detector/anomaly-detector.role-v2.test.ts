@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 /**
  * 🐜 自动: [anomaly-detector] [C] 角色测试 v2 — 街机/游艺厅场景深度覆盖

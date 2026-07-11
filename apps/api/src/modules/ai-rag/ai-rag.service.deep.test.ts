@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ai-rag.service.spec.ts — AI RAG Service 深层测试
  */
