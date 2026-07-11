@@ -104,6 +104,10 @@ export class EvaluateRequestDto {
 // ─── Batch Evaluate ────────────────────────────────────────────
 
 export class BatchEvaluateItemDto {
+  @IsOptional()
+  @IsNumber()
+  index?: number
+
   @IsString()
   @IsEnum(['member-level', 'device-anomaly'])
   type!: 'member-level' | 'device-anomaly'

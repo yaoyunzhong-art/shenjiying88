@@ -430,7 +430,7 @@ describe(`${ROLES.Marketing} ai-rule-engine 角色测试`, () => {
     const { controller } = makeController()
     const body = {
       type: 'member-level' as const,
-      data: tenantA,
+      data: tenantA as unknown as Record<string, unknown>,
     }
     const res = controller.evaluate(body)
     expect(res.type).toBe('member-level')
@@ -441,7 +441,7 @@ describe(`${ROLES.Marketing} ai-rule-engine 角色测试`, () => {
     const { controller } = makeController()
     const body = {
       type: 'unknown-type' as any,
-      data: tenantA,
+      data: tenantA as unknown as Record<string, unknown>,
     }
     expect(() => controller.evaluate(body)).toThrow(/Unsupported evaluation type/)
   })
