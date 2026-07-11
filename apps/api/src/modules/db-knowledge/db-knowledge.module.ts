@@ -6,9 +6,11 @@
  */
 
 import { Module } from '@nestjs/common'
+import { DbKnowledgeController } from './db-knowledge.controller'
 import { DbKnowledgeService } from './db-knowledge.service'
 
 @Module({
+  controllers: [DbKnowledgeController],
   providers: [DbKnowledgeService],
   exports: [DbKnowledgeService],
 })
