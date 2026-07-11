@@ -139,6 +139,36 @@ Phase推进规范修正:
 
 ---
 
+## 📡 2026-07-12 02:15 凌晨增补 - 全国场管DB入库+知识库已同步
+
+> 大飞哥指令完成：全国竞争对手及场馆数据已装入数据库+形成知识库
+
+### 执行成果
+| 事项 | 状态 | 所属Commit |
+|:----|:----:|:----------:|
+| 侦察兵全国扩展30城 | ✅ | `828d39bea` |
+| 城市分级T1~T5配置 | ✅ | 同上 |
+| competitive-intelligence.md同步 | ✅ | 同上 |
+| 全国场馆DB入库(8张表) | ✅ | `b5dda7727` |
+| import脚本(8平台×30城) | ✅ | 同上 |
+| ScoutModule NestJS API | ✅ | 同上 |
+| 知识库三文档同步 | ✅ | 同上 |
+| V14.1时间线更新 | ✅ | `37c66e91f` |
+| 关联文件对齐更新 | ✅ | 当前commit |
+
+### 新创建/修改的文件
+- `apps/api/src/database/migrations/20260712_create_national_venue_competitor_tables.sql` (130行)
+- `scripts/import-national-venues.ts` (136行)
+- `apps/api/src/modules/scout/*` (controller/service/module共139行)
+- `docs/knowledge/competitive-intelligence.md` (更新)
+- `docs/knowledge/national-venue-database.md` (更新)
+- `docs/knowledge/scout-intelligence.md` (更新)
+- `docs/knowledge/scout-city-tier.md` (新建)
+
+> 🚀 全国场管数据基础设施就绪，赋能后续竞品分析+市场策略
+
+---
+
 ## ⏰ 明日计划（7/12 周日）
 
 | 时间 | 任务 | 优先级 | 消耗 | 状态 |

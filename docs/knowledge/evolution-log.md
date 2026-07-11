@@ -5,6 +5,23 @@
 
 ---
 
+## 2026-07-12 02:15 🐜 侦察兵全国扩展+全国场管DB入库
+
+### 关键事件
+| 时间 | 事件 | Commit | 详情 |
+|:----:|:----|:------:|:------|
+| 02:02 | 侦察兵全国扩展30城 | `828d39bea` | 城市分级T1~T5 30城配置 + competitive-intelligence同步
+| 02:08 | 全国场馆+竞品DB入库+知识库+ScoutModule | `b5dda7727` | 8张全国表+import脚本+NestJS ScoutModule+3知识库同步
+| 02:10 | V14.1凌晨执行成果更新 | `37c66e91f` | 执行状态确认/后续关联更新列明
+
+### 数据基础设施
+- **DB迁移**: `20260712_create_national_venue_competitor_tables.sql` (venues + 6竞品子表 + scout_cities/scout_collection_logs)
+- **采集脚本**: `scripts/import-national-venues.ts` (8平台×30城采集框架)
+- **API服务**: `apps/api/src/modules/scout/` (ScoutController + ScoutService + ScoutModule)
+- **知识库**: competitive-intelligence.md / national-venue-database.md / scout-intelligence.md 同步完成
+
+---
+
 ## 2026-07-11 23:00 📡 日终汇总
 
 ### 反模式
