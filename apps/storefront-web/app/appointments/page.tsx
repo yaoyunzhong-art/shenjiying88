@@ -74,7 +74,7 @@ function getNextDays(count: number): { date: string; label: string; weekday: str
     const month = d.getMonth() + 1;
     const day = d.getDate();
     const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-    const weekday = weekdays[d.getDay()];
+    const weekday = weekdays[d.getDay()]!;
     const isToday = i === 0;
     result.push({
       date: dateStr,
@@ -90,7 +90,7 @@ function getNextDays(count: number): { date: string; label: string; weekday: str
 function generateSlotsForZone(zoneId: ZoneType, date: string): TimeSlot[] {
   const seed = (zoneId + date).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
   return TIME_LABELS.map((time, idx) => {
-    const hour = parseInt(time.split(':')[0], 10);
+    const hour = parseInt(time.split(':')[0]!, 10);
     const isPeak = hour >= 13 && hour <= 20;
     const basePrice =
       zoneId === 'racing' ? 88 :

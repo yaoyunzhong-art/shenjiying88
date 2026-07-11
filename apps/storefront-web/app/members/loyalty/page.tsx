@@ -16,9 +16,9 @@ const MEMBER_TIERS = [
 ];
 
 const CURRENT_POINTS = 8750;
-const NEXT_TIER = MEMBER_TIERS[2]; // 黄金
-const MAX_POINTS = NEXT_TIER.minPoints - MEMBER_TIERS[1].minPoints;
-const CURRENT_WITHIN_TIER = CURRENT_POINTS - MEMBER_TIERS[1].minPoints;
+const NEXT_TIER = MEMBER_TIERS[2]!; // 黄金
+const MAX_POINTS = NEXT_TIER.minPoints - MEMBER_TIERS[1]!.minPoints;
+const CURRENT_WITHIN_TIER = CURRENT_POINTS - MEMBER_TIERS[1]!.minPoints;
 
 const EARN_WAYS = [
   { action: '到店消费', points: '¥1=1积分', limit: '无上限' },
@@ -32,8 +32,8 @@ const EARN_WAYS = [
 const RECENT_TRANSACTIONS = Array.from({ length: 15 }, (_, i) => ({
   id: `TX${String(10000 + i).padStart(5, '0')}`,
   date: new Date(Date.now() - i * 86400000 * 2).toLocaleDateString('zh-CN'),
-  description: ['到店消费-游艺区', '签到奖励', '评价晒单', '推荐好友奖励', '到店消费-VR区'][i % 5],
-  change: [120, 5, 20, 200, 85, 5, 20, 120, 200, 85, 5, 20, 120, 200, 85][i],
+  description: (['到店消费-游艺区', '签到奖励', '评价晒单', '推荐好友奖励', '到店消费-VR区'] as const)[i % 5]!,
+  change: [120, 5, 20, 200, 85, 5, 20, 120, 200, 85, 5, 20, 120, 200, 85][i]!,
   balance: CURRENT_POINTS + [0, -120, -115, -95, 105, -20, -15, 5, -115, 85, -200, -205, -225, -25, 110].slice(0, i + 1).reduce((a, b) => a + b, 0),
 }));
 
@@ -48,7 +48,7 @@ const RECENT_REWARDS = [
 export default function LoyaltyPage() {
   const [activeTab, setActiveTab] = useState('tier');
   const [search, setSearch] = useState('');
-  const filtered = RECENT_TRANSACTIONS.filter(t => t.description.includes(search) || t.id.includes(search));
+  const filtered = RECENT_TRANSACTIONS.filter(t => (t.description ?? '').includes(search) || t.id.includes(search));
 
   return (
     <PageShell title="会员中心" subtitle="等级·积分·权益">
@@ -56,10 +56,10 @@ export default function LoyaltyPage() {
         {/* 头部：当前等级 + 积分 */}
         <div className="rounded-lg bg-gray-800/70 p-6 border border-gray-700/50">
           <div className="flex items-center gap-4">
-            <span className="text-5xl">{MEMBER_TIERS[1].icon}</span>
+            <span className="text-5xl">{MEMBER_TIERS[1]!.icon}</span>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-bold text-white">{MEMBER_TIERS[1].name}会员</h2>
+                <h2 className="text-2xl font-bold text-white">{MEMBER_TIERS[1]!.name}会员</h2>
                 <span className="text-sm text-gray-400">会员编号: M{String(10000 + Math.floor(Math.random() * 90000))}</span>
               </div>
               <div className="mt-2 flex gap-6 text-sm text-gray-300">
@@ -82,10 +82,10 @@ export default function LoyaltyPage() {
         </div>
 
         <Tabs
-          tabs={[
-            { id: 'tier', label: '会员等级' },
-            { id: 'points', label: '积分明细' },
-            { id: 'rewards', label: '我的奖励' },
+          items={[
+            { key: 'tier', label: '会员等级' },
+            { key: 'points', label: '积分明细' },
+            { key: 'rewards', label: '我的奖励' },
           ]}
           activeKey={activeTab}
           onChange={setActiveTab}
@@ -94,8 +94,8 @@ export default function LoyaltyPage() {
         {activeTab === 'tier' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {MEMBER_TIERS.map(tier => {
-              const isCurrent = tier.name === MEMBER_TIERS[1].name;
-              const isReached = MEMBER_TIERS.indexOf(tier) <= MEMBER_TIERS.indexOf(MEMBER_TIERS[1]);
+              const isCurrent = tier.name === MEMBER_TIERS[1]!.name;
+              const isReached = MEMBER_TIERS.indexOf(tier) <= MEMBER_TIERS.indexOf(MEMBER_TIERS[1]!);
               return (
                 <div key={tier.name} className={`rounded-lg p-4 border ${isCurrent ? 'border-yellow-500/50 bg-gray-800/90' : 'border-gray-700/50 bg-gray-800/50'}`}>
                   <div className="text-center">
@@ -132,13 +132,13 @@ export default function LoyaltyPage() {
             </div>
             <DataTable
               columns={[
-                { key: 'date', label: '日期' },
-                { key: 'description', label: '说明' },
-                { key: 'change', label: '积分变动', render: (v: number) => <span className={v > 0 ? 'text-green-400' : 'text-red-400'}>{v > 0 ? `+${v}` : v}</span> },
-                { key: 'balance', label: '余额', render: (v: number) => <span className="text-yellow-400">{v.toLocaleString()}</span> },
+                { key: 'date', header: '日期' },
+                { key: 'description', header: '说明' },
+                { key: 'change', header: '积分变动', render: (row: typeof RECENT_TRANSACTIONS[0], _index: number) => <span className={(row.change ?? 0) > 0 ? 'text-green-400' : 'text-red-400'}>{(row.change ?? 0) > 0 ? `+${row.change}` : row.change}</span> },
+                { key: 'balance', header: '余额', render: (row: typeof RECENT_TRANSACTIONS[0], _index: number) => <span className="text-yellow-400">{(row.balance ?? 0).toLocaleString()}</span> },
               ]}
               data={filtered.length > 0 ? filtered : RECENT_TRANSACTIONS}
-              pageSize={10}
+              rowKey={(row) => row.id}
             />
           </div>
         )}

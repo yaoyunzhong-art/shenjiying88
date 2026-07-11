@@ -34,8 +34,8 @@ const MILESTONES = [
 
 const WEEKLY_HISTORY = Array.from({ length: 12 }, (_, i) => ({
   week: `W${String(22 + i).padStart(2, '0')}`,
-  growth: [280, 310, 290, 340, 300, 320, 350, 310, 330, 320, 300, GROWTH_WEEK][i],
-  tasks: [5, 6, 5, 7, 5, 6, 7, 5, 6, 6, 5, 5][i],
+  growth: [280, 310, 290, 340, 300, 320, 350, 310, 330, 320, 300, GROWTH_WEEK][i]!,
+  tasks: [5, 6, 5, 7, 5, 6, 7, 5, 6, 6, 5, 5][i]!,
 }));
 
 const MAX_GROWTH_PER_WEEK = 500;

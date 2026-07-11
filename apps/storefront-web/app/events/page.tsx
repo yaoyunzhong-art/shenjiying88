@@ -37,10 +37,10 @@ export default function EventsPage() {
       <div className="p-4 space-y-4">
         {/* 统计 */}
         <div className="grid grid-cols-4 gap-3">
-          <StatCard title="进行中" value={activeEvents} change="+2" trend="up" />
-          <StatCard title="即将开始" value={upcomingEvents} change="" />
-          <StatCard title="累计参与" value={totalParticipants.toLocaleString()} change="+856" trend="up" />
-          <StatCard title="已结束" value={endedEvents} change="" />
+          <StatCard label="进行中" value={activeEvents} trend={{ value: '+2', positive: true }} />
+          <StatCard label="即将开始" value={upcomingEvents} />
+          <StatCard label="累计参与" value={totalParticipants.toLocaleString()} trend={{ value: '+856', positive: true }} />
+          <StatCard label="已结束" value={endedEvents} />
         </div>
 
         {/* 筛选 */}
@@ -85,9 +85,9 @@ export default function EventsPage() {
                     </div>
                     <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
                       <span className="px-2 py-0.5 rounded bg-gray-700/50">{event.type}</span>
-                      <StatusBadge status={
+                      <StatusBadge label={event.status} variant={
                         event.status === '进行中' ? 'info' : event.status === '即将开始' ? 'warning' : 'default'
-                      }>{event.status}</StatusBadge>
+                      } />
                       <span>📅 {event.start} ~ {event.end}</span>
                       <span>👥 {event.participants.toLocaleString()}人参与</span>
                     </div>

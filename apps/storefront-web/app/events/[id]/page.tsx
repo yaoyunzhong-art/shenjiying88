@@ -80,7 +80,7 @@ export default function EventDetailPage() {
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold text-white">{event.title}</h1>
-                <StatusBadge status={statusColor}>{event.status}</StatusBadge>
+                <StatusBadge label={event.status} variant={statusColor} />
               </div>
               <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-400">
                 <span>📅 {event.start} ~ {event.end}</span>
@@ -93,21 +93,21 @@ export default function EventDetailPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-3">
-          <StatCard title="总参与" value={event.participants.toLocaleString()} change="" />
-          <StatCard title="奖金/奖品" value={event.prize.split('+')[0]} change="" />
-          <StatCard title="剩余天数" value={(() => {
+          <StatCard label="总参与" value={event.participants.toLocaleString()} />
+          <StatCard label="奖金/奖品" value={event.prize.split('+')[0]} />
+          <StatCard label="剩余天数" value={(() => {
             const days = Math.ceil((new Date(event.end).getTime() - Date.now()) / 86400000);
             return days > 0 ? `${days}天` : '已结束';
-          })()} change="" />
-          <StatCard title="热度" value={event.participants > 1000 ? '🔥火爆' : event.participants > 500 ? '🔥热门' : '一般'} change="" />
+          })()} />
+          <StatCard label="热度" value={event.participants > 1000 ? '🔥火爆' : event.participants > 500 ? '🔥热门' : '一般'} />
         </div>
 
         {/* Tabs */}
         <Tabs
-          tabs={[
-            { id: 'overview', label: '活动介绍' },
-            { id: 'schedule', label: '赛程安排' },
-            { id: 'rules', label: '活动规则' },
+          items={[
+            { key: 'overview', label: '活动介绍' },
+            { key: 'schedule', label: '赛程安排' },
+            { key: 'rules', label: '活动规则' },
           ]}
           activeKey={activeTab}
           onChange={setActiveTab}
