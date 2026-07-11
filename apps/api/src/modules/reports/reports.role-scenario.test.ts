@@ -118,7 +118,7 @@ describe(`${ROLES.StoreManager} reports 场景测试`, () => {
     assert.equal(result.tenantId, TENANT)
     assert.ok(result.rows.length >= 1)
     assert.ok(result.totals)
-    assert.ok(result.totals.revenue > 0)
+    assert.ok(result.totals!.revenue !== undefined && Number(result.totals!.revenue) > 0)
   })
 
   it('店长查看商品排名报表（了解热销商品）', async () => {
@@ -175,7 +175,7 @@ describe(`${ROLES.FrontDesk} reports 场景测试`, () => {
     const { controller } = makeCtrl({ seedData: true })
     const result = await controller.hourlyHeatmapReport({ tenantId: TENANT, from: '2026-06-01', to: '2026-06-02' })
     assert.equal(result.type, 'hourly-heatmap')
-    assert.ok(result.rows.length >= 1 || result.heatGrid, '应返回时段热力数据')
+    assert.ok(result.rows.length >= 1, '应返回时段热力数据')
   })
 
   it('前台查看支付方式占比（指导收银操作）', async () => {
@@ -218,7 +218,7 @@ describe(`${ROLES.HR} reports 场景测试`, () => {
     // refundRate 以百分比形式返回 (0~100)
     const refundRow = result.rows.find((r: any) => r.metric === '退款率(%)')
     assert.ok(refundRow)
-    assert.ok(refundRow.value >= 0)
+    assert.ok(refundRow!.value !== undefined && Number(refundRow!.value) >= 0)
   })
 
   it('HR 导出会员报表 CSV（存档用）', async () => {
@@ -489,7 +489,8 @@ describe('reports 跨角色和边界场景测试', () => {
     const result = controller.deleteDefinition(def.id, { tenantId: 'different-tenant' })
     assert.equal(result.deleted, false, '不应删除其他租户定义')
     const found = controller.getDefinition(def.id, { tenantId: TENANT + '-iso' })
-    assert.equal(found.name, '租户A定义', '原租户定义应仍在')
+    assert.ok(found, '定义应仍在')
+    assert.equal(found!.name, '租户A定义', '原租户定义应仍在')
   })
 
   it('创建空 metrics 数组的定义应能工作（边界）', () => {
