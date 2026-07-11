@@ -354,7 +354,7 @@ describe(`${ROLES.Marketing} content 角色测试 v2`, () => {
       category: 'promotion',
       authorId: 'mkt-002',
       coverImageUrl: 'https://img.example.com/summer2026.jpg',
-      metadata: { tags: ['暑期', '五折', '2026', '促销'], version: 1, priority: 'high' },
+      metadata: { tags: ['暑期', '五折', '2026', '促销'], version: 1, priority: "high" as any as any },
     });
     expect(created.data.coverImageUrl).toContain('summer2026');
     expect(created.data.metadata?.priority).toBe('high');

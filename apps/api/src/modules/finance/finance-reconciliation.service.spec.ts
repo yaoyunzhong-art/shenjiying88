@@ -277,7 +277,7 @@ function autoMatch(
   return results
 }
 
-function manualMatch(ctx: TenantCtx, input: { transactionId: string; externalTransactionId: string; externalAmount?: number; memo?: string }): ReconTxn {
+function manualMatch(ctx: TenantCtx, input: { transactionId: string; externalAmount: string; externalAmount?: number; memo?: string }): ReconTxn {
   const txn = txnStore.get(input.transactionId)
   if (!txn || txn.tenantId !== ctx.tenantId) throw new Error(`Transaction ${input.transactionId} not found`)
 
@@ -526,7 +526,7 @@ describe('FinanceReconciliationService', () => {
 
       const matched = manualMatch(tenant, {
         transactionId: txn.id,
-        externalTransactionId: 'ext-005',
+        externalAmount: 'ext-005',
         externalAmount: 10000
       })
 
@@ -546,7 +546,7 @@ describe('FinanceReconciliationService', () => {
 
       const matched = manualMatch(tenant, {
         transactionId: txn.id,
-        externalTransactionId: 'ext-006',
+        externalAmount: 'ext-006',
         externalAmount: 9000
       })
 
@@ -557,7 +557,7 @@ describe('FinanceReconciliationService', () => {
     it('should throw for non-existent transaction', () => {
       expect(() => manualMatch(tenant, {
         transactionId: 'nonexistent',
-        externalTransactionId: 'ext-007'
+        externalAmount: 'ext-007'
       })).toThrow('Transaction nonexistent not found')
     })
   })
@@ -641,7 +641,7 @@ describe('FinanceReconciliationService', () => {
       for (const imp of imports) {
         createTxn(tenant, {
           channel: 'WECHAT',
-          externalTransactionId: imp.channelTransactionNo,
+          externalAmount: imp.channelTransactionNo,
           channelTransactionNo: imp.channelTransactionNo,
           type: imp.type,
           internalAmount: 0,

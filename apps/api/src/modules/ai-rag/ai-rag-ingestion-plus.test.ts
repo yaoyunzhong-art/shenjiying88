@@ -19,14 +19,14 @@ describe('KnowledgeBaseManager Extension', () => {
   it('getDocument 跨集合隔离', () => {
     kb.addDocument('a', { id: 'x', content: 'A' })
     kb.addDocument('b', { id: 'x', content: 'B' })
-    expect(kb.getDocument('a', 'x')!.content).toBe('A')
-    expect(kb.getDocument('b', 'x')!.content).toBe('B')
+    expect(kb.getDocument('a', 'x')!.text).toBe('A')
+    expect(kb.getDocument('b', 'x')!.text).toBe('B')
   })
 
   it('updateDocument 更新内容', () => {
     kb.addDocument('c', { id: 'd', content: 'old' })
     kb.updateDocument('c', 'd', 'new')
-    expect(kb.getDocument('c', 'd')!.chunks[0].content).toBe('new')
+    expect(kb.getDocument('c', 'd')!.chunks[0].text).toBe('new')
   })
 
   it('deleteDocument 返回', () => {

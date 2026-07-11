@@ -37,7 +37,7 @@ function makeStableHistory(base: number, count = 10, variance = 1): TimeSeriesPo
   return Array.from({ length: count }, (_, i) => ({
     timestamp: new Date(Date.now() - (count - i) * 60000).toISOString(),
     value: base + (Math.random() - 0.5) * variance,
-    labels: {},
+    //labels: {},
   }))
 }
 
@@ -72,7 +72,7 @@ describe(`${ROLES.StoreManager} 门店级异常监控`, () => {
     const variedHistory: TimeSeriesPoint[] = [48, 52, 49, 51, 47, 53, 50, 52, 51].map(v => ({
       timestamp: new Date().toISOString(),
       value: v,
-      labels: {},
+      //labels: {},
     }))
     // Reset EWMA by using a fresh metric key
     // sigma=3, mean~50, stddev~1.9, zScore for 58 = (58-50)/1.9 ≈ 4.2 > 3 → anomaly expected
@@ -130,7 +130,7 @@ describe(`${ROLES.FrontDesk} 收银异常数据监控`, () => {
     // Use separate fresh controllers for each metric to avoid EWMA cross-contamination
     const { controller: ctrl1 } = createController()
     const highHistory: TimeSeriesPoint[] = Array.from({ length: 20 }, () => ({
-      timestamp: new Date().toISOString(), value: 2 + (Math.random() - 0.5) * 0.5, labels: {},
+      timestamp: new Date().toISOString(), value: 2 + (Math.random() - 0.5) * 0.5, //labels: {},
     }))
     const r1 = ctrl1.detect({ metricKey: 'payment.failure.rate', value: 15, history: highHistory })
     assert.ok(r1.data.score > 0.5, `first point is anomalous: score=${r1.data.score}`)
@@ -147,7 +147,7 @@ describe(`${ROLES.FrontDesk} 收银异常数据监控`, () => {
   it('前台检测零数据点 — 历史不足 3 个时不触发假阳性', () => {
     const { controller } = createController()
     const shortHistory: TimeSeriesPoint[] = [
-      { timestamp: new Date().toISOString(), value: 10, labels: {} },
+      { timestamp: new Date().toISOString(), value: 10, //labels: {} },
     ]
     const result = controller.detect({
       metricKey: 'new.metric',
@@ -262,7 +262,7 @@ describe(`${ROLES.Security} 安全设备异常检测`, () => {
       history: Array.from({ length: 15 }, () => ({
         timestamp: new Date().toISOString(),
         value: 50,
-        labels: {},
+        //labels: {},
       })),
     })
     const defaultSeverity = mildResult.data.severity
@@ -276,7 +276,7 @@ describe(`${ROLES.Security} 安全设备异常检测`, () => {
       history: Array.from({ length: 15 }, () => ({
         timestamp: new Date().toISOString(),
         value: 50,
-        labels: {},
+        //labels: {},
       })),
     })
     assert.ok(sensitiveResult.data.severity !== 'NORMAL',
@@ -369,7 +369,7 @@ describe(`${ROLES.Operations} 运维指标异常监控`, () => {
     const variedHistory: TimeSeriesPoint[] = [48, 52, 49, 51, 47, 53, 50, 52, 49, 51, 48, 52, 50, 51, 49].map(v => ({
       timestamp: new Date().toISOString(),
       value: v,
-      labels: {},
+      //labels: {},
     }))
     // sigma=3, mean=~50, stddev=~1.6, zScore for 110 = (110-50)/1.6 ≈ 37 > 3 → anomaly
     const r1 = controller.detect({ metricKey: 'ops.latency', value: 110, history: variedHistory })
@@ -481,7 +481,7 @@ describe(`${ROLES.Marketing} 营销指标异常检测`, () => {
     const flatHistory: TimeSeriesPoint[] = Array.from({ length: 20 }, () => ({
       timestamp: new Date().toISOString(),
       value: 100,
-      labels: {},
+      //labels: {},
     }))
 
     // 先获得一个中等异常

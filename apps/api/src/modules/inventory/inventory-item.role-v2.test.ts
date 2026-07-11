@@ -215,7 +215,7 @@ describe('🔧 安监视角 — 危险品监控与安全库存', () => {
       metadata: { safetyCategory: '易燃品', safetyLevel: 'A' },
     });
     expect(updated.lowStockThreshold).toBe(10);
-    expect(updated.metadata.safetyLevel).toBe('A');
+    expect(updated.metadata?..safetyLevel).toBe('A');
 
     // 确认低库存阈值生效
     const lowStock = ctrl.getLowStock(authQuery()) as any[];

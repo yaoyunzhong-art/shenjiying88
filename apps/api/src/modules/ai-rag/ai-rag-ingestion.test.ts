@@ -37,8 +37,8 @@ describe('RAG Document Lifecycle', () => {
   it('多集合隔离：一个集合的变更不影响其他', () => {
     kb.addDocument('coll-a', { id: 'shared-1', content: '集合A' })
     kb.addDocument('coll-b', { id: 'shared-1', content: '集合B' })
-    expect(kb.getDocument('coll-a', 'shared-1')!.content).toBe('集合A')
-    expect(kb.getDocument('coll-b', 'shared-1')!.content).toBe('集合B')
+    expect(kb.getDocument('coll-a', 'shared-1')!.text).toBe('集合A')
+    expect(kb.getDocument('coll-b', 'shared-1')!.text).toBe('集合B')
 
     kb.deleteDocument('coll-a', 'shared-1')
     expect(kb.getDocument('coll-a', 'shared-1')).toBeNull()

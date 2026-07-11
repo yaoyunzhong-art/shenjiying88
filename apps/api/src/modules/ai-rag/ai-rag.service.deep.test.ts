@@ -26,7 +26,7 @@ describe('KnowledgeBaseManager (Deep)', () => {
   it('getDocument 跨集合应隔离', () => {
     kb.addDocument('col-a', { id: 'doc-1', content: 'A' })
     kb.addDocument('col-b', { id: 'doc-1', content: 'B' })
-    expect(kb.getDocument('col-a', 'doc-1')!.content !== kb.getDocument('col-b', 'doc-1')!.content).toBe(true)
+    expect(kb.getDocument('col-a', 'doc-1')!.text !== kb.getDocument('col-b', 'doc-1')!.text).toBe(true)
   })
 
   it('updateDocument 应更新元数据', () => {
