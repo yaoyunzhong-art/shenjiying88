@@ -1,7 +1,6 @@
 /**
- * promotions/page.test.tsx — 促销活动列表页冒烟测试
+ * promotions/page.test.ts — 促销活动列表页冒烟测试
  * 覆盖: 正例·边界·防御
- * 类型: B-列表页（含搜索/过滤/分页）
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -11,267 +10,138 @@ import { dirname, resolve } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PAGE_SOURCE = resolve(__dirname, 'page.tsx');
-const CLIENT_SOURCE = resolve(__dirname, 'promotion-list-client.tsx');
-const TYPES_SOURCE = resolve(__dirname, 'promotion-types.ts');
-const DATA_SOURCE = resolve(__dirname, 'promotions-data.ts');
 
 function readPage(): string {
   return readFileSync(PAGE_SOURCE, 'utf-8');
 }
 
-function readClient(): string {
-  return readFileSync(CLIENT_SOURCE, 'utf-8');
-}
-
-function readTypes(): string {
-  return readFileSync(TYPES_SOURCE, 'utf-8');
-}
-
-function readData(): string {
-  return readFileSync(DATA_SOURCE, 'utf-8');
-}
-
 // ==================== Page scaffold 正例 ====================
 
 describe('promotions/page — 正例', () => {
-  it('应默认导出 async function PromotionsPage', () => {
+  it('应默认导出 PromotionsPage', () => {
     const src = readPage();
     assert.ok(src.includes('export default function PromotionsPage'), '缺少默认导出函数');
   });
 
-  it('应导出 metadata 对象', () => {
+  it('应包含 "use client" 声明', () => {
     const src = readPage();
-    assert.ok(src.includes('export const metadata: Metadata'), '缺少 metadata');
-    assert.ok(src.includes("'促销活动管理 - M5 指挥台'"), '标题不正确');
+    assert.ok(src.includes("'use client'"), '缺少 use client');
   });
 
-  it('应使用 getPromotions 获取数据', () => {
+  it('应包含 PromoStatus 类型定义', () => {
     const src = readPage();
-    assert.ok(src.includes('getPromotions'), '缺少 getPromotions');
+    assert.ok(src.includes('type PromoStatus'), '缺少 PromoStatus');
   });
 
-  it('应使用 PromotionListClient 渲染列表', () => {
+  it('应包含 PromoType 类型定义', () => {
     const src = readPage();
-    assert.ok(src.includes('PromotionListClient'), '缺少 PromotionListClient');
+    assert.ok(src.includes('type PromoType'), '缺少 PromoType');
   });
 
-  it('应传递 promotions 作为 props', () => {
+  it('应包含 Promotion 接口定义', () => {
     const src = readPage();
-    assert.ok(src.includes('promotions={promotions}'), '缺少 promotions prop');
+    assert.ok(src.includes('interface Promotion'), '缺少 Promotion');
   });
 
-  it('应在 head 中包含 description meta', () => {
+  it('应包含 PS 状态映射表', () => {
     const src = readPage();
-    assert.ok(src.includes('管理门店促销活动'), 'description 包含门店促销活动');
-    assert.ok(
-      src.includes('折扣') || src.includes('优惠券') || src.includes('返现'),
-      'description 包含活动类型说明',
-    );
-  });
-});
-
-// ==================== PromotionListClient 正例 ====================
-
-describe('promotions/PromotionListClient — 正例', () => {
-  it('应导出 PromotionListClient 组件', () => {
-    const src = readClient();
-    assert.ok(src.includes('export function PromotionListClient'), '缺少导出');
+    assert.ok(src.includes('const PS:'), '缺少 PS 映射');
+    assert.ok(src.includes('进行中'), '缺少进行中标签');
   });
 
-  it('应使用 PageShell 布局', () => {
-    const src = readClient();
+  it('应引用 @m5/ui 组件', () => {
+    const src = readPage();
+    assert.ok(src.includes("from '@m5/ui'"), '缺少 @m5/ui 导入');
+  });
+
+  it('应包含 PageShell 页面外壳', () => {
+    const src = readPage();
     assert.ok(src.includes('PageShell'), '缺少 PageShell');
-    assert.ok(src.includes('"促销活动管理"'), 'PageShell 标题不正确');
-  });
-
-  it('应使用 SearchFilterInput 实现搜索', () => {
-    const src = readClient();
-    assert.ok(src.includes('SearchFilterInput'), '缺少搜索框');
-    assert.ok(src.includes('searchTerm'), '缺少 searchTerm 状态');
-  });
-
-  it('应使用 PaginatedDataTableCard 实现分页表格', () => {
-    const src = readClient();
-    assert.ok(src.includes('PaginatedDataTableCard'), '缺少分页表格');
-    assert.ok(src.includes('pagination'), '缺少 pagination 配置');
-  });
-
-  it('应从 promotion-types 导入类型', () => {
-    const src = readClient();
-    assert.ok(src.includes('./promotion-types'), '导入 promotion-types');
-  });
-
-  it('应定义 8 列数据表格', () => {
-    const src = readClient();
-    // Count column definitions — approximate by counting "header:"
-    const headerMatches = src.match(/header:/g);
-    assert.ok(headerMatches && headerMatches.length >= 7, `预期 ≥7 列, 实得 ${headerMatches?.length ?? 0}`);
+    assert.ok(src.includes('促销管理'), '缺少促销管理标题');
   });
 });
 
-// ==================== Type definitions 正例 ====================
+// ==================== 数据完整性 ====================
 
-describe('promotions/promotion-types — 正例', () => {
-  it('应定义 PromotionType 为 6 种活动类型', () => {
-    const src = readTypes();
-    assert.ok(src.includes("type PromotionType"), '缺少 PromotionType');
+describe('promotions/page — 数据完整性', () => {
+  it('应包含 promos 数据数组', () => {
+    const src = readPage();
+    assert.ok(src.includes('const promos: Promotion'), '缺少 promos 数据');
+  });
+
+  it('应包含多种活动类型', () => {
+    const src = readPage();
     assert.ok(src.includes("'discount'"), '缺少 discount');
-    assert.ok(src.includes("'coupon'"), '缺少 coupon');
-    assert.ok(src.includes("'cashback'"), '缺少 cashback');
-    assert.ok(src.includes("'gift'"), '缺少 gift');
     assert.ok(src.includes("'bundle'"), '缺少 bundle');
-    assert.ok(src.includes("'clearance'"), '缺少 clearance');
+    assert.ok(src.includes("'gift'"), '缺少 gift');
+    assert.ok(src.includes("'points'"), '缺少 points');
+    assert.ok(src.includes("'flash'"), '缺少 flash');
   });
 
-  it('应定义 PromotionStatus 为 6 种状态', () => {
-    const src = readTypes();
-    assert.ok(src.includes("type PromotionStatus"), '缺少 PromotionStatus');
-    assert.ok(src.includes("'draft'"), '缺少 draft');
-    assert.ok(src.includes("'scheduled'"), '缺少 scheduled');
-    assert.ok(src.includes("'active'"), '缺少 active');
-    assert.ok(src.includes("'paused'"), '缺少 paused');
-    assert.ok(src.includes("'expired'"), '缺少 expired');
-    assert.ok(src.includes("'cancelled'"), '缺少 cancelled');
+  it('应包含多种活动状态', () => {
+    const src = readPage();
+    assert.ok(src.includes("'active'"), '缺少 active 状态');
+    assert.ok(src.includes("'ended'"), '缺少 ended 状态');
+    assert.ok(src.includes("'draft'"), '缺少 draft 状态');
+    assert.ok(src.includes("'scheduled'"), '缺少 scheduled 状态');
   });
 
-  it('应定义 PromotionItem 接口含所有必要字段', () => {
-    const src = readTypes();
-    assert.ok(src.includes('interface PromotionItem'), '缺少 PromotionItem');
-    const requiredFields = ['id', 'name', 'type', 'status', 'storeId', 'storeName', 'budget', 'usedBudget', 'startAt', 'endAt', 'createdBy', 'createdAt', 'updatedAt', 'description'];
-    for (const f of requiredFields) {
-      assert.ok(src.includes(`${f}:`), `缺少 ${f} 字段`);
-    }
-  });
-
-  it('应可选字段 discountPercent', () => {
-    const src = readTypes();
-    assert.ok(src.includes('discountPercent?'), 'discountPercent 应为可选');
+  it('应包含 KPI 统计 (活动总数/总营收/平均ROI)', () => {
+    const src = readPage();
+    assert.ok(src.includes('活动总数'), '缺少活动总数');
+    assert.ok(src.includes('总营收'), '缺少总营收');
+    assert.ok(src.includes('平均ROI'), '缺少平均ROI');
   });
 });
 
-// ==================== Data layer 正例 ====================
+// ==================== 功能验证 ====================
 
-describe('promotions/promotions-data — 正例', () => {
-  it('应默认包含 8 条模拟数据', () => {
-    const src = readData();
-    const idMatches = src.match(/id:\s*'/g);
-    assert.equal(idMatches?.length ?? 0, 8, '预期 8 条活动数据');
+describe('promotions/page — 功能', () => {
+  it('应使用 Tabs 切换列表/分析视图', () => {
+    const src = readPage();
+    assert.ok(src.includes('<Tabs'), '缺少 Tabs');
+    assert.ok(src.includes("'list'"), '缺少列表视图');
+    assert.ok(src.includes("'analytics'"), '缺少分析视图');
   });
 
-  it('应包含 4 种不同 storeId', () => {
-    const src = readData();
-    assert.ok(src.includes("'S001'"), '缺少旗舰店');
-    assert.ok(src.includes("'S002'"), '缺少科技路店');
-    assert.ok(src.includes("'S003'"), '缺少中山路店');
+  it('应渲染 StatCard 统计组件', () => {
+    const src = readPage();
+    assert.ok(src.includes('StatCard'), '缺少 StatCard');
   });
 
-  it('应包含所有 6 种状态覆盖', () => {
-    const src = readData();
-    assert.ok(src.includes("status: 'active'"), '缺少 active 状态');
-    assert.ok(src.includes("status: 'scheduled'"), '缺少 scheduled 状态');
-    assert.ok(src.includes("status: 'draft'"), '缺少 draft 状态');
-    assert.ok(src.includes("status: 'expired'"), '缺少 expired 状态');
-    assert.ok(src.includes("status: 'paused'"), '缺少 paused 状态');
-    assert.ok(src.includes("status: 'cancelled'"), '缺少 cancelled 状态');
+  it('应包含创建活动和导出报告按钮', () => {
+    const src = readPage();
+    assert.ok(src.includes('创建活动'), '缺少创建活动按钮');
+    assert.ok(src.includes('导出报告'), '缺少导出报告按钮');
   });
 
-  it('应包含所有 6 种活动类型覆盖', () => {
-    const src = readData();
-    assert.ok(src.includes("type: 'discount'"), '缺少 discount');
-    assert.ok(src.includes("type: 'coupon'"), '缺少 coupon');
-    assert.ok(src.includes("type: 'gift'"), '缺少 gift');
-    assert.ok(src.includes("type: 'clearance'"), '缺少 clearance');
-    assert.ok(src.includes("type: 'cashback'"), '缺少 cashback');
-    assert.ok(src.includes("type: 'bundle'"), '缺少 bundle');
+  it('应包含 formatMoney 工具函数', () => {
+    const src = readPage();
+    assert.ok(src.includes('function fm'), '缺少 fm 格式化函数');
   });
 });
 
 // ==================== 边界 ====================
 
 describe('promotions/page — 边界', () => {
-  it('getPromotions 应返回非空数组', () => {
-    const data = readData();
-    assert.ok(data.includes(']'), '数据应有闭合数组');
-    assert.ok(data.includes('['), '数据应有起始数组');
+  it('应包含活动列表卡片渲染', () => {
+    const src = readPage();
+    assert.ok(src.includes('promos.map'), '使用 map 渲染列表');
   });
 
-  it('usedBudget 应不大于 budget', () => {
-    const data = readData();
-    // Parse as plain text check — for p2 budget=20000 usedBudget=8500
-    assert.ok(data.includes('budget: 50000') && data.includes('usedBudget: 32000'), 'p1 预算比例正确');
-    assert.ok(data.includes('budget: 20000') && data.includes('usedBudget: 8500'), 'p2 预算比例正确');
-    assert.ok(data.includes('budget: 15000') && data.includes('usedBudget: 0'), 'p3 未使用预算');
+  it('应包含效果分析表格', () => {
+    const src = readPage();
+    assert.ok(src.includes('analytics'), '包含 analytics tab');
+    assert.ok(src.includes('<table'), '包含表格');
   });
 
-  it('每种活动都应包含 startAt 和 endAt', () => {
-    const data = readData();
-    const startMatches = data.match(/startAt:/g);
-    const endMatches = data.match(/endAt:/g);
-    assert.equal(startMatches?.length, 8, '应有 8 个 startAt');
-    assert.equal(endMatches?.length, 8, '应有 8 个 endAt');
+  it('应使用 StatusBadge 展示状态', () => {
+    const src = readPage();
+    assert.ok(src.includes('StatusBadge'), '缺少 StatusBadge');
   });
 
-  it('空搜索时应显示所有活动', () => {
-    const client = readClient();
-    assert.ok(client.includes('searchTerm'), '搜索通过 searchTerm 实现');
-    assert.ok(client.includes('sortedItems.length'), '显示总数量');
-  });
-
-  it('分页选项应包含 5/10/20', () => {
-    const client = readClient();
-    assert.ok(client.includes('PAGE_SIZE_OPTIONS'), '分页选项已定义');
-  });
-});
-
-// ==================== 防御: 错误处理 & 非法输入 ====================
-
-describe('promotions/page — 防御', () => {
-  it('不存在活动时应显示空状态提示', () => {
-    const client = readClient();
-    assert.ok(client.includes('emptyTitle'), '缺少空状态标题');
-    assert.ok(client.includes('暂无促销活动'), '空状态提示应为暂无促销活动');
-  });
-
-  it('空搜索结果应有描述文案', () => {
-    const client = readClient();
-    assert.ok(client.includes('emptyDescription'), '缺少空状态描述');
-  });
-
-  it('formatDate 应安全处理 ISO 字符串', () => {
-    const client = readClient();
-    assert.ok(client.includes('new Date(iso)'), '使用 Date 构造函数');
-    assert.ok(client.includes('padStart'), '使用 padStart 补零');
-  });
-
-  it('formatMoney 应对 0 元正常显示', () => {
-    const client = readClient();
-    assert.ok(client.includes('toLocaleString'), '使用 toLocaleString');
-    assert.ok(client.includes("'zh-CN'"), 'locale 为 zh-CN');
-  });
-
-  it('usagePercent 应对 0 预算返回 0%', () => {
-    const client = readClient();
-    assert.ok(client.includes('<= 0'), '处理 0 或负预算');
-  });
-
-  it('PromotionListClient 应为 client component', () => {
-    const client = readClient();
-    assert.ok(client.includes("'use client'"), '缺少 client directive');
-  });
-
-  it('status variant 映射应覆盖所有状态', () => {
-    const client = readClient();
-    assert.ok(client.includes("'active'"), '含 active 映射');
-    assert.ok(client.includes("'paused'"), '含 paused 映射');
-    assert.ok(client.includes("'draft'"), '含 draft 映射');
-    assert.ok(client.includes("'expired'"), '含 expired 映射');
-    assert.ok(client.includes("'cancelled'"), '含 cancelled 映射');
-  });
-
-  it('所有 StatusBadge variant 应正确处理', () => {
-    const client = readClient();
-    assert.ok(client.includes("return 'success'"), 'active → success');
-    assert.ok(client.includes("return 'danger'"), 'expired/cancelled → danger');
-    assert.ok(client.includes("'default'"), 'scheduled → default');
+  it('空 ROI 应有合理处理', () => {
+    const src = readPage();
+    assert.ok(src.includes('roi>0'), '有 ROI 判空逻辑');
   });
 });

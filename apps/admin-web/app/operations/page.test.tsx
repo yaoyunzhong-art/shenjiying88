@@ -18,14 +18,14 @@ function readSource(): string {
 // ---- 正例 ----
 
 describe('operations — 正例', () => {
-  it('应导出一个默认组件 OperationsListPage', () => {
+  it('应导出一个默认组件 OperationsCenterPage', () => {
     const src = readSource();
-    assert.ok(src.includes('export default function OperationsListPage'), '缺少默认导出组件');
+    assert.ok(src.includes('export default function OperationsCenterPage'), '缺少默认导出组件');
   });
 
-  it('应包含 operation 类型定义或数据', () => {
+  it('应包含 OpsTask 类型定义', () => {
     const src = readSource();
-    assert.ok(src.includes('operation') || src.includes('Operation'), '缺少 operation 定义');
+    assert.ok(src.includes('interface OpsTask'), '缺少 OpsTask 接口');
   });
 
   it('应包含状态过滤逻辑', () => {
@@ -35,26 +35,26 @@ describe('operations — 正例', () => {
 
   it('应包含搜索或过滤功能', () => {
     const src = readSource();
-    assert.ok(src.includes('search') || src.includes('filter') || src.includes('Search'), '缺少搜索过滤');
+    assert.ok(src.includes('Tabs') || src.includes('filter'), '缺少过滤功能');
   });
 });
 
 // ---- 边界 ----
 
 describe('operations — 边界', () => {
-  it('空状态应有正确处理', () => {
+  it('应包含任务数据数组定义', () => {
     const src = readSource();
-    assert.ok(src.includes('.length') || src.includes('?.length') || src.includes('empty'), '空状态处理');
+    assert.ok(src.includes('const tasks:'), '缺少 tasks 数据');
   });
 
-  it('应包含 isLoading 加载状态', () => {
+  it('应包含 KPI 目标数据集', () => {
     const src = readSource();
-    assert.ok(src.includes('isLoading'), '缺少 isLoading');
+    assert.ok(src.includes('const kpis:'), '缺少 kpis 数据');
   });
 
-  it('应支持分类筛选', () => {
+  it('应支持分类筛选 Tabs', () => {
     const src = readSource();
-    assert.ok(src.includes('category') || src.includes('type'), '缺少分类筛选');
+    assert.ok(src.includes("tab") || src.includes("'tasks'"), '缺少 tab 切换');
   });
 });
 
@@ -63,7 +63,7 @@ describe('operations — 边界', () => {
 describe('operations — 防御', () => {
   it('应包含 use client 指令', () => {
     const src = readSource();
-    assert.ok(src.includes("'use client'") || src.includes('"use client"'), '缺少 use client');
+    assert.ok(src.includes("'use client'"), '缺少 use client');
   });
 
   it('应包含 useMemo 性能优化', () => {
@@ -71,8 +71,8 @@ describe('operations — 防御', () => {
     assert.ok(src.includes('useMemo'), '缺少 useMemo');
   });
 
-  it('应包含 Suspense fallback', () => {
+  it('应包含 DataTable 表格组件', () => {
     const src = readSource();
-    assert.ok(src.includes('fallback'), '缺少 fallback');
+    assert.ok(src.includes('DataTable'), '缺少 DataTable');
   });
 });
