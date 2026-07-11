@@ -116,6 +116,7 @@ import { CurrencyModule } from './modules/currency/currency.module';
 import { AiMarketingModule } from './modules/ai-marketing/ai-marketing.module';
 import { OpenAPIModule } from './modules/openapi/openapi.module';
 import { LocaleModule } from './modules/locale/locale.module';
+import { DbKnowledgeModule } from './modules/db-knowledge/db-knowledge.module';
 
 @Module({
   imports: [
@@ -244,6 +245,7 @@ import { LocaleModule } from './modules/locale/locale.module';
     AiMarketingModule,
     OpenAPIModule,
     LocaleModule,
+    DbKnowledgeModule,
   ],
   providers: [
     RequestGovernanceService,

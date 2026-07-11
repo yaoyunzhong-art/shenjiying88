@@ -15,7 +15,7 @@ import { Pool } from 'pg'
 const PROJECT_ROOT = join(__dirname, '..')
 const KNOWLEDGE_DIR = join(PROJECT_ROOT, 'docs/knowledge')
 
-// 从 .env 读取 DATABASE_URL
+// 从 .env 读取 POSTGRES_URL（优先）或 DATABASE_URL（回退）
 function loadEnv(): string {
   const envPath = join(PROJECT_ROOT, '.env')
   if (!existsSync(envPath)) {
@@ -23,12 +23,16 @@ function loadEnv(): string {
     return 'postgresql://postgres:postgres@127.0.0.1:5432/shenjiying'
   }
   const content = readFileSync(envPath, 'utf-8')
-  const match = content.match(/DATABASE_URL=(.+)/)
+  // 优先使用 POSTGRES_URL（与 API 服务 pg-pool.ts 一致），回退到 DATABASE_URL
+  let match = content.match(/POSTGRES_URL=(.+)/)
   if (!match) {
-    console.warn('⚠️  DATABASE_URL not found in .env')
+    match = content.match(/DATABASE_URL=(.+)/)
+  }
+  if (!match) {
+    console.warn('⚠️  POSTGRES_URL / DATABASE_URL not found in .env')
     return 'postgresql://postgres:postgres@127.0.0.1:5432/shenjiying'
   }
-  return match[1].trim().replace(/\\*\\*/g, '') // remove ***
+  return match[1].trim().replace(/\\*\\*/g, '') // remove *** if password is placeholder
 }
 
 // 从路径推断 kind
@@ -78,7 +82,7 @@ async function main() {
     console.log('✅  Database connected')
   } catch (e: any) {
     console.error(`❌  Cannot connect to database: ${e.message}`)
-    console.log('   Make sure PostgreSQL is running and DATABASE_URL is correct.')
+    console.log('   Make sure PostgreSQL is running and POSTGRES_URL/DATABASE_URL is correct.')
     console.log('   DB_URL:', url.replace(/\/\/.*@/, '//***@'))
     await pool.end()
     process.exit(1)
