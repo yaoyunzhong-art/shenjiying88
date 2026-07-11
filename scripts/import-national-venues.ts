@@ -6,8 +6,8 @@
  *       事务写入 + 回滚 + 导入日志
  */
 
-import { readdirSync, readFileSync, existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { readdirSync, readFileSync, existsSync, writeFileSync, mkdirSync } from 'node:fs'
+import { join, dirname } from 'node:path'
 import { Pool } from 'pg'
 
 const PROJECT_ROOT = join(__dirname, '..')
@@ -133,4 +133,144 @@ async function run() {
   }
 }
 
-run()
+// ══════════════════════════════════════════════════════════════════════════════
+// 种子数据导入 — 从 seed-national-cities-data.ts 导入120个全国场馆
+// ══════════════════════════════════════════════════════════════════════════════
+
+/** 从种子数据导入120个场馆到 competitor_venues 表（或导出JSON回退） */
+async function importVenueSeedData(): Promise<void> {
+  let nationalCityVenueData: any[]
+  try {
+    const mod = await import('./seed-national-cities-data.ts')
+    nationalCityVenueData = mod.nationalCityVenueData || mod.default
+  } catch (e: any) {
+    console.error('❌ 无法加载种子数据文件:', e.message)
+    process.exit(1)
+  }
+
+  if (!Array.isArray(nationalCityVenueData) || nationalCityVenueData.length === 0) {
+    console.error('❌ 种子数据为空')
+    process.exit(1)
+  }
+
+  console.log(`📦 种子数据: ${nationalCityVenueData.length} 个场馆`)
+
+  let pgAvailable = false
+  let pool: Pool | null = null
+  let client: any = null
+
+  // 尝试连接 PG
+  try {
+    const url = loadEnv()
+    pool = new Pool({ connectionString: url, connectionTimeoutMillis: 3000 })
+    client = await pool.connect()
+    await client.query('SELECT 1')
+    pgAvailable = true
+    console.log('✅ PostgreSQL 连接成功')
+  } catch (e: any) {
+    pgAvailable = false
+    console.log('⚠️  PostgreSQL 不可用，将导出 JSON 文件:', e.message.slice(0, 80))
+  }
+
+  let inserted = 0
+  let skipped = 0
+  let errors = 0
+
+  if (pgAvailable && client && pool) {
+    try {
+      await client.query('BEGIN')
+
+      for (const venue of nationalCityVenueData) {
+        try {
+          const data9dims = JSON.stringify({
+            rating: venue.rating,
+            review_count: venue.review_count,
+            address: venue.address,
+            tags: venue.tags,
+          })
+
+          const r = await client.query(
+            `INSERT INTO competitor_venues
+             (city, venue_name, venue_type, source_platform, data_9dims, region, city_tier, collection_batch, scout_updated_at)
+             VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, NOW())
+             ON CONFLICT (city, venue_name) DO NOTHING
+             RETURNING id`,
+            [
+              venue.city,
+              venue.name,
+              venue.category || null,
+              venue.source || null,
+              data9dims,
+              venue.region || null,
+              venue.city_tier || null,
+              BATCH_NO,
+            ]
+          )
+
+          if (r.rows.length > 0) {
+            inserted++
+          } else {
+            skipped++
+          }
+        } catch (e: any) {
+          errors++
+          console.error(`  ❌ 插入失败 [${venue.name}]: ${e.message.slice(0, 100)}`)
+        }
+
+        // 进度打印（每30个输出一次）
+        const processed = inserted + skipped + errors
+        if (processed % 30 === 0 || processed === nationalCityVenueData.length) {
+          console.log(`  📊 进度: ${processed}/${nationalCityVenueData.length} (已插入${inserted}, 跳过${skipped}, 错误${errors})`)
+        }
+      }
+
+      await client.query('COMMIT')
+      console.log(`\n✅ 种子数据导入完成: 插入${inserted}, 跳过${skipped}, 错误${errors}`)
+    } catch (e: any) {
+      await client.query('ROLLBACK')
+      console.error('❌ 事务回滚:', e.message)
+      pgAvailable = false
+    } finally {
+      client.release()
+      await pool.end()
+    }
+  }
+
+  // PG 不可用 → 导出 JSON 文件
+  if (!pgAvailable) {
+    const exportDir = join(PROJECT_ROOT, 'docs', 'knowledge')
+    mkdirSync(exportDir, { recursive: true })
+
+    const exportPath = join(exportDir, 'venue-seed-export.json')
+
+    const exportData = nationalCityVenueData.map(v => ({
+      city: v.city,
+      venue_name: v.name,
+      venue_type: v.category,
+      source_platform: v.source,
+      data_9dims: {
+        rating: v.rating,
+        review_count: v.review_count,
+        address: v.address,
+        tags: v.tags,
+      },
+      region: v.region,
+      city_tier: v.city_tier,
+      collection_batch: BATCH_NO,
+    }))
+
+    writeFileSync(exportPath, JSON.stringify(exportData, null, 2), 'utf-8')
+    console.log(`\n📄 已导出 ${exportData.length} 条场馆数据到 ${exportPath}`)
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CLI入口
+// ══════════════════════════════════════════════════════════════════════════════
+
+const command = process.argv[2]
+if (command === 'import-seed') {
+  importVenueSeedData()
+} else {
+  run()
+}
