@@ -11,7 +11,7 @@ import {
   PageShell, StatCard, StatusBadge, DetailActionBar, DetailClosureBar,
   InfoRow, CopyToClipboard, WorkspaceBreadcrumb, Tabs
 } from '@m5/ui';
-import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../../components/detail-workspace-registry';
+import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../components/detail-workspace-registry';
 
 type MemberStatus = 'active' | 'inactive' | 'frozen' | 'expired';
 type Gender = 'male' | 'female' | 'other';
