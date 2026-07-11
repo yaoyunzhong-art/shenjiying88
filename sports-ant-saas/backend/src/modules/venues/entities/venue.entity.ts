@@ -1,0 +1,273 @@
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  BeforeInsert,
+} from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
+import { ApiProperty } from '@nestjs/swagger';
+import { User } from '../../users/entities/user.entity';
+import { Device } from '../../devices/entities/device.entity';
+import { Member } from '../../members/entities/member.entity';
+import { Ticket } from '../../tickets/entities/ticket.entity';
+import { Session } from '../../sessions/entities/session.entity';
+import { Coach } from '../../sessions/entities/coach.entity';
+
+export enum VenueStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  MAINTENANCE = 'maintenance',
+  CLOSED = 'closed',
+}
+
+export enum VenueType {
+  GYM = 'gym',
+  STADIUM = 'stadium',
+  COURT = 'court',
+  POOL = 'pool',
+  OTHER = 'other',
+  INDOOR = 'indoor',
+  OUTDOOR = 'outdoor',
+  MIXED = 'mixed',
+}
+
+@Entity('venues')
+export class Venue {
+  @ApiProperty({ description: '场地ID' })
+  @PrimaryColumn('uuid')
+  id: string = '';
+
+  @BeforeInsert()
+  generateId() {
+    if (!this.id) {
+      this.id = uuidv4();
+    }
+  }
+
+  @ApiProperty({ description: '场地名称' })
+  @Column({ length: 200 })
+  name: string = '';
+
+  @ApiProperty({ description: '场地描述', nullable: true })
+  @Column({ type: 'text', nullable: true })
+  description: string = '';
+
+  @ApiProperty({ description: '场地地址' })
+  @Column({ length: 500 })
+  address: string = '';
+
+  @ApiProperty({ description: '城市' })
+  @Column({ length: 100 })
+  city: string = '';
+
+  @ApiProperty({ description: '省份/州' })
+  @Column({ length: 100 })
+  province: string = '';
+
+  @ApiProperty({ description: '邮政编码' })
+  @Column({ length: 20 })
+  postalCode: string = '';
+
+  @ApiProperty({ description: '国家' })
+  @Column({ length: 100, default: '中国' })
+  country: string;
+
+  @ApiProperty({ description: '纬度', nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
+  latitude: number;
+
+  @ApiProperty({ description: '经度', nullable: true })
+  @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
+  longitude: number;
+
+  @ApiProperty({ description: '场地类型', enum: VenueType })
+  @Column({ type: 'varchar', length: 50, default: VenueType.INDOOR })
+  type: VenueType;
+
+  @ApiProperty({ description: '最大容量' })
+  @Column({ type: 'int' })
+  capacity: number;
+
+  @ApiProperty({ description: '场地面积（平方米）', nullable: true })
+  @Column({ type: 'int', nullable: true })
+  area: number;
+
+  @ApiProperty({ description: '设施列表', nullable: true })
+  @Column({ type: 'simple-array', nullable: true })
+  facilities: string[];
+
+  @ApiProperty({ description: '营业时间（JSON格式）', nullable: true })
+  @Column({ type: 'text', nullable: true })
+  openingHours: Record<string, any>;
+
+  @ApiProperty({ description: '联系方式' })
+  @Column({ length: 100 })
+  contactPhone: string;
+
+  @ApiProperty({ description: '联系邮箱' })
+  @Column({ length: 200 })
+  contactEmail: string;
+
+  @ApiProperty({ description: '场地状态', enum: VenueStatus })
+  @Column({ type: 'varchar', length: 50, default: VenueStatus.ACTIVE })
+  status: VenueStatus;
+
+  @ApiProperty({ description: '是否支持在线预订' })
+  @Column({ default: true })
+  allowOnlineBooking: boolean;
+
+  @ApiProperty({ description: '预订提前时间（小时）' })
+  @Column({ type: 'int', default: 24 })
+  bookingAdvanceHours: number;
+
+  @ApiProperty({ description: '取消政策（JSON格式）', nullable: true })
+  @Column({ type: 'text', nullable: true })
+  cancellationPolicy: Record<string, any>;
+
+  @ApiProperty({ description: '价格信息（JSON格式）', nullable: true })
+  @Column({ type: 'text', nullable: true })
+  pricing: Record<string, any>;
+
+  @ApiProperty({ description: '每小时价格', nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  hourlyRate: number;
+
+  @ApiProperty({ description: '平均评分', nullable: true })
+  @Column({ type: 'decimal', precision: 3, scale: 2, nullable: true })
+  rating: number;
+
+  @ApiProperty({ description: '评论数量', nullable: true })
+  @Column({ type: 'int', default: 0 })
+  reviewCount: number;
+
+  @ApiProperty({ description: '是否特色场馆' })
+  @Column({ default: false })
+  isFeatured: boolean;
+
+  @ApiProperty({ description: '是否有停车场' })
+  @Column({ default: false })
+  hasParking: boolean;
+
+  @ApiProperty({ description: '是否有淋浴' })
+  @Column({ default: false })
+  hasShower: boolean;
+
+  @ApiProperty({ description: '是否有储物柜' })
+  @Column({ default: false })
+  hasLocker: boolean;
+
+  @ApiProperty({ description: '是否有WiFi' })
+  @Column({ default: false })
+  hasWifi: boolean;
+
+  @ApiProperty({ description: '是否有咖啡厅' })
+  @Column({ default: false })
+  hasCafe: boolean;
+
+  @ApiProperty({ description: '图片URL列表', nullable: true })
+  @Column({ type: 'simple-array', nullable: true })
+  images: string[];
+
+  @ApiProperty({ description: '创建者ID' })
+  @Column({ type: 'uuid' })
+  createdBy: string;
+
+  @ApiProperty({ description: '所有者ID', nullable: true })
+  @Column({ type: 'uuid', nullable: true })
+  ownerId: string;
+
+  @ApiProperty({ description: '所有者（关系）', type: () => User })
+  @ManyToOne(() => User, (user) => user.venues, { nullable: true })
+  owner: User;
+
+  @ApiProperty({ description: '设备列表', type: () => [Device] })
+  @OneToMany(() => Device, (device) => device.venue)
+  devices!: Device[];
+
+  @ApiProperty({ description: '会员列表', type: () => [Member] })
+  @OneToMany(() => Member, (member) => member.venue)
+  members!: Member[];
+
+  @ApiProperty({ description: '票务列表', type: () => [Ticket] })
+  @OneToMany(() => Ticket, (ticket) => ticket.venue)
+  tickets!: Ticket[];
+
+  @ApiProperty({ description: '课程列表', type: () => [Session] })
+  @OneToMany(() => Session, (session) => session.venue)
+  sessions!: Session[];
+
+  @ApiProperty({ description: '教练列表', type: () => [Coach] })
+  @OneToMany(() => Coach, (coach) => coach.venue)
+  coaches!: Coach[];
+
+  @ApiProperty({ description: '创建时间' })
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @ApiProperty({ description: '更新时间' })
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @ApiProperty({ description: '删除时间', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
+  deletedAt: Date;
+
+  // 虚拟字段
+  @ApiProperty({ description: '距离（米）', nullable: true })
+  distance?: number;
+
+  @ApiProperty({ description: '平均评分', nullable: true })
+  averageRating?: number;
+
+  constructor() {
+    // 初始化所有必填字段
+    this.id = '';
+    this.name = '';
+    this.description = '';
+    this.address = '';
+    this.city = '';
+
+    this.country = '';
+    this.postalCode = '';
+    this.latitude = 0;
+    this.longitude = 0;
+    this.type = VenueType.INDOOR;
+    this.capacity = 0;
+    this.area = 0;
+    this.facilities = [];
+    this.openingHours = {};
+    this.contactPhone = '';
+    this.contactEmail = '';
+
+    this.status = VenueStatus.ACTIVE;
+    this.ownerId = '';
+
+    this.allowOnlineBooking = true;
+    this.bookingAdvanceHours = 24;
+    this.cancellationPolicy = {};
+    this.pricing = {};
+    this.images = [];
+
+    this.hourlyRate = 0;
+    this.rating = 0;
+    this.reviewCount = 0;
+    this.isFeatured = false;
+    this.hasParking = false;
+    this.hasShower = false;
+    this.hasLocker = false;
+    this.hasWifi = false;
+    this.hasCafe = false;
+
+    this.createdAt = new Date();
+    this.createdBy = '';
+    this.owner = null as any;
+    this.updatedAt = new Date();
+    this.deletedAt = new Date();
+    this.distance = 0;
+    this.averageRating = 0;
+  }
+}
