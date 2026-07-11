@@ -67,3 +67,4 @@
 | 2026-07-11 23:07 | pulse#333 | ⛔P0 全库(非api) [TSC↑20err+admin174/storefront26fail] | Base❌20err/Service✅/Controller✅/CTest❌200fail | ❌38🏆连续→P0 |
 | 2026-07-11 23:37 | pulse#334 | ⛔P0持续 全库(非api) [持平原状 — 无改善] | Base❌20err/Service✅/Controller✅/CTest❌200fail | ❌连续4次→P0持续 |
 | 2026-07-12 00:17 | pulse#335 | ⛔P0持续 全库(非api) [admin-web20err+storefront11fail+app21fail] | Base❌20err/Service✅/Controller✅/CTest❌32fail | ❌连续5次→P0持续 |
+| 2026-07-12 00:33 | pulse#336 | 全库(非api) [P0解除-全绿回归] | Base✅/Service✅/Controller✅/C级测试✅ | 1🏆(新周期) |
