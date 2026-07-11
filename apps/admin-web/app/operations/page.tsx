@@ -1,379 +1,121 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import {
-  DetailActionBar,
-  RuntimeOperationsListPageSection,
-} from '@m5/ui';
-import { deriveScopedCapabilityActionItem, type GatedCapabilityActionItem } from '../lyt-capability-access';
-import { StoreCapabilityActionStrip } from '../components/store-capability-action-strip';
-import { adminRuntimeOperationsPreset, adminRuntimeOperationsRoute } from '../operations-data';
-import {
-  batchReplayAdminRuntimeReceipts,
-  filterAdminRuntimeOperationsByFocus,
-  getReplayableAdminRuntimeReceipts,
-  loadAdminRuntimeOperations,
-  type AdminRuntimeOperationsFocus,
-} from '../operations-view-model';
-import { StoreCapabilityGatingBanner } from '../components/store-capability-gating-banner';
-import { useStoreCapabilityGating } from '../components/use-store-capability-gating';
-import { RuntimeGovernancePanel } from '../components/runtime-governance-panel';
-import { useDetailActions } from '../components/use-detail-actions';
+/**
+ * 运营中心 - Operations Center
+ * 角色: 🎯运行专员 / 👔店长
+ * 功能: 任务管理、流程审批、运营工单、KPI看板
+ */
 
-function OperationsListPageContent() {
-  const searchParams = useSearchParams();
-  const [snapshot, setSnapshot] = useState<{
-    deliveryMode: 'api' | 'fallback';
-    generatedAt: string;
-    operations: Parameters<typeof RuntimeOperationsListPageSection>[0]['operations'];
-    receipts: Parameters<typeof getReplayableAdminRuntimeReceipts>[0]['receipts'];
-    stalledReceipts: Array<{
-      receiptCode: string;
-      escalationAction: string;
-      summary: string;
-    }>;
-    batchSummary: {
-      filteredReceipts: number;
-      replayableReceipts: number;
-      governanceAuditReceipts: number;
-      stalledReceipts: number;
-      blockedReceipts: number;
-      highRiskReceipts: number;
-    };
-    summary: {
-      backlog: number;
-      stalledCallbacks: number;
-      highRiskBacklog: number;
-      blockedActions: number;
-    };
-  }>({
-    deliveryMode: 'fallback',
-    generatedAt: new Date().toISOString(),
-    operations: [],
-    receipts: [],
-    stalledReceipts: [],
-    batchSummary: {
-      filteredReceipts: 0,
-      replayableReceipts: 0,
-      governanceAuditReceipts: 0,
-      stalledReceipts: 0,
-      blockedReceipts: 0,
-      highRiskReceipts: 0,
-    },
-    summary: {
-      backlog: 0,
-      stalledCallbacks: 0,
-      highRiskBacklog: 0,
-      blockedActions: 0,
-    },
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isBatchReplaying, setIsBatchReplaying] = useState(false);
-  const [batchReplayMessage, setBatchReplayMessage] = useState<string | null>(null);
-  const operationsGating = useStoreCapabilityGating({
-    targetCapabilities: ['payment', 'order', 'device', 'gate', 'coin']
-  });
-  const focus = useMemo<AdminRuntimeOperationsFocus>(() => {
-    const raw = searchParams.get('focus');
-    if (raw === 'batch-replay' || raw === 'governance-audit') {
-      return raw;
-    }
-    return 'all';
-  }, [searchParams]);
+import { useState, useMemo } from 'react';
+import { PageShell, StatCard, StatusBadge, Tabs, DataTable, Pagination, usePagination, type DataTableColumn } from '@m5/ui';
 
-  useEffect(() => {
-    let disposed = false;
+type OpsTaskStatus = 'todo'|'in_progress'|'done'|'cancelled';
+type OpsTaskType = 'approval'|'inspection'|'onboarding'|'report'|'event'|'issue';
+type OpsPriority = 'p0'|'p1'|'p2'|'p3';
 
-    async function hydrateOperations() {
-      try {
-        const nextSnapshot = await loadAdminRuntimeOperations(focus);
-        if (!disposed) {
-          setSnapshot(nextSnapshot);
-        }
-      } finally {
-        if (!disposed) {
-          setIsLoading(false);
-        }
-      }
-    }
+interface OpsTask { id:string; title:string; type:OpsTaskType; priority:OpsPriority; status:OpsTaskStatus; assignee:string; dept:string; createdDate:string; dueDate:string; completedDate:string; description:string; attachments:number; comments:number; }
+interface KpiTarget { metric:string; target:number; actual:number; unit:string; period:string; owner:string; status:'on_track'|'at_risk'|'behind'|'exceeded'; }
 
-    void hydrateOperations();
+const OTS: Record<OpsTaskStatus,{l:string;v:'success'|'warning'|'danger'|'neutral'}> = { todo:{l:'待处理',v:'danger'}, in_progress:{l:'进行中',v:'warning'}, done:{l:'已完成',v:'success'}, cancelled:{l:'已取消',v:'neutral'} };
+const OTT: Record<OpsTaskType,string> = { approval:'审批', inspection:'巡检', onboarding:'入职', report:'报告', event:'活动', issue:'问题' };
+const OTP: Record<OpsPriority,{l:string;v:'danger'|'warning'|'info'|'neutral'}> = { p0:{l:'P0紧急',v:'danger'}, p1:{l:'P1重要',v:'warning'}, p2:{l:'P2普通',v:'info'}, p3:{l:'P3低优',v:'neutral'} };
+const KPI_S: Record<KpiTarget['status'],{l:string;v:'success'|'warning'|'danger'|'info'}> = { on_track:{l:'正常',v:'success'}, at_risk:{l:'风险',v:'warning'}, behind:{l:'滞后',v:'danger'}, exceeded:{l:'超额',v:'info'} };
 
-    return () => {
-      disposed = true;
-    };
-  }, [focus]);
+const tasks: OpsTask[] = [
+  { id:'OT1', title:'7月营业数据汇总', type:'report', priority:'p1', status:'in_progress', assignee:'李娜', dept:'运营部', createdDate:'2026-07-10', dueDate:'2026-07-15', completedDate:'', description:'汇总7月1-10日营业数据', attachments:0, comments:2 },
+  { id:'OT2', title:'设备采购审批', type:'approval', priority:'p0', status:'todo', assignee:'店长', dept:'管理部', createdDate:'2026-07-11', dueDate:'2026-07-12', completedDate:'', description:'新购2台VR设备审批', attachments:3, comments:1 },
+  { id:'OT3', title:'新员工入职办理', type:'onboarding', priority:'p1', status:'in_progress', assignee:'赵敏', dept:'HR', createdDate:'2026-07-08', dueDate:'2026-07-14', completedDate:'', description:'3名新导玩员入职手续', attachments:2, comments:0 },
+  { id:'OT4', title:'暑期活动物料准备', type:'event', priority:'p1', status:'todo', assignee:'陈静', dept:'市场部', createdDate:'2026-07-09', dueDate:'2026-07-17', completedDate:'', description:'海报、展架、礼品采购', attachments:1, comments:3 },
+  { id:'OT5', title:'消防巡检整改', type:'inspection', priority:'p0', status:'todo', assignee:'杨磊', dept:'技术部', createdDate:'2026-07-11', dueDate:'2026-07-13', completedDate:'', description:'灭火器过期更换+应急灯维修', attachments:0, comments:0 },
+  { id:'OT6', title:'7月客户满意度报告', type:'report', priority:'p2', status:'done', assignee:'吴芳', dept:'运营部', createdDate:'2026-07-05', dueDate:'2026-07-10', completedDate:'2026-07-10', description:'6月满意度数据分析', attachments:1, comments:2 },
+  { id:'OT7', title:'库存盘点执行', type:'issue', priority:'p2', status:'in_progress', assignee:'刘洋', dept:'库存', createdDate:'2026-07-08', dueDate:'2026-07-15', completedDate:'', description:'7月例行库存盘点', attachments:0, comments:1 },
+  { id:'OT8', title:'空调故障报修', type:'issue', priority:'p1', status:'todo', assignee:'杨磊', dept:'技术部', createdDate:'2026-07-11', dueDate:'2026-07-12', completedDate:'', description:'A区空调制冷不足', attachments:0, comments:0 },
+  { id:'OT9', title:'充值活动方案审核', type:'approval', priority:'p2', status:'done', assignee:'店长', dept:'管理部', createdDate:'2026-07-06', dueDate:'2026-07-09', completedDate:'2026-07-09', description:'会员充值满赠活动方案', attachments:2, comments:5 },
+  { id:'OT10', title:'周运营报告', type:'report', priority:'p2', status:'done', assignee:'李娜', dept:'运营部', createdDate:'2026-07-04', dueDate:'2026-07-07', completedDate:'2026-07-07', description:'上周运营数据汇总', attachments:0, comments:1 },
+];
 
-  const replayableReceipts = useMemo(
-    () => getReplayableAdminRuntimeReceipts(snapshot),
-    [snapshot]
-  );
-  const filteredOperations = useMemo(
-    () => filterAdminRuntimeOperationsByFocus(snapshot, focus),
-    [focus, snapshot]
-  );
-  const focusDescription = useMemo(() => {
-    if (focus === 'batch-replay') {
-      return `当前聚焦 ${snapshot.batchSummary.replayableReceipts} 条可回放治理回执。`;
-    }
-    if (focus === 'governance-audit') {
-      return `当前聚焦 ${snapshot.batchSummary.governanceAuditReceipts} 条高风险、阻塞或 stalled 治理回执。`;
-    }
-    return '当前展示全部 runtime governance backlog。';
-  }, [focus, snapshot.batchSummary.governanceAuditReceipts, snapshot.batchSummary.replayableReceipts]);
-  const handleBatchReplay = useCallback(async () => {
-    const targetReceipts = replayableReceipts;
-    if (targetReceipts.length === 0) {
-      setBatchReplayMessage('当前没有可批量回放的治理回执。');
-      return;
-    }
+const kpis: KpiTarget[] = [
+  { metric:'月营收', target:380000, actual:265000, unit:'元', period:'7月', owner:'运营部', status:'on_track' },
+  { metric:'日均客流', target:400, actual:365, unit:'人', period:'7月', owner:'运营部', status:'at_risk' },
+  { metric:'设备在线率', target:95, actual:91.2, unit:'%', period:'7月', owner:'技术部', status:'behind' },
+  { metric:'会员活跃率', target:60, actual:58.5, unit:'%', period:'7月', owner:'运营部', status:'at_risk' },
+  { metric:'客单价', target:55, actual:52.3, unit:'元', period:'7月', owner:'运营部', status:'on_track' },
+  { metric:'投诉解决率', target:95, actual:97.5, unit:'%', period:'7月', owner:'运营部', status:'exceeded' },
+  { metric:'库存周转', target:15, actual:12.5, unit:'天', period:'7月', owner:'库存', status:'on_track' },
+  { metric:'员工培训完成', target:90, actual:78, unit:'%', period:'7月', owner:'HR', status:'at_risk' },
+];
 
-    setIsBatchReplaying(true);
-    setBatchReplayMessage(null);
-    try {
-      const result = await batchReplayAdminRuntimeReceipts(targetReceipts);
-      const nextSnapshot = await loadAdminRuntimeOperations(focus);
-      setSnapshot(nextSnapshot);
-      const approvalsPending = result.items.filter((item) => item.receipt.approval?.status === 'PENDING').length;
-      const dispatched = result.total - approvalsPending;
-      setBatchReplayMessage(
-        approvalsPending > 0
-          ? `已调度 ${dispatched} 条治理回执，另有 ${approvalsPending} 条高风险回执已转入审批。`
-          : `已提交 ${result.total} 条治理回执的批量 replay。`
-      );
-    } catch {
-      setBatchReplayMessage('批量 replay 失败，请检查 foundation.runtime-governance.write 权限或 API 可达性。');
-    } finally {
-      setIsBatchReplaying(false);
-    }
-  }, [focus, replayableReceipts]);
-
-  const description = `${adminRuntimeOperationsRoute.description} 当前数据源：${
-    snapshot.deliveryMode === 'api' ? 'foundation runtime backlog' : 'fallback'
-  }。${focusDescription}`;
-  const gatedBulkActions = useMemo<GatedCapabilityActionItem[]>(
-    () => [
-      ...(operationsGating.visibleActions[0]
-        ? [
-            deriveScopedCapabilityActionItem(operationsGating.visibleActions[0], {
-              key: 'operations-bulk-replay',
-              label:
-                operationsGating.visibleActions[0].isDisabled
-                  ? '等待批量回放'
-                  : operationsGating.visibleActions[0].access === 'degraded'
-                    ? '降级批量回放'
-                    : '批量回放',
-              href: `/operations?storeId=${operationsGating.storeId}&focus=batch-replay`,
-              hint: `${operationsGating.visibleActions[0].hint} 用于治理回执批量回放。`
-            })
-          ]
-        : []),
-      ...(operationsGating.visibleActions[1]
-        ? [
-            deriveScopedCapabilityActionItem(operationsGating.visibleActions[1], {
-              key: 'operations-bulk-audit',
-              label:
-                operationsGating.visibleActions[1].isDisabled
-                  ? '等待治理巡检'
-                  : operationsGating.visibleActions[1].access === 'degraded'
-                    ? '降级治理巡检'
-                    : '治理巡检',
-              href: `/operations?storeId=${operationsGating.storeId}&focus=governance-audit`,
-              hint: `${operationsGating.visibleActions[1].hint} 用于治理异常批量巡检。`
-            })
-          ]
-        : [])
-    ],
-    [operationsGating.storeId, operationsGating.visibleActions]
-  );
-  const canOpenOperationDetail = Boolean(operationsGating.primaryNavigableAction);
-
-  const { actions } = useDetailActions({
-    workspace: 'operations',
-    detailId: focus,
-    record: { snapshot, focus, deliveryMode: snapshot.deliveryMode },
-    shareTitle: '运营工作台',
-    shareText: '查看治理操作 backlog / 批量回放 / 治理巡检'
-  });
-
-  return (
-    <>
-      {isLoading ? (
-        <div
-          style={{
-            marginBottom: 16,
-            borderRadius: 12,
-            padding: '12px 14px',
-            border: '1px solid rgba(148, 163, 184, 0.18)',
-            background: 'rgba(15, 23, 42, 0.35)',
-            color: '#cbd5e1',
-            fontSize: 13,
-          }}
-        >
-          正在同步真实治理操作...
-        </div>
-      ) : null}
-      <StoreCapabilityGatingBanner
-        title="运营入口治理"
-        description="治理操作页会联合 payment、order、device、gate、coin 能力判断是否允许直接进入、降级进入或先阻塞相关运营动作。"
-        targetCapabilities={['payment', 'order', 'device', 'gate', 'coin']}
-        surfaceHref="/stores"
-        surfaceLabel="返回门店列表"
-      />
-      <StoreCapabilityActionStrip
-        title="运营批量动作"
-        description="批量回放和治理巡检会直接复用 payment / order / device / gate / coin capability gating。"
-        actions={gatedBulkActions}
-        emptyHint="当前门店没有可执行的运营批量动作，请先检查对应 capability access。"
-      />
-      {!canOpenOperationDetail && !operationsGating.isLoading ? (
-        <div
-          style={{
-            marginBottom: 16,
-            borderRadius: 12,
-            padding: '12px 14px',
-            border: '1px solid rgba(248, 113, 113, 0.24)',
-            background: 'rgba(127, 29, 29, 0.22)',
-            color: '#fecaca',
-            fontSize: 13,
-          }}
-        >
-          当前门店治理相关 capability 处于阻塞或隐藏状态，运营列表详情入口已回退到能力矩阵，请先处理治理问题。
-        </div>
-      ) : null}
-      {focus === 'batch-replay' ? (
-        <div
-          style={{
-            marginBottom: 16,
-            borderRadius: 12,
-            padding: '14px 16px',
-            border: '1px solid rgba(96, 165, 250, 0.24)',
-            background: 'rgba(15, 23, 42, 0.45)',
-          }}
-        >
-          <div style={{ fontSize: 16, fontWeight: 600, color: '#e2e8f0', marginBottom: 6 }}>
-            批量回放工作台
-          </div>
-          <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 12 }}>
-            当前可批量回放 {snapshot.batchSummary.replayableReceipts} 条治理回执；执行后会自动刷新 backlog。
-          </div>
-          <button
-            type="button"
-            disabled={snapshot.deliveryMode !== 'api' || isBatchReplaying || replayableReceipts.length === 0}
-            onClick={() => void handleBatchReplay()}
-            style={{
-              borderRadius: 10,
-              border: '1px solid rgba(96, 165, 250, 0.35)',
-              background: isBatchReplaying ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.28)',
-              color: '#dbeafe',
-              padding: '10px 14px',
-              cursor:
-                snapshot.deliveryMode !== 'api' || isBatchReplaying || replayableReceipts.length === 0
-                  ? 'not-allowed'
-                  : 'pointer',
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            {isBatchReplaying ? '批量回放中...' : '执行批量回放'}
-          </button>
-          {batchReplayMessage ? (
-            <div style={{ marginTop: 10, fontSize: 12, color: '#cbd5e1' }}>{batchReplayMessage}</div>
-          ) : null}
-          <div style={{ marginTop: 10, fontSize: 12, color: '#94a3b8' }}>
-            过滤后 {snapshot.batchSummary.filteredReceipts} 条，stalled {snapshot.batchSummary.stalledReceipts} 条，高风险 {snapshot.batchSummary.highRiskReceipts} 条。
-          </div>
-          <div style={{ marginTop: 14 }}>
-            <RuntimeGovernancePanel
-              tenantContext={{
-                tenantId: 'tenant-demo',
-                brandId: 'brand-demo',
-                storeId: operationsGating.storeId,
-                marketCode: 'cn-mainland'
-              }}
-            />
-          </div>
-        </div>
-      ) : null}
-      {focus === 'governance-audit' ? (
-        <div
-          style={{
-            marginBottom: 16,
-            borderRadius: 12,
-            padding: '14px 16px',
-            border: '1px solid rgba(250, 204, 21, 0.24)',
-            background: 'rgba(15, 23, 42, 0.42)',
-            color: '#fde68a',
-          }}
-        >
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>治理巡检视图</div>
-          <div style={{ fontSize: 13, color: '#fef3c7' }}>
-            已聚焦 {snapshot.batchSummary.governanceAuditReceipts} 条高风险、阻塞或 stalled 回执，便于运营先看异常再决定是否重放。
-          </div>
-          <div style={{ marginTop: 8, fontSize: 12, color: '#fde68a' }}>
-            其中 stalled {snapshot.batchSummary.stalledReceipts} 条，blocked {snapshot.batchSummary.blockedReceipts} 条，高风险 {snapshot.batchSummary.highRiskReceipts} 条。
-          </div>
-        </div>
-      ) : null}
-      <RuntimeOperationsListPageSection
-        title={adminRuntimeOperationsRoute.title}
-        description={description}
-        operations={filteredOperations}
-        preset={adminRuntimeOperationsPreset}
-        detailHrefBase={adminRuntimeOperationsRoute.detailHrefBase}
-        detailHrefBuilder={(operation) =>
-          canOpenOperationDetail
-            ? `${adminRuntimeOperationsRoute.detailHrefBase}/${operation.id}`
-            : `/stores/${operationsGating.storeId}/capability-access?focus=runtime-operation&id=${operation.id}`
-        }
-        statsCopy={{
-          totalLabel: '治理回执',
-          totalHint: (matched) =>
-            snapshot.deliveryMode === 'api'
-              ? `${matched} 条 backlog 回执`
-              : `${matched} 条 fallback 记录`,
-          runningLabel: '阻塞中',
-          runningHint:
-            snapshot.deliveryMode === 'api'
-              ? `${snapshot.summary.blockedActions} 条 blocked`
-              : '等待真实 API 接入',
-          failedLabel: '等待回写',
-          failedHint:
-            snapshot.deliveryMode === 'api'
-              ? `${snapshot.summary.stalledCallbacks} 条 callback stalled`
-              : '关注回放与回写',
-          typeLabel: '高风险积压',
-          typeHint:
-            snapshot.deliveryMode === 'api'
-              ? `${snapshot.summary.highRiskBacklog} 条 high-risk backlog`
-              : 'fallback 分类统计',
-        }}
-        emptyTitle="当前没有治理操作 backlog"
-        emptyDescription="真实 runtime governance backlog 清空后，这里会显示空态。"
-      />
-
-      <DetailActionBar
-        actions={actions}
-        heading="工作台收口动作"
-        caption="复制 / 导出 / 分享当前运营工作台筛选快照"
-      />
-    </>
-  );
+function buildColumns(): DataTableColumn<OpsTask>[] {
+  return [
+    {key:'title',title:'任务',dataKey:'title',sortable:true,render:i=><span style={{color:'#93c5fd',fontWeight:600}}>{i.title}</span>},
+    {key:'type',title:'类型',sortable:true,sortValue:i=>i.type,render:i=>OTT[i.type]},
+    {key:'priority',title:'优先级',sortable:true,sortValue:i=>i.priority,render:i=><StatusBadge label={OTP[i.priority].l} variant={OTP[i.priority].v} size="sm" />},
+    {key:'status',title:'状态',sortable:true,sortValue:i=>i.status,render:i=><StatusBadge label={OTS[i.status].l} variant={OTS[i.status].v} size="sm" dot />},
+    {key:'assignee',title:'负责人',dataKey:'assignee',sortable:true},
+    {key:'dueDate',title:'截止',dataKey:'dueDate',sortable:true,render:i=>{const d=Math.ceil((new Date(i.dueDate).getTime()-Date.now())/86400000);return<span style={{color:d<0?'#ef4444':d<3?'#eab308':'#94a3b8'}}>{i.dueDate}</span>;}},
+    {key:'comments',title:'评论',dataKey:'comments',sortable:true,align:'right'},
+  ];
 }
 
-export default function OperationsListPage() {
-  return (
-    <Suspense fallback={<OperationsPageFallback />}>
-      <OperationsListPageContent />
-    </Suspense>
-  );
-}
+export default function OperationsCenterPage() {
+  const [tab,setTab]=useState<'tasks'|'kpi'>('tasks');
+  const todoCount = tasks.filter(t=>t.status==='todo').length;
+  const inProgressCount = tasks.filter(t=>t.status==='in_progress').length;
+  const p0Count = tasks.filter(t=>t.priority==='p0').length;
 
-function OperationsPageFallback() {
+  const kpiStats = useMemo(() => ({
+    onTrack: kpis.filter(k=>k.status==='on_track'||k.status==='exceeded').length,
+    atRisk: kpis.filter(k=>k.status==='at_risk').length,
+    behind: kpis.filter(k=>k.status==='behind').length,
+  }), []);
+
+  const [sortConfig,setSortConfig]=useState<null>(null);
+  const columns=useMemo(()=>buildColumns(),[]);
+  const sorted=tasks;
+  const pagination=usePagination({initialPageSize:10});
+
   return (
-    <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32, color: '#cbd5e1' }}>
-      正在加载治理操作中心...
+    <main style={{maxWidth:1200,margin:'0 auto',padding:32}}>
+      <PageShell title="🏢 运营中心" subtitle="任务管理·KPI看板·流程审批">
+        <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(4,1fr)',marginBottom:20}}>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>待处理任务</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#ef4444'}}>{todoCount}</div><div style={{marginTop:4,fontSize:12,color:'#eab308'}}>进行中: {inProgressCount}</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>P0紧急</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#ef4444'}}>{p0Count}</div><div style={{marginTop:4,fontSize:12,color:'#fca5a5'}}>需立即处理</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>KPI达标</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#22c55e'}}>{kpiStats.onTrack}/{kpis.length}</div><div style={{marginTop:4,fontSize:12,color:'#eab308'}}>风险: {kpiStats.atRisk}</div></div>
+          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>滞后指标</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#ef4444'}}>{kpiStats.behind}</div><div style={{marginTop:4,fontSize:12,color:'#fca5a5'}}>需重点关注</div></div>
+        </div>
+
+        <div style={{marginBottom:16}}><Tabs items={[{key:'tasks',label:`📋 工单 (${tasks.length})`},{key:'kpi',label:`🎯 KPI (${kpis.length})`}]} activeKey={tab} onChange={t=>setTab(t as typeof tab)} variant="pills" /></div>
+
+        {tab==='tasks' && <>
+          <DataTable title={`运营工单`} columns={columns} items={pagination.paginate(sorted)} rowKey={i=>i.id} sort={sortConfig} onSortChange={setSortConfig} striped compact />
+          <Pagination page={pagination.page} pageSize={pagination.pageSize} total={sorted.length} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
+        </>}
+
+        {tab==='kpi' && <div style={{display:'grid',gap:10}}>
+          {kpis.map(k => (
+            <div key={k.metric} style={{padding:'14px 18px',borderRadius:12,background:'rgba(15,23,42,0.3)',border:'1px solid rgba(148,163,184,0.1)'}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
+                <div><span style={{fontWeight:700,fontSize:15}}>{k.metric}</span><span style={{color:'#94a3b8',marginLeft:8,fontSize:12}}>{k.period} · {k.owner}</span></div>
+                <StatusBadge label={KPI_S[k.status].l} variant={KPI_S[k.status].v} size="sm" />
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:16}}>
+                <div style={{flex:1,height:8,borderRadius:4,background:'rgba(148,163,184,0.12)',overflow:'hidden'}}>
+                  <div style={{height:'100%',width:`${Math.min((k.actual/k.target)*100,100)}%`,borderRadius:4,
+                    background:k.status==='behind'?'#ef4444':k.status==='at_risk'?'#eab308':k.status==='exceeded'?'#8b5cf6':'#22c55e'}} />
+                </div>
+                <div style={{fontSize:14,fontWeight:700,textAlign:'right',minWidth:100}}>
+                  <span style={{color:k.actual>=k.target?'#22c55e':'#ef4444'}}>{k.actual.toLocaleString()}</span>
+                  <span style={{color:'#94a3b8',fontSize:12,marginLeft:4}}>/ {k.target.toLocaleString()} {k.unit}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>}
+      </PageShell>
     </main>
   );
 }
+
+const card: React.CSSProperties={borderRadius:16,padding:18,background:'rgba(15,23,42,0.38)',border:'1px solid rgba(148,163,184,0.18)'};
+const th: React.CSSProperties={textAlign:'left',padding:'10px 14px',color:'#94a3b8',fontSize:12,borderBottom:'1px solid rgba(148,163,184,0.18)'};
+const td: React.CSSProperties={padding:'10px 14px',color:'#e2e8f0',fontSize:13,borderBottom:'1px solid rgba(148,163,184,0.1)'};
