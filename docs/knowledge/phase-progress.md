@@ -35,10 +35,11 @@
 | 2026-07-11 | #303 | 非API全包 (sports-ants, svip, tenant+inventory) | ✅ | ✅ | ✅ | ✅ | 11🏆 |
 | 2026-07-11 | #304 | 非API全包 (采购表单, tenant-config e2e, e2e-auto-gen, 设备巡检表单) | ✅ | ✅ | ✅ | ✅ | 12🏆 |
 | 2026-07-11 | #305 | 非API全包 (导购员工作台, 角色测试v4, Comment 评论组件) | ✅ | ✅ | ✅ | ✅ | 13🏆 |
-2026-07-11 07:25 | pulse#306 | 全库(非api) | Base✅/Service✅/Controller✅/C级测试✅ | 14🏆
+| 2026-07-11 07:25 | pulse#306 | 全库(非api) | Base✅/Service✅/Controller✅/C级测试✅ | 14🏆
 | 2026-07-11 08:07 | pulse#307 | 全库(非api) | Base✅/Service✅/Controller✅/C级测试✅ | 15🏆
 | 2026-07-11 08:41 | pulse#308 | 全库(非api) | Base✅/Service✅/Controller✅/C级测试✅ | 16🏆
 | 2026-07-11 09:23 | pulse#309 | 全库(非api) | Base✅/Service✅/Controller✅/C级测试✅ | 17🏆
 | 2026-07-11 09:55 | pulse#310 | 全库(非api) [reports,C] [compliance,A] | Base✅/Service✅/Controller✅/C级测试✅ | 18🏆
 | 2026-07-11 10:26 | pulse#311 | 全库(非api) [performance+reports,C] | Base✅/Service✅/Controller✅/C级测试✅ | 19🏆
-2026-07-11 11:03 | pulse#312 | 全库(非api) [docs,D] [canary,C] | Base✅/Service✅/Controller✅/C级测试✅ | 20🏆
+| 2026-07-11 11:03 | pulse#312 | 全库(非api) [docs,D] [canary,C] | Base✅/Service✅/Controller✅/C级测试✅ | 20🏆
+| 2026-07-11 11:39 | pulse#313 | 全库(非api) [docs,D] [report,C] [member-level,C] | Base✅/Service✅/Controller✅/C级测试✅ | 21🏆
