@@ -175,8 +175,8 @@ function generateStaff(): StaffMember[] {
       email: `${name.toLowerCase()}@m5store.com`,
       department: departments[idx]!,
       position: STAFF_ROLE_LABELS[roles[idx]!],
-      hireDate: d.toISOString().split('T')[0],
-      lastWorkDate: new Date().toISOString().split('T')[0],
+      hireDate: d.toISOString().split('T')[0]!,
+      lastWorkDate: new Date().toISOString().split('T')[0]!,
       shiftToday: shifts[idx]!,
       attendance: {
         late: Math.floor(Math.random() * 5),
@@ -199,14 +199,14 @@ function generateSchedule(staffList: StaffMember[]): ShiftSchedule[] {
   for (let day = -1; day <= 6; day++) {
     const date = new Date(today);
     date.setDate(date.getDate() + day);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = date.toISOString().split('T')[0]!;
     const dayOfWeek = date.getDay();
 
     staffList.forEach((staff, idx) => {
       if (staff.status === 'resigned') return;
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
       const shifts: ShiftType[] = isWeekend ? ['morning', 'evening', 'rest', 'rest', 'afternoon', 'full_day', 'rest', 'afternoon', 'morning', 'rest', 'evening', 'afternoon'] : ['morning', 'afternoon', 'rest', 'morning', 'afternoon', 'evening', 'rest', 'full_day', 'morning', 'afternoon', 'rest', 'morning'];
-      const shift = shifts[idx % shifts.length];
+      const shift = shifts[idx % shifts.length]!;
       const timeMap: Record<ShiftType, { start: string; end: string }> = {
         morning: { start: '08:00', end: '14:00' },
         afternoon: { start: '14:00', end: '20:00' },
@@ -253,7 +253,7 @@ function generateTrainingRecords(staffList: StaffMember[]): TrainingRecord[] {
         staffName: staff.name,
         courseName: courses[Math.floor(Math.random() * courses.length)]!,
         trainer: trainers[Math.floor(Math.random() * trainers.length)]!,
-        date: d.toISOString().split('T')[0],
+        date: d.toISOString().split('T')[0]!,
         duration: 1 + Math.floor(Math.random() * 8),
         status: statuses[Math.floor(Math.random() * statuses.length)]!,
         score: Math.random() > 0.3 ? 60 + Math.floor(Math.random() * 40) : null,
