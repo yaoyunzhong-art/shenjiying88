@@ -108,3 +108,4 @@
 | 2026-07-12 11:52 | 🐜**路由迁移** | **promotions+operations→stores/[id]/ 修复storefront角色冒烟6fail** | 17文件, 0删除遗漏, 6角色冒烟fail消除 | ✅ |
 
 | 2026-07-12 11:38 | pulse#355 | 全库(非api) [稳态维持·RQ-001~005超3h无响应·**P0已连4脉冲·紧急人工介入持续触发⚠️⛔**] | Base✅(TSC14/14)/Service✅/Controller⚠️(store7/tob4/miniapp12)/CTest✅(admin✅/app✅/mobile✅) | 0🏆 |
+| 2026-07-12 12:08 | pulse#356 | storefront-web [⚠️⚠️ 修复引入14TSC新回归+已知冒烟维持+RQ-001~005超3.5h未闭合+P0连5脉冲+新派dispatch-356] | Base❌(TSC13/14·storefront新回归14处)/Service⚠️/Controller⚠️/CTest⚠️(admin3✖/app12✖/mobile❌) | 0🏆 |
