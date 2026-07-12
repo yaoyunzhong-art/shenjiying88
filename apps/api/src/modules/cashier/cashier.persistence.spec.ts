@@ -11,6 +11,7 @@
  *  7. 降级: 无 CacheService 时纯内存运行
  *
  * 使用 Nest Test + InMemoryCacheService 模拟 Redis,不依赖真实 Redis。
+ * 注意: MemberService.memberStore 是模块级单例,每个测试用例用独立 memberId。
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
@@ -21,17 +22,35 @@ import { CashierService } from './cashier.service'
 import { CashierOrderStatus, CashierPaymentStatus, type CashierOrder, type CashierPayment } from './cashier.entity'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 
-// ── Helper ──────────────────────────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────────
 
 function makeTenantContext(overrides?: Partial<RequestTenantContext>): RequestTenantContext {
   return { tenantId: 'persist-tenant', brandId: 'persist-brand', storeId: 'persist-store', ...overrides }
 }
 
-function makeOrderInput(memberId = 'member-persist-001') {
+function makeOrderInput(memberId: string) {
   return {
     memberId,
     items: [{ skuId: 'sku-persist', title: '持久化商品', quantity: 2, price: 5000 }],
     currency: 'CNY',
+  }
+}
+
+let memberSeq = 0
+function uniqueMember(prefix = 'm'): string {
+  memberSeq++
+  return `${prefix}-${memberSeq}`
+}
+
+function registerMember(memberService: MemberService, memberId: string): void {
+  try {
+    memberService.register({
+      memberId,
+      tenantContext: makeTenantContext(),
+      nickname: '测试会员',
+    })
+  } catch {
+    // 已注册则跳过
   }
 }
 
@@ -44,10 +63,6 @@ interface TestContext {
   ctx: RequestTenantContext
 }
 
-/**
- * 创建 Nest 测试模块,注入 CashierService + InMemoryCacheService。
- * 每次调用重置现金存储器 + memberStore + cache。
- */
 async function createTestContext(): Promise<TestContext> {
   const moduleRef = await Test.createTestingModule({
     imports: [CacheModule.forRootInMemory()],
@@ -63,22 +78,8 @@ async function createTestContext(): Promise<TestContext> {
 
   cashierService.resetCashierStoresForTests()
   cache.clear()
-  // 清除 MemberService 的模块级 memberStore
-  // (通过 ListProfiles -> 删除每个 entry)
-  for (const p of memberService.listProfiles()) {
-    // MemberService 没有公开的删除方法,用 register 会抛 "already exists"
-    // 改用 getProfile 校验: 每个测试用不同的 memberId
-  }
 
   return { cashierService, cache, memberService, ctx: makeTenantContext() }
-}
-
-function registerMember(memberService: MemberService, memberId: string): void {
-  memberService.register({
-    memberId,
-    tenantContext: makeTenantContext(),
-    nickname: '测试会员',
-  })
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -101,7 +102,6 @@ describe('P0-A1 | Order write-through', () => {
 
   beforeEach(async () => {
     ctx = await createTestContext()
-    registerMember(ctx.memberService, 'wrt-member')
   })
 
   afterEach(() => {
@@ -109,10 +109,12 @@ describe('P0-A1 | Order write-through', () => {
   })
 
   it('createOrder -> orderStore + Redis 都有数据', async () => {
-    const order = await ctx.cashierService.createOrder(ctx.ctx, makeOrderInput('wrt-member'))
+    const uid = uniqueMember('w')
+    registerMember(ctx.memberService, uid)
+    const order = await ctx.cashierService.createOrder(ctx.ctx, makeOrderInput(uid))
 
     // 通过 getOrder 读取 (走内存)
-    const fromMemory = await ctx.cashierService.getOrder(order.orderId, ctx.ctx)
+    const fromMemory = await ctx.cashierService.getOrderAsync(order.orderId, ctx.ctx)
     expect(fromMemory).toBeDefined()
     expect(fromMemory!.orderId).toBe(order.orderId)
 
@@ -125,7 +127,9 @@ describe('P0-A1 | Order write-through', () => {
   })
 
   it('createOrder -> 租户上下文保留', async () => {
-    const order = await ctx.cashierService.createOrder(ctx.ctx, makeOrderInput('wrt-member'))
+    const uid = uniqueMember('w2')
+    registerMember(ctx.memberService, uid)
+    const order = await ctx.cashierService.createOrder(ctx.ctx, makeOrderInput(uid))
     const fromCache = await ctx.cache.get<CashierOrder>(`cashier:order:${order.orderId}`)
     expect(fromCache!.tenantContext.tenantId).toBe('persist-tenant')
     expect(fromCache!.tenantContext.brandId).toBe('persist-brand')
@@ -138,8 +142,9 @@ describe('P0-A1 | Order cache-aside (内存清空后从 Redis 恢复)', () => {
 
   beforeEach(async () => {
     ctx = await createTestContext()
-    registerMember(ctx.memberService, 'aside-member')
-    order = await ctx.cashierService.createOrder(ctx.ctx, makeOrderInput('aside-member'))
+    const uid = uniqueMember('a')
+    registerMember(ctx.memberService, uid)
+    order = await ctx.cashierService.createOrder(ctx.ctx, makeOrderInput(uid))
   })
 
   afterEach(() => {
@@ -155,14 +160,14 @@ describe('P0-A1 | Order cache-aside (内存清空后从 Redis 恢复)', () => {
     expect(fromCache).toBeDefined()
 
     // getOrder 应通过 cache-aside 从 Redis 恢复
-    const recovered = await ctx.cashierService.getOrder(order.orderId, ctx.ctx)
+    const recovered = await ctx.cashierService.getOrderAsync(order.orderId, ctx.ctx)
     expect(recovered).toBeDefined()
     expect(recovered!.orderId).toBe(order.orderId)
     expect(recovered!.totalAmount).toBe(10000)
     expect(recovered!.status).toBe(CashierOrderStatus.Created)
 
     // 验证内存已回填 (第二次走内存)
-    const fromMemoryAgain = await ctx.cashierService.getOrder(order.orderId, ctx.ctx)
+    const fromMemoryAgain = await ctx.cashierService.getOrderAsync(order.orderId, ctx.ctx)
     expect(fromMemoryAgain).toBeDefined()
   })
 
@@ -170,7 +175,7 @@ describe('P0-A1 | Order cache-aside (内存清空后从 Redis 恢复)', () => {
     ctx.cashierService.resetCashierStoresForTests()
     await ctx.cache.del(`cashier:order:${order.orderId}`)
 
-    const result = await ctx.cashierService.getOrder(order.orderId, ctx.ctx)
+    const result = await ctx.cashierService.getOrderAsync(order.orderId, ctx.ctx)
     expect(result).toBeUndefined()
   })
 
@@ -178,7 +183,7 @@ describe('P0-A1 | Order cache-aside (内存清空后从 Redis 恢复)', () => {
     ctx.cashierService.resetCashierStoresForTests()
 
     const wrongCtx = makeTenantContext({ tenantId: 'other-tenant' })
-    const result = await ctx.cashierService.getOrder(order.orderId, wrongCtx)
+    const result = await ctx.cashierService.getOrderAsync(order.orderId, wrongCtx)
     expect(result).toBeUndefined()
   })
 })
@@ -189,8 +194,9 @@ describe('P0-A1 | Order update -> Redis 同步更新', () => {
 
   beforeEach(async () => {
     ctx = await createTestContext()
-    registerMember(ctx.memberService, 'update-member')
-    order = await ctx.cashierService.createOrder(ctx.ctx, makeOrderInput('update-member'))
+    const uid = uniqueMember('u')
+    registerMember(ctx.memberService, uid)
+    order = await ctx.cashierService.createOrder(ctx.ctx, makeOrderInput(uid))
   })
 
   afterEach(() => {
@@ -204,7 +210,7 @@ describe('P0-A1 | Order update -> Redis 同步更新', () => {
     })
 
     // 内存
-    const fromMemory = await ctx.cashierService.getOrder(order.orderId, ctx.ctx)
+    const fromMemory = await ctx.cashierService.getOrderAsync(order.orderId, ctx.ctx)
     expect(fromMemory).toBeDefined()
     expect(fromMemory!.status).toBe(CashierOrderStatus.Closed)
 
@@ -219,7 +225,7 @@ describe('P0-A1 | Order update -> Redis 同步更新', () => {
     await ctx.cashierService.closeOrder(order.orderId, ctx.ctx, { reason: 'test' })
     ctx.cashierService.resetCashierStoresForTests()
 
-    const recovered = await ctx.cashierService.getOrder(order.orderId, ctx.ctx)
+    const recovered = await ctx.cashierService.getOrderAsync(order.orderId, ctx.ctx)
     expect(recovered!.status).toBe(CashierOrderStatus.Closed)
   })
 })
@@ -234,8 +240,9 @@ describe('P0-A1 | Payment cache-aside', () => {
 
   beforeEach(async () => {
     ctx = await createTestContext()
-    registerMember(ctx.memberService, 'pay-member')
-    order = await ctx.cashierService.createOrder(ctx.ctx, makeOrderInput('pay-member'))
+    const uid = uniqueMember('p')
+    registerMember(ctx.memberService, uid)
+    order = await ctx.cashierService.createOrder(ctx.ctx, makeOrderInput(uid))
   })
 
   afterEach(() => {
@@ -264,14 +271,14 @@ describe('P0-A1 | Payment cache-aside', () => {
     const payment = await ctx.cashierService.createPayment(order.orderId, { channel: 'alipay' })
     ctx.cashierService.resetCashierStoresForTests()
 
-    const recovered = await ctx.cashierService.getLatestPayment(order.orderId, ctx.ctx)
+    const recovered = await ctx.cashierService.getLatestPaymentAsync(order.orderId, ctx.ctx)
     expect(recovered).toBeDefined()
     expect(recovered!.paymentId).toBe(payment.paymentId)
     expect(recovered!.channel).toBe('alipay')
   })
 
   it('applyPaymentCallback 同步 Redis', async () => {
-    await ctx.cashierService.createPayment(order.orderId, { channel: 'card' })
+    const payment = await ctx.cashierService.createPayment(order.orderId, { channel: 'card' })
     ctx.cashierService.resetCashierStoresForTests()
 
     const { order: updatedOrder, payment: updatedPayment } = await ctx.cashierService.applyPaymentCallback({
@@ -306,16 +313,17 @@ describe('P0-A1 | Payment cache-aside', () => {
 describe('P0-A1 | resetCashierCacheForTests', () => {
   it('清空内存 + Redis', async () => {
     const ctx = await createTestContext()
-    registerMember(ctx.memberService, 'reset-member')
+    const uid = uniqueMember('r')
+    registerMember(ctx.memberService, uid)
 
-    const order = await ctx.cashierService.createOrder(ctx.ctx, makeOrderInput('reset-member'))
-    const fromMemory = await ctx.cashierService.getOrder(order.orderId, ctx.ctx)
+    const order = await ctx.cashierService.createOrder(ctx.ctx, makeOrderInput(uid))
+    const fromMemory = await ctx.cashierService.getOrderAsync(order.orderId, ctx.ctx)
     expect(fromMemory).toBeDefined()
 
     // 配置了 Cache 时,reset 清空全部
     await ctx.cashierService.resetCashierCacheForTests()
 
-    const afterReset = await ctx.cashierService.getOrder(order.orderId, ctx.ctx)
+    const afterReset = await ctx.cashierService.getOrderAsync(order.orderId, ctx.ctx)
     expect(afterReset).toBeUndefined()
 
     // Redis 也清空
@@ -341,13 +349,14 @@ describe('P0-A1 | 降级 (无 CacheService)', () => {
     const memberService = moduleRef.get(MemberService)
     cashierService.resetCashierStoresForTests()
 
-    registerMember(memberService, 'member-no-cache')
+    const uid = uniqueMember('d1')
+    registerMember(memberService, uid)
 
-    const order = await cashierService.createOrder(makeTenantContext(), makeOrderInput('member-no-cache'))
+    const order = await cashierService.createOrder(makeTenantContext(), makeOrderInput(uid))
     expect(order.orderId).toBeDefined()
     expect(order.status).toBe(CashierOrderStatus.Created)
 
-    const fetched = await cashierService.getOrder(order.orderId, makeTenantContext())
+    const fetched = await cashierService.getOrderAsync(order.orderId, makeTenantContext())
     expect(fetched).toBeDefined()
   })
 
@@ -360,14 +369,15 @@ describe('P0-A1 | 降级 (无 CacheService)', () => {
     const memberService = moduleRef.get(MemberService)
     cashierService.resetCashierStoresForTests()
 
-    registerMember(memberService, 'member-no-cache-2')
+    const uid = uniqueMember('d2')
+    registerMember(memberService, uid)
 
     const order = await cashierService.createOrder(
       makeTenantContext(),
-      makeOrderInput('member-no-cache-2'),
+      makeOrderInput(uid),
     )
     await cashierService.closeOrder(order.orderId, makeTenantContext(), { reason: '降级测试' })
-    const closed = await cashierService.getOrder(order.orderId, makeTenantContext())
+    const closed = await cashierService.getOrderAsync(order.orderId, makeTenantContext())
     expect(closed!.status).toBe(CashierOrderStatus.Closed)
   })
 })

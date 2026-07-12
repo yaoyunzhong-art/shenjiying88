@@ -16,6 +16,27 @@ import { LytToCashierBridge } from './bridges/lyt-to-cashier.bridge'
 import { CommercialBillingModule } from '../foundation/commercial-billing/commercial-billing.module'
 
 /**
+ * P0-A1: Cache-aside 模式持久化
+ *
+ * 存储模型:
+ *   orderStore   (in-memory Map)  ​↔  Redis(cashier:order:<orderId>)
+ *   paymentStore (in-memory Map)  ​↔  Redis(cashier:payment:<paymentId>)
+ *
+ * 写入策略 (write-through):
+ *   1. 写入 in-memory Map (始终成功)
+ *   2. 异步写入 Redis (fire-and-forget, 不阻塞主流程)
+ *
+ * 读取策略 (cache-aside):
+ *   1. 优先查 in-memory Map
+ *   2. Miss 则查 Redis
+ *   3. Redis hit → 回填 Map → 返回
+ *   4. Redis miss → undefined
+ *
+ * 测试模式: CacheService 不可用(未注入)时降级为纯内存,与旧行为一致。
+ * CashierService.spec.ts 使用内联存储不依赖本 Service 实例,不受影响。
+ */
+
+/**
  * Phase-35 T158-T164 + P3-5: 收银台模块
  *
  * 包含:
