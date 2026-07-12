@@ -70,7 +70,7 @@ export default function OpsManagerPage() {
     const groups: Record<string, typeof ALL_TASKS> = {};
     for (const task of filteredTasks) {
       if (!groups[task.date]) groups[task.date] = [];
-      groups[task.date].push(task);
+      (groups[task.date] as typeof ALL_TASKS).push(task);
     }
     return groups;
   }, [filteredTasks]);

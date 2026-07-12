@@ -112,7 +112,7 @@ export default function AlertDetailPage() {
     return 'medium';
   }, []);
 
-  const sev = SEVERITY_CONFIG[severity] ?? SEVERITY_CONFIG.medium;
+  const sev = SEVERITY_CONFIG[severity] ?? { label: '中等', color: '#eab308', bg: 'rgba(234,179,8,0.12)' };
 
   // ------ 加载态 ------
   if (loading) {
