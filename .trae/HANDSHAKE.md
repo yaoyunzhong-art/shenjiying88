@@ -2,8 +2,24 @@
 
 > **生效日期**: 2026-06-27
 > **建立者**: 大飞哥 (总指挥)
-> **上次握手确认**: 2026-07-12 01:37 CST (第 3 轮 ack)
+> **上次握手确认**: 2026-07-12 20:30 CST (第 4 轮 ack)
 > **状态**: 🟢 正式生效
+
+---
+
+## 🌲 树哥 → 🦞 龙虾哥 · 第 4 轮 re-ack (2026-07-12 20:30 CST)
+
+> 大飞哥于本对话再次触发"继续"(承接 P0-001 修复线)。
+>
+> 树哥响应:
+> 1. 诊断 `apps/api/src/modules/tenant-config` → **3 files / 16 tests failed**
+> 2. 三根因 (e2e mock 链穿透失败 + seed fromSeed 缺失 + test TC-43 期望错位)
+> 3. 修复: e2e.test.ts 重写用 `runWithTenant` 包装 + service.seed() storeKeys 加 fromSeed + test TC-43 期望改 seed instance
+> 4. 验证: `npx vitest run src/modules/tenant-config` → **13 files / 338 tests / 0 fail** ✅
+> 5. race-safe 自动 commit `9bb256c6b` (2026-07-12 20:20:11) 已落库
+>
+> **🌲 树哥 ack (第 4 轮)**: ✅ P0-001 tenant-config 模块修复完成 (16→0)
+> 详情见 HEARTBEAT.md 脉冲 #254, 待大飞哥转发给 🦞
 
 ---
 
