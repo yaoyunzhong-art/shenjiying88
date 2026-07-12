@@ -100,6 +100,25 @@ export class TenantConfigRepository {
     }
   }
 
+  /**
+   * P1-F1-6: 删除单个 instance (V17 新增, 配合 deleteConfig).
+   * 按 id 删, 找不到时 no-op (避免抛错阻塞主流程).
+   */
+  async deleteInstance(id: string): Promise<void> {
+    if (this.isTestEnv) return
+    try {
+      await this.prisma.configInstance.delete({
+        where: { id },
+      })
+    } catch (err) {
+      // P1-F1-6: 找不到时 (P2025) 不视为错误
+      const code = (err as { code?: string }).code
+      if (code !== 'P2025') {
+        this.logger.error(`[deleteInstance] failed for ${id}: ${(err as Error).message}`)
+      }
+    }
+  }
+
   // ============ ConfigAuditLog ============
 
   /**

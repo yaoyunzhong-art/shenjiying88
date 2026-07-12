@@ -8,11 +8,21 @@ import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll,
  *   3. checkCrossStoreEligibility 门店范围校验
  *
  * 覆盖: 幂等,过期,范围,配额,事务冲突,并发竞争
+ *
+ * 注意: 所有调用 redeemCrossStore/batchRedeem 的测试必须通过
+ *       withTenantCtx() 包裹, 因 P0-C2 守卫 requireTenantContext()
  */
 
 import { CouponService } from './coupon.service'
 import type { CouponV2 } from './coupon.entity'
 import type { Repository, DataSource } from 'typeorm'
+import { runWithTenant } from '../../common/context/tenant-context'
+
+// ─── Tenant context helper (P0-C2 守卫兼容) ────────────────────────────
+const TENANT_CTX = { tenantId: 'test-tenant', storeId: 'store-1', userId: 'test-user' }
+function withTenantCtx<T>(fn: () => T | Promise<T>): Promise<T> {
+  return runWithTenant(TENANT_CTX, fn)
+}
 
 // ─── Mock helpers ────────────────────────────────────────────────────────
 
@@ -82,7 +92,7 @@ describe('CouponService', () => {
     vi.mocked(couponRepo.findOne).mockResolvedValue(createMockCoupon())
     vi.mocked(redemptionRepo.findOne).mockResolvedValue(null)
 
-    const result = await service.redeemCrossStore({
+    const result = await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'CROSS-2026-50',
       storeId: 'store-1',
@@ -90,7 +100,7 @@ describe('CouponService', () => {
       orderId: 'o1',
       idempotencyKey: 'o1:CROSS-2026-50',
       tenantId: 'tenant-A',
-    })
+    }))
 
     expect(result.success).toBe(true)
     expect(result.couponId).toBe('coupon-test-1')
@@ -107,7 +117,7 @@ describe('CouponService', () => {
       amount: 50,
     })
 
-    const result = await service.redeemCrossStore({
+    const result = await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'CROSS-2026-50',
       storeId: 'store-1',
@@ -115,7 +125,7 @@ describe('CouponService', () => {
       orderId: 'o1',
       idempotencyKey: 'dup-key',
       tenantId: 'tenant-A',
-    })
+    }))
 
     expect(result.success).toBe(true)
     expect(result.redemptionId).toBe('existing-r-1')
@@ -131,14 +141,14 @@ describe('CouponService', () => {
       amount: 25,
     })
 
-    const result = await service.redeemCrossStore({
+    const result = await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'ANY',
       storeId: 's1',
       orderAmount: 100,
       orderId: 'o1',
       idempotencyKey: 'dup-key-2',
-    })
+    }))
 
     expect(result.success).toBe(true)
     expect(couponRepo.findOne).not.toHaveBeenCalled()
@@ -150,14 +160,14 @@ describe('CouponService', () => {
     vi.mocked(redemptionRepo.findOne).mockResolvedValue(null)
     vi.mocked(couponRepo.findOne).mockResolvedValue(null)
 
-    const result = await service.redeemCrossStore({
+    const result = await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'NOT-FOUND',
       storeId: 's1',
       orderAmount: 100,
       orderId: 'o1',
       idempotencyKey: 'o1:NOT-FOUND',
-    })
+    }))
 
     expect(result.success).toBe(false)
     expect(result.error?.code).toBe('COUPON_NOT_FOUND')
@@ -169,14 +179,14 @@ describe('CouponService', () => {
       createMockCoupon({ expiresAt: new Date('2020-01-01T00:00:00Z') }),
     )
 
-    const result = await service.redeemCrossStore({
+    const result = await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'EXPIRED',
       storeId: 's1',
       orderAmount: 100,
       orderId: 'o1',
       idempotencyKey: 'o1:EXPIRED',
-    })
+    }))
 
     expect(result.success).toBe(false)
     expect(result.error?.code).toBe('COUPON_EXPIRED')
@@ -188,14 +198,14 @@ describe('CouponService', () => {
       createMockCoupon({ scope: { type: 'single-store', storeIds: ['store-A'], includeSubordinates: false } }),
     )
 
-    const result = await service.redeemCrossStore({
+    const result = await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'C1',
       storeId: 'store-B',
       orderAmount: 100,
       orderId: 'o1',
       idempotencyKey: 'o1:C1',
-    })
+    }))
 
     expect(result.success).toBe(false)
     expect(result.error?.code).toBe('STORE_NOT_IN_SCOPE')
@@ -207,14 +217,14 @@ describe('CouponService', () => {
       createMockCoupon({ redemptionRules: { minAmount: 200 } }),
     )
 
-    const result = await service.redeemCrossStore({
+    const result = await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'C1',
       storeId: 'store-1',
       orderAmount: 50,
       orderId: 'o1',
       idempotencyKey: 'o1:C1',
-    })
+    }))
 
     expect(result.success).toBe(false)
     expect(result.error?.code).toBe('MIN_AMOUNT_NOT_MET')
@@ -226,14 +236,14 @@ describe('CouponService', () => {
       createMockCoupon({ redemptionCount: 1000, maxRedemptions: 1000 }),
     )
 
-    const result = await service.redeemCrossStore({
+    const result = await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'C1',
       storeId: 'store-1',
       orderAmount: 100,
       orderId: 'o1',
       idempotencyKey: 'o1:C1',
-    })
+    }))
 
     expect(result.success).toBe(false)
     expect(result.error?.code).toBe('COUPON_EXHAUSTED')
@@ -245,7 +255,7 @@ describe('CouponService', () => {
       createMockCoupon({ redemptionRules: { userSegments: ['svip', 'gold'], minAmount: 0 } }),
     )
 
-    const result = await service.redeemCrossStore({
+    const result = await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'C1',
       storeId: 'store-1',
@@ -253,7 +263,7 @@ describe('CouponService', () => {
       orderId: 'o1',
       idempotencyKey: 'o1:C1',
       userSegment: 'bronze',
-    })
+    }))
 
     expect(result.success).toBe(false)
     expect(result.error?.code).toBe('USER_SEGMENT_NOT_MATCH')
@@ -267,7 +277,7 @@ describe('CouponService', () => {
       createMockCoupon({ redemptionRules: { userSegments: [] as any, minAmount: 0 } }),
     )
 
-    const result = await service.redeemCrossStore({
+    const result = await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'C1',
       storeId: 'store-1',
@@ -275,7 +285,7 @@ describe('CouponService', () => {
       orderId: 'o1',
       idempotencyKey: 'o1:C1',
       userSegment: undefined,
-    })
+    }))
 
     expect(result.success).toBe(true)
   })
@@ -284,14 +294,14 @@ describe('CouponService', () => {
     vi.mocked(redemptionRepo.findOne).mockResolvedValue(null)
     vi.mocked(couponRepo.findOne).mockResolvedValue(createMockCoupon())
 
-    await service.redeemCrossStore({
+    await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'C1',
       storeId: 'store-1',
       orderAmount: 200,
       orderId: 'o1',
       idempotencyKey: 'o1:C1',
-    })
+    }))
 
     expect(couponRepo.findOne).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -306,14 +316,14 @@ describe('CouponService', () => {
       createMockCoupon({ maxRedemptions: undefined, redemptionCount: 9999 }),
     )
 
-    const result = await service.redeemCrossStore({
+    const result = await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'C1',
       storeId: 'store-1',
       orderAmount: 200,
       orderId: 'o1',
       idempotencyKey: 'o1:C1',
-    })
+    }))
 
     expect(result.success).toBe(true)
   })
@@ -324,14 +334,14 @@ describe('CouponService', () => {
       createMockCoupon({ redemptionRules: { userSegments: undefined, minAmount: undefined } }),
     )
 
-    const result = await service.redeemCrossStore({
+    const result = await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'C1',
       storeId: 'store-1',
       orderAmount: 1,
       orderId: 'o1',
       idempotencyKey: 'o1:C1',
-    })
+    }))
 
     expect(result.success).toBe(true)
   })
@@ -370,10 +380,10 @@ describe('CouponService', () => {
     vi.mocked(redemptionRepo.findOne).mockResolvedValue(null)
     vi.mocked(couponRepo.findOne).mockResolvedValue(createMockCoupon())
 
-    const results = await service.batchRedeem([
+    const results = await withTenantCtx(() => service.batchRedeem([
       { userId: 'u1', couponCode: 'C1', storeId: 'store-1', orderAmount: 200, orderId: 'o1', idempotencyKey: 'o1:C1' },
       { userId: 'u2', couponCode: 'C2', storeId: 'store-1', orderAmount: 200, orderId: 'o2', idempotencyKey: 'o2:C2' },
-    ])
+    ]))
 
     expect(results).toHaveLength(2)
     expect(results[0].success).toBe(true)
@@ -386,10 +396,10 @@ describe('CouponService', () => {
       .mockResolvedValueOnce(createMockCoupon())
       .mockResolvedValueOnce(null) // 第二个 coupon 不存在
 
-    const results = await service.batchRedeem([
+    const results = await withTenantCtx(() => service.batchRedeem([
       { userId: 'u1', couponCode: 'C1', storeId: 'store-1', orderAmount: 200, orderId: 'o1', idempotencyKey: 'o1:C1' },
       { userId: 'u2', couponCode: 'NOT-FOUND', storeId: 'store-1', orderAmount: 200, orderId: 'o2', idempotencyKey: 'o2:NOT-FOUND' },
-    ])
+    ]))
 
     expect(results).toHaveLength(2)
     expect(results[0].success).toBe(true)
@@ -416,7 +426,7 @@ describe('CouponService', () => {
     vi.mocked(redemptionRepo.findOne).mockResolvedValue(null)
     vi.mocked(couponRepo.findOne).mockResolvedValue(createMockCoupon())
 
-    await service.redeemCrossStore({
+    await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'C1',
       storeId: 'store-1',
@@ -424,7 +434,7 @@ describe('CouponService', () => {
       orderId: 'o1',
       idempotencyKey: 'o1:C1',
       tenantId: 'tenant-A',
-    })
+    }))
 
     expect(assertWriteAllowed).toHaveBeenCalledWith('tenant-A')
   })
@@ -440,7 +450,7 @@ describe('CouponService', () => {
     vi.mocked(redemptionRepo.findOne).mockResolvedValue(null)
     vi.mocked(couponRepo.findOne).mockResolvedValue(createMockCoupon())
 
-    const result = await service.redeemCrossStore({
+    const result = await withTenantCtx(() => service.redeemCrossStore({
       userId: 'u1',
       couponCode: 'C1',
       storeId: 'store-1',
@@ -448,7 +458,7 @@ describe('CouponService', () => {
       orderId: 'o1',
       idempotencyKey: 'o1:C1',
       tenantId: 'tenant-A',
-    })
+    }))
 
     expect(result.success).toBe(false)
     expect(result.error?.code).toBe('QUOTA_EXCEEDED')
