@@ -39,9 +39,9 @@ function formatDate(dateStr: string): string {
   try {
     const d = new Date(dateStr);
     const parts = dateStr.split('-');
-    const year = parts[0];
-    const month = parts[1];
-    const day = parts[2];
+    const year = parts[0] ?? '';
+    const month = parts[1] ?? '1';
+    const day = parts[2] ?? '1';
     return `${year}年${parseInt(month, 10)}月${parseInt(day, 10)}日`;
   } catch {
     return dateStr;

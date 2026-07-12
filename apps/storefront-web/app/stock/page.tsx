@@ -113,6 +113,22 @@ export default async function StockListPage() {
             </div>
           </div>
         </div>
+        {/* 库存健康度预警指示器 */}
+        <div style={{ borderRadius: 12, border: '1px solid #fecaca', padding: '12px 16px', marginBottom: 16, background: '#fef2f2' }}>
+          <h3 style={{ fontSize: 14, color: '#991b1b', marginBottom: 8 }}>🚨 库存预警 — 需立即处理</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {MOCK_STOCK_ITEMS.filter(i => i.status === 'out_of_stock' || i.status === 'critical').map(item => (
+              <div key={item.id} style={{ padding: '6px 12px', borderRadius: 6, background: '#fff', border: '1px solid #fecaca', fontSize: 12 }}>
+                <span style={{ fontWeight: 600, color: '#991b1b' }}>{item.name}</span>
+                <span style={{ color: '#ef4444', marginLeft: 6 }}>
+                  {item.status === 'out_of_stock' ? '缺货' : `告急(剩${item.quantity}${item.unit})`}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 12, color: '#b91c1c' }}>缺口 {summary.outOfStock} 种 · 告急 {summary.lowStock} 种 · 请尽快安排补货</div>
+        </div>
+
         {/* 分类库存分布 - 简化柱状图 */}
         <div style={{ borderRadius: 12, border: '1px solid #e5e7eb', padding: 16, marginBottom: 20, background: '#fff' }}>
           <h3 style={{ fontSize: 14, color: '#374151', marginBottom: 12 }}>📊 分类库存分布</h3>
