@@ -14,7 +14,9 @@ import {
   useSearchFilter,
   type DataTableColumn,
 } from '@m5/ui';
-import type { ReplenishmentOrder, ReplenishmentStatus } from './page';
+// types defined inline
+interface ReplenishmentOrder { id: string; status: string; }
+type ReplenishmentStatus = string;
 
 // ============================================================
 // 状态标签样式映射

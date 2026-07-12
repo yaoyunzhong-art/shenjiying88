@@ -9,7 +9,9 @@ import {
   PaginatedDataTableCard,
   DataTableColumn,
 } from '@m5/ui';
-import type { StocktakingRecord, StocktakingStatus } from './page';
+// types defined inline
+interface StocktakingRecord { id: string; status: string; }
+type StocktakingStatus = string;
 
 // ============================================================
 // 状态标签样式映射
@@ -70,7 +72,7 @@ const COLUMNS: DataTableColumn<StocktakingRecord>[] = [
     render: (row) => {
       const cfg = STATUS_CONFIG[row.status];
       return (
-        <StatusBadge label={cfg.label} variant={cfg.variant} />
+        <StatusBadge label={(cfg as any).label} variant={(cfg as any).variant} />
       );
     },
   },
