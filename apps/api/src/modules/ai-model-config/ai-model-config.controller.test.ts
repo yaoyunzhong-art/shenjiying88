@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 /**
  * 🐜 自动: [ai-model-config] [D] Controller 单元测试
  *
@@ -8,9 +7,10 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { AiModelConfigController } from './ai-model-config.controller'
+import { AiModelConfigService } from './ai-model-config.service'
+
 describe('AiModelConfigController', () => {
-  const { AiModelConfigController } = require('./ai-model-config.controller')
-  const { AiModelConfigService } = require('./ai-model-config.service')
 
   let controller: InstanceType<typeof AiModelConfigController>
   let service: InstanceType<typeof AiModelConfigService>

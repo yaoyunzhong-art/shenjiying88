@@ -21,6 +21,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var index_exports = {};
 __export(index_exports, {
   ApiClient: () => ApiClient,
+  ApiError: () => ApiError,
   buildRuntimeGovernanceReplayRequest: () => buildRuntimeGovernanceReplayRequest,
   buildRuntimeGovernanceSubmitRequest: () => buildRuntimeGovernanceSubmitRequest,
   computeBackoffDelay: () => computeBackoffDelay,
@@ -487,6 +488,18 @@ async function loadFoundationGovernanceReadModel(client, init = { cache: "no-sto
     topRisks: governanceOverview?.topRisks ?? []
   };
 }
+var ApiError = class extends Error {
+  constructor(status, message, code, i18nKey) {
+    super(message);
+    this.status = status;
+    this.name = "ApiError";
+    this.code = code;
+    this.i18nKey = i18nKey;
+  }
+  status;
+  code;
+  i18nKey;
+};
 var ApiClient = class {
   constructor(options) {
     this.options = options;
@@ -511,7 +524,13 @@ var ApiClient = class {
       headers: buildHeaders(this.options, init.headers)
     });
     if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
+      const errorBody = await response.json().catch(() => ({}));
+      throw new ApiError(
+        response.status,
+        errorBody.message ?? `Request failed with status ${response.status}`,
+        errorBody.code,
+        errorBody.i18nKey
+      );
     }
     return await response.json();
   }
@@ -1218,6 +1237,7 @@ function computeBackoffDelay(attemptNum, initialDelayMs = 1e3, backoffMultiplier
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   ApiClient,
+  ApiError,
   buildRuntimeGovernanceReplayRequest,
   buildRuntimeGovernanceSubmitRequest,
   computeBackoffDelay,

@@ -62,7 +62,12 @@ interface TenantConfigAuditLog {
     tenantId: string;
     previousValue?: string;
     newValue?: string;
-    action: 'create' | 'update' | 'delete' | 'rollback';
+    /**
+     * 动作类型 (P0-J4: 扩展联合, 与后端 ConfigAuditLog.action 同步)
+     * - create / update / delete / rollback: 业务操作
+     * - cross_tenant_brand_passthrough: P0-H8 super_admin/auditor 跨租户 brandId 豁免审计
+     */
+    action: 'create' | 'update' | 'delete' | 'rollback' | 'cross_tenant_brand_passthrough';
     operator: string;
     operatorRole: string;
     timestamp: string;
@@ -235,6 +240,16 @@ declare function createWebFoundationAlertPanelClientAccess({ app, drilldownInit,
 };
 declare function loadFoundationConsumerDescriptor(client: Pick<ApiClient, 'getFoundationConsumer'>, consumer: FoundationConsumerKey, init?: RequestInit): Promise<FoundationConsumerDescriptor | null>;
 declare function loadFoundationGovernanceReadModel(client: Pick<ApiClient, 'getFoundationAlertCatalog' | 'getFoundationOverview'>, init?: RequestInit): Promise<FoundationGovernanceReadModel>;
+/**
+ * P0-J4: 统一 API 错误类型, 透传后端 i18nKey/code/status
+ * 前端可基于 i18nKey 走 i18next, code 走业务分流, status 走 HTTP 兜底
+ */
+declare class ApiError extends Error {
+    readonly status: number;
+    readonly code?: string;
+    readonly i18nKey?: string;
+    constructor(status: number, message: string, code?: string, i18nKey?: string);
+}
 declare class ApiClient {
     private readonly options;
     constructor(options: ApiClientOptions);
@@ -523,4 +538,4 @@ declare function subscribeStream(client: ApiClient, opts: SseSubscribeOptions): 
  */
 declare function computeBackoffDelay(attemptNum: number, initialDelayMs?: number, backoffMultiplier?: number): number;
 
-export { ApiClient, type ApiClientOptions, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type WebFoundationAlertPanelApp, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };
+export { ApiClient, type ApiClientOptions, ApiError, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type WebFoundationAlertPanelApp, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };

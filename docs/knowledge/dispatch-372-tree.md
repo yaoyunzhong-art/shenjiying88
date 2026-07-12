@@ -3,7 +3,7 @@
 > 源于 force 跑分验证揭示 storefront-web 缓存遮罩
 > 脉冲: pulse#378 · 2026-07-13 00:21
 > **前置**: dispatch-371 原storefront目标218✖已过时(当前force揭示87✖)
-> **状态**: 🔴 新派 — 87✖全部需修复
+> **状态**: ✅ 闭环 — pulse#379验收·storefront 4,721/4,721 force✅(V16#026-#028修复)
 
 ---
 

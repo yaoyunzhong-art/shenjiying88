@@ -1,7 +1,7 @@
 # 🛠️ Phase开发进度追踪 (C层开发库)
 
 > 自动维护: 30min验收脉冲 · 手动更新: 23:00日终
-> 最后更新: 2026-07-12 21:15（验收脉冲自更新 + 日终手动追加 + 全国场管数据对齐）
+> 最后更新: 2026-07-13 00:51（验收脉冲自更新·pulse#379）
 
 ## 活跃Phase
 
@@ -145,3 +145,4 @@
 | 2026-07-12 22:45 | pulse#374 | 🔴 dispatch-370第2次验收零commit·miniapp4✖/store218✖/tob4✖/appTSC1✖全未修→dispatch-371强约束升级·Tier1已闭环 | Base❌(TSC force 10/11❌@m5/app TS2307)/Service❌(缓存遮罩不可信)/Controller❌(miniapp4✖/store218✖/tob4✖)/CTest❌(admin4278✅/miniapp❌/store❌/tob❌) | 0🏆 |
 | 2026-07-12 23:45 | pulse#376 | 🟢 本脉冲直接修复: @m5/app TSC✅(type声明)·@m5/miniapp 494/494✅(空状态+会员等级+积分不足)·dispatch-371首验收❌零commit→脉冲内→2项闭环✅ | Base✅(TSC 14/14 force✅)/Service✅(app222/222✅)/Controller⚠️(miniapp4✖→0✖✅/store218✖缓存/tob4✖缓存)/CTest✅(miniapp494/494✅) | 0🏆 |
 | 2026-07-13 00:21 | pulse#378 | 全库(非api) [force揭示: storefront-web 87✖(缓存遮罩)·dispatch-371原storefront目标过时·新派dispatch-372·@m5/app force✅222/222·tob 4✖稳定·mobile 314/314✅] | Base⚠️(TSC14/14缓存✅·force不完整)/Service✅(app222/222 force✅)/Controller❌(store87✖force/tob4✖/mobile314✅)/CTest⚠️(admin缓存·store❌force) | 0🏆 |
+| 2026-07-13 00:51 | pulse#379 | 🟢 **dispatch-372首次验收闭环**: storefront 4,721/4,721 force✅(V16#026-#028·3次提交)·miniapp 494/494✅·app 222/222✅·mobile 314/314✅·tob 4✖恒定的(非新)·新派dispatch-373·TSC force 14/14✅ | Base✅(TSC 14/14 force✅全部)/Service✅/Controller⚠️(tob4✖)/CTest✅(store✅4717/4717·miniapp✅494/494·app✅222/222·mobile✅314/314) | 1🏆(恢复) |

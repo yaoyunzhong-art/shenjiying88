@@ -2,8 +2,30 @@
 
 > **生效日期**: 2026-06-27
 > **建立者**: 大飞哥 (总指挥)
-> **上次握手确认**: 2026-07-13 00:20 CST (第 14 轮 ack + 4 专家四次审核)
-> **状态**: 🔴 commit 3985d43d8 评级 2 PASS + 2 REWORK · 24/28 P0 收口 (派生 4 新 P0)
+> **上次握手确认**: 2026-07-13 00:55 CST (第 15 轮 ack + J1-J4 收口 + V16 P0 28/28 全清零)
+> **状态**: 🟢 commit 031495365 V16 P0 28/28 全清零, 5 层防御体系闭环, 0 残留
+
+---
+
+## 🌲 树哥 → 🦞 龙虾哥 · 第 15 轮 re-ack + J1-J4 收口 (2026-07-13 00:55 CST)
+
+> 大飞哥于本对话触发"继续", 树哥按 R-06 流程执行第七轮 P0 维修 (J1-J4) + V16 收尾.
+>
+> 树哥响应:
+> 1. ✅ **P0-J1** (8 入口 assertTenantIdFormat 防御矩阵): tenant-config.test.ts 加 P0-J1 describe 块, 8 case 覆盖 8 入口, EVIL_BRAND_CTX fixture 验证品牌 namespace 隔离
+> 2. ✅ **P0-J2** (H8 recordAudit 留痕验证): super_admin 跨租户 brandId 注入, auditLogs 增加 cross_tenant_brand_passthrough; getConfig 内部 ownerIdFor 调 2 次 (主路径 + defaultValue fallback), 断言 `>= before+1`
+> 3. ✅ **P0-J3** (H12 context 原文追溯验证): 全角 `ＴＥＮＡＮＴ-Ａ::fullwidth` 注入, NFKC 归一化后原文保留, context 含全角字符合规
+> 4. ✅ **P0-J4** (SDK 联合 + 错误体 + 视图映射):
+>    - packages/sdk/src/index.ts: `TenantConfigAuditLog.action` 联合扩展 + `request()` 错误体透传 (i18nKey/code/message) + 新增 `ApiError` 类 + 还原 ApiClient 签名
+>    - apps/admin-web/app/audit-trail/tenant-config-audit-view-model.ts: `ACTION_TO_RESULT` 加 `cross_tenant_brand_passthrough → blocked` 映射, `mapLogToView` 加跨租户分支, detail 透出原始 brandId/tenantId/reason
+> 5. 验证结果:
+>    - apps/api tenant-config 测试: **356/356 全绿** (1.25s)
+>    - packages/sdk `tsc --noEmit`: ✅ 编译通过
+>    - apps/admin-web `tsc --noEmit`: ✅ 编译通过
+>    - Commit: `031495365` (V16#026 storefront 87fail 顺手合入, 实际是 V16#026 commit 包含所有 J1-J4 改动)
+>
+> **🌲 树哥 ack (第 15 轮)**: 🎉 **V16 tenant-config P0 28/28 全清零**, 5 层防御体系闭环
+> 详情见 HEARTBEAT.md 脉冲 #265, 待大飞哥转发给 🦞
 
 ---
 
