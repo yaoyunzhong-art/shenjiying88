@@ -104,7 +104,7 @@ describe('TimeSeriesCollectorService', () => {
     })
 
     it('should accept explicit timestamp', () => {
-      const ts = '2026-06-01T00:00:00.000Z'
+      const ts = new Date(Date.now() - 60000).toISOString() // 1分前
       collector.recordMetric({ metricName: 'lag', value: 1, timestamp: ts })
       const metric = collector.query({ metricName: 'lag', window: '30d' })
       expect(metric.points[0].timestamp).toBe(ts)
@@ -187,15 +187,17 @@ describe('TimeSeriesCollectorService', () => {
 
     it('should detect a daily pattern', () => {
       // Record data all at the same hour to create a pattern
+      // 使用 UTC 午夜作为基准，确保 getUTCHours() 正确分桶
+      const utcMidnight = new Date(Date.now() - 8 * 86400000)
+      utcMidnight.setUTCHours(0, 0, 0, 0)
+      const base = utcMidnight.getTime()
       for (let d = 0; d < 7; d++) {
         for (let h = 0; h < 24; h++) {
-          const date = new Date('2026-06-01T00:00:00Z')
-          date.setDate(date.getDate() + d)
-          date.setUTCHours(h, 0, 0, 0)
+          const ts = new Date(base + d * 86400000 + h * 3600000).toISOString()
           collector.recordMetric({
             metricName: 'orders',
             value: h === 10 ? 500 : h === 14 ? 400 : h === 20 ? 300 : 50,
-            timestamp: date.toISOString(),
+            timestamp: ts,
           })
         }
       }

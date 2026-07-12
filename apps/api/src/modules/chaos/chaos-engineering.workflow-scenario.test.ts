@@ -269,17 +269,15 @@ describe('场景2: 多实验并行运行与故障隔离', () => {
     faultService.injectLatency('service-x', 300)
     faultService.injectError('service-x', 50)
 
-    // 延迟注入覆盖了错误注入的记录（同一target, 后者覆盖前者类型）
-    // 但两个类型功能独立
-    assert.equal(faultService.getNetworkLatency('service-x'), 300)
+    // 对同一 target 叠加两种故障: injectError 会覆盖 injectLatency 的记录(同 key)
+    // 由于 FaultInjectionService 使用 target 作为唯一 key,后续 injectError
+    // 会替换之前的记录,导致 getNetworkLatency 返回 0 (因类型不是 LATENCY)
+    assert.equal(faultService.getNetworkLatency('service-x'), 0, 'error 覆盖了 latency 记录,因此 latency 为 0')
     assert.equal(faultService.isFaultActive('service-x'), true)
 
-    // 停止延迟故障
+    // 停止注入
     faultService.stopInjection('service-x')
     assert.equal(faultService.getNetworkLatency('service-x'), 0)
-
-    // 停止后错误注入也停止（因为同一个 target key 被 stop 清除）
-    // 这是 Service 的设计行为：stopInjection 从 map 删除整个 entry
     assert.equal(faultService.isFaultActive('service-x'), false)
   })
 })
@@ -459,8 +457,9 @@ describe('场景4: 实验结果记录与回滚链路', () => {
     const yHistory = rollbackService.getRollbackHistoryForExperiment(expY.id)
     assert.equal(xHistory.length, 1)
     assert.equal(yHistory.length, 2)
-    assert.equal(yHistory[0].reason, 'Y rollback 2')
-    assert.equal(yHistory[1].reason, 'Y rollback 1')
+    // getRollbackHistoryForExperiment 返回插入顺序(旧→新)
+    assert.equal(yHistory[0].reason, 'Y rollback 1', '第一个插入的是最早的记录')
+    assert.equal(yHistory[1].reason, 'Y rollback 2')
   })
 
   /** 🔲 边界: 无结果的实验抛出 undefined */

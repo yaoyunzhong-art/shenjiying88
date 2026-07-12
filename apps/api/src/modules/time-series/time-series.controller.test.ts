@@ -153,10 +153,12 @@ describe('TimeSeriesController', () => {
 
   describe('POST /time-series/seasonality', () => {
     it('should detect seasonality for metric with data', () => {
-      // Seed data across different hours
-      const now = new Date('2026-06-01T00:00:00.000Z')
+      // Seed data across different hours，使用 UTC 午夜确保 getUTCHours() 正确分桶
+      const utcMidnight = new Date(Date.now() - 2 * 86400000)
+      utcMidnight.setUTCHours(0, 0, 0, 0)
+      const base = utcMidnight.getTime()
       for (let h = 0; h < 24; h++) {
-        const ts = new Date(now.getTime() + h * 3600000).toISOString()
+        const ts = new Date(base + h * 3600000).toISOString()
         service.recordMetric({ metricName: 'traffic', value: h * 10, timestamp: ts })
       }
 

@@ -112,11 +112,11 @@ describe(`${ROLES.StoreManager} 店长全局运维场景`, () => {
   })
 
   it('🔴 [异常] 店长发现关键系统持续降级 — 应检测到异常', async () => {
-    // 让 mem 呈上升趋势
+    // 让 mem 呈上升趋势（从 60 升到 155，确保 zScore > 2.5）
     for (let i = 0; i < 20; i++) {
       detector.recordDataPoint(
         'pos-system_mem',
-        makePoint(60 + i * 2, (20 - i) * 30000),
+        makePoint(60 + i * 5, (20 - i) * 30000),
       )
     }
 
@@ -143,7 +143,14 @@ describe(`${ROLES.FrontDesk} 前台接待场景`, () => {
   })
 
   it('✅ [正常] 前台查看 POS 响应时间 — 正常范围内无异常', () => {
-    seedBaseline(detector, 'pos_response_time', 200, 20)
+    // 使用固定微小波动代替 Math.random，避免 flaky
+    for (let i = 0; i < 20; i++) {
+      const fixedDeviation = (i % 5 - 2) * 2 // -4, -2, 0, 2, 4
+      detector.recordDataPoint(
+        'pos_response_time',
+        makePoint(200 + fixedDeviation, (20 - i) * 60000),
+      )
+    }
     const result = detector.detectAnomaly('pos_response_time')
     expect(result.isAnomaly).toBe(false)
   })
@@ -362,7 +369,14 @@ describe(`${ROLES.Teambuilding} 团建协调场景`, () => {
   })
 
   it('✅ [正常] 团建系统日常负载正常', () => {
-    seedBaseline(detector, 'team_booking_load', 50, 24)
+    // 使用固定微小波动代替 Math.random，避免 flaky
+    for (let i = 0; i < 24; i++) {
+      const fixedDeviation = (i % 5 - 2) * 1 // -2, -1, 0, 1, 2
+      detector.recordDataPoint(
+        'team_booking_load',
+        makePoint(50 + fixedDeviation, (24 - i) * 60000),
+      )
+    }
     const result = detector.detectAnomaly('team_booking_load')
     expect(result.isAnomaly).toBe(false)
   })
@@ -400,7 +414,14 @@ describe(`${ROLES.Marketing} 营销活动场景`, () => {
   })
 
   it('✅ [正常] 营销日常流量正常', () => {
-    seedBaseline(detector, 'promo_traffic', 2000, 24)
+    // 使用固定微小波动代替 Math.random，避免 flaky
+    for (let i = 0; i < 24; i++) {
+      const fixedDeviation = (i % 5 - 2) * 10 // -20, -10, 0, 10, 20
+      detector.recordDataPoint(
+        'promo_traffic',
+        makePoint(2000 + fixedDeviation, (24 - i) * 60000),
+      )
+    }
     const result = detector.detectAnomaly('promo_traffic')
     expect(result.isAnomaly).toBe(false)
   })

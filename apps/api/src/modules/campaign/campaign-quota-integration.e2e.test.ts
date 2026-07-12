@@ -105,13 +105,11 @@ function makeRegisterInput(tenantId: string, code: string) {
 }
 
 it('e2e: registerCampaign 正常路径创建 plan + Campaign quota +1', async () => {
-  const { campaign, quota, close } = await buildAppWithQuota()
+  const { campaign, quota, lifecycle, close } = await buildAppWithQuota()
   try {
-    const plan = guardedRegisterCampaign(campaign, quota, undefined, makeRegisterInput('tenant-test', 'normal'))
+    const plan = guardedRegisterCampaign(campaign, quota, lifecycle, makeRegisterInput('tenant-test', 'normal'))
     assert.ok(plan.planId)
     assert.equal(plan.code.startsWith('normal-'), true)
-    // 这里传 undefined lifecycle 以跳过 lifecycle 检查(相当于有 quota 无 lifecycle)
-    // 实际使用中会传 lifecycle
     assert.equal(quota.getUsage('tenant-test').campaigns, 1, 'quota usage should be 1')
   } finally {
     await close()
@@ -119,11 +117,11 @@ it('e2e: registerCampaign 正常路径创建 plan + Campaign quota +1', async ()
 })
 
 it('e2e: tenant suspend 后 registerCampaign 抛 TenantLifecycleBlockedException', async () => {
-  const { campaign, lifecycle, close } = await buildAppWithQuota()
+  const { campaign, quota, lifecycle, close } = await buildAppWithQuota()
   try {
     lifecycle.suspend('tenant-test', TenantStatusReason.BillingOverdue, 'billing')
     assert.throws(
-      () => guardedRegisterCampaign(campaign, undefined, lifecycle, makeRegisterInput('tenant-test', 'suspended')),
+      () => guardedRegisterCampaign(campaign, quota, lifecycle, makeRegisterInput('tenant-test', 'suspended')),
       TenantLifecycleBlockedException
     )
     // 由于 guard 在 lifecycle 检查阶段就抛出了，quota usage 不变
@@ -175,12 +173,12 @@ it('e2e: 业务校验失败 (actions=[]) → quota 不污染', async () => {
 })
 
 it('e2e: tenant reactivate 后 registerCampaign 恢复', async () => {
-  const { campaign, lifecycle, close } = await buildAppWithQuota()
+  const { campaign, quota, lifecycle, close } = await buildAppWithQuota()
   try {
     lifecycle.suspend('tenant-test')
-    assert.throws(() => campaign.registerCampaign(makeRegisterInput('tenant-test', 'suspend-test')))
+    assert.throws(() => guardedRegisterCampaign(campaign, quota, lifecycle, makeRegisterInput('tenant-test', 'suspend-test')))
     lifecycle.reactivate('tenant-test', 'admin')
-    const plan = campaign.registerCampaign(makeRegisterInput('tenant-test', 'recover'))
+    const plan = guardedRegisterCampaign(campaign, quota, lifecycle, makeRegisterInput('tenant-test', 'recover'))
     assert.ok(plan.planId)
   } finally {
     await close()
@@ -194,8 +192,8 @@ it('e2e: 多 tenant 隔离 - tenant-A suspend 不影响 tenant-B', async () => {
     lifecycle.initialize('tenant-B')
 
     lifecycle.suspend('tenant-test')
-    assert.throws(() => campaign.registerCampaign(makeRegisterInput('tenant-test', 'iso-A')))
-    const planB = campaign.registerCampaign(makeRegisterInput('tenant-B', 'iso-B'))
+    assert.throws(() => guardedRegisterCampaign(campaign, quota, lifecycle, makeRegisterInput('tenant-test', 'iso-A')))
+    const planB = guardedRegisterCampaign(campaign, quota, lifecycle, makeRegisterInput('tenant-B', 'iso-B'))
     assert.ok(planB.planId)
     assert.equal(quota.getUsage('tenant-test').campaigns, 0)
     assert.equal(quota.getUsage('tenant-B').campaigns, 1)

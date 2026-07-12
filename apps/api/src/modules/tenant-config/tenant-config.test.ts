@@ -833,3 +833,124 @@ describe('Edge cases', () => {
     )
   })
 })
+
+// ═══════════════════════════════════════════════════════════════════
+// Phase-FP P0-J1 + J2 + J3: H4/H5/H9/H11 安全边界 + H8 留痕 + H12 原文
+// ═══════════════════════════════════════════════════════════════════
+
+/** 业务租户伪装品牌租户: tenantId 以 'brand-' 开头, role 是 tenant_admin (非特权) */
+const EVIL_BRAND_CTX = {
+  tenantId: 'brand-evil',
+  storeId: 'store-evil',
+  userId: 'evil-op',
+  role: 'tenant_admin' as const,
+}
+
+describe('P0-J1 8 入口 assertTenantIdFormat 防御矩阵', () => {
+  it('[J1-1] getConfigs: 业务租户 brand- 前缀 → 抛 Forbidden', async () => {
+    const service = new TenantConfigService()
+    await assert.rejects(
+      runWithTenant(EVIL_BRAND_CTX, async () => service.getConfigs({ level: 'store' })),
+      /reserved 'brand-' prefix/,
+    )
+  })
+
+  it('[J1-2] getConfig: 业务租户 brand- 前缀 → 抛 Forbidden', async () => {
+    const service = new TenantConfigService()
+    await assert.rejects(
+      runWithTenant(EVIL_BRAND_CTX, async () => service.getConfig('pos.tax_rate')),
+      /reserved 'brand-' prefix/,
+    )
+  })
+
+  it('[J1-3] getEffectiveConfigs: 业务租户 brand- 前缀 → 抛 Forbidden', async () => {
+    const service = new TenantConfigService()
+    await assert.rejects(
+      runWithTenant(EVIL_BRAND_CTX, async () => service.getEffectiveConfigs()),
+      /reserved 'brand-' prefix/,
+    )
+  })
+
+  it('[J1-4] getWorkbenchConfigs: 业务租户 brand- 前缀 → 抛 Forbidden', async () => {
+    const service = new TenantConfigService()
+    await assert.rejects(
+      runWithTenant(EVIL_BRAND_CTX, async () => service.getWorkbenchConfigs('W-S')),
+      /reserved 'brand-' prefix/,
+    )
+  })
+
+  it('[J1-5] listAuditLogs: 业务租户 brand- 前缀 → 抛 Forbidden (P0-H9)', async () => {
+    const service = new TenantConfigService()
+    await assert.rejects(
+      runWithTenant(EVIL_BRAND_CTX, async () => service.listAuditLogs(10)),
+      /reserved 'brand-' prefix/,
+    )
+  })
+
+  it('[J1-6] setConfig: 业务租户 brand- 前缀 → 抛 Forbidden', async () => {
+    const service = new TenantConfigService()
+    await assert.rejects(
+      runWithTenant(EVIL_BRAND_CTX, async () =>
+        service.setConfig({ key: 'pos.tax_rate', value: '0.1' }),
+      ),
+      /reserved 'brand-' prefix/,
+    )
+  })
+
+  it('[J1-7] setConfigBatch: 业务租户 brand- 前缀 → 抛 Forbidden (P0-H11)', async () => {
+    const service = new TenantConfigService()
+    await assert.rejects(
+      runWithTenant(EVIL_BRAND_CTX, async () =>
+        service.setConfigBatch([{ key: 'pos.tax_rate', value: '0.1' }]),
+      ),
+      /reserved 'brand-' prefix/,
+    )
+  })
+
+  it('[J1-8] rollback: 业务租户 brand- 前缀 → 抛 Forbidden', async () => {
+    const service = new TenantConfigService()
+    await assert.rejects(
+      runWithTenant(EVIL_BRAND_CTX, async () => service.rollback(1, 'cfg-x')),
+      /reserved 'brand-' prefix/,
+    )
+  })
+})
+
+describe('P0-J2 H8 跨租户 recordAudit 留痕验证', () => {
+  it('[J2] super_admin 跨租户 brandId 注入 → auditLogs 增加 cross_tenant_brand_passthrough', async () => {
+    const service = new TenantConfigService()
+    const ctx = {
+      tenantId: 'tenant-A',
+      brandId: 'tenant-B::cross',
+      userId: 'super-1',
+      role: 'super_admin' as const,
+    }
+    const before = (await runWithTenant(ctx, async () => service.listAuditLogs(100))).length
+    await runWithTenant(ctx, async () => service.getConfig('branding.primary_color'))
+    const after = (await runWithTenant(ctx, async () => service.listAuditLogs(100))).length
+    assert.equal(after, before + 1, 'auditLogs 应增加 1 条 cross_tenant_brand_passthrough 记录')
+    const logs = await runWithTenant(ctx, async () => service.listAuditLogs(100))
+    const passthroughLog = logs.find((l) => l.action === 'cross_tenant_brand_passthrough')
+    assert.ok(passthroughLog, '必须存在 cross_tenant_brand_passthrough 记录')
+    assert.equal(passthroughLog.key, '_meta_brand_id_passthrough')
+  })
+})
+
+describe('P0-J3 H12 context 原文追溯验证', () => {
+  it('[J3] super_admin 全角 brandId 注入 → context.originalBrandId 保留全角原文', async () => {
+    const service = new TenantConfigService()
+    const ctx = {
+      tenantId: 'tenant-A',
+      // 全角字符 - NFKC 归一化后与 tenant-A 归属, 但原文必须留存
+      brandId: 'ＴＥＮＡＮＴ-Ａ::fullwidth',
+      userId: 'super-1',
+      role: 'super_admin' as const,
+    }
+    await runWithTenant(ctx, async () => service.getConfig('branding.primary_color'))
+    const logs = await runWithTenant(ctx, async () => service.listAuditLogs(100))
+    const passthroughLog = logs.find((l) => l.action === 'cross_tenant_brand_passthrough')
+    assert.ok(passthroughLog, '必须存在 cross_tenant_brand_passthrough 记录')
+    assert.equal(passthroughLog.context?.['originalBrandId'], 'ＴＥＮＡＮＴ-Ａ::fullwidth',
+      '原文全角 brandId 必须保留在 context.originalBrandId')
+  })
+})
