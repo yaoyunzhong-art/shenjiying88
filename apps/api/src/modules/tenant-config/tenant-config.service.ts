@@ -464,6 +464,8 @@ export class TenantConfigService implements OnModuleInit {
    */
   async listAuditLogs(limit = 100, explicitTenantId?: string): Promise<ConfigAuditLog[]> {
     const ctx = requireTenantContext()
+    // Phase-FP P0-H9 修复: H5 闭合 - listAuditLogs 入口加 assertTenantIdFormat
+    this.assertTenantIdFormat(ctx)
     const isPrivileged =
       ctx.role === 'super_admin' || ctx.role === 'brand_admin' || ctx.role === 'auditor'
     const tenantId = isPrivileged ? explicitTenantId ?? ctx.tenantId : ctx.tenantId
