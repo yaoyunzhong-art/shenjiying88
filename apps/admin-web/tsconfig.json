@@ -30,8 +30,6 @@
     ".next",
     "app/**/*.test.ts",
     "app/**/*.test.tsx",
-    "app/license-renewal/**/*.ts",
-    "app/license-renewal/**/*.tsx",
     "app/stores/\\[id\\]",
     "app/stores/[id]/*"
   ]
