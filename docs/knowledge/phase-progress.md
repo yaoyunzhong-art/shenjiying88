@@ -141,3 +141,5 @@
 | 2026-07-12 21:45 | pulse#372 | 全库(非api) [🔴🔴🔴🔴 dispatch-369 93min零commit·连续3次验收失败→P0未响应·miniapp ELIFECYCLE 3次不变·app TSC+HomeScreen连锁崩溃·force揭示8/12仅8成功❌] | Base❌(TSC14/14缓存✅·force 11/12❌@m5/app TS2307)/Service❌(app222/222缓存✅·未force验证)/Controller❌(miniapp ELIFECYCLE·tob ELIFECYCLE·storefront缓存遮罩)/CTest❌(force 8/12·0cached·miniapp❌) | 0🏆 |
 
 | 2026-07-12 22:15 | pulse#373 | 全库(非api) [Tier1修复✅ · admin-web 26页冒烟+4278/4278✅ · dispatch-369连续3次❌→dispatch-370第1次验收][TSC缓存14/14✅·force 13/14❌@m5/app·miniapp 490/494 4✖·storefront 218✖·tob 4✖] | Base⚠️(TSC14/14缓存✅·force 13/14❌@m5/app TS2307)/Service✅(app222/222✅)/Controller❌(miniapp4✖/store218✖/tob4✖)/CTest✅(admin4278/4278✅) | 0🏆 |
+
+| 2026-07-12 22:45 | pulse#374 | 🔴 dispatch-370第2次验收零commit·miniapp4✖/store218✖/tob4✖/appTSC1✖全未修→dispatch-371强约束升级·Tier1已闭环 | Base❌(TSC force 10/11❌@m5/app TS2307)/Service❌(缓存遮罩不可信)/Controller❌(miniapp4✖/store218✖/tob4✖)/CTest❌(admin4278✅/miniapp❌/store❌/tob❌) | 0🏆 |
