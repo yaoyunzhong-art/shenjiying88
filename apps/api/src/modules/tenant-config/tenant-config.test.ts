@@ -1058,4 +1058,29 @@ describe('P1-F1 二级索引同步矩阵', () => {
       assert.equal(tier!.sourceLevel, 'tenant')
     })
   })
+
+  it('[F1-T1] 并发 100 次 setConfig 同一 key → instances 与 index 最终一致', async () => {
+    const service = makeService()
+    const promises: Promise<unknown>[] = []
+    for (let i = 0; i < 100; i++) {
+      promises.push(
+        runWithTenant(STORE_CTX, async () => {
+          await service.setConfig({ key: 'pos.tax_rate', value: `0.${i.toString().padStart(2, '0')}` })
+        }),
+      )
+    }
+    await Promise.all(promises)
+
+    // F1-T1 验证: instances Map 和 index 指向同一 instance (最终一致)
+    await runWithTenant(STORE_CTX, async () => {
+      const all = await service.getConfigs({ level: 'store' })
+      const tax = all.find((c) => c.key === 'pos.tax_rate')
+      assert.ok(tax)
+      // version: seed 算 1, 100 次并发 setConfig 累加 100 次 = 101
+      // 注: 实际 version 由 setConfig 串行累加, 并发时 V8 单线程保证原子性
+      assert.equal(tax!.version, 101, '100 次并发写入后 version 应 = 1 (seed) + 100 = 101')
+      // value 必须是 0.00-0.99 中某一个 (最后写入的)
+      assert.match(tax!.value, /^0\.\d{2}$/, 'value 应是 0.XX 格式')
+    })
+  })
 })

@@ -14,6 +14,8 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { NotFoundException } from '@nestjs/common'
+import { AiDiagnosisService } from './ai-diagnosis.service'
+import { AiDiagnosisController } from './ai-diagnosis.controller'
 
 const ROLES = {
   StoreManager: '👔店长',
@@ -28,8 +30,6 @@ const ROLES = {
 
 // ── 控制器工厂 ──
 function createCtrl() {
-  const { AiDiagnosisService } = require('./ai-diagnosis.service')
-  const { AiDiagnosisController } = require('./ai-diagnosis.controller')
   AiDiagnosisService.resetStores()
   const service = new AiDiagnosisService()
   return new AiDiagnosisController(service) as any

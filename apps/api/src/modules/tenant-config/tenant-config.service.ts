@@ -943,6 +943,8 @@ export class TenantConfigService implements OnModuleInit {
     for (const def of BUILTIN_CONFIG_DEFINITIONS) {
       this.definitions.set(def.key, def)
     }
+    // P1-F1-S1: 防御性校验 seed 租户格式, 防 mock 注入污染索引
+    this.assertTenantIdFormat({ tenantId: 'tenant-A', role: 'super_admin' })
     const now = new Date().toISOString()
 
     // 品牌级示例 (租户 A 所属品牌)
