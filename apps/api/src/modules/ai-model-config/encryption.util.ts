@@ -30,15 +30,24 @@ function deriveKey(password: string, salt: Buffer): Buffer {
 
 /**
  * 获取加密主密钥
- * - 生产环境从 Vault 获取
- * - 开发环境从环境变量 fallback
+ * - 生产环境从 Vault 获取 (AI_MODEL_ENCRYPTION_KEY)
+ * - 开发/测试环境从环境变量 fallback
+ *
+ * Phase-FP P0-C1 修复: 生产环境必须设置 env 变量, 不允许 fallback 到硬编码 dev key
+ * 防止密钥泄露到 GitHub 后被攻击者利用解密所有租户的 secret 字段
  */
 function getMasterKey(): string {
-  return (
-    process.env.AI_MODEL_ENCRYPTION_KEY ||
-    process.env.VAULT_AI_MODEL_KEY ||
-    'dev-only-key-DO-NOT-USE-IN-PROD-shenjiying88-2026'
-  )
+  const explicit = process.env.AI_MODEL_ENCRYPTION_KEY || process.env.VAULT_AI_MODEL_KEY
+  if (explicit) return explicit
+
+  // 生产环境强制要求 env 变量
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      '[encryption] FATAL: AI_MODEL_ENCRYPTION_KEY must be set in production (refuse to use dev fallback key)',
+    )
+  }
+  // 测试/开发环境允许 fallback (便于跑 vitest)
+  return 'dev-only-key-DO-NOT-USE-IN-PROD-shenjiying88-2026'
 }
 
 /**

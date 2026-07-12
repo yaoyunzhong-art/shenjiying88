@@ -14,6 +14,7 @@
 
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { getPgPool } from '../../database/pg-pool'
+import { UnauthorizedException } from '@nestjs/common'
 
 // ============ 类型 ============
 
@@ -25,6 +26,12 @@ export interface TenantContext {
   tenantId: string
   /** 门店 ID (V9 维度) */
   storeId?: string
+  /**
+   * 品牌 ID (Phase-FP P0-C7 修复: 显式存储, 不再从 tenantId 推导)
+   * - V10 Day 6 简化版曾用 `tenantId.split('-')[0]` 推导, 存在跨租户 brand 串扰
+   * - 现在 brandId 必须由调用方显式提供, 服务端校验归属
+   */
+  brandId?: string
   /** 当前用户 ID (审计用) */
   userId?: string
   /** 用户角色 (V9 权限分级) */
@@ -45,12 +52,16 @@ export function getTenantContext(): TenantContext | undefined {
 
 /**
  * 必须有 tenant context (用于 service 层强制校验)
- * 缺失时抛 ForbiddenException
+ * 缺失时抛 UnauthorizedException (401) 而非 native Error (500)
+ *
+ * Phase-FP P0-A3 修复: 防止 500 + 栈泄露
  */
 export function requireTenantContext(): TenantContext {
   const ctx = als.getStore()
   if (!ctx || !ctx.tenantId) {
-    throw new Error('[tenant-context] Missing tenant context (call tenantContext.run() first)')
+    // 使用 NestJS UnauthorizedException → 401 + 标准化错误响应
+    // 而非 native Error → 500 + 栈帧暴露
+    throw new UnauthorizedException('Authentication required (tenant context missing)')
   }
   return ctx
 }

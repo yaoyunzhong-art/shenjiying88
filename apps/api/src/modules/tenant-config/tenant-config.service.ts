@@ -631,7 +631,7 @@ export class TenantConfigService implements OnModuleInit {
     return value
   }
 
-  private ownerIdFor(ctx: TenantContext, level: ConfigLevel): string {
+  private ownerIdFor(ctx: TenantContext, level: ConfigLevel): string | null {
     if (level === 'store') return ctx.storeId ?? 'store-default'
     if (level === 'tenant') return ctx.tenantId
     // brand 级别 (Phase-FP P0-C7 修复):
@@ -641,10 +641,8 @@ export class TenantConfigService implements OnModuleInit {
     if (ctx.role === 'super_admin' || ctx.role === 'brand_admin' || ctx.role === 'auditor') {
       return ctx.tenantId.startsWith('brand-') ? ctx.tenantId : `brand-${ctx.tenantId.split('-')[0]}`
     }
-    // 业务租户无 brandId 时, 拒绝 brand-level 访问
-    throw new ForbiddenException(
-      `[TenantConfig] brand-level access requires ctx.brandId (tenantId=${ctx.tenantId} role=${ctx.role})`,
-    )
+    // 业务租户无 brandId 时, 软返回 null, 上层应跳过 brand-level 解析
+    return null
   }
 
   /** Phase-FP P0 修复: 改 public 让 controller 可以读取 */
