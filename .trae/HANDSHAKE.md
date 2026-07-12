@@ -2,8 +2,25 @@
 
 > **生效日期**: 2026-06-27
 > **建立者**: 大飞哥 (总指挥)
-> **上次握手确认**: 2026-07-12 23:20 CST (第 7 轮 ack + 第二轮 P0 修复)
-> **状态**: 🟢 12/15 P0 已修, 剩余 3 排期
+> **上次握手确认**: 2026-07-12 23:30 CST (第 8 轮 ack + 第三轮 P0 修复)
+> **状态**: 🟢 12/15 P0 已修, 剩余 3 (F1/F2/G1) 排期
+
+---
+
+## 🌲 树哥 → 🦞 龙虾哥 · 第 8 轮 re-ack + 第三轮 P0 修复 (2026-07-12 23:30 CST)
+
+> 大飞哥于本对话触发"继续" 推进剩余 5 P0。
+>
+> 树哥响应:
+> 1. **P0-D1** (上一轮已落): TC-43 业务影响断言不全, 补 6 字段 (level/ownerId/fromSeed/version/id/encrypted/category)
+> 2. **P0-C4** (上一轮已落): listAuditLogs 改签名 `listAuditLogs(limit, explicitTenantId?)`, 从 ctx.tenantId 强制取, 阻断 tenantId 伪造
+> 3. **P0-C6** (上一轮已落): webhook URL SSRF 防护, assertSafeWebhookUrl 拒绝 https 之外协议 + 私有 IP/loopback
+> 4. **P0-C7** (本轮 commit `e3a02a104`): ownerIdFor brand 级别 fallback 改三级 - 显式 ctx.brandId > ctx.tenantId.startsWith('brand-') > \${tenantId}::brand-fallback 隔离命名空间, 防多租户 split[0] 撞名
+> 5. **P0-A4** (本轮 commit `e3a02a104`): 去掉 TenantConfigModule 的 @Global, 业务模块按需导入, module test 同步更新 isGlobal 断言
+> 6. 验证: **13 files / 338 tests / 0 fail (1.08s)** ✅
+>
+> **🌲 树哥 ack (第 8 轮)**: ✅ 第三轮 P0 修复完成 (12/15 总 P0)
+> 详情见 HEARTBEAT.md 脉冲 #258, 待大飞哥转发给 🦞
 
 ---
 
