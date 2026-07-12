@@ -125,3 +125,5 @@
 | 2026-07-12 16:43 | 🦞**V15持续推进** | V15 lyt模块验证 — 22个测试文件/376个测试用例全部通过✅·无fail需修复 | lyt模块✅(22files/376tests 0fail) | 0🏆 |
 
 | 2026-07-12 16:45 | 🐜全量模块扫描 | P0-001闭环后全量模块验证·86+提交/1016+总 ·监控 TSC| Base✅/Service✅/Controller⚠️(store/tob/miniapp)/CTest⚠️ | 0🏆 |
+
+| 2026-07-12 17:06 | pulse#365 | 全库(非api) [TSC14/14连续8次·dispatch-358保持第8次·新发现@m5/app 21✖慢性残值·tob 3✖·miniapp ELIFECYCLE] | Base✅(TSC14/14✅✅✅✅)/Service✅/Controller⚠️(app21✖/tob3✖/miniapp5✖)/CTest✅(store✅/admin✅/P0-001✅) | 0🏆 |
