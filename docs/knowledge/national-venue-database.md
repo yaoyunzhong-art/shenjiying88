@@ -52,4 +52,33 @@ WHERE v.city = '深圳';
 
 -- 查询最新采集批次
 SELECT * FROM scout_collection_logs ORDER BY created_at DESC LIMIT 10;
+
+-- 查询某城市电玩城密度(竞争强度)
+SELECT city, COUNT(*) as venue_count, 
+       ROUND(COUNT(*) * 100000.0 / (SELECT population FROM scout_cities WHERE city = v.city), 1) as per_100k
+FROM venues v
+GROUP BY city
+ORDER BY venue_count DESC;
 ```
+
+## 🏗️ 2026-07 数据建设进展
+
+### 数据覆盖PK
+| 维度 | 7月10日 | 7月12日 | 目标(7月底) |
+|:----|:-------:|:-------:|:----------:|
+| 城市覆盖 | 10城(T1) | 30城(T1-T3) | 50城(T1-T4) |
+| 平台覆盖 | 5 | 8 | 8(已达) |
+| 总记录数 | 约2,000 | 约3,500 | 10,000 |
+| T4+城市 | 0 | 0 | 20 |
+
+### 数据质量指标
+- 场馆基础信息完整率: >95%
+- 价格数据时效性: ≤48h
+- 评价覆盖: 每场馆≥5条
+- 重复/僵尸数据清洗: 每日batch
+
+### 下一轮建设重点
+1. **T4+扩展**: 温州·无锡·常州·徐州·南昌·太原·兰州·乌鲁木齐·海口·珠海·中山·呼和浩特·银川·西宁·唐山·绍兴·嘉兴·台州·金华·潍坊
+2. **深度数据增强**: 设备台账拍照识别(图像→机型)自动化
+3. **实时价格监控**: 关键竞品(10城Top50场馆)每6h刷新
+4. **数据API化**: ScoutService REST API对外暴露可查询接口
