@@ -95,13 +95,11 @@ function buildColumns(): DataTableColumn<InspectionItem>[] {
 export default function FirePreventionPage() {
   const [items] = useState<InspectionItem[]>(MOCK_DATA);
 
-  const { searchQuery, setSearchQuery, filteredItems } = useSearchFilter(items, {
-    fields: ['area', 'inspector', 'notes'],
-  });
+  const { searchTerm: searchQuery, setSearchTerm: setSearchQuery, filteredItems } = useSearchFilter(items, ['area', 'inspector', 'notes']);
 
   const columns = useMemo(() => buildColumns(), []);
 
-  const pagination = usePagination({ initialPageSize: 10, pageSizeOptions: [5, 10], total: filteredItems.length });
+  const pagination = usePagination(filteredItems.length, 10);
   const pageItems = pagination.paginate(filteredItems);
 
   const handleNewInspection = useCallback(() => {
@@ -122,7 +120,7 @@ export default function FirePreventionPage() {
           placeholder="搜索区域、检查人..."
           value={searchQuery}
           onChange={setSearchQuery}
-          style={{ flex: 1, minWidth: 200 }}
+          width="100%"
         />
         <Button variant="primary" onClick={handleNewInspection}>新建检查</Button>
         <Button variant="outline" onClick={handleExportReport}>导出报告</Button>

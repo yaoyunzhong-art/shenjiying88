@@ -99,13 +99,11 @@ function buildColumns(): DataTableColumn<SafetyRecord>[] {
 export default function SafetyPage() {
   const [records] = useState<SafetyRecord[]>(MOCK_RECORDS);
 
-  const { searchQuery, setSearchQuery, filteredItems } = useSearchFilter(records, {
-    fields: ['category', 'reporter', 'description'],
-  });
+  const { searchTerm: searchQuery, setSearchTerm: setSearchQuery, filteredItems } = useSearchFilter(records, ['category', 'reporter', 'description']);
 
   const columns = useMemo(() => buildColumns(), []);
 
-  const pagination = usePagination({ initialPageSize: 10, pageSizeOptions: [5, 10], total: filteredItems.length });
+  const pagination = usePagination(filteredItems.length, 10);
   const pageItems = pagination.paginate(filteredItems);
 
   const handleNewRecord = useCallback(() => {
@@ -126,7 +124,7 @@ export default function SafetyPage() {
           placeholder="搜索类别、上报人..."
           value={searchQuery}
           onChange={setSearchQuery}
-          style={{ flex: 1, minWidth: 200 }}
+          width="100%"
         />
         <Button variant="primary" onClick={handleNewRecord}>新建记录</Button>
         <Button variant="outline" onClick={handleExportLog}>导出日志</Button>
