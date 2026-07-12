@@ -347,23 +347,14 @@ describe('[auto-rollback] 合约: 业务逻辑', () => {
     // 重置后重新触发
     svc.configure({ criticalRequiresConfirm: false })
     const r1 = svc.trigger({ reason: 'r1', severity: 'WARNING', metricKey: 'm1', anomalyValue: 200, baselineValue: 100 })
-    await new Promise((r) => setTimeout(r, 100))
-    const activeRecords = svc.listRecords({ status: 'COMPLETED' })
-    // WARNING 应在 400ms 内完成;如果未完成也接受 PENDING
+    await new Promise((r) => setTimeout(r, 300))
+    let activeRecords = svc.listRecords({ status: 'COMPLETED' })
+    // WARNING 应在 300ms 内完成;若未完成给更多时间
     if (activeRecords.length === 0) {
-      // 再试一次,给异步更多时间
       await new Promise((r) => setTimeout(r, 500))
-      const retryRecords = svc.listRecords({ status: 'COMPLETED' })
-      // 至少返回1条,或者是 PENDING/RUNNING 状态
-      if (retryRecords.length === 0) {
-        const allRecords = svc.listRecords()
-        expect(allRecords.length).toBeGreaterThanOrEqual(1)
-      } else {
-        expect(retryRecords.length).toBeGreaterThanOrEqual(1)
-      }
-    } else {
-      expect(activeRecords.length).toBeGreaterThanOrEqual(1)
+      activeRecords = svc.listRecords({ status: 'COMPLETED' })
     }
+    expect(activeRecords.length).toBeGreaterThanOrEqual(1)
   }, 10000)
 
   it('listRecords() 应支持按 metricKey 过滤', () => {
@@ -441,7 +432,7 @@ describe('[auto-rollback] 合约: 业务逻辑', () => {
     await new Promise((r) => setTimeout(r, 10))
     const syncResult = await svc.executeRollbackSync(record.id)
     expect(syncResult).toBeDefined()
-    // 同步回滚过程可能经过 ROLLING_BACK 等中间状态
+    // 同步回滚过程可能经过 ROLLING_BACK/VERIFYING 等中间状态
     expect(['COMPLETED', 'FAILED', 'ROLLING_BACK', 'VERIFYING']).toContain(syncResult!.status)
     if (syncResult!.status === 'COMPLETED') {
       expect(syncResult!.snapshotId).toBeDefined()
