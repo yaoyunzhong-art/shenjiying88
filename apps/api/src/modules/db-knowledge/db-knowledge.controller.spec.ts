@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 /**
  * DbKnowledgeController 单元测试
  *

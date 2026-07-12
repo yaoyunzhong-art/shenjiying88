@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 /**
  * finance-reconciliation.service.spec.ts — P-38 对账服务 深层单元测试
  *
