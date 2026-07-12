@@ -18,6 +18,6 @@ describe('events — 正例', () => {
     assert.ok(SRC.includes("'use client'"));
   });
   it('应包含深色主题', () => {
-    assert.ok(SRC.includes('#0f172a') || SRC.includes('#1e293b'));
+    assert.ok(SRC.includes('bg-gray') || SRC.includes('gray-900'));
   });
 });
