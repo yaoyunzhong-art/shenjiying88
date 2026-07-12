@@ -111,3 +111,4 @@
 | 2026-07-12 12:08 | pulse#356 | storefront-web [⚠️⚠️ 修复引入14TSC新回归+已知冒烟维持+RQ-001~005超3.5h未闭合+P0连5脉冲+新派dispatch-356] | Base❌(TSC13/14·storefront新回归14处)/Service⚠️/Controller⚠️/CTest⚠️(admin3✖/app12✖/mobile❌) | 0🏆 |
 | 2026-07-12 12:38 | pulse#357 | storefront-web [⚠️⚠️⚠️ dispatch-356 30min零响应·14TSC未修·连续2次无闭合→P0升级dispatch-357·RQ-001~005超4h零commit] | Base❌(TSC13/14·storefront14未修)/Service⚠️/Controller⚠️/CTest⚠️(admin3✖/tob4✖ELIFECYCLE/miniappELIFECYCLE) | 0🏆 |
 | **2026-07-12 13:08** | **pulse#358** | **storefront-web [✅ dispatch-358 闭环·14TSC回归全修复·TSC恢复14/14·RQ-001~005超5h仍未闭合]** | **Base✅(TSC14/14✅)/Service⚠️/Controller⚠️(store7/tob4/miniapp)/CTest⚠️(admin3✖/tob✖)** | **0🏆** |
+| 2026-07-12 14:06 | pulse#359 | 全库(非api) [TSC稳态维持14/14·无新回归·dispatch-358闭环保持·RQ-001~005超5.5h慢性未闭·网络离线仅本地验收] | Base✅(TSC14/14)/Service✅/Controller⚠️(store7/tob4/miniapp)/CTest⚠️(admin3✖/tob✖/miniapp✖) | 0🏆 |

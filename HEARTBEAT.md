@@ -1,21 +1,22 @@
 # 🦞 验收员 HEARTBEAT
 
-| 指标 | pulse#357 | pulse#358 | Δ |
+| 指标 | pulse#358 | pulse#359 | Δ |
 |-----|:---------:|:---------:|:-:|
-| Typecheck | 13/14 ❌ | **14/14** ✅ | 🟢 **14TSC回归全修复!** |
-| 新回归 | **14** | **0** | 🟢 dispatch-358 闭环 ✅ |
-| storefront-web | ⚠️ 7+14TSC | ⚠️ 7 | 🟢 TSC回归清零 |
+| Typecheck | **14/14** ✅ | **14/14** ✅ | 🟢 稳态维持 |
+| 新回归 | **0** | **0** | 🟢 无新回归(第2次) |
+| storefront-web | ⚠️ 7 | ⚠️ 7 | 🟢 维持(已知) |
 | tob-web | ❌ ELIFECYCLE+4✖ | ❌ ELIFECYCLE+4✖ | 🟢 维持(已知) |
 | miniapp | ❌ ELIFECYCLE | ❌ ELIFECYCLE | 🟢 维持(已知) |
 | admin-web | ⚠️ 3 ✖(已知) | ⚠️ 3 ✖(已知) | 🟢 维持(已知) |
 
 ### 🩺 健康摘要
-- **✅ 14TSC回归修复**: 🔴→🟢 dispatch-358 闭环成功 — `be15f58f0` 修复insights+member-center
+- **✅ TSC稳态维持**: 连续2次14/14 ✅(pulse#358→#359) — dispatch-358闭环成果保持
 - **已知角色冒烟**: ⚠️ storefront(7已知)+tob(4✖+ELIFECYCLE)+miniapp(ELIFECYCLE)+admin(3✖) 维持
-- **树哥派单**: 🔴 RQ-20260712-001~005 08:30派出→已过**5h仍未闭合**
-- **dispatch闭环**: ✅ dispatch-358 30min内commit → **连续1次闭环**
+- **树哥派单**: 🔴 RQ-20260712-001~005 08:30派出→已过**5.5h仍未闭合**
+- **dispatch闭环**: ✅ dispatch-358 已闭环保持 · 无新派单
 - **连续🏆**: 0（TSC全通过但角色冒烟未全清）
 - **知识库时效**: ✅ <24h ✅
+- **网络状态**: ⚠️ git pull无法解析github.com(本地验收仅限)
 
 ### 📊 年度连续记录
 - 最长连续全绿: 38🏆 (pulse#293→#330)
@@ -32,3 +33,4 @@
 - 2026-07-12 12:08 pulse#356 ⚠️⚠️ RQ-001~005超3.5h未闭合·修复commit引入14处TSC新回归·已派树哥新单dispatch-356
 - 2026-07-12 12:38 pulse#357 ⚠️⚠️⚠️ dispatch-356 30min零响应·14TSC归仍未修·连续2次无闭合→P0升级dispatch-357·RQ-001~005超4h零commit·连续6脉冲无闭合
 - **2026-07-12 13:08 pulse#358 ✅✅ dispatch-358 闭环成功·14TSC回归全修复·TSC恢复14/14·dispatch-357→358闭环·RQ-001~005超5h仍未闭合**
+- **2026-07-12 14:06 pulse#359 ✅ TSC稳态维持14/14·无新回归·dispatch-358闭环保持·RQ-001~005超5.5h慢性未闭**
