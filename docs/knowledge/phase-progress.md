@@ -82,3 +82,19 @@
 | 2026-07-12 07:08 | pulse#347 | 全库(非api) [清晨稳态维持 — 无新回归,角色冒烟14保持] | Base✅(TSC14/14)/Service✅/Controller⚠️(store6/tob4/mini4)/CTest✅(admin4384✅/app35/35✅/mobile314✅) | 0🏆 |
 | 2026-07-12 07:38 | pulse#348 | 全库(非api) [清晨稳态维持 — 无新回归,角色冒烟维持,安全基线更新] | Base✅(TSC14/14)/Service✅/Controller⚠️(store7/tob4/mini12)/CTest✅(admin✅/app✅/mobile✅) | 0🏆 |
 | 2026-07-12 08:10 | pulse#349 | 全库(非api) [清晨稳态维持 — 无新回归,角色冒烟维持,typecheck全绿] | Base✅(TSC14/14)/Service✅/Controller⚠️(store7/tob4/miniapp12)/CTest✅(admin✅/app✅/mobile✅) | 0🏆 |
+
+## 🐜 树哥派单记录
+
+### 2026-07-12 08:30 周日派单
+
+| RQ-ID | 优先级 | 任务 | 关联Phase | 预期耗时 | 余额影响 |
+|:-----:|:-----:|:-----|:---------:|:-------:|:--------:|
+| RQ-20260712-001 | 🔴 P0 | **Controller store 7-fail修复** — 门店营业时间/空会员/分页边界 | P-35(收银)+P-36(会员) | 20min | ₹5-8 |
+| RQ-20260712-002 | 🔴 P0 | **Controller tob 4-fail修复** — 空状态/加载异常/customers-data缺失/动态路由 | P-35(收银) | 10min | ₹3-5 |
+| RQ-20260712-003 | 🔴 P0 | **Controller miniapp 12-fail修复** — 积分不足/会员等级/redeem-center反例 | P-36(会员) | 20min | ₹5-8 |
+| RQ-20260712-004 | 🔴 P0 | **@m5/api hang vitest CLI迁移尝试** — 跳过--run默认挂起，尝试vitest-native并发 | 基础设施/测试质量(P0-001) | 30-60min | ₹15-30 |
+| RQ-20260712-005 | 🟢 P3 | **P-35/P-36前端轻量补全** — storefront-web收银台+admin-web会员页面组件补全 | P-35 + P-36 | 20min | ₹5-8 |
+
+**合计预算**: ₹33-59（计划执行P0四项 ≈ ₹28-51，P3视余额 🟢弹性）
+**当前余额**: ¥171.66 → 执行后预计剩余 ¥120.66-143.66 ✅ 安全
+**决策依据**: @m5/api hang 从7/10启动至今未解，持续22天P0-001，周末窗口不容错过。Controller 23fail集中修复可提高验收脉冲评分。
