@@ -115,3 +115,4 @@
 | 2026-07-12 14:36 | pulse#360 | 全库(非api) [TSC稳态维持14/14·连续3次全绿·无新回归·dispatch-358闭环保持·RQ-001~005超6h慢性未闭] | Base✅(TSC14/14✅)/Service✅/Controller⚠️(store7/tob4/miniapp)/CTest⚠️(admin3✖/tob✖/miniapp✖) | 0🏆 |
 | 2026-07-12 14:52 | 🦞V15推进 | V15修复3个已知问题（vitest hang配置+14TSC+断言规则）+ TSC14/14连续3次全绿 | 75提交/1005总/干净工作区 | ✅ |
 | 2026-07-12 15:06 | pulse#361 | 全库(非api) [TSC稳态维持14/14·连续4次全绿·无新回归·dispatch-358闭环保持第4次·RQ-001~005超6.5h慢性未闭] | Base✅(TSC14/14✅)/Service✅/Controller⚠️(store5/tob4/miniapp)/CTest⚠️(admin3✖/tob✖/miniapp✖) | 0🏆 |
+| 2026-07-12 15:36 | pulse#362 | 全库(非api) [TSC稳态维持14/14·连续5次全绿·无新回归·dispatch-358闭环保持第5次·RQ-001~005超7h慢性未闭] | Base✅(TSC14/14✅)/Service✅/Controller⚠️(store5/tob4/miniapp)/CTest⚠️(admin3✖/tob✖/miniapp✖) | 0🏆 |
