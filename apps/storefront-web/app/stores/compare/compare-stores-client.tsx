@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   StoreComparisonPanel,
@@ -158,11 +158,33 @@ function statusLabel(s: StatusFilter): string {
 // 比较门店客户组件
 // ============================================================
 
-export function CompareStoresClient() {
+export function CompareStoresClient({
+  preselectedIds = [],
+  baselineId: defaultBaselineId,
+}: {
+  preselectedIds?: string[];
+  baselineId?: string;
+} = {}) {
   const [regionFilter, setRegionFilter] = useState<RegionFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortKey, setSortKey] = useState<SortKey>('revenue');
-  const [baselineStoreId, setBaselineStoreId] = useState<string | undefined>('store-bj-1');
+  const [baselineStoreId, setBaselineStoreId] = useState<string | undefined>(
+    defaultBaselineId ?? 'store-bj-1',
+  );
+
+  // 如果通过 searchParams 传入了预选门店，默认选中这些门店的区域
+  useEffect(() => {
+    if (preselectedIds.length > 0) {
+      const preSelected = MOCK_ALL_STORES.filter((s) => preselectedIds.includes(s.id));
+      if (preSelected.length > 0) {
+        // 如果所有预选门店在同一区域，自动筛选到该区域
+        const regions = [...new Set(preSelected.map((s) => s.region))];
+        if (regions.length === 1) {
+          setRegionFilter(regions[0] as RegionFilter);
+        }
+      }
+    }
+  }, [preselectedIds]);
 
   const stores = useMemo(() => {
     let filtered = [...MOCK_ALL_STORES];
