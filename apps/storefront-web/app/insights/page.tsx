@@ -84,11 +84,11 @@ const HEATMAP_DATA: HeatmapCell[] = [
 
 /* 告警数据 */
 const MOCK_ALERTS: AnomalyAlert[] = [
-  { id: 'alt-01', deviceId: 'cam-02', type: 'camera_down', severity: 'high', message: '收银区摄像头画面无信号', timestamp: new Date(Date.now() - 1800000).toISOString(), status: 'acknowledged' },
-  { id: 'alt-02', deviceId: 'prt-01', type: 'thermal', severity: 'medium', message: '厨房打印机打印头温度偏高 (68°C)', timestamp: new Date(Date.now() - 120000).toISOString(), status: 'open' },
-  { id: 'alt-03', deviceId: 'sns-01', type: 'humidity', severity: 'medium', message: '冷库湿度异常 88%', timestamp: new Date(Date.now() - 60000).toISOString(), status: 'open' },
-  { id: 'alt-04', deviceId: 'pos-01', type: 'network', severity: 'low', message: 'POS-01 网络延迟偏高', timestamp: new Date(Date.now() - 3600000).toISOString(), status: 'resolved' },
-  { id: 'alt-05', deviceId: 'sns-01', type: 'temperature', severity: 'high', message: '冷库温度异常 12°C', timestamp: new Date(Date.now() - 7200000).toISOString(), status: 'resolved' },
+  { deviceId: 'cam-02', id: 'alt-01', type: 'camera_down', severity: 'high', message: '收银区摄像头画面无信号', timestamp: new Date(Date.now() - 1800000).toISOString(), status: 'acknowledged' },
+  { id: 'alt-02', id: 'prt-01', type: 'thermal', severity: 'medium', message: '厨房打印机打印头温度偏高 (68°C)', timestamp: new Date(Date.now() - 120000).toISOString(), status: 'open' },
+  { id: 'alt-03', id: 'sns-01', type: 'humidity', severity: 'medium', message: '冷库湿度异常 88%', timestamp: new Date(Date.now() - 60000).toISOString(), status: 'open' },
+  { id: 'alt-04', id: 'pos-01', type: 'network', severity: 'low', message: 'POS-01 网络延迟偏高', timestamp: new Date(Date.now() - 3600000).toISOString(), status: 'resolved' },
+  { id: 'alt-05', id: 'sns-01', type: 'temperature', severity: 'high', message: '冷库温度异常 12°C', timestamp: new Date(Date.now() - 7200000).toISOString(), status: 'resolved' },
 ];
 const gaugeSegments: GaugeSegment[] = [
   { from: 0, to: 30, color: '#22c55e', label: '良好' },
@@ -142,7 +142,7 @@ function UsageGauge({ used, total, label, accent }: { used: number; total: numbe
 }
 
 export default function DataInsights() {
-  const [filter, setFilter] = useState<'all' | 'warning' | 'error' | 'maintenance'>('all');
+  const [filter, setFilter] = useState<'all' | 'online' | 'warning' | 'error' | 'maintenance'>('all');
 
   const filteredDevices = useMemo(
     () => filter === 'all' ? MOCK_DEVICES : MOCK_DEVICES.filter(d => d.status === filter),
@@ -191,7 +191,7 @@ export default function DataInsights() {
       {/* 会员等级分布 */}
       <div style={{ ...styles.card, marginBottom: 16 }}>
         <div style={styles.cardTitle}>📊 会员等级分布</div>
-        <MemberLevelDistribution data={MOCK_MEMBER_LEVELS} total={total} />
+        <MemberLevelDistribution data={MOCK_MEMBER_LEVELS} />
         <div style={{ marginTop: 8, fontSize: 12, color: '#64748b', textAlign: 'center' }}>
           total: {total} · level count: {MOCK_MEMBER_LEVELS.length} · high-value: {percent(highValue, total)}%
         </div>

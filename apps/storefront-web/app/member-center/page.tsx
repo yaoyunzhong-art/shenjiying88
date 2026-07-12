@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Empty } from 'antd';
+// inline empty state
 import type { MemberInfo } from '../../lib/member-auth-service';
 
 type MembershipTier = 'diamond' | 'gold' | 'silver' | 'bronze' | 'basic';

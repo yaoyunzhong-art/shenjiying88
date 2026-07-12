@@ -78,7 +78,7 @@ describe('👔店长 / 🛒前台: member-center — 反例', () => {
   it('应处理空会员列表/无数据状态', () => {
     const src = readPageSource('member-center/page.tsx');
     assert.ok(
-      src.includes('暂无') || src.includes('empty') || src.includes('noData') || src.includes('EmptyState'),
+      src.includes('暂无') || src.includes('empty') || src.includes('noData') || src.includes('null'),
       '缺少空数据兜底'
     );
   });

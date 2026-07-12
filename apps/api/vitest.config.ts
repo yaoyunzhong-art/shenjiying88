@@ -8,19 +8,11 @@ export default defineConfig({
     exclude: ['node_modules', 'dist'],
     testTimeout: 120_000,
     pool: 'forks',
-    maxConcurrency: 8,
+    maxConcurrency: 4,
     maxConcurrencyPerFile: 1,
     isolate: false,
     hookTimeout: 60_000,
-    forceExit: true,
-    fileParallelism: true,
-    poolOptions: {
-      forks: {
-        singleFork: false,
-        maxForks: 4,
-        minForks: 1,
-      },
-    },
+    fileParallelism: false,
     teardownTimeout: 5000,
     alias: {
       'pg': path.resolve(__dirname, 'src/__mocks__/pg.ts'),
