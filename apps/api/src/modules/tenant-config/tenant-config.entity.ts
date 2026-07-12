@@ -165,6 +165,8 @@ export interface ConfigInstance {
   updatedAt: string
   /** 创建时间 */
   createdAt: string
+  /** Phase-FP P0 修复: 标记是否来自 seed(), 是则首次 setConfig 算 create 而非 update */
+  fromSeed?: boolean
 }
 
 /** 配置审计日志 */
@@ -174,6 +176,8 @@ export interface ConfigAuditLog {
   key: string
   level: ConfigLevel
   ownerId: string
+  /** Phase-FP P0 修复: 记录的 tenant id, 用于 listAuditLogs 跨 store 过滤 */
+  tenantId: string
   /** 变更前值 (脱敏) */
   previousValue?: string
   /** 变更后值 (脱敏) */

@@ -102,14 +102,33 @@ export class TenantConfigService {
     const levelMap = this.instances.get(def.level)
     const ownerMap = levelMap?.get(key)
     const inst = ownerMap?.get(this.ownerIdFor(ctx, def.level))
-    if (!inst) return null
-    // 解密后脱敏返回 (service 层负责 access control)
-    const plain = inst.encrypted ? decryptField(inst.value) : inst.value
-    const displayValue = this.maskValue(def.sensitivity, plain, false)
-    return {
-      ...inst,
-      value: displayValue,
+    if (inst) {
+      // 解密后脱敏返回 (service 层负责 access control)
+      const plain = inst.encrypted ? decryptField(inst.value) : inst.value
+      const displayValue = this.maskValue(def.sensitivity, plain, false)
+      return {
+        ...inst,
+        value: displayValue,
+      }
     }
+    // Phase-FP P0 修复: 没有任何 instance 时 fall back 到 BUILTIN defaultValue
+    if (def.defaultValue !== undefined && def.defaultValue !== null) {
+      return {
+        id: 'builtin-' + def.key,
+        key: def.key,
+        value: this.maskValue(def.sensitivity, String(def.defaultValue), false),
+        encrypted: false,
+        category: def.category,
+        level: def.level,
+        ownerId: this.ownerIdFor(ctx, def.level),
+        inherits: true,
+        version: 0,
+        updatedBy: 'system',
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      }
+    }
+    return null
   }
 
   // ============ 2. 写入: 三级独立 (V9 需求 4) ============
@@ -161,7 +180,9 @@ export class TenantConfigService {
       key: def.key,
       level: def.level,
       ownerId,
-      action: existing ? 'update' : 'create',
+      tenantId: ctx.tenantId ?? ownerId,
+      // Phase-FP P0 修复: 来自 seed 的 instance 首次被 setConfig 覆盖时算 create, 不是 update
+      action: existing && !existing.fromSeed ? 'update' : 'create',
       operator: ctx.userId ?? 'system',
       operatorRole: ctx.role ?? 'viewer',
       previousValue: existing ? this.maskValue(def.sensitivity, existing.value, existing.encrypted) : undefined,
@@ -195,6 +216,7 @@ export class TenantConfigService {
       key: target.key,
       level: target.level,
       ownerId: target.ownerId,
+      tenantId: ctx.tenantId ?? target.ownerId,
       action: 'rollback',
       operator: ctx.userId ?? 'system',
       operatorRole: ctx.role ?? 'viewer',
@@ -232,7 +254,8 @@ export class TenantConfigService {
   // ============ 4. 审计日志 (V9 需求 2 180 天) ============
 
   listAuditLogs(tenantId: string, limit = 100): ConfigAuditLog[] {
-    return this.auditLogs.filter((log) => log.ownerId.startsWith(tenantId)).slice(-limit).reverse()
+    // Phase-FP P0 修复: 用 auditLog.tenantId 字段精确过滤
+    return this.auditLogs.filter((log) => log.tenantId === tenantId).slice(-limit).reverse()
   }
 
   // ============ 5. 内部工具 ============
@@ -398,6 +421,7 @@ export class TenantConfigService {
           updatedBy,
           updatedAt: now,
           createdAt: now,
+          fromSeed: true,
         }],
       ]))
     }

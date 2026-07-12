@@ -11,6 +11,7 @@ import {
   IsArray,
   IsEnum,
   IsNumber,
+  MinLength,
   ValidateNested,
   ArrayMinSize,
   ArrayMaxSize,
@@ -37,7 +38,7 @@ export class GetConfigDto {
 
 export class SetConfigItemDto {
   @IsString()
-  @IsNotEmpty()
+  @MinLength(1)
   key!: string
 
   @IsString()
@@ -59,6 +60,7 @@ export class SetConfigBatchDto {
 
 export class RollbackConfigDto {
   @IsString()
+  @MinLength(1)
   configId!: string
 
   @IsNumber()
