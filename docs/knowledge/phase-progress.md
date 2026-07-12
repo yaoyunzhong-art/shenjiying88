@@ -118,3 +118,4 @@
 | 2026-07-12 15:36 | pulse#362 | 全库(非api) [TSC稳态维持14/14·连续5次全绿·无新回归·dispatch-358闭环保持第5次·RQ-001~005超7h慢性未闭] | Base✅(TSC14/14✅)/Service✅/Controller⚠️(store5/tob4/miniapp)/CTest⚠️(admin3✖/tob✖/miniapp✖) | 0🏆 |
 | 2026-07-12 15:45 | ✅**P0-001验证** | **forceExit修复验证通过** — 6个核心模块(cashier/cross-module/inventory/finance/tenant-config/compliance)全部不hang|
 | | | cashier 1.58s✅ 663/663全绿 | inventory 1.73s✅ 652/652全绿 | compliance 0.78s✅ 404/404全绿 🎯 |
+| 2026-07-12 16:06 | pulse#363 | 全库(非api) [TSC稳态维持14/14·连续6次全绿·P0-001闭环🎯·dispatch-358闭环保持第6次·RQ-001~005超7.5h慢性未闭] | Base✅(TSC14/14✅✅)/Service✅/Controller⚠️(store5/tob4/miniapp)/CTest⚠️(✅P0-001验证/admin3/tob/miniapp) | 0🏆 |

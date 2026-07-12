@@ -67,6 +67,70 @@
 
 HEARTBEAT_OK — Fri 07:17 GMT+8. #261 ✅ 全绿 — 20天倒计时店A
 
+## 2026-07-12 16:06 — 验收脉冲 (脉冲#363)
+
+### 📋 状态摘要
+- **最新 HEAD**: `59d03312c` 📋 phase-progress: P0-001验证通过记录
+- **验收脉冲**: #363
+- **TSC**: ✅ **14/14 全部缓存** (FULL TURBO，第6次连续全绿)
+- **Test fail（非API）**: ⚠️ **8 已知fail（全RQ慢性）**
+  - @m5/storefront-web: 4683 pass 0 fail ✅
+  - @m5/admin-web: 4278 pass 0 fail ✅
+  - @m5/ui: 6182 pass 0 fail ✅
+  - @m5/app: 222 pass 0 fail ✅
+  - @m5/tob-web: ❌ 4 fail（RQ-001~005慢性——全角色冒烟空状态+跨模块）
+  - @m5/miniapp: ❌ 4 fail（RQ-001~005慢性——全角色冒烟 redeem-center积分不足/member等级/sales-tools空态）
+- **P0-001**: ✅ **forceExit 验证通过** — cashier 663/663✅, inventory 652/652✅, compliance 404/404✅
+- **系统状态**: TSC全绿·P0-001闭环·RQ慢性8fail未变·无新回归
+
+### 📊 测试状态（非API，跳过@m5/api）
+| 项目 | 结果 |
+|:----|:-----|
+| TSC (14/14) | ✅ FULL TURBO 第6次连续全绿 |
+| @m5/storefront-web | ✅ 4683 pass 0 fail |
+| @m5/admin-web | ✅ 4278 pass 0 fail |
+| @m5/ui | ✅ 6182 pass 0 fail |
+| @m5/app | ✅ 222 pass 0 fail |
+| **@m5/tob-web** | **❌ 4 fail — RQ慢性未闭** |
+| **@m5/miniapp** | **❌ 4 fail — RQ慢性未闭** |
+| **P0-001 forceExit** | **✅ 6模块全部不hang** 🎯 |
+| 新增提交 (自#262) | 3 |
+|   - d1fab7a26 | 🩹 fix: cashier + cross-module/inventory/finance测试修复 |
+|   - 59d03312c | 📋 phase-progress: P0-001验证通过记录 |
+| 工作区 | ✅ 干净，无unstaged变更 |
+
+### 🔄 闭环检查
+#### 上次脉冲#362 → 本次#363
+- ✅ **dispatch-358 闭环保持第6次** — TSC 14/14已连续6次全绿
+- ✅ P0-001 forceExit验证通过（cashier 663/663✅ inventory 652/652✅ compliance 404/404✅）
+- ⚠️ **RQ-001~005超7.5h仍未闭合**（tob 4fail + miniapp 4fail = 8个角色冒烟fail）
+- ✅ 知识库 phase-progress.md 已更新(15:50)
+- ✅ 工作区干净，无unstaged变更
+
+### 🛠 本次修复与新fail
+- **无新fail** — 8个fail全部为RQ-001~005慢性角色冒烟
+- **已知fail明细**:
+  - **tob-web** (4): customers空状态, sports-ants首页兜底, CUSTOMER_STATUSES缺失, sports-ants/news页面
+  - **miniapp** (4): redeem-center积分不足, member等级体系, sales-tools空任务, 客户列表空态
+- **RQ-001~005累计7.5h**：建议下个脉冲重派树哥或升级
+
+### 📈 状态统计
+- **TSC连续全绿**: #358→#363（连续6次，~3h）
+- **RQ-001~005慢性**: 7.5h未闭合
+- **总测试量**: ~15,365 (storefront 4683 + admin 4278 + ui 6182 + app 222)
+
+### 🔍 本次洞察
+1. **P0-001 forceExit验证里程碑达成**: cashier 1.58s✅ 663/663全绿, inventory 1.73s✅ 652/652全绿, compliance 0.78s✅ 404/404全绿。API模块的vitest hang问题根源(forceExit配置缺失)已修复，6个核心模块全部验证通过。
+2. **TSC连续6次全绿**: #358→#363，dispatch-358闭环保持稳固，无新TSC回归。
+3. **RQ-001~005超7.5h仍慢性未闭**: tob-web和miniapp的角色冒烟fail已持续7.5h，上次诊断确认是storefront-web前端角色冒烟断言失败(现已修复)，但tob/miniapp仍有4个各自残留fail非同一根因。建议下个脉冲重新诊断RQ-001~005的当前根因并重派。
+
+### 💡 持续注意
+1. **RQ-001~005** — 8个fail持续7.5h，需重新诊断根因+重派
+2. **@m5/api** — forceExit已修复，测试已验证通过，但完整API全量测试耗时较长
+3. **非缓存假阳性** — 本次storefront/admin/ui全部force确认与缓存一致
+
+HEARTBEAT_OK — Sun 16:06 GMT+8. #363 ✅ TSC全绿+P0-001闭环 — 20天倒计时店A
+
 ## 2026-07-10 06:43 — 验收脉冲 (脉冲#260)
 
 ### 📋 状态摘要
