@@ -37,6 +37,7 @@ export class GetConfigDto {
 
 export class SetConfigItemDto {
   @IsString()
+  @IsNotEmpty()
   key!: string
 
   @IsString()

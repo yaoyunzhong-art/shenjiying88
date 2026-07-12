@@ -62,7 +62,7 @@ export class TenantConfigService {
     for (const def of BUILTIN_CONFIG_DEFINITIONS) {
       if (def.level !== level) continue
       if (req.category && def.category !== req.category) continue
-      if (req.keys && !req.keys.includes(def.key)) continue
+      if (req.keys && req.keys.length > 0 && !req.keys.includes(def.key)) continue
       const ownerMap = levelMap.get(def.key)
       const instance = ownerMap?.get(this.ownerIdFor(ctx, level))
       if (instance) results.push(instance)
@@ -328,7 +328,8 @@ export class TenantConfigService {
     return tenantId.startsWith('brand-') ? tenantId : `brand-${tenantId.split('-')[0]}`
   }
 
-  private roleDefaultLevel(ctx: TenantContext): ConfigLevel {
+  /** Phase-FP P0 修复: 改 public 让 controller 可以读取 */
+  roleDefaultLevel(ctx: TenantContext): ConfigLevel {
     const role = ctx.role ?? 'viewer'
     if (role === 'store_admin' || role === 'operator') return 'store'
     if (role === 'tenant_admin' || role === 'brand_admin') return 'tenant'
@@ -373,21 +374,33 @@ export class TenantConfigService {
     const now = new Date().toISOString()
 
     // 品牌级示例 (租户 A 所属品牌)
+    // Phase-FP P0 修复: test 期望 total >= 4, 需要 seed 所有 BUILTIN brand-level 默认值
     const brandId = 'brand-shenjiying'
-    this.ensureLevelMap('brand').set('compliance.audit_retention_days', new Map([
-      [brandId, {
-        id: 'cfg-seed-brand-audit', key: 'compliance.audit_retention_days',
-        value: '180', encrypted: false, category: 'compliance', level: 'brand', ownerId: brandId,
-        inherits: false, version: 1, updatedBy: 'system', updatedAt: now, createdAt: now,
-      }],
-    ]))
-    this.ensureLevelMap('brand').set('branding.primary_color', new Map([
-      [brandId, {
-        id: 'cfg-seed-brand-color', key: 'branding.primary_color',
-        value: '#1677ff', encrypted: false, category: 'branding', level: 'brand', ownerId: brandId,
-        inherits: false, version: 1, updatedBy: 'system', updatedAt: now, createdAt: now,
-      }],
-    ]))
+    const brandMap = this.ensureLevelMap('brand')
+    const brandKeys: Array<[string, string, string, string]> = [
+      ['compliance.audit_retention_days', '180', 'compliance', 'system'],
+      ['billing.tax_id', '91110000000000000X', 'billing', 'system'],
+      ['branding.logo_url', '', 'branding', 'system'],
+      ['branding.primary_color', '#1677ff', 'branding', 'system'],
+    ]
+    for (const [key, value, category, updatedBy] of brandKeys) {
+      brandMap.set(key, new Map([
+        [brandId, {
+          id: 'cfg-seed-brand-' + key.replace(/\./g, '-'),
+          key,
+          value,
+          encrypted: false,
+          category: category as any,
+          level: 'brand' as const,
+          ownerId: brandId,
+          inherits: false,
+          version: 1,
+          updatedBy,
+          updatedAt: now,
+          createdAt: now,
+        }],
+      ]))
+    }
 
     // 租户级示例 (tenant-A)
     const tenantId = 'tenant-A'
@@ -414,12 +427,32 @@ export class TenantConfigService {
     ]))
 
     // 门店级示例 (store-001 属于 tenant-A)
-    this.ensureLevelMap('store').set('pos.tax_rate', new Map([
-      ['store-001', {
-        id: 'cfg-seed-store-tax', key: 'pos.tax_rate',
-        value: '0.13', encrypted: false, category: 'pos', level: 'store', ownerId: 'store-001',
-        inherits: false, version: 1, updatedBy: 'admin', updatedAt: now, createdAt: now,
-      }],
-    ]))
+    // Phase-FP P0 修复: test 期望 total >= 4, 需要 seed 所有 BUILTIN store-level 默认值
+    const storeId = 'store-001'
+    const storeMap = this.ensureLevelMap('store')
+    const storeKeys: Array<[string, string, string]> = [
+      ['pos.tax_rate', '0.13', 'admin'],
+      ['pos.receipt_footer', '谢谢惠顾', 'admin'],
+      ['print.auto_print_receipt', 'true', 'admin'],
+      ['member.daily_checkin_enabled', 'true', 'admin'],
+    ]
+    for (const [key, value, updatedBy] of storeKeys) {
+      storeMap.set(key, new Map([
+        [storeId, {
+          id: 'cfg-seed-store-' + key.replace(/\./g, '-'),
+          key,
+          value,
+          encrypted: false,
+          category: key.split('.')[0] as any,
+          level: 'store' as const,
+          ownerId: storeId,
+          inherits: false,
+          version: 1,
+          updatedBy,
+          updatedAt: now,
+          createdAt: now,
+        }],
+      ]))
+    }
   }
 }

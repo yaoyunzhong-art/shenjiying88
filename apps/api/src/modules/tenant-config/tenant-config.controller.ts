@@ -23,6 +23,7 @@ import {
 } from './tenant-config.dto'
 import type { ConfigInstance, ConfigItemDefinition, ConfigLevel } from './tenant-config.entity'
 import { BUILTIN_CONFIG_DEFINITIONS, LEVEL_TO_WORKBENCH } from './tenant-config.entity'
+import { requireTenantContext } from '../../common/context/tenant-context'
 
 @Controller('tenant-config')
 export class TenantConfigController {
@@ -49,9 +50,12 @@ export class TenantConfigController {
       const def = defs.get(inst.key)
       return maskConfigResponse(inst, def?.sensitivity ?? 'public')
     })
+    // Phase-FP P0 修复: level 应该用 service 实际解析的 level, 不是硬编码 'tenant'
+    const ctx = requireTenantContext()
+    const resolvedLevel = query.level ?? this.service.roleDefaultLevel(ctx)
     return {
-      workbench: query.level ? LEVEL_TO_WORKBENCH[query.level] : 'auto',
-      level: query.level ?? 'tenant',
+      workbench: LEVEL_TO_WORKBENCH[resolvedLevel] ?? 'auto',
+      level: resolvedLevel,
       items,
       total: items.length,
     }
