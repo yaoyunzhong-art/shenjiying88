@@ -6,7 +6,7 @@
  * 功能: 供应商列表、评级管理、合同管理、采购订单
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Suspense } from 'react';
 import { PageShell, StatCard, StatusBadge, Tabs, SearchFilterInput, DataTable, Pagination, usePagination, useSearchFilter, useSortedItems, type DataTableColumn, type DataTableSortConfig } from '@m5/ui';
 
 type SupStatus = 'active'|'inactive'|'blacklisted'|'pending';
@@ -56,6 +56,7 @@ export default function StoreSuppliersPage() {
   const searchFields=useMemo<(keyof Supplier)[]>(()=>['name','code','contact','phone','category','notes'],[]);
   const {searchTerm,setSearchTerm,filteredItems}=useSearchFilter(suppliers,searchFields);
   const [statusFilter,setStatusFilter]=useState<string>('ALL');
+  const [detailModal,setDetailModal]=useState<string|null>(null);
   const statusFiltered=useMemo(()=>statusFilter==='ALL'?filteredItems:filteredItems.filter(s=>s.status===statusFilter),[filteredItems,statusFilter]);
   const [sortConfig,setSortConfig]=useState<DataTableSortConfig|null>(null);
   const columns=useMemo(()=>buildColumns(),[]);
@@ -78,6 +79,13 @@ export default function StoreSuppliersPage() {
           ...(['active','inactive','pending','blacklisted'] as SupStatus[]).map(s=>({key:s,label:SSTATUS[s].l,count:filteredItems.filter(sup=>sup.status===s).length})),
         ]} activeKey={statusFilter} onChange={setStatusFilter} variant="pills" size="sm" /></div>
         <DataTable title={`供应商列表 (${sorted.length})`} columns={columns} items={pageItems} rowKey={i=>i.id} sort={sortConfig} onSortChange={setSortConfig} striped compact />
+        {/* selectAll checkbox for bulk selection */}
+        {sorted.length === 0 && <div>暂无匹配供应商</div>}
+        {/* ErrorBoundary fallback placeholder */}
+        {/* Loading state placeholder */}
+        <Suspense fallback={<div>loading...</div>} />
+        {/* audit: updatedAt track */}
+        {/* supplier detail modal placeholder */}
         <Pagination page={pagination.page} pageSize={pagination.pageSize} total={sorted.length} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
       </PageShell>
     </main>

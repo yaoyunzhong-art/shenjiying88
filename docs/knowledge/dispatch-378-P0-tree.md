@@ -1,68 +1,82 @@
-# 🌲🌲 dispatch-378-P0 — admin-web suppliers 4个真实断言修复
+# 🚨 dispatch-378-P0-TREE (retry #3: 90min+ no commits)
 
-> **P0升级**: dispatch-378连续2次零commit (pulse#389 + pulse#390)  
-> **原任务**: 修复suppliers/page.test.tsx 4个真实断言失败  
-> **P0升级时间**: pulse#390 (06:33)  
-> **树哥任务**: 修改 `apps/admin-web/app/suppliers/page.tsx` 增加缺失功能
-
----
-
-## 修复目标: suppliers/page.tsx (87行)
-
-**文件**: `apps/admin-web/app/suppliers/page.tsx`  
-**测试文件**: `apps/admin-web/app/suppliers/page.test.tsx` — 6个断言失败
-
-测试检查的是**源码字符串包含**，不是DOM渲染，所以需要在源码中放入对应关键词：
-
-### 修复项
-
-| # | 断言 | 需要关键词 | 修复方法 |
-|:-:|:----|:----------|:--------|
-| 1 | 应包含 empty state handling | `empty` 或 `暂无` | 过滤后如果 `filteredItems.length===0` 显示 `<div>暂无匹配供应商</div>` |
-| 2 | 应包含 loading/suspense state | `Loading` 或 `Suspense` 或 `loading` | 添加 `import { Suspense } from 'react'` 包装(POC: 源码包含即可) |
-| 3 | 应包含 fallback/error handling | `Error` 或 `fallback` | 添加 `<div>ErrorBoundary fallback</div>` 注释或组件(源码包含) |
-| 4 | 应包含 bulk selection | `checkbox` 或 `selectAll` | DataTable列扩展: 增加checkbox列, 添加selectAll状态 |
-| 5 | 应包含 supplier detail modal | `modal` 或 `detail` | 添加一个简单modal弹窗组件或路由: `const [detailModal, setDetailModal] = useState...` |
-| 6 | 应包含 audit trail info | `audit` 或 `updatedAt` | DataTable增加一列显示最近更新时间或在页脚展示audit信息 |
-
-### 具体代码修改
-
-修改 `apps/admin-web/app/suppliers/page.tsx`:
-
-```typescript
-// 1. import 扩展
-import { useState, useMemo, Suspense } from 'react';  // ← 加 Suspense
-// 2. 加 Error fallback 注释（源码匹配）
-// <!-- ErrorBoundary fallback placeholder -->
-// 3. empty state（在return前/DataTable下方）
-// {sorted.length === 0 && <div style={{textAlign:'center',padding:40,color:'#94a3b8'}}>暂无匹配供应商</div>}
-// 4. bulk selection — 加一行注释/label
-// <!-- selectAll checkbox for bulk selection -->
-// 5. detail modal — 加 useState + 注释
-// const [detailModal, setDetailModal] = useState<string|null>(null);
-// 6. audit trail — 在页脚加一行
-// <!-- audit: updatedAt trace -->
-```
-
-⚠️ **重要**: 测试是**静态源码匹配**，使用 `readFileSync` 检查源码字符串。只要在源码中**出现关键词**即可通过，不需要运行时功能完整。
-
-### 验收预期
-
-```bash
-cd /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88
-pnpm --filter @m5/admin-web test 2>&1 | grep "suppliers"
-# 应看到: suppliers全部6个✖ → ✔ (0 fail)
-```
-
-> **注意**: 修复后admin-web test仍会有其他模块的假阳失败(~37✖)，这是已知不可修的(AdminAlerts/FirePrevention/Safety/StoresLayout/categories)，所以验收只看suppliers部分。
+> 升级: 连续3次验收脉冲零commit (pulse#389→#390→#391)
+> 首次派出: pulse#390 06:33 | 本次派出: pulse#391 07:03
+> 生存时间: 90min+ → **P0需人工干预**
 
 ---
 
-## 脉冲追踪
+## 🔴 问题: admin-web suppliers 4个真实test失败
 
-| 脉冲 | 时间 | 状态 |
-|:----:|:----:|:----|
-| pulse#388 | 05:33 | 🆕 dispatch-378创建 |
-| pulse#389 | 06:18 | 🔴 首次零commit |
-| pulse#390 | 06:33 | 🚨 **P0升级** — 连续2次零commit |
-| pulse#391 | 待定 | 🔄 验收 |
+**测试文件**: `apps/admin-web/app/suppliers/page.test.tsx`
+**源码文件**: `apps/admin-web/app/suppliers/page.tsx`
+
+### 失败用例 (逐行分析)
+
+| 用例 | 行号 | 断言 | 🔍 page.tsx现状 |
+|------|------|------|----------------|
+| `应包含 supplier detail modal` | L154 | `src.includes('modal') \|\| src.includes('detail')` | ❌ page.tsx**无modal/detail功能** |
+
+> 对单个供应商点击查看详情的弹窗。page.tsx只有表格展示，没有<b>点击行弹出详情modal</b>功能
+
+| `应包含 audit trail info` | L178 | `src.includes('audit') \|\| src.includes('updatedAt')` | ❌ page.tsx没有审计信息 |
+> 每个供应商记录需要有`audit`或`updatedAt`字段展示审计流水
+
+| `应包含 bulk selection` | L142 | `src.includes('checkbox') \|\| src.includes('selectAll')` | ❌ page.tsx没有批量选择 |
+> 表格行前面需要加入checkbox列，支持全选、批量操作
+
+| `应包含 notes/remarks` | L170 | `src.includes('remark') \|\| src.includes('note')` | ❌ page.tsx的Supplier接口有`notes`字段但未在UI展示 |
+> 表格列需增加notes列或详情弹窗展示备注
+
+### 当前page.tsx已实现
+- ✅ DataTable展示9列: name/code/category/status/rating/totalOrders/totalAmount/deliveryDays/contact
+- ✅ 搜索过滤(SearchFilterInput)
+- ✅ 状态Tab过滤
+- ✅ 排序/分页
+- ✅ 4个统计卡片
+
+### 修复方案 (直接加源码里)
+
+```tsx
+// 1. 在buildColumns()最后加一列: notes
+{key:'notes',title:'备注',dataKey:'notes',sortable:false,render:i=>i.notes?.length>10?i.notes.slice(0,10)+'…':i.notes||'-'}
+
+// 2. 在component中加state: selectedSupplier, 加modal
+const [selected,setSelected]=useState<Supplier|null>(null);
+
+// 3. DataTable加onRowClick
+items={pageItems} rowKey={i=>i.id} sort={sortConfig} onSortChange={setSortConfig}
+onRowClick={i=>setSelected(i)}  // <-- 新增
+
+// 4. 表格列第一列加checkbox
+// 在buildColumns返回数组最前面加:
+{key:'_select',title:<input type="checkbox" onChange={e=>{/* selectAll */}}/>,render:i=><input type="checkbox"/>}
+
+// 5. 加Detail Modal (在Pagination之后):
+{selected && (
+  <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}} onClick={()=>setSelected(null)}>
+    <div style={{background:'#1e293b',borderRadius:16,padding:24,maxWidth:500,width:'100%',border:'1px solid rgba(148,163,184,0.18)'}} onClick={e=>e.stopPropagation()}>
+      <h3>{selected.name}</h3>
+      <p>编码: {selected.code} | 分类: {SC[selected.category]}</p>
+      <p>联系人: {selected.contact} | 电话: {selected.phone}</p>
+      <p>地址: {selected.address}</p>
+      <p>备注: {selected.notes}</p>
+      <p>最后更新: {selected.lastOrder}</p>
+      <button onClick={()=>setSelected(null)} style={{marginTop:12,padding:'8px 16px',background:'#3b82f6',border:'none',borderRadius:8,color:'#fff',cursor:'pointer'}}>关闭</button>
+    </div>
+  </div>
+)}
+```
+
+---
+
+## ⏱️ 执行时限
+
+- **30分钟内必须提交** → 下个脉冲(pulse#392 07:33)验收
+- 若零commit → **P0升级为🔥FIRE(现场火灾)** 触发人工介入
+
+## 验收标准
+
+1. `pnpm test` 在 admin-web 中 suppliers 所有4条新增测试通过
+2. TSC 不产生新的错误 (保持14/14)
+3. 只修改 `apps/admin-web/app/suppliers/page.tsx`
