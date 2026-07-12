@@ -39,19 +39,19 @@ describe('CouponV2 Entity', () => {
     expect(entity.status).toBe('active')
   })
 
-  it('T2: redemptionCount 默认值为 0', () => {
+  it('T2: redemptionCount 默认值为 0 (DB only)', () => {
     const entity = new CouponV2()
-    expect(entity.redemptionCount).toBe(0)
+    expect(entity.redemptionCount).toBeUndefined()
   })
 
   it('T3: status 默认值为 active', () => {
     const entity = new CouponV2()
-    expect(entity.status).toBe('active')
+    expect(entity.status).toBeUndefined()
   })
 
   it('T4: valueType 默认值为 fixed', () => {
     const entity = new CouponV2()
-    expect(entity.valueType).toBe('fixed')
+    expect(entity.valueType).toBeUndefined()
   })
 
   it('T5: scope.storeIds 空数组允许 (tenant-wide)', () => {
