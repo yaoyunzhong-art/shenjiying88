@@ -1030,6 +1030,82 @@ var ApiClient = class {
   async listAgentTools(init = {}) {
     return this.getData("/agent/tools", init);
   }
+  // ── Tenant-Config (三级独立配置 · Phase-FP P0 集成) ──
+  /**
+   * GET /tenant-config
+   * 按 level / category / keys 过滤当前级别配置项
+   */
+  async getTenantConfigs(query = {}, init = {}) {
+    const path = this.buildPathWithQuery("/tenant-config", {
+      level: query.level,
+      category: query.category,
+      keys: query.keys && query.keys.length > 0 ? query.keys.join(",") : void 0
+    });
+    return this.getData(path, init);
+  }
+  /**
+   * GET /tenant-config/:key
+   * 查询单个配置 (已脱敏)
+   */
+  async getTenantConfig(key, init = {}) {
+    return this.getData(`/tenant-config/${encodeURIComponent(key)}`, init);
+  }
+  /**
+   * GET /tenant-config/workbench/:code
+   * 工作台视角 (W-S / W-T / W-B),返回考虑继承的生效配置
+   */
+  async getTenantWorkbenchConfigs(code, category, init = {}) {
+    const path = this.buildPathWithQuery(`/tenant-config/workbench/${encodeURIComponent(code)}`, {
+      category
+    });
+    return this.getData(path, init);
+  }
+  /**
+   * GET /tenant-config/meta/definitions
+   * 获取所有配置项静态定义 (前端 UI 用)
+   */
+  async getTenantConfigMeta(init = {}) {
+    return this.getData(
+      "/tenant-config/meta/definitions",
+      init
+    );
+  }
+  /**
+   * POST /tenant-config/batch
+   * 批量设置配置 (返回值会带回最新 version)
+   */
+  async setTenantConfigBatch(items, init = {}) {
+    return this.postData(
+      "/tenant-config/batch",
+      { items },
+      init
+    );
+  }
+  /**
+   * POST /tenant-config/rollback
+   * 回滚配置到指定版本
+   */
+  async rollbackTenantConfig(targetVersion, configId, init = {}) {
+    return this.postData(
+      "/tenant-config/rollback",
+      { targetVersion, configId },
+      init
+    );
+  }
+  /**
+   * 列出租户级配置变更审计日志
+   *
+   * 端点约定: GET /tenant-config/audit-logs?tenantId=...&limit=...
+   * (当前后端 service.listAuditLogs 已存在,本方法为前端 SDK 入口;若后端尚未暴露
+   * 该 endpoint,会收到 404 并由调用方 try/catch 处理空态。)
+   */
+  async listTenantConfigAuditLogs(tenantId, limit = 100, init = {}) {
+    const path = this.buildPathWithQuery("/tenant-config/audit-logs", {
+      tenantId,
+      limit: String(limit)
+    });
+    return this.getData(path, init);
+  }
 };
 function subscribeStream(client, opts) {
   const reconnectConfig = {

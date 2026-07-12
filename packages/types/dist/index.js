@@ -20,6 +20,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/index.ts
 var index_exports = {};
 __export(index_exports, {
+  FRONTEND_TO_BACKEND_ROLE: () => FRONTEND_TO_BACKEND_ROLE,
   adminRuntimeActionKeys: () => adminRuntimeActionKeys,
   adminRuntimeActionPresetContractMap: () => adminRuntimeActionPresetContractMap,
   adminRuntimeActionPresetContracts: () => adminRuntimeActionPresetContracts,
@@ -85,6 +86,7 @@ __export(index_exports, {
   isFoundationAlertRuntimeCallbackStalledDetail: () => isFoundationAlertRuntimeCallbackStalledDetail,
   isFoundationAlertTimelineFilterStateEqual: () => isFoundationAlertTimelineFilterStateEqual,
   listFoundationAlertTimelineActiveFilters: () => listFoundationAlertTimelineActiveFilters,
+  mapToBackendRole: () => mapToBackendRole,
   memberAutomationTriggerCodeContracts: () => memberAutomationTriggerCodeContracts,
   memberAutomationTriggerSourceContracts: () => memberAutomationTriggerSourceContracts,
   memberAutomationTriggerStatusContracts: () => memberAutomationTriggerStatusContracts,
@@ -1315,6 +1317,24 @@ var defaultRoleWorkbenchContracts = [
 var defaultRoleWorkbenchContractMap = Object.fromEntries(
   defaultRoleWorkbenchContracts.map((item) => [item.role.toLowerCase(), item])
 );
+var FRONTEND_TO_BACKEND_ROLE = {
+  SUPER_ADMIN: "super_admin",
+  BRAND_MANAGER: "brand_admin",
+  TENANT_ADMIN: "tenant_admin",
+  STORE_MANAGER: "store_admin",
+  OPERATIONS: "operator",
+  VIEWER: "viewer",
+  AUDITOR: "auditor",
+  GUIDE: "operator",
+  CASHIER: "operator",
+  WAREHOUSE: "operator",
+  FINANCE: "operator",
+  COACH: "operator"
+};
+function mapToBackendRole(frontendRole) {
+  const normalized = frontendRole.trim().toUpperCase();
+  return FRONTEND_TO_BACKEND_ROLE[normalized];
+}
 var memberLevelContracts = ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND"];
 var memberStatusContracts = ["ACTIVE", "FROZEN", "EXPIRED", "BLACKLISTED"];
 var memberLifecycleStageContracts = ["prospect", "newly-paid", "repeat-paid", "vip-active"];
@@ -1906,6 +1926,7 @@ function buildIntegrationOrchestrationHref(query = {}) {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  FRONTEND_TO_BACKEND_ROLE,
   adminRuntimeActionKeys,
   adminRuntimeActionPresetContractMap,
   adminRuntimeActionPresetContracts,
@@ -1971,6 +1992,7 @@ function buildIntegrationOrchestrationHref(query = {}) {
   isFoundationAlertRuntimeCallbackStalledDetail,
   isFoundationAlertTimelineFilterStateEqual,
   listFoundationAlertTimelineActiveFilters,
+  mapToBackendRole,
   memberAutomationTriggerCodeContracts,
   memberAutomationTriggerSourceContracts,
   memberAutomationTriggerStatusContracts,

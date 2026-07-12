@@ -226,11 +226,79 @@ export class TenantConfigService implements OnModuleInit {
   }
 
   async setConfigBatch(items: SetConfigRequest[]): Promise<ConfigInstance[]> {
-    const results: ConfigInstance[] = []
+    if (items.length === 0) return []
+    const ctx = requireTenantContext()
+    // Phase-FP P0-A2 修复: 预校验 - 所有项先过 def 存在性 + 角色权限 + 值校验
+    // 任何一项预校验失败则整批拒绝, 避免部分写入
     for (const item of items) {
-      results.push(await this.setConfig(item))
+      const def = this.definitions.get(item.key)
+      if (!def) {
+        throw new NotFoundException(`Unknown config key: ${item.key}`)
+      }
+      this.assertLevelAccess(ctx, def.level)
+      this.validateValue(def, item.value)
     }
-    return results
+
+    // 串行写入, 中途失败自动补偿 (还原已写入的)
+    const written: ConfigInstance[] = []
+    const snapshots: Map<string, { value: string; encrypted: boolean; version: number }> = new Map()
+    try {
+      for (const item of items) {
+        const def = this.definitions.get(item.key)!
+        const ownerId = this.ownerIdFor(ctx, def.level)
+        // 写入前快照 (用于补偿)
+        const ownerMap = this.instances.get(def.level)?.get(def.key)
+        const existing = ownerMap?.get(ownerId)
+        if (existing) {
+          snapshots.set(`${def.level}:${def.key}:${ownerId}`, {
+            value: existing.value,
+            encrypted: existing.encrypted,
+            version: existing.version,
+          })
+        }
+        const result = await this.setConfig(item)
+        written.push(result)
+      }
+      return written
+    } catch (err) {
+      // 补偿: 还原已写入的 instance 到快照状态
+      await this.compensateBatch(written, snapshots)
+      throw err
+    }
+  }
+
+  /**
+   * Phase-FP P0-A2 修复: 批量失败时的补偿逻辑
+   * 还原已写入 instance 到写入前快照 (非完美 - 简化: 直接删除, 因 batch 通常是新配置)
+   */
+  private async compensateBatch(
+    written: ConfigInstance[],
+    snapshots: Map<string, { value: string; encrypted: boolean; version: number }>,
+  ): Promise<void> {
+    for (const inst of written) {
+      try {
+        const snapshot = snapshots.get(`${inst.level}:${inst.key}:${inst.ownerId}`)
+        if (snapshot) {
+          // 还原到快照版本
+          const levelMap = this.instances.get(inst.level)
+          const ownerMap = levelMap?.get(inst.key)
+          ownerMap?.set(inst.ownerId, {
+            ...inst,
+            value: snapshot.value,
+            encrypted: snapshot.encrypted,
+            version: snapshot.version,
+            updatedAt: new Date().toISOString(),
+          })
+        } else {
+          // 无快照 - 该 instance 是新建的, 删除
+          const levelMap = this.instances.get(inst.level)
+          const ownerMap = levelMap?.get(inst.key)
+          ownerMap?.delete(inst.ownerId)
+        }
+      } catch {
+        // 补偿失败不阻塞原错误抛出
+      }
+    }
   }
 
   async rollback(targetVersion: number, configId: string): Promise<ConfigInstance> {

@@ -1,5 +1,78 @@
 import { ApiResult, MarketBootstrapResponse, FoundationBootstrapResponse, PortalBootstrapResponse, WorkbenchBootstrapResponse, AuditTrailQuery, AuditRecordContract, AuditTrailSummary, ConfigurationOverviewQuery, ConfigurationOverview, ConfigurationFeatureFlag, ConfigurationConfigEntry, ConfigurationSecretMetadata, ConfigurationCertificateMetadata, ConfigurationGovernanceMetadataEntry, ResilienceOverview, ObservabilitySignalContract, RetryPolicyContract, RecoveryPlanContract, EdgeReplayStageRequest, EdgeReplayStageContract, RateLimitWorkspaceQuery, RateLimitPolicyRecord, QuotaLedgerRecord, RateLimitWorkspace, IdentityAccessWorkspaceQuery, IdentityAccessResolvedContext, IdentityAccessValidationResult, IntegrationWebhookSourceContract, IntegrationOrchestrationWorkspaceQuery, IntegrationEventEnvelopeContract, IntegrationIdempotencyRecordContract, IntegrationPublishEventRequest, IntegrationPublishEventResponse, IntegrationWebhookIngestRequest, IntegrationWebhookIngestResponse, IntegrationOrchestrationWorkspace, FoundationConsumerDescriptor, FoundationAlertCatalogResponse, RuntimeGovernanceOverviewFilter, FoundationOperationsOverviewResponse, FoundationAlertDrilldownResponse, FoundationAlertMutationResponse, RuntimeGovernanceSubmitRequest, RuntimeGovernanceReceipt, RuntimeGovernanceSyncRequest, RuntimeGovernanceCallbackRequest, RuntimeGovernanceReplayRequest, RuntimeGovernanceBatchReplayRequest, RuntimeGovernanceBatchReplayResponse, AgentConfig, CreateSessionRequest, SessionExecutionResult, AgentSessionEvent, BatchAgentRequest, BatchAgentResponse, AgentSession, AgentExecution, QualityEvaluation, AgentStats, FoundationClientApp, RuntimeGovernanceReplaySource, RuntimeGovernanceActionKey, RuntimeGovernanceNextStep, RuntimeGovernanceRiskLevel, RuntimeGovernanceRecommendedAction, RuntimeGovernanceClientApp, FoundationAlertCatalogItem, FoundationOperationsOverviewSummary, FoundationOperationsAlert, AppBootstrapWiring, FoundationAlertMutationKind, FoundationConsumerKey } from '@m5/types';
 
+/** 三级工作台代码 (与后端 LEVEL_TO_WORKBENCH 保持一致) */
+type TenantConfigWorkbenchCode = 'W-S' | 'W-T' | 'W-B';
+/** 配置级别 */
+type TenantConfigLevel = 'store' | 'tenant' | 'brand';
+/** 配置分类 */
+type TenantConfigCategory = 'pos' | 'print' | 'member' | 'marketing' | 'inventory' | 'integration' | 'ai' | 'compliance' | 'billing' | 'branding';
+/** 配置敏感度 (与后端 tenant-config.entity 保持一致) */
+type TenantConfigSensitivity = 'public' | 'internal' | 'restricted' | 'secret';
+/** 配置值类型 */
+type TenantConfigValueType = 'string' | 'number' | 'boolean' | 'json' | 'secret';
+/** 生效配置 (考虑继承链) */
+interface TenantConfigEffective {
+    key: string;
+    value: string;
+    sourceLevel: TenantConfigLevel;
+    inherited: boolean;
+    isMasked?: boolean;
+    sensitivity?: TenantConfigSensitivity;
+}
+/** 单条配置实例 (已脱敏) */
+interface TenantConfigItem {
+    id: string;
+    key: string;
+    value: string;
+    category: TenantConfigCategory;
+    level: TenantConfigLevel;
+    ownerId: string;
+    inherits: boolean;
+    version: number;
+    updatedBy: string;
+    updatedAt: string;
+    isMasked?: boolean;
+}
+/** 配置项定义 (来自 BUILTIN_CONFIG_DEFINITIONS) */
+interface TenantConfigItemDefinition {
+    key: string;
+    category: TenantConfigCategory;
+    level: TenantConfigLevel;
+    valueType: TenantConfigValueType;
+    sensitivity: TenantConfigSensitivity;
+    defaultValue?: string | number | boolean | null;
+    allowedRoles?: string[];
+    required?: boolean;
+    validation?: {
+        pattern?: string;
+        min?: number;
+        max?: number;
+        enum?: string[];
+    };
+    label: string;
+    description?: string;
+}
+/** 审计日志条目 (与后端 ConfigAuditLog 对齐) */
+interface TenantConfigAuditLog {
+    id: string;
+    configId: string;
+    key: string;
+    level: TenantConfigLevel;
+    ownerId: string;
+    tenantId: string;
+    previousValue?: string;
+    newValue?: string;
+    action: 'create' | 'update' | 'delete' | 'rollback';
+    operator: string;
+    operatorRole: string;
+    timestamp: string;
+    context?: Record<string, unknown>;
+}
+interface TenantConfigBatchInput {
+    key: string;
+    value: string;
+    inherits?: boolean;
+}
 interface ApiClientOptions {
     baseUrl: string;
     tenantId?: string;
@@ -324,6 +397,63 @@ declare class ApiClient {
     getAgentStats(init?: RequestInit): Promise<AgentStats>;
     /** 列出可用工具(后端返回 unknown,前端按 ToolDefinition 解读) */
     listAgentTools(init?: RequestInit): Promise<unknown[]>;
+    /**
+     * GET /tenant-config
+     * 按 level / category / keys 过滤当前级别配置项
+     */
+    getTenantConfigs(query?: {
+        level?: TenantConfigLevel;
+        category?: TenantConfigCategory;
+        keys?: string[];
+    }, init?: RequestInit): Promise<{
+        workbench: string;
+        level: TenantConfigLevel;
+        items: TenantConfigItem[];
+        total: number;
+    }>;
+    /**
+     * GET /tenant-config/:key
+     * 查询单个配置 (已脱敏)
+     */
+    getTenantConfig(key: string, init?: RequestInit): Promise<TenantConfigItem | null>;
+    /**
+     * GET /tenant-config/workbench/:code
+     * 工作台视角 (W-S / W-T / W-B),返回考虑继承的生效配置
+     */
+    getTenantWorkbenchConfigs(code: TenantConfigWorkbenchCode, category?: TenantConfigCategory, init?: RequestInit): Promise<{
+        workbench: string;
+        items: TenantConfigEffective[];
+        total: number;
+    }>;
+    /**
+     * GET /tenant-config/meta/definitions
+     * 获取所有配置项静态定义 (前端 UI 用)
+     */
+    getTenantConfigMeta(init?: RequestInit): Promise<{
+        items: TenantConfigItemDefinition[];
+        total: number;
+    }>;
+    /**
+     * POST /tenant-config/batch
+     * 批量设置配置 (返回值会带回最新 version)
+     */
+    setTenantConfigBatch(items: TenantConfigBatchInput[], init?: RequestInit): Promise<{
+        items: TenantConfigItem[];
+        total: number;
+    }>;
+    /**
+     * POST /tenant-config/rollback
+     * 回滚配置到指定版本
+     */
+    rollbackTenantConfig(targetVersion: number, configId: string, init?: RequestInit): Promise<TenantConfigItem>;
+    /**
+     * 列出租户级配置变更审计日志
+     *
+     * 端点约定: GET /tenant-config/audit-logs?tenantId=...&limit=...
+     * (当前后端 service.listAuditLogs 已存在,本方法为前端 SDK 入口;若后端尚未暴露
+     * 该 endpoint,会收到 404 并由调用方 try/catch 处理空态。)
+     */
+    listTenantConfigAuditLogs(tenantId: string, limit?: number, init?: RequestInit): Promise<TenantConfigAuditLog[]>;
 }
 /** SSE 订阅状态 */
 type SseSubscribeStatus = 'connecting' | 'open' | 'reconnecting' | 'closed';
@@ -393,4 +523,4 @@ declare function subscribeStream(client: ApiClient, opts: SseSubscribeOptions): 
  */
 declare function computeBackoffDelay(attemptNum: number, initialDelayMs?: number, backoffMultiplier?: number): number;
 
-export { ApiClient, type ApiClientOptions, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type WebFoundationAlertPanelApp, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };
+export { ApiClient, type ApiClientOptions, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type WebFoundationAlertPanelApp, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };
