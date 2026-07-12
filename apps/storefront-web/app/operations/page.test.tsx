@@ -28,9 +28,11 @@ describe('页面结构', () => {
     assert.ok(PAGE_SRC.includes('运营管理'), '缺少页面标题');
   });
 
-  it('应包含 4 个功能入口', () => {
-    const match = PAGE_SRC.match(/icon: '/g);
-    assert.ok(match && match.length === 4, '应有 4 个入口');
+  it('应包含核心功能入口模块', () => {
+    assert.ok(PAGE_SRC.includes('运营日报'), '缺少运营日报');
+    assert.ok(PAGE_SRC.includes('目标管理'), '缺少目标管理');
+    assert.ok(PAGE_SRC.includes('检查清单'), '缺少检查清单');
+    assert.ok(PAGE_SRC.includes('数据洞察'), '缺少数据洞察');
   });
 
   it('应包含运营日报入口', () => {

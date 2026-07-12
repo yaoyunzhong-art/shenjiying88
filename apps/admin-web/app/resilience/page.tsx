@@ -64,8 +64,7 @@ function ResilienceErrorFallback() {
     <EmptyState
       title="强韧性数据加载失败"
       description="无法加载可观测信号、重试策略或恢复计划数据。请确保 resilence-view-model 服务正常，再次重试。"
-      actionLabel="重试"
-      actionHref="/resilience"
+      action={<a href="/resilience">重试</a>}
     />
   );
 }
@@ -77,8 +76,7 @@ function ResilienceEmptyState() {
       <EmptyState
         title="暂无强韧性数据"
         description="当前未配置任何可观测信号、重试策略或恢复计划。请从「配置」模块开始建立强韧性治理体系。"
-        actionLabel="前往配置"
-        actionHref="/resilience"
+        action={<a href="/resilience">前往配置</a>}
       />
     </main>
   );
@@ -182,7 +180,7 @@ export default async function ResiliencePage() {
           </div>
 
           {/* 错误边界 + 主体内容 */}
-          <ErrorBoundary fallback={<ResilienceErrorFallback />}>
+          <ErrorBoundary fallback={() => <ResilienceErrorFallback />}>
             <Suspense fallback={<ResilienceLoadingFallback />}>
               <ResilienceWorkspaceClient overview={overview} />
             </Suspense>

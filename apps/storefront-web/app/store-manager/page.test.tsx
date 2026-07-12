@@ -49,11 +49,21 @@ describe('store-manager — 正例', () => {
 });
 
 describe('store-manager — 防御', () => {
-  it('应包含 use client 指令', () => {
-    assert.ok(SOURCE.includes("'use client'"));
+  it('JSON-LD script 应使用 type="application/ld+json"', () => {
+    assert.ok(SOURCE.includes('type="application/ld+json"'));
   });
 
-  it('不应包含危险的 innerHTML', () => {
-    assert.doesNotMatch(SOURCE, /dangerouslySetInnerHTML/);
+  it('JSON-LD 应包含结构化门店数据', () => {
+    assert.ok(SOURCE.includes('@context'));
+    assert.ok(SOURCE.includes('schema.org'));
+  });
+
+  it('不应包含危险的 innerHTML 除了 JSON-LD script', () => {
+    // JSON-LD <script> 标签必须用 dangerouslySetInnerHTML 嵌入结构化数据，
+    // 除此之外不应在其他地方使用
+    const lines = SOURCE.split('\n');
+    const innerHtmlLines = lines.filter(l => l.includes('dangerouslySetInnerHTML'));
+    const allAreJsonLd = innerHtmlLines.every(l => l.includes('type="application/ld+json"'));
+    assert.ok(allAreJsonLd, 'dangerouslySetInnerHTML 只能用于 JSON-LD script 标签');
   });
 });

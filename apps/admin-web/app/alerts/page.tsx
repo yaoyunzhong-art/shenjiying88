@@ -32,7 +32,7 @@ function AlertsLoadingFallback() {
     <div style={{ padding: 32 }}>
       <LoadingSkeleton variant="card" rows={5} label="加载告警列表..." />
       <div style={{ height: 16 }} />
-      <LoadingSkeleton variant="text" rows={3} label="加载统计摘要..." />
+      <LoadingSkeleton variant="default" rows={3} label="加载统计摘要..." />
     </div>
   );
 }
@@ -45,8 +45,7 @@ function AlertsEmptyState() {
     <EmptyState
       title="暂无告警"
       description="当前没有任何审批、审计或运行时告警，系统运行状态正常。"
-      actionLabel="刷新页面"
-      actionHref="/alerts"
+      action={<a href="/alerts">刷新页面</a>}
     />
   );
 }
@@ -59,8 +58,7 @@ function AlertsErrorFallback() {
     <EmptyState
       title="告警加载异常"
       description="无法加载治理告警数据，请检查 foundation.write 权限或后端服务可达性，稍后重试。"
-      actionLabel="重试"
-      actionHref="/alerts"
+      action={<a href="/alerts">重试</a>}
     />
   );
 }
@@ -129,7 +127,7 @@ export default async function AdminAlertsPage() {
       />
 
       {/* 数据面板 — 加载 / 空状态 / 错误各层级覆盖 */}
-      <ErrorBoundary fallback={<AlertsErrorFallback />}>
+      <ErrorBoundary fallback={() => <AlertsErrorFallback />}>
         <Suspense fallback={<AlertsLoadingFallback />}>
           <AdminAlertsClient initialGovernance={governance} />
         </Suspense>

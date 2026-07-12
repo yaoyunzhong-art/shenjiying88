@@ -48,9 +48,6 @@ describe('MemberUpgradePathPage — L1 正例', () => {
 
 describe('MemberUpgradePathPage — L2 等级数据验证', () => {
   it('应定义青铜—白银—黄金—钻石四个等级', () => {
-    const ok = ['bronze', 'bronze', 'silver', 'gold', 'diamond']
-      .some(k => SRC.includes(k) || SRC.includes({ bronze: '青铜', silver: '白银', gold: '黄金', diamond: '钻石' }[k as keyof typeof {}]));
-    // direct string checks
     assert.ok(SRC.includes('青铜') && SRC.includes('白银') && SRC.includes('黄金') && SRC.includes('钻石'));
   });
 

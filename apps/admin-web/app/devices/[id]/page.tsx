@@ -34,7 +34,7 @@ function DeviceDetailLoadingFallback() {
   return (
     <div style={{ padding: 32, maxWidth: 1000, margin: '0 auto' }}>
       {/* 标题区 */}
-      <LoadingSkeleton variant="text" rows={1} label="加载设备标题..." />
+      <LoadingSkeleton variant="default" rows={1} label="加载设备标题..." />
       <div style={{ height: 24 }} />
 
       {/* 信息卡片 */}
@@ -55,8 +55,7 @@ function DeviceNotFoundState({ deviceId }: { deviceId: string }) {
     <EmptyState
       title="设备未找到"
       description={`设备 ${deviceId} 不存在或已被移除。请检查设备 ID 是否正确，或返回设备列表重新选择。`}
-      actionLabel="返回设备列表"
-      actionHref="/devices"
+      action={<a href="/devices">返回设备列表</a>}
     />
   );
 }
@@ -67,8 +66,7 @@ function DeviceDetailErrorFallback() {
     <EmptyState
       title="设备数据加载异常"
       description="无法加载设备详情数据。可能原因：设备离线、网络中断或后端服务不可用。"
-      actionLabel="重试"
-      actionHref="/devices"
+      action={<a href="/devices">重试</a>}
     />
   );
 }
@@ -98,7 +96,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
       />
 
       {/* 主内容区 */}
-      <ErrorBoundary fallback={<DeviceDetailErrorFallback />}>
+      <ErrorBoundary fallback={() => <DeviceDetailErrorFallback />}>
         <Suspense fallback={<DeviceDetailLoadingFallback />}>
           <DeviceDetailClient deviceId={id} />
         </Suspense>

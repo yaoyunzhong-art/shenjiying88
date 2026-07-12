@@ -60,8 +60,7 @@ function StockTransferNotFound({ transferId }: { transferId: string }) {
     <EmptyState
       title="调拨单未找到"
       description={`调拨单 ${transferId} 不存在或已被删除。请检查单号是否正确。`}
-      actionLabel="返回调拨列表"
-      actionHref="/stock-transfer"
+      action={<a href="/stock-transfer">返回调拨列表</a>}
     />
   );
 }
@@ -72,8 +71,7 @@ function StockTransferDetailErrorFallback() {
     <EmptyState
       title="调拨单数据加载异常"
       description="无法加载调拨单详情。可能原因：网络中断、后端服务不可用或调拨单数据异常。"
-      actionLabel="重试"
-      actionHref="/stock-transfer"
+      action={<a href="/stock-transfer">重试</a>}
     />
   );
 }
@@ -103,7 +101,7 @@ export default async function StockTransferDetailPage({ params }: PageProps) {
       />
 
       {/* 主内容 */}
-      <ErrorBoundary fallback={<StockTransferDetailErrorFallback />}>
+      <ErrorBoundary fallback={() => <StockTransferDetailErrorFallback />}>
         <Suspense fallback={<StockTransferDetailLoadingFallback />}>
           <StockTransferDetailClient transferId={id} />
         </Suspense>

@@ -39,8 +39,9 @@ describe('StocktakingPage structure', () => {
   it('should render actual/expected counts', async () => {
     const mod = await import('./page.tsx');
     const html = renderToStaticMarkup(React.createElement(mod.default));
-    assert.ok(html.includes('4980/5000'), 'Missing actual/expected for coins');
-    assert.ok(html.includes('120/120'), 'Missing zero diff item');
+    assert.ok(html.includes('5,000'), 'Missing expected count for coins');
+    assert.ok(html.includes('4,980'), 'Missing actual count for coins');
+    assert.ok(html.includes('120'), 'Missing drinks count (zero diff)');
   });
 
   it('should render diff indicators', async () => {

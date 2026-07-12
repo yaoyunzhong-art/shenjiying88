@@ -170,8 +170,7 @@ function AnomalyFrequencyErrorFallback() {
     <EmptyState
       title="异常数据加载失败"
       description="无法加载异常频率数据。请检查网络连接及后端监控服务状态。"
-      actionLabel="重试"
-      actionHref="/anomaly-frequency"
+      action={<a href="/anomaly-frequency">重试</a>}
     />
   );
 }
@@ -225,7 +224,7 @@ export default async function AnomalyFrequencyPage() {
       <AnomalySeverityFilter />
 
       {/* 主内容区 */}
-      <ErrorBoundary fallback={<AnomalyFrequencyErrorFallback />}>
+      <ErrorBoundary fallback={() => <AnomalyFrequencyErrorFallback />}>
         <Suspense fallback={<AnomalyFrequencyLoadingFallback />}>
           {alertCount > 0 ? (
             <AnomalyFrequencyClient initialGovernance={governance} />

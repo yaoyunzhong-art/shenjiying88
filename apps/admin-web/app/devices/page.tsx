@@ -93,8 +93,7 @@ function DeviceListErrorFallback() {
     <EmptyState
       title="设备数据加载失败"
       description="无法获取设备列表数据，请检查网络连接并稍后重试。"
-      actionLabel="重试"
-      actionHref="/devices"
+      action={<a href="/devices">重试</a>}
     />
   );
 }
@@ -105,8 +104,7 @@ function DeviceSearchNoResults() {
     <EmptyState
       title="未找到匹配设备"
       description="尝试修改筛选条件或关键词重新搜索。"
-      actionLabel="清除筛选"
-      actionHref="/devices"
+      action={<a href="/devices">清除筛选</a>}
     />
   );
 }
@@ -135,7 +133,7 @@ export default function DevicesPage() {
       {devices && devices.length > 0 && <DeviceSummaryStats devices={devices} />}
 
       {/* 主列表 */}
-      <ErrorBoundary fallback={<DeviceListErrorFallback />}>
+      <ErrorBoundary fallback={() => <DeviceListErrorFallback />}>
         <Suspense fallback={<DeviceListLoadingFallback />}>
           {devices && devices.length > 0 ? (
             <DeviceListClient devices={devices} />
@@ -160,7 +158,7 @@ export default function DevicesPage() {
       >
         <strong style={{ color: '#e2e8f0' }}>操作提示</strong>
         <br />
-        固件升级前请确保设备电量充足（>30%）。批量操作将同时发送指令至所选设备，建议分批操作。
+        固件升级前请确保设备电量充足（&gt;30%）。批量操作将同时发送指令至所选设备，建议分批操作。
         设备固件版本可设置自动更新策略。
       </div>
     </>

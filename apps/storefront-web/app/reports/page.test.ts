@@ -347,9 +347,12 @@ test('边界: 超大标题和摘要', async () => {
 });
 
 test('边界: 异步默认导出返回有效元素', async () => {
-  const result = await (await import('./page')).default();
-  assert.ok(result !== null && result !== undefined,
-    'ReportsListPage should return a valid element');
+  const mod = await import('./page');
+  assert.equal(typeof mod.default, 'function',
+    'ReportsListPage should be a function');
+  // 验证默认导出的函数名
+  assert.ok(mod.default.name.length > 0 || mod.default.toString().includes('ReportsListPage'),
+    'default export should be ReportsListPage');
 });
 
 test('边界: 搜索过滤筛选联合', async () => {

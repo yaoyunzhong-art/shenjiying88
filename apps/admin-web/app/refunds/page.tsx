@@ -92,8 +92,7 @@ function RefundListErrorFallback() {
     <EmptyState
       title="退款数据加载失败"
       description="无法获取退款申请列表。请检查网络连接，稍后重试。"
-      actionLabel="重试"
-      actionHref="/refunds"
+      action={<a href="/refunds">重试</a>}
     />
   );
 }
@@ -104,8 +103,7 @@ function RefundEmptyState() {
     <EmptyState
       title="暂无退款申请"
       description="当前没有待处理的退款申请，所有退款流程均已完结。"
-      actionLabel="查看历史"
-      actionHref="/refunds"
+      action={<a href="/refunds">查看历史</a>}
     />
   );
 }
@@ -134,7 +132,7 @@ export default function RefundsPage() {
       {refunds && refunds.length > 0 && <RefundSummaryCards refunds={refunds} />}
 
       {/* 主列表 */}
-      <ErrorBoundary fallback={<RefundListErrorFallback />}>
+      <ErrorBoundary fallback={() => <RefundListErrorFallback />}>
         <Suspense fallback={<RefundListLoadingFallback />}>
           {refunds && refunds.length > 0 ? (
             <RefundListClient refunds={refunds} />

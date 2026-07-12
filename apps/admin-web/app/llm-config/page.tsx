@@ -35,7 +35,7 @@ const PRESET_PROVIDERS = [
 function LLMConfigLoadingFallback() {
   return (
     <div style={{ padding: 32, maxWidth: 900, margin: '0 auto' }}>
-      <LoadingSkeleton variant="text" rows={1} label="加载标题..." />
+      <LoadingSkeleton variant="default" rows={1} label="加载标题..." />
       <div style={{ height: 24 }} />
       <LoadingSkeleton variant="card" rows={4} label="加载提供商卡片..." />
       <div style={{ height: 16 }} />
@@ -50,8 +50,7 @@ function LLMConfigErrorFallback() {
     <EmptyState
       title="配置加载异常"
       description="无法加载 LLM 提供商配置列表。请检查网络连接及后端配置服务是否正常。"
-      actionLabel="重试"
-      actionHref="/llm-config"
+      action={<a href="/llm-config">重试</a>}
     />
   );
 }
@@ -136,7 +135,7 @@ export default function LLMConfigPage() {
         }}
       />
 
-      <ErrorBoundary fallback={<LLMConfigErrorFallback />}>
+      <ErrorBoundary fallback={() => <LLMConfigErrorFallback />}>
         <Suspense fallback={<LLMConfigLoadingFallback />}>
           <LLMConfigClient />
         </Suspense>

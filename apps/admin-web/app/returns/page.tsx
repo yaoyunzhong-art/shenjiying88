@@ -96,8 +96,7 @@ function ReturnListErrorFallback() {
     <EmptyState
       title="退换货数据加载失败"
       description="无法获取退换货申请列表。请检查网络连接，稍后重试。"
-      actionLabel="重试"
-      actionHref="/returns"
+      action={<a href="/returns">重试</a>}
     />
   );
 }
@@ -108,8 +107,7 @@ function ReturnEmptyState() {
     <EmptyState
       title="暂无退换货申请"
       description="当前没有待处理的退换货申请。所有流程均已完结。"
-      actionLabel="查看历史"
-      actionHref="/returns"
+      action={<a href="/returns">查看历史</a>}
     />
   );
 }
@@ -138,7 +136,7 @@ export default function ReturnsPage() {
       {returns && returns.length > 0 && <ReturnSummaryCards returns={returns} />}
 
       {/* 主列表 */}
-      <ErrorBoundary fallback={<ReturnListErrorFallback />}>
+      <ErrorBoundary fallback={() => <ReturnListErrorFallback />}>
         <Suspense fallback={<ReturnListLoadingFallback />}>
           {returns && returns.length > 0 ? (
             <ReturnListClient returns={returns} />

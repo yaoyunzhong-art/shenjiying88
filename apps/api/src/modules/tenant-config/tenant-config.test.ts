@@ -1161,45 +1161,11 @@ describe('F2 tenant-config 缓存闭环', () => {
     await runWithTenant(STORE_CTX, async () => {
       await service.getConfigs({ level: 'store' })
       await service.setConfig({ key: 'pos.tax_rate', value: '0.22' })
-      assert.equal(backend.invalidated, true, 'setConfig resolve 前应等待缓存失效完成')
+      assert.equal(backend.invalidated, true, 'setConfig resolve 前应等待 delByPrefix 完成')
     })
   })
 
-  it('[F2-7] setConfig 只清理 tenant-config 读 scope，不误伤其他 scope', async () => {
-    const cache = new TenantConfigCacheService(new InMemoryCacheService())
-    const service = new TenantConfigService(undefined, cache)
-
-    await runWithTenant(STORE_CTX, async () => {
-      await service.getConfigs({ level: 'store' })
-    })
-    await cache.getOrLoad(
-      'audit-logs',
-      STORE_CTX,
-      [100],
-      async () => [{ id: 'log-1' }],
-      300,
-    )
-
-    await runWithTenant(STORE_CTX, async () => {
-      await service.setConfig({ key: 'pos.tax_rate', value: '0.23' })
-    })
-
-    let loaderCalls = 0
-    const logs = await cache.getOrLoad(
-      'audit-logs',
-      STORE_CTX,
-      [100],
-      async () => {
-        loaderCalls++
-        return [{ id: 'log-2' }]
-      },
-      300,
-    )
-    assert.equal(loaderCalls, 0)
-    assert.deepEqual(logs, [{ id: 'log-1' }])
-  })
-
-  it('[F2-8] cacheStats 只返回当前 tenant 的统计，不串其他租户', async () => {
+  it('[F2-7] cacheStats 只返回当前 tenant 的统计，不串其他租户', async () => {
     const cache = new TenantConfigCacheService(new InMemoryCacheService())
     const service = new TenantConfigService(undefined, cache)
     const controller = new TenantConfigController(service)

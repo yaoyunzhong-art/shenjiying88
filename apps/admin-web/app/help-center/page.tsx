@@ -71,8 +71,7 @@ function HelpCenterErrorFallback() {
     <EmptyState
       title="帮助文档加载异常"
       description="无法加载帮助中心文档数据，请稍后重试或联系技术支持。"
-      actionLabel="重试"
-      actionHref="/help-center"
+      action={<a href="/help-center">重试</a>}
     />
   );
 }
@@ -83,8 +82,7 @@ function SearchNoResultsState() {
     <EmptyState
       title="未找到相关文档"
       description="尝试更换关键词，或浏览分类目录查找。如果您的问题仍未解决，可以联系在线客服。"
-      actionLabel="浏览全部文档"
-      actionHref="/help-center"
+      action={<a href="/help-center">浏览全部文档</a>}
     />
   );
 }
@@ -179,7 +177,7 @@ export default function HelpCenterPage() {
       </div>
 
       {/* 主内容 */}
-      <ErrorBoundary fallback={<HelpCenterErrorFallback />}>
+      <ErrorBoundary fallback={() => <HelpCenterErrorFallback />}>
         <Suspense fallback={<HelpCenterLoadingFallback />}>
           {articleCount > 0 ? (
             <HelpCenterClient articles={articles} />

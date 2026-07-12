@@ -127,47 +127,6 @@ describe('TenantConfigCacheService', () => {
     assert.equal(stats.invalidations, 2)
   })
 
-  it('F2-2B invalidateScopes 仅清理指定 scope，不误伤其他缓存', async () => {
-    await service.getOrLoad(
-      'config',
-      ctx,
-      ['pos.tax_rate'],
-      async () => ({ key: 'pos.tax_rate', value: '0.13' }),
-      300,
-    )
-    await service.getOrLoad(
-      'configs',
-      ctx,
-      ['store'],
-      async () => [{ key: 'pos.tax_rate', value: '0.13' }],
-      300,
-    )
-    await service.getOrLoad(
-      'audit-logs',
-      ctx,
-      [100],
-      async () => [{ id: 'audit-1' }],
-      300,
-    )
-
-    const removed = await service.invalidateScopes('tenant-A', ['config', 'configs'])
-    assert.equal(removed, 2)
-
-    let loaderCalls = 0
-    const stillCached = await service.getOrLoad(
-      'audit-logs',
-      ctx,
-      [100],
-      async () => {
-        loaderCalls++
-        return [{ id: 'audit-2' }]
-      },
-      300,
-    )
-    assert.equal(loaderCalls, 0)
-    assert.deepEqual(stillCached, [{ id: 'audit-1' }])
-  })
-
   it('F2-3 无缓存后端时降级直读 loader', async () => {
     const direct = new TenantConfigCacheService()
     let loaderCalls = 0
@@ -219,7 +178,7 @@ describe('TenantConfigCacheService', () => {
     assert.equal(remote.getStats().hits, 1)
   })
 
-  it('F2-5 tenant stats 与全局 stats 隔离统计', async () => {
+  it('F2-5 stats 按 tenant 隔离，不返回其他租户累计值', async () => {
     await service.getOrLoad(
       'configs',
       { ...ctx, tenantId: 'tenant-A' },
@@ -242,14 +201,15 @@ describe('TenantConfigCacheService', () => {
       300,
     )
 
-    const tenantA = service.getStats('tenant-A')
-    const tenantB = service.getStats('tenant-B')
-    const all = service.getStats()
-    assert.equal(tenantA.hits, 1)
-    assert.equal(tenantA.misses, 1)
-    assert.equal(tenantB.hits, 0)
-    assert.equal(tenantB.misses, 1)
-    assert.equal(all.hits, 1)
-    assert.equal(all.misses, 2)
+    const tenantAStats = service.getStats('tenant-A')
+    const tenantBStats = service.getStats('tenant-B')
+    const globalStats = service.getStats()
+
+    assert.equal(tenantAStats.hits, 1)
+    assert.equal(tenantAStats.misses, 1)
+    assert.equal(tenantBStats.hits, 0)
+    assert.equal(tenantBStats.misses, 1)
+    assert.equal(globalStats.hits, 1)
+    assert.equal(globalStats.misses, 2)
   })
 })

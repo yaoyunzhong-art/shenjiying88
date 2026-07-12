@@ -156,8 +156,8 @@ describe('StoreRatingsPage — L1 导出完整性', () => {
     assert.ok(SRC.includes('useMemo'));
   });
 
-  it('应使用 React.CSSProperties 类型', () => {
-    assert.ok(SRC.includes('CSSProperties') || SRC.includes('React.CSSProperties'));
+  it('应使用 React 的内联样式 (style 对象)', () => {
+    assert.ok(SRC.includes('style={{'), '页面应使用 React 内联 style 对象');
   });
 
   it('评分分布 5 星应有计数', () => {
