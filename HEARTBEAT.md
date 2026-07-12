@@ -1,26 +1,26 @@
 # 🦞 验收员 HEARTBEAT
 
-| 指标 | pulse#367 | pulse#368 | Δ |
+| 指标 | pulse#368 | pulse#369 | Δ |
 |-----|:---------:|:---------:|:-:|
-| Typecheck | **14/14** ✅(×10) | **13/14** ❌(admin-web ~40✖·缓存揭示) | 🔴 **缓存掩盖暴露: admin-web TSC实际长期未🟢** |
-| 新回归 | **0** | **admin-web ~40✖(pre-existing·缓存掩盖)** | 🔴 缓存掩盖藏匿多日 |
-| storefront-web | ⚠️ 2✖(旧__smoke__) | ❌ **8✖(缓存揭示真实状态)** | 🔴 原缓存掩盖6✖·实际为8✖ |
-| admin-web | ✅ 0✖(缓存) | ✅ **4278/4278 测试全绿** | 🟢 测试OK·但TSC❌ |
-| tob-web | ❌ **4✖(缓存揭示)** | ❌ 4✖(同) | 🔴 维持 |
-| miniapp | ❌ **4✖(缓存揭示)** | ❌ 4✖(同) | 🔴 维持 |
-| @m5/app | ✅ **222/222** | ✅ **222/222** | 🟢 维持 |
+| Typecheck(缓存) | **13/14** ❌(admin-web ~40✖·缓存揭示) | **14/14** ✅(缓存) | 🟢 缓存恢复14 |
+| Typecheck(force) | **8/11❌** (admin~40✖) | **8/11❌** (admin修复·@m5/app新✖1) | 🔴 **@m5/app新回归(TS2307 expo-local-auth)** |
+| 新回归 | — | **storefront +89✖ + @m5/app TSC✖1** | 🔴🔴 缓存掩盖彻底崩塌 |
+| storefront-web | ❌ 8✖(缓存) | ❌ **97✖(缓存揭示→4673✅/97❌)** | 🔴🔴 89回归暴露(缓存~10次掩盖) |
+| admin-web | ✅ 4278/4278(测试) | ✅(测试) | 🟢 维持 |
+| tob-web | ❌ 4✖ | ❌ 4✖(同) | 🔴 维持 |
+| miniapp | ❌ 4✖ | ❌ 4✖(同) | 🔴 维持 |
+| @m5/app | ✅ 222/222 | ✅ 222/222 | 🟢 维持 |
+| @m5/app TSC | ✅ | ❌ **BiometricAuth.ts(6) TS2307** | 🔴 **新回归** |
 
 ### 🩺 健康摘要
-- **❌ TSC断裂(缓存揭示)**: 第11次验收`--force`跑→admin-web **~40 TS errors暴露**(5页面:analytics/audit/capability-access/devices/health-score/inspection/settings/training+health-score)—之前10次✅均为缓存掩盖假象
-- **🔥联合验收真实状态**: storefront-web **8✖**(原2✖·缓存加剧掩盖)·tob-web 4✖·miniapp 4✖·admin-web TSC~40✖
-- **🌲 闭环**: ✅ dispatch-365 — @m5/app 222/222 ✅保持
-- **🌲 dispatch-366❌(第1次验收)**: 已超1h零commit
-- **🌲 dispatch-367❌(第1次验收)**: 已超1h零commit→连续2次无闭合→**P0升级dispatch-368**(含admin-web TSC爆雷)
-- **⚠️ 缓存掩盖警告**: 之前10次'连续全绿'均为缓存假象·`--force`揭示真实状态
-- **🌲 重派**: dispatch-368 — 联合修复: admin-web TSC ~40✖ + storefront 8✖ + tob 4✖ + miniapp 4✖
-- **dispatch闭环**: ✅ dispatch-358 已闭环保持(第10次验收) · ✅ dispatch-365 已闭环
+- **🔥🔥 缓存彻底崩塌**: 此前~10次验收storefront-web仅显示2~8✖(缓存遮挡), `--force`揭示真实97✖(暴增89回归)·admin-web TSC已修复(晚会签署)但@m5/app新增1处TS2307
+- **❌ dispatch-368**: 第1次验收(1h零commit)→❌未闭环
+- **❌ storefront-web 97✖**: 主要为alerts/announcements/operations/stocktaking/store-manager 页面缺失组件导出
+- **❌ tob-web 4✖**: __smoke__残值(空数据兜底·错误边界·CUSTOMER_STATUSES·sports-news)
+- **❌ miniapp 4✖**: __smoke__残值(积分不足·会员等级·空任务·空客户)
+- **🌲 需要新派**: dispatch-369 — storefront-web 97✖联合修复 + @m5/app TSC TS2307修复
 - **连续🏆**: 0
-- **知识库时效**: ✅ <24h ✅(phase-progress.md 18:45·<1h)
+- **知识库时效**: ✅ <1h ✅(phase-progress.md 19:50·25min)
 
 ### 📊 年度连续记录
 - 最长连续全绿: 38🏆 (pulse#293→#330)
@@ -47,3 +47,4 @@
 - **2026-07-12 17:36 pulse#366 ✅✅ TSC14/14连续9次·dispatch-365✅闭环(21✖→222/222全绿)·清理旧member-center.test.ts冲突·storefront-web 2✖残值(旧__smoke__)·tob-web 1✖·新派dispatch-366清__smoke__残留**
 - **2026-07-12 18:10 pulse#367 ✅ TSC14/14连续10次(🚀10连)·dispatch-366第1次验收❌(storefront 2✖未闭)·tob真实4✖(缓存揭示原掩盖3✖)·miniapp真实4✖(缓存掩盖)·已重派dispatch-367(含tob+miniapp+storefront联合修复)**
 - **⚠️⚠️⚠️ 2026-07-12 19:10 pulse#368 🔴🔴🔴 TSC13/14缓存彻底揭示·admin-web ~40 TS errors暴露(5页·10x缓存假象)·storefront真实8✖(原2✖)·dispatch-366+367连续2次零commit→P0升级dispatch-368**
+- **⚠️⚠️⚠️ 2026-07-12 20:12 pulse#369 🔴🔴🔴 缓存彻底崩塌: storefront真实97✖(暴增89)·@m5/app TSC新回归(TS2307)·dispatch-368❌首次验收(1h零commit)·新派dispatch-369**

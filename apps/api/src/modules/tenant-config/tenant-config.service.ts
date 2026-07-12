@@ -475,6 +475,8 @@ export class TenantConfigService {
           updatedBy,
           updatedAt: now,
           createdAt: now,
+          // Phase-FP P0 修复: 标记为 seed 来源, 首次 setConfig 覆盖时算 create 而非 update
+          fromSeed: true,
         }],
       ]))
     }

@@ -133,3 +133,4 @@
 | 2026-07-12 18:38 | 🏪 P-35~P-40店A冲刺 | 6页面上线(3619行/133测试全绿)·P-35收银/P-36会员/P-37自助充值/P-38预约/P-39设备/P-40首页·smoke41/41全绿 | 113commit/1043总·TSC14/14·零hang | 6🏆 |
 | 2026-07-12 19:00 | ✅P-35~P-40全部完成 | 6页面上线/3619行/133测试全绿·等待20:00晚会 | 117commit/1047总 | 6🏆 |
 | 2026-07-12 19:10 | pulse#368 | 全库(非api) [🔴🔴🔴 缓存完全揭示: admin-web TSC~40✖(5页面)·storefront真实8✖(原2✖)·dispatch-366+367连续2次零commit→P0升级dispatch-368] | Base❌(TSC13/14·admin~40✖缓存揭示)/Service✅(app222/222✅)/Controller❌(store8✖/tob4✖/miniapp4✖)/CTest✅(admin4278/4278✅/app222/222✅) | 0🏆 |
+| 2026-07-12 20:12 | pulse#369 | 全库(非api) [🔴🔴🔴 缓存彻底崩塌: storefront真实97✖(暴增89回归)·@m5/app TSC新回归(TS2307 expo-local-auth)·dispatch-368❌首次验收(1h零commit)] | Base❌(TSC14/14→缓存·force 8/11❌@m5/app 回归)/Service✅(app222/222✅)/Controller❌(store97✖/tob4✖/miniapp4✖)/CTest✅(admin✅/app✅) | 0🏆 |

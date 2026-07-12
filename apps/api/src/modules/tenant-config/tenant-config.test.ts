@@ -485,12 +485,14 @@ describe('TenantConfigService.getConfig', () => {
     })
   })
 
-  it('TC-43 should return null for unset config (no instance)', async () => {
+  it('TC-43 should return seed instance for pos.receipt_footer', async () => {
     await runWithTenant(STORE_CTX, async () => {
-      // receipt_footer has no seed instance, exists as def only
+      // pos.receipt_footer 已在 seed() 中预置 (fromSeed: true)
+      // getConfig 应该返回 seed instance 而非 null
       const cfg = await service.getConfig('pos.receipt_footer')
-      // should be null since no instance was seeded for this key
-      assert.equal(cfg, null)
+      assert.ok(cfg, 'seeded config should be returned, not null')
+      assert.equal(cfg!.value, '谢谢惠顾')
+      assert.equal(cfg!.key, 'pos.receipt_footer')
     })
   })
 
