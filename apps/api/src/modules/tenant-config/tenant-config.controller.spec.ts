@@ -263,14 +263,16 @@ describe('TenantConfigController V10 Day 6 Phase 90', () => {
   })
 
   describe('GET /tenant-config/meta/cache-stats - cacheStats', () => {
-    it('[正例] 无缓存服务时返回默认统计', () => {
-      const result = controller.cacheStats()
-      assert.equal(result.enabled, false)
-      assert.equal(result.hits, 0)
-      assert.equal(result.misses, 0)
-      assert.equal(result.invalidations, 0)
-      assert.equal(result.errors, 0)
-      assert.equal(result.hitRate, 0)
+    it('[正例] 无缓存服务时返回默认统计', async () => {
+      await runWithTenant(STORE_CTX, async () => {
+        const result = controller.cacheStats()
+        assert.equal(result.enabled, false)
+        assert.equal(result.hits, 0)
+        assert.equal(result.misses, 0)
+        assert.equal(result.invalidations, 0)
+        assert.equal(result.errors, 0)
+        assert.equal(result.hitRate, 0)
+      })
     })
   })
 

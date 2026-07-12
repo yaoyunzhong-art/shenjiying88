@@ -406,7 +406,7 @@ export class TenantConfigService implements OnModuleInit {
     if (this.repo) {
       void this.repo.saveInstance(instance)
     }
-    void this.invalidateReadCache(ctx)
+    await this.invalidateReadCache(ctx)
     return instance
   }
 
@@ -456,7 +456,7 @@ export class TenantConfigService implements OnModuleInit {
         const [level, ownerId] = composite.split('::') as [ConfigLevel, string]
         this.rebuildIndexForOwner(level, ownerId)
       }
-      void this.invalidateReadCache(ctx)
+      await this.invalidateReadCache(ctx)
       return written
     } catch (err) {
       // 补偿: 还原已写入的 instance 到快照状态
@@ -466,7 +466,7 @@ export class TenantConfigService implements OnModuleInit {
         const [level, ownerId] = composite.split('::') as [ConfigLevel, string]
         this.rebuildIndexForOwner(level, ownerId)
       }
-      void this.invalidateReadCache(ctx)
+      await this.invalidateReadCache(ctx)
       throw err
     }
   }
@@ -566,7 +566,7 @@ export class TenantConfigService implements OnModuleInit {
     if (this.repo) {
       void this.repo.deleteInstance(target.id)
     }
-    void this.invalidateReadCache(ctx)
+    await this.invalidateReadCache(ctx)
   }
 
   async rollback(targetVersion: number, configId: string): Promise<ConfigInstance> {
@@ -678,7 +678,7 @@ export class TenantConfigService implements OnModuleInit {
     if (this.repo) {
       void this.repo.saveInstance(target)
     }
-    void this.invalidateReadCache(ctx)
+    await this.invalidateReadCache(ctx)
     return target
   }
 
@@ -746,7 +746,8 @@ export class TenantConfigService implements OnModuleInit {
   }
 
   getCacheStats(): ReturnType<TenantConfigCacheService['getStats']> & { enabled: boolean } {
-    const stats = this.cacheService?.getStats() ?? {
+    const ctx = requireTenantContext()
+    const stats = this.cacheService?.getStats(ctx.tenantId) ?? {
       hits: 0,
       misses: 0,
       invalidations: 0,
@@ -921,7 +922,11 @@ export class TenantConfigService implements OnModuleInit {
 
   private async invalidateReadCache(ctx: TenantContext): Promise<void> {
     this.ownerIdCache.clear()
-    await this.cacheService?.invalidateTenant(ctx.tenantId)
+    await this.cacheService?.invalidateScopes(ctx.tenantId, [
+      'config',
+      'configs',
+      'effective-configs',
+    ])
   }
 
   private ownerIdCacheKey(ctx: TenantContext, level: ConfigLevel): string {

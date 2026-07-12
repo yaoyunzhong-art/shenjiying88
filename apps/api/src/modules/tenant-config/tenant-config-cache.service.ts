@@ -71,6 +71,29 @@ export class TenantConfigCacheService {
     }
   }
 
+  async invalidateScope(tenantId: string | undefined, scope: string): Promise<number> {
+    if (!tenantId || !this.cache) return 0
+    try {
+      const count = await this.cache.delByPrefix(`${this.KEY_PREFIX}${tenantId}:${scope}:`)
+      this.recordStat(tenantId, 'invalidations', count)
+      return count
+    } catch (error) {
+      this.recordStat(tenantId, 'errors')
+      this.logger.warn(
+        `cache invalidate failed for tenant=${tenantId} scope=${scope}: ${(error as Error).message}`,
+      )
+      return 0
+    }
+  }
+
+  async invalidateScopes(tenantId: string | undefined, scopes: string[]): Promise<number> {
+    let total = 0
+    for (const scope of scopes) {
+      total += await this.invalidateScope(tenantId, scope)
+    }
+    return total
+  }
+
   getStats(tenantId?: string): TenantConfigCacheStats & { hitRate: number } {
     const stats = tenantId ? this.getTenantStats(tenantId) : this.stats
     const total = stats.hits + stats.misses

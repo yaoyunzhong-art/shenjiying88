@@ -127,6 +127,47 @@ describe('TenantConfigCacheService', () => {
     assert.equal(stats.invalidations, 2)
   })
 
+  it('F2-2B invalidateScopes 仅清理指定 scope，不误伤其他缓存', async () => {
+    await service.getOrLoad(
+      'config',
+      ctx,
+      ['pos.tax_rate'],
+      async () => ({ key: 'pos.tax_rate', value: '0.13' }),
+      300,
+    )
+    await service.getOrLoad(
+      'configs',
+      ctx,
+      ['store'],
+      async () => [{ key: 'pos.tax_rate', value: '0.13' }],
+      300,
+    )
+    await service.getOrLoad(
+      'audit-logs',
+      ctx,
+      [100],
+      async () => [{ id: 'audit-1' }],
+      300,
+    )
+
+    const removed = await service.invalidateScopes('tenant-A', ['config', 'configs'])
+    assert.equal(removed, 2)
+
+    let loaderCalls = 0
+    const stillCached = await service.getOrLoad(
+      'audit-logs',
+      ctx,
+      [100],
+      async () => {
+        loaderCalls++
+        return [{ id: 'audit-2' }]
+      },
+      300,
+    )
+    assert.equal(loaderCalls, 0)
+    assert.deepEqual(stillCached, [{ id: 'audit-1' }])
+  })
+
   it('F2-3 无缓存后端时降级直读 loader', async () => {
     const direct = new TenantConfigCacheService()
     let loaderCalls = 0
@@ -176,5 +217,39 @@ describe('TenantConfigCacheService', () => {
     assert.deepEqual(first, { key: 'pos.tax_rate', value: '0.13' })
     assert.deepEqual(second, { key: 'pos.tax_rate', value: '0.13' })
     assert.equal(remote.getStats().hits, 1)
+  })
+
+  it('F2-5 tenant stats 与全局 stats 隔离统计', async () => {
+    await service.getOrLoad(
+      'configs',
+      { ...ctx, tenantId: 'tenant-A' },
+      ['store'],
+      async () => ['A'],
+      300,
+    )
+    await service.getOrLoad(
+      'configs',
+      { ...ctx, tenantId: 'tenant-A' },
+      ['store'],
+      async () => ['A2'],
+      300,
+    )
+    await service.getOrLoad(
+      'configs',
+      { ...ctx, tenantId: 'tenant-B' },
+      ['store'],
+      async () => ['B'],
+      300,
+    )
+
+    const tenantA = service.getStats('tenant-A')
+    const tenantB = service.getStats('tenant-B')
+    const all = service.getStats()
+    assert.equal(tenantA.hits, 1)
+    assert.equal(tenantA.misses, 1)
+    assert.equal(tenantB.hits, 0)
+    assert.equal(tenantB.misses, 1)
+    assert.equal(all.hits, 1)
+    assert.equal(all.misses, 2)
   })
 })
