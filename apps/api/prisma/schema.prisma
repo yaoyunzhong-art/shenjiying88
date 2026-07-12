@@ -1219,3 +1219,44 @@ model AiExecutionRecord {
   @@index([status, createdAt])
   @@index([scopeType, tenantId, brandId, storeId])
 }
+
+// ============ P0-A1 零持久化修复: 三级配置持久化 + 审计 ============
+// Phase-FP tenant-config 持久化层 (替代内存 Map, V9 需求 2 180 天审计)
+model ConfigInstance {
+  id          String   @id @default(cuid())
+  key         String
+  value       String
+  encrypted   Boolean  @default(false)
+  category    String
+  level       String   // store | tenant | brand
+  ownerId     String
+  inherits    Boolean  @default(false)
+  version     Int      @default(1)
+  updatedBy   String
+  fromSeed    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([level, ownerId, key])
+  @@index([level, ownerId])
+  @@index([key])
+}
+
+model ConfigAuditLog {
+  id            String   @id @default(cuid())
+  configId      String
+  key           String
+  level         String
+  ownerId       String
+  tenantId      String
+  action        String   // create | update | delete | rollback
+  operator      String
+  operatorRole  String
+  previousValue String?
+  newValue      String?
+  context       Json?
+  timestamp     DateTime @default(now())
+
+  @@index([configId])
+  @@index([tenantId, timestamp])
+}

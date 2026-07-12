@@ -55,6 +55,26 @@ export default function SEOMeta({
 }
 
 // 品牌JSON-LD结构化数据
+
+/**
+ * 安全地将对象渲染为 JSON-LD 结构化数据<script>标签。
+ * 使用 JSON.stringify + HTML 实体编码防止 XSS。
+ * 所有外部调用应传入固定/硬编码数据对象。
+ */
+export function SafeJSONLD({ data }: { data: Record<string, unknown> }) {
+  // JSON.stringify 自动转义特殊字符, 额外对 < > 做 Unicode 转义确保 XSS 安全
+  const safeJsonLd = JSON.stringify(data)
+    .replace(/</g, '\\u003C')
+    .replace(/>/g, '\\u003E');
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: safeJsonLd }}
+    />
+  );
+}
+
 export function BigAntsOrganizationJSONLD() {
   const schema = {
     '@context': 'https://schema.org',
@@ -75,16 +95,5 @@ export function BigAntsOrganizationJSONLD() {
     },
   };
 
-  // 安全说明: JSON.stringify 自动转义 <, >, & 等特殊字符, JSON-LD 数据为固定硬编码值
-  const jsonLd = (() => {
-    const encoded = JSON.stringify(schema).replace(/</g, '\\u003C').replace(/>/g, '\\u003E');
-    return encoded;
-  })();
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: jsonLd }}
-    />
-  );
+  return <SafeJSONLD data={schema} />;
 }

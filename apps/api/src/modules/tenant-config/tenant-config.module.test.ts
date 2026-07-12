@@ -9,6 +9,7 @@ import assert from 'node:assert/strict'
 import { TenantConfigModule } from './tenant-config.module'
 import { TenantConfigController } from './tenant-config.controller'
 import { TenantConfigService } from './tenant-config.service'
+import { TenantConfigRepository } from './tenant-config.repository'
 
 it('TenantConfigModule exposes controller, providers, and exports', () => {
   const controllers = Reflect.getMetadata('controllers', TenantConfigModule) as unknown[] | undefined
@@ -21,14 +22,17 @@ it('TenantConfigModule exposes controller, providers, and exports', () => {
 
   assert.ok(controllers?.includes(TenantConfigController), 'TenantConfigController should be registered')
   assert.ok(providers?.includes(TenantConfigService), 'TenantConfigService should be a provider')
+  assert.ok(providers?.includes(TenantConfigRepository), 'TenantConfigRepository should be a provider (P0-A1)')
   assert.ok(exportsList?.includes(TenantConfigService), 'TenantConfigService should be exported')
+  assert.ok(exportsList?.includes(TenantConfigRepository), 'TenantConfigRepository should be exported (P0-A1)')
 })
 
-it('TenantConfigModule has exactly 1 controller and 1 provider', () => {
+it('TenantConfigModule has exactly 1 controller and 2 providers (P0-A1 added repository)', () => {
   const controllers = Reflect.getMetadata('controllers', TenantConfigModule) as unknown[]
   const providers = Reflect.getMetadata('providers', TenantConfigModule) as unknown[]
   assert.equal(controllers.length, 1, `Expected 1 controller, got ${controllers.length}`)
-  assert.equal(providers.length, 1, `Expected 1 provider, got ${providers.length}`)
+  // P0-A1 修复: 增加 TenantConfigRepository 作为 provider (Prisma 持久化)
+  assert.equal(providers.length, 2, `Expected 2 providers (Service + Repository), got ${providers.length}`)
 })
 
 it('TenantConfigModule is Global (can be used anywhere)', () => {

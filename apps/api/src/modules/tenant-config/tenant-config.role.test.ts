@@ -179,7 +179,7 @@ describe(`${ROLES.Security} 安监视角`, () => {
       await service.setConfig({ key: 'marketing.default_campaign_budget', value: '60000' })
     })
     await runWithTenant(VIEWER, async () => {
-      const logs = service.listAuditLogs('tenant-A')
+      const logs = await service.listAuditLogs('tenant-A')
       assert.ok(Array.isArray(logs))
       assert.ok(logs.length > 0)
     })
@@ -313,7 +313,7 @@ describe(`${ROLES.Marketing} 营销视角`, () => {
       const result = await service.setConfig({ key: 'marketing.default_campaign_budget', value: '100000' })
       assert.equal(result.value, '100000')
       // 审计日志记录
-      const logs = service.listAuditLogs('tenant-A')
+      const logs = await service.listAuditLogs('tenant-A')
       const log = logs.find((l) => l.key === 'marketing.default_campaign_budget')
       assert.ok(log)
       assert.equal(log.action, 'update')

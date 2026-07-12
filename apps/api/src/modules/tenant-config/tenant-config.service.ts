@@ -8,6 +8,7 @@
  * - 角色权限校验 (ROLE_LEVEL_ACCESS)
  * - 继承链解析 (effective config)
  * - 审计日志 (V9 需求 2: 180 天)
+ * - 持久化 (P0-A1): 双写 PostgreSQL, 内存 Map 仅作 cache
  */
 
 import {
@@ -15,6 +16,8 @@ import {
   ForbiddenException,
   BadRequestException,
   NotFoundException,
+  Optional,
+  OnModuleInit,
 } from '@nestjs/common'
 import { requireTenantContext, assertStoreOwnership } from '../../common/context/tenant-context'
 import { encryptField, decryptField } from '../ai-model-config/encryption.util'
@@ -34,18 +37,43 @@ import {
   type SetConfigRequest,
   type WorkbenchCode,
 } from './tenant-config.entity'
+import { TenantConfigRepository, type ConfigAuditLogInput } from './tenant-config.repository'
 
 @Injectable()
-export class TenantConfigService {
+export class TenantConfigService implements OnModuleInit {
   /** 配置定义表 (静态 schema) */
   private readonly definitions = new Map<string, ConfigItemDefinition>()
-  /** 配置实例存储: key -> level -> ownerId -> instance */
+  /** 配置实例存储: key -> level -> ownerId -> instance (内存 cache, 启动时从 DB 预热) */
   private readonly instances = new Map<string, Map<string, Map<string, ConfigInstance>>>()
-  /** 审计日志 */
+  /** 审计日志 (内存 fallback, 优先从 DB 读) */
   private readonly auditLogs: ConfigAuditLog[] = []
+  /** P0-A1: 可选 DB repository, 测试环境或无 Prisma 注入时为 undefined */
+  private readonly repo?: TenantConfigRepository
 
-  constructor() {
+  constructor(@Optional() repo?: TenantConfigRepository) {
+    this.repo = repo
     this.seed()
+  }
+
+  /**
+   * P0-A1: 启动时从 DB 预热内存 Map.
+   * 测试环境 (new TenantConfigService() 无 NestJS 生命周期) 不会触发, 不影响 338 测试.
+   */
+  async onModuleInit(): Promise<void> {
+    if (!this.repo) return
+    try {
+      const rows = await this.repo.loadAllInstances()
+      for (const inst of rows) {
+        const levelMap = this.ensureLevelMap(inst.level)
+        const ownerMap = levelMap.get(inst.key) ?? new Map<string, ConfigInstance>()
+        ownerMap.set(inst.ownerId, inst)
+        levelMap.set(inst.key, ownerMap)
+      }
+    } catch (err) {
+      // 预热失败不阻塞启动, 仅记录
+      // eslint-disable-next-line no-console
+      console.warn('[TenantConfigService] warm-up failed:', (err as Error).message)
+    }
   }
 
   // ============ 1. 读取: 三级独立 (V9 需求 4) ============
@@ -190,6 +218,10 @@ export class TenantConfigService {
       previousValue: existing ? this.maskValue(def.sensitivity, existing.value, existing.encrypted) : undefined,
       newValue: this.maskValue(def.sensitivity, encrypted.value, encrypted.encrypted),
     })
+    // P0-A1: 双写 DB (no-op in test env via repo's isTestEnv guard)
+    if (this.repo) {
+      void this.repo.saveInstance(instance)
+    }
     return instance
   }
 
@@ -226,10 +258,36 @@ export class TenantConfigService {
     // Phase-FP P0-B1 修复: 通过 auditLogs 链回溯 targetVersion 对应的实际值
     // 倒序遍历 auditLogs, 找到 targetVersion 之前的最后一次 newValue
     // 即该版本"刚被创建/恢复"时的值
+    // P0-A1: 优先从 DB 读 history, 内存 auditLogs 作 fallback
     const def = this.definitions.get(target.key)!
-    const logsForConfig = this.auditLogs
+    let logsForConfig = this.auditLogs
       .filter((l) => l.configId === configId)
       .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+    if (this.repo) {
+      try {
+        const dbLogs = await this.repo.findAuditByConfigId(configId)
+        if (dbLogs.length > 0) {
+          // 合并 DB + 内存, 去重 (按 id), 时间排序
+          const seen = new Set<string>()
+          const merged: ConfigAuditLog[] = []
+          for (const l of logsForConfig) {
+            if (!seen.has(l.id)) {
+              seen.add(l.id)
+              merged.push(l)
+            }
+          }
+          for (const l of dbLogs) {
+            if (!seen.has(l.id)) {
+              seen.add(l.id)
+              merged.push(l)
+            }
+          }
+          logsForConfig = merged.sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+        }
+      } catch {
+        // DB 读失败用内存 fallback
+      }
+    }
 
     // 找到 targetVersion 之前(或等于)最后一次写入了 newValue 的 audit log
     // 即回滚目标版本的"完成值"
@@ -279,6 +337,10 @@ export class TenantConfigService {
       previousValue: this.maskValue(def.sensitivity, previousValue, target.encrypted),
       newValue: this.maskValue(def.sensitivity, target.value, target.encrypted),
     })
+    // P0-A1: 双写 DB
+    if (this.repo) {
+      void this.repo.saveInstance(target)
+    }
     return target
   }
 
@@ -310,9 +372,23 @@ export class TenantConfigService {
 
   // ============ 4. 审计日志 (V9 需求 2 180 天) ============
 
-  listAuditLogs(tenantId: string, limit = 100): ConfigAuditLog[] {
-    // Phase-FP P0 修复: 用 auditLog.tenantId 字段精确过滤
-    return this.auditLogs.filter((log) => log.tenantId === tenantId).slice(-limit).reverse()
+  /**
+   * P0-A1: 优先从 DB 读取审计 (跨进程持久).
+   * DB 不可用或为空时 fallback 到内存数组 (用于 338 测试无 Prisma 连接场景).
+   */
+  async listAuditLogs(tenantId: string, limit = 100): Promise<ConfigAuditLog[]> {
+    if (this.repo) {
+      try {
+        const dbLogs = await this.repo.loadAuditLogs(tenantId, limit)
+        if (dbLogs.length > 0) return dbLogs
+      } catch {
+        // fallthrough
+      }
+    }
+    return this.auditLogs
+      .filter((log) => log.tenantId === tenantId)
+      .slice(-limit)
+      .reverse()
   }
 
   // ============ 5. 内部工具 ============
@@ -474,6 +550,22 @@ export class TenantConfigService {
     }
     this.auditLogs.push(log)
     if (this.auditLogs.length > 10000) this.auditLogs.splice(0, this.auditLogs.length - 10000)
+    // P0-A1: 同步双写 DB (fire-and-forget 不阻塞主业务, repo 内部 try/catch 兜底)
+    if (this.repo) {
+      void this.repo.appendAudit({
+        configId: log.configId,
+        key: log.key,
+        level: log.level,
+        ownerId: log.ownerId,
+        tenantId: log.tenantId,
+        action: log.action,
+        operator: log.operator,
+        operatorRole: log.operatorRole,
+        previousValue: log.previousValue,
+        newValue: log.newValue,
+        context: log.context,
+      } satisfies ConfigAuditLogInput)
+    }
   }
 
   // ============ 6. 种子 (V10 Day 6) ============

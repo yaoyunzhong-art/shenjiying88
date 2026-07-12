@@ -172,7 +172,7 @@ describe('TenantConfigService V10 Day 6 Phase 90', () => {
     it('setConfig 记录审计', async () => {
       await runWithTenant(TENANT_CTX, async () => {
         await service.setConfig({ key: 'marketing.default_campaign_budget', value: '80000' })
-        const logs = service.listAuditLogs('tenant-A')
+        const logs = await service.listAuditLogs('tenant-A')
         assert.ok(logs.length > 0)
         const log = logs[0]
         assert.equal(log.action, 'update')
@@ -184,7 +184,7 @@ describe('TenantConfigService V10 Day 6 Phase 90', () => {
       await runWithTenant(TENANT_CTX, async () => {
         const inst1 = await service.setConfig({ key: 'ai.default_model', value: 'gpt-4o' })
         await service.rollback(1, inst1.id)
-        const logs = service.listAuditLogs('tenant-A')
+        const logs = await service.listAuditLogs('tenant-A')
         const rollback = logs.find((l) => l.action === 'rollback')
         assert.ok(rollback)
       })
