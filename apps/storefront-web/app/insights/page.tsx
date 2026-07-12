@@ -84,11 +84,11 @@ const HEATMAP_DATA: HeatmapCell[] = [
 
 /* 告警数据 */
 const MOCK_ALERTS: AnomalyAlert[] = [
-  { deviceId: 'cam-02', id: 'alt-01', type: 'camera_down', severity: 'high', message: '收银区摄像头画面无信号', timestamp: new Date(Date.now() - 1800000).toISOString(), status: 'acknowledged' },
-  { id: 'alt-02', id: 'prt-01', type: 'thermal', severity: 'medium', message: '厨房打印机打印头温度偏高 (68°C)', timestamp: new Date(Date.now() - 120000).toISOString(), status: 'open' },
-  { id: 'alt-03', id: 'sns-01', type: 'humidity', severity: 'medium', message: '冷库湿度异常 88%', timestamp: new Date(Date.now() - 60000).toISOString(), status: 'open' },
-  { id: 'alt-04', id: 'pos-01', type: 'network', severity: 'low', message: 'POS-01 网络延迟偏高', timestamp: new Date(Date.now() - 3600000).toISOString(), status: 'resolved' },
-  { id: 'alt-05', id: 'sns-01', type: 'temperature', severity: 'high', message: '冷库温度异常 12°C', timestamp: new Date(Date.now() - 7200000).toISOString(), status: 'resolved' },
+  { id: 'alt-01', title: '摄像头画面无信号', description: '收银区摄像头画面无信号', severity: 'high', source: 'device', timestamp: new Date(Date.now() - 1800000).toISOString(), acknowledged: true },
+  { id: 'alt-02', title: '打印头温度偏高', description: '厨房打印机打印头温度偏高 (68°C)', severity: 'medium', source: 'device', timestamp: new Date(Date.now() - 120000).toISOString(), acknowledged: false },
+  { id: 'alt-03', title: '湿度异常', description: '冷库湿度异常 88%', severity: 'medium', source: 'system', timestamp: new Date(Date.now() - 60000).toISOString(), acknowledged: false },
+  { id: 'alt-04', title: '网络延迟偏高', description: 'POS-01 网络延迟偏高', severity: 'low', source: 'network', timestamp: new Date(Date.now() - 3600000).toISOString(), acknowledged: false },
+  { id: 'alt-05', title: '冷库温度异常', description: '冷库温度异常 12°C', severity: 'high', source: 'system', timestamp: new Date(Date.now() - 7200000).toISOString(), acknowledged: true },
 ];
 const gaugeSegments: GaugeSegment[] = [
   { from: 0, to: 30, color: '#22c55e', label: '良好' },
