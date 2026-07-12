@@ -10,12 +10,13 @@
 
 import { Module } from '@nestjs/common'
 import { TenantConfigController } from './tenant-config.controller'
+import { TenantConfigCacheService } from './tenant-config-cache.service'
 import { TenantConfigService } from './tenant-config.service'
 import { TenantConfigRepository } from './tenant-config.repository'
 
 @Module({
   controllers: [TenantConfigController],
-  providers: [TenantConfigService, TenantConfigRepository],
-  exports: [TenantConfigService, TenantConfigRepository],
+  providers: [TenantConfigService, TenantConfigRepository, TenantConfigCacheService],
+  exports: [TenantConfigService, TenantConfigRepository, TenantConfigCacheService],
 })
 export class TenantConfigModule {}

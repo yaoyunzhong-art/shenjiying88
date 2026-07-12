@@ -9,7 +9,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  */
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { InMemoryCacheService } from '../../infrastructure/cache/cache.module'
 import { TenantConfigService } from './tenant-config.service'
+import { TenantConfigCacheService } from './tenant-config-cache.service'
 import { TenantConfigController } from './tenant-config.controller'
 import {
   BUILTIN_CONFIG_DEFINITIONS,
@@ -1082,5 +1084,49 @@ describe('P1-F1 二级索引同步矩阵', () => {
       // value 必须是 0.00-0.99 中某一个 (最后写入的)
       assert.match(tax!.value, /^0\.\d{2}$/, 'value 应是 0.XX 格式')
     })
+  })
+})
+
+describe('F2 tenant-config 缓存闭环', () => {
+  it('[F2-4] getConfigs 同上下文第二次命中缓存', async () => {
+    const cache = new TenantConfigCacheService(new InMemoryCacheService())
+    const service = new TenantConfigService(undefined, cache)
+
+    await runWithTenant(STORE_CTX, async () => {
+      const first = await service.getConfigs({ level: 'store' })
+      const second = await service.getConfigs({ level: 'store' })
+      assert.ok(first.length >= 1)
+      assert.deepEqual(second, first)
+    })
+
+    const stats = cache.getStats()
+    assert.equal(stats.misses, 1)
+    assert.equal(stats.hits, 1)
+  })
+
+  it('[F2-5] setConfig 后租户缓存失效，再读返回新值', async () => {
+    const cache = new TenantConfigCacheService(new InMemoryCacheService())
+    const service = new TenantConfigService(undefined, cache)
+
+    await runWithTenant(STORE_CTX, async () => {
+      const before = await service.getConfigs({ level: 'store' })
+      const taxBefore = before.find((c) => c.key === 'pos.tax_rate')
+      assert.equal(taxBefore?.value, '0.13')
+    })
+    assert.equal(cache.getStats().misses, 1)
+
+    await runWithTenant(STORE_CTX, async () => {
+      await service.setConfig({ key: 'pos.tax_rate', value: '0.21' })
+    })
+
+    await runWithTenant(STORE_CTX, async () => {
+      const after = await service.getConfigs({ level: 'store' })
+      const taxAfter = after.find((c) => c.key === 'pos.tax_rate')
+      assert.equal(taxAfter?.value, '0.21')
+    })
+
+    const stats = cache.getStats()
+    assert.equal(stats.misses, 2, '写入后应失效并重新 miss 一次')
+    assert.ok(stats.invalidations >= 1, '写入后必须触发租户级缓存失效')
   })
 })

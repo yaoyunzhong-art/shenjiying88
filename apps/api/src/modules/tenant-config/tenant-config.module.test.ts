@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  */
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { TenantConfigCacheService } from './tenant-config-cache.service'
 import { TenantConfigModule } from './tenant-config.module'
 import { TenantConfigController } from './tenant-config.controller'
 import { TenantConfigService } from './tenant-config.service'
@@ -23,16 +24,19 @@ it('TenantConfigModule exposes controller, providers, and exports', () => {
   assert.ok(controllers?.includes(TenantConfigController), 'TenantConfigController should be registered')
   assert.ok(providers?.includes(TenantConfigService), 'TenantConfigService should be a provider')
   assert.ok(providers?.includes(TenantConfigRepository), 'TenantConfigRepository should be a provider (P0-A1)')
+  assert.ok(providers?.includes(TenantConfigCacheService), 'TenantConfigCacheService should be a provider (F2)')
   assert.ok(exportsList?.includes(TenantConfigService), 'TenantConfigService should be exported')
   assert.ok(exportsList?.includes(TenantConfigRepository), 'TenantConfigRepository should be exported (P0-A1)')
+  assert.ok(exportsList?.includes(TenantConfigCacheService), 'TenantConfigCacheService should be exported (F2)')
 })
 
-it('TenantConfigModule has exactly 1 controller and 2 providers (P0-A1 added repository)', () => {
+it('TenantConfigModule has exactly 1 controller and 3 providers (P0-A1 + F2 cache)', () => {
   const controllers = Reflect.getMetadata('controllers', TenantConfigModule) as unknown[]
   const providers = Reflect.getMetadata('providers', TenantConfigModule) as unknown[]
   assert.equal(controllers.length, 1, `Expected 1 controller, got ${controllers.length}`)
   // P0-A1 修复: 增加 TenantConfigRepository 作为 provider (Prisma 持久化)
-  assert.equal(providers.length, 2, `Expected 2 providers (Service + Repository), got ${providers.length}`)
+  // F2: 增加 TenantConfigCacheService 作为 provider (缓存层)
+  assert.equal(providers.length, 3, `Expected 3 providers (Service + Repository + Cache), got ${providers.length}`)
 })
 
 it('TenantConfigModule is NOT @Global (P0-A4: 业务模块不应全局共享)', () => {

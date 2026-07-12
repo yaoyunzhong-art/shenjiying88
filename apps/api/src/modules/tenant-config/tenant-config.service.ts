@@ -37,6 +37,7 @@ import {
   type SetConfigRequest,
   type WorkbenchCode,
 } from './tenant-config.entity'
+import { TenantConfigCacheService } from './tenant-config-cache.service'
 import { TenantConfigRepository, type ConfigAuditLogInput } from './tenant-config.repository'
 
 @Injectable()
@@ -57,8 +58,13 @@ export class TenantConfigService implements OnModuleInit {
    * 失效: 随 instances Map 同步增删, 不需要独立失效
    */
   private readonly index = new Map<string, Map<string, ConfigInstance>>()
+  /** F2: ownerIdFor 高频读路径内存缓存, LRU 超 1000 条时清空 */
+  private readonly ownerIdCache = new Map<string, string>()
 
-  constructor(@Optional() repo?: TenantConfigRepository) {
+  constructor(
+    @Optional() repo?: TenantConfigRepository,
+    @Optional() private readonly cacheService?: TenantConfigCacheService,
+  ) {
     this.repo = repo
     this.seed()
   }
@@ -162,51 +168,100 @@ export class TenantConfigService implements OnModuleInit {
     const level = req.level ?? this.roleDefaultLevel(ctx)
     this.assertLevelAccess(ctx, level)
 
-    // P1-F1: 二级索引 O(1) 命中 (主路径)
-    const ownerId = this.ownerIdFor(ctx, level)
-    const ownerMap = this.index.get(this.indexKey(level, ownerId))
+    return this.cacheService?.getOrLoad(
+      'configs',
+      ctx,
+      [level, req.category, req.keys?.join(',')],
+      async () => {
+        // P1-F1: 二级索引 O(1) 命中 (主路径)
+        const ownerId = this.ownerIdFor(ctx, level)
+        const ownerMap = this.index.get(this.indexKey(level, ownerId))
 
-    // P1-F1 兜底: 索引未命中时回退到 O(n×m) 慢路径 (兼容测试环境无 onModuleInit)
-    const levelMap = ownerMap
-      ? null
-      : this.instances.get(level) ?? new Map<string, Map<string, ConfigInstance>>()
+        // P1-F1 兜底: 索引未命中时回退到 O(n×m) 慢路径 (兼容测试环境无 onModuleInit)
+        const levelMap = ownerMap
+          ? null
+          : this.instances.get(level) ?? new Map<string, Map<string, ConfigInstance>>()
 
-    const results: ConfigInstance[] = []
-    for (const def of BUILTIN_CONFIG_DEFINITIONS) {
-      if (def.level !== level) continue
-      if (req.category && def.category !== req.category) continue
-      if (req.keys && req.keys.length > 0 && !req.keys.includes(def.key)) continue
-      // P1-F1: 索引命中 O(1); 兜底走慢路径 (levelMap 为 null 时用空 Map 避免 TS 警告)
-      const instance = ownerMap
-        ? ownerMap.get(def.key)
-        : (levelMap ?? new Map<string, Map<string, ConfigInstance>>()).get(def.key)?.get(ownerId)
-      if (instance) results.push(instance)
-    }
-    return results
+        const results: ConfigInstance[] = []
+        for (const def of BUILTIN_CONFIG_DEFINITIONS) {
+          if (def.level !== level) continue
+          if (req.category && def.category !== req.category) continue
+          if (req.keys && req.keys.length > 0 && !req.keys.includes(def.key)) continue
+          const instance = ownerMap
+            ? ownerMap.get(def.key)
+            : (levelMap ?? new Map<string, Map<string, ConfigInstance>>()).get(def.key)?.get(ownerId)
+          if (instance) results.push(instance)
+        }
+        return results
+      },
+    ) ?? (async () => {
+      const ownerId = this.ownerIdFor(ctx, level)
+      const ownerMap = this.index.get(this.indexKey(level, ownerId))
+      const levelMap = ownerMap
+        ? null
+        : this.instances.get(level) ?? new Map<string, Map<string, ConfigInstance>>()
+      const results: ConfigInstance[] = []
+      for (const def of BUILTIN_CONFIG_DEFINITIONS) {
+        if (def.level !== level) continue
+        if (req.category && def.category !== req.category) continue
+        if (req.keys && req.keys.length > 0 && !req.keys.includes(def.key)) continue
+        const instance = ownerMap
+          ? ownerMap.get(def.key)
+          : (levelMap ?? new Map<string, Map<string, ConfigInstance>>()).get(def.key)?.get(ownerId)
+        if (instance) results.push(instance)
+      }
+      return results
+    })()
   }
 
   async getEffectiveConfigs(category?: string): Promise<EffectiveConfig[]> {
     const ctx = requireTenantContext()
     // Phase-FP P0-H5 修复: H4 写-读对称
     this.assertTenantIdFormat(ctx)
-    const results: EffectiveConfig[] = []
-    for (const def of BUILTIN_CONFIG_DEFINITIONS) {
-      if (category && def.category !== category) continue
-      if (!this.canAccessConfigKey(ctx, def)) continue
-      const effective = this.resolveEffective(ctx, def)
-      if (effective) {
-        const masked = this.maskValue(def.sensitivity, effective.value)
-        results.push({
-          key: def.key,
-          value: masked,
-          sourceLevel: effective.sourceLevel,
-          inherited: effective.inherited,
-          sensitivity: def.sensitivity,
-          isMasked: def.sensitivity === 'secret' || def.sensitivity === 'restricted',
-        })
+    return this.cacheService?.getOrLoad(
+      'effective-configs',
+      ctx,
+      [category],
+      async () => {
+        const results: EffectiveConfig[] = []
+        for (const def of BUILTIN_CONFIG_DEFINITIONS) {
+          if (category && def.category !== category) continue
+          if (!this.canAccessConfigKey(ctx, def)) continue
+          const effective = this.resolveEffective(ctx, def)
+          if (effective) {
+            const masked = this.maskValue(def.sensitivity, effective.value)
+            results.push({
+              key: def.key,
+              value: masked,
+              sourceLevel: effective.sourceLevel,
+              inherited: effective.inherited,
+              sensitivity: def.sensitivity,
+              isMasked: def.sensitivity === 'secret' || def.sensitivity === 'restricted',
+            })
+          }
+        }
+        return results
+      },
+    ) ?? (async () => {
+      const results: EffectiveConfig[] = []
+      for (const def of BUILTIN_CONFIG_DEFINITIONS) {
+        if (category && def.category !== category) continue
+        if (!this.canAccessConfigKey(ctx, def)) continue
+        const effective = this.resolveEffective(ctx, def)
+        if (effective) {
+          const masked = this.maskValue(def.sensitivity, effective.value)
+          results.push({
+            key: def.key,
+            value: masked,
+            sourceLevel: effective.sourceLevel,
+            inherited: effective.inherited,
+            sensitivity: def.sensitivity,
+            isMasked: def.sensitivity === 'secret' || def.sensitivity === 'restricted',
+          })
+        }
       }
-    }
-    return results
+      return results
+    })()
   }
 
   async getConfig(key: string): Promise<ConfigInstance | null> {
@@ -218,36 +273,70 @@ export class TenantConfigService implements OnModuleInit {
     if (!this.canAccessConfigKey(ctx, def)) {
       throw new ForbiddenException(`Role ${ctx.role} cannot access ${key}`)
     }
-    const levelMap = this.instances.get(def.level)
-    const ownerMap = levelMap?.get(key)
-    const inst = ownerMap?.get(this.ownerIdFor(ctx, def.level))
-    if (inst) {
-      // 解密后脱敏返回 (service 层负责 access control)
-      const plain = inst.encrypted ? decryptField(inst.value) : inst.value
-      const displayValue = this.maskValue(def.sensitivity, plain, false)
-      return {
-        ...inst,
-        value: displayValue,
+    return this.cacheService?.getOrLoad(
+      'config',
+      ctx,
+      [key],
+      async () => {
+        const levelMap = this.instances.get(def.level)
+        const ownerMap = levelMap?.get(key)
+        const inst = ownerMap?.get(this.ownerIdFor(ctx, def.level))
+        if (inst) {
+          const plain = inst.encrypted ? decryptField(inst.value) : inst.value
+          const displayValue = this.maskValue(def.sensitivity, plain, false)
+          return {
+            ...inst,
+            value: displayValue,
+          }
+        }
+        if (def.defaultValue !== undefined && def.defaultValue !== null) {
+          return {
+            id: 'builtin-' + def.key,
+            key: def.key,
+            value: this.maskValue(def.sensitivity, String(def.defaultValue), false),
+            encrypted: false,
+            category: def.category,
+            level: def.level,
+            ownerId: this.ownerIdFor(ctx, def.level),
+            inherits: true,
+            version: 0,
+            updatedBy: 'system',
+            updatedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+          }
+        }
+        return null
+      },
+    ) ?? (async () => {
+      const levelMap = this.instances.get(def.level)
+      const ownerMap = levelMap?.get(key)
+      const inst = ownerMap?.get(this.ownerIdFor(ctx, def.level))
+      if (inst) {
+        const plain = inst.encrypted ? decryptField(inst.value) : inst.value
+        const displayValue = this.maskValue(def.sensitivity, plain, false)
+        return {
+          ...inst,
+          value: displayValue,
+        }
       }
-    }
-    // Phase-FP P0 修复: 没有任何 instance 时 fall back 到 BUILTIN defaultValue
-    if (def.defaultValue !== undefined && def.defaultValue !== null) {
-      return {
-        id: 'builtin-' + def.key,
-        key: def.key,
-        value: this.maskValue(def.sensitivity, String(def.defaultValue), false),
-        encrypted: false,
-        category: def.category,
-        level: def.level,
-        ownerId: this.ownerIdFor(ctx, def.level),
-        inherits: true,
-        version: 0,
-        updatedBy: 'system',
-        updatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
+      if (def.defaultValue !== undefined && def.defaultValue !== null) {
+        return {
+          id: 'builtin-' + def.key,
+          key: def.key,
+          value: this.maskValue(def.sensitivity, String(def.defaultValue), false),
+          encrypted: false,
+          category: def.category,
+          level: def.level,
+          ownerId: this.ownerIdFor(ctx, def.level),
+          inherits: true,
+          version: 0,
+          updatedBy: 'system',
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        }
       }
-    }
-    return null
+      return null
+    })()
   }
 
   // ============ 2. 写入: 三级独立 (V9 需求 4) ============
@@ -317,6 +406,7 @@ export class TenantConfigService implements OnModuleInit {
     if (this.repo) {
       void this.repo.saveInstance(instance)
     }
+    void this.invalidateReadCache(ctx)
     return instance
   }
 
@@ -366,6 +456,7 @@ export class TenantConfigService implements OnModuleInit {
         const [level, ownerId] = composite.split('::') as [ConfigLevel, string]
         this.rebuildIndexForOwner(level, ownerId)
       }
+      void this.invalidateReadCache(ctx)
       return written
     } catch (err) {
       // 补偿: 还原已写入的 instance 到快照状态
@@ -375,6 +466,7 @@ export class TenantConfigService implements OnModuleInit {
         const [level, ownerId] = composite.split('::') as [ConfigLevel, string]
         this.rebuildIndexForOwner(level, ownerId)
       }
+      void this.invalidateReadCache(ctx)
       throw err
     }
   }
@@ -474,6 +566,7 @@ export class TenantConfigService implements OnModuleInit {
     if (this.repo) {
       void this.repo.deleteInstance(target.id)
     }
+    void this.invalidateReadCache(ctx)
   }
 
   async rollback(targetVersion: number, configId: string): Promise<ConfigInstance> {
@@ -537,7 +630,6 @@ export class TenantConfigService implements OnModuleInit {
     // 找到 targetVersion 之前(或等于)最后一次写入了 newValue 的 audit log
     // 即回滚目标版本的"完成值"
     let rolledValue: string | undefined
-    let foundAtLog: ConfigAuditLog | undefined
     for (let i = logsForConfig.length - 1; i >= 0; i--) {
       const log = logsForConfig[i]
       if (log.action === 'rollback' && log.context?.['targetVersion'] === targetVersion) {
@@ -551,7 +643,6 @@ export class TenantConfigService implements OnModuleInit {
         // 从当前 target.version 倒推到 targetVersion, 每次 setConfig/rollback 都会使 version+1
         // 简化: 取最近一次 newValue 作为回滚目标值, 并附 targetVersion 上下文
         rolledValue = log.newValue
-        foundAtLog = log
         break
       }
     }
@@ -587,6 +678,7 @@ export class TenantConfigService implements OnModuleInit {
     if (this.repo) {
       void this.repo.saveInstance(target)
     }
+    void this.invalidateReadCache(ctx)
     return target
   }
 
@@ -813,19 +905,51 @@ export class TenantConfigService implements OnModuleInit {
     return value
   }
 
+  private async invalidateReadCache(ctx: TenantContext): Promise<void> {
+    this.ownerIdCache.clear()
+    await this.cacheService?.invalidateTenant(ctx.tenantId)
+  }
+
+  private ownerIdCacheKey(ctx: TenantContext, level: ConfigLevel): string {
+    return [
+      level,
+      ctx.tenantId ?? '-',
+      ctx.brandId ?? '-',
+      ctx.storeId ?? '-',
+      ctx.role ?? 'viewer',
+    ].join('::')
+  }
+
   private ownerIdFor(ctx: TenantContext, level: ConfigLevel): string {
-    if (level === 'store') return ctx.storeId ?? 'store-default'
-    if (level === 'tenant') return ctx.tenantId
+    const allowCache = !(level === 'brand' && ctx.brandId && (ctx.role === 'super_admin' || ctx.role === 'auditor'))
+    const cacheKey = this.ownerIdCacheKey(ctx, level)
+    if (allowCache) {
+      const hit = this.ownerIdCache.get(cacheKey)
+      if (hit) return hit
+    }
+
+    let ownerId: string
+    if (level === 'store') ownerId = ctx.storeId ?? 'store-default'
+    else if (level === 'tenant') ownerId = ctx.tenantId
     // brand 级别 (Phase-FP P0-C7 + P0-H1 修复):
     // 1. ctx.brandId 显式: 必须通过服务端归属校验 (P0-H1 防 brandId 注入越权)
-    if (ctx.brandId) {
+    else if (ctx.brandId) {
       this.assertBrandIdBelongsToTenant(ctx)
-      return ctx.brandId
+      ownerId = ctx.brandId
     }
     // 2. 兼容品牌租户命名约定: ctx.tenantId 以 'brand-' 开头 (单租户品牌场景)
-    if (ctx.tenantId.startsWith('brand-')) return ctx.tenantId
+    else if (ctx.tenantId.startsWith('brand-')) ownerId = ctx.tenantId
     // 3. 业务租户 (无 brandId, 非品牌命名): 隔离命名空间
-    return `${ctx.tenantId}::brand-fallback`
+    else ownerId = `${ctx.tenantId}::brand-fallback`
+
+    if (allowCache) {
+      this.ownerIdCache.set(cacheKey, ownerId)
+      if (this.ownerIdCache.size > 1000) {
+        this.ownerIdCache.clear()
+        this.ownerIdCache.set(cacheKey, ownerId)
+      }
+    }
+    return ownerId
   }
 
   /**
