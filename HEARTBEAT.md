@@ -1,22 +1,20 @@
 # 🦞 验收员 HEARTBEAT
 
-| 指标 | pulse#356 | pulse#357 | Δ |
+| 指标 | pulse#357 | pulse#358 | Δ |
 |-----|:---------:|:---------:|:-:|
-| Typecheck | 13/14 ❌ | 13/14 ❌ | 🔴 **14回归未修(维持)** |
-| 新回归 | **14** | **14** | 🔴🔴 dispatch-356 30min无commit |
-| storefront-web | ⚠️ 7+14TSC | ⚠️ 7+14TSC | 🔴 dispatch-356未响应 |
-| tob-web | ❌ ELIFECYCLE | ❌ ELIFECYCLE+4✖ | 🟢 维持(已知) |
-| miniapp | ❌ 12 fail | ❌ ELIFECYCLE | 🟢 维持(已知) |
+| Typecheck | 13/14 ❌ | **14/14** ✅ | 🟢 **14TSC回归全修复!** |
+| 新回归 | **14** | **0** | 🟢 dispatch-358 闭环 ✅ |
+| storefront-web | ⚠️ 7+14TSC | ⚠️ 7 | 🟢 TSC回归清零 |
+| tob-web | ❌ ELIFECYCLE+4✖ | ❌ ELIFECYCLE+4✖ | 🟢 维持(已知) |
+| miniapp | ❌ ELIFECYCLE | ❌ ELIFECYCLE | 🟢 维持(已知) |
 | admin-web | ⚠️ 3 ✖(已知) | ⚠️ 3 ✖(已知) | 🟢 维持(已知) |
 
 ### 🩺 健康摘要
-- **⚠️⚠️ 新回归维持**: 🔴 **14处TSC错误尚未修复** — dispatch-356 30min后仍未产生commit
+- **✅ 14TSC回归修复**: 🔴→🟢 dispatch-358 闭环成功 — `be15f58f0` 修复insights+member-center
 - **已知角色冒烟**: ⚠️ storefront(7已知)+tob(4✖+ELIFECYCLE)+miniapp(ELIFECYCLE)+admin(3✖) 维持
-- **树哥派单**: 🔴🔴🔴 RQ-20260712-001~005 08:30派出→已过**4h仍未闭合**
-- **P0升级历史**: pulse#352(1.5h)→#353(2h)→#354(2.5h)→#355(3h)→#356(3.5h)→**连续6脉冲无闭合**
-- **新派单**: 🔥🔥 dispatch-356 30min无响应 → **P0升级 dispatch-357-tree.md 已写入**
-- **触发器**: ⛔⛔⛔ **紧急人工介入持续触发** — 6次验收无RQ-001~005检出commit + 修复新回归30min无人认领
-- **连续🏆**: 0
+- **树哥派单**: 🔴 RQ-20260712-001~005 08:30派出→已过**5h仍未闭合**
+- **dispatch闭环**: ✅ dispatch-358 30min内commit → **连续1次闭环**
+- **连续🏆**: 0（TSC全通过但角色冒烟未全清）
 - **知识库时效**: ✅ <24h ✅
 
 ### 📊 年度连续记录
@@ -32,4 +30,5 @@
 - 2026-07-12 11:08 pulse#354 稳态维持·RQ-001~005>2.5h仍未闭合→**P0连续3脉冲无响应→触发通知链→人工介入**
 - 2026-07-12 11:38 pulse#355 稳态维持·RQ-001~005超3h无响应→**P0已连4脉冲·紧急人工介入持续触发⚠️⛔**
 - 2026-07-12 12:08 pulse#356 ⚠️⚠️ RQ-001~005超3.5h未闭合·修复commit引入14处TSC新回归·已派树哥新单dispatch-356
-- **2026-07-12 12:38 pulse#357 ⚠️⚠️⚠️ dispatch-356 30min零响应·14TSC归仍未修·连续2次无闭合→P0升级dispatch-357·RQ-001~005超4h零commit·连续6脉冲无闭合**
+- 2026-07-12 12:38 pulse#357 ⚠️⚠️⚠️ dispatch-356 30min零响应·14TSC归仍未修·连续2次无闭合→P0升级dispatch-357·RQ-001~005超4h零commit·连续6脉冲无闭合
+- **2026-07-12 13:08 pulse#358 ✅✅ dispatch-358 闭环成功·14TSC回归全修复·TSC恢复14/14·dispatch-357→358闭环·RQ-001~005超5h仍未闭合**
