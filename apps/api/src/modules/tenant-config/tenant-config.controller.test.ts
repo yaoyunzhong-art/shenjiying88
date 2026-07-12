@@ -469,13 +469,15 @@ describe('TenantConfigController 集成测试', () => {
         await cachedController.listConfigs({ level: 'store' })
       })
 
-      const stats = cachedController.cacheStats()
-      assert.equal(stats.enabled, true)
-      assert.equal(stats.misses, 1)
-      assert.equal(stats.hits, 1)
-      assert.equal(stats.invalidations, 0)
-      assert.equal(stats.errors, 0)
-      assert.equal(stats.hitRate, 0.5)
+      await runWithTenant(STORE_CTX, async () => {
+        const stats = cachedController.cacheStats()
+        assert.equal(stats.enabled, true)
+        assert.equal(stats.misses, 1)
+        assert.equal(stats.hits, 1)
+        assert.equal(stats.invalidations, 0)
+        assert.equal(stats.errors, 0)
+        assert.equal(stats.hitRate, 0.5)
+      })
     })
   })
 

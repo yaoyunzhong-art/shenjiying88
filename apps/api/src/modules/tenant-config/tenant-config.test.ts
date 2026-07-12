@@ -738,14 +738,16 @@ describe('TenantConfigController', () => {
     }
   })
 
-  it('TC-62B cacheStats() should expose default zero stats', () => {
-    const result = controller.cacheStats()
-    assert.equal(result.enabled, false)
-    assert.equal(result.hits, 0)
-    assert.equal(result.misses, 0)
-    assert.equal(result.invalidations, 0)
-    assert.equal(result.errors, 0)
-    assert.equal(result.hitRate, 0)
+  it('TC-62B cacheStats() should expose default zero stats', async () => {
+    await runWithTenant(TENANT_CTX, async () => {
+      const result = controller.cacheStats()
+      assert.equal(result.enabled, false)
+      assert.equal(result.hits, 0)
+      assert.equal(result.misses, 0)
+      assert.equal(result.invalidations, 0)
+      assert.equal(result.errors, 0)
+      assert.equal(result.hitRate, 0)
+    })
   })
 })
 
@@ -1098,6 +1100,17 @@ describe('P1-F1 二级索引同步矩阵', () => {
 })
 
 describe('F2 tenant-config 缓存闭环', () => {
+  class SlowInvalidationCacheBackend extends InMemoryCacheService {
+    invalidated = false
+
+    override async delByPrefix(prefix: string): Promise<number> {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+      const count = await super.delByPrefix(prefix)
+      this.invalidated = true
+      return count
+    }
+  }
+
   it('[F2-4] getConfigs 同上下文第二次命中缓存', async () => {
     const cache = new TenantConfigCacheService(new InMemoryCacheService())
     const service = new TenantConfigService(undefined, cache)
@@ -1138,5 +1151,72 @@ describe('F2 tenant-config 缓存闭环', () => {
     const stats = cache.getStats()
     assert.equal(stats.misses, 2, '写入后应失效并重新 miss 一次')
     assert.ok(stats.invalidations >= 1, '写入后必须触发租户级缓存失效')
+  })
+
+  it('[F2-6] setConfig 返回前必须已完成缓存失效，避免脏读窗口', async () => {
+    const backend = new SlowInvalidationCacheBackend()
+    const cache = new TenantConfigCacheService(backend)
+    const service = new TenantConfigService(undefined, cache)
+
+    await runWithTenant(STORE_CTX, async () => {
+      await service.getConfigs({ level: 'store' })
+      await service.setConfig({ key: 'pos.tax_rate', value: '0.22' })
+      assert.equal(backend.invalidated, true, 'setConfig resolve 前应等待缓存失效完成')
+    })
+  })
+
+  it('[F2-7] setConfig 只清理 tenant-config 读 scope，不误伤其他 scope', async () => {
+    const cache = new TenantConfigCacheService(new InMemoryCacheService())
+    const service = new TenantConfigService(undefined, cache)
+
+    await runWithTenant(STORE_CTX, async () => {
+      await service.getConfigs({ level: 'store' })
+    })
+    await cache.getOrLoad(
+      'audit-logs',
+      STORE_CTX,
+      [100],
+      async () => [{ id: 'log-1' }],
+      300,
+    )
+
+    await runWithTenant(STORE_CTX, async () => {
+      await service.setConfig({ key: 'pos.tax_rate', value: '0.23' })
+    })
+
+    let loaderCalls = 0
+    const logs = await cache.getOrLoad(
+      'audit-logs',
+      STORE_CTX,
+      [100],
+      async () => {
+        loaderCalls++
+        return [{ id: 'log-2' }]
+      },
+      300,
+    )
+    assert.equal(loaderCalls, 0)
+    assert.deepEqual(logs, [{ id: 'log-1' }])
+  })
+
+  it('[F2-8] cacheStats 只返回当前 tenant 的统计，不串其他租户', async () => {
+    const cache = new TenantConfigCacheService(new InMemoryCacheService())
+    const service = new TenantConfigService(undefined, cache)
+    const controller = new TenantConfigController(service)
+
+    await runWithTenant(STORE_CTX, async () => {
+      await controller.listConfigs({ level: 'store' })
+      await controller.listConfigs({ level: 'store' })
+    })
+    await runWithTenant({ ...STORE_CTX, tenantId: 'tenant-B', storeId: 'store-009' }, async () => {
+      await controller.listConfigs({ level: 'store' })
+    })
+
+    await runWithTenant(STORE_CTX, async () => {
+      const stats = controller.cacheStats()
+      assert.equal(stats.hits, 1)
+      assert.equal(stats.misses, 1)
+      assert.equal(stats.hitRate, 0.5)
+    })
   })
 })
