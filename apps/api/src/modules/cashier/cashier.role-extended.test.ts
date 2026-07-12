@@ -176,7 +176,7 @@ function freshService() {
 //  👔 店长扩展
 // ════════════════════════════════════════════════
 describe('👔店长 收银扩展测试', () => {
-  it('店长手动关闭待支付订单（正常：取消超时未付订单）', () => {
+  it('店长手动关闭待支付订单（正常：取消超时未付订单）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {
@@ -184,7 +184,7 @@ describe('👔店长 收银扩展测试', () => {
       items: [{ skuId: 'sku-01', quantity: 1, price: 100 }]
     })
     svc.createPayment(order.orderId, { channel: 'wechat-pay', amount: 100 })
-    const { order: closed, payment: closedPayment } = svc.closeOrder(
+    const { order: closed, payment: closedPayment } = await svc.closeOrder(
       order.orderId,
       ctx,
       { reason: '顾客半小时未付款，手动关闭', operator: 'store-manager-01' }
@@ -196,7 +196,7 @@ describe('👔店长 收银扩展测试', () => {
     assert.ok(closed.closedAt)
     assert.equal(closedPayment!.status, CashierPaymentStatus.Failed)
   })
-  it('店长不可关闭已支付订单（边界：保护已收款订单）', () => {
+  it('店长不可关闭已支付订单（边界：保护已收款订单）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {
@@ -211,12 +211,12 @@ describe('👔店长 收银扩展测试', () => {
       tenantId: 't-ext',
       externalPaymentId: 'ext-002'
     })
-    assert.throws(
-      () => await svc.closeOrder(order.orderId, ctx),
+    await assert.rejects(
+      () => svc.closeOrder(order.orderId, ctx),
       /Paid order .* cannot be manually closed/
     )
   })
-  it('店长超时自动关闭订单（业务边界：超时自动触发）', () => {
+  it('店长超时自动关闭订单（业务边界：超时自动触发）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {
@@ -234,7 +234,7 @@ describe('👔店长 收银扩展测试', () => {
 //  🛒 前台扩展
 // ════════════════════════════════════════════════
 describe('🛒前台 收银扩展测试', () => {
-  it('前台查看订单详情（正常：完整字段展示）', () => {
+  it('前台查看订单详情（正常：完整字段展示）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {
@@ -263,10 +263,10 @@ describe('🛒前台 收银扩展测试', () => {
     const orders = svc.listOrders(ctx)
     assert.equal(orders.length, 3)
   })
-  it('前台查询不存在的订单应返回 undefined（边界）', () => {
+  it('前台查询不存在的订单应返回 undefined（边界）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
-    const result = await svc.getOrder(.nonexistent-order., ctx)
+    const result = await svc.getOrder('nonexistent-order', ctx)
     assert.equal(result, undefined)
   })
 })
@@ -285,7 +285,7 @@ describe('👥HR 收银扩展测试', () => {
     const payments = svc.listPayments(ctx)
     assert.ok(payments.length >= 1)
   })
-  it('HR 查看指定订单的最新支付（正常）', () => {
+  it('HR 查看指定订单的最新支付（正常）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {
@@ -298,10 +298,10 @@ describe('👥HR 收银扩展测试', () => {
     assert.equal(latest!.channel, 'wechat-pay')
     assert.equal(latest!.amount, 100)
   })
-  it('HR 查看无支付订单的最新支付返回 undefined（边界）', () => {
+  it('HR 查看无支付订单的最新支付返回 undefined（边界）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
-    const result = await svc.getLatestPayment(.nonexistent., ctx)
+    const result = await svc.getLatestPayment('nonexistent', ctx)
     assert.equal(result, undefined)
   })
 })
@@ -309,7 +309,7 @@ describe('👥HR 收银扩展测试', () => {
 //  🔧 安监扩展
 // ════════════════════════════════════════════════
 describe('🔧安监 收银扩展测试', () => {
-  it('安监核对大额订单总金额（正常：人工审计）', () => {
+  it('安监核对大额订单总金额（正常：人工审计）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {
@@ -322,7 +322,7 @@ describe('🔧安监 收银扩展测试', () => {
     const detail = await svc.getOrder(order.orderId, ctx)
     assert.equal(detail!.totalAmount, 2 * 500 + 1 * 1200)
   })
-  it('安监确认已关闭订单手动关闭操作幂等（边界：终态保护）', () => {
+  it('安监确认已关闭订单手动关闭操作幂等（边界：终态保护）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {
@@ -330,11 +330,11 @@ describe('🔧安监 收银扩展测试', () => {
       items: [{ skuId: 'sku-sec3', quantity: 1, price: 100 }]
     })
     svc.createPayment(order.orderId, { channel: 'card' })
-    await svc.closeOrder(order.orderId, ctx, { reason: .安全审计关闭., operator: .auditor. })
+    await svc.closeOrder(order.orderId, ctx, { reason: '安全审计关闭', operator: 'auditor' })
     const { order: result } = await svc.closeOrder(order.orderId, ctx)
     assert.equal(result.status, CashierOrderStatus.Closed)
   })
-  it('安监检查失败支付记录（边界：失败原因追溯）', () => {
+  it('安监检查失败支付记录（边界：失败原因追溯）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {
@@ -387,7 +387,7 @@ describe('🎮导玩员 收银扩展测试', () => {
 //  🎯 运行专员扩展
 // ════════════════════════════════════════════════
 describe('🎯运行专员 收银扩展测试', () => {
-  it('运行专员处理支付回调时验证 transactionNo 记录（正常）', () => {
+  it('运行专员处理支付回调时验证 transactionNo 记录（正常）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {
@@ -410,7 +410,7 @@ describe('🎯运行专员 收银扩展测试', () => {
     assert.equal(result.payment.transactionNo, 'txn-ops-20260630')
     assert.equal(result.payment.status, CashierPaymentStatus.Succeeded)
   })
-  it('运行专员查某订单的所有支付记录（正常）', () => {
+  it('运行专员查某订单的所有支付记录（正常）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {
@@ -443,7 +443,7 @@ describe('🎯运行专员 收银扩展测试', () => {
     assert.equal(succeeded.length, 1)
     assert.equal(failed.length, 1)
   })
-  it('运行专员重复回调不创建新支付（幂等边界）', () => {
+  it('运行专员重复回调不创建新支付（幂等边界）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {
@@ -492,7 +492,7 @@ describe('🤝团建 收银扩展测试', () => {
     assert.equal(order.totalAmount, 5000 + 20 * 15 + 20 * 50)
     assert.equal(order.totalAmount, 6300)
   })
-  it('团建订单支付失败后可重试（正常流程：失败→重试→成功）', () => {
+  it('团建订单支付失败后可重试（正常流程：失败→重试→成功）', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {
@@ -561,7 +561,7 @@ describe('📢营销 收银扩展测试', () => {
 //  状态机扩展边界
 // ════════════════════════════════════════════════
 describe('订单状态机扩展边界', () => {
-  it('已支付订单不可被超时关闭', () => {
+  it('已支付订单不可被超时关闭', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {
@@ -575,12 +575,12 @@ describe('订单状态机扩展边界', () => {
       orderId: order.orderId,
       tenantId: 't-ext'
     })
-    assert.throws(
-      () => await svc.closeTimedOutOrder(order.orderId, ctx),
+    await assert.rejects(
+      () => svc.closeTimedOutOrder(order.orderId, ctx),
       /Paid order .* cannot be timeout-closed/
     )
   })
-  it('已关闭订单超时关闭幂等', () => {
+  it('已关闭订单超时关闭幂等', async () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const order = svc.createOrder(ctx, {

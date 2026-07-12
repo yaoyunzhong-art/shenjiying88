@@ -137,3 +137,118 @@ describe('cashier — 防御', () => {
     assert.ok(src.includes('!paymentMethod'), '支付方式检查');
   });
 });
+
+// ============================================================
+// P0-E1: 前端 API 集成诊断
+// 目标: 确认 storefront cashier 页与后端 API 的集成状态
+// 诊断结果: 🔴 现阶段为纯 Mock 页面,未连接真实后端
+// ============================================================
+
+describe('cashier — API 集成诊断 [P0-E1]', () => {
+  it('[GAP] 页面使用 setTimeout 模拟结账,未调用真实 API', () => {
+    const src = readSource();
+    const hasApiCall =
+      src.includes('fetch(') ||
+      src.includes('axios.') ||
+      src.includes('/api/cashier') ||
+      src.includes('cashierOrder') ||
+      src.includes('createOrder');
+    assert.equal(hasApiCall, false, '页面不应存在真实 API 调用（诊断确认）');
+    // handleCheckout 使用 setTimeout + Math.random, 无真实请求
+    assert.ok(src.includes('setTimeout('), 'handleCheckout 使用 setTimeout');
+    assert.ok(src.includes('Math.random()'), 'handleCheckout 使用随机模拟');
+  });
+
+  it('[GAP] 商品和会员数据为内联 Mock,未从 API 获取', () => {
+    const src = readSource();
+    assert.ok(src.includes('MOCK_PRODUCTS'), '商品数据为内联 Mock');
+    assert.ok(src.includes('MOCK_MEMBER'), '会员数据为内联 Mock');
+    // 未引用任何远程数据源
+    const hasDataFetching =
+      src.includes('useEffect') &&
+      (src.includes('fetch(') || src.includes('loadProducts') || src.includes('loadMember'));
+    assert.equal(hasDataFetching, false, '页面未使用 useEffect 获取数据');
+  });
+
+  it('[GAP] 未导入 @m5/sdk 或其他 API 客户端', () => {
+    const src = readSource();
+    const hasSdkImport =
+      src.includes('@m5/sdk') ||
+      src.includes('@m5/domain') ||
+      src.includes('cashier-pos-service') ||
+      src.includes('ApiClient');
+    assert.equal(hasSdkImport, false, '未导入 API 客户端模块');
+  });
+
+  it('[GAP] 支付处理无真实后端交互,仅前端模拟', () => {
+    const src = readSource();
+    // 支付选择仅更新状态,未触发 API
+    assert.ok(src.includes('handlePaymentSelect'), '支付选择函数存在');
+    assert.ok(src.includes('setPaymentMethod'), '支付状态管理存在');
+    // 无支付 API 调用
+    const hasPaymentApi =
+      src.includes('paymentSubmit') ||
+      src.includes('submitPayment') ||
+      src.includes('/api/payments');
+    assert.equal(!!hasPaymentApi, false, '无支付 API 调用');
+  });
+
+  it('[GAP] 无会员查询 API 交互', () => {
+    const src = readSource();
+    // 会员信息直接使用 MOCK_MEMBER,无查询 API
+    assert.ok(src.includes('MemberInfo'), '会员类型定义存在');
+    assert.ok(src.includes('cardNo'), '会员卡号字段存在');
+    // 无会员查询
+    const hasMemberLookup =
+      src.includes('lookupMember') ||
+      src.includes('searchMember') ||
+      src.includes('fetchMember');
+    assert.equal(!!hasMemberLookup, false, '无会员查询 API');
+  });
+
+  it('[READY] 页面结构支持后续接入 API (handleCheckout 已设计为 async-capable)', () => {
+    const src = readSource();
+    // useCallback + useState 结构可被替换为 async function
+    assert.ok(src.includes('useCallback'), '使用 useCallback 可包装');
+    assert.ok(src.includes('setIsProcessing'), '加载状态管理就绪');
+    assert.ok(src.includes('setCheckoutStatus'), '结账状态管理就绪');
+    assert.ok(src.includes('setMessageText'), '消息状态管理就绪');
+  });
+
+  it('[SUMMARY] 后端 API 已存在 (cashier.service.ts + cashier-pos-service.ts)', () => {
+    // 诊断发现:
+    //   - apps/api/src/modules/cashier/cashier.service.ts  — 后端收银 API
+    //   - apps/tob-web/app/cashier-pos/cashier-pos-service.ts — TOB 端集成服务层
+    //   - packages/sdk/src/index.ts — ApiClient 通用客户端
+    // 但 storefront-web 的 cashier/page.tsx 未使用以上任何模块
+    const src = readSource();
+    // 确认 storefront 页面结构
+    assert.ok(src.includes('export default function CashierPage'), '页面组件就绪');
+    assert.ok(src.includes('PaymentMethod'), '支付类型就绪');
+    assert.ok(src.includes('checkoutStatus'), '结账状态就绪');
+
+    // 打印集成摘要
+    const gapItems = [
+      '❌ 无 API 调用 (纯 setTimeout 模拟)',
+      '❌ 无 useEffect 数据获取',
+      '❌ 未导入 @m5/sdk 或 cashier 服务',
+      '❌ 无真实会员查询',
+      '❌ 无真实支付交互',
+      '❌ 无真实商品数据加载',
+      '✅ 页面 UI 组件完整 (PageShell, Card, Tag, Select, Input, Button)',
+      '✅ 状态管理就绪 (isProcessing, checkoutStatus, messageText)',
+      '✅ 后端 Cashier API 已实现',
+      '✅ TOB cashier-pos-service 提供集成参考',
+    ];
+    // 通过 console 输出集成摘要
+    console.log('\n📊 [P0-E1] Storefront Cashier API 集成诊断报告');
+    console.log('   =============================================');
+    gapItems.forEach((item, i) => console.log(`   ${item}`));
+    console.log('   =============================================');
+    console.log('   🔴 整体状态: 纯 Mock 前端,需进行真实 API 集成');
+    console.log('   🎯 下一步: 参考 tob-web cashier-pos-service.ts 模式');
+    console.log('         引入 @m5/sdk ApiClient 或新建 cashier-service.ts');
+    console.log('         替换 MOCK_PRODUCTS/MOCK_MEMBER -> API 获取');
+    console.log('         替换 setTimeout checkout -> POST /api/cashier/orders');
+  });
+});

@@ -147,7 +147,7 @@ describe(`${ROLES.FrontDesk} 收银增强测试`, () => {
     expect(orderDetail?.status).toBe(CashierOrderStatus.Paid)
     expect(orderDetail?.paidAt).toBeDefined()
 
-    const latestPayment = service.getLatestPayment(order.orderId, ctx)
+    const latestPayment = await service.getLatestPayment(order.orderId, ctx)
     expect(latestPayment?.status).toBe(CashierPaymentStatus.Succeeded)
   })
 
