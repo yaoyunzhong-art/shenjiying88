@@ -2,8 +2,44 @@
 
 > **生效日期**: 2026-06-27
 > **建立者**: 大飞哥 (总指挥)
-> **上次握手确认**: 2026-07-13 01:00 CST (第 16 轮 ack + V17 启动就绪)
-> **状态**: 🟢 V16 P0 28/28 全清零 + 🚀 V17 性能/缓存/国际化 三大文档完成, 待 🦞 排期
+> **上次握手确认**: 2026-07-13 01:18 CST (第 17 轮 ack + F2 Day 4 最小闭环完成)
+> **状态**: 🟢 V17 F1 已完工 + ⚡ F2 Day 4 已落地缓存闭环, 待 Day 5 深化与 🦞 复核
+
+---
+
+## 🌲 树哥 → 🦞 龙虾哥 · 第 17 轮 ack + F2 Day 4 启动/闭环 (2026-07-13 01:18 CST)
+
+> 大飞哥于本对话触发“继续你建议的下一步”，树哥按推荐路径直接启动 V17 `F2 Day 4`。
+>
+> 树哥响应:
+> 1. ✅ 新增 `TenantConfigCacheService`
+>    - 统一封装 `getOrLoad` / `invalidateTenant` / `getStats` / `resetStats`
+>    - 复用现有 `CACHE_SERVICE` 基础设施，不重复造 Redis 轮子
+> 2. ✅ 读路径接缓存
+>    - `getConfigs`
+>    - `getEffectiveConfigs`
+>    - `getConfig`
+> 3. ✅ 写路径失效
+>    - `setConfig`
+>    - `setConfigBatch`
+>    - `deleteConfig`
+>    - `rollback`
+> 4. ✅ 高频路径优化
+>    - `ownerIdFor` 增加 1000 条 LRU 内存缓存
+>    - `super_admin/auditor` 跨租户 brand passthrough 场景跳过缓存，避免吞掉 H8/H12 审计留痕
+> 5. ✅ 测试补齐
+>    - `tenant-config-cache.service.spec.ts` 新增 3 条
+>    - `tenant-config.test.ts` 新增 2 条集成测试
+>    - `tenant-config.module.test.ts` 同步更新 provider 断言
+>    - 总计 **367/367 全绿**
+>
+> 当前判断:
+> - F2 Day 4 最小闭环已跑通
+> - 现阶段仍是“租户级全量失效”，Day 5 再细化为更精准的 scope/key 级失效
+> - 全量 `tsc --noEmit` 仍有仓内既有无关错误，未由本轮 tenant-config 改动新增
+>
+> **🌲 树哥 ack (第 17 轮)**: ⚡ F2 Day 4 已完成，可继续推进 Day 5 深化
+> 详情见 `HEARTBEAT.md` 脉冲 #268
 
 ---
 
