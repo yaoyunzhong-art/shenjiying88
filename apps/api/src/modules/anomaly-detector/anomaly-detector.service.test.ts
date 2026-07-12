@@ -85,8 +85,10 @@ describe('AnomalyDetectorService', () => {
         value: 50,
         history,
       })
-      expect(result.detectors.threeSigma?.detected).toBe(false)
-      expect(result.detectors.iqr?.detected).toBe(false)
+      // threeSigma(需≥3)和IQR(需≥4)在数据不足时不返回
+      expect(result.detectors.threeSigma).toBeUndefined()
+      expect(result.detectors.iqr).toBeUndefined()
+      expect(result.detectors.ewma).toBeDefined()
       expect(result.severity).toBe('NORMAL')
     })
   })

@@ -14,22 +14,31 @@ describe('AiModelConfigService (Complete)', () => {
   // V2 已彻底重构, 方法名/签名均不同
   let service: any
 
+  let store: Map<string, any>
+
   beforeEach(() => {
+    store = new Map([
+      ['model-1', { id: 'model-1', name: 'GPT-4', provider: 'openai', temperature: 0.7 }],
+    ])
+
     service = {
       getModels: vi.fn().mockReturnValue([
         { id: 'model-1', name: 'GPT-4', provider: 'openai' },
         { id: 'model-2', name: 'Claude 3', provider: 'anthropic' },
       ]),
-      getConfig: vi.fn().mockImplementation((id: string) => {
-        if (id === 'model-1') return { id: 'model-1', name: 'GPT-4', provider: 'openai', temperature: 0.7 }
-        return null
-      }),
+      getConfig: vi.fn().mockImplementation((id: string) => store.get(id) ?? null),
       updateConfig: vi.fn().mockImplementation((id: string, data: any) => {
-        if (id === 'model-1') return { id: 'model-1', name: 'GPT-4', provider: 'openai', ...data }
-        return null
+        if (!store.has(id)) return null
+        const updated = { ...store.get(id), ...data }
+        store.set(id, updated)
+        return updated
       }),
       switchVersion: vi.fn().mockReturnValue({ id: 'model-1', version: '2.0', status: 'switched' }),
-      deleteConfig: vi.fn().mockImplementation((id: string) => id === 'model-1'),
+      deleteConfig: vi.fn().mockImplementation((id: string) => {
+        if (!store.has(id)) return false
+        store.delete(id)
+        return true
+      }),
     }
   })
 

@@ -65,7 +65,13 @@ export class AnomalyDetectorService {
   private readonly ewmaState = new Map<string, { value: number; updatedAt: string }>();
 
   configure(config: AnomalyConfig): void {
-    this.config = { ...DEFAULT_CONFIG, ...config };
+    // Only override defined values to avoid undefined poisoning
+    this.config = { ...DEFAULT_CONFIG };
+    if (config.sigmaThreshold !== undefined) this.config.sigmaThreshold = config.sigmaThreshold;
+    if (config.ewmaAlpha !== undefined) this.config.ewmaAlpha = config.ewmaAlpha;
+    if (config.criticalThreshold !== undefined) this.config.criticalThreshold = config.criticalThreshold;
+    if (config.warningThreshold !== undefined) this.config.warningThreshold = config.warningThreshold;
+    if (config.whitelist !== undefined) this.config.whitelist = config.whitelist;
   }
 
   /**
@@ -100,27 +106,31 @@ export class AnomalyDetectorService {
     }
 
     // 1. 3σ 检测
-    const zScoreResult = this.threeSigma(input.history, input.value, cfg.sigmaThreshold);
-    // 2. IQR 检测
-    const iqrResult = this.iqrFence(input.history, input.value);
+    const zScoreResult = input.history.length >= 3
+      ? this.threeSigma(input.history, input.value, cfg.sigmaThreshold)
+      : undefined;
+    // 2. IQR 检测 (需要至少 4 个历史点)
+    const iqrResult = input.history.length >= 4
+      ? this.iqrFence(input.history, input.value)
+      : undefined;
     // 3. EWMA 检测
     const ewmaResult = this.ewma(input.metricKey, input.value, cfg.ewmaAlpha, detectedAt);
 
-    // 综合 score:任一检测器触发即视为异常,综合分 = max(detector score) + 多个检测器叠加加分
-    const zScoreNormalized = zScoreResult.detected
+    // 综合 score: 任一检测器触发即视为异常
+    const zScoreNormalized = zScoreResult?.detected
       ? Math.min(1, Math.abs(zScoreResult.zScore) / cfg.sigmaThreshold)
       : 0;
-    const iqrNormalized = iqrResult.detected
+    const iqrNormalized = iqrResult?.detected
       ? Math.min(1, (iqrResult.deviation ?? 0) / 3)
       : 0;
-    const ewmaNormalized = ewmaResult.detected
+    const ewmaNormalized = ewmaResult?.detected
       ? Math.min(1, (ewmaResult.deviation ?? 0) / 0.5)
       : 0;
 
     // 多检测器一致 → 更确信异常
-    const detectorCount = [zScoreResult.detected, iqrResult.detected, ewmaResult.detected].filter(Boolean).length;
+    const detectedFlags = [zScoreResult?.detected, iqrResult?.detected, ewmaResult?.detected].filter(Boolean).length;
     const detectorMax = Math.max(zScoreNormalized, iqrNormalized, ewmaNormalized);
-    const confidenceBonus = detectorCount >= 2 ? 0.2 : 0;
+    const confidenceBonus = detectedFlags >= 2 ? 0.2 : 0;
     const score = Math.min(1, detectorMax + confidenceBonus);
 
     const severity: AnomalySeverity =
@@ -137,9 +147,9 @@ export class AnomalyDetectorService {
       score,
       severity,
       detectors: {
-        threeSigma: zScoreResult,
-        iqr: iqrResult,
-        ewma: ewmaResult,
+        ...(zScoreResult !== undefined ? { threeSigma: zScoreResult } : {}),
+        ...(iqrResult !== undefined ? { iqr: iqrResult } : {}),
+        ...(ewmaResult !== undefined ? { ewma: ewmaResult } : {}),
       },
       whitelisted: false,
       reason: this.composeReason(zScoreResult, iqrResult, ewmaResult),
@@ -254,14 +264,14 @@ export class AnomalyDetectorService {
   }
 
   private composeReason(
-    z: { detected: boolean; zScore: number },
-    iqr: { detected: boolean },
-    ewma: { detected: boolean },
+    z?: { detected: boolean; zScore: number },
+    iqr?: { detected: boolean },
+    ewma?: { detected: boolean },
   ): string {
     const reasons: string[] = [];
-    if (z.detected) reasons.push(`3σ violated (z=${z.zScore.toFixed(2)})`);
-    if (iqr.detected) reasons.push('IQR fence violated');
-    if (ewma.detected) reasons.push('EWMA drift detected');
+    if (z?.detected) reasons.push(`3σ violated (z=${z.zScore.toFixed(2)})`);
+    if (iqr?.detected) reasons.push('IQR fence violated');
+    if (ewma?.detected) reasons.push('EWMA drift detected');
     return reasons.length > 0 ? reasons.join('; ') : 'No anomaly detected';
   }
 

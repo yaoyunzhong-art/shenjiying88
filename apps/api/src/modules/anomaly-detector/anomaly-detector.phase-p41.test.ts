@@ -365,9 +365,9 @@ describe(`${AI_ROLE} P-41 异常检测 · 角色模拟测试`, () => {
         history,
       })
 
-      // 3σ require >= 3, IQR require >= 4
-      expect(result.detectors.threeSigma?.detected).toBe(false)
-      expect(result.detectors.iqr?.detected).toBe(false)
+      // 3σ require >= 3, IQR require >= 4, 数据不足时检测器不返回
+      expect(result.detectors.threeSigma).toBeUndefined()
+      expect(result.detectors.iqr).toBeUndefined()
       expect(result.severity).toBe('NORMAL')
     })
 
@@ -381,12 +381,10 @@ describe(`${AI_ROLE} P-41 异常检测 · 角色模拟测试`, () => {
         history,
       })
 
-      // 3σ needs >= 3 so it works; IQR needs >= 4 so it returns {detected: false, ...}
-      if (result.detectors.threeSigma) {
-        expect(result.detectors.threeSigma!.detected).toBe(true) // 3σ 可用
-      }
-      // IQR with < 4 points returns detected=false (not undefined)
-      expect(result.detectors.iqr?.detected).toBe(false)
+      // 3σ needs >= 3 so it works
+      expect(result.detectors.threeSigma?.detected).toBe(true)
+      // IQR with < 4 points does not return
+      expect(result.detectors.iqr).toBeUndefined()
     })
   })
 

@@ -107,13 +107,13 @@ describe(`${ROLES.StoreManager} anomaly-detector 角色测试`, () => {
 
     const result = ctrl.detectBatch({
       points: [
-        { metricKey: 'store-a-revenue', value: 15000, history: makeHistory([14000, 14200, 13800, 14500, 14100]) },
+        { metricKey: 'store-a-revenue', value: 14300, history: makeHistory([14000, 14200, 13800, 14500, 14100]) },
         { metricKey: 'store-b-customer-count', value: 30, history: makeHistory([300, 310, 290, 305, 295]) },
       ],
     })
 
     expect(result.data.length).toBe(2)
-    // store-a 正常
+    // store-a 正常 (14300 vs 均值14120, 在3σ范围内)
     expect(result.data[0].metricKey).toBe('store-a-revenue')
     expect(result.data[0].severity).toBe('NORMAL')
     // store-b 客流暴跌
@@ -165,8 +165,11 @@ describe(`${ROLES.FrontDesk} anomaly-detector 角色测试`, () => {
     })
     // 由于没有足够历史，检测器均不触发 → NORMAL
     expect(result.data.severity).toBe('NORMAL')
+    // threeSigma (需≥3个历史点) 和 IQR (需≥4个历史点) 在数据不足时不返回
     expect(result.data.detectors.threeSigma).toBeUndefined()
     expect(result.data.detectors.iqr).toBeUndefined()
+    // EWMA 始终初始化跟踪
+    expect(result.data.detectors.ewma).toBeDefined()
   })
 })
 
@@ -384,7 +387,7 @@ describe(`${ROLES.Operations} anomaly-detector 角色测试`, () => {
     // 小幅波动在 sigma=4 下分数较低
     const mildResult = ctrl.detect({
       metricKey: 'tuned-cpu',
-      value: 108,
+      value: 103,
       history,
     })
     expect(mildResult.data.score).toBeLessThan(result.data.score)

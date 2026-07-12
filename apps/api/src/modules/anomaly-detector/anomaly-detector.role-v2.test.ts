@@ -127,17 +127,16 @@ describe(`${ROLES.StoreManager} 门店级异常监控`, () => {
 // ═══════════════════════════════════════════════════════════════════
 describe(`${ROLES.FrontDesk} 收银异常数据监控`, () => {
   it('前台检测支付失败率飙升 — 批量检测识别多个异常指标', () => {
-    const { controller } = createController()
-    // Use separate fresh controllers for each metric to avoid EWMA cross-contamination
-    const { controller: ctrl1 } = createController()
-    const highHistory: TimeSeriesPoint[] = Array.from({ length: 20 }, () => ({
-      timestamp: new Date().toISOString(), value: 2 + (Math.random() - 0.5) * 0.5, //labels: {},
+    // 使用固定历史数据避免随机性导致不稳定
+    const highHistory: TimeSeriesPoint[] = Array.from({ length: 20 }, (_, i) => ({
+      timestamp: new Date().toISOString(), value: 2 + (i % 5) * 0.5,
     }))
+    const { controller: ctrl1 } = createController()
     const r1 = ctrl1.detect({ metricKey: 'payment.failure.rate', value: 15, history: highHistory })
     assert.ok(r1.data.score > 0.5, `first point is anomalous: score=${r1.data.score}`)
 
     const { controller: ctrl2 } = createController()
-    const r2 = ctrl2.detect({ metricKey: 'payment.failure.rate', value: 2.5, history: highHistory })
+    const r2 = ctrl2.detect({ metricKey: 'payment.failure.rate', value: 2.1, history: highHistory })
     assert.ok(r2.data.severity === 'NORMAL', `second point normal: severity=${r2.data.severity}`)
 
     const { controller: ctrl3 } = createController()
@@ -182,16 +181,19 @@ describe(`${ROLES.HR} 员工指标异常检测`, () => {
     // Use a fresh controller so EWMA is clean
     const { service, controller } = createController()
     controller.configure({ sigmaThreshold: 3, criticalThreshold: 0.8, warningThreshold: 0.5 })
-    const history = makeStableHistory(10, 20, 1) // ~10 次迟到
+    // 固定历史数据，标准差约2.8，10.5在均值1σ内
+    const history: TimeSeriesPoint[] = [5, 8, 12, 9, 11, 7, 13, 10, 6, 14, 8, 11, 9, 12, 7, 10, 13, 8, 11, 9].map(v => ({
+      timestamp: new Date().toISOString(), value: v,
+    }))
     const result = controller.detect({
       metricKey: 'attendance.late.count',
-      value: 12,
+      value: 10.5,
       history,
     })
-    // 12 vs mean~10 is within 2σ → should be NORMAL or at most WARNING
+    // 10.5 vs mean~10 within 1σ → should be NORMAL
     assert.ok(
-      result.data.severity === 'NORMAL' || result.data.severity === 'WARNING',
-      `12 with mean~10 should be normal or warning, got ${result.data.severity}`
+      result.data.severity === 'NORMAL',
+      `10.5 with mean~10 should be normal, got ${result.data.severity}`
     )
   })
 
@@ -316,14 +318,17 @@ describe(`${ROLES.Guide} 游戏设备异常检测`, () => {
 
   it('导玩员检测多台机器状态 — 批量检测', () => {
     const { controller } = createController()
-    const cpuHistory = makeStableHistory(40, 10, 5)
+    // 使用固定数据避免随机性：mean≈40, stddev≈5.8, 45在1σ内
+    const cpuHistory: TimeSeriesPoint[] = [30, 35, 40, 45, 50, 35, 40, 45, 30, 50].map(v => ({
+      timestamp: new Date().toISOString(), value: v,
+    }))
     const points = [
       { metricKey: 'machine.A.cpu', value: 92, history: cpuHistory },
       { metricKey: 'machine.B.cpu', value: 45, history: cpuHistory },
     ]
     const batch = controller.detectBatch({ points })
     assert.ok(batch.data[0].score > 0.5, 'machine A cpu anomaly')
-    // B: 45 vs mean 40 ± 5 是正常范围
+    // B: 45 vs mean 40 ± 10 是正常范围
     assert.ok(batch.data[1].severity !== 'CRITICAL', 'machine B cpu should not be critical')
   })
 

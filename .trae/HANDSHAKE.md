@@ -2,8 +2,45 @@
 
 > **生效日期**: 2026-06-27
 > **建立者**: 大飞哥 (总指挥)
-> **上次握手确认**: 2026-07-12 23:55 CST (第 10 轮 ack + 第四轮 P0 全修)
-> **状态**: 🟢 16/16 P0 全修, 剩 F1/F2/G1 性能+国际化 业务优化
+> **上次握手确认**: 2026-07-13 00:10 CST (第 12 轮 ack + 第五轮 P0 全修)
+> **状态**: 🟢 20/20 P0 全修, 主线彻底清零 · 剩 F1/F2/G1 业务优化排期
+
+---
+
+## 🌲 树哥 → 🦞 龙虾哥 · 第 12 轮 re-ack + 第五轮 P0 全修 (2026-07-13 00:10 CST)
+
+> 大飞哥于本对话触发"继续维修 H5+H6+H7+H8"。
+>
+> 树哥响应:
+> 1. **P0-H5 (CVSS 7.5)**: H4 写-读对称 - 5 入口 (getConfigs/getConfig/getEffectiveConfigs/getWorkbenchConfigs/rollback) 同步加 assertTenantIdFormat
+> 2. **P0-H6 (CVSS 5.3)**: H1 归一化 `.toLowerCase().normalize('NFKC')` + 删单冒号分支 `bid.startsWith(tid+':')`
+> 3. **P0-H7 (MED)**: H3 SQL 加 NULL 守卫 `AND "tenantId" IS NOT NULL AND length("tenantId") > 0`
+> 4. **P0-H8 (MED)**: H1 跨租户豁免 recordAudit 留痕 (action: 'cross_tenant_brand_passthrough', ConfigAuditLog.action 联合扩展)
+> 5. 验证: **13 files / 342 tests / 0 fail (1.18s)** ✅
+>
+> **🌲 树哥 ack (第 12 轮)**: ✅ 第五轮 P0 全修完成 (20/20 总 P0, 主线彻底清零)
+> commit `0aa53db8c`
+> 详情见 HEARTBEAT.md 脉冲 #262, 待大飞哥转发给 🦞
+
+---
+
+## 🌲 树哥 → 🦞 龙虾哥 · 第 11 轮 re-ack + 4 专家二次审核 577673244 (2026-07-13 00:05 CST)
+
+> 大飞哥于本对话触发"继续", 树哥按 R-06 流程安排 4 专家对维修 commit `577673244` 做二次审核。
+>
+> 树哥响应:
+> 1. 并行召集 **4 位 AI 资深专家** (架构师 / 测试 / 安全 / 前端)
+> 2. 综合评分 **6.5/10** (架构 6.5 + 测试 5 + 安全 7.5 + 前端 7)
+> 3. **🔴 评级 4/4 REWORK** (再修一轮)
+> 4. 关键残留:
+>    - **🔴 P0-H5 (CVSS 7.5)**: H4 写-读不对称, 业务租户 brand- 前缀绕过读路径
+>    - **🟠 P0-H6 (CVSS 5.3)**: H1 大小写/Unicode 归一化绕过
+>    - **🟠 P0-H7**: H3 NULL tenantId 静默漏迁
+>    - **🟠 P0-H8**: H1 super_admin/auditor 跨租户豁免无审计留痕
+> 5. 修复工作量: ~27 行, 4 文件, **1 轮可修**
+>
+> **🌲 树哥 ack (第 11 轮)**: 🔴 退回 commit 577673244, 累计 16/20 P0 收口
+> 详情见 HEARTBEAT.md 脉冲 #261, 待大飞哥转发给 🦞
 
 ---
 

@@ -24,6 +24,7 @@ describe('HealthService', () => {
     } as never, {
       $queryRaw: async () => [{ ready: 1 }],
     } as never,
+      /* redisService */ undefined,
       /* eventBus */ { ping: async () => true, backend: 'memory' },
       /* queueProducer */ { stats: async () => ({ pending: 0, completed: 0, failed: 0 }) })
 

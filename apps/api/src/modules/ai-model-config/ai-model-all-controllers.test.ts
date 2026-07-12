@@ -77,18 +77,31 @@ describe('AiReviewController', () => {
   let service: AIReviewService
 
   beforeEach(() => {
-    service = {} as unknown as AIReviewService
+    service = {
+      reviewPRDiff: vi.fn().mockResolvedValue({
+        output: { overallScore: 85, strengths: ['clean code'], summary: 'Good', needsApproverReview: false },
+        totalLatencyMs: 10,
+        cacheHit: false,
+      }),
+    } as unknown as AIReviewService
     controller = new AIReviewController(service)
   })
 
   it('should be defined', () => { expect(controller).toBeDefined() })
 
-  it('POST /review should review code', () => {
-    const result = (controller as any).reviewCode({
-      files: [{ path: 'test.ts', content: 'const x = 1;' }],
-      language: 'typescript',
-    })
+  it('POST /review should review code', async () => {
+    const result = await (controller as any).submitReview(
+      'tenant-1',
+      {
+        repository: 'test/repo',
+        pullRequestId: 'pr-1',
+        title: 'Test PR',
+        description: 'Testing',
+        files: [{ filePath: 'test.ts', language: 'typescript', diff: '+const x = 1;', additions: 1, deletions: 0 }],
+      },
+    )
     expect(result).toBeDefined()
+    expect(result.reviewId).toBeDefined()
   })
 })
 

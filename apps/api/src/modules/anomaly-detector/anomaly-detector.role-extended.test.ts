@@ -189,7 +189,7 @@ describe(`${ROLES.FrontDesk} anomaly-detector 扩展测试`, () => {
     const ctrl = createController()
     const minimalHistory = makeHistory([10])
 
-    // 只有一个历史点，3σ(需≥3)和IQR(需≥4)静默，但EWMA有初始值
+    // 只有一个历史点，3σ(需≥3)和IQR(需≥4)静默(不返回)，EWMA有初始值
     const result = ctrl.detect({
       metricKey: 'first-ever-metric',
       value: 999,
@@ -197,8 +197,8 @@ describe(`${ROLES.FrontDesk} anomaly-detector 扩展测试`, () => {
     })
 
     expect(result.data.severity).toBe('NORMAL')
-    // threeSigma 返回 {zScore:0, detected: false} 而非 undefined
-    expect(result.data.detectors.threeSigma!.detected).toBe(false)
+    // threeSigma(需≥3历史点)在数据不足时不返回
+    expect(result.data.detectors.threeSigma).toBeUndefined()
     expect(result.data.detectors.iqr).toBeUndefined()
     expect(result.data.detectors.ewma).toBeDefined() // EWMA 记录初始值
   })
@@ -426,7 +426,7 @@ describe(`${ROLES.Guide} anomaly-detector 扩展测试`, () => {
 
     const result = ctrl.detect({
       metricKey: 'old-machine-usage',
-      value: 0.28, // 继续下滑，偏离EWMA
+      value: 0.15, // 从0.35到0.15偏离超过50%，EWMA应检测
       history: decliningHistory,
     })
 
@@ -501,10 +501,10 @@ describe(`${ROLES.Operations} anomaly-detector 扩展测试`, () => {
     })
 
     expect(result.data.length).toBe(1)
-    // 无历史数据，3σ(需≥3)和IQR(需≥4)静默返回 {detected:false}
+    // 无历史数据，3σ(需≥3)和IQR(需≥4)静默不返回
     expect(result.data[0].severity).toBe('NORMAL')
-    // 3σ 返回 {zScore:0,detected:false} 而非 undefined
-    expect(result.data[0].detectors.threeSigma!.detected).toBe(false)
+    // threeSigma(需≥3历史点)在数据不足时不返回
+    expect(result.data[0].detectors.threeSigma).toBeUndefined()
     expect(result.data[0].detectors.iqr).toBeUndefined()
   })
 })
