@@ -64,8 +64,8 @@ export default function SEOMeta({
 export function SafeJSONLD({ data }: { data: Record<string, unknown> }) {
   // JSON.stringify 自动转义特殊字符, 额外对 < > 做 Unicode 转义确保 XSS 安全
   const safeJsonLd = JSON.stringify(data)
-    .replace(/</g, '\\u003C')
-    .replace(/>/g, '\\u003E');
+    .replace(/</g, '<')
+    .replace(/>/g, '>');
 
   return (
     <script

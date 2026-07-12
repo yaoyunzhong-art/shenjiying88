@@ -91,7 +91,8 @@ describe('ops-manager/page — 防御性编程', () => {
   it('应使用 PageShell 包装且不直接暴露内部实现', () => {
     const src = readSource();
     // 应该只有 PageShell + 组件，没有裸 DOM/div 包装
-    const exportLine = src.split('\n').find(l => l.trim().startsWith('export default'));
+    const exportLine = src.split('
+').find(l => l.trim().startsWith('export default'));
     assert.ok(exportLine);
   });
 

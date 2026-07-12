@@ -317,10 +317,11 @@ export class TenantConfigService implements OnModuleInit {
     }
 
     // 真正回滚 value (解密后), 并保持原 encrypted 标志
+    // P0-B1 修复: rollback 后 version 设为目标版本 (而非 +1), 与测试期望一致
     const decryptedRolledValue = target.encrypted ? decryptField(rolledValue) : rolledValue
     const previousValue = target.value
     target.value = target.encrypted ? encryptField(decryptedRolledValue) : decryptedRolledValue
-    target.version = target.version + 1   // rollback 自身产生新版本
+    target.version = targetVersion
     target.updatedBy = ctx.userId ?? 'system'
     target.updatedAt = new Date().toISOString()
 
