@@ -145,7 +145,12 @@ export interface TenantConfigAuditLog {
   tenantId: string;
   previousValue?: string;
   newValue?: string;
-  action: 'create' | 'update' | 'delete' | 'rollback';
+  /**
+   * 动作类型 (P0-J4: 扩展联合, 与后端 ConfigAuditLog.action 同步)
+   * - create / update / delete / rollback: 业务操作
+   * - cross_tenant_brand_passthrough: P0-H8 super_admin/auditor 跨租户 brandId 豁免审计
+   */
+  action: 'create' | 'update' | 'delete' | 'rollback' | 'cross_tenant_brand_passthrough';
   operator: string;
   operatorRole: string;
   timestamp: string;
@@ -804,6 +809,27 @@ export async function loadFoundationGovernanceReadModel(
   };
 }
 
+/**
+ * P0-J4: 统一 API 错误类型, 透传后端 i18nKey/code/status
+ * 前端可基于 i18nKey 走 i18next, code 走业务分流, status 走 HTTP 兜底
+ */
+export class ApiError extends Error {
+  public readonly code?: string
+  public readonly i18nKey?: string
+
+  constructor(
+    public readonly status: number,
+    message: string,
+    code?: string,
+    i18nKey?: string,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+    this.code = code
+    this.i18nKey = i18nKey
+  }
+}
+
 export class ApiClient {
   constructor(private readonly options: ApiClientOptions) {}
 
@@ -830,7 +856,20 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
+      // P0-J4 修复: 透传错误体 (含 i18nKey/code/message), 前端可做 i18n 友好化
+      // 而非仅抛 'Request failed with status 403' 黑盒
+      const errorBody = (await response.json().catch(() => ({}))) as {
+        message?: string;
+        code?: string;
+        i18nKey?: string;
+        statusCode?: number;
+      }
+      throw new ApiError(
+        response.status,
+        errorBody.message ?? `Request failed with status ${response.status}`,
+        errorBody.code,
+        errorBody.i18nKey,
+      )
     }
 
     return (await response.json()) as ApiResult<T>;

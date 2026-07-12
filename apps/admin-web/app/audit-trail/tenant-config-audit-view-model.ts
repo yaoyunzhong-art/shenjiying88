@@ -72,11 +72,14 @@ const MODULE_FROM_KEY = (key: string): AuditModule => {
   return 'settings';
 };
 
-const ACTION_TO_RESULT: Record<'create' | 'update' | 'delete' | 'rollback', AuditResult> = {
+const ACTION_TO_RESULT: Record<'create' | 'update' | 'delete' | 'rollback' | 'cross_tenant_brand_passthrough', AuditResult> = {
   create: 'success',
   update: 'success',
   delete: 'success',
   rollback: 'success',
+  // P0-J4: super_admin/auditor 跨租户 brandId 透传是审计留痕, 非实际业务修改
+  // 视图中以"拦截"变体展示, 提示运营这是审计事件而非配置变更
+  cross_tenant_brand_passthrough: 'blocked',
 };
 
 function mapLogToView(log: TenantConfigAuditLog): TenantConfigAuditView {
@@ -86,8 +89,13 @@ function mapLogToView(log: TenantConfigAuditLog): TenantConfigAuditView {
     : log.action === 'update' ? 'update'
     : log.action === 'delete' ? 'delete'
     : log.action === 'rollback' ? 'approve'
+    // P0-J4: 跨租户 brandId 透传审计展示为"查看", 但 result 走 blocked
+    : log.action === 'cross_tenant_brand_passthrough' ? 'view'
     : 'view';
-  const detail = log.newValue
+  // P0-J4: 跨租户 brandId 透传审计, 详情透出原始 brandId/tenantId 供安全审计回查
+  const detail = log.action === 'cross_tenant_brand_passthrough'
+    ? `跨租户 brandId 透传审计: brandId=${log.context?.originalBrandId ?? log.ownerId}, tenantId=${log.context?.originalTenantId ?? log.tenantId}, 原因: ${log.context?.reason ?? 'super_admin_or_auditor_passthrough'}`
+    : log.newValue
     ? `将 ${log.key} 更新为 ${log.newValue}${log.previousValue ? ` (前值 ${log.previousValue})` : ''}`
     : `操作 ${log.key}`;
   return {

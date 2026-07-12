@@ -112,11 +112,18 @@ describe(`${ROLES.StoreManager} 店长全局运维场景`, () => {
   })
 
   it('🔴 [异常] 店长发现关键系统持续降级 — 应检测到异常', async () => {
-    // 让 mem 呈上升趋势（从 60 升到 155，确保 zScore > 2.5）
-    for (let i = 0; i < 20; i++) {
+    // 10 个基线值 70 + 10 个加速上升值，确保 zScore > 2.5
+    for (let i = 0; i < 10; i++) {
       detector.recordDataPoint(
         'pos-system_mem',
-        makePoint(60 + i * 5, (20 - i) * 30000),
+        makePoint(70, (20 - i) * 60000),
+      )
+    }
+    const rises = [100, 150, 250, 400, 700, 1200, 2000, 3000, 4000, 5500]
+    for (let i = 0; i < rises.length; i++) {
+      detector.recordDataPoint(
+        'pos-system_mem',
+        makePoint(rises[i], (rises.length - i) * 60000),
       )
     }
 
