@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
  * 🐜 自动: [reservation] [A] module.test 补全
  */
@@ -8,15 +7,14 @@ import assert from 'node:assert/strict'
 
 describe('ReservationModule', () => {
   it('should be defined', () => {
-    const { ReservationModule } = require('./reservation.module')
     const mod = new ReservationModule()
     assert.ok(mod instanceof ReservationModule)
   })
 
-  it('should have correct module metadata', () => {
-    const { ReservationModule } = require('./reservation.module')
-    const { ReservationController } = require('./reservation.controller')
-    const { ReservationService } = require('./reservation.service')
+  it('should have correct module metadata', async () => {
+    const { ReservationModule } = await import('./reservation.module')
+    const { ReservationController } = await import('./reservation.controller')
+    const { ReservationService } = await import('./reservation.service')
 
     const controllers = Reflect.getMetadata('controllers', ReservationModule)
     const providers = Reflect.getMetadata('providers', ReservationModule)
@@ -26,8 +24,8 @@ describe('ReservationModule', () => {
     assert.ok(providers)
     assert.ok(exports)
 
-    assert.ok(controllers.includes(ReservationController))
-    assert.ok(providers.includes(ReservationService))
-    assert.ok(exports.includes(ReservationService))
+    assert.ok(controllers?.includes?.(ReservationController))
+    assert.ok(providers?.includes?.(ReservationService))
+    assert.ok(exports?.includes?.(ReservationService))
   })
 })
