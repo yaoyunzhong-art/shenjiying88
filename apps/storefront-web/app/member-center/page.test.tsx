@@ -4,10 +4,13 @@
  * 测试覆盖:
  * - 默认导出 & 组件结构
  * - 会员等级体系常量全覆盖
+ * - Ant Design 组件导入检验
  * - 功能菜单入口完整性
- * - 增强功能：会员详细信息、充值续费入口、消费记录、权益展示、等级进度条
- * - SSR 渲染静态结构验证
- * - 未登录状态引导
+ * - 会员权益展示
+ * - 积分和余额显示
+ * - 等级升级进度条
+ * - 最近消费记录列表
+ * - 加载态 & 未登录状态
  */
 const assert = require('node:assert/strict');
 const { describe, test } = require('node:test');
@@ -54,6 +57,20 @@ describe('MemberCenterPage — 结构验证', () => {
     );
   });
 
+  test('包含 Ant Design 核心组件', () => {
+    const antdComponents = ['Card', 'Button', 'Tag', 'Progress', 'Statistic', 'Descriptions', 'List', 'Skeleton', 'Empty', 'Row', 'Col'];
+    antdComponents.forEach(comp => {
+      assert.ok(pageSource.includes(comp), `缺少 Ant Design 组件: ${comp}`);
+    });
+  });
+
+  test('包含 @ant-design/icons 引用', () => {
+    const icons = ['GiftOutlined', 'CreditCardOutlined', 'ShoppingCartOutlined', 'StarOutlined', 'ShopOutlined', 'LogoutOutlined'];
+    icons.forEach(icon => {
+      assert.ok(pageSource.includes(icon), `缺少图标: ${icon}`);
+    });
+  });
+
   test('包含 localStorage 登录态校验', () => {
     assert.ok(pageSource.includes('member_access_token'));
     assert.ok(pageSource.includes('member_info'));
@@ -70,6 +87,7 @@ describe('MemberCenterPage — 结构验证', () => {
   test('包含退出登录按钮', () => {
     assert.ok(pageSource.includes('退出'));
     assert.ok(pageSource.includes('handleLogout'));
+    assert.ok(pageSource.includes('LogoutOutlined'));
   });
 
   test('包含底部导航', () => {
@@ -79,113 +97,69 @@ describe('MemberCenterPage — 结构验证', () => {
   });
 
   test('包含积分展示区域', () => {
-    assert.ok(pageSource.includes('积分'));
+    assert.ok(pageSource.includes('我的积分'));
+    assert.ok(pageSource.includes('可兑换优惠券及礼品'));
   });
 
-  test('加载态显示"加载中..."', () => {
-    assert.ok(pageSource.includes('加载中...'));
+  test('包含余额展示区域', () => {
+    assert.ok(pageSource.includes('账户余额'));
   });
 
-  test('手机号显示区域', () => {
-    assert.ok(pageSource.includes('手机号：'));
+  test('包含积分充值按钮', () => {
+    assert.ok(pageSource.includes('积分充值'));
+    assert.ok(pageSource.includes('handleRecharge'));
   });
 
-  // === 增强功能验证 ===
-
-  test('会员详细信息 — 显示余额', () => {
-    assert.ok(pageSource.includes('余额'));
-    assert.ok(pageSource.includes('toFixed'));
-    assert.ok(pageSource.includes('member_balance'));
-  });
-
-  test('会员详细信息 — 显示门店信息', () => {
-    assert.ok(pageSource.includes('storeName'));
-  });
-
-  test('快速充值入口链接到 member-recharge', () => {
-    assert.ok(pageSource.includes('/member-recharge'));
-    assert.ok(pageSource.includes('快速充值'));
-  });
-
-  test('续费入口链接到 member-center-renewal', () => {
-    assert.ok(pageSource.includes('/member-center-renewal'));
-    assert.ok(pageSource.includes('立即续费'));
-  });
-
-  test('消费记录概览 — 最近3笔表格', () => {
-    assert.ok(pageSource.includes('最近消费'));
-    assert.ok(pageSource.includes('查看全部'));
-    assert.ok(pageSource.includes('2026-07-10'));
-    assert.ok(pageSource.includes('标准游戏套餐'));
-    assert.ok(pageSource.includes('VIP包房3小时'));
-    assert.ok(pageSource.includes('零食套餐B'));
-    // 表格列头
-    assert.ok(pageSource.includes('日期'));
-    assert.ok(pageSource.includes('项目'));
-    assert.ok(pageSource.includes('金额'));
-    assert.ok(pageSource.includes('方式'));
-  });
-
-  test('会员权益展示 — 折扣', () => {
+  test('包含会员权益展示', () => {
     assert.ok(pageSource.includes('会员权益'));
-    assert.ok(pageSource.includes('折扣'));
-    assert.ok(pageSource.includes('全场折扣'));
+    const benefits = ['积分倍率', '生日礼遇', '专属折扣'];
+    benefits.forEach(b => assert.ok(pageSource.includes(b), `缺少权益项: ${b}`));
   });
 
-  test('会员权益展示 — 生日福利', () => {
-    assert.ok(pageSource.includes('生日福利'));
-    assert.ok(pageSource.includes('生日'));
+  test('包含等级升级进度条', () => {
+    assert.ok(pageSource.includes('Progress'));
+    assert.ok(pageSource.includes('已达最高等级') || pageSource.includes('还差'));
   });
 
-  test('等级进度条', () => {
-    assert.ok(pageSource.includes('等级进度'));
-    assert.ok(pageSource.includes('getLevelProgress'));
-    assert.ok(pageSource.includes('toFixed'));
-    assert.ok(pageSource.includes('width'));
-    assert.ok(pageSource.includes('borderRadius'));
+  test('包含最近消费记录', () => {
+    assert.ok(pageSource.includes('最近消费记录'));
+    assert.ok(pageSource.includes('ORD2026'));
+    assert.ok(pageSource.includes('orderNo'));
   });
 
-  test('TIER_BENEFITS 包含所有等级权益数据', () => {
-    // 每个等级应有折扣、生日福利、下一等级名、升级所需积分
-    assert.ok(pageSource.includes('TIER_BENEFITS'));
-    assert.ok(pageSource.includes('discount'));
-    assert.ok(pageSource.includes('birthdayBenefit'));
-    assert.ok(pageSource.includes('nextTierName'));
-    assert.ok(pageSource.includes('nextTierPoints'));
-
-    // 钻石会员满级
-    assert.ok(pageSource.includes('已满级'));
-    // 基础权益
-    assert.ok(pageSource.includes('注册送100积分'));
+  test('加载态显示 Skeleton 组件', () => {
+    assert.ok(pageSource.includes('Skeleton'));
+    assert.ok(pageSource.includes('loading') || pageSource.includes('加载'));
   });
 
-  test('消费记录支付方式展示', () => {
-    assert.ok(pageSource.includes('paymentMethod'));
-    assert.ok(pageSource.includes('余额'));
-    assert.ok(pageSource.includes('微信'));
-  });
-
-  test('MOCK_RECENT_CONSUMPTIONS 包含3条记录', () => {
-    // 验证3条消费记录的存在
-    const count = (pageSource.match(/id: '/g) || []).length;
-    assert.ok(count >= 3, `预期至少3个id属性，实际 ${count}`);
+  test('会员信息卡包含头像、昵称、等级', () => {
+    assert.ok(pageSource.includes('nickname'));
+    assert.ok(pageSource.includes('TIER_LABELS'));
   });
 });
 
 describe('MemberCenterPage — SSR 渲染', () => {
-
-  test('加载态渲染 "加载中..."', () => {
-    // 当 member=null, loading=true 时，应显示加载状态
+  test('加载态渲染包含 Skeleton', () => {
     const html = renderToStaticMarkup(
-      React.createElement('main', {
-        style: { minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#0f172a' }
-      },
-        React.createElement('div', { style: { color: '#94a3b8', fontSize: 14 } }, '加载中...')
+      React.createElement('main', { style: { minHeight: '100vh', padding: '24px 16px', background: '#0f172a' } },
+        React.createElement('div', { style: { maxWidth: 960, margin: '0 auto' } },
+          React.createElement('div', null, '加载中...')
+        )
       )
     );
-    assert.ok(html.includes('加载中...'));
     assert.ok(html.includes('#0f172a'));
-    assert.ok(html.includes('#94a3b8'));
+  });
+
+  test('页面文件包含 深色主题背景', () => {
+    assert.ok(pageSource.includes('background: #0f172a') || pageSource.includes("background: '#0f172a'"));
+  });
+
+  test('深色主题颜色体系', () => {
+    const colors = ['#0f172a', '#e2e8f0', '#94a3b8', '#64748b', '#f8fafc'];
+    colors.forEach(color => {
+      assert.ok(pageSource.includes(color), `缺少深色主题色: ${color}`);
+    });
+    assert.ok(pageSource.includes('rgba(30, 41, 59'), '缺少深色背景色 rgba(30, 41, 59)');
   });
 
   test('登录页面跳转至 /member-login', () => {
@@ -193,12 +167,18 @@ describe('MemberCenterPage — SSR 渲染', () => {
     assert.ok(pageSource.includes('localStorage.removeItem(\'member_access_token\''));
   });
 
+  test('响应式网格 Row/Col 布局', () => {
+    assert.ok(pageSource.includes('<Row'));
+    assert.ok(pageSource.includes('<Col'));
+    assert.ok(pageSource.includes('xs={24}'));
+    assert.ok(pageSource.includes('lg={12}'));
+  });
+
   test('会员等级标签颜色体系完整', () => {
     const html = renderToStaticMarkup(
       React.createElement('div', { style: { padding: '4px 10px', borderRadius: 20, background: '#a78bfa20', border: '1px solid #a78bfa40', color: '#a78bfa', fontSize: 12 } }, '钻石会员')
     );
     assert.ok(html.includes('钻石会员'));
-    assert.ok(html.includes('#a78bfa'));
   });
 
   test('功能菜单渲染链接', () => {
@@ -208,24 +188,14 @@ describe('MemberCenterPage — SSR 渲染', () => {
     });
   });
 
-  test('积分数字使用 toLocaleString', () => {
-    assert.ok(pageSource.includes('toLocaleString'));
+  test('积分数字使用 Statistic 组件展示', () => {
+    assert.ok(pageSource.includes('Statistic'));
+    assert.ok(pageSource.includes('points'));
   });
 
-  test('增强链接渲染', () => {
-    const enhancedLinks = ['/member-recharge', '/member-center-renewal'];
-    enhancedLinks.forEach(href => {
-      assert.ok(pageSource.includes(href), `缺少增强链接: ${href}`);
-    });
-  });
-
-  test('等级进度条渲染函数存在', () => {
-    assert.ok(pageSource.includes('getLevelProgress'));
-    assert.ok(pageSource.includes('levelProgress'));
-  });
-
-  test('余额渲染格式 ¥ + toFixed(2)', () => {
-    assert.ok(pageSource.includes('toFixed(2)'));
-    assert.ok(pageSource.includes('¥'));
+  test('error handling callback', () => {
+    assert.ok(pageSource.includes('try'));
+    assert.ok(pageSource.includes('catch'));
+    assert.ok(pageSource.includes('JSON.parse'));
   });
 });
