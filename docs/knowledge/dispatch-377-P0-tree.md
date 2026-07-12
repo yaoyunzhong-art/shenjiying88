@@ -94,4 +94,10 @@ pulse#385缓存报告3✖ → **pulse#386 force验证揭露真实~40✖**
 - [x] `pnpm turbo typecheck --filter=@m5/storefront-web --force` 通过 (0 errors ✅)
 - [ ] `pnpm turbo test --filter=@m5/admin-web --force` 通过 (0 failures) → 迁移至dispatch-378
 - [x] 不影响已有测试: storefront 4,950/4,950✅
-- [x] app 222/222✅ miniapp 494/494✅ mobile 314/314✅ tob 1,587/1,587✅
+- [x] app 222/222✅ miniapp 494/494✅ tob 1,587/1,587✅
+
+## 后续追踪 — pulse#389 (06:18)
+- **TSC 14/14 force全绿**: storefront 0✖确认无回归 ✅
+- **admin test 84✖**: 不变(dispatch-378首次零commit)
+- **app test 222/222**: force验证成功(43"✖"为测试名文字·非失败)
+- **最终确认**: storefront部分✅ **已稳定闭环**

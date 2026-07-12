@@ -3,6 +3,7 @@
 > **来源**: dispatch-377-P0 闭环后(storefront TSC已修)剩余admin部分
 > **核心任务**: 修复suppliers/page.test.tsx 4个真实断言失败 + 定义假阳过滤策略
 > **创建**: pulse#388 (05:33) · **优先级**: 高(非P0)
+> **存活脉冲**: 1次 (pulse#389 首次零commit)
 
 ---
 
@@ -31,6 +32,12 @@
 - ⛔ Safety (4✖)
 - ⛔ StoresLayout (7✖)
 - ⛔ categories-data (3✖)
+
+## 脉冲追踪
+| 脉冲 | 时间 | 状态 | 备注 |
+|:----:|:----:|:----:|:----|
+| pulse#388 | 05:33 | 🆕 创建 | 树文件就绪·待执行 |
+| pulse#389 | 06:18 | 🔴 首次零commit | 45min无提交·正常等待期 |
 
 ## 验收标准
 - [ ] `pnpm turbo test --filter=@m5/admin-web --force` suppliers部分通过
