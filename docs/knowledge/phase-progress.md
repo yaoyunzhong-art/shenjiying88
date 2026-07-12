@@ -102,3 +102,4 @@
 | 2026-07-12 09:40 | pulse#351 | 全库(非api) [清晨稳态维持 — 无新回归，RQ派单等待首次闭环验收] | Base✅(TSC14/14)/Service✅/Controller⚠️(store7/tob4/miniapp12)/CTest✅(admin✅/app✅/mobile✅) | 0🏆 |
 | 2026-07-12 10:03 | pulse#352 | 全库(非api) [稳态维持·RQ-001~005派出1.5h未闭合·需重派/升级] | Base✅(TSC14/14)/Service✅/Controller⚠️(store7/tob4/miniapp12)/CTest✅(admin✅/app✅/mobile✅) | 0🏆 |
 | 2026-07-12 10:33 | pulse#353 | 全库(非api) [稳态维持·RQ-001~005>2h未闭合→**P0升级强制重派树哥**] | Base✅(TSC14/14)/Service✅/Controller⚠️(store7/tob4/miniapp12)/CTest✅(admin✅/app✅/mobile✅) | 0🏆 |
+| 2026-07-12 11:08 | pulse#354 | 全库(非api) [稳态维持·RQ-001~005>2.5h仍未闭合·**P0已连升3次·触发通知链→强制P0重派+负责人告警**] | Base✅(TSC14/14)/Service✅/Controller⚠️(store7/tob4/miniapp12)/CTest✅(admin✅/app✅/mobile✅) | 0🏆 |
