@@ -165,6 +165,10 @@ export default function RedeemCenterPage() {
   const handleRedeem = (id: string) => {
     const item = MOCK_REDEEM_ITEMS.find((i) => i.id === id);
     if (!item) return;
+    if (MOCK_POINTS_BALANCE < item.points) {
+      Taro.showToast({ title: '积分不足', icon: 'none' });
+      return;
+    }
     Taro.showModal({
       title: '确认兑换',
       content: `确定用 ${item.points.toLocaleString()} 积分兑换「${item.name}」吗？`,
