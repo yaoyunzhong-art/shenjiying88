@@ -23,7 +23,7 @@ export interface ConfigAuditLogInput {
   level: ConfigLevel
   ownerId: string
   tenantId: string
-  action: 'create' | 'update' | 'delete' | 'rollback'
+  action: 'create' | 'update' | 'delete' | 'rollback' | 'cross_tenant_brand_passthrough'
   operator: string
   operatorRole: string
   previousValue?: string

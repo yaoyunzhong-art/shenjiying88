@@ -116,20 +116,20 @@ function maskValue(sensitivity: ConfigSensitivity, value: string | number | bool
   return String(value ?? '')
 }
 
-// Phase-FP P0-C7 + P0-H1 修复: ownerIdFor 与生产代码对齐
-// 三级 fallback: ctx.brandId (校验归属) > ctx.tenantId.startsWith('brand-') > ${tenantId}::brand-fallback
+// Phase-FP P0-C7 + P0-H1 + P0-H6 修复: ownerIdFor 与生产代码完全同步
+// 三级 fallback: ctx.brandId (校验归属+NFKC) > ctx.tenantId.startsWith('brand-') > ${tenantId}::brand-fallback
 function ownerIdFor(ctx: TenantCtx, level: ConfigLevel): string {
   if (level === 'store') return ctx.storeId ?? 'store-default'
   if (level === 'tenant') return ctx.tenantId
-  // brand 级别: 与 [tenant-config.service.ts:636-649] 生产实现同步
+  // brand 级别: 与 [tenant-config.service.ts:636-649] 生产实现完全同步 (P0-H10)
   if (ctx.brandId) {
-    // P0-H1: 校验 brandId 归属 (生产 service 抛 Forbidden, 测试内联简化为返回值检测)
+    // P0-H1 + H6: 校验 brandId 归属 (NFKC 归一化, 仅允许 ${tid}:: 双冒号)
     if (ctx.role !== 'super_admin' && ctx.role !== 'auditor') {
-      const tid = ctx.tenantId
-      const bid = ctx.brandId
-      const belongs = bid === tid || bid.startsWith(`${tid}::`) || bid.startsWith(`${tid}:`)
+      const tid = (ctx.tenantId ?? '').toLowerCase().normalize('NFKC')
+      const bid = ctx.brandId.toLowerCase().normalize('NFKC')
+      const belongs = bid === tid || bid.startsWith(`${tid}::`)  // P0-H6 删单冒号
       if (!belongs) {
-        throw new Error(`Forbidden: brandId=${bid} does not belong to tenantId=${tid}`)
+        throw new Error(`Forbidden: brandId=${ctx.brandId} does not belong to tenantId=${ctx.tenantId}`)
       }
     }
     return ctx.brandId
@@ -391,6 +391,28 @@ describe('TenantConfigService 边界', () => {
   it('[C7-D] super_admin 跨租户 brandId 豁免 (审计场景)', () => {
     const ctx: TenantCtx = { tenantId: 'tenant-A', brandId: 'any-brand', role: 'super_admin' }
     expect(ownerIdFor(ctx, 'brand')).toBe('any-brand') // 豁免
+  })
+
+  // ── Phase-FP P0-H6 真实 ownerIdFor 测试 (覆盖大小写/Unicode bypass 防护) ──
+
+  it('[H6-A] 大小写 bypass 防护: brandId="TENANT-A::X" tenantId="tenant-a" → 归属 (NFKC+toLowerCase)', () => {
+    const ctx: TenantCtx = { tenantId: 'tenant-a', brandId: 'TENANT-A::X', role: 'brand_admin' }
+    expect(ownerIdFor(ctx, 'brand')).toBe('TENANT-A::X')
+  })
+
+  it('[H6-B] 单冒号 tenant-A:sub → 抛 Forbidden (P0-H6 收紧后)', () => {
+    const ctx: TenantCtx = { tenantId: 'tenant-A', brandId: 'tenant-A:sub', role: 'brand_admin' }
+    expect(() => ownerIdFor(ctx, 'brand')).toThrow(/Forbidden.*brandId.*does not belong to tenantId/)
+  })
+
+  it('[H6-C] Unicode NFKC 归一化: 全角 "ｔｅｎａｎｔ-Ａ" → 应与半角 tenantId 归属', () => {
+    const ctx: TenantCtx = { tenantId: 'tenant-A', brandId: 'ｔｅｎａｎｔ-Ａ::X', role: 'brand_admin' }
+    expect(ownerIdFor(ctx, 'brand')).toBe('ｔｅｎａｎｔ-Ａ::X') // NFKC 后归属
+  })
+
+  it('[H6-D] brandId="" 空串视为未提供, 降级到 ::brand-fallback', () => {
+    const ctx: TenantCtx = { tenantId: 'tenant-X', brandId: '', role: 'tenant_admin' }
+    expect(ownerIdFor(ctx, 'brand')).toBe('tenant-X::brand-fallback')
   })
 
   it('[D29] 缺失 role 权限校验抛错', () => {

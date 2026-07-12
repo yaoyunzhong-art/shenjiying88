@@ -236,6 +236,9 @@ export class TenantConfigService implements OnModuleInit {
   async setConfigBatch(items: SetConfigRequest[]): Promise<ConfigInstance[]> {
     if (items.length === 0) return []
     const ctx = requireTenantContext()
+    // Phase-FP P0-H11 修复: 预校验阶段加 assertTenantIdFormat
+    // 防业务租户用 brand- 前缀 ctx.tenantId 走 batch 接口绕过
+    this.assertTenantIdFormat(ctx)
     // Phase-FP P0-A2 修复: 预校验 - 所有项先过 def 存在性 + 角色权限 + 值校验
     // 任何一项预校验失败则整批拒绝, 避免部分写入
     for (const item of items) {
@@ -668,7 +671,7 @@ export class TenantConfigService implements OnModuleInit {
    */
   private assertBrandIdBelongsToTenant(ctx: TenantContext): void {
     if (!ctx.brandId) return
-    // 跨租户审计豁免 (P0-H8: 留痕)
+    // 跨租户审计豁免 (P0-H8: 留痕 + P0-H12: 原文追溯)
     if (ctx.role === 'super_admin' || ctx.role === 'auditor') {
       this.recordAudit({
         configId: 'cross-tenant-brand-access',
@@ -679,6 +682,14 @@ export class TenantConfigService implements OnModuleInit {
         action: 'cross_tenant_brand_passthrough',
         operator: ctx.userId ?? 'system',
         operatorRole: ctx.role ?? 'viewer',
+        // P0-H12: 原文追溯 context, 防归一化后证据丢失
+        context: {
+          originalBrandId: ctx.brandId,
+          originalTenantId: ctx.tenantId,
+          normalized: true,
+          reason: 'super_admin_or_auditor_passthrough',
+          timestamp: new Date().toISOString(),
+        },
       })
       return
     }
