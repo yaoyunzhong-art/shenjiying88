@@ -342,11 +342,11 @@ describe('[auto-rollback] 合约: 业务逻辑', () => {
   })
 
   it('listRecords() 应支持按 status 过滤', async () => {
-    svc.trigger({ reason: 'r1', severity: 'WARNING', metricKey: 'm1', anomalyValue: 200, baselineValue: 100 })
+    svc.trigger({ reason: 'r1', severity: 'WARNING', metricKey: 'm1', anomalyValue: 110, baselineValue: 100 })
     svc.resetForTests()
     // 重置后重新触发
     svc.configure({ criticalRequiresConfirm: false })
-    const r1 = svc.trigger({ reason: 'r1', severity: 'WARNING', metricKey: 'm1', anomalyValue: 200, baselineValue: 100 })
+    const r1 = svc.trigger({ reason: 'r1', severity: 'WARNING', metricKey: 'm1', anomalyValue: 110, baselineValue: 100 })
     await new Promise((r) => setTimeout(r, 300))
     let activeRecords = svc.listRecords({ status: 'COMPLETED' })
     // WARNING 应在 300ms 内完成;若未完成给更多时间
