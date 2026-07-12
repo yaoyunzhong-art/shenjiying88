@@ -1,32 +1,9 @@
-// ⚙️ 设置中心 — 门店基础参数配置
-
+// ⚙️ 设置中心 · 门店基础参数配置
 'use client';
-
-import { PageShell } from '@m5/ui';
-
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col } from '@m5/ui';
 export default function SettingsPage() {
-  return (
-    <PageShell>
-      <div style={{
-        padding: 24, background: '#1e293b', borderRadius: 12,
-        border: '1px solid rgba(148, 163, 184, 0.12)',
-      }}>
-        <div style={{ fontSize: 28, marginBottom: 12 }}>⚙️</div>
-        <h2 style={{ color: '#f8fafc', fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
-          设置中心
-        </h2>
-        <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>
-          门店基础参数配置
-        </p>
-        <div style={{
-          marginTop: 24, padding: 20, borderRadius: 8,
-          background: 'rgba(15, 23, 42, 0.6)',
-          border: '1px solid rgba(148, 163, 184, 0.08)',
-          color: '#64748b', fontSize: 14, textAlign: 'center',
-        }}>
-          功能开发中 · 树哥正在施工 🐜
-        </div>
-      </div>
-    </PageShell>
-  );
+  return (<PageShell><Space style={{width:'100%',flexDirection:'column',gap:16,alignItems:'stretch'}}>
+    <h2 style={{color:'#f8fafc',margin:0}}>⚙️ 设置中心</h2>
+    <Card><div style={{color:'#64748b',fontSize:14,textAlign:'center',padding:40}}>门店基础参数配置<br/>功能开发中 · 树哥正在施工 🐜</div></Card>
+  </Space></PageShell>);
 }
