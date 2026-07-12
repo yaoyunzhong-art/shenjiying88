@@ -506,6 +506,9 @@ importers:
 
   apps/storefront-web:
     dependencies:
+      '@ant-design/icons':
+        specifier: ^6.3.2
+        version: 6.3.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@m5/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -518,6 +521,9 @@ importers:
       '@m5/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      antd:
+        specifier: ^6.5.0
+        version: 6.5.0(date-fns@3.6.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next:
         specifier: ^15.3.5
         version: 15.5.19(@opentelemetry/api@1.9.1)(@playwright/test@1.61.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.100.0)
@@ -1811,7 +1817,7 @@ packages:
 
   '@expo/bunyan@4.0.1':
     resolution: {integrity: sha512-+Lla7nYSiHZirgK+U/uYzsLv/X+HaJienbD5AKX1UQZHYfWaP+9uuQluRB4GrEVWF0GZ7vEVp/jzaOT9k/SQlg==}
-    engines: {'0': node >=0.10.0}
+    engines: {node: '>=0.10.0'}
 
   '@expo/cli@0.18.31':
     resolution: {integrity: sha512-v9llw9fT3Uv+TCM6Xllo54t672CuYtinEQZ2LPJ2EJsCwuTc4Cd2gXQaouuIVD21VoeGQnr5JtJuWbF97sBKzQ==}
@@ -3095,6 +3101,7 @@ packages:
   '@opentelemetry/propagation-utils@0.30.16':
     resolution: {integrity: sha512-ZVQ3Z/PQ+2GQlrBfbMMMT0U7MzvYZLCPP800+ooyaBqm4hMvuQHfP028gB9/db0mwkmyEAMad9houukUVxhwcw==}
     engines: {node: '>=14'}
+    deprecated: The use of process spans has been removed from Messaging Semantic Conventions. It is now recommended to connect pub/sub spans via Span Links. See https://opentelemetry.io/docs/specs/semconv/messaging/messaging-spans/ for details.
     peerDependencies:
       '@opentelemetry/api': ^1.0.0
 
@@ -7572,6 +7579,7 @@ packages:
   git-raw-commits@5.0.1:
     resolution: {integrity: sha512-Y+csSm2GD/PCSh6Isd/WiMjNAydu0VBiG9J7EdQsNA5P9uXvLayqjmTsNlK5Gs9IhblFZqOU0yid5Il5JPoLiQ==}
     engines: {node: '>=18'}
+    deprecated: Deprecated and no longer maintained. Use @conventional-changelog/git-client instead.
     hasBin: true
 
   glob-parent@5.1.2:
@@ -16575,9 +16583,7 @@ snapshots:
     transitivePeerDependencies:
       - '@babel/core'
       - '@babel/preset-env'
-      - bufferutil
       - supports-color
-      - utf-8-validate
 
   '@react-native/normalize-colors@0.74.85': {}
 
