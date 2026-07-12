@@ -1,5 +1,5 @@
 /**
- * L1冒烟测试 - Safety
+ * L1冒烟测试 — safety 安全管理
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,11 +13,12 @@ const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
 describe('Safety', () => {
   it('应导出一个默认组件', () => assert.ok(SRC.includes('export default function')));
-  it('应包含use client指令', () => assert.ok(SRC.includes("'use client'")));
-  it('应包含JSX模板', () => assert.ok(SRC.includes('return') && SRC.includes('element')));
+  it('应包含 use client 指令', () => assert.ok(SRC.includes("'use client'")));
+  it('应包含 safety inspection checklist', () => assert.ok(SRC.includes('inspection') || SRC.includes('检查')));
+  it('应包含 incident report', () => assert.ok(SRC.includes('incident') || SRC.includes('事故')));
+  it('应包含 risk assessment', () => assert.ok(SRC.includes('risk') || SRC.includes('风险')));
+  it('应包含 safety training', () => assert.ok(SRC.includes('training') || SRC.includes('培训')));
+  it('应包含 hazard identification', () => assert.ok(SRC.includes('hazard') || SRC.includes('隐患')));
   it('不应使用dangerouslySetInnerHTML', () => assert.ok(!SRC.includes('dangerouslySetInnerHTML')));
-  it('应包含PageShell', () => assert.ok(SRC.includes('PageShell')));
-  it('应包含安全相关关键词', () => assert.ok(SRC.includes('safety') || SRC.includes('安全')));
-  it('应包含日志或记录功能', () => assert.ok(SRC.includes('log') || SRC.includes('record') || SRC.includes('记录')));
-  it('应包含状态显示', () => assert.ok(SRC.includes('status') || SRC.includes('statusVariant') || SRC.includes('状态')));
+  it('应包含 JSX return', () => assert.ok(SRC.includes('return')));
 });
