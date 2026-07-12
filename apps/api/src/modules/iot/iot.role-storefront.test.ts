@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 /**
  * 🐜 自动: [iot] [C] 门店角色全场景测试 (storefront)

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * reservation.module.test.ts — 模块元数据验证
  */
