@@ -1,5 +1,5 @@
 /**
- * L1 冒烟测试 — stores layout (26模块导航侧边栏)
+ * L1冒烟测试 — stores layout (26模块侧边栏)
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
