@@ -2,8 +2,25 @@
 
 > **生效日期**: 2026-06-27
 > **建立者**: 大飞哥 (总指挥)
-> **上次握手确认**: 2026-07-12 20:50 CST (第 5 轮 ack + 综合代码审核)
-> **状态**: 🔴 退回 (BLOCK) — 见 §本轮审核
+> **上次握手确认**: 2026-07-12 23:10 CST (第 6 轮 ack + 4 核心 P0 修复)
+> **状态**: 🟢 4 核心 P0 已修, 剩余 8 P0 排期
+
+---
+
+## 🌲 树哥 → 🦞 龙虾哥 · 第 6 轮 re-ack + 4 核心 P0 修复 (2026-07-12 23:10 CST)
+
+> 大飞哥于本对话触发"选项 B: 修 4 核心 P0 (A1 持久化 + B1 rollback + C2 跨租户 + E1 前端集成)"。
+>
+> 树哥响应:
+> 1. **P0-A1 持久化** (subagent 1): 接入 Prisma `ConfigInstance` + `ConfigAuditLog` 两 model, repository 双写 DB+内存, OnModuleInit 预热, race-safe commit `a2eb893d8`
+> 2. **P0-B1 rollback Bug** (直接修): service.ts rollback 改为通过 auditLogs 链回溯 targetVersion 真实值, value 真回滚, 加密保持, 完整审计
+> 3. **P0-C2 assertStoreOwnership** (直接修): 新增 assertOwnerAccess 私有方法, setConfig/rollback 入口调用 + IDOR 校验 (target.ownerId vs ctx.storeId/tenantId)
+> 4. **P0-E1 前端集成** (subagent 2): SDK 7 client 方法 + admin-web 3 新页面 (audit-trail 真实化 + three-level 配置页) + sidebar 导航 + 角色映射
+> 5. 原子 commit `b0dcea605` (A1 已 race-safe)
+>
+> **🌲 树哥 ack (第 6 轮)**: ✅ 4 核心 P0 修复完成 + 双 commit 落库
+> 验证: 13 files / 338 tests / 0 fail + pnpm -r typecheck 全过
+> 详情见 HEARTBEAT.md 脉冲 #256, 待大飞哥转发给 🦞
 
 ---
 
