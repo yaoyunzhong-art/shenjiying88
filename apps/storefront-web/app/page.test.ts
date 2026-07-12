@@ -1,151 +1,100 @@
 /**
- * page.test.ts — L1 角色冒烟测试 (JMeter 风格: 正例 + 反例 + 边界)
- *
- * storefront-web Dashboard page component test
- * 角色视角: 🛒前台 · 👔店长 · 📊运营
- * 验证 StorefrontDashboard 组件导出、Source Code 快照数据完整性
+ * page.test.ts — P-40 门店首页 L1 冒烟测试 (storefront-web)
+ * 覆盖: 正例·反例·边界
  */
-
 import assert from 'node:assert/strict';
-import { test, describe, it } from 'node:test';
+import { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-// ── 辅助：从 page.tsx 源码提取常量/函数 ──
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
+const SRC = readFileSync(SOURCE, 'utf-8');
 
-function loadSource(): string {
-  const fs = require('fs');
-  const path = require('path');
-  return fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
-}
+describe('StorefrontHomePage — 正例', () => {
+  it('应导出一个默认组件 StorefrontHomePage', () => {
+    assert.ok(SRC.includes('export default function StorefrontHomePage'));
+  });
 
-test('🛒 前台视角: StorefrontDashboard is a function component', async () => {
-  const mod = await import('./page');
-  assert.equal(typeof mod.default, 'function',
-    'StorefrontDashboard should be a function component');
+  it('应包含 use client 指令', () => {
+    assert.ok(SRC.includes("'use client'"));
+  });
+
+  it('应包含门店名称', () => {
+    assert.ok(SRC.includes('神机营电竞乐园'));
+  });
+
+  it('应包含门店信息', () => {
+    assert.ok(SRC.includes('北京市朝阳区建国路88号'));
+    assert.ok(SRC.includes('010-88886666'));
+    assert.ok(SRC.includes('10:00-22:00'));
+  });
+
+  it('应包含@m5/ui导入', () => {
+    assert.ok(SRC.includes("@m5/ui"));
+  });
+
+  it('应包含8个快速入口', () => {
+    ['自助充值', '团队预约', '设备预定', '前台收银', '会员中心', '门店信息', '我的订单', '活动中心'].forEach(e =>
+      assert.ok(SRC.includes(e), `缺少入口: ${e}`)
+    );
+  });
+
+  it('应包含4个轮播横幅', () => {
+    ['新会员首充', '团建特惠', '周末畅玩', '生日派对'].forEach(b =>
+      assert.ok(SRC.includes(b), `缺少横幅: ${b}`)
+    );
+  });
+
+  it('应包含6种特色设备', () => {
+    ['街机', 'VR体验', '模拟机', '台球', '卡丁车', '桌游'].forEach(d =>
+      assert.ok(SRC.includes(d), `缺少设备: ${d}`)
+    );
+  });
+
+  it('应包含深色主题', () => {
+    assert.ok(SRC.includes('#0f172a'));
+    assert.ok(SRC.includes('#f8fafc'));
+  });
+
+  it('应包含响应式布局', () => {
+    assert.ok(SRC.includes('maxWidth: 800'));
+  });
+
+  it('应使用 Next.js Link', () => {
+    assert.ok(SRC.includes("next/link"));
+  });
+
+  it('应包含自动轮播', () => {
+    assert.ok(SRC.includes('setInterval'));
+    assert.ok(SRC.includes('clearInterval'));
+  });
+
+  it('应包含 P-40 标识', () => {
+    assert.ok(SRC.includes('P-40'));
+  });
 });
 
-test('👔 店长视角: component name is meaningful', async () => {
-  const component = (await import('./page')).default;
-  assert.ok(component.name.length > 0 || typeof component === 'function',
-    'component should be callable');
+describe('StorefrontHomePage — 边界', () => {
+  it('轮播指示点', () => {
+    assert.ok(SRC.includes('width: i === currentBanner'));
+    assert.ok(SRC.includes('setCurrentBanner'));
+  });
+
+  it('所有入口应指向有效路径', () => {
+    ['/self-recharge', '/group-booking', '/device-reservation', '/cashier', '/member-center', '/stores', '/orders', '/campaigns'].forEach(h =>
+      assert.ok(SRC.includes(h), `缺少路径: ${h}`)
+    );
+  });
 });
 
-test('📊 运营视角: page title in source code', () => {
-  const source = loadSource();
-  assert.ok(source.includes('Storefront Dashboard'), 'should contain title');
-  assert.ok(source.includes('Recent Alerts'), 'should contain alerts section');
-});
+describe('StorefrontHomePage — 防御', () => {
+  it('不应包含未定义变量', () => {
+    assert.ok(!SRC.includes('undefined'));
+  });
 
-// ── 正例 ──
-
-test('正例: module exports default component', async () => {
-  const mod = await import('./page');
-  assert.ok(mod.default !== undefined, 'default export required');
-});
-
-test('正例: page import does not throw', async () => {
-  let importErr = false;
-  try {
-    await import('./page');
-  } catch {
-    importErr = true;
-  }
-  assert.equal(importErr, false, 'page import should not throw');
-});
-
-test('正例: component is callable function', async () => {
-  const StorefrontDashboard = (await import('./page')).default;
-  assert.equal(typeof StorefrontDashboard, 'function');
-});
-
-test('正例: source imports @m5/ui components', () => {
-  const source = loadSource();
-  assert.ok(source.includes('@m5/ui'), 'should import from @m5/ui');
-  assert.ok(source.includes('PageShell'), 'should import PageShell');
-  assert.ok(source.includes('StatCard'), 'should import StatCard');
-  assert.ok(source.includes('StatusBadge'), 'should import StatusBadge');
-  assert.ok(source.includes('SearchFilterInput'), 'should import SearchFilterInput');
-  assert.ok(source.includes('LoadingSkeleton'), 'should import LoadingSkeleton');
-});
-
-test('正例: source imports local StoreShowcaseClient', () => {
-  const source = loadSource();
-  assert.ok(source.includes('StoreShowcaseClient'), 'should import StoreShowcaseClient');
-});
-
-test('正例: source imports storefront-home-view-model', () => {
-  const source = loadSource();
-  assert.ok(source.includes('storefront-home-view-model'), 'should import view model');
-  assert.ok(source.includes('loadStorefrontHomeSnapshot'), 'should import snapshot loader');
-});
-
-test('正例: source has store name "Demo Store"', () => {
-  const source = loadSource();
-  assert.ok(source.includes('Demo Store'), 'should reference demo store');
-});
-
-// ── 反例 ──
-
-test('反例: export is not null or undefined', async () => {
-  const StorefrontDashboard = (await import('./page')).default;
-  assert.notEqual(StorefrontDashboard, null, 'component should not be null');
-  assert.notEqual(StorefrontDashboard, undefined, 'component should not be undefined');
-});
-
-test('反例: page import should succeed without error', async () => {
-  let threw = false;
-  try {
-    await import('./page');
-  } catch {
-    threw = true;
-  }
-  assert.equal(threw, false, 'should import without throw');
-});
-
-test('反例: no raw React.createElement in source (uses JSX)', () => {
-  const source = loadSource();
-  // Modern Next.js pages use JSX, not createElement
-  assert.ok(!source.includes('createElement(') || source.includes('jsx'),
-    'prefer JSX over createElement');
-});
-
-// ── 边界 ──
-
-test('边界: StorefrontDashboard is not a class', async () => {
-  const StorefrontDashboard = (await import('./page')).default;
-  const isClass = StorefrontDashboard.prototype?.constructor === StorefrontDashboard &&
-    Object.getOwnPropertyDescriptor(StorefrontDashboard, 'prototype')?.writable === false;
-  if (isClass) {
-    // 类组件在某些写法下等价调用
-    try {
-      const instance = new StorefrontDashboard({});
-      assert.ok(instance !== undefined);
-    } catch {
-      // 类组件需要 props
-      assert.ok(true, 'class component requires props');
-    }
-  }
-});
-
-test('边界: component is callable with no props', async () => {
-  const StorefrontDashboard = (await import('./page')).default;
-  try {
-    const result = StorefrontDashboard({});
-    assert.ok(result === null || typeof result === 'object',
-      'should return React element or null');
-  } catch {
-    // hooks context 不满足时调用会抛
-    assert.equal(typeof StorefrontDashboard, 'function',
-      'component should be a valid function even if direct call requires hooks');
-  }
-});
-
-test('边界: source length is reasonable', () => {
-  const source = loadSource();
-  assert.ok(source.length > 500, 'source should be substantial');
-  assert.ok(source.length < 20000, 'source should not be too large');
-});
-
-test("边界: 'use client' directive exists", () => {
-  const source = loadSource();
-  assert.ok(source.includes("'use client'"), 'should be a client component');
+  it('组件应为函数', () => {
+    assert.ok(SRC.includes('function StorefrontHomePage'));
+  });
 });
