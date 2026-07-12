@@ -130,3 +130,4 @@
 
 | 2026-07-12 17:36 | pulse#366 | 全库(非api) [TSC14/14连续9次·dispatch-365✅闭·member-old.ts清理·app222/222✅·tob残1✖·storefront残2✖·新派dispatch-366清storefront-__smoke__] | Base✅(TSC14/14✅✅✅✅✅)/Service✅(app222/222✅)/Controller⚠️(tob1✖/store2✖)/CTest✅(admin✅/store✅/app✅) | 0🏆 |
 | 2026-07-12 18:10 | pulse#367 | 全库(非api) [TSC14/14连续10次·dispatch-366❌第1次验收(storefront 2✖未闭)·tob缓存揭示4✖(原1✖)·miniapp 4✖·重派dispatch-367] | Base✅(TSC14/14✅✅✅✅✅✅)/Service✅/Controller⚠️(tob4✖/store2✖/miniapp4✖)/CTest✅(admin✅/app✅) | 0🏆 |
+| 2026-07-12 18:38 | 🏪 P-35~P-40店A冲刺 | 6页面上线(3619行/133测试全绿)·P-35收银/P-36会员/P-37自助充值/P-38预约/P-39设备/P-40首页·smoke41/41全绿 | 113commit/1043总·TSC14/14·零hang | 6🏆 |
