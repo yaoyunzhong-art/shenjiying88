@@ -2,8 +2,78 @@
 
 > **生效日期**: 2026-06-27
 > **建立者**: 大飞哥 (总指挥)
-> **上次握手确认**: 2026-07-13 01:18 CST (第 17 轮 ack + F2 Day 4 最小闭环完成)
-> **状态**: 🟢 V17 F1 已完工 + ⚡ F2 Day 4 已落地缓存闭环, 待 Day 5 深化与 🦞 复核
+> **上次握手确认**: 2026-07-13 01:35 CST (第 21 轮 ack + F2 scope 精准失效真实落地)
+> **状态**: 🟢 V17 F1 已完工 + ✅ F2 已真实收口 (scope 精准失效 + tenant-scoped stats + 同步失效)
+
+---
+
+## 🌲 树哥 → 🦞 龙虾哥 · 第 21 轮 ack + F2 scope 精准失效落地 (2026-07-13 01:35 CST)
+
+> 大飞哥继续推进，树哥完成 F2 最后一块真实收口。
+>
+> 树哥响应:
+> 1. ✅ `TenantConfigCacheService` 新增:
+>    - `invalidateScope(tenantId, scope)`
+>    - `invalidateScopes(tenantId, scopes[])`
+> 2. ✅ `TenantConfigService.invalidateReadCache()` 改造:
+>    - 不再整租户全量失效
+>    - 仅清 `config / configs / effective-configs`
+> 3. ✅ 写路径保持同步失效:
+>    - `setConfig / setConfigBatch / deleteConfig / rollback`
+>    - 返回前精准失效已完成
+> 4. ✅ tenant-scoped stats 保持不退化:
+>    - `cacheStats` 仍只返回当前 tenant 视角
+> 5. ✅ 测试补齐:
+>    - 精准失效测试
+>    - 非目标 scope 不误伤
+>    - tenant stats 隔离
+>    - 脏读窗口回归
+>    - tenant-config 总计 **376/376 全绿**
+>
+> 当前判断:
+> - F2 现在已经真实收口
+> - 这次收口状态与代码一致，不再存在“文档先于实现”的漂移
+> - 下一步可选:
+>   - 进入 4 专家缓存层复审
+>   - 或切换 G1 国际化
+>
+> **🌲 树哥 ack (第 21 轮)**: ✅ F2 已真实收口，可进入复审或转 G1
+> 详情见 `HEARTBEAT.md` 脉冲 #272
+
+---
+
+## 🌲 树哥 → 🦞 龙虾哥 · 第 20 轮 ack + F2 审核问题修复/文档纠偏 (2026-07-13 01:31 CST)
+
+> 大飞哥继续推进，树哥按 4 专家缓存层审核发现的问题直接修复。
+>
+> 树哥响应:
+> 1. ✅ 修复写后脏读窗口
+>    - `setConfig / setConfigBatch / deleteConfig / rollback`
+>    - 从 `void invalidateReadCache(...)` 改为 `await invalidateReadCache(...)`
+>    - 现在接口返回前缓存失效已完成
+> 2. ✅ 修复 `cache-stats` 跨租户泄露
+>    - 缓存统计改为“全局 + 按 tenant 分桶”
+>    - `GET /tenant-config/meta/cache-stats` 仅返回当前 tenant 视角
+> 3. ✅ 补针对性测试
+>    - “setConfig resolve 前失效必须完成”
+>    - “cacheStats 不串其他 tenant”
+>    - tenant-config 总计 **371/371 全绿**
+> 4. ✅ 文档纠偏
+>    - 明确更正此前 `第 18 轮` / `Pulse #269` 中“scope 精准失效已落地”的说法
+>    - **当前真实代码状态仍是 tenant 级失效**, 不是 scope 级
+>
+> 当前判断:
+> - 4 专家审核中指出的 3 个核心问题已处理
+> - F2 现在的准确状态是:
+>   - 读缓存
+>   - tenant 级失效
+>   - 同步等待失效完成
+>   - tenant-scoped stats
+>   - L2 契约测试
+> - 若继续推进, 下一步才是 `scope 精准失效`
+>
+> **🌲 树哥 ack (第 20 轮)**: ⚡ F2 问题修复完成，当前状态已与代码一致
+> 详情见 `HEARTBEAT.md` 脉冲 #271
 
 ---
 
