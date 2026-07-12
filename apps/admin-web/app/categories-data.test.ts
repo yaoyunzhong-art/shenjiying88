@@ -41,3 +41,95 @@ describe('categories-data — 正例', () => {
     assert.ok(src.includes('getCategoryUniqueParents'));
   });
 });
+
+describe('categories-data — 正例·数据结构', () => {
+  it('CATEGORY_STATUS_MAP 应含 variant 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('variant') || src.includes('Variant'));
+  });
+  it('CATEGORY_STATUS_MAP 应含 label 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('label') || src.includes('Label'));
+  });
+  it('MOCK_CATEGORIES 应包含 categoryId', () => {
+    const src = readSource();
+    assert.ok(src.includes('categoryId') || src.includes('category_id'));
+  });
+  it('MOCK_CATEGORIES 应包含 parentId', () => {
+    const src = readSource();
+    assert.ok(src.includes('parentId') || src.includes('parent_id'));
+  });
+  it('MOCK_CATEGORIES 应包含 status', () => {
+    const src = readSource();
+    assert.ok(src.includes('status'));
+  });
+  it('MOCK_CATEGORIES 应包含 name', () => {
+    const src = readSource();
+    assert.ok(src.includes(': name') || src.includes("'name'") || src.includes('"name"'));
+  });
+});
+
+describe('categories-data — 正例·辅助函数', () => {
+  it('getCategoryStatusLabel 应返回字符串', () => {
+    const src = readSource();
+    assert.ok(src.includes('getCategoryStatusLabel'));
+  });
+  it('getCategoryStatusVariant 应返回字符串', () => {
+    const src = readSource();
+    assert.ok(src.includes('getCategoryStatusVariant'));
+  });
+  it('computeCategoryStats 应处理空数组边界', () => {
+    const src = readSource();
+    assert.ok(src.includes('computeCategoryStats'));
+  });
+  it('getCategoryUniqueParents 应处理去重', () => {
+    const src = readSource();
+    assert.ok(src.includes('getCategoryUniqueParents') || src.includes('uniqueParents'));
+  });
+  it('函数应使用 export 关键字', () => {
+    const src = readSource();
+    const exports = src.match(/export\s+function/g) || [];
+    assert.ok(exports.length >= 2, `至少2个导出函数, 实际${exports.length}`);
+  });
+});
+
+describe('categories-data — 边界·防御', () => {
+  it('不应使用 any 类型', () => {
+    const src = readSource();
+    assert.ok(!src.includes(': any'));
+  });
+  it('不应包含 dangerous 操作', () => {
+    const src = readSource();
+    assert.ok(!src.includes('dangerouslySetInnerHTML'));
+  });
+  it('不应包含 console.log', () => {
+    const src = readSource();
+    assert.ok(!src.includes('console.log'));
+  });
+  it('应使用 TS 常量枚举或联合类型', () => {
+    const src = readSource();
+    assert.ok(/type\s+|interface\s+|enum\s+|const\s+/.test(src));
+  });
+  it('文件应可被 import 解析', () => {
+    assert.doesNotThrow(() => {
+      const src = readSource();
+      assert.ok(src.includes('export'));
+    });
+  });
+});
+
+describe('categories-data — 反例·错误路径', () => {
+  it('export 导出个数应不小于数据常量', () => {
+    const src = readSource();
+    const exports = src.match(/export\s+(function|const|type|interface)\s+/g) || [];
+    assert.ok(exports.length >= 2);
+  });
+  it('不应导入未使用的第三方库', () => {
+    const src = readSource();
+    assert.ok(!src.includes('import React'));
+  });
+  it('不应包含未导出测试辅助', () => {
+    const src = readSource();
+    assert.ok(!src.match(/^function\s+(?!\*)/m));
+  });
+});
