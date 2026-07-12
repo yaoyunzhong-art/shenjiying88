@@ -129,3 +129,4 @@
 | 2026-07-12 17:06 | pulse#365 | 全库(非api) [TSC14/14连续8次·dispatch-358保持第8次·新发现@m5/app 21✖慢性残值·tob 3✖·miniapp ELIFECYCLE] | Base✅(TSC14/14✅✅✅✅)/Service✅/Controller⚠️(app21✖/tob3✖/miniapp5✖)/CTest✅(store✅/admin✅/P0-001✅) | 0🏆 |
 
 | 2026-07-12 17:36 | pulse#366 | 全库(非api) [TSC14/14连续9次·dispatch-365✅闭·member-old.ts清理·app222/222✅·tob残1✖·storefront残2✖·新派dispatch-366清storefront-__smoke__] | Base✅(TSC14/14✅✅✅✅✅)/Service✅(app222/222✅)/Controller⚠️(tob1✖/store2✖)/CTest✅(admin✅/store✅/app✅) | 0🏆 |
+| 2026-07-12 18:10 | pulse#367 | 全库(非api) [TSC14/14连续10次·dispatch-366❌第1次验收(storefront 2✖未闭)·tob缓存揭示4✖(原1✖)·miniapp 4✖·重派dispatch-367] | Base✅(TSC14/14✅✅✅✅✅✅)/Service✅/Controller⚠️(tob4✖/store2✖/miniapp4✖)/CTest✅(admin✅/app✅) | 0🏆 |

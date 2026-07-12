@@ -1,21 +1,23 @@
 # 🦞 验收员 HEARTBEAT
 
-| 指标 | pulse#358→#362 | pulse#363→#365 | pulse#366 | Δ |
-|-----|:--------------:|:--------------:|:---------:|:-:|
-| Typecheck | **14/14** ✅(×6) | **14/14** ✅(×8) | **14/14** ✅(×9) | 🟢 连续9次全绿 |
-| 新回归 | **0** | **0** | **0** | 🟢 无新回归(第9次) |
-| storefront-web | ⚠️ 5✖(已知) | ✅ 0✖ | ⚠️ 2✖(旧__smoke__残) | 🟢 基本维持 |
-| admin-web | ⚠️ 3✖(已知) | ✅ 0✖ | ✅ 0✖ | 🟢 维持 |
-| tob-web | ❌ 4✖残值 | ❌ 3✖残值 | ❌ 1✖残值 | 🟢 改善(3→1) |
-| miniapp | ❌ ELIFECYCLE | ❌ ELIFECYCLE | ❌ ELIFECYCLE | 🟢 维持(已知) |
-| @m5/app | — | ❌ **21✖ 新发现** | ✅ **222/222** | 🟢 **dispatch-365闭环** |
+| 指标 | pulse#366 | pulse#367 | Δ |
+|-----|:---------:|:---------:|:-:|
+| Typecheck | **14/14** ✅(×9) | **14/14** ✅(×10) | 🟢 **连续10次全绿** |
+| 新回归 | **0** | **0** | 🟢 无新回归(第10次) |
+| storefront-web | ⚠️ 2✖(旧__smoke__) | ⚠️ 2✖(旧__smoke__·dispatch-366未闭) | 🔴 dispatch-366第1次验收❌ |
+| admin-web | ✅ 0✖ | ✅ 0✖ | 🟢 维持 |
+| tob-web | ❌ 1✖残值(缓存) | ❌ **4✖残值(缓存揭示真实状态)** | 🔴 原缓存掩盖3✖·实际为4✖ |
+| miniapp | ❌ ELIFECYCLE | ❌ **4✖(缓存揭示)** | 🔴 原缓存掩盖+ELIFECYCLE |
+| @m5/app | ✅ **222/222** | ✅ **222/222** | 🟢 维持 |
 
 ### 🩺 健康摘要
-- **✅ TSC稳态维持**: 连续9次14/14 ✅(pulse#358→#366) — dispatch-358闭环成果保持
-- **🔥角色冒烟**: storefront-web(2✖残值·旧__smoke__残留)·tob-web(1✖残值)·miniapp(ELIFECYCLE残值)
-- **🌲 闭环**: ✅ dispatch-365 — @m5/app .tsx测试问题修复成功, 21✖→222/222 ✅
-- **🌲 新派单**: dispatch-366 — 清理storefront-web __smoke__/role-based-smoke残留(2✖·MEMBERS_PER_PAGE旧常量)
-- **dispatch闭环**: ✅ dispatch-358 已闭环保持(第9次验收) · ✅ dispatch-365 已闭环
+- **✅ TSC稳态维持**: 连续10次14/14 ✅(pulse#358→#367) — dispatch-358闭环成果保持
+- **🔥角色冒烟(真实缓存清除后)**: storefront-web(2✖·__smoke__)·tob-web(4✖·3__smoke__+1 sports-ants/news)·miniapp(4✖·积分/等级/任务/客户)
+- **🌲 闭环**: ✅ dispatch-365 — @m5/app 222/222 ✅保持
+- **🌲 新派单(dispatch-366首次验收❌)**: 派单dispatch-366清storefront __smoke__ 2✖ 未闭合(第1次)
+- **⚠️ 缓存揭示**: 本次pulse#367强制uncached跑→tob-web原1✖→**实际4✖**(缓存掩盖3✖)·miniapp原ELIFECYCLE→**实际4✖**(缓存掩盖)
+- **🌲 重派**: dispatch-367 — 同时清理tob 3✖__smoke__ + sports-ants/news ✖ + miniapp 4✖__smoke__
+- **dispatch闭环**: ✅ dispatch-358 已闭环保持(第10次验收) · ✅ dispatch-365 已闭环
 - **连续🏆**: 0
 - **知识库时效**: ✅ <24h ✅
 
@@ -42,3 +44,4 @@
 - **🔥 2026-07-12 16:36 pulse#364 ✅✅ TSC连续7次全绿·storefront-web 5✖→✅修复·admin-web 3✖→✅修复·dispatch-358保持第7次·VOID/assertion残留→tob残值4✖+miniapp ELIFECYCLE·RQ-001~005超8h慢性**
 - **2026-07-12 17:06 pulse#365 ✅ TSC14/14连续8次·dispatch-358保持第8次·新发现@m5/app 21✖(node --test.tsx崩溃)·已派dispatch-365**
 - **2026-07-12 17:36 pulse#366 ✅✅ TSC14/14连续9次·dispatch-365✅闭环(21✖→222/222全绿)·清理旧member-center.test.ts冲突·storefront-web 2✖残值(旧__smoke__)·tob-web 1✖·新派dispatch-366清__smoke__残留**
+- **2026-07-12 18:10 pulse#367 ✅ TSC14/14连续10次(🚀10连)·dispatch-366第1次验收❌(storefront 2✖未闭)·tob真实4✖(缓存揭示原掩盖3✖)·miniapp真实4✖(缓存掩盖)·已重派dispatch-367(含tob+miniapp+storefront联合修复)**
