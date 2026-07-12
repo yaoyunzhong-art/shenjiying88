@@ -20,9 +20,9 @@ describe('AnnouncementsPage (storefront-web)', () => {
     assert.ok(pageSource.includes("'use client'"));
   });
 
-  test('定义了 3 条公告数据', () => {
+  test('定义了 5 条公告数据（增强后）', () => {
     const count = (pageSource.match(/title: '/g) || []).length;
-    assert.equal(count, 3);
+    assert.equal(count, 5);
   });
 
   test('包含新店开业优惠公告', () => {
@@ -46,5 +46,18 @@ describe('AnnouncementsPage (storefront-web)', () => {
 
   test('渲染深色主题样式', () => {
     assert.ok(pageSource.includes('#0f172a'), '缺少深色背景');
+  });
+
+  test('包含加载/错误/空三态', () => {
+    assert.ok(pageSource.includes('loading'), '缺少 loading 状态');
+    assert.ok(pageSource.includes('error'), '缺少 error 状态');
+    assert.ok(pageSource.includes('simulateFetch'), '缺少模拟 API');
+    assert.ok(pageSource.includes('search'), '缺少搜索框');
+    assert.ok(pageSource.includes('badgeFilter'), '缺少类型筛选');
+  });
+
+  test('包含展开详情功能', () => {
+    assert.ok(pageSource.includes('toggleExpand'), '缺少展开/收起');
+    assert.ok(pageSource.includes('expandedId'), '缺少展开状态');
   });
 });

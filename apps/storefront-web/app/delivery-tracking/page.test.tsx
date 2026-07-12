@@ -5,10 +5,35 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { DeliveryTrackingClient } from './components/DeliveryTrackingClient';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const pageSource = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+
 describe('DeliveryTrackingPage (via DeliveryTrackingClient)', () => {
+  it('页面导出默认函数 DeliveryTrackingPage', () => {
+    assert.ok(pageSource.includes('export default function DeliveryTrackingPage'));
+  });
+
+  it('页面包含 use client 指令', () => {
+    assert.ok(pageSource.includes("'use client'"));
+  });
+
+  it('页面使用 DeliveryTrackingClient 组件', () => {
+    assert.ok(pageSource.includes('DeliveryTrackingClient'));
+  });
+
+  it('包含 loading/error 二态', () => {
+    assert.ok(pageSource.includes('loading'), '缺少加载态');
+    assert.ok(pageSource.includes('error'), '缺少错误态');
+    assert.ok(pageSource.includes('simulateLoad'), '缺少模拟初始化');
+  });
+
   it('renders page title and search elements', () => {
     const html = renderToStaticMarkup(<DeliveryTrackingClient />);
     assert.ok(html.includes('📦 物流追踪'));

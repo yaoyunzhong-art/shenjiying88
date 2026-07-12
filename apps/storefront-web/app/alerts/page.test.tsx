@@ -31,10 +31,10 @@ describe('alerts — 正例', () => {
     assert.ok(src.includes('alerts'), '缺少 alerts 定义');
   });
 
-  it('应包含 4 条通知', () => {
+  it('应包含 6 条通知（增强后）', () => {
     const src = readSource();
     const match = src.match(/id: '/g);
-    assert.ok(match && match.length === 4, '应有 4 条通知');
+    assert.ok(match && match.length === 6, '应有 6 条通知');
   });
 
   it('应包含不同通知类型', () => {
@@ -43,6 +43,23 @@ describe('alerts — 正例', () => {
     assert.ok(src.includes("type: 'info'"), '缺少 info 类型');
     assert.ok(src.includes("type: 'points'"), '缺少 points 类型');
     assert.ok(src.includes("type: 'upgrade'"), '缺少 upgrade 类型');
+    assert.ok(src.includes("type: 'warning'"), '缺少 warning 类型');
+    assert.ok(src.includes("type: 'system'"), '缺少 system 类型');
+  });
+
+  it('应包含 loading/error/empty 三态', () => {
+    const src = readSource();
+    assert.ok(src.includes('loading'), '缺少 loading 状态');
+    assert.ok(src.includes('error'), '缺少 error 状态');
+    assert.ok(src.includes('simulateFetch'), '缺少模拟 API');
+    assert.ok(src.includes('filter'), '缺少筛选逻辑');
+    assert.ok(src.includes('markRead'), '缺少标记已读');
+  });
+
+  it('应包含骨架屏占位', () => {
+    const src = readSource();
+    assert.ok(src.includes('Loading skeleton'), '缺少骨架屏注释');
+    assert.ok(src.includes('height: 16'), '缺少骨架屏动画');
   });
 });
 
