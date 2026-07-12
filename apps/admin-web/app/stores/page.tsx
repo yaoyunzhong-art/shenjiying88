@@ -37,14 +37,14 @@ interface StoreItem {
 
 type StoreStatusVariant = 'success' | 'neutral' | 'warning' | 'danger';
 
-const STORE_STATUS_MAP: Record<StoreItem['status'], { label: string; variant: StoreStatusVariant }> = {
+export const STORE_STATUS_MAP: Record<StoreItem['status'], { label: string; variant: StoreStatusVariant }> = {
   active: { label: '运营中', variant: 'success' },
   inactive: { label: '已停用', variant: 'neutral' },
   pending: { label: '待激活', variant: 'warning' },
   suspended: { label: '已暂停', variant: 'danger' }
 };
 
-const RISK_LEVEL_MAP: Record<StoreItem['riskLevel'], { label: string; variant: StoreStatusVariant }> = {
+export const RISK_LEVEL_MAP: Record<StoreItem['riskLevel'], { label: string; variant: StoreStatusVariant }> = {
   low: { label: '低', variant: 'success' },
   medium: { label: '中', variant: 'warning' },
   high: { label: '高', variant: 'danger' }
@@ -52,7 +52,7 @@ const RISK_LEVEL_MAP: Record<StoreItem['riskLevel'], { label: string; variant: S
 
 // ---- Mock 数据 ----
 
-const MOCK_STORES: StoreItem[] = [
+export const MOCK_STORES: StoreItem[] = [
   { id: 's1', code: 'STORE-001', name: '朝阳大悦城旗舰店', marketCode: 'cn-mainland', status: 'active', tenantCount: 12, brandCount: 8, lastDeployed: '2026-06-12 14:30', riskLevel: 'low' },
   { id: 's2', code: 'STORE-002', name: '上海陆家嘴中心店', marketCode: 'cn-mainland', status: 'active', tenantCount: 9, brandCount: 6, lastDeployed: '2026-06-12 10:15', riskLevel: 'medium' },
   { id: 's3', code: 'STORE-003', name: '深圳万象天地店', marketCode: 'cn-mainland', status: 'pending', tenantCount: 3, brandCount: 2, lastDeployed: '2026-06-11 09:00', riskLevel: 'low' },
@@ -195,6 +195,8 @@ export default function StoresPage() {
     total: MOCK_STORES.length,
     active: MOCK_STORES.filter((s) => s.status === 'active').length,
     highRisk: MOCK_STORES.filter((s) => s.riskLevel === 'high').length,
+    totalTenants: MOCK_STORES.reduce((sum, s) => sum + s.tenantCount, 0),
+    totalBrands: MOCK_STORES.reduce((sum, s) => sum + s.brandCount, 0),
   }), []);
 
   const { actions } = useDetailActions({
@@ -212,7 +214,7 @@ export default function StoresPage() {
         subtitle="统一管理所有市场下的门店运营状态、租户品牌关联及风险等级。"
       >
         {/* 统计卡片 */}
-        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginBottom: 20 }}>
+        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 20 }}>
           <article style={statCardStyle}>
             <div style={{ fontSize: 13, color: '#cbd5e1' }}>门店总数</div>
             <div style={{ marginTop: 6, fontSize: 24, fontWeight: 700 }}>{stats.total}</div>
@@ -222,6 +224,11 @@ export default function StoresPage() {
             <div style={{ fontSize: 13, color: '#cbd5e1' }}>运营中</div>
             <div style={{ marginTop: 6, fontSize: 24, fontWeight: 700, color: '#4ade80' }}>{stats.active}</div>
             <div style={{ marginTop: 4, fontSize: 12, color: '#94a3b8' }}>{((stats.active / stats.total) * 100).toFixed(0)}% 健康率</div>
+          </article>
+          <article style={statCardStyle}>
+            <div style={{ fontSize: 13, color: '#cbd5e1' }}>总租户数</div>
+            <div style={{ marginTop: 6, fontSize: 24, fontWeight: 700, color: '#60a5fa' }}>{stats.totalTenants}</div>
+            <div style={{ marginTop: 4, fontSize: 12, color: '#94a3b8' }}>所有门店累计租户</div>
           </article>
           <article style={statCardStyle}>
             <div style={{ fontSize: 13, color: '#cbd5e1' }}>高风险门店</div>
