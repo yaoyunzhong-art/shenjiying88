@@ -571,14 +571,14 @@ describe('高级安全与隔离场景', () => {
     expect(timeoutResult.order.closeReason).toBe(CashierOrderCloseReason.ManualCancel)
   })
 
-  it('不存在的订单查询返回 undefined', () => {
+  it('不存在的订单查询返回 undefined', async () => {
     const { service } = makeCashierService()
     const ctx = makeTenantContext()
     const found = await service.getOrder('order-nonexistent', ctx)
     expect(found).toBeUndefined()
   })
 
-  it('跨租户查询不存在的订单返回 undefined 而非异常', () => {
+  it('跨租户查询不存在的订单返回 undefined 而非异常', async () => {
     const { service } = makeCashierService('t-tenant-a')
     const ctxA = makeTenantContext('t-tenant-a')
     const ctxB = makeTenantContext('t-tenant-b')
