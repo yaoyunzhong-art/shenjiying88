@@ -1,21 +1,30 @@
 /**
- * 🐜 自动: [reservation] [A] module.test 补全
+ * reservation.module.test.ts — 模块元数据验证
  */
-
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { describe, it } from 'vitest'
+
+let ReservationModule: new () => void
+let ReservationController: new () => void
+let ReservationService: new () => void
 
 describe('ReservationModule', () => {
-  it('should be defined', () => {
-    const mod = new ReservationModule()
-    assert.ok(mod instanceof ReservationModule)
+  beforeAll(async () => {
+    const mod = await import('./reservation.module')
+    ReservationModule = mod.ReservationModule
+    const ctrl = await import('./reservation.controller')
+    ReservationController = ctrl.ReservationController
+    const svc = await import('./reservation.service')
+    ReservationService = svc.ReservationService
   })
 
-  it('should have correct module metadata', async () => {
-    const { ReservationModule } = await import('./reservation.module')
-    const { ReservationController } = await import('./reservation.controller')
-    const { ReservationService } = await import('./reservation.service')
+  it('should be defined', () => {
+    const instance = new ReservationModule()
+    assert.ok(instance instanceof ReservationModule)
+  })
 
+  it('should have correct module metadata', () => {
     const controllers = Reflect.getMetadata('controllers', ReservationModule)
     const providers = Reflect.getMetadata('providers', ReservationModule)
     const exports = Reflect.getMetadata('exports', ReservationModule)
@@ -23,7 +32,6 @@ describe('ReservationModule', () => {
     assert.ok(controllers)
     assert.ok(providers)
     assert.ok(exports)
-
     assert.ok(controllers?.includes?.(ReservationController))
     assert.ok(providers?.includes?.(ReservationService))
     assert.ok(exports?.includes?.(ReservationService))
