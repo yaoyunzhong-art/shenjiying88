@@ -211,7 +211,7 @@ describe('👔店长 收银扩展测试', () => {
       tenantId: 't-ext',
       externalPaymentId: 'ext-002'
     })
-    await assert.rejects(
+    assert.throws(
       () => svc.closeOrder(order.orderId, ctx),
       /Paid order .* cannot be manually closed/
     )
@@ -575,7 +575,7 @@ describe('订单状态机扩展边界', () => {
       orderId: order.orderId,
       tenantId: 't-ext'
     })
-    await assert.rejects(
+    assert.throws(
       () => svc.closeTimedOutOrder(order.orderId, ctx),
       /Paid order .* cannot be timeout-closed/
     )
