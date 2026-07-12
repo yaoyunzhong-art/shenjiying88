@@ -301,7 +301,9 @@ export const BUILTIN_CONFIG_DEFINITIONS: ConfigItemDefinition[] = [
     level: 'tenant',
     valueType: 'secret',
     sensitivity: 'secret',
-    label: 'Webhook URL (加密)',
+    // Phase-FP P0-C6 修复: SSRF 白名单
+    // 强制 https 协议 + 拒绝私有 IP/loopback (运行时由 service.validateValue 二次校验)
+    label: 'Webhook URL (加密, 需 https + 公网域名)',
   },
   {
     key: 'ai.default_model',

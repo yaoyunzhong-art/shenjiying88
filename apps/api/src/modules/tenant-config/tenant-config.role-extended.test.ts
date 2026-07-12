@@ -148,7 +148,7 @@ describe('🔧 安监扩展', () => {
       await service.setConfig({ key: 'pos.tax_rate', value: '0.06' })
     })
     await runWithTenant(AUDITOR, async () => {
-      const logs = await service.listAuditLogs('tenant-A')
+      const logs = await service.listAuditLogs(100, 'tenant-A')
       assert.ok(logs.length > 0)
     })
   })
@@ -159,7 +159,7 @@ describe('🔧 安监扩展', () => {
       await service.setConfig({ key: 'pos.receipt_footer', value: '欢迎光临' })
     })
     await runWithTenant(AUDITOR, async () => {
-      const logs = await service.listAuditLogs('tenant-A', 50)
+      const logs = await service.listAuditLogs(50, 'tenant-A')
       const footerLog = logs.find((l) => l.key === 'pos.receipt_footer')
       assert.ok(footerLog)
       assert.equal(footerLog.action, 'create')
@@ -171,7 +171,7 @@ describe('🔧 安监扩展', () => {
     await runWithTenant(TENANT_ADMIN, async () => {
       const created = await service.setConfig({ key: 'marketing.default_campaign_budget', value: '99999' })
       await service.rollback(1, created.id)
-      const logs = await service.listAuditLogs('tenant-A')
+      const logs = await service.listAuditLogs(100, 'tenant-A')
       const rollbackLog = logs.find((l) => l.action === 'rollback')
       assert.ok(rollbackLog)
       assert.equal(typeof rollbackLog.context?.targetVersion, 'number')

@@ -493,6 +493,14 @@ describe('TenantConfigService.getConfig', () => {
       assert.ok(cfg, 'seeded config should be returned, not null')
       assert.equal(cfg!.value, '谢谢惠顾')
       assert.equal(cfg!.key, 'pos.receipt_footer')
+      // Phase-FP P0-D1 修复: 业务影响完整断言
+      assert.equal(cfg!.level, 'store')
+      assert.equal(cfg!.ownerId, 'store-001')
+      assert.equal(cfg!.fromSeed, true)
+      assert.equal(cfg!.version, 1)
+      assert.match(cfg!.id, /^cfg-seed-store-pos-receipt_footer$/)
+      assert.equal(cfg!.encrypted, false)
+      assert.equal(cfg!.category, 'pos')
     })
   })
 
@@ -674,7 +682,7 @@ describe('TenantConfigService.listAuditLogs', () => {
   it('TC-58 should record audit log on setConfig', async () => {
     await runWithTenant(TENANT_CTX, async () => {
       await service.setConfig({ key: 'marketing.default_campaign_budget', value: '80000' })
-      const logs = await service.listAuditLogs('tenant-A')
+      const logs = await service.listAuditLogs(100, 'tenant-A')
       assert.ok(logs.length > 0)
       const log = logs.find((l) => l.action === 'update' || l.action === 'create')
       assert.ok(log, 'should have audit log for setConfig')
@@ -685,7 +693,7 @@ describe('TenantConfigService.listAuditLogs', () => {
     await runWithTenant(TENANT_CTX, async () => {
       const v1 = await service.setConfig({ key: 'ai.default_model', value: 'gpt-4o' })
       await service.rollback(1, v1.id)
-      const logs = await service.listAuditLogs('tenant-A')
+      const logs = await service.listAuditLogs(100, 'tenant-A')
       const rollbackLog = logs.find((l) => l.action === 'rollback')
       assert.ok(rollbackLog, 'should have rollback audit log')
       assert.equal(rollbackLog.operatorRole, 'tenant_admin')
@@ -695,7 +703,7 @@ describe('TenantConfigService.listAuditLogs', () => {
   it('TC-60 should record operator role in audit log', async () => {
     await runWithTenant(TENANT_CTX, async () => {
       await service.setConfig({ key: 'marketing.default_campaign_budget', value: '60000' })
-      const logs = await service.listAuditLogs('tenant-A')
+      const logs = await service.listAuditLogs(100, 'tenant-A')
       const log = logs.find((l) => l.key === 'marketing.default_campaign_budget')
       assert.ok(log, 'should have audit log for campaign budget')
       assert.equal(log.operatorRole, 'tenant_admin')
@@ -783,7 +791,7 @@ describe('Edge cases', () => {
   it('TC-67 listAuditLogs should return logs filtered by tenant', async () => {
     await runWithTenant(TENANT_CTX, async () => {
       await service.setConfig({ key: 'marketing.default_campaign_budget', value: '60000' })
-      const logs = await service.listAuditLogs('tenant-A')
+      const logs = await service.listAuditLogs(100, 'tenant-A')
       assert.ok(logs.length >= 1)
       // all logs should be for tenant-A
       for (const log of logs) {
@@ -794,10 +802,10 @@ describe('Edge cases', () => {
 
   it('TC-68 rollback should record new audit log entry', async () => {
     await runWithTenant(TENANT_CTX, async () => {
-      const beforeCount = (await service.listAuditLogs('tenant-A')).length
+      const beforeCount = (await service.listAuditLogs(100, 'tenant-A')).length
       const v1 = await service.setConfig({ key: 'ai.default_model', value: 'gpt-4o' })
       await service.rollback(1, v1.id)
-      const afterCount = (await service.listAuditLogs('tenant-A')).length
+      const afterCount = (await service.listAuditLogs(100, 'tenant-A')).length
       assert.ok(afterCount > beforeCount)
     })
   })

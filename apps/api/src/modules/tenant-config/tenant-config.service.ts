@@ -444,8 +444,20 @@ export class TenantConfigService implements OnModuleInit {
   /**
    * P0-A1: 优先从 DB 读取审计 (跨进程持久).
    * DB 不可用或为空时 fallback 到内存数组 (用于 338 测试无 Prisma 连接场景).
+   *
+   * Phase-FP P0-C4 修复: listAuditLogs 不再接受任意 tenantId
+   * - 默认从 ctx.tenantId 取 (强制当前租户)
+   * - super_admin / brand_admin / auditor 可显式传 explicitTenantId (合规审计)
+   * - 非特权角色传 explicitTenantId 也忽略, 仍用 ctx.tenantId (防越权)
    */
-  async listAuditLogs(tenantId: string, limit = 100): Promise<ConfigAuditLog[]> {
+  async listAuditLogs(limit = 100, explicitTenantId?: string): Promise<ConfigAuditLog[]> {
+    const ctx = requireTenantContext()
+    const isPrivileged =
+      ctx.role === 'super_admin' || ctx.role === 'brand_admin' || ctx.role === 'auditor'
+    const tenantId = isPrivileged ? explicitTenantId ?? ctx.tenantId : ctx.tenantId
+    if (!tenantId) {
+      throw new ForbiddenException('[TenantConfig] listAuditLogs requires ctx.tenantId')
+    }
     if (this.repo) {
       try {
         const dbLogs = await this.repo.loadAuditLogs(tenantId, limit)
@@ -542,6 +554,43 @@ export class TenantConfigService implements OnModuleInit {
         throw new BadRequestException(`Config ${def.key} must be <= ${v.max}`)
       }
     }
+    // Phase-FP P0-C6 修复: SSRF 白名单 - webhook URL 强制 https + 拒绝私有 IP/loopback
+    if (def.key === 'integration.webhook_url') {
+      this.assertSafeWebhookUrl(value)
+    }
+  }
+
+  /**
+   * 校验 webhook URL: 强制 https 协议 + 拒绝 loopback / 私有 IP / link-local
+   * 防止 SSRF 攻击 (P0-C6)
+   */
+  private assertSafeWebhookUrl(value: string): void {
+    let url: URL
+    try {
+      url = new URL(value)
+    } catch {
+      throw new BadRequestException(`Invalid webhook URL: ${value}`)
+    }
+    if (url.protocol !== 'https:') {
+      throw new BadRequestException(`Webhook URL must use https protocol, got ${url.protocol}`)
+    }
+    const host = url.hostname.toLowerCase()
+    // 拒绝 loopback / 私有 IP / link-local
+    if (
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === '::1' ||
+      host === '0.0.0.0' ||
+      host.startsWith('10.') ||
+      host.startsWith('192.168.') ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+      host.endsWith('.local') ||
+      host.endsWith('.internal')
+    ) {
+      throw new BadRequestException(
+        `Webhook URL points to private/loopback address, SSRF risk: ${host}`,
+      )
+    }
   }
 
   private resolveEffective(
@@ -585,9 +634,17 @@ export class TenantConfigService implements OnModuleInit {
   private ownerIdFor(ctx: TenantContext, level: ConfigLevel): string {
     if (level === 'store') return ctx.storeId ?? 'store-default'
     if (level === 'tenant') return ctx.tenantId
-    // brand 级别: 用 tenantId 前缀推导 brandId (V10 Day 6 简化)
-    const tenantId = ctx.tenantId
-    return tenantId.startsWith('brand-') ? tenantId : `brand-${tenantId.split('-')[0]}`
+    // brand 级别 (Phase-FP P0-C7 修复):
+    // 优先 ctx.brandId 显式字段, 不再从 tenantId.split('-')[0] 推导 (跨租户 brand 串扰)
+    if (ctx.brandId) return ctx.brandId
+    // 兼容旧 ctx (无 brandId): 仅对 super_admin/brand_admin 允许使用 tenantId 作 fallback
+    if (ctx.role === 'super_admin' || ctx.role === 'brand_admin' || ctx.role === 'auditor') {
+      return ctx.tenantId.startsWith('brand-') ? ctx.tenantId : `brand-${ctx.tenantId.split('-')[0]}`
+    }
+    // 业务租户无 brandId 时, 拒绝 brand-level 访问
+    throw new ForbiddenException(
+      `[TenantConfig] brand-level access requires ctx.brandId (tenantId=${ctx.tenantId} role=${ctx.role})`,
+    )
   }
 
   /** Phase-FP P0 修复: 改 public 让 controller 可以读取 */
