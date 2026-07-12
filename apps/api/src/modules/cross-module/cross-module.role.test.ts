@@ -13,6 +13,8 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { CrossModuleService } from './cross-module.service'
+import { CrossModuleController } from './cross-module.controller'
 // ── 角色定义 ──
 const ROLES = {
   TenantAdmin: '👔店长',
@@ -31,8 +33,6 @@ const crossBorderCtx = { tenantId: 't-cross', storeId: 's-cross', marketCode: 'u
 
 // ── 控制器工厂 (每次创建新实例以确保状态隔离) ──
 function createCtrl() {
-  const { CrossModuleService } = require('./cross-module.service')
-  const { CrossModuleController } = require('./cross-module.controller')
   return new CrossModuleController(new CrossModuleService()) as any
 }
 

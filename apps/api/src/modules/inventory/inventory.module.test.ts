@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-const { InventoryModule } = require('./inventory.module')
-const { InventoryController } = require('./inventory.controller')
-const { InventoryService } = require('./inventory.service')
+import { InventoryModule } from './inventory.module'
+import { InventoryController } from './inventory.controller'
+import { InventoryService } from './inventory.service'
 
 describe('InventoryModule', () => {
   it('is defined', () => {

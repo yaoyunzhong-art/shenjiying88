@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-const { InventoryController } = require('./inventory.controller')
-const { InventoryService, resetInventoryServiceTestState } = require('./inventory.service')
+import { InventoryController } from './inventory.controller'
+import { InventoryService, resetInventoryServiceTestState } from './inventory.service'
 
 type AnyFn = (...args: any[]) => any
 interface MockServiceOverrides {
