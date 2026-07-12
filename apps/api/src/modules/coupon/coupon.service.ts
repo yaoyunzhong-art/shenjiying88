@@ -18,6 +18,7 @@ import {
   CouponValueType,
 } from './coupon.types';
 import { QuotaResourceKind } from '../tenant/tenant-quota.entity';
+import { requireTenantContext, assertStoreOwnership } from '../../common/context/tenant-context';
 
 /**
  * CouponBusinessError: 业务校验失败 (阶段 4-9)
@@ -143,6 +144,10 @@ export class CouponService {
       if (this.lifecycle?.assertWriteAllowed) {
         this.lifecycle.assertWriteAllowed(tenantId);
       }
+
+      // 1a. 多租户 store 所有权守卫 (P0-C2)
+      requireTenantContext()
+      assertStoreOwnership(req.storeId)
 
       // 2. quota check (only check, no increment)
       if (this.quota?.check) {

@@ -15,7 +15,7 @@
 
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
-import { requireTenantContext } from '../../common/context/tenant-context'
+import { requireTenantContext, assertStoreOwnership } from '../../common/context/tenant-context'
 import {
   InsightReport,
   InsightSource,
