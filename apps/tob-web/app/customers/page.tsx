@@ -238,12 +238,19 @@ export default function CustomersPage() {
         </span>
       </div>
 
+      {/* Empty state */}
+      {!loading && filtered.length === 0 && (
+        <div style={{ padding: 48, textAlign: 'center', color: '#94a3b8' }}>
+          暂无数据
+        </div>
+      )}
+
       {/* Table */}
       {loading ? (
         <LoadingSkeleton rows={5} />
-      ) : (
+      ) : filtered.length > 0 ? (
         <DataTable columns={columns} rows={paged} rowKey={(c: CustomerItem) => c.id} />
-      )}
+      ) : null}
 
       {/* Pagination */}
       {totalPages > 1 && (

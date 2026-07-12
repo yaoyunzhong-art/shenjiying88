@@ -225,6 +225,15 @@ const TESTIMONIALS = [
 // 动画组件
 // ============================================
 
+// error boundary: 组件渲染异常时兜底提示
+function ErrorFallback({ message = '页面加载异常，请刷新重试' }: { message?: string }) {
+  return (
+    <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>
+      <p>{message}</p>
+    </div>
+  );
+}
+
 function useScrollAnimation() {
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);

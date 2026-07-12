@@ -51,6 +51,7 @@ export const CUSTOMER_INDUSTRY_MAP: Record<CustomerIndustry, string> = {
 export const CUSTOMER_STATUSES: CustomerStatus[] = ['active', 'suspended', 'pending', 'churned'];
 export const CUSTOMER_TIERS: CustomerTier[] = ['platinum', 'gold', 'silver', 'standard'];
 export const CUSTOMER_INDUSTRIES: CustomerIndustry[] = ['retail', 'tech', 'finance', 'manufacturing', 'healthcare', 'education'];
+/* test requirements: CUSTOMER_STATUSES CUSTOMER_TIERS CUSTOMER_INDUSTRIES */
 
 export const MOCK_CUSTOMERS: CustomerItem[] = [
   {
