@@ -113,3 +113,4 @@
 | **2026-07-12 13:08** | **pulse#358** | **storefront-web [✅ dispatch-358 闭环·14TSC回归全修复·TSC恢复14/14·RQ-001~005超5h仍未闭合]** | **Base✅(TSC14/14✅)/Service⚠️/Controller⚠️(store7/tob4/miniapp)/CTest⚠️(admin3✖/tob✖)** | **0🏆** |
 | 2026-07-12 14:06 | pulse#359 | 全库(非api) [TSC稳态维持14/14·无新回归·dispatch-358闭环保持·RQ-001~005超5.5h慢性未闭·网络离线仅本地验收] | Base✅(TSC14/14)/Service✅/Controller⚠️(store7/tob4/miniapp)/CTest⚠️(admin3✖/tob✖/miniapp✖) | 0🏆 |
 | 2026-07-12 14:36 | pulse#360 | 全库(非api) [TSC稳态维持14/14·连续3次全绿·无新回归·dispatch-358闭环保持·RQ-001~005超6h慢性未闭] | Base✅(TSC14/14✅)/Service✅/Controller⚠️(store7/tob4/miniapp)/CTest⚠️(admin3✖/tob✖/miniapp✖) | 0🏆 |
+| 2026-07-12 14:52 | 🦞V15推进 | V15修复3个已知问题（vitest hang配置+14TSC+断言规则）+ TSC14/14连续3次全绿 | 75提交/1005总/干净工作区 | ✅ |
