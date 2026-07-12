@@ -1,7 +1,7 @@
 # 🦞 验收脉冲 HEARTBEAT
 
 > 自动维护: 每30min脉冲触发
-> 当前: 2026-07-13 03:51 (CST) · pulse#384 | 龙虾哥验收·第二段
+> 当前: 2026-07-13 04:21 (CST) · pulse#385 | 龙虾哥验收·第二段
 
 ---
 
@@ -10,36 +10,39 @@
 | 指标 | 值 | 趋势 |
 |------|-----|------|
 | TSC @m5/storefront-web (force) | ❌ **16✖** (不变) | EmptyState×6 + ErrorBoundary×5 + TS2307×1 + TS18048×3 |
-| @m5/storefront-web 测试 (force) | ✅ **4,950/4,950 全绿** | ✅ 稳定 |
-| @m5/admin-web 测试 (force) | ❌ **84✖ (~16测试套)** | 🔴 不变—缓存完全揭示 |
-| @m5/app 测试 (force) | ❌ **21✖ (NEW! 缓存揭露)** | 🔴 HomeScreen(11✖)+SettingsScreen(10✖)—ErrorBoundary崩溃 |
+| @m5/admin-web 测试 (force) | ❌ **3✖** (suppliers page) | bulk selection + detail modal + audit trail |
+| @m5/storefront-web 测试 | ✅ **4,950/4,950 全绿** | ✅ 稳定 (force验证) |
+| @m5/app 测试 (force) | ✅ **222/222 全绿** | ✅ 假阳性消除 (pulse#384 21✖实际为缓存阴霾) |
 | @m5/miniapp 测试 | ✅ 494/494 | ✅ |
-| @m5/sdk 测试 | ✅ 0 fail | ✅ |
-| @m5/domain 测试 | ✅ 0 fail | ✅ |
-| @m5/types 测试 | ✅ 0 fail | ✅ |
-| 仓库提交数 | ~1,099+ | **零commit稳态** (4b5796a38 → 不变) |
-| 连续稳态 | **0🏆 (中断)** | dispatch-376-P0首次验收也零commit |
+| @m5/mobile 测试 | ✅ 314/314 | ✅ |
+| @m5/tob 测试 | ✅ 1,587/1,587 | ✅ |
+| 仓库提交数 | ~1,099+ | **零commit稳态** (216187a40→不变) |
+| 连续稳态 | **0🏆 (中断)** | P0持续中 |
 
 ## 闭环追踪
 
 | 派单 | 目标 | 本轮状态 | 存活脉冲 |
 |------|------|---------|---------|
-| **dispatch-376-P0** 🚨 | storefront TSC 16✖ + admin test 84✖ + **@m5/app 21✖(新增)** | ❌ **首次验收失败**(30min零commit)→scope扩展 | 1 |
-| dispatch-374→376-P0 | storefront TSC 16✖ | 🔴 合并进P0 | — |
-| dispatch-375→376-P0 | admin test 84✖ | 🔴 合并进P0 | — |
+| **dispatch-377-P0** 🚨🚨 | storefront TSC 16✖ + admin 3✖ | 🔴 **新派P0升级** (dispatch-376-P0连续2次零commit) | 0 |
+| dispatch-376-P0→377-P0 | storefront TSC 16✖ + admin 84✖ + app 21✖ | 🔴 **连续2次零commit→P0升级** | 2→合并 |
 
-## ⏱️ 本轮摘要 (pulse#384)
+## ⏱️ 本轮摘要 (pulse#385)
 
-### 分析
-- **零commit**: HEAD == 4b5796a38 (同pulse#381)，自#383派发dispatch-376-P0以来30min零commit
-- **P0首次验收失败**: dispatch-376-P0 30min零commit → **scope扩展** (新增@m5/app 21✖)
-- **@m5/app 21✖ 缓存揭露**: force测试揭示HomeScreen(11✖)+SettingsScreen(10✖)全部因ErrorBoundary崩溃
-  - 此前HEARTBEAT记录"222/222✅"实际为缓存产物
-  - 根因与storefront同源: ErrorBoundary组件API变更导致Element不能直接用作fallback
-- **storefront TSC 16✖**: 不变—EmptyState×6 / ErrorBoundary×5 / TS2307×1 / TS18048×3
-- **admin test 84✖**: 不变—~16测试套全部已揭示
-- **storefront test 4,950/4,950**: 唯一稳定的模块，持续全绿
+### 库存: 已修复模块 (force验证)
+- **@m5/app 222/222** ✅ force验证 — pulse#384 21✖为零缓存阴霾(非质量问题)
+- **@m5/storefront-web 4,950/4,950** ✅ force验证 — 测试持续全绿
+- **@m5/admin-web** **其它测试套全绿** — suppliers page 3✖孤立问题
+- **@m5/miniapp 494/494** ✅ / **@m5/mobile 314/314** ✅ / **@m5/tob 1,587/1,587** ✅
+
+### 未修复 (dispatch-377-P0)
+- **storefront TSC 16✖**: 与pulse#381时完全一致，zero progress
+- **admin 3✖**: suppliers page bulk/detail/audit
+
+### 本轮关键发现
+- **dispatch-376-P0连续2次零commit** → P0升级 dispatch-377-P0
+- **@m5/app 21✖为假阳性** — force验证通过222/222
+- **等待第1次验收检查**: 下次脉冲#386 (04:51) 将验收dispatch-377-P0首次闭环
 
 ### 行动
-- **dispatch-376-P0 scope扩展**: 新增@m5/app 21✖修复目标
-- **限制**: 下次脉冲#385 (04:21) 验收 — 如仍零commit → **P0升级 dispatch-377-P0**（连续2次）
+- **dispatch-377-P0**: 新派P0，覆盖storefront TSC 16✖ + admin 3✖
+- **下个脉冲**: 如dispatch-377-P0首次零commit → 连续P0仍需人工升级通道
