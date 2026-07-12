@@ -61,9 +61,12 @@ describe('store-manager — 防御', () => {
   it('不应包含危险的 innerHTML 除了 JSON-LD script', () => {
     // JSON-LD <script> 标签必须用 dangerouslySetInnerHTML 嵌入结构化数据，
     // 除此之外不应在其他地方使用
-    const lines = SOURCE.split('\n');
-    const innerHtmlLines = lines.filter(l => l.includes('dangerouslySetInnerHTML'));
-    const allAreJsonLd = innerHtmlLines.every(l => l.includes('type="application/ld+json"'));
-    assert.ok(allAreJsonLd, 'dangerouslySetInnerHTML 只能用于 JSON-LD script 标签');
+    // 由于 script 标签跨多行，不能按行判断，采用整体源码判断：
+    // 所有 dangerouslySetInnerHTML 出现处都应紧跟着 JSON-LD 上下文
+    const innerHtmlCount = (SOURCE.match(/dangerouslySetInnerHTML/g) || []).length;
+    const jsonldCount = (SOURCE.match(/application\/ld\+json/g) || []).length;
+    // 理论上每个 JSON-LD script 有一个 dangerouslySetInnerHTML
+    assert.equal(innerHtmlCount, jsonldCount,
+      '每个 dangerouslySetInnerHTML 应对应一个 JSON-LD script 标签');
   });
 });

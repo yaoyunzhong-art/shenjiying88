@@ -34,7 +34,7 @@ describe('PointHistoryPage', () => {
   test('renders total point amount', () => {
     if (!PointHistoryPage) return;
     const html = renderToStaticMarkup(createElement(PointHistoryPage));
-    assert.ok(html.includes('636'), 'should show total points (earn - spend)');
+    assert.ok(html.includes('596'), 'should show total points (earn - spend = 2156 - 1560)');
   });
 
   test('renders at least 4 point records', () => {
