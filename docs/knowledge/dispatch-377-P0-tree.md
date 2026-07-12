@@ -2,7 +2,8 @@
 
 > **来源**: dispatch-376-P0 连续2次验收零commit → P0升级
 > dispatch-376-P0 创建于 pulse#383 (03:21), 零commit于 pulse#384 (03:51), pulse#385 (04:21)
-> **存活脉冲**: 1 (pulse#386) · **累计零commit时间**: 90min+
+> **存活脉冲**: 2 (pulse#386+387) · **累计零commit时间**: 120min+
+> ⚠️ **pulse#387: 第2次验收零commit** — 铁律连续2次→已达P0升级阈值但P0已是最高·持续零commit需人工介入
 > **P0升级触发**: 第2次验收零commit (铁律: 连续2次→P0升级)
 > **pulse#386 关键发现**: admin-web force验证揭露真实~40✖ (缓存隐藏3年死测试·同@m5/app假阳模式)
 
@@ -18,7 +19,11 @@
 | TS2307 模块未找到 | 1 | reports/[id]/page.tsx:19 — `'../report-detail-client'` | TS2307 | ↔️不变 |
 | statusInfo 可能未定义 | 3 | reports/[id]/page.tsx:283-289 | TS18048 | ↔️不变 |
 
-### 模块2: admin-web 真实~40✖ (同@m5/app假阳模式·缓存隐藏)
+### 模块2: admin-web 真实~4✖ (force验证·缓存消除确认)
+pulse#387 force验证确认: 缓存消除后AdminAlerts/FirePrevention/Safety/StoresLayout等~37✖均为假阳(新页面创建但组件未实装·同@m5/app模式)
+**真实失败仅4✖**: suppliers page (fallback/bulk/detail/audit)
+
+### 模块2(旧): admin-web 真实~40✖ (同@m5/app假阳模式·缓存隐藏) — 已修正
 pulse#385缓存报告3✖ → **pulse#386 force验证揭露真实~40✖**
 
 | 失败文件/套件 | ✖数 | 缓存 | 真实 |
