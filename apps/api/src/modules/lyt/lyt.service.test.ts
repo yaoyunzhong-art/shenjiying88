@@ -2,10 +2,11 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { BadRequestException } from '@nestjs/common'
+import { LytService } from './lyt.service'
+import { toLytStandardizedWebhookEventContract } from './lyt.contract'
+import type { LytService as LytServiceType } from './lyt.service'
 
 describe('LytService', () => {
-  const { LytService } = require('./lyt.service')
-  const { toLytStandardizedWebhookEventContract } = require('./lyt.contract')
 
   it('getAdapter returns the injected adapter instance', () => {
     const mockAdapterRegistry = {

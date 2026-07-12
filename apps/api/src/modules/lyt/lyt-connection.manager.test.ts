@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
+import { LytConnectionManager } from './lyt-connection.manager'
+
 it('lyt connection manager returns configured connection for scoped store', async () => {
-  const { LytConnectionManager } = require('./lyt-connection.manager')
   const manager = new LytConnectionManager({
     store: {
       findFirst: async () => ({ id: 'store-42', tenantId: 'tenant-42', brandId: 'brand-42' })
@@ -49,7 +50,6 @@ it('lyt connection manager returns configured connection for scoped store', asyn
 })
 
 it('lyt connection manager returns scoped fallback when store has no connection config', async () => {
-  const { LytConnectionManager } = require('./lyt-connection.manager')
   const manager = new LytConnectionManager({
     store: {
       findFirst: async () => ({ id: 'store-abc', tenantId: 'tenant-abc', brandId: 'brand-abc' })
@@ -79,7 +79,6 @@ it('lyt connection manager returns scoped fallback when store has no connection 
 })
 
 it('lyt connection manager resolves brand default connection when store-specific config is absent', async () => {
-  const { LytConnectionManager } = require('./lyt-connection.manager')
   const requestedKeys: string[] = []
   const manager = new LytConnectionManager({
     store: {
@@ -115,7 +114,6 @@ it('lyt connection manager resolves brand default connection when store-specific
 })
 
 it('lyt connection manager resolves tenant default connection when brand config is absent', async () => {
-  const { LytConnectionManager } = require('./lyt-connection.manager')
   const requestedKeys: string[] = []
   const manager = new LytConnectionManager({
     store: {

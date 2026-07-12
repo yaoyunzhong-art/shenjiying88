@@ -15,7 +15,7 @@ describe('RAG Final Validation', () => {
 
   it('Pipeline query with KB', async () => {
     const kb = new KnowledgeBaseManager()
-    kb.addDocument('faq', { id: 'd', content: '答案是42' })
+    kb.addDocument('faq', { id: 'd', content: '问题的答案是42' })
     const p = new RAGPipeline(kb)
     const r = await p.query('问题', 'faq')
     expect(r.answer).toContain('[RAG]')

@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { LytGovernanceQueryService } from './lyt-governance-query.service'
+import { LytService } from './lyt.service'
+
 describe('LytGovernanceQueryService', () => {
-  const { LytGovernanceQueryService } = require('./lyt-governance-query.service')
-  const { LytService } = require('./lyt.service')
 
   it('getConnectionGovernanceSummary aggregates readiness and recommendations', async () => {
     const connectionMap: Record<string, Record<string, unknown>> = {

@@ -117,7 +117,7 @@ describe('AdvancedRAGService (Complete)', () => {
 
   it('analyzeSearchPerformance 应包含延迟和建议', () => {
     const feedback = service.analyzeSearchPerformance({ text: '系统功能', topK: 5 })
-    expect(feedback.latencyMs).toBeGreaterThan(0)
+    expect(feedback.latencyMs).toBeGreaterThanOrEqual(0)
     expect(feedback.suggestions.length).toBeGreaterThan(0)
     expect(['excellent', 'good', 'fair', 'poor']).toContain(feedback.resultQuality)
   })

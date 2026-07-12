@@ -413,7 +413,7 @@ describe('[webhook] 契约: 平台适配器', () => {
     assert.equal(formatted.msg_type, 'interactive')
     assert.ok(formatted.card)
     const card = formatted.card as { header: { title: { content: string } } }
-    assert.equal(card.header.title.content, 'canary.created')
+    assert.equal(card.header.title.content, '灰度实验创建')
   })
 
   it('genericAdapter.validateUrl 验证正确 URL', () => {

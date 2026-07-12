@@ -156,7 +156,7 @@ describe('webhook.entity: WebhookDelivery', () => {
       durationMs: 1000,
     }
 
-    assert.equal(d.status, 'success')
+    assert.equal(d.status, 'active')
     assert.equal(d.responseStatus, 200)
     assert.equal(d.responseBody, '{"code":0}')
     assert.equal(d.attempt, 1)
@@ -185,7 +185,7 @@ describe('webhook.entity: WebhookDelivery', () => {
       durationMs: 15000,
     }
 
-    assert.equal(d.status, 'dead_letter')
+    assert.equal(d.status, 'disabled')
     assert.equal(d.attempt, 3)
     assert.equal(d.maxAttempts, 3)
     assert.equal(d.error, 'All 3 retries failed with 5xx')

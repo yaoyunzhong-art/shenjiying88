@@ -193,6 +193,7 @@ describe(`${ROLES.HR} report 角色测试 v3`, () => {
     expect(dash.isShared).toBe(false)
 
     // 等待短暂时间确保 updatedAt 变化
+    await new Promise(r => setTimeout(r, 5))
     const dashCreatedAt = dash.updatedAt
 
     // 更新看板增加卡片

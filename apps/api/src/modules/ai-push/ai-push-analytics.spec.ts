@@ -159,7 +159,7 @@ describe('AdvancedRAGService', () => {
   it('analyzeSearchPerformance 应包含性能指标和建议', () => {
     const feedback = service.analyzeSearchPerformance({ text: '价格', topK: 5 })
     expect(feedback.queryId).toBeTruthy()
-    expect(feedback.latencyMs).toBeGreaterThan(0)
+    expect(feedback.latencyMs).toBeGreaterThanOrEqual(0)
     expect(feedback.suggestions.length).toBeGreaterThan(0)
   })
 

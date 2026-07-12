@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
+import { MockLytAdapter } from './mock-lyt.adapter'
+
 describe('MockLytAdapter', () => {
-   
-  const { MockLytAdapter } = require('./mock-lyt.adapter')
 
   it('getMember returns member profile with input memberId', async () => {
     const adapter = new MockLytAdapter()

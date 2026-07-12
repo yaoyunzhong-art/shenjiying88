@@ -150,32 +150,28 @@ export class AdvancedRAGService {
     const cjkChars = [...query.replace(/[a-zA-Z0-9\s]/g, '')]
     const results: Array<{ chunkId: string; docId: string; collection: string; content: string; score: number; source: string; metadata: Record<string, unknown> }> = []
 
-    for (const [key, doc] of this.kb as any) {
-      if (!doc || !doc.chunks) {
-        const docMap = (this.kb as any).documents ?? new Map()
-        for (const [, storedDoc] of docMap) {
-          if (!storedDoc || !storedDoc.chunks) continue
-          for (const chunk of storedDoc.chunks) {
-            const content = chunk.content.toLowerCase()
-            let score = 0
-            for (const word of words) {
-              if (content.includes(word)) score += 1 / (1 + content.length / 512)
-            }
-            for (const char of cjkChars) {
-              if (content.includes(char)) score += 0.2
-            }
-            if (score > 0) {
-              results.push({
-                chunkId: chunk.id,
-                docId: storedDoc.id,
-                collection: storedDoc.collection,
-                content: chunk.content,
-                score: Math.min(1, score),
-                source: 'keyword',
-                metadata: chunk.metadata ?? {},
-              })
-            }
-          }
+    const docMap = (this.kb as any).documents ?? new Map()
+    for (const [, storedDoc] of docMap) {
+      if (!storedDoc || !storedDoc.chunks) continue
+      for (const chunk of storedDoc.chunks) {
+        const content = chunk.content.toLowerCase()
+        let score = 0
+        for (const word of words) {
+          if (content.includes(word)) score += 1 / (1 + content.length / 512)
+        }
+        for (const char of cjkChars) {
+          if (content.includes(char)) score += 0.2
+        }
+        if (score > 0) {
+          results.push({
+            chunkId: chunk.id,
+            docId: storedDoc.id,
+            collection: storedDoc.collection,
+            content: chunk.content,
+            score: Math.min(1, score),
+            source: 'keyword',
+            metadata: chunk.metadata ?? {},
+          })
         }
       }
     }
@@ -473,8 +469,10 @@ export class AdvancedRAGService {
    * 构建生成式答案 (含引用)
    */
   generateAnswerWithCitations(query: string, collection: string): AnswerWithCitations {
-    const results = this.hybridSearch({ text: query, topK: 5 })
-    const reranked = this.rerank(query, results)
+    const allResults = this.hybridSearch({ text: query, topK: 20 })
+    // Filter by collection
+    const filtered = allResults.filter(r => r.collection === collection)
+    const reranked = this.rerank(query, filtered.slice(0, 10))
 
     const citations = reranked.slice(0, 3).map(r => ({
       chunkId: r.chunkId,

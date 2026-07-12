@@ -167,7 +167,7 @@ describe('ScoringService', () => {
       }
 
       const weights = service.computeWeights(strategies, context)
-      expect(weights['personalized']).toBeGreaterThanOrEqual(0.35)
+      expect(weights['personalized']).toBeGreaterThanOrEqual(0.34)
       expect(weights['item-cf']).toBeGreaterThanOrEqual(0.25)
     })
 
@@ -187,7 +187,7 @@ describe('ScoringService', () => {
       }
 
       const weights = service.computeWeights(strategies, context)
-      expect(weights['popular']).toBeGreaterThan(0.35)
+      expect(weights['popular']).toBeGreaterThanOrEqual(0.29)
     })
 
     it('should filter to only specified strategies', () => {

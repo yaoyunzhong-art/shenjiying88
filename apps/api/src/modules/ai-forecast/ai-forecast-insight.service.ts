@@ -266,13 +266,17 @@ export class ForecastInsightService {
       modelConfidence,
       volatilityScore: volatility,
       historicalAccuracy: historical,
-      confidenceInterval: {
-        p10: Math.round((100 - volatility) * 0.7),
-        p25: Math.round((100 - volatility) * 0.85),
-        p50: Math.round(100 - volatility * 0.5),
-        p75: Math.round((100 - volatility) * 1.1),
-        p90: Math.round((100 - volatility) * 1.2),
-      },
+      confidenceInterval: (() => {
+        const base = 100 - volatility
+        const raw = [
+          Math.round(base * 0.7),
+          Math.round(base * 0.85),
+          Math.round(100 - volatility * 0.5),
+          Math.round(base * 1.1),
+          Math.round(base * 1.2),
+        ].sort((a, b) => a - b)
+        return { p10: raw[0], p25: raw[1], p50: raw[2], p75: raw[3], p90: raw[4] }
+      })(),
       uncertaintyFactors: [
         { factor: '历史数据完整性', impact: dataQuality > 85 ? 'low' : dataQuality > 70 ? 'medium' : 'high', description: `数据质量评分 ${dataQuality}/100` },
         { factor: '市场波动性', impact: volatility > 30 ? 'high' : volatility > 20 ? 'medium' : 'low', description: `市场波动评分 ${volatility}/100` },
