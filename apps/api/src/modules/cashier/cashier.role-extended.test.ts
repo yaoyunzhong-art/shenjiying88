@@ -204,7 +204,7 @@ describe('👔店长 收银扩展测试', () => {
       items: [{ skuId: 'sku-02', quantity: 1, price: 200 }]
     })
     svc.createPayment(order.orderId, { channel: 'alipay' })
-    svc.applyPaymentCallback({
+    await svc.applyPaymentCallback({
       standardizedEventName: 'cashier.payment-succeeded',
       aggregateId: order.orderId,
       orderId: order.orderId,
@@ -212,7 +212,7 @@ describe('👔店长 收银扩展测试', () => {
       externalPaymentId: 'ext-002'
     })
     assert.throws(
-      () => svc.closeOrder(order.orderId, ctx),
+      () => await svc.closeOrder(order.orderId, ctx),
       /Paid order .* cannot be manually closed/
     )
   })
@@ -224,7 +224,7 @@ describe('👔店长 收银扩展测试', () => {
       items: [{ skuId: 'sku-03', quantity: 1, price: 50 }]
     })
     svc.createPayment(order.orderId, { channel: 'card' })
-    const { order: closed } = svc.closeTimedOutOrder(order.orderId, ctx)
+    const { order: closed } = await svc.closeTimedOutOrder(order.orderId, ctx)
     assert.equal(closed.status, CashierOrderStatus.Closed)
     assert.equal(closed.closeReason, 'PAYMENT_TIMEOUT')
     assert.ok(closed.closedAt)
@@ -245,7 +245,7 @@ describe('🛒前台 收银扩展测试', () => {
       ],
       currency: 'CNY'
     })
-    const detail = svc.getOrder(order.orderId, ctx)
+    const detail = await svc.getOrder(order.orderId, ctx)
     assert.ok(detail)
     assert.equal(detail!.orderId, order.orderId)
     assert.equal(detail!.memberId, 'm-02')
@@ -266,7 +266,7 @@ describe('🛒前台 收银扩展测试', () => {
   it('前台查询不存在的订单应返回 undefined（边界）', () => {
     const svc = freshService()
     const ctx = makeTenantContext()
-    const result = svc.getOrder('nonexistent-order', ctx)
+    const result = await svc.getOrder(.nonexistent-order., ctx)
     assert.equal(result, undefined)
   })
 })
@@ -293,7 +293,7 @@ describe('👥HR 收银扩展测试', () => {
       items: [{ skuId: 'sku-hr2', quantity: 1, price: 100 }]
     })
     svc.createPayment(order.orderId, { channel: 'wechat-pay', amount: 100, externalPaymentId: 'ext-hr2' })
-    const latest = svc.getLatestPayment(order.orderId, ctx)
+    const latest = await svc.getLatestPayment(order.orderId, ctx)
     assert.ok(latest)
     assert.equal(latest!.channel, 'wechat-pay')
     assert.equal(latest!.amount, 100)
@@ -301,7 +301,7 @@ describe('👥HR 收银扩展测试', () => {
   it('HR 查看无支付订单的最新支付返回 undefined（边界）', () => {
     const svc = freshService()
     const ctx = makeTenantContext()
-    const result = svc.getLatestPayment('nonexistent', ctx)
+    const result = await svc.getLatestPayment(.nonexistent., ctx)
     assert.equal(result, undefined)
   })
 })
@@ -319,7 +319,7 @@ describe('🔧安监 收银扩展测试', () => {
         { skuId: 'sku-sec2', quantity: 1, price: 1200 }
       ]
     })
-    const detail = svc.getOrder(order.orderId, ctx)
+    const detail = await svc.getOrder(order.orderId, ctx)
     assert.equal(detail!.totalAmount, 2 * 500 + 1 * 1200)
   })
   it('安监确认已关闭订单手动关闭操作幂等（边界：终态保护）', () => {
@@ -330,8 +330,8 @@ describe('🔧安监 收银扩展测试', () => {
       items: [{ skuId: 'sku-sec3', quantity: 1, price: 100 }]
     })
     svc.createPayment(order.orderId, { channel: 'card' })
-    svc.closeOrder(order.orderId, ctx, { reason: '安全审计关闭', operator: 'auditor' })
-    const { order: result } = svc.closeOrder(order.orderId, ctx)
+    await svc.closeOrder(order.orderId, ctx, { reason: .安全审计关闭., operator: .auditor. })
+    const { order: result } = await svc.closeOrder(order.orderId, ctx)
     assert.equal(result.status, CashierOrderStatus.Closed)
   })
   it('安监检查失败支付记录（边界：失败原因追溯）', () => {
@@ -342,7 +342,7 @@ describe('🔧安监 收银扩展测试', () => {
       items: [{ skuId: 'sku-sec4', quantity: 1, price: 999 }]
     })
     svc.createPayment(order.orderId, { channel: 'bank-transfer' })
-    const result = svc.applyPaymentCallback({
+    const result = await svc.applyPaymentCallback({
       standardizedEventName: 'cashier.payment-failed',
       aggregateId: order.orderId,
       orderId: order.orderId,
@@ -399,7 +399,7 @@ describe('🎯运行专员 收银扩展测试', () => {
       amount: 300,
       externalPaymentId: 'ext-ops-01'
     })
-    const result = svc.applyPaymentCallback({
+    const result = await svc.applyPaymentCallback({
       standardizedEventName: 'cashier.payment-succeeded',
       aggregateId: order.orderId,
       orderId: order.orderId,
@@ -419,7 +419,7 @@ describe('🎯运行专员 收银扩展测试', () => {
     })
     // 第一笔失败
     svc.createPayment(order.orderId, { channel: 'card', amount: 400, externalPaymentId: 'ext-ops-fail' })
-    svc.applyPaymentCallback({
+    await svc.applyPaymentCallback({
       standardizedEventName: 'cashier.payment-failed',
       aggregateId: order.orderId,
       orderId: order.orderId,
@@ -428,7 +428,7 @@ describe('🎯运行专员 收银扩展测试', () => {
     })
     // 第二笔成功
     svc.createPayment(order.orderId, { channel: 'wechat-pay', amount: 400, externalPaymentId: 'ext-ops-ok' })
-    svc.applyPaymentCallback({
+    await svc.applyPaymentCallback({
       standardizedEventName: 'cashier.payment-succeeded',
       aggregateId: order.orderId,
       orderId: order.orderId,
@@ -451,7 +451,7 @@ describe('🎯运行专员 收银扩展测试', () => {
       items: [{ skuId: 'sku-ops3', quantity: 1, price: 100 }]
     })
     svc.createPayment(order.orderId, { channel: 'alipay', amount: 100, externalPaymentId: 'ext-idem-01' })
-    const r1 = svc.applyPaymentCallback({
+    const r1 = await svc.applyPaymentCallback({
       standardizedEventName: 'cashier.payment-succeeded',
       aggregateId: order.orderId,
       orderId: order.orderId,
@@ -461,7 +461,7 @@ describe('🎯运行专员 收银扩展测试', () => {
     })
     assert.equal(r1.payment.status, CashierPaymentStatus.Succeeded)
     // 同样 externalPaymentId 再次回调 → 重用已有支付记录
-    const r2 = svc.applyPaymentCallback({
+    const r2 = await svc.applyPaymentCallback({
       standardizedEventName: 'cashier.payment-succeeded',
       aggregateId: order.orderId,
       orderId: order.orderId,
@@ -501,7 +501,7 @@ describe('🤝团建 收银扩展测试', () => {
     })
     // 第一次失败
     svc.createPayment(order.orderId, { channel: 'card', amount: 3000, externalPaymentId: 'ext-team-fail' })
-    svc.applyPaymentCallback({
+    await svc.applyPaymentCallback({
       standardizedEventName: 'cashier.payment-failed',
       aggregateId: order.orderId,
       orderId: order.orderId,
@@ -510,7 +510,7 @@ describe('🤝团建 收银扩展测试', () => {
     })
     // 第二次成功
     svc.createPayment(order.orderId, { channel: 'bank-transfer', amount: 3000, externalPaymentId: 'ext-team-ok' })
-    const result = svc.applyPaymentCallback({
+    const result = await svc.applyPaymentCallback({
       standardizedEventName: 'cashier.payment-succeeded',
       aggregateId: order.orderId,
       orderId: order.orderId,
@@ -569,14 +569,14 @@ describe('订单状态机扩展边界', () => {
       items: [{ skuId: 'fsm-1', quantity: 1, price: 300 }]
     })
     svc.createPayment(order.orderId, { channel: 'wechat-pay', amount: 300 })
-    svc.applyPaymentCallback({
+    await svc.applyPaymentCallback({
       standardizedEventName: 'cashier.payment-succeeded',
       aggregateId: order.orderId,
       orderId: order.orderId,
       tenantId: 't-ext'
     })
     assert.throws(
-      () => svc.closeTimedOutOrder(order.orderId, ctx),
+      () => await svc.closeTimedOutOrder(order.orderId, ctx),
       /Paid order .* cannot be timeout-closed/
     )
   })
@@ -587,8 +587,8 @@ describe('订单状态机扩展边界', () => {
       memberId: 'm-fsm2',
       items: [{ skuId: 'fsm-2', quantity: 1, price: 100 }]
     })
-    svc.closeTimedOutOrder(order.orderId, ctx)
-    const { order: result } = svc.closeTimedOutOrder(order.orderId, ctx)
+    await svc.closeTimedOutOrder(order.orderId, ctx)
+    const { order: result } = await svc.closeTimedOutOrder(order.orderId, ctx)
     assert.equal(result.status, CashierOrderStatus.Closed)
   })
 })

@@ -51,7 +51,7 @@ describe('CashierService', () => {
     const payment = await service.createPayment(order.orderId, {
       channel: 'wechat-pay'
     })
-    const storedOrder = service.getOrder(order.orderId, createContext())
+    const storedOrder = await service.getOrder(order.orderId, createContext())
     assert.equal(payment.status, CashierPaymentStatus.Pending)
     assert.equal(storedOrder?.status, CashierOrderStatus.PendingPayment)
     assert.equal(storedOrder?.latestPaymentId, payment.paymentId)

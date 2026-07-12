@@ -134,7 +134,7 @@ describe(`${ROLES.StoreManager} 收银深度场景`, () => {
       () => svc.closeTimedOutOrder(order.orderId, ctx, CashierOrderCloseReason.PaymentTimeout),
       /Paid order.*cannot be timeout-closed/
     )
-    const paidOrder = svc.getOrder(order.orderId, ctx)
+    const paidOrder = await svc.getOrder(order.orderId, ctx)
     assert.equal(paidOrder!.status, CashierOrderStatus.Paid)
   })
 })
@@ -149,7 +149,7 @@ describe(`${ROLES.FrontDesk} 收银深度场景`, () => {
       items: [{ skuId: 'play-hour-1', title: '台球1小时', quantity: 1, price: 60 }],
     })
     assert.equal(order.status, CashierOrderStatus.Created)
-    const retrieved = svc.getOrder(order.orderId, ctx)
+    const retrieved = await svc.getOrder(order.orderId, ctx)
     assert.equal(retrieved!.orderId, order.orderId)
   })
 
@@ -241,7 +241,7 @@ describe(`${ROLES.Safety} 收银深度场景`, () => {
       items: [{ skuId: 'audit-pay', title: '支付审计', quantity: 2, price: 50 }],
     })
     await svc.createPayment(order.orderId, { channel: 'cash', amount: 100 })
-    const latestPayment = svc.getLatestPayment(order.orderId, ctx)
+    const latestPayment = await svc.getLatestPayment(order.orderId, ctx)
     assert.ok(latestPayment)
     assert.equal(latestPayment!.amount, 100)
   })
@@ -333,7 +333,7 @@ describe(`${ROLES.Ops} 收银深度场景`, () => {
       tenantId: TENANT_ID,
       externalPaymentId: 'ext-fail-01',
     })
-    const failedOrder = svc.getOrder(order.orderId, ctx)
+    const failedOrder = await svc.getOrder(order.orderId, ctx)
     assert.equal(failedOrder!.status, CashierOrderStatus.PaymentFailed)
   })
 
@@ -469,7 +469,7 @@ describe(`${ROLES.Marketing} 收银深度场景`, () => {
     assert.equal(payments.length, 3)
     // 验证只读 - 营销不能修改任何状态
     const firstOrderId = svc.listOrders(ctx)[0].orderId
-    const order = svc.getOrder(firstOrderId, ctx)
+    const order = await svc.getOrder(firstOrderId, ctx)
     assert.equal(order!.status, CashierOrderStatus.PendingPayment) // 只读验证
   })
 })

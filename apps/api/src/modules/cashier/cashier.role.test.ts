@@ -170,7 +170,7 @@ describe(`${ROLES.Safety} 收银角色测试`, () => {
       memberId: 'm-01',
       items: [{ skuId: 'sku-007', title: '门票', quantity: 1, price: 100 }]
     })
-    const orderDetail = service.getOrder(order.orderId, tenantContext)
+    const orderDetail = await service.getOrder(order.orderId, tenantContext)
     assert.ok(orderDetail)
     assert.equal(orderDetail.totalAmount, 100)
     assert.equal(orderDetail.status, CashierOrderStatus.Created)

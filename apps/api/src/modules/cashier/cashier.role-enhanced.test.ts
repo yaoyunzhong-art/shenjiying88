@@ -143,7 +143,7 @@ describe(`${ROLES.FrontDesk} 收银增强测试`, () => {
     expect(order.status).toBe(CashierOrderStatus.Paid)
 
     // 前台只能查看已支付的订单及其支付信息（退款依赖更高权限）
-    const orderDetail = service.getOrder(order.orderId, ctx)
+    const orderDetail = await service.getOrder(order.orderId, ctx)
     expect(orderDetail?.status).toBe(CashierOrderStatus.Paid)
     expect(orderDetail?.paidAt).toBeDefined()
 
@@ -172,7 +172,7 @@ describe(`${ROLES.FrontDesk} 收银增强测试`, () => {
     // 验证 getOrder 在跨租户时也返回 undefined
     const allOrders = service.listOrders(ctxA)
     expect(allOrders.length).toBe(1)
-    const foundWithB = service.getOrder(allOrders[0].orderId, ctxB)
+    const foundWithB = await service.getOrder(allOrders[0].orderId, ctxB)
     expect(foundWithB).toBeUndefined()
   })
 
@@ -230,7 +230,7 @@ describe(`${ROLES.HR} 收银增强测试`, () => {
       items: [{ skuId: 'sku-hr-3', quantity: 1, price: 100 }]
     })
     // 用另一租户上下文查询同一订单 ID
-    const found = service.getOrder(order.orderId, ctx2)
+    const found = await service.getOrder(order.orderId, ctx2)
     expect(found).toBeUndefined()
   })
 })
@@ -283,7 +283,7 @@ describe(`${ROLES.Safety} 收银增强测试`, () => {
       transactionNo: 'txn-fail-risk'
     })
 
-    const orderDetail = service.getOrder(order.orderId, ctx)
+    const orderDetail = await service.getOrder(order.orderId, ctx)
     expect(orderDetail?.status).toBe(CashierOrderStatus.PaymentFailed)
     const payments = service.listOrderPayments(order.orderId, ctx)
     expect(payments[0].status).toBe(CashierPaymentStatus.Failed)
@@ -574,7 +574,7 @@ describe('高级安全与隔离场景', () => {
   it('不存在的订单查询返回 undefined', () => {
     const { service } = makeCashierService()
     const ctx = makeTenantContext()
-    const found = service.getOrder('order-nonexistent', ctx)
+    const found = await service.getOrder('order-nonexistent', ctx)
     expect(found).toBeUndefined()
   })
 
@@ -585,7 +585,7 @@ describe('高级安全与隔离场景', () => {
     // 在 A 租户创建订单
     // 用 B 租户上下文查询（即便订单 ID 正确也返回 undefined）
     // 由于 B 租户下没有任何订单，直接返回 undefined
-    const found = service.getOrder('any-order', ctxB)
+    const found = await service.getOrder('any-order', ctxB)
     expect(found).toBeUndefined()
   })
 })
