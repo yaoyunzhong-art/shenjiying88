@@ -262,6 +262,18 @@ describe('TenantConfigController V10 Day 6 Phase 90', () => {
     })
   })
 
+  describe('GET /tenant-config/meta/cache-stats - cacheStats', () => {
+    it('[正例] 无缓存服务时返回默认统计', () => {
+      const result = controller.cacheStats()
+      assert.equal(result.enabled, false)
+      assert.equal(result.hits, 0)
+      assert.equal(result.misses, 0)
+      assert.equal(result.invalidations, 0)
+      assert.equal(result.errors, 0)
+      assert.equal(result.hitRate, 0)
+    })
+  })
+
   // ─── 敏感字段脱敏 ───
 
   describe('secret 字段脱敏', () => {

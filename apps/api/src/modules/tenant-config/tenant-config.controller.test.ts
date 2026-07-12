@@ -8,7 +8,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { InMemoryCacheService } from '../../infrastructure/cache/cache.module'
 import { TenantConfigController } from './tenant-config.controller'
+import { TenantConfigCacheService } from './tenant-config-cache.service'
 import { TenantConfigService } from './tenant-config.service'
 import { runWithTenant } from '../../common/context/tenant-context'
 
@@ -453,6 +455,27 @@ describe('TenantConfigController 集成测试', () => {
       assert.ok(levels.has('store'))
       assert.ok(levels.has('tenant'))
       assert.ok(levels.has('brand'))
+    })
+  })
+
+  describe('GET /tenant-config/meta/cache-stats → cacheStats()', () => {
+    it('[正例] 返回 tenant-config 缓存统计', async () => {
+      const cache = new TenantConfigCacheService(new InMemoryCacheService())
+      const cachedService = new TenantConfigService(undefined, cache)
+      const cachedController = new TenantConfigController(cachedService)
+
+      await runWithTenant(STORE_CTX, async () => {
+        await cachedController.listConfigs({ level: 'store' })
+        await cachedController.listConfigs({ level: 'store' })
+      })
+
+      const stats = cachedController.cacheStats()
+      assert.equal(stats.enabled, true)
+      assert.equal(stats.misses, 1)
+      assert.equal(stats.hits, 1)
+      assert.equal(stats.invalidations, 0)
+      assert.equal(stats.errors, 0)
+      assert.equal(stats.hitRate, 0.5)
     })
   })
 

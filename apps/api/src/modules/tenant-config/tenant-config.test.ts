@@ -737,6 +737,16 @@ describe('TenantConfigController', () => {
       assert.ok(def.label.length >= 2, `label too short for ${def.key}: ${def.label}`)
     }
   })
+
+  it('TC-62B cacheStats() should expose default zero stats', () => {
+    const result = controller.cacheStats()
+    assert.equal(result.enabled, false)
+    assert.equal(result.hits, 0)
+    assert.equal(result.misses, 0)
+    assert.equal(result.invalidations, 0)
+    assert.equal(result.errors, 0)
+    assert.equal(result.hitRate, 0)
+  })
 })
 
 // ═══════════════════════════════════════════════════════════════════

@@ -143,4 +143,20 @@ export class TenantConfigController {
   definitions(): { items: ConfigItemDefinition[]; total: number } {
     return { items: BUILTIN_CONFIG_DEFINITIONS, total: BUILTIN_CONFIG_DEFINITIONS.length }
   }
+
+  /**
+   * GET /tenant-config/meta/cache-stats
+   * 获取 tenant-config 缓存统计
+   */
+  @Get('meta/cache-stats')
+  cacheStats(): {
+    enabled: boolean
+    hits: number
+    misses: number
+    invalidations: number
+    errors: number
+    hitRate: number
+  } {
+    return this.service.getCacheStats()
+  }
 }

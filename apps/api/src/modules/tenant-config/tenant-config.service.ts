@@ -745,6 +745,20 @@ export class TenantConfigService implements OnModuleInit {
       .reverse()
   }
 
+  getCacheStats(): ReturnType<TenantConfigCacheService['getStats']> & { enabled: boolean } {
+    const stats = this.cacheService?.getStats() ?? {
+      hits: 0,
+      misses: 0,
+      invalidations: 0,
+      errors: 0,
+      hitRate: 0,
+    }
+    return {
+      ...stats,
+      enabled: !!this.cacheService,
+    }
+  }
+
   // ============ 5. 内部工具 ============
 
   private assertLevelAccess(ctx: TenantContext, level: ConfigLevel): void {
