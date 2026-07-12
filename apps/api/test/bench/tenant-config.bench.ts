@@ -1,3 +1,4 @@
+// @ts-nocheck — k6 模块由 k6 运行时解析, 不通过 TS 编译
 // k6 压测: tenant-config getConfigs / getEffectiveConfigs
 // 目标: 验证 P1-F1 二级索引优化效果
 //
