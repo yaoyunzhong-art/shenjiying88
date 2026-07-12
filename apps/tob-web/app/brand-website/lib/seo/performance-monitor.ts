@@ -305,7 +305,19 @@ export class PerformanceMonitor {
     // 上报数据到服务器
     const data = this.getSummary();
     console.log('[PerformanceMonitor] Flushing data:', data);
-    // TODO: 实际上报逻辑
+    // 通过 sendBeacon 异步上报，不阻塞页面卸载
+    if (navigator.sendBeacon) {
+      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+      navigator.sendBeacon('/api/metrics/web-vitals', blob);
+    } else {
+      // Fallback: 使用 fetch keepalive
+      fetch('/api/metrics/web-vitals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        keepalive: true,
+      }).catch(() => {/* ignore flush errors */});
+    }
   }
 
   /**

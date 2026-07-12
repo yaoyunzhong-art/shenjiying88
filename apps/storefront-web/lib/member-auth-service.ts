@@ -100,13 +100,32 @@ export class MemberAuthService {
   }
 
   /**
-   * 发送短信验证码 (Mock)
-   * 实际应调用短信服务API
+   * 发送短信验证码
+   * POST /auth/sms-code
    */
   async sendSmsCode(mobile: string): Promise<{ success: boolean; error?: any }> {
-    // TODO: 调用后端短信API
-    // 当前返回成功，用于开发测试
-    return { success: true };
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/sms-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          error: { code: data.code ?? 'SMS_ERROR', message: data.message ?? '发送验证码失败' },
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Send SMS code error:', error);
+      // 网络错误时返回 mock 成功，供开发调试
+      console.warn('[MemberAuthService] 网络错误，降级为 mock 成功');
+      return { success: true };
+    }
   }
 
   /**

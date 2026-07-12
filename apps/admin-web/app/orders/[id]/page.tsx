@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { Suspense, useMemo } from 'react';
+import { message } from 'antd';
 import {
   PageShell,
   StatusBadge,
@@ -121,7 +122,7 @@ function OrderDetailContent() {
                     ? 'danger' as const
                     : 'primary' as const,
                   onClick: () => {
-                    // TODO: connect to real status transition API
+                    message.warning('状态流转API尚未接入，暂无法操作');
                   },
                 }))
               : []

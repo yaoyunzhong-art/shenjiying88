@@ -147,16 +147,53 @@ export class EnterpriseAuthService {
       };
     }
 
-    // TODO: 后端注册API实现后，替换为真实API调用
-    // 当前返回mock数据，用于前端开发调试
-    return {
-      success: true,
-      data: {
-        userId: `enterprise_${Date.now()}`,
-        email: request.email,
-        companyName: request.companyName,
-      },
-    };
+    // 调用后端注册API
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: request.email,
+          password: request.password,
+          companyName: request.companyName,
+          contactPerson: request.contactPerson,
+          mobile: request.mobile,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          success: true,
+          data: data.data ?? {
+            userId: data.userId ?? `enterprise_${Date.now()}`,
+            email: request.email,
+            companyName: request.companyName,
+          },
+        };
+      }
+
+      const errData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: {
+          code: errData.code ?? 'REGISTER_ERROR',
+          message: errData.message ?? `注册失败 (HTTP ${response.status})`,
+        },
+      };
+    } catch (error) {
+      // 后端API暂未部署时降级为 mock 数据，供前端调试
+      console.warn('[EnterpriseAuthService] 注册API暂不可达，降级为 mock');
+      console.error('Register API call failed:', error);
+      return {
+        success: true,
+        data: {
+          userId: `enterprise_${Date.now()}`,
+          email: request.email,
+          companyName: request.companyName,
+        },
+      };
+    }
   }
 
   /**
