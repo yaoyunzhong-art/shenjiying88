@@ -12,7 +12,10 @@ import { MockLytAdapter } from './adapters/mock-lyt.adapter'
 import { RealLytAdapter } from './adapters/real-lyt.adapter'
 import { SandboxLytAdapter } from './adapters/sandbox-lyt.adapter'
 import { FoundationModule } from '../foundation/foundation.module'
+import { FoundationService } from '../foundation/foundation.service'
 import { IntegrationOrchestrationService } from '../foundation/integration-orchestration/integration-orchestration.service'
+import { CashierToLytBridge } from '../cashier/bridges/cashier-to-lyt.bridge'
+import { LytToCashierBridge } from '../cashier/bridges/lyt-to-cashier.bridge'
 
 const stubFoundationService = {
   getDependencySummary: () => ({
@@ -30,10 +33,10 @@ const stubIntegrationOrchestrationService = {
 @Global()
 @Module({
   providers: [
-    { provide: 'FoundationService', useValue: stubFoundationService },
+    { provide: FoundationService, useValue: stubFoundationService as unknown as FoundationService },
     { provide: IntegrationOrchestrationService, useValue: stubIntegrationOrchestrationService }
   ],
-  exports: ['FoundationService', IntegrationOrchestrationService]
+  exports: [FoundationService, IntegrationOrchestrationService]
 })
 class StubFoundationModule {}
 
@@ -41,6 +44,16 @@ function createTestingModule(): Promise<TestingModule> {
   return Test.createTestingModule({ imports: [LytModule] })
     .overrideModule(FoundationModule)
     .useModule(StubFoundationModule)
+    .overrideProvider(CashierToLytBridge).useFactory({
+      factory: () => new CashierToLytBridge({ resolveLytAdapter: () => null })
+    })
+    .overrideProvider(LytToCashierBridge).useFactory({
+      factory: () => new LytToCashierBridge({
+        syncMemberProfile: async () => ({ updated: false }),
+        syncExternalOrder: async () => ({ cashierOrderId: '' }),
+        recordGatePass: async () => ({ recorded: false })
+      })
+    })
     .compile()
 }
 
