@@ -61,7 +61,7 @@ describe(`${ROLES.StoreManager} 店长设备管理场景`, () => {
   let svc: DeviceAdapterService
   let ctrl: DeviceAdapterController
 
-  beforeEach(async () => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
+  beforeEach(() => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
 
   it('场景A: 新店开业注册全套设备', () => {
     // 店长为新门店注册 POS、闸机、打印机、扫描仪
@@ -133,7 +133,7 @@ describe(`${ROLES.FrontDesk} 前台收银场景`, () => {
   let svc: DeviceAdapterService
   let ctrl: DeviceAdapterController
 
-  beforeEach(async () => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
+  beforeEach(() => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
 
   it('场景A: 正常收款POS交易', async () => {
     await registerAndConnect(ctrl, svc, makePOS('pos-cashier'))
@@ -208,7 +208,7 @@ describe(`${ROLES.Security} 安监安全场景`, () => {
   let svc: DeviceAdapterService
   let ctrl: DeviceAdapterController
 
-  beforeEach(async () => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
+  beforeEach(() => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
 
   it('场景A: 监控闸机出入记录', async () => {
     await registerAndConnect(ctrl, svc, makeGate('gate-security'))
@@ -249,7 +249,7 @@ describe(`${ROLES.Guide} 导玩员运营场景`, () => {
   let svc: DeviceAdapterService
   let ctrl: DeviceAdapterController
 
-  beforeEach(async () => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
+  beforeEach(() => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
 
   it('场景A: 打印游戏积分小票', async () => {
     await registerAndConnect(ctrl, svc, makePrinter('printer-guide'))
@@ -282,7 +282,7 @@ describe(`${ROLES.Operations} 运行专员运维场景`, () => {
   let svc: DeviceAdapterService
   let ctrl: DeviceAdapterController
 
-  beforeEach(async () => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
+  beforeEach(() => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
 
   it('场景A: 查看所有设备状态', async () => {
     await registerAndConnect(ctrl, svc, makePOS('ops-pos'))
@@ -317,7 +317,7 @@ describe(`${ROLES.Teambuilding} 团建活动场景`, () => {
   let svc: DeviceAdapterService
   let ctrl: DeviceAdapterController
 
-  beforeEach(async () => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
+  beforeEach(() => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
 
   it('场景A: 团建团体入场闸机开门', async () => {
     await registerAndConnect(ctrl, svc, makeGate('gate-tb'))
@@ -343,7 +343,7 @@ describe(`${ROLES.Marketing} 营销活动场景`, () => {
   let svc: DeviceAdapterService
   let ctrl: DeviceAdapterController
 
-  beforeEach(async () => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
+  beforeEach(() => { svc = new DeviceAdapterService(); ctrl = new DeviceAdapterController(svc) })
 
   it('场景A: 打印促销活动二维码', async () => {
     await registerAndConnect(ctrl, svc, makePrinter('printer-mkt'))

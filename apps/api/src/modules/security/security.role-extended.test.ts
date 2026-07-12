@@ -123,7 +123,7 @@ describe(`${ROLES.FrontDesk} security 扩展测试`, () => {
 // ──────────── 👥 HR：数据隐私 ────────────
 describe(`${ROLES.HR} security 扩展测试`, () => {
   let ctx: Ctx
-  beforeEach(async () => { ctx = setup() })
+  beforeEach(() => { ctx = setup() })
 
   it('HR 检测响应中的敏感数据暴露（正常流程）', async () => {
     const responseBody = {
@@ -161,7 +161,7 @@ describe(`${ROLES.HR} security 扩展测试`, () => {
 // ──────────── 🔧 安监：WAF 规则管理/漏洞扫描 ────────────
 describe(`${ROLES.Safety} security 扩展测试`, () => {
   let ctx: Ctx
-  beforeEach(async () => { ctx = setup() })
+  beforeEach(() => { ctx = setup() })
 
   it('安监创建多条 WAF 规则（正常流程）', () => {
     ctx.waf.addRule({ name: 'Block Admin', condition: { type: 'path', operator: 'regex', value: '^/admin' }, action: 'block', priority: 10, enabled: true })
@@ -201,7 +201,7 @@ describe(`${ROLES.Safety} security 扩展测试`, () => {
 // ──────────── 🎮 导玩员：设备安全 ────────────
 describe(`${ROLES.Guide} security 扩展测试`, () => {
   let ctx: Ctx
-  beforeEach(async () => { ctx = setup() })
+  beforeEach(() => { ctx = setup() })
 
   it('导玩员对正常设备请求 WAF 放行（正常流程）', () => {
     const result = ctx.waf.evaluate({
@@ -238,7 +238,7 @@ describe(`${ROLES.Guide} security 扩展测试`, () => {
 // ──────────── 🎯 运行专员：系统加固 ────────────
 describe(`${ROLES.Ops} security 扩展测试`, () => {
   let ctx: Ctx
-  beforeEach(async () => { ctx = setup() })
+  beforeEach(() => { ctx = setup() })
 
   it('运行专员批量扫描多个目标（正常流程）', async () => {
     const targets: SecurityScanTarget[] = [
@@ -346,7 +346,7 @@ describe(`${ROLES.Marketing} security 扩展测试`, () => {
 // ──────────── 📦 跨角色通用测试 ────────────
 describe('跨角色 security 通用边界测试', () => {
   let ctx: Ctx
-  beforeEach(async () => { ctx = setup() })
+  beforeEach(() => { ctx = setup() })
 
   it('所有角色可查看 WAF 列表（通用能力）', () => {
     const rules = ctx.waf.listRules()

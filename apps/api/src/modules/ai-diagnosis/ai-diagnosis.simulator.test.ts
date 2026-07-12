@@ -8,10 +8,10 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { AiDiagnosisController } from './ai-diagnosis.controller'
-import { AiDiagnosisService } from './ai-diagnosis.service'
 // ── 模拟服务工厂 ──
 function createSimulator() {
+  const { AiDiagnosisService } = require('./ai-diagnosis.service')
+  const { AiDiagnosisController } = require('./ai-diagnosis.controller')
   AiDiagnosisService.resetStores()
   const service = new AiDiagnosisService()
   const controller = new AiDiagnosisController(service)

@@ -184,7 +184,7 @@ describe('🎮导玩员 iot 扩展测试', () => {
 // ============================================================
 describe('🎯运行专员 iot 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(async () => { svc = setup() })
+  beforeEach(() => { svc = setup() })
 
   it('固件上传和 OTA 任务调度', async () => {
     const binary = Buffer.from('mock-firmware-binary-data')
@@ -248,7 +248,7 @@ describe('🤝团建 iot 扩展测试', () => {
 // ============================================================
 describe('📢营销 iot 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(async () => { svc = setup() })
+  beforeEach(() => { svc = setup() })
 
   it('按类型查询设备列表', () => {
     svc.esp32.registerDevice('e1', DeviceType.ESP32)

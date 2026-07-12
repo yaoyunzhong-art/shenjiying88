@@ -11,9 +11,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { runWithTenant } from '../../common/context/tenant-context'
-import { OcrController } from './ocr.controller'
-import { OcrService } from './ocr.service'
 
+const { OcrService } = require('./ocr.service')
+const { OcrController } = require('./ocr.controller')
 
 const TENANT_ID = 'test-role-tenant'
 

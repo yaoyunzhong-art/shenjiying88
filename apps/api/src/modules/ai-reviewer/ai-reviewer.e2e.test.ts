@@ -4,7 +4,7 @@ import { AIReviewerService } from './ai-reviewer.service';
 describe('AIReviewerService - Phase-18 T17', () => {
   let service: AIReviewerService;
 
-  beforeEach(async () => { service = new AIReviewerService(); });
+  beforeEach(() => { service = new AIReviewerService(); });
 
   it('AC-1: 检测 quota 双重 increment', () => {
     const code = `

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { PortalController } from './portal.controller'
 // ── Helpers ──
 function mockPortalService(overrides: any = {}) {
   return {
@@ -19,6 +18,7 @@ function mockPortalService(overrides: any = {}) {
 }
 
 function createPortalController(mockPortal = mockPortalService()) {
+  const { PortalController } = require('./portal.controller')
   return new PortalController(mockPortal)
 }
 
@@ -274,6 +274,7 @@ function makePortalControllerWithMocks(overrides: any = {}) {
     resolveBrandPortal: () => ({ audience: 'ToB', scopeType: 'BRAND', scopeCode: 'b-portal', tenantCode: 't-portal', brandCode: 'b-portal', marketCode: 'cn-mainland', channel: 'WEB', name: '品牌官网', primaryDomain: 'b.local', supportedLanguages: ['zh-cn'], heroTitle: '品牌经营官网', loginEntry: { label: '登录', loginPath: '/login', ssoEnabled: true } }),
     resolveStorePortal: () => ({ audience: 'ToC', scopeType: 'STORE', scopeCode: 's-portal', tenantCode: 't-portal', brandCode: 'b-portal', storeCode: 's-portal', storeName: '门店', marketCode: 'cn-mainland', channel: 'WEB', name: '门店门户', primaryDomain: 's.local', supportedLanguages: ['zh-cn'], supportedSurfaces: ['OFFICIAL_SITE', 'MINI_APP'] })
   }
+  const { PortalController } = require('./portal.controller')
   return new PortalController({ ...defaults, ...overrides })
 }
 

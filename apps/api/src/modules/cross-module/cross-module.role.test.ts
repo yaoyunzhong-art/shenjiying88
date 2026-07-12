@@ -40,7 +40,7 @@ function createCtrl() {
 describe(`${ROLES.TenantAdmin} cross-module 角色测试`, () => {
   let ctrl: any
 
-  beforeAll(async () => { ctrl = createCtrl() })
+  beforeAll(() => { ctrl = createCtrl() })
 
   it('店长可以查看跨模块链路状态 — 4 条链路完整', () => {
     const result = ctrl.getChainStatus()
@@ -173,7 +173,7 @@ describe(`${ROLES.Hr} cross-module 角色测试`, () => {
 describe(`${ROLES.Security} cross-module 角色测试`, () => {
   let ctrl: any
 
-  beforeAll(async () => { ctrl = createCtrl() })
+  beforeAll(() => { ctrl = createCtrl() })
 
   it('安监审计 cross-module — governance-chain 存在且状态 defined', () => {
     const result = ctrl.getChainStatus()
@@ -255,7 +255,7 @@ describe(`${ROLES.Guide} cross-module 角色测试`, () => {
 describe(`${ROLES.Operations} cross-module 角色测试`, () => {
   let ctrl: any
 
-  beforeAll(async () => { ctrl = createCtrl() })
+  beforeAll(() => { ctrl = createCtrl() })
 
   it('运行专员获取链路概要 — total > 0', () => {
     const result = ctrl.getChainStatus()

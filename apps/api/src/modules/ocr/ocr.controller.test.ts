@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { OcrController } from './ocr.controller'
-import { OcrService } from './ocr.service'
-import { runWithTenant } from '../../common/context/tenant-context'
 const TENANT_ID = 'test-tenant-001'
 
+const { runWithTenant } = require('../../common/context/tenant-context')
 
 describe('OcrController', () => {
+  const { OcrController } = require('./ocr.controller')
+  const { OcrService } = require('./ocr.service')
   let controller: InstanceType<typeof OcrController>
   let service: InstanceType<typeof OcrService>
 

@@ -8,9 +8,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { RetrievalService } from './retrieval.service'
 
 describe('Retrieval Contract', () => {
+  const { RetrievalService } = require('./retrieval.service')
 
   describe('service method signatures', () => {
     let service: InstanceType<typeof RetrievalService>
@@ -90,8 +90,8 @@ describe('Retrieval Contract', () => {
   })
 
   describe('RetrievalUnavailableError contract', () => {
-    it('RetrievalUnavailableError should have reason property', async () => {
-      const { RetrievalUnavailableError } = await import('./retrieval.types')
+    it('RetrievalUnavailableError should have reason property', () => {
+      const { RetrievalUnavailableError } = require('./retrieval.types')
 
       const err = new RetrievalUnavailableError('Qdrant connection refused')
 
@@ -102,8 +102,8 @@ describe('Retrieval Contract', () => {
   })
 
   describe('EmbeddingQuotaExceededError contract', () => {
-    it('should have provider property', async () => {
-      const { EmbeddingQuotaExceededError } = await import('./retrieval.types')
+    it('should have provider property', () => {
+      const { EmbeddingQuotaExceededError } = require('./retrieval.types')
 
       const err = new EmbeddingQuotaExceededError('text-embedding-3-large')
 

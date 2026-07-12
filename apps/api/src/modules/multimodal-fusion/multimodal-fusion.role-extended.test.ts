@@ -12,9 +12,6 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { NotFoundException, BadRequestException } from '@nestjs/common'
-import { MultimodalFusionController } from './multimodal-fusion.controller'
-import { MultimodalFusionService } from './multimodal-fusion.service'
-import { runWithTenant } from '../../common/context/tenant-context'
 
 // ── 角色定义 ──
 const ROLES = {
@@ -35,12 +32,15 @@ const TENANT_B = { tenantId: 'role-ext-tenant-b', storeId: 'store-b', userId: 'u
 // ── 工厂函数 ──
 function createCtx() {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { MultimodalFusionService } = require('./multimodal-fusion.service')
   // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { MultimodalFusionController } = require('./multimodal-fusion.controller')
   return new MultimodalFusionController(new MultimodalFusionService())
 }
 
 function runAs(ctx: { tenantId: string; storeId: string; userId: string; role: string }, fn: () => any) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { runWithTenant } = require('../../common/context/tenant-context')
   return runWithTenant(ctx, fn)
 }
 

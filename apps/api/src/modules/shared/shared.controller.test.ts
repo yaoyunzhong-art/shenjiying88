@@ -5,10 +5,10 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  */
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { AuditService } from './audit.service'
-import { SharedController } from './shared.controller'
 
 describe('SharedController', () => {
+  const { SharedController } = require('./shared.controller')
+  const { AuditService } = require('./audit.service')
 
   let controller: InstanceType<typeof SharedController>
   let auditService: InstanceType<typeof AuditService>

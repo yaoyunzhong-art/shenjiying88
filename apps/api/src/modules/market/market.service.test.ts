@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { MarketService } from './market.service'
 describe('MarketService', () => {
+  const { MarketService } = require('./market.service')
 
   it('getBootstrap returns bootstrap with supported markets and foundation metadata', () => {
     const mockFoundation = {

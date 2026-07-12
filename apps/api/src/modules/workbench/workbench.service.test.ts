@@ -4,7 +4,6 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { ClientChannel, UserRole } from '@m5/domain'
 import { defaultRoleWorkbenchContracts } from '@m5/types'
-import { WorkbenchService } from './workbench.service'
 
 function mockMarketProfile(overrides: Partial<ReturnType<typeof mockMarketProfile>> = {}) {
   return {
@@ -23,6 +22,7 @@ function mockMarketProfile(overrides: Partial<ReturnType<typeof mockMarketProfil
 }
 
 describe('WorkbenchService', () => {
+  const { WorkbenchService } = require('./workbench.service')
 
   describe('getRoleWorkbenches', () => {
     it('returns 6 role workbenches', () => {

@@ -45,8 +45,8 @@ const CTX_INTERNAL = {
 describe('LicenseService (V10 Day 4 Phase 88)', () => {
   let service: LicenseService
 
-  beforeEach(async () => {
-    const { createInMemoryLicenseRepos } = await import('./repositories/in-memory.repository')
+  beforeEach(() => {
+    const { createInMemoryLicenseRepos } = require('./repositories/in-memory.repository')
     const repos = createInMemoryLicenseRepos()
     service = new LicenseService(repos.licenseRepo, repos.auditLogRepo)
     // 显式植入种子数据（因为直接构造不触发 constructor fallback）

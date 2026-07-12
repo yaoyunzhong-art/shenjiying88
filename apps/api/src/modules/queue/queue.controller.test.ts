@@ -266,9 +266,9 @@ describe('QueueController queue queries', () => {
 
 // ── Controller integration with real service (light smoke) ──────────────
 describe('QueueController integration with real service', () => {
-  it('full join→leave flow returns valid contract shapes', async () => {
+  it('full join→leave flow returns valid contract shapes', () => {
      
-    const { QueueService } = await import('./queue.service') as typeof import('./queue.service')
+    const { QueueService } = require('./queue.service') as typeof import('./queue.service')
     const svc = new QueueService()
     svc.resetQueueStoresForTests()
     const controller = new QueueController(svc)
@@ -285,9 +285,9 @@ describe('QueueController integration with real service', () => {
     assert.equal(left.status, QueueStatus.Cancelled)
   })
 
-  it('full join→call-next→start→complete flow', async () => {
+  it('full join→call-next→start→complete flow', () => {
      
-    const { QueueService } = await import('./queue.service') as typeof import('./queue.service')
+    const { QueueService } = require('./queue.service') as typeof import('./queue.service')
     const svc = new QueueService()
     svc.resetQueueStoresForTests()
     const controller = new QueueController(svc)

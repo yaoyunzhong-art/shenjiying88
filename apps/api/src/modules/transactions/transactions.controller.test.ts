@@ -100,7 +100,7 @@ async function checkoutOnly(
   })
 }
 
-beforeEach(async () => { buildServices() })
+beforeEach(() => { buildServices() })
 afterEach(() => { resetTransactionsServiceTestState() })
 
 describe('transactions controller', () => {

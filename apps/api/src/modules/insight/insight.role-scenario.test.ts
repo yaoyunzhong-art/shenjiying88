@@ -111,7 +111,7 @@ function genSources(type: string = 'report', count: number = 1) {
   }))
 }
 
-async function makeRequest(
+function makeRequest(
   overrides: Partial<GenerateInsightRequest> = {},
 ): GenerateInsightRequest {
   return {

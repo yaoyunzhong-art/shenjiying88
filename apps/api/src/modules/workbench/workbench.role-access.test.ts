@@ -13,7 +13,6 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { UserRole } from '@m5/domain'
-import { WorkbenchService } from './workbench.service'
 
 // ---------------------------------------------------------------------------
 // 10-role bootstrap contract — every role must appear in the workbench list
@@ -35,6 +34,7 @@ const ROLE_CONFIG = [
 // Lazy-require workbench service so we don't import NestJS DI for pure unit tests.
 // ---------------------------------------------------------------------------
 function makeService(overrides: Record<string, unknown> = {}) {
+  const { WorkbenchService } = require('./workbench.service')
   const mockMarket = {
     getMergedProfile: () => ({
       marketCode: 'zh-cn',

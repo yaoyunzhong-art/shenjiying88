@@ -47,7 +47,7 @@ describe('👔店长 device-adapter 扩展测试', () => {
 
 describe('🛒前台 device-adapter 扩展测试', () => {
   let svc: DeviceAdapterService
-  beforeEach(async () => { svc = setup() })
+  beforeEach(() => { svc = setup() })
 
   it('连接设备后状态变为 online', async () => {
     registerTestDevice(svc, 'dev-003')
@@ -66,7 +66,7 @@ describe('🛒前台 device-adapter 扩展测试', () => {
 
 describe('🔧安监 device-adapter 扩展测试', () => {
   let svc: DeviceAdapterService
-  beforeEach(async () => { svc = setup() })
+  beforeEach(() => { svc = setup() })
 
   it('对离线设备执行 POS 交易返回错误', async () => {
     registerTestDevice(svc, 'dev-pos')
@@ -95,7 +95,7 @@ describe('🔧安监 device-adapter 扩展测试', () => {
 
 describe('🎮导玩员 device-adapter 扩展测试', () => {
   let svc: DeviceAdapterService
-  beforeEach(async () => { svc = setup() })
+  beforeEach(() => { svc = setup() })
 
   it('闸机开门操作', async () => {
     registerTestDevice(svc, 'dev-gate', 'gate')
@@ -116,7 +116,7 @@ describe('🎮导玩员 device-adapter 扩展测试', () => {
 
 describe('🎯运行专员 device-adapter 扩展测试', () => {
   let svc: DeviceAdapterService
-  beforeEach(async () => { svc = setup() })
+  beforeEach(() => { svc = setup() })
 
   it('打印机打印内容', async () => {
     registerTestDevice(svc, 'dev-printer', 'printer')
@@ -143,7 +143,7 @@ describe('🎯运行专员 device-adapter 扩展测试', () => {
 
 describe('🤝团建 device-adapter 扩展测试', () => {
   let svc: DeviceAdapterService
-  beforeEach(async () => { svc = setup() })
+  beforeEach(() => { svc = setup() })
 
   it('扫描仪扫描操作', async () => {
     registerTestDevice(svc, 'dev-scanner', 'scanner')
@@ -162,7 +162,7 @@ describe('🤝团建 device-adapter 扩展测试', () => {
 
 describe('📢营销 device-adapter 扩展测试', () => {
   let svc: DeviceAdapterService
-  beforeEach(async () => { svc = setup() })
+  beforeEach(() => { svc = setup() })
 
   it('删除设备后无法再获取', () => {
     registerTestDevice(svc, 'dev-del')

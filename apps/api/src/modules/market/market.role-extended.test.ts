@@ -12,8 +12,8 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { MarketController } from './market.controller'
 // ── 直接用 require 绕过编译时模块解析（NestJS 参数装饰器不支持 tsx） ──
+const { MarketController } = require('./market.controller')
 
 // ── 8 角色定义 ──
 const ROLES = {

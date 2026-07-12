@@ -14,7 +14,6 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { PortalController } from './portal.controller'
 // ── 角色定义 ──
 const ROLES = {
   Reception: '🛒前台',
@@ -78,6 +77,7 @@ function mockPortalService(overrides: any = {}) {
 }
 
 function createPortalController(mockPortal?: any) {
+  const { PortalController } = require('./portal.controller')
   return new PortalController(mockPortal ?? mockPortalService())
 }
 
