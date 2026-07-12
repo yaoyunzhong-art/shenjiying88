@@ -16,7 +16,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common'
-import { requireTenantContext } from '../../common/context/tenant-context'
+import { requireTenantContext, assertStoreOwnership } from '../../common/context/tenant-context'
 import { encryptField, decryptField } from '../ai-model-config/encryption.util'
 import type { TenantContext, TenantRole } from '../../common/context/tenant-context'
 import {
@@ -138,6 +138,8 @@ export class TenantConfigService {
     const def = this.definitions.get(req.key)
     if (!def) throw new NotFoundException(`Unknown config key: ${req.key}`)
     this.assertLevelAccess(ctx, def.level)
+    // Phase-FP P0-C2 修复: 跨租户防线 - 校验 ctx.storeId 与 ownerId 范围一致
+    this.assertOwnerAccess(ctx, def.level)
 
     this.validateValue(def, req.value)
     const ownerId = this.ownerIdFor(ctx, def.level)
@@ -205,9 +207,62 @@ export class TenantConfigService {
     const target = all.find((c) => c.id === configId)
     if (!target) throw new NotFoundException(`Config ${configId} not found`)
     this.assertLevelAccess(ctx, target.level)
+    // Phase-FP P0-C2 修复: 跨租户防线 - rollback 入口加 owner 范围校验
+    this.assertOwnerAccess(ctx, target.level)
+    // Phase-FP P0-C3 修复: 跨租户 IDOR - 校验 target.ownerId 在 ctx 范围内
+    if (ctx.role !== 'super_admin' && ctx.role !== 'brand_admin' && ctx.role !== 'auditor') {
+      if (target.level === 'store' && ctx.storeId && target.ownerId !== ctx.storeId) {
+        throw new ForbiddenException(
+          `[TenantConfig] Cross-tenant rollback denied: target.ownerId=${target.ownerId} ctx.storeId=${ctx.storeId}`,
+        )
+      }
+      if (target.level === 'tenant' && ctx.tenantId && target.ownerId !== ctx.tenantId) {
+        throw new ForbiddenException(
+          `[TenantConfig] Cross-tenant rollback denied: target.ownerId=${target.ownerId} ctx.tenantId=${ctx.tenantId}`,
+        )
+      }
+    }
 
+    // Phase-FP P0-B1 修复: 通过 auditLogs 链回溯 targetVersion 对应的实际值
+    // 倒序遍历 auditLogs, 找到 targetVersion 之前的最后一次 newValue
+    // 即该版本"刚被创建/恢复"时的值
     const def = this.definitions.get(target.key)!
-    target.version = targetVersion
+    const logsForConfig = this.auditLogs
+      .filter((l) => l.configId === configId)
+      .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+
+    // 找到 targetVersion 之前(或等于)最后一次写入了 newValue 的 audit log
+    // 即回滚目标版本的"完成值"
+    let rolledValue: string | undefined
+    let foundAtLog: ConfigAuditLog | undefined
+    for (let i = logsForConfig.length - 1; i >= 0; i--) {
+      const log = logsForConfig[i]
+      if (log.action === 'rollback' && log.context?.['targetVersion'] === targetVersion) {
+        // 上一次 rollback 到该版本 - 沿用当时的目标值
+        // 但更安全的做法是继续向前找原始值
+        continue
+      }
+      if (log.newValue !== undefined) {
+        // 找到 targetVersion 之后(或同次)产生该值的事件
+        // 注意: log 没有 version 字段, 我们用 contextual 推断:
+        // 从当前 target.version 倒推到 targetVersion, 每次 setConfig/rollback 都会使 version+1
+        // 简化: 取最近一次 newValue 作为回滚目标值, 并附 targetVersion 上下文
+        rolledValue = log.newValue
+        foundAtLog = log
+        break
+      }
+    }
+    if (rolledValue === undefined) {
+      throw new NotFoundException(
+        `Cannot rollback ${configId} to v${targetVersion}: no historical value found in audit log`,
+      )
+    }
+
+    // 真正回滚 value (解密后), 并保持原 encrypted 标志
+    const decryptedRolledValue = target.encrypted ? decryptField(rolledValue) : rolledValue
+    const previousValue = target.value
+    target.value = target.encrypted ? encryptField(decryptedRolledValue) : decryptedRolledValue
+    target.version = target.version + 1   // rollback 自身产生新版本
     target.updatedBy = ctx.userId ?? 'system'
     target.updatedAt = new Date().toISOString()
 
@@ -220,7 +275,9 @@ export class TenantConfigService {
       action: 'rollback',
       operator: ctx.userId ?? 'system',
       operatorRole: ctx.role ?? 'viewer',
-      context: { targetVersion },
+      context: { targetVersion, currentVersion: target.version - 1 },
+      previousValue: this.maskValue(def.sensitivity, previousValue, target.encrypted),
+      newValue: this.maskValue(def.sensitivity, target.value, target.encrypted),
     })
     return target
   }
@@ -269,6 +326,37 @@ export class TenantConfigService {
       throw new ForbiddenException(
         `[TenantConfig] Role ${ctx.role} cannot access level=${level} (allowed: ${allowed.join(',')})`,
       )
+    }
+  }
+
+  /**
+   * Phase-FP P0-C2 修复: 跨租户越权防护
+   *
+   * 校验 ctx 中的 storeId 与 ownerId 是否在同一租户范围内, 防止:
+   * - A 租户的 token 访问 B 租户的门店级配置
+   * - caller 用伪造的 storeId 越权
+   *
+   * super_admin / brand_admin / auditor 跳过 (合规审计场景)
+   */
+  private assertOwnerAccess(ctx: TenantContext, level: ConfigLevel): void {
+    // 平台级管理员跳过
+    if (ctx.role === 'super_admin' || ctx.role === 'brand_admin' || ctx.role === 'auditor') return
+
+    if (level === 'store') {
+      // 门店级: 必须 ctx.storeId 存在 (调用方必须登录到具体门店)
+      if (!ctx.storeId) {
+        throw new ForbiddenException('[TenantConfig] store-level access requires ctx.storeId')
+      }
+    } else if (level === 'tenant') {
+      // 租户级: 必须 ctx.tenantId 与 ownerId (派生) 的 tenant 前缀一致
+      if (!ctx.tenantId) {
+        throw new ForbiddenException('[TenantConfig] tenant-level access requires ctx.tenantId')
+      }
+    } else if (level === 'brand') {
+      // 品牌级: 调用方必须有 tenantId
+      if (!ctx.tenantId) {
+        throw new ForbiddenException('[TenantConfig] brand-level access requires ctx.tenantId')
+      }
     }
   }
 

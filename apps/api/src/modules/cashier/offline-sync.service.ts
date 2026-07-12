@@ -253,7 +253,8 @@ export class EdgeSyncCoordinator {
     order: Partial<Order>,
     syncFn: (order: Partial<Order>) => Promise<Partial<Order>>
   ): Promise<{ success: boolean; result?: Partial<Order>; error?: string; idempotent?: boolean }> {
-    const syncId = `sync-${order.id}-${Date.now()}`
+    // 使用order.id作为基础key保证幂等性（同一个order二次调用命中缓存）
+    const syncId = `sync-${order.id}`
 
     // 检查幂等性
     const existingResult = this.idempotencyChecker.get(syncId)
