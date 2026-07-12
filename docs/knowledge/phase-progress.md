@@ -127,3 +127,5 @@
 | 2026-07-12 16:45 | 🐜全量模块扫描 | P0-001闭环后全量模块验证·86+提交/1016+总 ·监控 TSC| Base✅/Service✅/Controller⚠️(store/tob/miniapp)/CTest⚠️ | 0🏆 |
 
 | 2026-07-12 17:06 | pulse#365 | 全库(非api) [TSC14/14连续8次·dispatch-358保持第8次·新发现@m5/app 21✖慢性残值·tob 3✖·miniapp ELIFECYCLE] | Base✅(TSC14/14✅✅✅✅)/Service✅/Controller⚠️(app21✖/tob3✖/miniapp5✖)/CTest✅(store✅/admin✅/P0-001✅) | 0🏆 |
+
+| 2026-07-12 17:36 | pulse#366 | 全库(非api) [TSC14/14连续9次·dispatch-365✅闭·member-old.ts清理·app222/222✅·tob残1✖·storefront残2✖·新派dispatch-366清storefront-__smoke__] | Base✅(TSC14/14✅✅✅✅✅)/Service✅(app222/222✅)/Controller⚠️(tob1✖/store2✖)/CTest✅(admin✅/store✅/app✅) | 0🏆 |

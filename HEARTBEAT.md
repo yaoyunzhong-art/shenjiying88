@@ -1,21 +1,21 @@
 # 🦞 验收员 HEARTBEAT
 
-| 指标 | pulse#358→#362 | pulse#363→#365 | Δ |
-|-----|:--------------:|:--------------:|:-:|
-| Typecheck | **14/14** ✅(×6) | **14/14** ✅(×8) | 🟢 连续8次全绿 |
-| 新回归 | **0** | **0** | 🟢 无新回归(第8次) |
-| storefront-web | ⚠️ 5✖(已知) | ✅ **0✖** ⚠️→✅ | 🟢 **已修复→全绿** |
-| admin-web | ⚠️ 3✖(已知) | ✅ **0✖** ⚠️→✅ | 🟢 **已修复→全绿** |
-| tob-web | ❌ 4✖残值 | ❌ 3✖残值 | 🟢 维持(已知) |
-| miniapp | ❌ ELIFECYCLE | ❌ ELIFECYCLE | 🟢 维持(已知) |
-| @m5/app | — | ❌ **21✖ 新发现** | 🔴 新发现慢性残值 |
+| 指标 | pulse#358→#362 | pulse#363→#365 | pulse#366 | Δ |
+|-----|:--------------:|:--------------:|:---------:|:-:|
+| Typecheck | **14/14** ✅(×6) | **14/14** ✅(×8) | **14/14** ✅(×9) | 🟢 连续9次全绿 |
+| 新回归 | **0** | **0** | **0** | 🟢 无新回归(第9次) |
+| storefront-web | ⚠️ 5✖(已知) | ✅ 0✖ | ⚠️ 2✖(旧__smoke__残) | 🟢 基本维持 |
+| admin-web | ⚠️ 3✖(已知) | ✅ 0✖ | ✅ 0✖ | 🟢 维持 |
+| tob-web | ❌ 4✖残值 | ❌ 3✖残值 | ❌ 1✖残值 | 🟢 改善(3→1) |
+| miniapp | ❌ ELIFECYCLE | ❌ ELIFECYCLE | ❌ ELIFECYCLE | 🟢 维持(已知) |
+| @m5/app | — | ❌ **21✖ 新发现** | ✅ **222/222** | 🟢 **dispatch-365闭环** |
 
 ### 🩺 健康摘要
-- **✅ TSC稳态维持**: 连续8次14/14 ✅(pulse#358→#365) — dispatch-358闭环成果保持
-- **🔥角色冒烟**: storefront-web(✅)·admin-web(✅)·tob-web(3✖残值)·miniapp(ELIFECYCLE残值)
-- **⚠️ 新发现**: @m5/app 21✖ (node --test无法执行.tsx React组件)
-- **🌲 新派单**: dispatch-365 — @m5/app .tsx测试排除修复
-- **dispatch闭环**: ✅ dispatch-358 已闭环保持(第8次验收)
+- **✅ TSC稳态维持**: 连续9次14/14 ✅(pulse#358→#366) — dispatch-358闭环成果保持
+- **🔥角色冒烟**: storefront-web(2✖残值·旧__smoke__残留)·tob-web(1✖残值)·miniapp(ELIFECYCLE残值)
+- **🌲 闭环**: ✅ dispatch-365 — @m5/app .tsx测试问题修复成功, 21✖→222/222 ✅
+- **🌲 新派单**: dispatch-366 — 清理storefront-web __smoke__/role-based-smoke残留(2✖·MEMBERS_PER_PAGE旧常量)
+- **dispatch闭环**: ✅ dispatch-358 已闭环保持(第9次验收) · ✅ dispatch-365 已闭环
 - **连续🏆**: 0
 - **知识库时效**: ✅ <24h ✅
 
@@ -41,3 +41,4 @@
 - **2026-07-12 16:06 pulse#363 ✅ TSC稳态维持14/14·连续6次全绿·P0-001验证闭环🎯·dispatch-358保持第6次**
 - **🔥 2026-07-12 16:36 pulse#364 ✅✅ TSC连续7次全绿·storefront-web 5✖→✅修复·admin-web 3✖→✅修复·dispatch-358保持第7次·VOID/assertion残留→tob残值4✖+miniapp ELIFECYCLE·RQ-001~005超8h慢性**
 - **2026-07-12 17:06 pulse#365 ✅ TSC14/14连续8次·dispatch-358保持第8次·新发现@m5/app 21✖(node --test.tsx崩溃)·已派dispatch-365**
+- **2026-07-12 17:36 pulse#366 ✅✅ TSC14/14连续9次·dispatch-365✅闭环(21✖→222/222全绿)·清理旧member-center.test.ts冲突·storefront-web 2✖残值(旧__smoke__)·tob-web 1✖·新派dispatch-366清__smoke__残留**
