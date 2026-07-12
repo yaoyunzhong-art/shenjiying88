@@ -1,77 +1,29 @@
 /**
- * 库存盘点列表页 — Stocktaking List Page (Next.js App Router Page)
- * 角色视角: 👔店长 / 🔧仓管
- * 功能: 搜索盘点单、筛选状态、分页查看、跳转新建/详情
+ * 盘点 — Stocktaking (storefront-web)
  */
-import React from 'react';
-import { StocktakingPageClient } from './stocktaking-client';
-
-/** 盘点单状态 */
-export type StocktakingStatus = 'draft' | 'in_progress' | 'completed' | 'cancelled';
-
-/** 盘点单 */
-export interface StocktakingRecord {
-  id: string;
-  batchNo: string;
-  storeName: string;
-  initiator: string;
-  totalItems: number;
-  checkedItems: number;
-  discrepancyCount: number;
-  status: StocktakingStatus;
-  createdAt: string;
-  completedAt?: string;
-}
-
-/* ── Mock 数据 ── */
-const MOCK_RECORDS: StocktakingRecord[] = [
-  {
-    id: 'st-001', batchNo: 'PD-20260708-001', storeName: '朝阳旗舰店',
-    initiator: '张三', totalItems: 320, checkedItems: 320, discrepancyCount: 2,
-    status: 'completed', createdAt: '2026-07-08 08:30', completedAt: '2026-07-08 10:15',
-  },
-  {
-    id: 'st-002', batchNo: 'PD-20260708-002', storeName: '朝阳旗舰店',
-    initiator: '李四', totalItems: 150, checkedItems: 98, discrepancyCount: 0,
-    status: 'in_progress', createdAt: '2026-07-08 09:00',
-  },
-  {
-    id: 'st-003', batchNo: 'PD-20260707-001', storeName: '海淀分店',
-    initiator: '王五', totalItems: 280, checkedItems: 280, discrepancyCount: 5,
-    status: 'completed', createdAt: '2026-07-07 14:00', completedAt: '2026-07-07 16:30',
-  },
-  {
-    id: 'st-004', batchNo: 'PD-20260707-002', storeName: '西单体验店',
-    initiator: '赵六', totalItems: 200, checkedItems: 0, discrepancyCount: 0,
-    status: 'draft', createdAt: '2026-07-07 11:20',
-  },
-  {
-    id: 'st-005', batchNo: 'PD-20260706-001', storeName: '朝阳旗舰店',
-    initiator: '张三', totalItems: 320, checkedItems: 320, discrepancyCount: 1,
-    status: 'completed', createdAt: '2026-07-06 08:30', completedAt: '2026-07-06 11:00',
-  },
-  {
-    id: 'st-006', batchNo: 'PD-20260705-001', storeName: '望京分店',
-    initiator: '钱七', totalItems: 180, checkedItems: 50, discrepancyCount: 0,
-    status: 'in_progress', createdAt: '2026-07-05 15:00',
-  },
-  {
-    id: 'st-007', batchNo: 'PD-20260704-001', storeName: '海淀分店',
-    initiator: '孙八', totalItems: 280, checkedItems: 280, discrepancyCount: 0,
-    status: 'completed', createdAt: '2026-07-04 09:00', completedAt: '2026-07-04 11:45',
-  },
-  {
-    id: 'st-008', batchNo: 'PD-20260703-001', storeName: '西单体验店',
-    initiator: '周九', totalItems: 200, checkedItems: 0, discrepancyCount: 0,
-    status: 'cancelled', createdAt: '2026-07-03 08:00', completedAt: '2026-07-03 08:30',
-  },
-];
-
-export default function StocktakingListPage() {
+'use client';
+import React, { useState } from 'react';
+export default function StocktakingPage() {
+  const [items] = useState([
+    { name: '游戏币', expected: 5000, actual: 4980, diff: -20 },
+    { name: '饮料(箱)', expected: 120, actual: 120, diff: 0 },
+    { name: '礼品玩偶', expected: 50, actual: 48, diff: -2 },
+    { name: 'VR手柄', expected: 10, actual: 10, diff: 0 },
+  ]);
   return (
-    <StocktakingPageClient
-      records={MOCK_RECORDS}
-      total={MOCK_RECORDS.length}
-    />
+    <main style={{ minHeight: '100vh', padding: '24px 16px', background: '#0f172a' }}>
+      <div style={{ maxWidth: 600, margin: '0 auto' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc', marginBottom: 20 }}>库存盘点</h1>
+        {items.map((item, i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 16px', borderRadius: 10, marginBottom: 6, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.08)' }}>
+            <span style={{ color: '#e2e8f0' }}>{item.name}</span>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ color: '#94a3b8', fontSize: 13 }}>{item.actual}/{item.expected}</span>
+              {item.diff !== 0 && <span style={{ color: item.diff < 0 ? '#f87171' : '#34d399', fontSize: 12, marginLeft: 8 }}>{item.diff > 0 ? '+' : ''}{item.diff}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </main>
   );
 }
