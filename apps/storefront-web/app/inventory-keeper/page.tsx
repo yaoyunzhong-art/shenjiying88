@@ -1,7 +1,7 @@
 /**
- * 库存管理 — Inventory Keeper (storefront-web)
- * 角色视角: 👔店长 / 🛒前台 / 💳采购
- * 功能: 库存看板、预警提示、补货建议、搜索过滤、分类统计、空/加载状态
+ * 库存看板 — Inventory Keeper (storefront-web)
+ * 角色视角: 👔店长 / 🛒前台
+ * 功能: 库存看板、预警、补货建议、分类筛选、搜索、入库/出库趋势
  */
 'use client';
 
@@ -11,222 +11,292 @@ import React, { useState, useMemo } from 'react';
 type InventoryItem = {
   id: string;
   name: string;
+  category: string;
   stock: number;
   unit: string;
   min: number;
   max: number;
-  status: 'normal' | 'low' | 'critical' | 'overstocked';
-  category: string;
-  dailyUsage?: number;
-  lastRestock: string;
+  cost: number;
+  updatedAt: string;
   location: string;
+  supplier: string;
+  status: 'normal' | 'low' | 'overstock' | 'critical';
 };
 
 /* ── Mock 数据 (20+) ── */
 const ALL_ITEMS: InventoryItem[] = [
-  { id: '1', name: '游戏币', stock: 4980, unit: '枚', min: 1000, max: 10000, status: 'normal', category: '游戏耗材', dailyUsage: 200, lastRestock: '2026-07-10', location: '前台抽屉' },
-  { id: '2', name: '饮料-可乐', stock: 56, unit: '箱', min: 20, max: 120, status: 'normal', category: '饮品', dailyUsage: 4, lastRestock: '2026-07-08', location: '冷柜A' },
-  { id: '3', name: '礼品-玩偶', stock: 48, unit: '个', min: 10, max: 80, status: 'normal', category: '礼品', dailyUsage: 2, lastRestock: '2026-07-05', location: '礼品柜' },
-  { id: '4', name: '打印纸', stock: 3, unit: '箱', min: 5, max: 20, status: 'low', category: '办公耗材', dailyUsage: 0.5, lastRestock: '2026-06-20', location: '仓库货架B' },
-  { id: '5', name: '饮品-橙汁', stock: 12, unit: '箱', min: 15, max: 60, status: 'low', category: '饮品', dailyUsage: 2, lastRestock: '2026-06-28', location: '冷柜B' },
-  { id: '6', name: '一次性纸杯', stock: 200, unit: '只', min: 100, max: 1000, status: 'normal', category: '办公耗材', dailyUsage: 30, lastRestock: '2026-07-01', location: '吧台' },
-  { id: '7', name: 'VR手柄', stock: 2, unit: '个', min: 4, max: 15, status: 'critical', category: '设备', dailyUsage: 0, lastRestock: '2026-06-15', location: '设备柜' },
-  { id: '8', name: '清洁湿巾', stock: 5, unit: '包', min: 10, max: 50, status: 'low', category: '清洁用品', dailyUsage: 1, lastRestock: '2026-06-25', location: '清洁站' },
-  { id: '9', name: '吸尘器滤袋', stock: 1, unit: '个', min: 3, max: 10, status: 'critical', category: '清洁用品', dailyUsage: 0, lastRestock: '2026-06-10', location: '清洁间' },
-  { id: '10', name: '礼品-徽章', stock: 300, unit: '个', min: 50, max: 200, status: 'overstocked', category: '礼品', dailyUsage: 5, lastRestock: '2026-07-12', location: '仓库' },
-  { id: '11', name: '零食-薯片', stock: 38, unit: '包', min: 20, max: 100, status: 'normal', category: '零食', dailyUsage: 6, lastRestock: '2026-07-09', location: '零食架A' },
-  { id: '12', name: '零食-巧克力', stock: 5, unit: '盒', min: 10, max: 40, status: 'low', category: '零食', dailyUsage: 2, lastRestock: '2026-06-30', location: '零食架B' },
-  { id: '13', name: '饮品-矿泉水', stock: 80, unit: '瓶', min: 30, max: 200, status: 'normal', category: '饮品', dailyUsage: 8, lastRestock: '2026-07-07', location: '冷柜A' },
-  { id: '14', name: '游戏币盒', stock: 12, unit: '个', min: 5, max: 30, status: 'normal', category: '游戏耗材', dailyUsage: 1, lastRestock: '2026-07-06', location: '前台' },
-  { id: '15', name: '礼品袋', stock: 150, unit: '个', min: 30, max: 200, status: 'normal', category: '礼品', dailyUsage: 3, lastRestock: '2026-07-11', location: '仓库' },
-  { id: '16', name: '除尘掸', stock: 4, unit: '把', min: 3, max: 10, status: 'normal', category: '清洁用品', dailyUsage: 0, lastRestock: '2026-07-02', location: '清洁间' },
-  { id: '17', name: '收银纸卷', stock: 48, unit: '卷', min: 10, max: 80, status: 'normal', category: '办公耗材', dailyUsage: 2, lastRestock: '2026-07-04', location: '前台收银台' },
-  { id: '18', name: '礼品-钥匙扣', stock: 2, unit: '个', min: 10, max: 50, status: 'critical', category: '礼品', dailyUsage: 1, lastRestock: '2026-06-18', location: '仓库' },
-  { id: '19', name: '耳机', stock: 25, unit: '副', min: 5, max: 30, status: 'normal', category: '设备', dailyUsage: 0, lastRestock: '2026-06-22', location: '设备柜' },
-  { id: '20', name: '消毒喷雾', stock: 8, unit: '瓶', min: 5, max: 20, status: 'normal', category: '清洁用品', dailyUsage: 0.3, lastRestock: '2026-07-03', location: '清洁站' },
+  { id: 'INV-001', name: '游戏币', category: '游戏消耗', stock: 4980, unit: '枚', min: 1000, max: 10000, cost: 0.5, updatedAt: '2026-07-13', location: '主库-A01', supplier: '华强游戏设备', status: 'normal' },
+  { id: 'INV-002', name: '可口可乐(箱)', category: '饮品', stock: 56, unit: '箱', min: 20, max: 80, cost: 48, updatedAt: '2026-07-12', location: '冷库-B02', supplier: '饮品速配', status: 'normal' },
+  { id: 'INV-003', name: '毛绒公仔-中号', category: '礼品', stock: 48, unit: '个', min: 10, max: 80, cost: 35, updatedAt: '2026-07-11', location: '礼品架-C03', supplier: '欢乐谷礼品', status: 'normal' },
+  { id: 'INV-004', name: '彩票打印纸', category: '耗材', stock: 3, unit: '箱', min: 5, max: 20, cost: 60, updatedAt: '2026-07-13', location: '耗材柜-D01', supplier: '鑫宇耗材', status: 'low' },
+  { id: 'INV-005', name: 'VR手柄', category: '设备配件', stock: 8, unit: '个', min: 5, max: 30, cost: 180, updatedAt: '2026-07-10', location: '配件柜-E02', supplier: '乐玩娱乐', status: 'normal' },
+  { id: 'INV-006', name: '一次性杯盖', category: '耗材', stock: 12, unit: '箱', min: 8, max: 25, cost: 20, updatedAt: '2026-07-12', location: '耗材柜-D02', supplier: '鑫宇耗材', status: 'normal' },
+  { id: 'INV-007', name: '冰激凌机原料', category: '食品原料', stock: 2, unit: '桶', min: 3, max: 10, cost: 120, updatedAt: '2026-07-13', location: '冷库-A03', supplier: '亿达食品', status: 'low' },
+  { id: 'INV-008', name: '奶茶珍珠', category: '食品原料', stock: 1, unit: '袋', min: 3, max: 12, cost: 45, updatedAt: '2026-07-13', location: '冷库-A04', supplier: '亿达食品', status: 'critical' },
+  { id: 'INV-009', name: '全自动咖啡机', category: '设备', stock: 2, unit: '台', min: 1, max: 5, cost: 2800, updatedAt: '2026-07-08', location: '设备库-F01', supplier: '华强游戏设备', status: 'normal' },
+  { id: 'INV-010', name: '桌游卡牌', category: '礼品', stock: 65, unit: '副', min: 10, max: 60, cost: 28, updatedAt: '2026-07-11', location: '礼品架-C01', supplier: '欢乐谷礼品', status: 'overstock' },
+  { id: 'INV-011', name: '橙汁(箱)', category: '饮品', stock: 18, unit: '箱', min: 10, max: 50, cost: 42, updatedAt: '2026-07-12', location: '冷库-B01', supplier: '饮品速配', status: 'normal' },
+  { id: 'INV-012', name: '飞镖盘', category: '设备', stock: 5, unit: '个', min: 3, max: 15, cost: 158, updatedAt: '2026-07-09', location: '设备库-F02', supplier: '华强游戏设备', status: 'normal' },
+  { id: 'INV-013', name: '投篮机弹簧', category: '设备配件', stock: 20, unit: '个', min: 5, max: 30, cost: 15, updatedAt: '2026-07-10', location: '配件柜-E01', supplier: '乐玩娱乐', status: 'normal' },
+  { id: 'INV-014', name: '一次性纸杯', category: '耗材', stock: 28, unit: '箱', min: 10, max: 30, cost: 18, updatedAt: '2026-07-12', location: '耗材柜-D03', supplier: '鑫宇耗材', status: 'normal' },
+  { id: 'INV-015', name: '西瓜味糖浆', category: '食品原料', stock: 4, unit: '桶', min: 2, max: 8, cost: 68, updatedAt: '2026-07-11', location: '冷库-A05', supplier: '亿达食品', status: 'normal' },
+  { id: 'INV-016', name: '抓娃娃机礼品-小号', category: '礼品', stock: 120, unit: '个', min: 20, max: 150, cost: 8, updatedAt: '2026-07-12', location: '礼品架-C02', supplier: '欢乐谷礼品', status: 'normal' },
+  { id: 'INV-017', name: '清洁消毒液', category: '清洁用品', stock: 6, unit: '瓶', min: 5, max: 20, cost: 25, updatedAt: '2026-07-10', location: '清洁区-G01', supplier: '康洁清洁', status: 'normal' },
+  { id: 'INV-018', name: '抹布(包)', category: '清洁用品', stock: 2, unit: '包', min: 5, max: 15, cost: 12, updatedAt: '2026-07-12', location: '清洁区-G02', supplier: '康洁清洁', status: 'low' },
+  { id: 'INV-019', name: '蓝牙音箱', category: '设备', stock: 3, unit: '台', min: 2, max: 8, cost: 350, updatedAt: '2026-07-08', location: '设备库-F03', supplier: '华强游戏设备', status: 'normal' },
+  { id: 'INV-020', name: '彩票', category: '游戏消耗', stock: 2000, unit: '张', min: 500, max: 5000, cost: 1, updatedAt: '2026-07-13', location: '主库-A02', supplier: '天诚广告', status: 'normal' },
+  { id: 'INV-021', name: '零食大礼包', category: '食品', stock: 15, unit: '袋', min: 10, max: 40, cost: 45, updatedAt: '2026-07-10', location: '货架-H01', supplier: '新鲜食品', status: 'normal' },
+  { id: 'INV-022', name: '碳酸饮料(箱)', category: '饮品', stock: 32, unit: '箱', min: 15, max: 60, cost: 38, updatedAt: '2026-07-13', location: '冷库-B03', supplier: '饮品速配', status: 'normal' },
 ];
 
-/* ── 分类列表 ── */
-const CATEGORIES = ['全部', '游戏耗材', '饮品', '礼品', '办公耗材', '设备', '清洁用品', '零食'];
+const CATEGORY_OPTIONS = ['全部', '游戏消耗', '饮品', '礼品', '耗材', '设备', '设备配件', '食品原料', '食品', '清洁用品'];
+const STATUS_OPTIONS = ['全部', 'normal', 'low', 'critical', 'overstock'];
+const STATUS_LABELS: Record<string, string> = { normal: '正常', low: '偏少', critical: '严重不足', overstock: '偏多' };
+const STATUS_COLORS: Record<string, string> = { normal: '#34d399', low: '#fbbf24', critical: '#f87171', overstock: '#60a5fa' };
 
-/* ── Helpers ── */
-function statusColor(status: InventoryItem['status']): string {
-  switch (status) {
-    case 'normal': return '#34d399';
-    case 'low': return '#fbbf24';
-    case 'critical': return '#f87171';
-    case 'overstocked': return '#818cf8';
-  }
+/* ── 子组件: 统计卡片 ── */
+function InventoryStats({ items }: { items: InventoryItem[] }) {
+  const totalItems = items.length;
+  const totalStock = items.reduce((s, i) => s + i.stock, 0);
+  const lowCount = items.filter(i => i.status === 'low' || i.status === 'critical').length;
+  const overstockCount = items.filter(i => i.status === 'overstock').length;
+  const totalValue = items.reduce((s, i) => s + i.stock * i.cost, 0);
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
+      {[
+        { label: '品类总数', count: totalItems, color: '#94a3b8', sub: `${totalStock} 件` },
+        { label: '库存总额', count: `¥${(totalValue / 10000).toFixed(1)}万`, color: '#94a3b8', sub: `${(totalValue / totalItems).toFixed(0)} 元/品` },
+        { label: '预警商品', count: lowCount, color: lowCount > 0 ? '#f87171' : '#34d399', sub: `短缺+严重` },
+        { label: '过剩商品', count: overstockCount, color: overstockCount > 0 ? '#60a5fa' : '#34d399', sub: '库存偏多' },
+      ].map((s, i) => (
+        <div key={i} style={{
+          padding: '12px', borderRadius: 10, textAlign: 'center',
+          background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.08)',
+        }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: s.color }}>{s.count}</div>
+          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{s.label}</div>
+          <div style={{ fontSize: 10, color: '#475569', marginTop: 1 }}>{s.sub}</div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
-function statusLabel(status: InventoryItem['status']): string {
-  switch (status) {
-    case 'normal': return '正常';
-    case 'low': return '偏低';
-    case 'critical': return '告急';
-    case 'overstocked': return '过剩';
-  }
+/* ── 子组件: 补货建议条 ── */
+function RestockBar({ item }: { item: InventoryItem }) {
+  if (item.status === 'normal' || item.status === 'overstock') return null;
+  const suggested = Math.min(item.max, item.min * 3 - item.stock);
+  return (
+    <div style={{
+      marginTop: 8, padding: '8px 12px', borderRadius: 8,
+      background: item.status === 'critical' ? '#ef444415' : '#fbbf2415',
+      border: `1px solid ${item.status === 'critical' ? '#ef444430' : '#fbbf2430'}`,
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    }}>
+      <div>
+        <span style={{ fontSize: 12, color: item.status === 'critical' ? '#fca5a5' : '#fde68a' }}>
+          {item.status === 'critical' ? '🔴 严重短缺' : '🟡 库存偏低'}
+        </span>
+        <span style={{ fontSize: 11, color: '#64748b', marginLeft: 8 }}>建议补货: {suggested} {item.unit}</span>
+      </div>
+      <button
+        style={{
+          padding: '4px 10px', borderRadius: 6,
+          background: '#3b82f6', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer',
+        }}
+        onClick={e => { e.stopPropagation(); alert(`📦 发起 ${item.name} 补货申请 (${suggested}${item.unit})`); }}
+      >
+        补货
+      </button>
+    </div>
+  );
 }
 
+/* ── 子组件: 进度条 ── */
+function StockBar({ stock, min, max }: { stock: number; min: number; max: number }) {
+  const pct = Math.min(100, Math.max(0, ((stock - min) / (max - min)) * 100));
+  const color = stock < min ? '#f87171' : stock > max ? '#60a5fa' : '#34d399';
+  return (
+    <div style={{ width: '100%', height: 6, background: 'rgba(148,163,184,0.12)', borderRadius: 3, marginTop: 6, overflow: 'hidden' }}>
+      <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 3, transition: 'width 0.3s' }} />
+    </div>
+  );
+}
+
+/* ── 主组件 ── */
 export default function InventoryKeeperPage() {
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('全部');
+  const [statusFilter, setStatusFilter] = useState('全部');
+  const [page, setPage] = useState(1);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  /* ── 过滤 ── */
   const filtered = useMemo(() => {
-    let result = [...ALL_ITEMS];
-    if (search) result = result.filter(i => i.name.includes(search) || i.category.includes(search) || i.location.includes(search));
-    if (categoryFilter) result = result.filter(i => i.category === categoryFilter);
-    if (statusFilter) result = result.filter(i => i.status === statusFilter);
-    return result;
+    const kw = search.trim().toLowerCase();
+    return ALL_ITEMS.filter(item => {
+      if (categoryFilter !== '全部' && item.category !== categoryFilter) return false;
+      if (statusFilter !== '全部' && item.status !== statusFilter) return false;
+      if (kw && !item.name.toLowerCase().includes(kw) && !item.category.toLowerCase().includes(kw) && !item.location.toLowerCase().includes(kw)) return false;
+      return true;
+    });
   }, [search, categoryFilter, statusFilter]);
 
-  /* ── 看板统计 ── */
-  const stats = useMemo(() => ({
-    totalItems: ALL_ITEMS.length,
-    totalStock: ALL_ITEMS.reduce((s, i) => s + i.stock, 0),
-    lowItems: ALL_ITEMS.filter(i => i.status === 'low' || i.status === 'critical').length,
-    overstockedItems: ALL_ITEMS.filter(i => i.status === 'overstocked').length,
-    needsRestock: ALL_ITEMS.filter(i => i.stock < i.min).map(i => ({ name: i.name, shortBy: i.min - i.stock, unit: i.unit })),
-  }), []);
+  const PAGE_SIZE = 8;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page]);
 
-  const handleSearch = () => {
-    setLoading(true);
-    setTimeout(() => setLoading(false), 300);
-  };
+  React.useEffect(() => { setPage(1); setExpandedId(null); }, [search, categoryFilter, statusFilter]);
 
   return (
     <main style={{ minHeight: '100vh', padding: '24px 16px', background: '#0f172a' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        {/* 标题 */}
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc', marginBottom: 20 }}>📊 库存看板</h1>
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        {/* ── 标题 ── */}
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc', marginBottom: 16 }}>库存看板</h1>
 
-        {/* 核心看板卡片 */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
-          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #0ea5e920, #0284c720)', border: '1px solid #0ea5e940' }}>
-            <div style={{ fontSize: 13, color: '#7dd3fc', marginBottom: 4 }}>库存品项</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#e0f2fe' }}>{stats.totalItems}</div>
-          </div>
-          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #22c55e20, #16a34a20)', border: '1px solid #22c55e40' }}>
-            <div style={{ fontSize: 13, color: '#86efac', marginBottom: 4 }}>库存总量</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#dcfce7' }}>{stats.totalStock.toLocaleString()}</div>
-          </div>
-          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #f9731620, #ea580c20)', border: '1px solid #f9731640' }}>
-            <div style={{ fontSize: 13, color: '#fdba74', marginBottom: 4 }}>⚠️ 需补货</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#ffedd5' }}>{stats.lowItems}</div>
-          </div>
-          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #a855f720, #9333ea20)', border: '1px solid #a855f740' }}>
-            <div style={{ fontSize: 13, color: '#d8b4fe', marginBottom: 4 }}>库存积压</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#f3e8ff' }}>{stats.overstockedItems}</div>
-          </div>
-        </div>
+        {/* ── 统计卡片 ── */}
+        <InventoryStats items={ALL_ITEMS} />
 
-        {/* 补货建议 */}
-        {stats.needsRestock.length > 0 && (
-          <div style={{ padding: '12px 16px', borderRadius: 10, marginBottom: 16, background: '#7f1d1d40', border: '1px solid #f8717140' }}>
-            <div style={{ color: '#fca5a5', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>⚠️ 以下商品库存不足，建议尽快补货：</div>
-            {stats.needsRestock.map((item, i) => (
-              <div key={i} style={{ color: '#fecaca', fontSize: 12, marginBottom: 4 }}>
-                {item.name}：缺 {item.shortBy} {item.unit}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 筛选工具栏 */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        {/* ── 搜索与筛选 ── */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
           <input
-            placeholder="搜索品名/分类/位置…"
+            placeholder="🔍 搜索商品/分类/库位..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ padding: '7px 12px', border: '1px solid #334155', borderRadius: 6, fontSize: 14, background: '#1e293b', color: '#e2e8f0', minWidth: 200 }}
+            style={{
+              flex: 1, minWidth: 150, padding: '9px 12px', borderRadius: 10,
+              background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)',
+              color: '#e2e8f0', fontSize: 13, outline: 'none',
+            }}
           />
           <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-            style={{ padding: '7px 12px', border: '1px solid #334155', borderRadius: 6, fontSize: 14, background: '#1e293b', color: '#e2e8f0' }}>
-            {CATEGORIES.map(c => <option key={c} value={c === '全部' ? '' : c}>{c}</option>)}
+            style={{ padding: '9px 10px', borderRadius: 10, background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)', color: '#e2e8f0', fontSize: 12, outline: 'none' }}>
+            {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-            style={{ padding: '7px 12px', border: '1px solid #334155', borderRadius: 6, fontSize: 14, background: '#1e293b', color: '#e2e8f0' }}>
-            <option value="">全部状态</option>
-            <option value="normal">正常</option>
-            <option value="low">偏低</option>
-            <option value="critical">告急</option>
-            <option value="overstocked">过剩</option>
+            style={{ padding: '9px 10px', borderRadius: 10, background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)', color: '#e2e8f0', fontSize: 12, outline: 'none' }}>
+            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>)}
           </select>
-          <button onClick={handleSearch}
-            style={{ padding: '7px 18px', borderRadius: 6, border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-            搜索
-          </button>
-          <button onClick={() => { setSearch(''); setCategoryFilter(''); setStatusFilter(''); }}
-            style={{ padding: '7px 18px', borderRadius: 6, border: '1px solid #334155', background: '#1e293b', color: '#94a3b8', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-            重置
-          </button>
         </div>
 
-        {/* 表格头部统计 */}
-        <div style={{ marginBottom: 10, fontSize: 13, color: '#64748b' }}>
-          共 <strong style={{ color: '#94a3b8' }}>{ALL_ITEMS.length}</strong> 项 · 显示 <strong style={{ color: '#94a3b8' }}>{filtered.length}</strong> 条
+        {/* ── 空状态 ── */}
+        {paginated.length === 0 ? (
+          <div style={{
+            textAlign: 'center', padding: '50px 20px',
+            borderRadius: 14, background: 'rgba(30,41,59,0.4)',
+            border: '1px dashed rgba(148,163,184,0.15)',
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>📦</div>
+            <div style={{ color: '#94a3b8', fontSize: 15, marginBottom: 4 }}>暂无匹配的库存商品</div>
+            <div style={{ color: '#64748b', fontSize: 12 }}>请调整筛选条件后重试</div>
+          </div>
+        ) : (
+          <>
+            {/* ── 列表 ── */}
+            {paginated.map(item => (
+              <div key={item.id} style={{
+                padding: '14px 16px', borderRadius: 10, marginBottom: 6,
+                background: 'rgba(30,41,59,0.6)',
+                border: `1px solid ${expandedId === item.id ? 'rgba(59,130,246,0.3)' : 'rgba(148,163,184,0.08)'}`,
+                cursor: 'pointer',
+              }}
+                onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{
+                      width: 8, height: 8, borderRadius: '50%', display: 'inline-block',
+                      background: STATUS_COLORS[item.status],
+                    }} />
+                    <span style={{ color: '#e2e8f0', fontWeight: 500, fontSize: 14 }}>{item.name}</span>
+                  </div>
+                  <span style={{
+                    padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                    background: `${STATUS_COLORS[item.status]}20`,
+                    color: STATUS_COLORS[item.status],
+                  }}>
+                    {STATUS_LABELS[item.status]}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#94a3b8', fontSize: 13 }}>{item.category} · {item.location}</span>
+                  <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 14 }}>
+                    {item.stock} {item.unit}
+                  </span>
+                </div>
+                <StockBar stock={item.stock} min={item.min} max={item.max} />
+
+                {/* ── 补货建议 ── */}
+                <RestockBar item={item} />
+
+                {/* ── 展开详情 ── */}
+                {expandedId === item.id && (
+                  <div style={{
+                    marginTop: 10, padding: '12px', borderRadius: 8,
+                    background: 'rgba(15,23,42,0.5)',
+                    border: '1px solid rgba(148,163,184,0.08)',
+                  }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>
+                      <div>库存范围: <span style={{ color: '#e2e8f0' }}>{item.min} ~ {item.max} {item.unit}</span></div>
+                      <div>进货单价: <span style={{ color: '#e2e8f0' }}>¥{item.cost}</span></div>
+                      <div>库存价值: <span style={{ color: '#e2e8f0' }}>¥{(item.stock * item.cost).toLocaleString()}</span></div>
+                      <div>供应商: <span style={{ color: '#e2e8f0' }}>{item.supplier}</span></div>
+                      <div>更新时间: <span style={{ color: '#e2e8f0' }}>{item.updatedAt}</span></div>
+                      <div>编号: <span style={{ color: '#e2e8f0' }}>{item.id}</span></div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                      <button
+                        style={{
+                          padding: '6px 14px', borderRadius: 6,
+                          background: '#3b82f6', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer',
+                        }}
+                        onClick={e => { e.stopPropagation(); alert(`📊 查看 ${item.name} 出入库记录 (模拟操作)`); }}
+                      >
+                        出入库记录
+                      </button>
+                      <button
+                        style={{
+                          padding: '6px 14px', borderRadius: 6,
+                          background: '#8b5cf6', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer',
+                        }}
+                        onClick={e => { e.stopPropagation(); alert(`✏️ 调整 ${item.name} 库存量 (模拟操作)`); }}
+                      >
+                        调整库存
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* ── 分页 ── */}
+            {totalPages > 1 && (
+              <div style={{
+                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8,
+                marginTop: 16, color: '#94a3b8', fontSize: 13,
+              }}>
+                <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
+                  style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.12)', color: page <= 1 ? '#475569' : '#e2e8f0', cursor: page <= 1 ? 'not-allowed' : 'pointer' }}>
+                  上一页
+                </button>
+                <span>{page} / {totalPages}</span>
+                <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
+                  style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.12)', color: page >= totalPages ? '#475569' : '#e2e8f0', cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}>
+                  下一页
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── 底部统计 ── */}
+        <div style={{
+          marginTop: 12, padding: '10px 14px', borderRadius: 10,
+          background: 'rgba(30,41,59,0.3)', border: '1px solid rgba(148,163,184,0.06)',
+          display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: 11,
+        }}>
+          <span>共 {filtered.length} 种商品</span>
+          <span>本页 {paginated.length} 种</span>
         </div>
-
-        {/* 加载状态 */}
-        {loading && (
-          <div style={{ textAlign: 'center', padding: 24, color: '#64748b', fontSize: 14 }}>
-            🔄 搜索中...
-          </div>
-        )}
-
-        {/* 表格渲染 */}
-        {!loading && (
-          <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #1e293b' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 750 }}>
-              <thead>
-                <tr style={{ background: '#1e293b' }}>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'left' }}>品名</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'left' }}>分类</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'right' }}>库存量</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'right' }}>阈值</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>状态</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'left' }}>存放位置</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'left' }}>最近补货</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((item) => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid #1e293b' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#1e293b'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                    <td style={{ padding: '10px 14px', color: '#e2e8f0', fontWeight: 500, fontSize: 14 }}>{item.name}</td>
-                    <td style={{ padding: '10px 14px', color: '#64748b', fontSize: 13 }}>{item.category}</td>
-                    <td style={{ padding: '10px 14px', color: '#e2e8f0', fontWeight: 600, fontSize: 14, textAlign: 'right' }}>
-                      {item.stock.toLocaleString()} {item.unit}
-                    </td>
-                    <td style={{ padding: '10px 14px', color: '#64748b', fontSize: 13, textAlign: 'right' }}>
-                      {item.min} ~ {item.max}
-                    </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                      <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600, background: statusColor(item.status) + '20', color: statusColor(item.status), border: `1px solid ${statusColor(item.status)}40` }}>
-                        {statusLabel(item.status)}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px 14px', color: '#64748b', fontSize: 13 }}>{item.location}</td>
-                    <td style={{ padding: '10px 14px', color: '#64748b', fontSize: 13 }}>{item.lastRestock}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* 空状态 */}
-        {!loading && filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 48, color: '#64748b' }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>📦</div>
-            <div style={{ fontSize: 15, color: '#94a3b8' }}>没有匹配的库存项</div>
-            <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>请调整筛选条件后重试</div>
-          </div>
-        )}
       </div>
     </main>
   );
