@@ -1,91 +1,81 @@
 /**
  * 供应商 — Suppliers (storefront-web)
- * 角色视角: 💳采购 / 👔店长
- * 功能: 供应商列表、搜索、分类筛选、星级评价、联系人详情、最近交易、空/错状态
+ * 角色视角: 👔店长 / 🛒前台
+ * 功能: 供应商列表、评级、联系方式、合作状态、筛选、搜索、快速联系
  */
 'use client';
 
 import React, { useState, useMemo } from 'react';
 
 /* ── 类型 ── */
-type Supplier = {
+type SupplierItem = {
   id: string;
   name: string;
-  shortName: string;
   contact: string;
   phone: string;
-  altPhone?: string;
+  email: string;
   category: string;
-  rating: number; // 1-5
-  status: 'active' | 'paused' | 'blacklisted';
-  cooperationYear: number;
-  lastOrder?: string;
-  lastOrderAmount?: number;
+  rating: number;
+  cooperation: '合作中' | '暂停合作' | '终止合作';
+  since: string;
+  totalOrders: number;
+  totalAmount: number;
   address?: string;
   remark?: string;
 };
 
-/* ── Mock 数据 (20+) ── */
-const ALL_SUPPLIERS: Supplier[] = [
-  { id: 'S001', name: '华强游戏设备有限公司', shortName: '华强游戏', contact: '张经理', phone: '13800001111', altPhone: '0755-88886666', category: '游戏设备', rating: 5, status: 'active', cooperationYear: 3, lastOrder: '2026-07-10', lastOrderAmount: 16800, address: '深圳市南山区科技园', remark: '主力供应商' },
-  { id: 'S002', name: '欢乐谷礼品供应有限公司', shortName: '欢乐谷礼品', contact: '李主管', phone: '13800002222', altPhone: '020-83336666', category: '礼品玩具', rating: 4, status: 'active', cooperationYear: 2, lastOrder: '2026-07-08', lastOrderAmount: 5600, address: '广州市天河区' },
-  { id: 'S003', name: '饮品速配有限公司', shortName: '饮品速配', contact: '王总', phone: '13800003333', category: '饮品', rating: 4, status: 'active', cooperationYear: 4, lastOrder: '2026-07-12', lastOrderAmount: 3200, address: '东莞市长安镇' },
-  { id: 'S004', name: '鑫达食品供应链', shortName: '鑫达食品', contact: '刘经理', phone: '13900001111', category: '食品零食', rating: 3, status: 'active', cooperationYear: 1, lastOrder: '2026-06-28', lastOrderAmount: 1800, remark: '新供应商试用期' },
-  { id: 'S005', name: '天宇设备维修服务', shortName: '天宇维修', contact: '陈师傅', phone: '13900002222', altPhone: '13600003333', category: '维修服务', rating: 5, status: 'active', cooperationYear: 5, lastOrder: '2026-07-11', lastOrderAmount: 2500, address: '深圳市龙华区', remark: '长期合作伙伴' },
-  { id: 'S006', name: '广源打印耗材批发', shortName: '广源耗材', contact: '赵主管', phone: '13900003333', category: '耗材', rating: 4, status: 'active', cooperationYear: 3, lastOrder: '2026-07-05', lastOrderAmount: 800, address: '广州市白云区' },
-  { id: 'S007', name: '鲜美冷饮原料厂', shortName: '鲜美原料', contact: '周厂长', phone: '13700001111', category: '食品原料', rating: 4, status: 'paused', cooperationYear: 2, lastOrder: '2026-06-15', lastOrderAmount: 4200, remark: '因质检问题暂停合作' },
-  { id: 'S008', name: '环球游戏卡牌公司', shortName: '环球卡牌', contact: '吴经理', phone: '13700002222', category: '游戏设备', rating: 3, status: 'active', cooperationYear: 1, lastOrder: '2026-07-01', lastOrderAmount: 9800, address: '上海市浦东新区' },
-  { id: 'S009', name: '优品清洁用品', shortName: '优品清洁', contact: '郑女士', phone: '13600001111', category: '清洁用品', rating: 5, status: 'active', cooperationYear: 2, lastOrder: '2026-07-09', lastOrderAmount: 450, address: '深圳市宝安区' },
-  { id: 'S010', name: '鑫鑫文具礼品店', shortName: '鑫鑫文具', contact: '孙老板', phone: '13600002222', category: '礼品玩具', rating: 3, status: 'active', cooperationYear: 1, lastOrder: '2026-06-20', lastOrderAmount: 1200, remark: '小型供应商' },
-  { id: 'S011', name: '鸿运设备租赁', shortName: '鸿运租赁', contact: '黄经理', phone: '13500001111', category: '设备租赁', rating: 4, status: 'active', cooperationYear: 3, lastOrder: '2026-07-06', lastOrderAmount: 15000, address: '东莞市塘厦镇' },
-  { id: 'S012', name: '宏达纸业有限公司', shortName: '宏达纸业', contact: '林主管', phone: '13500002222', category: '耗材', rating: 4, status: 'active', cooperationYear: 4, lastOrder: '2026-07-03', lastOrderAmount: 650 },
-  { id: 'S013', name: '速达物流配送', shortName: '速达物流', contact: '何总', phone: '13400001111', category: '物流配送', rating: 3, status: 'active', cooperationYear: 2, lastOrder: '2026-07-12', lastOrderAmount: 3800, address: '深圳市龙岗区', remark: '旺季配送延迟较多' },
-  { id: 'S014', name: '海达电子配件', shortName: '海达电子', contact: '马工', phone: '13400002222', category: '设备配件', rating: 5, status: 'active', cooperationYear: 3, lastOrder: '2026-07-08', lastOrderAmount: 5200, address: '深圳市福田区' },
-  { id: 'S015', name: '绿色环保清洁', shortName: '绿色清洁', contact: '范经理', phone: '13300001111', category: '清洁用品', rating: 3, status: 'blacklisted', cooperationYear: 0, lastOrder: '2026-05-10', lastOrderAmount: 600, remark: '多次违约，已列入黑名单' },
-  { id: 'S016', name: '嘉年华活动策划', shortName: '嘉年华策划', contact: '蔡总监', phone: '13300002222', category: '活动策划', rating: 4, status: 'active', cooperationYear: 2, lastOrder: '2026-07-05', lastOrderAmount: 22000, address: '广州市海珠区' },
-  { id: 'S017', name: '新口味食品', shortName: '新口味', contact: '魏主管', phone: '13200001111', category: '食品零食', rating: 5, status: 'active', cooperationYear: 1, lastOrder: '2026-07-10', lastOrderAmount: 2800, remark: '新品口味反馈好' },
-  { id: 'S018', name: '恒达信息技术', shortName: '恒达信息', contact: '冯工', phone: '13200002222', category: '信息技术', rating: 4, status: 'active', cooperationYear: 3, lastOrder: '2026-06-25', lastOrderAmount: 12000, address: '深圳市南山区' },
-  { id: 'S019', name: '阳光装饰工程', shortName: '阳光装饰', contact: '杨工', phone: '13100001111', category: '装修工程', rating: 4, status: 'paused', cooperationYear: 2, lastOrder: '2026-04-20', lastOrderAmount: 58000, remark: '工程验收后暂停合作' },
-  { id: 'S020', name: '悦心花艺绿植', shortName: '悦心花艺', contact: '唐小姐', phone: '13100002222', category: '装饰绿植', rating: 5, status: 'active', cooperationYear: 1, lastOrder: '2026-07-08', lastOrderAmount: 380 },
+/* ── Mock 数据 (15+) ── */
+const ALL_SUPPLIERS: SupplierItem[] = [
+  { id: 'SP-001', name: '华强游戏设备有限公司', contact: '张经理', phone: '13800001111', email: 'zhang@huaqiang.com', category: '游戏设备', rating: 4.8, cooperation: '合作中', since: '2024-01', totalOrders: 36, totalAmount: 258000, address: '深圳市南山区科技园路8号' },
+  { id: 'SP-002', name: '欢乐谷礼品供应', contact: '李主管', phone: '13800002222', email: 'li@huanlegu.com', category: '礼品', rating: 4.5, cooperation: '合作中', since: '2024-03', totalOrders: 24, totalAmount: 95000, address: '广州市海珠区江南大道中88号' },
+  { id: 'SP-003', name: '饮品速配有限公司', contact: '王总', phone: '13800003333', email: 'wang@yinpinsupai.com', category: '饮品', rating: 4.6, cooperation: '合作中', since: '2024-02', totalOrders: 68, totalAmount: 187000, address: '东莞市长安镇乌沙工业区' },
+  { id: 'SP-004', name: '新鲜食品供应链', contact: '陈经理', phone: '13800004444', email: 'chen@freshfood.com', category: '食品', rating: 4.3, cooperation: '合作中', since: '2024-04', totalOrders: 42, totalAmount: 120000, remark: '生鲜冷链配送，时效好' },
+  { id: 'SP-005', name: '鑫宇耗材批发', contact: '赵主管', phone: '13800005555', email: 'zhao@xinyu.com', category: '耗材', rating: 4.2, cooperation: '合作中', since: '2024-05', totalOrders: 18, totalAmount: 32000, address: '佛山市顺德区陈村镇白陈路' },
+  { id: 'SP-006', name: '宏达设备维修', contact: '刘工', phone: '13800006666', email: 'liu@hongda.com', category: '维修服务', rating: 4.0, cooperation: '合作中', since: '2024-06', totalOrders: 12, totalAmount: 45000 },
+  { id: 'SP-007', name: '亿达食品原料公司', contact: '黄总', phone: '13800007777', email: 'huang@yida.com', category: '食品原料', rating: 4.4, cooperation: '暂停合作', since: '2024-02', totalOrders: 8, totalAmount: 28000, remark: '因质量问题暂停合作' },
+  { id: 'SP-008', name: '天诚广告物料', contact: '周经理', phone: '13800008888', email: 'zhou@tiancheng.com', category: '广告物料', rating: 4.1, cooperation: '合作中', since: '2024-07', totalOrders: 6, totalAmount: 15000, address: '东莞市南城区莞太路' },
+  { id: 'SP-009', name: '乐玩娱乐科技', contact: '吴主管', phone: '13800009999', email: 'wu@lewan.com', category: '设备配件', rating: 4.7, cooperation: '合作中', since: '2024-03', totalOrders: 15, totalAmount: 78000, remark: '配件品类齐全，响应快速' },
+  { id: 'SP-010', name: '康洁清洁用品', contact: '郑经理', phone: '13800001000', email: 'zheng@kangjie.com', category: '清洁用品', rating: 3.8, cooperation: '合作中', since: '2024-08', totalOrders: 9, totalAmount: 12000, address: '惠州市惠城区河南岸镇' },
+  { id: 'SP-011', name: '瑞丰物流有限公司', contact: '林主管', phone: '13800001112', email: 'lin@ruifeng.com', category: '物流', rating: 4.3, cooperation: '合作中', since: '2024-04', totalOrders: 45, totalAmount: 89000 },
+  { id: 'SP-012', name: '创艺装饰设计', contact: '许经理', phone: '13800001113', email: 'xu@chuangyi.com', category: '装修维护', rating: 4.0, cooperation: '暂停合作', since: '2024-05', totalOrders: 4, totalAmount: 55000, remark: '合同到期待续签' },
+  { id: 'SP-013', name: '北冰洋冷饮供应', contact: '孙总', phone: '13800001114', email: 'sun@iceocean.com', category: '饮品', rating: 4.5, cooperation: '合作中', since: '2024-06', totalOrders: 22, totalAmount: 65000 },
+  { id: 'SP-014', name: '安信安防设备', contact: '于主管', phone: '13800001115', email: 'yu@anxin.com', category: '安防设备', rating: 4.2, cooperation: '合作中', since: '2024-09', totalOrders: 3, totalAmount: 28000 },
+  { id: 'SP-015', name: '华美收银系统', contact: '谭经理', phone: '13800001116', email: 'tan@huamei.com', category: 'IT服务', rating: 4.6, cooperation: '合作中', since: '2024-01', totalOrders: 10, totalAmount: 135000, remark: '系统运维响应及时' },
 ];
 
-const CATEGORY_OPTIONS = ['全部', '游戏设备', '礼品玩具', '饮品', '食品零食', '食品原料', '耗材', '设备配件', '维修服务', '清洁用品', '物流配送', '设备租赁', '活动策划', '信息技术', '装修工程', '装饰绿植'];
-const STATUS_OPTIONS = ['全部', 'active', 'paused', 'blacklisted'];
-const STATUS_LABELS: Record<string, string> = { active: '合作中', paused: '暂停合作', blacklisted: '已拉黑' };
-const STATUS_COLORS: Record<string, string> = { active: '#34d399', paused: '#fbbf24', blacklisted: '#f87171' };
-const PAGE_SIZE = 8;
+const COOP_OPTIONS = ['全部', '合作中', '暂停合作', '终止合作'];
+const CATEGORY_OPTIONS = ['全部', '游戏设备', '礼品', '饮品', '食品', '食品原料', '耗材', '设备配件', '维修服务', '广告物料', '清洁用品', '物流', '装修维护', '安防设备', 'IT服务'];
+const COOP_COLORS: Record<string, string> = { '合作中': '#34d399', '暂停合作': '#fbbf24', '终止合作': '#f87171' };
 
-/* ── 子组件: Star Rating ── */
+/* ── 子组件: 评分星星 ── */
 function StarRating({ rating }: { rating: number }) {
-  return (
-    <span style={{ color: '#fbbf24', fontSize: 13 }}>
-      {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
-    </span>
-  );
+  const full = Math.floor(rating);
+  const half = rating - full >= 0.5;
+  const stars = '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(5 - full - (half ? 1 : 0));
+  return <span style={{ color: '#fbbf24', fontSize: 12 }}>{stars} {rating.toFixed(1)}</span>;
 }
 
-/* ── 子组件: 统计摘要 ── */
-function SupplierStats({ suppliers }: { suppliers: Supplier[] }) {
-  const active = suppliers.filter(s => s.status === 'active').length;
-  const paused = suppliers.filter(s => s.status === 'paused').length;
-  const blacklisted = suppliers.filter(s => s.status === 'blacklisted').length;
-  const totalAmount = suppliers.reduce((s, item) => s + (item.lastOrderAmount || 0), 0);
+/* ── 子组件: 统计卡片 ── */
+function SupplierStats({ items }: { items: SupplierItem[] }) {
+  const active = items.filter(i => i.cooperation === '合作中');
+  const paused = items.filter(i => i.cooperation === '暂停合作');
+  const totalOrders = items.reduce((s, i) => s + i.totalOrders, 0);
+  const totalAmount = items.reduce((s, i) => s + i.totalAmount, 0);
   return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16,
-    }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
       {[
-        { label: '全部供应商', count: suppliers.length, color: '#94a3b8' },
-        { label: '合作中', count: active, color: '#34d399' },
-        { label: '暂停', count: paused, color: '#fbbf24' },
-        { label: '近期交易额', count: `¥${(totalAmount / 10000).toFixed(1)}w`, color: '#60a5fa' },
+        { label: '全部供应商', count: items.length, color: '#94a3b8', sub: `${totalOrders} 单` },
+        { label: '合作中', count: active.length, color: '#34d399', sub: `¥${(totalAmount / 10000).toFixed(1)}万` },
+        { label: '暂停合作', count: paused.length, color: '#fbbf24', sub: '待处理' },
+        { label: '平均评分', count: (items.reduce((s, i) => s + i.rating, 0) / items.length).toFixed(1), color: '#fbbf24', sub: '综合评分' },
       ].map((s, i) => (
         <div key={i} style={{
           padding: '12px', borderRadius: 10, textAlign: 'center',
           background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.08)',
         }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{typeof s.count === 'number' ? s.count : s.count}</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: s.color }}>{s.count}</div>
           <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{s.label}</div>
+          <div style={{ fontSize: 10, color: '#475569', marginTop: 1 }}>{s.sub}</div>
         </div>
       ))}
     </div>
@@ -95,191 +85,183 @@ function SupplierStats({ suppliers }: { suppliers: Supplier[] }) {
 /* ── 主组件 ── */
 export default function SuppliersPage() {
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('全部');
-  const [statusFilter, setStatusFilter] = useState('全部');
+  const [coopFilter, setCoopFilter] = useState('全部');
+  const [categoryFilter, setCategoryFilter] = useState('全部');
   const [page, setPage] = useState(1);
-  const [error, setError] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const kw = search.trim().toLowerCase();
     return ALL_SUPPLIERS.filter(s => {
-      if (statusFilter !== '全部' && s.status !== statusFilter) return false;
-      if (category !== '全部' && s.category !== category) return false;
-      if (kw && !s.name.toLowerCase().includes(kw) && !s.shortName.toLowerCase().includes(kw) && !s.contact.toLowerCase().includes(kw) && !s.phone.includes(kw)) return false;
+      if (coopFilter !== '全部' && s.cooperation !== coopFilter) return false;
+      if (categoryFilter !== '全部' && s.category !== categoryFilter) return false;
+      if (kw && !s.name.toLowerCase().includes(kw) && !s.contact.toLowerCase().includes(kw) && !s.phone.includes(kw) && !s.category.toLowerCase().includes(kw)) return false;
       return true;
     });
-  }, [search, category, statusFilter]);
+  }, [search, coopFilter, categoryFilter]);
 
+  const PAGE_SIZE = 8;
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page]);
 
-  React.useEffect(() => { setPage(1); }, [search, category, statusFilter]);
+  React.useEffect(() => { setPage(1); setExpandedId(null); }, [search, coopFilter, categoryFilter]);
 
   return (
     <main style={{ minHeight: '100vh', padding: '24px 16px', background: '#0f172a' }}>
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
         {/* ── 标题 ── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc' }}>供应商管理</h1>
-          <button
-            onClick={() => setError(!error)}
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc', marginBottom: 16 }}>供应商管理</h1>
+
+        {/* ── 统计卡片 ── */}
+        <SupplierStats items={ALL_SUPPLIERS} />
+
+        {/* ── 搜索与筛选 ── */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            placeholder="🔍 搜索名称/联系人/电话/品类..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
             style={{
-              padding: '4px 12px', borderRadius: 6,
-              background: '#ef444420', border: '1px solid #ef444430',
-              color: '#fca5a5', fontSize: 11, cursor: 'pointer',
+              flex: 1, minWidth: 150, padding: '9px 12px', borderRadius: 10,
+              background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)',
+              color: '#e2e8f0', fontSize: 13, outline: 'none',
             }}
-          >
-            {error ? '恢复' : '模拟加载失败'}
-          </button>
+          />
+          <select value={coopFilter} onChange={e => setCoopFilter(e.target.value)}
+            style={{ padding: '9px 10px', borderRadius: 10, background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)', color: '#e2e8f0', fontSize: 12, outline: 'none' }}>
+            {COOP_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+            style={{ padding: '9px 10px', borderRadius: 10, background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)', color: '#e2e8f0', fontSize: 12, outline: 'none' }}>
+            {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
 
-        {/* ── 错误状态 ── */}
-        {error && (
+        {/* ── 空状态 ── */}
+        {paginated.length === 0 ? (
           <div style={{
-            padding: '16px 18px', marginBottom: 16, borderRadius: 12,
-            background: '#ef444415', border: '1px solid #ef444430',
-            display: 'flex', alignItems: 'flex-start', gap: 10,
+            textAlign: 'center', padding: '50px 20px',
+            borderRadius: 14, background: 'rgba(30,41,59,0.4)',
+            border: '1px dashed rgba(148,163,184,0.15)',
           }}>
-            <span style={{ fontSize: 20 }}>⚠️</span>
-            <div>
-              <div style={{ color: '#fca5a5', fontWeight: 600, fontSize: 14, marginBottom: 4 }}>数据加载失败</div>
-              <div style={{ color: '#fca5a580', fontSize: 13 }}>供应商信息获取异常，请稍后重试</div>
-              <button
-                onClick={() => { setError(false); }}
-                style={{
-                  marginTop: 8, padding: '6px 16px', borderRadius: 6,
-                  background: '#3b82f6', border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer',
-                }}
-              >重新加载</button>
-            </div>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>🏢</div>
+            <div style={{ color: '#94a3b8', fontSize: 15, marginBottom: 4 }}>暂无匹配供应商</div>
+            <div style={{ color: '#64748b', fontSize: 12 }}>请调整筛选条件后重试</div>
           </div>
-        )}
-
-        {!error && (
+        ) : (
           <>
-            {/* ── 统计 ── */}
-            <SupplierStats suppliers={ALL_SUPPLIERS} />
-
-            {/* ── 搜索与筛选 ── */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-              <input
-                placeholder="🔍 搜索供应商/联系人/电话..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{
-                  flex: 1, minWidth: 150, padding: '9px 12px', borderRadius: 10,
-                  background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)',
-                  color: '#e2e8f0', fontSize: 13, outline: 'none',
-                }}
-              />
-              <select value={category} onChange={e => setCategory(e.target.value)}
-                style={{ padding: '9px 10px', borderRadius: 10, background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)', color: '#e2e8f0', fontSize: 12, outline: 'none', maxWidth: 120 }}>
-                <option value="全部">全部分类</option>
-                {CATEGORY_OPTIONS.filter(c => c !== '全部').map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-                style={{ padding: '9px 10px', borderRadius: 10, background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)', color: '#e2e8f0', fontSize: 12, outline: 'none' }}>
-                <option value="全部">全部状态</option>
-                {STATUS_OPTIONS.filter(s => s !== '全部').map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
-              </select>
-            </div>
-
-            {/* ── 列表 / 空状态 ── */}
-            {paginated.length === 0 ? (
-              <div style={{
-                textAlign: 'center', padding: '50px 20px',
-                borderRadius: 14, background: 'rgba(30,41,59,0.4)',
-                border: '1px dashed rgba(148,163,184,0.15)',
-              }}>
-                <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
-                <div style={{ color: '#94a3b8', fontSize: 15, marginBottom: 4 }}>未找到匹配的供应商</div>
-                <div style={{ color: '#64748b', fontSize: 12 }}>尝试修改搜索条件或筛选分类</div>
-              </div>
-            ) : (
-              <>
-                {paginated.map(s => (
-                  <div key={s.id} style={{
-                    padding: '16px 20px', borderRadius: 14, marginBottom: 10,
-                    background: 'rgba(30,41,59,0.8)',
-                    border: '1px solid rgba(148,163,184,0.12)',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                      <div>
-                        <span style={{ color: '#f8fafc', fontWeight: 600, fontSize: 15 }}>{s.name}</span>
-                        <span style={{ color: '#64748b', fontSize: 11, marginLeft: 8 }}>{s.shortName}</span>
-                      </div>
-                      <span style={{
-                        padding: '2px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
-                        background: `${STATUS_COLORS[s.status]}20`,
-                        color: STATUS_COLORS[s.status],
-                      }}>
-                        {STATUS_LABELS[s.status]}
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <span style={{ color: '#64748b', fontSize: 11 }}>{s.category}</span>
-                      <span style={{ color: '#334155', fontSize: 11 }}>|</span>
-                      <StarRating rating={s.rating} />
-                      <span style={{ color: '#64748b', fontSize: 11 }}>合作 {s.cooperationYear} 年</span>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#94a3b8', marginBottom: 4, flexWrap: 'wrap' }}>
-                      <span>📞 {s.contact} · {s.phone}</span>
-                      {s.altPhone && <span style={{ color: '#64748b', fontSize: 11 }}>备用: {s.altPhone}</span>}
-                    </div>
-
-                    {s.lastOrder && (
-                      <div style={{ color: '#64748b', fontSize: 11 }}>
-                        最近订单: {s.lastOrder}
-                        {s.lastOrderAmount ? ` · ¥${s.lastOrderAmount.toLocaleString()}` : ''}
-                        {s.address && ` · ${s.address}`}
-                      </div>
-                    )}
-
-                    {s.remark && (
-                      <div style={{
-                        marginTop: 6, padding: '4px 10px', borderRadius: 6,
-                        background: '#3b82f610', border: '1px solid #3b82f620',
-                        color: '#60a5fa', fontSize: 11,
-                      }}>
-                        📌 {s.remark}
-                      </div>
-                    )}
+            {/* ── 列表 ── */}
+            {paginated.map(item => (
+              <div key={item.id} style={{
+                padding: '14px 16px', borderRadius: 10, marginBottom: 6,
+                background: 'rgba(30,41,59,0.6)',
+                border: `1px solid ${expandedId === item.id ? 'rgba(59,130,246,0.3)' : 'rgba(148,163,184,0.08)'}`,
+                cursor: 'pointer',
+              }}
+                onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ color: '#e2e8f0', fontWeight: 500, fontSize: 14 }}>{item.name}</span>
+                    <StarRating rating={item.rating} />
                   </div>
-                ))}
-
-                {/* ── 分页 ── */}
-                {totalPages > 1 && (
-                  <div style={{
-                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8,
-                    marginTop: 16, color: '#94a3b8', fontSize: 13,
+                  <span style={{
+                    padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                    background: `${COOP_COLORS[item.cooperation]}20`,
+                    color: COOP_COLORS[item.cooperation],
                   }}>
-                    <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
-                      style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.12)', color: page <= 1 ? '#475569' : '#e2e8f0', cursor: page <= 1 ? 'not-allowed' : 'pointer' }}>
-                      上一页
-                    </button>
-                    <span>{page} / {totalPages}</span>
-                    <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
-                      style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.12)', color: page >= totalPages ? '#475569' : '#e2e8f0', cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}>
-                      下一页
-                    </button>
+                    {item.cooperation}
+                  </span>
+                </div>
+                <div style={{ color: '#94a3b8', fontSize: 13 }}>
+                  {item.contact} · {item.phone} · {item.category}
+                </div>
+                <div style={{ color: '#64748b', fontSize: 11, marginTop: 2 }}>
+                  加入时间: {item.since} · 累计 {item.totalOrders} 单
+                </div>
+
+                {/* ── 展开详情 ── */}
+                {expandedId === item.id && (
+                  <div style={{
+                    marginTop: 10, padding: '12px', borderRadius: 8,
+                    background: 'rgba(15,23,42,0.5)',
+                    border: '1px solid rgba(148,163,184,0.08)',
+                  }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>
+                      <div>编号: <span style={{ color: '#e2e8f0' }}>{item.id}</span></div>
+                      <div>邮箱: <span style={{ color: '#e2e8f0' }}>{item.email}</span></div>
+                      <div>累计金额: <span style={{ color: '#e2e8f0' }}>¥{item.totalAmount.toLocaleString()}</span></div>
+                      <div>{item.address ? '' : '备注'}</div>
+                    </div>
+                    {item.address && (
+                      <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>📍 {item.address}</div>
+                    )}
+                    {item.remark && (
+                      <div style={{ fontSize: 12, color: '#60a5fa', marginTop: 2 }}>📌 {item.remark}</div>
+                    )}
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                      <button
+                        style={{
+                          padding: '6px 14px', borderRadius: 6,
+                          background: '#3b82f6', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer',
+                        }}
+                        onClick={e => { e.stopPropagation(); alert(`📞 拨打 ${item.contact}(${item.phone}) (模拟操作)`); }}
+                      >
+                        📞 联系
+                      </button>
+                      <button
+                        style={{
+                          padding: '6px 14px', borderRadius: 6,
+                          background: '#6366f1', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer',
+                        }}
+                        onClick={e => { e.stopPropagation(); alert(`📧 发送邮件至 ${item.email} (模拟操作)`); }}
+                      >
+                        ✉️ 发邮件
+                      </button>
+                      <button
+                        style={{
+                          padding: '6px 14px', borderRadius: 6,
+                          background: '#8b5cf6', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer',
+                        }}
+                        onClick={e => { e.stopPropagation(); alert(`📋 查看 ${item.name} 采购记录 (模拟操作)`); }}
+                      >
+                        采购记录
+                      </button>
+                    </div>
                   </div>
                 )}
-              </>
-            )}
+              </div>
+            ))}
 
-            {/* ── 底部统计 ── */}
-            <div style={{
-              marginTop: 12, padding: '10px 14px', borderRadius: 10,
-              background: 'rgba(30,41,59,0.3)', border: '1px solid rgba(148,163,184,0.06)',
-              display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: 11,
-            }}>
-              <span>共 {filtered.length} 家供应商</span>
-              <span>本页 {paginated.length} 家</span>
-            </div>
+            {/* ── 分页 ── */}
+            {totalPages > 1 && (
+              <div style={{
+                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8,
+                marginTop: 16, color: '#94a3b8', fontSize: 13,
+              }}>
+                <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
+                  style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.12)', color: page <= 1 ? '#475569' : '#e2e8f0', cursor: page <= 1 ? 'not-allowed' : 'pointer' }}>
+                  上一页
+                </button>
+                <span>{page} / {totalPages}</span>
+                <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
+                  style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.12)', color: page >= totalPages ? '#475569' : '#e2e8f0', cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}>
+                  下一页
+                </button>
+              </div>
+            )}
           </>
         )}
+
+        {/* ── 底部统计 ── */}
+        <div style={{
+          marginTop: 12, padding: '10px 14px', borderRadius: 10,
+          background: 'rgba(30,41,59,0.3)', border: '1px solid rgba(148,163,184,0.06)',
+          display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: 11,
+        }}>
+          <span>共 {filtered.length} 家供应商</span>
+          <span>本页 {paginated.length} 家</span>
+        </div>
       </div>
     </main>
   );
