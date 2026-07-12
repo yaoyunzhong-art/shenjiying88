@@ -75,10 +75,16 @@ export function BigAntsOrganizationJSONLD() {
     },
   };
 
+  // 安全说明: JSON.stringify 自动转义 <, >, & 等特殊字符, JSON-LD 数据为固定硬编码值
+  const jsonLd = (() => {
+    const encoded = JSON.stringify(schema).replace(/</g, '\\u003C').replace(/>/g, '\\u003E');
+    return encoded;
+  })();
+
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: jsonLd }}
     />
   );
 }

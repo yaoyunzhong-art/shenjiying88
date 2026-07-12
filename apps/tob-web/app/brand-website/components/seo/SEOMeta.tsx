@@ -128,6 +128,11 @@ export default function SEOMeta({
 /**
  * JSON-LD结构化数据注入组件
  */
+/**
+ * 安全地将对象渲染为 JSON-LD 结构化数据脚本标签。
+ * 使用 JSON.stringify + HTML 实体编码防止 XSS。
+ * 所有外部调用应传入固定/硬编码数据对象。
+ */
 export function JSONLD({ data }: { data: Record<string, unknown> }) {
   const [mounted, setMounted] = useState(false);
 
@@ -137,10 +142,13 @@ export function JSONLD({ data }: { data: Record<string, unknown> }) {
 
   if (!mounted) return null;
 
+  // JSON.stringify 自动转义特殊字符, 额外对 < > 做 Unicode 转义确保 XSS 安全
+  const safeJsonLd = JSON.stringify(data).replace(/</g, '\\u003C').replace(/>/g, '\\u003E');
+
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd }}
     />
   );
 }
