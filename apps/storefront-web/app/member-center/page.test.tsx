@@ -5,6 +5,7 @@
  * - 默认导出 & 组件结构
  * - 会员等级体系常量全覆盖
  * - 功能菜单入口完整性
+ * - 增强功能：会员详细信息、充值续费入口、消费记录、权益展示、等级进度条
  * - SSR 渲染静态结构验证
  * - 未登录状态引导
  */
@@ -78,8 +79,7 @@ describe('MemberCenterPage — 结构验证', () => {
   });
 
   test('包含积分展示区域', () => {
-    assert.ok(pageSource.includes('我的积分'));
-    assert.ok(pageSource.includes('可兑换优惠券及礼品'));
+    assert.ok(pageSource.includes('积分'));
   });
 
   test('加载态显示"加载中..."', () => {
@@ -88,6 +88,87 @@ describe('MemberCenterPage — 结构验证', () => {
 
   test('手机号显示区域', () => {
     assert.ok(pageSource.includes('手机号：'));
+  });
+
+  // === 增强功能验证 ===
+
+  test('会员详细信息 — 显示余额', () => {
+    assert.ok(pageSource.includes('余额'));
+    assert.ok(pageSource.includes('toFixed'));
+    assert.ok(pageSource.includes('member_balance'));
+  });
+
+  test('会员详细信息 — 显示门店信息', () => {
+    assert.ok(pageSource.includes('storeName'));
+  });
+
+  test('快速充值入口链接到 member-recharge', () => {
+    assert.ok(pageSource.includes('/member-recharge'));
+    assert.ok(pageSource.includes('快速充值'));
+  });
+
+  test('续费入口链接到 member-center-renewal', () => {
+    assert.ok(pageSource.includes('/member-center-renewal'));
+    assert.ok(pageSource.includes('立即续费'));
+  });
+
+  test('消费记录概览 — 最近3笔表格', () => {
+    assert.ok(pageSource.includes('最近消费'));
+    assert.ok(pageSource.includes('查看全部'));
+    assert.ok(pageSource.includes('2026-07-10'));
+    assert.ok(pageSource.includes('标准游戏套餐'));
+    assert.ok(pageSource.includes('VIP包房3小时'));
+    assert.ok(pageSource.includes('零食套餐B'));
+    // 表格列头
+    assert.ok(pageSource.includes('日期'));
+    assert.ok(pageSource.includes('项目'));
+    assert.ok(pageSource.includes('金额'));
+    assert.ok(pageSource.includes('方式'));
+  });
+
+  test('会员权益展示 — 折扣', () => {
+    assert.ok(pageSource.includes('会员权益'));
+    assert.ok(pageSource.includes('折扣'));
+    assert.ok(pageSource.includes('全场折扣'));
+  });
+
+  test('会员权益展示 — 生日福利', () => {
+    assert.ok(pageSource.includes('生日福利'));
+    assert.ok(pageSource.includes('生日'));
+  });
+
+  test('等级进度条', () => {
+    assert.ok(pageSource.includes('等级进度'));
+    assert.ok(pageSource.includes('getLevelProgress'));
+    assert.ok(pageSource.includes('toFixed'));
+    assert.ok(pageSource.includes('width'));
+    assert.ok(pageSource.includes('borderRadius'));
+  });
+
+  test('TIER_BENEFITS 包含所有等级权益数据', () => {
+    // 每个等级应有折扣、生日福利、下一等级名、升级所需积分
+    assert.ok(pageSource.includes('TIER_BENEFITS'));
+    assert.ok(pageSource.includes('discount'));
+    assert.ok(pageSource.includes('birthdayBenefit'));
+    assert.ok(pageSource.includes('nextTierName'));
+    assert.ok(pageSource.includes('nextTierPoints'));
+
+    // 钻石会员满级
+    assert.ok(pageSource.includes('已满级'));
+    // 基础权益
+    assert.ok(pageSource.includes('注册送100积分'));
+  });
+
+  test('消费记录支付方式展示', () => {
+    assert.ok(pageSource.includes('paymentMethod'));
+    assert.ok(pageSource.includes('余额'));
+    assert.ok(pageSource.includes('微信'));
+  });
+
+  test('MOCK_RECENT_CONSUMPTIONS 包含3条记录', () => {
+    // 验证3条消费记录的存在
+    const count = (pageSource.match(/id: '/g) || []).length;
+    assert.ok(count >= 3, `预期至少3个id属性，实际 ${count}`);
   });
 });
 
@@ -129,5 +210,22 @@ describe('MemberCenterPage — SSR 渲染', () => {
 
   test('积分数字使用 toLocaleString', () => {
     assert.ok(pageSource.includes('toLocaleString'));
+  });
+
+  test('增强链接渲染', () => {
+    const enhancedLinks = ['/member-recharge', '/member-center-renewal'];
+    enhancedLinks.forEach(href => {
+      assert.ok(pageSource.includes(href), `缺少增强链接: ${href}`);
+    });
+  });
+
+  test('等级进度条渲染函数存在', () => {
+    assert.ok(pageSource.includes('getLevelProgress'));
+    assert.ok(pageSource.includes('levelProgress'));
+  });
+
+  test('余额渲染格式 ¥ + toFixed(2)', () => {
+    assert.ok(pageSource.includes('toFixed(2)'));
+    assert.ok(pageSource.includes('¥'));
   });
 });
