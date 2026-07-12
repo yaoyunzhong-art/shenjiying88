@@ -80,6 +80,8 @@ export class TenantConfigService implements OnModuleInit {
 
   async getConfigs(req: GetConfigRequest): Promise<ConfigInstance[]> {
     const ctx = requireTenantContext()
+    // Phase-FP P0-H5 修复: H4 写-读对称 - 读路径也校验租户 ID 格式, 防 brand- 前缀绕过
+    this.assertTenantIdFormat(ctx)
     const level = req.level ?? this.roleDefaultLevel(ctx)
     this.assertLevelAccess(ctx, level)
 
@@ -100,6 +102,8 @@ export class TenantConfigService implements OnModuleInit {
 
   async getEffectiveConfigs(category?: string): Promise<EffectiveConfig[]> {
     const ctx = requireTenantContext()
+    // Phase-FP P0-H5 修复: H4 写-读对称
+    this.assertTenantIdFormat(ctx)
     const results: EffectiveConfig[] = []
     for (const def of BUILTIN_CONFIG_DEFINITIONS) {
       if (category && def.category !== category) continue
@@ -122,6 +126,8 @@ export class TenantConfigService implements OnModuleInit {
 
   async getConfig(key: string): Promise<ConfigInstance | null> {
     const ctx = requireTenantContext()
+    // Phase-FP P0-H5 修复: H4 写-读对称
+    this.assertTenantIdFormat(ctx)
     const def = this.definitions.get(key)
     if (!def) throw new NotFoundException(`Unknown config key: ${key}`)
     if (!this.canAccessConfigKey(ctx, def)) {
@@ -305,6 +311,8 @@ export class TenantConfigService implements OnModuleInit {
 
   async rollback(targetVersion: number, configId: string): Promise<ConfigInstance> {
     const ctx = requireTenantContext()
+    // Phase-FP P0-H5 修复: H4 写-读对称
+    this.assertTenantIdFormat(ctx)
     const all = this.flattenInstances()
     const target = all.find((c) => c.id === configId)
     if (!target) throw new NotFoundException(`Config ${configId} not found`)
@@ -419,6 +427,8 @@ export class TenantConfigService implements OnModuleInit {
 
   async getWorkbenchConfigs(workbench: WorkbenchCode, category?: string): Promise<EffectiveConfig[]> {
     const ctx = requireTenantContext()
+    // Phase-FP P0-H5 修复: H4 写-读对称
+    this.assertTenantIdFormat(ctx)
     const level = WORKBENCH_TO_LEVEL[workbench]
     this.assertLevelAccess(ctx, level)
 
@@ -649,21 +659,35 @@ export class TenantConfigService implements OnModuleInit {
   }
 
   /**
-   * Phase-FP P0-H1 修复: ctx.brandId 服务端归属校验
-   * 防止攻击者注入 brandId="victim-brand" 越权读他人 brand 配置 (CVSS 7.5)
-   * 规则: brandId 必须以 ctx.tenantId 为命名空间根 (tenantId/tenantId::sub/tenantId 完全相等)
-   *       super_admin 跨租户审计时可豁免 (但仍需 audit log 留痕)
+   * Phase-FP P0-H1 + P0-H6 + P0-H8 修复: ctx.brandId 服务端归属校验 (CVSS 7.5)
+   * - H1 防御: brandId 注入越权
+   * - H6 归一化: toLowerCase + NFKC 防止大小写/Unicode 绕过; 收紧单冒号分支
+   * - H8 审计: super_admin/auditor 跨租户豁免必须 recordAudit 留痕
    */
   private assertBrandIdBelongsToTenant(ctx: TenantContext): void {
     if (!ctx.brandId) return
-    if (ctx.role === 'super_admin' || ctx.role === 'auditor') return // 跨租户审计豁免
-    const tid = ctx.tenantId
-    const bid = ctx.brandId
-    // 归属规则: brandId === tenantId OR brandId.startsWith(tenantId + '::')
-    const belongs = bid === tid || bid.startsWith(`${tid}::`) || bid.startsWith(`${tid}:`)
+    // 跨租户审计豁免 (P0-H8: 留痕)
+    if (ctx.role === 'super_admin' || ctx.role === 'auditor') {
+      this.recordAudit({
+        configId: 'cross-tenant-brand-access',
+        key: '_meta_brand_id_passthrough',
+        level: 'brand',
+        ownerId: ctx.brandId,
+        tenantId: ctx.tenantId ?? 'unknown',
+        action: 'cross_tenant_brand_passthrough',
+        operator: ctx.userId ?? 'system',
+        operatorRole: ctx.role ?? 'viewer',
+      })
+      return
+    }
+    // P0-H6: 归一化比较, 防大小写/Unicode bypass
+    const tid = (ctx.tenantId ?? '').toLowerCase().normalize('NFKC')
+    const bid = ctx.brandId.toLowerCase().normalize('NFKC')
+    // P0-H6 收紧: 仅允许 ${tid}:: 双冒号前缀, 删单冒号孤儿形态
+    const belongs = bid === tid || bid.startsWith(`${tid}::`)
     if (!belongs) {
       throw new ForbiddenException(
-        `[TenantConfig] brandId does not belong to tenant: brandId=${bid} tenantId=${tid} role=${ctx.role}`,
+        `[TenantConfig] brandId does not belong to tenant: brandId=${ctx.brandId} tenantId=${ctx.tenantId} role=${ctx.role}`,
       )
     }
   }

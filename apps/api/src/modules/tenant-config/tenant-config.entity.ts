@@ -182,7 +182,12 @@ export interface ConfigAuditLog {
   previousValue?: string
   /** 变更后值 (脱敏) */
   newValue?: string
-  action: 'create' | 'update' | 'delete' | 'rollback'
+  /**
+   * 动作类型
+   * - create / update / delete / rollback: 业务操作
+   * - cross_tenant_brand_passthrough: P0-H8 super_admin/auditor 跨租户 brandId 豁免审计
+   */
+  action: 'create' | 'update' | 'delete' | 'rollback' | 'cross_tenant_brand_passthrough'
   operator: string
   operatorRole: TenantRole
   timestamp: string

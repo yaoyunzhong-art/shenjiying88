@@ -21,13 +21,16 @@ BEGIN
 END $$;
 
 -- 2. 迁移 brand-level 老 owner_id
+-- P0-H7 修复: 加 IS NOT NULL 守卫, 防 tenantId 为空时 UPDATE 静默跳过
 UPDATE "ConfigInstance"
 SET "ownerId" = "tenantId" || '::brand-fallback',
     "updatedAt" = NOW()
 WHERE "level" = 'brand'
   AND "ownerId" LIKE 'brand-%'
   AND "ownerId" != "tenantId"                -- 排除品牌租户 (tenantId='brand-shenjiying' 同行)
-  AND "ownerId" NOT LIKE '%::%';             -- 排除已迁移的 (新格式带 ::)
+  AND "ownerId" NOT LIKE '%::%'              -- 排除已迁移的 (新格式带 ::)
+  AND "tenantId" IS NOT NULL                 -- P0-H7: NULL 守卫
+  AND length("tenantId") > 0;                -- P0-H7: 空串守卫
 
 -- 3. 验证迁移结果 (应返回 0)
 DO $$
