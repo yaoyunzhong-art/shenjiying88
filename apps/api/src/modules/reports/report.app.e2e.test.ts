@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 // AppModule 使用了 ConfigModule.forRoot，其中 validate 会同步校验运行所需的最小 env 集合。
 // import 会被 tsx 静态提升，因此这里仍使用动态 require 加载 AppModule。

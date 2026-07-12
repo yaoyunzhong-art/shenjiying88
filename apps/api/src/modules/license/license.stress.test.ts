@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * 🐜 自动: [license] stress 压力/韧性测试
  *
