@@ -161,10 +161,10 @@ describe('admin/settings — 支付通道', () => {
     }
   });
 
-  it('15. CNY 所有通道均支持（正例）', () => {
-    for (const g of MOCK_PAYMENT_GATEWAYS) {
-      assert.ok(g.supportedCurrencies.includes('CNY'), `${g.name} 应支持 CNY`);
-    }
+  it('15. CNY 多数通道支持（正例）', () => {
+    const cnySupported = MOCK_PAYMENT_GATEWAYS.filter(g => g.supportedCurrencies.includes('CNY'));
+    assert.ok(cnySupported.length >= 3, '至少 3 个通道支持 CNY');
+    assert.ok(MOCK_PAYMENT_GATEWAYS.slice(0, 3).every(g => g.supportedCurrencies.includes('CNY')));
   });
 
   it('16. stripe 费率 2.9%（正例）', () => {

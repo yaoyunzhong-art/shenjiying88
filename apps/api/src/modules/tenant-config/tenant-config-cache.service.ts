@@ -22,6 +22,7 @@ export class TenantConfigCacheService {
     invalidations: 0,
     errors: 0,
   }
+  private readonly statsByTenant = new Map<string, TenantConfigCacheStats>()
 
   constructor(
     @Optional() @Inject(CACHE_SERVICE) private readonly cache?: CacheService,
@@ -35,7 +36,7 @@ export class TenantConfigCacheService {
     ttlSeconds = this.DEFAULT_TTL_SECONDS,
   ): Promise<T> {
     if (!this.cache) {
-      this.stats.misses++
+      this.recordStat(ctx.tenantId, 'misses')
       return loader()
     }
 
@@ -43,15 +44,15 @@ export class TenantConfigCacheService {
     try {
       const cached = await this.cache.get<T>(key)
       if (cached !== null) {
-        this.stats.hits++
+        this.recordStat(ctx.tenantId, 'hits')
         return cached
       }
-      this.stats.misses++
+      this.recordStat(ctx.tenantId, 'misses')
       const fresh = await loader()
       await this.cache.set(key, fresh, this.withJitter(ttlSeconds))
       return fresh
     } catch (error) {
-      this.stats.errors++
+      this.recordStat(ctx.tenantId, 'errors')
       this.logger.warn(`cache get/load failed for ${key}: ${(error as Error).message}`)
       return loader()
     }
@@ -61,20 +62,21 @@ export class TenantConfigCacheService {
     if (!tenantId || !this.cache) return 0
     try {
       const count = await this.cache.delByPrefix(`${this.KEY_PREFIX}${tenantId}:`)
-      this.stats.invalidations += count
+      this.recordStat(tenantId, 'invalidations', count)
       return count
     } catch (error) {
-      this.stats.errors++
+      this.recordStat(tenantId, 'errors')
       this.logger.warn(`cache invalidate failed for tenant=${tenantId}: ${(error as Error).message}`)
       return 0
     }
   }
 
-  getStats(): TenantConfigCacheStats & { hitRate: number } {
-    const total = this.stats.hits + this.stats.misses
+  getStats(tenantId?: string): TenantConfigCacheStats & { hitRate: number } {
+    const stats = tenantId ? this.getTenantStats(tenantId) : this.stats
+    const total = stats.hits + stats.misses
     return {
-      ...this.stats,
-      hitRate: total > 0 ? Math.round((this.stats.hits / total) * 10000) / 10000 : 0,
+      ...stats,
+      hitRate: total > 0 ? Math.round((stats.hits / total) * 10000) / 10000 : 0,
     }
   }
 
@@ -85,6 +87,7 @@ export class TenantConfigCacheService {
       invalidations: 0,
       errors: 0,
     }
+    this.statsByTenant.clear()
   }
 
   private buildKey(
@@ -116,5 +119,28 @@ export class TenantConfigCacheService {
   private withJitter(ttlSeconds: number): number {
     const jitter = Math.floor(Math.random() * (this.TTL_JITTER_SECONDS + 1))
     return ttlSeconds + jitter
+  }
+
+  private getTenantStats(tenantId?: string): TenantConfigCacheStats {
+    const key = tenantId ?? 'unknown'
+    const existing = this.statsByTenant.get(key)
+    if (existing) return existing
+    const fresh: TenantConfigCacheStats = {
+      hits: 0,
+      misses: 0,
+      invalidations: 0,
+      errors: 0,
+    }
+    this.statsByTenant.set(key, fresh)
+    return fresh
+  }
+
+  private recordStat(
+    tenantId: string | undefined,
+    field: keyof TenantConfigCacheStats,
+    delta = 1,
+  ): void {
+    this.stats[field] += delta
+    this.getTenantStats(tenantId)[field] += delta
   }
 }
