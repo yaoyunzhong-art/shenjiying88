@@ -11,6 +11,7 @@
 |------|------|------|------|
 | dispatch-374 | storefront-web TSC 10✖→16✖(scope扩展) | #381派→#382 30min零commit→#383 60min零commit | 🔴 **连续2次验收失败→P0** |
 | dispatch-375 | admin-web test 1✖ | #381派→#382 30min零commit→#383 60min零commit | 🔴 **连续2次验收失败→P0** |
+| dispatch-376-P0 | storefront TSC 16✖ + admin test 84✖ + **@m5/app 21✖(新增)** | #383→#384 30min零commit | 🔴 **首次验收失败(30min零commit)→scope扩展** |
 
 ---
 
@@ -36,6 +37,17 @@
 - **dispatch-374-tree.md 不存在** (之前应写入的树文件缺失)
 
 **根因**: EmptyStateProps缺少actionLabel+actionHref属性定义; ErrorBoundary组件API变更; reports-detail-client模块缺失; statusInfo非空断言缺失
+
+## 问题三 (NEW): @m5/app test 21✖ (缓存揭露)
+
+**force揭示真实失败** — 此前HEARTBEAT记录"222/222✅"为缓存产物
+
+| 测试套 | 失败数 | 说明 |
+|--------|--------|------|
+| HomeScreen | 11✖ | renders greeting/stats/revenue/actions/navigation/tasks/announcement/order/avatar — 全部ErrorBoundary崩溃 |
+| SettingsScreen | 10✖ | renders section titles/offline toggle/push notification/biometric/cache/update/about/legal/logout — 全部ErrorBoundary崩溃 |
+
+**根因**: 与storefront问题同源 — ErrorBoundary组件`fallback`属性从`ReactNode`变更为`(args: ErrorBoundaryFallbackArgs) => ReactNode`函数签名，直接传递`<Fallback/>`作为JSX Element不满足新的类型要求
 
 ## 问题二: admin-web test ~35✖ (scope大幅扩展)
 
@@ -65,8 +77,9 @@
 ### 优先级
 
 1. **P0.1 [关键] storefront TSC 16✖** — 修复全部TS错误
-2. **P0.2 [关键] admin test ~35✖** — 修复全部测试失败
-3. **P0.3 [验证] 全force验证** — 无缓存masking
+2. **P0.2 [关键] admin test 84✖** — 修复全部测试失败(~16测试套)
+3. **P0.3 [新增] @m5/app test 21✖** — HomeScreen(11✖)+SettingsScreen(10✖)·ErrorBoundary缓存遮罩揭露
+4. **P0.4 [验证] 全force验证** — 无缓存masking
 
 ### 已知修复方案
 
@@ -74,4 +87,5 @@
 **ErrorBoundary**: 在下方组件中找到 ErrorBoundary 使用处，将 `<Fallback>` 改为 `{() => <Fallback />}` 闭包
 **TS2307**: 创建 `app/reports/[id]/report-detail-client.tsx` 或调整 import 路径
 **TS18048**: 在 `reports/[id]/page.tsx` 283-289 行对 `statusInfo` 添加 `?.` 可选链或提前guard
+**@m5/app tests**: 在 HomeScreen.tsx 和 SettingsScreen.tsx 中将 ErrorBoundary 中的 `<Fallback>` 改为 `{() => <Fallback />}` 闭包
 **admin tests**: 检查各测试suite中的mock数据是否遗漏字段，补全categoryId/parentId/name等
