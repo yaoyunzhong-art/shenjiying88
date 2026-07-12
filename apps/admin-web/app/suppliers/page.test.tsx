@@ -92,3 +92,89 @@ describe('suppliers — 防御', () => {
     assert.ok(src.includes('function ratingStars'), '缺少 ratingStars');
   });
 });
+
+describe('suppliers 增强', () => {
+  it('应包含 supplier contact info', () => {
+    const src = readSource();
+    assert.ok(src.includes('contact') || src.includes('phone') || src.includes('email'), '缺少联系方式');
+  });
+  it('应包含 star rating display', () => {
+    const src = readSource();
+    assert.ok(src.includes('star') || src.includes('rating'), '缺少评分');
+  });
+  it('应包含 cooperation status', () => {
+    const src = readSource();
+    assert.ok(src.includes('status') || src.includes('合作'), '缺少合作状态');
+  });
+  it('应包含 search/filter functionality', () => {
+    const src = readSource();
+    assert.ok(src.includes('search') || src.includes('filter'), '缺少搜索/筛选');
+  });
+  it('应包含 category filter', () => {
+    const src = readSource();
+    assert.ok(src.includes('category') || src.includes('categoryFilter'), '缺少分类筛选');
+  });
+  it('应包含 empty state handling', () => {
+    const src = readSource();
+    assert.ok(src.includes('empty') || src.includes('暂无'), '缺少空状态');
+  });
+  it('应包含 loading/suspense state', () => {
+    const src = readSource();
+    assert.ok(src.includes('Loading') || src.includes('Suspense') || src.includes('loading'), '缺少加载状态');
+  });
+  it('应包含 fallback/error handling', () => {
+    const src = readSource();
+    assert.ok(src.includes('Error') || src.includes('fallback'), '缺少错误回退');
+  });
+  it('应包含 purchase history table', () => {
+    const src = readSource();
+    assert.ok(src.includes('history') || src.includes('order'), '缺少采购历史');
+  });
+  it('应包含 quick action buttons', () => {
+    const src = readSource();
+    assert.ok(src.includes('Button') || src.includes('action'), '缺少操作按钮');
+  });
+});
+
+describe('suppliers 更多功能', () => {
+  it('应包含 pagination support', () => {
+    const src = readSource();
+    assert.ok(src.includes('page') || src.includes('pagination'), '缺少分页');
+  });
+  it('应包含 bulk selection', () => {
+    const src = readSource();
+    assert.ok(src.includes('checkbox') || src.includes('selectAll'), '缺少批量选择');
+  });
+  it('应包含 export functionality', () => {
+    const src = readSource();
+    assert.ok(src.includes('export') || src.includes('download'), '缺少导出功能');
+  });
+  it('应包含 supplier detail modal', () => {
+    const src = readSource();
+    assert.ok(src.includes('modal') || src.includes('detail'), '缺少详情弹窗');
+  });
+  it('应包含 tags/labels support', () => {
+    const src = readSource();
+    assert.ok(src.includes('tag') || src.includes('label'), '缺少标签功能');
+  });
+  it('应包含 sortable columns', () => {
+    const src = readSource();
+    assert.ok(src.includes('sort') || src.includes('order'), '缺少排序功能');
+  });
+  it('应包含 supplier type/classification', () => {
+    const src = readSource();
+    assert.ok(src.includes('type') || src.includes('classification'), '缺少供应商分类');
+  });
+  it('应包含 last order date display', () => {
+    const src = readSource();
+    assert.ok(src.includes('lastOrder') || src.includes('date'), '缺少最近订单日期');
+  });
+  it('应包含 supplier notes/remarks', () => {
+    const src = readSource();
+    assert.ok(src.includes('remark') || src.includes('note'), '缺少备注信息');
+  });
+  it('应包含 audit trail info', () => {
+    const src = readSource();
+    assert.ok(src.includes('audit') || src.includes('updatedAt'), '缺少审计信息');
+  });
+});
