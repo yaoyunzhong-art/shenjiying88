@@ -51,34 +51,35 @@ const MOCK_DATA: InspectionItem[] = [
   { id: 'FP-005', area: '停车场', inspector: '张三', scheduledDate: '2026-07-09', status: 'passed', riskLevel: 'low', notes: '灭火器压力正常' },
 ];
 
-const PAGE_SIZE = 10;
-
 // ---- 列定义 ----
 
-const COLUMNS: DataTableColumn<InspectionItem>[] = [
-  { header: '编号', accessorKey: 'id' },
-  { header: '检查区域', accessorKey: 'area' },
-  { header: '检查人', accessorKey: 'inspector' },
-  { header: '计划日期', accessorKey: 'scheduledDate' },
-  {
-    header: '状态',
-    accessorKey: 'status',
-    cell: ({ row }) => {
-      const { label, variant } = FIRE_STATUS_MAP[row.original.status] ?? { label: row.original.status, variant: 'neutral' as const };
-      return <StatusBadge variant={variant}>{label}</StatusBadge>;
+function buildColumns(): DataTableColumn<InspectionItem>[] {
+  return [
+    { key: 'id', title: '编号', dataKey: 'id' },
+    { key: 'area', title: '检查区域', dataKey: 'area' },
+    { key: 'inspector', title: '检查人', dataKey: 'inspector' },
+    { key: 'scheduledDate', title: '计划日期', dataKey: 'scheduledDate' },
+    {
+      key: 'status',
+      title: '状态',
+      sortValue: (item: InspectionItem) => item.status,
+      render: (item: InspectionItem) => {
+        const s = FIRE_STATUS_MAP[item.status];
+        return <StatusBadge label={s.label} variant={s.variant} size="sm" dot />;
+      },
     },
-  },
-  {
-    header: '风险等级',
-    accessorKey: 'riskLevel',
-    cell: ({ row }) => (
-      <StatusBadge variant={RISK_VARIANT[row.original.riskLevel]}>
-        {row.original.riskLevel === 'high' ? '高风险' : row.original.riskLevel === 'medium' ? '中风险' : '低风险'}
-      </StatusBadge>
-    ),
-  },
-  { header: '备注', accessorKey: 'notes', enableSorting: false },
-];
+    {
+      key: 'riskLevel',
+      title: '风险等级',
+      sortValue: (item: InspectionItem) => item.riskLevel,
+      render: (item: InspectionItem) => {
+        const label = item.riskLevel === 'high' ? '高风险' : item.riskLevel === 'medium' ? '中风险' : '低风险';
+        return <StatusBadge label={label} variant={RISK_VARIANT[item.riskLevel]} size="sm" />;
+      },
+    },
+    { key: 'notes', title: '备注', dataKey: 'notes' },
+  ];
+}
 
 // ---- 组件 ----
 
@@ -87,7 +88,7 @@ const COLUMNS: DataTableColumn<InspectionItem>[] = [
  *
  * 功能:
  * - 展示消防检查列表
- * - 按区域/状态搜索
+ * - 按区域/检查人搜索
  * - 支持分页
  * - 操作按钮: 新建检查、导出报告
  */
@@ -98,9 +99,10 @@ export default function FirePreventionPage() {
     fields: ['area', 'inspector', 'notes'],
   });
 
-  const sorted = useMemo(() => filteredItems, [filteredItems]);
+  const columns = useMemo(() => buildColumns(), []);
 
-  const { page, totalPages, paginatedItems, goToPage, nextPage, prevPage } = usePagination(sorted, PAGE_SIZE);
+  const pagination = usePagination({ initialPageSize: 10, pageSizeOptions: [5, 10], total: filteredItems.length });
+  const pageItems = pagination.paginate(filteredItems);
 
   const handleNewInspection = useCallback(() => {
     // TODO: navigate to new inspection form
@@ -127,17 +129,19 @@ export default function FirePreventionPage() {
       </div>
 
       <DataTable
-        columns={COLUMNS}
-        data={paginatedItems}
-        getRowId={(row) => row.id}
+        columns={columns}
+        items={pageItems}
+        rowKey={(item) => item.id}
+        striped
+        compact
       />
 
       <Pagination
-        page={page}
-        totalPages={totalPages}
-        onPageChange={goToPage}
-        onPrev={prevPage}
-        onNext={nextPage}
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        total={filteredItems.length}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
       />
     </PageShell>
   );

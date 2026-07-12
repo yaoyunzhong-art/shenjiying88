@@ -52,34 +52,38 @@ const MOCK_RECORDS: SafetyRecord[] = [
   { id: 'SAF-005', category: '环境安全', reporter: '行政部门', reportedDate: '2026-07-12', status: 'open', severity: 'critical', description: '天花板漏水有触电风险' },
 ];
 
-const PAGE_SIZE = 10;
-
 // ---- 列定义 ----
 
-const COLUMNS: DataTableColumn<SafetyRecord>[] = [
-  { header: '编号', accessorKey: 'id' },
-  { header: '类别', accessorKey: 'category' },
-  { header: '上报人', accessorKey: 'reporter' },
-  { header: '上报日期', accessorKey: 'reportedDate' },
-  {
-    header: '状态',
-    accessorKey: 'status',
-    cell: ({ row }) => {
-      const { label, variant } = SAFETY_STATUS_MAP[row.original.status] ?? { label: row.original.status, variant: 'neutral' as const };
-      return <StatusBadge variant={variant}>{label}</StatusBadge>;
+function buildColumns(): DataTableColumn<SafetyRecord>[] {
+  return [
+    { key: 'id', title: '编号', dataKey: 'id' },
+    { key: 'category', title: '类别', dataKey: 'category' },
+    { key: 'reporter', title: '上报人', dataKey: 'reporter' },
+    { key: 'reportedDate', title: '上报日期', dataKey: 'reportedDate' },
+    {
+      key: 'status',
+      title: '状态',
+      sortValue: (item: SafetyRecord) => item.status,
+      render: (item: SafetyRecord) => {
+        const s = SAFETY_STATUS_MAP[item.status];
+        return <StatusBadge label={s.label} variant={s.variant} size="sm" dot />;
+      },
     },
-  },
-  {
-    header: '严重程度',
-    accessorKey: 'severity',
-    cell: ({ row }) => (
-      <StatusBadge variant={SEVERITY_VARIANT[row.original.severity]}>
-        {row.original.severity === 'critical' ? '严重' : row.original.severity === 'high' ? '高' : row.original.severity === 'medium' ? '中' : '低'}
-      </StatusBadge>
-    ),
-  },
-  { header: '描述', accessorKey: 'description', enableSorting: false },
-];
+    {
+      key: 'severity',
+      title: '严重程度',
+      sortValue: (item: SafetyRecord) => item.severity,
+      render: (item: SafetyRecord) => {
+        const label =
+          item.severity === 'critical' ? '严重'
+            : item.severity === 'high' ? '高'
+            : item.severity === 'medium' ? '中' : '低';
+        return <StatusBadge label={label} variant={SEVERITY_VARIANT[item.severity]} size="sm" />;
+      },
+    },
+    { key: 'description', title: '描述', dataKey: 'description' },
+  ];
+}
 
 // ---- 组件 ----
 
@@ -88,7 +92,7 @@ const COLUMNS: DataTableColumn<SafetyRecord>[] = [
  *
  * 功能:
  * - 展示安全事件/隐患记录列表
- * - 按类别/描述搜索
+ * - 按类别/上报人搜索
  * - 支持分页
  * - 操作按钮: 新建记录、导出日志
  */
@@ -99,9 +103,10 @@ export default function SafetyPage() {
     fields: ['category', 'reporter', 'description'],
   });
 
-  const sorted = useMemo(() => filteredItems, [filteredItems]);
+  const columns = useMemo(() => buildColumns(), []);
 
-  const { page, totalPages, paginatedItems, goToPage, nextPage, prevPage } = usePagination(sorted, PAGE_SIZE);
+  const pagination = usePagination({ initialPageSize: 10, pageSizeOptions: [5, 10], total: filteredItems.length });
+  const pageItems = pagination.paginate(filteredItems);
 
   const handleNewRecord = useCallback(() => {
     // TODO: navigate to new safety record form
@@ -128,17 +133,19 @@ export default function SafetyPage() {
       </div>
 
       <DataTable
-        columns={COLUMNS}
-        data={paginatedItems}
-        getRowId={(row) => row.id}
+        columns={columns}
+        items={pageItems}
+        rowKey={(item) => item.id}
+        striped
+        compact
       />
 
       <Pagination
-        page={page}
-        totalPages={totalPages}
-        onPageChange={goToPage}
-        onPrev={prevPage}
-        onNext={nextPage}
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        total={filteredItems.length}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
       />
     </PageShell>
   );
