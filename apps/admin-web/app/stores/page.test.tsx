@@ -40,6 +40,37 @@ describe('stores — 正例', () => {
     const src = readSource();
     assert.ok(src.includes('useSearchFilter'), '缺少 useSearchFilter');
   });
+
+  it('应导出 STORE_STATUS_MAP 常量', () => {
+    const src = readSource();
+    assert.ok(src.includes('export const STORE_STATUS_MAP'), '缺少导出 STORE_STATUS_MAP');
+  });
+
+  it('应导出 RISK_LEVEL_MAP 常量', () => {
+    const src = readSource();
+    assert.ok(src.includes('export const RISK_LEVEL_MAP'), '缺少导出 RISK_LEVEL_MAP');
+  });
+
+  it('应导出 MOCK_STORES 数据', () => {
+    const src = readSource();
+    assert.ok(src.includes('export const MOCK_STORES'), '缺少导出 MOCK_STORES');
+  });
+
+  it('应包含 totalTenants 和 totalBrands 统计', () => {
+    const src = readSource();
+    assert.ok(src.includes('totalTenants'), '缺少 totalTenants');
+    assert.ok(src.includes('totalBrands'), '缺少 totalBrands');
+  });
+
+  it('应包含 4 列统计卡片布局', () => {
+    const src = readSource();
+    assert.ok(src.includes("gridTemplateColumns: 'repeat(4, minmax(0, 1fr))'"), '缺少 4 列统计卡片');
+  });
+
+  it('应包含 FilterChips 活跃过滤条件可视化', () => {
+    const src = readSource();
+    assert.ok(src.includes('FilterChips'), '缺少 FilterChips');
+  });
 });
 
 // ---- 边界 ----
@@ -59,6 +90,26 @@ describe('stores — 边界', () => {
     const src = readSource();
     assert.ok(src.includes('.status'), '缺少状态分组');
   });
+
+  it('应支持 riskLevel 风险等级筛选', () => {
+    const src = readSource();
+    assert.ok(src.includes('riskFilter'), '缺少 riskFilter');
+  });
+
+  it('应支持风险等级 Tabs 筛选组件', () => {
+    const src = readSource();
+    assert.ok(src.includes("riskLevel: 'low' | 'medium' | 'high'"), '缺少风险等级类型');
+  });
+
+  it('应支持 DetailActionBar 操作栏', () => {
+    const src = readSource();
+    assert.ok(src.includes('DetailActionBar'), '缺少 DetailActionBar');
+  });
+
+  it('应支持合条件清空（onClearAll）', () => {
+    const src = readSource();
+    assert.ok(src.includes('onClearAll'), '缺少 onClearAll');
+  });
 });
 
 // ---- 防御 ----
@@ -77,5 +128,30 @@ describe('stores — 防御', () => {
   it('应包含 usePagination 分页逻辑', () => {
     const src = readSource();
     assert.ok(src.includes('usePagination'), '缺少分页');
+  });
+
+  it('应包含 useDetailActions hook', () => {
+    const src = readSource();
+    assert.ok(src.includes('useDetailActions'), '缺少 useDetailActions');
+  });
+
+  it('应包含 SearchFilterInput 搜索组件', () => {
+    const src = readSource();
+    assert.ok(src.includes('SearchFilterInput'), '缺少 SearchFilterInput');
+  });
+
+  it('应包含 useSortedItems 排序逻辑', () => {
+    const src = readSource();
+    assert.ok(src.includes('useSortedItems'), '缺少 useSortedItems');
+  });
+
+  it('应处理筛选变化后重置分页', () => {
+    const src = readSource();
+    assert.ok(src.includes('pagination.resetPage()'), '缺少重置分页');
+  });
+
+  it('应包含 statCardStyle 样式常量', () => {
+    const src = readSource();
+    assert.ok(src.includes('statCardStyle'), '缺少 statCardStyle');
   });
 });

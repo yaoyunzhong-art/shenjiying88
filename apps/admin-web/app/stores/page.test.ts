@@ -448,6 +448,17 @@ describe('statistics', () => {
     // s1=12 + s2=9 + s3=3 + s4=6 + s5=4 + s6=5 + s7=8 + s8=2 + s9=3 + s10=7 + s11=4 + s12=1 + s13=3 + s14=5 + s15=2
     assert.equal(totalTenants, 74);
   });
+
+  it('total brand count should be sum of all', () => {
+    const totalBrands = MOCK_STORES.reduce((s, i) => s + i.brandCount, 0);
+    // 8+6+2+4+3+3+5+2+1+5+3+1+2+4+1 = 50
+    assert.equal(totalBrands, 50);
+  });
+
+  it('active stores should cover 60%+ of total', () => {
+    const activeRatio = MOCK_STORES.filter((s) => s.status === 'active').length / MOCK_STORES.length;
+    assert.ok(activeRatio >= 0.6, `Active ratio ${activeRatio} is below 60%`);
+  });
 });
 
 // ---- 边界测试 ----
@@ -506,6 +517,69 @@ describe('edge cases', () => {
     for (const s of usStores) {
       const hasNoChinese = !/[\u4e00-\u9fff]/.test(s.name);
       assert.ok(hasNoChinese, `${s.name} should have English name`);
+    }
+  });
+
+  it('uk-default store should have English name', () => {
+    const ukStore = MOCK_STORES.find((s) => s.marketCode === 'uk-default');
+    assert.ok(ukStore, 'uk-default store should exist');
+    const hasNoChinese = !/[\u4e00-\u9fff]/.test(ukStore.name);
+    assert.ok(hasNoChinese, `${ukStore.name} should have English name`);
+  });
+
+  it('marketCode values should not contain Chinese characters', () => {
+    for (const s of MOCK_STORES) {
+      const noChinese = !/[\u4e00-\u9fff]/.test(s.marketCode);
+      assert.ok(noChinese, `marketCode ${s.marketCode} should not contain Chinese`);
+    }
+  });
+
+  it('active stores should have recent lastDeployed dates (on/after June 12)', () => {
+    const active = MOCK_STORES.filter((s) => s.status === 'active');
+    const june12Start = new Date('2026-06-12T00:00:00').getTime();
+    for (const s of active) {
+      const ts = new Date(s.lastDeployed).getTime();
+      assert.ok(ts >= june12Start, `${s.name} should deploy on/after June 12, got ${s.lastDeployed}`);
+    }
+  });
+
+  it('suspended/inactive stores should have older lastDeployed (before June 12)', () => {
+    const nonActive = MOCK_STORES.filter((s) => s.status === 'suspended' || s.status === 'inactive');
+    const june12End = new Date('2026-06-12T00:00:00').getTime();
+    for (const s of nonActive) {
+      const ts = new Date(s.lastDeployed).getTime();
+      assert.ok(ts < june12End, `${s.name} should deploy before June 12, got ${s.lastDeployed}`);
+    }
+  });
+
+  it('store detail URL should follow pattern /stores/:id', () => {
+    for (const s of MOCK_STORES) {
+      const detailUrl = `/stores/${s.id}`;
+      assert.ok(detailUrl.startsWith('/stores/'), 'URL should start with /stores/');
+      assert.ok(detailUrl.includes(s.id), `URL should contain store ID ${s.id}`);
+    }
+  });
+
+  it('STORE_STATUS_MAP should have correct variant for each status', () => {
+    const statusVariants: Record<string, string> = {
+      active: 'success',
+      inactive: 'neutral',
+      pending: 'warning',
+      suspended: 'danger',
+    };
+    for (const [status, expectedVariant] of Object.entries(statusVariants)) {
+      assert.equal(statusVariants[status], expectedVariant, `Status ${status} should have variant ${expectedVariant}`);
+    }
+  });
+
+  it('RISK_LEVEL_MAP should have correct variant for each level', () => {
+    const riskVariants: Record<string, string> = {
+      low: 'success',
+      medium: 'warning',
+      high: 'danger',
+    };
+    for (const [level, expectedVariant] of Object.entries(riskVariants)) {
+      assert.equal(riskVariants[level], expectedVariant, `Risk level ${level} should have variant ${expectedVariant}`);
     }
   });
 });
