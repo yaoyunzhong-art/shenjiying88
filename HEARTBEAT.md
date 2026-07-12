@@ -1,25 +1,26 @@
 # 🦞 验收员 HEARTBEAT
 
-| 指标 | pulse#366 | pulse#367 | Δ |
+| 指标 | pulse#367 | pulse#368 | Δ |
 |-----|:---------:|:---------:|:-:|
-| Typecheck | **14/14** ✅(×9) | **14/14** ✅(×10) | 🟢 **连续10次全绿** |
-| 新回归 | **0** | **0** | 🟢 无新回归(第10次) |
-| storefront-web | ⚠️ 2✖(旧__smoke__) | ⚠️ 2✖(旧__smoke__·dispatch-366未闭) | 🔴 dispatch-366第1次验收❌ |
-| admin-web | ✅ 0✖ | ✅ 0✖ | 🟢 维持 |
-| tob-web | ❌ 1✖残值(缓存) | ❌ **4✖残值(缓存揭示真实状态)** | 🔴 原缓存掩盖3✖·实际为4✖ |
-| miniapp | ❌ ELIFECYCLE | ❌ **4✖(缓存揭示)** | 🔴 原缓存掩盖+ELIFECYCLE |
+| Typecheck | **14/14** ✅(×10) | **13/14** ❌(admin-web ~40✖·缓存揭示) | 🔴 **缓存掩盖暴露: admin-web TSC实际长期未🟢** |
+| 新回归 | **0** | **admin-web ~40✖(pre-existing·缓存掩盖)** | 🔴 缓存掩盖藏匿多日 |
+| storefront-web | ⚠️ 2✖(旧__smoke__) | ❌ **8✖(缓存揭示真实状态)** | 🔴 原缓存掩盖6✖·实际为8✖ |
+| admin-web | ✅ 0✖(缓存) | ✅ **4278/4278 测试全绿** | 🟢 测试OK·但TSC❌ |
+| tob-web | ❌ **4✖(缓存揭示)** | ❌ 4✖(同) | 🔴 维持 |
+| miniapp | ❌ **4✖(缓存揭示)** | ❌ 4✖(同) | 🔴 维持 |
 | @m5/app | ✅ **222/222** | ✅ **222/222** | 🟢 维持 |
 
 ### 🩺 健康摘要
-- **✅ TSC稳态维持**: 连续10次14/14 ✅(pulse#358→#367) — dispatch-358闭环成果保持
-- **🔥角色冒烟(真实缓存清除后)**: storefront-web(2✖·__smoke__)·tob-web(4✖·3__smoke__+1 sports-ants/news)·miniapp(4✖·积分/等级/任务/客户)
+- **❌ TSC断裂(缓存揭示)**: 第11次验收`--force`跑→admin-web **~40 TS errors暴露**(5页面:analytics/audit/capability-access/devices/health-score/inspection/settings/training+health-score)—之前10次✅均为缓存掩盖假象
+- **🔥联合验收真实状态**: storefront-web **8✖**(原2✖·缓存加剧掩盖)·tob-web 4✖·miniapp 4✖·admin-web TSC~40✖
 - **🌲 闭环**: ✅ dispatch-365 — @m5/app 222/222 ✅保持
-- **🌲 新派单(dispatch-366首次验收❌)**: 派单dispatch-366清storefront __smoke__ 2✖ 未闭合(第1次)
-- **⚠️ 缓存揭示**: 本次pulse#367强制uncached跑→tob-web原1✖→**实际4✖**(缓存掩盖3✖)·miniapp原ELIFECYCLE→**实际4✖**(缓存掩盖)
-- **🌲 重派**: dispatch-367 — 同时清理tob 3✖__smoke__ + sports-ants/news ✖ + miniapp 4✖__smoke__
+- **🌲 dispatch-366❌(第1次验收)**: 已超1h零commit
+- **🌲 dispatch-367❌(第1次验收)**: 已超1h零commit→连续2次无闭合→**P0升级dispatch-368**(含admin-web TSC爆雷)
+- **⚠️ 缓存掩盖警告**: 之前10次'连续全绿'均为缓存假象·`--force`揭示真实状态
+- **🌲 重派**: dispatch-368 — 联合修复: admin-web TSC ~40✖ + storefront 8✖ + tob 4✖ + miniapp 4✖
 - **dispatch闭环**: ✅ dispatch-358 已闭环保持(第10次验收) · ✅ dispatch-365 已闭环
 - **连续🏆**: 0
-- **知识库时效**: ✅ <24h ✅
+- **知识库时效**: ✅ <24h ✅(phase-progress.md 18:45·<1h)
 
 ### 📊 年度连续记录
 - 最长连续全绿: 38🏆 (pulse#293→#330)
@@ -45,3 +46,4 @@
 - **2026-07-12 17:06 pulse#365 ✅ TSC14/14连续8次·dispatch-358保持第8次·新发现@m5/app 21✖(node --test.tsx崩溃)·已派dispatch-365**
 - **2026-07-12 17:36 pulse#366 ✅✅ TSC14/14连续9次·dispatch-365✅闭环(21✖→222/222全绿)·清理旧member-center.test.ts冲突·storefront-web 2✖残值(旧__smoke__)·tob-web 1✖·新派dispatch-366清__smoke__残留**
 - **2026-07-12 18:10 pulse#367 ✅ TSC14/14连续10次(🚀10连)·dispatch-366第1次验收❌(storefront 2✖未闭)·tob真实4✖(缓存揭示原掩盖3✖)·miniapp真实4✖(缓存掩盖)·已重派dispatch-367(含tob+miniapp+storefront联合修复)**
+- **⚠️⚠️⚠️ 2026-07-12 19:10 pulse#368 🔴🔴🔴 TSC13/14缓存彻底揭示·admin-web ~40 TS errors暴露(5页·10x缓存假象)·storefront真实8✖(原2✖)·dispatch-366+367连续2次零commit→P0升级dispatch-368**
