@@ -1029,5 +1029,16 @@ export class TenantConfigService implements OnModuleInit {
         }],
       ]))
     }
+
+    // P1-F1: seed 完成后同步构建二级索引 (与 onModuleInit 行为一致, 兼容测试环境)
+    // 原因: 测试环境不触发 onModuleInit (无 NestJS 生命周期), seed 写完 instances 但 index 是空
+    // 不同步会导致 getEffectiveConfigs / getConfigs 走慢路径或 fallback
+    for (const [level, levelMap] of this.instances) {
+      for (const [key, ownerMap] of levelMap) {
+        for (const [ownerId, inst] of ownerMap) {
+          this.syncIndexForInstance(level as ConfigLevel, key, ownerId, inst)
+        }
+      }
+    }
   }
 }

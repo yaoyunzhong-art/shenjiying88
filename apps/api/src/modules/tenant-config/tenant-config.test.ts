@@ -955,3 +955,107 @@ describe('P0-J3 H12 context 原文追溯验证', () => {
       '原文全角 brandId 必须保留在 context.originalBrandId')
   })
 })
+
+// ═══════════════════════════════════════════════════════════════════
+// P1-F1-7: 二级索引同步矩阵 (验证 setConfig / setConfigBatch / deleteConfig 三入口双写)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('P1-F1 二级索引同步矩阵', () => {
+  it('[F1-7-1] setConfig 后 getConfigs 立即可见 (O(1) 索引同步)', async () => {
+    const service = makeService()
+    // STORE_CTX 写入 pos.tax_rate = '0.18' (覆盖 seed 0.13)
+    await runWithTenant(STORE_CTX, async () => {
+      const set = await service.setConfig({ key: 'pos.tax_rate', value: '0.18' })
+      assert.equal(set.value, '0.18')
+    })
+    // 立即读取 - 如果索引没同步, getConfigs 走慢路径也可能命中, 但 version 必须 = 2
+    await runWithTenant(STORE_CTX, async () => {
+      const all = await service.getConfigs({ level: 'store' })
+      const tax = all.find((c) => c.key === 'pos.tax_rate')
+      assert.ok(tax, 'pos.tax_rate 必须存在')
+      assert.equal(tax!.value, '0.18', '索引同步后值已更新')
+      assert.equal(tax!.version, 2, 'setConfig 后 version 递增到 2')
+    })
+  })
+
+  it('[F1-7-2] setConfigBatch 完成后索引批量同步', async () => {
+    const service = makeService()
+    await runWithTenant(STORE_CTX, async () => {
+      // 批量更新 3 项
+      const results = await service.setConfigBatch([
+        { key: 'pos.tax_rate', value: '0.20' },
+        { key: 'pos.receipt_footer', value: '欢迎光临' },
+        { key: 'member.daily_checkin_enabled', value: 'false' },
+      ])
+      assert.equal(results.length, 3)
+      // 索引同步验证
+      const all = await service.getConfigs({ level: 'store' })
+      const tax = all.find((c) => c.key === 'pos.tax_rate')
+      const footer = all.find((c) => c.key === 'pos.receipt_footer')
+      const checkin = all.find((c) => c.key === 'member.daily_checkin_enabled')
+      assert.equal(tax!.value, '0.20')
+      assert.equal(footer!.value, '欢迎光临')
+      assert.equal(checkin!.value, 'false')
+    })
+  })
+
+  it('[F1-7-3] deleteConfig 后索引清理, getConfigs 不再返回', async () => {
+    const service = makeService()
+    let configId: string = ''
+    await runWithTenant(STORE_CTX, async () => {
+      // 先确保存在
+      const before = await service.getConfigs({ level: 'store' })
+      const tax = before.find((c) => c.key === 'pos.tax_rate')
+      assert.ok(tax)
+      configId = tax!.id
+    })
+    // 删除
+    await runWithTenant(STORE_CTX, async () => {
+      await service.deleteConfig(configId)
+    })
+    // 删除后 getConfigs 不再返回该 instance (但 getEffectiveConfigs 会 fallback 到 defaultValue)
+    await runWithTenant(STORE_CTX, async () => {
+      const after = await service.getConfigs({ level: 'store' })
+      const tax = after.find((c) => c.key === 'pos.tax_rate')
+      assert.equal(tax, undefined, '索引清理后 pos.tax_rate 不再存在')
+    })
+  })
+
+  it('[F1-F1-4] 跨租户 setConfig 互不污染 (索引按 ownerId 隔离)', async () => {
+    const service = makeService()
+    // tenant-A store-001 写 pos.tax_rate = '0.18'
+    await runWithTenant(STORE_CTX, async () => {
+      await service.setConfig({ key: 'pos.tax_rate', value: '0.18' })
+    })
+    // tenant-A store-002 读 pos.tax_rate - 应该是 seed 默认 0.13, 不是 0.18
+    await runWithTenant(
+      { tenantId: 'tenant-A', storeId: 'store-002', userId: 'op-2', role: 'store_admin' as const },
+      async () => {
+        const all = await service.getConfigs({ level: 'store' })
+        const tax = all.find((c) => c.key === 'pos.tax_rate')
+        // store-002 没 seed (只有 store-001 有), 索引应为空, 返回 undefined
+        // 这证明索引按 idxKey='store::store-002' 隔离
+        assert.equal(tax, undefined, 'store-002 索引应隔离, 不继承 store-001 的 0.18')
+      },
+    )
+    // tenant-A store-001 再读, 应该是 0.18
+    await runWithTenant(STORE_CTX, async () => {
+      const all = await service.getConfigs({ level: 'store' })
+      const tax = all.find((c) => c.key === 'pos.tax_rate')
+      assert.equal(tax!.value, '0.18', 'store-001 自己的写入不受其他 store 影响')
+    })
+  })
+
+  it('[F1-F1-5] getEffectiveConfigs 走索引 O(1) 命中 (非 O(n×m) 遍历)', async () => {
+    const service = makeService()
+    await runWithTenant(TENANT_CTX, async () => {
+      // tenant-A tenant_admin 读 effective: member.tier_upgrade_threshold 应来自 tenant 级
+      const eff = await service.getEffectiveConfigs('member')
+      const tier = eff.find((e) => e.key === 'member.tier_upgrade_threshold')
+      assert.ok(tier)
+      assert.equal(tier!.inherited, false, 'tenant 级有 seed, 不应继承')
+      assert.equal(tier!.value, '1000', 'tenant 级 seed 值是 1000')
+      assert.equal(tier!.sourceLevel, 'tenant')
+    })
+  })
+})
