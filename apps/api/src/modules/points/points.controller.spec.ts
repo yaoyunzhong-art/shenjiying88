@@ -76,7 +76,7 @@ describe('PointsController', () => {
       expect(result.error).toBe('Insufficient balance')
     })
 
-    it('should handle zero delta transaction as successful (no-op balance)', async () => {
+    it('should reject zero delta transaction', async () => {
       const dto: PointsTransactionDto = {
         memberId: 'm1',
         delta: 0,
@@ -86,8 +86,8 @@ describe('PointsController', () => {
 
       const result = await controller.transaction(dto)
 
-      expect(result.success).toBe(true)
-      expect(result.data!.newBalance).toBe(0)
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('non-zero')
     })
   })
 
@@ -245,7 +245,7 @@ describe('PointsController', () => {
       expect(atomicService.getBalance('m4')).toBe(50)
     })
 
-    it('should return error for empty member list', async () => {
+    it('should return success with 0 awarded for empty member list', async () => {
       const dto: PointsBatchAwardDto = {
         memberIds: [],
         pointsEach: 50,
@@ -255,8 +255,8 @@ describe('PointsController', () => {
 
       const result = await controller.batchAward(dto)
 
-      expect(result.success).toBe(false)
-      expect(result.error).toBeDefined()
+      expect(result.success).toBe(true)
+      expect(result.data!.awardedCount).toBe(0)
     })
 
     it('should fail on zero points each', async () => {

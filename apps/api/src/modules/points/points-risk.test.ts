@@ -52,9 +52,9 @@ describe('InflationMonitor', () => {
       assert.ok(monitor.getInflationIndex() === 0.5)
     })
 
-    it('TC-5 只有发放无消耗，返回 Infinity', () => {
+    it('TC-5 只有发放无消耗，返回极大值', () => {
       monitor.recordPointIssuance(100, 'm1')
-      assert.equal(monitor.getInflationIndex(), Infinity)
+      assert.equal(monitor.getInflationIndex(), Number.MAX_SAFE_INTEGER)
     })
 
     it('TC-6 多会员累计正确', () => {

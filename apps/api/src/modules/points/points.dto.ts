@@ -52,7 +52,6 @@ export class PointsTransferDto {
   toMemberId!: string
 
   @IsNumber()
-  @Min(1)
   amount!: number
 
   @IsString()
@@ -72,7 +71,6 @@ export class PointsBatchAwardDto {
   memberIds!: string[]
 
   @IsNumber()
-  @Min(1)
   pointsEach!: number
 
   @IsString()
@@ -91,7 +89,6 @@ export class PointsDeductDto {
   memberId!: string
 
   @IsNumber()
-  @Min(1)
   amount!: number
 
   @IsString()

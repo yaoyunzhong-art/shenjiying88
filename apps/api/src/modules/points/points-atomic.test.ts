@@ -147,10 +147,10 @@ describe('PointsAtomicService', () => {
       expect(svc.getBalance('m3')).toBe(50)
     })
 
-    it('空成员列表返回错误', async () => {
+    it('空成员列表返回成功（积分为0）', async () => {
       const result = await svc.batchAwardAtomic([], 50, 'campaign')
-      expect(result.success).toBe(false)
-      expect(result.error).toContain('empty')
+      expect(result.success).toBe(true)
+      expect(result.data!.awardedCount).toBe(0)
     })
 
     it('负数积分数返回错误', async () => {

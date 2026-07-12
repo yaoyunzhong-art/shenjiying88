@@ -122,6 +122,8 @@ export class PointsAtomicService {
     amount: number,
     orderId: string
   ): Promise<AtomicOperationResult<DeductResult>> {
+    if (amount <= 0) return { success: false, error: 'Deduction amount must be positive' }
+
     const lockKey = `deduct:${orderId}`
     const acquired = await this.acquireLock(lockKey)
     if (!acquired) return { success: false, error: 'Lock acquisition timeout' }
@@ -148,7 +150,7 @@ export class PointsAtomicService {
     pointsEach: number,
     reason: string
   ): Promise<AtomicOperationResult<BatchAwardResult>> {
-    if (memberIds.length === 0) return { success: false, error: 'Member list cannot be empty' }
+    if (memberIds.length === 0) return { success: true, data: { awardedCount: 0, memberBalances: new Map() } }
     if (pointsEach <= 0) return { success: false, error: 'Points each must be positive' }
 
     const sortedIds = [...memberIds].sort()

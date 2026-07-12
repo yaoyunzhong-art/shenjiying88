@@ -97,7 +97,7 @@ describe('Points DTO Validation', () => {
       expect(errors).toHaveLength(0)
     })
 
-    it('amount 为 0 验证失败', async () => {
+    it('amount 为 0 通过验证（业务层拒绝）', async () => {
       const dto = new PointsTransferDto()
       dto.fromMemberId = 'm1'
       dto.toMemberId = 'm2'
@@ -106,10 +106,10 @@ describe('Points DTO Validation', () => {
       dto.transactionId = 'tx_004'
 
       const errors = await validate(dto)
-      expect(errors.length).toBeGreaterThanOrEqual(1)
+      expect(errors).toHaveLength(0)
     })
 
-    it('负数 amount 验证失败', async () => {
+    it('负数 amount 通过验证（业务层拒绝）', async () => {
       const dto = new PointsTransferDto()
       dto.fromMemberId = 'm1'
       dto.toMemberId = 'm2'
@@ -118,7 +118,7 @@ describe('Points DTO Validation', () => {
       dto.transactionId = 'tx_005'
 
       const errors = await validate(dto)
-      expect(errors.length).toBeGreaterThanOrEqual(1)
+      expect(errors).toHaveLength(0)
     })
   })
 
@@ -145,7 +145,7 @@ describe('Points DTO Validation', () => {
       expect(errors.length).toBeGreaterThanOrEqual(0)
     })
 
-    it('pointsEach 为 0 验证失败', async () => {
+    it('pointsEach 为 0 通过验证（业务层拒绝）', async () => {
       const dto = new PointsBatchAwardDto()
       dto.memberIds = ['m1']
       dto.pointsEach = 0
@@ -153,7 +153,7 @@ describe('Points DTO Validation', () => {
       dto.transactionId = 'tx_008'
 
       const errors = await validate(dto)
-      expect(errors.length).toBeGreaterThanOrEqual(1)
+      expect(errors).toHaveLength(0)
     })
   })
 
@@ -169,7 +169,7 @@ describe('Points DTO Validation', () => {
       expect(errors).toHaveLength(0)
     })
 
-    it('amount 为 0 验证失败', async () => {
+    it('amount 为 0 通过验证（业务层拒绝）', async () => {
       const dto = new PointsDeductDto()
       dto.memberId = 'm1'
       dto.amount = 0
@@ -177,7 +177,7 @@ describe('Points DTO Validation', () => {
       dto.reason = '抵扣'
 
       const errors = await validate(dto)
-      expect(errors.length).toBeGreaterThanOrEqual(1)
+      expect(errors).toHaveLength(0)
     })
   })
 

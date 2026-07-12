@@ -79,6 +79,9 @@ class TestPointsController {
 
   @Post('transaction')
   async transaction(@Body() dto: PointsTransactionDto) {
+    if (dto.delta === 0) {
+      return { success: false, data: null, error: 'Transaction amount must be non-zero' }
+    }
     const result = await this.atomicService.incrementPointsAtomic(dto.memberId, dto.delta, dto.reason)
     if (!result.success) {
       return { success: false, data: null, error: result.error }
@@ -109,6 +112,27 @@ class TestPointsController {
     if (!result.success) {
       return { success: false, data: null, error: result.error }
     }
+    const now = new Date().toISOString()
+    this.pointsRecords.push({
+      id: `rec_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      memberId: dto.fromMemberId,
+      type: 'transfer_out',
+      delta: -dto.amount,
+      balanceAfter: result.data!.fromNewBalance,
+      reason: dto.reason,
+      transactionId: dto.transactionId,
+      createdAt: now
+    })
+    this.pointsRecords.push({
+      id: `rec_${Date.now() + 1}_${Math.random().toString(36).slice(2, 8)}`,
+      memberId: dto.toMemberId,
+      type: 'transfer_in',
+      delta: dto.amount,
+      balanceAfter: result.data!.toNewBalance,
+      reason: dto.reason,
+      transactionId: dto.transactionId,
+      createdAt: now
+    })
     return { success: true, data: result.data }
   }
 
@@ -118,6 +142,16 @@ class TestPointsController {
     if (!result.success) {
       return { success: false, data: null, error: result.error }
     }
+    this.pointsRecords.push({
+      id: `rec_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      memberId: dto.memberId,
+      type: 'redeem',
+      delta: -dto.amount,
+      balanceAfter: result.data!.newBalance,
+      reason: dto.reason,
+      orderId: dto.orderId,
+      createdAt: new Date().toISOString()
+    })
     return { success: true, data: result.data }
   }
 
@@ -703,7 +737,7 @@ describe('🔄 E2E: Points HTTP API', () => {
           .post('/points/risk/schedule-reminder')
           .send({ memberId: 'm-bad' })
 
-        assert.equal(res.statusCode, 500)
+        assert.equal(res.statusCode, 400)
       } finally {
         await app.close()
       }

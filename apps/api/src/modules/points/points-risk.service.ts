@@ -80,7 +80,7 @@ export class InflationMonitor {
 
   getInflationIndex(): number {
     if (this.totalRedemption === 0) {
-      return this.totalIssuance > 0 ? Infinity : 1
+      return this.totalIssuance > 0 ? Number.MAX_SAFE_INTEGER : 1
     }
     return this.totalIssuance / this.totalRedemption
   }

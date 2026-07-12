@@ -55,6 +55,9 @@ export class PointsController {
   /** POST /points/transaction - 积分变动（增加/扣减） */
   @Post('transaction')
   async transaction(@Body() dto: PointsTransactionDto): Promise<{ success: boolean; data: PointsOperationResult['data']; error?: string }> {
+    if (dto.delta === 0) {
+      return { success: false, data: undefined, error: 'Transaction amount must be non-zero' }
+    }
     const result = await this.atomicService.incrementPointsAtomic(dto.memberId, dto.delta, dto.reason)
     if (!result.success) {
       return { success: false, data: undefined, error: result.error }

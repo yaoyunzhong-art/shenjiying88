@@ -174,8 +174,11 @@ describe(`${ROLES.Ops} Points`, () => {
     const { ctrl } = makeCtrl()
     for (let i = 0; i < 3; i++)
       await ctrl.transaction({ memberId: 'm-v' + i, delta: 1000, reason: 'op-issue', transactionId: nextTx() })
-    const recs = ctrl.getRecords({ memberId: 'm-v0', type: 'award' })
-    const totalAwarded = recs.data.reduce((s: number, r: any) => s + r.delta, 0)
+    let totalAwarded = 0
+    for (let i = 0; i < 3; i++) {
+      const recs = ctrl.getRecords({ memberId: 'm-v' + i, type: 'award' })
+      totalAwarded += recs.data.reduce((s: number, r: any) => s + r.delta, 0)
+    }
     assert.ok(totalAwarded >= 3000)
   })
 
