@@ -67,6 +67,7 @@ export default function MemberCenterPage() {
     );
   }
 
+  // empty state: no member data available
   if (!member && !loading) {
     return null;
   }
