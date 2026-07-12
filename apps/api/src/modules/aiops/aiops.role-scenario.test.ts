@@ -275,8 +275,14 @@ describe(`${ROLES.Guide} 导玩员设备检测场景`, () => {
   })
 
   it('✅ [正常] 导玩员查看设备温度 — 正常范围无异常', () => {
-    // 连续记录设备正常温度
-    seedBaseline(detector, 'machine_1_temp', 40, 20)
+    // 使用固定微小波动避免 flaky
+    for (let i = 0; i < 20; i++) {
+      const fixedDeviation = (i % 5 - 2) * 1 // -2, -1, 0, 1, 2
+      detector.recordDataPoint(
+        'machine_1_temp',
+        makePoint(40 + fixedDeviation, (20 - i) * 60000),
+      )
+    }
     const result = detector.detectAnomaly('machine_1_temp')
     expect(result.isAnomaly).toBe(false)
     expect(result.metricName).toBe('machine_1_temp')

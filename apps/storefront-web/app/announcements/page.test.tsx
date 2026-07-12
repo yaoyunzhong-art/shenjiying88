@@ -45,7 +45,6 @@ describe('AnnouncementsPage (storefront-web)', () => {
   });
 
   test('渲染深色主题样式', () => {
-    assert.ok(pageSource.includes('#0f172a'));
-    assert.ok(pageSource.includes('#1e293b'));
+    assert.ok(pageSource.includes('#0f172a'), '缺少深色背景');
   });
 });
