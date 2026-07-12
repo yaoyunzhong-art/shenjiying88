@@ -67,6 +67,7 @@ export class SchedulePushDto {
 
 export class CancelScheduledPushDto {
   @IsString()
+  @IsNotEmpty()
   pushId!: string
 }
 
