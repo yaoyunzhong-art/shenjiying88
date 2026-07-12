@@ -225,7 +225,7 @@ export default function SalesToolsPage() {
       <View style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filteredCustomers.length === 0 ? (
           <View style={{ padding: 24, textAlign: 'center' }}>
-            <Text style={{ color: '#64748b', fontSize: 14 }}>暂无客户</Text>
+            <Text style={{ color: '#64748b', fontSize: 14 }}>暂无客户，未找到匹配客户</Text>
           </View>
         ) : (
           filteredCustomers.map((cust) => (

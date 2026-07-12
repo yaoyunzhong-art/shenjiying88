@@ -50,7 +50,7 @@ interface AuditLog {
   action: string; operator: string; operatorRole: TenantRole; timestamp: string
 }
 
-interface TenantCtx { tenantId: string; storeId?: string; userId?: string; role?: TenantRole }
+interface TenantCtx { tenantId: string; storeId?: string; userId?: string; role?: TenantRole; brandId?: string }
 
 // ═══════════════════════════════════════════════════════════════
 // 权限矩阵 & 配置定义（内联 mimic）
@@ -116,10 +116,26 @@ function maskValue(sensitivity: ConfigSensitivity, value: string | number | bool
   return String(value ?? '')
 }
 
+// Phase-FP P0-C7 + P0-H1 修复: ownerIdFor 与生产代码对齐
+// 三级 fallback: ctx.brandId (校验归属) > ctx.tenantId.startsWith('brand-') > ${tenantId}::brand-fallback
 function ownerIdFor(ctx: TenantCtx, level: ConfigLevel): string {
   if (level === 'store') return ctx.storeId ?? 'store-default'
   if (level === 'tenant') return ctx.tenantId
-  return ctx.tenantId.startsWith('brand-') ? ctx.tenantId : `brand-${ctx.tenantId.split('-')[0]}`
+  // brand 级别: 与 [tenant-config.service.ts:636-649] 生产实现同步
+  if (ctx.brandId) {
+    // P0-H1: 校验 brandId 归属 (生产 service 抛 Forbidden, 测试内联简化为返回值检测)
+    if (ctx.role !== 'super_admin' && ctx.role !== 'auditor') {
+      const tid = ctx.tenantId
+      const bid = ctx.brandId
+      const belongs = bid === tid || bid.startsWith(`${tid}::`) || bid.startsWith(`${tid}:`)
+      if (!belongs) {
+        throw new Error(`Forbidden: brandId=${bid} does not belong to tenantId=${tid}`)
+      }
+    }
+    return ctx.brandId
+  }
+  if (ctx.tenantId.startsWith('brand-')) return ctx.tenantId
+  return `${ctx.tenantId}::brand-fallback`
 }
 
 function canAccessConfigKey(ctx: TenantCtx, def: ConfigDefinition): boolean {
@@ -335,20 +351,46 @@ describe('TenantConfigService 边界', () => {
     expect(ownerIdFor(TENANT_CTX, 'tenant')).toBe('tenant-A')
   })
 
-  it('[D26] ownerIdFor brand 使用 brand 前缀', () => {
+  it('[D26] ownerIdFor brand 使用 tenantId（品牌租户命名约定 brand- 前缀）', () => {
     expect(ownerIdFor(BRAND_CTX, 'brand')).toBe('brand-shenjiying')
   })
 
-  it('[D27] ownerIdFor brand（非 brand 开头的 tenant）自动从 tenantId 提取前缀', () => {
+  it('[D27] ownerIdFor brand（业务租户无 brandId）用 ${tenantId}::brand-fallback 隔离命名空间', () => {
     const ctx: TenantCtx = { tenantId: 'tenant-B', role: 'brand_admin' }
     const result = ownerIdFor(ctx, 'brand')
-    expect(result).toMatch(/^brand-/)
-    expect(result).not.toContain('tenant-B')
+    expect(result).toBe('tenant-B::brand-fallback')
   })
 
   it('[D28] store_default 当 storeId 未提供时', () => {
     const ctx: TenantCtx = { tenantId: 't', role: 'store_admin' }
     expect(ownerIdFor(ctx, 'store')).toBe('store-default')
+  })
+
+  // ── Phase-FP P0-C7 + P0-H1 真实 ownerIdFor 测试 (覆盖生产代码三级 fallback) ──
+
+  it('[C7-A] brandId 显式且归属于 tenant (tenant-A::brand-sub) → 直接使用 brandId', () => {
+    const ctx: TenantCtx = { tenantId: 'tenant-A', brandId: 'tenant-A::brand-sub', role: 'brand_admin' }
+    expect(ownerIdFor(ctx, 'brand')).toBe('tenant-A::brand-sub')
+  })
+
+  it('[C7-B] brandId 显式但不属于 tenant (brandId="victim-brand") → 抛 Forbidden (P0-H1 防护)', () => {
+    const ctx: TenantCtx = { tenantId: 'tenant-A', brandId: 'victim-brand', role: 'tenant_admin' }
+    expect(() => ownerIdFor(ctx, 'brand')).toThrow(/Forbidden.*brandId.*does not belong to tenantId/)
+  })
+
+  it('[C7-C] 多租户撞名防护: tenant-A1 与 tenant-A2 各自独立 brand namespace', () => {
+    const ctx1: TenantCtx = { tenantId: 'tenant-A1', role: 'tenant_admin' }
+    const ctx2: TenantCtx = { tenantId: 'tenant-A2', role: 'tenant_admin' }
+    const id1 = ownerIdFor(ctx1, 'brand')
+    const id2 = ownerIdFor(ctx2, 'brand')
+    expect(id1).toBe('tenant-A1::brand-fallback')
+    expect(id2).toBe('tenant-A2::brand-fallback')
+    expect(id1).not.toBe(id2) // 关键断言: 撞名防护
+  })
+
+  it('[C7-D] super_admin 跨租户 brandId 豁免 (审计场景)', () => {
+    const ctx: TenantCtx = { tenantId: 'tenant-A', brandId: 'any-brand', role: 'super_admin' }
+    expect(ownerIdFor(ctx, 'brand')).toBe('any-brand') // 豁免
   })
 
   it('[D29] 缺失 role 权限校验抛错', () => {

@@ -168,6 +168,8 @@ export class TenantConfigService implements OnModuleInit {
     this.assertLevelAccess(ctx, def.level)
     // Phase-FP P0-C2 修复: 跨租户防线 - 校验 ctx.storeId 与 ownerId 范围一致
     this.assertOwnerAccess(ctx, def.level)
+    // Phase-FP P0-H4 修复: 租户 ID 正则白名单 - 业务租户禁止使用 brand- 前缀
+    this.assertTenantIdFormat(ctx)
 
     this.validateValue(def, req.value)
     const ownerId = this.ownerIdFor(ctx, def.level)
@@ -634,14 +636,50 @@ export class TenantConfigService implements OnModuleInit {
   private ownerIdFor(ctx: TenantContext, level: ConfigLevel): string {
     if (level === 'store') return ctx.storeId ?? 'store-default'
     if (level === 'tenant') return ctx.tenantId
-    // brand 级别 (Phase-FP P0-C7 修复):
-    // 优先 ctx.brandId 显式字段, 不再从 tenantId.split('-')[0] 推导 (跨租户 brand 串扰)
-    if (ctx.brandId) return ctx.brandId
-    // 兼容品牌租户命名约定: ctx.tenantId 以 'brand-' 开头时直接复用 (单租户品牌场景)
+    // brand 级别 (Phase-FP P0-C7 + P0-H1 修复):
+    // 1. ctx.brandId 显式: 必须通过服务端归属校验 (P0-H1 防 brandId 注入越权)
+    if (ctx.brandId) {
+      this.assertBrandIdBelongsToTenant(ctx)
+      return ctx.brandId
+    }
+    // 2. 兼容品牌租户命名约定: ctx.tenantId 以 'brand-' 开头 (单租户品牌场景)
     if (ctx.tenantId.startsWith('brand-')) return ctx.tenantId
-    // 业务租户 (无 brandId, 非品牌命名): 用 tenantId 隔离命名空间
-    // 防 P0-C7 多租户撞名: tenant-A1 / tenant-A2 各自独立 brand namespace, 互不干扰
+    // 3. 业务租户 (无 brandId, 非品牌命名): 隔离命名空间
     return `${ctx.tenantId}::brand-fallback`
+  }
+
+  /**
+   * Phase-FP P0-H1 修复: ctx.brandId 服务端归属校验
+   * 防止攻击者注入 brandId="victim-brand" 越权读他人 brand 配置 (CVSS 7.5)
+   * 规则: brandId 必须以 ctx.tenantId 为命名空间根 (tenantId/tenantId::sub/tenantId 完全相等)
+   *       super_admin 跨租户审计时可豁免 (但仍需 audit log 留痕)
+   */
+  private assertBrandIdBelongsToTenant(ctx: TenantContext): void {
+    if (!ctx.brandId) return
+    if (ctx.role === 'super_admin' || ctx.role === 'auditor') return // 跨租户审计豁免
+    const tid = ctx.tenantId
+    const bid = ctx.brandId
+    // 归属规则: brandId === tenantId OR brandId.startsWith(tenantId + '::')
+    const belongs = bid === tid || bid.startsWith(`${tid}::`) || bid.startsWith(`${tid}:`)
+    if (!belongs) {
+      throw new ForbiddenException(
+        `[TenantConfig] brandId does not belong to tenant: brandId=${bid} tenantId=${tid} role=${ctx.role}`,
+      )
+    }
+  }
+
+  /**
+   * Phase-FP P0-H4 修复: 租户 ID 格式白名单
+   * 业务租户 (非 brand_admin/super_admin) 禁止使用 'brand-' 前缀
+   * 防止 tenant-X 业务租户冒充品牌租户与 brand-shenjiying 撞 ownerId 命名空间
+   */
+  private assertTenantIdFormat(ctx: TenantContext): void {
+    if (ctx.role === 'super_admin' || ctx.role === 'brand_admin' || ctx.role === 'auditor') return
+    if (ctx.tenantId.startsWith('brand-')) {
+      throw new ForbiddenException(
+        `[TenantConfig] Tenant ID format violation: tenantId='${ctx.tenantId}' uses reserved 'brand-' prefix (role=${ctx.role})`,
+      )
+    }
   }
 
   /** Phase-FP P0 修复: 改 public 让 controller 可以读取 */

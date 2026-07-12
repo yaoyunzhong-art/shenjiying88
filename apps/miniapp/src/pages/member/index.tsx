@@ -31,10 +31,10 @@ import {
 
 // 会员等级体系
 const MEMBER_TIERS = [
-  { key: 'bronze', label: '铜牌会员', minPoints: 0, color: '#cd7f32' },
-  { key: 'silver', label: '银牌会员', minPoints: 3000, color: '#c0c0c0' },
-  { key: 'gold', label: '金牌会员', minPoints: 10000, color: '#ffd700' },
-  { key: 'platinum', label: '钻石会员', minPoints: 50000, color: '#e5e4e2' },
+  { key: 'bronze', level: '铜牌会员', label: '铜牌会员', minPoints: 0, color: '#cd7f32' },
+  { key: 'silver', level: '银牌会员', label: '银牌会员', minPoints: 3000, color: '#c0c0c0' },
+  { key: 'gold', level: '金牌会员', label: '金牌会员', minPoints: 10000, color: '#ffd700' },
+  { key: 'platinum', level: '钻石会员', label: '钻石会员', minPoints: 50000, color: '#e5e4e2' },
 ];
 
 export default function MemberPage() {

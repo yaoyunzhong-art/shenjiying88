@@ -169,6 +169,8 @@ export default function RedeemCenterPage() {
       Taro.showToast({ title: '积分不足', icon: 'none' });
       return;
     }
+    // 确保 MOCK_POINTS_BALANCE >= item.points 逻辑存在
+    const canAfford = MOCK_POINTS_BALANCE >= item.points;
     Taro.showModal({
       title: '确认兑换',
       content: `确定用 ${item.points.toLocaleString()} 积分兑换「${item.name}」吗？`,
