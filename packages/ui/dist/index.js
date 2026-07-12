@@ -21578,7 +21578,7 @@ function Table({
 
 // src/components/EmptyState.tsx
 var import_jsx_runtime83 = require("react/jsx-runtime");
-function EmptyState3({ title = "\u6682\u65E0\u6570\u636E", description, action, icon, variant = "default" }) {
+function EmptyState3({ title = "\u6682\u65E0\u6570\u636E", description, action, actionLabel, actionHref, icon, variant = "default" }) {
   const compact = variant === "compact";
   return /* @__PURE__ */ (0, import_jsx_runtime83.jsxs)(
     "div",
@@ -21595,7 +21595,25 @@ function EmptyState3({ title = "\u6682\u65E0\u6570\u636E", description, action, 
         icon && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { style: { marginBottom: 16, color: "#475569" }, children: icon }),
         /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("h3", { style: { fontSize: 16, fontWeight: 600, color: "#94a3b8", margin: 0 }, children: title }),
         description && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("p", { style: { fontSize: 13, color: "#64748b", margin: "4px 0 16px", maxWidth: 320 }, children: description }),
-        action && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { children: action })
+        action && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)("div", { children: action }),
+        actionLabel && actionHref && /* @__PURE__ */ (0, import_jsx_runtime83.jsx)(
+          "a",
+          {
+            href: actionHref,
+            style: {
+              display: "inline-block",
+              marginTop: 12,
+              padding: "8px 20px",
+              borderRadius: 6,
+              background: "#2563eb",
+              color: "#fff",
+              fontSize: 14,
+              fontWeight: 500,
+              textDecoration: "none"
+            },
+            children: actionLabel
+          }
+        )
       ]
     }
   );

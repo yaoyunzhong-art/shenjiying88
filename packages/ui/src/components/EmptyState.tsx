@@ -2,15 +2,17 @@
 
 import React from 'react';
 
-interface EmptyStateProps {
+export interface EmptyStateProps {
   title?: string;
   description?: string;
   action?: React.ReactNode;
+  actionLabel?: string;
+  actionHref?: string;
   icon?: React.ReactNode;
   variant?: 'default' | 'compact';
 }
 
-export function EmptyState({ title = '暂无数据', description, action, icon, variant = 'default' }: EmptyStateProps) {
+export function EmptyState({ title = '暂无数据', description, action, actionLabel, actionHref, icon, variant = 'default' }: EmptyStateProps) {
   const compact = variant === 'compact';
   return (
     <div
@@ -31,6 +33,24 @@ export function EmptyState({ title = '暂无数据', description, action, icon, 
         </p>
       )}
       {action && <div>{action}</div>}
+      {actionLabel && actionHref && (
+        <a
+          href={actionHref}
+          style={{
+            display: 'inline-block',
+            marginTop: 12,
+            padding: '8px 20px',
+            borderRadius: 6,
+            background: '#2563eb',
+            color: '#fff',
+            fontSize: 14,
+            fontWeight: 500,
+            textDecoration: 'none',
+          }}
+        >
+          {actionLabel}
+        </a>
+      )}
     </div>
   );
 }

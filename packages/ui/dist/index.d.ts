@@ -4572,10 +4572,12 @@ interface EmptyStateProps {
     title?: string;
     description?: string;
     action?: React__default.ReactNode;
+    actionLabel?: string;
+    actionHref?: string;
     icon?: React__default.ReactNode;
     variant?: 'default' | 'compact';
 }
-declare function EmptyState({ title, description, action, icon, variant }: EmptyStateProps): React__default.JSX.Element;
+declare function EmptyState({ title, description, action, actionLabel, actionHref, icon, variant }: EmptyStateProps): React__default.JSX.Element;
 
 type LabelSize = 'sm' | 'md' | 'lg';
 type LabelWeight = 'normal' | 'medium' | 'semibold' | 'bold';

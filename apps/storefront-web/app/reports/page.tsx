@@ -250,7 +250,7 @@ export default async function ReportsListPage() {
       <ReportsCategoryTabs />
 
       {/* 主列表 */}
-      <ErrorBoundary fallback={<ReportsListErrorFallback />}>
+      <ErrorBoundary fallback={() => <ReportsListErrorFallback />}>
         <Suspense fallback={<ReportsListLoadingFallback />}>
           {MOCK_REPORTS && MOCK_REPORTS.length > 0 ? (
             <ReportsPage

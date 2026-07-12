@@ -16,7 +16,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
-import { ReportDetailClient } from '../report-detail-client';
+import { ReportDetailClient } from './report-detail-client';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -222,7 +222,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
     redirect('/reports');
   }
 
-  const statusInfo = STATUS_CONFIG[report.status] ?? STATUS_CONFIG.generated;
+  const statusInfo = (STATUS_CONFIG[report.status] ?? STATUS_CONFIG.generated)!;
 
   return (
     <>
@@ -294,7 +294,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
       <ReportNavigation currentId={id} />
 
       {/* 主内容 */}
-      <ErrorBoundary fallback={<ReportDetailErrorFallback />}>
+      <ErrorBoundary fallback={() => <ReportDetailErrorFallback />}>
         <Suspense fallback={<ReportDetailLoadingFallback />}>
           <ReportDetailClient report={report} />
         </Suspense>
