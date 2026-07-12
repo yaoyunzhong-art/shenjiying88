@@ -4,6 +4,7 @@ import type { DiagnosisEntity, DiagnosisBatch } from './ai-diagnosis.entity'
 
 const diagnosisStore = new Map<string, DiagnosisEntity>()
 const batchStore = new Map<string, DiagnosisBatch>()
+let createSeq = 0
 
 @Injectable()
 export class AiDiagnosisService {
@@ -47,6 +48,7 @@ export class AiDiagnosisService {
     }
 
     diagnosisStore.set(diagnosisId, diagnosis)
+    ;(diagnosis as any)._seq = ++createSeq
     return diagnosis
   }
 
@@ -71,8 +73,12 @@ export class AiDiagnosisService {
     if (filters?.riskLevel) results = results.filter((d) => d.riskLevel === filters.riskLevel)
     if (filters?.tenantId) results = results.filter((d) => d.tenantId === filters.tenantId)
 
-    // 按创建时间降序
-    results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    // 按创建时间降序，相同时按创建顺序降序
+    results.sort((a, b) => {
+      const timeDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      if (timeDiff !== 0) return timeDiff
+      return ((b as any)._seq ?? 0) - ((a as any)._seq ?? 0)
+    })
 
     return { diagnoses: results, total: results.length }
   }
@@ -186,6 +192,7 @@ export class AiDiagnosisService {
     }
 
     batchStore.set(batchId, batch)
+    ;(batch as any)._seq = ++createSeq
     return batch
   }
 
@@ -199,7 +206,12 @@ export class AiDiagnosisService {
     if (filters?.engineId) results = results.filter((b) => b.engineId === filters.engineId)
     if (filters?.tenantId) results = results.filter((b) => b.tenantId === filters.tenantId)
 
-    results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    // 按创建时间降序，相同时按创建顺序降序
+    results.sort((a, b) => {
+      const timeDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      if (timeDiff !== 0) return timeDiff
+      return ((b as any)._seq ?? 0) - ((a as any)._seq ?? 0)
+    })
     return results
   }
 

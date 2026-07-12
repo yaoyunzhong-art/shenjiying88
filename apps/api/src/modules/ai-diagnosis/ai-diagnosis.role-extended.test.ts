@@ -138,7 +138,8 @@ describe(`${ROLES.FrontDesk} ai-diagnosis 扩展角色测试`, () => {
 
   it('前台按引擎过滤 — 只看到 POS 相关诊断', () => {
     const result = ctrl.list({ engineId: 'pos-check', tenantId: 'T-store-001' })
-    assert.equal(result.total, 1)
+    // beforeAll创建1个pos-check + 第一条测试又创建1个pos-check
+    assert.equal(result.total, 2)
     assert.equal(result.diagnoses[0].engineId, 'pos-check')
   })
 
@@ -411,7 +412,8 @@ describe(`${ROLES.Marketing} ai-diagnosis 扩展角色测试`, () => {
 
   it('营销获取跨租户报告 — 被正确隔离', () => {
     const report = ctrl.riskReport('marketing-campaign', 'T-store-001')
-    assert.equal(report.totalEvaluated, 2) // 1 from before + 1 new
+    // beforeAll batch (2) + test1 batch (3) + test2 single (1) = 6
+    assert.equal(report.totalEvaluated, 6)
     // T-store-002 的数据不应出现
     const otherReport = ctrl.riskReport('marketing-campaign', 'T-store-002')
     assert.equal(otherReport.totalEvaluated, 0)

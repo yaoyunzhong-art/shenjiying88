@@ -115,7 +115,7 @@ describe(`${ROLES.StoreManager} ai-diagnosis 角色v2测试`, () => {
     ctrl.remove(id1)
     const d2 = makeDiag(ctrl, { tenantId: 'T-shop-a', requestedBy: 'boss-a' })
     assert.notEqual(d2.diagnosis.diagnosisId, id1)
-    assert.equal(ctrl.list({ tenantId: 'T-shop-a' }).total, 2) // 2 from beforeEach remain
+    assert.equal(ctrl.list({ tenantId: 'T-shop-a' }).total, 3) // 2 from beforeEach + 1 recreated
   })
 })
 
@@ -430,7 +430,8 @@ describe(`${ROLES.Operations} ai-diagnosis 角色v2测试`, () => {
     const d2 = makeDiag(ctrl, { engineId: 'ops-monitor', tenantId: 'T-ops-001', requestedBy: 'ops4' })
     ctrl.update(d2.diagnosis.diagnosisId, { status: 'COMPLETED', evaluationDurationMs: 300 })
     const report = ctrl.riskReport('ops-monitor', 'T-ops-001')
-    assert.equal(report.averageEvaluationDurationMs, 250)
+    // avg = (0 + 200 + 300) / 3 = 167 (包括 beforeEach 创建的1个诊断)
+    assert.equal(report.averageEvaluationDurationMs, 167)
   })
 
   it('运行专员获取不存在的诊断 — throws 404', () => {
