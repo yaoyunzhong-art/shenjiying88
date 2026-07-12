@@ -34,7 +34,7 @@ function setup() {
 
 describe(`${ROLES.StoreManager} ai-content 扩展测试`, () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('店长查询团建报告统计时确认参与率和时长数据', async () => {
     const r = await svc.reportGenerator.generateReport('evt-001')
@@ -134,7 +134,7 @@ describe(`${ROLES.Safety} ai-content 扩展测试`, () => {
 
 describe(`${ROLES.Guide} ai-content 扩展测试`, () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('导玩员比较两个不同视频指纹的相似度', () => {
     const fp1 = svc.videoDedupService.computeVideoFingerprint('vid-a')
@@ -178,7 +178,7 @@ describe(`${ROLES.Ops} ai-content 扩展测试`, () => {
 
 describe(`${ROLES.Teambuilding} ai-content 扩展测试`, () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('团建专员生成报告后通过 eventId 查询', async () => {
     await svc.reportGenerator.generateReport('evt-001')

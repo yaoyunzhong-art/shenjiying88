@@ -369,7 +369,7 @@ describe('🤝团建 brand-custom 扩展测试', () => {
 
 describe('📢营销 brand-custom 扩展测试', () => {
   let svc: BrandCustomService
-  beforeEach(() => { svc = setup(); svc.registerTenant('t-mkt', '营销品牌') })
+  beforeEach(async () => { svc = setup(); svc.registerTenant('t-mkt', '营销品牌') })
 
   it('预览主题 HTML 包含品牌名称和主色', () => {
     const html = svc.previewTheme({

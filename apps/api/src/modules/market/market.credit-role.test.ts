@@ -8,9 +8,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { MarketController } from './market.controller'
 // ── 直接用 require 绕过编译时模块解析 ──
  
-const { MarketController } = require('./market.controller')
 
 const ROLES = {
   StoreManager: '👔店长',

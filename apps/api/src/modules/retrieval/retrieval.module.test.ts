@@ -10,9 +10,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { RetrievalModule } from './retrieval.module'
 
 describe('RetrievalModule', () => {
-  const { RetrievalModule } = require('./retrieval.module')
 
   it('module should be defined', () => {
     assert.ok(RetrievalModule)

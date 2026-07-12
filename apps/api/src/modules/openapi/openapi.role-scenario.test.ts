@@ -10,6 +10,20 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { APIKeyAdapter } from './datasources/api-key.adapter'
+import { APIKeyService } from './services/api-key.service'
+import { KeyGenerator } from './key-generator'
+import { OpenAPIController } from './openapi.controller'
+import { QuotaAdapter } from './datasources/quota.adapter'
+import { RateLimitAdapter } from './datasources/rate-limit.adapter'
+import { RateLimiter } from './rate-limiter'
+import { SandboxAdapter } from './datasources/sandbox.adapter'
+import { SandboxService } from './services/sandbox.service'
+import { SignValidator } from './sign-validator'
+import { UsageService } from './services/usage.service'
+import { WebhookAdapter } from './datasources/webhook.adapter'
+import { WebhookDispatcher } from './webhook-dispatcher'
+import { WebhookService } from './services/webhook.service'
 
 // ── 角色定义 ──
 const ROLES = {
@@ -25,20 +39,6 @@ const ROLES = {
 
 // ── 控制器工厂 ──
 function createCtrl() {
-  const { APIKeyAdapter } = require('./datasources/api-key.adapter')
-  const { WebhookAdapter } = require('./datasources/webhook.adapter')
-  const { SandboxAdapter } = require('./datasources/sandbox.adapter')
-  const { RateLimitAdapter } = require('./datasources/rate-limit.adapter')
-  const { QuotaAdapter } = require('./datasources/quota.adapter')
-  const { KeyGenerator } = require('./key-generator')
-  const { SignValidator } = require('./sign-validator')
-  const { RateLimiter } = require('./rate-limiter')
-  const { WebhookDispatcher } = require('./webhook-dispatcher')
-  const { APIKeyService } = require('./services/api-key.service')
-  const { WebhookService } = require('./services/webhook.service')
-  const { SandboxService } = require('./services/sandbox.service')
-  const { UsageService } = require('./services/usage.service')
-  const { OpenAPIController } = require('./openapi.controller')
 
   const apiKeyAdapter = new APIKeyAdapter()
   const webhookAdapter = new WebhookAdapter()

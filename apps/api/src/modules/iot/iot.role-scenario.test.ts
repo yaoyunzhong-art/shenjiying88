@@ -55,7 +55,7 @@ function setup() {
 // ═══════════════════════════════════════════════════════════════════════════════
 describe('🎯【S1】运行专员注册设备 → 🔧安监验证设备状态 → 🎮导玩员查看设备', () => {
   let ctx: ReturnType<typeof setup>
-  beforeEach(() => { ctx = setup() })
+  beforeEach(async () => { ctx = setup() })
 
   it('S1-正常流程: 运行专员注册多台设备 → 安监验证全部在线 → 导玩员查看设备列表', async () => {
     const { controller } = ctx

@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { ContextBuilderService } from './context-builder.service'
+import { KnowledgeIndexerService } from '../knowledge/knowledge-indexer.service'
+import { PersonalizedRecommenderService } from './personalized-recommender.service'
+import { RagRetrievalService } from './rag-retrieval.service'
+import { RecommenderController } from './recommender.controller'
+import { RecommenderService } from './recommender.service'
 describe('RecommenderController', () => {
-  const { RecommenderController } = require('./recommender.controller')
-  const { RecommenderService } = require('./recommender.service')
-  const { ContextBuilderService } = require('./context-builder.service')
-  const { RagRetrievalService } = require('./rag-retrieval.service')
-  const { PersonalizedRecommenderService } = require('./personalized-recommender.service')
-  const { KnowledgeIndexerService } = require('../knowledge/knowledge-indexer.service')
 
   let controller: InstanceType<typeof RecommenderController>
   let recommenderService: InstanceType<typeof RecommenderService>

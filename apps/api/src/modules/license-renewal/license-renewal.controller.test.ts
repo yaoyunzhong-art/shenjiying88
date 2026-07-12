@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { LicenseRenewalController } from './license-renewal.controller'
 
 describe('LicenseRenewalController', () => {
   // 通过 eval 动态加载 controller 文件, 避免 tsx 提前解析装饰器
@@ -17,8 +18,7 @@ describe('LicenseRenewalController', () => {
   let service: any
 
   beforeEach(async () => {
-    const { LicenseRenewalService } = require('./license-renewal.service')
-    const { LicenseRenewalController } = require('./license-renewal.controller')
+    const { LicenseRenewalService } = await import('./license-renewal.service')
     ControllerClass = LicenseRenewalController
     service = new LicenseRenewalService()
     controller = new ControllerClass(service)

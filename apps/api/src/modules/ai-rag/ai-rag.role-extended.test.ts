@@ -83,7 +83,7 @@ describe(`${ROLES.HR} ai-rag 扩展测试`, () => {
 
 describe(`${ROLES.Safety} ai-rag 扩展测试`, () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('安监创建含敏感词文档并通过 RAG 检索', async () => {
     svc.kb.addDocument('security', { id: 'sec1', content: '安全管理规定禁止打架斗殴和分裂行为' })
@@ -115,7 +115,7 @@ describe(`${ROLES.Guide} ai-rag 扩展测试`, () => {
 
 describe(`${ROLES.Ops} ai-rag 扩展测试`, () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('运行专员对空集合 RAG 查询返回无结果信息', async () => {
     const result = await svc.rag.query('任何问题', 'empty')
@@ -134,7 +134,7 @@ describe(`${ROLES.Ops} ai-rag 扩展测试`, () => {
 
 describe(`${ROLES.Teambuilding} ai-rag 扩展测试`, () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('团建专员多轮对话 RAG 持续回答', async () => {
     svc.kb.addDocument('team', { id: 't1', content: '团建活动策划包含破冰游戏、拓展训练和烧烤' })

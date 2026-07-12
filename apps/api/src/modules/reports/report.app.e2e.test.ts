@@ -30,8 +30,8 @@ import { GovernanceApprovalService } from '../foundation/governance-approval/gov
 import { IdentityAccessGuard } from '../foundation/identity-access/identity-access.guard'
 import { MemberApprovalOutcomeRecorder } from '../member/member-approval-recorder'
 import { AgentModule } from '../agent/agent.module'
+import { AppModule } from '../../app.module'
 
-const { AppModule } = require('../../app.module')
 const mockPrismaService = {
   $connect: async () => undefined,
   $disconnect: async () => undefined,

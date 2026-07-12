@@ -27,8 +27,8 @@ import assert from 'node:assert/strict'
 describe('🎭 License Renewal — 8 Role Tests', () => {
   let service: any
 
-  beforeEach(() => {
-    const { LicenseRenewalService } = require('./license-renewal.service')
+  beforeEach(async () => {
+    const { LicenseRenewalService } = await import('./license-renewal.service')
     service = new LicenseRenewalService()
   })
 

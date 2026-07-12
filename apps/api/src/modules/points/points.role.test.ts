@@ -19,7 +19,7 @@ function nextTx() { return 'tx-' + (++txId).toString().padStart(4, '0') }
 
 // ──────────── 👔店长 ────────────
 describe(`${ROLES.TenantAdmin} Points`, () => {
-  beforeEach(() => { resetTestState(); txId = 0 })
+  beforeEach(async () => { resetTestState(); txId = 0 })
 
   it('add points to member - happy path', async () => {
     const { ctrl } = makeCtrl()
@@ -44,7 +44,7 @@ describe(`${ROLES.TenantAdmin} Points`, () => {
 
 // ──────────── 🛒前台 ────────────
 describe(`${ROLES.Reception} Points`, () => {
-  beforeEach(() => { resetTestState(); txId = 0 })
+  beforeEach(async () => { resetTestState(); txId = 0 })
 
   it('check member balance', async () => {
     const { ctrl } = makeCtrl()
@@ -84,7 +84,7 @@ describe(`${ROLES.Reception} Points`, () => {
 
 // ──────────── 👥HR ────────────
 describe(`${ROLES.HR} Points`, () => {
-  beforeEach(() => { resetTestState(); txId = 0 })
+  beforeEach(async () => { resetTestState(); txId = 0 })
 
   it('view points records', async () => {
     const { ctrl } = makeCtrl()
@@ -107,7 +107,7 @@ describe(`${ROLES.HR} Points`, () => {
 
 // ──────────── 🔧安监 ────────────
 describe(`${ROLES.Safety} Points`, () => {
-  beforeEach(() => { resetTestState(); txId = 0 })
+  beforeEach(async () => { resetTestState(); txId = 0 })
 
   it('monitor risk status', async () => {
     const { ctrl } = makeCtrl()
@@ -138,7 +138,7 @@ describe(`${ROLES.Safety} Points`, () => {
 
 // ──────────── 🎮导玩员 ────────────
 describe(`${ROLES.Guide} Points`, () => {
-  beforeEach(() => { resetTestState(); txId = 0 })
+  beforeEach(async () => { resetTestState(); txId = 0 })
 
   it('transfer points between members', async () => {
     const { ctrl } = makeCtrl()
@@ -168,7 +168,7 @@ describe(`${ROLES.Guide} Points`, () => {
 
 // ──────────── 🎯运行专员 ────────────
 describe(`${ROLES.Ops} Points`, () => {
-  beforeEach(() => { resetTestState(); txId = 0 })
+  beforeEach(async () => { resetTestState(); txId = 0 })
 
   it('reconcile total awarded', async () => {
     const { ctrl } = makeCtrl()
@@ -200,7 +200,7 @@ describe(`${ROLES.Ops} Points`, () => {
 
 // ──────────── 🤝团建 ────────────
 describe(`${ROLES.Teambuilding} Points`, () => {
-  beforeEach(() => { resetTestState(); txId = 0 })
+  beforeEach(async () => { resetTestState(); txId = 0 })
 
   it('send manual expiration reminder', async () => {
     const { ctrl } = makeCtrl()
@@ -223,7 +223,7 @@ describe(`${ROLES.Teambuilding} Points`, () => {
 
 // ──────────── 📢营销 ────────────
 describe(`${ROLES.Marketing} Points`, () => {
-  beforeEach(() => { resetTestState(); txId = 0 })
+  beforeEach(async () => { resetTestState(); txId = 0 })
 
   it('bulk awards for promo campaign', async () => {
     const { ctrl } = makeCtrl()
@@ -252,7 +252,7 @@ describe(`${ROLES.Marketing} Points`, () => {
 
 // ──────────── 数据隔离 ────────────
 describe('Points Isolation', () => {
-  beforeEach(() => { resetTestState(); txId = 0 })
+  beforeEach(async () => { resetTestState(); txId = 0 })
 
   it('balances isolated per member', async () => {
     const { ctrl } = makeCtrl()

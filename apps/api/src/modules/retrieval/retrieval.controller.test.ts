@@ -11,10 +11,10 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { RetrievalController } from './retrieval.controller'
+import { RetrievalService } from './retrieval.service'
 
 describe('RetrievalController', () => {
-  const { RetrievalController } = require('./retrieval.controller')
-  const { RetrievalService } = require('./retrieval.service')
 
   let controller: InstanceType<typeof RetrievalController>
   let service: InstanceType<typeof RetrievalService>

@@ -7,9 +7,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { AiModelConfigController } from './ai-model-config.controller'
+import { AiModelConfigService } from './ai-model-config.service'
 describe('AiModelConfigController', () => {
-  const { AiModelConfigController } = require('./ai-model-config.controller')
-  const { AiModelConfigService } = require('./ai-model-config.service')
 
   let controller: InstanceType<typeof AiModelConfigController>
   let service: InstanceType<typeof AiModelConfigService>

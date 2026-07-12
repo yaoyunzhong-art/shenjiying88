@@ -12,15 +12,15 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { MockHomomorphicCipher } from './federated.entity'
+import { FederatedLearningController } from './federated.controller'
+import { FederatedLearningService } from './federated.service'
+import { runWithTenant } from '../../common/context/tenant-context'
 
 const TENANT_A = { tenantId: 'tenant-A', storeId: 'store-001', userId: 'coordinator', role: 'tenant_admin' as const }
 const TENANT_B = { tenantId: 'tenant-B', userId: 'participant-B', role: 'operator' as const }
 const TENANT_C = { tenantId: 'tenant-C', userId: 'participant-C', role: 'operator' as const }
 
 describe('FederatedLearningController (.test.ts)', () => {
-  const { FederatedLearningController } = require('./federated.controller')
-  const { FederatedLearningService } = require('./federated.service')
-  const { runWithTenant } = require('../../common/context/tenant-context')
 
   const TASK_DEF = {
     name: 'test-task',

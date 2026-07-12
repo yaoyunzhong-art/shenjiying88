@@ -9,7 +9,7 @@ import type {
 } from '@m5/types'
 
 // ── helpers ────────────────────────────────────────────────────
-function buildSubmitInput(
+async function buildSubmitInput(
   overrides: Partial<RuntimeGovernanceSubmitRequest> = {}
 ): RuntimeGovernanceSubmitRequest & { tenantId?: string; brandId?: string; storeId?: string; marketCode?: string } {
   return {

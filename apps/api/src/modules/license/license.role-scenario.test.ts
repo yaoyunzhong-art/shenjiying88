@@ -158,7 +158,7 @@ function makeReq(overrides: Record<string, any> = {}): any {
 describe(`${ROLES.StoreManager} license 角色场景测试`, () => {
   let svc: ReturnType<typeof createMockLicenseSvc>
 
-  beforeEach(() => { svc = createMockLicenseSvc() })
+  beforeEach(async () => { svc = createMockLicenseSvc() })
 
   it('店长查看租户下所有授权列表 - 正常流程', async () => {
     const result = await svc.listLicensesByTenant('t-store')
@@ -188,7 +188,7 @@ describe(`${ROLES.StoreManager} license 角色场景测试`, () => {
 describe(`${ROLES.FrontDesk} license 角色场景测试`, () => {
   let svc: ReturnType<typeof createMockLicenseSvc>
 
-  beforeEach(() => { svc = createMockLicenseSvc() })
+  beforeEach(async () => { svc = createMockLicenseSvc() })
 
   it('前台在收银台前置校验AI能力授权 - 正常流程', async () => {
     const result = await svc.checkLicense({ scope: 'ai.capability', tenantId: 't-store' })
@@ -211,7 +211,7 @@ describe(`${ROLES.FrontDesk} license 角色场景测试`, () => {
 describe(`${ROLES.HR} license 角色场景测试`, () => {
   let svc: ReturnType<typeof createMockLicenseSvc>
 
-  beforeEach(() => { svc = createMockLicenseSvc() })
+  beforeEach(async () => { svc = createMockLicenseSvc() })
 
   it('HR查阅授权审计日志 - 正常流程', async () => {
     // Trigger an audit first
@@ -231,7 +231,7 @@ describe(`${ROLES.HR} license 角色场景测试`, () => {
 describe(`${ROLES.Security} license 角色场景测试`, () => {
   let svc: ReturnType<typeof createMockLicenseSvc>
 
-  beforeEach(() => { svc = createMockLicenseSvc() })
+  beforeEach(async () => { svc = createMockLicenseSvc() })
 
   it('安监发现异常活动后暂停授权 - 正常流程', async () => {
     const result = await svc.suspend('lic-store-1', 'sec-admin', '异常活动 - 未经授权的API调用')
@@ -280,7 +280,7 @@ describe(`${ROLES.Guide} license 角色场景测试`, () => {
 describe(`${ROLES.Operations} license 角色场景测试`, () => {
   let svc: ReturnType<typeof createMockLicenseSvc>
 
-  beforeEach(() => { svc = createMockLicenseSvc() })
+  beforeEach(async () => { svc = createMockLicenseSvc() })
 
   it('运行专员检查授权是否过期 - 正常流程', async () => {
     const result = await svc.checkLicense({ scope: 'ai.capability', tenantId: 't-store' })
@@ -299,7 +299,7 @@ describe(`${ROLES.Operations} license 角色场景测试`, () => {
 describe(`${ROLES.Teambuilding} license 角色场景测试`, () => {
   let svc: ReturnType<typeof createMockLicenseSvc>
 
-  beforeEach(() => { svc = createMockLicenseSvc() })
+  beforeEach(async () => { svc = createMockLicenseSvc() })
 
   it('团建负责人查看租户授权清单 - 正常流程', async () => {
     const result = await svc.listLicensesByTenant('t-store')
@@ -316,7 +316,7 @@ describe(`${ROLES.Teambuilding} license 角色场景测试`, () => {
 describe(`${ROLES.Marketing} license 角色场景测试`, () => {
   let svc: ReturnType<typeof createMockLicenseSvc>
 
-  beforeEach(() => { svc = createMockLicenseSvc() })
+  beforeEach(async () => { svc = createMockLicenseSvc() })
 
   it('营销人员检查AI行业增值授权 - 正常流程', async () => {
     const result = await svc.checkLicense({ scope: 'integration.open', tenantId: 't-internal' })
@@ -342,7 +342,7 @@ describe(`${ROLES.Marketing} license 角色场景测试`, () => {
 describe('跨角色协作 license 端到端场景测试', () => {
   let svc: ReturnType<typeof createMockLicenseSvc>
 
-  beforeEach(() => { svc = createMockLicenseSvc() })
+  beforeEach(async () => { svc = createMockLicenseSvc() })
 
   it('店长生成激活码 → 导玩员激活使用（端到端）', async () => {
     // 1. Admin/店长生成激活码

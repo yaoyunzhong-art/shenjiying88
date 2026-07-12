@@ -108,8 +108,8 @@ describe('LicenseController (V10 Day 4 Phase 88)', () => {
     role: 'tenant_admin' as const,
   }
 
-  beforeEach(() => {
-    const { createInMemoryLicenseRepos } = require('./repositories/in-memory.repository')
+  beforeEach(async () => {
+    const { createInMemoryLicenseRepos } = await import('./repositories/in-memory.repository')
     const repos = createInMemoryLicenseRepos()
     service = new LicenseService(repos.licenseRepo, repos.auditLogRepo)
     // 显式植入种子数据（因为直接构造不触发 constructor fallback）
@@ -390,7 +390,7 @@ describe('LicenseController (V10 Day 4 Phase 88)', () => {
   // ============ 异常场景 ============
   describe('异常与边界场景', () => {
     it('service.checkLicense 抛出异常时向上传播', async () => {
-      const { createInMemoryLicenseRepos: createRepos } = require('./repositories/in-memory.repository')
+      const { createInMemoryLicenseRepos: createRepos } = await import('./repositories/in-memory.repository')
     const brokenRepos = createRepos()
     const brokenService = new LicenseService(brokenRepos.licenseRepo, brokenRepos.auditLogRepo)
       // 替换内部方法

@@ -17,6 +17,7 @@ import { ContextBuilderService } from './context-builder.service';
 import { RagRetrievalService } from './rag-retrieval.service';
 import { KnowledgeIndexerService } from '../knowledge/knowledge-indexer.service';
 import { PersonalizedRecommenderService } from './personalized-recommender.service';
+import { RecommenderController } from './recommender.controller'
 import type {
   ChampionSummary,
   RecommendationContext,
@@ -544,7 +545,6 @@ describe('[recommender] 合约: 反馈与统计', () => {
 // ════════════════ 合约: 端点元数据 ════════════════════
 
 describe('[recommender] 合约: 端点路由', () => {
-  const { RecommenderController } = require('./recommender.controller');
 
   it('Controller path = recommender', () => {
     const path = Reflect.getMetadata('path', RecommenderController);

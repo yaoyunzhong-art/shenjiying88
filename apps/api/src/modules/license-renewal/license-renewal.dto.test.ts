@@ -4,9 +4,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  */
 
 import assert from 'node:assert/strict'
+import mod from './license-renewal.dto'
 
 describe('LicenseRenewal DTOs', () => {
-  const mod = require('./license-renewal.dto')
 
   describe('CreateRenewalRecordDto', () => {
     it('should create with all required fields', () => {

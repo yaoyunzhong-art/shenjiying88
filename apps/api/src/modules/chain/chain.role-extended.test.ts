@@ -132,7 +132,7 @@ describe('🤝团建 chain 扩展测试', () => {
 
 describe('📢营销 chain 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { resetSmartContractTestState(); svc = setup() })
+  beforeEach(async () => { resetSmartContractTestState(); svc = setup() })
 
   it('智能合约部署和查询', async () => {
     const deployed = await svc.smart.deployContract('积分合约', ['param1']) as unknown as { contractId: string }

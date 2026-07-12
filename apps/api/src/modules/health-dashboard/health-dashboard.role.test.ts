@@ -8,11 +8,11 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
+import { HealthDashboardController } from './health-dashboard.controller'
+import { HealthDashboardService } from './health-dashboard.service'
+import { HealthScoreService } from './health-score.service'
 // ── Helpers ──
 function createController() {
-  const { HealthDashboardController } = require('./health-dashboard.controller');
-  const { HealthScoreService } = require('./health-score.service');
-  const { HealthDashboardService } = require('./health-dashboard.service');
   const healthScore = new HealthScoreService();
   const dashboard = new HealthDashboardService(healthScore);
   const controller = new HealthDashboardController(healthScore, dashboard);

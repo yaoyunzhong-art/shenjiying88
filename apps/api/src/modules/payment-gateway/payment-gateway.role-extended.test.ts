@@ -36,7 +36,7 @@ async function createWalletPayment(service: PaymentGatewayService, overrides: Pa
 // ═══════════════════════════════════════════════════════════
 describe('👔店长 payment-gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('发起本地钱包支付并查询结果', async () => {
     svc.service.setWalletBalance('store-mgr', 'CNY', 20000)
@@ -125,7 +125,7 @@ describe('🛒前台 payment-gateway 扩展测试', () => {
 // ═══════════════════════════════════════════════════════════
 describe('👥HR payment-gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('员工本地钱包充值查询', () => {
     svc.service.setWalletBalance('emp-001', 'CNY', 50000)
@@ -156,7 +156,7 @@ describe('👥HR payment-gateway 扩展测试', () => {
 // ═══════════════════════════════════════════════════════════
 describe('🔧安监 payment-gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('查询不存在的交易应报错 (PaymentError)', async () => {
     await expect(
@@ -195,7 +195,7 @@ describe('🔧安监 payment-gateway 扩展测试', () => {
 // ═══════════════════════════════════════════════════════════
 describe('🎮导玩员 payment-gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('游戏小额充值 (本地钱包)', async () => {
     svc.service.setWalletBalance('gamer-001', 'CNY', 1000)
@@ -239,7 +239,7 @@ describe('🎮导玩员 payment-gateway 扩展测试', () => {
 // ═══════════════════════════════════════════════════════════
 describe('🎯运行专员 payment-gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('多渠道支付 (pending 状态验证)', async () => {
     const wx = await svc.service.pay({
@@ -285,7 +285,7 @@ describe('🎯运行专员 payment-gateway 扩展测试', () => {
 // ═══════════════════════════════════════════════════════════
 describe('🤝团建 payment-gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('团建采购 (本地钱包)', async () => {
     svc.service.setWalletBalance('team-budget', 'CNY', 100000)
@@ -322,7 +322,7 @@ describe('🤝团建 payment-gateway 扩展测试', () => {
 // ═══════════════════════════════════════════════════════════
 describe('📢营销 payment-gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('营销活动充值 (alipay pending)', async () => {
     const result = await svc.service.pay({
@@ -353,7 +353,7 @@ describe('📢营销 payment-gateway 扩展测试', () => {
 // ═══════════════════════════════════════════════════════════
 describe('边界场景：错误与异常处理', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('支付金额为 0 应抛错', async () => {
     await expect(

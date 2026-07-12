@@ -27,7 +27,7 @@ function setup() {
 // ============================================================
 describe('👔店长 gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('路由查找已注册路径', async () => {
     const r = await svc.apiGateway.routeRequest({ path: '/api/agent', method: 'GET', headers: {} })
@@ -52,7 +52,7 @@ describe('👔店长 gateway 扩展测试', () => {
 // ============================================================
 describe('🛒前台 gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('前台可创建只读 API Key', async () => {
     const key = await svc.apiKeyManager.createAPIKey('front-desk-1', 'front-desk', ['read'])
@@ -80,7 +80,7 @@ describe('🛒前台 gateway 扩展测试', () => {
 // ============================================================
 describe('👥HR gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('创建并撤销 API Key', async () => {
     const key = await svc.apiKeyManager.createAPIKey('hr-user', 'hr-department', ['read', 'write'])
@@ -111,7 +111,7 @@ describe('👥HR gateway 扩展测试', () => {
 // ============================================================
 describe('🔧安监 gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('API Key 认证通过', async () => {
     const key = await svc.apiKeyManager.createAPIKey('sec-user', 'security', ['admin'])
@@ -137,7 +137,7 @@ describe('🔧安监 gateway 扩展测试', () => {
 // ============================================================
 describe('🎮导玩员 gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('导玩员 API Key 可认证只读路径', async () => {
     const key = await svc.apiKeyManager.createAPIKey('guide-1', 'guide', ['read'])
@@ -156,7 +156,7 @@ describe('🎮导玩员 gateway 扩展测试', () => {
 // ============================================================
 describe('🎯运行专员 gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('限流检查未超限时允许', async () => {
     const r = await svc.apiGateway.rateLimit('client-1', { path: '/api/test', method: 'GET', headers: {} })
@@ -187,7 +187,7 @@ describe('🎯运行专员 gateway 扩展测试', () => {
 // ============================================================
 describe('🤝团建 gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('团队场景：为多个活动创建 API Key', async () => {
     await svc.apiKeyManager.createAPIKey('team-building-1', 'teambuilding', ['read'])
@@ -211,7 +211,7 @@ describe('🤝团建 gateway 扩展测试', () => {
 // ============================================================
 describe('📢营销 gateway 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('营销可创建多个不同权限 Key', async () => {
     await svc.apiKeyManager.createAPIKey('mkt-read', 'marketing', ['read'])

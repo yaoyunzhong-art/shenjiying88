@@ -129,7 +129,7 @@ describe('🎮导玩员 edge 扩展测试', () => {
 
 describe('🎯运行专员 edge 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('AI 推理加载模型后运行', async () => {
     await svc.inferenceService.loadModel('face-model', 'edge-001')
@@ -169,7 +169,7 @@ describe('🤝团建 edge 扩展测试', () => {
 
 describe('📢营销 edge 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('模型缓存操作', async () => {
     const cached = await svc.modelCache.cacheModel('mkt-model', 'v1')

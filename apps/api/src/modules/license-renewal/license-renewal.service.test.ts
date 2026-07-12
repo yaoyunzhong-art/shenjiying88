@@ -13,9 +13,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  */
 
 import assert from 'node:assert/strict'
+import { LicenseRenewalService } from './license-renewal.service'
 
 describe('LicenseRenewalService', () => {
-  const { LicenseRenewalService } = require('./license-renewal.service')
   let service: InstanceType<typeof LicenseRenewalService>
 
   beforeEach(() => {

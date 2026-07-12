@@ -172,7 +172,7 @@ describe('🔧【S3】安监校准时钟 → 🎯运行专员验证容差', () =
 describe('📢【S4】营销加载 AI 模型 → 🎯运行专员推理 → 🎮导玩员使用结果', () => {
   let svc: ReturnType<typeof setup>
 
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('S4-正常流程: 营销热更新模型 → 运行专员加载 → 导玩员识别人脸', async () => {
     // 营销通知更新模型版本
@@ -254,7 +254,7 @@ describe('👥【S5】HR 注册新员工终端 → 🤝团建同步离线队列'
 describe('👔【S6】店长全局运维 + 📢营销模型缓存', () => {
   let svc: ReturnType<typeof setup>
 
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('S6-正常流程: 营销缓存多个模型 → 店长查看缓存列表', async () => {
     // 营销缓存 2 个模型

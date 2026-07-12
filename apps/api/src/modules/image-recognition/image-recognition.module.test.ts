@@ -78,8 +78,8 @@ describe('ImageRecognitionModule', () => {
     assert.ok(typeof service.createRecognition === 'function')
   })
 
-  it('Service listEngines 返回 7 个引擎', () => {
-    const service = new (require('./image-recognition.service').ImageRecognitionService)()
+  it('Service listEngines 返回 7 个引擎', async () => {
+    const service = new (await import('./image-recognition.service').ImageRecognitionService)()
     const engines = service.listEngines()
     assert.equal(engines.length, 7)
   })

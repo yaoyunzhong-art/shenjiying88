@@ -18,7 +18,7 @@ function setup() {
 
 describe('👔店长 webhook 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('创建并列出多个 webhook', async () => {
     await svc.controller.create({ url: 'https://hook1.example.com', secret: 's1', events: ['order.created'] })
@@ -35,7 +35,7 @@ describe('👔店长 webhook 扩展测试', () => {
 
 describe('🛒前台 webhook 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('创建并测试 webhook 发送', async () => {
     const ep = await svc.controller.create({ url: 'https://test.example.com', secret: 'sec', events: ['order.created'] })
@@ -51,7 +51,7 @@ describe('🛒前台 webhook 扩展测试', () => {
 
 describe('👥HR webhook 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('更新 webhook 配置', async () => {
     const ep = await svc.controller.create({ url: 'https://hr.example.com', secret: 's', events: ['user.registered'] })
@@ -67,7 +67,7 @@ describe('👥HR webhook 扩展测试', () => {
 
 describe('🔧安监 webhook 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('验证签名机制', () => {
     const payload = 'test payload'
@@ -88,7 +88,7 @@ describe('🔧安监 webhook 扩展测试', () => {
 
 describe('🎯运行专员 webhook 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('查看投递日志', async () => {
     const ep = await svc.controller.create({ url: 'https://ops.example.com', secret: 's', events: ['order.created'] })
@@ -110,7 +110,7 @@ describe('🎯运行专员 webhook 扩展测试', () => {
 
 describe('📢营销 webhook 扩展测试', () => {
   let svc: ReturnType<typeof setup>
-  beforeEach(() => { svc = setup() })
+  beforeEach(async () => { svc = setup() })
 
   it('获取支持的事件类型列表', async () => {
     const events = await svc.controller.getEvents()

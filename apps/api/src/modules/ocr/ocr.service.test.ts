@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { OcrService } from './ocr.service'
+import { runWithTenant } from '../../common/context/tenant-context'
 const TENANT_ID = 'test-tenant-001'
 
 // Import tenant context helper
-const { runWithTenant } = require('../../common/context/tenant-context')
 
 describe('OcrService', () => {
-  const { OcrService } = require('./ocr.service')
   let service: InstanceType<typeof OcrService>
 
   function withTenant<T>(fn: () => T): Promise<T> {
@@ -303,26 +303,26 @@ describe('OcrService', () => {
   })
 
   describe('entity utility functions', () => {
-    it('generateOcrTaskId should produce unique ids', () => {
-      const { generateOcrTaskId } = require('./ocr.entity')
+    it('generateOcrTaskId should produce unique ids', async () => {
+      const { generateOcrTaskId } = await import('./ocr.entity')
       const id1 = generateOcrTaskId()
       const id2 = generateOcrTaskId()
       assert.ok(id1.startsWith('ocr-'))
       assert.notEqual(id1, id2)
     })
 
-    it('parseBbox should parse valid string', () => {
-      const { parseBbox } = require('./ocr.entity')
+    it('parseBbox should parse valid string', async () => {
+      const { parseBbox } = await import('./ocr.entity')
       assert.deepEqual(parseBbox('100,200,400,30'), { x: 100, y: 200, width: 400, height: 30 })
     })
 
-    it('parseBbox should return zeros for invalid input', () => {
-      const { parseBbox } = require('./ocr.entity')
+    it('parseBbox should return zeros for invalid input', async () => {
+      const { parseBbox } = await import('./ocr.entity')
       assert.deepEqual(parseBbox('invalid'), { x: 0, y: 0, width: 0, height: 0 })
     })
 
-    it('averageConfidence should calculate correctly', () => {
-      const { averageConfidence } = require('./ocr.entity')
+    it('averageConfidence should calculate correctly', async () => {
+      const { averageConfidence } = await import('./ocr.entity')
       const blocks = [
         { id: '1', confidence: 0.9 },
         { id: '2', confidence: 0.7 },
@@ -331,26 +331,26 @@ describe('OcrService', () => {
       assert.equal(averageConfidence(blocks).toFixed(1), '0.8')
     })
 
-    it('averageConfidence should return 0 for empty array', () => {
-      const { averageConfidence } = require('./ocr.entity')
+    it('averageConfidence should return 0 for empty array', async () => {
+      const { averageConfidence } = await import('./ocr.entity')
       assert.equal(averageConfidence([]), 0)
     })
 
-    it('cleanText should trim and deduplicate whitespace', () => {
-      const { cleanText } = require('./ocr.entity')
+    it('cleanText should trim and deduplicate whitespace', async () => {
+      const { cleanText } = await import('./ocr.entity')
       assert.equal(cleanText('  hello   world  '), 'hello world')
     })
 
-    it('extractKeywords should return top frequent words', () => {
-      const { extractKeywords } = require('./ocr.entity')
+    it('extractKeywords should return top frequent words', async () => {
+      const { extractKeywords } = await import('./ocr.entity')
       const text = 'apple banana apple cherry apple banana date'
       const keywords = extractKeywords(text, 2)
       assert.equal(keywords.length, 2)
       assert.equal(keywords[0], 'apple')
     })
 
-    it('isStructuredFormat should return true for table-capable formats', () => {
-      const { isStructuredFormat } = require('./ocr.entity')
+    it('isStructuredFormat should return true for table-capable formats', async () => {
+      const { isStructuredFormat } = await import('./ocr.entity')
       assert.equal(isStructuredFormat('pdf'), true)
       assert.equal(isStructuredFormat('xlsx'), true)
       assert.equal(isStructuredFormat('docx'), true)

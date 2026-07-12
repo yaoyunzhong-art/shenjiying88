@@ -78,7 +78,7 @@ describe('👔 店长｜storeManager - 门店运营权限', () => {
   let ctrl: PermissionController
   const token = bearer('storeManager')
 
-  beforeEach(() => { ctrl = createController() })
+  beforeEach(async () => { ctrl = createController() })
 
   it('STORE-MGR-1 店长应能读取门店信息（store:read）', async () => {
     await assertAllowed(ctrl, 'store', 'read', token)
@@ -140,7 +140,7 @@ describe('🛒 前台｜cashier - 收银权限', () => {
   let ctrl: PermissionController
   const token = bearer('cashier')
 
-  beforeEach(() => { ctrl = createController() })
+  beforeEach(async () => { ctrl = createController() })
 
   it('CASHIER-1 前台应能创建订单（order:create）', async () => {
     await assertAllowed(ctrl, 'order', 'create', token)
@@ -187,7 +187,7 @@ describe('👥 HR｜hr - 人事权限', () => {
   let ctrl: PermissionController
   const token = bearer('hr')
 
-  beforeEach(() => { ctrl = createController() })
+  beforeEach(async () => { ctrl = createController() })
 
   it('HR-1 HR 应能创建用户（user:create）', async () => {
     await assertAllowed(ctrl, 'user', 'create', token)
@@ -230,7 +230,7 @@ describe('🔧 安监｜security - 安全审计权限', () => {
   let ctrl: PermissionController
   const token = bearer('security')
 
-  beforeEach(() => { ctrl = createController() })
+  beforeEach(async () => { ctrl = createController() })
 
   it('SEC-1 安监应能读取审计日志（audit:read）', async () => {
     await assertAllowed(ctrl, 'audit', 'read', token)
@@ -291,7 +291,7 @@ describe('🎮 导玩员｜salesGuide - 会员权限', () => {
   let ctrl: PermissionController
   const token = bearer('salesGuide')
 
-  beforeEach(() => { ctrl = createController() })
+  beforeEach(async () => { ctrl = createController() })
 
   it('GUIDE-1 导玩员应能读取会员信息（member:read）', async () => {
     await assertAllowed(ctrl, 'member', 'read', token)
@@ -330,7 +330,7 @@ describe('🎯 运行专员｜ops - 运维权限', () => {
   let ctrl: PermissionController
   const token = bearer('ops')
 
-  beforeEach(() => { ctrl = createController() })
+  beforeEach(async () => { ctrl = createController() })
 
   it('OPS-1 运行专员应能操作租户配置（tenant:*）', async () => {
     await assertAllowed(ctrl, 'tenant', 'read', token)
@@ -385,7 +385,7 @@ describe('🤝 团建｜teamBuilder - 团建活动权限', () => {
   let ctrl: PermissionController
   const token = bearer('teamBuilder')
 
-  beforeEach(() => { ctrl = createController() })
+  beforeEach(async () => { ctrl = createController() })
 
   it('TEAM-1 团建专员应能管理会员（member:*）', async () => {
     await assertAllowed(ctrl, 'member', 'read', token)
@@ -427,7 +427,7 @@ describe('📢 营销｜marketing - 营销权限', () => {
   let ctrl: PermissionController
   const token = bearer('marketing')
 
-  beforeEach(() => { ctrl = createController() })
+  beforeEach(async () => { ctrl = createController() })
 
   it('MKT-1 营销专员应能管理营销活动（campaign:*）', async () => {
     await assertAllowed(ctrl, 'campaign', 'read', token)
@@ -485,7 +485,7 @@ describe('📢 营销｜marketing - 营销权限', () => {
 describe('🔐 匿名用户 - 无权限边界', () => {
   let ctrl: PermissionController
 
-  beforeEach(() => { ctrl = createController() })
+  beforeEach(async () => { ctrl = createController() })
 
   it('ANON-1 匿名用户任何敏感操作应被拒绝', async () => {
     await assertForbidden(ctrl, 'store', 'read', '')
@@ -515,7 +515,7 @@ describe('🔐 匿名用户 - 无权限边界', () => {
 describe('🏪 公开 API - 角色与权限列表', () => {
   let ctrl: PermissionController
 
-  beforeEach(() => { ctrl = createController() })
+  beforeEach(async () => { ctrl = createController() })
 
   it('PUB-1 任何用户可获取所有角色列表（无需认证）', async () => {
     const res = await ctrl.getAllRoles()
