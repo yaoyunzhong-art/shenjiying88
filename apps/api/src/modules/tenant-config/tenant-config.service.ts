@@ -631,18 +631,17 @@ export class TenantConfigService implements OnModuleInit {
     return value
   }
 
-  private ownerIdFor(ctx: TenantContext, level: ConfigLevel): string | null {
+  private ownerIdFor(ctx: TenantContext, level: ConfigLevel): string {
     if (level === 'store') return ctx.storeId ?? 'store-default'
     if (level === 'tenant') return ctx.tenantId
     // brand 级别 (Phase-FP P0-C7 修复):
     // 优先 ctx.brandId 显式字段, 不再从 tenantId.split('-')[0] 推导 (跨租户 brand 串扰)
     if (ctx.brandId) return ctx.brandId
-    // 兼容旧 ctx (无 brandId): 仅对 super_admin/brand_admin 允许使用 tenantId 作 fallback
-    if (ctx.role === 'super_admin' || ctx.role === 'brand_admin' || ctx.role === 'auditor') {
-      return ctx.tenantId.startsWith('brand-') ? ctx.tenantId : `brand-${ctx.tenantId.split('-')[0]}`
-    }
-    // 业务租户无 brandId 时, 软返回 null, 上层应跳过 brand-level 解析
-    return null
+    // 兼容品牌租户命名约定: ctx.tenantId 以 'brand-' 开头时直接复用 (单租户品牌场景)
+    if (ctx.tenantId.startsWith('brand-')) return ctx.tenantId
+    // 业务租户 (无 brandId, 非品牌命名): 用 tenantId 隔离命名空间
+    // 防 P0-C7 多租户撞名: tenant-A1 / tenant-A2 各自独立 brand namespace, 互不干扰
+    return `${ctx.tenantId}::brand-fallback`
   }
 
   /** Phase-FP P0 修复: 改 public 让 controller 可以读取 */

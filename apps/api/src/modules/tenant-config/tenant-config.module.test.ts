@@ -35,7 +35,7 @@ it('TenantConfigModule has exactly 1 controller and 2 providers (P0-A1 added rep
   assert.equal(providers.length, 2, `Expected 2 providers (Service + Repository), got ${providers.length}`)
 })
 
-it('TenantConfigModule is Global (can be used anywhere)', () => {
+it('TenantConfigModule is NOT @Global (P0-A4: 业务模块不应全局共享)', () => {
   const isGlobal = Reflect.getMetadata('__module:global__', TenantConfigModule)
-  assert.equal(isGlobal, true, 'TenantConfigModule should be decorated with @Global()')
+  assert.notEqual(isGlobal, true, 'TenantConfigModule should NOT be decorated with @Global() (P0-A4 fix)')
 })
