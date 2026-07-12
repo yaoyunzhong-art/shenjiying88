@@ -13,6 +13,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import type { Repository, DataSource } from 'typeorm'
 import { CouponService } from './coupon.service'
 import type { CouponV2 } from './coupon.entity'
+import { runWithTenant } from '../../common/context/tenant-context'
+
+// ─── Tenant context helper (P0-C2 守卫兼容) ────────────────────────────
+const TENANT_CTX = { tenantId: 'stress-tenant', userId: 'stress-runner' }
+function withTenantCtx<T>(fn: () => T | Promise<T>): Promise<T> {
+  return runWithTenant(TENANT_CTX, fn)
+}
 
 // ─── Mock helpers ────────────────────────────────────────────────────────
 
@@ -97,7 +104,7 @@ describe('Coupon - Stress & Resilience', () => {
         tenantId: 'tenant-stress',
       }))
 
-      const results = await service.batchRedeem(reqs)
+      const results = await withTenantCtx(() => service.batchRedeem(reqs))
 
       expect(results).toHaveLength(100)
       const succeeded = results.filter((r) => r.success).length
@@ -128,7 +135,7 @@ describe('Coupon - Stress & Resilience', () => {
         idempotencyKey: `key-${i}`,
       }))
 
-      const results = await service.batchRedeem(reqs)
+      const results = await withTenantCtx(() => service.batchRedeem(reqs))
 
       expect(results).toHaveLength(100)
       const succeeded = results.filter((r) => r.success).length
@@ -157,7 +164,7 @@ describe('Coupon - Stress & Resilience', () => {
         idempotencyKey: 'same-key-for-all',
       }))
 
-      const results = await service.batchRedeem(reqs)
+      const results = await withTenantCtx(() => service.batchRedeem(reqs))
       expect(results).toHaveLength(200)
       // 只有第一次真正查询了 coupon（幂等跳过），事务只开一次
       expect(dataSource.transaction).toHaveBeenCalledTimes(1)
@@ -173,14 +180,15 @@ describe('Coupon - Stress & Resilience', () => {
         createMockCoupon({ redemptionRules: { minAmount: undefined } }),
       )
 
-      const result = await service.redeemCrossStore({
+      const result = await withTenantCtx(() => service.redeemCrossStore({
         userId: 'u1',
         couponCode: 'C1',
         storeId: 'store-1',
         orderAmount: -1,
         orderId: 'o1',
         idempotencyKey: 'o1:neg',
-      })
+      }))
+
 
       // DTO 层面应拦截负数(Min(0))，但 service 宽松允许
       expect(result.success).toBe(true)
@@ -196,14 +204,15 @@ describe('Coupon - Stress & Resilience', () => {
         }),
       )
 
-      const result = await service.redeemCrossStore({
+      const result = await withTenantCtx(() => service.redeemCrossStore({
         userId: 'u1',
         couponCode: 'C1',
         storeId: 'store-1',
         orderAmount: Number.MAX_SAFE_INTEGER,
         orderId: 'o1',
         idempotencyKey: 'o1:max',
-      })
+      }))
+
 
       expect(result.success).toBe(true)
       expect(result.amount).toBe(Number.MAX_SAFE_INTEGER)
@@ -214,14 +223,15 @@ describe('Coupon - Stress & Resilience', () => {
       vi.mocked(redemptionRepo.findOne).mockResolvedValue(null)
       vi.mocked(couponRepo.findOne).mockResolvedValue(null) // 找不到，返回 COUPON_NOT_FOUND
 
-      const result = await service.redeemCrossStore({
+      const result = await withTenantCtx(() => service.redeemCrossStore({
         userId: longStr,
         couponCode: longStr,
         storeId: longStr,
         orderAmount: 100,
         orderId: longStr,
         idempotencyKey: longStr,
-      })
+      }))
+
 
       expect(result.success).toBe(false)
       expect(result.error?.code).toBe('COUPON_NOT_FOUND')
@@ -233,14 +243,15 @@ describe('Coupon - Stress & Resilience', () => {
         createMockCoupon({ expiresAt: new Date('1969-01-01T00:00:00Z') }),
       )
 
-      const result = await service.redeemCrossStore({
+      const result = await withTenantCtx(() => service.redeemCrossStore({
         userId: 'u1',
         couponCode: 'C1',
         storeId: 'store-1',
         orderAmount: 100,
         orderId: 'o1',
         idempotencyKey: 'o1:past',
-      })
+      }))
+
 
       expect(result.success).toBe(false)
       expect(result.error?.code).toBe('COUPON_EXPIRED')
@@ -255,14 +266,15 @@ describe('Coupon - Stress & Resilience', () => {
         }),
       )
 
-      const result = await service.redeemCrossStore({
+      const result = await withTenantCtx(() => service.redeemCrossStore({
         userId: 'u1',
         couponCode: 'C1',
         storeId: '',
         orderAmount: 200,
         orderId: 'o1',
         idempotencyKey: 'o1:empty',
-      })
+      }))
+
 
       // storeId '' 在 scope.storeIds [''] 中, 所以应该成功
       expect(result.success).toBe(true)
@@ -295,14 +307,14 @@ describe('Coupon - Stress & Resilience', () => {
         undefined,
       )
 
-      const result = await conflictingService.redeemCrossStore({
+      const result = await withTenantCtx(() => conflictingService.redeemCrossStore({
         userId: 'u1',
         couponCode: 'C1',
         storeId: 'store-1',
         orderAmount: 200,
         orderId: 'o1',
         idempotencyKey: 'o1:concurrent',
-      })
+      }))
 
       expect(result.success).toBe(false)
       expect(result.error?.code).toBe('COUPON_NOT_FOUND')
@@ -358,7 +370,7 @@ describe('Coupon - Stress & Resilience', () => {
         idempotencyKey: `concurrent-${i}`,
       }))
 
-      const results = await limitedService.batchRedeem(reqs)
+      const results = await withTenantCtx(() => limitedService.batchRedeem(reqs))
       const succeeded = results.filter((r) => r.success).length
       const failed = results.filter((r) => !r.success).length
 
@@ -437,7 +449,7 @@ describe('Coupon - Stress & Resilience', () => {
         }
       })
 
-      const results = await service.batchRedeem(reqs)
+      const results = await withTenantCtx(() => service.batchRedeem(reqs))
       expect(results.filter((r) => r.success).length).toBe(100)
     })
 
@@ -461,14 +473,14 @@ describe('Coupon - Stress & Resilience', () => {
       const startTime = performance.now()
       // 模拟前台快速收银 5 次 (每次不同优惠券, 避免 maxRedemptions 耗尽)
       for (let i = 0; i < 5; i++) {
-        const r = await cashierService.redeemCrossStore({
+        const r = await withTenantCtx(() => cashierService.redeemCrossStore({
           userId: `cashier-u-${i}`,
           couponCode: `FRONT-DESK-${i}`,
           storeId: 'store-1',
           orderAmount: 88,
           orderId: `cashier-order-${i}`,
           idempotencyKey: `cashier-${i}`,
-        })
+        }))
         expect(r.success).toBe(true)
       }
       const elapsed = performance.now() - startTime
@@ -485,7 +497,7 @@ describe('Coupon - Stress & Resilience', () => {
       vi.mocked(couponRepo.findOne).mockResolvedValue(svipCoupon)
 
       // SVIP 可以，REGULAR 不可以
-      const svipResult = await service.redeemCrossStore({
+      const svipResult = await withTenantCtx(() => service.redeemCrossStore({
         userId: 'svip-1',
         couponCode: 'SVIP-ONLY',
         storeId: 'store-1',
@@ -493,10 +505,11 @@ describe('Coupon - Stress & Resilience', () => {
         orderId: 'hr-o1',
         idempotencyKey: 'hr-svip-1',
         userSegment: 'svip',
-      })
+      }))
+
       expect(svipResult.success).toBe(true)
 
-      const regularResult = await service.redeemCrossStore({
+      const regularResult = await withTenantCtx(() => service.redeemCrossStore({
         userId: 'regular-1',
         couponCode: 'SVIP-ONLY',
         storeId: 'store-1',
@@ -504,7 +517,8 @@ describe('Coupon - Stress & Resilience', () => {
         orderId: 'hr-o2',
         idempotencyKey: 'hr-regular-1',
         userSegment: 'regular',
-      })
+      }))
+
       expect(regularResult.success).toBe(false)
       expect(regularResult.error?.code).toBe('USER_SEGMENT_NOT_MATCH')
     })
@@ -519,14 +533,15 @@ describe('Coupon - Stress & Resilience', () => {
 
       for (let i = 0; i < evilOrderAmounts.length; i++) {
         const amount = evilOrderAmounts[i]
-        const result = await service.redeemCrossStore({
+        const result = await withTenantCtx(() => service.redeemCrossStore({
           userId: 'u1',
           couponCode: 'C1',
           storeId: 'store-1',
           orderAmount: amount as any,
           orderId: `o1-${i}`,
           idempotencyKey: `evil-${i}`,
-        })
+      }))
+
         // 异常数值不应导致崩溃
         expect(typeof result.success).toBe('boolean')
         // error 可能是 undefined（成功）或包含合法错误信息
@@ -557,7 +572,7 @@ describe('Coupon - Stress & Resilience', () => {
         idempotencyKey: `game-${i}`,
       }))
 
-      const results = await service.batchRedeem(reqs)
+      const results = await withTenantCtx(() => service.batchRedeem(reqs))
       expect(results.filter((r) => r.success).length).toBe(50)
     })
 
@@ -579,7 +594,7 @@ describe('Coupon - Stress & Resilience', () => {
         idempotencyKey: `team-${i}`,
       }))
 
-      const results = await service.batchRedeem(reqs)
+      const results = await withTenantCtx(() => service.batchRedeem(reqs))
       const succeeded = results.filter((r) => r.success).length
       expect(succeeded).toBe(100)
       // 确认 100 人全成功
@@ -630,7 +645,7 @@ describe('Coupon - Stress & Resilience', () => {
         idempotencyKey: `campaign-${i}`,
       }))
 
-      const results = await marketingService.batchRedeem(reqs)
+      const results = await withTenantCtx(() => marketingService.batchRedeem(reqs))
       const succeeded = results.filter((r) => r.success).length
       const failed = results.filter((r) => !r.success).length
 
@@ -657,14 +672,15 @@ describe('Coupon - Stress & Resilience', () => {
 
       const startTime = performance.now()
       for (let i = 0; i < iterations; i++) {
-        const r = await service.redeemCrossStore({
+        const r = await withTenantCtx(() => service.redeemCrossStore({
           userId: `mem-u-${i}`,
           couponCode: 'MEM-STRESS',
           storeId: stores[i % 3],
           orderAmount: 200,
           orderId: `mem-o-${i}`,
           idempotencyKey: `mem-${i}`,
-        })
+      }))
+
         results.push(r.success)
       }
       const elapsed = performance.now() - startTime

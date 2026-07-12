@@ -8,6 +8,13 @@ import { CouponV2 } from './coupon.entity';
 import { CouponRedemptionLog } from './coupon-redemption-log.entity';
 import { TenantTier } from '../tenant/tenant-quota.entity';
 import { TenantQuotaService } from '../tenant/tenant-quota.service';
+import { runWithTenant } from '../../common/context/tenant-context';
+
+// ─── Tenant context helper (P0-C2 守卫兼容) ────────────────────────────
+const TENANT_CTX = { tenantId: 'test-tenant', userId: 'test-user' };
+function withTenantCtx<T>(fn: () => T | Promise<T>): Promise<T> {
+  return runWithTenant(TENANT_CTX, fn);
+}
 
 /**
  * 5 个 e2e 场景 (E40 P0 验收):
@@ -129,11 +136,11 @@ describe('CouponService e2e · Phase-17 跨门店核销', () => {
         scope: { type: 'single-store', storeIds: ['store-1'], includeSubordinates: false },
       });
       let { service } = createServiceWithMocks({ quota, coupons: [singleCoupon] });
-      const r1 = await service.redeemCrossStore({
+      const r1 = await withTenantCtx(() => service.redeemCrossStore({
         tenantId: 'tenant-A', userId: 'user-A', couponCode: 'CROSS-2026-50',
         storeId: 'store-1', orderAmount: 200, orderId: 'order-001',
         idempotencyKey: 'order-001:coupon-single',
-      });
+      }));
       expect(r1.success).toBe(true);
 
       const multiCoupon = buildCoupon({
@@ -141,11 +148,11 @@ describe('CouponService e2e · Phase-17 跨门店核销', () => {
         scope: { type: 'multi-store', storeIds: ['store-1', 'store-2', 'store-3'], includeSubordinates: false },
       });
       ({ service } = createServiceWithMocks({ quota, coupons: [multiCoupon] }));
-      const r2 = await service.redeemCrossStore({
+      const r2 = await withTenantCtx(() => service.redeemCrossStore({
         tenantId: 'tenant-A', userId: 'user-A', couponCode: 'MULTI-2026-50',
         storeId: 'store-2', orderAmount: 200, orderId: 'order-002',
         idempotencyKey: 'order-002:coupon-multi',
-      });
+      }));
       expect(r2.success).toBe(true);
       expect(r2.couponId).toBe('coupon-multi');
     });
@@ -160,11 +167,11 @@ describe('CouponService e2e · Phase-17 跨门店核销', () => {
       const { service } = createServiceWithMocks({ quota, coupons: [coupon] });
       const results = [];
       for (let i = 1; i <= 3; i++) {
-        results.push(await service.redeemCrossStore({
+        results.push(await withTenantCtx(() => service.redeemCrossStore({
           tenantId: 'tenant-A', userId: `user-${i}`, couponCode: 'CROSS-2026-50',
           storeId: `store-${i}`, orderAmount: 200, orderId: `order-${i}`,
           idempotencyKey: `order-${i}:coupon-multi-3`,
-        }));
+        })));
       }
       expect(results.every(r => r.success)).toBe(true);
       expect(results.map(r => r.couponId)).toEqual(['coupon-multi-3', 'coupon-multi-3', 'coupon-multi-3']);
@@ -178,22 +185,22 @@ describe('CouponService e2e · Phase-17 跨门店核销', () => {
         scope: { type: 'single-store', storeIds: ['store-1'], includeSubordinates: false },
       });
       const { service } = createServiceWithMocks({ quota, coupons: [couponA] });
-      const r = await service.redeemCrossStore({
+      const r = await withTenantCtx(() => service.redeemCrossStore({
         tenantId: 'tenant-B', userId: 'user-B', couponCode: 'CROSS-2026-50',
         storeId: 'store-1', orderAmount: 200, orderId: 'order-cross',
         idempotencyKey: 'order-cross:coupon-tenantA',
-      });
+      }));
       expect(r.success).toBe(false);
       expect(r.error?.code).toBe('COUPON_NOT_FOUND');
     });
 
     it('E2E-3b: couponCode 不存在直接返回 COUPON_NOT_FOUND', async () => {
       const { service } = createServiceWithMocks({ quota });
-      const r = await service.redeemCrossStore({
+      const r = await withTenantCtx(() => service.redeemCrossStore({
         tenantId: 'tenant-A', userId: 'user-A', couponCode: 'NON-EXISTENT',
         storeId: 'store-1', orderAmount: 200, orderId: 'order-x',
         idempotencyKey: 'order-x:non-existent',
-      });
+      }));
       expect(r.success).toBe(false);
       expect(r.error?.code).toBe('COUPON_NOT_FOUND');
     });
@@ -204,11 +211,11 @@ describe('CouponService e2e · Phase-17 跨门店核销', () => {
       quota.initialize('tenant-A', TenantTier.Pro);
       const before = quota.getUsage('tenant-A').couponRedemptionsThisMonth;
       const { service } = createServiceWithMocks({ quota });
-      const r = await service.redeemCrossStore({
+      const r = await withTenantCtx(() => service.redeemCrossStore({
         tenantId: 'tenant-A', userId: 'user-A', couponCode: 'GHOST-COUPON',
         storeId: 'store-1', orderAmount: 200, orderId: 'order-rollback',
         idempotencyKey: 'order-rollback:ghost',
-      });
+      }));
       expect(r.success).toBe(false);
       const after = quota.getUsage('tenant-A').couponRedemptionsThisMonth;
       expect(after).toBe(before);
@@ -219,11 +226,11 @@ describe('CouponService e2e · Phase-17 跨门店核销', () => {
       const before = quota.getUsage('tenant-A').couponRedemptionsThisMonth;
       const coupon = buildCoupon({ id: 'coupon-success' });
       const { service } = createServiceWithMocks({ quota, coupons: [coupon] });
-      const r = await service.redeemCrossStore({
+      const r = await withTenantCtx(() => service.redeemCrossStore({
         tenantId: 'tenant-A', userId: 'user-A', couponCode: 'CROSS-2026-50',
         storeId: 'store-1', orderAmount: 200, orderId: 'order-success',
         idempotencyKey: 'order-success:coupon-success',
-      });
+      }));
       expect(r.success).toBe(true);
       const after = quota.getUsage('tenant-A').couponRedemptionsThisMonth;
       expect(after).toBe(before + 1);
@@ -240,11 +247,11 @@ describe('CouponService e2e · Phase-17 跨门店核销', () => {
         storeId: 'store-1', orderAmount: 200, orderId: 'order-idem',
         idempotencyKey: 'order-idem:coupon-idem',
       };
-      const r1 = await service.redeemCrossStore(req);
+      const r1 = await withTenantCtx(() => service.redeemCrossStore(req));
       expect(r1.success).toBe(true);
       expect(redemptionRepo._count()).toBe(1);
 
-      const r2 = await service.redeemCrossStore(req);
+      const r2 = await withTenantCtx(() => service.redeemCrossStore(req));
       expect(r2.success).toBe(true);
       expect(r2.redemptionId).toBe(r1.redemptionId);
       expect(redemptionRepo._count()).toBe(1);

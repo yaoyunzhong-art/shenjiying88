@@ -19,7 +19,8 @@ import type { Repository, DataSource } from 'typeorm'
 import { runWithTenant } from '../../common/context/tenant-context'
 
 // ─── Tenant context helper (P0-C2 守卫兼容) ────────────────────────────
-const TENANT_CTX = { tenantId: 'test-tenant', storeId: 'store-1', userId: 'test-user' }
+// storeId 不在默认 ctx 中 — 各测试自行传入 storeId 到请求参数
+const TENANT_CTX = { tenantId: 'test-tenant', userId: 'test-user' }
 function withTenantCtx<T>(fn: () => T | Promise<T>): Promise<T> {
   return runWithTenant(TENANT_CTX, fn)
 }
