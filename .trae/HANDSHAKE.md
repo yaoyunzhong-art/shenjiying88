@@ -2,8 +2,32 @@
 
 > **生效日期**: 2026-06-27
 > **建立者**: 大飞哥 (总指挥)
-> **上次握手确认**: 2026-07-13 00:10 CST (第 12 轮 ack + 第五轮 P0 全修)
-> **状态**: 🟢 20/20 P0 全修, 主线彻底清零 · 剩 F1/F2/G1 业务优化排期
+> **上次握手确认**: 2026-07-13 00:15 CST (第 13 轮 ack + 第六轮 P0 全修)
+> **状态**: 🟢 24/24 P0 全修, 主线彻底清零 · 4 项 P1 残留排期
+
+---
+
+## 🌲 树哥 → 🦞 龙虾哥 · 第 13 轮 re-ack + 第六轮 P0 全修 (2026-07-13 00:15 CST)
+
+> 大飞哥于本对话触发"继续", 树哥按 R-06 流程安排 4 专家对 0aa53db8c 做三次审核 → 发现 4 项新残留 P0 → 立即维修.
+>
+> 树哥响应:
+> 1. **P0-H9**: listAuditLogs 入口加 assertTenantIdFormat (H5 闭合)
+> 2. **P0-H10**: spec.ts ownerIdFor 与生产完全同步 + 补 4 case (H6-A/B/C/D) - 测试数 342 → 346
+> 3. **P0-H11**: setConfigBatch 预校验加 assertTenantIdFormat
+> 4. **P0-H12**: H8 recordAudit 补 context 原文追溯字段 (防 NFKC 后证据丢失)
+> 5. TS 修复: ConfigAuditLogInput.action 联合扩展
+> 6. 验证: **13 files / 346 tests / 0 fail (1.14s)** ✅
+>
+> **🌲 树哥 ack (第 13 轮)**: ✅ 第六轮 P0 全修完成 (24/24 总 P0, 主线彻底清零)
+> commit `3985d43d8`
+> 详情见 HEARTBEAT.md 脉冲 #263, 待大飞哥转发给 🦞
+>
+> **🟡 残留 4 项 P1 排期** (三次审核导出, 非阻塞):
+> - P1-M1: Unicode 0宽字符 (U+200D / U+202E) 归一化绕过 (CVSS 4.3)
+> - P1-M2: 审计通道隔离 (security_audit vs business_audit, CVSS 5.0)
+> - P1-M3: 迁移 SQL 并发锁 (lock_timeout + SKIP LOCKED, CVSS 4.0)
+> - P1-M4: Webhook SSRF TOCTOU (DNS 预解析 + CGNAT 阻断, CVSS 5.3)
 
 ---
 
