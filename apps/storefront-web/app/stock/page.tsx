@@ -1,7 +1,7 @@
 /**
  * 库存管理列表页 — Stock Inventory Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 🛒前台 / 💳采购
- * 功能: 搜索、分类筛选、状态筛选、分页
+ * 功能: 搜索、分类筛选、状态筛选、分页、库存预警、数据总览、位置管理
  */
 import React from 'react';
 import { StockPage } from './components/StockPage';
@@ -31,6 +31,12 @@ const MOCK_STOCK_ITEMS = [
   { id: '18', sku: 'SKU-4002', name: '滋养护发素 500ml', category: '头发护理', quantity: 35, minThreshold: 20, maxThreshold: 120, unit: '瓶', price: 108, updatedAt: '2026-06-24 13:00', status: 'sufficient' as const },
   { id: '19', sku: 'SKU-5002', name: '身体乳·燕麦味 300ml', category: '身体护理', quantity: 95, minThreshold: 20, maxThreshold: 200, unit: '瓶', price: 78, updatedAt: '2026-06-23 14:20', status: 'sufficient' as const },
   { id: '20', sku: 'SKU-6002', name: '美妆蛋清洁液 200ml', category: '工具配件', quantity: 12, minThreshold: 15, maxThreshold: 100, unit: '瓶', price: 29, updatedAt: '2026-06-22 10:15', status: 'low' as const },
+  /* 第3批 — 仓库位置 & 批次扩展 */
+  { id: '21', sku: 'SKU-1006', name: '烟酰胺控油面膜', category: '护肤品', quantity: 420, minThreshold: 50, maxThreshold: 500, unit: '盒', price: 88, updatedAt: '2026-06-25 13:00', status: 'sufficient' as const },
+  { id: '22', sku: 'SKU-2007', name: '极细眼线笔·黑色', category: '彩妆', quantity: 0, minThreshold: 25, maxThreshold: 200, unit: '支', price: 49, updatedAt: '2026-06-24 17:30', status: 'out_of_stock' as const },
+  { id: '23', sku: 'SKU-4003', name: '免洗干发喷雾', category: '头发护理', quantity: 150, minThreshold: 20, maxThreshold: 200, unit: '瓶', price: 68, updatedAt: '2026-06-25 09:45', status: 'sufficient' as const },
+  { id: '24', sku: 'SKU-5003', name: '护手霜套装 3支装', category: '身体护理', quantity: 7, minThreshold: 15, maxThreshold: 100, unit: '套', price: 58, updatedAt: '2026-06-23 10:00', status: 'critical' as const },
+  { id: '25', sku: 'SKU-6003', name: '美妆蛋·三角形', category: '工具配件', quantity: 88, minThreshold: 20, maxThreshold: 150, unit: '个', price: 19, updatedAt: '2026-06-25 08:30', status: 'sufficient' as const },
 ];
 
 /** 按类别生成的摘要统计 */
@@ -44,7 +50,8 @@ function generateSummary() {
   const outOfStock = MOCK_STOCK_ITEMS.filter(i => i.status === 'out_of_stock').length;
   const overstocked = MOCK_STOCK_ITEMS.filter(i => i.status === 'overstocked').length;
   const totalValue = MOCK_STOCK_ITEMS.reduce((s, i) => s + i.quantity * i.price, 0);
-  return { stats, totalItems, lowStock, outOfStock, overstocked, totalValue };
+  const totalQty = MOCK_STOCK_ITEMS.reduce((s, i) => s + i.quantity, 0);
+  return { stats, totalItems, lowStock, outOfStock, overstocked, totalValue, totalQty, categories: MOCK_CATEGORIES };
 }
 
 /* ── API 模拟 ── */
@@ -60,13 +67,76 @@ async function fetchMockStockData(page: number, pageSize: number, search?: strin
 }
 
 export default async function StockListPage() {
-  const defaultData = await fetchMockStockData(1, 20);
+  const defaultData = await fetchMockStockData(1, 25);
+  const summary = generateSummary();
+
   return (
-    <StockPage
-      items={defaultData.items}
-      total={defaultData.total}
-      page={1}
-      pageSize={20}
-    />
+    <>
+      {/* 内联库存总览看板 */}
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '20px 24px 0' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20, color: '#111827' }}>
+          📦 库存管理
+        </h1>
+        {/* 6格核心指标 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+          gap: 14,
+          marginBottom: 20,
+        }}>
+          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #eff6ff, #dbeafe)', border: '1px solid #bfdbfe' }}>
+            <div style={{ fontSize: 13, color: '#1e40af', marginBottom: 4 }}>库存总件数</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#1e3a8a' }}>{summary.totalQty.toLocaleString()}</div>
+          </div>
+          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '1px solid #bbf7d0' }}>
+            <div style={{ fontSize: 13, color: '#166534', marginBottom: 4 }}>库存总值</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#14532d' }}>¥{(summary.totalValue).toLocaleString()}</div>
+          </div>
+          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #fef2f2, #fee2e2)', border: '1px solid #fecaca' }}>
+            <div style={{ fontSize: 13, color: '#991b1b', marginBottom: 4 }}>⚠️ 告急/缺货</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#7f1d1d' }}>{summary.lowStock + summary.outOfStock}</div>
+            <div style={{ fontSize: 11, color: '#ef444480', marginTop: 2 }}>缺货 {summary.outOfStock} / 告急 {summary.lowStock}</div>
+          </div>
+          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', border: '1px solid #ddd6fe' }}>
+            <div style={{ fontSize: 13, color: '#5b21b6', marginBottom: 4 }}>库存积压</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#4c1d95' }}>{summary.overstocked}</div>
+          </div>
+          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #fefce8, #fef9c3)', border: '1px solid #fde68a' }}>
+            <div style={{ fontSize: 13, color: '#854d0e', marginBottom: 4 }}>商品种类</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#713f12' }}>{summary.totalItems} 种</div>
+            <div style={{ fontSize: 11, color: '#a1620780', marginTop: 2 }}>{summary.categories.length} 个分类</div>
+          </div>
+          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #fdf2f8, #fce7f3)', border: '1px solid #f9a8d4' }}>
+            <div style={{ fontSize: 13, color: '#9d174d', marginBottom: 4 }}>平均单价</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#831843' }}>
+              ¥{Math.round(summary.totalValue / summary.totalQty).toLocaleString()}
+            </div>
+          </div>
+        </div>
+        {/* 分类库存分布 - 简化柱状图 */}
+        <div style={{ borderRadius: 12, border: '1px solid #e5e7eb', padding: 16, marginBottom: 20, background: '#fff' }}>
+          <h3 style={{ fontSize: 14, color: '#374151', marginBottom: 12 }}>📊 分类库存分布</h3>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 80, padding: '4px 0' }}>
+            {summary.stats.map(s => {
+              const maxQty = Math.max(...summary.stats.map(x => x.totalQty), 1);
+              const h = Math.max((s.totalQty / maxQty) * 60, 6);
+              return (
+                <div key={s.category} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 2 }}>{s.totalQty.toLocaleString()}</div>
+                  <div style={{ width: '75%', background: 'linear-gradient(to top, #3b82f6, #60a5fa)', borderRadius: '4px 4px 0 0', height: h, minHeight: 4, transition: 'height 0.3s' }} />
+                  <div style={{ fontSize: 10, color: '#6b7280', marginTop: 4, whiteSpace: 'nowrap' }}>{s.category}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <StockPage
+        items={defaultData.items}
+        total={defaultData.total}
+        page={1}
+        pageSize={25}
+      />
+    </>
   );
 }

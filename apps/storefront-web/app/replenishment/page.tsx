@@ -1,7 +1,7 @@
 /**
  * 补货管理 — Replenishment (storefront-web)
- * 角色视角: 👔店长 / 💳采购
- * 功能: 补货列表、优先级排序、状态筛选、补货申请、快速下单、空/加载状态
+ * 角色视角: 👔店长 / 🛒前台
+ * 功能: 补货列表、优先级、状态、分类筛选、搜索、快速下单、历史统计
  */
 'use client';
 
@@ -11,245 +11,281 @@ import React, { useState, useMemo } from 'react';
 type ReplenishmentItem = {
   id: string;
   name: string;
+  category: string;
   qty: number;
   unit: string;
-  status: 'pending' | 'ordered' | 'received' | 'cancelled';
-  priority: 'high' | 'medium' | 'low';
-  category: string;
-  currentStock: number;
-  minThreshold: number;
-  suggestedQty: number;
-  requester: string;
-  requestedAt: string;
+  priority: '高' | '中' | '低';
+  status: '待采购' | '已下单' | '配送中' | '已完成' | '已取消';
   supplier: string;
-  expectedArrival?: string;
+  cost: number;
+  createdBy: string;
+  createdAt: string;
+  expectedAt?: string;
+  remark?: string;
 };
 
 /* ── Mock 数据 (20+) ── */
 const ALL_ITEMS: ReplenishmentItem[] = [
-  { id: '1', name: '打印纸', qty: 5, unit: '箱', status: 'pending', priority: 'high', category: '办公耗材', currentStock: 3, minThreshold: 5, suggestedQty: 5, requester: '王小明', requestedAt: '2026-07-12 10:30', supplier: '日用百货批发商城', expectedArrival: '2026-07-15' },
-  { id: '2', name: '饮品-可乐', qty: 20, unit: '箱', status: 'ordered', priority: 'medium', category: '饮品', currentStock: 12, minThreshold: 20, suggestedQty: 20, requester: '李娟', requestedAt: '2026-07-11 14:20', supplier: '饮品速配', expectedArrival: '2026-07-14' },
-  { id: '3', name: '游戏币', qty: 2000, unit: '枚', status: 'ordered', priority: 'medium', category: '游戏耗材', currentStock: 400, minThreshold: 1000, suggestedQty: 2000, requester: '自动检测', requestedAt: '2026-07-10 09:00', supplier: '华强游戏设备有限公司', expectedArrival: '2026-07-13' },
-  { id: '4', name: 'VR手柄', qty: 3, unit: '个', status: 'pending', priority: 'high', category: '设备', currentStock: 2, minThreshold: 4, suggestedQty: 3, requester: '王小明', requestedAt: '2026-07-12 08:15', supplier: '华强游戏设备有限公司' },
-  { id: '5', name: '吸尘器滤袋', qty: 4, unit: '个', status: 'pending', priority: 'high', category: '清洁用品', currentStock: 1, minThreshold: 3, suggestedQty: 4, requester: '自动检测', requestedAt: '2026-07-11 16:00', supplier: '日用百货批发商城' },
-  { id: '6', name: '饮品-橙汁', qty: 10, unit: '箱', status: 'received', priority: 'medium', category: '饮品', currentStock: 12, minThreshold: 15, suggestedQty: 10, requester: '李娟', requestedAt: '2026-07-08 11:30', supplier: '饮品速配', expectedArrival: '2026-07-10' },
-  { id: '7', name: '清洁湿巾', qty: 10, unit: '包', status: 'pending', priority: 'medium', category: '清洁用品', currentStock: 5, minThreshold: 10, suggestedQty: 10, requester: '自动检测', requestedAt: '2026-07-10 14:00', supplier: '日用百货批发商城' },
-  { id: '8', name: '零食-巧克力', qty: 10, unit: '盒', status: 'ordered', priority: 'low', category: '零食', currentStock: 5, minThreshold: 10, suggestedQty: 10, requester: '王小明', requestedAt: '2026-07-09 09:45', supplier: '欢乐谷礼品供应', expectedArrival: '2026-07-13' },
-  { id: '9', name: '礼品-钥匙扣', qty: 20, unit: '个', status: 'pending', priority: 'medium', category: '礼品', currentStock: 2, minThreshold: 10, suggestedQty: 20, requester: '自动检测', requestedAt: '2026-07-09 08:00', supplier: '欢乐谷礼品供应' },
-  { id: '10', name: '一次性纸杯', qty: 500, unit: '只', status: 'received', priority: 'low', category: '办公耗材', currentStock: 200, minThreshold: 100, suggestedQty: 500, requester: '李娟', requestedAt: '2026-07-06 16:30', supplier: '日用百货批发商城', expectedArrival: '2026-07-08' },
-  { id: '11', name: '零食-薯片', qty: 20, unit: '包', status: 'cancelled', priority: 'low', category: '零食', currentStock: 38, minThreshold: 20, suggestedQty: 20, requester: '王小明', requestedAt: '2026-07-05 10:00', supplier: '欢乐谷礼品供应' },
-  { id: '12', name: '饮品-矿泉水', qty: 24, unit: '瓶', status: 'ordered', priority: 'medium', category: '饮品', currentStock: 30, minThreshold: 30, suggestedQty: 24, requester: '自动检测', requestedAt: '2026-07-07 11:20', supplier: '饮品速配', expectedArrival: '2026-07-12' },
-  { id: '13', name: '游戏币盒', qty: 10, unit: '个', status: 'pending', priority: 'low', category: '游戏耗材', currentStock: 12, minThreshold: 5, suggestedQty: 10, requester: '王小明', requestedAt: '2026-07-06 09:30', supplier: '华强游戏设备有限公司' },
-  { id: '14', name: '礼品-玩偶', qty: 15, unit: '个', status: 'ordered', priority: 'medium', category: '礼品', currentStock: 48, minThreshold: 10, suggestedQty: 15, requester: '自动检测', requestedAt: '2026-07-05 14:15', supplier: '欢乐谷礼品供应', expectedArrival: '2026-07-11' },
-  { id: '15', name: '消毒喷雾', qty: 6, unit: '瓶', status: 'received', priority: 'low', category: '清洁用品', currentStock: 8, minThreshold: 5, suggestedQty: 6, requester: '李娟', requestedAt: '2026-07-04 10:00', supplier: '日用百货批发商城', expectedArrival: '2026-07-06' },
+  { id: 'RE-001', name: '奶茶珍珠', category: '食品原料', qty: 5, unit: '袋', priority: '高', status: '待采购', supplier: '亿达食品', cost: 225, createdBy: '李娟', createdAt: '2026-07-13', remark: '已断货' },
+  { id: 'RE-002', name: '冰激凌机原料', category: '食品原料', qty: 4, unit: '桶', priority: '高', status: '待采购', supplier: '亿达食品', cost: 480, createdBy: '张主管', createdAt: '2026-07-13', remark: '预计本周到货' },
+  { id: 'RE-003', name: '彩票打印纸', category: '耗材', qty: 5, unit: '箱', priority: '高', status: '待采购', supplier: '鑫宇耗材', cost: 300, createdBy: '王小明', createdAt: '2026-07-12' },
+  { id: 'RE-004', name: '可口可乐(箱)', category: '饮品', qty: 15, unit: '箱', priority: '中', status: '已下单', supplier: '饮品速配', cost: 720, createdBy: '李娟', createdAt: '2026-07-12', expectedAt: '2026-07-14' },
+  { id: 'RE-005', name: '游戏币', category: '游戏消耗', qty: 3000, unit: '枚', priority: '中', status: '已下单', supplier: '华强游戏设备', cost: 1500, createdBy: '王小明', createdAt: '2026-07-11', expectedAt: '2026-07-15' },
+  { id: 'RE-006', name: '橙汁(箱)', category: '饮品', qty: 10, unit: '箱', priority: '中', status: '配送中', supplier: '饮品速配', cost: 420, createdBy: '李娟', createdAt: '2026-07-11', expectedAt: '2026-07-13', remark: '预计今天到货' },
+  { id: 'RE-007', name: '抹布(包)', category: '清洁用品', qty: 10, unit: '包', priority: '低', status: '待采购', supplier: '康洁清洁', cost: 120, createdBy: '张主管', createdAt: '2026-07-10' },
+  { id: 'RE-008', name: '毛绒公仔-中号', category: '礼品', qty: 30, unit: '个', priority: '中', status: '已下单', supplier: '欢乐谷礼品', cost: 1050, createdBy: '王小明', createdAt: '2026-07-10', expectedAt: '2026-07-16' },
+  { id: 'RE-009', name: '一次性杯盖', category: '耗材', qty: 8, unit: '箱', priority: '低', status: '已完成', supplier: '鑫宇耗材', cost: 160, createdBy: '李娟', createdAt: '2026-07-09', remark: '已到货入库' },
+  { id: 'RE-010', name: '零食大礼包', category: '食品', qty: 20, unit: '袋', priority: '中', status: '配送中', supplier: '新鲜食品', cost: 900, createdBy: '王小明', createdAt: '2026-07-09', expectedAt: '2026-07-14' },
+  { id: 'RE-011', name: '碳酸饮料(箱)', category: '饮品', qty: 15, unit: '箱', priority: '低', status: '已完成', supplier: '饮品速配', cost: 570, createdBy: '李娟', createdAt: '2026-07-08' },
+  { id: 'RE-012', name: '一次性纸杯', category: '耗材', qty: 10, unit: '箱', priority: '低', status: '已完成', supplier: '鑫宇耗材', cost: 180, createdBy: '张主管', createdAt: '2026-07-08' },
+  { id: 'RE-013', name: '西瓜味糖浆', category: '食品原料', qty: 4, unit: '桶', priority: '低', status: '已完成', supplier: '亿达食品', cost: 272, createdBy: '李娟', createdAt: '2026-07-07' },
+  { id: 'RE-014', name: '抓娃娃机礼品', category: '礼品', qty: 80, unit: '个', priority: '中', status: '已取消', supplier: '欢乐谷礼品', cost: 640, createdBy: '王小明', createdAt: '2026-07-07', remark: '库存调整，取消补货' },
+  { id: 'RE-015', name: '投篮机弹簧', category: '设备配件', qty: 15, unit: '个', priority: '低', status: '已完成', supplier: '乐玩娱乐', cost: 225, createdBy: '张主管', createdAt: '2026-07-06' },
+  { id: 'RE-016', name: '清洁消毒液', category: '清洁用品', qty: 8, unit: '瓶', priority: '低', status: '已完成', supplier: '康洁清洁', cost: 200, createdBy: '李娟', createdAt: '2026-07-06' },
+  { id: 'RE-017', name: 'VR手柄', category: '设备配件', qty: 5, unit: '个', priority: '低', status: '已完成', supplier: '乐玩娱乐', cost: 900, createdBy: '王小明', createdAt: '2026-07-05' },
+  { id: 'RE-018', name: '酸奶(箱)', category: '饮品', qty: 8, unit: '箱', priority: '低', status: '已完成', supplier: '饮品速配', cost: 320, createdBy: '李娟', createdAt: '2026-07-05' },
+  { id: 'RE-019', name: '飞镖盘', category: '设备', qty: 3, unit: '个', priority: '低', status: '已完成', supplier: '华强游戏设备', cost: 474, createdBy: '张主管', createdAt: '2026-07-04' },
+  { id: 'RE-020', name: '彩票', category: '游戏消耗', qty: 1500, unit: '张', priority: '低', status: '已完成', supplier: '天诚广告', cost: 1500, createdBy: '王小明', createdAt: '2026-07-04' },
 ];
 
-/* ── 分类列表 ── */
-const CATEGORIES = ['全部', '游戏耗材', '饮品', '礼品', '办公耗材', '设备', '清洁用品', '零食'];
+const CATEGORY_OPTIONS = ['全部', '饮品', '食品', '礼品', '耗材', '设备', '设备配件', '食品原料', '清洁用品', '游戏消耗'];
+const STATUS_OPTIONS = ['全部', '待采购', '已下单', '配送中', '已完成', '已取消'];
+const PRIORITY_OPTIONS = ['全部', '高', '中', '低'];
+const STATUS_COLORS: Record<string, string> = {
+  '待采购': '#f87171', '已下单': '#fbbf24', '配送中': '#60a5fa', '已完成': '#34d399', '已取消': '#94a3b8',
+};
+const PRIORITY_COLORS: Record<string, string> = { '高': '#f87171', '中': '#fbbf24', '低': '#94a3b8' };
 
-function priorityColor(p: ReplenishmentItem['priority']): string {
-  switch (p) {
-    case 'high': return '#f87171';
-    case 'medium': return '#fbbf24';
-    case 'low': return '#94a3b8';
-  }
+/* ── 子组件: 统计卡片 ── */
+function ReplenishStats({ items }: { items: ReplenishmentItem[] }) {
+  const pending = items.filter(i => i.status === '待采购');
+  const ordered = items.filter(i => i.status === '已下单' || i.status === '配送中');
+  const done = items.filter(i => i.status === '已完成');
+  const totalCost = items.reduce((s, i) => s + i.cost, 0);
+  const pendingCost = pending.reduce((s, i) => s + i.cost, 0);
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
+      {[
+        { label: '申请总数', count: items.length, color: '#94a3b8', sub: `¥${(totalCost).toFixed(0)}` },
+        { label: '待采购', count: pending.length, color: '#f87171', sub: `¥${(pendingCost).toFixed(0)}` },
+        { label: '进行中', count: ordered.length, color: '#60a5fa', sub: `${ordered.length} 单` },
+        { label: '已完成', count: done.length, color: '#34d399', sub: `${((done.length / items.length) * 100).toFixed(0)}%` },
+      ].map((s, i) => (
+        <div key={i} style={{
+          padding: '12px', borderRadius: 10, textAlign: 'center',
+          background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.08)',
+        }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: s.color }}>{s.count}</div>
+          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{s.label}</div>
+          <div style={{ fontSize: 10, color: '#475569', marginTop: 1 }}>{s.sub}</div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
-function priorityLabel(p: ReplenishmentItem['priority']): string {
-  switch (p) {
-    case 'high': return '高优先级';
-    case 'medium': return '中优先级';
-    case 'low': return '低优先级';
-  }
-}
-
-function statusColor(s: ReplenishmentItem['status']): string {
-  switch (s) {
-    case 'pending': return '#fbbf24';
-    case 'ordered': return '#60a5fa';
-    case 'received': return '#34d399';
-    case 'cancelled': return '#64748b';
-  }
-}
-
-function statusLabel(s: ReplenishmentItem['status']): string {
-  switch (s) {
-    case 'pending': return '待采购';
-    case 'ordered': return '已下单';
-    case 'received': return '已到货';
-    case 'cancelled': return '已取消';
-  }
-}
-
+/* ── 主组件 ── */
 export default function ReplenishmentPage() {
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('全部');
+  const [priorityFilter, setPriorityFilter] = useState('全部');
+  const [categoryFilter, setCategoryFilter] = useState('全部');
+  const [page, setPage] = useState(1);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  /* ── 排序: 高 > 中 > 低; 待采购 > 已下单 > 已到货 ── */
   const filtered = useMemo(() => {
-    let result = [...ALL_ITEMS];
-    if (search) result = result.filter(i => i.name.includes(search) || i.category.includes(search) || i.supplier.includes(search));
-    if (categoryFilter) result = result.filter(i => i.category === categoryFilter);
-    if (statusFilter) result = result.filter(i => i.status === statusFilter);
-    const priorityOrder = { high: 0, medium: 1, low: 2 };
-    const statusOrder = { pending: 0, ordered: 1, received: 2, cancelled: 3 };
-    result.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority] || statusOrder[a.status] - statusOrder[b.status]);
-    return result;
-  }, [search, categoryFilter, statusFilter]);
+    const kw = search.trim().toLowerCase();
+    return ALL_ITEMS.filter(item => {
+      if (statusFilter !== '全部' && item.status !== statusFilter) return false;
+      if (priorityFilter !== '全部' && item.priority !== priorityFilter) return false;
+      if (categoryFilter !== '全部' && item.category !== categoryFilter) return false;
+      if (kw && !item.name.toLowerCase().includes(kw) && !item.supplier.toLowerCase().includes(kw) && !item.id.toLowerCase().includes(kw)) return false;
+      return true;
+    });
+  }, [search, statusFilter, priorityFilter, categoryFilter]);
 
-  /* ── 统计 ── */
-  const stats = useMemo(() => ({
-    pendingCount: ALL_ITEMS.filter(i => i.status === 'pending').length,
-    orderedCount: ALL_ITEMS.filter(i => i.status === 'ordered').length,
-    receivedCount: ALL_ITEMS.filter(i => i.status === 'received').length,
-    highPriorityCount: ALL_ITEMS.filter(i => i.priority === 'high' && i.status !== 'received').length,
-  }), []);
+  const PAGE_SIZE = 8;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page]);
 
-  const handleSearch = () => {
-    setLoading(true);
-    setTimeout(() => setLoading(false), 300);
-  };
+  React.useEffect(() => { setPage(1); setExpandedId(null); }, [search, statusFilter, priorityFilter, categoryFilter]);
 
   return (
     <main style={{ minHeight: '100vh', padding: '24px 16px', background: '#0f172a' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        {/* 标题 */}
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc', marginBottom: 20 }}>🚚 补货管理</h1>
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        {/* ── 标题 ── */}
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc', marginBottom: 16 }}>补货管理</h1>
 
-        {/* 核心看板卡片 */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
-          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #f9731620, #ea580c20)', border: '1px solid #f9731640' }}>
-            <div style={{ fontSize: 13, color: '#fdba74', marginBottom: 4 }}>待采购</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#ffedd5' }}>{stats.pendingCount}</div>
-          </div>
-          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #60a5fa20, #3b82f620)', border: '1px solid #60a5fa40' }}>
-            <div style={{ fontSize: 13, color: '#93c5fd', marginBottom: 4 }}>已下单</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#dbeafe' }}>{stats.orderedCount}</div>
-          </div>
-          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #22c55e20, #16a34a20)', border: '1px solid #22c55e40' }}>
-            <div style={{ fontSize: 13, color: '#86efac', marginBottom: 4 }}>已到货</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#dcfce7' }}>{stats.receivedCount}</div>
-          </div>
-          <div style={{ borderRadius: 12, padding: '14px 18px', background: 'linear-gradient(135deg, #f8717120, #ef444420)', border: '1px solid #f8717140' }}>
-            <div style={{ fontSize: 13, color: '#fca5a5', marginBottom: 4 }}>🔴 紧急待处理</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#fecaca' }}>{stats.highPriorityCount}</div>
-          </div>
-          <div style={{ borderRadius: 12, padding: '14px 18px', background: '#2563eb', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}
-            onClick={() => alert('📋 已创建新的补货申请单')}>
-            <div style={{ fontSize: 13, color: '#bfdbfe', marginBottom: 4 }}>+ 创建补货</div>
-            <div style={{ fontSize: 18, color: '#fff', fontWeight: 600 }}>新建申请</div>
-          </div>
-        </div>
+        {/* ── 统计卡片 ── */}
+        <ReplenishStats items={ALL_ITEMS} />
 
-        {/* 筛选 */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-          <input placeholder="搜索品名/分类/供应商…" value={search} onChange={e => setSearch(e.target.value)}
-            style={{ padding: '7px 12px', border: '1px solid #334155', borderRadius: 6, fontSize: 14, background: '#1e293b', color: '#e2e8f0', minWidth: 200 }} />
-          <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-            style={{ padding: '7px 12px', border: '1px solid #334155', borderRadius: 6, fontSize: 14, background: '#1e293b', color: '#e2e8f0' }}>
-            {CATEGORIES.map(c => <option key={c} value={c === '全部' ? '' : c}>{c}</option>)}
-          </select>
+        {/* ── 搜索与筛选 ── */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            placeholder="🔍 搜索商品/供应商/单号..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              flex: 1, minWidth: 130, padding: '9px 12px', borderRadius: 10,
+              background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)',
+              color: '#e2e8f0', fontSize: 13, outline: 'none',
+            }}
+          />
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-            style={{ padding: '7px 12px', border: '1px solid #334155', borderRadius: 6, fontSize: 14, background: '#1e293b', color: '#e2e8f0' }}>
-            <option value="">全部状态</option>
-            <option value="pending">待采购</option>
-            <option value="ordered">已下单</option>
-            <option value="received">已到货</option>
-            <option value="cancelled">已取消</option>
+            style={{ padding: '9px 10px', borderRadius: 10, background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)', color: '#e2e8f0', fontSize: 12, outline: 'none' }}>
+            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          <button onClick={handleSearch}
-            style={{ padding: '7px 18px', borderRadius: 6, border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-            搜索
-          </button>
-          <button onClick={() => { setSearch(''); setCategoryFilter(''); setStatusFilter(''); }}
-            style={{ padding: '7px 18px', borderRadius: 6, border: '1px solid #334155', background: '#1e293b', color: '#94a3b8', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-            重置
-          </button>
+          <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}
+            style={{ padding: '9px 10px', borderRadius: 10, background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)', color: '#e2e8f0', fontSize: 12, outline: 'none' }}>
+            {PRIORITY_OPTIONS.map(p => <option key={p} value={p}>{p === '全部' ? '全部' : `${p}优先`}</option>)}
+          </select>
+          <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+            style={{ padding: '9px 10px', borderRadius: 10, background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)', color: '#e2e8f0', fontSize: 12, outline: 'none' }}>
+            {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
 
-        {/* 统计 */}
-        <div style={{ marginBottom: 10, fontSize: 13, color: '#64748b' }}>
-          共 <strong style={{ color: '#94a3b8' }}>{ALL_ITEMS.length}</strong> 项 · 显示 <strong style={{ color: '#94a3b8' }}>{filtered.length}</strong> 条
+        {/* ── 空状态 ── */}
+        {paginated.length === 0 ? (
+          <div style={{
+            textAlign: 'center', padding: '50px 20px',
+            borderRadius: 14, background: 'rgba(30,41,59,0.4)',
+            border: '1px dashed rgba(148,163,184,0.15)',
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>📦</div>
+            <div style={{ color: '#94a3b8', fontSize: 15, marginBottom: 4 }}>暂无匹配的补货申请</div>
+            <div style={{ color: '#64748b', fontSize: 12 }}>请调整筛选条件后重试</div>
+          </div>
+        ) : (
+          <>
+            {/* ── 列表 ── */}
+            {paginated.map(item => (
+              <div key={item.id} style={{
+                padding: '14px 16px', borderRadius: 10, marginBottom: 6,
+                background: 'rgba(30,41,59,0.6)',
+                border: `1px solid ${expandedId === item.id ? 'rgba(59,130,246,0.3)' : 'rgba(148,163,184,0.08)'}`,
+                cursor: 'pointer',
+              }}
+                onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{
+                      width: 8, height: 8, borderRadius: '50%', display: 'inline-block',
+                      background: PRIORITY_COLORS[item.priority],
+                    }} />
+                    <span style={{ color: '#e2e8f0', fontWeight: 500, fontSize: 14 }}>{item.name}</span>
+                    <span style={{
+                      fontSize: 10, padding: '1px 6px', borderRadius: 4,
+                      background: `${PRIORITY_COLORS[item.priority]}20`,
+                      color: PRIORITY_COLORS[item.priority],
+                    }}>
+                      {item.priority}优先
+                    </span>
+                  </div>
+                  <span style={{
+                    padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                    background: `${STATUS_COLORS[item.status]}20`,
+                    color: STATUS_COLORS[item.status],
+                  }}>
+                    {item.status}
+                  </span>
+                </div>
+                <div style={{ color: '#94a3b8', fontSize: 13 }}>
+                  {item.qty} {item.unit} · {item.supplier}
+                </div>
+                <div style={{ color: '#64748b', fontSize: 11, marginTop: 2 }}>
+                  金额 ¥{item.cost} · {item.createdBy} · {item.createdAt}
+                </div>
+
+                {/* ── 展开详情 ── */}
+                {expandedId === item.id && (
+                  <div style={{
+                    marginTop: 10, padding: '12px', borderRadius: 8,
+                    background: 'rgba(15,23,42,0.5)',
+                    border: '1px solid rgba(148,163,184,0.08)',
+                  }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>
+                      <div>单号: <span style={{ color: '#e2e8f0' }}>{item.id}</span></div>
+                      <div>品类: <span style={{ color: '#e2e8f0' }}>{item.category}</span></div>
+                      <div>供应商: <span style={{ color: '#e2e8f0' }}>{item.supplier}</span></div>
+                      <div>金额: <span style={{ color: '#e2e8f0' }}>¥{item.cost}</span></div>
+                      <div>创建人: <span style={{ color: '#e2e8f0' }}>{item.createdBy}</span></div>
+                      <div>创建时间: <span style={{ color: '#e2e8f0' }}>{item.createdAt}</span></div>
+                      {item.expectedAt && (
+                        <div>预计到货: <span style={{ color: '#e2e8f0' }}>{item.expectedAt}</span></div>
+                      )}
+                    </div>
+                    {item.remark && (
+                      <div style={{ fontSize: 12, color: '#60a5fa', marginTop: 2 }}>📌 {item.remark}</div>
+                    )}
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                      {item.status === '待采购' && (
+                        <button
+                          style={{
+                            padding: '6px 14px', borderRadius: 6,
+                            background: '#3b82f6', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer',
+                          }}
+                          onClick={e => { e.stopPropagation(); alert(`📦 提交 ${item.name} 采购单 (${item.qty}${item.unit})`); }}
+                        >
+                          📦 提交采购
+                        </button>
+                      )}
+                      {item.status === '已下单' && (
+                        <button
+                          style={{
+                            padding: '6px 14px', borderRadius: 6,
+                            background: '#fbbf24', border: 'none', color: '#0f172a', fontSize: 11, cursor: 'pointer',
+                          }}
+                          onClick={e => { e.stopPropagation(); alert(`📬 催单: ${item.name} (${item.supplier})`); }}
+                        >
+                          📬 催单
+                        </button>
+                      )}
+                      <button
+                        style={{
+                          padding: '6px 14px', borderRadius: 6,
+                          background: '#8b5cf6', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer',
+                        }}
+                        onClick={e => { e.stopPropagation(); alert(`📊 查看 ${item.name} 补货记录 (模拟操作)`); }}
+                      >
+                        历史记录
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* ── 分页 ── */}
+            {totalPages > 1 && (
+              <div style={{
+                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8,
+                marginTop: 16, color: '#94a3b8', fontSize: 13,
+              }}>
+                <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
+                  style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.12)', color: page <= 1 ? '#475569' : '#e2e8f0', cursor: page <= 1 ? 'not-allowed' : 'pointer' }}>
+                  上一页
+                </button>
+                <span>{page} / {totalPages}</span>
+                <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
+                  style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.12)', color: page >= totalPages ? '#475569' : '#e2e8f0', cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}>
+                  下一页
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── 底部统计 ── */}
+        <div style={{
+          marginTop: 12, padding: '10px 14px', borderRadius: 10,
+          background: 'rgba(30,41,59,0.3)', border: '1px solid rgba(148,163,184,0.06)',
+          display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: 11,
+        }}>
+          <span>共 {filtered.length} 条补货申请</span>
+          <span>总计 ¥{filtered.reduce((s, i) => s + i.cost, 0).toFixed(0)}</span>
         </div>
-
-        {/* 加载 */}
-        {loading && <div style={{ textAlign: 'center', padding: 24, color: '#64748b', fontSize: 14 }}>🔄 加载中...</div>}
-
-        {/* 表格 */}
-        {!loading && (
-          <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #1e293b' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 850 }}>
-              <thead>
-                <tr style={{ background: '#1e293b' }}>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'left' }}>品名</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'left' }}>分类</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'right' }}>当前库存</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'right' }}>建议补货</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>优先级</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>状态</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'left' }}>供应商</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'left' }}>申请人</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8', textAlign: 'left' }}>申请时间</th>
-                  <th style={{ padding: '10px 14px', borderBottom: '1px solid #334155', fontSize: 12, color: '#94a3b8' }}>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((item) => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid #1e293b' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#1e293b'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                    <td style={{ padding: '10px 14px', color: '#e2e8f0', fontWeight: 500, fontSize: 14 }}>{item.name}</td>
-                    <td style={{ padding: '10px 14px', color: '#64748b', fontSize: 13 }}>{item.category}</td>
-                    <td style={{ padding: '10px 14px', fontSize: 14, fontWeight: 600, textAlign: 'right', color: item.currentStock < item.minThreshold ? '#f87171' : '#e2e8f0' }}>
-                      {item.currentStock} {item.unit}
-                    </td>
-                    <td style={{ padding: '10px 14px', color: '#93c5fd', fontWeight: 600, fontSize: 14, textAlign: 'right' }}>
-                      {item.suggestedQty} {item.unit}
-                    </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                      <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600, background: priorityColor(item.priority) + '20', color: priorityColor(item.priority), border: `1px solid ${priorityColor(item.priority)}40` }}>
-                        {priorityLabel(item.priority)}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                      <span style={{ padding: '2px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600, background: statusColor(item.status) + '20', color: statusColor(item.status), border: `1px solid ${statusColor(item.status)}40` }}>
-                        {statusLabel(item.status)}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px 14px', color: '#64748b', fontSize: 13 }}>{item.supplier}</td>
-                    <td style={{ padding: '10px 14px', color: '#64748b', fontSize: 13 }}>{item.requester}</td>
-                    <td style={{ padding: '10px 14px', color: '#64748b', fontSize: 13 }}>{item.requestedAt}</td>
-                    <td style={{ padding: '10px 14px' }}>
-                      {item.status === 'pending' && (
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          <button style={{ padding: '3px 10px', borderRadius: 4, border: 'none', background: '#2563eb', color: '#fff', fontSize: 11, cursor: 'pointer' }}>下单</button>
-                          <button style={{ padding: '3px 10px', borderRadius: 4, border: '1px solid #334155', background: 'transparent', color: '#f87171', fontSize: 11, cursor: 'pointer' }}>取消</button>
-                        </div>
-                      )}
-                      {item.status === 'ordered' && (
-                        <span style={{ color: '#64748b', fontSize: 12 }}>预计 {item.expectedArrival}</span>
-                      )}
-                      {(item.status === 'received' || item.status === 'cancelled') && (
-                        <span style={{ color: '#64748b', fontSize: 12 }}>—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* 空状态 */}
-        {!loading && filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 48, color: '#64748b' }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>🚚</div>
-            <div style={{ fontSize: 15, color: '#94a3b8' }}>没有匹配的补货记录</div>
-            <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>请调整筛选条件后重试</div>
-          </div>
-        )}
       </div>
     </main>
   );
