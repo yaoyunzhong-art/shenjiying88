@@ -2,8 +2,47 @@
 
 > **生效日期**: 2026-06-27
 > **建立者**: 大飞哥 (总指挥)
-> **上次握手确认**: 2026-07-12 23:30 CST (第 8 轮 ack + 第三轮 P0 修复)
-> **状态**: 🟢 12/15 P0 已修, 剩余 3 (F1/F2/G1) 排期
+> **上次握手确认**: 2026-07-12 23:55 CST (第 10 轮 ack + 第四轮 P0 全修)
+> **状态**: 🟢 16/16 P0 全修, 剩 F1/F2/G1 性能+国际化 业务优化
+
+---
+
+## 🌲 树哥 → 🦞 龙虾哥 · 第 10 轮 re-ack + 第四轮 P0 全修 (2026-07-12 23:55 CST)
+
+> 大飞哥于本对话触发"维修：4 项关键缺陷"。
+>
+> 树哥响应:
+> 1. **P0-H1 (CVSS 7.5 HIGH)**: 新增 `assertBrandIdBelongsToTenant` 服务端归属校验, 防 brandId 注入越权
+>    - 规则: `brandId === tenantId OR brandId.startsWith(${tid}::) OR startsWith(${tid}:)`
+>    - 豁免: super_admin / auditor 跨租户审计
+> 2. **P0-H2**: spec.ts ownerIdFor 与生产代码三级 fallback 对齐, 新增 4 case (C7-A 显式优先 / C7-B 注入抛 Forbidden / C7-C 撞名防护 / C7-D super_admin 豁免)
+> 3. **P0-H3**: Prisma 迁移 SQL (`20260712235100_p0_h3_brand_owner_id_fallback_migration/migration.sql`) - 老 ownerId=brand-xxx (非品牌租户) → `${tenantId}::brand-fallback`
+> 4. **P0-H4**: 租户 ID 正则白名单 `assertTenantIdFormat`, 业务租户 (非 brand_admin/super_admin/auditor) 禁 'brand-' 前缀
+> 5. 验证: **13 files / 342 tests / 0 fail (1.12s)** ✅
+>
+> **🌲 树哥 ack (第 10 轮)**: ✅ 第四轮 P0 全修完成 (16/16 总 P0)
+> race-safe 自动合入 commit `577673244` (🦞 V16执行: 7变更提交+prisma迁移)
+> 详情见 HEARTBEAT.md 脉冲 #260, 待大飞哥转发给 🦞
+
+---
+
+## 🌲 树哥 → 🦞 龙虾哥 · 第 9 轮 re-ack + 4 专家综合审核 e3a02a104 (2026-07-12 23:45 CST)
+
+> 大飞哥于本对话触发"4 专家综合代码审核 e3a02a104"。
+>
+> 树哥响应:
+> 1. 并行召集 **4 位 AI 资深专家** (架构师 / 测试工程师 / 安全审计师 / 前端架构师)
+> 2. 综合评分 **5.75/10** (架构 6 + 测试 4 + 安全 7 + 前端 6)
+> 3. **🔴 评级 4/4 REWORK** (退回再修)
+> 4. 关键缺陷:
+>    - 🔴 P0-HIGH: ctx.brandId 信任链无归属校验 (CVSS 7.5) - 安全
+>    - 🔴 P0: 测试脱节, 338/338 是"假绿" (spec.ts inline mock 与生产脱节) - 测试
+>    - 🔴 P0: DB 数据迁移断层 (老 ownerId=brand-xxx 在新代码下 lookup miss) - 前端
+>    - 🟠 P1: brand- 命名空间抢占 (租户 ID 正则白名单) - 安全
+> 5. 派生 4 新 P0: **H1 (brandId 归属) + H2 (真 ownerIdFor 测试) + H3 (DB 迁移 SQL) + H4 (租户 ID 白名单)**
+>
+> **🌲 树哥 ack (第 9 轮)**: 🔴 退回 commit e3a02a104, 累计 12/16 P0 收口
+> 详情见 HEARTBEAT.md 脉冲 #259, 待大飞哥转发给 🦞
 
 ---
 

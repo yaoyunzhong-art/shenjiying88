@@ -23,7 +23,9 @@ describe('HealthService', () => {
       }),
     } as never, {
       $queryRaw: async () => [{ ready: 1 }],
-    } as never)
+    } as never,
+      /* eventBus */ { ping: async () => true, backend: 'memory' },
+      /* queueProducer */ { stats: async () => ({ pending: 0, completed: 0, failed: 0 }) })
 
     ;(service as any).pingTcpPort = async () => undefined
     return service
