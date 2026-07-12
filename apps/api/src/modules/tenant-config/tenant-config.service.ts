@@ -416,11 +416,17 @@ export class TenantConfigService implements OnModuleInit {
    * super_admin / brand_admin / auditor 跳过 (合规审计场景)
    */
   private assertOwnerAccess(ctx: TenantContext, level: ConfigLevel): void {
-    // 平台级管理员跳过
-    if (ctx.role === 'super_admin' || ctx.role === 'brand_admin' || ctx.role === 'auditor') return
+    // 平台级管理员 / 跨租户审计员 / 租户级管理员跳过 (租户管理员管理所有门店, 允许无 storeId)
+    if (
+      ctx.role === 'super_admin' ||
+      ctx.role === 'brand_admin' ||
+      ctx.role === 'auditor' ||
+      ctx.role === 'tenant_admin'
+    )
+      return
 
     if (level === 'store') {
-      // 门店级: 必须 ctx.storeId 存在 (调用方必须登录到具体门店)
+      // 门店级: 必须 ctx.storeId 存在 (门店管理员/操作员必须登录到具体门店)
       if (!ctx.storeId) {
         throw new ForbiddenException('[TenantConfig] store-level access requires ctx.storeId')
       }

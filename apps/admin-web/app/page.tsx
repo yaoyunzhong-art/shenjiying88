@@ -114,6 +114,26 @@ export default async function HomePage() {
             </div>
           </Link>
           <Link
+            href="/configuration/three-level"
+            style={{
+              display: 'block',
+              borderRadius: 18,
+              padding: 20,
+              color: '#e2e8f0',
+              textDecoration: 'none',
+              background: 'rgba(15, 23, 42, 0.35)',
+              border: '1px solid rgba(148, 163, 184, 0.18)'
+            }}
+          >
+            <div style={{ fontSize: 16, fontWeight: 700 }}>三级独立配置 (W-S / W-T / W-B)</div>
+            <div style={{ marginTop: 8, color: '#cbd5e1' }}>
+              门店/租户/品牌三级工作台配置:POS/打印/会员/营销/库存/合规/计费,支持批量编辑与版本回滚。
+            </div>
+            <div style={{ marginTop: 12, color: '#93c5fd' }}>
+              端点：GET /tenant-config/workbench/:code · 角色：{snapshot.tenantContext.tenantId}
+            </div>
+          </Link>
+          <Link
             href={adminRuntimeOperationsRoute.href}
             style={{
               display: 'block',

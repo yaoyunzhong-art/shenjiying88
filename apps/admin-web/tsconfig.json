@@ -9,6 +9,9 @@
       "@m5/ui": [
         "../../packages/ui/src/index.tsx"
       ],
+      "@m5/ui/three-level-config": [
+        "../../packages/ui/src/three-level-config/index.ts"
+      ],
       "@m5/sdk": [
         "../../packages/sdk/src/index.ts"
       ]

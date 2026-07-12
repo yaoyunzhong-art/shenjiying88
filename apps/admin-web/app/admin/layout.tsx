@@ -23,6 +23,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { key: 'dashboard', label: '全局仪表盘', href: '/admin/dashboard', icon: '📊' },
   { key: 'tenants', label: '租户管理', href: '/admin/tenants', icon: '🏢' },
+  { key: 'configuration', label: '配置治理', href: '/configuration', icon: '⚙️' },
+  { key: 'three-level', label: '三级独立配置', href: '/configuration/three-level', icon: '🧩' },
 ];
 
 // ============================================================
@@ -118,7 +120,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
-  const activeKey = pathname?.startsWith('/admin/tenants') ? 'tenants' : 'dashboard';
+  const activeKey = pathname?.startsWith('/admin/tenants')
+    ? 'tenants'
+    : pathname?.startsWith('/configuration/three-level')
+    ? 'three-level'
+    : pathname?.startsWith('/configuration')
+    ? 'configuration'
+    : 'dashboard';
 
   const sidebarWidth = collapsed ? 56 : SIDEBAR_WIDTH;
 

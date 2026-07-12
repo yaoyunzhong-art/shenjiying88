@@ -76,6 +76,88 @@ import type {
   AgentSessionEvent
 } from '@m5/types';
 
+// ── Tenant-Config (三级独立配置 · Phase-FP P0) ──
+
+/** 三级工作台代码 (与后端 LEVEL_TO_WORKBENCH 保持一致) */
+export type TenantConfigWorkbenchCode = 'W-S' | 'W-T' | 'W-B';
+
+/** 配置级别 */
+export type TenantConfigLevel = 'store' | 'tenant' | 'brand';
+
+/** 配置分类 */
+export type TenantConfigCategory =
+  | 'pos' | 'print' | 'member' | 'marketing' | 'inventory'
+  | 'integration' | 'ai' | 'compliance' | 'billing' | 'branding';
+
+/** 配置敏感度 (与后端 tenant-config.entity 保持一致) */
+export type TenantConfigSensitivity = 'public' | 'internal' | 'restricted' | 'secret';
+
+/** 配置值类型 */
+export type TenantConfigValueType = 'string' | 'number' | 'boolean' | 'json' | 'secret';
+
+/** 生效配置 (考虑继承链) */
+export interface TenantConfigEffective {
+  key: string;
+  value: string;
+  sourceLevel: TenantConfigLevel;
+  inherited: boolean;
+  isMasked?: boolean;
+  sensitivity?: TenantConfigSensitivity;
+}
+
+/** 单条配置实例 (已脱敏) */
+export interface TenantConfigItem {
+  id: string;
+  key: string;
+  value: string;
+  category: TenantConfigCategory;
+  level: TenantConfigLevel;
+  ownerId: string;
+  inherits: boolean;
+  version: number;
+  updatedBy: string;
+  updatedAt: string;
+  isMasked?: boolean;
+}
+
+/** 配置项定义 (来自 BUILTIN_CONFIG_DEFINITIONS) */
+export interface TenantConfigItemDefinition {
+  key: string;
+  category: TenantConfigCategory;
+  level: TenantConfigLevel;
+  valueType: TenantConfigValueType;
+  sensitivity: TenantConfigSensitivity;
+  defaultValue?: string | number | boolean | null;
+  allowedRoles?: string[];
+  required?: boolean;
+  validation?: { pattern?: string; min?: number; max?: number; enum?: string[] };
+  label: string;
+  description?: string;
+}
+
+/** 审计日志条目 (与后端 ConfigAuditLog 对齐) */
+export interface TenantConfigAuditLog {
+  id: string;
+  configId: string;
+  key: string;
+  level: TenantConfigLevel;
+  ownerId: string;
+  tenantId: string;
+  previousValue?: string;
+  newValue?: string;
+  action: 'create' | 'update' | 'delete' | 'rollback';
+  operator: string;
+  operatorRole: string;
+  timestamp: string;
+  context?: Record<string, unknown>;
+}
+
+export interface TenantConfigBatchInput {
+  key: string;
+  value: string;
+  inherits?: boolean;
+}
+
 export interface ApiClientOptions {
   baseUrl: string;
   tenantId?: string;
@@ -1407,6 +1489,101 @@ export class ApiClient {
   /** 列出可用工具(后端返回 unknown,前端按 ToolDefinition 解读) */
   async listAgentTools(init: RequestInit = {}) {
     return this.getData<unknown[]>('/agent/tools', init);
+  }
+
+  // ── Tenant-Config (三级独立配置 · Phase-FP P0 集成) ──
+
+  /**
+   * GET /tenant-config
+   * 按 level / category / keys 过滤当前级别配置项
+   */
+  async getTenantConfigs(
+    query: { level?: TenantConfigLevel; category?: TenantConfigCategory; keys?: string[] } = {},
+    init: RequestInit = {}
+  ) {
+    const path = this.buildPathWithQuery('/tenant-config', {
+      level: query.level,
+      category: query.category,
+      keys: query.keys && query.keys.length > 0 ? query.keys.join(',') : undefined
+    });
+    return this.getData<{ workbench: string; level: TenantConfigLevel; items: TenantConfigItem[]; total: number }>(path, init);
+  }
+
+  /**
+   * GET /tenant-config/:key
+   * 查询单个配置 (已脱敏)
+   */
+  async getTenantConfig(key: string, init: RequestInit = {}) {
+    return this.getData<TenantConfigItem | null>(`/tenant-config/${encodeURIComponent(key)}`, init);
+  }
+
+  /**
+   * GET /tenant-config/workbench/:code
+   * 工作台视角 (W-S / W-T / W-B),返回考虑继承的生效配置
+   */
+  async getTenantWorkbenchConfigs(
+    code: TenantConfigWorkbenchCode,
+    category?: TenantConfigCategory,
+    init: RequestInit = {}
+  ) {
+    const path = this.buildPathWithQuery(`/tenant-config/workbench/${encodeURIComponent(code)}`, {
+      category
+    });
+    return this.getData<{ workbench: string; items: TenantConfigEffective[]; total: number }>(path, init);
+  }
+
+  /**
+   * GET /tenant-config/meta/definitions
+   * 获取所有配置项静态定义 (前端 UI 用)
+   */
+  async getTenantConfigMeta(init: RequestInit = {}) {
+    return this.getData<{ items: TenantConfigItemDefinition[]; total: number }>(
+      '/tenant-config/meta/definitions',
+      init
+    );
+  }
+
+  /**
+   * POST /tenant-config/batch
+   * 批量设置配置 (返回值会带回最新 version)
+   */
+  async setTenantConfigBatch(items: TenantConfigBatchInput[], init: RequestInit = {}) {
+    return this.postData<{ items: TenantConfigItem[]; total: number }>(
+      '/tenant-config/batch',
+      { items },
+      init
+    );
+  }
+
+  /**
+   * POST /tenant-config/rollback
+   * 回滚配置到指定版本
+   */
+  async rollbackTenantConfig(targetVersion: number, configId: string, init: RequestInit = {}) {
+    return this.postData<TenantConfigItem>(
+      '/tenant-config/rollback',
+      { targetVersion, configId },
+      init
+    );
+  }
+
+  /**
+   * 列出租户级配置变更审计日志
+   *
+   * 端点约定: GET /tenant-config/audit-logs?tenantId=...&limit=...
+   * (当前后端 service.listAuditLogs 已存在,本方法为前端 SDK 入口;若后端尚未暴露
+   * 该 endpoint,会收到 404 并由调用方 try/catch 处理空态。)
+   */
+  async listTenantConfigAuditLogs(
+    tenantId: string,
+    limit: number = 100,
+    init: RequestInit = {}
+  ) {
+    const path = this.buildPathWithQuery('/tenant-config/audit-logs', {
+      tenantId,
+      limit: String(limit)
+    });
+    return this.getData<TenantConfigAuditLog[]>(path, init);
   }
 }
 

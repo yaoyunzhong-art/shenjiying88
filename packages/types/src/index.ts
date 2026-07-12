@@ -2396,6 +2396,48 @@ export const defaultRoleWorkbenchContractMap: Record<string, RoleWorkbenchContra
   defaultRoleWorkbenchContracts.map((item) => [item.role.toLowerCase(), item])
 );
 
+// ============ 角色命名映射 (P1-3) ============
+
+/**
+ * 前端 Workbench 角色 (大写下划线) → 后端 tenant-config 角色 (蛇形)
+ *
+ * 后端 ROLE_LEVEL_ACCESS 使用小写蛇形:
+ *   super_admin / brand_admin / tenant_admin / store_admin / operator / viewer / auditor
+ * 前端 defaultRoleWorkbenchContracts 使用大写下划线:
+ *   SUPER_ADMIN / BRAND_MANAGER / TENANT_ADMIN / STORE_MANAGER / OPERATIONS / VIEWER / AUDITOR
+ * (GUIDE / CASHIER / WAREHOUSE / FINANCE / COACH 等暂未在 tenant-config 中使用)
+ */
+export const FRONTEND_TO_BACKEND_ROLE: Record<string, string> = {
+  SUPER_ADMIN: 'super_admin',
+  BRAND_MANAGER: 'brand_admin',
+  TENANT_ADMIN: 'tenant_admin',
+  STORE_MANAGER: 'store_admin',
+  OPERATIONS: 'operator',
+  VIEWER: 'viewer',
+  AUDITOR: 'auditor',
+  GUIDE: 'operator',
+  CASHIER: 'operator',
+  WAREHOUSE: 'operator',
+  FINANCE: 'operator',
+  COACH: 'operator',
+};
+
+/** 后端角色枚举 (与后端 ROLE_LEVEL_ACCESS key 对齐) */
+export type BackendTenantRole =
+  | 'super_admin' | 'brand_admin' | 'tenant_admin'
+  | 'store_admin' | 'operator' | 'viewer' | 'auditor';
+
+/** 前端 Workbench 角色 (与 defaultRoleWorkbenchContracts 对齐) */
+export type FrontendWorkbenchRole =
+  | 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'BRAND_MANAGER' | 'STORE_MANAGER'
+  | 'GUIDE' | 'CASHIER' | 'OPERATIONS' | 'FINANCE' | 'WAREHOUSE' | 'COACH';
+
+/** 角色映射工具: 把前端 Workbench role 转成后端 tenant-config role */
+export function mapToBackendRole(frontendRole: string): BackendTenantRole | undefined {
+  const normalized = frontendRole.trim().toUpperCase();
+  return FRONTEND_TO_BACKEND_ROLE[normalized] as BackendTenantRole | undefined;
+}
+
 export interface TenantContextContract {
   tenantId: string;
   brandId?: string;
