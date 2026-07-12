@@ -1,26 +1,28 @@
 # 🦞 验收员 HEARTBEAT
 
-| 指标 | pulse#368 | pulse#369 | Δ |
+| 指标 | pulse#369 | pulse#370 | Δ |
 |-----|:---------:|:---------:|:-:|
-| Typecheck(缓存) | **13/14** ❌(admin-web ~40✖·缓存揭示) | **14/14** ✅(缓存) | 🟢 缓存恢复14 |
-| Typecheck(force) | **8/11❌** (admin~40✖) | **8/11❌** (admin修复·@m5/app新✖1) | 🔴 **@m5/app新回归(TS2307 expo-local-auth)** |
-| 新回归 | — | **storefront +89✖ + @m5/app TSC✖1** | 🔴🔴 缓存掩盖彻底崩塌 |
-| storefront-web | ❌ 8✖(缓存) | ❌ **97✖(缓存揭示→4673✅/97❌)** | 🔴🔴 89回归暴露(缓存~10次掩盖) |
-| admin-web | ✅ 4278/4278(测试) | ✅(测试) | 🟢 维持 |
-| tob-web | ❌ 4✖ | ❌ 4✖(同) | 🔴 维持 |
-| miniapp | ❌ 4✖ | ❌ 4✖(同) | 🔴 维持 |
-| @m5/app | ✅ 222/222 | ✅ 222/222 | 🟢 维持 |
-| @m5/app TSC | ✅ | ❌ **BiometricAuth.ts(6) TS2307** | 🔴 **新回归** |
+| Typecheck(缓存) | **14/14** ✅(缓存) | **14/14** ✅(缓存) | 🟢 维持 |
+| Typecheck(force) | **8/11❌** (@m5/app新✖1·TS2307) | **8/11❌** (@m5/app同✖·TS2307 expo-local-auth) | 🔴 **@m5/app TSC持续未修** |
+| 新回归 | storefront +89✖ + @m5/app TSC✖1 | **无新增** | 🟢 无恶化 |
+| storefront-web | ❌ 97✖(4673✅/97❌) | ❌ **97✖(4673✅/97❌·同)** | 🔴 维持 |
+| admin-web | ✅(测试) | ✅(测试) | 🟢 维持 |
+| tob-web | ❌ 4✖ | ❌ **4✖(同·sports-news+smoke)** | 🔴 维持 |
+| miniapp | ❌ 4✖ | ❌ **4✖(积分·会员·空任务·空客户)** | 🔴 维持 |
+| @m5/app | ✅ 222/222 | ✅ **222/222** | 🟢 维持 |
+| @m5/app TSC | ❌ BiometricAuth.ts TS2307 | ❌ **同·未修** | 🔴 维持 |
 
 ### 🩺 健康摘要
-- **🔥🔥 缓存彻底崩塌**: 此前~10次验收storefront-web仅显示2~8✖(缓存遮挡), `--force`揭示真实97✖(暴增89回归)·admin-web TSC已修复(晚会签署)但@m5/app新增1处TS2307
-- **❌ dispatch-368**: 第1次验收(1h零commit)→❌未闭环
-- **❌ storefront-web 97✖**: 主要为alerts/announcements/operations/stocktaking/store-manager 页面缺失组件导出
+- **🔴 dispatch-369 30min零commit**: 20:12派单·20:42仍无任何commit·dispatch-368已1h零commit失败→如果dispatch-369在21:12前仍无commit→连续2次→**P0升级**
+- **🔥 storefront-web 97✖维持**: alerts/announcements/operations/stocktaking/store-manager 页面缺失组件导出·无任何修复
 - **❌ tob-web 4✖**: __smoke__残值(空数据兜底·错误边界·CUSTOMER_STATUSES·sports-news)
-- **❌ miniapp 4✖**: __smoke__残值(积分不足·会员等级·空任务·空客户)
-- **🌲 需要新派**: dispatch-369 — storefront-web 97✖联合修复 + @m5/app TSC TS2307修复
+- **❌ miniapp 4✖**: __smoke__残值(积分不足限制·会员等级·空任务·空客户)
+- **❌ @m5/app TSC**: BiometricAuth.ts TS2307 expo-local-authentication 未安装
+- **✅ @m5/app 测试**: 222/222全绿·零hang·零fail
+- **✅ shenjiying-mobile**: 28文件/314测试全绿
+- **🌲 dispatch-369等待中**: 无commit·30min验收尚未进行
 - **连续🏆**: 0
-- **知识库时效**: ✅ <1h ✅(phase-progress.md 19:50·25min)
+- **知识库时效**: ✅ 上次 20:18·24min前·在阈值内
 
 ### 📊 年度连续记录
 - 最长连续全绿: 38🏆 (pulse#293→#330)
@@ -48,3 +50,4 @@
 - **2026-07-12 18:10 pulse#367 ✅ TSC14/14连续10次(🚀10连)·dispatch-366第1次验收❌(storefront 2✖未闭)·tob真实4✖(缓存揭示原掩盖3✖)·miniapp真实4✖(缓存掩盖)·已重派dispatch-367(含tob+miniapp+storefront联合修复)**
 - **⚠️⚠️⚠️ 2026-07-12 19:10 pulse#368 🔴🔴🔴 TSC13/14缓存彻底揭示·admin-web ~40 TS errors暴露(5页·10x缓存假象)·storefront真实8✖(原2✖)·dispatch-366+367连续2次零commit→P0升级dispatch-368**
 - **⚠️⚠️⚠️ 2026-07-12 20:12 pulse#369 🔴🔴🔴 缓存彻底崩塌: storefront真实97✖(暴增89)·@m5/app TSC新回归(TS2307)·dispatch-368❌首次验收(1h零commit)·新派dispatch-369**
+- **2026-07-12 20:42 pulse#370 🔴 dispatch-369 30min零commit·store97✖+tob4✖+miniapp4✖+appTSC全未修·验收等待第1次闭环→即将1h阈值**
