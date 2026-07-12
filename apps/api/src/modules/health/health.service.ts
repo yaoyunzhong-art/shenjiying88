@@ -95,7 +95,7 @@ export class HealthService {
   private async collectComponentHealths(verbose: boolean): Promise<ComponentHealth[]> {
     const names = verbose
       ? ['database', 'redis', 'lyt-adapter', 'memory', 'disk', 'event-bus', 'queue-producer']
-      : ['database', 'lyt-adapter']
+      : ['database', 'lyt-adapter', 'event-bus', 'queue-producer']
 
     const results = await Promise.allSettled(
       names.map((name) => this.checkComponent(name))

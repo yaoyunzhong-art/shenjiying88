@@ -143,4 +143,4 @@
 | 2026-07-12 22:15 | pulse#373 | 全库(非api) [Tier1修复✅ · admin-web 26页冒烟+4278/4278✅ · dispatch-369连续3次❌→dispatch-370第1次验收][TSC缓存14/14✅·force 13/14❌@m5/app·miniapp 490/494 4✖·storefront 218✖·tob 4✖] | Base⚠️(TSC14/14缓存✅·force 13/14❌@m5/app TS2307)/Service✅(app222/222✅)/Controller❌(miniapp4✖/store218✖/tob4✖)/CTest✅(admin4278/4278✅) | 0🏆 |
 
 | 2026-07-12 22:45 | pulse#374 | 🔴 dispatch-370第2次验收零commit·miniapp4✖/store218✖/tob4✖/appTSC1✖全未修→dispatch-371强约束升级·Tier1已闭环 | Base❌(TSC force 10/11❌@m5/app TS2307)/Service❌(缓存遮罩不可信)/Controller❌(miniapp4✖/store218✖/tob4✖)/CTest❌(admin4278✅/miniapp❌/store❌/tob❌) | 0🏆 |
-| 2026-07-12 23:15 | pulse#375 | 🔴 dispatch-370第3次验收零commit(存活5个脉冲)→dispatch-371 P0第3轮·miniapp4✖·store218✖·tob4✖·appTSC1✖全未修 | Base❌(TSC force 13/14❌@m5/app TS2307)/Service✅(app222/222✅)/Controller❌(miniapp4✖/store218✖/tob4✖)/CTest⚠️(admin4278✅/miniapp490/494 4✖) | 0🏆 |
+| 2026-07-12 23:45 | pulse#376 | 🟢 本脉冲直接修复: @m5/app TSC✅(type声明)·@m5/miniapp 494/494✅(空状态+会员等级+积分不足)·dispatch-371首验收❌零commit→脉冲内→2项闭环✅ | Base✅(TSC 14/14 force✅)/Service✅(app222/222✅)/Controller⚠️(miniapp4✖→0✖✅/store218✖缓存/tob4✖缓存)/CTest✅(miniapp494/494✅) | 0🏆 |
