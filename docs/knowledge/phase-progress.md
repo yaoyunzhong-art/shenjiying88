@@ -137,3 +137,5 @@
 | 2026-07-12 20:42 | pulse#370 | 全库(非api) [🔴 dispatch-369 30min零commit·store97+tob4+miniapp4+appTSC全未修·验收等待第1次闭环→即将1h阈值] | Base❌(TSC14/14缓存✅·force 8/11❌@m5/app TS2307)/Service✅(app222/222✅)/Controller❌(store97✖/tob4✖/miniapp4✖)/CTest✅(admin✅/mobile314✅) | 0🏆 |
 
 | 2026-07-12 21:15 | pulse#371 | 全库(非api) [🔴🔴🔴 dispatch-369 连续2次验收失败→P0·63min零commit·storefront 273✖+miniapp 4✖+tob 4✖+appTSC 1✖全未修] | Base❌(TSC14/14缓存✅·force 11/12❌@m5/app TS2307)/Service✅(app222/222✅)/Controller❌(store273✖/tob4✖/miniapp4✖)/CTest❌(12/15全缓存) | 0🏆 |
+
+| 2026-07-12 21:45 | pulse#372 | 全库(非api) [🔴🔴🔴🔴 dispatch-369 93min零commit·连续3次验收失败→P0未响应·miniapp ELIFECYCLE 3次不变·app TSC+HomeScreen连锁崩溃·force揭示8/12仅8成功❌] | Base❌(TSC14/14缓存✅·force 11/12❌@m5/app TS2307)/Service❌(app222/222缓存✅·未force验证)/Controller❌(miniapp ELIFECYCLE·tob ELIFECYCLE·storefront缓存遮罩)/CTest❌(force 8/12·0cached·miniapp❌) | 0🏆 |
