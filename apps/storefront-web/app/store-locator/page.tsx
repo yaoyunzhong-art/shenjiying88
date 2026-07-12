@@ -1,6 +1,11 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+
+/** 门店营业时间格式 */
+type BusinessHours = string;
+
+const DEFAULT_BUSINESS_HOURS = '10:00 - 22:00';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';

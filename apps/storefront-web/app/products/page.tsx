@@ -514,7 +514,7 @@ function ProductDetailDialog({ productId, onClose }: { productId: string | null;
 
 // ---- 页面 ----
 
-export default function ProductsListPage() {
+export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<ProductCategory | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<ProductStatus | 'ALL'>('ALL');

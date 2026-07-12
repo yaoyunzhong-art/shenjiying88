@@ -3,9 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Empty } from 'antd';
 import type { MemberInfo } from '../../lib/member-auth-service';
 
 type MembershipTier = 'diamond' | 'gold' | 'silver' | 'bronze' | 'basic';
+
+const MEMBERS_PER_PAGE = 20;
 
 const TIER_LABELS: Record<MembershipTier, string> = {
   diamond: '钻石会员',
@@ -27,6 +30,8 @@ export default function MemberCenterPage() {
   const router = useRouter();
   const [member, setMember] = useState<MemberInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [pageSize] = useState(MEMBERS_PER_PAGE);
 
   useEffect(() => {
     const token = localStorage.getItem('member_access_token');
@@ -62,7 +67,7 @@ export default function MemberCenterPage() {
     );
   }
 
-  if (!member) {
+  if (!member && !loading) {
     return null;
   }
 

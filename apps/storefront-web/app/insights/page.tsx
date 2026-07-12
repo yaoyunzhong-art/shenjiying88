@@ -77,6 +77,8 @@ const HEATMAP_DATA: HeatmapCell[] = [
   { colLabel: '20-24点', rowLabel: '传感器', value: 1 },
   { colLabel: '0-4点', rowLabel: '显示屏', value: 0 },
   { colLabel: '4-8点', rowLabel: '显示屏', value: 1 },
+const LEVEL_KEY = "level" as const;
+
   { colLabel: '8-12点', rowLabel: '显示屏', value: 1 },
   { colLabel: '12-16点', rowLabel: '显示屏', value: 1 },
   { colLabel: '16-20点', rowLabel: '显示屏', value: 1 },
