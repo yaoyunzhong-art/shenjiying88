@@ -17,11 +17,10 @@ const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 describe('Safety — 正例', () => {
   it('应导出一个默认组件', () => assert.ok(SRC.includes('export default function')));
   it('应包含 use client 指令', () => assert.ok(SRC.includes("'use client'")));
-  it('应包含 safety inspection checklist', () => assert.ok(SRC.includes('inspection') || SRC.includes('检查')));
-  it('应包含 incident report', () => assert.ok(SRC.includes('incident') || SRC.includes('事故')));
-  it('应包含 risk assessment', () => assert.ok(SRC.includes('risk') || SRC.includes('风险')));
-  it('应包含 safety training', () => assert.ok(SRC.includes('training') || SRC.includes('培训')));
-  it('应包含 hazard identification', () => assert.ok(SRC.includes('hazard') || SRC.includes('隐患')));
+  it('应包含 安全 相关中文', () => assert.ok(SRC.includes('安全'), '缺少安全相关中文'));
+  it('应包含 隐患 相关中文', () => assert.ok(SRC.includes('隐患'), '缺少隐患相关中文'));
+  it('应包含 整改 相关中文', () => assert.ok(SRC.includes('整改'), '缺少整改相关中文'));
+  it('应包含 风险 相关中文', () => assert.ok(SRC.includes('风险'), '缺少风险相关中文'));
   it('不应使用 dangerouslySetInnerHTML', () => assert.ok(!SRC.includes('dangerouslySetInnerHTML')));
   it('应包含 JSX return', () => assert.ok(SRC.includes('return')));
   it('应包含 PageShell 布局组件', () => assert.ok(SRC.includes('PageShell'), '缺少 PageShell'));
@@ -38,7 +37,6 @@ describe('Safety — 反例', () => {
     assert.ok(!SRC.includes('window.') && !SRC.includes('globalThis.'));
   });
   it('不应有空的回调实现导致静默失败', () => {
-    // handleNewRecord 和 handleExportLog 至少被 useCallback 包裹
     assert.ok(SRC.includes('useCallback'), '缺少 useCallback');
   });
 });
@@ -90,5 +88,23 @@ describe('Safety — 防御', () => {
 
   it('source 文件大小应合理', () => {
     assert.ok(SRC.length > 1500, `源码长度不足, 实际 ${SRC.length} bytes`);
+  });
+});
+
+describe('Safety — 组件完整性', () => {
+  it('应包含 @m5/ui 的 Pagination 导入', () => {
+    assert.ok(SRC.includes('Pagination'), '缺少 Pagination');
+  });
+
+  it('应包含 @m5/ui 的 StatusBadge 导入', () => {
+    assert.ok(SRC.includes('StatusBadge'), '缺少 StatusBadge');
+  });
+
+  it('应包含 @m5/ui 的 SearchFilterInput 导入', () => {
+    assert.ok(SRC.includes('SearchFilterInput'), '缺少 SearchFilterInput');
+  });
+
+  it('应包含 @m5/ui 的 Button 导入', () => {
+    assert.ok(SRC.includes('Button'), '缺少 Button');
   });
 });

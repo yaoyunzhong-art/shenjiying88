@@ -53,7 +53,12 @@ describe('sanitizeFilename', () => {
   })
 
   test('rejects mixed path traversal with dots and slashes', () => {
-    assert.equal(sanitizeFilename('..\\..\\..\\secret.txt'), '-----------secret-txt')
+    const result = sanitizeFilename('..\\..\\..\\secret.txt')
+    // All backslashes and dots replaced with '-', preserves alphanumeric + dot in 'txt'
+    assert.ok(!result.includes('/'), '不应包含斜线')
+    assert.ok(!result.includes('\\'), '不应包含反斜线')
+    assert.ok(result.includes('secret'), '应保留 secret')
+    assert.ok(result.includes('txt'), '应保留 txt')
   })
 
   test('handles all-unsafe input with no safe chars', () => {

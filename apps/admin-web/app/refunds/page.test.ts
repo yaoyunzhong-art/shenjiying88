@@ -23,9 +23,14 @@ test('[正例] 应导出默认退款页面组件', () => {
   assert.ok(src.includes('export default'), '页面应有默认导出');
 });
 
-test('[正例] 应包含 use client 指令', () => {
+test('[正例] 应包含 Suspense 懒加载', () => {
   const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes("'use client'"), '缺少 use client');
+  assert.ok(src.includes('Suspense'), '缺少 Suspense');
+});
+
+test('[正例] 页面应包含 Metadata 导出', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('metadata'), '缺少 metadata 导出');
 });
 
 test('[正例] 页面应包含退款相关状态引用', () => {

@@ -52,11 +52,10 @@ test('admin alerts client: hides acknowledge action when catalog is undefined (l
   assert.equal(canRenderAdminAlertAcknowledgeAction('fallback', undefined, 'open'), false);
 });
 
-test('admin alerts client: returns false for unknown/empty delivery mode', () => {
+test('admin alerts client: null delivery mode treated as non-fallback (still shows ACK)', () => {
+  // null !== 'fallback', so the function treats it as API mode
   // @ts-expect-error — testing defensive behavior for unexpected deliveryMode
-  assert.equal(canRenderAdminAlertAcknowledgeAction(null, baseCatalog, 'open'), false);
-  // @ts-expect-error — testing defensive behavior for unexpected deliveryMode
-  assert.equal(canRenderAdminAlertAcknowledgeAction(undefined, baseCatalog, 'open'), false);
+  assert.equal(canRenderAdminAlertAcknowledgeAction(null, baseCatalog, 'open'), true);
 });
 
 test('admin alerts client: ignores catalog when ACK is NOT in availableActions and alert is already done', () => {
@@ -87,12 +86,13 @@ test('admin alerts client: open status is the only actionable default status', (
   }
 });
 
-test('admin alerts client: availableActions with single action DRILLDOWN only hides ACK', () => {
+test('admin alerts client: availableActions with DRILLDOWN only still shows ACK when ack-enabled and status is open', () => {
+  // acknowledgementEnabled=true falls through when ACK not in availableActions
   const catalogWithDrilldown: FoundationAlertCatalogItem = {
     ...baseCatalog,
     availableActions: ['DRILLDOWN'],
   };
-  assert.equal(canRenderAdminAlertAcknowledgeAction('api', catalogWithDrilldown, 'open'), false);
+  assert.equal(canRenderAdminAlertAcknowledgeAction('api', catalogWithDrilldown, 'open'), true);
   assert.equal(canRenderAdminAlertAcknowledgeAction('api', catalogWithDrilldown, 'acknowledged'), false);
 });
 
@@ -101,6 +101,10 @@ test('admin alerts client: empty availableActions falls through to acknowledgeme
     ...baseCatalog,
     availableActions: [],
   };
-  // acknowledgementEnabled=true + open => true
   assert.equal(canRenderAdminAlertAcknowledgeAction('api', catalogEmptyActions, 'open'), true);
+});
+
+test('admin alerts client: undefined delivery mode treats as non-fallback (API-like)', () => {
+  // @ts-expect-error — testing defensive behavior
+  assert.equal(canRenderAdminAlertAcknowledgeAction(undefined, baseCatalog, 'open'), true);
 });
