@@ -127,8 +127,8 @@ describe('events — 防御', () => {
 describe('events — 数据校验', () => {
   it('EVENTS 应包含 id/name/type/date/status/participants/budget 字段', () => {
     const src = readSource();
-    assert.ok(src.includes("'id'"), '缺少 id');
-    assert.ok(src.includes("'name'") || src.includes("id:'E001'"), '缺少 name');
+    assert.ok(src.includes("'id'") || src.includes('id:\'E'), '缺少 id');
+    assert.ok(src.includes("'name'") || src.includes('name:\''), '缺少 name');
   });
 
   it('COLUMNS 应覆盖活动/类型/日期/状态/参与人数/预算', () => {

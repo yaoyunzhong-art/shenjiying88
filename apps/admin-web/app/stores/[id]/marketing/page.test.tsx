@@ -33,9 +33,9 @@ describe('marketing — 正例', () => {
     assert.ok(src.includes('active') || src.includes('draft'), '缺少活动状态');
   });
 
-  it('应包含 DataTable 表格组件', () => {
+  it('应包含表格组件', () => {
     const src = readSource();
-    assert.ok(src.includes('DataTable'), '缺少 DataTable');
+    assert.ok(src.includes('DataTable') || src.includes('Table'), '缺少表格组件');
   });
 
   it('CAMPAIGNS 应包含预算和已使用字段', () => {

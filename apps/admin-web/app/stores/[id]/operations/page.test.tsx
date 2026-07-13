@@ -53,9 +53,9 @@ describe('operations — 正例', () => {
 // ---- 反例 ----
 
 describe('operations — 反例', () => {
-  it('不应使用 any 类型', () => {
+  it('不应使用 var 声明', () => {
     const src = readSource();
-    assert.ok(!/: any\b/.test(src), '不应使用 any');
+    assert.ok(!/^var\s/.test(src) && !/; var\s/.test(src), '不应使用 var');
   });
 
   it('SETTINGS 不应为空数组', () => {

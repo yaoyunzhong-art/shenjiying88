@@ -58,9 +58,9 @@ describe('agents — 正例', () => {
 // ---- 反例 ----
 
 describe('agents — 反例', () => {
-  it('不应包含 'use client' 指令', () => {
+  it('不应包含 use client 指令', () => {
     const src = readSource();
-    assert.ok(!src.includes("'use client'"), '服务端组件不应使用 use client');
+    assert.ok(!src.includes('use client'), '服务端组件不应使用 use client');
   });
 
   it('不应使用 class 组件', () => {
