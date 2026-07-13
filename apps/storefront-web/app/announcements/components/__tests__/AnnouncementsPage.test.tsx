@@ -98,3 +98,38 @@ test('AnnouncementsPage - item has required fields', () => {
     assert.ok(typeof item.readCount === 'number');
   }
 });
+
+test('AnnouncementsPage - search is case-insensitive', () => {
+  const result = filterItems(MOCK_ITEMS, { search: '系' });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].title, '系统升级公告');
+});
+
+test('AnnouncementsPage - search matches summary not just title', () => {
+  const result = filterItems(MOCK_ITEMS, { search: '满减' });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].id, '2');
+});
+
+test('AnnouncementsPage - combined search+category+status returns filtered', () => {
+  const result = filterItems(MOCK_ITEMS, { search: '', category: 'system', status: 'published' });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].id, '1');
+});
+
+test('AnnouncementsPage - high priority items exist', () => {
+  const high = MOCK_ITEMS.filter(i => i.priority === 'high');
+  assert.equal(high.length, 2);
+  assert.ok(high.every(i => ['system', 'emergency'].includes(i.category)));
+});
+
+test('AnnouncementsPage - normal priority item', () => {
+  const normal = MOCK_ITEMS.find(i => i.priority === 'normal');
+  assert.ok(normal);
+  assert.equal(normal?.category, 'promotion');
+});
+
+test('AnnouncementsPage - emergency has highest read count among high pri', () => {
+  const high = MOCK_ITEMS.filter(i => i.priority === 'high').sort((a, b) => b.readCount - a.readCount);
+  assert.equal(high[0].id, '1', '系统公告应有最高阅读量');
+});

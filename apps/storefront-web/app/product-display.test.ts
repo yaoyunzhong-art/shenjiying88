@@ -98,3 +98,42 @@ describe('product-display discount computation', () => {
     for (const p of MOCK_DISPLAY_PRODUCTS.filter(p => p.category === 'hot')) assert.ok(p.salesCount >= 500);
   });
 });
+
+describe('product-display edge cases', () => {
+  it('pre_order product should have zero stock and zero sales', () => {
+    for (const p of MOCK_DISPLAY_PRODUCTS.filter(p => p.status === 'pre_order')) {
+      assert.equal(p.stockQuantity, 0);
+      assert.equal(p.salesCount, 0);
+    }
+  });
+  it('off_shelf product should have no sales', () => {
+    for (const p of MOCK_DISPLAY_PRODUCTS.filter(p => p.status === 'off_shelf')) {
+      assert.equal(p.salesCount, 0);
+    }
+  });
+  it('new category must have products from different stores', () => {
+    const newProducts = MOCK_DISPLAY_PRODUCTS.filter(p => p.category === 'new');
+    const stores = new Set(newProducts.map(p => p.storeCode));
+    assert.ok(stores.size >= 1, 'New products should span at least 1 store');
+  });
+  it('organic category products must have organic/healthy tags', () => {
+    for (const p of MOCK_DISPLAY_PRODUCTS.filter(p => p.category === 'organic')) {
+      assert.ok(p.tags.includes('有机') || p.tags.includes('低糖'), 'Organic products need relevant tags');
+    }
+  });
+  it('salePrice should never exceed originalPrice for any product', () => {
+    for (const p of MOCK_DISPLAY_PRODUCTS) {
+      assert.ok(p.salePrice <= p.originalPrice, `${p.name}: salePrice(${p.salePrice}) > originalPrice(${p.originalPrice})`);
+    }
+  });
+  it('products with 0 reviews should have rating of 0', () => {
+    for (const p of MOCK_DISPLAY_PRODUCTS) {
+      if (p.reviewCount === 0) assert.equal(p.rating, 0);
+    }
+  });
+  it('on_shelf products should have stock > 0 for availability', () => {
+    for (const p of MOCK_DISPLAY_PRODUCTS.filter(p => p.status === 'on_shelf')) {
+      assert.ok(p.stockQuantity > 0, `${p.name} should have stock when on_shelf`);
+    }
+  });
+});

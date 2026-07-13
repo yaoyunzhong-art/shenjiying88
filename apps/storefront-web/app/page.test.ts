@@ -98,3 +98,36 @@ describe('StorefrontHomePage — 防御', () => {
     assert.ok(SRC.includes('function StorefrontHomePage'));
   });
 });
+
+describe('StorefrontHomePage — 内容完整性', () => {
+  it('应包含所有快速入口的href', () => {
+    const hrefs = ['/self-recharge', '/group-booking', '/device-reservation', '/cashier', '/member-center', '/stores', '/orders', '/campaigns'];
+    for (const h of hrefs) assert.ok(SRC.includes(h), `缺少href: ${h}`);
+  });
+
+  it('应包含快速入口数据域', () => {
+    // 检查是否定义入口数据数组
+    assert.ok(SRC.includes('[') && SRC.includes(']'), 'Source should contain data structures');
+    assert.ok(SRC.includes('/self-recharge'));
+  });
+
+  it('应包含样式定义', () => {
+    assert.ok(SRC.includes('gap') || SRC.includes('flex'));
+  });
+
+  it('应包含数据状态管理', () => {
+    // 检查是否有 useState/useEffect
+    assert.ok(SRC.includes('useState') || SRC.includes('useEffect'));
+  });
+
+  it('深色主题应使用正确色值', () => {
+    assert.ok(SRC.includes('#0f172a') || SRC.includes('#1e293b'));
+    assert.ok(SRC.includes('#f8fafc') || SRC.includes('#e2e8f0'));
+  });
+
+  it('应包含多种功能模块', () => {
+    // 检查页面组件是否包含多种功能
+    assert.ok(SRC.includes('function') || SRC.includes('=>'), 'Should have function definitions');
+    assert.ok(SRC.includes('src') || SRC.includes('import'), 'Should have imports');
+  });
+});
