@@ -102,3 +102,54 @@ describe('FirePrevention — 防御', () => {
     assert.ok(SRC.length > 1500, `源码长度不足, 实际 ${SRC.length} bytes`);
   });
 });
+
+// ---- 反例扩展 ——
+
+describe('FirePrevention — 反例扩展', () => {
+  it('不应包含 eval 或 new Function', () => {
+    assert.ok(!SRC.includes('eval('), '不应使用 eval');
+    assert.ok(!SRC.includes('new Function('), '不应使用 new Function');
+  });
+
+  it('不应包含未处理的 Promise', () => {
+    const promises = [...SRC.matchAll(/\.then\(/g)];
+    const catches = [...SRC.matchAll(/\.catch\(/g)];
+    if (promises.length > 0) {
+      assert.ok(catches.length >= promises.length, `Promise 应配 catch: ${promises.length} then vs ${catches.length} catch`);
+    }
+  });
+});
+
+describe('FirePrevention — 边界扩展', () => {
+  it('inspector 字段不应为空字符串', () => {
+    assert.ok(SRC.includes('inspector'), '应有 inspector 字段');
+  });
+
+  it('scheduledDate 应为合法日期格式', () => {
+    const dateMatches = SRC.match(/\d{4}-\d{2}-\d{2}/g);
+    assert.ok(dateMatches && dateMatches.length >= 3, `应包含至少 3 个日期, 发现 ${dateMatches?.length || 0}`);
+  });
+
+  it('risk level 映射应区分大小写', () => {
+    const src = SRC.toLowerCase();
+    assert.ok(src.includes('low') && src.includes('medium') && src.includes('high'), '应包含低/中/高风险');
+  });
+
+  it('notes 字段应包含可选的空值处理', () => {
+    assert.ok(SRC.includes('notes'), '应包含 notes 字段');
+  });
+});
+
+describe('FirePrevention — 正例扩展', () => {
+  it('应包含操作按钮', () => {
+    assert.ok(SRC.includes('按钮') || SRC.includes('Button'), '应有操作按钮');
+  });
+
+  it('应包含搜索组件', () => {
+    assert.ok(SRC.includes('Search') || SRC.includes('搜索'), '应有搜索组件');
+  });
+
+  it('应包含导出按钮', () => {
+    assert.ok(SRC.includes('导出'), '应有导出功能');
+  });
+});

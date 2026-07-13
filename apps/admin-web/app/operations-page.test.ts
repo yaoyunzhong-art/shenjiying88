@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { describe, it, test } from 'node:test';
 import { adminRuntimeOperationDetails, adminRuntimeOperationsPreset, adminRuntimeOperationsRoute } from './operations-data';
 
 test('admin operations route: exposes shared list/detail route contract', () => {
@@ -62,11 +62,17 @@ describe('operations-page — 正例·mock数据', () => {
   it('adminRuntimeOperationDetails["op-3"] 应为 failed', () => {
     assert.equal(adminRuntimeOperationDetails['op-3'].op.status, 'failed');
   });
-  it('preset.includeColumns 应包含 startTime', () => {
-    assert.ok(adminRuntimeOperationsPreset.includeColumns.includes('startTime'));
+  it('preset.includeColumns 应包含 type', () => {
+    assert.ok(adminRuntimeOperationsPreset.includeColumns.includes('type'));
   });
-  it('preset.includeColumns 应包含 endTime', () => {
-    assert.ok(adminRuntimeOperationsPreset.includeColumns.includes('startTime'));
+  it('preset.includeColumns 应包含 targetId', () => {
+    assert.ok(adminRuntimeOperationsPreset.includeColumns.includes('targetId'));
+  });
+  it('preset.includeColumns 应包含 createdAt', () => {
+    assert.ok(adminRuntimeOperationsPreset.includeColumns.includes('createdAt'));
+  });
+  it('preset.includeColumns 应包含 id', () => {
+    assert.ok(adminRuntimeOperationsPreset.includeColumns.includes('id'));
   });
 });
 
@@ -100,5 +106,56 @@ describe('operations-page — 反例', () => {
     const msg = adminRuntimeOperationsRoute.emptyMessage('');
     assert.ok(typeof msg === 'string');
     assert.ok(msg.length > 0);
+  });
+});
+
+describe('operations-page — 正例-pages扩展', () => {
+  it('emptyMessage 应接受带特殊字符的 id', () => {
+    const msg = adminRuntimeOperationsRoute.emptyMessage('op_123-ABC');
+    assert.ok(msg.includes('op_123-ABC'));
+  });
+
+  it('adminRuntimeOperationsPreset.labels 应包含 searchPlaceholder', () => {
+    assert.ok(typeof adminRuntimeOperationsPreset.labels.searchPlaceholder === 'string');
+  });
+
+  it('adminRuntimeOperationsPreset.labels 应包含 all', () => {
+    assert.ok(typeof adminRuntimeOperationsPreset.labels.all === 'string');
+  });
+
+  it('adminRuntimeOperationsPreset.labels 应包含 typeSectionTitle', () => {
+    assert.ok(typeof adminRuntimeOperationsPreset.labels.typeSectionTitle === 'string');
+  });
+});
+
+describe('operations-page — 边界-time', () => {
+  it('all operations have non-empty id', () => {
+    const ops = Object.values(adminRuntimeOperationDetails);
+    for (const detail of ops) {
+      assert.ok(detail.op.id && detail.op.id.length > 0, `操作缺少 id`);
+    }
+  });
+
+  it('op.type 应为已知类型之一', () => {
+    const known = ['runtime-replay', 'secret-rotation', 'approval-execution'];
+    const ops = Object.values(adminRuntimeOperationDetails);
+    for (const detail of ops) {
+      assert.ok(known.includes(detail.op.type), `未知 op.type: ${detail.op.type}`);
+    }
+  });
+
+  it('createdAt exists for all operations', () => {
+    const ops = Object.values(adminRuntimeOperationDetails);
+    for (const detail of ops) {
+      assert.ok(detail.op.createdAt, `${detail.op.id}: 缺少 createdAt`);
+    }
+  });
+
+  it('all operations have valid status', () => {
+    const knownStatuses = ['running', 'completed', 'failed', 'pending'];
+    const ops = Object.values(adminRuntimeOperationDetails);
+    for (const detail of ops) {
+      assert.ok(knownStatuses.includes(detail.op.status), `${detail.op.id}: 未知 status ${detail.op.status}`);
+    }
   });
 });

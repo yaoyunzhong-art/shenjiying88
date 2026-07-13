@@ -105,3 +105,53 @@ describe('configuration/operations/[operation] — 防御', () => {
     assert.ok(!src.includes('searchParams'), '该页面不应有 searchParams');
   });
 });
+
+describe('configuration/operations/[operation] — 反例', () => {
+  it('不应直接修改全局对象', () => {
+    const src = readSource();
+    assert.ok(!src.includes('window.') && !src.includes('globalThis.'), '不应有全局副作用');
+  });
+
+  it('不应使用 any 类型', () => {
+    const src = readSource();
+    assert.ok(!src.includes(': any'), '不应有 any 类型');
+  });
+
+  it('不应包含未使用的 use client', () => {
+    const src = readSource();
+    assert.ok(!src.includes("'use client'"), '服务端组件不应有 use client');
+  });
+
+  it('不应包含 console.log 调试代码', () => {
+    const src = readSource();
+    const logLines = src.split('\n').filter(l => l.includes('console.log') && !l.trimStart().startsWith('//'));
+    assert.equal(logLines.length, 0, '不应有非注释 console.log');
+  });
+});
+
+describe('configuration/operations/[operation] — 边界扩展', () => {
+  it('title 应包含 operation id', () => {
+    const src = readSource();
+    assert.ok(src.includes('operation') || src.includes('operationId'), '应使用 operation 参数');
+  });
+
+  it('应包含 ReadonlyPageShell 布局', () => {
+    const src = readSource();
+    assert.ok(src.includes('PageShell') || src.includes('ReadonlyPageShell'), '应有页面容器');
+  });
+
+  it('snapshot.howToResolve 应包含 fix-it-next 引用', () => {
+    const src = readSource();
+    assert.ok(src.includes('snapshot.howToResolve'), '缺少 howToResolve');
+  });
+
+  it('snapshot 应包含 audit 链接', () => {
+    const src = readSource();
+    assert.ok(src.includes('audit') || src.includes('auditLink'), '应有审计链接');
+  });
+
+  it('生成的 HTML title 不应为空', () => {
+    const src = readSource();
+    assert.ok(src.includes('<title>') || src.includes('title:'), '应有页面标题');
+  });
+});

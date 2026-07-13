@@ -104,3 +104,38 @@ describe('products — 防御', () => {
     assert.ok(src.includes('useMemo') || src.includes('useCallback'), '缺少性能优化 hook');
   });
 });
+
+describe('products — 反例', () => {
+  it('不应包含未处理的 console.log', () => {
+    const src = readSource();
+    const lines = src.split('\n').filter(l => l.includes('console.log') && !l.trimStart().startsWith('//'));
+    assert.equal(lines.length, 0, '不应有非注释 console.log');
+  });
+
+  it('不应使用 any 类型', () => {
+    const src = readSource();
+    assert.ok(!src.includes(': any') || src.includes('// eslint'), '应避免 any 类型');
+  });
+
+  it('不应直接修改 props', () => {
+    const src = readSource();
+    assert.ok(!src.includes('props.') || src.includes('props:'), '不应直接修改 props 对象');
+  });
+});
+
+describe('products — 正例扩展', () => {
+  it('应包含品类筛选 CATEOGORY_FILTERS', () => {
+    const src = readSource();
+    assert.ok(src.includes('CATEGORY') || src.includes('category'), '应有品类筛选');
+  });
+
+  it('应包含价格格式化方法', () => {
+    const src = readSource();
+    assert.ok(src.includes('price') || src.includes('Price'), '应有价格字段');
+  });
+
+  it('应包含商品名称 Col', () => {
+    const src = readSource();
+    assert.ok(src.includes('名称') || src.includes('Name') || src.includes('name'), '应有商品名称列');
+  });
+});

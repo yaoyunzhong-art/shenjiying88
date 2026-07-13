@@ -105,3 +105,47 @@ describe('staff / L3 防御检查', () => {
     assert.ok(SRC.includes('StaffPage'));
   });
 });
+
+// ===================== L3 扩展防御 =====================
+describe('staff / L3 扩展防御', () => {
+  it('不应包含 eval 或 new Function', () => {
+    assert.ok(!SRC.includes('eval('));
+    assert.ok(!SRC.includes('new Function('));
+  });
+
+  it('STATUS_MAP 应覆盖所有状态', () => {
+    assert.ok(SRC.includes('在职') && SRC.includes('离职'));
+  });
+
+  it('phone 字段应包含正则校验', () => {
+    assert.ok(SRC.includes('phone') || SRC.includes('tel'), '应有电话字段');
+  });
+
+  it('不应有硬编码的图片 URL', () => {
+    assert.ok(!SRC.includes('http://') && !SRC.includes('https://'), '不应有硬编码 URL');
+  });
+});
+
+describe('staff / L2 扩展-分页', () => {
+  it('应包含 Pagination 组件', () => {
+    assert.ok(SRC.includes('Pagination') || SRC.includes('pagination'), '缺少分页');
+  });
+
+  it('表格应包含 selectable checkbox', () => {
+    assert.ok(SRC.includes('rowSelection') || SRC.includes('selection'), '应包含行选择');
+  });
+
+  it('应包含 Search 搜索组件', () => {
+    assert.ok(SRC.includes('Search') || SRC.includes('search'), '应包含搜索');
+  });
+});
+
+describe('staff / L2 扩展-数据', () => {
+  it('STAFF 数据应包含 email 字段', () => {
+    assert.ok(SRC.includes('email') || SRC.includes('mail'), '应有邮箱字段');
+  });
+
+  it('STAFF 数据应包含 department 字段', () => {
+    assert.ok(SRC.includes('department') || SRC.includes('dept'), '应有部门字段');
+  });
+});

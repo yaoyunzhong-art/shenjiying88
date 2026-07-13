@@ -25,9 +25,43 @@ describe('DETAIL_WORKSPACE_REGISTRY', () => {
     assert.equal(lookupWorkspaceMeta('does-not-exist'), undefined)
   })
 
+  test('lookupWorkspaceMeta returns meta for known key', () => {
+    const meta = lookupWorkspaceMeta('brands')
+    assert.ok(meta)
+    assert.equal(meta?.breadcrumbLabel, '品牌管理')
+  })
+
+  test('lookupWorkspaceMeta works for stores', () => {
+    const meta = lookupWorkspaceMeta('stores')
+    assert.ok(meta)
+    assert.equal(meta?.breadcrumbLabel, '门店管理')
+  })
+
   test('every registry entry is unique by key', () => {
     const keys = Object.keys(DETAIL_WORKSPACE_REGISTRY)
     assert.equal(new Set(keys).size, keys.length)
+  })
+
+  test('all href values start with / and have no double slash', () => {
+    for (const [key, meta] of Object.entries(DETAIL_WORKSPACE_REGISTRY)) {
+      assert.ok(meta.href.startsWith('/'), `${key}: href should start with /`)
+      assert.ok(!meta.href.includes('//'), `${key}: no double slash`)
+    }
+  })
+
+  test('all entries have minimum label length', () => {
+    for (const [key, meta] of Object.entries(DETAIL_WORKSPACE_REGISTRY)) {
+      assert.ok(meta.breadcrumbLabel.length >= 2, `${key}: breadcrumbLabel >= 2`)
+      assert.ok(meta.closureLabel.length >= 2, `${key}: closureLabel >= 2`)
+    }
+  })
+
+  test('href for each workspace does not end with trailing slash', () => {
+    for (const [key, meta] of Object.entries(DETAIL_WORKSPACE_REGISTRY)) {
+      if (meta.href.length > 1) {
+        assert.ok(!meta.href.endsWith('/'), `${key}: no trailing slash`)
+      }
+    }
   })
 })
 
@@ -52,6 +86,35 @@ describe('buildStandardBreadcrumb', () => {
 
   test('throws for unknown workspace', () => {
     assert.throws(() => buildStandardBreadcrumb({ workspace: 'unknown', detailLabel: 'X' }))
+  })
+
+  test('works with stores workspace', () => {
+    const crumb = buildStandardBreadcrumb({ workspace: 'stores', detailLabel: '三里屯店' })
+    assert.equal(crumb.workspaceLabel, '门店管理')
+    assert.equal(crumb.workspaceHref, '/stores')
+  })
+
+  test('works with members workspace', () => {
+    const crumb = buildStandardBreadcrumb({ workspace: 'members', detailLabel: '会员详情' })
+    assert.equal(crumb.workspaceLabel, '会员管理')
+    assert.equal(crumb.workspaceHref, '/members')
+  })
+
+  test('empty detailLabel does not throw', () => {
+    const crumb = buildStandardBreadcrumb({ workspace: 'brands', detailLabel: '' })
+    assert.equal(crumb.detailLabel, '')
+  })
+
+  test('works with notifications workspace', () => {
+    const crumb = buildStandardBreadcrumb({ workspace: 'notifications', detailLabel: '通知' })
+    assert.equal(crumb.workspaceLabel, '通知中心')
+    assert.equal(crumb.workspaceHref, '/notifications')
+  })
+
+  test('works with operations workspace', () => {
+    const crumb = buildStandardBreadcrumb({ workspace: 'operations', detailLabel: '操作详情' })
+    assert.ok(crumb.workspaceLabel.length > 0)
+    assert.equal(crumb.workspaceHref, '/operations')
   })
 })
 
@@ -98,12 +161,45 @@ describe('buildStandardClosureLinks', () => {
     assert.equal(links[0]!.title, '返回告警中心')
   })
 
-  test('uses auditSource override when set (configuration → config)', () => {
+  test('uses auditSource override when set (configuration -> config)', () => {
     const links = buildStandardClosureLinks({
       workspace: 'configuration',
       detailId: 'cfg-1'
     })
-    // configuration has no override, falls back to href strip
     assert.equal(links[1]!.context, 'configuration:cfg-1')
+  })
+
+  test('accepts auditSource override for alerts workspace', () => {
+    const links = buildStandardClosureLinks({
+      workspace: 'alerts',
+      detailId: 'a-1'
+    })
+    assert.equal(links[0]!.key, 'workspace')
+    assert.equal(links[1]!.context, 'alerts:a-1')
+  })
+
+  test('links all have unique keys', () => {
+    const links = buildStandardClosureLinks({
+      workspace: 'members',
+      detailId: 'm-1',
+      extraLinks: [
+        { key: 'member', title: 'Back', href: '/members/m-1' }
+      ]
+    })
+    const keys = links.map(l => l.key)
+    assert.equal(new Set(keys).size, keys.length)
+  })
+
+  test('empty detailId does not throw (falls back)', () => {
+    const links = buildStandardClosureLinks({ workspace: 'brands', detailId: '' })
+    assert.equal(links.length, 2)
+    assert.equal(links[0]!.key, 'workspace')
+    assert.ok(links[1]!.href.includes('source=brands'))
+  })
+
+  test('audit link contains source and purpose query params', () => {
+    const links = buildStandardClosureLinks({ workspace: 'stores', detailId: 's-1' })
+    assert.ok(links[1]!.href.includes('source='))
+    assert.ok(links[1]!.href.includes('purpose='))
   })
 })
