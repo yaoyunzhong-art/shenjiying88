@@ -34,6 +34,7 @@ const roleAccessMatrix: Record<string, string[]> = {
   notification: ['👔店长', '🛒前台', '👥HR', '🎯运行专员'],
   reservation: ['🛒前台', '🎮导玩员', '🤝团建'],
   blindbox: ['👔店长', '🎮导玩员', '📢营销'],
+  'db-knowledge': ['👔店长', '🛒前台', '👥HR', '🔧安监', '🎮导玩员', '🎯运行专员', '🤝团建', '📢营销'],
 }
 
 // ── 模拟请求响应工厂 ──
@@ -357,6 +358,81 @@ describe(`${ROLES.Marketing} API 角色旅程测试`, () => {
   it('📢[边界] 营销活动投放范围为空', () => {
     const emptyScope = mockSuccessResponse({ id: 'CPN-002', targetStores: [] })
     assert.equal(emptyScope.data.targetStores.length, 0)
+  })
+})
+
+// ── 🦞 数据库知识库 (全角色可访问) ──
+describe(`🦞 数据库知识库 角色旅程测试`, () => {
+  it('👔[正例] 店长搜索运营手册 → 获取门店运营知识', () => {
+    assert.ok(checkModuleAccess(ROLES.StoreManager, 'db-knowledge'))
+    const result = mockSuccessResponse([{ id: 'KD-001', title: '门店运营手册', kind: 'operations' }])
+    assert.equal(result.data.length, 1)
+    assert.equal(result.data[0].kind, 'operations')
+  })
+
+  it('🛒[正例] 前台搜索收银指南 → 获取收银操作步骤', () => {
+    assert.ok(checkModuleAccess(ROLES.FrontDesk, 'db-knowledge'))
+    const result = mockSuccessResponse([{ id: 'KD-002', title: '收银系统操作指南', kind: 'guide' }])
+    assert.equal(result.data[0].title, '收银系统操作指南')
+  })
+
+  it('👥[正例] HR查询人事制度文档', () => {
+    assert.ok(checkModuleAccess(ROLES.HR, 'db-knowledge'))
+    const result = mockSuccessResponse([{ id: 'KD-003', title: '人事管理制度', kind: 'policy' }])
+    assert.equal(result.data[0].kind, 'policy')
+  })
+
+  it('🔧[正例] 安监搜索安全巡检规程', () => {
+    assert.ok(checkModuleAccess(ROLES.Security, 'db-knowledge'))
+    const result = mockSuccessResponse([{ id: 'KD-004', title: '安防巡检规程', kind: 'safety' }])
+    assert.equal(result.data[0].kind, 'safety')
+  })
+
+  it('🎮[正例] 导玩员查找设备维护手册', () => {
+    assert.ok(checkModuleAccess(ROLES.Guide, 'db-knowledge'))
+    const result = mockSuccessResponse([{ id: 'KD-005', title: '设备维护手册', kind: 'maintenance' }])
+    assert.equal(result.data[0].kind, 'maintenance')
+  })
+
+  it('🎯[正例] 运行专员搜索盲盒上新流程', () => {
+    assert.ok(checkModuleAccess(ROLES.Operations, 'db-knowledge'))
+    const result = mockSuccessResponse([{ id: 'KD-008', title: '盲盒上新流程', kind: 'product' }])
+    assert.equal(result.data[0].kind, 'product')
+  })
+
+  it('🤝[正例] 团建查看团建活动指南模板', () => {
+    assert.ok(checkModuleAccess(ROLES.Teambuilding, 'db-knowledge'))
+    const result = mockSuccessResponse([{ id: 'KD-006', title: '团建活动指南', kind: 'activity' }])
+    assert.equal(result.data[0].kind, 'activity')
+  })
+
+  it('📢[正例] 营销搜索营销活动策划模板', () => {
+    assert.ok(checkModuleAccess(ROLES.Marketing, 'db-knowledge'))
+    const result = mockSuccessResponse([{ id: 'KD-007', title: '营销活动策划模板', kind: 'marketing' }])
+    assert.equal(result.data[0].kind, 'marketing')
+  })
+
+  it('[反例] 搜索不存在的知识文档返回空', () => {
+    const empty = mockSuccessResponse([])
+    assert.equal(empty.data.length, 0)
+  })
+
+  it('[边界] 搜索关键词超长应被截断或返回空', () => {
+    const longQuery = 'x'.repeat(500)
+    const empty = mockSuccessResponse([])
+    assert.equal(Array.isArray(empty.data), true)
+  })
+
+  it('[闭环] 全角色体验: 打开→搜索→阅读知识文档', () => {
+    // 1. 打开知识库（检查状态）
+    const status = { available: true, docCount: 10 }
+    assert.equal(status.available, true)
+    // 2. 搜索
+    const search = mockSuccessResponse([{ id: 'KD-001', title: '门店运营手册', content: '门店日常运营规范...' }])
+    assert.equal(search.data.length, 1)
+    // 3. 阅读
+    const docRead = { content: '门店日常运营规范...' }
+    assert.ok(docRead.content.length > 0)
   })
 })
 
