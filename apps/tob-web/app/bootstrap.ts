@@ -47,9 +47,9 @@ export interface TobPortalConsumerSnapshot {
 export type TobGovernanceReadModel = FoundationGovernanceReadModel;
 
 function getFallbackMarketProfile(marketCode: string): MarketProfileContract {
-  if (marketCode === 'cn-mainland') {
-    return {
-      marketCode,
+  const profiles: Record<string, MarketProfileContract> = {
+    'cn-mainland': {
+      marketCode: 'cn-mainland',
       marketName: '中国大陆',
       countryCode: 'CN',
       locale: {
@@ -84,46 +84,158 @@ function getFallbackMarketProfile(marketCode: string): MarketProfileContract {
         primaryPlatforms: ['WECHAT', 'XIAOHONGSHU'],
         supportPlatforms: ['WECHAT', 'WEIBO', 'DOUYIN']
       }
-    };
+    },
+    'us-default': {
+      marketCode: 'us-default',
+      marketName: 'United States',
+      countryCode: 'US',
+      locale: {
+        defaultLanguage: 'en-US',
+        supportedLanguages: ['en-US']
+      },
+      timezone: {
+        timezone: 'America/New_York'
+      },
+      currency: {
+        currencyCode: 'USD',
+        symbol: '$'
+      },
+      tax: {
+        taxMode: 'PRICES_EXCLUDE_TAX',
+        taxRate: 8.25,
+        taxLabel: 'Sales Tax'
+      },
+      network: {
+        networkRegion: 'NORTH_AMERICA',
+        apiBaseUrl: 'https://us-api.m5.local',
+        cdnBaseUrl: 'https://us-cdn.m5.local',
+        callbackBaseUrl: 'https://us-hooks.m5.local'
+      },
+      email: {
+        provider: 'SENDGRID',
+        fromName: 'M5 US',
+        fromAddress: 'hello-us@m5.local',
+        replyTo: 'support-us@m5.local'
+      },
+      social: {
+        primaryPlatforms: ['LINKEDIN', 'INSTAGRAM'],
+        supportPlatforms: ['LINKEDIN', 'INSTAGRAM', 'FACEBOOK', 'X']
+      }
+    },
+    'sea-sg': {
+      marketCode: 'sea-sg',
+      marketName: 'Singapore',
+      countryCode: 'SG',
+      locale: {
+        defaultLanguage: 'en-SG',
+        supportedLanguages: ['en-SG', 'zh-CN']
+      },
+      timezone: {
+        timezone: 'Asia/Singapore'
+      },
+      currency: {
+        currencyCode: 'SGD',
+        symbol: 'S$'
+      },
+      tax: {
+        taxMode: 'PRICES_INCLUDE_TAX',
+        taxRate: 9,
+        taxLabel: 'GST'
+      },
+      network: {
+        networkRegion: 'SOUTHEAST_ASIA',
+        apiBaseUrl: 'https://sg-api.m5.local',
+        cdnBaseUrl: 'https://sg-cdn.m5.local',
+        callbackBaseUrl: 'https://sg-hooks.m5.local'
+      },
+      email: {
+        provider: 'SENDGRID',
+        fromName: 'M5 Singapore',
+        fromAddress: 'hello-sg@m5.local',
+        replyTo: 'support-sg@m5.local'
+      },
+      social: {
+        primaryPlatforms: ['LINKEDIN', 'INSTAGRAM'],
+        supportPlatforms: ['LINKEDIN', 'INSTAGRAM', 'FACEBOOK', 'WHATSAPP']
+      }
+    },
+    'jp-tokyo': {
+      marketCode: 'jp-tokyo',
+      marketName: 'Japan',
+      countryCode: 'JP',
+      locale: {
+        defaultLanguage: 'ja-JP',
+        supportedLanguages: ['ja-JP', 'en-US']
+      },
+      timezone: {
+        timezone: 'Asia/Tokyo'
+      },
+      currency: {
+        currencyCode: 'JPY',
+        symbol: '¥'
+      },
+      tax: {
+        taxMode: 'PRICES_INCLUDE_TAX',
+        taxRate: 10,
+        taxLabel: '消費税'
+      },
+      network: {
+        networkRegion: 'JAPAN',
+        apiBaseUrl: 'https://jp-api.m5.local',
+        cdnBaseUrl: 'https://jp-cdn.m5.local',
+        callbackBaseUrl: 'https://jp-hooks.m5.local'
+      },
+      email: {
+        provider: 'SES',
+        fromName: 'M5 Japan',
+        fromAddress: 'hello-jp@m5.local',
+        replyTo: 'support-jp@m5.local'
+      },
+      social: {
+        primaryPlatforms: ['LINE', 'X'],
+        supportPlatforms: ['LINE', 'X', 'INSTAGRAM']
+      }
+    },
+    'eu-de': {
+      marketCode: 'eu-de',
+      marketName: 'Germany',
+      countryCode: 'DE',
+      locale: {
+        defaultLanguage: 'de-DE',
+        supportedLanguages: ['de-DE', 'en-US']
+      },
+      timezone: {
+        timezone: 'Europe/Berlin'
+      },
+      currency: {
+        currencyCode: 'EUR',
+        symbol: 'EUR'
+      },
+      tax: {
+        taxMode: 'PRICES_INCLUDE_TAX',
+        taxRate: 19,
+        taxLabel: 'MwSt'
+      },
+      network: {
+        networkRegion: 'EUROPE',
+        apiBaseUrl: 'https://eu-api.m5.local',
+        cdnBaseUrl: 'https://eu-cdn.m5.local',
+        callbackBaseUrl: 'https://eu-hooks.m5.local'
+      },
+      email: {
+        provider: 'SES',
+        fromName: 'M5 Europe',
+        fromAddress: 'hello-eu@m5.local',
+        replyTo: 'support-eu@m5.local'
+      },
+      social: {
+        primaryPlatforms: ['LINKEDIN', 'XING'],
+        supportPlatforms: ['LINKEDIN', 'XING', 'INSTAGRAM']
+      }
+    }
   }
 
-  return {
-    marketCode,
-    marketName: 'United States',
-    countryCode: 'US',
-    locale: {
-      defaultLanguage: 'en-US',
-      supportedLanguages: ['en-US']
-    },
-    timezone: {
-      timezone: 'America/New_York'
-    },
-    currency: {
-      currencyCode: 'USD',
-      symbol: '$'
-    },
-    tax: {
-      taxMode: 'PRICES_EXCLUDE_TAX',
-      taxRate: 8.25,
-      taxLabel: 'Sales Tax'
-    },
-    network: {
-      networkRegion: 'NORTH_AMERICA',
-      apiBaseUrl: 'https://us-api.m5.local',
-      cdnBaseUrl: 'https://us-cdn.m5.local',
-      callbackBaseUrl: 'https://us-hooks.m5.local'
-    },
-    email: {
-      provider: 'SENDGRID',
-      fromName: 'M5 US',
-      fromAddress: 'hello-us@m5.local',
-      replyTo: 'support-us@m5.local'
-    },
-    social: {
-      primaryPlatforms: ['LINKEDIN', 'INSTAGRAM'],
-      supportPlatforms: ['LINKEDIN', 'INSTAGRAM', 'FACEBOOK', 'X']
-    }
-  };
+  return profiles[marketCode] ?? profiles['us-default']!
 }
 
 function buildLoginEntry(label: string, loginPath: string): PortalLoginEntryContract {

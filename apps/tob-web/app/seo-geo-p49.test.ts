@@ -35,9 +35,12 @@ describe('PRD-015 SEO/GEO 根级入口', () => {
     assert.ok(entries.some((entry) => entry.url.endsWith('/brand-website')), '缺少品牌官网 sitemap')
     assert.ok(entries.some((entry) => entry.url.endsWith('/sports-ants')), '缺少运动蚂蚁 sitemap')
 
-    const marketEntry = entries.find((entry) => entry.url.includes('/cn/shenjiying88'))
+    const marketEntry = entries.find((entry) => entry.url.includes('/cn-mainland/shenjiying88'))
     assert.ok(marketEntry, '缺少市场/租户级 sitemap')
-    assert.deepEqual(Object.keys(marketEntry.alternates?.languages ?? {}), ['cn', 'us', 'sg', 'jp'])
+    assert.deepEqual(
+      Object.keys(marketEntry.alternates?.languages ?? {}),
+      ['zh-CN', 'en-US', 'en-SG', 'ja-JP', 'de-DE']
+    )
   })
 
   test('AC-49-13: 根级 /robots.txt 暴露爬虫规则与 sitemap 地址', () => {
@@ -213,6 +216,33 @@ describe('PRD-015 监控、转化与自治闭环', () => {
       'https://www.bigants.net/us-default/demo-tenant/demo-brand'
     )
     assert.equal(metadata.openGraph?.url, 'https://www.bigants.net/us-default/demo-tenant/demo-brand')
+  })
+
+  test('AC-49-11: 新加坡市场 metadata 不再误报为 United States', async () => {
+    const metadata = await generateTenantPortalMetadata({
+      params: Promise.resolve({
+        marketCode: 'sea-sg',
+        tenantCode: 'demo-tenant',
+      }),
+    })
+
+    assert.equal(metadata.title, 'demo-tenant ToB 官网 | Singapore | 神机营')
+    assert.equal(metadata.alternates?.languages?.['en-SG'], 'https://www.bigants.net/sea-sg/demo-tenant')
+    assert.equal(metadata.openGraph?.locale, 'en-SG')
+  })
+
+  test('AC-49-11: 德国市场品牌 metadata 使用 de-DE locale 与 Germany 标识', async () => {
+    const metadata = await generateBrandPortalMetadata({
+      params: Promise.resolve({
+        marketCode: 'eu-de',
+        tenantCode: 'demo-tenant',
+        brandCode: 'sportslife',
+      }),
+    })
+
+    assert.equal(metadata.title, 'sportslife 品牌 ToB 官网 | Germany | 神机营')
+    assert.equal(metadata.alternates?.languages?.['de-DE'], 'https://www.bigants.net/eu-de/demo-tenant/sportslife')
+    assert.equal(metadata.openGraph?.locale, 'de-DE')
   })
 
   test('AC-49-16: 智能自治系统可刷新 SEO/GEO 健康快照', async () => {

@@ -9,6 +9,13 @@
 import { MetadataRoute } from 'next'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.bigants.net'
+const MARKET_LANGUAGE_MAP: Record<string, string> = {
+  'cn-mainland': 'zh-CN',
+  'us-default': 'en-US',
+  'sea-sg': 'en-SG',
+  'jp-tokyo': 'ja-JP',
+  'eu-de': 'de-DE',
+}
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
@@ -22,10 +29,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ]
 
   // 2. 多市场 / 多租户落地页 (从公开元数据推断,避免枚举写死)
-  const marketLocales = ['cn', 'us', 'sg', 'jp']
+  const marketCodes = ['cn-mainland', 'us-default', 'sea-sg', 'jp-tokyo', 'eu-de']
   const tenantCodes = ['shenjiying88', 'bigants', 'sports-ants-cn']
   const marketRoutes: MetadataRoute.Sitemap = []
-  for (const market of marketLocales) {
+  for (const market of marketCodes) {
     for (const tenant of tenantCodes) {
       marketRoutes.push({
         url: `${SITE_URL}/${market}/${tenant}`,
@@ -34,7 +41,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: 0.8,
         alternates: {
           languages: Object.fromEntries(
-            marketLocales.map((m) => [m, `${SITE_URL}/${m}/${tenant}`])
+            marketCodes.map((marketCode) => [
+              MARKET_LANGUAGE_MAP[marketCode],
+              `${SITE_URL}/${marketCode}/${tenant}`,
+            ])
           ),
         },
       })

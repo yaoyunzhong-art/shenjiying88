@@ -1,43 +1,120 @@
-// 🔧 服务管理 · 客户服务/投诉处理
-'use client'; import { useState } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select } from '@m5/ui';
+// 🛠️ 售后服务 · 客诉/维修/工单管理
+'use client';
+import { useState, useMemo } from 'react';
+import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, Input, Modal, message, Progress } from '@m5/ui';
 
-const DATA = [
-  { id:'SV-01', customer:'张明', type:'投诉', desc:'排队时间太长', time:'2026-07-12 14:30', handler:'李四', status:'processing', priority:'high', phone:'138****1111' },
-  { id:'SV-02', customer:'李芳', type:'咨询', desc:'会员卡使用规则', time:'2026-07-12 13:00', handler:'张三', status:'resolved', priority:'low', phone:'139****2222' },
-  { id:'SV-03', customer:'王强', type:'报修', desc:'VR-2设备故障', time:'2026-07-12 10:15', handler:'', status:'pending', priority:'high', phone:'136****3333' },
-  { id:'SV-04', customer:'赵丽', type:'建议', desc:'增加扫码点单', time:'2026-07-11 16:00', handler:'张三', status:'resolved', priority:'low', phone:'135****4444' },
-  { id:'SV-05', customer:'高伟', type:'投诉', desc:'卫生间不干净', time:'2026-07-13 09:30', handler:'', status:'pending', priority:'high', phone:'137****5555' },
-  { id:'SV-06', customer:'陈丽', type:'咨询', desc:'团建套餐报价', time:'2026-07-13 10:00', handler:'李四', status:'processing', priority:'medium', phone:'188****6666' },
-];
+type TicketStatus = 'open' | 'processing' | 'resolved' | 'closed';
+type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
 
-const STATUS_CFG: Record<string,[string,string]> = { resolved:['green','已解决'], processing:['blue','处理中'], pending:['orange','待处理'] };
-const PRIORITY_CFG: Record<string,string> = { high:'red', medium:'orange', low:'default' };
-const COLUMNS = [
-  { title:'客户', dataIndex:'customer' }, { title:'类型', dataIndex:'type', render:(v:string)=><Tag>{v}</Tag> },
-  { title:'内容', dataIndex:'desc', ellipsis:true }, { title:'时间', dataIndex:'time' },
-  { title:'处理人', dataIndex:'handler', render:(v:string)=><span style={{color:v?'#e2e8f0':'#94a3b8'}}>{v||'未分配'}</span> },
-  { title:'状态', dataIndex:'status', render:(v:string)=><Tag color={STATUS_CFG[v]?.[0]||'default'}>{STATUS_CFG[v]?.[1]||v}</Tag> },
-  { title:'优先级', dataIndex:'priority', render:(v:string)=><Tag color={PRIORITY_CFG[v]||'default'}>{v==='high'?'高':v==='medium'?'中':'低'}</Tag> },
+interface Ticket {
+  id: string; title: string; type: string; customer: string;
+  priority: TicketPriority; status: TicketStatus; assignee: string;
+  createdAt: string; resolvedAt?: string; slaHours: number;
+}
+
+const PRIORITY_CFG: Record<TicketPriority, { color: string; label: string }> = {
+  low: { color: 'default', label: '低' },
+  medium: { color: 'blue', label: '中' },
+  high: { color: 'orange', label: '高' },
+  urgent: { color: 'red', label: '紧急' },
+};
+const STATUS_CFG: Record<TicketStatus, { color: string; label: string }> = {
+  open: { color: 'red', label: '待处理' },
+  processing: { color: 'blue', label: '处理中' },
+  resolved: { color: 'green', label: '已解决' },
+  closed: { color: 'default', label: '已关闭' },
+};
+
+const TICKETS: Ticket[] = [
+  { id: 'TK-001', title: 'VR设备画面闪烁', type: '设备故障', customer: '张先生', priority: 'high', status: 'processing', assignee: '王师傅', createdAt: '2026-07-13 14:00', slaHours: 4 },
+  { id: 'TK-002', title: '会员卡无法充值', type: '系统问题', customer: '李女士', priority: 'urgent', status: 'open', assignee: '李开发', createdAt: '2026-07-13 16:30', slaHours: 2 },
+  { id: 'TK-003', title: '空调制冷不足', type: '环境', customer: '赵先生', priority: 'medium', status: 'processing', assignee: '物业', createdAt: '2026-07-13 10:00', slaHours: 8 },
+  { id: 'TK-004', title: '游戏币兑换故障', type: '设备故障', customer: '王女士', priority: 'medium', status: 'resolved', assignee: '王师傅', createdAt: '2026-07-12 20:00', resolvedAt: '2026-07-13 09:00', slaHours: 8 },
+  { id: 'TK-005', title: '预约系统显示异常', type: '系统问题', customer: '刘先生', priority: 'low', status: 'closed', assignee: '李开发', createdAt: '2026-07-11 15:00', resolvedAt: '2026-07-12 10:00', slaHours: 24 },
+  { id: 'TK-006', title: '空调噪音过大', type: '环境', customer: '周先生', priority: 'high', status: 'open', assignee: '物业', createdAt: '2026-07-13 18:00', slaHours: 4 },
+  { id: 'TK-007', title: '充值未到账投诉', type: '客诉', customer: '吴女士', priority: 'urgent', status: 'processing', assignee: '张店长', createdAt: '2026-07-13 17:00', slaHours: 2 },
+  { id: 'TK-008', title: '台球桌台面磨损', type: '设备维护', customer: '内部', priority: 'low', status: 'open', assignee: '王师傅', createdAt: '2026-07-13 09:00', slaHours: 48 },
 ];
 
 export default function ServicePage() {
-  const [typeFilter, setTypeFilter] = useState('all');
-  const filtered = typeFilter === 'all' ? DATA : DATA.filter(d => d.type === typeFilter);
-  return (<PageShell><Space style={{width:'100%',flexDirection:'column',gap:16}}>
-    <h2 style={{color:'#f8fafc',margin:0}}>🔧 服务管理</h2>
-    <Row gutter={16}>
-      <Col span={4}><Card><Statistic title="工单总数" value={DATA.length}/></Card></Col>
-      <Col span={4}><Card><Statistic title="待处理" value={DATA.filter(d=>d.status==='pending').length} valueStyle={{color:'#f87171'}}/></Card></Col>
-      <Col span={4}><Card><Statistic title="处理中" value={DATA.filter(d=>d.status==='processing').length} valueStyle={{color:'#f59e0b'}}/></Card></Col>
-      <Col span={4}><Card><Statistic title="已解决" value={DATA.filter(d=>d.status==='resolved').length} valueStyle={{color:'#34d399'}}/></Card></Col>
-    </Row>
-    <Card><Space style={{marginBottom:12}}>
-      <span style={{color:'#94a3b8',fontSize:13}}>类型:</span>
-      <Select value={typeFilter} onChange={setTypeFilter} style={{width:110}}
-        options={[{value:'all',label:'全部'},{value:'投诉',label:'投诉'},{value:'咨询',label:'咨询'},{value:'报修',label:'报修'},{value:'建议',label:'建议'}]}/>
-      <Button type="primary" style={{marginLeft:'auto'}}>新建工单</Button>
-    </Space><Table dataSource={filtered} columns={COLUMNS} rowKey="id" pagination={false}/></Card>
-    <Card><Space><Button>报表</Button><Button>知识库</Button></Space></Card>
-  </Space></PageShell>);
+  const [filter, setFilter] = useState<TicketStatus | ''>('');
+  const [priorityFilter, setPriorityFilter] = useState<TicketPriority | ''>('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
+
+  const filtered = useMemo(() => {
+    let list = TICKETS;
+    if (filter) list = list.filter(t => t.status === filter);
+    if (priorityFilter) list = list.filter(t => t.priority === priorityFilter);
+    return list;
+  }, [filter, priorityFilter]);
+
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const totalPages = Math.ceil(filtered.length / pageSize);
+
+  const stats = useMemo(() => ({
+    total: TICKETS.length,
+    open: TICKETS.filter(t => t.status === 'open').length,
+    processing: TICKETS.filter(t => t.status === 'processing').length,
+    resolved: TICKETS.filter(t => t.status === 'resolved').length,
+    urgent: TICKETS.filter(t => t.priority === 'urgent').length,
+  }), []);
+
+  const columns = [
+    { title: '工单号', dataIndex: 'id', width: 90 },
+    { title: '标题', dataIndex: 'title', width: 160 },
+    { title: '类型', dataIndex: 'type', width: 80, render: (v: string) => <Tag>{v}</Tag> },
+    { title: '客户', dataIndex: 'customer', width: 80 },
+    { title: '优先级', dataIndex: 'priority', width: 70, render: (v: TicketPriority) => <Tag color={PRIORITY_CFG[v].color}>{PRIORITY_CFG[v].label}</Tag> },
+    { title: '状态', dataIndex: 'status', width: 80, render: (v: TicketStatus) => <Tag color={STATUS_CFG[v].color}>{STATUS_CFG[v].label}</Tag> },
+    { title: '负责人', dataIndex: 'assignee', width: 80 },
+    { title: '创建时间', dataIndex: 'createdAt', width: 150 },
+    { title: 'SLA', dataIndex: 'slaHours', width: 70, render: (v: number) => `${v}h` },
+    { title: '操作', key: 'actions', width: 140, render: (_: unknown) => <Space size="small"><Button size="small">处理</Button><Button size="small">转派</Button></Space> },
+  ];
+
+  return (
+    <PageShell>
+      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ color: '#f8fafc', margin: 0 }}>🛠️ 售后服务</h2>
+          <Button type="primary" onClick={() => setShowCreate(true)}>创建工单</Button>
+        </div>
+        <Row gutter={[16, 16]}>
+          <Col span={4}><Card size="small"><Statistic title="总工单" value={stats.total} /></Card></Col>
+          <Col span={4}><Card size="small"><Statistic title="待处理" value={stats.open} valueStyle={{ color: '#f87171' }} /></Card></Col>
+          <Col span={4}><Card size="small"><Statistic title="处理中" value={stats.processing} valueStyle={{ color: '#60a5fa' }} /></Card></Col>
+          <Col span={4}><Card size="small"><Statistic title="已解决" value={stats.resolved} valueStyle={{ color: '#34d399' }} /></Card></Col>
+          <Col span={4}><Card size="small"><Statistic title="紧急" value={stats.urgent} valueStyle={{ color: '#ef4444' }} /></Card></Col>
+        </Row>
+        <Card>
+          <Space style={{ width: '100%', marginBottom: 12, flexWrap: 'wrap' }}>
+            <Select style={{ width: 120 }} placeholder="全部状态" allowClear value={filter || undefined} onChange={v => setFilter((v || '') as TicketStatus | '')}>
+              {Object.entries(STATUS_CFG).map(([k, v]) => <Select.Option key={k} value={k}>{v.label}</Select.Option>)}
+            </Select>
+            <Select style={{ width: 120 }} placeholder="全部优先级" allowClear value={priorityFilter || undefined} onChange={v => setPriorityFilter((v || '') as TicketPriority | '')}>
+              {Object.entries(PRIORITY_CFG).map(([k, v]) => <Select.Option key={k} value={k}>{v.label}</Select.Option>)}
+            </Select>
+            <span style={{ color: '#94a3b8', fontSize: 13 }}>共 {filtered.length} 条</span>
+          </Space>
+          <Table dataSource={paged} columns={columns} rowKey="id" pagination={false} />
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, gap: 8 }}>
+              <Button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>上一页</Button>
+              <span style={{ color: '#94a3b8', lineHeight: '32px' }}>{page}/{totalPages}</span>
+              <Button disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>下一页</Button>
+            </div>
+          )}
+        </Card>
+      </Space>
+      <Modal title="创建工单" open={showCreate} onCancel={() => setShowCreate(false)} onOk={() => { message.success('工单已创建'); setShowCreate(false); }} okText="创建" width={480}>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Input placeholder="工单标题" /><Select placeholder="类型"><Select.Option value="设备故障">设备故障</Select.Option><Select.Option value="系统问题">系统问题</Select.Option><Select.Option value="客诉">客诉</Select.Option><Select.Option value="环境">环境</Select.Option></Select>
+          <Select placeholder="优先级"><Select.Option value="low">低</Select.Option><Select.Option value="medium">中</Select.Option><Select.Option value="high">高</Select.Option><Select.Option value="urgent">紧急</Select.Option></Select>
+          <Input placeholder="客户信息" /><Input.TextArea rows={3} placeholder="问题描述" />
+        </Space>
+      </Modal>
+    </PageShell>
+  );
 }
