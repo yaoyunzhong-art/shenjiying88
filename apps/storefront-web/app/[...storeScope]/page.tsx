@@ -169,7 +169,7 @@ export default async function StoreSitePage({
               <div style={{ marginTop: 8, fontSize: 15, color: '#e2e8f0' }}>{portal.supportedSurfaces.join(' / ')}</div>
             </article>
             <article style={{ borderRadius: 16, padding: 20, background: 'rgba(15, 23, 42, 0.45)' }}>
-              <div style={{ fontSize: 12, color: '#93c5fd' }}>默认语言</div>
+              <div style={{ fontSize: 12, color: '#93c5fd' }}>支持语言</div>
               <div style={{ marginTop: 8, fontSize: 15, color: '#e2e8f0' }}>{portal.supportedLanguages.join(' / ')}</div>
             </article>
           </div>

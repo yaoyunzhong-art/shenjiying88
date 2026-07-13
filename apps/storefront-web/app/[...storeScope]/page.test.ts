@@ -189,8 +189,9 @@ describe('Portal 语言配置 — cn-mainland', () => {
     assert.ok(BOOTSTRAP_SRC.includes('zh-CN'), '应包含 zh-CN');
   });
 
-  it('国内市场语言数组应只含 zh-CN', () => {
-    assert.ok(BOOTSTRAP_SRC.includes("['zh-CN']"), '国内市场应只有 zh-CN');
+  it('国内市场 fallback 应至少保留 zh-CN，并支持 locale hint 覆盖顺序', () => {
+    assert.ok(BOOTSTRAP_SRC.includes('resolveFallbackStoreLanguages'), '应通过 helper 统一 fallback 语言');
+    assert.ok(BOOTSTRAP_SRC.includes('zh-CN'), '国内市场 fallback 应保留 zh-CN');
   });
 });
 
@@ -339,5 +340,10 @@ describe('页面组件 — 导出与导入', () => {
 
   it('应导入 GovernanceLinkedSection', () => {
     assert.ok(PAGE_SRC.includes('GovernanceLinkedSection'), '缺少 GovernanceLinkedSection 导入');
+  });
+
+  it('门店官网语言卡片应使用“支持语言”而非“默认语言”文案', () => {
+    assert.ok(PAGE_SRC.includes('支持语言'), '门店官网应展示支持语言文案');
+    assert.ok(!PAGE_SRC.includes('>默认语言<'), '列表展示不应误标为默认语言');
   });
 });

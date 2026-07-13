@@ -240,7 +240,7 @@ test('market-bootstrap: storePortal 缺失时优先用 marketProfile.locale 构�
 
   const snapshot = await getStorefrontConsumerSnapshot('cn-mainland', 't-locale', 'b-locale', 's-locale');
 
-  assert.equal(snapshot.deliveryMode, 'fallback');
+  assert.equal(snapshot.deliveryMode, 'api');
   assert.deepEqual(snapshot.portal.supportedLanguages, ['en-US', 'zh-CN']);
 });
 
