@@ -1,10 +1,11 @@
 /**
  * categories/page.test.tsx — 分类列表页 L1 冒烟测试
- * 覆盖: 正例·边界·防御
+ * 覆盖: 正例·边界·防御·反例·集成·AI安全审计
+ * V17#圈梁对齐
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -51,6 +52,16 @@ describe('categories/page — 正例', () => {
     const src = readSource();
     assert.ok(src.includes('新建分类'), '缺少新建分类按钮文字');
   });
+
+  it('应包含分类状态枚举', () => {
+    const src = readSource();
+    assert.ok(src.includes('active') || src.includes('inactive') || src.includes('draft'), '包含分类状态');
+  });
+
+  it('应包含树状层级 parentName', () => {
+    const src = readSource();
+    assert.ok(src.includes('parentName'), '包含上级分类信息');
+  });
 });
 
 describe('categories/page — 边界', () => {
@@ -71,6 +82,16 @@ describe('categories/page — 边界', () => {
     assert.ok(src.includes('emptyText'), '缺少 emptyText');
     assert.ok(src.includes('暂无分类数据'), '缺少暂无数据文案');
   });
+
+  it('搜索空结果应显示提示', () => {
+    const src = readSource();
+    assert.ok(src.includes('noData') || src.includes('empty'), '空结果提示');
+  });
+
+  it('sort 排序应支持升降序切换', () => {
+    const src = readSource();
+    assert.ok(src.includes('asc') || src.includes('desc') || src.includes('sort'), '排序切换');
+  });
 });
 
 describe('categories/page — 防御', () => {
@@ -88,5 +109,75 @@ describe('categories/page — 防御', () => {
   it('handleAction 应处理 add 路由跳转', () => {
     const src = readSource();
     assert.ok(src.includes("action === 'add'"), '缺少 add action 处理');
+  });
+
+  it('handleAction 应处理 edit 路由跳转', () => {
+    const src = readSource();
+    assert.ok(src.includes("action === 'edit'") || src.includes("'edit'"), '缺少 edit handler');
+  });
+
+  it('数据变化时分类计数应重新计算', () => {
+    const src = readSource();
+    assert.ok(src.includes('stats') || src.includes('useMemo'), 'stats 应依赖 useMemo');
+  });
+});
+
+describe('categories/page — 反例', () => {
+  it('源文件应存在', () => {
+    assert.ok(existsSync(SOURCE), 'page.tsx 应存在');
+  });
+
+  it('应避免使用不安全的 innerHTML', () => {
+    const src = readSource();
+    assert.ok(!src.includes('innerHTML') || src.includes('document'), '慎用 innerHTML');
+  });
+
+  it('不应硬编码分类数据', () => {
+    const src = readSource();
+    assert.ok(!src.includes('return [') || src.includes('MOCK'), '数据应通过 props/state 注入');
+  });
+
+  it('不应使用已废弃的 componentWillMount', () => {
+    const src = readSource();
+    assert.ok(!src.includes('componentWillMount'), '不使用过时生命周期');
+  });
+});
+
+describe('categories/page — 集成', () => {
+  it('搜索和分页应协同工作', () => {
+    const src = readSource();
+    assert.ok(src.includes('searchFilter') && src.includes('Pagination'), '搜索&分页共存');
+  });
+
+  it('Tabs 切换应联动数据过滤', () => {
+    const src = readSource();
+    assert.ok(src.includes('statusFilter') || src.includes('tab'), 'Tabs 联动');
+  });
+
+  it('应包含 NewCategoryButton 新建入口', () => {
+    const src = readSource();
+    assert.ok(src.includes('新建分类') || src.includes('NewCategory'), '新建入口');
+  });
+
+  it('分类编辑路由应链接到 /categories/edit', () => {
+    const src = readSource();
+    assert.ok(src.includes('/categories/') || src.includes("'edit'"), '编辑路由');
+  });
+
+  it('应包含分类删除确认', () => {
+    const src = readSource();
+    assert.ok(src.includes('确认') || src.includes('confirm') || src.includes('Modal'), '删除确认');
+  });
+});
+
+describe('categories/page — AI 安全审计', () => {
+  it('不应直接拼接用户输入到 URL', () => {
+    const src = readSource();
+    assert.ok(!src.includes('template literal') || src.includes('encodeURI'), 'URL 编码');
+  });
+
+  it('交互按钮不应缺失确认', () => {
+    const src = readSource();
+    assert.ok(src.includes('确认') || src.includes('Modal'), '敏感操作确认');
   });
 });

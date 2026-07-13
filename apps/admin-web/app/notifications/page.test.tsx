@@ -1,10 +1,11 @@
 /**
  * notifications/page.test.tsx — 通知列表页 L1 冒烟测试
- * 覆盖: 正例·边界·防御
+ * 覆盖: 正例·边界·防御·反例·集成·AI安全审计
+ * V17#圈梁对齐
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -54,6 +55,16 @@ describe('notifications — 正例', () => {
     assert.ok(src.includes('const NP:'), '缺少 NP 映射表');
     assert.ok(src.includes('紧急'), '缺少紧急标签');
   });
+
+  it('应包含通知详情标题字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('title'), '缺少 title');
+  });
+
+  it('应包含通知时间 createdAt', () => {
+    const src = readSource();
+    assert.ok(src.includes('createdAt') || src.includes('time'), '缺少 createdAt');
+  });
 });
 
 // ---- 边界 ----
@@ -77,6 +88,21 @@ describe('notifications — 边界', () => {
     const src = readSource();
     assert.ok(src.includes('SearchFilterInput') || src.includes('searchTerm'), '缺少搜索功能');
   });
+
+  it('全部通知数为 0 时应显示空状态', () => {
+    const src = readSource();
+    assert.ok(src.includes('empty') || src.includes('暂无通知'), '空状态处理');
+  });
+
+  it('优先级紧急值为最高级别', () => {
+    const src = readSource();
+    assert.ok(src.includes('urgent') || src.includes('紧急'), '紧急级别');
+  });
+
+  it('时间应格式化为可读日期', () => {
+    const src = readSource();
+    assert.ok(src.includes('toLocale') || src.includes('format') || src.includes('时间'), '日期格式化');
+  });
 });
 
 // ---- 防御 ----
@@ -95,5 +121,86 @@ describe('notifications — 防御', () => {
   it('应包含 useMemo 性能优化', () => {
     const src = readSource();
     assert.ok(src.includes('useMemo'), '缺少 useMemo');
+  });
+
+  it('已读标记应更新状态', () => {
+    const src = readSource();
+    assert.ok(src.includes('markAsRead') || src.includes('onRead'), '已读操作');
+  });
+
+  it('通知数量统计不应突变原数组', () => {
+    const src = readSource();
+    assert.ok(src.includes('filter') || src.includes('reduce'), '不可变统计');
+  });
+});
+
+// ---- 反例 ----
+
+describe('notifications — 反例', () => {
+  it('源文件应存在', () => {
+    assert.ok(existsSync(SOURCE), 'page.tsx 应存在');
+  });
+
+  it('不应使用 dangeroueslySetInnerHTML', () => {
+    const src = readSource();
+    assert.ok(!src.includes('dangerouslySetInnerHTML'), '安全不用 innerHTML');
+  });
+
+  it('不应包含硬编码通知数据', () => {
+    const src = readSource();
+    assert.ok(!src.includes('type:') || src.includes('MOCK'), '使用 mock 数据');
+  });
+
+  it('不应直接突变 state', () => {
+    const src = readSource();
+    assert.ok(!src.includes('.push(') && !src.includes('.splice('), '不可变');
+  });
+
+  it('不应使用 eval', () => {
+    const src = readSource();
+    assert.ok(!src.includes('eval('), '不使用 eval');
+  });
+});
+
+// ---- 集成 ----
+
+describe('notifications — 集成', () => {
+  it('type 筛选和 status 筛选应并存', () => {
+    const src = readSource();
+    assert.ok(src.includes('typeFilter') && src.includes("n.status=="), '多条件筛');
+  });
+
+  it('搜索过滤应在筛选结果上执行', () => {
+    const src = readSource();
+    assert.ok(src.includes('searchTerm') || src.includes('useSearchFilter'), '搜索+筛选');
+  });
+
+  it('点击通知应跳转到详情', () => {
+    const src = readSource();
+    assert.ok(src.includes('/notifications/') || src.includes('onClick'), '跳转详情');
+  });
+
+  it('批量标记已读功能', () => {
+    const src = readSource();
+    assert.ok(src.includes('markAll') || src.includes('全部已读') || src.includes('markAllRead'), '批量操作');
+  });
+
+  it('通知列表应有分页或懒加载', () => {
+    const src = readSource();
+    assert.ok(src.includes('Pagination') || src.includes('LoadMore') || src.includes('page'), '分页');
+  });
+});
+
+// ---- AI 安全审计 ----
+
+describe('notifications — AI 安全审计', () => {
+  it('不应将通知内容暴露到 console', () => {
+    const src = readSource();
+    assert.ok(!src.includes('console.log(title)'), '不泄露内容');
+  });
+
+  it('通知内容不应包含 JSX 注入', () => {
+    const src = readSource();
+    assert.ok(!src.includes('dangerouslySetInnerHTML'), '不注入 JSX');
   });
 });

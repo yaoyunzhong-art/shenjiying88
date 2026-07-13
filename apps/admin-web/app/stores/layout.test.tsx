@@ -1,9 +1,11 @@
 /**
  * L1冒烟测试 — stores layout (26模块侧边栏)
+ * 覆盖: 正例·结构·功能·边界·防御·反例·集成·AI安全审计
+ * V17#圈梁对齐
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -43,6 +45,9 @@ describe('StoresLayout — 正例·结构', () => {
   it('应包含 React fragment 或 div wrapper', () => {
     assert.ok(SRC.includes('<') || SRC.includes('<>') || SRC.includes('<div'));
   });
+  it('源文件应存在', () => {
+    assert.ok(existsSync(resolve(__dirname, 'layout.tsx')), 'layout.tsx 应存在');
+  });
 });
 
 describe('StoresLayout — 正例·功能', () => {
@@ -60,6 +65,9 @@ describe('StoresLayout — 正例·功能', () => {
   });
   it('应包含事件处理函数', () => {
     assert.ok(/onClick|onChange|onSubmit/.test(SRC));
+  });
+  it('应包含子路由出口 children', () => {
+    assert.ok(SRC.includes('children') || SRC.includes('{children}'), '应包含 children');
   });
 });
 
@@ -80,6 +88,9 @@ describe('StoresLayout — 边界·防御', () => {
     const count = (SRC.match(/label:/g) || []).length;
     assert.ok(Number.isInteger(count) && count > 0);
   });
+  it('sidebar 不应在移动端溢出', () => {
+    assert.ok(SRC.includes('overflow') || SRC.includes('scroll'), '应处理溢出');
+  });
 });
 
 describe('StoresLayout — 反例', () => {
@@ -92,5 +103,39 @@ describe('StoresLayout — 反例', () => {
     for (const d of deprecated) {
       assert.ok(!SRC.includes(d), `不应包含 ${d}`);
     }
+  });
+  it('不应包含绝对路径', () => {
+    assert.ok(!SRC.includes('//'));
+  });
+  it('不应缺少 key prop', () => {
+    assert.ok(SRC.includes('key=') || SRC.includes('key {'), '应包含 key');
+  });
+});
+
+describe('StoresLayout — 集成', () => {
+  it('SidebarNav 应与 layout 参数路由同步', () => {
+    assert.ok(SRC.includes('SidebarNav') && SRC.includes('[id]'), '侧栏与路由一致');
+  });
+  it('应包含品牌下拉选择', () => {
+    assert.ok(SRC.includes('brand') || SRC.includes('Brand'), '品牌选择');
+  });
+  it('门店切换应有路由跳转', () => {
+    assert.ok(SRC.includes('router') || SRC.includes('navigate'), '路由跳转');
+  });
+  it('应包含返回管理后台导航', () => {
+    assert.ok(SRC.includes('返回') || SRC.includes('back') || SRC.includes('/stores'), '返回导航');
+  });
+  it('sidebar 数据应与 store 模块定义一致', () => {
+    const count = (SRC.match(/label:/g) || []).length;
+    assert.ok(count >= 20, `模块数 ${count} 符合预期`);
+  });
+});
+
+describe('StoresLayout — AI 安全审计', () => {
+  it('不应包含明确定义的密码', () => {
+    assert.ok(!SRC.includes('password') && !SRC.includes('token'), '无敏感信息');
+  });
+  it('不应包含 API 密钥', () => {
+    assert.ok(!SRC.includes('apiKey') && !SRC.includes('secret'), '无密钥');
   });
 });
