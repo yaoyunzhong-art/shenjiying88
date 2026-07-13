@@ -404,3 +404,29 @@ PS. P-35/P-36(截止7/15) → 仅剩2天，需集中推进到90%
 1. **V17 Day3 PRD全覆盖后圈梁对齐高效**: PRD→AC→测试一条龙，101模块3h完成归类
 2. **晨会条件超时未解已成惯例**: A1(AM-020)超11h+B2(P-31)超7h → 需考虑条件强制执行机制
 3. **P-35/P-36 7/15截止在即**: 2天后截止，60%/55%进度需明日全力聚焦
+
+## 2026-07-14 01:45 · TSC清零战
+
+### 事件
+从79个预存TSC错误到完全清零（源码层0错误），30分钟人工修复22个文件。
+
+### 学到的教训
+13. **子agent全部网络波动** → 5个子agent并行全部fail，改为主session亲手逐文件修。超高频子agent spawn在弱网络下不可靠。
+14. **copy-paste bug 模式** — `finance-reconciliation.service.spec.ts`中3处把`externalTransactionId`写成了`externalAmount`，导致重复属性+类型错误。测试helper `createTxn`缺`externalTransactionId`字段需显式加入。
+
+### 反模式库
+| ID | 反模式 | 发现日期 |
+|----|--------|----------|
+| AM-006 | `externalTransactionId` copy-paste为`externalAmount`（3处） | 2026-07-14 |
+| AM-007 | `const req`未指定`any`类型导致controller测试11个TSC | 2026-07-14 |
+| AM-008 | monitoring-recordMetric缺`labels`字段 | 2026-07-14 |
+
+### 正向模式库
+| ID | 模式 | 效果 |
+|----|------|------|
+| PP-006 | 主session逐文件修vs子agent并行 | TSC 30min清79错误 |
+| PP-007 | 预存copy-paste bug检查 → `externalTransactionId`模式 | 发现3处系统化bug |
+
+### 清单
+- 修复文件: agent-ringbeam, ai-model-config.controller.test, finance-reconciliation.service.spec, finance-reconciliation.controller.spec, monitoring-ringbeam.test, health.service.test, runbook.module.test, coupon-ringbeam.test, push.dto.ts, tenant-ringbeam.test, saas-billing-ringbeam.test, bootstrap.contract.test, ai-diagnosis-ringbeam.test, ai-review-ringbeam.test, db-knowledge.controller.spec
+- 总修复: 79 TSC错误 + 1预存业务bug (fee-included预期)
