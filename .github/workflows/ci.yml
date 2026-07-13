@@ -173,11 +173,47 @@ jobs:
           JWT_SECRET: test-jwt-secret
           NODE_ENV: test
 
+  seo-geo-browser:
+    name: SEO/GEO Browser E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run Phase-49 SEO/GEO browser evidence
+        run: pnpm run e2e:phase49:seo-geo
+        env:
+          CI: true
+
+      - name: Upload SEO/GEO browser evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase49-seo-geo-evidence
+          path: tmp/phase49-seo-geo
+          retention-days: 7
+
   # ─── 4. Docker Build (仅 main 分支) ──────────────────
   docker:
     name: Docker Build
     if: github.ref == 'refs/heads/main'
-    needs: [lint, build, test]
+    needs: [lint, build, test, seo-geo-browser]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:

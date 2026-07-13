@@ -1,6 +1,6 @@
 # P-49 SEO/GEO 专项审计
 
-> 更新时间: 2026-07-14 05:22
+> 更新时间: 2026-07-14 05:31
 > 范围: `PRD-015` / `apps/tob-web` / `SEO/GEO`
 
 ## 1. 审计结论
@@ -52,9 +52,13 @@
    - 修复 `PortalConsumerGovernanceSection` 在动态门户下触发的 React child key 告警
 7. 固化浏览器自动化证据：
    - 新增 `scripts/phase49-e2e-seo-geo.ts` 与根脚本命令 `pnpm run e2e:phase49:seo-geo`
+   - 新增 `scripts/run-phase49-seo-geo.sh`，支持自动探测/复用现有 `tob-web` 服务，离线时自动起本地 `3005` 端口再执行验收
    - 自动抽检 `cn-mainland / sea-sg / jp-tokyo / eu-de` 四条动态门户路径
    - 自动校验 `title / html lang / canonical / og:locale / description / h1 / console messages`
    - 证据已落盘到 `tmp/phase49-seo-geo/report.json` 与同目录 4 张全页截图
+8. 接入持续回归入口：
+   - `.github/workflows/ci.yml` 新增 `SEO/GEO Browser E2E` job，安装 Playwright Chromium 后执行 `pnpm run e2e:phase49:seo-geo`
+   - `scripts/nightly-jobs.sh` 的 Phase 2 新增 `2.4 SEO/GEO 浏览器回归`，夜间自动补 `PRD-015` 浏览器证据
 
 ## 4. AC / RQ 映射
 
@@ -72,7 +76,7 @@
 
 ## 5. 剩余缺口
 
-1. 浏览器自动化证据已落盘，但当前仍是本地手动触发，尚未接入 CI / 定时回归流水线。
+1. 浏览器自动化证据已落盘并接入 CI / 夜间回归；后续可继续补失败告警通知与更长期的截图归档策略。
 
 ## 6. 验证记录
 
