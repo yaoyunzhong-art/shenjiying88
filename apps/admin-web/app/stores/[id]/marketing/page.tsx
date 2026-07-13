@@ -14,6 +14,7 @@ const CAMPAIGNS = [
 
 const TYPE_COLORS: Record<string,string> = { 充值:'#6366f1', 推广:'#f59e0b', 会员:'#8b5cf6', 节日:'#ef4444', 会员卡:'#10b981' };
 const STATUS_CFG: Record<string,[string,string]> = { active:['green','进行中'], scheduled:['blue','待开始'], ended:['default','已结束'] };
+
 const COLUMNS = [
   { title:'活动名称', dataIndex:'name' },
   { title:'类型', dataIndex:'type', render:(v:string)=><Tag color={TYPE_COLORS[v]||'default'}>{v}</Tag> },
@@ -28,14 +29,15 @@ const COLUMNS = [
 export default function MarketingPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const filtered = statusFilter === 'all' ? CAMPAIGNS : CAMPAIGNS.filter(c => c.status === statusFilter);
+  const totalBudget = CAMPAIGNS.reduce((s, c) => s + c.budget, 0);
   const totalUsed = CAMPAIGNS.reduce((s, c) => s + c.used, 0);
   return (<PageShell><Space style={{width:'100%',flexDirection:'column',gap:16}}>
     <h2 style={{color:'#f8fafc',margin:0}}>📢 营销管理</h2>
     <Row gutter={16}>
       <Col span={4}><Card><Statistic title="进行中" value={CAMPAIGNS.filter(c=>c.status==='active').length}/></Card></Col>
-      <Col span={4}><Card><Statistic title="总营销投入" value={CAMPAIGNS.reduce((s,c)=>s+c.budget,0)} prefix="¥" valueStyle={{color:'#34d399'}}/></Card></Col>
+      <Col span={4}><Card><Statistic title="总投入" value={totalBudget} prefix="¥" valueStyle={{color:'#34d399'}}/></Card></Col>
       <Col span={4}><Card><Statistic title="已消耗" value={totalUsed} prefix="¥" valueStyle={{color:'#f59e0b'}}/></Card></Col>
-      <Col span={4}><Card><Statistic title="预算使用率" value={`${Math.round(totalUsed/CAMPAIGNS.reduce((s,c)=>s+c.budget,0)*100)}%`}/></Card></Col>
+      <Col span={4}><Card><Statistic title="使用率" value={`${Math.round(totalUsed/totalBudget*100)}%`}/></Card></Col>
     </Row>
     <Card><Space style={{marginBottom:12}}>
       <span style={{color:'#94a3b8',fontSize:13}}>状态:</span>
