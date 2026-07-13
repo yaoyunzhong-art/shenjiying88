@@ -1,7 +1,7 @@
 # 知识库索引 (knowledge/INDEX.md)
 
 > 创建: Pulse-65 (2026-06-25)
-> 最后更新: 2026-07-11 (Pulse-Nightly-13)
+> 最后更新: 2026-07-14 (Pulse-Nightly-15)
 > 目标: **结构化沉淀所有 phase 经验 + 专家洞察 + 决策记录,赋能后续开发**
 > 详细路线: [dev-roadmap.md](../dev-roadmap.md)
 
@@ -12,9 +12,9 @@
 | lessons-learned | **18** | pulse-nightly-13.md (今日凌晨) 🆕 |
 | patterns | 18 | e2e-pattern.md +3模式 · 情感累积/OTA/许可证矩阵 🆕 |
 | anti-patterns | 49 | v4 体系持续 |
-| expert-insights | **12** (E1~E35) | insight-2026-07-11.md (今日凌晨) 🆕 E35 |
+| expert-insights | **13** (E1~E45) | insight-2026-07-14.md (今日凌晨) 🆕 E45 |
 | decision-records | 8 (DR-001~DR-008) | — |
-| best-practices | **20** | e2e-pattern.md (+3 模式) |
+| best-practices | **20** | e2e-pattern.md (+3 模式) | Pulse-Nightly-15 新增3测试模式 🆕 |
 | automations | README | — |
 
 ---

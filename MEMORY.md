@@ -1,6 +1,6 @@
 # 🧠 shenjiying88 长期知识 (MEMORY.md)
 
-> 最后更新: 2026-07-12 05:30 CST (晨间收尾 · Pulse-Nightly-14 · 43链 · 161+ subtests 🟢 · +40 subtests · 3新模式 · 盲区清零 🎉)
+> 最后更新: 2026-07-14 05:30 CST (晨间收尾 · Pulse-Nightly-15 · admin-web路径24链 + api路径43链 · +21 subtests 🟢 · 3新模式 · 数据管道/订单生命周期/多租户)
 > 维护者: 龙虾哥 测试指挥官
 
 ---
@@ -10,7 +10,7 @@
 ### 应用模块 (apps/)
 | 模块 | 说明 | 测试现状 | 跨模块 E2E 链 |
 |------|------|---------|:------------:|
-| admin-web | 管理后台 (Next.js) | ✅ 4299 | ✅ 43 链 (链01~43) |
+| admin-web | 管理后台 (Next.js) | ✅ 4299 | ✅ **24 链 (链01~24 admin-web路径)** + 43 链 (链01~43 api路径) |
 | api | 后端 API (NestJS) | ❌ full-regression false positive (662 fail) | ✅ 间接+直接 |
 | app | C端原生App (Expo) | ✅ 222 pass | ✅ 间接 (链06/07) |
 | storefront-web | B端店铺门户 (Next.js) | ✅ 4554 pass | ✅ 间接+直接 |
@@ -34,7 +34,7 @@
 ### 测试金字塔（当前状态）
 ```
         /\
-       /  \       跨模块 E2E (43 chains, 161+ subtests) ← 🆕 40→43 链 (+40)
+       /  \       跨模块 E2E (admin-web 24链 + api 43链 = 67链总, 182+ subtests) ← 🆕 +3链 · +21 subtests
       /────\
      /      \      集成测试 (~200, admin-web)
     /────────\
@@ -69,21 +69,46 @@
 3. **语音+LYT+AI+国际化+监控模式**: 语音STT→交易→AI Chat→多语言→调用链监控
    - ⚠️ 关键: 小金额 `Math.round` 精度舍入, 投诉自动转人工
 
+### 新增测试模式 (Pulse-Nightly-15)
+4. **数据管道同步模式** (链22): Admin→API同步→Domain变换→TOB展示→Storefront消费
+   - 三种同步模式: 全量/增量/定时; 版本冲突解决; 合规检查; 多目标一致性
+   - ⚠️ 关键: 时间戳同一ms断言需用 `>=`; 版本冲突需前置播种
+5. **订单全生命周期模式** (链23): Mobile→Storefront确认→API状态机→Domain库存→Admin看板
+   - 完整状态机: cart→pending_payment→paid→confirmed→preparing→shipping→delivered→completed
+   - ⚠️ 关键: 状态转换必须完整走链(不可跳步); 库存三态管理(预占/扣减/释放)
+6. **企业多租户全流程模式** (链24): Tob注册→API路由→Domain隔离/配额→Admin审批→Audit合规
+   - 分层租户模型(free→enterprise); 功能矩阵自动分配; 资源配额限流; 合规报告
+   - ⚠️ 关键: 数据隔离需要严格验证; 切换暂停/恢复需要支持循环
+
 ---
 
-## 🔴 持续债务 (Pulse-Nightly-14)
+## 🔴 持续债务 (Pulse-Nightly-15)
 
 | 债务 | 级别 | 持续脉冲 | 根因 | 状态 | 趋势 |
 |------|------|:--------:|------|:----:|:----:|
-| @m5/api 662 tests fail | 🔴 P0 | **32+** | Nest TestingModule / Vitest 4 不兼容 | 🔴 | 📈 恶化 |
-| @m5/api TSC errors | 🔴 P0 | 5+ | ~59 errors (持续修复中) | 🔴 | 📈 持续 |
-| @m5/api full-regression false positive | 🟡 P2 | 5+ | Vitest 4 API 不兼容 | 🔴 | 📈 持续 |
-| @m5/api DEPRECATED 警告 | 🟡 P2 | 4+ | Vitest 4 poolOptions 迁移 | 🔴 | 持续 |
-| 共享状态隔离 链01-28 | 🟡 P2 | 8+ | 全局变量模式,需要迁移到工厂模式 | 🟡 | 📉 待迁移 |
-| Mobile/Tob-Web 零单元测试 | 🟡 P1 | 7+ | 两模块无 .test.ts 文件 | 🟡 | 📈 持续 |
-| 执行时间未追踪 | 🟢 P3 | 5+ | 无性能退化基线 | 🟡 | 持续 |
-| 幂等性缺外部存储 | 🟡 P2 | 6+ | 仅 in-memory Map | 🟡 | 持续 |
-| 40人专家团反馈未产出 | 🟡 P1 | 7+ | 从 Pulse-64 起未启动 | 🟡 | 持续 |
+| @m5/api 662 tests fail | 🔴 P0 | **33+** | Nest TestingModule / Vitest 4 不兼容 | 🔴 | 📈 恶化 |
+| @m5/api TSC errors | 🔴 P0 | 6+ | ~59 errors (持续修复中) | 🔴 | 📈 持续 |
+| @m5/api full-regression false positive | 🟡 P2 | 6+ | Vitest 4 API 不兼容 | 🔴 | 📈 持续 |
+| @m5/api DEPRECATED 警告 | 🟡 P2 | 5+ | Vitest 4 poolOptions 迁移 | 🔴 | 持续 |
+| 共享状态隔离 链01-28 | 🟡 P2 | 9+ | 全局变量模式,需要迁移到工厂模式 | 🟡 | 📉 待迁移 |
+| Mobile/Tob-Web 零单元测试 | 🟡 P1 | 8+ | 两模块无 .test.ts 文件 | 🟡 | 📈 持续 |
+| 40人专家团反馈未产出 | 🟡 P1 | 8+ | 从 Pulse-64 起未启动 | 🟡 | 持续 |
+| admin-web stores/layout 1✖假阳 | 🟡 P2 | 10+ | 源文件模式匹配断言 | 🟡 | 恒定非新 |
+| RQ-010~020 P0-FIRE 停滞 | 🔴 P0 | 21h+ | 20h+未执行, 需人工推进 | 🔴 | 📈 持续停滞 |
+
+### Pulse-Nightly-15 新增经验教训
+- **时间戳零差**: 同一事件循环内 `Date.now()` 返回相同值; 时间序断言需用 `>=` 而非 `>`
+- **状态机跳转严谨**: 业务状态转换必须严格按照定义链; 跨步跳转应触发错误
+- **版本冲突前置状态**: 负向测试需要清晰的前置条件建立
+- **管理看板时间阈值**: 同一ms操作 `age > 0` 不成立; 需要用负阈值
+
+### Pulse-Nightly-15 闭环
+| 债务 | 日期 | 说明 |
+|------|:----:|------|
+| 链22-24 编写验证 | 2026-07-14 ✅ | 3链 21 subtests, 0 fail |
+| 数据管道同步/版本冲突 | 2026-07-14 ✅ | 链22 全量/增量/定时+冲突解决 |
+| 订单全生命周期 | 2026-07-14 ✅ | 链23 完整状态机+库存三态+逆向 |
+| 企业多租户全流程 | 2026-07-14 ✅ | 链24 注册/订阅/隔离/配额/审计 |
 
 ### 已闭环债务 (Pulse-Nightly-14)
 | 债务 | 日期 | 说明 |
@@ -98,17 +123,21 @@
 
 ## 📚 知识库索引
 
-### 最佳实践 (Pulse-Nightly-14 已扩展至 22 种模式)
-- [knowledge/best-practices/e2e-pattern.md](knowledge/best-practices/e2e-pattern.md) — E2E 测试规范 + 22 种跨模块设计模式
-  - #20: 部署生命周期+灰度+自动回滚模式 🆕
-  - #21: 多币种+低代码配置模式 🆕
-  - #22: 语音+LYT+AI聊天+多语言+监控模式 🆕
+### 最佳实践 (Pulse-Nightly-15 已扩展至 25 种模式)
+- [knowledge/best-practices/e2e-pattern.md](knowledge/best-practices/e2e-pattern.md) — E2E 测试规范 + 25 种跨模块设计模式
+  - #20: 部署生命周期+灰度+自动回滚模式
+  - #21: 多币种+低代码配置模式
+  - #22: 语音+LYT+AI聊天+多语言+监控模式
+  - #23: 数据管道同步模式 (链22) 🆕
+  - #24: 订单全生命周期模式 (链23) 🆕
+  - #25: 企业多租户全流程模式 (链24) 🆕
 - [knowledge/best-practices/testing-strategy.md](knowledge/best-practices/testing-strategy.md) — 整体测试策略 (新增8.1-8.3)
 - [knowledge/best-practices/testing.md](knowledge/best-practices/testing.md) — 测试工具链
 
-### 专家洞察 (已扩展至 E36)
+### 专家洞察 (已扩展至 E45)
 - E01-E35: Pulse-Nightly-01~13 积累
-- **E36**: Pulse-Nightly-14 盲区清零洞察 (链41-43, +40 subtests, 覆盖5个盲区) 🆕 (2026-07-12)
+- **E36**: Pulse-Nightly-14 盲区清零洞察 (链41-43, +40 subtests, 覆盖5个盲区) (2026-07-12)
+- **E45**: Pulse-Nightly-15 数据管道/订单全生命周期/企业多租户洞察 (链22-24, +21 subtests) 🆕 (2026-07-14)
 - 完整: [knowledge/expert-insights/](knowledge/expert-insights/)
 
 ---
@@ -121,16 +150,14 @@
 3. 知识提炼 → update knowledge/ + expert-insights
 4. 自进化指标记录 → HEARTBEAT.md
 
-### Pulse-Nightly 测试节奏 (Pulse-Nightly-14 更新)
+### Pulse-Nightly 测试节奏 (Pulse-Nightly-15 更新)
 - **第3段 (03:30-05:30)**: **L3 跨模块 E2E 扩展 + 复盘 + 进化** ★ 本段
 - **晨间收尾 (05:30)**:
-  - 3 条新跨模块 E2E 链运行确认 (41/42/43, 40 subtests, 0 fail)
-  - **盲区清零** ✅ (currency/lowcode/voice-processing/deploy/lyt 5个首覆盖)
+  - 3 条新跨模块 E2E 链运行确认 (22/23/24, 21 subtests, 0 fail)
+  - **3新模式入库** (数据管道同步/订单全生命周期/企业多租户)
   - 复盘分析 + debt.md 和知识库更新
-  - 3 新模式入库 (部署生命周期/多币种&低代码/语音&LYT&监控)
-  - 专家团洞察更新 (E36)
-  - 报告: reports/nightly-test-20260712.md
-  - 测试报告 nightly-test-$(date +%Y%m%d).md 生成
+  - 专家团洞察更新 (E45)
+  - 报告: reports/nightly-test-20260714.md
   - HEARTBEAT.md 测试矩阵更新
   - MEMORY.md 长期知识沉淀
 
