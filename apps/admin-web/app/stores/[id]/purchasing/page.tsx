@@ -1,48 +1,35 @@
-// 🛒 采购管理 · 采购订单/供应商管理
-'use client'; import { useState } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Input } from '@m5/ui';
-
-const DATA = [
-  { id:'PO-001', item:'可乐(箱)', supplier:'统一商贸', qty:20, price:1200, date:'2026-07-10', status:'received', category:'饮品' },
-  { id:'PO-002', item:'打印纸(箱)', supplier:'办公用品', qty:5, price:400, date:'2026-07-12', status:'pending', category:'办公' },
-  { id:'PO-003', item:'游戏币(袋)', supplier:'游戏币厂', qty:100, price:5000, date:'2026-07-08', status:'received', category:'耗材' },
-  { id:'PO-004', item:'礼品玩偶', supplier:'礼品商', qty:50, price:3000, date:'2026-07-14', status:'ordered', category:'礼品' },
-  { id:'PO-005', item:'清洁剂(箱)', supplier:'清洁用品', qty:10, price:800, date:'2026-07-15', status:'ordered', category:'耗材' },
-  { id:'PO-006', item:'WiFi路由器', supplier:'网络设备', qty:3, price:1500, date:'2026-07-16', status:'pending', category:'设备' },
+// 🛒 采购管理 · 采购订单/供应商/入库
+'use client'; import { useState, useMemo } from 'react';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Input, Modal, message, Progress } from '@m5/ui';
+interface Purchase { id:string; supplier:string; items:string; total:number; status:'pending'|'ordered'|'partial'|'received'; created:string; expected:string; receiver?:string; }
+const DATA: Purchase[] = [
+  { id:'PO-001',supplier:'农夫山泉',items:'纯净水×200箱',total:2400,status:'received',created:'2026-07-10',expected:'2026-07-12',receiver:'张三'},
+  { id:'PO-002',supplier:'义乌礼品',items:'加油棒×500个',total:1250,status:'ordered',created:'2026-07-11',expected:'2026-07-14'},
+  { id:'PO-003',supplier:'任天堂',items:'NS游戏卡带×10张',total:2800,status:'pending',created:'2026-07-12',expected:'2026-07-18'},
+  { id:'PO-004',supplier:'清洁之家',items:'VR清洁套装×20套',total:700,status:'partial',created:'2026-07-09',expected:'2026-07-13',receiver:'李四'},
+  { id:'PO-005',supplier:'宇治抹茶',items:'抹茶粉×5kg',total:600,status:'ordered',created:'2026-07-12',expected:'2026-07-15'},
+  { id:'PO-006',supplier:'世嘉',items:'游戏币×10000枚',total:5000,status:'received',created:'2026-07-08',expected:'2026-07-10',receiver:'王五'},
+  { id:'PO-007',supplier:'得力文具',items:'打印纸×50卷',total:400,status:'pending',created:'2026-07-13',expected:'2026-07-16'},
+  { id:'PO-008',supplier:'本地供应商',items:'水果×15份',total:450,status:'ordered',created:'2026-07-12',expected:'2026-07-13'},
 ];
-
-const STATUS_CFG: Record<string,[string,string]> = { received:['green','已入库'], ordered:['blue','已下单'], pending:['orange','待处理'] };
-const COLUMNS = [
-  { title:'品名', dataIndex:'item' }, { title:'供应商', dataIndex:'supplier' },
-  { title:'数量', dataIndex:'qty' }, { title:'金额', dataIndex:'price', render:(v:number)=>`¥${v.toLocaleString()}` },
-  { title:'日期', dataIndex:'date' }, { title:'分类', dataIndex:'category' },
-  { title:'状态', dataIndex:'status', render:(v:string)=><Tag color={STATUS_CFG[v]?.[0]||'default'}>{STATUS_CFG[v]?.[1]||v}</Tag> },
-];
-
+const SCFG:Record<string,{color:string,label:string}> = { pending:{color:'default',label:'待下单'}, ordered:{color:'blue',label:'已下单'}, partial:{color:'orange',label:'部分到货'}, received:{color:'green',label:'已到货'} };
 export default function PurchasingPage() {
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [search, setSearch] = useState('');
-  const filtered = DATA.filter(d => {
-    if (statusFilter !== 'all' && d.status !== statusFilter) return false;
-    if (search && !d.item.includes(search) && !d.supplier.includes(search)) return false;
-    return true;
-  });
-  const totalSpend = DATA.reduce((s, d) => s + d.price, 0);
-  return (<PageShell><Space style={{width:'100%',flexDirection:'column',gap:16}}>
-    <h2 style={{color:'#f8fafc',margin:0}}>🛒 采购管理</h2>
-    <Row gutter={16}>
-      <Col span={6}><Card><Statistic title="本月采购" value={DATA.length}/></Card></Col>
-      <Col span={6}><Card><Statistic title="总金额" value={totalSpend} prefix="¥" valueStyle={{color:'#34d399'}}/></Card></Col>
-      <Col span={6}><Card><Statistic title="待收货" value={DATA.filter(d=>d.status!=='received').length} valueStyle={{color:'#f59e0b'}}/></Card></Col>
-      <Col span={6}><Card><Statistic title="已入库" value={DATA.filter(d=>d.status==='received').length} valueStyle={{color:'#34d399'}}/></Card></Col>
-    </Row>
-    <Card><Space style={{marginBottom:12}}>
-      <Input placeholder="搜索品名/供应商" value={search} onChange={e=>setSearch(e.target.value)} style={{width:200}} />
-      <span style={{color:'#94a3b8',fontSize:13}}>状态:</span>
-      <Select value={statusFilter} onChange={setStatusFilter} style={{width:130}}
-        options={[{value:'all',label:'全部'},{value:'received',label:'已入库'},{value:'ordered',label:'已下单'},{value:'pending',label:'待处理'}]}/>
-      <Button type="primary" style={{marginLeft:'auto'}}>新建采购单</Button>
-    </Space><Table dataSource={filtered} columns={COLUMNS} rowKey="id" pagination={false}/></Card>
-    <Card><Space><Button>供应商管理</Button><Button>采购报表</Button></Space></Card>
+  const [filter,setFilter]=useState<string>('all'); const [showAdd,setShowAdd]=useState(false);
+  const filtered = filter==='all'?DATA:DATA.filter(d=>d.status===filter);
+  const dueCount = DATA.filter(d=>d.status!=='received').length;
+  const cols = [
+    {title:'单号',dataIndex:'id'},{title:'供应商',dataIndex:'supplier'},{title:'物品',dataIndex:'items'},
+    {title:'金额',dataIndex:'total',render:(v:number)=>`¥${v.toLocaleString()}`},
+    {title:'下单日',dataIndex:'created'},{title:'预期到货',dataIndex:'expected'},
+    {title:'状态',dataIndex:'status',render:(v:string)=><Tag color={SCFG[v]?.color}>{SCFG[v]?.label}</Tag>},
+    {title:'签收人',dataIndex:'receiver',render:(v?:string)=>v||'-'},
+    {title:'操作',key:'a',width:140,render:(_:any,r:Purchase)=><Space size="small">{r.status!=='received'&&<Button size="small" type="primary">收货</Button>}<Button size="small">催单</Button></Space>},
+  ];
+  return (<PageShell><Space style={{width:'100%',flexDirection:'column',gap:16,alignItems:'stretch'}}>
+    <div style={{display:'flex',justifyContent:'space-between'}}><h2 style={{color:'#f8fafc',margin:0}}>🛒 采购管理</h2><Button type="primary" onClick={()=>setShowAdd(true)}>新建采购单</Button></div>
+    <Row gutter={16}><Col span={4}><Card size="small"><Statistic title="总采购单" value={DATA.length}/></Card></Col><Col span={4}><Card size="small"><Statistic title="待收货" value={dueCount} valueStyle={{color:'#f59e0b'}}/></Card></Col><Col span={4}><Card size="small"><Statistic title="已到货" value={DATA.filter(d=>d.status==='received').length} valueStyle={{color:'#34d399'}}/></Card></Col><Col span={4}><Card size="small"><Statistic title="采购总额" value={DATA.reduce((s,d)=>s+d.total,0)} prefix="¥" valueStyle={{color:'#fbbf24'}}/></Card></Col></Row>
+    <Card><Space style={{marginBottom:12}}><Select value={filter} onChange={setFilter} style={{width:120}} options={[{value:'all',label:'全部'},{value:'pending',label:'待下单'},{value:'ordered',label:'已下单'},{value:'partial',label:'部分到货'},{value:'received',label:'已到货'}]}/></Space>
+    <Table dataSource={filtered} columns={cols} rowKey="id" pagination={false}/></Card>
+    <Modal title="新建采购单" open={showAdd} onCancel={()=>setShowAdd(false)} onOk={()=>{message.success('采购单已创建');setShowAdd(false)}}><Space direction="vertical" style={{width:'100%'}}><Input placeholder="供应商"/><Input placeholder="物品描述"/><Input placeholder="金额" type="number"/><Input placeholder="预期到货日" type="date"/></Space></Modal>
   </Space></PageShell>);
 }

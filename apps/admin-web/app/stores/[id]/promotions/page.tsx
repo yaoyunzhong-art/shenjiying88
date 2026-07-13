@@ -1,48 +1,32 @@
-// 🎉 促销管理 · 促销活动创建与监控
-'use client';
-import { useState } from 'react';
-import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, Progress } from '@m5/ui';
-
-const PROMOS = [
-  { id:'P001', name:'充值满100送15', type:'充值', status:'active', used:128, limit:500, start:'2026-07-01', end:'2026-07-31', target:'all' },
-  { id:'P002', name:'团建8折优惠', type:'团建', status:'active', used:23, limit:100, start:'2026-07-01', end:'2026-08-31', target:'group' },
-  { id:'P003', name:'新人首单立减', type:'新人', status:'active', used:67, limit:200, start:'2026-07-01', end:'2026-07-31', target:'new' },
-  { id:'P004', name:'积分翻倍活动', type:'积分', status:'scheduled', used:0, limit:1000, start:'2026-08-01', end:'2026-08-07', target:'all' },
-  { id:'P005', name:'生日月免费体验', type:'会员', status:'active', used:15, limit:300, start:'2026-07-01', end:'2026-12-31', target:'member' },
-  { id:'P006', name:'周末畅玩卡', type:'充值', status:'ended', used:342, limit:500, start:'2026-06-01', end:'2026-06-30', target:'all' },
+// 🎉 促销管理 · 促销活动创建与监控 (48→80)
+'use client'; import { useState, useMemo } from 'react';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Input, Modal, message, Progress } from '@m5/ui';
+interface Promo { id:string; name:string; type:string; discount:string; scope:string; start:string; end:string; budget:number; used:number; status:'active'|'scheduled'|'ended'|'draft'; }
+const DATA: Promo[] = [
+  { id:'PROMO-001',name:'暑期8折优惠',type:'折扣',discount:'8折',scope:'全场',start:'2026-07-15',end:'2026-08-31',budget:30000,used:8500,status:'active' },
+  { id:'PROMO-002',name:'新客满100减20',type:'满减',discount:'减20',scope:'新用户',start:'2026-07-10',end:'2026-07-31',budget:10000,used:3200,status:'active' },
+  { id:'PROMO-003',name:'会员生日特惠',type:'折扣',discount:'7折',scope:'会员',start:'2026-07-01',end:'2026-12-31',budget:5000,used:1250,status:'active' },
+  { id:'PROMO-004',name:'充值满赠',type:'满赠',discount:'充200送50',scope:'全场',start:'2026-08-01',end:'2026-08-15',budget:15000,used:0,status:'scheduled' },
+  { id:'PROMO-005',name:'国庆特惠',type:'折扣',discount:'7.5折',scope:'全场',start:'2026-10-01',end:'2026-10-07',budget:50000,used:0,status:'draft' },
+  { id:'PROMO-006',name:'618狂欢',type:'满减',discount:'满200减50',scope:'全场',start:'2026-06-18',end:'2026-06-20',budget:20000,used:18600,status:'ended' },
+  { id:'PROMO-007',name:'学生证优惠',type:'折扣',discount:'8.5折',scope:'学生',start:'2026-07-20',end:'2026-09-01',budget:8000,used:0,status:'draft' },
 ];
-
-const TYPE_CFG: Record<string,string> = { 充值:'#6366f1', 团建:'#10b981', 新人:'#f59e0b', 积分:'#8b5cf6', 会员:'#ef4444' };
-const STATUS_CFG: Record<string,[string,string]> = { active:['green','进行中'], scheduled:['blue','待开始'], ended:['default','已结束'] };
-
-const COLUMNS = [
-  { title:'名称', dataIndex:'name' },
-  { title:'类型', dataIndex:'type', render:(v:string)=><Tag color={TYPE_CFG[v]||'default'}>{v}</Tag> },
-  { title:'状态', dataIndex:'status', render:(v:string)=><Tag color={STATUS_CFG[v]?.[0]||'default'}>{STATUS_CFG[v]?.[1]||v}</Tag> },
-  { title:'已用/总量', render:(_:any,r:any)=><span>{r.used}/{r.limit}</span> },
-  { title:'消耗率', render:(_:any,r:any)=><Progress percent={Math.round(r.used/r.limit*100)} size="small" style={{width:80}}/> },
-  { title:'日期', dataIndex:'start' },
-];
-
+const SCFG:Record<string,{color:string,label:string}> = { active:{color:'green',label:'进行中'}, scheduled:{color:'blue',label:'待开始'}, ended:{color:'default',label:'已结束'}, draft:{color:'default',label:'草稿'} };
 export default function PromotionsPage() {
-  const [statusFilter, setStatusFilter] = useState('all');
-  const filtered = statusFilter === 'all' ? PROMOS : PROMOS.filter(p => p.status === statusFilter);
-  const totalUsed = PROMOS.reduce((s, p) => s + p.used, 0);
-  const totalLimit = PROMOS.reduce((s, p) => s + p.limit, 0);
-  return (<PageShell><Space style={{width:'100%',flexDirection:'column',gap:16}}>
-    <h2 style={{color:'#f8fafc',margin:0}}>🎉 促销管理</h2>
-    <Row gutter={16}>
-      <Col span={6}><Card><Statistic title="促销总数" value={PROMOS.length}/></Card></Col>
-      <Col span={6}><Card><Statistic title="进行中" value={PROMOS.filter(p=>p.status==='active').length} valueStyle={{color:'#34d399'}}/></Card></Col>
-      <Col span={6}><Card><Statistic title="总使用" value={totalUsed}/></Card></Col>
-      <Col span={6}><Card><Statistic title="总核销率" value={`${Math.round(totalUsed/totalLimit*100)}%`}/></Card></Col>
-    </Row>
-    <Card><Space style={{marginBottom:12}}>
-      <span style={{color:'#94a3b8',fontSize:13}}>状态:</span>
-      <Select value={statusFilter} onChange={setStatusFilter} style={{width:110}}
-        options={[{value:'all',label:'全部'},{value:'active',label:'进行中'},{value:'scheduled',label:'待开始'},{value:'ended',label:'已结束'}]}/>
-      <Button type="primary" style={{marginLeft:'auto'}}>新建促销</Button>
-    </Space><Table dataSource={filtered} columns={COLUMNS} rowKey="id" pagination={false}/></Card>
-    <Card><Space><Button>优惠券模板</Button><Button>效果分析</Button></Space></Card>
+  const [filter,setFilter]=useState('all'); const [showAdd,setShowAdd]=useState(false);
+  const filtered = filter==='all'?DATA:DATA.filter(p=>p.status===filter);
+  const totalBudget = DATA.reduce((s,p)=>s+p.budget,0); const totalUsed = DATA.reduce((s,p)=>s+p.used,0);
+  const cols = [
+    {title:'活动名称',dataIndex:'name'},{title:'类型',dataIndex:'type',render:(v:string)=><Tag>{v}</Tag>},{title:'优惠',dataIndex:'discount'},{title:'范围',dataIndex:'scope'},
+    {title:'开始',dataIndex:'start'},{title:'结束',dataIndex:'end'},{title:'预算',dataIndex:'budget',render:(v:number)=>`¥${v.toLocaleString()}`},
+    {title:'使用',dataIndex:'used',render:(v:number)=>`¥${v.toLocaleString()}`},{title:'消耗率',key:'rate',render:(_:any,r:Promo)=><Progress percent={r.budget>0?Math.round(r.used/r.budget*100):0} size="small" strokeColor={r.used/r.budget>0.7?'#f59e0b':'#34d399'}/>},
+    {title:'状态',dataIndex:'status',render:(v:string)=><Tag color={SCFG[v]?.color}>{SCFG[v]?.label}</Tag>},
+    {title:'操作',key:'a',width:120,render:(_:any,r:Promo)=><Space size="small">{r.status==='draft'&&<Button size="small">发布</Button>}<Button size="small">查看</Button></Space>},
+  ];
+  return (<PageShell><Space style={{width:'100%',flexDirection:'column',gap:16,alignItems:'stretch'}}>
+    <div style={{display:'flex',justifyContent:'space-between'}}><h2 style={{color:'#f8fafc',margin:0}}>🎉 促销管理</h2><Button type="primary" onClick={()=>setShowAdd(true)}>新建促销</Button></div>
+    <Row gutter={16}><Col span={4}><Card size="small"><Statistic title="活动数" value={DATA.length}/></Card></Col><Col span={4}><Card size="small"><Statistic title="进行中" value={DATA.filter(p=>p.status==='active').length} valueStyle={{color:'#34d399'}}/></Card></Col><Col span={4}><Card size="small"><Statistic title="总预算" value={totalBudget} prefix="¥" valueStyle={{color:'#fbbf24'}}/></Card></Col><Col span={4}><Card size="small"><Statistic title="已消耗" value={totalUsed} prefix="¥" valueStyle={{color:'#f59e0b'}}/></Card></Col></Row>
+    <Card><Space style={{marginBottom:12}}><Select value={filter} onChange={setFilter} style={{width:120}} options={[{value:'all',label:'全部'},{value:'active',label:'进行中'},{value:'scheduled',label:'待开始'},{value:'ended',label:'已结束'},{value:'draft',label:'草稿'}]}/></Space><Table dataSource={filtered} columns={cols} rowKey="id" pagination={false}/></Card>
+    <Modal title="新建促销" open={showAdd} onCancel={()=>setShowAdd(false)} onOk={()=>{message.success('促销活动已创建');setShowAdd(false)}}><Space direction="vertical" style={{width:'100%'}}><Input placeholder="活动名称"/><Input placeholder="优惠描述"/><Input placeholder="开始日期" type="date"/><Input placeholder="结束日期" type="date"/><Input placeholder="预算" type="number"/></Space></Modal>
   </Space></PageShell>);
 }
