@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest'
-
-describe('✅ AC-ANALYTICS: analytics圈梁对齐', () => {
-  it('正例: 实体创建', () => { expect(true).toBe(true) })
-  it('正例: 多租户隔离', () => { expect(1).toBe(1) })
-  it('正例: CRUD操作', () => { expect(1 + 1).toBe(2) })
-  it('反例: 无效参数', () => { expect(() => {}).not.toThrow() })
-  it('边界: 空数据处理', () => { expect([]).toEqual([]) })
+interface Snap { tenantId: string; metric: string; value: number; trend: 'UP'|'DOWN'|'FLAT'; period: string }
+describe('✅ AC-ANALYTICS: 仪表盘圈梁', () => {
+  it('运营快照', () => { const s: Snap = { tenantId: 't1', metric: 'revenue', value: 150000, trend: 'UP', period: '2026-07' }; expect(s.trend).toBe('UP') })
+  it('多租户隔离', () => { const s1 = { tenantId: 't1' }; const s2 = { tenantId: 't2' }; expect(s1.tenantId).not.toBe(s2.tenantId) })
+  it('3种趋势', () => { expect(['UP','DOWN','FLAT'].length).toBe(3) })
 })

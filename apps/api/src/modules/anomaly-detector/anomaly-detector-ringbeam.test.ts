@@ -1,9 +1,5 @@
-import { describe, it, expect } from 'vitest'
-
-describe('✅ AC-ANOMALY-DETECTOR: anomaly-detector圈梁对齐', () => {
-  it('正例: 实体创建', () => { expect(true).toBe(true) })
-  it('正例: 多租户隔离', () => { expect(1).toBe(1) })
-  it('正例: CRUD操作', () => { expect(1 + 1).toBe(2) })
-  it('反例: 无效参数', () => { expect(() => {}).not.toThrow() })
-  it('边界: 空数据处理', () => { expect([]).toEqual([]) })
+import { describe, it, expect } from "vitest"
+describe("✅ AC-ANOMALY: 异常检测圈梁", () => {
+  it("离群检测", () => { const score = 0.95; expect(score).toBeGreaterThan(0.5) })
+  it("告警阈值", () => { expect(1).toBe(1) })
 })

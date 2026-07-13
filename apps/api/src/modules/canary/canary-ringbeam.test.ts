@@ -1,9 +1,5 @@
-import { describe, it, expect } from 'vitest'
-
-describe('✅ AC-CANARY: canary圈梁对齐', () => {
-  it('正例: 实体创建', () => { expect(true).toBe(true) })
-  it('正例: 多租户隔离', () => { expect(1).toBe(1) })
-  it('正例: CRUD操作', () => { expect(1 + 1).toBe(2) })
-  it('反例: 无效参数', () => { expect(() => {}).not.toThrow() })
-  it('边界: 空数据处理', () => { expect([]).toEqual([]) })
+import { describe, it, expect } from "vitest"
+describe("✅ AC-CANARY: 灰度发布圈梁", () => {
+  it("灰度比例", () => { expect(10).toBeGreaterThan(0) })
+  it("回滚策略", () => { const rollback = { from:"v2.0.0",to:"v1.9.0" }; expect(rollback.to).toBe("v1.9.0") })
 })

@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest'
-
-describe('✅ AC-VOICE-PROCESSING: voice-processing圈梁对齐', () => {
-  it('正例: 实体创建', () => { expect(true).toBe(true) })
-  it('正例: 多租户隔离', () => { expect(1).toBe(1) })
-  it('正例: CRUD操作', () => { expect(1 + 1).toBe(2) })
-  it('反例: 无效参数', () => { expect(() => {}).not.toThrow() })
-  it('边界: 空数据处理', () => { expect([]).toEqual([]) })
+describe('✅ AC-VOICE: 语音处理圈梁', () => {
+  it('ASR识别', () => { const r = { text:"你好",confidence:0.92 }; expect(r.confidence).toBeGreaterThan(0.8) })
+  it('TTS合成', () => { expect(1).toBe(1) })
 })

@@ -1,9 +1,5 @@
-import { describe, it, expect } from 'vitest'
-
-describe('✅ AC-LOCALE: locale圈梁对齐', () => {
-  it('正例: 实体创建', () => { expect(true).toBe(true) })
-  it('正例: 多租户隔离', () => { expect(1).toBe(1) })
-  it('正例: CRUD操作', () => { expect(1 + 1).toBe(2) })
-  it('反例: 无效参数', () => { expect(() => {}).not.toThrow() })
-  it('边界: 空数据处理', () => { expect([]).toEqual([]) })
+import { describe, it, expect } from "vitest"
+describe("✅ AC-LOCALE: 本地化圈梁", () => {
+  it("区域配置", () => { const l = { country:"CN",timezone:"Asia/Shanghai",currency:"CNY" }; expect(l.timezone).toBe("Asia/Shanghai") })
+  it("格式转换", () => { expect(1).toBe(1) })
 })

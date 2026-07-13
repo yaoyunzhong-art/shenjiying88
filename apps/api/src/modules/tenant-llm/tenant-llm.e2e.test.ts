@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+import { describe, it, beforeAll, afterAll, vi } from 'vitest'
 /**
  * E2E: Tenant LLM 配置管理 HTTP 链路
  *
@@ -59,6 +59,9 @@ interface ApplyBody {
 interface ApproveBody {
   approved: boolean
   approvedBy: string
+  permissions?: string[]
+  actorRole?: string
+  reason?: string
 }
 
 /** 辅助: 判断一个响应 body 是否为空 (null 或 {}) */
@@ -127,7 +130,11 @@ class TestTenantLLMController {
     @Param('id') id: string,
     @Body() body: ApproveBody
   ) {
-    return this.service.approveConfig(id, body.approvedBy, body.approved)
+    return this.service.approveConfig(id, body.approvedBy, body.approved, {
+      permissions: body.permissions,
+      actorRole: body.actorRole,
+      reason: body.reason,
+    })
   }
 
   @Get('stats')
@@ -148,6 +155,14 @@ class TestTenantLLMController {
     @Query('periodEnd') periodEnd?: string
   ) {
     return this.service.getCallLogs(tenantId, configId, periodStart, periodEnd)
+  }
+
+  @Get('audit-logs')
+  getAuditLogs(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('configId') configId?: string
+  ) {
+    return this.service.getAuditLogs(tenantId, configId)
   }
 }
 
@@ -398,6 +413,38 @@ describe('E2E: [tenant-llm] LLM配置管理 HTTP链路', () => {
     assert.ok(isEmpty(res.body))
   })
 
+  it('POST /tenant-llm/configs/:id/approve 普通运营无审批权限', async () => {
+    const createRes = await http
+      .post('/tenant-llm/configs')
+      .set('x-tenant-id', tenantId)
+      .send({
+        name: 'Denied In E2E',
+        provider: 'openai',
+        modelName: 'gpt-4',
+        apiKey: 'sk-denied-e2e',
+      })
+      .expect(201)
+
+    await http
+      .post(`/tenant-llm/configs/${createRes.body.id}/approve`)
+      .send({
+        approved: true,
+        approvedBy: 'operator-e2e',
+        permissions: ['llm:view', 'llm:write'],
+        actorRole: 'operator',
+        reason: '普通运营无审批权限',
+      })
+      .expect(403)
+
+    const configRes = await http
+      .get(`/tenant-llm/configs/${createRes.body.id}`)
+      .set('x-tenant-id', tenantId)
+      .expect(200)
+
+    assert.equal(configRes.body.status, 'pending')
+    assert.equal(configRes.body.enabled, false)
+  })
+
   // ── 调用统计 ──
 
   it('GET /tenant-llm/stats 返回统计（无日志时为零数据）', async () => {
@@ -452,6 +499,59 @@ describe('E2E: [tenant-llm] LLM配置管理 HTTP链路', () => {
 
     assert.ok(Array.isArray(resA.body))
     assert.ok(Array.isArray(resB.body))
+  })
+
+  it('GET /tenant-llm/audit-logs 返回申请与审批审计日志', async () => {
+    const res = await http
+      .get(`/tenant-llm/audit-logs?configId=${createdConfigId}`)
+      .set('x-tenant-id', tenantId)
+      .expect(200)
+
+    assert.ok(Array.isArray(res.body))
+    assert.ok(res.body.some((log: any) => log.action === 'apply'))
+    assert.ok(res.body.some((log: any) => log.action === 'approve'))
+  })
+
+  it('GET /tenant-llm/audit-logs 可查看拒绝审批审计记录', async () => {
+    const deniedTenantId = 'e2e-tenant-llm-denied'
+    const createRes = await http
+      .post('/tenant-llm/configs')
+      .set('x-tenant-id', deniedTenantId)
+      .send({
+        name: 'Audit Denied Config',
+        provider: 'deepseek',
+        modelName: 'deepseek-chat',
+        apiKey: 'sk-denied-audit',
+      })
+      .expect(201)
+
+    await http
+      .post(`/tenant-llm/configs/${createRes.body.id}/apply`)
+      .set('x-tenant-id', deniedTenantId)
+      .send({
+        configId: createRes.body.id,
+        useCase: '审计拒绝链路',
+        expectedVolume: 10,
+      })
+      .expect(201)
+
+    await http
+      .post(`/tenant-llm/configs/${createRes.body.id}/approve`)
+      .send({
+        approved: true,
+        approvedBy: 'operator-e2e-2',
+        permissions: ['llm:view'],
+        actorRole: 'operator',
+        reason: 'e2e 审批拒绝',
+      })
+      .expect(403)
+
+    const auditRes = await http
+      .get(`/tenant-llm/audit-logs?configId=${createRes.body.id}`)
+      .set('x-tenant-id', deniedTenantId)
+      .expect(200)
+
+    assert.ok(auditRes.body.some((log: any) => log.action === 'approve_denied'))
   })
 
   // ── 删除配置 ──
