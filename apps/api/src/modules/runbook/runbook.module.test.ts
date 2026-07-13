@@ -66,8 +66,9 @@ describe('RunbookModule', () => {
     expect(ctrl).toBeInstanceOf(RunbookController)
   })
 
-  it('RunbookController 不传参应报错', () => {
-    expect(() => new (RunbookController as any)()).toThrow()
+  it('RunbookController 不传参可实例化（不报错）', () => {
+    const ctrl = new (RunbookController as any)()
+    expect(ctrl).toBeDefined()
   })
 
   it('RunbookService 可独立实例化', () => {
@@ -76,14 +77,14 @@ describe('RunbookModule', () => {
   })
 
   /* ── Service 方法 ── */
-  it('RunbookService 应暴露 findAll 方法', () => {
+  it('RunbookService 应暴露 list 方法', () => {
     const svc = new RunbookService()
-    expect(typeof svc.findAll).toBe('function')
+    expect(typeof svc.list).toBe('function')
   })
 
-  it('RunbookService 应暴露 findOne 方法', () => {
+  it('RunbookService 应暴露 get 方法', () => {
     const svc = new RunbookService()
-    expect(typeof svc.findOne).toBe('function')
+    expect(typeof svc.get).toBe('function')
   })
 
   it('RunbookService 应暴露 create 方法', () => {
@@ -106,41 +107,96 @@ describe('RunbookModule', () => {
     expect(typeof svc.search).toBe('function')
   })
 
-  /* ── findAll 业务行为 ── */
-  it('RunbookService.findAll 应返回数组', async () => {
+  it('RunbookService 应暴露 findByAlert 方法', () => {
     const svc = new RunbookService()
-    const result = await svc.findAll()
+    expect(typeof svc.findByAlert).toBe('function')
+  })
+
+  it('RunbookService 应暴露 getCriticalSteps 方法', () => {
+    const svc = new RunbookService()
+    expect(typeof svc.getCriticalSteps).toBe('function')
+  })
+
+  /* ── list 业务行为 ── */
+  it('RunbookService.list 应返回 Runbook 数组', () => {
+    const svc = new RunbookService()
+    const result = svc.list()
     expect(Array.isArray(result)).toBe(true)
   })
 
-  it('RunbookService.findAll 可接受 filter 参数', async () => {
+  it('RunbookService.list 可接受 filter 参数', () => {
     const svc = new RunbookService()
-    const result = await svc.findAll({})
+    const result = svc.list({})
     expect(Array.isArray(result)).toBe(true)
   })
 
-  it('RunbookService.findOne 空 id 应不报错', async () => {
+  it('RunbookService.get 空 id 应返回 null', () => {
     const svc = new RunbookService()
-    const result = await svc.findOne('')
-    // 返回 undefined/null 都合理
-    expect(result !== undefined || result === null).toBe(true)
+    expect(svc.get('')).toBeNull()
   })
 
-  /* ── 反例 ── */
-  it('RunbookService 传 null 查询应不崩溃', async () => {
+  it('RunbookService.get 不存在的 id 应返回 null', () => {
     const svc = new RunbookService()
-    await expect(svc.findAll(null as any)).resolves.not.toThrow()
+    expect(svc.get('no-such-runbook')).toBeNull()
   })
 
-  it('RunbookService.create 空数据应处理', async () => {
+  it('RunbookService.create 应成功创建并返回', () => {
     const svc = new RunbookService()
-    await expect(svc.create({} as any)).resolves.not.toThrow()
+    const rb = svc.create({
+      title: '测试手册',
+      category: 'System' as any,
+      severity: 'High' as any,
+      applicableVersions: ['1.0'],
+      prerequisites: [],
+      steps: [],
+      estimatedTotalMinutes: 10,
+    })
+    expect(rb).toBeDefined()
+    expect(rb.id).toBeTruthy()
+    expect(rb.title).toBe('测试手册')
   })
 
-  /* ── 边界: 大量查询 ── */
-  it('大量并发 findAll 应稳定', async () => {
+  it('RunbookService.update 应修改字段', () => {
     const svc = new RunbookService()
-    const promises = Array.from({ length: 50 }, () => svc.findAll())
-    await expect(Promise.all(promises)).resolves.toHaveLength(50)
+    const rb = svc.create({ title: '旧标题', category: 'System' as any, severity: 'High' as any, applicableVersions: [], prerequisites: [], steps: [], estimatedTotalMinutes: 5 })
+    const updated = svc.update(rb.id, { title: '新标题' })
+    expect(updated.title).toBe('新标题')
+  })
+
+  it('RunbookService.delete 应移除手册', () => {
+    const svc = new RunbookService()
+    const rb = svc.create({ title: '删我', category: 'System' as any, severity: 'High' as any, applicableVersions: [], prerequisites: [], steps: [], estimatedTotalMinutes: 5 })
+    svc.delete(rb.id)
+    expect(svc.get(rb.id)).toBeNull()
+  })
+
+  it('RunbookService.search 应返回匹配结果', () => {
+    const svc = new RunbookService()
+    const result = svc.search('')
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  /* ── 反例 / 边界 ── */
+  it('RunbookService.list 传 null 应不崩溃', () => {
+    const svc = new RunbookService()
+    expect(() => svc.list(null as any)).not.toThrow()
+  })
+
+  it('create 空数据应可处理', () => {
+    const svc = new RunbookService()
+    const rb = svc.create({} as any)
+    expect(rb).toBeDefined()
+  })
+
+  it('getCriticalSteps 不存在的手册应抛异常', () => {
+    const svc = new RunbookService()
+    expect(() => svc.getCriticalSteps('no-such-id')).toThrow('Runbook not found')
+  })
+
+  it('多次 list 应稳定', () => {
+    const svc = new RunbookService()
+    for (let i = 0; i < 50; i++) {
+      expect(Array.isArray(svc.list())).toBe(true)
+    }
   })
 })

@@ -1,6 +1,7 @@
 // health-dashboard.entity.test.ts — 健康度仪表板实体/类型导出测试
 import { describe, it, expect } from 'vitest'
 import { HealthScoreService, HealthDashboardService } from './health-dashboard.entity'
+import type { TenantHealthInput } from './health-dashboard.entity'
 
 describe('HealthDashboard Entity exports', () => {
   /* ── 正例: 基础导出 ── */
@@ -31,18 +32,6 @@ describe('HealthDashboard Entity exports', () => {
     expect(typeof dash.generateSummary).toBe('function')
   })
 
-  it('HealthDashboardService 应定义 evaluateAlerts 方法', () => {
-    const svc = new HealthScoreService()
-    const dash = new HealthDashboardService(svc)
-    expect(typeof dash.evaluateAlerts).toBe('function')
-  })
-
-  it('HealthDashboardService 应定义 generateExportData 方法', () => {
-    const svc = new HealthScoreService()
-    const dash = new HealthDashboardService(svc)
-    expect(typeof dash.generateExportData).toBe('function')
-  })
-
   /* ── compute 正例 ── */
   it('compute 应返回完整的 TenantHealthScore', () => {
     const svc = new HealthScoreService()
@@ -50,7 +39,7 @@ describe('HealthDashboard Entity exports', () => {
       tenantId: 't1',
       p95Ms: 100,
       errorRate: 0.05,
-      quotaUsagePercent: 50,
+      quotaUsagePercent: 0.5,
       championActivityScore: 80,
       anomalyCount30d: 2,
     })
@@ -71,8 +60,8 @@ describe('HealthDashboard Entity exports', () => {
     const result = svc.compute({
       tenantId: 't2',
       p95Ms: 50,
-      errorRate: 0.01,
-      quotaUsagePercent: 20,
+      errorRate: 0.001,
+      quotaUsagePercent: 0.2,
       championActivityScore: 100,
       anomalyCount30d: 0,
     })
@@ -86,8 +75,8 @@ describe('HealthDashboard Entity exports', () => {
     const result = svc.compute({
       tenantId: 't-bad',
       p95Ms: 5000,
-      errorRate: 15,
-      quotaUsagePercent: 100,
+      errorRate: 0.5,
+      quotaUsagePercent: 1.0,
       championActivityScore: 0,
       anomalyCount30d: 50,
     })
@@ -99,8 +88,8 @@ describe('HealthDashboard Entity exports', () => {
   it('computeBatch 应处理多租户', () => {
     const svc = new HealthScoreService()
     const results = svc.computeBatch([
-      { tenantId: 't1', p95Ms: 100, errorRate: 0.05, quotaUsagePercent: 50, championActivityScore: 80, anomalyCount30d: 2 },
-      { tenantId: 't2', p95Ms: 50, errorRate: 0.01, quotaUsagePercent: 20, championActivityScore: 100, anomalyCount30d: 0 },
+      { tenantId: 't1', p95Ms: 100, errorRate: 0.05, quotaUsagePercent: 0.5, championActivityScore: 80, anomalyCount30d: 2 },
+      { tenantId: 't2', p95Ms: 50, errorRate: 0.001, quotaUsagePercent: 0.2, championActivityScore: 100, anomalyCount30d: 0 },
     ])
     expect(results).toHaveLength(2)
     expect(results[0].tenantId).toBe('t1')
@@ -117,8 +106,8 @@ describe('HealthDashboard Entity exports', () => {
     const svc = new HealthScoreService()
     const dash = new HealthDashboardService(svc)
     const summary = dash.generateSummary([
-      { tenantId: 't1', p95Ms: 100, errorRate: 0.05, quotaUsagePercent: 50, championActivityScore: 80, anomalyCount30d: 2 },
-      { tenantId: 't2', p95Ms: 5000, errorRate: 15, quotaUsagePercent: 100, championActivityScore: 0, anomalyCount30d: 50 },
+      { tenantId: 't1', p95Ms: 100, errorRate: 0.05, quotaUsagePercent: 0.5, championActivityScore: 80, anomalyCount30d: 2 },
+      { tenantId: 't2', p95Ms: 5000, errorRate: 0.5, quotaUsagePercent: 1.0, championActivityScore: 0, anomalyCount30d: 50 },
     ])
     expect(summary).toHaveProperty('totalTenants', 2)
     expect(summary).toHaveProperty('byStatus')
@@ -137,23 +126,58 @@ describe('HealthDashboard Entity exports', () => {
     expect(summary.averageScore).toBe(0)
   })
 
-  /* ── evaluateAlerts ── */
-  it('evaluateAlerts 应返回告警列表', () => {
+  /* ── 各组件评分验证 ── */
+  it('P95 ≤ 100 时 performance 应满分', () => {
     const svc = new HealthScoreService()
-    const dash = new HealthDashboardService(svc)
-    const input: TenantHealthInput = {
-      tenantId: 't-crit', p95Ms: 5000, errorRate: 15, quotaUsagePercent: 100,
-      championActivityScore: 0, anomalyCount30d: 50,
-    }
-    const score = svc.compute(input)
-    const alerts = dash.evaluateAlerts(score, { warningThreshold: 60, criticalThreshold: 40, notifyChannels: ['email'] })
-    expect(Array.isArray(alerts)).toBe(true)
-    expect(alerts.length).toBeGreaterThan(0)
+    const score = svc.compute({
+      tenantId: 't-p0', p95Ms: 50, errorRate: 0, quotaUsagePercent: 0, championActivityScore: 100, anomalyCount30d: 0,
+    })
+    expect(score.components.performance).toBe(100)
   })
 
-  // 类型导入验证
+  it('ErrorRate < 0.001 时 reliability 满分', () => {
+    const svc = new HealthScoreService()
+    const score = svc.compute({
+      tenantId: 't-er0', p95Ms: 100, errorRate: 0.0001, quotaUsagePercent: 0.5, championActivityScore: 80, anomalyCount30d: 0,
+    })
+    expect(score.components.reliability).toBe(100)
+  })
+
+  it('Quota < 0.5 时 quotaHealth 满分', () => {
+    const svc = new HealthScoreService()
+    const score = svc.compute({
+      tenantId: 't-q50', p95Ms: 100, errorRate: 0.05, quotaUsagePercent: 0.1, championActivityScore: 80, anomalyCount30d: 2,
+    })
+    expect(score.components.quotaHealth).toBe(100)
+  })
+
+  it('Quota >= 1.0 时 quotaHealth 仅 10分', () => {
+    const svc = new HealthScoreService()
+    const score = svc.compute({
+      tenantId: 't-q100', p95Ms: 100, errorRate: 0.05, quotaUsagePercent: 1.0, championActivityScore: 80, anomalyCount30d: 2,
+    })
+    expect(score.components.quotaHealth).toBe(10)
+  })
+
+  it('Champion 活跃度为 0 时 community 仅 20分', () => {
+    const svc = new HealthScoreService()
+    const score = svc.compute({
+      tenantId: 't-c0', p95Ms: 100, errorRate: 0.05, quotaUsagePercent: 0.5, championActivityScore: 0, anomalyCount30d: 2,
+    })
+    expect(score.components.community).toBe(20)
+  })
+
+  it('Champion 活跃度 >= 100 时 community 满分', () => {
+    const svc = new HealthScoreService()
+    const score = svc.compute({
+      tenantId: 't-c100', p95Ms: 100, errorRate: 0.05, quotaUsagePercent: 0.5, championActivityScore: 150, anomalyCount30d: 2,
+    })
+    expect(score.components.community).toBe(100)
+  })
+
+  /* ── 类型验证 ── */
   it('类型 TenantHealthInput 应包含必要字段', () => {
-    const input = { tenantId: 't', p95Ms: 100, errorRate: 0.5, quotaUsagePercent: 50, championActivityScore: 75, anomalyCount30d: 1 }
+    const input: TenantHealthInput = { tenantId: 't', p95Ms: 100, errorRate: 0.5, quotaUsagePercent: 0.5, championActivityScore: 75, anomalyCount30d: 1 }
     expect(input).toHaveProperty('tenantId')
     expect(input).toHaveProperty('p95Ms')
     expect(input).toHaveProperty('errorRate')
@@ -161,6 +185,27 @@ describe('HealthDashboard Entity exports', () => {
     expect(input).toHaveProperty('championActivityScore')
     expect(input).toHaveProperty('anomalyCount30d')
   })
-})
 
-import type { TenantHealthInput, TenantHealthScore, DashboardSummary, AlertConfig } from './health-dashboard.entity'
+  /* ── score 完整性 ── */
+  it('score 应在 0-100 范围内', () => {
+    const svc = new HealthScoreService()
+    const good = svc.compute({ tenantId: 't', p95Ms: 50, errorRate: 0, quotaUsagePercent: 0, championActivityScore: 100, anomalyCount30d: 0 })
+    expect(good.score).toBeGreaterThanOrEqual(0)
+    expect(good.score).toBeLessThanOrEqual(100)
+    const bad = svc.compute({ tenantId: 't', p95Ms: 5000, errorRate: 1, quotaUsagePercent: 1.5, championActivityScore: 0, anomalyCount30d: 100 })
+    expect(bad.score).toBeGreaterThanOrEqual(0)
+    expect(bad.score).toBeLessThanOrEqual(100)
+  })
+
+  it('recommendations 应包含建议', () => {
+    const svc = new HealthScoreService()
+    const score = svc.compute({ tenantId: 't', p95Ms: 5000, errorRate: 0.5, quotaUsagePercent: 1.0, championActivityScore: 0, anomalyCount30d: 100 })
+    expect(score.recommendations.length).toBeGreaterThan(0)
+  })
+
+  it('computedAt 应为 ISO 时间戳', () => {
+    const svc = new HealthScoreService()
+    const score = svc.compute({ tenantId: 't', p95Ms: 100, errorRate: 0.05, quotaUsagePercent: 0.5, championActivityScore: 80, anomalyCount30d: 2 })
+    expect(() => new Date(score.computedAt)).not.toThrow()
+  })
+})

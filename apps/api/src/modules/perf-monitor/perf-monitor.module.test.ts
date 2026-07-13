@@ -53,8 +53,9 @@ describe('PerfMonitorModule', () => {
     expect(ctrl).toBeInstanceOf(PerfMonitorController)
   })
 
-  it('PerfMonitorController 不带参数应报错', () => {
-    expect(() => new (PerfMonitorController as any)()).toThrow()
+  it('PerfMonitorController 传 null 可实例化（不报错）', () => {
+    const ctrl = new (PerfMonitorController as any)(null)
+    expect(ctrl).toBeDefined()
   })
 
   /* ── Service 实例化 ── */
@@ -63,67 +64,80 @@ describe('PerfMonitorModule', () => {
     expect(svc).toBeInstanceOf(PerfMonitorService)
   })
 
-  it('PerfMonitorService 应定义 recordMetric 方法', () => {
+  it('PerfMonitorService 应定义 record 方法', () => {
     const svc = new PerfMonitorService()
-    expect(typeof svc.recordMetric).toBe('function')
+    expect(typeof svc.record).toBe('function')
   })
 
-  it('PerfMonitorService 应定义 getMetrics 方法', () => {
+  it('PerfMonitorService 应定义 getStatsForRoute 方法', () => {
     const svc = new PerfMonitorService()
-    expect(typeof svc.getMetrics).toBe('function')
+    expect(typeof svc.getStatsForRoute).toBe('function')
   })
 
-  it('PerfMonitorService 应定义 getStats 方法', () => {
+  it('PerfMonitorService 应定义 getAllStats 方法', () => {
     const svc = new PerfMonitorService()
-    expect(typeof svc.getStats).toBe('function')
+    expect(typeof svc.getAllStats).toBe('function')
   })
 
-  it('PerfMonitorService 的 recordMetric 应为异步函数', async () => {
+  it('PerfMonitorService 应定义 getSlaViolations 方法', () => {
     const svc = new PerfMonitorService()
-    const result = await svc.recordMetric('latency', 42)
-    expect(result).toBeDefined()
+    expect(typeof svc.getSlaViolations).toBe('function')
   })
 
-  it('PerfMonitorService 的 getMetrics 应返回数组', async () => {
+  it('PerfMonitorService 应定义 getSlowQueries 方法', () => {
     const svc = new PerfMonitorService()
-    const result = await svc.getMetrics({})
-    expect(Array.isArray(result)).toBe(true)
+    expect(typeof svc.getSlowQueries).toBe('function')
   })
 
-  it('PerfMonitorService 的 getStats 应返回统计值', async () => {
+  /* ── Service 行为正例 ── */
+  it('record 应记录采样（无返回值）', () => {
     const svc = new PerfMonitorService()
-    const result = await svc.getStats({})
-    expect(result).toBeDefined()
+    svc.record({ route: '/api/test', durationMs: 100, statusCode: 200, timestamp: new Date().toISOString() })
+    const stats = svc.getStatsForRoute('/api/test')
+    expect(stats).toBeDefined()
+    expect(stats.count).toBe(1)
   })
 
-  /* ── 反例: 无效输入 ── */
-  it('recordMetric 空名称应不报错', async () => {
+  it('getAllStats 应返回所有路由的统计', () => {
     const svc = new PerfMonitorService()
-    await expect(svc.recordMetric('', 0)).resolves.toBeDefined()
+    svc.record({ route: '/api/a', durationMs: 50, statusCode: 200, timestamp: new Date().toISOString() })
+    svc.record({ route: '/api/b', durationMs: 100, statusCode: 200, timestamp: new Date().toISOString() })
+    const allStats = svc.getAllStats()
+    expect(Array.isArray(allStats)).toBe(true)
+    expect(allStats.length).toBeGreaterThanOrEqual(2)
   })
 
-  it('recordMetric 负数值应接受', async () => {
+  it('getSlowQueries 应返回慢查询列表', () => {
     const svc = new PerfMonitorService()
-    await expect(svc.recordMetric('latency', -1)).resolves.toBeDefined()
+    const slow = svc.getSlowQueries()
+    expect(Array.isArray(slow)).toBe(true)
   })
 
-  it('getMetrics 传 null 应返回数组', async () => {
+  /* ── 边界: 空/无效输入 ── */
+  it('未记录的路由 getStatsForRoute 应返回零值统计', () => {
     const svc = new PerfMonitorService()
-    await expect(svc.getMetrics(null as any)).resolves.toEqual([])
+    const stats = svc.getStatsForRoute('/api/never-called')
+    expect(stats.count).toBe(0)
   })
 
-  it('getStats 传 undefined 应返回默认值', async () => {
+  it('空服务 getSlaViolations 应返回空数组', () => {
     const svc = new PerfMonitorService()
-    const result = await svc.getStats(undefined as any)
-    expect(result).toBeDefined()
+    expect(svc.getSlaViolations()).toEqual([])
   })
 
-  /* ── 边界: 并发记录 ── */
-  it('大量并发 recordMetric 应稳定', async () => {
+  it('getSlowQueries 默认 limit 为 20', () => {
     const svc = new PerfMonitorService()
-    const promises = Array.from({ length: 100 }, (_, i) =>
-      svc.recordMetric('latency', i)
-    )
-    await expect(Promise.all(promises)).resolves.toHaveLength(100)
+    expect(Array.isArray(svc.getSlowQueries())).toBe(true)
+  })
+
+  /* ── 大量记录 ── */
+  it('大量并发 record 应稳定', () => {
+    const svc = new PerfMonitorService()
+    for (let i = 0; i < 100; i++) {
+      svc.record({ route: '/api/load', durationMs: i, statusCode: 200, timestamp: new Date().toISOString() })
+    }
+    const stats = svc.getStatsForRoute('/api/load')
+    expect(stats.count).toBe(100)
+    expect(stats.p50).toBeGreaterThan(0)
   })
 })

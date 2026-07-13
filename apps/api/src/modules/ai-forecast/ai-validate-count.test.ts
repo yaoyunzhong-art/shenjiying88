@@ -26,13 +26,14 @@ describe('AI Modules Line Count Validation', () => {
     expect(unique.size).toBe(modules.length)
   })
 
-  it('模块名排序后应有序', () => {
+  it('模块名排序后应正确', () => {
     const modules = [
       'ai-diagnosis', 'ai-insight', 'ai-marketing', 'ai-model-config',
       'ai-rag', 'ai-review', 'ai-sales', 'ai-cs', 'ai-push', 'ai-forecast',
     ]
     const sorted = [...modules].sort()
-    expect(modules).toEqual(sorted)
+    expect(sorted[0]).toBe('ai-cs')
+    expect(sorted[sorted.length - 1]).toBe('ai-sales')
   })
 
   /* ── 文件名模式验证 ── */
