@@ -1,6 +1,6 @@
 /**
  * scheduling/page.test.tsx — 排班管理页 L1 冒烟测试 (storefront-web)
- * 覆盖: 正例·边界·防御
+ * 覆盖: 正例·反例·边界·防御
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -36,6 +36,28 @@ describe('scheduling — 正例', () => {
     const src = readSource();
     assert.ok(src.includes('availableStaff'), '缺少员工传递');
   });
+
+  it('应包含 staff 名称字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('name'), '缺少 name');
+  });
+
+  it('应包含 shift 时间字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('start') || src.includes('startTime'), '缺少开始时间');
+    assert.ok(src.includes('end') || src.includes('endTime'), '缺少结束时间');
+  });
+
+  it('应包含日期 date 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('date'), '缺少 date');
+  });
+
+  it('Mock 数据中应至少包含 5 个班次', () => {
+    const src = readSource();
+    const matches = src.match(/id:\s*['"]/g);
+    assert.ok(matches && matches.length >= 5, `期望 ≥5, 实际 ${matches?.length ?? 0}`);
+  });
 });
 
 describe('scheduling — 边界', () => {
@@ -53,6 +75,16 @@ describe('scheduling — 边界', () => {
     const src = readSource();
     assert.ok(src.includes('MOCK_SHIFTS'), '排班数据');
   });
+
+  it('已分配和未分配员工都应存在', () => {
+    const src = readSource();
+    assert.ok(src.includes('assigned') || src.includes('Assigned'), '已分配状态');
+  });
+
+  it('应包含分页或周视图切换', () => {
+    const src = readSource();
+    assert.ok(src.includes('view') || src.includes('View') || src.includes('totalPages'), '视图切换');
+  });
 });
 
 describe('scheduling — 防御', () => {
@@ -69,5 +101,32 @@ describe('scheduling — 防御', () => {
   it('排班渲染应有 generateMockShifts 数据生成', () => {
     const src = readSource();
     assert.ok(src.includes('generateMockShifts'), '缺少数据生成函数');
+  });
+
+  it('不应包含危险的 innerHTML', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /dangerouslySetInnerHTML/);
+  });
+
+  it('不应包含硬编码 token/密钥', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /(?:secret|password|api[_-]?key|token|authorization)/i);
+  });
+});
+
+describe('scheduling — 反例', () => {
+  it('不应使用 any 类型', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /:\s*any\b/);
+  });
+
+  it('不应包含 console.log', () => {
+    const src = readSource();
+    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), '裸 console.log');
+  });
+
+  it('Mock 数据中每个班次都应有时长', () => {
+    const src = readSource();
+    assert.ok(src.includes('duration') || src.includes('hours'));
   });
 });

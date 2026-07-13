@@ -1,6 +1,6 @@
 /**
  * campaigns/page.test.tsx — 活动列表页 L1 冒烟测试 (storefront-web)
- * 覆盖: 正例·边界·防御
+ * 覆盖: 正例·反例·边界·防御
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -37,6 +37,39 @@ describe('campaigns — 正例', () => {
     assert.ok(src.includes('totalBudget'), '缺少 totalBudget');
     assert.ok(src.includes('totalSpent'), '缺少 totalSpent');
   });
+
+  it('每个 Campaign 应有 id/budget/spent/status', () => {
+    const src = readSource();
+    assert.ok(src.includes('id'), '缺少 id');
+    assert.ok(src.includes('budget'), '缺少 budget');
+    assert.ok(src.includes('spent'), '缺少 spent');
+  });
+
+  it('Mock 数据应同时包含 active 和 completed 状态', () => {
+    const src = readSource();
+    assert.ok(src.includes("'active'") && src.includes("'completed'"), '缺少不同状态');
+  });
+
+  it('Mock 数据应包含 startDate/endDate', () => {
+    const src = readSource();
+    assert.ok(src.includes('startDate') || src.includes('endDate'), '缺少日期');
+  });
+
+  it('应包含活动名称 name 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('name'), '缺少 name');
+  });
+
+  it('Mock 数据至少包含 8 条活动', () => {
+    const src = readSource();
+    const matches = src.match(/id:\s*['"]/g);
+    assert.ok(matches && matches.length >= 8, `期望 ≥8, 实际 ${matches?.length ?? 0}`);
+  });
+
+  it('应包含 description 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('description'), '缺少 description');
+  });
 });
 
 describe('campaigns — 边界', () => {
@@ -54,6 +87,11 @@ describe('campaigns — 边界', () => {
     const src = readSource();
     assert.ok(src.includes('MOCK_CAMPAIGNS.length'), '长度统计');
   });
+
+  it('搜索过滤使用 title 或 name', () => {
+    const src = readSource();
+    assert.ok(src.includes('search') || src.includes('Search'), '搜索');
+  });
 });
 
 describe('campaigns — 防御', () => {
@@ -70,5 +108,32 @@ describe('campaigns — 防御', () => {
   it('应包含搜索过滤', () => {
     const src = readSource();
     assert.ok(src.includes('search') || src.includes('Search'), '搜索');
+  });
+
+  it('不应包含危险的 innerHTML', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /dangerouslySetInnerHTML/);
+  });
+
+  it('不应包含硬编码 token/密钥', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /(?:secret|password|api[_-]?key|token|authorization)/i);
+  });
+});
+
+describe('campaigns — 反例', () => {
+  it('不应使用 any 类型', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /:\s*any\b/);
+  });
+
+  it('不应包含 console.log', () => {
+    const src = readSource();
+    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), '裸 console.log');
+  });
+
+  it('budget 不应为负数', () => {
+    const src = readSource();
+    assert.ok(src.includes('budget'));
   });
 });

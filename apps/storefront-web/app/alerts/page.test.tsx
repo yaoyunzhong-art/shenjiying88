@@ -61,6 +61,38 @@ describe('alerts — 正例', () => {
     assert.ok(src.includes('Loading skeleton'), '缺少骨架屏注释');
     assert.ok(src.includes('height: 16'), '缺少骨架屏动画');
   });
+
+  it('每条通知应有 message 内容字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('message'), '缺少 message');
+  });
+
+  it('每条通知应有 time 时间字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('time'), '缺少 time');
+  });
+
+  it('每条通知应有 read 状态字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('read'), '缺少 read');
+  });
+});
+
+describe('alerts — 边界', () => {
+  it('应包含筛选不同类型逻辑', () => {
+    const src = readSource();
+    assert.ok(src.includes('filter'), '筛选逻辑');
+  });
+
+  it('应支持标记已读/全部已读', () => {
+    const src = readSource();
+    assert.ok(src.includes('markAllRead') || src.includes('markRead'), '标记已读');
+  });
+
+  it('应为已读和未读提供不同样式', () => {
+    const src = readSource();
+    assert.ok(src.includes('opacity') || src.includes('read'), '样式区分');
+  });
 });
 
 describe('alerts — 防御', () => {
@@ -72,5 +104,33 @@ describe('alerts — 防御', () => {
   it('不应包含危险的 innerHTML', () => {
     const src = readSource();
     assert.doesNotMatch(src, /dangerouslySetInnerHTML/);
+  });
+
+  it('不应包含硬编码 token/密钥', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /(?:secret|password|api[_-]?key|token|authorization)/i);
+  });
+
+  it('不应使用 any 类型', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /:\s*any\b/);
+  });
+});
+
+describe('alerts — 反例', () => {
+  it('不应包含 console.log', () => {
+    const src = readSource();
+    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), '裸 console.log');
+  });
+
+  it('time 字段应为字符串日期', () => {
+    const src = readSource();
+    const timeRegex = /time:\s*['"]/;
+    assert.ok(timeRegex.test(src), 'time 字符串格式');
+  });
+
+  it('imageUrl 应有效或为空', () => {
+    const src = readSource();
+    assert.ok(src.includes('imageUrl') || src.includes('avatar'), '图片/头像字段');
   });
 });

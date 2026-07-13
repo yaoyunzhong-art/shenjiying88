@@ -1,5 +1,6 @@
 import { Injectable, Optional } from '@nestjs/common'
 import {
+  LanguageCode,
   PortalAudience,
   PortalChannel,
   PortalScopeType,
@@ -15,6 +16,8 @@ import { toMarketProfileContract, toRegionalConfigOverrideContract } from '../ma
 import { toStorePortalContract, toTobPortalContract } from './portal.contract'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { TenantConfigService } from '../tenant-config/tenant-config.service'
+
+const PORTAL_SUPPORTED_LANGUAGES = Object.values(LanguageCode)
 
 @Injectable()
 export class PortalService {
@@ -124,12 +127,29 @@ export class PortalService {
       defaultLanguage: marketProfile.locale.defaultLanguage,
       supportedLanguages: marketProfile.locale.supportedLanguages,
     }) ?? marketProfile.locale
+    const normalizedSupportedLanguages = [
+      ...new Set([
+        ...resolvedLocale.supportedLanguages,
+        ...marketProfile.locale.supportedLanguages,
+      ]),
+    ].filter((locale): locale is LanguageCode =>
+      PORTAL_SUPPORTED_LANGUAGES.includes(locale as LanguageCode),
+    )
+    const normalizedDefaultLanguage = PORTAL_SUPPORTED_LANGUAGES.includes(
+      resolvedLocale.defaultLanguage as LanguageCode,
+    )
+      ? (resolvedLocale.defaultLanguage as LanguageCode)
+      : marketProfile.locale.defaultLanguage
+
+    if (!normalizedSupportedLanguages.includes(normalizedDefaultLanguage)) {
+      normalizedSupportedLanguages.unshift(normalizedDefaultLanguage)
+    }
 
     return {
       ...marketProfile,
       locale: {
-        defaultLanguage: resolvedLocale.defaultLanguage as typeof marketProfile.locale.defaultLanguage,
-        supportedLanguages: resolvedLocale.supportedLanguages as typeof marketProfile.locale.supportedLanguages,
+        defaultLanguage: normalizedDefaultLanguage as typeof marketProfile.locale.defaultLanguage,
+        supportedLanguages: normalizedSupportedLanguages as typeof marketProfile.locale.supportedLanguages,
       },
     }
   }

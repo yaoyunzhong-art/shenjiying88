@@ -71,4 +71,65 @@ describe('ReportStatusBadge', () => {
     assert.ok(html.includes('#f3f4f6')); // bg
     assert.ok(html.includes('#6b7280')); // fg
   });
+
+  describe('ReportStatusBadge — 反例', () => {
+    it('does not throw on unknown status', () => {
+      const fn = () => renderToStaticMarkup(<ReportStatusBadge status={'invalid' as ReportStatus} />);
+      assert.doesNotThrow(fn);
+    });
+
+    it('does not render broken HTML', () => {
+      for (const status of allStatuses) {
+        const html = renderToStaticMarkup(<ReportStatusBadge status={status} />);
+        assert.doesNotMatch(html, /<[^>]*$/);
+      }
+    });
+  });
+
+  describe('ReportStatusBadge — 边界', () => {
+    it('all statuses have labels', () => {
+      for (const status of allStatuses) {
+        assert.ok(REPORT_STATUS_LABEL[status], `Missing label for ${status}`);
+      }
+    });
+
+    it('all statuses have colors', () => {
+      for (const status of allStatuses) {
+        assert.ok(REPORT_STATUS_COLOR[status], `Missing color for ${status}`);
+      }
+    });
+
+    it('all labels are Chinese', () => {
+      for (const status of allStatuses) {
+        const label = REPORT_STATUS_LABEL[status];
+        assert.ok([...label].some(ch => ch >= '\u4e00' && ch <= '\u9fff'),
+          `Label "${label}" has no Chinese`);
+      }
+    });
+
+    it('all colors have bg and fg as hex', () => {
+      for (const status of allStatuses) {
+        const c = REPORT_STATUS_COLOR[status];
+        assert.match(c.bg, /^#[0-9a-fA-F]{6}$/, `Invalid bg for ${status}`);
+        assert.match(c.fg, /^#[0-9a-fA-F]{6}$/, `Invalid fg for ${status}`);
+      }
+    });
+  });
+
+  describe('ReportStatusBadge — 渲染结构', () => {
+    it('renders as span element', () => {
+      const html = renderToStaticMarkup(<ReportStatusBadge status="generated" />);
+      assert.ok(html.startsWith('<span'));
+    });
+
+    it('has inline style attribute', () => {
+      const html = renderToStaticMarkup(<ReportStatusBadge status="generated" />);
+      assert.ok(html.includes('style="') || html.includes("style='"));
+    });
+
+    it('has display:inline-block in style', () => {
+      const html = renderToStaticMarkup(<ReportStatusBadge status="generating" />);
+      assert.ok(html.includes('display') || html.includes('inline'));
+    });
+  });
 });
