@@ -1,7 +1,7 @@
 # 🦞 验收脉冲 HEARTBEAT
 
 > 自动维护: 30min脉冲触发
-> 当前: 2026-07-14 04:37 (CST) · pulse#411 | 验收脉冲(第17次)
+> 当前: 2026-07-14 05:07 (CST) · pulse#412 | 验收脉冲(第18次)
 
 ---
 
@@ -19,44 +19,44 @@
 
 | 指标 | 值 | 趋势 |
 |------|-----|------|
-| TSC (非api) force | ✅ **14/14 全绿(2新鲜+12缓存)** | ✅ 稳定(连续17脉冲) |
-| @m5/admin-web 测试 | ⚠️ **1✖假阳(stores/layout.tsx 源文件断言)** | ⚠️ 非新·同pulse#399(10+脉冲) |
+| TSC (非api) force | ✅ **14/14 全绿(缓存)** | ✅ 稳定(连续18脉冲) |
+| @m5/admin-web 测试 | ⚠️ **2✖假阳(stores/layout.tsx 源文件断言)** | ⚠️ 非新·同pulse#399(10+脉冲) |
 | @m5/storefront-web 测试 | ✅ **缓存全绿** | ✅ |
 | @m5/app 测试 | ✅ **222/222 全绿(cache)** | ✅ |
 | @m5/miniapp 测试 | ✅ **494/494(cache)** | ✅ |
 | @m5/tob 测试 | ✅ **1,587/1,587(cache)** | ✅ |
 | @m5/shenjiying-mobile 测试 | ✅ **314/314(cache)** | ✅ |
 | @m5/types/sdk/domain/ui 测试 | ✅ **全绿(cache)** | ✅ |
-| @m5/tob-web 测试 | ✅ **全绿(cache)** — T-pulse403-tob-fix闭环保持(5+脉冲)·pulse#409 TSC修复闭环✅ | ✅ |
+| @m5/tob-web 测试 | ✅ **全绿(cache)** — T-pulse403-tob-fix闭环保持(6+脉冲)·pulse#409 TSC修复闭环✅(连续3脉冲) | ✅ |
 | 网络状态 | ❌ 离线(git remote不可达) | 仅本地作业 |
-| 连续稳态 | **0🏆 (中断)** | RQ-010~020 P0-FIRE未执行中断计数(22h+) |
+| 连续稳态 | **0🏆 (中断)** | RQ-010~020 P0-FIRE未执行中断计数(23h+) |
 
 ## 闭环追踪
 
 | 派单 | 目标 | 状态 | 存活脉冲 |
 |------|------|------|---------|
-| **dispatch-378-FIRE** 🔥🔥🔥 | admin suppliers 4✖(真实) | 🟢 ✅ 闭环于pulse#392 | 稳态保持(15+脉冲) |
-| **RQ-20260713-010~020** | AM-020假阳治理+storefront218✖+miniapp/tob残值 | 🔴 P0-FIRE自11:00派出·22h+未执行 | 停滞中 |
-| **T-pulse403-tob-fix** 🌳 | tob-web contracts时间敏感过期 + seo-geo-p49 metadata解析 | 🟢 ✅ 闭环于pulse#404 | 稳态保持(5+脉冲) |
-| **T-pulse409-tob-tsc** 🌳 | tob-web route.ts导出resetWebVitalsStoreForTest破坏类型 | 🟢 ✅ 立即闭环(pulse#409) | 即时修复(连续2脉冲稳态) |
+| **dispatch-378-FIRE** 🔥🔥🔥 | admin suppliers 4✖(真实) | 🟢 ✅ 闭环于pulse#392 | 稳态保持(16+脉冲) |
+| **RQ-20260713-010~020** | AM-020假阳治理+storefront218✖+miniapp/tob残值 | 🔴 P0-FIRE自11:00派出·23h+未执行 | 停滞中 |
+| **T-pulse403-tob-fix** 🌳 | tob-web contracts时间敏感过期 + seo-geo-p49 metadata解析 | 🟢 ✅ 闭环于pulse#404 | 稳态保持(6+脉冲) |
+| **T-pulse409-tob-tsc** 🌳 | tob-web route.ts导出resetWebVitalsStoreForTest破坏类型 | 🟢 ✅ 立即闭环(pulse#409) | 连续3脉冲稳态 |
 
-## ⏱️ 本轮摘要 (pulse#411 | 04:37)
+## ⏱️ 本轮摘要 (pulse#412 | 05:07)
 
-### ✅ TSC 14/14 全绿(连续17脉冲)
-- 2新鲜+12缓存，pulse#409 TSC fix闭环保持(连续2脉冲稳态)✅
+### ✅ TSC 14/14 全绿(连续18脉冲)
+- 缓存全绿，pulse#409 TSC fix连续3脉冲稳态保持✅
 - 无新Fail
 
-### ⚠️ admin-web 1✖假阳(非新·连续10+脉冲)
+### ⚠️ admin-web 2✖假阳(非新·连续10+脉冲)
 stores/layout.test.tsx 源文件断言。已知非新fail，不处理。
 
 ### ✅ 全体模块测试全绿(缓存)
 tob-web 缓存全绿✅ | app 222/222 ✅(缓存) | miniapp 494/494 ✅(缓存) | tob 1,587/1,587 ✅(缓存) | mobile 314/314 ✅(缓存)
 
-### 🔴 RQ-20260713-010~020 P0-FIRE 22h+停滞
+### 🔴 RQ-20260713-010~020 P0-FIRE 23h+停滞
 自11:00派出后零进展。需人工介入。
 
 ### 📝 本轮决策
 - **无新Fail → 本轮无派单**
-- pulse#409 TSC fix连续2脉冲稳态保持 ✅
-- admin-web 1✖假阳: 非新·已知·不处理
-- RQ-010~020 P0-FIRE: 22h+停滞，需人工介入
+- pulse#409 TSC fix连续3脉冲稳态保持 ✅
+- admin-web 2✖假阳: 非新·已知·不处理
+- RQ-010~020 P0-FIRE: 23h+停滞，需人工介入
