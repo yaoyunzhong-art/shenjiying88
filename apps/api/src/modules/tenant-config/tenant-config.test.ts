@@ -117,6 +117,40 @@ describe('BUILTIN_CONFIG_DEFINITIONS', () => {
     assert.equal(retention!.validation!.min, 30)
     assert.equal(retention!.validation!.max, 2555)
   })
+
+  it('TC-6A should expose tenant locale policy definitions for G1 i18n', () => {
+    const defaultLanguage = BUILTIN_CONFIG_DEFINITIONS.find((d) => d.key === 'locale.default_language')
+    const supportedLanguages = BUILTIN_CONFIG_DEFINITIONS.find((d) => d.key === 'locale.supported_languages')
+
+    assert.equal(defaultLanguage?.level, 'tenant')
+    assert.deepEqual(defaultLanguage?.validation?.enum, ['zh-CN', 'en-US', 'ja-JP'])
+    assert.equal(supportedLanguages?.level, 'tenant')
+    assert.equal(supportedLanguages?.category, 'locale')
+  })
+})
+
+describe('G1 locale policy', () => {
+  it('G1-1 resolves locale policy from tenant-config and keeps default language in supported list', () => {
+    const service = makeService()
+
+    const policy = service.resolveLocalePolicyForContext(TENANT_CTX, {
+      defaultLanguage: 'zh-CN',
+      supportedLanguages: ['zh-CN'],
+    })
+
+    assert.equal(policy.defaultLanguage, 'zh-CN')
+    assert.deepEqual(policy.supportedLanguages, ['zh-CN', 'en-US'])
+  })
+
+  it('G1-2 rejects invalid locale.default_language writes', async () => {
+    const service = makeService()
+
+    await assert.rejects(
+      runWithTenant(TENANT_CTX, async () =>
+        service.setConfig({ key: 'locale.default_language', value: 'de-DE' })),
+      /must be one of zh-CN,en-US,ja-JP/,
+    )
+  })
 })
 
 // ═══════════════════════════════════════════════════════════════════

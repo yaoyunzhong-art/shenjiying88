@@ -31,6 +31,7 @@ import { MarketService } from '../market/market.service'
 import { toMarketProfileContract } from '../market/market.contract'
 import { PortalService } from '../portal/portal.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
+import { TenantConfigService } from '../tenant-config/tenant-config.service'
 import {
   EVENT_BUS_SERVICE,
   type EventBusService
@@ -83,6 +84,7 @@ export class WorkbenchService {
     private readonly portalService: PortalService,
     private readonly foundationService: FoundationService,
     private readonly runtimeGovernanceService: RuntimeGovernanceService,
+    @Optional() private readonly tenantConfigService?: TenantConfigService,
     @Optional() @Inject(EVENT_BUS_SERVICE) private readonly eventBus?: EventBusService
   ) {}
 
@@ -92,6 +94,17 @@ export class WorkbenchService {
 
   getBootstrap(context: RequestTenantContext): WorkbenchBootstrapResponse {
     const marketProfile = this.marketService.getMergedProfile(context)
+    const resolvedLocale = this.tenantConfigService?.resolveLocalePolicyForContext(context, {
+      defaultLanguage: marketProfile.locale.defaultLanguage,
+      supportedLanguages: marketProfile.locale.supportedLanguages,
+    }) ?? marketProfile.locale
+    const effectiveMarketProfile = {
+      ...marketProfile,
+      locale: {
+        defaultLanguage: resolvedLocale.defaultLanguage as typeof marketProfile.locale.defaultLanguage,
+        supportedLanguages: resolvedLocale.supportedLanguages as typeof marketProfile.locale.supportedLanguages,
+      },
+    }
     const portals = this.portalService.getBootstrap(context)
     const foundationDependency = this.foundationService.getDependencySummary('workbench')
 
@@ -101,12 +114,12 @@ export class WorkbenchService {
       storePortals: [portals.storePortal],
       tenantPortal: portals.tenantPortal,
       brandPortal: portals.brandPortal,
-      marketProfile: toMarketProfileContract(marketProfile),
+      marketProfile: toMarketProfileContract(effectiveMarketProfile),
       regionalLoginPolicies: toRegionalLoginPolicyContract(
         portals.tenantPortal.loginEntry.loginPath,
         portals.tenantPortal.loginEntry.ssoEnabled
       ),
-      supportedLocales: marketProfile.locale.supportedLanguages,
+      supportedLocales: resolvedLocale.supportedLanguages,
       supportedClients: [...foundationSupportedClients],
       ...toBootstrapFoundationMetadata(foundationDependency)
     }

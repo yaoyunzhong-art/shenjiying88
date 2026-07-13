@@ -35,10 +35,13 @@ import {
   type EffectiveConfig,
   type GetConfigRequest,
   type SetConfigRequest,
+  type TenantLocalePolicy,
   type WorkbenchCode,
 } from './tenant-config.entity'
 import { TenantConfigCacheService } from './tenant-config-cache.service'
 import { TenantConfigRepository, type ConfigAuditLogInput } from './tenant-config.repository'
+
+const SUPPORTED_I18N_LOCALES = ['zh-CN', 'en-US', 'ja-JP'] as const
 
 @Injectable()
 export class TenantConfigService implements OnModuleInit {
@@ -765,7 +768,53 @@ export class TenantConfigService implements OnModuleInit {
     }
   }
 
+  resolveLocalePolicyForContext(
+    ctx: TenantContext,
+    fallback: TenantLocalePolicy,
+  ): TenantLocalePolicy {
+    this.assertTenantIdFormat(ctx)
+
+    const defaultLanguage = this.resolveTenantLocaleConfigValue(
+      ctx,
+      'locale.default_language',
+      fallback.defaultLanguage,
+    )
+    const supportedLanguageValue = this.resolveTenantLocaleConfigValue(
+      ctx,
+      'locale.supported_languages',
+      fallback.supportedLanguages.join(','),
+    )
+
+    const supportedLanguages = this.normalizeSupportedLanguages(
+      this.parseSupportedLanguages(supportedLanguageValue),
+      fallback.supportedLanguages,
+    )
+    const resolvedDefaultLanguage = SUPPORTED_I18N_LOCALES.includes(defaultLanguage as (typeof SUPPORTED_I18N_LOCALES)[number])
+      ? defaultLanguage
+      : fallback.defaultLanguage
+
+    if (!supportedLanguages.includes(resolvedDefaultLanguage)) {
+      supportedLanguages.unshift(resolvedDefaultLanguage)
+    }
+
+    return {
+      defaultLanguage: resolvedDefaultLanguage,
+      supportedLanguages,
+    }
+  }
+
   // ============ 5. 内部工具 ============
+
+  private resolveTenantLocaleConfigValue(
+    ctx: TenantContext,
+    key: 'locale.default_language' | 'locale.supported_languages',
+    fallback: string,
+  ): string {
+    const def = this.definitions.get(key)
+    if (!def) return fallback
+    const effective = this.resolveEffective(ctx, def)
+    return effective?.value ?? fallback
+  }
 
   private assertLevelAccess(ctx: TenantContext, level: ConfigLevel): void {
     if (!ctx.role) {
@@ -923,6 +972,24 @@ export class TenantConfigService implements OnModuleInit {
       return `***-${plain.slice(-4)}`
     }
     return value
+  }
+
+  private parseSupportedLanguages(value: string): string[] {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item): item is string => SUPPORTED_I18N_LOCALES.includes(item as (typeof SUPPORTED_I18N_LOCALES)[number]))
+  }
+
+  private normalizeSupportedLanguages(primary: string[], fallback: string[]): string[] {
+    const normalized: string[] = []
+    for (const locale of [...primary, ...fallback]) {
+      if (!SUPPORTED_I18N_LOCALES.includes(locale as (typeof SUPPORTED_I18N_LOCALES)[number])) continue
+      if (!normalized.includes(locale)) {
+        normalized.push(locale)
+      }
+    }
+    return normalized.length > 0 ? normalized : ['zh-CN']
   }
 
   private async invalidateReadCache(ctx: TenantContext): Promise<void> {
@@ -1145,6 +1212,20 @@ export class TenantConfigService implements OnModuleInit {
       [tenantId, {
         id: 'cfg-seed-tenant-marketing', key: 'marketing.default_campaign_budget',
         value: '50000', encrypted: false, category: 'marketing', level: 'tenant', ownerId: tenantId,
+        inherits: false, version: 1, updatedBy: 'admin', updatedAt: now, createdAt: now,
+      }],
+    ]))
+    this.ensureLevelMap('tenant').set('locale.default_language', new Map([
+      [tenantId, {
+        id: 'cfg-seed-tenant-locale-default', key: 'locale.default_language',
+        value: 'zh-CN', encrypted: false, category: 'locale', level: 'tenant', ownerId: tenantId,
+        inherits: false, version: 1, updatedBy: 'admin', updatedAt: now, createdAt: now,
+      }],
+    ]))
+    this.ensureLevelMap('tenant').set('locale.supported_languages', new Map([
+      [tenantId, {
+        id: 'cfg-seed-tenant-locale-supported', key: 'locale.supported_languages',
+        value: 'zh-CN,en-US', encrypted: false, category: 'locale', level: 'tenant', ownerId: tenantId,
         inherits: false, version: 1, updatedBy: 'admin', updatedAt: now, createdAt: now,
       }],
     ]))

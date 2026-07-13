@@ -90,7 +90,7 @@ async function buildWorkbenchApp(): Promise<{
     providers: [
       NotificationService,
       { provide: WorkbenchService, useFactory: (rg: RuntimeGovernanceService, ms: MarketService, ps: PortalService, fs: FoundationService, bus: EventBusService | undefined) =>
-        new WorkbenchService(ms, ps, fs, rg, bus), inject: [RuntimeGovernanceService, MarketService, PortalService, FoundationService, { token: EVENT_BUS_SERVICE, optional: true }] },
+        new WorkbenchService(ms, ps, fs, rg, undefined, bus), inject: [RuntimeGovernanceService, MarketService, PortalService, FoundationService, { token: EVENT_BUS_SERVICE, optional: true }] },
       { provide: RuntimeGovernanceService, useValue: makeMockRuntimeGovernanceService() },
       { provide: FoundationService, useValue: { getDependencySummary: () => ({}) } as unknown as FoundationService },
       { provide: MarketService, useValue: { getMergedProfile: () => ({ locale: { supportedLanguages: ['zh-CN'] } }) } as unknown as MarketService },
@@ -181,7 +181,7 @@ it('e2e: WorkbenchService 无 EventBus 时不抛错', async () => {
     imports: [CacheModule.forRootInMemory()],
     providers: [
       { provide: WorkbenchService, useFactory: (rg: RuntimeGovernanceService, ms: MarketService, ps: PortalService, fs: FoundationService) =>
-        new WorkbenchService(ms, ps, fs, rg, undefined), inject: [RuntimeGovernanceService, MarketService, PortalService, FoundationService] },
+        new WorkbenchService(ms, ps, fs, rg), inject: [RuntimeGovernanceService, MarketService, PortalService, FoundationService] },
       { provide: RuntimeGovernanceService, useValue: makeMockRuntimeGovernanceService() },
       { provide: FoundationService, useValue: {} as FoundationService },
       { provide: MarketService, useValue: {} as MarketService },
@@ -256,7 +256,7 @@ it('e2e: WorkbenchService publish 失败不阻断主流程', async () => {
     imports: [CacheModule.forRootInMemory()],
     providers: [
       { provide: WorkbenchService, useFactory: (rg: RuntimeGovernanceService, ms: MarketService, ps: PortalService, fs: FoundationService, bus: EventBusService) =>
-        new WorkbenchService(ms, ps, fs, rg, bus), inject: [RuntimeGovernanceService, MarketService, PortalService, FoundationService, EVENT_BUS_SERVICE] },
+        new WorkbenchService(ms, ps, fs, rg, undefined, bus), inject: [RuntimeGovernanceService, MarketService, PortalService, FoundationService, EVENT_BUS_SERVICE] },
       { provide: RuntimeGovernanceService, useValue: makeMockRuntimeGovernanceService() },
       { provide: FoundationService, useValue: {} as FoundationService },
       { provide: MarketService, useValue: {} as MarketService },

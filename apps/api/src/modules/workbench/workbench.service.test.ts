@@ -195,6 +195,41 @@ describe('WorkbenchService', () => {
       assert.deepStrictEqual(result.supportedLocales, ['zh-CN', 'en-US', 'ja-JP'])
     })
 
+    it('prefers tenant-config locale policy over market defaults', () => {
+      const mockMarket = {
+        getMergedProfile: () => mockMarketProfile({ locale: { defaultLanguage: 'zh-CN', supportedLanguages: ['zh-CN'] } })
+      } as any
+      const mockPortal = {
+        getBootstrap: () => ({
+          storePortal: {},
+          tenantPortal: { loginEntry: { loginPath: '/login', ssoEnabled: false } },
+          brandPortal: {}
+        })
+      } as any
+      const mockFoundation = {
+        getDependencySummary: () => null
+      } as any
+      const mockTenantConfig = {
+        resolveLocalePolicyForContext: () => ({
+          defaultLanguage: 'en-US',
+          supportedLanguages: ['en-US', 'ja-JP']
+        })
+      } as any
+      const service = new WorkbenchService(
+        mockMarket,
+        mockPortal,
+        mockFoundation,
+        {} as any,
+        mockTenantConfig
+      )
+
+      const result = service.getBootstrap({ tenantId: 't-1' })
+
+      assert.deepStrictEqual(result.supportedLocales, ['en-US', 'ja-JP'])
+      assert.equal(result.marketProfile.locale.defaultLanguage, 'en-US')
+      assert.deepStrictEqual(result.marketProfile.locale.supportedLanguages, ['en-US', 'ja-JP'])
+    })
+
     it('regionalLoginPolicies derived from portal login entry', () => {
       const mockMarket = {
         getMergedProfile: () => mockMarketProfile()
