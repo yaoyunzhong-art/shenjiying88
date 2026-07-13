@@ -414,7 +414,8 @@ describe('FinanceReconciliationService', () => {
         channelFee: 600,
         type: 'SETTLEMENT'
       })
-      expect(txn.status).toBe('MATCHED')
+      // netAmount = 100000 - 600 = 99400 != internalAmount(100000) → MISMATCHED
+      expect(txn.status).toBe('MISMATCHED')
       expect(txn.netAmount).toBe(99400)
       expect(txn.channelFee).toBe(600)
     })
