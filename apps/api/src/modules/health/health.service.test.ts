@@ -26,7 +26,7 @@ describe('HealthService', () => {
     } as never,
       /* redisService */ undefined,
       /* eventBus */ { ping: async () => true, backend: 'memory', publish: async () => {}, subscribe: () => {} } as any,
-      /* queueProducer */ { stats: async () => ({ pending: 0, completed: 0, failed: 0 }) })
+      /* queueProducer */ { stats: async () => ({ pending: 0, completed: 0, failed: 0 }) } as any)
 
     ;(service as any).pingTcpPort = async () => undefined
     return service

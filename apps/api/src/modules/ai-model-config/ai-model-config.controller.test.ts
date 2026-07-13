@@ -118,7 +118,7 @@ describe('AiModelConfigController', () => {
 
   describe('POST /ai-model-config/store-configs', () => {
     it('should create store config with encrypted API key', async () => {
-      const req = { user: { tenantId: 'tenant-1', storeId: 'store-1', id: 'user-1' } }
+      const req: any = { user: { tenantId: 'tenant-1', storeId: 'store-1', id: 'user-1' } }
       const config = await controller.createStoreConfig(req, {
         storeId: 'store-1',
         configName: 'My Config',
@@ -139,7 +139,7 @@ describe('AiModelConfigController', () => {
 
   describe('GET /ai-model-config/store-configs', () => {
     it('should return masked store configs', async () => {
-      const req = { user: { tenantId: 'tenant-1', storeId: 'store-1', id: 'user-1' } }
+      const req: any = { user: { tenantId: 'tenant-1', storeId: 'store-1', id: 'user-1' } }
       await controller.createStoreConfig(req, {
         storeId: 'store-1',
         configName: 'C1', provider: 'openai',
@@ -155,7 +155,7 @@ describe('AiModelConfigController', () => {
 
   describe('POST /ai-model-config/switch', () => {
     it('should switch active config', async () => {
-      const req = { user: { tenantId: 'tenant-1', storeId: 'store-1', id: 'user-1' } }
+      const req: any = { user: { tenantId: 'tenant-1', storeId: 'store-1', id: 'user-1' } }
       const c1 = await controller.createStoreConfig(req, {
         storeId: 'store-1',
         configName: 'C1', provider: 'openai',
@@ -178,7 +178,7 @@ describe('AiModelConfigController', () => {
 
   describe('GET /ai-model-config/history/:configId', () => {
     it('should return history for a config', async () => {
-      const req = { user: { tenantId: 'tenant-1', storeId: 'store-1', id: 'user-1' } }
+      const req: any = { user: { tenantId: 'tenant-1', storeId: 'store-1', id: 'user-1' } }
       const config = await controller.createStoreConfig(req, {
         storeId: 'store-1',
         configName: 'C1', provider: 'openai',
@@ -195,7 +195,7 @@ describe('AiModelConfigController', () => {
 
   describe('POST /ai-model-config/rollback', () => {
     it('should rollback to history version', async () => {
-      const req = { user: { tenantId: 'tenant-1', storeId: 'store-1', id: 'user-1' } }
+      const req: any = { user: { tenantId: 'tenant-1', storeId: 'store-1', id: 'user-1' } }
       const config = await controller.createStoreConfig(req, {
         storeId: 'store-1',
         configName: 'Original', provider: 'openai',

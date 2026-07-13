@@ -68,6 +68,7 @@ describe('🔵 MonitoringRingBeam: 监控告警模块PRD对齐', () => {
       monitoringService.recordMetric({
         name: 'custom_app_metric',
         value: 1,
+        labels: {},
       })
 
       const points = monitoringService.queryMetric('custom_app_metric')

@@ -161,6 +161,7 @@ function createTxn(ctx: TenantCtx, input: {
   channel: string
   internalTransactionId?: string
   channelTransactionNo?: string
+  externalTransactionId?: string
   type: string
   internalAmount: number
   externalAmount?: number
@@ -558,7 +559,7 @@ describe('FinanceReconciliationService', () => {
     it('should throw for non-existent transaction', () => {
       expect(() => manualMatch(tenant, {
         transactionId: 'nonexistent',
-        externalAmount: 'ext-007'
+        externalTransactionId: 'ext-007'
       })).toThrow('Transaction nonexistent not found')
     })
   })
