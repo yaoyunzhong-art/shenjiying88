@@ -4,7 +4,7 @@
  * 提供多租户隔离的LLM配置管理能力
  */
 
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common'
 import { nanoid } from 'nanoid'
 import {
   TenantLLMConfig,
@@ -12,8 +12,9 @@ import {
   UpdateLLMConfigRequest,
   LLMStats,
   LLMCallLog,
-  LLMConfigStatus,
   ApplyLLMConfigRequest,
+  LLMAuditLog,
+  LLMApprovalOptions,
 } from './llm-config.entity'
 // @ts-ignore
 import { TenantScopeGuard } from '../../agent/tenant.guard'
@@ -22,6 +23,7 @@ import { TenantScopeGuard } from '../../agent/tenant.guard'
 const configStore = new Map<string, TenantLLMConfig>()
 const callLogStore = new Map<string, LLMCallLog>()
 const apiKeyStore = new Map<string, string>()
+const auditLogStore = new Map<string, LLMAuditLog>()
 
 /** 加密工具函数 (生产环境应使用更安全的方案) */
 function encryptApiKey(apiKey: string): string {
@@ -149,7 +151,7 @@ export class TenantLLMService {
   async applyConfig(
     configId: string,
     tenantId: string,
-    request: ApplyLLMConfigRequest
+    _request: ApplyLLMConfigRequest
   ): Promise<{ success: boolean; message: string }> {
     const config = configStore.get(configId)
     if (!config || config.tenantId !== tenantId) {
@@ -160,6 +162,14 @@ export class TenantLLMService {
     config.status = 'pending'
     config.updatedAt = new Date().toISOString()
     configStore.set(configId, config)
+    this.recordAudit({
+      tenantId,
+      configId,
+      action: 'apply',
+      actorId: tenantId,
+      success: true,
+      reason: 'submitted_for_approval',
+    })
 
     return {
       success: true,
@@ -173,11 +183,29 @@ export class TenantLLMService {
   async approveConfig(
     configId: string,
     approvedBy: string,
-    approved: boolean
+    approved: boolean,
+    options?: LLMApprovalOptions
   ): Promise<TenantLLMConfig | null> {
     const config = configStore.get(configId)
     if (!config) {
       return null
+    }
+
+    if (!this.canApprove(approvedBy, options)) {
+      this.recordAudit({
+        tenantId: config.tenantId,
+        configId,
+        action: 'approve_denied',
+        actorId: approvedBy,
+        actorRole: options?.actorRole,
+        success: false,
+        reason: options?.reason || 'missing_llm_approve_permission',
+        metadata: {
+          permissions: options?.permissions || [],
+          requestedAction: approved ? 'approve' : 'reject',
+        },
+      })
+      throw new ForbiddenException('缺少 llm:approve 权限')
     }
 
     config.status = approved ? 'approved' : 'rejected'
@@ -187,6 +215,18 @@ export class TenantLLMService {
     config.updatedAt = new Date().toISOString()
 
     configStore.set(configId, config)
+    this.recordAudit({
+      tenantId: config.tenantId,
+      configId,
+      action: approved ? 'approve' : 'reject',
+      actorId: approvedBy,
+      actorRole: options?.actorRole,
+      success: true,
+      reason: options?.reason,
+      metadata: {
+        permissions: options?.permissions || [],
+      },
+    })
     return { ...config, apiEndpoint: undefined }
   }
 
@@ -253,6 +293,21 @@ export class TenantLLMService {
   }
 
   /**
+   * 获取审批与治理审计日志
+   */
+  getAuditLogs(tenantId: string, configId?: string): LLMAuditLog[] {
+    const logs: LLMAuditLog[] = []
+
+    for (const log of auditLogStore.values()) {
+      if (log.tenantId !== tenantId) continue
+      if (configId && log.configId !== configId) continue
+      logs.push(log)
+    }
+
+    return logs.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }
+
+  /**
    * 记录调用日志
    */
   async logCall(log: Omit<LLMCallLog, 'id' | 'createdAt'>): Promise<LLMCallLog> {
@@ -286,6 +341,24 @@ export class TenantLLMService {
     // 生产环境需要从安全的密钥存储中获取
     const encrypted = apiKeyStore.get(configId)
     return encrypted ? decryptApiKey(encrypted) : null
+  }
+
+  private canApprove(approvedBy: string, options?: LLMApprovalOptions): boolean {
+    if (Array.isArray(options?.permissions)) {
+      return options.permissions.includes('llm:approve')
+    }
+
+    return /admin|security|safety|platform|owner|root/i.test(approvedBy)
+  }
+
+  private recordAudit(input: Omit<LLMAuditLog, 'id' | 'createdAt'>): LLMAuditLog {
+    const log: LLMAuditLog = {
+      ...input,
+      id: `audit-${nanoid()}`,
+      createdAt: new Date().toISOString(),
+    }
+    auditLogStore.set(log.id, log)
+    return log
   }
 }
 

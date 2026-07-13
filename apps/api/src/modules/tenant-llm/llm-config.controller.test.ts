@@ -4,6 +4,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import 'reflect-metadata'
+import { ForbiddenException } from '@nestjs/common'
 
 // Mock TenantScopeGuard before importing service
 vi.mock('../../agent/tenant.guard', () => ({
@@ -264,6 +265,30 @@ describe('TenantLLMController', () => {
       })
       expect(result).toBeNull()
     })
+
+    it('反例: 缺少 llm:approve 权限时抛出 ForbiddenException', async () => {
+      const created = await controller.createConfig('t-appr-denied', {
+        name: 'Denied Me', provider: 'deepseek', modelName: 'deepseek-chat', apiKey: 'sk',
+      })
+
+      await expect(
+        controller.approveConfig(created.id, {
+          approved: true,
+          approvedBy: 'operator-01',
+          permissions: ['llm:view'],
+          actorRole: 'operator',
+          reason: '无审批权限',
+        })
+      ).rejects.toThrow(ForbiddenException)
+
+      const logs = await controller.getAuditLogs('t-appr-denied', created.id)
+      expect(logs[0]).toMatchObject({
+        action: 'approve_denied',
+        actorId: 'operator-01',
+        actorRole: 'operator',
+        success: false,
+      })
+    })
   })
 
   // ── GET /llm/stats (getStats) ────────────────────────────────────
@@ -285,6 +310,25 @@ describe('TenantLLMController', () => {
     it('正例: 无日志时返回空数组', async () => {
       const logs = await controller.getCallLogs('t-logs-empty')
       expect(logs).toEqual([])
+    })
+  })
+
+  // ── GET /llm/audit-logs (getAuditLogs) ───────────────────────────
+
+  describe('GET /llm/audit-logs', () => {
+    it('正例: 返回当前租户的审计日志', async () => {
+      const created = await controller.createConfig('t-audit-logs', {
+        name: 'Audit LLM', provider: 'openai', modelName: 'gpt-4', apiKey: 'sk-audit',
+      })
+      await controller.applyConfig(created.id, 't-audit-logs', {
+        configId: created.id,
+        useCase: '审计查看',
+        expectedVolume: 10,
+      })
+
+      const logs = await controller.getAuditLogs('t-audit-logs', created.id)
+      expect(logs.length).toBeGreaterThanOrEqual(1)
+      expect(logs.some((log: { action: string }) => log.action === 'apply')).toBe(true)
     })
   })
 

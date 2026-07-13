@@ -12,7 +12,7 @@
  *   AC-49-27 Webhook 重试/死信
  *   RQ-49-26/27 Sandbox 与 Usage 主链
  *   AC-49-28 OpenAPI 文档输出
- *   AC-49-01/05/06/07 tenant-llm 隔离、统计与审批流转
+ *   AC-49-01/05/06/07/08 tenant-llm 隔离、统计、审批与拒绝链路
  */
 
 import { describe, it, expect } from 'vitest'
@@ -340,5 +340,35 @@ describe('🔵 OpenPlatformRingBeam: P-49 开放平台 PRD 对齐', () => {
     expect(approved?.status).toBe('approved')
     expect(approved?.enabled).toBe(true)
     expect(approved?.approvedBy).toBe('platform-admin')
+  })
+
+  it('AC-49-08: 普通运营审批会被拒绝并写入审计日志', async () => {
+    const svc = makeTenantLLMService()
+    const created = await svc.createConfig('tenant-ops', {
+      name: 'Operator Config',
+      provider: 'openai',
+      modelName: 'gpt-4',
+      apiKey: 'sk-ops',
+    })
+
+    await expect(
+      svc.approveConfig(created.id, 'operator-001', true, {
+        permissions: ['llm:view', 'llm:write'],
+        actorRole: 'operator',
+        reason: '普通运营无审批权限',
+      })
+    ).rejects.toThrow('缺少 llm:approve 权限')
+
+    const config = await svc.getConfig(created.id, 'tenant-ops')
+    const logs = svc.getAuditLogs('tenant-ops', created.id)
+
+    expect(config?.status).toBe('pending')
+    expect(config?.enabled).toBe(false)
+    expect(logs[0]).toMatchObject({
+      action: 'approve_denied',
+      actorId: 'operator-001',
+      actorRole: 'operator',
+      success: false,
+    })
   })
 })

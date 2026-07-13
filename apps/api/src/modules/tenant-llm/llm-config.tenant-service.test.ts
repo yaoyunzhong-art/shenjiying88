@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { NotFoundException } from '@nestjs/common'
+import { NotFoundException, ForbiddenException } from '@nestjs/common'
 
 // Mock the tenant guard import — TenantScopeGuard is @ts-ignore'd
 vi.mock('../../agent/tenant.guard', () => ({
@@ -274,6 +274,37 @@ describe('TenantLLMService', () => {
       const result = await service.approveConfig('non-existent-approve', 'admin', true)
       expect(result).toBeNull()
     })
+
+    it('无 llm:approve 权限时拒绝审批并记录审计日志', async () => {
+      const created = await service.createConfig('tenant-ac-49-08', {
+        name: '待权限校验配置', provider: 'openai', modelName: 'gpt-4', apiKey: 'sk-ac-49-08',
+      })
+
+      await expect(
+        service.approveConfig(created.id, 'operator-001', true, {
+          permissions: ['llm:view', 'llm:write'],
+          actorRole: 'operator',
+          reason: '普通运营无审批权限',
+        })
+      ).rejects.toThrow(ForbiddenException)
+
+      const config = await service.getConfig(created.id, 'tenant-ac-49-08')
+      const logs = service.getAuditLogs('tenant-ac-49-08', created.id)
+
+      expect(config?.status).toBe('pending')
+      expect(config?.enabled).toBe(false)
+      expect(logs[0]).toMatchObject({
+        action: 'approve_denied',
+        actorId: 'operator-001',
+        actorRole: 'operator',
+        success: false,
+        reason: '普通运营无审批权限',
+      })
+      expect(logs[0].metadata).toMatchObject({
+        requestedAction: 'approve',
+        permissions: ['llm:view', 'llm:write'],
+      })
+    })
   })
 
   // ============ 调用统计与日志 ============
@@ -429,6 +460,29 @@ describe('TenantLLMService', () => {
     it('不存在的配置返回 null', () => {
       const key = service.getApiKey('non-existent-apikey', 'tenant-001')
       expect(key).toBeNull()
+    })
+  })
+
+  describe('getAuditLogs', () => {
+    it('应返回当前租户的申请与审批审计日志', async () => {
+      const created = await service.createConfig('tenant-audit', {
+        name: '审计配置', provider: 'deepseek', modelName: 'deepseek-chat', apiKey: 'sk-audit',
+      })
+      await service.applyConfig(created.id, 'tenant-audit', {
+        configId: created.id,
+        useCase: '审计验证',
+        expectedVolume: 100,
+      })
+      await service.approveConfig(created.id, 'platform-admin', true, {
+        permissions: ['llm:approve'],
+        actorRole: 'platform-admin',
+      })
+
+      const logs = service.getAuditLogs('tenant-audit', created.id)
+
+      expect(logs.length).toBeGreaterThanOrEqual(2)
+      expect(logs.some((log: { action: string }) => log.action === 'apply')).toBe(true)
+      expect(logs.some((log: { action: string }) => log.action === 'approve')).toBe(true)
     })
   })
 })

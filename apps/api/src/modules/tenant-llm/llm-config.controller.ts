@@ -107,9 +107,19 @@ export class TenantLLMController {
   @Post('configs/:id/approve')
   async approveConfig(
     @Param('id') id: string,
-    @Body() body: { approved: boolean; approvedBy: string }
+    @Body() body: {
+      approved: boolean
+      approvedBy: string
+      permissions?: string[]
+      actorRole?: string
+      reason?: string
+    }
   ) {
-    return this.llmService.approveConfig(id, body.approvedBy, body.approved)
+    return this.llmService.approveConfig(id, body.approvedBy, body.approved, {
+      permissions: body.permissions,
+      actorRole: body.actorRole,
+      reason: body.reason,
+    })
   }
 
   /**
@@ -136,5 +146,16 @@ export class TenantLLMController {
     @Query('periodEnd') periodEnd?: string
   ) {
     return this.llmService.getCallLogs(tenantId, configId, periodStart, periodEnd)
+  }
+
+  /**
+   * 获取审批与治理审计日志
+   */
+  @Get('audit-logs')
+  async getAuditLogs(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('configId') configId?: string
+  ) {
+    return this.llmService.getAuditLogs(tenantId, configId)
   }
 }

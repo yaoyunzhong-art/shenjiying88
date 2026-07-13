@@ -43,9 +43,9 @@
 | member-level | P-36 | (合入PRD-002) | ✅ 6files | ⬜ | ⬜ | 🔴 缺对齐 |
 | points | P-36 | (合入PRD-002) | ✅ 7files | ⬜ | ⬜ | 🔴 缺对齐 |
 | loyalty | P-36 | (合入PRD-002) | ✅ 6files | ⬜ | ⬜ | 🔴 缺对齐 |
-| open-api | P-49 | ✅ PRD-016 | ✅ 5files | ✅ 1圈梁/13tests | ✅ P-49专项审计 | 🟡 已补主圈梁 |
-| openapi | P-49 | ✅ PRD-016 | ✅ 29files | ✅ 1圈梁/13tests | ✅ P-49专项审计 | 🟡 已补主圈梁 |
-| tenant-llm | P-49 | ✅ PRD-014 | ✅ 10files | ✅ 1圈梁+30tests | ✅ P-49专项审计 | 🟡 已补主圈梁 |
+| open-api | P-49 | ✅ PRD-016 | ✅ 5files | ✅ 1圈梁/14tests | ✅ P-49专项审计 | 🟡 已补主圈梁 |
+| openapi | P-49 | ✅ PRD-016 | ✅ 29files | ✅ 1圈梁/14tests | ✅ P-49专项审计 | 🟡 已补主圈梁 |
+| tenant-llm | P-49 | ✅ PRD-014 | ✅ 10files | ✅ 1圈梁+61tests | ✅ P-49专项审计 | 🟡 已补主圈梁 |
 | deploy | P-53 | ✅ PRD-013 | ✅ 6files | ⬜ | ⬜ | 🔴 缺测试+审计 |
 | iot | (未分配) | ⬜ | ✅ 6files | ⬜ | ⬜ | 🔴 缺Phase归属 |
 

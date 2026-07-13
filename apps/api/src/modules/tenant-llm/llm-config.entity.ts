@@ -105,6 +105,27 @@ export interface LLMCallLog {
   createdAt: string
 }
 
+/** 审批与治理审计日志 */
+export interface LLMAuditLog {
+  id: string
+  tenantId: string
+  configId: string
+  action: 'apply' | 'approve' | 'reject' | 'approve_denied'
+  actorId: string
+  actorRole?: string
+  success: boolean
+  reason?: string
+  createdAt: string
+  metadata?: Record<string, unknown>
+}
+
+/** 审批选项 */
+export interface LLMApprovalOptions {
+  permissions?: string[]
+  actorRole?: string
+  reason?: string
+}
+
 /** 权限配置 */
 export interface LLMPermission {
   roleId: string
