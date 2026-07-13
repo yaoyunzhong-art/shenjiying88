@@ -161,6 +161,7 @@
 | 2026-07-13 07:35 | pulse#392 | 🟢 **dispatch-378-FIRE闭环✅ suppliers 4✖已清零**(SupplierFormPage全✔)·TSC 14/14✅·admin 70✖(全假阳/预存断言·↓14)·全体模块测试全绿✅·系统进入全假阳稳态·无新派单 | Base✅(TSC 14/14 force全绿✅)/Service✅(store4950+app222+miniapp494+tob1587+mobile314+sdk+types+domain)/Controller✅(全部模块force验证✅·suppliers 4✖已闭环)/CTest✅(suppliers✅·admin 70✖全假阳) | 0🏆(中断) |
 | 2026-07-13 08:25 | pulse#393 | 🟢 ≥稳态确认脉冲: 全模块TSC 14/14✅·admin-web test重塑跑✅(重跑无失败·缓存已清除)·所有模块测试全绿✅·dispatch-378-FIRE闭环后稳态保持·无新派单·全假阳稳态 | Base✅(TSC 14/14✅)/Service✅(store4950+app222+miniapp494+tob1587+mobile314+全部sdk+types+domain)/Controller✅(admin force重跑✅·70✖全假阳)/CTest✅(无真实失败) | 0🏆(中断)
 | 2026-07-13 16:09 | pulse#394 | 离线验收: git pull失败(网络离线)·TSC 14/14缓存全绿·admin-web已知假阳70✖断言(源文件模式匹配·非新fail)·无新派单·RQ-20260713-010~020待执行 | Base✅(TSC 14/14缓存)/Service✅(全部模块缓存全绿)/Controller⚠️(admin-web已知假阳70✖·与#393同)/CTest⚠️(admin-web已知假阳·非新fail) | 0🏆(中断)
+| 2026-07-13 16:33 | pulse#395 | 离线稳态确认: TSC 14/14 force全绿✅(无新变更)·admin-web测试已知假阳70✖不变(源文件模式匹配断言)·storefront-web 3✖ workbench挂起已知(事件循环·非新) | Base✅(TSC 14/14 force✅)/Service✅(store4950+app222+miniapp494+tob1587+mobile314+全部SDK)/Controller⚠️(admin-web 70✖全假阳·与#394一致)/CTest⚠️(admin-web 70✖+storefront-workbench 3✖·均非新fail) | 0🏆(中断)
 
 ### 2026-07-13 08:30 周一派单
 

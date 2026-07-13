@@ -36,6 +36,16 @@ describe('coupons — 正例', () => {
     assert.ok(src.includes('active:'), '缺少 active');
     assert.ok(src.includes('totalIssued'), '缺少 totalIssued');
   });
+
+  it('应包含优惠券使用率统计', () => {
+    const src = readSource();
+    assert.ok(src.includes('used') || src.includes('usage'), '缺少使用率');
+  });
+
+  it('应展示优惠券列表', () => {
+    const src = readSource();
+    assert.ok(src.includes('优惠券') || src.includes('Coupon'), '缺少优惠券列表');
+  });
 });
 
 describe('coupons — 边界', () => {
@@ -53,6 +63,16 @@ describe('coupons — 边界', () => {
     const src = readSource();
     assert.ok(src.includes('MOCK_COUPONS.length'), '长度统计');
   });
+
+  it('应包含 status 字段过滤', () => {
+    const src = readSource();
+    assert.ok(src.includes('status'), '缺少 status 字段');
+  });
+
+  it('应包含 discount 或 amount 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('discount') || src.includes('amount') || src.includes('Discount'), '缺少折扣字段');
+  });
 });
 
 describe('coupons — 防御', () => {
@@ -69,5 +89,37 @@ describe('coupons — 防御', () => {
   it('应包含搜索过滤', () => {
     const src = readSource();
     assert.ok(src.includes('search') || src.includes('Search'), '搜索');
+  });
+
+  it('不应使用 innerHTML', () => {
+    const src = readSource();
+    assert.ok(!src.includes('innerHTML'), '不应使用 innerHTML');
+  });
+});
+
+describe('coupons — 补充覆盖', () => {
+  it('应包含 过期时间 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('expires') || src.includes('expire') || src.includes('endDate'), '缺少过期时间');
+  });
+
+  it('应包含 useCallback 或 useEffect', () => {
+    const src = readSource();
+    assert.ok(src.includes('useCallback') || src.includes('useEffect'), '缺少副作用管理');
+  });
+
+  it('MOCK_COUPONS 应包含 minAmount 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('minAmount') || src.includes('min') || src.includes('threshold'), '缺少最低消费');
+  });
+
+  it('应包含 优惠券类型 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('type') || src.includes('couponType'), '缺少类型字段');
+  });
+
+  it('应包含 filter 过滤逻辑', () => {
+    const src = readSource();
+    assert.ok(src.includes('.filter('), '缺少 filter 调用');
   });
 });

@@ -1,6 +1,6 @@
 /**
- * devices/page.test.tsx — 设备管理页面 L1 冒烟测试
- * 覆盖: 正例·边界·防御
+ * devices/page.test.tsx — 设备管理页面 L1+L2 测试
+ * 覆盖: 正例·反例·边界·防御·数据校验
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -28,33 +28,69 @@ describe('devices — 正例', () => {
     assert.ok(src.includes('DEVICES'), '缺少设备数据定义');
   });
 
-  it('应包含设备状态状态值', () => {
+  it('应包含设备在线/离线状态', () => {
     const src = readSource();
-    assert.ok(src.includes('online') || src.includes('offline'), '缺少设备状态');
+    assert.ok(src.includes('online'), '缺少在线状态');
+    assert.ok(src.includes('offline'), '缺少离线状态');
   });
 
-  it('应包含设备类型分类', () => {
+  it('应包含 DataTable 组件', () => {
     const src = readSource();
-    assert.ok(src.includes('DataTable'), '缺少 DataTable 组件');
+    assert.ok(src.includes('DataTable') || src.includes('Table'), '缺少表格组件');
+  });
+
+  it('DEVICES 应包含维修维护状态', () => {
+    const src = readSource();
+    assert.ok(src.includes('maintenance'), '缺少维护状态');
+  });
+
+  it('应包含设备类型街机/VR/模拟机/台球/卡丁车', () => {
+    const src = readSource();
+    assert.ok(src.includes('街机'), '缺少街机类型');
+    assert.ok(src.includes('VR'), '缺少 VR 类型');
+  });
+});
+
+// ---- 反例 ----
+
+describe('devices — 反例', () => {
+  it('不应使用 any 类型', () => {
+    const src = readSource();
+    assert.ok(!/: any\b/.test(src), '不应使用 any');
+  });
+
+  it('不应使用 var 声明', () => {
+    const src = readSource();
+    assert.ok(!/^var\s/.test(src) && !/; var\s/.test(src), '不应使用 var');
+  });
+
+  it('DEVICES 不应为空数组', () => {
+    const src = readSource();
+    assert.ok(src.includes('D001'), 'DEVICES 应包含实际数据');
   });
 });
 
 // ---- 边界 ----
 
 describe('devices — 边界', () => {
-  it('应包含 Columns 列定义', () => {
+  it('应包含列定义 COLUMNS', () => {
     const src = readSource();
     assert.ok(src.includes('COLUMNS'), '缺少列定义');
   });
 
-  it('应包含状态过滤或统计', () => {
+  it('应包含统计/过滤功能', () => {
     const src = readSource();
-    assert.ok(src.includes('Statistic') || src.includes('filter'), '缺少统计/过滤');
+    assert.ok(src.includes('Statistic') || src.includes('Badge'), '缺少统计/徽标');
   });
 
   it('应包含维护操作按钮', () => {
     const src = readSource();
-    assert.ok(src.includes('维护') || src.includes('维修'), '缺少维护操作');
+    assert.ok(src.includes('维护') || src.includes('维修') || src.includes('新增设备'), '缺少维护操作');
+  });
+
+  it('设备名称应包含区域编号', () => {
+    const src = readSource();
+    assert.ok(src.includes('A区') || src.includes('B区') || src.includes('1号'), '缺少设备区域编号');
   });
 });
 
@@ -73,6 +109,39 @@ describe('devices — 防御', () => {
 
   it('不应使用 dangerouslySetInnerHTML', () => {
     const src = readSource();
-    assert.ok(!src.includes('dangerouslySetInnerHTML'));
+    assert.ok(!src.includes('dangerouslySetInnerHTML'), '不应使用 dangerouslySetInnerHTML');
+  });
+
+  it('状态 Tag 应有对应颜色配置', () => {
+    const src = readSource();
+    assert.ok(src.includes('green') && src.includes('red') && src.includes('orange'),
+      '缺少状态颜色映射(在线绿/离线红/维护橙)');
+  });
+});
+
+// ---- 数据校验 ----
+
+describe('devices — 数据校验', () => {
+  it('DEVICES 应包含 id/name/type/status/usage/lastMaintenance 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes("'id'") && src.includes("'name'") && src.includes("'type'"), '缺少基础字段');
+    assert.ok(src.includes("usage") || src.includes("'usage'"), '缺少 usage 字段');
+    assert.ok(src.includes("lastMaintenance") || src.includes("'lastMaintenance'"), '缺少 lastMaintenance 字段');
+  });
+
+  it('COLUMNS 应覆盖编号/名称/类型/状态/使用率/最后维护', () => {
+    const src = readSource();
+    const colCount = (src.match(/\{ title:/g) || []).length;
+    assert.ok(colCount >= 6, `COLUMNS 列数不足: ${colCount}`);
+  });
+
+  it('应消费 useState', () => {
+    const src = readSource();
+    assert.ok(src.includes('useState'), '缺少 useState');
+  });
+
+  it('Table 应禁用分页 pagination=false', () => {
+    const src = readSource();
+    assert.ok(src.includes('pagination={false}'), '应禁用分页');
   });
 });

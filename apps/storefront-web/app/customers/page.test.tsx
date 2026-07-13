@@ -36,6 +36,16 @@ describe('customers — 正例', () => {
     assert.ok(src.includes('total'), '缺少 total');
     assert.ok(src.includes('active'), '缺少 active');
   });
+
+  it('应包含客户姓名字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('name') || src.includes('Name'), '缺少姓名');
+  });
+
+  it('应包含客户联系方式', () => {
+    const src = readSource();
+    assert.ok(src.includes('phone') || src.includes('Phone') || src.includes('email') || src.includes('Email'), '缺少联系方式');
+  });
 });
 
 describe('customers — 边界', () => {
@@ -53,6 +63,16 @@ describe('customers — 边界', () => {
     const src = readSource();
     assert.ok(src.includes('activeTab'), 'tab 切换');
   });
+
+  it('应包含积分字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('points') || src.includes('Point') || src.includes('积分'), '缺少积分');
+  });
+
+  it('应包含最后活跃日期', () => {
+    const src = readSource();
+    assert.ok(src.includes('lastActive') || src.includes('lastVisit') || src.includes('Last'), '缺少最后活跃');
+  });
 });
 
 describe('customers — 防御', () => {
@@ -69,5 +89,42 @@ describe('customers — 防御', () => {
   it('搜索过滤应包含 .filter', () => {
     const src = readSource();
     assert.ok(src.includes('.filter('), 'filter 过滤');
+  });
+
+  it('不应包含危险的 innerHTML', () => {
+    const src = readSource();
+    assert.ok(!src.includes('dangerouslySetInnerHTML'), '不应使用危险 HTML');
+  });
+
+  it('不应使用 eval', () => {
+    const src = readSource();
+    assert.ok(!src.includes('eval('), '不应使用 eval');
+  });
+});
+
+describe('customers — 补充覆盖', () => {
+  it('应包含客户等级或类型', () => {
+    const src = readSource();
+    assert.ok(src.includes('vip') || src.includes('level') || src.includes('type') || src.includes('VIP'), '缺少等级');
+  });
+
+  it('应包含 useCallback 或 useEffect', () => {
+    const src = readSource();
+    assert.ok(src.includes('useCallback') || src.includes('useEffect'), '缺少副作用管理');
+  });
+
+  it('应包含 Tab 切换组件', () => {
+    const src = readSource();
+    assert.ok(src.includes('Tab') || src.includes('tab'), '缺少 Tab 组件');
+  });
+
+  it('应包含搜索输入框', () => {
+    const src = readSource();
+    assert.ok(src.includes('placeholder') || src.includes('搜索') || src.includes('Search'), '缺少搜索框');
+  });
+
+  it('客户统计数据应包含 newThisMonth', () => {
+    const src = readSource();
+    assert.ok(src.includes('new') || src.includes('newThisMonth'), '缺少新增客户统计');
   });
 });

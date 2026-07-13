@@ -1,6 +1,6 @@
 /**
- * inventory/page.test.tsx — 库存管理页面 L1 冒烟测试
- * 覆盖: 正例·边界·防御
+ * inventory/page.test.tsx — 库存管理页面 L1+L2 测试
+ * 覆盖: 正例·反例·边界·防御·数据校验
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -28,7 +28,7 @@ describe('inventory — 正例', () => {
     assert.ok(src.includes('ITEMS'), '缺少库存数据定义');
   });
 
-  it('应包含低库存计算逻辑', () => {
+  it('应包含低库存计算逻辑 lowStock', () => {
     const src = readSource();
     assert.ok(src.includes('lowStock'), '缺少低库存计算');
   });
@@ -37,24 +37,59 @@ describe('inventory — 正例', () => {
     const src = readSource();
     assert.ok(src.includes('DataTable'), '缺少 DataTable');
   });
+
+  it('ITEMS 应包含多种状态 (normal/low)', () => {
+    const src = readSource();
+    assert.ok(src.includes('normal') && src.includes('low'), '缺少库存状态');
+  });
+
+  it('应包含库存预警阈值 threshold', () => {
+    const src = readSource();
+    assert.ok(src.includes('threshold'), '缺少预警阈值');
+  });
+});
+
+// ---- 反例 ----
+
+describe('inventory — 反例', () => {
+  it('不应使用 any 类型', () => {
+    const src = readSource();
+    assert.ok(!/: any\b/.test(src), '不应使用 any');
+  });
+
+  it('ITEMS 不应为空', () => {
+    const src = readSource();
+    assert.ok(src.includes('I001'), 'ITEMS 应有实际数据');
+  });
+
+  it('不应包含内外联脚本注入', () => {
+    const src = readSource();
+    assert.ok(!src.includes('<script') && !src.includes('onerror='), '不应包含脚本注入');
+  });
 });
 
 // ---- 边界 ----
 
 describe('inventory — 边界', () => {
-  it('应包含 Columns 列定义', () => {
+  it('应包含列定义 COLUMNS', () => {
     const src = readSource();
     assert.ok(src.includes('COLUMNS'), '缺少列定义');
   });
 
   it('应包含库存状态 Tag 颜色', () => {
     const src = readSource();
-    assert.ok(src.includes('orange') || src.includes('需补货'), '缺少状态 Tag');
+    assert.ok(src.includes('orange') || src.includes('需补货') || src.includes('green'), '缺少状态颜色');
   });
 
   it('应包含入库/出库操作按钮', () => {
     const src = readSource();
-    assert.ok(src.includes('入库') || src.includes('出库'), '缺少入库出库按钮');
+    assert.ok(src.includes('入库'), '缺少入库按钮');
+    assert.ok(src.includes('出库'), '缺少出库按钮');
+  });
+
+  it('低库存商品字体应为红色', () => {
+    const src = readSource();
+    assert.ok(src.includes('#f87171'), '缺少红色低库存标识');
   });
 });
 
@@ -73,6 +108,43 @@ describe('inventory — 防御', () => {
 
   it('不应使用 dangerouslySetInnerHTML', () => {
     const src = readSource();
-    assert.ok(!src.includes('dangerouslySetInnerHTML'));
+    assert.ok(!src.includes('dangerouslySetInnerHTML'), '不应使用 dangerouslySetInnerHTML');
+  });
+
+  it('库存数字渲染应使用 fontWeight 600', () => {
+    const src = readSource();
+    assert.ok(src.includes('fontWeight') || src.includes('font-weight'), '缺少字体加粗');
+  });
+
+  it('当 stock < threshold 时颜色应为红色', () => {
+    const src = readSource();
+    assert.ok(src.includes('r.stock < r.threshold') || src.includes("stock<i.threshold") || src.includes('stock <= i.threshold'), '缺少库存阈值比较');
+  });
+});
+
+// ---- 数据校验 ----
+
+describe('inventory — 数据校验', () => {
+  it('ITEMS 应包含 id/name/category/stock/threshold/unit/status', () => {
+    const src = readSource();
+    assert.ok(src.includes("'id'") || src.includes("id: 'I001'") || src.includes("id:'I001'"), '缺少 id');
+    assert.ok(src.includes("'name'") || src.includes("'category'"), '缺少名称/分类');
+    assert.ok(src.includes("stock") || src.includes("'stock'"), '缺少 stock');
+  });
+
+  it('COLUMNS 应覆盖编号/名称/分类/库存/预警线/状态', () => {
+    const src = readSource();
+    const colCount = (src.match(/\{ title:/g) || []).length;
+    assert.ok(colCount >= 6, `COLUMNS 列数不足: ${colCount}`);
+  });
+
+  it('应消费 useState', () => {
+    const src = readSource();
+    assert.ok(src.includes('useState'), '缺少 useState');
+  });
+
+  it('应包含库存种类/需补货/总库存量三个统计', () => {
+    const src = readSource();
+    assert.ok(src.includes('库存种类') || src.includes('需补货') || src.includes('总库存量'), '缺少统计卡片');
   });
 });

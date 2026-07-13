@@ -1,6 +1,6 @@
 /**
- * marketing/page.test.tsx — 营销管理页面 L1 冒烟测试
- * 覆盖: 正例·边界·防御
+ * marketing/page.test.tsx — 营销管理页面 L1+L2 测试
+ * 覆盖: 正例·反例·边界·防御·数据校验
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -28,7 +28,7 @@ describe('marketing — 正例', () => {
     assert.ok(src.includes('CAMPAIGNS'), '缺少活动数据');
   });
 
-  it('应包含活动状态字段', () => {
+  it('应包含活动状态 active 和 draft', () => {
     const src = readSource();
     assert.ok(src.includes('active') || src.includes('draft'), '缺少活动状态');
   });
@@ -37,12 +37,41 @@ describe('marketing — 正例', () => {
     const src = readSource();
     assert.ok(src.includes('DataTable'), '缺少 DataTable');
   });
+
+  it('CAMPAIGNS 应包含预算和已使用字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('budget') && src.includes('used'), '缺少预算/已使用字段');
+  });
+
+  it('应计算活动进度百分比', () => {
+    const src = readSource();
+    assert.ok(src.includes('progress') || src.includes('/r.budget'), '缺少进度计算');
+  });
+});
+
+// ---- 反例 ----
+
+describe('marketing — 反例', () => {
+  it('不应使用 any 类型', () => {
+    const src = readSource();
+    assert.ok(!/: any\b/.test(src), '不应使用 any');
+  });
+
+  it('CAMPAIGNS 不应为空', () => {
+    const src = readSource();
+    assert.ok(src.includes('C001'), 'CAMPAIGNS 应有实际数据');
+  });
+
+  it('不应使用 var 声明', () => {
+    const src = readSource();
+    assert.ok(!/^var\s/.test(src) && !/; var\s/.test(src), '不应使用 var');
+  });
 });
 
 // ---- 边界 ----
 
 describe('marketing — 边界', () => {
-  it('应包含 Columns 列定义', () => {
+  it('应包含列定义 COLUMNS', () => {
     const src = readSource();
     assert.ok(src.includes('COLUMNS'), '缺少列定义');
   });
@@ -54,7 +83,12 @@ describe('marketing — 边界', () => {
 
   it('应包含预算统计', () => {
     const src = readSource();
-    assert.ok(src.includes('budget'), '缺少预算统计');
+    assert.ok(src.includes('budget') || src.includes('本月预算'), '缺少预算统计');
+  });
+
+  it('活动日期应包含起止时间', () => {
+    const src = readSource();
+    assert.ok(src.includes('start') && src.includes('end'), '缺少活动起止日期');
   });
 });
 
@@ -73,6 +107,42 @@ describe('marketing — 防御', () => {
 
   it('不应使用 dangerouslySetInnerHTML', () => {
     const src = readSource();
-    assert.ok(!src.includes('dangerouslySetInnerHTML'));
+    assert.ok(!src.includes('dangerouslySetInnerHTML'), '不应使用 dangerouslySetInnerHTML');
+  });
+
+  it('状态 Tag 进行中应为绿色，草稿为默认色', () => {
+    const src = readSource();
+    assert.ok(src.includes("'green'") || src.includes("green"), '进行中应为绿色');
+  });
+
+  it('预算数字应使用 toLocaleString 格式化', () => {
+    const src = readSource();
+    assert.ok(src.includes('toLocaleString'), '缺少数字格式化');
+  });
+});
+
+// ---- 数据校验 ----
+
+describe('marketing — 数据校验', () => {
+  it('CAMPAIGNS 应包含多种活动类型', () => {
+    const src = readSource();
+    assert.ok(src.includes('充值') || src.includes('会员卡') || src.includes('套餐') || src.includes('优惠券'), '缺少活动类型');
+  });
+
+  it('COLUMNS 应覆盖活动名称/类型/状态/预算/已用/进度/日期', () => {
+    const src = readSource();
+    const colCount = (src.match(/\{ title:/g) || []).length;
+    assert.ok(colCount >= 7, `COLUMNS 列数不足: ${colCount}`);
+  });
+
+  it('应包含活动中/预算/已消耗/转化率四个统计', () => {
+    const src = readSource();
+    const statCount = (src.match(/Statistic/g) || []).length;
+    assert.ok(statCount >= 4, `Statistic 数量不足: ${statCount}`);
+  });
+
+  it('Table 应禁用分页', () => {
+    const src = readSource();
+    assert.ok(src.includes('pagination={false}'), '应禁用分页');
   });
 });

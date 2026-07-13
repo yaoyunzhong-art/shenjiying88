@@ -1,6 +1,6 @@
 /**
- * analytics/page.test.tsx — 门店分析看板 L1 冒烟测试
- * 覆盖: 正例·边界·防御
+ * analytics/page.test.tsx — 门店分析看板 L1+L2 测试
+ * 覆盖: 正例·反例·边界·防御·数据校验
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -23,7 +23,7 @@ describe('analytics — 正例', () => {
     assert.ok(src.includes('export default function AnalyticsPage'), '缺少默认导出组件');
   });
 
-  it('应包含 Statistic 营收指标', () => {
+  it('应包含 Statistic 今日营收指标', () => {
     const src = readSource();
     assert.ok(src.includes('今日营收'), '缺少今日营收指标');
   });
@@ -36,6 +36,37 @@ describe('analytics — 正例', () => {
   it('应包含坪效指标', () => {
     const src = readSource();
     assert.ok(src.includes('坪效'), '缺少坪效指标');
+  });
+
+  it('应包含本月同比统计数据', () => {
+    const src = readSource();
+    assert.ok(src.includes('本月同比'), '缺少本月同比统计');
+  });
+
+  it('Statistic 应设置 value 属性', () => {
+    const src = readSource();
+    // Statistic 组件应有 value 属性
+    const matches = src.match(/Statistic\s+title=/g);
+    assert.ok(matches && matches.length >= 4, `Statistic 数量不足: ${matches?.length ?? 0}`);
+  });
+});
+
+// ---- 反例 ----
+
+describe('analytics — 反例', () => {
+  it('不应导出非默认函数', () => {
+    const src = readSource();
+    assert.ok(!src.includes('export function '), '不应存在命名导出');
+  });
+
+  it('不应使用 class 组件', () => {
+    const src = readSource();
+    assert.ok(!src.includes('extends Component') && !src.includes('React.Component'), '不应使用 class 组件');
+  });
+
+  it('不应使用 any 类型', () => {
+    const src = readSource();
+    assert.ok(!/: any\b/.test(src), '不应使用 any 类型');
   });
 });
 
@@ -56,6 +87,21 @@ describe('analytics — 边界', () => {
     const src = readSource();
     assert.ok(src.includes('支付方式'), '缺少支付方式分布');
   });
+
+  it('支付方式应覆盖所有主流渠道', () => {
+    const src = readSource();
+    const count = (src.match(/^(?!.*Card\b).*%/gm) || []).length;
+    const hasWechat = src.includes('微信');
+    const hasAlipay = src.includes('支付宝');
+    assert.ok(hasWechat && hasAlipay, '缺少微信或支付宝支付方式');
+  });
+
+  it('应包含日报/周报/月报导出按钮', () => {
+    const src = readSource();
+    assert.ok(src.includes('日报'), '缺少日报按钮');
+    assert.ok(src.includes('周报'), '缺少周报按钮');
+    assert.ok(src.includes('月报'), '缺少月报按钮');
+  });
 });
 
 // ---- 防御 ----
@@ -73,6 +119,41 @@ describe('analytics — 防御', () => {
 
   it('不应使用 dangerouslySetInnerHTML', () => {
     const src = readSource();
-    assert.ok(!src.includes('dangerouslySetInnerHTML'));
+    assert.ok(!src.includes('dangerouslySetInnerHTML'), '不应使用 dangerouslySetInnerHTML');
+  });
+
+  it('营收应前缀 ¥ 符号', () => {
+    const src = readSource();
+    const statUsage = src.indexOf('Statistic');
+    const afterStat = src.slice(statUsage);
+    // 检查是否使用 prefix="¥"
+    assert.ok(afterStat.includes('prefix="¥"') || afterStat.includes("prefix='¥'"), '营收缺少 ¥ 前缀');
+  });
+
+  it('坪效应有提醒颜色', () => {
+    const src = readSource();
+    assert.ok(src.includes('#f59e0b'), '坪效应有 warning 颜色');
+  });
+});
+
+// ---- 数据校验 ----
+
+describe('analytics — 数据校验', () => {
+  it('营收/同比/客流/坪效应各占 Col span 6', () => {
+    const src = readSource();
+    const span6Count = (src.match(/span=\{6\}/g) || []).length;
+    assert.ok(span6Count >= 4, `Col span={6} 数量不足: ${span6Count}`);
+  });
+
+  it('应消费 useState', () => {
+    const src = readSource();
+    assert.ok(src.includes('useState'), '缺少 useState');
+  });
+
+  it('PageShell 应被正确包裹', () => {
+    const src = readSource();
+    const firstContent = src.indexOf('return (');
+    const afterReturn = src.slice(firstContent);
+    assert.ok(afterReturn.includes('<PageShell'), '渲染应包裹 PageShell');
   });
 });

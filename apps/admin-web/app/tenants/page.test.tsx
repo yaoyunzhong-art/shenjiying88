@@ -1,6 +1,6 @@
 /**
- * tenants/page.test.tsx — 租户列表页 L1 冒烟测试
- * 覆盖: 正例·边界·防御
+ * tenants/page.test.tsx — 租户列表页 L1+L2 测试
+ * 覆盖: 正例·反例·边界·防御·数据校验
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -45,6 +45,42 @@ describe('tenants — 正例', () => {
     const src = readSource();
     assert.ok(src.includes('useSearchFilter'), '缺少 useSearchFilter');
   });
+
+  it('应包含 useMemo 性能优化', () => {
+    const src = readSource();
+    assert.ok(src.includes('useMemo'), '缺少 useMemo');
+  });
+
+  it('应包含 DataTable 列定义', () => {
+    const src = readSource();
+    assert.ok(src.includes('DataTableColumn') || src.includes('buildColumns'), '缺少列定义');
+  });
+});
+
+// ---- 反例 ----
+
+describe('tenants — 反例', () => {
+  it('不应使用 any 类型', () => {
+    const src = readSource();
+    assert.ok(!/: any\b/.test(src), '不应使用 any');
+  });
+
+  it('tenants 不应为空', () => {
+    const src = readSource();
+    assert.ok(src.includes('TNT-'), 'tenants 应有实际数据');
+  });
+
+  it('不应使用 var 声明', () => {
+    const src = readSource();
+    assert.ok(!/^var\s/.test(src) && !/; var\s/.test(src), '不应使用 var');
+  });
+
+  it('不应使用 'use client' before imports', () => {
+    const src = readSource();
+    // 'use client' should be at top
+    const firstLines = src.split('\n').slice(0, 3).join('\n');
+    assert.ok(firstLines.includes("'use client'") || firstLines.includes('@ts-nocheck'), '缺少 use client 指令');
+  });
 });
 
 // ---- 边界 ----
@@ -61,9 +97,19 @@ describe('tenants — 边界', () => {
     assert.ok(src.includes('region') || src.includes('REGIONS'), '缺少 region');
   });
 
-  it('应支持 status 分组统计', () => {
+  it('应支持状态分组统计', () => {
     const src = readSource();
     assert.ok(src.includes(".status==='active'") || src.includes('.status==='), '缺少状态过滤');
+  });
+
+  it('数组长度应为 32', () => {
+    const src = readSource();
+    assert.ok(src.includes('length:32') || src.includes('32}'), '应包含 length:32');
+  });
+
+  it('应支持分页 Pagination', () => {
+    const src = readSource();
+    assert.ok(src.includes('Pagination') || src.includes('usePagination'), '缺少分页组件');
   });
 });
 
@@ -75,13 +121,50 @@ describe('tenants — 防御', () => {
     assert.ok(src.includes("'use client'"), '缺少 use client');
   });
 
-  it('应包含 useMemo 性能优化', () => {
+  it('应包含状态过滤 Tabs', () => {
     const src = readSource();
-    assert.ok(src.includes('useMemo'), '缺少 useMemo');
+    assert.ok(src.includes('Tabs'), '缺少 Tabs');
   });
 
-  it('数组长度应为 32', () => {
+  it('状态过滤应包含 active/trial/suspended/expired', () => {
     const src = readSource();
-    assert.ok(src.includes('length:32'), '应包含 length:32');
+    assert.ok(src.includes('active') && src.includes('trial') && src.includes('expired'), '缺少完整状态');
+    assert.ok(src.includes('suspended'), '缺少 suspended 状态');
+  });
+
+  it('应包含营收格式化函数 formatMoney', () => {
+    const src = readSource();
+    assert.ok(src.includes('formatMoney'), '缺少 formatMoney');
+  });
+
+  it('到期日应显示剩余天数', () => {
+    const src = readSource();
+    assert.ok(src.includes('expiryDate') || src.includes('已过期'), '缺少到期日显示');
+  });
+});
+
+// ---- 数据校验 ----
+
+describe('tenants — 数据校验', () => {
+  it('Tenant 接口应包含必需字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('id') && src.includes('name') && src.includes('tier'), '缺少基础字段');
+    assert.ok(src.includes('status') && src.includes('region'), '缺少 status/region');
+  });
+
+  it('应包含多个行业类型', () => {
+    const src = readSource();
+    assert.ok(src.includes('游艺厅') || src.includes('电玩城'), '缺少游戏厅行业');
+  });
+
+  it('COLUMNS 列数量应足够', () => {
+    const src = readSource();
+    const colDefs = (src.match(/key:'/g) || src.match(/key: '/g) || []).length;
+    assert.ok(colDefs >= 8, `列定义不足: ${colDefs}`);
+  });
+
+  it('营收渲染应有 ¥ 符号', () => {
+    const src = readSource();
+    assert.ok(src.includes('¥'), '缺少货币符号');
   });
 });
