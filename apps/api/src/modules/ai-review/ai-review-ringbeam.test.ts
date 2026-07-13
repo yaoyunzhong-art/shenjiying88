@@ -24,7 +24,6 @@ describe('ai-review DTO', () => {
     dto.repository = 'shenjiying88'
     dto.repositoryType = 'github'
     dto.author = 'dev-1'
-    dto.branch = 'fix/auth'
     dto.files = []
     expect(dto.title).toBeTruthy()
     expect(dto.repositoryType).toBe('github')

@@ -73,7 +73,7 @@ describe('🔵 SaaSBillingRingBeam: SaaS计费PRD对齐', () => {
     })
 
     it('[P1] 订阅到不存在套餐抛出错误', () => {
-      expect(() => billing.subscribe('tenant-003', 'plan_unknown')).toThrow()
+      expect(() => billing.subscribe('tenant-003', 'plan_unknown', 'monthly')).toThrow()
     })
 
     it('[P1] 取消订阅后状态为cancelled', () => {

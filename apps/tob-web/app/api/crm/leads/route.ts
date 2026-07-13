@@ -55,6 +55,14 @@ interface LeadPayload {
   metadata?: Record<string, unknown>;
 }
 
+function createQueuedLeadResponse() {
+  return NextResponse.json({
+    success: true,
+    leadId: `local_${Date.now()}`,
+    message: 'Lead received, queuing for processing',
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body: LeadPayload = await request.json();
@@ -81,7 +89,7 @@ export async function POST(request: NextRequest) {
       },
       // 扩展字段存储额外信息
       customFields: {
-        eventType: body.eventType,
+        eventType: EVENT_TYPE_MAP[body.eventType] || body.eventType,
         sourcePage: body.sourcePage,
         visitorId: body.visitorId,
         cooperationType: body.cooperationType,
@@ -96,22 +104,25 @@ export async function POST(request: NextRequest) {
 
     // 调用神机营SaaS Leads模块
     const leadsApiUrl = process.env.API_BASE_URL || 'http://localhost:3000';
-    const leadsResponse = await fetch(`${leadsApiUrl}/leads/webhook`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(leadData),
-    });
+    let leadsResponse: Response;
+
+    try {
+      leadsResponse = await fetch(`${leadsApiUrl}/leads/webhook`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(leadData),
+      });
+    } catch (error) {
+      console.error('[CRM API] Leads API unavailable, queue locally:', error);
+      return createQueuedLeadResponse();
+    }
 
     if (!leadsResponse.ok) {
       console.error('[CRM API] Leads API error:', await leadsResponse.text());
       // 即使leads模块调用失败，也返回成功，因为数据已经收集
-      return NextResponse.json({
-        success: true,
-        leadId: `local_${Date.now()}`,
-        message: 'Lead received, queuing for processing',
-      });
+      return createQueuedLeadResponse();
     }
 
     const leadResult = await leadsResponse.json();

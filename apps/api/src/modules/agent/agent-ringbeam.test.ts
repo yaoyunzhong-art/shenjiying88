@@ -9,36 +9,82 @@ import { AgentCore, MockLLM } from './agent-core'
 import { ToolRegistry } from './tool-registry'
 import { KnowledgeGraph } from './knowledge-graph'
 import { EventBufferService } from './event-buffer.service'
+import type { AgentSessionEvent, AgentMessage, AgentSession } from './agent.entity'
 
 // ─── 帮助函数：为测试创建简单的工具注册表 ────────────────────────
 
 function createTestTools(): ToolRegistry {
   const registry = new ToolRegistry()
-  registry.register({
-    name: 'weather',
-    description: '获取天气信息',
-    inputSchema: {
-      type: 'object',
-      properties: { city: { type: 'string' } },
-      required: ['city'],
+  registry.register(
+    {
+      name: 'weather',
+      description: '获取天气信息',
+      inputSchema: {
+        type: 'object',
+        properties: { city: { type: 'string' } },
+        required: ['city'],
+      },
     },
-    execute: async (input: { city: string }) => {
-      return { temperature: 25, condition: 'sunny', city: input.city }
+    async (input: unknown) => {
+      const { city } = input as { city: string }
+      return { temperature: 25, condition: 'sunny', city }
     },
-  })
-  registry.register({
-    name: 'calculate',
-    description: '执行计算',
-    inputSchema: {
-      type: 'object',
-      properties: { expression: { type: 'string' } },
-      required: ['expression'],
+  )
+  registry.register(
+    {
+      name: 'calculate',
+      description: '执行计算',
+      inputSchema: {
+        type: 'object',
+        properties: { expression: { type: 'string' } },
+        required: ['expression'],
+      },
     },
-    execute: async (input: { expression: string }) => {
-      return { result: eval(input.expression) }
+    async (input: unknown) => {
+      const { expression } = input as { expression: string }
+      return { result: eval(expression) }
     },
-  })
+  )
   return registry
+}
+
+/** 辅助: 创建一条 AgentMessage 用于 event buffer 测试 */
+function makeAgentMessage(text: string, overrides?: Partial<AgentMessage>): AgentMessage {
+  return {
+    id: overrides?.id ?? `msg-${Date.now()}`,
+    sessionId: overrides?.sessionId ?? 'test-session',
+    role: overrides?.role ?? 'assistant',
+    content: text,
+    timestamp: new Date().toISOString(),
+    ...overrides,
+  }
+}
+
+/** 辅助: 创建简化的 AgentSession 用于 event buffer 测试 */
+function makeAgentSession(overrides?: Partial<AgentSession>): AgentSession {
+  return {
+    id: overrides?.id ?? 'test-session',
+    configId: overrides?.configId ?? 'cfg-1',
+    status: overrides?.status ?? 'RUNNING',
+    userInput: overrides?.userInput ?? 'test',
+    currentStep: overrides?.currentStep ?? 0,
+    maxSteps: overrides?.maxSteps ?? 10,
+    enableReflection: overrides?.enableReflection ?? false,
+    messages: overrides?.messages ?? [],
+    createdAt: new Date().toISOString(),
+    createdBy: overrides?.createdBy ?? 'test',
+    tenantId: overrides?.tenantId ?? 'default',
+    ...overrides,
+  }
+}
+
+/** 辅助: 创建合法的 AgentSessionEvent */
+function makeMessageAddedEvent(text: string): AgentSessionEvent {
+  return {
+    type: 'message_added',
+    message: makeAgentMessage(text),
+    timestamp: new Date().toISOString(),
+  }
 }
 
 describe('🔵 AgentRingBeam: 智能体模块PRD对齐', () => {
@@ -158,11 +204,14 @@ describe('🔵 AgentRingBeam: 智能体模块PRD对齐', () => {
     })
 
     it('[P0] 注册后可执行工具', async () => {
-      registry.register({
-        name: 'echo',
-        description: '回声工具',
-        inputSchema: { type: 'object', properties: { msg: { type: 'string' } }, required: ['msg'] },
-      }, async (input: { msg: string }) => ({ echo: input.msg }))
+      registry.register(
+        {
+          name: 'echo',
+          description: '回声工具',
+          inputSchema: { type: 'object', properties: { msg: { type: 'string' } }, required: ['msg'] },
+        },
+        async (input: unknown) => ({ echo: (input as { msg: string }).msg }),
+      )
 
       const result = await registry.execute('echo', { msg: 'hello' })
       expect(result).toEqual({ echo: 'hello' })
@@ -173,11 +222,14 @@ describe('🔵 AgentRingBeam: 智能体模块PRD对齐', () => {
     })
 
     it('[P1] list返回已注册工具(含内置)', () => {
-      registry.register({
-        name: 'tool-a',
-        description: 'tool A',
-        inputSchema: { type: 'object', properties: {} },
-      }, async () => ({ success: true }))
+      registry.register(
+        {
+          name: 'tool-a',
+          description: 'tool A',
+          inputSchema: { type: 'object', properties: {} },
+        },
+        async () => ({ success: true }),
+      )
 
       const list = registry.list()
       // 含4个内置工具 + 新注册的tool-a
@@ -197,9 +249,9 @@ describe('🔵 AgentRingBeam: 智能体模块PRD对齐', () => {
     })
 
     it('[P0] 添加实体和关系后可查询邻居', () => {
-      const e1 = kg.addEntity({ type: 'Product', name: '王者荣耀', properties: {} })
-      const e2 = kg.addEntity({ type: 'Concept', name: 'MOBA', properties: {} })
-      kg.addRelation({ from: e1.id, to: e2.id, type: 'belongs_to', properties: {} })
+      const e1 = kg.addEntity({ type: 'Product', name: '王者荣耀', aliases: [], properties: {} })
+      const e2 = kg.addEntity({ type: 'Concept', name: 'MOBA', aliases: [], properties: {} })
+      kg.addRelation({ from: e1.id, to: e2.id, type: 'belongs_to', properties: {}, confidence: 1.0 })
 
       const neighbors = kg.getNeighbors(e1.id, 'out')
       expect(neighbors.length).toBeGreaterThan(0)
@@ -207,9 +259,9 @@ describe('🔵 AgentRingBeam: 智能体模块PRD对齐', () => {
     })
 
     it('[P1] 子图提取返回包含起点和邻居', () => {
-      const e1 = kg.addEntity({ type: 'Product', name: '原神', properties: {} })
-      const e2 = kg.addEntity({ type: 'Concept', name: 'RPG', properties: {} })
-      kg.addRelation({ from: e1.id, to: e2.id, type: 'is_a', properties: {} })
+      const e1 = kg.addEntity({ type: 'Product', name: '原神', aliases: [], properties: {} })
+      const e2 = kg.addEntity({ type: 'Concept', name: 'RPG', aliases: [], properties: {} })
+      kg.addRelation({ from: e1.id, to: e2.id, type: 'is_a', properties: {}, confidence: 1.0 })
 
       const sub = kg.subgraph(e1.id, 2)
       expect(sub.nodes.length).toBeGreaterThanOrEqual(2)
@@ -217,7 +269,7 @@ describe('🔵 AgentRingBeam: 智能体模块PRD对齐', () => {
     })
 
     it('[P1] 无邻居时子图仅包含起点', () => {
-      const e1 = kg.addEntity({ type: 'Place', name: '孤岛', properties: {} })
+      const e1 = kg.addEntity({ type: 'Place', name: '孤岛', aliases: [], properties: {} })
       const sub = kg.subgraph(e1.id, 2)
 
       expect(sub.nodes.length).toBe(1)
@@ -226,9 +278,9 @@ describe('🔵 AgentRingBeam: 智能体模块PRD对齐', () => {
     })
 
     it('[P2] listEntitiesByType按类型过滤返回实体', () => {
-      kg.addEntity({ type: 'Product', name: '游戏A', properties: {} })
-      kg.addEntity({ type: 'Product', name: '游戏B', properties: {} })
-      kg.addEntity({ type: 'Person', name: '用户X', properties: {} })
+      kg.addEntity({ type: 'Product', name: '游戏A', aliases: [], properties: {} })
+      kg.addEntity({ type: 'Product', name: '游戏B', aliases: [], properties: {} })
+      kg.addEntity({ type: 'Person', name: '用户X', aliases: [], properties: {} })
 
       const products = kg.listEntitiesByType('Product')
       expect(products.length).toBe(2)
@@ -248,23 +300,19 @@ describe('🔵 AgentRingBeam: 智能体模块PRD对齐', () => {
     })
 
     it('[P0] append追加事件并返回带id的BufferedEvent', () => {
-      const event = buffer.append('session-001', {
-        type: 'user_message',
-        payload: { text: 'hello' },
-        timestamp: new Date().toISOString(),
-      })
+      const event = buffer.append('session-001', makeMessageAddedEvent('hello'))
 
       expect(event.id).toBeGreaterThanOrEqual(1)
-      expect(event.payload).toEqual({ text: 'hello' })
+      // BufferedEvent = AgentSessionEvent & { id: number }
+      // message_added 事件有 message 字段
+      if (event.type === 'message_added') {
+        expect(event.message.content).toBe('hello')
+      }
     })
 
     it('[P1] replayAfter返回lastEventId之后的事件', () => {
-      const e1 = buffer.append('session-001', {
-        type: 'user_message', payload: { text: 'msg1' }, timestamp: new Date().toISOString(),
-      })
-      const e2 = buffer.append('session-001', {
-        type: 'user_message', payload: { text: 'msg2' }, timestamp: new Date().toISOString(),
-      })
+      const e1 = buffer.append('session-001', makeMessageAddedEvent('msg1'))
+      const e2 = buffer.append('session-001', makeMessageAddedEvent('msg2'))
 
       const afterE1 = buffer.replayAfter('session-001', e1.id)
       expect(afterE1.events.length).toBe(1)
@@ -276,12 +324,14 @@ describe('🔵 AgentRingBeam: 智能体模块PRD对齐', () => {
     })
 
     it('[P1] 不同session独立缓冲', () => {
-      buffer.append('session-a', { type: 'test', payload: { text: 'a' }, timestamp: new Date().toISOString() })
-      buffer.append('session-b', { type: 'test', payload: { text: 'b' }, timestamp: new Date().toISOString() })
+      buffer.append('session-a', makeMessageAddedEvent('a'))
+      buffer.append('session-b', makeMessageAddedEvent('b'))
 
       const aEvents = buffer.replayAfter('session-a', 0)
       expect(aEvents.events.length).toBe(1)
-      expect(aEvents.events[0].payload).toEqual({ text: 'a' })
+      if (aEvents.events[0].type === 'message_added') {
+        expect(aEvents.events[0].message.content).toBe('a')
+      }
     })
   })
 })

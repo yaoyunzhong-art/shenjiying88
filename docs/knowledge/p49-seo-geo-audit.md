@@ -1,0 +1,64 @@
+# P-49 SEO/GEO 专项审计
+
+> 更新时间: 2026-07-14 01:10
+> 范围: `PRD-015` / `apps/tob-web` / `SEO/GEO`
+
+## 1. 审计结论
+
+`PRD-015` 已从“只有正式 PRD”推进到“有需求卡、有前台代码映射、有圈梁测试、且已完成浏览器级抽检”的状态，当前结论为 `🟡 已补主圈梁，待补更深层 UI/回放证据`。
+
+## 2. 证据总表
+
+| 模块 | PRD | 代码入口 | 测试证据 | 审计结论 |
+|:-----|:----|:---------|:---------|:---------|
+| 根级站点入口 | PRD-015 | `apps/tob-web/app/sitemap.ts` / `apps/tob-web/app/robots.ts` | `seo-geo-p49.test.ts` 中 AC-49-12 / AC-49-13 | 根级抓取入口已存在且可校验 |
+| 品牌站 SEO/GEO 路由 | PRD-015 | `apps/tob-web/app/brand-website/sitemap.xml/route.ts` / `robots.txt/route.ts` / `api/geo/route.ts` | `seo-geo-p49.test.ts` 中 AC-49-12 / AC-49-13 / AC-49-15 | 动态 sitemap、robots、地域解析主链可执行 |
+| 元标签与结构化数据 | PRD-015 | `apps/tob-web/app/brand-website/lib/seo/meta-generator.ts` | `seo-geo-p49.test.ts` 中 AC-49-11 / AC-49-14 | title/description/OG/canonical/JSON-LD 已有生成能力 |
+| AI 引用优化 | PRD-015 | `apps/tob-web/app/brand-website/lib/geo/ai-reference-optimizer.ts` | `seo-geo-p49.test.ts` 中 RQ-49-15 | AI 友好内容切分、结构化片段、地域化改写可执行 |
+| 监控与自治优化 | PRD-015 | `apps/tob-web/app/brand-website/lib/intelligent/self-system.ts` | `seo-geo-p49.test.ts` 中 AC-49-16 / AC-49-18 | 健康快照刷新、异常转优化任务链路已具备主证据 |
+| 社媒与转化追踪锚点 | PRD-015 | `apps/tob-web/app/brand-website/page.tsx` / `apps/tob-web/app/sports-ants/page.tsx` | `seo-geo-p49.test.ts` 中 AC-49-17 + 页面契约测试 | 分享、联系、CTA 埋点入口已存在 |
+
+## 3. 本轮补齐
+
+1. 新增需求卡 `docs/knowledge/requirement-cards/2026-07-14-P49-seo-geo.md`
+2. 新增圈梁测试 `apps/tob-web/app/seo-geo-p49.test.ts`，覆盖 13 条关键场景
+3. 将 `PRD-015` 从“页面契约”推进到“路由/模块可执行证据”：
+   - 根级 `sitemap.xml` / `robots.txt`
+   - 品牌站 `sitemap.xml` / `robots.txt` / `api/geo`
+   - `meta-generator` 的 OG / canonical / alternate / JSON-LD
+   - `ai-reference-optimizer` 的 AI 引用友好化与地域化改写
+   - `intelligent/self-system` 的健康快照与异常优化任务
+4. 浏览器级抽检 `brand-website` / `sports-ants` / `sitemap.xml` / `robots.txt`：
+   - 确认品牌站真实页面存在 `description`、`OG`、`Organization JSON-LD`
+   - 确认根级 `sitemap.xml` 为 `application/xml` 且包含品牌站、运动蚂蚁、租户级路由
+   - 确认根级 `robots.txt` 为 `text/plain` 且包含 `Sitemap`、`/admin/`、`/api/` 禁止规则
+   - 修复 `sports-ants` 继承 ToB Admin 标题的问题
+   - 修复 `PersonalizedRecommendations` 默认数组引用不稳定导致的无交互重复埋点
+
+## 4. AC / RQ 映射
+
+| 需求 | 证据 |
+|:-----|:-----|
+| AC-49-11 | `seoMetaGenerator.generate()` 输出 title / description / OG / canonical |
+| AC-49-12 | 根级与品牌站 `sitemap.xml` 返回合法公开链接 |
+| AC-49-13 | 根级与品牌站 `robots.txt` 返回爬虫规则与 sitemap |
+| AC-49-14 | `generateOrganizationJsonLd()` / `generateLocalBusinessJsonLd()` 输出结构化数据 |
+| AC-49-15 | `GET /brand-website/api/geo` 返回地域与地域内容 |
+| AC-49-16 | `IntelligentSystem.triggerCycle()` 刷新 SEO/GEO 健康状态 |
+| AC-49-17 | `brand-website` 包含分享/联系入口，`sports-ants` 包含 CTA 埋点追踪 |
+| AC-49-18 | 性能异常可转化为待执行优化任务 |
+| RQ-49-15 | `aiReferenceOptimizer.optimize()` / `generateLocalContent()` 产出 AI 友好内容 |
+
+## 5. 剩余缺口
+
+1. 监控看板与 UTM 入库只有源码/模块证据，缺少 HTTP 或 UI 层回放。
+2. `PRD-015` 目前仅覆盖主链闭环，尚未对多语言 / 多品牌 SEO 策略做更细粒度隔离验收。
+3. 浏览器抽检已覆盖核心页面与根级入口，但尚未形成截图归档或自动化浏览器脚本。
+
+## 6. 验证记录
+
+```bash
+pnpm --dir apps/tob-web test -- app/seo-geo-p49.test.ts
+pnpm --dir apps/tob-web typecheck
+bash scripts/prd-validate.sh
+```

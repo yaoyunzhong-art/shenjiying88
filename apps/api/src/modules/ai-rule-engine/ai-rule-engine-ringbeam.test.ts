@@ -24,6 +24,7 @@ describe('🔵 AiRuleEngineRingBeam: 规则引擎PRD对齐', () => {
         totalSpend: 15000,
         totalPoints: 10000,
         visitCount: 50,
+        tenantId: 'tenant-001',
       })
 
       expect(result.memberId).toBe('member-svip')
@@ -41,6 +42,7 @@ describe('🔵 AiRuleEngineRingBeam: 规则引擎PRD对齐', () => {
         totalSpend: 8000,
         totalPoints: 3000,
         visitCount: 15,
+        tenantId: 'tenant-001',
       })
 
       // 此数据不满足全匹配条件(8000<10000,3000<5000,15<20)，因此suggestedLevel为REGULAR
@@ -56,6 +58,7 @@ describe('🔵 AiRuleEngineRingBeam: 规则引擎PRD对齐', () => {
         totalSpend: 1000,
         totalPoints: 500,
         visitCount: 3,
+        tenantId: 'tenant-001',
       })
 
       expect(result.suggestedLevel).toBe('REGULAR')
@@ -70,6 +73,8 @@ describe('🔵 AiRuleEngineRingBeam: 规则引擎PRD对齐', () => {
     it('[P0] 多项指标超标标记为严重异常', () => {
       const result = ruleEngine.detectDeviceAnomaly({
         deviceId: 'device-abnormal-01',
+        storeId: 'store-001',
+        tenantId: 'tenant-001',
         metrics: {
           cpuUsage: 95,
           memoryUsage: 90,
@@ -88,6 +93,8 @@ describe('🔵 AiRuleEngineRingBeam: 规则引擎PRD对齐', () => {
     it('[P1] 全部指标正常返回isAnomaly=false', () => {
       const result = ruleEngine.detectDeviceAnomaly({
         deviceId: 'device-healthy',
+        storeId: 'store-001',
+        tenantId: 'tenant-001',
         metrics: {
           cpuUsage: 30,
           memoryUsage: 40,
@@ -105,6 +112,8 @@ describe('🔵 AiRuleEngineRingBeam: 规则引擎PRD对齐', () => {
     it('[P1] 一个指标超标返回MEDIUM级别', () => {
       const result = ruleEngine.detectDeviceAnomaly({
         deviceId: 'device-mild',
+        storeId: 'store-001',
+        tenantId: 'tenant-001',
         metrics: {
           cpuUsage: 95,
           memoryUsage: 40,
@@ -126,6 +135,8 @@ describe('🔵 AiRuleEngineRingBeam: 规则引擎PRD对齐', () => {
     it('[P0] 多项风险指标触发CRITICAL级别', () => {
       const result = ruleEngine.evaluateRiskScore({
         subjectId: 'user-risky',
+        subjectType: 'member',
+        tenantId: 'tenant-001',
         metrics: {
           refundCount: 5,
           abnormalPaymentCount: 3,
@@ -145,6 +156,8 @@ describe('🔵 AiRuleEngineRingBeam: 规则引擎PRD对齐', () => {
     it('[P1] 无风险指标返回LOW级别', () => {
       const result = ruleEngine.evaluateRiskScore({
         subjectId: 'user-safe',
+        subjectType: 'member',
+        tenantId: 'tenant-001',
         metrics: {
           refundCount: 0,
           abnormalPaymentCount: 0,
@@ -162,6 +175,8 @@ describe('🔵 AiRuleEngineRingBeam: 规则引擎PRD对齐', () => {
     it('[P1] 单个指标触发返回MEDIUM', () => {
       const result = ruleEngine.evaluateRiskScore({
         subjectId: 'user-med',
+        subjectType: 'member',
+        tenantId: 'tenant-001',
         metrics: {
           refundCount: 3,
           abnormalPaymentCount: 0,
@@ -184,12 +199,14 @@ describe('🔵 AiRuleEngineRingBeam: 规则引擎PRD对齐', () => {
       const result = ruleEngine.batchEvaluate({
         items: [
           {
+            index: 0,
             type: 'member-level',
-            data: { memberId: 'batch-user-1', totalSpend: 15000, totalPoints: 10000, visitCount: 50 },
+            data: { memberId: 'batch-user-1', totalSpend: 15000, totalPoints: 10000, visitCount: 50, tenantId: 'tenant-001' },
           },
           {
+            index: 1,
             type: 'device-anomaly',
-            data: { deviceId: 'batch-dev-1', metrics: { cpuUsage: 95, memoryUsage: 90, diskUsage: 50, networkLatencyMs: 50, errorRate: 1 } },
+            data: { deviceId: 'batch-dev-1', storeId: 'store-001', tenantId: 'tenant-001', metrics: { cpuUsage: 95, memoryUsage: 90, diskUsage: 50, networkLatencyMs: 50, errorRate: 1 } },
           },
         ],
       })

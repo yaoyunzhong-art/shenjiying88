@@ -171,8 +171,8 @@ describe('P-48 联名券圈梁对齐 (PRD-009)', () => {
   let redemptionRepo: ReturnType<typeof createMockRepo>;
 
   beforeEach(() => {
-    couponRepo = createMockRepo<CouponV2>();
-    redemptionRepo = createMockRepo<CouponRedemptionLog>();
+    couponRepo = createMockRepo<CouponV2>() as any;
+    redemptionRepo = createMockRepo<CouponRedemptionLog>() as any;
     const dataSource = createMockDataSource(couponRepo, redemptionRepo);
     couponService = new CouponService(
       couponRepo as unknown as Repository<CouponV2>,

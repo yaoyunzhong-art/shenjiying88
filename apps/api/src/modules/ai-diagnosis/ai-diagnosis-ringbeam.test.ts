@@ -12,7 +12,6 @@ import type { DiagnosisEntity } from './ai-diagnosis.entity'
 import {
   toDiagnosisContract,
   toDiagnosisBatchContract,
-  toRiskReportContract,
 } from './ai-diagnosis.contract'
 
 // ─── Service ─────────────────────────────────────────────

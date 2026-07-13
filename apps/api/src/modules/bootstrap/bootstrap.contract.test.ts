@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
+import type { FoundationModuleKey } from '@m5/types'
 import {
   toBootstrapFoundationMetadata,
   toRegionalLoginPolicyContract
@@ -21,21 +22,21 @@ it('contract mapper: bootstrap foundation metadata handles null', () => {
 
 it('contract mapper: bootstrap foundation metadata preserves provided values', () => {
   const result = toBootstrapFoundationMetadata({
-    dependsOn: ['FoundationCoreModule', 'AuthModule'],
+    dependsOn: ['configuration-governance' as FoundationModuleKey, 'identity-access' as FoundationModuleKey],
     handoffContracts: ['BootstrapSetupContract']
   })
   assert.deepEqual(result, {
-    foundationDependencies: ['FoundationCoreModule', 'AuthModule'],
+    foundationDependencies: ['configuration-governance' as FoundationModuleKey, 'identity-access' as FoundationModuleKey],
     foundationContracts: ['BootstrapSetupContract']
   })
 })
 
 it('contract mapper: bootstrap foundation metadata partial - only dependsOn', () => {
   const result = toBootstrapFoundationMetadata({
-    dependsOn: ['ConfigModule']
+    dependsOn: ['configuration-governance' as FoundationModuleKey]
   })
   assert.deepEqual(result, {
-    foundationDependencies: ['ConfigModule'],
+    foundationDependencies: ['configuration-governance' as FoundationModuleKey],
     foundationContracts: []
   })
 })

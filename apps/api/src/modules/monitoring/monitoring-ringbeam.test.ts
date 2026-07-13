@@ -76,9 +76,9 @@ describe('🔵 MonitoringRingBeam: 监控告警模块PRD对齐', () => {
     })
 
     it('[P1] 平均值计算正确', () => {
-      monitoringService.recordMetric({ name: 'test_average', value: 10 })
-      monitoringService.recordMetric({ name: 'test_average', value: 20 })
-      monitoringService.recordMetric({ name: 'test_average', value: 30 })
+      monitoringService.recordMetric({ name: 'test_average', value: 10, labels: {} })
+      monitoringService.recordMetric({ name: 'test_average', value: 20, labels: {} })
+      monitoringService.recordMetric({ name: 'test_average', value: 30, labels: {} })
 
       const avg = monitoringService.getMetricAverage('test_average', 3600)
       expect(avg).not.toBeNull()

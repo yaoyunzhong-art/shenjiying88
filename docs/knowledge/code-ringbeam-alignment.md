@@ -1,6 +1,6 @@
 # 🏗️ 代码圈梁对齐报告 — 全系统代码-PRD-测试-审计四道箍
 
-> 最后更新: 2026-07-13 23:25
+> 最后更新: 2026-07-14 01:10
 > 概念: 👑 大飞哥提出 — 像建筑圈梁一样把每块代码箍住
 > 维护: 🦞 龙虾哥
 
@@ -43,9 +43,10 @@
 | member-level | P-36 | (合入PRD-002) | ✅ 6files | ⬜ | ⬜ | 🔴 缺对齐 |
 | points | P-36 | (合入PRD-002) | ✅ 7files | ⬜ | ⬜ | 🔴 缺对齐 |
 | loyalty | P-36 | (合入PRD-002) | ✅ 6files | ⬜ | ⬜ | 🔴 缺对齐 |
-| open-api | P-49 | ✅ PRD-016 | ✅ 5files | ✅ 1圈梁/14tests | ✅ P-49专项审计 | 🟡 已补主圈梁 |
-| openapi | P-49 | ✅ PRD-016 | ✅ 29files | ✅ 1圈梁/14tests | ✅ P-49专项审计 | 🟡 已补主圈梁 |
-| tenant-llm | P-49 | ✅ PRD-014 | ✅ 10files | ✅ 1圈梁+61tests | ✅ P-49专项审计 | 🟡 已补主圈梁 |
+| open-api | P-49 | ✅ PRD-016 | ✅ 5files | ✅ 1圈梁+7e2e | ✅ P-49专项审计 | 🟡 已补主圈梁 |
+| openapi | P-49 | ✅ PRD-016 | ✅ 29files | ✅ 1圈梁+7e2e | ✅ P-49专项审计 | 🟡 已补主圈梁 |
+| tenant-llm | P-49 | ✅ PRD-014 | ✅ 10files | ✅ 1圈梁+61tests+27e2e | ✅ P-49专项审计 | 🟡 已补主圈梁 |
+| tob-web-seo-geo | P-49 | ✅ PRD-015 | ✅ 10files | ✅ 1圈梁+13tests | ✅ P-49专项审计 | 🟡 已补主圈梁 |
 | deploy | P-53 | ✅ PRD-013 | ✅ 6files | ⬜ | ⬜ | 🔴 缺测试+审计 |
 | iot | (未分配) | ⬜ | ✅ 6files | ⬜ | ⬜ | 🔴 缺Phase归属 |
 

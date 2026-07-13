@@ -10,8 +10,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { BigAntsColors, BigAntsFonts, BigAntsSpacing, BigAntsRadius, BigAntsTransitions } from '../lib/bigants-design';
 import { USER_PERSONAS, getPersonaById, UserPersonaId } from '../lib/user-personas';
-import { SAAS_FEATURES, getSaaSFeaturesByScenario, BusinessScenario } from '../lib/shenjiying-saas';
+import { SAAS_FEATURES } from '../lib/shenjiying-saas';
 import { conversionService } from '../lib/conversion-service';
+
+const EMPTY_EXCLUDE_IDS: string[] = [];
 
 // 推荐内容类型
 export type RecommendationType = 
@@ -47,7 +49,7 @@ interface PersonalizedRecommendationsProps {
 export default function PersonalizedRecommendations({
   userPersona,
   currentPage = 'homepage',
-  excludeIds = [],
+  excludeIds = EMPTY_EXCLUDE_IDS,
   maxItems = 4,
   onItemClick,
 }: PersonalizedRecommendationsProps) {

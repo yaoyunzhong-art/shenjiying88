@@ -43,7 +43,7 @@ describe('🔵 TenantRingBeam: 租户模块PRD对齐', () => {
           actorType: 'platform-user',
           tenantId: 'tenant-override',
           brandId: 'brand-ali',
-          authenticated: true,
+          authenticated: true, roles: ["admin"], permissions: ["*"], source: "web",
         }
       )
 
