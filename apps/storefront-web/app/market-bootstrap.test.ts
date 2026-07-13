@@ -191,6 +191,59 @@ test('market-bootstrap: fetch 抛出 TypeError 时走 fallback', async () => {
   assert.equal(snapshot.portal.tenantCode, 't-net');
 });
 
+test('market-bootstrap: storePortal 缺失时优先用 marketProfile.locale 构造 fallback 语言', async () => {
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+
+    if (url.endsWith('/portals/bootstrap')) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: {
+            marketProfile: {
+              marketCode: 'cn-mainland',
+              locale: { defaultLanguage: 'en-US', supportedLanguages: ['en-US', 'zh-CN'] },
+            },
+            foundationDependencies: [],
+            foundationContracts: [],
+            regionalOverrides: [],
+          },
+          timestamp: '2026-06-13T00:00:00.000Z',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    }
+
+    if (url.endsWith('/foundation/consumers/portal') || url.endsWith('/foundation/overview')) {
+      return new Response(
+        JSON.stringify({
+          success: true, message: 'OK',
+          data: {
+            generatedAt: '2026-06-13T00:00:00.000Z',
+            summary: {
+              approvalsPending: 0, approvalsWithFailures: 0, highRiskAudits: 0,
+              blockedLedgers: 0, rotationDueSecrets: 0, expiredSecrets: 0,
+              expiringCertificates: 0, expiredCertificates: 0,
+              degradedSignals: 0, attentionRecoveryPlans: 0, staleDrills: 0,
+            },
+            alerts: [], topRisks: [],
+          },
+          timestamp: '2026-06-13T00:00:00.000Z',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    }
+
+    return new Response('boom', { status: 500 });
+  }) as typeof fetch;
+
+  const snapshot = await getStorefrontConsumerSnapshot('cn-mainland', 't-locale', 'b-locale', 's-locale');
+
+  assert.equal(snapshot.deliveryMode, 'fallback');
+  assert.deepEqual(snapshot.portal.supportedLanguages, ['en-US', 'zh-CN']);
+});
+
 // ── 新增边界 ──
 
 test('market-bootstrap: storeCode 包含特殊字符时不应影响解析', async () => {

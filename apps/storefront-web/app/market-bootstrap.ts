@@ -44,13 +44,40 @@ export interface StorefrontConsumerSnapshot {
 
 export type StorefrontGovernanceReadModel = FoundationGovernanceReadModel;
 
+const STOREFRONT_SUPPORTED_LANGUAGES = ['zh-CN', 'en-US'];
+
+function getFallbackDefaultLanguage(marketCode: string): string {
+  return marketCode === 'cn-mainland' ? 'zh-CN' : 'en-US';
+}
+
+function resolveFallbackStoreLanguages(
+  marketCode: string,
+  localeHint?: Partial<PortalBootstrapResponse['marketProfile']['locale']>
+): string[] {
+  const fallbackDefaultLanguage = getFallbackDefaultLanguage(marketCode);
+  const defaultLanguage = STOREFRONT_SUPPORTED_LANGUAGES.includes(localeHint?.defaultLanguage ?? '')
+    ? localeHint!.defaultLanguage!
+    : fallbackDefaultLanguage;
+  const normalized: string[] = [];
+
+  for (const language of [...(localeHint?.supportedLanguages ?? []), defaultLanguage, fallbackDefaultLanguage]) {
+    if (!STOREFRONT_SUPPORTED_LANGUAGES.includes(language)) continue;
+    if (!normalized.includes(language)) {
+      normalized.push(language);
+    }
+  }
+
+  return normalized.length > 0 ? normalized : [fallbackDefaultLanguage];
+}
+
 function getFallbackStorePortal(
   marketCode: string,
   tenantCode: string,
   brandCode: string,
-  storeCode: string
+  storeCode: string,
+  bootstrap?: PortalBootstrapResponse | null
 ): StorePortalContract {
-  const supportedLanguages = marketCode === 'cn-mainland' ? ['zh-CN'] : ['en-US'];
+  const supportedLanguages = resolveFallbackStoreLanguages(marketCode, bootstrap?.marketProfile?.locale);
 
   return {
     audience: 'TOC',
@@ -126,7 +153,8 @@ export async function getStorefrontConsumerSnapshot(
     loadStorefrontGovernanceReadModel(marketCode, tenantCode, brandCode, storeCode),
     loadPortalConsumerDescriptor(marketCode, tenantCode, brandCode, storeCode)
   ]);
-  const portal = bootstrap?.storePortal ?? getFallbackStorePortal(marketCode, tenantCode, brandCode, storeCode);
+  const portal =
+    bootstrap?.storePortal ?? getFallbackStorePortal(marketCode, tenantCode, brandCode, storeCode, bootstrap);
   const snapshotBase = createFoundationPortalConsumerSnapshotBase({
     wiring: storefrontWebBootstrap,
     bootstrap,

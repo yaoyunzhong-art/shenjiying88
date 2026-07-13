@@ -184,6 +184,27 @@ test('miniapp bootstrap: falls back when portal bootstrap request fails', async 
   assert.equal(snapshot.marketCode, 'cn-mainland');
 });
 
+test('miniapp bootstrap: non-cn fallback snapshot uses global preset', () => {
+  assert.deepEqual(
+    createMiniappFallbackSnapshot({
+      tenantId: 'tenant-global',
+      brandId: 'brand-global',
+      storeId: 'store-global',
+      marketCode: 'jp-tokyo',
+    }),
+    {
+      deliveryMode: 'fallback',
+      marketCode: 'jp-tokyo',
+      defaultLanguage: 'en-US',
+      timezone: 'America/New_York',
+      socialPlatforms: ['INSTAGRAM', 'X'],
+      sharePolicy: 'GLOBAL_CONTENT_FIRST',
+      primaryDomain: 'store-global.brand-global.tenant-global.jp-tokyo.local',
+      supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    },
+  );
+});
+
 test('miniapp bootstrap: loads real member runtime snapshot when member api is available', async () => {
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);

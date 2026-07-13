@@ -308,22 +308,42 @@ const emptyGovernanceOverviewSummary: FoundationOperationsOverviewSummary = {
   staleDrills: 0,
 };
 
+function resolveMiniappFallbackMarketPreset(marketCode: string): {
+  defaultLanguage: string;
+  timezone: string;
+  socialPlatforms: string[];
+  sharePolicy: MiniappBootstrapSnapshot['sharePolicy'];
+} {
+  if (marketCode === 'cn-mainland') {
+    return {
+      defaultLanguage: 'zh-CN',
+      timezone: 'Asia/Shanghai',
+      socialPlatforms: ['WECHAT', 'XIAOHONGSHU'],
+      sharePolicy: 'DOMESTIC_SOCIAL_FIRST',
+    };
+  }
+
+  return {
+    defaultLanguage: 'en-US',
+    timezone: 'America/New_York',
+    socialPlatforms: ['INSTAGRAM', 'X'],
+    sharePolicy: 'GLOBAL_CONTENT_FIRST',
+  };
+}
+
 export function createMiniappFallbackSnapshot(
   context: MiniappBootstrapContext = defaultMiniappContext,
 ): MiniappBootstrapSnapshot {
   const resolvedContext = { ...defaultMiniappContext, ...context };
+  const marketPreset = resolveMiniappFallbackMarketPreset(resolvedContext.marketCode);
 
   return {
     deliveryMode: 'fallback',
     marketCode: resolvedContext.marketCode,
-    defaultLanguage: resolvedContext.marketCode === 'cn-mainland' ? 'zh-CN' : 'en-US',
-    timezone: resolvedContext.marketCode === 'cn-mainland' ? 'Asia/Shanghai' : 'America/New_York',
-    socialPlatforms:
-      resolvedContext.marketCode === 'cn-mainland' ? ['WECHAT', 'XIAOHONGSHU'] : ['INSTAGRAM', 'X'],
-    sharePolicy:
-      resolvedContext.marketCode === 'cn-mainland'
-        ? 'DOMESTIC_SOCIAL_FIRST'
-        : 'GLOBAL_CONTENT_FIRST',
+    defaultLanguage: marketPreset.defaultLanguage,
+    timezone: marketPreset.timezone,
+    socialPlatforms: marketPreset.socialPlatforms,
+    sharePolicy: marketPreset.sharePolicy,
     primaryDomain: `${resolvedContext.storeId}.${resolvedContext.brandId}.${resolvedContext.tenantId}.${resolvedContext.marketCode}.local`,
     supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
   };
