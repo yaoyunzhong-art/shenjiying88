@@ -19,4 +19,32 @@ describe('MetricsModule', () => {
     assert.ok(providers.length > 0, 'should have at least one provider')
     assert.ok(exports.length > 0, 'should export service and interceptor')
   })
+
+  it('模块 exports 数量合理 (≤10)', () => {
+    const exports = Reflect.getMetadata('exports', MetricsModule) ?? []
+    assert.ok(exports.length <= 10, 'exports should be manageable')
+  })
+
+  it('模块 controllers 均为 class', () => {
+    const controllers: unknown[] = Reflect.getMetadata('controllers', MetricsModule) ?? []
+    for (const ctrl of controllers) {
+      assert.equal(typeof ctrl, 'function', 'controller should be a class')
+    }
+  })
+
+  it('模块 providers 均为 class 或 object', () => {
+    const providers: unknown[] = Reflect.getMetadata('providers', MetricsModule) ?? []
+    for (const provider of providers) {
+      assert.ok(
+        typeof provider === 'function' || typeof provider === 'object',
+        'provider should be class or config object'
+      )
+    }
+  })
+
+  it('模块实例化应存在', () => {
+    const instance = new MetricsModule()
+    assert.equal(typeof instance, 'object')
+    assert.equal(instance.constructor, MetricsModule)
+  })
 })

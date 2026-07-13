@@ -22,3 +22,47 @@ it('contract mapper: portal contracts backfill missing primaryDomain', () => {
 
   assert.equal(storePortal.primaryDomain, 'store-001.cn-mainland.local')
 })
+
+it('contract mapper: Tob portal backfills with scopeCode.marketCode.b2b.local', () => {
+  const tenantPortal = toTobPortalContract({
+    ...createTenantPortalFixture(),
+    primaryDomain: undefined
+  } as never)
+
+  assert.ok(tenantPortal.primaryDomain.endsWith('.b2b.local'))
+  assert.ok(tenantPortal.primaryDomain.includes('tenant-demo'))
+})
+
+it('contract mapper: store portal backfills with storeCode.marketCode.local', () => {
+  const storePortal = toStorePortalContract({
+    ...createStorePortalFixture(),
+    primaryDomain: undefined
+  } as never)
+
+  assert.ok(storePortal.primaryDomain.endsWith('.local'))
+  assert.ok(!storePortal.primaryDomain.includes('b2b'))
+  assert.ok(storePortal.primaryDomain.startsWith('store-001'))
+})
+
+it('contract mapper: store portal has required fields', () => {
+  const portal = toStorePortalContract(createStorePortalFixture() as never)
+  assert.ok(portal.storeCode)
+  assert.ok(portal.storeName)
+  assert.equal(typeof portal.audience, 'string')
+  assert.equal(typeof portal.scopeType, 'string')
+})
+
+it('contract mapper: Tob portal has required fields', () => {
+  const portal = toTobPortalContract(createTenantPortalFixture() as never)
+  assert.ok(portal.tenantCode)
+  assert.ok(portal.heroTitle)
+  assert.equal(typeof portal.audience, 'string')
+  assert.equal(typeof portal.scopeType, 'string')
+})
+
+it('contract mapper: Tob portal loginEntry is present', () => {
+  const portal = toTobPortalContract(createTenantPortalFixture() as never)
+  assert.ok(portal.loginEntry)
+  assert.equal(typeof portal.loginEntry, 'object')
+  assert.ok('loginPath' in portal.loginEntry)
+})
