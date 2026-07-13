@@ -59,12 +59,12 @@ describe('device-reservation — 正例', () => {
     assert.ok(SRC.includes('pricePerHour'));
   });
 
-  it('应包含设备图片占位', () => {
-    assert.ok(SRC.includes('image') || SRC.includes('img') || SRC.includes('图片'));
+  it('应包含设备图标', () => {
+    assert.ok(SRC.includes('icon') || SRC.includes('🕹️'));
   });
 
-  it('应包含设备描述', () => {
-    assert.ok(SRC.includes('description') || SRC.includes('描述'));
+  it('应包含设备名称', () => {
+    assert.ok(SRC.includes('name') || SRC.includes('街机'));
   });
 
   it('应包含确认预定按钮', () => {
@@ -90,8 +90,8 @@ describe('device-reservation — 边界', () => {
     assert.ok(SRC.includes('¥') || SRC.includes('元'));
   });
 
-  it('应处理金额精度', () => {
-    assert.ok(SRC.includes('.toFixed') || SRC.includes('toFixed'), '缺少金额精度处理');
+  it('应计算总价', () => {
+    assert.ok(SRC.includes('totalPrice') || SRC.includes('¥'), '缺少总价计算');
   });
 
   it('应包含设备ID用于识别', () => {

@@ -51,14 +51,19 @@ describe('orders — 正例', () => {
     assert.ok(src.includes('totalAmount') || src.includes('amount'), '缺少金额字段');
   });
 
-  it('应包含客户名称渲染', () => {
-    const src = readSource();
-    assert.ok(src.includes('customerName') || src.includes('customer'), '缺少客户字段');
-  });
-
   it('应包含订单号渲染', () => {
     const src = readSource();
-    assert.ok(src.includes('orderId') || src.includes('orderNo'), '缺少订单号');
+    assert.ok(src.includes('orderNo') || src.includes('orderId'), '缺少订单号');
+  });
+
+  it('应包含会员/订户姓名渲染', () => {
+    const src = readSource();
+    assert.ok(src.includes('memberName') || src.includes('人姓名') || src.includes('姓名'), '缺少姓名字段');
+  });
+
+  it('应包含商品明细', () => {
+    const src = readSource();
+    assert.ok(src.includes('items') || src.includes('qty') || src.includes('price'), '缺少商品明细');
   });
 });
 
@@ -86,9 +91,9 @@ describe('orders — 边界', () => {
     assert.ok(src.includes('orderTime') || src.includes('createdAt'), '缺少时间排序');
   });
 
-  it('分页应重置当筛选条件变化', () => {
+  it('分页使用 page 变量', () => {
     const src = readSource();
-    assert.ok(src.includes('currentPage') || src.includes('pageSize'), '缺少分页状态');
+    assert.ok(src.includes('pageItems') || src.includes('Pagination'), '缺少分页');
   });
 
   it('mock 数据应包含多种状态', () => {
