@@ -1,35 +1,5 @@
 import { NextResponse } from 'next/server'
-
-interface StoredWebVitalsEntry {
-  id: string
-  receivedAt: string
-  payload: Record<string, unknown>
-}
-
-type MetricsStore = typeof globalThis & {
-  __tobWebVitalsStore?: StoredWebVitalsEntry[]
-}
-
-function getStore(): StoredWebVitalsEntry[] {
-  const metricsStore = globalThis as MetricsStore
-  if (!metricsStore.__tobWebVitalsStore) {
-    metricsStore.__tobWebVitalsStore = []
-  }
-  return metricsStore.__tobWebVitalsStore
-}
-
-function createEntry(payload: Record<string, unknown>): StoredWebVitalsEntry {
-  return {
-    id: `wv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    receivedAt: new Date().toISOString(),
-    payload,
-  }
-}
-
-export function resetWebVitalsStoreForTest(): void {
-  const metricsStore = globalThis as MetricsStore
-  metricsStore.__tobWebVitalsStore = []
-}
+import { createWebVitalsEntry, getWebVitalsStore } from './store'
 
 export async function POST(request: Request) {
   try {
@@ -42,8 +12,8 @@ export async function POST(request: Request) {
       )
     }
 
-    const store = getStore()
-    const entry = createEntry(payload as Record<string, unknown>)
+    const store = getWebVitalsStore()
+    const entry = createWebVitalsEntry(payload as Record<string, unknown>)
     store.push(entry)
 
     if (store.length > 50) {
@@ -67,7 +37,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  const store = getStore()
+  const store = getWebVitalsStore()
   const latest = store[store.length - 1] || null
 
   return NextResponse.json({

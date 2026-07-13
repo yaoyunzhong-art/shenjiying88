@@ -16,6 +16,12 @@ import {
   seoMetaGenerator,
 } from './brand-website/lib/seo/meta-generator'
 import { metadata as sportsAntsMetadata } from './sports-ants/layout'
+import {
+  generateMetadata as generateTenantPortalMetadata,
+} from './[marketCode]/[tenantCode]/page'
+import {
+  generateMetadata as generateBrandPortalMetadata,
+} from './[marketCode]/[tenantCode]/[brandCode]/page'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BRAND_PAGE_SOURCE = readFileSync(resolve(__dirname, 'brand-website/page.tsx'), 'utf-8')
@@ -173,6 +179,40 @@ describe('PRD-015 监控、转化与自治闭环', () => {
     assert.equal(sportsAntsMetadata.title, '运动蚂蚁 BigAnts | 数字运动潮玩一站式提供商')
     assert.equal(sportsAntsMetadata.alternates?.canonical, 'https://www.bigants.net')
     assert.equal(sportsAntsMetadata.openGraph?.url, 'https://www.bigants.net')
+  })
+
+  test('AC-49-11: 多市场租户门户生成独立 metadata，避免复用后台标题', async () => {
+    const metadata = await generateTenantPortalMetadata({
+      params: Promise.resolve({
+        marketCode: 'cn-mainland',
+        tenantCode: 'demo-tenant',
+      }),
+    })
+
+    assert.equal(metadata.title, 'demo-tenant ToB 官网 | 中国大陆 | 神机营')
+    assert.equal(metadata.description, '统一承接租户解决方案、渠道合作、门店网络能力展示与后台登录入口。')
+    assert.equal(metadata.alternates?.canonical, 'https://www.bigants.net/cn-mainland/demo-tenant')
+    assert.equal(metadata.alternates?.languages?.['zh-CN'], 'https://www.bigants.net/cn-mainland/demo-tenant')
+    assert.equal(metadata.openGraph?.url, 'https://www.bigants.net/cn-mainland/demo-tenant')
+  })
+
+  test('AC-49-11: 多品牌门户生成独立 metadata，隔离 market / tenant / brand 作用域', async () => {
+    const metadata = await generateBrandPortalMetadata({
+      params: Promise.resolve({
+        marketCode: 'us-default',
+        tenantCode: 'demo-tenant',
+        brandCode: 'demo-brand',
+      }),
+    })
+
+    assert.equal(metadata.title, 'demo-brand 品牌 ToB 官网 | United States | 神机营')
+    assert.equal(metadata.description, '面向招商加盟、品牌合作、联合营销、赛事活动和品牌后台登录的统一入口。')
+    assert.equal(metadata.alternates?.canonical, 'https://www.bigants.net/us-default/demo-tenant/demo-brand')
+    assert.equal(
+      metadata.alternates?.languages?.['en-US'],
+      'https://www.bigants.net/us-default/demo-tenant/demo-brand'
+    )
+    assert.equal(metadata.openGraph?.url, 'https://www.bigants.net/us-default/demo-tenant/demo-brand')
   })
 
   test('AC-49-16: 智能自治系统可刷新 SEO/GEO 健康快照', async () => {

@@ -1,8 +1,44 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PortalConsumerGovernanceSection } from '@m5/ui';
 import { getTenantPortalConsumerSnapshot } from '../../bootstrap';
 import { GovernanceLinkedSection } from '../../components/governance-linked-overview';
 import { RuntimeGovernancePanel } from '../../components/runtime-governance-panel';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.bigants.net';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ marketCode: string; tenantCode: string }>;
+}): Promise<Metadata> {
+  const { marketCode, tenantCode } = await params;
+  const snapshot = await getTenantPortalConsumerSnapshot(marketCode, tenantCode);
+  const canonical = `${SITE_URL}/${marketCode}/${tenantCode}`;
+
+  return {
+    title: `${snapshot.portal.name} | ${snapshot.market.marketName} | 神机营`,
+    description: snapshot.portal.heroSubtitle,
+    alternates: {
+      canonical,
+      languages: Object.fromEntries(
+        snapshot.portal.supportedLanguages.map((language) => [language, canonical])
+      ),
+    },
+    openGraph: {
+      title: `${snapshot.portal.name} | ${snapshot.market.marketName} | 神机营`,
+      description: snapshot.portal.heroSubtitle,
+      url: canonical,
+      siteName: snapshot.portal.name,
+      type: 'website',
+      locale: snapshot.market.locale.defaultLanguage,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 
 export default async function TenantPortalPage({
   params

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, test } from 'node:test'
-import { GET, POST, resetWebVitalsStoreForTest } from './route'
+import { GET, POST } from './route'
+import { resetWebVitalsStoreForTest } from './store'
 
 afterEach(() => {
   resetWebVitalsStoreForTest()

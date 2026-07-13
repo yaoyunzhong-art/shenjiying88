@@ -14,6 +14,7 @@ export default defineConfig({
     hookTimeout: 60_000,
     fileParallelism: false,
     teardownTimeout: 5000,
+    forceExit: true,
     alias: {
       'pg': path.resolve(__dirname, 'src/__mocks__/pg.ts'),
       '../../agent/tenant.guard': path.resolve(__dirname, 'src/__mocks__/tenant.guard.ts'),

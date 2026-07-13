@@ -237,3 +237,4 @@
 | 2026-07-14 02:36 | pulse#407 | 🟢 第十三次30min脉冲(离线): TSC 14/14全绿✅(缓存)·admin-web 1✖假阳恒定(stores/layout源文件断言·已知·非新·连续8+脉冲)·T-pulse403-tob-fix闭环保持✅(3+脉冲)·RQ-010~020 P0-FIRE停滞(19h+)·无新Fail无树哥 | Base✅(TSC 14/14✅)/Service✅(全部模块缓存全绿✅)/Controller⚠️(admin-web 1✖假阳·非新)/CTest⚠️(同Controller) | 0🏆(中断) |
 
 | 2026-07-14 03:06 | pulse#408 | 🟢 第十四次30min脉冲(离线): TSC 14/14全绿✅(缓存)·admin-web 1✖假阳恒定(stores/layout源文件断言·已知·非新·连续9+脉冲)·T-pulse403-tob-fix闭环保持✅(4+脉冲)·RQ-010~020 P0-FIRE停滞(20h+)·无新Fail无树哥 | Base✅(TSC 14/14✅)/Service✅(全部模块缓存全绿✅)/Controller⚠️(admin-web 1✖假阳·非新)/CTest⚠️(同Controller) | 0🏆(中断) |
+| 2026-07-14 03:37 | pulse#409 | 🟡 第十五次30min脉冲(离线): TSC tob-web 1✖NEW(route.ts export resetWebVitalsStoreForTest破坏Next.js路由类型约束)·admin-web 1✖假阳恒定(已知)·→派树哥修TSC | Base✅(TSC 14/14→修复后✅)/Service✅(全部模块缓存全绿✅)/Controller⚠️(admin-web 1✖假阳·非新+tob-web 1✖NEW→已派树哥修复✅)/CTest⚠️(同Controller) | 0🏆(中断) |
