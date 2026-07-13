@@ -70,6 +70,12 @@ describe('TenantConfigCacheService', () => {
     }
   }
 
+  class FailingSetCacheService extends FakeRemoteCacheService {
+    override async set<T = unknown>(_key: string, _value: T): Promise<void> {
+      throw new Error('set failed')
+    }
+  }
+
   it('F2-1 缓存未命中后写入，再次读取命中', async () => {
     let loaderCalls = 0
 
@@ -211,5 +217,26 @@ describe('TenantConfigCacheService', () => {
     assert.equal(tenantBStats.misses, 1)
     assert.equal(globalStats.hits, 1)
     assert.equal(globalStats.misses, 2)
+  })
+
+  it('F2-6 cache.set 失败时不应重复执行 loader', async () => {
+    const flaky = new TenantConfigCacheService(new FailingSetCacheService())
+    let loaderCalls = 0
+
+    const result = await flaky.getOrLoad(
+      'config',
+      ctx,
+      ['pos.tax_rate'],
+      async () => {
+        loaderCalls++
+        return { key: 'pos.tax_rate', value: '0.13' }
+      },
+      300,
+    )
+
+    assert.equal(loaderCalls, 1)
+    assert.deepEqual(result, { key: 'pos.tax_rate', value: '0.13' })
+    assert.equal(flaky.getStats().misses, 1)
+    assert.equal(flaky.getStats().errors, 1)
   })
 })

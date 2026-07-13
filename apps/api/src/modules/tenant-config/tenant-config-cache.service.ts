@@ -47,15 +47,20 @@ export class TenantConfigCacheService {
         this.recordStat(ctx.tenantId, 'hits')
         return cached
       }
-      this.recordStat(ctx.tenantId, 'misses')
-      const fresh = await loader()
-      await this.cache.set(key, fresh, this.withJitter(ttlSeconds))
-      return fresh
     } catch (error) {
       this.recordStat(ctx.tenantId, 'errors')
-      this.logger.warn(`cache get/load failed for ${key}: ${(error as Error).message}`)
-      return loader()
+      this.logger.warn(`cache get failed for ${key}: ${(error as Error).message}`)
     }
+
+    this.recordStat(ctx.tenantId, 'misses')
+    const fresh = await loader()
+    try {
+      await this.cache.set(key, fresh, this.withJitter(ttlSeconds))
+    } catch (error) {
+      this.recordStat(ctx.tenantId, 'errors')
+      this.logger.warn(`cache set failed for ${key}: ${(error as Error).message}`)
+    }
+    return fresh
   }
 
   async invalidateTenant(tenantId?: string): Promise<number> {

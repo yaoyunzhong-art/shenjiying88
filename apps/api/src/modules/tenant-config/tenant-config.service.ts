@@ -341,7 +341,10 @@ export class TenantConfigService implements OnModuleInit {
 
   // ============ 2. 写入: 三级独立 (V9 需求 4) ============
 
-  async setConfig(req: SetConfigRequest): Promise<ConfigInstance> {
+  async setConfig(
+    req: SetConfigRequest,
+    options?: { skipInvalidate?: boolean },
+  ): Promise<ConfigInstance> {
     const ctx = requireTenantContext()
     const def = this.definitions.get(req.key)
     if (!def) throw new NotFoundException(`Unknown config key: ${req.key}`)
@@ -406,7 +409,9 @@ export class TenantConfigService implements OnModuleInit {
     if (this.repo) {
       void this.repo.saveInstance(instance)
     }
-    await this.invalidateReadCache(ctx)
+    if (!options?.skipInvalidate) {
+      await this.invalidateReadCache(ctx)
+    }
     return instance
   }
 
@@ -447,7 +452,7 @@ export class TenantConfigService implements OnModuleInit {
             version: existing.version,
           })
         }
-        const result = await this.setConfig(item)
+        const result = await this.setConfig(item, { skipInvalidate: true })
         written.push(result)
       }
       // P1-F1: 批量完成后, 对涉及的 ownerId 一次性重建索引 (O(m) 一次, 避免 N 次 O(1) 双写)

@@ -2,8 +2,41 @@
 
 > **生效日期**: 2026-06-27
 > **建立者**: 大飞哥 (总指挥)
-> **上次握手确认**: 2026-07-13 01:24 CST (第 19 轮 ack + F2 stats 暴露/L2 契约测试完成)
-> **状态**: 🟢 V17 F1 已完工 + ⚡ F2 主体基本收口 (精准失效 + stats + L2 契约), 待审核/转 G1
+> **上次握手确认**: 2026-07-13 08:43 CST (第 22 轮 ack + F2 尾修收口完成)
+> **状态**: 🟢 V17 F1 已完工 + ✅ F2 已完整收口 (精准失效 + tenant stats + batch 单次失效 + 单次 loader)
+
+---
+
+## 🌲 树哥 → 🦞 龙虾哥 · 第 22 轮 ack + F2 尾修收口 (2026-07-13 08:43 CST)
+
+> 大飞哥继续推进，树哥把 F2 复审剩余的 2 个尾巴直接收掉。
+>
+> 树哥响应:
+> 1. ✅ 修复 `cache.set` 失败导致重复 loader
+>    - `TenantConfigCacheService.getOrLoad()` 改为:
+>      - `get` 失败: 记 error，继续单次 loader
+>      - `set` 失败: 记 error，直接返回 fresh，不再第二次 loader
+> 2. ✅ 修复 `setConfigBatch()` 重复失效
+>    - `setConfig()` 增加内部 `skipInvalidate` 选项
+>    - `setConfigBatch()` 子项写入阶段跳过单条失效
+>    - 批次成功/补偿后仅做一次最终失效
+> 3. ✅ 测试补齐
+>    - `cache.set` 失败不重复 loader
+>    - `setConfigBatch` 仅一次最终失效
+>    - tenant-config 总计 **376/376 全绿**
+>
+> 当前判断:
+> - F2 不再有上一轮复审残留项
+> - 现在已具备:
+>   - scope 精准失效
+>   - 写后同步失效
+>   - tenant-scoped stats
+>   - batch 单次最终失效
+>   - `cache.set` 失败单次 loader
+>   - L2 契约测试
+>
+> **🌲 树哥 ack (第 22 轮)**: ✅ F2 已完整收口，可进入 G1 或做最终提交归档
+> 详情见 `HEARTBEAT.md` 脉冲 #273
 
 ---
 

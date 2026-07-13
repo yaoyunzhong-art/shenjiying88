@@ -1102,8 +1102,10 @@ describe('P1-F1 二级索引同步矩阵', () => {
 describe('F2 tenant-config 缓存闭环', () => {
   class SlowInvalidationCacheBackend extends InMemoryCacheService {
     invalidated = false
+    delByPrefixCalls = 0
 
     override async delByPrefix(prefix: string): Promise<number> {
+      this.delByPrefixCalls++
       await new Promise((resolve) => setTimeout(resolve, 20))
       const count = await super.delByPrefix(prefix)
       this.invalidated = true
@@ -1184,5 +1186,25 @@ describe('F2 tenant-config 缓存闭环', () => {
       assert.equal(stats.misses, 1)
       assert.equal(stats.hitRate, 0.5)
     })
+  })
+
+  it('[F2-9] setConfigBatch 只做一次最终缓存失效，不对每条 item 重复失效', async () => {
+    const backend = new SlowInvalidationCacheBackend()
+    const cache = new TenantConfigCacheService(backend)
+    const service = new TenantConfigService(undefined, cache)
+
+    await runWithTenant(TENANT_CTX, async () => {
+      await service.getConfigs({ level: 'tenant' })
+      await service.setConfigBatch([
+        { key: 'member.tier_upgrade_threshold', value: '2001' },
+        { key: 'member.daily_checkin_enabled', value: 'false' },
+      ])
+    })
+
+    assert.equal(
+      backend.delByPrefixCalls,
+      3,
+      'batch 预热后的失效应只发生在最终 config/configs/effective-configs 三个 scope，各 1 次',
+    )
   })
 })
