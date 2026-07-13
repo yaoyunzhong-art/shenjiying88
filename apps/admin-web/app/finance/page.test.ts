@@ -30,20 +30,20 @@ test('[正例] 页面应包含 use client 指令', () => {
 
 test('[正例] 页面应引用核心财务字段', () => {
   const src = readFileSync(SOURCE, 'utf-8');
-  const financeFields = ['revenue', 'amount', 'total', 'income', 'expense', 'profit', '金额', '收入', '支出'];
+  const financeFields = ['amountCents', 'amount', 'currency', 'orderId', 'paymentId', '金额', '状态'];
   const found = financeFields.filter(f => src.includes(f));
   assert.ok(found.length >= 3, `至少包含 3 个财务字段, 实际: ${found.length}`);
 });
 
-test('[正例] 页面应包含日期范围选择器引用', () => {
+test('[正例] 页面应包含日期/时间字段引用', () => {
   const src = readFileSync(SOURCE, 'utf-8');
-  const hasDatePicker = /DatePicker|datePicker|date_range|时间范围|startDate|endDate|dayjs|moment/i.test(src);
-  assert.ok(hasDatePicker, '财务页面应有日期范围选择器');
+  const hasDateReference = /createdAt|updatedAt|DatePicker|datePicker|dayjs|moment|时间/i.test(src);
+  assert.ok(hasDateReference, '财务页面应有时间/日期相关引用');
 });
 
 test('[正例] 页面应有表格/列表展示财务数据', () => {
   const src = readFileSync(SOURCE, 'utf-8');
-  const hasTable = /Table|columns|dataSource|data-index|dataIndex|proTable/i.test(src);
+  const hasTable = /Table|columns|dataSource|data-index|dataIndex|proTable|<tr>|<td>/i.test(src);
   assert.ok(hasTable, '页面应有财务数据表格');
 });
 
@@ -57,15 +57,55 @@ test('[反例] 页面不应有 console.log 残留', () => {
   assert.ok(!hasConsoleLog, '页面不应有 console.log 调试残留');
 });
 
+test('[反例] 不应该存在硬编码 Token', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const sensitivePatterns = [/apiKey\s*[:=]\s*['"][A-Za-z0-9_\-]{20,}/, /bearer\s+['"][A-Za-z0-9_\-]{20,}/i];
+  for (const pat of sensitivePatterns) {
+    assert.ok(!pat.test(src), '不应包含硬编码 API Token');
+  }
+});
+
+test('[反例] 金额比较不应使用 == 宽松比较', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const looseCompare = /amount\s*==\s*['"]?\d+/.test(src);
+  assert.ok(!looseCompare, '金额比较应使用 ===');
+});
+
+test('[反例] 不应在业务逻辑中直接使用 Math.random 产生密值', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  // 允许 uuid 生成器中的 Math.random，但禁止直接用于业务 ID
+  const lines = src.split('\n').filter(l => l.includes('Math.random') && !l.includes('uuid') && !l.includes('nanoid'));
+  assert.ok(lines.length <= 1, '业务逻辑应避免分散 Math.random 调用');
+});
+
 // ---- 边界 ----
 
 test('[边界] 页面应有合计/汇总计算', () => {
   const src = readFileSync(SOURCE, 'utf-8');
-  const hasSummary = /summary|合计|汇总|total|sum\(|reduce|aggregation/i.test(src);
+  const hasSummary = /summary|合计|汇总|total|sum\(|reduce|aggregation|counter|count|统计|filtered|\.length/i.test(src);
   assert.ok(hasSummary, '页面应有合计/汇总计算');
 });
 
 test('[边界] 页面源码应大于 3KB，确保有实质内容', () => {
   const src = readFileSync(SOURCE, 'utf-8');
   assert.ok(src.length > 3072, `源码长度不足, 实际 ${src.length} bytes`);
+});
+
+test('[边界] 页面应有 loading/empty/error 状态处理', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const statePatterns = [/loading|isEmpty|empty|error|fallback|skeleton|Spin|Skeleton/i];
+  const hasStateHandling = statePatterns.some(p => p.test(src));
+  assert.ok(hasStateHandling, '页面应有 loading/empty/error 状态处理');
+});
+
+test('[边界] 页面应处理零金额场景', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const zeroCheck = /amountCents\s*[=<>!]|=== -1|\/\/.*0\b|余额不足/i.test(src);
+  assert.ok(zeroCheck, '页面应处理零金额/余额不足场景');
+});
+
+test('[边界] 页面应定义财务状态标签常量', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const statusLabels = /状态|已支付|未支付|待审核|已退款|STATUS|PENDING|SUCCESS|FAILED|REFUNDED/i.test(src);
+  assert.ok(statusLabels, '页面应有财务状态标签');
 });

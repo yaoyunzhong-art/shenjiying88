@@ -66,6 +66,24 @@ test('[反例] 不应包含硬编码敏感信息', () => {
   }
 });
 
+test('[反例] 不应有直接引用未安全处理的用户输入', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const dangerousPattern = /dangerouslySetInnerHTML/i.test(src);
+  assert.ok(!dangerousPattern, '不应使用 dangerouslySetInnerHTML');
+});
+
+test('[反例] 订单状态过滤应使用精确比较', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const looseStatusCheck = /status\s*==\s*['"][a-z]+['"]/i.test(src);
+  assert.ok(!looseStatusCheck, '状态过滤应使用 === 而非 ==');
+});
+
+test('[反例] 不应存在注释掉的调试代码', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const debugComments = src.match(/\/\/\s*console\./g);
+  assert.ok(!debugComments || debugComments.length === 0, '不应有注释掉的 console 语句');
+});
+
 // ---- 边界 ----
 
 test('[边界] 页面源码应大于 2KB', () => {
@@ -78,4 +96,22 @@ test('[边界] 页面应有正确处理 loading/empty/error 状态的逻辑', ()
   const statePatterns = [/loading|isEmpty|empty|error|fallback|skeleton|Spin|Skeleton/i];
   const hasStateHandling = statePatterns.some(p => p.test(src));
   assert.ok(hasStateHandling, '页面应有 loading/empty/error 状态处理');
+});
+
+test('[边界] 页面应支持订单搜索功能', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const hasSearch = /search|onSearch|Search|filter|Filter/i.test(src);
+  assert.ok(hasSearch, '页面应有搜索/筛选功能');
+});
+
+test('[边界] 页面应处理零金额订单场景', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const zeroHandling = /=== 0|amount === 0|free|zero/i.test(src);
+  assert.ok(zeroHandling, '页面应处理零金额场景');
+});
+
+test('[边界] 订单时间戳应使用 UTC 格式', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const hasUtc = /toISOString|UTC|getTimezone|utc/i.test(src);
+  assert.ok(hasUtc || src.includes('createdAt'), '应有时间戳格式化处理');
 });

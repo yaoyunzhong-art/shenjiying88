@@ -59,10 +59,20 @@ test('反例: route title should not be empty', () => {
   assert.ok(adminRuntimeOperationsRoute.title.length > 0);
 });
 
+test('反例: route href must not contain protocol', () => {
+  assert.ok(!adminRuntimeOperationsRoute.href.startsWith('http'));
+  assert.ok(!adminRuntimeOperationsRoute.href.startsWith('//'));
+});
+
+test('反例: emptyMessage with operationId containing special characters', () => {
+  const msg = adminRuntimeOperationsRoute.emptyMessage('<script>alert(1)</script>');
+  assert.ok(typeof msg === 'string');
+  assert.ok(msg.includes('<script>'));
+});
+
 // ===================== 边界 =====================
 
 test('边界: route strings within max lengths', () => {
-  ['href', 'detailHrefBase', 'backHref', 'title'] as const satisfies (keyof typeof adminRuntimeOperationsRoute)[];
   for (const key of ['href', 'detailHrefBase', 'backHref', 'title'] as const) {
     const val = adminRuntimeOperationsRoute[key] as string;
     assert.ok(val.length <= 256, `${key} too long: ${val.length}`);
@@ -77,4 +87,32 @@ test('边界: preset object has expected keys', () => {
 
 test('边界: admin preset and detail presets are distinct references', () => {
   assert.notEqual(adminRuntimeOperationsPreset, adminRuntimeOperationDetails);
+});
+
+test('边界: route href path must be absolute', () => {
+  assert.ok(adminRuntimeOperationsRoute.href.startsWith('/'), '路径应以 / 开头');
+  assert.ok(adminRuntimeOperationsRoute.backHref.startsWith('/'), '返回路径应以 / 开头');
+});
+
+test('边界: route description is not excessively long', () => {
+  assert.ok(adminRuntimeOperationsRoute.description.length <= 500, '描述不应超过 500 字符');
+  assert.ok(adminRuntimeOperationsRoute.description.length >= 5, '描述不应少于 5 字符');
+});
+
+test('边界: route object has no extra unexpected keys', () => {
+  const allowed = ['href', 'detailHrefBase', 'backHref', 'title', 'description', 'emptyTitle', 'emptyMessage'];
+  const keys = Object.keys(adminRuntimeOperationsRoute) as Array<keyof typeof adminRuntimeOperationsRoute>;
+  for (const key of keys) {
+    assert.ok(allowed.includes(key),
+      `不允许意外键: ${key}`);
+  }
+});
+
+test('边界: preset values are not null or undefined', () => {
+  const preset = adminRuntimeOperationsPreset;
+  assert.notEqual(preset, null);
+  assert.notEqual(preset, undefined);
+  const detail = adminRuntimeOperationDetails;
+  assert.notEqual(detail, null);
+  assert.notEqual(detail, undefined);
 });

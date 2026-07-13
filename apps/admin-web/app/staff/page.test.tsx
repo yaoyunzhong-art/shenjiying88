@@ -45,6 +45,21 @@ describe('staff — 正例', () => {
     const src = readSource();
     assert.ok(src.includes('marketCode'), '缺少 marketCode');
   });
+
+  it('应包含员工姓名字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('name') || src.includes('员工姓名'), '缺少员工姓名');
+  });
+
+  it('应包含员工岗位字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('position') || src.includes('岗位'), '缺少岗位字段');
+  });
+
+  it('应包含员工入职时间字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('joinDate') || src.includes('入职'), '缺少入职时间');
+  });
 });
 
 // ---- 边界 ----
@@ -63,6 +78,21 @@ describe('staff — 边界', () => {
   it('应支持 status 分组统计', () => {
     const src = readSource();
     assert.ok(src.includes(".status === 'active'"), '缺少状态过滤');
+  });
+
+  it('应处理空员工列表边界', () => {
+    const src = readSource();
+    assert.ok(src.includes('.length') && src.includes('MOCK_STAFF'), '应检查列表长度');
+  });
+
+  it('应包含角色/岗位过滤逻辑', () => {
+    const src = readSource();
+    assert.ok(src.includes('roleFilter') || src.includes('role'), '缺少角色过滤');
+  });
+
+  it('应包含绩效表现评分字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('performanceScore'), '缺少绩效评分');
   });
 });
 
@@ -83,5 +113,20 @@ describe('staff — 防御', () => {
     const src = readSource();
     assert.ok(src.includes('reduce((sum, s)'), '缺少 reduce 求和');
     assert.ok(src.includes('.length'), '除以 length');
+  });
+
+  it('筛选过滤不应修改原数组', () => {
+    const src = readSource();
+    assert.ok(src.includes('.filter('), '应使用 filter 不可变过滤');
+  });
+
+  it('数据统计应使用 reduce 聚合', () => {
+    const src = readSource();
+    assert.ok(src.includes('.reduce('), '应有 reduce 聚合');
+  });
+
+  it('应使用 useCallback 包裹事件处理', () => {
+    const src = readSource();
+    assert.ok(src.includes('useCallback'), '缺少 useCallback');
   });
 });

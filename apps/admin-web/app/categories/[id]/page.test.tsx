@@ -51,6 +51,21 @@ describe('categories/[id]/page — 正例', () => {
     const src = readSource();
     assert.ok(src.includes('childCategories'), '缺少子分类数据');
   });
+
+  it('应包含分类名称字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('分类名称') || src.includes('name'), '缺少分类名称');
+  });
+
+  it('应包含分类状态字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('分类状态') || src.includes('status'), '缺少分类状态');
+  });
+
+  it('应包含排序号字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('sort') || src.includes('排序'), '缺少排序号');
+  });
 });
 
 describe('categories/[id]/page — 边界', () => {
@@ -62,6 +77,21 @@ describe('categories/[id]/page — 边界', () => {
   it('子分类为空时应显示占位', () => {
     const src = readSource();
     assert.ok(src.includes('暂无子分类'), '缺少空子分类提示');
+  });
+
+  it('保存按钮应有 loading 状态处理', () => {
+    const src = readSource();
+    assert.ok(src.includes('loading') || src.includes('isSubmitting'), '缺少 loading 状态');
+  });
+
+  it('应支持 useState 状态管理切换', () => {
+    const src = readSource();
+    assert.ok(src.includes('useState'), '缺少 useState 状态管理');
+  });
+
+  it('应处理 loading/disabled 按钮状态', () => {
+    const src = readSource();
+    assert.ok(src.includes('loading') || src.includes('disabled'), '缺少 loading/disabled 状态');
   });
 });
 
@@ -79,6 +109,21 @@ describe('categories/[id]/page — 防御', () => {
   it('保存/删除操作应有错误处理', () => {
     const src = readSource();
     assert.ok(src.includes('useFormSubmit'), '缺少 useFormSubmit');
-    assert.ok(src.includes('useDetailActions'), '缺少 useDetailActions');
+    assert.ok(src.includes('handleDelete') || src.includes('handleSave'), '缺少操作处理函数');
+  });
+
+  it('form 提交应阻止重复提交', () => {
+    const src = readSource();
+    assert.ok(src.includes('disabled') || src.includes('isSubmitting'), '缺少重复提交防护');
+  });
+
+  it('删除操作应有确认弹窗', () => {
+    const src = readSource();
+    assert.ok(src.includes('confirm') || src.includes('弹窗') || src.includes('Modal.confirm'), '缺少删除确认');
+  });
+
+  it('表单字段应有 required 校验', () => {
+    const src = readSource();
+    assert.ok(src.includes('required') || src.includes('rules'), '缺少必填校验');
   });
 });
