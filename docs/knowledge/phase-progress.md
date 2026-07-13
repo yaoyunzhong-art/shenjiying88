@@ -160,3 +160,25 @@
 | 2026-07-13 07:03 | pulse#391 | 🔥🔥 **dispatch-378-P0连续3次零commit(90min+)→升级FIRE(火灾)**·TSC 14/14 force全绿✅·admin 84✖(4✖真实suppliers+~37假阳)不变·新派dispatch-378-P0-TREE retry#3(含详细逐行修复方案)·树哥需30min内提交修正行源码 | Base✅(TSC 14/14 force✅)/Service✅(store4950+app222+miniapp494+tob1587)/Controller❌(admin suppliers 4✖·dispatch-378-FIRE)/CTest❌(admin force❌) | 0🏆(中断) |
 | 2026-07-13 07:35 | pulse#392 | 🟢 **dispatch-378-FIRE闭环✅ suppliers 4✖已清零**(SupplierFormPage全✔)·TSC 14/14✅·admin 70✖(全假阳/预存断言·↓14)·全体模块测试全绿✅·系统进入全假阳稳态·无新派单 | Base✅(TSC 14/14 force全绿✅)/Service✅(store4950+app222+miniapp494+tob1587+mobile314+sdk+types+domain)/Controller✅(全部模块force验证✅·suppliers 4✖已闭环)/CTest✅(suppliers✅·admin 70✖全假阳) | 0🏆(中断) |
 | 2026-07-13 08:25 | pulse#393 | 🟢 ≥稳态确认脉冲: 全模块TSC 14/14✅·admin-web test重塑跑✅(重跑无失败·缓存已清除)·所有模块测试全绿✅·dispatch-378-FIRE闭环后稳态保持·无新派单·全假阳稳态 | Base✅(TSC 14/14✅)/Service✅(store4950+app222+miniapp494+tob1587+mobile314+全部sdk+types+domain)/Controller✅(admin force重跑✅·70✖全假阳)/CTest✅(无真实失败) | 0🏆(中断)
+
+### 2026-07-13 08:30 周一派单
+
+| RQ-ID | 优先级 | 任务 | 关联Phase | 预期耗时 | 余额影响 |
+|:-----:|:-----:|:-----|:---------:|:-------:|:--------:|
+| RQ-20260713-001 | 🔴 P0 | **storefront-web 真实218✖全面清理** — 缓存脱离后的真实断裂，不含假阳 | P-35(收银)+P-36(会员) | 40min | ₹15-25 |
+| RQ-20260713-002 | 🔴 P0 | **miniapp 4✖ + tob 4✖残值一次性清理** — 缓存确认后的持久残值 | P-36(会员) | 15min | ₹5-8 |
+| RQ-20260713-003 | 🔴 P0 | **admin-web 70✖假阳正式标记+缓存假阳治理(AM-020)** — touch --timestamp强制TSC重跑+pulse标注缓存状态 | 基础设施(P0-AM-020) | 20min | ₹8-12 |
+| RQ-20260713-004 | 🟡 P1 | **P-53(部署DevOps) phase-progress对齐并推进** — 现有3 commits已代码落地，需正式标记为🟡进行中，补充Dockerfile验证+deploy管道 | P-53 (限7/18截止) | 20min | ₹8-12 |
+| RQ-20260713-005 | 🟡 P1 | **P-31(多租户隔离) 概念文档产出** — RLS vs Schema选型分析，C层库封装方案 | P-31 (限7/20截止) | 20min | ₹8-12 |
+| RQ-20260713-006 | 🟡 P1 | **P-35(收银) 60%→90%推进** — 距7/15仅剩2天，补全前端验收+storefront断言完善 | P-35(收银) | 30min | ₹10-15 |
+| RQ-20260713-007 | 🟡 P1 | **P-36(会员) 55%→90%推进** — 距7/15仅剩2天，补全会员流水+等级+积分流程 | P-36(会员) | 30min | ₹10-15 |
+| RQ-20260713-008 | 🟢 P2 | **验收断裂告警cron部署(AM-019)** — 当dispatch目标超过45min未闭合时自动告警 | 基础设施 | 10min | ₹3-5 |
+| RQ-20260713-009 | 🟢 P2 | **@m5/api forceExit纳入验收脉冲链条** — 确认forceExit模式已在验收链条中覆盖 | 基础设施 | 5min | ₹2-3 |
+
+**合计预算**: ₹69-107
+**当前余额**: ≈¥500 ✅ 充足
+**决策依据**:
+- 🔴 P0(3项: ₹28-45): 218✖真实断裂 → 验收脉冲恢复必要条件; miniapp+tob残值 = 持续P0-AM-020; 假阳治理 → 基础设施可靠
+- 🟡 P1(3项: ₹28-42): P-53距截止5天但代码已落地↔需正式标记; P-31距截止7天↔不启动则雪崩; P-35/P-36仅剩2天↔必须加速
+- 🟢 P2(2项: ₹5-8): 告警cron+验收链条覆盖
+**平衡**: P0+P1先执行(₹56-87)，P2视剩余弹性补完
