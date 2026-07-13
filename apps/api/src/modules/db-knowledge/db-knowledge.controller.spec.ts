@@ -329,7 +329,7 @@ describe('DbKnowledgeController (边界条件)', () => {
     const svc = makeMockService(true)
     const spy: { calledWith: number } = { calledWith: 0 }
     svc.getRecentPulses = (limit?: number) => {
-      spy.calledWith = limit
+      spy.calledWith = limit ?? 20
       return Promise.resolve([])
     }
     const ctrl = new DbKnowledgeController(svc)

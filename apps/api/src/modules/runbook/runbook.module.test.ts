@@ -150,6 +150,8 @@ describe('RunbookModule', () => {
       prerequisites: [],
       steps: [],
       estimatedTotalMinutes: 10,
+      status: 'draft' as any,
+      tags: [],
     })
     expect(rb).toBeDefined()
     expect(rb.id).toBeTruthy()
@@ -158,14 +160,14 @@ describe('RunbookModule', () => {
 
   it('RunbookService.update 应修改字段', () => {
     const svc = new RunbookService()
-    const rb = svc.create({ title: '旧标题', category: 'System' as any, severity: 'High' as any, applicableVersions: [], prerequisites: [], steps: [], estimatedTotalMinutes: 5 })
+    const rb = svc.create({ title: '旧标题', category: 'System' as any, severity: 'High' as any, applicableVersions: [], prerequisites: [], steps: [], estimatedTotalMinutes: 5, status: 'draft' as any, tags: [] })
     const updated = svc.update(rb.id, { title: '新标题' })
     expect(updated.title).toBe('新标题')
   })
 
   it('RunbookService.delete 应移除手册', () => {
     const svc = new RunbookService()
-    const rb = svc.create({ title: '删我', category: 'System' as any, severity: 'High' as any, applicableVersions: [], prerequisites: [], steps: [], estimatedTotalMinutes: 5 })
+    const rb = svc.create({ title: '删我', category: 'System' as any, severity: 'High' as any, applicableVersions: [], prerequisites: [], steps: [], estimatedTotalMinutes: 5, status: 'draft' as any, tags: [] })
     svc.delete(rb.id)
     expect(svc.get(rb.id)).toBeNull()
   })
