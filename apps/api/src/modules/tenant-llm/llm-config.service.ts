@@ -21,6 +21,7 @@ import { TenantScopeGuard } from '../../agent/tenant.guard'
 /** 内存存储 (生产环境应替换为Prisma + Redis) */
 const configStore = new Map<string, TenantLLMConfig>()
 const callLogStore = new Map<string, LLMCallLog>()
+const apiKeyStore = new Map<string, string>()
 
 /** 加密工具函数 (生产环境应使用更安全的方案) */
 function encryptApiKey(apiKey: string): string {
@@ -97,7 +98,6 @@ export class TenantLLMService {
 
     // 存储加密的API Key (独立存储，不在主配置中)
     if (request.apiKey) {
-      const apiKeyStore = new Map<string, string>()
       apiKeyStore.set(id, encryptApiKey(request.apiKey))
     }
 
@@ -124,6 +124,9 @@ export class TenantLLMService {
     }
 
     configStore.set(configId, updated)
+    if (typeof updates.apiKey === 'string' && updates.apiKey.length > 0) {
+      apiKeyStore.set(configId, encryptApiKey(updates.apiKey))
+    }
     return { ...updated, apiEndpoint: undefined }
   }
 
@@ -136,6 +139,7 @@ export class TenantLLMService {
       return false
     }
     configStore.delete(configId)
+    apiKeyStore.delete(configId)
     return true
   }
 
@@ -280,7 +284,8 @@ export class TenantLLMService {
     }
     // 从独立存储获取解密后的API Key
     // 生产环境需要从安全的密钥存储中获取
-    return null // 实际应从加密存储获取
+    const encrypted = apiKeyStore.get(configId)
+    return encrypted ? decryptApiKey(encrypted) : null
   }
 }
 

@@ -418,12 +418,12 @@ describe('TenantLLMService', () => {
   })
 
   describe('getApiKey', () => {
-    it('应返回 null (当前实现从加密存储获取)', async () => {
+    it('应返回当前租户的明文密钥', async () => {
       const created = await service.createConfig('tenant-001', {
         name: 'Key测试-apikey', provider: 'openai', modelName: 'gpt-4', apiKey: 'sk-secret-xxx',
       })
       const key = service.getApiKey(created.id, 'tenant-001')
-      expect(key).toBeNull()
+      expect(key).toBe('sk-secret-xxx')
     })
 
     it('不存在的配置返回 null', () => {
