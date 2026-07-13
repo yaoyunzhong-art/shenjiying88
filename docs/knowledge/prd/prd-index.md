@@ -8,7 +8,7 @@
 | ID | 标题 | Phase | 状态 | 文件 |
 |:--:|:-----|:-----:|:----:|:----|
 | PRD-001 | 前台收银台 (Cashier) | P-35 | 🟢 已签发 | [prd-cashier-p35.md](./prd-cashier-p35.md) |
-| PRD-002 | 会员中心 (Member Center) | P-36 | 🟡 待签发 | — |
+| PRD-002 | 会员中心 (Member Center) | P-36 | 🟢 已签发 | [prd-member-p36.md](./prd-member-p36.md) |
 
 ## 待迁移PRD（来自. trae）
 
