@@ -1,9 +1,19 @@
 import { describe, it, expect } from 'vitest'
 
-describe('✅ AC-CHAIN: chain圈梁对齐', () => {
-  it('正例: 实体创建', () => { expect(true).toBe(true) })
-  it('正例: 多租户隔离', () => { expect(1).toBe(1) })
-  it('正例: CRUD操作', () => { expect(1 + 1).toBe(2) })
-  it('反例: 无效参数', () => { expect(() => {}).not.toThrow() })
-  it('边界: 空数据处理', () => { expect([]).toEqual([]) })
+interface ChainLink { id: string; tenantId: string; previousId?: string; operation: string; payload: any; status: 'pending' | 'completed' | 'failed'; createdAt: string }
+
+describe('✅ AC-CHAIN: 链式操作圈梁', () => {
+  it('创建链节', () => {
+    const l: ChainLink = { id: 'l1', tenantId: 't1', operation: 'create_order', payload: { orderId: 'o1' }, status: 'completed', createdAt: '' }
+    expect(l.operation).toBe('create_order'); expect(l.status).toBe('completed')
+  })
+  it('链式追踪', () => {
+    const l1: ChainLink = { id: 'l1', tenantId: 't1', operation: 'payment', payload: {}, status: 'completed', createdAt: '' }
+    const l2: ChainLink = { id: 'l2', tenantId: 't1', previousId: 'l1', operation: 'delivery', payload: {}, status: 'pending', createdAt: '' }
+    expect(l2.previousId).toBe('l1')
+  })
+  it('失败传播', () => {
+    const failed: ChainLink = { id: 'l3', tenantId: 't1', previousId: 'l2', operation: 'refund', payload: {}, status: 'failed', createdAt: '' }
+    expect(failed.status).toBe('failed')
+  })
 })

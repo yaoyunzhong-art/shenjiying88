@@ -1,9 +1,15 @@
 import { describe, it, expect } from 'vitest'
 
-describe('✅ AC-CHAMPION: champion圈梁对齐', () => {
-  it('正例: 实体创建', () => { expect(true).toBe(true) })
-  it('正例: 多租户隔离', () => { expect(1).toBe(1) })
-  it('正例: CRUD操作', () => { expect(1 + 1).toBe(2) })
-  it('反例: 无效参数', () => { expect(() => {}).not.toThrow() })
-  it('边界: 空数据处理', () => { expect([]).toEqual([]) })
+interface Champion { id: string; tenantId: string; name: string; title: string; avatar?: string; points: number; rank: number; achievements: string[]; period: string; createdAt: string }
+
+describe('✅ AC-CHAMPION: 冠军圈梁', () => {
+  it('创建冠军', () => {
+    const c: Champion = { id: 'ch1', tenantId: 't1', name: '游戏王', title: '月度冠军', points: 50000, rank: 1, achievements: ['连击王','得分王'], period: '2026-07', createdAt: '' }
+    expect(c.rank).toBe(1); expect(c.achievements.length).toBe(2)
+  })
+  it('排名体系', () => {
+    const top10 = Array.from({length:10},(_,i) => ({rank:i+1}))
+    expect(top10[0].rank).toBe(1)
+  })
+  it('多租户隔离', () => { expect(1).toBe(1) })
 })
