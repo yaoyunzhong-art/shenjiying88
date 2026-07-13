@@ -38,6 +38,9 @@
 | AM-025 | 合盖空转无保护 | 2026-07-13 |
 | AM-026 | 午会Gate缺失→下午窗口失控 | 2026-07-13 |
 | AM-027 | 周日/周一恢复效率低下 | 2026-07-13 |
+| AM-028 | `externalTransactionId` copy-paste为`externalAmount`（3处） | 2026-07-14 |
+| AM-029 | `const req`未指定`any`类型导致controller测试11个TSC | 2026-07-14 |
+| AM-030 | monitoring-recordMetric缺`labels`字段 | 2026-07-14 |
 
 ## 正向模式索引（详见归档层 §2）
 
@@ -62,6 +65,8 @@
 | PP-017 | PRD+圈梁对齐流水线 | 101模块3h归类 |
 | PP-018 | 龙虾哥admin-web批量写模式 | 17页单日完成 |
 | PP-019 | 7-Gate晚宴签署流程 | 全量签署+看板+倒计时 |
+| PP-020 | 主session逐文件修vs子agent并行 | TSC 30min清79错误 |
+| PP-021 | 预存copy-paste bug检查 → `externalTransactionId`模式 | 发现3处系统化bug |
 
 ---
 
@@ -69,5 +74,6 @@
 
 | 日期 | 修改人 | 摘要 |
 |------|--------|------|
+| 2026-07-14 | 🦞 龙虾哥 | 追加AM-028~030·PP-020~021·TSC清零79→0 |
 | 2026-07-13 | 📡 日终汇总 | 追加AM-020~027·PP-017~019·索引同步evolution-log |
 | 2026-07-10 | 🦞 龙虾哥 | T1活跃层化; 完整历史迁至archive; 新增AM-009 |
