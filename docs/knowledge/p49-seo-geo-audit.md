@@ -1,6 +1,6 @@
 # P-49 SEO/GEO 专项审计
 
-> 更新时间: 2026-07-14 03:54
+> 更新时间: 2026-07-14 04:08
 > 范围: `PRD-015` / `apps/tob-web` / `SEO/GEO`
 
 ## 1. 审计结论
@@ -21,7 +21,7 @@
 ## 3. 本轮补齐
 
 1. 新增需求卡 `docs/knowledge/requirement-cards/2026-07-14-P49-seo-geo.md`
-2. 新增圈梁测试 `apps/tob-web/app/seo-geo-p49.test.ts`，覆盖 15 条关键场景
+2. 新增圈梁测试 `apps/tob-web/app/seo-geo-p49.test.ts`，覆盖 19 条关键场景
 3. 将 `PRD-015` 从“页面契约”推进到“路由/模块可执行证据”：
    - 根级 `sitemap.xml` / `robots.txt`
    - 品牌站 `sitemap.xml` / `robots.txt` / `api/geo`
@@ -42,15 +42,20 @@
    - 浏览器抽检 `http://127.0.0.1:3005/brand-website/monitoring`，确认看板真实渲染指标卡、告警、任务队列，`触发检测` 可用且无业务报错
 6. 补齐多市场 / 多品牌 SEO 隔离证据：
    - 为 `app/[marketCode]/[tenantCode]/page.tsx` 与 `app/[marketCode]/[tenantCode]/[brandCode]/page.tsx` 新增 `generateMetadata`
-   - `seo-geo-p49.test.ts` 新增 2 条断言，锁定 tenant / brand 动态路由的 title、description、canonical、languages、OG url
+   - 新增 `app/lib/document-language.ts` 与 `middleware.ts`，让动态门户根 `<html lang>` 按市场切换
+   - `seo-geo-p49.test.ts` 新增 6 条断言，锁定 tenant / brand 动态路由的 title、description、canonical、languages、OG url，以及 document lang 路径解析/白名单逻辑
    - 浏览器抽检 `http://127.0.0.1:3005/cn-mainland/demo-tenant`，确认标题为 `demo-tenant ToB 官网 | 中国大陆 | 神机营`
    - 浏览器抽检 `http://127.0.0.1:3005/us-default/demo-tenant/demo-brand`，确认标题为 `demo-brand 品牌 ToB 官网 | United States | 神机营`
+   - 浏览器抽检 `http://127.0.0.1:3005/sea-sg/demo-tenant`，确认标题为 `demo-tenant ToB 官网 | Singapore | 神机营`
+   - 浏览器抽检 `http://127.0.0.1:3005/jp-tokyo/demo-tenant`，确认 `document.documentElement.lang === 'ja-JP'` 且无控制台告警
+   - 浏览器抽检 `http://127.0.0.1:3005/eu-de/demo-tenant/sportslife`，确认 `document.documentElement.lang === 'de-DE'` 且无控制台告警
+   - 修复 `PortalConsumerGovernanceSection` 在动态门户下触发的 React child key 告警
 
 ## 4. AC / RQ 映射
 
 | 需求 | 证据 |
 |:-----|:-----|
-| AC-49-11 | `seoMetaGenerator.generate()` 输出 title / description / OG / canonical；多市场 tenant / brand 动态路由会生成独立 metadata，避免继承后台标题 |
+| AC-49-11 | `seoMetaGenerator.generate()` 输出 title / description / OG / canonical；多市场 tenant / brand 动态路由会生成独立 metadata，避免继承后台标题；动态门户根 `<html lang>` 会随 `marketCode` 切换 |
 | AC-49-12 | 根级与品牌站 `sitemap.xml` 返回合法公开链接 |
 | AC-49-13 | 根级与品牌站 `robots.txt` 返回爬虫规则与 sitemap |
 | AC-49-14 | `generateOrganizationJsonLd()` / `generateLocalBusinessJsonLd()` 输出结构化数据 |
@@ -62,8 +67,7 @@
 
 ## 5. 剩余缺口
 
-1. 当前已补 tenant / brand 两条动态路由的 metadata 隔离，但尚未扩展到更多市场样本（如 `sea-sg`、`jp-tokyo`、`eu-de`）做更细粒度抽检。
-2. 浏览器抽检已覆盖核心页面、根级入口、监控看板与两条动态门户路由，但尚未形成截图归档或自动化浏览器脚本。
+1. 浏览器抽检已覆盖核心页面、根级入口、监控看板以及 `cn-mainland / us-default / sea-sg / jp-tokyo / eu-de` 市场样本，但尚未形成截图归档或自动化浏览器脚本。
 
 ## 6. 验证记录
 
@@ -72,6 +76,7 @@ pnpm --dir apps/tob-web exec node --import tsx --test app/seo-geo-p49.test.ts
 pnpm --dir apps/tob-web exec node --import tsx --test app/api/crm/leads/route.test.ts
 pnpm --dir apps/tob-web exec node --import tsx --test app/api/metrics/web-vitals/route.test.ts
 pnpm --dir apps/tob-web exec node --import tsx --test app/sports-ants/lib/conversion-service.test.ts
+pnpm --dir packages/ui build
 pnpm --dir apps/tob-web typecheck
 bash scripts/prd-validate.sh
 ```

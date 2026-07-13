@@ -53,8 +53,8 @@ export function PortalConsumerGovernanceSection({
       ))}
       <div style={{ marginTop: 6, color: titleColor }}>Governance：{governanceCodes.join(' / ')}</div>
       <div style={{ marginTop: 10, color: summaryTextColor }}>{governanceSummary}</div>
-      {linkedOverview}
-      {runtimePanel}
+      {linkedOverview ? <React.Fragment key="linked-overview">{linkedOverview}</React.Fragment> : null}
+      {runtimePanel ? <React.Fragment key="runtime-panel">{runtimePanel}</React.Fragment> : null}
     </div>
   );
 }

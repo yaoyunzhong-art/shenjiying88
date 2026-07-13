@@ -25968,6 +25968,7 @@ function FoundationConsumerWiringSection({
 }
 
 // src/components/PortalConsumerGovernanceSection.tsx
+var import_react65 = __toESM(require("react"));
 var import_jsx_runtime108 = require("react/jsx-runtime");
 function PortalConsumerGovernanceSection({
   title = "Contract Consumer",
@@ -26004,15 +26005,15 @@ function PortalConsumerGovernanceSection({
           governanceCodes.join(" / ")
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime108.jsx)("div", { style: { marginTop: 10, color: summaryTextColor }, children: governanceSummary }),
-        linkedOverview,
-        runtimePanel
+        linkedOverview ? /* @__PURE__ */ (0, import_jsx_runtime108.jsx)(import_react65.default.Fragment, { children: linkedOverview }, "linked-overview") : null,
+        runtimePanel ? /* @__PURE__ */ (0, import_jsx_runtime108.jsx)(import_react65.default.Fragment, { children: runtimePanel }, "runtime-panel") : null
       ]
     }
   );
 }
 
 // src/components/FoundationAlertLinkedOverview.tsx
-var import_react65 = require("react");
+var import_react66 = require("react");
 var import_types3 = require("@m5/types");
 var import_jsx_runtime109 = require("react/jsx-runtime");
 function renderSectionShell(hasShell, title, description, titleStyle4, descriptionStyle, sectionStyle3, children) {
@@ -26047,17 +26048,17 @@ function FoundationAlertLinkedOverviewSection({
   buildCatalogMetaLines,
   renderPanel
 }) {
-  const panelRef = (0, import_react65.useRef)(null);
+  const panelRef = (0, import_react66.useRef)(null);
   const searchEnabled = search?.enabled ?? false;
   const topRisks = governance.topRisks.slice(0, 3);
-  const defaultFocusCode = (0, import_react65.useMemo)(
+  const defaultFocusCode = (0, import_react66.useMemo)(
     () => topRisks[0]?.code ?? governance.overviewAlerts[0]?.code ?? governance.alerts[0]?.code ?? "",
     [governance.alerts, governance.overviewAlerts, topRisks]
   );
   const timelineQueryKey = `${focusQueryKey}Action`;
   const ownerQueryKey = `${focusQueryKey}Owner`;
   const defaultFocusContext = defaultFocusContextPrefix ? `${defaultFocusContextPrefix} / \u9ED8\u8BA4\u805A\u7126 / ${defaultFocusCode || "none"}` : `\u9ED8\u8BA4\u805A\u7126 / ${defaultFocusCode || "none"}`;
-  const searchableAlerts = (0, import_react65.useMemo)(
+  const searchableAlerts = (0, import_react66.useMemo)(
     () => [
       ...governance.topRisks.map((item) => ({
         code: item.code,
@@ -26087,15 +26088,15 @@ function FoundationAlertLinkedOverviewSection({
   const filteredSearchableAlerts = searchEnabled ? searchResult.filteredItems : searchableAlerts;
   const matchedCount = searchEnabled ? searchResult.matchedCount : searchableAlerts.length;
   const totalCount = searchEnabled ? searchResult.totalCount : searchableAlerts.length;
-  const matchedCodes = (0, import_react65.useMemo)(
+  const matchedCodes = (0, import_react66.useMemo)(
     () => new Set((filteredSearchableAlerts ?? []).map((item) => item.code)),
     [filteredSearchableAlerts]
   );
-  const displayTopRisks = (0, import_react65.useMemo)(
+  const displayTopRisks = (0, import_react66.useMemo)(
     () => searchTerm.trim() ? governance.topRisks.filter((item) => matchedCodes.has(item.code)).slice(0, 3) : governance.topRisks.slice(0, 3),
     [governance.topRisks, matchedCodes, searchTerm]
   );
-  const displayCatalogAlerts = (0, import_react65.useMemo)(
+  const displayCatalogAlerts = (0, import_react66.useMemo)(
     () => searchTerm.trim() ? governance.alerts.filter((item) => matchedCodes.has(item.code)).slice(0, 3) : governance.alerts.slice(0, 3),
     [governance.alerts, matchedCodes, searchTerm]
   );
@@ -26137,7 +26138,7 @@ function FoundationAlertLinkedOverviewSection({
     }
     return governance.alerts.find((item) => item.code === defaultFocusCode) ?? governance.overviewAlerts[0] ?? displayTopRisks[0] ?? null;
   }
-  const overviewStatItems = (0, import_react65.useMemo)(
+  const overviewStatItems = (0, import_react66.useMemo)(
     () => overviewStats.map((item) => {
       const preferredAlert = pickPreferredAlert(item.preferredCodes);
       const preferredCode = preferredAlert?.code ?? "";
@@ -26153,7 +26154,7 @@ function FoundationAlertLinkedOverviewSection({
     }),
     [focusAlertCode, overviewStats]
   );
-  const topRiskItems = (0, import_react65.useMemo)(
+  const topRiskItems = (0, import_react66.useMemo)(
     () => displayTopRisks.map((item) => ({
       key: title ? `${title}-${item.code}-risk` : `${item.code}-risk`,
       code: item.code,
@@ -26168,7 +26169,7 @@ function FoundationAlertLinkedOverviewSection({
     })),
     [buildTopRiskMetaLines, displayTopRisks, focusAlertCode, title]
   );
-  const catalogAlertItems = (0, import_react65.useMemo)(
+  const catalogAlertItems = (0, import_react66.useMemo)(
     () => displayCatalogAlerts.map((item) => ({
       key: title ? `${title}-${item.code}` : item.code,
       code: item.code,
@@ -26380,10 +26381,10 @@ function createFoundationAlertLinkedOverviewStats(preset, summary, topRiskCount 
 }
 
 // src/components/FoundationAlertViews.tsx
-var import_react67 = require("react");
+var import_react68 = require("react");
 
 // src/components/FormSubmitFeedback.tsx
-var import_react66 = require("react");
+var import_react67 = require("react");
 var import_jsx_runtime110 = require("react/jsx-runtime");
 function FormSubmitFeedback({
   state,
@@ -26540,8 +26541,8 @@ function useFormSubmit({
   successMessage,
   defaultErrorMessage
 }) {
-  const [state, setState] = (0, import_react66.useState)({ isSubmitting: false });
-  const submit = (0, import_react66.useCallback)(async () => {
+  const [state, setState] = (0, import_react67.useState)({ isSubmitting: false });
+  const submit = (0, import_react67.useCallback)(async () => {
     setState({ isSubmitting: true });
     try {
       const result = await onSubmit();
@@ -26560,13 +26561,13 @@ function useFormSubmit({
       return void 0;
     }
   }, [defaultErrorMessage, onSubmit, successMessage]);
-  const clearError = (0, import_react66.useCallback)(() => {
+  const clearError = (0, import_react67.useCallback)(() => {
     setState((s2) => ({ ...s2, errorMessage: void 0 }));
   }, []);
-  const clearSuccess = (0, import_react66.useCallback)(() => {
+  const clearSuccess = (0, import_react67.useCallback)(() => {
     setState((s2) => ({ ...s2, successMessage: void 0 }));
   }, []);
-  const reset = (0, import_react66.useCallback)(() => {
+  const reset = (0, import_react67.useCallback)(() => {
     setState({ isSubmitting: false });
   }, []);
   return {
@@ -26754,7 +26755,7 @@ function FoundationAlertDemoListPage({
   mapRecords,
   acknowledgeOptions
 }) {
-  const [alerts] = (0, import_react67.useState)(() => {
+  const [alerts] = (0, import_react68.useState)(() => {
     const records = createFoundationAlertMockRecords({
       count,
       titles: preset.titles,
@@ -27239,7 +27240,7 @@ function FoundationAlertTableCard({
   omitColumns,
   pagination
 }) {
-  const columns = (0, import_react67.useMemo)(
+  const columns = (0, import_react68.useMemo)(
     () => createFoundationAlertTableColumns({
       detailHrefBase,
       renderAction,
@@ -27770,9 +27771,9 @@ function useFoundationAlertDemoAcknowledge({
   delayMs = 300,
   copy
 } = {}) {
-  const [loading, setLoading] = (0, import_react67.useState)(false);
-  const [feedback, setFeedback] = (0, import_react67.useState)(null);
-  const acknowledge = (0, import_react67.useCallback)(
+  const [loading, setLoading] = (0, import_react68.useState)(false);
+  const [feedback, setFeedback] = (0, import_react68.useState)(null);
+  const acknowledge = (0, import_react68.useCallback)(
     async (alertId) => {
       setLoading(true);
       try {
@@ -27792,7 +27793,7 @@ function useFoundationAlertDemoAcknowledge({
     },
     [copy, delayMs]
   );
-  const dismissFeedback = (0, import_react67.useCallback)(() => {
+  const dismissFeedback = (0, import_react68.useCallback)(() => {
     setFeedback(null);
   }, []);
   return {
@@ -27903,7 +27904,7 @@ function FoundationAlertListPageSection({
   const severityFacet = listState.facets[0];
   const statusFacet = listState.facets[1];
   const sourceFacet = listState.facets[2];
-  const stats = (0, import_react67.useMemo)(
+  const stats = (0, import_react68.useMemo)(
     () => ({
       total: alerts.length,
       open: alerts.filter((alert) => alert.status === "open").length,
@@ -28062,7 +28063,7 @@ function FoundationAlertListPageSection({
 }
 
 // src/components/RuntimeOperationViews.tsx
-var import_react68 = require("react");
+var import_react69 = require("react");
 var import_jsx_runtime113 = require("react/jsx-runtime");
 var runtimeOperationStatusVariants = {
   pending: "default",
@@ -28390,7 +28391,7 @@ function RuntimeOperationDemoListPage({
   recordOptions,
   mapRecords
 }) {
-  const [operations] = (0, import_react68.useState)(() => {
+  const [operations] = (0, import_react69.useState)(() => {
     const records = createRuntimeOperationMockRecords({
       count,
       typeOrder: preset.typeOrder,
@@ -28429,7 +28430,7 @@ function RuntimeOperationsTableCard({
   omitColumns,
   pagination
 }) {
-  const columns = (0, import_react68.useMemo)(
+  const columns = (0, import_react69.useMemo)(
     () => createRuntimeOperationTableColumns({
       detailHrefBase,
       detailHrefBuilder,
@@ -28885,7 +28886,7 @@ function RuntimeOperationsListPageSection({
   });
   const statusFacet = listState.facets[0];
   const typeFacet = listState.facets[1];
-  const stats = (0, import_react68.useMemo)(
+  const stats = (0, import_react69.useMemo)(
     () => ({
       total: operations.length,
       running: operations.filter((operation) => operation.status === "running").length,
@@ -29046,7 +29047,7 @@ function FormField({
 }
 
 // src/components/SubmitButton.tsx
-var import_react69 = __toESM(require("react"));
+var import_react70 = __toESM(require("react"));
 var import_jsx_runtime115 = require("react/jsx-runtime");
 var VARIANT_STYLES6 = {
   primary: {
@@ -29066,7 +29067,7 @@ var VARIANT_STYLES6 = {
     border: "1px solid rgba(252, 165, 165, 0.28)"
   }
 };
-var SubmitButton = import_react69.default.forwardRef(
+var SubmitButton = import_react70.default.forwardRef(
   function SubmitButton2({
     loading = false,
     label = "\u63D0\u4EA4",
@@ -29133,7 +29134,7 @@ var SubmitButton = import_react69.default.forwardRef(
 );
 
 // src/components/InlineNotification.tsx
-var import_react70 = __toESM(require("react"));
+var import_react71 = __toESM(require("react"));
 var import_jsx_runtime116 = require("react/jsx-runtime");
 var TYPE_STYLES = {
   info: {
@@ -29172,7 +29173,7 @@ function InlineNotification({
   className,
   style
 }) {
-  const [visible, setVisible] = import_react70.default.useState(true);
+  const [visible, setVisible] = import_react71.default.useState(true);
   if (!visible) return null;
   const t = TYPE_STYLES[type];
   const handleClose = () => {
@@ -29248,7 +29249,7 @@ function InlineNotification({
 }
 
 // src/components/Alert.tsx
-var import_react71 = require("react");
+var import_react72 = require("react");
 var import_jsx_runtime117 = require("react/jsx-runtime");
 var VARIANT_PALETTE = {
   info: {
@@ -29327,7 +29328,7 @@ function Alert({
   className,
   style
 }) {
-  const [dismissed, setDismissed] = (0, import_react71.useState)(false);
+  const [dismissed, setDismissed] = (0, import_react72.useState)(false);
   const palette = VARIANT_PALETTE[variant];
   if (dismissed) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime117.jsxs)(
@@ -29382,7 +29383,7 @@ function Alert({
   );
 }
 function useAlert(defaultOptions) {
-  const [alert, setAlert] = (0, import_react71.useState)(null);
+  const [alert, setAlert] = (0, import_react72.useState)(null);
   const show = (title, message, variant) => {
     const resolvedVariant = variant ?? defaultOptions?.variant ?? "info";
     setAlert({ visible: true, variant: resolvedVariant, title, message });
@@ -29400,7 +29401,7 @@ function useAlert(defaultOptions) {
 }
 
 // src/components/CopyToClipboard.tsx
-var import_react72 = require("react");
+var import_react73 = require("react");
 var import_jsx_runtime118 = require("react/jsx-runtime");
 function CopyToClipboard({
   text,
@@ -29410,8 +29411,8 @@ function CopyToClipboard({
   size = "md",
   iconOnly = false
 }) {
-  const [copied, setCopied] = (0, import_react72.useState)(false);
-  const handleCopy = (0, import_react72.useCallback)(async () => {
+  const [copied, setCopied] = (0, import_react73.useState)(false);
+  const handleCopy = (0, import_react73.useCallback)(async () => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -29591,7 +29592,7 @@ function CopyToClipboard({
 }
 
 // src/components/CodeBlock.tsx
-var import_react73 = require("react");
+var import_react74 = require("react");
 var import_jsx_runtime119 = require("react/jsx-runtime");
 var LANGUAGE_COLORS = {
   json: "#fbbf24",
@@ -29631,14 +29632,14 @@ function CodeBlock({
   defaultCollapsed = false,
   "data-testid": dataTestId
 }) {
-  const [copied, setCopied] = (0, import_react73.useState)(false);
-  const [collapsed, setCollapsed] = (0, import_react73.useState)(defaultCollapsed);
+  const [copied, setCopied] = (0, import_react74.useState)(false);
+  const [collapsed, setCollapsed] = (0, import_react74.useState)(defaultCollapsed);
   const totalLines = countLines(code);
   const lines = code.split("\n");
   const isTruncatable = maxLines > 0 && totalLines > maxLines;
   const visibleLines = isTruncatable && collapsed ? lines.slice(0, maxLines) : lines;
   const hasTrailingEmpty = code.endsWith("\n");
-  const handleCopy = (0, import_react73.useCallback)(async () => {
+  const handleCopy = (0, import_react74.useCallback)(async () => {
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
@@ -29656,7 +29657,7 @@ function CodeBlock({
       setTimeout(() => setCopied(false), 2e3);
     }
   }, [code]);
-  const toggleCollapse = (0, import_react73.useCallback)(() => {
+  const toggleCollapse = (0, import_react74.useCallback)(() => {
     setCollapsed((prev) => !prev);
   }, []);
   const langColor = getLanguageColor(language);
@@ -29902,7 +29903,7 @@ function CodeBlock({
 }
 
 // src/components/VirtualizedList.tsx
-var import_react74 = require("react");
+var import_react75 = require("react");
 var import_jsx_runtime120 = require("react/jsx-runtime");
 function VirtualizedList({
   rows,
@@ -29919,10 +29920,10 @@ function VirtualizedList({
   onScroll,
   disabled = false
 }) {
-  const containerRef = (0, import_react74.useRef)(null);
-  const [containerHeight, setContainerHeight] = (0, import_react74.useState)(heightProp ?? 0);
-  const [scrollTop, setScrollTop] = (0, import_react74.useState)(0);
-  (0, import_react74.useEffect)(() => {
+  const containerRef = (0, import_react75.useRef)(null);
+  const [containerHeight, setContainerHeight] = (0, import_react75.useState)(heightProp ?? 0);
+  const [scrollTop, setScrollTop] = (0, import_react75.useState)(0);
+  (0, import_react75.useEffect)(() => {
     const calcHeight = () => {
       if (heightProp) {
         setContainerHeight(heightProp);
@@ -29942,11 +29943,11 @@ function VirtualizedList({
       return () => observer.disconnect();
     }
   }, [heightProp]);
-  const rowHeights = (0, import_react74.useMemo)(() => {
+  const rowHeights = (0, import_react75.useMemo)(() => {
     if (!rowHeightFn) return void 0;
     return rows.map((row, idx) => rowHeightFn(row, idx));
   }, [rows, rowHeightFn]);
-  const { totalHeight, rowOffsets } = (0, import_react74.useMemo)(() => {
+  const { totalHeight, rowOffsets } = (0, import_react75.useMemo)(() => {
     const offsets = [0];
     let total = 0;
     for (let i = 0; i < rows.length; i++) {
@@ -29956,7 +29957,7 @@ function VirtualizedList({
     }
     return { totalHeight: total, rowOffsets: offsets };
   }, [rows, rowHeights, rowHeight]);
-  const visibleRange = (0, import_react74.useMemo)(() => {
+  const visibleRange = (0, import_react75.useMemo)(() => {
     const startIdx = binarySearchStart(rowOffsets, scrollTop, rows.length);
     const endIdx = binarySearchEnd(
       rowOffsets,
@@ -29967,7 +29968,7 @@ function VirtualizedList({
     const end = Math.min(rows.length, endIdx + overscan);
     return { start, end };
   }, [rowOffsets, scrollTop, containerHeight, rows.length, overscan]);
-  const handleScroll = (0, import_react74.useCallback)(
+  const handleScroll = (0, import_react75.useCallback)(
     (e) => {
       const top = e.target.scrollTop;
       setScrollTop(top);
@@ -30066,7 +30067,7 @@ function binarySearchEnd(offsets, target, maxIdx) {
 }
 
 // src/components/FeedbackWidget.tsx
-var import_react75 = require("react");
+var import_react76 = require("react");
 var import_jsx_runtime121 = require("react/jsx-runtime");
 var DEFAULT_RATING_LABELS = ["\u5F88\u5DEE", "\u8F83\u5DEE", "\u4E00\u822C", "\u6EE1\u610F", "\u975E\u5E38\u6EE1\u610F"];
 var DEFAULT_SUCCESS_MSG = "\u611F\u8C22\u60A8\u7684\u53CD\u9988\uFF01";
@@ -30181,20 +30182,20 @@ function FeedbackWidget({
   successMessage = DEFAULT_SUCCESS_MSG,
   className
 }) {
-  const [rating, setRating] = (0, import_react75.useState)(initialRating);
-  const [hoverRating, setHoverRating] = (0, import_react75.useState)(0);
-  const [comment, setComment] = (0, import_react75.useState)("");
+  const [rating, setRating] = (0, import_react76.useState)(initialRating);
+  const [hoverRating, setHoverRating] = (0, import_react76.useState)(0);
+  const [comment, setComment] = (0, import_react76.useState)("");
   const displayRating = hoverRating || rating;
-  const label = (0, import_react75.useMemo)(
+  const label = (0, import_react76.useMemo)(
     () => displayRating > 0 && displayRating <= ratingLabels.length ? ratingLabels[displayRating - 1] : "",
     [displayRating, ratingLabels]
   );
   const canSubmit = rating > 0 && !submitting;
-  const handleSubmit = (0, import_react75.useCallback)(() => {
+  const handleSubmit = (0, import_react76.useCallback)(() => {
     if (!canSubmit) return;
     void onSubmit?.(rating, comment);
   }, [canSubmit, rating, comment, onSubmit]);
-  const handleCancel = (0, import_react75.useCallback)(() => {
+  const handleCancel = (0, import_react76.useCallback)(() => {
     setRating(initialRating);
     setComment("");
     onCancel?.();
@@ -30254,7 +30255,7 @@ function FeedbackWidget({
 }
 
 // src/components/FileUpload.tsx
-var import_react76 = require("react");
+var import_react77 = require("react");
 var import_jsx_runtime122 = require("react/jsx-runtime");
 var uidCounter = 0;
 function generateUid() {
@@ -30348,12 +30349,12 @@ function FileUpload({
   style,
   "aria-label": ariaLabel
 }) {
-  const [internalFileList, setInternalFileList] = (0, import_react76.useState)([]);
-  const [dragActive, setDragActive] = (0, import_react76.useState)(false);
-  const inputRef = (0, import_react76.useRef)(null);
+  const [internalFileList, setInternalFileList] = (0, import_react77.useState)([]);
+  const [dragActive, setDragActive] = (0, import_react77.useState)(false);
+  const inputRef = (0, import_react77.useRef)(null);
   const isControlled = controlledFileList !== void 0;
   const fileList = isControlled ? controlledFileList : internalFileList;
-  const updateFileList = (0, import_react76.useCallback)(
+  const updateFileList = (0, import_react77.useCallback)(
     (newList) => {
       if (!isControlled) {
         setInternalFileList(newList);
@@ -30362,7 +30363,7 @@ function FileUpload({
     },
     [isControlled, onChange]
   );
-  const addFiles = (0, import_react76.useCallback)(
+  const addFiles = (0, import_react77.useCallback)(
     async (rawFiles) => {
       const files = Array.from(rawFiles);
       if (!multiple && fileList.length > 0) {
@@ -30437,7 +30438,7 @@ function FileUpload({
     },
     [multiple, maxSize, maxCount, fileList, beforeUpload, customRequest, updateFileList]
   );
-  const removeFile = (0, import_react76.useCallback)(
+  const removeFile = (0, import_react77.useCallback)(
     (uid) => {
       const removed = fileList.find((f) => f.uid === uid);
       if (removed?.url?.startsWith("blob:")) {
@@ -30448,7 +30449,7 @@ function FileUpload({
     },
     [fileList, updateFileList]
   );
-  const retryUpload = (0, import_react76.useCallback)(
+  const retryUpload = (0, import_react77.useCallback)(
     async (uid) => {
       const file = fileList.find((f) => f.uid === uid);
       const originFile = file?.originFileObj;
@@ -30473,7 +30474,7 @@ function FileUpload({
     },
     [fileList, customRequest, updateFileList]
   );
-  (0, import_react76.useEffect)(() => {
+  (0, import_react77.useEffect)(() => {
     return () => {
       for (const f of fileList) {
         if (f.url?.startsWith("blob:")) {
@@ -30482,7 +30483,7 @@ function FileUpload({
       }
     };
   }, []);
-  const handleDragEnter = (0, import_react76.useCallback)(
+  const handleDragEnter = (0, import_react77.useCallback)(
     (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -30490,12 +30491,12 @@ function FileUpload({
     },
     [disabled]
   );
-  const handleDragLeave = (0, import_react76.useCallback)((e) => {
+  const handleDragLeave = (0, import_react77.useCallback)((e) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
   }, []);
-  const handleDragOver = (0, import_react76.useCallback)(
+  const handleDragOver = (0, import_react77.useCallback)(
     (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -30503,7 +30504,7 @@ function FileUpload({
     },
     [disabled]
   );
-  const handleDrop = (0, import_react76.useCallback)(
+  const handleDrop = (0, import_react77.useCallback)(
     (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -30515,7 +30516,7 @@ function FileUpload({
     },
     [disabled, addFiles]
   );
-  const handleInputChange = (0, import_react76.useCallback)(
+  const handleInputChange = (0, import_react77.useCallback)(
     (e) => {
       if (e.target.files && e.target.files.length > 0) {
         addFiles(e.target.files);
@@ -30524,7 +30525,7 @@ function FileUpload({
     },
     [addFiles]
   );
-  const handleClick = (0, import_react76.useCallback)(() => {
+  const handleClick = (0, import_react77.useCallback)(() => {
     if (!disabled) inputRef.current?.click();
   }, [disabled]);
   const statusIcon = (status) => {
@@ -30720,7 +30721,7 @@ function FileUpload({
 }
 
 // src/components/Switch.tsx
-var import_react77 = __toESM(require("react"));
+var import_react78 = __toESM(require("react"));
 var import_jsx_runtime123 = require("react/jsx-runtime");
 var SIZE_MAP5 = {
   sm: { width: 34, height: 20, thumb: 14, gap: 3 },
@@ -30747,8 +30748,8 @@ function Switch({
   className,
   style
 }) {
-  const id = (0, import_react77.useId)();
-  const [internalChecked, setInternalChecked] = import_react77.default.useState(defaultChecked);
+  const id = (0, import_react78.useId)();
+  const [internalChecked, setInternalChecked] = import_react78.default.useState(defaultChecked);
   const isControlled = checked !== void 0;
   const isChecked = isControlled ? checked : internalChecked;
   const handleToggle = () => {
@@ -30851,7 +30852,7 @@ function Switch({
 }
 
 // src/components/RadioGroup.tsx
-var import_react78 = __toESM(require("react"));
+var import_react79 = __toESM(require("react"));
 var import_jsx_runtime124 = require("react/jsx-runtime");
 var DOT_SIZE_MAP2 = { sm: 8, md: 10, lg: 12 };
 var RING_SIZE_MAP = { sm: 16, md: 20, lg: 24 };
@@ -30881,12 +30882,12 @@ function RadioGroup({
   style,
   optionStyle
 }) {
-  const generatedName = (0, import_react78.useId)();
+  const generatedName = (0, import_react79.useId)();
   const resolvedName = name ?? generatedName;
-  const [internalValue, setInternalValue] = import_react78.default.useState(defaultValue);
+  const [internalValue, setInternalValue] = import_react79.default.useState(defaultValue);
   const isControlled = controlledValue !== void 0;
   const selectedValue = isControlled ? controlledValue : internalValue;
-  const handleChange = import_react78.default.useCallback(
+  const handleChange = import_react79.default.useCallback(
     (optionValue) => {
       if (disabled) return;
       if (!isControlled) {
@@ -31042,7 +31043,7 @@ function RadioGroup({
 }
 
 // src/components/Tooltip.tsx
-var import_react79 = __toESM(require("react"));
+var import_react80 = __toESM(require("react"));
 var import_jsx_runtime125 = require("react/jsx-runtime");
 var PLACEMENT_STYLES2 = {
   top: (rect, tt) => ({
@@ -31092,7 +31093,7 @@ var ARROW_STYLES = {
     borderBottom: "1px solid rgba(148, 163, 184, 0.18)"
   }
 };
-var Tooltip = import_react79.default.memo(function Tooltip2({
+var Tooltip = import_react80.default.memo(function Tooltip2({
   content,
   children,
   placement = "top",
@@ -31101,27 +31102,27 @@ var Tooltip = import_react79.default.memo(function Tooltip2({
   style,
   className
 }) {
-  const [visible, setVisible] = (0, import_react79.useState)(false);
-  const [position, setPosition] = (0, import_react79.useState)({});
-  const triggerRef = (0, import_react79.useRef)(null);
-  const tooltipRef = (0, import_react79.useRef)(null);
-  const timerRef = (0, import_react79.useRef)(null);
-  const show = (0, import_react79.useCallback)(() => {
+  const [visible, setVisible] = (0, import_react80.useState)(false);
+  const [position, setPosition] = (0, import_react80.useState)({});
+  const triggerRef = (0, import_react80.useRef)(null);
+  const tooltipRef = (0, import_react80.useRef)(null);
+  const timerRef = (0, import_react80.useRef)(null);
+  const show = (0, import_react80.useCallback)(() => {
     timerRef.current = setTimeout(() => setVisible(true), delayMs);
   }, [delayMs]);
-  const hide = (0, import_react79.useCallback)(() => {
+  const hide = (0, import_react80.useCallback)(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
     setVisible(false);
   }, []);
-  (0, import_react79.useEffect)(() => {
+  (0, import_react80.useEffect)(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
-  (0, import_react79.useEffect)(() => {
+  (0, import_react80.useEffect)(() => {
     if (!visible || !triggerRef.current || !tooltipRef.current) return;
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const tooltipRect = tooltipRef.current.getBoundingClientRect();
@@ -31198,7 +31199,7 @@ var Tooltip = import_react79.default.memo(function Tooltip2({
 });
 
 // src/components/Popover.tsx
-var import_react80 = __toESM(require("react"));
+var import_react81 = __toESM(require("react"));
 var import_jsx_runtime126 = require("react/jsx-runtime");
 function resolvePlacement(p) {
   const parts = p.split("-");
@@ -31284,7 +31285,7 @@ function arrowStyles(side) {
       return { ...base, left: -5, top: "50%", transform: "translateY(-50%) rotate(45deg)", borderRight: "none", borderTop: "none" };
   }
 }
-var Popover = import_react80.default.memo(function Popover2({
+var Popover = import_react81.default.memo(function Popover2({
   trigger,
   children,
   title,
@@ -31298,16 +31299,16 @@ var Popover = import_react80.default.memo(function Popover2({
   style,
   onOpenChange
 }) {
-  const [open, setOpen] = (0, import_react80.useState)(false);
-  const [position, setPosition] = (0, import_react80.useState)({});
-  const containerRef = (0, import_react80.useRef)(null);
-  const popoverRef = (0, import_react80.useRef)(null);
+  const [open, setOpen] = (0, import_react81.useState)(false);
+  const [position, setPosition] = (0, import_react81.useState)({});
+  const containerRef = (0, import_react81.useRef)(null);
+  const popoverRef = (0, import_react81.useRef)(null);
   const { side } = resolvePlacement(placement);
-  const close = (0, import_react80.useCallback)(() => {
+  const close = (0, import_react81.useCallback)(() => {
     setOpen(false);
     onOpenChange?.(false);
   }, [onOpenChange]);
-  const toggle = (0, import_react80.useCallback)(() => {
+  const toggle = (0, import_react81.useCallback)(() => {
     if (disabled) return;
     setOpen((prev) => {
       const next = !prev;
@@ -31315,7 +31316,7 @@ var Popover = import_react80.default.memo(function Popover2({
       return next;
     });
   }, [disabled, onOpenChange]);
-  (0, import_react80.useEffect)(() => {
+  (0, import_react81.useEffect)(() => {
     if (!open) return;
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -31335,7 +31336,7 @@ var Popover = import_react80.default.memo(function Popover2({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open, close]);
-  (0, import_react80.useEffect)(() => {
+  (0, import_react81.useEffect)(() => {
     if (!open || !containerRef.current || !popoverRef.current) return;
     const triggerEl = containerRef.current.firstElementChild;
     if (!triggerEl) return;
@@ -31343,16 +31344,16 @@ var Popover = import_react80.default.memo(function Popover2({
     const popoverRect = popoverRef.current.getBoundingClientRect();
     setPosition(computePosition(popoverRect, triggerRect, placement));
   }, [open, placement]);
-  const handleTriggerClick = (0, import_react80.useCallback)(() => {
+  const handleTriggerClick = (0, import_react81.useCallback)(() => {
     if (triggerMode === "click") toggle();
   }, [triggerMode, toggle]);
-  const handleMouseEnter = (0, import_react80.useCallback)(() => {
+  const handleMouseEnter = (0, import_react81.useCallback)(() => {
     if (triggerMode === "hover" && !disabled) {
       setOpen(true);
       onOpenChange?.(true);
     }
   }, [triggerMode, disabled, onOpenChange]);
-  const handleMouseLeave = (0, import_react80.useCallback)(() => {
+  const handleMouseLeave = (0, import_react81.useCallback)(() => {
     if (triggerMode === "hover") {
       setOpen(false);
       onOpenChange?.(false);
@@ -31636,7 +31637,7 @@ var Timeline = ({ items, "data-testid": testId }) => {
 };
 
 // src/components/FoundationAlertPanel.tsx
-var import_react81 = require("react");
+var import_react82 = require("react");
 var import_jsx_runtime128 = require("react/jsx-runtime");
 var adminPalette = {
   background: "rgba(15, 23, 42, 0.6)",
@@ -31730,7 +31731,7 @@ var foundationAlertPanelThemePresets = {
   }
 };
 function useFoundationAsyncLoader(loader) {
-  return (0, import_react81.useCallback)(() => loader(), [loader]);
+  return (0, import_react82.useCallback)(() => loader(), [loader]);
 }
 async function runPanelMutation(panelAccess, action, alertCode) {
   if (action === "ACK" && panelAccess.ackAlert) {
@@ -31762,17 +31763,17 @@ function FoundationAlertPanelFrame({
   runtimeCallbackAccentColor,
   runtimeCallbackBorderColor
 }) {
-  const [governance, setGovernance] = (0, import_react81.useState)(initialGovernance);
-  const [selectedAlertCode, setSelectedAlertCode] = (0, import_react81.useState)(focusAlertCode);
-  const [actionLoading, setActionLoading] = (0, import_react81.useState)(null);
-  const handleFocusAlert = (0, import_react81.useCallback)(
+  const [governance, setGovernance] = (0, import_react82.useState)(initialGovernance);
+  const [selectedAlertCode, setSelectedAlertCode] = (0, import_react82.useState)(focusAlertCode);
+  const [actionLoading, setActionLoading] = (0, import_react82.useState)(null);
+  const handleFocusAlert = (0, import_react82.useCallback)(
     (code) => {
       setSelectedAlertCode(code);
       onFocusChange?.(code, focusContext ?? "panel");
     },
     [focusContext, onFocusChange]
   );
-  const handleAck = (0, import_react81.useCallback)(
+  const handleAck = (0, import_react82.useCallback)(
     async (alertCode) => {
       setActionLoading(alertCode);
       try {
@@ -31785,7 +31786,7 @@ function FoundationAlertPanelFrame({
     },
     [loadGovernance, panelAccess]
   );
-  const handleMute = (0, import_react81.useCallback)(
+  const handleMute = (0, import_react82.useCallback)(
     async (alertCode) => {
       setActionLoading(alertCode);
       try {
@@ -31798,7 +31799,7 @@ function FoundationAlertPanelFrame({
     },
     [loadGovernance, panelAccess]
   );
-  const handleUnmute = (0, import_react81.useCallback)(
+  const handleUnmute = (0, import_react82.useCallback)(
     async (alertCode) => {
       setActionLoading(alertCode);
       try {
@@ -32115,7 +32116,7 @@ function ActionButton2({
 }
 
 // src/components/FoundationAlertPanelReadouts.tsx
-var import_react82 = require("react");
+var import_react83 = require("react");
 var import_jsx_runtime129 = require("react/jsx-runtime");
 var defaultPalette = {
   surface: "#1e293b",
@@ -32533,11 +32534,11 @@ function useFoundationAlertGovernanceState({
   focusAlertCode,
   loadGovernance
 }) {
-  const [governance, setGovernance] = (0, import_react82.useState)(
+  const [governance, setGovernance] = (0, import_react83.useState)(
     initialGovernance ?? { alerts: [], topRisks: [] }
   );
-  const [selectedAlertCode, setSelectedAlertCode] = (0, import_react82.useState)(focusAlertCode);
-  const refreshGovernance = (0, import_react82.useCallback)(async () => {
+  const [selectedAlertCode, setSelectedAlertCode] = (0, import_react83.useState)(focusAlertCode);
+  const refreshGovernance = (0, import_react83.useCallback)(async () => {
     if (!loadGovernance) {
       return;
     }
@@ -32554,8 +32555,8 @@ function useFoundationAlertDrilldownQuery({
   loadDrilldown,
   setActionError
 }) {
-  const [drilldown, setDrilldown] = (0, import_react82.useState)(null);
-  (0, import_react82.useEffect)(() => {
+  const [drilldown, setDrilldown] = (0, import_react83.useState)(null);
+  (0, import_react83.useEffect)(() => {
     if (!selectedAlertCode || !loadDrilldown) {
       return;
     }
@@ -32583,8 +32584,8 @@ function useFoundationAlertMutationController({
   refreshView,
   executeMutation
 }) {
-  const [pendingMutationAction, setPendingMutationAction] = (0, import_react82.useState)(null);
-  const runMutation = (0, import_react82.useCallback)(
+  const [pendingMutationAction, setPendingMutationAction] = (0, import_react83.useState)(null);
+  const runMutation = (0, import_react83.useCallback)(
     async (action, code) => {
       const resolvedCode = code ?? selectedAlertCode;
       if (!resolvedCode) {
@@ -32623,7 +32624,7 @@ function useFoundationAlertTimelineQueryState({
   filterState,
   setFilterState
 }) {
-  const activeFilterChips = (0, import_react82.useMemo)(
+  const activeFilterChips = (0, import_react83.useMemo)(
     () => Object.entries(filterState).filter(([, value]) => value && value !== "ALL").map(([kind, value]) => ({
       kind,
       label: toSentenceCase(kind),
@@ -32639,11 +32640,11 @@ function useFoundationAlertTimelineQueryState({
     count: 0
   }));
   const shortcutPresets = [];
-  const applyShortcut = (0, import_react82.useCallback)(
+  const applyShortcut = (0, import_react83.useCallback)(
     (filters) => setFilterState(filters),
     [setFilterState]
   );
-  const clearAllFilters = (0, import_react82.useCallback)(
+  const clearAllFilters = (0, import_react83.useCallback)(
     () => setFilterState((current) => {
       const next = { ...current };
       for (const key of Object.keys(next)) {
@@ -32653,23 +32654,23 @@ function useFoundationAlertTimelineQueryState({
     }),
     [setFilterState]
   );
-  const clearFilter = (0, import_react82.useCallback)(
+  const clearFilter = (0, import_react83.useCallback)(
     (key) => setFilterState((current) => withAllValue(current, key, "ALL")),
     [setFilterState]
   );
-  const handleOwnerFilterChange = (0, import_react82.useCallback)(
+  const handleOwnerFilterChange = (0, import_react83.useCallback)(
     (owner) => setFilterState((current) => withAllValue(current, "owner", owner)),
     [setFilterState]
   );
-  const handleSourceFilterChange = (0, import_react82.useCallback)(
+  const handleSourceFilterChange = (0, import_react83.useCallback)(
     (source) => setFilterState((current) => withAllValue(current, "source", source)),
     [setFilterState]
   );
-  const handleTimelineFilterChange = (0, import_react82.useCallback)(
+  const handleTimelineFilterChange = (0, import_react83.useCallback)(
     (filter) => setFilterState((current) => withAllValue(current, "action", filter)),
     [setFilterState]
   );
-  const filterDeepLinkPreview = (0, import_react82.useMemo)(() => {
+  const filterDeepLinkPreview = (0, import_react83.useMemo)(() => {
     const params = new URLSearchParams();
     if (filterState.action && filterState.action !== "ALL") {
       params.set(timelineQueryKey, filterState.action);
@@ -32699,8 +32700,8 @@ function useFoundationAlertTimelineQueryState({
   };
 }
 function useFoundationAlertViewLinkController() {
-  const [copiedViewMessage, setCopiedViewMessage] = (0, import_react82.useState)(null);
-  const copyCurrentViewLink = (0, import_react82.useCallback)(async () => {
+  const [copiedViewMessage, setCopiedViewMessage] = (0, import_react83.useState)(null);
+  const copyCurrentViewLink = (0, import_react83.useCallback)(async () => {
     try {
       const url = typeof window !== "undefined" ? window.location.href : "";
       if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
@@ -32721,7 +32722,7 @@ function useFoundationAlertFocusSync({
   focusContext,
   onFocusChange
 }) {
-  (0, import_react82.useEffect)(() => {
+  (0, import_react83.useEffect)(() => {
     if (selectedAlertCode && selectedAlertCode !== focusAlertCode) {
       onFocusChange?.(selectedAlertCode, focusContext ?? "");
     }
@@ -32729,7 +32730,7 @@ function useFoundationAlertFocusSync({
 }
 
 // src/components/FormPageScaffold.tsx
-var import_react83 = require("react");
+var import_react84 = require("react");
 var import_jsx_runtime130 = require("react/jsx-runtime");
 function validateFormFields(fields, values) {
   const errors = {};
@@ -32831,15 +32832,15 @@ function FormPageScaffold({
   onSuccess,
   disabled = false
 }) {
-  const [values, setValues] = (0, import_react83.useState)(() => {
+  const [values, setValues] = (0, import_react84.useState)(() => {
     const init = {};
     for (const f of fields) {
       init[f.key] = f.initialValue ?? "";
     }
     return init;
   });
-  const [errors, setErrors] = (0, import_react83.useState)({});
-  const [_submitted, setSubmitted] = (0, import_react83.useState)(false);
+  const [errors, setErrors] = (0, import_react84.useState)({});
+  const [_submitted, setSubmitted] = (0, import_react84.useState)(false);
   const { state, submit, clearError, clearSuccess } = useFormSubmit({
     onSubmit: async () => {
       const validationErrors = validateFormFields(fields, values);
@@ -33029,8 +33030,8 @@ function DeleteButton({
   onDelete,
   disabled
 }) {
-  const [showConfirm, setShowConfirm] = (0, import_react83.useState)(false);
-  const [deleting, setDeleting] = (0, import_react83.useState)(false);
+  const [showConfirm, setShowConfirm] = (0, import_react84.useState)(false);
+  const [deleting, setDeleting] = (0, import_react84.useState)(false);
   if (!showConfirm) {
     return /* @__PURE__ */ (0, import_jsx_runtime130.jsx)(
       "button",
@@ -33105,7 +33106,7 @@ function DeleteButton({
 }
 
 // src/components/CombinedDetailPage.tsx
-var import_react84 = require("react");
+var import_react85 = require("react");
 var import_jsx_runtime131 = require("react/jsx-runtime");
 function CombinedDetailPage({
   title,
@@ -33130,12 +33131,12 @@ function CombinedDetailPage({
   "data-testid": testId
 }) {
   const { success, error: toastError } = useToast();
-  const [activeTab, setActiveTab] = (0, import_react84.useState)(defaultTab ?? tabs?.[0]?.key ?? "");
-  const [deleteDialogOpen, setDeleteDialogOpen] = (0, import_react84.useState)(false);
-  const [deleting, setDeleting] = (0, import_react84.useState)(false);
-  const [pendingTransition, setPendingTransition] = (0, import_react84.useState)(null);
-  const [transitioning, setTransitioning] = (0, import_react84.useState)(false);
-  const handleDelete = (0, import_react84.useCallback)(async () => {
+  const [activeTab, setActiveTab] = (0, import_react85.useState)(defaultTab ?? tabs?.[0]?.key ?? "");
+  const [deleteDialogOpen, setDeleteDialogOpen] = (0, import_react85.useState)(false);
+  const [deleting, setDeleting] = (0, import_react85.useState)(false);
+  const [pendingTransition, setPendingTransition] = (0, import_react85.useState)(null);
+  const [transitioning, setTransitioning] = (0, import_react85.useState)(false);
+  const handleDelete = (0, import_react85.useCallback)(async () => {
     if (!onDelete) return;
     setDeleting(true);
     try {
@@ -33149,14 +33150,14 @@ function CombinedDetailPage({
       setDeleteDialogOpen(false);
     }
   }, [onDelete, success, toastError]);
-  const handleTransition = (0, import_react84.useCallback)(async (action) => {
+  const handleTransition = (0, import_react85.useCallback)(async (action) => {
     if (action.confirm) {
       setPendingTransition(action);
       return;
     }
     await executeTransition(action);
   }, []);
-  const executeTransition = (0, import_react84.useCallback)(async (action) => {
+  const executeTransition = (0, import_react85.useCallback)(async (action) => {
     setTransitioning(true);
     try {
       await action.onTransition();
@@ -33354,7 +33355,7 @@ var disabledButtonStyle2 = {
 };
 
 // src/components/Stepper.tsx
-var import_react85 = __toESM(require("react"));
+var import_react86 = __toESM(require("react"));
 var import_jsx_runtime132 = require("react/jsx-runtime");
 var SIZE_MAP6 = {
   sm: { circle: 24, font: 12, gap: 6 },
@@ -33602,7 +33603,7 @@ function Stepper({
         const hasError = step.error ?? false;
         const disabled = step.disabled ?? false;
         const isLast = i === steps.length - 1;
-        return /* @__PURE__ */ (0, import_jsx_runtime132.jsxs)(import_react85.default.Fragment, { children: [
+        return /* @__PURE__ */ (0, import_jsx_runtime132.jsxs)(import_react86.default.Fragment, { children: [
           /* @__PURE__ */ (0, import_jsx_runtime132.jsxs)(
             "div",
             {
@@ -33708,7 +33709,7 @@ function Stepper({
 }
 
 // src/components/Input.tsx
-var import_react86 = __toESM(require("react"));
+var import_react87 = __toESM(require("react"));
 var import_jsx_runtime133 = require("react/jsx-runtime");
 var SIZE_MAP7 = {
   sm: { fontSize: 13, paddingY: 4, paddingX: 8 },
@@ -33734,7 +33735,7 @@ var VARIANT_STYLES8 = {
     borderRadius: 0
   })
 };
-var Input = import_react86.default.memo(function Input2({
+var Input = import_react87.default.memo(function Input2({
   size = "md",
   variant = "outline",
   label,
@@ -33771,20 +33772,20 @@ var Input = import_react86.default.memo(function Input2({
   "aria-label": ariaLabel,
   ...rest
 }) {
-  const generatedId = (0, import_react86.useId)();
+  const generatedId = (0, import_react87.useId)();
   const id = idProp ?? generatedId;
-  const [focused, setFocused] = (0, import_react86.useState)(false);
-  const [internalValue, setInternalValue] = (0, import_react86.useState)(defaultValue ?? "");
+  const [focused, setFocused] = (0, import_react87.useState)(false);
+  const [internalValue, setInternalValue] = (0, import_react87.useState)(defaultValue ?? "");
   const isControlled = valueProp !== void 0;
   const value = isControlled ? valueProp : internalValue;
-  const handleChange = (0, import_react86.useCallback)(
+  const handleChange = (0, import_react87.useCallback)(
     (e) => {
       if (!isControlled) setInternalValue(e.target.value);
       onChange?.(e);
     },
     [isControlled, onChange]
   );
-  const handleClear = (0, import_react86.useCallback)(() => {
+  const handleClear = (0, import_react87.useCallback)(() => {
     if (disabled || readOnly) return;
     if (!isControlled) setInternalValue("");
     onClear?.();
@@ -33997,7 +33998,7 @@ var Input = import_react86.default.memo(function Input2({
 });
 
 // src/components/TextArea.tsx
-var import_react87 = require("react");
+var import_react88 = require("react");
 var import_jsx_runtime134 = require("react/jsx-runtime");
 var SIZE_MAP8 = {
   sm: { fontSize: 13, paddingY: 4, paddingX: 8 },
@@ -34040,16 +34041,16 @@ function TextArea({
   "aria-label": ariaLabel,
   ...rest
 }) {
-  const generatedId = (0, import_react87.useId)();
+  const generatedId = (0, import_react88.useId)();
   const id = externalId ?? generatedId;
-  const [focused, setFocused] = (0, import_react87.useState)(false);
-  const [internalValue, setInternalValue] = (0, import_react87.useState)(defaultValue ?? "");
+  const [focused, setFocused] = (0, import_react88.useState)(false);
+  const [internalValue, setInternalValue] = (0, import_react88.useState)(defaultValue ?? "");
   const isControlled = value !== void 0;
   const currentValue = String(isControlled ? value : internalValue);
-  const textareaRef = (0, import_react87.useRef)(null);
+  const textareaRef = (0, import_react88.useRef)(null);
   const dims = SIZE_MAP8[size];
   const hasError = !!error;
-  const adjustHeight = (0, import_react87.useCallback)(() => {
+  const adjustHeight = (0, import_react88.useCallback)(() => {
     const el = textareaRef.current;
     if (!el || !autoSize) return;
     el.style.height = "auto";
@@ -34059,10 +34060,10 @@ function TextArea({
     const scrollH = el.scrollHeight;
     el.style.height = `${Math.min(Math.max(scrollH, minH), maxH)}px`;
   }, [autoSize, minRows, maxRows, dims]);
-  (0, import_react87.useEffect)(() => {
+  (0, import_react88.useEffect)(() => {
     if (autoSize) adjustHeight();
   }, [currentValue, autoSize, adjustHeight]);
-  const handleChange = (0, import_react87.useCallback)(
+  const handleChange = (0, import_react88.useCallback)(
     (e) => {
       if (!isControlled) setInternalValue(e.target.value);
       onChange?.(e);
@@ -34072,14 +34073,14 @@ function TextArea({
     },
     [isControlled, onChange, autoSize, adjustHeight]
   );
-  const handleFocus = (0, import_react87.useCallback)(
+  const handleFocus = (0, import_react88.useCallback)(
     (e) => {
       setFocused(true);
       rest.onFocus?.(e);
     },
     [rest.onFocus]
   );
-  const handleBlur = (0, import_react87.useCallback)(
+  const handleBlur = (0, import_react88.useCallback)(
     (e) => {
       setFocused(false);
       rest.onBlur?.(e);
@@ -34227,7 +34228,7 @@ function TextArea({
 }
 
 // src/components/Checkbox.tsx
-var import_react88 = require("react");
+var import_react89 = require("react");
 var import_jsx_runtime135 = require("react/jsx-runtime");
 var SIZE_MAP9 = { sm: 14, md: 18, lg: 22 };
 var CHECK_MARK_SCALE = { sm: 0.7, md: 0.75, lg: 0.78 };
@@ -34249,20 +34250,20 @@ function Checkbox({
   className,
   style
 }) {
-  const id = (0, import_react88.useId)();
-  const [internalChecked, setInternalChecked] = (0, import_react88.useState)(defaultChecked);
+  const id = (0, import_react89.useId)();
+  const [internalChecked, setInternalChecked] = (0, import_react89.useState)(defaultChecked);
   const isControlled = checked !== void 0;
   const isChecked = isControlled ? checked : internalChecked;
   const hasError = Boolean(error);
   const boxSize = SIZE_MAP9[size];
   const checkSize = Math.round(boxSize * CHECK_MARK_SCALE[size]);
-  const handleToggle = (0, import_react88.useCallback)(() => {
+  const handleToggle = (0, import_react89.useCallback)(() => {
     if (disabled) return;
     const next = !isChecked;
     if (!isControlled) setInternalChecked(next);
     onChange?.(next);
   }, [disabled, isChecked, isControlled, onChange]);
-  const handleKeyDown = (0, import_react88.useCallback)(
+  const handleKeyDown = (0, import_react89.useCallback)(
     (e) => {
       if (disabled) return;
       if (e.key === " " || e.key === "Enter") {
@@ -34423,7 +34424,7 @@ function Checkbox({
 }
 
 // src/components/Collapse.tsx
-var import_react89 = require("react");
+var import_react90 = require("react");
 var import_jsx_runtime136 = require("react/jsx-runtime");
 var SIZE_CLASS = {
   sm: "py-1 px-2 text-xs",
@@ -34447,16 +34448,16 @@ function Collapse({
   subtitle
 }) {
   const isControlled = controlledOpen !== void 0;
-  const [internalOpen, setInternalOpen] = (0, import_react89.useState)(defaultOpen);
+  const [internalOpen, setInternalOpen] = (0, import_react90.useState)(defaultOpen);
   const open = isControlled ? controlledOpen : internalOpen;
-  const contentRef = (0, import_react89.useRef)(null);
-  const [contentHeight, setContentHeight] = (0, import_react89.useState)(0);
-  (0, import_react89.useEffect)(() => {
+  const contentRef = (0, import_react90.useRef)(null);
+  const [contentHeight, setContentHeight] = (0, import_react90.useState)(0);
+  (0, import_react90.useEffect)(() => {
     if (contentRef.current) {
       setContentHeight(contentRef.current.scrollHeight);
     }
   }, [children]);
-  const handleToggle = (0, import_react89.useCallback)(() => {
+  const handleToggle = (0, import_react90.useCallback)(() => {
     if (disabled) return;
     const next = !open;
     if (!isControlled) setInternalOpen(next);
@@ -34507,7 +34508,7 @@ function Collapse({
 }
 
 // src/components/Combobox.tsx
-var import_react90 = __toESM(require("react"));
+var import_react91 = __toESM(require("react"));
 var import_jsx_runtime137 = require("react/jsx-runtime");
 var BG = "rgba(15, 23, 42, 0.97)";
 var BORDER = "rgba(148, 163, 184, 0.15)";
@@ -34543,7 +34544,7 @@ function groupOptions(options) {
   }
   return result;
 }
-var Combobox = import_react90.default.memo(function Combobox2({
+var Combobox = import_react91.default.memo(function Combobox2({
   value,
   options,
   onChange,
@@ -34561,33 +34562,33 @@ var Combobox = import_react90.default.memo(function Combobox2({
   className,
   "data-testid": dataTestId
 }) {
-  const [open, setOpen] = (0, import_react90.useState)(false);
-  const [query, setQuery] = (0, import_react90.useState)("");
-  const [highlightIndex, setHighlightIndex] = (0, import_react90.useState)(0);
-  const [internalValue, setInternalValue] = (0, import_react90.useState)(value ?? "");
-  const inputRef = (0, import_react90.useRef)(null);
-  const listRef = (0, import_react90.useRef)(null);
-  const containerRef = (0, import_react90.useRef)(null);
-  (0, import_react90.useEffect)(() => {
+  const [open, setOpen] = (0, import_react91.useState)(false);
+  const [query, setQuery] = (0, import_react91.useState)("");
+  const [highlightIndex, setHighlightIndex] = (0, import_react91.useState)(0);
+  const [internalValue, setInternalValue] = (0, import_react91.useState)(value ?? "");
+  const inputRef = (0, import_react91.useRef)(null);
+  const listRef = (0, import_react91.useRef)(null);
+  const containerRef = (0, import_react91.useRef)(null);
+  (0, import_react91.useEffect)(() => {
     if (value !== void 0) {
       setInternalValue(value);
     }
   }, [value]);
-  const filteredOptions = (0, import_react90.useMemo)(() => filterOptions(options, query), [options, query]);
-  const grouped = (0, import_react90.useMemo)(() => groupOptions(filteredOptions), [filteredOptions]);
-  const totalAvailable = (0, import_react90.useMemo)(
+  const filteredOptions = (0, import_react91.useMemo)(() => filterOptions(options, query), [options, query]);
+  const grouped = (0, import_react91.useMemo)(() => groupOptions(filteredOptions), [filteredOptions]);
+  const totalAvailable = (0, import_react91.useMemo)(
     () => grouped.reduce((sum2, g) => sum2 + g.options.length, 0),
     [grouped]
   );
-  const selectedLabel = (0, import_react90.useMemo)(() => {
+  const selectedLabel = (0, import_react91.useMemo)(() => {
     if (!internalValue) return "";
     const opt = options.find((o) => o.value === internalValue);
     return opt?.label ?? internalValue;
   }, [internalValue, options]);
-  (0, import_react90.useEffect)(() => {
+  (0, import_react91.useEffect)(() => {
     setHighlightIndex(0);
   }, [filteredOptions.length]);
-  (0, import_react90.useEffect)(() => {
+  (0, import_react91.useEffect)(() => {
     if (open && listRef.current) {
       const el = listRef.current.querySelector(`[data-combobox-option-index="${highlightIndex}"]`);
       if (el) {
@@ -34595,7 +34596,7 @@ var Combobox = import_react90.default.memo(function Combobox2({
       }
     }
   }, [highlightIndex, open]);
-  (0, import_react90.useEffect)(() => {
+  (0, import_react91.useEffect)(() => {
     if (!open) return;
     function handleClick(e) {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -34606,7 +34607,7 @@ var Combobox = import_react90.default.memo(function Combobox2({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
-  (0, import_react90.useEffect)(() => {
+  (0, import_react91.useEffect)(() => {
     if (!open) return;
     function handleKey(e) {
       if (e.key === "Escape") {
@@ -34617,7 +34618,7 @@ var Combobox = import_react90.default.memo(function Combobox2({
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [open]);
-  const handleSelect = (0, import_react90.useCallback)(
+  const handleSelect = (0, import_react91.useCallback)(
     (opt) => {
       if (opt.disabled) return;
       setInternalValue(opt.value);
@@ -34628,18 +34629,18 @@ var Combobox = import_react90.default.memo(function Combobox2({
     },
     [onChange]
   );
-  const handleInputChange = (0, import_react90.useCallback)((e) => {
+  const handleInputChange = (0, import_react91.useCallback)((e) => {
     const v = e.target.value;
     setQuery(v);
     if (!open) setOpen(true);
     setHighlightIndex(0);
   }, [open]);
-  const handleFocus = (0, import_react90.useCallback)(() => {
+  const handleFocus = (0, import_react91.useCallback)(() => {
     if (disabled) return;
     setOpen(true);
     if (!query) setQuery("");
   }, [disabled, query]);
-  const handleKeyDown = (0, import_react90.useCallback)(
+  const handleKeyDown = (0, import_react91.useCallback)(
     (e) => {
       if (!open) {
         if (e.key === "ArrowDown" || e.key === "Enter") {
@@ -34688,7 +34689,7 @@ var Combobox = import_react90.default.memo(function Combobox2({
     },
     [open, totalAvailable, highlightIndex, grouped, handleSelect, allowCustom, query, onChange]
   );
-  const handleClear = (0, import_react90.useCallback)(() => {
+  const handleClear = (0, import_react91.useCallback)(() => {
     setInternalValue("");
     onChange?.("");
     setQuery("");
@@ -34939,7 +34940,7 @@ var Combobox = import_react90.default.memo(function Combobox2({
 });
 
 // src/components/ContentSwitcher.tsx
-var import_react91 = require("react");
+var import_react92 = require("react");
 var import_jsx_runtime138 = require("react/jsx-runtime");
 var SIZE_STYLES3 = {
   sm: { height: 32, fontSize: 13, paddingX: 12, gap: 2 },
@@ -34955,11 +34956,11 @@ function ContentSwitcher({
   fullWidth = false,
   "data-testid": dataTestId
 }) {
-  const [internalSelected, setInternalSelected] = (0, import_react91.useState)(
+  const [internalSelected, setInternalSelected] = (0, import_react92.useState)(
     defaultSelected ?? segments[0]?.key ?? ""
   );
   const selected = controlledSelected ?? internalSelected;
-  const handleSelect = (0, import_react91.useCallback)(
+  const handleSelect = (0, import_react92.useCallback)(
     (key) => {
       if (controlledSelected === void 0) {
         setInternalSelected(key);
@@ -35066,7 +35067,7 @@ var badgeStyle = {
 };
 
 // src/components/ContextMenu.tsx
-var import_react92 = require("react");
+var import_react93 = require("react");
 var import_jsx_runtime139 = require("react/jsx-runtime");
 var MENU_STYLE = {
   position: "fixed",
@@ -35104,7 +35105,7 @@ var SHORTCUT_STYLE = {
   fontFamily: "monospace"
 };
 function useClickOutside(ref, handler, enabled) {
-  (0, import_react92.useEffect)(() => {
+  (0, import_react93.useEffect)(() => {
     if (!enabled) return;
     const listener = (e) => {
       if (ref.current && !ref.current.contains(e.target)) {
@@ -35128,9 +35129,9 @@ function ContextMenu({
   onClose,
   width = 200
 }) {
-  const menuRef = (0, import_react92.useRef)(null);
-  const [adjustedPos, setAdjustedPos] = (0, import_react92.useState)({ x, y });
-  (0, import_react92.useEffect)(() => {
+  const menuRef = (0, import_react93.useRef)(null);
+  const [adjustedPos, setAdjustedPos] = (0, import_react93.useState)({ x, y });
+  (0, import_react93.useEffect)(() => {
     if (!open) return;
     const menuEl = menuRef.current;
     if (!menuEl) {
@@ -35153,7 +35154,7 @@ function ContextMenu({
     setAdjustedPos({ x: adjustedX, y: adjustedY });
   }, [open, x, y]);
   useClickOutside(menuRef, onClose, open);
-  (0, import_react92.useEffect)(() => {
+  (0, import_react93.useEffect)(() => {
     if (!open) return;
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -35163,7 +35164,7 @@ function ContextMenu({
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, onClose]);
-  (0, import_react92.useEffect)(() => {
+  (0, import_react93.useEffect)(() => {
     if (!open) return;
     const handleScroll = () => onClose();
     window.addEventListener("scroll", handleScroll, true);
@@ -35229,7 +35230,7 @@ function ContextMenu({
 }
 
 // src/components/DropdownMenu.tsx
-var import_react93 = require("react");
+var import_react94 = require("react");
 var import_jsx_runtime140 = require("react/jsx-runtime");
 var TRIGGER_BASE = {
   display: "inline-flex",
@@ -35291,25 +35292,25 @@ var SUBMENU_ARROW = {
   color: "#94a3b8"
 };
 var SubMenu = ({ item, depth, onItemSelect, onCloseAll }) => {
-  const [subOpen, setSubOpen] = (0, import_react93.useState)(false);
-  const subRef = (0, import_react93.useRef)(null);
-  const enterTimerRef = (0, import_react93.useRef)(null);
-  const leaveTimerRef = (0, import_react93.useRef)(null);
-  const handleMouseEnter = (0, import_react93.useCallback)(() => {
+  const [subOpen, setSubOpen] = (0, import_react94.useState)(false);
+  const subRef = (0, import_react94.useRef)(null);
+  const enterTimerRef = (0, import_react94.useRef)(null);
+  const leaveTimerRef = (0, import_react94.useRef)(null);
+  const handleMouseEnter = (0, import_react94.useCallback)(() => {
     if (leaveTimerRef.current) {
       clearTimeout(leaveTimerRef.current);
       leaveTimerRef.current = null;
     }
     enterTimerRef.current = setTimeout(() => setSubOpen(true), 120);
   }, []);
-  const handleMouseLeave = (0, import_react93.useCallback)(() => {
+  const handleMouseLeave = (0, import_react94.useCallback)(() => {
     if (enterTimerRef.current) {
       clearTimeout(enterTimerRef.current);
       enterTimerRef.current = null;
     }
     leaveTimerRef.current = setTimeout(() => setSubOpen(false), 200);
   }, []);
-  (0, import_react93.useEffect)(() => {
+  (0, import_react94.useEffect)(() => {
     return () => {
       if (enterTimerRef.current) clearTimeout(enterTimerRef.current);
       if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
@@ -35424,9 +35425,9 @@ var DropdownMenu = ({
   className,
   disabled = false
 }) => {
-  const [open, setOpen] = (0, import_react93.useState)(defaultOpen);
-  const containerRef = (0, import_react93.useRef)(null);
-  const toggle = (0, import_react93.useCallback)(() => {
+  const [open, setOpen] = (0, import_react94.useState)(defaultOpen);
+  const containerRef = (0, import_react94.useRef)(null);
+  const toggle = (0, import_react94.useCallback)(() => {
     if (disabled) return;
     setOpen((prev) => {
       const next = !prev;
@@ -35434,11 +35435,11 @@ var DropdownMenu = ({
       return next;
     });
   }, [disabled, onOpenChange]);
-  const close = (0, import_react93.useCallback)(() => {
+  const close = (0, import_react94.useCallback)(() => {
     setOpen(false);
     onOpenChange?.(false);
   }, [onOpenChange]);
-  (0, import_react93.useEffect)(() => {
+  (0, import_react94.useEffect)(() => {
     if (!open) return;
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -35516,7 +35517,7 @@ var DropdownMenu = ({
 };
 
 // src/components/DateRangePicker.tsx
-var import_react94 = require("react");
+var import_react95 = require("react");
 var import_jsx_runtime141 = require("react/jsx-runtime");
 var DAY_NAMES2 = ["\u65E5", "\u4E00", "\u4E8C", "\u4E09", "\u56DB", "\u4E94", "\u516D"];
 var MONTH_NAMES2 = [
@@ -35619,22 +35620,22 @@ var DateRangePicker = ({
   style,
   className
 }) => {
-  const [open, setOpen] = (0, import_react94.useState)(false);
-  const containerRef = (0, import_react94.useRef)(null);
+  const [open, setOpen] = (0, import_react95.useState)(false);
+  const containerRef = (0, import_react95.useRef)(null);
   const todayDate = /* @__PURE__ */ new Date();
-  const [leftYear, setLeftYear] = (0, import_react94.useState)(todayDate.getFullYear());
-  const [leftMonth, setLeftMonth] = (0, import_react94.useState)(todayDate.getMonth());
-  const [rightYear, setRightYear] = (0, import_react94.useState)(
+  const [leftYear, setLeftYear] = (0, import_react95.useState)(todayDate.getFullYear());
+  const [leftMonth, setLeftMonth] = (0, import_react95.useState)(todayDate.getMonth());
+  const [rightYear, setRightYear] = (0, import_react95.useState)(
     todayDate.getMonth() === 11 ? todayDate.getFullYear() + 1 : todayDate.getFullYear()
   );
-  const [rightMonth, setRightMonth] = (0, import_react94.useState)(
+  const [rightMonth, setRightMonth] = (0, import_react95.useState)(
     todayDate.getMonth() === 11 ? 0 : todayDate.getMonth() + 1
   );
-  const [selecting, setSelecting] = (0, import_react94.useState)("start");
-  const [hoverDate, setHoverDate] = (0, import_react94.useState)(null);
+  const [selecting, setSelecting] = (0, import_react95.useState)("start");
+  const [hoverDate, setHoverDate] = (0, import_react95.useState)(null);
   const startParsed = value?.start ? parseDate(value.start) : null;
   const endParsed = value?.end ? parseDate(value.end) : null;
-  (0, import_react94.useEffect)(() => {
+  (0, import_react95.useEffect)(() => {
     if (!open) return;
     const handler = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -35644,7 +35645,7 @@ var DateRangePicker = ({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
-  const handleDayClick = (0, import_react94.useCallback)(
+  const handleDayClick = (0, import_react95.useCallback)(
     (year, month, day) => {
       if (disabled) return;
       const clickedDate = formatDate(year, month, day);
@@ -35684,7 +35685,7 @@ var DateRangePicker = ({
     },
     [disabled, min, max, onChange, selecting, value]
   );
-  const handlePresetClick = (0, import_react94.useCallback)(
+  const handlePresetClick = (0, import_react95.useCallback)(
     (preset) => {
       const range = preset.getValue();
       onChange?.(range);
@@ -35693,7 +35694,7 @@ var DateRangePicker = ({
     },
     [onChange]
   );
-  const handleClear = (0, import_react94.useCallback)(() => {
+  const handleClear = (0, import_react95.useCallback)(() => {
     onChange?.({ start: "", end: "" });
     setSelecting("start");
   }, [onChange]);
@@ -36098,7 +36099,7 @@ var DateRangePicker = ({
 var DateRangePicker_default = DateRangePicker;
 
 // src/components/DatePicker.tsx
-var import_react95 = require("react");
+var import_react96 = require("react");
 var import_jsx_runtime142 = require("react/jsx-runtime");
 var DAY_NAMES3 = ["\u65E5", "\u4E00", "\u4E8C", "\u4E09", "\u56DB", "\u4E94", "\u516D"];
 var MONTH_NAMES3 = [
@@ -36227,20 +36228,20 @@ var DatePicker = ({
   style,
   className
 }) => {
-  const [open, setOpen] = (0, import_react95.useState)(false);
-  const [hoveredBtn, setHoveredBtn] = (0, import_react95.useState)(null);
-  const wrapperRef = (0, import_react95.useRef)(null);
+  const [open, setOpen] = (0, import_react96.useState)(false);
+  const [hoveredBtn, setHoveredBtn] = (0, import_react96.useState)(null);
+  const wrapperRef = (0, import_react96.useRef)(null);
   const parsed = value ? parseDate2(value) : null;
   const today2 = /* @__PURE__ */ new Date();
-  const [viewYear, setViewYear] = (0, import_react95.useState)(parsed?.getFullYear() ?? today2.getFullYear());
-  const [viewMonth, setViewMonth] = (0, import_react95.useState)(parsed?.getMonth() ?? today2.getMonth());
-  (0, import_react95.useEffect)(() => {
+  const [viewYear, setViewYear] = (0, import_react96.useState)(parsed?.getFullYear() ?? today2.getFullYear());
+  const [viewMonth, setViewMonth] = (0, import_react96.useState)(parsed?.getMonth() ?? today2.getMonth());
+  (0, import_react96.useEffect)(() => {
     if (parsed) {
       setViewYear(parsed.getFullYear());
       setViewMonth(parsed.getMonth());
     }
   }, [value]);
-  (0, import_react95.useEffect)(() => {
+  (0, import_react96.useEffect)(() => {
     if (!open) return;
     const handleClick = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
@@ -36250,7 +36251,7 @@ var DatePicker = ({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
-  const handlePrevMonth = (0, import_react95.useCallback)(() => {
+  const handlePrevMonth = (0, import_react96.useCallback)(() => {
     if (viewMonth === 0) {
       setViewYear((y) => y - 1);
       setViewMonth(11);
@@ -36258,7 +36259,7 @@ var DatePicker = ({
       setViewMonth((m) => m - 1);
     }
   }, [viewMonth]);
-  const handleNextMonth = (0, import_react95.useCallback)(() => {
+  const handleNextMonth = (0, import_react96.useCallback)(() => {
     if (viewMonth === 11) {
       setViewYear((y) => y + 1);
       setViewMonth(0);
@@ -36266,7 +36267,7 @@ var DatePicker = ({
       setViewMonth((m) => m + 1);
     }
   }, [viewMonth]);
-  const handleSelectDay = (0, import_react95.useCallback)(
+  const handleSelectDay = (0, import_react96.useCallback)(
     (year, month, day) => {
       if (isDisabled2(year, month, day, min, max)) return;
       const dateStr = formatDate2(year, month, day);
@@ -36275,13 +36276,13 @@ var DatePicker = ({
     },
     [onChange, min, max]
   );
-  const handleToday = (0, import_react95.useCallback)(() => {
+  const handleToday = (0, import_react96.useCallback)(() => {
     const d = /* @__PURE__ */ new Date();
     const dateStr = formatDate2(d.getFullYear(), d.getMonth(), d.getDate());
     onChange?.(dateStr);
     setOpen(false);
   }, [onChange]);
-  const handleClear = (0, import_react95.useCallback)(() => {
+  const handleClear = (0, import_react96.useCallback)(() => {
     onChange?.("");
     setOpen(false);
   }, [onChange]);
@@ -36692,7 +36693,7 @@ function MemberTierDistribution({
 }
 
 // src/components/NotificationBell.tsx
-var import_react96 = require("react");
+var import_react97 = require("react");
 var import_jsx_runtime144 = require("react/jsx-runtime");
 var sizeMap3 = {
   sm: { bell: 18, badge: 10, dot: 6 },
@@ -36718,17 +36719,17 @@ function NotificationBell({
   size = "md",
   className
 }) {
-  const [open, setOpen] = (0, import_react96.useState)(false);
-  const ref = (0, import_react96.useRef)(null);
+  const [open, setOpen] = (0, import_react97.useState)(false);
+  const ref = (0, import_react97.useRef)(null);
   const unreadCount = items.filter((i) => !i.read).length;
   const displayItems = items.slice(0, maxListCount);
   const s2 = sizeMap3[size];
-  const handleClickOutside = (0, import_react96.useCallback)((e) => {
+  const handleClickOutside = (0, import_react97.useCallback)((e) => {
     if (ref.current && !ref.current.contains(e.target)) {
       setOpen(false);
     }
   }, []);
-  (0, import_react96.useEffect)(() => {
+  (0, import_react97.useEffect)(() => {
     if (open) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -37032,7 +37033,7 @@ function NotificationBell({
 }
 
 // src/components/NotificationCenter.tsx
-var import_react97 = require("react");
+var import_react98 = require("react");
 var import_jsx_runtime145 = require("react/jsx-runtime");
 var SEVERITY_ICONS = {
   info: /* @__PURE__ */ (0, import_jsx_runtime145.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", children: [
@@ -37207,7 +37208,7 @@ function NotificationSummaryBar({
   ] });
 }
 function NotificationItemRow({ item, onClick, onMarkAsRead, onDelete }) {
-  const [actionsVisible, setActionsVisible] = (0, import_react97.useState)(false);
+  const [actionsVisible, setActionsVisible] = (0, import_react98.useState)(false);
   return /* @__PURE__ */ (0, import_jsx_runtime145.jsxs)(
     "div",
     {
@@ -37404,8 +37405,8 @@ function NotificationCenter({
   emptyText = "\u6682\u65E0\u901A\u77E5",
   maxHeight = 480
 }) {
-  const [activeCategory, setActiveCategory] = (0, import_react97.useState)("all");
-  const summary = (0, import_react97.useMemo)(() => {
+  const [activeCategory, setActiveCategory] = (0, import_react98.useState)("all");
+  const summary = (0, import_react98.useMemo)(() => {
     const total = notifications.length;
     const unread = notifications.filter((n) => !n.read).length;
     const byCategory = {};
@@ -37414,7 +37415,7 @@ function NotificationCenter({
     }
     return { total, unread, byCategory };
   }, [notifications]);
-  const filtered = (0, import_react97.useMemo)(() => {
+  const filtered = (0, import_react98.useMemo)(() => {
     if (activeCategory === "all") return notifications;
     return notifications.filter((n) => n.category === activeCategory);
   }, [notifications, activeCategory]);
@@ -37492,7 +37493,7 @@ function NotificationCenter({
   );
 }
 function useNotificationSummary(notifications) {
-  return (0, import_react97.useMemo)(() => {
+  return (0, import_react98.useMemo)(() => {
     const total = notifications.length;
     const unread = notifications.filter((n) => !n.read).length;
     const byCategory = {};
@@ -37663,7 +37664,7 @@ function ConfigurationPosturePanel({
 }
 
 // src/components/DecisionAuditTrail.tsx
-var import_react98 = require("react");
+var import_react99 = require("react");
 var import_jsx_runtime147 = require("react/jsx-runtime");
 var ACTION_LABELS = {
   rule_evaluated: "\u89C4\u5219\u8BC4\u4F30",
@@ -37704,9 +37705,9 @@ function DecisionAuditTrail({
   compact = false,
   emptyText = "\u6682\u65E0\u5BA1\u8BA1\u8BB0\u5F55"
 }) {
-  const [currentPage, setCurrentPage] = (0, import_react98.useState)(1);
-  const [expandedId, setExpandedId] = (0, import_react98.useState)(null);
-  const filteredEntries = (0, import_react98.useMemo)(() => {
+  const [currentPage, setCurrentPage] = (0, import_react99.useState)(1);
+  const [expandedId, setExpandedId] = (0, import_react99.useState)(null);
+  const filteredEntries = (0, import_react99.useMemo)(() => {
     if (!filter) return entries;
     return entries.filter((e) => {
       if (filter.action && e.action !== filter.action) return false;
@@ -38131,7 +38132,7 @@ function DecisionAuditTrail({
 }
 
 // src/components/ImagePreview.tsx
-var import_react99 = require("react");
+var import_react100 = require("react");
 var import_jsx_runtime148 = require("react/jsx-runtime");
 var BACKDROP_STYLE = {
   position: "fixed",
@@ -38229,31 +38230,31 @@ function ImagePreview({
   errorFallback
 }) {
   const safeIndex = Math.max(0, Math.min(initialIndex, images.length - 1));
-  const [lightboxIndex, setLightboxIndex] = (0, import_react99.useState)(null);
+  const [lightboxIndex, setLightboxIndex] = (0, import_react100.useState)(null);
   const currentIndex = lightboxIndex ?? safeIndex;
   const isOpen = lightboxIndex !== null;
-  const openLightbox = (0, import_react99.useCallback)(
+  const openLightbox = (0, import_react100.useCallback)(
     (idx) => {
       setLightboxIndex(idx);
       onOpen?.(idx);
     },
     [onOpen]
   );
-  const closeLightbox = (0, import_react99.useCallback)(() => {
+  const closeLightbox = (0, import_react100.useCallback)(() => {
     setLightboxIndex(null);
     onClose?.();
   }, [onClose]);
-  const goNext = (0, import_react99.useCallback)(() => {
+  const goNext = (0, import_react100.useCallback)(() => {
     const next = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
     setLightboxIndex(next);
     onChange?.(next);
   }, [currentIndex, images.length, onChange]);
-  const goPrev = (0, import_react99.useCallback)(() => {
+  const goPrev = (0, import_react100.useCallback)(() => {
     const prev = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
     setLightboxIndex(prev);
     onChange?.(prev);
   }, [currentIndex, images.length, onChange]);
-  (0, import_react99.useEffect)(() => {
+  (0, import_react100.useEffect)(() => {
     if (!isOpen) return;
     const handleKey = (e) => {
       if (e.key === "ArrowRight") goNext();
@@ -38287,7 +38288,7 @@ function ImagePreview({
     index,
     size
   }) => {
-    const [failed, setFailed] = (0, import_react99.useState)(false);
+    const [failed, setFailed] = (0, import_react100.useState)(false);
     const isActive = index === currentIndex && isOpen;
     const src = item.thumb || item.src;
     return /* @__PURE__ */ (0, import_jsx_runtime148.jsx)(
@@ -38518,7 +38519,7 @@ function ImagePreview({
 }
 
 // src/components/Slider.tsx
-var import_react100 = require("react");
+var import_react101 = require("react");
 var import_jsx_runtime149 = require("react/jsx-runtime");
 var VARIANT_COLORS4 = {
   default: "#3b82f6",
@@ -38571,25 +38572,25 @@ function Slider({
 }) {
   const isControlledSingle = valueProp !== void 0 && !Array.isArray(valueProp);
   const isControlledRange = valueProp !== void 0 && Array.isArray(valueProp);
-  const [internalSingle, setInternalSingle] = (0, import_react100.useState)(
+  const [internalSingle, setInternalSingle] = (0, import_react101.useState)(
     clamp2(defaultValue ?? min, min, max)
   );
-  const [internalRange, setInternalRange] = (0, import_react100.useState)(
+  const [internalRange, setInternalRange] = (0, import_react101.useState)(
     defaultRangeValue ? [clamp2(defaultRangeValue[0], min, max), clamp2(defaultRangeValue[1], min, max)] : [min, max]
   );
   const singleVal = isControlledSingle ? valueProp : internalSingle;
   const rangeVal = isControlledRange ? valueProp : internalRange;
-  const trackRef = (0, import_react100.useRef)(null);
-  const [dragging, setDragging] = (0, import_react100.useState)(null);
-  const idBase = (0, import_react100.useId)();
+  const trackRef = (0, import_react101.useRef)(null);
+  const [dragging, setDragging] = (0, import_react101.useState)(null);
+  const idBase = (0, import_react101.useId)();
   const isVertical = orientation === "vertical";
   const color = VARIANT_COLORS4[variant] ?? VARIANT_COLORS4.default;
   const trackBg = VARIANT_TRACK_BG[variant] ?? VARIANT_TRACK_BG.default;
-  const getRatio = (0, import_react100.useCallback)(
+  const getRatio = (0, import_react101.useCallback)(
     (v) => max - min > 0 ? (v - min) / (max - min) : 0,
     [min, max]
   );
-  const getValueFromPosition = (0, import_react100.useCallback)(
+  const getValueFromPosition = (0, import_react101.useCallback)(
     (clientPos) => {
       const el = trackRef.current;
       if (!el) return min;
@@ -38601,13 +38602,13 @@ function Slider({
     },
     [min, max, step, isVertical]
   );
-  const commitValue = (0, import_react100.useCallback)(
+  const commitValue = (0, import_react101.useCallback)(
     (val) => {
       onChangeCommitted?.(val);
     },
     [onChangeCommitted]
   );
-  const setSingle = (0, import_react100.useCallback)(
+  const setSingle = (0, import_react101.useCallback)(
     (v, commit = false) => {
       const clamped = clamp2(v, min, max);
       if (!isControlledSingle) setInternalSingle(clamped);
@@ -38616,7 +38617,7 @@ function Slider({
     },
     [isControlledSingle, onChange, commitValue, min, max]
   );
-  const setRange = (0, import_react100.useCallback)(
+  const setRange = (0, import_react101.useCallback)(
     (vals, commit = false) => {
       const lower = clamp2(vals[0], min, vals[1]);
       const upper = clamp2(vals[1], lower, max);
@@ -38626,7 +38627,7 @@ function Slider({
     },
     [isControlledRange, onRangeChange, commitValue, min, max]
   );
-  const handleStart = (0, import_react100.useCallback)(
+  const handleStart = (0, import_react101.useCallback)(
     (thumb) => (e) => {
       if (disabled) return;
       e.preventDefault();
@@ -38634,7 +38635,7 @@ function Slider({
     },
     [disabled]
   );
-  (0, import_react100.useEffect)(() => {
+  (0, import_react101.useEffect)(() => {
     if (!dragging) return;
     const onMove = (e) => {
       const pos = "touches" in e ? e.touches[0]?.[isVertical ? "clientY" : "clientX"] : e[isVertical ? "clientY" : "clientX"];
@@ -38667,7 +38668,7 @@ function Slider({
       window.removeEventListener("touchend", onEnd);
     };
   }, [dragging, getValueFromPosition, singleVal, rangeVal, setSingle, setRange, isVertical]);
-  const handleKeySingle = (0, import_react100.useCallback)(
+  const handleKeySingle = (0, import_react101.useCallback)(
     (e) => {
       if (disabled) return;
       let val = singleVal;
@@ -38697,7 +38698,7 @@ function Slider({
     },
     [disabled, singleVal, min, max, step, setSingle]
   );
-  const makeRangeKeyHandler = (0, import_react100.useCallback)(
+  const makeRangeKeyHandler = (0, import_react101.useCallback)(
     (which) => (e) => {
       if (disabled) return;
       const vals = [...rangeVal];
@@ -38735,7 +38736,7 @@ function Slider({
     },
     [disabled, rangeVal, min, max, step, setRange]
   );
-  const resolveTicks = (0, import_react100.useCallback)(() => {
+  const resolveTicks = (0, import_react101.useCallback)(() => {
     if (ticksProp) return ticksProp;
     const arr = [];
     for (let v = min; v <= max; v += step) arr.push(v);
@@ -39041,7 +39042,7 @@ function Slider({
 }
 
 // src/components/InputNumber.tsx
-var import_react101 = __toESM(require("react"));
+var import_react102 = __toESM(require("react"));
 var import_jsx_runtime150 = require("react/jsx-runtime");
 var SIZE_MAP10 = {
   sm: { fontSize: 13, padding: 4, height: 28 },
@@ -39092,7 +39093,7 @@ function InputNumber({
 }) {
   const generatedId = (() => {
     try {
-      return (0, import_react101.useId)();
+      return (0, import_react102.useId)();
     } catch {
       return "input-fallback";
     }
@@ -39100,14 +39101,14 @@ function InputNumber({
   const id = `input-number-${generatedId}`;
   const initialValue = valueProp !== void 0 ? valueProp : defaultValue ?? (allowEmpty ? NaN : 0);
   const isControlled = valueProp !== void 0;
-  const [internalValue, setInternalValue] = (0, import_react101.useState)(initialValue);
-  const [focused, setFocused] = (0, import_react101.useState)(false);
-  const [displayValue, setDisplayValue] = (0, import_react101.useState)(
+  const [internalValue, setInternalValue] = (0, import_react102.useState)(initialValue);
+  const [focused, setFocused] = (0, import_react102.useState)(false);
+  const [displayValue, setDisplayValue] = (0, import_react102.useState)(
     isNaN(initialValue) && allowEmpty ? "" : formatValue3(initialValue, precision)
   );
   const currentValue = isControlled ? valueProp : internalValue;
   const hasError = Boolean(error);
-  const emitValue = (0, import_react101.useCallback)(
+  const emitValue = (0, import_react102.useCallback)(
     (next) => {
       const clamped = clampValue(next, min, max);
       if (!isControlled) setInternalValue(clamped);
@@ -39116,23 +39117,23 @@ function InputNumber({
     },
     [isControlled, min, max, precision, allowEmpty, onChange]
   );
-  import_react101.default.useEffect(() => {
+  import_react102.default.useEffect(() => {
     if (isControlled) {
       const v = valueProp;
       setDisplayValue(isNaN(v) && allowEmpty ? "" : formatValue3(v, precision));
     }
   }, [isControlled, valueProp, precision, allowEmpty]);
-  const handleIncrement = (0, import_react101.useCallback)(() => {
+  const handleIncrement = (0, import_react102.useCallback)(() => {
     if (disabled || readOnly) return;
     const base = currentValue ?? 0;
     emitValue(base + step);
   }, [disabled, readOnly, currentValue, step, emitValue]);
-  const handleDecrement = (0, import_react101.useCallback)(() => {
+  const handleDecrement = (0, import_react102.useCallback)(() => {
     if (disabled || readOnly) return;
     const base = currentValue ?? 0;
     emitValue(base - step);
   }, [disabled, readOnly, currentValue, step, emitValue]);
-  const handleInputChange = (0, import_react101.useCallback)(
+  const handleInputChange = (0, import_react102.useCallback)(
     (e) => {
       const raw = e.target.value;
       if (raw === "" && allowEmpty) {
@@ -39150,7 +39151,7 @@ function InputNumber({
     },
     [allowEmpty, precision]
   );
-  const handleBlur = (0, import_react101.useCallback)(() => {
+  const handleBlur = (0, import_react102.useCallback)(() => {
     setFocused(false);
     if (displayValue === "" && allowEmpty) {
       return;
@@ -39165,7 +39166,7 @@ function InputNumber({
       setDisplayValue(formatValue3(currentValue, precision));
     }
   }, [displayValue, allowEmpty, precision, currentValue, isControlled, min, max, onChange]);
-  const handleKeyDown = (0, import_react101.useCallback)(
+  const handleKeyDown = (0, import_react102.useCallback)(
     (e) => {
       if (disabled || readOnly) return;
       if (e.key === "ArrowUp") {
@@ -39371,7 +39372,7 @@ function InputNumber({
 }
 
 // src/components/PasswordInput.tsx
-var import_react102 = require("react");
+var import_react103 = require("react");
 var import_jsx_runtime151 = require("react/jsx-runtime");
 var TOGGLE_BUTTON_STYLE = {
   position: "absolute",
@@ -39409,8 +39410,8 @@ function PasswordInput({
   toggleLabel,
   ...inputProps
 }) {
-  const [visible, setVisible] = (0, import_react102.useState)(defaultVisible);
-  const handleToggle = (0, import_react102.useCallback)(() => {
+  const [visible, setVisible] = (0, import_react103.useState)(defaultVisible);
+  const handleToggle = (0, import_react103.useCallback)(() => {
     setVisible((prev) => !prev);
   }, []);
   const toggleAriaLabel = toggleLabel ?? (visible ? "\u9690\u85CF\u5BC6\u7801" : "\u663E\u793A\u5BC6\u7801");
@@ -40684,7 +40685,7 @@ function ProductManagerDashboard({
 }
 
 // src/components/ProfitMarginPanel.tsx
-var import_react103 = require("react");
+var import_react104 = require("react");
 var import_jsx_runtime156 = require("react/jsx-runtime");
 function formatCurrency3(value) {
   return `\xA5${value.toLocaleString("zh-CN", {
@@ -40737,8 +40738,8 @@ function ProfitMarginPanel({
   error,
   periodLabel = "\u672C\u6708"
 }) {
-  const profit = (0, import_react103.useMemo)(() => totalRevenue - totalCost, [totalRevenue, totalCost]);
-  const sortedRecords = (0, import_react103.useMemo)(
+  const profit = (0, import_react104.useMemo)(() => totalRevenue - totalCost, [totalRevenue, totalCost]);
+  const sortedRecords = (0, import_react104.useMemo)(
     () => [...records].sort((a, b) => b.grossMargin - a.grossMargin),
     [records]
   );
@@ -40868,7 +40869,7 @@ function ProfitMarginPanel({
 }
 
 // src/components/ErrorBoundary.tsx
-var import_react104 = __toESM(require("react"));
+var import_react105 = __toESM(require("react"));
 var import_jsx_runtime157 = require("react/jsx-runtime");
 var DEFAULT_RETRY_LABEL = "\u91CD\u8BD5";
 var DEFAULT_FALLBACK_MESSAGE = "\u7EC4\u4EF6\u52A0\u8F7D\u5F02\u5E38";
@@ -40911,7 +40912,7 @@ var ICON_STYLE = {
   height: 20,
   flexShrink: 0
 };
-var ErrorBoundary = class extends import_react104.default.Component {
+var ErrorBoundary = class extends import_react105.default.Component {
   constructor(props) {
     super(props);
     this.state = { error: null };
@@ -41038,7 +41039,7 @@ var ErrorBoundary = class extends import_react104.default.Component {
 };
 
 // src/components/Tree.tsx
-var import_react105 = __toESM(require("react"));
+var import_react106 = __toESM(require("react"));
 var import_jsx_runtime158 = require("react/jsx-runtime");
 var INDENT = 20;
 var NODE_HEIGHT = { sm: 28, md: 34 };
@@ -41201,7 +41202,7 @@ function findNode(nodes, key) {
   }
   return null;
 }
-var TreeNodeRow = import_react105.default.memo(function TreeNodeRow2({
+var TreeNodeRow = import_react106.default.memo(function TreeNodeRow2({
   node,
   depth,
   expanded,
@@ -41220,7 +41221,7 @@ var TreeNodeRow = import_react105.default.memo(function TreeNodeRow2({
 }) {
   const nodeH = NODE_HEIGHT[size];
   const fontSize = FONT_SIZE[size];
-  const handleClick = (0, import_react105.useCallback)(
+  const handleClick = (0, import_react106.useCallback)(
     (e) => {
       onClick(node, e);
       if (hasChildren) onToggle(node.key);
@@ -41228,7 +41229,7 @@ var TreeNodeRow = import_react105.default.memo(function TreeNodeRow2({
     },
     [node, hasChildren, selectable, onToggle, onSelect, onClick]
   );
-  const handleCheckClick = (0, import_react105.useCallback)(
+  const handleCheckClick = (0, import_react106.useCallback)(
     (e) => {
       e.stopPropagation();
       if (!node.disabled) onCheck(node.key);
@@ -41332,10 +41333,10 @@ function Tree({
   className,
   style
 }) {
-  const [internalExpanded, setInternalExpanded] = (0, import_react105.useState)(defaultExpandedKeys ?? []);
+  const [internalExpanded, setInternalExpanded] = (0, import_react106.useState)(defaultExpandedKeys ?? []);
   const isExpandedControlled = controlledExpandedKeys !== void 0;
   const expandedSet = new Set(isExpandedControlled ? controlledExpandedKeys : internalExpanded);
-  const handleExpandToggle = (0, import_react105.useCallback)(
+  const handleExpandToggle = (0, import_react106.useCallback)(
     (key) => {
       const current = isExpandedControlled ? controlledExpandedKeys : internalExpanded;
       let next;
@@ -41349,13 +41350,13 @@ function Tree({
     },
     [isExpandedControlled, controlledExpandedKeys, internalExpanded, onExpand]
   );
-  const [internalSelected, setInternalSelected] = (0, import_react105.useState)(defaultSelectedKeys ?? []);
+  const [internalSelected, setInternalSelected] = (0, import_react106.useState)(defaultSelectedKeys ?? []);
   const isSelectedControlled = controlledSelectedKeys !== void 0;
-  const selectedSet = (0, import_react105.useMemo)(
+  const selectedSet = (0, import_react106.useMemo)(
     () => new Set(isSelectedControlled ? controlledSelectedKeys : internalSelected),
     [isSelectedControlled, controlledSelectedKeys, internalSelected]
   );
-  const handleSelect = (0, import_react105.useCallback)(
+  const handleSelect = (0, import_react106.useCallback)(
     (key) => {
       if (!selectable) return;
       const current = isSelectedControlled ? controlledSelectedKeys : internalSelected;
@@ -41370,13 +41371,13 @@ function Tree({
     },
     [selectable, multiple, isSelectedControlled, controlledSelectedKeys, internalSelected, onSelect]
   );
-  const [internalChecked, setInternalChecked] = (0, import_react105.useState)(defaultCheckedKeys ?? []);
+  const [internalChecked, setInternalChecked] = (0, import_react106.useState)(defaultCheckedKeys ?? []);
   const isCheckedControlled = controlledCheckedKeys !== void 0;
-  const checkedSet = (0, import_react105.useMemo)(
+  const checkedSet = (0, import_react106.useMemo)(
     () => new Set(isCheckedControlled ? controlledCheckedKeys : internalChecked),
     [isCheckedControlled, controlledCheckedKeys, internalChecked]
   );
-  const handleCheck = (0, import_react105.useCallback)(
+  const handleCheck = (0, import_react106.useCallback)(
     (key) => {
       if (!checkable) return;
       const current = new Set(isCheckedControlled ? controlledCheckedKeys : internalChecked);
@@ -41410,7 +41411,7 @@ function Tree({
     },
     [checkable, treeData, isCheckedControlled, controlledCheckedKeys, internalChecked, onCheck]
   );
-  const getCheckedStatus = (0, import_react105.useCallback)(
+  const getCheckedStatus = (0, import_react106.useCallback)(
     (node) => {
       if (!checkable) return false;
       if (checkedSet.has(node.key)) {
@@ -41428,13 +41429,13 @@ function Tree({
     },
     [checkable, checkedSet]
   );
-  const handleNodeClick = (0, import_react105.useCallback)(
+  const handleNodeClick = (0, import_react106.useCallback)(
     (node, event) => {
       onNodeClick?.(node, event);
     },
     [onNodeClick]
   );
-  const effectiveExpanded = (0, import_react105.useMemo)(() => {
+  const effectiveExpanded = (0, import_react106.useMemo)(() => {
     if (!autoExpandParent) return expandedSet;
     const set = new Set(expandedSet);
     const selectedKeysArr = isSelectedControlled ? controlledSelectedKeys : internalSelected;
@@ -41458,7 +41459,7 @@ function Tree({
       const isSelected = selectedSet.has(node.key);
       const checkedStatus = getCheckedStatus(node);
       const children = hasChildren && isExpanded ? renderTree(node.children, depth + 1) : null;
-      return /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)(import_react105.default.Fragment, { children: [
+      return /* @__PURE__ */ (0, import_jsx_runtime158.jsxs)(import_react106.default.Fragment, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime158.jsx)(
           TreeNodeRow,
           {
@@ -41496,7 +41497,7 @@ function Tree({
 }
 
 // src/components/CommandPalette.tsx
-var import_react106 = __toESM(require("react"));
+var import_react107 = __toESM(require("react"));
 var import_jsx_runtime159 = require("react/jsx-runtime");
 function groupCommands(commands) {
   const map = /* @__PURE__ */ new Map();
@@ -41601,26 +41602,26 @@ function CommandPalette({
   autoFocus = true,
   className
 }) {
-  const [query, setQuery] = (0, import_react106.useState)("");
-  const [activeIndex, setActiveIndex] = (0, import_react106.useState)(0);
-  const inputRef = (0, import_react106.useRef)(null);
-  const listRef = (0, import_react106.useRef)(null);
-  const itemRefs = (0, import_react106.useRef)(/* @__PURE__ */ new Map());
-  const filtered = (0, import_react106.useMemo)(() => {
+  const [query, setQuery] = (0, import_react107.useState)("");
+  const [activeIndex, setActiveIndex] = (0, import_react107.useState)(0);
+  const inputRef = (0, import_react107.useRef)(null);
+  const listRef = (0, import_react107.useRef)(null);
+  const itemRefs = (0, import_react107.useRef)(/* @__PURE__ */ new Map());
+  const filtered = (0, import_react107.useMemo)(() => {
     if (!query.trim()) return commands;
     return commands.filter(
       (cmd) => fuzzyMatch(cmd.label, query) || fuzzyMatch(cmd.description ?? "", query) || fuzzyMatch(cmd.group ?? "", query) || fuzzyMatch(cmd.shortcut ?? "", query)
     );
   }, [commands, query]);
-  const grouped = (0, import_react106.useMemo)(() => groupCommands(filtered), [filtered]);
-  const flatItems = (0, import_react106.useMemo)(() => {
+  const grouped = (0, import_react107.useMemo)(() => groupCommands(filtered), [filtered]);
+  const flatItems = (0, import_react107.useMemo)(() => {
     const result = [];
     for (const g of grouped) {
       result.push(...g.items);
     }
     return result;
   }, [grouped]);
-  (0, import_react106.useEffect)(() => {
+  (0, import_react107.useEffect)(() => {
     if (open) {
       setQuery("");
       setActiveIndex(0);
@@ -41630,13 +41631,13 @@ function CommandPalette({
     }
   }, [open, autoFocus]);
   const safeActiveIndex = flatItems.length === 0 ? -1 : Math.min(activeIndex, flatItems.length - 1);
-  (0, import_react106.useEffect)(() => {
+  (0, import_react107.useEffect)(() => {
     const el = itemRefs.current.get(safeActiveIndex);
     if (el) {
       el.scrollIntoView({ block: "nearest" });
     }
   }, [safeActiveIndex]);
-  const selectItem = (0, import_react106.useCallback)(
+  const selectItem = (0, import_react107.useCallback)(
     (item) => {
       if (item.disabled) return;
       onSelect(item);
@@ -41644,7 +41645,7 @@ function CommandPalette({
     },
     [onSelect, onClose]
   );
-  const handleKeyDown = (0, import_react106.useCallback)(
+  const handleKeyDown = (0, import_react107.useCallback)(
     (e) => {
       switch (e.key) {
         case "ArrowDown": {
@@ -41684,13 +41685,13 @@ function CommandPalette({
     },
     [flatItems, safeActiveIndex, selectItem, onClose]
   );
-  const handleItemMouseEnter = (0, import_react106.useCallback)(
+  const handleItemMouseEnter = (0, import_react107.useCallback)(
     (index) => {
       setActiveIndex(index);
     },
     []
   );
-  const handleOverlayClick = (0, import_react106.useCallback)(
+  const handleOverlayClick = (0, import_react107.useCallback)(
     (e) => {
       if (e.target === e.currentTarget) {
         onClose();
@@ -41698,7 +41699,7 @@ function CommandPalette({
     },
     [onClose]
   );
-  const handleItemClick = (0, import_react106.useCallback)(
+  const handleItemClick = (0, import_react107.useCallback)(
     (item) => {
       selectItem(item);
     },
@@ -41930,7 +41931,7 @@ function CommandPalette({
                       item.id
                     );
                   });
-                  return /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)(import_react106.default.Fragment, { children: [
+                  return /* @__PURE__ */ (0, import_jsx_runtime159.jsxs)(import_react107.default.Fragment, { children: [
                     groupHeader,
                     items
                   ] }, group.group || "ungrouped");
@@ -42011,7 +42012,7 @@ function CommandPalette({
 }
 
 // src/components/DeviceStatusPanel.tsx
-var import_react107 = require("react");
+var import_react108 = require("react");
 var import_jsx_runtime160 = require("react/jsx-runtime");
 var DEVICE_TYPE_LABELS = {
   pos: "POS\u673A",
@@ -42432,11 +42433,11 @@ var DeviceStatusPanel = ({
   emptyText = "\u6682\u65E0\u8BBE\u5907\u6570\u636E",
   showSearch = true
 }) => {
-  const [statusFilter, setStatusFilter] = (0, import_react107.useState)("all");
-  const [searchQuery, setSearchQuery] = (0, import_react107.useState)("");
-  const [expanded, setExpanded] = (0, import_react107.useState)(true);
-  const summary = (0, import_react107.useMemo)(() => computeDeviceSummary(devices), [devices]);
-  const filteredDevices = (0, import_react107.useMemo)(() => {
+  const [statusFilter, setStatusFilter] = (0, import_react108.useState)("all");
+  const [searchQuery, setSearchQuery] = (0, import_react108.useState)("");
+  const [expanded, setExpanded] = (0, import_react108.useState)(true);
+  const summary = (0, import_react108.useMemo)(() => computeDeviceSummary(devices), [devices]);
+  const filteredDevices = (0, import_react108.useMemo)(() => {
     let result = [...devices];
     if (statusFilter !== "all") {
       result = result.filter((d) => d.status === statusFilter);
@@ -43931,7 +43932,7 @@ function MemberRechargePanel({
 }
 
 // src/components/MemberRFMAnalysisPanel.tsx
-var import_react108 = require("react");
+var import_react109 = require("react");
 var import_jsx_runtime165 = require("react/jsx-runtime");
 var SCORE_COLORS = {
   1: "#ef4444",
@@ -44078,19 +44079,19 @@ function MemberRFMAnalysisPanel({
   className = "",
   "data-testid": dataTestId = "member-rfm-analysis"
 }) {
-  const avgR = (0, import_react108.useMemo)(
+  const avgR = (0, import_react109.useMemo)(
     () => data.length > 0 ? data.reduce((s2, d) => s2 + d.recency, 0) / data.length : 0,
     [data]
   );
-  const avgF = (0, import_react108.useMemo)(
+  const avgF = (0, import_react109.useMemo)(
     () => data.length > 0 ? data.reduce((s2, d) => s2 + d.frequency, 0) / data.length : 0,
     [data]
   );
-  const avgM = (0, import_react108.useMemo)(
+  const avgM = (0, import_react109.useMemo)(
     () => data.length > 0 ? data.reduce((s2, d) => s2 + d.monetary, 0) / data.length : 0,
     [data]
   );
-  const segments = (0, import_react108.useMemo)(() => {
+  const segments = (0, import_react109.useMemo)(() => {
     const map = /* @__PURE__ */ new Map();
     for (const d of data) {
       const seg = calcSegment(d.recency, d.frequency, d.monetary);
@@ -44108,7 +44109,7 @@ function MemberRFMAnalysisPanel({
     ];
     return order.filter((k) => map.has(k)).map((k) => ({ label: k, color: SEGMENT_COLORS[k], count: map.get(k) }));
   }, [data]);
-  const sorted = (0, import_react108.useMemo)(
+  const sorted = (0, import_react109.useMemo)(
     () => [...data].sort((a, b) => b.recency + b.frequency + b.monetary - (a.recency + a.frequency + a.monetary)),
     [data]
   );
@@ -44191,7 +44192,7 @@ function MemberRFMAnalysisPanel({
 }
 
 // src/components/AIMemberChurnPredictionPanel.tsx
-var import_react109 = require("react");
+var import_react110 = require("react");
 var import_jsx_runtime166 = require("react/jsx-runtime");
 var RISK_COLORS = {
   low: "#22c55e",
@@ -44332,8 +44333,8 @@ function AIMemberChurnPredictionPanel({
   onRefresh,
   className = ""
 }) {
-  const [expandedSignal, setExpandedSignal] = (0, import_react109.useState)(false);
-  const maxWeight = (0, import_react109.useMemo)(
+  const [expandedSignal, setExpandedSignal] = (0, import_react110.useState)(false);
+  const maxWeight = (0, import_react110.useMemo)(
     () => Math.max(...prediction.signalFactors.map((f) => f.weight), 1),
     [prediction.signalFactors]
   );
@@ -44824,7 +44825,7 @@ function AISummaryCard({
 }
 
 // src/components/AISuggestionCard.tsx
-var import_react110 = require("react");
+var import_react111 = require("react");
 var import_jsx_runtime168 = require("react/jsx-runtime");
 var PRIORITY_COLORS = {
   critical: "#ef4444",
@@ -44884,16 +44885,16 @@ function AISuggestionCard({
   variant = "detailed",
   className
 }) {
-  const [adopted, setAdopted] = (0, import_react110.useState)(suggestion.adopted ?? null);
-  const [expanded, setExpanded] = (0, import_react110.useState)(variant === "detailed");
-  const handleAdopt = (0, import_react110.useCallback)(
+  const [adopted, setAdopted] = (0, import_react111.useState)(suggestion.adopted ?? null);
+  const [expanded, setExpanded] = (0, import_react111.useState)(variant === "detailed");
+  const handleAdopt = (0, import_react111.useCallback)(
     (value) => {
       setAdopted(value);
       onAdopt?.(value, suggestion.id);
     },
     [onAdopt, suggestion.id]
   );
-  const handleAction = (0, import_react110.useCallback)(
+  const handleAction = (0, import_react111.useCallback)(
     (key) => {
       onAction?.(key, suggestion.id);
     },
@@ -45136,7 +45137,7 @@ function AISuggestionCard({
 }
 
 // src/components/AIPricingRecommendationPanel.tsx
-var import_react111 = require("react");
+var import_react112 = require("react");
 var import_jsx_runtime169 = require("react/jsx-runtime");
 function formatCurrency4(value) {
   return `\xA5${value.toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -45175,7 +45176,7 @@ function AIPricingRecommendationPanel({
   onApplyAll,
   onRefresh
 }) {
-  const sorted = (0, import_react111.useMemo)(
+  const sorted = (0, import_react112.useMemo)(
     () => [...recommendations].sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent)),
     [recommendations]
   );
@@ -45306,7 +45307,7 @@ function AIPricingRecommendationPanel({
 }
 
 // src/components/Rating.tsx
-var import_react112 = require("react");
+var import_react113 = require("react");
 var import_jsx_runtime170 = require("react/jsx-runtime");
 var DEFAULT_STAR_LABELS = ["\u5F88\u5DEE", "\u8F83\u5DEE", "\u4E00\u822C", "\u597D", "\u5F88\u597D"];
 function Rating({
@@ -45326,11 +45327,11 @@ function Rating({
   className,
   style
 }) {
-  const [hoverValue, setHoverValue] = (0, import_react112.useState)(null);
-  const [internalValue, setInternalValue] = (0, import_react112.useState)(value);
+  const [hoverValue, setHoverValue] = (0, import_react113.useState)(null);
+  const [internalValue, setInternalValue] = (0, import_react113.useState)(value);
   const currentValue = interactive ? hoverValue ?? internalValue : value;
   const safeValue = Math.max(0, Math.min(currentValue, max));
-  const handleClick = (0, import_react112.useCallback)(
+  const handleClick = (0, import_react113.useCallback)(
     (starIndex, event) => {
       if (!interactive) return;
       let newValue;
@@ -45347,7 +45348,7 @@ function Rating({
     },
     [interactive, half, onChange]
   );
-  const handleMouseEnter = (0, import_react112.useCallback)(
+  const handleMouseEnter = (0, import_react113.useCallback)(
     (starIndex, event) => {
       if (!interactive || !half) {
         setHoverValue(starIndex + 1);
@@ -45360,7 +45361,7 @@ function Rating({
     },
     [interactive, half]
   );
-  const handleMouseLeave = (0, import_react112.useCallback)(() => {
+  const handleMouseLeave = (0, import_react113.useCallback)(() => {
     setHoverValue(null);
   }, []);
   const displayValue = hoverValue ?? internalValue;
@@ -45491,7 +45492,7 @@ function Rating({
 }
 
 // src/components/BranchSelector.tsx
-var import_react113 = require("react");
+var import_react114 = require("react");
 var import_jsx_runtime171 = require("react/jsx-runtime");
 function findNodeById(nodes, id) {
   for (const n of nodes) {
@@ -45526,14 +45527,14 @@ function BranchNode({
   const hasChildren = node.children && node.children.length > 0;
   const isExpanded = expandedIds.has(node.id);
   const isSelected = selectedId === node.id;
-  const [initialized] = (0, import_react113.useState)(() => {
+  const [initialized] = (0, import_react114.useState)(() => {
     if (defaultExpandDepth < 0 || depth < defaultExpandDepth) {
       onToggle(node.id);
     }
     return true;
   });
   void initialized;
-  const typeIcon = (0, import_react113.useMemo)(() => {
+  const typeIcon = (0, import_react114.useMemo)(() => {
     switch (node.type) {
       case "region":
         return "\u{1F3E2}";
@@ -45592,13 +45593,13 @@ function BranchSelector({
   disabled = false,
   className = ""
 }) {
-  const [expandedIds, setExpandedIds] = (0, import_react113.useState)(() => /* @__PURE__ */ new Set());
-  const instanceId = (0, import_react113.useId)();
-  const selectedNode = (0, import_react113.useMemo)(
+  const [expandedIds, setExpandedIds] = (0, import_react114.useState)(() => /* @__PURE__ */ new Set());
+  const instanceId = (0, import_react114.useId)();
+  const selectedNode = (0, import_react114.useMemo)(
     () => value ? findNodeById(nodes, value) : null,
     [nodes, value]
   );
-  const handleToggle = (0, import_react113.useCallback)((id) => {
+  const handleToggle = (0, import_react114.useCallback)((id) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -45606,7 +45607,7 @@ function BranchSelector({
       return next;
     });
   }, []);
-  const handleSelect = (0, import_react113.useCallback)(
+  const handleSelect = (0, import_react114.useCallback)(
     (id) => {
       if (!disabled && onChange) onChange(id);
     },
@@ -46020,7 +46021,7 @@ function RuleRecommendationPanel({
 }
 
 // src/components/SalesForecastPanel.tsx
-var import_react114 = require("react");
+var import_react115 = require("react");
 var import_jsx_runtime173 = require("react/jsx-runtime");
 var TREND_LABELS2 = {
   up: "\u{1F4C8} \u4E0A\u5347\u8D8B\u52BF",
@@ -46185,7 +46186,7 @@ function SalesForecastPanel({
   footerActions,
   "data-testid": testId
 }) {
-  const lastPoint = (0, import_react114.useMemo)(() => dataPoints[dataPoints.length - 1], [dataPoints]);
+  const lastPoint = (0, import_react115.useMemo)(() => dataPoints[dataPoints.length - 1], [dataPoints]);
   return /* @__PURE__ */ (0, import_jsx_runtime173.jsx)(
     Card,
     {
@@ -46278,7 +46279,7 @@ function SalesForecastPanel({
 }
 
 // src/components/WorkbenchHeader.tsx
-var import_react115 = __toESM(require("react"));
+var import_react116 = __toESM(require("react"));
 var import_jsx_runtime174 = require("react/jsx-runtime");
 function Breadcrumbs({ items }) {
   return /* @__PURE__ */ (0, import_jsx_runtime174.jsx)(
@@ -46293,7 +46294,7 @@ function Breadcrumbs({ items }) {
         color: "#64748b",
         marginBottom: 12
       },
-      children: items.map((item, idx) => /* @__PURE__ */ (0, import_jsx_runtime174.jsxs)(import_react115.default.Fragment, { children: [
+      children: items.map((item, idx) => /* @__PURE__ */ (0, import_jsx_runtime174.jsxs)(import_react116.default.Fragment, { children: [
         idx > 0 && /* @__PURE__ */ (0, import_jsx_runtime174.jsx)("span", { style: { color: "#475569", userSelect: "none" }, children: "/" }),
         item.href ? /* @__PURE__ */ (0, import_jsx_runtime174.jsx)(
           "a",
@@ -46542,7 +46543,7 @@ function WorkbenchHeader({
 }
 
 // src/components/SideNavigation.tsx
-var import_react116 = __toESM(require("react"));
+var import_react117 = __toESM(require("react"));
 var import_jsx_runtime175 = require("react/jsx-runtime");
 function NavItem({
   item,
@@ -46661,7 +46662,7 @@ function SideNavigation({
   footer,
   className
 }) {
-  const [expandedKeys, setExpandedKeys] = import_react116.default.useState(() => {
+  const [expandedKeys, setExpandedKeys] = import_react117.default.useState(() => {
     const initial = /* @__PURE__ */ new Set();
     const walk = (list) => {
       for (const item of list) {
@@ -47751,7 +47752,7 @@ var Steps = ({
 };
 
 // src/components/SplitPane.tsx
-var import_react117 = require("react");
+var import_react118 = require("react");
 var import_jsx_runtime180 = require("react/jsx-runtime");
 var MIN_PANE_SIZE = 100;
 var DIVIDER_DEFAULT_COLOR = "rgba(148, 163, 184, 0.24)";
@@ -47770,13 +47771,13 @@ function SplitPane({
   style
 }) {
   const isHorizontal = direction === "horizontal";
-  const [splitPct, setSplitPct] = (0, import_react117.useState)(
+  const [splitPct, setSplitPct] = (0, import_react118.useState)(
     () => Math.min(1, Math.max(0, initialSplit)) * 100
   );
-  const containerRef = (0, import_react117.useRef)(null);
-  const draggingRef = (0, import_react117.useRef)(false);
-  const lastPosRef = (0, import_react117.useRef)(0);
-  const handleMouseDown = (0, import_react117.useCallback)(
+  const containerRef = (0, import_react118.useRef)(null);
+  const draggingRef = (0, import_react118.useRef)(false);
+  const lastPosRef = (0, import_react118.useRef)(0);
+  const handleMouseDown = (0, import_react118.useCallback)(
     (e) => {
       e.preventDefault();
       draggingRef.current = true;
@@ -47879,7 +47880,7 @@ function SplitPane({
 }
 
 // src/components/SmartTrendAnalysisPanel.tsx
-var import_react118 = require("react");
+var import_react119 = require("react");
 var import_jsx_runtime181 = require("react/jsx-runtime");
 var DIRECTION_META = {
   up: { label: "\u4E0A\u5347", icon: "\u{1F4C8}", color: "#4ade80", bg: "rgba(34,197,94,0.12)" },
@@ -48035,11 +48036,11 @@ function SmartTrendAnalysisPanel({
   accentColor = "#60a5fa",
   className
 }) {
-  const [showForecast, setShowForecast] = (0, import_react118.useState)(false);
+  const [showForecast, setShowForecast] = (0, import_react119.useState)(false);
   const delta = currentValue - previousValue;
   const dirMeta = DIRECTION_META[analysis.direction];
   const labelMeta = LABEL_META[analysis.label];
-  const historyStats = (0, import_react118.useMemo)(() => {
+  const historyStats = (0, import_react119.useMemo)(() => {
     if (!history || history.length === 0) return null;
     const values = history.map((p) => p.value);
     return {
@@ -48389,7 +48390,7 @@ function UsageMetricsPanel({ title, metrics, timeRange, className }) {
 }
 
 // src/SmartTrendChart/SmartTrendChart.tsx
-var import_react119 = require("react");
+var import_react120 = require("react");
 var import_jsx_runtime183 = require("react/jsx-runtime");
 function SmartTrendChart({
   data,
@@ -48405,7 +48406,7 @@ function SmartTrendChart({
   className = "",
   "data-testid": dataTestId = "smart-trend-chart"
 }) {
-  const maxValue = (0, import_react119.useMemo)(
+  const maxValue = (0, import_react120.useMemo)(
     () => Math.max(...data.map((d) => Math.max(d.value, d.target ?? 0)), 1),
     [data]
   );
@@ -48614,7 +48615,7 @@ function SmartTrendChart({
 }
 
 // src/TierDistributionChart/TierDistributionChart.tsx
-var import_react120 = require("react");
+var import_react121 = require("react");
 var import_jsx_runtime184 = require("react/jsx-runtime");
 var DEFAULT_SIZE2 = 240;
 var DEFAULT_EMPTY = "\u6682\u65E0\u7B49\u7EA7\u5206\u5E03\u6570\u636E";
@@ -48633,7 +48634,7 @@ function TierDistributionChart({
   const cy = size / 2;
   const outerRadius = size * 0.38;
   const innerRadius = size * 0.24;
-  const arcs = (0, import_react120.useMemo)(() => {
+  const arcs = (0, import_react121.useMemo)(() => {
     if (!tiers.length || !total) return [];
     let currentAngle = -Math.PI / 2;
     return tiers.map((tier) => {
@@ -48820,7 +48821,7 @@ function TierDistributionChart({
 }
 
 // src/TierDistributionChart/useTierDistribution.ts
-var import_react121 = require("react");
+var import_react122 = require("react");
 
 // src/TierDistributionChart/useTierDistribution.mock.ts
 var MOCK_TIER_DATA = [
@@ -48842,11 +48843,11 @@ function fetchMockTierDistribution(_params) {
 
 // src/TierDistributionChart/useTierDistribution.ts
 function useTierDistribution(params) {
-  const [tiers, setTiers] = (0, import_react121.useState)([]);
-  const [total, setTotal] = (0, import_react121.useState)(0);
-  const [loading, setLoading] = (0, import_react121.useState)(true);
-  const [error, setError] = (0, import_react121.useState)(null);
-  const load = (0, import_react121.useCallback)(async () => {
+  const [tiers, setTiers] = (0, import_react122.useState)([]);
+  const [total, setTotal] = (0, import_react122.useState)(0);
+  const [loading, setLoading] = (0, import_react122.useState)(true);
+  const [error, setError] = (0, import_react122.useState)(null);
+  const load = (0, import_react122.useCallback)(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -48859,7 +48860,7 @@ function useTierDistribution(params) {
       setLoading(false);
     }
   }, [params]);
-  (0, import_react121.useEffect)(() => {
+  (0, import_react122.useEffect)(() => {
     load();
   }, [load]);
   const sorted = [...tiers].sort((a, b) => b.count - a.count);
@@ -48874,7 +48875,7 @@ function useTierDistribution(params) {
 }
 
 // src/components/ExportButton.tsx
-var import_react122 = require("react");
+var import_react123 = require("react");
 var import_jsx_runtime185 = require("react/jsx-runtime");
 var VARIANT_STYLE = {
   primary: {
@@ -48941,9 +48942,9 @@ function ExportButton({
   onSuccess,
   onError
 }) {
-  const [exporting, setExporting] = (0, import_react122.useState)(false);
-  const [error, setError] = (0, import_react122.useState)(null);
-  const handleExport = (0, import_react122.useCallback)(async () => {
+  const [exporting, setExporting] = (0, import_react123.useState)(false);
+  const [error, setError] = (0, import_react123.useState)(null);
+  const handleExport = (0, import_react123.useCallback)(async () => {
     setExporting(true);
     setError(null);
     try {
@@ -49212,7 +49213,7 @@ function MetricsDashboardGrid({
 }
 
 // src/components/AutoComplete.tsx
-var import_react123 = require("react");
+var import_react124 = require("react");
 var import_jsx_runtime187 = require("react/jsx-runtime");
 function AutoComplete(props) {
   const {
@@ -49235,16 +49236,16 @@ function AutoComplete(props) {
     className = "",
     "data-testid": dataTestId = "auto-complete"
   } = props;
-  const [internalValue, setInternalValue] = (0, import_react123.useState)(defaultValue);
-  const [inputValue, setInputValue] = (0, import_react123.useState)("");
-  const [isOpen, setIsOpen] = (0, import_react123.useState)(false);
-  const [highlightIndex, setHighlightIndex] = (0, import_react123.useState)(-1);
-  const containerRef = (0, import_react123.useRef)(null);
-  const inputRef = (0, import_react123.useRef)(null);
-  const debounceTimer = (0, import_react123.useRef)();
+  const [internalValue, setInternalValue] = (0, import_react124.useState)(defaultValue);
+  const [inputValue, setInputValue] = (0, import_react124.useState)("");
+  const [isOpen, setIsOpen] = (0, import_react124.useState)(false);
+  const [highlightIndex, setHighlightIndex] = (0, import_react124.useState)(-1);
+  const containerRef = (0, import_react124.useRef)(null);
+  const inputRef = (0, import_react124.useRef)(null);
+  const debounceTimer = (0, import_react124.useRef)();
   const isControlled = controlledValue !== void 0;
   const currentValue = isControlled ? controlledValue : internalValue;
-  (0, import_react123.useEffect)(() => {
+  (0, import_react124.useEffect)(() => {
     if (currentValue !== void 0 && currentValue !== null) {
       const matched = options.find((o) => o.value === currentValue);
       if (matched) {
@@ -49252,7 +49253,7 @@ function AutoComplete(props) {
       }
     }
   }, [currentValue, options]);
-  const filteredOptions = (0, import_react123.useMemo)(() => {
+  const filteredOptions = (0, import_react124.useMemo)(() => {
     if (!inputValue.trim()) {
       return options.slice(0, maxOptions);
     }
@@ -49262,7 +49263,7 @@ function AutoComplete(props) {
     const filterFn = filterOption || defaultFilter;
     return options.filter((o) => filterFn(inputValue, o)).slice(0, maxOptions);
   }, [options, inputValue, filterOption, maxOptions]);
-  const selectOption = (0, import_react123.useCallback)(
+  const selectOption = (0, import_react124.useCallback)(
     (option) => {
       setInputValue(option.label);
       if (!isControlled) {
@@ -49274,7 +49275,7 @@ function AutoComplete(props) {
     },
     [onChange, isControlled]
   );
-  const handleInputChange = (0, import_react123.useCallback)(
+  const handleInputChange = (0, import_react124.useCallback)(
     (e) => {
       const val = e.target.value;
       setInputValue(val);
@@ -49294,7 +49295,7 @@ function AutoComplete(props) {
     },
     [debounceMs, onInputChange, clearable, isControlled, onChange]
   );
-  const handleKeyDown = (0, import_react123.useCallback)(
+  const handleKeyDown = (0, import_react124.useCallback)(
     (e) => {
       if (!isOpen) {
         if (e.key === "ArrowDown") {
@@ -49332,7 +49333,7 @@ function AutoComplete(props) {
     },
     [isOpen, filteredOptions, highlightIndex, selectOption]
   );
-  (0, import_react123.useEffect)(() => {
+  (0, import_react124.useEffect)(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setIsOpen(false);
@@ -49342,12 +49343,12 @@ function AutoComplete(props) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  (0, import_react123.useEffect)(() => {
+  (0, import_react124.useEffect)(() => {
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
   }, []);
-  const handleClear = (0, import_react123.useCallback)(() => {
+  const handleClear = (0, import_react124.useCallback)(() => {
     setInputValue("");
     if (!isControlled) {
       setInternalValue(void 0);
@@ -49357,7 +49358,7 @@ function AutoComplete(props) {
     inputRef.current?.focus();
     setIsOpen(false);
   }, [onChange, isControlled]);
-  const handleFocus = (0, import_react123.useCallback)(() => {
+  const handleFocus = (0, import_react124.useCallback)(() => {
     if (!disabled) {
       setIsOpen(true);
     }
@@ -49530,7 +49531,7 @@ function AutoComplete(props) {
 }
 
 // src/components/DrilldownTrendCard.tsx
-var import_react124 = require("react");
+var import_react125 = require("react");
 var import_jsx_runtime188 = require("react/jsx-runtime");
 var ACCENTS2 = {
   default: "#3b82f6",
@@ -49598,11 +49599,11 @@ function DrilldownTrendCard({
   expandable = true,
   className = ""
 }) {
-  const [expanded, setExpanded] = (0, import_react124.useState)(defaultExpanded);
+  const [expanded, setExpanded] = (0, import_react125.useState)(defaultExpanded);
   const accent = ACCENTS2[variant] ?? ACCENTS2["default"];
   const trendColor2 = TREND_COLORS3[trendDirection] ?? TREND_COLORS3.stable;
   const canExpand = expandable && !!drilldownDetail;
-  const handleToggle = (0, import_react124.useCallback)(() => {
+  const handleToggle = (0, import_react125.useCallback)(() => {
     if (canExpand) setExpanded((prev) => !prev);
   }, [canExpand]);
   const trendArrow2 = trendDirection === "up" ? "\u2191" : trendDirection === "down" ? "\u2193" : "\u2192";
@@ -49736,7 +49737,7 @@ function DrilldownTrendCard({
 }
 
 // src/components/KanbanBoard.tsx
-var import_react125 = require("react");
+var import_react126 = require("react");
 var import_jsx_runtime189 = require("react/jsx-runtime");
 var PRIORITY_COLORS2 = {
   low: "#22c55e",
@@ -49828,29 +49829,29 @@ function KanbanBoard({
   className,
   "data-testid": dataTestId
 }) {
-  const [draggedCardId, setDraggedCardId] = (0, import_react125.useState)(null);
-  const [dragOverColumnId, setDragOverColumnId] = (0, import_react125.useState)(null);
-  const cardsByColumn = (0, import_react125.useMemo)(() => {
+  const [draggedCardId, setDraggedCardId] = (0, import_react126.useState)(null);
+  const [dragOverColumnId, setDragOverColumnId] = (0, import_react126.useState)(null);
+  const cardsByColumn = (0, import_react126.useMemo)(() => {
     const map = {};
     for (const col of columns) {
       map[col.id] = cards.filter((c) => c.columnId === col.id);
     }
     return map;
   }, [cards, columns]);
-  const handleDragStart = (0, import_react125.useCallback)((e, cardId) => {
+  const handleDragStart = (0, import_react126.useCallback)((e, cardId) => {
     setDraggedCardId(cardId);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", cardId);
   }, []);
-  const handleDragOver = (0, import_react125.useCallback)((e, columnId) => {
+  const handleDragOver = (0, import_react126.useCallback)((e, columnId) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     setDragOverColumnId(columnId);
   }, []);
-  const handleDragLeave = (0, import_react125.useCallback)(() => {
+  const handleDragLeave = (0, import_react126.useCallback)(() => {
     setDragOverColumnId(null);
   }, []);
-  const handleDrop = (0, import_react125.useCallback)(
+  const handleDrop = (0, import_react126.useCallback)(
     (e, targetColumnId) => {
       e.preventDefault();
       setDragOverColumnId(null);
@@ -50007,7 +50008,7 @@ function KanbanBoard({
 }
 
 // src/components/AnomalyFrequencyTimeline.tsx
-var import_react126 = require("react");
+var import_react127 = require("react");
 var import_jsx_runtime190 = require("react/jsx-runtime");
 var SEVERITY_COLORS5 = {
   critical: "#ef4444",
@@ -50034,11 +50035,11 @@ function AnomalyFrequencyTimeline({
   emptyText = "\u6682\u65E0\u5F02\u5E38\u65F6\u5E8F\u6570\u636E",
   "data-testid": dataTestId = "anomaly-frequency-timeline"
 }) {
-  const displayed = (0, import_react126.useMemo)(
+  const displayed = (0, import_react127.useMemo)(
     () => (buckets ?? []).slice(-maxBuckets),
     [buckets, maxBuckets]
   );
-  const maxTotal = (0, import_react126.useMemo)(
+  const maxTotal = (0, import_react127.useMemo)(
     () => Math.max(...displayed.map((b) => b.total), 1),
     [displayed]
   );
@@ -50120,7 +50121,7 @@ function AnomalyFrequencyTimeline({
 }
 
 // src/components/AnomalyPatternPanel.tsx
-var import_react127 = require("react");
+var import_react128 = require("react");
 var import_jsx_runtime191 = require("react/jsx-runtime");
 var PATTERN_TYPE_LABELS = {
   periodic_spike: "\u5468\u671F\u6027\u7A81\u589E",
@@ -50155,7 +50156,7 @@ function PatternCard({
   onApplySuggestion,
   onViewDetail
 }) {
-  const [expanded, setExpanded] = (0, import_react127.useState)(false);
+  const [expanded, setExpanded] = (0, import_react128.useState)(false);
   return /* @__PURE__ */ (0, import_jsx_runtime191.jsxs)(
     "div",
     {
@@ -50299,16 +50300,16 @@ function AnomalyPatternPanel({
   onApplySuggestion,
   onViewDetail
 }) {
-  const [filterSeverity, setFilterSeverity] = (0, import_react127.useState)("all");
-  const [filterType, setFilterType] = (0, import_react127.useState)("all");
-  const filtered = (0, import_react127.useMemo)(() => {
+  const [filterSeverity, setFilterSeverity] = (0, import_react128.useState)("all");
+  const [filterType, setFilterType] = (0, import_react128.useState)("all");
+  const filtered = (0, import_react128.useMemo)(() => {
     return patterns.filter((p) => {
       if (filterSeverity !== "all" && p.severity !== filterSeverity) return false;
       if (filterType !== "all" && p.patternType !== filterType) return false;
       return true;
     });
   }, [patterns, filterSeverity, filterType]);
-  const severityCounts = (0, import_react127.useMemo)(() => {
+  const severityCounts = (0, import_react128.useMemo)(() => {
     const counts = { critical: 0, high: 0, medium: 0, low: 0 };
     patterns.forEach((p) => {
       counts[p.severity] = (counts[p.severity] || 0) + 1;
@@ -50407,7 +50408,7 @@ function AnomalyPatternPanel({
 }
 
 // src/components/AISmartSchedulingPanel.tsx
-var import_react128 = require("react");
+var import_react129 = require("react");
 var import_jsx_runtime192 = require("react/jsx-runtime");
 function ConfidenceBadge2({ score }) {
   let color;
@@ -50497,7 +50498,7 @@ function AISmartSchedulingPanel({
     { type: "skill_requirement", label: "\u6280\u80FD\u5339\u914D", value: "\u662F", active: true },
     { type: "max_consecutive_days", label: "\u8FDE\u7EED\u6392\u73ED\u4E0A\u9650", value: 6, active: false }
   ];
-  const [constraints, setConstraints] = (0, import_react128.useState)(
+  const [constraints, setConstraints] = (0, import_react129.useState)(
     initialConstraints ?? defaultConstraints
   );
   const handleToggleConstraint = (type) => {
@@ -50506,13 +50507,13 @@ function AISmartSchedulingPanel({
     );
     onToggleConstraint?.(type);
   };
-  const scheduleStats = (0, import_react128.useMemo)(() => {
+  const scheduleStats = (0, import_react129.useMemo)(() => {
     const totalStaff = staff.length;
     const coveredSlots = recommendations.filter((r) => r.confidenceScore >= 0.9).length;
     const coverage = recommendations.length > 0 ? Math.round(coveredSlots / slots.length * 100) : 0;
     return { totalStaff, coveredSlots, coverage };
   }, [staff, recommendations, slots]);
-  const staffHoursMap = (0, import_react128.useMemo)(() => {
+  const staffHoursMap = (0, import_react129.useMemo)(() => {
     const map = /* @__PURE__ */ new Map();
     recommendations.forEach((rec) => {
       rec.recommendedStaff.forEach((sid) => {
@@ -50869,7 +50870,7 @@ function AISmartSchedulingPanel({
 }
 
 // src/components/StrategyConfigPanel.tsx
-var import_react129 = __toESM(require("react"));
+var import_react130 = __toESM(require("react"));
 var import_jsx_runtime193 = require("react/jsx-runtime");
 var PRIORITY_COLORS3 = {
   high: "#ef4444",
@@ -50980,7 +50981,7 @@ function ParamInput({
     case "tags": {
       const tags = Array.isArray(currentVal) ? currentVal : [];
       const allOptions = def.options ?? [];
-      const [searchText, setSearchText] = (0, import_react129.useState)("");
+      const [searchText, setSearchText] = (0, import_react130.useState)("");
       const filteredOptions = allOptions.filter(
         (o) => !tags.includes(o.value) && o.label.includes(searchText)
       );
@@ -51129,19 +51130,19 @@ function StrategyConfigPanel({
   saveLabel = "\u4FDD\u5B58\u914D\u7F6E",
   resetLabel = "\u6062\u590D\u9ED8\u8BA4"
 }) {
-  const [editing, setEditing] = (0, import_react129.useState)(() => ({
+  const [editing, setEditing] = (0, import_react130.useState)(() => ({
     ...initialStrategy,
     params: initialStrategy.params.map((p) => ({
       ...p,
       value: p.value ?? p.defaultValue
     }))
   }));
-  const [dirty, setDirty] = (0, import_react129.useState)(false);
-  const [saving, setSaving] = (0, import_react129.useState)(false);
-  const [saveMsg, setSaveMsg] = (0, import_react129.useState)(null);
-  const [errors, setErrors] = (0, import_react129.useState)({});
-  const strategyRef = import_react129.default.useRef(initialStrategy);
-  import_react129.default.useEffect(() => {
+  const [dirty, setDirty] = (0, import_react130.useState)(false);
+  const [saving, setSaving] = (0, import_react130.useState)(false);
+  const [saveMsg, setSaveMsg] = (0, import_react130.useState)(null);
+  const [errors, setErrors] = (0, import_react130.useState)({});
+  const strategyRef = import_react130.default.useRef(initialStrategy);
+  import_react130.default.useEffect(() => {
     if (initialStrategy.id !== strategyRef.current.id) {
       setEditing({
         ...initialStrategy,
@@ -51156,7 +51157,7 @@ function StrategyConfigPanel({
       setErrors({});
     }
   }, [initialStrategy]);
-  const handleParamChange = (0, import_react129.useCallback)(
+  const handleParamChange = (0, import_react130.useCallback)(
     (key, value) => {
       setEditing((prev) => ({
         ...prev,
@@ -51618,7 +51619,7 @@ function StrategyConfigPanel({
 }
 
 // src/components/ComparisonBreakdownChart.tsx
-var import_react130 = require("react");
+var import_react131 = require("react");
 var import_jsx_runtime194 = require("react/jsx-runtime");
 function ComparisonBreakdownChart({
   data,
@@ -51633,7 +51634,7 @@ function ComparisonBreakdownChart({
   className = "",
   "data-testid": dataTestId = "comparison-breakdown-chart"
 }) {
-  const maxValue = (0, import_react130.useMemo)(
+  const maxValue = (0, import_react131.useMemo)(
     () => Math.max(...(data ?? []).map((d) => Math.max(d.value, d.baseline ?? 0)), 1),
     [data]
   );
@@ -51825,7 +51826,7 @@ function ComparisonBreakdownChart({
 }
 
 // src/components/ScenarioComparisonPanel.tsx
-var import_react131 = require("react");
+var import_react132 = require("react");
 var import_jsx_runtime195 = require("react/jsx-runtime");
 function TrendIcon({ direction }) {
   const color = direction === "good" ? "#22c55e" : direction === "bad" ? "#ef4444" : "#6b7280";
@@ -51903,7 +51904,7 @@ function ScenarioComparisonPanel({
   className = "",
   "data-testid": dataTestId = "scenario-comparison-panel"
 }) {
-  const maxValues = (0, import_react131.useMemo)(() => {
+  const maxValues = (0, import_react132.useMemo)(() => {
     if (!scenarios || scenarios.length === 0) return {};
     const metricLabels = scenarios[0]?.metrics.map((m) => m.label) ?? [];
     const map = {};
@@ -52114,7 +52115,7 @@ function ScenarioComparisonPanel({
 }
 
 // src/components/Typography.tsx
-var import_react132 = __toESM(require("react"));
+var import_react133 = __toESM(require("react"));
 var import_jsx_runtime196 = require("react/jsx-runtime");
 var VARIANT_STYLES9 = {
   h1: { fontSize: 32, fontWeight: 700, lineHeight: 1.25, letterSpacing: "-0.02em", margin: 0 },
@@ -52179,7 +52180,7 @@ var Typography = ({
     ...style
   };
   const Tag2 = as || TAG_MAP[variant] || "span";
-  return import_react132.default.createElement(Tag2, { id, className, style: mergedStyle }, children);
+  return import_react133.default.createElement(Tag2, { id, className, style: mergedStyle }, children);
 };
 function getWeightValue(w) {
   switch (w) {
@@ -52202,7 +52203,7 @@ var Paragraph = (props) => /* @__PURE__ */ (0, import_jsx_runtime196.jsx)(Typogr
 var Caption = (props) => /* @__PURE__ */ (0, import_jsx_runtime196.jsx)(Typography, { variant: "caption", ...props });
 
 // src/components/ReconnectingBadge.tsx
-var import_react133 = require("react");
+var import_react134 = require("react");
 var import_jsx_runtime197 = require("react/jsx-runtime");
 var STATE_STYLES = {
   connecting: {
@@ -52242,8 +52243,8 @@ function ReconnectingBadge({
   autoHideMs = 3e3,
   style
 }) {
-  const [hidden, setHidden] = (0, import_react133.useState)(false);
-  (0, import_react133.useEffect)(() => {
+  const [hidden, setHidden] = (0, import_react134.useState)(false);
+  (0, import_react134.useEffect)(() => {
     if (state === "open") {
       setHidden(false);
       const timer = setTimeout(() => setHidden(true), autoHideMs);
@@ -52304,7 +52305,7 @@ function ReconnectingBadge({
 }
 
 // src/components/OfflineBadge.tsx
-var import_react134 = require("react");
+var import_react135 = require("react");
 var import_jsx_runtime198 = require("react/jsx-runtime");
 var STATUS_STYLES2 = {
   online: {
@@ -52345,8 +52346,8 @@ function OfflineBadge({
   autoHideOnlineMs = 3e3,
   "data-testid": dataTestId
 }) {
-  const [hidden, setHidden] = (0, import_react134.useState)(false);
-  (0, import_react134.useEffect)(() => {
+  const [hidden, setHidden] = (0, import_react135.useState)(false);
+  (0, import_react135.useEffect)(() => {
     if (status === "online") {
       setHidden(false);
       const timer = setTimeout(() => setHidden(true), autoHideOnlineMs);
@@ -52916,7 +52917,7 @@ function QuickActionBar({
 }
 
 // src/CampaignPerformancePanel/CampaignPerformancePanel.tsx
-var import_react135 = require("react");
+var import_react136 = require("react");
 var import_jsx_runtime201 = require("react/jsx-runtime");
 function MetricCard3({ metric }) {
   const trendIcon = metric.trend === "up" ? "\u{1F4C8}" : metric.trend === "down" ? "\u{1F4C9}" : "\u27A1\uFE0F";
@@ -52949,7 +52950,7 @@ function MetricCard3({ metric }) {
   );
 }
 function MiniTrendBars({ data }) {
-  const maxValue = (0, import_react135.useMemo)(() => Math.max(...data.map((d) => d.conversions), 1), [data]);
+  const maxValue = (0, import_react136.useMemo)(() => Math.max(...data.map((d) => d.conversions), 1), [data]);
   if (!data.length) return /* @__PURE__ */ (0, import_jsx_runtime201.jsx)("div", { style: { color: "#9ca3af", textAlign: "center", padding: 20 }, children: "\u6682\u65E0\u8D8B\u52BF\u6570\u636E" });
   return /* @__PURE__ */ (0, import_jsx_runtime201.jsx)("div", { style: { display: "flex", alignItems: "flex-end", gap: 4, height: 120, padding: "8px 0" }, children: data.slice(-14).map((d, i) => {
     const h = Math.max(d.conversions / maxValue * 100, 4);
@@ -53117,7 +53118,7 @@ function CampaignPerformancePanel({
 }
 
 // src/CampaignTrendForecast/CampaignTrendForecast.tsx
-var import_react136 = require("react");
+var import_react137 = require("react");
 var import_jsx_runtime202 = require("react/jsx-runtime");
 var DEFAULT_EMPTY_TEXT = "\u6682\u65E0\u9884\u6D4B\u6570\u636E";
 var FORECAST_COLOR = "#3b82f6";
@@ -53154,12 +53155,12 @@ function MiniTrendChart({
   width = 280,
   height = 100
 }) {
-  const all = (0, import_react136.useMemo)(() => {
+  const all = (0, import_react137.useMemo)(() => {
     const h = historical.map((p) => ({ date: p.date, value: p.actual }));
     const f = forecast.map((p) => ({ date: p.date, value: p.predicted }));
     return [...h, ...f];
   }, [historical, forecast]);
-  const { yMin, yMax, chartW, chartH } = (0, import_react136.useMemo)(() => {
+  const { yMin, yMax, chartW, chartH } = (0, import_react137.useMemo)(() => {
     if (all.length < 2) return { yMin: 0, yMax: 100, chartW: width, chartH: height };
     const values = all.map((p) => p.value);
     const fVals = forecast.map((p) => [p.lowerBound, p.upperBound]).flat();
@@ -53252,7 +53253,7 @@ function CampaignTrendForecast({
   className
 }) {
   const isEmpty = !loading && historical.length === 0 && forecast.length === 0;
-  const overallTrend = (0, import_react136.useMemo)(() => {
+  const overallTrend = (0, import_react137.useMemo)(() => {
     if (forecast.length < 2) return "flat";
     const first = forecast[0].predicted;
     const last = forecast[forecast.length - 1].predicted;
@@ -53507,7 +53508,7 @@ var styles7 = {
 };
 
 // src/components/ReconciliationDiffPanel.tsx
-var import_react137 = require("react");
+var import_react138 = require("react");
 var import_jsx_runtime203 = require("react/jsx-runtime");
 var severityColors = {
   critical: { bg: "rgba(239,68,68,0.15)", text: "#ef4444", label: "\u4E25\u91CD" },
@@ -53537,17 +53538,17 @@ function ReconciliationDiffPanel({
   onViewDetail,
   onExport
 }) {
-  const [activeFilter, setActiveFilter] = (0, import_react137.useState)("all");
-  const [expandedId, setExpandedId] = (0, import_react137.useState)(null);
-  const toggleExpanded = (0, import_react137.useCallback)((id) => {
+  const [activeFilter, setActiveFilter] = (0, import_react138.useState)("all");
+  const [expandedId, setExpandedId] = (0, import_react138.useState)(null);
+  const toggleExpanded = (0, import_react138.useCallback)((id) => {
     setExpandedId((prev) => prev === id ? null : id);
   }, []);
-  const filtered = (0, import_react137.useMemo)(() => {
+  const filtered = (0, import_react138.useMemo)(() => {
     if (activeFilter === "all") return diffs;
     if (activeFilter === "unresolved") return diffs.filter((d) => !d.resolved);
     return diffs.filter((d) => d.severity === activeFilter);
   }, [diffs, activeFilter]);
-  const stats = (0, import_react137.useMemo)(() => {
+  const stats = (0, import_react138.useMemo)(() => {
     const total = diffs.length;
     const unresolved = diffs.filter((d) => !d.resolved).length;
     const totalDiff = diffs.reduce((s2, d) => s2 + d.diffAmount, 0);
@@ -53922,7 +53923,7 @@ function Result({
 }
 
 // src/components/RealTimeRevenueDisplay.tsx
-var import_react138 = require("react");
+var import_react139 = require("react");
 var import_jsx_runtime205 = require("react/jsx-runtime");
 var S_CONTAINER = {
   background: "rgba(15,23,42,0.35)",
@@ -54125,11 +54126,11 @@ function RealTimeRevenueDisplay({
   isLive = true,
   className = ""
 }) {
-  const maxRevenue = (0, import_react138.useMemo)(
+  const maxRevenue = (0, import_react139.useMemo)(
     () => Math.max(...hourlyTrend.map((p) => p.revenue), 1),
     [hourlyTrend]
   );
-  const sortedCategories = (0, import_react138.useMemo)(
+  const sortedCategories = (0, import_react139.useMemo)(
     () => [...categoryRevenue].sort((a, b) => b.amount - a.amount),
     [categoryRevenue]
   );
@@ -54605,7 +54606,7 @@ function CoachDashboard({
 }
 
 // src/components/OTPInput.tsx
-var import_react139 = require("react");
+var import_react140 = require("react");
 var import_jsx_runtime207 = require("react/jsx-runtime");
 var sizeMap4 = {
   sm: { width: "32px", height: "36px", fontSize: "14px", gap: "4px" },
@@ -54646,18 +54647,18 @@ var OTPInput = ({
   inputMode = "text",
   label = "\u9A8C\u8BC1\u7801\u8F93\u5165"
 }) => {
-  const inputRefs = (0, import_react139.useRef)([]);
+  const inputRefs = (0, import_react140.useRef)([]);
   const dims = sizeMap4[size];
   const chars = value.split("").concat(new Array(Math.max(0, length - value.length)).fill(""));
   const activeIndex = Math.min(value.length, length - 1);
-  const focusIndex = (0, import_react139.useCallback)(
+  const focusIndex = (0, import_react140.useCallback)(
     (index) => {
       const idx = Math.max(0, Math.min(index, length - 1));
       inputRefs.current[idx]?.focus();
     },
     [length]
   );
-  const handleChange = (0, import_react139.useCallback)(
+  const handleChange = (0, import_react140.useCallback)(
     (index, char) => {
       if (disabled || readOnly) return;
       const digit = char.slice(-1);
@@ -54677,7 +54678,7 @@ var OTPInput = ({
     },
     [value, length, onChange, onComplete, focusIndex, disabled, readOnly, inputMode]
   );
-  const handleKeyDown = (0, import_react139.useCallback)(
+  const handleKeyDown = (0, import_react140.useCallback)(
     (index, e) => {
       if (disabled || readOnly) return;
       if (e.key === "Backspace") {
@@ -54698,7 +54699,7 @@ var OTPInput = ({
     },
     [value, length, onChange, focusIndex, disabled, readOnly]
   );
-  const handlePaste = (0, import_react139.useCallback)(
+  const handlePaste = (0, import_react140.useCallback)(
     (e) => {
       if (disabled || readOnly) return;
       e.preventDefault();
@@ -54780,7 +54781,7 @@ var OTPInput = ({
 };
 
 // src/components/QRCodeDisplay.tsx
-var import_react140 = require("react");
+var import_react141 = require("react");
 var import_jsx_runtime208 = require("react/jsx-runtime");
 var TYPE_LABELS2 = {
   payment: "\u4ED8\u6B3E\u7801",
@@ -54846,14 +54847,14 @@ var QRCodeDisplay = ({
   className = "",
   "data-testid": testId = "qr-code-display"
 }) => {
-  const [copied, setCopied] = (0, import_react140.useState)(false);
-  const timerRef = (0, import_react140.useRef)(null);
-  (0, import_react140.useEffect)(() => {
+  const [copied, setCopied] = (0, import_react141.useState)(false);
+  const timerRef = (0, import_react141.useRef)(null);
+  (0, import_react141.useEffect)(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
-  const handleCopy = (0, import_react140.useCallback)(async () => {
+  const handleCopy = (0, import_react141.useCallback)(async () => {
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
@@ -55015,7 +55016,7 @@ var actionBtnStyle = {
 };
 
 // src/components/ShiftHandoverPanel.tsx
-var import_react141 = require("react");
+var import_react142 = require("react");
 var import_jsx_runtime209 = require("react/jsx-runtime");
 var categoryLabel2 = {
   cash: "\u73B0\u91D1",
@@ -55052,10 +55053,10 @@ var ShiftHandoverPanel = ({
   onEditNotes,
   loading = false
 }) => {
-  const [selectedItem, setSelectedItem] = (0, import_react141.useState)(null);
-  const [notesDraft, setNotesDraft] = (0, import_react141.useState)("");
-  const pendingItems = (0, import_react141.useMemo)(() => items.filter((i) => i.status === "pending"), [items]);
-  const columns = (0, import_react141.useMemo)(
+  const [selectedItem, setSelectedItem] = (0, import_react142.useState)(null);
+  const [notesDraft, setNotesDraft] = (0, import_react142.useState)("");
+  const pendingItems = (0, import_react142.useMemo)(() => items.filter((i) => i.status === "pending"), [items]);
+  const columns = (0, import_react142.useMemo)(
     () => [
       {
         key: "category",
@@ -55224,7 +55225,7 @@ var ShiftHandoverPanel = ({
 };
 
 // src/components/SegmentedControl.tsx
-var import_react142 = __toESM(require("react"));
+var import_react143 = __toESM(require("react"));
 var import_jsx_runtime210 = require("react/jsx-runtime");
 var SIZE_MAP11 = {
   sm: { height: 28, fontSize: 12, padding: "2px", gap: "2px" },
@@ -55233,9 +55234,9 @@ var SIZE_MAP11 = {
 };
 function useControlledState(controlled, defaultValue) {
   const isControlled = controlled !== void 0;
-  const [internal, setInternal] = import_react142.default.useState(defaultValue);
+  const [internal, setInternal] = import_react143.default.useState(defaultValue);
   const value = isControlled ? controlled : internal;
-  const setValue = (0, import_react142.useCallback)(
+  const setValue = (0, import_react143.useCallback)(
     (v) => {
       if (!isControlled) setInternal(v);
     },
@@ -55257,7 +55258,7 @@ function SegmentedControl({
   "data-testid": dataTestId
 }) {
   const [selectedValue, setSelectedValue] = useControlledState(controlledValue, defaultValue ?? options[0]?.value ?? "");
-  const handleSelect = (0, import_react142.useCallback)(
+  const handleSelect = (0, import_react143.useCallback)(
     (val) => {
       if (disabled) return;
       setSelectedValue(val);
@@ -55365,7 +55366,7 @@ function SegmentedControl({
 }
 
 // src/components/Transfer.tsx
-var import_react143 = require("react");
+var import_react144 = require("react");
 var import_jsx_runtime211 = require("react/jsx-runtime");
 var defaultRender = (item) => /* @__PURE__ */ (0, import_jsx_runtime211.jsx)("span", { className: "m5-transfer-item-label", children: item.label });
 var Transfer = ({
@@ -55382,28 +55383,28 @@ var Transfer = ({
   style,
   listHeight = 240
 }) => {
-  const targetSet = (0, import_react143.useMemo)(() => new Set(targetKeys), [targetKeys]);
-  const leftItems = (0, import_react143.useMemo)(
+  const targetSet = (0, import_react144.useMemo)(() => new Set(targetKeys), [targetKeys]);
+  const leftItems = (0, import_react144.useMemo)(
     () => dataSource.filter((item) => !targetSet.has(item.key)),
     [dataSource, targetSet]
   );
-  const rightItems = (0, import_react143.useMemo)(
+  const rightItems = (0, import_react144.useMemo)(
     () => dataSource.filter((item) => targetSet.has(item.key)),
     [dataSource, targetSet]
   );
-  const [leftSearch, setLeftSearch] = (0, import_react143.useState)("");
-  const [rightSearch, setRightSearch] = (0, import_react143.useState)("");
-  const [leftChecked, setLeftChecked] = (0, import_react143.useState)(/* @__PURE__ */ new Set());
-  const [rightChecked, setRightChecked] = (0, import_react143.useState)(/* @__PURE__ */ new Set());
-  const filteredLeft = (0, import_react143.useMemo)(
+  const [leftSearch, setLeftSearch] = (0, import_react144.useState)("");
+  const [rightSearch, setRightSearch] = (0, import_react144.useState)("");
+  const [leftChecked, setLeftChecked] = (0, import_react144.useState)(/* @__PURE__ */ new Set());
+  const [rightChecked, setRightChecked] = (0, import_react144.useState)(/* @__PURE__ */ new Set());
+  const filteredLeft = (0, import_react144.useMemo)(
     () => leftSearch ? leftItems.filter((i) => i.label.toLowerCase().includes(leftSearch.toLowerCase())) : leftItems,
     [leftItems, leftSearch]
   );
-  const filteredRight = (0, import_react143.useMemo)(
+  const filteredRight = (0, import_react144.useMemo)(
     () => rightSearch ? rightItems.filter((i) => i.label.toLowerCase().includes(rightSearch.toLowerCase())) : rightItems,
     [rightItems, rightSearch]
   );
-  const handleLeftCheck = (0, import_react143.useCallback)((key, checked) => {
+  const handleLeftCheck = (0, import_react144.useCallback)((key, checked) => {
     setLeftChecked((prev) => {
       const next = new Set(prev);
       if (checked) next.add(key);
@@ -55411,7 +55412,7 @@ var Transfer = ({
       return next;
     });
   }, []);
-  const handleRightCheck = (0, import_react143.useCallback)((key, checked) => {
+  const handleRightCheck = (0, import_react144.useCallback)((key, checked) => {
     setRightChecked((prev) => {
       const next = new Set(prev);
       if (checked) next.add(key);
@@ -55419,7 +55420,7 @@ var Transfer = ({
       return next;
     });
   }, []);
-  const moveRight = (0, import_react143.useCallback)(() => {
+  const moveRight = (0, import_react144.useCallback)(() => {
     const moveKeys = Array.from(leftChecked).filter((k) => !disabled);
     if (moveKeys.length === 0) return;
     onChange?.(
@@ -55429,7 +55430,7 @@ var Transfer = ({
     );
     setLeftChecked(/* @__PURE__ */ new Set());
   }, [leftChecked, targetKeys, onChange, disabled]);
-  const moveLeft = (0, import_react143.useCallback)(() => {
+  const moveLeft = (0, import_react144.useCallback)(() => {
     const moveKeys = Array.from(rightChecked).filter((k) => !disabled);
     if (moveKeys.length === 0) return;
     onChange?.(
@@ -55441,14 +55442,14 @@ var Transfer = ({
   }, [rightChecked, targetKeys, onChange, disabled]);
   const allLeftChecked = filteredLeft.length > 0 && filteredLeft.every((i) => leftChecked.has(i.key));
   const allRightChecked = filteredRight.length > 0 && filteredRight.every((i) => rightChecked.has(i.key));
-  const toggleAllLeft = (0, import_react143.useCallback)(() => {
+  const toggleAllLeft = (0, import_react144.useCallback)(() => {
     if (allLeftChecked) {
       setLeftChecked(/* @__PURE__ */ new Set());
     } else {
       setLeftChecked(new Set(filteredLeft.filter((i) => !i.disabled).map((i) => i.key)));
     }
   }, [filteredLeft, allLeftChecked]);
-  const toggleAllRight = (0, import_react143.useCallback)(() => {
+  const toggleAllRight = (0, import_react144.useCallback)(() => {
     if (allRightChecked) {
       setRightChecked(/* @__PURE__ */ new Set());
     } else {
@@ -55543,7 +55544,7 @@ var Transfer = ({
 };
 
 // src/components/Masonry.tsx
-var import_react144 = require("react");
+var import_react145 = require("react");
 var import_jsx_runtime212 = require("react/jsx-runtime");
 var BREAKPOINTS = { xs: 0, sm: 640, md: 768, lg: 1024, xl: 1280 };
 function resolveColumns(columns) {
@@ -55570,7 +55571,7 @@ function Masonry({
   "data-testid": dataTestId
 }) {
   const colCount = typeof columns === "number" ? columns : resolveColumns(columns);
-  const items = import_react144.Children.toArray(children).filter(import_react144.isValidElement);
+  const items = import_react145.Children.toArray(children).filter(import_react145.isValidElement);
   const containerStyle7 = {
     columnCount: colCount,
     columnGap: gap,
@@ -55604,7 +55605,7 @@ function WaterfallMasonry({
 }) {
   const cols = Array.from({ length: columns }, () => []);
   const heights = new Array(columns).fill(0);
-  const items = import_react144.Children.toArray(children).filter(import_react144.isValidElement);
+  const items = import_react145.Children.toArray(children).filter(import_react145.isValidElement);
   items.forEach((item) => {
     const minVal = Math.min(...heights);
     const shortestIdx = heights.indexOf(minVal);
@@ -55823,7 +55824,7 @@ function BottomNavigation({
 }
 
 // src/components/Collapsible.tsx
-var import_react145 = require("react");
+var import_react146 = require("react");
 var import_jsx_runtime214 = require("react/jsx-runtime");
 var Collapsible = ({
   title,
@@ -55840,16 +55841,16 @@ var Collapsible = ({
   hideExpandIcon = false
 }) => {
   const isControlled = controlledOpen !== void 0;
-  const [internalOpen, setInternalOpen] = (0, import_react145.useState)(defaultOpen);
+  const [internalOpen, setInternalOpen] = (0, import_react146.useState)(defaultOpen);
   const isOpen = isControlled ? controlledOpen : internalOpen;
-  const contentRef = (0, import_react145.useRef)(null);
-  const [contentHeight, setContentHeight] = (0, import_react145.useState)(0);
-  (0, import_react145.useEffect)(() => {
+  const contentRef = (0, import_react146.useRef)(null);
+  const [contentHeight, setContentHeight] = (0, import_react146.useState)(0);
+  (0, import_react146.useEffect)(() => {
     if (contentRef.current) {
       setContentHeight(contentRef.current.scrollHeight);
     }
   }, [children]);
-  const toggle = (0, import_react145.useCallback)(() => {
+  const toggle = (0, import_react146.useCallback)(() => {
     if (disabled) return;
     const next = !isOpen;
     if (!isControlled) setInternalOpen(next);
@@ -55913,7 +55914,7 @@ var Collapsible = ({
 };
 
 // src/components/CountUp.tsx
-var import_react146 = require("react");
+var import_react147 = require("react");
 var import_jsx_runtime215 = require("react/jsx-runtime");
 function formatNumber3(value, decimals, separator, prefix, suffix) {
   const fixed = value.toFixed(decimals);
@@ -55940,14 +55941,14 @@ function CountUp({
   formatter,
   "data-testid": dataTestId
 }) {
-  const [displayValue, setDisplayValue] = (0, import_react146.useState)(start);
-  const [isAnimating, setIsAnimating] = (0, import_react146.useState)(false);
-  const [hasAnimated, setHasAnimated] = (0, import_react146.useState)(false);
-  const rafRef = (0, import_react146.useRef)(null);
-  const startTimeRef = (0, import_react146.useRef)(0);
-  const elementRef = (0, import_react146.useRef)(null);
-  const startedRef = (0, import_react146.useRef)(false);
-  const animate = (0, import_react146.useRef)(() => {
+  const [displayValue, setDisplayValue] = (0, import_react147.useState)(start);
+  const [isAnimating, setIsAnimating] = (0, import_react147.useState)(false);
+  const [hasAnimated, setHasAnimated] = (0, import_react147.useState)(false);
+  const rafRef = (0, import_react147.useRef)(null);
+  const startTimeRef = (0, import_react147.useRef)(0);
+  const elementRef = (0, import_react147.useRef)(null);
+  const startedRef = (0, import_react147.useRef)(false);
+  const animate = (0, import_react147.useRef)(() => {
     if (!startTimeRef.current) {
       startTimeRef.current = performance.now();
     }
@@ -55974,13 +55975,13 @@ function CountUp({
     setHasAnimated(false);
     rafRef.current = requestAnimationFrame(animate.current);
   };
-  (0, import_react146.useEffect)(() => {
+  (0, import_react147.useEffect)(() => {
     if (autoStart && !enableScrollTrigger) {
       const timer = setTimeout(() => startAnimation(), 50);
       return () => clearTimeout(timer);
     }
   }, [autoStart, enableScrollTrigger]);
-  (0, import_react146.useEffect)(() => {
+  (0, import_react147.useEffect)(() => {
     if (!enableScrollTrigger || !elementRef.current) return;
     const observer = new IntersectionObserver(
       (entries) => {
@@ -55996,12 +55997,12 @@ function CountUp({
     observer.observe(elementRef.current);
     return () => observer.disconnect();
   }, [enableScrollTrigger, hasAnimated]);
-  (0, import_react146.useEffect)(() => {
+  (0, import_react147.useEffect)(() => {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []);
-  (0, import_react146.useEffect)(() => {
+  (0, import_react147.useEffect)(() => {
     if (autoStart) {
       startedRef.current = false;
       setHasAnimated(false);
@@ -56029,7 +56030,7 @@ function CountUp({
 }
 
 // src/components/Countdown.tsx
-var import_react147 = require("react");
+var import_react148 = require("react");
 var import_jsx_runtime216 = require("react/jsx-runtime");
 function pad3(n) {
   return String(n).padStart(2, "0");
@@ -56051,19 +56052,19 @@ var Countdown = ({
   loading = false,
   "data-testid": dataTestId
 }) => {
-  const [remaining, setRemaining] = (0, import_react147.useState)(seconds);
-  const [status, setStatus] = (0, import_react147.useState)(
+  const [remaining, setRemaining] = (0, import_react148.useState)(seconds);
+  const [status, setStatus] = (0, import_react148.useState)(
     autoStart ? "running" : "paused"
   );
-  const intervalRef = (0, import_react147.useRef)(null);
-  const finishedRef = (0, import_react147.useRef)(false);
-  const clearTimer = (0, import_react147.useCallback)(() => {
+  const intervalRef = (0, import_react148.useRef)(null);
+  const finishedRef = (0, import_react148.useRef)(false);
+  const clearTimer = (0, import_react148.useCallback)(() => {
     if (intervalRef.current !== null) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
   }, []);
-  const start = (0, import_react147.useCallback)(() => {
+  const start = (0, import_react148.useCallback)(() => {
     clearTimer();
     setStatus("running");
     intervalRef.current = setInterval(() => {
@@ -56078,31 +56079,31 @@ var Countdown = ({
       });
     }, 1e3);
   }, [clearTimer]);
-  const pause = (0, import_react147.useCallback)(() => {
+  const pause = (0, import_react148.useCallback)(() => {
     clearTimer();
     setStatus("paused");
   }, [clearTimer]);
-  const reset = (0, import_react147.useCallback)(() => {
+  const reset = (0, import_react148.useCallback)(() => {
     clearTimer();
     setRemaining(seconds);
     setStatus(autoStart ? "running" : "paused");
     finishedRef.current = false;
   }, [seconds, autoStart, clearTimer]);
-  (0, import_react147.useEffect)(() => {
+  (0, import_react148.useEffect)(() => {
     if (status === "running" && onTick) {
       onTick(remaining);
     }
   }, [remaining, status, onTick]);
-  (0, import_react147.useEffect)(() => {
+  (0, import_react148.useEffect)(() => {
     if (remaining === 0 && status === "finished" && !finishedRef.current) {
       finishedRef.current = true;
       onFinish?.();
     }
   }, [remaining, status, onFinish]);
-  (0, import_react147.useEffect)(() => {
+  (0, import_react148.useEffect)(() => {
     reset();
   }, [seconds]);
-  (0, import_react147.useEffect)(() => {
+  (0, import_react148.useEffect)(() => {
     return clearTimer;
   }, [clearTimer]);
   if (loading) {
@@ -56149,16 +56150,16 @@ var Countdown = ({
   );
 };
 function useCountdown(initialSeconds = 0) {
-  const [remaining, setRemaining] = (0, import_react147.useState)(initialSeconds);
-  const [status, setStatus] = (0, import_react147.useState)("paused");
-  const intervalRef = (0, import_react147.useRef)(null);
-  const clear = (0, import_react147.useCallback)(() => {
+  const [remaining, setRemaining] = (0, import_react148.useState)(initialSeconds);
+  const [status, setStatus] = (0, import_react148.useState)("paused");
+  const intervalRef = (0, import_react148.useRef)(null);
+  const clear = (0, import_react148.useCallback)(() => {
     if (intervalRef.current !== null) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
   }, []);
-  const start = (0, import_react147.useCallback)(
+  const start = (0, import_react148.useCallback)(
     (seconds) => {
       clear();
       if (seconds !== void 0) setRemaining(seconds);
@@ -56176,11 +56177,11 @@ function useCountdown(initialSeconds = 0) {
     },
     [clear]
   );
-  const pause = (0, import_react147.useCallback)(() => {
+  const pause = (0, import_react148.useCallback)(() => {
     clear();
     setStatus("paused");
   }, [clear]);
-  const reset = (0, import_react147.useCallback)(
+  const reset = (0, import_react148.useCallback)(
     (seconds) => {
       clear();
       setRemaining(seconds ?? initialSeconds);
@@ -56188,18 +56189,18 @@ function useCountdown(initialSeconds = 0) {
     },
     [initialSeconds, clear]
   );
-  (0, import_react147.useEffect)(() => {
+  (0, import_react148.useEffect)(() => {
     return clear;
   }, [clear]);
   return { remaining, status, start, pause, reset };
 }
 
 // src/components/ToggleGroup.tsx
-var import_react148 = __toESM(require("react"));
+var import_react149 = __toESM(require("react"));
 var import_jsx_runtime217 = require("react/jsx-runtime");
-var ToggleGroupContext = (0, import_react148.createContext)(null);
+var ToggleGroupContext = (0, import_react149.createContext)(null);
 function useToggleGroupContext() {
-  const ctx = (0, import_react148.useContext)(ToggleGroupContext);
+  const ctx = (0, import_react149.useContext)(ToggleGroupContext);
   if (!ctx) throw new Error("ToggleButton must be used within ToggleGroup");
   return ctx;
 }
@@ -56214,7 +56215,7 @@ var ToggleButton = ({
   const ctx = useToggleGroupContext();
   const isSelected = ctx.selected.has(value);
   const isDisabled3 = ctx.disabled || itemDisabled;
-  const handleClick = (0, import_react148.useCallback)(() => {
+  const handleClick = (0, import_react149.useCallback)(() => {
     if (!isDisabled3) ctx.toggle(value);
   }, [isDisabled3, ctx, value]);
   const sizeMap5 = {
@@ -56270,15 +56271,15 @@ var ToggleGroup = ({
   orientation = "horizontal"
 }) => {
   const isControlled = controlledValue !== void 0;
-  const defaultSelected = (0, import_react148.useMemo)(() => {
+  const defaultSelected = (0, import_react149.useMemo)(() => {
     const raw = isControlled ? controlledValue : defaultValue;
     if (!raw) return /* @__PURE__ */ new Set();
     if (Array.isArray(raw)) return new Set(raw);
     return /* @__PURE__ */ new Set([raw]);
   }, []);
-  const [internalSelected, setInternalSelected] = import_react148.default.useState(defaultSelected);
+  const [internalSelected, setInternalSelected] = import_react149.default.useState(defaultSelected);
   const selected = isControlled ? Array.isArray(controlledValue) ? new Set(controlledValue) : /* @__PURE__ */ new Set([controlledValue]) : internalSelected;
-  const toggle = (0, import_react148.useCallback)(
+  const toggle = (0, import_react149.useCallback)(
     (val) => {
       const next = new Set(selected);
       if (next.has(val)) {
@@ -56296,7 +56297,7 @@ var ToggleGroup = ({
     },
     [selected, multiple, isControlled, onChange]
   );
-  const ctxValue = (0, import_react148.useMemo)(
+  const ctxValue = (0, import_react149.useMemo)(
     () => ({ variant, size, disabled, multiple, selected, toggle, orientation }),
     [variant, size, disabled, multiple, selected, toggle, orientation]
   );
@@ -56325,7 +56326,7 @@ var ToggleGroup = ({
 ToggleGroup.Button = ToggleButton;
 
 // src/components/InventoryKeeperDashboard.tsx
-var import_react149 = __toESM(require("react"));
+var import_react150 = __toESM(require("react"));
 var import_jsx_runtime218 = require("react/jsx-runtime");
 var STATUS_LABELS3 = {
   low_stock: "\u4F4E\u5E93\u5B58",
@@ -56474,7 +56475,7 @@ function InventoryKeeperDashboard({
       key: "priority",
       header: "\u4F18\u5148\u7EA7",
       width: "70px",
-      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)(import_react149.default.Fragment, { children: [
+      render: (row) => /* @__PURE__ */ (0, import_jsx_runtime218.jsxs)(import_react150.default.Fragment, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime218.jsx)(
           "span",
           {
@@ -57378,7 +57379,7 @@ function SalesGuideTool({
 }
 
 // src/components/ReturnGoodsProcessingPanel/ReturnGoodsProcessingPanel.tsx
-var import_react150 = require("react");
+var import_react151 = require("react");
 var import_jsx_runtime221 = require("react/jsx-runtime");
 var RETURN_TYPE_LABELS = {
   refund: "\u4EC5\u9000\u6B3E",
@@ -57462,10 +57463,10 @@ function ReturnGoodsProcessingPanel({
   callbacks
 }) {
   const safeRequests = requests ?? [];
-  const [selectedRequest, setSelectedRequest] = (0, import_react150.useState)(null);
-  const [detailModalOpen, setDetailModalOpen] = (0, import_react150.useState)(false);
-  const [remark, setRemark] = (0, import_react150.useState)("");
-  const stats = (0, import_react150.useMemo)(() => {
+  const [selectedRequest, setSelectedRequest] = (0, import_react151.useState)(null);
+  const [detailModalOpen, setDetailModalOpen] = (0, import_react151.useState)(false);
+  const [remark, setRemark] = (0, import_react151.useState)("");
+  const stats = (0, import_react151.useMemo)(() => {
     const pending = safeRequests.filter((r) => r.status === "pending_review").length;
     const totalRefund = safeRequests.reduce((s2, r) => s2 + r.refundAmount, 0);
     const toShip = safeRequests.filter((r) => r.status === "approved" && r.returnType === "exchange").length;
@@ -57476,17 +57477,17 @@ function ReturnGoodsProcessingPanel({
       { label: "\u5F85\u6362\u8D27", value: toShip, color: "#60a5fa" }
     ];
   }, [requests]);
-  const handleOpenDetail = (0, import_react150.useCallback)((r) => {
+  const handleOpenDetail = (0, import_react151.useCallback)((r) => {
     setSelectedRequest(r);
     setRemark("");
     setDetailModalOpen(true);
   }, []);
-  const handleCloseDetail = (0, import_react150.useCallback)(() => {
+  const handleCloseDetail = (0, import_react151.useCallback)(() => {
     setDetailModalOpen(false);
     setSelectedRequest(null);
     setRemark("");
   }, []);
-  const handleAction = (0, import_react150.useCallback)(
+  const handleAction = (0, import_react151.useCallback)(
     (newStatus) => {
       if (!selectedRequest) return;
       callbacks?.onStatusChange?.(selectedRequest.id, newStatus, remark.trim() || void 0);
@@ -57494,7 +57495,7 @@ function ReturnGoodsProcessingPanel({
     },
     [selectedRequest, remark, callbacks, handleCloseDetail]
   );
-  const isActionAllowed = (0, import_react150.useCallback)(
+  const isActionAllowed = (0, import_react151.useCallback)(
     (action) => {
       if (readOnly) return false;
       if (!allowedActions) return true;
@@ -57502,7 +57503,7 @@ function ReturnGoodsProcessingPanel({
     },
     [readOnly, allowedActions]
   );
-  const columns = (0, import_react150.useMemo)(
+  const columns = (0, import_react151.useMemo)(
     () => [
       { key: "id", header: "\u9000\u6362\u5355\u53F7" },
       { key: "orderNo", header: "\u8BA2\u5355\u53F7" },
@@ -57848,30 +57849,30 @@ var CouponRedemptionPanel = ({
 };
 
 // src/providers/ViewModelProvider.tsx
-var import_react151 = require("react");
+var import_react152 = require("react");
 var import_jsx_runtime223 = require("react/jsx-runtime");
-var ViewModelContext = (0, import_react151.createContext)(null);
+var ViewModelContext = (0, import_react152.createContext)(null);
 function ViewModelProvider({
   initialTenantId,
   initialUserId,
   children
 }) {
-  const [tenantId, setTenantIdState] = (0, import_react151.useState)(initialTenantId);
-  const [userId, setUserIdState] = (0, import_react151.useState)(initialUserId);
-  const setTenantId = (0, import_react151.useCallback)((newTenantId) => {
+  const [tenantId, setTenantIdState] = (0, import_react152.useState)(initialTenantId);
+  const [userId, setUserIdState] = (0, import_react152.useState)(initialUserId);
+  const setTenantId = (0, import_react152.useCallback)((newTenantId) => {
     setTenantIdState(newTenantId);
   }, []);
-  const setUserId = (0, import_react151.useCallback)((newUserId) => {
+  const setUserId = (0, import_react152.useCallback)((newUserId) => {
     setUserIdState(newUserId);
   }, []);
-  const value = (0, import_react151.useMemo)(
+  const value = (0, import_react152.useMemo)(
     () => ({ tenantId, userId, setTenantId, setUserId }),
     [tenantId, userId, setTenantId, setUserId]
   );
   return /* @__PURE__ */ (0, import_jsx_runtime223.jsx)(ViewModelContext.Provider, { value, children: /* @__PURE__ */ (0, import_jsx_runtime223.jsx)("span", { "data-testid": "view-model-provider", "data-tenant-id": tenantId, "data-user-id": userId, style: { display: "contents" }, children }) });
 }
 function useViewModel() {
-  const ctx = (0, import_react151.useContext)(ViewModelContext);
+  const ctx = (0, import_react152.useContext)(ViewModelContext);
   if (!ctx) {
     throw new Error("useViewModel must be used within ViewModelProvider");
   }
@@ -57885,7 +57886,7 @@ function useUserId() {
 }
 
 // src/components/SpeedDial.tsx
-var import_react152 = require("react");
+var import_react153 = require("react");
 var import_jsx_runtime224 = require("react/jsx-runtime");
 var SIZE_MAP12 = {
   sm: { btn: 36, icon: 16 },
@@ -57909,13 +57910,13 @@ function SpeedDial({
   style,
   className
 }) {
-  const [open, setOpen] = (0, import_react152.useState)(false);
-  const containerRef = (0, import_react152.useRef)(null);
+  const [open, setOpen] = (0, import_react153.useState)(false);
+  const containerRef = (0, import_react153.useRef)(null);
   const dims = SIZE_MAP12[size];
   const dirVec = DIRECTION_MAP[direction];
-  const toggle = (0, import_react152.useCallback)(() => setOpen((v) => !v), []);
-  const close = (0, import_react152.useCallback)(() => setOpen(false), []);
-  (0, import_react152.useEffect)(() => {
+  const toggle = (0, import_react153.useCallback)(() => setOpen((v) => !v), []);
+  const close = (0, import_react153.useCallback)(() => setOpen(false), []);
+  (0, import_react153.useEffect)(() => {
     if (!open) return;
     const handler = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -58083,7 +58084,7 @@ function SpeedDial({
 }
 
 // src/components/SortableList.tsx
-var import_react153 = require("react");
+var import_react154 = require("react");
 var import_jsx_runtime225 = require("react/jsx-runtime");
 var SortableList = ({
   items,
@@ -58093,10 +58094,10 @@ var SortableList = ({
   className = "",
   ariaLabel = "\u6392\u5E8F\u5217\u8868"
 }) => {
-  const [dragIndex, setDragIndex] = (0, import_react153.useState)(null);
-  const [overIndex, setOverIndex] = (0, import_react153.useState)(null);
-  const listRef = (0, import_react153.useRef)(null);
-  const handleDragStart = (0, import_react153.useCallback)(
+  const [dragIndex, setDragIndex] = (0, import_react154.useState)(null);
+  const [overIndex, setOverIndex] = (0, import_react154.useState)(null);
+  const listRef = (0, import_react154.useRef)(null);
+  const handleDragStart = (0, import_react154.useCallback)(
     (e, index) => {
       if (disabled) return;
       setDragIndex(index);
@@ -58105,7 +58106,7 @@ var SortableList = ({
     },
     [disabled]
   );
-  const handleDragOver = (0, import_react153.useCallback)(
+  const handleDragOver = (0, import_react154.useCallback)(
     (e, index) => {
       e.preventDefault();
       if (disabled || dragIndex === null) return;
@@ -58114,10 +58115,10 @@ var SortableList = ({
     },
     [disabled, dragIndex]
   );
-  const handleDragLeave = (0, import_react153.useCallback)(() => {
+  const handleDragLeave = (0, import_react154.useCallback)(() => {
     setOverIndex(null);
   }, []);
-  const handleDrop = (0, import_react153.useCallback)(
+  const handleDrop = (0, import_react154.useCallback)(
     (e, dropIndex) => {
       e.preventDefault();
       if (disabled || dragIndex === null || dragIndex === dropIndex) {
@@ -58134,11 +58135,11 @@ var SortableList = ({
     },
     [disabled, dragIndex, items, onReorder]
   );
-  const handleDragEnd = (0, import_react153.useCallback)(() => {
+  const handleDragEnd = (0, import_react154.useCallback)(() => {
     setDragIndex(null);
     setOverIndex(null);
   }, []);
-  const handleKeyDown = (0, import_react153.useCallback)(
+  const handleKeyDown = (0, import_react154.useCallback)(
     (e, index) => {
       if (disabled) return;
       if (items[index]?.disabled) return;
@@ -58283,7 +58284,7 @@ var SortableList = ({
 };
 
 // src/components/NumberFormat.tsx
-var import_react154 = __toESM(require("react"));
+var import_react155 = __toESM(require("react"));
 var import_jsx_runtime226 = require("react/jsx-runtime");
 var SIZE_FONT = {
   xs: 11,
@@ -58367,7 +58368,7 @@ var NumberFormat = ({
       fontVariantNumeric: "tabular-nums",
       ...style
     };
-    return import_react154.default.createElement("span", { className, style: fallbackStyle }, placeholder);
+    return import_react155.default.createElement("span", { className, style: fallbackStyle }, placeholder);
   }
   const numericValue = type === "percent" ? value : value;
   let formatted = formatNumber4(numericValue, type, decimals);
@@ -58394,7 +58395,7 @@ var NumberFormat = ({
     ...style
   };
   const content = [prefix, formatted, suffix].filter(Boolean).join(" ");
-  return import_react154.default.createElement("span", { className, style: mergedStyle }, content);
+  return import_react155.default.createElement("span", { className, style: mergedStyle }, content);
 };
 var Currency = (props) => /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(NumberFormat, { type: "currency", ...props });
 var Percent = (props) => /* @__PURE__ */ (0, import_jsx_runtime226.jsx)(NumberFormat, { type: "percent", ...props });
@@ -58809,7 +58810,7 @@ var PredictionAnalysisPanel = ({
 };
 
 // src/components/ScrollToTop.tsx
-var import_react155 = __toESM(require("react"));
+var import_react156 = __toESM(require("react"));
 var import_jsx_runtime230 = require("react/jsx-runtime");
 function ScrollToTop({
   threshold = 300,
@@ -58826,9 +58827,9 @@ function ScrollToTop({
   style,
   icon
 }) {
-  const [visible, setVisible] = import_react155.default.useState(false);
-  const [hovered, setHovered] = import_react155.default.useState(false);
-  import_react155.default.useEffect(() => {
+  const [visible, setVisible] = import_react156.default.useState(false);
+  const [hovered, setHovered] = import_react156.default.useState(false);
+  import_react156.default.useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > threshold);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -58884,7 +58885,7 @@ function ScrollToTop({
 }
 
 // src/components/FloatingActionButton.tsx
-var import_react156 = __toESM(require("react"));
+var import_react157 = __toESM(require("react"));
 var import_jsx_runtime231 = require("react/jsx-runtime");
 var POSITION_STYLES2 = {
   "bottom-right": { bottom: 24, right: 24 },
@@ -58923,7 +58924,7 @@ function FloatingActionButton({
   "aria-label": ariaLabel,
   "data-testid": dataTestId
 }) {
-  const [hovered, setHovered] = import_react156.default.useState(false);
+  const [hovered, setHovered] = import_react157.default.useState(false);
   const btnSize = SIZE_MAP13[size];
   const iconSize = SIZE_FONT2[size];
   const pos = POSITION_STYLES2[position];
@@ -59018,7 +59019,7 @@ function FloatingActionButton({
 }
 
 // src/components/AIMetricGoalPanel.tsx
-var import_react157 = require("react");
+var import_react158 = require("react");
 var import_jsx_runtime232 = require("react/jsx-runtime");
 var categoryColors = {
   revenue: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950",
@@ -59115,7 +59116,7 @@ function AIMetricGoalPanel({
   period,
   emptyText = "\u6682\u65E0\u6307\u6807\u6570\u636E"
 }) {
-  const summary = (0, import_react157.useMemo)(() => {
+  const summary = (0, import_react158.useMemo)(() => {
     if (goals.length === 0) return null;
     const total = goals.length;
     const achieved = goals.filter((g) => getCompletionRate(g.actual, g.target) >= 100).length;
@@ -59165,7 +59166,7 @@ function AIMetricGoalPanel({
 }
 
 // src/components/AIModelPerformancePanel.tsx
-var import_react158 = require("react");
+var import_react159 = require("react");
 var import_jsx_runtime233 = require("react/jsx-runtime");
 var STATUS_CONFIG3 = {
   online: { label: "\u5728\u7EBF", dot: "bg-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
@@ -59237,7 +59238,7 @@ function AIModelPerformancePanel({
   style
 }) {
   const safeModels = models || [];
-  const summary = (0, import_react158.useMemo)(() => {
+  const summary = (0, import_react159.useMemo)(() => {
     const total = safeModels.length;
     const online = safeModels.filter((m) => m.status === "online").length;
     const totalReqs24h = safeModels.reduce((s2, m) => s2 + m.requestCount24h, 0);
@@ -59307,7 +59308,7 @@ function AIModelPerformancePanel({
 }
 
 // src/components/NavigationMenu.tsx
-var import_react159 = require("react");
+var import_react160 = require("react");
 var import_jsx_runtime234 = require("react/jsx-runtime");
 function SubMenu2({
   items,
@@ -59404,14 +59405,14 @@ function NavigationMenu({
   variant = "default",
   "data-testid": dataTestId = "nav-menu"
 }) {
-  const [openKey, setOpenKey] = (0, import_react159.useState)(null);
-  const menuRef = (0, import_react159.useRef)(null);
-  const handleOutsideClick = (0, import_react159.useCallback)((e) => {
+  const [openKey, setOpenKey] = (0, import_react160.useState)(null);
+  const menuRef = (0, import_react160.useRef)(null);
+  const handleOutsideClick = (0, import_react160.useCallback)((e) => {
     if (menuRef.current && !menuRef.current.contains(e.target)) {
       setOpenKey(null);
     }
   }, []);
-  (0, import_react159.useEffect)(() => {
+  (0, import_react160.useEffect)(() => {
     if (openKey) {
       document.addEventListener("mousedown", handleOutsideClick);
       return () => document.removeEventListener("mousedown", handleOutsideClick);
@@ -59548,7 +59549,7 @@ function NavigationMenu({
 }
 
 // src/components/HoverCard.tsx
-var import_react160 = require("react");
+var import_react161 = require("react");
 var import_jsx_runtime235 = require("react/jsx-runtime");
 function computePosition2(triggerRect, cardRect, placement, gap = 8) {
   switch (placement) {
@@ -59593,17 +59594,17 @@ function HoverCard({
   style,
   contentStyle
 }) {
-  const [visible, setVisible] = (0, import_react160.useState)(false);
-  const [position, setPosition] = (0, import_react160.useState)({});
-  const triggerRef = (0, import_react160.useRef)(null);
-  const cardRef = (0, import_react160.useRef)(null);
-  const openTimer = (0, import_react160.useRef)();
-  const closeTimer = (0, import_react160.useRef)();
-  const clearTimers = (0, import_react160.useCallback)(() => {
+  const [visible, setVisible] = (0, import_react161.useState)(false);
+  const [position, setPosition] = (0, import_react161.useState)({});
+  const triggerRef = (0, import_react161.useRef)(null);
+  const cardRef = (0, import_react161.useRef)(null);
+  const openTimer = (0, import_react161.useRef)();
+  const closeTimer = (0, import_react161.useRef)();
+  const clearTimers = (0, import_react161.useCallback)(() => {
     if (openTimer.current) clearTimeout(openTimer.current);
     if (closeTimer.current) clearTimeout(closeTimer.current);
   }, []);
-  const handleMouseEnter = (0, import_react160.useCallback)(() => {
+  const handleMouseEnter = (0, import_react161.useCallback)(() => {
     if (disabled) return;
     clearTimers();
     openTimer.current = setTimeout(() => {
@@ -59619,21 +59620,21 @@ function HoverCard({
       }
     }, openDelay);
   }, [disabled, clearTimers, openDelay, placement]);
-  const handleMouseLeave = (0, import_react160.useCallback)(() => {
+  const handleMouseLeave = (0, import_react161.useCallback)(() => {
     clearTimers();
     closeTimer.current = setTimeout(() => {
       setVisible(false);
     }, closeDelay);
   }, [clearTimers, closeDelay]);
-  const handleCardMouseEnter = (0, import_react160.useCallback)(() => {
+  const handleCardMouseEnter = (0, import_react161.useCallback)(() => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
   }, []);
-  const handleCardMouseLeave = (0, import_react160.useCallback)(() => {
+  const handleCardMouseLeave = (0, import_react161.useCallback)(() => {
     closeTimer.current = setTimeout(() => {
       setVisible(false);
     }, closeDelay);
   }, [closeDelay]);
-  (0, import_react160.useEffect)(() => {
+  (0, import_react161.useEffect)(() => {
     return () => clearTimers();
   }, [clearTimers]);
   return /* @__PURE__ */ (0, import_jsx_runtime235.jsxs)(
@@ -59697,7 +59698,7 @@ function HoverCard({
 }
 
 // src/components/AnnouncementBanner.tsx
-var import_react161 = require("react");
+var import_react162 = require("react");
 var import_jsx_runtime236 = require("react/jsx-runtime");
 var DefaultIcons = {
   info: "\u2139\uFE0F",
@@ -59750,8 +59751,8 @@ function AnnouncementBanner({
   onClose,
   className
 }) {
-  const [visible, setVisible] = (0, import_react161.useState)(defaultVisible);
-  const handleClose = (0, import_react161.useCallback)(() => {
+  const [visible, setVisible] = (0, import_react162.useState)(defaultVisible);
+  const handleClose = (0, import_react162.useCallback)(() => {
     setVisible(false);
     onClose?.();
   }, [onClose]);
@@ -59869,7 +59870,7 @@ function AnnouncementBanner({
 }
 
 // src/components/AIDecisionTimeline.tsx
-var import_react162 = __toESM(require("react"));
+var import_react163 = __toESM(require("react"));
 var import_jsx_runtime237 = require("react/jsx-runtime");
 var STATUS_META = {
   success: {
@@ -60166,7 +60167,7 @@ function AIDecisionTimeline({
   className,
   onEventClick
 }) {
-  const [showAll, setShowAll] = import_react162.default.useState(false);
+  const [showAll, setShowAll] = import_react163.default.useState(false);
   const visibleEvents = showAll ? events : events.slice(0, maxVisible);
   const hiddenCount = events.length - maxVisible;
   if (events.length === 0) {
@@ -60356,7 +60357,7 @@ function OverviewItem({
 }
 
 // src/components/CustomerSessionPanel.tsx
-var import_react163 = require("react");
+var import_react164 = require("react");
 var import_jsx_runtime238 = require("react/jsx-runtime");
 var STATUS_LABELS4 = {
   active: "\u670D\u52A1\u4E2D",
@@ -60387,13 +60388,13 @@ function CustomerSessionPanel({
   onNotesChange,
   className = ""
 }) {
-  const [editingNotes, setEditingNotes] = (0, import_react163.useState)(false);
-  const [notesDraft, setNotesDraft] = (0, import_react163.useState)(notes);
-  const handleSaveNotes = (0, import_react163.useCallback)(() => {
+  const [editingNotes, setEditingNotes] = (0, import_react164.useState)(false);
+  const [notesDraft, setNotesDraft] = (0, import_react164.useState)(notes);
+  const handleSaveNotes = (0, import_react164.useCallback)(() => {
     onNotesChange?.(notesDraft);
     setEditingNotes(false);
   }, [notesDraft, onNotesChange]);
-  const handleCancelEditNotes = (0, import_react163.useCallback)(() => {
+  const handleCancelEditNotes = (0, import_react164.useCallback)(() => {
     setNotesDraft(notes);
     setEditingNotes(false);
   }, [notes]);
@@ -60714,7 +60715,7 @@ function CustomerSessionPanel({
 }
 
 // src/components/AnomalyDiagnosisReport.tsx
-var import_react164 = require("react");
+var import_react165 = require("react");
 var import_jsx_runtime239 = require("react/jsx-runtime");
 var severityVariantMap = {
   critical: "error",
@@ -60740,8 +60741,8 @@ function AnomalyDiagnosisReport({
   onExport,
   className = ""
 }) {
-  const [activeTab, setActiveTab] = (0, import_react164.useState)("all");
-  const [resolvedIds, setResolvedIds] = (0, import_react164.useState)(/* @__PURE__ */ new Set());
+  const [activeTab, setActiveTab] = (0, import_react165.useState)("all");
+  const [resolvedIds, setResolvedIds] = (0, import_react165.useState)(/* @__PURE__ */ new Set());
   const unresolvedFindings = findings.filter((f) => !resolvedIds.has(f.id));
   const severityCounts = {
     critical: unresolvedFindings.filter((f) => f.severity === "critical").length,
@@ -60935,7 +60936,7 @@ function AnomalyDiagnosisReport({
 }
 
 // src/components/StoreTransferOrderPanel.tsx
-var import_react165 = require("react");
+var import_react166 = require("react");
 var import_jsx_runtime240 = require("react/jsx-runtime");
 var STATUS_CONFIG4 = {
   draft: { label: "\u8349\u7A3F", variant: "neutral" },
@@ -60980,9 +60981,9 @@ function StoreTransferOrderPanel({
   onViewDetail,
   onCancelTransfer
 }) {
-  const [searchText, setSearchText] = (0, import_react165.useState)("");
-  const [filterStatus, setFilterStatus] = (0, import_react165.useState)("all");
-  const filteredOrders = (0, import_react165.useMemo)(() => {
+  const [searchText, setSearchText] = (0, import_react166.useState)("");
+  const [filterStatus, setFilterStatus] = (0, import_react166.useState)("all");
+  const filteredOrders = (0, import_react166.useMemo)(() => {
     if (!orders) return [];
     return orders.filter((o) => {
       const matchSearch = !searchText || o.id.toLowerCase().includes(searchText.toLowerCase()) || o.sourceStore.includes(searchText) || o.targetStore.includes(searchText);
@@ -61743,7 +61744,7 @@ var Empty = ({
 };
 
 // src/components/AIDecisionComparisonPanel.tsx
-var import_react166 = require("react");
+var import_react167 = require("react");
 var import_jsx_runtime246 = require("react/jsx-runtime");
 var CATEGORY_LABELS6 = {
   pricing: "\u5B9A\u4EF7\u7B56\u7565",
@@ -61783,7 +61784,7 @@ function AIDecisionComparisonPanel({
   onItemClick,
   onToggleAdopt
 }) {
-  const filtered = (0, import_react166.useMemo)(() => {
+  const filtered = (0, import_react167.useMemo)(() => {
     let list = items;
     if (categoryFilter !== "all") {
       list = list.filter((i) => i.category === categoryFilter);
@@ -61795,7 +61796,7 @@ function AIDecisionComparisonPanel({
     if (adoptedFilter === "not-adopted") list = list.filter((i) => !i.adopted);
     return list;
   }, [items, categoryFilter, statusFilter, adoptedFilter]);
-  const sorted = (0, import_react166.useMemo)(() => {
+  const sorted = (0, import_react167.useMemo)(() => {
     const arr = [...filtered];
     switch (sort) {
       case "confidence":
@@ -61819,8 +61820,8 @@ function AIDecisionComparisonPanel({
     }
     return arr;
   }, [filtered, sort]);
-  const [hoveredId, setHoveredId] = (0, import_react166.useState)(null);
-  const stats = (0, import_react166.useMemo)(() => {
+  const [hoveredId, setHoveredId] = (0, import_react167.useState)(null);
+  const stats = (0, import_react167.useMemo)(() => {
     const total = items.length;
     const adopted = items.filter((i) => i.adopted).length;
     const succeeded = items.filter((i) => i.status === "success").length;
@@ -62115,7 +62116,7 @@ function ResourceOptimizationPanel({
 }
 
 // src/components/Mentions.tsx
-var import_react167 = require("react");
+var import_react168 = require("react");
 var import_jsx_runtime248 = require("react/jsx-runtime");
 function Mentions({
   options,
@@ -62131,16 +62132,16 @@ function Mentions({
   className = "",
   "data-testid": dataTestId = "mentions"
 }) {
-  const [internalText, setInternalText] = (0, import_react167.useState)(defaultValue);
-  const [isOpen, setIsOpen] = (0, import_react167.useState)(false);
-  const [triggerIndex, setTriggerIndex] = (0, import_react167.useState)(-1);
-  const [query, setQuery] = (0, import_react167.useState)("");
-  const [highlightIndex, setHighlightIndex] = (0, import_react167.useState)(-1);
-  const textareaRef = (0, import_react167.useRef)(null);
-  const containerRef = (0, import_react167.useRef)(null);
+  const [internalText, setInternalText] = (0, import_react168.useState)(defaultValue);
+  const [isOpen, setIsOpen] = (0, import_react168.useState)(false);
+  const [triggerIndex, setTriggerIndex] = (0, import_react168.useState)(-1);
+  const [query, setQuery] = (0, import_react168.useState)("");
+  const [highlightIndex, setHighlightIndex] = (0, import_react168.useState)(-1);
+  const textareaRef = (0, import_react168.useRef)(null);
+  const containerRef = (0, import_react168.useRef)(null);
   const isControlled = controlledValue !== void 0;
   const currentText = isControlled ? controlledValue : internalText;
-  const extractMentions = (0, import_react167.useCallback)(
+  const extractMentions = (0, import_react168.useCallback)(
     (text) => {
       const regex = new RegExp(`${trigger}(\\w+[\\w\\u4e00-\\u9fff]*)`, "g");
       const items = [];
@@ -62164,7 +62165,7 @@ function Mentions({
     },
     [options, trigger]
   );
-  const findTrigger = (0, import_react167.useCallback)(
+  const findTrigger = (0, import_react168.useCallback)(
     (text, cursorPos) => {
       const beforeCursor = text.slice(0, cursorPos);
       const triggerIdx = beforeCursor.lastIndexOf(trigger);
@@ -62178,14 +62179,14 @@ function Mentions({
     },
     [trigger]
   );
-  const filteredOptions = (0, import_react167.useMemo)(() => {
+  const filteredOptions = (0, import_react168.useMemo)(() => {
     if (!query) return options.slice(0, 10);
     const q = query.toLowerCase();
     return options.filter(
       (o) => o.label.toLowerCase().includes(q) || (o.keyword ?? "").toLowerCase().includes(q) || o.id.toLowerCase().includes(q)
     ).slice(0, 10);
   }, [options, query]);
-  const selectMention = (0, import_react167.useCallback)(
+  const selectMention = (0, import_react168.useCallback)(
     (option) => {
       const beforeTrigger = currentText.slice(0, triggerIndex);
       const afterCursor = currentText.slice(
@@ -62211,7 +62212,7 @@ function Mentions({
     },
     [currentText, triggerIndex, query, trigger, isControlled, onChange, onMentionsChange, extractMentions]
   );
-  const handleChange = (0, import_react167.useCallback)(
+  const handleChange = (0, import_react168.useCallback)(
     (e) => {
       const newText = e.target.value;
       if (!isControlled) setInternalText(newText);
@@ -62236,7 +62237,7 @@ function Mentions({
     },
     [isControlled, findTrigger, extractMentions, onChange, onMentionsChange, isOpen]
   );
-  const handleKeyDown = (0, import_react167.useCallback)(
+  const handleKeyDown = (0, import_react168.useCallback)(
     (e) => {
       if (!isOpen) {
         if (e.key === "ArrowDown" && triggerIndex >= 0) {
@@ -62275,7 +62276,7 @@ function Mentions({
     },
     [isOpen, filteredOptions, highlightIndex, selectMention, triggerIndex]
   );
-  (0, import_react167.useEffect)(() => {
+  (0, import_react168.useEffect)(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setIsOpen(false);
@@ -62285,7 +62286,7 @@ function Mentions({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  const textareaStyle = (0, import_react167.useMemo)(() => {
+  const textareaStyle = (0, import_react168.useMemo)(() => {
     const lineHeight = 22;
     const minHeight = minRows * lineHeight + 16;
     return {
@@ -62392,7 +62393,7 @@ function Mentions({
 }
 
 // src/components/CommentList.tsx
-var import_react168 = require("react");
+var import_react169 = require("react");
 var import_jsx_runtime249 = require("react/jsx-runtime");
 function CommentRow({
   comment,
@@ -62403,8 +62404,8 @@ function CommentRow({
   onToggleLike,
   testId
 }) {
-  const [showReply, setShowReply] = (0, import_react168.useState)(false);
-  const [replyText, setReplyText] = (0, import_react168.useState)("");
+  const [showReply, setShowReply] = (0, import_react169.useState)(false);
+  const [replyText, setReplyText] = (0, import_react169.useState)("");
   const isAuthor = currentUserId === comment.author.id;
   const handleSubmitReply = () => {
     if (replyText.trim() && onAddComment) {
@@ -62568,7 +62569,7 @@ function CommentList({
   placeholder = "\u5199\u4E0B\u4F60\u7684\u8BC4\u8BBA...",
   "data-testid": testId = "comment-list"
 }) {
-  const [newComment, setNewComment] = (0, import_react168.useState)("");
+  const [newComment, setNewComment] = (0, import_react169.useState)("");
   const handleSubmit = () => {
     if (newComment.trim() && onAddComment) {
       onAddComment(newComment.trim());
@@ -62675,7 +62676,7 @@ function CommentList({
 }
 
 // src/components/RealtimeKpiStrip.tsx
-var import_react169 = require("react");
+var import_react170 = require("react");
 var import_jsx_runtime250 = require("react/jsx-runtime");
 var S_WRAPPER = {
   display: "flex",
@@ -62779,11 +62780,11 @@ function RealtimeKpiStrip({
   maxItems = 12,
   className = ""
 }) {
-  const displayItems = (0, import_react169.useMemo)(
+  const displayItems = (0, import_react170.useMemo)(
     () => items.slice(0, maxItems),
     [items, maxItems]
   );
-  const liveText = (0, import_react169.useMemo)(() => {
+  const liveText = (0, import_react170.useMemo)(() => {
     if (!isLive) return null;
     const now = lastUpdate || (/* @__PURE__ */ new Date()).toLocaleTimeString("zh-CN", { hour12: false });
     return /* @__PURE__ */ (0, import_jsx_runtime250.jsxs)("div", { style: S_LIVE_TAG, children: [
@@ -62841,7 +62842,7 @@ function RealtimeKpiStrip({
 }
 
 // src/components/AttachmentList.tsx
-var import_react170 = __toESM(require("react"));
+var import_react171 = __toESM(require("react"));
 var import_jsx_runtime251 = require("react/jsx-runtime");
 function getFileTypeIcon2(mimeType) {
   if (mimeType.startsWith("image/")) return "\u{1F5BC}\uFE0F";
@@ -62892,7 +62893,7 @@ var AttachmentList = ({
   maxVisible,
   className = ""
 }) => {
-  const [expanded, setExpanded] = import_react170.default.useState(false);
+  const [expanded, setExpanded] = import_react171.default.useState(false);
   const displayItems = maxVisible && !expanded ? items.slice(0, maxVisible) : items;
   const hasMore = maxVisible != null && items.length > maxVisible;
   const containerStyle7 = {
@@ -63345,7 +63346,7 @@ var StoreComparisonPanel = ({
 };
 
 // src/components/BulkEditPanel.tsx
-var import_react171 = require("react");
+var import_react172 = require("react");
 var import_jsx_runtime253 = require("react/jsx-runtime");
 var inputContainer = {
   display: "flex",
@@ -63427,9 +63428,9 @@ function BulkEditPanel({
   error = null,
   className
 }) {
-  const [focusedField, setFocusedField] = (0, import_react171.useState)(null);
-  const [validationErrors, setValidationErrors] = (0, import_react171.useState)({});
-  const handleChange = (0, import_react171.useCallback)(
+  const [focusedField, setFocusedField] = (0, import_react172.useState)(null);
+  const [validationErrors, setValidationErrors] = (0, import_react172.useState)({});
+  const handleChange = (0, import_react172.useCallback)(
     (fieldKey, rawValue) => {
       const field = fields.find((f) => f.key === fieldKey);
       if (field?.validate) {
@@ -63446,7 +63447,7 @@ function BulkEditPanel({
     },
     [fields, onFieldChange]
   );
-  const handleSubmit = (0, import_react171.useCallback)(() => {
+  const handleSubmit = (0, import_react172.useCallback)(() => {
     const errs = {};
     let hasError = false;
     for (const field of fields) {
@@ -63462,7 +63463,7 @@ function BulkEditPanel({
       onApply(editingValues);
     }
   }, [fields, editingValues, onApply]);
-  const allSetCount = (0, import_react171.useMemo)(
+  const allSetCount = (0, import_react172.useMemo)(
     () => fields.filter((f) => editingValues[f.key] !== void 0 && editingValues[f.key] !== null).length,
     [fields, editingValues]
   );
@@ -63691,7 +63692,7 @@ function BulkEditPanel({
 }
 
 // src/components/Watermark.tsx
-var import_react172 = require("react");
+var import_react173 = require("react");
 var import_jsx_runtime254 = require("react/jsx-runtime");
 var DEFAULT_PROPS = {
   content: "",
@@ -63716,7 +63717,7 @@ var Watermark = ({
   children,
   "data-testid": dataTestId
 }) => {
-  const svgText = (0, import_react172.useMemo)(() => {
+  const svgText = (0, import_react173.useMemo)(() => {
     if (!content) return "";
     const text = typeof content === "string" ? content : "";
     return text;
@@ -63764,7 +63765,7 @@ var Watermark = ({
 };
 
 // src/components/Spin.tsx
-var import_react173 = __toESM(require("react"));
+var import_react174 = __toESM(require("react"));
 var import_jsx_runtime255 = require("react/jsx-runtime");
 var SPINNER_SIZE_MAP = {
   sm: 20,
@@ -63824,8 +63825,8 @@ function DefaultSpinner({ size }) {
   );
 }
 function useDelay(delay, spinning) {
-  const [delayed, setDelayed] = import_react173.default.useState(!delay || !spinning);
-  import_react173.default.useEffect(() => {
+  const [delayed, setDelayed] = import_react174.default.useState(!delay || !spinning);
+  import_react174.default.useEffect(() => {
     if (!delay || !spinning) {
       setDelayed(!delay || spinning);
       return;
@@ -63926,7 +63927,7 @@ function Spin({
 }
 
 // src/components/AIMemberLifecycleForecastPanel.tsx
-var import_react174 = __toESM(require("react"));
+var import_react175 = __toESM(require("react"));
 var import_jsx_runtime256 = require("react/jsx-runtime");
 var STAGE_LABELS = {
   new: "\u65B0\u6CE8\u518C",
@@ -64011,12 +64012,12 @@ function AIMemberLifecycleForecastPanel({
   if (!forecast) {
     return /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { style: { ...containerStyle7, display: "flex", alignItems: "center", justifyContent: "center", height: 160, color: "#94a3b8" }, "data-testid": `${testId}-empty`, children: emptyText });
   }
-  const ltvDirection = (0, import_react174.useMemo)(() => {
+  const ltvDirection = (0, import_react175.useMemo)(() => {
     if (forecast.estimatedLtv > forecast.previousLtv) return "up";
     if (forecast.estimatedLtv < forecast.previousLtv) return "down";
     return "flat";
   }, [forecast.estimatedLtv, forecast.previousLtv]);
-  const confidenceLabel = (0, import_react174.useMemo)(() => {
+  const confidenceLabel = (0, import_react175.useMemo)(() => {
     if (forecast.confidence >= 80) return "\u9AD8";
     if (forecast.confidence >= 50) return "\u4E2D";
     return "\u4F4E";
@@ -64120,7 +64121,7 @@ function AIMemberLifecycleForecastPanel({
     ] }),
     forecast.stageHistory.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { style: sectionStyle3, "data-testid": `${testId}-history`, children: [
       /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { style: { fontSize: 14, fontWeight: 600, color: "#0f172a", marginBottom: 12 }, children: "\u9636\u6BB5\u53D8\u8FC1\u8BB0\u5F55" }),
-      /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { style: { display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }, children: forecast.stageHistory.map((h, idx) => /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(import_react174.default.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime256.jsx)("div", { style: { display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }, children: forecast.stageHistory.map((h, idx) => /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)(import_react175.default.Fragment, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime256.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime256.jsx)(
             "span",
@@ -64651,7 +64652,7 @@ function AIDecisionRuleChain({
 }
 
 // src/ai-ab-test-comparison/AiABTestComparisonPanel.tsx
-var import_react175 = require("react");
+var import_react176 = require("react");
 var import_jsx_runtime259 = require("react/jsx-runtime");
 function Card2({ children, style }) {
   return /* @__PURE__ */ (0, import_jsx_runtime259.jsx)(
@@ -64775,8 +64776,8 @@ function ComparisonCard({
   onAdoptVariant,
   compact
 }) {
-  const [adopting, setAdopting] = (0, import_react175.useState)(false);
-  const handleAdopt = (0, import_react175.useCallback)(
+  const [adopting, setAdopting] = (0, import_react176.useState)(false);
+  const handleAdopt = (0, import_react176.useCallback)(
     (variant) => {
       if (onAdoptVariant && !adopting) {
         setAdopting(true);
@@ -64904,9 +64905,9 @@ function AiABTestComparisonPanel({
   onAdoptVariant,
   compact = false
 }) {
-  const [showOnlySignificant, setShowOnlySignificant] = (0, import_react175.useState)(false);
-  const [sortBy, setSortBy] = (0, import_react175.useState)("date");
-  const filtered = (0, import_react175.useMemo)(() => {
+  const [showOnlySignificant, setShowOnlySignificant] = (0, import_react176.useState)(false);
+  const [sortBy, setSortBy] = (0, import_react176.useState)("date");
+  const filtered = (0, import_react176.useMemo)(() => {
     let list = [...comparisons];
     if (showOnlySignificant) {
       list = list.filter((c) => c.isSignificant);
@@ -65016,7 +65017,7 @@ function AiABTestComparisonPanel({
 }
 
 // src/ai-ab-test-comparison/useAiABTestComparison.ts
-var import_react176 = require("react");
+var import_react177 = require("react");
 
 // src/ai-ab-test-comparison/useAiABTestComparison.mock.ts
 function makeVariantStats(base) {
@@ -65138,10 +65139,10 @@ function mockABTestComparisons() {
 
 // src/ai-ab-test-comparison/useAiABTestComparison.ts
 function useAiABTestComparison() {
-  const [sortKey, setSortKey] = (0, import_react176.useState)("date");
-  const [showOnlySignificant, setShowOnlySignificant] = (0, import_react176.useState)(false);
-  const raw = (0, import_react176.useMemo)(() => mockABTestComparisons(), []);
-  const filtered = (0, import_react176.useMemo)(() => {
+  const [sortKey, setSortKey] = (0, import_react177.useState)("date");
+  const [showOnlySignificant, setShowOnlySignificant] = (0, import_react177.useState)(false);
+  const raw = (0, import_react177.useMemo)(() => mockABTestComparisons(), []);
+  const filtered = (0, import_react177.useMemo)(() => {
     let list = [...raw];
     if (showOnlySignificant) {
       list = list.filter((e) => e.isSignificant);
@@ -65164,14 +65165,14 @@ function useAiABTestComparison() {
     });
     return list;
   }, [raw, sortKey, showOnlySignificant]);
-  const adoptVariant = (0, import_react176.useCallback)((_experimentId, _variant) => {
+  const adoptVariant = (0, import_react177.useCallback)((_experimentId, _variant) => {
     console.log(`Adopt variant ${_variant} for experiment ${_experimentId}`);
   }, []);
-  const getVariantRate = (0, import_react176.useCallback)((stats) => {
+  const getVariantRate = (0, import_react177.useCallback)((stats) => {
     if (stats.totalExecutions === 0) return 0;
     return stats.successCount / stats.totalExecutions;
   }, []);
-  const getVariantAdoptionRate = (0, import_react176.useCallback)((stats) => {
+  const getVariantAdoptionRate = (0, import_react177.useCallback)((stats) => {
     if (stats.totalExecutions === 0) return 0;
     return stats.adoptionCount / stats.totalExecutions;
   }, []);
@@ -65190,7 +65191,7 @@ function useAiABTestComparison() {
 }
 
 // src/components/AIRecommendationFeedbackPanel.tsx
-var import_react177 = require("react");
+var import_react178 = require("react");
 var import_jsx_runtime260 = require("react/jsx-runtime");
 var ratingMeta = {
   helpful: { label: "\u6709\u5E2E\u52A9", variant: "success", buttonVariant: "primary", icon: "\u{1F44D}" },
@@ -65264,11 +65265,11 @@ function AIRecommendationFeedbackPanel({
   submitting = false,
   className = ""
 }) {
-  const [selectedRating, setSelectedRating] = (0, import_react177.useState)(null);
-  const [comment, setComment] = (0, import_react177.useState)("");
-  const [submitted, setSubmitted] = (0, import_react177.useState)(false);
+  const [selectedRating, setSelectedRating] = (0, import_react178.useState)(null);
+  const [comment, setComment] = (0, import_react178.useState)("");
+  const [submitted, setSubmitted] = (0, import_react178.useState)(false);
   const { toast: showToast } = useToast();
-  const handleSubmit = (0, import_react177.useCallback)(async () => {
+  const handleSubmit = (0, import_react178.useCallback)(async () => {
     if (selectedRating === null) return;
     try {
       await onSubmitFeedback(source.id, selectedRating, comment);
@@ -65278,10 +65279,10 @@ function AIRecommendationFeedbackPanel({
       showToast("\u63D0\u4EA4\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002", { variant: "error" });
     }
   }, [selectedRating, comment, source.id, onSubmitFeedback, showToast]);
-  const handleSkip = (0, import_react177.useCallback)(() => {
+  const handleSkip = (0, import_react178.useCallback)(() => {
     onSkip?.(source.id);
   }, [onSkip, source.id]);
-  const handleReset = (0, import_react177.useCallback)(() => {
+  const handleReset = (0, import_react178.useCallback)(() => {
     setSelectedRating(null);
     setComment("");
     setSubmitted(false);
@@ -65398,7 +65399,7 @@ function AIRecommendationFeedbackPanel({
 }
 
 // src/components/Popconfirm.tsx
-var import_react178 = __toESM(require("react"));
+var import_react179 = __toESM(require("react"));
 var import_jsx_runtime261 = require("react/jsx-runtime");
 function resolvePlacement2(p) {
   const parts = p.split("-");
@@ -65484,7 +65485,7 @@ function arrowStyles2(side) {
       return { ...base, left: -5, top: "50%", transform: "translateY(-50%) rotate(45deg)", borderRight: "none", borderTop: "none" };
   }
 }
-var Popconfirm = import_react178.default.memo(function Popconfirm2({
+var Popconfirm = import_react179.default.memo(function Popconfirm2({
   children,
   title,
   description,
@@ -65502,23 +65503,23 @@ var Popconfirm = import_react178.default.memo(function Popconfirm2({
   onOpenChange,
   beforeConfirm
 }) {
-  const [open, setOpen] = (0, import_react178.useState)(false);
-  const [confirming, setConfirming] = (0, import_react178.useState)(false);
-  const [position, setPosition] = (0, import_react178.useState)({});
-  const containerRef = (0, import_react178.useRef)(null);
-  const popoverRef = (0, import_react178.useRef)(null);
+  const [open, setOpen] = (0, import_react179.useState)(false);
+  const [confirming, setConfirming] = (0, import_react179.useState)(false);
+  const [position, setPosition] = (0, import_react179.useState)({});
+  const containerRef = (0, import_react179.useRef)(null);
+  const popoverRef = (0, import_react179.useRef)(null);
   const { side } = resolvePlacement2(placement);
-  const close = (0, import_react178.useCallback)(() => {
+  const close = (0, import_react179.useCallback)(() => {
     setOpen(false);
     setConfirming(false);
     onOpenChange?.(false);
   }, [onOpenChange]);
-  const openPop = (0, import_react178.useCallback)(() => {
+  const openPop = (0, import_react179.useCallback)(() => {
     if (disabled) return;
     setOpen(true);
     onOpenChange?.(true);
   }, [disabled, onOpenChange]);
-  const toggle = (0, import_react178.useCallback)(() => {
+  const toggle = (0, import_react179.useCallback)(() => {
     if (disabled) return;
     setOpen((prev) => {
       const next = !prev;
@@ -65526,7 +65527,7 @@ var Popconfirm = import_react178.default.memo(function Popconfirm2({
       return next;
     });
   }, [disabled, onOpenChange]);
-  const handleConfirm = (0, import_react178.useCallback)(async () => {
+  const handleConfirm = (0, import_react179.useCallback)(async () => {
     if (confirming) return;
     if (beforeConfirm) {
       const canProceed = await beforeConfirm();
@@ -65540,11 +65541,11 @@ var Popconfirm = import_react178.default.memo(function Popconfirm2({
       setConfirming(false);
     }
   }, [confirming, beforeConfirm, onConfirm, close]);
-  const handleCancel = (0, import_react178.useCallback)(() => {
+  const handleCancel = (0, import_react179.useCallback)(() => {
     onCancel?.();
     close();
   }, [onCancel, close]);
-  (0, import_react178.useEffect)(() => {
+  (0, import_react179.useEffect)(() => {
     if (!open) return;
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -65564,7 +65565,7 @@ var Popconfirm = import_react178.default.memo(function Popconfirm2({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open, close]);
-  (0, import_react178.useEffect)(() => {
+  (0, import_react179.useEffect)(() => {
     if (!open || !containerRef.current || !popoverRef.current) return;
     const triggerEl = containerRef.current.firstElementChild;
     if (!triggerEl) return;
@@ -65572,15 +65573,15 @@ var Popconfirm = import_react178.default.memo(function Popconfirm2({
     const popoverRect = popoverRef.current.getBoundingClientRect();
     setPosition(computePosition3(popoverRect, triggerRect, placement));
   }, [open, placement]);
-  const handleTriggerClick = (0, import_react178.useCallback)(() => {
+  const handleTriggerClick = (0, import_react179.useCallback)(() => {
     if (triggerMode === "click") toggle();
   }, [triggerMode, toggle]);
-  const handleMouseEnter = (0, import_react178.useCallback)(() => {
+  const handleMouseEnter = (0, import_react179.useCallback)(() => {
     if (triggerMode === "hover" && !disabled) {
       openPop();
     }
   }, [triggerMode, disabled, openPop]);
-  const handleMouseLeave = (0, import_react178.useCallback)(() => {
+  const handleMouseLeave = (0, import_react179.useCallback)(() => {
     if (triggerMode === "hover") {
       close();
     }
@@ -65885,7 +65886,7 @@ function RolePadClient({
 }
 
 // src/components/RichTextEditor.tsx
-var import_react179 = __toESM(require("react"));
+var import_react180 = __toESM(require("react"));
 var import_jsx_runtime263 = require("react/jsx-runtime");
 var TOOLBAR_PRESETS = {
   full: [
@@ -65942,7 +65943,7 @@ var SIZE_STYLES4 = {
 function sanitizeHtml(html) {
   return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "").replace(/on\w+\s*=\s*"[^"]*"/gi, "").replace(/on\w+\s*=\s*'[^']*'/gi, "");
 }
-var RichTextEditor = import_react179.default.forwardRef(function RichTextEditor2({
+var RichTextEditor = import_react180.default.forwardRef(function RichTextEditor2({
   value = "",
   onChange,
   placeholder = "Type something...",
@@ -65961,13 +65962,13 @@ var RichTextEditor = import_react179.default.forwardRef(function RichTextEditor2
   editorRef,
   "data-testid": dataTestId
 }, ref) {
-  const containerRef = (0, import_react179.useRef)(null);
-  const editorContentRef = (0, import_react179.useRef)(null);
-  const [isFocused, setIsFocused] = (0, import_react179.useState)(false);
-  const [currentValue, setCurrentValue] = (0, import_react179.useState)(value);
-  const uniqueId = (0, import_react179.useId)();
+  const containerRef = (0, import_react180.useRef)(null);
+  const editorContentRef = (0, import_react180.useRef)(null);
+  const [isFocused, setIsFocused] = (0, import_react180.useState)(false);
+  const [currentValue, setCurrentValue] = (0, import_react180.useState)(value);
+  const uniqueId = (0, import_react180.useId)();
   const contentId = `rte-content-${uniqueId}`;
-  const handle = (0, import_react179.useRef)({
+  const handle = (0, import_react180.useRef)({
     getContent: () => editorContentRef.current?.innerHTML ?? "",
     setContent: (html) => {
       if (editorContentRef.current) {
@@ -65985,27 +65986,27 @@ var RichTextEditor = import_react179.default.forwardRef(function RichTextEditor2
     },
     focus: () => editorContentRef.current?.focus()
   });
-  import_react179.default.useImperativeHandle(ref, () => handle.current);
-  import_react179.default.useImperativeHandle(editorRef, () => handle.current);
-  (0, import_react179.useEffect)(() => {
+  import_react180.default.useImperativeHandle(ref, () => handle.current);
+  import_react180.default.useImperativeHandle(editorRef, () => handle.current);
+  (0, import_react180.useEffect)(() => {
     if (editorContentRef.current && !editorContentRef.current.innerHTML) {
       editorContentRef.current.innerHTML = sanitizeHtml(value);
     }
   }, []);
-  (0, import_react179.useEffect)(() => {
+  (0, import_react180.useEffect)(() => {
     if (editorContentRef.current && value !== currentValue) {
       editorContentRef.current.innerHTML = sanitizeHtml(value);
       setCurrentValue(value);
     }
   }, [value]);
-  const handleInput = (0, import_react179.useCallback)(() => {
+  const handleInput = (0, import_react180.useCallback)(() => {
     if (!editorContentRef.current) return;
     const html = editorContentRef.current.innerHTML;
     if (maxLength && html.replace(/<[^>]*>/g, "").length > maxLength) return;
     setCurrentValue(html);
     onChange?.(html);
   }, [onChange, maxLength]);
-  const handlePaste = (0, import_react179.useCallback)((e) => {
+  const handlePaste = (0, import_react180.useCallback)((e) => {
     e.preventDefault();
     const text = e.clipboardData.getData("text/plain");
     document.execCommand("insertText", false, text);
@@ -66168,7 +66169,7 @@ var RichTextEditor = import_react179.default.forwardRef(function RichTextEditor2
 });
 
 // src/components/YearPicker.tsx
-var import_react180 = require("react");
+var import_react181 = require("react");
 var import_jsx_runtime264 = require("react/jsx-runtime");
 function parseYear(str) {
   const year = parseInt(str, 10);
@@ -66334,13 +66335,13 @@ var YearPicker = ({
   const minYear = min ? parseYear(min) ?? startYear : startYear;
   const maxYear = max ? parseYear(max) ?? endYear : endYear;
   const selectedYear = value ? parseYear(value) ?? null : null;
-  const [open, setOpen] = (0, import_react180.useState)(false);
-  const [decadeStart, setDecadeStart] = (0, import_react180.useState)(() => {
+  const [open, setOpen] = (0, import_react181.useState)(false);
+  const [decadeStart, setDecadeStart] = (0, import_react181.useState)(() => {
     const seed = selectedYear ?? currentYear;
     return getDecadeStart(seed);
   });
-  const wrapperRef = (0, import_react180.useRef)(null);
-  (0, import_react180.useEffect)(() => {
+  const wrapperRef = (0, import_react181.useRef)(null);
+  (0, import_react181.useEffect)(() => {
     if (!open) return;
     const handleClick = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
@@ -66350,13 +66351,13 @@ var YearPicker = ({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
-  (0, import_react180.useEffect)(() => {
+  (0, import_react181.useEffect)(() => {
     if (open) {
       const seed = selectedYear ?? currentYear;
       setDecadeStart(getDecadeStart(seed));
     }
   }, [open, selectedYear, currentYear]);
-  const handleSelect = (0, import_react180.useCallback)(
+  const handleSelect = (0, import_react181.useCallback)(
     (year) => {
       if (isYearDisabled(year, minYear, maxYear)) return;
       onChange?.(String(year));
@@ -66364,11 +66365,11 @@ var YearPicker = ({
     },
     [onChange, minYear, maxYear]
   );
-  const handleToggle = (0, import_react180.useCallback)(() => {
+  const handleToggle = (0, import_react181.useCallback)(() => {
     if (disabled) return;
     setOpen((prev) => !prev);
   }, [disabled]);
-  const years = (0, import_react180.useMemo)(() => {
+  const years = (0, import_react181.useMemo)(() => {
     const result = [];
     for (let y = decadeStart; y < decadeStart + 10; y++) {
       if (y >= startYear && y <= endYear) {
@@ -66379,10 +66380,10 @@ var YearPicker = ({
   }, [decadeStart, startYear, endYear]);
   const canPrev = decadeStart - 10 >= startYear;
   const canNext = decadeStart + 10 <= endYear;
-  const handlePrevDecade = (0, import_react180.useCallback)(() => {
+  const handlePrevDecade = (0, import_react181.useCallback)(() => {
     if (canPrev) setDecadeStart((d) => d - 10);
   }, [canPrev]);
-  const handleNextDecade = (0, import_react180.useCallback)(() => {
+  const handleNextDecade = (0, import_react181.useCallback)(() => {
     if (canNext) setDecadeStart((d) => d + 10);
   }, [canNext]);
   const displayText = selectedYear ? `${selectedYear}\u5E74` : "";
@@ -66611,7 +66612,7 @@ function StoreStatusIndicator({
 }
 
 // src/components/StoreSelector.tsx
-var import_react181 = require("react");
+var import_react182 = require("react");
 var import_jsx_runtime266 = require("react/jsx-runtime");
 function groupStoresByKey(stores, key) {
   const groups = /* @__PURE__ */ new Map();
@@ -66652,25 +66653,25 @@ function StoreSelector({
   dropdownClassName,
   name
 }) {
-  const [open, setOpen] = (0, import_react181.useState)(false);
-  const [searchText, setSearchText] = (0, import_react181.useState)("");
-  const containerRef = (0, import_react181.useRef)(null);
-  const searchInputRef = (0, import_react181.useRef)(null);
-  const instanceId = (0, import_react181.useId)();
+  const [open, setOpen] = (0, import_react182.useState)(false);
+  const [searchText, setSearchText] = (0, import_react182.useState)("");
+  const containerRef = (0, import_react182.useRef)(null);
+  const searchInputRef = (0, import_react182.useRef)(null);
+  const instanceId = (0, import_react182.useId)();
   const isMultiple = mode === "multiple";
-  const selectedValues = (0, import_react181.useMemo)(
+  const selectedValues = (0, import_react182.useMemo)(
     () => {
       if (!value) return [];
       return Array.isArray(value) ? value : [value];
     },
     [value]
   );
-  const grouped = (0, import_react181.useMemo)(
+  const grouped = (0, import_react182.useMemo)(
     () => groupBy ? groupStoresByKey(stores, groupBy) : [],
     [stores, groupBy]
   );
   const getGroupLabelFn = groupLabel ?? getDefaultGroupLabel;
-  const filteredItems = (0, import_react181.useMemo)(() => {
+  const filteredItems = (0, import_react182.useMemo)(() => {
     const search = searchText.trim().toLowerCase();
     if (!search) return null;
     const allItems = stores.filter((s2) => {
@@ -66693,11 +66694,11 @@ function StoreSelector({
   }, [stores, searchText, groupBy, getGroupLabelFn]);
   const displayGroups = filteredItems ?? (groupBy ? grouped : []);
   const flatStores = filteredItems ? displayGroups.flatMap((g) => g.stores) : groupBy ? stores : stores;
-  const isSelected = (0, import_react181.useCallback)(
+  const isSelected = (0, import_react182.useCallback)(
     (id) => selectedValues.includes(id),
     [selectedValues]
   );
-  const isAllSelected = (0, import_react181.useMemo)(
+  const isAllSelected = (0, import_react182.useMemo)(
     () => {
       if (!isMultiple || stores.length === 0) return false;
       const selectable = stores.filter((s2) => !s2.disabled);
@@ -66705,7 +66706,7 @@ function StoreSelector({
     },
     [isMultiple, stores, selectedValues]
   );
-  const handleToggleStore = (0, import_react181.useCallback)(
+  const handleToggleStore = (0, import_react182.useCallback)(
     (id) => {
       const store = stores.find((s2) => s2.id === id);
       if (!store || store.disabled || disabled) return;
@@ -66724,7 +66725,7 @@ function StoreSelector({
     },
     [stores, disabled, isMultiple, selectedValues, onChange]
   );
-  const handleSelectAll = (0, import_react181.useCallback)(() => {
+  const handleSelectAll = (0, import_react182.useCallback)(() => {
     if (!isMultiple || disabled) return;
     const selectable = stores.filter((s2) => !s2.disabled);
     if (isAllSelected) {
@@ -66733,11 +66734,11 @@ function StoreSelector({
       onChange?.(selectable.map((s2) => s2.id));
     }
   }, [isMultiple, stores, disabled, isAllSelected, onChange]);
-  const handleClearAll = (0, import_react181.useCallback)(() => {
+  const handleClearAll = (0, import_react182.useCallback)(() => {
     if (!isMultiple || disabled) return;
     onChange?.([]);
   }, [isMultiple, disabled, onChange]);
-  const selectedTags = (0, import_react181.useMemo)(() => {
+  const selectedTags = (0, import_react182.useMemo)(() => {
     if (!isMultiple || selectedValues.length === 0) return null;
     const labels = selectedValues.map((id) => stores.find((s2) => s2.id === id)?.label).filter(Boolean);
     if (labels.length <= maxTagCount) {
@@ -66745,16 +66746,16 @@ function StoreSelector({
     }
     return `${labels.slice(0, maxTagCount).join(", ")} +${labels.length - maxTagCount}`;
   }, [isMultiple, selectedValues, stores, maxTagCount]);
-  const selectedLabel = (0, import_react181.useMemo)(() => {
+  const selectedLabel = (0, import_react182.useMemo)(() => {
     if (selectedValues.length === 0) return null;
     const s2 = stores.find((st) => st.id === selectedValues[0]);
     return s2?.label ?? null;
   }, [selectedValues, stores]);
-  const handleClose = (0, import_react181.useCallback)(() => {
+  const handleClose = (0, import_react182.useCallback)(() => {
     setOpen(false);
     setSearchText("");
   }, []);
-  (0, import_react181.useEffect)(() => {
+  (0, import_react182.useEffect)(() => {
     if (!open) return;
     const handler = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -66764,19 +66765,19 @@ function StoreSelector({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open, handleClose]);
-  (0, import_react181.useEffect)(() => {
+  (0, import_react182.useEffect)(() => {
     if (open && searchInputRef.current) {
       searchInputRef.current.focus();
     }
   }, [open]);
-  const handleToggle = (0, import_react181.useCallback)(() => {
+  const handleToggle = (0, import_react182.useCallback)(() => {
     if (disabled) return;
     setOpen((prev) => {
       if (prev) handleClose();
       return !prev;
     });
   }, [disabled, handleClose]);
-  const handleKeyDown = (0, import_react181.useCallback)(
+  const handleKeyDown = (0, import_react182.useCallback)(
     (e) => {
       if (e.key === "Escape") {
         handleClose();
@@ -67067,7 +67068,7 @@ function StoreSelector({
 StoreSelector.displayName = "StoreSelector";
 
 // src/components/AIDecisionEffectivenessBoard.tsx
-var import_react182 = require("react");
+var import_react183 = require("react");
 var import_jsx_runtime267 = require("react/jsx-runtime");
 var DEFAULT_SUCCESS_THRESHOLD = 80;
 var RESULT_LABELS = {
@@ -67107,10 +67108,10 @@ function AIDecisionEffectivenessBoard({
   showSummary = true,
   successThreshold = DEFAULT_SUCCESS_THRESHOLD
 }) {
-  const [sortBy, setSortBy] = (0, import_react182.useState)("rate");
-  const [sourceFilter, setSourceFilter] = (0, import_react182.useState)("all");
-  const [resultFilter, setResultFilter] = (0, import_react182.useState)("all");
-  const summary = (0, import_react182.useMemo)(() => {
+  const [sortBy, setSortBy] = (0, import_react183.useState)("rate");
+  const [sourceFilter, setSourceFilter] = (0, import_react183.useState)("all");
+  const [resultFilter, setResultFilter] = (0, import_react183.useState)("all");
+  const summary = (0, import_react183.useMemo)(() => {
     if (items.length === 0) {
       return { totalDecisions: 0, totalExecutions: 0, overallSuccessRate: 0, avgResponseMs: 0, avgLiftPercent: 0 };
     }
@@ -67127,7 +67128,7 @@ function AIDecisionEffectivenessBoard({
       avgLiftPercent: itemsWithLift.length > 0 ? Math.round(totalLift / itemsWithLift.length) : 0
     };
   }, [items]);
-  const processed = (0, import_react182.useMemo)(() => {
+  const processed = (0, import_react183.useMemo)(() => {
     let list = [...items];
     if (sourceFilter !== "all") {
       list = list.filter((i) => i.source === sourceFilter);
@@ -67351,7 +67352,7 @@ function AIDecisionEffectivenessBoard({
 }
 
 // src/ai-rule-weight-panel/AIRuleWeightPanel.tsx
-var import_react183 = require("react");
+var import_react184 = require("react");
 var import_jsx_runtime268 = require("react/jsx-runtime");
 var CATEGORY_LABELS7 = {
   risk: "\u98CE\u63A7",
@@ -67501,13 +67502,13 @@ function AIRuleWeightPanel({
   loading = false,
   disabled = false
 }) {
-  const handleWeightChange = (0, import_react183.useCallback)(
+  const handleWeightChange = (0, import_react184.useCallback)(
     (ruleId, newWeight) => {
       onWeightChange?.(ruleId, newWeight);
     },
     [onWeightChange]
   );
-  const handleBatchApply = (0, import_react183.useCallback)(() => {
+  const handleBatchApply = (0, import_react184.useCallback)(() => {
     const adjustments = rules.filter((r) => r.adjustable && r.enabled).map((r) => ({
       ruleId: r.id,
       oldWeight: r.currentWeight,
@@ -67671,17 +67672,17 @@ function AIRuleWeightPanel({
 }
 
 // src/ai-rule-weight-panel/useAIRuleWeight.ts
-var import_react184 = require("react");
+var import_react185 = require("react");
 function useAIRuleWeight(initialRules) {
-  const [rules, setRules] = (0, import_react184.useState)(initialRules);
-  const [loading, setLoading] = (0, import_react184.useState)(false);
-  const [error] = (0, import_react184.useState)(null);
-  const updateWeight = (0, import_react184.useCallback)((ruleId, newWeight) => {
+  const [rules, setRules] = (0, import_react185.useState)(initialRules);
+  const [loading, setLoading] = (0, import_react185.useState)(false);
+  const [error] = (0, import_react185.useState)(null);
+  const updateWeight = (0, import_react185.useCallback)((ruleId, newWeight) => {
     setRules(
       (prev) => prev.map((r) => r.id === ruleId ? { ...r, currentWeight: Math.max(0, Math.min(100, newWeight)) } : r)
     );
   }, []);
-  const batchUpdate = (0, import_react184.useCallback)((adjustments) => {
+  const batchUpdate = (0, import_react185.useCallback)((adjustments) => {
     setRules(
       (prev) => prev.map((r) => {
         const adj = adjustments.find((a) => a.ruleId === r.id);
@@ -67689,14 +67690,14 @@ function useAIRuleWeight(initialRules) {
       })
     );
   }, []);
-  const resetWeights = (0, import_react184.useCallback)(() => {
+  const resetWeights = (0, import_react185.useCallback)(() => {
     setRules(initialRules);
   }, [initialRules]);
   return { rules, loading, error, updateWeight, batchUpdate, resetWeights };
 }
 
 // src/components/AIModelSelector.tsx
-var import_react185 = require("react");
+var import_react186 = require("react");
 var import_jsx_runtime269 = require("react/jsx-runtime");
 var TIER_COLORS = {
   budget: "#52c41a",
@@ -67804,7 +67805,7 @@ function AIModelSelector({
   className,
   variant = "detailed"
 }) {
-  const selectedModel = (0, import_react185.useMemo)(
+  const selectedModel = (0, import_react186.useMemo)(
     () => models.find((m) => m.id === value),
     [models, value]
   );
@@ -68397,7 +68398,7 @@ function FeedbackList({
 }
 
 // src/components/AIDecisionExplainerPanel.tsx
-var import_react186 = __toESM(require("react"));
+var import_react187 = __toESM(require("react"));
 var import_jsx_runtime272 = require("react/jsx-runtime");
 var FACTOR_TYPE_CONFIG = {
   positive: { color: "#52c41a", bg: "#f6ffed", label: "\u6B63\u5411\u8D21\u732E" },
@@ -68586,7 +68587,7 @@ function AIDecisionExplainerPanel({
   defaultExpanded = true,
   variant = "pc"
 }) {
-  const [expanded, setExpanded] = import_react186.default.useState(defaultExpanded);
+  const [expanded, setExpanded] = import_react187.default.useState(defaultExpanded);
   const isH5 = variant === "h5";
   if (!data) {
     return /* @__PURE__ */ (0, import_jsx_runtime272.jsx)(
@@ -68928,7 +68929,7 @@ function AIDecisionOutcomeCard({
 }
 
 // src/components/DonutChart.tsx
-var import_react187 = require("react");
+var import_react188 = require("react");
 var import_jsx_runtime274 = require("react/jsx-runtime");
 function normalizeData(data, minPercent) {
   const total = data.reduce((s2, d) => s2 + Math.max(0, d.value), 0);
@@ -68968,14 +68969,14 @@ var DonutChart2 = ({
   animationDuration = 600,
   onSliceClick
 }) => {
-  const { slices, total } = (0, import_react187.useMemo)(
+  const { slices, total } = (0, import_react188.useMemo)(
     () => normalizeData(data, minPercent),
     [data, minPercent]
   );
   const radius = size / 2;
   const innerRadius = radius - thickness;
   const centerRadius = (radius + innerRadius) / 2;
-  const arcs = (0, import_react187.useMemo)(() => {
+  const arcs = (0, import_react188.useMemo)(() => {
     if (total <= 0 || slices.length === 0) return [];
     const circumference2 = 2 * Math.PI * centerRadius;
     let cumulativePercent = 0;
@@ -69203,7 +69204,7 @@ var DonutChart2 = ({
 };
 
 // src/components/AsyncSelect.tsx
-var import_react188 = require("react");
+var import_react189 = require("react");
 var import_jsx_runtime275 = require("react/jsx-runtime");
 function AsyncSelect({
   loadOptions,
@@ -69224,21 +69225,21 @@ function AsyncSelect({
   loadOnOpen = true,
   "aria-label": ariaLabel
 }) {
-  const [open, setOpen] = (0, import_react188.useState)(false);
-  const [searchText, setSearchText] = (0, import_react188.useState)("");
-  const [options, setOptions] = (0, import_react188.useState)([]);
-  const [loading, setLoading] = (0, import_react188.useState)(false);
-  const [hasLoaded, setHasLoaded] = (0, import_react188.useState)(false);
-  const [highlightIndex, setHighlightIndex] = (0, import_react188.useState)(-1);
-  const containerRef = (0, import_react188.useRef)(null);
-  const searchInputRef = (0, import_react188.useRef)(null);
-  const debounceRef = (0, import_react188.useRef)();
-  const abortRef = (0, import_react188.useRef)();
-  const selectedOption = (0, import_react188.useMemo)(
+  const [open, setOpen] = (0, import_react189.useState)(false);
+  const [searchText, setSearchText] = (0, import_react189.useState)("");
+  const [options, setOptions] = (0, import_react189.useState)([]);
+  const [loading, setLoading] = (0, import_react189.useState)(false);
+  const [hasLoaded, setHasLoaded] = (0, import_react189.useState)(false);
+  const [highlightIndex, setHighlightIndex] = (0, import_react189.useState)(-1);
+  const containerRef = (0, import_react189.useRef)(null);
+  const searchInputRef = (0, import_react189.useRef)(null);
+  const debounceRef = (0, import_react189.useRef)();
+  const abortRef = (0, import_react189.useRef)();
+  const selectedOption = (0, import_react189.useMemo)(
     () => options.find((o) => o.value === value),
     [options, value]
   );
-  const doLoad = (0, import_react188.useCallback)(
+  const doLoad = (0, import_react189.useCallback)(
     async (query) => {
       if (abortRef.current) {
         abortRef.current.abort();
@@ -69266,7 +69267,7 @@ function AsyncSelect({
     },
     [loadOptions]
   );
-  const handleSearchChange = (0, import_react188.useCallback)(
+  const handleSearchChange = (0, import_react189.useCallback)(
     (text) => {
       setSearchText(text);
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -69276,7 +69277,7 @@ function AsyncSelect({
     },
     [doLoad, debounceMs]
   );
-  const handleOpen = (0, import_react188.useCallback)(() => {
+  const handleOpen = (0, import_react189.useCallback)(() => {
     if (disabled) return;
     setOpen(true);
     setSearchText("");
@@ -69286,12 +69287,12 @@ function AsyncSelect({
       setHighlightIndex(0);
     }
   }, [disabled, loadOnOpen, hasLoaded, doLoad]);
-  const handleClose = (0, import_react188.useCallback)(() => {
+  const handleClose = (0, import_react189.useCallback)(() => {
     setOpen(false);
     setSearchText("");
     setHighlightIndex(-1);
   }, []);
-  (0, import_react188.useEffect)(() => {
+  (0, import_react189.useEffect)(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         handleClose();
@@ -69300,25 +69301,25 @@ function AsyncSelect({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [handleClose]);
-  (0, import_react188.useEffect)(() => {
+  (0, import_react189.useEffect)(() => {
     if (open && searchInputRef.current) {
       searchInputRef.current.focus();
     }
   }, [open]);
-  (0, import_react188.useEffect)(() => {
+  (0, import_react189.useEffect)(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       if (abortRef.current) abortRef.current.abort();
     };
   }, []);
-  const handleSelect = (0, import_react188.useCallback)(
+  const handleSelect = (0, import_react189.useCallback)(
     (val) => {
       onChange?.(val);
       handleClose();
     },
     [onChange, handleClose]
   );
-  const handleClear = (0, import_react188.useCallback)(
+  const handleClear = (0, import_react189.useCallback)(
     (e) => {
       e.stopPropagation();
       onChange?.("");
@@ -69326,7 +69327,7 @@ function AsyncSelect({
     },
     [onChange, handleClose]
   );
-  const handleKeyDown = (0, import_react188.useCallback)(
+  const handleKeyDown = (0, import_react189.useCallback)(
     (e) => {
       if (!open && (e.key === "Enter" || e.key === "ArrowDown")) {
         e.preventDefault();
@@ -69507,7 +69508,7 @@ function AsyncSelect({
 }
 
 // src/components/Tour.tsx
-var import_react189 = require("react");
+var import_react190 = require("react");
 var import_jsx_runtime276 = require("react/jsx-runtime");
 function scrollIntoViewIfNeeded(selector) {
   const el = document.querySelector(selector);
@@ -69529,21 +69530,21 @@ var Tour = ({
   showActions = true,
   maskClosable = false
 }) => {
-  const [current, setCurrent] = (0, import_react189.useState)(initialStep);
-  const [targetRect, setTargetRect] = (0, import_react189.useState)(null);
-  const tooltipRef = (0, import_react189.useRef)(null);
-  const [tooltipStyle, setTooltipStyle] = (0, import_react189.useState)(
+  const [current, setCurrent] = (0, import_react190.useState)(initialStep);
+  const [targetRect, setTargetRect] = (0, import_react190.useState)(null);
+  const tooltipRef = (0, import_react190.useRef)(null);
+  const [tooltipStyle, setTooltipStyle] = (0, import_react190.useState)(
     // SSR safe default: center the tooltip
     { position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 10001 }
   );
-  const [isHydrated, setIsHydrated] = (0, import_react189.useState)(false);
-  (0, import_react189.useEffect)(() => {
+  const [isHydrated, setIsHydrated] = (0, import_react190.useState)(false);
+  (0, import_react190.useEffect)(() => {
     if (open) {
       setCurrent(initialStep);
     }
     setIsHydrated(true);
   }, [open, initialStep]);
-  const locateTarget = (0, import_react189.useCallback)(
+  const locateTarget = (0, import_react190.useCallback)(
     (index) => {
       const step2 = steps[index];
       if (!step2) return;
@@ -69605,19 +69606,19 @@ var Tour = ({
     },
     [steps]
   );
-  (0, import_react189.useEffect)(() => {
+  (0, import_react190.useEffect)(() => {
     if (open) {
       setIsHydrated(true);
       locateTarget(current);
     }
   }, [open, current, locateTarget]);
-  (0, import_react189.useEffect)(() => {
+  (0, import_react190.useEffect)(() => {
     if (!open) return;
     const handleResize = () => locateTarget(current);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [open, current, locateTarget]);
-  const handleNext = (0, import_react189.useCallback)(() => {
+  const handleNext = (0, import_react190.useCallback)(() => {
     const next = current + 1;
     if (next >= steps.length) {
       onClose();
@@ -69626,14 +69627,14 @@ var Tour = ({
       onStepChange?.(next);
     }
   }, [current, steps.length, onClose, onStepChange]);
-  const handlePrev = (0, import_react189.useCallback)(() => {
+  const handlePrev = (0, import_react190.useCallback)(() => {
     if (current > 0) {
       const prev = current - 1;
       setCurrent(prev);
       onStepChange?.(prev);
     }
   }, [current, onStepChange]);
-  const handleSkip = (0, import_react189.useCallback)(() => {
+  const handleSkip = (0, import_react190.useCallback)(() => {
     onClose();
   }, [onClose]);
   if (!open || steps.length === 0) return null;
@@ -69798,7 +69799,7 @@ var Tour = ({
 };
 
 // src/components/AIDecisionDistributionPanel.tsx
-var import_react190 = require("react");
+var import_react191 = require("react");
 var import_jsx_runtime277 = require("react/jsx-runtime");
 var CATEGORY_LABELS9 = {
   pricing: "\u5B9A\u4EF7\u51B3\u7B56",
@@ -69948,15 +69949,15 @@ function AIDecisionDistributionPanel({
   className = "",
   "data-testid": dataTestId = "aidist-panel"
 }) {
-  const filtered = (0, import_react190.useMemo)(() => {
+  const filtered = (0, import_react191.useMemo)(() => {
     if (filterCategory === "all") return items;
     return items.filter((i) => i.category === filterCategory);
   }, [items, filterCategory]);
-  const maxTotal = (0, import_react190.useMemo)(() => {
+  const maxTotal = (0, import_react191.useMemo)(() => {
     if (filtered.length === 0) return 0;
     return Math.max(...filtered.map((i) => i.total));
   }, [filtered]);
-  const summary = (0, import_react190.useMemo)(() => {
+  const summary = (0, import_react191.useMemo)(() => {
     const total = items.reduce((s2, i) => s2 + i.total, 0);
     const totalApproved = items.reduce((s2, i) => s2 + i.approved, 0);
     const totalRejected = items.reduce((s2, i) => s2 + i.rejected, 0);
@@ -70075,7 +70076,7 @@ function AIDecisionDistributionPanel({
 }
 
 // src/components/ChartExportPanel/ChartExportPanel.tsx
-var import_react191 = require("react");
+var import_react192 = require("react");
 var import_jsx_runtime278 = require("react/jsx-runtime");
 var styles10 = {
   wrapper: {
@@ -70202,7 +70203,7 @@ function ActionButton3({
   children,
   onClick
 }) {
-  const [hover, setHover] = (0, import_react191.useState)(false);
+  const [hover, setHover] = (0, import_react192.useState)(false);
   return /* @__PURE__ */ (0, import_jsx_runtime278.jsx)(
     "button",
     {
@@ -70231,21 +70232,21 @@ function ChartExportPanel({
   extraActions,
   className
 }) {
-  const [isFullscreen, setIsFullscreen] = (0, import_react191.useState)(false);
-  const chartRef = (0, import_react191.useRef)(null);
-  const handleExportCSV = (0, import_react191.useCallback)(() => {
+  const [isFullscreen, setIsFullscreen] = (0, import_react192.useState)(false);
+  const chartRef = (0, import_react192.useRef)(null);
+  const handleExportCSV = (0, import_react192.useCallback)(() => {
     if (!csvData || csvData.length === 0) return;
     downloadCSV(csvData, csvFilename);
   }, [csvData, csvFilename]);
-  const handleExportPNG = (0, import_react191.useCallback)(() => {
+  const handleExportPNG = (0, import_react192.useCallback)(() => {
     if (!chartRef.current) return;
     downloadImage(chartRef.current, csvFilename);
   }, [csvFilename]);
-  const handleToggleFullscreen = (0, import_react191.useCallback)(() => {
+  const handleToggleFullscreen = (0, import_react192.useCallback)(() => {
     if (!enableFullscreen) return;
     setIsFullscreen((prev) => !prev);
   }, [enableFullscreen]);
-  const handleRefresh = (0, import_react191.useCallback)(() => {
+  const handleRefresh = (0, import_react192.useCallback)(() => {
     onRefresh?.();
   }, [onRefresh]);
   return /* @__PURE__ */ (0, import_jsx_runtime278.jsxs)(
@@ -70301,7 +70302,7 @@ function ChartExportPanel({
 }
 
 // src/components/AlertCorrelationDashboard.tsx
-var import_react192 = require("react");
+var import_react193 = require("react");
 var import_jsx_runtime279 = require("react/jsx-runtime");
 var SEVERITY_CONFIG3 = {
   critical: { label: "\u4E25\u91CD", dot: "#ef4444", bg: "rgba(239,68,68,0.10)" },
@@ -70389,11 +70390,11 @@ function CorrelationGroupCard({
   onExecuteAction,
   onViewDetail
 }) {
-  const groupAlerts = (0, import_react192.useMemo)(
+  const groupAlerts = (0, import_react193.useMemo)(
     () => alerts.filter((a) => group.alertIds.includes(a.id)),
     [alerts, group.alertIds]
   );
-  const maxSeverity = (0, import_react192.useMemo)(() => {
+  const maxSeverity = (0, import_react193.useMemo)(() => {
     const order = ["critical", "high", "medium", "low"];
     for (const s2 of order) {
       if (groupAlerts.some((a) => a.severity === s2)) return s2;
@@ -70544,20 +70545,20 @@ function AlertCorrelationDashboard({
   onViewDetail,
   className
 }) {
-  const [filterSeverity, setFilterSeverity] = (0, import_react192.useState)("all");
-  const [filterAcknowledged, setFilterAcknowledged] = (0, import_react192.useState)(null);
-  const unacknowledgedCount = (0, import_react192.useMemo)(
+  const [filterSeverity, setFilterSeverity] = (0, import_react193.useState)("all");
+  const [filterAcknowledged, setFilterAcknowledged] = (0, import_react193.useState)(null);
+  const unacknowledgedCount = (0, import_react193.useMemo)(
     () => alerts.filter((a) => !a.acknowledged).length,
     [alerts]
   );
-  const severityCounts = (0, import_react192.useMemo)(() => {
+  const severityCounts = (0, import_react193.useMemo)(() => {
     const counts = { critical: 0, high: 0, medium: 0, low: 0 };
     alerts.forEach((a) => {
       counts[a.severity]++;
     });
     return counts;
   }, [alerts]);
-  const filteredAlerts = (0, import_react192.useMemo)(() => {
+  const filteredAlerts = (0, import_react193.useMemo)(() => {
     return alerts.filter((a) => {
       if (filterSeverity !== "all" && a.severity !== filterSeverity) return false;
       if (filterAcknowledged === true && !a.acknowledged) return false;
@@ -70565,7 +70566,7 @@ function AlertCorrelationDashboard({
       return true;
     });
   }, [alerts, filterSeverity, filterAcknowledged]);
-  const filteredGroups = (0, import_react192.useMemo)(() => {
+  const filteredGroups = (0, import_react193.useMemo)(() => {
     return correlationGroups.filter((g) => {
       const groupAlertIds = new Set(g.alertIds);
       return filteredAlerts.some((a) => groupAlertIds.has(a.id));
@@ -70646,7 +70647,7 @@ function AlertCorrelationDashboard({
 }
 
 // src/components/ResponsiveContainer.tsx
-var import_react193 = __toESM(require("react"));
+var import_react194 = __toESM(require("react"));
 var import_jsx_runtime280 = require("react/jsx-runtime");
 var BREAKPOINTS2 = {
   xs: 480,
@@ -70664,7 +70665,7 @@ function resolveBreakpoint(width) {
   if (width < BREAKPOINTS2["2xl"]) return "xl";
   return "2xl";
 }
-var ResponsiveContext = (0, import_react193.createContext)({
+var ResponsiveContext = (0, import_react194.createContext)({
   breakpoint: "lg",
   width: 1200,
   height: 800,
@@ -70672,7 +70673,7 @@ var ResponsiveContext = (0, import_react193.createContext)({
   isTablet: false,
   isDesktop: true
 });
-var useResponsive = () => (0, import_react193.useContext)(ResponsiveContext);
+var useResponsive = () => (0, import_react194.useContext)(ResponsiveContext);
 var ResponsiveContainer = ({
   children,
   breakpoints: customBp,
@@ -70683,10 +70684,10 @@ var ResponsiveContainer = ({
   asChild = false
 }) => {
   const mergedBreakpoints = { ...BREAKPOINTS2, ...customBp };
-  const [dimensions, setDimensions] = (0, import_react193.useState)({ width: 0, height: 0 });
-  const containerRef = import_react193.default.useRef(null);
-  const timerRef = import_react193.default.useRef();
-  (0, import_react193.useEffect)(() => {
+  const [dimensions, setDimensions] = (0, import_react194.useState)({ width: 0, height: 0 });
+  const containerRef = import_react194.default.useRef(null);
+  const timerRef = import_react194.default.useRef();
+  (0, import_react194.useEffect)(() => {
     if (!observeResize || typeof window === "undefined") return;
     const el = containerRef.current || document.documentElement;
     const handler = (entry) => {
@@ -71675,7 +71676,7 @@ function InventoryManagerDashboard({
 }
 
 // src/components/SalespersonToolPanel.tsx
-var import_react194 = require("react");
+var import_react195 = require("react");
 var import_jsx_runtime284 = require("react/jsx-runtime");
 var PANEL_STYLE4 = {
   backgroundColor: "#0f172a",
@@ -71954,8 +71955,8 @@ function SalespersonToolPanel({
   onScan,
   className
 }) {
-  const [searchKeyword, setSearchKeyword] = (0, import_react194.useState)("");
-  const [activeTab, setActiveTab] = (0, import_react194.useState)("customer");
+  const [searchKeyword, setSearchKeyword] = (0, import_react195.useState)("");
+  const [activeTab, setActiveTab] = (0, import_react195.useState)("customer");
   const handleSearch = () => {
     if (searchKeyword.trim() && onSearchCustomer) {
       onSearchCustomer(searchKeyword.trim());
@@ -72166,7 +72167,7 @@ function StatCard2({
 }
 
 // src/components/DataDriftMonitorPanel.tsx
-var import_react195 = require("react");
+var import_react196 = require("react");
 var import_jsx_runtime285 = require("react/jsx-runtime");
 var SEVERITY_CONFIG4 = {
   low: { label: "\u6B63\u5E38", bar: "bg-emerald-500", text: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
@@ -72250,7 +72251,7 @@ function DataDriftMonitorPanel({
   style
 }) {
   const safeFeatures = features || [];
-  const severityBreakdown = (0, import_react195.useMemo)(() => {
+  const severityBreakdown = (0, import_react196.useMemo)(() => {
     const counts = { critical: 0, high: 0, medium: 0, low: 0 };
     safeFeatures.forEach((f) => {
       if (counts[f.severity] !== void 0) counts[f.severity]++;
@@ -72634,7 +72635,7 @@ var AIAutomationSuggestionPanel = ({
 };
 
 // src/components/InfiniteScroll.tsx
-var import_react196 = __toESM(require("react"));
+var import_react197 = __toESM(require("react"));
 var import_jsx_runtime287 = require("react/jsx-runtime");
 function InfiniteScroll({
   hasMore,
@@ -72651,13 +72652,13 @@ function InfiniteScroll({
   style,
   direction = "vertical"
 }) {
-  const sentinelRef = (0, import_react196.useRef)(null);
-  const observerRef = (0, import_react196.useRef)(null);
-  const loadingRef = (0, import_react196.useRef)(loading);
-  const disabledRef = (0, import_react196.useRef)(disabled);
+  const sentinelRef = (0, import_react197.useRef)(null);
+  const observerRef = (0, import_react197.useRef)(null);
+  const loadingRef = (0, import_react197.useRef)(loading);
+  const disabledRef = (0, import_react197.useRef)(disabled);
   loadingRef.current = loading;
   disabledRef.current = disabled;
-  const handleIntersect = (0, import_react196.useCallback)(
+  const handleIntersect = (0, import_react197.useCallback)(
     (entries) => {
       const entry = entries[0];
       if (!entry) return;
@@ -72667,7 +72668,7 @@ function InfiniteScroll({
     },
     [hasMore, onLoadMore]
   );
-  (0, import_react196.useEffect)(() => {
+  (0, import_react197.useEffect)(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
     observerRef.current?.disconnect();
@@ -72680,7 +72681,7 @@ function InfiniteScroll({
       observerRef.current?.disconnect();
     };
   }, [handleIntersect, threshold, direction]);
-  const isEmpty = !loading && !hasMore && import_react196.default.Children.count(children) === 0;
+  const isEmpty = !loading && !hasMore && import_react197.default.Children.count(children) === 0;
   const isHorizontal = direction === "horizontal";
   return /* @__PURE__ */ (0, import_jsx_runtime287.jsxs)(
     "div",
@@ -72738,7 +72739,7 @@ function InfiniteScroll({
 }
 
 // src/components/MemberUpgradePath.tsx
-var import_react197 = __toESM(require("react"));
+var import_react198 = __toESM(require("react"));
 var import_jsx_runtime288 = require("react/jsx-runtime");
 function MemberUpgradePath({
   tiers,
@@ -72795,7 +72796,7 @@ function MemberUpgradePath({
           const isCurrent = idx === currentIdx;
           const isPassed = currentIdx >= 0 && idx < currentIdx;
           const isNext = currentIdx >= 0 && idx === currentIdx + 1;
-          return /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)(import_react197.default.Fragment, { children: [
+          return /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)(import_react198.default.Fragment, { children: [
             /* @__PURE__ */ (0, import_jsx_runtime288.jsxs)(
               "div",
               {
@@ -73137,7 +73138,7 @@ function MemberPointHistory({
 }
 
 // src/components/PrizeRedemptionCounter.tsx
-var import_react198 = require("react");
+var import_react199 = require("react");
 var import_jsx_runtime290 = require("react/jsx-runtime");
 var CATEGORY_LABELS10 = {
   toy: "\u73A9\u5177",
@@ -73269,9 +73270,9 @@ function PrizeRedemptionCounter({
   isProcessing = false,
   emptyText = "\u6682\u65E0\u53EF\u7528\u5956\u54C1"
 }) {
-  const [search, setSearch] = (0, import_react198.useState)(searchKeyword);
-  const [category, setCategory] = (0, import_react198.useState)(categoryFilter);
-  const filteredPrizes = (0, import_react198.useMemo)(() => {
+  const [search, setSearch] = (0, import_react199.useState)(searchKeyword);
+  const [category, setCategory] = (0, import_react199.useState)(categoryFilter);
+  const filteredPrizes = (0, import_react199.useMemo)(() => {
     let list = prizes;
     if (category !== "ALL") {
       list = list.filter((p) => p.category === category);
@@ -73282,7 +73283,7 @@ function PrizeRedemptionCounter({
     }
     return list;
   }, [prizes, category, search]);
-  const totalSelectedPoints = (0, import_react198.useMemo)(() => {
+  const totalSelectedPoints = (0, import_react199.useMemo)(() => {
     let sum2 = 0;
     for (const [id, qty] of selected.entries()) {
       const prize = prizes.find((p) => p.id === id);
@@ -73292,7 +73293,7 @@ function PrizeRedemptionCounter({
   }, [selected, prizes]);
   const remaining = availablePoints - totalSelectedPoints;
   const canRedeem = totalSelectedPoints > 0 && remaining >= 0 && !isProcessing;
-  const handleAdd = (0, import_react198.useCallback)(
+  const handleAdd = (0, import_react199.useCallback)(
     (id) => {
       const next = new Map(selected);
       next.set(id, (next.get(id) || 0) + 1);
@@ -73300,7 +73301,7 @@ function PrizeRedemptionCounter({
     },
     [selected, onSelectionChange]
   );
-  const handleRemove = (0, import_react198.useCallback)(
+  const handleRemove = (0, import_react199.useCallback)(
     (id) => {
       const next = new Map(selected);
       const cur = next.get(id) || 0;
@@ -73313,7 +73314,7 @@ function PrizeRedemptionCounter({
     },
     [selected, onSelectionChange]
   );
-  const handleRedeem = (0, import_react198.useCallback)(() => {
+  const handleRedeem = (0, import_react199.useCallback)(() => {
     const records = [];
     for (const [id, qty] of selected.entries()) {
       const prize = prizes.find((p) => p.id === id);

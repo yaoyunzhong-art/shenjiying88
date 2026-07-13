@@ -15,6 +15,7 @@ import {
   generateOrganizationJsonLd,
   seoMetaGenerator,
 } from './brand-website/lib/seo/meta-generator'
+import { resolveDocumentLanguageFromPathname, sanitizeDocumentLanguage } from './lib/document-language'
 import { metadata as sportsAntsMetadata } from './sports-ants/layout'
 import {
   generateMetadata as generateTenantPortalMetadata,
@@ -243,6 +244,19 @@ describe('PRD-015 监控、转化与自治闭环', () => {
     assert.equal(metadata.title, 'sportslife 品牌 ToB 官网 | Germany | 神机营')
     assert.equal(metadata.alternates?.languages?.['de-DE'], 'https://www.bigants.net/eu-de/demo-tenant/sportslife')
     assert.equal(metadata.openGraph?.locale, 'de-DE')
+  })
+
+  test('AC-49-11: 动态门户 document lang 可按市场路径切换', () => {
+    assert.equal(resolveDocumentLanguageFromPathname('/jp-tokyo/demo-tenant'), 'ja-JP')
+    assert.equal(resolveDocumentLanguageFromPathname('/eu-de/demo-tenant/sportslife'), 'de-DE')
+    assert.equal(resolveDocumentLanguageFromPathname('/brand-website'), 'zh-CN')
+  })
+
+  test('AC-49-11: document lang header 仅接受受支持的市场语言', () => {
+    assert.equal(sanitizeDocumentLanguage('en-SG'), 'en-SG')
+    assert.equal(sanitizeDocumentLanguage('de-DE'), 'de-DE')
+    assert.equal(sanitizeDocumentLanguage('fr-FR'), 'zh-CN')
+    assert.equal(sanitizeDocumentLanguage(undefined), 'zh-CN')
   })
 
   test('AC-49-16: 智能自治系统可刷新 SEO/GEO 健康快照', async () => {
