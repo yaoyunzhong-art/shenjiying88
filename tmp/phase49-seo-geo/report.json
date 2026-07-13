@@ -1,0 +1,58 @@
+{
+  "baseUrl": "http://127.0.0.1:3005",
+  "generatedAt": "2026-07-13T21:21:05.711Z",
+  "routes": [
+    {
+      "name": "cn-mainland-tenant",
+      "url": "http://127.0.0.1:3005/cn-mainland/demo-tenant",
+      "title": "demo-tenant ToB 官网 | 中国大陆 | 神机营",
+      "lang": "zh-CN",
+      "canonical": "https://www.bigants.net/cn-mainland/demo-tenant",
+      "ogLocale": "zh-CN",
+      "description": "统一承接租户解决方案、渠道合作、门店网络能力展示与后台登录入口。",
+      "headingText": "demo-tenant 企业级经营官网",
+      "consoleMessages": [],
+      "screenshotPath": "/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/tmp/phase49-seo-geo/cn-mainland-tenant.png",
+      "checkedAt": "2026-07-13T21:21:07.888Z"
+    },
+    {
+      "name": "sea-sg-tenant",
+      "url": "http://127.0.0.1:3005/sea-sg/demo-tenant",
+      "title": "demo-tenant ToB 官网 | Singapore | 神机营",
+      "lang": "en-SG",
+      "canonical": "https://www.bigants.net/sea-sg/demo-tenant",
+      "ogLocale": "en-SG",
+      "description": "统一承接租户解决方案、渠道合作、门店网络能力展示与后台登录入口。",
+      "headingText": "demo-tenant 企业级经营官网",
+      "consoleMessages": [],
+      "screenshotPath": "/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/tmp/phase49-seo-geo/sea-sg-tenant.png",
+      "checkedAt": "2026-07-13T21:21:09.249Z"
+    },
+    {
+      "name": "jp-tokyo-tenant",
+      "url": "http://127.0.0.1:3005/jp-tokyo/demo-tenant",
+      "title": "demo-tenant ToB 官网 | Japan | 神机营",
+      "lang": "ja-JP",
+      "canonical": "https://www.bigants.net/jp-tokyo/demo-tenant",
+      "ogLocale": "ja-JP",
+      "description": "统一承接租户解决方案、渠道合作、门店网络能力展示与后台登录入口。",
+      "headingText": "demo-tenant 企业级经营官网",
+      "consoleMessages": [],
+      "screenshotPath": "/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/tmp/phase49-seo-geo/jp-tokyo-tenant.png",
+      "checkedAt": "2026-07-13T21:21:10.600Z"
+    },
+    {
+      "name": "eu-de-brand",
+      "url": "http://127.0.0.1:3005/eu-de/demo-tenant/sportslife",
+      "title": "sportslife 品牌 ToB 官网 | Germany | 神机营",
+      "lang": "de-DE",
+      "canonical": "https://www.bigants.net/eu-de/demo-tenant/sportslife",
+      "ogLocale": "de-DE",
+      "description": "面向招商加盟、品牌合作、联合营销、赛事活动和品牌后台登录的统一入口。",
+      "headingText": "sportslife 品牌增长官网",
+      "consoleMessages": [],
+      "screenshotPath": "/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/tmp/phase49-seo-geo/eu-de-brand.png",
+      "checkedAt": "2026-07-13T21:21:12.056Z"
+    }
+  ]
+}

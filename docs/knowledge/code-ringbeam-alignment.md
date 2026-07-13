@@ -46,7 +46,7 @@
 | open-api | P-49 | ✅ PRD-016 | ✅ 5files | ✅ 1圈梁+7e2e | ✅ P-49专项审计 | 🟡 已补主圈梁 |
 | openapi | P-49 | ✅ PRD-016 | ✅ 29files | ✅ 1圈梁+7e2e | ✅ P-49专项审计 | 🟡 已补主圈梁 |
 | tenant-llm | P-49 | ✅ PRD-014 | ✅ 10files | ✅ 1圈梁+61tests+27e2e | ✅ P-49专项审计 | 🟡 已补主圈梁 |
-| tob-web-seo-geo | P-49 | ✅ PRD-015 | ✅ 14files | ✅ 1圈梁+19tests | ✅ P-49专项审计 | 🟡 已补主圈梁 |
+| tob-web-seo-geo | P-49 | ✅ PRD-015 | ✅ 15files | ✅ 1圈梁+19tests+1browser | ✅ P-49专项审计 | 🟡 已补主圈梁 |
 | deploy | P-53 | ✅ PRD-013 | ✅ 6files | ⬜ | ⬜ | 🔴 缺测试+审计 |
 | iot | (未分配) | ⬜ | ✅ 6files | ⬜ | ⬜ | 🔴 缺Phase归属 |
 

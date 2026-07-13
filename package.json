@@ -11,6 +11,7 @@
     "commit:f11": "bash scripts/foundation11-commit.sh",
     "e2e:smoke": "playwright test e2e/smoke.spec.ts",
     "e2e:smoke:headed": "playwright test e2e/smoke.spec.ts --headed",
+    "e2e:phase49:seo-geo": "tsx scripts/phase49-e2e-seo-geo.ts",
     "e2e:report": "playwright show-report",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

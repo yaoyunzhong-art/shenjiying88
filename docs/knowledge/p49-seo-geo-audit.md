@@ -1,6 +1,6 @@
 # P-49 SEO/GEO 专项审计
 
-> 更新时间: 2026-07-14 04:08
+> 更新时间: 2026-07-14 05:22
 > 范围: `PRD-015` / `apps/tob-web` / `SEO/GEO`
 
 ## 1. 审计结论
@@ -50,6 +50,11 @@
    - 浏览器抽检 `http://127.0.0.1:3005/jp-tokyo/demo-tenant`，确认 `document.documentElement.lang === 'ja-JP'` 且无控制台告警
    - 浏览器抽检 `http://127.0.0.1:3005/eu-de/demo-tenant/sportslife`，确认 `document.documentElement.lang === 'de-DE'` 且无控制台告警
    - 修复 `PortalConsumerGovernanceSection` 在动态门户下触发的 React child key 告警
+7. 固化浏览器自动化证据：
+   - 新增 `scripts/phase49-e2e-seo-geo.ts` 与根脚本命令 `pnpm run e2e:phase49:seo-geo`
+   - 自动抽检 `cn-mainland / sea-sg / jp-tokyo / eu-de` 四条动态门户路径
+   - 自动校验 `title / html lang / canonical / og:locale / description / h1 / console messages`
+   - 证据已落盘到 `tmp/phase49-seo-geo/report.json` 与同目录 4 张全页截图
 
 ## 4. AC / RQ 映射
 
@@ -67,7 +72,7 @@
 
 ## 5. 剩余缺口
 
-1. 浏览器抽检已覆盖核心页面、根级入口、监控看板以及 `cn-mainland / us-default / sea-sg / jp-tokyo / eu-de` 市场样本，但尚未形成截图归档或自动化浏览器脚本。
+1. 浏览器自动化证据已落盘，但当前仍是本地手动触发，尚未接入 CI / 定时回归流水线。
 
 ## 6. 验证记录
 
@@ -78,5 +83,6 @@ pnpm --dir apps/tob-web exec node --import tsx --test app/api/metrics/web-vitals
 pnpm --dir apps/tob-web exec node --import tsx --test app/sports-ants/lib/conversion-service.test.ts
 pnpm --dir packages/ui build
 pnpm --dir apps/tob-web typecheck
+pnpm run e2e:phase49:seo-geo
 bash scripts/prd-validate.sh
 ```
