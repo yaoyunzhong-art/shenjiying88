@@ -1,6 +1,5 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Optional } from '@nestjs/common'
 import {
-  LanguageCode,
   PortalAudience,
   PortalChannel,
   PortalScopeType,
@@ -15,16 +14,18 @@ import { MarketService } from '../market/market.service'
 import { toMarketProfileContract, toRegionalConfigOverrideContract } from '../market/market.contract'
 import { toStorePortalContract, toTobPortalContract } from './portal.contract'
 import type { RequestTenantContext } from '../tenant/tenant.types'
+import { TenantConfigService } from '../tenant-config/tenant-config.service'
 
 @Injectable()
 export class PortalService {
   constructor(
     private readonly marketService: MarketService,
-    private readonly foundationService: FoundationService
+    private readonly foundationService: FoundationService,
+    @Optional() private readonly tenantConfigService?: TenantConfigService
   ) {}
 
   resolveTenantPortal(context: RequestTenantContext): TobPortal {
-    const marketProfile = this.marketService.getMergedProfile(context)
+    const marketProfile = this.getEffectiveMarketProfile(context)
     return {
       audience: PortalAudience.ToB,
       scopeType: PortalScopeType.Tenant,
@@ -48,7 +49,7 @@ export class PortalService {
 
   resolveBrandPortal(context: RequestTenantContext): TobPortal {
     const brandCode = context.brandId ?? 'brand-demo'
-    const marketProfile = this.marketService.getMergedProfile(context)
+    const marketProfile = this.getEffectiveMarketProfile(context)
     return {
       audience: PortalAudience.ToB,
       scopeType: PortalScopeType.Brand,
@@ -74,7 +75,7 @@ export class PortalService {
   resolveStorePortal(context: RequestTenantContext): StorePortal {
     const brandCode = context.brandId ?? 'brand-demo'
     const storeCode = context.storeId ?? 'store-001'
-    const marketProfile = this.marketService.getMergedProfile(context)
+    const marketProfile = this.getEffectiveMarketProfile(context)
 
     return {
       audience: PortalAudience.ToC,
@@ -88,8 +89,7 @@ export class PortalService {
       channel: PortalChannel.Web,
       name: `${storeCode} 门店门户`,
       primaryDomain: `${storeCode}.${brandCode}.${context.tenantId}.${marketProfile.marketCode}.local`,
-      supportedLanguages:
-        marketProfile.marketCode === 'cn-mainland' ? [LanguageCode.ZhCn] : [LanguageCode.EnUs],
+      supportedLanguages: marketProfile.locale.supportedLanguages,
       supportedSurfaces: [
         StorefrontSurface.OfficialSite,
         StorefrontSurface.H5,
@@ -103,7 +103,7 @@ export class PortalService {
 
   getBootstrap(context: RequestTenantContext): PortalBootstrapResponse {
     const foundationDependency = this.foundationService.getDependencySummary('portal')
-    const marketProfile = this.marketService.getMergedProfile(context)
+    const marketProfile = this.getEffectiveMarketProfile(context)
     const tenantPortal = this.resolveTenantPortal(context)
     const brandPortal = this.resolveBrandPortal(context)
     const storePortal = this.resolveStorePortal(context)
@@ -115,6 +115,22 @@ export class PortalService {
       marketProfile: toMarketProfileContract(marketProfile),
       regionalOverrides: this.marketService.getOverrides(context).map(toRegionalConfigOverrideContract),
       ...toBootstrapFoundationMetadata(foundationDependency)
+    }
+  }
+
+  private getEffectiveMarketProfile(context: RequestTenantContext) {
+    const marketProfile = this.marketService.getMergedProfile(context)
+    const resolvedLocale = this.tenantConfigService?.resolveLocalePolicyForContext(context, {
+      defaultLanguage: marketProfile.locale.defaultLanguage,
+      supportedLanguages: marketProfile.locale.supportedLanguages,
+    }) ?? marketProfile.locale
+
+    return {
+      ...marketProfile,
+      locale: {
+        defaultLanguage: resolvedLocale.defaultLanguage as typeof marketProfile.locale.defaultLanguage,
+        supportedLanguages: resolvedLocale.supportedLanguages as typeof marketProfile.locale.supportedLanguages,
+      },
     }
   }
 }

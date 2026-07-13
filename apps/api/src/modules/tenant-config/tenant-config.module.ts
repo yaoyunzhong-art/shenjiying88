@@ -9,12 +9,14 @@
  */
 
 import { Module } from '@nestjs/common'
+import { PrismaModule } from '../../prisma/prisma.module'
 import { TenantConfigController } from './tenant-config.controller'
 import { TenantConfigCacheService } from './tenant-config-cache.service'
 import { TenantConfigService } from './tenant-config.service'
 import { TenantConfigRepository } from './tenant-config.repository'
 
 @Module({
+  imports: [PrismaModule],
   controllers: [TenantConfigController],
   providers: [TenantConfigService, TenantConfigRepository, TenantConfigCacheService],
   exports: [TenantConfigService, TenantConfigRepository, TenantConfigCacheService],

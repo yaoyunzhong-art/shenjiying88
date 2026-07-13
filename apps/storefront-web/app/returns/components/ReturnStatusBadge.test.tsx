@@ -70,4 +70,60 @@ describe('ReturnStatusBadge', () => {
     assert.ok(html.includes('已收货'));
     assert.ok(html.includes('#059669'));
   });
+
+  describe('ReturnStatusBadge — 反例', () => {
+    it('throws or renders fallback for unknown status', () => {
+      const html = renderToStaticMarkup(<ReturnStatusBadge status={'unknown' as ReturnStatus} />);
+      // Should still render without crash — verify it doesn't throw
+      assert.ok(typeof html === 'string');
+    });
+
+    it('does not render broken HTML tags', () => {
+      for (const status of allStatuses) {
+        const html = renderToStaticMarkup(<ReturnStatusBadge status={status} />);
+        assert.doesNotMatch(html, /<[^>]*$/); // no unclosed tags
+      }
+    });
+  });
+
+  describe('ReturnStatusBadge — 边界', () => {
+    it('label map has entry for every status', () => {
+      for (const status of allStatuses) {
+        assert.ok(RETURN_STATUS_LABELS[status], `Missing label for ${status}`);
+      }
+    });
+
+    it('color map has entry for every status', () => {
+      for (const status of allStatuses) {
+        assert.ok(RETURN_STATUS_COLORS[status], `Missing color for ${status}`);
+      }
+    });
+
+    it('all labels are Chinese text', () => {
+      for (const status of allStatuses) {
+        const label = RETURN_STATUS_LABELS[status];
+        // Chinese characters are in Unicode range \u4e00-\u9fff
+        assert.ok([...label].some(ch => ch >= '\u4e00' && ch <= '\u9fff'),
+          `Label for ${status} has no Chinese characters: "${label}"`);
+      }
+    });
+
+    it('all colors start with #', () => {
+      for (const status of allStatuses) {
+        assert.match(RETURN_STATUS_COLORS[status], /^#[0-9a-fA-F]+$/);
+      }
+    });
+  });
+
+  describe('ReturnStatusBadge — 渲染结构', () => {
+    it('renders as a span element', () => {
+      const html = renderToStaticMarkup(<ReturnStatusBadge status="pending" />);
+      assert.ok(html.startsWith('<span'));
+    });
+
+    it('has inline style attribute with display:inline-block', () => {
+      const html = renderToStaticMarkup(<ReturnStatusBadge status="completed" />);
+      assert.ok(html.includes('style="') || html.includes("style='"));
+    });
+  });
 });

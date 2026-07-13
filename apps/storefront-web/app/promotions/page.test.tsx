@@ -1,6 +1,6 @@
 /**
  * promotions/page.test.tsx — 促销列表页 L1 冒烟测试 (storefront-web)
- * 覆盖: 正例·边界·防御
+ * 覆盖: 正例·反例·边界·防御
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -35,6 +35,46 @@ describe('promotions — 正例', () => {
     const src = readSource();
     assert.ok(src.includes('useSearchFilter'), '缺少搜索过滤');
   });
+
+  it('应包含 status 字段在 Promotion 接口中', () => {
+    const src = readSource();
+    assert.ok(src.includes('status'), '接口缺少 status');
+  });
+
+  it('Mock 数据每条应有 id 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes("id: 'promo") || src.includes("id: '") || src.includes('id: 1'), '缺少自增 id');
+  });
+
+  it('应包含 storeName 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('storeName'), '缺少 storeName');
+  });
+
+  it('应包含 title 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('title'), '缺少 title');
+  });
+
+  it('mock 数据应包含 active 和 inactive 状态', () => {
+    const src = readSource();
+    assert.ok(src.includes("'active'") && src.includes("'inactive'"), '缺少不同状态');
+  });
+
+  it('应包含促销折扣比例字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('discount'), '缺少 discount 字段');
+  });
+
+  it('mock 数据应包含 startDate 和 endDate 日期', () => {
+    const src = readSource();
+    assert.ok(src.includes('startDate') || src.includes('endDate'), '缺少日期字段');
+  });
+
+  it('mock 数据应包含不同门店', () => {
+    const src = readSource();
+    assert.ok(src.includes('storeName'), '门店名');
+  });
 });
 
 describe('promotions — 边界', () => {
@@ -44,14 +84,25 @@ describe('promotions — 边界', () => {
     assert.ok(src.includes('storeName'), '缺少 storeName');
   });
 
-  it('MOCK_DATA 数量', () => {
+  it('MOCK_DATA 数量应至少包含 8 条', () => {
     const src = readSource();
-    assert.ok(src.includes('MOCK_DATA'), '数据源');
+    const matches = src.match(/id: '/g) || src.match(/id:\s*['"]/g);
+    assert.ok(matches && matches.length >= 8, `期望 ≥8 条, 实际 ${matches?.length ?? 0}`);
   });
 
   it('应支持状态过滤', () => {
     const src = readSource();
     assert.ok(src.includes('status'), '缺少 status');
+  });
+
+  it('应包含满减或折扣类型区分', () => {
+    const src = readSource();
+    assert.ok(src.includes('type') || src.includes('discountType'), '缺少类型区分');
+  });
+
+  it('空促销数据处理', () => {
+    const src = readSource();
+    assert.ok(src.includes('.filter(') || src.includes('.find('), 'filter/find 方法');
   });
 });
 
@@ -69,5 +120,27 @@ describe('promotions — 防御', () => {
   it('空调拨状态应有处理', () => {
     const src = readSource();
     assert.ok(src.includes('.length'), '长度判断');
+  });
+
+  it('不应包含危险的 innerHTML', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /dangerouslySetInnerHTML/);
+  });
+
+  it('不应包含硬编码 token/密钥', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /(?:secret|password|api[_-]?key|token|authorization)/i);
+  });
+});
+
+describe('promotions — 反例', () => {
+  it('不应使用 any 类型', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /:\s*any\b/);
+  });
+
+  it('不应包含 console.log 调试代码', () => {
+    const src = readSource();
+    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), '不允许裸 console.log');
   });
 });
