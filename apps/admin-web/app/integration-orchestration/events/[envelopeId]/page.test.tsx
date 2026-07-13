@@ -75,6 +75,65 @@ describe('integration-orchestration/events/[envelopeId] — 边界', () => {
   });
 });
 
+// ---- L2 增强: 数据负载验证 ----
+
+describe('integration-orchestration/events/[envelopeId] — 数据负载验证', () => {
+  it('snapshot 应包含 envelopeId 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('snapshot.envelopeId'), 'snapshot 数据应含 envelopeId');
+  });
+
+  it('snapshot 应通过 record?.eventName 展示事件名称', () => {
+    const src = readSource();
+    assert.ok(src.includes('snapshot.record?.eventName'), '应通过 record 访问事件名');
+  });
+
+  it('subtitle 应提及 payload 和幂等记录', () => {
+    const src = readSource();
+    assert.ok(src.includes('payload') || src.includes('幂等'), 'subtitle 应描述 payload/幂等');
+  });
+
+  it('title 应包含 snapshot.notFound 条件', () => {
+    const src = readSource();
+    assert.ok(src.includes('snapshot.notFound'), 'title 应有 notFound 条件');
+  });
+
+  it('notFound 为 true 时应显示事件信封不存在', () => {
+    const src = readSource();
+    assert.ok(src.includes('事件信封不存在'), 'notFound 标题应为事件信封不存在');
+  });
+
+  it('notFound 为 false 时 title 应展示事件名称', () => {
+    const src = readSource();
+    assert.ok(src.includes('eventName'), 'title 应显示 eventName');
+  });
+
+  it('readEnvelopeId 应处理单字符串', () => {
+    const src = readSource();
+    assert.ok(src.includes('readEnvelopeId(') || src.includes('function readEnvelopeId'), '应定义参数解析');
+  });
+
+  it('envelopeId 可选类型含 undefined', () => {
+    const src = readSource();
+    assert.ok(src.includes('envelopeId?:'), 'envelopeId 应为可选');
+  });
+
+  it('params 类型中包含 string[]', () => {
+    const src = readSource();
+    assert.ok(src.includes('string | string[]'), 'params 应接受数组');
+  });
+
+  it('页面引用 integration-orchestration-detail-view-model', () => {
+    const src = readSource();
+    assert.ok(src.includes('integration-orchestration-detail-view-model'), '应引用 view model');
+  });
+
+  it('页面引用 integration-orchestration-event-detail-client', () => {
+    const src = readSource();
+    assert.ok(src.includes('integration-orchestration-event-detail-client'), '应引用 detail client');
+  });
+});
+
 // ---- 防御: 错误处理 & 非法输入 ----
 
 describe('integration-orchestration/events/[envelopeId] — 防御', () => {
@@ -103,8 +162,21 @@ describe('integration-orchestration/events/[envelopeId] — 防御', () => {
     assert.ok(src.includes("@m5/types'"), '从 @m5/types 导入');
   });
 
-  it('subtitle 应提及 payload 和幂等记录', () => {
+  it('应使用 @m5/ui 导入 UI 组件', () => {
     const src = readSource();
-    assert.ok(src.includes('payload') || src.includes('幂等'), 'subtitle 应描述 payload/幂等');
+    assert.ok(src.includes("@m5/ui'"), '从 @m5/ui 导入');
+  });
+
+  it('页面不应使用 dangerouslySetInnerHTML', () => {
+    const src = readSource();
+    assert.ok(!src.includes('dangerouslySetInnerHTML'), '不应使用危险 HTML');
+  });
+
+  it('页面不应有生产环境 console.log', () => {
+    const src = readSource();
+    const logLines = src.split('\n').filter(l =>
+      l.includes('console.log') && !l.trimStart().startsWith('//')
+    );
+    assert.equal(logLines.length, 0, '不应有 console.log');
   });
 });

@@ -123,4 +123,55 @@ describe('MemberTiersPage — 等级数据逻辑', () => {
       assert.ok(tier.count >= 0, `${tier.tier} 人数不应为负`);
     }
   });
+
+  it('14. 百分比之和近似为 100%', () => {
+    const total = calculateTotal(MOCK_TIERS);
+    const pcts = MOCK_TIERS.map((t) => parseFloat(calculatePercentage(t.count, total)));
+    const sum = pcts.reduce((a, b) => a + b, 0);
+    // 四舍五入后和应在 99.9 ~ 100.1 范围内
+    assert.ok(sum >= 99.8 && sum <= 100.2, `百分比和 ${sum} 应接近 100%`);
+  });
+
+  it('15. 按等级 key 排序稳定（正例）', () => {
+    const sorted = [...MOCK_TIERS].sort((a, b) => b.count - a.count);
+    assert.equal(sorted[0]!.tier, '普通会员', '最多人数应为普通会员');
+    assert.equal(sorted[sorted.length - 1]!.tier, '铂金会员', '最少人数应为铂金会员');
+  });
+
+  it('16. 等级增长率最高为正（边界）', () => {
+    const withGrowth = MOCK_TIERS.filter((t) => t.growth != null);
+    const maxGrowth = Math.max(...withGrowth.map((t) => t.growth!));
+    const minGrowth = Math.min(...withGrowth.map((t) => t.growth!));
+    assert.ok(maxGrowth > 0, '最高增长率为正');
+    assert.ok(minGrowth < 0, '最低增长率为负');
+  });
+
+  it('17. 钻石会员占比应低于普通会员（正例）', () => {
+    const total = calculateTotal(MOCK_TIERS);
+    const diamondPct = parseFloat(calculatePercentage(128, total));
+    const regularPct = parseFloat(calculatePercentage(2340, total));
+    assert.ok(diamondPct < regularPct, '钻石占比应小于普通');
+  });
+
+  it('18. 筛选返回的数组元素类型正确（反例防御）', () => {
+    const result = filterByTier(MOCK_TIERS, 'diamond');
+    for (const r of result) {
+      assert.ok(typeof r.key === 'string', 'key 应为字符串');
+      assert.ok(typeof r.count === 'number', 'count 应为数字');
+    }
+  });
+
+  it('19. 多个等级可自由组合筛选（边界）', () => {
+    const keys = ['diamond', 'gold', 'platinum'];
+    for (const key of keys) {
+      const result = filterByTier(MOCK_TIERS, key);
+      assert.equal(result.length, 1, `key=${key} 应恰好返回一条`);
+      assert.equal(result[0]!.key, key);
+    }
+  });
+
+  it('20. 空数组筛选返回空（边界）', () => {
+    assert.equal(filterByTier([], 'diamond').length, 0);
+    assert.equal(filterByTier([], null).length, 0);
+  });
 });

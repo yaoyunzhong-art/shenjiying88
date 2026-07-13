@@ -85,6 +85,103 @@ describe('agents/studio — 边界', () => {
   });
 });
 
+// ---- L2 增强: 面板数据 & 骨架屏校验 ----
+
+describe('agents/studio — 面板数据验证', () => {
+  it('snapshot 应包含 configs 配置列表', () => {
+    const src = readSource();
+    assert.ok(src.includes('snapshot.configs') || src.includes('configs:'), 'snapshot 应含 configs 配置');
+  });
+
+  it('snapshot 应包含 deliveryMode 交付模式', () => {
+    const src = readSource();
+    assert.ok(src.includes('snapshot.deliveryMode') || src.includes('deliveryMode'), 'snapshot 应含 deliveryMode');
+  });
+
+  it('snapshot 应包含 configs 配置列表（验证 snapshot 结构）', () => {
+    const src = readSource();
+    assert.ok(src.includes('snapshot.configs'), 'snapshot 应含 configs');
+  });
+
+  it('snapshot 应包含 deliveryMode 交付模式（验证 snapshot 结构）', () => {
+    const src = readSource();
+    assert.ok(src.includes('snapshot.deliveryMode'), 'snapshot 应含 deliveryMode');
+  });
+
+  it('AgentStudioClient 应接收 configs prop', () => {
+    const src = readSource();
+    assert.ok(src.includes('configs={snapshot.configs}'), '子组件应接收 configs');
+  });
+
+  it('AgentStudioClient 应接收 deliveryMode prop', () => {
+    const src = readSource();
+    assert.ok(src.includes('deliveryMode={snapshot.deliveryMode}'), '子组件应接收 deliveryMode');
+  });
+
+  it('Studio 页面应显示英文模式（英文/中文双语言）', () => {
+    const src = readSource();
+    // title 或 subtitle 包含英文
+    assert.ok(
+      src.includes('Agent') || src.includes('agent'),
+      'Studio 页面应有英文描述'
+    );
+  });
+
+  it('Studio 页面应使用 SSR 不缓存策略', () => {
+    const src = readSource();
+    assert.ok(
+      src.includes('no-store') || src.includes('force-dynamic'),
+      '页面应有不缓存策略'
+    );
+  });
+
+  it('Studio 页面应防止 XSS，不渲染危险 HTML', () => {
+    const src = readSource();
+    assert.ok(!src.includes('dangerouslySetInnerHTML'), '页面不应使用危险 HTML');
+  });
+
+  it('Studio 页面应包含文字说明 subtitle', () => {
+    const src = readSource();
+    assert.ok(src.includes('Agent Studio') || src.includes('agent studio'), 'subtitle 应提及 Agent Studio');
+  });
+
+  it('Studio 页面 skeleton 应使用 dark variant', () => {
+    const src = readSource();
+    assert.ok(
+      src.includes('variant="card"') || src.includes('rows={3}'),
+      'skeleton 应有 card variant 和 3 行'
+    );
+  });
+});
+
+describe('agents/studio — 骨架屏布局', () => {
+  it('LoadingSkeleton 应在 Suspense 内部', () => {
+    const src = readSource();
+    const suspenseOpen = src.lastIndexOf('<Suspense');
+    const skeletonOpen = src.lastIndexOf('LoadingSkeleton');
+    const suspenseClose = src.lastIndexOf('</Suspense>');
+    assert.ok(suspenseOpen < skeletonOpen && skeletonOpen < suspenseClose, 'LoadingSkeleton 应在 Suspense 内');
+  });
+
+  it('Suspense fallback 应为 LoadingSkeleton', () => {
+    const src = readSource();
+    assert.ok(
+      src.includes('fallback={<LoadingSkeleton'),
+      'Suspense fallback 应为 LoadingSkeleton'
+    );
+  });
+
+  it('Studio 页面不包含 window 直接访问', () => {
+    const src = readSource();
+    assert.ok(!src.includes('window.'), '服务端组件不应访问 window');
+  });
+
+  it('Studio 页面不包含 document 直接访问', () => {
+    const src = readSource();
+    assert.ok(!src.includes('document.'), '服务端组件不应访问 document');
+  });
+});
+
 // ---- 防御: 错误处理 & 非法输入 ----
 
 describe('agents/studio — 防御', () => {

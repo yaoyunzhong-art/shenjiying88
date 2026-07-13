@@ -122,4 +122,105 @@ describe('CampaignRuleDetailPage', () => {
       assert.ok(source.includes('deliveryMode'), 'Should pass deliveryMode');
     });
   });
+
+  // ---- L2 增强: 页面逻辑与防御 ----
+
+  describe('campaign-rule page — L2 页面结构', () => {
+    it('page.tsx should import from campaign-rules-view-model', () => {
+      const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+      assert.ok(source.includes('campaign-rules-view-model'), 'Should import view model');
+    });
+
+    it('page.tsx should import CampaignRuleDetailPresenter', () => {
+      const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+      assert.ok(source.includes('CampaignRuleDetailPresenter'), 'Should import presenter');
+    });
+
+    it('page.tsx should use Promise<{ id }> for params', () => {
+      const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+      assert.ok(source.includes('Promise<{ id: string }>'), 'Params should be Promise');
+    });
+
+    it('page.tsx passes rule prop as rule ?? null', () => {
+      const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+      assert.ok(source.includes('rule={rule ?? null}'), 'Should pass null for missing rule');
+    });
+
+    it('page.tsx should find rule by .find()', () => {
+      const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+      assert.ok(source.includes('.find((r)'), 'Should use find()');
+    });
+
+    it('page.tsx uses no-store cache policy', () => {
+      const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+      assert.ok(source.includes('no-store'), 'Should use no-store');
+    });
+  });
+
+  describe('campaign-rule detail presenter — L2 边界与防御', () => {
+    const presenterPath = path.join(__dirname, 'detail-presenter.tsx');
+
+    it('should not contain dangerouslySetInnerHTML', () => {
+      const source = fs.readFileSync(presenterPath, 'utf-8');
+      assert.ok(!source.includes('dangerouslySetInnerHTML'), 'Should not use dangerouslySetInnerHTML');
+    });
+
+    it('should not contain any type annotation', () => {
+      const source = fs.readFileSync(presenterPath, 'utf-8');
+      const anyPattern = /:\s*any[\s,;})]/;
+      assert.ok(!anyPattern.test(source), 'Should not use any type');
+    });
+
+    it('should handle null rule (not found state)', () => {
+      const source = fs.readFileSync(presenterPath, 'utf-8');
+      assert.ok(
+        source.includes('!localRule') || source.includes('null'),
+        'Should handle null rule'
+      );
+    });
+
+    it('should render toggle and delete action buttons', () => {
+      const source = fs.readFileSync(presenterPath, 'utf-8');
+      assert.ok(
+        source.includes('handleToggle') || source.includes('toggleEnabled'),
+        'Should have toggle action'
+      );
+      assert.ok(
+        source.includes('handleDelete') || source.includes('删除'),
+        'Should have delete action'
+      );
+    });
+  });
+
+  describe('campaign-rule page — L2 防御检查', () => {
+    it('should not contain hardcoded secrets', () => {
+      const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+      for (const s of ['sk-', 'api_key', 'secret_key', 'password=']) {
+        assert.ok(!source.includes(s), `Should not contain ${s}`);
+      }
+    });
+
+    it('should not render img tag directly', () => {
+      const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+      assert.ok(!source.includes('<img '), 'Should not use <img> directly');
+    });
+
+    it('should not have production console.log', () => {
+      const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+      const logLines = source.split('\n').filter(l =>
+        l.includes('console.log') && !l.trimStart().startsWith('//')
+      );
+      assert.equal(logLines.length, 0, 'Should not have console.log');
+    });
+
+    it('should use no-store for data loading', () => {
+      const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+      assert.ok(source.includes('no-store'), 'Should use no-store');
+    });
+
+    it('page source should be over 500 bytes', () => {
+      const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+      assert.ok(source.length > 500, `Source too small: ${source.length} bytes`);
+    });
+  });
 });

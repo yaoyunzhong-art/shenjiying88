@@ -124,3 +124,111 @@ describe('DeviceItem 类型过滤', () => {
     }
   });
 });
+
+describe('DeviceItem — 数据完整性与边界', () => {
+  it('所有设备 IP 地址格式合法', () => {
+    const devices = getDevices();
+    const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+    for (const d of devices) {
+      assert.ok(ipPattern.test(d.ip), `设备 ${d.name} IP ${d.ip} 格式不合法`);
+      const parts = d.ip.split('.').map(Number);
+      for (const p of parts) {
+        assert.ok(p >= 0 && p <= 255, `IP ${d.ip} 段 ${p} 超出 0-255`);
+      }
+    }
+  });
+
+  it('firmwareVersion 应为 semver 格式（含可选 v 前缀）', () => {
+    const devices = getDevices();
+    const semverPattern = /^v?\d+\.\d+\.\d+$/;
+    for (const d of devices) {
+      assert.ok(semverPattern.test(d.firmwareVersion), `设备 ${d.name} 固件版本 ${d.firmwareVersion} 非 semver`);
+    }
+  });
+
+  it('同一 store 的 device 应属于同一个 store', () => {
+    const devices = getDevices();
+    const storeMap = new Map<string, string>();
+    for (const d of devices) {
+      if (storeMap.has(d.storeId)) {
+        assert.equal(storeMap.get(d.storeId), d.storeName, `storeId=${d.storeId} 对应不同 storeName`);
+      } else {
+        storeMap.set(d.storeId, d.storeName);
+      }
+    }
+  });
+
+  it('每种 DeviceStatus 至少有一台设备', () => {
+    const devices = getDevices();
+    const statuses = new Set(devices.map((d) => d.status));
+    const expected: DeviceStatus[] = ['online', 'offline', 'warning', 'maintenance'];
+    for (const s of expected) {
+      assert.ok(statuses.has(s), `缺少状态: ${s}`);
+    }
+  });
+
+  it('所有设备 serialNumber 长度合理 (8-64 字符)', () => {
+    const devices = getDevices();
+    for (const d of devices) {
+      assert.ok(d.serialNumber.length >= 8, `设备 ${d.name} serialNumber 过短`);
+      assert.ok(d.serialNumber.length <= 64, `设备 ${d.name} serialNumber 过长`);
+    }
+  });
+
+  it('每种 DeviceType 至少有一台设备', () => {
+    const devices = getDevices();
+    const types = new Set(devices.map((d) => d.type));
+    const expected: DeviceType[] = ['POS', 'printer', 'scanner', 'tablet', 'kiosk', 'scale'];
+    for (const t of expected) {
+      assert.ok(types.has(t), `缺少设备类型: ${t}`);
+    }
+  });
+
+  it('lastCheckAt 时间戳在合理范围内', () => {
+    const devices = getDevices();
+    const now = Date.now();
+    const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000;
+    for (const d of devices) {
+      const ts = new Date(d.lastCheckAt).getTime();
+      assert.ok(!isNaN(ts), `设备 ${d.name} lastCheckAt 无法解析`);
+      assert.ok(ts >= oneYearAgo, `设备 ${d.name} lastCheckAt 早于一年前`);
+      assert.ok(ts <= now, `设备 ${d.name} lastCheckAt 在未来`);
+    }
+  });
+
+  it('按维护状态过滤返回正确类型', () => {
+    const devices = getDevices();
+    const maintenance = devices.filter((d) => d.status === 'maintenance');
+    assert.ok(maintenance.length > 0);
+    for (const d of maintenance) {
+      assert.equal(d.status, 'maintenance');
+    }
+  });
+
+  it('firmware versions 应不同（边界检查更新机制）', () => {
+    const devices = getDevices();
+    const versions = new Set(devices.map((d) => d.firmwareVersion));
+    assert.ok(versions.size > 1, '应有至少 2 种 firmware 版本');
+  });
+
+  it('全部 devices 不应有重复 id', () => {
+    const devices = getDevices();
+    const ids = devices.map((d) => d.id);
+    const uniqueIds = new Set(ids);
+    assert.equal(ids.length, uniqueIds.size, 'device ids 应唯一');
+  });
+
+  it('全部 devices id 不为空', () => {
+    const devices = getDevices();
+    for (const d of devices) {
+      assert.ok(d.id.length > 0, `设备 ${d.name} id 为空`);
+    }
+  });
+
+  it('全部 devices name 不为空', () => {
+    const devices = getDevices();
+    for (const d of devices) {
+      assert.ok(d.name.trim().length > 0, '设备 name 为空');
+    }
+  });
+});

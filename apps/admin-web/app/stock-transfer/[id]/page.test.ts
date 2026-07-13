@@ -114,3 +114,81 @@ describe('AdminStockTransferDetailPage (stock-transfer/[id]/page.tsx)', () => {
     assert.ok(source.length > 3000, `源码长度不足, 实际 ${source.length} bytes`);
   });
 });
+
+// ---- L2 增强: 页面逻辑细节 ----
+
+describe('AdminStockTransferDetailPage — L2 页面逻辑', () => {
+  test('页面应包含 generateStockTransferMetadata 函数', () => {
+    assert.ok(source.includes('generateStockTransferMetadata'), '缺少 generateStockTransferMetadata 函数');
+  });
+
+  test('页面应使用 StockTransferDetailClient 子组件', () => {
+    assert.ok(source.includes('StockTransferDetailClient'), '缺少子组件引用');
+  });
+
+  test('StockTransferDetailClient 应接收 transferId prop', () => {
+    assert.ok(source.includes('transferId={id}'), '缺少 transferId prop');
+  });
+
+  test('页面应包含 StockTransferDetailLoadingFallback 加载占位', () => {
+    assert.ok(source.includes('StockTransferDetailLoadingFallback'), '缺少加载占位函数');
+  });
+
+  test('页面应包含发起方/接收方字段引用', () => {
+    assert.ok(source.includes('发起') || source.includes('接收'), '应提及发起方/接收方');
+  });
+
+  test('页面应包含调拨流程操作按钮文本', () => {
+    assert.ok(
+      source.includes('审核') || source.includes('发货') || source.includes('签收'),
+      '缺少调拨流程操作按钮'
+    );
+  });
+
+  test('页面应包含 JSON-LD 结构化数据', () => {
+    assert.ok(
+      source.includes('ld+json') || source.includes('schema.org'),
+      '缺少 JSON-LD'
+    );
+  });
+
+  test('页面不应使用 any 类型', () => {
+    const matches = source.match(/:\s*any[\s,;\)]/g);
+    assert.ok(!matches || matches.length === 0, '不应使用 any 类型');
+  });
+
+  test('页面应包含 ErrorBoundary fallback UI 描述', () => {
+    assert.ok(
+      source.includes('StockTransferDetailErrorFallback'),
+      '缺少错误回退组件'
+    );
+  });
+
+  test('页面有 grid 布局时间线', () => {
+    assert.ok(
+      source.includes('grid') || source.includes('gridTemplateColumns'),
+      '应包含 grid 布局'
+    );
+  });
+
+  test('页面应处理空数据状态', () => {
+    assert.ok(
+      source.includes('EmptyState') || source.includes('empty'),
+      '应处理空数据'
+    );
+  });
+
+  test('页面应包含数据加载状态处理', () => {
+    assert.ok(
+      source.includes('LoadingSkeleton') || source.includes('loading'),
+      '应有加载状态处理'
+    );
+  });
+
+  test('页面应包含 retry 重试按钮', () => {
+    assert.ok(
+      source.includes('重试') || source.includes('retry'),
+      '应有重试按钮'
+    );
+  });
+});
