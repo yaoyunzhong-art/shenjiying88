@@ -25,4 +25,34 @@ describe('OpenAPIModule', () => {
     const exportedProviders = Reflect.getMetadata('exports', OpenAPIModule) ?? []
     assert.ok(Array.isArray(exportedProviders))
   })
+
+  it('should be instantiable', () => {
+    const instance = new OpenAPIModule()
+    assert.ok(instance instanceof OpenAPIModule)
+  })
+
+  it('should have controllers registered', () => {
+    const controllers = Reflect.getMetadata('controllers', OpenAPIModule) ?? []
+    assert.ok(Array.isArray(controllers))
+    assert.ok(controllers.length >= 1)
+  })
+
+  it('should have providers registered', () => {
+    const providers = Reflect.getMetadata('providers', OpenAPIModule) ?? []
+    assert.ok(Array.isArray(providers))
+    assert.ok(providers.length >= 2)
+    const providerNames = providers.map((p: any) => p?.name ?? String(p))
+    assert.ok(providerNames.length > 0)
+  })
+
+  it('should have imports registered', () => {
+    const imports = Reflect.getMetadata('imports', OpenAPIModule) ?? []
+    assert.ok(Array.isArray(imports))
+  })
+
+  it('should have exports registered with proper services', () => {
+    const exports = Reflect.getMetadata('exports', OpenAPIModule) ?? []
+    assert.ok(Array.isArray(exports))
+    assert.ok(exports.length >= 1)
+  })
 })

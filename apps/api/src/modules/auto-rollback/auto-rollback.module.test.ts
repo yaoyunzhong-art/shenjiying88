@@ -25,4 +25,27 @@ describe('AutoRollbackModule', () => {
     expect(exported.confirm).toBeTypeOf('function')
     expect(exported.cancel).toBeTypeOf('function')
   })
+
+  it('should be instantiable without NestJS', () => {
+    const instance = new AutoRollbackModule()
+    expect(instance).toBeInstanceOf(AutoRollbackModule)
+  })
+
+  it('should have controller metadata', () => {
+    const controllers = Reflect.getMetadata('controllers', AutoRollbackModule) ?? []
+    expect(Array.isArray(controllers)).toBe(true)
+    expect(controllers.length).toBe(1)
+  })
+
+  it('should have providers metadata', () => {
+    const providers = Reflect.getMetadata('providers', AutoRollbackModule) ?? []
+    expect(Array.isArray(providers)).toBe(true)
+    expect(providers.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('should have exports metadata', () => {
+    const exports = Reflect.getMetadata('exports', AutoRollbackModule) ?? []
+    expect(Array.isArray(exports)).toBe(true)
+    expect(exports.length).toBeGreaterThanOrEqual(1)
+  })
 })

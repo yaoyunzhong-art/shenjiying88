@@ -24,4 +24,36 @@ describe('RecommendModule', () => {
     expect(content).toContain('RecommendModule')
     expect(content).toContain('@Module')
   })
+
+  it('should be defined from import', async () => {
+    const { RecommendModule } = await import('./recommend.module')
+    expect(RecommendModule).toBeDefined()
+  })
+
+  it('should have controllers metadata', async () => {
+    const { RecommendModule } = await import('./recommend.module')
+    const controllers = Reflect.getMetadata('controllers', RecommendModule) ?? []
+    expect(Array.isArray(controllers)).toBe(true)
+    expect(controllers.length).toBeGreaterThan(0)
+  })
+
+  it('should have providers metadata', async () => {
+    const { RecommendModule } = await import('./recommend.module')
+    const providers = Reflect.getMetadata('providers', RecommendModule) ?? []
+    expect(Array.isArray(providers)).toBe(true)
+    expect(providers.length).toBeGreaterThan(0)
+  })
+
+  it('should have exports metadata', async () => {
+    const { RecommendModule } = await import('./recommend.module')
+    const exports = Reflect.getMetadata('exports', RecommendModule) ?? []
+    expect(Array.isArray(exports)).toBe(true)
+  })
+
+  it('should have @Module decorator with services', async () => {
+    const fs = await import('node:fs')
+    const content = fs.readFileSync(resolve(__dirname, './recommend.module.ts'), 'utf-8')
+    expect(content).toContain('RecommendationService')
+    expect(content).toMatch(/@Module\(/)
+  })
 })

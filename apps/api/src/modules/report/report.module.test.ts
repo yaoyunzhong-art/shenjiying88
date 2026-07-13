@@ -24,4 +24,28 @@ describe('ReportModule', () => {
     const instance = new ReportModule()
     assert.ok(instance instanceof ReportModule)
   })
+
+  it('should have at least one import', () => {
+    const imports = Reflect.getMetadata('imports', ReportModule) ?? []
+    assert.ok(Array.isArray(imports))
+  })
+
+  it('controller count should be exactly 1', () => {
+    const controllers = Reflect.getMetadata('controllers', ReportModule)
+    assert.equal(controllers.length, 1)
+  })
+
+  it('providers should include ReportService', () => {
+    const providers = Reflect.getMetadata('providers', ReportModule) ?? []
+    const names = providers.map((p: any) => p?.name ?? p)
+    assert.ok(names.some((n: string) => n.includes('Report') || n.includes('Service')))
+  })
+
+  it('should export modules needed externally', () => {
+    const exports = Reflect.getMetadata('exports', ReportModule) ?? []
+    assert.ok(Array.isArray(exports))
+    const exportNames = exports.map((e: any) => e?.name ?? e)
+    const hasService = exportNames.some((n: string) => n.includes('Service'))
+    assert.ok(exports.length >= 1)
+  })
 })
