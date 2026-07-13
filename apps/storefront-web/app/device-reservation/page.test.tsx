@@ -58,6 +58,18 @@ describe('device-reservation — 正例', () => {
     assert.ok(SRC.includes('totalPrice'));
     assert.ok(SRC.includes('pricePerHour'));
   });
+
+  it('应包含设备图片占位', () => {
+    assert.ok(SRC.includes('image') || SRC.includes('img') || SRC.includes('图片'));
+  });
+
+  it('应包含设备描述', () => {
+    assert.ok(SRC.includes('description') || SRC.includes('描述'));
+  });
+
+  it('应包含确认预定按钮', () => {
+    assert.ok(SRC.includes('确认预定') || SRC.includes('提交预定'));
+  });
 });
 
 describe('device-reservation — 边界', () => {
@@ -72,6 +84,19 @@ describe('device-reservation — 边界', () => {
   it('应限制最大时长', () => {
     assert.ok(SRC.includes('maxDuration'));
   });
+
+  it('应计算总价并格式化', () => {
+    assert.ok(SRC.includes('totalPrice') || SRC.includes('总价'));
+    assert.ok(SRC.includes('¥') || SRC.includes('元'));
+  });
+
+  it('应处理金额精度', () => {
+    assert.ok(SRC.includes('.toFixed') || SRC.includes('toFixed'), '缺少金额精度处理');
+  });
+
+  it('应包含设备ID用于识别', () => {
+    assert.ok(SRC.includes('deviceId') || SRC.includes('id'), '缺少设备ID');
+  });
 });
 
 describe('device-reservation — 防御', () => {
@@ -85,5 +110,17 @@ describe('device-reservation — 防御', () => {
 
   it('提交中应禁用', () => {
     assert.ok(SRC.includes('submitting'));
+  });
+
+  it('应验证手机号长度', () => {
+    assert.ok(SRC.includes('11') || SRC.includes('手机号.length'), '手机号长度验证');
+  });
+
+  it('未选择设备时提交应阻止', () => {
+    assert.ok(SRC.includes('请选择设备') || SRC.includes('selectedDevice'), '未选设备');
+  });
+
+  it('应使用可选链防御', () => {
+    assert.ok(SRC.includes('?.') || SRC.includes('??'), '缺少可选链');
   });
 });

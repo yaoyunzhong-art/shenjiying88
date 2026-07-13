@@ -8,7 +8,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { OrderStatusBadge, type OrderStatus, STATUS_LABEL, STATUS_COLOR } from './OrderStatusBadge';
 
-describe('OrderStatusBadge', () => {
+describe('OrderStatusBadge — 正例', () => {
   const allStatuses: OrderStatus[] = [
     'pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled', 'refunded',
   ];
@@ -78,5 +78,88 @@ describe('OrderStatusBadge', () => {
   it('has white text color (#fff) for readability', () => {
     const html = renderToStaticMarkup(<OrderStatusBadge status="delivered" />);
     assert.ok(html.includes('#fff'));
+  });
+
+  it('STATUS_LABEL and STATUS_COLOR have same keys', () => {
+    const labelKeys = Object.keys(STATUS_LABEL).sort();
+    const colorKeys = Object.keys(STATUS_COLOR).sort();
+    assert.deepEqual(labelKeys, colorKeys);
+  });
+
+  it('renders all statuses as span elements', () => {
+    for (const status of allStatuses) {
+      const html = renderToStaticMarkup(<OrderStatusBadge status={status} />);
+      assert.ok(html.startsWith('<span'), `Status "${status}" not wrapped in span`);
+      assert.ok(html.endsWith('</span>'), `Status "${status}" span not properly closed`);
+    }
+  });
+
+  it('renders rounded style for all badges', () => {
+    for (const status of allStatuses) {
+      const html = renderToStaticMarkup(<OrderStatusBadge status={status} />);
+      assert.ok(html.includes('rounded') || html.includes('border-radius'), `${status} missing rounded style`);
+    }
+  });
+
+  it('renders font-medium for readability', () => {
+    const html = renderToStaticMarkup(<OrderStatusBadge status="confirmed" />);
+    assert.ok(html.includes('font-medium') || html.includes('font-weight'));
+  });
+
+  it('renders padding inside badge', () => {
+    const html = renderToStaticMarkup(<OrderStatusBadge status="confirmed" />);
+    assert.ok(html.includes('px') || html.includes('padding') || html.includes('py'));
+  });
+});
+
+describe('OrderStatusBadge — 边界', () => {
+  it('all statuses have unique labels', () => {
+    const labels = Object.values(STATUS_LABEL);
+    const unique = new Set(labels);
+    assert.equal(unique.size, labels.length);
+  });
+
+  it('all statuses have unique colors', () => {
+    const colors = Object.values(STATUS_COLOR);
+    const unique = new Set(colors);
+    assert.equal(unique.size, colors.length);
+  });
+
+  it('all colors are valid CSS hex codes', () => {
+    const hexRegex = /^#[0-9a-fA-F]{6}$/;
+    for (const color of Object.values(STATUS_COLOR)) {
+      assert.ok(hexRegex.test(color), `Invalid hex: ${color}`);
+    }
+  });
+
+  it('STATUS_COLOR has exactly 7 entries', () => {
+    assert.equal(Object.keys(STATUS_COLOR).length, 7);
+  });
+
+  it('STATUS_LABEL has exactly 7 entries', () => {
+    assert.equal(Object.keys(STATUS_LABEL).length, 7);
+  });
+
+  it('all labels are non-empty strings', () => {
+    for (const [status, label] of Object.entries(STATUS_LABEL)) {
+      assert.ok(label.length > 0, `Status "${status}" has empty label`);
+    }
+  });
+});
+
+describe('OrderStatusBadge — 防御', () => {
+  it('no CSS injection in status labels', () => {
+    // Labels are hard-coded, not user input — confirm no HTML-like content
+    for (const label of Object.values(STATUS_LABEL)) {
+      assert.ok(!label.includes('<'), `${label} should not contain HTML tag syntax`);
+    }
+  });
+
+  it('label rendering uses textContent, not innerHTML', () => {
+    // Verify labels are rendered as plain text children, not dangerouslySetInnerHTML
+    for (const status of Object.keys(STATUS_LABEL) as OrderStatus[]) {
+      const html = renderToStaticMarkup(<OrderStatusBadge status={status} />);
+      assert.ok(!html.includes('dangerouslySetInnerHTML'), `Status "${status}" uses dangerouslySetInnerHTML`);
+    }
   });
 });

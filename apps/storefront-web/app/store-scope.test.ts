@@ -38,6 +38,21 @@ describe('store-scope: 正例 — 正常解析', () => {
     assert.equal(result!.marketCode, 'eu-de');
     assert.equal(result!.storeCode, 'paris-001');
   });
+
+  it('应当解析 3 段短 storeCode', () => {
+    const result = resolveStoreScope(['t', 'b', 's']);
+    assert.notEqual(result, null);
+    assert.equal(result!.marketCode, 'cn-mainland');
+    assert.equal(result!.storeCode, 's');
+  });
+
+  it('应当解析带中文字符的 4 段路径', () => {
+    const result = resolveStoreScope(['cn-mainland', '租户', '品牌', '门店']);
+    assert.notEqual(result, null);
+    assert.equal(result!.tenantCode, '租户');
+    assert.equal(result!.brandCode, '品牌');
+    assert.equal(result!.storeCode, '门店');
+  });
 });
 
 describe('store-scope: 反例 — 无效解析', () => {
@@ -51,6 +66,11 @@ describe('store-scope: 反例 — 无效解析', () => {
 
   it('应当拒绝空数组', () => {
     assert.equal(resolveStoreScope([]), null);
+  });
+
+  it('undefined/null 输入会导致 TypeError', () => {
+    assert.throws(() => resolveStoreScope(undefined as unknown as string[]), TypeError);
+    assert.throws(() => resolveStoreScope(null as unknown as string[]), TypeError);
   });
 });
 
@@ -78,5 +98,37 @@ describe('store-scope: 边界 — 特殊输入', () => {
     // 4 段路径使用显式 marketCode，不触发默认补全
     assert.equal(result!.marketCode, 'cn-mainland');
     assert.equal(result!.storeCode, 'store-001');
+  });
+
+  it('应当处理 3 段含特殊字符的路径', () => {
+    const result = resolveStoreScope(['demo-corps', 'brand_2026', 'store@001']);
+    assert.notEqual(result, null);
+    assert.equal(result!.marketCode, 'cn-mainland');
+    assert.equal(result!.tenantCode, 'demo-corps');
+    assert.equal(result!.storeCode, 'store@001');
+  });
+
+  it('应当处理长度为 9 字符的短 segment', () => {
+    const result = resolveStoreScope(['abc', 'def', 'ghi']);
+    assert.notEqual(result, null);
+    assert.equal(result!.tenantCode, 'abc');
+    assert.equal(result!.storeCode, 'ghi');
+  });
+
+  it('不应当修改输入数组', () => {
+    const input = ['cn', 't', 'b', 's'];
+    const result = resolveStoreScope(input);
+    assert.notEqual(result, null);
+    assert.equal(input.length, 4, '输入数组不应被修改');
+  });
+
+  it('解析后应包含所有4个字段', () => {
+    const result = resolveStoreScope(['a', 'b', 'c']);
+    assert.notEqual(result, null);
+    const keys = Object.keys(result!);
+    assert.ok(keys.includes('marketCode'));
+    assert.ok(keys.includes('tenantCode'));
+    assert.ok(keys.includes('brandCode'));
+    assert.ok(keys.includes('storeCode'));
   });
 });

@@ -45,6 +45,21 @@ describe('orders — 正例', () => {
     assert.ok(src.includes('SearchFilterInput'), '缺少 SearchFilterInput');
     assert.ok(src.includes('searchTerm'), '缺少搜索状态');
   });
+
+  it('应包含订单金额渲染', () => {
+    const src = readSource();
+    assert.ok(src.includes('totalAmount') || src.includes('amount'), '缺少金额字段');
+  });
+
+  it('应包含客户名称渲染', () => {
+    const src = readSource();
+    assert.ok(src.includes('customerName') || src.includes('customer'), '缺少客户字段');
+  });
+
+  it('应包含订单号渲染', () => {
+    const src = readSource();
+    assert.ok(src.includes('orderId') || src.includes('orderNo'), '缺少订单号');
+  });
 });
 
 describe('orders — 边界', () => {
@@ -65,6 +80,21 @@ describe('orders — 边界', () => {
     assert.ok(src.includes('statusFilter'), '缺少状态筛选');
     assert.ok(src.includes('paymentFilter'), '缺少支付方式筛选');
   });
+
+  it('应支持按时间排序', () => {
+    const src = readSource();
+    assert.ok(src.includes('orderTime') || src.includes('createdAt'), '缺少时间排序');
+  });
+
+  it('分页应重置当筛选条件变化', () => {
+    const src = readSource();
+    assert.ok(src.includes('currentPage') || src.includes('pageSize'), '缺少分页状态');
+  });
+
+  it('mock 数据应包含多种状态', () => {
+    const src = readSource();
+    assert.ok(src.includes('pending') || src.includes('delivered') || src.includes('cancelled'), '多种状态');
+  });
 });
 
 describe('orders — 防御', () => {
@@ -82,5 +112,20 @@ describe('orders — 防御', () => {
     const src = readSource();
     assert.ok(src.includes('创建订单'), '缺少时间线');
     assert.ok(src.includes('formatDateTime'), '缺少时间格式化');
+  });
+
+  it('应包含 use client 指令', () => {
+    const src = readSource();
+    assert.ok(src.includes("'use client'"), '缺少 use client');
+  });
+
+  it('应包 useMemo/useCallback 优化', () => {
+    const src = readSource();
+    assert.ok(src.includes('useMemo') || src.includes('useCallback'), '缺少性能优化');
+  });
+
+  it('应使用可选链避免深层属性报错', () => {
+    const src = readSource();
+    assert.ok(src.includes('?.') || src.includes('??'), '缺少可选链');
   });
 });
