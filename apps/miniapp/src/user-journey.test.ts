@@ -124,6 +124,7 @@ describe('miniapp user journey: page navigation lifecycle — 正例', () => {
     assert.equal(snapshot.deliveryMode, 'fallback');
     assert.equal(snapshot.marketCode, 'cn-mainland');
     assert.equal(snapshot.defaultLanguage, 'zh-CN');
+    assert.deepEqual(snapshot.supportedLanguages, ['zh-CN', 'en-US']);
     assert.equal(snapshot.timezone, 'Asia/Shanghai');
     assert.deepEqual(snapshot.socialPlatforms, ['WECHAT', 'XIAOHONGSHU']);
     assert.equal(snapshot.sharePolicy, 'DOMESTIC_SOCIAL_FIRST');
@@ -135,6 +136,7 @@ describe('miniapp user journey: page navigation lifecycle — 正例', () => {
     assert.equal(snapshot.deliveryMode, 'api');
     assert.equal(snapshot.marketCode, 'cn-mainland');
     assert.equal(snapshot.defaultLanguage, 'zh-CN');
+    assert.deepEqual(snapshot.supportedLanguages, ['zh-CN']);
     assert.equal(snapshot.sharePolicy, 'DOMESTIC_SOCIAL_FIRST');
     assert.equal(snapshot.primaryDomain, 'store-001.brand-demo.tenant-demo.cn-mainland.local');
   });
@@ -154,6 +156,7 @@ describe('miniapp user journey: page navigation lifecycle — 正例', () => {
 
     assert.equal(jpSnapshot.marketCode, 'jp-tokyo');
     assert.equal(jpSnapshot.defaultLanguage, 'en-US');
+    assert.deepEqual(jpSnapshot.supportedLanguages, ['en-US']);
     assert.equal(jpSnapshot.timezone, 'America/New_York'); // fallback default when not cn-mainland
     assert.equal(jpSnapshot.sharePolicy, 'GLOBAL_CONTENT_FIRST');
     assert.deepEqual(jpSnapshot.socialPlatforms, ['INSTAGRAM', 'X']);

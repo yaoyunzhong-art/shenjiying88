@@ -35,6 +35,8 @@ import {
   syncMiniappRuntimeReceipt,
   submitMiniappActionPlanToApi,
   submitMiniappActionPlan,
+  formatMiniappLocaleSummary,
+  formatMiniappSharePolicySummary,
   toMiniappBootstrapSnapshot
 } from './market-bootstrap';
 import type { MiniappBookingSubmitDraft } from './market-bootstrap';
@@ -121,6 +123,7 @@ test('miniapp bootstrap: fallback snapshot stays aligned to store portal default
     deliveryMode: 'fallback',
     marketCode: 'cn-mainland',
     defaultLanguage: 'zh-CN',
+    supportedLanguages: ['zh-CN', 'en-US'],
     timezone: 'Asia/Shanghai',
     socialPlatforms: ['WECHAT', 'XIAOHONGSHU'],
     sharePolicy: 'DOMESTIC_SOCIAL_FIRST',
@@ -134,12 +137,27 @@ test('miniapp bootstrap: maps portal bootstrap into runtime snapshot', () => {
     deliveryMode: 'api',
     marketCode: 'cn-mainland',
     defaultLanguage: 'zh-CN',
+    supportedLanguages: ['zh-CN'],
     timezone: 'Asia/Shanghai',
     socialPlatforms: ['WECHAT', 'XIAOHONGSHU'],
     sharePolicy: 'DOMESTIC_SOCIAL_FIRST',
     primaryDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
     supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
   });
+});
+
+test('miniapp bootstrap: formats locale summary with default and supported languages', () => {
+  assert.equal(
+    formatMiniappLocaleSummary(createMiniappFallbackSnapshot()),
+    '默认 zh-CN，支持 zh-CN / en-US',
+  );
+});
+
+test('miniapp bootstrap: formats domestic share policy summary for miniapp page', () => {
+  assert.equal(
+    formatMiniappSharePolicySummary(createMiniappFallbackSnapshot()),
+    '国内社交优先，优先分发到微信 / 小红书生态。',
+  );
 });
 
 test('miniapp bootstrap: maps persistent member profile into api session view', () => {
@@ -196,6 +214,7 @@ test('miniapp bootstrap: non-cn fallback snapshot uses global preset', () => {
       deliveryMode: 'fallback',
       marketCode: 'jp-tokyo',
       defaultLanguage: 'en-US',
+      supportedLanguages: ['en-US'],
       timezone: 'America/New_York',
       socialPlatforms: ['INSTAGRAM', 'X'],
       sharePolicy: 'GLOBAL_CONTENT_FIRST',
@@ -526,6 +545,20 @@ test('miniapp bootstrap: builds executable booking plan for authenticated member
   assert.equal(plan.checklist.includes('确认门店营业时间与预约时间窗'), true);
   assert.equal(plan.requestPreview.endpoint, '/api/v1/storefront/bookings');
   assert.equal((plan.requestPreview.payload as MiniappBookingSubmitDraft).bookingSlot, '2026-06-12T10:00:00+08:00');
+});
+
+test('miniapp bootstrap: member-login draft summary carries locale policy context', () => {
+  const snapshot = createMiniappFallbackSnapshot();
+  const plan = createMiniappActionPlan(snapshot, createGuestMemberSession(), 'member-login');
+
+  assert.match(plan.draftSummary, /默认 zh-CN，支持 zh-CN \/ en-US/);
+});
+
+test('miniapp bootstrap: coupon draft summary carries share policy context', () => {
+  const snapshot = createMiniappFallbackSnapshot();
+  const plan = createMiniappActionPlan(snapshot, createMemberSession('SVIP'), 'coupon-claim');
+
+  assert.match(plan.draftSummary, /国内社交优先/);
 });
 
 test('miniapp bootstrap: lists governed plans with refresh fallback channel', () => {

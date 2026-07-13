@@ -12,8 +12,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 
 // ── Source 分析 ──
 
@@ -28,6 +27,7 @@ interface MiniappMarketBootstrap {
   marketCode: string;
   deliveryMode: DeliveryMode;
   defaultLanguage: string;
+  supportedLanguages: string[];
   sharePolicy: string;
   primaryDomain: string;
 }
@@ -36,6 +36,7 @@ const MINIAPP_BOOTSTRAP: MiniappMarketBootstrap = {
   marketCode: 'cn-mainland',
   deliveryMode: 'bootstrap',
   defaultLanguage: 'zh-CN',
+  supportedLanguages: ['zh-CN', 'en-US'],
   sharePolicy: 'TEMPLATE_SHARE',
   primaryDomain: 'store-001.b.t.cn-mainland.local',
 };
@@ -86,6 +87,7 @@ describe('IndexPage 正例', () => {
     assert.equal(MINIAPP_BOOTSTRAP.marketCode, 'cn-mainland');
     assert.equal(MINIAPP_BOOTSTRAP.deliveryMode, 'bootstrap');
     assert.equal(MINIAPP_BOOTSTRAP.defaultLanguage, 'zh-CN');
+    assert.deepEqual(MINIAPP_BOOTSTRAP.supportedLanguages, ['zh-CN', 'en-US']);
     assert.equal(MINIAPP_BOOTSTRAP.sharePolicy, 'TEMPLATE_SHARE');
   });
 
@@ -119,6 +121,21 @@ describe('IndexPage 正例', () => {
 
   it('source has "M5 门店小程序骨架" string', () => {
     assert.ok(source.includes('M5 门店小程序骨架'), 'should contain skeleton label');
+  });
+
+  it('source 展示支持语言信息', () => {
+    assert.ok(source.includes('支持语言'), 'should render supported languages label');
+    assert.ok(source.includes("bootstrap.supportedLanguages.join(' / ')"), 'should render supported languages list');
+  });
+
+  it('source 展示统一语言策略摘要', () => {
+    assert.ok(source.includes('语言策略'), 'should render locale summary label');
+    assert.ok(source.includes('formatMiniappLocaleSummary(bootstrap)'), 'should use shared locale summary helper');
+  });
+
+  it('source 展示统一分享策略摘要', () => {
+    assert.ok(source.includes('分享策略'), 'should render share policy label');
+    assert.ok(source.includes('formatMiniappSharePolicySummary(bootstrap)'), 'should use shared share policy helper');
   });
 
   it('source uses useState/useEffect', () => {

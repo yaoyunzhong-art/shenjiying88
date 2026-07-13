@@ -1,6 +1,6 @@
 # 📋 PRD 索引目录
 
-> 需求文档中枢 · 最后更新: 2026-07-13 16:35 · 🎉 10个Phase全量覆盖
+> 需求文档中枢 · 最后更新: 2026-07-13 22:10 · 🎉 10个Phase全量覆盖
 > 维护人: 🦞 龙虾哥
 
 ## 已签发 PRD（覆盖所有10个活跃Phase）
@@ -25,6 +25,12 @@
 | 运动蚂蚁品牌官网 | prd-sports-ants-website.md | P-47 | 🔄 合并入PRD-012 |
 | 智能体接入模块(Gateway) | prd-tenant-llm-gateway.md | P-49 | 🔄 待创建PRD-014 |
 | SEO/GEO智能优化系统 | prd-seo-geo-intelligent-system.md | P-49 | 🔄 待创建PRD-015 |
+
+## PRD预备工具
+
+| 名称 | 文件 | 用途 |
+|:-----|:-----|:-----|
+| Gate 0 预备清单 | [prd-preflight-checklist.md](./prd-preflight-checklist.md) | 提前补齐树哥开工前的最小 PRD 结构 |
 
 ## PRD覆盖率
 
@@ -51,4 +57,4 @@
 
 ---
 
-*🦞 龙虾哥 · 🎉 100% PRD覆盖率达成 — 从Day1的0%到现在的100%只用了2小时*
+*🦞 龙虾哥 · 🎉 100% PRD覆盖率达成 — 当前历史预备稿也已补齐 RQ/AC，可直接纳入派单前检查*

@@ -18,6 +18,7 @@ export interface MiniappBootstrapSnapshot {
   deliveryMode: 'api' | 'fallback';
   marketCode: string;
   defaultLanguage: string;
+  supportedLanguages: string[];
   timezone: string;
   socialPlatforms: string[];
   sharePolicy: 'DOMESTIC_SOCIAL_FIRST' | 'GLOBAL_CONTENT_FIRST';
@@ -310,6 +311,7 @@ const emptyGovernanceOverviewSummary: FoundationOperationsOverviewSummary = {
 
 function resolveMiniappFallbackMarketPreset(marketCode: string): {
   defaultLanguage: string;
+  supportedLanguages: string[];
   timezone: string;
   socialPlatforms: string[];
   sharePolicy: MiniappBootstrapSnapshot['sharePolicy'];
@@ -317,6 +319,7 @@ function resolveMiniappFallbackMarketPreset(marketCode: string): {
   if (marketCode === 'cn-mainland') {
     return {
       defaultLanguage: 'zh-CN',
+      supportedLanguages: ['zh-CN', 'en-US'],
       timezone: 'Asia/Shanghai',
       socialPlatforms: ['WECHAT', 'XIAOHONGSHU'],
       sharePolicy: 'DOMESTIC_SOCIAL_FIRST',
@@ -325,6 +328,7 @@ function resolveMiniappFallbackMarketPreset(marketCode: string): {
 
   return {
     defaultLanguage: 'en-US',
+    supportedLanguages: ['en-US'],
     timezone: 'America/New_York',
     socialPlatforms: ['INSTAGRAM', 'X'],
     sharePolicy: 'GLOBAL_CONTENT_FIRST',
@@ -341,6 +345,7 @@ export function createMiniappFallbackSnapshot(
     deliveryMode: 'fallback',
     marketCode: resolvedContext.marketCode,
     defaultLanguage: marketPreset.defaultLanguage,
+    supportedLanguages: marketPreset.supportedLanguages,
     timezone: marketPreset.timezone,
     socialPlatforms: marketPreset.socialPlatforms,
     sharePolicy: marketPreset.sharePolicy,
@@ -356,6 +361,7 @@ export function toMiniappBootstrapSnapshot(
     deliveryMode: 'api',
     marketCode: bootstrap.marketProfile.marketCode,
     defaultLanguage: bootstrap.marketProfile.locale.defaultLanguage,
+    supportedLanguages: bootstrap.storePortal.supportedLanguages,
     timezone: bootstrap.marketProfile.timezone.timezone,
     socialPlatforms: bootstrap.marketProfile.social.primaryPlatforms,
     sharePolicy:
@@ -365,6 +371,16 @@ export function toMiniappBootstrapSnapshot(
     primaryDomain: bootstrap.storePortal.primaryDomain,
     supportedSurfaces: bootstrap.storePortal.supportedSurfaces,
   };
+}
+
+export function formatMiniappLocaleSummary(snapshot: MiniappBootstrapSnapshot): string {
+  return `默认 ${snapshot.defaultLanguage}，支持 ${snapshot.supportedLanguages.join(' / ')}`;
+}
+
+export function formatMiniappSharePolicySummary(snapshot: MiniappBootstrapSnapshot): string {
+  return snapshot.sharePolicy === 'DOMESTIC_SOCIAL_FIRST'
+    ? '国内社交优先，优先分发到微信 / 小红书生态。'
+    : '全球内容优先，优先分发到 Instagram / X 等全球渠道。';
 }
 
 function createMiniappBootstrapClient(context: MiniappBootstrapContext = defaultMiniappContext) {
@@ -846,7 +862,7 @@ export function createMiniappActionPlan(
           : decision.nextStep === 'CHALLENGE'
             ? 'WECHAT_LOGIN'
             : 'MEMBER_RUNTIME',
-      draftSummary: `按 ${snapshot.marketCode} 市场与 ${snapshot.defaultLanguage} 语言准备会员会话刷新。`,
+      draftSummary: `按 ${snapshot.marketCode} 市场的 ${formatMiniappLocaleSummary(snapshot)} 准备会员会话刷新。`,
       checklist: ['校验租户/品牌/门店上下文', '拉起微信登录或静默授权', '刷新会员会话与积分权益'],
       requestPreview: {
         endpoint: '/api/v1/members/session/challenge',
@@ -874,7 +890,7 @@ export function createMiniappActionPlan(
             : decision.nextStep === 'CHALLENGE'
               ? 'WECHAT_CHALLENGE'
               : 'MEMBER_RUNTIME',
-      draftSummary: `基于 ${session.memberTier} 会员态校验券权益，当前券包数量 ${session.couponCount}。`,
+      draftSummary: `基于 ${session.memberTier} 会员态校验券权益，当前券包数量 ${session.couponCount}，分享策略为 ${formatMiniappSharePolicySummary(snapshot)}`,
       checklist: ['确认会员已登录', '拉取实时券模板与活动批次', '命中风控时先完成微信生态挑战'],
       requestPreview: {
         endpoint: '/api/v1/storefront/coupons/claim',

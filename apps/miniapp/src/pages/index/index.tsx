@@ -19,6 +19,8 @@ import {
   createGuestMemberSession,
   createMemberSession,
   acknowledgeMiniappGovernanceAlert,
+  formatMiniappLocaleSummary,
+  formatMiniappSharePolicySummary,
   loadMiniappRuntimeReceipt,
   loadMiniappAlertDrilldown,
   listMiniappActionPlans,
@@ -129,7 +131,13 @@ export default function IndexPage() {
         <Text>默认语言：{bootstrap.defaultLanguage}</Text>
       </View>
       <View style={{ marginTop: '8px' }}>
-        <Text>分享策略：{bootstrap.sharePolicy}</Text>
+        <Text>支持语言：{bootstrap.supportedLanguages.join(' / ')}</Text>
+      </View>
+      <View style={{ marginTop: '8px' }}>
+        <Text>语言策略：{formatMiniappLocaleSummary(bootstrap)}</Text>
+      </View>
+      <View style={{ marginTop: '8px' }}>
+        <Text>分享策略：{formatMiniappSharePolicySummary(bootstrap)}</Text>
       </View>
       <View style={{ marginTop: '8px' }}>
         <Text>门店域名：{bootstrap.primaryDomain}</Text>
