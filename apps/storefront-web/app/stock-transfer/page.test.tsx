@@ -38,40 +38,38 @@ describe('stock-transfer — 正例', () => {
     assert.ok(src.includes('completed'), '缺少 completed');
   });
 
-  it('每个 Transfer 应有 id/quantity/status/from/to', () => {
+  it('每个 Transfer 应有 id/status/fromLocation/toLocation', () => {
     const src = readSource();
     assert.ok(src.includes('id'), '缺少 id');
-    assert.ok(src.includes('quantity'), '缺少 quantity');
     assert.ok(src.includes('status'), '缺少 status');
-    assert.ok(src.includes('from'), '缺少 from');
-    assert.ok(src.includes('to'), '缺少 to');
+    assert.ok(src.includes('fromLocation'), '缺少 fromLocation');
+    assert.ok(src.includes('toLocation'), '缺少 toLocation');
   });
 
-  it('Mock 数据中应包含 fromStore 和 toStore', () => {
+  it('每个 Transfer 应有 transferNo 调拨单号', () => {
     const src = readSource();
-    assert.ok(src.includes('fromStore'), '缺少 fromStore');
-    assert.ok(src.includes('toStore'), '缺少 toStore');
+    assert.ok(src.includes('transferNo'), '缺少 transferNo');
   });
 
-  it('Mock 数据中应包含 materialName 物资名称', () => {
+  it('每个 Transfer 应有 totalQuantity 总数', () => {
     const src = readSource();
-    assert.ok(src.includes('materialName') || src.includes('productName'), '缺少物资名称');
+    assert.ok(src.includes('totalQuantity'), '缺少 totalQuantity');
   });
 
-  it('Mock 数据至少包含 6 条调拨记录', () => {
+  it('Mock 数据至少包含 8 条调拨记录', () => {
     const src = readSource();
     const matches = src.match(/id:\s*['"]/g);
-    assert.ok(matches && matches.length >= 6, `期望 ≥6, 实际 ${matches?.length ?? 0}`);
+    assert.ok(matches && matches.length >= 8, `期望 ≥8, 实际 ${matches?.length ?? 0}`);
   });
 
-  it('应包含 createdDate 创建日期', () => {
+  it('应包含 createdAt 创建日期', () => {
     const src = readSource();
-    assert.ok(src.includes('createdDate') || src.includes('date'), '缺少日期');
+    assert.ok(src.includes('createdAt') || src.includes('created_at'), '缺少日期');
   });
 });
 
 describe('stock-transfer — 边界', () => {
-  it('pending 状态过滤', () => {
+  it('pending/in_transit/completed 状态过滤', () => {
     const src = readSource();
     assert.ok(src.includes('status'), 'status 过滤');
   });
@@ -86,9 +84,9 @@ describe('stock-transfer — 边界', () => {
     assert.ok(src.includes("i.status === 'completed'") || src.includes('completed'), 'completed 过滤');
   });
 
-  it('quantity 应为数字类型', () => {
+  it('应有 TransferType 类型区分', () => {
     const src = readSource();
-    assert.ok(src.includes('quantity'), '数量字段');
+    assert.ok(src.includes('TransferType'), '缺少类型');
   });
 });
 
@@ -130,8 +128,8 @@ describe('stock-transfer — 反例', () => {
     assert.ok(!src.includes('console.log(') || src.includes('// console.log'), '裸 console.log');
   });
 
-  it('fromStore 和 toStore 不应相同', () => {
+  it('fromLocation 和 toLocation 字段都存在', () => {
     const src = readSource();
-    assert.ok(src.includes('fromStore') && src.includes('toStore'));
+    assert.ok(src.includes('fromLocation') && src.includes('toLocation'), '缺少位置字段');
   });
 });

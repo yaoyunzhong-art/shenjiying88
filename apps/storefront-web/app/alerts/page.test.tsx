@@ -62,9 +62,9 @@ describe('alerts — 正例', () => {
     assert.ok(src.includes('height: 16'), '缺少骨架屏动画');
   });
 
-  it('每条通知应有 message 内容字段', () => {
+  it('每条通知应有 desc 内容字段', () => {
     const src = readSource();
-    assert.ok(src.includes('message'), '缺少 message');
+    assert.ok(src.includes('desc'), '缺少 desc');
   });
 
   it('每条通知应有 time 时间字段', () => {
@@ -123,14 +123,14 @@ describe('alerts — 反例', () => {
     assert.ok(!src.includes('console.log(') || src.includes('// console.log'), '裸 console.log');
   });
 
-  it('time 字段应为字符串日期', () => {
+  it('time 字段应为字符串', () => {
     const src = readSource();
     const timeRegex = /time:\s*['"]/;
     assert.ok(timeRegex.test(src), 'time 字符串格式');
   });
 
-  it('imageUrl 应有效或为空', () => {
+  it('每条通知应有 title 标题字段', () => {
     const src = readSource();
-    assert.ok(src.includes('imageUrl') || src.includes('avatar'), '图片/头像字段');
+    assert.ok(src.includes('title'), '缺少 title');
   });
 });
