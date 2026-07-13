@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
         eventType: EVENT_TYPE_MAP[body.eventType] || body.eventType,
         sourcePage: body.sourcePage,
         visitorId: body.visitorId,
+        referrer: body.referrer,
         cooperationType: body.cooperationType,
         budgetRange: body.budgetRange,
         timeline: body.timeline,

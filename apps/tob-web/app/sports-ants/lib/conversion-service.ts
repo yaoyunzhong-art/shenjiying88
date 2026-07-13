@@ -96,8 +96,13 @@ class ConversionService {
     this.visitorId = visitorId;
   }
 
-  // 获取UTM参数
-  private getUTMParams(): { utmSource?: string; utmMedium?: string; utmCampaign?: string } {
+  // 获取归因参数
+  private getAttributionParams(): {
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    referrer?: string;
+  } {
     if (typeof window === 'undefined') return {};
 
     const params = new URLSearchParams(window.location.search);
@@ -105,19 +110,20 @@ class ConversionService {
       utmSource: params.get('utm_source') || undefined,
       utmMedium: params.get('utm_medium') || undefined,
       utmCampaign: params.get('utm_campaign') || undefined,
+      referrer: typeof document !== 'undefined' ? document.referrer || undefined : undefined,
     };
   }
 
   // 发送转化数据
   private async sendConversion(data: ConversionData): Promise<void> {
     // 合并UTM参数
-    const utmParams = this.getUTMParams();
+    const attributionParams = this.getAttributionParams();
 
     const payload: ConversionData = {
       ...data,
       visitorId: this.visitorId || undefined,
       eventTime: new Date().toISOString(),
-      ...utmParams,
+      ...attributionParams,
     };
 
     // 发送到神机营SaaS CRM系统

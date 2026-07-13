@@ -57,6 +57,10 @@ describe('sports-ants crm leads route', () => {
           sourcePage: 'homepage',
           companyName: 'BigAnts',
           priority: 'high',
+          utmSource: 'baidu',
+          utmMedium: 'cpc',
+          utmCampaign: 'summer-launch',
+          referrer: 'https://www.baidu.com/s?wd=bigants',
         }),
       }) as any
     )
@@ -64,6 +68,10 @@ describe('sports-ants crm leads route', () => {
     assert.equal(capturedUrl, 'http://localhost:3000/leads/webhook')
     assert.match(capturedBody, /"source":"website_home"/)
     assert.match(capturedBody, /"eventType":"form_submit"/)
+    assert.match(capturedBody, /"utm_source":"baidu"/)
+    assert.match(capturedBody, /"utm_medium":"cpc"/)
+    assert.match(capturedBody, /"utm_campaign":"summer-launch"/)
+    assert.match(capturedBody, /"referrer":"https:\/\/www\.baidu\.com\/s\?wd=bigants"/)
 
     const payload = await response.json()
     assert.equal(response.status, 200)
