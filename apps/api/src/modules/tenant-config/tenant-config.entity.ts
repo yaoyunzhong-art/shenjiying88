@@ -75,6 +75,7 @@ export type ConfigCategory =
   | 'member'       // 会员
   | 'marketing'    // 营销
   | 'inventory'    // 库存
+  | 'locale'       // 国际化 / 语言
   | 'integration'  // 对接
   | 'ai'           // AI 模型
   | 'compliance'   // 合规
@@ -88,6 +89,7 @@ export const CATEGORY_LEVEL_MATRIX: Record<ConfigCategory, ConfigLevel[]> = {
   member: ['store', 'tenant', 'brand'],
   marketing: ['store', 'tenant', 'brand'],
   inventory: ['store', 'tenant', 'brand'],
+  locale: ['tenant', 'brand'],
   integration: ['tenant', 'brand'],
   ai: ['tenant', 'brand'],
   compliance: ['brand'],
@@ -227,6 +229,11 @@ export interface EffectiveConfig {
   isMasked: boolean
 }
 
+export interface TenantLocalePolicy {
+  defaultLanguage: string
+  supportedLanguages: string[]
+}
+
 // ============ 内置配置项定义 (V10 Day 6 种子) ============
 
 export const BUILTIN_CONFIG_DEFINITIONS: ConfigItemDefinition[] = [
@@ -299,6 +306,30 @@ export const BUILTIN_CONFIG_DEFINITIONS: ConfigItemDefinition[] = [
     sensitivity: 'internal',
     defaultValue: 10,
     label: '库存预警阈值',
+  },
+  {
+    key: 'locale.default_language',
+    category: 'locale',
+    level: 'tenant',
+    valueType: 'string',
+    sensitivity: 'internal',
+    defaultValue: 'zh-CN',
+    validation: { enum: ['zh-CN', 'en-US', 'ja-JP'] },
+    label: '默认语言',
+    description: '租户默认语言，驱动工作台与前台默认语种',
+  },
+  {
+    key: 'locale.supported_languages',
+    category: 'locale',
+    level: 'tenant',
+    valueType: 'string',
+    sensitivity: 'internal',
+    defaultValue: 'zh-CN',
+    validation: {
+      pattern: '^(zh-CN|en-US|ja-JP)(,(zh-CN|en-US|ja-JP))*$',
+    },
+    label: '支持语言列表',
+    description: '以逗号分隔的语言列表，例如 zh-CN,en-US',
   },
   {
     key: 'integration.webhook_url',

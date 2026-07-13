@@ -3,6 +3,7 @@ import test, { describe } from 'node:test'
 import { sanitizeFilename } from './components/sanitize-filename'
 
 describe('sanitizeFilename', () => {
+  // ---- 正例 ----
   test('keeps alphanumerics, underscores, and hyphens as-is', () => {
     assert.equal(sanitizeFilename('brands'), 'brands')
     assert.equal(sanitizeFilename('brand_123'), 'brand_123')
@@ -17,9 +18,6 @@ describe('sanitizeFilename', () => {
   })
 
   test('replaces each unsafe character independently (no collapsing)', () => {
-    // We intentionally do NOT collapse runs so that "a   b" becomes
-    // "a---b" rather than "a-b". The filename is only used as a
-    // download token; users do not compare them.
     assert.equal(sanitizeFilename('a  b'), 'a--b')
     assert.equal(sanitizeFilename('a/./b'), 'a---b')
   })
@@ -41,9 +39,71 @@ describe('sanitizeFilename', () => {
   })
 
   test('preserves Unicode characters', () => {
-    // The implementation preserves CJK unified ideographs (\u4e00-\u9fff)
-    // for Chinese filename compatibility on all major platforms.
     assert.equal(sanitizeFilename('品牌'), '品牌')
     assert.equal(sanitizeFilename('brand-品牌-1'), 'brand-品牌-1')
+  })
+
+  // ---- 反例 ----
+  test('rejects tab characters', () => {
+    assert.equal(sanitizeFilename('brand\tname'), 'brand-name')
+  })
+
+  test('rejects carriage return characters', () => {
+    assert.equal(sanitizeFilename('brand\rname'), 'brand-name')
+  })
+
+  test('rejects mixed path traversal with dots and slashes', () => {
+    assert.equal(sanitizeFilename('..\\..\\..\\secret.txt'), '-----------secret-txt')
+  })
+
+  test('handles all-unsafe input with no safe chars', () => {
+    assert.equal(sanitizeFilename('!@#$%^&*()'), '----------')
+    assert.equal(sanitizeFilename('~`+=[]{}|;:\'",.<>?'), '------------------')
+  })
+
+  test('handles strings that start and end with unsafe chars', () => {
+    assert.equal(sanitizeFilename(' brand '), '-brand-')
+    assert.equal(sanitizeFilename('.brand.'), '-brand-')
+  })
+
+  // ---- 边界 ----
+  test('handles extremely long input without throwing', () => {
+    const long = 'a'.repeat(1000)
+    assert.equal(sanitizeFilename(long), long)
+  })
+
+  test('handles long input with unsafe chars interspersed', () => {
+    const long = 'a/' .repeat(500).slice(0, -1) // 'a/a/a/...'
+    const result = sanitizeFilename(long)
+    assert.ok(result.length <= long.length)
+    assert.ok(!result.includes('/'))
+  })
+
+  test('preserves CJK mixed with English and numbers', () => {
+    assert.equal(sanitizeFilename('文件01'), '文件01')
+    assert.equal(sanitizeFilename('测试报告-final'), '测试报告-final')
+    assert.equal(sanitizeFilename('测试 报告'), '测试-报告')
+  })
+
+  test('handles single character inputs', () => {
+    assert.equal(sanitizeFilename('a'), 'a')
+    assert.equal(sanitizeFilename('.'), '-')
+    assert.equal(sanitizeFilename('/'), '-')
+  })
+
+  test('handles null-like edge cases without crashing', () => {
+    assert.equal(sanitizeFilename('null'), 'null')
+    assert.equal(sanitizeFilename('undefined'), 'undefined')
+  })
+
+  test('preserves underscore and hyphen dominance over unsafe chars', () => {
+    assert.equal(sanitizeFilename('a_b-c'), 'a_b-c')
+    assert.equal(sanitizeFilename('a b-c'), 'a-b-c')
+    assert.equal(sanitizeFilename('a_b c'), 'a_b-c')
+  })
+
+  test('handles multiple consecutive control characters', () => {
+    assert.equal(sanitizeFilename('\0\0\0'), '---')
+    assert.equal(sanitizeFilename('\n\n\n'), '---')
   })
 })

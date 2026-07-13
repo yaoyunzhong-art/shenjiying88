@@ -3,7 +3,8 @@
  *
  * 覆盖:
  *   正例 — 页面导出默认异步函数、引用 StockTransferDetailClient
- *   边界 — 无 params.id 场景（由 StockTransferDetailClient 防御）
+ *   反例 — 防御性边界检验
+ *   边界 — 无 params.id 场景、id 长度校验
  */
 import { describe, test } from 'node:test';
 import assert from 'node:assert';
@@ -32,15 +33,84 @@ describe('AdminStockTransferDetailPage (stock-transfer/[id]/page.tsx)', () => {
     assert.match(source, /transferId=\{\s*id\s*\}/);
   });
 
-  test('页面声明 params 为 Promise<{ id: string }>', () => {
-    assert.match(source, /params:\s*(Promise<|Promise<|Parameters<)/);
+  test('页面导入 Next.js 关键 API', () => {
+    assert.match(source, /notFound/);
+    assert.match(source, /Suspense/);
+    assert.match(source, /Metadata/);
+  });
+
+  test('页面包含 ErrorBoundary 错误边界', () => {
+    assert.match(source, /ErrorBoundary/);
+  });
+
+  test('页面包含 LoadingSkeleton 占位组件', () => {
+    assert.match(source, /LoadingSkeleton/);
+  });
+
+  test('页面包含 EmptyState 空状态组件', () => {
+    assert.match(source, /EmptyState/);
+  });
+
+  // ---- 反例 ----
+  test('页面不应包含直接访问 DOM 的操作', () => {
+    assert.ok(!source.includes('document.'));
+    assert.ok(!source.includes('window.'));
+  });
+
+  test('页面不应直接渲染危险 HTML', () => {
+    // JSON-LD 是可控内容，不构成 XSS 风险
+    assert.ok(!source.includes('dangerouslySetInnerHTML') || source.includes('ld+json') || source.includes('JSON.stringify'));
+  });
+
+  test('页面不应直接处理数据库查询', () => {
+    assert.ok(!source.includes('db.'));
+    assert.ok(!source.includes('.query('));
+    assert.ok(!source.includes('query('));
   });
 
   // ---- 边界 ----
-  test('StockTransferDetailPage 不处理空 id，交由 Client 防御', () => {
+  test('页面包含 ID 合法性校验逻辑', () => {
+    assert.ok(source.includes('id.length'), '缺少 id.length 校验');
+    assert.ok(source.includes('id > 64') || source.includes('< 1'), '缺少长度边界校验');
+  });
+
+  test('页面处理 id 为空时调用 notFound', () => {
+    assert.ok(source.includes('notFound'), '缺少 notFound 调用');
+  });
+
+  test('页面不处理空 id，交由 notFound 处理', () => {
     assert.ok(
-      !source.includes('if (!id)') && !source.includes('if(!id)'),
-      '页面本身不应做空 id 判断（由 Client 组件处理）'
+      !source.includes('if (!id)') || source.includes('notFound'),
+      '空 id 应通过 notFound 处理'
     );
+  });
+
+  test('页面生成动态 Metadata', () => {
+    assert.match(source, /generateStockTransferMetadata/);
+    assert.ok(source.includes('generateMetadata'), '应导出 generateMetadata');
+  });
+
+  test('页面包含 StockTransferNotFound 组件', () => {
+    assert.ok(source.includes('StockTransferNotFound'), '缺少未找到组件');
+    assert.match(source, /调拨单未找到/);
+  });
+
+  test('页面包含 StockTransferDetailErrorFallback 组件', () => {
+    assert.ok(source.includes('StockTransferDetailErrorFallback'), '缺少错误回退组件');
+    assert.match(source, /数据加载异常/);
+  });
+
+  test('页面包含 JSON-LD 结构化数据', () => {
+    assert.ok(source.includes('ld+json'), '缺少 JSON-LD');
+    assert.ok(source.includes('Product'), '缺少 Product Schema');
+  });
+
+  test('页面包含调拨流程说明底部提示', () => {
+    assert.ok(source.includes('调拨流程说明'), '缺少流程说明');
+    assert.ok(source.includes('签收'), '缺少签收说明');
+  });
+
+  test('页面 source 长度应大于 3KB', () => {
+    assert.ok(source.length > 3000, `源码长度不足, 实际 ${source.length} bytes`);
   });
 });

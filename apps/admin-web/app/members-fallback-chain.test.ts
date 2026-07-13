@@ -6,7 +6,10 @@ import {
   loadAdminMemberOperationSourceDetail,
   loadMemberOperationsRuntimeReceipt,
   replayMemberOperationsRuntimeReceipt,
+  replayMemberOperationsRuntimeReceipts,
 } from './members-view-model';
+
+// ---- 正例 ----
 
 test('members fallback chain: detail hydrates member-001 receipt and runtime approval context', async () => {
   globalThis.fetch = (async () => {
@@ -65,4 +68,70 @@ test('members fallback chain: compact member id resolves to canonical fallback r
   assert.equal(runtimeReceipt?.approval?.ticket, 'APR-RTREPL-001');
   assert.equal(replayReceipt?.receiptCode, 'ADMIN-RUNTIME-001');
   assert.equal(replayReceipt?.approval?.status, 'PENDING');
+});
+
+// ---- 反例 ----
+
+test('members fallback chain: throwing fetch returns null for unknown receipt', async () => {
+  globalThis.fetch = (async () => {
+    throw new Error('network unavailable');
+  }) as typeof fetch;
+
+  const runtimeReceipt = await loadMemberOperationsRuntimeReceipt('unknown-member', 'unknown-exec');
+  assert.equal(runtimeReceipt, null);
+});
+
+test('members fallback chain: getApprovalSummary returns null for missing approval', async () => {
+  const approval = getMemberOperationsRuntimeApprovalSummary({} as any);
+  assert.equal(approval, null);
+});
+
+test('members fallback chain: getApprovalSummary returns null for receipt without approval field', () => {
+  const receipt = { receiptCode: 'NO-APR-001', callback: { callbackStatus: 'no-callback' } } as any;
+  const approval = getMemberOperationsRuntimeApprovalSummary(receipt);
+  assert.equal(approval, null);
+});
+
+// ---- 边界 ----
+
+test('members fallback chain: batch replay empty list returns empty results', async () => {
+  globalThis.fetch = (async () => {
+    throw new Error('network unavailable');
+  }) as typeof fetch;
+
+  const results = await replayMemberOperationsRuntimeReceipts('m001', []);
+  assert.equal(results.length, 0);
+});
+
+test('members fallback chain: batch replay handles single item', async () => {
+  globalThis.fetch = (async () => {
+    throw new Error('network unavailable');
+  }) as typeof fetch;
+
+  const results = await replayMemberOperationsRuntimeReceipts('m001', ['ops-exec-001']);
+  assert.equal(results.length, 1);
+  assert.equal(results[0]?.executionId, 'ops-exec-001');
+  assert.equal(results[0]?.receipt?.receiptCode, 'ADMIN-RUNTIME-001');
+});
+
+test('members fallback chain: batch replay handles multiple items', async () => {
+  globalThis.fetch = (async () => {
+    throw new Error('network unavailable');
+  }) as typeof fetch;
+
+  const results = await replayMemberOperationsRuntimeReceipts('m001', ['ops-exec-001', 'ops-exec-002']);
+  assert.equal(results.length, 2);
+  assert.equal(results[0]?.executionId, 'ops-exec-001');
+  assert.equal(results[1]?.executionId, 'ops-exec-002');
+});
+
+test('members fallback chain: source detail with unknown source kind returns empty tasks', async () => {
+  globalThis.fetch = (async () => {
+    throw new Error('network unavailable');
+  }) as typeof fetch;
+
+  const snapshot = await loadAdminMemberOperationSourceDetail('member-001', 'payment' as any, 'unknown-payment');
+  assert.equal(snapshot.deliveryMode, 'fallback');
+  assert.equal(snapshot.tasks.length, 0);
+  assert.equal(snapshot.receipts.length, 0);
 });
