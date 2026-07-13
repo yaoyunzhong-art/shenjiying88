@@ -47,8 +47,9 @@ Phase5: 终局 multi-region/edge/saas-billing/payment-gateway/realtime (4→完�
 
 | PRD | 文件 | 关联Phase |
 |:----|:-----|:---------:|
-| 租户LLM网关 | prd-tenant-llm-gateway.md | P-49 |
-| SEO/GEO智能优化 | prd-seo-geo-intelligent-system.md | P-49 |
+| 租户LLM网关 | prd-ai-gateway-p49.md | P-49 |
+| SEO/GEO智能优化 | prd-seo-geo-p49.md | P-49 |
+| 开放平台网关 | prd-open-platform-p49.md | P-49 |
 | B2B品牌官网 | prd-b2b-brand-website.md | P-50 |
 | 运动蚂蚁门户 | prd-sports-ants-website.md | P-50 |
 | 预备清单 | prd-preflight-checklist.md | Gate 0工具 |

@@ -1,6 +1,6 @@
 # 📋 PRD 索引目录
 
-> 需求文档中枢 · 最后更新: 2026-07-13 22:24 · 🎉 10个Phase全量覆盖
+> 需求文档中枢 · 最后更新: 2026-07-13 22:33 · 🎉 10个Phase全量覆盖
 > 维护人: 🦞 龙虾哥
 
 ## 已签发 PRD（覆盖所有10个活跃Phase）
@@ -18,6 +18,7 @@
 | PRD-013 | 部署DevOps | P-53 | 🟢 已签发 | [prd-devops-p53.md](./prd-devops-p53.md) | 5 |
 | PRD-014 | 智能体接入网关 (AI Gateway) | P-49 | 🟢 已签发 | [prd-ai-gateway-p49.md](./prd-ai-gateway-p49.md) | 8 |
 | PRD-015 | SEO/GEO 智能优化 (SEO & GEO Engine) | P-49 | 🟢 已签发 | [prd-seo-geo-p49.md](./prd-seo-geo-p49.md) | 8 |
+| PRD-016 | 开放平台网关 (Open Platform Gateway) | P-49 | 🟢 已签发 | [prd-open-platform-p49.md](./prd-open-platform-p49.md) | 8 |
 
 ## 待迁移PRD（来自.trae，与已签发PRD内容重叠，待合并）
 
@@ -27,6 +28,14 @@
 | 运动蚂蚁品牌官网 | prd-sports-ants-website.md | P-47 | 🔄 合并入PRD-012 |
 | 智能体接入模块(Gateway) | prd-tenant-llm-gateway.md | P-49 | ✅ 已收口至 PRD-014 |
 | SEO/GEO智能优化系统 | prd-seo-geo-intelligent-system.md | P-49 | ✅ 已收口至 PRD-015 |
+
+## P-49 平台收口
+
+| 能力 | 收口PRD | 说明 |
+|:-----|:--------|:-----|
+| AI 接入治理 | PRD-014 | 租户 LLM 配置、配额、审批、统计 |
+| SEO / GEO | PRD-015 | 搜索流量与 AI 引用优化 |
+| 开放平台基座 | PRD-016 | OAuth、签名、API Key、Webhook、Sandbox、Usage |
 
 ## PRD预备工具
 
@@ -58,6 +67,7 @@
 | PRD-013 | 5 | 5 | ⬜ 待开发 | — | — |
 | PRD-014 | 8 | 8 | ⬜ 待开发 | — | — |
 | PRD-015 | 8 | 8 | ⬜ 待开发 | — | — |
+| PRD-016 | 8 | 8 | ⬜ 待开发 | — | — |
 
 ---
 
