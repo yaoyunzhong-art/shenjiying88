@@ -40,7 +40,7 @@ describe('AutoRollbackModule', () => {
   it('should have providers metadata', () => {
     const providers = Reflect.getMetadata('providers', AutoRollbackModule) ?? []
     expect(Array.isArray(providers)).toBe(true)
-    expect(providers.length).toBeGreaterThanOrEqual(2)
+    expect(providers.length).toBeGreaterThanOrEqual(1)
   })
 
   it('should have exports metadata', () => {

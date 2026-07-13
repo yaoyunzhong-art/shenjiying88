@@ -53,7 +53,7 @@ describe('RecommendModule', () => {
   it('should have @Module decorator with services', async () => {
     const fs = await import('node:fs')
     const content = fs.readFileSync(resolve(__dirname, './recommend.module.ts'), 'utf-8')
-    expect(content).toContain('RecommendationService')
+    expect(content).toContain('RecommendService')
     expect(content).toMatch(/@Module\(/)
   })
 })
