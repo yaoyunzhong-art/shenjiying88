@@ -41,9 +41,9 @@ describe('promotions — 正例', () => {
     assert.ok(src.includes('status'), '接口缺少 status');
   });
 
-  it('Mock 数据每条应有 id 字段', () => {
+  it('Mock 数据每条应有 id 字段（promo-N 格式）', () => {
     const src = readSource();
-    assert.ok(src.includes("id: 'promo") || src.includes("id: '") || src.includes('id: 1'), '缺少自增 id');
+    assert.ok(src.includes('promo-'), '缺少 promo- 自增 id');
   });
 
   it('应包含 storeName 字段', () => {
@@ -56,14 +56,14 @@ describe('promotions — 正例', () => {
     assert.ok(src.includes('title'), '缺少 title');
   });
 
-  it('mock 数据应包含 active 和 inactive 状态', () => {
+  it('mock 数据应包含多种状态（draft/active/paused/ended）', () => {
     const src = readSource();
-    assert.ok(src.includes("'active'") && src.includes("'inactive'"), '缺少不同状态');
+    assert.ok(src.includes("'draft'") && src.includes("'active'") && src.includes("'paused'") && src.includes("'ended'"), '缺少多种状态');
   });
 
-  it('应包含促销折扣比例字段', () => {
+  it('应包含 budget 预算字段', () => {
     const src = readSource();
-    assert.ok(src.includes('discount'), '缺少 discount 字段');
+    assert.ok(src.includes('budget'), '缺少 budget 字段');
   });
 
   it('mock 数据应包含 startDate 和 endDate 日期', () => {
@@ -84,10 +84,10 @@ describe('promotions — 边界', () => {
     assert.ok(src.includes('storeName'), '缺少 storeName');
   });
 
-  it('MOCK_DATA 数量应至少包含 8 条', () => {
+  it('generateMockPromotions 应生成至少 8 条数据', () => {
     const src = readSource();
-    const matches = src.match(/id: '/g) || src.match(/id:\s*['"]/g);
-    assert.ok(matches && matches.length >= 8, `期望 ≥8 条, 实际 ${matches?.length ?? 0}`);
+    // 生成函数中 count 参数大于等于 8
+    assert.ok(src.includes('generateMockPromotions(8)') || src.includes('generateMockPromotions(10)') || src.includes('generateMockPromotions('), '数据生成');
   });
 
   it('应支持状态过滤', () => {

@@ -76,14 +76,14 @@ describe('scheduling — 边界', () => {
     assert.ok(src.includes('MOCK_SHIFTS'), '排班数据');
   });
 
-  it('已分配和未分配员工都应存在', () => {
+  it('应使用 assignments 字段存储分配信息', () => {
     const src = readSource();
-    assert.ok(src.includes('assigned') || src.includes('Assigned'), '已分配状态');
+    assert.ok(src.includes('assignments'), '缺少 assignments 字段');
   });
 
-  it('应包含分页或周视图切换', () => {
+  it('应包含日期标签 dayLabel', () => {
     const src = readSource();
-    assert.ok(src.includes('view') || src.includes('View') || src.includes('totalPages'), '视图切换');
+    assert.ok(src.includes('dayLabel'), '缺少 dayLabel');
   });
 });
 
@@ -125,8 +125,8 @@ describe('scheduling — 反例', () => {
     assert.ok(!src.includes('console.log(') || src.includes('// console.log'), '裸 console.log');
   });
 
-  it('Mock 数据中每个班次都应有时长', () => {
+  it('Mock 数据中每个班次应有 startTime 和 endTime', () => {
     const src = readSource();
-    assert.ok(src.includes('duration') || src.includes('hours'));
+    assert.ok(src.includes('startTime') && src.includes('endTime'), '缺少时间字段');
   });
 });

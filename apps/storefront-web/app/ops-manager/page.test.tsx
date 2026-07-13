@@ -61,6 +61,31 @@ describe('ops-manager/page — 正例', () => {
     const src = readSource();
     assert.ok(src.includes('#0f172a'), '缺少深色背景');
   });
+
+  it('每个任务应有 id 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('id'), '缺少 id');
+  });
+
+  it('每个任务应有 assignee 负责人', () => {
+    const src = readSource();
+    assert.ok(src.includes('assignee') || src.includes('assigneeName'), '缺少负责人');
+  });
+
+  it('应包含任务优先级字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('priority') || src.includes('level'), '缺少优先级');
+  });
+
+  it('应包含任务 deadline/时间', () => {
+    const src = readSource();
+    assert.ok(src.includes('deadline') || src.includes('time') || src.includes('date'), '缺少截止时间');
+  });
+
+  it('应包含当天日期显示', () => {
+    const src = readSource();
+    assert.ok(src.includes('Date()') || src.includes('today') || src.includes('getDate') || src.includes('YYYY-MM-DD'), '日期显示');
+  });
 });
 
 describe('ops-manager/page — 防御性编程', () => {
@@ -72,5 +97,40 @@ describe('ops-manager/page — 防御性编程', () => {
   it('不应包含危险的 innerHTML', () => {
     const src = readSource();
     assert.doesNotMatch(src, /dangerouslySetInnerHTML/);
+  });
+
+  it('应包含 use client 指令', () => {
+    const src = readSource();
+    assert.ok(src.includes("'use client'"), '缺少 use client');
+  });
+
+  it('不应使用 any 类型', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /:\s*any\b/);
+  });
+});
+
+describe('ops-manager/page — 反例', () => {
+  it('不应包含 console.log', () => {
+    const src = readSource();
+    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), '裸 console.log');
+  });
+
+  it('任务数应与界面保持匹配', () => {
+    const src = readSource();
+    assert.ok(src.includes('done: true'), '有已完成任务');
+    assert.ok(src.includes('done: false'), '有未完成任务');
+  });
+});
+
+describe('ops-manager/page — 边界', () => {
+  it('全部完成时应有完成状态', () => {
+    const src = readSource();
+    assert.ok(src.includes('done'));
+  });
+
+  it('任务列表渲染前应有空检查', () => {
+    const src = readSource();
+    assert.ok(src.includes('.length') || src.includes('.map('), 'length 或 map');
   });
 });

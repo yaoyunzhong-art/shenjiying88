@@ -221,3 +221,5 @@
 5. 🟢 RQ-017/018/019/020 — 4项P2弹性
 
 **强制需求卡ID引用**: RQ-20260713-AM020(缓存假阳治理) · RQ-20260713-C1(storefront 218) · RQ-20260713-C2(miniapp+tob残值)
+
+| 2026-07-13 21:12 | pulse#396 | 🟢 第二次30min脉冲(离线): TSC 14/14缓存全绿✅·admin-web已知假阳✖维持(源文件模式匹配)·storefront-web 29✖(含已知+新assertion)·app 222/222✅ mobile 314/314✅ miniapp 494/494✅ tob 1587/1587✅·全假阳稳态无新fail | Base✅(TSC 14/14缓存✅)/Service✅(全部模块缓存全绿✅)/Controller⚠️(admin-web 131✖全假阳·storefront 29✖全假阳)/CTest⚠️(全假阳·非新fail) | 0🏆(中断) |

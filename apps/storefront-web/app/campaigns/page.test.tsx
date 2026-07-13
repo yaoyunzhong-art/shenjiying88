@@ -45,14 +45,14 @@ describe('campaigns — 正例', () => {
     assert.ok(src.includes('spent'), '缺少 spent');
   });
 
-  it('Mock 数据应同时包含 active 和 completed 状态', () => {
+  it('Mock 数据应包含多种状态（active/scheduled/ended/paused/draft）', () => {
     const src = readSource();
-    assert.ok(src.includes("'active'") && src.includes("'completed'"), '缺少不同状态');
+    assert.ok(src.includes("'active'") && src.includes("'ended'") && src.includes("'draft'"), '缺少不同状态');
   });
 
-  it('Mock 数据应包含 startDate/endDate', () => {
+  it('Mock 数据应包含 startAt/endAt', () => {
     const src = readSource();
-    assert.ok(src.includes('startDate') || src.includes('endDate'), '缺少日期');
+    assert.ok(src.includes('startAt') || src.includes('endAt'), '缺少日期');
   });
 
   it('应包含活动名称 name 字段', () => {
