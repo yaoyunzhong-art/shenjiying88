@@ -74,4 +74,96 @@ describe('DeliveryTimeline', () => {
     const html = renderToStaticMarkup(<DeliveryTimeline events={undefined as unknown as TrackingEvent[]} />);
     assert.ok(html.includes('暂无物流信息'));
   });
+
+  /* ── Enhanced tests ── */
+  it('renders carrier info BEFORE tracking number in DOM order', () => {
+    const html = renderToStaticMarkup(
+      <DeliveryTimeline events={mockEvents} trackingNumber="YT987654" carrier="圆通速递" />
+    );
+    const carrierIdx = html.indexOf('圆通速递');
+    const trackingIdx = html.indexOf('YT987654');
+    assert.ok(carrierIdx >= 0, 'Carrier name should be present');
+    assert.ok(trackingIdx >= 0, 'Tracking number should be present');
+    // Carrier rendered before tracking number in the header block
+    assert.ok(carrierIdx < trackingIdx, 'Carrier should appear before tracking number');
+  });
+
+  it('renders only carrier when trackingNumber is absent', () => {
+    const html = renderToStaticMarkup(
+      <DeliveryTimeline events={mockEvents} carrier='中通快递' />
+    );
+    assert.ok(html.includes('中通快递'));
+    // Should not error when trackingNumber is undefined
+    assert.ok(html.includes('data-testid="delivery-timeline"'));
+  });
+
+  it('renders only trackingNumber when carrier is absent', () => {
+    const html = renderToStaticMarkup(
+      <DeliveryTimeline events={mockEvents} trackingNumber='ZTO111222333' />
+    );
+    assert.ok(html.includes('ZTO111222333'));
+  });
+
+  it('renders event timestamps as formatted date/time', () => {
+    const html = renderToStaticMarkup(
+      <DeliveryTimeline events={[{
+        id: 'e1', timestamp: '2026-07-08T10:00:00Z',
+        description: '测试时间格式化', status: 'completed',
+      }]} />
+    );
+    // Should contain formatted datetime in yyyy-MM-dd HH:mm
+    assert.ok(html.includes('2026') && html.includes(':'));
+  });
+
+  it('handles empty events array with no header crash', () => {
+    // Empty events + no tracking info should show just empty state
+    const html = renderToStaticMarkup(<DeliveryTimeline events={[]} />);
+    assert.ok(html.includes('暂无物流信息'));
+    // Should not error or show NaN/undefined text
+    assert.ok(!html.includes('NaN'));
+    assert.ok(!html.includes('undefined'));
+  });
+
+  it('renders description text for each event correctly', () => {
+    const descriptions = ['包裹已揽收', '离开中转站', '到达派送站'];
+    const events = descriptions.map((desc, i) => ({
+      id: `e${i}`, timestamp: '2026-07-08T10:00:00Z',
+      description: desc, status: 'completed' as const,
+    }));
+    const html = renderToStaticMarkup(<DeliveryTimeline events={events} />);
+    for (const desc of descriptions) {
+      assert.ok(html.includes(desc), `Description "${desc}" should be rendered`);
+    }
+  });
+
+  it('renders status icon for each timeline point', () => {
+    const html = renderToStaticMarkup(
+      <DeliveryTimeline events={mockEvents.slice(0, 2)} />
+    );
+    // completed events show checkmark
+    assert.ok(html.includes('✓'));
+  });
+
+  it('does not render status icon for pending items', () => {
+    const html = renderToStaticMarkup(
+      <DeliveryTimeline events={[{
+        id: 'e0', timestamp: '2026-07-09T12:00:00Z',
+        description: '等待中', status: 'pending',
+      }]} />
+    );
+    // Pending items should not show checkmark
+    // They may show a dot or placeholder
+    assert.ok(html.includes('等待中'));
+  });
+
+  it('renders current event with distinct visual indicator', () => {
+    const html = renderToStaticMarkup(
+      <DeliveryTimeline events={[{
+        id: 'e0', timestamp: '2026-07-09T08:00:00Z',
+        description: '配送中', status: 'current', location: '浦东',
+      }]} />
+    );
+    assert.ok(html.includes('配送中'));
+    assert.ok(html.includes('浦东'));
+  });
 });

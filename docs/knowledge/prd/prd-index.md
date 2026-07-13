@@ -1,6 +1,6 @@
 # 📋 PRD 索引目录
 
-> 需求文档中枢 · 最后更新: 2026-07-13 22:10 · 🎉 10个Phase全量覆盖
+> 需求文档中枢 · 最后更新: 2026-07-13 22:24 · 🎉 10个Phase全量覆盖
 > 维护人: 🦞 龙虾哥
 
 ## 已签发 PRD（覆盖所有10个活跃Phase）
@@ -16,6 +16,8 @@
 | PRD-011 | 多租户隔离 (Tenant) | P-31 | 🟢 已签发 | [prd-tenant-p31.md](./prd-tenant-p31.md) | 3 |
 | PRD-012 | 品牌运营 (Brand) | P-47 | 🟢 已签发 | [prd-brand-p47.md](./prd-brand-p47.md) | 3 |
 | PRD-013 | 部署DevOps | P-53 | 🟢 已签发 | [prd-devops-p53.md](./prd-devops-p53.md) | 5 |
+| PRD-014 | 智能体接入网关 (AI Gateway) | P-49 | 🟢 已签发 | [prd-ai-gateway-p49.md](./prd-ai-gateway-p49.md) | 8 |
+| PRD-015 | SEO/GEO 智能优化 (SEO & GEO Engine) | P-49 | 🟢 已签发 | [prd-seo-geo-p49.md](./prd-seo-geo-p49.md) | 8 |
 
 ## 待迁移PRD（来自.trae，与已签发PRD内容重叠，待合并）
 
@@ -23,8 +25,8 @@
 |:-----|:------|:---------:|:----|
 | B2B品牌官网 | prd-b2b-brand-website.md | P-47 | 🔄 合并入PRD-012 |
 | 运动蚂蚁品牌官网 | prd-sports-ants-website.md | P-47 | 🔄 合并入PRD-012 |
-| 智能体接入模块(Gateway) | prd-tenant-llm-gateway.md | P-49 | 🔄 待创建PRD-014 |
-| SEO/GEO智能优化系统 | prd-seo-geo-intelligent-system.md | P-49 | 🔄 待创建PRD-015 |
+| 智能体接入模块(Gateway) | prd-tenant-llm-gateway.md | P-49 | ✅ 已收口至 PRD-014 |
+| SEO/GEO智能优化系统 | prd-seo-geo-intelligent-system.md | P-49 | ✅ 已收口至 PRD-015 |
 
 ## PRD预备工具
 
@@ -54,6 +56,8 @@
 | PRD-011 | 3 | 3 | ⬜ 待开发 | — | — |
 | PRD-012 | 4 | 3 | ⬜ 待开发 | — | — |
 | PRD-013 | 5 | 5 | ⬜ 待开发 | — | — |
+| PRD-014 | 8 | 8 | ⬜ 待开发 | — | — |
+| PRD-015 | 8 | 8 | ⬜ 待开发 | — | — |
 
 ---
 
