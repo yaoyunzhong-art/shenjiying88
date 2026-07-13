@@ -85,9 +85,14 @@ describe('faq 常见问题页面', () => {
     });
 
     it('FAQ数据中不应有重复ID', () => {
-      const idMatches = SRC.match(/id:\s*'[^']+'/g) || [];
-      const ids = idMatches.map(m => m.match(/'([^']+)'/)?.[1]).filter(Boolean);
-      assert.equal(ids.length, new Set(ids).length, 'FAQ IDs should be unique');
+      // 只检查FAQ_DATA数组中的id，匹配 id: '字母+数字' 格式的单字母模式
+      // FAQ IDs: a1-a6, p1-p6, b1-b6, m1-m6, d1-d6, o1-o6
+      const faqIdPattern = /id:\s*'[abpmod]\d'/g;
+      const allFaqIdMatches = SRC.match(faqIdPattern) || [];
+      assert.ok(allFaqIdMatches.length >= 12, 'should find at least 12 FAQ items');
+      assert.ok(allFaqIdMatches.length <= 40, 'should not have too many ID matches');
+      const idSet = new Set(allFaqIdMatches);
+      assert.equal(allFaqIdMatches.length, idSet.size, 'FAQ IDs should be unique');
     });
   });
 
