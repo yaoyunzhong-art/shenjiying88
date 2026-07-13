@@ -278,7 +278,7 @@ function autoMatch(
   return results
 }
 
-function manualMatch(ctx: TenantCtx, input: { transactionId: string; externalAmount: string; externalAmount?: number; memo?: string }): ReconTxn {
+function manualMatch(ctx: TenantCtx, input: { transactionId: string; externalAmount?: number; memo?: string; externalTransactionId?: string }): ReconTxn {
   const txn = txnStore.get(input.transactionId)
   if (!txn || txn.tenantId !== ctx.tenantId) throw new Error(`Transaction ${input.transactionId} not found`)
 
@@ -527,7 +527,7 @@ describe('FinanceReconciliationService', () => {
 
       const matched = manualMatch(tenant, {
         transactionId: txn.id,
-        externalAmount: 'ext-005',
+        externalTransactionId: 'ext-005',
         externalAmount: 10000
       })
 
@@ -547,7 +547,7 @@ describe('FinanceReconciliationService', () => {
 
       const matched = manualMatch(tenant, {
         transactionId: txn.id,
-        externalAmount: 'ext-006',
+        externalTransactionId: 'ext-006',
         externalAmount: 9000
       })
 
@@ -642,7 +642,7 @@ describe('FinanceReconciliationService', () => {
       for (const imp of imports) {
         createTxn(tenant, {
           channel: 'WECHAT',
-          externalAmount: imp.channelTransactionNo,
+          externalTransactionId: imp.channelTransactionNo,
           channelTransactionNo: imp.channelTransactionNo,
           type: imp.type,
           internalAmount: 0,

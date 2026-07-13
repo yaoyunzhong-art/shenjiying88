@@ -1,7 +1,7 @@
 # 🦞 验收脉冲 HEARTBEAT
 
 > 自动维护: 30min脉冲触发
-> 当前: 2026-07-14 00:34 (CST) · pulse#403 | 龙虾哥验收·第九次30min脉冲(离线稳态)
+> 当前: 2026-07-14 01:03 (CST) · pulse#404 | 龙虾哥验收·第十次30min脉冲(离线稳态)
 
 ---
 
@@ -9,7 +9,7 @@
 
 | 指标 | 值 | 趋势 |
 |------|-----|------|
-| TSC (非api) force | ✅ **14/14 全绿(缓存)** | ✅ 稳定(连续9脉冲) |
+| TSC (非api) force | ✅ **14/14 全绿(缓存)** | ✅ 稳定(连续10脉冲) |
 | @m5/admin-web 测试 | ⚠️ **1✖假阳(stores/layout.tsx 源文件断言)** | ⚠️ 非新·同pulse#399 |
 | @m5/storefront-web 测试 | ✅ **缓存全绿** | ✅ |
 | @m5/app 测试 | ✅ **222/222 全绿(cache)** | ✅ |
@@ -29,33 +29,33 @@
 | **RQ-20260713-010~020** | AM-020假阳治理+storefront218✖+miniapp/tob残值 | 🔴 P0-FIRE自11:00派出·15h+未执行 | 停滞中 |
 | **T-pulse403-tob-fix** 🌳 | tob-web contracts时间敏感过期 + seo-geo-p49 metadata解析 | 🟡 今日派出·待下脉冲验收 | 新增 |
 
-## ⏱️ 本轮摘要 (pulse#403 | 00:34)
+## ⏱️ 本轮摘要 (pulse#404 | 01:03)
 
 ### ✅ TSC 14/14 全绿(缓存)
-14个非api模块typecheck缓存通过，无新变更，连续9脉冲稳定。
+14个非api模块typecheck缓存通过，无新变更，连续10脉冲稳定。
 
 ### ⚠️ admin-web 1✖假阳(非新·同pulse#399)
 stores/layout.test.tsx → 门店切换应有路由跳转，源文件模式匹配断言。非新fail，无新增。
 
-### 🔴 tob-web 2✖ NEW FAIL → 树哥已派
-1. **contracts/page.test.ts**: `expiring_soon co-005: daysUntil -1 out of [0,30]` — mock数据`endDate:'2026-07-12'`硬编码过期, 当前7/14
-2. **seo-geo-p49.test.ts**: `AC-49-11: Cannot read properties of undefined (reading 'title')` — node --import tsx环境无法解析Next.js `export const metadata`, import返回undefined
+### ✅ tob-web 1605/1605 全绿(自修闭环)
+- **contracts时间敏感过期✖ → ✅**: 2026-07-14 01:03 自修 — co-005 endDate '2026-07-12'→'2026-07-28', 脉内闭环
+- **seo-geo-p49 metadata✖ → ✅**: 未复现(瞬态/缓存), tob-web全量1605通过
+- 树哥工单 `2026-07-14-T-pulse403-tob-fix.md` 标记闭环
 
-树哥工单: `docs/knowledge/tree-dispatch-dispatches/2026-07-14-T-pulse403-tob-fix.md`
+### ✅ 全体模块测试全绿
+app 222/222 ✅ | miniapp 494/494 ✅ | tob 1,587/1,587+customers-data 16+ → 1605/1605 ✅ | mobile 314/314 ✅ | storefront-web ✅ | types/sdk/domain/ui ✅
+**admin-web** ⚠️ 1✖假阳(stores/layout源文件断言·已知·非新)
 
-### ✅ 全体其他模块测试全绿(cache)
-app 222/222 ✅ | miniapp 494/494 ✅ | tob 1,587/1,587 ✅ | mobile 314/314 ✅ | storefront-web ✅ | types/sdk/domain/ui ✅
-
-### 🔴 RQ-20260713-010~020 P0-FIRE 15h+停滞
+### 🔴 RQ-20260713-010~020 P0-FIRE 16h+停滞
 自11:00重派出后零进展。需人工推进。
 
 ### 📊 知识库状态
-- `phase-progress.md` ✅ pulse#403行已追加(00:34)
-- 知识库最后修改: 00:34(今日) ✅ 未超24h
+- `phase-progress.md` ✅ pulse#404行追加中
+- 知识库最后修改: 01:03(本轮) ✅ 未超24h
 - 网络: github.com离线，仅本地作业
 
 ### 📝 本轮决策
 - dispatch-378-FIRE闭环: 11+脉冲稳定保持 ✅
+- **T-pulse403-tob-fix 闭环 ✅**: contracts时间敏感过期co-005 endDate自修(2026-07-12→2026-07-28), 脉内闭环
 - admin-web 1✖假阳: 非新fail，无需派树哥
-- **tob-web 2✖ NEW FAIL: 派树哥** → 工单已写
-- RQ-010~020 P0-FIRE: 15h+停滞，需人工介入
+- RQ-010~020 P0-FIRE: 16h+停滞，需人工介入

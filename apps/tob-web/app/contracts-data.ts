@@ -165,7 +165,7 @@ export const MOCK_CONTRACTS: ContractItem[] = [
     amount: 120000,
     paid: 120000,
     startDate: '2025-07-01',
-    endDate: '2026-07-12',
+    endDate: '2026-07-28',
     signatory: '刘洋',
     renewalCount: 1,
     updatedAt: '2026-06-21 11:45:00',
