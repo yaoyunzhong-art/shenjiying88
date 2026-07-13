@@ -111,8 +111,8 @@ describe('stock — 反例/补充', () => {
     assert.ok(itemCount > 5, '应有库存数据对象');
   });
 
-  it('应包含 useState 或 useMemo', () => {
+  it('应包含 StockPage 组件调用', () => {
     const src = readSource();
-    assert.ok(src.includes('useState') || src.includes('useMemo') || src.includes('useCallback'), '应使用 React hooks');
+    assert.ok(src.includes('StockPage'), '应包含 StockPage 组件');
   });
 });

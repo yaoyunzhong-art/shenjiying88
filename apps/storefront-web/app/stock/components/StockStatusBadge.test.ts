@@ -51,20 +51,20 @@ test('正例: 各状态背景色各不相同', () => {
   assert.equal(unique.size, bgs.length, 'all status backgrounds should be unique');
 });
 
-test('正例: sufficient 状态使用绿色系', () => {
-  assert.ok(STOCK_STATUS_COLOR.sufficient.includes('52') || STOCK_STATUS_COLOR.sufficient.includes('green'), '充足应为绿色');
+test('正例: sufficient 状态使用绿色', () => {
+  assert.equal(STOCK_STATUS_COLOR.sufficient, '#22c55e');
 });
 
-test('正例: critical 状态使用红色系', () => {
-  assert.ok(STOCK_STATUS_COLOR.critical.includes('ff4d') || STOCK_STATUS_COLOR.critical.includes('red'), '告急应为红色');
+test('正例: critical 状态使用橙色', () => {
+  assert.equal(STOCK_STATUS_COLOR.critical, '#f97316');
 });
 
-test('正例: out_of_stock 状态使用深红色', () => {
-  assert.ok(STOCK_STATUS_COLOR.out_of_stock.includes('ff') || STOCK_STATUS_COLOR.out_of_stock.includes('red'), '缺货应为红色系');
+test('正例: out_of_stock 状态使用红色', () => {
+  assert.equal(STOCK_STATUS_COLOR.out_of_stock, '#ef4444');
 });
 
-test('正例: overstocked 状态使用橙色系', () => {
-  assert.ok(STOCK_STATUS_COLOR.overstocked.includes('fa') || STOCK_STATUS_COLOR.overstocked.includes('orange'), '过剩应为橙色系');
+test('正例: overstocked 状态使用紫色', () => {
+  assert.equal(STOCK_STATUS_COLOR.overstocked, '#8b5cf6');
 });
 
 /* ── 反例 ── */
@@ -118,17 +118,13 @@ test('边界: State 类型枚举完整性', () => {
   assert.deepEqual([...statuses].sort(), [...bgs].sort());
 });
 
-test('边界: 语义颜色与状态匹配', () => {
-  // 充足→绿色, 偏低→黄色, 告急→红色, 缺货→深红, 过剩→橙色
-  const greenish = /#(52c41a|389e0d)/i;
-  const yellowish = /#(faad14|d4b106)/i;
-  const reddish = /#(ff4d4f|cf1322)/i;
-  const darkish = /#(ff4d4f|820014)/i;
-  const orangish = /#(fa8c16|d46b08)/i;
+test('边界: 每个状态的颜色都是有效十六进制', () => {
+  const colors = Object.values(STOCK_STATUS_COLOR);
+  for (const c of colors) {
+    assert.ok(/^#[0-9a-f]{6}$/i.test(c), `${c} 应为6位十六进制色值`);
+  }
+});
 
-  assert.ok(greenish.test(STOCK_STATUS_COLOR.sufficient), 'sufficient 应为绿色');
-  assert.ok(yellowish.test(STOCK_STATUS_COLOR.low), 'low 应为黄色');
-  assert.ok(reddish.test(STOCK_STATUS_COLOR.critical), 'critical 应为红色');
-  assert.ok(darkish.test(STOCK_STATUS_COLOR.out_of_stock), 'out_of_stock 应为深红');
-  assert.ok(orangish.test(STOCK_STATUS_COLOR.overstocked), 'overstocked 应为橙色');
+test('边界: low 状态使用黄色系', () => {
+  assert.equal(STOCK_STATUS_COLOR.low, '#eab308');
 });

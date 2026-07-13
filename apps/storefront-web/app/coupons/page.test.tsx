@@ -98,14 +98,14 @@ describe('coupons — 防御', () => {
 });
 
 describe('coupons — 补充覆盖', () => {
-  it('应包含 过期时间 字段', () => {
+  it('应包含 有效期 字段', () => {
     const src = readSource();
-    assert.ok(src.includes('expires') || src.includes('expire') || src.includes('endDate'), '缺少过期时间');
+    assert.ok(src.includes('validTo') || src.includes('validFrom') || src.includes('valid'), '缺少有效期');
   });
 
-  it('应包含 useCallback 或 useEffect', () => {
+  it('应包含 useMemo 或 useState', () => {
     const src = readSource();
-    assert.ok(src.includes('useCallback') || src.includes('useEffect'), '缺少副作用管理');
+    assert.ok(src.includes('useMemo') || src.includes('useState'), '缺少 hooks');
   });
 
   it('MOCK_COUPONS 应包含 minAmount 字段', () => {

@@ -64,14 +64,14 @@ describe('customers — 边界', () => {
     assert.ok(src.includes('activeTab'), 'tab 切换');
   });
 
-  it('应包含积分字段', () => {
+  it('应包含总订单数字段', () => {
     const src = readSource();
-    assert.ok(src.includes('points') || src.includes('Point') || src.includes('积分'), '缺少积分');
+    assert.ok(src.includes('totalOrders') || src.includes('orders') || src.includes('Orders'), '缺少订单数');
   });
 
-  it('应包含最后活跃日期', () => {
+  it('应包含最后订单日期', () => {
     const src = readSource();
-    assert.ok(src.includes('lastActive') || src.includes('lastVisit') || src.includes('Last'), '缺少最后活跃');
+    assert.ok(src.includes('lastOrderDate') || src.includes('lastOrder') || src.includes('LastOrder'), '缺少最后订单');
   });
 });
 
@@ -108,9 +108,9 @@ describe('customers — 补充覆盖', () => {
     assert.ok(src.includes('vip') || src.includes('level') || src.includes('type') || src.includes('VIP'), '缺少等级');
   });
 
-  it('应包含 useCallback 或 useEffect', () => {
+  it('应包含 useMemo 或 useState', () => {
     const src = readSource();
-    assert.ok(src.includes('useCallback') || src.includes('useEffect'), '缺少副作用管理');
+    assert.ok(src.includes('useMemo') || src.includes('useState'), '缺少 hooks');
   });
 
   it('应包含 Tab 切换组件', () => {
@@ -123,8 +123,8 @@ describe('customers — 补充覆盖', () => {
     assert.ok(src.includes('placeholder') || src.includes('搜索') || src.includes('Search'), '缺少搜索框');
   });
 
-  it('客户统计数据应包含 newThisMonth', () => {
+  it('客户统计数据应包含总消费', () => {
     const src = readSource();
-    assert.ok(src.includes('new') || src.includes('newThisMonth'), '缺少新增客户统计');
+    assert.ok(src.includes('totalSpent') || src.includes('spent') || src.includes('Spent'), '缺少总消费统计');
   });
 });

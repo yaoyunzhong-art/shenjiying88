@@ -50,6 +50,14 @@ describe('PointHistoryPage — 正例', () => {
   test('includes search or filter functionality', () => {
     assert.ok(PAGE_SRC.includes('search') || PAGE_SRC.includes('filter') || PAGE_SRC.includes('Search'), '缺少搜索/过滤');
   });
+
+  test('includes pagination', () => {
+    assert.ok(PAGE_SRC.includes('page') || PAGE_SRC.includes('Page') || PAGE_SRC.includes('Pagination'), '缺少分页');
+  });
+
+  test('includes record type filter', () => {
+    assert.ok(PAGE_SRC.includes('type') || PAGE_SRC.includes('Type') || PAGE_SRC.includes('filter'), '缺少类型筛选');
+  });
 });
 
 describe('PointHistoryPage — 反例/防御', () => {
@@ -59,6 +67,18 @@ describe('PointHistoryPage — 反例/防御', () => {
 
   test('should not contain eval', () => {
     assert.ok(!PAGE_SRC.includes('eval('), '不应使用 eval');
+  });
+
+  test('should not contain document.write', () => {
+    assert.ok(!PAGE_SRC.includes('document.write'), '不应使用 document.write');
+  });
+
+  test('should not contain Function constructor', () => {
+    assert.ok(!PAGE_SRC.includes('new Function('), '不应使用 new Function');
+  });
+
+  test('should not contain innerHTML', () => {
+    assert.ok(!PAGE_SRC.includes('innerHTML'), '不应使用 innerHTML');
   });
 });
 
@@ -79,5 +99,22 @@ describe('PointHistoryPage — 边界', () => {
     assert.ok(PAGE_SRC.includes('PointHistoryPage'), 'page contains PointHistoryPage');
     assert.ok(PAGE_SRC.includes('useState'), 'contains useState');
     assert.ok(PAGE_SRC.includes('useMemo'), 'contains useMemo');
+  });
+
+  test('contains empty state handling', () => {
+    assert.ok(PAGE_SRC.includes('empty') || PAGE_SRC.includes('Empty') || PAGE_SRC.includes('暂无'), '缺少空状态处理');
+  });
+
+  test('contains state filter for active/inactive', () => {
+    assert.ok(PAGE_SRC.includes('active') || PAGE_SRC.includes('type') || PAGE_SRC.includes('status'), '缺少状态过滤');
+  });
+
+  test('contains error state handling', () => {
+    assert.ok(PAGE_SRC.includes('error') || PAGE_SRC.includes('Error') || PAGE_SRC.includes('catch'), '缺少错误状态');
+  });
+
+  test('useMemo returns computed values', () => {
+    const useMemoMatch = PAGE_SRC.match(/useMemo\(\(\) =>\s*\{/);
+    assert.ok(useMemoMatch !== null, '缺少 useMemo 计算');
   });
 });
