@@ -119,6 +119,7 @@ import { LocaleModule } from './modules/locale/locale.module';
 import { DbKnowledgeModule } from './modules/db-knowledge/db-knowledge.module';
 import { ScoutModule } from './modules/scout/scout.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
+import { RlsModule } from './modules/rls/rls.module';
 
 @Module({
   imports: [
@@ -250,6 +251,7 @@ import { LogisticsModule } from './modules/logistics/logistics.module';
     DbKnowledgeModule,
     ScoutModule,
     LogisticsModule,
+    RlsModule,
   ],
   providers: [
     RequestGovernanceService,
