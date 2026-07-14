@@ -1,6 +1,6 @@
 # 🐲 shenjiying — 稳态验证脉冲 HEARTBEAT
 
-> 最后更新: 2026-07-14 20:10 (CST) · pulse#440
+> 最后更新: 2026-07-14 20:40 (CST) · pulse#441
 > 角色: 验收员/闭环检查/树哥调度/知识库维护
 
 ---
@@ -13,34 +13,42 @@
 | T-pulse409-tob-tsc 🌳 | tob-web route.ts导出破坏类型 | ✅ 闭环于pulse#409 | 29+ |
 | T-pulse437-dashboard-tsc 🌳 | admin-web brand/dashboard page.tsx @m5/ui API对齐 | ✅ 闭环于pulse#437 | 3+ |
 
-## ⏱️ 本轮摘要 (pulse#440 | 20:10)
+## ⏱️ 本轮摘要 (pulse#441 | 20:40)
 
 ### ✅ TSC 14/14 全绿（14缓存，无新建）
-- 连续第4轮保持14/14全绿
+- 连续第5轮保持14/14全绿
 - **无新Fail**
 
-### ✅ Test 15 total（14缓存通过）
-- admin-web 53个已知假阳(内容检查型，同前):
+### ✅ Test 结果
+| 模块 | 通过/总计 | 状态 |
+|:----|:---------:|:----:|
+| @m5/app | 222/222 | ✅ |
+| @m5/storefront-web | 5414/5414 | ✅ |
+| @m5/tob-web | 1614/1614 | ✅ |
+| @m5/ui | 6182/6182 | ✅ |
+| @m5/admin-web | 5065/5118 | ⚠️ 53已知假阳(同前) |
+| **合计** | **18497/18550** | ✅ 无新Fail |
+
+- admin-web 53个已知假阳(内容检查型，同pulse#440):
   - AiDecisionPage假阳
   - AdminAlertsPage假阳
   - 其他内容断言模式假阳
-- @m5/app 21个已知假阳(HomeScreen/SettingsScreen渲染测试缺少合适mock)
 - **无新Fail** ✅
 
 ### ✅ 闭环检查
-- T-pulse437-dashboard-tsc ✅ 已闭环，本次无待闭环派单
+- 无待闭环派单 ✅
+- 上次pulse#440: 不派树哥 → 本脉冲检查确认无需再派 ✅
 
 ### ✅ 知识库
-- 18:28 有knowledge-refresh ✅ <24h
-- 20:10 evolution-log.md已更新 ✅
-- 首层核心文件(Jul 12 03:13 ~65h🚨)老化仍存在
+- 20:17 evolution-log.md已更新 ✅ <24h
+- phase-progress.md已追加pulse#441记录 ✅
 
-### 🔴 RQ-010~020 P0-FIRE ~52h+停滞 & RQ-001~010 ~22h+停滞
-- RQ-010~020停滞持续 (~52h+ 🚨)
-- P-35/P-36 7/15截止线仅剩~4h 🚨🚨🚨
+### 🔴 RQ-010~020 P0-FIRE ~54h+停滞 & RQ-001~010 ~24h+停滞
+- RQ-010~020停滞持续 (~54h+ 🚨)
+- P-35/P-36 7/15截止线已不足4h 🚨🚨🚨
 
 ### 🔄 本次无新修复/派单
 - **TSC 无Fail** ✅
 - **Test 无新Fail** ✅
 - **不派树哥** ✅
-- **连续稳态4🏆**
+- **连续稳态5🏆**
