@@ -11,6 +11,24 @@
       "count": 3,
       "last": "test_fail",
       "last_at": "2026-07-14 23:37"
+    },
+    {
+      "module": "pulse-verify",
+      "count": 1,
+      "last": "test",
+      "last_at": "2026-07-14 23:49"
+    },
+    {
+      "module": "v17-final",
+      "count": 1,
+      "last": "verify",
+      "last_at": "2026-07-14 23:52"
+    },
+    {
+      "module": "v17-pipeline",
+      "count": 1,
+      "last": "initial-run",
+      "last_at": "2026-07-14 23:56"
     }
   ],
   "paused": true

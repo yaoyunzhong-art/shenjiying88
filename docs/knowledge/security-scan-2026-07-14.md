@@ -1,6 +1,6 @@
 # 🔐 安全扫描报告
 
-> 扫描时间: 2026-07-14 23:34:33 CST
+> 扫描时间: 2026-07-14 23:56:15 CST
 > 项目: shenjiying88 (V17)
 > 扫描模式: full
 > 脚本: scripts/security-scan.sh
