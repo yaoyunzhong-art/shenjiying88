@@ -55,7 +55,7 @@
 | points | 积分系统:原子操作/积分转账 | 19 | P-36/48 延伸 |
 | portal | 门户管理:租户Portal/Bootstrap | 20 | 🔧 基础设施 |
 | referral | 推荐/裂变:微信分享/小程序扫码 | 20 | 业务 → 新建P-X |
-| reservation | 预约管理:预约合约/统计 | 19 | 业务 → 新建P-X |
+| reservation | SSE后勤底座：时间安排/状态流转/冲突检测（当前仍偏预约域） | 19 | P-30 (SSE后勤)底座 |
 | saas-advanced | SaaS高级功能:自定义域名/高级功能 | 24 | P-31 (多租户)延伸 |
 | saas-billing | SaaS计费:账单/计量 | 17 | P-31 (多租户)延伸 |
 | scout | 选址/侦察:城市/区域查询 | 4 | 业务 → 新建P-X |
@@ -165,7 +165,7 @@
 | ├ P-31 多租户 | 3 (tenant, saas-advanced, saas-billing) | 85 | 3.5% |
 | ├ P-49 开放平台 | 4 (open-api, openapi, tenant-llm, agent) | 135 | 5.5% |
 | ├ P-53 DevOps | 1 (deploy + auto-rollback + canary) | 57 | 2.3% |
-| ├ P-30 SSE后勤 | 0 | 0 | 0% |
+| ├ P-30 SSE后勤 | 1 (reservation) | 19 | 0.8% |
 | | | | |
 | **业务核心(待新Phase)** | 16 | 321 | 13.1% |
 | **AI/智能(待新Phase)** | 24 | 558 | 22.7% |
@@ -180,7 +180,7 @@
 | P-49 (已有) | ai-content ~ ai-sales 等24个AI模块 | 已有P-49，但AI模块规模超出现有范围 |
 | P-54 | license/license-package/license-renewal | 授权/计费核心 |
 | P-55 | alliance/leads/scout/tournament/champion | 联盟/线索/选址/赛事 |
-| P-56 | referral/reservation/training | 推荐/预约/培训 |
+| P-56 | referral/training | 推荐/培训 |
 | P-57 | audit/compliance/security | 安全合规 |
 | P-58 | monitoring/observability/health/perf-monitor | 可观测性体系 |
 
@@ -190,6 +190,6 @@
 
 1. **基础设施模块占比最高(43.3%)** — foundation(166文件)、observability(50)、cross-module(55)等核心基础设施需要稳定归类
 2. **AI模块规模庞大(22.7%, 558文件)** — 24个AI相关模块远超P-49现有边界，建议扩建P-49或新建P-AI
-3. **P-30 SSE后勤无归属模块** — 没有任何模块映射到P-30，需要确认模块是否存在或待创建
+3. **P-30 SSE后勤当前仅有 reservation 底座** — 已可挂到 P-30，但与巡检/维修/物料语义仍未完全对齐
 4. **扩展归类** — member-level/svip/loyalty等已映射模块的扩展子功能，建议在Phase内标记为子模块
 5. **cross-module** 55个跨模块E2E测试文件，建议归类到测试基础设施
