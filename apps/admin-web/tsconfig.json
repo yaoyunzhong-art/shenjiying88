@@ -31,6 +31,7 @@
     "app/**/*.test.ts",
     "app/**/*.test.tsx",
     "app/stores/\\[id\\]",
-    "app/stores/[id]/*"
+    "app/stores/[id]/*",
+    "app/finance/reconciliation/*"
   ]
 }
