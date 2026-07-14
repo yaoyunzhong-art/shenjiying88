@@ -1,15 +1,85 @@
 // 📦 库存管理 · 物资/消耗品/安全库存管理
 'use client';
-import { useState, useMemo } from 'react';
-import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Input, Modal, Select, message, Progress, Empty, Divider, Tabs, Timeline } from '@m5/ui';
 
-interface Item {
-  id: string; name: string; category: string; unit: string;
-  stock: number; minStock: number; maxStock: number; cost: number;
-  totalValue: number; supplier: string; lastRestock: string;
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useParams } from 'next/navigation';
+import {
+  Button,
+  Card,
+  Empty,
+  Input,
+  Modal,
+  PageShell,
+  Progress,
+  Select,
+  Statistic,
+  Table,
+  Tabs,
+  Tag,
+  ToastContainer,
+  useToast,
+} from '@m5/ui';
+import type { TableColumn } from '@m5/ui';
+
+interface Item extends Record<string, unknown> {
+  id: string;
+  name: string;
+  category: string;
+  unit: string;
+  stock: number;
+  minStock: number;
+  maxStock: number;
+  threshold: number;
+  status: 'normal' | 'low';
+  cost: number;
+  totalValue: number;
+  supplier: string;
+  lastRestock: string;
 }
 
-const ITEMS: Item[] = [
+type InventoryTab = 'list' | 'category';
+type MaterialRequestStatus = 'pending_approval' | 'approved' | 'outbound';
+type RequestStatusFilter = 'all' | MaterialRequestStatus;
+
+interface MaterialRequestItem {
+  itemId: string;
+  itemName: string;
+  category: string;
+  unit: string;
+  quantity: number;
+}
+
+interface MaterialRequestRecord extends Record<string, unknown> {
+  id: string;
+  tenantId: string;
+  storeId?: string;
+  requesterId: string;
+  requesterName: string;
+  department?: string;
+  purpose: string;
+  status: MaterialRequestStatus;
+  items: MaterialRequestItem[];
+  totalQuantity: number;
+  approval?: {
+    approverId: string;
+    approverName: string;
+    note: string;
+    approvedAt: string;
+  };
+  outbound?: {
+    operatorId: string;
+    operatorName: string;
+    warehouseCode?: string;
+    note?: string;
+    outboundAt: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+const REQUEST_API_BASE = '/api/logistics/material-requests';
+
+const RAW_ITEMS = [
   { id: 'STK-001', name: '游戏币', category: '消耗品', unit: '枚', stock: 5000, minStock: 1000, maxStock: 20000, cost: 0.5, totalValue: 2500, supplier: '世嘉', lastRestock: '2026-07-12' },
   { id: 'STK-002', name: '加油棒', category: '礼品', unit: '个', stock: 320, minStock: 100, maxStock: 1000, cost: 2.5, totalValue: 800, supplier: '义乌礼品', lastRestock: '2026-07-11' },
   { id: 'STK-003', name: '纯净水', category: '饮品', unit: '瓶', stock: 85, minStock: 200, maxStock: 2000, cost: 1.2, totalValue: 102, supplier: '农夫山泉', lastRestock: '2026-07-10' },
@@ -24,164 +94,893 @@ const ITEMS: Item[] = [
   { id: 'STK-012', name: '免洗洗手液', category: '耗材', unit: '瓶', stock: 8, minStock: 10, maxStock: 50, cost: 18, totalValue: 144, supplier: '清洁之家', lastRestock: '2026-06-25' },
 ];
 
-const CATEGORIES = [...new Set(ITEMS.map(i => i.category))];
+const ITEMS: Item[] = RAW_ITEMS.map((item) => ({
+  ...item,
+  threshold: item.minStock,
+  status: item.stock < item.minStock ? 'low' : 'normal',
+}));
+
+const CATEGORIES = [...new Set(ITEMS.map((item) => item.category))];
+
 const RESTOCK_LOG = [
-  { id:'R-01', item:'游戏币', qty:5000, date:'2026-07-12', supplier:'世嘉', cost:2500 },
-  { id:'R-02', item:'打印纸(热敏)', qty:50, date:'2026-07-12', supplier:'得力文具', cost:400 },
-  { id:'R-03', item:'加油棒', qty:200, date:'2026-07-11', supplier:'义乌礼品', cost:500 },
-  { id:'R-04', item:'纯净水', qty:500, date:'2026-07-10', supplier:'农夫山泉', cost:600 },
-  { id:'R-05', item:'礼品包装袋', qty:100, date:'2026-07-09', supplier:'义乌礼品', cost:150 },
+  { id: 'R-01', item: '游戏币', qty: 5000, date: '2026-07-12', supplier: '世嘉', cost: 2500 },
+  { id: 'R-02', item: '打印纸(热敏)', qty: 50, date: '2026-07-12', supplier: '得力文具', cost: 400 },
+  { id: 'R-03', item: '加油棒', qty: 200, date: '2026-07-11', supplier: '义乌礼品', cost: 500 },
+  { id: 'R-04', item: '纯净水', qty: 500, date: '2026-07-10', supplier: '农夫山泉', cost: 600 },
+  { id: 'R-05', item: '礼品包装袋', qty: 100, date: '2026-07-09', supplier: '义乌礼品', cost: 150 },
 ];
 
+const STATUS_VARIANT: Record<Item['status'], 'success' | 'warning'> = {
+  normal: 'success',
+  low: 'warning',
+};
+
+const REQUEST_STATUS_LABEL: Record<MaterialRequestStatus, string> = {
+  pending_approval: '待审批',
+  approved: '待出库',
+  outbound: '已出库',
+};
+
+const REQUEST_STATUS_VARIANT: Record<MaterialRequestStatus, 'warning' | 'info' | 'success'> = {
+  pending_approval: 'warning',
+  approved: 'info',
+  outbound: 'success',
+};
+
+const CARD_GRID_STYLE: CSSProperties = {
+  display: 'grid',
+  gap: 16,
+  gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+};
+
+const FILTER_GRID_STYLE: CSSProperties = {
+  display: 'grid',
+  gap: 12,
+  gridTemplateColumns: 'minmax(220px, 1.5fr) minmax(160px, 220px) auto',
+  alignItems: 'center',
+  marginBottom: 16,
+};
+
+const REQUEST_FILTER_GRID_STYLE: CSSProperties = {
+  display: 'grid',
+  gap: 12,
+  gridTemplateColumns: 'minmax(180px, 1fr) minmax(140px, 180px) auto auto',
+  alignItems: 'center',
+};
+
+const DETAIL_GRID_STYLE: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: 12,
+};
+
+async function readResponseMessage(response: Response): Promise<string> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (contentType.includes('application/json')) {
+    const payload = (await response.json()) as { message?: string | string[] };
+    if (Array.isArray(payload.message)) {
+      return payload.message.join(', ');
+    }
+    if (typeof payload.message === 'string' && payload.message.trim()) {
+      return payload.message;
+    }
+  }
+
+  const text = await response.text();
+  return text.trim() || `请求失败(${response.status})`;
+}
+
+function formatCategoryVariant(category: string): 'default' | 'info' | 'purple' | 'warning' {
+  if (category === '耗材') return 'warning';
+  if (category === '礼品') return 'purple';
+  if (category.includes('饮品')) return 'info';
+  return 'default';
+}
+
 export default function InventoryPage() {
+  const params = useParams<{ id: string }>();
+  const storeId = Array.isArray(params?.id) ? params.id[0] : (params?.id ?? 'store-001');
+  const [tenantId, setTenantId] = useState('tenant-p30');
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('all');
-  const [showAdd, setShowAdd] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
   const [showDetail, setShowDetail] = useState<Item | null>(null);
   const [showRestock, setShowRestock] = useState(false);
-  const [tabKey, setTabKey] = useState('list');
+  const [tabKey, setTabKey] = useState<InventoryTab>('list');
+  const [requests, setRequests] = useState<MaterialRequestRecord[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [requestStatusFilter, setRequestStatusFilter] = useState<RequestStatusFilter>('all');
+  const [requestItemId, setRequestItemId] = useState(ITEMS[0]?.id ?? '');
+  const [requestQuantity, setRequestQuantity] = useState('1');
+  const [requesterName, setRequesterName] = useState('门店后勤');
+  const [requestDepartment, setRequestDepartment] = useState('后勤组');
+  const [requestPurpose, setRequestPurpose] = useState('晚班耗材补充');
+  const [requestSubmitting, setRequestSubmitting] = useState(false);
+  const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
+  const { toasts, success, error, info, dismiss } = useToast();
 
-  const lowStock = ITEMS.filter(i => i.stock < i.minStock);
-  const totalVal = ITEMS.reduce((s, i) => s + i.totalValue, 0);
-  const safeCount = ITEMS.filter(i => i.stock >= i.minStock).length;
+  const lowStock = ITEMS.filter((item) => item.stock < item.threshold);
+  const totalVal = ITEMS.reduce((sum, item) => sum + item.totalValue, 0);
+  const totalStock = ITEMS.reduce((sum, item) => sum + item.stock, 0);
+  const safeCount = ITEMS.filter((item) => item.stock >= item.threshold).length;
+  const selectedRequestItem = ITEMS.find((item) => item.id === requestItemId) ?? ITEMS[0];
 
   const filtered = useMemo(() => {
-    let list = ITEMS;
-    if (search) list = list.filter(i => i.name.includes(search) || i.category.includes(search) || i.supplier.includes(search));
-    if (catFilter !== 'all') list = list.filter(i => i.category === catFilter);
-    return list;
+    return ITEMS.filter((item) => {
+      const matchesSearch =
+        !search ||
+        item.name.includes(search) ||
+        item.category.includes(search) ||
+        item.supplier.includes(search) ||
+        item.id.includes(search);
+      const matchesCategory = catFilter === 'all' || item.category === catFilter;
+      return matchesSearch && matchesCategory;
+    });
   }, [search, catFilter]);
 
-  const getLevel = (stock: number, min: number, max: number) => {
-    if (stock < min) return { pct: Math.round((stock / min) * 100), color: '#f87171', label: '不足' };
-    const pct = Math.round((stock / max) * 100);
-    return { pct: Math.min(pct, 100), color: pct > 85 ? '#60a5fa' : '#34d399', label: pct > 85 ? '充足' : '正常' };
-  };
+  const categorySummary = useMemo(
+    () =>
+      CATEGORIES.map((category) => ({
+        name: category,
+        count: ITEMS.filter((item) => item.category === category).length,
+        value: ITEMS.filter((item) => item.category === category).reduce((sum, item) => sum + item.totalValue, 0),
+        low: ITEMS.filter((item) => item.category === category && item.stock < item.threshold).length,
+      })),
+    [],
+  );
 
-  const catSummary = useMemo(() => CATEGORIES.map(cat => ({
-    name: cat,
-    count: ITEMS.filter(i => i.category === cat).length,
-    value: ITEMS.filter(i => i.category === cat).reduce((s, i) => s + i.totalValue, 0),
-    low: ITEMS.filter(i => i.category === cat && i.stock < i.minStock).length,
-  })), []);
+  const filteredRequests = useMemo(() => {
+    if (requestStatusFilter === 'all') return requests;
+    return requests.filter((request) => request.status === requestStatusFilter);
+  }, [requests, requestStatusFilter]);
 
-  const columns = [
-    { title: '名称', dataIndex: 'name', width: 140 },
-    { title: '分类', dataIndex: 'category', width: 80, render: (v: string) => <Tag size="small">{v}</Tag> },
-    { title: '库存', dataIndex: 'stock', width: 80, render: (v: number, r: Item) => (
-      <span style={{ color: v < r.minStock ? '#f87171' : '#e2e8f0', fontWeight: v < r.minStock ? 700 : 400 }}>{v}{r.unit}</span>
-    )},
-    { title: '安全库存', dataIndex: 'minStock', width: 70, render: (v: number, r: Item) => `${v}${r.unit}` },
-    { title: '库存水位', key: 'level', width: 130, render: (_: unknown, r: Item) => {
-      const { pct, color, label } = getLevel(r.stock, r.minStock, r.maxStock);
-      return <Space size={4}><Progress percent={pct} size="small" style={{width:80}} strokeColor={color} /><Tag color={label === '不足' ? 'red' : 'green'} size="small">{label}</Tag></Space>;
-    }},
-    { title: '单价', dataIndex: 'cost', width: 60, render: (v: number) => `¥${v}` },
-    { title: '总价值', dataIndex: 'totalValue', width: 80, render: (v: number) => `¥${v.toLocaleString()}` },
-    { title: '供应商', dataIndex: 'supplier', width: 90 },
-    { title: '上次补货', dataIndex: 'lastRestock', width: 90 },
-    { title: '操作', key: 'actions', width: 140, render: (_: unknown, r: Item) => <Space size="small">
-      <Button size="small" onClick={() => setShowDetail(r)}>详情</Button>
-      <Button size="small" type={r.stock < r.minStock ? 'primary' : 'default'} danger={r.stock < r.minStock}>
-        {r.stock < r.minStock ? '紧急采购' : '补货'}
-      </Button>
-    </Space> },
+  const requestStats = useMemo(() => {
+    return {
+      pending: requests.filter((request) => request.status === 'pending_approval').length,
+      approved: requests.filter((request) => request.status === 'approved').length,
+      outbound: requests.filter((request) => request.status === 'outbound').length,
+    };
+  }, [requests]);
+
+  const openRequestModal = useCallback((item?: Item) => {
+    if (item) {
+      setRequestItemId(item.id);
+      setRequestQuantity('1');
+      setRequestPurpose(`${item.name} 现场补充申领`);
+    }
+    setShowRequestModal(true);
+  }, []);
+
+  const resetRequestForm = useCallback(() => {
+    setRequestItemId(ITEMS[0]?.id ?? '');
+    setRequestQuantity('1');
+    setRequesterName('门店后勤');
+    setRequestDepartment('后勤组');
+    setRequestPurpose('晚班耗材补充');
+  }, []);
+
+  const loadMaterialRequests = useCallback(async () => {
+    const normalizedTenantId = tenantId.trim();
+    if (!normalizedTenantId) {
+      setRequests([]);
+      return;
+    }
+
+    setRequestsLoading(true);
+    try {
+      const response = await fetch(REQUEST_API_BASE, {
+        method: 'GET',
+        headers: {
+          'x-tenant-id': normalizedTenantId,
+        },
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        throw new Error(await readResponseMessage(response));
+      }
+
+      const payload = (await response.json()) as MaterialRequestRecord[];
+      setRequests(Array.isArray(payload) ? payload : []);
+    } catch (requestError) {
+      error(`加载物料申领失败：${requestError instanceof Error ? requestError.message : '未知错误'}`);
+    } finally {
+      setRequestsLoading(false);
+    }
+  }, [tenantId, error]);
+
+  useEffect(() => {
+    void loadMaterialRequests();
+  }, [loadMaterialRequests]);
+
+  const handleCreateMaterialRequest = useCallback(async () => {
+    const normalizedTenantId = tenantId.trim();
+    const normalizedRequesterName = requesterName.trim();
+    const normalizedPurpose = requestPurpose.trim();
+    const quantity = Number(requestQuantity);
+
+    if (!normalizedTenantId) {
+      error('请先填写 tenantId');
+      return;
+    }
+    if (!selectedRequestItem) {
+      error('请选择申领物资');
+      return;
+    }
+    if (!normalizedRequesterName) {
+      error('请填写申领人');
+      return;
+    }
+    if (!normalizedPurpose) {
+      error('请填写申领用途');
+      return;
+    }
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      error('申领数量必须大于 0');
+      return;
+    }
+
+    setRequestSubmitting(true);
+    try {
+      const response = await fetch(REQUEST_API_BASE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': normalizedTenantId,
+        },
+        body: JSON.stringify({
+          storeId,
+          requesterId: `req-${storeId}`,
+          requesterName: normalizedRequesterName,
+          department: requestDepartment.trim(),
+          purpose: normalizedPurpose,
+          items: [
+            {
+              itemId: selectedRequestItem.id,
+              itemName: selectedRequestItem.name,
+              category: selectedRequestItem.category,
+              unit: selectedRequestItem.unit,
+              quantity,
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await readResponseMessage(response));
+      }
+
+      success(`${selectedRequestItem.name} 申领单已创建`);
+      setShowRequestModal(false);
+      resetRequestForm();
+      await loadMaterialRequests();
+    } catch (requestError) {
+      error(`创建申领失败：${requestError instanceof Error ? requestError.message : '未知错误'}`);
+    } finally {
+      setRequestSubmitting(false);
+    }
+  }, [
+    tenantId,
+    requesterName,
+    requestPurpose,
+    requestQuantity,
+    selectedRequestItem,
+    requestDepartment,
+    storeId,
+    error,
+    success,
+    resetRequestForm,
+    loadMaterialRequests,
+  ]);
+
+  const handleApproveMaterialRequest = useCallback(async (request: MaterialRequestRecord) => {
+    setActiveRequestId(request.id);
+    try {
+      const response = await fetch(`${REQUEST_API_BASE}/${request.id}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': tenantId.trim(),
+        },
+        body: JSON.stringify({
+          approverId: 'logistics-manager-01',
+          approverName: '后勤主管',
+          note: `门店 ${storeId} 申领审批通过`,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await readResponseMessage(response));
+      }
+
+      success(`${request.id} 已审批通过`);
+      await loadMaterialRequests();
+    } catch (requestError) {
+      error(`审批失败：${requestError instanceof Error ? requestError.message : '未知错误'}`);
+    } finally {
+      setActiveRequestId(null);
+    }
+  }, [tenantId, storeId, success, error, loadMaterialRequests]);
+
+  const handleOutboundMaterialRequest = useCallback(async (request: MaterialRequestRecord) => {
+    setActiveRequestId(request.id);
+    try {
+      const response = await fetch(`${REQUEST_API_BASE}/${request.id}/outbound`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': tenantId.trim(),
+        },
+        body: JSON.stringify({
+          operatorId: 'warehouse-keeper-01',
+          operatorName: '仓管员',
+          warehouseCode: 'WH-P30',
+          note: `${request.requesterName} 申领物资已完成出库`,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await readResponseMessage(response));
+      }
+
+      success(`${request.id} 已完成出库`);
+      await loadMaterialRequests();
+    } catch (requestError) {
+      error(`出库失败：${requestError instanceof Error ? requestError.message : '未知错误'}`);
+    } finally {
+      setActiveRequestId(null);
+    }
+  }, [tenantId, success, error, loadMaterialRequests]);
+
+  const COLUMNS: TableColumn<Item>[] = [
+    {
+      title: '编号',
+      key: 'id',
+      width: '110px',
+      render: (row) => <span style={{ color: '#93c5fd', fontWeight: 600 }}>{row.id}</span>,
+    },
+    {
+      title: '名称',
+      key: 'name',
+      width: '160px',
+      render: (row) => (
+        <div>
+          <div style={{ color: '#f8fafc', fontWeight: 600 }}>{row.name}</div>
+          <div style={{ color: '#94a3b8', fontSize: 12 }}>{row.supplier}</div>
+        </div>
+      ),
+    },
+    {
+      title: '分类',
+      key: 'category',
+      width: '110px',
+      render: (row) => (
+        <Tag size="sm" variant={formatCategoryVariant(row.category)}>
+          {row.category}
+        </Tag>
+      ),
+    },
+    {
+      title: '库存',
+      key: 'stock',
+      width: '100px',
+      render: (row) => (
+        <span
+          style={{
+            color: row.stock < row.threshold ? '#f87171' : '#e2e8f0',
+            fontWeight: row.stock < row.threshold ? 700 : 400,
+          }}
+        >
+          {row.stock}
+          {row.unit}
+        </span>
+      ),
+    },
+    {
+      title: '预警线',
+      key: 'threshold',
+      width: '100px',
+      render: (row) => `${row.threshold}${row.unit}`,
+    },
+    {
+      title: '状态',
+      key: 'status',
+      width: '90px',
+      render: (row) => (
+        <Tag size="sm" variant={STATUS_VARIANT[row.status]}>
+          {row.status === 'low' ? '需补货' : '正常'}
+        </Tag>
+      ),
+    },
+    {
+      title: '库存水位',
+      key: 'level',
+      width: '180px',
+      render: (row) => {
+        const percent = Math.round((row.stock / row.maxStock) * 100);
+        const variant = row.stock < row.threshold ? 'danger' : percent > 85 ? 'info' : 'success';
+        return (
+          <div style={{ minWidth: 120 }}>
+            <Progress value={row.stock} max={row.maxStock} variant={variant} height={8} showLabel={false} />
+          </div>
+        );
+      },
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: '220px',
+      render: (row) => (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Button size="sm" variant="secondary" onClick={() => setShowDetail(row)}>
+            详情
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => openRequestModal(row)}>
+            出库
+          </Button>
+          <Button
+            size="sm"
+            variant={row.stock < row.threshold ? 'danger' : 'primary'}
+            onClick={() => info(`${row.name} 已加入补货跟踪`)}
+          >
+            {row.stock < row.minStock ? '紧急采购' : '补货'}
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  const requestColumns: TableColumn<MaterialRequestRecord>[] = [
+    {
+      title: '申领单',
+      key: 'id',
+      width: '180px',
+      render: (row) => (
+        <div>
+          <div style={{ color: '#93c5fd', fontWeight: 600 }}>{row.id}</div>
+          <div style={{ color: '#94a3b8', fontSize: 12 }}>{row.storeId ?? storeId}</div>
+        </div>
+      ),
+    },
+    {
+      title: '申领人',
+      key: 'requester',
+      width: '140px',
+      render: (row) => (
+        <div>
+          <div style={{ color: '#f8fafc', fontWeight: 600 }}>{row.requesterName}</div>
+          <div style={{ color: '#94a3b8', fontSize: 12 }}>{row.department ?? '未分组'}</div>
+        </div>
+      ),
+    },
+    {
+      title: '物料',
+      key: 'items',
+      width: '220px',
+      render: (row) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {row.items.map((item) => (
+            <div key={`${row.id}-${item.itemId}`}>
+              <div style={{ color: '#e2e8f0' }}>{item.itemName}</div>
+              <div style={{ color: '#94a3b8', fontSize: 12 }}>
+                {item.quantity}
+                {item.unit} · {item.category}
+              </div>
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      title: '用途',
+      key: 'purpose',
+      width: '180px',
+      render: (row) => <span style={{ color: '#e2e8f0' }}>{row.purpose}</span>,
+    },
+    {
+      title: '状态',
+      key: 'status',
+      width: '100px',
+      render: (row) => (
+        <Tag size="sm" variant={REQUEST_STATUS_VARIANT[row.status]}>
+          {REQUEST_STATUS_LABEL[row.status]}
+        </Tag>
+      ),
+    },
+    {
+      title: '流转记录',
+      key: 'timeline',
+      width: '220px',
+      render: (row) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, color: '#94a3b8', fontSize: 12 }}>
+          <span>创建: {new Date(row.createdAt).toLocaleString()}</span>
+          {row.approval ? <span>审批: {row.approval.approverName}</span> : <span>审批: 待处理</span>}
+          {row.outbound ? <span>出库: {row.outbound.operatorName}</span> : <span>出库: 待处理</span>}
+        </div>
+      ),
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: '190px',
+      render: (row) => (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {row.status === 'pending_approval' ? (
+            <Button
+              size="sm"
+              variant="primary"
+              disabled={activeRequestId === row.id}
+              onClick={() => void handleApproveMaterialRequest(row)}
+            >
+              审批
+            </Button>
+          ) : null}
+          {row.status === 'approved' ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={activeRequestId === row.id}
+              onClick={() => void handleOutboundMaterialRequest(row)}
+            >
+              确认出库
+            </Button>
+          ) : null}
+          {row.status === 'outbound' ? (
+            <Tag size="sm" variant="success">
+              已闭环
+            </Tag>
+          ) : null}
+        </div>
+      ),
+    },
+  ];
+
+  const tabItems: Array<{ key: InventoryTab; label: string }> = [
+    { key: 'list', label: '物资列表' },
+    { key: 'category', label: '分类概览' },
   ];
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+    <PageShell title="库存管理">
+      <ToastContainer toasts={toasts} onDismiss={dismiss} />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ color: '#f8fafc', margin: 0 }}>📦 库存管理</h2>
-          <Space>
-            <Button onClick={() => setShowRestock(true)}>入库记录</Button>
-            <Button>盘点</Button>
-            <Button type="primary" onClick={() => setShowAdd(true)}>+ 添加物资</Button>
-          </Space>
+          <div>
+            <h2 style={{ color: '#f8fafc', margin: 0 }}>📦 库存管理</h2>
+            <div style={{ color: '#94a3b8', fontSize: 13 }}>物料申领 · 安全库存 · 补货跟踪 · P-30 后勤出库联调</div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="secondary" onClick={() => setShowRestock(true)}>
+              入库记录
+            </Button>
+            <Button variant="outline" onClick={() => info('盘点任务已创建')}>
+              盘点
+            </Button>
+            <Button onClick={() => openRequestModal()}>+ 发起申领</Button>
+          </div>
         </div>
 
-        <Row gutter={[16, 16]}>
-          <Col span={3}><Card size="small"><Statistic title="物资种类" value={ITEMS.length} /></Card></Col>
-          <Col span={3}><Card size="small"><Statistic title="低于安全库存" value={lowStock.length} valueStyle={{ color: '#f87171' }} /></Card></Col>
-          <Col span={3}><Card size="small"><Statistic title="库存充足" value={safeCount} valueStyle={{ color: '#34d399' }} /></Card></Col>
-          <Col span={3}><Card size="small"><Statistic title="库存总价值" value={totalVal.toLocaleString()} prefix="¥" /></Card></Col>
-          <Col span={3}><Card size="small"><Statistic title="平均库存水位" value={lowStock.length > 0 ? '⚠️' : '✓'} valueStyle={{ color: lowStock.length > 0 ? '#f87171' : '#34d399' }} /></Card></Col>
-          <Col span={3}><Card size="small"><Statistic title="供应商数" value={[...new Set(ITEMS.map(i => i.supplier))].length} /></Card></Col>
-          <Col span={3}><Card size="small"><Statistic title="本月补货" value={RESTOCK_LOG.length} suffix="次" /></Card></Col>
-          <Col span={3}><Card size="small"><Statistic title="库存品类" value={CATEGORIES.length} /></Card></Col>
-        </Row>
+        <div style={CARD_GRID_STYLE}>
+          <Card padding={16}>
+            <Statistic label="物资种类" value={ITEMS.length} size="sm" />
+          </Card>
+          <Card padding={16}>
+            <Statistic label="需补货" value={lowStock.length} size="sm" variant="danger" />
+          </Card>
+          <Card padding={16}>
+            <Statistic label="库存总价值" value={totalVal} prefix="¥" size="sm" groupSeparator />
+          </Card>
+          <Card padding={16}>
+            <Statistic label="总库存量" value={totalStock} size="sm" groupSeparator />
+          </Card>
+          <Card padding={16}>
+            <Statistic label="待审批申领" value={requestStats.pending} size="sm" variant="warning" />
+          </Card>
+          <Card padding={16}>
+            <Statistic label="待出库申领" value={requestStats.approved} size="sm" variant="info" />
+          </Card>
+          <Card padding={16}>
+            <Statistic label="已出库闭环" value={requestStats.outbound} size="sm" variant="success" />
+          </Card>
+          <Card padding={16}>
+            <Statistic label="库存充足" value={safeCount} size="sm" variant="success" />
+          </Card>
+          <Card padding={16}>
+            <Statistic label="本月补货" value={RESTOCK_LOG.length} suffix="次" size="sm" variant="info" />
+          </Card>
+          <Card padding={16}>
+            <Statistic label="库存品类" value={CATEGORIES.length} size="sm" />
+          </Card>
+        </div>
 
-        <Tabs activeKey={tabKey} onChange={setTabKey} items={[
-          { key:'list', label:'物资列表',
-            children: <Card>
-              <Space style={{ width: '100%', marginBottom: 12, display:'flex', flexWrap:'wrap' }}>
-                <Input.Search placeholder="搜索名称/分类/供应商" style={{ width: 260 }} value={search} onChange={e => setSearch(e.target.value)} />
-                <Select value={catFilter} onChange={setCatFilter} style={{ width: 120 }}
-                  options={[{value:'all', label:'全部分类'}, ...CATEGORIES.map(c => ({value:c, label:c}))]} />
-                <Button size="small" style={{marginLeft:'auto'}}>导出清单</Button>
-              </Space>
-              {filtered.length === 0 ? <Empty description="无匹配物资" /> :
-                <Table dataSource={filtered} columns={columns} rowKey="id" pagination={{pageSize: 8}} />
-              }
-            </Card>
-          },
-          { key:'category', label:'分类概览',
-            children: <Row gutter={[16, 16]}>
-              {catSummary.map(cat => (
-                <Col key={cat.name} span={8}>
-                  <Card title={cat.name} size="small" extra={<Tag color={cat.low > 0 ? 'red' : 'green'}>{cat.low > 0 ? `${cat.low}项不足` : '正常'}</Tag>}>
-                    <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
-                      <span style={{color:'#94a3b8'}}>种类</span>
-                      <span style={{color:'#e2e8f0'}}>{cat.count}项</span>
-                    </div>
-                    <div style={{display:'flex', justifyContent:'space-between'}}>
-                      <span style={{color:'#94a3b8'}}>总价值</span>
-                      <span style={{color:'#e2e8f0'}}>¥{cat.value.toLocaleString()}</span>
+        <Card>
+          <Tabs items={tabItems} activeKey={tabKey} onChange={setTabKey} />
+
+          <div style={{ marginTop: 16 }}>
+            {tabKey === 'list' ? (
+              <>
+                <div style={FILTER_GRID_STYLE}>
+                  <Input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="搜索编号/名称/分类/供应商"
+                    allowClear
+                    block
+                  />
+
+                  <Select
+                    value={catFilter}
+                    onChange={setCatFilter}
+                    options={[
+                      { value: 'all', label: '全部分类' },
+                      ...CATEGORIES.map((category) => ({ value: category, label: category })),
+                    ]}
+                    style={{ width: '100%' }}
+                    minWidth={160}
+                  />
+
+                  <Button variant="outline" onClick={() => info('导出清单任务已提交')}>
+                    导出清单
+                  </Button>
+                </div>
+
+                {filtered.length === 0 ? (
+                  <Empty description="无匹配物资" />
+                ) : (
+                  <Table<Item> rows={filtered} columns={COLUMNS} rowKey={(row) => row.id} />
+                )}
+              </>
+            ) : (
+              <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+                {categorySummary.map((category) => (
+                  <Card
+                    key={category.name}
+                    title={category.name}
+                    headerActions={
+                      <Tag size="sm" variant={category.low > 0 ? 'warning' : 'success'}>
+                        {category.low > 0 ? `${category.low}项不足` : '正常'}
+                      </Tag>
+                    }
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#94a3b8' }}>种类</span>
+                        <span style={{ color: '#e2e8f0' }}>{category.count}项</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#94a3b8' }}>总价值</span>
+                        <span style={{ color: '#e2e8f0' }}>¥{category.value.toLocaleString()}</span>
+                      </div>
                     </div>
                   </Card>
-                </Col>
-              ))}
-            </Row>
-          },
-        ]} />
+                ))}
+              </div>
+            )}
+          </div>
+        </Card>
 
-        <Modal title={`物资详情 - ${showDetail?.name || ''}`} open={!!showDetail} onCancel={() => setShowDetail(null)} footer={<Button onClick={() => setShowDetail(null)}>关闭</Button>}>
-          {showDetail && <Space direction="vertical" style={{width:'100%'}}>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-              <div><div style={{color:'#94a3b8',fontSize:12}}>名称</div><div style={{color:'#e2e8f0'}}>{showDetail.name}</div></div>
-              <div><div style={{color:'#94a3b8',fontSize:12}}>分类</div><Tag>{showDetail.category}</Tag></div>
-              <div><div style={{color:'#94a3b8',fontSize:12}}>库存</div><span style={{color: showDetail.stock < showDetail.minStock ? '#f87171' : '#e2e8f0',fontWeight: showDetail.stock < showDetail.minStock ? 700 : 400}}>{showDetail.stock}{showDetail.unit}</span></div>
-              <div><div style={{color:'#94a3b8',fontSize:12}}>安全库存</div><span style={{color:'#e2e8f0'}}>{showDetail.minStock}{showDetail.unit}</span></div>
-              <div><div style={{color:'#94a3b8',fontSize:12}}>单价</div><span style={{color:'#e2e8f0'}}>¥{showDetail.cost}</span></div>
-              <div><div style={{color:'#94a3b8',fontSize:12}}>总价值</div><span style={{color:'#e2e8f0'}}>¥{showDetail.totalValue.toLocaleString()}</span></div>
-              <div><div style={{color:'#94a3b8',fontSize:12}}>供应商</div><span style={{color:'#e2e8f0'}}>{showDetail.supplier}</span></div>
-              <div><div style={{color:'#94a3b8',fontSize:12}}>上次补货</div><span style={{color:'#e2e8f0'}}>{showDetail.lastRestock}</span></div>
+        <Card
+          title="物料申领流转"
+          subtitle="已接入 /api/logistics/material-requests，按 tenant/store 维度执行申领、审批、出库"
+          headerActions={
+            <Tag size="sm" variant={requestStats.pending > 0 ? 'warning' : 'success'}>
+              {requestStats.pending > 0 ? `${requestStats.pending} 单待审批` : '流转平稳'}
+            </Tag>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={REQUEST_FILTER_GRID_STYLE}>
+              <Input
+                value={tenantId}
+                onChange={(event) => setTenantId(event.target.value)}
+                placeholder="tenantId"
+                block
+              />
+              <Select
+                value={requestStatusFilter}
+                onChange={(value) => setRequestStatusFilter(value as RequestStatusFilter)}
+                options={[
+                  { value: 'all', label: '全部状态' },
+                  { value: 'pending_approval', label: '待审批' },
+                  { value: 'approved', label: '待出库' },
+                  { value: 'outbound', label: '已出库' },
+                ]}
+                style={{ width: '100%' }}
+              />
+              <Button variant="secondary" onClick={() => void loadMaterialRequests()}>
+                刷新申领
+              </Button>
+              <Button onClick={() => openRequestModal()}>新建申领</Button>
             </div>
-          </Space>}
+
+            <div style={{ display: 'flex', gap: 12, color: '#94a3b8', fontSize: 13 }}>
+              <span>tenant: {tenantId || '-'}</span>
+              <span>store: {storeId}</span>
+              <span>API: {REQUEST_API_BASE}</span>
+            </div>
+
+            {requestsLoading ? (
+              <div style={{ color: '#94a3b8', padding: '12px 0' }}>加载申领流转中...</div>
+            ) : filteredRequests.length === 0 ? (
+              <Empty description="暂无物料申领单" />
+            ) : (
+              <Table<MaterialRequestRecord> rows={filteredRequests} columns={requestColumns} rowKey={(row) => row.id} />
+            )}
+          </div>
+        </Card>
+
+        <Modal
+          open={Boolean(showDetail)}
+          onClose={() => setShowDetail(null)}
+          title={`物资详情 - ${showDetail?.name ?? ''}`}
+          footer={
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button variant="secondary" onClick={() => setShowDetail(null)}>
+                关闭
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (showDetail) {
+                    openRequestModal(showDetail);
+                    setShowDetail(null);
+                  }
+                }}
+              >
+                发起申领
+              </Button>
+            </div>
+          }
+        >
+          {showDetail ? (
+            <div style={DETAIL_GRID_STYLE}>
+              <div>
+                <div style={{ color: '#94a3b8', fontSize: 12 }}>名称</div>
+                <div style={{ color: '#e2e8f0' }}>{showDetail.name}</div>
+              </div>
+              <div>
+                <div style={{ color: '#94a3b8', fontSize: 12 }}>分类</div>
+                <Tag size="sm" variant={formatCategoryVariant(showDetail.category)}>
+                  {showDetail.category}
+                </Tag>
+              </div>
+              <div>
+                <div style={{ color: '#94a3b8', fontSize: 12 }}>库存</div>
+                <span
+                  style={{
+                    color: showDetail.stock < showDetail.threshold ? '#f87171' : '#e2e8f0',
+                    fontWeight: showDetail.stock < showDetail.threshold ? 700 : 400,
+                  }}
+                >
+                  {showDetail.stock}
+                  {showDetail.unit}
+                </span>
+              </div>
+              <div>
+                <div style={{ color: '#94a3b8', fontSize: 12 }}>预警线</div>
+                <span style={{ color: '#e2e8f0' }}>
+                  {showDetail.threshold}
+                  {showDetail.unit}
+                </span>
+              </div>
+              <div>
+                <div style={{ color: '#94a3b8', fontSize: 12 }}>单价</div>
+                <span style={{ color: '#e2e8f0' }}>¥{showDetail.cost}</span>
+              </div>
+              <div>
+                <div style={{ color: '#94a3b8', fontSize: 12 }}>总价值</div>
+                <span style={{ color: '#e2e8f0' }}>¥{showDetail.totalValue.toLocaleString()}</span>
+              </div>
+              <div>
+                <div style={{ color: '#94a3b8', fontSize: 12 }}>供应商</div>
+                <span style={{ color: '#e2e8f0' }}>{showDetail.supplier}</span>
+              </div>
+              <div>
+                <div style={{ color: '#94a3b8', fontSize: 12 }}>上次补货</div>
+                <span style={{ color: '#e2e8f0' }}>{showDetail.lastRestock}</span>
+              </div>
+            </div>
+          ) : null}
         </Modal>
 
-        <Modal title="添加入库记录" open={showRestock} onCancel={() => setShowRestock(false)} onOk={() => {message.success('入库记录已添加'); setShowRestock(false);}} width={500}>
-          <Space direction="vertical" style={{width:'100%'}}>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-              <Input placeholder="物资名称" /><Input placeholder="入库数量" type="number" />
-              <Input placeholder="入库单价" type="number" /><Input placeholder="供应商" />
-              <Input placeholder="批次号" style={{gridColumn:'1 / -1'}} />
-              <Input.TextArea rows={3} placeholder="备注" style={{gridColumn:'1 / -1'}} />
+        <Modal
+          open={showRestock}
+          onClose={() => setShowRestock(false)}
+          title="添加入库记录"
+          footer={
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button variant="secondary" onClick={() => setShowRestock(false)}>
+                取消
+              </Button>
+              <Button
+                onClick={() => {
+                  success('入库记录已添加');
+                  setShowRestock(false);
+                }}
+              >
+                确认入库
+              </Button>
             </div>
-          </Space>
+          }
+        >
+          <div style={DETAIL_GRID_STYLE}>
+            <Input placeholder="物资名称" block />
+            <Input placeholder="入库数量" type="number" block />
+            <Input placeholder="入库单价" type="number" block />
+            <Input placeholder="供应商" block />
+            <Input placeholder="批次号" block style={{ gridColumn: '1 / -1' }} />
+            <textarea
+              rows={3}
+              placeholder="备注"
+              style={{
+                gridColumn: '1 / -1',
+                width: '100%',
+                borderRadius: 8,
+                border: '1px solid #d1d5db',
+                padding: 12,
+                resize: 'vertical',
+                minHeight: 96,
+              }}
+            />
+          </div>
         </Modal>
 
-        <Modal title="添加物资" open={showAdd} onCancel={() => setShowAdd(false)} onOk={() => { message.success('物资已添加'); setShowAdd(false); }} okText="添加" width={480}>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
-              <Input placeholder="物资名称" /><Input placeholder="分类" />
-              <Input placeholder="单位" /><Input placeholder="初始库存" type="number" />
-              <Input placeholder="安全库存" type="number" /><Input placeholder="最大库存" type="number" />
-              <Input placeholder="成本价" type="number" /><Input placeholder="供应商" />
+        <Modal
+          open={showRequestModal}
+          onClose={() => setShowRequestModal(false)}
+          title="发起物料申领"
+          footer={
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button variant="secondary" onClick={() => setShowRequestModal(false)}>
+                取消
+              </Button>
+              <Button disabled={requestSubmitting} onClick={() => void handleCreateMaterialRequest()}>
+                {requestSubmitting ? '提交中...' : '提交申领'}
+              </Button>
             </div>
-          </Space>
+          }
+        >
+          <div style={DETAIL_GRID_STYLE}>
+            <Input value={tenantId} onChange={(event) => setTenantId(event.target.value)} label="租户" block />
+            <Input value={storeId} label="门店" disabled block />
+            <Select
+              value={requestItemId}
+              onChange={setRequestItemId}
+              options={ITEMS.map((item) => ({
+                value: item.id,
+                label: `${item.id} · ${item.name}`,
+              }))}
+              style={{ width: '100%' }}
+              minWidth={220}
+            />
+            <Input value={requestQuantity} onChange={(event) => setRequestQuantity(event.target.value)} label="数量" type="number" block />
+            <Input value={requesterName} onChange={(event) => setRequesterName(event.target.value)} label="申领人" block />
+            <Input value={requestDepartment} onChange={(event) => setRequestDepartment(event.target.value)} label="部门" block />
+            <Input value={requestPurpose} onChange={(event) => setRequestPurpose(event.target.value)} label="用途" block style={{ gridColumn: '1 / -1' }} />
+            {selectedRequestItem ? (
+              <Card
+                variant="outlined"
+                padding={16}
+                style={{ gridColumn: '1 / -1' }}
+                title="当前申领物资"
+                subtitle={`${selectedRequestItem.category} · 当前库存 ${selectedRequestItem.stock}${selectedRequestItem.unit}`}
+                headerActions={
+                  <Tag size="sm" variant={selectedRequestItem.stock < selectedRequestItem.threshold ? 'warning' : 'success'}>
+                    {selectedRequestItem.stock < selectedRequestItem.threshold ? '低库存' : '库存正常'}
+                  </Tag>
+                }
+              >
+                <div style={{ color: '#94a3b8', fontSize: 13 }}>
+                  安全库存 {selectedRequestItem.threshold}
+                  {selectedRequestItem.unit} · 供应商 {selectedRequestItem.supplier}
+                </div>
+              </Card>
+            ) : null}
+          </div>
         </Modal>
-      </Space>
+      </div>
     </PageShell>
   );
 }

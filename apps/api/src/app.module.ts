@@ -118,6 +118,7 @@ import { OpenAPIModule } from './modules/openapi/openapi.module';
 import { LocaleModule } from './modules/locale/locale.module';
 import { DbKnowledgeModule } from './modules/db-knowledge/db-knowledge.module';
 import { ScoutModule } from './modules/scout/scout.module';
+import { LogisticsModule } from './modules/logistics/logistics.module';
 
 @Module({
   imports: [
@@ -248,6 +249,7 @@ import { ScoutModule } from './modules/scout/scout.module';
     LocaleModule,
     DbKnowledgeModule,
     ScoutModule,
+    LogisticsModule,
   ],
   providers: [
     RequestGovernanceService,

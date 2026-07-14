@@ -296,14 +296,14 @@ model User {
 }
 
 model MemberProfile {
-  id          String   @id @default(cuid())
+  id          String                  @id @default(cuid())
   tenantId    String
   userId      String?
-  points      Int      @default(0)
-  growthValue Int      @default(0)
-  svipStatus  String   @default("INACTIVE")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  points      Int                     @default(0)
+  growthValue Int                     @default(0)
+  svipStatus  String                  @default("INACTIVE")
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
   extension   MemberProfileExtension?
 }
 
@@ -347,7 +347,7 @@ model LytMemberSnapshot {
 }
 
 model LytOrderSnapshot {
-  id                  String   @id @default(cuid())
+  id                  String    @id @default(cuid())
   tenantId            String
   brandId             String?
   storeId             String?
@@ -357,40 +357,40 @@ model LytOrderSnapshot {
   couponCode          String?
   blindboxPlanId      String?
   blindboxQuantity    Int?
-  amount              Float    @default(0)
-  discountAmount      Float    @default(0)
-  payableAmount       Float    @default(0)
-  currency            String   @default("CNY")
-  status              String   @default("UPDATED")
+  amount              Float     @default(0)
+  discountAmount      Float     @default(0)
+  payableAmount       Float     @default(0)
+  currency            String    @default("CNY")
+  status              String    @default("UPDATED")
   paidAt              DateTime?
   updatedAtFromSource DateTime
   rawVersion          String?
   rawPayload          Json?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   @@unique([tenantId, externalOrderId])
   @@index([tenantId, storeId, updatedAtFromSource])
 }
 
 model LytPaymentSnapshot {
-  id                  String   @id @default(cuid())
+  id                  String    @id @default(cuid())
   tenantId            String
   brandId             String?
   storeId             String?
   externalPaymentId   String
   externalOrderId     String
   paymentChannel      String?
-  paymentStatus       String   @default("PENDING")
-  amount              Float    @default(0)
-  currency            String   @default("CNY")
+  paymentStatus       String    @default("PENDING")
+  amount              Float     @default(0)
+  currency            String    @default("CNY")
   transactionNo       String?
   paidAt              DateTime?
   updatedAtFromSource DateTime
   rawVersion          String?
   rawPayload          Json?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   @@unique([tenantId, externalPaymentId])
   @@index([tenantId, externalOrderId])
@@ -398,29 +398,29 @@ model LytPaymentSnapshot {
 }
 
 model MemberOperationsTask {
-  taskId             String   @id
-  tenantId           String
-  brandId            String?
-  storeId            String?
-  marketCode         String?
-  memberId           String
-  actionCode         String
-  title              String
-  reason             String
-  channel            String
-  priority           String
-  status             String
-  executionLane      String
-  source             String
-  sourceOrderId      String?
-  sourcePaymentId    String?
-  executionSummary   String?
-  executionTargetId  String?
-  executedAt         DateTime?
-  dedupeKey          String   @unique
-  createdAt          DateTime
-  scheduledAt        DateTime
-  updatedAt          DateTime @updatedAt
+  taskId            String    @id
+  tenantId          String
+  brandId           String?
+  storeId           String?
+  marketCode        String?
+  memberId          String
+  actionCode        String
+  title             String
+  reason            String
+  channel           String
+  priority          String
+  status            String
+  executionLane     String
+  source            String
+  sourceOrderId     String?
+  sourcePaymentId   String?
+  executionSummary  String?
+  executionTargetId String?
+  executedAt        DateTime?
+  dedupeKey         String    @unique
+  createdAt         DateTime
+  scheduledAt       DateTime
+  updatedAt         DateTime  @updatedAt
 
   @@index([tenantId, memberId, createdAt])
   @@index([tenantId, sourceOrderId])
@@ -478,182 +478,182 @@ model AuditLog {
 }
 
 model LytConnection {
-  id          String   @id @default(cuid())
-  tenantId    String
-  storeId     String
-  endpoint    String
-  authMode    String
-  credential  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  tenantId   String
+  storeId    String
+  endpoint   String
+  authMode   String
+  credential String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model MarketProfile {
-  id                  String                   @id @default(cuid())
-  marketCode          String                   @unique
-  marketName          String
-  countryCode         String
-  defaultLanguage     String
-  supportedLanguages  String[]
-  timezone            String
-  currencyCode        String
-  currencySymbol      String
-  taxMode             String
-  taxLabel            String
-  taxRate             Decimal?                 @db.Decimal(5, 2)
-  networkRegion       String
-  apiBaseUrl          String
-  cdnBaseUrl          String
-  callbackBaseUrl     String?
-  emailProvider       String
-  emailFromName       String
-  emailFromAddress    String
-  emailReplyTo        String?
-  socialDefaults      String[]
-  portals             PortalSite[]
-  tenants             Tenant[]                 @relation("TenantDefaultMarket")
-  brands              Brand[]                  @relation("BrandDefaultMarket")
-  stores              Store[]                  @relation("StoreDefaultMarket")
-  regionalConfigs     RegionalConfig[]
-  overrideLinks       RegionalConfigOverride[]
-  emailChannels       EmailChannelConfig[]
-  socialChannels      SocialChannelConfig[]
-  taxPolicies         TaxPolicyConfig[]
-  createdAt           DateTime                 @default(now())
-  updatedAt           DateTime                 @updatedAt
+  id                 String                   @id @default(cuid())
+  marketCode         String                   @unique
+  marketName         String
+  countryCode        String
+  defaultLanguage    String
+  supportedLanguages String[]
+  timezone           String
+  currencyCode       String
+  currencySymbol     String
+  taxMode            String
+  taxLabel           String
+  taxRate            Decimal?                 @db.Decimal(5, 2)
+  networkRegion      String
+  apiBaseUrl         String
+  cdnBaseUrl         String
+  callbackBaseUrl    String?
+  emailProvider      String
+  emailFromName      String
+  emailFromAddress   String
+  emailReplyTo       String?
+  socialDefaults     String[]
+  portals            PortalSite[]
+  tenants            Tenant[]                 @relation("TenantDefaultMarket")
+  brands             Brand[]                  @relation("BrandDefaultMarket")
+  stores             Store[]                  @relation("StoreDefaultMarket")
+  regionalConfigs    RegionalConfig[]
+  overrideLinks      RegionalConfigOverride[]
+  emailChannels      EmailChannelConfig[]
+  socialChannels     SocialChannelConfig[]
+  taxPolicies        TaxPolicyConfig[]
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
 }
 
 model RegionalConfig {
-  id               String                   @id @default(cuid())
-  marketProfileId  String
-  marketProfile    MarketProfile            @relation(fields: [marketProfileId], references: [id])
-  localePolicy     Json
-  timezonePolicy   Json
-  currencyPolicy   Json
-  taxPolicy        Json
-  networkPolicy    Json
-  emailPolicy      Json
-  socialPolicy     Json
-  overrides        RegionalConfigOverride[]
-  createdAt        DateTime                 @default(now())
-  updatedAt        DateTime                 @updatedAt
+  id              String                   @id @default(cuid())
+  marketProfileId String
+  marketProfile   MarketProfile            @relation(fields: [marketProfileId], references: [id])
+  localePolicy    Json
+  timezonePolicy  Json
+  currencyPolicy  Json
+  taxPolicy       Json
+  networkPolicy   Json
+  emailPolicy     Json
+  socialPolicy    Json
+  overrides       RegionalConfigOverride[]
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
 }
 
 model RegionalConfigOverride {
-  id                  String                @id @default(cuid())
-  scopeType           PortalScopeType
-  inheritanceMode     ConfigInheritanceMode
-  marketProfileId     String
-  marketProfile       MarketProfile         @relation(fields: [marketProfileId], references: [id])
-  regionalConfigId    String?
-  regionalConfig      RegionalConfig?       @relation(fields: [regionalConfigId], references: [id])
-  tenantId            String?
-  brandId             String?
-  storeId             String?
-  localeOverride      Json?
-  timezoneOverride    Json?
-  currencyOverride    Json?
-  taxOverride         Json?
-  networkOverride     Json?
-  emailOverride       Json?
-  socialOverride      Json?
-  tenant              Tenant?               @relation("TenantOverrides", fields: [tenantId], references: [id])
-  brand               Brand?                @relation("BrandOverrides", fields: [brandId], references: [id])
-  store               Store?                @relation("StoreOverrides", fields: [storeId], references: [id])
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-}
-
-model PortalSite {
-  id               String          @id @default(cuid())
+  id               String                @id @default(cuid())
   scopeType        PortalScopeType
-  audience         PortalAudience
-  channel          PortalChannel
+  inheritanceMode  ConfigInheritanceMode
+  marketProfileId  String
+  marketProfile    MarketProfile         @relation(fields: [marketProfileId], references: [id])
+  regionalConfigId String?
+  regionalConfig   RegionalConfig?       @relation(fields: [regionalConfigId], references: [id])
   tenantId         String?
   brandId          String?
   storeId          String?
-  marketProfileId  String
-  code             String
-  name             String
-  domain           String?
-  pathPrefix       String?
-  status           String          @default("ACTIVE")
-  loginPath        String?
-  ssoEnabled       Boolean         @default(false)
-  heroTitle        String?
-  heroSubtitle     String?
-  solutionTags     String[]
-  marketProfile    MarketProfile   @relation(fields: [marketProfileId], references: [id])
-  tenant           Tenant?         @relation("TenantPortalSites", fields: [tenantId], references: [id])
-  brand            Brand?          @relation("BrandPortalSites", fields: [brandId], references: [id])
-  store            Store?          @relation("StorePortalSites", fields: [storeId], references: [id])
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  localeOverride   Json?
+  timezoneOverride Json?
+  currencyOverride Json?
+  taxOverride      Json?
+  networkOverride  Json?
+  emailOverride    Json?
+  socialOverride   Json?
+  tenant           Tenant?               @relation("TenantOverrides", fields: [tenantId], references: [id])
+  brand            Brand?                @relation("BrandOverrides", fields: [brandId], references: [id])
+  store            Store?                @relation("StoreOverrides", fields: [storeId], references: [id])
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+}
+
+model PortalSite {
+  id              String          @id @default(cuid())
+  scopeType       PortalScopeType
+  audience        PortalAudience
+  channel         PortalChannel
+  tenantId        String?
+  brandId         String?
+  storeId         String?
+  marketProfileId String
+  code            String
+  name            String
+  domain          String?
+  pathPrefix      String?
+  status          String          @default("ACTIVE")
+  loginPath       String?
+  ssoEnabled      Boolean         @default(false)
+  heroTitle       String?
+  heroSubtitle    String?
+  solutionTags    String[]
+  marketProfile   MarketProfile   @relation(fields: [marketProfileId], references: [id])
+  tenant          Tenant?         @relation("TenantPortalSites", fields: [tenantId], references: [id])
+  brand           Brand?          @relation("BrandPortalSites", fields: [brandId], references: [id])
+  store           Store?          @relation("StorePortalSites", fields: [storeId], references: [id])
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
 
 model EmailChannelConfig {
-  id               String        @id @default(cuid())
-  marketProfileId  String
-  marketProfile    MarketProfile @relation(fields: [marketProfileId], references: [id])
-  provider         String
-  fromName         String
-  fromAddress      String
-  replyTo          String?
-  purpose          String
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  marketProfileId String
+  marketProfile   MarketProfile @relation(fields: [marketProfileId], references: [id])
+  provider        String
+  fromName        String
+  fromAddress     String
+  replyTo         String?
+  purpose         String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model SocialChannelConfig {
-  id               String        @id @default(cuid())
-  marketProfileId  String
-  marketProfile    MarketProfile @relation(fields: [marketProfileId], references: [id])
-  platform         String
-  handle           String?
-  profileUrl       String?
-  usage            String
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  marketProfileId String
+  marketProfile   MarketProfile @relation(fields: [marketProfileId], references: [id])
+  platform        String
+  handle          String?
+  profileUrl      String?
+  usage           String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model TaxPolicyConfig {
-  id               String        @id @default(cuid())
-  marketProfileId  String
-  marketProfile    MarketProfile @relation(fields: [marketProfileId], references: [id])
-  taxMode          String
-  taxLabel         String
-  taxRate          Decimal?      @db.Decimal(5, 2)
-  invoiceProvider  String?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  marketProfileId String
+  marketProfile   MarketProfile @relation(fields: [marketProfileId], references: [id])
+  taxMode         String
+  taxLabel        String
+  taxRate         Decimal?      @db.Decimal(5, 2)
+  invoiceProvider String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model IdentityAccount {
-  id             String              @id @default(cuid())
-  subjectType    IdentitySubjectType
-  tenantId       String?
-  brandId        String?
-  storeId        String?
-  userId         String?
-  subjectKey     String              @unique
-  displayName    String
-  username       String?
-  mobile         String?
-  email          String?
-  status         String              @default("ACTIVE")
-  loginPolicyKey String?
+  id              String                   @id @default(cuid())
+  subjectType     IdentitySubjectType
+  tenantId        String?
+  brandId         String?
+  storeId         String?
+  userId          String?
+  subjectKey      String                   @unique
+  displayName     String
+  username        String?
+  mobile          String?
+  email           String?
+  status          String                   @default("ACTIVE")
+  loginPolicyKey  String?
   organizationIds String[]
-  roleKeys       String[]
-  metadata       Json?
-  memberships    OrganizationMembership[]
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  roleKeys        String[]
+  metadata        Json?
+  memberships     OrganizationMembership[]
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
 
   @@index([tenantId, subjectType])
 }
 
 model OrganizationNode {
-  id          String                  @id @default(cuid())
+  id          String                   @id @default(cuid())
   nodeType    OrganizationNodeType
   tenantId    String?
   brandId     String?
@@ -662,29 +662,29 @@ model OrganizationNode {
   name        String
   parentId    String?
   attributes  Json?
-  parent      OrganizationNode?       @relation("OrganizationTree", fields: [parentId], references: [id])
-  children    OrganizationNode[]      @relation("OrganizationTree")
+  parent      OrganizationNode?        @relation("OrganizationTree", fields: [parentId], references: [id])
+  children    OrganizationNode[]       @relation("OrganizationTree")
   memberships OrganizationMembership[]
-  createdAt   DateTime                @default(now())
-  updatedAt   DateTime                @updatedAt
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
 
-  @@index([tenantId, nodeType])
   @@unique([tenantId, code])
+  @@index([tenantId, nodeType])
 }
 
 model OrganizationMembership {
-  id                 String          @id @default(cuid())
+  id                 String           @id @default(cuid())
   identityAccountId  String
   organizationNodeId String
   titles             String[]
-  isPrimary          Boolean         @default(false)
+  isPrimary          Boolean          @default(false)
   effectiveFrom      DateTime?
   effectiveTo        DateTime?
   scope              Json?
-  identityAccount    IdentityAccount @relation(fields: [identityAccountId], references: [id])
+  identityAccount    IdentityAccount  @relation(fields: [identityAccountId], references: [id])
   organizationNode   OrganizationNode @relation(fields: [organizationNodeId], references: [id])
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   @@index([identityAccountId, organizationNodeId])
 }
@@ -736,16 +736,16 @@ model GovernanceApproval {
 }
 
 model FoundationAlertAcknowledgement {
-  id             String                             @id @default(cuid())
-  tenantId       String                             @default("platform")
+  id             String                               @id @default(cuid())
+  tenantId       String                               @default("platform")
   code           String
   status         FoundationAlertAcknowledgementStatus
   note           String?
   actorId        String?
   acknowledgedAt DateTime?
   mutedUntil     DateTime?
-  createdAt      DateTime                           @default(now())
-  updatedAt      DateTime                           @updatedAt
+  createdAt      DateTime                             @default(now())
+  updatedAt      DateTime                             @updatedAt
 
   @@unique([tenantId, code])
   @@index([tenantId, status, updatedAt])
@@ -836,69 +836,69 @@ model CertificateAsset {
 }
 
 model DomainEvent {
-  id             String              @id @default(cuid())
-  eventType      String
-  aggregateType  String
-  aggregateId    String
-  scopeType      FoundationScopeType
-  tenantId       String?
-  brandId        String?
-  storeId        String?
+  id              String              @id @default(cuid())
+  eventType       String
+  aggregateType   String
+  aggregateId     String
+  scopeType       FoundationScopeType
+  tenantId        String?
+  brandId         String?
+  storeId         String?
   marketProfileId String?
-  idempotencyKey String?             @unique
-  status         EventStatus         @default(PENDING)
-  payload        Json
-  headers        Json?
-  retryCount     Int                 @default(0)
-  occurredAt     DateTime
-  availableAt    DateTime?
-  processedAt    DateTime?
-  deliveries     WebhookDelivery[]
-  syncTasks      EdgeSyncTask[]
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  idempotencyKey  String?             @unique
+  status          EventStatus         @default(PENDING)
+  payload         Json
+  headers         Json?
+  retryCount      Int                 @default(0)
+  occurredAt      DateTime
+  availableAt     DateTime?
+  processedAt     DateTime?
+  deliveries      WebhookDelivery[]
+  syncTasks       EdgeSyncTask[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
   @@index([status, availableAt])
   @@index([tenantId, aggregateType, aggregateId])
 }
 
 model WebhookSubscription {
-  id               String               @id @default(cuid())
-  scopeType        FoundationScopeType
-  tenantId         String?
-  brandId          String?
-  storeId          String?
-  integrationAppId String?
-  topic            String
-  targetUrl        String
-  secretAssetId    String?
+  id                 String              @id @default(cuid())
+  scopeType          FoundationScopeType
+  tenantId           String?
+  brandId            String?
+  storeId            String?
+  integrationAppId   String?
+  topic              String
+  targetUrl          String
+  secretAssetId      String?
   signatureAlgorithm String?
-  enabled          Boolean              @default(true)
-  retryLimit       Int                  @default(3)
-  filter           Json?
-  headers          Json?
-  metadata         Json?
-  deliveries       WebhookDelivery[]
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  enabled            Boolean             @default(true)
+  retryLimit         Int                 @default(3)
+  filter             Json?
+  headers            Json?
+  metadata           Json?
+  deliveries         WebhookDelivery[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([topic, enabled])
   @@index([scopeType, tenantId, brandId, storeId])
 }
 
 model WebhookDelivery {
-  id               String                @id @default(cuid())
-  subscriptionId   String
-  eventId          String?
-  status           WebhookDeliveryStatus @default(PENDING)
-  requestBody      Json
-  responseCode     Int?
-  responseBody     Json?
-  errorMessage     String?
-  attemptedAt      DateTime              @default(now())
-  nextRetryAt      DateTime?
-  subscription     WebhookSubscription   @relation(fields: [subscriptionId], references: [id])
-  event            DomainEvent?          @relation(fields: [eventId], references: [id])
+  id             String                @id @default(cuid())
+  subscriptionId String
+  eventId        String?
+  status         WebhookDeliveryStatus @default(PENDING)
+  requestBody    Json
+  responseCode   Int?
+  responseBody   Json?
+  errorMessage   String?
+  attemptedAt    DateTime              @default(now())
+  nextRetryAt    DateTime?
+  subscription   WebhookSubscription   @relation(fields: [subscriptionId], references: [id])
+  event          DomainEvent?          @relation(fields: [eventId], references: [id])
 
   @@index([subscriptionId, status])
   @@index([eventId])
@@ -949,38 +949,38 @@ model NotificationDispatch {
 }
 
 model EdgeNode {
-  id          String          @id @default(cuid())
-  code        String          @unique
-  tenantId    String
-  brandId     String?
-  storeId     String?
-  status      EdgeNodeStatus
-  version     String?
-  lastSeenAt  DateTime?
+  id           String         @id @default(cuid())
+  code         String         @unique
+  tenantId     String
+  brandId      String?
+  storeId      String?
+  status       EdgeNodeStatus
+  version      String?
+  lastSeenAt   DateTime?
   capabilities String[]
-  metadata    Json?
-  syncTasks   EdgeSyncTask[]
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  metadata     Json?
+  syncTasks    EdgeSyncTask[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   @@index([tenantId, status])
 }
 
 model EdgeSyncTask {
-  id           String            @id @default(cuid())
-  edgeNodeId   String
-  eventId      String?
-  direction    EdgeSyncDirection
+  id            String            @id @default(cuid())
+  edgeNodeId    String
+  eventId       String?
+  direction     EdgeSyncDirection
   aggregateType String
-  aggregateId  String
-  status       EventStatus       @default(PENDING)
-  payload      Json
-  checksum     String?
-  retryCount   Int               @default(0)
-  queuedAt     DateTime          @default(now())
-  processedAt  DateTime?
-  edgeNode     EdgeNode          @relation(fields: [edgeNodeId], references: [id])
-  event        DomainEvent?      @relation(fields: [eventId], references: [id])
+  aggregateId   String
+  status        EventStatus       @default(PENDING)
+  payload       Json
+  checksum      String?
+  retryCount    Int               @default(0)
+  queuedAt      DateTime          @default(now())
+  processedAt   DateTime?
+  edgeNode      EdgeNode          @relation(fields: [edgeNodeId], references: [id])
+  event         DomainEvent?      @relation(fields: [eventId], references: [id])
 
   @@index([edgeNodeId, status])
   @@index([eventId])
@@ -1010,22 +1010,22 @@ model FileAsset {
 }
 
 model OpenPlatformApp {
-  id               String              @id @default(cuid())
-  appType          OpenPlatformAppType
-  tenantId         String?
-  brandId          String?
-  storeId          String?
-  name             String
-  appKey           String              @unique
-  appSecretRef     String?
-  redirectUris     String[]
-  webhookTopics    String[]
+  id                String              @id @default(cuid())
+  appType           OpenPlatformAppType
+  tenantId          String?
+  brandId           String?
+  storeId           String?
+  name              String
+  appKey            String              @unique
+  appSecretRef      String?
+  redirectUris      String[]
+  webhookTopics     String[]
   rateLimitPolicyId String?
-  sandboxEnabled   Boolean             @default(true)
-  status           String              @default("ACTIVE")
-  metadata         Json?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
+  sandboxEnabled    Boolean             @default(true)
+  status            String              @default("ACTIVE")
+  metadata          Json?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 
   @@index([tenantId, brandId, storeId, status])
 }
@@ -1064,8 +1064,8 @@ model QuotaLedger {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
-  @@index([subjectKey, resetAt])
   @@unique([rateLimitPolicyId, subjectKey, resetAt])
+  @@index([subjectKey, resetAt])
 }
 
 model FeatureFlag {
@@ -1094,7 +1094,7 @@ model FeatureFlag {
 }
 
 model BackupSnapshot {
-  id           String        @id @default(cuid())
+  id           String              @id @default(cuid())
   resourceType String
   resourceId   String
   scopeType    FoundationScopeType
@@ -1108,48 +1108,48 @@ model BackupSnapshot {
   capturedAt   DateTime
   expiresAt    DateTime?
   restores     RestoreRun[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
   @@index([scopeType, tenantId, brandId, storeId, capturedAt])
 }
 
 model RestoreRun {
-  id                 String         @id @default(cuid())
-  backupSnapshotId   String
-  scopeType          FoundationScopeType
-  tenantId           String?
-  brandId            String?
-  storeId            String?
-  status             RestoreStatus
-  requestedBy        String
-  targetEnvironment  String
-  validationReport   Json?
-  startedAt          DateTime?
-  finishedAt         DateTime?
-  backupSnapshot     BackupSnapshot @relation(fields: [backupSnapshotId], references: [id])
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  id                String              @id @default(cuid())
+  backupSnapshotId  String
+  scopeType         FoundationScopeType
+  tenantId          String?
+  brandId           String?
+  storeId           String?
+  status            RestoreStatus
+  requestedBy       String
+  targetEnvironment String
+  validationReport  Json?
+  startedAt         DateTime?
+  finishedAt        DateTime?
+  backupSnapshot    BackupSnapshot      @relation(fields: [backupSnapshotId], references: [id])
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 
   @@index([status, createdAt])
 }
 
 model PiiPolicy {
-  id              String              @id @default(cuid())
-  fieldName       String
-  piiLevel        PiiLevel
-  scopeType       FoundationScopeType
-  tenantId        String?
-  brandId         String?
-  storeId         String?
-  marketCode      String?
-  maskingStrategy String
-  retentionDays   Int?
-  purposeLimit    String[]
-  approvalRequired Boolean            @default(false)
-  metadata        Json?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  id               String              @id @default(cuid())
+  fieldName        String
+  piiLevel         PiiLevel
+  scopeType        FoundationScopeType
+  tenantId         String?
+  brandId          String?
+  storeId          String?
+  marketCode       String?
+  maskingStrategy  String
+  retentionDays    Int?
+  purposeLimit     String[]
+  approvalRequired Boolean             @default(false)
+  metadata         Json?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
 
   @@index([fieldName, piiLevel])
   @@index([scopeType, tenantId, brandId, storeId, marketCode])
@@ -1179,23 +1179,23 @@ model AiModelConfig {
 }
 
 model AiPromptTemplate {
-  id            String          @id @default(cuid())
+  id            String              @id @default(cuid())
   code          String
   modelConfigId String
   version       Int
   prompt        String
   variables     String[]
   outputSchema  Json?
-  modelConfig   AiModelConfig   @relation(fields: [modelConfigId], references: [id])
+  modelConfig   AiModelConfig       @relation(fields: [modelConfigId], references: [id])
   executions    AiExecutionRecord[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   @@unique([code, version, modelConfigId])
 }
 
 model AiExecutionRecord {
-  id               String            @id @default(cuid())
+  id               String              @id @default(cuid())
   modelConfigId    String
   promptTemplateId String?
   scopeType        FoundationScopeType
@@ -1208,13 +1208,13 @@ model AiExecutionRecord {
   promptTokens     Int?
   completionTokens Int?
   totalTokens      Int?
-  escalatedToHuman Boolean           @default(false)
+  escalatedToHuman Boolean             @default(false)
   reviewerId       String?
   safetyResult     Json?
-  modelConfig      AiModelConfig     @relation(fields: [modelConfigId], references: [id])
-  promptTemplate   AiPromptTemplate? @relation(fields: [promptTemplateId], references: [id])
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  modelConfig      AiModelConfig       @relation(fields: [modelConfigId], references: [id])
+  promptTemplate   AiPromptTemplate?   @relation(fields: [promptTemplateId], references: [id])
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
 
   @@index([status, createdAt])
   @@index([scopeType, tenantId, brandId, storeId])
@@ -1223,19 +1223,19 @@ model AiExecutionRecord {
 // ============ P0-A1 零持久化修复: 三级配置持久化 + 审计 ============
 // Phase-FP tenant-config 持久化层 (替代内存 Map, V9 需求 2 180 天审计)
 model ConfigInstance {
-  id          String   @id @default(cuid())
-  key         String
-  value       String
-  encrypted   Boolean  @default(false)
-  category    String
-  level       String   // store | tenant | brand
-  ownerId     String
-  inherits    Boolean  @default(false)
-  version     Int      @default(1)
-  updatedBy   String
-  fromSeed    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  key       String
+  value     String
+  encrypted Boolean  @default(false)
+  category  String
+  level     String // store | tenant | brand
+  ownerId   String
+  inherits  Boolean  @default(false)
+  version   Int      @default(1)
+  updatedBy String
+  fromSeed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([level, ownerId, key])
   @@index([level, ownerId])
@@ -1249,7 +1249,7 @@ model ConfigAuditLog {
   level         String
   ownerId       String
   tenantId      String
-  action        String   // create | update | delete | rollback
+  action        String // create | update | delete | rollback
   operator      String
   operatorRole  String
   previousValue String?
@@ -1259,4 +1259,25 @@ model ConfigAuditLog {
 
   @@index([configId])
   @@index([tenantId, timestamp])
+}
+
+// ============ AI V11: 营销推送决策日志 ============
+model MarketingPushDecisionLog {
+  id        String    @id @default(cuid())
+  tenantId  String    @map("tenant_id")
+  memberId  String?   @map("member_id")
+  pushType  String    @map("push_type") // sms | email | app_notification | wechat
+  channel   String? // 推送渠道
+  content   String? // 推送内容(摘要)
+  decision  String // accept | reject | pending
+  reason    String? // 决策原因
+  status    String    @default("pending") // pending | sent | failed
+  sentAt    DateTime? @map("sent_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([tenantId, pushType, createdAt])
+  @@index([tenantId, memberId, createdAt])
+  @@index([tenantId, decision, status])
+  @@map("marketing_push_decision_log")
 }

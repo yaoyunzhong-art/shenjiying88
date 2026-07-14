@@ -59,7 +59,7 @@ describe('inventory — 反例', () => {
 
   it('ITEMS 不应为空', () => {
     const src = readSource();
-    assert.ok(src.includes('I001'), 'ITEMS 应有实际数据');
+    assert.ok(src.includes('STK-001'), 'ITEMS 应有实际数据');
   });
 
   it('不应包含内外联脚本注入', () => {
@@ -74,6 +74,11 @@ describe('inventory — 边界', () => {
   it('应包含列定义 COLUMNS', () => {
     const src = readSource();
     assert.ok(src.includes('COLUMNS'), '缺少列定义');
+  });
+
+  it('应接入 material-requests 申领接口', () => {
+    const src = readSource();
+    assert.ok(src.includes('/api/logistics/material-requests'), '缺少物料申领 API');
   });
 
   it('应包含库存状态 Tag 颜色', () => {
@@ -118,7 +123,17 @@ describe('inventory — 防御', () => {
 
   it('当 stock < threshold 时颜色应为红色', () => {
     const src = readSource();
-    assert.ok(src.includes('r.stock < r.threshold') || src.includes("stock<i.threshold") || src.includes('stock <= i.threshold'), '缺少库存阈值比较');
+    assert.ok(
+      src.includes('row.stock < row.threshold') ||
+      src.includes('showDetail.stock < showDetail.threshold') ||
+      src.includes('item.stock < item.threshold'),
+      '缺少库存阈值比较'
+    );
+  });
+
+  it('请求应携带 x-tenant-id 头', () => {
+    const src = readSource();
+    assert.ok(src.includes("'x-tenant-id'"), '缺少租户隔离请求头');
   });
 });
 
@@ -134,7 +149,7 @@ describe('inventory — 数据校验', () => {
 
   it('COLUMNS 应覆盖编号/名称/分类/库存/预警线/状态', () => {
     const src = readSource();
-    const colCount = (src.match(/\{ title:/g) || []).length;
+    const colCount = (src.match(/title:\s*'/g) || []).length;
     assert.ok(colCount >= 6, `COLUMNS 列数不足: ${colCount}`);
   });
 
@@ -146,5 +161,12 @@ describe('inventory — 数据校验', () => {
   it('应包含库存种类/需补货/总库存量三个统计', () => {
     const src = readSource();
     assert.ok(src.includes('库存种类') || src.includes('需补货') || src.includes('总库存量'), '缺少统计卡片');
+  });
+
+  it('应包含 pending_approval/approved/outbound 三态流转', () => {
+    const src = readSource();
+    assert.ok(src.includes('pending_approval'), '缺少待审批状态');
+    assert.ok(src.includes('approved'), '缺少待出库状态');
+    assert.ok(src.includes('outbound'), '缺少已出库状态');
   });
 });

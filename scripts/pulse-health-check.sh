@@ -2,7 +2,8 @@
 # 🐜 pulse-health-check.sh — 验收脉冲健康检查
 # AM-019修复: 读取phase-progress.md最新脉记录，若最近2次中有任一失败→写入daily-brief告警
 # Part of: shenjiying88 20min验收健康检查cron
-# Usage: bash scripts/pulse-health-check.sh
+# Usage: bash scripts/pulse-health-check.sh [--security]
+#   --security  额外执行安全门扫描 (SAST + 密钥扫描)
 
 set -euo pipefail
 
@@ -13,6 +14,53 @@ STATE_FILE="${PROJECT}/.pulse-health-alert-state"
 NOW=$(date '+%Y-%m-%d %H:%M')
 
 cd "$PROJECT"
+
+# ── 解析参数 ──────────────────────────────────────────────────────
+DO_SECURITY=false
+for arg in "$@"; do
+  case "$arg" in
+    --security) DO_SECURITY=true ;;
+    --help|-h)
+      echo "Usage: bash scripts/pulse-health-check.sh [--security]"
+      echo "  --security   额外执行安全门扫描"
+      echo "  (无参数)     仅脉冲健康检查"
+      exit 0
+      ;;
+  esac
+done
+
+# ── [--security] 安全门扫描前置 ─────────────────────────────────────
+if [ "$DO_SECURITY" = true ]; then
+  echo ""
+  echo "[pulse-health-check] 🔐 触发安全门扫描 (--security flag)..."
+  echo ""
+  
+  SECURITY_SCRIPT="$PROJECT/scripts/security-scan.sh"
+  if [ -f "$SECURITY_SCRIPT" ]; then
+    if bash "$SECURITY_SCRIPT"; then
+      echo ""
+      echo "[pulse-health-check] ✅ 安全门通过"
+    else
+      SEC_EXIT=$?
+      echo ""
+      echo "[pulse-health-check] ❌ 安全门报告安全问题 (退出码 $SEC_EXIT)"
+      echo "[pulse-health-check]    🐜 [V17: security-gates] 安全门硬阻断"
+      echo "[pulse-health-check]    检查: docs/knowledge/security-scan-*.md"
+      
+      # 写入告警到daily-brief
+      ALERT_LINE="> 🚨 **安全门阻断（${NOW}）** 安全扫描发现风险 — 🐜 [V17: security-gates]"
+      echo "" >> "$DAILY_BRIEF"
+      echo "$ALERT_LINE" >> "$DAILY_BRIEF"
+      
+      # 安全门的失败不阻断脉冲检查流程
+      echo ""
+      echo "[pulse-health-check] ⚠️ 继续执行脉冲健康检查..."
+      echo ""
+    fi
+  else
+    echo "[pulse-health-check] ⚠️ 安全扫描脚本未找到: $SECURITY_SCRIPT"
+  fi
+fi
 
 # ── 1. 解析脉冲表最后2个记录 ──────────────────────────────────────
 PULSE_LINES=$(grep '| pulse#' "$PHASE_PROGRESS" | tail -2)

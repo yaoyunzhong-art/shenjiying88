@@ -140,7 +140,12 @@ echo "  🌐 2.4 SEO/GEO 浏览器回归..."
 $NICE bash -c "(cd '$PROJECT_ROOT' && pnpm run e2e:phase49:seo-geo > '$NIGHTLY_LOG_DIR/08b-seo-geo-browser.log' 2>&1 && ./scripts/archive-phase49-seo-geo.sh '$NIGHTLY_DATE' >> '$NIGHTLY_LOG_DIR/08b-seo-geo-browser.log' 2>&1)" &
 SEO_GEO_PID=$!
 
-wait $VITEST_PID $TSC_API_PID $TSC_ADMIN_PID $LINT_PID $SEO_GEO_PID 2>/dev/null || true
+# 2.5 P-30 logistics 专项回归
+echo "  🧰 2.5 P-30 logistics 专项回归..."
+$NICE bash -c "(cd '$PROJECT_ROOT' && pnpm run test:phase30:logistics > '$NIGHTLY_LOG_DIR/08c-phase30-logistics.log' 2>&1)" &
+P30_LOGISTICS_PID=$!
+
+wait $VITEST_PID $TSC_API_PID $TSC_ADMIN_PID $LINT_PID $SEO_GEO_PID $P30_LOGISTICS_PID 2>/dev/null || true
 
 echo "  ✅ Phase 2 完成"
 echo ""
