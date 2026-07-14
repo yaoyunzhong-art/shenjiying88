@@ -15,14 +15,7 @@ NOW=$(date '+%Y-%m-%d %H:%M')
 cd "$PROJECT"
 
 # ── 1. 解析脉冲表最后2个记录 ──────────────────────────────────────
-PULSE_LINES=$(awk '
-  /^## 验收脉冲记录/ { found=1; next }
-  found && /^\|/ && /pulse#/ { lines[++n]=$0 }
-  END { 
-    if (n>=2) { print lines[n-1]; print lines[n] }
-    else if (n>=1) { print lines[n] }
-  }
-' "$PHASE_PROGRESS")
+PULSE_LINES=$(grep '| pulse#' "$PHASE_PROGRESS" | tail -2)
 
 TOTAL_LINES=$(echo "$PULSE_LINES" | grep -c .)
 

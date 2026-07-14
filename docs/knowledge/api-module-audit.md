@@ -48,7 +48,7 @@
 | license-renewal | 授权续期管理 | 22 | 业务(license延伸) |
 | lowcode | 低代码页面构建/告警 | 25 | 🔧 基础设施 |
 | lyt | LYT收银桥接:LYT对接/资金流 | 39 | P-35 (收银)延伸 |
-| logistics | SSE后勤：巡检任务/提醒/结果记录 | 5 | P-30 (SSE后勤)核心 |
+| logistics | SSE后勤：巡检任务/提醒/结果记录 + 清洁排班/考勤 + 维修工单派单/验收 + 物料申领审批/出库 | 5 | P-30 (SSE后勤)核心 |
 | market | 市场/区域配置:市场Profile/区域覆盖 | 19 | 🔧 基础设施 |
 | marketing-metrics | 营销指标:快照/Prometheus导出/汇总 | 19 | P-47 (品牌运营)延伸 |
 | member-level | 会员等级管理 | 20 | P-36 (会员)延伸 |
@@ -191,6 +191,6 @@
 
 1. **基础设施模块占比最高(43.3%)** — foundation(166文件)、observability(50)、cross-module(55)等核心基础设施需要稳定归类
 2. **AI模块规模庞大(22.7%, 558文件)** — 24个AI相关模块远超P-49现有边界，建议扩建P-49或新建P-AI
-3. **P-30 SSE后勤已补 logistics 巡检主链** — `RQ-30-01` 已闭环，`reservation` 仍作为维修/排班可复用底座
+3. **P-30 SSE后勤已补 logistics 四主链** — `RQ-30-01` 巡检、`RQ-30-02` 清洁排班、`RQ-30-03` 维修工单、`RQ-30-04` 物料申领均已闭环，`reservation` 仅保留为通用状态机底座
 4. **扩展归类** — member-level/svip/loyalty等已映射模块的扩展子功能，建议在Phase内标记为子模块
 5. **cross-module** 55个跨模块E2E测试文件，建议归类到测试基础设施
