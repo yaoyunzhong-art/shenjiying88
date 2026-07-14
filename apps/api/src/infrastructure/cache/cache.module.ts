@@ -40,6 +40,9 @@ export interface CacheService {
   /** 后端健康检查 */
   ping(): Promise<boolean>
 
+  /** 强制清空所有缓存 (用于验收脉冲 cache-bust) */
+  clear(): Promise<void>
+
   /** 后端类型标识 (用于日志 / 监控) */
   readonly backend: 'redis' | 'memory'
 }
@@ -118,6 +121,11 @@ export class RedisCacheService implements CacheService {
       return false
     }
   }
+
+  async clear(): Promise<void> {
+    // 验收脉冲 cache-bust: 强制清空 Redis 当前 db
+    await this.client.flushdb()
+  }
 }
 
 // ── In-memory 实现 ────────────────────────────────────────────────────
@@ -194,8 +202,7 @@ export class InMemoryCacheService implements CacheService {
     return true
   }
 
-  /** 测试 helper:清空所有 keys */
-  clear(): void {
+  async clear(): Promise<void> {
     this.store.clear()
   }
 

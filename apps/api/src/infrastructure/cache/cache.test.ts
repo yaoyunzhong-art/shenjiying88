@@ -127,3 +127,46 @@ describe('InMemoryCacheService — clear / size helpers', () => {
     assert.equal(cache.size(), 3)
   })
 })
+
+describe('AM-020: 验收脉冲 cache-bust — 强制缓存清除', () => {
+  it('clear() 可被 CacheService 接口调用', async () => {
+    // 契约: CacheService 接口必须包含 clear()
+    const cache: CacheService = new InMemoryCacheService()
+    await cache.set('key', 'value', 3600)
+    await cache.clear()
+    const got = await cache.get('key')
+    assert.equal(got, null)
+  })
+
+  it('delByPrefix 对 cache-bust 前缀生效', async () => {
+    const cache = new InMemoryCacheService()
+    await cache.set('pulse:tsc:result', { passed: true })
+    await cache.set('pulse:report:cache', { data: 1 })
+    const deleted = await cache.delByPrefix('pulse:')
+    assert.equal(deleted, 2)
+    assert.equal(await cache.get('pulse:tsc:result'), null)
+  })
+
+  it('clear() 后 stats size 归零', async () => {
+    const cache = new InMemoryCacheService()
+    await cache.set('a', 1)
+    await cache.set('b', 2)
+    await cache.set('c', 3)
+    assert.equal(cache.size(), 3)
+    await cache.clear()
+    await cache.set('d', 4)
+    // clear 后 set 应正常工作
+    assert.equal(await cache.get('d'), 4)
+    assert.equal(cache.size(), 1)
+  })
+
+  it('验收脉冲 force-run 后 get 不到旧缓存', async () => {
+    const cache = new InMemoryCacheService()
+    await cache.set('report:revenue:T1:monthly', { rows: [{ total: 'stale' }] }, 300)
+    // 模拟验收脉冲: cache-bust
+    await cache.clear()
+    // 重新查应得到 null
+    const got = await cache.get('report:revenue:T1:monthly')
+    assert.equal(got, null)
+  })
+})
