@@ -20,6 +20,11 @@
 ### 测试文件位置
 - `apps/admin-web/app/__e2e__/cross-module-journey-{25,26,27}*.test.ts`
 
+### G→T 验收记录
+| 日期 | Pulse# | 模块 | Base | Service | Controller | CTest | 连续🏆 |
+|:----:|:-----:|:----|:----:|:-------:|:----------:|:-----:|:-----:|
+| 2026-07-15 | #456 | admin-web(假阳)×app | ✅ | ✅ | ✅ | ✅ | 21🏆 |
+
 ### 今天将推进方向 (Day5)
 - 持续纯函数E2E模式
 - 修复@m5/api 662 fail (Day5计划)
