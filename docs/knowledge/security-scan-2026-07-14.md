@@ -1,6 +1,6 @@
 # 🔐 安全扫描报告
 
-> 扫描时间: 2026-07-14 23:00:11 CST
+> 扫描时间: 2026-07-14 23:34:33 CST
 > 项目: shenjiying88 (V17)
 > 扫描模式: full
 > 脚本: scripts/security-scan.sh
@@ -43,7 +43,7 @@
 
 > 命令: pnpm audit --audit-level=high
 
-  | ├─────────────────────┼───────────────── |\n  | │ Package             │ git-clone                                              │ |\n  | ├─────────────────────┼───────────────── |\n  | │ Vulnerable versions │ <=0.2.0                                                │ |\n  | ├─────────────────────┼───────────────── |\n  | │ Patched versions    │ <0.0.0                                                 │ |\n  | ├─────────────────────┼───────────────── |\n  | │ Paths               │ apps__miniapp>@tarojs/cli>download-git-repo>git-clone  │ |\n  | ├─────────────────────┼───────────────── |\n  | │ More info           │ https://github.com/advisories/GHSA-8jmw-wjr8-2x66      │ |\n  | └─────────────────────┴───────────────── |\n  | ┌─────────────────────┬───────────────── |\n  | │ high                │ http-cache-semantics vulnerable to Regular Expression  │ |\n  | │                     │ Denial of Service                                      │ |\n  | ├─────────────────────┼───────────────── |\n  | │ Package             │ http-cache-semantics                                   │ |\n  | ├─────────────────────┼───────────────── |\n  | │ Vulnerable versions │ <4.1.1                                                 │ |\n  | ├─────────────────────┼───────────────── |\n  | │ Patched versions    │ >=4.1.1                                                │ |\n  | ├─────────────────────┼───────────────── |\n  | │ Paths               │ apps__miniapp>@tarojs/cli>download-git-                │ |\n  | │                     │ repo>download>got>cacheable-request>http-cache-        │ |\n  | │                     │ semantics                                              │ |\n  | ├─────────────────────┼───────────────── |\n  | │ More info           │ https://github.com/advisories/GHSA-rc47-6667-2j5j      │ |\n  | └─────────────────────┴───────────────── |\n  | ┌─────────────────────┬───────────────── |\n  | │ high                │ kangax html-minifier REDoS vulnerability               │ |\n  | ├─────────────────────┼───────────────── |\n
+✅ 无高/危急漏洞
 
 ---
 

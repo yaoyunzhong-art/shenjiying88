@@ -2,8 +2,10 @@
 # 🐜 pulse-health-check.sh — 验收脉冲健康检查
 # AM-019修复: 读取phase-progress.md最新脉记录，若最近2次中有任一失败→写入daily-brief告警
 # Part of: shenjiying88 20min验收健康检查cron
-# Usage: bash scripts/pulse-health-check.sh [--security]
-#   --security  额外执行安全门扫描 (SAST + 密钥扫描)
+# Usage: bash scripts/pulse-health-check.sh [--skip-security]
+#   (无参数)     默认: 脉冲健康检查 + 安全门扫描
+#   --skip-security  跳过安全门扫描
+# 🐜 [V17-round3: fix-security-audit] 默认执行安全扫描
 
 set -euo pipefail
 
@@ -16,23 +18,24 @@ NOW=$(date '+%Y-%m-%d %H:%M')
 cd "$PROJECT"
 
 # ── 解析参数 ──────────────────────────────────────────────────────
-DO_SECURITY=false
+# 🐜 [V17-round3: fix-security-audit] 默认执行安全扫描,不再需要 --security 参数
+DO_SECURITY=true
 for arg in "$@"; do
   case "$arg" in
-    --security) DO_SECURITY=true ;;
+    --skip-security) DO_SECURITY=false ;;
     --help|-h)
-      echo "Usage: bash scripts/pulse-health-check.sh [--security]"
-      echo "  --security   额外执行安全门扫描"
-      echo "  (无参数)     仅脉冲健康检查"
+      echo "Usage: bash scripts/pulse-health-check.sh [--skip-security]"
+      echo "  (无参数)     脉冲健康检查 + 安全门扫描(默认)"
+      echo "  --skip-security  跳过安全门扫描"
       exit 0
       ;;
   esac
 done
 
-# ── [--security] 安全门扫描前置 ─────────────────────────────────────
+# ── 安全门扫描前置 (默认执行) ──────────────────────────────────────
 if [ "$DO_SECURITY" = true ]; then
   echo ""
-  echo "[pulse-health-check] 🔐 触发安全门扫描 (--security flag)..."
+  echo "[pulse-health-check] 🔐 触发安全门扫描 (默认执行)...
   echo ""
   
   SECURITY_SCRIPT="$PROJECT/scripts/security-scan.sh"
@@ -86,6 +89,9 @@ while IFS= read -r line; do
     HAS_FAILURE=true
     FAILED_PULSES="$FAILED_PULSES $PULSE_NUM"
     echo "[pulse-health-check] ❌ $PULSE_NUM 失败"
+    # 🐜 [V17-round3: fix-fuse-force-adr] 熔断检测: 记录失败到fuse计数器
+    MODULE_NAME="pulse-${PULSE_NUM}"
+    bash "${PROJECT}/scripts/fuse-check.sh" "${MODULE_NAME}" "pulse_failure" 2>&1 || true
   elif echo "$STATUS_COL" | grep -qE '[✅🏆]'; then
     echo "[pulse-health-check] ✅ $PULSE_NUM 正常"
   else

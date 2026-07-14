@@ -164,54 +164,22 @@ audit_deps() {
     return 0
   fi
 
-  # 用临时文件避免 SIGPIPE 问题 (macOS head after pnpm)
-  local audit_file
-  audit_file=$(mktemp /tmp/shenjiying-audit-XXXXXX 2>/dev/null || mktemp -t shenjiying-audit)
-  local audit_exit=0
-  pnpm audit --audit-level=high 2>/dev/null > "$audit_file" || audit_exit=$?
-  local audit_body
-  audit_body=$(head -60 "$audit_file")
-
-  # Parse results (兼容 macOS/BSD grep, 不使用 -P)
-  # grep -oiE '<label>: <count>' -> sed extracts count -> paste sums
-  if echo "$audit_body" | grep -qi "critical"; then
-    local _crit_nums
-    _crit_nums=$(echo "$audit_body" \
-      | grep -oiE 'critical[[:space:]]*:[[:space:]]*[0-9]+' \
-      | grep -oE '[0-9]+$' 2>/dev/null || true)
-    if [ -n "$_crit_nums" ]; then
-      AUDIT_CRITICAL=$(echo "$_crit_nums" | paste -sd+ 2>/dev/null | bc 2>/dev/null || echo "0")
-    fi
-    AUDIT_CRITICAL=${AUDIT_CRITICAL:-0}
-  fi
-  if echo "$audit_body" | grep -qi "high"; then
-    local _high_nums
-    _high_nums=$(echo "$audit_body" \
-      | grep -oiE 'high[[:space:]]*:[[:space:]]*[0-9]+' \
-      | grep -oE '[0-9]+$' 2>/dev/null || true)
-    if [ -n "$_high_nums" ]; then
-      AUDIT_HIGH=$(echo "$_high_nums" | paste -sd+ 2>/dev/null | bc 2>/dev/null || echo "0")
-    fi
-    AUDIT_HIGH=${AUDIT_HIGH:-0}
-  fi
+  # 🐜 [V17-round3: fix-security-audit] 使用 pnpm audit --json + python3 解析
+  # macOS 兼容: 替代 paste+bc 解析,直接解析 JSON 输出避免 SIGPIPE/BSD 问题
+  _audit_json=$(pnpm audit --json 2>/dev/null || echo '{"vulnerabilities":{}}')
+  AUDIT_HIGH=$(echo "$_audit_json" | python3 -c "import sys,json; d=json.load(sys.stdin).get('vulnerabilities',{}); print(sum(1 for s in d.values() if s.get('severity','')=='high'))" 2>/dev/null || echo "0")
+  AUDIT_CRITICAL=$(echo "$_audit_json" | python3 -c "import sys,json; d=json.load(sys.stdin).get('vulnerabilities',{}); print(sum(1 for s in d.values() if s.get('severity','')=='critical'))" 2>/dev/null || echo "0")
 
   log "INFO" "  审计结果: high=${AUDIT_HIGH} critical=${AUDIT_CRITICAL}"
 
-  if [ "$audit_exit" = "0" ]; then
+  # 如果有critical漏洞或高危>2个 -> 硬阻断(退出码由下方汇总逻辑决定)
+  if [ "$AUDIT_CRITICAL" -gt 0 ] || [ "$AUDIT_HIGH" -gt 2 ]; then
+    AUDIT_RESULTS="$AUDIT_HIGH high · $AUDIT_CRITICAL critical ⛔ HARD BLOCK"
+    SCAN_MESSAGES+=("⚠️ 依赖审计硬阻断: high=${AUDIT_HIGH} critical=${AUDIT_CRITICAL}")
+  else
     AUDIT_RESULTS="✅ 无高/危急漏洞"
     SCAN_MESSAGES+=("✅ 依赖审计通过")
-    rm -f "$audit_file"
-    return 0
   fi
-
-  AUDIT_RESULTS=""
-  while IFS= read -r line; do
-    [ -z "$line" ] && continue
-    AUDIT_RESULTS+="  | $(md_safe "$line" | head -c 120) |\n"
-  done <<< "$(echo "$audit_body" | tail -30)"
-  SCAN_MESSAGES+=("⚠️ 依赖审计: high=${AUDIT_HIGH} critical=${AUDIT_CRITICAL}")
-
-  rm -f "$audit_file"
 }
 
 # ── 执行扫描 ────────────────────────────────────────────
