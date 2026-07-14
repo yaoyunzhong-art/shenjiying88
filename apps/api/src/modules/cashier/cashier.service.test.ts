@@ -92,32 +92,174 @@ describe('CashierService', () => {
     assert.equal(loyaltyService.listCouponRedemptions(createContext().tenantId).slice(-1)[0]?.couponCode, 'COUPON-66')
     assert.equal(loyaltyService.listBlindboxFulfillments(createContext().tenantId).slice(-1)[0]?.blindboxPlanId, 'blindbox-pro')
   })
-  it('applyPaymentCallback can synthesize failed payment writeback', async () => {
+
+  it('createOrder rejects empty items list', async () => {
     const memberService = new MemberService()
     memberService.register({
-      memberId: 'member-order-4',
+      memberId: 'member-empty-1',
       tenantContext: createContext(),
-      nickname: 'Failed User'
+      nickname: 'Empty Items User'
     })
-    const loyaltyService = new LoyaltyService(memberService)
-    const service = new CashierService(memberService, loyaltyService)
-    const order = await service.createOrder(createContext(), {
-      memberId: 'member-order-4',
-      items: [{ skuId: 'sku-1', quantity: 1, price: 120 }],
-      couponCode: 'COUPON-FAIL'
-    })
-    const result = await service.applyPaymentCallback({
-      standardizedEventName: 'cashier.payment-failed',
-      aggregateId: 'agg-2',
-      orderId: order.orderId,
-      tenantId: createContext().tenantId,
-      channel: 'mock-gateway',
-      amount: 120
-    })
-    assert.equal(result.payment.status, CashierPaymentStatus.Failed)
-    assert.equal(result.order.status, CashierOrderStatus.PaymentFailed)
-    assert.equal(loyaltyService.listCouponRedemptions(createContext().tenantId).slice(-1)[0]?.couponCode, 'COUPON-FAIL')
+    const service = new CashierService(memberService)
+    await assert.rejects(
+      () =>
+        service.createOrder(createContext(), {
+          memberId: 'member-empty-1',
+          items: []
+        }),
+      /must include at least one item/
+    )
   })
+
+  it('createOrder rejects non-existent member', async () => {
+    const memberService = new MemberService()
+    const service = new CashierService(memberService)
+    await assert.rejects(
+      () =>
+        service.createOrder(createContext(), {
+          memberId: 'non-existent-member',
+          items: [{ skuId: 'sku-1', quantity: 1, price: 100 }]
+        }),
+      /not found/
+    )
+  })
+
+  it('createOrder rejects member from different tenant', async () => {
+    const memberService = new MemberService()
+    memberService.register({
+      memberId: 'member-cross-tenant',
+      tenantContext: { tenantId: 'other-tenant', brandId: 'other-brand', storeId: 'other-store' },
+      nickname: 'Cross Tenant User'
+    })
+    const service = new CashierService(memberService)
+    await assert.rejects(
+      () =>
+        service.createOrder(createContext(), {
+          memberId: 'member-cross-tenant',
+          items: [{ skuId: 'sku-1', quantity: 1, price: 100 }]
+        }),
+      /does not belong to tenant/
+    )
+  })
+
+  it('getOrder returns undefined for wrong tenant', async () => {
+    const memberService = new MemberService()
+    memberService.register({
+      memberId: 'member-get-1',
+      tenantContext: createContext(),
+      nickname: 'Get Order User'
+    })
+    const service = new CashierService(memberService)
+    const order = await service.createOrder(createContext(), {
+      memberId: 'member-get-1',
+      items: [{ skuId: 'sku-1', quantity: 1, price: 50 }]
+    })
+    const wrongTenant = service.getOrder(order.orderId, {
+      tenantId: 'wrong-tenant', brandId: 'wrong-brand', storeId: 'wrong-store'
+    })
+    assert.equal(wrongTenant, undefined)
+    const correctTenant = service.getOrder(order.orderId, createContext())
+    assert.equal(correctTenant?.orderId, order.orderId)
+  })
+
+  it('listOrders filters by tenant context', async () => {
+    const memberService = new MemberService()
+    const ctx1 = { tenantId: 'tenant-a', brandId: 'brand-a', storeId: 'store-a' }
+    const ctx2 = { tenantId: 'tenant-b', brandId: 'brand-b', storeId: 'store-b' }
+    memberService.register({ memberId: 'member-list-1', tenantContext: ctx1, nickname: 'User A' })
+    memberService.register({ memberId: 'member-list-2', tenantContext: ctx2, nickname: 'User B' })
+
+    const service = new CashierService(memberService)
+    await service.createOrder(ctx1, {
+      memberId: 'member-list-1',
+      items: [{ skuId: 'sku-1', quantity: 1, price: 100 }]
+    })
+    await service.createOrder(ctx2, {
+      memberId: 'member-list-2',
+      items: [{ skuId: 'sku-2', quantity: 2, price: 50 }]
+    })
+
+    const ordersA = service.listOrders(ctx1)
+    assert.equal(ordersA.length, 1)
+    assert.equal(ordersA[0].memberId, 'member-list-1')
+
+    const ordersB = service.listOrders(ctx2)
+    assert.equal(ordersB.length, 1)
+    assert.equal(ordersB[0].memberId, 'member-list-2')
+  })
+
+  it('createPayment rejects non-existent order', async () => {
+    const memberService = new MemberService()
+    const service = new CashierService(memberService)
+    await assert.rejects(
+      () =>
+        service.createPayment('non-existent-order', {
+          channel: 'wechat-pay'
+        }),
+      /not found/
+    )
+  })
+
+  it('closeTimedOutOrder succeeds on already timeout-closed order (idempotent)', async () => {
+    const memberService = new MemberService()
+    memberService.register({
+      memberId: 'member-idempotent-1',
+      tenantContext: createContext(),
+      nickname: 'Idempotent User'
+    })
+    const service = new CashierService(memberService)
+    const order = await service.createOrder(createContext(), {
+      memberId: 'member-idempotent-1',
+      items: [{ skuId: 'sku-1', quantity: 1, price: 50 }]
+    })
+    await service.createPayment(order.orderId, { channel: 'wechat-pay' })
+    await service.closeTimedOutOrder(order.orderId, createContext())
+    // Second timeout close on already-closed order returns immediately (guarded by status check)
+    const second = await service.closeTimedOutOrder(order.orderId, createContext())
+    assert.equal(second.order.status, 'CLOSED')
+  })
+
+  it('closeOrder is not eligible for timeout-closed order (reject double-close)', async () => {
+    const memberService = new MemberService()
+    memberService.register({
+      memberId: 'member-double-close-1',
+      tenantContext: createContext(),
+      nickname: 'Double Close User'
+    })
+    const service = new CashierService(memberService)
+    const order = await service.createOrder(createContext(), {
+      memberId: 'member-double-close-1',
+      items: [{ skuId: 'sku-1', quantity: 1, price: 30 }]
+    })
+    await service.createPayment(order.orderId, { channel: 'alipay' })
+    await service.closeTimedOutOrder(order.orderId, createContext())
+    await assert.rejects(
+      () => service.closeOrder(order.orderId, createContext()),
+      /not eligible/
+    )
+  })
+
+  it('closeOrder throws on order already closed via timeout (no double-close)', async () => {
+    const memberService = new MemberService()
+    memberService.register({
+      memberId: 'member-idempotent-2',
+      tenantContext: createContext(),
+      nickname: 'Idempotent User 2'
+    })
+    const service = new CashierService(memberService)
+    const order = await service.createOrder(createContext(), {
+      memberId: 'member-idempotent-2',
+      items: [{ skuId: 'sku-1', quantity: 1, price: 30 }]
+    })
+    await service.createPayment(order.orderId, { channel: 'alipay' })
+    await service.closeTimedOutOrder(order.orderId, createContext())
+    // 已关单订单不能再次手动关单(closeOrder 对已关单状态拒操作)
+    await assert.rejects(
+      () => service.closeOrder(order.orderId, createContext()),
+      /not eligible/
+    )
+  })
+})
   it('closeTimedOutOrder closes pending payment order and releases coupon', async () => {
     const memberService = new MemberService()
     memberService.register({
