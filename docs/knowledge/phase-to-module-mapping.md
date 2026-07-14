@@ -10,7 +10,7 @@
 |:-----:|:-----|:----|:---------|:---------|:--------:|
 | P-35 | 收银店A | ✅ | cashier(61files) | lyt(31), payment-gateway(20), transactions(18) | 🟡部分 |
 | P-36 | 会员店A | ✅ | member(47), member-level(21), points(20), loyalty(23) | svip(19) | 🟢完成 |
-| P-30 | SSE后勤 | ✅ | reservation(20) | admin-web inspection(page) | 🟡部分 |
+| P-30 | SSE后勤 | ✅ | logistics(5), reservation(20) | admin-web inspection(page) | 🟡部分 |
 | P-31 | 多租户隔离 | ✅ | tenant(45), tenant-config(23) | saas-advanced(25), saas-billing(18) | 🟡部分 |
 | P-37 | 库存采购 | ✅ | inventory(48) | — | 🟡完成 |
 | P-38 | 财务对账 | ✅ | finance(47), reports(29), audit(18) | currency(19), transactions(18) | 🟡部分 |
