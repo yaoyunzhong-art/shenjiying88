@@ -1,0 +1,17 @@
+{
+  "fails": [
+    {
+      "module": "pulse-init",
+      "count": 1,
+      "last": "initialization",
+      "last_at": "2026-07-14 23:37"
+    },
+    {
+      "module": "test_module",
+      "count": 3,
+      "last": "test_fail",
+      "last_at": "2026-07-14 23:37"
+    }
+  ],
+  "paused": true
+}
