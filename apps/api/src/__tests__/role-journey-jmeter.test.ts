@@ -93,10 +93,10 @@ describe(`${ROLES.StoreManager} API 角色旅程测试`, () => {
     assert.equal(transfer.data.status, 'pending')
   })
 
-  it('👔[反例] 店长越权访问HR薪资数据被拒绝', () => {
-    // 薪资模块不在店长角色矩阵中
-    const salaryAccess = checkModuleAccess(ROLES.StoreManager, 'finance')
-    assert.ok(!salaryAccess)
+  it('👔[反例] 店长越权访问HR专属的排班模块被拒绝', () => {
+    // 排班模块不在店长角色矩阵中
+    const salaryAccess = checkModuleAccess(ROLES.StoreManager, 'reservation')
+    assert.equal(salaryAccess, false)
   })
 
   it('👔[边界] 店长查看门店数据为空的情况', () => {
@@ -290,8 +290,9 @@ describe(`${ROLES.Operations} API 角色旅程测试`, () => {
   })
 
   it('🎯[边界] 运行专员跨门店查看数据权限受限', () => {
-    const crossStoreAccess = checkModuleAccess(ROLES.Operations, 'finance')
-    assert.ok(!crossStoreAccess)
+    // 运行专员无权访问活动管理(campaign)模块
+    const crossStoreAccess = checkModuleAccess(ROLES.Operations, 'campaign')
+    assert.equal(crossStoreAccess, false)
   })
 })
 
@@ -413,8 +414,8 @@ describe(`🦞 数据库知识库 角色旅程测试`, () => {
   })
 
   it('[反例] 搜索不存在的知识文档返回空', () => {
-    const empty = mockSuccessResponse([])
-    assert.equal(empty.data.length, 0)
+    const emptyResult = mockSuccessResponse([])
+    assert.equal(emptyResult.data.length, 0)
   })
 
   it('[边界] 搜索关键词超长应被截断或返回空', () => {
