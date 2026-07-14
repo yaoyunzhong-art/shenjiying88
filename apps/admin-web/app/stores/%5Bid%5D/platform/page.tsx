@@ -1,11 +1,12 @@
 // 🔗 开放平台 · API密钥/开发者/接口管理
 'use client';
-import { useState, useMemo } from 'react';
-import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Input, Modal, Select, message, Tabs, Progress, Empty, DatePicker } from '@m5/ui';
+import { useState } from 'react';
+import { PageShell, Card, Statistic, Table, Tag, Button, Space, Input, Modal, Select, Tabs, Progress } from '@m5/ui';
 
 interface APIKey {
-  id: string; name: string; key: string; status: 'active' | 'expired' | 'revoked';
+  id: string; name: string; key: string; status: string;
   created: string; expires: string; lastUsed: string; quota: number; used: number;
+  [key:string]: unknown;
 }
 
 const API_KEYS: APIKey[] = [
@@ -16,6 +17,25 @@ const API_KEYS: APIKey[] = [
   { id:'K-005', name:'离职开发密钥', key:'sk_live_****i9j0', status:'revoked', created:'2025-10-01', expires:'2026-10-01', lastUsed:'2026-06-15', quota:5000, used:4800 },
 ];
 
+const QUOTA_OPTIONS = [
+  { value:'read', label:'只读' },
+  { value:'write', label:'读写' },
+  { value:'admin', label:'管理' },
+];
+
+const DOCS = ['REST API概览','OAuth2认证','Webhook回调','SDK下载','错误码表','频率限制'];
+
+function statusTag(status: string) {
+  if (status === 'active') return <Tag variant="success">活跃</Tag>;
+  if (status === 'expired') return <Tag variant="warning">已过期</Tag>;
+  return <Tag variant="error">已吊销</Tag>;
+}
+
+function expiresTag(expires: string) {
+  const color = new Date(expires) < new Date() ? 'red' : 'green';
+  return <span style={{color,fontSize:13}}>{expires}</span>;
+}
+
 export default function OpenPlatformPage() {
   const [tabKey, setTabKey] = useState('keys');
   const [search, setSearch] = useState('');
@@ -24,61 +44,98 @@ export default function OpenPlatformPage() {
   const activeKeys = API_KEYS.filter(k => k.status === 'active').length;
   const totalQuota = API_KEYS.reduce((s, k) => s + k.quota, 0);
   const totalUsed = API_KEYS.reduce((s, k) => s + k.used, 0);
-  const expiredCount = API_KEYS.filter(k => k.status === 'expired').length;
+  const usagePct = Math.round(totalUsed/totalQuota*100);
 
-  return (<PageShell><Space style={{width:'100%',flexDirection:'column',gap:16}}>
-    <div style={{display:'flex',justifyContent:'space-between'}}>
-      <h2 style={{color:'#f8fafc',margin:0}}>🔗 开放平台</h2>
-      <Space><Button>开发者文档</Button><Button type="primary" onClick={() => setShowCreate(true)}>+ 创建密钥</Button></Space>
+  const filteredKeys = API_KEYS.filter(k => !search || k.name.includes(search));
+
+  const statsRow = (
+    <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:16,marginBottom:16}}>
+      <Card><Statistic label="总密钥" value={API_KEYS.length} /></Card>
+      <Card><Statistic label="活跃" value={activeKeys} variant="success" /></Card>
+      <Card><Statistic label="过期/吊销" value={API_KEYS.filter(k => k.status !== 'active').length} variant="danger" /></Card>
+      <Card><Statistic label="总配额" value={totalQuota.toLocaleString()} prefix="¥" /></Card>
+      <Card><Statistic label="已消耗" value={totalUsed.toLocaleString()} prefix="¥" variant="warning" /></Card>
+      <Card><Statistic label="使用率" value={usagePct} suffix="%" variant={totalUsed/totalQuota > 0.7 ? 'warning' : 'success'} /></Card>
     </div>
+  );
 
-    <Row gutter={16}>
-      <Col span={4}><Card size="small"><Statistic title="总密钥" value={API_KEYS.length} /></Card></Col>
-      <Col span={4}><Card size="small"><Statistic title="活跃" value={activeKeys} valueStyle={{color:'#34d399'}} /></Card></Col>
-      <Col span={4}><Card size="small"><Statistic title="过期/吊销" value={API_KEYS.filter(k => k.status !== 'active').length} valueStyle={{color:'#f87171'}} /></Card></Col>
-      <Col span={4}><Card size="small"><Statistic title="总配额" value={totalQuota.toLocaleString()} prefix="¥" /></Card></Col>
-      <Col span={4}><Card size="small"><Statistic title="已消耗" value={totalUsed.toLocaleString()} prefix="¥" valueStyle={{color:'#f59e0b'}} /></Card></Col>
-      <Col span={4}><Card size="small"><Statistic title="使用率" value={Math.round(totalUsed/totalQuota*100)} suffix="%" valueStyle={{color: totalUsed/totalQuota > 0.7 ? '#f59e0b' : '#34d399'}} /></Card></Col>
-    </Row>
-
-    <Tabs activeKey={tabKey} onChange={setTabKey} items={[
-      { key:'keys', label:'API密钥',
-        children: <Card>
-          <Space style={{marginBottom:12,width:'100%'}}>
-            <Input.Search placeholder="搜索密钥名称" value={search} onChange={e => setSearch(e.target.value)} style={{width:220}} />
+  return (
+    <PageShell title="开放平台">
+      <Space style={{width:'100%',flexDirection:'column',gap:16}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <h2 style={{color:'#f8fafc',margin:0}}>🔗 开放平台</h2>
+          <Space>
+            <Button>开发者文档</Button>
+            <Button variant="primary" onClick={() => setShowCreate(true)}>+ 创建密钥</Button>
           </Space>
-          <Table dataSource={API_KEYS.filter(k => !search || k.name.includes(search))} rowKey="id" columns={[
-            {title:'名称',dataIndex:'name'}, {title:'密钥',dataIndex:'key'},
-            {title:'状态',dataIndex:'status',render:(v:string)=>v==='active'?<Tag color="green">活跃</Tag>:v==='expired'?<Tag color="orange">已过期</Tag>:<Tag color="red">已吊销</Tag>},
-            {title:'创建',dataIndex:'created'},{title:'到期',dataIndex:'expires',render:(v:string)=><Tag color={new Date(v)<new Date()?'red':'green'} size="small">{v}</Tag>},
-            {title:'最近使用',dataIndex:'lastUsed'},{title:'配额',key:'quota',render:(_:unknown,r:APIKey)=><><Progress percent={Math.round(r.used/r.quota*100)} size="small" style={{width:80}} /><span style={{color:'#94a3b8',fontSize:12,marginLeft:4}}>{r.used}/{r.quota}</span></>},
-            {title:'操作',key:'a',render:(_:unknown,r:APIKey)=>r.status==='active'?<Space><Button size="small" danger>吊销</Button></Space>:<Button size="small">恢复</Button>},
-          ]} pagination={{pageSize:6}} />
-        </Card>
-      },
-      { key:'docs', label:'开发文档',
-        children: <Card>
-          <Space direction="vertical" style={{width:'100%'}}>
-            {['REST API概览','OAuth2认证','Webhook回调','SDK下载','错误码表','频率限制'].map(d => (
-              <div key={d} style={{display:'flex',justifyContent:'space-between',padding:'12px 0',borderBottom:'1px solid rgba(148,163,184,0.08)'}}>
-                <span style={{color:'#e2e8f0'}}>{d}</span>
-                <Button size="small" type="link">查看 →</Button>
-              </div>
-            ))}
-          </Space>
-        </Card>
-      },
-    ]} />
+        </div>
 
-    <Modal title="创建API密钥" open={showCreate} onCancel={() => setShowCreate(false)} onOk={()=>{message.success('密钥已创建');setShowCreate(false)}}>
-      <Space direction="vertical" style={{width:'100%'}}>
-        <Input placeholder="密钥名称" /><Input placeholder="配额上限" type="number" />
-        <Select placeholder="权限范围" style={{width:'100%'}}>
-          <Select.Option value="read">只读</Select.Option>
-          <Select.Option value="write">读写</Select.Option>
-          <Select.Option value="admin">管理</Select.Option>
-        </Select>
+        {statsRow}
+
+        <Tabs activeKey={tabKey} onChange={setTabKey} items={[
+          { key:'keys', label:'API密钥' },
+          { key:'docs', label:'开发文档' },
+        ]} />
+
+        {tabKey === 'keys' && (
+          <Card>
+            <Input
+              placeholder="搜索密钥名称"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{width:220,marginBottom:12}}
+            />
+            <Table
+              rows={filteredKeys}
+              rowKey={(r: APIKey) => r.id}
+              columns={[
+                {key:'name', header:'名称', render:(r: APIKey)=>r.name},
+                {key:'key', header:'密钥', render:(r: APIKey)=>r.key},
+                {key:'status', header:'状态', render:(r: APIKey)=>statusTag(r.status)},
+                {key:'created', header:'创建', render:(r: APIKey)=>r.created},
+                {key:'expires', header:'到期', render:(r: APIKey)=>expiresTag(r.expires)},
+                {key:'lastUsed', header:'最近使用', render:(r: APIKey)=>r.lastUsed},
+                {key:'quota', header:'配额', render:(r: APIKey)=>(
+                  <Space>
+                    <Progress value={Math.round(r.used/r.quota*100)} height={16} style={{width:80}} />
+                    <span style={{color:'#94a3b8',fontSize:12}}>{r.used}/{r.quota}</span>
+                  </Space>
+                )},
+                {key:'a', header:'操作', render:(r: APIKey)=>(
+                  r.status==='active'
+                    ? <Button size="sm" variant="danger">吊销</Button>
+                    : <Button size="sm">恢复</Button>
+                )},
+              ]}
+            />
+          </Card>
+        )}
+
+        {tabKey === 'docs' && (
+          <Card>
+            <Space style={{width:'100%',flexDirection:'column'}}>
+              {DOCS.map(d => (
+                <div key={d} style={{display:'flex',justifyContent:'space-between',padding:'12px 0',borderBottom:'1px solid rgba(148,163,184,0.08)'}}>
+                  <span style={{color:'#e2e8f0'}}>{d}</span>
+                  <Button size="sm" variant="ghost">查看 →</Button>
+                </div>
+              ))}
+            </Space>
+          </Card>
+        )}
+
+        <Modal
+          title="创建API密钥"
+          open={showCreate}
+          onClose={() => setShowCreate(false)}
+        >
+          <Space style={{width:'100%',flexDirection:'column'}}>
+            <Input placeholder="密钥名称" />
+            <Input placeholder="配额上限" type="number" />
+            <Select placeholder="权限范围" options={QUOTA_OPTIONS} style={{width:'100%'}} />
+          </Space>
+        </Modal>
       </Space>
-    </Modal>
-  </Space></PageShell>);
+    </PageShell>
+  );
 }
