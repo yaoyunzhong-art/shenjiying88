@@ -11,14 +11,14 @@ describe('FinanceModule', () => {
     const controllers: unknown[] = Reflect.getMetadata('controllers', FinanceModule) || [];
 
     assert.ok(controllers.includes(FinanceController), 'should register FinanceController');
-    assert.equal(controllers.length, 1, 'should have exactly 1 controller');
+    assert.equal(controllers.length, 2, 'should have exactly 2 controllers (FinanceController + ReconciliationController)');
   });
 
   it('exposes provider in metadata', () => {
     const providers: unknown[] = Reflect.getMetadata('providers', FinanceModule) || [];
 
     assert.ok(providers.includes(FinanceService), 'should register FinanceService');
-    assert.equal(providers.length, 5, 'should have exactly 5 providers');
+    assert.equal(providers.length, 6, 'should have exactly 6 providers');
   });
 
   it('imports PrismaModule', () => {
@@ -32,7 +32,7 @@ describe('FinanceModule', () => {
     const exports: unknown[] = Reflect.getMetadata('exports', FinanceModule) || [];
 
     assert.ok(exports.includes(FinanceService), 'should export FinanceService');
-    assert.equal(exports.length, 3, 'should export exactly 3 symbols (FinanceService, ReconciliationService, ReconciliationCron)');
+    assert.equal(exports.length, 4, 'should export exactly 4 symbols (FinanceService, ReconService, ReconciliationService, ReconciliationCron)');
   });
 
   it('is a valid NestJS Module class', () => {

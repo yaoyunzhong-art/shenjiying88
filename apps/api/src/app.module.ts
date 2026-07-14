@@ -120,6 +120,7 @@ import { DbKnowledgeModule } from './modules/db-knowledge/db-knowledge.module';
 import { ScoutModule } from './modules/scout/scout.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
 import { RlsModule } from './modules/rls/rls.module';
+import { DevopsModule } from './modules/devops/devops.module';
 
 @Module({
   imports: [
@@ -252,6 +253,7 @@ import { RlsModule } from './modules/rls/rls.module';
     ScoutModule,
     LogisticsModule,
     RlsModule,
+    DevopsModule,
   ],
   providers: [
     RequestGovernanceService,
