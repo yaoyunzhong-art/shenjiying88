@@ -69,11 +69,9 @@ jobs:
 
       - name: Lint
         run: pnpm lint
-        continue-on-error: true
 
       - name: TypeCheck
         run: pnpm typecheck
-        continue-on-error: true
 
   # ─── 2. Build ─────────────────────────────────────────
   build:

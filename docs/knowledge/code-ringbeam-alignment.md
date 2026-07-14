@@ -36,9 +36,9 @@
 |:-----|:-----:|:---:|:----:|:----:|:----:|:--------:|
 | cashier | P-35 | ✅ PRD-001 | ✅ 4files | ✅ 45tests | ✅ | 🟢 完整 |
 | member | P-36 | ✅ PRD-002 | ✅ 17files | ✅ 41tests | ✅ | 🟢 完整 |
-| finance | P-38 | ✅ PRD-007 | ✅ 29files（含admin-web 142行页） | ✅ 20tests (7,942行) | ⬜ | 🟡 缺审计 |
-| inventory | P-37 | ✅ PRD-008 | ✅ 19files（含admin-web 74行页） | ✅ 22tests (8,628行) | ⬜ | 🟡 缺审计 |
-| coupon | P-48 | ✅ PRD-009 | ✅ 10files | ✅ 16tests | ⬜ | 🟡 缺审计 |
+| finance | P-38 | ✅ PRD-007 | ✅ 29files（含admin-web 142行页） | ✅ 20tests (7,942行) | 🐜 进行中 | 🟡 审计撰写中 |
+| inventory | P-37 | ✅ PRD-008 | ✅ 19files（含admin-web 74行页） | ✅ 22tests (8,628行) | 🐜 进行中 | 🟡 审计撰写中 |
+| coupon | P-48 | ✅ PRD-009 | ✅ 10files | ✅ 16tests | 🐜 进行中 | 🟡 审计撰写中 |
 | tenant | P-31 | ✅ PRD-011 | ✅ 45files | ✅ 1圈梁+71tests | ✅ P-31专项审计 | 🟡 已补主圈梁 |
 | tenant-config | P-31 | ✅ PRD-011 | ✅ 23files | ✅ 1圈梁+65tests | ✅ P-31专项审计 | 🟡 已补主圈梁 |
 | member-level | P-36 | (合入PRD-002) | ✅ 6files | ⬜ | ⬜ | 🔴 缺对齐 |
@@ -48,7 +48,7 @@
 | openapi | P-49 | ✅ PRD-016 | ✅ 29files | ✅ 1圈梁+7e2e | ✅ P-49专项审计 | 🟡 已补主圈梁 |
 | tenant-llm | P-49 | ✅ PRD-014 | ✅ 10files | ✅ 1圈梁+61tests+27e2e | ✅ P-49专项审计 | 🟡 已补主圈梁 |
 | tob-web-seo-geo | P-49 | ✅ PRD-015 | ✅ 16files | ✅ 1圈梁+19tests+1browser+CI/nightly | ✅ P-49专项审计 | 🟡 已补主圈梁 |
-| deploy | P-53 | ✅ PRD-013 | ✅ 6files | ✅ 13tests | ⬜ | 🟡 缺审计 |
+| deploy | P-53 | ✅ PRD-013 | ✅ 6files | ✅ 13tests | 🐜 进行中 | 🟡 审计撰写中 |
 | iot | (未分配) | ⬜ | ✅ 6files | ⬜ | ⬜ | 🔴 缺Phase归属 |
 
 ### 2.2 无Phase归属模块（需要建新Phase或合并）
@@ -202,13 +202,13 @@ Phase3 (7/17~7/20)  🟢 P3模块对齐
 ⬜ 未动: 尚未开始对齐
 
 当前整体圈梁状态:
-  P-35: 🟢  | P-36: 🟢  | P-38: 🔴  | P-37: 🔴
-  P-48: 🔴  | P-31: 🟡  | P-47: 🔴  | P-49: 🟡
-  P-30: 🔴  | P-53: 🔴
+  P-35: 🟢  | P-36: 🟢  | P-38: 🟡(审计中)  | P-37: 🟡(审计中)
+  P-48: 🟡(审计中)  | P-31: 🟡  | P-47: 🔴  | P-49: 🟡
+  P-30: 🔴  | P-53: 🟡(审计中)
   基础设施: 🔴 (100+模块)
   AI层: 🔴 (20+模块)
   
-总体: 仅有2/100+模块达到🟢完整圈梁
+总体: 2/100+模块达到🟢完整圈梁 + 4🟡审计撰写中
 目标: 7/20前50%模块达到🟢, 7/27前80%模块达到🟢
 ```
 

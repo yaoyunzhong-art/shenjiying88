@@ -49,6 +49,12 @@ volumes:
   minio_data:
     name: m5_minio_data
     driver: local
+  qdrant_storage:
+    name: m5_qdrant_storage
+    driver: local
+  qdrant_snapshots:
+    name: m5_qdrant_snapshots
+    driver: local
   nginx_logs:
     name: m5_nginx_logs
     driver: local
@@ -439,11 +445,3 @@ services:
         limits:
           cpus: "2.0"
           memory: 2G
-
-volumes:
-  qdrant_storage:
-    name: m5_qdrant_storage
-    driver: local
-  qdrant_snapshots:
-    name: m5_qdrant_snapshots
-    driver: local
