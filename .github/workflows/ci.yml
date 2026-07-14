@@ -202,12 +202,79 @@ jobs:
         env:
           CI: true
 
+      - name: Write SEO/GEO browser summary
+        if: always()
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+          const reportPath = 'tmp/phase49-seo-geo/report.json';
+          const lines = ['## SEO/GEO Browser E2E'];
+          if (!fs.existsSync(reportPath)) {
+            lines.push('', '- 报告文件缺失: `tmp/phase49-seo-geo/report.json`');
+            fs.appendFileSync(summaryPath, lines.join('\n') + '\n');
+            process.exit(0);
+          }
+          const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+          lines.push('', `- baseUrl: \`${report.baseUrl}\``);
+          lines.push(`- generatedAt: \`${report.generatedAt}\``);
+          lines.push(`- route count: \`${report.routes.length}\``);
+          lines.push('', '| route | lang | title | console |');
+          lines.push('|---|---|---|---:|');
+          for (const route of report.routes) {
+            const safeTitle = String(route.title).replaceAll('|', '\\|');
+            lines.push(`| \`${route.name}\` | \`${route.lang}\` | ${safeTitle} | ${route.consoleMessages.length} |`);
+          }
+          fs.appendFileSync(summaryPath, lines.join('\n') + '\n');
+          EOF
+
+      - name: Comment PR on SEO/GEO browser failure
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = 'tmp/phase49-seo-geo/report.json';
+            const body = [];
+            body.push('## SEO/GEO Browser E2E 失败');
+            body.push('');
+            body.push('- Job: `seo-geo-browser`');
+            body.push('- Artifact: `phase49-seo-geo-evidence`');
+            if (fs.existsSync(reportPath)) {
+              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              body.push(`- baseUrl: \`${report.baseUrl}\``);
+              body.push(`- generatedAt: \`${report.generatedAt}\``);
+              body.push('');
+              body.push('| route | lang | title | console |');
+              body.push('|---|---|---|---:|');
+              for (const route of report.routes) {
+                const safeTitle = String(route.title).replaceAll('|', '\\|');
+                body.push(`| \`${route.name}\` | \`${route.lang}\` | ${safeTitle} | ${route.consoleMessages.length} |`);
+              }
+            } else {
+              body.push('');
+              body.push('- 未生成 `tmp/phase49-seo-geo/report.json`，请先检查 `tob-web` 启动与 Playwright 执行日志。');
+            }
+            body.push('');
+            body.push('建议排查:');
+            body.push('```bash');
+            body.push('pnpm run e2e:phase49:seo-geo');
+            body.push('cat tmp/phase49-seo-geo/report.json');
+            body.push('```');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body.join('\n')
+            });
+
       - name: Upload SEO/GEO browser evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: phase49-seo-geo-evidence
           path: tmp/phase49-seo-geo
-          retention-days: 7
+          retention-days: 14
 
   # ─── 4. Docker Build (仅 main 分支) ──────────────────
   docker:

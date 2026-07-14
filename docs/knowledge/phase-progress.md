@@ -285,3 +285,4 @@
 
 | 2026-07-14 09:25 | pulse#420 | 🟢 第二十六次30min脉冲: TSC 14/14全绿✅(全部缓存)·无新Fail·admin-web ~85✖假阳(同pulse#399批次·连续18+脉冲已知)·RQ-010~020 P0-FIRE停滞(31h+) | Base✅(TSC 14/14✅)/Service✅(全部缓存全绿✅)/Controller⚠️(admin-web ~85✖假阳·非新)/CTest⚠️(同Controller) | 0🏆(中断) ⚠️知识库陈旧持续 |
 | 2026-07-14 09:43 | pulse#421 | 🟢 第二十七次30min脉冲: TSC 14/14全绿✅(全部缓存)·无新Fail·admin-web ~85✖假阳(同pulse#399批次·连续19+脉冲已知)·RQ-010~020 P0-FIRE停滞(32h+) | Base✅(TSC 14/14✅)/Service✅(全部缓存全绿✅)/Controller⚠️(admin-web ~85✖假阳·非新)/CTest⚠️(同Controller) | 0🏆(中断) ⚠️知识库3文件>48h老化🚨
+| 2026-07-14 10:13 | pulse#422 | 🟢 第二十八次30min脉冲: TSC 14/14全绿✅(全部缓存)·pulse#409 TSC fix连续13脉冲稳态保持✅·无新Fail·admin-web ~137✖假阳(新鲜跑·同pulse#399批次·连续20+脉冲已知)·RQ-010~020 P0-FIRE停滞(33h+) | Base✅(TSC 14/14✅)/Service✅(全部缓存全绿✅)/Controller⚠️(admin-web ~137✖假阳·非新)/CTest⚠️(同Controller) | 0🏆(中断) ⚠️知识库3文件>24h龄(ui 55h·expert 33h·dispatch 31h)🚨

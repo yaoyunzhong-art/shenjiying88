@@ -1,6 +1,6 @@
 # P-49 SEO/GEO 专项审计
 
-> 更新时间: 2026-07-14 05:31
+> 更新时间: 2026-07-14 05:46
 > 范围: `PRD-015` / `apps/tob-web` / `SEO/GEO`
 
 ## 1. 审计结论
@@ -58,7 +58,12 @@
    - 证据已落盘到 `tmp/phase49-seo-geo/report.json` 与同目录 4 张全页截图
 8. 接入持续回归入口：
    - `.github/workflows/ci.yml` 新增 `SEO/GEO Browser E2E` job，安装 Playwright Chromium 后执行 `pnpm run e2e:phase49:seo-geo`
-   - `scripts/nightly-jobs.sh` 的 Phase 2 新增 `2.4 SEO/GEO 浏览器回归`，夜间自动补 `PRD-015` 浏览器证据
+   - `scripts/nightly-jobs.sh` 的 Phase 2 新增 `2.4 SEO/GEO 浏览器回归`，夜间自动补 `PRD-015` 浏览器证据，并在成功后归档到 `docs/monitoring/nightly/<date>/seo-geo`
+9. 补齐失败通知与保留策略：
+   - CI 新增 `GITHUB_STEP_SUMMARY` 摘要输出，失败时在 PR 自动评论 `route/lang/title/console` 摘要
+   - CI artifact `phase49-seo-geo-evidence` 保留期提升到 14 天，并在失败时也会上传
+   - 新增 `scripts/archive-phase49-seo-geo.sh`，把 `report.json`、截图和 `summary.md` 归档到 `docs/monitoring/nightly/<date>/seo-geo`
+   - 夜间归档默认只保留最近 14 天，超期目录自动清理 `seo-geo` 子目录
 
 ## 4. AC / RQ 映射
 
@@ -76,7 +81,7 @@
 
 ## 5. 剩余缺口
 
-1. 浏览器自动化证据已落盘并接入 CI / 夜间回归；后续可继续补失败告警通知与更长期的截图归档策略。
+1. 浏览器自动化证据、失败通知、14 天归档与夜间回放已接通；后续可继续补外部通知通道（如 Slack/企微 webhook）与更长期冷存储策略。
 
 ## 6. 验证记录
 
