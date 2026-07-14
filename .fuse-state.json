@@ -29,6 +29,12 @@
       "count": 1,
       "last": "initial-run",
       "last_at": "2026-07-14 23:56"
+    },
+    {
+      "module": "pipeline",
+      "count": 2,
+      "last": "auto",
+      "last_at": "2026-07-15 00:10"
     }
   ],
   "paused": true
