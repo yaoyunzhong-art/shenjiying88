@@ -433,5 +433,4 @@ describe('CashierService', () => {
         }),
       /already closed/
     )
-  })
 })

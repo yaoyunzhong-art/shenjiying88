@@ -68,6 +68,10 @@ describe('TenantConfigCacheService', () => {
     async ping(): Promise<boolean> {
       return true
     }
+
+    async clear(): Promise<void> {
+      this.store.clear()
+    }
   }
 
   class FailingSetCacheService extends FakeRemoteCacheService {
