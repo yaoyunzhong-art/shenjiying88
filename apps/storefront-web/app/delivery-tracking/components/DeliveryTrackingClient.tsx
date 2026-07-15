@@ -42,12 +42,22 @@ const MOCK_TRACKING: Record<string, { carrier: string; trackingNumber: string; s
 /* ── Props ── */
 export interface DeliveryTrackingClientProps {
   initialOrderId?: string;
+  onSearch?: (orderId: string) => void;
 }
 
 /* ── Component ── */
-export function DeliveryTrackingClient({ initialOrderId }: DeliveryTrackingClientProps) {
+export function DeliveryTrackingClient({ initialOrderId, onSearch }: DeliveryTrackingClientProps) {
   const [orderId, setOrderId] = useState(initialOrderId ?? '');
   const [searchedOrderId, setSearchedOrderId] = useState(initialOrderId ?? '');
+
+  // 当父组件更新 initialOrderId 时，同步执行搜索
+  React.useEffect(() => {
+    if (initialOrderId && initialOrderId !== searchedOrderId) {
+      setOrderId(initialOrderId);
+      setSearchedOrderId(initialOrderId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialOrderId]);
 
   const trackingInfo = useMemo(() => {
     if (!searchedOrderId) return null;
@@ -55,7 +65,11 @@ export function DeliveryTrackingClient({ initialOrderId }: DeliveryTrackingClien
   }, [searchedOrderId]);
 
   const handleSearch = () => {
-    setSearchedOrderId(orderId.trim());
+    const trimmed = orderId.trim();
+    setSearchedOrderId(trimmed);
+    if (trimmed && onSearch) {
+      onSearch(trimmed);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

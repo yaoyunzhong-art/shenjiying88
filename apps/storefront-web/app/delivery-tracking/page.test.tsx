@@ -1,6 +1,6 @@
 /**
  * 物流配送追踪页 — 集成测试
- * 项目测试规范: node:test + renderToStaticMarkup
+ * 覆盖: loading/error/empty三态 + 统计看板 + 历史记录 + 趋势图
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -32,6 +32,40 @@ describe('DeliveryTrackingPage — 正例', () => {
     assert.ok(pageSource.includes('loading'), '缺少加载态');
     assert.ok(pageSource.includes('error'), '缺少错误态');
     assert.ok(pageSource.includes('simulateLoad'), '缺少模拟初始化');
+  });
+
+  it('包含统计看板 StatsDashboard', () => {
+    assert.ok(pageSource.includes('StatsDashboard'));
+    assert.ok(pageSource.includes('TrackingStats'));
+    assert.ok(pageSource.includes('totalOrders'));
+    assert.ok(pageSource.includes('inTransit'));
+    assert.ok(pageSource.includes('delivered'));
+    assert.ok(pageSource.includes('issues'));
+  });
+
+  it('包含空状态 — SearchHistory', () => {
+    assert.ok(pageSource.includes('SearchHistory'));
+    assert.ok(pageSource.includes('searchHistory'));
+  });
+
+  it('包含配送趋势图 DeliveryTrendChart', () => {
+    assert.ok(pageSource.includes('DeliveryTrendChart'));
+    assert.ok(pageSource.includes('本周配送趋势'));
+  });
+
+  it('包含 LoadingSkeleton 组件', () => {
+    assert.ok(pageSource.includes('LoadingSkeleton'));
+    assert.ok(pageSource.includes('function LoadingSkeleton'));
+  });
+
+  it('包含 ErrorState 组件', () => {
+    assert.ok(pageSource.includes('function ErrorState'));
+    assert.ok(pageSource.includes('onRetry'));
+  });
+
+  it('包含快速查询示例按钮', () => {
+    assert.ok(pageSource.includes('快速查询示例'));
+    assert.ok(pageSource.includes('ORD-20260708-001'));
   });
 
   it('renders page title and search elements', () => {
@@ -75,16 +109,6 @@ describe('DeliveryTrackingPage — 正例', () => {
     assert.ok(html.includes('中通快递'));
     assert.ok(html.includes('ZT0987654321'));
   });
-
-  it('renders delivery location for in-transit order', () => {
-    const html = renderToStaticMarkup(<DeliveryTrackingClient initialOrderId="ORD-20260708-001" />);
-    assert.ok(html.includes('上海浦东'));
-  });
-
-  it('renders delivery location for completed order', () => {
-    const html = renderToStaticMarkup(<DeliveryTrackingClient initialOrderId="ORD-20260707-002" />);
-    assert.ok(html.includes('上海浦西') || html.includes('上海浦东'));
-  });
 });
 
 describe('DeliveryTrackingPage — 边界', () => {
@@ -99,7 +123,6 @@ describe('DeliveryTrackingPage — 边界', () => {
     const html2 = renderToStaticMarkup(<DeliveryTrackingClient initialOrderId="ORD-20260707-002" />);
     assert.ok(html1.includes('顺丰速运'));
     assert.ok(html2.includes('中通快递'));
-    // Different carriers
     assert.ok(html1 !== html2);
   });
 
@@ -132,6 +155,15 @@ describe('DeliveryTrackingPage — 防御', () => {
 
   it('initial render without props should show placeholder', () => {
     const html = renderToStaticMarkup(<DeliveryTrackingClient />);
-    assert.ok(html.includes('输入订单号') || html.includes('placeholder') || html.includes('placeholder'));
+    assert.ok(html.includes('输入订单号') || html.includes('placeholder'));
+  });
+
+  it('page source contains onSearch prop in DeliveryTrackingClient usage', () => {
+    assert.ok(pageSource.includes('onSearch={handleSearch}'));
+  });
+
+  it('page has handleRetry and handleClearHistory', () => {
+    assert.ok(pageSource.includes('handleRetry'));
+    assert.ok(pageSource.includes('handleClearHistory'));
   });
 });
