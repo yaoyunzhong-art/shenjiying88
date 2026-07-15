@@ -1,15 +1,17 @@
+/**
+ * venue.dto.ts — P-25 场地管理 DTO
+ */
 import {
   IsArray,
   IsEnum,
   IsInt,
-  IsNumber,
   IsOptional,
   IsString,
   Min,
   ValidateNested,
 } from 'class-validator'
 import { Type } from 'class-transformer'
-import { VenueType, VenueStatus, type TimeSlotPricing, type HolidayPricing } from './venue.entity'
+import { VenueType, VenueStatus, TimeSlotPricing, HolidayPricing } from './venue.entity'
 
 class TimeSlotPricingDto implements TimeSlotPricing {
   @IsString()
