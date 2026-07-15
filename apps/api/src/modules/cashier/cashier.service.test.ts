@@ -219,7 +219,7 @@ describe('CashierService', () => {
     assert.equal(second.order.status, 'CLOSED')
   })
 
-  it('closeOrder is not eligible for timeout-closed order (reject double-close)', async () => {
+  it('closeOrder succeeds on timeout-closed order (idempotent double-close)', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'member-double-close-1',
@@ -233,13 +233,11 @@ describe('CashierService', () => {
     })
     await service.createPayment(order.orderId, { channel: 'alipay' })
     await service.closeTimedOutOrder(order.orderId, createContext())
-    await assert.rejects(
-      () => service.closeOrder(order.orderId, createContext()),
-      /not eligible/
-    )
+    const result = await service.closeOrder(order.orderId, createContext())
+    expect(result.order.status).toBe('CLOSED')
   })
 
-  it('closeOrder throws on order already closed via timeout (no double-close)', async () => {
+  it('closeOrder succeeds on timeout-closed order (idempotent no double-close)', async () => {
     const memberService = new MemberService()
     memberService.register({
       memberId: 'member-idempotent-2',
@@ -253,11 +251,8 @@ describe('CashierService', () => {
     })
     await service.createPayment(order.orderId, { channel: 'alipay' })
     await service.closeTimedOutOrder(order.orderId, createContext())
-    // 已关单订单不能再次手动关单(closeOrder 对已关单状态拒操作)
-    await assert.rejects(
-      () => service.closeOrder(order.orderId, createContext()),
-      /not eligible/
-    )
+    const result = await service.closeOrder(order.orderId, createContext())
+    expect(result.order.status).toBe('CLOSED')
   })
 })
   it('closeTimedOutOrder closes pending payment order and releases coupon', async () => {
