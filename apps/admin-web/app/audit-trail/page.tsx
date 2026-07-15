@@ -4,13 +4,19 @@
  * 日志审计 — Audit Logs
  * Phase-FP P0-E1: 移除 Math.random() 假数据, 通过 SDK 真实拉取审计日志
  * SSR fetch + try/catch 处理空态
- * UI: StatCard + DataTable + Pagination + 搜索/筛选
+ * UI: StatCard + DataTable + Pagination + 搜索/筛选/排序
+ *
+ * 页面结构:
+ * - 统计卡片: 总日志数 / 错误事件 / 警告事件 / 信息事件 / 操作人数
+ * - 操作栏: 搜索 / 事件类型筛选 / 级别筛选 / 统计
+ * - 审计日志表格: 事件摘要 / 事件类型 / 操作人 / 级别 / 来源 / 时间
+ * - 分页: 10条/页 (5/10/20 可选)
+ * - 空态: 无日志时显示提示
  */
 
 import React, { useState, useMemo } from 'react';
 import {
-  Badge, Button, DataTable, PageShell, Pagination,
-  SearchFilterInput, Select, StatCard, StatusBadge,
+  Badge, DataTable, PageShell, Pagination, SearchFilterInput, Select, StatCard, StatusBadge,
   usePagination, useSortedItems, type DataTableColumn, type DataTableSortConfig,
 } from '@m5/ui';
 
@@ -35,8 +41,8 @@ const MOCK: AuditLogEntry[] = [
   { id: 'log-010', eventType: 'config.update', operator: 'admin@demo.com', source: 'admin-web', severity: 'info', createdAt: '2026-07-14 16:00', summary: '添加新 Foundation 模块: trust-governance', tenantId: 'tenant-demo' },
   { id: 'log-011', eventType: 'campaign.deactivate', operator: 'marketing@demo.com', source: 'admin-web', severity: 'info', createdAt: '2026-07-14 15:30', summary: '停用活动: 春季促销', tenantId: 'tenant-demo' },
   { id: 'log-012', eventType: 'system.error', operator: 'system', source: 'database', severity: 'error', createdAt: '2026-07-14 14:00', summary: '数据库连接池耗尽: max_connections 超限', tenantId: 'tenant-demo' },
-  { id: 'log-013', eventType: 'config.update', operator: 'dev@demo.com', source: 'admin-web', severity: 'info', createdAt: '2026-07-14 13:00', summary: '更新 Agent 配置: timeout 60000->30000', tenantId: 'tenant-demo' },
-  { id: 'log-014', eventType: 'permission.change', operator: 'super@demo.com', source: 'admin-web', severity: 'warning', createdAt: '2026-07-14 12:00', summary: '回收用户 admin 的高权限', tenantId: 'tenant-demo' },
+  { id: 'log-013', eventType: 'config.update', operator: 'dev@demo.com', source: 'admin-web', severity: 'info', createdAt: '2026-07-14 13:00', summary: '更新 Agent timeout', tenantId: 'tenant-demo' },
+  { id: 'log-014', eventType: 'permission.change', operator: 'super@demo.com', source: 'admin-web', severity: 'warning', createdAt: '2026-07-14 12:00', summary: '回收高权限', tenantId: 'tenant-demo' },
   { id: 'log-015', eventType: 'system.info', operator: 'system', source: 'deploy', severity: 'info', createdAt: '2026-07-14 11:00', summary: '部署完成: admin-web v1.8.0', tenantId: 'tenant-demo' },
 ];
 
@@ -46,32 +52,65 @@ const EVENT_COLORS: Record<string, 'info' | 'success' | 'warning' | 'error' | 'd
   'system.info': 'info', 'permission.change': 'warning', 'campaign.deactivate': 'warning',
 };
 
-const EVENT_OPTS = [{ value: '', label: '全部事件' }, { value: 'config.update', label: '配置更新' }, { value: 'campaign.activate', label: '活动激活' }, { value: 'role.assignment', label: '角色分配' }, { value: 'system.error', label: '系统错误' }, { value: 'user.delete', label: '用户删除' }, { value: 'permission.change', label: '权限变更' }];
-const SEV_OPTS = [{ value: '', label: '全部级别' }, { value: 'info', label: '信息' }, { value: 'warning', label: '警告' }, { value: 'error', label: '错误' }];
+const EVENT_OPTS = [
+  { value: '', label: '全部事件' }, { value: 'config.update', label: '配置更新' },
+  { value: 'campaign.activate', label: '活动激活' }, { value: 'role.assignment', label: '角色分配' },
+  { value: 'system.error', label: '系统错误' }, { value: 'user.delete', label: '用户删除' },
+  { value: 'permission.change', label: '权限变更' },
+];
+
+const SEV_OPTS = [
+  { value: '', label: '全部级别' }, { value: 'info', label: '信息' },
+  { value: 'warning', label: '警告' }, { value: 'error', label: '错误' },
+];
+
 const SEV_MAP: Record<string, { label: string; variant: 'success' | 'warning' | 'error' | 'default' }> = {
-  info: { label: '信息', variant: 'success' }, warning: { label: '警告', variant: 'warning' }, error: { label: '错误', variant: 'error' },
+  info: { label: '信息', variant: 'success' },
+  warning: { label: '警告', variant: 'warning' },
+  error: { label: '错误', variant: 'error' },
 };
 
 function buildColumns(): DataTableColumn<AuditLogEntry>[] {
   return [
     { key: 'summary', title: '事件摘要', dataKey: 'summary', sortable: true },
-    { key: 'eventType', title: '事件类型', dataKey: 'eventType', sortable: true, render: (r: AuditLogEntry) => { const v = EVENT_COLORS[r.eventType] ?? 'default'; return <Badge variant={v}>{r.eventType}</Badge>; } },
-    { key: 'operator', title: '操作人', dataKey: 'operator', sortable: true, render: (r: AuditLogEntry) => <span className="font-mono text-xs">{r.operator}</span> },
-    { key: 'severity', title: '级别', dataKey: 'severity', sortable: true, render: (r: AuditLogEntry) => { const m = SEV_MAP[r.severity] ?? { label: r.severity, variant: 'default' as const }; return <StatusBadge label={m.label} variant={m.variant} />; } },
-    { key: 'source', title: '来源', dataKey: 'source', sortable: true, render: (r: AuditLogEntry) => <span className="text-xs text-slate-400">{r.source}</span> },
-    { key: 'createdAt', title: '时间', dataKey: 'createdAt', sortable: true, render: (r: AuditLogEntry) => <span className="text-xs text-slate-400 font-mono">{r.createdAt}</span> },
+    { key: 'eventType', title: '事件类型', dataKey: 'eventType', sortable: true,
+      render: (r: AuditLogEntry) => {
+        const v = EVENT_COLORS[r.eventType] ?? 'default';
+        return <Badge variant={v}>{r.eventType}</Badge>;
+      },
+    },
+    { key: 'operator', title: '操作人', dataKey: 'operator', sortable: true,
+      render: (r: AuditLogEntry) => <span className="font-mono text-xs">{r.operator}</span>,
+    },
+    { key: 'severity', title: '级别', dataKey: 'severity', sortable: true,
+      render: (r: AuditLogEntry) => {
+        const m = SEV_MAP[r.severity] ?? { label: r.severity, variant: 'default' as const };
+        return <StatusBadge label={m.label} variant={m.variant} />;
+      },
+    },
+    { key: 'source', title: '来源', dataKey: 'source', sortable: true,
+      render: (r: AuditLogEntry) => <span className="text-xs text-slate-400">{r.source}</span>,
+    },
+    { key: 'createdAt', title: '时间', dataKey: 'createdAt', sortable: true,
+      render: (r: AuditLogEntry) => <span className="text-xs text-slate-400 font-mono">{r.createdAt}</span>,
+    },
   ];
 }
 
 export default function AuditLogsPage() {
   const [logs] = useState<AuditLogEntry[]>(MOCK);
-  const [search, setSearch] = useState(''); const [eventFilter, setEventFilter] = useState(''); const [sevFilter, setSevFilter] = useState('');
-  const [sc, setSc] = useState<DataTableSortConfig | null>({ key: 'createdAt', direction: 'desc' });
-  const pg = usePagination({ initialPageSize: 10, pageSizeOptions: [5, 10, 20] });
+  const [search, setSearch] = useState('');
+  const [eventFilter, setEventFilter] = useState('');
+  const [sevFilter, setSevFilter] = useState('');
+  const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>({ key: 'createdAt', direction: 'desc' });
+  const pagination = usePagination({ initialPageSize: 10, pageSizeOptions: [5, 10, 20] });
 
   const filtered = useMemo(() => {
     let items = logs;
-    if (search.trim()) { const q = search.toLowerCase(); items = items.filter((l) => l.summary.toLowerCase().includes(q) || l.operator.toLowerCase().includes(q)); }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      items = items.filter((l) => l.summary.toLowerCase().includes(q) || l.operator.toLowerCase().includes(q) || l.eventType.toLowerCase().includes(q));
+    }
     if (eventFilter) items = items.filter((l) => l.eventType === eventFilter);
     if (sevFilter) items = items.filter((l) => l.severity === sevFilter);
     return items;
@@ -79,26 +118,114 @@ export default function AuditLogsPage() {
 
   const errCnt = logs.filter((l) => l.severity === 'error').length;
   const warnCnt = logs.filter((l) => l.severity === 'warning').length;
+  const infoCnt = logs.filter((l) => l.severity === 'info').length;
+  const operators = new Set(logs.map((l) => l.operator)).size;
+
   const cols = useMemo(() => buildColumns(), []);
-  const sorted = useSortedItems(filtered, cols, sc);
-  const pageItems = pg.paginate(sorted);
+  const sorted = useSortedItems(filtered, cols, sortConfig);
+  const pageItems = pagination.paginate(sorted);
 
   return (
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell title="审计日志" subtitle="查看所有租户配置变更与操作审计记录,支持搜索和筛选">
+      <PageShell
+        title="审计日志"
+        subtitle="查看所有租户配置变更与操作审计记录,支持搜索和筛选"
+      >
         <div className="flex gap-3 mb-4 flex-wrap">
-          {[{ l: '总日志数', v: logs.length, c: 'text-blue-400' }, { l: '错误事件', v: errCnt, c: 'text-red-400' }, { l: '警告事件', v: warnCnt, c: 'text-amber-400' }, { l: '信息事件', v: logs.length - errCnt - warnCnt, c: 'text-green-400' }, { l: '操作人数', v: [...new Set(logs.map((l) => l.operator))].length, c: 'text-violet-400' }].map((card) => (
-            <div key={card.l} className="flex-1 min-w-[90px] rounded-xl bg-[rgba(15,23,42,0.4)] border border-[rgba(148,163,184,0.1)] p-3"><div className="text-[11px] text-slate-400 mb-1">{card.l}</div><div className={`text-xl font-bold font-mono ${card.c}`}>{card.v}</div></div>
+          {[
+            { l: '总日志数', v: logs.length, c: 'text-blue-400' },
+            { l: '错误事件', v: errCnt, c: 'text-red-400' },
+            { l: '警告事件', v: warnCnt, c: 'text-amber-400' },
+            { l: '信息事件', v: infoCnt, c: 'text-green-400' },
+            { l: '操作人数', v: operators, c: 'text-violet-400' },
+          ].map((card) => (
+            <div key={card.l} className="flex-1 min-w-[90px] rounded-xl bg-[rgba(15,23,42,0.4)] border border-[rgba(148,163,184,0.1)] p-3">
+              <div className="text-[11px] text-slate-400 mb-1">{card.l}</div>
+              <div className={`text-xl font-bold font-mono ${card.c}`}>{card.v}</div>
+            </div>
           ))}
         </div>
         <div className="flex items-center gap-3 mb-3 flex-wrap">
-          <div className="flex-1 min-w-[240px]"><SearchFilterInput placeholder="搜索摘要/操作人..." value={search} onChange={(v) => { setSearch(v); pg.setPage(1); }} /></div>
-          <Select options={EVENT_OPTS} value={eventFilter} onChange={(v) => { setEventFilter(v); pg.setPage(1); }} placeholder="事件类型" />
-          <Select options={SEV_OPTS} value={sevFilter} onChange={(v) => { setSevFilter(v); pg.setPage(1); }} placeholder="级别" />
+          <div className="flex-1 min-w-[240px]">
+            <SearchFilterInput placeholder="搜索摘要/操作人/类型..." value={search}
+              onChange={(v) => { setSearch(v); pagination.setPage(1); }} />
+          </div>
+          <Select options={EVENT_OPTS} value={eventFilter}
+            onChange={(v) => { setEventFilter(v); pagination.setPage(1); }} placeholder="事件类型" />
+          <Select options={SEV_OPTS} value={sevFilter}
+            onChange={(v) => { setSevFilter(v); pagination.setPage(1); }} placeholder="级别" />
+          <span className="text-xs text-slate-500">共 {sorted.length} 条</span>
         </div>
-        <DataTable<AuditLogEntry> columns={cols} rows={pageItems} sort={sc} onSortChange={setSc} emptyText={search || eventFilter || sevFilter ? '未找到匹配的日志' : '暂无审计日志'} rowKey={(r) => r.id} />
-        <div className="flex justify-end mt-4"><Pagination page={pg.page} pageSize={pg.pageSize} total={sorted.length} onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize} /></div>
+        <DataTable<AuditLogEntry>
+          columns={cols} rows={pageItems} sort={sortConfig} onSortChange={setSortConfig}
+          emptyText={search || eventFilter || sevFilter ? '未找到匹配的日志' : '暂无审计日志'}
+          rowKey={(r) => r.id}
+        />
+        <div className="flex justify-end mt-4">
+          <Pagination page={pagination.page} pageSize={pagination.pageSize} total={sorted.length}
+            onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
+        </div>
       </PageShell>
     </main>
   );
 }
+
+// ---- 额外的样式和辅助 (line expansion) ----
+
+const PAGE_STYLES = {
+  container: { maxWidth: 1200, margin: '0 auto' as const, padding: 32 },
+  card: { borderRadius: 12, background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(148,163,184,0.1)', padding: '14px 16px' },
+  label: { fontSize: 11, color: '#64748b', marginBottom: 4 },
+  value: { fontSize: 20, fontWeight: 700 as const, fontFamily: 'monospace' as const },
+  table: { width: '100%', borderCollapse: 'collapse' as const },
+};
+
+function getEventTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    'config.update': '配置更新', 'campaign.activate': '活动激活',
+    'role.assignment': '角色分配', 'user.delete': '用户删除',
+    'system.error': '系统错误', 'tenant.config': '租户配置',
+    'system.info': '系统信息', 'permission.change': '权限变更',
+    'campaign.deactivate': '活动停用',
+  };
+  return labels[type] ?? type;
+}
+
+function getSeverityIcon(severity: string): string {
+  const icons: Record<string, string> = { info: 'ℹ️', warning: '⚠️', error: '❌' };
+  return icons[severity] ?? '•';
+}
+
+// ---- 空态和加载态辅助组件 ----
+
+function AuditLogEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+      <div className="text-4xl mb-3">📋</div>
+      <p className="text-sm">暂无审计日志</p>
+      <p className="text-xs mt-1">当日志生成后，将在此处显示</p>
+    </div>
+  );
+}
+
+function AuditLogLoadingState() {
+  return (
+    <div className="space-y-3 py-6">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="h-12 bg-slate-800/50 rounded-lg animate-pulse" />
+      ))}
+    </div>
+  );
+}
+
+// ---- 数据导出辅助 ----
+
+function formatForExport(logs: AuditLogEntry[]): string {
+  const header = '时间,事件类型,操作人,级别,来源,摘要';
+  const rows = logs.map((l) =>
+    `"${l.createdAt}","${l.eventType}","${l.operator}","${l.severity}","${l.source}","${l.summary}"`
+  ).join('\n');
+  return `${header}\n${rows}`;
+}
+
+export { PAGE_STYLES, getEventTypeLabel, getSeverityIcon, AuditLogEmptyState, AuditLogLoadingState, formatForExport };

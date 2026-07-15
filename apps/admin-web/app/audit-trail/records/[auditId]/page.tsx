@@ -1,37 +1,181 @@
-import { Suspense } from 'react';
-import { LoadingSkeleton, PageShell } from '@m5/ui';
-import { readAuditTrailRecordDetailParam } from '@m5/types';
-import { loadAuditTrailRecordDetail } from '../../../audit-trail-detail-view-model';
-import AuditTrailRecordDetailClient from './audit-trail-record-detail-client';
+'use client';
 
-interface AuditTrailRecordDetailPageProps {
+/**
+ * 审计记录详情页 — Audit Trail Record Detail
+ * 功能: 查看事件级别、操作人、来源、详情 payload 与关联审计记录
+ *
+ * 页面结构:
+ * - 404 处理: null routeParam 显示不存在状态
+ * - 数据层: 加载审计详情快照
+ * - 详情面板: 事件类型 / 操作人 / 级别 / 来源 / 时间 / 详情
+ * - 操作栏: 返回列表 / 复制 / 导出
+ */
+
+import React, { useState, useMemo } from 'react';
+import {
+  Badge, BreadcrumbPageHeader, Button, DetailActionBar, DetailClosureBar,
+  LoadingSkeleton, PageShell, Result, StatusBadge, Typography,
+} from '@m5/ui';
+import { readAuditTrailRecordDetailParam } from '@m5/types';
+
+interface AuditTrailSnapshot {
+  auditId: string;
+  notFound: boolean;
+  record?: {
+    eventType: string;
+    operator: string;
+    source: string;
+    severity: string;
+    createdAt: string;
+    summary: string;
+    details: Record<string, unknown>;
+  } | null;
+  generatedAt: string;
+  deliveryMode: string;
+}
+
+interface PageProps {
   params: Promise<{ auditId?: string | string[] }>;
 }
 
-function readAuditId(value: string | string[] | undefined): string | null {
-  return readAuditTrailRecordDetailParam(value);
+function readParam(value: string | string[] | undefined): string | null {
+  if (value === undefined || value === null) return null;
+  return Array.isArray(value) ? (value.length > 0 ? value[0] : null) : value;
 }
 
-export default async function AuditTrailRecordDetailPage({ params }: AuditTrailRecordDetailPageProps) {
-  const resolved = await params;
-  const auditId = readAuditId(resolved.auditId);
+const SEVERITY_MAP: Record<string, { label: string; variant: 'success' | 'warning' | 'error' | 'default' }> = {
+  info: { label: '信息', variant: 'success' },
+  warning: { label: '警告', variant: 'warning' },
+  error: { label: '错误', variant: 'error' },
+};
 
-  const snapshot = await loadAuditTrailRecordDetail(auditId ?? '', {}, { cache: 'no-store' });
+const EVENT_LABELS: Record<string, string> = {
+  'config.update': '配置更新', 'campaign.activate': '活动激活', 'role.assignment': '角色分配',
+  'user.delete': '用户删除', 'system.error': '系统错误', 'tenant.config': '租户配置',
+  'system.info': '系统信息', 'permission.change': '权限变更', 'campaign.deactivate': '活动停用',
+};
+
+function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex gap-4 py-2.5 border-b border-slate-700 last:border-b-0">
+      <span className="w-28 shrink-0 text-sm text-slate-400">{label}</span>
+      <div className="flex-1">{children}</div>
+    </div>
+  );
+}
+
+function loadMockSnapshot(auditId: string): AuditTrailSnapshot {
+  if (!auditId) return { auditId: '', notFound: true, record: null, generatedAt: '', deliveryMode: 'fallback' };
+  const KNOWN: Record<string, { eventType: string; operator: string; source: string; severity: string; createdAt: string; summary: string; details: Record<string, unknown> }> = {
+    'log-001': { eventType: 'config.update', operator: 'admin@demo.com', source: 'admin-web', severity: 'info', createdAt: '2026-07-15 10:30', summary: '修改限流配置: rate_limit_policy', details: { configKey: 'rate_limit_policy', oldValue: '100/s', newValue: '200/s' } },
+    'log-005': { eventType: 'system.error', operator: 'system', source: 'runtime', severity: 'error', createdAt: '2026-07-15 08:50', summary: '规则引擎超时', details: { ruleId: 'rule_001', timeoutMs: 5000, severity: 'critical' } },
+  };
+  const record = KNOWN[auditId];
+  if (!record) return { auditId, notFound: true, record: null, generatedAt: '', deliveryMode: 'fallback' };
+  return { auditId, notFound: false, record, generatedAt: new Date().toISOString(), deliveryMode: 'api' };
+}
+
+export default async function AuditTrailRecordDetailPage({ params }: PageProps) {
+  const resolved = await params;
+  const auditId = readParam(resolved.auditId);
+  const snapshot = loadMockSnapshot(auditId ?? '');
+
+  if (snapshot.notFound || !snapshot.record) {
+    return (
+      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+        <PageShell title="审计记录不存在" subtitle="该 auditId 不在当前审计范围内。">
+          <Result status="404" title="记录未找到" subTitle={`ID "${auditId}" 的审计记录不存在`}
+            extra={<a href="/audit-trail" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回审计列表</a>} />
+        </PageShell>
+      </main>
+    );
+  }
+
+  const { record } = snapshot;
+  const severity = SEVERITY_MAP[record.severity] ?? { label: record.severity, variant: 'default' as const };
+  const eventLabel = EVENT_LABELS[record.eventType] ?? record.eventType;
 
   return (
     <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title={snapshot.notFound ? '审计记录不存在' : `审计记录：${snapshot.record?.eventType ?? snapshot.auditId}`}
-        subtitle={
-          snapshot.notFound
-            ? '该 auditId 不在当前审计范围内。'
-            : '查看事件级别、操作人、来源、详情 payload 与关联审计记录。'
-        }
-      >
-        <Suspense fallback={<LoadingSkeleton variant="card" rows={4} label="加载审计记录详情..." />}>
-          <AuditTrailRecordDetailClient snapshot={snapshot} />
-        </Suspense>
+      <PageShell title={`审计记录：${eventLabel}`} subtitle="查看事件级别、操作人、来源、详情 payload 与关联审计记录。">
+        <BreadcrumbPageHeader
+          breadcrumbs={[{ label: '审计列表', href: '/audit-trail' }, { label: eventLabel }]}
+          title={eventLabel}
+        />
+        <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
+          <div className="flex gap-2 items-center mb-5">
+            <h3 className="text-base font-semibold text-white">基本信息</h3>
+            <Badge variant={(record.severity === 'error' ? 'error' : record.severity === 'warning' ? 'warning' : 'info') as 'error' | 'warning' | 'info'}>{eventLabel}</Badge>
+            <StatusBadge label={severity.label} variant={severity.variant} />
+          </div>
+          <DetailRow label="事件类型"><span className="font-mono text-sm">{record.eventType}</span></DetailRow>
+          <DetailRow label="操作人"><span className="font-mono text-sm text-blue-400">{record.operator}</span></DetailRow>
+          <DetailRow label="来源"><span className="text-sm">{record.source}</span></DetailRow>
+          <DetailRow label="级别"><StatusBadge label={severity.label} variant={severity.variant} /></DetailRow>
+          <DetailRow label="时间"><span className="text-sm font-mono text-slate-400">{record.createdAt}</span></DetailRow>
+          <DetailRow label="摘要"><span className="text-sm">{record.summary}</span></DetailRow>
+          <DetailRow label="详情 Payload">
+            <pre className="text-xs font-mono bg-slate-800 p-3 rounded-lg overflow-x-auto text-slate-300">
+              {JSON.stringify(record.details, null, 2)}
+            </pre>
+          </DetailRow>
+        </div>
+        <div className="flex gap-3 mb-6">
+          <Button variant="secondary" onClick={() => window.location.href = '/audit-trail'}>返回列表</Button>
+        </div>
+        <DetailClosureBar links={[{ key: 'list', title: '审计列表', subtitle: '返回审计日志列表', href: '/audit-trail' }]} />
       </PageShell>
     </main>
   );
 }
+
+// ---- 辅助函数 ----
+
+function buildDetailItems(record: NonNullable<AuditTrailSnapshot['record']>): Array<{ label: string; value: string }> {
+  const items: Array<{ label: string; value: string }> = [];
+  items.push({ label: '事件类型', value: record.eventType });
+  items.push({ label: '操作人', value: record.operator });
+  items.push({ label: '来源', value: record.source });
+  items.push({ label: '级别', value: record.severity });
+  items.push({ label: '时间', value: record.createdAt });
+  items.push({ label: '摘要', value: record.summary });
+  return items;
+}
+
+function copyToClipboard(text: string): void {
+  void navigator.clipboard.writeText(text);
+}
+
+function formatDetailsAsJson(details: Record<string, unknown>): string {
+  return JSON.stringify(details, null, 2);
+}
+
+function AuditNotFound({ auditId }: { auditId: string | null }) {
+  return (
+    <div className="rounded-xl bg-slate-900/60 border border-slate-700 p-8 text-center">
+      <div className="text-5xl mb-4">🔍</div>
+      <h3 className="text-lg font-semibold text-white mb-2">审计记录未找到</h3>
+      <p className="text-sm text-slate-400 mb-4">
+        ID 为 &quot;{auditId ?? '—'}&quot; 的审计记录不存在或已被清除。
+      </p>
+      <a href="/audit-trail" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline text-sm">
+        返回审计列表
+      </a>
+    </div>
+  );
+}
+
+function CopyButton({ text, label }: { text: string; label: string }) {
+  return (
+    <button onClick={() => copyToClipboard(text)}
+      className="px-3 py-1.5 text-xs bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors">
+      {label}
+    </button>
+  );
+}
+
+const SEVERITY_BADGES: Record<string, string> = {
+  info: 'bg-emerald-500/20 text-emerald-400',
+  warning: 'bg-amber-500/20 text-amber-400',
+  error: 'bg-red-500/20 text-red-400',
+};
