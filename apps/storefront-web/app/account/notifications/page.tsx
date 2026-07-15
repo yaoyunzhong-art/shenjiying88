@@ -61,8 +61,8 @@ const PRIORITY_LABELS: Record<NotificationPriority, string> = {
   low: '低优先级',
 };
 
-const PRIORITY_VARIANTS: Record<NotificationPriority, 'danger' | 'warning' | 'info'> = {
-  high: 'danger',
+const PRIORITY_VARIANTS: Record<NotificationPriority, 'error' | 'warning' | 'info'> = {
+  high: 'error',
   medium: 'warning',
   low: 'info',
 };
@@ -84,7 +84,7 @@ function generateNotifications(count: number): Notification[] {
   const senders = ['系统管理员', '运营团队', '门店经理', '供应链系统', '监控系统', '会员中心'];
 
   return Array.from({ length: count }, (_, i) => {
-    const category = CATEGORIES[i % CATEGORIES.length];
+    const category = CATEGORIES[i % CATEGORIES.length]!;
     const categoryTitles = titles[category]!;
     const title = categoryTitles[i % categoryTitles.length];
     const priorities: NotificationPriority[] = ['high', 'medium', 'low'];
@@ -92,7 +92,7 @@ function generateNotifications(count: number): Notification[] {
 
     return {
       id: `NOTIF-${String(i + 1).padStart(4, '0')}`,
-      title,
+      title: title!, // eslint-disable-line @typescript-eslint/no-non-null-assertion
       content: `这是${CATEGORY_LABELS[category]}的详细内容。请根据通知类型进行相应处理。${i % 3 === 0 ? '如需了解更多信息，请点击查看详情按钮。' : ''}`,
       category,
       priority,
@@ -100,7 +100,7 @@ function generateNotifications(count: number): Notification[] {
       createdAt: `2026-07-${String(15 - Math.floor(i / 5)).padStart(2, '0')} ${String(8 + (i % 10)).padStart(2, '0')}:${String((i * 7) % 60).padStart(2, '0')}`,
       actionUrl: i % 3 === 0 ? '/orders' : undefined,
       actionLabel: i % 3 === 0 ? '查看详情' : undefined,
-      sender: senders[i % senders.length],
+      sender: senders[i % senders.length]!,
     };
   });
 }
@@ -147,7 +147,7 @@ function NotificationSummaryCards({ items }: { items: Notification[] }) {
     >
       <StatCard label="全部通知" value={items.length.toString()} variant="info" />
       <StatCard label="未读通知" value={unread.toString()} variant="warning" />
-      <StatCard label="高优先级" value={highPriority.toString()} variant="danger" />
+      <StatCard label="高优先级" value={highPriority.toString()} variant="error" />
       <StatCard label="今日通知" value={todayCount.toString()} variant="success" />
     </div>
   );
@@ -375,8 +375,8 @@ function MarkAllReadButton({ unreadCount, onMarkAll }: { unreadCount: number; on
 export default function AccountNotificationsPage() {
   const [activeCategory, setActiveCategory] = useState<NotificationCategory | 'all'>('all');
   const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
-  const searchFilter = useSearchFilter({ keys: ['title', 'content', 'sender'] });
-  const pagination = usePagination({ defaultPageSize: 8 });
+  const searchFilter = useSearchFilter('', 300);
+  const pagination = usePagination({ initialPageSize: 8 });
 
   // 过滤
   const filtered = useMemo(() => {
@@ -385,8 +385,8 @@ export default function AccountNotificationsPage() {
     if (activeCategory !== 'all') {
       result = result.filter((n) => n.category === activeCategory);
     }
-    if (searchFilter.query) {
-      const q = searchFilter.query.toLowerCase();
+    if (searchFilter.value) {
+      const q = searchFilter.value.toLowerCase();
       result = result.filter(
         (n) =>
           n.title.toLowerCase().includes(q) ||
@@ -396,7 +396,7 @@ export default function AccountNotificationsPage() {
     }
 
     return result;
-  }, [activeCategory, notifications, searchFilter.query]);
+  }, [activeCategory, notifications, searchFilter.value]);
 
   // 排序：最新在前
   const sorted = useMemo(
@@ -448,8 +448,8 @@ export default function AccountNotificationsPage() {
       <div style={{ marginBottom: 12 }}>
         <SearchFilterInput
           placeholder="搜索通知标题、内容、发送人..."
-          value={searchFilter.query}
-          onChange={searchFilter.setQuery}
+          value={searchFilter.value}
+          onChange={(v) => searchFilter.setValue(v)}
         />
       </div>
 

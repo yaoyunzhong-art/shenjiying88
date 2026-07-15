@@ -16,7 +16,7 @@
  */
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { LoadingSkeleton, EmptyState, ErrorBoundary, Tabs } from '@m5/ui';
+import { Button, LoadingSkeleton, EmptyState, ErrorBoundary, Tabs } from '@m5/ui';
 import { ReportsPage } from './components/ReportsPage';
 
 export const metadata: Metadata = {

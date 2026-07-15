@@ -14,9 +14,7 @@ import {
   Button,
   EmptyState,
   Select,
-  Tabs,
   Avatar,
-  AvatarGroup,
   usePagination,
   useSearchFilter,
   useSortedItems,
@@ -115,22 +113,22 @@ function generateTeam(count: number): TeamMember[] {
   const shifts: ('morning' | 'afternoon' | 'night' | 'rest')[] = ['morning', 'afternoon', 'night', 'rest'];
 
   return Array.from({ length: count }, (_, i) => {
-    const role = i < 2 ? roles[0] : roles[(i % (roles.length - 1)) + 1];
-    const status: TeamStatus = i < 20 ? 'active' : (i < 24 ? 'on_leave' : (i < 27 ? 'off_duty' : 'resigned'));
+    const role: TeamRole = i < 2 ? roles[0]! : roles[(i % (roles.length - 1)) + 1]!;
+    const status: TeamStatus = (i < 20 ? 'active' : (i < 24 ? 'on_leave' : (i < 27 ? 'off_duty' : 'resigned'))) as TeamStatus;
     const monthSales = 20000 + Math.floor(Math.random() * 80000);
     const orders = 50 + Math.floor(Math.random() * 200);
 
     return {
       id: `TM-${String(i + 1).padStart(3, '0')}`,
-      name: NAMES[i % NAMES.length],
+      name: NAMES[i % NAMES.length]!,
       employeeNo: `EMP-${String(2026001 + i)}`,
       role,
       status,
       phone: `138${String(10000000 + Math.floor(Math.random() * 90000000)).slice(0, 8)}`,
       email: `staff${i + 1}@shenjiying.com`,
-      department: DEPARTMENTS[i % DEPARTMENTS.length],
+      department: DEPARTMENTS[i % DEPARTMENTS.length]!,
       joinDate: `202${i % 6}-0${(i % 9) + 1}-${String((i % 28) + 1).padStart(2, '0')}`,
-      shift: shifts[i % shifts.length],
+      shift: shifts[i % shifts.length]!,
       performanceScore: 60 + Math.floor(Math.random() * 40),
       monthlySales: monthSales,
       orderCount: orders,
@@ -205,7 +203,7 @@ function ShiftDistributionBar({ members }: { members: TeamMember[] }) {
               transition: 'all 0.3s',
             }}
           >
-            {count > 0 ? `${SHIFT_LABELS[shift].split(' ')[0]} ${count}人` : ''}
+            {count > 0 ? `${SHIFT_LABELS[shift]!.split(' ')[0]} ${count}人` : ''}
           </div>
         ))}
       </div>
@@ -335,67 +333,68 @@ const COLUMNS: DataTableColumn<TeamMember>[] = [
     key: 'name',
     header: '姓名',
     sortable: true,
-    width: 120,
+    width: '120px',
     render: (item) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Avatar name={item.name} size="sm" />
+        <Avatar size="sm" />
         <span>{item.name}</span>
       </div>
     ),
   },
-  { key: 'employeeNo', header: '工号', sortable: true, width: 130 },
+  { key: 'employeeNo', header: '工号', sortable: true, width: '130px' },
   {
     key: 'role',
     header: '岗位',
     sortable: true,
-    width: 90,
+    width: '90px',
     render: (item) => ROLE_LABELS[item.role],
   },
   {
     key: 'status',
     header: '状态',
     sortable: true,
-    width: 80,
+    width: '80px',
     render: (item) => (
       <StatusBadge label={STATUS_LABELS[item.status]} variant={STATUS_VARIANTS[item.status]} size="sm" />
     ),
   },
-  { key: 'department', header: '部门', sortable: true, width: 110 },
+  { key: 'department', header: '部门', sortable: true, width: '110px' },
   {
     key: 'shift',
     header: '班次',
     sortable: true,
-    width: 100,
+    width: '100px',
     render: (item) => SHIFT_LABELS[item.shift],
   },
   {
     key: 'performanceScore',
     header: '绩效分',
     sortable: true,
-    width: 80,
+    width: '80px',
     align: 'right',
   },
   {
     key: 'monthlySales',
     header: '月业绩',
     sortable: true,
-    width: 110,
+    width: '110px',
     align: 'right',
     render: (item) => formatCurrency(item.monthlySales),
   },
-  { key: 'phone', header: '联系电话', width: 130 },
+  { key: 'phone', header: '联系电话', width: '130px' },
   {
     key: 'actions',
     header: '操作',
-    width: 100,
+    width: '100px',
     render: () => <Button variant="ghost" size="sm">详情</Button>,
   },
 ];
 
 export default function DashboardTeamPage() {
   const [roleFilter, setRoleFilter] = useState<TeamRole | 'all'>('all');
-  const searchFilter = useSearchFilter({ keys: ['name', 'employeeNo', 'phone', 'email', 'department'] });
-  const pagination = usePagination({ defaultPageSize: 10 });
+  const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>({ key: 'name', direction: 'asc' });
+  const searchFilter = useSearchFilter('', 300);
+  const pagination = usePagination({ initialPageSize: 10 });
 
   // 多维过滤
   const filtered = useMemo(() => {
@@ -404,8 +403,8 @@ export default function DashboardTeamPage() {
     if (roleFilter !== 'all') {
       result = result.filter((m) => m.role === roleFilter);
     }
-    if (searchFilter.query) {
-      const q = searchFilter.query.toLowerCase();
+    if (searchFilter.value) {
+      const q = searchFilter.value.toLowerCase();
       result = result.filter(
         (m) =>
           m.name.toLowerCase().includes(q) ||
@@ -417,13 +416,14 @@ export default function DashboardTeamPage() {
     }
 
     return result;
-  }, [roleFilter, searchFilter.query]);
+  }, [roleFilter, searchFilter.value]);
 
   // 排序
-  const { sortedItems, sortConfig, handleSort } = useSortedItems(filtered, {
-    key: 'name',
-    direction: 'asc',
-  });
+  const sortedItems = useSortedItems(filtered, [], sortConfig);
+  const handleSort = useCallback(
+    (newSortConfig: DataTableSortConfig) => setSortConfig(newSortConfig),
+    []
+  );
 
   // 分页
   const pagedItems = sortedItems.slice(
@@ -456,8 +456,8 @@ export default function DashboardTeamPage() {
         <div style={{ marginBottom: 10 }}>
           <SearchFilterInput
             placeholder="搜索姓名、工号、电话、邮箱..."
-            value={searchFilter.query}
-            onChange={searchFilter.setQuery}
+            value={searchFilter.value}
+            onChange={(v) => searchFilter.setValue(v)}
           />
         </div>
         <RoleFilter value={roleFilter} onChange={(v) => { setRoleFilter(v); pagination.setPage(1); }} />
@@ -465,12 +465,13 @@ export default function DashboardTeamPage() {
 
       {/* 数据表格 */}
       <div style={{ marginTop: 16 }}>
-        <DataTable
+        <DataTable<TeamMember>
           columns={COLUMNS}
-          data={pagedItems}
-          sortConfig={sortConfig as DataTableSortConfig}
-          onSort={handleSort}
-          emptyState={<TeamEmptyState />}
+          rows={pagedItems}
+          rowKey={(item) => item.id}
+          sort={sortConfig}
+          onSortChange={setSortConfig}
+          emptyText="暂无团队成员数据"
           loading={false}
         />
 

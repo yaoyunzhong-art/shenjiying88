@@ -75,7 +75,7 @@ const STORAGE_LOCATIONS = ['A区-01货架', 'A区-02货架', 'B区-01货架', 'B
 const SUPPLIERS = ['神机供应链', '电竞装备有限公司', '鑫达商贸', '嘉华文化', '赛瑞克斯', '腾达科技'];
 
 function randomItem(arr: string[]): string {
-  return arr[Math.floor(Math.random() * arr.length)];
+  return arr[Math.floor(Math.random() * arr.length)]!;
 }
 
 function generateInventory(count: number): InventoryItem[] {
@@ -88,9 +88,9 @@ function generateInventory(count: number): InventoryItem[] {
   };
 
   return Array.from({ length: count }, (_, i) => {
-    const category = (['equipment', 'consumable', 'merchandise', 'supplement', 'accessory'] as InventoryCategory[])[i % 5];
+    const category: InventoryCategory = (['equipment', 'consumable', 'merchandise', 'supplement', 'accessory'] as InventoryCategory[])[i % 5]!;
     const categoryNames = names[category]!;
-    const name = categoryNames[i % categoryNames.length];
+    const name = categoryNames[i % categoryNames.length]!;
     const quantity = Math.floor(Math.random() * 200);
     const minThreshold = 10 + Math.floor(Math.random() * 20);
     const unitPrice = Math.floor(Math.random() * 5000) + 10;
@@ -327,27 +327,27 @@ function InventoryEmptyState() {
 const CATEGORIES = ['equipment', 'consumable', 'merchandise', 'supplement', 'accessory'] as InventoryCategory[];
 
 const COLUMNS: DataTableColumn<InventoryItem>[] = [
-  { key: 'sku', header: 'SKU', sortable: true, width: 140 },
-  { key: 'name', header: '商品名称', sortable: true, width: 180 },
+  { key: 'sku', header: 'SKU', sortable: true, width: '140px' },
+  { key: 'name', header: '商品名称', sortable: true, width: '180px' },
   {
     key: 'category',
     header: '分类',
     sortable: true,
-    width: 80,
+    width: '80px',
     render: (item) => CATEGORY_LABELS[item.category],
   },
   {
     key: 'quantity',
     header: '库存数量',
     sortable: true,
-    width: 100,
+    width: '100px',
     align: 'right',
   },
   {
     key: 'unitPrice',
     header: '单价',
     sortable: true,
-    width: 100,
+    width: '100px',
     align: 'right',
     render: (item) => formatCurrency(item.unitPrice),
   },
@@ -355,7 +355,7 @@ const COLUMNS: DataTableColumn<InventoryItem>[] = [
     key: 'totalValue',
     header: '总价值',
     sortable: true,
-    width: 120,
+    width: '120px',
     align: 'right',
     render: (item) => formatCurrency(item.totalValue),
   },
@@ -363,19 +363,19 @@ const COLUMNS: DataTableColumn<InventoryItem>[] = [
     key: 'storageLocation',
     header: '存放位置',
     sortable: true,
-    width: 120,
+    width: '120px',
   },
   {
     key: 'supplier',
     header: '供应商',
     sortable: true,
-    width: 120,
+    width: '120px',
   },
   {
     key: 'status',
     header: '状态',
     sortable: true,
-    width: 100,
+    width: '100px',
     render: (item) => (
       <StatusBadge label={STATUS_LABELS[item.status]} variant={STATUS_VARIANTS[item.status]} size="sm" />
     ),
@@ -383,7 +383,7 @@ const COLUMNS: DataTableColumn<InventoryItem>[] = [
   {
     key: 'actions',
     header: '操作',
-    width: 100,
+    width: '100px',
     render: () => <Button variant="ghost" size="sm">补货</Button>,
   },
 ];
@@ -391,8 +391,9 @@ const COLUMNS: DataTableColumn<InventoryItem>[] = [
 export default function DashboardInventoryPage() {
   const [activeCategory, setActiveCategory] = useState<InventoryCategory | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<InventoryStatus | 'all'>('all');
-  const searchFilter = useSearchFilter({ keys: ['name', 'sku', 'supplier', 'storageLocation'] });
-  const pagination = usePagination({ defaultPageSize: 10 });
+  const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>({ key: 'quantity', direction: 'asc' });
+  const searchFilter = useSearchFilter('', 300);
+  const pagination = usePagination({ initialPageSize: 10 });
 
   // 计算分类计数
   const categoryCounts = useMemo(() => {
@@ -409,7 +410,7 @@ export default function DashboardInventoryPage() {
       ...CATEGORIES.map((cat) => ({
         key: cat as InventoryCategory | 'all',
         label: CATEGORY_LABELS[cat],
-        count: categoryCounts[cat],
+        count: categoryCounts[cat] ?? 0,
       })),
     ],
     [categoryCounts]
@@ -425,8 +426,8 @@ export default function DashboardInventoryPage() {
     if (statusFilter !== 'all') {
       result = result.filter((item) => item.status === statusFilter);
     }
-    if (searchFilter.query) {
-      const q = searchFilter.query.toLowerCase();
+    if (searchFilter.value) {
+      const q = searchFilter.value.toLowerCase();
       result = result.filter(
         (item) =>
           item.name.toLowerCase().includes(q) ||
@@ -437,13 +438,14 @@ export default function DashboardInventoryPage() {
     }
 
     return result;
-  }, [activeCategory, statusFilter, searchFilter.query]);
+  }, [activeCategory, statusFilter, searchFilter.value]);
 
   // 排序
-  const { sortedItems, sortConfig, handleSort } = useSortedItems(filtered, {
-    key: 'quantity',
-    direction: 'asc',
-  });
+  const sortedItems = useSortedItems(filtered, [], sortConfig);
+  const handleSort = useCallback(
+    (newSortConfig: DataTableSortConfig) => setSortConfig(newSortConfig),
+    []
+  );
 
   // 分页
   const pagedItems = sortedItems.slice(
@@ -473,8 +475,8 @@ export default function DashboardInventoryPage() {
         <div style={{ marginBottom: 12 }}>
           <SearchFilterInput
             placeholder="搜索商品名称、SKU、供应商..."
-            value={searchFilter.query}
-            onChange={searchFilter.setQuery}
+            value={searchFilter.value}
+            onChange={(v) => searchFilter.setValue(v)}
           />
         </div>
 
@@ -498,14 +500,13 @@ export default function DashboardInventoryPage() {
 
       {/* 数据表格 */}
       <div style={{ marginTop: 16 }}>
-        <DataTable
+        <DataTable<InventoryItem>
           columns={COLUMNS}
-          data={pagedItems}
-          sortConfig={sortConfig as DataTableSortConfig}
-          onSort={handleSort}
-          emptyState={
-            <InventoryEmptyState />
-          }
+          rows={pagedItems}
+          rowKey={(item) => item.id}
+          sort={sortConfig}
+          onSortChange={setSortConfig}
+          emptyText="暂无库存数据"
           loading={false}
         />
 
