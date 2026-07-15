@@ -723,6 +723,210 @@ describe('ReconciliationService', () => {
     })
   })
 
+  // ── 新增: getDailyReport ──────────────────────────────────
+
+  describe('getDailyReport', () => {
+    it('should return null when no reconciliation has run', () => {
+      expect(service.getDailyReport()).toBeNull()
+    })
+
+    it('should return null when target date not cached', async () => {
+      await service.run({
+        date: '2026-07-15',
+        internalTransactions: [makeInternal({ id: '1' })],
+        externalTransactions: [makeExternal({ id: '1' })],
+        matchKey: 'orderNo'
+      })
+      expect(service.getDailyReport('2026-07-14')).toBeNull()
+    })
+
+    it('should return full report view with summary and details', async () => {
+      const internal = [makeInternal({ id: '1', amountCents: 1500 })]
+      const external = [makeExternal({ id: '1', amountCents: 1000 })]
+
+      await service.run({
+        date: '2026-07-15',
+        internalTransactions: internal,
+        externalTransactions: external,
+        matchKey: 'orderNo'
+      })
+
+      const dr = service.getDailyReport()
+      expect(dr).not.toBeNull()
+      expect(dr!.date).toBe('2026-07-15')
+      expect(dr!.summary.matchRate).toBeGreaterThanOrEqual(0)
+      expect(dr!.details.length).toBeGreaterThanOrEqual(1)
+      expect(dr!.status.totalRuns).toBe(1)
+      expect(dr!.status.inProgress).toBe(false)
+    })
+
+    it('should accept specific date parameter', async () => {
+      await service.run({
+        date: '2026-08-01',
+        internalTransactions: [],
+        externalTransactions: [],
+        matchKey: 'orderNo'
+      })
+
+      const dr = service.getDailyReport('2026-08-01')
+      expect(dr).not.toBeNull()
+      expect(dr!.date).toBe('2026-08-01')
+    })
+
+    it('should include details with resolve status', async () => {
+      const internal = [makeInternal({ id: '1', amountCents: 1500 })]
+      const external = [makeExternal({ id: '1', amountCents: 1000 })]
+
+      await service.run({
+        date: '2026-07-15',
+        internalTransactions: internal,
+        externalTransactions: external,
+        matchKey: 'orderNo'
+      })
+
+      const dr = service.getDailyReport()
+      const diffDetail = dr!.details[0]
+      expect(diffDetail.diffKey).toMatch(/^amount-mismatch::/)
+      expect(diffDetail.resolved).toBe(false)
+    })
+  })
+
+  // ── 新增: autoReconcile ──────────────────────────────────
+
+  describe('autoReconcile', () => {
+    it('should complete auto-reconciliation and return daily report', async () => {
+      const result = await service.autoReconcile('2026-07-20')
+      expect(result).not.toBeNull()
+      expect(result!.date).toBe('2026-07-20')
+      expect(result!.status.lastRunDate).toBe('2026-07-20')
+      expect(result!.status.totalRuns).toBeGreaterThanOrEqual(1)
+    })
+
+    it('should re-use cached report on subsequent call', async () => {
+      await service.autoReconcile('2026-07-21')
+      const cacheBefore = service.getCacheStats().totalHits
+      const result = await service.autoReconcile('2026-07-21')
+      expect(result).not.toBeNull()
+      expect(result!.date).toBe('2026-07-21')
+      const cacheAfter = service.getCacheStats().totalHits
+      expect(cacheAfter).toBeGreaterThanOrEqual(cacheBefore)
+    })
+
+    it('should default to today when no date specified', async () => {
+      const today = new Date().toISOString().slice(0, 10)
+      const result = await service.autoReconcile()
+      expect(result).not.toBeNull()
+      expect(result!.date).toBe(today)
+    })
+
+    it('should handle date with existing diff data', async () => {
+      const internal = [makeInternal({ id: 'd1', amountCents: 2000 })]
+      const external = [makeExternal({ id: 'd1', amountCents: 999 })]
+
+      await service.run({
+        date: '2026-07-22',
+        internalTransactions: internal,
+        externalTransactions: external,
+        matchKey: 'orderNo'
+      })
+
+      const result = await service.autoReconcile('2026-07-22')
+      expect(result).not.toBeNull()
+      expect(result!.date).toBe('2026-07-22')
+    })
+  })
+
+  // ── 新增: getOverallStats ──────────────────────────────────
+
+  describe('getOverallStats', () => {
+    it('should return empty stats when no reports exist', () => {
+      const stats = service.getOverallStats()
+      expect(stats.totalRuns).toBe(0)
+      expect(stats.reportDates).toHaveLength(0)
+      expect(stats.weeklySummary).toHaveLength(0)
+      expect(stats.monthlySummary).toHaveLength(0)
+      expect(stats.dailyStatus).toHaveLength(0)
+    })
+
+    it('should include trend data after multiple runs', async () => {
+      await service.run({
+        date: '2026-07-10',
+        internalTransactions: [makeInternal({ id: 't1' })],
+        externalTransactions: [makeExternal({ id: 't1' })],
+        matchKey: 'orderNo'
+      })
+      await service.run({
+        date: '2026-07-11',
+        internalTransactions: [makeInternal({ id: 't2', amountCents: 500 })],
+        externalTransactions: [makeExternal({ id: 't2', amountCents: 600 })],
+        matchKey: 'orderNo'
+      })
+
+      const stats = service.getOverallStats()
+      expect(stats.totalRuns).toBe(2)
+      expect(stats.reportDates).toHaveLength(2)
+      expect(stats.matchRateTrend.length).toBeGreaterThanOrEqual(2)
+      expect(stats.diffKindTrends['amount-mismatch']).toBeGreaterThanOrEqual(1)
+    })
+
+    it('should aggregate weekly summary correctly', async () => {
+      // Two reports in the same week
+      await service.run({
+        date: '2026-07-13',
+        internalTransactions: [makeInternal({ id: 'w1' })],
+        externalTransactions: [makeExternal({ id: 'w1' })],
+        matchKey: 'orderNo'
+      })
+      await service.run({
+        date: '2026-07-14',
+        internalTransactions: [makeInternal({ id: 'w2' })],
+        externalTransactions: [makeExternal({ id: 'w2' })],
+        matchKey: 'orderNo'
+      })
+
+      const stats = service.getOverallStats()
+      expect(stats.weeklySummary.length).toBeGreaterThanOrEqual(1)
+      // Each week's internalTotal should sum both runs
+      const firstWeek = stats.weeklySummary[0]
+      expect(firstWeek.internalTotal).toBeGreaterThanOrEqual(2)
+    })
+
+    it('should aggregate monthly summary correctly', async () => {
+      await service.run({
+        date: '2026-07-01',
+        internalTransactions: [makeInternal({ id: 'm01' })],
+        externalTransactions: [makeExternal({ id: 'm01' })],
+        matchKey: 'orderNo'
+      })
+      await service.run({
+        date: '2026-07-15',
+        internalTransactions: [makeInternal({ id: 'm02' })],
+        externalTransactions: [makeExternal({ id: 'm02' })],
+        matchKey: 'orderNo'
+      })
+
+      const stats = service.getOverallStats()
+      const july = stats.monthlySummary.find((m) => m.monthLabel === '2026-07')
+      expect(july).toBeDefined()
+      expect(july!.internalTotal).toBe(2)
+    })
+
+    it('should report dailyStatus for each cached date', async () => {
+      await service.run({
+        date: '2026-07-10',
+        internalTransactions: [makeInternal({ id: 's1' })],
+        externalTransactions: [makeExternal({ id: 's1' })],
+        matchKey: 'orderNo'
+      })
+
+      const stats = service.getOverallStats()
+      expect(stats.dailyStatus).toHaveLength(1)
+      expect(stats.dailyStatus[0].date).toBe('2026-07-10')
+      expect(stats.dailyStatus[0].matched).toBe(true)
+      expect(stats.dailyStatus[0].diffCount).toBeGreaterThanOrEqual(0)
+    })
+  })
+
   // ── 组合场景: 混合差异 ──────────────────────────────────
 
   describe('composite: mixed scenario', () => {

@@ -201,6 +201,53 @@ export interface DiffDetailRecord extends DiffRecord {
   resolveNote?: string
 }
 
+/** 每日对账报告的完整视图 */
+export interface DailyReconciliationReport {
+  date: string
+  summary: ReconciliationSummary
+  details: DiffDetailRecord[]
+  status: {
+    inProgress: boolean
+    lastRunAt: string | null
+    lastRunDate: string | null
+    totalRuns: number
+  }
+}
+
+/** 综合对账统计 (趋势) */
+export interface OverallReconciliationStats {
+  /** 总运行次数 */
+  totalRuns: number
+  /** 有数据的日期数 */
+  reportDates: string[]
+  /** 最近 7 天匹配率 */
+  matchRateTrend: Array<{ date: string; matchRate: number; totalDiffCents: number }>
+  /** 周汇总 */
+  weeklySummary: Array<{
+    weekLabel: string
+    startDate: string
+    endDate: string
+    internalTotal: number
+    externalTotal: number
+    matchedCount: number
+    exactMatchCount: number
+    totalDiffCents: number
+    totalDiffs: number
+  }>
+  /** 月汇总 */
+  monthlySummary: Array<{
+    monthLabel: string
+    internalTotal: number
+    externalTotal: number
+    matchedCount: number
+    totalDiffCents: number
+  }>
+  /** 不同差异类型的趋势 */
+  diffKindTrends: Record<DiffKind, number>
+  /** 对账总体状态 */
+  dailyStatus: Array<{ date: string; matched: boolean; diffCount: number }>
+}
+
 /** 对账缓存条目 */
 export interface ReconciliationCacheEntry {
   report: ReconciliationReport
@@ -261,6 +308,174 @@ export class ReconciliationService {
    */
   getDiffs(): DiffRecord[] {
     return this.lastReport?.diffs ?? []
+  }
+
+  /**
+   * 获取每日对账报告的完整视图
+   * 包含摘要、差异明细、运行状态
+   */
+  getDailyReport(date?: string): DailyReconciliationReport | null {
+    const targetDate = date ?? this.reconciliationStatus.lastRunDate
+    if (!targetDate) return null
+
+    const summary = this.getSummary(targetDate)
+    if (!summary) return null
+
+    const details = this.getDetails({ limit: 200 })
+
+    return {
+      date: targetDate,
+      summary,
+      details,
+      status: {
+        inProgress: this.reconciliationStatus.inProgress,
+        lastRunAt: this.reconciliationStatus.lastRunAt,
+        lastRunDate: this.reconciliationStatus.lastRunDate,
+        totalRuns: this.reconciliationStatus.totalRuns
+      }
+    }
+  }
+
+  /**
+   * 自动执行每日对账的批处理入口
+   * 如果已有缓存则直接返回，否则执行空对账并返回报告视图
+   * 实际场景中会从 DB 拉取数据执行
+   */
+  async autoReconcile(date?: string): Promise<DailyReconciliationReport | null> {
+    const targetDate = date ?? new Date().toISOString().slice(0, 10)
+    this.logger.log(`autoReconcile started for date=${targetDate}`)
+
+    // 如果已有缓存且状态正常，直接返回
+    const cached = this.getCachedReport(targetDate)
+    if (cached && cached.diffs.length === 0) {
+      this.logger.log(`autoReconcile: using cached report for ${targetDate}`)
+      return this.getDailyReport(targetDate)
+    }
+
+    // 执行对账（真实场景从 DB 加载数据）
+    const report = await this.run({
+      date: targetDate,
+      internalTransactions: [],
+      externalTransactions: [],
+      matchKey: 'orderNo'
+    })
+
+    this.logger.log(`autoReconcile completed for date=${targetDate} diffs=${report.diffs.length}`)
+    return this.getDailyReport(targetDate)
+  }
+
+  /**
+   * 综合对账统计（匹配率趋势、周/月汇总）
+   */
+  getOverallStats(): OverallReconciliationStats {
+    const reportDates: string[] = []
+    const cacheStats = this.getCacheStats()
+    for (const entry of this.reportCache.values()) {
+      if (!reportDates.includes(entry.report.date)) {
+        reportDates.push(entry.report.date)
+      }
+    }
+    reportDates.sort()
+
+    // 最近 7 天匹配率趋势
+    const last7 = reportDates.slice(-7)
+    const matchRateTrend = last7.map((d) => {
+      const s = this.getSummary(d)
+      return {
+        date: d,
+        matchRate: s?.matchRate ?? 0,
+        totalDiffCents: s?.totalDiffCents ?? 0
+      }
+    })
+
+    // 周汇总（按 ISO 周分组）
+    const weeklyMap = new Map<string, {
+      reports: ReconciliationReport[]
+      startDate: string
+      endDate: string
+    }>()
+    for (const [date, entry] of this.reportCache) {
+      const d = new Date(date)
+      const dayOfWeek = d.getDay()
+      const monday = new Date(d)
+      monday.setDate(d.getDate() - ((dayOfWeek + 6) % 7))
+      const sunday = new Date(monday)
+      sunday.setDate(monday.getDate() + 6)
+      const weekLabel = `${monday.toISOString().slice(0, 10)}~${sunday.toISOString().slice(0, 10)}`
+      const existing = weeklyMap.get(weekLabel)
+      if (existing) {
+        existing.reports.push(entry.report)
+      } else {
+        weeklyMap.set(weekLabel, {
+          reports: [entry.report],
+          startDate: monday.toISOString().slice(0, 10),
+          endDate: sunday.toISOString().slice(0, 10)
+        })
+      }
+    }
+    const weeklySummary = Array.from(weeklyMap.entries()).map(([weekLabel, w]) => ({
+      weekLabel,
+      startDate: w.startDate,
+      endDate: w.endDate,
+      internalTotal: w.reports.reduce((s, r) => s + r.internalTotal, 0),
+      externalTotal: w.reports.reduce((s, r) => s + r.externalTotal, 0),
+      matchedCount: w.reports.reduce((s, r) => s + r.matchedCount, 0),
+      exactMatchCount: w.reports.reduce((s, r) => s + r.exactMatchCount, 0),
+      totalDiffCents: w.reports.reduce((s, r) => s + r.totalDiffCents, 0),
+      totalDiffs: w.reports.reduce((s, r) => s + r.diffs.length, 0)
+    })).sort((a, b) => a.startDate.localeCompare(b.startDate))
+
+    // 月汇总
+    const monthlyMap = new Map<string, { reports: ReconciliationReport[] }>()
+    for (const [date, entry] of this.reportCache) {
+      const monthLabel = date.slice(0, 7)
+      const existing = monthlyMap.get(monthLabel)
+      if (existing) {
+        existing.reports.push(entry.report)
+      } else {
+        monthlyMap.set(monthLabel, { reports: [entry.report] })
+      }
+    }
+    const monthlySummary = Array.from(monthlyMap.entries()).map(([monthLabel, m]) => ({
+      monthLabel,
+      internalTotal: m.reports.reduce((s, r) => s + r.internalTotal, 0),
+      externalTotal: m.reports.reduce((s, r) => s + r.externalTotal, 0),
+      matchedCount: m.reports.reduce((s, r) => s + r.matchedCount, 0),
+      totalDiffCents: m.reports.reduce((s, r) => s + r.totalDiffCents, 0)
+    })).sort((a, b) => a.monthLabel.localeCompare(b.monthLabel))
+
+    // 差异类型趋势
+    const diffKindTrends: Record<DiffKind, number> = {
+      'amount-mismatch': 0,
+      'missing-internal': 0,
+      'missing-external': 0,
+      'duplicate': 0
+    }
+    for (const entry of this.reportCache.values()) {
+      for (const d of entry.report.diffs) {
+        diffKindTrends[d.kind] = (diffKindTrends[d.kind] ?? 0) + 1
+      }
+    }
+
+    // 每日状态
+    const dailyStatus = reportDates.map((d) => {
+      const s = this.getSummary(d)
+      return {
+        date: d,
+        matched: (s?.exactMatchCount ?? 0) > 0 && (s?.unresolvedCount ?? 0) === 0,
+        diffCount: (s?.unresolvedCount ?? 0) + (s?.resolvedCount ?? 0)
+      }
+    })
+
+    return {
+      totalRuns: this.reconciliationStatus.totalRuns,
+      reportDates,
+      matchRateTrend,
+      weeklySummary,
+      monthlySummary,
+      diffKindTrends,
+      dailyStatus
+    }
   }
 
   /**
