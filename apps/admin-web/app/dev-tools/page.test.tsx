@@ -363,6 +363,209 @@ describe('dev-tools — platform 开放平台数据', () => {
 });
 
 /* ══════════════════════════════════════════════════════════
+   新增: DevTools Hub Page 数据
+   ══════════════════════════════════════════════════════════ */
+
+interface DevToolEntry {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+  href: string;
+  category: 'brand' | 'deploy' | 'platform';
+  tags: string[];
+  enabled: boolean;
+}
+
+interface ActivityItem {
+  id: string;
+  type: 'deploy' | 'brand' | 'platform';
+  action: string;
+  target: string;
+  timestamp: string;
+  status: 'success' | 'info' | 'warning';
+}
+
+const DEV_TOOLS: DevToolEntry[] = [
+  { id: 'brand-main', label: '品牌概览', description: '查看所有品牌列表', icon: '🏢', href: '/dev-tools/brand', category: 'brand', tags: ['品牌', '概览', '模板'], enabled: true },
+  { id: 'brand-dashboard', label: '运营看板', description: '品牌运营数据仪表盘', icon: '📊', href: '/dev-tools/brand/dashboard', category: 'brand', tags: ['看板', '运营', '数据'], enabled: true },
+  { id: 'brand-campaigns', label: '营销活动', description: '品牌营销活动管理', icon: '📣', href: '/dev-tools/brand/campaigns', category: 'brand', tags: ['营销', '活动', '投放'], enabled: true },
+  { id: 'deploy-main', label: '部署管理', description: '多环境部署管理', icon: '🚀', href: '/dev-tools/deploy', category: 'deploy', tags: ['部署', '环境', '回滚'], enabled: true },
+  { id: 'platform-main', label: '开放平台', description: 'API 文档与开发者管理', icon: '🔌', href: '/dev-tools/platform', category: 'platform', tags: ['API', '开发者', '文档'], enabled: true },
+];
+
+const RECENT_ACTIVITIES: ActivityItem[] = [
+  { id: 'a1', type: 'deploy', action: '发布成功', target: '收银系统 v2.3.1', timestamp: '2026-07-16 04:30', status: 'success' },
+  { id: 'a2', type: 'brand', action: '新品牌上架', target: '极限攀岩馆', timestamp: '2026-07-16 02:15', status: 'info' },
+  { id: 'a3', type: 'deploy', action: '回滚完成', target: '财务对账 v2.2.0', timestamp: '2026-07-15 22:30', status: 'warning' },
+  { id: 'a4', type: 'platform', action: 'API 密钥轮换', target: '收银API v3', timestamp: '2026-07-15 18:00', status: 'info' },
+  { id: 'a5', type: 'brand', action: '活动上线', target: '暑期大促 Campaign', timestamp: '2026-07-15 14:00', status: 'success' },
+];
+
+function computeCategoryStats(entries: DevToolEntry[]) {
+  const categories = new Map<string, number>();
+  for (const e of entries) {
+    categories.set(e.category, (categories.get(e.category) ?? 0) + 1);
+  }
+  return {
+    total: entries.length,
+    brand: categories.get('brand') ?? 0,
+    deploy: categories.get('deploy') ?? 0,
+    platform: categories.get('platform') ?? 0,
+  };
+}
+
+function filterEntries(entries: DevToolEntry[], query: string, category: string): DevToolEntry[] {
+  let result = entries;
+  if (category !== 'all') {
+    result = result.filter((e) => e.category === category);
+  }
+  if (query.trim()) {
+    const q = query.toLowerCase();
+    result = result.filter(
+      (e) =>
+        e.label.toLowerCase().includes(q) ||
+        e.description.toLowerCase().includes(q) ||
+        e.tags.some((t) => t.includes(q)),
+    );
+  }
+  return result;
+}
+
+describe('dev-tools — Hub Page 数据', () => {
+  it('56. DEV_TOOLS 包含 5 条记录', () => {
+    assert.equal(DEV_TOOLS.length, 5);
+  });
+
+  it('57. 所有工具 ID 唯一', () => {
+    const ids = DEV_TOOLS.map((d) => d.id);
+    assert.equal(new Set(ids).size, ids.length);
+  });
+
+  it('58. 品牌类 3 个工具', () => {
+    assert.equal(DEV_TOOLS.filter((d) => d.category === 'brand').length, 3);
+  });
+
+  it('59. 部署类 1 个工具', () => {
+    assert.equal(DEV_TOOLS.filter((d) => d.category === 'deploy').length, 1);
+  });
+
+  it('60. 平台类 1 个工具', () => {
+    assert.equal(DEV_TOOLS.filter((d) => d.category === 'platform').length, 1);
+  });
+
+  it('61. 所有工具默认启用', () => {
+    assert.ok(DEV_TOOLS.every((d) => d.enabled === true));
+  });
+
+  it('62. 每个工具都有 href', () => {
+    for (const d of DEV_TOOLS) {
+      assert.ok(d.href.startsWith('/dev-tools/'), `${d.id} invalid href`);
+    }
+  });
+
+  it('63. 每个工具至少有一个标签', () => {
+    for (const d of DEV_TOOLS) {
+      assert.ok(d.tags.length >= 1, `${d.id} missing tags`);
+    }
+  });
+
+  it('64. computeCategoryStats 统计正确', () => {
+    const stats = computeCategoryStats(DEV_TOOLS);
+    assert.equal(stats.total, 5);
+    assert.equal(stats.brand, 3);
+    assert.equal(stats.deploy, 1);
+    assert.equal(stats.platform, 1);
+  });
+
+  it('65. RECENT_ACTIVITIES 包含 5 条', () => {
+    assert.equal(RECENT_ACTIVITIES.length, 5);
+  });
+
+  it('66. 活动 ID 唯一', () => {
+    const ids = RECENT_ACTIVITIES.map((a) => a.id);
+    assert.equal(new Set(ids).size, ids.length);
+  });
+
+  it('67. 所有活动 status 值有效', () => {
+    const valid = ['success', 'info', 'warning'];
+    for (const a of RECENT_ACTIVITIES) {
+      assert.ok(valid.includes(a.status), `${a.id} invalid status`);
+    }
+  });
+
+  it('68. filterEntries 全部返回', () => {
+    assert.equal(filterEntries(DEV_TOOLS, '', 'all').length, 5);
+  });
+
+  it('69. filterEntries 按分类过滤', () => {
+    assert.equal(filterEntries(DEV_TOOLS, '', 'brand').length, 3);
+    assert.equal(filterEntries(DEV_TOOLS, '', 'deploy').length, 1);
+    assert.equal(filterEntries(DEV_TOOLS, '', 'platform').length, 1);
+  });
+
+  it('70. filterEntries 按搜索过滤', () => {
+    assert.equal(filterEntries(DEV_TOOLS, '品牌', 'all').length, 3);
+    assert.equal(filterEntries(DEV_TOOLS, '部署', 'all').length, 1);
+  });
+
+  it('71. filterEntries 按标签搜索', () => {
+    assert.equal(filterEntries(DEV_TOOLS, 'API', 'all').length, 1);
+  });
+
+  it('72. filterEntries 空搜索返回全部', () => {
+    assert.equal(filterEntries(DEV_TOOLS, '', 'all').length, 5);
+    assert.equal(filterEntries(DEV_TOOLS, '  ', 'all').length, 5);
+  });
+
+  it('73. filterEntries 不匹配返回空', () => {
+    assert.equal(filterEntries(DEV_TOOLS, 'zzznoex', 'all').length, 0);
+  });
+
+  it('74. page.tsx 头部导出默认组件', () => {
+    const p = path.join(__dirname, 'page.tsx');
+    assert.equal(fs.existsSync(p), true);
+    const source = fs.readFileSync(p, 'utf-8');
+    assert.ok(source.includes('export default function DevToolsPage'), '缺少默认导出');
+  });
+
+  it('75. page.tsx 包含统计面板', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes('StatCard'), '缺少 StatCard');
+    assert.ok(source.includes('工具总数'), '缺少统计总数');
+  });
+
+  it('76. page.tsx 包含搜索过滤', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes('searchQuery'), '缺少搜索');
+    assert.ok(source.includes('filterEntries'), '缺少过滤');
+    assert.ok(source.includes('categoryFilter'), '缺少分类过滤');
+  });
+
+  it('77. page.tsx 包含环境概览', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes('环境概览'), '缺少环境概览');
+    assert.ok(source.includes('系统状态'), '缺少系统状态');
+  });
+
+  it('78. page.tsx 不包含 console.log', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(!source.includes('console.log'), '不应有 console.log');
+  });
+
+  it('79. page.tsx 空状态处理', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes('没有匹配的开发工具'), '缺少空状态');
+    assert.ok(source.includes('清除过滤'), '缺少清除过滤按钮');
+  });
+
+  it('80. page.tsx 使用 use client', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes("'use client'"), '缺少 use client');
+  });
+});
+
+/* ══════════════════════════════════════════════════════════
    边界与反例
    ══════════════════════════════════════════════════════════ */
 
