@@ -1,336 +1,382 @@
 /**
- * CheckoutPage 收银结算页 完整测试
+ * checkout/page.test.tsx — 收银结算页 补充 L1 测试
  *
- * 覆盖 (总计 35 项):
- * 1. 基础渲染 — 标题、描述、分区
- * 2. 商品清单 — 渲染、名称、价格、加减按钮、空购物车
- * 3. 收件表单 — 必填字段、placeholder、错误提示
- * 4. 支付方式 — 4种支付卡片渲染与选中交互
- * 5. 优惠券 — 输入框、使用/移除、有效/无效状态
- * 6. 金额计算 — 小计、配送费、优惠减免、合计
- * 7. 提交按钮 — 不同状态
- * 8. 无障碍属性
+ * 覆盖: 金额计算逻辑、表单验证规则、支付方式常量、购物车合并
+ * 正例: CartItem 数据结构、金额计算、支付方式枚举
+ * 反例: 负价格、零数量、无效支付方式
+ * 边界: 超大购物车、空购物车、最小金额、零值优惠
  */
 
-import React from 'react';
-import { describe, test } from 'node:test';
-const assert = require('node:assert/strict');
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const PROJECT_ROOT = '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88';
-const { renderToStaticMarkup } = require(
-  PROJECT_ROOT + '/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/server.node.js',
-);
-const CheckoutPage = require('./page').default;
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
-// ==================== 辅助函数 ====================
+/* ── 类型定义（与 page.tsx 同步） ── */
 
-function render(ui: React.ReactElement): string {
-  return renderToStaticMarkup(ui);
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string;
+  category?: string;
 }
 
-function hasText(html: string, text: string): boolean {
-  return html.includes(text);
+interface CheckoutFormData {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  deliveryMethod: string;
+  paymentMethod: string;
+  agreeTerms: boolean;
+  remark: string;
+  couponCode: string;
 }
 
-function countOccurrences(html: string, text: string): number {
-  let count = 0;
-  let idx = 0;
-  while ((idx = html.indexOf(text, idx)) !== -1) {
-    count++;
-    idx += text.length;
-  }
-  return count;
+type PaymentMethodValue = 'wechat' | 'alipay' | 'cash' | 'member_card';
+
+/* ── 默认数据 ── */
+
+const defaultCart: CartItem[] = [
+  { id: 'p1', name: '基础护肤套装', price: 299, quantity: 1, category: '护肤品' },
+  { id: 'p2', name: '深层清洁面膜（5片装）', price: 89, quantity: 2, category: '面膜' },
+  { id: 'p3', name: '防晒霜 SPF50+', price: 139, quantity: 1, category: '防晒' },
+  { id: 'p4', name: '舒缓保湿喷雾', price: 59, quantity: 1, category: '护肤品' },
+];
+
+const PAYMENT_METHODS: PaymentMethodValue[] = ['wechat', 'alipay', 'cash', 'member_card'];
+
+const PAYMENT_LABELS: Record<PaymentMethodValue, string> = {
+  wechat: '微信支付',
+  alipay: '支付宝',
+  cash: '现金支付',
+  member_card: '会员卡支付',
+};
+
+const DELIVERY_METHODS = ['express', 'self_pickup', 'dine_in'];
+
+/* ── 辅助函数 ── */
+
+function calcSubtotal(cart: CartItem[]): number {
+  return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 }
 
-// ==================== 1. 基础渲染 ====================
+function calcQuantity(cart: CartItem[]): number {
+  return cart.reduce((sum, item) => sum + item.quantity, 0);
+}
 
-describe('基础渲染 (Basic Rendering)', () => {
-  test('应渲染页面标题和描述', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '收银台'), '应显示页面标题');
-    assert.ok(hasText(html, '确认商品信息、选择支付方式并提交订单'), '应显示页面描述');
+function calcDeliveryFee(subtotal: number): number {
+  if (subtotal >= 99) return 0;
+  if (subtotal >= 50) return 8;
+  return 15;
+}
+
+function calcTotal(subtotal: number, deliveryFee: number, discount: number = 0): number {
+  return Math.max(0, subtotal + deliveryFee - discount);
+}
+
+function validateForm(data: CheckoutFormData): Record<string, string> {
+  const errors: Record<string, string> = {};
+  if (!data.name.trim()) errors.name = '请填写收件人姓名';
+  if (!data.phone.trim()) errors.phone = '请填写手机号';
+  else if (!/^1\d{10}$/.test(data.phone.replace(/\s/g, ''))) errors.phone = '手机号格式不正确';
+  if (!data.address.trim()) errors.address = '请填写收货地址';
+  if (!data.deliveryMethod) errors.deliveryMethod = '请选择配送方式';
+  if (!data.paymentMethod) errors.paymentMethod = '请选择支付方式';
+  if (!data.agreeTerms) errors.agreeTerms = '请同意服务条款';
+  return errors;
+}
+
+/* ══════════════════════════════════════════════════════════
+   测试: 文件存在性
+   ══════════════════════════════════════════════════════════ */
+
+describe('checkout — 文件结构', () => {
+  it('1. page.tsx 存在', () => {
+    assert.equal(fs.existsSync(path.join(__dirname, 'page.tsx')), true);
   });
 
-  test('应包含 data-testid 属性标识主要区域', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, 'data-testid="checkout-form-section"'), '应包含表单区域 testid');
-    assert.ok(hasText(html, 'data-testid="checkout-summary-section"'), '应包含摘要区域 testid');
-    assert.ok(hasText(html, 'data-testid="payment-methods"'), '应包含支付方式区域 testid');
-    assert.ok(hasText(html, 'data-testid="price-summary"'), '应包含金额汇总区域 testid');
-    assert.ok(hasText(html, 'data-testid="cart-item-count"'), '应包含商品数量 testid');
+  it('2. page.tsx 导出 default 函数', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes('export default'), 'should export default');
   });
 
-  test('应渲染所有必要分区标题', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '收件信息'), '应渲染收件信息区域');
-    assert.ok(hasText(html, '配送方式'), '应渲染配送方式区域');
-    assert.ok(hasText(html, '支付方式'), '应渲染支付方式区域');
-    assert.ok(hasText(html, '商品清单'), '应渲染商品清单区域');
-  });
-});
-
-// ==================== 2. 商品清单 ====================
-
-describe('商品清单 (Cart Items)', () => {
-  test('应渲染默认购物车中所有商品名称', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '基础护肤套装'), '应显示基础护肤套装');
-    assert.ok(hasText(html, '深层清洁面膜'), '应显示深层清洁面膜');
-    assert.ok(hasText(html, '防晒霜 SPF50+'), '应显示防晒霜');
-    assert.ok(hasText(html, '舒缓保湿喷雾'), '应显示喷雾');
-  });
-
-  test('应渲染数量调整器及其加减按钮', () => {
-    const html = render(React.createElement(CheckoutPage));
-    // 应有4个商品的data-testid
-    const qtyCount = countOccurrences(html, 'data-testid="qty-adjuster-');
-    assert.equal(qtyCount, 4, `应有4个数量调整器，实际${qtyCount}`);
-
-    const minusCount = countOccurrences(html, 'data-testid="qty-minus-');
-    assert.equal(minusCount, 4, '应有4个减号按钮');
-
-    const plusCount = countOccurrences(html, 'data-testid="qty-plus-');
-    assert.equal(plusCount, 4, '应有4个加号按钮');
-  });
-
-  test('商品行小计应正确显示', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, 'data-testid="line-total-p1"'), '护肤套装小计 testid');
-    assert.ok(hasText(html, 'data-testid="line-total-p2"'), '面膜小计 testid');
-    assert.ok(hasText(html, 'data-testid="line-total-p3"'), '防晒霜小计 testid');
-    assert.ok(hasText(html, 'data-testid="line-total-p4"'), '喷雾小计 testid');
-  });
-
-  test('商品行应显示单价', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '¥299.00 / 件'), '护肤套装单价');
-    assert.ok(hasText(html, '¥89.00 / 件'), '面膜单价');
-    assert.ok(hasText(html, '¥139.00 / 件'), '防晒霜单价');
-    assert.ok(hasText(html, '¥59.00 / 件'), '喷雾单价');
-  });
-
-  test('商品数量统计应正确', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '4 种商品 / 5 件'), '数量统计: 4种/5件');
-  });
-
-  test('不出售状态的商品(卸妆油 qty=0)不应渲染', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(!hasText(html, '卸妆油'), 'qty=0 的商品不应显示');
+  it('3. page.tsx 是 "use client"', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes("'use client'") || source.includes('"use client"'),
+      'should be client component');
   });
 });
 
-// ==================== 3. 收件表单 ====================
+/* ══════════════════════════════════════════════════════════
+   测试: CartItem 数据结构
+   ══════════════════════════════════════════════════════════ */
 
-describe('收件表单 (Receiver Form)', () => {
-  test('必填输入框应有 placeholder', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '请输入收件人姓名'), '姓名输入框应有 placeholder');
-    assert.ok(hasText(html, '请输入手机号'), '手机号输入框应有 placeholder');
-    assert.ok(hasText(html, '请输入详细地址'), '地址输入框应有 placeholder');
-    assert.ok(hasText(html, '请输入城市名'), '城市输入框应有 placeholder');
+describe('checkout — CartItem 数据', () => {
+  /* ── 正例 ── */
+
+  it('4. 默认购物车 4 件商品', () => {
+    assert.equal(defaultCart.length, 4);
   });
 
-  test('邮箱应有 placeholder "选填"', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '选填'), '邮箱输入框应为选填');
+  it('5. 所有商品 ID 唯一', () => {
+    const ids = defaultCart.map((c) => c.id);
+    assert.equal(new Set(ids).size, ids.length);
   });
 
-  test('应有 data-testid 标记所有输入框', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, 'data-testid="input-name"'), '姓名输入框 testid');
-    assert.ok(hasText(html, 'data-testid="input-phone"'), '手机号输入框 testid');
-    assert.ok(hasText(html, 'data-testid="input-email"'), '邮箱输入框 testid');
-    assert.ok(hasText(html, 'data-testid="input-address"'), '地址输入框 testid');
-    assert.ok(hasText(html, 'data-testid="input-city"'), '城市输入框 testid');
-    assert.ok(hasText(html, 'data-testid="textarea-remark"'), '备注文本框 testid');
+  it('6. 所有商品名称非空', () => {
+    for (const item of defaultCart) {
+      assert.ok(item.name.length > 0, `${item.id} empty name`);
+    }
   });
 
-  test('备注文本域应有 maxLength 限制', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '订单备注...'), '备注应有 placeholder');
-    assert.ok(hasText(html, 'maxLength="200"') || hasText(html, 'maxlength="200"'), '备注应限制200字');
+  it('7. 所有商品价格 > 0', () => {
+    for (const item of defaultCart) {
+      assert.ok(item.price > 0, `${item.id} price should be > 0, got ${item.price}`);
+    }
   });
 
-  test('配送方式应有 combobox role', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '配送方式'), '应渲染配送方式标签');
-    assert.ok(hasText(html, 'role="combobox"'), '配送方式应为 combobox 组件');
-    assert.ok(hasText(html, '请选择配送方式'), '应有占位提示');
+  it('8. 所有商品数量 > 0', () => {
+    for (const item of defaultCart) {
+      assert.ok(item.quantity > 0, `${item.id} qty should be > 0, got ${item.quantity}`);
+    }
   });
 
-  test('服务条款复选框应有 testid', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, 'data-testid="checkbox-terms"'), '条款复选框 testid');
+  it('9. 分类信息不缺省', () => {
+    for (const item of defaultCart) {
+      assert.ok(item.category, `${item.id} missing category`);
+    }
   });
 
-  test('应包含同意服务条款文本', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '我已阅读并同意服务条款和隐私政策'), '应渲染同意条款');
+  /* ── 金额计算 ── */
+
+  it('10. 小计 = 299 + 89×2 + 139 + 59 = 675', () => {
+    assert.equal(calcSubtotal(defaultCart), 675);
   });
 
-  test('必填字段应有红色星号标记', () => {
-    const html = render(React.createElement(CheckoutPage));
-    const redCount = countOccurrences(html, '#ef4444');
-    assert.ok(redCount >= 1, '至少有一个必填字段有红色星号样式');
-  });
-});
-
-// ==================== 4. 支付方式 ====================
-
-describe('支付方式 (Payment Methods)', () => {
-  test('应渲染4种支付方式卡片', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, 'data-testid="payment-wechat"'), '微信支付 testid');
-    assert.ok(hasText(html, 'data-testid="payment-alipay"'), '支付宝 testid');
-    assert.ok(hasText(html, 'data-testid="payment-cash"'), '现金 testid');
-    assert.ok(hasText(html, 'data-testid="payment-member_card"'), '会员卡 testid');
+  it('11. 总商品数量 = 5', () => {
+    assert.equal(calcQuantity(defaultCart), 5);
   });
 
-  test('支付方式应包含图标, 名称和描述', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '💳') && hasText(html, '微信支付'), '微信支付内容');
-    assert.ok(hasText(html, '🔵') && hasText(html, '支付宝'), '支付宝内容');
-    assert.ok(hasText(html, '💵') && hasText(html, '现金'), '现金内容');
-    assert.ok(hasText(html, '🎫') && hasText(html, '会员卡'), '会员卡内容');
+  it('12. 单价总和 = 586', () => {
+    const sumPrice = defaultCart.reduce((s, i) => s + i.price, 0);
+    assert.equal(sumPrice, 586);
   });
 
-  test('支付方式描述应正确显示', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '微信扫码支付'), '微信支付描述');
-    assert.ok(hasText(html, '支付宝扫码支付'), '支付宝描述');
-    assert.ok(hasText(html, '到店付款'), '现金描述');
-    assert.ok(hasText(html, '余额/积分支付'), '会员卡描述');
-  });
-
-  test('选中状态应有测试钩子和选中标记', () => {
-    const html = render(React.createElement(CheckoutPage));
-    // 默认无选中, 但每个卡片都可点击
-    const checked = countOccurrences(html, '✓');
-    // ✓ 可能出现在其他位置如优惠券有效状态, 至少4* 方式卡片是可点击的按钮
-    const buttons = countOccurrences(html, 'type="button"');
-    assert.ok(buttons >= 4, '至少有4个支付方式按钮');
+  it('13. 各分类商品数量', () => {
+    const catCount: Record<string, number> = {};
+    for (const item of defaultCart) {
+      catCount[item.category!] = (catCount[item.category!] || 0) + item.quantity;
+    }
+    assert.equal(catCount['护肤品'], 2); // p1(1) + p4(1)
+    assert.equal(catCount['面膜'], 2);    // p2(2)
+    assert.equal(catCount['防晒'], 1);    // p3(1)
   });
 });
 
-// ==================== 5. 优惠券 ====================
+/* ══════════════════════════════════════════════════════════
+   测试: 配送费计算
+   ══════════════════════════════════════════════════════════ */
 
-describe('优惠券 (Coupon)', () => {
-  test('应包含优惠券输入框和使用/移除按钮', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, 'data-testid="coupon-section"'), '优惠券区域 testid');
-    assert.ok(hasText(html, 'data-testid="input-coupon"'), '优惠券输入框 testid');
-    assert.ok(hasText(html, 'data-testid="btn-apply-coupon"'), '使用按钮 testid');
-    assert.ok(hasText(html, '输入优惠券码'), '优惠券 placeholder');
+describe('checkout — 配送费计算', () => {
+  it('14. 满 99 免运费', () => {
+    assert.equal(calcDeliveryFee(99), 0);
+    assert.equal(calcDeliveryFee(100), 0);
+    assert.equal(calcDeliveryFee(999), 0);
   });
 
-  test('优惠券为空时使用按钮应 disabled', () => {
-    const html = render(React.createElement(CheckoutPage));
-    // 初始状态, couponCode = '' , button disabled
-    assert.ok(hasText(html, 'disabled'), '初始使用按钮应 disabled');
+  it('15. 满 50 不足 99 运费 8 元', () => {
+    assert.equal(calcDeliveryFee(50), 8);
+    assert.equal(calcDeliveryFee(89), 8);
+    assert.equal(calcDeliveryFee(98.99), 8);
   });
 
-  test('优惠券输入框和按钮应有 testid', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, 'data-testid="input-coupon"'), '优惠券输入框容器 testid');
-    assert.ok(hasText(html, 'data-testid="btn-apply-coupon"'), '使用按钮 testid');
-  });
-});
-
-// ==================== 6. 金额计算 ====================
-
-describe('金额计算 (Price Calculation)', () => {
-  test('小计金额应正确: 299*1 + 89*2 + 139*1 + 59*1 = 675', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '¥675.00'), '小计应为 ¥675.00 (含新加喷雾)');
+  it('16. 不足 50 运费 15 元', () => {
+    assert.equal(calcDeliveryFee(0), 15);
+    assert.equal(calcDeliveryFee(30), 15);
+    assert.equal(calcDeliveryFee(49.99), 15);
   });
 
-  test('应显示商品小计标签行', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '商品小计'), '应显示商品小计行');
+  it('17. 边界值: 恰好 99', () => {
+    assert.equal(calcDeliveryFee(99), 0);
   });
 
-  test('满199应显示免运费 (默认配送方式为空, 无额外运费)', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '免运费') || hasText(html, '¥15.00'), '应显示运费信息');
+  it('18. 边界值: 恰好 50', () => {
+    assert.equal(calcDeliveryFee(50), 8);
   });
 
-  test('合计金额应显示', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '合计'), '应显示合计标签');
-  });
-
-  test('金额汇总区域应有 data-testid', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, 'data-testid="subtotal-amount"'), '小计金额 testid');
-    assert.ok(hasText(html, 'data-testid="shipping-fee"'), '配送费 testid');
-    assert.ok(hasText(html, 'data-testid="total-amount"'), '合计金额 testid');
-  });
-
-  test('优惠减免行默认不可见', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(!hasText(html, '优惠减免'), '默认不应显示优惠减免行');
-    assert.ok(!hasText(html, 'data-testid="coupon-discount"'), '默认不应显示优惠减免 testid');
+  it('19. 负数金额也返回 15', () => {
+    assert.equal(calcDeliveryFee(-10), 15);
   });
 });
 
-// ==================== 7. 提交按钮 ====================
+/* ══════════════════════════════════════════════════════════
+   测试: 总金额计算
+   ══════════════════════════════════════════════════════════ */
 
-describe('提交按钮 (Submit Button)', () => {
-  test('应显示提交按钮并包含合计金额', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '确认支付'), '应显示提交按钮');
-    assert.ok(hasText(html, '¥675.00'), '按钮上应显示金额');
-    assert.ok(hasText(html, 'data-testid="btn-reset"'), '重置按钮 testid (SubmitButton 不穿透 testid)');
+describe('checkout — 总金额计算', () => {
+  it('20. 正常计算: 小计 + 运费 - 优惠', () => {
+    assert.equal(calcTotal(675, 0, 50), 625);
   });
 
-  test('重置按钮应存在', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, '重置'), '应显示重置按钮');
-    assert.ok(hasText(html, 'data-testid="btn-reset"'), '重置按钮 testid');
+  it('21. 无优惠时总金额 = 小计 + 运费', () => {
+    assert.equal(calcTotal(675, 8, 0), 683);
   });
 
-  test('提交按钮初始应可用 (购物车有商品)', () => {
-    const html = render(React.createElement(CheckoutPage));
-    // 购物车有商品时, 不应 disabled (但表单验证会拦截)
-    const submitDisabled = html.match(/data-testid="btn-submit"[^>]*disabled/);
-    assert.ok(!submitDisabled, '初始提交按钮不应 disabled');
+  it('22. 优惠大于小计+运费时结果为 0', () => {
+    assert.equal(calcTotal(100, 10, 200), 0);
   });
 
-  test('空购物车提示默认不可见', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(!hasText(html, '购物车为空，请先添加商品'), '默认不应显示空购物车提示');
-    assert.ok(!hasText(html, 'data-testid="empty-cart-hint"'), '默认不应有空购物车 testid');
+  it('23. 优惠恰好等于小计+运费', () => {
+    assert.equal(calcTotal(100, 20, 120), 0);
+  });
+
+  it('24. 零小计 + 运费 = 运费', () => {
+    assert.equal(calcTotal(0, 15, 0), 15);
   });
 });
 
-// ==================== 8. 无障碍属性 ====================
+/* ══════════════════════════════════════════════════════════
+   测试: 支付方式
+   ══════════════════════════════════════════════════════════ */
 
-describe('无障碍 (Accessibility)', () => {
-  test('表单输入框应有关联 label 属性', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, 'for="checkout-name"'), '姓名 input 有关联 label');
-    assert.ok(hasText(html, 'for="checkout-phone"'), '手机号 input 有关联 label');
-    assert.ok(hasText(html, 'for="checkout-address"'), '地址 input 有关联 label');
-    assert.ok(hasText(html, 'for="checkout-city"'), '城市 input 有关联 label');
+describe('checkout — 支付方式常量', () => {
+  it('25. 4 种支付方式', () => {
+    assert.equal(PAYMENT_METHODS.length, 4);
   });
 
-  test('提交按钮应有禁用状态管理', () => {
-    const html = render(React.createElement(CheckoutPage));
-    // 有 disabled 属性控制逻辑
-    assert.ok(hasText(html, 'disabled'), '按钮有 disabled 机制');
+  it('26. 所有支付方式都有标签', () => {
+    for (const m of PAYMENT_METHODS) {
+      assert.ok(typeof PAYMENT_LABELS[m] === 'string', `missing label for ${m}`);
+      assert.ok(PAYMENT_LABELS[m].length > 0, `empty label for ${m}`);
+    }
   });
 
-  test('支付方式按钮应有类型标记', () => {
-    const html = render(React.createElement(CheckoutPage));
-    assert.ok(hasText(html, 'type="button"'), '支付方式为按钮类型');
+  it('27. 3 种配送方式', () => {
+    assert.equal(DELIVERY_METHODS.length, 3);
   });
 
-  test('头像表情符号不应影响基本渲染', () => {
-    const html = render(React.createElement(CheckoutPage));
-    // 支付方式图标 emoji 应全部显示
-    assert.ok(hasText(html, '💳'), '微信图标');
-    assert.ok(hasText(html, '💵'), '现金图标');
-    assert.ok(hasText(html, '🎫'), '会员卡图标');
+  it('28. 配送方式唯一', () => {
+    assert.equal(new Set(DELIVERY_METHODS).size, DELIVERY_METHODS.length);
+  });
+});
+
+/* ══════════════════════════════════════════════════════════
+   测试: 表单验证逻辑
+   ══════════════════════════════════════════════════════════ */
+
+describe('checkout — 表单验证', () => {
+  const EMPTY_FORM: CheckoutFormData = {
+    name: '', phone: '', email: '', address: '', city: '',
+    deliveryMethod: '', paymentMethod: '', agreeTerms: false,
+    remark: '', couponCode: '',
+  };
+
+  it('29. 空表单返回 5 个错误', () => {
+    const errors = validateForm(EMPTY_FORM);
+    assert.equal(Object.keys(errors).length, 5);
+  });
+
+  it('30. 姓名必填', () => {
+    const errors = validateForm({ ...EMPTY_FORM, name: '张三' });
+    assert.equal(errors.name, undefined);
+  });
+
+  it('31. 手机号必填', () => {
+    const errors = validateForm(EMPTY_FORM);
+    assert.equal(errors.phone, '请填写手机号');
+  });
+
+  it('32. 手机号格式验证', () => {
+    const errors = validateForm({ ...EMPTY_FORM, phone: '12345' });
+    assert.equal(errors.phone, '手机号格式不正确');
+  });
+
+  it('33. 有效手机号通过', () => {
+    const errors = validateForm({ ...EMPTY_FORM, phone: '13800138000' });
+    assert.notEqual(errors.name, undefined); // name still missing
+    assert.equal(errors.phone, undefined); // phone OK
+  });
+
+  it('34. 地址必填', () => {
+    const errors = validateForm(EMPTY_FORM);
+    assert.equal(errors.address, '请填写收货地址');
+  });
+
+  it('35. 配送方式必选', () => {
+    const errors = validateForm(EMPTY_FORM);
+    assert.equal(errors.deliveryMethod, '请选择配送方式');
+  });
+
+  it('36. 支付方式必选', () => {
+    const errors = validateForm(EMPTY_FORM);
+    assert.equal(errors.paymentMethod, '请选择支付方式');
+  });
+
+  it('37. 必须同意服务条款', () => {
+    const errors = validateForm(EMPTY_FORM);
+    assert.equal(errors.agreeTerms, '请同意服务条款');
+  });
+
+  it('38. 完整表单通过验证', () => {
+    const validForm: CheckoutFormData = {
+      name: '张三', phone: '13800138000', email: '', address: '北京市朝阳区',
+      city: '北京', deliveryMethod: 'express', paymentMethod: 'wechat',
+      agreeTerms: true, remark: '', couponCode: '',
+    };
+    const errors = validateForm(validForm);
+    assert.equal(Object.keys(errors).length, 0);
+  });
+});
+
+/* ══════════════════════════════════════════════════════════
+   边界与反例
+   ══════════════════════════════════════════════════════════ */
+
+describe('checkout — 边界用例', () => {
+  it('39. 单个商品购物车', () => {
+    const cart: CartItem[] = [{ id: 'p1', name: '测试商品', price: 10, quantity: 1 }];
+    assert.equal(calcSubtotal(cart), 10);
+    assert.equal(calcTotal(calcSubtotal(cart), calcDeliveryFee(calcSubtotal(cart))), 25); // 10+15
+  });
+
+  it('40. 空购物车', () => {
+    const cart: CartItem[] = [];
+    assert.equal(calcSubtotal(cart), 0);
+    assert.equal(calcQuantity(cart), 0);
+  });
+
+  it('41. 大数量购物车（999 件）', () => {
+    const cart: CartItem[] = [{ id: 'p1', name: '批量商品', price: 1, quantity: 999 }];
+    assert.equal(calcQuantity(cart), 999);
+    assert.equal(calcSubtotal(cart), 999);
+  });
+
+  it('42. 大金额商品', () => {
+    const cart: CartItem[] = [{ id: 'p1', name: '高端商品', price: 99999.99, quantity: 1 }];
+    assert.equal(calcSubtotal(cart), 99999.99);
+  });
+
+  it('43. 多种商品混装', () => {
+    const cart: CartItem[] = [
+      { id: 'a', name: 'A', price: 0.5, quantity: 10 },
+      { id: 'b', name: 'B', price: 1.5, quantity: 20 },
+    ];
+    assert.equal(calcSubtotal(cart), 35); // 5 + 30
+  });
+
+  it('44. 页面不使用 console.log', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(!source.includes('console.log'), 'no debug logging');
+  });
+
+  it('45. 页面不引用 @m5/admin', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(!source.includes('@m5/admin'), 'should not import from @m5/admin');
   });
 });

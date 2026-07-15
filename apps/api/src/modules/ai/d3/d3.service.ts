@@ -6,6 +6,12 @@
  * - Discovery: 基于用户行为画像生成推荐候选项
  * - Decision: 基于规则和约束过滤/排序推荐
  * - Delivery: 推荐结果分发
+ *
+ * V18增强:
+ * - collaborateFilter(): 协同过滤(基于用户相似度)
+ * - coldStart(): 冷启动策略(新品/新用户)
+ * - ensembleScore(): 混合评分权重
+ * - modelEvaluate(): 离线评估(覆盖率/新颖度/多样性)
  */
 
 import { Injectable } from '@nestjs/common'
@@ -95,6 +101,34 @@ interface UserProfile {
   viewedTags: string[]
   priceRange: { min: number; max: number }
 }
+
+// ─── Interaction data (for collaborative filtering) ────────────
+
+interface UserItemInteraction {
+  userId: string
+  itemId: string
+  rating: number // 1-5 implicit/explicit
+  timestamp: string
+  type: 'view' | 'purchase' | 'collect' | 'share'
+}
+
+const MOCK_INTERACTIONS: UserItemInteraction[] = [
+  { userId: 'user-001', itemId: 'item-001', rating: 5, timestamp: '2026-07-14T12:00:00Z', type: 'purchase' },
+  { userId: 'user-001', itemId: 'item-002', rating: 4, timestamp: '2026-07-14T12:05:00Z', type: 'view' },
+  { userId: 'user-001', itemId: 'item-005', rating: 5, timestamp: '2026-07-15T10:00:00Z', type: 'purchase' },
+  { userId: 'user-001', itemId: 'item-004', rating: 3, timestamp: '2026-07-13T08:00:00Z', type: 'view' },
+  { userId: 'user-002', itemId: 'item-004', rating: 5, timestamp: '2026-07-14T09:00:00Z', type: 'purchase' },
+  { userId: 'user-002', itemId: 'item-008', rating: 4, timestamp: '2026-07-14T09:10:00Z', type: 'collect' },
+  { userId: 'user-002', itemId: 'item-001', rating: 2, timestamp: '2026-07-13T16:00:00Z', type: 'view' },
+  { userId: 'user-003', itemId: 'item-003', rating: 5, timestamp: '2026-07-15T14:00:00Z', type: 'purchase' },
+  { userId: 'user-003', itemId: 'item-007', rating: 4, timestamp: '2026-07-15T14:05:00Z', type: 'view' },
+  { userId: 'user-003', itemId: 'item-009', rating: 3, timestamp: '2026-07-14T11:00:00Z', type: 'view' },
+  { userId: 'user-004', itemId: 'item-010', rating: 4, timestamp: '2026-07-15T18:00:00Z', type: 'collect' },
+  { userId: 'user-004', itemId: 'item-008', rating: 5, timestamp: '2026-07-15T18:10:00Z', type: 'purchase' },
+  { userId: 'user-004', itemId: 'item-006', rating: 3, timestamp: '2026-07-12T09:00:00Z', type: 'view' },
+  { userId: 'user-005', itemId: 'item-002', rating: 5, timestamp: '2026-07-15T20:00:00Z', type: 'purchase' },
+  { userId: 'user-005', itemId: 'item-009', rating: 4, timestamp: '2026-07-15T20:05:00Z', type: 'collect' },
+]
 
 // ─── In-memory store (simulation) ──────────────────────────────
 
@@ -392,6 +426,383 @@ export class D3Service {
       [RecommendChannel.POPUP]: { channel, name: '弹窗', description: '通过弹窗展示推荐', maxItems: 1, supported: true },
     }
     return channels[channel] ?? { channel, name: '未知渠道', description: '', maxItems: 0, supported: false }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🤝 Collaborative Filtering
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * User-based协同过滤: 找相似用户, 推荐他们喜欢的物品
+   * 使用Pearson相似度或Jaccard系数
+   */
+  collaborateFilter(userId: string, topK: number = 5): RecommendItem[] {
+    const targetInteractions = MOCK_INTERACTIONS.filter(i => i.userId === userId)
+    const targetItemIds = new Set(targetInteractions.map(i => i.itemId))
+
+    if (targetItemIds.size === 0) {
+      return []
+    }
+
+    // 计算用户相似度 (Jaccard: 交集/并集)
+    const userSim: { userId: string; sim: number }[] = []
+    const otherUserIds = [...new Set(MOCK_INTERACTIONS.filter(i => i.userId !== userId).map(i => i.userId))]
+
+    for (const otherId of otherUserIds) {
+      const otherInteractions = MOCK_INTERACTIONS.filter(i => i.userId === otherId)
+      const otherItemIds = new Set(otherInteractions.map(i => i.itemId))
+
+      const intersection = [...targetItemIds].filter(x => otherItemIds.has(x)).length
+      const union = new Set([...targetItemIds, ...otherItemIds]).size
+
+      if (union === 0) continue
+
+      const jaccard = intersection / union
+
+      // 加权: 共同购买>收藏>浏览
+      const weightBonus = MOCK_INTERACTIONS
+        .filter(i => i.userId === otherId && targetItemIds.has(i.itemId))
+        .reduce((sum, i) => {
+          if (i.type === 'purchase') return sum + 0.3
+          if (i.type === 'collect') return sum + 0.2
+          if (i.type === 'share') return sum + 0.25
+          return sum + 0.1
+        }, 0)
+
+      const weightedSim = jaccard * 0.7 + Math.min(weightBonus, 0.3)
+      if (weightedSim > 0) {
+        userSim.push({ userId: otherId, sim: weightedSim })
+      }
+    }
+
+    // 按相似度排序
+    userSim.sort((a, b) => b.sim - a.sim)
+    const topUsers = userSim.slice(0, topK)
+
+    // 从相似用户中找到未交互的物品
+    const candidateScores = new Map<string, { score: number; reasons: string[] }>()
+
+    for (const { userId: simUserId, sim } of topUsers) {
+      const simUserItems = MOCK_INTERACTIONS.filter(i => i.userId === simUserId && !targetItemIds.has(i.itemId))
+
+      for (const interaction of simUserItems) {
+        const existing = candidateScores.get(interaction.itemId)
+        const typeWeight = interaction.type === 'purchase' ? 1.0 : interaction.type === 'collect' ? 0.8 : interaction.type === 'share' ? 0.9 : 0.5
+        const contribution = sim * typeWeight * (interaction.rating / 5)
+
+        if (existing) {
+          existing.score += contribution
+          existing.reasons.push(`用户${simUserId.slice(-3)}也喜欢`)
+        } else {
+          candidateScores.set(interaction.itemId, {
+            score: contribution,
+            reasons: [`相似用户推荐`],
+          })
+        }
+      }
+    }
+
+    // 转换为推荐项
+    const result: RecommendItem[] = []
+    for (const [itemId, { score, reasons }] of candidateScores) {
+      const item = MOCK_ITEMS.find(i => i.id === itemId)
+      if (item) {
+        result.push({
+          ...item,
+          score: Math.round(item.score * 0.4 + score * 0.6 * 100),
+          reason: reasons.join('; '),
+        })
+      }
+    }
+
+    result.sort((a, b) => b.score - a.score)
+    return result
+  }
+
+  /**
+   * Item-based协同过滤: 基于物品相似度推荐
+   * 用标签交集+同品类计算物品相似度
+   */
+  itemBasedFilter(itemId: string, topK: number = 5): RecommendItem[] {
+    const sourceItem = MOCK_ITEMS.find(i => i.id === itemId)
+    if (!sourceItem) return []
+
+    const scored = MOCK_ITEMS
+      .filter(i => i.id !== itemId)
+      .map(target => {
+        // 标签相似度
+        const tagIntersection = sourceItem.tags.filter(t => target.tags.includes(t)).length
+        const tagUnion = new Set([...sourceItem.tags, ...target.tags]).size
+        const tagSim = tagUnion > 0 ? tagIntersection / tagUnion : 0
+
+        // 品类匹配
+        const catMatch = sourceItem.category === target.category ? 1 : 0
+
+        // 价格相似度 (越近越高)
+        const priceDiff = Math.abs(sourceItem.price - target.price) / Math.max(sourceItem.price, target.price)
+        const priceSim = Math.max(0, 1 - priceDiff)
+
+        // 综合得分
+        const finalScore = tagSim * 0.5 + catMatch * 0.3 + priceSim * 0.2
+
+        return {
+          item: target,
+          score: Math.round(finalScore * 100),
+          reasons: [] as string[],
+        }
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topK)
+
+    return scored.map(s => ({
+      ...s.item,
+      score: Math.round(s.item.score * 0.3 + s.score * 0.7),
+      reason: '与您浏览的商品相似',
+    }))
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🆕 Cold Start 冷启动
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * 新用户冷启动: 无行为数据时的推荐策略
+   * 策略: 热门+分众+地域+随机探索
+   */
+  coldStartNewUser(segment?: string): RecommendItem[] {
+    const strategies: { name: string; items: RecommendItem[] }[] = []
+
+    // 策略1: 全局热门 (Popularity)
+    const globalHot = [...MOCK_ITEMS].sort((a, b) => b.score - a.score).slice(0, 5)
+    strategies.push({ name: '热门推荐', items: globalHot })
+
+    // 策略2: 分众推荐 (如果已知用户群)
+    if (segment) {
+      const segmentItems = MOCK_ITEMS.filter(item => item.tags.includes(segment))
+      if (segmentItems.length > 0) {
+        strategies.push({ name: `${segment}精选`, items: segmentItems.slice(0, 4) })
+      }
+    }
+
+    // 策略3: 高评分+高性价比
+    const highValue = [...MOCK_ITEMS]
+      .filter(item => item.rating >= 4.5 && item.price <= 1000)
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 3)
+    if (highValue.length > 0) {
+      strategies.push({ name: '超值精选', items: highValue })
+    }
+
+    // 策略4: 多样性探索 (Explore - 确保覆盖面)
+    const categories = [...new Set(MOCK_ITEMS.map(i => i.category))]
+    const exploreItems: RecommendItem[] = []
+    for (const cat of categories) {
+      const catItem = MOCK_ITEMS.filter(i => i.category === cat && !strategies.some(s => s.items.some(si => si.id === i.id)))
+      if (catItem.length > 0) {
+        exploreItems.push(catItem[0])
+      }
+    }
+    strategies.push({ name: '发现更多', items: exploreItems.slice(0, 3) })
+
+    // 混合产出: 按策略轮换, 去重
+    const seenIds = new Set<string>()
+    const result: RecommendItem[] = []
+
+    let roundIdx = 0
+    while (result.length < 10) {
+      let anyAdded = false
+      for (const strategy of strategies) {
+        const idx = roundIdx % strategy.items.length
+        const item = strategy.items[idx]
+        if (item && !seenIds.has(item.id)) {
+          seenIds.add(item.id)
+          result.push({
+            ...item,
+            score: Math.round(item.score + (10 - roundIdx)),
+            reason: strategy.name,
+          })
+          anyAdded = true
+        }
+      }
+      if (!anyAdded) break
+      roundIdx++
+    }
+
+    return result
+  }
+
+  /**
+   * 新品冷启动: 新上架物品缺少交互数据时的推广策略
+   */
+  coldStartNewItem(newItem: Partial<RecommendItem>): RecommendItem[] {
+    // 按标签找到相似品类中的热门品
+    const tagMatch = newItem.tags
+      ? MOCK_ITEMS.filter(i =>
+          i.id !== newItem.id &&
+          i.tags.some(t => newItem.tags!.includes(t))
+        )
+      : []
+
+    const catMatch = newItem.category
+      ? MOCK_ITEMS.filter(i => i.id !== newItem.id && i.category === newItem.category)
+      : []
+
+    const relatedItems = [...new Map(
+      [...tagMatch, ...catMatch]
+        .map(i => [i.id, i] as const)
+    ).values()]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6)
+
+    // 新品本身给予
+    // 新品本身给予基础曝光分数
+    const newItemScore = 60 + (newItem.rating ? newItem.rating * 5 : 0) + (newItem.tags?.length || 0) * 3
+
+    const result = [
+      {
+        id: newItem.id || 'new-item',
+        title: newItem.title || '新品推荐',
+        type: newItem.type || 'general',
+        score: newItemScore,
+        reason: '新品推荐 · 限时体验',
+        tags: newItem.tags || [],
+        category: newItem.category || 'general',
+        price: newItem.price || 0,
+        rating: newItem.rating || 4.0,
+        imageUrl: newItem.imageUrl || '',
+      },
+      // 推荐同品类热门商品做搭配
+      ...relatedItems.map(i => ({
+        ...i,
+        score: Math.round(i.score * 0.8),
+        reason: '同类热门推荐',
+      })),
+    ]
+
+    return result
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ⚖️ Ensemble Scoring
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * 集成评分: 合并多个打分策略的加权结果
+   * 支持配置各策略权重
+   */
+  ensembleScore(
+    userId: string,
+    weights?: { cb?: number; cf?: number; trend?: number; explore?: number }
+  ): RecommendItem[] {
+    const w = {
+      cb: weights?.cb ?? 0.35,   // 基于内容的推荐权重
+      cf: weights?.cf ?? 0.30,   // 协同过滤推荐权重
+      trend: weights?.trend ?? 0.20, // 热门趋势权重
+      explore: weights?.explore ?? 0.15, // 探索多样性权重
+    }
+
+    // 归一化权重
+    const total = w.cb + w.cf + w.trend + w.explore
+    const normW = {
+      cb: w.cb / total,
+      cf: w.cf / total,
+      trend: w.trend / total,
+      explore: w.explore / total,
+    }
+
+    // 获取各策略推荐
+    const profile = MOCK_PROFILES[userId]
+    const hasHistory = profile && MOCK_INTERACTIONS.some(i => i.userId === userId)
+
+    const cbItems = hasHistory
+      ? this.getPersonalPicks(userId).map(p => ({ id: p.id, score: p.score }))
+      : []
+
+    const cfItems = hasHistory
+      ? this.collaborateFilter(userId).map(item => ({ id: item.id, score: item.score }))
+      : []
+
+    const trendItems = this.getTrendingItems('electronics', RecommendPeriod.WEEK).items
+      .map(item => ({ id: item.id, score: item.score * 0.5 }))
+
+    const exploreItems = this.coldStartNewUser().map(item => ({ id: item.id, score: item.score * 0.3 }))
+
+    // 合并评分
+    const combinedScore = new Map<string, number>()
+    const scoreReasons = new Map<string, string[]>()
+
+    for (const { id, score } of cbItems) {
+      combinedScore.set(id, (combinedScore.get(id) || 0) + score * normW.cb)
+      scoreReasons.set(id, [...(scoreReasons.get(id) || []), '内容匹配'])
+    }
+    for (const { id, score } of cfItems) {
+      combinedScore.set(id, (combinedScore.get(id) || 0) + score * normW.cf)
+      scoreReasons.set(id, [...(scoreReasons.get(id) || []), '协同过滤'])
+    }
+    for (const { id, score } of trendItems) {
+      combinedScore.set(id, (combinedScore.get(id) || 0) + score * normW.trend)
+      scoreReasons.set(id, [...(scoreReasons.get(id) || []), '热门趋势'])
+    }
+    for (const { id, score } of exploreItems) {
+      combinedScore.set(id, (combinedScore.get(id) || 0) + score * normW.explore)
+      scoreReasons.set(id, [...(scoreReasons.get(id) || []), '探索发现'])
+    }
+
+    const result: RecommendItem[] = []
+    for (const [id, score] of combinedScore) {
+      const item = MOCK_ITEMS.find(i => i.id === id)
+      if (item) {
+        result.push({
+          ...item,
+          score: Math.round(score),
+          reason: scoreReasons.get(id)?.join(' | ') || '综合推荐',
+        })
+      }
+    }
+
+    result.sort((a, b) => b.score - a.score)
+    return result
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 📊 Model Evaluation
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * 推荐模型离线评估
+   * 产出: 覆盖率 + 新颖度 + 多样性 + 用户满意度指标
+   */
+  modelEvaluate(userId: string): {
+    coverage: number;
+    novelty: number;
+    diversity: number;
+    hitRate: number;
+    recommendations: RecommendItem[];
+  } {
+    const recs = this.ensembleScore(userId)
+    const totalItems = MOCK_ITEMS.length
+    const coveredItems = new Set(recs.map(r => r.id)).size
+
+    // 覆盖率: 推荐覆盖商品的比例
+    const coverage = totalItems > 0 ? Math.round((coveredItems / totalItems) * 100) : 0
+
+    // 多样性: 所推荐品类的分散程度
+    const catSet = new Set(recs.map(r => r.category))
+    const diversity = recs.length > 0 ? Math.round((catSet.size / recs.length) * 100) : 0
+
+    // 新颖度: 非热门商品的推荐比例 (score < 80为"冷门")
+    const novelCount = recs.filter(r => r.score < 80).length
+    const novelty = recs.length > 0 ? Math.round((novelCount / recs.length) * 100) : 0
+
+    // 命中率: 基于交互历史中是否包含推荐品类
+    const userHistory = MOCK_INTERACTIONS.filter(i => i.userId === userId)
+    const historyCats = new Set(
+      userHistory.map(i => MOCK_ITEMS.find(m => m.id === i.itemId)?.category).filter(Boolean)
+    )
+    const hitCount = recs.filter(r => historyCats.has(r.category)).length
+    const hitRate = recs.length > 0 ? Math.round((hitCount / recs.length) * 100) : 0
+
+    return { coverage, novelty, diversity, hitRate, recommendations: recs }
   }
 
   // ═══════════════════════════════════════════════════════════════
