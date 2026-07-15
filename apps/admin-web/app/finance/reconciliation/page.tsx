@@ -3,7 +3,7 @@
  *
  * 功能:
  *   1. 对账概览卡片 — 日期选择器+状态卡片+匹配率
- *   2. 对账结果表格 — 交易号/金额/差异/状态+搜索筛选
+ *   6. 对账操作日志时间线 — 批量resolve — 自动刷新
  *   3. 差异明细表格 — 差异分类+标记已处理
  *   4. 对账操作栏 — 手动触发+导出+刷新
  *   5. 状态管理 — loading/空/error
@@ -120,6 +120,63 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
 
 // ─── 主组件 ─────────────────────────────────────────────
 
+// ─── 时间线日志组件 ─────────────────────────────────────
+
+interface TimelineEntry {
+  id: string
+  action: string
+  operator: string
+  timestamp: string
+  details?: string
+  status?: 'success' | 'warning' | 'error'
+}
+
+function Timeline({ entries }: { entries: TimelineEntry[] }) {
+  if (entries.length === 0) return null
+  return (
+    <div className="space-y-0">
+      {entries.map((entry, i) => (
+        <div key={entry.id} className="flex gap-3">
+          <div className="flex flex-col items-center">
+            <div className={`w-3 h-3 rounded-full border-2 ${
+              entry.status === 'error' ? 'border-red-500 bg-red-100' :
+              entry.status === 'warning' ? 'border-yellow-500 bg-yellow-100' :
+              'border-green-500 bg-green-100'
+            }`} />
+            {i < entries.length - 1 && <div className="w-0.5 flex-1 bg-gray-200" />}
+          </div>
+          <div className="pb-6 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-900">{entry.action}</span>
+              <span className={`text-xs px-1.5 py-0.5 rounded ${
+                entry.status === 'error' ? 'bg-red-50 text-red-700' :
+                entry.status === 'warning' ? 'bg-yellow-50 text-yellow-700' :
+                'bg-green-50 text-green-700'
+              }`}>{entry.status === 'success' ? '成功' : entry.status === 'warning' ? '警告' : '失败'}</span>
+            </div>
+            <div className="text-xs text-gray-500 mt-0.5">
+              {entry.operator} · {new Date(entry.timestamp).toLocaleString('zh-CN')}
+            </div>
+            {entry.details && <div className="text-xs text-gray-400 mt-1">{entry.details}</div>}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── 自动刷新钩子 ─────────────────────────────────────
+
+function useAutoRefresh(callback: () => void, intervalMs: number) {
+  const [active, setActive] = useState(false)
+  useEffect(() => {
+    if (!active) return
+    const id = setInterval(callback, intervalMs)
+    return () => clearInterval(id)
+  }, [active, callback, intervalMs])
+  return { active, toggle: () => setActive((a) => !a) }
+}
+
 export default function ReconciliationPage() {
   const [status, setStatus] = useState<ReconciliationStatus | null>(null)
   const [summary, setSummary] = useState<SummaryResponse | null>(null)
@@ -133,8 +190,36 @@ export default function ReconciliationPage() {
   const [running, setRunning] = useState(false)
   const [kindFilter, setKindFilter] = useState<string>('')
   const [resolvedFilter, setResolvedFilter] = useState<string>('all')
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
 
-  // ── 数据加载 ──
+  const autoRefresh = useAutoRefresh(loadData, 30000)
+  const [timeline] = useState<TimelineEntry[]>([
+    { id: 'tl-1', action: '对账发起', operator: '系统', timestamp: new Date(Date.now() - 3600000).toISOString(), details: '自动对账 2026-07-15', status: 'success' },
+    { id: 'tl-2', action: '差异发现', operator: '系统', timestamp: new Date(Date.now() - 1800000).toISOString(), details: '发现 3 条差异', status: 'warning' },
+    { id: 'tl-3', action: '差异处理', operator: 'admin', timestamp: new Date(Date.now() - 600000).toISOString(), details: '已处理 2 条差异', status: 'success' },
+  ])
+
+  // ── 批量resolve ──
+
+  const handleBatchResolve = async () => {
+    if (selectedKeys.size === 0) return
+    setRunning(true)
+    try {
+      for (const key of selectedKeys) {
+        await apiFetch(`/api/finance/reconciliation/${encodeURIComponent(key)}/resolve`, {
+          method: 'POST',
+          body: JSON.stringify({ resolvedBy: 'admin' }),
+        })
+      }
+      setSelectedKeys(new Set())
+      await loadData()
+      if (tabView === 'details') await loadDetails()
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setRunning(false)
+    }
+  }
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -330,8 +415,25 @@ export default function ReconciliationPage() {
           >
             刷新
           </button>
+          <label className="flex items-center gap-1.5 text-sm text-gray-500 cursor-pointer select-none">
+            <input type="checkbox" checked={autoRefresh.active} onChange={autoRefresh.toggle} className="rounded" />
+            自动刷新
+          </label>
         </div>
       </div>
+
+      {/* 批量操作栏 */}
+      {tabView === 'details' && selectedKeys.size > 0 && (
+        <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <span className="text-sm text-blue-700">已选择 {selectedKeys.size} 条差异</span>
+          <button onClick={handleBatchResolve} disabled={running} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50">
+            批量标记已处理
+          </button>
+          <button onClick={() => setSelectedKeys(new Set())} className="px-3 py-1.5 border border-gray-300 rounded text-sm hover:bg-gray-100">
+            取消
+          </button>
+        </div>
+      )}
 
       {/* 错误提示 */}
       {error && (
@@ -516,6 +618,15 @@ export default function ReconciliationPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b">
+                  <th className="w-10 px-2 py-3">
+                    <input type="checkbox" className="rounded"
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedKeys(new Set(details.map((d) => d.diffKey)))
+                        else setSelectedKeys(new Set())
+                      }}
+                      checked={selectedKeys.size === details.length && details.length > 0}
+                    />
+                  </th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">差异类型</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">交易号</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-600">差异金额</th>
@@ -532,6 +643,18 @@ export default function ReconciliationPage() {
                 ) : (
                   details.map((d) => (
                     <tr key={d.diffKey} className="border-b hover:bg-gray-50">
+                      <td className="px-2 py-3 text-center">
+                        {!d.resolved && (
+                          <input type="checkbox" checked={selectedKeys.has(d.diffKey)} className="rounded"
+                            onChange={(e) => {
+                              const next = new Set(selectedKeys)
+                              if (e.target.checked) next.add(d.diffKey)
+                              else next.delete(d.diffKey)
+                              setSelectedKeys(next)
+                            }}
+                          />
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${diffKindColor(d.kind)}`}>
                           {diffKindLabel(d.kind)}

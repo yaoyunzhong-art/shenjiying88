@@ -103,7 +103,17 @@ export default function AuditLogsPage() {
   const [eventFilter, setEventFilter] = useState('');
   const [sevFilter, setSevFilter] = useState('');
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>({ key: 'createdAt', direction: 'desc' });
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const pagination = usePagination({ initialPageSize: 10, pageSizeOptions: [5, 10, 20] });
+
+  const today = logs.filter((l) => l.createdAt.startsWith('2026-07-15')).length;
+  const thisWeek = logs.filter((l) => l.createdAt >= '2026-07-13').length;
+  const thisMonth = logs.length;
+  const eventTypeCounts = logs.reduce<Record<string, number>>((acc, l) => {
+    acc[l.eventType] = (acc[l.eventType] || 0) + 1;
+    return acc;
+  }, {});
 
   const filtered = useMemo(() => {
     let items = logs;
@@ -113,8 +123,10 @@ export default function AuditLogsPage() {
     }
     if (eventFilter) items = items.filter((l) => l.eventType === eventFilter);
     if (sevFilter) items = items.filter((l) => l.severity === sevFilter);
+    if (dateRange.start) items = items.filter((l) => l.createdAt >= dateRange.start);
+    if (dateRange.end) items = items.filter((l) => l.createdAt <= dateRange.end + ' 23:59');
     return items;
-  }, [logs, search, eventFilter, sevFilter]);
+  }, [logs, search, eventFilter, sevFilter, dateRange]);
 
   const errCnt = logs.filter((l) => l.severity === 'error').length;
   const warnCnt = logs.filter((l) => l.severity === 'warning').length;

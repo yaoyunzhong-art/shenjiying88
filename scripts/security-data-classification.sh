@@ -116,48 +116,50 @@ check_prisma_classification() {
 
   # 提取所有 model 定义
   local models
-  models=$(grep -n '^model ' "$schema_file" | awk '{print $NF}' | sort -u || true)
+  models=$(grep -n '^model ' "$schema_file" | awk '{print $2}' | sort -u || true)
 
   # 检查每个 model 是否含敏感字段或 PiiLevel 关联
   UNCLASSIFIED_MODELS=()
   UNCLASSIFIED_COUNT=0
 
-  # 预先生成文件中的行号边界，避免在循环中反复调用sed/grep
-  local model_lines
-  model_lines=$(grep -n '^model \|^enum \|^generator \|^datasource ' "$schema_file" || true)
-  local next_line
-  next_line=$(tail -1 "$schema_file" | wc -l | xargs)
-  [ -z "$next_line" ] && next_line=$(wc -l < "$schema_file")
+  # 使用awk一次性解析所有model的分类标注，避免逐行shell循环
+  local awk_result
+  awk_result=$(awk '
+    BEGIN { INSIDE=0; HAS_PII=0; HAS_SENSITIVE=0; MODEL_NAME=""; COUNT=0; }
+    /^model [A-Z]/ { 
+      if (INSIDE && MODEL_NAME != "" && HAS_SENSITIVE > 0 && HAS_PII == 0) {
+        print MODEL_NAME;
+        COUNT++;
+      }
+      MODEL_NAME=$2; INSIDE=1; HAS_PII=0; HAS_SENSITIVE=0;
+      next;
+    }
+    /^enum |^generator |^datasource / { INSIDE=0; next; }
+    {
+      if (INSIDE) {
+        if (/PiiLevel|piiLevel|pii_/) HAS_PII=1;
+        if (/(password|secret|token|credential|certificate|key|private|auth|pin|ssn|identity|phone|email|address|birth|idcard|cvv|bank)/) HAS_SENSITIVE=1;
+      }
+    }
+    END {
+      if (INSIDE && MODEL_NAME != "" && HAS_SENSITIVE > 0 && HAS_PII == 0) {
+        print MODEL_NAME;
+        COUNT++;
+      }
+    }
+  ' "$schema_file" || true)
 
-  while IFS= read -r model_name; do
-    [ -z "$model_name" ] && continue
+  UNCLASSIFIED_MODELS=()
+  UNCLASSIFIED_COUNT=0
 
-    local model_line_num
-    model_line_num=$(echo "$model_lines" | grep "^[0-9]*:model ${model_name}" | head -1 | cut -d: -f1)
-    [ -z "$model_line_num" ] && continue
-
-    # 找下一个关键词行做边界
-    local end_line_num
-    end_line_num=$(echo "$model_lines" | awk -v start="$model_line_num" '$1+0 > start+0 {print $1+0; exit}' FS=: || echo "$next_line")
-    [ -z "$end_line_num" ] && end_line_num=$((model_line_num + 30))
-
-    local model_block
-    model_block=$(sed -n "${model_line_num},${end_line_num}p" "$schema_file" 2>/dev/null || true)
-
-    # 检查是否包含 PiiLevel 字段或敏感相关字段
-    local has_pii_level
-    has_pii_level=$(echo "$model_block" | grep -c 'PiiLevel\|piiLevel\|pii_') || true
-
-    local has_sensitive_field
-    has_sensitive_field=$(echo "$model_block" | \
-      grep -cE '(password|secret|token|credential|certificate|key|private|auth|pin|ssn|identity|phone|email|address|birth|idcard|cvv|bank)' || true)
-
-    if [ "$has_pii_level" -eq 0 ] && [ "$has_sensitive_field" -gt 0 ]; then
+  if [ -n "$awk_result" ]; then
+    while IFS= read -r model_name; do
+      [ -z "$model_name" ] && continue
       UNCLASSIFIED_COUNT=$((UNCLASSIFIED_COUNT + 1))
       UNCLASSIFIED_MODELS+=("$model_name (含敏感字段但无PiiLevel标注)")
       warn "  ⚠️ [无分类标注] model ${model_name} 含敏感字段但无 PiiLevel 标注"
-    fi
-  done <<< "$models"
+    done <<< "$awk_result"
+  fi
 
   if [ "$UNCLASSIFIED_COUNT" -eq 0 ]; then
     ok "  ✅ 所有 model 均有数据分类标注"
@@ -326,15 +328,15 @@ cat <<JSONEOF
   "module": "data-classification",
   "results": {
     "prisma_model_classification": {
-      "status": $( [ "$UNCLASSIFIED_COUNT" -eq 0 ] && echo '"passed"' || echo '"missing' ),
+      "status": $( [ "$UNCLASSIFIED_COUNT" -eq 0 ] && echo '"passed"' || echo '"missing"' ),
       "models_without_pii": $UNCLASSIFIED_COUNT
     },
     "rules_permission_annotations": {
-      "status": $( [ "$UNLABELED_RULES_COUNT" -eq 0 ] && echo '"passed"' || echo '"missing' ),
+      "status": $( [ "$UNLABELED_RULES_COUNT" -eq 0 ] && echo '"passed"' || echo '"missing"' ),
       "unlabeled_pages": $UNLABELED_RULES_COUNT
     },
     "rls_classification": {
-      "status": $( [ "$RLS_MISSING_CLASS_COUNT" -eq 0 ] && echo '"passed"' || echo '"missing' ),
+      "status": $( [ "$RLS_MISSING_CLASS_COUNT" -eq 0 ] && echo '"passed"' || echo '"missing"' ),
       "tables_without_classification": $RLS_MISSING_CLASS_COUNT
     },
     "pii_coverage": {
