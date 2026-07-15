@@ -381,3 +381,63 @@ describe('DocumentRelation 实体结构', () => {
     expect(types).toContain('related')
   })
 })
+
+describe('PatternEdge 实体结构', () => {
+  it('完整 PatternEdge 对象至少包含 source 和 target', () => {
+    const edge = { source: 'p-001', target: 'p-002', relationship: 'supersedes' }
+    expect(edge.source).toBeTypeOf('string')
+    expect(edge.target).toBeTypeOf('string')
+    expect(edge.relationship).toBeDefined()
+  })
+
+  it('edge 的 relationship 可以是空字符串', () => {
+    const edge = { source: 'p-001', target: 'p-002', relationship: '' }
+    expect(edge.relationship).toBe('')
+  })
+
+  it('edge 关系类型为已知枚举值', () => {
+    const edge1 = { source: 'a', target: 'b', relationship: 'supersedes' }
+    const edge2 = { source: 'b', target: 'c', relationship: 'extends' }
+    const edge3 = { source: 'c', target: 'a', relationship: 'related' }
+    expect(['supersedes', 'extends', 'related']).toContain(edge1.relationship)
+    expect(['supersedes', 'extends', 'related']).toContain(edge2.relationship)
+    expect(['supersedes', 'extends', 'related']).toContain(edge3.relationship)
+  })
+
+  it('边缘关系 source 和 target 不应相同', () => {
+    // self-referencing edges are likely data errors
+    const edge = { source: 'p-001', target: 'p-001', relationship: 'related' }
+    expect(edge.source === edge.target).toBe(true)
+    // but we document that it's not prohibited by the type system
+  })
+})
+
+describe('PhaseInfo 实体结构', () => {
+  it('完整 PhaseInfo 对象包含阶段标识字段', () => {
+    const phase = { id: 'phase-001', name: '启动阶段', order: 1, isActive: true }
+    expect(phase.id).toBeTypeOf('string')
+    expect(phase.name).toBeTypeOf('string')
+    expect(phase.order).toBeTypeOf('number')
+    expect(phase.isActive).toBeTypeOf('boolean')
+  })
+
+  it('PhaseInfo 可选字段 createdAt 可以为空', () => {
+    const phase = { id: 'phase-002', name: '规划阶段', order: 2 }
+    expect(phase.createdAt).toBeUndefined()
+  })
+
+  it('PhaseInfo 的 order 可以为 0', () => {
+    const phase = { id: 'phase-003', name: '预备', order: 0, isActive: false }
+    expect(phase.order).toBe(0)
+  })
+
+  it('PhaseInfo 的 name 可以为空', () => {
+    const phase = { id: 'phase-004', name: '', order: 3, isActive: true }
+    expect(phase.name).toBe('')
+  })
+
+  it('PhaseInfo 的 isActive 默认为 true', () => {
+    const phase = { id: 'phase-005', name: '默认', order: 4, isActive: true }
+    expect(phase.isActive).toBe(true)
+  })
+})

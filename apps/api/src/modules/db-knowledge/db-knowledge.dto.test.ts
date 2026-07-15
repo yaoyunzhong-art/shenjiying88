@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest'
 import { validate } from 'class-validator'
 import 'reflect-metadata'
-import { SearchQueryDto, KindQueryDto, CityQueryDto, PatternFilterDto } from './db-knowledge.dto'
+import { SearchQueryDto, KindQueryDto, CityQueryDto, GroupQueryDto, PatternFilterDto } from './db-knowledge.dto'
 
 describe('SearchQueryDto', () => {
   it('有效的搜索请求通过校验', async () => {
@@ -177,6 +177,49 @@ describe('PatternFilterDto 边界', () => {
   it('null type 通过校验（可选）', async () => {
     const dto = new PatternFilterDto()
     dto.type = null as any
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+})
+
+describe('GroupQueryDto', () => {
+  it('有效 groupId 通过校验', async () => {
+    const dto = new GroupQueryDto()
+    dto.groupId = 'team-a'
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+
+  it('groupId 为空字符串通过校验（可选）', async () => {
+    const dto = new GroupQueryDto()
+    dto.groupId = ''
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+
+  it('limit 200 通过校验', async () => {
+    const dto = new GroupQueryDto()
+    dto.limit = 200
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+
+  it('limit 超过 200 应报错', async () => {
+    const dto = new GroupQueryDto()
+    dto.limit = 201
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+
+  it('limit 为 0 应报错（必须 >=1）', async () => {
+    const dto = new GroupQueryDto()
+    dto.limit = 0
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+
+  it('全空 GroupQueryDto 通过校验（全部可选）', async () => {
+    const dto = new GroupQueryDto()
     const errors = await validate(dto)
     expect(errors).toHaveLength(0)
   })

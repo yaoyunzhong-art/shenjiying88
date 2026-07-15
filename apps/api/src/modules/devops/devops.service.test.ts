@@ -217,4 +217,54 @@ describe('DevopsService', () => {
     expect(result.action).toBe('restart')
     expect(result.status).toBe('accepted')
   })
+
+  // ── 新增: 更多状态/字段验证 (8) ──────────────────────────
+
+  it('getStatus 返回 deployments 字段结构', () => {
+    const status = service.getStatus()
+    expect(status.deployments).toBeDefined()
+    expect(typeof status.deployments.active).toBe('number')
+    expect(typeof status.deployments.recent).toBe('number')
+  })
+
+  it('getStatus 返回 builds 字段结构', () => {
+    const status = service.getStatus()
+    expect(status.builds).toBeDefined()
+    expect(typeof status.builds.running).toBe('number')
+    expect(typeof status.builds.total).toBe('number')
+  })
+
+  it('getStatus deployments.active 初始为 0', () => {
+    const status = service.getStatus()
+    expect(status.deployments.active).toBe(0)
+  })
+
+  it('createPipeline 设置 enabled 默认 true', () => {
+    const p = service.createPipeline({ name: 'EnabledCheck', type: 'ci', config: {} })
+    expect(p.enabled).toBe(true)
+  })
+
+  it('createPipeline 设置 createdAt 和 updatedAt', () => {
+    const p = service.createPipeline({ name: 'TimeCheck', type: 'ci', config: {} })
+    expect(p.createdAt).toBeDefined()
+    expect(p.updatedAt).toBeDefined()
+    expect(typeof p.createdAt).toBe('string')
+  })
+
+  it('updatePipeline 只更新 name 不改变其他字段', () => {
+    const p = service.createPipeline({ name: 'Orig', type: 'ci', config: { image: 'node:20' } })
+    const updated = service.updatePipeline(p.id, { name: 'Renamed' })
+    expect(updated.name).toBe('Renamed')
+    expect(updated.type).toBe('ci')
+    expect(updated.config).toEqual({ image: 'node:20' })
+  })
+
+  it('triggerPipeline 传不存在的 id 抛 NotFoundException', () => {
+    expect(() => service.triggerPipeline('nonexistent-id')).toThrow('not found')
+  })
+
+  it('createDeployment 设置 id 格式正确', () => {
+    const d = service.createDeployment({ pipelineId: 'p-1', version: 'v1.0.0' })
+    expect(d.id).toMatch(/^deploy-/)
+  })
 })

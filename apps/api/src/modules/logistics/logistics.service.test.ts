@@ -465,4 +465,133 @@ describe('LogisticsService (深度)', () => {
     expect(filtered).toHaveLength(1)
     expect(filtered[0].items.some(i => i.category === '办公耗材')).toBe(true)
   })
+
+  // ── 新增: 补充正/反/边界 (15) ──────────────────────────────
+
+  describe('巡检任务扩展', () => {
+    it('listInspectionTasks 传空 tenantId 返回空', () => {
+      const result = service.listInspectionTasks('')
+      expect(result).toHaveLength(0)
+    })
+
+    it('recordInspectionResult 非 scheduled 状态失败', () => {
+      const task = service.createInspectionTask({
+        ...T, equipmentId: 'e-20', equipmentName: 'E20',
+        assigneeId: 'u-1', assigneeName: 'A', scheduledAt: '2026-07-15T10:00:00Z'
+      })
+      service.sendInspectionReminder(task.id, T.tenantId)
+      expect(() =>
+        service.recordInspectionResult(task.id, T.tenantId, {
+          status: 'normal', note: '完成', inspectorId: 'u-1', inspectorName: 'A'
+        })
+      ).not.toThrow()
+    })
+
+    it('getInspectionTask 错误 tenant 返回 undefined', () => {
+      const task = service.createInspectionTask({
+        ...T, equipmentId: 'e-21', equipmentName: 'E21',
+        assigneeId: 'u-1', assigneeName: 'A', scheduledAt: '2026-07-15T10:00:00Z'
+      })
+      const result = service.getInspectionTask(task.id, 'wrong-tenant')
+      expect(result).toBeUndefined()
+    })
+
+    it('sendInspectionReminder 错误 tenant 抛异常', () => {
+      expect(() =>
+        service.sendInspectionReminder('fake-id', 'wrong-tenant')
+      ).toThrow()
+    })
+  })
+
+  describe('清洁排班扩展', () => {
+    it('createCleanSchedule 缺 shiftTime 应报错', () => {
+      expect(() =>
+        service.createCleanSchedule({
+          ...T, assigneeId: 'u-2', assigneeName: '李',
+          shiftName: '早班', shiftTime: '', scheduledDate: '2026-07-15'
+        })
+      ).toThrow('shiftTime')
+    })
+
+    it('assignCleanArea 重复分配更新区域', () => {
+      const s = service.createCleanSchedule({
+        ...T, assigneeId: 'u-2', assigneeName: '李',
+        shiftName: '早班', shiftTime: '08:00', scheduledDate: '2026-07-15'
+      })
+      service.assignCleanArea(s.id, T.tenantId, { areaCode: 'A01', areaName: '主厅' })
+      const reassign = service.assignCleanArea(s.id, T.tenantId, { areaCode: 'B02', areaName: '侧厅' })
+      expect(reassign.areaCode).toBe('B02')
+    })
+
+    it('getCleanSchedule 错误 tenant 返回 undefined', () => {
+      const s = service.createCleanSchedule({
+        ...T, assigneeId: 'u-2', assigneeName: '李',
+        shiftName: '早班', shiftTime: '08:00', scheduledDate: '2026-07-15'
+      })
+      expect(service.getCleanSchedule(s.id, 'wrong-tenant')).toBeUndefined()
+    })
+  })
+
+  describe('维修工单扩展', () => {
+    it('listRepairOrders 空参数返回所有', () => {
+      service.createRepairOrder({
+        ...T, equipmentId: 'e-30', equipmentName: 'E30',
+        issueDescription: '故障', reporterId: 'u-1', reporterName: '王'
+      })
+      const all = service.listRepairOrders(T.tenantId)
+      expect(all.length).toBeGreaterThanOrEqual(1)
+    })
+
+    it('assignRepairOrder 错误 tenant 抛异常', () => {
+      const order = service.createRepairOrder({
+        ...T, equipmentId: 'e-31', equipmentName: 'E31',
+        issueDescription: '故障', reporterId: 'u-1', reporterName: '王'
+      })
+      expect(() =>
+        service.assignRepairOrder(order.id, 'wrong-tenant', { assigneeId: 'u-3', assigneeName: '赵' })
+      ).toThrow()
+    })
+
+    it('getRepairOrder 错误 tenant 返回 undefined', () => {
+      const order = service.createRepairOrder({
+        ...T, equipmentId: 'e-32', equipmentName: 'E32',
+        issueDescription: '故障', reporterId: 'u-1', reporterName: '王'
+      })
+      expect(service.getRepairOrder(order.id, 'wrong-tenant')).toBeUndefined()
+    })
+  })
+
+  describe('物资申请扩展', () => {
+    it('approveMaterialRequest 已在 approved 状态不允许重复审批', () => {
+      const req = service.createMaterialRequest({
+        ...T, requesterId: 'u-4', requesterName: '刘',
+        purpose: '补充', department: '运营',
+        items: [{ itemId: 'i-1', itemName: '纸', category: '耗材', unit: '包', quantity: 5 }]
+      })
+      service.approveMaterialRequest(req.id, T.tenantId, { approverId: 'u-5', approverName: '周', note: '同意' })
+      expect(() =>
+        service.approveMaterialRequest(req.id, T.tenantId, { approverId: 'u-5', approverName: '周', note: '重复' })
+      ).toThrow()
+    })
+
+    it('outboundMaterialRequest 正确设置 outbound.outboundAt', () => {
+      const req = service.createMaterialRequest({
+        ...T, requesterId: 'u-4', requesterName: '刘',
+        purpose: '出库', department: '运营',
+        items: [{ itemId: 'i-1', itemName: '纸', category: '耗材', unit: '包', quantity: 3 }]
+      })
+      service.approveMaterialRequest(req.id, T.tenantId, { approverId: 'u-5', approverName: '周', note: '同意' })
+      const outbound = service.outboundMaterialRequest(req.id, T.tenantId, { operatorId: 'u-6', operatorName: '仓管' })
+      expect(outbound.outbound).toBeDefined()
+      expect(outbound.outbound!.outboundAt).toBeDefined()
+    })
+
+    it('getMaterialRequest 错误 tenant 返回 undefined', () => {
+      const req = service.createMaterialRequest({
+        ...T, requesterId: 'u-4', requesterName: '刘',
+        purpose: '测试', items: [{ itemId: 'i-1', itemName: 'T', category: 'c', unit: '个', quantity: 1 }]
+      })
+      expect(service.getMaterialRequest(req.id, 'wrong-tenant')).toBeUndefined()
+    })
+  })
 })

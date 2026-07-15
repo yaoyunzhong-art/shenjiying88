@@ -344,4 +344,76 @@ describe('DbKnowledgeController (边界条件)', () => {
     const result = await ctrl.getVenuesByCity({ city: '' })
     expect(result).toEqual([])
   })
+
+  // ── 新增: 路由结构测试 ──
+
+  it('getTodayBrief 委托到 service', async () => {
+    const svc = makeMockService(true)
+    const ctrl = new DbKnowledgeController(svc)
+    const result = await ctrl.getTodayBrief()
+    expect(Array.isArray(result)).toBe(false)
+  })
+
+  it('search 传空 query 委托到 service', async () => {
+    const svc = makeMockService(true)
+    const ctrl = new DbKnowledgeController(svc)
+    const result = await ctrl.search({ query: '', limit: 10 })
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('search 传负 limit 委托到 service', async () => {
+    const svc = makeMockService(true)
+    const ctrl = new DbKnowledgeController(svc)
+    const result = await ctrl.search({ query: 'test', limit: -1 })
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('search 传超大 limit 委托到 service', async () => {
+    const svc = makeMockService(true)
+    const ctrl = new DbKnowledgeController(svc)
+    const result = await ctrl.search({ query: 'test', limit: 99999 })
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('getPatterns 传 undefined type 委托到 service', async () => {
+    const svc = makeMockService(true)
+    const ctrl = new DbKnowledgeController(svc)
+    const result = await ctrl.getPatterns({} as any)
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('PatternFilterDto 完整参数委托到 service', async () => {
+    const svc = makeMockService(true)
+    const ctrl = new DbKnowledgeController(svc)
+    const result = await ctrl.getPatterns({ type: 'anti-pattern' })
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('PatternFilterDto positive-pattern 委托', async () => {
+    const svc = makeMockService(true)
+    const ctrl = new DbKnowledgeController(svc)
+    const result = await ctrl.getPatterns({ type: 'positive-pattern' })
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('getExperts 返回数组', async () => {
+    const svc = makeMockService(true)
+    const ctrl = new DbKnowledgeController(svc)
+    const result = await ctrl.getExperts({})
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('getRecentPulses 默认 limit 委托到 service', async () => {
+    const svc = makeMockService(true)
+    const ctrl = new DbKnowledgeController(svc)
+    const result = await ctrl.getRecentPulses({ limit: 10 })
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('getRecentPulses 传 undefined limit', async () => {
+    const svc = makeMockService(true)
+    const ctrl = new DbKnowledgeController(svc)
+    const result = await ctrl.getRecentPulses({})
+    expect(Array.isArray(result)).toBe(true)
+  })
 })

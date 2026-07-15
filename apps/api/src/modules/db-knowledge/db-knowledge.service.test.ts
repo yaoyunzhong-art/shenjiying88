@@ -184,4 +184,78 @@ describe('DbKnowledgeService', () => {
     const result = await svc.getTodayBrief()
     expect(result).toBeNull()
   })
+
+  // ── 新增: 返回类型验证 (10) ──────────────────────────────
+
+  it('getPatterns 传 anti-pattern 返回空数组', async () => {
+    const svc = new DbKnowledgeService()
+    const result = await svc.getPatterns('anti-pattern')
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(0)
+  })
+
+  it('getPatterns 传 positive-pattern 返回空数组', async () => {
+    const svc = new DbKnowledgeService()
+    const result = await svc.getPatterns('positive-pattern')
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(0)
+  })
+
+  it('getVenuesByCity 传城市名含空格返回空数组', async () => {
+    const svc = new DbKnowledgeService()
+    const result = await svc.getVenuesByCity('San Francisco')
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(0)
+  })
+
+  it('getVenuesByCity 传城市名含数字返回空数组', async () => {
+    const svc = new DbKnowledgeService()
+    const result = await svc.getVenuesByCity('Chengdu123')
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(0)
+  })
+
+  it('getRecentPulses 传 undefined limit 使用默认值', async () => {
+    const svc = new DbKnowledgeService()
+    const result = await svc.getRecentPulses(undefined)
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('getActivePhases 两次调用结果引用不同（深拷贝）', async () => {
+    const svc = new DbKnowledgeService()
+    const r1 = await svc.getActivePhases()
+    const r2 = await svc.getActivePhases()
+    expect(r1).toEqual(r2)
+    // 证明不是同一个引用
+    if (r1.length > 0) {
+      r2.push({} as any)
+      expect(r1.length).not.toBe(r2.length)
+    }
+  })
+
+  it('getExperts 传 undefined 不传参数不抛异常', async () => {
+    const svc = new DbKnowledgeService()
+    const result = await svc.getExperts()
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('getTodayBrief 不等于空对象（返回 null）', async () => {
+    const svc = new DbKnowledgeService()
+    const result = await svc.getTodayBrief()
+    expect(result).not.toEqual({})
+  })
+
+  it('logSearch 传全部 undefined 参数不抛异常', async () => {
+    const svc = new DbKnowledgeService()
+    await expect(
+      svc.logSearch(undefined as any, undefined as any, undefined as any)
+    ).resolves.toBeUndefined()
+  })
+
+  it('getVenuesByCity 传超长城市名不抛异常', async () => {
+    const svc = new DbKnowledgeService()
+    const long = 'x'.repeat(500)
+    const result = await svc.getVenuesByCity(long)
+    expect(Array.isArray(result)).toBe(true)
+  })
 })

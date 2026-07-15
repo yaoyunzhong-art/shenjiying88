@@ -257,4 +257,87 @@ describe('ScoutService', () => {
     await svc.getCollectionLogs(undefined)
     expect(mockPrisma.$queryRawUnsafe.mock.calls[0][1]).toBe(20)
   })
+
+  // ── 新增: 补充测试 (8) ────────────────────────────────────
+
+  it('getCities 传非空 tier 生成 WHERE 子句', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getCities('1')
+    const sql: string = mockPrisma.$queryRawUnsafe.mock.calls[0][0]
+    expect(sql).toContain('WHERE tier = $1')
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[0][1]).toBe('1')
+  })
+
+  it('getCities 传 undefined tier 不生成 WHERE', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getCities(undefined)
+    const sql: string = mockPrisma.$queryRawUnsafe.mock.calls[0][0]
+    expect(sql).not.toContain('WHERE')
+  })
+
+  it('getVenues 传 city 和负 offset 仍传递参数', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getVenues('上海', undefined, 10, -1)
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled()
+    const params = mockPrisma.$queryRawUnsafe.mock.calls[0]
+    expect(params.slice(1)).toEqual(['上海', 10, -1])
+  })
+
+  it('getVenues 传 city 和 category 参数顺序正确', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getVenues('北京', '台球', 20, 5)
+    const params = mockPrisma.$queryRawUnsafe.mock.calls[0]
+    expect(params.slice(1)).toEqual(['北京', '台球', 20, 5])
+  })
+
+  it('getPrices 传负 venueId 仍生成 SQL', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getPrices(-1)
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+      expect.stringContaining('venue_id = $1'),
+      -1
+    )
+  })
+
+  it('getDevices 传大整数 venueId', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getDevices(2147483647)
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+      expect.stringContaining('competitor_devices'),
+      2147483647
+    )
+  })
+
+  it('getReviews 传 undefined sentiment 不添加 AND 条件', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getReviews(1, undefined)
+    const sql: string = mockPrisma.$queryRawUnsafe.mock.calls[0][0]
+    expect(sql).not.toContain('AND sentiment')
+  })
+
+  it('getActivities 传 0 venueId 仍生成 SQL', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getActivities(0)
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+      expect.stringContaining('competitor_activities WHERE venue_id = $1'),
+      0
+    )
+  })
+
+  it('getCollectionLogs 传空 cityId 不过滤', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getCollectionLogs('', 10)
+    const sql: string = mockPrisma.$queryRawUnsafe.mock.calls[0][0]
+    // Empty string is falsy, so no WHERE
+    expect(sql).not.toContain('WHERE')
+  })
 })

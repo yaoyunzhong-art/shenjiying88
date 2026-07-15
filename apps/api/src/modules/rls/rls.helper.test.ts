@@ -624,3 +624,141 @@ describe('validateName 详细校验', () => {
     assert.equal(validateName('pg_stat_activity', 'table'), true)
   })
 })
+
+describe('validateName 更多边界', () => {
+  it('单字符名字通过校验', () => {
+    expect(validateName('a', 'table')).toBe(true)
+  })
+
+  it('下划线结尾通过校验', () => {
+    expect(validateName('my_table_', 'table')).toBe(true)
+  })
+
+  it('数字开头不通过校验', () => {
+    expect(validateName('123table', 'table')).toBe(false)
+  })
+
+  it('反引号包含不通过', () => {
+    expect(validateName('my`table', 'table')).toBe(false)
+  })
+
+  it('制表符不通过', () => {
+    expect(validateName('my\ttable', 'table')).toBe(false)
+  })
+
+  it('换行符不通过', () => {
+    expect(validateName('my\ntable', 'table')).toBe(false)
+  })
+
+  it('UTF-8 中文不通过', () => {
+    expect(validateName('表名', 'table')).toBe(false)
+  })
+
+  it('全角字符不通过', () => {
+    expect(validateName('ｔａｂｌｅ', 'table')).toBe(false)
+  })
+
+  it('前后空白不通过', () => {
+    expect(validateName('  mytable', 'table')).toBe(false)
+  })
+
+  it('tab 缩进不通过', () => {
+    expect(validateName('\ttable', 'table')).toBe(false)
+  })
+
+  it('空字符串 column 名拒绝', () => {
+    expect(validateName('', 'column')).toBe(false)
+  })
+
+  it('名字长度超过 128 字符不通过', () => {
+    expect(validateName('a'.repeat(129), 'table')).toBe(false)
+  })
+
+  it('128 字符合法名通过', () => {
+    expect(validateName('a'.repeat(128), 'table')).toBe(true)
+  })
+
+  it('数字 column 名拒绝', () => {
+    expect(validateName('123', 'column')).toBe(false)
+  })
+
+  it('column: 下划线开头拒绝', () => {
+    expect(validateName('_private', 'column')).toBe(false)
+  })
+
+  it('column: table 类型允许下划线开头', () => {
+    expect(validateName('_private', 'table')).toBe(false)
+  })
+})
+
+describe('SQL 生成 扩展', () => {
+  it('generateRlsStatusSql 全表扫描 SQL 包含 pg_class 和 pg_policy', () => {
+    const sql = generateRlsStatusSql()
+    expect(sql).toContain('pg_class')
+    expect(sql).toContain('pg_policy')
+    expect(sql).toContain('ORDER BY')
+  })
+
+  it('generateRlsStatusSql 单表查询只包含表名列', () => {
+    const sql = generateRlsStatusSql('MemberProfile')
+    expect(sql).toContain('MemberProfile')
+    expect(sql).toContain('relname')
+  })
+
+  it('generateEnableRlsSql 生成 ALTER TABLE 语句', () => {
+    const sql = generateEnableRlsSql('MemberProfile')
+    expect(sql).toMatch(/ALTER TABLE .+ ENABLE ROW LEVEL SECURITY/)
+  })
+
+  it('generateCreatePolicySql 默认策略名使用 tenant_isolation', () => {
+    const sql = generateCreatePolicySql('Orders', 'rls_tenant_filter', 'tenant_id', 'billing')
+    expect(sql).toContain('"rls_tenant_filter"')
+    expect(sql).toContain('billing')
+    expect(sql).toContain('tenant_id')
+  })
+
+  it('generateCreatePolicySql 默认参数正确', () => {
+    const sql = generateCreatePolicySql('MemberProfile')
+    expect(sql).toContain('"tenant_isolation"')
+    expect(sql).toContain('public')
+  })
+
+  it('generateDropPolicySql 带 schema 生成正确', () => {
+    const sql = generateDropPolicySql('Orders', 'my_policy', 'billing')
+    expect(sql).toContain('billing')
+    expect(sql).toContain('"my_policy"')
+  })
+
+  it('generateGetPolicySql 带 schema 生成正确', () => {
+    const sql = generateGetPolicySql('Orders', 'my_policy', 'billing')
+    expect(sql).toContain('billing')
+    expect(sql).toContain('my_policy')
+  })
+
+  it('generateListPoliciesSql 带 schema 生成正确', () => {
+    const sql = generateListPoliciesSql('Orders', 'billing')
+    expect(sql).toContain('billing')
+  })
+
+  it('generateUpdatePolicySql 带 schema 生成 DROP + CREATE', () => {
+    const sql = generateUpdatePolicySql('Orders', 'my_policy', 'org_id', 'billing')
+    expect(sql).toContain('DROP POLICY IF EXISTS')
+    expect(sql).toContain('CREATE POLICY')
+  })
+
+  it('generateVerifyTenantFilterSql 使用默认列名 tenantId', () => {
+    const sql = generateVerifyTenantFilterSql('MemberProfile', 'my-tenant', 'tenantId')
+    expect(sql).toContain('tenantId')
+  })
+
+  it('generateDeletePolicySql (via drop) 自定义 schema', () => {
+    const sql = generateDropPolicySql('MemberProfile', 'cleanup', 'custom_schema')
+    expect(sql).toContain('custom_schema')
+    expect(sql).toContain('cleanup')
+  })
+
+  it('generateEmptyPolicySql 空 policyName 用默认空字符串', () => {
+    const sql = generateDropPolicySql('MemberProfile', '')
+    expect(sql).toContain('""')
+  })
+})

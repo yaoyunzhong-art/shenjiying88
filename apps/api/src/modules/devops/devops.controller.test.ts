@@ -186,4 +186,67 @@ describe('DevopsController', () => {
     controller.executeAction({ action: 'restart', target: 'api' })
     expect(spy).toHaveBeenCalledOnce()
   })
+
+  // ── 新增: 更多委托测试 (8) ──────────────────────────────────
+
+  it('listPipelines 返回 items 和 total 对应', async () => {
+    const service = new DevopsService()
+    const controller = new DevopsController(service)
+    const result = await controller.listPipelines()
+    expect(result.items.length).toBe(result.total)
+  })
+
+  it('getPipeline 不存在的 id 抛异常 (同步)', () => {
+    const service = new DevopsService()
+    const controller = new DevopsController(service)
+    expect(() => controller.getPipeline('no-such-pipeline')).toThrow()
+  })
+
+  it('deletePipeline 删除已存在返回 true (委托)', async () => {
+    const service = new DevopsService()
+    const p = service.createPipeline({ name: 'D', type: 'ci', config: {} })
+    const spy = vi.spyOn(service, 'deletePipeline')
+    const controller = new DevopsController(service)
+    await controller.deletePipeline(p.id)
+    expect(spy).toHaveBeenCalledWith(p.id)
+  })
+
+  it('deletePipeline 删除不存在委托到 service', async () => {
+    const service = new DevopsService()
+    const spy = vi.spyOn(service, 'deletePipeline')
+    const controller = new DevopsController(service)
+    await controller.deletePipeline('fake-id')
+    expect(spy).toHaveBeenCalledWith('fake-id')
+  })
+
+  it('listDeployments 手动创建后计数正确', async () => {
+    const service = new DevopsService()
+    service.createDeployment({ pipelineId: 'p-1', version: 'v1.0.0' })
+    const controller = new DevopsController(service)
+    const result = await controller.listDeployments()
+    expect(result.items.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('createDeployment 传所有可选字段', () => {
+    const service = new DevopsService()
+    const spy = vi.spyOn(service, 'createDeployment')
+    const controller = new DevopsController(service)
+    controller.createDeployment({ pipelineId: 'p-1', version: 'v3.0.0', env: 'staging', notes: 'test' })
+    expect(spy).toHaveBeenCalledWith({ pipelineId: 'p-1', version: 'v3.0.0', env: 'staging', notes: 'test' })
+  })
+
+  it('getPipeline 传不存在的 id 抛 NotFoundException', () => {
+    const service = new DevopsService()
+    const controller = new DevopsController(service)
+    expect(() => controller.getPipeline('nonexistent')).toThrow()
+  })
+
+  it('listBuildJobs 返回正确结构', async () => {
+    const service = new DevopsService()
+    const controller = new DevopsController(service)
+    const result = await controller.listBuildJobs()
+    expect(result).toHaveProperty('items')
+    expect(result).toHaveProperty('total')
+    expect(result.total).toBe(result.items.length)
+  })
 })
