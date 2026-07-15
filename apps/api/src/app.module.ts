@@ -122,6 +122,8 @@ import { LogisticsModule } from './modules/logistics/logistics.module';
 import { RlsModule } from './modules/rls/rls.module';
 import { DevopsModule } from './modules/devops/devops.module';
 import { CrmModule } from './modules/crm/crm.module';
+import { AutomationModule } from './modules/automation/automation.module';
+import { BillingModule } from './modules/billing/billing.module';
 import { FeedModule } from './modules/feed/feed.module';
 import { VenueModule } from './modules/venue/venue.module';
 
@@ -258,6 +260,8 @@ import { VenueModule } from './modules/venue/venue.module';
     RlsModule,
     DevopsModule,
     VenueModule,
+    AutomationModule,
+    BillingModule,
     CrmModule,
     FeedModule,
   ],
