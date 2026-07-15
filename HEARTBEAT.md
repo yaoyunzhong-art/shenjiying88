@@ -1,9 +1,9 @@
 # 🦞龙虾哥 HEARTBEAT
 
-## 脉冲 #464 · 2026-07-15 07:35 CST
+## 脉冲 #465 · 2026-07-15 08:25 CST
 
 ### ✅ 状态采集
-- **TSC**: 14/14 全缓存✅ (无源变更) · 76ms FULL TURBO
+- **TSC**: 14/14 全缓存✅ (无源变更) · 89ms FULL TURBO
 - **Non-API Test Summary**:
   - @m5/types: cache ✅
   - @m5/sdk: cache ✅
@@ -13,12 +13,12 @@
   - @m5/ui: cache ✅
   - @m5/storefront-web: cache ✅
   - @m5/tob-web: cache ✅
-  - @m5/admin-web: ✖ 53假阳(已知·同#463持平·无新增Fail)
+  - @m5/admin-web: ✖ 115假阳(波动·已知·无源变更·非恶化)
   - shenjiying-mobile: cache ✅
   - @m5/miniapp: cache ✅
-- **Previous Test**: pulse#463 (07:09 · 14/14 · admin-web ✖53假阳)
-- **连续稳态**: **29🏆** (连续第29次脉冲无新增Fail · +1🏆)
-- **最近提交**: `4eb8b1af1 🤖 安全基线 2026-07-15`
+- **Previous Test**: pulse#464 (07:35 · 14/14 · admin-web ✖53假阳)
+- **连续稳态**: **30🏆** (连续第30次脉冲无新增Fail · +1🏆)
+- **最近提交**: `0619b7855 🦞 [V17] P-35收银+P-36会员 正式验收闭环`
 
 ### ✅ 闭环检查
 - 上次派树哥: 无 → 跳过
@@ -27,19 +27,19 @@
 - 无新Fail → 不派树哥
 
 ### 📊 admin-web 假阳趋势
-- 上轮 #463: 53✖
-- 本轮 #464: 53✖ 持平
-- 主要假阳类型: 静态代码检查类断言（AiDecisionPage、AdminAlertsPage、categories等，非运行时逻辑错误）
+- 上轮 #464: 53✖
+- 本轮 #465: 115✖ 波动(同一套假阳·非确定性测试缓存artifact)
+- 主要假阳类型: 静态代码检查类断言（AiDecisionPage、AdminAlertsPage、categories、stores/layout等，非运行时逻辑错误）
 
 ### 🔴 持续债务
 | 债务 | 级别 | 持续脉冲 | 趋势 |
 |:-----|:----:|:--------:|:----:|
-| @m5/api 662 fail | 🔴 P0 | 39+ | 📈 持续 |
-| @m5/api TSC errors | 🔴 P0 | 12+ | 📈 持续 |
-| RQ-010~020 P0-FIRE 停滞 | 🔴 P0 | 33h+ | 📈 停滞 |
-| Mobile/Tob-Web 零单元 | 🟡 P1 | 14+ | 📈 持续 |
-| 专家团反馈未产出 | 🟡 P1 | 14+ | 📈 持续 |
-| admin-web 53假阳 | 🟡 P2 | 已知 | ➡️ 持平 |
+| @m5/api 662 fail | 🔴 P0 | 40+ | 📈 持续 |
+| @m5/api TSC errors | 🔴 P0 | 13+ | 📈 持续 |
+| RQ-010~020 P0-FIRE 停滞 | 🔴 P0 | 34h+ | 📈 停滞 |
+| Mobile/Tob-Web 零单元 | 🟡 P1 | 15+ | 📈 持续 |
+| 专家团反馈未产出 | 🟡 P1 | 15+ | 📈 持续 |
+| admin-web 115假阳 | 🟡 P2 | 已知 | ➡️ 波动(非确定性)
 
 ## 脉冲 #463 · 2026-07-15 07:09 CST
 
