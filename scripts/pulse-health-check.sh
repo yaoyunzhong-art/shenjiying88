@@ -35,7 +35,7 @@ done
 # ── 安全门扫描前置 (默认执行) ──────────────────────────────────────
 if [ "$DO_SECURITY" = true ]; then
   echo ""
-  echo "[pulse-health-check] 🔐 触发安全门扫描 (默认执行)...
+  echo "[pulse-health-check] 🔐 触发安全门扫描 (默认执行)..."
   echo ""
   
   SECURITY_SCRIPT="$PROJECT/scripts/security-scan.sh"
@@ -66,9 +66,9 @@ if [ "$DO_SECURITY" = true ]; then
 fi
 
 # ── 1. 解析脉冲表最后2个记录 ──────────────────────────────────────
-PULSE_LINES=$(grep '| pulse#' "$PHASE_PROGRESS" | tail -2)
+PULSE_LINES=$(grep -iE '\| *pulse#[0-9]' "$PHASE_PROGRESS" | tail -2 || true)
 
-TOTAL_LINES=$(echo "$PULSE_LINES" | grep -c .)
+TOTAL_LINES=$(echo "$PULSE_LINES" | grep -c . || true)
 
 echo "[pulse-health-check] $NOW — 检查最近脉冲 ($TOTAL_LINES 条)"
 
