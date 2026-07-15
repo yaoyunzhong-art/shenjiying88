@@ -1,11 +1,12 @@
 /**
  * 积分历史 — Point History (storefront-web)
  * 角色视角: 👤会员 / 👔店长
- * 功能: 积分总览、历史记录列表、按类型筛选、搜索、分页、空/错状态
+ * 功能: 积分总览、历史记录列表、按类型筛选、搜索、分页、空/错状态、统计面板
  */
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { PageShell, StatusBadge } from '@m5/ui';
 
 /* ── 类型 ── */
 type PointRecord = {
@@ -55,6 +56,9 @@ const ALL_RECORDS: PointRecord[] = [
   { id: 'P033', date: '2026-06-12 09:50', desc: '消费获得', points: 45, type: 'earn', category: '消费', orderNo: 'ORD20260612020' },
   { id: 'P034', date: '2026-06-11 10:00', desc: '分享得积分', points: 8, type: 'earn', category: '任务' },
   { id: 'P035', date: '2026-06-10 16:00', desc: '消费获得', points: 103, type: 'earn', category: '消费', orderNo: 'ORD20260610018' },
+  { id: 'P036', date: '2026-06-09 14:00', desc: '积分商城兑换', points: -200, type: 'spend', category: '兑换' },
+  { id: 'P037', date: '2026-06-08 08:30', desc: '每日签到', points: 5, type: 'earn', category: '签到' },
+  { id: 'P038', date: '2026-06-07 16:00', desc: '消费获得', points: 78, type: 'earn', category: '消费', orderNo: 'ORD20260607021' },
 ];
 
 const TYPE_OPTIONS = ['全部', 'earn', 'spend', 'expire', 'adjust'] as const;
@@ -64,30 +68,34 @@ const CATEGORY_OPTIONS = ['全部', '消费', '活动', '兑换', '签到', '系
 const PAGE_SIZE = 10;
 
 /* ── 子组件: 积分统计卡片 ── */
-function PointSummary({ records }: { records: PointRecord[] }) {
+function PointSummary({ records, onClick }: { records: PointRecord[]; onClick?: () => void }) {
   const totalEarn = records.filter(r => r.type === 'earn').reduce((s, r) => s + r.points, 0);
   const totalSpent = records.filter(r => r.type === 'spend' || r.type === 'expire').reduce((s, r) => s + Math.abs(r.points), 0);
   const balance = totalEarn - totalSpent;
   return (
     <div style={{
-      marginBottom: 16, padding: '16px 20px', borderRadius: 14,
-      background: 'linear-gradient(135deg, rgba(251,191,36,0.15), rgba(251,191,36,0.05))',
-      border: '1px solid rgba(251,191,36,0.2)',
+      marginBottom: 16, padding: '14px 20px', borderRadius: 14,
+      background: '#fefce8', border: '1px solid #fde68a',
       display: 'flex', justifyContent: 'space-around', textAlign: 'center',
     }}>
       <div>
-        <div style={{ fontSize: 28, fontWeight: 700, color: '#fbbf24' }}>{balance.toLocaleString()}</div>
-        <div style={{ fontSize: 11, color: '#94a3b8' }}>当前积分</div>
+        <div style={{ fontSize: 28, fontWeight: 700, color: '#d97706' }}>{balance.toLocaleString()}</div>
+        <div style={{ fontSize: 11, color: '#6b7280' }}>当前积分</div>
       </div>
-      <div style={{ width: 1, background: 'rgba(148,163,184,0.15)' }} />
+      <div style={{ width: 1, background: '#e5e7eb' }} />
       <div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: '#34d399' }}>+{totalEarn.toLocaleString()}</div>
-        <div style={{ fontSize: 11, color: '#94a3b8' }}>累计获得</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#059669' }}>+{totalEarn.toLocaleString()}</div>
+        <div style={{ fontSize: 11, color: '#6b7280' }}>累计获得</div>
       </div>
-      <div style={{ width: 1, background: 'rgba(148,163,184,0.15)' }} />
+      <div style={{ width: 1, background: '#e5e7eb' }} />
       <div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: '#f87171' }}>-{totalSpent.toLocaleString()}</div>
-        <div style={{ fontSize: 11, color: '#94a3b8' }}>累计支出</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#dc2626' }}>-{totalSpent.toLocaleString()}</div>
+        <div style={{ fontSize: 11, color: '#6b7280' }}>累计支出</div>
+      </div>
+      <div style={{ width: 1, background: '#e5e7eb' }} />
+      <div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#6b7280' }}>{records.length}</div>
+        <div style={{ fontSize: 11, color: '#6b7280' }}>总记录</div>
       </div>
     </div>
   );
@@ -99,7 +107,7 @@ function RecordRow({ record }: { record: PointRecord }) {
     <div style={{
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       padding: '12px 16px', borderRadius: 10, marginBottom: 6,
-      background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.08)',
+      background: '#fff', border: '1px solid #f3f4f6',
     }}>
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
@@ -110,19 +118,55 @@ function RecordRow({ record }: { record: PointRecord }) {
           }}>
             {TYPE_LABELS[record.type]}
           </span>
-          <span style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 500 }}>{record.desc}</span>
+          <span style={{ color: '#374151', fontSize: 14, fontWeight: 500 }}>{record.desc}</span>
+          {record.category && <span style={{ color: '#9ca3af', fontSize: 11, marginLeft: 4 }}>({record.category})</span>}
         </div>
-        <div style={{ color: '#64748b', fontSize: 11 }}>
+        <div style={{ color: '#9ca3af', fontSize: 11 }}>
           {record.date}
           {record.orderNo && <span> · {record.orderNo}</span>}
         </div>
       </div>
       <span style={{
-        color: record.points > 0 ? '#34d399' : '#f87171',
+        color: record.points > 0 ? '#059669' : '#dc2626',
         fontWeight: 700, fontSize: 16, whiteSpace: 'nowrap',
       }}>
         {record.points > 0 ? '+' : ''}{record.points.toLocaleString()}
       </span>
+    </div>
+  );
+}
+
+/* ── 统计图表面板 ── */
+function StatsPanel({ records }: { records: PointRecord[] }) {
+  const stats = useMemo(() => {
+    const byCategory: Record<string, { earned: number; spent: number }> = {};
+    records.forEach(r => {
+      const cat = r.category;
+      if (!byCategory[cat]) byCategory[cat] = { earned: 0, spent: 0 };
+      const entry = byCategory[cat];
+      if (entry) {
+        if (r.type === 'earn') entry.earned += r.points;
+        else if (r.type === 'spend' || r.type === 'expire') entry.spent += Math.abs(r.points);
+      }
+    });
+    return byCategory;
+  }, [records]);
+
+  return (
+    <div style={{ marginTop: 16, marginBottom: 16, padding: 16, background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb' }}>
+      <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>📊 分类统计</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
+        {Object.entries(stats).map(([category, data]) => (
+          <div key={category} style={{ padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>{category}</div>
+            <div style={{ fontSize: 11, color: '#059669' }}>获得: +{data.earned.toLocaleString()}</div>
+            <div style={{ fontSize: 11, color: '#dc2626' }}>支出: -{data.spent.toLocaleString()}</div>
+            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+              净: {data.earned > data.spent ? '+' : ''}{(data.earned - data.spent).toLocaleString()}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -134,6 +178,7 @@ export default function PointHistoryPage() {
   const [categoryFilter, setCategoryFilter] = useState('全部');
   const [page, setPage] = useState(1);
   const [showError, setShowError] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   const filtered = useMemo(() => {
     const kw = search.trim().toLowerCase();
@@ -148,44 +193,66 @@ export default function PointHistoryPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page]);
 
-  // 当筛选变时重置页码
-  React.useEffect(() => { setPage(1); }, [search, typeFilter, categoryFilter]);
+  // 筛选变化时重置页码
+  useEffect(() => { setPage(1); }, [search, typeFilter, categoryFilter]);
 
   return (
-    <main style={{ minHeight: '100vh', padding: '24px 16px', background: '#0f172a' }}>
-      <div style={{ maxWidth: 600, margin: '0 auto' }}>
-        {/* ── 标题 ── */}
+    <PageShell title="积分历史" description="会员积分获取和使用记录明细">
+      <div style={{ padding: 24, maxWidth: 640, margin: '0 auto' }}>
+        {/* 标题 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc' }}>积分历史</h1>
-          <button
-            onClick={() => setShowError(!showError)}
-            style={{
-              padding: '4px 12px', borderRadius: 6,
-              background: '#ef444420', border: '1px solid #ef444430',
-              color: '#fca5a5', fontSize: 11, cursor: 'pointer',
-            }}
-          >
-            {showError ? '恢复数据' : '模拟错误'}
-          </button>
+          <div>
+            <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px' }}>🎯 积分历史</h1>
+            <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
+              共 {ALL_RECORDS.length} 条记录 · 查看积分获取和使用明细
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              onClick={() => setShowStats(!showStats)}
+              style={{
+                padding: '6px 14px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff',
+                cursor: 'pointer', fontSize: 12, color: showStats ? '#2563eb' : '#374151',
+              }}
+            >
+              {showStats ? '隐藏统计' : '📊 统计'}
+            </button>
+            <button
+              onClick={() => setShowError(!showError)}
+              style={{
+                padding: '6px 14px', borderRadius: 8,
+                background: '#fef2f2', border: '1px solid #fecaca',
+                color: '#dc2626', fontSize: 11, cursor: 'pointer',
+              }}
+            >
+              {showError ? '恢复数据' : '模拟错误'}
+            </button>
+          </div>
         </div>
 
-        {/* ── 错误状态 ── */}
+        {/* 错误状态 */}
         {showError && (
-          <div style={{
-            padding: '14px 16px', marginBottom: 16, borderRadius: 10,
-            background: '#ef444415', border: '1px solid #ef444430',
-          }}>
-            <div style={{ color: '#fca5a5', fontWeight: 600, marginBottom: 4 }}>⚠️ 加载失败</div>
-            <div style={{ color: '#fca5a580', fontSize: 13 }}>积分数据加载异常，请下拉刷新重试 (模拟错误状态)</div>
+          <div style={{ padding: 16, marginBottom: 16, borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca' }}>
+            <div style={{ color: '#dc2626', fontWeight: 600, marginBottom: 4 }}>⚠️ 加载失败</div>
+            <div style={{ color: '#fca5a5', fontSize: 13 }}>积分数据加载异常，请稍后刷新重试 (模拟错误状态)</div>
+            <button
+              onClick={() => setShowError(false)}
+              style={{ marginTop: 8, padding: '4px 12px', borderRadius: 6, border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontSize: 12 }}
+            >
+              重试
+            </button>
           </div>
         )}
 
         {!showError && (
           <>
-            {/* ── 积分摘要 ── */}
+            {/* 积分摘要 */}
             <PointSummary records={ALL_RECORDS} />
 
-            {/* ── 搜索与筛选 ── */}
+            {/* 分类统计面板 */}
+            {showStats && <StatsPanel records={ALL_RECORDS} />}
+
+            {/* 搜索与筛选 */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
               <input
                 placeholder="🔍 搜索描述或订单号..."
@@ -193,65 +260,104 @@ export default function PointHistoryPage() {
                 onChange={e => setSearch(e.target.value)}
                 style={{
                   flex: 1, minWidth: 150, padding: '9px 12px', borderRadius: 10,
-                  background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)',
-                  color: '#e2e8f0', fontSize: 13, outline: 'none',
+                  border: '1px solid #d1d5db', color: '#374151', fontSize: 13, outline: 'none',
                 }}
               />
               <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-                style={{ padding: '9px 10px', borderRadius: 10, background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)', color: '#e2e8f0', fontSize: 12, outline: 'none' }}>
+                style={{ padding: '9px 10px', borderRadius: 10, border: '1px solid #d1d5db', color: '#374151', fontSize: 12 }}>
                 {TYPE_OPTIONS.map(t => <option key={t} value={t}>{t === '全部' ? '全部类型' : TYPE_LABELS[t]}</option>)}
               </select>
               <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-                style={{ padding: '9px 10px', borderRadius: 10, background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(148,163,184,0.15)', color: '#e2e8f0', fontSize: 12, outline: 'none' }}>
+                style={{ padding: '9px 10px', borderRadius: 10, border: '1px solid #d1d5db', color: '#374151', fontSize: 12 }}>
                 {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
+              <span style={{ fontSize: 12, color: '#9ca3af', marginLeft: 'auto' }}>
+                {filtered.length} 条
+              </span>
             </div>
 
-            {/* ── 记录列表 / 空状态 ── */}
+            {/* 记录列表 / 空状态 */}
             {paginated.length === 0 ? (
               <div style={{
                 textAlign: 'center', padding: '50px 20px',
-                borderRadius: 14, background: 'rgba(30,41,59,0.4)',
-                border: '1px dashed rgba(148,163,184,0.15)',
+                borderRadius: 14, border: '1px dashed #d1d5db', background: '#f9fafb',
               }}>
                 <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
-                <div style={{ color: '#94a3b8', fontSize: 15, marginBottom: 4 }}>暂无积分记录</div>
-                <div style={{ color: '#64748b', fontSize: 12 }}>消费或参与活动即可获得积分</div>
+                <div style={{ color: '#6b7280', fontSize: 15, marginBottom: 4 }}>暂无积分记录</div>
+                <div style={{ color: '#9ca3af', fontSize: 12 }}>消费或参与活动即可获得积分</div>
               </div>
             ) : (
               <>
                 {paginated.map(r => <RecordRow key={r.id} record={r} />)}
 
-                {/* ── 分页 ── */}
-                <div style={{
-                  display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8,
-                  marginTop: 16, color: '#94a3b8', fontSize: 13,
-                }}>
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
-                    style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.12)', color: page <= 1 ? '#475569' : '#e2e8f0', cursor: page <= 1 ? 'not-allowed' : 'pointer' }}>
-                    上一页
-                  </button>
-                  <span>{page} / {totalPages}</span>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
-                    style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.12)', color: page >= totalPages ? '#475569' : '#e2e8f0', cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}>
-                    下一页
-                  </button>
-                </div>
+                {/* 分页 */}
+                {totalPages > 1 && (
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 16, fontSize: 13 }}>
+                    <button
+                      disabled={page <= 1}
+                      onClick={() => setPage(p => p - 1)}
+                      style={{
+                        padding: '6px 14px', borderRadius: 8, border: '1px solid #d1d5db',
+                        background: page <= 1 ? '#f3f4f6' : '#fff',
+                        color: page <= 1 ? '#9ca3af' : '#374151',
+                        cursor: page <= 1 ? 'not-allowed' : 'pointer', fontSize: 13,
+                      }}
+                    >
+                      ← 上一页
+                    </button>
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                      const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+                      const p = start + i;
+                      if (p > totalPages) return null;
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => setPage(p)}
+                          style={{
+                            padding: '6px 12px', borderRadius: 8, border: 'none',
+                            background: p === page ? '#2563eb' : '#f3f4f6',
+                            color: p === page ? '#fff' : '#374151',
+                            cursor: 'pointer', fontSize: 13, fontWeight: p === page ? 700 : 400,
+                          }}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                    <button
+                      disabled={page >= totalPages}
+                      onClick={() => setPage(p => p + 1)}
+                      style={{
+                        padding: '6px 14px', borderRadius: 8, border: '1px solid #d1d5db',
+                        background: page >= totalPages ? '#f3f4f6' : '#fff',
+                        color: page >= totalPages ? '#9ca3af' : '#374151',
+                        cursor: page >= totalPages ? 'not-allowed' : 'pointer', fontSize: 13,
+                      }}
+                    >
+                      下一页 →
+                    </button>
+                    <span style={{ fontSize: 12, color: '#6b7280' }}>
+                      {page}/{totalPages}
+                    </span>
+                  </div>
+                )}
               </>
             )}
 
-            {/* ── 底部统计 ── */}
+            {/* 底部统计 */}
             <div style={{
               marginTop: 12, padding: '10px 14px', borderRadius: 10,
-              background: 'rgba(30,41,59,0.3)', border: '1px solid rgba(148,163,184,0.06)',
-              display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: 11,
+              background: '#f9fafb', border: '1px solid #e5e7eb',
+              display: 'flex', justifyContent: 'space-between',
+              color: '#6b7280', fontSize: 11,
             }}>
               <span>共 {filtered.length} 条记录</span>
               <span>本页 {paginated.length} 条</span>
+              <span>页码 {page}/{totalPages}</span>
             </div>
           </>
         )}
       </div>
-    </main>
+    </PageShell>
   );
 }
