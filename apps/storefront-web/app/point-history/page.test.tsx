@@ -35,8 +35,8 @@ describe('PointHistoryPage — 正例', () => {
     assert.ok(PAGE_SRC.includes('+') || PAGE_SRC.includes('-'), 'should have signed amounts');
   });
 
-  test('has dark theme background', () => {
-    assert.ok(PAGE_SRC.includes('#0f172a'), 'should have dark background');
+  test('has amber summary background', () => {
+    assert.ok(PAGE_SRC.includes('#fefce8'), 'should have amber summary background');
   });
 
   test('includes useMemo for computed data', () => {

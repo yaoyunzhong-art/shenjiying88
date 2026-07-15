@@ -105,3 +105,4 @@
 | 2026-07-16 | #500 | storefront-web(✅5686/5687·1已知checkout偏差不变)×admin-web(40基线较54⬇️改善·无新fail)×app(闭环27🏆✅·全缓存) | ✅ | ⚠️ | ⚠️ | ⚠️ | 27🏆(续·稳态第27脉冲·admin-web基线向下修正40·无新fail注入) |
 | 2026-07-16 | #501 | storefront-web(✅5686/5687·1已知checkout偏差不变)×admin-web(61基线·缓存过期暴露真实值·无新注入)×app(闭环28🏆✅·全缓存) | ✅ | ⚠️ | ⚠️ | ⚠️ | 28🏆(续·稳态第28脉冲·admin-web基线61·缓存过期·无新fail注入) |
 | 2026-07-16 | #502 | storefront-web(✅5686/5687·1已知checkout偏差不变)×admin-web(61基线持平·8 TSC假阳持平·无新注入)×app(闭环29🏆✅·全缓存) | ✅ | ⚠️ | ⚠️ | ⚠️ | 29🏆(续·稳态第29脉冲·admin-web基线61持平·无新fail注入) |
+| 2026-07-16 | #503 | storefront-web(9 fails·8NEW注入·已派树哥)×admin-web(61基线持平·8 TSC假阳)×app(29🏆✅·全缓存) | ✅ | ⚠️ | ⚠️ | ⚠️ | 0🏆(断裂·storefront 8NEW fail注入·CoachPage×4/CustomerService×1/EventsPage×1/FrontDesk×1/PointHistory×1) |

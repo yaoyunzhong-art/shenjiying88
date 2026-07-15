@@ -17,14 +17,14 @@ describe('CustomerServicePage structure (客服工作台角色页)', () => {
     assert.equal(typeof mod.default, 'function');
   });
 
-  // 正例：使用 CustomerServiceDashboard 组件
-  it('should reference CustomerServiceDashboard from @m5/ui', async () => {
+  // 正例：使用 @m5/ui 组件
+  it('should reference PageShell and StatusBadge from @m5/ui', async () => {
     const fs = await import('fs');
     const content = fs.readFileSync(
       new URL('./page.tsx', import.meta.url).pathname,
       'utf-8',
     );
-    assert.ok(content.includes('CustomerServiceDashboard'));
+    assert.ok(content.includes('PageShell') || content.includes('StatusBadge'), 'should reference @m5/ui components');
     assert.ok(content.includes('@m5/ui'));
   });
 

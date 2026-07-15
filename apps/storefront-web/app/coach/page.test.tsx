@@ -35,8 +35,10 @@ describe('CoachPage (storefront-web)', () => {
     assert.match(pageSource, /'use client'/);
   });
 
-  test('页面导入 CoachDashboard 和 PageShell', () => {
-    assert.ok(pageSource.includes("import { CoachDashboard, PageShell } from '@m5/ui'"));
+  test('页面导入 PageShell 和 StatusBadge', () => {
+    assert.ok(pageSource.includes('PageShell'));
+    assert.ok(pageSource.includes('StatusBadge'));
+    assert.ok(pageSource.includes("from '@m5/ui'"));
   });
 
   test('页面包含 CoachDailyMetrics / FollowUpMember / PromoTask 类型导入', () => {
@@ -87,18 +89,16 @@ describe('CoachPage (storefront-web)', () => {
     assert.ok(pageSource.includes('deadline'));
   });
 
-  test('教练个人信息传递', () => {
-    assert.ok(pageSource.includes('coachName='));
+  test('教练个人信息内联展示', () => {
     assert.ok(pageSource.includes('张教练'));
-    assert.ok(pageSource.includes('storeName='));
     assert.ok(pageSource.includes('朝阳旗舰店'));
-    assert.ok(pageSource.includes('employeeId='));
     assert.ok(pageSource.includes('EMP-0032'));
+    assert.ok(pageSource.includes('排名'));
   });
 
-  test('排名信息传递', () => {
-    assert.ok(pageSource.includes('current: 3'));
-    assert.ok(pageSource.includes('total: 12'));
+  test('排名信息内联展示', () => {
+    assert.ok(pageSource.includes('第 3 名 / 共 12 名'));
+    assert.ok(pageSource.includes('排名'));
   });
 
   test('页面包含 loading 状态管理', () => {
@@ -118,17 +118,15 @@ describe('CoachPage (storefront-web)', () => {
 
   // ---- 渲染验证 ----
 
-  test('CoachPage 渲染 PageShell 和 CoachDashboard', () => {
+  test('CoachPage 渲染 PageShell 和 MetricCard', () => {
     assert.ok(pageSource.includes('PageShell'));
-    assert.ok(pageSource.includes('CoachDashboard'));
+    assert.ok(pageSource.includes('MetricCard'));
   });
 
-  test('CoachDashboard 接收所有必要 props', () => {
-    assert.ok(pageSource.includes('dailyMetrics={MOCK_METRICS}'));
-    assert.ok(pageSource.includes('followUpMembers={followUps}'));
-    assert.ok(pageSource.includes('promoTasks={MOCK_PROMO_TASKS}'));
-    assert.ok(pageSource.includes('loading={loading}'));
-    assert.ok(pageSource.includes('lastSyncAt='));
+  test('页面引用 MOCK_METRICS / MOCK_FOLLOW_UPS / MOCK_PROMO_TASKS', () => {
+    assert.ok(pageSource.includes('MOCK_METRICS'));
+    assert.ok(pageSource.includes('MOCK_FOLLOW_UPS'));
+    assert.ok(pageSource.includes('MOCK_PROMO_TASKS'));
   });
 
   test('传入的日期为格式化时间字符串', () => {

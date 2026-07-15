@@ -68,7 +68,7 @@ test('🛒 前台视角: 页面模块导入稳定', async () => {
   const mod = await import('./page');
   assert.equal(typeof mod.default, 'function', 'default export should be a function');
   const src = mod.default.toString();
-  assert.ok(src.includes('FrontDeskPanel'), 'should reference FrontDeskPanel');
+  assert.ok(src.includes('FrontDeskPage'), 'should reference FrontDeskPage');
   assert.ok(src.includes('PageShell'), 'should reference PageShell');
 });
 

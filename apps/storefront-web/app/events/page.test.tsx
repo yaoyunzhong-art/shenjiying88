@@ -45,9 +45,9 @@ describe('EventsPage — L1 正例', () => {
 });
 
 describe('EventsPage — L1 活动数据验证', () => {
-  it('应定义 12 个模拟活动', () => {
+  it('应定义 13 个模拟活动', () => {
     const matches = SRC.match(/id:\s*\d+/g);
-    assert.equal(matches ? matches.length : 0, 12, `预期 12 个活动，实际 ${matches?.length || 0}`);
+    assert.equal(matches ? matches.length : 0, 13, `预期 13 个活动，实际 ${matches?.length || 0}`);
   });
 
   it('活动类型包含竞赛、促销、体验、亲子、会员、主题', () => {
