@@ -10,10 +10,10 @@
 #   4. 核心数据表/字段是否有敏感数据分类标注
 #
 # 数据分类级别:
-#   PUBLIC     = public    = 公开数据
-#   INTERNAL   = internal  = 内部数据 (默认)
-#   SENSITIVE  = sensitive = 敏感数据 (需脱敏)
-#   RESTRICTED = restricted= 受限数据 (需审批)
+#   - PUBLIC      = public    = 公开数据
+#   - INTERNAL    = internal  = 内部数据 (默认)
+#   - SENSITIVE   = sensitive = 敏感数据 (需脱敏)
+#   - RESTRICTED  = restricted= 受限数据 (需审批)
 #
 # 用法:
 #   bash scripts/security-data-classification.sh         # 完整检查
@@ -79,23 +79,23 @@ badge() {
 
 # ── 常量 ──────────────────────────────────────────────
 
-CLASSIFICATION_LEVELS="PUBLIC INTERNAL SENSITIVE RESTRICTED"
+CLASSIFICATION_LEVELS=("PUBLIC" "INTERNAL" "SENSITIVE" "RESTRICTED")
 
 # ── 结果变量 ──────────────────────────────────────────
 
-UNCLASSIFIED_MODELS=""
+UNCLASSIFIED_MODELS=()
 UNCLASSIFIED_COUNT=0
 
-UNLABELED_RULES=""
+UNLABELED_RULES=()
 UNLABELED_RULES_COUNT=0
 
-RLS_MISSING_COUNT=0
-RLS_MISSING_LIST=""
+RLS_WITH_MISSING_CLASS=()
+RLS_MISSING_CLASS_COUNT=0
 
 PII_POLICY_COVERAGE=0
 PII_POLICY_TOTAL=0
 
-SENSITIVE_FIELDS_LIST=""
+SENSITIVE_FIELDS_FOUND=()
 SENSITIVE_FIELDS_COUNT=0
 
 EXIT_CODE=0
@@ -114,35 +114,39 @@ check_prisma_classification() {
     return
   fi
 
-  UNCLASSIFIED_COUNT=0
-  UNCLASSIFIED_MODELS=""
-
   # 提取所有 model 定义
+  local models
+  models=$(grep -n '^model ' "$schema_file" | awk '{print $NF}' | sort -u || true)
+
+  # 检查每个 model 是否含敏感字段或 PiiLevel 关联
+  UNCLASSIFIED_MODELS=()
+  UNCLASSIFIED_COUNT=0
+
   while IFS= read -r model_name; do
     [ -z "$model_name" ] && continue
 
     local model_line
-    model_line=$(grep -n "^model ${model_name}" "$schema_file" | head -1 | cut -d: -f1 || true)
-    [ -z "$model_line" ] && continue
+    model_line=$(grep -n "^model ${model_name}" "$schema_file" | head -1 | cut -d: -f1)
 
     # 提取 model 块(直到下一个 model 或 enum)
     local model_block
-    model_block=$(sed -n "${model_line},/^[a-z]/p" "$schema_file" 2>/dev/null | head -n -1 || true)
+    model_block=$(sed -n "${model_line},/^\(model\|enum\|generator\|datasource\)/p" "$schema_file" \
+      | head -n -1 2>/dev/null || true)
 
     # 检查是否包含 PiiLevel 字段或敏感相关字段
     local has_pii_level
-    has_pii_level=$(echo "$model_block" | grep -c 'PiiLevel\|piiLevel\|pii_' 2>/dev/null || true)
+    has_pii_level=$(echo "$model_block" | grep -c 'PiiLevel\|piiLevel\|pii_') || true
 
     local has_sensitive_field
     has_sensitive_field=$(echo "$model_block" | \
-      grep -ciE '(password|secret|token|credential|certificate|private.*key|public.*key|pinCode|ssn|identity|phone|email|address|birth|idcard|cvv|bank)' 2>/dev/null || true)
+      grep -cE '(password|secret|token|credential|certificate|key|private|auth|pin|ssn|identity|phone|email|address|birth|idcard|cvv|bank)' || true)
 
     if [ "$has_pii_level" -eq 0 ] && [ "$has_sensitive_field" -gt 0 ]; then
       UNCLASSIFIED_COUNT=$((UNCLASSIFIED_COUNT + 1))
-      UNCLASSIFIED_MODELS="${UNCLASSIFIED_MODELS}${model_name} (含敏感字段但无PiiLevel标注)"$'\n'
+      UNCLASSIFIED_MODELS+=("$model_name (含敏感字段但无PiiLevel标注)")
       warn "  ⚠️ [无分类标注] model ${model_name} 含敏感字段但无 PiiLevel 标注"
     fi
-  done < <(grep -n '^model ' "$schema_file" | awk '{print $NF}' | sort -u)
+  done <<< "$models"
 
   if [ "$UNCLASSIFIED_COUNT" -eq 0 ]; then
     ok "  ✅ 所有 model 均有数据分类标注"
@@ -156,22 +160,24 @@ check_rules_permissions() {
   info "🔍 [2/4] Rules 权限标注 — 检查 apps/admin-web/app/rules/ 权限标注..."
 
   local rules_dir="apps/admin-web/app/rules"
+  UNLABELED_RULES=()
   UNLABELED_RULES_COUNT=0
-  UNLABELED_RULES=""
 
   if [ ! -d "$rules_dir" ]; then
     warn "  ⚠️ Rules 目录不存在: $rules_dir"
     return
   fi
 
+  # 查找所有 page.tsx/page.ts 文件
   while IFS= read -r rule_file; do
     [ -z "$rule_file" ] && continue
-    local has_annotation
-    has_annotation=$(grep -ciE '(@roles|@permission|roles:|permission:|角色视角|权限|@access|角色)' "$rule_file" 2>/dev/null || true)
+    # 检查文件头部是否有权限/角色标注注释
+    local has_permission_annotation
+    has_permission_annotation=$(grep -cE '(@roles|@permission|roles:|permission:|角色视角|权限|@access)' "$rule_file" 2>/dev/null || true)
 
-    if [ "$has_annotation" -eq 0 ]; then
+    if [ "$has_permission_annotation" -eq 0 ]; then
       UNLABELED_RULES_COUNT=$((UNLABELED_RULES_COUNT + 1))
-      UNLABELED_RULES="${UNLABELED_RULES}${rule_file}"$'\n'
+      UNLABELED_RULES+=("$rule_file")
       warn "  ⚠️ [缺少权限标注] $rule_file"
     fi
   done < <(find "$rules_dir" -name 'page.tsx' -o -name 'page.ts' 2>/dev/null)
@@ -188,35 +194,42 @@ check_rls_classification() {
   info "🔍 [3/4] RLS 数据分类 — 检查 RLS 策略中的数据分类级别..."
 
   local migrations_dir="apps/api/src/database/migrations"
-  RLS_MISSING_COUNT=0
-  RLS_MISSING_LIST=""
+  RLS_MISSING_CLASS_COUNT=0
+  RLS_WITH_MISSING_CLASS=()
 
   if [ ! -d "$migrations_dir" ]; then
     warn "  ⚠️ Migrations 目录不存在: $migrations_dir"
     return
   fi
 
+  # 查找所有 RLS 相关 SQL
   while IFS= read -r rls_file; do
     [ -z "$rls_file" ] && continue
 
+    # 提取 RLS 策略的表名
     local tables_with_rls
     tables_with_rls=$(grep -n 'ALTER TABLE.*ENABLE ROW LEVEL SECURITY' "$rls_file" \
       | sed 's/.*ALTER TABLE \(.*\) ENABLE ROW LEVEL SECURITY.*/\1/' || true)
 
     while IFS= read -r table_name; do
       [ -z "$table_name" ] && continue
-      local has_comment
-      has_comment=$(grep -ci "data.classification\|@classification\|分类" "$rls_file" 2>/dev/null || true)
+      # 检查该表是否有数据分类注释
+      local has_classification_comment
+      has_classification_comment=$(grep -c "data.classification\|@classification\|分类.*${table_name}\|--.*${table_name}.*:" "$rls_file" 2>/dev/null || true)
 
-      if [ "$has_comment" -eq 0 ]; then
-        RLS_MISSING_COUNT=$((RLS_MISSING_COUNT + 1))
-        RLS_MISSING_LIST="${RLS_MISSING_LIST}${rls_file}:${table_name}"$'\n'
+      if [ "$has_classification_comment" -eq 0 ]; then
+        RLS_MISSING_CLASS_COUNT=$((RLS_MISSING_CLASS_COUNT + 1))
+        RLS_WITH_MISSING_CLASS+=("${rls_file}:${table_name}")
         warn "  ⚠️ [RLS缺少分类] ${rls_file} 表 ${table_name} 无数据分类标注"
+      else
+        local class_level
+        class_level=$(grep -A2 "$table_name" "$rls_file" | grep -oE 'public|internal|confidential|restricted' | head -1 || echo "internal")
+        ok "  ✅ ${table_name}: 数据分类 = ${class_level}"
       fi
     done <<< "$tables_with_rls"
   done < <(find "$migrations_dir" -name '*rls*' -o -name '*RLS*' 2>/dev/null | sort)
 
-  if [ "$RLS_MISSING_COUNT" -eq 0 ]; then
+  if [ "$RLS_MISSING_CLASS_COUNT" -eq 0 ]; then
     ok "  ✅ 所有 RLS 表均有数据分类标注"
   fi
 }
@@ -228,33 +241,36 @@ check_pii_coverage() {
   info "🔍 [4/4] PII 字段覆盖率 — 检查 PiiPolicy 对敏感数据字段的覆盖..."
 
   local schema_file="apps/api/prisma/schema.prisma"
+  PII_POLICY_COVERAGE=0
   PII_POLICY_TOTAL=0
+  SENSITIVE_FIELDS_FOUND=()
   SENSITIVE_FIELDS_COUNT=0
-  SENSITIVE_FIELDS_LIST=""
 
   if [ ! -f "$schema_file" ]; then
     warn "  ⚠️ Prisma schema 未找到"
     return
   fi
 
-  # Check PiiPolicy model fields in prisma schema
-  PII_POLICY_TOTAL=$(grep -c 'PiiPolicy\|piiPolicy\|piiLevel' "$schema_file" 2>/dev/null || echo "0")
-
-  # Check PiiDetector references in source code
-  local pii_source_count
-  pii_source_count=$(grep -rn 'pii\|PII\|Pii' apps/api/src/ --include="*.ts" \
+  # 提取所有 PiiPolicy 中的 fieldName
+  local pii_policy_fields
+  pii_policy_fields=$(grep 'fieldName\|field_name' apps/api/src/ --include="*.ts" --include="*.prisma" -r 2>/dev/null \
+    | grep -i 'pii\|mask\|sensitive' \
     | grep -v 'node_modules' | grep -v '.spec.ts' | grep -v '.test.ts' \
-    | grep -ciE '(piiDetector|PiiDetector|pii_detector|piiPolicy|PiiPolicy)' 2>/dev/null || echo "0")
-  PII_POLICY_TOTAL=$((PII_POLICY_TOTAL + pii_source_count))
+    | head -50 || true)
 
-  # Scan for common sensitive field names in schema
-  local common_fields="password token secret privateKey certificate pinCode ssn idCard phone email address birthDate cvv bankAccount passwordHash creditCard accessToken refreshToken apiKey webhookSecret"
-  for field in $common_fields; do
+  local pii_fields_count
+  pii_fields_count=$(echo "$pii_policy_fields" | grep -c . 2>/dev/null || echo "0")
+  PII_POLICY_TOTAL=$pii_fields_count
+
+  # 扫描常见的敏感字段名
+  local common_sensitive_fields=("password" "token" "secret" "privateKey" "certificate" "pinCode" "ssn" "idCard" "phone" "email" "address" "birthDate" "cvv" "bankAccount" "passwordHash" "creditCard" "accessToken" "refreshToken" "apiKey" "webhookSecret")
+
+  for field in "${common_sensitive_fields[@]}"; do
     local occurrences
-    occurrences=$(grep -c "${field}" "$schema_file" 2>/dev/null || true)
-    if [ "$occurrences" -gt 0 ] 2>/dev/null; then
+    occurrences=$(grep -rn "${field}" apps/api/prisma/schema.prisma 2>/dev/null | grep -v '^\s*//' | grep -v 'comment' | head -5 || true)
+    if [ -n "$occurrences" ]; then
       SENSITIVE_FIELDS_COUNT=$((SENSITIVE_FIELDS_COUNT + 1))
-      SENSITIVE_FIELDS_LIST="${SENSITIVE_FIELDS_LIST}${field} (${occurrences}次)"$'\n'
+      SENSITIVE_FIELDS_FOUND+=("${field}")
     fi
   done
 
@@ -281,9 +297,9 @@ check_pii_coverage
 # 汇总
 # ============================================================
 
-TOTAL_ISSUES=$((UNCLASSIFIED_COUNT + UNLABELED_RULES_COUNT + RLS_MISSING_COUNT))
+TOTAL_ISSUES=$((UNCLASSIFIED_COUNT + UNLABELED_RULES_COUNT + RLS_MISSING_CLASS_COUNT))
 
-if [ "$UNCLASSIFIED_COUNT" -gt 0 ] || [ "$RLS_MISSING_COUNT" -gt 0 ]; then
+if [ "$UNCLASSIFIED_COUNT" -gt 0 ] || [ "$RLS_MISSING_CLASS_COUNT" -gt 0 ]; then
   RISK_LABEL="中危"
   EXIT_CODE=1
 elif [ "$UNLABELED_RULES_COUNT" -gt 0 ]; then
@@ -299,19 +315,19 @@ cat <<JSONEOF
   "module": "data-classification",
   "results": {
     "prisma_model_classification": {
-      "status": $( [ "$UNCLASSIFIED_COUNT" -eq 0 ] && echo '"passed"' || echo '"missing"' ),
+      "status": $( [ "$UNCLASSIFIED_COUNT" -eq 0 ] && echo '"passed"' || echo '"missing' ),
       "models_without_pii": $UNCLASSIFIED_COUNT
     },
     "rules_permission_annotations": {
-      "status": $( [ "$UNLABELED_RULES_COUNT" -eq 0 ] && echo '"passed"' || echo '"missing"' ),
+      "status": $( [ "$UNLABELED_RULES_COUNT" -eq 0 ] && echo '"passed"' || echo '"missing' ),
       "unlabeled_pages": $UNLABELED_RULES_COUNT
     },
     "rls_classification": {
-      "status": $( [ "$RLS_MISSING_COUNT" -eq 0 ] && echo '"passed"' || echo '"missing"' ),
-      "tables_without_classification": $RLS_MISSING_COUNT
+      "status": $( [ "$RLS_MISSING_CLASS_COUNT" -eq 0 ] && echo '"passed"' || echo '"missing' ),
+      "tables_without_classification": $RLS_MISSING_CLASS_COUNT
     },
     "pii_coverage": {
-      "status": $( [ "$PII_POLICY_TOTAL" -gt 0 ] && echo '"passed"' || echo '"partial"' ),
+      "status": $( [ "$PII_POLICY_TOTAL" -gt 0 ] || [ "$SENSITIVE_FIELDS_COUNT" -eq 0 ] && echo '"passed"' || echo '"partial' ),
       "pii_policy_count": $PII_POLICY_TOTAL,
       "sensitive_field_categories": $SENSITIVE_FIELDS_COUNT
     }
@@ -339,7 +355,7 @@ echo ""
 echo " 📊 检查结果:"
 echo "   Prisma数据分类:   $( [ "$UNCLASSIFIED_COUNT" -eq 0 ] && echo '✅ 完整' || echo "⚠️ ${UNCLASSIFIED_COUNT} 个model未标注" )"
 echo "   Rules权限标注:    $( [ "$UNLABELED_RULES_COUNT" -eq 0 ] && echo '✅ 完整' || echo "⚠️ ${UNLABELED_RULES_COUNT} 个文件缺少标注" )"
-echo "   RLS数据分类:      $( [ "$RLS_MISSING_COUNT" -eq 0 ] && echo '✅ 完整' || echo "⚠️ ${RLS_MISSING_COUNT} 张表无分类" )"
+echo "   RLS数据分类:      $( [ "$RLS_MISSING_CLASS_COUNT" -eq 0 ] && echo '✅ 完整' || echo "⚠️ ${RLS_MISSING_CLASS_COUNT} 张表无分类" )"
 echo "   PII策略覆盖:      $( [ "$PII_POLICY_TOTAL" -gt 0 ] && echo "✅ ${PII_POLICY_TOTAL} 条策略" || echo 'ℹ️ 未配置' )"
 echo ""
 echo " 🚦 风险等级: ${RISK_LABEL}"
@@ -374,7 +390,7 @@ if [ "$QUICK_MODE" != true ]; then
 |--------|:----:|:----:|
 | Prisma Schema 数据分类 | $(badge $UNCLASSIFIED_COUNT) | $( [ "$UNCLASSIFIED_COUNT" -eq 0 ] && echo "✅ 所有model已分类" || echo "⚠️ ${UNCLASSIFIED_COUNT} 个model缺失" ) |
 | Rules 权限标注 | $(badge $UNLABELED_RULES_COUNT) | $( [ "$UNLABELED_RULES_COUNT" -eq 0 ] && echo "✅ 页面均有权限标注" || echo "⚠️ ${UNLABELED_RULES_COUNT} 个文件缺失" ) |
-| RLS 数据分类 | $(badge $RLS_MISSING_COUNT) | $( [ "$RLS_MISSING_COUNT" -eq 0 ] && echo "✅ 所有RLS表已分类" || echo "⚠️ ${RLS_MISSING_COUNT} 张表缺失" ) |
+| RLS 数据分类 | $(badge $RLS_MISSING_CLASS_COUNT) | $( [ "$RLS_MISSING_CLASS_COUNT" -eq 0 ] && echo "✅ 所有RLS表已分类" || echo "⚠️ ${RLS_MISSING_CLASS_COUNT} 张表缺失" ) |
 | PII 策略覆盖 | $( [ "$PII_POLICY_TOTAL" -gt 0 ] && echo "🟢" || echo "🟡" ) | $( [ "$PII_POLICY_TOTAL" -gt 0 ] && echo "${PII_POLICY_TOTAL} 条 PiiPolicy 已配置" || echo "PiiPolicy 未配置" ) |
 | **总体** | **🔴 ${RISK_LABEL}** | **退出码: ${EXIT_CODE}** |
 
@@ -392,16 +408,16 @@ REPORTEOF
     echo "" >> "$REPORT_FILE"
     echo "| Model | 问题 |" >> "$REPORT_FILE"
     echo "|-------|------|" >> "$REPORT_FILE"
-    while IFS= read -r model; do
-      [ -z "$model" ] && continue
+    for model in "${UNCLASSIFIED_MODELS[@]}"; do
       echo "| \`${model}\` | 含敏感字段但未标注数据分类 |" >> "$REPORT_FILE"
-    done <<< "$UNCLASSIFIED_MODELS"
+    done
     echo "" >> "$REPORT_FILE"
   else
     echo "✅ 所有 model 均有数据分类标注 \`PiiLevel\`" >> "$REPORT_FILE"
     echo "" >> "$REPORT_FILE"
   fi
 
+  # 添加数据分类定级参考
   echo "### 数据分类定级参考" >> "$REPORT_FILE"
   echo "" >> "$REPORT_FILE"
   echo "| 级别 | 含义 | 示例 | 要求 |" >> "$REPORT_FILE"
@@ -426,34 +442,32 @@ REPORTEOF
     echo "" >> "$REPORT_FILE"
     echo "| 文件 | 缺少 |" >> "$REPORT_FILE"
     echo "|------|------|" >> "$REPORT_FILE"
-    while IFS= read -r file; do
-      [ -z "$file" ] && continue
+    for file in "${UNLABELED_RULES[@]}"; do
       echo "| \`$file\` | @roles / @permission 注解 |" >> "$REPORT_FILE"
-    done <<< "$UNLABELED_RULES"
+    done
     echo "" >> "$REPORT_FILE"
   else
     echo "✅ 所有 Rules 页面均有权限/角色标注" >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
   fi
 
   cat >> "$REPORT_FILE" <<REPORTEOF
-
 ---
 
 ## 3️⃣ RLS 数据分类
 
-> 扫描: apps/api/src/database/migrations/\\*rls\\*.sql — 检查每张 RLS 表的数据分类标注
+> 扫描: apps/api/src/database/migrations/\*rls\*.sql — 检查每张 RLS 表的数据分类标注
 
 REPORTEOF
 
-  if [ "$RLS_MISSING_COUNT" -gt 0 ]; then
-    echo "**⚠️ ${RLS_MISSING_COUNT} 张 RLS 表缺少数据分类标注:**" >> "$REPORT_FILE"
+  if [ "$RLS_MISSING_CLASS_COUNT" -gt 0 ]; then
+    echo "**⚠️ ${RLS_MISSING_CLASS_COUNT} 张 RLS 表缺少数据分类标注:**" >> "$REPORT_FILE"
     echo "" >> "$REPORT_FILE"
     echo "| 文件 | 表名 |" >> "$REPORT_FILE"
     echo "|------|------|" >> "$REPORT_FILE"
-    while IFS= read -r entry; do
-      [ -z "$entry" ] && continue
+    for entry in "${RLS_WITH_MISSING_CLASS[@]}"; do
       echo "| \`$entry\` | 无数据分类 SQL 注释 |" >> "$REPORT_FILE"
-    done <<< "$RLS_MISSING_LIST"
+    done
   else
     echo "✅ 所有 RLS 表均有数据分类标注 (SQL 注释标记分类级别)" >> "$REPORT_FILE"
   fi
@@ -478,10 +492,9 @@ REPORTEOF
     echo "" >> "$REPORT_FILE"
     echo "**Schema 中检测到 ${SENSITIVE_FIELDS_COUNT} 类敏感字段:**" >> "$REPORT_FILE"
     echo "" >> "$REPORT_FILE"
-    while IFS= read -r field; do
-      [ -z "$field" ] && continue
+    for field in "${SENSITIVE_FIELDS_FOUND[@]}"; do
       echo "- \`${field}\`" >> "$REPORT_FILE"
-    done <<< "$SENSITIVE_FIELDS_LIST"
+    done
   fi
 
   cat >> "$REPORT_FILE" <<REPORTEOF
@@ -494,13 +507,16 @@ REPORTEOF
 |------|:----:|------|
 | Prisma model 分类缺失 > 0 | $(badge $UNCLASSIFIED_COUNT) | ⚠️ 建议补充 PiiLevel 标注 |
 | Rules 权限标注缺失 > 0 | $(badge $UNLABELED_RULES_COUNT) | ⚠️ 建议补充角色/权限标注 |
-| RLS 数据分类缺失 > 0 | $(badge $RLS_MISSING_COUNT) | ⚠️ 建议补充 SQL 注释 |
+| RLS 数据分类缺失 > 0 | $(badge $RLS_MISSING_CLASS_COUNT) | ⚠️ 建议补充 SQL 注释 |
 | PII 策略覆盖 | $( [ "$PII_POLICY_TOTAL" -gt 0 ] && echo "🟢" || echo "🟡" ) | 已配置 |
 | **出口** | **🔴 ${RISK_LABEL} (退出码 ${EXIT_CODE})** | |
 
 > 🐜 [V18: security-baseline] · 安全基线修复 (G2退回)
 
 REPORTEOF
+
+  echo ""
+  echo " 📝 报告已保存: ${REPORT_FILE}"
 fi
 
 exit $EXIT_CODE
