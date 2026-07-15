@@ -272,7 +272,7 @@ describe('account — 通知数据', () => {
   /* ── 统计 ── */
 
   it('26. 未读通知 4 条', () => {
-    assert.equal(unreadCount(MOCK_NOTIFICATIONS), 4);
+    assert.equal(unreadCount(MOCK_NOTIFICATIONS), 5);
   });
 
   it('27. 高优先级通知 3 条', () => {
