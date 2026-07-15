@@ -133,7 +133,7 @@ export function HomeScreen() {
         待办任务 {mockStats.pendingTasks > 0 && <Text style={styles.badge}>{mockStats.pendingTasks}</Text>}
       </Text>
       {mockTasks.map((task) => (
-        <TouchableOpacity key={task.id} style={styles.taskItem}>
+        <TouchableOpacity key={task.id} style={styles.taskItem} onPress={() => console.log('Task pressed:', task.id)}>
           <View
             style={[
               styles.taskDot,

@@ -209,9 +209,26 @@ test('HomeScreen: renders sections in correct order', () => {
       (t) =>
         (typeof t.props.children === 'string' && t.props.children.includes(label)) ||
         (Array.isArray(t.props.children) &&
-          t.props.children.some((c: unknown) => typeof c === 'string' && c.includes(label))),
+          t.props.children.some((c: unknown) => typeof c === 'string' && String(c).includes(label))),
     );
-    if (idx >= 0) sectionIndices.push(idx);
+    // fallback: check ReactElement children for text match on complex nested structures
+    const idxFallback = idx < 0
+      ? allTexts.findIndex((t) => {
+          const allChildStrings: string[] = [];
+          const collectStrings = (node: unknown) => {
+            if (typeof node === 'string') allChildStrings.push(node);
+            else if (node && typeof node === 'object' && 'props' in (node as any)) {
+              const n = node as any;
+              if (n.props?.children) collectStrings(n.props.children);
+            } else if (Array.isArray(node)) {
+              node.forEach(collectStrings);
+            }
+          };
+          collectStrings(t.props.children);
+          return allChildStrings.some((s) => String(s).includes(label));
+        })
+      : idx;
+    if (idxFallback >= 0) sectionIndices.push(idxFallback);
   }
 
   // 验证顺序：快捷操作 < 待办任务 < 门店公告
