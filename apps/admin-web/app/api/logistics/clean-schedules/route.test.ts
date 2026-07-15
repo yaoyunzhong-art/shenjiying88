@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const ROUTE_PATH = resolve(process.cwd(), 'apps/admin-web/app/api/logistics/clean-schedules/route.ts');
+const ROUTE_PATH = resolve(process.cwd(), 'app/api/logistics/clean-schedules/route.ts');
 const src = readFileSync(ROUTE_PATH, 'utf-8');
 
 describe('clean-schedules proxy 静态证据', () => {
