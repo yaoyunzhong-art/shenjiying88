@@ -224,4 +224,93 @@ export class D3Controller {
     const result = this.d3Service.getChannel(body.channel)
     return { success: true, data: result }
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🤝 Collaborative Filtering
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * User-based协同过滤
+   * GET /ai/d3/collaborate?userId=&topK=
+   */
+  @Get('collaborate')
+  collaborateFilter(
+    @Query('userId') userId: string,
+    @Query('topK') topK?: string,
+  ) {
+    const k = topK ? Math.max(1, Math.min(20, Number(topK))) : 5
+    const result = this.d3Service.collaborateFilter(userId, k)
+    return { success: true, data: result }
+  }
+
+  /**
+   * Item-based协同过滤
+   * GET /ai/d3/similar-items/:itemId
+   */
+  @Get('similar-items/:itemId')
+  itemBasedFilter(
+    @Param('itemId') itemId: string,
+    @Query('topK') topK?: string,
+  ) {
+    const k = topK ? Math.max(1, Math.min(20, Number(topK))) : 5
+    const result = this.d3Service.itemBasedFilter(itemId, k)
+    return { success: true, data: result }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🆕 Cold Start
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * 新用户冷启动
+   * GET /ai/d3/cold-start?segment=
+   */
+  @Get('cold-start')
+  coldStartNewUser(@Query('segment') segment?: string) {
+    const result = this.d3Service.coldStartNewUser(segment)
+    return { success: true, data: result }
+  }
+
+  /**
+   * 新品冷启动
+   * POST /ai/d3/cold-start/new-item
+   */
+  @Post('cold-start/new-item')
+  coldStartNewItem(@Body() body: any) {
+    const result = this.d3Service.coldStartNewItem({
+      id: body.id,
+      title: body.title,
+      type: body.type,
+      tags: body.tags,
+      category: body.category,
+      price: body.price,
+      rating: body.rating,
+      imageUrl: body.imageUrl,
+    })
+    return { success: true, data: result }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ⚖️ Ensemble & Evaluation
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * 集成评分
+   * GET /ai/d3/ensemble?userId=
+   */
+  @Get('ensemble')
+  ensembleScore(@Query('userId') userId: string) {
+    const result = this.d3Service.ensembleScore(userId)
+    return { success: true, data: result }
+  }
+
+  /**
+   * 推荐模型离线评估
+   * GET /ai/d3/evaluate?userId=
+   */
+  @Get('evaluate')
+  modelEvaluate(@Query('userId') userId: string) {
+    const result = this.d3Service.modelEvaluate(userId)
+    return { success: true, data: result }
+  }
 }
