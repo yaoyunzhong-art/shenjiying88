@@ -14,14 +14,19 @@ import { UserCFStrategy } from './strategies/user-cf.strategy'
 import { PopularStrategy } from './strategies/popular.strategy'
 import { RecentlyViewedStrategy } from './strategies/recently-viewed.strategy'
 import { PersonalizedStrategy } from './strategies/personalized.strategy'
+import { SimilarityMatrixService } from './similarity-matrix.service'
+import { TimeDecayService } from './time-decay.service'
+import { ImplicitFeedbackService } from './implicit-feedback.service'
+import { OfflineEvaluationService } from './offline-evaluation.service'
 
 /**
- * Phase-40 T170: RecommendModule
+ * Phase-40 T170 + V18 Day2 D3: RecommendModule
  *
- * 15 providers:
+ * 19 providers:
  *  - 5 核心 service (Scoring / Diversification / ColdStart / Cache / Recommend)
  *  - 3 adapter (Product / PurchaseHistory / MemberPreference)
  *  - 5 策略 (ItemCF / UserCF / Popular / RecentlyViewed / Personalized)
+ *  - 4 V18 D3 新增: SimilarityMatrix / TimeDecay / ImplicitFeedback / OfflineEvaluation
  *  - 1 主引擎
  *  - 1 Controller
  */
@@ -45,6 +50,12 @@ import { PersonalizedStrategy } from './strategies/personalized.strategy'
     PopularStrategy,
     RecentlyViewedStrategy,
     PersonalizedStrategy,
+    // V18 D3: CF 增强
+    SimilarityMatrixService,
+    TimeDecayService,
+    ImplicitFeedbackService,
+    // V18 D3: 离线评估
+    OfflineEvaluationService,
     // 主引擎
     RecommendationEngine
   ],
@@ -54,7 +65,12 @@ import { PersonalizedStrategy } from './strategies/personalized.strategy'
     RecommendCacheService,
     ProductAdapter,
     PurchaseHistoryAdapter,
-    MemberPreferenceAdapter
+    MemberPreferenceAdapter,
+    // V18 D3
+    SimilarityMatrixService,
+    TimeDecayService,
+    ImplicitFeedbackService,
+    OfflineEvaluationService
   ]
 })
 export class RecommendModule {}

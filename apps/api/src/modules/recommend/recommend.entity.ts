@@ -86,7 +86,7 @@ export interface RecommendationRequest {
 export interface RecommendationResult {
   request: RecommendationRequest
   candidates: Candidate[]
-  fallbackUsed?: StrategyType              // 冷启动 fallback 策略
+  fallbackUsed?: StrategyType | 'popular-heatmap' | 'category-tag'              // 冷启动 fallback 策略
   metadata: {
     strategiesApplied: StrategyType[]
     totalCandidates: number

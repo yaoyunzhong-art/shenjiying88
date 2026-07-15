@@ -94,8 +94,8 @@ describe('RecommendationEngine 端到端测试', () => {
       product.seed([{ id: 'A', tenantId: 'T', sku: 'A', name: 'A', category: 'c', priceCents: 100, available: true }])
       product.incrementSold('A', 10)
       const r = await engine.recommend({ tenantId: 'T' })
-      // 匿名访问 → 冷启动 → popular fallback
-      assert.equal(r.fallbackUsed, 'popular')
+      // 匿名访问 → 冷启动 → popular-heatmap fallback
+      assert.equal(r.fallbackUsed, 'popular-heatmap')
       assert.ok(r.metadata.strategiesApplied.includes('popular'))
       assert.ok(r.metadata.strategiesApplied.length >= 1)
     })
@@ -118,7 +118,7 @@ describe('RecommendationEngine 端到端测试', () => {
         memberId: 'm-new',
         strategies: ['popular', 'item-cf', 'user-cf']
       })
-      assert.equal(r.fallbackUsed, 'popular')
+      assert.equal(r.fallbackUsed, 'popular-heatmap')
       assert.equal(r.metadata.strategiesApplied.includes('popular'), true)
       // item-cf 和 user-cf 应被跳过 (冷启动)
       assert.equal(r.metadata.strategiesApplied.includes('item-cf'), false)
@@ -131,7 +131,7 @@ describe('RecommendationEngine 端到端测试', () => {
         { id: 'A', tenantId: 'T', sku: 'A', name: 'A', category: 'c', priceCents: 100, available: true }
       ])
       const r = await engine.recommend({ tenantId: 'T' })
-      assert.equal(r.fallbackUsed, 'popular')
+      assert.equal(r.fallbackUsed, 'popular-heatmap')
     })
   })
 

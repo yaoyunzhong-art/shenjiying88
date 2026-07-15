@@ -178,7 +178,7 @@ describe('Recommend 核心服务测试', () => {
     it('匿名访问 → cold start', () => {
       const d = c.detect({ hasMemberId: false, purchaseCount: 0, viewCount: 0 })
       assert.equal(d.isColdStart, true)
-      assert.equal(d.fallbackStrategy, 'popular')
+      assert.equal(d.fallbackStrategy, 'popular-heatmap')
     })
 
     it('新会员 → cold start', () => {

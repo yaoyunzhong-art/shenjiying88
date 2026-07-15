@@ -69,7 +69,7 @@ export interface CandidateContract extends Candidate {}
 export interface RecommendationResultContract {
   request: RecommendRequestContract
   candidates: CandidateContract[]
-  fallbackUsed?: StrategyType
+  fallbackUsed?: StrategyType | 'popular-heatmap' | 'category-tag'
   metadata: {
     strategiesApplied: StrategyType[]
     totalCandidates: number
