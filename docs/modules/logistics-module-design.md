@@ -645,4 +645,91 @@ sweepDueInspectionReminders(now: string = new Date().toISOString()): {
 // 1. 巡检任务状态机测试
 describe('InspectionTask State Machine', () => {
   it('should transition from scheduled to reminded', () => {
-    // Given:
+    // Given: 已创建的 scheduled 任务
+    // When: 调用 sendInspectionReminder
+    // Then: 状态变为 reminded，发送通知
+  })
+  
+  it('should transition from reminded to completed', () => {
+    // Given: reminded 状态的任务
+    // When: 调用 recordInspectionResult
+    // Then: 状态变为 completed，记录 result
+  })
+  
+  it('should throw when completing already completed task', () => {
+    // Given: completed 状态的任务
+    // When: 调用 recordInspectionResult
+    // Then: 抛出错误
+  })
+})
+
+// 2. 维修工单闭环测试
+describe('RepairOrder Lifecycle', () => {
+  it('should complete full lifecycle: open → verified', () => {
+    // Step 1: 创建工单 → open
+    // Step 2: 派单 → assigned
+    // Step 3: 开始维修 → in_progress
+    // Step 4: 完成维修 → completed
+    // Step 5: 验收 → verified
+    // Verify: 每个步骤状态正确，数据完整
+  })
+})
+
+// 3. 批量提醒扫描测试
+describe('SweepDueInspectionReminders', () => {
+  it('should remind all due scheduled tasks', () => {
+    // Given: 3个已到期的 scheduled 任务，2个未到期的任务
+    // When: 调用 sweepDueInspectionReminders
+    // Then: 返回 scanned=3, reminded=3，发送3条通知
+  })
+})
+```
+
+## 7. 部署与运维
+
+### 7.1 环境变量配置
+
+```bash
+# 物流模块配置
+LOGISTICS_INSPECTION_REMINDER_INTERVAL=300000  # 巡检提醒扫描间隔（毫秒，默认5分钟）
+LOGISTICS_NOTIFICATION_ENABLED=true             # 是否启用通知
+```
+
+### 7.2 监控指标
+
+| 指标名 | 类型 | 描述 |
+|--------|------|------|
+| `logistics_inspection_task_total` | Counter | 巡检任务总数 |
+| `logistics_inspection_reminder_sent` | Counter | 巡检提醒发送数 |
+| `logistics_repair_order_cycle_time` | Histogram | 维修工单处理时长（小时） |
+| `logistics_material_request_approval_time` | Histogram | 物料申请审批时长（小时） |
+
+### 7.3 告警规则
+
+```yaml
+# 巡检任务告警
+- alert: InspectionTaskOverdue
+  expr: |
+    logistics_inspection_task_overdue > 0
+  for: 1h
+  labels:
+    severity: warning
+  annotations:
+    summary: "存在超期未完成巡检任务"
+    
+# 维修工单告警
+- alert: RepairOrderInProgressTooLong
+  expr: |
+    time() - logistics_repair_order_start_time > 86400
+  for: 1h
+  labels:
+    severity: warning
+  annotations:
+    summary: "维修工单处理超24小时"
+```
+
+---
+
+**文档版本**: v1.0  
+**最后更新**: 2026-07-16  
+**作者**: M5 Platform Team
