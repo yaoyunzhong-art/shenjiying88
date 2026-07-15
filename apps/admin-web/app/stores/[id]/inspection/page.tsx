@@ -1,154 +1,314 @@
-// 📋 巡检管理 · 设备/安全/卫生巡检记录 · 完整巡检体系
 'use client';
-import { useState, useMemo } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Modal, message, Input, Tabs, Empty, Tooltip, Badge, Progress } from '@m5/ui';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Button,
+  Card,
+  Col,
+  Empty,
+  Input,
+  Modal,
+  PageShell,
+  Progress,
+  Row,
+  Select,
+  Space,
+  Statistic,
+  Table,
+  Tabs,
+  Tag,
+  ToastContainer,
+  Tooltip,
+  useToast,
+} from '@m5/ui';
+import type { TableColumn } from '@m5/ui';
 
-interface Inspection {
-  id: string; type: '设备' | '安全' | '卫生'; item: string;
-  result: 'pass' | 'fail' | 'warn'; inspector: string; time: string; note: string;
-  score?: number; area?: string;
+interface InspectionItem {
+  id: string;
+  tenantId: string;
+  storeId?: string;
+  equipmentId?: string;
+  equipmentName?: string;
+  assigneeId?: string;
+  assigneeName?: string;
+  scheduledAt: string;
+  remindedAt?: string;
+  result?: 'normal' | 'warning' | 'fault';
+  note?: string;
+  inspectorId?: string;
+  inspectorName?: string;
+  status?: 'scheduled' | 'reminded' | 'completed';
+  createdAt: string;
+  updatedAt: string;
 }
 
-const INSPECT_DATA: Inspection[] = [
-  { id: 'IN-001', type: '设备', item: 'VR-01 头盔', result: 'pass', inspector: '王工', time: '2026-07-13 14:00', note: '镜片清洁, 线缆完好', score: 95, area: 'VR区' },
-  { id: 'IN-002', type: '设备', item: '赛车-03 方向盘', result: 'pass', inspector: '王工', time: '2026-07-13 14:15', note: '螺丝紧固, 响应正常', score: 92, area: '主机区' },
-  { id: 'IN-003', type: '设备', item: '台球桌-02', result: 'fail', inspector: '李工', time: '2026-07-13 14:30', note: '台面绒布破损, 需更换', score: 45, area: '台球区' },
-  { id: 'IN-004', type: '安全', item: '消防栓-A区', result: 'pass', inspector: '陈安全', time: '2026-07-13 10:00', note: '压力正常, 无遮挡', score: 100, area: 'A区' },
-  { id: 'IN-005', type: '安全', item: '灭火器(3F)', result: 'warn', inspector: '陈安全', time: '2026-07-13 10:20', note: '有效期至8月, 需更换', score: 60, area: '3F' },
-  { id: 'IN-006', type: '安全', item: '应急灯', result: 'pass', inspector: '陈安全', time: '2026-07-13 10:40', note: '全部工作正常', score: 98, area: '全场' },
-  { id: 'IN-007', type: '卫生', item: '洗手间男', result: 'pass', inspector: '张保洁', time: '2026-07-13 09:00', note: '清洁到位, 消毒记录完整', score: 90, area: '洗手间' },
-  { id: 'IN-008', type: '卫生', item: '游戏区地面', result: 'fail', inspector: '张保洁', time: '2026-07-13 09:30', note: '零食碎屑较多, 需吸尘', score: 30, area: '游戏区' },
-  { id: 'IN-009', type: '卫生', item: '休息区沙发', result: 'pass', inspector: '张保洁', time: '2026-07-13 10:00', note: '整洁无污渍', score: 95, area: '休息区' },
-  { id: 'IN-010', type: '设备', item: '兑币机-01', result: 'pass', inspector: '王工', time: '2026-07-13 15:00', note: '出币流畅, 零钱充足', score: 88, area: '前台' },
-  { id: 'IN-011', type: '设备', item: '投篮机-02', result: 'warn', inspector: '李工', time: '2026-07-13 15:30', note: '篮筐轻微松动, 需紧固', score: 65, area: '游戏区' },
-  { id: 'IN-012', type: '安全', item: '监控系统', result: 'pass', inspector: '陈安全', time: '2026-07-13 11:00', note: '全部摄像头在线', score: 97, area: '监控室' },
-];
-
-const RESULT_CFG: Record<string, { color: string; label: string }> = {
-  pass: { color: 'green', label: '通过' },
-  fail: { color: 'red', label: '不通过' },
-  warn: { color: 'orange', label: '需关注' },
+const INSPECTION_TYPE_MAP: Record<string, { label: string; color: 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' }> = {
+  equipment: { label: '设备', color: 'primary' },
+  safety: { label: '安全', color: 'warning' },
+  hygiene: { label: '卫生', color: 'success' },
 };
 
-const TYPE_CFG: Record<string, string> = { 设备: '🔧', 安全: '🛡️', 卫生: '🧹' };
+const STATUS_MAP: Record<string, { label: string; color: 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' }> = {
+  scheduled: { label: '已排期', color: 'default' },
+  reminded: { label: '已提醒', color: 'warning' },
+  completed: { label: '已完成', color: 'success' },
+};
 
-const resultScore = (v: string) => v === 'pass' ? 90 : v === 'warn' ? 60 : 30;
+const RESULT_MAP: Record<string, { label: string; color: 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info' }> = {
+  normal: { label: '正常', color: 'success' },
+  warning: { label: '警告', color: 'warning' },
+  fault: { label: '故障', color: 'error' },
+};
 
 export default function InspectionPage() {
+  const { toasts, success, error, dismiss } = useToast();
+  const [items, setItems] = useState<InspectionItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [resultFilter, setResultFilter] = useState<string>('all');
-  const [showAdd, setShowAdd] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [tab, setTab] = useState('list');
+  const [showAdd, setShowAdd] = useState(false);
+  const [newItem, setNewItem] = useState({ equipmentName: '', assigneeName: '', scheduledAt: '' });
+
+  const tenantId = 'tenant-p30';
+
+  const fetchItems = async () => {
+    setLoading(true);
+    try {
+      const qs = new URLSearchParams();
+      if (statusFilter !== 'all') qs.set('status', statusFilter);
+      const res = await fetch(`/api/logistics/inspections?${qs.toString()}`, {
+        headers: { 'x-tenant-id': tenantId },
+      });
+      if (!res.ok) throw new Error('fetch failed');
+      const data = await res.json();
+      setItems(Array.isArray(data) ? data : []);
+    } catch (e) {
+      error('加载巡检列表失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter]);
+
+  const handleCreate = async () => {
+    try {
+      const res = await fetch('/api/logistics/inspections', {
+        method: 'POST',
+        headers: { 'x-tenant-id': tenantId, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          equipmentName: newItem.equipmentName,
+          assigneeName: newItem.assigneeName,
+          scheduledAt: newItem.scheduledAt || new Date().toISOString(),
+        }),
+      });
+      if (!res.ok) throw new Error('create failed');
+      success('新建巡检成功');
+      setShowAdd(false);
+      setNewItem({ equipmentName: '', assigneeName: '', scheduledAt: '' });
+      await fetchItems();
+    } catch (e) {
+      error('新建巡检失败');
+    }
+  };
+
+  const handleRemind = async (id: string) => {
+    try {
+      const res = await fetch(`/api/logistics/inspections/${id}/remind`, {
+        method: 'POST',
+        headers: { 'x-tenant-id': tenantId, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ now: new Date().toISOString() }),
+      });
+      if (!res.ok) throw new Error('remind failed');
+      success('发送提醒成功');
+      await fetchItems();
+    } catch (e) {
+      error('发送提醒失败');
+    }
+  };
+
+  const handleRecordResult = async (id: string, result: 'normal' | 'warning' | 'fault') => {
+    try {
+      const res = await fetch(`/api/logistics/inspections/${id}/result`, {
+        method: 'POST',
+        headers: { 'x-tenant-id': tenantId, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          result,
+          note: '',
+          inspectorId: 'inspector-01',
+          inspectorName: '系统管理员',
+        }),
+      });
+      if (!res.ok) throw new Error('record result failed');
+      success('记录巡检结果成功');
+      await fetchItems();
+    } catch (e) {
+      error('记录巡检结果失败');
+    }
+  };
 
   const filtered = useMemo(() => {
-    let r = INSPECT_DATA;
-    if (typeFilter !== 'all') r = r.filter(d => d.type === typeFilter);
-    if (resultFilter !== 'all') r = r.filter(d => d.result === resultFilter);
+    let r = items;
+    if (typeFilter !== 'all') {
+      const map: Record<string, string> = { equipment: '设备', safety: '安全', hygiene: '卫生' };
+      r = r.filter(d => (d.equipmentName || '').includes(map[typeFilter] || typeFilter));
+    }
     return r;
-  }, [typeFilter, resultFilter]);
+  }, [items, typeFilter]);
 
-  const passCount = INSPECT_DATA.filter(d => d.result === 'pass').length;
-  const warnCount = INSPECT_DATA.filter(d => d.result === 'warn').length;
-  const failCount = INSPECT_DATA.filter(d => d.result === 'fail').length;
-  const avgScore = Math.round(INSPECT_DATA.reduce((s, d) => s + (d.score || resultScore(d.result)), 0) / INSPECT_DATA.length);
+  const passCount = items.filter(d => d.result === 'normal').length;
+  const warnCount = items.filter(d => d.result === 'warning').length;
+  const failCount = items.filter(d => d.result === 'fault').length;
+  const avgScore = useMemo(() => {
+    const scores = items.map(d => (d.result === 'normal' ? 90 : d.result === 'warning' ? 60 : 30));
+    return scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+  }, [items]);
 
-  const cols = [
-    { title: '类别', dataIndex: 'type', render: (v: string) => <Tag>{TYPE_CFG[v] || ''} {v}</Tag> },
-    { title: '检查项', dataIndex: 'item' },
-    { title: '区域', dataIndex: 'area' },
-    {
-      title: '评分', dataIndex: 'score', render: (v: number | undefined, r: Inspection) => {
-        const s = v || resultScore(r.result);
-        return <Progress percent={s} size="small" style={{ width: 100 }} strokeColor={s >= 80 ? '#34d399' : s >= 60 ? '#f59e0b' : '#f87171'} />;
-      }
-    },
-    { title: '结果', dataIndex: 'result', render: (v: string) => <Tag color={RESULT_CFG[v]?.color || 'default'}>{RESULT_CFG[v]?.label || v}</Tag> },
-    { title: '检查人', dataIndex: 'inspector' },
-    { title: '备注', dataIndex: 'note', ellipsis: true },
-    { title: '时间', dataIndex: 'time' },
-    {
-      title: '操作', key: 'a', width: 100,
-      render: (_: unknown, r: Inspection) => (
-        <Space size="small">
-          {r.result === 'fail' && <Button size="small" type="primary">派单维修</Button>}
-          <Button size="small">详情</Button>
-        </Space>
-      ),
-    },
+  const columns: TableColumn<InspectionItem>[] = [
+    { title: 'ID', key: 'id', render: (_, r) => <span className="font-mono text-xs text-slate-400">{r.id.slice(0, 8)}</span> },
+    { title: '设备', key: 'equipmentName' },
+    { title: '负责人', key: 'assigneeName' },
+    { title: '排期', key: 'scheduledAt', render: (v) => <span className="text-slate-400 text-sm">{v ? new Date(v as string).toLocaleString() : '-'}</span> },
+    { title: '状态', key: 'status', render: (_, r) => <Tag variant={STATUS_MAP[r.status || 'scheduled']?.color || 'default'}>{STATUS_MAP[r.status || 'scheduled']?.label || r.status}</Tag> },
+    { title: '结果', key: 'result', render: (_, r) => r.result ? <Tag variant={RESULT_MAP[r.result]?.color || 'default'}>{RESULT_MAP[r.result]?.label || r.result}</Tag> : <span className="text-slate-500">-</span> },
+    { title: '备注', key: 'note', render: (v) => <span className="text-slate-400 text-sm truncate max-w-xs">{v as string || '-'}</span> },
+    { title: '操作', key: 'actions', render: (_, r) => (
+      <Space>
+        {r.status !== 'completed' && (
+          <Button size="sm" variant="outline" onClick={() => handleRemind(r.id)}>提醒</Button>
+        )}
+        {r.status === 'reminded' && (
+          <>
+            <Button size="sm" variant="primary" onClick={() => handleRecordResult(r.id, 'normal')}>正常</Button>
+            <Button size="sm" variant="warning" onClick={() => handleRecordResult(r.id, 'warning')}>警告</Button>
+            <Button size="sm" variant="danger" onClick={() => handleRecordResult(r.id, 'fault')}>故障</Button>
+          </>
+        )}
+      </Space>
+    )},
   ];
 
-  const typeStats = useMemo(() => {
-    const map = new Map<string, number>();
-    INSPECT_DATA.forEach(d => map.set(d.type, (map.get(d.type) || 0) + 1));
-    return Array.from(map.entries()).map(([type, count]) => ({ type, count }));
-  }, []);
-
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div><h2 style={{ color: '#f8fafc', margin: 0 }}>📋 巡检管理</h2><span style={{ color: '#94a3b8', fontSize: 13 }}>设备 · 安全 · 卫生 · 全维度巡检</span></div>
-          <Button type="primary" onClick={() => setShowAdd(true)}>+ 新建巡检</Button>
+    <PageShell title="巡检管理">
+      <ToastContainer toasts={toasts} onDismiss={dismiss} />
+      <Space direction="vertical" className="w-full" style={{ gap: 16 }}>
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-slate-100 text-xl font-semibold">📋 巡检管理</h2>
+            <span className="text-slate-400 text-sm">设备 · 安全 · 卫生 · 全维度巡检</span>
+          </div>
+          <Button variant="primary" onClick={() => setShowAdd(true)}>+ 新建巡检</Button>
         </div>
 
         <Row gutter={[16, 16]}>
-          <Col span={4}><Card size="small"><Statistic title="今日巡检" value={INSPECT_DATA.length} /></Card></Col>
-          <Col span={5}><Card size="small"><Statistic title="通过" value={passCount} valueStyle={{ color: '#34d399' }} /></Card></Col>
-          <Col span={5}><Card size="small"><Statistic title="需关注" value={warnCount} valueStyle={{ color: '#f59e0b' }} /></Card></Col>
-          <Col span={5}><Card size="small"><Statistic title="不通过" value={failCount} valueStyle={{ color: '#f87171' }} /></Card></Col>
-          <Col span={5}><Card size="small"><Statistic title="综合评分" value={avgScore} suffix="分" valueStyle={{ color: avgScore >= 80 ? '#34d399' : '#f59e0b' }} /></Card></Col>
+          <Col span={4}><Card><Statistic title="今日巡检" value={items.length} /></Card></Col>
+          <Col span={5}><Card><Statistic title="通过" value={passCount} valueStyle={{ color: '#34d399' }} /></Card></Col>
+          <Col span={5}><Card><Statistic title="需关注" value={warnCount} valueStyle={{ color: '#f59e0b' }} /></Card></Col>
+          <Col span={5}><Card><Statistic title="不通过" value={failCount} valueStyle={{ color: '#f87171' }} /></Card></Col>
+          <Col span={5}><Card><Statistic title="综合评分" value={avgScore} suffix="分" valueStyle={{ color: avgScore >= 80 ? '#34d399' : '#f59e0b' }} /></Card></Col>
         </Row>
 
         <Card>
-          <Tabs value={tab} onChange={setTab} style={{ marginBottom: 12 }}>
-            <Tabs.Tab key="list" label="巡检列表" />
-            <Tabs.Tab key="stats" label="统计" />
-          </Tabs>
+          <Tabs items={[
+            { key: 'list', label: '巡检列表' },
+            { key: 'stats', label: '统计' },
+          ]} activeKey={tab} onChange={(k) => setTab(k)} />
 
           {tab === 'list' ? (
-            <>
-              <Space style={{ marginBottom: 12, gap: 8 }} wrap>
-                <span style={{ color: '#94a3b8', fontSize: 13 }}>类别:</span>
-                <Select value={typeFilter} onChange={setTypeFilter} style={{ width: 130 }}
-                  options={[{ value: 'all', label: '全部' }, { value: '设备', label: '🔧 设备' }, { value: '安全', label: '🛡️ 安全' }, { value: '卫生', label: '🧹 卫生' }]} />
-                <span style={{ color: '#94a3b8', fontSize: 13 }}>结果:</span>
-                <Select value={resultFilter} onChange={setResultFilter} style={{ width: 120 }}
-                  options={[{ value: 'all', label: '全部' }, { value: 'pass', label: '通过' }, { value: 'warn', label: '需关注' }, { value: 'fail', label: '不通过' }]} />
+            <Space direction="vertical" className="w-full" style={{ marginTop: 12 }}>
+              <Space wrap style={{ gap: 8 }}>
+                <span className="text-slate-400 text-sm">类别:</span>
+                <Select
+                  value={typeFilter}
+                  onChange={setTypeFilter}
+                  style={{ width: 130 }}
+                  options={[
+                    { value: 'all', label: '全部' },
+                    { value: 'equipment', label: '🔧 设备' },
+                    { value: 'safety', label: '🛡️ 安全' },
+                    { value: 'hygiene', label: '🧹 卫生' },
+                  ]}
+                />
+                <span className="text-slate-400 text-sm">状态:</span>
+                <Select
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  style={{ width: 120 }}
+                  options={[
+                    { value: 'all', label: '全部' },
+                    { value: 'scheduled', label: '已排期' },
+                    { value: 'reminded', label: '已提醒' },
+                    { value: 'completed', label: '已完成' },
+                  ]}
+                />
+                <Button variant="outline" size="sm" onClick={fetchItems} loading={loading}>刷新</Button>
               </Space>
-              <Table dataSource={filtered} columns={cols} rowKey="id" pagination={{ pageSize: 8, showSizeChanger: true }} />
-            </>
+              <Table<InspectionItem>
+                rows={filtered}
+                columns={columns}
+                rowKey={(r) => r.id}
+                emptyContent={<Empty description="暂无巡检数据" />}
+              />
+            </Space>
           ) : (
-            <Space direction="vertical" style={{ width: '100%', gap: 12 }}>
-              <Row gutter={16}>
-                {typeStats.map(s => (
-                  <Col key={s.type} span={8}>
-                    <Card size="small" title={`${TYPE_CFG[s.type] || ''} ${s.type}`}>
-                      <div>今日巡检: {s.count}项</div>
-                      <div>通过率: {Math.round(INSPECT_DATA.filter(d => d.type === s.type && d.result === 'pass').length / s.count * 100)}%</div>
-                    </Card>
-                  </Col>
-                ))}
+            <Space direction="vertical" className="w-full" style={{ marginTop: 12 }}>
+              <Row gutter={[16, 16]}>
+                <Col span={8}>
+                  <Card title="巡检类型分布">
+                    <Space direction="vertical">
+                      {Object.entries(INSPECTION_TYPE_MAP).map(([k, v]) => (
+                        <Space key={k}>
+                          <Tag variant={v.color}>{v.label}</Tag>
+                          <span>{items.filter(i => (i.equipmentName || '').includes(v.label)).length} 项</span>
+                        </Space>
+                      ))}
+                    </Space>
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card title="结果分布">
+                    <Space direction="vertical">
+                      <Space><Tag variant="success">正常</Tag><span>{passCount} 项</span></Space>
+                      <Space><Tag variant="warning">警告</Tag><span>{warnCount} 项</span></Space>
+                      <Space><Tag variant="error">故障</Tag><span>{failCount} 项</span></Space>
+                    </Space>
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card title="状态分布">
+                    <Space direction="vertical">
+                      <Space><Tag>已排期</Tag><span>{items.filter(i => i.status === 'scheduled').length} 项</span></Space>
+                      <Space><Tag variant="warning">已提醒</Tag><span>{items.filter(i => i.status === 'reminded').length} 项</span></Space>
+                      <Space><Tag variant="success">已完成</Tag><span>{items.filter(i => i.status === 'completed').length} 项</span></Space>
+                    </Space>
+                  </Card>
+                </Col>
               </Row>
-              <Button>生成巡检报告</Button>
             </Space>
           )}
         </Card>
-
-        <Modal title="新建巡检" open={showAdd} onCancel={() => setShowAdd(false)}
-          onOk={() => { message.success('巡检记录已创建'); setShowAdd(false); }}>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <Select placeholder="巡检类别" style={{ width: '100%' }}>
-              <Select.Option value="设备">🔧 设备</Select.Option>
-              <Select.Option value="安全">🛡️ 安全</Select.Option>
-              <Select.Option value="卫生">🧹 卫生</Select.Option>
-            </Select>
-            <Input placeholder="检查项名称" />
-            <Input placeholder="检查区域" />
-            <Input placeholder="检查人" />
-            <Input placeholder="备注" />
-          </Space>
-        </Modal>
       </Space>
+
+      <Modal
+        open={showAdd}
+        onClose={() => setShowAdd(false)}
+        title="新建巡检"
+        footer={
+          <Space>
+            <Button variant="ghost" onClick={() => setShowAdd(false)}>取消</Button>
+            <Button variant="primary" onClick={handleCreate}>确定</Button>
+          </Space>
+        }
+      >
+        <Space direction="vertical" className="w-full" style={{ gap: 12 }}>
+          <Input placeholder="设备名称" value={newItem.equipmentName} onChange={(v) => setNewItem(s => ({ ...s, equipmentName: v }))} />
+          <Input placeholder="负责人" value={newItem.assigneeName} onChange={(v) => setNewItem(s => ({ ...s, assigneeName: v }))} />
+          <Input type="datetime-local" placeholder="排期时间" value={newItem.scheduledAt} onChange={(v) => setNewItem(s => ({ ...s, scheduledAt: v }))} />
+        </Space>
+      </Modal>
     </PageShell>
   );
 }

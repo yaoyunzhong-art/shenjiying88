@@ -8,7 +8,7 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "test:phase30:logistics": "pnpm --dir apps/api exec vitest run src/modules/logistics/logistics-ringbeam.test.ts src/modules/logistics/logistics.e2e.test.ts && pnpm --dir apps/admin-web exec node --import tsx --test app/api/logistics/material-requests/route.test.ts && pnpm --dir apps/admin-web exec node --import tsx './app/stores/[id]/inspection/page.test.ts' && pnpm --dir apps/admin-web exec node --import tsx './app/stores/[id]/scheduling/page.test.tsx' && pnpm --dir apps/admin-web exec node --import tsx './app/stores/[id]/inventory/page.test.tsx'",
+    "test:phase30:logistics": "pnpm --dir apps/api exec vitest run src/modules/logistics/logistics-ringbeam.test.ts src/modules/logistics/logistics.e2e.test.ts && pnpm --dir apps/admin-web exec node --import tsx --test app/api/logistics/material-requests/route.test.ts && pnpm --dir apps/admin-web exec node --import tsx --test app/api/logistics/clean-schedules/route.test.ts && pnpm --dir apps/admin-web exec node --import tsx --test app/api/logistics/inspections/route.test.ts && pnpm --dir apps/admin-web exec node --import tsx './app/stores/[id]/inspection/page.test.ts' && pnpm --dir apps/admin-web exec node --import tsx './app/stores/[id]/scheduling/page.test.tsx' && pnpm --dir apps/admin-web exec node --import tsx './app/stores/[id]/inventory/page.test.tsx'",
     "commit:f11": "bash scripts/foundation11-commit.sh",
     "e2e:smoke": "playwright test e2e/smoke.spec.ts",
     "e2e:smoke:headed": "playwright test e2e/smoke.spec.ts --headed",
