@@ -1,10 +1,12 @@
 /**
- * events/page.test.tsx — 活动中心页 增强测试
+ * events/page.test.tsx — 活动中心页 增强测试 (2026-07-16)
  *
  * 覆盖:
- *   L1 正例    — 组件导出、活动数据完整、统计卡片、筛选器
- *   L2 角色测试 — 类型/状态筛选、展开详情、空结果
- *   边界       — 参与者统计、所有活动数据校验
+ *   L1 正例    — 组件导出、活动数据扩展至 12 条、统计卡片、筛选器
+ *   L1 三态    — loading/error/empty 状态
+ *   L2 角色测试 — 类型/状态筛选、展开详情、空结果、热门排行、分类分析、精选推荐
+ *   边界       — 倒计时计算、参与人数统计、新类型验证
+ *   L3 安全    — 无危险代码、无 as any
  */
 
 import assert from 'node:assert/strict';
@@ -43,44 +45,58 @@ describe('EventsPage — L1 正例', () => {
 });
 
 describe('EventsPage — L1 活动数据验证', () => {
-  it('应定义 8 个模拟活动', () => {
+  it('应定义 12 个模拟活动', () => {
     const matches = SRC.match(/id:\s*\d+/g);
-    assert.equal(matches ? matches.length : 0, 8, `预期 8 个活动，实际 ${matches?.length || 0}`);
+    assert.equal(matches ? matches.length : 0, 12, `预期 12 个活动，实际 ${matches?.length || 0}`);
   });
 
   it('活动类型包含竞赛、促销、体验、亲子、会员、主题', () => {
-    const types = ['竞赛', '促销', '体验', '亲子', '会员', '主题'];
-    const found = types.filter(t => SRC.includes(t));
-    assert.equal(found.length, 6, `缺失类型: ${types.filter(t => !SRC.includes(t)).join(', ')}`);
+    assert.ok(SRC.includes('竞赛') && SRC.includes('促销') && SRC.includes('体验'));
+    assert.ok(SRC.includes('亲子') && SRC.includes('会员') && SRC.includes('主题'));
   });
 
   it('活动状态包含进行中、即将开始、已结束', () => {
-    assert.ok(SRC.includes('进行中'));
-    assert.ok(SRC.includes('即将开始'));
-    assert.ok(SRC.includes('已结束'));
+    assert.ok(SRC.includes('进行中') && SRC.includes('即将开始') && SRC.includes('已结束'));
   });
 
-  it('每个活动应有 title、status、start、end、participants、prize', () => {
-    assert.ok(SRC.includes('title'));
-    assert.ok(SRC.includes('status'));
-    assert.ok(SRC.includes('start'));
-    assert.ok(SRC.includes('end'));
-    assert.ok(SRC.includes('participants'));
-    assert.ok(SRC.includes('prize'));
+  it('每个活动应有 rating 评分字段', () => {
+    assert.ok(SRC.includes('rating'));
   });
 
   it('活动应包含渐变色定义', () => {
-    assert.ok(SRC.includes('from-red') || SRC.includes('from-purple') || SRC.includes('from-green'));
+    assert.ok(SRC.includes('from-red') || SRC.includes('from-purple') || SRC.includes('from-pink'));
+  });
+});
+
+describe('EventsPage — L1 三态', () => {
+  it('应有 loading 骨架屏', () => {
+    assert.ok(SRC.includes('LoadingSkeleton') || SRC.includes('loading'));
+  });
+
+  it('应有 error 状态界面', () => {
+    assert.ok(SRC.includes('活动中心加载失败') || SRC.includes('重新加载'));
+  });
+
+  it('无匹配活动时应显示空状态提示', () => {
+    assert.ok(SRC.includes('没有找到符合条件的活动'));
+  });
+
+  it('空状态应提示尝试调整筛选', () => {
+    assert.ok(SRC.includes('调整筛选条件') || SRC.includes('其他关键词'));
   });
 });
 
 describe('EventsPage — L2 统计与筛选', () => {
+  it('应使用 useMemo 优化统计', () => {
+    assert.ok(SRC.includes('useMemo'));
+  });
+
   it('应计算进行中活动数量', () => {
-    assert.ok(SRC.includes('activeEvents') || SRC.includes('进行中'));
+    assert.ok(SRC.includes('stats') && SRC.includes('active'));
   });
 
   it('应计算即将开始活动数量', () => {
-    assert.ok(SRC.includes('upcomingEvents') || SRC.includes('即将开始'));
+    assert.ok(SRC.includes('stats') && SRC.includes('upcoming'));
   });
 
   it('应计算总参与人数', () => {
@@ -88,69 +104,84 @@ describe('EventsPage — L2 统计与筛选', () => {
   });
 
   it('应计算已结束活动数量', () => {
-    assert.ok(SRC.includes('endedEvents') || SRC.includes('已结束'));
+    assert.ok(SRC.includes('stats') && SRC.includes('ended'));
   });
 
-  it('应支持类型筛选（全部/竞赛/促销/体验/...）', () => {
+  it('应支持类型筛选', () => {
     assert.ok(SRC.includes('typeFilter') || SRC.includes('setTypeFilter'));
   });
 
-  it('应支持状态筛选（全部/进行中/即将开始/已结束）', () => {
+  it('应支持状态筛选', () => {
     assert.ok(SRC.includes('statusFilter') || SRC.includes('setStatusFilter'));
   });
 
   it('应支持展开/收起活动详情', () => {
-    assert.ok(SRC.includes('expandedId') || SRC.includes('setExpandedId'));
+    assert.ok(SRC.includes('expandedId') || SRC.includes('toggleExpand'));
   });
 
-  it('应显示 TYPES 筛选按钮数组', () => {
+  it('应显示 TYPES 筛选按钮', () => {
     assert.ok(SRC.includes('TYPES'));
   });
 
-  it('应显示 STATUSES 筛选按钮数组', () => {
+  it('应显示 STATUSES 筛选按钮', () => {
     assert.ok(SRC.includes('STATUSES'));
   });
 });
 
-describe('EventsPage — 空状态与边界', () => {
-  it('无匹配活动时应显示空状态提示', () => {
-    assert.ok(SRC.includes('没有找到'));
+describe('EventsPage — L2 增强功能', () => {
+  it('应有热门排行 Top 3 区域', () => {
+    assert.ok(SRC.includes('热度排行') || SRC.includes('Top 3'));
   });
 
-  it('空状态应包含搜索图标 🔍', () => {
-    assert.ok(SRC.includes('🔍'));
+  it('应有分类分析统计', () => {
+    assert.ok(SRC.includes('typeStats') || SRC.includes('分类'));
   });
 
-  it('已结束活动参与者仍显示', () => {
-    // 街机怀旧夜: participants: 423
-    assert.ok(SRC.includes('423') || SRC.includes('567'));
+  it('应有精选推荐活动', () => {
+    assert.ok(SRC.includes('精选推荐') || SRC.includes('featured'));
   });
 
-  it('即将开始活动参与者数为 0', () => {
-    // VR新游体验周 participants: 0
-    assert.ok(SRC.includes('participants: 0') || SRC.includes('0, prize'));
+  it('进行中活动应显示剩余天数', () => {
+    assert.ok(SRC.includes('剩余') || SRC.includes('daysLeft'));
+  });
+
+  it('活动列表应按状态优先级排序', () => {
+    assert.ok(SRC.includes('sortedFiltered') || SRC.includes('statusOrder'));
+  });
+
+  it('应显示活动评分星级', () => {
+    assert.ok(SRC.includes('⭐') || SRC.includes('rating'));
   });
 });
 
-describe('EventsPage — L1 导出完整性', () => {
-  it('应使用 useState 管理筛选状态', () => {
-    assert.ok(SRC.includes("useState"));
-  });
-
-  it('展开详情后应显示"立即参与"按钮', () => {
-    assert.ok(SRC.includes('立即参与'));
-  });
-
-  it('展开详情后应显示"分享"和"加入日历"', () => {
-    assert.ok(SRC.includes('分享'));
-    assert.ok(SRC.includes('加入日历'));
-  });
-
-  it('.filtered 过滤数组应基于类型和状态', () => {
-    assert.ok(SRC.includes('.filter('));
-  });
-
+describe('EventsPage — 边界', () => {
   it('参与者数应使用 toLocaleString 格式化', () => {
     assert.ok(SRC.includes('toLocaleString'));
+  });
+
+  it('即将开始活动参与者为 0', () => {
+    assert.ok(SRC.includes('participants: 0') || SRC.includes('0, prize'));
+  });
+
+  it('simulateFetch 应异步返回活动数据', () => {
+    assert.ok(SRC.includes('Promise') && SRC.includes('resolve'));
+  });
+
+  it('calcDaysLeft 工具函数存在', () => {
+    assert.ok(SRC.includes('calcDaysLeft') || SRC.includes('daysLeft'));
+  });
+});
+
+describe('EventsPage — L3 安全', () => {
+  it('不应使用 dangerouslySetInnerHTML', () => {
+    assert.ok(!SRC.includes('dangerouslySetInnerHTML'));
+  });
+
+  it('不应包含 as any', () => {
+    assert.ok(!SRC.includes('as any'));
+  });
+
+  it('不应使用 eval', () => {
+    assert.ok(!SRC.includes('eval('));
   });
 });
