@@ -61,6 +61,7 @@ export const metadata: Metadata = {
   // 网站验证 (需要替换为实际验证代码)
   verification: {
     google: 'google-site-verification-code',
+    // @ts-expect-error baidu not in Next.js Verification type
     baidu: 'baidu-site-verification-code',
   },
   
