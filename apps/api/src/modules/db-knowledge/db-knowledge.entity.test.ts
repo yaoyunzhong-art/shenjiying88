@@ -218,3 +218,166 @@ describe('SearchResult 实体结构', () => {
     expect(result.score).toBeLessThanOrEqual(1)
   })
 })
+
+describe('SupportTicket 实体结构', () => {
+  it('完整工单对象属性齐全', () => {
+    const ticket = {
+      id: 'tkt-001',
+      title: '文档内容过时',
+      description: '运营手册第3章需要更新',
+      kind: 'correction',
+      status: 'open',
+      reporter: '树哥',
+      assignee: null,
+      createdAt: '2026-07-14T00:00:00Z',
+      updatedAt: '2026-07-14T00:00:00Z',
+      resolvedAt: null,
+    }
+    expect(ticket.id).toBeTypeOf('string')
+    expect(ticket.title).toBeTypeOf('string')
+    expect(ticket.status).toBe('open')
+    expect(ticket.assignee).toBeNull()
+    expect(ticket.resolvedAt).toBeNull()
+  })
+
+  it('已解决的工单有 resolvedAt', () => {
+    const resolved = {
+      id: 'tkt-002',
+      title: '修复链接',
+      description: '断链已修复',
+      kind: 'bug',
+      status: 'resolved',
+      reporter: '王工',
+      assignee: '树哥',
+      createdAt: '2026-07-13T00:00:00Z',
+      updatedAt: '2026-07-14T00:00:00Z',
+      resolvedAt: '2026-07-14T00:00:00Z',
+    }
+    expect(resolved.status).toBe('resolved')
+    expect(resolved.assignee).toBe('树哥')
+    expect(resolved.resolvedAt).toBeDefined()
+  })
+
+  it('kind 应为标准类型之一', () => {
+    const validKinds = ['correction', 'bug', 'feature_request', 'question', 'other']
+    const ticketKinds: string[] = ['correction', 'bug', 'feature_request', 'question', 'other']
+    ticketKinds.forEach(k => expect(validKinds).toContain(k))
+  })
+})
+
+describe('KnowledgeTag 实体结构', () => {
+  it('标签完整结构', () => {
+    const tag = { id: 'tag-001', name: '运营', color: '#1890ff', docCount: 5 }
+    expect(tag.id).toBeTypeOf('string')
+    expect(tag.name).toBeTypeOf('string')
+    expect(tag.color).toMatch(/^#[0-9a-f]{6}$/)
+    expect(tag.docCount).toBeTypeOf('number')
+  })
+
+  it('docCount 可为 0', () => {
+    const tag = { id: 'tag-002', name: '新标签', color: '#52c41a', docCount: 0 }
+    expect(tag.docCount).toBe(0)
+  })
+})
+
+describe('KnowledgeDoc 边界校验', () => {
+  it('tags 数组可为空', () => {
+    const doc = {
+      id: 'doc-empty-tags',
+      sourcePath: '/docs/no-tags.md',
+      title: '无标签文档',
+      kind: 'note',
+      tags: [] as string[],
+      content: '暂无分类',
+      chunkCount: 1,
+      isArchive: false,
+      metadata: {},
+      createdAt: '2026-07-01T00:00:00Z',
+      updatedAt: '2026-07-01T00:00:00Z',
+    }
+    expect(doc.tags).toHaveLength(0)
+  })
+
+  it('chunkCount 可以为 0（小文档不分块）', () => {
+    const doc = {
+      id: 'doc-no-chunks',
+      sourcePath: '/docs/tiny.md',
+      title: '小文档',
+      kind: 'note',
+      tags: [],
+      content: '短内容',
+      chunkCount: 0,
+      isArchive: false,
+      metadata: {},
+      createdAt: '2026-07-01T00:00:00Z',
+      updatedAt: '2026-07-01T00:00:00Z',
+    }
+    expect(doc.chunkCount).toBe(0)
+  })
+
+  it('isArchive 可为 true（已归档文档）', () => {
+    const doc = {
+      id: 'doc-archived',
+      sourcePath: '/docs/old.md',
+      title: '历史归档',
+      kind: 'guide',
+      tags: ['归档'],
+      content: '已归档内容',
+      chunkCount: 3,
+      isArchive: true,
+      metadata: { archivedBy: 'treege' },
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-06-01T00:00:00Z',
+    }
+    expect(doc.isArchive).toBe(true)
+    expect(doc.metadata.archivedBy).toBe('treege')
+  })
+})
+
+describe('RevisionHistory 实体结构', () => {
+  it('修订历史含版本号和作者', () => {
+    const revision = {
+      id: 'rev-001',
+      docId: 'doc-001',
+      version: 2,
+      author: '树哥',
+      change: '更新运营手册第三章',
+      timestamp: '2026-07-14T10:00:00Z',
+    }
+    expect(revision.version).toBeGreaterThan(0)
+    expect(revision.author).toBeTypeOf('string')
+    expect(revision.change).toBeTypeOf('string')
+  })
+
+  it('版本号可累加', () => {
+    const revisions = [
+      { version: 1, change: '初始创建' },
+      { version: 2, change: '添加内容' },
+      { version: 3, change: '修正错误' },
+    ]
+    revisions.forEach((r, i) => expect(r.version).toBe(i + 1))
+  })
+})
+
+describe('DocumentRelation 实体结构', () => {
+  it('关联文档双向引用', () => {
+    const relation = {
+      id: 'rel-001',
+      sourceDocId: 'doc-001',
+      targetDocId: 'doc-002',
+      relationType: 'references',
+      createdAt: '2026-07-14T00:00:00Z',
+    }
+    expect(relation.sourceDocId).toBe('doc-001')
+    expect(relation.targetDocId).toBe('doc-002')
+    expect(relation.relationType).toBe('references')
+  })
+
+  it('关联类型可为 enum', () => {
+    const types = ['references', 'extends', 'supersedes', 'related']
+    expect(types).toContain('references')
+    expect(types).toContain('extends')
+    expect(types).toContain('supersedes')
+    expect(types).toContain('related')
+  })
+})

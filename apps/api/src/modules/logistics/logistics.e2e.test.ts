@@ -533,4 +533,72 @@ describe('logistics inspection e2e', () => {
       await app.close()
     }
   })
+
+  it('创建巡检任务后按状态过滤返回正确', async () => {
+    const { app } = await buildApp()
+    try {
+      const res1 = await request(app.getHttpServer())
+        .post('/logistics/inspections')
+        .set('x-tenant-id', 'tenant-p30')
+        .send({ equipmentId: 'e-1', equipmentName: 'X', assigneeId: 'w-1', assigneeName: '王', scheduledAt: '2026-07-20T10:00:00Z' })
+      await request(app.getHttpServer())
+        .post('/logistics/inspections')
+        .set('x-tenant-id', 'tenant-p30')
+        .send({ equipmentId: 'e-2', equipmentName: 'Y', assigneeId: 'w-2', assigneeName: '李', scheduledAt: '2026-07-20T12:00:00Z' })
+
+      const listAll = await request(app.getHttpServer())
+        .get('/logistics/inspections')
+        .set('x-tenant-id', 'tenant-p30')
+      assert.equal(listAll.statusCode, 200)
+      assert.equal(listAll.body.length, 2)
+
+      const listScheduled = await request(app.getHttpServer())
+        .get('/logistics/inspections?status=scheduled')
+        .set('x-tenant-id', 'tenant-p30')
+      assert.equal(listScheduled.body.length, 2)
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('巡检任务完成后再查状态为 completed', async () => {
+    const { app } = await buildApp()
+    try {
+      const createRes = await request(app.getHttpServer())
+        .post('/logistics/inspections')
+        .set('x-tenant-id', 'tenant-p30')
+        .send({ equipmentId: 'e-status', equipmentName: '状态测试', assigneeId: 'w-1', assigneeName: '王', scheduledAt: '2026-07-20T10:00:00Z' })
+
+      await request(app.getHttpServer())
+        .post(`/logistics/inspections/${createRes.body.id}/result`)
+        .set('x-tenant-id', 'tenant-p30')
+        .send({ status: 'normal', note: 'OK', inspectorId: 'w-1', inspectorName: '王' })
+
+      const listCompleted = await request(app.getHttpServer())
+        .get('/logistics/inspections?status=completed')
+        .set('x-tenant-id', 'tenant-p30')
+      assert.equal(listCompleted.body.length, 1)
+      assert.equal(listCompleted.body[0].result.status, 'normal')
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('清洁排班列表按日期和 assignee 过滤', async () => {
+    const { app } = await buildApp()
+    try {
+      const createRes = await request(app.getHttpServer())
+        .post('/logistics/clean-schedules')
+        .set('x-tenant-id', 'tenant-p30')
+        .send({ assigneeId: 'c-1', assigneeName: '张', shiftName: '早班', shiftTime: '06:00-14:00', scheduledDate: '2026-07-20' })
+
+      const listByDate = await request(app.getHttpServer())
+        .get('/logistics/clean-schedules?scheduledDate=2026-07-20')
+        .set('x-tenant-id', 'tenant-p30')
+      assert.equal(listByDate.body.length, 1)
+      assert.equal(listByDate.body[0].assigneeName, '张')
+    } finally {
+      await app.close()
+    }
+  })
 })

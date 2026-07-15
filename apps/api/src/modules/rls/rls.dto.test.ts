@@ -134,3 +134,103 @@ describe('RlsStatusQueryDto', () => {
     expect(errors.length).toBeGreaterThan(0)
   })
 })
+
+describe('EnableRlsDto 边界', () => {
+  it('包含下划线的表名通过校验', async () => {
+    const dto = new EnableRlsDto()
+    dto.tableName = 'Member_Profile'
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+
+  it('超长表名应报错', async () => {
+    const dto = new EnableRlsDto()
+    dto.tableName = 'A' + 'b'.repeat(200)
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+
+  it('以 _ 开头的表名应报错', async () => {
+    const dto = new EnableRlsDto()
+    dto.tableName = '_Private' as any
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+})
+
+describe('CreatePolicyDto 边界', () => {
+  it('超长 policyName 应报错', async () => {
+    const dto = new CreatePolicyDto()
+    dto.tableName = 'Orders'
+    dto.policyName = 'x'.repeat(130)
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+
+  it('包含 SQL 注入的 tableName 应报错', async () => {
+    const dto = new CreatePolicyDto()
+    dto.tableName = "Orders; DELETE FROM users"
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+
+  it('超长 schema 名应报错（@MaxLength 128）', async () => {
+    const dto = new CreatePolicyDto()
+    dto.tableName = 'Orders'
+    dto.schema = 'a'.repeat(200)
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+})
+
+describe('VerifyFilterDto 边界', () => {
+  it('超长 tenantId 应报错', async () => {
+    const dto = new VerifyFilterDto()
+    dto.tableName = 'MemberProfile'
+    dto.tenantId = 'x'.repeat(300)
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+
+  it('非法 tableName 应报错', async () => {
+    const dto = new VerifyFilterDto()
+    dto.tableName = '123abc'
+    dto.tenantId = 'tenant-1'
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+})
+
+describe('SetupIsolationDto 边界', () => {
+  it('超长 tenantColumn 名应报错', async () => {
+    const dto = new SetupIsolationDto()
+    dto.tableName = 'Orders'
+    dto.tenantColumn = 'a'.repeat(200)
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+
+  it('包含特殊字符的 policyName 应报错', async () => {
+    const dto = new SetupIsolationDto()
+    dto.tableName = 'Orders'
+    dto.policyName = "policy' OR '1'='1"
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+})
+
+describe('RlsStatusQueryDto 边界', () => {
+  it('包含 SQL 注入字符的 table 名应报错', async () => {
+    const dto = new RlsStatusQueryDto()
+    dto.table = "t; SELECT pg_sleep(10)"
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+
+  it('空字符串 table 应报错（@IsString 不允许空字符串）', async () => {
+    const dto = new RlsStatusQueryDto()
+    dto.table = ''
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+})

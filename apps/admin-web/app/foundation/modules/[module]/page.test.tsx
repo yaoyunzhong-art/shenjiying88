@@ -7,6 +7,16 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
+
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
 
 // ── 复刻 page.tsx 中的纯函数，确保可测试 ──────────────────────────────────────
 

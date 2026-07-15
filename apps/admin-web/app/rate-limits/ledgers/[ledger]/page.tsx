@@ -237,8 +237,6 @@ const QUOTA_STATUS_VARIANTS: Record<string, 'success' | 'warning' | 'error'> = {
   active: 'success', exhausted: 'error', pending: 'warning',
 };
 
-export { QuotaGauge, LedgerMetaGrid, QUOTA_STATUS_VARIANTS };
-
 // ---- 新增: 速率消耗趋势 ----
 
 interface ConsumptionDataPoint {

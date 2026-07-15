@@ -237,4 +237,232 @@ describe('LogisticsService (深度)', () => {
     const result = service.getInspectionTask('nonexistent-id', T.tenantId)
     expect(result).toBeUndefined()
   })
+
+  // ─── Logistics: 新增测试 (正例+反例+边界) ────────────────────
+
+  // ── Repair order edge cases
+
+  it('创建维修工单缺 issueDescription 应报错', () => {
+    expect(() =>
+      service.createRepairOrder({
+        ...T, equipmentId: 'e-bad', equipmentName: '坏设备',
+        issueDescription: '   ', reporterId: 'u-1', reporterName: '王工'
+      })
+    ).toThrow('issueDescription')
+  })
+
+  it('startRepairOrder 不传 startedAt 使用默认值', () => {
+    const order = service.createRepairOrder({
+      ...T, equipmentId: 'e-11', equipmentName: '设备11',
+      issueDescription: '故障', reporterId: 'u-1', reporterName: '王工'
+    })
+    service.assignRepairOrder(order.id, T.tenantId, { assigneeId: 'u-3', assigneeName: '赵' })
+    const started = service.startRepairOrder(order.id, T.tenantId)
+    expect(started.status).toBe('in_progress')
+    expect(started.startedAt).toBeDefined()
+  })
+
+  it('completeRepairOrder 缺 completionNote 应报错', () => {
+    const order = service.createRepairOrder({
+      ...T, equipmentId: 'e-12', equipmentName: '设备12',
+      issueDescription: '异响', reporterId: 'u-1', reporterName: '王工'
+    })
+    service.assignRepairOrder(order.id, T.tenantId, { assigneeId: 'u-3', assigneeName: '赵' })
+    service.startRepairOrder(order.id, T.tenantId)
+    expect(() =>
+      service.completeRepairOrder(order.id, T.tenantId, {
+        completionNote: '   ', technicianId: 'u-3', technicianName: '赵'
+      })
+    ).toThrow('completionNote')
+  })
+
+  it('verifyRepairOrder 缺 verification note 应报错', () => {
+    const order = service.createRepairOrder({
+      ...T, equipmentId: 'e-13', equipmentName: '设备13',
+      issueDescription: '故障', reporterId: 'u-1', reporterName: '王工'
+    })
+    service.assignRepairOrder(order.id, T.tenantId, { assigneeId: 'u-3', assigneeName: '赵' })
+    service.startRepairOrder(order.id, T.tenantId)
+    service.completeRepairOrder(order.id, T.tenantId, {
+      completionNote: '修好了', technicianId: 'u-3', technicianName: '赵'
+    })
+    expect(() =>
+      service.verifyRepairOrder(order.id, T.tenantId, {
+        verifierId: 'u-1', verifierName: '王工', note: '   '
+      })
+    ).toThrow('verification note')
+  })
+
+  // ── Clean schedule edge cases
+
+  it('创建清洁排班缺 shiftName 应报错（空格视为空）', () => {
+    expect(() =>
+      service.createCleanSchedule({
+        ...T, assigneeId: 'u-2', assigneeName: '李',
+        shiftName: '   ', shiftTime: '08:00', scheduledDate: '2026-07-15'
+      })
+    ).toThrow('shiftName')
+  })
+
+  it('assignCleanArea 缺 areaCode 应报错', () => {
+    const schedule = service.createCleanSchedule({
+      ...T, assigneeId: 'u-2', assigneeName: '李',
+      shiftName: '早班', shiftTime: '08:00', scheduledDate: '2026-07-15'
+    })
+    expect(() =>
+      service.assignCleanArea(schedule.id, T.tenantId, { areaCode: '   ', areaName: '区域' })
+    ).toThrow('areaCode')
+  })
+
+  it('checkInCleanSchedule 必须从 assigned 状态才能签到', () => {
+    const schedule = service.createCleanSchedule({
+      ...T, assigneeId: 'u-2', assigneeName: '李',
+      shiftName: '早班', shiftTime: '08:00', scheduledDate: '2026-07-15'
+    })
+    expect(() =>
+      service.checkInCleanSchedule(schedule.id, T.tenantId, {
+        cleanerId: 'u-2', cleanerName: '李'
+      })
+    ).toThrow('cannot check in')
+  })
+
+  it('checkInCleanSchedule 保洁员 ID 不匹配应报错', () => {
+    const schedule = service.createCleanSchedule({
+      ...T, assigneeId: 'u-2', assigneeName: '李',
+      shiftName: '早班', shiftTime: '08:00', scheduledDate: '2026-07-15'
+    })
+    service.assignCleanArea(schedule.id, T.tenantId, { areaCode: 'A01', areaName: '主厅' })
+    expect(() =>
+      service.checkInCleanSchedule(schedule.id, T.tenantId, {
+        cleanerId: 'wrong-user', cleanerName: '张三'
+      })
+    ).toThrow('assignee mismatch')
+  })
+
+  it('listCleanSchedules 按状态和区域过滤', () => {
+    const s1 = service.createCleanSchedule({
+      ...T, assigneeId: 'u-2', assigneeName: '李',
+      shiftName: '早班', shiftTime: '08:00', scheduledDate: '2026-07-15'
+    })
+    service.assignCleanArea(s1.id, T.tenantId, { areaCode: 'A01', areaName: '主厅' })
+    service.createCleanSchedule({
+      ...T, assigneeId: 'u-3', assigneeName: '赵',
+      shiftName: '晚班', shiftTime: '14:00', scheduledDate: '2026-07-15'
+    })
+    const filtered = service.listCleanSchedules(T.tenantId, { areaCode: 'A01' })
+    expect(filtered).toHaveLength(1)
+    expect(filtered[0].assigneeName).toBe('李')
+  })
+
+  // ── Material request edge cases
+
+  it('物资申请缺 purpose 应报错', () => {
+    expect(() =>
+      service.createMaterialRequest({
+        ...T, requesterId: 'u-4', requesterName: '刘',
+        purpose: '   ', department: '运营', items: [{ itemId: 'i-1', itemName: '纸', category: '耗材', unit: '包', quantity: 1 }]
+      })
+    ).toThrow('purpose')
+  })
+
+  it('物资申请 item quantity 为 0 应报错', () => {
+    expect(() =>
+      service.createMaterialRequest({
+        ...T, requesterId: 'u-4', requesterName: '刘',
+        purpose: '补充', items: [{ itemId: 'i-1', itemName: '纸', category: '耗材', unit: '包', quantity: 0 }]
+      })
+    ).toThrow('quantity must be greater than 0')
+  })
+
+  it('approveMaterialRequest 缺少 note 应报错', () => {
+    const req = service.createMaterialRequest({
+      ...T, requesterId: 'u-4', requesterName: '刘',
+      purpose: '补充', department: '运营',
+      items: [{ itemId: 'i-1', itemName: '纸', category: '耗材', unit: '包', quantity: 5 }]
+    })
+    expect(() =>
+      service.approveMaterialRequest(req.id, T.tenantId, {
+        approverId: 'u-5', approverName: '周经理', note: '   '
+      })
+    ).toThrow('approval note')
+  })
+
+  it('outboundMaterialRequest 必须从 approved 状态才能出库', () => {
+    const req = service.createMaterialRequest({
+      ...T, requesterId: 'u-4', requesterName: '刘',
+      purpose: '补充', items: [{ itemId: 'i-1', itemName: '纸', category: '耗材', unit: '包', quantity: 3 }]
+    })
+    expect(() =>
+      service.outboundMaterialRequest(req.id, T.tenantId, {
+        operatorId: 'u-6', operatorName: '仓管员'
+      })
+    ).toThrow('cannot outbound')
+  })
+
+  // ── 边界: 跨租户隔离
+
+  it('跨租户数据隔离：另一个 tenant 无法操作', () => {
+    const task = service.createInspectionTask({
+      tenantId: 't-other', equipmentId: 'e-1', equipmentName: '其他设备',
+      assigneeId: 'u-1', assigneeName: '王', scheduledAt: '2026-07-15T10:00:00Z'
+    })
+    const result = service.getInspectionTask(task.id, T.tenantId)
+    expect(result).toBeUndefined()
+  })
+
+  it('getCleanSchedule 返回正确副本', () => {
+    const schedule = service.createCleanSchedule({
+      ...T, assigneeId: 'u-2', assigneeName: '李',
+      shiftName: '早班', shiftTime: '08:00', scheduledDate: '2026-07-15'
+    })
+    const found = service.getCleanSchedule(schedule.id, T.tenantId)
+    expect(found).toBeDefined()
+    expect(found!.shiftName).toBe('早班')
+  })
+
+  it('getRepairOrder 正确返回或 undefined', () => {
+    const order = service.createRepairOrder({
+      ...T, equipmentId: 'e-14', equipmentName: '设备14',
+      issueDescription: '故障', reporterId: 'u-1', reporterName: '王工'
+    })
+    expect(service.getRepairOrder(order.id, T.tenantId)).toBeDefined()
+    expect(service.getRepairOrder('nonexistent', T.tenantId)).toBeUndefined()
+  })
+
+  it('getMaterialRequest 正确返回或 undefined', () => {
+    const req = service.createMaterialRequest({
+      ...T, requesterId: 'u-4', requesterName: '刘',
+      purpose: '补充', items: [{ itemId: 'i-1', itemName: '纸', category: '耗材', unit: '包', quantity: 2 }]
+    })
+    expect(service.getMaterialRequest(req.id, T.tenantId)).toBeDefined()
+    expect(service.getMaterialRequest('nonexistent', T.tenantId)).toBeUndefined()
+  })
+
+  it('listRepairOrders 按状态和设备过滤', () => {
+    const o1 = service.createRepairOrder({
+      ...T, equipmentId: 'e-15', equipmentName: '设备15',
+      issueDescription: '故障A', reporterId: 'u-1', reporterName: '王工'
+    })
+    service.createRepairOrder({
+      ...T, equipmentId: 'e-16', equipmentName: '设备16',
+      issueDescription: '故障B', reporterId: 'u-2', reporterName: '李工'
+    })
+    const filtered = service.listRepairOrders(T.tenantId, { equipmentId: 'e-15' })
+    expect(filtered).toHaveLength(1)
+    expect(filtered[0].equipmentId).toBe('e-15')
+  })
+
+  it('listMaterialRequests 按 category 过滤', () => {
+    service.createMaterialRequest({
+      ...T, requesterId: 'u-4', requesterName: '刘',
+      purpose: '补充',
+      items: [
+        { itemId: 'i-1', itemName: '打印纸', category: '办公耗材', unit: '包', quantity: 5 },
+        { itemId: 'i-2', itemName: '手套', category: '劳保用品', unit: '双', quantity: 10 },
+      ]
+    })
+    const filtered = service.listMaterialRequests(T.tenantId, { category: '办公耗材' })
+    expect(filtered).toHaveLength(1)
+    expect(filtered[0].items.some(i => i.category === '办公耗材')).toBe(true)
+  })
 })

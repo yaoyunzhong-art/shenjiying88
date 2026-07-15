@@ -561,3 +561,66 @@ describe('RLS tenantId filter 验证', () => {
     assert.ok(sql.includes('org_id'))
   })
 })
+
+describe('SQL 生成 边界条件', () => {
+  it('generateForceRlsSql 使用默认 public schema', () => {
+    const sql = generateForceRlsSql('TestTable')
+    assert.equal(sql, 'ALTER TABLE "public"."TestTable" FORCE ROW LEVEL SECURITY')
+  })
+
+  it('generateCreatePolicySql 空 policyName 使用默认名', () => {
+    const sql = generateCreatePolicySql('MemberProfile', '', 'tenantId')
+    assert.ok(sql.includes('CREATE POLICY'))
+    assert.ok(sql.includes('"public"'))
+  })
+
+  it('generateDropPolicySql 空 policyName 使用默认空字符串', () => {
+    const sql = generateDropPolicySql('MemberProfile', '')
+    assert.ok(sql.includes('""'))
+  })
+
+  it('generateEnableRlsSql 无 schema 参数（函数只有 tableName 参数）', () => {
+    const sql = generateEnableRlsSql('Orders')
+    assert.equal(sql, 'ALTER TABLE "public"."Orders" ENABLE ROW LEVEL SECURITY')
+  })
+
+  it('generateRlsStatusSql 不含 schema 参数（函数只有 tableName 参数）', () => {
+    const sql = generateRlsStatusSql()
+    assert.ok(sql.includes('pg_class'))
+    assert.ok(sql.includes("NOT IN ('pg_catalog', 'information_schema')"))
+  })
+})
+
+describe('validateName 详细校验', () => {
+  it('单个字母通过校验', () => {
+    assert.equal(validateName('a', 'table'), true)
+  })
+
+  it('带数字后缀通过校验', () => {
+    assert.equal(validateName('MemberProfile2026', 'table'), true)
+  })
+
+  it('空字符串拒绝', () => {
+    assert.equal(validateName('', 'table'), false)
+  })
+
+  it('包含空格拒绝', () => {
+    assert.equal(validateName('My Table', 'table'), false)
+  })
+
+  it('Unicode 非 ASCII 字符拒绝', () => {
+    assert.equal(validateName('Mémber', 'table'), false)
+  })
+
+  it('下划线开头拒绝', () => {
+    assert.equal(validateName('__private', 'column'), false)
+  })
+
+  it('纯数字拒绝', () => {
+    assert.equal(validateName('12345', 'table'), false)
+  })
+
+  it('以 pg_ 开头的名字通过校验（regex 允许）', () => {
+    assert.equal(validateName('pg_stat_activity', 'table'), true)
+  })
+})

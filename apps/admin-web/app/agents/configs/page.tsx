@@ -241,8 +241,6 @@ const CONFIG_PAGE_META = {
   subtitle: '管理 ReAct Agent 的 system prompt、模型选择、最大步数、允许工具与超时',
 } as const;
 
-export { prepareConfigExport, modelDistribution, summaryStats, CONFIG_PAGE_META };
-
 // ---- 新增: 批量操作与启用/禁用切换 ----
 
 interface BatchAction {

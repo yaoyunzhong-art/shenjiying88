@@ -251,8 +251,6 @@ const RECOVERY_STATUS_VARIANTS: Record<string, string> = {
   expired: 'text-red-400 bg-red-500/10',
 };
 
-export { RTOProgressBar, RecoveryMetricCard, parseTimeToSeconds, RECOVERY_STATUS_LABELS, RECOVERY_STATUS_VARIANTS };
-
 // ---- 新增: 恢复状态卡 ----
 
 function RecoveryStatusCard({ status, label, description, color }: {

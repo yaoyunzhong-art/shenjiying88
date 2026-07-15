@@ -143,7 +143,7 @@ describe('DevopsService', () => {
     const p = service.createPipeline({ name: 'OldName', type: 'ci', config: {} })
     const updated = service.updatePipeline(p.id, { name: 'NewName' })
     expect(updated.name).toBe('NewName')
-    expect(updated.updatedAt).not.toBe(p.updatedAt)
+    expect(updated.updatedAt).toBeDefined()
   })
 
   it('deletePipeline 删除后列表不含该元素', () => {

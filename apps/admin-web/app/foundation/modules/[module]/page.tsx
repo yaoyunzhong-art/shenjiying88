@@ -259,8 +259,6 @@ const FOUNDATION_PAGE_META = {
   subtitle: '查看模块职责、能力、契约、消费方依赖与治理基线',
 } as const;
 
-export { getBlueprintVersion, formatModuleStatus, getBlueprintUrl, countTotalCapabilities, countActiveCapabilities, getContractDirectionBadge, FOUNDATION_PAGE_META };
-
 // ---- 新增: 模块依赖图 ----
 
 interface DependencyNode {

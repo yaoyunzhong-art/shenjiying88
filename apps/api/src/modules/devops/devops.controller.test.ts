@@ -90,4 +90,100 @@ describe('DevopsController', () => {
     const result = controller.getPipelineStatus('pipeline_with#special?chars&symbols')
     expect(result.pipeline).toBe('pipeline_with#special?chars&symbols')
   })
+
+  // ── Pipeline CRUD 正例 (4) ──────────────────────────────────
+
+  it('createPipeline 委托到 service.createPipeline', () => {
+    const service = new DevopsService()
+    const spy = vi.spyOn(service, 'createPipeline')
+    const controller = new DevopsController(service)
+    const body = { name: 'CI', type: 'ci' as const, config: {} }
+    controller.createPipeline(body)
+    expect(spy).toHaveBeenCalledWith(body)
+  })
+
+  it('listPipelines 返回 { items, total } 结构', async () => {
+    const service = new DevopsService()
+    const controller = new DevopsController(service)
+    const result = await controller.listPipelines()
+    expect(result).toHaveProperty('items')
+    expect(result).toHaveProperty('total')
+    expect(Array.isArray(result.items)).toBe(true)
+    expect(result.total).toBe(result.items.length)
+  })
+
+  it('getPipeline 委托到 service.getPipeline', async () => {
+    const service = new DevopsService()
+    const p = service.createPipeline({ name: 'P', type: 'ci', config: {} })
+    const spy = vi.spyOn(service, 'getPipeline')
+    const controller = new DevopsController(service)
+    await controller.getPipeline(p.id)
+    expect(spy).toHaveBeenCalledWith(p.id)
+  })
+
+  it('updatePipeline 委托到 service.updatePipeline', () => {
+    const service = new DevopsService()
+    const p = service.createPipeline({ name: 'P', type: 'ci', config: {} })
+    const spy = vi.spyOn(service, 'updatePipeline')
+    const controller = new DevopsController(service)
+    controller.updatePipeline(p.id, { name: 'U' })
+    expect(spy).toHaveBeenCalledWith(p.id, { name: 'U' })
+  })
+
+  // ── Pipeline CRUD 反例 (1) ──────────────────────────────────
+
+  it('deletePipeline 委托到 service.deletePipeline', async () => {
+    const service = new DevopsService()
+    const p = service.createPipeline({ name: 'P', type: 'ci', config: {} })
+    const spy = vi.spyOn(service, 'deletePipeline')
+    const controller = new DevopsController(service)
+    await controller.deletePipeline(p.id)
+    expect(spy).toHaveBeenCalledWith(p.id)
+  })
+
+  // ── Deployments 正例 (2) ────────────────────────────────────
+
+  it('createDeployment 委托到 service.createDeployment', () => {
+    const service = new DevopsService()
+    const spy = vi.spyOn(service, 'createDeployment')
+    const controller = new DevopsController(service)
+    controller.createDeployment({ pipelineId: 'p-1', version: 'v1.0.0' })
+    expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('listDeployments 返回 { items, total }', async () => {
+    const service = new DevopsService()
+    const controller = new DevopsController(service)
+    const result = await controller.listDeployments()
+    expect(result).toHaveProperty('items')
+    expect(result).toHaveProperty('total')
+  })
+
+  // ── Build Jobs 正例 (2) ─────────────────────────────────────
+
+  it('createBuildJob 委托到 service.createBuildJob', () => {
+    const service = new DevopsService()
+    const spy = vi.spyOn(service, 'createBuildJob')
+    const controller = new DevopsController(service)
+    controller.createBuildJob({ pipelineId: 'p-1', branch: 'main', commands: ['npm test'] })
+    expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('listBuildJobs 返回 { items, total }', async () => {
+    const service = new DevopsService()
+    const controller = new DevopsController(service)
+    const result = await controller.listBuildJobs()
+    expect(result).toHaveProperty('items')
+    expect(result).toHaveProperty('total')
+  })
+
+  // ── Actions 正例 (1) ────────────────────────────────────────
+
+  it('executeAction 委托到 service.executeAction', () => {
+    const service = new DevopsService()
+    const spy = vi.spyOn(service, 'executeAction')
+    const controller = new DevopsController(service)
+    controller.executeAction({ action: 'restart', target: 'api' })
+    expect(spy).toHaveBeenCalledOnce()
+  })
 })

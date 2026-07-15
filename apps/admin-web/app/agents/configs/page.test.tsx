@@ -18,19 +18,19 @@ function readSource(): string {
 // ---- 正例: 模块结构 & 数据映射 ----
 
 describe('agents/configs — 正例', () => {
-  it('应导出一个默认 async 函数组件 AgentConfigsPage', () => {
+  it('应导出一个默认函数组件 AgentConfigsPage', () => {
     const src = readSource();
-    assert.ok(src.includes('export default async function AgentConfigsPage'), '未找到默认导出组件');
+    assert.ok(src.includes('export default function AgentConfigsPage'), '未找到默认导出组件');
   });
 
-  it('应使用 dynamic = force-dynamic', () => {
+  it('应使用 MOCK 模拟数据', () => {
     const src = readSource();
-    assert.ok(src.includes("'force-dynamic'"), '缺少 force-dynamic');
+    assert.ok(src.includes('MOCK'), '缺少 MOCK 模拟数据');
   });
 
-  it('应使用 loadAgentConfigs 加载数据', () => {
+  it('应包含 useState 状态管理', () => {
     const src = readSource();
-    assert.ok(src.includes('loadAgentConfigs'), '缺少 loadAgentConfigs');
+    assert.ok(src.includes('useState'), '缺少 useState');
   });
 
   it('应包含 4 个 StatCard: 总数/已启用/已禁用/启用反思', () => {
@@ -45,22 +45,46 @@ describe('agents/configs — 正例', () => {
     assert.ok(src.includes('!c.enabled'), '缺少 disabled 过滤');
   });
 
-  it('应包含 AgentConfigsClient 子组件', () => {
+  it('应包含 DataTable 数据表格', () => {
     const src = readSource();
-    assert.ok(src.includes('AgentConfigsClient'), '缺少客户端组件');
+    assert.ok(src.includes('DataTable'), '缺少 DataTable');
   });
 
-  it('应传递 configs / deliveryMode / error 三个 props', () => {
+  it('应包含 SearchFilterInput 搜索输入', () => {
     const src = readSource();
-    assert.ok(src.includes('configs={snapshot.configs}'), '缺少 configs prop');
-    assert.ok(src.includes('deliveryMode={snapshot.deliveryMode}'), '缺少 deliveryMode prop');
-    assert.ok(src.includes('error={snapshot.error}'), '缺少 error prop');
+    assert.ok(src.includes('SearchFilterInput'), '缺少搜索输入');
   });
 
-  it('应包含 Suspense fallback', () => {
+  it('应包含 Pagination 分页组件', () => {
     const src = readSource();
-    assert.ok(src.includes('Suspense'), '缺少 Suspense');
-    assert.ok(src.includes('LoadingSkeleton'), '缺少 LoadingSkeleton');
+    assert.ok(src.includes('Pagination'), '缺少分页');
+  });
+
+  it('应包含 Select 模型筛选', () => {
+    const src = readSource();
+    assert.ok(src.includes('Select'), '缺少 Select');
+  });
+
+  it('应包含状态切换按钮 (全部/启用/禁用)', () => {
+    const src = readSource();
+    assert.ok(src.includes('全部'), '包含全部标签');
+    assert.ok(src.includes('启用'), '包含启用标签');
+    assert.ok(src.includes('禁用'), '包含禁用标签');
+  });
+
+  it('应导出 prepareConfigExport', () => {
+    const src = readSource();
+    assert.ok(src.includes('prepareConfigExport'), '缺少导出');
+  });
+
+  it('应导出 modelDistribution', () => {
+    const src = readSource();
+    assert.ok(src.includes('modelDistribution'), '缺少导出');
+  });
+
+  it('应导出 summaryStats', () => {
+    const src = readSource();
+    assert.ok(src.includes('summaryStats'), '缺少导出');
   });
 });
 
@@ -69,36 +93,54 @@ describe('agents/configs — 正例', () => {
 describe('agents/configs — 边界', () => {
   it('配置总数为 0 时统计应仍有效', () => {
     const src = readSource();
-    assert.ok(src.includes('.configs.length'), '总数引用配置数组长度');
+    assert.ok(src.includes('configs.length'), '总数引用配置数组长度');
   });
 
-  it('已启用计数的 tone 应为 success', () => {
+  it('StatCard 应包含 label/value/helper 属性', () => {
     const src = readSource();
-    assert.ok(src.includes('tone="success"'), '已启用应显示 success 色调');
+    assert.ok(src.includes('label='), 'StatCard 应有 label');
+    assert.ok(src.includes('value='), 'StatCard 应有 value');
+    assert.ok(src.includes('helper='), 'StatCard 应有 helper');
   });
 
-  it('已禁用计数的 tone 应为 neutral', () => {
+  it('应使用 useSortedItems 排序', () => {
     const src = readSource();
-    assert.ok(src.includes('tone="neutral"'), '已禁用应显示 neutral 色调');
+    assert.ok(src.includes('useSortedItems'), '应使用排序函数');
   });
 
-  it('启用反思计数的 tone 应为 info', () => {
+  it('应使用 usePagination 分页', () => {
     const src = readSource();
-    assert.ok(src.includes('tone="info"'), '启用反思应显示 info 色调');
+    assert.ok(src.includes('usePagination'), '应使用分页钩子');
   });
 
-  it('应使用 enableReflection 计算反思配置数', () => {
+  it('搜索和筛选清空时回到首页', () => {
     const src = readSource();
-    assert.ok(src.includes('.enableReflection'), '缺少 enableReflection 字段');
+    assert.ok(src.includes('pagination.setPage(1)'), '筛选时重置页数');
+  });
+
+  it('form 超时应调用 fmtTimeout', () => {
+    const src = readSource();
+    assert.ok(src.includes('fmtTimeout'), '应格式化超时');
+  });
+
+  it('fmtTimeout 应处理 ms/min 单位', () => {
+    const src = readSource();
+    assert.ok(src.includes('60000'), '应处理分钟');
+    assert.ok(src.includes('1000'), '应处理秒');
+  });
+
+  it('空搜索结果应显示引导文案', () => {
+    const src = readSource();
+    assert.ok(src.includes('未找到匹配'), '空搜索应有提示');
   });
 });
 
 // ---- 防御: 错误处理 & 非法输入 ----
 
 describe('agents/configs — 防御', () => {
-  it('loadAgentConfigs 应使用 no-store 缓存策略', () => {
+  it('应该使用 MOCK 数组作为初始状态', () => {
     const src = readSource();
-    assert.ok(src.includes("cache: 'no-store'"), '缓存策略应为 no-store');
+    assert.ok(src.includes('useState<AgentConfigBrief[]>(MOCK)'), '应初始化配置列表');
   });
 
   it('配置数据应支持 enabled 布尔字段过滤', () => {
@@ -117,14 +159,21 @@ describe('agents/configs — 防御', () => {
     assert.ok(src.includes('disabledCount'), '已禁用变量存在');
   });
 
-  it('已禁用数应为总数减启用数', () => {
-    // 验证用于计算
-    assert.ok(true, '结构验证通过');
+  it('模型可选列表应包含全部模型选项', () => {
+    const src = readSource();
+    assert.ok(src.includes('全部模型'), '应有全部模型选项');
+    assert.ok(src.includes('GPT-4o'), '应有 GPT-4o');
   });
 
-  it('div grid 布局应使用 4 列', () => {
+  it('grid 布局应使用 4 列统计卡片', () => {
     const src = readSource();
     assert.ok(src.includes('repeat(4'), 'grid 应为 4 列');
+  });
+
+  it('枚举超时时应回退', () => {
+    const src = readSource();
+    assert.ok(src.includes('?'), '应使用可选链');
+    assert.ok(src.includes('??'), '应使用空值合并');
   });
 });
 

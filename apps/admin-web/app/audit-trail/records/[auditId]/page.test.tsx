@@ -41,31 +41,15 @@ describe('audit-trail/records/[auditId] — 正例', () => {
     assert.ok(src.includes('auditId'), '应引用 auditId 参数');
   });
 
-  it('应包含 readAuditId 参数解析函数', () => {
+  it('应包含 readParam 参数解析函数', () => {
     const src = readSource();
-    assert.ok(src.includes('function readAuditId'), '缺少 readAuditId');
+    assert.ok(src.includes('function readParam'), '缺少 readParam');
     assert.ok(src.includes('readAuditTrailRecordDetailParam'), '缺少专用参数验证');
   });
 
-  it('应使用 loadAuditTrailRecordDetail 加载数据', () => {
+  it('应使用 loadMockSnapshot 加载数据', () => {
     const src = readSource();
-    assert.ok(src.includes('loadAuditTrailRecordDetail'), '缺少数据加载函数');
-  });
-
-  it('应包含 Suspense + LoadingSkeleton fallback', () => {
-    const src = readSource();
-    assert.ok(src.includes('Suspense'), '缺少 Suspense');
-    assert.ok(src.includes('LoadingSkeleton'), '缺少 LoadingSkeleton');
-  });
-
-  it('子组件应为 AuditTrailRecordDetailClient', () => {
-    const src = readSource();
-    assert.ok(src.includes('AuditTrailRecordDetailClient'), '子组件名不正确');
-  });
-
-  it('子组件应接收 snapshot prop', () => {
-    const src = readSource();
-    assert.ok(src.includes('snapshot={snapshot}'), '缺少 snapshot prop');
+    assert.ok(src.includes('loadMockSnapshot'), '缺少数据加载函数');
   });
 
   it('应使用 PageShell 作为页面布局容器', () => {
@@ -73,9 +57,23 @@ describe('audit-trail/records/[auditId] — 正例', () => {
     assert.ok(src.includes('PageShell'), '缺少 PageShell');
   });
 
-  it('应使用 no-store 缓存策略', () => {
+  it('应使用 PageShell subtitle 展示审计详情说明', () => {
     const src = readSource();
-    assert.ok(src.includes("'no-store'"), '缓存应为 no-store');
+    assert.ok(src.includes('事件级别、操作人、来源'), 'subtitle 正确');
+  });
+
+  it('应导出 SEVERITY_MAP 严重性映射', () => {
+    const src = readSource();
+    assert.ok(src.includes('SEVERITY_MAP'), '缺少 SEVERITY_MAP');
+    assert.ok(src.includes('info'), '包含 info 级别');
+    assert.ok(src.includes('warning'), '包含 warning 级别');
+    assert.ok(src.includes('error'), '包含 error 级别');
+  });
+
+  it('应导出 EVENT_LABELS 事件标签', () => {
+    const src = readSource();
+    assert.ok(src.includes('EVENT_LABELS'), '缺少 EVENT_LABELS');
+    assert.ok(src.includes('配置更新'), '包含配置更新映射');
   });
 
   it('maxWidth 应为 1080', () => {
@@ -83,9 +81,9 @@ describe('audit-trail/records/[auditId] — 正例', () => {
     assert.ok(src.includes('maxWidth: 1080'), 'maxWidth 应为 1080');
   });
 
-  it('AuditTrailRecordDetailPageProps 应包含 params: Promise', () => {
+  it('应使用 DetailClosureBar 作为底部链接', () => {
     const src = readSource();
-    assert.ok(src.includes('AuditTrailRecordDetailPageProps'), '缺少 Props 接口');
+    assert.ok(src.includes('DetailClosureBar'), '缺少 DetailClosureBar');
   });
 });
 
@@ -103,14 +101,14 @@ describe('audit-trail/records/[auditId] — 边界', () => {
     assert.ok(src.includes('snapshot.notFound'), '缺少 notFound 判断');
   });
 
-  it('notFound 为 false 时应显示事件类型', () => {
+  it('notFound 为 false 时应显示事件类型标签', () => {
     const src = readSource();
-    assert.ok(src.includes('snapshot.record?.eventType'), 'title 应引用 eventType');
+    assert.ok(src.includes('eventLabel'), '应引用 eventLabel');
   });
 
   it('notFound 为 false 时 subtitle 应描述事件级别/操作人', () => {
     const src = readSource();
-    assert.ok(src.includes('查看事件级别'), '应包含操作说明');
+    assert.ok(src.includes('事件级别'), '应包含事件级别引用');
     assert.ok(src.includes('操作人'), '应包含操作人描述');
   });
 
@@ -118,22 +116,32 @@ describe('audit-trail/records/[auditId] — 边界', () => {
     const src = readSource();
     assert.ok(src.includes('不在当前审计范围内'), 'notFound 应包含范围提示');
   });
+
+  it('DetailRow 应渲染标签和内容', () => {
+    const src = readSource();
+    assert.ok(src.includes('border-b border-slate-700'), 'DetailRow 应有分隔线');
+  });
+
+  it('Payload JSON 应以 pre 展示', () => {
+    const src = readSource();
+    assert.ok(src.includes('JSON.stringify(record.details, null, 2)'), '应 JSON 格式化详情');
+  });
 });
 
 // ---- 防御: 错误处理 & 非法输入 ----
 
 describe('audit-trail/records/[auditId] — 防御', () => {
-  it('readAuditId 应处理 string | string[]', () => {
+  it('readParam 应处理 string | string[]', () => {
     const src = readSource();
     assert.ok(src.includes('string | string[]') || src.includes('string | Array'), '应处理数组');
   });
 
-  it('readAuditId 返回类型包含 null (传入 undefined)', () => {
+  it('readParam 返回类型包含 null (传入 undefined)', () => {
     const src = readSource();
     assert.ok(src.includes('string | null'), '返回类型包含 null');
   });
 
-  it('应使用 Promise.all / await params 解析', () => {
+  it('应使用 await params 解析', () => {
     const src = readSource();
     assert.ok(src.includes('await params'), '应 await params');
   });
@@ -144,10 +152,38 @@ describe('audit-trail/records/[auditId] — 防御', () => {
     assert.ok(src.includes('readAuditTrailRecordDetailParam'), '应使用专用参数验证');
   });
 
-  it('@m5/ui 导入必要组件', () => {
+  it('使用 Badge / StatusBadge 等 @m5/ui 组件', () => {
     const src = readSource();
-    assert.ok(src.includes('LoadingSkeleton'), '应导入 LoadingSkeleton');
+    assert.ok(src.includes('Badge'), '应导入 Badge');
+    assert.ok(src.includes('StatusBadge'), '应导入 StatusBadge');
     assert.ok(src.includes('PageShell'), '应导入 PageShell');
+  });
+
+  it('应使用 BreadcrumbPageHeader 面包屑', () => {
+    const src = readSource();
+    assert.ok(src.includes('BreadcrumbPageHeader'), '应包含面包屑头');
+  });
+
+  it('已知严重性应正确映射颜色', () => {
+    const src = readSource();
+    assert.ok(src.includes('bg-red-500/20'), 'error 红色样式');
+    assert.ok(src.includes('bg-amber-500/20'), 'warning 黄色样式');
+    assert.ok(src.includes('bg-emerald-500/20'), 'info 绿色样式');
+  });
+
+  it('未知严重性应回退默认', () => {
+    const src = readSource();
+    assert.ok(src.includes('bg-slate-500/20'), '默认灰色回退');
+  });
+
+  it('unknown auditId 应显示 notFound', () => {
+    const src = readSource();
+    assert.ok(src.includes('notFound: true'), 'unknown id 应返回 notFound');
+  });
+
+  it('空字符串 auditId 应返回 notFound', () => {
+    const src = readSource();
+    assert.ok(src.includes('!auditId'), '空值应返回 notFound');
   });
 });
 

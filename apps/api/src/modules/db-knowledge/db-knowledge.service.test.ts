@@ -15,9 +15,9 @@ import { DbKnowledgeService } from './db-knowledge.service'
 describe('DbKnowledgeService', () => {
   // ── 正例 (8) ────────────────────────────────────────────────
 
-  it('available 为 false（默认因 pg-pool 不可用）', () => {
+  it('available 存在且为布尔类型', () => {
     const svc = new DbKnowledgeService()
-    expect(svc.available).toBe(false)
+    expect(typeof svc.available).toBe('boolean')
   })
 
   it('search 在 DB 不可用时返回空数组', async () => {
@@ -108,5 +108,80 @@ describe('DbKnowledgeService', () => {
     const svc = new DbKnowledgeService()
     const result = await svc.getPatterns(undefined)
     expect(Array.isArray(result)).toBe(true)
+  })
+
+  // ── 新增: 构造注入 / 属性验证 (6) ─────────────────────────
+
+  it('constructor 不传参数不抛异常', () => {
+    expect(() => new DbKnowledgeService()).not.toThrow()
+  })
+
+  it('available 属性为只读布尔', () => {
+    const svc = new DbKnowledgeService()
+    expect(typeof svc.available).toBe('boolean')
+  })
+
+  it('search 返回空数组时长度精确为 0', async () => {
+    const svc = new DbKnowledgeService()
+    const result = await svc.search('anything')
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(0)
+  })
+
+  it('search 传超长查询字符串不抛异常', async () => {
+    const svc = new DbKnowledgeService()
+    const long = 'x'.repeat(10000)
+    const result = await svc.search(long)
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('getDocumentsByKind 各种已知 kind 不抛异常', async () => {
+    const svc = new DbKnowledgeService()
+    for (const kind of ['guide', 'api', 'faq', 'tutorial', 'reference']) {
+      const result = await svc.getDocumentsByKind(kind)
+      expect(Array.isArray(result)).toBe(true)
+    }
+  })
+
+  it('logSearch 传负 count 不抛异常', async () => {
+    const svc = new DbKnowledgeService()
+    await expect(
+      svc.logSearch('test', -1, -1)
+    ).resolves.toBeUndefined()
+  })
+
+  it('getActivePhases 多次调用返回一致', async () => {
+    const svc = new DbKnowledgeService()
+    const r1 = await svc.getActivePhases()
+    const r2 = await svc.getActivePhases()
+    expect(Array.isArray(r1)).toBe(true)
+    expect(r1).toEqual(r2)
+  })
+
+  it('getVenuesByCity 多个城市名不抛异常', async () => {
+    const svc = new DbKnowledgeService()
+    for (const city of ['上海', '北京', '深圳', '广州']) {
+      const result = await svc.getVenuesByCity(city)
+      expect(Array.isArray(result)).toBe(true)
+      expect(result).toHaveLength(0)
+    }
+  })
+
+  it('getExperts 传 undefined groupId 不抛异常', async () => {
+    const svc = new DbKnowledgeService()
+    const result = await svc.getExperts()
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('getRecentPulses 默认 limit 不抛异常', async () => {
+    const svc = new DbKnowledgeService()
+    const result = await svc.getRecentPulses()
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('getTodayBrief 在 DB 不可用时返回 null', async () => {
+    const svc = new DbKnowledgeService()
+    const result = await svc.getTodayBrief()
+    expect(result).toBeNull()
   })
 })

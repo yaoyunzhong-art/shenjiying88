@@ -100,3 +100,84 @@ describe('PatternFilterDto', () => {
     expect(errors).toHaveLength(0)
   })
 })
+
+describe('SearchQueryDto 边界', () => {
+  it('limit 为 0 应报错（必须 >=1）', async () => {
+    const dto = new SearchQueryDto()
+    dto.query = 'test'
+    dto.limit = 0
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+
+  it('limit 为 1 通过校验', async () => {
+    const dto = new SearchQueryDto()
+    dto.query = 'test'
+    dto.limit = 1
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+
+  it('kind 传入空字符串通过校验', async () => {
+    const dto = new SearchQueryDto()
+    dto.query = 'test'
+    dto.kind = ''
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+
+  it('超长 query 字符串通过校验（无 @Length 约束）', async () => {
+    const dto = new SearchQueryDto()
+    dto.query = 'x'.repeat(501)
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+})
+
+describe('KindQueryDto 边界', () => {
+  it('空 kind 字符串应报错（@IsString 不允许空字符串）', async () => {
+    const dto = new KindQueryDto()
+    dto.kind = ''
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+
+  it('超长 kind 通过校验（无 @Length 约束）', async () => {
+    const dto = new KindQueryDto()
+    dto.kind = 'a'.repeat(100)
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+})
+
+describe('CityQueryDto 边界', () => {
+  it('空 city 字符串应报错（@IsString 不允许空字符串）', async () => {
+    const dto = new CityQueryDto()
+    dto.city = ''
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+
+  it('包含特殊字符的城市名通过校验', async () => {
+    const dto = new CityQueryDto()
+    dto.city = 'San Francisco'
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+})
+
+describe('PatternFilterDto 边界', () => {
+  it('positive-pattern 通过校验', async () => {
+    const dto = new PatternFilterDto()
+    dto.type = 'positive-pattern'
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+
+  it('null type 通过校验（可选）', async () => {
+    const dto = new PatternFilterDto()
+    dto.type = null as any
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+})

@@ -158,4 +158,103 @@ describe('ScoutService', () => {
       99999
     )
   })
+
+  // ── 补充正例: 新增方法覆盖 (4) ───────────────────────────
+
+  it('getActivities 委托正确的 SQL', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getActivities(42)
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+      expect.stringContaining('competitor_activities WHERE venue_id = $1'),
+      42
+    )
+  })
+
+  it('getVenues 默认 limit 为 50 offset 为 0', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getVenues()
+    const sql: string = mockPrisma.$queryRawUnsafe.mock.calls[0][0]
+    expect(sql).toContain('LIMIT $1 OFFSET $2')
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[0][1]).toBe(50)
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[0][2]).toBe(0)
+  })
+
+  it('getVenues 只传 city 生成单条件 WHERE', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getVenues('上海', undefined, 10, 0)
+    const sql: string = mockPrisma.$queryRawUnsafe.mock.calls[0][0]
+    expect(sql).toContain('WHERE city = $1')
+    expect(sql).not.toContain('AND category')
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[0][1]).toBe('上海')
+  })
+
+  it('getVenues 只传 category 生成单条件 WHERE', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getVenues(undefined, '电竞', 5, 0)
+    const sql: string = mockPrisma.$queryRawUnsafe.mock.calls[0][0]
+    expect(sql).toContain('WHERE category = $1')
+    expect(sql).not.toContain('AND city')
+  })
+
+  // ── 补充反例: 边界参数 (3) ───────────────────────────────
+
+  it('getPrices 传 0 作为 venueId 生成正确 SQL', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getPrices(0)
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+      expect.stringContaining('venue_id = $1'),
+      0
+    )
+  })
+
+  it('getReviews 传空字符串 sentiment 按空值处理（不过滤 sentiment）', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getReviews(1, '')
+    const sql: string = mockPrisma.$queryRawUnsafe.mock.calls[0][0]
+    // Empty string is falsy, so no AND sentiment
+    expect(sql).not.toContain('AND sentiment')
+    expect(sql).toContain('venue_id = $1')
+  })
+
+  it('getVenues 传超大 limit 仍传递参数', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getVenues(undefined, undefined, 100000, 0)
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[0][1]).toBe(100000)
+  })
+
+  // ── 补充: searchVenues 边界 (2) ──────────────────────────
+
+  it('searchVenues 传空字符串生成 ILIKE %% 查询', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.searchVenues('', 10)
+    const sql: string = mockPrisma.$queryRawUnsafe.mock.calls[0][0]
+    expect(sql).toContain('ILIKE')
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[0][1]).toBe('%%')
+  })
+
+  it('searchVenues 传特殊字符 безопасно через ILIKE', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.searchVenues("test's bar", 5)
+    const sql: string = mockPrisma.$queryRawUnsafe.mock.calls[0][0]
+    expect(sql).toContain('ILIKE')
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[0][1]).toBe("%test's bar%")
+  })
+
+  // ── 补充: getCollectionLogs 边界 (1) ─────────────────────
+
+  it('getCollectionLogs 默认 limit 为 20', async () => {
+    const mockPrisma = { $queryRawUnsafe: vi.fn().mockResolvedValue([]) }
+    const svc = new ScoutService(mockPrisma as any)
+    await svc.getCollectionLogs(undefined)
+    expect(mockPrisma.$queryRawUnsafe.mock.calls[0][1]).toBe(20)
+  })
 })
