@@ -224,3 +224,39 @@ function ContractSection({ title, items }: { title: string; items: string[] }) {
     </div>
   );
 }
+
+// ---- Foundation 模块辅助函数 ----
+
+function getBlueprintVersion(): string {
+  return 'v2.3.1 (Foundation-11)';
+}
+
+function formatModuleStatus(status: string): string {
+  const labels: Record<string, string> = {
+    active: '活跃', deprecated: '已废弃', draft: '草案', archived: '已归档',
+  };
+  return labels[status] ?? status;
+}
+
+function getBlueprintUrl(): string {
+  return '/foundation/blueprint';
+}
+
+function countTotalCapabilities(module: NonNullable<ModuleSnapshot['module']>): number {
+  return module.capabilities.length;
+}
+
+function countActiveCapabilities(module: NonNullable<ModuleSnapshot['module']>): number {
+  return module.capabilities.filter((c) => c.status === 'active').length;
+}
+
+function getContractDirectionBadge(dir: 'inbound' | 'outbound'): { label: string; variant: 'info' | 'success' } {
+  return dir === 'inbound' ? { label: '入向', variant: 'info' } : { label: '出向', variant: 'success' };
+}
+
+const FOUNDATION_PAGE_META = {
+  title: 'Foundation 模块详情',
+  subtitle: '查看模块职责、能力、契约、消费方依赖与治理基线',
+} as const;
+
+export { getBlueprintVersion, formatModuleStatus, getBlueprintUrl, countTotalCapabilities, countActiveCapabilities, getContractDirectionBadge, FOUNDATION_PAGE_META };

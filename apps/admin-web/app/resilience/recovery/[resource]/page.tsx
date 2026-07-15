@@ -197,3 +197,58 @@ function DependencyBadgeList({ deps }: { deps: string[] }) {
     </div>
   );
 }
+
+// ---- 页面辅助 ----
+
+function RTOProgressBar({ rto, rpo }: { rto: string; rpo: string }) {
+  const rtoSeconds = parseTimeToSeconds(rto);
+  const rpoSeconds = parseTimeToSeconds(rpo);
+  const ratio = rpoSeconds > 0 ? Math.min(rtoSeconds / rpoSeconds, 5) : 5;
+  const width = Math.min((ratio / 5) * 100, 100);
+  return (
+    <div className="bg-slate-800 rounded-lg p-4">
+      <div className="text-xs text-slate-400 mb-2">RTO / RPO 比率</div>
+      <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+        <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-amber-500" style={{ width: `${width}%` }} />
+      </div>
+      <div className="flex justify-between text-xs text-slate-500 mt-1">
+        <span>RPO: {rpo}</span>
+        <span>RTO: {rto}</span>
+      </div>
+    </div>
+  );
+}
+
+function parseTimeToSeconds(time: string): number {
+  const match = time.match(/^(\d+)(min|s|h)$/);
+  if (!match) return 60;
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+  if (unit === 'min') return value * 60;
+  if (unit === 'h') return value * 3600;
+  return value;
+}
+
+function RecoveryMetricCard({ label, value, sublabel, color }: {
+  label: string; value: string; sublabel: string; color: string;
+}) {
+  return (
+    <div className="bg-slate-800 rounded-lg p-4 text-center border border-slate-700">
+      <div className="text-[10px] text-slate-500 mb-1">{label}</div>
+      <div className={`text-2xl font-bold font-mono ${color}`}>{value}</div>
+      <div className="text-[10px] text-slate-500 mt-1">{sublabel}</div>
+    </div>
+  );
+}
+
+const RECOVERY_STATUS_LABELS: Record<string, string> = {
+  active: '已就绪', drill: '演练中', expired: '已过期',
+};
+
+const RECOVERY_STATUS_VARIANTS: Record<string, string> = {
+  active: 'text-emerald-400 bg-emerald-500/10',
+  drill: 'text-amber-400 bg-amber-500/10',
+  expired: 'text-red-400 bg-red-500/10',
+};
+
+export { RTOProgressBar, RecoveryMetricCard, parseTimeToSeconds, RECOVERY_STATUS_LABELS, RECOVERY_STATUS_VARIANTS };

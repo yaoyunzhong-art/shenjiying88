@@ -178,3 +178,60 @@ function formatScope(scope: string): string {
 }
 
 interface PolicyConfigItem { label: string; value: string; }
+
+// ---- 深层辅助组件 ----
+
+function AlgorithmBadge({ algorithm }: { algorithm: string }) {
+  const colors: Record<string, string> = {
+    'token-bucket': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    'leaky-bucket': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    'fixed-window': 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    'sliding-window': 'bg-violet-500/20 text-violet-400 border-violet-500/30',
+  };
+  const className = colors[algorithm] ?? 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+  return (
+    <span className={`inline-block px-3 py-1 rounded-full text-xs font-mono border ${className}`}>
+      {getAlgorithmLabel(algorithm)}
+    </span>
+  );
+}
+
+function PolicyConfigPanel({ record }: { record: NonNullable<PolicySnapshot['record']> }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between bg-slate-800 rounded-lg p-3">
+        <span className="text-xs text-slate-400">时间窗口</span>
+        <span className="font-mono text-sm text-white">{record.windowSize}</span>
+      </div>
+      <div className="flex items-center justify-between bg-slate-800 rounded-lg p-3">
+        <span className="text-xs text-slate-400">限额</span>
+        <span className="font-mono text-sm text-blue-400">{record.limit.toLocaleString()} 次</span>
+      </div>
+      <div className="flex items-center justify-between bg-slate-800 rounded-lg p-3">
+        <span className="text-xs text-slate-400">算法</span>
+        <AlgorithmBadge algorithm={record.algorithm} />
+      </div>
+      <div className="flex items-center justify-between bg-slate-800 rounded-lg p-3">
+        <span className="text-xs text-slate-400">匹配账本</span>
+        <span className="font-mono text-sm text-amber-400">{record.matchedLedgers}</span>
+      </div>
+    </div>
+  );
+}
+
+function TimestampRow({ label, timestamp }: { label: string; timestamp: string }) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-slate-700 last:border-b-0">
+      <span className="text-xs text-slate-400">{label}</span>
+      <span className="font-mono text-xs text-slate-400">{timestamp}</span>
+    </div>
+  );
+}
+
+const SCOPE_SEGMENTS = ['tenant', 'api', 'campaign'];
+
+function parseScope(scope: string): string[] {
+  return scope.split(':');
+}
+
+export { AlgorithmBadge, PolicyConfigPanel, TimestampRow, parseScope, formatScope };

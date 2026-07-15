@@ -196,3 +196,41 @@ export default function AgentStudioPage() {
     </main>
   );
 }
+
+// ---- 页面常量与辅助配置 ----
+
+const STUDIO_PAGE_CONFIG = {
+  title: 'Agent Studio · 写操作面板',
+  subtitle: '创建/运行/批量执行/删除 Agent 配置与会话',
+  maxWidth: 1280,
+  padding: 32,
+} as const;
+
+const STUDIO_STATUS_LABELS: Record<string, string> = {
+  idle: '空闲', running: '运行中', completed: '已完成', failed: '失败',
+};
+
+function formatAgentStatus(status: string): string {
+  return STUDIO_STATUS_LABELS[status] ?? status;
+}
+
+function getAgentModelDisplay(model: string): string {
+  const labels: Record<string, string> = {
+    'gpt-4o': 'GPT-4o',
+    'gpt-4o-mini': 'GPT-4o Mini',
+    'claude-3-sonnet': 'Claude 3 Sonnet',
+    'claude-3-haiku': 'Claude 3 Haiku',
+  };
+  return labels[model] ?? model;
+}
+
+function countTools(configs: Array<{ toolCount: number }>): number {
+  return configs.reduce((sum, c) => sum + (c.toolCount ?? 0), 0);
+}
+
+function computeEnablementRate(enabled: number, total: number): string {
+  if (total === 0) return '—';
+  return `${Math.round((enabled / total) * 100)}%`;
+}
+
+export { STUDIO_PAGE_CONFIG, formatAgentStatus, getAgentModelDisplay, countTools, computeEnablementRate };

@@ -211,3 +211,34 @@ export default function AgentConfigsPage() {
     </main>
   );
 }
+
+// ---- 数据导出与统计辅助 ----
+
+function prepareConfigExport(confs: AgentConfigBrief[]): string {
+  const header = '名称,模型,状态,反思,最大步数,超时,工具数,创建时间';
+  const rows = confs.map((c) => `"${c.name}","${c.model}","${c.enabled ? '启用' : '停用'}","${c.enableReflection ? '是' : '否'}",${c.maxSteps},${c.timeout},${c.toolCount},"${c.createdAt}"`);
+  return [header, ...rows].join('\n');
+}
+
+function modelDistribution(configs: AgentConfigBrief[]): Record<string, number> {
+  const dist: Record<string, number> = {};
+  for (const c of configs) {
+    dist[c.model] = (dist[c.model] ?? 0) + 1;
+  }
+  return dist;
+}
+
+function summaryStats(configs: AgentConfigBrief[]) {
+  const total = configs.length;
+  const enabled = configs.filter((c) => c.enabled).length;
+  const avgSteps = total > 0 ? Math.round(configs.reduce((s, c) => s + c.maxSteps, 0) / total) : 0;
+  const avgTools = total > 0 ? Math.round(configs.reduce((s, c) => s + c.toolCount, 0) / total) : 0;
+  return { total, enabled, avgSteps, avgTools };
+}
+
+const CONFIG_PAGE_META = {
+  title: 'Agent 配置中心',
+  subtitle: '管理 ReAct Agent 的 system prompt、模型选择、最大步数、允许工具与超时',
+} as const;
+
+export { prepareConfigExport, modelDistribution, summaryStats, CONFIG_PAGE_META };

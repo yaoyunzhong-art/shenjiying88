@@ -179,3 +179,57 @@ const SEVERITY_BADGES: Record<string, string> = {
   warning: 'bg-amber-500/20 text-amber-400',
   error: 'bg-red-500/20 text-red-400',
 };
+
+// ---- 详情展示辅助 ----
+
+function SeverityIndicator({ severity }: { severity: string }) {
+  const colors: Record<string, string> = {
+    info: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    warning: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    error: 'bg-red-500/20 text-red-400 border-red-500/30',
+  };
+  return (
+    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${colors[severity] ?? 'bg-slate-500/20 text-slate-400'}`}>
+      {SEVERITY_MAP[severity]?.label ?? severity}
+    </span>
+  );
+}
+
+function PayloadViewer({ details }: { details: Record<string, unknown> }) {
+  const entries = Object.entries(details);
+  if (entries.length === 0) {
+    return <span className="text-xs text-slate-500">无额外数据</span>;
+  }
+  return (
+    <div className="space-y-2">
+      {entries.map(([key, value]) => (
+        <div key={key} className="flex items-start gap-3 py-1.5 border-b border-slate-700 last:border-b-0">
+          <span className="text-xs font-mono text-slate-400 w-24 shrink-0">{key}</span>
+          <span className="text-xs font-mono text-slate-300 break-all">{String(value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TimelineEntry({ label, value, time }: { label: string; value: string; time: string }) {
+  return (
+    <div className="flex gap-3 py-2">
+      <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <div className="text-xs text-slate-400">{label}</div>
+        <div className="text-sm text-white truncate">{value}</div>
+        <div className="text-[10px] text-slate-500 font-mono">{time}</div>
+      </div>
+    </div>
+  );
+}
+
+function buildBreadcrumbs(eventLabel: string) {
+  return [
+    { label: '审计列表', href: '/audit-trail' as const },
+    { label: eventLabel },
+  ];
+}
+
+export { SeverityIndicator, PayloadViewer, TimelineEntry, buildBreadcrumbs };

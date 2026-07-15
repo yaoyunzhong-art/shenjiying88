@@ -188,3 +188,53 @@ function formatWindowSize(size: string): string {
 }
 
 interface DetailItem { label: string; value: string; color?: string; }
+
+// ---- 深度辅助组件 ----
+
+function QuotaGauge({ used, limit, percent }: { used: number; limit: number; percent: number }) {
+  const color = percent >= 90 ? 'stroke-red-500' : percent >= 70 ? 'stroke-amber-500' : 'stroke-blue-500';
+  const circumference = 2 * Math.PI * 40;
+  const offset = circumference * (1 - percent / 100);
+  return (
+    <div className="flex flex-col items-center">
+      <svg width="100" height="100" viewBox="0 0 100 100" className="transform -rotate-90">
+        <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(148,163,184,0.15)" strokeWidth="8" />
+        <circle cx="50" cy="50" r="40" fill="none" className={color} strokeWidth="8"
+          strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
+      </svg>
+      <span className={`text-lg font-bold font-mono mt-2 ${percent >= 90 ? 'text-red-400' : percent >= 70 ? 'text-amber-400' : 'text-blue-400'}`}>
+        {percent}%
+      </span>
+      <span className="text-[10px] text-slate-500">使用率</span>
+    </div>
+  );
+}
+
+function LedgerMetaGrid({ record }: { record: NonNullable<LedgerSnapshot['record']> }) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <div className="bg-slate-800 rounded-lg p-3">
+        <div className="text-[10px] text-slate-500 mb-1">已用</div>
+        <div className="font-mono text-lg">{record.usedQuota.toLocaleString()}</div>
+      </div>
+      <div className="bg-slate-800 rounded-lg p-3">
+        <div className="text-[10px] text-slate-500 mb-1">限额</div>
+        <div className="font-mono text-lg">{record.limit.toLocaleString()}</div>
+      </div>
+      <div className="bg-slate-800 rounded-lg p-3">
+        <div className="text-[10px] text-slate-500 mb-1">剩余</div>
+        <div className={`font-mono text-lg ${record.remaining === 0 ? 'text-red-400' : 'text-emerald-400'}`}>{record.remaining.toLocaleString()}</div>
+      </div>
+      <div className="bg-slate-800 rounded-lg p-3">
+        <div className="text-[10px] text-slate-500 mb-1">窗口</div>
+        <div className="font-mono text-lg text-blue-400">{record.windowSize}</div>
+      </div>
+    </div>
+  );
+}
+
+const QUOTA_STATUS_VARIANTS: Record<string, 'success' | 'warning' | 'error'> = {
+  active: 'success', exhausted: 'error', pending: 'warning',
+};
+
+export { QuotaGauge, LedgerMetaGrid, QUOTA_STATUS_VARIANTS };
