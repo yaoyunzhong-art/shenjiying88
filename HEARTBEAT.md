@@ -1,5 +1,49 @@
 # 🦞龙虾哥 HEARTBEAT
 
+## 脉冲 #472 · 2026-07-15 11:09 CST
+
+### ✅ 状态采集
+- **TSC**: 14/14 全缓存✅ (无源变更) · 59ms FULL TURBO
+- **Non-API Test Summary**:
+  - @m5/types: 41 pass ✅ / 0 fail (cache)
+  - @m5/sdk: 19 pass ✅ / 0 fail (cache)
+  - @m5/domain: 95 pass ✅ / 0 fail (cache)
+  - @m5/config-typescript: cache ✅
+  - @m5/app: **cache ✅ 闭环持续 222/222 🟢**
+  - @m5/ui: cache ✅ (6182 pass)
+  - @m5/storefront-web: cache ✅ (5414 pass)
+  - @m5/tob-web: cache ✅ (1614 pass)
+  - @m5/admin-web: 5151 pass / 44 fail ❌ (已知假阳·持平稳定)
+  - shenjiying-mobile: 314 pass ✅ / 0 fail (cache)
+  - @m5/miniapp: cache ✅
+- **Previous Test**: pulse#471 (10:35 · 14/14 · admin-web 44✖· @m5/app闭环✅)
+- **连续稳态**: **4🏆** (🔁 续 · @m5/app闭环持续稳定)
+- **最近提交**: `ba91cc7ce 📚 日采 2026-07-15 四层浓缩`
+
+### ✅ 闭环检查
+- 上次(#471)新修: 无(闭环验证)
+- @m5/app 222/222 ✅ 闭环持续
+- 本次无新修
+
+### ✅ 本次新Fail
+- 无新增Fail → 不派树哥
+- admin-web 44✖均为已知假阳(runtime-governance-panel + 订单断言等)
+
+### 📊 admin-web 假阳趋势
+- 上轮 #471: 44✖
+- 本轮 #472: 44✖ 持平
+- 主要假阳类型: 静态代码检查类断言（路由跳转、useEffect检测、空状态处理等，非运行时逻辑错误）
+
+### 🔴 持续债务
+| 债务 | 级别 | 持续脉冲 | 趋势 |
+|:-----|:----:|:--------:|:----:|
+| @m5/api 662 fail | 🔴 P0 | 46+ | 📈 持续 |
+| @m5/api TSC errors | 🔴 P0 | 19+ | 📈 持续 |
+| RQ-010~020 P0-FIRE 停滞 | 🔴 P0 | 40h+ | 📈 停滞 |
+| Mobile/Tob-Web 零单元 | 🟡 P1 | 21+ | 📈 持续 |
+| 专家团反馈未产出 | 🟡 P1 | 21+ | 📈 持续 |
+| admin-web 44假阳 | 🟡 P2 | 已知 | ➡️ 持平
+
 ## 脉冲 #471 · 2026-07-15 10:35 CST
 
 ### ✅ 状态采集
