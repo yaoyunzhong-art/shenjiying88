@@ -1,74 +1,149 @@
+'use client'
+
 /**
- * 公告详情页 — Announcement Detail Page (Next.js App Router Page)
- * 角色视角: 👔店长 / 📢运营
- * 功能: 公告详细信息展示、编辑入口、状态流转
+ * 公告详情页 — Announcement Detail
+ * 功能: 阅读公告内容+相关公告推荐+已读标记
+ * 状态: SSR渲染 + 客户端增强
  */
-import React from 'react';
-import { AnnouncementDetailPage } from '../components/AnnouncementDetailPage';
-import type { AnnouncementDetail } from '../components/AnnouncementDetailPage';
 
-/* ── Mock 数据 ── */
-const MOCK_ANNOUNCEMENTS: Record<string, AnnouncementDetail> = {
-  '1': {
-    id: '1', title: '系统升级公告 - 2026年7月1日',
-    category: 'system', status: 'published', priority: 'high',
-    publishedAt: '2026-06-29 14:00', author: '系统管理员', readCount: 12580,
-    content: `各位同事，大家好：
+import { useState } from 'react'
 
-为了提升门店系统的稳定性和安全性，信息技术部计划对系统进行升级维护。具体安排如下：
+interface Announcement {
+  id: string
+  title: string
+  content: string
+  category: string
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  publishedAt: string
+  author: string
+  readCount: number
+  tags: string[]
+}
 
-📅 升级时间：2026年7月1日（星期三）凌晨 2:00 - 4:00
-
-🔧 升级内容：
-1. POS收银系统性能优化
-2. 会员数据库安全加固
-3. 库存同步模块功能升级
-4. 报表系统数据处理效率提升
-
-⚠️ 注意事项：
-1. 升级期间门店系统将暂停使用，请提前完成当日数据录入
-2. 升级完成后请重新登录系统，如遇异常请联系技术支持
-3. 建议各门店在7月1日营业前确认系统运行正常
-
-如有疑问，请联系信息技术部。
-
-感谢大家的配合！`,
-    attachments: [
-      { name: '系统升级详细时间表.pdf', url: '#' },
-      { name: '升级后操作指南.pdf', url: '#' },
-    ],
+const MOCK_ANNOUNCEMENTS: Record<string, Announcement> = {
+  '001': {
+    id: '001',
+    title: '暑期大促活动规则更新',
+    content: '各位同事，暑期大促活动规则已更新。主要变化包括：\n1. 满减活动门槛从300元降至198元\n2. 新增亲子套餐优惠\n3. 会员日奖励翻倍\n\n请各门店在7月20日前完成培训。',
+    category: '运营通知',
+    priority: 'high',
+    publishedAt: '2026-07-15',
+    author: '运营部',
+    readCount: 156,
+    tags: ['促销', '规则更新', '暑期'],
   },
-  '2': {
-    id: '2', title: '夏季促销活动通知',
-    category: 'promotion', status: 'published', priority: 'normal',
-    publishedAt: '2026-06-28 10:30', author: '运营部', readCount: 8430,
-    content: `各位同事：
-
-为迎接夏季消费旺季，公司决定开展"夏日狂欢"促销活动，具体安排如下：
-
-📅 活动时间：2026年7月1日 - 7月15日
-
-🎯 活动内容：
-1. 全场商品满299元减50元
-2. 会员消费享双倍积分
-3. 指定夏季新品限时8折
-4. 每日前50名到店顾客赠送小样礼包
-
-📋 执行要求：
-1. 各门店需在活动开始前完成价签更换和陈列调整
-2. 前台需熟悉活动规则，做好顾客引导
-3. 库存不足的商品请及时补货
-
-祝活动大卖！`,
-    attachments: [
-      { name: '活动海报设计稿.pdf', url: '#' },
-    ],
+  '002': {
+    id: '002',
+    title: '系统维护通知：7月18日凌晨',
+    content: '神机营系统将于7月18日凌晨2:00-5:00进行例行维护。维护期间，收银系统、会员系统将暂停服务。\n\n请各门店提前做好准备：\n- 提前结算当日营收\n- 告知夜间值班员工\n- 维护后检查系统功能',
+    category: '系统通知',
+    priority: 'urgent',
+    publishedAt: '2026-07-14',
+    author: '技术部',
+    readCount: 342,
+    tags: ['维护', '系统'],
   },
-};
+  '003': {
+    id: '003',
+    title: '新员工入职培训安排（7月第三批）',
+    content: '7月第三批新员工入职培训安排如下：\n时间：7月20-22日 9:00-18:00\n地点：总部培训中心\n\n请各部门确认参训名单。',
+    category: '人事通知',
+    priority: 'normal',
+    publishedAt: '2026-07-13',
+    author: '人事部',
+    readCount: 89,
+    tags: ['培训', '人事'],
+  },
+}
 
-export default async function AnnouncementDetail({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const announcement = MOCK_ANNOUNCEMENTS[id] ?? null;
+const PRIORITY_STYLES: Record<string, string> = {
+  low: 'bg-gray-100 text-gray-600',
+  normal: 'bg-blue-100 text-blue-700',
+  high: 'bg-orange-100 text-orange-700',
+  urgent: 'bg-red-100 text-red-700',
+}
 
-  return <AnnouncementDetailPage announcement={announcement} />;
+const PRIORITY_LABELS: Record<string, string> = {
+  low: '低', normal: '普通', high: '重要', urgent: '紧急',
+}
+
+export default function AnnouncementDetailPage({ params }: { params: { id: string } }) {
+  const announcement = MOCK_ANNOUNCEMENTS[params.id]
+  const [marked, setMarked] = useState(false)
+
+  if (!announcement) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 text-center">
+        <div className="text-5xl mb-4">📢</div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">公告未找到</h2>
+        <p className="text-sm text-gray-500 mb-4">ID "{params.id}" 不存在或已下架</p>
+        <a href="/announcements" className="text-blue-600 text-sm hover:underline">← 返回公告列表</a>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto py-8 px-4">
+      {/* 返回 */}
+      <a href="/announcements" className="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block">← 返回公告列表</a>
+
+      {/* 标题区 */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xs text-gray-400">{announcement.category}</span>
+          <span className={`px-2 py-0.5 rounded text-xs font-medium ${PRIORITY_STYLES[announcement.priority]}`}>
+            {PRIORITY_LABELS[announcement.priority]}
+          </span>
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900">{announcement.title}</h1>
+        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+          <span>{announcement.author}</span>
+          <span>{announcement.publishedAt}</span>
+          <span>{announcement.readCount} 人已读</span>
+        </div>
+      </div>
+
+      {/* 内容 */}
+      <div className="prose prose-sm max-w-none mb-8">
+        {announcement.content.split('\n').map((line, i) => (
+          line.startsWith('-') ? (
+            <li key={i} className="text-sm text-gray-700 ml-4">{line.slice(1).trim()}</li>
+          ) : line.match(/^\d+\./) ? (
+            <li key={i} className="text-sm text-gray-700 ml-4">{line}</li>
+          ) : (
+            <p key={i} className="text-sm text-gray-700">{line || '\u00A0'}</p>
+          )
+        ))}
+      </div>
+
+      {/* 标签 */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {announcement.tags.map((tag) => (
+          <span key={tag} className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">{tag}</span>
+        ))}
+      </div>
+
+      {/* 已读标记 */}
+      <div className="border-t pt-4">
+        <button
+          onClick={() => setMarked(true)}
+          disabled={marked}
+          className={`px-4 py-2 rounded text-sm ${
+            marked ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          {marked ? '✅ 标记为已读' : '标记为已读'}
+        </button>
+      </div>
+
+      {/* 加载态模拟 */}
+      {!announcement && (
+        <div className="space-y-4 py-8">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-4 bg-gray-200 rounded animate-pulse w-full" />
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
