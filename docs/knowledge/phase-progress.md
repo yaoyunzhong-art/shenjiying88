@@ -95,3 +95,4 @@
 
 | 2026-07-16 | #492 | storefront-web(test回归·11文件jest写法→22fail❌已派树哥)×admin-web(44假阳⛔第20次持平·无新增)×app(19🏆✅) | ✅ | ⚠️ | ⚠️ | ⚠️ | 19🏆(续)·📉storefront test回归(jest→node:test重写中) |
 | 2026-07-16 | #493 | storefront-web(树哥修复✅5686/5687·闭环·1已知checkout偏差)×admin-web(44假阳⛔第21次持平·无新增)×app(闭环20🏆✅)·ui(6182✅) | ✅ | ⚠️ | ⚠️ | ✅ | 20🏆(续)·storefront test闭环✅ |
+| 2026-07-16 | #494 | storefront-web(稳态✅5686/5687·1已知偏差不变)×admin-web(44假阳⛔第22次·持平·无新增)×app(闭环21🏆✅·全缓存) | ✅ | ⚠️ | ⚠️ | ⚠️ | 21🏆(续)·无新fail·稳态持续 |
