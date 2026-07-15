@@ -1281,3 +1281,27 @@ model MarketingPushDecisionLog {
   @@index([tenantId, decision, status])
   @@map("marketing_push_decision_log")
 }
+
+// ============ P-30 物流模块: 巡检任务 ============
+model InspectionTask {
+  id              String    @id @default(cuid())
+  tenantId        String
+  storeId         String?
+  equipmentId     String
+  equipmentName   String
+  assigneeId      String
+  assigneeName    String
+  scheduledAt     DateTime
+  remindedAt      DateTime?
+  result          String?   // normal | warning | fault
+  note            String?
+  inspectorId     String?
+  inspectorName   String?
+  status          String    @default("scheduled") // scheduled | reminded | completed
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, scheduledAt])
+  @@map("inspection_task")
+}

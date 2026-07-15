@@ -12,10 +12,12 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import assert from 'node:assert/strict'
 import { MetricsController } from './metrics.controller'
 import { MetricsService } from './metrics.service'
+import { ObservabilityService } from './observability.service'
 
 function makeController(skipDefaults = false) {
   const service = new MetricsService(skipDefaults)
-  return { service, controller: new MetricsController(service) }
+  const obs = new ObservabilityService(service)
+  return { service, controller: new MetricsController(service, obs) }
 }
 
 function makeMockRes() {

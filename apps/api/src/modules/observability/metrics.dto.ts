@@ -32,6 +32,7 @@ export interface CreateAlertRuleRequest {
 
 export interface UpdateAlertRuleRequest {
   name?: string
+  metricName?: string
   operator?: '>' | '<' | '>=' | '<=' | '=='
   threshold?: number
   duration?: string

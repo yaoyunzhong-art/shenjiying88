@@ -26,6 +26,7 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { MetricsController } from './metrics.controller'
 import { MetricsService } from './metrics.service'
+import { ObservabilityService } from './observability.service'
 
 // ── 角色定义 ──
 const ROLES = {
@@ -42,7 +43,8 @@ const ROLES = {
 // ── 测试工厂 ──
 function makeCtx(skipDefaults?: boolean) {
   const service = new MetricsService(skipDefaults)
-  const controller = new MetricsController(service)
+  const obs = new ObservabilityService(service)
+  const controller = new MetricsController(service, obs)
   return { service, controller }
 }
 

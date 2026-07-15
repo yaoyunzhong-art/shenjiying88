@@ -12,6 +12,7 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { MetricsController } from './metrics.controller'
 import { MetricsService, registerDefaultMetrics } from './metrics.service'
+import { ObservabilityService } from './observability.service'
 
 const ROLES = {
   TenantAdmin: '👔店长',
@@ -29,7 +30,8 @@ function makeEnv(seedMetrics = true) {
   if (seedMetrics) {
     registerDefaultMetrics(service)
   }
-  const controller = new MetricsController(service)
+  const obs = new ObservabilityService(service)
+  const controller = new MetricsController(service, obs)
   return { controller, service }
 }
 

@@ -16,12 +16,14 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { MetricsController } from './metrics.controller'
 import { MetricsService, registerDefaultMetrics } from './metrics.service'
+import { ObservabilityService } from './observability.service'
 import type { Response } from 'express'
 
 // ── 测试数据工厂 ──
 function createController() {
   const service = new MetricsService(true) // skipDefaults — 手动注册以便精确控制
-  const controller = new MetricsController(service)
+  const obs = new ObservabilityService(service)
+  const controller = new MetricsController(service, obs)
   return { controller, service }
 }
 
