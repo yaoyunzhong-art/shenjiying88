@@ -24,6 +24,8 @@ export enum RecommendContext {
 }
 
 export enum RecommendPeriod {
+  HOURLY = 'hourly',
+  DAILY = 'daily',
   TODAY = 'today',
   WEEK = 'week',
   MONTH = 'month',
