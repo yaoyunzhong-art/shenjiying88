@@ -294,6 +294,26 @@ export default function FirePreventionPage() {
         <StatCard title="未通过" value={stats.failed.toString()} secondary="需整改" tone="danger" />
       </div>
 
+      {/* 效率概要 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+        <div style={{ padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, fontSize: 13 }}>
+          <span style={{ color: '#16a34a' }}>完成率</span>
+          <div style={{ fontWeight: 700, fontSize: 20, color: '#166534', marginTop: 2 }}>
+            {stats.total > 0 ? Math.round(((stats.passed + stats.failed) / stats.total) * 100) : 0}%
+          </div>
+        </div>
+        <div style={{ padding: '10px 14px', background: '#fefce8', borderRadius: 8, fontSize: 13 }}>
+          <span style={{ color: '#ca8a04' }}>高危占比</span>
+          <div style={{ fontWeight: 700, fontSize: 20, color: '#854d0e', marginTop: 2 }}>
+            {stats.total > 0 ? Math.round((stats.highRisk / stats.total) * 100) : 0}%
+          </div>
+        </div>
+        <div style={{ padding: '10px 14px', background: '#eff6ff', borderRadius: 8, fontSize: 13 }}>
+          <span style={{ color: '#2563eb' }}>需整改项</span>
+          <div style={{ fontWeight: 700, fontSize: 20, color: '#1e40af', marginTop: 2 }}>{stats.failed}</div>
+        </div>
+      </div>
+
       {/* 反馈 */}
       {feedback && (
         <FormSubmitFeedback
@@ -370,6 +390,25 @@ export default function FirePreventionPage() {
           <SubmitButton label="保存修改" variant="primary" onClick={handleUpdate} />
         </div>
       </Modal>
+
+      {/* 安全合规提示 */}
+      <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+        <div style={{ flex: 1, padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0', fontSize: 13 }}>
+          <div style={{ fontWeight: 600 }}>📋 合规状态</div>
+          <div style={{ marginTop: 4, display: 'flex', justifyContent: 'space-between' }}>
+            <span>通过率</span>
+            <span style={{ fontWeight: 700 }}>{stats.total > 0 ? Math.round((stats.passed / stats.total) * 100) : 0}%</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+            <span>待检查</span>
+            <span style={{ fontWeight: 700 }}>{stats.pending} 项</span>
+          </div>
+        </div>
+        <div style={{ flex: 1, padding: '10px 14px', background: '#fefce8', borderRadius: 8, border: '1px solid #fde68a', fontSize: 13 }}>
+          <div style={{ fontWeight: 600 }}>🛡️ 消防安全提示</div>
+          <div style={{ marginTop: 4, color: '#92400e' }}>按时完成检查，确保所有设备正常运行。高风险区域需优先处理。</div>
+        </div>
+      </div>
     </PageShell>
   );
 }

@@ -471,6 +471,31 @@ export default function LicenseRenewalPage() {
           </Form.Item>
         </Form>
       </Modal>
+
+      <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+        <div style={{ flex: 2, padding: 14, background: '#f9f9f9', borderRadius: 8, border: '1px solid #e8e8e8' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>💡 续费提醒</div>
+          <div style={{ fontSize: 12, color: '#666', lineHeight: 1.8 }}>
+            已到期的套餐需在 7 天内续费以保持服务。建议配置自动续费避免中断。
+            到期前 3 天、1 天各发送一次提醒通知。关闭自动续费的策略需要手动操作。
+          </div>
+        </div>
+        <div style={{ flex: 1, padding: 14, background: '#f1f5f9', borderRadius: 8, border: '1px solid #e8e8e8' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>📊 续费概览</div>
+          <div style={{ fontSize: 12, color: '#475569' }}>策略配置: {strategies.length} 个</div>
+          <div style={{ fontSize: 12, color: '#475569' }}>续费记录: {records.length} 条</div>
+          <div style={{ fontSize: 12, color: '#475569' }}>活跃策略: {strategies.filter((s) => s.isActive).length} 个</div>
+          <div style={{ fontSize: 12, color: '#475569' }}>自动续费: {strategies.filter((s) => s.isActive).length} 个已开启</div>
+          <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>使用率: {strategies.length > 0 ? Math.round((strategies.filter((s) => s.isActive).length / strategies.length) * 100) : 0}%</div>
+        </div>
+      </div>
+
+      <div style={{ fontSize: 12, color: '#999', marginTop: 16, textAlign: 'center' }}>
+        当前为演示模式，数据每 5 分钟同步一次。实际数据以生产环境为准。
+      </div>
+      <div style={{ fontSize: 11, color: '#ccc', marginTop: 4, textAlign: 'center' }}>
+        Phase-41 · Sprint 3 · License Renewal Module
+      </div>
     </div>
   )
 }

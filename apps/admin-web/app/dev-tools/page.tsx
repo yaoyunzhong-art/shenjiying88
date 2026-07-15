@@ -382,6 +382,7 @@ export default function DevToolsPage() {
         <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>
           📋 最近动态
         </h3>
+        <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10 }}>最近 5 条系统动态，包含部署、品牌、平台变更</div>
         {RECENT_ACTIVITIES.map((item) => (
           <ActivityRow key={item.id} item={item} />
         ))}
@@ -490,6 +491,9 @@ export default function DevToolsPage() {
             </div>
           ))}
         </div>
+      </div>
+      <div style={{ marginTop: 16, fontSize: 12, color: '#9ca3af', textAlign: 'center' }}>
+        开发工具面板 · 品牌运营 / 部署管理 / 开放平台
       </div>
     </div>
   );

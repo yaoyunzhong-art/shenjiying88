@@ -383,6 +383,29 @@ export default function StockOperationsPage() {
             <SubmitButton label="保存修改" variant="primary" onClick={handleUpdate} />
           </div>
         </Modal>
+
+        {/* 库存统计汇总 */}
+        <div style={{ marginTop: 16, padding: 14, background: '#f9fafb', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>📦 库存操作汇总</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 11, color: '#6b7280' }}>入库单</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{opsData.filter((o) => o.type === 'inbound').length}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#6b7280' }}>出库单</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{opsData.filter((o) => o.type === 'outbound').length}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#6b7280' }}>调拨单</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{opsData.filter((o) => o.type === 'transfer').length}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#6b7280' }}>退货单</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{opsData.filter((o) => o.type === 'return').length}</div>
+            </div>
+          </div>
+        </div>
       </PageShell>
     </main>
   );
