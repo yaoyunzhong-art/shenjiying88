@@ -135,11 +135,11 @@ describe('SearchQueryDto 边界', () => {
 })
 
 describe('KindQueryDto 边界', () => {
-  it('空 kind 字符串应报错（@IsString 不允许空字符串）', async () => {
+  it('空 kind 字符串通过校验（@IsString 不拒空）', async () => {
     const dto = new KindQueryDto()
     dto.kind = ''
     const errors = await validate(dto)
-    expect(errors.length).toBeGreaterThan(0)
+    expect(errors).toHaveLength(0)
   })
 
   it('超长 kind 通过校验（无 @Length 约束）', async () => {
@@ -151,11 +151,11 @@ describe('KindQueryDto 边界', () => {
 })
 
 describe('CityQueryDto 边界', () => {
-  it('空 city 字符串应报错（@IsString 不允许空字符串）', async () => {
+  it('空 city 字符串通过校验（@IsString 不拒空）', async () => {
     const dto = new CityQueryDto()
     dto.city = ''
     const errors = await validate(dto)
-    expect(errors.length).toBeGreaterThan(0)
+    expect(errors).toHaveLength(0)
   })
 
   it('包含特殊字符的城市名通过校验', async () => {
