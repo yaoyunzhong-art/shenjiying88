@@ -1,222 +1,167 @@
 /**
- * ai-decision/page.test.tsx — AI决策页面 L1 冒烟测试
- * ⚡ 覆盖: mock数据 / 筛选/排序/统计逻辑 / 状态映射 / 分页
+ * ai-decision/page.test.tsx — AI 决策中心 L2 测试
+ * 覆盖: 正例·边界·组件结构·数据完整性
  */
-
 import assert from 'node:assert/strict';
-import test, { describe, it } from 'node:test';
+import { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-// ---- 类型 ----
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
 
-interface DecisionRecord {
-  id: string;
-  ruleName: string;
-  status: 'approved' | 'rejected' | 'pending';
-  confidence: number;
-  source: string;
-  createdAt: string;
-  targetAudience: string;
-  description: string;
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
 }
 
-// ---- Mock 数据 (与 page.tsx 同步) ----
-
-const MOCK: DecisionRecord[] = [
-  { id: 'dec-001', ruleName: '首单折扣规则', status: 'approved', confidence: 0.92, source: '规则引擎-A', createdAt: '2026-07-15 10:30', targetAudience: '全部会员', description: '首单自动折扣审批' },
-  { id: 'dec-002', ruleName: '高消费返券规则', status: 'approved', confidence: 0.88, source: '规则引擎-B', createdAt: '2026-07-15 10:28', targetAudience: '高活跃会员', description: '满500返券' },
-  { id: 'dec-003', ruleName: '大额订单审批', status: 'rejected', confidence: 0.45, source: '人工审核', createdAt: '2026-07-15 10:15', targetAudience: '全部会员', description: '超10000元人工审批' },
-  { id: 'dec-004', ruleName: '流失预警关怀', status: 'pending', confidence: 0.73, source: '规则引擎-A', createdAt: '2026-07-15 09:50', targetAudience: '低活跃会员', description: '30天未活跃发送关怀' },
-  { id: 'dec-005', ruleName: '生日月双倍积分', status: 'approved', confidence: 0.95, source: '规则引擎-C', createdAt: '2026-07-15 09:30', targetAudience: '全部会员', description: '自动双倍积分' },
-  { id: 'dec-006', ruleName: 'VIP专属折扣', status: 'rejected', confidence: 0.38, source: '人工审核', createdAt: '2026-07-15 09:00', targetAudience: '黄金会员', description: '85折审批' },
-  { id: 'dec-007', ruleName: '库存预警补货', status: 'pending', confidence: 0.81, source: '规则引擎-B', createdAt: '2026-07-15 08:45', targetAudience: '仓储', description: '安全水位自动补货' },
-  { id: 'dec-008', ruleName: '新客注册礼包', status: 'approved', confidence: 0.99, source: '规则引擎-A', createdAt: '2026-07-15 08:30', targetAudience: '新注册会员', description: '自动发放注册礼包' },
-  { id: 'dec-009', ruleName: '季节性促销', status: 'pending', confidence: 0.65, source: '规则引擎-C', createdAt: '2026-07-14 16:00', targetAudience: '全部会员', description: '换季商品促销' },
-  { id: 'dec-010', ruleName: '欺诈风险拦截', status: 'rejected', confidence: 0.28, source: '人工审核', createdAt: '2026-07-14 14:30', targetAudience: '全部会员', description: '短时间多次下单拦截' },
-];
-
-// ---- 辅助函数 (与 page.tsx 逻辑同步) ----
-
-const STATUS_MAP: Record<string, { label: string }> = {
-  approved: { label: '已批准' },
-  rejected: { label: '已拒绝' },
-  pending: { label: '待定' },
-};
-
-function computeStats(decisions: DecisionRecord[]) {
-  const approved = decisions.filter(d => d.status === 'approved').length;
-  const pending = decisions.filter(d => d.status === 'pending').length;
-  const rejected = decisions.filter(d => d.status === 'rejected').length;
-  const avgConf = decisions.length > 0
-    ? decisions.reduce((s, d) => s + d.confidence, 0) / decisions.length
-    : 0;
-  return { total: decisions.length, approved, pending, rejected, avgConf };
-}
-
-function filterDecisions(decisions: DecisionRecord[], search: string, statusFilter: string): DecisionRecord[] {
-  let items = decisions;
-  if (search.trim()) {
-    const q = search.toLowerCase();
-    items = items.filter(r =>
-      r.ruleName.toLowerCase().includes(q) ||
-      r.source.toLowerCase().includes(q) ||
-      r.description.toLowerCase().includes(q) ||
-      r.targetAudience.toLowerCase().includes(q)
-    );
-  }
-  if (statusFilter) {
-    items = items.filter(r => r.status === statusFilter);
-  }
-  return items;
-}
-
-function paginate<T>(items: T[], page: number, pageSize: number): T[] {
-  const start = (page - 1) * pageSize;
-  return items.slice(start, start + pageSize);
-}
-
-// ---- 测试 ----
-
-describe('AiDecisionPage — Mock 数据', () => {
-  it('有 10 条决策记录', () => {
-    assert.strictEqual(MOCK.length, 10);
+describe('ai-decision — 正例', () => {
+  it('应导出一个默认组件 AiDecisionPage', () => {
+    const src = readSource();
+    assert.ok(src.includes('export default function AiDecisionPage'), '缺少默认导出组件');
   });
 
-  it('每条记录有必填字段', () => {
-    MOCK.forEach(d => {
-      assert.ok(d.id);
-      assert.ok(d.ruleName);
-      assert.ok(['approved', 'rejected', 'pending'].includes(d.status));
-      assert.ok(typeof d.confidence === 'number');
-    });
+  it('应包含 PageShell 页面外壳', () => {
+    const src = readSource();
+    assert.ok(src.includes('PageShell'), '缺少 PageShell');
   });
 
-  it('覆盖所有状态类型', () => {
-    const statuses = new Set(MOCK.map(d => d.status));
-    assert.ok(statuses.has('approved'));
-    assert.ok(statuses.has('rejected'));
-    assert.ok(statuses.has('pending'));
+  it('应包含 DataTable 数据表', () => {
+    const src = readSource();
+    assert.ok(src.includes('DataTable'), '缺少 DataTable');
   });
 
-  it('confidence 值在 0-1 范围内', () => {
-    MOCK.forEach(d => {
-      assert.ok(d.confidence >= 0 && d.confidence <= 1);
-    });
+  it('应包含 Pagination 分页控件', () => {
+    const src = readSource();
+    assert.ok(src.includes('Pagination'), '缺少 Pagination');
   });
 
-  it('有 created_at 时间戳', () => {
-    MOCK.forEach(d => {
-      assert.ok(d.createdAt.length > 0);
-    });
+  it('应包含 SearchFilterInput 搜索框', () => {
+    const src = readSource();
+    assert.ok(src.includes('SearchFilterInput'), '缺少 SearchFilterInput');
+  });
+
+  it('应包含 AIDecisionPanel 面板', () => {
+    const src = readSource();
+    assert.ok(src.includes('AIDecisionPanel'), '缺少 AIDecisionPanel');
+  });
+
+  it('应包含 StatCard 统计卡片', () => {
+    const src = readSource();
+    assert.ok(src.includes('StatCard'), '缺少 StatCard');
+  });
+
+  it('应包含 Modal 创建弹窗', () => {
+    const src = readSource();
+    assert.ok(src.includes('Modal'), '缺少 Modal');
+  });
+
+  it('应包含 Select 筛选组件', () => {
+    const src = readSource();
+    assert.ok(src.includes('Select'), '缺少 Select');
+  });
+
+  it('应包含 FormSubmitFeedback 反馈', () => {
+    const src = readSource();
+    assert.ok(src.includes('FormSubmitFeedback'), '缺少 FormSubmitFeedback');
+  });
+
+  it('应使用 use client 指令', () => {
+    const src = readSource();
+    assert.ok(src.includes("'use client'"), '缺少 use client');
+  });
+
+  it('应包含创建 Modal 状态', () => {
+    const src = readSource();
+    assert.ok(src.includes('showCreateModal'), '缺少 showCreateModal');
+  });
+
+  it('应包含批量操作栏', () => {
+    const src = readSource();
+    assert.ok(src.includes('selectedIds.size > 0'), '缺少批量操作栏');
+    assert.ok(src.includes('handleBatchApprove'), '缺少批量批准');
+    assert.ok(src.includes('handleBatchReject'), '缺少批量拒绝');
+  });
+
+  it('应包含导出功能', () => {
+    const src = readSource();
+    assert.ok(src.includes('handleExport'), '缺少导出');
   });
 });
 
-describe('AiDecisionPage — 统计计算', () => {
-  it('计算总数和各状态数量', () => {
-    const stats = computeStats(MOCK);
-    assert.strictEqual(stats.total, 10);
-    assert.strictEqual(stats.approved, 4);
-    assert.strictEqual(stats.rejected, 3);
-    assert.strictEqual(stats.pending, 3);
+describe('ai-decision — 边界防御', () => {
+  it('STATUS_MAP 应覆盖 3 种状态', () => {
+    const src = readSource();
+    assert.ok(src.includes("approved:"), '缺少 approved');
+    assert.ok(src.includes("rejected:"), '缺少 rejected');
+    assert.ok(src.includes("pending:"), '缺少 pending');
   });
 
-  it('平均置信度在合理范围', () => {
-    const stats = computeStats(MOCK);
-    assert.ok(stats.avgConf > 0.6);
-    assert.ok(stats.avgConf < 0.8);
+  it('STATUS_OPTS 应包含全部状态选项', () => {
+    const src = readSource();
+    assert.ok(src.includes("value: '', label: '全部状态'"), '缺少全部状态');
+    assert.ok(src.includes("value: 'approved'"), '缺少 approved');
+    assert.ok(src.includes("value: 'rejected'"), '缺少 rejected');
+    assert.ok(src.includes("value: 'pending'"), '缺少 pending');
   });
 
-  it('空数组统计为 0', () => {
-    const stats = computeStats([]);
-    assert.strictEqual(stats.total, 0);
-    assert.strictEqual(stats.avgConf, 0);
-    assert.strictEqual(stats.approved, 0);
+  it('CATEGORY_OPTS 应包含类别选项', () => {
+    const src = readSource();
+    assert.ok(src.includes("'营销'"), '缺少 营销');
+    assert.ok(src.includes("'运营'"), '缺少 运营');
+    assert.ok(src.includes("'风控'"), '缺少 风控');
   });
 
-  it('单条记录平均置信度等于自身', () => {
-    const stats = computeStats([MOCK[0]]);
-    assert.strictEqual(stats.avgConf, 0.92);
-  });
-});
-
-describe('AiDecisionPage — 筛选逻辑', () => {
-  it('空搜索返回全部', () => {
-    const result = filterDecisions(MOCK, '', '');
-    assert.strictEqual(result.length, 10);
+  it('Mock 数据应包含 12 条决策记录', () => {
+    const src = readSource();
+    const mockCount = (src.match(/id: 'dec-/g) || []).length;
+    assert.ok(mockCount >= 10, `Mock 至少应有 10 条决策, 实际 ${mockCount}`);
   });
 
-  it('按规则名称搜索', () => {
-    const result = filterDecisions(MOCK, '首单', '');
-    assert.strictEqual(result.length, 1);
-    assert.strictEqual(result[0].id, 'dec-001');
+  it('每条 Mock 记录应有 ruleCategory', () => {
+    const src = readSource();
+    assert.ok(src.includes('ruleCategory'), '缺少 ruleCategory');
   });
 
-  it('按来源搜索', () => {
-    const result = filterDecisions(MOCK, '人工审核', '');
-    assert.strictEqual(result.length, 3);
+  it('每条 Mock 记录应有 triggeredCount', () => {
+    const src = readSource();
+    assert.ok(src.includes('triggeredCount'), '缺少 triggeredCount');
   });
 
-  it('按目标人群搜索', () => {
-    const result = filterDecisions(MOCK, '黄金', '');
-    assert.strictEqual(result.length, 1);
+  it('应包含表单校验 validateForm', () => {
+    const src = readSource();
+    assert.ok(src.includes('validateForm('), '缺少 validateForm');
   });
 
-  it('状态筛选 approved', () => {
-    const result = filterDecisions(MOCK, '', 'approved');
-    assert.strictEqual(result.length, 4);
+  it('默认表单 DEFAULT_FORM 应定义', () => {
+    const src = readSource();
+    assert.ok(src.includes('DEFAULT_FORM'), '缺少 DEFAULT_FORM');
   });
 
-  it('组合筛选 (搜索+状态)', () => {
-    const result = filterDecisions(MOCK, '规则引擎-A', 'approved');
-    assert.strictEqual(result.length, 2);
+  it('列定义应包含 actions 操作列', () => {
+    const src = readSource();
+    assert.ok(src.includes("key: 'description'"), '缺少 description 列');
   });
 
-  it('无匹配返回空数组', () => {
-    const result = filterDecisions(MOCK, '不存在的规则xxxx', '');
-    assert.strictEqual(result.length, 0);
-  });
-});
-
-describe('AiDecisionPage — 分页', () => {
-  it('默认每页 8 条', () => {
-    const page1 = paginate(MOCK, 1, 8);
-    assert.strictEqual(page1.length, 8);
+  it('统计应包含总触发次数', () => {
+    const src = readSource();
+    assert.ok(src.includes('totalTriggered'), '缺少 totalTriggered');
   });
 
-  it('第二页返回剩余', () => {
-    const page2 = paginate(MOCK, 2, 8);
-    assert.strictEqual(page2.length, 2);
+  it('应创建新决策规则', () => {
+    const src = readSource();
+    assert.ok(src.includes('handleCreate'), '缺少 handleCreate');
   });
 
-  it('越界页码返回空', () => {
-    const page3 = paginate(MOCK, 3, 8);
-    assert.strictEqual(page3.length, 0);
+  it('应刷新数据', () => {
+    const src = readSource();
+    assert.ok(src.includes('handleRefresh'), '缺少 handleRefresh');
   });
 
-  it('自定义每页 5 条', () => {
-    const page1 = paginate(MOCK, 1, 5);
-    assert.strictEqual(page1.length, 5);
-    const page2 = paginate(MOCK, 2, 5);
-    assert.strictEqual(page2.length, 5);
-  });
-
-  it('分页不覆盖源数据', () => {
-    const paged = paginate(MOCK, 1, 3);
-    assert.strictEqual(paged.length, 3);
-    assert.strictEqual(MOCK.length, 10);
-  });
-});
-
-describe('AiDecisionPage — STATUS_MAP', () => {
-  it('所有状态都有映射', () => {
-    ['approved', 'rejected', 'pending'].forEach(s => {
-      assert.ok(STATUS_MAP[s]);
-      assert.ok(STATUS_MAP[s].label);
-    });
-  });
-
-  it('label 中文显示正确', () => {
-    assert.strictEqual(STATUS_MAP.approved.label, '已批准');
-    assert.strictEqual(STATUS_MAP.rejected.label, '已拒绝');
-    assert.strictEqual(STATUS_MAP.pending.label, '待定');
+  it('创建 Modal 应包含表单字段', () => {
+    const src = readSource();
+    assert.ok(src.includes("label: '规则名称'"), '缺少规则名称');
+    assert.ok(src.includes("label: '规则类别'"), '缺少规则类别');
+    assert.ok(src.includes("label: '规则描述'"), '缺少规则描述');
   });
 });

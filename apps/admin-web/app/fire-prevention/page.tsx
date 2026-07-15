@@ -1,69 +1,122 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+/**
+ * 消防管理 — Fire Prevention Page
+ * 功能: 消防安全检查记录与风险管理
+ * 角色: 🔥 安全管理员
+ *
+ * 页面结构:
+ * - 统计面板: 全部检查 · 待检查 · 通过/未通过 · 高风险
+ * - 搜索栏 + 状态筛选 + 风险等级 Tabs
+ * - 检查列表 DataTable (排序/分页/选择)
+ * - 创建检查 Modal (form + validation)
+ * - 编辑检查 Modal (prefill + update)
+ * - 批量操作栏 + 导出报告 + 刷新
+ */
 
+import { useState, useMemo, useCallback } from 'react';
 import {
-  DataTable,
   Button,
+  DataTable,
+  FormField,
+  FormSubmitFeedback,
+  Modal,
   PageShell,
-  StatusBadge,
   Pagination,
   SearchFilterInput,
+  Select,
+  StatCard,
+  StatusBadge,
+  SubmitButton,
+  type DataTableColumn,
+  type DataTableSortConfig,
   usePagination,
   useSearchFilter,
-  type DataTableColumn,
+  useSortedItems,
 } from '@m5/ui';
 
-// ---- 类型定义 ----
+// ==================== 类型定义 ====================
+
+type InspectionStatus = 'pending' | 'in_progress' | 'passed' | 'failed';
+type RiskLevel = 'low' | 'medium' | 'high';
 
 interface InspectionItem {
   id: string;
   area: string;
   inspector: string;
   scheduledDate: string;
-  status: 'pending' | 'in_progress' | 'passed' | 'failed';
-  riskLevel: 'low' | 'medium' | 'high';
+  status: InspectionStatus;
+  riskLevel: RiskLevel;
   notes: string;
+  equipment: string;
+  lastInspection: string;
+  actionRequired: string;
 }
 
-type FireStatusVariant = 'neutral' | 'warning' | 'success' | 'danger';
+// ==================== 常量与映射 ====================
 
-export const FIRE_STATUS_MAP: Record<InspectionItem['status'], { label: string; variant: FireStatusVariant }> = {
+const FIRE_STATUS_MAP: Record<InspectionStatus, { label: string; variant: 'neutral' | 'warning' | 'success' | 'danger' }> = {
   pending: { label: '待检查', variant: 'neutral' },
   in_progress: { label: '检查中', variant: 'warning' },
   passed: { label: '通过', variant: 'success' },
   failed: { label: '未通过', variant: 'danger' },
 };
 
-const RISK_VARIANT: Record<InspectionItem['riskLevel'], 'neutral' | 'warning' | 'danger'> = {
-  low: 'neutral',
-  medium: 'warning',
-  high: 'danger',
+const RISK_MAP: Record<RiskLevel, { label: string; variant: 'neutral' | 'warning' | 'danger' }> = {
+  low: { label: '低风险', variant: 'neutral' },
+  medium: { label: '中风险', variant: 'warning' },
+  high: { label: '高风险', variant: 'danger' },
 };
 
-// ---- 模拟数据 ----
+const EQUIPMENT_OPTIONS = ['灭火器', '消防栓', '报警器', '喷淋系统', '疏散指示灯', '防火门', '排烟系统'] as const;
+const AREA_OPTIONS = ['厨房A区', '厨房B区', '仓库A区', '仓库B区', '大厅', '办公室', '停车场', '走廊', '天台'] as const;
+const INSPECTOR_OPTIONS = ['张三', '李四', '王五', '赵六', '陈七', '刘八'] as const;
 
-const MOCK_DATA: InspectionItem[] = [
-  { id: 'FP-001', area: '厨房A区', inspector: '张三', scheduledDate: '2026-07-10', status: 'passed', riskLevel: 'low', notes: '灭火器正常' },
-  { id: 'FP-002', area: '仓库B区', inspector: '李四', scheduledDate: '2026-07-11', status: 'in_progress', riskLevel: 'medium', notes: '疏散通道检查中' },
-  { id: 'FP-003', area: '大厅C区', inspector: '王五', scheduledDate: '2026-07-12', status: 'failed', riskLevel: 'high', notes: '报警器故障需维修' },
-  { id: 'FP-004', area: '办公室D区', inspector: '赵六', scheduledDate: '2026-07-13', status: 'pending', riskLevel: 'medium', notes: '待安排' },
-  { id: 'FP-005', area: '停车场', inspector: '张三', scheduledDate: '2026-07-09', status: 'passed', riskLevel: 'low', notes: '灭火器压力正常' },
-];
+// ==================== Mock 数据 ====================
 
-// ---- 列定义 ----
+const generateMockData = (): InspectionItem[] => {
+  const statuses: InspectionStatus[] = ['passed', 'passed', 'passed', 'in_progress', 'failed', 'pending'];
+  const levels: RiskLevel[] = ['low', 'low', 'medium', 'medium', 'high', 'low'];
+  return AREA_OPTIONS.slice(0, 9).map((area, i) => {
+    const d = new Date(Date.now() + i * 86400000);
+    return {
+      id: `FP-${String(i + 1).padStart(3, '0')}`,
+      area,
+      inspector: INSPECTOR_OPTIONS[i % INSPECTOR_OPTIONS.length],
+      scheduledDate: d.toISOString().split('T')[0],
+      status: statuses[i % statuses.length],
+      riskLevel: levels[i % levels.length],
+      notes: i === 4 ? '报警器故障需维修' : i === 0 ? '灭火器正常' : '',
+      equipment: EQUIPMENT_OPTIONS[i % EQUIPMENT_OPTIONS.length],
+      lastInspection: new Date(Date.now() - (30 + i * 5) * 86400000).toISOString().split('T')[0],
+      actionRequired: statuses[i % statuses.length] === 'failed' ? '立即维修' : '',
+    };
+  });
+};
+
+const DEFAULT_FORM = {
+  area: '' as string,
+  inspector: '' as string,
+  scheduledDate: '' as string,
+  riskLevel: 'low' as RiskLevel,
+  equipment: '' as string,
+  notes: '',
+};
+
+// ==================== 列定义 ====================
 
 function buildColumns(): DataTableColumn<InspectionItem>[] {
   return [
-    { key: 'id', title: '编号', dataKey: 'id' },
-    { key: 'area', title: '检查区域', dataKey: 'area' },
-    { key: 'inspector', title: '检查人', dataKey: 'inspector' },
-    { key: 'scheduledDate', title: '计划日期', dataKey: 'scheduledDate' },
+    { key: 'id', title: '编号', dataKey: 'id', width: 80 },
+    { key: 'area', title: '检查区域', dataKey: 'area', sortable: true },
+    { key: 'equipment', title: '设备', dataKey: 'equipment', sortable: true },
+    { key: 'inspector', title: '检查人', dataKey: 'inspector', sortable: true },
+    { key: 'scheduledDate', title: '计划日期', dataKey: 'scheduledDate', sortable: true },
     {
       key: 'status',
       title: '状态',
-      sortValue: (item: InspectionItem) => item.status,
-      render: (item: InspectionItem) => {
+      sortValue: (item) => item.status,
+      render: (item) => {
         const s = FIRE_STATUS_MAP[item.status];
         return <StatusBadge label={s.label} variant={s.variant} size="sm" dot />;
       },
@@ -71,67 +124,224 @@ function buildColumns(): DataTableColumn<InspectionItem>[] {
     {
       key: 'riskLevel',
       title: '风险等级',
-      sortValue: (item: InspectionItem) => item.riskLevel,
-      render: (item: InspectionItem) => {
-        const label = item.riskLevel === 'high' ? '高风险' : item.riskLevel === 'medium' ? '中风险' : '低风险';
-        return <StatusBadge label={label} variant={RISK_VARIANT[item.riskLevel]} size="sm" />;
+      sortValue: (item) => item.riskLevel,
+      render: (item) => {
+        const r = RISK_MAP[item.riskLevel];
+        return <StatusBadge label={r.label} variant={r.variant} size="sm" />;
       },
     },
-    { key: 'notes', title: '备注', dataKey: 'notes' },
+    { key: 'notes', title: '备注', dataKey: 'notes', render: (item) => item.notes || '—' },
+    {
+      key: 'actions',
+      title: '操作',
+      width: 100,
+      render: (item) => (
+        <div style={{ display: 'flex', gap: 4 }}>
+          <Button size="xs" variant="text">编辑</Button>
+          {item.status === 'pending' && <Button size="xs" variant="primary">开始检查</Button>}
+        </div>
+      ),
+    },
   ];
 }
 
-// ---- 组件 ----
+// ==================== 主页面 ====================
 
-/**
- * 消防管理 — Fire Prevention Page
- *
- * 功能:
- * - 展示消防检查列表
- * - 按区域/检查人搜索
- * - 支持分页
- * - 操作按钮: 新建检查、导出报告
- */
 export default function FirePreventionPage() {
-  const [items] = useState<InspectionItem[]>(MOCK_DATA);
+  const [items, setItems] = useState<InspectionItem[]>(generateMockData);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<InspectionStatus | 'ALL'>('ALL');
+  const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<InspectionItem | null>(null);
+  const [formData, setFormData] = useState(DEFAULT_FORM);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const { searchTerm: searchQuery, setSearchTerm: setSearchQuery, filteredItems } = useSearchFilter(items, ['area', 'inspector', 'notes']);
+  // 搜索过滤
+  const { filteredItems: searchedItems } = useSearchFilter(
+    items,
+    useMemo<(keyof InspectionItem)[]>(() => ['area', 'inspector', 'notes', 'equipment'], []),
+    searchQuery,
+  );
+
+  const filteredItems = useMemo(
+    () => (statusFilter === 'ALL' ? searchedItems : searchedItems.filter((i) => i.status === statusFilter)),
+    [searchedItems, statusFilter],
+  );
 
   const columns = useMemo(() => buildColumns(), []);
+  const sorted = useSortedItems(filteredItems, columns, sortConfig);
+  const pagination = usePagination({ initialPageSize: 10 });
+  const pageItems = pagination.paginate(sorted);
 
-  const pagination = usePagination(filteredItems.length, 10);
-  const pageItems = pagination.paginate(filteredItems);
+  // 统计
+  const stats = useMemo(() => ({
+    total: items.length,
+    pending: items.filter((i) => i.status === 'pending').length,
+    inProgress: items.filter((i) => i.status === 'in_progress').length,
+    passed: items.filter((i) => i.status === 'passed').length,
+    failed: items.filter((i) => i.status === 'failed').length,
+    highRisk: items.filter((i) => i.riskLevel === 'high').length,
+  }), [items]);
 
-  const handleNewInspection = useCallback(() => {
-    // TODO: navigate to new inspection form
+  // 表单校验
+  const validateForm = useCallback((data: typeof DEFAULT_FORM): boolean => {
+    const errors: Record<string, string> = {};
+    if (!data.area) errors.area = '请选择检查区域';
+    if (!data.inspector) errors.inspector = '请选择检查人';
+    if (!data.scheduledDate) errors.scheduledDate = '请选择计划日期';
+    if (!data.equipment) errors.equipment = '请选择检查设备';
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   }, []);
 
+  // 创建
+  const handleCreate = useCallback(() => {
+    if (!validateForm(formData)) return;
+    const newItem: InspectionItem = {
+      id: `FP-${String(items.length + 1).padStart(3, '0')}`,
+      area: formData.area,
+      inspector: formData.inspector,
+      scheduledDate: formData.scheduledDate,
+      status: 'pending',
+      riskLevel: formData.riskLevel,
+      notes: formData.notes,
+      equipment: formData.equipment,
+      lastInspection: new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0],
+      actionRequired: '',
+    };
+    setItems((prev) => [newItem, ...prev]);
+    setFeedback({ type: 'success', message: `检查记录 ${newItem.id} 已创建` });
+    setShowCreateModal(false);
+    setFormData(DEFAULT_FORM);
+  }, [formData, validateForm, items.length]);
+
+  // 编辑
+  const handleEdit = useCallback((item: InspectionItem) => {
+    setEditingItem(item);
+    setFormData({
+      area: item.area,
+      inspector: item.inspector,
+      scheduledDate: item.scheduledDate,
+      riskLevel: item.riskLevel,
+      equipment: item.equipment,
+      notes: item.notes,
+    });
+    setFormErrors({});
+    setShowEditModal(true);
+  }, []);
+
+  const handleUpdate = useCallback(() => {
+    if (!editingItem || !validateForm(formData)) return;
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === editingItem.id
+          ? {
+              ...i,
+              area: formData.area,
+              inspector: formData.inspector,
+              scheduledDate: formData.scheduledDate,
+              riskLevel: formData.riskLevel,
+              equipment: formData.equipment,
+              notes: formData.notes,
+            }
+          : i,
+      ),
+    );
+    setFeedback({ type: 'success', message: `检查记录 ${editingItem.id} 已更新` });
+    setShowEditModal(false);
+    setEditingItem(null);
+    setFormData(DEFAULT_FORM);
+  }, [editingItem, formData, validateForm]);
+
+  // 批量操作
+  const handleBatchComplete = useCallback(() => {
+    setItems((prev) =>
+      prev.map((i) => (selectedIds.has(i.id) ? { ...i, status: 'passed' as InspectionStatus } : i)),
+    );
+    setFeedback({ type: 'success', message: `已完成 ${selectedIds.size} 项检查` });
+    setSelectedIds(new Set());
+  }, [selectedIds]);
+
   const handleExportReport = useCallback(() => {
-    // TODO: export inspection report
+    const exportItems = selectedIds.size > 0 ? items.filter((i) => selectedIds.has(i.id)) : items;
+    const csv = ['id,area,equipment,status,riskLevel,notes']
+      .concat(exportItems.map((i) => `${i.id},${i.area},${i.equipment},${FIRE_STATUS_MAP[i.status].label},${RISK_MAP[i.riskLevel].label},${i.notes}`))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fire-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [items, selectedIds]);
+
+  const handleRefresh = useCallback(() => {
+    setFeedback({ type: 'success', message: '数据已刷新' });
   }, []);
 
   return (
-    <PageShell
-      title="消防管理"
-      subtitle="消防安全检查记录与风险管理"
-    >
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        <SearchFilterInput
-          placeholder="搜索区域、检查人..."
-          value={searchQuery}
-          onChange={setSearchQuery}
-          width="100%"
-        />
-        <Button variant="primary" onClick={handleNewInspection}>新建检查</Button>
-        <Button variant="outline" onClick={handleExportReport}>导出报告</Button>
+    <PageShell title="🔥 消防管理" subtitle="消防安全检查记录与风险管理">
+      {/* 统计面板 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
+        <StatCard title="总检查项" value={stats.total.toString()} secondary={`高风险 ${stats.highRisk}`} />
+        <StatCard title="待检查" value={stats.pending.toString()} secondary={`检查中 ${stats.inProgress}`} tone="warning" />
+        <StatCard title="已通过" value={stats.passed.toString()} secondary="通过项" tone="success" />
+        <StatCard title="未通过" value={stats.failed.toString()} secondary="需整改" tone="danger" />
       </div>
 
+      {/* 反馈 */}
+      {feedback && (
+        <FormSubmitFeedback
+          success={feedback.type === 'success' ? feedback.message : undefined}
+          onDismissSuccess={() => setFeedback(null)}
+        />
+      )}
+
+      {/* 工具栏 */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <SearchFilterInput placeholder="搜索区域、检查人..." value={searchQuery} onChange={setSearchQuery} width="auto" />
+        <Select
+          value={statusFilter}
+          onChange={(v) => setStatusFilter(v as InspectionStatus | 'ALL')}
+          options={[
+            { value: 'ALL', label: '全部状态' },
+            ...Object.entries(FIRE_STATUS_MAP).map(([k, v]) => ({ value: k, label: v.label })),
+          ]}
+        />
+        <div style={{ flex: 1 }} />
+        <SubmitButton label="＋ 新建检查" variant="primary" onClick={() => { setFormData(DEFAULT_FORM); setFormErrors({}); setShowCreateModal(true); }} />
+        <Button variant="outline" onClick={handleRefresh}>🔄 刷新</Button>
+        <Button variant="outline" onClick={handleExportReport}>📥 导出报告</Button>
+      </div>
+
+      {/* 批量操作栏 */}
+      {selectedIds.size > 0 && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, padding: '8px 12px', borderRadius: 8, background: 'rgba(34,197,94,0.08)', alignItems: 'center' }}>
+          <span style={{ fontSize: 13, color: '#22c55e', fontWeight: 600 }}>已选 {selectedIds.size} 项</span>
+          <Button variant="primary" size="sm" onClick={handleBatchComplete}>标记已完成</Button>
+          <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
+        </div>
+      )}
+
+      {/* 表格 */}
       <DataTable
+        title={`消防检查 (${filteredItems.length})`}
         columns={columns}
         items={pageItems}
         rowKey={(item) => item.id}
+        sort={sortConfig}
+        onSortChange={setSortConfig}
         striped
         compact
+        selectable
+        selectedKeys={selectedIds}
+        onSelectionChange={(keys) => setSelectedIds(new Set(Array.from(keys)))}
+        emptyText={searchQuery || statusFilter !== 'ALL' ? '没有匹配的检查记录' : '暂无检查记录'}
       />
 
       <Pagination
@@ -141,6 +351,115 @@ export default function FirePreventionPage() {
         onPageChange={pagination.setPage}
         onPageSizeChange={pagination.setPageSize}
       />
+
+      {/* 创建 Modal */}
+      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="新建消防检查" width={560}>
+        <InspectionForm formData={formData} onChange={setFormData} errors={formErrors} />
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+          <SubmitButton label="取消" variant="secondary" onClick={() => setShowCreateModal(false)} />
+          <SubmitButton label="创建" variant="primary" onClick={handleCreate} />
+        </div>
+      </Modal>
+
+      {/* 编辑 Modal */}
+      <Modal open={showEditModal} onClose={() => { setShowEditModal(false); setEditingItem(null); }} title={`编辑检查记录`} width={560}>
+        <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>编号: {editingItem?.id}</p>
+        <InspectionForm formData={formData} onChange={setFormData} errors={formErrors} />
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+          <SubmitButton label="取消" variant="secondary" onClick={() => { setShowEditModal(false); setEditingItem(null); }} />
+          <SubmitButton label="保存修改" variant="primary" onClick={handleUpdate} />
+        </div>
+      </Modal>
     </PageShell>
+  );
+}
+
+// ==================== 检查表单 ====================
+
+function InspectionForm({
+  formData,
+  onChange,
+  errors,
+}: {
+  formData: typeof DEFAULT_FORM;
+  onChange: (d: typeof DEFAULT_FORM) => void;
+  errors: Record<string, string>;
+}) {
+  const update = (partial: Partial<typeof DEFAULT_FORM>) => onChange({ ...formData, ...partial });
+
+  return (
+    <div style={{ display: 'grid', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <FormField label="检查区域" error={errors.area} required>
+          <select
+            value={formData.area}
+            onChange={(e) => update({ area: e.target.value })}
+            style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #d9d9d9' }}
+          >
+            <option value="">选择区域</option>
+            {AREA_OPTIONS.map((a) => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
+        </FormField>
+        <FormField label="检查人" error={errors.inspector} required>
+          <select
+            value={formData.inspector}
+            onChange={(e) => update({ inspector: e.target.value })}
+            style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #d9d9d9' }}
+          >
+            <option value="">选择检查人</option>
+            {INSPECTOR_OPTIONS.map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </FormField>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <FormField label="计划日期" error={errors.scheduledDate} required>
+          <input
+            type="date"
+            value={formData.scheduledDate}
+            onChange={(e) => update({ scheduledDate: e.target.value })}
+            style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #d9d9d9' }}
+          />
+        </FormField>
+        <FormField label="风险等级">
+          <select
+            value={formData.riskLevel}
+            onChange={(e) => update({ riskLevel: e.target.value as RiskLevel })}
+            style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #d9d9d9' }}
+          >
+            {Object.entries(RISK_MAP).map(([k, v]) => (
+              <option key={k} value={k}>{v.label}</option>
+            ))}
+          </select>
+        </FormField>
+      </div>
+
+      <FormField label="检查设备" error={errors.equipment} required>
+        <select
+          value={formData.equipment}
+          onChange={(e) => update({ equipment: e.target.value })}
+          style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #d9d9d9' }}
+        >
+          <option value="">选择设备</option>
+          {EQUIPMENT_OPTIONS.map((e) => (
+            <option key={e} value={e}>{e}</option>
+          ))}
+        </select>
+      </FormField>
+
+      <FormField label="备注">
+        <textarea
+          value={formData.notes}
+          onChange={(e) => update({ notes: e.target.value })}
+          rows={2}
+          placeholder="备注信息"
+          style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #d9d9d9', resize: 'vertical' }}
+        />
+      </FormField>
+    </div>
   );
 }
