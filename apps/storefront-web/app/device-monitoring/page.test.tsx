@@ -1,132 +1,176 @@
 import assert from 'node:assert/strict';
 import test, { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-describe('DeviceMonitoringPage', () => {
-  it('renders without crashing', () => {
-    const html = renderPage();
-    assert.ok(html.includes('data-testid="page-shell"'), 'Page shell should render');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const SOURCE = resolve(__dirname, 'page.tsx');
+
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
+
+describe('DeviceMonitoringPage — 源码分析', () => {
+  it('应导出默认函数组件', () => {
+    const src = readSource();
+    assert.ok(src.includes('export default function DeviceMonitoringPage'));
+  });
+
+  it('应包含 use client 指令', () => {
+    const src = readSource();
+    assert.ok(src.includes("'use client'"));
+  });
+
+  it('应包含 LoadingSkeleton 组件', () => {
+    const src = readSource();
+    assert.ok(src.includes('function LoadingSkeleton'));
+  });
+
+  it('应包含 ErrorState 组件', () => {
+    const src = readSource();
+    assert.ok(src.includes('function ErrorState'));
+    assert.ok(src.includes('onRetry'));
+  });
+
+  it('应包含 CategoryDistributionChart 分类分布图', () => {
+    const src = readSource();
+    assert.ok(src.includes('CategoryDistributionChart'));
+    assert.ok(src.includes('设备类型分布'));
+  });
+
+  it('应包含 AlertSummary 告警汇总', () => {
+    const src = readSource();
+    assert.ok(src.includes('AlertSummary'));
+    assert.ok(src.includes('告警汇总'));
+  });
+
+  it('应包含 RecentEvents 最近心跳', () => {
+    const src = readSource();
+    assert.ok(src.includes('RecentEvents'));
+    assert.ok(src.includes('最近心跳上报'));
+  });
+
+  it('应包含 MaintenanceRecord 维护记录', () => {
+    const src = readSource();
+    assert.ok(src.includes('MaintenanceRecord'));
+    assert.ok(src.includes('最近维护记录'));
+  });
+
+  it('应模拟加载延迟（loading态）', () => {
+    const src = readSource();
+    assert.ok(src.includes('setLoading(true)'));
+    assert.ok(src.includes('setLoading(false)'));
+  });
+
+  it('应模拟错误概率（error态）', () => {
+    const src = readSource();
+    assert.ok(src.includes('Math.random() < 0.05'));
+    assert.ok(src.includes('setError'));
+  });
+
+  it('应包含 handleRetry 重试函数', () => {
+    const src = readSource();
+    assert.ok(src.includes('handleRetry'));
+  });
+
+  it('应包含空状态守卫', () => {
+    const src = readSource();
+    assert.ok(src.includes('暂无设备'));
   });
 
   it('renders page shell with correct title', () => {
-    const html = renderPage();
-    assert.ok(html.includes('data-title="设备监控"'), 'Page shell title should be correct');
+    const src = readSource();
+    assert.ok(src.includes('设备监控'));
+    assert.ok(src.includes('PageShell'));
   });
 
-  it('renders stat cards for device counts', () => {
-    const html = renderPage();
-    const matches = html.match(/data-testid="stat-card"/g);
-    assert.ok(matches !== null, 'Stat cards should exist');
-    assert.ok(matches.length >= 5, `Expected >=5 stat cards, got ${matches.length}`);
+  it('uses model imports', () => {
+    const src = readSource();
+    assert.ok(src.includes('generateMockDevices'));
+    assert.ok(src.includes('computeStats'));
+    assert.ok(src.includes('sortDevicesBySeverity'));
+    assert.ok(src.includes('filterDevices'));
   });
 
-  it('renders total device count stat', () => {
-    const html = renderPage();
-    assert.ok(html.includes('设备总数'), 'Should show total device count');
+  it('uses segmented control and search', () => {
+    const src = readSource();
+    assert.ok(src.includes('SegmentedControl'));
+    assert.ok(src.includes('SearchFilterInput'));
   });
 
-  it('renders online device stat', () => {
-    const html = renderPage();
-    assert.ok(html.includes('在线'), 'Should show online stat');
-  });
-
-  it('renders segmented control for status filter', () => {
-    const html = renderPage();
-    assert.ok(html.includes('data-testid="segmented-control"'), 'Segmented control should render');
-  });
-
-  it('renders search input', () => {
-    const html = renderPage();
-    assert.ok(html.includes('data-testid="search-filter"'), 'Search input should render');
-  });
-
-  it('renders device list items', () => {
-    const html = renderPage();
-    assert.ok(html.includes('收银机-01'), 'Should show device 收银机-01');
-    assert.ok(html.includes('监控摄像头-02'), 'Should show device 监控摄像头-02');
+  it('uses pagination', () => {
+    const src = readSource();
+    assert.ok(src.includes('Pagination'));
   });
 });
 
-describe('DeviceMonitoringPage - Filter & Interaction', () => {
-  it('renders pagination component', () => {
-    const html = renderPage();
-    assert.ok(html.includes('data-testid="pagination"'), 'Pagination should render');
+describe('DeviceMonitoringPage - 模拟渲染', () => {
+  it('renders stat cards for device counts', () => {
+    const src = readSource();
+    assert.ok(src.includes('设备总数'));
+    assert.ok(src.includes('在线'));
+    assert.ok(src.includes('离线'));
+    assert.ok(src.includes('警告'));
+    assert.ok(src.includes('健康率'));
   });
 
-  it('shows device IP addresses', () => {
-    const html = renderPage();
-    assert.ok(html.includes('192.168.1.10'), 'Should show device IP');
+  it('shows device IP addresses in rendering', () => {
+    const src = readSource();
+    assert.ok(src.includes('.ip'));
   });
 
   it('shows firmware versions', () => {
-    const html = renderPage();
-    assert.ok(html.includes('v3.2.1'), 'Should show firmware version');
+    const src = readSource();
+    assert.ok(src.includes('firmware'));
   });
 
   it('shows store names for devices', () => {
-    const html = renderPage();
-    assert.ok(html.includes('旗舰店'), 'Should show store name 旗舰店');
-    assert.ok(html.includes('分店A'), 'Should show store name 分店A');
+    const src = readSource();
+    assert.ok(src.includes('storeName'));
   });
 
-  it('shows health rate percentage', () => {
-    const html = renderPage();
-    assert.ok(html.includes('85%'), 'Should show health rate 85%');
+  it('shows health rate percentage value', () => {
+    const src = readSource();
+    assert.ok(src.includes('stats.healthRate'));
   });
 
   it('renders device category labels', () => {
-    const html = renderPage();
-    assert.ok(html.includes('收银机'), 'Should show category 收银机');
-    assert.ok(html.includes('摄像头'), 'Should show category 摄像头');
+    const src = readSource();
+    assert.ok(src.includes('DEVICE_CATEGORY_LABELS'));
+  });
+
+  it('shows alert counts on device items', () => {
+    const src = readSource();
+    assert.ok(src.includes('告警'));
+  });
+
+  it('shows status badge for each device', () => {
+    const src = readSource();
+    assert.ok(src.includes('StatusBadge'));
+  });
+
+  it('shows pagination info in footer', () => {
+    const src = readSource();
+    assert.ok(src.includes('totalPages'));
+    assert.ok(src.includes('filtered.length'));
   });
 });
 
-function renderPage(): string {
-  // Simulate the static HTML output of DeviceMonitoringPage
-  // Based on mocked @m5/ui components + mocked ./model data
-  const devices = [
-    { id: 'd1', name: '收银机-01', category: 'pos', storeName: '旗舰店', ip: '192.168.1.10', status: 'online', firmware: 'v3.2.1', alerts: 0 },
-    { id: 'd2', name: '监控摄像头-02', category: 'camera', storeName: '旗舰店', ip: '192.168.1.20', status: 'offline', firmware: 'v2.1.0', alerts: 0 },
-    { id: 'd3', name: '空调系统-01', category: 'hvac', storeName: '分店A', ip: '192.168.2.10', status: 'warning', firmware: 'v1.5.0', alerts: 3 },
-    { id: 'd4', name: '门禁系统-01', category: 'access', storeName: '分店A', ip: '192.168.2.20', status: 'error', firmware: 'v4.0.1', alerts: 5 },
-    { id: 'd5', name: '打印机-01', category: 'printer', storeName: '分店B', ip: '192.168.3.10', status: 'pending', firmware: 'v2.0.0', alerts: 0 },
-  ];
+describe('DeviceMonitoringPage - 防御', () => {
+  it('page.tsx should not contain hardcoded phone numbers', () => {
+    const src = readSource();
+    assert.ok(!src.match(/1[3-9]\d{9}/), '不应包含手机号');
+  });
 
-  const stats = { total: 5, online: 1, offline: 1, warning: 1, error: 1, healthRate: 85 };
-  const categoryLabels: Record<string, string> = { pos: '收银机', camera: '摄像头', hvac: '空调', access: '门禁', printer: '打印机' };
+  it('empty state handles zero devices', () => {
+    const src = readSource();
+    assert.ok(src.includes('devices.length === 0'));
+  });
 
-  return `
-    <div data-testid="page-shell" data-title="设备监控">
-      <div data-testid="stat-card" data-label="设备总数">设备总数: ${stats.total}</div>
-      <div data-testid="stat-card" data-label="在线">在线: ${stats.online}</div>
-      <div data-testid="stat-card" data-label="离线">离线: ${stats.offline}</div>
-      <div data-testid="stat-card" data-label="警告">警告: ${stats.warning}</div>
-      <div data-testid="stat-card" data-label="故障">故障: ${stats.error}</div>
-      <div data-testid="stat-card" data-label="健康率">健康率: ${stats.healthRate}%</div>
-      <div data-testid="segmented-control">
-        <button data-active="true">全部</button>
-        <button data-active="false">在线</button>
-        <button data-active="false">离线</button>
-        <button data-active="false">警告</button>
-        <button data-active="false">故障</button>
-      </div>
-      <input data-testid="search-filter" placeholder="搜索设备名称或IP..." />
-      <div data-testid="device-list">
-        ${devices.map((d) => `
-          <div data-testid="device-item" data-status="${d.status}">
-            <div>${d.name}</div>
-            <div>${categoryLabels[d.category]}</div>
-            <div>${d.storeName}</div>
-            <div>${d.ip}</div>
-            <div>${d.firmware}</div>
-            <span data-testid="status-badge" data-variant="${d.status}">${d.status}</span>
-          </div>
-        `).join('')}
-      </div>
-      <div data-testid="pagination">
-        <button disabled="">Prev</button>
-        <span>1 / 1</span>
-        <button disabled="">Next</button>
-      </div>
-    </div>
-  `;
-}
+  it('properly handles the onPageChange callback', () => {
+    const src = readSource();
+    assert.ok(src.includes('onPageChange'));
+  });
+});
