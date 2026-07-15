@@ -606,7 +606,7 @@ export default function ProductsPage() {
         ))}
       </div>
 
-      {/* 搜索 + 视图切换 */}
+      {/* 搜索 + 批量操作 + 视图切换 */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'center' }}>
         <div style={{ flex: 1, maxWidth: 360 }}>
           <SearchFilterInput
@@ -614,6 +614,10 @@ export default function ProductsPage() {
             onChange={setSearchTerm}
             placeholder="搜索商品名称、分类、标签..."
           />
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <Button variant="ghost" size="sm" onClick={() => alert('批量上架选中商品')}>📤 批量上架</Button>
+          <Button variant="ghost" size="sm" onClick={() => alert('批量下架选中商品')}>📥 批量下架</Button>
         </div>
         <select
           value={viewMode}

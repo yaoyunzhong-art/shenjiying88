@@ -246,8 +246,97 @@ export default async function ReportsListPage() {
       {/* 统计摘要 */}
       <ReportsSummaryCards />
 
+      {/* 快速操作入口 */}
+      <div
+        style={{
+          display: 'flex',
+          gap: 10,
+          marginBottom: 20,
+          maxWidth: 1100,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+        }}
+      >
+        <Button variant="primary" size="sm" onClick={() => alert('跳转至新建报表页')}>
+          📄 新建报表
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => alert('跳转至导出中心')}>
+          📥 批量导出
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => alert('跳转至对比分析页')}>
+          📊 对比分析
+        </Button>
+        <span style={{ color: '#64748b', fontSize: 12, marginLeft: 'auto' }}>
+          最近更新：{new Date().toLocaleDateString('zh-CN')}
+        </span>
+      </div>
+
       {/* 分类快速筛选 */}
       <ReportsCategoryTabs />
+
+      {/* 搜索与状态筛选 */}
+      <div
+        style={{
+          maxWidth: 1100,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          marginBottom: 16,
+          display: 'flex',
+          gap: 12,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+        }}
+      >
+        <input
+          type="text"
+          placeholder="搜索报表标题、摘要..."
+          style={{
+            flex: 1,
+            minWidth: 200,
+            padding: '8px 14px',
+            borderRadius: 8,
+            border: '1px solid rgba(148,163,184,0.15)',
+            background: 'rgba(30,41,59,0.5)',
+            color: '#e2e8f0',
+            fontSize: 13,
+            outline: 'none',
+          }}
+        />
+        <select
+          style={{
+            padding: '8px 14px',
+            borderRadius: 8,
+            border: '1px solid rgba(148,163,184,0.15)',
+            background: 'rgba(30,41,59,0.5)',
+            color: '#cbd5e1',
+            fontSize: 13,
+            outline: 'none',
+          }}
+        >
+          <option value="all">全部状态</option>
+          <option value="generated">已生成</option>
+          <option value="generating">生成中</option>
+          <option value="failed">失败</option>
+          <option value="expired">过期</option>
+        </select>
+        <select
+          style={{
+            padding: '8px 14px',
+            borderRadius: 8,
+            border: '1px solid rgba(148,163,184,0.15)',
+            background: 'rgba(30,41,59,0.5)',
+            color: '#cbd5e1',
+            fontSize: 13,
+            outline: 'none',
+          }}
+        >
+          <option value="10">每页 10 条</option>
+          <option value="20">每页 20 条</option>
+          <option value="50">每页 50 条</option>
+        </select>
+      </div>
 
       {/* 主列表 */}
       <ErrorBoundary fallback={() => <ReportsListErrorFallback />}>

@@ -122,16 +122,27 @@ check_prisma_classification() {
   UNCLASSIFIED_MODELS=()
   UNCLASSIFIED_COUNT=0
 
+  # 预先生成文件中的行号边界，避免在循环中反复调用sed/grep
+  local model_lines
+  model_lines=$(grep -n '^model \|^enum \|^generator \|^datasource ' "$schema_file" || true)
+  local next_line
+  next_line=$(tail -1 "$schema_file" | wc -l | xargs)
+  [ -z "$next_line" ] && next_line=$(wc -l < "$schema_file")
+
   while IFS= read -r model_name; do
     [ -z "$model_name" ] && continue
 
-    local model_line
-    model_line=$(grep -n "^model ${model_name}" "$schema_file" | head -1 | cut -d: -f1)
+    local model_line_num
+    model_line_num=$(echo "$model_lines" | grep "^[0-9]*:model ${model_name}" | head -1 | cut -d: -f1)
+    [ -z "$model_line_num" ] && continue
 
-    # 提取 model 块(直到下一个 model 或 enum)
+    # 找下一个关键词行做边界
+    local end_line_num
+    end_line_num=$(echo "$model_lines" | awk -v start="$model_line_num" '$1+0 > start+0 {print $1+0; exit}' FS=: || echo "$next_line")
+    [ -z "$end_line_num" ] && end_line_num=$((model_line_num + 30))
+
     local model_block
-    model_block=$(sed -n "${model_line},/^\(model\|enum\|generator\|datasource\)/p" "$schema_file" \
-      | head -n -1 2>/dev/null || true)
+    model_block=$(sed -n "${model_line_num},${end_line_num}p" "$schema_file" 2>/dev/null || true)
 
     # 检查是否包含 PiiLevel 字段或敏感相关字段
     local has_pii_level
