@@ -127,3 +127,172 @@ describe('agents/configs — 防御', () => {
     assert.ok(src.includes('repeat(4'), 'grid 应为 4 列');
   });
 });
+
+// ---- 新增: 批量操作与开关辅助函数 ----
+
+describe('executeBatchAction — 批量操作', () => {
+  it('应导出 executeBatchAction', () => {
+    const src = readSource();
+    assert.ok(src.includes('executeBatchAction'), '缺少 executeBatchAction');
+  });
+
+  it('应返回 { success, failed }', () => {
+    const src = readSource();
+    assert.ok(src.includes('success: number'), '应返回 success');
+    assert.ok(src.includes('failed: number'), '应返回 failed');
+  });
+
+  it('成功数应与输入 ID 数一致', () => {
+    const src = readSource();
+    assert.ok(src.includes('action.ids.length'), '成功数基于 ids 长度');
+  });
+});
+
+describe('toggleConfigStatus — 状态切换', () => {
+  it('应导出 toggleConfigStatus', () => {
+    const src = readSource();
+    assert.ok(src.includes('toggleConfigStatus'), '缺少 toggleConfigStatus');
+  });
+
+  it('应翻转指定配置的 enabled 状态', () => {
+    const src = readSource();
+    assert.ok(src.includes('!c.enabled'), '应翻转 enabled');
+  });
+
+  it('不应影响其他配置', () => {
+    const src = readSource();
+    assert.ok(src.includes('c.id === id'), '应仅匹配 id');
+  });
+});
+
+describe('batchToggle — 批量状态切换', () => {
+  it('应导出 batchToggle', () => {
+    const src = readSource();
+    assert.ok(src.includes('batchToggle'), '缺少 batchToggle');
+  });
+
+  it('enable 为 true 时应启用所有选中配置', () => {
+    const src = readSource();
+    assert.ok(src.includes("type: enable ? 'enable' : 'disable'"), '应根据 enable 参数');
+  });
+
+  it('应调用 executeBatchAction 执行', () => {
+    const src = readSource();
+    assert.ok(src.includes('executeBatchAction(action)'), '应调用批量执行');
+  });
+});
+
+describe('EnableToggle — 开关组件', () => {
+  it('应导出 EnableToggle', () => {
+    const src = readSource();
+    assert.ok(src.includes('function EnableToggle'), '缺少 EnableToggle');
+  });
+
+  it('enabled 为 true 时应显示绿色', () => {
+    const src = readSource();
+    assert.ok(src.includes('bg-emerald-500'), '启用状态应为绿色');
+  });
+
+  it('enabled 为 false 时应显示灰色', () => {
+    const src = readSource();
+    assert.ok(src.includes('bg-slate-600'), '禁用状态应为灰色');
+  });
+
+  it('disabled 时应设置 cursor-not-allowed', () => {
+    const src = readSource();
+    assert.ok(src.includes('cursor-not-allowed'), 'disabled 应显示禁止指针');
+  });
+
+  it('应使用 role=switch', () => {
+    const src = readSource();
+    assert.ok(src.includes('role="switch"'), '应使用 switch role');
+  });
+});
+
+describe('BatchActionBar — 批量操作栏', () => {
+  it('应导出 BatchActionBar', () => {
+    const src = readSource();
+    assert.ok(src.includes('BatchActionBar'), '缺少 BatchActionBar');
+  });
+
+  it('selectedIds 为空时应返回 null', () => {
+    const src = readSource();
+    assert.ok(src.includes('selectedIds.length === 0'), '空选择应返回 null');
+    assert.ok(src.includes('return null'), '应返回 null');
+  });
+
+  it('应显示已选数量', () => {
+    const src = readSource();
+    assert.ok(src.includes('selectedIds.length'), '应显示已选数量');
+  });
+
+  it('应包含启用/禁用/删除按钮', () => {
+    const src = readSource();
+    assert.ok(src.includes('onBatchAction(\'enable\')'), '应支持启用');
+    assert.ok(src.includes('onBatchAction(\'disable\')'), '应支持禁用');
+    assert.ok(src.includes('onBatchAction(\'delete\')'), '应支持删除');
+  });
+});
+
+describe('applyFilters — 筛选辅助', () => {
+  it('应导出 applyFilters', () => {
+    const src = readSource();
+    assert.ok(src.includes('applyFilters'), '缺少 applyFilters');
+  });
+
+  it('search 空时应原样返回', () => {
+    const src = readSource();
+    assert.ok(src.includes('search.trim()'), '应检查空白搜索');
+  });
+
+  it('modelFilter 空时应不过滤', () => {
+    const src = readSource();
+    assert.ok(src.includes('modelFilter)'), '应检查模型筛选');
+  });
+});
+
+describe('countByModel — 模型统计', () => {
+  it('应导出 countByModel', () => {
+    const src = readSource();
+    assert.ok(src.includes('countByModel'), '缺少 countByModel');
+  });
+
+  it('应返回模型到数量的映射', () => {
+    const src = readSource();
+    assert.ok(src.includes('Record<string, number>'), '应返回 Record');
+  });
+});
+
+describe('getStatusLabel — 状态标签', () => {
+  it('应导出 getStatusLabel', () => {
+    const src = readSource();
+    assert.ok(src.includes('getStatusLabel'), '缺少 getStatusLabel');
+  });
+
+  it('enabled 为 true 返回已启用', () => {
+    const src = readSource();
+    assert.ok(src.includes('已启用'), '启用返回正确中文');
+  });
+
+  it('enabled 为 false 返回已禁用', () => {
+    const src = readSource();
+    assert.ok(src.includes('已禁用'), '禁用返回正确中文');
+  });
+});
+
+describe('getAverageTimeoutText — 平均超时', () => {
+  it('应导出 getAverageTimeoutText', () => {
+    const src = readSource();
+    assert.ok(src.includes('getAverageTimeoutText'), '缺少 getAverageTimeoutText');
+  });
+
+  it('空列表应返回 0s', () => {
+    const src = readSource();
+    assert.ok(src.includes("return '0s'"), '空列表返回 0s');
+  });
+
+  it('应计算并格式化平均超时', () => {
+    const src = readSource();
+    assert.ok(src.includes('/ configs.length'), '应计算平均值');
+  });
+});

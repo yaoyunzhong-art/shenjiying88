@@ -260,3 +260,209 @@ const FOUNDATION_PAGE_META = {
 } as const;
 
 export { getBlueprintVersion, formatModuleStatus, getBlueprintUrl, countTotalCapabilities, countActiveCapabilities, getContractDirectionBadge, FOUNDATION_PAGE_META };
+
+// ---- 新增: 模块依赖图 ----
+
+interface DependencyNode {
+  name: string;
+  direction: 'inbound' | 'outbound';
+  weight: 'high' | 'medium' | 'low';
+}
+
+function buildDependencyGraph(module: NonNullable<ModuleSnapshot['module']>): DependencyNode[] {
+  const nodes: DependencyNode[] = [];
+  for (const contract of module.inboundContracts) {
+    nodes.push({ name: contract, direction: 'inbound', weight: 'medium' });
+  }
+  for (const contract of module.outboundContracts) {
+    nodes.push({ name: contract, direction: 'outbound', weight: 'high' });
+  }
+  return nodes;
+}
+
+function DependencyGraphView({ nodes }: { nodes: DependencyNode[] }) {
+  if (nodes.length === 0) {
+    return <span className="text-xs text-slate-500">无依赖关系</span>;
+  }
+  const inbound = nodes.filter((n) => n.direction === 'inbound');
+  const outbound = nodes.filter((n) => n.direction === 'outbound');
+  return (
+    <div className="space-y-4">
+      <div>
+        <h5 className="text-xs font-semibold text-slate-400 mb-2">入向依赖 ({inbound.length})</h5>
+        <div className="flex flex-wrap gap-2">
+          {inbound.map((n, i) => (
+            <span key={i}
+              className="px-2.5 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-xs text-blue-400">
+              ← {n.name}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div>
+        <h5 className="text-xs font-semibold text-slate-400 mb-2">出向依赖 ({outbound.length})</h5>
+        <div className="flex flex-wrap gap-2">
+          {outbound.map((n, i) => (
+            <span key={i}
+              className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-xs text-emerald-400">
+              → {n.name}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---- 新增: API 端点列表 ----
+
+interface ApiEndpoint {
+  path: string;
+  method: string;
+  description: string;
+  status: 'active' | 'deprecated' | 'experimental';
+}
+
+function buildMockEndpoints(moduleKey: string): ApiEndpoint[] {
+  const endpoints: Record<string, ApiEndpoint[]> = {
+    'trust-governance': [
+      { path: '/api/v1/audit/events', method: 'GET', description: '获取审计事件列表', status: 'active' },
+      { path: '/api/v1/audit/events/:id', method: 'GET', description: '获取审计事件详情', status: 'active' },
+      { path: '/api/v1/approval/requests', method: 'POST', description: '创建审批请求', status: 'active' },
+      { path: '/api/v1/risk/assess', method: 'POST', description: '风控评估', status: 'active' },
+      { path: '/api/v1/risk/rules', method: 'GET', description: '获取风控规则列表', status: 'deprecated' },
+    ],
+    'identity-access': [
+      { path: '/api/v1/auth/login', method: 'POST', description: '用户登录', status: 'active' },
+      { path: '/api/v1/auth/refresh', method: 'POST', description: '令牌刷新', status: 'active' },
+      { path: '/api/v1/roles', method: 'GET', description: '角色列表', status: 'active' },
+      { path: '/api/v1/permissions/check', method: 'POST', description: '权限校验', status: 'active' },
+    ],
+    'data-platform': [
+      { path: '/api/v1/ingestion/events', method: 'POST', description: '采集事件', status: 'active' },
+      { path: '/api/v1/analytics/reports', method: 'GET', description: '获取报表', status: 'deprecated' },
+      { path: '/api/v1/analytics/query', method: 'POST', description: '数据查询', status: 'experimental' },
+    ],
+  };
+  return endpoints[moduleKey] ?? [];
+}
+
+function ApiEndpointList({ endpoints }: { endpoints: ApiEndpoint[] }) {
+  if (endpoints.length === 0) {
+    return <span className="text-xs text-slate-500">暂无 API 端点</span>;
+  }
+  return (
+    <div className="space-y-2">
+      {endpoints.map((ep, i) => (
+        <div key={i} className="flex items-center gap-3 py-2 border-b border-slate-700 last:border-b-0">
+          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+            ep.method === 'GET' ? 'bg-emerald-500/20 text-emerald-400' :
+            ep.method === 'POST' ? 'bg-blue-500/20 text-blue-400' :
+            'bg-amber-500/20 text-amber-400'
+          }`}>
+            {ep.method}
+          </span>
+          <span className="font-mono text-xs text-slate-300 flex-1">{ep.path}</span>
+          <span className="text-xs text-slate-400 flex-1">{ep.description}</span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+            ep.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' :
+            ep.status === 'deprecated' ? 'bg-red-500/10 text-red-400' :
+            'bg-amber-500/10 text-amber-400'
+          }`}>{ep.status}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---- 新增: 状态历史 ----
+
+interface StatusChangeEvent {
+  date: string;
+  fromStatus: string;
+  toStatus: string;
+  reason: string;
+}
+
+function buildMockStatusHistory(): StatusChangeEvent[] {
+  return [
+    { date: '2025-01-15', fromStatus: 'draft', toStatus: 'active', reason: '模块初始化完成' },
+    { date: '2025-06-01', fromStatus: 'active', toStatus: 'active', reason: '能力扩展: 新增审计记录功能' },
+    { date: '2026-01-10', fromStatus: 'active', toStatus: 'active', reason: '安全加固: 增加访问审计' },
+    { date: '2026-03-20', fromStatus: 'active', toStatus: 'active', reason: '性能优化: 请求限流支持' },
+  ];
+}
+
+function buildModuleStatusHistory(moduleKey: string): StatusChangeEvent[] {
+  if (moduleKey === 'data-platform') {
+    return [
+      { date: '2025-02-01', fromStatus: 'draft', toStatus: 'active', reason: '数据平台上线' },
+      { date: '2026-04-15', fromStatus: 'active', toStatus: 'deprecated', reason: 'analytics 能力标记废弃' },
+    ];
+  }
+  return buildMockStatusHistory();
+}
+
+function StatusHistoryTimeline({ events }: { events: StatusChangeEvent[] }) {
+  if (events.length === 0) {
+    return <span className="text-xs text-slate-500">暂无状态历史</span>;
+  }
+  return (
+    <div className="relative pl-5 space-y-3">
+      {events.map((evt, i) => (
+        <div key={i} className="relative">
+          <div className={`absolute -left-[17px] w-2.5 h-2.5 rounded-full mt-1.5 ${
+            evt.toStatus === 'active' ? 'bg-emerald-500' :
+            evt.toStatus === 'deprecated' ? 'bg-red-500' :
+            evt.toStatus === 'draft' ? 'bg-slate-400' : 'bg-blue-500'
+          }`} />
+          <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-mono text-slate-500">{evt.date}</span>
+            </div>
+            <p className="text-xs text-slate-300">{evt.reason}</p>
+            <div className="flex gap-1 mt-1">
+              <span className="text-[10px] bg-slate-700 px-1.5 py-0.5 rounded text-slate-400">{evt.fromStatus}</span>
+              <span className="text-[10px] text-slate-500">→</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                evt.toStatus === 'active' ? 'bg-emerald-500/20 text-emerald-400' :
+                evt.toStatus === 'deprecated' ? 'bg-red-500/20 text-red-400' :
+                'bg-slate-700 text-slate-300'
+              }`}>{evt.toStatus}</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---- 新增: 模块概览统计 ----
+
+function moduleHealthScore(module: NonNullable<ModuleSnapshot['module']>): { score: number; label: string } {
+  const activeCaps = module.capabilities.filter((c) => c.status === 'active').length;
+  const totalCaps = module.capabilities.length;
+  const ratio = totalCaps > 0 ? activeCaps / totalCaps : 0;
+  if (ratio >= 0.8) return { score: 90, label: '健康' };
+  if (ratio >= 0.5) return { score: 60, label: '需关注' };
+  return { score: 30, label: '需修复' };
+}
+
+function countDeprecatedCapabilities(module: NonNullable<ModuleSnapshot['module']>): number {
+  return module.capabilities.filter((c) => c.status === 'deprecated').length;
+}
+
+function getModuleAgeInMonths(module: NonNullable<ModuleSnapshot['module']>): number {
+  // 基于能力数量估算模块年龄（模拟）
+  return module.capabilities.length * 3;
+}
+
+export {
+  getBlueprintVersion, formatModuleStatus, getBlueprintUrl,
+  countTotalCapabilities, countActiveCapabilities,
+  getContractDirectionBadge, FOUNDATION_PAGE_META,
+  buildDependencyGraph, DependencyGraphView,
+  buildMockEndpoints, ApiEndpointList,
+  buildMockStatusHistory, buildModuleStatusHistory, StatusHistoryTimeline,
+  moduleHealthScore, countDeprecatedCapabilities, getModuleAgeInMonths,
+};

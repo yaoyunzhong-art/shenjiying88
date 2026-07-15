@@ -145,3 +145,140 @@ test('边界: 超长备注', () => {
   const record = makeRecoveryPlan({ notes: longNotes });
   assert.equal((record.notes as string).length, 10000);
 });
+
+// ── 新增: 恢复状态卡 ──
+
+test('新增: RecoveryStatusCard 应导出', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('RecoveryStatusCard'), '缺少 RecoveryStatusCard');
+});
+
+test('新增: RecoveryStatusCard 应渲染状态标签', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('label'), '渲染标签');
+  assert.ok(src.includes('description'), '渲染描述');
+});
+
+test('新增: RecoveryStatusCard 应包含彩色指示点', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('w-3 h-3 rounded-full'), '状态点');
+});
+
+// ── 新增: 重试按钮 ──
+
+test('新增: RetryButton 应导出', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('function RetryButton'), '缺少 RetryButton');
+});
+
+test('新增: RetryButton 在 loading 时应显示旋转图标', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('animate-spin'), '旋转图标');
+});
+
+test('新增: RetryButton 在 loading 时应显示恢复中文字', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('\'恢复中...\''), '恢复中文案');
+});
+
+test('新增: RetryButton disabled 时应禁止点击', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('cursor-not-allowed'), '禁止点击样式');
+});
+
+test('新增: executeRecovery 应返回成功结果', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('executeRecovery'), '缺少 executeRecovery');
+  assert.ok(src.includes('success: true'), '返回成功');
+});
+
+test('新增: executeRecovery 应包含持续时常', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('duration'), '包含持续时长');
+});
+
+// ── 新增: 健康指标 ──
+
+test('新增: buildMockHealthMetrics for api-gateway 返回 4 个指标', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('buildMockHealthMetrics'), '缺少 buildMockHealthMetrics');
+  assert.ok(src.includes('api-gateway'), '网关指标');
+  assert.ok(src.includes('320ms'), '延迟指标');
+});
+
+test('新增: buildMockHealthMetrics for user-db 包含 degraded 指标', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('user-db'), '数据库指标');
+  assert.ok(src.includes('850ms'), '降级延迟');
+});
+
+test('新增: buildMockHealthMetrics for message-queue 包含 down 指标', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('message-queue'), '队列指标');
+  assert.ok(src.includes('50,000'), '队列深度');
+});
+
+test('新增: buildMockHealthMetrics 未知资源返回默认指标', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('99.9%'), '默认可用性');
+});
+
+test('新增: HealthMetricsPanel 空指标显示暂无健康指标', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('暂无健康指标'), '空状态文案');
+});
+
+test('新增: HealthMetricsPanel 应渲染指标名称和值', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('m.name'), '指标名称');
+  assert.ok(src.includes('m.value'), '指标值');
+  assert.ok(src.includes('m.threshold'), '指标阈值');
+});
+
+// ── 新增: 健康评分辅助 ──
+
+test('新增: computeHealthScore 全员 healthy 返回 100', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('computeHealthScore'), '缺少 computeHealthScore');
+  assert.ok(src.includes('m.status'), '基于状态计算');
+});
+
+test('新增: computeHealthScore 空指标返回 0', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('Math.round'), '取整');
+});
+
+test('新增: getHealthScoreColor 高分返回绿色', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('getHealthScoreColor'), '缺少 getHealthScoreColor');
+  assert.ok(src.includes('text-emerald-400'), '绿色');
+  assert.ok(src.includes('text-amber-400'), '黄色');
+  assert.ok(src.includes('text-red-400'), '红色');
+});
+
+test('新增: getOverallHealthStatus 包含 down 返回 down', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('getOverallHealthStatus'), '缺少 getOverallHealthStatus');
+  assert.ok(src.includes("return 'down'"), 'down 状态');
+  assert.ok(src.includes("return 'degraded'"), 'degraded 状态');
+  assert.ok(src.includes("return 'healthy'"), 'healthy 状态');
+});
+
+// ── 新增: 演练状态 ──
+
+test('新增: isDrillOverdue 应判断演练是否过期', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('isDrillOverdue'), '缺少 isDrillOverdue');
+  assert.ok(src.includes('daysThreshold'), '天数阈值');
+});
+
+test('新增: formatDrillStatus 过期应返回 error', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('formatDrillStatus'), '缺少 formatDrillStatus');
+  assert.ok(src.includes('演练已过期'), '过期状态');
+});
+
+test('新增: formatDrillStatus 正常应返回 success', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('演练正常'), '正常状态');
+});

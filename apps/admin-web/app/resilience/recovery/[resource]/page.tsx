@@ -252,3 +252,172 @@ const RECOVERY_STATUS_VARIANTS: Record<string, string> = {
 };
 
 export { RTOProgressBar, RecoveryMetricCard, parseTimeToSeconds, RECOVERY_STATUS_LABELS, RECOVERY_STATUS_VARIANTS };
+
+// ---- 新增: 恢复状态卡 ----
+
+function RecoveryStatusCard({ status, label, description, color }: {
+  status: string; label: string; description: string; color: string;
+}) {
+  return (
+    <div className="bg-slate-800/60 rounded-lg p-4 border border-slate-700">
+      <div className="flex items-center gap-2 mb-2">
+        <div className={`w-3 h-3 rounded-full ${color}`} />
+        <span className="text-sm font-semibold text-white">{label}</span>
+      </div>
+      <p className="text-xs text-slate-400">{description}</p>
+      <span className="text-[10px] text-slate-500 mt-1 block font-mono">{status}</span>
+    </div>
+  );
+}
+
+// ---- 新增: 重试按钮 ----
+
+interface RetryButtonProps {
+  onClick: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  label?: string;
+}
+
+function RetryButton({ onClick, disabled, loading, label }: RetryButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+        loading ? 'bg-blue-600/50 text-blue-300 cursor-wait' :
+        disabled ? 'bg-slate-700 text-slate-500 cursor-not-allowed' :
+        'bg-blue-600 text-white hover:bg-blue-500 active:scale-95'
+      }`}
+    >
+      {loading && (
+        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      )}
+      {loading ? '恢复中...' : label ?? '执行恢复'}
+    </button>
+  );
+}
+
+async function executeRecovery(resource: string): Promise<{ success: boolean; message: string; duration: number }> {
+  await new Promise((r) => setTimeout(r, 500));
+  return {
+    success: true,
+    message: `资源 ${resource} 恢复成功`,
+    duration: 2.3,
+  };
+}
+
+// ---- 新增: 资源健康指标 ----
+
+interface HealthMetric {
+  name: string;
+  status: 'healthy' | 'degraded' | 'down';
+  value: string;
+  threshold: string;
+}
+
+function buildMockHealthMetrics(resource: string): HealthMetric[] {
+  const metrics: Record<string, HealthMetric[]> = {
+    'api-gateway': [
+      { name: '延迟 P99', status: 'healthy', value: '320ms', threshold: '<500ms' },
+      { name: '请求成功率', status: 'healthy', value: '99.8%', threshold: '>99%' },
+      { name: '并发连接数', status: 'healthy', value: '1,234', threshold: '<5,000' },
+      { name: '错误率', status: 'healthy', value: '0.2%', threshold: '<1%' },
+    ],
+    'user-db': [
+      { name: '查询延迟 P99', status: 'degraded', value: '850ms', threshold: '<500ms' },
+      { name: '连接池使用率', status: 'healthy', value: '45%', threshold: '<80%' },
+      { name: '复制延迟', status: 'healthy', value: '120ms', threshold: '<1s' },
+      { name: '磁盘 IO', status: 'degraded', value: '75%', threshold: '<70%' },
+    ],
+    'cache-cluster': [
+      { name: '缓存命中率', status: 'healthy', value: '95%', threshold: '>90%' },
+      { name: '内存使用率', status: 'degraded', value: '85%', threshold: '<80%' },
+      { name: '响应延迟', status: 'healthy', value: '2ms', threshold: '<10ms' },
+    ],
+    'message-queue': [
+      { name: '队列深度', status: 'down', value: '50,000', threshold: '<10,000' },
+      { name: '消费延迟', status: 'down', value: '15min', threshold: '<5min' },
+      { name: 'Broker 可用性', status: 'down', value: '0/3', threshold: '3/3' },
+    ],
+  };
+  return metrics[resource] ?? [
+    { name: '可用性', status: 'healthy', value: '99.9%', threshold: '>99%' },
+    { name: '延迟', status: 'healthy', value: '50ms', threshold: '<100ms' },
+  ];
+}
+
+function HealthMetricsPanel({ metrics }: { metrics: HealthMetric[] }) {
+  if (metrics.length === 0) {
+    return <span className="text-xs text-slate-500">暂无健康指标</span>;
+  }
+  return (
+    <div className="space-y-2">
+      {metrics.map((m, i) => (
+        <div key={i} className="flex items-center gap-3 py-2 border-b border-slate-700 last:border-b-0">
+          <div className={`w-2 h-2 rounded-full shrink-0 ${
+            m.status === 'healthy' ? 'bg-emerald-500' :
+            m.status === 'degraded' ? 'bg-amber-500' : 'bg-red-500'
+          }`} />
+          <span className="text-xs text-slate-300 w-28 shrink-0">{m.name}</span>
+          <span className={`text-xs font-mono flex-1 ${
+            m.status === 'healthy' ? 'text-emerald-400' :
+            m.status === 'degraded' ? 'text-amber-400' : 'text-red-400'
+          }`}>{m.value}</span>
+          <span className="text-[10px] text-slate-500 font-mono">阈值: {m.threshold}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---- 新增: 健康评分 ----
+
+function computeHealthScore(metrics: HealthMetric[]): number {
+  if (metrics.length === 0) return 0;
+  const scores = metrics.map((m) => {
+    if (m.status === 'healthy') return 100;
+    if (m.status === 'degraded') return 50;
+    return 0;
+  });
+  return Math.round(scores.reduce((a, b) => a + b, 0) / metrics.length);
+}
+
+function getHealthScoreColor(score: number): string {
+  if (score >= 80) return 'text-emerald-400';
+  if (score >= 50) return 'text-amber-400';
+  return 'text-red-400';
+}
+
+function getOverallHealthStatus(metrics: HealthMetric[]): 'healthy' | 'degraded' | 'down' {
+  if (metrics.some((m) => m.status === 'down')) return 'down';
+  if (metrics.some((m) => m.status === 'degraded')) return 'degraded';
+  return 'healthy';
+}
+
+// ---- 新增: 演练状态辅助 ----
+
+function isDrillOverdue(lastDrillAt: string, daysThreshold: number = 90): boolean {
+  const last = new Date(lastDrillAt).getTime();
+  const now = Date.now();
+  const diffDays = (now - last) / (1000 * 60 * 60 * 24);
+  return diffDays > daysThreshold;
+}
+
+function formatDrillStatus(lastDrillAt: string): { label: string; variant: 'success' | 'warning' | 'error' } {
+  const overdue = isDrillOverdue(lastDrillAt);
+  if (overdue) return { label: '演练已过期', variant: 'error' };
+  return { label: '演练正常', variant: 'success' };
+}
+
+export {
+  RTOProgressBar, RecoveryMetricCard, parseTimeToSeconds,
+  RECOVERY_STATUS_LABELS, RECOVERY_STATUS_VARIANTS,
+  RecoveryStatusCard, RetryButton, executeRecovery,
+  buildMockHealthMetrics, HealthMetricsPanel,
+  computeHealthScore, getHealthScoreColor, getOverallHealthStatus,
+  isDrillOverdue, formatDrillStatus,
+};

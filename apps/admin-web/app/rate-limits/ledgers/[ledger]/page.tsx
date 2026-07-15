@@ -238,3 +238,219 @@ const QUOTA_STATUS_VARIANTS: Record<string, 'success' | 'warning' | 'error'> = {
 };
 
 export { QuotaGauge, LedgerMetaGrid, QUOTA_STATUS_VARIANTS };
+
+// ---- 新增: 速率消耗趋势 ----
+
+interface ConsumptionDataPoint {
+  timestamp: string;
+  consumed: number;
+  limit: number;
+}
+
+function buildMockConsumptionTrend(ledgerId: string): ConsumptionDataPoint[] {
+  if (ledgerId === 'ledger-demo-001') {
+    return [
+      { timestamp: '10:00', consumed: 3000, limit: 10000 },
+      { timestamp: '10:05', consumed: 4200, limit: 10000 },
+      { timestamp: '10:10', consumed: 5100, limit: 10000 },
+      { timestamp: '10:15', consumed: 6800, limit: 10000 },
+      { timestamp: '10:20', consumed: 7200, limit: 10000 },
+      { timestamp: '10:25', consumed: 8100, limit: 10000 },
+      { timestamp: '10:30', consumed: 9500, limit: 10000 },
+    ];
+  }
+  if (ledgerId === 'ledger-demo-002') {
+    return [
+      { timestamp: '10:00', consumed: 5000, limit: 5000 },
+      { timestamp: '10:05', consumed: 5000, limit: 5000 },
+      { timestamp: '10:10', consumed: 5000, limit: 5000 },
+      { timestamp: '10:15', consumed: 5000, limit: 5000 },
+    ];
+  }
+  return [
+    { timestamp: '10:00', consumed: 50, limit: 1000 },
+    { timestamp: '10:05', consumed: 120, limit: 1000 },
+    { timestamp: '10:10', consumed: 200, limit: 1000 },
+  ];
+}
+
+function ConsumptionTrendChart({ dataPoints }: { dataPoints: ConsumptionDataPoint[] }) {
+  if (dataPoints.length === 0) {
+    return <span className="text-xs text-slate-500">暂无趋势数据</span>;
+  }
+  const maxValue = Math.max(...dataPoints.map((d) => d.consumed), ...dataPoints.map((d) => d.limit));
+  const barHeight = 120;
+  return (
+    <div className="space-y-1">
+      <div className="flex items-end gap-1 h-[120px]" style={{ height: barHeight }}>
+        {dataPoints.map((dp, i) => {
+          const h = maxValue > 0 ? (dp.consumed / maxValue) * barHeight : 0;
+          const pct = dp.limit > 0 ? Math.round((dp.consumed / dp.limit) * 100) : 0;
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
+              <div className="w-full max-w-[24px] rounded-t-sm transition-all"
+                style={{
+                  height: `${h}px`,
+                  backgroundColor: pct > 90 ? 'rgba(239,68,68,0.6)' : pct > 70 ? 'rgba(251,191,36,0.6)' : 'rgba(59,130,246,0.5)',
+                }}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex gap-1">
+        {dataPoints.map((dp, i) => (
+          <div key={i} className="flex-1 text-[9px] text-slate-500 text-center font-mono truncate">
+            {dp.timestamp}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---- 新增: 限额统计卡 ----
+
+interface QuotaSummary {
+  totalQuota: number;
+  usedQuota: number;
+  remainingQuota: number;
+  usagePercent: number;
+  estimatedExhaustionTime: string;
+}
+
+function buildQuotaSummary(record: NonNullable<LedgerSnapshot['record']>): QuotaSummary {
+  const usagePercent = record.limit > 0 ? Math.round((record.usedQuota / record.limit) * 100) : 0;
+  const remainingQuota = record.limit - record.usedQuota;
+  // 估算耗尽时间 (模拟)
+  const estimatedExhaustionTime = usagePercent > 80 ? '30 分钟内' : usagePercent > 50 ? '2 小时内' : '> 4 小时';
+  return {
+    totalQuota: record.limit,
+    usedQuota: record.usedQuota,
+    remainingQuota: Math.max(0, remainingQuota),
+    usagePercent,
+    estimatedExhaustionTime,
+  };
+}
+
+function QuotaSummaryCards({ summary }: { summary: QuotaSummary }) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700">
+        <div className="text-[10px] text-slate-500 mb-1">总限额</div>
+        <div className="font-mono text-lg text-blue-400">{summary.totalQuota.toLocaleString()}</div>
+      </div>
+      <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700">
+        <div className="text-[10px] text-slate-500 mb-1">已使用</div>
+        <div className={`font-mono text-lg ${summary.usagePercent > 90 ? 'text-red-400' : summary.usagePercent > 70 ? 'text-amber-400' : 'text-emerald-400'}`}>
+          {summary.usedQuota.toLocaleString()}
+        </div>
+      </div>
+      <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700">
+        <div className="text-[10px] text-slate-500 mb-1">剩余</div>
+        <div className={`font-mono text-lg ${summary.remainingQuota === 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+          {summary.remainingQuota.toLocaleString()}
+        </div>
+      </div>
+      <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700">
+        <div className="text-[10px] text-slate-500 mb-1">预计耗尽</div>
+        <div className={`font-mono text-sm ${summary.usagePercent > 80 ? 'text-red-400' : 'text-slate-300'}`}>
+          {summary.estimatedExhaustionTime}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---- 新增: 最近的限流事件 ----
+
+interface RateLimitEvent {
+  id: string;
+  subjectKey: string;
+  timestamp: string;
+  reason: string;
+  blockedDuration: string;
+  severity: 'critical' | 'warning' | 'info';
+}
+
+function buildMockRateLimitEvents(ledgerId: string): RateLimitEvent[] {
+  if (ledgerId === 'ledger-demo-002') {
+    return [
+      { id: 'evt-001', subjectKey: 'tenant-demo:api:write', timestamp: '2026-07-15 10:15:30', reason: '写 API 配额耗尽', blockedDuration: '45min', severity: 'critical' },
+      { id: 'evt-002', subjectKey: 'tenant-demo:api:write', timestamp: '2026-07-15 10:05:00', reason: '写速率超过 50 QPS 阈值', blockedDuration: '30s', severity: 'warning' },
+      { id: 'evt-003', subjectKey: 'tenant-demo:api:write', timestamp: '2026-07-15 09:50:00', reason: '写速率接近限额 90%', blockedDuration: '0s', severity: 'info' },
+    ];
+  }
+  return [
+    { id: 'evt-004', subjectKey: 'tenant-demo:api:read', timestamp: '2026-07-15 10:28:00', reason: '读速率接近限额 95%', blockedDuration: '0s', severity: 'info' },
+    { id: 'evt-005', subjectKey: 'tenant-demo:api:read', timestamp: '2026-07-15 10:20:00', reason: '读请求瓶颈告警', blockedDuration: '0s', severity: 'warning' },
+  ];
+}
+
+function RateLimitEventList({ events }: { events: RateLimitEvent[] }) {
+  if (events.length === 0) {
+    return <span className="text-xs text-slate-500">近期无限流事件</span>;
+  }
+  return (
+    <div className="space-y-2">
+      {events.map((evt) => (
+        <div key={evt.id} className="flex items-start gap-3 py-2 border-b border-slate-700 last:border-b-0">
+          <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+            evt.severity === 'critical' ? 'bg-red-500' :
+            evt.severity === 'warning' ? 'bg-amber-500' : 'bg-blue-500'
+          }`} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono text-slate-300">{evt.subjectKey}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                evt.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
+                evt.severity === 'warning' ? 'bg-amber-500/20 text-amber-400' :
+                'bg-blue-500/20 text-blue-400'
+              }`}>{evt.severity}</span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">{evt.reason}</p>
+            <div className="text-[10px] text-slate-500 font-mono mt-0.5">{evt.timestamp}</div>
+          </div>
+          {evt.blockedDuration !== '0s' && (
+            <span className="text-[10px] px-2 py-0.5 bg-red-500/10 text-red-400 rounded whitespace-nowrap">
+              阻断 {evt.blockedDuration}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---- 新增: 辅助统计函数 ----
+
+function calculateUsageRate(record: NonNullable<LedgerSnapshot['record']>): number {
+  return record.limit > 0 ? Math.round((record.usedQuota / record.limit) * 100) : 0;
+}
+
+function getUsageSeverity(percent: number): 'healthy' | 'warning' | 'critical' {
+  if (percent >= 90) return 'critical';
+  if (percent >= 70) return 'warning';
+  return 'healthy';
+}
+
+function formatQuotaNumber(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return value.toLocaleString();
+}
+
+const USAGE_SEVERITY_COLORS: Record<string, string> = {
+  healthy: 'text-emerald-400',
+  warning: 'text-amber-400',
+  critical: 'text-red-400',
+};
+
+export {
+  QuotaGauge, LedgerMetaGrid, QUOTA_STATUS_VARIANTS,
+  buildMockConsumptionTrend, ConsumptionTrendChart,
+  buildQuotaSummary, QuotaSummaryCards,
+  buildMockRateLimitEvents, RateLimitEventList,
+  calculateUsageRate, getUsageSeverity, formatQuotaNumber,
+  USAGE_SEVERITY_COLORS,
+};

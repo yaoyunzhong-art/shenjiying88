@@ -269,3 +269,115 @@ test('rate-limits-ledger-detail-page: policy.matchedPolicy may be null when poli
   assert.ok('matchedPolicy' in result);
   assert.equal(result.matchedPolicy, null);
 });
+
+/* ─── 9. 新增: 消费趋势数据 ─── */
+
+test('rate-limits-ledger-detail-page: buildMockConsumptionTrend for demo-001 returns 7 points', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('buildMockConsumptionTrend'), '缺少 buildMockConsumptionTrend');
+  assert.ok(src.includes("ledger-demo-001"), 'demo-001 趋势');
+  assert.ok(src.includes('timestamp:'), '趋势包含时间戳');
+});
+
+test('rate-limits-ledger-detail-page: buildMockConsumptionTrend for demo-002 returns 4 points', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes("ledger-demo-002"), 'demo-002 趋势');
+  assert.ok(src.includes('consumed: 5000'), 'demo-002 已耗尽');
+});
+
+test('rate-limits-ledger-detail-page: default trend returns 3 points', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('return ['), '默认趋势');
+});
+
+test('rate-limits-ledger-detail-page: ConsumptionTrendChart handles empty data', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('暂无趋势数据'), '空数据状态');
+});
+
+test('rate-limits-ledger-detail-page: ConsumptionTrendChart renders bars with color', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('backgroundColor'), '柱状图颜色');
+  assert.ok(src.includes('maxValue'), '最大参考值');
+});
+
+/* ─── 10. 新增: 限额统计 ─── */
+
+test('rate-limits-ledger-detail-page: buildQuotaSummary calculates summary correctly', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('buildQuotaSummary'), '缺少 buildQuotaSummary');
+  assert.ok(src.includes('usagePercent'), '使用率计算');
+  assert.ok(src.includes('estimatedExhaustionTime'), '耗尽时间估算');
+});
+
+test('rate-limits-ledger-detail-page: buildQuotaSummary handles 100% usage', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('30 分钟内'), '高使用率耗尽时间');
+});
+
+test('rate-limits-ledger-detail-page: QuotaSummaryCards renders 4 cards', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('总限额'), '总限额卡片');
+  assert.ok(src.includes('已使用'), '已使用卡片');
+  assert.ok(src.includes('剩余'), '剩余卡片');
+  assert.ok(src.includes('预计耗尽'), '预计耗尽卡片');
+});
+
+/* ─── 11. 新增: 限流事件 ─── */
+
+test('rate-limits-ledger-detail-page: buildMockRateLimitEvents for demo-002 returns 3 events', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('buildMockRateLimitEvents'), '缺少 buildMockRateLimitEvents');
+  assert.ok(src.includes("ledger-demo-002"), 'demo-002 事件');
+});
+
+test('rate-limits-ledger-detail-page: RateLimitEventList handles empty events', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('近期无限流事件'), '空事件状态');
+});
+
+test('rate-limits-ledger-detail-page: RateLimitEventList renders severity badge', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('evt.severity'), '严重性显示');
+  assert.ok(src.includes('critical'), '严重级别');
+});
+
+test('rate-limits-ledger-detail-page: RateLimitEventList shows blocked duration', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('blockedDuration'), '阻断时长');
+});
+
+test('rate-limits-ledger-detail-page: blockedDuration 0s hides badge', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes("evt.blockedDuration !== '0s'"), '0s 阻断不显示');
+});
+
+/* ─── 12. 新增: 辅助函数 ─── */
+
+test('rate-limits-ledger-detail-page: calculateUsageRate returns 0 when limit is 0', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('calculateUsageRate'), '缺少 calculateUsageRate');
+});
+
+test('rate-limits-ledger-detail-page: getUsageSeverity returns correct level', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('getUsageSeverity'), '缺少 getUsageSeverity');
+  assert.ok(src.includes("'healthy'"), '健康级别');
+  assert.ok(src.includes("'warning'"), '告警级别');
+  assert.ok(src.includes("'critical'"), '严重级别');
+});
+
+test('rate-limits-ledger-detail-page: formatQuotaNumber formats large numbers', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('formatQuotaNumber'), '缺少 formatQuotaNumber');
+  assert.ok(src.includes('1_000_000'), '百万格式');
+  assert.ok(src.includes('1_000'), '千格式');
+});
+
+test('rate-limits-ledger-detail-page: USAGE_SEVERITY_COLORS maps severities', () => {
+  const src = require('fs').readFileSync(require('path').resolve(__dirname, 'page.tsx'), 'utf-8');
+  assert.ok(src.includes('USAGE_SEVERITY_COLORS'), '缺少颜色映射');
+  assert.ok(src.includes('text-emerald-400'), '健康颜色');
+  assert.ok(src.includes('text-amber-400'), '告警颜色');
+  assert.ok(src.includes('text-red-400'), '严重颜色');
+});
