@@ -32,7 +32,19 @@ function AppProvider({ children }) {
   );
 }
 
+function useBootstrap() {
+  const { state } = useAppContext();
+  return state.bootstrap;
+}
+
+function useSession() {
+  const { state } = useAppContext();
+  return state.session;
+}
+
 module.exports = {
   AppProvider,
   useAppContext,
+  useBootstrap,
+  useSession,
 };
