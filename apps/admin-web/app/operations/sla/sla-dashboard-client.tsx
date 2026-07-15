@@ -13,7 +13,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { StatusBadge, StatCard } from '@m5/ui';
+import { StatusBadge } from '@m5/ui';
 import type {
   SLADashboardSnapshot,
   ServiceStatus,
@@ -24,7 +24,6 @@ import type {
 } from '../../sla-types';
 import {
   SERVICE_STATUS_LABEL,
-  SERVICE_STATUS_COLOR,
   ALERT_LEVEL_LABEL,
   ALERT_LEVEL_COLOR,
   ALERT_STATUS_LABEL,

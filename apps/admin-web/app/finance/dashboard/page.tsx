@@ -14,6 +14,7 @@
 
 'use client'
 
+import React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 
 // ─── 类型定义 ─────────────────────────────────────────────

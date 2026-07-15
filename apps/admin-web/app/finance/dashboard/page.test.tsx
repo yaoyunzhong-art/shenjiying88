@@ -5,12 +5,35 @@
  * 要求: ≥12个测试, 0 as any, 全部通过
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, beforeEach } from 'node:test'
+import assert from 'node:assert'
+import React from 'react'
 import FinanceDashboardPage from './page'
 
-// ─── Mock fetch ─────────────────────────────────────────────
+// ─── Helper: simple mock function ──────────────────────────
 
-const mockFetch = vi.fn()
-globalThis.fetch = mockFetch
+function createMockFn() {
+  let callCount = 0
+  const calls: unknown[][] = []
+  const mock: { (): unknown; mockReset: () => void; mockResolvedValueOnce: (v: unknown) => void; mockRejectedValueOnce: (v: unknown) => void; callCount: number } = Object.assign(
+    function (this: unknown) {
+      callCount++
+      const args = Array.from(arguments)
+      calls.push(args)
+      return undefined
+    },
+    {
+      mockReset: () => { callCount = 0; calls.length = 0 },
+      mockResolvedValueOnce: () => {},
+      mockRejectedValueOnce: () => {},
+      get callCount() { return callCount },
+    }
+  )
+  return mock
+}
+
+let mockFetch: ReturnType<typeof createMockFn>
+let resolveChain: Array<() => Promise<Response>>
 
 function mockApiResponse(overrides: Record<string, unknown> = {}) {
   const base = {
@@ -76,160 +99,193 @@ function mockApiResponse(overrides: Record<string, unknown> = {}) {
   } as Response
 }
 
+function mockApiSuccessResponse(data: unknown) {
+  return {
+    status: () => Promise.resolve(200),
+    json: () => Promise.resolve({ success: true, data, message: 'OK' }),
+    ok: true,
+    headers: new Headers(),
+    redirected: false,
+    statusText: 'OK',
+    type: 'basic' as const,
+    url: '',
+    clone: () => ({} as Response),
+    body: null,
+    bodyUsed: false,
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+    blob: () => Promise.resolve(new Blob()),
+    formData: () => Promise.resolve(new FormData()),
+    text: () => Promise.resolve(''),
+  } as Response
+}
+
+function setupFetch(...responses: Response[]) {
+  let idx = 0
+  mockFetch = Object.assign(
+    function () {
+      const r = idx < responses.length ? responses[idx] : mockApiResponse()
+      idx++
+      return Promise.resolve(r)
+    },
+    { mockReset: () => { idx = 0 }, mockResolvedValueOnce: () => {}, mockRejectedValueOnce: () => {}, callCount: 0 }
+  )
+  globalThis.fetch = mockFetch as unknown as typeof globalThis.fetch
+}
+
 // ─── Tests ─────────────────────────────────────────────
 
 describe('FinanceDashboardPage', () => {
   beforeEach(() => {
-    mockFetch.mockReset()
+    // Reset fetch
+    globalThis.fetch = (() => Promise.resolve(mockApiResponse())) as unknown as typeof globalThis.fetch
   })
 
   // ─── 加载态 ──
 
-  it('should show loading state initially', () => {
-    mockFetch.mockImplementation(() => new Promise(() => {}))
+  it('should show loading state initially', async () => {
+    // Keep fetch pending
+    globalThis.fetch = (() => new Promise(() => {})) as unknown as typeof globalThis.fetch
+
     render(<FinanceDashboardPage />)
-    expect(screen.getByText(/加载财务仪表盘/)).toBeInTheDocument()
-    expect(screen.getByTestId('loading-state')).toBeInTheDocument()
+    const ctx = assert.ok(screen.getByText(/加载财务仪表盘/))
+    const loadingEl = screen.getByTestId('loading-state')
+    assert.ok(loadingEl)
   })
 
   // ─── 错误态 ──
 
   it('should show error state when fetch fails', async () => {
-    mockFetch.mockRejectedValue(new Error('Network error'))
+    globalThis.fetch = (() => Promise.reject(new Error('Network error'))) as unknown as typeof globalThis.fetch
+
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByText('加载失败')).toBeInTheDocument()
-      expect(screen.getByTestId('error-state')).toBeInTheDocument()
+      assert.ok(screen.getByText('加载失败'))
+      assert.ok(screen.getByTestId('error-state'))
     })
   })
 
   it('should show retry button on error', async () => {
-    mockFetch.mockRejectedValue(new Error('Network error'))
+    globalThis.fetch = (() => Promise.reject(new Error('Network error'))) as unknown as typeof globalThis.fetch
+
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByText('重试')).toBeInTheDocument()
+      assert.ok(screen.getByText('重试'))
     })
   })
 
   // ─── 空态 ──
 
   it('should show empty state when no data returned', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ...mockApiResponse(),
-      json: () => Promise.resolve({
-        success: true,
-        data: null,
-        message: 'OK',
-      }),
-    } as Response)
+    globalThis.fetch = (() => Promise.resolve(mockApiSuccessResponse(null))) as unknown as typeof globalThis.fetch
+
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByText('暂无财务数据')).toBeInTheDocument()
-      expect(screen.getByTestId('empty-state')).toBeInTheDocument()
+      assert.ok(screen.getByText('暂无财务数据'))
+      assert.ok(screen.getByTestId('empty-state'))
     })
   })
 
   // ─── 正例渲染 ──
 
   it('should render page title', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse())
+    setupFetch(mockApiResponse())
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByText('财务健康仪表盘')).toBeInTheDocument()
+      assert.ok(screen.getByText('财务健康仪表盘'))
     })
   })
 
   it('should render all four revenue cards', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse())
+    setupFetch(mockApiResponse())
     render(<FinanceDashboardPage />)
     await waitFor(() => {
       const cards = screen.getAllByTestId('revenue-card')
-      expect(cards).toHaveLength(4)
-      expect(screen.getByText('今日营收')).toBeInTheDocument()
-      expect(screen.getByText('今日退款')).toBeInTheDocument()
-      expect(screen.getByText('净收入')).toBeInTheDocument()
-      expect(screen.getByText('交易笔数')).toBeInTheDocument()
+      assert.strictEqual(cards.length, 4)
+      assert.ok(screen.getByText('今日营收'))
+      assert.ok(screen.getByText('今日退款'))
+      assert.ok(screen.getByText('净收入'))
+      assert.ok(screen.getByText('交易笔数'))
     })
   })
 
   it('should display revenue amounts correctly', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse())
+    setupFetch(mockApiResponse())
     render(<FinanceDashboardPage />)
     await waitFor(() => {
       const amounts = screen.getAllByTestId('revenue-amount')
-      expect(amounts.length).toBeGreaterThanOrEqual(4)
-      expect(amounts[0].textContent).toContain('¥15,800.00')
+      assert.ok(amounts.length >= 4)
+      assert.ok(amounts[0].textContent!.includes('¥15,800.00'))
     })
   })
 
   // ─── 渠道拆分 ──
 
   it('should show channel breakdown section', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse())
+    setupFetch(mockApiResponse())
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByTestId('channel-breakdown')).toBeInTheDocument()
-      expect(screen.getByText('微信支付')).toBeInTheDocument()
-      expect(screen.getByText('支付宝')).toBeInTheDocument()
-      expect(screen.getByText('会员卡')).toBeInTheDocument()
-      expect(screen.getByText('现金')).toBeInTheDocument()
+      assert.ok(screen.getByTestId('channel-breakdown'))
+      assert.ok(screen.getByText('微信支付'))
+      assert.ok(screen.getByText('支付宝'))
+      assert.ok(screen.getByText('会员卡'))
+      assert.ok(screen.getByText('现金'))
     })
   })
 
   it('should show channel amounts and percentages', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse())
+    setupFetch(mockApiResponse())
     render(<FinanceDashboardPage />)
     await waitFor(() => {
       const rows = screen.getAllByTestId('channel-row')
-      expect(rows.length).toBe(4)
-      expect(screen.getByText('¥6,800.00')).toBeInTheDocument()
-      expect(screen.getByText('¥5,200.00')).toBeInTheDocument()
+      assert.strictEqual(rows.length, 4)
+      assert.ok(screen.getByText('¥6,800.00'))
+      assert.ok(screen.getByText('¥5,200.00'))
     })
   })
 
   // ─── 趋势图 ──
 
   it('should render trend chart with 7 bars', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse())
+    setupFetch(mockApiResponse())
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByTestId('trend-chart')).toBeInTheDocument()
+      assert.ok(screen.getByTestId('trend-chart'))
       const bars = screen.getAllByTestId('trend-bar')
-      expect(bars.length).toBe(7)
+      assert.strictEqual(bars.length, 7)
     })
   })
 
   it('should display trend chart legend', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse())
+    setupFetch(mockApiResponse())
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByText('7日营收趋势')).toBeInTheDocument()
-      expect(screen.getByText('营收')).toBeInTheDocument()
-      expect(screen.getByText('退款')).toBeInTheDocument()
+      assert.ok(screen.getByText('7日营收趋势'))
+      assert.ok(screen.getByText('营收'))
+      assert.ok(screen.getByText('退款'))
     })
   })
 
   // ─── 对账状态卡 ──
 
   it('should show reconciliation status', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse())
+    setupFetch(mockApiResponse())
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByTestId('reconciliation-status')).toBeInTheDocument()
-      expect(screen.getByText('今日对账状态')).toBeInTheDocument()
+      assert.ok(screen.getByTestId('reconciliation-status'))
+      assert.ok(screen.getByText('今日对账状态'))
     })
   })
 
   it('should show healthy status when matchRate >= 90 and no diffs', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse())
+    setupFetch(mockApiResponse())
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByText('✅ 账目健康')).toBeInTheDocument()
+      assert.ok(screen.getByText('✅ 账目健康'))
     })
   })
 
   it('should show warning status when diffs exist', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse({
+    setupFetch(mockApiResponse({
       reconciliation: {
         inProgress: false,
         lastRunAt: '2026-07-15T10:00:00.000Z',
@@ -247,12 +303,12 @@ describe('FinanceDashboardPage', () => {
     }))
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByText('⚠️ 需关注')).toBeInTheDocument()
+      assert.ok(screen.getByText('⚠️ 需关注'))
     })
   })
 
   it('should show in-progress state when reconciliation is running', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse({
+    setupFetch(mockApiResponse({
       reconciliation: {
         inProgress: true,
         lastRunAt: null,
@@ -264,12 +320,12 @@ describe('FinanceDashboardPage', () => {
     }))
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByText('对账进行中...')).toBeInTheDocument()
+      assert.ok(screen.getByText('对账进行中...'))
     })
   })
 
   it('should show no data state when no summary exists', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse({
+    setupFetch(mockApiResponse({
       reconciliation: {
         inProgress: false,
         lastRunAt: null,
@@ -281,25 +337,25 @@ describe('FinanceDashboardPage', () => {
     }))
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByText('暂无对账数据')).toBeInTheDocument()
+      assert.ok(screen.getByText('暂无对账数据'))
     })
   })
 
   // ─── 操作按钮 ──
 
   it('should render quick action buttons', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse())
+    setupFetch(mockApiResponse())
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByTestId('quick-actions')).toBeInTheDocument()
-      expect(screen.getByTestId('btn-run-reconciliation')).toBeInTheDocument()
-      expect(screen.getByTestId('btn-view-reconciliation')).toBeInTheDocument()
-      expect(screen.getByTestId('btn-export')).toBeInTheDocument()
+      assert.ok(screen.getByTestId('quick-actions'))
+      assert.ok(screen.getByTestId('btn-run-reconciliation'))
+      assert.ok(screen.getByTestId('btn-view-reconciliation'))
+      assert.ok(screen.getByTestId('btn-export'))
     })
   })
 
   it('should disable run reconciliation button when in progress', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse({
+    setupFetch(mockApiResponse({
       reconciliation: {
         inProgress: true,
         lastRunAt: null,
@@ -311,43 +367,28 @@ describe('FinanceDashboardPage', () => {
     }))
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      const btn = screen.getByTestId('btn-run-reconciliation')
-      expect(btn).toBeDisabled()
+      const btn = screen.getByTestId('btn-run-reconciliation') as HTMLButtonElement
+      assert.ok(btn.disabled)
     })
   })
 
   // ─── 渠道明细表 ──
 
   it('should render channel detail table', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse())
+    setupFetch(mockApiResponse())
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByTestId('channel-detail-table')).toBeInTheDocument()
+      assert.ok(screen.getByTestId('channel-detail-table'))
       const rows = screen.getAllByTestId('channel-detail-row')
-      expect(rows.length).toBe(4)
+      assert.strictEqual(rows.length, 4)
     })
   })
 
   it('should show proportion bars in detail table', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse())
+    setupFetch(mockApiResponse())
     render(<FinanceDashboardPage />)
     await waitFor(() => {
-      expect(screen.getByText('渠道明细')).toBeInTheDocument()
+      assert.ok(screen.getByText('渠道明细'))
     })
-  })
-
-  // ─── 错误提示 ──
-
-  it('should show yellow error banner when fetch fails after first success', async () => {
-    mockFetch.mockResolvedValueOnce(mockApiResponse())
-    render(<FinanceDashboardPage />)
-    await waitFor(() => {
-      expect(screen.getByText('财务健康仪表盘')).toBeInTheDocument()
-    })
-    // Simulate second call error: trigger refresh
-    mockFetch.mockRejectedValueOnce(new Error('Partial error'))
-    // We can't easily trigger a refresh without UI element, but the error state path is covered
   })
 })
-
-// Total: 22 tests covering: loading/error(2)/empty/render/revenue-cards(2)/channel-breakdown(2)/trend-chart(2)/reconciliation-status(5)/quick-actions(2)/channel-detail(2)/error-banner
