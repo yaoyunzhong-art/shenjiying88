@@ -53,7 +53,7 @@ function validateConfigValue(config: SystemConfig, inputValue: string): ConfigVa
       break;
     }
     case 'boolean':
-      if (!['true', 'false', '1', '0'].includes(inputValue)) errors.push(`${config.label} 必须是布尔值`);
+      if (inputValue && !['true', 'false', '1', '0'].includes(inputValue)) errors.push(`${config.label} 必须是布尔值`);
       break;
     case 'select':
       if (config.options && !config.options.includes(inputValue)) errors.push(`${config.label} 必须在可选值内`);

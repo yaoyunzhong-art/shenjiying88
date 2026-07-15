@@ -230,7 +230,7 @@ describe('security: 业务逻辑', () => {
 
   it('min length 16 with all requirements', () => {
     const strongPolicy: PasswordPolicy = { ...POLICY, minLength: 16 };
-    const result = validatePassword('Abcdef123!@#xyz', strongPolicy);
+    const result = validatePassword('Abcdef123!@#xyzA', strongPolicy);
     assert.ok(result.valid);
   });
 

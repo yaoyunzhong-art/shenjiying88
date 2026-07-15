@@ -141,9 +141,9 @@ describe('discount-rules: 业务逻辑', () => {
     assert.equal(result, 9000);
   });
 
-  it('applyDiscount fixed amount not exceeding item price', () => {
-    const result = applyDiscount(500, FIXED_100);
-    assert.equal(result, 0);
+  it('applyDiscount fixed amount not exceeding min purchase', () => {
+    const result = applyDiscount(1500, FIXED_100);
+    assert.equal(result, 1500);
   });
 
   it('applyDiscount free shipping no discount on item', () => {

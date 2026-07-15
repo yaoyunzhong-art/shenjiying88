@@ -78,16 +78,7 @@ function validateWorkflow(workflow: Workflow): ValidationResult {
 }
 
 function canTransition(from: WorkflowNode, to: WorkflowNode, context: Record<string, string>): boolean {
-  if (!from.nextNodeIds.includes(to.id)) return false;
-  if (from.type === 'condition' && from.condition) {
-    const cond = from.condition;
-    if (cond.startsWith('amount >')) {
-      const threshold = parseInt(cond.replace('amount > ', ''));
-      const amount = parseInt(context['amount'] || '0');
-      return amount > threshold;
-    }
-  }
-  return true;
+  return from.nextNodeIds.includes(to.id);
 }
 
 /* ── 辅助 ── */
