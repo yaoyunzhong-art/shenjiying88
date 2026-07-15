@@ -1,317 +1,612 @@
-// 🧾 财务对账 · 交易清单/对账状态/对账操作
-// P-38 财务对账: admin-web增强 — 平台级对账管理
-'use client';
-import { useState, useMemo } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Select, Modal, Input, Tooltip, DatePicker, Tabs, Progress, TextArea } from '@m5/ui';
+/**
+ * P-38 财务对账管理页面
+ *
+ * 功能:
+ *   1. 对账概览卡片 — 日期选择器+状态卡片+匹配率
+ *   2. 对账结果表格 — 交易号/金额/差异/状态+搜索筛选
+ *   3. 差异明细表格 — 差异分类+标记已处理
+ *   4. 对账操作栏 — 手动触发+导出+刷新
+ *   5. 状态管理 — loading/空/error
+ *   6. 审计日志 — 对账发起记录
+ *
+ * 路由: /finance/reconciliation
+ */
 
-interface TransactionRecord {
-  id: string;
-  date: string;
-  orderId: string;
-  storeId: string;
-  storeName: string;
-  income: number;
-  system: number;
-  diff: number;
-  method: string;
-  status: 'match' | 'diff';
-  operator: string;
-  note: string;
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+
+// ─── 类型定义 ─────────────────────────────────────────────
+
+interface ReconciliationStatus {
+  inProgress: boolean
+  lastRunAt: string | null
+  lastRunDate: string | null
+  totalRuns: number
+  lastError: string | null
+  lastReportSummary: {
+    date: string
+    internalTotal: number
+    externalTotal: number
+    matchedCount: number
+    exactMatchCount: number
+    totalDiffCents: number
+    diffCount: number
+    toleranceCents: number
+  } | null
 }
 
-const DATA: TransactionRecord[] = [
-  { id:'TRX-001', date:'2026-07-14', orderId:'ORD-240714-001', storeId:'S001', storeName:'总店', income:25600, system:25600, diff:0, method:'微信', status:'match', operator:'系统', note:'' },
-  { id:'TRX-002', date:'2026-07-14', orderId:'ORD-240714-002', storeId:'S002', storeName:'天河分店', income:8200, system:8250, diff:-50, method:'支付宝', status:'diff', operator:'系统', note:'支付宝手续费差异' },
-  { id:'TRX-003', date:'2026-07-14', orderId:'ORD-240714-003', storeId:'S003', storeName:'海珠分店', income:3500, system:3500, diff:0, method:'现金', status:'match', operator:'系统', note:'' },
-  { id:'TRX-004', date:'2026-07-13', orderId:'ORD-240713-004', storeId:'S001', storeName:'总店', income:18400, system:18400, diff:0, method:'微信', status:'match', operator:'系统', note:'' },
-  { id:'TRX-005', date:'2026-07-13', orderId:'ORD-240713-005', storeId:'S002', storeName:'天河分店', income:5200, system:5180, diff:20, method:'现金', status:'diff', operator:'系统', note:'现金短款+20' },
-  { id:'TRX-006', date:'2026-07-13', orderId:'ORD-240713-006', storeId:'S003', storeName:'海珠分店', income:12800, system:12800, diff:0, method:'微信', status:'match', operator:'系统', note:'' },
-  { id:'TRX-007', date:'2026-07-12', orderId:'ORD-240712-007', storeId:'S001', storeName:'总店', income:32000, system:31950, diff:50, method:'微信', status:'diff', operator:'系统', note:'微信通道结算延迟' },
-  { id:'TRX-008', date:'2026-07-12', orderId:'ORD-240712-008', storeId:'S002', storeName:'天河分店', income:7600, system:7600, diff:0, method:'支付宝', status:'match', operator:'系统', note:'' },
-  { id:'TRX-009', date:'2026-07-12', orderId:'ORD-240712-009', storeId:'S004', storeName:'番禺分店', income:4500, system:4500, diff:0, method:'微信', status:'match', operator:'系统', note:'' },
-  { id:'TRX-010', date:'2026-07-11', orderId:'ORD-240711-010', storeId:'S001', storeName:'总店', income:22100, system:22100, diff:0, method:'支付宝', status:'match', operator:'系统', note:'' },
-  { id:'TRX-011', date:'2026-07-11', orderId:'ORD-240711-011', storeId:'S003', storeName:'海珠分店', income:6800, system:6700, diff:100, method:'微信', status:'diff', operator:'系统', note:'大额差异待查' },
-  { id:'TRX-012', date:'2026-07-11', orderId:'ORD-240711-012', storeId:'S004', storeName:'番禺分店', income:3900, system:3900, diff:0, method:'现金', status:'match', operator:'系统', note:'' },
-  { id:'TRX-013', date:'2026-07-10', orderId:'ORD-240710-013', storeId:'S001', storeName:'总店', income:15700, system:15700, diff:0, method:'微信', status:'match', operator:'系统', note:'' },
-  { id:'TRX-014', date:'2026-07-10', orderId:'ORD-240710-014', storeId:'S002', storeName:'天河分店', income:9400, system:9400, diff:0, method:'支付宝', status:'match', operator:'系统', note:'' },
-  { id:'TRX-015', date:'2026-07-09', orderId:'ORD-240709-015', storeId:'S001', storeName:'总店', income:19800, system:19750, diff:50, method:'微信', status:'diff', operator:'系统', note:'微信通道手续费扣减' },
-  { id:'TRX-016', date:'2026-07-09', orderId:'ORD-240709-016', storeId:'S003', storeName:'海珠分店', income:5500, system:5500, diff:0, method:'现金', status:'match', operator:'系统', note:'' },
-  { id:'TRX-017', date:'2026-07-08', orderId:'ORD-240708-017', storeId:'S002', storeName:'天河分店', income:11200, system:11200, diff:0, method:'微信', status:'match', operator:'系统', note:'' },
-  { id:'TRX-018', date:'2026-07-08', orderId:'ORD-240708-018', storeId:'S004', storeName:'番禺分店', income:6100, system:6080, diff:20, method:'支付宝', status:'diff', operator:'系统', note:'支付宝手续费差异' },
-];
-
-const formatDiff = (v: number) => {
-  if (v === 0) return <span style={{ color: '#34d399', fontWeight: 600 }}>✓</span>;
-  return <span style={{ color: '#ff6b6b', fontWeight: 600 }}>{v > 0 ? `+${v}` : `${v}`}</span>;
-};
-
-function StatCard({ label, value, color }: { label: string; value: string | number; color?: React.CSSProperties['color'] }) {
-  return (
-    <Card style={{ padding: '8px 12px' }}>
-      <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 18, fontWeight: 700, color: color || '#fafafa' }}>{value}</div>
-    </Card>
-  );
+interface DiffRecord {
+  kind: string
+  orderNo?: string
+  internalId?: string
+  externalId?: string
+  internalAmountCents?: number
+  externalAmountCents?: number
+  diffCents: number
+  duplicateIds?: string[]
+  note?: string
 }
 
-export default function FinanceReconciliationPage() {
-  const [filter, setFilter] = useState('all');
-  const [methodFilter, setMethodFilter] = useState('all');
-  const [storeFilter, setStoreFilter] = useState('all');
-  const [dateRange, setDateRange] = useState<'7d' | '30d' | 'all'>('7d');
-  const [showPerf, setShowPerf] = useState(false);
-  const [showDetail, setShowDetail] = useState<TransactionRecord | null>(null);
-  const [tab, setTab] = useState('list');
+interface DiffDetailRecord extends DiffRecord {
+  diffKey: string
+  resolved: boolean
+  resolvedAt?: string
+  resolvedBy?: string
+  resolveNote?: string
+}
 
-  // 按日期范围过滤
-  const filteredByDate = useMemo(() => {
-    if (dateRange === 'all') return DATA;
-    const now = new Date('2026-07-15');
-    const cutoff = new Date(now);
-    cutoff.setDate(cutoff.getDate() - (dateRange === '7d' ? 7 : 30));
-    return DATA.filter(d => new Date(d.date) >= cutoff);
-  }, [dateRange]);
+interface SummaryResponse {
+  date: string
+  internalTotal: number
+  externalTotal: number
+  matchedCount: number
+  exactMatchCount: number
+  matchRate: number
+  internalTotalCents: number
+  externalTotalCents: number
+  totalDiffCents: number
+  diffRate: number
+  diffKindBreakdown: Array<{ kind: string; count: number; totalDiffCents: number }>
+  resolvedCount: number
+  unresolvedCount: number
+  durationMs: number
+  totalRuns: number
+}
 
-  const f = useMemo(() => {
-    let r = filteredByDate;
-    if (filter !== 'all') r = r.filter(d => d.status === filter);
-    if (methodFilter !== 'all') r = r.filter(d => d.method === methodFilter);
-    if (storeFilter !== 'all') r = r.filter(d => d.storeId === storeFilter);
-    return r;
-  }, [filter, methodFilter, storeFilter, filteredByDate]);
+type TabView = 'overview' | 'details' | 'history'
 
-  const totalIncome = filteredByDate.reduce((s, d) => s + d.income, 0);
-  const totalSystem = filteredByDate.reduce((s, d) => s + d.system, 0);
-  const td = filteredByDate.reduce((s, d) => s + Math.abs(d.diff), 0);
-  const dc = filteredByDate.filter(d => d.status === 'diff').length;
-  const matchRate = filteredByDate.length > 0
-    ? ((filteredByDate.length - dc) / filteredByDate.length * 100).toFixed(1)
-    : '100';
+// ─── 工具函数 ─────────────────────────────────────────────
 
-  // 去重获取门店列表
-  const storeOptions = useMemo(() => {
-    const map = new Map<string, string>();
-    DATA.forEach(d => map.set(d.storeId, d.storeName));
-    return Array.from(map.entries()).map(([id, name]) => ({ value: id, label: name }));
-  }, []);
+function fmtCents(cents: number): string {
+  const abs = Math.abs(cents)
+  const sign = cents < 0 ? '-' : ''
+  return `${sign}¥${(abs / 100).toFixed(2)}`
+}
 
-  const cols = [
-    { title: '日期', dataIndex: 'date', width: 90 },
-    { title: '订单号', dataIndex: 'orderId', width: 140, render: (v: string) => <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{v}</span> },
-    { title: '门店', dataIndex: 'storeName', width: 90 },
-    { title: '实收', dataIndex: 'income', render: (v: number) => <span style={{ fontWeight: 600 }}>¥{v.toLocaleString()}</span> },
-    { title: '系统', dataIndex: 'system', render: (v: number) => `¥${v.toLocaleString()}` },
-    { title: '差额', dataIndex: 'diff', width: 80, render: (v: number, r: TransactionRecord) => (
-      <Tooltip content={r.note || (v === 0 ? '无差异' : '差异详情')}>
-        {formatDiff(v)}
-      </Tooltip>
-    ) },
-    { title: '支付方式', dataIndex: 'method', width: 80, render: (v: string) => <Tag>{v}</Tag> },
-    { title: '门店编号', dataIndex: 'storeId', width: 70, render: (v: string) => <span style={{ color: '#94a3b8', fontSize: 12 }}>{v}</span> },
-    { title: '状态', dataIndex: 'status', width: 70, render: (v: string) => (
-      <Tag variant={v === 'match' ? 'success' : 'warning'}>{v === 'match' ? '一致' : '差异'}</Tag>
-    ) },
-    { title: '操作', key: 'a', width: 100, render: (_: unknown, r: TransactionRecord) => (
-      <Space size="small">
-        {r.status === 'diff' && <Button size="sm" variant="primary" onClick={() => setShowDetail(r)}>处理</Button>}
-        <Button size="sm" onClick={() => setShowDetail(r)}>详情</Button>
-      </Space>
-    ) },
-  ];
+function fmtRate(rate: number): string {
+  return `${rate.toFixed(1)}%`
+}
 
-  // 汇总列 (按门店)
-  const storeSummaryCols = [
-    { title: '门店', dataIndex: 'storeName', render: (v: string) => <strong>{v}</strong> },
-    { title: '笔数', dataIndex: 'count' },
-    { title: '一致', dataIndex: 'matchCount', render: (v: number) => <span style={{ color: '#34d399' }}>{v}</span> },
-    { title: '差异', dataIndex: 'diffCount', render: (v: number) => <span style={{ color: v > 0 ? '#f87171' : '#94a3b8' }}>{v}</span> },
-    { title: '实收总计', dataIndex: 'totalIncome', render: (v: number) => `¥${v.toLocaleString()}` },
-    { title: '系统总计', dataIndex: 'totalSystem', render: (v: number) => `¥${v.toLocaleString()}` },
-    { title: '差异总额', dataIndex: 'diffTotal', render: (v: number) => (
-      <span style={{ color: v !== 0 ? '#f87171' : '#34d399', fontWeight: 600 }}>¥{v.toLocaleString()}</span>
-    ) },
-  ];
+function diffKindLabel(kind: string): string {
+  const map: Record<string, string> = {
+    'amount-mismatch': '金额不一致',
+    'missing-internal': '外部无匹配',
+    'missing-external': '内部无匹配',
+    'duplicate': '重复记录',
+  }
+  return map[kind] ?? kind
+}
 
-  const storeSummary = useMemo(() => {
-    const map = new Map<string, {
-      storeName: string; count: number; matchCount: number; diffCount: number;
-      totalIncome: number; totalSystem: number; diffTotal: number;
-    }>();
-    filteredByDate.forEach(d => {
-      if (!map.has(d.storeId)) {
-        map.set(d.storeId, { storeName: d.storeName, count: 0, matchCount: 0, diffCount: 0, totalIncome: 0, totalSystem: 0, diffTotal: 0 });
+function diffKindColor(kind: string): string {
+  const map: Record<string, string> = {
+    'amount-mismatch': 'bg-yellow-100 text-yellow-800',
+    'missing-internal': 'bg-red-100 text-red-800',
+    'missing-external': 'bg-orange-100 text-orange-800',
+    'duplicate': 'bg-purple-100 text-purple-800',
+  }
+  return map[kind] ?? 'bg-gray-100 text-gray-800'
+}
+
+async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  })
+  const json = await res.json()
+  if (!json.success) throw new Error(json.message || 'API error')
+  return json.data as T
+}
+
+// ─── 主组件 ─────────────────────────────────────────────
+
+export default function ReconciliationPage() {
+  const [status, setStatus] = useState<ReconciliationStatus | null>(null)
+  const [summary, setSummary] = useState<SummaryResponse | null>(null)
+  const [details, setDetails] = useState<DiffDetailRecord[]>([])
+  const [diffs, setDiffs] = useState<DiffRecord[]>([])
+  const [resolvedCount, setResolvedCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [tabView, setTabView] = useState<TabView>('overview')
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [running, setRunning] = useState(false)
+  const [kindFilter, setKindFilter] = useState<string>('')
+  const [resolvedFilter, setResolvedFilter] = useState<string>('all')
+
+  // ── 数据加载 ──
+
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const [statusData, diffsData] = await Promise.all([
+        apiFetch<ReconciliationStatus>('/api/finance/reconciliation/status'),
+        apiFetch<{ diffs: DiffRecord[]; resolvedCount: number; totalCount: number; unresolvedCount: number }>('/api/finance/reconciliation/diffs'),
+      ])
+      setStatus(statusData)
+      setDiffs(diffsData.diffs)
+      setResolvedCount(diffsData.resolvedCount)
+
+      if (statusData.lastRunDate) {
+        try {
+          const summaryData = await apiFetch<SummaryResponse>(`/api/finance/reconciliation/summary?date=${statusData.lastRunDate}`)
+          setSummary(summaryData)
+        } catch {
+          // summary not available yet
+        }
       }
-      const g = map.get(d.storeId)!;
-      g.count++;
-      if (d.status === 'match') g.matchCount++;
-      else g.diffCount++;
-      g.totalIncome += d.income;
-      g.totalSystem += d.system;
-      g.diffTotal += d.diff;
-    });
-    return Array.from(map.values());
-  }, [filteredByDate]);
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-  // 汇总列 (按支付方式)
-  const methodSummaryCols = [
-    { title: '支付方式', dataIndex: 'method', render: (v: string) => <Tag>{v}</Tag> },
-    { title: '笔数', dataIndex: 'count' },
-    { title: '实收总计', dataIndex: 'totalIncome', render: (v: number) => `¥${v.toLocaleString()}` },
-    { title: '系统总计', dataIndex: 'totalSystem', render: (v: number) => `¥${v.toLocaleString()}` },
-    { title: '差异总额', dataIndex: 'diffTotal', render: (v: number) => (
-      <span style={{ color: v !== 0 ? '#f87171' : '#34d399' }}>¥{v.toLocaleString()}</span>
-    ) },
-  ];
+  useEffect(() => { loadData() }, [loadData])
 
-  const methodSummary = useMemo(() => {
-    const map = new Map<string, { method: string; count: number; totalIncome: number; totalSystem: number; diffTotal: number }>();
-    filteredByDate.forEach(d => {
-      if (!map.has(d.method)) map.set(d.method, { method: d.method, count: 0, totalIncome: 0, totalSystem: 0, diffTotal: 0 });
-      const g = map.get(d.method)!;
-      g.count++; g.totalIncome += d.income; g.totalSystem += d.system; g.diffTotal += d.diff;
-    });
-    return Array.from(map.values());
-  }, [filteredByDate]);
+  // ── 加载差异明细 ──
+
+  const loadDetails = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (kindFilter) params.set('kind', kindFilter)
+      if (resolvedFilter !== 'all') params.set('resolved', resolvedFilter)
+      const data = await apiFetch<{ details: DiffDetailRecord[] }>(`/api/finance/reconciliation/details?${params.toString()}`)
+      setDetails(data.details)
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }, [kindFilter, resolvedFilter])
+
+  useEffect(() => {
+    if (tabView === 'details') loadDetails()
+  }, [tabView, loadDetails])
+
+  // ── 手动对账 ──
+
+  const handleRunReconciliation = async () => {
+    setRunning(true)
+    setError(null)
+    try {
+      await apiFetch('/api/finance/reconciliation/run', {
+        method: 'POST',
+        body: JSON.stringify({
+          date,
+          internalTransactions: [],
+          externalTransactions: [],
+          matchKey: 'orderNo',
+        }),
+      })
+      await loadData()
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setRunning(false)
+    }
+  }
+
+  // ── 标记已处理 ──
+
+  const handleResolve = async (diffKey: string) => {
+    try {
+      await apiFetch(`/api/finance/reconciliation/${encodeURIComponent(diffKey)}/resolve`, {
+        method: 'POST',
+        body: JSON.stringify({ resolvedBy: 'admin' }),
+      })
+      await loadDetails()
+      await loadData()
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
+  // ── 状态轮询 ──
+
+  useEffect(() => {
+    if (!status?.inProgress) return
+    const interval = setInterval(async () => {
+      try {
+        const s = await apiFetch<ReconciliationStatus>('/api/finance/reconciliation/status')
+        setStatus(s)
+        if (!s.inProgress) {
+          clearInterval(interval)
+          await loadData()
+        }
+      } catch {
+        clearInterval(interval)
+      }
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [status?.inProgress, loadData])
+
+  // ── 导出 ──
+
+  const handleExport = () => {
+    const rows = [['交易号', '内部金额', '外部金额', '差异金额', '类型', '备注']]
+    for (const d of diffs) {
+      rows.push([
+        d.orderNo ?? '',
+        d.internalAmountCents != null ? String(d.internalAmountCents) : '',
+        d.externalAmountCents != null ? String(d.externalAmountCents) : '',
+        String(d.diffCents),
+        diffKindLabel(d.kind),
+        d.note ?? '',
+      ])
+    }
+    const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `reconciliation-${date}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // ── 渲染 ──
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+        <span className="ml-3 text-gray-600">加载对账数据...</span>
+      </div>
+    )
+  }
+
+  if (error && !status) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 className="text-red-800 font-medium">加载失败</h3>
+          <p className="text-red-600 mt-1">{error}</p>
+          <button
+            onClick={loadData}
+            className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            重试
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <PageShell title="财务对账">
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h2 style={{ color: '#fafafa', margin: 0 }}>📊 财务对账</h2>
-            <span style={{ color: '#94a3b8', fontSize: 13 }}>交易清单 · 对账状态 · 差异处理 · 报表生成</span>
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* 标题与操作栏 */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">财务对账</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {status?.totalRuns ? `已运行 ${status.totalRuns} 次` : '尚未运行对账'}
+            {status?.lastRunAt ? ` · 上次: ${new Date(status.lastRunAt).toLocaleString('zh-CN')}` : ''}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-1.5 text-sm"
+          />
+          <button
+            onClick={handleRunReconciliation}
+            disabled={running || status?.inProgress}
+            className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+          >
+            {running || status?.inProgress ? '对账进行中...' : '手动对账'}
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={diffs.length === 0}
+            className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50"
+          >
+            导出CSV
+          </button>
+          <button
+            onClick={loadData}
+            className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+          >
+            刷新
+          </button>
+        </div>
+      </div>
+
+      {/* 错误提示 */}
+      {error && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <p className="text-yellow-800 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* 对账进行中指示器 */}
+      {status?.inProgress && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2" />
+          <span className="text-blue-800 text-sm">对账正在执行中...</span>
+        </div>
+      )}
+
+      {/* 对账状态错误 */}
+      {status?.lastError && !status.inProgress && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <p className="text-red-800 text-sm font-medium">上次对账失败</p>
+          <p className="text-red-600 text-sm mt-1">{status.lastError}</p>
+        </div>
+      )}
+
+      {/* 概览卡片 */}
+      {summary && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white border rounded-lg p-4">
+            <p className="text-sm text-gray-500">交易总数</p>
+            <p className="text-2xl font-bold mt-1">{summary.internalTotal}</p>
+            <p className="text-xs text-gray-400 mt-1">外部 {summary.externalTotal} 条</p>
           </div>
-          <Space size="small">
-            <Select value={dateRange} onChange={setDateRange} style={{ width: 110 }}
-              options={[{ value: '7d', label: '近7天' }, { value: '30d', label: '近30天' }, { value: 'all', label: '全部' }]} />
-            <Button variant="primary" onClick={() => setShowPerf(true)}>+ 执行对账</Button>
-          </Space>
+          <div className="bg-white border rounded-lg p-4">
+            <p className="text-sm text-gray-500">匹配数</p>
+            <p className="text-2xl font-bold mt-1">{summary.matchedCount}</p>
+            <p className="text-xs text-gray-400 mt-1">精确 {summary.exactMatchCount}</p>
+          </div>
+          <div className="bg-white border rounded-lg p-4">
+            <p className="text-sm text-gray-500">匹配率</p>
+            <div className="flex items-center mt-1">
+              <p className="text-2xl font-bold">{fmtRate(summary.matchRate)}</p>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+              <div
+                className={`h-2 rounded-full ${summary.matchRate >= 90 ? 'bg-green-500' : summary.matchRate >= 70 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                style={{ width: `${Math.min(summary.matchRate, 100)}%` }}
+              />
+            </div>
+          </div>
+          <div className="bg-white border rounded-lg p-4">
+            <p className="text-sm text-gray-500">总差异</p>
+            <p className={`text-2xl font-bold mt-1 ${summary.totalDiffCents !== 0 ? 'text-red-600' : 'text-green-600'}`}>
+              {fmtCents(summary.totalDiffCents)}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">差异率 {fmtRate(summary.diffRate)}</p>
+          </div>
         </div>
+      )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
-          <Card><Statistic title="交易笔数" value={filteredByDate.length} /></Card>
-          <Card><Statistic title="一致" value={filteredByDate.length - dc} valueStyle={{ color: '#34d399' }} suffix={`/ ${filteredByDate.length} (${matchRate}%)`} /></Card>
-          <Card><Statistic title="差异" value={dc} valueStyle={{ color: '#f87171' }} /></Card>
-          <Card><Statistic title="差异总额" value={td.toLocaleString()} prefix="¥" valueStyle={{ color: '#f87171' }} /></Card>
-          <Card><Statistic title="净差异率" value={td > 0 ? (td / totalIncome * 100).toFixed(2) : '0.00'} suffix="%" valueStyle={{ color: td > 0.01 * totalIncome ? '#f87171' : '#34d399' }} /></Card>
-        </div>
-
-        <Card>
-          <Tabs activeKey={tab} onChange={setTab} style={{ marginBottom: 12 }}
-            items={[
-              { key: 'list', label: '交易明细' },
-              { key: 'store-summary', label: '按门店汇总' },
-              { key: 'method-summary', label: '按支付方式汇总' },
-              { key: 'tools', label: '对账工具' },
-            ]} />
-
-          {tab === 'list' && (
-            <>
-              <Space style={{ marginBottom: 12, gap: 8 }} wrap>
-                <span style={{ color: '#94a3b8', fontSize: 13 }}>状态:</span>
-                <Select value={filter} onChange={setFilter} style={{ width: 110 }}
-                  options={[{ value: 'all', label: '全部' }, { value: 'match', label: '一致' }, { value: 'diff', label: '差异' }]} />
-                <span style={{ color: '#94a3b8', fontSize: 13 }}>支付方式:</span>
-                <Select value={methodFilter} onChange={setMethodFilter} style={{ width: 110 }}
-                  options={[{ value: 'all', label: '全部' }, { value: '微信', label: '微信' }, { value: '支付宝', label: '支付宝' }, { value: '现金', label: '现金' }]} />
-                <span style={{ color: '#94a3b8', fontSize: 13 }}>门店:</span>
-                <Select value={storeFilter} onChange={setStoreFilter} style={{ width: 130 }}
-                  options={[{ value: 'all', label: '全部门店' }, ...storeOptions]} />
-                <span style={{ marginLeft: 'auto', color: '#94a3b8', fontSize: 12 }}>
-                  实收: ¥{totalIncome.toLocaleString()} / 系统: ¥{totalSystem.toLocaleString()} / 差额: ¥{td.toLocaleString()}
-                </span>
-              </Space>
-              <Table dataSource={f} columns={cols} rowKey="id" pagination={{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'] }} />
-            </>
-          )}
-
-          {tab === 'store-summary' && (
-            <Table dataSource={storeSummary} columns={storeSummaryCols} rowKey="storeName" pagination={false} />
-          )}
-
-          {tab === 'method-summary' && (
-            <Table dataSource={methodSummary} columns={methodSummaryCols} rowKey="method" pagination={false} />
-          )}
-
-          {tab === 'tools' && (
-            <Space direction="vertical" style={{ width: '100%', gap: 12 }}>
-              <Card style={{ padding: '8px 12px' }}>
-                <Space wrap>
-                  <Button variant="primary" onClick={() => setShowPerf(true)}>执行自动对账</Button>
-                  <Button>导出差异报告</Button>
-                  <Button>导出全额明细</Button>
-                  <Button>历史对账记录</Button>
-                </Space>
-              </Card>
-              <Card style={{ padding: '8px 12px' }}>
-                <div style={{ marginBottom: 8, fontWeight: 500, color: '#94a3b8', fontSize: 13 }}>对账规则配置</div>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <Input placeholder="差异阈值(¥)" defaultValue="10" addonBefore="阈值" style={{ flex: 1 }} />
-                  <Input placeholder="自动确认天数" defaultValue="7" addonBefore="自动确认" style={{ flex: 1 }} />
-                  <Select defaultValue="all" style={{ flex: 1 }}
-                    options={[{ value: 'all', label: '所有通道' }, { value: 'wechat', label: '仅微信' }, { value: 'alipay', label: '仅支付宝' }]} />
-                  <Button>保存配置</Button>
+      {/* 差异分类概览 */}
+      {summary && summary.diffKindBreakdown.length > 0 && (
+        <div className="bg-white border rounded-lg p-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">差异分类统计</h3>
+          <div className="space-y-2">
+            {summary.diffKindBreakdown.map((bk) => (
+              <div key={bk.kind} className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${diffKindColor(bk.kind)}`}>
+                    {diffKindLabel(bk.kind)}
+                  </span>
+                  <span className="ml-2 text-sm text-gray-600">{bk.count} 条</span>
                 </div>
-              </Card>
-              <Card style={{ padding: '8px 12px' }}>
-                <div style={{ marginBottom: 8, fontWeight: 500, color: '#94a3b8', fontSize: 13 }}>批量操作</div>
-                <Space wrap>
-                  <Button>批量标记已处理</Button>
-                  <Button>批量导出</Button>
-                  <Button>生成对账报表</Button>
-                </Space>
-              </Card>
-            </Space>
-          )}
-        </Card>
-
-        {/* 执行对账 Modal */}
-        <Modal title="执行自动对账" open={showPerf} onClose={() => setShowPerf(false)}
-          onOk={() => { setShowPerf(false); }}>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <div style={{ color: '#94a3b8' }}>将拉取所选时段订单数据与银行流水逐一对账。</div>
-            <Select placeholder="选择支付通道" style={{ width: '100%' }}>
-              <Select.Option value="all">全部通道</Select.Option>
-              <Select.Option value="wechat">微信支付</Select.Option>
-              <Select.Option value="alipay">支付宝</Select.Option>
-            </Select>
-            <Select placeholder="选择门店" style={{ width: '100%' }}>
-              <Select.Option value="all">全部门店</Select.Option>
-              {storeOptions.map(o => (
-                <Select.Option key={o.value} value={o.value}>{o.label}</Select.Option>
-              ))}
-            </Select>
-          </Space>
-        </Modal>
-
-        {/* 差异详情 Modal */}
-        <Modal title="交易差异详情" open={!!showDetail} onClose={() => setShowDetail(null)} footer={null}>
-          {showDetail && (
-            <Space direction="vertical" style={{ width: '100%', gap: 8 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px' }}>
-                <div><span style={{ color: '#94a3b8' }}>交易单号:</span> {showDetail.id}</div>
-                <div><span style={{ color: '#94a3b8' }}>订单号:</span> {showDetail.orderId}</div>
-                <div><span style={{ color: '#94a3b8' }}>日期:</span> {showDetail.date}</div>
-                <div><span style={{ color: '#94a3b8' }}>门店:</span> {showDetail.storeName} ({showDetail.storeId})</div>
-                <div><span style={{ color: '#94a3b8' }}>实收:</span> <span style={{ fontWeight: 600 }}>¥{showDetail.income.toLocaleString()}</span></div>
-                <div><span style={{ color: '#94a3b8' }}>系统记录:</span> ¥{showDetail.system.toLocaleString()}</div>
-                <div><span style={{ color: '#94a3b8' }}>差额:</span> <span style={{ color: showDetail.diff !== 0 ? '#f87171' : '#34d399', fontWeight: 600 }}>{showDetail.diff > 0 ? `+${showDetail.diff}` : showDetail.diff}</span></div>
-                <div><span style={{ color: '#94a3b8' }}>支付方式:</span> <Tag>{showDetail.method}</Tag></div>
+                <span className="text-sm font-medium">{fmtCents(bk.totalDiffCents)}</span>
               </div>
-              <div><span style={{ color: '#94a3b8' }}>备注:</span> {showDetail.note || '无'}</div>
-              <div style={{ marginTop: 12 }}>
-                <label style={{ display: 'block', color: '#94a3b8', marginBottom: 4, fontSize: 13 }}>处理说明</label>
-                <TextArea placeholder="输入处理说明…" rows={3} />
-              </div>
-              <Space style={{ marginTop: 8 }}>
-                <Button variant="primary">标记已处理</Button>
-                <Button>提交审核</Button>
-                <Button>标记无需处理</Button>
-              </Space>
-            </Space>
+            ))}
+          </div>
+          <div className="flex items-center justify-between mt-3 pt-3 border-t">
+            <span className="text-sm text-gray-500">
+              已解决 {summary.resolvedCount} / 未解决 {summary.unresolvedCount}
+            </span>
+            <span className="text-sm text-gray-400">容差 {status?.lastReportSummary?.toleranceCents ?? 0} 分</span>
+          </div>
+        </div>
+      )}
+
+      {/* Tab切换 */}
+      <div className="border-b border-gray-200">
+        <nav className="flex space-x-4">
+          {(['overview', 'details', 'history'] as TabView[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setTabView(tab)}
+              className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
+                tabView === tab
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {{ overview: '对账概览', details: '差异明细', history: '运行历史' }[tab]}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* ── 对账概览 Tab ── */}
+      {tabView === 'overview' && (
+        <div className="bg-white border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b">
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">交易号</th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-600">内部金额</th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-600">外部金额</th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-600">差异</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                {diffs.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-12 text-gray-400">
+                      <p className="text-lg mb-1">无差异记录</p>
+                      <p className="text-sm">所有交易均已精确匹配</p>
+                    </td>
+                  </tr>
+                ) : (
+                  diffs.slice(0, 50).map((d, i) => (
+                    <tr key={`${d.orderNo}-${i}`} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-3 font-mono text-xs">{d.orderNo || '-'}</td>
+                      <td className="px-4 py-3 text-right">{d.internalAmountCents != null ? fmtCents(d.internalAmountCents) : '-'}</td>
+                      <td className="px-4 py-3 text-right">{d.externalAmountCents != null ? fmtCents(d.externalAmountCents) : '-'}</td>
+                      <td className={`px-4 py-3 text-right font-medium ${d.diffCents !== 0 ? 'text-red-600' : ''}`}>
+                        {fmtCents(d.diffCents)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${diffKindColor(d.kind)}`}>
+                          {diffKindLabel(d.kind)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          {diffs.length > 50 && (
+            <div className="px-4 py-3 text-sm text-gray-500 border-t">
+              显示前50条, 共 {diffs.length} 条差异
+            </div>
           )}
-        </Modal>
-      </Space>
-    </PageShell>
-  );
+        </div>
+      )}
+
+      {/* ── 差异明细 Tab ── */}
+      {tabView === 'details' && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <select
+              value={kindFilter}
+              onChange={(e) => setKindFilter(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-1.5 text-sm"
+            >
+              <option value="">全部类型</option>
+              <option value="amount-mismatch">金额不一致</option>
+              <option value="missing-internal">外部无匹配</option>
+              <option value="missing-external">内部无匹配</option>
+              <option value="duplicate">重复记录</option>
+            </select>
+            <select
+              value={resolvedFilter}
+              onChange={(e) => setResolvedFilter(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-1.5 text-sm"
+            >
+              <option value="all">全部状态</option>
+              <option value="false">未处理</option>
+              <option value="true">已处理</option>
+            </select>
+          </div>
+
+          <div className="bg-white border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b">
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">差异类型</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">交易号</th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-600">差异金额</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">状态</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">备注</th>
+                  <th className="text-center px-4 py-3 font-medium text-gray-600">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {details.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-12 text-gray-400">暂无差异明细</td>
+                  </tr>
+                ) : (
+                  details.map((d) => (
+                    <tr key={d.diffKey} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${diffKindColor(d.kind)}`}>
+                          {diffKindLabel(d.kind)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs">{d.orderNo || '-'}</td>
+                      <td className="px-4 py-3 text-right font-medium">{fmtCents(d.diffCents)}</td>
+                      <td className="px-4 py-3">
+                        {d.resolved ? (
+                          <span className="text-green-600 text-xs">已处理</span>
+                        ) : (
+                          <span className="text-yellow-600 text-xs">待处理</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500 max-w-[200px] truncate">{d.note || '-'}</td>
+                      <td className="px-4 py-3 text-center">
+                        {!d.resolved && (
+                          <button
+                            onClick={() => handleResolve(d.diffKey)}
+                            className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100"
+                          >
+                            标记已处理
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── 运行历史 Tab ── */}
+      {tabView === 'history' && (
+        <div className="bg-white border rounded-lg p-6">
+          {status ? (
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">总运行次数</span>
+                <span className="font-medium">{status.totalRuns}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">上次运行</span>
+                <span className="font-medium">{status.lastRunAt ? new Date(status.lastRunAt).toLocaleString('zh-CN') : '从未运行'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">上次对账日期</span>
+                <span className="font-medium">{status.lastRunDate || '-'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">差异数</span>
+                <span className="font-medium">{diffs.length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">已解决差异</span>
+                <span className="font-medium text-green-600">{resolvedCount}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">未解决差异</span>
+                <span className="font-medium text-yellow-600">{diffs.length - resolvedCount}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">上次错误</span>
+                <span className={`font-medium ${status.lastError ? 'text-red-600' : 'text-gray-400'}`}>
+                  {status.lastError || '无'}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-400 text-center py-8">暂无运行记录</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
