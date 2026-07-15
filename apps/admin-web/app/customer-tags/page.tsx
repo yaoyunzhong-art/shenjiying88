@@ -459,6 +459,76 @@ export default function CustomerTagsPage() {
           </div>
         </div>
       </div>
+
+      {/* 分类分布 */}
+      <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 200, padding: 14, background: '#f5f5f5', borderRadius: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#333' }}>📂 分类分布</div>
+          {Array.from(new Set(tags.map((t) => t.category))).map((cat) => {
+            const count = tags.filter((t) => t.category === cat).length;
+            const catLabel = TAG_CATEGORIES.find((c) => c.value === cat)?.label || cat;
+            const pct = Math.round((count / tags.length) * 100);
+            return (
+              <div key={cat} style={{ marginBottom: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
+                  <span>{catLabel}</span>
+                  <span style={{ fontWeight: 600 }}>{count} ({pct}%)</span>
+                </div>
+                <div style={{ height: 6, background: '#e8e8e8', borderRadius: 3 }}>
+                  <div style={{ height: '100%', width: `${pct}%`, background: '#1677ff', borderRadius: 3 }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ flex: 1, minWidth: 200, padding: 14, background: '#f5f5f5', borderRadius: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#333' }}>📡 来源分析</div>
+          {Array.from(new Set(tags.map((t) => t.source))).map((src) => {
+            const count = tags.filter((t) => t.source === src).length;
+            const srcLabel = TAG_SOURCES.find((s) => s.value === src)?.label || src;
+            const pct = Math.round((count / tags.length) * 100);
+            return (
+              <div key={src} style={{ marginBottom: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
+                  <span>{srcLabel}</span>
+                  <span style={{ fontWeight: 600 }}>{count} ({pct}%)</span>
+                </div>
+                <div style={{ height: 6, background: '#e8e8e8', borderRadius: 3 }}>
+                  <div style={{ height: '100%', width: `${pct}%`, background: '#52c41a', borderRadius: 3 }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ flex: 1, minWidth: 200, padding: 14, background: '#f5f5f5', borderRadius: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#333' }}>🎨 颜色分布</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {Array.from(new Set(tags.map((t) => t.color))).map((color) => {
+              const count = tags.filter((t) => t.color === color).length;
+              const tagColor = TAG_COLORS.find((c) => c.value === color)?.hex || '#1677ff';
+              return (
+                <div
+                  key={color}
+                  style={{
+                    padding: '4px 10px', borderRadius: 12, fontSize: 12,
+                    background: tagColor, color: '#fff', display: 'flex', alignItems: 'center', gap: 4,
+                  }}
+                >
+                  {count}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* 停用标签记录 */}
+      {tags.filter((t) => !t.enabled).length > 0 && (
+        <div style={{ marginTop: 16, padding: 14, background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 8, fontSize: 13 }}>
+          <span style={{ fontWeight: 600 }}>⏸️ 停用标签提醒:</span>{' '}
+          {tags.filter((t) => !t.enabled).length} 个标签已停用，涉及 {tags.filter((t) => !t.enabled).reduce((s, t) => s + t.memberCount, 0).toLocaleString()} 名会员
+        </div>
+      )}
     </PageShell>
   );
 }

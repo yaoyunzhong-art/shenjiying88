@@ -2,7 +2,7 @@
 
 /**
  * 管理后台登录 — Login Page
- * 功能: 统一认证入口，支持用户名密码登录、忘记密码、登录历史查看
+ * 功能: 统一认证入口，支持用户名密码登录、忘记密码、登录历史查看、安全策略面板
  * 角色: 👤 所有管理员
  *
  * 页面结构:
@@ -11,6 +11,9 @@
  * - 提交反馈/错误提示
  * - 登录历史表格
  * - 忘记密码链接
+ * - 安全评分面板
+ * - 密码策略面板
+ * - IP 白名单面板
  */
 
 import React, { useState, useMemo } from 'react';
@@ -42,6 +45,39 @@ interface LoginHistoryEntry {
   userAgent: string;
 }
 
+interface SecurityScore {
+  total: number;
+  success: number;
+  fail: number;
+  recentFail: number;
+  successRate: number;
+  uniqueIPs: number;
+  uniqueUsernames: number;
+}
+
+interface PasswordPolicy {
+  minLength: number;
+  requireUpper: boolean;
+  requireLower: boolean;
+  requireNumber: boolean;
+  requireSpecial: boolean;
+  maxAgeDays: number;
+}
+
+const PASSWORD_POLICY: PasswordPolicy = {
+  minLength: 8,
+  requireUpper: true,
+  requireLower: true,
+  requireNumber: true,
+  requireSpecial: false,
+  maxAgeDays: 90,
+};
+
+const RECOMMENDED_IPS = [
+  { ip: '192.168.1.0/24', label: '内网办公' },
+  { ip: '10.0.0.0/8', label: 'VPN 接入' },
+];
+
 // ==================== Mock 登录 API ====================
 
 async function mockLoginApi(username: string, password: string): Promise<LoginResult> {
@@ -70,6 +106,9 @@ const MOCK_LOGIN_HISTORY: LoginHistoryEntry[] = [
   { id: 'lh-3', username: 'operator', ip: '192.168.1.50', timestamp: '2026-07-15 14:10:00', success: false, failReason: '密码错误', userAgent: 'Safari / macOS' },
   { id: 'lh-4', username: 'admin', ip: '192.168.1.100', timestamp: '2026-07-15 09:05:00', success: true, failReason: '', userAgent: 'Chrome 128 / macOS' },
   { id: 'lh-5', username: 'admin', ip: '10.0.0.55', timestamp: '2026-07-14 22:45:00', success: false, failReason: 'IP不在白名单', userAgent: 'Firefox / Windows' },
+  { id: 'lh-6', username: 'auditor', ip: '10.0.0.100', timestamp: '2026-07-14 16:30:00', success: true, failReason: '', userAgent: 'Safari / iOS' },
+  { id: 'lh-7', username: 'admin', ip: '192.168.1.100', timestamp: '2026-07-14 08:15:00', success: true, failReason: '', userAgent: 'Chrome 128 / macOS' },
+  { id: 'lh-8', username: 'operator', ip: '203.0.113.50', timestamp: '2026-07-13 19:45:00', success: false, failReason: '账户锁定', userAgent: 'Edge / Windows' },
 ];
 
 // ==================== 样式常量 ====================
@@ -86,6 +125,71 @@ const inputStyle: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 
+const CARD_DARK: React.CSSProperties = {
+  borderRadius: 12,
+  padding: 14,
+  background: 'rgba(15, 23, 42, 0.38)',
+  border: '1px solid rgba(148, 163, 184, 0.12)',
+};
+
+// ==================== 辅助函数 ====================
+
+function computeSecurityScore(history: LoginHistoryEntry[]): SecurityScore {
+  const total = history.length;
+  const success = history.filter((h) => h.success).length;
+  const fail = total - success;
+  const recentFail = history.filter((h) => !h.success && h.timestamp.startsWith('2026-07-16')).length;
+  const uniqueIPs = new Set(history.map((h) => h.ip)).size;
+  const uniqueUsernames = new Set(history.map((h) => h.username)).size;
+  return {
+    total,
+    success,
+    fail,
+    recentFail,
+    successRate: total > 0 ? Math.round((success / total) * 100) : 0,
+    uniqueIPs,
+    uniqueUsernames,
+  };
+}
+
+function validatePasswordPolicy(password: string): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  if (password.length < PASSWORD_POLICY.minLength) {
+    errors.push(`至少 ${PASSWORD_POLICY.minLength} 个字符`);
+  }
+  if (PASSWORD_POLICY.requireUpper && !/[A-Z]/.test(password)) {
+    errors.push('需要至少一个大写字母');
+  }
+  if (PASSWORD_POLICY.requireLower && !/[a-z]/.test(password)) {
+    errors.push('需要至少一个小写字母');
+  }
+  if (PASSWORD_POLICY.requireNumber && !/\d/.test(password)) {
+    errors.push('需要至少一个数字');
+  }
+  if (PASSWORD_POLICY.requireSpecial && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    errors.push('需要至少一个特殊字符');
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+function filterHistory(history: LoginHistoryEntry[], query: string, showOnlyFail: boolean): LoginHistoryEntry[] {
+  let result = history;
+  if (showOnlyFail) {
+    result = result.filter((h) => !h.success);
+  }
+  if (query.trim()) {
+    const q = query.toLowerCase();
+    result = result.filter(
+      (h) =>
+        h.username.toLowerCase().includes(q) ||
+        h.ip.includes(q) ||
+        h.failReason.toLowerCase().includes(q) ||
+        h.userAgent.toLowerCase().includes(q),
+    );
+  }
+  return result;
+}
+
 // ==================== 主页面 ====================
 
 export default function LoginPage() {
@@ -93,11 +197,26 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showSecurity, setShowSecurity] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ username?: string; password?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginHistory] = useState<LoginHistoryEntry[]>(MOCK_LOGIN_HISTORY);
+  const [historyQuery, setHistoryQuery] = useState('');
+  const [historyOnlyFail, setHistoryOnlyFail] = useState(false);
+
+  // 安全统计
+  const stats = useMemo(() => computeSecurityScore(loginHistory), [loginHistory]);
+
+  // 密码策略校验
+  const passwordPolicyResult = useMemo(() => validatePasswordPolicy(password), [password]);
+
+  // 过滤后的历史
+  const filteredHistory = useMemo(
+    () => filterHistory(loginHistory, historyQuery, historyOnlyFail),
+    [loginHistory, historyQuery, historyOnlyFail],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,9 +240,8 @@ export default function LoginPage() {
     setLoginSuccess(false);
 
     try {
-      const result = await mockLoginApi(username, password);
+      await mockLoginApi(username, password);
       setLoginSuccess(true);
-      setLoginError(null);
     } catch (err) {
       setLoginSuccess(false);
       setLoginError(err instanceof Error ? err.message : '登录失败，请稍后重试');
@@ -135,13 +253,13 @@ export default function LoginPage() {
   // 历史记录列
   const historyColumns: DataTableColumn<LoginHistoryEntry>[] = useMemo(
     () => [
-      { key: 'timestamp', title: '时间', dataKey: 'timestamp', sortable: true, width: 160 },
-      { key: 'username', title: '账号', dataKey: 'username', sortable: true, width: 100 },
-      { key: 'ip', title: 'IP 地址', dataKey: 'ip', width: 140 },
+      { key: 'timestamp', title: '时间', render: (item) => <span>{item.timestamp}</span>, sortable: true, width: '160px' },
+      { key: 'username', title: '账号', render: (item) => <span>{item.username}</span>, sortable: true, width: '100px' },
+      { key: 'ip', title: 'IP 地址', render: (item) => <span>{item.ip}</span>, width: '140px' },
       {
         key: 'success',
         title: '结果',
-        width: 80,
+        width: '80px',
         render: (item) => (
           <StatusBadge
             label={item.success ? '成功' : '失败'}
@@ -154,45 +272,25 @@ export default function LoginPage() {
       {
         key: 'failReason',
         title: '失败原因',
-        dataKey: 'failReason',
-        render: (item) => item.failReason || '—',
+        render: (item) => <span>{item.failReason || '—'}</span>,
       },
-      { key: 'userAgent', title: '客户端', dataKey: 'userAgent', width: 160 },
+      { key: 'userAgent', title: '客户端', render: (item) => <span>{item.userAgent}</span>, width: '160px' },
     ],
     [],
   );
 
-  // 清除单个字段错误
   const clearFieldError = (field: 'username' | 'password') => {
     if (fieldErrors[field]) {
       setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
-  // 安全统计
-  const stats = useMemo(() => ({
-    total: loginHistory.length,
-    success: loginHistory.filter((h) => h.success).length,
-    fail: loginHistory.filter((h) => !h.success).length,
-    recentFail: loginHistory.filter((h) => !h.success && h.timestamp.startsWith('2026-07-16')).length,
-  }), [loginHistory]);
-
   return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
-      <section style={{ width: 460 }}>
+      <section style={{ width: 500 }}>
         <PageShell title="管理后台登录" subtitle="统一认证入口，登录后按 foundation bootstrap 校验租户/品牌/门店作用域。">
           {/* 作用域状态 */}
-          <div
-            style={{
-              display: 'grid',
-              gap: 8,
-              marginBottom: 20,
-              padding: 14,
-              borderRadius: 12,
-              background: 'rgba(15, 23, 42, 0.38)',
-              border: '1px solid rgba(148, 163, 184, 0.12)',
-            }}
-          >
+          <div style={CARD_DARK}>
             <div style={{ fontSize: 13, fontWeight: 600, color: '#93c5fd', marginBottom: 6 }}>
               🛡️ 安全状态
             </div>
@@ -271,6 +369,15 @@ export default function LoginPage() {
               />
             </FormField>
 
+            {/* 密码策略提示 */}
+            {password.length > 0 && !passwordPolicyResult.valid && (
+              <div style={{ fontSize: 12, color: '#fbbf24', padding: '4px 8px', background: 'rgba(251, 191, 36, 0.08)', borderRadius: 4 }}>
+                {passwordPolicyResult.errors.map((err, i) => (
+                  <div key={i}>· {err}</div>
+                ))}
+              </div>
+            )}
+
             {/* 记住我 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <input
@@ -315,8 +422,75 @@ export default function LoginPage() {
             </button>
           </div>
 
+          {/* 安全评分 */}
+          <div style={{ marginTop: 16 }}>
+            <button
+              type="button"
+              onClick={() => setShowSecurity(!showSecurity)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#93c5fd',
+                fontSize: 13,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 0',
+                fontWeight: 600,
+              }}
+            >
+              {showSecurity ? '▼' : '▶'} 安全策略面板
+            </button>
+
+            {showSecurity && (
+              <div style={{ marginTop: 8, ...CARD_DARK }}>
+                {/* 安全评分 */}
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>安全评分</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ flex: 1, padding: '8px 12px', borderRadius: 8, background: 'rgba(34, 197, 94, 0.08)', fontSize: 12 }}>
+                      <span style={{ color: '#94a3b8' }}>成功率</span>
+                      <div style={{ color: '#22c55e', fontWeight: 700, fontSize: 16 }}>{stats.successRate}%</div>
+                    </div>
+                    <div style={{ flex: 1, padding: '8px 12px', borderRadius: 8, background: 'rgba(239, 68, 68, 0.08)', fontSize: 12 }}>
+                      <span style={{ color: '#94a3b8' }}>失败次数</span>
+                      <div style={{ color: '#ef4444', fontWeight: 700, fontSize: 16 }}>{stats.fail}</div>
+                    </div>
+                    <div style={{ flex: 1, padding: '8px 12px', borderRadius: 8, background: 'rgba(99, 102, 241, 0.08)', fontSize: 12 }}>
+                      <span style={{ color: '#94a3b8' }}>独立 IP</span>
+                      <div style={{ color: '#818cf8', fontWeight: 700, fontSize: 16 }}>{stats.uniqueIPs}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 密码策略 */}
+                <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(15, 23, 42, 0.3)' }}>
+                  <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>🔐 密码策略</div>
+                  <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                    · 最少 {PASSWORD_POLICY.minLength} 个字符
+                    · {PASSWORD_POLICY.requireUpper ? '需要' : '不需要'}大写字母
+                    · {PASSWORD_POLICY.requireLower ? '需要' : '不需要'}小写字母
+                    · {PASSWORD_POLICY.requireNumber ? '需要' : '不需要'}数字
+                    · {PASSWORD_POLICY.maxAgeDays} 天过期
+                  </div>
+                </div>
+
+                {/* IP 白名单建议 */}
+                <div style={{ padding: 10, borderRadius: 8, background: 'rgba(15, 23, 42, 0.3)' }}>
+                  <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>🌐 推荐 IP 白名单</div>
+                  {RECOMMENDED_IPS.map((item) => (
+                    <div key={item.ip} style={{ fontSize: 12, color: '#94a3b8', marginBottom: 2 }}>
+                      · {item.ip} ({item.label})
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* 登录历史 */}
-          <div style={{ marginTop: 24 }}>
+          <div style={{ marginTop: 16 }}>
             <button
               type="button"
               onClick={() => setShowHistory(!showHistory)}
@@ -341,6 +515,30 @@ export default function LoginPage() {
 
             {showHistory && (
               <div style={{ marginTop: 8 }}>
+                {/* 搜索与过滤 */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  <input
+                    type="text"
+                    value={historyQuery}
+                    onChange={(e) => setHistoryQuery(e.target.value)}
+                    placeholder="搜索用户名、IP、原因..."
+                    style={{
+                      flex: 1, padding: '6px 10px', borderRadius: 6, fontSize: 12,
+                      background: 'rgba(15, 23, 42, 0.48)', border: '1px solid rgba(148, 163, 184, 0.22)',
+                      color: '#f8fafc', outline: 'none',
+                    }}
+                  />
+                  <label style={{ fontSize: 12, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={historyOnlyFail}
+                      onChange={(e) => setHistoryOnlyFail(e.target.checked)}
+                      style={{ accentColor: '#3b82f6' }}
+                    />
+                    仅失败
+                  </label>
+                </div>
+
                 {/* 安全统计小卡片 */}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                   <div style={{ flex: 1, padding: '8px 12px', borderRadius: 8, background: 'rgba(34, 197, 94, 0.08)', fontSize: 12 }}>
@@ -357,13 +555,20 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <DataTable
-                  columns={historyColumns}
-                  items={loginHistory}
-                  rowKey={(h) => h.id}
-                  compact
-                  striped
-                />
+                {/* 空状态 */}
+                {filteredHistory.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 24, color: '#64748b', fontSize: 13 }}>
+                    没有匹配的登录历史
+                  </div>
+                ) : (
+                  <DataTable
+                    columns={historyColumns}
+                    items={filteredHistory}
+                    rowKey={(h) => h.id}
+                    compact
+                    striped
+                  />
+                )}
               </div>
             )}
           </div>

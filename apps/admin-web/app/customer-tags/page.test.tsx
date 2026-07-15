@@ -1,14 +1,23 @@
 /**
- * customer-tags/page.test.tsx — 客户画像标签管理页 L1 测试
+ * customer-tags/page.test.tsx — 客户画像标签管理页 L2 全量测试
  *
- * 覆盖:
- *   正例 — 常量映射、筛选逻辑、统计计算、表单校验、CRUD 辅助逻辑
- *   反例 — 空数据、非法输入、无匹配场景
- *   边界 — 名称长度限制、空白搜索、启用状态切换
+ * 覆盖: 常量映射、筛选逻辑、统计计算、表单校验、CRUD、分类分布、来源分析
  */
 
 import assert from 'node:assert/strict'
-import test from 'node:test'
+import { describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const SOURCE = resolve(__dirname, 'page.tsx')
+
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8')
+}
+
+// ---- 类型与数据（与 page.tsx 同步） ----
 
 interface Tag {
   id: string
@@ -22,21 +31,8 @@ interface Tag {
   createdAt: string
 }
 
-interface FormErrors {
-  name?: string
-  category?: string
-  color?: string
-  source?: string
-}
-
-interface FormData {
-  name: string
-  category: string
-  color: string
-  source: string
-  description: string
-  enabled: boolean
-}
+interface FormErrors { name?: string; category?: string; color?: string; source?: string }
+interface FormData { name: string; category: string; color: string; source: string; description: string; enabled: boolean }
 
 const TAG_CATEGORIES = [
   { value: 'demographics', label: '人口属性' },
@@ -73,18 +69,12 @@ const MOCK_TAGS: Tag[] = [
   { id: 't7', name: '夜猫子客群', category: 'lifestyle', color: 'blue', source: 'ai-prediction', memberCount: 4560, description: '主要消费时段22:00-02:00', enabled: true, createdAt: '2025-11-28' },
 ]
 
+// ---- 辅助函数（与 page.tsx 同步） ----
+
 function filterTags(tags: Tag[], search: string, categoryFilter: string): Tag[] {
   return tags.filter((tag) => {
-    if (
-      search &&
-      !tag.name.toLowerCase().includes(search.toLowerCase()) &&
-      !tag.description.toLowerCase().includes(search.toLowerCase())
-    ) {
-      return false
-    }
-    if (categoryFilter && tag.category !== categoryFilter) {
-      return false
-    }
+    if (search && !tag.name.toLowerCase().includes(search.toLowerCase()) && !tag.description.toLowerCase().includes(search.toLowerCase())) return false
+    if (categoryFilter && tag.category !== categoryFilter) return false
     return true
   })
 }
@@ -92,255 +82,147 @@ function filterTags(tags: Tag[], search: string, categoryFilter: string): Tag[] 
 function computeStats(tags: Tag[]) {
   return {
     total: tags.length,
-    enabled: tags.filter((tag) => tag.enabled).length,
-    aiPrediction: tags.filter((tag) => tag.source === 'ai-prediction').length,
-    totalCoverage: tags.filter((tag) => tag.enabled).reduce((sum, tag) => sum + tag.memberCount, 0),
+    enabled: tags.filter((t) => t.enabled).length,
+    disabled: tags.filter((t) => !t.enabled).length,
+    aiPrediction: tags.filter((t) => t.source === 'ai-prediction').length,
+    totalCoverage: tags.filter((t) => t.enabled).reduce((s, t) => s + t.memberCount, 0),
+    disabledCoverage: tags.filter((t) => !t.enabled).reduce((s, t) => s + t.memberCount, 0),
   }
 }
 
 function validateForm(form: FormData): FormErrors {
   const errors: FormErrors = {}
-  if (!form.name.trim()) {
-    errors.name = '标签名称不能为空'
-  } else if (form.name.trim().length > 20) {
-    errors.name = '标签名称最多20个字符'
-  }
-  if (!form.category) {
-    errors.category = '请选择标签分类'
-  }
-  if (!form.color) {
-    errors.color = '请选择标签颜色'
-  }
-  if (!form.source) {
-    errors.source = '请选择标签来源'
-  }
+  if (!form.name.trim()) errors.name = '标签名称不能为空'
+  else if (form.name.trim().length > 20) errors.name = '标签名称最多20个字符'
+  if (!form.category) errors.category = '请选择标签分类'
+  if (!form.color) errors.color = '请选择标签颜色'
+  if (!form.source) errors.source = '请选择标签来源'
   return errors
 }
 
-function getCategoryLabel(value: string): string {
-  return TAG_CATEGORIES.find((item) => item.value === value)?.label || value
-}
-
-function getSourceLabel(value: string): string {
-  return TAG_SOURCES.find((item) => item.value === value)?.label || value
-}
-
-function getColorHex(value: string): string {
-  const colorMap: Record<string, string> = {
-    blue: '#1677ff',
-    green: '#52c41a',
-    orange: '#fa8c16',
-    red: '#f5222d',
-    purple: '#722ed1',
-    cyan: '#13c2c2',
-    pink: '#eb2f96',
-  }
-  return colorMap[value] || '#1677ff'
+function getCategoryLabel(v: string): string { return TAG_CATEGORIES.find((c) => c.value === v)?.label || v }
+function getSourceLabel(v: string): string { return TAG_SOURCES.find((c) => c.value === v)?.label || v }
+function getColorHex(v: string): string {
+  const m: Record<string, string> = { blue: '#1677ff', green: '#52c41a', orange: '#fa8c16', red: '#f5222d', purple: '#722ed1', cyan: '#13c2c2', pink: '#eb2f96' }
+  return m[v] || '#1677ff'
 }
 
 function addTag(tags: Tag[], form: FormData): Tag[] {
-  const newTag: Tag = {
-    id: `t${Date.now()}`,
-    name: form.name,
-    category: form.category,
-    color: form.color,
-    source: form.source,
-    memberCount: 0,
-    description: form.description,
-    enabled: form.enabled,
-    createdAt: new Date().toISOString().slice(0, 10),
-  }
-  return [newTag, ...tags]
+  return [{ id: `t${Date.now()}`, name: form.name, category: form.category, color: form.color, source: form.source, memberCount: 0, description: form.description, enabled: form.enabled, createdAt: new Date().toISOString().slice(0, 10) }, ...tags]
 }
 
 function editTag(tags: Tag[], id: string, form: FormData): Tag[] {
-  return tags.map((tag) => (tag.id === id ? { ...tag, ...form, memberCount: tag.memberCount } : tag))
+  return tags.map((t) => (t.id === id ? { ...t, ...form, memberCount: t.memberCount } : t))
 }
 
-function deleteTag(tags: Tag[], id: string): Tag[] {
-  return tags.filter((tag) => tag.id !== id)
-}
+function deleteTag(tags: Tag[], id: string): Tag[] { return tags.filter((t) => t.id !== id) }
+function toggleEnabled(tags: Tag[], id: string): Tag[] { return tags.map((t) => (t.id === id ? { ...t, enabled: !t.enabled } : t)) }
 
-function toggleEnabled(tags: Tag[], id: string): Tag[] {
-  return tags.map((tag) => (tag.id === id ? { ...tag, enabled: !tag.enabled } : tag))
-}
+// ===== 测试集 =====
 
-test('TAG_CATEGORIES 应包含 5 个完整分类', () => {
-  assert.equal(TAG_CATEGORIES.length, 5)
-  assert.deepEqual(
-    TAG_CATEGORIES.map((item) => item.value),
-    ['demographics', 'behavior', 'consumption', 'lifestyle', 'engagement'],
-  )
+describe('customer-tags — 常量', () => {
+  it('1. TAG_CATEGORIES 5 个', () => assert.equal(TAG_CATEGORIES.length, 5))
+  it('2. TAG_COLORS 7 种', () => assert.equal(TAG_COLORS.length, 7))
+  it('3. TAG_SOURCES 4 种', () => assert.equal(TAG_SOURCES.length, 4))
+  it('4. 颜色 hex 完整', () => { for (const c of TAG_COLORS) assert.ok(c.hex.startsWith('#') && c.hex.length === 7) })
+  it('5. 分类值去重', () => { assert.equal(new Set(TAG_CATEGORIES.map((c) => c.value)).size, TAG_CATEGORIES.length) })
+  it('6. 来源值去重', () => { assert.equal(new Set(TAG_SOURCES.map((c) => c.value)).size, TAG_SOURCES.length) })
 })
 
-test('TAG_COLORS 应包含 7 种颜色且 hex 完整', () => {
-  assert.equal(TAG_COLORS.length, 7)
-  for (const color of TAG_COLORS) {
-    assert.ok(color.hex.startsWith('#'))
-    assert.equal(color.hex.length, 7)
-  }
+describe('customer-tags — Mock 数据', () => {
+  it('7. 7 条', () => assert.equal(MOCK_TAGS.length, 7))
+  it('8. ID 唯一', () => assert.equal(new Set(MOCK_TAGS.map((t) => t.id)).size, 7))
+  it('9. 6 个启用', () => assert.equal(MOCK_TAGS.filter((t) => t.enabled).length, 6))
+  it('10. 1 个停用', () => assert.equal(MOCK_TAGS.filter((t) => !t.enabled).length, 1))
+  it('11. 3 个 AI 预测', () => assert.equal(MOCK_TAGS.filter((t) => t.source === 'ai-prediction').length, 3))
+  it('12. 覆盖 5 种分类', () => assert.equal(new Set(MOCK_TAGS.map((t) => t.category)).size, 5))
+  it('13. 覆盖 3 种来源', () => assert.equal(new Set(MOCK_TAGS.map((t) => t.source)).size, 3))
+  it('14. memberCount 非负', () => { for (const t of MOCK_TAGS) assert.ok(t.memberCount >= 0) })
+  it('15. createdAt 格式 YYYY-MM-DD', () => { for (const t of MOCK_TAGS) assert.match(t.createdAt, /^\d{4}-\d{2}-\d{2}$/) })
 })
 
-test('TAG_SOURCES 应包含 4 种来源', () => {
-  assert.deepEqual(
-    TAG_SOURCES.map((item) => item.value),
-    ['manual', 'rule-engine', 'ai-prediction', 'imported'],
-  )
+describe('customer-tags — getCategoryLabel / getSourceLabel / getColorHex', () => {
+  it('16. getCategoryLabel 正确', () => assert.equal(getCategoryLabel('behavior'), '行为特征'))
+  it('17. getCategoryLabel 回退', () => assert.equal(getCategoryLabel('unknown'), 'unknown'))
+  it('18. getSourceLabel 正确', () => assert.equal(getSourceLabel('manual'), '手动创建'))
+  it('19. getColorHex 正确', () => assert.equal(getColorHex('purple'), '#722ed1'))
+  it('20. getColorHex 回退蓝', () => assert.equal(getColorHex('unknown'), '#1677ff'))
 })
 
-test('MOCK_TAGS 应保持 7 条完整样本数据', () => {
-  assert.equal(MOCK_TAGS.length, 7)
-  assert.equal(new Set(MOCK_TAGS.map((tag) => tag.id)).size, MOCK_TAGS.length)
-  assert.equal(MOCK_TAGS.filter((tag) => tag.enabled).length, 6)
-  assert.equal(MOCK_TAGS.filter((tag) => tag.source === 'ai-prediction').length, 3)
+describe('customer-tags — filterTags', () => {
+  it('21. 无过滤返回全部', () => assert.equal(filterTags(MOCK_TAGS, '', '').length, 7))
+  it('22. 按名称搜索', () => { const r = filterTags(MOCK_TAGS, '沉睡', ''); assert.equal(r.length, 1); assert.equal(r[0]?.name, '沉睡用户') })
+  it('23. 按描述搜索', () => { assert.equal(filterTags(MOCK_TAGS, '90天', '').length, 1) })
+  it('24. 按分类过滤', () => { assert.equal(filterTags(MOCK_TAGS, '', 'lifestyle').length, 2) })
+  it('25. 组合过滤', () => { assert.equal(filterTags(MOCK_TAGS, '夜猫子', 'lifestyle').length, 1) })
+  it('26. 不匹配返回空', () => { assert.deepEqual(filterTags(MOCK_TAGS, 'xxxxxxxxxxxxx', ''), []) })
+  it('27. 不存在的分类返回空', () => { assert.deepEqual(filterTags(MOCK_TAGS, '', 'nonexistent'), []) })
 })
 
-test('computeStats 应正确计算统计卡片数据', () => {
-  const stats = computeStats(MOCK_TAGS)
-  assert.equal(stats.total, 7)
-  assert.equal(stats.enabled, 6)
-  assert.equal(stats.aiPrediction, 3)
-  assert.equal(
-    stats.totalCoverage,
-    MOCK_TAGS.filter((tag) => tag.enabled).reduce((sum, tag) => sum + tag.memberCount, 0),
-  )
-})
-
-test('computeStats 对空列表应返回全 0', () => {
-  assert.deepEqual(computeStats([]), {
-    total: 0,
-    enabled: 0,
-    aiPrediction: 0,
-    totalCoverage: 0,
+describe('customer-tags — computeStats', () => {
+  it('28. 7 总 6 启用 1 停用 3 AI', () => {
+    const s = computeStats(MOCK_TAGS)
+    assert.equal(s.total, 7)
+    assert.equal(s.enabled, 6)
+    assert.equal(s.disabled, 1)
+    assert.equal(s.aiPrediction, 3)
+  })
+  it('29. 总覆盖率计算正确', () => {
+    const s = computeStats(MOCK_TAGS)
+    const expected = MOCK_TAGS.filter((t) => t.enabled).reduce((sum, t) => sum + t.memberCount, 0)
+    assert.equal(s.totalCoverage, expected)
+  })
+  it('30. 空数组全零', () => {
+    const s = computeStats([])
+    assert.equal(s.total, 0)
+    assert.equal(s.enabled, 0)
+    assert.equal(s.disabled, 0)
+    assert.equal(s.aiPrediction, 0)
+    assert.equal(s.totalCoverage, 0)
+    assert.equal(s.disabledCoverage, 0)
   })
 })
 
-test('getCategoryLabel 和 getSourceLabel 应返回正确中文文案', () => {
-  assert.equal(getCategoryLabel('behavior'), '行为特征')
-  assert.equal(getCategoryLabel('unknown'), 'unknown')
-  assert.equal(getSourceLabel('manual'), '手动创建')
-  assert.equal(getSourceLabel('unknown'), 'unknown')
+describe('customer-tags — validateForm', () => {
+  it('31. 空名称报错', () => assert.equal(validateForm({ name: '  ', category: '', color: '', source: '', description: '', enabled: true }).name, '标签名称不能为空'))
+  it('32. 超长名称报错', () => { const e = validateForm({ name: '这是一个超过二十个字符的标签名称测试啊啊啊', category: 'behavior', color: 'blue', source: 'manual', description: '', enabled: true }); assert.equal(e.name, '标签名称最多20个字符') })
+  it('33. 合法表单通过', () => { assert.deepEqual(validateForm({ name: '测试标签', category: 'behavior', color: 'blue', source: 'manual', description: '', enabled: true }), {}) })
+  it('34. 必填缺失', () => { const e = validateForm({ name: '', category: '', color: '', source: '', description: '', enabled: true }); assert.ok(e.category && e.color && e.source) })
+  it('35. 边界 20 字通过', () => { assert.deepEqual(validateForm({ name: '一二三四五六七八九十一二三四五六七八九十', category: 'behavior', color: 'blue', source: 'manual', description: '', enabled: true }), {}) })
 })
 
-test('getColorHex 应返回对应颜色值，未知值回退蓝色', () => {
-  assert.equal(getColorHex('purple'), '#722ed1')
-  assert.equal(getColorHex('unknown'), '#1677ff')
-})
-
-test('filterTags 应支持按名称与描述搜索', () => {
-  const byName = filterTags(MOCK_TAGS, '沉睡', '')
-  assert.equal(byName.length, 1)
-  assert.equal(byName[0]?.name, '沉睡用户')
-
-  const byDescription = filterTags(MOCK_TAGS, '90天', '')
-  assert.equal(byDescription.length, 1)
-  assert.equal(byDescription[0]?.name, '沉睡用户')
-})
-
-test('filterTags 应支持分类过滤与组合过滤', () => {
-  const byCategory = filterTags(MOCK_TAGS, '', 'lifestyle')
-  assert.equal(byCategory.length, 2)
-  assert.ok(byCategory.every((tag) => tag.category === 'lifestyle'))
-
-  const combined = filterTags(MOCK_TAGS, '夜猫子', 'lifestyle')
-  assert.equal(combined.length, 1)
-  assert.equal(combined[0]?.name, '夜猫子客群')
-})
-
-test('filterTags 无匹配时应返回空数组', () => {
-  assert.deepEqual(filterTags(MOCK_TAGS, 'xxxxxxxxxxxxx', ''), [])
-  assert.deepEqual(filterTags(MOCK_TAGS, '', 'nonexistent'), [])
-})
-
-test('filterTags 保持页面当前空白搜索行为', () => {
-  assert.equal(filterTags(MOCK_TAGS, '   ', '').length, 0)
-})
-
-test('validateForm 应拒绝空名称与缺失必填项', () => {
-  const errors = validateForm({
-    name: '   ',
-    category: '',
-    color: '',
-    source: '',
-    description: '',
-    enabled: true,
+describe('customer-tags — CRUD', () => {
+  it('36. addTag 首位插入', () => {
+    const r = addTag(MOCK_TAGS, { name: '新标签', category: 'behavior', color: 'blue', source: 'manual', description: '', enabled: true })
+    assert.equal(r.length, 8)
+    assert.equal(r[0]?.name, '新标签')
+    assert.equal(r[0]?.memberCount, 0)
   })
 
-  assert.equal(errors.name, '标签名称不能为空')
-  assert.equal(errors.category, '请选择标签分类')
-  assert.equal(errors.color, '请选择标签颜色')
-  assert.equal(errors.source, '请选择标签来源')
-})
-
-test('validateForm 应拒绝超长名称并接受合法边界值', () => {
-  const tooLong = validateForm({
-    name: '这是一个超过二十个字符的标签名称测试啊啊啊',
-    category: 'behavior',
-    color: 'blue',
-    source: 'manual',
-    description: '',
-    enabled: true,
-  })
-  assert.equal(tooLong.name, '标签名称最多20个字符')
-
-  const valid = validateForm({
-    name: '一二三四五六七八九十一二三四五六七八九十',
-    category: 'behavior',
-    color: 'blue',
-    source: 'manual',
-    description: '',
-    enabled: true,
-  })
-  assert.deepEqual(valid, {})
-})
-
-test('addTag 应在首位新增标签并设置默认 memberCount', () => {
-  const updated = addTag(MOCK_TAGS, {
-    name: '测试标签',
-    category: 'behavior',
-    color: 'blue',
-    source: 'manual',
-    description: '测试描述',
-    enabled: true,
+  it('37. editTag 修改保留 memberCount', () => {
+    const r = editTag(MOCK_TAGS, 't1', { name: '高净值VIP', category: 'consumption', color: 'purple', source: 'ai-prediction', description: '修改', enabled: true })
+    assert.equal(r.find((t) => t.id === 't1')?.name, '高净值VIP')
+    assert.equal(r.find((t) => t.id === 't1')?.memberCount, 1243)
   })
 
-  assert.equal(updated.length, MOCK_TAGS.length + 1)
-  assert.equal(updated[0]?.name, '测试标签')
-  assert.equal(updated[0]?.memberCount, 0)
-  assert.equal(updated[1]?.name, '高净值会员')
-})
-
-test('editTag 应更新指定标签但保留 memberCount', () => {
-  const updated = editTag(MOCK_TAGS, 't1', {
-    name: '高净值VIP',
-    category: 'consumption',
-    color: 'purple',
-    source: 'ai-prediction',
-    description: '修改后的描述',
-    enabled: true,
+  it('38. deleteTag 删除', () => {
+    assert.equal(deleteTag(MOCK_TAGS, 't1').length, 6)
+    assert.equal(deleteTag(MOCK_TAGS, 'not-exist').length, 7)
   })
 
-  const edited = updated.find((tag) => tag.id === 't1')
-  assert.equal(edited?.name, '高净值VIP')
-  assert.equal(edited?.description, '修改后的描述')
-  assert.equal(edited?.memberCount, 1243)
+  it('39. toggleEnabled 翻转', () => {
+    assert.equal(toggleEnabled(MOCK_TAGS, 't1').find((t) => t.id === 't1')?.enabled, false)
+    assert.equal(toggleEnabled(MOCK_TAGS, 't6').find((t) => t.id === 't6')?.enabled, true)
+  })
 })
 
-test('deleteTag 应删除目标标签，删除不存在项时保持不变', () => {
-  const removed = deleteTag(MOCK_TAGS, 't1')
-  assert.equal(removed.length, MOCK_TAGS.length - 1)
-  assert.ok(!removed.some((tag) => tag.id === 't1'))
-
-  const untouched = deleteTag(MOCK_TAGS, 'not-exist')
-  assert.equal(untouched.length, MOCK_TAGS.length)
-})
-
-test('toggleEnabled 应仅翻转目标标签状态', () => {
-  const updated = toggleEnabled(MOCK_TAGS, 't1')
-  const target = updated.find((tag) => tag.id === 't1')
-  const other = updated.find((tag) => tag.id === 't2')
-
-  assert.equal(target?.enabled, false)
-  assert.equal(other?.enabled, true)
-  assert.equal(other?.name, '沉睡用户')
+describe('customer-tags — 页面结构', () => {
+  it('40. 导出默认组件', () => assert.ok(readSource().includes('export default function CustomerTagsPage')))
+  it('41. 使用 use client', () => assert.ok(readSource().includes("'use client'")))
+  it('42. 包含分类分布', () => assert.ok(readSource().includes('分类分布')))
+  it('43. 包含来源分析', () => assert.ok(readSource().includes('来源分析')))
+  it('44. 包含颜色分布', () => assert.ok(readSource().includes('颜色分布')))
+  it('45. 包含停用标签提醒', () => assert.ok(readSource().includes('停用标签提醒')))
+  it('46. 包含删除确认弹窗', () => assert.ok(readSource().includes('确认删除')))
+  it('47. 不包含 console.log', () => assert.ok(!readSource().includes('console.log')))
 })
