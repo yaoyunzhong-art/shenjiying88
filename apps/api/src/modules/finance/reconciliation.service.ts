@@ -5,6 +5,7 @@
  *   1. 根据 订单号+金额+日期 匹配银行/渠道流水
  *   2. 差异检测: 金额不一致 / 缺少交易 / 重复交易
  *   3. 报表生成: return 差异汇总
+ *   4. 缓存层: getSummary / getDetails 聚合查询
  *
  * 与 ReconciliationService (reconciliation/reconciliation.service.ts) 的区别:
  *   - reconciliation/reconciliation.service.ts: 内部 Payment vs 通道账单 (adapter 模式)
@@ -120,6 +121,8 @@ export interface ReconciliationReport {
   generatedAt: string
   /** 耗时 ms */
   durationMs: number
+  /** 使用的容差 (分) */
+  toleranceCents: number
 }
 
 /** 对账运行参数 */
@@ -146,6 +149,65 @@ export interface ResolvedDiff {
   note?: string
 }
 
+/** 对账汇总 */
+export interface ReconciliationSummary {
+  /** 对账日期 */
+  date: string
+  /** 内部交易总数 */
+  internalTotal: number
+  /** 外部流水总数 */
+  externalTotal: number
+  /** 成功匹配数 */
+  matchedCount: number
+  /** 精确匹配数 */
+  exactMatchCount: number
+  /** 匹配率 (%) */
+  matchRate: number
+  /** 内部总金额 (分) */
+  internalTotalCents: number
+  /** 外部总金额 (分) */
+  externalTotalCents: number
+  /** 总金额差异 (分) */
+  totalDiffCents: number
+  /** 差异率 (%) */
+  diffRate: number
+  /** 差异分类统计 */
+  diffKindBreakdown: Array<{ kind: DiffKind; count: number; totalDiffCents: number }>
+  /** 已解决差异数 */
+  resolvedCount: number
+  /** 未解决差异数 */
+  unresolvedCount: number
+  /** 耗时 ms */
+  durationMs: number
+  /** 运行次数 */
+  totalRuns: number
+}
+
+/** 差异明细查询参数 */
+export interface DiffDetailQuery {
+  kind?: DiffKind
+  resolved?: boolean
+  orderNo?: string
+  offset?: number
+  limit?: number
+}
+
+/** 差异明细记录 (含解析状态) */
+export interface DiffDetailRecord extends DiffRecord {
+  diffKey: string
+  resolved: boolean
+  resolvedAt?: string
+  resolvedBy?: string
+  resolveNote?: string
+}
+
+/** 对账缓存条目 */
+export interface ReconciliationCacheEntry {
+  report: ReconciliationReport
+  cachedAt: string
+  hits: number
+}
+
 // ─── Service ──────────────────────────────────────────────
 
 @Injectable()
@@ -156,6 +218,8 @@ export class ReconciliationService {
   private resolvedDiffs = new Map<string, ResolvedDiff>()
   /** 最近的对账报告 */
   private lastReport: ReconciliationReport | null = null
+  /** 对账历史报告缓存 */
+  private reportCache = new Map<string, ReconciliationCacheEntry>()
   /** 对账状态 */
   private reconciliationStatus: {
     inProgress: boolean
@@ -183,8 +247,10 @@ export class ReconciliationService {
             internalTotal: this.lastReport.internalTotal,
             externalTotal: this.lastReport.externalTotal,
             matchedCount: this.lastReport.matchedCount,
+            exactMatchCount: this.lastReport.exactMatchCount,
             totalDiffCents: this.lastReport.totalDiffCents,
-            diffCount: this.lastReport.diffs.length
+            diffCount: this.lastReport.diffs.length,
+            toleranceCents: this.lastReport.toleranceCents
           }
         : null
     }
@@ -198,6 +264,97 @@ export class ReconciliationService {
   }
 
   /**
+   * 获取对账汇总
+   *
+   * 返回最近一次对账的聚合统计，含差异分类明细和已解决/未解决计数。
+   * date 参数用于查询历史缓存; 不传则返回最近一次。
+   */
+  getSummary(date?: string): ReconciliationSummary | null {
+    let report = this.lastReport
+
+    if (date) {
+      const cached = this.reportCache.get(date)
+      if (cached) {
+        report = cached.report
+      } else {
+        return null
+      }
+    }
+
+    if (!report) return null
+
+    const diffKindBreakdown = this.buildDiffKindBreakdown(report.diffs)
+    const totalDiffCents = diffKindBreakdown.reduce((sum, b) => sum + b.totalDiffCents, 0)
+    const diffRate = report.internalTotalCents > 0
+      ? Math.round((Math.abs(report.totalDiffCents) / report.internalTotalCents) * 10000) / 100
+      : 0
+    const matchRate = report.internalTotal > 0
+      ? Math.round((report.exactMatchCount / report.internalTotal) * 10000) / 100
+      : 100
+    const resolvedCount = Array.from(this.resolvedDiffs.values()).length
+    const unresolvedCount = report.diffs.length - resolvedCount
+
+    return {
+      date: report.date,
+      internalTotal: report.internalTotal,
+      externalTotal: report.externalTotal,
+      matchedCount: report.matchedCount,
+      exactMatchCount: report.exactMatchCount,
+      matchRate,
+      internalTotalCents: report.internalTotalCents,
+      externalTotalCents: report.externalTotalCents,
+      totalDiffCents: report.totalDiffCents,
+      diffRate,
+      diffKindBreakdown,
+      resolvedCount: Math.max(0, resolvedCount),
+      unresolvedCount: Math.max(0, unresolvedCount),
+      durationMs: report.durationMs,
+      totalRuns: this.reconciliationStatus.totalRuns
+    }
+  }
+
+  /**
+   * 获取差异明细（含解析状态），支持过滤
+   */
+  getDetails(query?: DiffDetailQuery): DiffDetailRecord[] {
+    const report = this.lastReport
+    if (!report) return []
+
+    let details: DiffDetailRecord[] = report.diffs.map((d) => {
+      const diffKey = `${d.kind}::${d.orderNo ?? ''}::${d.internalId ?? ''}::${d.externalId ?? ''}`
+      const resolved = this.resolvedDiffs.get(diffKey)
+      return {
+        ...d,
+        diffKey,
+        resolved: !!resolved,
+        resolvedAt: resolved?.resolvedAt,
+        resolvedBy: resolved?.resolvedBy,
+        resolveNote: resolved?.note
+      }
+    })
+
+    if (query) {
+      if (query.kind) {
+        details = details.filter((d) => d.kind === query.kind)
+      }
+      if (query.resolved !== undefined) {
+        details = details.filter((d) => d.resolved === query.resolved)
+      }
+      if (query.orderNo) {
+        details = details.filter((d) => d.orderNo === query.orderNo)
+      }
+      if (query.offset !== undefined) {
+        details = details.slice(query.offset)
+      }
+      if (query.limit !== undefined) {
+        details = details.slice(0, query.limit)
+      }
+    }
+
+    return details
+  }
+
+  /**
    * 标记某条差异已处理
    * 返回 false 如果 key 为空、不存在于最近报告差异中、或已标记过
    */
@@ -208,10 +365,11 @@ export class ReconciliationService {
     }
     // 校验 key 是否对应一个真实的差异记录
     if (this.lastReport) {
-      const exists = this.lastReport.diffs.some((d) => `${d.kind}::${d.orderNo}` === diffKey)
+      const exists = this.lastReport.diffs.some(
+        (d) => `${d.kind}::${d.orderNo ?? ''}::${d.internalId ?? ''}::${d.externalId ?? ''}` === diffKey
+      )
       if (!exists) return false
     } else {
-      // 还没有跑过对账 → 没有差异可标记
       return false
     }
     this.resolvedDiffs.set(diffKey, {
@@ -237,6 +395,45 @@ export class ReconciliationService {
     return Array.from(this.resolvedDiffs.values())
   }
 
+  /**
+   * 清除已处理的差异标记
+   */
+  clearResolvedDiffs(): void {
+    this.resolvedDiffs.clear()
+  }
+
+  /**
+   * 获取缓存报告
+   */
+  getCachedReport(date: string): ReconciliationReport | null {
+    const cached = this.reportCache.get(date)
+    if (cached) {
+      cached.hits++
+      return cached.report
+    }
+    return null
+  }
+
+  /**
+   * 清除所有缓存
+   */
+  clearCache(): void {
+    this.reportCache.clear()
+  }
+
+  /**
+   * 获取缓存统计
+   */
+  getCacheStats(): { entryCount: number; dates: string[]; totalHits: number } {
+    const dates: string[] = []
+    let totalHits = 0
+    for (const [date, entry] of this.reportCache) {
+      dates.push(date)
+      totalHits += entry.hits
+    }
+    return { entryCount: this.reportCache.size, dates: dates.sort(), totalHits }
+  }
+
   // ═══════════════════════════════════════════════════════
   // 核心: 执行对账
   // ═══════════════════════════════════════════════════════
@@ -251,6 +448,7 @@ export class ReconciliationService {
    *   4. 处理未匹配的内部交易 → missing-external
    *   5. 处理重复交易 → duplicate
    *   6. 生成差异汇总
+   *   7. 缓存报告
    */
   async run(options: ReconciliationRunOptions): Promise<ReconciliationReport> {
     const startedAt = Date.now()
@@ -259,6 +457,9 @@ export class ReconciliationService {
     this.reconciliationStatus.inProgress = true
 
     try {
+      // 验证输入
+      this.validateInput(internalTransactions, externalTransactions)
+
       // 1. 构建内部索引
       const internalIndex = this.buildIndex(internalTransactions, matchKey)
 
@@ -274,7 +475,6 @@ export class ReconciliationService {
 
         const key = this.extractKey(ext, matchKey)
         if (!key) {
-          // 外部流水无可用的匹配键 → 标记为 missing-internal
           diffs.push({
             kind: 'missing-internal',
             externalId: ext.id,
@@ -287,7 +487,6 @@ export class ReconciliationService {
 
         const internalMatches = internalIndex.get(key)
         if (!internalMatches || internalMatches.length === 0) {
-          // 外部流水在内部找不到对应 → missing-internal
           diffs.push({
             kind: 'missing-internal',
             orderNo: ext.orderNo,
@@ -307,7 +506,6 @@ export class ReconciliationService {
         matchedExternalIds.add(ext.id)
 
         if (alreadyMatchedInt) {
-          // 这条外部匹配了一条已被前一条外部关联的内部记录 → 外部重复
           diffs.push({
             kind: 'duplicate',
             orderNo: key,
@@ -316,7 +514,6 @@ export class ReconciliationService {
             diffCents: 0,
             note: `订单 ${key} 在外部有多条流水且内部已被匹配`
           })
-          // 仍记录 match 但标记为 false
           matches.push({
             internalId: primary.id,
             externalId: ext.id,
@@ -354,23 +551,30 @@ export class ReconciliationService {
           })
         }
 
-        // 检查重复匹配: 同一个 key 命中多个内部交易
+        // 检查内部重复匹配: 同一个 key 命中多个未匹配的内部交易
         if (internalMatches.length > 1) {
           const duplicateInternalIds = internalMatches.slice(1).map((t) => t.id)
-          diffs.push({
-            kind: 'duplicate',
-            orderNo: key,
-            externalId: ext.id,
-            duplicateIds: duplicateInternalIds,
-            diffCents: 0,
-            note: `订单 ${key} 在内部存在 ${internalMatches.length} 条匹配记录`
-          })
+          const dupExists = diffs.some(
+            (d) =>
+              d.kind === 'duplicate' &&
+              d.orderNo === key &&
+              d.internalId === primary.id
+          )
+          if (!dupExists) {
+            diffs.push({
+              kind: 'duplicate',
+              orderNo: key,
+              externalId: ext.id,
+              duplicateIds: duplicateInternalIds,
+              diffCents: 0,
+              note: `订单 ${key} 在内部存在 ${internalMatches.length} 条匹配记录`
+            })
+          }
         }
       }
 
       // 4. 未匹配的内部交易 → missing-external
       for (const internal of internalTransactions) {
-        // 渠道过滤
         if (channel && internal.channel !== channel) continue
 
         if (!matchedInternalIds.has(internal.id)) {
@@ -385,27 +589,35 @@ export class ReconciliationService {
         }
       }
 
-      // 5. 检查外部重复: 同一个 key 被多个外部流水匹配
-      // (已在上面 detectDuplicateInternalMatches 处理, 额外的 external-only 检查)
-      const externalKeyCounts = new Map<string, number>()
+      // 5. 外部重复检测: 同一个 key 被多个外部流水引用
+      //    只报告那些尚未在匹配循环中标记的
+      const externalKeyCounts = new Map<string, { count: number; ids: string[] }>()
       for (const ext of externalTransactions) {
+        if (channel && ext.channel !== channel) continue
         const key = this.extractKey(ext, matchKey)
         if (key) {
-          externalKeyCounts.set(key, (externalKeyCounts.get(key) ?? 0) + 1)
+          const entry = externalKeyCounts.get(key) ?? { count: 0, ids: [] }
+          entry.count++
+          entry.ids.push(ext.id)
+          externalKeyCounts.set(key, entry)
         }
       }
-      for (const [key, count] of externalKeyCounts) {
-        if (count > 1) {
-          // 外部有重复, 检查是否已记录
+      for (const [key, entry] of externalKeyCounts) {
+        if (entry.count > 1) {
           const alreadyReported = diffs.some(
-            (d) => d.kind === 'duplicate' && d.orderNo === key
+            (d) =>
+              d.kind === 'duplicate' &&
+              d.orderNo === key &&
+              d.externalId !== undefined &&
+              entry.ids.includes(d.externalId)
           )
           if (!alreadyReported) {
             diffs.push({
               kind: 'duplicate',
               orderNo: key,
               diffCents: 0,
-              note: `订单 ${key} 在外部存在 ${count} 条重复流水`
+              duplicateIds: entry.ids,
+              note: `订单 ${key} 在外部存在 ${entry.count} 条重复流水`
             })
           }
         }
@@ -433,10 +645,12 @@ export class ReconciliationService {
         matches,
         matchKeyType: matchKey,
         generatedAt: new Date().toISOString(),
-        durationMs: Date.now() - startedAt
+        durationMs: Date.now() - startedAt,
+        toleranceCents
       }
 
       this.lastReport = report
+      this.cacheReport(date, report)
       this.reconciliationStatus.lastRunAt = report.generatedAt
       this.reconciliationStatus.lastRunDate = date
       this.reconciliationStatus.totalRuns++
@@ -462,6 +676,23 @@ export class ReconciliationService {
   // ═══════════════════════════════════════════════════════
   // 辅助方法
   // ═══════════════════════════════════════════════════════
+
+  /**
+   * 校验输入数据合法性
+   */
+  private validateInput(
+    internalTransactions: TransactionInput[],
+    externalTransactions: BankStatementInput[]
+  ): void {
+    for (const txn of internalTransactions) {
+      if (!txn.id) throw new Error('内部交易缺少 id')
+      if (typeof txn.amountCents !== 'number' || !Number.isFinite(txn.amountCents)) throw new Error(`内部交易 ${txn.id} 金额无效`)
+    }
+    for (const stmt of externalTransactions) {
+      if (!stmt.id) throw new Error('外部流水缺少 id')
+      if (typeof stmt.amountCents !== 'number' || !Number.isFinite(stmt.amountCents)) throw new Error(`外部流水 ${stmt.id} 金额无效`)
+    }
+  }
 
   /**
    * 构建内部索引: matchKey → TransactionInput[]
@@ -500,13 +731,50 @@ export class ReconciliationService {
       case 'channelTxnNo':
         return input.channelTxnNo ?? null
       case 'combined': {
-        // combined = orderNo + amountCents + date
         const parts = [input.orderNo, String(input.amountCents), input.date]
         if (parts.some((p) => !p)) return null
         return parts.join('::')
       }
       default:
         return null
+    }
+  }
+
+  /**
+   * 构建差异分类统计
+   */
+  private buildDiffKindBreakdown(diffs: DiffRecord[]): Array<{ kind: DiffKind; count: number; totalDiffCents: number }> {
+    const map = new Map<DiffKind, { count: number; totalDiffCents: number }>()
+
+    for (const d of diffs) {
+      const entry = map.get(d.kind) ?? { count: 0, totalDiffCents: 0 }
+      entry.count++
+      entry.totalDiffCents += d.diffCents
+      map.set(d.kind, entry)
+    }
+
+    return Array.from(map.entries()).map(([kind, stats]) => ({
+      kind,
+      count: stats.count,
+      totalDiffCents: stats.totalDiffCents
+    }))
+  }
+
+  /**
+   * 缓存对账报告
+   */
+  private cacheReport(date: string, report: ReconciliationReport): void {
+    this.reportCache.set(date, {
+      report,
+      cachedAt: new Date().toISOString(),
+      hits: 0
+    })
+    // 最多缓存 30 天
+    if (this.reportCache.size > 30) {
+      const oldestKey = this.reportCache.keys().next().value
+      if (oldestKey) {
+        this.reportCache.delete(oldestKey)
+      }
     }
   }
 }

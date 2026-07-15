@@ -6,7 +6,9 @@
  * 路由:
  *   GET    /api/finance/reconciliation/status        — 对账状态
  *   POST   /api/finance/reconciliation/run           — 执行对账
- *   GET    /api/finance/reconciliation/diffs         — 差异列表
+ *   GET    /api/finance/reconciliation/summary       — 对账汇总统计
+ *   GET    /api/finance/reconciliation/details       — 差异明细
+ *   GET    /api/finance/reconciliation/diffs         — 差异列表 (原始)
  *   POST   /api/finance/reconciliation/:id/resolve   — 标记已处理
  */
 
@@ -16,11 +18,18 @@ import {
   Post,
   Param,
   Body,
+  Query,
   Logger
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
-import { ReconciliationService, type ReconciliationRunOptions } from './reconciliation.service'
+import {
+  ReconciliationService,
+  type ReconciliationRunOptions,
+  type MatchKeyType,
+  type DiffKind,
+  type DiffDetailQuery
+} from './reconciliation.service'
 
 // ─── DTO ──────────────────────────────────────────────────
 
@@ -54,6 +63,18 @@ export class RunReconciliationDto {
 export class ResolveDiffDto {
   declare resolvedBy?: string
   declare note?: string
+}
+
+export class SummaryQueryDto {
+  declare date?: string
+}
+
+export class DetailsQueryDto {
+  declare kind?: DiffKind
+  declare resolved?: string
+  declare orderNo?: string
+  declare offset?: string
+  declare limit?: string
 }
 
 // ─── Controller ──────────────────────────────────────────
@@ -91,7 +112,7 @@ export class ReconciliationController {
       date: body.date,
       internalTransactions: body.internalTransactions,
       externalTransactions: body.externalTransactions,
-      matchKey: body.matchKey ?? 'orderNo',
+      matchKey: (body.matchKey ?? 'orderNo') as MatchKeyType,
       channel: body.channel,
       toleranceCents: body.toleranceCents
     }
@@ -102,6 +123,72 @@ export class ReconciliationController {
       success: true,
       data: report,
       message: `Reconciliation completed: ${report.matchedCount} matched, ${report.diffs.length} diffs`
+    }
+  }
+
+  /**
+   * GET /api/finance/reconciliation/summary
+   * 对账汇总统计
+   */
+  @Get('summary')
+  getSummary(
+    @TenantContext() _tenantContext: RequestTenantContext,
+    @Query() query: SummaryQueryDto
+  ) {
+    const summary = this.reconciliationService.getSummary(query.date)
+
+    if (!summary) {
+      return {
+        success: false,
+        data: null,
+        message: 'No reconciliation data available. Run reconciliation first.'
+      }
+    }
+
+    return {
+      success: true,
+      data: summary,
+      message: 'OK'
+    }
+  }
+
+  /**
+   * GET /api/finance/reconciliation/details
+   * 差异明细（含解析状态），支持过滤
+   */
+  @Get('details')
+  getDetails(
+    @TenantContext() _tenantContext: RequestTenantContext,
+    @Query() query: DetailsQueryDto
+  ) {
+    const detailQuery: DiffDetailQuery = {}
+
+    if (query.kind) {
+      detailQuery.kind = query.kind as DiffKind
+    }
+    if (query.resolved !== undefined) {
+      detailQuery.resolved = query.resolved === 'true'
+    }
+    if (query.orderNo) {
+      detailQuery.orderNo = query.orderNo
+    }
+    if (query.offset !== undefined) {
+      detailQuery.offset = parseInt(query.offset, 10) || 0
+    }
+    if (query.limit !== undefined) {
+      detailQuery.limit = parseInt(query.limit, 10) || 10
+    }
+
+    const details = this.reconciliationService.getDetails(detailQuery)
+
+    return {
+      success: true,
+      data: {
+        details,
+        totalCount: this.reconciliationService.getDiffs().length,
+        filteredCount: details.length
+      },
+      message: 'OK'
     }
   }
 
@@ -136,7 +223,6 @@ export class ReconciliationController {
     @TenantContext() _tenantContext: RequestTenantContext,
     @Body() body: ResolveDiffDto
   ) {
-    // diff id 使用 "kind::orderNo" 作为标识
     const result = this.reconciliationService.markDiffResolved(id, {
       resolvedBy: body.resolvedBy,
       note: body.note
