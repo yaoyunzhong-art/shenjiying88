@@ -121,6 +121,8 @@ import { ScoutModule } from './modules/scout/scout.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
 import { RlsModule } from './modules/rls/rls.module';
 import { DevopsModule } from './modules/devops/devops.module';
+import { CrmModule } from './modules/crm/crm.module';
+import { FeedModule } from './modules/feed/feed.module';
 import { VenueModule } from './modules/venue/venue.module';
 
 @Module({
@@ -256,6 +258,8 @@ import { VenueModule } from './modules/venue/venue.module';
     RlsModule,
     DevopsModule,
     VenueModule,
+    CrmModule,
+    FeedModule,
   ],
   providers: [
     RequestGovernanceService,
