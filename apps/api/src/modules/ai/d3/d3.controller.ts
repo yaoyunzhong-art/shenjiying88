@@ -3,6 +3,9 @@
  *
  * 路由: /ai/d3
  * D3 = Discovery + Decision + Delivery
+ *
+ * @see d3.service.ts — 所有业务逻辑
+ * @see d3.dto.ts — 请求校验 DTO
  */
 
 import {
@@ -40,11 +43,27 @@ export class D3Controller {
   // ═══════════════════════════════════════════════════════════════
 
   /**
-   * 上下感知推荐
+   * 上下文感知推荐（GET 版本，支持 Query 参数）
+   * GET /ai/d3/recommendations?userId=&context=&limit=
+   */
+  @Get('recommendations')
+  getRecommendations(
+    @Query('userId') userId: string,
+    @Query('context') context?: RecommendContext,
+    @Query('limit') limit?: string,
+  ) {
+    const ctx = context ?? RecommendContext.HOME
+    const lim = limit ? Math.max(1, Math.min(100, Number(limit))) : 10
+    const result = this.d3Service.getRecommendations(userId, ctx, lim)
+    return { success: true, data: result }
+  }
+
+  /**
+   * 上下文感知推荐（POST 版本，支持 Body）
    * POST /ai/d3/recommendations
    */
   @Post('recommendations')
-  getRecommendations(@Body() body: GetRecommendationsDto) {
+  postRecommendations(@Body() body: GetRecommendationsDto) {
     const result = this.d3Service.getRecommendations(
       body.userId,
       body.context ?? RecommendContext.HOME,
@@ -54,11 +73,21 @@ export class D3Controller {
   }
 
   /**
-   * 热门推荐
+   * 热门推荐（GET 版本，同时支持 Query 参数和 Path 参数）
+   * GET /ai/d3/trending?type=&period=
    * GET /ai/d3/trending/:type
    */
+  @Get('trending')
+  getTrendingByQuery(
+    @Query('type') type: string,
+    @Query('period') period?: RecommendPeriod,
+  ) {
+    const result = this.d3Service.getTrendingItems(type, period ?? RecommendPeriod.WEEK)
+    return { success: true, data: result }
+  }
+
   @Get('trending/:type')
-  getTrending(
+  getTrendingByParam(
     @Param('type') type: string,
     @Query('period') period?: RecommendPeriod,
   ) {
@@ -67,11 +96,21 @@ export class D3Controller {
   }
 
   /**
-   * 个性化选品
+   * 个性化选品（GET 版本）
+   * GET /ai/d3/personal-picks?userId=
+   */
+  @Get('personal-picks')
+  getPersonalPicks(@Query('userId') userId: string) {
+    const result = this.d3Service.getPersonalPicks(userId)
+    return { success: true, data: result }
+  }
+
+  /**
+   * 个性化选品（POST 版本）
    * POST /ai/d3/personal-picks
    */
   @Post('personal-picks')
-  getPersonalPicks(@Body() body: GetPersonalPicksDto) {
+  postPersonalPicks(@Body() body: GetPersonalPicksDto) {
     const result = this.d3Service.getPersonalPicks(body.userId)
     return { success: true, data: result }
   }
@@ -104,7 +143,7 @@ export class D3Controller {
   }
 
   /**
-   * 推荐解释
+   * 推荐解释（POST 版本，Body 传参）
    * POST /ai/d3/explain
    */
   @Post('explain')
@@ -113,22 +152,58 @@ export class D3Controller {
     return { success: true, data: result }
   }
 
+  /**
+   * 推荐解释（通过 itemId 路径参数）
+   * POST /ai/d3/items/:itemId/explain
+   */
+  @Post('items/:itemId/explain')
+  explainItem(
+    @Param('itemId') itemId: string,
+    @Body('score') score: number,
+  ) {
+    const result = this.d3Service.getExplanation(itemId, score ?? 0)
+    return { success: true, data: result }
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // 📦 Delivery Endpoints
   // ═══════════════════════════════════════════════════════════════
 
   /**
-   * 查看推荐分发历史
+   * 查看推荐分发历史（GET 版本）
+   * GET /ai/d3/deliveries?userId=
+   */
+  @Get('deliveries')
+  getDeliveries(@Query('userId') userId: string) {
+    const result = this.d3Service.getDeliveries(userId)
+    return { success: true, data: result }
+  }
+
+  /**
+   * 查看推荐分发历史（POST 版本）
    * POST /ai/d3/deliveries
    */
   @Post('deliveries')
-  getDeliveries(@Body() body: GetDeliveriesDto) {
+  postDeliveries(@Body() body: GetDeliveriesDto) {
     const result = this.d3Service.getDeliveries(body.userId)
     return { success: true, data: result }
   }
 
   /**
-   * 标记已送达
+   * 标记配送（通过 deliveryId 路径参数）
+   * POST /ai/d3/deliveries/:deliveryId/deliver
+   */
+  @Post('deliveries/:deliveryId/deliver')
+  deliverDelivery(@Param('deliveryId') deliveryId: string) {
+    const result = this.d3Service.markDelivered(deliveryId)
+    if (!result) {
+      return { success: false, message: `Delivery ${deliveryId} not found` }
+    }
+    return { success: true, data: result }
+  }
+
+  /**
+   * 标记已送达（POST Body 版本）
    * POST /ai/d3/deliveries/mark
    */
   @Post('deliveries/mark')
