@@ -1,0 +1,911 @@
+# ═══════════════════════════════════════════════════════════════
+# M5 Platform - OpenAPI 3.0 规范
+# ═══════════════════════════════════════════════════════════════
+openapi: 3.0.3
+
+info:
+  title: M5 Platform API
+  description: |
+    数字运动潮玩平台 (SPORTS ANTS) V17 API 文档
+    
+    ## 认证方式
+    - **Bearer Token**: 在请求头中携带 `Authorization: Bearer <token>`
+    - **API Key**: 通过 `x-api-key` 头传递
+    
+    ## 多租户支持
+    所有请求需要携带以下头信息：
+    - `x-tenant-id`: 租户ID (默认: tenant-demo)
+    - `x-brand-id`: 品牌ID (可选)
+    - `x-store-id`: 门店ID (可选)
+    
+    ## 分页规范
+    列表接口支持以下参数：
+    - `page`: 页码 (从1开始)
+    - `pageSize`: 每页数量 (默认20, 最大100)
+    - `sort`: 排序字段
+    - `order`: 排序方向 (asc/desc)
+  
+  version: 17.0.0
+  contact:
+    name: M5 Platform Team
+    email: support@m5.local
+    url: https://docs.m5.local
+  license:
+    name: Proprietary
+    url: https://m5.local/license
+
+servers:
+  - url: https://api.m5.local
+    description: 生产环境
+  - url: https://staging-api.m5.local
+    description: 测试环境
+  - url: http://localhost:3001
+    description: 本地开发环境
+
+# ═══════════════════════════════════════════════════════════════
+# 安全认证
+# ═══════════════════════════════════════════════════════════════
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Token 认证
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: API Key 认证
+
+  # ═════════════════════════════════════════════════════════════
+  # 通用参数
+  # ═════════════════════════════════════════════════════════════
+  parameters:
+    TenantIdHeader:
+      name: x-tenant-id
+      in: header
+      required: true
+      schema:
+        type: string
+        default: tenant-demo
+      description: 租户ID
+    
+    BrandIdHeader:
+      name: x-brand-id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: 品牌ID
+    
+    StoreIdHeader:
+      name: x-store-id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: 门店ID
+    
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+      description: 页码
+    
+    PageSizeParam:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+      description: 每页数量
+    
+    SortParam:
+      name: sort
+      in: query
+      schema:
+        type: string
+      description: 排序字段
+    
+    OrderParam:
+      name: order
+      in: query
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: desc
+      description: 排序方向
+
+  # ═════════════════════════════════════════════════════════════
+  # 通用响应
+  # ═════════════════════════════════════════════════════════════
+  schemas:
+    # 分页响应包装器
+    PaginationWrapper:
+      type: object
+      properties:
+        data:
+          type: array
+          description: 数据列表
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              description: 当前页码
+            pageSize:
+              type: integer
+              description: 每页数量
+            total:
+              type: integer
+              description: 总记录数
+            totalPages:
+              type: integer
+              description: 总页数
+    
+    # 错误响应
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: 错误代码
+            message:
+              type: string
+              description: 错误消息
+            details:
+              type: object
+              description: 详细错误信息
+        timestamp:
+          type: string
+          format: date-time
+          description: 错误发生时间
+    
+    # 成功响应
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          description: 成功消息
+        data:
+          type: object
+          description: 响应数据
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    Unauthorized:
+      description: 认证失败
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    Forbidden:
+      description: 权限不足
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    InternalError:
+      description: 服务器内部错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+# ═══════════════════════════════════════════════════════════════
+# API 路径定义
+# ═══════════════════════════════════════════════════════════════
+paths:
+  # ═══════════════════════════════════════════════════════════
+  # 健康检查
+  # ═══════════════════════════════════════════════════════════
+  /api/v1/health/ping:
+    get:
+      tags:
+        - Health
+      summary: 健康检查
+      description: 检查服务是否正常运行
+      operationId: healthPing
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: 服务正常
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: 17.0.0
+        '503':
+          description: 服务不可用
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+
+  /api/v1/health/ready:
+    get:
+      tags:
+        - Health
+      summary: 就绪检查
+      description: 检查服务是否已准备好接收流量
+      operationId: healthReady
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: 服务就绪
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ready:
+                    type: boolean
+                    example: true
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        example: connected
+                      cache:
+                        type: string
+                        example: connected
+        '503':
+          description: 服务未就绪
+
+  /api/v1/health/live:
+    get:
+      tags:
+        - Health
+      summary: 存活检查
+      description: Kubernetes 存活探针
+      operationId: healthLive
+      responses:
+        '200':
+          description: 服务存活
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alive:
+                    type: boolean
+                    example: true
+
+  # ═══════════════════════════════════════════════════════════
+  # 认证相关
+  # ═══════════════════════════════════════════════════════════
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: 用户登录
+      description: 使用用户名密码登录获取访问令牌
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  description: 用户名
+                  example: admin
+                password:
+                  type: string
+                  description: 密码
+                  format: password
+                  example: '********'
+                tenantId:
+                  type: string
+                  description: 租户ID
+                  example: tenant-demo
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        description: JWT 访问令牌
+                        example: eyJhbGciOiJIUzI1NiIs...
+                      refreshToken:
+                        type: string
+                        description: 刷新令牌
+                        example: eyJhbGciOiJIUzI1NiIs...
+                      expiresIn:
+                        type: integer
+                        description: 令牌过期时间(秒)
+                        example: 3600
+                      user:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          username:
+                            type: string
+                          roles:
+                            type: array
+                            items:
+                              type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: 用户登出
+      description: 注销当前用户的访问令牌
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 登出成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: 刷新令牌
+      description: 使用刷新令牌获取新的访问令牌
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+                  description: 刷新令牌
+      responses:
+        '200':
+          description: 刷新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      expiresIn:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+# ═══════════════════════════════════════════════════════════════
+# 用户管理
+# ═══════════════════════════════════════════════════════════════
+  /api/v1/users:
+    get:
+      tags:
+        - Users
+      summary: 获取用户列表
+      description: 分页获取用户列表，支持搜索和筛选
+      operationId: listUsers
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/SortParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - name: keyword
+          in: query
+          schema:
+            type: string
+          description: 搜索关键词
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, suspended]
+          description: 用户状态
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginationWrapper'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            username:
+                              type: string
+                            email:
+                              type: string
+                            phone:
+                              type: string
+                            status:
+                              type: string
+                            roles:
+                              type: array
+                              items:
+                                type: string
+                            createdAt:
+                              type: string
+                              format: date-time
+                            updatedAt:
+                              type: string
+                              format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags:
+        - Users
+      summary: 创建用户
+      description: 创建新用户账号
+      operationId: createUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                password:
+                  type: string
+                  minLength: 8
+                  format: password
+                roles:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: 用户已存在
+
+  /api/v1/users/{id}:
+    get:
+      tags:
+        - Users
+      summary: 获取用户详情
+      description: 获取指定用户的详细信息
+      operationId: getUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 用户ID
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  username:
+                    type: string
+                  email:
+                    type: string
+                  phone:
+                    type: string
+                  status:
+                    type: string
+                  roles:
+                    type: array
+                    items:
+                      type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags:
+        - Users
+      summary: 更新用户信息
+      description: 更新指定用户的信息
+      operationId: updateUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                status:
+                  type: string
+                  enum: [active, inactive, suspended]
+                roles:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Users
+      summary: 删除用户
+      description: 删除指定用户（软删除）
+      operationId: deleteUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+# ═══════════════════════════════════════════════════════════════
+# 营销券管理
+# ═══════════════════════════════════════════════════════════════
+  /api/v1/coupons:
+    get:
+      tags:
+        - Coupons
+      summary: 获取优惠券列表
+      description: 分页查询优惠券列表，支持多种筛选条件
+      operationId: listCoupons
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/BrandIdHeader'
+        - $ref: '#/components/parameters/StoreIdHeader'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, active, paused, expired, archived]
+          description: 优惠券状态
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [fixed_amount, percentage, buy_x_get_y, free_shipping]
+          description: 优惠券类型
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 开始日期
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 结束日期
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginationWrapper'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            code:
+                              type: string
+                            name:
+                              type: string
+                            description:
+                              type: string
+                            type:
+                              type: string
+                              enum: [fixed_amount, percentage, buy_x_get_y, free_shipping]
+                            value:
+                              type: number
+                            minPurchase:
+                              type: number
+                            maxDiscount:
+                              type: number
+                            startDate:
+                              type: string
+                              format: date-time
+                            endDate:
+                              type: string
+                              format: date-time
+                            status:
+                              type: string
+                              enum: [draft, active, paused, expired, archived]
+                            usageLimit:
+                              type: integer
+                            usageCount:
+                              type: integer
+                            perUserLimit:
+                              type: integer
+                            createdAt:
+                              type: string
+                              format: date-time
+                            updatedAt:
+                              type: string
+                              format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags:
+        - Coupons
+      summary: 创建优惠券
+      description: 创建新的优惠券活动
+      operationId: createCoupon
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/BrandIdHeader'
+        - $ref: '#/components/parameters/StoreIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - type
+                - value
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  description: 优惠券名称
+                description:
+                  type: string
+                  maxLength: 500
+                  description: 优惠券描述
+                type:
+                  type: string
+                  enum: [fixed_amount, percentage, buy_x_get_y, free_shipping]
+                  description: 优惠券类型
+                value:
+                  type: number
+                  minimum: 0
+                  description: 优惠值(金额或折扣百分比)
+                minPurchase:
+                  type: number
+                  minimum: 0
+                  default: 0
+                  description: 最低消费金额
+                maxDiscount:
+                  type: number
+                  minimum: 0
+                  description: 最大优惠金额(仅限百分比类型)
+                startDate:
+                  type: string
+                  format: date-time
+                  description: 开始时间
+                endDate:
+                  type: string
+                  format: date-time
+                  description: 结束时间
+                usageLimit:
+                  type: integer
+                  minimum: -1
+                  default: -1
+                  description: 总使用次数限制(-1表示无限制)
+                perUserLimit:
+                  type: integer
+                  minimum: 1
+                  default: 1
+                  description: 每用户领取次数限制
+                applicableScopes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum: [all, category, product, brand, store]
+                      ids:
+                        type: array
+                        items:
+                          type: string
+                userSegments:
+                  type: array
+                  items:
+                    type: string
+                  description: 适用用户群体
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          code:
+                            type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: 优惠券代码已存在
