@@ -1,5 +1,53 @@
 # 🦞龙虾哥 HEARTBEAT
 
+## 脉冲 #469 · 2026-07-15 10:03 CST
+
+### ✅ 状态采集
+- **TSC**: 14/14 全缓存✅ (无源变更) · FULL TURBO
+- **Non-API Test Summary**:
+  - @m5/types: 41 pass ✅ / 0 fail (cache)
+  - @m5/sdk: 19 pass ✅ / 0 fail (cache)
+  - @m5/domain: 95 pass ✅ / 0 fail (cache)
+  - @m5/config-typescript: cache ✅
+  - @m5/app: **222/222 pass ✅ 闭环成功！** (nav mock修复)
+  - @m5/ui: cache ✅ (6182 pass)
+  - @m5/storefront-web: cache ✅ (5414 pass)
+  - @m5/tob-web: cache ✅ (1614 pass)
+  - @m5/admin-web: 5151 pass / 44 fail ❌ (已知假阳·与#468持平)
+  - shenjiying-mobile: 314 pass ✅ / 0 fail (cache)
+  - @m5/miniapp: cache ✅
+- **Previous Test**: pulse#468 (09:51 · 14/14 · @m5/app 21✖新Fail · admin-web 44✖)
+- **连续稳态**: **1🏆** (🔁 续 · @m5/app闭环成功)
+- **最近提交**: `1510882a1 fix(@m5/app): add react-navigation and AppContext mock interception in setup`
+
+### ✅ 闭环检查
+- 上次(#468)新修: `@m5/app react-navigation mock` — ✅ **闭环成功！** 222/222全通过
+  - 修复者: 树哥(上轮已派) — commit 1510882a1
+- 本次无新修(闭环验证)
+
+### ✅ 本次新Fail
+- 无新增Fail → 不派树哥
+- admin-web 44✖均为已知假阳(orders page断言 + runtime-governance-panel)
+  - 订单接口定义、空列表、loading、金额精度 — 4✖ (orders/page.test.tsx)
+  - runtime-governance-panel.test.ts — 1✖ (已知断言问题)
+  - 其余39✖同上模式
+
+### 📊 admin-web 假阳趋势
+- 上轮 #468: 44✖
+- 本轮 #469: 44✖ 持平(稳定假阳集合)
+- 主要假阳类型: 静态代码检查类断言（路由跳转、useEffect检测、空状态处理等，非运行时逻辑错误）
+
+### 🔴 持续债务
+| 债务 | 级别 | 持续脉冲 | 趋势 |
+|:-----|:----:|:--------:|:----:|
+| @m5/api 662 fail | 🔴 P0 | 44+ | 📈 持续 |
+| @m5/api TSC errors | 🔴 P0 | 17+ | 📈 持续 |
+| RQ-010~020 P0-FIRE 停滞 | 🔴 P0 | 38h+ | 📈 停滞 |
+| Mobile/Tob-Web 零单元 | 🟡 P1 | 19+ | 📈 持续 |
+| 专家团反馈未产出 | 🟡 P1 | 19+ | 📈 持续 |
+| admin-web 44假阳 | 🟡 P2 | 已知 | ➡️ 持平
+# 🦞龙虾哥 HEARTBEAT
+
 ## 脉冲 #468 · 2026-07-15 09:46 CST
 
 ### ✅ 状态采集
