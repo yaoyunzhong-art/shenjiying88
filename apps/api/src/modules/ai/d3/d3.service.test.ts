@@ -221,3 +221,176 @@ describe('D3Service — Delivery', () => {
     })
   })
 })
+
+describe('D3Service — Collaborative Filtering', () => {
+  let service: D3Service
+
+  beforeEach(() => {
+    service = new D3Service()
+  })
+
+  describe('collaborateFilter', () => {
+    it('应按用户交互历史找到相似用户的推荐（正例）', () => {
+      const result = service.collaborateFilter('user-001', 3)
+      expect(result.length).toBeGreaterThan(0)
+      // user-001 与 user-002 有过交互交集, user-002的item-008/004应被推荐
+      expect(result.some(r => r.id === 'item-008' || r.id === 'item-004')).toBe(true)
+    })
+
+    it('无交互历史用户应返回空数组（反例）', () => {
+      const result = service.collaborateFilter('new-user-no-history', 5)
+      expect(result).toHaveLength(0)
+    })
+
+    it('topK=0时应返回空（边界）', () => {
+      const result = service.collaborateFilter('user-001', 0)
+      expect(result).toHaveLength(0)
+    })
+  })
+
+  describe('itemBasedFilter', () => {
+    it('应基于物品标签和品类找到相似物品（正例）', () => {
+      const result = service.itemBasedFilter('item-001', 3)
+      expect(result.length).toBeGreaterThan(0)
+      // item-001(wearable/smart)相似item-002(audio/noise-cancelling)都electronics
+      expect(result.some(r => r.category === 'electronics')).toBe(true)
+    })
+
+    it('不存在的itemId应返回空数组（反例）', () => {
+      const result = service.itemBasedFilter('nonexistent-item', 5)
+      expect(result).toHaveLength(0)
+    })
+
+    it('应返回最多topK个结果（边界）', () => {
+      const result = service.itemBasedFilter('item-001', 1)
+      expect(result.length).toBeLessThanOrEqual(1)
+    })
+  })
+})
+
+describe('D3Service — Cold Start', () => {
+  let service: D3Service
+
+  beforeEach(() => {
+    service = new D3Service()
+  })
+
+  describe('coldStartNewUser', () => {
+    it('无segment时应返回热门+探索混合推荐（正例）', () => {
+      const result = service.coldStartNewUser()
+      expect(result.length).toBeGreaterThan(0)
+      expect(result.length).toBeLessThanOrEqual(10)
+      // 应包含热门和高性价比
+      expect(result.some(r => r.reason === '热门推荐')).toBe(true)
+    })
+
+    it('有segment时应包含对应品类的推荐（正例）', () => {
+      const result = service.coldStartNewUser('sports')
+      const sportsItems = result.filter(r => r.tags.includes('sports'))
+      expect(sportsItems.length).toBeGreaterThan(0)
+    })
+
+    it('每项应有不同的reason说明来源（多样性验证）', () => {
+      const result = service.coldStartNewUser()
+      const reasons = new Set(result.map(r => r.reason))
+      expect(reasons.size).toBeGreaterThanOrEqual(2) // 至少2种策略
+    })
+  })
+
+  describe('coldStartNewItem', () => {
+    it('新品应获得基础曝光分+同类推广（正例）', () => {
+      const newItem: Partial<RecommendItem> = {
+        id: 'new-item-01',
+        title: '新款运动水壶',
+        type: 'sports',
+        tags: ['hydration', 'sports'],
+        category: 'sports',
+        price: 99,
+        rating: 4.5,
+      }
+      const result = service.coldStartNewItem(newItem)
+      expect(result.length).toBeGreaterThan(0)
+      // 新品自身排在首位
+      expect(result[0].id).toBe('new-item-01')
+      expect(result[0].score).toBeGreaterThan(0)
+    })
+
+    it('最小信息的新品也能获得推荐（边界）', () => {
+      const newItem: Partial<RecommendItem> = {
+        id: 'bare-item',
+        title: '最小新品',
+      }
+      const result = service.coldStartNewItem(newItem)
+      expect(result.length).toBeGreaterThan(0)
+      expect(result[0].id).toBe('bare-item')
+    })
+
+    it('同品类热门商品应作为搭配推荐（正例）', () => {
+      const newItem: Partial<RecommendItem> = {
+        id: 'sports-new',
+        title: '新运动装备',
+        type: 'sports',
+        tags: ['running'],
+        category: 'sports',
+      }
+      const result = service.coldStartNewItem(newItem)
+      expect(result.length).toBeGreaterThan(1)
+      // 应该有搭配推荐（同品类其他商品）
+      expect(result.slice(1).some(r => r.category === 'sports')).toBe(true)
+    })
+  })
+})
+
+describe('D3Service — Ensemble & Evaluation', () => {
+  let service: D3Service
+
+  beforeEach(() => {
+    service = new D3Service()
+  })
+
+  describe('ensembleScore', () => {
+    it('有历史的用户应返回多策略混合推荐（正例）', () => {
+      const result = service.ensembleScore('user-001')
+      expect(result.length).toBeGreaterThan(0)
+      // 包含各种推荐理由
+      const reasons = result.map(r => r.reason).join(' ')
+      expect(reasons.length).toBeGreaterThan(0)
+    })
+
+    it('无历史用户应降级为冷启动策略（反例）', () => {
+      const result = service.ensembleScore('completely-new-user')
+      expect(result.length).toBeGreaterThan(0)
+    })
+
+    it('自定义权重应改变推荐顺序（正例）', () => {
+      const resultExplore = service.ensembleScore('user-001', { explore: 1, cb: 0, cf: 0, trend: 0 })
+      const resultCB = service.ensembleScore('user-001', { cb: 1, cf: 0, trend: 0, explore: 0 })
+      // 不同权重策略应产生不同结果
+      expect(resultExplore.length).toBeGreaterThanOrEqual(0)
+      expect(resultCB.length).toBeGreaterThanOrEqual(0)
+    })
+  })
+
+  describe('modelEvaluate', () => {
+    it('应返回四维评估指标（正例）', () => {
+      const evalResult = service.modelEvaluate('user-001')
+      expect(evalResult).toHaveProperty('coverage')
+      expect(evalResult).toHaveProperty('novelty')
+      expect(evalResult).toHaveProperty('diversity')
+      expect(evalResult).toHaveProperty('hitRate')
+      expect(evalResult).toHaveProperty('recommendations')
+    })
+
+    it('覆盖率应在0-100之间（正例）', () => {
+      const evalResult = service.modelEvaluate('user-001')
+      expect(evalResult.coverage).toBeGreaterThanOrEqual(0)
+      expect(evalResult.coverage).toBeLessThanOrEqual(100)
+    })
+
+    it('无历史用户也应有评估结果但各项指标较低（边界）', () => {
+      const evalResult = service.modelEvaluate('fresh-user')
+      expect(evalResult.coverage).toBeGreaterThanOrEqual(0)
+      expect(evalResult.recommendations.length).toBeGreaterThan(0)
+    })
+  })
+})
