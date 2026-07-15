@@ -1,0 +1,138 @@
+groups:
+  - name: m5_platform_alerts
+    rules:
+      # ==================== 关键服务可用性 ====================
+      - alert: APIHighErrorRate
+        expr: m5:api:error_rate:5m > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "API 错误率过高"
+          description: "API 错误率在 5 分钟内超过 5%，当前值: {{ $value | humanizePercentage }}"
+          runbook_url: "https://wiki.m5.local/runbooks/api-high-error-rate"
+
+      - alert: APIHighLatency
+        expr: m5:api:latency:p99 > 2
+        for: 3m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "API P99 延迟过高"
+          description: "API P99 延迟超过 2 秒，当前值: {{ $value }}s"
+
+      - alert: APIDown
+        expr: up{job="m5-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "API 服务宕机"
+          description: "API 服务 {{ $labels.instance }} 无法访问"
+
+      # ==================== 数据库告警 ====================
+      - alert: DatabaseHighConnectionPoolUsage
+        expr: m5:db:connection_pool:usage > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "数据库连接池使用率过高"
+          description: "数据库连接池使用率超过 80%，当前值: {{ $value | humanizePercentage }}"
+
+      - alert: DatabaseSlowQueries
+        expr: rate(prisma_query_total_time_ms_sum[5m]) / rate(prisma_query_total_time_ms_count[5m]) > 1000
+        for: 3m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "数据库慢查询"
+          description: "平均查询时间超过 1000ms"
+
+      # ==================== 缓存告警 ====================
+      - alert: CacheLowHitRate
+        expr: m5:cache:hit_rate < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          service: cache
+        annotations:
+          summary: "缓存命中率过低"
+          description: "缓存命中率低于 50%，当前值: {{ $value | humanizePercentage }}"
+
+      - alert: RedisDown
+        expr: up{job="redis-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cache
+        annotations:
+          summary: "Redis 服务宕机"
+          description: "Redis 服务无法访问"
+
+      # ==================== 消息队列告警 ====================
+      - alert: QueueHighDepth
+        expr: m5:queue:depth > 10000
+        for: 5m
+        labels:
+          severity: warning
+          service: queue
+        annotations:
+          summary: "消息队列堆积"
+          description: "消息队列深度超过 10000，当前值: {{ $value }}"
+
+      - alert: RabbitMQDown
+        expr: up{job="rabbitmq-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: queue
+        annotations:
+          summary: "RabbitMQ 服务宕机"
+          description: "RabbitMQ 服务无法访问"
+
+      # ==================== 基础设施告警 ====================
+      - alert: NodeHighCPUUsage
+        expr: m5:node:cpu_usage > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "节点 CPU 使用率过高"
+          description: "节点 CPU 使用率超过 80%，当前值: {{ $value }}%"
+
+      - alert: NodeHighMemoryUsage
+        expr: m5:node:memory_usage > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "节点内存使用率过高"
+          description: "节点内存使用率超过 85%，当前值: {{ $value }}%"
+
+      - alert: NodeHighDiskUsage
+        expr: m5:node:disk_usage > 85
+        for: 5m
+        labels:
+          severity: critical
+          service: infrastructure
+        annotations:
+          summary: "节点磁盘使用率过高"
+          description: "节点磁盘使用率超过 85%，当前值: {{ $value }}%"
+
+      - alert: NodeDown
+        expr: up{job="node-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: infrastructure
+        annotations:
+          summary: "节点宕机"
+          description: "节点 {{ $labels.instance }} 无法访问"

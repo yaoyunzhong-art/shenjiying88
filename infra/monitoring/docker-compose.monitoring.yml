@@ -1,0 +1,370 @@
+# ═══════════════════════════════════════════════════════════════
+# M5 Platform — 监控栈 (Prometheus + Grafana + Loki + AlertManager)
+# ═══════════════════════════════════════════════════════════════
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+networks:
+  m5-network:
+    name: m5-network
+    external: true
+  monitoring-network:
+    name: monitoring-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16
+
+volumes:
+  prometheus_data:
+    name: m5_prometheus_data
+  grafana_data:
+    name: m5_grafana_data
+  alertmanager_data:
+    name: m5_alertmanager_data
+  loki_data:
+    name: m5_loki_data
+  loki_rules:
+    name: m5_loki_rules
+  promtail_positions:
+    name: m5_promtail_positions
+
+services:
+  # ═══ Prometheus ═══════════════════════════════════════════
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: m5-prometheus
+    restart: unless-stopped
+    networks:
+      - monitoring-network
+      - m5-network
+    ports:
+      - "127.0.0.1:9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --storage.tsdb.retention.size=10GB
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      - --web.enable-lifecycle
+      - --web.enable-admin-api
+      - --web.external-url=http://prometheus:9090
+      - --log.level=info
+      - --query.lookback-delta=15m
+      - --query.timeout=2m
+      - --alertmanager.notification-queue-capacity=10000
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4G
+        reservations:
+          cpus: "0.5"
+          memory: 1G
+    labels:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9090"
+      prometheus.io/path: "/metrics"
+
+  # ═══ Grafana ══════════════════════════════════════════════
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: m5-grafana
+    restart: unless-stopped
+    networks:
+      - monitoring-network
+      - m5-network
+    ports:
+      - "127.0.0.1:3005:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_SECURITY_SECRET_KEY: ${GRAFANA_SECRET_KEY:-your-secret-key}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_USERS_AUTO_ASSIGN_ORG: "true"
+      GF_USERS_AUTO_ASSIGN_ORG_ROLE: Viewer
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3005}
+      GF_SERVER_SERVE_FROM_SUB_PATH: "false"
+      GF_DATABASE_TYPE: sqlite3
+      GF_DATABASE_PATH: /var/lib/grafana/grafana.db
+      GF_LOG_MODE: console
+      GF_LOG_LEVEL: info
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/m5-platform/m5-overview.json
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    depends_on:
+      - prometheus
+      - loki
+
+  # ═══ AlertManager ════════════════════════════════════════
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: m5-alertmanager
+    restart: unless-stopped
+    networks:
+      - monitoring-network
+    ports:
+      - "127.0.0.1:9093:9093"
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --data.retention=120h
+      - --web.external-url=http://alertmanager:9093
+      - --web.route-prefix=/
+      - --cluster.listen-address=
+      - --log.level=info
+    volumes:
+      - alertmanager_data:/alertmanager
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/templates:/etc/alertmanager/templates:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9093/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+    depends_on:
+      - prometheus
+
+  # ═══ Loki ═════════════════════════════════════════════════
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: m5-loki
+    restart: unless-stopped
+    networks:
+      - monitoring-network
+    ports:
+      - "127.0.0.1:3100:3100"
+    command:
+      - --config.file=/etc/loki/loki-config.yml
+      - --config.expand-env=true
+    volumes:
+      - loki_data:/loki
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_rules:/loki/rules
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4G
+        reservations:
+          cpus: "0.5"
+          memory: 1G
+
+  # ═══ Promtail ════════════════════════════════════════════
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: m5-promtail
+    restart: unless-stopped
+    networks:
+      - monitoring-network
+      - m5-network
+    ports:
+      - "127.0.0.1:9080:9080"
+    command:
+      - --config.file=/etc/promtail/promtail-config.yml
+      - --config.expand-env=true
+    volumes:
+      - promtail_positions:/tmp
+      - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9080/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+    depends_on:
+      - loki
+
+  # ═══ Node Exporter ═══════════════════════════════════════
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: m5-node-exporter
+    restart: unless-stopped
+    networks:
+      - monitoring-network
+    ports:
+      - "127.0.0.1:9100:9100"
+    command:
+      - --path.procfs=/host/proc
+      - --path.rootfs=/host/root
+      - --path.sysfs=/host/sys
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9100/metrics || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+
+  # ═══ cAdvisor ════════════════════════════════════════════
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: m5-cadvisor
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - monitoring-network
+    ports:
+      - "127.0.0.1:8080:8080"
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /dev/disk:/dev/disk:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+
+  # ═══ PostgreSQL Exporter ═══════════════════════════════════
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: m5-postgres-exporter
+    restart: unless-stopped
+    networks:
+      - monitoring-network
+      - m5-network
+    ports:
+      - "127.0.0.1:9187:9187"
+    environment:
+      DATA_SOURCE_NAME: "postgresql://m5:m5_prod_password@postgres:5432/m5?sslmode=disable"
+      PG_EXPORTER_INCLUDE_DATABASES: "m5"
+      PG_EXPORTER_DISABLE_SETTINGS_METRICS: "false"
+      PG_EXPORTER_DISABLE_DEFAULT_METRICS: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9187/metrics || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+
+  # ═══ Redis Exporter ═══════════════════════════════════════
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    container_name: m5-redis-exporter
+    restart: unless-stopped
+    networks:
+      - monitoring-network
+      - m5-network
+    ports:
+      - "127.0.0.1:9121:9121"
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+      REDIS_EXPORTER_LOG_FORMAT: "txt"
+      REDIS_EXPORTER_WEB_LISTEN_ADDRESS: ":9121"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9121/metrics || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M

@@ -1,0 +1,43 @@
+groups:
+  - name: m5_platform_recording_rules
+    interval: 60s
+    rules:
+      # API 请求速率
+      - record: m5:api:request_rate:1m
+        expr: sum(rate(http_requests_total{job="m5-api"}[1m])) by (route, method, status)
+
+      # API 延迟分布
+      - record: m5:api:latency:p99
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="m5-api"}[5m])) by (le, route))
+
+      - record: m5:api:latency:p95
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="m5-api"}[5m])) by (le, route))
+
+      - record: m5:api:latency:p50
+        expr: histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job="m5-api"}[5m])) by (le, route))
+
+      # 错误率
+      - record: m5:api:error_rate:5m
+        expr: sum(rate(http_requests_total{job="m5-api",status=~"5.."}[5m])) / sum(rate(http_requests_total{job="m5-api"}[5m]))
+
+      # 数据库连接池
+      - record: m5:db:connection_pool:usage
+        expr: prisma_pool_connections_busy / prisma_pool_connections_max
+
+      # 缓存命中率
+      - record: m5:cache:hit_rate
+        expr: redis_keyspace_hits / (redis_keyspace_hits + redis_keyspace_misses)
+
+      # 消息队列深度
+      - record: m5:queue:depth
+        expr: rabbitmq_queue_messages
+
+      # 节点资源使用率
+      - record: m5:node:cpu_usage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+
+      - record: m5:node:memory_usage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100
+
+      - record: m5:node:disk_usage
+        expr: (node_filesystem_size_bytes - node_filesystem_avail_bytes) / node_filesystem_size_bytes * 100
