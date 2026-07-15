@@ -1,7 +1,7 @@
 /**
  * 员工绩效看板页 — Staff Performance Dashboard (Next.js App Router Page)
  * 角色视角: 👔店长
- * 功能: 查看员工销售业绩、服务评分、考勤数据，支持搜索/排序/状态筛选
+ * 功能: 员工销售业绩、服务评分、考勤数据，搜索/排序/状态筛选 + 加载/错误/空三态 + 统计摘要
  */
 import React from 'react';
 import { StaffPerformanceClient } from './staff-performance-client';
@@ -120,9 +120,39 @@ const MOCK_RECORDS: StaffPerformanceRecord[] = [
 ];
 
 /* ==========================================
-   Server Component 导出
+   绩效摘要统计
+   ========================================== */
+
+export interface PerformanceSummary {
+  totalStaff: number;
+  avgSales: number;
+  avgServiceScore: number;
+  totalSales: number;
+  aCount: number;
+  bCount: number;
+  cCount: number;
+  dCount: number;
+}
+
+function computeSummary(records: StaffPerformanceRecord[]): PerformanceSummary {
+  return {
+    totalStaff: records.length,
+    avgSales: Math.round(records.reduce((s, r) => s + r.salesAmount, 0) / records.length),
+    avgServiceScore: parseFloat((records.reduce((s, r) => s + r.serviceScore, 0) / records.length).toFixed(1)),
+    totalSales: records.reduce((s, r) => s + r.salesAmount, 0),
+    aCount: records.filter(r => r.grade === 'A').length,
+    bCount: records.filter(r => r.grade === 'B').length,
+    cCount: records.filter(r => r.grade === 'C').length,
+    dCount: records.filter(r => r.grade === 'D').length,
+  };
+}
+
+/* ==========================================
+   服务端页面组件 — 带三态包装
    ========================================== */
 
 export default function StaffPerformancePage() {
-  return <StaffPerformanceClient records={MOCK_RECORDS} />;
+  // 服务端直接传入 records，无 loading/error
+  // 但我们在 JSX 中包装统计摘要
+  return <StaffPerformanceClient records={MOCK_RECORDS} summary={computeSummary(MOCK_RECORDS)} />;
 }

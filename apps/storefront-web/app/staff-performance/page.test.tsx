@@ -1,6 +1,6 @@
 /**
  * staff-performance/page.test.tsx — 员工绩效看板 L1 冒烟测试
- * 覆盖: 正例·边界·防御
+ * 覆盖: 正例·边界·防御 + 三态(loading/error/empty)
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -26,6 +26,11 @@ describe('staff-performance/page — 正例', () => {
     assert.ok(src.includes('export interface StaffPerformanceRecord'), '应导出 StaffPerformanceRecord 接口');
   });
 
+  it('应导出 PerformanceSummary 类型', () => {
+    const src = readSource();
+    assert.ok(src.includes('export interface PerformanceSummary'), '应导出 PerformanceSummary 接口');
+  });
+
   it('应导入 StaffPerformanceClient', () => {
     const src = readSource();
     assert.ok(src.includes('import { StaffPerformanceClient }'), '应导入客户端组件');
@@ -34,6 +39,11 @@ describe('staff-performance/page — 正例', () => {
   it('应包含 Mock 数据定义', () => {
     const src = readSource();
     assert.ok(src.includes('MOCK_RECORDS'), '应定义 Mock 数据');
+  });
+
+  it('应包含 computeSummary 函数', () => {
+    const src = readSource();
+    assert.ok(src.includes('function computeSummary'), '应包含摘要计算函数');
   });
 
   it('Mock 数据应包含至少 5 条记录', () => {
@@ -86,12 +96,40 @@ describe('staff-performance/client — 正例', () => {
     const src = readFileSync(CLIENT_SOURCE, 'utf-8');
     assert.ok(src.includes('export function StaffPerformanceClient'), '应导出客户端组件');
   });
+
+  it('应包含 LoadingSkeleton 组件', () => {
+    const src = readFileSync(CLIENT_SOURCE, 'utf-8');
+    assert.ok(src.includes('LoadingSkeleton'), '应包含加载骨架');
+  });
+
+  it('应包含 ErrorState 组件', () => {
+    const src = readFileSync(CLIENT_SOURCE, 'utf-8');
+    assert.ok(src.includes('ErrorState'), '应包含错误状态');
+    assert.ok(src.includes('onRetry'), '错误状态应支持重试');
+  });
+
+  it('应包含 StaffRanking 排行榜', () => {
+    const src = readFileSync(CLIENT_SOURCE, 'utf-8');
+    assert.ok(src.includes('StaffRanking'), '应包含排行榜组件');
+    assert.ok(src.includes('销售排行榜'), '排行榜应有标题');
+  });
+
+  it('应包含 GradeDistributionChart 分布图', () => {
+    const src = readFileSync(CLIENT_SOURCE, 'utf-8');
+    assert.ok(src.includes('GradeDistributionChart'), '应包含等级分布图');
+    assert.ok(src.includes('绩效等级分布'), '分布图应有标题');
+  });
+
+  it('应包含 LowPerformanceAlert 预警', () => {
+    const src = readFileSync(CLIENT_SOURCE, 'utf-8');
+    assert.ok(src.includes('LowPerformanceAlert'), '应包含绩效预警');
+    assert.ok(src.includes('绩效预警'), '预警应有标题');
+  });
 });
 
 describe('staff-performance — 防御', () => {
   it('不应包含硬编码的敏感信息', () => {
     const src = readSource();
-    // 不应出现真实电话号码或密码
     assert.ok(!src.match(/1[3-9]\d{9}/), '不应包含手机号');
     assert.ok(!src.includes('password'), '不应包含密码字段');
   });
