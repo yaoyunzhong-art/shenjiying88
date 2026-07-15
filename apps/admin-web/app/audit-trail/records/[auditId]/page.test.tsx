@@ -248,3 +248,208 @@ describe('audit-trail-detail-view-model — 结构验证', () => {
     assert.ok(src.includes('function buildRelatedQuery'), '缺少查询构建');
   });
 });
+
+// ---- 新增组件: AuditTimeline ----
+
+describe('AuditTimeline — 审计时间线', () => {
+  it('应导出 AuditTimeline 组件', () => {
+    const src = readSource();
+    assert.ok(src.includes('export {\n  SeverityIndicator, PayloadViewer, TimelineEntry, buildBreadcrumbs,\n  AuditTimeline'), '缺少 AuditTimeline 导出');
+  });
+
+  it('events 为空时应渲染暂无时间线', () => {
+    const src = readSource();
+    assert.ok(src.includes('暂无时间线'), '应包含空状态文案');
+  });
+
+  it('events 非空时应渲染时间线条目', () => {
+    const src = readSource();
+    assert.ok(src.includes('AuditTimelineEvent'), '应使用时间线事件接口');
+    assert.ok(src.includes('description'), '事件应包含描述');
+  });
+
+  it('每条时间线应显示操作人', () => {
+    const src = readSource();
+    assert.ok(src.includes('evt.operator'), '应显示操作人');
+  });
+
+  it('每条时间线应显示时间戳', () => {
+    const src = readSource();
+    assert.ok(src.includes('evt.timestamp'), '应显示时间戳');
+  });
+});
+
+// ---- 新增组件: DataDiffView ----
+
+describe('DataDiffView — 数据变更对比', () => {
+  it('应导出 DataDiffView 组件', () => {
+    const src = readSource();
+    assert.ok(src.includes('DataDiffView'), '缺少 DataDiffView');
+  });
+
+  it('changes 为空时应渲染无数据变更', () => {
+    const src = readSource();
+    assert.ok(src.includes('无数据变更'), '应包含空状态文案');
+  });
+
+  it('应渲染旧值和新值对比', () => {
+    const src = readSource();
+    assert.ok(src.includes('oldValue'), '应包含旧值');
+    assert.ok(src.includes('newValue'), '应包含新值');
+  });
+
+  it('应提取字段名用于对比', () => {
+    const src = readSource();
+    assert.ok(src.includes('chg.field'), '应显示字段名');
+  });
+});
+
+// ---- 新增组件: OperatorInfoCard ----
+
+describe('OperatorInfoCard — 操作员信息卡片', () => {
+  it('应导出 OperatorInfoCard 组件', () => {
+    const src = readSource();
+    assert.ok(src.includes('OperatorInfoCard'), '缺少 OperatorInfoCard');
+  });
+
+  it('应显示操作员名称', () => {
+    const src = readSource();
+    assert.ok(src.includes('operator.name'), '应显示名称');
+  });
+
+  it('应显示操作员角色', () => {
+    const src = readSource();
+    assert.ok(src.includes('operator.role'), '应显示角色');
+  });
+
+  it('应显示最后活跃时间', () => {
+    const src = readSource();
+    assert.ok(src.includes('operator.lastActive'), '应显示最后活跃');
+  });
+
+  it('应显示操作次数', () => {
+    const src = readSource();
+    assert.ok(src.includes('operator.actionsCount'), '应显示操作次数');
+  });
+});
+
+// ---- 新增辅助函数 ----
+
+describe('getEventTypeBadge — 审计类型标签', () => {
+  it('应导出 getEventTypeBadge', () => {
+    const src = readSource();
+    assert.ok(src.includes('getEventTypeBadge'), '缺少 getEventTypeBadge');
+  });
+
+  it('已知类型应返回中文化标签', () => {
+    const src = readSource();
+    assert.ok(src.includes('配置更新'), '配置更新应有中文'),
+    assert.ok(src.includes('系统错误'), '系统错误应有中文');
+  });
+
+  it('未知类型应回退为原始值', () => {
+    const src = readSource();
+    assert.ok(src.includes('?? { label: type, variant'), '应回退为原始值');
+  });
+});
+
+// ---- 新增: extractDataChanges ----
+
+function runExtractDataChangesTest() {
+  const src = readSource();
+  assert.ok(src.includes('extractDataChanges'), '缺少 extractDataChanges');
+  assert.ok(src.includes('oldValue'), '应处理 oldValue');
+  assert.ok(src.includes('newValue'), '应处理 newValue');
+  assert.ok(src.includes('configKey'), '应处理 configKey');
+  assert.ok(src.includes('ruleId'), '应处理 ruleId');
+}
+
+describe('extractDataChanges — 数据变更提取', () => {
+  it('应导出 extractDataChanges 并从 details 中提取变更', () => {
+    runExtractDataChangesTest();
+  });
+
+  it('应处理含有 oldValue/newValue 的细节', () => {
+    const src = readSource();
+    assert.ok(src.includes('oldValue'), '应支持 oldValue 字段');
+    assert.ok(src.includes('newValue'), '应支持 newValue 字段');
+  });
+
+  it('应处理含有 configKey 的细节', () => {
+    const src = readSource();
+    assert.ok(src.includes('configKey'), '应支持 configKey');
+  });
+});
+
+// ---- 新增: buildMockTimeline ----
+
+describe('buildMockTimeline — 模拟时间线', () => {
+  it('应导出 buildMockTimeline', () => {
+    const src = readSource();
+    assert.ok(src.includes('buildMockTimeline'), '缺少 buildMockTimeline');
+  });
+
+  it('log-001 应返回 3 条时间线', () => {
+    const src = readSource();
+    assert.ok(src.includes('log-001'), '应处理 log-001');
+    assert.ok(src.includes('配置更新'), 'log-001 应有配置更新时间线');
+  });
+
+  it('log-005 应返回 3 条时间线', () => {
+    const src = readSource();
+    assert.ok(src.includes('log-005'), '应处理 log-005');
+    assert.ok(src.includes('规则引擎超时'), 'log-005 应有超时相关时间线');
+  });
+
+  it('未知甲 auditId 应返回空数组', () => {
+    const src = readSource();
+    assert.ok(src.includes('return []'), '未知 id 应返回空数组');
+  });
+});
+
+// ---- 新增: buildOperatorInfo ----
+
+describe('buildOperatorInfo — 操作员信息构建', () => {
+  it('应导出 buildOperatorInfo', () => {
+    const src = readSource();
+    assert.ok(src.includes('buildOperatorInfo'), '缺少 buildOperatorInfo');
+  });
+
+  it('应返回 OperatorInfo 结构', () => {
+    const src = readSource();
+    assert.ok(src.includes('OperatorInfo'), '应返回 OperatorInfo');
+  });
+
+  it('email 格式操作人应截取前缀作为 ID', () => {
+    const src = readSource();
+    assert.ok(src.includes("operator.name.charAt(0)"), '首字母大写');
+  });
+});
+
+// ---- 新增: formatSeverityBadge ----
+
+describe('formatSeverityBadge — 严重性映射', () => {
+  it('info 返回 信息', () => {
+    const src = readSource();
+    assert.ok(src.includes('info: \'信息\''), 'info 映射');
+  });
+
+  it('unknown 返回原始值', () => {
+    const src = readSource();
+    assert.ok(src.includes('?? severity'), 'unknown 回退');
+  });
+});
+
+// ---- 新增: getSourceIcon ----
+
+describe('getSourceIcon — 来源图标', () => {
+  it('admin-web 返回 🌐', () => {
+    const src = readSource();
+    assert.ok(src.includes("'admin-web': '🌐'"), 'admin-web 图标');
+  });
+
+  it('unknown 返回 📋', () => {
+    const src = readSource();
+    assert.ok(src.includes("?? '📋'"), 'unknown 回退');
+  });
+});

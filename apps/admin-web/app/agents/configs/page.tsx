@@ -242,3 +242,112 @@ const CONFIG_PAGE_META = {
 } as const;
 
 export { prepareConfigExport, modelDistribution, summaryStats, CONFIG_PAGE_META };
+
+// ---- 新增: 批量操作与启用/禁用切换 ----
+
+interface BatchAction {
+  type: 'enable' | 'disable' | 'delete';
+  ids: string[];
+}
+
+async function executeBatchAction(action: BatchAction): Promise<{ success: number; failed: number }> {
+  // 模拟批量操作
+  await new Promise((r) => setTimeout(r, 100));
+  const success = action.ids.length;
+  return { success, failed: 0 };
+}
+
+function toggleConfigStatus(configs: AgentConfigBrief[], id: string): AgentConfigBrief[] {
+  return configs.map((c) => (c.id === id ? { ...c, enabled: !c.enabled } : c));
+}
+
+async function batchToggle(configs: AgentConfigBrief[], ids: string[], enable: boolean): Promise<AgentConfigBrief[]> {
+  const action: BatchAction = { type: enable ? 'enable' : 'disable', ids };
+  await executeBatchAction(action);
+  return configs.map((c) => (ids.includes(c.id) ? { ...c, enabled: enable } : c));
+}
+
+// ---- 开关配置组件 ----
+
+function EnableToggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: () => void; disabled?: boolean }) {
+  return (
+    <button
+      onClick={onChange}
+      disabled={disabled}
+      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+        enabled ? 'bg-emerald-500' : 'bg-slate-600'
+      } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+      role="switch"
+      aria-checked={enabled}
+    >
+      <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+        enabled ? 'translate-x-4.5' : 'translate-x-1'
+      }`} />
+    </button>
+  );
+}
+
+// ---- 批量操作栏 ----
+
+function BatchActionBar({ selectedIds, onBatchAction }: {
+  selectedIds: string[];
+  onBatchAction: (type: 'enable' | 'disable' | 'delete') => void;
+}) {
+  if (selectedIds.length === 0) return null;
+  return (
+    <div className="flex items-center gap-3 px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-lg mb-3">
+      <span className="text-xs text-blue-400">已选 {selectedIds.length} 项</span>
+      <button onClick={() => onBatchAction('enable')}
+        className="px-3 py-1 text-xs bg-emerald-500/20 text-emerald-400 rounded hover:bg-emerald-500/30 transition-colors">
+        启用
+      </button>
+      <button onClick={() => onBatchAction('disable')}
+        className="px-3 py-1 text-xs bg-amber-500/20 text-amber-400 rounded hover:bg-amber-500/30 transition-colors">
+        禁用
+      </button>
+      <button onClick={() => onBatchAction('delete')}
+        className="px-3 py-1 text-xs bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors">
+        删除
+      </button>
+    </div>
+  );
+}
+
+// ---- 筛选辅助函数 ----
+
+function applyFilters(configs: AgentConfigBrief[], search: string, modelFilter: string): AgentConfigBrief[] {
+  let result = configs;
+  if (search.trim()) {
+    const q = search.toLowerCase();
+    result = result.filter((c) => c.name.toLowerCase().includes(q) || c.model.toLowerCase().includes(q));
+  }
+  if (modelFilter) {
+    result = result.filter((c) => c.model === modelFilter);
+  }
+  return result;
+}
+
+function countByModel(configs: AgentConfigBrief[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const c of configs) {
+    counts[c.model] = (counts[c.model] ?? 0) + 1;
+  }
+  return counts;
+}
+
+function getStatusLabel(enabled: boolean): string {
+  return enabled ? '已启用' : '已禁用';
+}
+
+function getAverageTimeoutText(configs: AgentConfigBrief[]): string {
+  if (configs.length === 0) return '0s';
+  const avg = configs.reduce((s, c) => s + c.timeout, 0) / configs.length;
+  return `${Math.round(avg / 1000)}s`;
+}
+
+export {
+  prepareConfigExport, modelDistribution, summaryStats, CONFIG_PAGE_META,
+  executeBatchAction, toggleConfigStatus, batchToggle,
+  EnableToggle, BatchActionBar,
+  applyFilters, countByModel, getStatusLabel, getAverageTimeoutText,
+};

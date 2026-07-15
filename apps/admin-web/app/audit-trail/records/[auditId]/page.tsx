@@ -232,4 +232,200 @@ function buildBreadcrumbs(eventLabel: string) {
   ];
 }
 
-export { SeverityIndicator, PayloadViewer, TimelineEntry, buildBreadcrumbs };
+// ---- 审计时间线组件 ----
+
+interface AuditTimelineEvent {
+  id: string;
+  type: string;
+  description: string;
+  operator: string;
+  timestamp: string;
+}
+
+function AuditTimeline({ events }: { events: AuditTimelineEvent[] }) {
+  if (events.length === 0) {
+    return <span className="text-xs text-slate-500">暂无时间线</span>;
+  }
+  return (
+    <div className="relative pl-6 border-l-2 border-slate-700 space-y-4">
+      {events.map((evt) => (
+        <div key={evt.id} className="relative">
+          <div className="absolute -left-[21px] w-3 h-3 rounded-full bg-blue-500 border-2 border-slate-900" />
+          <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-semibold text-blue-400">{evt.type}</span>
+              <span className="text-[10px] text-slate-500 font-mono">{evt.timestamp}</span>
+            </div>
+            <p className="text-sm text-slate-300 mb-1">{evt.description}</p>
+            <span className="text-[10px] text-slate-500">操作人: {evt.operator}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---- 数据变更对比 ----
+
+interface DataChange {
+  field: string;
+  oldValue: string;
+  newValue: string;
+}
+
+function DataDiffView({ changes }: { changes: DataChange[] }) {
+  if (changes.length === 0) {
+    return <span className="text-xs text-slate-500">无数据变更</span>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-slate-700">
+            <th className="text-left text-slate-400 py-2 pr-4 text-xs">字段</th>
+            <th className="text-left text-slate-400 py-2 pr-4 text-xs">旧值</th>
+            <th className="text-left text-slate-400 py-2 text-xs">新值</th>
+          </tr>
+        </thead>
+        <tbody>
+          {changes.map((chg, i) => (
+            <tr key={i} className="border-b border-slate-800">
+              <td className="py-2 pr-4 font-mono text-xs text-blue-400">{chg.field}</td>
+              <td className="py-2 pr-4 font-mono text-xs text-red-400 line-through">{chg.oldValue}</td>
+              <td className="py-2 font-mono text-xs text-emerald-400">{chg.newValue}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ---- 操作员信息卡片 ----
+
+interface OperatorInfo {
+  id: string;
+  name: string;
+  role: string;
+  lastActive: string;
+  actionsCount: number;
+}
+
+function OperatorInfoCard({ operator }: { operator: OperatorInfo }) {
+  return (
+    <div className="bg-slate-800/60 rounded-lg p-4 border border-slate-700">
+      <h4 className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">操作员信息</h4>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-sm">
+          {operator.name.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <div className="text-sm font-medium text-white">{operator.name}</div>
+          <div className="text-xs text-slate-400">{operator.role}</div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <div>
+          <span className="text-slate-500">ID</span>
+          <div className="font-mono text-slate-300">{operator.id}</div>
+        </div>
+        <div>
+          <span className="text-slate-500">最后活跃</span>
+          <div className="font-mono text-slate-300">{operator.lastActive}</div>
+        </div>
+        <div className="col-span-2">
+          <span className="text-slate-500">操作次数</span>
+          <div className="font-mono text-blue-400">{operator.actionsCount.toLocaleString()}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---- 审计事件类型标签映射 ----
+
+function getEventTypeBadge(type: string): { label: string; variant: 'info' | 'warning' | 'error' | 'success' } {
+  const map: Record<string, { label: string; variant: 'info' | 'warning' | 'error' | 'success' }> = {
+    'config.update': { label: '配置更新', variant: 'info' },
+    'system.error': { label: '系统错误', variant: 'error' },
+    'role.assignment': { label: '角色分配', variant: 'success' },
+    'permission.change': { label: '权限变更', variant: 'warning' },
+  };
+  return map[type] ?? { label: type, variant: 'info' };
+}
+
+function extractDataChanges(details: Record<string, unknown>): DataChange[] {
+  const changes: DataChange[] = [];
+  if ('oldValue' in details && 'newValue' in details) {
+    changes.push({
+      field: 'value',
+      oldValue: String(details.oldValue ?? ''),
+      newValue: String(details.newValue ?? ''),
+    });
+  }
+  if ('configKey' in details) {
+    changes.push({
+      field: 'configKey',
+      oldValue: '',
+      newValue: String(details.configKey),
+    });
+  }
+  if ('ruleId' in details) {
+    changes.push({
+      field: 'ruleId',
+      oldValue: '',
+      newValue: String(details.ruleId),
+    });
+  }
+  return changes;
+}
+
+function buildMockTimeline(auditId: string): AuditTimelineEvent[] {
+  if (auditId === 'log-001') {
+    return [
+      { id: 't1', type: '创建', description: '审计记录创建于 admin-web', operator: 'admin@demo.com', timestamp: '2026-07-15 10:30' },
+      { id: 't2', type: '配置更新', description: '限流配置写入数据库', operator: 'system', timestamp: '2026-07-15 10:30:05' },
+      { id: 't3', type: '生效', description: '新配置已生效', operator: 'system', timestamp: '2026-07-15 10:30:10' },
+    ];
+  }
+  if (auditId === 'log-005') {
+    return [
+      { id: 't1', type: '创建', description: '审计记录创建于 runtime', operator: 'system', timestamp: '2026-07-15 08:50' },
+      { id: 't2', type: '告警', description: '规则引擎超时告警触发', operator: 'alert-system', timestamp: '2026-07-15 08:50:03' },
+      { id: 't3', type: '自动恢复', description: '规则引擎自动重启', operator: 'system', timestamp: '2026-07-15 08:51:00' },
+    ];
+  }
+  return [];
+}
+
+function buildOperatorInfo(record: NonNullable<AuditTrailSnapshot['record']>): OperatorInfo {
+  return {
+    id: record.operator.includes('@') ? record.operator.split('@')[0] : record.operator,
+    name: record.operator,
+    role: record.source === 'admin-web' ? '管理员' : record.source === 'runtime' ? '系统' : '用户',
+    lastActive: record.createdAt,
+    actionsCount: 42,
+  };
+}
+
+function formatSeverityBadge(severity: string): string {
+  const labels: Record<string, string> = {
+    info: '信息', warning: '警告', error: '错误', critical: '严重',
+  };
+  return labels[severity] ?? severity;
+}
+
+function getSourceIcon(source: string): string {
+  const icons: Record<string, string> = {
+    'admin-web': '🌐', runtime: '⚙️', system: '🖥️', api: '🔌',
+  };
+  return icons[source] ?? '📋';
+}
+
+export {
+  SeverityIndicator, PayloadViewer, TimelineEntry, buildBreadcrumbs,
+  AuditTimeline, DataDiffView, OperatorInfoCard,
+  getEventTypeBadge, extractDataChanges,
+  buildMockTimeline, buildOperatorInfo,
+  formatSeverityBadge, getSourceIcon,
+};
