@@ -2,9 +2,11 @@
  * crm.module.ts — CRM客户关系管理 Module
  */
 import { Module } from '@nestjs/common'
+import { CrmController } from './crm.controller'
 import { CrmService } from './crm.service'
 
 @Module({
+  controllers: [CrmController],
   providers: [CrmService],
   exports: [CrmService],
 })
