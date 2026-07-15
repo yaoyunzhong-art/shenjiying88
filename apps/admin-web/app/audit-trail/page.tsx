@@ -105,11 +105,16 @@ export default function AuditLogsPage() {
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>({ key: 'createdAt', direction: 'desc' });
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const [showDist, setShowDist] = useState(false);
   const pagination = usePagination({ initialPageSize: 10, pageSizeOptions: [5, 10, 20] });
 
   const today = logs.filter((l) => l.createdAt.startsWith('2026-07-15')).length;
   const thisWeek = logs.filter((l) => l.createdAt >= '2026-07-13').length;
   const thisMonth = logs.length;
+  const errCnt = logs.filter((l) => l.severity === 'error').length;
+  const warnCnt = logs.filter((l) => l.severity === 'warning').length;
+  const infoCnt = logs.filter((l) => l.severity === 'info').length;
+  const operators = new Set(logs.map((l) => l.operator)).size;
   const eventTypeCounts = logs.reduce<Record<string, number>>((acc, l) => {
     acc[l.eventType] = (acc[l.eventType] || 0) + 1;
     return acc;
@@ -128,11 +133,6 @@ export default function AuditLogsPage() {
     return items;
   }, [logs, search, eventFilter, sevFilter, dateRange]);
 
-  const errCnt = logs.filter((l) => l.severity === 'error').length;
-  const warnCnt = logs.filter((l) => l.severity === 'warning').length;
-  const infoCnt = logs.filter((l) => l.severity === 'info').length;
-  const operators = new Set(logs.map((l) => l.operator)).size;
-
   const cols = useMemo(() => buildColumns(), []);
   const sorted = useSortedItems(filtered, cols, sortConfig);
   const pageItems = pagination.paginate(sorted);
@@ -150,6 +150,8 @@ export default function AuditLogsPage() {
             { l: '警告事件', v: warnCnt, c: 'text-amber-400' },
             { l: '信息事件', v: infoCnt, c: 'text-green-400' },
             { l: '操作人数', v: operators, c: 'text-violet-400' },
+            { l: '今日', v: today, c: 'text-cyan-400' },
+            { l: '本周', v: thisWeek, c: 'text-teal-400' },
           ].map((card) => (
             <div key={card.l} className="flex-1 min-w-[90px] rounded-xl bg-[rgba(15,23,42,0.4)] border border-[rgba(148,163,184,0.1)] p-3">
               <div className="text-[11px] text-slate-400 mb-1">{card.l}</div>
@@ -157,6 +159,7 @@ export default function AuditLogsPage() {
             </div>
           ))}
         </div>
+        <EventTypeDistribution counts={eventTypeCounts} />
         <div className="flex items-center gap-3 mb-3 flex-wrap">
           <div className="flex-1 min-w-[240px]">
             <SearchFilterInput placeholder="搜索摘要/操作人/类型..." value={search}
@@ -166,13 +169,47 @@ export default function AuditLogsPage() {
             onChange={(v) => { setEventFilter(v); pagination.setPage(1); }} placeholder="事件类型" />
           <Select options={SEV_OPTS} value={sevFilter}
             onChange={(v) => { setSevFilter(v); pagination.setPage(1); }} placeholder="级别" />
+          <input type="date" value={dateRange.start} onChange={(e) => { setDateRange((d) => ({ ...d, start: e.target.value })); pagination.setPage(1); }}
+            className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white" />
+          <input type="date" value={dateRange.end} onChange={(e) => { setDateRange((d) => ({ ...d, end: e.target.value })); pagination.setPage(1); }}
+            className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white" />
+          <button onClick={() => {
+            const csv = formatForExport(filtered);
+            const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+            URL.revokeObjectURL(url);
+          }} className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">导出CSV</button>
           <span className="text-xs text-slate-500">共 {sorted.length} 条</span>
         </div>
         <DataTable<AuditLogEntry>
           columns={cols} rows={pageItems} sort={sortConfig} onSortChange={setSortConfig}
           emptyText={search || eventFilter || sevFilter ? '未找到匹配的日志' : '暂无审计日志'}
           rowKey={(r) => r.id}
+          onRowClick={(r) => setExpandedId(expandedId === r.id ? null : r.id)}
         />
+        {expandedId && (
+          <div className="mt-3 rounded-lg bg-slate-800/80 border border-slate-700 p-4 text-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-medium text-white">日志详情</span>
+              <button onClick={() => setExpandedId(null)} className="text-xs text-slate-400 hover:text-white">关闭 ×</button>
+            </div>
+            {(() => {
+              const entry = logs.find((l) => l.id === expandedId);
+              if (!entry) return <p className="text-slate-500">未找到日志条目</p>;
+              return (
+                <div className="grid grid-cols-2 gap-3">
+                  <div><span className="text-slate-400">ID: </span><span className="text-white font-mono text-xs">{entry.id}</span></div>
+                  <div><span className="text-slate-400">租户: </span><span className="text-white">{entry.tenantId}</span></div>
+                  <div><span className="text-slate-400">摘要: </span><span className="text-white">{entry.summary}</span></div>
+                  <div><span className="text-slate-400">操作人: </span><span className="font-mono text-xs text-white">{entry.operator}</span></div>
+                  <div><span className="text-slate-400">来源: </span><span className="text-white">{entry.source}</span></div>
+                  <div><span className="text-slate-400">时间: </span><span className="font-mono text-xs text-white">{entry.createdAt}</span></div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
         <div className="flex justify-end mt-4">
           <Pagination page={pagination.page} pageSize={pagination.pageSize} total={sorted.length}
             onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
@@ -210,6 +247,27 @@ function getSeverityIcon(severity: string): string {
 
 // ---- 空态和加载态辅助组件 ----
 
+function EventTypeDistribution({ counts }: { counts: Record<string, number> }) {
+  const entries = Object.entries(counts).sort(([, a], [, b]) => b - a)
+  const maxVal = Math.max(...entries.map(([, v]) => v), 1)
+  return (
+    <div className="mt-4 rounded-xl bg-[rgba(15,23,42,0.4)] border border-[rgba(148,163,184,0.1)] p-4">
+      <h4 className="text-sm font-medium text-slate-300 mb-3">事件类型分布</h4>
+      <div className="space-y-2">
+        {entries.slice(0, 6).map(([type, count]) => (
+          <div key={type} className="flex items-center gap-2">
+            <span className="text-xs text-slate-400 w-28 truncate">{getEventTypeLabel(type)}</span>
+            <div className="flex-1 bg-slate-700 rounded-full h-2">
+              <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${(count / maxVal) * 100}%` }} />
+            </div>
+            <span className="text-xs text-slate-400 w-6 text-right">{count}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function AuditLogEmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-slate-500">
@@ -241,3 +299,52 @@ function formatForExport(logs: AuditLogEntry[]): string {
 }
 
 export { PAGE_STYLES, getEventTypeLabel, getSeverityIcon, AuditLogEmptyState, AuditLogLoadingState, formatForExport };
+
+// ---- 辅助函数 ----
+
+/** 格式化时间显示 */
+function formatTime(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return iso;
+  }
+}
+
+/** 判断是否为今天的日志 */
+function isToday(iso: string): boolean {
+  return iso.startsWith(new Date().toISOString().slice(0, 10));
+}
+
+/** 判断是否为本周的日志 */
+function isThisWeek(iso: string): boolean {
+  const d = new Date(iso);
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - now.getDay());
+  return d >= weekStart;
+}
+
+/** 获取严重程度的图标和颜色 */
+function getSeverityStyle(severity: string): { icon: string; color: string; bg: string } {
+  switch (severity) {
+    case 'error':
+      return { icon: '❌', color: 'text-red-400', bg: 'bg-red-900/20' };
+    case 'warning':
+      return { icon: '⚠️', color: 'text-amber-400', bg: 'bg-amber-900/20' };
+    default:
+      return { icon: 'ℹ️', color: 'text-blue-400', bg: 'bg-blue-900/20' };
+  }
+}
+
+/** 统计每个来源的数据量 */
+function countBySource(logs: AuditLogEntry[]): Array<{ source: string; count: number }> {
+  const map: Record<string, number> = {};
+  for (const l of logs) {
+    map[l.source] = (map[l.source] || 0) + 1;
+  }
+  return Object.entries(map)
+    .map(([source, count]) => ({ source, count }))
+    .sort((a, b) => b.count - a.count);
+}
