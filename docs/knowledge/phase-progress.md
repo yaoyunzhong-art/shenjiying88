@@ -92,3 +92,6 @@
 | 2026-07-15 | #489 | storefront-web(TSC✅闭环持续)×admin-web(44假阳⛔第17次持平·无新增)×app(闭环19🏆✅·全缓存) | ✅ | ✅ | ✅ | ⚠️ | 19🏆(续·稳态无变化) |
 | 2026-07-15 | #490 | storefront-web(TSC✅闭环持续)×admin-web(44假阳⛔第18次持平·无新增)×app(闭环19🏆✅·全缓存) | ✅ | ✅ | ✅ | ⚠️ | 19🏆(续·稳态无变化) |
 | 2026-07-16 | #491 | storefront-web(自修test✅全绿5462)×admin-web(44假阳⛔第19次持平·无新增)×app(19🏆✅) | ✅ | ✅ | ✅ | ⚠️ | 19🏆(续·storefront test自修闭环) |
+
+| 2026-07-16 | #492 | storefront-web(test回归·11文件jest写法→22fail❌已派树哥)×admin-web(44假阳⛔第20次持平·无新增)×app(19🏆✅) | ✅ | ⚠️ | ⚠️ | ⚠️ | 19🏆(续)·📉storefront test回归(jest→node:test重写中) |
+| 2026-07-16 | #493 | storefront-web(树哥修复✅5686/5687·闭环·1已知checkout偏差)×admin-web(44假阳⛔第21次持平·无新增)×app(闭环20🏆✅)·ui(6182✅) | ✅ | ⚠️ | ⚠️ | ✅ | 20🏆(续)·storefront test闭环✅ |

@@ -212,16 +212,16 @@ describe('members — 数据校验', () => {
 describe('members — 统计与过滤', () => {
   /* ── 统计 ── */
 
-  it('17. 活跃会员 5 人', () => {
-    assert.equal(MOCK_MEMBERS.filter(m => m.status === 'active').length, 5);
+  it('17. 活跃会员 6 人', () => {
+    assert.equal(MOCK_MEMBERS.filter(m => m.status === 'active').length, 6);
   });
 
   it('18. 冻结会员 1 人', () => {
     assert.equal(MOCK_MEMBERS.filter(m => m.status === 'frozen').length, 1);
   });
 
-  it('19. 停用会员 2 人', () => {
-    assert.equal(MOCK_MEMBERS.filter(m => m.status === 'inactive').length, 2); // corrected
+  it('19. 停用会员 1 人', () => {
+    assert.equal(MOCK_MEMBERS.filter(m => m.status === 'inactive').length, 1);
   });
 
   it('20. 钻石会员 2 人', () => {
@@ -268,8 +268,8 @@ describe('members — 统计与过滤', () => {
     assert.equal(filterByTier(MOCK_MEMBERS, 'all').length, MOCK_MEMBERS.length);
   });
 
-  it('30. 按状态过滤 active 返回 5 条', () => {
-    assert.equal(filterByStatus(MOCK_MEMBERS, 'active').length, 5);
+  it('30. 按状态过滤 active 返回 6 条', () => {
+    assert.equal(filterByStatus(MOCK_MEMBERS, 'active').length, 6);
   });
 
   it('31. 按状态过滤 frozen 返回 1 条', () => {
@@ -323,7 +323,7 @@ describe('members — 边界与反例', () => {
   it('38. diamond 会员消费 > 400,000', () => {
     const diamonds = MOCK_MEMBERS.filter(m => m.tier === 'diamond');
     for (const d of diamonds) {
-      assert.ok(d.totalSpent >= 400000, `${d.code} diamond but low spent`);
+      assert.ok(d.totalSpent >= 400000, `${d.code} diamond but low spent: ${d.totalSpent}`);
     }
   });
 

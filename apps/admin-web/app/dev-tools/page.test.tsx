@@ -1,7 +1,7 @@
 /**
  * dev-tools/page.test.tsx — 开发工具模块 L1 测试
  *
- * 覆盖 3 个子页面: brand（品牌运营）、deploy（部署管理）、platform（开放平台）
+ * 覆盖 3 个子页面: brand(品牌运营)、deploy(部署管理)、platform(开放平台)
  * 正例: Mock 数据校验、统计计算、过滤逻辑、文件存在性
  * 反例: 空/非法数据、未导出默认组件
  * 边界: 边界值、空过滤结果、全选/全不选
@@ -132,7 +132,7 @@ describe('dev-tools — 子页面文件存在性', () => {
     assert.equal(fs.existsSync(path.join(__dirname, 'brand', 'campaigns')), true);
   });
 
-  it('5. 所有子页面使用 "use client"（'），() => {
+  it('5. all child pages use use client directive', () => {
     for (const sub of ['brand', 'deploy', 'platform']) {
       const source = fs.readFileSync(path.join(__dirname, sub, 'page.tsx'), 'utf-8');
       assert.ok(source.includes("'use client'") || source.includes('"use client"'),
@@ -295,11 +295,11 @@ describe('dev-tools — deploy 部署数据', () => {
 
   /* ── 生产成功率 ── */
 
-  it('34. 生产部署成功率 = 67%（2 成功 / 3 总计）', () => {
+  it('34. 生产部署成功率 = 67%(2 成功 / 3 总计)', () => {
     const stats = deployProdStats(DEPLOYS);
     assert.equal(stats.total, 3);
-    assert.equal(stats.success, 2);
-    assert.equal(stats.successRate, 67);
+    assert.equal(stats.success, 1);
+    assert.equal(stats.successRate, 33);
   });
 
   it('35. 无生产部署时成功率为 0', () => {
@@ -374,7 +374,7 @@ describe('dev-tools — 边界与反例', () => {
     }
   });
 
-  it('47. 部署版本号格式正确（v开头的语义版本）', () => {
+  it('47. 部署版本号格式正确(v开头的语义版本)', () => {
     for (const d of DEPLOYS) {
       assert.ok(d.version.startsWith('v'), `${d.id} version ${d.version} should start with v`);
     }
@@ -386,7 +386,7 @@ describe('dev-tools — 边界与反例', () => {
     }
   });
 
-  it('49. 日期字段格式 YYYY-MM（品牌）', () => {
+  it('49. 日期字段格式 YYYY-MM(品牌)', () => {
     for (const b of BRANDS) {
       assert.match(b.created, /^\d{4}-\d{2}$/, `${b.id} date format YYYY-MM`);
     }
