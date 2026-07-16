@@ -182,3 +182,4 @@
 | 2026-07-17 02:36 | `#538` | @m5/app(1🔴缓存刷新)·admin-web(~270假阳)·storefront(64持平) | Base`✅`(TSC14/14全绿✅) Service`❌`(@m5/app 1🔴 NEW·HomeScreen章节) Controller`⚠️` CTest`⚠️` | **0🏆**(连续断裂·V19 Day2 950缓存刷新暴露@m5/app 1🔴·已派dispatch-538-tree·P0✅第23次确认) |
 | 2026-07-17 03:06 | `#539` | @m5/app(0✅恢复)·admin-web(171回落⬇️)·storefront(36回落⬇️) | Base`✅`(TSC14/14全绿✅) Service`⚠️`(@m5/app 0🔴已修✅ dispatch-538-tree闭环) Controller`⚠️` CTest`⚠️` | **1🏆**(dispatch-538-tree 1次修复成功·@m5/app恢复连续·全线基线回落·0 NEW·P0✅第24次确认) |
 | 2026-07-17 05:44 | `#541` | @m5/app(0✅持稳)·admin-web(171假阳⛔持稳)·storefront(36基线持平) | Base`✅`(TSC14/14全绿✅·P0第26次确认) Service`⚠️`(admin 171假阳持稳·storefront 36基线持平) Controller`⚠️` CTest`⚠️` | **2🏆**(#539->#541·0 NEW·dispatch-538-tree第3次确认·P0✅第26次确认) |
+| 2026-07-17 04:44 | #543 | baseline-全线 | Base✅ Service✅ Controller✅ CTest✅ | 5🏆(续·#539->#543·dispatch-538-tree第4次确认·0 NEW·P0✅第27次确认) |
