@@ -142,6 +142,7 @@ import { OpenApiModule } from './modules/open-api/open-api.module';
 import { SaasAdvancedModule } from './modules/saas-advanced/saas-advanced.module';
 import { TenantLLMModule } from './modules/tenant-llm/tenant-llm.module';
 import { TrainingModule } from './modules/training/training.module';
+import { StoreRevenueReportModule } from './modules/store-revenue-report/store-revenue-report.module';
 
 @Module({
   imports: [
@@ -295,6 +296,7 @@ import { TrainingModule } from './modules/training/training.module';
     SaasAdvancedModule,
     TenantLLMModule,
     TrainingModule,
+    StoreRevenueReportModule,
     ModulesModule,
   ],
   providers: [

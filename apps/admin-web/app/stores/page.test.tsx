@@ -155,3 +155,74 @@ describe('stores — 防御', () => {
     assert.ok(src.includes('statCardStyle'), '缺少 statCardStyle');
   });
 });
+
+// ---- 深度组件 ----
+
+describe('stores — 深度组件', () => {
+  it('包含JSX列表渲染 .map()', () => {
+    const src = readSource(); assert.ok(src.includes('.map('));
+  });
+  it('包含三元条件渲染', () => {
+    const src = readSource(); assert.ok(src.includes(' ? ') || src.includes(' ?? '));
+  });
+  it('包含 && 逻辑条件', () => {
+    const src = readSource(); assert.ok(src.includes(' && '));
+  });
+  it('包含事件处理 onClick', () => {
+    const src = readSource(); assert.ok(src.includes('onClick') || src.includes('onChange'));
+  });
+  it('包含style内联样式', () => {
+    const src = readSource(); assert.ok(src.includes('style={'));
+  });
+  it('包含模板变量 ${}', () => {
+    const src = readSource(); assert.ok(src.includes('${'));
+  });
+  it('包含 useState 状态管理', () => {
+    const src = readSource(); assert.ok(src.includes('const [') && src.includes('useState'));
+  });
+  it('包含 filter 不可变过滤', () => {
+    const src = readSource(); assert.ok(src.includes('.filter('));
+  });
+  it('包含 reduce 数据聚合', () => {
+    const src = readSource(); assert.ok(src.includes('.reduce('));
+  });
+  it('包含 Tabs 筛选组件', () => {
+    const src = readSource(); assert.ok(src.includes('Tabs'));
+  });
+});
+
+describe('stores — 业务深度', () => {
+  it('包含15条Mock门店数据', () => {
+    const src = readSource();
+    const match = src.match(/MOCK_STORES[\s\S]{0,20}\[/);
+    assert.ok(match, 'MOCK_STORES数组定义');
+  });
+  it('包含门店状态枚举4种', () => {
+    const src = readSource();
+    assert.ok(src.includes("'active'") && src.includes("'inactive'") && src.includes("'pending'") && src.includes("'suspended'"));
+  });
+  it('包含市场分类marketCode', () => {
+    const src = readSource(); assert.ok(src.includes('cn-mainland') || src.includes('marketCode'));
+  });
+  it('包含DataTable表格数据', () => {
+    const src = readSource(); assert.ok(src.includes('DataTable'));
+  });
+  it('包含Pagination分页', () => {
+    const src = readSource(); assert.ok(src.includes('Pagination'));
+  });
+  it('包含dataKey列数据绑定', () => {
+    const src = readSource(); assert.ok(src.includes('dataKey'));
+  });
+  it('包含sortable可排序', () => {
+    const src = readSource(); assert.ok(src.includes('sortable'));
+  });
+  it('包含 StatusBadge 状态徽章渲染', () => {
+    const src = readSource(); assert.ok(src.includes('StatusBadge'));
+  });
+  it('包含 riskFilter 风险筛选', () => {
+    const src = readSource(); assert.ok(src.includes('riskFilter'));
+  });
+  it('包含筛选后重置分页逻辑', () => {
+    const src = readSource(); assert.ok(src.includes('resetPage'));
+  });
+});

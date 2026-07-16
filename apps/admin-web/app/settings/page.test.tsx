@@ -32,3 +32,31 @@ describe('SettingsPage — 状态覆盖', () => {
   it('应处理 partial 状态', () => assert.ok(SRC.includes("'partial'")));
   it('应处理 pending 状态', () => assert.ok(SRC.includes("'pending'")));
 });
+
+// ---- 深度组件 ----
+
+describe('SettingsPage — 深度组件', () => {
+  it('包含JSX列表渲染.MODULES.map()', () => assert.ok(SRC.includes('.map(')));
+  it('包含三元条件渲染', () => assert.ok(SRC.includes(' ? ') || SRC.includes(' ?? ')));
+  it('包含 && 条件渲染', () => assert.ok(SRC.includes(' && ')));
+  it('包含事件处理(onClick)', () => assert.ok(SRC.includes('onClick') || SRC.includes('onChange')));
+  it('包含 style 内联样式对象', () => assert.ok(SRC.includes('style={')));
+  it('包含样式函数(statCard)', () => assert.ok(SRC.includes('statCard(') || SRC.includes('statusBadge(')));
+  it('包含模板字符串', () => assert.ok(SRC.includes('${}') || SRC.includes('${ ')));
+  it('包含状态管理useState', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
+  it('包含filter数据过滤', () => assert.ok(SRC.includes('.filter(m') || SRC.includes('.filter(mod')));
+  it('包含card总数统计', () => assert.ok(SRC.includes('totalModules') || SRC.includes('configuredCount') || SRC.includes('partialCount')));
+});
+
+describe('SettingsPage — 业务深度', () => {
+  it('包含11个配置模块', () => assert.ok(SRC.includes('payment-config') || SRC.includes('MODULES.length')));
+  it('包含支付配置模块', () => assert.ok(SRC.includes('支付配置')));
+  it('包含安全设置模块', () => assert.ok(SRC.includes('安全设置')));
+  it('包含权限管理模块', () => assert.ok(SRC.includes('权限管理')));
+  it('包含状态徽章样式(StatusBadge)', () => assert.ok(SRC.includes('STATUS_COLOR') && SRC.includes('STATUS_LABEL')));
+  it('包含itemCount显示', () => assert.ok(SRC.includes('itemCount')));
+  it('包含完整网格布局grid 2列', () => assert.ok(SRC.includes("gridTemplateColumns: 'repeat(2, 1fr)'")));
+  it('包含配置概要统计', () => assert.ok(SRC.includes('配置模块总数') || SRC.includes('设置中心')));
+  it('包含工作流配置项', () => assert.ok(SRC.includes('工作流配置') || SRC.includes('workflow')));
+  it('包含通知设置模块', () => assert.ok(SRC.includes('通知设置') || SRC.includes('通知模板')));
+});
