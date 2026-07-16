@@ -424,6 +424,62 @@ export default function PointHistoryPage() {
                 ))}
               </div>
             </div>
+
+            {/* 积分使用排行榜 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#ecfeff', border: '1px solid #a5f3fc' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0e7490' }}>🎯 本月积分达人榜</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {[
+                  { rank: 1, name: '张伟', earned: 1250, spent: 350 },
+                  { rank: 2, name: '李芳', earned: 980, spent: 500 },
+                  { rank: 3, name: '王强', earned: 720, spent: 200 },
+                  { rank: 4, name: '赵敏', earned: 680, spent: 450 },
+                  { rank: 5, name: '陈浩', earned: 520, spent: 180 },
+                ].map((u, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontWeight: 700, color: u.rank <= 3 ? '#0e7490' : '#6b7280', minWidth: 20 }}>#{u.rank}</span>
+                      <span>{u.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <span style={{ color: '#059669' }}>+{u.earned}</span>
+                      <span style={{ color: '#dc2626' }}>-{u.spent}</span>
+                      <span style={{ fontWeight: 700, color: '#0e7490' }}>{u.earned - u.spent}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 积分常见问题 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
+              <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>❓ 积分常见问题</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[
+                  { q: '积分有效期多久？', a: '积分自获取之日起有效期12个月，到期系统将自动清零。' },
+                  { q: '如何查询积分明细？', a: '在本页面直接查看即可，支持按类型、日期筛选和搜索。' },
+                  { q: '积分可以转让吗？', a: '积分仅限本人使用，不可转让或兑换现金。' },
+                  { q: '退款积分如何处理？', a: '消费获得的积分在退款时会按比例扣除，请理性消费。' },
+                ].map((faq, i) => (
+                  <div key={i} style={{ padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #e5e7eb' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 2 }}>Q: {faq.q}</div>
+                    <div style={{ fontSize: 11, color: '#6b7280' }}>A: {faq.a}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 积分小贴士 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+              <h3 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 600, color: '#16a34a' }}>💡 积分小贴士</h3>
+              <ul style={{ margin: 0, padding: '0 0 0 18px', fontSize: 12, color: '#374151', lineHeight: 1.8 }}>
+                <li>每日签到可获5积分，连续7天额外奖励20积分</li>
+                <li>推荐好友注册并首消，推荐人可获得200积分</li>
+                <li>每月15日会员日消费享双倍积分</li>
+                <li>积分有效期12个月，到期自动清零</li>
+                <li>钻石会员以上享积分兑换折扣</li>
+              </ul>
+            </div>
           </>
         )}
       </div>

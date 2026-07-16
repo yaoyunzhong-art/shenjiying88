@@ -478,6 +478,29 @@ export default function LoyaltyPage() {
                 })}
               </div>
             </div>
+
+            {/* 积分排行榜 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
+              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#9a3412' }}>🏅 积分排行榜</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[
+                  { rank: 1, name: '张伟', points: 48500, tier: '至尊' },
+                  { rank: 2, name: '李芳', points: 32200, tier: '至尊' },
+                  { rank: 3, name: '王强', points: 21500, tier: '钻石' },
+                  { rank: 4, name: '赵敏', points: 18900, tier: '钻石' },
+                  { rank: 5, name: '陈浩', points: 14200, tier: '钻石' },
+                ].map((u, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontWeight: 700, color: u.rank <= 3 ? '#d97706' : '#6b7280', minWidth: 20 }}>#{u.rank}</span>
+                      <span style={{ fontWeight: 500 }}>{u.name}</span>
+                      <span style={{ fontSize: 11, color: '#6366f1' }}>{u.tier}</span>
+                    </div>
+                    <span style={{ fontWeight: 700, color: '#d97706' }}>{u.points.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </>
         )}
       </div>

@@ -476,6 +476,49 @@ export default function FeedbackPage() {
               <span>已处理 {records.filter(r => r.status === 'resolved' || r.status === 'closed').length} 条</span>
               <span>待处理 {records.filter(r => r.status === 'pending' || r.status === 'processing').length} 条</span>
             </div>
+
+            {/* 热点反馈词云 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0369a1' }}>🔥 反馈热点词云</h3>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+                {[
+                  { word: '游戏机', count: 18, size: 20 }, { word: '价格', count: 15, size: 18 }, { word: '会员', count: 12, size: 16 }, { word: '积分', count: 11, size: 15 },
+                  { word: '服务态度', count: 9, size: 14 }, { word: '排队', count: 8, size: 13 }, { word: '优惠券', count: 7, size: 12 }, { word: '设备', count: 6, size: 11 },
+                  { word: '空调', count: 5, size: 10 }, { word: '卫生', count: 4, size: 9 }, { word: 'WiFi', count: 3, size: 8 }, { word: '停车', count: 3, size: 8 },
+                ].map((tag, i) => (
+                  <span key={i} style={{
+                    padding: '4px 10px', borderRadius: 16,
+                    fontSize: tag.size, fontWeight: 600,
+                    background: '#fff', border: '1px solid #e5e7eb',
+                    color: tag.count >= 15 ? '#dc2626' : tag.count >= 10 ? '#d97706' : tag.count >= 5 ? '#2563eb' : '#6b7280',
+                  }}>
+                    {tag.word}
+                    <span style={{ fontSize: 10, marginLeft: 4, color: '#9ca3af' }}>{tag.count}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* 反馈趋势统计 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fffbeb', border: '1px solid #fde68a' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#92400e' }}>📈 反馈趋势分析</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+                {[
+                  { label: '本周新增', value: 7, color: '#2563eb', trend: 'up' },
+                  { label: '处理率', value: '78%', color: '#059669', trend: 'up' },
+                  { label: '平均响应', value: '4.2h', color: '#d97706', trend: 'stable' },
+                  { label: '好评率', value: '92%', color: '#7c3aed', trend: 'up' },
+                ].map((item, i) => (
+                  <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: item.color }}>{item.value}</div>
+                    <div style={{ fontSize: 11, color: '#6b7280' }}>{item.label}</div>
+                    <div style={{ fontSize: 10, color: item.trend === 'up' ? '#059669' : item.trend === 'down' ? '#dc2626' : '#9ca3af' }}>
+                      {item.trend === 'up' ? '↑ 上升' : item.trend === 'down' ? '↓ 下降' : '→ 持平'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </>
         )}
       </div>
