@@ -122,7 +122,7 @@ describe('notifications: 页面渲染', () => {
     assert.doesNotThrow(() => setup());
   });
 
-  it.skip('has padding layout (skip: happy-dom)', () => {
+  it.skip('has padding layout' (跳检: happy-dom无内联样式), () => {
     const { container } = setup();
     const _pad = (container.firstElementChild as HTMLElement)?.style?.padding ?? ''; assert.ok(!_pad || _pad.includes('24px'), 'padding should be 24px or empty');
   });
