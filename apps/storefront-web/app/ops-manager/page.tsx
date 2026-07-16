@@ -58,8 +58,9 @@ export default function OpsManagerPage() {
     const map: Record<string, { total: number; done: number }> = {};
     ALL_TASKS.forEach(t => {
       if (!map[t.category]) map[t.category] = { total: 0, done: 0 };
-      map[t.category].total++;
-      if (t.done) map[t.category].done++;
+      const entry = map[t.category]!;
+      entry.total++;
+      if (t.done) entry.done++;
     });
     return map;
   }, []);
