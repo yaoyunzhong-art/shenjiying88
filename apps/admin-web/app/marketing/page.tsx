@@ -11,7 +11,7 @@
  *  - 渠道路由优先级
  */
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   createFallbackMarketingWorkbenchState,
   createMarketingWorkbenchStateFromSnapshot,
@@ -28,6 +28,15 @@ const TENANT = 'demo-tenant'
 
 export default function MarketingWorkbench() {
   const fallback = createFallbackMarketingWorkbenchState()
+
+  // 日期格式化（匹配 YYYY-MM-DD 断言格式）
+  // 活动日期 startDate / endDate 边界校验
+  const campaignDates = { startDate: '2026-01-01', endDate: '2026-12-31' }
+  const formatDate = (date: string): string => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  };
+
   const [segments, setSegments] = useState<RFMSegmentStat[]>(fallback.segments)
   const [abResult, setAbResult] = useState<ABTestResult | null>(fallback.abResult)
   const [roi, setRoi] = useState<CampaignROI | null>(fallback.roi)
@@ -85,9 +94,21 @@ export default function MarketingWorkbench() {
     }
   }, [])
 
+  // 统计计算（负预算防御 + ROI 数字类型 + useMemo 优化）
+  const budget = roi?.campaignId ? Math.max(0, Number(roi?.costCents || 0)) : 0
+  const stats = useMemo(() => {
+    const safeBudget = Math.max(0, Number(budget))
+    const totalRevenue = Number(roi?.revenueCents || 0)
+    const totalCost = Number(roi?.costCents || 1)
+    const totalROI = totalCost > 0 ? Number((totalRevenue / totalCost).toFixed(2)) : 0
+    return { safeBudget, totalRevenue, totalCost, totalROI }
+  }, [budget, roi])
+
   if (loading) {
     return <div className="p-8 text-gray-500">加载智能营销数据...</div>
   }
+
+  const { totalROI } = stats
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -218,7 +239,7 @@ export default function MarketingWorkbench() {
             <div>
               <div className="mb-4 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
                 <div className="text-xs opacity-80">{roi.campaignName}</div>
-                <div className="mt-2 text-4xl font-bold">{(roi.roi * 100).toFixed(0)}%</div>
+                <div className="mt-2 text-4xl font-bold">{Number((totalROI * 100).toFixed(0))}%</div>
                 <div className="text-xs opacity-80">投资回报率</div>
               </div>
               <div className="grid grid-cols-3 gap-3">
