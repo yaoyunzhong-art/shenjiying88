@@ -125,6 +125,7 @@ import { CrmModule } from './modules/crm/crm.module';
 import { AutomationModule } from './modules/automation/automation.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { FeedModule } from './modules/feed/feed.module';
+import { ModulesModule } from './modules/modules/modules.module';
 import { VenueModule } from './modules/venue/venue.module';
 import { AiForecastModule } from './modules/ai-forecast/ai-forecast.module';
 import { AiModelConfigModule } from './modules/ai-model-config/ai-model-config.module';
@@ -294,6 +295,7 @@ import { TrainingModule } from './modules/training/training.module';
     SaasAdvancedModule,
     TenantLLMModule,
     TrainingModule,
+    ModulesModule,
   ],
   providers: [
     RequestGovernanceService,
