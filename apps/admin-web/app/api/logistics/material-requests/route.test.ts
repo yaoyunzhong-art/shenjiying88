@@ -42,24 +42,23 @@ afterEach(() => {
 })
 
 describe('logistics material requests route', () => {
-  test('resolveLogisticsApiBaseUrl normalizes host-only api origin', () => {
+  test('resolveLogisticsApiBaseUrl normalizes host-only api origin', async () => {
     delete process.env.M5_API_BASE_URL
     delete process.env.NEXT_PUBLIC_M5_API_BASE_URL
     process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3001'
 
-    const baseUrl = resolveLogisticsApiBaseUrl(); assert.ok(baseUrl.includes('api/v1') || baseUrl.includes('/api/'), 'api base: ' + baseUrl)
+    const baseUrl = await resolveLogisticsApiBaseUrl(); assert.ok(baseUrl.includes('api/v1') || baseUrl.includes('/api/'), 'api base: ' + baseUrl)
   })
 
-  test('buildLogisticsUpstreamUrl preserves query string', () => {
+  test('buildLogisticsUpstreamUrl preserves query string', async () => {
     process.env.M5_API_BASE_URL = 'http://logistics.local/api/v1'
 
-    const upstreamUrl = buildLogisticsUpstreamUrl(
+    const upstreamUrl = await buildLogisticsUpstreamUrl(
         'http://admin.local/api/logistics/material-requests?status=pending_approval',
         'logistics/material-requests'
       );
       assert.ok(upstreamUrl.includes('material-requests') && upstreamUrl.includes('pending_approval'), 'upstream: ' + upstreamUrl);
-      'http://logistics.local/api/v1/logistics/material-requests?status=pending_approval'
-    )
+      assert.equal(upstreamUrl, 'http://logistics.local/api/v1/logistics/material-requests?status=pending_approval');
   })
 
   test('GET forwards tenant header to material request list', async () => {

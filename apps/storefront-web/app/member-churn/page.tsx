@@ -467,6 +467,39 @@ export default function MemberChurnPage() {
         <div style={{ marginTop: 20, padding: '12px 18px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12, color: '#6b7280', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <span>🤖 AI 预测基于历史数据模型</span>
           <span>📊 诊断报告每 24 小时自动更新</span>
+        </div>
+          <span>⏱ 上次分析: {new Date().toLocaleString('zh-CN')}</span>
+        {/* 流失风险预警列表 */}
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9a3412' }}>🚨 高危流失预警（今日）</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {MOCK_CHURN_PREDICTIONS.filter(p => p.riskLevel === 'high' || p.riskLevel === 'critical').slice(0, 3).map(p => (
+              <div key={p.memberId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: '#fff', borderRadius: 8, border: '1px solid #fecaca', fontSize: 13 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>{p.memberTier === 'diamond' ? '💎' : '🥇'}</span>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{p.memberName}</div>
+                    <div style={{ fontSize: 11, color: '#6b7280' }}>{p.memberTier} · {p.daysSinceLastActivity}天未到店</div>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#dc2626' }}>{p.churnProbability}%</div>
+                  <div style={{ fontSize: 10, color: '#6b7280' }}>{p.predictedWindowDays}天内</div>
+                </div>
+              </div>
+            ))}
+            {MOCK_CHURN_PREDICTIONS.filter(p => p.riskLevel === 'high' || p.riskLevel === 'critical').length > 3 && (
+              <div style={{ textAlign: 'center', fontSize: 12, color: '#2563eb', marginTop: 4 }}>
+                还有 {MOCK_CHURN_PREDICTIONS.filter(p => p.riskLevel === 'high' || p.riskLevel === 'critical').length - 3} 位高危会员...
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 脚注 */}
+        <div style={{ marginTop: 20, padding: '12px 18px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12, color: '#6b7280', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <span>🤖 AI 预测基于历史数据模型</span>
+          <span>📊 诊断报告每 24 小时自动更新</span>
           <span>⏱ 上次分析: {new Date().toLocaleString('zh-CN')}</span>
         </div>
       </div>
