@@ -479,6 +479,70 @@ export default function LoyaltyPage() {
               </div>
             </div>
 
+            {/* 可兑换商品分类 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#166534' }}>🏷️ 可兑换商品分类</h4>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {[
+                  { name: '游戏时长', icon: '🎮', minPoints: 500, count: 12 },
+                  { name: '零食饮品', icon: '🍿', minPoints: 200, count: 18 },
+                  { name: '周边礼品', icon: '🎁', minPoints: 1000, count: 8 },
+                  { name: '优惠券', icon: '🎟️', minPoints: 100, count: 25 },
+                  { name: 'VIP体验', icon: '👑', minPoints: 5000, count: 3 },
+                  { name: '生日礼包', icon: '🎂', minPoints: 300, count: 6 },
+                ].map((cat, i) => (
+                  <div key={i} style={{ flex: '1 1 100px', padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #dcfce7', textAlign: 'center' }}>
+                    <div style={{ fontSize: 18 }}>{cat.icon}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#166534', marginTop: 2 }}>{cat.name}</div>
+                    <div style={{ fontSize: 12, color: '#059669' }}>{cat.count}种</div>
+                    <div style={{ fontSize: 10, color: '#9ca3af' }}>{cat.minPoints}分起</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 会员消费偏好 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#ecfeff', border: '1px solid #a5f3fc' }}>
+              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#0e7490' }}>📊 本月会员消费偏好</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
+                {[
+                  { label: '兑换次数', value: '345次', trend: '+12%' },
+                  { label: '使用会员', value: '128人', trend: '+8%' },
+                  { label: '平均消费', value: '¥85/次', trend: '+5%' },
+                  { label: '最受欢迎', value: '游戏时长', trend: '42%占比' },
+                ].map((s, i) => (
+                  <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                    <div style={{ fontSize: 11, color: '#6b7280' }}>{s.label}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#0e7490' }}>{s.value}</div>
+                    <div style={{ fontSize: 10, color: '#059669' }}>{s.trend}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 会员升级提醒 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
+              <h4 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#9a3412' }}>🎯 离升级还差一步</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {[
+                  { name: '张小美', current: '银卡', next: '金卡', need: 380, progress: 62, color: '#f59e0b' },
+                  { name: '王大伟', current: '金卡', next: '钻石', need: 1250, progress: 75, color: '#06b6d4' },
+                  { name: 'Lisa', current: '钻石', next: '至尊', need: 4800, progress: 76, color: '#a855f7' },
+                ].map((u, i) => (
+                  <div key={i} style={{ padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #fed7aa', fontSize: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontWeight: 600 }}>{u.name}</span>
+                      <span style={{ color: u.color }}>{u.current} → {u.next}</span>
+                    </div>
+                    <div style={{ marginBottom: 2, fontSize: 11, color: '#6b7280' }}>还需 {u.need} 积分</div>
+                    <div style={{ height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
+                      <div style={{ width: `${u.progress}%`, height: '100%', borderRadius: 3, background: u.color }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* 积分排行榜 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
               <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#9a3412' }}>🏅 积分排行榜</h4>
@@ -504,6 +568,11 @@ export default function LoyaltyPage() {
           </>
         )}
       </div>
+    <div style={{ display: 'flex', gap: 16, justifyContent: 'center', fontSize: 10, color: '#9ca3af', marginTop: 8 }}>
+      <span>🏪 本月兑换: 345次</span>
+      <span>👥 使用会员: 128人</span>
+      <span>📈 活跃率: 72%</span>
+    </div>
     </PageShell>
   );
 }
