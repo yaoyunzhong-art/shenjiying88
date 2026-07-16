@@ -589,6 +589,118 @@ export default function StorePromotionsPage() {
           </div>
         </div>
 
+        {/* 活动渠道投入产出 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fefce8', border: '1px solid #fde68a' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#713f12' }}>📢 活动渠道投入产出 ROI 对比</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
+            {[
+              { channel: '抖音', invest: 12000, roi: 4.8, users: 8500, color: '#2563eb' },
+              { channel: '美团', invest: 8000, roi: 3.2, users: 6200, color: '#f59e0b' },
+              { channel: '微信公众号', invest: 5000, roi: 2.6, users: 3800, color: '#059669' },
+              { channel: '门店海报', invest: 3000, roi: 5.1, users: 2200, color: '#7c3aed' },
+            ].map(function(c, i) {
+              var maxInvest = 12000;
+              var barPct = (c.invest / maxInvest * 100);
+              return (
+                <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fef3c7', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#374151' }}>{c.channel}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: c.color, marginTop: 4 }}>{c.roi}x</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af' }}>投入 ¥{(c.invest / 1000).toFixed(0)}k</div>
+                  <div style={{ fontSize: 10, color: '#6b7280' }}>吸引 {c.users.toLocaleString()}人</div>
+                  <div style={{ marginTop: 4, height: 6, borderRadius: 3, background: '#fef3c7', overflow: 'hidden' }}>
+                    <div style={{ width: barPct + '%', height: '100%', borderRadius: 3, background: c.color }} />
+                  </div>
+                  <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2 }}>{'¥' + (c.invest / c.users).toFixed(1)}/人</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 10, color: '#9ca3af', textAlign: 'center' }}>
+            门店海报 ROI {(5.1).toFixed(1)}x 最高，抖音吸引用户 {(8500).toLocaleString()}人 最多
+          </div>
+        </div>
+
+        {/* 活动参与会员画像 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fdf2f8', border: '1px solid #fbcfe8' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9d174d' }}>👥 活动参与会员画像</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
+            {[
+              { dim: '年龄18-25岁', rate: 28, color: '#ec4899' },
+              { dim: '年龄26-35岁', rate: 45, color: '#f43f5e' },
+              { dim: '年龄36-45岁', rate: 20, color: '#f97316' },
+              { dim: '年龄46岁+', rate: 7, color: '#94a3b8' },
+            ].map(function(a, i) {
+              return (
+                <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fce7f3', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>{a.dim}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: a.color, marginTop: 2 }}>{a.rate}%</div>
+                  <div style={{ marginTop: 4, height: 6, borderRadius: 3, background: '#fce7f3', overflow: 'hidden' }}>
+                    <div style={{ width: a.rate + '%', height: '100%', borderRadius: 3, background: a.color }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 10, paddingTop: 10, borderTop: '1px solid #fce7f3' }}>
+            {[
+              { dim: '男性参与率', rate: 38, color: '#3b82f6' },
+              { dim: '女性参与率', rate: 62, color: '#ec4899' },
+              { dim: '高消费会员', rate: 52, color: '#7c3aed' },
+              { dim: '中消费会员', rate: 32, color: '#f59e0b' },
+              { dim: '低消费会员', rate: 16, color: '#94a3b8' },
+            ].map(function(p, i) {
+              return (
+                <div key={i} style={{ flex: '1 1 80px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>{p.dim}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: p.color }}>{p.rate}%</div>
+                  <div style={{ marginTop: 2, height: 4, borderRadius: 2, background: '#fce7f3', overflow: 'hidden' }}>
+                    <div style={{ width: p.rate + '%', height: '100%', borderRadius: 2, background: p.color }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 10, color: '#9ca3af', textAlign: 'center' }}>
+            主力参与人群: 26-35岁女性，高消费会员参与率最高
+          </div>
+        </div>
+
+        {/* 淡旺季活动效果 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#ecfeff', border: '1px solid #a5f3fc' }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#0e7490' }}>📊 各月活动效果评分（淡旺季对比）</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[
+              { month: '1月', score: 72, peak: '春节旺季', color: '#06b6d4' },
+              { month: '2月', score: 88, peak: '春节持续', color: '#06b6d4' },
+              { month: '3月', score: 65, peak: '淡季', color: '#94a3b8' },
+              { month: '4月', score: 58, peak: '淡季', color: '#94a3b8' },
+              { month: '5月', score: 75, peak: '劳动节', color: '#06b6d4' },
+              { month: '6月', score: 82, peak: '儿童节', color: '#06b6d4' },
+              { month: '7月', score: 90, peak: '暑期旺季', color: '#06b6d4' },
+              { month: '8月', score: 85, peak: '暑期持续', color: '#06b6d4' },
+              { month: '9月', score: 70, peak: '开学季', color: '#f59e0b' },
+              { month: '10月', score: 78, peak: '国庆节', color: '#06b6d4' },
+              { month: '11月', score: 68, peak: '双11', color: '#f59e0b' },
+              { month: '12月', score: 92, peak: '圣诞+元旦', color: '#06b6d4' },
+            ].map(function(m, i) {
+              var isPeak = m.color === '#06b6d4';
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 6, background: isPeak ? '#f0fdfa' : '#fff', border: '1px solid ' + (isPeak ? '#99f6e4' : '#e5e7eb'), fontSize: 12 }}>
+                  <span style={{ fontWeight: 600, color: '#0e7490', width: 40 }}>{m.month}</span>
+                  <div style={{ flex: 1, height: 10, borderRadius: 5, background: '#e5e7eb', overflow: 'hidden' }}>
+                    <div style={{ width: m.score + '%', height: '100%', borderRadius: 5, background: m.color }} />
+                  </div>
+                  <span style={{ fontWeight: 700, color: m.color, minWidth: 30, textAlign: 'right' }}>{m.score}</span>
+                  <span style={{ fontSize: 10, color: isPeak ? '#059669' : '#9ca3af', minWidth: 60, textAlign: 'right' }}>{m.peak}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 10, color: '#9ca3af', textAlign: 'center' }}>
+            旺季平均评分 {((88 + 75 + 82 + 90 + 85 + 78 + 92) / 7).toFixed(0)}分 vs 淡季平均评分 {((72 + 65 + 58 + 70 + 68) / 5).toFixed(0)}分
+          </div>
+        </div>
+
         <div style={{ textAlign: "center", fontSize: 10, color: "#9ca3af", marginTop: 8 }}>💡 数据来源: 各门店活动执行系统 · 自动更新于每日 06:00</div>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", fontSize: 10, color: "#9ca3af", marginTop: 4 }}>
           <span>📊 统计周期: 本月</span>

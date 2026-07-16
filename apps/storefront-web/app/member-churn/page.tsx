@@ -589,6 +589,117 @@ export default function MemberChurnPage() {
           </div>
         </div>
 
+        {/* 流失预警时间线 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fdf2f8', border: '1px solid #fbcfe8' }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#9d174d' }}>📈 流失预警时间线（过去6个月）</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { month: '2月', lowRisk: 80, mediumRisk: 45, highRisk: 15, criticalRisk: 5 },
+              { month: '3月', lowRisk: 72, mediumRisk: 48, highRisk: 18, criticalRisk: 7 },
+              { month: '4月', lowRisk: 65, mediumRisk: 50, highRisk: 22, criticalRisk: 8 },
+              { month: '5月', lowRisk: 60, mediumRisk: 52, highRisk: 25, criticalRisk: 10 },
+              { month: '6月', lowRisk: 55, mediumRisk: 48, highRisk: 28, criticalRisk: 12 },
+              { month: '7月', lowRisk: 50, mediumRisk: 45, highRisk: 30, criticalRisk: 15 },
+            ].map(function(m, i) {
+              var total = m.lowRisk + m.mediumRisk + m.highRisk + m.criticalRisk;
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #fce7f3', fontSize: 12 }}>
+                  <span style={{ fontWeight: 600, color: '#9d174d', width: 40 }}>{m.month}</span>
+                  <div style={{ flex: 1, height: 12, borderRadius: 6, background: '#f3f4f6', overflow: 'hidden', display: 'flex' }}>
+                    <div style={{ width: (m.lowRisk / total * 100) + '%', height: '100%', background: '#22c55e' }} title={'低风险: ' + m.lowRisk} />
+                    <div style={{ width: (m.mediumRisk / total * 100) + '%', height: '100%', background: '#f59e0b' }} title={'中风险: ' + m.mediumRisk} />
+                    <div style={{ width: (m.highRisk / total * 100) + '%', height: '100%', background: '#f97316' }} title={'高风险: ' + m.highRisk} />
+                    <div style={{ width: (m.criticalRisk / total * 100) + '%', height: '100%', background: '#ef4444' }} title={'极高风险: ' + m.criticalRisk} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, minWidth: 100, justifyContent: 'flex-end' }}>
+                    <span style={{ color: '#22c55e', fontSize: 10 }}>低{m.lowRisk}</span>
+                    <span style={{ color: '#f59e0b', fontSize: 10 }}>中{m.mediumRisk}</span>
+                    <span style={{ color: '#ef4444', fontSize: 10 }}>{'高' + (m.highRisk + m.criticalRisk)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 10, color: '#9ca3af', textAlign: 'center' }}>
+            ⚠️ 高风险+极高风险人数从 {15 + 5} 人上升至 {30 + 15} 人，需重点关注
+          </div>
+        </div>
+
+        {/* 会员流失原因分析 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#faf5ff', border: '1px solid #e9d5ff' }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#7c3aed' }}>🎯 会员流失原因分布</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
+            {[
+              { reason: '价格偏高', pct: 36, count: 180, color: '#7c3aed' },
+              { reason: '服务体验差', pct: 24, count: 120, color: '#ef4444' },
+              { reason: '距离太远', pct: 20, count: 100, color: '#f59e0b' },
+              { reason: '设备老化', pct: 12, count: 60, color: '#06b6d4' },
+              { reason: '其他原因', pct: 8, count: 40, color: '#94a3b8' },
+            ].map(function(r, i) {
+              var offset = 0;
+              var segments = [
+                { pct: 36, color: '#7c3aed' },
+                { pct: 24, color: '#ef4444' },
+                { pct: 20, color: '#f59e0b' },
+                { pct: 12, color: '#06b6d4' },
+                { pct: 8, color: '#94a3b8' },
+              ];
+              for (var j = 0; j < i; j++) { offset += segments[j]!.pct; }
+              var conicGradient = segments.map(function(s, idx) {
+                var start = segments.slice(0, idx).reduce(function(a, b) { return a + b.pct; }, 0);
+                return s.color + ' ' + start + '% ' + (start + s.pct) + '%';
+              }).join(', ');
+              return (
+                <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e9d5ff', textAlign: 'center' }}>
+                  <div style={{ width: 60, height: 60, borderRadius: '50%', margin: '0 auto 6px', background: 'conic-gradient(' + conicGradient + ')' }} />
+                  <div style={{ fontSize: 13, fontWeight: 700, color: r.color }}>{r.reason}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: '#374151' }}>{r.pct}%</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af' }}>{r.count}人</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 10, color: '#9ca3af', textAlign: 'center' }}>
+            价格和服务体验合计占比 {(36 + 24) + '%'}，是主要流失原因
+          </div>
+        </div>
+
+        {/* 地区流失热力图 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#9a3412' }}>📍 各门店流失率排名</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[
+              { store: '宝安店', rate: 18.5, churned: 45, total: 243, trend: 'up' as const },
+              { store: '龙华店', rate: 15.2, churned: 38, total: 250, trend: 'up' as const },
+              { store: '福田分店', rate: 12.8, churned: 32, total: 250, trend: 'stable' as const },
+              { store: '南山分店', rate: 10.3, churned: 25, total: 243, trend: 'stable' as const },
+              { store: '旗舰店', rate: 8.6, churned: 22, total: 256, trend: 'down' as const },
+            ].map(function(s, i) {
+              var maxRate = 18.5;
+              var barWidth = (s.rate / maxRate * 100);
+              var barColor = s.rate >= 15 ? '#ef4444' : s.rate >= 10 ? '#f59e0b' : '#22c55e';
+              var trendIcon = s.trend === 'up' ? '↑' : s.trend === 'down' ? '↓' : '→';
+              var trendColor = s.trend === 'up' ? '#dc2626' : s.trend === 'down' ? '#059669' : '#6b7280';
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, background: i === 0 ? '#fef2f2' : '#fff', border: '1px solid ' + (i === 0 ? '#fecaca' : '#e5e7eb'), fontSize: 13 }}>
+                  <span style={{ fontWeight: 700, color: '#374151', width: 16 }}>{i + 1}</span>
+                  <span style={{ fontWeight: 600, minWidth: 70 }}>{s.store}</span>
+                  <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#f3f4f6', overflow: 'hidden' }}>
+                    <div style={{ width: barWidth + '%', height: '100%', borderRadius: 4, background: barColor }} />
+                  </div>
+                  <span style={{ fontWeight: 600, color: barColor, minWidth: 50, textAlign: 'right' }}>{s.rate}%</span>
+                  <span style={{ color: trendColor, minWidth: 20, textAlign: 'right' }}>{trendIcon}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 8, fontSize: 10, color: '#9ca3af' }}>
+            <span>📊 总计: {45 + 38 + 32 + 25 + 22}人</span>
+            <span>🏪 平均: {((18.5 + 15.2 + 12.8 + 10.3 + 8.6) / 5).toFixed(1)}%</span>
+            <span>⚠️ 宝安店流失率最高</span>
+          </div>
+        </div>
+
         {/* 脚注 */}
         <div style={{ marginTop: 20, padding: '12px 18px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12, color: '#6b7280', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <span>🤖 AI 预测基于历史数据模型</span>
