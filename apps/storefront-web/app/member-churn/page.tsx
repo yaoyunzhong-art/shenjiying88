@@ -700,12 +700,135 @@ export default function MemberChurnPage() {
           </div>
         </div>
 
+        {/* 流失挽回活动效果评估 */}
+        {function(s, i) {
+          var channels = [
+            { name: '短信', reached: 850, recallRate: 18, retention30: 65, roi: 4.2 },
+            { name: '推送', reached: 1200, recallRate: 22, retention30: 72, roi: 5.8 },
+            { name: '电话', reached: 200, recallRate: 35, retention30: 80, roi: 2.1 },
+            { name: '门店提醒', reached: 350, recallRate: 28, retention30: 75, roi: 3.5 },
+          ];
+          var channelIcons: Record<string, string> = { '短信': '📱', '推送': '🔔', '电话': '📞', '门店提醒': '🏪' };
+          var totalReached = channels.reduce(function(a, b) { return a + b.reached; }, 0);
+          var avgRecall = Math.round(channels.reduce(function(a, b) { return a + b.recallRate; }, 0) / channels.length);
+          var avgRetention = Math.round(channels.reduce(function(a, b) { return a + b.retention30; }, 0) / channels.length);
+          var avgRoi = (channels.reduce(function(a, b) { return a + b.roi; }, 0) / channels.length).toFixed(1);
+          return (
+            <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+              <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#1d4ed8' }}>📡 流失挽回活动效果评估</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10, marginBottom: 10 }}>
+                {channels.map(function(ch, idx) {
+                  return (
+                    <div key={idx} style={{ padding: '10px 12px', borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#1d4ed8', marginBottom: 6 }}>{channelIcons[ch.name] || '📡'} {ch.name}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '2px 0' }}>
+                        <span style={{ color: '#6b7280' }}>触达人数</span>
+                        <span style={{ fontWeight: 600 }}>{ch.reached}人</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '2px 0' }}>
+                        <span style={{ color: '#6b7280' }}>召回率</span>
+                        <span style={{ fontWeight: 600, color: ch.recallRate >= 30 ? '#059669' : ch.recallRate >= 20 ? '#d97706' : '#dc2626' }}>{ch.recallRate}%</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '2px 0' }}>
+                        <span style={{ color: '#6b7280' }}>30天留存</span>
+                        <span style={{ fontWeight: 600, color: ch.retention30 >= 75 ? '#059669' : '#6b7280' }}>{ch.retention30}%</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '2px 0' }}>
+                        <span style={{ color: '#6b7280' }}>ROI</span>
+                        <span style={{ fontWeight: 700, color: ch.roi >= 3.5 ? '#059669' : '#d97706' }}>{ch.roi}x</span>
+                      </div>
+                      <div style={{ marginTop: 6, height: 4, borderRadius: 2, background: '#f3f4f6', overflow: 'hidden' }}>
+                        <div style={{ width: ch.roi * 17 + '%', height: '100%', borderRadius: 2, background: ch.roi >= 3.5 ? '#22c55e' : '#f59e0b' }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', fontSize: 11, color: '#6b7280' }}>
+                <span>📊 总触达: {totalReached}人</span>
+                <span>📈 平均召回率: {avgRecall}%</span>
+                <span>📌 平均30天留存: {avgRetention}%</span>
+                <span>💰 综合ROI: {avgRoi}x</span>
+              </div>
+            </div>
+          );
+        }()}
+
         {/* 脚注 */}
         <div style={{ marginTop: 20, padding: '12px 18px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12, color: '#6b7280', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <span>🤖 AI 预测基于历史数据模型</span>
           <span>📊 诊断报告每 24 小时自动更新</span>
           <span>⏱ 上次分析: {new Date().toLocaleString('zh-CN')}</span>
         </div>
+        {/* 流失预测准确率 */}
+        {function(s, i) {
+          var monthlyAccuracy = [
+            { month: '2月', accuracy: 84, recall: 78, f1: 0.81, falsePositive: 15 },
+            { month: '3月', accuracy: 85, recall: 79, f1: 0.82, falsePositive: 14 },
+            { month: '4月', accuracy: 86, recall: 80, f1: 0.83, falsePositive: 13 },
+            { month: '5月', accuracy: 86, recall: 81, f1: 0.84, falsePositive: 12 },
+            { month: '6月', accuracy: 87, recall: 82, f1: 0.84, falsePositive: 12 },
+            { month: '7月', accuracy: 87, recall: 82, f1: 0.84, falsePositive: 12 },
+          ];
+          var latest = monthlyAccuracy[monthlyAccuracy.length - 1] || { month: '7月', accuracy: 87, recall: 82, f1: 0.84, falsePositive: 12 };
+          var avgAccuracy = Math.round(monthlyAccuracy.reduce(function(a, b) { return a + b.accuracy; }, 0) / monthlyAccuracy.length);
+          return (
+            <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#faf5ff', border: '1px solid #e9d5ff' }}>
+              <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#7c3aed' }}>🎯 流失预测准确率</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 10, marginBottom: 12 }}>
+                <div style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e9d5ff', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, color: '#6b7280' }}>预测准确率</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: '#7c3aed' }}>{latest.accuracy}%</div>
+                </div>
+                <div style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e9d5ff', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, color: '#6b7280' }}>召回率</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: '#059669' }}>{latest.recall}%</div>
+                </div>
+                <div style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e9d5ff', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, color: '#6b7280' }}>F1得分</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: '#2563eb' }}>{latest.f1}</div>
+                </div>
+                <div style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e9d5ff', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, color: '#6b7280' }}>误报率</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: latest.falsePositive >= 12 ? '#d97706' : '#059669' }}>{latest.falsePositive}%</div>
+                </div>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#7c3aed', marginBottom: 8 }}>近6个月准确率趋势</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {monthlyAccuracy.map(function(m, idx) {
+                  var accBarColor = m.accuracy >= 86 ? '#7c3aed' : m.accuracy >= 84 ? '#a855f7' : '#c084fc';
+                  var recallBarColor = m.recall >= 80 ? '#059669' : '#22c55e';
+                  return (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 6, background: '#fff', border: '1px solid #f3e8ff', fontSize: 11 }}>
+                      <span style={{ fontWeight: 700, color: '#7c3aed', width: 32 }}>{m.month}</span>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ color: '#6b7280', width: 50 }}>准确率</span>
+                          <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#f3f4f6', overflow: 'hidden' }}>
+                            <div style={{ width: m.accuracy + '%', height: '100%', borderRadius: 3, background: accBarColor }} />
+                          </div>
+                          <span style={{ fontWeight: 600, minWidth: 30, textAlign: 'right', color: '#374151' }}>{m.accuracy}%</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ color: '#6b7280', width: 50 }}>召回率</span>
+                          <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#f3f4f6', overflow: 'hidden' }}>
+                            <div style={{ width: m.recall + '%', height: '100%', borderRadius: 3, background: recallBarColor }} />
+                          </div>
+                          <span style={{ fontWeight: 600, minWidth: 30, textAlign: 'right', color: '#374151' }}>{m.recall}%</span>
+                        </div>
+                      </div>
+                      <span style={{ color: '#9ca3af', fontSize: 10, minWidth: 24 }}>F1: {m.f1}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 10, color: '#9ca3af', textAlign: 'center' }}>
+                📈 平均准确率 {avgAccuracy}% · 模型持续优化中，准确率逐月提升
+              </div>
+            </div>
+          );
+        }()}
+
         {/* 召回成本分析 */}
         <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
           <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#166534' }}>💰 召回成本 vs 流失损失</h3>
