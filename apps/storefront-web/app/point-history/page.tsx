@@ -355,6 +355,30 @@ export default function PointHistoryPage() {
               <span>本页 {paginated.length} 条</span>
               <span>页码 {page}/{totalPages}</span>
             </div>
+
+            {/* 积分任务攻略 */}
+            <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fefce8', border: '1px solid #fde68a' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#92400e' }}>🎯 积分任务攻略</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
+                {[
+                  { name: '每日签到', points: 5, limit: '每天1次', done: true },
+                  { name: '到店消费', points: '¥1=1分', limit: '无上限', done: false },
+                  { name: '评价晒单', points: 20, limit: '每单1次', done: true },
+                  { name: '推荐好友', points: 200, limit: '月10人', done: false },
+                  { name: '生日祝福', points: 500, limit: '年1次', done: false },
+                  { name: '活动参与', points: '50~500', limit: '按规则', done: false },
+                ].map((t, i) => (
+                  <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', opacity: t.done ? 0.6 : 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: t.done ? '#9ca3af' : '#374151', textDecoration: t.done ? 'line-through' : 'none' }}>{t.name}</span>
+                      {t.done && <span style={{ fontSize: 10, color: '#059669' }}>✓ 已完成</span>}
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#059669' }}>+{t.points}积分</div>
+                    <div style={{ fontSize: 11, color: '#6b7280' }}>{t.limit}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </>
         )}
       </div>

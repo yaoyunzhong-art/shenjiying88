@@ -404,6 +404,49 @@ export default function StorePromotionsPage() {
           setPage(1);
         }}
       />
+      {/* 活动效果分析 */}
+      {!showError && (
+        <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#16a34a' }}>📊 活动效果分析</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+            {[
+              { label: '最佳活动类型', value: '折扣', count: MOCK_DATA.filter(d => d.type === 'discount').length, color: '#059669' },
+              { label: '平均预算', value: `¥${Math.round(MOCK_DATA.reduce((s, d) => s + d.budget, 0) / MOCK_DATA.length)}`, count: 0, color: '#2563eb' },
+              { label: '平均使用', value: Math.round(MOCK_DATA.reduce((s, d) => s + d.usageCount, 0) / MOCK_DATA.length).toLocaleString(), count: 0, color: '#d97706' },
+              { label: '进行中活动', value: MOCK_DATA.filter(d => d.status === 'active').length.toString(), count: 0, color: '#6366f1' },
+            ].map((item, i) => (
+              <div key={i} style={{ padding: 12, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 2 }}>{item.label}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: item.color }}>{item.value}</div>
+                {item.count > 0 && <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{item.count}个活动</div>}
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 10, fontSize: 11, color: '#6b7280', textAlign: 'center' }}>
+            基于{MOCK_DATA.length}个活动数据分析
+          </div>
+        </div>
+      )}
+
+      {/* 门店活动排行 */}
+      {!showError && (
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#1d4ed8' }}>🏪 门店活动排行</h3>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {Array.from(new Set(MOCK_DATA.map(d => d.storeName))).map(store => {
+              const promos = MOCK_DATA.filter(d => d.storeName === store);
+              const usage = promos.reduce((s, d) => s + d.usageCount, 0);
+              return (
+                <div key={store} style={{ flex: '1 1 120px', padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>{store}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#2563eb' }}>{promos.length}</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af' }}>{usage.toLocaleString()}次使用</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 }
