@@ -279,6 +279,29 @@ export default function DataInsights() {
         </div>
       )}
 
+      {/* 设备故障频率分布 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>🔧 设备故障频率分布</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+          {[
+            { type: '收银机', count: 3, trend: 'down' },
+            { type: '摄像头', count: 7, trend: 'up' },
+            { type: '打印机', count: 5, trend: 'stable' },
+            { type: '网络设备', count: 2, trend: 'down' },
+            { type: '传感器', count: 4, trend: 'up' },
+            { type: '显示屏', count: 1, trend: 'stable' },
+          ].map((item, i) => (
+            <div key={i} style={{ padding: 10, borderRadius: 8, background: 'rgba(148,163,184,0.06)', textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 2 }}>{item.type}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: item.count > 5 ? '#f87171' : item.count > 3 ? '#fbbf24' : '#4ade80' }}>{item.count}</div>
+              <div style={{ fontSize: 11, color: item.trend === 'up' ? '#f87171' : item.trend === 'down' ? '#4ade80' : '#94a3b8' }}>
+                {item.trend === 'up' ? '↑ 上升' : item.trend === 'down' ? '↓ 下降' : '→ 持平'}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* 快速统计摘要 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
         <div style={{ borderRadius: 12, padding: 14, background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.1)', textAlign: 'center' }}>
@@ -295,7 +318,39 @@ export default function DataInsights() {
         </div>
       </div>
 
-          {/* AI分析面板 */}
+          {/* 实时活动日志 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>📋 实时活动日志</h3>
+            <p style={{ margin: '2px 0 0', fontSize: 11, color: '#64748b' }}>最新 {8} 条门店活动</p>
+          </div>
+          <span style={{ padding: '2px 8px', borderRadius: 4, background: 'rgba(34,197,94,0.15)', color: '#4ade80', fontSize: 11 }}>实时</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {[
+            { time: '14:32', event: '会员 张伟 充值 ¥500', type: 'transaction' as const },
+            { time: '14:28', event: 'POS-01 完成订单 #202607161482', type: 'transaction' as const },
+            { time: '14:20', event: '新会员注册: 李明 (推荐码 M003)', type: 'registration' as const },
+            { time: '14:15', event: '打印机 打印头温度恢复正常', type: 'system' as const },
+            { time: '14:08', event: '库存预警: 游戏币 < 2000枚', type: 'alert' as const },
+            { time: '13:55', event: '收银区摄像头 重连成功', type: 'system' as const },
+            { time: '13:42', event: '会员 王芳 兑换免费游戏券', type: 'reward' as const },
+            { time: '13:30', event: '广告显示屏 播放列表更新', type: 'system' as const },
+          ].map((log, i) => {
+            const colors: Record<string, string> = { transaction: '#60a5fa', registration: '#34d399', system: '#94a3b8', alert: '#f87171', reward: '#fbbf24' };
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 6, background: 'rgba(148,163,184,0.04)', fontSize: 12 }}>
+                <span style={{ color: '#64748b', minWidth: 40, fontSize: 11 }}>{log.time}</span>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: colors[log.type] || '#94a3b8' }} />
+                <span style={{ color: '#cbd5e1' }}>{log.event}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* AI分析面板 */}
       <div style={{ marginBottom: 24, padding: 18, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
         <div style={{ marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>🤖 AI 智能分析</h3>
