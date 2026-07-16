@@ -185,3 +185,4 @@
 | 2026-07-17 04:44 | #543 | baseline-全线 | Base✅ Service⚠️ Controller⚠️ CTest⚠️ | 5🏆(续·#539->#543·dispatch-538-tree第4次确认·0 NEW·P0✅第27次确认) |
 | 2026-07-17 05:14 | `#544` | baseline-全线 | Base`✅`(TSC14/14全绿✅·P0第29次确认) Service`⚠️`(admin 171假阳持稳·storefront 36基线持平) Controller`⚠️` CTest`⚠️` | **6🏆**(#539->#544·dispatch-538-tree第5次确认·0 NEW·P0✅第28次确认) |
 | 2026-07-17 05:44 | `#545` | baseline-全线 | Base`✅`(TSC14/14全绿✅·P0第30次确认) Service`⚠️`(admin 171假阳持稳·storefront 36基线持平) Controller`⚠️` CTest`⚠️` | **7🏆**(#539->#545·dispatch-538-tree第6次确认·0 NEW·P0✅第29次确认) |
+| 2026-07-17 06:14 | `#546` | baseline-全线 | Base`✅`(TSC14/14全缓存✅·P0第31次确认) Service`⚠️`(admin 171假阳持稳·storefront 36基线持平) Controller`⚠️` CTest`⚠️` | **8🏆**(#539->#546·dispatch-538-tree第7次确认·0 NEW·P0✅第30次确认) |
