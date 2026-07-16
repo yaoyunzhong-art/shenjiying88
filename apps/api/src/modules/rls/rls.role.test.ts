@@ -65,6 +65,7 @@ function mockErrorResponse(code: number, message: string) {
 // ── RLS Service 工厂 ──
 function makeRlsService(): RlsService {
   // vi.mock 模拟 connector 在 service 内部使用
+  // @ts-expect-error: connector mock handles injection internally
   return new RlsService()
 }
 

@@ -167,7 +167,7 @@ describe('D3Controller', () => {
     it('should mark a delivery as sent', () => {
       const result = controller.deliverDelivery('del-002')
       expect(result.success).toBe(true)
-      expect(result.data.status).toBe('sent')
+      expect(result.data!.status).toBe('sent')
     })
 
     it('should return not found for unknown delivery', () => {

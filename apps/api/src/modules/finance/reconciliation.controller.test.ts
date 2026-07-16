@@ -416,8 +416,8 @@ describe('ReconciliationController', () => {
 
       const result = callGetSummary({})
       expect(result.success).toBe(true)
-      expect(result.data.matchRate).toBe(100)
-      expect(result.data.date).toBe('2026-07-15')
+      expect(result.data!.matchRate).toBe(100)
+      expect(result.data!.date).toBe('2026-07-15')
     })
 
     it('should return summary for a specific date', async () => {
@@ -434,7 +434,7 @@ describe('ReconciliationController', () => {
 
       const result = callGetSummary({ date: '2026-07-14' })
       expect(result.success).toBe(true)
-      expect(result.data.date).toBe('2026-07-14')
+      expect(result.data!.date).toBe('2026-07-14')
     })
 
     it('should return null for unknown date', async () => {
