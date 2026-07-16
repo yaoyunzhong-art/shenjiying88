@@ -167,3 +167,4 @@
 | 2026-07-16 21:16 | `#528` | admin-web(24假阳⛔持平)·storefront(1已知偏差) | Base`✅`(TSC14/14全缓存) Service`⚠️`(admin假阳24⛔持平) Controller`⚠️` CTest`⚠️` | **15🏆**(P0闭环后第15脉冲·admin-web假阳24持平·无新fail注入·P0闭环✅第15次确认) |
 | 2026-07-16 21:33 | `#529` | admin-web(24假阳⛔持平)·storefront(1已知偏差) | Base`✅`(TSC14/14全缓存) Service`⚠️`(admin假阳24⛔持平) Controller`⚠️` CTest`⚠️` | **16🏆**(P0闭环后第16脉冲·admin-web假阳24持平·无新fail注入·P0闭环✅第16次确认) |
 | 2026-07-16 22:05 | `#530` | admin-web(13 TSC NEW🔴·5 test NEW🔴)·shop 3页拉升(317d9ef8e) | Base`❌`(TSC 13NEW·14→0🔴) Service`❌`(test 5NEW) Controller`⚠️` CTest`⚠️` | **0🏆**(断裂·shop 3页拉升引入13TSC+5test NEW·已派dispatch-530-tree🔴) |
+| 2026-07-16 23:35 | `#531` | admin-web(48假阳⛔基线)·storefront(35已知偏差)·树哥修复3cd8a572c合入 | Base`✅`(TSC14/14全绿·树哥修13NEW🔴→🟢) Service`⚠️`(admin假阳48⛔基线) Controller`⚠️` CTest`⚠️` | **1🏆**(#530断裂后重启·dispatch-530-tree闭环✅·树哥全部TSC修复·已知基线不变) |
