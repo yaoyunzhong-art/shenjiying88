@@ -133,12 +133,15 @@ resource "alicloud_cs_managed_kubernetes" "main" {
   new_nat_gateway    = false
   slb_internet_enabled = true
   
-  # 简化插件配置（绕过部分角色授权限制）
+  # 最小化插件配置（绕过CSI等插件的角色授权限制）
+  # 仅启用核心插件
   addons {
-    name = "kube-proxy"
+    name    = "kube-proxy"
+    config  = ""
   }
   addons {
-    name = "coredns"
+    name    = "coredns"
+    config  = ""
   }
   
   # 标签

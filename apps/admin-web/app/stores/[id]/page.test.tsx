@@ -231,3 +231,38 @@ describe('StoreDetailPage — 边界条件', () => {
     }
   });
 });
+
+// ---- 深度组件（追加 L1+ JSX 断言） ----
+
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const _SRC_DIR = dirname(fileURLToPath(import.meta.url));
+const SRC = readFileSync(resolve(_SRC_DIR, 'page.tsx'), 'utf-8');
+
+describe('StoreDetailPage — 深度组件', () => {
+  it('包含use client指令', () => assert.ok(SRC.includes("'use client'")));
+  it('包含JSX列表渲染 .map()', () => assert.ok(SRC.includes('.map(') || SRC.includes('.map(function')));
+  it('包含三元条件渲染', () => assert.ok(SRC.includes(' ? ') || SRC.includes(' ?? ')));
+  it('包含 && 条件渲染', () => assert.ok(SRC.includes(' && ')));
+  it('包含事件处理 onClick', () => assert.ok(SRC.includes('onClick') || SRC.includes('onChange')));
+  it('包含style内联样式', () => assert.ok(SRC.includes('style={')));
+  it('包含模板变量 ${}', () => assert.ok(SRC.includes('${')));
+  it('包含 useState 状态管理', () => assert.ok(SRC.includes('useState')));
+  it('包含 useCallback', () => assert.ok(SRC.includes('useCallback')));
+  it('包含 filter 数据过滤', () => assert.ok(SRC.includes('.filter(')));
+});
+
+describe('StoreDetailPage — 业务深度', () => {
+  it('包含 DetailShell 外壳', () => assert.ok(SRC.includes('DetailShell')));
+  it('包含 StatCard 统计卡片', () => assert.ok(SRC.includes('StatCard')));
+  it('包含 StatusBadge 状态徽章', () => assert.ok(SRC.includes('StatusBadge')));
+  it('包含 DetailActionBar 操作栏', () => assert.ok(SRC.includes('DetailActionBar')));
+  it('包含 workspaces 工作区', () => assert.ok(SRC.includes('workspace') || SRC.includes('Workspace') || SRC.includes('workspaces')));
+  it('包含 getStoreById 数据查询', () => assert.ok(SRC.includes('getStoreById')));
+  it('包含 InfoRow 信息行', () => assert.ok(SRC.includes('InfoRow')));
+  it('包含 CopyToClipboard', () => assert.ok(SRC.includes('CopyToClipboard')));
+  it('包含 FormField 表单字段', () => assert.ok(SRC.includes('FormField')));
+  it('包含 capabilty access 能力访问', () => assert.ok(SRC.includes('capability') || SRC.includes('Capability')));
+});

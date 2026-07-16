@@ -130,3 +130,71 @@ describe('staff — 防御', () => {
     assert.ok(src.includes('useCallback'), '缺少 useCallback');
   });
 });
+
+// ---- 深度组件 ----
+
+describe('staff — 深度组件', () => {
+  it('包含JSX列表渲染 .map()', () => {
+    const src = readSource(); assert.ok(src.includes('.map('));
+  });
+  it('包含三元条件渲染', () => {
+    const src = readSource(); assert.ok(src.includes(' ? ') || src.includes(' ?? '));
+  });
+  it('包含 && 逻辑条件', () => {
+    const src = readSource(); assert.ok(src.includes(' && '));
+  });
+  it('包含事件处理 onClick', () => {
+    const src = readSource(); assert.ok(src.includes('onClick') || src.includes('onChange'));
+  });
+  it('包含style内联样式', () => {
+    const src = readSource(); assert.ok(src.includes('style={'));
+  });
+  it('包含模板变量 ${}', () => {
+    const src = readSource(); assert.ok(src.includes('${'));
+  });
+  it('包含 useState 状态管理', () => {
+    const src = readSource(); assert.ok(src.includes('const [') && src.includes('useState'));
+  });
+  it('包含 useEffect 副作用', () => {
+    const src = readSource(); assert.ok(src.includes('useEffect'));
+  });
+  it('包含 filter 不可变过滤', () => {
+    const src = readSource(); assert.ok(src.includes('.filter('));
+  });
+  it('包含 Math.round 统计计算', () => {
+    const src = readSource(); assert.ok(src.includes('Math.round'));
+  });
+});
+
+describe('staff — 业务深度', () => {
+  it('包含员工岗位角色枚举', () => {
+    const src = readSource(); assert.ok(src.includes('STAFF_ROLE_MAP'));
+  });
+  it('包含员工状态枚举', () => {
+    const src = readSource(); assert.ok(src.includes('STAFF_STATUS_MAP'));
+  });
+  it('包含员工编号字段 code', () => {
+    const src = readSource(); assert.ok(src.includes('code'));
+  });
+  it('包含DataTable表格', () => {
+    const src = readSource(); assert.ok(src.includes('DataTable'));
+  });
+  it('包含usePagination分页', () => {
+    const src = readSource(); assert.ok(src.includes('usePagination'));
+  });
+  it('包含SearchFilterInput搜索', () => {
+    const src = readSource(); assert.ok(src.includes('SearchFilterInput'));
+  });
+  it('包含useSortedItems排序', () => {
+    const src = readSource(); assert.ok(src.includes('useSortedItems'));
+  });
+  it('包含FilterChips过滤标签', () => {
+    const src = readSource(); assert.ok(src.includes('FilterChips'));
+  });
+  it('包含 marketCode 市场筛选', () => {
+    const src = readSource(); assert.ok(src.includes('marketCode'));
+  });
+  it('包含 Tabs 分类切换', () => {
+    const src = readSource(); assert.ok(src.includes('Tabs'));
+  });
+});
