@@ -749,6 +749,13 @@ export default function MaintenancePage() {
           ], 0)}
         </div>
 
+        {/* 维护工程师紧急响应时效 */}
+        <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca' }}>
+          <h3 style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: '#b91c1c' }}>🚨 维护工程师紧急响应时效</h3>
+          {function(s,i) { return ( <div style={{display:'flex',gap:4,alignItems:'flex-end',height:60,padding:'2px 0'}}>{[{n:'张',t:12},{n:'李',t:18},{n:'王',t:25},{n:'陈',t:8},{n:'刘',t:35}].map(function(e,idx){var h=e.t/35*48;return (<div key={idx} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center'}}><span style={{fontSize:9,fontWeight:600,color:e.t>30?'#ef4444':e.t>15?'#f59e0b':'#22c55e'}}>{e.t}min</span><div style={{width:24,height:h,borderRadius:'3px 3px 0 0',background:e.t>30?'#ef4444':e.t>15?'#f59e0b':'#22c55e',marginTop:1}}/><span style={{fontSize:8,color:'#6b7280',marginTop:1}}>{e.n}师傅</span></div>);})}</div>); }([])}
+          <div style={{ marginTop: 2, fontSize: 9, color: '#9ca3af', textAlign: 'center' }}>平均 {Math.round([12,18,25,8,35].reduce(function(a,b){return a+b})/5)}min · 🏆 陈师傅最快  ⚠️ 刘师傅最慢</div>
+        </div>
+
         {/* 维护工单趋势 */}
         <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
           <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0369a1' }}>📈 近半年工单趋势</h3>

@@ -628,6 +628,103 @@ export default function StorePromotionsPage() {
             );
           }(MOCK_DATA)}
         </div>
+                {/* 活动历史回顾 */}
+        {function(promos: Promotion[], i: number) {
+          var RECENT_ACTIVITIES = [
+            { name: '六一儿童节特惠', month: '6月', score: 92, participants: 480, feedback: '亲子活动评价很高' },
+            { name: '端午节福利', month: '6月', score: 88, participants: 350, feedback: '会员专属感强' },
+            { name: '暑期狂欢季', month: '7月', score: 95, participants: 620, feedback: '设备免费玩反馈最佳' },
+            { name: '周四会员日', month: '7月', score: 78, participants: 280, feedback: '优惠力度可加大' },
+            { name: '夏日清凉大促', month: '7月', score: 85, participants: 410, feedback: '折扣活动受欢迎' },
+            { name: '周末特惠票', month: '7月', score: 73, participants: 320, feedback: '周末人流大但转化一般' },
+          ];
+          var avgScore = RECENT_ACTIVITIES.reduce(function(a, b) { return a + b.score; }, 0) / RECENT_ACTIVITIES.length;
+          var totalPax = RECENT_ACTIVITIES.reduce(function(a, b) { return a + b.participants; }, 0);
+          var topActivity = RECENT_ACTIVITIES.reduce(function(max, cur) { return cur.score > max.score ? cur : max; });
+          return (
+            <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9a3412' }}>📅 近3个月活动历史回顾</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8, marginBottom: 10 }}>
+                {[
+                  { label: '平均评分', value: avgScore.toFixed(0) + '分', color: '#ea580c', bg: '#fff7ed' },
+                  { label: '参与人次', value: totalPax.toLocaleString(), color: '#2563eb', bg: '#eff6ff' },
+                  { label: '最高评分', value: topActivity.name, color: '#059669', bg: '#f0fdf4' },
+                  { label: '活动数量', value: RECENT_ACTIVITIES.length + '个', color: '#7c3aed', bg: '#f5f3ff' },
+                ].map(function(s, i) {
+                  return (
+                    <div key={i} style={{ padding: 10, borderRadius: 8, background: s.bg, border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, color: '#6b7280' }}>{s.label}</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: s.color }}>{s.value}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {RECENT_ACTIVITIES.map(function(a, idx) {
+                  var barH = a.score;
+                  return (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: '#fff', border: '1px solid #fed7aa', fontSize: 12 }}>
+                      <span style={{ fontWeight: 600, color: '#9a3412', width: 80 }}>{a.month} {a.name}</span>
+                      <span style={{ fontSize: 10, color: '#6b7280', minWidth: 30 }}>{a.participants}人</span>
+                      <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#ffedd5', overflow: 'hidden' }}>
+                        <div style={{ width: barH + '%', height: '100%', borderRadius: 4, background: '#ea580c' }} />
+                      </div>
+                      <span style={{ fontWeight: 700, color: '#ea580c', minWidth: 30, textAlign: 'right' }}>{a.score}</span>
+                      <span style={{ fontSize: 10, color: '#9ca3af', maxWidth: 100, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.feedback}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 6, fontSize: 10, color: '#9ca3af', textAlign: 'center' }}>
+                🏆 最佳活动: {topActivity.name} ({topActivity.score}分) · 建议参考其策划经验
+              </div>
+            </div>
+          );
+        }(MOCK_DATA, 0)}
+
+                {/* 活动新客转化效果 */}
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#ecfdf5', border: '1px solid #6ee7b7' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#065f46' }}>🆕 活动新客转化效果</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {function(s, i) {
+              var icons = {优惠券: '🎫', 免费体验: '🎮', 团购活动: '👥', 联合推广: '🤝', 限时优惠: '⏰'} as const;
+              return s.map(function(e, idx) {
+                var barPct = Math.min(e.conversionRate * 2, 100);
+                var icon = (icons as Record<string, string>)[e.type] || '🎁';
+                return (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #a7f3d0' }}>
+                    <span style={{ fontSize: 16 }}>{icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 2 }}>
+                        <span style={{ fontWeight: 600, color: '#065f46' }}>{e.type}</span>
+                        <span style={{ fontWeight: 600, color: '#059669' }}>{e.newMembers}人 <span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 400 }}>新会员</span></span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#d1fae5', overflow: 'hidden' }}>
+                          <div style={{ width: barPct + '%', height: '100%', borderRadius: 3, background: '#059669' }} />
+                        </div>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: '#059669', minWidth: 60, textAlign: 'right' }}>{e.conversionRate}%转化</span>
+                        <span style={{ fontSize: 9, color: '#9ca3af' }}>{e.campaigns}活动</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              });
+            }([
+              { type: '优惠券', newMembers: 320, conversionRate: 28, campaigns: 12 },
+              { type: '免费体验', newMembers: 240, conversionRate: 35, campaigns: 8 },
+              { type: '团购活动', newMembers: 180, conversionRate: 22, campaigns: 6 },
+              { type: '联合推广', newMembers: 260, conversionRate: 40, campaigns: 10 },
+              { type: '限时优惠', newMembers: 150, conversionRate: 18, campaigns: 5 },
+            ])}
+          </div>
+          <div style={{ marginTop: 8, padding: '6px 12px', borderRadius: 6, background: 'rgba(5,150,105,0.06)', fontSize: 11, color: '#6b7280', display: 'flex', justifyContent: 'space-between' }}>
+            <span>🏆 联合推广转化率最高 (40%)</span>
+            <span>📊 平均转化率: {Math.round([28,35,22,40,18].reduce(function(a,b){return a+b})/5)}%</span>
+            <span>💡 限时优惠新客转化较低需优化</span>
+          </div>
+        </div>
+
                 {/* 活动执行满意度 */}
         <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
           <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#5b21b6' }}>📊 活动执行满意度</h3>
