@@ -538,6 +538,56 @@ export default function StorePromotionsPage() {
           </div>
         </div>
       )}
+                {/* 会员活动参与偏好 */}
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#0369a1' }}>🧑‍🤝‍🧑 会员活动参与偏好 (按年龄段)</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[
+              { age: '18-22岁', icon: '🎓', fav: '竞技类游戏', fav2: '社交派对', pct1: 60, pct2: 30, color: '#3b82f6' },
+              { age: '23-28岁', icon: '💼', fav: 'VR/电竞体验', fav2: '主题派对', pct1: 45, pct2: 38, color: '#06b6d4' },
+              { age: '29-35岁', icon: '👨‍👩‍👧', fav: '亲子活动', fav2: '充值优惠', pct1: 50, pct2: 30, color: '#22c55e' },
+              { age: '36-45岁', icon: '🏠', fav: '家庭套票', fav2: '会员福利', pct1: 42, pct2: 35, color: '#f59e0b' },
+              { age: '46岁以上', icon: '🧓', fav: '休闲娱乐', fav2: '优惠活动', pct1: 35, pct2: 40, color: '#a855f7' },
+              { age: '整体分布', icon: '📊', fav: '亲子/竞技类', fav2: '社交/优惠类', pct1: 48, pct2: 35, color: '#64748b' },
+            ].map(function(g, i) {
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #bae6fd', fontSize: 12 }}>
+                  <span style={{ fontSize: 14, minWidth: 22 }}>{g.icon}</span>
+                  <span style={{ fontWeight: 600, color: '#0369a1', width: 68 }}>{g.age}</span>
+                  <span style={{ fontSize: 11, color: '#374151', minWidth: 80 }}>🎯 {g.fav}</span>
+                  <div style={{ flex: '0 0 60px', height: 8, borderRadius: 4, background: '#e5e7eb', overflow: 'hidden' }}>
+                    <div style={{ width: g.pct1 + '%', height: '100%', borderRadius: 4, background: g.color, opacity: 0.8 }} />
+                  </div>
+                  <span style={{ fontSize: 10, color: '#6b7280', minWidth: 76 }}>{g.fav2}</span>
+                  <div style={{ flex: '0 0 60px', height: 8, borderRadius: 4, background: '#e5e7eb', overflow: 'hidden' }}>
+                    <div style={{ width: g.pct2 + '%', height: '100%', borderRadius: 4, background: '#9ca3af', opacity: 0.5 }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 10, color: '#0369a1', textAlign: 'center' }}>
+            📊 蓝色=最喜爱类型 · 灰色=次喜爱类型 · 建议按年龄段针对性推送活动
+          </div>
+          <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4, fontSize: 10 }}>
+            <div style={{ padding: '4px 6px', borderRadius: 4, background: '#f8fafc', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+              <div style={{ fontWeight: 600, color: '#0369a1' }}>最高</div>
+              <span style={{ color: '#3b82f6' }}>18-22岁 60%</span>
+            </div>
+            <div style={{ padding: '4px 6px', borderRadius: 4, background: '#f8fafc', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+              <div style={{ fontWeight: 600, color: '#0369a1' }}>最低</div>
+              <span style={{ color: '#a855f7' }}>46岁以上 35%</span>
+            </div>
+            <div style={{ padding: '4px 6px', borderRadius: 4, background: '#f8fafc', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+              <div style={{ fontWeight: 600, color: '#0369a1' }}>平均</div>
+              <span style={{ color: '#06b6d4' }}>46% / 33%</span>
+            </div>
+            <div style={{ padding: '4px 6px', borderRadius: 4, background: '#f8fafc', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+              <div style={{ fontWeight: 600, color: '#0369a1' }}>热门</div>
+              <span style={{ color: '#22c55e' }}>亲子类850+人次</span>
+            </div>
+          </div>
+        </div>
                 {/* 活动执行满意度 */}
         <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
           <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#5b21b6' }}>📊 活动执行满意度</h3>
@@ -620,20 +670,21 @@ export default function StorePromotionsPage() {
           </div>
         </div>
 
-        {/* 活动参与会员画像 */}
+        {/* 活动参与用户画像 — 年龄段/性别/消费水平分布 */}
         <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fdf2f8', border: '1px solid #fbcfe8' }}>
-          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9d174d' }}>👥 活动参与会员画像</h3>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9d174d' }}>👥 活动参与用户画像</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
             {[
-              { dim: '年龄18-25岁', rate: 28, color: '#ec4899' },
-              { dim: '年龄26-35岁', rate: 45, color: '#f43f5e' },
-              { dim: '年龄36-45岁', rate: 20, color: '#f97316' },
-              { dim: '年龄46岁+', rate: 7, color: '#94a3b8' },
+              { dim: '18-25岁', rate: 28, pax: 420, color: '#ec4899' },
+              { dim: '26-35岁', rate: 45, pax: 675, color: '#f43f5e' },
+              { dim: '36-45岁', rate: 20, pax: 300, color: '#f97316' },
+              { dim: '46岁+', rate: 7, pax: 105, color: '#94a3b8' },
             ].map(function(a, i) {
               return (
                 <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fce7f3', textAlign: 'center' }}>
                   <div style={{ fontSize: 11, color: '#6b7280' }}>{a.dim}</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: a.color, marginTop: 2 }}>{a.rate}%</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: a.color, marginTop: 2 }}>{a.rate}%</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af' }}>{a.pax}人参与</div>
                   <div style={{ marginTop: 4, height: 6, borderRadius: 3, background: '#fce7f3', overflow: 'hidden' }}>
                     <div style={{ width: a.rate + '%', height: '100%', borderRadius: 3, background: a.color }} />
                   </div>
@@ -641,27 +692,42 @@ export default function StorePromotionsPage() {
               );
             })}
           </div>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 10, paddingTop: 10, borderTop: '1px solid #fce7f3' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid #fce7f3' }}>
             {[
-              { dim: '男性参与率', rate: 38, color: '#3b82f6' },
-              { dim: '女性参与率', rate: 62, color: '#ec4899' },
-              { dim: '高消费会员', rate: 52, color: '#7c3aed' },
-              { dim: '中消费会员', rate: 32, color: '#f59e0b' },
-              { dim: '低消费会员', rate: 16, color: '#94a3b8' },
-            ].map(function(p, i) {
+              { dim: '男性', rate: 38, pct: 38, color: '#3b82f6', icon: '♂' },
+              { dim: '女性', rate: 62, pct: 62, color: '#ec4899', icon: '♀' },
+            ].map(function(g, i) {
               return (
-                <div key={i} style={{ flex: '1 1 80px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 11, color: '#6b7280' }}>{p.dim}</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: p.color }}>{p.rate}%</div>
-                  <div style={{ marginTop: 2, height: 4, borderRadius: 2, background: '#fce7f3', overflow: 'hidden' }}>
-                    <div style={{ width: p.rate + '%', height: '100%', borderRadius: 2, background: p.color }} />
+                <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fce7f3', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>{g.icon} 性别: {g.dim}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: g.color }}>{g.rate}%</div>
+                  <div style={{ marginTop: 4, height: 6, borderRadius: 3, background: '#fce7f3', overflow: 'hidden' }}>
+                    <div style={{ width: g.pct + '%', height: '100%', borderRadius: 3, background: g.color }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid #fce7f3' }}>
+            {[
+              { dim: '高消费', rate: 52, pct: 52, pax: 340, color: '#7c3aed' },
+              { dim: '中消费', rate: 32, pct: 32, pax: 210, color: '#f59e0b' },
+              { dim: '低消费', rate: 16, pct: 16, pax: 105, color: '#94a3b8' },
+            ].map(function(c, i) {
+              return (
+                <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fce7f3', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>消费: {c.dim}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: c.color }}>{c.rate}%</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af' }}>{c.pax}人</div>
+                  <div style={{ marginTop: 4, height: 6, borderRadius: 3, background: '#fce7f3', overflow: 'hidden' }}>
+                    <div style={{ width: c.pct + '%', height: '100%', borderRadius: 3, background: c.color }} />
                   </div>
                 </div>
               );
             })}
           </div>
           <div style={{ marginTop: 8, fontSize: 10, color: '#9ca3af', textAlign: 'center' }}>
-            主力参与人群: 26-35岁女性，高消费会员参与率最高
+            主力参与人群: 26-35岁女性，高消费会员参与率{(52).toFixed(0)}%最高
           </div>
         </div>
 

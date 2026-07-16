@@ -550,6 +550,42 @@ export default function DataInsights() {
         </div>
       </div>
 
+      {/* 设备使用率排行 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>⚙️ 设备使用率排行</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {[
+            { name: '跳舞机', icon: '🕺', usage: 85, idle: 10, repair: 5, color: '#06b6d4' },
+            { name: '抓娃娃机', icon: '🧸', usage: 78, idle: 15, repair: 7, color: '#f59e0b' },
+            { name: '模拟赛车', icon: '🏎️', usage: 72, idle: 18, repair: 10, color: '#22c55e' },
+            { name: '音游机', icon: '🎵', usage: 68, idle: 22, repair: 10, color: '#a855f7' },
+            { name: '射击游戏', icon: '🔫', usage: 65, idle: 20, repair: 15, color: '#ef4444' },
+            { name: 'VR体验', icon: '🥽', usage: 60, idle: 25, repair: 15, color: '#3b82f6' },
+            { name: '台球桌', icon: '🎱', usage: 55, idle: 30, repair: 15, color: '#f97316' },
+          ].map(function(d, i) {
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 6, background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.1)', fontSize: 12 }}>
+                <span style={{ fontSize: 14, minWidth: 22 }}>{d.icon}</span>
+                <span style={{ fontWeight: 600, color: '#e2e8f0', width: 80 }}>{d.name}</span>
+                <div style={{ flex: 1, display: 'flex', gap: 2, height: 12, borderRadius: 4, overflow: 'hidden', background: '#1e293b' }}>
+                  <div style={{ width: d.usage + '%', background: d.color, height: '100%' }} title="使用率" />
+                  <div style={{ width: d.idle + '%', background: '#475569', height: '100%' }} title="空闲率" />
+                  <div style={{ width: d.repair + '%', background: '#dc2626', height: '100%' }} title="维修率" />
+                </div>
+                <span style={{ fontSize: 10, color: '#06b6d4', minWidth: 32, textAlign: 'right' }}>{d.usage}%</span>
+                <span style={{ fontSize: 10, color: '#94a3b8', minWidth: 32, textAlign: 'right' }}>{d.idle}%</span>
+                <span style={{ fontSize: 10, color: '#f87171', minWidth: 32, textAlign: 'right' }}>{d.repair}%</span>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: 8, display: 'flex', gap: 16, justifyContent: 'center', fontSize: 10, color: '#94a3b8' }}>
+          <span style={{ color: '#06b6d4' }}>■ 使用率</span>
+          <span style={{ color: '#475569' }}>■ 空闲率</span>
+          <span style={{ color: '#f87171' }}>■ 维修率</span>
+        </div>
+      </div>
+
       {/* 会员活跃时段分布 */}
       <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
         <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>⏰ 会员活跃时段分布</h3>
@@ -701,6 +737,41 @@ export default function DataInsights() {
           💡 <span style={{ color: '#fbbf24' }}>唤醒建议</span>: 30天沉睡发送提醒 → 60天沉睡发放优惠券 → 90天沉睡电话回访
           · 可唤醒会员 <span style={{ color: '#34d399', fontWeight: 600 }}>{68 + 45}人</span> (占比 {22 + 14}%)
           · 总沉睡会员 <span style={{ color: '#f87171', fontWeight: 600 }}>{68 + 45 + 32}人</span>
+        </div>
+      </div>
+
+      {/* 会员生命周期阶段分析 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>🔄 会员生命周期阶段分析</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+          {[
+            { stage: '新客', count: 85, pct: 27, color: '#60a5fa', icon: '🆕', avgDays: '<7天', desc: '首次到店≤7天', action: '推送欢迎礼包+首充优惠' },
+            { stage: '活跃', count: 128, pct: 41, color: '#34d399', icon: '🔥', avgDays: '7-30天', desc: '近30天有到店', action: '定期推送新游+积分翻倍' },
+            { stage: '沉默', count: 58, pct: 18, color: '#fbbf24', icon: '💤', avgDays: '31-60天', desc: '31-60天未到店', action: '推送召回优惠+发短信提醒' },
+            { stage: '流失', count: 44, pct: 14, color: '#f87171', icon: '🚪', avgDays: '>60天', desc: '>60天未到店', action: '电话回访+大额优惠券刺激' },
+          ].map(function(s, i) {
+            return (
+              <div key={i} style={{ padding: 14, borderRadius: 8, background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.1)', textAlign: 'center' }}>
+                <div style={{ fontSize: 26 }}>{s.icon}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', marginTop: 4 }}>{s.stage}</div>
+                <div style={{ fontSize: 26, fontWeight: 700, color: s.color, marginTop: 2 }}>{s.count}<span style={{ fontSize: 13, fontWeight: 400, color: '#64748b' }}>人</span></div>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>占比 {s.pct}%</div>
+                <div style={{ marginTop: 6, height: 8, borderRadius: 4, background: 'rgba(148,163,184,0.12)', overflow: 'hidden' }}>
+                  <div style={{ width: s.pct * 2.5 + '%', height: '100%', borderRadius: 4, background: s.color, opacity: 0.7 }} />
+                </div>
+                <div style={{ fontSize: 10, color: '#64748b', marginTop: 6 }}>{s.avgDays} · {s.desc}</div>
+                <div style={{ marginTop: 6, padding: '4px 8px', borderRadius: 6, background: 'rgba(148,163,184,0.08)', fontSize: 10, color: '#94a3b8' }}>
+                  💡 {s.action}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'rgba(148,163,184,0.06)', fontSize: 11, color: '#94a3b8', display: 'flex', justifyContent: 'space-between' }}>
+          <span>总会员: {85 + 128 + 58 + 44}人</span>
+          <span>活跃率: {Math.round(128 / (85 + 128 + 58 + 44) * 100)}%</span>
+          <span>健康度: <span style={{ color: (128 / (85 + 128 + 58 + 44)) > 0.35 ? '#34d399' : '#fbbf24', fontWeight: 600 }}>{(128 / (85 + 128 + 58 + 44) * 100).toFixed(0)}%</span></span>
+          <span>沉默+流失: <span style={{ color: '#f87171', fontWeight: 600 }}>{58 + 44}人 ({Math.round((58 + 44) / (85 + 128 + 58 + 44) * 100)}%)</span></span>
         </div>
       </div>
 

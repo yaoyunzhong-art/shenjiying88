@@ -477,6 +477,56 @@ export default function FeedbackPage() {
               <span>待处理 {records.filter(r => r.status === 'pending' || r.status === 'processing').length} 条</span>
             </div>
 
+            {/* 各门店反馈处理排名 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#166534' }}>🏪 各门店反馈处理排名</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {[
+                  { store: '北京朝阳店', total: 28, resolved: 26, rate: 92.9, avgTime: '2.1h', color: '#22c55e' },
+                  { store: '上海浦东店', total: 35, resolved: 31, rate: 88.6, avgTime: '2.8h', color: '#16a34a' },
+                  { store: '广州天河店', total: 22, resolved: 19, rate: 86.4, avgTime: '3.2h', color: '#65a30d' },
+                  { store: '深圳南山店', total: 18, resolved: 15, rate: 83.3, avgTime: '3.5h', color: '#84cc16' },
+                    { store: '成都锦江店', total: 15, resolved: 12, rate: 80.0, avgTime: '4.0h', color: '#a3e635' },
+                  { store: '杭州西湖店', total: 12, resolved: 10, rate: 83.3, avgTime: '3.8h', color: '#bef264' },
+                ].map(function(st, i) {
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #bbf7d0', fontSize: 12 }}>
+                      <span style={{ fontWeight: 700, color: i < 3 ? '#166534' : '#6b7280', minWidth: 20 }}>#{i + 1}</span>
+                      <span style={{ fontWeight: 600, color: '#166534', width: 80 }}>{st.store}</span>
+                      <span style={{ fontSize: 10, color: '#374151', minWidth: 56, textAlign: 'center' }}>共 {st.total}条</span>
+                      <span style={{ fontSize: 10, color: '#16a34a', minWidth: 56, textAlign: 'center' }}>已处理 {st.resolved}条</span>
+                      <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#e5e7eb', overflow: 'hidden' }}>
+                        <div style={{ width: st.rate + '%', height: '100%', borderRadius: 4, background: st.color }} />
+                      </div>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#166534', minWidth: 36, textAlign: 'right' }}>{st.rate}%</span>
+                      <span style={{ fontSize: 10, color: '#6b7280', minWidth: 40, textAlign: 'right' }}>⏱{st.avgTime}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 10, color: '#15803d', textAlign: 'center' }}>
+                📊 全部门店平均处理率 {(92.9 + 88.6 + 86.4 + 83.3 + 80).toFixed(1)}% · TOP1店奖励月度绩效
+              </div>
+              <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4, fontSize: 10 }}>
+                <div style={{ padding: '4px 6px', borderRadius: 4, background: '#fff', border: '1px solid #d1fae5', textAlign: 'center' }}>
+                  <div style={{ fontWeight: 600, color: '#166534' }}>最高处理率</div>
+                  <span style={{ color: '#059669' }}>北京朝阳 92.9%</span>
+                </div>
+                <div style={{ padding: '4px 6px', borderRadius: 4, background: '#fff', border: '1px solid #d1fae5', textAlign: 'center' }}>
+                  <div style={{ fontWeight: 600, color: '#166534' }}>反馈最多</div>
+                  <span style={{ color: '#d97706' }}>上海浦东 35条</span>
+                </div>
+                <div style={{ padding: '4px 6px', borderRadius: 4, background: '#fff', border: '1px solid #d1fae5', textAlign: 'center' }}>
+                  <div style={{ fontWeight: 600, color: '#166534' }}>响应最快</div>
+                  <span style={{ color: '#06b6d4' }}>北京朝阳 2.1h</span>
+                </div>
+                <div style={{ padding: '4px 6px', borderRadius: 4, background: '#fff', border: '1px solid #d1fae5', textAlign: 'center' }}>
+                  <div style={{ fontWeight: 600, color: '#166534' }}>待处理最多</div>
+                  <span style={{ color: '#dc2626' }}>成都锦江 3条</span>
+                </div>
+              </div>
+            </div>
+
             {/* 反馈分类统计 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
               <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>📊 反馈分类统计</h3>
@@ -524,6 +574,63 @@ export default function FeedbackPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* 反馈处理部门响应热度 — 各门店处理量排名 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0fdfa', border: '1px solid #99f6e4' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0f766e' }}>🏪 反馈处理部门响应热度 (各门店处理量排名)</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {[
+                  { store: '北京朝阳店', dept: '运营部', resolved: 86, pending: 3, avgTime: '1.2h', total: 89, heat: 96.6, color: '#14b8a6', rank: '🥇' },
+                  { store: '上海浦东店', dept: '客服部', resolved: 72, pending: 5, avgTime: '2.0h', total: 77, heat: 93.5, color: '#0d9488', rank: '🥈' },
+                  { store: '广州天河店', dept: '运营部', resolved: 58, pending: 8, avgTime: '2.8h', total: 66, heat: 87.9, color: '#2dd4bf', rank: '🥉' },
+                  { store: '深圳南山店', dept: '客服部', resolved: 45, pending: 12, avgTime: '3.5h', total: 57, heat: 78.9, color: '#5eead4', rank: '⭐' },
+                  { store: '成都锦江店', dept: '运营部', resolved: 38, pending: 10, avgTime: '4.1h', total: 48, heat: 79.2, color: '#99f6e4', rank: '⭐' },
+                ].map(function(st, i) {
+                  var barW = Math.round(st.heat);
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, background: '#fff', border: '1px solid #99f6e4', fontSize: 12 }}>
+                      <span style={{ fontSize: 16, minWidth: 24 }}>{st.rank}</span>
+                      <div style={{ flex: '0 0 90px' }}>
+                        <span style={{ fontWeight: 600, color: '#0f766e' }}>{st.store}</span>
+                        <span style={{ fontSize: 10, color: '#6b7280', marginLeft: 4 }}>({st.dept})</span>
+                      </div>
+                      <div style={{ flex: 1, height: 10, borderRadius: 5, background: '#e5e7eb', overflow: 'hidden' }}>
+                        <div style={{ width: barW + '%', height: '100%', borderRadius: 5, background: st.color }} />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#0f766e', minWidth: 36, textAlign: 'right' }}>{st.heat.toFixed(1)}%</span>
+                      <span style={{ fontSize: 10, color: '#6b7280', minWidth: 42, textAlign: 'right' }}>已处理 {st.resolved}/{st.total}</span>
+                      <span style={{ fontSize: 10, color: '#94a3b8', minWidth: 36, textAlign: 'right' }}>⏱{st.avgTime}</span>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {st.pending > 0 && (
+                          <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: st.pending > 8 ? '#fef2f2' : '#fff7ed', color: st.pending > 8 ? '#dc2626' : '#d97706' }}>
+                            {st.pending}待处理
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                {[
+                  { label: '最高热度', value: '96.6%', detail: '北京朝阳店', color: '#14b8a6' },
+                  { label: '平均处理率', value: Math.round((86 + 72 + 58 + 45 + 38) / (89 + 77 + 66 + 57 + 48) * 100) + '%', detail: '5店加权', color: '#0f766e' },
+                  { label: '最快响应', value: '1.2h', detail: '北京朝阳店', color: '#0d9488' },
+                  { label: '待办总量', value: (3 + 5 + 8 + 12 + 10) + '条', detail: '需跟进处理', color: '#f59e0b' },
+                ].map(function(s, i) {
+                  return (
+                    <div key={i} style={{ textAlign: 'center', padding: '6px 8px', borderRadius: 6, background: '#f9fafb' }}>
+                      <div style={{ fontSize: 10, color: '#6b7280' }}>{s.label}</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: s.color }}>{s.value}</div>
+                      <div style={{ fontSize: 9, color: '#9ca3af' }}>{s.detail}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 10, color: '#0f766e', textAlign: 'center' }}>
+                📊 激励政策: 每月对处理率TOP3门店给予运营奖金 · ⏱响应时效进入目标线奖励绩效
               </div>
             </div>
 
