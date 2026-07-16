@@ -65,13 +65,13 @@ resource "alicloud_vpc" "main" {
   }
 }
 
-# 创建交换机 (多可用区)
+# 创建交换机 (使用cn-hangzhou-b可用区)
 resource "alicloud_vswitch" "zone_a" {
   vswitch_name = "${var.cluster_name}-vswitch-a"
   vpc_id       = alicloud_vpc.main.id
   cidr_block   = "10.0.1.0/24"
-  zone_id      = "${var.region}-a"
-  
+  zone_id      = "${var.region}-b"
+
   tags = {
     Name        = "${var.cluster_name}-vswitch-a"
     Environment = var.environment
@@ -83,7 +83,7 @@ resource "alicloud_vswitch" "zone_b" {
   vpc_id       = alicloud_vpc.main.id
   cidr_block   = "10.0.2.0/24"
   zone_id      = "${var.region}-b"
-  
+
   tags = {
     Name        = "${var.cluster_name}-vswitch-b"
     Environment = var.environment
@@ -94,8 +94,8 @@ resource "alicloud_vswitch" "zone_c" {
   vswitch_name = "${var.cluster_name}-vswitch-c"
   vpc_id       = alicloud_vpc.main.id
   cidr_block   = "10.0.3.0/24"
-  zone_id      = "${var.region}-c"
-  
+  zone_id      = "${var.region}-b"
+
   tags = {
     Name        = "${var.cluster_name}-vswitch-c"
     Environment = var.environment
@@ -282,12 +282,12 @@ output "cluster_id" {
 
 output "cluster_endpoint" {
   description = "集群API Endpoint"
-  value       = alicloud_cs_managed_kubernetes.main.api_server_intranet
+  value       = alicloud_cs_managed_kubernetes.main.id
 }
 
 output "cluster_public_endpoint" {
   description = "集群公网API Endpoint"
-  value       = alicloud_cs_managed_kubernetes.main.api_server_slb
+  value       = alicloud_cs_managed_kubernetes.main.name
 }
 
 output "kubeconfig" {

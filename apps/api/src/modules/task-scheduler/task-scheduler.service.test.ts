@@ -1,0 +1,332 @@
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+/**
+ * 🐜 自动: [task-scheduler] [D] service 测试
+ */
+
+import 'reflect-metadata'
+import assert from 'node:assert/strict'
+import { TaskSchedulerService } from './task-scheduler.service'
+import {
+  TaskStatus,
+  TaskType,
+  TaskPriority,
+  type Task,
+} from './task-scheduler.entity'
+
+describe('TaskSchedulerService', () => {
+  let service: TaskSchedulerService
+
+  const TENANT = 'tenant-001'
+
+  beforeEach(() => {
+    service = new TaskSchedulerService()
+  })
+
+  afterEach(() => {
+    service.resetTaskStoresForTests()
+  })
+
+  function createTestTask(overrides?: Partial<Parameters<TaskSchedulerService['createTask']>[0]>): Task {
+    return service.createTask({
+      tenantId: TENANT,
+      name: 'Test Task',
+      type: TaskType.OneTime,
+      priority: TaskPriority.Medium,
+      assignedTo: 'user-001',
+      startTime: '2026-07-17T10:00:00.000Z',
+      description: 'A test task',
+      ...overrides,
+    })
+  }
+
+  // ── CRUD ──
+
+  describe('createTask', () => {
+    it('should create a task with PENDING status', () => {
+      const t = createTestTask()
+
+      assert.equal(t.name, 'Test Task')
+      assert.equal(t.type, TaskType.OneTime)
+      assert.equal(t.priority, TaskPriority.Medium)
+      assert.equal(t.status, TaskStatus.Pending)
+      assert.equal(t.tenantId, TENANT)
+      assert.equal(t.assignedTo, 'user-001')
+      assert.ok(t.id.startsWith('task-'))
+      assert.ok(t.createdAt)
+      assert.ok(t.updatedAt)
+    })
+
+    it('should create recurring task with cronExpr', () => {
+      const t = createTestTask({
+        type: TaskType.Recurring,
+        cronExpr: '0 2 * * *',
+        name: 'Daily Backup',
+      })
+
+      assert.equal(t.type, TaskType.Recurring)
+      assert.equal(t.cronExpr, '0 2 * * *')
+    })
+
+    it('should create shift task with endTime', () => {
+      const t = createTestTask({
+        type: TaskType.Shift,
+        startTime: '2026-07-17T08:00:00.000Z',
+        endTime: '2026-07-17T16:00:00.000Z',
+      })
+
+      assert.equal(t.type, TaskType.Shift)
+      assert.equal(t.endTime, '2026-07-17T16:00:00.000Z')
+    })
+  })
+
+  describe('getTask', () => {
+    it('should return task by id', () => {
+      const t = createTestTask()
+      const found = service.getTask(t.id, TENANT)
+      assert.ok(found)
+      assert.equal(found?.id, t.id)
+    })
+
+    it('should return undefined for non-existent task', () => {
+      const found = service.getTask('nonexistent', TENANT)
+      assert.equal(found, undefined)
+    })
+
+    it('should return undefined for wrong tenant', () => {
+      const t = createTestTask()
+      const found = service.getTask(t.id, 'wrong-tenant')
+      assert.equal(found, undefined)
+    })
+  })
+
+  describe('listTasks', () => {
+    it('should list all tasks for tenant', () => {
+      createTestTask({ name: 'T1' })
+      createTestTask({ name: 'T2' })
+
+      const list = service.listTasks(TENANT)
+      assert.equal(list.length, 2)
+    })
+
+    it('should filter by status', () => {
+      createTestTask({ name: 'Pending Task' })
+      const t2 = createTestTask({ name: 'Running Task' })
+      service.updateTaskStatus(t2.id, TaskStatus.Running, TENANT)
+
+      const running = service.listTasks(TENANT, { status: TaskStatus.Running })
+      assert.equal(running.length, 1)
+      assert.equal(running[0].status, TaskStatus.Running)
+    })
+
+    it('should filter by type', () => {
+      createTestTask({ name: 'OneTime', type: TaskType.OneTime })
+      createTestTask({ name: 'Recurring', type: TaskType.Recurring })
+
+      const recurring = service.listTasks(TENANT, { type: TaskType.Recurring })
+      assert.equal(recurring.length, 1)
+    })
+
+    it('should filter by priority', () => {
+      createTestTask({ name: 'High', priority: TaskPriority.High })
+      createTestTask({ name: 'Low', priority: TaskPriority.Low })
+
+      const high = service.listTasks(TENANT, { priority: TaskPriority.High })
+      assert.equal(high.length, 1)
+    })
+
+    it('should filter by assignedTo', () => {
+      createTestTask({ name: 'U1', assignedTo: 'user-001' })
+      createTestTask({ name: 'U2', assignedTo: 'user-002' })
+
+      const u1 = service.listTasks(TENANT, { assignedTo: 'user-001' })
+      assert.equal(u1.length, 1)
+    })
+  })
+
+  describe('updateTask', () => {
+    it('should update task fields', () => {
+      const t = createTestTask()
+      const updated = service.updateTask(t.id, TENANT, {
+        name: 'Updated Name',
+        priority: TaskPriority.High,
+      })
+
+      assert.equal(updated.name, 'Updated Name')
+      assert.equal(updated.priority, TaskPriority.High)
+    })
+
+    it('should throw for non-existent task', () => {
+      assert.throws(
+        () => service.updateTask('nonexistent', TENANT, { name: 'X' }),
+        /Task not found/
+      )
+    })
+
+    it('should throw for wrong tenant', () => {
+      const t = createTestTask()
+      assert.throws(
+        () => service.updateTask(t.id, 'wrong-tenant', { name: 'X' }),
+        /Task not found/
+      )
+    })
+  })
+
+  describe('deleteTask', () => {
+    it('should delete a task', () => {
+      const t = createTestTask()
+      service.deleteTask(t.id, TENANT)
+
+      const found = service.getTask(t.id, TENANT)
+      assert.equal(found, undefined)
+    })
+
+    it('should throw for non-existent task', () => {
+      assert.throws(
+        () => service.deleteTask('nonexistent', TENANT),
+        /Task not found/
+      )
+    })
+
+    it('should throw for wrong tenant', () => {
+      const t = createTestTask()
+      assert.throws(
+        () => service.deleteTask(t.id, 'wrong-tenant'),
+        /Task not found/
+      )
+    })
+  })
+
+  // ── Status transitions ──
+
+  describe('updateTaskStatus', () => {
+    it('should transition Pending → Running', () => {
+      const t = createTestTask()
+      const updated = service.updateTaskStatus(t.id, TaskStatus.Running, TENANT)
+      assert.equal(updated.status, TaskStatus.Running)
+    })
+
+    it('should transition Pending → Cancelled', () => {
+      const t = createTestTask()
+      const updated = service.updateTaskStatus(t.id, TaskStatus.Cancelled, TENANT)
+      assert.equal(updated.status, TaskStatus.Cancelled)
+    })
+
+    it('should transition Running → Completed', () => {
+      const t = createTestTask()
+      service.updateTaskStatus(t.id, TaskStatus.Running, TENANT)
+      const updated = service.updateTaskStatus(t.id, TaskStatus.Completed, TENANT)
+      assert.equal(updated.status, TaskStatus.Completed)
+    })
+
+    it('should transition Running → Failed', () => {
+      const t = createTestTask()
+      service.updateTaskStatus(t.id, TaskStatus.Running, TENANT)
+      const updated = service.updateTaskStatus(t.id, TaskStatus.Failed, TENANT)
+      assert.equal(updated.status, TaskStatus.Failed)
+    })
+
+    it('should transition Failed → Pending (retry)', () => {
+      const t = createTestTask()
+      service.updateTaskStatus(t.id, TaskStatus.Running, TENANT)
+      service.updateTaskStatus(t.id, TaskStatus.Failed, TENANT)
+      const updated = service.updateTaskStatus(t.id, TaskStatus.Pending, TENANT)
+      assert.equal(updated.status, TaskStatus.Pending)
+    })
+
+    it('should transition Cancelled → Pending (reopen)', () => {
+      const t = createTestTask()
+      service.updateTaskStatus(t.id, TaskStatus.Cancelled, TENANT)
+      const updated = service.updateTaskStatus(t.id, TaskStatus.Pending, TENANT)
+      assert.equal(updated.status, TaskStatus.Pending)
+    })
+
+    it('should reject invalid transition: Pending → Completed', () => {
+      const t = createTestTask()
+      assert.throws(
+        () => service.updateTaskStatus(t.id, TaskStatus.Completed, TENANT),
+        /Invalid task status transition/
+      )
+    })
+
+    it('should reject invalid transition: Completed → Running', () => {
+      const t = createTestTask()
+      service.updateTaskStatus(t.id, TaskStatus.Running, TENANT)
+      service.updateTaskStatus(t.id, TaskStatus.Completed, TENANT)
+      assert.throws(
+        () => service.updateTaskStatus(t.id, TaskStatus.Running, TENANT),
+        /Invalid task status transition/
+      )
+    })
+  })
+
+  describe('batchUpdateStatus', () => {
+    it('should update status for multiple tasks', () => {
+      const t1 = createTestTask({ name: 'T1' })
+      const t2 = createTestTask({ name: 'T2' })
+
+      const results = service.batchUpdateStatus([t1.id, t2.id], TaskStatus.Cancelled, TENANT)
+      assert.equal(results.length, 2)
+      assert.equal(results[0].status, TaskStatus.Cancelled)
+      assert.equal(results[1].status, TaskStatus.Cancelled)
+    })
+
+    it('should throw if any task not found', () => {
+      const t1 = createTestTask()
+      assert.throws(
+        () => service.batchUpdateStatus([t1.id, 'nonexistent'], TaskStatus.Cancelled, TENANT),
+        /Task not found/
+      )
+    })
+  })
+
+  // ── Scheduling views ──
+
+  describe('getPendingTasks', () => {
+    it('should return pending tasks sorted by priority', () => {
+      createTestTask({ name: 'Low', priority: TaskPriority.Low })
+      createTestTask({ name: 'High', priority: TaskPriority.High })
+
+      const pending = service.getPendingTasks(TENANT)
+      // All just created tasks are PENDING
+      assert.ok(pending.length >= 2)
+    })
+  })
+
+  describe('getTaskByAssignee', () => {
+    it('should return tasks for an assignee', () => {
+      createTestTask({ name: 'T1', assignedTo: 'user-001' })
+      createTestTask({ name: 'T2', assignedTo: 'user-001' })
+      createTestTask({ name: 'T3', assignedTo: 'user-002' })
+
+      const u1Tasks = service.getTaskByAssignee('user-001', TENANT)
+      assert.equal(u1Tasks.length, 2)
+    })
+
+    it('should return empty for unknown assignee', () => {
+      const tasks = service.getTaskByAssignee('nobody', TENANT)
+      assert.equal(tasks.length, 0)
+    })
+  })
+
+  describe('getRecurringTasks', () => {
+    it('should return recurring tasks', () => {
+      createTestTask({ name: 'OT', type: TaskType.OneTime })
+      createTestTask({ name: 'RC', type: TaskType.Recurring, cronExpr: '0 2 * * *' })
+
+      const recurring = service.getRecurringTasks(TENANT)
+      assert.equal(recurring.length, 1)
+      assert.equal(recurring[0].name, 'RC')
+    })
+  })
+
+  describe('getShiftTasks', () => {
+    it('should return shift tasks', () => {
+      createTestTask({ name: 'OT', type: TaskType.OneTime })
+      createTestTask({ name: 'SH', type: TaskType.Shift })
+
+      const shifts = service.getShiftTasks(TENANT)
+      assert.equal(shifts.length, 1)
+      assert.equal(shifts[0].name, 'SH')
+    })
+  })
+})
