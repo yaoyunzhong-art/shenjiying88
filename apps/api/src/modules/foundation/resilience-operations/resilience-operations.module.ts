@@ -19,9 +19,28 @@ import { HeterogeneousChannelRouter } from './heterogeneous-router'
   controllers: [ResilienceOperationsController],
   providers: [
     ResilienceOperationsService,
-    CircuitBreaker,
-    TokenBucket,
-    HeterogeneousChannelRouter
+    {
+      provide: CircuitBreaker,
+      useFactory: () =>
+        new CircuitBreaker({
+          name: 'resilience-operations',
+        }),
+    },
+    {
+      provide: TokenBucket,
+      useFactory: () =>
+        new TokenBucket({
+          name: 'resilience-operations',
+        }),
+    },
+    {
+      provide: HeterogeneousChannelRouter,
+      useFactory: () =>
+        new HeterogeneousChannelRouter({
+          strategy: 'round_robin',
+          channels: [],
+        }),
+    }
   ],
   exports: [
     ResilienceOperationsService,

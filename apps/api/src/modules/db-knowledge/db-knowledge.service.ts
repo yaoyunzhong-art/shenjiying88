@@ -169,14 +169,10 @@ export class DbKnowledgeService {
       path.join(__dirname, '../../database/migrations/20260711_create_knowledge_tables.sql'),
       'utf-8'
     )
-    // 按语句拆分执行(不包括空行和注释)
-    const statements = sql
-      .split(';')
-      .map(s => s.trim())
-      .filter(s => s && !s.startsWith('--'))
+    const statements = this.splitSqlStatements(sql)
     for (const stmt of statements) {
       try {
-        await this.pool!.query(stmt + ';')
+        await this.pool!.query(stmt)
       } catch (e: any) {
         // 忽略 "already exists" 错误
         if (!e.message?.includes('already exists')) {
@@ -185,6 +181,61 @@ export class DbKnowledgeService {
       }
     }
     console.log('[DbKnowledgeService] ✅ Migration applied')
+  }
+
+  /**
+   * 按 SQL 语句拆分，保留 $$...$$ / $tag$...$tag$ 内部的分号。
+   */
+  private splitSqlStatements(sql: string): string[] {
+    const statements: string[] = []
+    let current = ''
+    let dollarQuoteTag: string | null = null
+
+    for (let i = 0; i < sql.length; i++) {
+      const char = sql[i]
+
+      if (char === '$') {
+        const rest = sql.slice(i)
+        const match = rest.match(/^\$[A-Za-z0-9_]*\$/)
+        if (match) {
+          const tag = match[0]
+          current += tag
+          i += tag.length - 1
+          if (dollarQuoteTag === tag) {
+            dollarQuoteTag = null
+          } else if (dollarQuoteTag === null) {
+            dollarQuoteTag = tag
+          }
+          continue
+        }
+      }
+
+      if (char === ';' && dollarQuoteTag === null) {
+        const statement = current
+          .split('\n')
+          .filter(line => !line.trim().startsWith('--'))
+          .join('\n')
+          .trim()
+        if (statement) {
+          statements.push(statement + ';')
+        }
+        current = ''
+        continue
+      }
+
+      current += char
+    }
+
+    const trailing = current
+      .split('\n')
+      .filter(line => !line.trim().startsWith('--'))
+      .join('\n')
+      .trim()
+    if (trailing) {
+      statements.push(trailing.endsWith(';') ? trailing : trailing + ';')
+    }
+
+    return statements
   }
 
   /** 全文搜索 */

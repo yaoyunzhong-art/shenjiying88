@@ -11,6 +11,7 @@ import { envValidation, getEnv } from './config/env.validation';
 import { CacheModule } from './infrastructure/cache/cache.module';
 import { EventBusModule } from './infrastructure/event-bus/event-bus.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
+import { TypeOrmCompatModule } from './infrastructure/typeorm/typeorm-compat.module';
 import { BootstrapModule } from './modules/bootstrap/bootstrap.module';
 import { CashierModule } from './modules/cashier/cashier.module';
 import { CrossModuleModule } from './modules/cross-module/cross-module.module';
@@ -175,6 +176,7 @@ import { CustomerSatisfactionModule } from './modules/customer-satisfaction/cust
     }),
     CacheModule.forRootInMemory(),
     EventBusModule.forRootInMemory(),
+    ...(process.env.NODE_ENV === 'production' ? [] : [TypeOrmCompatModule]),
     PrismaModule,
     TenantModule,
     BootstrapModule,

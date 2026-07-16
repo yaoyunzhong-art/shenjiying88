@@ -64,8 +64,26 @@ import { CommercialBillingModule } from '../foundation/commercial-billing/commer
     CashierEventEmitter,  // Phase-35 T164: SSE 事件总线
     PaymentChannelRegistry,  // P0-2.5: 多租户通道注册表
     PaymentChannelBootstrap,  // P0-2.5: 启动时注册 Mock 通道
-    CashierToLytBridge,  // P1-1.2: cashier → LYT
-    LytToCashierBridge  // P1-1.3: LYT → cashier
+    {
+      provide: CashierToLytBridge,
+      useFactory: () =>
+        new CashierToLytBridge(
+          {
+            resolveLytAdapter: () => null as never,
+          },
+        ),
+    },  // P1-1.2: cashier → LYT
+    {
+      provide: LytToCashierBridge,
+      useFactory: () =>
+        new LytToCashierBridge(
+          {
+            syncMemberProfile: async () => ({ updated: false }),
+            syncExternalOrder: async () => ({ cashierOrderId: '' }),
+            recordGatePass: async () => ({ recorded: false }),
+          },
+        ),
+    }  // P1-1.3: LYT → cashier
   ],
   exports: [
     CashierService,

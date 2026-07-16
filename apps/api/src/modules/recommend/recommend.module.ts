@@ -44,16 +44,31 @@ import { OfflineEvaluationService } from './offline-evaluation.service'
     ProductAdapter,
     PurchaseHistoryAdapter,
     MemberPreferenceAdapter,
-    // 策略
-    ItemCFStrategy,
-    UserCFStrategy,
-    PopularStrategy,
-    RecentlyViewedStrategy,
-    PersonalizedStrategy,
     // V18 D3: CF 增强
     SimilarityMatrixService,
     TimeDecayService,
     ImplicitFeedbackService,
+    // 策略
+    {
+      provide: ItemCFStrategy,
+      useFactory: (
+        similarityMatrix: SimilarityMatrixService,
+        timeDecay: TimeDecayService,
+        implicitFeedback: ImplicitFeedbackService,
+      ) => new ItemCFStrategy(similarityMatrix, timeDecay, implicitFeedback),
+      inject: [SimilarityMatrixService, TimeDecayService, ImplicitFeedbackService],
+    },
+    {
+      provide: UserCFStrategy,
+      useFactory: (
+        similarityMatrix: SimilarityMatrixService,
+        timeDecay: TimeDecayService,
+      ) => new UserCFStrategy(similarityMatrix, timeDecay),
+      inject: [SimilarityMatrixService, TimeDecayService],
+    },
+    PopularStrategy,
+    RecentlyViewedStrategy,
+    PersonalizedStrategy,
     // V18 D3: 离线评估
     OfflineEvaluationService,
     // 主引擎

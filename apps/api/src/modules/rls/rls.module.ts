@@ -8,13 +8,20 @@
 
 import { Module } from '@nestjs/common'
 import { PrismaModule } from '../../prisma/prisma.module'
+import { PrismaService } from '../../prisma/prisma.service'
 import { RlsController } from './rls.controller'
 import { RlsService } from './rls.helper'
 
 @Module({
   imports: [PrismaModule],
   controllers: [RlsController],
-  providers: [RlsService],
+  providers: [
+    {
+      provide: RlsService,
+      useFactory: (prisma: PrismaService) => new RlsService(prisma),
+      inject: [PrismaService],
+    },
+  ],
   exports: [RlsService],
 })
 export class RlsModule {}

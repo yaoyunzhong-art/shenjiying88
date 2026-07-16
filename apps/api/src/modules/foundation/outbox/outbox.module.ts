@@ -20,8 +20,17 @@ import { OutboxReplayService } from './outbox-replay.service'
 @Module({
   providers: [
     InMemoryOutboxStore,
-    OutboxRelay,
-    OutboxReplayService
+    {
+      provide: OutboxRelay,
+      useFactory: (store: InMemoryOutboxStore) => new OutboxRelay(store, {}),
+      inject: [InMemoryOutboxStore],
+    },
+    {
+      provide: OutboxReplayService,
+      useFactory: (store: InMemoryOutboxStore, relay: OutboxRelay) =>
+        new OutboxReplayService(store, relay),
+      inject: [InMemoryOutboxStore, OutboxRelay],
+    }
   ],
   exports: [
     InMemoryOutboxStore,

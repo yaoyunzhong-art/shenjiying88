@@ -22,6 +22,7 @@ import { ConfigModule } from '@nestjs/config'
 import { llmConfig } from './llm/llm.config'
 import {
   ClaudeProvider,
+  DeepSeekProvider,
   OpenAIProvider,
   LLMProviderFactory,
 } from './llm/llm.provider'
@@ -43,6 +44,7 @@ export * from './ai-review.service'
   controllers: [AIReviewController],
   providers: [
     ClaudeProvider,
+    DeepSeekProvider,
     OpenAIProvider,
     LLMProviderFactory,
     CostTrackerService,
@@ -50,6 +52,7 @@ export * from './ai-review.service'
   ],
   exports: [
     ClaudeProvider,
+    DeepSeekProvider,
     OpenAIProvider,
     LLMProviderFactory,
     CostTrackerService,

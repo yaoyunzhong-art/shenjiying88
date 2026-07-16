@@ -9,6 +9,7 @@
 
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { NotificationModule } from '../notification/notification.module'
 import { LicenseRenewalController } from './license-renewal.controller'
 import { LicenseRenewalService } from './license-renewal.service'
 import { LicenseRenewalJob } from './license-renewal.job'
@@ -17,6 +18,7 @@ import { RenewalNotification } from './entities/renewal-notification.entity'
 
 @Module({
   imports: [
+    NotificationModule,
     TypeOrmModule.forFeature([LicenseRenewalRecord, RenewalNotification]),
   ],
   controllers: [LicenseRenewalController],

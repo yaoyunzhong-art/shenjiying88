@@ -16,6 +16,9 @@ import { CostAnalysisService, CashFlowService } from './finance-cost-cash-flow.s
 import { FinanceSettlementCron } from './finance-settlement.cron'
 import { FinanceSettlementController } from './finance-settlement.controller'
 import { FinanceHealthDashboardController } from './finance-health-dashboard.controller'
+import type { PaymentMethod } from '@m5/types'
+import type { ReconciliationAdapter } from './reconciliation/reconciliation.port'
+import type { ReconciliationServiceDeps } from './reconciliation'
 
 /**
  * FinanceModule · 财务模块
@@ -48,13 +51,54 @@ import { FinanceHealthDashboardController } from './finance-health-dashboard.con
     BrandPAndLService,
     CostAnalysisService,
     CashFlowService,
-    ReconService,
+    {
+      provide: WeChatReconciliationAdapter,
+      useFactory: () =>
+        new WeChatReconciliationAdapter({
+          baseUrl: process.env.WECHAT_RECON_BASE_URL ?? 'https://api.mch.weixin.qq.com',
+          signingSecret: process.env.WECHAT_RECON_SIGNING_SECRET ?? 'dev-wechat-recon-secret'
+        }),
+    },
+    {
+      provide: AlipayReconciliationAdapter,
+      useFactory: () =>
+        new AlipayReconciliationAdapter({
+          baseUrl: process.env.ALIPAY_RECON_BASE_URL ?? 'https://openapi.alipay.com',
+          appId: process.env.ALIPAY_APP_ID ?? 'dev-alipay-app-id',
+          privateKey: process.env.ALIPAY_PRIVATE_KEY ?? 'dev-alipay-private-key'
+        }),
+    },
+    {
+      provide: ReconService,
+      useFactory: (
+        wechatAdapter: WeChatReconciliationAdapter,
+        alipayAdapter: AlipayReconciliationAdapter
+      ) => {
+        // Finance T+1 reconciliation wiring is incomplete in this repo.
+        // Use an empty payment source so the app can boot in local dev, while
+        // still keeping the reconciliation service callable.
+        const deps: ReconciliationServiceDeps = {
+          async listPaymentsByDate() {
+            return []
+          }
+        }
+        const adapters = new Map<PaymentMethod, ReconciliationAdapter>([
+          ['WECHAT', wechatAdapter],
+          ['ALIPAY', alipayAdapter],
+        ])
+        return new ReconService(deps, adapters)
+      },
+      inject: [WeChatReconciliationAdapter, AlipayReconciliationAdapter],
+    },
     ReconciliationService,
-    ReconciliationCron,
+    {
+      provide: ReconciliationCron,
+      useFactory: (reconciliationService: ReconService) =>
+        new ReconciliationCron(reconciliationService, () => []),
+      inject: [ReconService],
+    },
     FinanceReconciliationReportService,
     FinanceSettlementCron,
-    WeChatReconciliationAdapter,
-    AlipayReconciliationAdapter
   ],
   exports: [
     FinanceService,
