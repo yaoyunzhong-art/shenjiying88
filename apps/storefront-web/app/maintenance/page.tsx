@@ -544,6 +544,54 @@ export default function MaintenancePage() {
         {/* 快速统计底部 */}
         <div style={{ marginTop: 20, padding: '12px 18px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 11, color: '#6b7280', display: 'flex', gap: 16, justifyContent: 'space-between' }}>
 
+        {/* 维护工程师能力评分 */}
+        <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#166534' }}>👨‍🔧 维护工程师能力评分</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {[
+              { name: '李明', title: '高级工程师', completed: 48, avgTime: '1.2h', praise: 98, color: '#22c55e' },
+              { name: '王飞', title: '工程师', completed: 36, avgTime: '1.5h', praise: 94, color: '#16a34a' },
+              { name: '张浩', title: '高级工程师', completed: 42, avgTime: '1.3h', praise: 96, color: '#15803d' },
+              { name: '刘洋', title: '工程师', completed: 29, avgTime: '1.8h', praise: 91, color: '#65a30d' },
+              { name: '陈磊', title: '初级工程师', completed: 22, avgTime: '2.1h', praise: 87, color: '#84cc16' },
+            ].map(function(e, i) {
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #bbf7d0', fontSize: 12 }}>
+                  <span style={{ fontWeight: 600, color: '#166534', width: 56 }}>{e.name}</span>
+                  <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: '#f0fdf4', color: '#15803d', minWidth: 72 }}>{e.title}</span>
+                  <span style={{ fontSize: 10, color: '#374151', minWidth: 70, textAlign: 'center' }}>完成 {e.completed}单</span>
+                  <span style={{ fontSize: 10, color: '#6b7280', minWidth: 56, textAlign: 'center' }}>⏱ {e.avgTime}/单</span>
+                  <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
+                    <div style={{ width: e.praise + '%', height: '100%', borderRadius: 3, background: e.color }} />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#166534', minWidth: 40, textAlign: 'right' }}>{e.praise}%</span>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 10, color: '#15803d', textAlign: 'center' }}>
+            📊 团队平均好评率 {(94).toFixed(1)}% · 人均完成工单 {((48+36+42+29+22)/5).toFixed(0)}单
+          </div>
+          <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4, fontSize: 10 }}>
+            <div style={{ padding: '4px 6px', borderRadius: 4, background: '#f0fdf4', border: '1px solid #d1fae5', textAlign: 'center' }}>
+              <div style={{ fontWeight: 600, color: '#166534' }}>最佳工程师</div>
+              <span style={{ color: '#059669' }}>李明 98%</span>
+            </div>
+            <div style={{ padding: '4px 6px', borderRadius: 4, background: '#f0fdf4', border: '1px solid #d1fae5', textAlign: 'center' }}>
+              <div style={{ fontWeight: 600, color: '#166534' }}>最多工单</div>
+              <span style={{ color: '#16a34a' }}>李明 48单</span>
+            </div>
+            <div style={{ padding: '4px 6px', borderRadius: 4, background: '#f0fdf4', border: '1px solid #d1fae5', textAlign: 'center' }}>
+              <div style={{ fontWeight: 600, color: '#166534' }}>最快维修</div>
+              <span style={{ color: '#06b6d4' }}>李明 1.2h</span>
+            </div>
+            <div style={{ padding: '4px 6px', borderRadius: 4, background: '#f0fdf4', border: '1px solid #d1fae5', textAlign: 'center' }}>
+              <div style={{ fontWeight: 600, color: '#166534' }}>待提升</div>
+              <span style={{ color: '#d97706' }}>陈磊 87%</span>
+            </div>
+          </div>
+        </div>
+
         {/* 工单按门店分布 */}
         <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
           <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>🏪 各门店工单分布</h3>

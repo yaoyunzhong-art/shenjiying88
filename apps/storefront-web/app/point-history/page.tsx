@@ -525,6 +525,48 @@ export default function PointHistoryPage() {
               </div>
             </div>
 
+            {/* 积分排行榜 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9a3412' }}>🏅 积分排行榜 (本月TOP5)</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {[
+                  { rank: 1, name: '张伟', avatar: '🧑‍💼', tier: '钻石', points: 2850, color: '#f59e0b' },
+                  { rank: 2, name: '李娜', avatar: '👩‍💼', tier: '钻石', points: 2320, color: '#a855f7' },
+                  { rank: 3, name: '王强', avatar: '👨‍🔧', tier: '金卡', points: 1880, color: '#06b6d4' },
+                  { rank: 4, name: '赵敏', avatar: '👩‍🎓', tier: '金卡', points: 1560, color: '#22c55e' },
+                  { rank: 5, name: '陈龙', avatar: '👨‍💻', tier: '银卡', points: 1220, color: '#f97316' },
+                ].map(function(m, i) {
+                  var medal = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'][i];
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #fed7aa' }}>
+                      <span style={{ fontSize: 16, minWidth: 24 }}>{medal}</span>
+                      <span style={{ fontSize: 14 }}>{m.avatar}</span>
+                      <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#374151' }}>{m.name}</span>
+                      <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: m.tier === '钻石' ? '#fffbeb' : m.tier === '金卡' ? '#fef9c3' : '#f3f4f6', color: m.tier === '钻石' ? '#b45309' : m.tier === '金卡' ? '#854d0e' : '#6b7280' }}>{m.tier}</span>
+                      <div style={{ flex: '0 0 80px', height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
+                        <div style={{ width: Math.min(100, (m.points / 2850) * 100) + '%', height: '100%', borderRadius: 3, background: m.color }} />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#9a3412', minWidth: 50, textAlign: 'right' }}>{m.points}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 10, color: '#92400e', textAlign: 'center' }}>
+                🏆 本月总排行TOP5 · TOP1额外奖励 <span style={{ fontWeight: 600 }}>500积分</span>
+              </div>
+              <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4, fontSize: 10 }}>
+                <div style={{ padding: '4px 6px', borderRadius: 4, background: '#fffbeb', border: '1px solid #fed7aa', textAlign: 'center' }}>
+                  <span style={{ fontWeight: 600, color: '#9a3412' }}>总积分</span> 9,830
+                </div>
+                <div style={{ padding: '4px 6px', borderRadius: 4, background: '#fffbeb', border: '1px solid #fed7aa', textAlign: 'center' }}>
+                  <span style={{ fontWeight: 600, color: '#9a3412' }}>参与人数</span> 156人
+                </div>
+                <div style={{ padding: '4px 6px', borderRadius: 4, background: '#fffbeb', border: '1px solid #fed7aa', textAlign: 'center' }}>
+                  <span style={{ fontWeight: 600, color: '#9a3412' }}>平均</span> 63分/人
+                </div>
+              </div>
+            </div>
+
             {/* 积分兑换推荐 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#ecfeff', border: '1px solid #a5f3fc' }}>
               <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#0e7490' }}>🎯 热门兑换推荐</h3>

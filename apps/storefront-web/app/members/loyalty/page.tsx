@@ -568,7 +568,75 @@ export default function LoyaltyPage() {
           </>
         )}
       </div>
-    
+
+            {/* 会员等级特权对比 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#166534' }}>🏆 会员等级特权对比</h4>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[
+                  { tier: '普通', icon: '🟤', color: '#cd7f32', benefits: ['基础积分累计', '生日优惠', '免费WiFi'], stars: [3, 1, 3, 1] as const },
+                  { tier: '银卡', icon: '⚪', color: '#c0c0c0', benefits: ['1.2x积分加速', '生日优惠', '优先排队', '每月1张游戏券'], stars: [4, 2, 3, 2] as const },
+                  { tier: '金卡', icon: '🟡', color: '#ffd700', benefits: ['1.5x积分加速', '生日礼包', '优先排队', '专属活动', '每月3张游戏券'], stars: [5, 3, 4, 3] as const },
+                  { tier: '钻石', icon: '💎', color: '#b9f2ff', benefits: ['2x积分加速', '生日大礼包', 'VIP通道', '专属活动', '年度回馈', '1v1客服'], stars: [5, 5, 5, 5] as const },
+                ].map(function(t, i) {
+                  var stars = t.stars as unknown as [number, number, number, number];
+                  return (
+                    <div key={i} style={{ flex: '1 1 120px', padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #bbf7d0' }}>
+                      <div style={{ textAlign: 'center', marginBottom: 6 }}>
+                        <span style={{ fontSize: 18 }}>{t.icon}</span>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: t.color }}>{t.tier}</div>
+                      </div>
+                      <div style={{ borderTop: '1px dashed #bbf7d0', paddingTop: 6 }}>
+                        <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>积分加速</div>
+                        <div style={{ display: 'flex', gap: 1 }}>
+                          {[1,2,3,4,5].map(function(s, j) { return <span key={j} style={{ fontSize: 11, color: j < stars[0] ? '#f59e0b' : '#d1d5db' }}>★</span>; })}
+                        </div>
+                        <div style={{ fontSize: 10, color: '#6b7280', marginTop: 4, marginBottom: 4 }}>生日权益</div>
+                        <div style={{ display: 'flex', gap: 1 }}>
+                          {[1,2,3,4,5].map(function(s, j) { return <span key={j} style={{ fontSize: 11, color: j < stars[1] ? '#f59e0b' : '#d1d5db' }}>★</span>; })}
+                        </div>
+                        <div style={{ fontSize: 10, color: '#6b7280', marginTop: 4, marginBottom: 4 }}>排队优先</div>
+                        <div style={{ display: 'flex', gap: 1 }}>
+                          {[1,2,3,4,5].map(function(s, j) { return <span key={j} style={{ fontSize: 11, color: j < stars[2] ? '#f59e0b' : '#d1d5db' }}>★</span>; })}
+                        </div>
+                        <div style={{ fontSize: 10, color: '#6b7280', marginTop: 4, marginBottom: 4 }}>专属活动</div>
+                        <div style={{ display: 'flex', gap: 1 }}>
+                          {[1,2,3,4,5].map(function(s, j) { return <span key={j} style={{ fontSize: 11, color: j < stars[3] ? '#f59e0b' : '#d1d5db' }}>★</span>; })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 积分游戏化任务 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fdf2f8', border: '1px solid #fbcfe8' }}>
+              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#9d174d' }}>🎮 积分游戏化任务</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {[
+                  { name: '每日签到', icon: '📅', points: 5, bonus: '连续7天+20', limit: '每天1次', done: true },
+                  { name: '连续签到7天', icon: '🔥', points: 20, bonus: '额外奖励', limit: '每7天1次', done: true },
+                  { name: '分享好友', icon: '📤', points: 10, bonus: '对方注册+50', limit: '每天3次', done: false },
+                  { name: '评价晒单', icon: '✍️', points: 20, bonus: '带图+10', limit: '每单1次', done: false },
+                  { name: '推荐新会员', icon: '👥', points: 200, bonus: '首消再+50', limit: '每月10人', done: false },
+                  { name: '参与活动', icon: '🎪', points: 50, bonus: '限时活动', limit: '按活动规则', done: false },
+                ].map(function(t, i) {
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #fbcfe8' }}>
+                      <span style={{ fontSize: 14, width: 24 }}>{t.icon}</span>
+                      <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#374151' }}>{t.name}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#db2777' }}>+{t.points}</span>
+                      <span style={{ fontSize: 10, color: '#9ca3af' }}>{t.bonus}</span>
+                      <span style={{ fontSize: 10, color: '#9ca3af' }}>{t.limit}</span>
+                      <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: t.done ? '#f0fdf4' : '#fef2f2', color: t.done ? '#16a34a' : '#dc2626' }}>
+                        {t.done ? '✓ 已做' : '○ 待做'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* 积分获取渠道分析 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fefce8', border: '1px solid #fde047' }}>
