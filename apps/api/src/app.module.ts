@@ -147,6 +147,9 @@ import { StoreRevenueReportModule } from './modules/store-revenue-report/store-r
 import { MemberSpendingAnalysisModule } from './modules/member-spending-analysis/member-spending-analysis.module';
 import { InventoryAlertModule } from './modules/inventory-alert/inventory-alert.module';
 import { EquipmentFaultReportModule } from './modules/equipment-fault-report/equipment-fault-report.module';
+import { DeviceUsageReportModule } from './modules/device-usage-report/device-usage-report.module';
+import { EmployeePerformanceReviewModule } from './modules/employee-performance-review/employee-performance-review.module';
+import { CustomerSatisfactionModule } from './modules/customer-satisfaction/customer-satisfaction.module';
 
 @Module({
   imports: [
@@ -305,6 +308,9 @@ import { EquipmentFaultReportModule } from './modules/equipment-fault-report/equ
     MemberSpendingAnalysisModule,
     InventoryAlertModule,
     EquipmentFaultReportModule,
+    DeviceUsageReportModule,
+    EmployeePerformanceReviewModule,
+    CustomerSatisfactionModule,
     ModulesModule,
   ],
   providers: [
