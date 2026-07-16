@@ -250,7 +250,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    <<: *healthcheck-base
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/v1/health/ping"]
       interval: 30s
@@ -291,7 +290,6 @@ services:
       API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:3001}
     depends_on:
       - api
-    <<: *healthcheck-base
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3002/"]
       interval: 30s
@@ -332,7 +330,6 @@ services:
       API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:3001}
     depends_on:
       - api
-    <<: *healthcheck-base
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3003/"]
       interval: 30s
@@ -373,7 +370,6 @@ services:
       API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:3001}
     depends_on:
       - api
-    <<: *healthcheck-base
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3011/"]
       interval: 30s

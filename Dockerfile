@@ -71,7 +71,6 @@ COPY packages/config-typescript/   packages/config-typescript/
 COPY apps/api/src                  apps/api/src
 COPY apps/api/tsconfig.json        apps/api/
 COPY apps/api/tsconfig.build.json  apps/api/
-COPY apps/api/nest-cli.json        apps/api/ 2>/dev/null || true
 
 COPY apps/admin-web/               apps/admin-web/
 COPY apps/storefront-web/          apps/storefront-web/

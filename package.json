@@ -21,6 +21,7 @@
     "docker:up:ops": "docker compose -f infra/docker/docker-compose.dev.yml -f infra/docker/docker-compose.ops.yml up -d",
     "docker:down": "docker compose -f infra/docker/docker-compose.dev.yml down",
     "docker:down:ops": "docker compose -f infra/docker/docker-compose.dev.yml -f infra/docker/docker-compose.ops.yml down",
+    "docker:ps": "docker compose -f infra/docker/docker-compose.dev.yml ps",
     "docker:logs": "docker compose -f infra/docker/docker-compose.dev.yml logs -f --tail=100",
 
     "docker:build": "docker compose build --parallel",
@@ -30,8 +31,8 @@
     "docker:build:tob": "docker build --target=tob-prod -t m5-tob:latest .",
     "docker:prod:up": "docker compose -f docker-compose.yml up -d",
     "docker:prod:down": "docker compose -f docker-compose.yml down",
-    "docker:prod:logs": "docker compose -f docker-compose.yml logs -f --tail=100",
     "docker:prod:ps": "docker compose -f docker-compose.yml ps",
+    "docker:prod:logs": "docker compose -f docker-compose.yml logs -f --tail=100",
     "docker:prod:restart": "docker compose -f docker-compose.yml restart",
     "docker:prod:pull": "docker compose -f docker-compose.yml pull",
     "docker:clean": "docker compose -f docker-compose.yml down -v --remove-orphans",

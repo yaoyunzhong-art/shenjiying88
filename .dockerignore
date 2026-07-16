@@ -17,7 +17,6 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .turbo
-turbo.json
 .cache
 .vscode
 .idea
@@ -26,7 +25,6 @@ turbo.json
 *~
 .DS_Store
 docker-compose*.yml
-Dockerfile*
 .dockerignore
 test-results
 playwright-report
