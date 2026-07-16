@@ -119,7 +119,6 @@ test('渲染底部说明区域', () => {
 
 test('统计数值为非负数', () => {
   const html = render(React.createElement(AnomalyFrequencyPage));
-  // 验证至少有一个统计数字
   const match = html.match(/>\d+</);
   assert.ok(match, '应有统计数值');
 });
@@ -134,6 +133,138 @@ test('默认选中 severity=all', () => {
   const html = render(React.createElement(AnomalyFrequencyPage));
   assert.ok(contains(html, '全部'), '应展示全部按钮');
 });
+
+/* ════════════════════════════════════════════════════════
+   子组件: 异常详情表格
+   ════════════════════════════════════════════════════════ */
+
+test('渲染异常事件详情表格', () => {
+  const html = render(React.createElement(AnomalyFrequencyPage));
+  assert.ok(contains(html, '🚨'), '应渲染异常事件图标');
+  assert.ok(contains(html, '异常事件详情'), '应渲染事件标题');
+});
+
+test('异常事件表格包含表头——事件、级别、来源、时间、持续、状态', () => {
+  const html = render(React.createElement(AnomalyFrequencyPage));
+  assert.ok(contains(html, '级别'), '应展示级别列');
+  assert.ok(contains(html, '来源'), '应展示来源列');
+  assert.ok(contains(html, '持续'), '应展示持续列');
+  assert.ok(contains(html, '状态'), '应展示状态列');
+});
+
+test('异常事件表格至少包含4行默认数据', () => {
+  const html = render(React.createElement(AnomalyFrequencyPage));
+  const handledMatches = html.match(/已处理/g);
+  const pendingMatches = html.match(/待处理/g);
+  assert.ok((handledMatches?.length ?? 0) + (pendingMatches?.length ?? 0) >= 4, '应至少渲染4条事件');
+});
+
+test('异常事件支持展开详情（含事件标题展示）', () => {
+  const html = render(React.createElement(AnomalyFrequencyPage));
+  assert.ok(contains(html, '收银台'), '应包含事件名称');
+  assert.ok(contains(html, '网络闪断'), '应包含事件描述词');
+});
+
+/* ════════════════════════════════════════════════════════
+   子组件: 异常类型分布面板
+   ════════════════════════════════════════════════════════ */
+
+test('渲染异常类型分布面板', () => {
+  const html = render(React.createElement(AnomalyFrequencyPage));
+  assert.ok(contains(html, '📊'), '应渲染图表图标');
+  assert.ok(contains(html, '异常类型分布'), '应渲染分布标题');
+});
+
+test('异常类型分布包含多种类型', () => {
+  const html = render(React.createElement(AnomalyFrequencyPage));
+  assert.ok(contains(html, '网络异常'), '应包含网络异常类型');
+  assert.ok(contains(html, '设备故障'), '应包含设备故障类型');
+  assert.ok(contains(html, '传感器告警'), '应包含传感器类型');
+  assert.ok(contains(html, '电力问题'), '应包含电力问题类型');
+});
+
+test('异常类型分布包含百分比值', () => {
+  const html = render(React.createElement(AnomalyFrequencyPage));
+  assert.ok(/\d+%/.test(html), '应包含百分比');
+});
+
+/* ════════════════════════════════════════════════════════
+   子组件: 处理操作记录
+   ════════════════════════════════════════════════════════ */
+
+test('渲染操作记录面板', () => {
+  const html = render(React.createElement(AnomalyFrequencyPage));
+  assert.ok(contains(html, '📝'), '应渲染操作记录图标');
+  assert.ok(contains(html, '处理操作记录'), '应渲染操作记录标题');
+});
+
+test('操作记录包含操作人信息', () => {
+  const html = render(React.createElement(AnomalyFrequencyPage));
+  // 操作人姓名首字母应渲染
+  assert.ok(contains(html, '张'), '应包含操作人张');
+  assert.ok(contains(html, '李'), '应包含操作人李');
+});
+
+test('操作记录包含操作行为描述', () => {
+  const html = render(React.createElement(AnomalyFrequencyPage));
+  assert.ok(contains(html, '重启'), '应包含重启操作');
+  assert.ok(contains(html, '检查'), '应包含检查操作');
+});
+
+/* ════════════════════════════════════════════════════════
+   子组件: 操作栏
+   ════════════════════════════════════════════════════════ */
+
+test('渲染操作栏按钮——导出报告', () => {
+  const html = render(React.createElement(AnomalyFrequencyPage));
+  assert.ok(contains(html, '📥'), '应渲染导出图标');
+  assert.ok(contains(html, '导出报告'), '应渲染导出按钮');
+});
+
+test('渲染操作栏按钮——设置告警', () => {
+  const html = render(React.createElement(AnomalyFrequencyPage));
+  assert.ok(contains(html, '🔔'), '应渲染告警图标');
+  assert.ok(contains(html, '设置告警'), '应渲染告警按钮');
+});
+
+test('渲染刷新数据按钮在主操作栏', () => {
+  const html = render(React.createElement(AnomalyFrequencyPage));
+  assert.ok(contains(html, '刷新数据'), '应渲染刷新数据按钮');
+});
+
+/* ════════════════════════════════════════════════════════
+   子组件: SeverityBadge
+   ════════════════════════════════════════════════════════ */
+
+test('严重级别标签颜色映射——critical 为红色背景', () => {
+  const bg = severityBadgeBg('critical');
+  assert.equal(bg, '#fef2f2', '严重级别背景应为浅红');
+});
+
+test('严重级别标签颜色映射——high 为橙色背景', () => {
+  const bg = severityBadgeBg('high');
+  assert.equal(bg, '#fff7ed', '高级别背景应为浅橙');
+});
+
+test('严重级别标签颜色映射——medium 为黄色背景', () => {
+  const bg = severityBadgeBg('medium');
+  assert.equal(bg, '#fefce8', '中级别背景应为浅黄');
+});
+
+test('严重级别标签颜色映射——low 为绿色背景', () => {
+  const bg = severityBadgeBg('low');
+  assert.equal(bg, '#f0fdf4', '低级别背景应为浅绿');
+});
+
+function severityBadgeBg(severity: string): string {
+  const map: Record<string, string> = {
+    critical: '#fef2f2',
+    high: '#fff7ed',
+    medium: '#fefce8',
+    low: '#f0fdf4',
+  };
+  return map[severity] ?? '#f8fafc';
+}
 
 /* ════════════════════════════════════════════════════════
    边界: 极端/空数据

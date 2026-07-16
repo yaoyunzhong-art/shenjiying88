@@ -64,6 +64,51 @@ export interface BrandPAndLReport {
   }>
 }
 
+// ══════════════════════════════════════════════════════════
+// P-38 100%: 费用分析 + 现金流追踪 扩展类型
+// ══════════════════════════════════════════════════════════
+
+export interface CostCategory {
+  category: string
+  amountCents: number
+  count: number
+  percentage: number
+}
+
+export interface CostAnalysis {
+  period: string
+  totalCostCents: number
+  categories: CostCategory[]
+  /** 环比变化率 (%) */
+  monthOverMonthChange: number
+  /** 去年同期变化率 (%) */
+  yearOverYearChange: number
+}
+
+export interface CashFlowEntry {
+  date: string
+  inflowCents: number
+  outflowCents: number
+  netCents: number
+  balanceCents: number
+}
+
+export interface CashFlowReport {
+  period: string
+  totalInflowCents: number
+  totalOutflowCents: number
+  netFlowCents: number
+  openingBalanceCents: number
+  closingBalanceCents: number
+  dailyFlows: CashFlowEntry[]
+  /** 现金流分类 */// eslint-disable-next-line @typescript-eslint/no-unused-vars
+  categoryBreakdown: Array<{
+    category: string
+    inflowCents: number
+    outflowCents: number
+  }>
+}
+
 export enum TransactionStatus {
   Pending = 'pending',
   Processing = 'processing',

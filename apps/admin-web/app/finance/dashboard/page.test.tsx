@@ -51,6 +51,23 @@ function mockApiResponse(overrides: Record<string, unknown> = {}) {
         matchRate: 96,
       },
     },
+    costAnalysis: {
+      totalCostCents: 580000,
+      categories: [
+        { category: '采购成本', amountCents: 320000, count: 12, percentage: 55.2 },
+        { category: '人力成本', amountCents: 180000, count: 8, percentage: 31.0 },
+        { category: '租金', amountCents: 80000, count: 1, percentage: 13.8 },
+      ],
+      monthOverMonthChange: -2.5,
+      yearOverYearChange: 3.8,
+    },
+    profit: {
+      storeProfit: 450000,
+      storeMargin: 0.18,
+      brandProfit: 890000,
+      brandRevenue: 3160000,
+      brandCost: 2270000,
+    },
     ...overrides,
   }
   return {
@@ -346,6 +363,74 @@ describe('FinanceDashboardPage', () => {
     await waitFor(() => {
       assert.ok(screen.getByTestId('channel-detail-table'))
       assert.ok(screen.getByText('进度'))
+    })
+  })
+
+  // ─── 费用分析面板测试 ──
+
+  it('should render cost analysis panel', async () => {
+    globalThis.fetch = (() => Promise.resolve(mockApiResponse())) as unknown as typeof globalThis.fetch
+    render(<FinanceDashboardPage />)
+    await waitFor(() => {
+      const panel = screen.queryByTestId('cost-analysis-panel')
+      assert.ok(panel, 'Cost analysis panel should render')
+    })
+  })
+
+  it('should show cost categories in cost panel', async () => {
+    globalThis.fetch = (() => Promise.resolve(mockApiResponse())) as unknown as typeof globalThis.fetch
+    render(<FinanceDashboardPage />)
+    await waitFor(() => {
+      const rows = screen.getAllByTestId('cost-category-row')
+      assert.strictEqual(rows.length, 3)
+    })
+  })
+
+  it('should display MoM and YoY indicators', async () => {
+    globalThis.fetch = (() => Promise.resolve(mockApiResponse())) as unknown as typeof globalThis.fetch
+    render(<FinanceDashboardPage />)
+    await waitFor(() => {
+      assert.ok(screen.getByText(/环比/))
+      assert.ok(screen.getByText(/同比/))
+    })
+  })
+
+  // ─── 利润概览面板测试 ──
+
+  it('should render profit overview panel', async () => {
+    globalThis.fetch = (() => Promise.resolve(mockApiResponse())) as unknown as typeof globalThis.fetch
+    render(<FinanceDashboardPage />)
+    await waitFor(() => {
+      const panel = screen.queryByTestId('profit-overview')
+      assert.ok(panel, 'Profit overview panel should render')
+    })
+  })
+
+  it('should show brand profit in profit panel', async () => {
+    globalThis.fetch = (() => Promise.resolve(mockApiResponse())) as unknown as typeof globalThis.fetch
+    render(<FinanceDashboardPage />)
+    await waitFor(() => {
+      assert.ok(screen.getByText(/品牌利润/))
+      assert.ok(screen.getByText(/品牌营收/))
+    })
+  })
+
+  it('should render cost panel even when data has negative changes', async () => {
+    globalThis.fetch = (() => Promise.resolve(mockApiResponse({
+      costAnalysis: {
+        totalCostCents: 600000,
+        categories: [
+          { category: '采购成本', amountCents: 350000, count: 10, percentage: 58.3 },
+          { category: '人力成本', amountCents: 180000, count: 7, percentage: 30.0 },
+          { category: '租金', amountCents: 70000, count: 1, percentage: 11.7 },
+        ],
+        monthOverMonthChange: 5.2,
+        yearOverYearChange: -1.3,
+      },
+    }))) as unknown as typeof globalThis.fetch
+    render(<FinanceDashboardPage />)
+    await waitFor(() => {
+      assert.ok(screen.getByTestId('cost-analysis-panel'))
     })
   })
 })

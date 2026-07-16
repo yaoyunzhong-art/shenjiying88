@@ -10,6 +10,8 @@
  *   GET    /api/finance/reconciliation/details       — 差异明细
  *   GET    /api/finance/reconciliation/diffs         — 差异列表 (原始)
  *   POST   /api/finance/reconciliation/:id/resolve   — 标记已处理
+ *   GET    /api/finance/reconciliation/monthly       — 月度对账报表
+ *   GET    /api/finance/reconciliation/monthly/export— 月度对账报表导出CSV
  */
 
 import {
@@ -19,8 +21,10 @@ import {
   Param,
   Body,
   Query,
+  Res,
   Logger
 } from '@nestjs/common'
+import type { Response } from 'express'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -30,6 +34,7 @@ import {
   type DiffKind,
   type DiffDetailQuery
 } from './reconciliation.service'
+import { FinanceReconciliationReportService } from './reconciliation/finance-reconciliation-report.service'
 
 // ─── DTO ──────────────────────────────────────────────────
 
@@ -77,13 +82,20 @@ export class DetailsQueryDto {
   declare limit?: string
 }
 
+export class MonthlyReportQueryDto {
+  declare month?: string
+}
+
 // ─── Controller ──────────────────────────────────────────
 
 @Controller('finance/reconciliation')
 export class ReconciliationController {
   private readonly logger = new Logger(ReconciliationController.name)
 
-  constructor(private readonly reconciliationService: ReconciliationService) {}
+  constructor(
+    private readonly reconciliationService: ReconciliationService,
+    private readonly reportService: FinanceReconciliationReportService
+  ) {}
 
   /**
    * GET /api/finance/reconciliation/status
@@ -241,5 +253,63 @@ export class ReconciliationController {
       data: { diffKey: id, resolved: false },
       message: `Diff ${id} already resolved or not found`
     }
+  }
+
+  /**
+   * GET /api/finance/reconciliation/monthly
+   * 月度对账报表汇总
+   */
+  @Get('monthly')
+  async getMonthlyReport(
+    @TenantContext() _tenantContext: RequestTenantContext,
+    @Query() query: MonthlyReportQueryDto
+  ) {
+    const month = query.month ?? new Date().toISOString().slice(0, 7)
+    const summary = await this.reportService.generateMonthlySummary(month)
+
+    if (!summary) {
+      return {
+        success: false,
+        data: null,
+        message: `No reconciliation data for month ${month}`
+      }
+    }
+
+    const rows = await this.reportService.getMonthlyRows(month)
+
+    return {
+      success: true,
+      data: { summary, rows },
+      message: 'OK'
+    }
+  }
+
+  /**
+   * GET /api/finance/reconciliation/monthly/export
+   * 导出月度对账报表 CSV
+   */
+  @Get('monthly/export')
+  async exportMonthlyReport(
+    @TenantContext() _tenantContext: RequestTenantContext,
+    @Query() query: MonthlyReportQueryDto,
+    @Res() res: Response
+  ) {
+    const month = query.month ?? new Date().toISOString().slice(0, 7)
+    const payload = await this.reportService.exportMonthlyReport(month)
+
+    if (!payload) {
+      return {
+        success: false,
+        data: null,
+        message: `No reconciliation data for month ${month}`
+      }
+    }
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${payload.filename}"`
+    )
+    res.send(payload.csvContent)
   }
 }

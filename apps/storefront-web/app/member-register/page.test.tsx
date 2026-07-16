@@ -1,6 +1,6 @@
 /**
  * member-register/page.test.ts — 会员注册页面冒烟测试
- * 覆盖: 正例·边界·防御
+ * 覆盖: 正例·边界·防御·子组件·模块加载
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -108,6 +108,86 @@ describe('member-register — 防御', () => {
     const src = readSource();
     assert.ok(src.includes('服务条款'), '缺少服务条款');
     assert.ok(src.includes('隐私政策'), '缺少隐私政策');
+  });
+});
+
+// ---- 子组件: 注册统计 ----
+
+describe('member-register — 统计面板', () => {
+  it('应包含注册统计面板 (RegistrationStatsPanel)', () => {
+    const src = readSource();
+    assert.ok(src.includes('RegistrationStatsPanel'), '缺少统计面板');
+    assert.ok(src.includes('注册统计'), '应包含统计标题');
+  });
+
+  it('统计面板包含今日/本周/本月/累计 4 项指标', () => {
+    const src = readSource();
+    assert.ok(src.includes('今日注册'), '缺少今日注册');
+    assert.ok(src.includes('本周注册'), '缺少本周注册');
+    assert.ok(src.includes('本月注册'), '缺少本月注册');
+    assert.ok(src.includes('累计注册'), '缺少累计注册');
+  });
+
+  it('统计面板展示具体统计数值', () => {
+    const src = readSource();
+    assert.ok(src.includes('todayCount'), '缺少 todayCount 字段');
+    assert.ok(src.includes('weekCount'), '缺少 weekCount 字段');
+    assert.ok(src.includes('monthCount'), '缺少 monthCount 字段');
+    assert.ok(src.includes('totalCount'), '缺少 totalCount 字段');
+  });
+});
+
+// ---- 子组件: 新会员权益 ----
+
+describe('member-register — 权益面板', () => {
+  it('应包含新会员权益展示 (PromotionBannerRow)', () => {
+    const src = readSource();
+    assert.ok(src.includes('PromotionBannerRow'), '缺少权益面板');
+    assert.ok(src.includes('新会员福利'), '应包含权益标题');
+  });
+
+  it('权益面板包含 3 项优惠', () => {
+    const src = readSource();
+    assert.ok(src.includes('新会员礼包'), '缺少新会员礼包');
+    assert.ok(src.includes('首充双倍'), '缺少首充双倍');
+    assert.ok(src.includes('好友邀请'), '缺少好友邀请');
+  });
+});
+
+// ---- 子组件: 注册流程 ----
+
+describe('member-register — 注册流程', () => {
+  it('应包含注册流程步骤 (RegistrationSteps)', () => {
+    const src = readSource();
+    assert.ok(src.includes('RegistrationSteps'), '缺少流程步骤');
+    assert.ok(src.includes('注册流程'), '应包含流程标题');
+  });
+
+  it('注册流程包含 4 个步骤', () => {
+    const src = readSource();
+    assert.ok(src.includes('填写手机号'), '缺少步骤1');
+    assert.ok(src.includes('验证身份'), '缺少步骤2');
+    assert.ok(src.includes('完善资料'), '缺少步骤3');
+    assert.ok(src.includes('注册成功'), '缺少步骤4');
+  });
+});
+
+// ---- 子组件: 最近注册 ----
+
+describe('member-register — 注册记录', () => {
+  it('应包含最近注册记录表格 (RecentRegistrationTable)', () => {
+    const src = readSource();
+    assert.ok(src.includes('RecentRegistrationTable'), '缺少注册记录表格');
+    assert.ok(src.includes('最近注册'), '应包含表格标题');
+  });
+
+  it('注册记录表格包含表头: 手机号/昵称/时间/来源/验证', () => {
+    const src = readSource();
+    assert.ok(src.includes('手机号'), '缺少手机号列');
+    assert.ok(src.includes('昵称'), '缺少昵称列');
+    assert.ok(src.includes('时间'), '缺少时间列');
+    assert.ok(src.includes('来源'), '缺少来源列');
+    assert.ok(src.includes('验证'), '缺少验证列');
   });
 });
 

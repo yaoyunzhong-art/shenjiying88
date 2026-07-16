@@ -19,3 +19,9 @@ logs/
 
 # Runtime pulse health check state
 .pulse-health-alert-state
+
+# Large files that exceed GitHub size limit
+node_modules/.pnpm/@next+swc-darwin-arm64@*/**
+apps/admin-web/.next/cache/**
+apps/storefront-web/.next/cache/**
+apps/tob-web/.next/cache/**

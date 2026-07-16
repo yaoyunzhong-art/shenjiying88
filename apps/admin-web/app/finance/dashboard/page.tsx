@@ -57,11 +57,31 @@ interface ReconciliationStatus {
   } | null
 }
 
+interface CostAnalysisData {
+  totalCostCents: number
+  categories: Array<{
+    category: string
+    amountCents: number
+    count: number
+    percentage: number
+  }>
+  monthOverMonthChange: number
+  yearOverYearChange: number
+}
+
 interface DashboardData {
   revenue: RevenueSummary
   channels: ChannelBreakdown
   trend: DailyTrendPoint[]
   reconciliation: ReconciliationStatus
+  costAnalysis: CostAnalysisData | null
+  profit: {
+    storeProfit: number
+    storeMargin: number
+    brandProfit: number
+    brandRevenue: number
+    brandCost: number
+  }
 }
 
 // ─── 工具函数 ─────────────────────────────────────────────
@@ -280,6 +300,89 @@ function ReconciliationStatusCard({ status }: { status: ReconciliationStatus }) 
   )
 }
 
+// ─── 子组件: 费用分析面板 ────────────────────────────────
+
+function CostAnalysisPanel({ data }: { data: CostAnalysisData | null }) {
+  if (!data) return null
+  return (
+    <div className="bg-white border rounded-lg p-4" data-testid="cost-analysis-panel">
+      <h3 className="text-sm font-medium text-gray-700 mb-3">费用分析</h3>
+      <div className="text-2xl font-bold text-gray-900 mb-3">{fmtCents(data.totalCostCents)}</div>
+      <div className="flex items-center gap-3 mb-4 text-xs">
+        <span className={`px-2 py-0.5 rounded ${data.monthOverMonthChange > 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+          环比 {data.monthOverMonthChange > 0 ? '+' : ''}{data.monthOverMonthChange.toFixed(1)}%
+        </span>
+        <span className={`px-2 py-0.5 rounded ${data.yearOverYearChange > 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+          同比 {data.yearOverYearChange > 0 ? '+' : ''}{data.yearOverYearChange.toFixed(1)}%
+        </span>
+      </div>
+      <div className="space-y-2">
+        {data.categories.map((cat) => (
+          <div key={cat.category} className="flex items-center justify-between text-sm" data-testid="cost-category-row">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600">{cat.category}</span>
+              <span className="text-xs text-gray-400">{cat.count} 笔</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="font-medium">{fmtCents(cat.amountCents)}</span>
+              <span className="text-gray-400 w-12 text-right">{cat.percentage.toFixed(1)}%</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 pt-3 border-t">
+        <div className="flex h-2 rounded-full overflow-hidden">
+          {data.categories.map((cat) => (
+            <div
+              key={cat.category}
+              className={`${cat.category === '采购成本' ? 'bg-blue-400' : cat.category === '人力成本' ? 'bg-purple-400' : 'bg-orange-400'}`}
+              style={{ width: `${cat.percentage}%` }}
+            />
+          ))}
+        </div>
+        <div className="flex items-center gap-4 mt-1.5 text-xs text-gray-400">
+          {data.categories.map((cat) => (
+            <span key={cat.category} className="flex items-center gap-1">
+              <span className={`inline-block w-2 h-2 rounded ${cat.category === '采购成本' ? 'bg-blue-400' : cat.category === '人力成本' ? 'bg-purple-400' : 'bg-orange-400'}`} />
+              {cat.category}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── 子组件: 利润概览面板 ────────────────────────────────
+
+function ProfitOverviewPanel({ data }: { data: { storeProfit: number; storeMargin: number; brandProfit: number; brandRevenue: number; brandCost: number } }) {
+  const marginArrow = data.storeMargin > 0 ? '↑' : '↓'
+  const marginColor = data.storeMargin > 0.1 ? 'text-green-600' : data.storeMargin > 0 ? 'text-yellow-600' : 'text-red-600'
+  return (
+    <div className="bg-white border rounded-lg p-4" data-testid="profit-overview">
+      <h3 className="text-sm font-medium text-gray-700 mb-3">利润概况</h3>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <p className="text-xs text-gray-500">门店利润</p>
+          <p className="text-lg font-bold mt-0.5">{fmtCents(data.storeProfit)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">门店利润率</p>
+          <p className={`text-lg font-bold mt-0.5 ${marginColor}`}>{marginArrow} {(data.storeMargin * 100).toFixed(1)}%</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">品牌营收</p>
+          <p className="text-lg font-bold mt-0.5">{fmtCents(data.brandRevenue)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">品牌利润</p>
+          <p className="text-lg font-bold mt-0.5">{fmtCents(data.brandProfit)}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── 主组件 ─────────────────────────────────────────────
 
 export default function FinanceDashboardPage() {
@@ -367,7 +470,7 @@ export default function FinanceDashboardPage() {
     )
   }
 
-  const { revenue, channels, trend, reconciliation } = data
+  const { revenue, channels, trend, reconciliation, costAnalysis, profit } = data
 
   // ── 渠道列表（排除 totalCents） ──
   const channelKeys = (Object.keys(channels) as Array<keyof ChannelBreakdown>)
@@ -503,6 +606,12 @@ export default function FinanceDashboardPage() {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* 5. 利润概况 + 费用分析面板 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ProfitOverviewPanel data={profit} />
+        <CostAnalysisPanel data={costAnalysis} />
       </div>
     </div>
   )
