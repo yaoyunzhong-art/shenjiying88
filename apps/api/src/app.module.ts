@@ -145,6 +145,7 @@ import { TenantLLMModule } from './modules/tenant-llm/tenant-llm.module';
 import { TrainingModule } from './modules/training/training.module';
 import { StoreRevenueReportModule } from './modules/store-revenue-report/store-revenue-report.module';
 import { MemberSpendingAnalysisModule } from './modules/member-spending-analysis/member-spending-analysis.module';
+import { InventoryAlertModule } from './modules/inventory-alert/inventory-alert.module';
 
 @Module({
   imports: [
@@ -301,6 +302,7 @@ import { MemberSpendingAnalysisModule } from './modules/member-spending-analysis
     TrainingModule,
     StoreRevenueReportModule,
     MemberSpendingAnalysisModule,
+    InventoryAlertModule,
     ModulesModule,
   ],
   providers: [
