@@ -656,6 +656,99 @@ export default function MaintenancePage() {
           </div>
         </div>
 
+        {/* 设备维护周期合规率 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>🔁 设备维护周期合规率</h3>
+          <p style={{ margin: '0 0 12px', fontSize: 11, color: '#6b7280' }}>各设备类型的定期维护执行率 — 按时完成维护的工单占比</p>
+          {function(deviceTypes, i) {
+            var maxRate = Math.max.apply(null, deviceTypes.map(function(d) { return d.rate; }));
+            return (
+              <div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  {deviceTypes.map(function(d, idx) {
+                    var barPct = maxRate > 0 ? Math.round((d.rate / maxRate) * 100) : 0;
+                    var statusColor = d.rate >= 90 ? '#22c55e' : d.rate >= 75 ? '#f59e0b' : '#ef4444';
+                    var statusLabel = d.rate >= 90 ? '优秀' : d.rate >= 75 ? '注意' : '告警';
+                    return (
+                      <div key={idx} style={{ padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 16 }}>{d.icon}</span>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{d.name}</span>
+                            <span style={{ fontSize: 11, color: '#6b7280' }}>{d.type}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 16, fontWeight: 700, color: statusColor }}>{d.rate}%</span>
+                            <span style={{ padding: '1px 8px', borderRadius: 4, fontSize: 10, fontWeight: 600, background: statusColor + '18', color: statusColor }}>{statusLabel}</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#e5e7eb', overflow: 'hidden' }}>
+                            <div style={{ width: barPct + '%', height: '100%', borderRadius: 4, background: statusColor, transition: 'width 0.4s' }} />
+                          </div>
+                        </div>
+                        <div style={{ marginTop: 4, display: 'flex', gap: 12, fontSize: 10, color: '#9ca3af' }}>
+                          <span>🕒 周期: {d.cycleDays}天/次</span>
+                          <span>✅ 按时完成: {d.completed}次</span>
+                          <span>⏳ 延误: {d.overdue}次</span>
+                          <span>📋 计划: {d.planned}次</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                  <div style={{ padding: '8px 12px', borderRadius: 6, background: '#f0fdf4', border: '1px solid #bbf7d0', textAlign: 'center' }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#22c55e' }}>
+                      {Math.round(deviceTypes.reduce(function(s, d) { return s + d.rate; }, 0) / deviceTypes.length)}%
+                    </div>
+                    <div style={{ fontSize: 10, color: '#16a34a' }}>整体合规率</div>
+                  </div>
+                  <div style={{ padding: '8px 12px', borderRadius: 6, background: '#fef2f2', border: '1px solid #fecaca', textAlign: 'center' }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#ef4444' }}>
+                      {deviceTypes.filter(function(d) { return d.rate < 75; }).length}类
+                    </div>
+                    <div style={{ fontSize: 10, color: '#dc2626' }}>需改进设备</div>
+                  </div>
+                  <div style={{ padding: '8px 12px', borderRadius: 6, background: '#fffbeb', border: '1px solid #fde68a', textAlign: 'center' }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#f59e0b' }}>
+                      {deviceTypes.reduce(function(s, d) { return s + d.overdue; }, 0)}次
+                    </div>
+                    <div style={{ fontSize: 10, color: '#d97706' }}>累计延误</div>
+                  </div>
+                </div>
+                {function(types) {
+                  if (types.length === 0) return <span>暂无设备数据</span>;
+                  var best: any = types[0];
+                  var worst: any = types[0];
+                  for (var j = 1; j < types.length; j++) {
+                    var t: any = types[j];
+                    if (t.rate > best.rate) { best = t; }
+                    if (t.rate < worst.rate) { worst = t; }
+                  }
+                  return (
+                    <div style={{ marginTop: 8, padding: '6px 12px', borderRadius: 6, background: '#f9fafb', border: '1px solid #e5e7eb', fontSize: 11, color: '#6b7280', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>🏆 最佳: {best.name} ({best.rate}%)</span>
+                      <span>⚠️ 最差: {worst.name} ({worst.rate}%)</span>
+                      <span>💡 建议加大空调和打印机的巡检频率</span>
+                    </div>
+                  );
+                }(deviceTypes)}
+              </div>
+            );
+          }([
+            { name: '中央空调系统', icon: '❄️', type: '暖通', rate: 88, cycleDays: 30, completed: 22, overdue: 3, planned: 25 },
+            { name: '收银POS机', icon: '💳', type: 'IT设备', rate: 96, cycleDays: 15, completed: 48, overdue: 2, planned: 50 },
+            { name: '监控系统', icon: '📹', type: '安防', rate: 92, cycleDays: 45, completed: 12, overdue: 1, planned: 13 },
+            { name: '消防设备', icon: '🔥', type: '安全', rate: 100, cycleDays: 90, completed: 4, overdue: 0, planned: 4 },
+            { name: '打印机', icon: '🖨️', type: 'IT设备', rate: 72, cycleDays: 60, completed: 8, overdue: 3, planned: 11 },
+            { name: '网络设备', icon: '🌐', type: 'IT设备', rate: 94, cycleDays: 20, completed: 28, overdue: 2, planned: 30 },
+            { name: '照明系统', icon: '💡', type: '电气', rate: 85, cycleDays: 90, completed: 5, overdue: 1, planned: 6 },
+            { name: '游戏终端', icon: '🎮', type: '娱乐', rate: 78, cycleDays: 14, completed: 42, overdue: 12, planned: 54 },
+            { name: '门禁系统', icon: '🚪', type: '安防', rate: 90, cycleDays: 60, completed: 6, overdue: 1, planned: 7 },
+          ], 0)}
+        </div>
+
         {/* 维护工单趋势 */}
         <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
           <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0369a1' }}>📈 近半年工单趋势</h3>

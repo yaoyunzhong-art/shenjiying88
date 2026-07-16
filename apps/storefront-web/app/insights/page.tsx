@@ -820,6 +820,43 @@ export default function DataInsights() {
         </div>
       </div>
 
+      {/* 会员忠诚度指数 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>⭐ 会员忠诚度指数</h3>
+        <p style={{ margin: '0 0 12px', fontSize: 11, color: '#64748b' }}>各等级会员忠诚度评分（复购率/推荐率/活跃度综合）</p>
+        {function(members, i) {
+          var maxVal = Math.max.apply(null, members.map(function(m) { return m.score; }));
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {members.map(function(m, idx) {
+                var barPct = maxVal > 0 ? Math.round((m.score / maxVal) * 100) : 0;
+                return (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.1)', fontSize: 12 }}>
+                    <span style={{ width: 64, fontWeight: 600, color: '#e2e8f0' }}>{m.name}</span>
+                    <div style={{ flex: 1, height: 10, borderRadius: 5, background: 'rgba(148,163,184,0.12)', overflow: 'hidden' }}>
+                      <div style={{ width: barPct + '%', height: '100%', borderRadius: 5, background: m.color, opacity: 0.8, transition: 'width 0.4s' }} />
+                    </div>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: m.color, minWidth: 32, textAlign: 'right' }}>{m.score}</span>
+                    <span style={{ fontSize: 10, color: '#64748b', minWidth: 80, textAlign: 'right' }}>复购{m.repurchasePct}% 推荐{m.referralPct}% 活跃{m.activityPct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }([
+          { name: '钻石会员', score: 95, color: '#a78bfa', repurchasePct: 92, referralPct: 88, activityPct: 90 },
+          { name: '黄金会员', score: 82, color: '#f59e0b', repurchasePct: 78, referralPct: 72, activityPct: 80 },
+          { name: '银卡会员', score: 68, color: '#94a3b8', repurchasePct: 62, referralPct: 58, activityPct: 70 },
+          { name: '铜卡会员', score: 52, color: '#a0522d', repurchasePct: 48, referralPct: 42, activityPct: 55 },
+          { name: '普通会员', score: 35, color: '#6b7280', repurchasePct: 30, referralPct: 22, activityPct: 40 },
+        ], 0)}
+        <div style={{ marginTop: 8, padding: '6px 12px', borderRadius: 6, background: 'rgba(148,163,184,0.06)', fontSize: 11, color: '#94a3b8', display: 'flex', justifyContent: 'space-between' }}>
+          <span>🏆 钻石会员忠诚度最高 (<span style={{ color: '#a78bfa', fontWeight: 600 }}>95分</span>)</span>
+          <span>📊 整体忠诚度均值: {Math.round([95, 82, 68, 52, 35].reduce(function(a, b) { return a + b; }) / 5)}分</span>
+          <span>💡 推荐提升铜卡/普通会员的复购激励</span>
+        </div>
+      </div>
+
       {/* 脚注 */}
       <div style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 24 }}>
         数据洞察系统 · 数据更新于 {new Date().toLocaleString('zh-CN')} · 共 {MOCK_DEVICES.length} 台设备 · {total} 位会员
