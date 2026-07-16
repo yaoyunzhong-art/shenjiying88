@@ -88,7 +88,7 @@ export default function NotificationTemplatesPage() {
           <div style={styles.configItem}><span style={styles.configKey}>变量命名</span><span style={styles.configValue}>camelCase，只含字母</span></div>
           <div style={styles.configItem}><span style={styles.configKey}>声明要求</span><span style={styles.configValue}>模板使用的变量必须在 variables 声明</span></div>
           <div style={styles.configItem}><span style={styles.configKey}>未闭合变量</span><span style={styles.configValue}>系统自动检测并告警</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>默认值</span><span style={styles.configValue}>缺失变量保留原始 {占位符}</span></div>
+          <div style={styles.configItem}><span style={styles.configKey}>默认值</span><span style={styles.configValue}>缺失变量保留原始 {'{占位符}'}</span></div>
         </div>
       </div>
     </div>
