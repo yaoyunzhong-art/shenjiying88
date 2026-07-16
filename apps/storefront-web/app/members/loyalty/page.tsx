@@ -819,6 +819,57 @@ export default function LoyaltyPage() {
               }(null, null)}
             </div>
 
+            {/* 会员推荐有礼效果 */}
+            {function(s,i) {
+              var REFERRAL_DATA = [
+                { month: '5月', recommenders: 38, conversions: 22, rate: 57.9, rewards: 4400 },
+                { month: '6月', recommenders: 52, conversions: 31, rate: 59.6, rewards: 6200 },
+                { month: '7月', recommenders: 45, conversions: 28, rate: 62.2, rewards: 5600 },
+              ];
+              var totalRecommenders = REFERRAL_DATA.reduce(function(a,b) { return a + b.recommenders; }, 0);
+              var totalConversions = REFERRAL_DATA.reduce(function(a,b) { return a + b.conversions; }, 0);
+              var totalRewards = REFERRAL_DATA.reduce(function(a,b) { return a + b.rewards; }, 0);
+              var avgRate = totalConversions / totalRecommenders * 100;
+              return (
+                <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fdf4ff', border: '1px solid #e9d5ff' }}>
+                  <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#86198f' }}>👥 会员推荐有礼效果</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 10 }}>
+                    {[
+                      { label: '推荐人数', value: totalRecommenders, color: '#7c3aed' },
+                      { label: '成功转化', value: totalConversions, color: '#059669' },
+                      { label: '奖励发放', value: '¥' + totalRewards.toLocaleString(), color: '#d97706' },
+                    ].map(function(v, i) {
+                      return (
+                        <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e9d5ff', textAlign: 'center' }}>
+                          <div style={{ fontSize: 11, color: '#6b7280' }}>{v.label}</div>
+                          <div style={{ fontSize: 18, fontWeight: 700, color: v.color }}>{v.value}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {REFERRAL_DATA.map(function(r, i) {
+                      return (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, background: '#fff', border: '1px solid #e9d5ff', fontSize: 12 }}>
+                          <span style={{ fontWeight: 600, color: '#86198f', width: 36 }}>{r.month}</span>
+                          <span style={{ color: '#6b7280', minWidth: 50 }}>👤 {r.recommenders}人推荐</span>
+                          <span style={{ color: '#059669', minWidth: 50 }}>✅ {r.conversions}人注册</span>
+                          <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#f3e8ff', overflow: 'hidden' }}>
+                            <div style={{ width: r.rate + '%', height: '100%', borderRadius: 3, background: '#7c3aed' }} />
+                          </div>
+                          <span style={{ fontWeight: 600, color: '#7c3aed', minWidth: 36 }}>{r.rate.toFixed(1)}%</span>
+                          <span style={{ fontSize: 10, color: '#d97706' }}>🎁 ¥{r.rewards}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 10, color: '#9ca3af', textAlign: 'center' }}>
+                    平均转化率 {avgRate.toFixed(1)}% · 人均奖励 ¥{(totalRewards / totalConversions).toFixed(0)} · 建议持续优化推荐奖励机制
+                  </div>
+                </div>
+              );
+            }(null, null)}
+
             {/* 积分获取渠道分析 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fefce8', border: '1px solid #fde047' }}>
               <h4 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#713f12' }}>⚡ 积分获取渠道分析 (本月)</h4>
