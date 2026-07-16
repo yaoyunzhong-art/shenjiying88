@@ -59,6 +59,44 @@ function buildColumns(): DataTableColumn<Tenant>[] {
   ];
 }
 
+// 租户健康评分
+function HealthScore({ items, stats }: { items: Tenant[]; stats: ReturnType<typeof useMemo<{total:number;active:number;trial:number;suspended:number;expired:number;revenue:number;stores:number;users:number;byTier:{tier:TenantTier;count:number}[]}>> }) {
+  const health = useMemo(() => {
+    const activePct = stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0;
+    const expiringSoon = items.filter(t => {
+      const days = Math.ceil((new Date(t.expiryDate).getTime() - Date.now()) / 86400000);
+      return days > 0 && days <= 30;
+    }).length;
+    const avgStores = stats.total > 0 ? (stats.stores / stats.total).toFixed(1) : '0';
+    const avgRevenue = stats.total > 0 ? formatMoney(stats.revenue / stats.total) : '¥0';
+    return { activePct, expiringSoon, avgStores, avgRevenue };
+  }, [items, stats]);
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+      <div style={{ ...card, background: 'rgba(34,197,94,0.08)' }}>
+        <div style={{ fontSize: 12, color: '#64748b' }}>健康分</div>
+        <div style={{ fontSize: 32, fontWeight: 700, color: '#22c55e', marginTop: 4 }}>{health.activePct}</div>
+        <div style={{ fontSize: 11, color: '#94a3b8' }}>健康租户占比</div>
+      </div>
+      <div style={{ ...card, background: 'rgba(251,191,36,0.08)' }}>
+        <div style={{ fontSize: 12, color: '#64748b' }}>即将到期</div>
+        <div style={{ fontSize: 32, fontWeight: 700, color: '#fbbf24', marginTop: 4 }}>{health.expiringSoon}</div>
+        <div style={{ fontSize: 11, color: '#94a3b8' }}>30天内到期</div>
+      </div>
+      <div style={{ ...card, background: 'rgba(59,130,246,0.08)' }}>
+        <div style={{ fontSize: 12, color: '#64748b' }}>平均门店</div>
+        <div style={{ fontSize: 32, fontWeight: 700, color: '#60a5fa', marginTop: 4 }}>{health.avgStores}</div>
+        <div style={{ fontSize: 11, color: '#94a3b8' }}>单租户</div>
+      </div>
+      <div style={{ ...card, background: 'rgba(168,85,247,0.08)' }}>
+        <div style={{ fontSize: 12, color: '#64748b' }}>平均营收</div>
+        <div style={{ fontSize: 32, fontWeight: 700, color: '#a78bfa', marginTop: 4 }}>{health.avgRevenue}</div>
+        <div style={{ fontSize: 11, color: '#94a3b8' }}>单租户ARPU</div>
+      </div>
+    </div>
+  );
+}
+
 export default function TenantsPage() {
   const [tab,setTab]=useState<'list'|'analytics'>('list');
   const stats = useMemo(()=>({
