@@ -451,6 +451,105 @@ export default function PointHistoryPage() {
               </div>
             </div>
 
+            {/* 积分月统计 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#166534' }}>📊 本月积分概览</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8 }}>
+                {[
+                  { label: '总获得', value: '12,850', trend: '+8%', color: '#16a34a' },
+                  { label: '总消耗', value: '8,420', trend: '+12%', color: '#dc2626' },
+                  { label: '当前余额', value: '248,600', change: '+4,430', color: '#2563eb' },
+                  { label: '即将到期', value: '3,200', change: '30天内', color: '#d97706' },
+                ].map(function(s, i) {
+                  return (
+                    <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #dcfce7', textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, color: '#6b7280' }}>{s.label}</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: s.color }}>{s.value}</div>
+                      <div style={{ fontSize: 10, color: s.trend ? '#059669' : '#d97706' }}>{s.trend || s.change}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 积分获取/消耗对比 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>🔄 积分获取 vs 消耗趋势</h3>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', height: 80, padding: '4px 0' }}>
+                {[
+                  { month: '2月', earn: 75, spend: 45 },
+                  { month: '3月', earn: 82, spend: 55 },
+                  { month: '4月', earn: 70, spend: 62 },
+                  { month: '5月', earn: 88, spend: 50 },
+                  { month: '6月', earn: 95, spend: 68 },
+                ].map(function(m, i) {
+                  return (
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                      <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 65 }}>
+                        <div style={{ width: 12, height: m.earn + 'px', borderRadius: '2px 2px 0 0', background: '#16a34a' }} />
+                        <div style={{ width: 12, height: m.spend + 'px', borderRadius: '2px 2px 0 0', background: '#dc2626' }} />
+                      </div>
+                      <div style={{ fontSize: 9, color: '#6b7280' }}>{m.month}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#6b7280', marginTop: 4 }}>
+                <span><span style={{ color: '#16a34a' }}>■</span> 获取</span>
+                <span><span style={{ color: '#dc2626' }}>■</span> 消耗</span>
+              </div>
+            </div>
+
+            {/* 积分到期日历 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9a3412' }}>⏰ 积分到期提醒</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {[
+                  { batch: '2026年1月获得', points: 1200, expireDate: '2026-07-31', daysLeft: 14, priority: 'urgent' },
+                  { batch: '2026年2月获得', points: 800, expireDate: '2026-08-31', daysLeft: 45, priority: 'warning' },
+                  { batch: '2026年3月获得', points: 1200, expireDate: '2026-09-30', daysLeft: 75, priority: 'normal' },
+                ].map(function(b, i) {
+                  return (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #fed7aa' }}>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{b.batch}</div>
+                        <div style={{ fontSize: 11, color: '#6b7280' }}>{b.expireDate} 到期</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: b.priority === 'urgent' ? '#dc2626' : b.priority === 'warning' ? '#d97706' : '#6b7280' }}>{b.points}<span style={{ fontSize: 10, fontWeight: 400 }}>分</span></div>
+                        <div style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: b.priority === 'urgent' ? '#fef2f2' : b.priority === 'warning' ? '#fff7ed' : '#f3f4f6', color: b.priority === 'urgent' ? '#dc2626' : b.priority === 'warning' ? '#d97706' : '#6b7280' }}>剩{b.daysLeft}天</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 积分兑换推荐 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#ecfeff', border: '1px solid #a5f3fc' }}>
+              <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#0e7490' }}>🎯 热门兑换推荐</h3>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {[
+                  { item: '免费游戏币20枚', points: 200, exchangeRate: '10分/枚', hot: 92 },
+                  { item: '单人畅玩卡', points: 500, exchangeRate: '省¥30', hot: 85 },
+                  { item: '生日派对套餐', points: 2000, exchangeRate: '省¥120', hot: 78 },
+                  { item: 'VIP月卡', points: 3000, exchangeRate: '省¥200', hot: 72 },
+                ].map(function(r, i) {
+                  return (
+                    <div key={i} style={{ flex: '1 1 120px', padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #a5f3fc', textAlign: 'center' }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#0e7490' }}>{r.item}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#0891b2' }}>{r.points}<span style={{ fontSize: 10, fontWeight: 400 }}>分</span></div>
+                      <div style={{ fontSize: 10, color: '#059669' }}>{r.exchangeRate}</div>
+                      <div style={{ fontSize: 10, color: '#6b7280' }}>热度 {r.hot}%</div>
+                      <div style={{ marginTop: 2, height: 3, borderRadius: 2, background: '#e5e7eb', overflow: 'hidden' }}>
+                        <div style={{ width: r.hot + '%', height: '100%', borderRadius: 2, background: '#06b6d4' }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* 积分常见问题 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
               <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>❓ 积分常见问题</h3>
