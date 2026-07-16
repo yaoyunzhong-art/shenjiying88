@@ -79,4 +79,67 @@ export class ScoutService {
       `%${query}%`, limit
     )
   }
+
+  /** 竞品对比分析: 给定场馆ID列表, 返回价格/设备/会员对比 */
+  async compareVenues(venueIds: number[]) {
+    if (!venueIds.length) return { prices: [], devices: [], memberships: [], summary: null }
+    const placeholders = venueIds.map((_, i) => `$${i + 1}`).join(',')
+    const [prices, devices, memberships] = await Promise.all([
+      this.prisma.$queryRawUnsafe(
+        `SELECT venue_id, item_name, price, captured_at FROM competitor_prices WHERE venue_id IN (${placeholders}) ORDER BY venue_id, captured_at DESC`,
+        ...venueIds
+      ),
+      this.prisma.$queryRawUnsafe(
+        `SELECT venue_id, device_name, quantity, status FROM competitor_devices WHERE venue_id IN (${placeholders})`,
+        ...venueIds
+      ),
+      this.prisma.$queryRawUnsafe(
+        `SELECT venue_id, tier_name, price, benefits FROM competitor_membership WHERE venue_id IN (${placeholders})`,
+        ...venueIds
+      ),
+    ])
+    const summary = {
+      totalVenues: venueIds.length,
+      avgPriceItems: Array.isArray(prices) ? Math.round((prices as any[]).length / venueIds.length) : 0,
+      avgDevices: Array.isArray(devices) ? Math.round((devices as any[]).length / venueIds.length) : 0,
+    }
+    return { prices, devices, memberships, summary }
+  }
+
+  /** 对比统计摘要 */
+  async getComparisonSummary(venueIds: number[]) {
+    const { summary } = await this.compareVenues(venueIds)
+    return summary
+  }
+
+  /** 批量场馆数据快照 */
+  async batchSnapshot(city: string) {
+    const venues = await this.getVenues(city)
+    const venueIds = (venues as any[])?.map(v => v.id).filter(Boolean) as number[] ?? []
+    return this.compareVenues(venueIds)
+  }
+
+  /** 按区域聚合统计 */
+  async getRegionStats() {
+    return this.prisma.$queryRawUnsafe(
+      `SELECT region, COUNT(*) as venue_count, AVG(rating) as avg_rating
+       FROM scout_cities GROUP BY region ORDER BY venue_count DESC`
+    )
+  }
+
+  /** 数据采集进度 */
+  async getCollectionProgress() {
+    return this.prisma.$queryRawUnsafe(
+      `SELECT status, COUNT(*) as count FROM scout_cities GROUP BY status`
+    )
+  }
+
+  /** 最近更新场馆 */
+  async getRecentUpdated(limit = 10) {
+    return this.prisma.$queryRawUnsafe(
+      `SELECT v.*, c.name as city_name
+       FROM venues v JOIN scout_cities c ON v.city = c.name
+       ORDER BY v.updated_at DESC NULLS LAST LIMIT $1`, limit
+    )
+  }
 }
