@@ -14,7 +14,7 @@
  * - 空态: 无配置时显示引导
  */
 
-import { Suspense, useState, useMemo, useCallback } from 'react';
+import { Suspense, useState, useMemo } from 'react';
 import {
   Badge,
   Button,
@@ -32,24 +32,9 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
-import { loadAgentConfigs } from '../agent-view-model';
-import AgentStudioClient from './studio-client';
+import { loadAgentConfigs, type AgentConfigBrief } from '../agent-view-model';
 
 export const dynamic = 'force-dynamic';
-
-// ---- 类型 ----
-
-interface AgentConfigBrief {
-  id: string;
-  name: string;
-  model: string;
-  enabled: boolean;
-  enableReflection: boolean;
-  maxSteps: number;
-  timeout: number;
-  createdAt: string;
-  toolCount: number;
-}
 
 // ---- 模拟数据 ----
 
@@ -114,10 +99,22 @@ function buildColumns(): DataTableColumn<AgentConfigBrief>[] {
   ];
 }
 
-// ---- 主页面 ----
+// ---- 主页面 (Server Component) ----
 
-export default function AgentStudioPage() {
-  const [configs] = useState<AgentConfigBrief[]>(MOCK_CONFIGS);
+export default async function AgentStudioPage() {
+  const snapshot = await loadAgentConfigs();
+
+  return (
+    <Suspense fallback={<LoadingSkeleton variant="card" rows={3} />}>
+      <AgentStudioPageContent snapshot={snapshot} />
+    </Suspense>
+  );
+}
+
+// ---- Client Content ----
+
+function AgentStudioPageContent({ snapshot }: { snapshot: { configs: AgentConfigBrief[]; deliveryMode: string } }) {
+  const { configs, deliveryMode } = snapshot;
   const [search, setSearch] = useState('');
   const [modelFilter, setModelFilter] = useState('');
   const [enabledFilter, setEnabledFilter] = useState('');
@@ -141,7 +138,6 @@ export default function AgentStudioPage() {
   // ---- 统计数据 ----
   const enabledCount = configs.filter((c) => c.enabled).length;
   const reflectionCount = configs.filter((c) => c.enableReflection).length;
-  const toolTotal = configs.reduce((s, c) => s + c.toolCount, 0);
 
   // ---- 排序和分页 ----
   const cols = useMemo(() => buildColumns(), []);
