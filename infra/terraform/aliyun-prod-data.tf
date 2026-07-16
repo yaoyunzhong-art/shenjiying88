@@ -47,7 +47,7 @@ resource "alicloud_db_connection" "main" {
 
 resource "alicloud_kvstore_instance" "main" {
   db_instance_name = "${var.cluster_name}-redis"
-  vswitch_id       = alicloud_vswitch.zone_b.id
+  vswitch_id       = alicloud_vswitch.zone_i.id
   security_ips     = ["10.0.0.0/8", "172.20.0.0/16"]
   
   instance_type    = "Redis"

@@ -76,6 +76,18 @@ resource "alicloud_vswitch" "zone_c" {
   }
 }
 
+resource "alicloud_vswitch" "zone_i" {
+  vswitch_name = "${var.cluster_name}-vswitch-i"
+  vpc_id       = alicloud_vpc.main.id
+  cidr_block   = "10.0.4.0/24"
+  zone_id      = "${var.region}-i"
+
+  tags = {
+    Name        = "${var.cluster_name}-vswitch-i"
+    Environment = var.environment
+  }
+}
+
 # ═══════════════════════════════════════════════════════════════════════
 # 3. NAT 网关和弹性IP
 # ═══════════════════════════════════════════════════════════════════════
