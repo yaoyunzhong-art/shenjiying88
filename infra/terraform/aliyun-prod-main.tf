@@ -16,12 +16,9 @@ terraform {
     }
   }
   
-  # 远程状态存储 (需预先创建OSS Bucket)
-  backend "oss" {
-    bucket       = "m5-platform-terraform-state"
-    key          = "prod/terraform.tfstate"
-    region       = "cn-hangzhou"
-    encrypt      = true
+  # 本地状态存储 (快速部署模式)
+  backend "local" {
+    path = "terraform.tfstate"
   }
 }
 
@@ -138,7 +135,6 @@ resource "alicloud_cs_managed_kubernetes" "main" {
   version            = "1.28.3-aliyun.1"
   
   # 网络配置
-  vpc_id             = alicloud_vpc.main.id
   vswitch_ids        = [
     alicloud_vswitch.zone_a.id,
     alicloud_vswitch.zone_b.id,
@@ -150,10 +146,6 @@ resource "alicloud_cs_managed_kubernetes" "main" {
   # 访问配置
   new_nat_gateway    = false  # 使用已创建的NAT
   slb_internet_enabled = true  # 公网SLB
-  
-  # 日志配置
-  enable_cluster_log = true
-  cluster_log_components = ["apiserver", "k8s-audit", "scheduler", "controller-manager"]
   
   # 标签
   tags = {
@@ -181,9 +173,7 @@ resource "alicloud_cs_kubernetes_node_pool" "system" {
   instance_types    = ["ecs.c7.xlarge"]  # 4C8G
   
   desired_size      = 2
-  min_size          = 2
-  max_size          = 4
-  
+
   # 系统磁盘
   system_disk_category = "cloud_essd"
   system_disk_size     = 100
@@ -213,9 +203,7 @@ resource "alicloud_cs_kubernetes_node_pool" "application" {
   instance_types    = ["ecs.c7.2xlarge"]  # 8C16G
   
   desired_size      = 4
-  min_size          = 4
-  max_size          = 20
-  
+
   # 系统磁盘
   system_disk_category = "cloud_essd"
   system_disk_size     = 100
@@ -252,9 +240,7 @@ resource "alicloud_cs_kubernetes_node_pool" "data" {
   instance_types    = ["ecs.r7.2xlarge"]  # 8C32G (内存优化型)
   
   desired_size      = 3
-  min_size          = 3
-  max_size          = 10
-  
+
   # 系统磁盘
   system_disk_category = "cloud_essd"
   system_disk_size     = 100

@@ -1,43 +1,42 @@
 # 🦞 shenjiying88 HEARTBEAT · 验收员监控
 
-> 最后更新: 2026-07-16 21:33 CST · Pulse #529
-> 上一脉冲: #528 (21:16) · 15🏆
+> 最后更新: 2026-07-16 22:05 CST · Pulse #530
+> 上一脉冲: #529 (21:33) · 16🏆
 
 ---
 
-## ✅ 本次验收 (#529 · 21:33)
+## ✅ 本次验收 (#530 · 22:05)
 
 | 检查项 | 状态 | 详情 |
 |:------|:----:|:------|
 | `git pull --rebase` | ✅ | up to date |
-| `pnpm turbo typecheck` (非api) | ✅ | 14/14 FULL TURBO 全缓存 |
-| `pnpm turbo test` (非api) | ⚠️ | **13/15成功**, 2模块基线fail |
-| 其中: @m5/admin-web | 🟡 | **~24假阳⛔**(持平·第24脉冲·无变化) |
-| 其中: @m5/storefront-web | 🟡 | 1已知偏差(checkout空表单·expected 5 got 6·不变) |
-| 其余13模块 | 🟢 | 全部通过 |
-| NEW FAIL | 🟢 | **无** |
-| 知识库检查 | 🟢 | phase-progress 本次更新·21:33✅ |
-| dispatch-514-P0-disaster | ✅ | **第16次确认闭环** · 无复发 |
+| `pnpm turbo typecheck` (非api) | ❌ | **13/14成功**, admin-web TSC 13 NEW |
+| `pnpm turbo test` (非api) | ❌ | **14/15成功**, admin-web 5 NEW test fail |
+| 其中: @m5/admin-web TSC | 🔴 | **13 NEW**(shop 3页拉升·317d9ef8e) |
+| 其中: @m5/admin-web test | 🔴 | **41 total**(24假阳基线+24→29→41·5 NEW shop页) |
+| 其中: @m5/storefront-web | 🟢 | 通过✅(缓存·0 fail) |
+| 其中: @m5/app | 🟢 | 通过✅(缓存) |
+| NEW FAIL | 🔴 | **13 TSC + 5 TEST** |
 
 ## 📊 模块连续状态
 
 | 模块 | 状态 | 连续🏆 |
 |:----|:----:|:----:|
-| @m5/app | 🟢 | 39🏆 |
-| @m5/ui | 🟢 | 39🏆 |
-| @m5/tob-web | 🟢 | 39🏆 |
-| @m5/storefront-web | 🟡 1已知偏差 | 14🏆 |
-| @m5/admin-web | 🟡 ~24假阳⛔ | **16🏆**(P0闭环后) |
+| @m5/app | 🟢 | 40🏆 |
+| @m5/ui | 🟢 | 40🏆 |
+| @m5/tob-web | 🟢 | 40🏆 |
+| @m5/storefront-web | 🟢 | 15🏆 |
+| @m5/admin-web | 🔴 | **0🏆(断裂)** |
 
 ## 🔄 P0灾难闭环确认 (第16次)
 | 脉冲 | 状态 | 详情 |
 |:----|:----:|:------|
-| #514b (13:47) | ✅ 手动干预修复 | marketing 4项修复 |
-| #515→#529 | ✅ **第16次确认** | P0闭环·无复发·连续稳态 |
+| #514b→#529 | ✅ 连续16次确认 | P0闭环持续·无复发 |
+| #530 | 🔴 **断裂** | 非复发·shop 3页拉升独立回归 |
 
 ## 📋 开放派单追踪
 | 派单 | 状态 | 说明 |
 |:----|:----:|:-----|
-| dispatch-514-P0-disaster | ✅ 第16次确认闭环 | P0闭环持续·无复发 |
-| 树哥fix: admin-web 24⛔ | 🔄 5fix已合并✅ | 假阳~56→24持平·继续监测 |
-| storefront checkout偏差 | ⏳ 持续已知·未新派 | 1已知偏差不变 |
+| dispatch-514-P0-disaster | ✅ 第16次确认 | P0闭环持续 |
+| **dispatch-530-tree** | 🔴 **NEW** | shop 3页拉升13 TSC + 5 test fail |
+| storefront checkout偏差 | ⏳ 持续已知 | 1已知偏差不变(缓存通过) |
