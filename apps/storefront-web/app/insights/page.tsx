@@ -857,6 +857,57 @@ export default function DataInsights() {
         </div>
       </div>
 
+      {/* 会员增长漏斗 */}
+      <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fffbeb', border: '1px solid #fde68a' }}>
+        <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#92400e' }}>🔄 会员增长漏斗</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {function(s, i) {
+            var colors = ['#3b82f6','#8b5cf6','#f59e0b','#ef4444','#6b7280'];
+            var icons = ['👀','📝','🛒','🔄','📢'];
+            var stages = ['访问','注册','消费','复购','推荐'];
+            return s.map(function(e, idx) {
+              var fill = e.rate / e.maxRate * 100;
+              return (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 12 }}>{icons[idx]}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#374151', minWidth: 36 }}>{stages[idx]}</span>
+                  <div style={{ flex: 1, height: 12, borderRadius: 6, background: '#fef3c7', overflow: 'hidden' }}>
+                    <div style={{ width: fill + '%', height: '100%', borderRadius: 6, background: colors[idx] }} />
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: colors[idx], minWidth: 72, textAlign: 'right' }}>{e.rate}% (N={e.count})</span>
+                  <span style={{ fontSize: 10, color: '#9ca3af', minWidth: 40, textAlign: 'right' }}>↓{idx > 0 && s[idx - 1] ? Math.round((1 - e.rate / (s[idx - 1] as { rate: number }).rate) * 100) + '%' : '-'}</span>
+                </div>
+              );
+            });
+          }([
+            { rate: 100, maxRate: 100, count: 5000 },
+            { rate: 38, maxRate: 100, count: 1900 },
+            { rate: 22, maxRate: 100, count: 1100 },
+            { rate: 14, maxRate: 100, count: 700 },
+            { rate: 6, maxRate: 100, count: 300 },
+          ])}
+        </div>
+        <div style={{ marginTop: 8, padding: '6px 12px', borderRadius: 6, background: 'rgba(251,191,36,0.06)', fontSize: 11, color: '#6b7280', display: 'flex', justifyContent: 'space-between' }}>
+          <span>👀 访问→注册: 38%</span>
+          <span>📝 注册→消费: 57.9%</span>
+          <span>🛒 消费→复购: 63.6%</span>
+          <span>💡 注册转化需重点优化</span>
+        </div>
+      </div>
+
+      {/* 门店会员转化率 */}
+      <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+        <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#166534' }}>🏪 门店会员转化率</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {function(data, idx) { var colors = ['#22c55e','#16a34a','#ca8a04','#dc2626','#9333ea']; var max = Math.max.apply(null, data.map(function(d) { return d.rate; })); return data.map(function(d, i) { var barPct = d.rate / max * 100; return (<div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ fontSize: 11, fontWeight: 600, color: '#374151', minWidth: 80 }}>{d.name}</span><div style={{ flex: 1, height: 14, borderRadius: 7, background: '#dcfce7', overflow: 'hidden' }}><div style={{ width: barPct + '%', height: '100%', borderRadius: 7, background: colors[i % colors.length], display: 'flex', alignItems: 'center', paddingLeft: 8 }}><span style={{ fontSize: 10, fontWeight: 600, color: '#fff' }}>{d.rate}%</span></div></div><span style={{ fontSize: 10, color: '#6b7280', minWidth: 24, textAlign: 'right' }}>{i === 0 ? '🏆' : (i === data.length - 1 ? '📉' : '')}</span></div>); }); }([{ name: '北京朝阳店', rate: 65 }, { name: '上海浦东店', rate: 72 }, { name: '广州天河店', rate: 58 }, { name: '深圳南山店', rate: 61 }, { name: '成都锦江店', rate: 55 }])}
+        </div>
+        <div style={{ marginTop: 8, padding: '6px 12px', borderRadius: 6, background: 'rgba(34,197,94,0.06)', fontSize: 11, color: '#6b7280', display: 'flex', justifyContent: 'space-between' }}>
+          <span>🥇 上海浦东店转化率最高 (72%)</span>
+          <span>📊 平均转化率: {Math.round([65,72,58,61,55].reduce(function(a,b){return a+b;})/5)}%</span>
+          <span>💡 成都锦江店需重点优化注册引导</span>
+        </div>
+      </div>
+
       {/* 脚注 */}
       <div style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 24 }}>
         数据洞察系统 · 数据更新于 {new Date().toLocaleString('zh-CN')} · 共 {MOCK_DEVICES.length} 台设备 · {total} 位会员
