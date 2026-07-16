@@ -54,7 +54,7 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: admin-web
-          image: ghcr.io/shenjiying/shenjiying88/admin-web:latest
+          image: ghcr.io/shenjiying88/m5-admin-web:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3002

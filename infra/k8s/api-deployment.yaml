@@ -17,10 +17,6 @@ spec:
       port: 3001
       targetPort: 3001
       protocol: TCP
-    - name: swagger
-      port: 3001
-      targetPort: 3001
-      protocol: TCP
   selector:
     app: m5-api
 ---
@@ -60,7 +56,7 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: api
-          image: ghcr.io/shenjiying/shenjiying88/api:latest
+          image: ghcr.io/shenjiying88/m5-api:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3001

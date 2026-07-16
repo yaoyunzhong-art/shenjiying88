@@ -47,15 +47,13 @@ spec:
               app: m5-api
   egress:
     - to:
-        - podSelector:
-            matchLabels:
-              app: m5-postgres
+        - ipBlock:
+            cidr: 0.0.0.0/0
       ports:
         - port: 5432
     - to:
-        - podSelector:
-            matchLabels:
-              app: m5-redis
+        - ipBlock:
+            cidr: 0.0.0.0/0
       ports:
         - port: 6379
     - to:
@@ -76,6 +74,12 @@ spec:
               app: m5-qdrant
       ports:
         - port: 6333
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - port: 80
+        - port: 443
     - to:
         - namespaceSelector:
             matchLabels:

@@ -29,13 +29,13 @@ data:
   EMBEDDING_PROVIDER: "text-embedding-3-small"
 
   # ─── Database ─────────────────────────────────────────
-  POSTGRES_HOST: "m5-postgres"
+  POSTGRES_HOST: "m5-prod-cluster-rds.pg.rds.aliyuncs.com"
   POSTGRES_PORT: "5432"
-  POSTGRES_DB: "m5"
-  DATABASE_URL: "postgresql://m5:m5_prod_password@m5-postgres:5432/m5"
+  POSTGRES_DB: "m5platform"
+  DATABASE_URL: "postgresql://m5admin:M5Platform@2026!@m5-prod-cluster-rds.pg.rds.aliyuncs.com:5432/m5platform"
 
   # ─── Redis ────────────────────────────────────────────
-  REDIS_HOST: "m5-redis"
+  REDIS_HOST: "r-bp1db6d2422ff374.redis.rds.aliyuncs.com"
   REDIS_PORT: "6379"
 
   # ─── RabbitMQ ─────────────────────────────────────────
