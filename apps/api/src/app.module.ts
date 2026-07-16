@@ -143,6 +143,7 @@ import { SaasAdvancedModule } from './modules/saas-advanced/saas-advanced.module
 import { TenantLLMModule } from './modules/tenant-llm/tenant-llm.module';
 import { TrainingModule } from './modules/training/training.module';
 import { StoreRevenueReportModule } from './modules/store-revenue-report/store-revenue-report.module';
+import { MemberSpendingAnalysisModule } from './modules/member-spending-analysis/member-spending-analysis.module';
 
 @Module({
   imports: [
@@ -297,6 +298,7 @@ import { StoreRevenueReportModule } from './modules/store-revenue-report/store-r
     TenantLLMModule,
     TrainingModule,
     StoreRevenueReportModule,
+    MemberSpendingAnalysisModule,
     ModulesModule,
   ],
   providers: [
