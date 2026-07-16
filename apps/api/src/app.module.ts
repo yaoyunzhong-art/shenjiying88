@@ -29,6 +29,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AiRuleEngineModule } from './modules/ai-rule-engine/ai-rule-engine.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { CampaignModule } from './modules/campaign/campaign.module';
+import { CampaignPerformanceModule } from './modules/campaign-performance/campaign-performance.module';
 import { WorkbenchModule } from './modules/workbench/workbench.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { SvipModule } from './modules/svip/svip.module';
@@ -184,6 +185,7 @@ import { MemberSpendingAnalysisModule } from './modules/member-spending-analysis
     AiRuleEngineModule,
     AnalyticsModule,
     CampaignModule,
+    CampaignPerformanceModule,
     HealthModule,
     WorkbenchModule,
     NotificationModule,
