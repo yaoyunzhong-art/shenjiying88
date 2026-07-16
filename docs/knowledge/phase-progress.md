@@ -148,3 +148,4 @@
 | RQ-20260716-011 | 🐜 Pulse#506: admin-web TSC 75 errors(NEW回归·f45a7306d触发)·dispatch-506-tree.md | #507 | 下个脉冲验收·连续2次→P0
 
 | 2026-07-16 | `#512` | admin-web/(storefront) | Base`✅` Service`✅` Controller`✅` CTest`⚠️` | 0🏆 · dispatch-510❌→P0 |
+| 2026-07-16 | `#513` | admin-web | Base`✅` Service`✅` Controller`✅` CTest`⚠️` | 0🏆 · dispatch-512-P0第3次❌·树哥0commit→🚨🚨P0危机 |
