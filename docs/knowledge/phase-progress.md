@@ -146,3 +146,5 @@
 | RQ-20260716-009 | E1 storefront-web已知checkout偏差根因排查 | 18:00 | 持续多轮·定位清除
 | RQ-20260716-010 | F1 phase-progress Phase标记审计(P-31/P-38/P-37/P-30/P-47/P-48) | 09:30 | 对齐V18路线图
 | RQ-20260716-011 | 🐜 Pulse#506: admin-web TSC 75 errors(NEW回归·f45a7306d触发)·dispatch-506-tree.md | #507 | 下个脉冲验收·连续2次→P0
+
+| 2026-07-16 | `#512` | admin-web/(storefront) | Base`✅` Service`✅` Controller`✅` CTest`⚠️` | 0🏆 · dispatch-510❌→P0 |
