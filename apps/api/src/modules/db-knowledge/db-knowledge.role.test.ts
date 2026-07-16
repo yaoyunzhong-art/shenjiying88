@@ -291,31 +291,23 @@ describe('多角色知识库协作场景', () => {
   // ── 新增: 更多角色访问模式测试 ──
 
   it('店长可以搜索角色专属文档', () => {
-    ROLES.manager && (() => {
-      const results = searchKnowledge('门店运营')
-      expect(results).toBeDefined()
-    })()
+    const results = searchKnowledge('门店运营')
+    expect(results).toBeDefined()
   })
 
   it('导玩员可以搜索游戏设备知识', () => {
-    ROLES.guide && (() => {
-      const results = searchKnowledge('设备维护')
-      expect(results).toBeDefined()
-    })()
+    const results = searchKnowledge('设备维护')
+    expect(results).toBeDefined()
   })
 
   it('营销专员可以搜索活动策划文档', () => {
-    ROLES.marketing && (() => {
-      const results = searchKnowledge('活动策划')
-      expect(results).toBeDefined()
-    })()
+    const results = searchKnowledge('活动策划')
+    expect(results).toBeDefined()
   })
 
   it('运行专员可以搜索日常工作文档', () => {
-    ROLES.operations && (() => {
-      const results = searchKnowledge('日常运营')
-      expect(results).toBeDefined()
-    })()
+    const results = searchKnowledge('日常运营')
+    expect(results).toBeDefined()
   })
 
   it('设备维护相关搜索跨角色返回结果', () => {

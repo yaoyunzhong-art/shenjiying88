@@ -422,7 +422,7 @@ describe('PhaseInfo 实体结构', () => {
   })
 
   it('PhaseInfo 可选字段 createdAt 可以为空', () => {
-    const phase = { id: 'phase-002', name: '规划阶段', order: 2 }
+    const phase: Partial<{id:string;name:string;order:number;createdAt:undefined}> = { id: 'phase-002', name: '规划阶段', order: 2 }
     expect(phase.createdAt).toBeUndefined()
   })
 

@@ -822,12 +822,12 @@ export class D3Service {
   }
 
   private getPeriodBonus(item: RecommendItem, period: RecommendPeriod): number {
-    const bonuses: Record<RecommendPeriod, number> = {
+    const bonuses: Partial<Record<RecommendPeriod, number>> = {
       [RecommendPeriod.TODAY]: item.score * 0.2,
       [RecommendPeriod.WEEK]: item.score * 0.1,
       [RecommendPeriod.MONTH]: item.score * 0.05,
       [RecommendPeriod.QUARTER]: 0,
     }
-    return bonuses[period]
+    return bonuses[period] ?? 0
   }
 }
