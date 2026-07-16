@@ -110,11 +110,14 @@
 | 2026-07-16 | #503c | storefront-web(✅闭环确认5755/5756·1已知checkout偏差维持)×admin-web(61基线持平·8 TSC假阳第31次持平)×app(30🏆✅·全缓存)·无NEW fail注入 | ✅ | ✅ | ⚠️ | ✅ | 1🏆(续·闭环验证第2次确认·稳态维持) |
 | 2026-07-16 | #504 | storefront-web(✅6504/6505test·feat(sales-forecast+sales-clerk) 65新增全绿·1已知checkout偏差不变)×admin-web(61基线持平·8 TSC假阳持平·无新注入)×app(闭环30🏆✅) | ✅ | ⚠️ | ⚠️ | ✅ | 2🏆(续·稳态第2脉冲·65新测试全绿·无新fail注入) |
 | 2026-07-16 | #505 | storefront-web(✅5755/5756·1已知checkout偏差不变)×admin-web(61基线持平·8 TSC假阳第32次持平)×app(30🏆✅·全缓存)·无NEW fail·稳态维持 | ✅ | ⚠️ | ⚠️ | ✅ | 3🏆(续·稳态第3脉冲·无新fail注入) |
+| 2026-07-16 | #506 | admin-web(TSC 8→75🔴 NEW regression·f45a7306d wave3+finance 4658行触发StatCardProps/ButtonVariant/DataTable假阳)×storefront-web(✅5811/5812·58新测全绿·checkout偏差1不变)×admin-web(test 61→57✅改善4)·app(30🏆✅) | ✅ | ⚠️ | ⚠️ | ❌ | 0🏆(断裂·admin-web TSC回归·已派树哥)
 
 ### 🐜 树哥派单 2026-07-16 08:30 (V18 Day1 · 熔断模式)
 
 > V18 Day1 · RQ积压熔断(停止验收pulse 6h) · 5路并行启动
-> 当前基准: storefront稳定✅ · admin-web 61基线/8TSC假阳 · app 30🏆续
+> 当前基准: storefront稳定✅(5811/5812) · admin-web TSC 75❌(NEW回归·已派树哥dispatch-506)·test 57⚠️ · app 30🏆续
+
+> 🐜 **09:47 Pulse#506**: admin-web TSC 8→75 NEW回归(来源f45a7306d wave3+finance 4658行)·已派tree哥 dispatch-506-tree.md
 
 #### 🔴 P0 (V18 Day1强阻塞)
 | RQ-ID | 任务 | 截止 | 说明 |
@@ -137,3 +140,4 @@
 | RQ-20260716-008 | D5 admin-web PageTemplate组件(400行: Table+Search+Modal+ActionBar) | 18:00 | G7建议·批量拉升前置
 | RQ-20260716-009 | E1 storefront-web已知checkout偏差根因排查 | 18:00 | 持续多轮·定位清除
 | RQ-20260716-010 | F1 phase-progress Phase标记审计(P-31/P-38/P-37/P-30/P-47/P-48) | 09:30 | 对齐V18路线图
+| RQ-20260716-011 | 🐜 Pulse#506: admin-web TSC 75 errors(NEW回归·f45a7306d触发)·dispatch-506-tree.md | #507 | 下个脉冲验收·连续2次→P0
