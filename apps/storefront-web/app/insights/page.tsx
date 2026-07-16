@@ -775,6 +775,51 @@ export default function DataInsights() {
         </div>
       </div>
 
+      {/* 门店收益排行榜 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>🏪 门店收益排行榜</h3>
+        <p style={{ margin: '0 0 12px', fontSize: 11, color: '#64748b' }}>各门店月收益与利润对比，按收益降序排列</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {function(stores, idx) {
+            const maxRevenue = Math.max(...stores.map(s => s.revenue));
+            return stores.map(function(s, i) {
+              const barPct = (s.revenue / maxRevenue) * 100;
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 6, background: '#1e293b', border: '1px solid rgba(148,163,184,0.15)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: i < 3 ? '#fbbf24' : '#94a3b8', minWidth: 28, textAlign: 'center' }}>#{i + 1}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', minWidth: 90 }}>{s.store}</span>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ flex: 1, height: 14, borderRadius: 7, background: 'rgba(148,163,184,0.1)', overflow: 'hidden', position: 'relative' }}>
+                      <div style={{
+                        width: barPct + '%', height: '100%', borderRadius: 7,
+                        background: `linear-gradient(90deg, rgba(96,165,250,0.7), ${i === 0 ? 'rgba(251,191,36,0.8)' : 'rgba(96,165,250,0.4)'})`,
+                        transition: 'width 0.4s',
+                      }} />
+                    </div>
+                    <span style={{ fontSize: 11, color: '#93c5fd', fontWeight: 600, minWidth: 45, textAlign: 'right' }}>¥{s.revenue}w</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#94a3b8' }}>
+                    <span>利润 <span style={{ color: '#34d399', fontWeight: 600 }}>{s.profitPct}%</span></span>
+                    <span>客流 {s.visitors}人</span>
+                  </div>
+                </div>
+              );
+            });
+          }([
+            { store: '北京朝阳店', revenue: 12.5, profitPct: 32, visitors: 1850 },
+            { store: '上海浦东店', revenue: 11.8, profitPct: 30, visitors: 1720 },
+            { store: '广州天河店', revenue: 9.2, profitPct: 28, visitors: 1450 },
+            { store: '深圳南山店', revenue: 8.6, profitPct: 26, visitors: 1380 },
+            { store: '成都锦江店', revenue: 7.9, profitPct: 25, visitors: 1220 },
+          ], 0)}
+        </div>
+        <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'rgba(148,163,184,0.06)', fontSize: 11, color: '#94a3b8', display: 'flex', justifyContent: 'space-between' }}>
+          <span>📊 总收益: <span style={{ color: '#fbbf24', fontWeight: 600 }}>¥{(12.5 + 11.8 + 9.2 + 8.6 + 7.9).toFixed(1)}w</span></span>
+          <span>平均利润率: <span style={{ color: '#34d399', fontWeight: 600 }}>{Math.round((32 + 30 + 28 + 26 + 25) / 5)}%</span></span>
+          <span>🏆 <span style={{ color: '#fbbf24' }}>北京朝阳店</span> 收益领先 {((12.5 - 7.9) / 7.9 * 100).toFixed(0)}%</span>
+        </div>
+      </div>
+
       {/* 脚注 */}
       <div style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 24 }}>
         数据洞察系统 · 数据更新于 {new Date().toLocaleString('zh-CN')} · 共 {MOCK_DEVICES.length} 台设备 · {total} 位会员
