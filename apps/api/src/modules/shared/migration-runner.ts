@@ -33,7 +33,13 @@ export class MigrationRunner implements OnModuleInit {
   }
 
   async onModuleInit(): Promise<void> {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[debug:init] MigrationRunner.onModuleInit begin')
+    }
     await this.runAllMigrations()
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[debug:init] MigrationRunner.onModuleInit end')
+    }
   }
 
   /**

@@ -81,6 +81,7 @@ function createRepositoryStub(entityManagerFactory: () => EntityManager): Reposi
   return new Proxy(repository, {
     get(target, prop) {
       if (prop in target) return Reflect.get(target, prop)
+      if (prop === 'then' || prop === 'catch' || prop === 'finally') return undefined
       return (..._args: unknown[]) => undefined
     },
   }) as unknown as Repository<any>
@@ -111,6 +112,7 @@ function createTypeOrmCompatDataSource(): DataSource {
   entityManager = new Proxy(managerLike, {
     get(target, prop) {
       if (prop in target) return Reflect.get(target, prop)
+      if (prop === 'then' || prop === 'catch' || prop === 'finally') return undefined
       return (..._args: unknown[]) => undefined
     },
   }) as unknown as EntityManager
@@ -118,6 +120,7 @@ function createTypeOrmCompatDataSource(): DataSource {
   const dataSourceLike: Record<string, unknown> = {
     isInitialized: true,
     manager: entityManager,
+    entityMetadatas: [],
     initialize: async () => dataSource,
     destroy: async () => undefined,
     getRepository,
@@ -140,6 +143,7 @@ function createTypeOrmCompatDataSource(): DataSource {
   const dataSource = new Proxy(dataSourceLike, {
     get(target, prop) {
       if (prop in target) return Reflect.get(target, prop)
+      if (prop === 'then' || prop === 'catch' || prop === 'finally') return undefined
       return (..._args: unknown[]) => undefined
     },
   }) as unknown as DataSource

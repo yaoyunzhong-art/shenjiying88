@@ -31,9 +31,15 @@ initTracing();
  */
 async function bootstrap() {
   const logger = new LoggerService({ serviceName: 'm5-api-bootstrap' });
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[bootstrap] creating Nest app');
+  }
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: undefined, // 关闭 NestJS 默认 logger,改用我们的 pino
   });
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[bootstrap] Nest app created');
+  }
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
@@ -86,11 +92,23 @@ async function bootstrap() {
     .setDescription('M5 multi-tenant SaaS API gateway and backbone service.')
     .setVersion('0.1.0')
     .build();
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[bootstrap] creating swagger document');
+  }
   const document = SwaggerModule.createDocument(app, swaggerConfig);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[bootstrap] swagger document created');
+  }
   SwaggerModule.setup('docs', app, document);
 
   const port = Number(process.env.API_PORT ?? 3001);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[bootstrap] listening on ${port}`);
+  }
   await app.listen(port);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[bootstrap] listen completed');
+  }
   logger.info({ port, allowedOrigins }, 'm5-api started');
   logger.info(
     { url: `http://localhost:${port}/api/v1/foundation/bootstrap` },

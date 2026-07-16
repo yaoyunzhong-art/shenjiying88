@@ -144,6 +144,9 @@ export class TenantConfigService implements OnModuleInit {
    * P1-F1: 同步构建二级索引 (从 instances 派生, O(n) 一次)
    */
   async onModuleInit(): Promise<void> {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[debug:init] TenantConfigService.onModuleInit begin')
+    }
     if (!this.repo) return
     try {
       const rows = await this.repo.loadAllInstances()
@@ -159,6 +162,10 @@ export class TenantConfigService implements OnModuleInit {
       // 预热失败不阻塞启动, 仅记录
       // eslint-disable-next-line no-console
       console.warn('[TenantConfigService] warm-up failed:', (err as Error).message)
+    } finally {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[debug:init] TenantConfigService.onModuleInit end')
+      }
     }
   }
 
