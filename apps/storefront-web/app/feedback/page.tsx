@@ -477,6 +477,80 @@ export default function FeedbackPage() {
               <span>待处理 {records.filter(r => r.status === 'pending' || r.status === 'processing').length} 条</span>
             </div>
 
+            {/* 反馈分类统计 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>📊 反馈分类统计</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
+                {[
+                  { category: '设备问题', count: 28, pct: 35, icon: '🔧' },
+                  { category: '服务态度', count: 18, pct: 22, icon: '🙋' },
+                  { category: '价格意见', count: 15, pct: 19, icon: '💰' },
+                  { category: '环境卫生', count: 10, pct: 12, icon: '🧹' },
+                  { category: '其他', count: 10, pct: 12, icon: '📌' },
+                ].map(cat => (
+                  <div key={cat.category} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                    <div style={{ fontSize: 18 }}>{cat.icon}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginTop: 2 }}>{cat.category}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#5b21b6' }}>{cat.count}<span style={{ fontSize: 11, fontWeight: 400, color: '#9ca3af' }}>条</span></div>
+                    <div style={{ marginTop: 4, height: 4, borderRadius: 2, background: '#e5e7eb', overflow: 'hidden' }}>
+                      <div style={{ width: `${cat.pct}%`, height: '100%', borderRadius: 2, background: '#7c3aed' }} />
+                    </div>
+                    <div style={{ fontSize: 10, color: '#9ca3af' }}>{cat.pct}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 各渠道响应时效 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fef2f2', border: '1px solid #fecaca' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#991b1b' }}>⏱ 各渠道响应时效</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[
+                  { channel: '门店投诉', avg: '1.2h', max: '3h', volume: 32, color: '#dc2626' },
+                  { channel: '在线客服', avg: '5min', max: '30min', volume: 85, color: '#3b82f6' },
+                  { channel: '电话', avg: '30s', max: '2min', volume: 120, color: '#10b981' },
+                  { channel: '小程序', avg: '2h', max: '6h', volume: 45, color: '#f59e0b' },
+                  { channel: '邮件', avg: '8h', max: '24h', volume: 18, color: '#8b5cf6' },
+                ].map(ch => (
+                  <div key={ch.channel} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#fff', borderRadius: 8, border: '1px solid #fecaca', fontSize: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: ch.color }} />
+                      <span style={{ fontWeight: 600 }}>{ch.channel}</span>
+                      <span style={{ color: '#6b7280' }}>({ch.volume}条)</span>
+                    </div>
+                    <div style={{ color: '#374151' }}>
+                      平均 <span style={{ fontWeight: 600, color: '#dc2626' }}>{ch.avg}</span>
+                      <span style={{ color: '#9ca3af' }}> / 最长 {ch.max}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 常见反馈处理建议 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fffbeb', border: '1px solid #fde68a' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#92400e' }}>💡 常见反馈处理建议</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {[
+                  { issue: '设备排队太久', solution: '高峰时段增设导玩员·启用叫号系统', priority: '高' },
+                  { issue: '积分未到账', solution: '检查系统日志·确认支付完成·手动补登', priority: '高' },
+                  { issue: '空调温度不适', solution: '调整恒温设置·定期清洗滤网', priority: '中' },
+                  { issue: '客服响应慢', solution: '增加高峰班次·使用快捷回复模板', priority: '中' },
+                  { issue: 'WiFi信号差', solution: '检查AP状态·重启路由器·联系宽带', priority: '低' },
+                ].map((f, i) => (
+                  <div key={i} style={{ padding: '7px 10px', borderRadius: 6, background: '#fff', border: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{f.issue}</span>
+                      <span style={{ fontSize: 11, color: '#6b7280', marginLeft: 8 }}>→ {f.solution}</span>
+                    </div>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: f.priority === '高' ? '#fef2f2' : f.priority === '中' ? '#fff7ed' : '#f3f4f6', color: f.priority === '高' ? '#dc2626' : f.priority === '中' ? '#d97706' : '#6b7280' }}>
+                      {f.priority}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* 热点反馈词云 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
               <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0369a1' }}>🔥 反馈热点词云</h3>
