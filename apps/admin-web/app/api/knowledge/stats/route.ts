@@ -24,7 +24,7 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({
       success: true,
       data: {
-        totalDocuments: parseInt(countResult.rows[0]?.count || '0', 10),
+        totalDocuments: parseInt(String(countResult.rows[0]?.count || '0'), 10),
         byKind: kindResult.rows.map((r: any) => ({ kind: r.kind, count: parseInt(r.cnt, 10) })),
         recentEntries: recentResult.rows.map((r: any) => ({
           title: r.title,

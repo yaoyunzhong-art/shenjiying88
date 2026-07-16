@@ -107,7 +107,7 @@ const DEFAULT_FORM = {
 
 function buildColumns(): DataTableColumn<InspectionItem>[] {
   return [
-    { key: 'id', title: '编号', dataKey: 'id', width: 80 },
+    { key: 'id', title: '编号', dataKey: 'id', width: '80px' },
     { key: 'area', title: '检查区域', dataKey: 'area', sortable: true },
     { key: 'equipment', title: '设备', dataKey: 'equipment', sortable: true },
     { key: 'inspector', title: '检查人', dataKey: 'inspector', sortable: true },
@@ -134,11 +134,11 @@ function buildColumns(): DataTableColumn<InspectionItem>[] {
     {
       key: 'actions',
       title: '操作',
-      width: 100,
+      width: '100px',
       render: (item) => (
         <div style={{ display: 'flex', gap: 4 }}>
-          <Button size="xs" variant="text">编辑</Button>
-          {item.status === 'pending' && <Button size="xs" variant="primary">开始检查</Button>}
+          <Button size="sm" variant="ghost">编辑</Button>
+          {item.status === 'pending' && <Button size="sm" variant="primary">开始检查</Button>}
         </div>
       ),
     },
@@ -149,7 +149,6 @@ function buildColumns(): DataTableColumn<InspectionItem>[] {
 
 export default function FirePreventionPage() {
   const [items, setItems] = useState<InspectionItem[]>(generateMockData);
-  const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<InspectionStatus | 'ALL'>('ALL');
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -161,11 +160,13 @@ export default function FirePreventionPage() {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // 搜索过滤
-  const { filteredItems: searchedItems } = useSearchFilter(
+  const { filteredItems: searchedItems, searchTerm, setSearchTerm } = useSearchFilter(
     items,
     useMemo<(keyof InspectionItem)[]>(() => ['area', 'inspector', 'notes', 'equipment'], []),
-    searchQuery,
   );
+  const [searchQuery, setSearchQuery] = useState(searchTerm);
+  // sync the hook's internal searchTerm when external value changes
+  const syncSearch = useCallback((v: string) => { setSearchTerm(v); setSearchQuery(v); }, [setSearchTerm]);
 
   const filteredItems = useMemo(
     () => (statusFilter === 'ALL' ? searchedItems : searchedItems.filter((i) => i.status === statusFilter)),
@@ -288,10 +289,10 @@ export default function FirePreventionPage() {
     <PageShell title="🔥 消防管理" subtitle="消防安全检查记录与风险管理">
       {/* 统计面板 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard title="总检查项" value={stats.total.toString()} secondary={`高风险 ${stats.highRisk}`} />
-        <StatCard title="待检查" value={stats.pending.toString()} secondary={`检查中 ${stats.inProgress}`} tone="warning" />
-        <StatCard title="已通过" value={stats.passed.toString()} secondary="通过项" tone="success" />
-        <StatCard title="未通过" value={stats.failed.toString()} secondary="需整改" tone="danger" />
+        <StatCard label="总检查项" value={stats.total.toString()} helper={`高风险 ${stats.highRisk}`} />
+        <StatCard label="待检查" value={stats.pending.toString()} helper={`检查中 ${stats.inProgress}`} variant="warning" />
+        <StatCard label="已通过" value={stats.passed.toString()} helper="通过项" variant="success" />
+        <StatCard label="未通过" value={stats.failed.toString()} helper="需整改" variant="error" />
       </div>
 
       {/* 效率概要 */}
@@ -324,7 +325,7 @@ export default function FirePreventionPage() {
 
       {/* 工具栏 */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        <SearchFilterInput placeholder="搜索区域、检查人..." value={searchQuery} onChange={setSearchQuery} width="auto" />
+        <SearchFilterInput placeholder="搜索区域、检查人..." value={searchQuery} onChange={syncSearch} width="auto" />
         <Select
           value={statusFilter}
           onChange={(v) => setStatusFilter(v as InspectionStatus | 'ALL')}
@@ -358,9 +359,6 @@ export default function FirePreventionPage() {
         onSortChange={setSortConfig}
         striped
         compact
-        selectable
-        selectedKeys={selectedIds}
-        onSelectionChange={(keys) => setSelectedIds(new Set(Array.from(keys)))}
         emptyText={searchQuery || statusFilter !== 'ALL' ? '没有匹配的检查记录' : '暂无检查记录'}
       />
 

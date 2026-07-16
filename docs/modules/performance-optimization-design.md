@@ -326,4 +326,213 @@ export interface LoadTestResult {
 @Injectable()
 export class LoadTester {
   async run(runner: TaskRunner, options: LoadTestOptions = {}): Promise<LoadTestResult> {
-    const concurrency
+    const concurrency = options.concurrency ?? 10
+    const requestsPerUser = options.requestsPerUser ?? 100
+    const targetRps = options.targetRps ?? 0
+    const rampUpMs = options.rampUpMs ?? 0
+    const timeoutMs = options.timeoutMs ?? 5000
+
+    const totalRequests = concurrency * requestsPerUser
+    const start = Date.now()
+    const latencies: number[] = []
+    const errors: Record<string, number> = {}
+    let successful = 0
+    let failed = 0
+    let completed = 0
+
+    const userDelay = rampUpMs > 0 ? rampUpMs / concurrency : 0
+    const rpsDelay = targetRps > 0 ? (concurrency * 1000) / targetRps : 0
+
+    const userPromises: Promise<void>[] = []
+
+    for (let u = 0; u < concurrency; u++) {
+      if (userDelay > 0) await sleep(userDelay)
+      userPromises.push(this.runUser(u, requestsPerUser, runner, {
+        timeoutMs,
+        rpsDelay,
+        onLatency: (latency) => latencies.push(latency),
+        onResult: (success, errMsg) => {
+          if (success) successful++
+          else { failed++; errors[errMsg] = (errors[errMsg] ?? 0) + 1 }
+          completed++
+          options.onProgress?.(completed, totalRequests)
+        },
+      }))
+    }
+
+    await Promise.all(userPromises)
+
+    const totalDurationMs = Date.now() - start
+    const actualRps = totalRequests / (totalDurationMs / 1000)
+
+    latencies.sort((a, b) => a - b)
+    const percentile = (p: number) => {
+      if (latencies.length === 0) return 0
+      const idx = Math.floor((p / 100) * latencies.length)
+      return latencies[Math.min(idx, latencies.length - 1)]
+    }
+    const sumLat = latencies.reduce((s, l) => s + l, 0)
+    const mean = latencies.length === 0 ? 0 : sumLat / latencies.length
+
+    return {
+      totalRequests,
+      successful,
+      failed,
+      errorRate: totalRequests === 0 ? 0 : failed / totalRequests,
+      actualRps,
+      totalDurationMs,
+      latency: {
+        p50: percentile(50),
+        p95: percentile(95),
+        p99: percentile(99),
+        min: latencies[0] ?? 0,
+        max: latencies[latencies.length - 1] ?? 0,
+        mean,
+      },
+      errors,
+    }
+  }
+}
+```
+
+## 4. 监控与告警
+
+### 4.1 性能指标采集
+
+```typescript
+// 性能指标装饰器
+
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common'
+import { Observable } from 'rxjs'
+import { tap } from 'rxjs/operators'
+
+@Injectable()
+export class PerformanceInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const start = Date.now()
+    const request = context.switchToHttp().getRequest()
+    const endpoint = `${request.method} ${request.route?.path || request.url}`
+
+    return next.handle().pipe(
+      tap(() => {
+        const duration = Date.now() - start
+        this.recordMetrics(endpoint, duration)
+      }),
+    )
+  }
+
+  private recordMetrics(endpoint: string, duration: number): void {
+    // 记录到 Prometheus
+    // http_request_duration_seconds.observe({ endpoint }, duration / 1000)
+    // http_requests_total.inc({ endpoint, status: 'success' })
+
+    // 慢查询告警
+    if (duration > 1000) {
+      console.warn(`Slow query detected: ${endpoint} took ${duration}ms`)
+    }
+  }
+}
+```
+
+### 4.2 告警规则
+
+```yaml
+# 性能告警规则
+
+- alert: HighApiLatency
+  expr: |
+    histogram_quantile(0.95, 
+      sum(rate(http_request_duration_seconds_bucket[5m])) by (le, endpoint)
+    ) > 0.2
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "API 延迟过高"
+    description: "{{ $labels.endpoint }} P95 延迟超过 200ms"
+
+- alert: LowCacheHitRate
+  expr: |
+    cache_hit_rate < 0.9
+  for: 10m
+  labels:
+    severity: warning
+  annotations:
+    summary: "缓存命中率过低"
+    description: "当前命中率 {{ $value }}，低于 90%"
+
+- alert: HighErrorRate
+  expr: |
+    rate(http_requests_total{status=~"5.."}[5m]) / 
+    rate(http_requests_total[5m]) > 0.01
+  for: 5m
+  labels:
+    severity: critical
+  annotations:
+    summary: "错误率过高"
+    description: "5xx 错误率超过 1%"
+```
+
+## 5. 最佳实践
+
+### 5.1 缓存使用规范
+
+1. **选择合适的缓存层级**
+   - L1: 高频访问、计算成本高、数据量小的数据
+   - L2: 跨服务共享、中等访问频率的数据
+   - L3: 持久化数据、低频访问的历史数据
+
+2. **缓存更新策略**
+   - 写入时同时更新缓存和数据库（Write-Through）
+   - 读取时先查缓存，未命中再查数据库（Cache-Aside）
+   - 缓存过期时自动删除（TTL）
+
+3. **缓存穿透防护**
+   - 使用 `wrap` 方法自动处理缓存加载
+   - 对空结果也进行缓存（短TTL）
+   - 布隆过滤器预检查
+
+### 5.2 性能优化清单
+
+```typescript
+// 优化前检查清单
+const optimizationChecklist = {
+  // 数据库层面
+  database: [
+    '是否添加了合适的索引',
+    '查询是否使用了索引覆盖',
+    '是否避免了 N+1 查询',
+    '连接池配置是否合理',
+  ],
+  
+  // 缓存层面
+  cache: [
+    '是否使用了合适的缓存层级',
+    '缓存 key 是否规范',
+    'TTL 设置是否合理',
+    '是否处理了缓存击穿',
+  ],
+  
+  // 代码层面
+  code: [
+    '是否避免了重复计算',
+    '是否使用了批量操作',
+    '异步操作是否优化',
+    '内存使用是否合理',
+  ],
+  
+  // 架构层面
+  architecture: [
+    '是否使用了 CDN',
+    '是否需要分页',
+    '是否启用了压缩',
+    '是否配置了合理的超时',
+  ],
+}
+```
+
+---
+
+**文档版本**: v1.0  
+**最后更新**: 2026-07-16  
+**作者**: M5 Platform Team

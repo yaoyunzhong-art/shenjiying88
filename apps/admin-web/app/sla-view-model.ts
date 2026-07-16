@@ -9,6 +9,9 @@
  * - 自动修复率计算
  */
 
+/** 服务状态枚举 */
+type ServiceStatus = 'green' | 'yellow' | 'red';
+
 import type {
   SLADashboardSnapshot,
   SLAOverallRate,

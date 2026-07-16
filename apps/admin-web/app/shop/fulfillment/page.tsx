@@ -30,6 +30,7 @@ import {
   StatCard,
   StatusBadge,
   SubmitButton,
+  type DataTableColumn,
   type DataTableSortConfig,
   usePagination,
   useSearchFilter,
@@ -132,7 +133,6 @@ function formatMoney(amount: number): string {
 
 export default function FulfillmentPage() {
   const [orders, setOrders] = useState<FulfillmentOrder[]>(MOCK_ORDERS);
-  const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<FulfillmentStatus | 'ALL'>('ALL');
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -148,7 +148,9 @@ export default function FulfillmentPage() {
     () => ['orderId', 'memberName', 'contactPhone', 'address', 'carrier', 'trackingNumber', 'notes'],
     [],
   );
-  const { filteredItems: searchedItems } = useSearchFilter(orders, searchFields, searchQuery);
+  const { filteredItems: searchedItems, searchTerm, setSearchTerm } = useSearchFilter(orders, searchFields);
+  const [searchQuery, setSearchQuery] = useState(searchTerm);
+  const syncSearch = useCallback((v: string) => { setSearchTerm(v); setSearchQuery(v); }, [setSearchTerm]);
 
   const filteredOrders = useMemo(() => {
     if (statusFilter === 'ALL') return searchedItems;
@@ -290,10 +292,10 @@ export default function FulfillmentPage() {
     <PageShell title="📦 履约管理" subtitle="订单履约流程与配送管理">
       {/* 统计面板 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard title="履约单总数" value={stats.total.toString()} secondary={`代履约 ${stats.pending}`} />
-        <StatCard title="配送中" value={stats.shipping.toString()} secondary="拣货/打包/配送" />
-        <StatCard title="已完成" value={stats.delivered.toString()} secondary={`总金额 ${formatMoney(stats.totalAmount)}`} tone="success" />
-        <StatCard title="异常单" value={stats.issues.toString()} secondary="取消/退货" tone="danger" />
+        <StatCard label="履约单总数" value={stats.total.toString()} helper={`代履约 ${stats.pending}`} />
+        <StatCard label="配送中" value={stats.shipping.toString()} helper="拣货/打包/配送" />
+        <StatCard label="已完成" value={stats.delivered.toString()} helper={`总金额 ${formatMoney(stats.totalAmount)}`} variant="success" />
+        <StatCard label="异常单" value={stats.issues.toString()} helper="取消/退货" variant="error" />
       </div>
 
       {/* 反馈 */}
@@ -311,7 +313,7 @@ export default function FulfillmentPage() {
         <SearchFilterInput
           placeholder="搜索单号/会员/地址..."
           value={searchQuery}
-          onChange={setSearchQuery}
+          onChange={syncSearch}
           width="auto"
         />
         <Select
@@ -333,7 +335,7 @@ export default function FulfillmentPage() {
           <span style={{ fontSize: 13, color: '#93c5fd', fontWeight: 600 }}>已选 {selectedIds.size} 单</span>
           <Button variant="primary" size="sm" onClick={handleBatchShip}>批量发货</Button>
           <Button variant="outline" size="sm" onClick={handleBatchExport}>导出选中</Button>
-          <Button variant="text" size="sm" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
         </div>
       )}
 
@@ -347,9 +349,6 @@ export default function FulfillmentPage() {
         onSortChange={setSortConfig}
         striped
         compact
-        selectable
-        selectedKeys={selectedIds}
-        onSelectionChange={(keys) => setSelectedIds(new Set(Array.from(keys)))}
         emptyText={searchQuery || statusFilter !== 'ALL' ? '没有匹配的履约单' : '暂无履约单'}
       />
 
@@ -409,7 +408,7 @@ function buildColumns({ onEdit }: { onEdit: (order: FulfillmentOrder) => void })
       title: '单号',
       dataKey: 'orderId',
       sortable: true,
-      width: 140,
+      width: '140px',
       render: (item) => (
         <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#93c5fd' }}>{item.orderId}</span>
       ),
@@ -419,13 +418,13 @@ function buildColumns({ onEdit }: { onEdit: (order: FulfillmentOrder) => void })
       title: '会员',
       dataKey: 'memberName',
       sortable: true,
-      width: 100,
+      width: '100px',
     },
     {
       key: 'status',
       title: '状态',
       sortValue: (item) => item.status,
-      width: 100,
+      width: '100px',
       render: (item) => (
         <StatusBadge
           label={STATUS_CONFIG[item.status].label}
@@ -439,7 +438,7 @@ function buildColumns({ onEdit }: { onEdit: (order: FulfillmentOrder) => void })
       key: 'shippingMethod',
       title: '配送方式',
       dataKey: 'shippingMethod',
-      width: 100,
+      width: '100px',
       render: (item) => SHIPPING_LABELS[item.shippingMethod],
     },
     {
@@ -447,13 +446,13 @@ function buildColumns({ onEdit }: { onEdit: (order: FulfillmentOrder) => void })
       title: '承运商',
       dataKey: 'carrier',
       sortable: true,
-      width: 100,
+      width: '100px',
     },
     {
       key: 'trackingNumber',
       title: '运单号',
       dataKey: 'trackingNumber',
-      width: 120,
+      width: '120px',
       render: (item) => (
         <span style={{ fontFamily: 'monospace', fontSize: 11, color: item.trackingNumber ? '#94a3b8' : '#666' }}>
           {item.trackingNumber || '—'}
@@ -466,7 +465,7 @@ function buildColumns({ onEdit }: { onEdit: (order: FulfillmentOrder) => void })
       dataKey: 'totalAmount',
       sortable: true,
       align: 'right',
-      width: 100,
+      width: '100px',
       render: (item) => (
         <span style={{ fontWeight: 600, color: '#22c55e' }}>{formatMoney(item.totalAmount)}</span>
       ),
@@ -476,21 +475,21 @@ function buildColumns({ onEdit }: { onEdit: (order: FulfillmentOrder) => void })
       title: '预计送达',
       dataKey: 'estimatedDeliveryDate',
       sortable: true,
-      width: 110,
+      width: '110px',
     },
     {
       key: 'actions',
       title: '操作',
-      width: 120,
+      width: '120px',
       render: (item) => (
         <div style={{ display: 'flex', gap: 4 }}>
           {item.status === 'pending' && (
-            <Button size="xs" variant="primary" onClick={() => {}}>确认</Button>
+            <Button size="sm" variant="primary" onClick={() => {}}>确认</Button>
           )}
           {item.status === 'packed' && (
-            <Button size="xs" variant="primary" onClick={() => {}}>发货</Button>
+            <Button size="sm" variant="primary" onClick={() => {}}>发货</Button>
           )}
-          <Button size="xs" variant="outline" onClick={() => onEdit(item)}>编辑</Button>
+          <Button size="sm" variant="outline" onClick={() => onEdit(item)}>编辑</Button>
         </div>
       ),
     },

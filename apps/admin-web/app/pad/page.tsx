@@ -198,9 +198,9 @@ export default function PadIndexPage() {
 
         {/* 概览统计 */}
         <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', marginBottom: 20 }}>
-          <StatCard title="Pad 角色数" value={String(allPadWorkbenches.length)} secondary="适配不同岗位" />
-          <StatCard title="功能模块数" value={String(totalNavItems)} secondary="可执行功能模块" />
-          <StatCard title="覆盖市场" value={String(marketCodes.length)} secondary={marketCodes.join(' / ') || '—'} />
+          <StatCard label="Pad 角色数" value={String(allPadWorkbenches.length)} helper="适配不同岗位" />
+          <StatCard label="功能模块数" value={String(totalNavItems)} helper="可执行功能模块" />
+          <StatCard label="覆盖市场" value={String(marketCodes.length)} helper={marketCodes.join(' / ') || '—'} />
         </div>
 
         <div style={{ marginBottom: 12, fontSize: 12, color: '#64748b' }}>角色按职能分类统计，点击卡片可展开详情</div>

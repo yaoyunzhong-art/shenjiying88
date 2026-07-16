@@ -114,7 +114,7 @@ const DEFAULT_FORM = {
 
 function buildColumns(): DataTableColumn<SafetyRecord>[] {
   return [
-    { key: 'id', title: '编号', dataKey: 'id', width: 80 },
+    { key: 'id', title: '编号', dataKey: 'id', width: '80px' },
     { key: 'category', title: '类别', dataKey: 'category', sortable: true },
     { key: 'reporter', title: '上报人', dataKey: 'reporter', sortable: true },
     { key: 'reportedDate', title: '上报日期', dataKey: 'reportedDate', sortable: true },
@@ -144,11 +144,11 @@ function buildColumns(): DataTableColumn<SafetyRecord>[] {
     {
       key: 'actions',
       title: '操作',
-      width: 100,
+      width: '100px',
       render: (item) => (
         <div style={{ display: 'flex', gap: 4 }}>
-          <Button size="xs" variant="text">编辑</Button>
-          {item.status === 'open' && <Button size="xs" variant="primary">受理</Button>}
+          <Button size="sm" variant="ghost">编辑</Button>
+          {item.status === 'open' && <Button size="sm" variant="primary">受理</Button>}
         </div>
       ),
     },
@@ -159,7 +159,6 @@ function buildColumns(): DataTableColumn<SafetyRecord>[] {
 
 export default function SafetyPage() {
   const [records, setRecords] = useState<SafetyRecord[]>(generateMockRecords);
-  const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<SafetyStatus | 'ALL'>('ALL');
   const [severityFilter, setSeverityFilter] = useState<SeverityLevel | 'ALL'>('ALL');
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null);
@@ -176,7 +175,9 @@ export default function SafetyPage() {
     () => ['category', 'reporter', 'description', 'location', 'assignee'],
     [],
   );
-  const { filteredItems: searchedItems } = useSearchFilter(records, searchFields, searchQuery);
+  const { filteredItems: searchedItems, searchTerm, setSearchTerm } = useSearchFilter(records, searchFields);
+  const [searchQuery, setSearchQuery] = useState(searchTerm);
+  const syncSearch = useCallback((v: string) => { setSearchTerm(v); setSearchQuery(v); }, [setSearchTerm]);
 
   const filteredRecords = useMemo(() => {
     let result = searchedItems;
@@ -307,10 +308,10 @@ export default function SafetyPage() {
     <PageShell title="🛡️ 安全记录" subtitle="安全事件、隐患与整改跟踪">
       {/* 统计面板 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard title="总记录" value={stats.total.toString()} secondary={`严重 ${stats.critical}`} />
-        <StatCard title="待处理" value={stats.open.toString()} secondary={`调查中 ${stats.investigating}`} tone="warning" />
-        <StatCard title="已解决" value={stats.resolved.toString()} secondary="待关闭" tone="success" />
-        <StatCard title="已关闭" value={stats.closed.toString()} secondary="已完成" tone="default" />
+        <StatCard label="总记录" value={stats.total.toString()} helper={`严重 ${stats.critical}`} />
+        <StatCard label="待处理" value={stats.open.toString()} helper={`调查中 ${stats.investigating}`} variant="warning" />
+        <StatCard label="已解决" value={stats.resolved.toString()} helper="待关闭" variant="success" />
+        <StatCard label="已关闭" value={stats.closed.toString()} helper="已完成" />
       </div>
 
       {/* 反馈 */}
@@ -323,7 +324,7 @@ export default function SafetyPage() {
 
       {/* 工具栏 */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        <SearchFilterInput placeholder="搜索类别、上报人..." value={searchQuery} onChange={setSearchQuery} width="auto" />
+        <SearchFilterInput placeholder="搜索类别、上报人..." value={searchQuery} onChange={syncSearch} width="auto" />
         <Select
           value={statusFilter}
           onChange={(v) => setStatusFilter(v as SafetyStatus | 'ALL')}
@@ -365,9 +366,6 @@ export default function SafetyPage() {
         onSortChange={setSortConfig}
         striped
         compact
-        selectable
-        selectedKeys={selectedIds}
-        onSelectionChange={(keys) => setSelectedIds(new Set(Array.from(keys)))}
         emptyText={searchQuery || statusFilter !== 'ALL' || severityFilter !== 'ALL' ? '没有匹配的记录' : '暂无记录'}
       />
 
@@ -402,8 +400,8 @@ export default function SafetyPage() {
       <div style={{ marginTop: 16, padding: '12px 16px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0', fontSize: 13 }}>
         <div style={{ fontWeight: 600, color: '#166534', marginBottom: 6 }}>🛡️ 安全合规概览</div>
         <div style={{ display: 'flex', gap: 16, color: '#15803d' }}>
-          <span>待处理: {stats.pending} 项</span>
-          <span>调查中: {stats.inProgress} 项</span>
+          <span>待处理: {stats.open} 项</span>
+          <span>调查中: {stats.investigating} 项</span>
           <span>已解决: {stats.resolved} 项</span>
           <span>已关闭: {stats.closed} 项</span>
         </div>

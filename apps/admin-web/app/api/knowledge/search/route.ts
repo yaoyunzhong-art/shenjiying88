@@ -68,7 +68,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<ApiResponse<Se
     // 总结果数
     const countSql = sql.replace(/SELECT.*FROM/, 'SELECT COUNT(*) FROM')
     const countResult = await pool.query(countSql, params)
-    const total = parseInt(countResult.rows[0]?.count || '0', 10)
+    const total = parseInt(String(countResult.rows[0]?.count || '0'), 10)
 
     // 分页
     sql += ` ORDER BY score DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<ApiResponse<Se
       kind: r.kind,
       tags: r.tags || [],
       summary: r.summary || '',
-      score: parseFloat(r.score) || 0,
+      score: parseFloat(String(r.score)) || 0,
       createdAt: r.created_at,
     }))
 

@@ -168,11 +168,11 @@ function buildColumns(): DataTableColumn<StockOp>[] {
     {
       key: 'actions',
       title: '操作',
-      width: 100,
+      width: '100px',
       render: (item) => (
         <div style={{ display: 'flex', gap: 4 }}>
-          <Button size="xs" variant="text">编辑</Button>
-          {item.status === 'draft' && <Button size="xs" variant="text" style={{ color: '#f87171' }}>撤销</Button>}
+          <Button size="sm" variant="ghost">编辑</Button>
+          {item.status === 'draft' && <Button size="sm" variant="ghost" style={{ color: '#f87171' }}>撤销</Button>}
         </div>
       ),
     },
@@ -183,7 +183,6 @@ function buildColumns(): DataTableColumn<StockOp>[] {
 
 export default function StockOperationsPage() {
   const [allOps] = useState<StockOp[]>(generateMockOps);
-  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -196,7 +195,7 @@ export default function StockOperationsPage() {
 
   // 搜索过滤
   const searchFields = useMemo<(keyof StockOp)[]>(() => ['refNo', 'creator', 'warehouse', 'note', 'type', 'supplier'], []);
-  const { filteredItems: searchedItems } = useSearchFilter(allOps, searchFields, searchTerm);
+  const { filteredItems: searchedItems, searchTerm, setSearchTerm } = useSearchFilter(allOps, searchFields);
   const filteredOps = useMemo(
     () => (statusFilter === 'ALL' ? searchedItems : searchedItems.filter((o) => o.status === statusFilter)),
     [searchedItems, statusFilter],
@@ -290,10 +289,10 @@ export default function StockOperationsPage() {
       <PageShell title="📦 库存操作中心" subtitle="入库·出库·调拨·退货">
         {/* 统计面板 */}
         <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 20 }}>
-          <StatCard title="操作单总数" value={stats.total.toString()} secondary={`已完成: ${stats.completed}`} />
-          <StatCard title="待处理" value={stats.pending.toString()} secondary="草稿+待审批" tone="warning" />
-          <StatCard title="入库/出库" value={`${stats.inCount} / ${stats.outCount}`} secondary="入库/出库统计" />
-          <StatCard title="库存变动金额" value={fm(stats.totalCost)} secondary="累计变动" tone="success" />
+          <StatCard label="操作单总数" value={stats.total.toString()} helper={`已完成: ${stats.completed}`} />
+          <StatCard label="待处理" value={stats.pending.toString()} helper="草稿+待审批" variant="warning" />
+          <StatCard label="入库/出库" value={`${stats.inCount} / ${stats.outCount}`} helper="入库/出库统计" />
+          <StatCard label="库存变动金额" value={fm(stats.totalCost)} helper="累计变动" variant="success" />
         </div>
 
         {/* 反馈 */}
@@ -351,9 +350,6 @@ export default function StockOperationsPage() {
           onSortChange={setSortConfig}
           striped
           compact
-          selectable
-          selectedKeys={selectedIds}
-          onSelectionChange={(keys) => setSelectedIds(new Set(Array.from(keys)))}
           emptyText={searchTerm || statusFilter !== 'ALL' ? '没有匹配的操作单' : '暂无操作单'}
         />
 
@@ -390,19 +386,19 @@ export default function StockOperationsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             <div>
               <div style={{ fontSize: 11, color: '#6b7280' }}>入库单</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{opsData.filter((o) => o.type === 'inbound').length}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{sorted.filter((o) => o.type === 'purchase_in').length}</div>
             </div>
             <div>
               <div style={{ fontSize: 11, color: '#6b7280' }}>出库单</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{opsData.filter((o) => o.type === 'outbound').length}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{sorted.filter((o) => o.type === 'sale_out' || o.type === 'damage_out').length}</div>
             </div>
             <div>
               <div style={{ fontSize: 11, color: '#6b7280' }}>调拨单</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{opsData.filter((o) => o.type === 'transfer').length}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{sorted.filter((o) => o.type === 'transfer_out' || o.type === 'transfer_in').length}</div>
             </div>
             <div>
               <div style={{ fontSize: 11, color: '#6b7280' }}>退货单</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{opsData.filter((o) => o.type === 'return').length}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{sorted.filter((o) => o.type === 'return_in').length}</div>
             </div>
           </div>
         </div>

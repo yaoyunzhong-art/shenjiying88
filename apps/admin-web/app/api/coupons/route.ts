@@ -1,6 +1,6 @@
 // P-48 营销券系统代理层 - 优惠券列表/创建
 import { NextRequest } from 'next/server';
-import { API_BASE_URL, createProxyHandler } from '../../_proxy/utils';
+import { API_BASE_URL, createProxyHandler } from '../_proxy/utils';
 
 const COUPON_API = `${API_BASE_URL}/coupons`;
 

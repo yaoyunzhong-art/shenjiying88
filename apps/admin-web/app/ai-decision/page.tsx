@@ -118,14 +118,14 @@ function buildColumns(): DataTableColumn<DecisionRecord>[] {
       title: '类别',
       dataKey: 'ruleCategory',
       sortable: true,
-      width: 80,
+      width: '80px',
     },
     {
       key: 'status',
       title: '状态',
       dataKey: 'status',
       sortable: true,
-      width: 90,
+      width: '90px',
       render: (r: DecisionRecord) => {
         const m = STATUS_MAP[r.status] ?? { label: r.status, variant: 'neutral' as const };
         return <StatusBadge label={m.label} variant={m.variant} size="sm" />;
@@ -136,7 +136,7 @@ function buildColumns(): DataTableColumn<DecisionRecord>[] {
       title: '置信度',
       dataKey: 'confidence',
       sortable: true,
-      width: 90,
+      width: '90px',
       render: (r: DecisionRecord) => (
         <span style={{ fontFamily: 'monospace', color: '#e2e8f0' }}>{(r.confidence * 100).toFixed(0)}%</span>
       ),
@@ -146,7 +146,7 @@ function buildColumns(): DataTableColumn<DecisionRecord>[] {
       title: '触发次数',
       dataKey: 'triggeredCount',
       sortable: true,
-      width: 90,
+      width: '90px',
       align: 'right',
     },
     {
@@ -154,21 +154,21 @@ function buildColumns(): DataTableColumn<DecisionRecord>[] {
       title: '来源',
       dataKey: 'source',
       sortable: true,
-      width: 120,
+      width: '120px',
     },
     {
       key: 'targetAudience',
       title: '目标人群',
       dataKey: 'targetAudience',
       sortable: true,
-      width: 120,
+      width: '120px',
     },
     {
       key: 'createdAt',
       title: '时间',
       dataKey: 'createdAt',
       sortable: true,
-      width: 150,
+      width: '150px',
       render: (r: DecisionRecord) => (
         <span style={{ fontSize: 12, color: '#94a3b8' }}>{r.createdAt}</span>
       ),
@@ -309,11 +309,11 @@ export default function AiDecisionPage() {
       >
         {/* 统计卡片 */}
         <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', marginBottom: 24 }}>
-          <StatCard title="决策总数" value={stats.total.toString()} secondary={`今日`} />
-          <StatCard title="平均置信度" value={`${(stats.avgConf * 100).toFixed(0)}%`} secondary={`总触发 ${stats.totalTriggered.toLocaleString()} 次`} />
-          <StatCard title="已批准" value={stats.approved.toString()} secondary={`${((stats.approved / stats.total) * 100).toFixed(0)}%`} tone="success" />
-          <StatCard title="待处理" value={stats.pending.toString()} secondary="需人工审核" tone="warning" />
-          <StatCard title="已拒绝" value={stats.rejected.toString()} secondary={`${((stats.rejected / stats.total) * 100).toFixed(0)}%`} tone="danger" />
+          <StatCard label="决策总数" value={stats.total.toString()} helper="今日" />
+          <StatCard label="平均置信度" value={`${(stats.avgConf * 100).toFixed(0)}%`} helper={`总触发 ${stats.totalTriggered.toLocaleString()} 次`} />
+          <StatCard label="已批准" value={stats.approved.toString()} helper={`${((stats.approved / stats.total) * 100).toFixed(0)}%`} variant="success" />
+          <StatCard label="待处理" value={stats.pending.toString()} helper="需人工审核" variant="warning" />
+          <StatCard label="已拒绝" value={stats.rejected.toString()} helper={`${((stats.rejected / stats.total) * 100).toFixed(0)}%`} variant="error" />
         </div>
 
         {/* 反馈 */}
@@ -361,7 +361,7 @@ export default function AiDecisionPage() {
             <span style={{ fontSize: 13, color: '#93c5fd', fontWeight: 600 }}>已选 {selectedIds.size} 条</span>
             <Button variant="primary" size="sm" onClick={handleBatchApprove}>批量批准</Button>
             <Button variant="outline" size="sm" onClick={handleBatchReject}>批量拒绝</Button>
-            <Button variant="text" size="sm" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
           </div>
         )}
 
@@ -375,9 +375,6 @@ export default function AiDecisionPage() {
             onSortChange={setSortConfig}
             striped
             compact
-            selectable
-            selectedKeys={selectedIds}
-            onSelectionChange={(keys) => setSelectedIds(new Set(Array.from(keys)))}
             emptyText={search || statusFilter || categoryFilter ? '未找到匹配的决策记录' : '暂无决策数据'}
             rowKey={(r) => r.id}
           />
