@@ -592,6 +592,41 @@ export default function MaintenancePage() {
           </div>
         </div>
 
+        {/* 维护工单按优先级分布 */}
+        <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#fefce8', border: '1px solid #fde68a' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#92400e' }}>🔴 维护工单按优先级分布</h3>
+          {function(orders: MaintenanceOrder[]) {
+            var urgent = orders.filter(function(o) { return o.priority === 'urgent'; }).length;
+            var high = orders.filter(function(o) { return o.priority === 'high'; }).length;
+            var medium = orders.filter(function(o) { return o.priority === 'medium'; }).length;
+            var low = orders.filter(function(o) { return o.priority === 'low'; }).length;
+            var total = orders.length;
+            var items = [
+              { label: '紧急', count: urgent, color: '#dc2626', bg: '#fef2f2' },
+              { label: '高', count: high, color: '#f97316', bg: '#fff7ed' },
+              { label: '中', count: medium, color: '#eab308', bg: '#fefce8' },
+              { label: '低', count: low, color: '#6b7280', bg: '#f3f4f6' },
+            ];
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {items.map(function(item, idx) {
+                  var pct = total > 0 ? Math.round(item.count / total * 100) : 0;
+                  return (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid ' + item.color + '40' }}>
+                      <span style={{ fontWeight: 600, fontSize: 13, color: item.color, minWidth: 32 }}>{item.label}</span>
+                      <div style={{ flex: 1, height: 10, borderRadius: 5, background: '#e5e7eb', overflow: 'hidden' }}>
+                        <div style={{ width: pct + '%', height: '100%', borderRadius: 5, background: item.color, transition: 'width 0.3s' }} />
+                      </div>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: item.color, minWidth: 60, textAlign: 'right' }}>{item.count}单</span>
+                      <span style={{ fontSize: 11, color: '#9ca3af', minWidth: 36, textAlign: 'right' }}>{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          }(MOCK_ORDERS)}
+        </div>
+
         {/* 工单按门店分布 */}
         <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
           <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>🏪 各门店工单分布</h3>

@@ -588,6 +588,46 @@ export default function StorePromotionsPage() {
             </div>
           </div>
         </div>
+                {/* 活动拉新效果对比 */}
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#ecfeff', border: '1px solid #a5f3fc' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#0e7490' }}>📈 活动拉新效果对比</h3>
+          {function(promos: Promotion[]) {
+            var byType: Record<string, Promotion[]> = {};
+            promos.forEach(function(p) {
+              var mapKey: Record<string, string> = { discount: '折扣', coupon: '优惠券', gift: '赠品', 'flash-sale': '秒杀' };
+              var key = mapKey[p.type] || p.type;
+              if (!byType[key]) byType[key] = [];
+              (byType[key] as Promotion[]).push(p);
+            });
+            var typeOrder = ['折扣', '优惠券', '赠品', '秒杀'];
+            var typeIcons: Record<string, string> = { '折扣': '🏷️', '优惠券': '🎫', '赠品': '🎁', '秒杀': '⚡' };
+            var typeColors: Record<string, string> = { '折扣': '#7c3aed', '优惠券': '#2563eb', '赠品': '#059669', '秒杀': '#dc2626' };
+            var newMemberData = [125, 85, 60, 40];
+            return (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {typeOrder.map(function(t, i) {
+                  var count = (byType[t] || []).length;
+                  var newMembers = newMemberData[i] || 0;
+                  return (
+                    <div key={i} style={{ flex: '1 1 120px', padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #a5f3fc', textAlign: 'center' }}>
+                      <div style={{ fontSize: 18 }}>{typeIcons[t]}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#0e7490', marginTop: 2 }}>{t}</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: typeColors[t], marginTop: 2 }}>{count}个</div>
+                      <div style={{ fontSize: 10, color: '#6b7280' }}>活动</div>
+                      <div style={{ marginTop: 4, paddingTop: 4, borderTop: '1px dashed #e5e7eb' }}>
+                        <div style={{ fontSize: 11, color: '#059669' }}>👤 +{newMembers}新会员</div>
+                        <div style={{ marginTop: 2, height: 4, borderRadius: 2, background: '#e5e7eb', overflow: 'hidden' }}>
+                          <div style={{ width: newMembers + '%', height: '100%', borderRadius: 2, background: typeColors[t] }} />
+                        </div>
+                        <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 1 }}>拉新占比 {newMembers}%</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          }(MOCK_DATA)}
+        </div>
                 {/* 活动执行满意度 */}
         <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
           <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#5b21b6' }}>📊 活动执行满意度</h3>

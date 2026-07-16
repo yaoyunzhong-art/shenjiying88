@@ -638,6 +638,36 @@ export default function LoyaltyPage() {
               </div>
             </div>
 
+            {/* 会员权益履行率 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+              <h4 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#166534' }}>✅ 会员权益履行率</h4>
+              {function(data: typeof MEMBER_TIERS) {
+                var fulfillmentData = [
+                  { tier: '普通', icon: '🟤', rate: 38, used: 190, total: 500, color: '#cd7f32' },
+                  { tier: '银卡', icon: '⚪', rate: 55, used: 275, total: 500, color: '#94a3b8' },
+                  { tier: '金卡', icon: '🟡', rate: 72, used: 360, total: 500, color: '#f59e0b' },
+                  { tier: '钻石', icon: '💎', rate: 85, used: 425, total: 500, color: '#06b6d4' },
+                ];
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {fulfillmentData.map(function(f, i) {
+                      return (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #dcfce7', fontSize: 12 }}>
+                          <span style={{ fontSize: 14 }}>{f.icon}</span>
+                          <span style={{ fontWeight: 600, color: '#166534', width: 40 }}>{f.tier}</span>
+                          <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#e5e7eb', overflow: 'hidden' }}>
+                            <div style={{ width: f.rate + '%', height: '100%', borderRadius: 4, background: f.color }} />
+                          </div>
+                          <span style={{ fontWeight: 700, color: f.color, minWidth: 36, textAlign: 'right' }}>{f.rate}%</span>
+                          <span style={{ fontSize: 10, color: '#9ca3af', minWidth: 50 }}>{f.used}/{f.total}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }(MEMBER_TIERS)}
+            </div>
+
             {/* 积分获取渠道分析 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fefce8', border: '1px solid #fde047' }}>
               <h4 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#713f12' }}>⚡ 积分获取渠道分析 (本月)</h4>
