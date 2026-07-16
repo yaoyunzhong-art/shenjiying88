@@ -55,7 +55,7 @@ const marketContexts: RequestTenantContext[] = [
 // ══════════════════════════════════════════════════════════════════
 describe(`${ROLES.StoreManager} bootstrap 扩展测试`, () => {
   it('店长开业前确认系统健康 + 基建元数据完整（全量开业检查）', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const health = ctrl.getHealth()
     const meta = ctrl.getBootstrapMetadata(fullCtx())
 
@@ -69,7 +69,7 @@ describe(`${ROLES.StoreManager} bootstrap 扩展测试`, () => {
   })
 
   it('店长检查多门店副本一致性（反复调用返回相同结构）', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const results = Array.from({ length: 10 }, () => ctrl.getHealth())
 
     for (const r of results) {
@@ -84,7 +84,7 @@ describe(`${ROLES.StoreManager} bootstrap 扩展测试`, () => {
   })
 
   it('店长跨市场查询基础配置确认兼容性（边界：多市场码）', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     for (const ctx of marketContexts) {
       const meta = ctrl.getBootstrapMetadata(ctx)
       assert.equal(meta.tenantContext.tenantId, ctx.tenantId)
@@ -94,7 +94,7 @@ describe(`${ROLES.StoreManager} bootstrap 扩展测试`, () => {
   })
 
   it('店长检查只含 tenantId 的最小上下文（极端边界）', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const ctx: RequestTenantContext = { tenantId: 't-store-only' }
     const meta = ctrl.getBootstrapMetadata(ctx)
     assert.equal(meta.tenantContext.tenantId, 't-store-only')
@@ -127,7 +127,7 @@ describe(`${ROLES.FrontDesk} bootstrap 扩展测试`, () => {
   })
 
   it('前台在高客流时段快速连续 health 检查（压力边界）', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const start = Date.now()
     // 模拟 100 次快速 health 调用（前台高峰）
     for (let i = 0; i < 100; i++) {
@@ -153,7 +153,7 @@ describe(`${ROLES.FrontDesk} bootstrap 扩展测试`, () => {
 // ══════════════════════════════════════════════════════════════════
 describe(`${ROLES.HR} bootstrap 扩展测试`, () => {
   it('HR 为新开门店获取元数据确认员工系统可用', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const ctx = fullCtx({ tenantId: 't-new-store-hr', storeId: 's-hr-new' })
     const meta = ctrl.getBootstrapMetadata(ctx)
     assert.equal(meta.tenantContext.tenantId, 't-new-store-hr')
@@ -227,7 +227,7 @@ describe(`${ROLES.Safety} bootstrap 扩展测试`, () => {
   })
 
   it('安监审计 metadata 不可为 undefined 或 null', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const ctx = fullCtx()
     const meta = ctrl.getBootstrapMetadata(ctx)
 
@@ -238,7 +238,7 @@ describe(`${ROLES.Safety} bootstrap 扩展测试`, () => {
   })
 
   it('安监检查大流量场景下 health uptime 时序不紊乱（防回拨攻击）', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const timestamps: number[] = []
     for (let i = 0; i < 50; i++) {
       const h = ctrl.getHealth()
@@ -254,7 +254,7 @@ describe(`${ROLES.Safety} bootstrap 扩展测试`, () => {
   })
 
   it('安监确认 metadata 的 tenantContext 不泄露其他租户信息', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const ctx: RequestTenantContext = { tenantId: 't-sec-audit' }
     const meta = ctrl.getBootstrapMetadata(ctx)
     // 安监边界检查：tenantContext 只能包含当前请求的租户信息
@@ -290,7 +290,7 @@ describe(`${ROLES.Guide} bootstrap 扩展测试`, () => {
   })
 
   it('导玩员在游客高峰时短时间大量调用 health 无卡顿', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const results: BootstrapHealthResponse[] = []
     // 模拟 500 次密集调用
     for (let i = 0; i < 500; i++) {
@@ -325,7 +325,7 @@ describe(`${ROLES.Guide} bootstrap 扩展测试`, () => {
 // ══════════════════════════════════════════════════════════════════
 describe(`${ROLES.Ops} bootstrap 扩展测试`, () => {
   it('运行专员采集当前 uptime 监控基准', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const h = ctrl.getHealth()
     // 记录当前 uptime 作为健康检查基准
     assert.ok(typeof h.uptime === 'number')
@@ -357,7 +357,7 @@ describe(`${ROLES.Ops} bootstrap 扩展测试`, () => {
   })
 
   it('运行专员验证 metadata 响应吞吐（并发模拟：50 次含不同上下文）', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const ctxs = [
       ...marketContexts,
       minimalCtx('t-ops-01'),
@@ -386,7 +386,7 @@ describe(`${ROLES.Ops} bootstrap 扩展测试`, () => {
 // ══════════════════════════════════════════════════════════════════
 describe(`${ROLES.Teambuilding} bootstrap 扩展测试`, () => {
   it('团建活动开始前确认场地系统健康', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const h = ctrl.getHealth()
     assert.equal(h.status, 'ok')
     assert.equal(h.phase, 'scaffold')
@@ -437,7 +437,7 @@ describe(`${ROLES.Teambuilding} bootstrap 扩展测试`, () => {
 // ══════════════════════════════════════════════════════════════════
 describe(`${ROLES.Marketing} bootstrap 扩展测试`, () => {
   it('营销确认跨区域活动的系统基线一致', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     for (const ctx of marketContexts) {
       const h = ctrl.getHealth()
       assert.equal(h.status, 'ok')
@@ -476,7 +476,7 @@ describe(`${ROLES.Marketing} bootstrap 扩展测试`, () => {
   })
 
   it('营销在活动上线峰值时反复确认系统稳定性（边界：高频率健康巡检）', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const start = process.hrtime.bigint()
     // 模拟 200 次 health 调用（大促活动上线轮询）
     for (let i = 0; i < 200; i++) {
@@ -495,7 +495,7 @@ describe(`${ROLES.Marketing} bootstrap 扩展测试`, () => {
 // ══════════════════════════════════════════════════════════════════
 describe('bootstrap 跨角色集成测试', () => {
   it('所有角色同时获取健康检查返回一致结果', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const results = Array.from({ length: 8 }, () => ctrl.getHealth())
     for (const r of results) {
       assert.equal(r.status, 'ok')
@@ -515,7 +515,7 @@ describe('bootstrap 跨角色集成测试', () => {
   })
 
   it('BootstrapController 和 BootstrapService 的行为一致', () => {
-    const ctrl = new BootstrapController()
+    const ctrl = new BootstrapController(new BootstrapService())
     const svc = new BootstrapService()
     const ctx = fullCtx()
 

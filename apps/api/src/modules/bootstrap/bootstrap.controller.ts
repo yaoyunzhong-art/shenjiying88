@@ -1,25 +1,46 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body } from '@nestjs/common';
 import { TenantContext } from '../tenant/tenant.decorator';
 import type { RequestTenantContext } from '../tenant/tenant.types';
-import { toBootstrapFoundationMetadata } from './bootstrap.contract';
+import { BootstrapService } from './bootstrap.service';
 
 @Controller('bootstrap')
 export class BootstrapController {
-  @Get('metadata')
-  getBootstrapMetadata(@TenantContext() tenantContext: RequestTenantContext) {
-    return {
-      tenantContext,
-      foundationDependencies: toBootstrapFoundationMetadata(undefined).foundationDependencies,
-      phase: 'scaffold'
-    };
-  }
+  constructor(private readonly svc: BootstrapService) {}
 
   @Get('health')
   getHealth() {
-    return {
-      status: 'ok',
-      uptime: process.uptime(),
-      phase: 'scaffold'
-    };
+    return this.svc.getHealth();
+  }
+
+  @Get('metadata')
+  getBootstrapMetadata(@TenantContext() tenantContext: RequestTenantContext) {
+    return this.svc.getBootstrapMetadata(tenantContext);
+  }
+
+  @Get('modules')
+  getModules() {
+    return this.svc.getModuleStatuses();
+  }
+
+  @Get('modules/:module')
+  getModule(@Param('module') module: string) {
+    return this.svc.getModuleStatus(module);
+  }
+
+  @Post('modules/register')
+  registerModule(@Body() body: { module: string; status?: string; details?: string }) {
+    this.svc.registerModule(body.module, (body.status as 'ready' | 'pending' | 'error') ?? 'ready', body.details);
+    return { ok: true };
+  }
+
+  @Post('mark-running')
+  markRunning() {
+    this.svc.markRunning();
+    return { ok: true };
+  }
+
+  @Get('summary')
+  getSummary() {
+    return this.svc.getSummary();
   }
 }
