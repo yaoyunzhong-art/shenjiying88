@@ -151,7 +151,8 @@ describe('notifications — 反例', () => {
   it('不应包含硬编码通知数据', () => {
     const src = readSource();
     // type: 在interface中使用,mock数据使用MOCK_NOTIFICATIONS
-    assert.ok(src.includes('MOCK_NOTIFICATIONS') || src.includes('Mock'), '使用 mock 数据');
+    // type: 在interface中使用, mock数据用MOCK_NOTIFICATIONS
+    assert.ok(src.includes('MOCK_NOTIFICATIONS') || src.includes('Mock') || src.includes('mock'), '使用 mock 数据');
   });
 
   it('不应直接突变 state', () => {

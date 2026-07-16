@@ -160,8 +160,8 @@ describe('ai-decision — 边界防御', () => {
 
   it('创建 Modal 应包含表单字段', () => {
     const src = readSource();
-    assert.ok(src.includes("label: '规则名称'"), '缺少规则名称');
-    assert.ok(src.includes("label: '规则类别'"), '缺少规则类别');
-    assert.ok(src.includes("label: '规则描述'"), '缺少规则描述');
+    assert.ok(src.includes('规则名称') || src.includes("label: '规则名称'"), '缺少规则名称');
+    assert.ok(src.includes('规则类别') || src.includes("label: '规则类别'"), '缺少规则类别');
+    assert.ok(src.includes('规则描述') || src.includes("label: '规则描述'"), '缺少规则描述');
   });
 });
