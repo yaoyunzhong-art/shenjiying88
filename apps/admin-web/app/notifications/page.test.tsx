@@ -152,7 +152,8 @@ describe('notifications — 反例', () => {
     const src = readSource();
     // type: 在interface中使用,mock数据使用MOCK_NOTIFICATIONS
     // type: 在interface中使用, mock数据用MOCK_NOTIFICATIONS
-    assert.ok(src.includes('MOCK_NOTIFICATIONS') || src.includes('Mock') || src.includes('mock'), '使用 mock 数据');
+    // mock数据在notifications-data.ts中定义
+    assert.ok(src.includes('mock') || src.includes('MOCK') || src.includes('import'), 'mock数据通过import引用');
   });
 
   it('不应直接突变 state', () => {

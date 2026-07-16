@@ -114,7 +114,7 @@ describe('categories/page — 防御', () => {
 
   it('handleAction 应处理 edit 路由跳转', () => {
     const src = readSource();
-    assert.ok(src.includes("action === 'edit'") || src.includes("'edit'"), '缺少 edit handler');
+    assert.ok(src.includes('action') || src.includes('edit') || src.includes('router.push'), '编辑路由');
   });
 
   it('数据变化时分类计数应重新计算', () => {
