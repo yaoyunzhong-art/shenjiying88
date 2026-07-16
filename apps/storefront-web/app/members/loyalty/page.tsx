@@ -625,6 +625,90 @@ export default function LoyaltyPage() {
               </div>
             </div>
 
+        {/* 会员等级分布图 */}
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
+          <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#5b21b6' }}>🏅 会员等级分布</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {[
+              { tier: '钻石', icon: '💎', count: 125, pct: 5, color: '#b9f2ff', textColor: '#1e3a5f' },
+              { tier: '金卡', icon: '🟡', count: 375, pct: 15, color: '#ffd700', textColor: '#92400e' },
+              { tier: '银卡', icon: '⚪', count: 875, pct: 35, color: '#c0c0c0', textColor: '#374151' },
+              { tier: '普通', icon: '🟤', count: 1125, pct: 45, color: '#cd7f32', textColor: '#6b7280' },
+            ].map(function(t, i) {
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 6, background: '#fff', border: '1px solid #e5e7eb' }}>
+                  <span style={{ fontSize: 16 }}>{t.icon}</span>
+                  <span style={{ fontWeight: 600, width: 40, fontSize: 12, color: t.textColor }}>{t.tier}</span>
+                  <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#e5e7eb', overflow: 'hidden' }}>
+                    <div style={{ width: t.pct + '%', height: '100%', borderRadius: 4, background: 'linear-gradient(90deg, ' + t.color + ', ' + t.textColor + ')' }} />
+                  </div>
+                  <span style={{ fontWeight: 600, fontSize: 12, color: '#5b21b6' }}>{t.pct}%</span>
+                  <span style={{ fontSize: 10, color: '#9ca3af' }}>{t.count}人</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 会员生命周期阶段分析 */}
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+          <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#0369a1' }}>🌱 会员生命周期阶段</h4>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+            {[
+              { stage: '新客', icon: '🌟', count: 320, pct: 13, color: '#22c55e', desc: '注册30天内' },
+              { stage: '活跃', icon: '🔥', count: 1020, pct: 42, color: '#3b82f6', desc: '近30天有消费' },
+              { stage: '沉默', icon: '💤', count: 680, pct: 28, color: '#f59e0b', desc: '30-90天未消费' },
+              { stage: '流失', icon: '💔', count: 415, pct: 17, color: '#ef4444', desc: '超90天未消费' },
+            ].map(function(s, i) {
+              return (
+                <div key={i} style={{ padding: 12, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 18 }}>{s.icon}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{s.stage}</span>
+                    </div>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: s.color }}>{s.pct}%</span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden', marginBottom: 2 }}>
+                    <div style={{ width: s.pct + '%', height: '100%', borderRadius: 3, background: s.color }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#9ca3af' }}>
+                    <span>{s.count}人</span>
+                    <span>{s.desc}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 权益使用排名 */}
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
+          <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#9a3412' }}>🎫 权益使用排名</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {[
+              { rank: 1, name: '免费停车', icon: '🚗', used: 685, total: 2500, rate: 27.4, trend: '+5.2%' },
+              { rank: 2, name: '双倍积分', icon: '⚡', used: 520, total: 2500, rate: 20.8, trend: '+3.1%' },
+              { rank: 3, name: '优先预约', icon: '📅', used: 380, total: 2500, rate: 15.2, trend: '+8.7%' },
+              { rank: 4, name: '生日礼包', icon: '🎂', used: 215, total: 2500, rate: 8.6, trend: '+1.4%' },
+            ].map(function(b, i) {
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 6, background: '#fff', border: '1px solid #fed7aa' }}>
+                  <span style={{ fontWeight: 700, color: i < 3 ? '#d97706' : '#6b7280', minWidth: 20 }}>#{b.rank}</span>
+                  <span style={{ fontSize: 14 }}>{b.icon}</span>
+                  <span style={{ fontWeight: 600, fontSize: 12, color: '#374151', width: 60 }}>{b.name}</span>
+                  <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
+                    <div style={{ width: b.rate + '%', height: '100%', borderRadius: 3, background: b.rate >= 20 ? '#22c55e' : b.rate >= 10 ? '#f59e0b' : '#ef4444' }} />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#9a3412', minWidth: 36 }}>{b.rate}%</span>
+                  <span style={{ fontSize: 10, color: '#16a34a' }}>{b.used}次</span>
+                  <span style={{ fontSize: 10, color: '#059669' }}>{b.trend}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
     <div style={{ display: 'flex', gap: 16, justifyContent: 'center', fontSize: 10, color: '#9ca3af', marginTop: 8 }}>
       <span>🏪 本月兑换: 345次</span>
       <span>👥 使用会员: 128人</span>

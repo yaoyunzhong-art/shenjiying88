@@ -601,6 +601,111 @@ export default function MaintenancePage() {
           </div>
         </div>
 
+        {/* 维护耗材库存预警 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fffbeb', border: '1px solid #fde68a' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#92400e' }}>📦 维护耗材库存预警</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
+            {[
+              { name: '空调滤网', stock: 3, threshold: 20, unit: '个', status: '告警', color: '#ef4444' },
+              { name: '润滑油', stock: 8, threshold: 15, unit: '桶', status: '不足', color: '#f59e0b' },
+              { name: '螺丝套装', stock: 45, threshold: 30, unit: '套', status: '正常', color: '#22c55e' },
+              { name: '传感器', stock: 2, threshold: 10, unit: '个', status: '告警', color: '#ef4444' },
+              { name: '电源模块', stock: 4, threshold: 8, unit: '块', status: '不足', color: '#f59e0b' },
+              { name: '数据线', stock: 25, threshold: 20, unit: '条', status: '正常', color: '#22c55e' },
+              { name: '保险丝', stock: 1, threshold: 12, unit: '盒', status: '告警', color: '#ef4444' },
+              { name: '轴承', stock: 6, threshold: 10, unit: '个', status: '不足', color: '#f59e0b' },
+            ].map(function(item, i) {
+              return (
+                <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{item.name}</span>
+                    <span style={{ padding: '1px 6px', borderRadius: 4, fontSize: 10, fontWeight: 600, background: item.status === '告警' ? '#fef2f2' : item.status === '不足' ? '#fffbeb' : '#f0fdf4', color: item.color }}>{item.status}</span>
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: item.color }}>{item.stock}<span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 400 }}>/{item.threshold}{item.unit}</span></div>
+                  <div style={{ marginTop: 4, height: 4, borderRadius: 2, background: '#e5e7eb', overflow: 'hidden' }}>
+                    <div style={{ width: Math.min(100, (item.stock / item.threshold) * 100) + '%', height: '100%', borderRadius: 2, background: item.color }} />
+                  </div>
+                  <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2 }}>{item.stock < item.threshold ? '需补货 ' + (item.threshold - item.stock) + item.unit : '库存充足'}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 维护成本分布 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0369a1' }}>💰 维护成本分布（月度趋势）</h3>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 80, padding: '4px 0' }}>
+            {[
+              { month: '3月', parts: 3200, labor: 2400, outsource: 1500, color: '#22c55e' },
+              { month: '4月', parts: 2800, labor: 2600, outsource: 1800, color: '#22c55e' },
+              { month: '5月', parts: 4100, labor: 2200, outsource: 1200, color: '#22c55e' },
+              { month: '6月', parts: 3600, labor: 2800, outsource: 2000, color: '#22c55e' },
+              { month: '本月', parts: 3850, labor: 2600, outsource: 1800, color: '#22c55e' },
+            ].map(function(m, i) {
+              const maxVal = 4100;
+              return (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 65 }}>
+                    <div style={{ width: 10, height: (m.parts / maxVal) * 60 + 'px', borderRadius: '2px 2px 0 0', background: '#22c55e' }} />
+                    <div style={{ width: 10, height: (m.labor / maxVal) * 60 + 'px', borderRadius: '2px 2px 0 0', background: '#3b82f6' }} />
+                    <div style={{ width: 10, height: (m.outsource / maxVal) * 60 + 'px', borderRadius: '2px 2px 0 0', background: '#a855f7' }} />
+                  </div>
+                  <div style={{ fontSize: 9, color: '#6b7280', marginTop: 2 }}>{m.month}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#64748b', marginTop: 4 }}>
+            <span><span style={{ color: '#22c55e' }}>■</span> 配件</span>
+            <span><span style={{ color: '#3b82f6' }}>■</span> 人工</span>
+            <span><span style={{ color: '#a855f7' }}>■</span> 外包</span>
+          </div>
+          <div style={{ marginTop: 8, padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', fontSize: 11, color: '#6b7280', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            {[
+              { label: '配件采购', value: '¥3,850', pct: 42, color: '#22c55e' },
+              { label: '人工费用', value: '¥2,600', pct: 28, color: '#3b82f6' },
+              { label: '外包服务', value: '¥1,800', pct: 19, color: '#a855f7' },
+            ].map(function(c, i) {
+              return (
+                <div key={i} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, color: '#9ca3af' }}>{c.label}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: c.color }}>{c.value}</div>
+                  <div style={{ fontSize: 10, color: '#c026d3' }}>{c.pct}%</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 设备故障率排行 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#faf5ff', border: '1px solid #e9d5ff' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#6b21a8' }}>🔝 设备故障率排行 TOP5</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {[
+              { rank: 1, name: '抓娃娃机', incidents: 24, totalUnits: 32, rate: 75, trend: '+8%' },
+              { rank: 2, name: '赛车模拟器', incidents: 18, totalUnits: 28, rate: 64, trend: '+12%' },
+              { rank: 3, name: '投篮机', incidents: 22, totalUnits: 40, rate: 55, trend: '-3%' },
+              { rank: 4, name: '射击机', incidents: 12, totalUnits: 25, rate: 48, trend: '+5%' },
+              { rank: 5, name: 'VR设备', incidents: 7, totalUnits: 18, rate: 39, trend: '-2%' },
+            ].map(function(d, i) {
+              const barColor = d.rate >= 70 ? '#ef4444' : d.rate >= 50 ? '#f59e0b' : '#22c55e';
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', fontSize: 12 }}>
+                  <span style={{ fontWeight: 700, color: i < 3 ? '#d97706' : '#6b7280', minWidth: 20 }}>#{d.rank}</span>
+                  <span style={{ fontWeight: 600, width: 80 }}>{d.name}</span>
+                  <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
+                    <div style={{ width: d.rate + '%', height: '100%', borderRadius: 3, background: barColor }} />
+                  </div>
+                  <span style={{ color: barColor, fontWeight: 700, minWidth: 32 }}>{d.rate}%</span>
+                  <span style={{ color: d.trend.startsWith('+') ? '#ef4444' : '#22c55e', fontSize: 10 }}>{d.trend}</span>
+                  <span style={{ fontSize: 10, color: '#9ca3af' }}>{d.incidents}次/{d.totalUnits}台</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
           <span>📋 总工单: {stats.total}单</span>
           <span>🔧 完成率: {stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%</span>
           <span>🚨 紧急: {stats.urgent}单</span>
