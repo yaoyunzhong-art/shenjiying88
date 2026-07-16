@@ -538,6 +538,57 @@ export default function StorePromotionsPage() {
           </div>
         </div>
       )}
+                {/* 活动执行满意度 */}
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#5b21b6' }}>📊 活动执行满意度</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
+            {[
+              { name: '设备免费玩', satisfaction: 0.92, participants: 320 },
+              { name: '充值送积分', satisfaction: 0.88, participants: 280 },
+              { name: '新客专享', satisfaction: 0.95, participants: 180 },
+              { name: '周末特惠', satisfaction: 0.85, participants: 450 },
+              { name: '团队优惠', satisfaction: 0.90, participants: 120 },
+            ].map(function(a, i) {
+              return (
+                <div key={i} style={{ padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #e9d5ff' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 2 }}>{a.name}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#7c3aed' }}>{Math.round(a.satisfaction * 100)}%<span style={{ fontSize: 10, color: '#9ca3af' }}>满意度</span></div>
+                  <div style={{ fontSize: 10, color: '#6b7280' }}>参与 {a.participants}人</div>
+                  <div style={{ marginTop: 2, height: 4, borderRadius: 2, background: '#f3e8ff', overflow: 'hidden' }}>
+                    <div style={{ width: a.satisfaction * 100 + '%', height: '100%', borderRadius: 2, background: '#7c3aed' }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 活动预算执行 */}
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#166534' }}>💰 月度活动预算执行</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {[
+              { month: '2月', budget: 80, used: 65, color: '#22c55e' },
+              { month: '3月', budget: 100, used: 92, color: '#22c55e' },
+              { month: '4月', budget: 80, used: 85, color: '#f59e0b' },
+              { month: '5月', budget: 120, used: 88, color: '#3b82f6' },
+              { month: '6月', budget: 100, used: 78, color: '#22c55e' },
+            ].map(function(b, i) {
+              var over = b.used > b.budget
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #dcfce7', fontSize: 12 }}>
+                  <span style={{ fontWeight: 600, color: '#166534', width: 40 }}>{b.month}</span>
+                  <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#e5e7eb', overflow: 'hidden' }}>
+                    <div style={{ width: Math.min(b.used / b.budget * 100, 100) + '%', height: '100%', borderRadius: 4, background: over ? '#ef4444' : b.color }} />
+                  </div>
+                  <span style={{ color: '#6b7280', width: 60, textAlign: 'right' }}>¥{b.used}k / ¥{b.budget}k</span>
+                  <span style={{ color: over ? '#ef4444' : '#16a34a', width: 40, textAlign: 'right' }}>{over ? '超' + (b.used - b.budget) + 'k' : ''}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         <div style={{ textAlign: "center", fontSize: 10, color: "#9ca3af", marginTop: 8 }}>💡 数据来源: 各门店活动执行系统 · 自动更新于每日 06:00</div>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", fontSize: 10, color: "#9ca3af", marginTop: 4 }}>
           <span>📊 统计周期: 本月</span>

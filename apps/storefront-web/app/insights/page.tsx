@@ -550,6 +550,57 @@ export default function DataInsights() {
         </div>
       </div>
 
+      {/* 会员活跃时段分布 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>⏰ 会员活跃时段分布</h3>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 70, padding: '4px 0' }}>
+          {[
+            { hour: '6-9', pct: 8, color: '#c4b5fd' },
+            { hour: '9-12', pct: 25, color: '#a78bfa' },
+            { hour: '12-14', pct: 18, color: '#8b5cf6' },
+            { hour: '14-17', pct: 22, color: '#7c3aed' },
+            { hour: '17-19', pct: 15, color: '#6d28d9' },
+            { hour: '19-22', pct: 35, color: '#5b21b6' },
+            { hour: '22-6', pct: 5, color: '#4c1d95' },
+          ].map(function(s, i) {
+            return (
+              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ width: '70%', height: (s.pct * 2) + 'px', borderRadius: '4px 4px 0 0', background: s.color, opacity: 0.8 }} />
+                <div style={{ fontSize: 9, color: '#64748b', marginTop: 2 }}>{s.hour}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 门店效率TOP5 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>🏪 门店效率 TOP5</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {[
+            { store: '北京朝阳店', revenue: 12.5, visitors: 1850, satisfaction: 0.94 },
+            { store: '上海浦东店', revenue: 11.8, visitors: 1720, satisfaction: 0.92 },
+            { store: '广州天河店', revenue: 9.2, visitors: 1450, satisfaction: 0.90 },
+            { store: '深圳南山店', revenue: 8.6, visitors: 1380, satisfaction: 0.89 },
+            { store: '成都锦江店', revenue: 7.9, visitors: 1220, satisfaction: 0.88 },
+          ].map(function(st, i) {
+            return (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 10px', borderRadius: 6, background: '#1e293b', border: '1px solid rgba(148,163,184,0.15)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#34d399', width: 18, textAlign: 'center' }}>#{i + 1}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>{st.store}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 10, fontSize: 11, color: '#94a3b8' }}>
+                  <span>¥{st.revenue}w</span>
+                  <span>{st.visitors}人</span>
+                  <span>满意度 {Math.round(st.satisfaction * 100)}%</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* 脚注 */}
       <div style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 24 }}>
         数据洞察系统 · 数据更新于 {new Date().toLocaleString('zh-CN')} · 共 {MOCK_DEVICES.length} 台设备 · {total} 位会员

@@ -550,6 +550,51 @@ export default function MemberChurnPage() {
           <span>📊 诊断报告每 24 小时自动更新</span>
           <span>⏱ 上次分析: {new Date().toLocaleString('zh-CN')}</span>
         </div>
+        {/* 召回成本分析 */}
+        <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#166534' }}>💰 召回成本 vs 流失损失</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8 }}>
+            {[
+              { label: '单客召回成本', value: '¥35', color: '#22c55e' },
+              { label: '月流失损失', value: '¥180/人', color: '#ef4444' },
+              { label: '召回月均消费', value: '¥220', color: '#3b82f6' },
+              { label: 'ROI', value: '6.3x', color: '#f59e0b' },
+            ].map(function(s, i) {
+              return (
+                <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #dcfce7', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>{s.label}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: s.color }}>{s.value}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 流失会员画像 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fef2f2', border: '1px solid #fecaca' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#991b1b' }}>🔍 流失会员画像</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8 }}>
+            {[
+              { dim: '年龄', desc: '25-35岁占52%', pct: 52 },
+              { dim: '入会时长', desc: '3-6月', pct: 45 },
+              { dim: '月消费', desc: '<2次', pct: 68 },
+              { dim: '客单价', desc: '<¥50', pct: 55 },
+              { dim: '距店', desc: '>3公里', pct: 60 },
+              { dim: '时段', desc: '周末为主', pct: 42 },
+            ].map(function(p, i) {
+              return (
+                <div key={i} style={{ padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #fecaca' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#374151' }}>{p.dim}</div>
+                  <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 3 }}>{p.desc}</div>
+                  <div style={{ height: 4, borderRadius: 2, background: '#fee2e2', overflow: 'hidden' }}>
+                    <div style={{ width: p.pct + '%', height: '100%', borderRadius: 2, background: '#ef4444' }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
       </div>
     </PageShell>
   );
