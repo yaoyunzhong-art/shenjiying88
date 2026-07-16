@@ -674,6 +674,124 @@ export default function FeedbackPage() {
               </div>
             </div>
 
+            {/* 门店反馈处理效率排行 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0369a1' }}>🏪 门店反馈处理效率排行</h3>
+              {function(s,i) {
+                var STORE_EFFICIENCY = [
+                  { store: '北京朝阳店', category: '旗舰店', avgTime: '1.2h', maxTime: '3.0h', resolved: 26, total: 28, satisfaction: 96, score: 94, emoji: '🥇' },
+                  { store: '上海浦东店', category: '商场店', avgTime: '2.0h', maxTime: '4.5h', resolved: 31, total: 35, satisfaction: 92, score: 88, emoji: '🥈' },
+                  { store: '广州天河店', category: '商场店', avgTime: '2.5h', maxTime: '5.0h', resolved: 19, total: 22, satisfaction: 90, score: 85, emoji: '🥉' },
+                  { store: '深圳南山店', category: '社区店', avgTime: '3.2h', maxTime: '6.0h', resolved: 15, total: 18, satisfaction: 87, score: 80, emoji: '⭐' },
+                  { store: '成都锦江店', category: '街边店', avgTime: '4.0h', maxTime: '8.0h', resolved: 12, total: 15, satisfaction: 82, score: 74, emoji: '⭐' },
+                  { store: '杭州西湖店', category: '景区店', avgTime: '3.8h', maxTime: '7.0h', resolved: 10, total: 12, satisfaction: 85, score: 76, emoji: '⭐' },
+                ];
+                var MAX_SCORE = 94;
+                return (
+                  <div>
+                    {/* 排行头部总览 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 10 }}>
+                      <div style={{ padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>总门店数</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#0369a1' }}>{STORE_EFFICIENCY.length}</div>
+                      </div>
+                      <div style={{ padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>平均处理率</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#059669' }}>{Math.round(STORE_EFFICIENCY.reduce(function(a, st) { return a + (st.resolved / st.total) * 100; }, 0) / STORE_EFFICIENCY.length)}%</div>
+                      </div>
+                      <div style={{ padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>平均时效</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#d97706' }}>2.8h</div>
+                      </div>
+                      <div style={{ padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>平均满意度</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#8b5cf6' }}>89%</div>
+                      </div>
+                    </div>
+
+                    {/* 门店排行列表 */}
+                    {STORE_EFFICIENCY.map(function(st, i) {
+                      var rate = Math.round((st.resolved / st.total) * 100);
+                      var sw = Math.round((st.score / MAX_SCORE) * 100);
+                      var barColor = st.score >= 85 ? '#22c55e' : st.score >= 75 ? '#f59e0b' : '#ef4444';
+                      return (
+                        <div key={i} style={{ padding: '8px 12px', borderRadius: 8, marginBottom: 5, background: '#fff', border: '1px solid ' + (i < 3 ? '#bae6fd' : '#e5e7eb'), fontSize: 12 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontSize: 16 }}>{st.emoji}</span>
+                              <span style={{ fontWeight: 600, color: '#374151' }}>{st.store}</span>
+                              <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: '#f0f9ff', color: '#0284c7' }}>{st.category}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontSize: 10, color: '#6b7280' }}>⏱{st.avgTime}</span>
+                              <span style={{ padding: '2px 6px', borderRadius: 4, background: barColor + '20', color: barColor, fontWeight: 600, fontSize: 11 }}>
+                                综{st.score}分
+                              </span>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 12, marginBottom: 4, color: '#6b7280', fontSize: 10 }}>
+                            <span>处理 <span style={{ fontWeight: 600, color: '#059669' }}>{st.resolved}/{st.total}</span></span>
+                            <span>处理率 <span style={{ fontWeight: 600, color: '#059669' }}>{rate}%</span></span>
+                            <span>满意度 <span style={{ fontWeight: 600, color: '#8b5cf6' }}>{st.satisfaction}%</span></span>
+                            <span>最长响应 <span style={{ fontWeight: 600, color: '#dc2626' }}>{st.maxTime}</span></span>
+                          </div>
+                          <div style={{ height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
+                            <div style={{ width: sw + '%', height: '100%', borderRadius: 3, background: barColor, transition: 'width 0.3s ease' }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* 效率评级分布 */}
+                    <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                      <div style={{ padding: '6px 8px', borderRadius: 6, background: '#f0fdf4', border: '1px solid #bbf7d0', textAlign: 'center', fontSize: 11 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>{STORE_EFFICIENCY.filter(function(st) { return st.score >= 85; }).length}</div>
+                        <div style={{ color: '#166534' }}>优秀门店 (≥85分)</div>
+                      </div>
+                      <div style={{ padding: '6px 8px', borderRadius: 6, background: '#fffbeb', border: '1px solid #fde68a', textAlign: 'center', fontSize: 11 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#d97706' }}>{STORE_EFFICIENCY.filter(function(st) { return st.score >= 75 && st.score < 85; }).length}</div>
+                        <div style={{ color: '#92400e' }}>良好门店 (75-84分)</div>
+                      </div>
+                      <div style={{ padding: '6px 8px', borderRadius: 6, background: '#fef2f2', border: '1px solid #fecaca', textAlign: 'center', fontSize: 11 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#dc2626' }}>{STORE_EFFICIENCY.filter(function(st) { return st.score < 75; }).length}</div>
+                        <div style={{ color: '#991b1b' }}>待提升 (&lt;75分)</div>
+                      </div>
+                    </div>
+
+                    {/* 最快/最慢门店对比 */}
+                    <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 6, background: '#ecfeff', border: '1px solid #a5f3fc', fontSize: 11, color: '#0e7490' }}>
+                      <div style={{ display: 'flex', gap: 16, justifyContent: 'space-around' }}>
+                        <span>⚡ 最快: <span style={{ fontWeight: 600 }}>北京朝阳店 1.2h</span></span>
+                        <span>🐢 最慢: <span style={{ fontWeight: 600 }}>成都锦江店 4.0h</span></span>
+                        <span>📊 效率差: <span style={{ fontWeight: 600, color: '#dc2626' }}>3.3x</span></span>
+                      </div>
+                    </div>
+
+                    {/* 月度效率趋势 */}
+                    <div style={{ marginTop: 10, padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd' }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#0369a1', marginBottom: 6 }}>📈 各门店月度效率趋势 (处理率%)</div>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 60, padding: '4px 0' }}>
+                        {STORE_EFFICIENCY.slice(0, 5).map(function(st, i) {
+                          var rate = Math.round((st.resolved / st.total) * 100);
+                          var barH = Math.round(rate * 0.55);
+                          var barColors = ['#22c55e', '#16a34a', '#65a30d', '#84cc16', '#a3e635'];
+                          return (
+                            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                              <span style={{ fontSize: 9, fontWeight: 600, color: '#16a34a' }}>{rate}%</span>
+                              <div style={{ width: '60%', height: barH + 'px', borderRadius: '3px 3px 0 0', background: barColors[i], minHeight: 8 }} />
+                              <span style={{ fontSize: 8, color: '#0369a1', textAlign: 'center', lineHeight: 1.2, marginTop: 2 }}>
+                                {st.store.replace(/[市县店]/g, '')}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }(null, null)}
+            </div>
+
             {/* 常见反馈处理建议 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fffbeb', border: '1px solid #fde68a' }}>
               <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#92400e' }}>💡 常见反馈处理建议</h3>

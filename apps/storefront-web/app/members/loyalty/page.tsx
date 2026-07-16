@@ -706,6 +706,119 @@ export default function LoyaltyPage() {
               </div>
             </div>
 
+            {/* 会员活跃度评分 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fffbeb', border: '1px solid #fde68a' }}>
+              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#92400e' }}>📊 会员活跃度评分</h4>
+              {function(s,i) {
+                var DIMS = ['消费频次', '到店时间', '推荐分享', '评价互动'];
+                var ICONS = ['🛒', '⏰', '👥', '✍️'];
+                var WEIGHTS = [35, 30, 20, 15];
+                var ACTIVE_DATA = [
+                  { level: '活跃', icon: '🔥', min: 85, max: 100, count: 320, color: '#22c55e', bg: '#f0fdf4' },
+                  { level: '一般', icon: '😐', min: 60, max: 84, count: 480, color: '#f59e0b', bg: '#fffbeb' },
+                  { level: '沉睡', icon: '💤', min: 30, max: 59, count: 280, color: '#f97316', bg: '#fff7ed' },
+                  { level: '流失', icon: '💔', min: 0, max: 29, count: 120, color: '#ef4444', bg: '#fef2f2' },
+                ];
+                var VIBRANT_SUMMARY = [
+                  { label: '总会员', value: '1,200', icon: '👥', color: '#2563eb' },
+                  { label: '综合活跃', value: '68%', icon: '📈', color: '#059669' },
+                  { label: '上月变化', value: '+5.2%', icon: '⬆️', color: '#16a34a' },
+                  { label: '预警人数', value: '120', icon: '⚠️', color: '#dc2626' },
+                ];
+                var RECENT_SCORE_TREND = [
+                  { month: '2月', score: 62, change: '-' },
+                  { month: '3月', score: 65, change: '+3' },
+                  { month: '4月', score: 64, change: '-1' },
+                  { month: '5月', score: 68, change: '+4' },
+                  { month: '6月', score: 71, change: '+3' },
+                  { month: '7月', score: 75, change: '+4' },
+                ];
+                return (
+                  <div>
+                    {/* 四维度评分介绍 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8, marginBottom: 10 }}>
+                      {DIMS.map(function(d, i) {
+                        var w = WEIGHTS[i];
+                        return (
+                          <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fef08a', textAlign: 'center' }}>
+                            <span style={{ fontSize: 18 }}>{ICONS[i]}</span>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: '#713f12', marginTop: 2 }}>{d}</div>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: '#854d0e' }}>{w}<span style={{ fontSize: 10, fontWeight: 400, color: '#9ca3af' }}>%</span></div>
+                            <div style={{ fontSize: 10, color: '#a16207' }}>权重占比</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* 活跃度等级分布 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
+                      {ACTIVE_DATA.map(function(d, i) {
+                        var pct = Math.round((d.count / 1200) * 100);
+                        return (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, background: d.bg, border: '1px solid ' + d.color + '40', fontSize: 12 }}>
+                            <span style={{ fontSize: 16, minWidth: 24 }}>{d.icon}</span>
+                            <span style={{ fontWeight: 600, color: '#374151', width: 36 }}>{d.level}</span>
+                            <span style={{ fontSize: 10, color: '#6b7280', minWidth: 42 }}>{d.min}-{d.max}分</span>
+                            <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#e5e7eb', overflow: 'hidden' }}>
+                              <div style={{ width: pct + '%', height: '100%', borderRadius: 4, background: d.color }} />
+                            </div>
+                            <span style={{ fontWeight: 700, color: d.color, minWidth: 36, textAlign: 'right' }}>{d.count}</span>
+                            <span style={{ fontSize: 10, color: '#9ca3af', minWidth: 32 }}>{pct}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* 活跃度评分数值总览 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+                      {VIBRANT_SUMMARY.map(function(s, i) {
+                        return (
+                          <div key={i} style={{ padding: '6px 8px', borderRadius: 6, background: '#fff', border: '1px solid #fef08a', textAlign: 'center' }}>
+                            <div style={{ fontSize: 11, color: '#6b7280' }}>{s.icon} {s.label}</div>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: s.color }}>{s.value}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* 近6个月活跃度趋势 */}
+                    <div style={{ marginTop: 10, padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #fef08a' }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#713f12', marginBottom: 6 }}>📈 近6个月活跃度趋势</div>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 70, padding: '4px 0' }}>
+                        {RECENT_SCORE_TREND.map(function(s, i) {
+                          var barH = Math.round(s.score * 0.7);
+                          var isUp = i > 0 && parseInt(s.change || '0') > 0;
+                          var isDown = i > 0 && parseInt(s.change || '0') < 0;
+                          return (
+                            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                              <span style={{ fontSize: 10, fontWeight: 600, color: isUp ? '#16a34a' : isDown ? '#dc2626' : '#6b7280' }}>{s.change !== '-' ? s.change : '—'}</span>
+                              <div style={{ width: '60%', height: barH + 'px', borderRadius: '3px 3px 0 0', background: i >= 4 ? '#f59e0b' : '#fde68a', minHeight: 10 }} />
+                              <span style={{ fontSize: 9, color: '#713f12' }}>{s.score}</span>
+                              <span style={{ fontSize: 8, color: '#9ca3af' }}>{s.month}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 低活跃会员提醒 */}
+                    <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 6, background: '#fef2f2', border: '1px solid #fecaca', fontSize: 11, color: '#991b1b' }}>
+                      ⚠️ 沉睡+流失会员共 <span style={{ fontWeight: 700 }}>400</span> 人 (占比 33.3%)
+                      · 建议对沉睡会员推送召回优惠券，对流失会员定向发送回归礼包
+                    </div>
+
+                    {/* 各维度评分均分 */}
+                    <div style={{ marginTop: 8, display: 'flex', gap: 6, fontSize: 10, color: '#6b7280', justifyContent: 'center' }}>
+                      <span>🎯 消费频次均分: <span style={{ fontWeight: 600, color: '#16a34a' }}>72</span></span>
+                      <span>⏰ 到店时间均分: <span style={{ fontWeight: 600, color: '#f59e0b' }}>65</span></span>
+                      <span>👥 推荐分享均分: <span style={{ fontWeight: 600, color: '#3b82f6' }}>48</span></span>
+                      <span>✍️ 评价互动均分: <span style={{ fontWeight: 600, color: '#8b5cf6' }}>38</span></span>
+                    </div>
+                  </div>
+                );
+              }(null, null)}
+            </div>
+
             {/* 积分获取渠道分析 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fefce8', border: '1px solid #fde047' }}>
               <h4 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#713f12' }}>⚡ 积分获取渠道分析 (本月)</h4>

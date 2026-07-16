@@ -778,6 +778,138 @@ export default function PointHistoryPage() {
               </div>
             </div>
 
+            {/* 积分消耗渠道分布 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0369a1' }}>🔄 积分消耗渠道分布</h3>
+              {function(s,i) {
+                var CAT_CHANNELS = [
+                  { category: '游戏时长', icon: '🎮', points: 182000, pct: 38, items: ['单人畅玩卡 ×85', '游戏币20枚 ×120', '双人套餐 ×45', 'VIP体验 ×12'], color: '#22c55e' },
+                  { category: '零食饮品', icon: '🍿', points: 96000, pct: 20, items: ['饮品兑换券 ×210', '零食套餐 ×68', '爆米花桶 ×55', '特调饮品 ×32'], color: '#f59e0b' },
+                  { category: '周边礼品', icon: '🎁', points: 72000, pct: 15, items: ['公仔玩偶 ×38', '定制徽章 ×56', '主题T恤 ×22', '纪念手办 ×15'], color: '#a855f7' },
+                  { category: '优惠券', icon: '🎟️', points: 84000, pct: 18, items: ['满减券 ×180', '折扣券 ×95', '团购券 ×65', '生日券 ×42'], color: '#3b82f6' },
+                  { category: '其他渠道', icon: '📌', points: 46000, pct: 9, items: ['积分抽奖 ×120', '会员特权 ×38', '积分捐赠 ×12', '平台抵扣 ×25'], color: '#6b7280' },
+                ];
+                var TOTAL_CONSUMED = 182000 + 96000 + 72000 + 84000 + 46000;
+                return (
+                  <div>
+                    {/* 消耗总览 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 10 }}>
+                      <div style={{ padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>本月消耗</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#0369a1' }}>{(TOTAL_CONSUMED / 10000).toFixed(1)}w</div>
+                      </div>
+                      <div style={{ padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>兑换人次</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#0369a1' }}>1,042</div>
+                      </div>
+                      <div style={{ padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>最大品类</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#059669' }}>游戏时长</div>
+                      </div>
+                      <div style={{ padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>品类数量</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#059669' }}>{CAT_CHANNELS.length}</div>
+                      </div>
+                    </div>
+
+                    {/* 各品类消耗占比 */}
+                    {CAT_CHANNELS.map(function(ch, i) {
+                      return (
+                        <div key={i} style={{ padding: '8px 10px', borderRadius: 8, marginBottom: 6, background: '#fff', border: '1px solid #e5e7eb' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontSize: 16 }}>{ch.icon}</span>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{ch.category}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: '#0369a1' }}>{(ch.points / 10000).toFixed(1)}<span style={{ fontSize: 9, fontWeight: 400, color: '#9ca3af' }}>w</span></span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: ch.color }}>{ch.pct}%</span>
+                            </div>
+                          </div>
+                          <div style={{ height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden', marginBottom: 4 }}>
+                            <div style={{ width: ch.pct + '%', height: '100%', borderRadius: 3, background: ch.color }} />
+                          </div>
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                            {ch.items.map(function(item, j) {
+                              return (
+                                <span key={j} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd' }}>
+                                  {item}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* 消耗趋势对比 */}
+                    <div style={{ marginTop: 10, padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd' }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#0369a1', marginBottom: 6 }}>📊 各品类上月对比</div>
+                      {function() {
+                        var TREND_DATA = [
+                          { cat: '游戏时长', prev: 172000, curr: 182000, change: '+5.8%', icon: '🎮' },
+                          { cat: '零食饮品', prev: 88000, curr: 96000, change: '+9.1%', icon: '🍿' },
+                          { cat: '周边礼品', prev: 68000, curr: 72000, change: '+5.9%', icon: '🎁' },
+                          { cat: '优惠券', prev: 78000, curr: 84000, change: '+7.7%', icon: '🎟️' },
+                          { cat: '其他渠道', prev: 42000, curr: 46000, change: '+9.5%', icon: '📌' },
+                        ];
+                        return TREND_DATA.map(function(t, i) {
+                          var prevPct = Math.round((t.prev / TOTAL_CONSUMED) * 100);
+                          var currPct = Math.round((t.curr / TOTAL_CONSUMED) * 100);
+                          return (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 6, background: '#f9fafb', marginBottom: 3 }}>
+                              <span style={{ fontSize: 13 }}>{t.icon}</span>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: '#374151', width: 56 }}>{t.cat}</span>
+                              <div style={{ flex: 1, display: 'flex', gap: 2, alignItems: 'center' }}>
+                                <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
+                                  <div style={{ width: prevPct + '%', height: '100%', borderRadius: 3, background: '#93c5fd' }} />
+                                </div>
+                                <span style={{ fontSize: 9, color: '#6b7280', minWidth: 22 }}>{prevPct}%</span>
+                                <span style={{ fontSize: 9, color: '#9ca3af' }}>→</span>
+                                <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
+                                  <div style={{ width: currPct + '%', height: '100%', borderRadius: 3, background: '#3b82f6' }} />
+                                </div>
+                                <span style={{ fontSize: 9, color: '#059669', minWidth: 26 }}>{currPct}%</span>
+                              </div>
+                              <span style={{ fontSize: 10, fontWeight: 600, color: '#059669', minWidth: 36, textAlign: 'right' }}>+{t.change}</span>
+                            </div>
+                          );
+                        });
+                      }()}
+                      <div style={{ display: 'flex', gap: 12, justifyContent: 'center', fontSize: 10, color: '#6b7280', marginTop: 6 }}>
+                        <span><span style={{ color: '#93c5fd' }}>■</span> 上月</span>
+                        <span><span style={{ color: '#3b82f6' }}>■</span> 本月</span>
+                      </div>
+                    </div>
+
+                    {/* 消耗渠道统计摘要 */}
+                    <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                      <div style={{ padding: '6px 8px', borderRadius: 6, background: '#fff', border: '1px solid #bae6fd', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>最高消耗品类</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#22c55e' }}>游戏时长</div>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>占比 38%</div>
+                      </div>
+                      <div style={{ padding: '6px 8px', borderRadius: 6, background: '#fff', border: '1px solid #bae6fd', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>人均消耗积分</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb' }}>{Math.round(TOTAL_CONSUMED / 1042).toLocaleString()}</div>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>分/人</div>
+                      </div>
+                      <div style={{ padding: '6px 8px', borderRadius: 6, background: '#fff', border: '1px solid #bae6fd', textAlign: 'center' }}>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>品类增长率</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#059669' }}>+7.6%</div>
+                        <div style={{ fontSize: 10, color: '#6b7280' }}>环比上月</div>
+                      </div>
+                    </div>
+
+                    {/* 推荐优化建议 */}
+                    <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 6, background: '#e0f2fe', border: '1px solid #7dd3fc', fontSize: 11, color: '#0369a1' }}>
+                      💡 建议：游戏时长消耗占比达38%为主力渠道，可增加面向零食饮品&优惠券的兑换推广以拉升其他品类占比；周边礼品品类仅15%增量空间可观
+                    </div>
+                  </div>
+                );
+              }(null, null)}
+            </div>
+
             {/* 积分常见问题 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
               <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>❓ 积分常见问题</h3>
