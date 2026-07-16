@@ -295,6 +295,36 @@ export default function DataInsights() {
         </div>
       </div>
 
+          {/* AI分析面板 */}
+      <div style={{ marginBottom: 24, padding: 18, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <div style={{ marginBottom: 12 }}>
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>🤖 AI 智能分析</h3>
+          <p style={{ margin: '2px 0 0', fontSize: 11, color: '#64748b' }}>基于历史数据的自动化运营洞察</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
+          <div style={{ padding: 12, borderRadius: 8, background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.1)' }}>
+            <div style={{ color: '#93c5fd', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>📈 会员增长预测</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#60a5fa' }}>+23%</div>
+            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>下月预计新增{Math.round(total * 0.23)}位高价值会员</div>
+          </div>
+          <div style={{ padding: 12, borderRadius: 8, background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.1)' }}>
+            <div style={{ color: '#fca5a5', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>⚠️ 设备风险提醒</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#f87171' }}>{warningCount}台</div>
+            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>设备存在异常，建议安排运维巡检</div>
+          </div>
+          <div style={{ padding: 12, borderRadius: 8, background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.1)' }}>
+            <div style={{ color: '#86efac', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>💡 运营优化建议</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>客单价提升机会</div>
+            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>钻石会员人均消费是铜卡4.2倍，重点维护</div>
+          </div>
+          <div style={{ padding: 12, borderRadius: 8, background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.1)' }}>
+            <div style={{ color: '#fbbf24', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>⏰ 峰值时段预警</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#fbbf24' }}>16-20点</div>
+            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>当前时段设备调用率最高，建议增加备用设备</div>
+          </div>
+        </div>
+      </div>
+
       {/* 脚注 */}
       <div style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 24 }}>
         数据洞察系统 · 数据更新于 {new Date().toLocaleString('zh-CN')} · 共 {MOCK_DEVICES.length} 台设备 · {total} 位会员
