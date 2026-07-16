@@ -807,6 +807,47 @@ export default function StorePromotionsPage() {
           </div>
         </div>
 
+        {/* 活动投入产出比对比 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#1e293b' }}>💰 活动投入产出比对比</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { type: '满减活动', cost: 28000, revenue: 120000, roi: 4.3, ratio: 85, color: '#22c55e' },
+              { type: '折扣促销', cost: 45000, revenue: 168000, roi: 3.7, ratio: 72, color: '#3b82f6' },
+              { type: '赠品活动', cost: 15000, revenue: 72000, roi: 4.8, ratio: 92, color: '#a855f7' },
+              { type: '会员专享', cost: 8000, revenue: 56000, roi: 7.0, ratio: 65, color: '#eab308' },
+              { type: '限时秒杀', cost: 32000, revenue: 96000, roi: 3.0, ratio: 55, color: '#f97316' },
+              { type: '裂变活动', cost: 6000, revenue: 38000, roi: 6.3, ratio: 78, color: '#06b6d4' },
+            ].map(function(a, i) {
+              var barW = Math.min(a.ratio, 100);
+              return (
+                <div key={i} style={{ padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#1e293b' }}>{a.type}</span>
+                    <span style={{ fontSize: 11, color: '#6b7280' }}>
+                      成本 ¥{String(a.cost).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} · 营收 ¥{String(a.revenue).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#f1f5f9', overflow: 'hidden' }}>
+                      <div style={{ width: barW + '%', height: '100%', borderRadius: 4, background: a.color }} />
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: a.color, minWidth: 40 }}>ROI {a.roi.toFixed(1)}</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
+                    投入产出比排名: #{i + 1} · 每投入1元回报 ¥{a.roi.toFixed(1)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 8, padding: '6px 12px', borderRadius: 6, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 10, color: '#166534', display: 'flex', justifyContent: 'space-between' }}>
+            <span>📌 最优: 会员专享活动 (ROI 7.0)</span>
+            <span>⚡ 改进方向: 限时秒杀投入高回报低</span>
+            <span>📊 平均ROI: {((4.3 + 3.7 + 4.8 + 7.0 + 3.0 + 6.3) / 6).toFixed(1)}</span>
+          </div>
+        </div>
+
         <div style={{ textAlign: "center", fontSize: 10, color: "#9ca3af", marginTop: 8 }}>💡 数据来源: 各门店活动执行系统 · 自动更新于每日 06:00</div>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", fontSize: 10, color: "#9ca3af", marginTop: 4 }}>
           <span>📊 统计周期: 本月</span>

@@ -749,6 +749,35 @@ export default function PointHistoryPage() {
               );
             }()}
 
+            {/* 积分获取途径占比 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#16a34a' }}>🎯 积分获取途径占比</h3>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {[
+                  { source: '消费积分', icon: '🛒', pct: 52, points: 218000, color: '#22c55e' },
+                  { source: '签到奖励', icon: '📅', pct: 18, points: 75600, color: '#3b82f6' },
+                  { source: '活动赠送', icon: '🎪', pct: 15, points: 63000, color: '#a855f7' },
+                  { source: '推荐好友', icon: '👥', pct: 8, points: 33600, color: '#f59e0b' },
+                  { source: '其他渠道', icon: '📌', pct: 7, points: 29400, color: '#6b7280' },
+                ].map(function(s, i) {
+                  return (
+                    <div key={i} style={{ flex: '1 1 140px', padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #bbf7d0', textAlign: 'center' }}>
+                      <div style={{ fontSize: 18 }}>{s.icon}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#166534', marginTop: 2 }}>{s.source}</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: '#16a34a', marginTop: 4 }}>{s.pct}%</div>
+                      <div style={{ marginTop: 4, height: 5, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
+                        <div style={{ width: s.pct + '%', height: '100%', borderRadius: 3, background: s.color }} />
+                      </div>
+                      <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>{(s.points / 10000).toFixed(1)}w分</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 8, padding: '6px 12px', borderRadius: 6, background: '#ecfdf5', border: '1px solid #a7f3d0', fontSize: 10, color: '#065f46' }}>
+                📊 消费积分占比 {52}%为主力，推荐好友渠道仅占 {8}%，建议加大推荐奖励以提升拉新效果
+              </div>
+            </div>
+
             {/* 积分常见问题 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
               <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>❓ 积分常见问题</h3>

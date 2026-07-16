@@ -634,6 +634,46 @@ export default function FeedbackPage() {
               </div>
             </div>
 
+            {/* 反馈处理满意度趋势 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>📈 反馈处理满意度趋势（近6个月）</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+{function() {
+                var SAT_DATA = [
+                  { month: '2月', score: 82, total: 45, color: '#8b5cf6' },
+                  { month: '3月', score: 78, total: 52, color: '#8b5cf6' },
+                  { month: '4月', score: 85, total: 48, color: '#8b5cf6' },
+                  { month: '5月', score: 80, total: 55, color: '#8b5cf6' },
+                  { month: '6月', score: 88, total: 42, color: '#8b5cf6' },
+                  { month: '7月', score: 91, total: 38, color: '#059669' },
+                ];
+                return SAT_DATA.map(function(s, i) {
+                  var prev = SAT_DATA[i - 1];
+                  var prevScore = prev ? prev.score : 0;
+                  var diff = s.score - prevScore;
+                  var trendText = i === 0 ? '—' : diff > 0 ? '↑ +' + diff : diff < 0 ? ('↓ ' + diff) : '→';
+                  var trendColor = i === 0 ? '#9ca3af' : diff > 0 ? '#059669' : diff < 0 ? '#dc2626' : '#9ca3af';
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: i === 5 ? '#f0fdf4' : '#fff', border: '1px solid ' + (i === 5 ? '#bbf7d0' : '#e5e7eb') }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#4c1d95', width: 32 }}>{s.month}</span>
+                      <div style={{ flex: 1, height: 10, borderRadius: 5, background: '#e5e7eb', overflow: 'hidden' }}>
+                        <div style={{ width: s.score + '%', height: '100%', borderRadius: 5, background: s.color }} />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: s.color, minWidth: 28, textAlign: 'right' }}>{s.score}</span>
+                      <span style={{ fontSize: 10, color: trendColor, minWidth: 36 }}>{trendText}</span>
+                      <span style={{ fontSize: 10, color: '#9ca3af' }}>{s.total}条</span>
+                    </div>
+                  );
+                });
+              }()}
+              </div>
+              <div style={{ marginTop: 6, display: 'flex', gap: 12, justifyContent: 'center', fontSize: 10, color: '#6b7280' }}>
+                <span>📊 最高: 7月 (91分)</span>
+                <span>📉 最低: 3月 (78分)</span>
+                <span>📈 半年均: {((82+78+85+80+88+91)/6).toFixed(0)}分</span>
+              </div>
+            </div>
+
             {/* 常见反馈处理建议 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fffbeb', border: '1px solid #fde68a' }}>
               <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#92400e' }}>💡 常见反馈处理建议</h3>

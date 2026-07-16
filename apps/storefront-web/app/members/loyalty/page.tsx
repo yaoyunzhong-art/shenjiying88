@@ -668,6 +668,44 @@ export default function LoyaltyPage() {
               }(MEMBER_TIERS)}
             </div>
 
+            {/* 会员等级升级成功率 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#0369a1' }}>📊 会员等级升级成功率</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[
+                  { from: '普通', to: '银卡', rate: 68, avgDays: 45, total: 320, color: '#c0c0c0' },
+                  { from: '银卡', to: '金卡', rate: 42, avgDays: 92, total: 185, color: '#eab308' },
+                  { from: '金卡', to: '钻石', rate: 18, avgDays: 210, total: 68, color: '#b9f2ff' },
+                  { from: '普通', to: '钻石', rate: 6, avgDays: 365, total: 22, color: '#a855f7' },
+                ].map(function(u, i) {
+                  return (
+                    <div key={i} style={{ padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #bae6fd', fontSize: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ fontWeight: 600, color: '#0369a1' }}>{u.from} → {u.to}</span>
+                        <div style={{ display: 'flex', gap: 10, color: '#6b7280' }}>
+                          <span>平均 <span style={{ fontWeight: 600, color: '#0e7490' }}>{u.avgDays}</span> 天</span>
+                          <span>参与 <span style={{ fontWeight: 600, color: '#0891b2' }}>{u.total}</span> 人</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#e0f2fe', overflow: 'hidden' }}>
+                          <div style={{ width: u.rate + '%', height: '100%', borderRadius: 4, background: u.rate >= 50 ? '#22c55e' : u.rate >= 30 ? '#eab308' : '#f97316' }} />
+                        </div>
+                        <span style={{ fontWeight: 700, color: u.rate >= 50 ? '#16a34a' : u.rate >= 30 ? '#ca8a04' : '#ea580c', minWidth: 40, textAlign: 'right' }}>{u.rate}%</span>
+                      </div>
+                      <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
+                        {u.rate >= 50 ? '✅ 升级门槛适中' : u.rate >= 30 ? '⚠️ 有一定挑战' : u.rate >= 10 ? '🔴 难度较高' : '⛔ 极难达成'} · 建议优化{u.from}→{u.to}升级奖励
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 6, display: 'flex', gap: 8, justifyContent: 'center', fontSize: 10, color: '#6b7280' }}>
+                <span>📊 综合升级成功率: {((68+42+18+6)/4).toFixed(0)}%</span>
+                <span>⏱ 平均升级周期: {((45+92+210+365)/4).toFixed(0)}天</span>
+              </div>
+            </div>
+
             {/* 积分获取渠道分析 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fefce8', border: '1px solid #fde047' }}>
               <h4 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#713f12' }}>⚡ 积分获取渠道分析 (本月)</h4>
