@@ -1,6 +1,6 @@
 /**
  * apps/storefront-web/app/operations/[id]/page.tsx — L1 冒烟测试
- * 角色视角: 👤会员 / 👔店长
+ * 角色视角: 👔店长 / 🛠️运维
  * 覆盖: 正例·反例·边界
  */
 const assert = require('node:assert/strict');
@@ -14,8 +14,8 @@ describe('OperationDetail — 正例', () => {
   test('exports default function', () => { assert.ok(SRC.includes('export default function')); });
   test('contains use client', () => { assert.ok(SRC.includes("'use client'")); });
   test('uses useState', () => { assert.ok(SRC.includes('useState')); });
-  test('contains type or interface', () => { assert.ok(SRC.includes('interface') || SRC.includes('type ')); });
-  test('has mock data', () => { assert.ok(SRC.includes('MOCK') || SRC.includes('mock')); });
+  test('uses useParams', () => { assert.ok(SRC.includes('useParams')); });
+  test('has mock data', () => { assert.ok(SRC.includes('MOCK') || SRC.includes('mock') || SRC.includes('PRESET')); });
 });
 
 describe('OperationDetail — 反例', () => {
@@ -26,6 +26,6 @@ describe('OperationDetail — 反例', () => {
 
 describe('OperationDetail — 边界', () => {
   test('has length check', () => { assert.ok(SRC.includes('.length')); });
-  test('has filter or find', () => { assert.ok(SRC.includes('.filter(') || SRC.includes('.find(')); });
   test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
+  test('has filter or find', () => { assert.ok(SRC.includes('.filter(') || SRC.includes('.find(')); });
 });

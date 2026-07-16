@@ -142,7 +142,7 @@ resource "alicloud_security_group_rule" "allow_internal" {
 
 resource "alicloud_instance" "master" {
   count           = 3
-  image_id        = "centos_8_5_x64_20G_alibase_20220128.vhd"
+  image_id        = "centos_8_5_x64_20G_alibase_20220727.vhd"
   instance_type   = "ecs.c7.2xlarge"  # 8C16G
   security_groups = [alicloud_security_group.main.id]
   vswitch_id      = alicloud_vswitch.zone_a.id
@@ -189,7 +189,7 @@ EOF
 
 resource "alicloud_instance" "worker" {
   count           = 4
-  image_id        = "centos_8_5_x64_20G_alibase_20220128.vhd"
+  image_id        = "centos_8_5_x64_20G_alibase_20220727.vhd"
   instance_type   = "ecs.c7.2xlarge"  # 8C16G
   security_groups = [alicloud_security_group.main.id]
   vswitch_id      = alicloud_vswitch.zone_b.id
@@ -242,7 +242,7 @@ EOF
 resource "alicloud_db_instance" "postgres" {
   engine           = "PostgreSQL"
   engine_version   = "15.0"
-  instance_type    = "pg.n2.2xlarge"  # 8C16G
+  instance_type    = "rds.pg.c2.2xlarge"  # 8C16G
   instance_storage = "500"
   vswitch_id       = alicloud_vswitch.zone_b.id
   security_ips     = [alicloud_vpc.main.cidr_block]
@@ -261,7 +261,7 @@ resource "alicloud_db_instance" "postgres" {
 
 resource "alicloud_kvstore_instance" "redis" {
   instance_type  = "Redis"
-  engine_version = "7.0"
+  engine_version = "6.0"
   instance_name  = "${var.cluster_name}-redis"
   vswitch_id     = alicloud_vswitch.zone_b.id
   security_ips   = [alicloud_vpc.main.cidr_block]
