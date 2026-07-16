@@ -550,6 +550,107 @@ export default function PointHistoryPage() {
               </div>
             </div>
 
+            {/* 积分增长路径推荐 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0369a1' }}>🚀 积分增长路径推荐</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { target: 500, title: '快速积累500分', desc: '适合新会员解锁基础兑换', duration: '7~50天' },
+                  { target: 1000, title: '冲刺1000分', desc: '适合金卡门槛冲刺', duration: '15~90天' },
+                  { target: 2000, title: '挑战2000分', desc: '适合银卡升级与权益解锁', duration: '30~180天' },
+                ].map(function(path, i) {
+                  var ways = [
+                    { target: 500, items: ['每日签到 × 50天 (250分)', '到店消费 × ¥500 (500分)', '推荐好友 × 10人 (2000分)'], rec: '每日签到 + 小额消费' },
+                    { target: 1000, items: ['签到30天 + 消费¥300 (580分)', '参与活动 × 5次 (250~2500分)', '推荐好友 × 3人 (600分)'], rec: '签到 + 消费组合' },
+                    { target: 2000, items: ['升级银卡 (2000分起)', '大额充值 (¥2000=2000分)', '参与季度活动(500~3000分)'], rec: '升级银卡 + 活动参与' },
+                  ];
+                  var w = ways[i];
+                  if (!w) return null;
+                  return (
+                    <div key={i} style={{ padding: 12, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: '#0369a1' }}>🎯 {path.title}</span>
+                        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: '#e0f2fe', color: '#0284c7' }}>预计{path.duration}</span>
+                      </div>
+                      <ul style={{ margin: '0 0 6px', padding: '0 0 0 16px', fontSize: 12, color: '#374151', lineHeight: 1.7 }}>
+                        {w.items.map(function(item, j) {
+                          return <li key={j}>{item}</li>;
+                        })}
+                      </ul>
+                      <div style={{ fontSize: 11, color: '#0891b2', background: '#f0f9ff', padding: '4px 8px', borderRadius: 4 }}>
+                        💡 推荐路径：{w.rec}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 积分兑换统计 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fefce8', border: '1px solid #fde68a' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#92400e' }}>🏅 本月最受欢迎兑换 TOP3</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { item: '免费游戏币20枚', count: 120, rate: 92 },
+                  { item: '单人畅玩卡', count: 85, rate: 85 },
+                  { item: '零食套餐', count: 68, rate: 72 },
+                ].map(function(t, i) {
+                  return (
+                    <div key={i} style={{ padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #fde68a' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontWeight: 700, fontSize: 13, color: i === 0 ? '#d97706' : i === 1 ? '#6b7280' : '#a16207', minWidth: 20 }}>#{i + 1}</span>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{t.item}</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: '#d97706' }}>{t.count}</span>
+                          <span style={{ fontSize: 10, color: '#9ca3af' }}> 次</span>
+                        </div>
+                      </div>
+                      <div style={{ height: 8, borderRadius: 4, background: '#fef3c7', overflow: 'hidden', marginBottom: 2 }}>
+                        <div style={{ height: '100%', borderRadius: 4, background: i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : '#a16207', width: t.rate + '%', transition: 'width 0.3s ease' }} />
+                      </div>
+                      <div style={{ fontSize: 10, color: '#6b7280', textAlign: 'right' }}>热度 {t.rate}%</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 积分预警设置 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#faf5ff', border: '1px solid #e9d5ff' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#7c3aed' }}>🔔 积分预警设置</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { icon: '⏰', title: '积分即将到期提醒', desc: '当积分即将过期时推送通知', options: ['7天', '15天', '30天'] },
+                  { icon: '📉', title: '积分余额达阈值提醒', desc: '当积分余额低于设定值时提醒', options: ['100分', '500分', '1000分'] },
+                  { icon: '📈', title: '获得大额积分提醒', desc: '当单次获得积分超过设定值', options: ['100分', '500分', '1000分'] },
+                ].map(function(w, i) {
+                  return (
+                    <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e9d5ff' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontSize: 18 }}>{w.icon}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{w.title}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 6 }}>{w.desc}</div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {w.options.map(function(opt, j) {
+                          return (
+                            <span key={j} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: '#f3e8ff', color: '#7c3aed', border: '1px solid #d8b4fe', cursor: 'pointer' }}>
+                              {opt}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 11, color: '#6b7280', textAlign: 'center' }}>
+                💡 点击预警值可快速选中，保存后系统将在满足条件时推送通知
+              </div>
+            </div>
+
             {/* 积分常见问题 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
               <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>❓ 积分常见问题</h3>
