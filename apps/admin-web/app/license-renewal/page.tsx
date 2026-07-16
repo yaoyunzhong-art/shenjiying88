@@ -32,6 +32,7 @@ import {
   Statistic,
   Row,
   Col,
+  Pagination,
 } from 'antd'
 import {
   PlusOutlined,
@@ -78,6 +79,17 @@ export default function LicenseRenewalPage() {
     pageSize: 10,
   })
   
+  // License statistics for stat cards
+  const [licenseStats, setLicenseStats] = useState({
+    total: 0,
+    soonExpiring: 0,
+    expired: 0,
+  })
+
+  // Pagination state for strategy table
+  const [strategyPage, setStrategyPage] = useState(1)
+  const [strategyPageSize, setStrategyPageSize] = useState(10)
+
   // Statistics
   const [statistics, setStatistics] = useState({
     totalStrategies: 0,
@@ -135,10 +147,32 @@ export default function LicenseRenewalPage() {
     return Math.round((successCount / records.length) * 100)
   }
 
+  // Compute license stats from records
+  const computeLicenseStats = (records: RenewalRecord[]) => {
+    const now = dayjs()
+    const total = records.length
+    const soonExpiring = records.filter(r => {
+      if (!r.expiresAt) return false
+      const expires = dayjs(r.expiresAt)
+      return expires.isAfter(now) && expires.diff(now, 'day') <= 7
+    }).length
+    const expired = records.filter(r => {
+      if (r.status === 'success' && r.expiresAt) {
+        return dayjs(r.expiresAt).isBefore(now)
+      }
+      return false
+    }).length
+    setLicenseStats({ total, soonExpiring, expired })
+  }
+
   useEffect(() => {
     fetchStrategies()
     fetchRecords()
   }, [recordQuery.page, recordQuery.pageSize])
+
+  useEffect(() => {
+    computeLicenseStats(records)
+  }, [records])
 
   // Create strategy
   const handleCreateStrategy = () => {
@@ -301,6 +335,40 @@ export default function LicenseRenewalPage() {
 
   return (
     <div className="p-6">
+      {/* License statistics cards */}
+      <Row gutter={16} className="mb-4">
+        <Col span={8}>
+          <Card>
+            <Statistic
+              title="License 总数"
+              value={licenseStats.total}
+              prefix={<CreditCardOutlined />}
+              valueStyle={{ color: '#1677ff' }}
+            />
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card>
+            <Statistic
+              title="即将到期（7天内）"
+              value={licenseStats.soonExpiring}
+              prefix={<ExclamationCircleOutlined />}
+              valueStyle={licenseStats.soonExpiring > 0 ? { color: '#faad14' } : { color: '#1677ff' }}
+            />
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card>
+            <Statistic
+              title="已过期"
+              value={licenseStats.expired}
+              prefix={<CloseCircleOutlined />}
+              valueStyle={licenseStats.expired > 0 ? { color: '#ff4d4f' } : { color: '#1677ff' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
       <Card
         title={
           <div className="flex items-center justify-between">
@@ -337,6 +405,21 @@ export default function LicenseRenewalPage() {
               loading={strategyLoading}
               pagination={false}
             />
+            {/* Pagination below strategy table */}
+            <div className="flex justify-end mt-4">
+              <Pagination
+                current={strategyPage}
+                pageSize={strategyPageSize}
+                total={strategies.length}
+                showSizeChanger
+                pageSizeOptions={['10', '20', '50']}
+                showTotal={(total) => `共 ${total} 条`}
+                onChange={(page, size) => {
+                  setStrategyPage(page)
+                  setStrategyPageSize(size)
+                }}
+              />
+            </div>
           </TabPane>
           
           <TabPane
