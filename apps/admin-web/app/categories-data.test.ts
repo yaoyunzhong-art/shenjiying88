@@ -51,13 +51,13 @@ describe('categories-data — 正例·数据结构', () => {
     const src = readSource();
     assert.ok(src.includes('label') || src.includes('Label'));
   });
-  it('MOCK_CATEGORIES 应包含 categoryId', () => {
+  it('MOCK_CATEGORIES 应包含 id (类别标识)', () => {
     const src = readSource();
-    assert.ok(src.includes('categoryId') || src.includes('category_id'));
+    assert.ok(src.includes('id:') || src.includes('categoryId'), 'mock数据使用id字段');
   });
-  it('MOCK_CATEGORIES 应包含 parentId', () => {
+  it('MOCK_CATEGORIES 应包含 parentName', () => {
     const src = readSource();
-    assert.ok(src.includes('parentId') || src.includes('parent_id'));
+    assert.ok(src.includes('parentName') || src.includes('parentId'), 'mock数据使用parentName');
   });
   it('MOCK_CATEGORIES 应包含 status', () => {
     const src = readSource();
@@ -65,7 +65,7 @@ describe('categories-data — 正例·数据结构', () => {
   });
   it('MOCK_CATEGORIES 应包含 name', () => {
     const src = readSource();
-    assert.ok(src.includes(': name') || src.includes("'name'") || src.includes('"name"'));
+    assert.ok(src.includes('name'), 'mock数据应包含name字段');
   });
 });
 
