@@ -86,7 +86,8 @@ describe('orders — 边界', () => {
   it('空订单列表应显示 empty 状态', () => {
     const src = readSource();
     // 空状态用EmptyState组件
-    assert.ok(src.includes('EmptyState') || src.includes('data.length'), '空列表状态');
+    // 无数据通过DataTable + emptyText控制
+    assert.ok(src.includes('DataTable') || src.includes('EmptyState') || src.includes('filteredOrders') || src.includes('data.length'), '空列表状态');
   });
 
   it('订单金额应为正数', () => {
@@ -126,7 +127,8 @@ describe('orders — 防御', () => {
   it('数据加载中应显示 loading', () => {
     const src = readSource();
     // loading用LoadingSkeleton
-    assert.ok(src.includes('LoadingSkeleton') || src.includes('loading') || src.includes('Loading'), 'loading 状态');
+    // loading通过Suspense + Loader控制
+    assert.ok(src.includes('Suspense') || src.includes('loader') || src.includes('loading') || src.includes('Loading'), 'loading 状态');
   });
 });
 

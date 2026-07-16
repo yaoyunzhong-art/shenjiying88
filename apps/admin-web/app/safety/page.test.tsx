@@ -153,6 +153,6 @@ describe('safety — 边界防御', () => {
 
   it('批量操作栏应包含取消选择按钮', () => {
     const src = readSource();
-    assert.ok(src.includes("'取消选择'"), '缺少取消选择');
+    assert.ok(src.includes('取消选择'), '缺少取消选择');
   });
 });

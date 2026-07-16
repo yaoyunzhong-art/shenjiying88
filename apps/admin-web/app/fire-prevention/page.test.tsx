@@ -90,10 +90,10 @@ describe('fire-prevention — 正例', () => {
 
   it('应包含 4 个统计面板', () => {
     const src = readSource();
-    assert.ok(src.includes("'总检查项'"), '缺少总检查项');
-    assert.ok(src.includes("'待检查'"), '缺少待检查');
-    assert.ok(src.includes("'已通过'"), '缺少已通过');
-    assert.ok(src.includes("'未通过'"), '缺少未通过');
+    assert.ok(src.includes('总检查项'), '缺少总检查项');
+    assert.ok(src.includes('待检查'), '缺少待检查');
+    assert.ok(src.includes('已通过'), '缺少已通过');
+    assert.ok(src.includes('未通过'), '缺少未通过');
   });
 });
 

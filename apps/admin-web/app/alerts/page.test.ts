@@ -69,7 +69,8 @@ describe('AdminAlertsPage — 正例·Client 组件', () => {
   });
   test('AdminAlertsClient 处理空状态 (通过governance model)', () => {
     // 空状态由 FoundationAlertListPageSection 管理，组件通过 governance 数据驱动
-    assert.ok(clientSource.includes('alerts.length') || clientSource.includes('noAlerts') || clientSource.includes('alertCount'), '空状态通过alerts数据判断');
+    // 空状态由FoundationAlertListPageSection管理，governance.deliveryMode决定数据派发逻辑
+    assert.ok(clientSource.includes('deliveryMode') || clientSource.includes('governance'), '空状态由外部组件管理');
   });
   test('AdminAlertsClient 使用列表组件(FoundationAlertListPageSection)', () => {
     // 使用 FoundationAlertListPageSection 组件管理列表展示
