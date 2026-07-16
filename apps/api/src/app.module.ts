@@ -126,6 +126,21 @@ import { AutomationModule } from './modules/automation/automation.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { FeedModule } from './modules/feed/feed.module';
 import { VenueModule } from './modules/venue/venue.module';
+import { AiForecastModule } from './modules/ai-forecast/ai-forecast.module';
+import { AiModelConfigModule } from './modules/ai-model-config/ai-model-config.module';
+import { AiRagModule } from './modules/ai-rag/ai-rag.module';
+import { AnalyticsV2Module } from './modules/analytics-v2/analytics-v2.module';
+import { CanaryModule } from './modules/canary/canary.module';
+import { CdnCacheModule } from './modules/cdn-cache/cdn.module';
+import { IoTModule } from './modules/iot/iot.module';
+import { LicenseRenewalModule } from './modules/license-renewal/license-renewal.module';
+import { LineageModule } from './modules/lineage/lineage.module';
+import { MultimodalFusionModule } from './modules/multimodal-fusion/multimodal-fusion.module';
+import { OmnichannelModule } from './modules/omnichannel/omnichannel.module';
+import { OpenApiModule } from './modules/open-api/open-api.module';
+import { SaasAdvancedModule } from './modules/saas-advanced/saas-advanced.module';
+import { TenantLLMModule } from './modules/tenant-llm/tenant-llm.module';
+import { TrainingModule } from './modules/training/training.module';
 
 @Module({
   imports: [
@@ -264,6 +279,21 @@ import { VenueModule } from './modules/venue/venue.module';
     BillingModule,
     CrmModule,
     FeedModule,
+    AiForecastModule,
+    AiModelConfigModule,
+    AiRagModule,
+    AnalyticsV2Module,
+    CanaryModule,
+    CdnCacheModule,
+    IoTModule,
+    LicenseRenewalModule,
+    LineageModule,
+    MultimodalFusionModule,
+    OmnichannelModule,
+    OpenApiModule,
+    SaasAdvancedModule,
+    TenantLLMModule,
+    TrainingModule,
   ],
   providers: [
     RequestGovernanceService,
