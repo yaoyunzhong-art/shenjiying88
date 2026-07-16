@@ -6,8 +6,8 @@
  */
 'use client';
 
-import React, { useCallback, useState } from 'react';
-import { SalesClerkTool, PageShell } from '@m5/ui';
+import React, { useCallback, useMemo, useState } from 'react';
+import { SalesClerkTool, PageShell, StatusBadge } from '@m5/ui';
 import type {
   DailyReceptionStats,
   FollowUpClient,
@@ -134,6 +134,314 @@ const mockMemberSearch = async (query: string): Promise<MemberQuickLookup[]> => 
 };
 
 // ============================================================
+//  Mock 店员绩效数据
+// ============================================================
+
+interface ClerkPerformance {
+  rank: number;
+  name: string;
+  receptions: number;
+  salesAmount: number;
+  conversionRate: number;
+  avgRating: number;
+  trend: 'up' | 'down' | 'stable';
+}
+
+const CURRENT_CLERK: ClerkPerformance = {
+  rank: 3,
+  name: '张三',
+  receptions: 47,
+  salesAmount: 28600,
+  conversionRate: 17.0,
+  avgRating: 4.6,
+  trend: 'up',
+};
+
+const MOCK_CLERK_RANKING: ClerkPerformance[] = [
+  { rank: 1, name: '李小红', receptions: 62, salesAmount: 41200, conversionRate: 21.0, avgRating: 4.8, trend: 'up' },
+  { rank: 2, name: '王大伟', receptions: 55, salesAmount: 35800, conversionRate: 18.9, avgRating: 4.7, trend: 'up' },
+  { rank: 3, name: '张三', receptions: 47, salesAmount: 28600, conversionRate: 17.0, avgRating: 4.6, trend: 'up' },
+  { rank: 4, name: '赵晓霞', receptions: 41, salesAmount: 25300, conversionRate: 15.8, avgRating: 4.5, trend: 'stable' },
+  { rank: 5, name: '陈浩', receptions: 36, salesAmount: 22100, conversionRate: 14.2, avgRating: 4.3, trend: 'down' },
+];
+
+// ============================================================
+//  Mock 数据统计
+// ============================================================
+
+interface DailyDataStat {
+  label: string;
+  value: string;
+  sublabel: string;
+  color: string;
+  icon: string;
+}
+
+const DAILY_STATS: DailyDataStat[] = [
+  { label: '今日业绩', value: '¥28,600', sublabel: '目标进度 57%', color: '#4ade80', icon: '💰' },
+  { label: '接待人数', value: '47 人', sublabel: '门店第 3 名', color: '#60a5fa', icon: '👥' },
+  { label: '转化率', value: '17.0%', sublabel: '高于均值 2.1%', color: '#fbbf24', icon: '📈' },
+  { label: '客单价', value: '¥608', sublabel: '较昨日 +¥42', color: '#a78bfa', icon: '🛒' },
+];
+
+// ============================================================
+//  子组件: 每日数据统计卡片
+// ============================================================
+
+function DailyStatsCards({ stats }: { stats: DailyDataStat[] }) {
+  return (
+    <div
+      data-testid="daily-stats-grid"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+        gap: 12,
+        marginBottom: 20,
+      }}
+    >
+      {stats.map((s) => (
+        <div
+          key={s.label}
+          style={{
+            borderRadius: 12,
+            padding: '14px 18px',
+            background: 'rgba(15,23,42,0.35)',
+            border: '1px solid rgba(148,163,184,0.1)',
+          }}
+          data-testid={`daily-stat-${s.label}`}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 20 }}>{s.icon}</span>
+            <span style={{ fontSize: 13, color: '#64748b' }}>{s.label}</span>
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: s.color, marginBottom: 2 }}>
+            {s.value}
+          </div>
+          <div style={{ fontSize: 12, color: '#475569' }}>{s.sublabel}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
+//  子组件: 店员绩效排行
+// ============================================================
+
+function ClerkRankingPanel({
+  current,
+  rankings,
+}: {
+  current: ClerkPerformance;
+  rankings: ClerkPerformance[];
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  const displayRankings = expanded ? rankings : rankings.slice(0, 3);
+
+  return (
+    <div
+      style={{
+        borderRadius: 14,
+        padding: '18px 20px',
+        background: 'rgba(15,23,42,0.30)',
+        border: '1px solid rgba(148,163,184,0.08)',
+        marginBottom: 20,
+      }}
+      data-testid="clerk-ranking-panel"
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#e2e8f0' }}>
+          🏆 店员销售排行
+        </h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13, color: '#94a3b8' }}>
+            你排名 <strong style={{ color: '#60a5fa' }}>#{current.rank}</strong>
+          </span>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            style={{
+              padding: '4px 12px',
+              borderRadius: 6,
+              border: '1px solid rgba(148,163,184,0.15)',
+              background: 'transparent',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              fontSize: 12,
+            }}
+            data-testid="ranking-toggle-btn"
+          >
+            {expanded ? '收起' : '查看全部'}
+          </button>
+        </div>
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+        <thead>
+          <tr>
+            <th style={rankingStyles.th}>排名</th>
+            <th style={rankingStyles.th}>姓名</th>
+            <th style={rankingStyles.th}>接待</th>
+            <th style={rankingStyles.th}>销售额</th>
+            <th style={rankingStyles.th}>转化率</th>
+            <th style={rankingStyles.th}>评分</th>
+            <th style={rankingStyles.th}>趋势</th>
+          </tr>
+        </thead>
+        <tbody>
+          {displayRankings.map((clerk) => (
+            <tr
+              key={clerk.name}
+              style={{
+                ...rankingStyles.tr,
+                background: clerk.name === current.name ? 'rgba(96,165,250,0.08)' : 'transparent',
+              }}
+              data-testid={`ranking-row-${clerk.rank}`}
+            >
+              <td style={rankingStyles.td}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  background: clerk.rank <= 3 ? 'rgba(251,191,36,0.15)' : 'rgba(148,163,184,0.1)',
+                  color: clerk.rank <= 3 ? '#fbbf24' : '#64748b',
+                }}>
+                  {clerk.rank}
+                </span>
+              </td>
+              <td style={rankingStyles.td}>
+                <span style={{ fontWeight: 600, color: '#e2e8f0' }}>
+                  {clerk.name}
+                  {clerk.name === current.name && (
+                    <span style={{ fontSize: 11, color: '#60a5fa', marginLeft: 4 }}>(你)</span>
+                  )}
+                </span>
+              </td>
+              <td style={{ ...rankingStyles.td, color: '#94a3b8' }}>{clerk.receptions}</td>
+              <td style={{ ...rankingStyles.td, color: '#e2e8f0', fontWeight: 600 }}>
+                ¥{(clerk.salesAmount / 1000).toFixed(1)}k
+              </td>
+              <td style={{ ...rankingStyles.td, color: '#4ade80' }}>{clerk.conversionRate}%</td>
+              <td style={{ ...rankingStyles.td, color: '#fbbf24' }}>
+                {'⭐'.repeat(Math.round(clerk.avgRating / 2))}
+              </td>
+              <td style={rankingStyles.td}>
+                <span style={{
+                  fontSize: 16,
+                  color: clerk.trend === 'up' ? '#4ade80' : clerk.trend === 'down' ? '#ef4444' : '#94a3b8',
+                }}>
+                  {clerk.trend === 'up' ? '↑' : clerk.trend === 'down' ? '↓' : '→'}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const rankingStyles: Record<string, React.CSSProperties> = {
+  th: {
+    padding: '8px 10px',
+    textAlign: 'left',
+    fontWeight: 600,
+    color: '#64748b',
+    borderBottom: '1px solid rgba(148,163,184,0.1)',
+    fontSize: 12,
+  },
+  tr: {
+    borderBottom: '1px solid rgba(148,163,184,0.06)',
+  },
+  td: {
+    padding: '10px 10px',
+  },
+};
+
+// ============================================================
+//  子组件: 值班摘要
+// ============================================================
+
+function ShiftSummary() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: 16,
+        flexWrap: 'wrap',
+        marginBottom: 20,
+        padding: '14px 18px',
+        borderRadius: 14,
+        background: 'rgba(15,23,42,0.30)',
+        border: '1px solid rgba(148,163,184,0.08)',
+      }}
+      data-testid="shift-summary"
+    >
+      <div style={{ flex: '1 1 auto', minWidth: 120 }}>
+        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>今日班次</div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: '#e2e8f0' }}>早班 · 08:00-16:00</div>
+      </div>
+      <div style={{ flex: '1 1 auto', minWidth: 120 }}>
+        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>在岗时长</div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: '#e2e8f0' }}>5h 32min</div>
+      </div>
+      <div style={{ flex: '1 1 auto', minWidth: 120 }}>
+        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>休息时间</div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: '#e2e8f0' }}>12:00-12:30</div>
+      </div>
+      <div style={{ flex: '1 1 auto', minWidth: 120, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <StatusBadge variant="success" label="● 在岗" />
+        <StatusBadge variant="info" label="在线接客" />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+//  子组件: 快速操作栏
+// ============================================================
+
+const QUICK_ACTIONS = [
+  { icon: '📝', label: '新建客户', testId: 'action-new-customer' },
+  { icon: '📋', label: '回访计划', testId: 'action-return-plan' },
+  { icon: '📊', label: '业绩排行', testId: 'action-ranking' },
+  { icon: '📱', label: '联系客户', testId: 'action-contact' },
+];
+
+function QuickActionBar() {
+  return (
+    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 }} data-testid="quick-action-bar">
+      {QUICK_ACTIONS.map((action) => (
+        <button
+          key={action.label}
+          data-testid={action.testId}
+          style={{
+            padding: '8px 18px',
+            borderRadius: 10,
+            border: '1px solid rgba(148,163,184,0.15)',
+            background: 'rgba(15,23,42,0.25)',
+            color: '#cbd5e1',
+            cursor: 'pointer',
+            fontSize: 13,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontWeight: 500,
+            transition: 'all 0.15s',
+          }}
+        >
+          {action.icon} {action.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
 // 页面组件
 // ============================================================
 
@@ -200,6 +508,18 @@ export default function SalesClerkPage() {
             </span>
           )}
         </div>
+
+        {/* ---- 值班摘要 ---- */}
+        <ShiftSummary />
+
+        {/* ---- 每日数据统计 ---- */}
+        <DailyStatsCards stats={DAILY_STATS} />
+
+        {/* ---- 快速操作栏 ---- */}
+        <QuickActionBar />
+
+        {/* ---- 店员排行 ---- */}
+        <ClerkRankingPanel current={CURRENT_CLERK} rankings={MOCK_CLERK_RANKING} />
 
         {/* ---- SalesClerkTool 核心组件 ---- */}
         <SalesClerkTool
