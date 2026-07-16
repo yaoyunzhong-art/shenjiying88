@@ -98,6 +98,7 @@ resource "alicloud_nat_gateway" "main" {
   payment_type         = "PayAsYouGo"
   vswitch_id           = alicloud_vswitch.zone_b.id
   nat_type             = "Enhanced"
+  specification        = "Small"
 
   tags = {
     Name        = "${var.cluster_name}-nat"
@@ -117,7 +118,7 @@ resource "alicloud_eip_association" "nat" {
 resource "alicloud_cs_managed_kubernetes" "main" {
   name               = var.cluster_name
   cluster_spec       = "ack.standard"
-  version            = "1.28.3-aliyun.1"
+  version            = "1.34.3-aliyun.1"
   
   # 网络配置
   vswitch_ids        = [
