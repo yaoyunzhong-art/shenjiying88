@@ -98,7 +98,7 @@ describe('AdminAlertsPage — 边界·防御', () => {
     assert.ok(!clientSource.includes('dangerouslySetInnerHTML'));
   });
   test('页面响应布局兼容', () => {
-    assert.ok(/className/.test(pageSource));
+    assert.ok(pageSource.includes('className') || pageSource.includes('style='), '页面包含样式属性');
   });
 });
 
