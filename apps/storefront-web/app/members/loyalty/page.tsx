@@ -568,6 +568,63 @@ export default function LoyaltyPage() {
           </>
         )}
       </div>
+    
+
+            {/* 积分获取渠道分析 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fefce8', border: '1px solid #fde047' }}>
+              <h4 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#713f12' }}>⚡ 积分获取渠道分析 (本月)</h4>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[
+                  { channel: '游戏消费', icon: '🎮', points: 125000, pct: 45, color: '#eab308' },
+                  { channel: '签到奖励', icon: '📅', points: 42000, pct: 15, color: '#3b82f6' },
+                  { channel: '活动赠送', icon: '🎪', points: 56000, pct: 20, color: '#22c55e' },
+                  { channel: '推荐好友', icon: '👥', points: 28000, pct: 10, color: '#a855f7' },
+                  { channel: '其他', icon: '📌', points: 28000, pct: 10, color: '#f97316' },
+                ].map(function(ch, i) {
+                  return (
+                    <div key={i} style={{ flex: '1 1 100px', padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fef08a', textAlign: 'center' }}>
+                      <div style={{ fontSize: 16 }}>{ch.icon}</div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#713f12', marginTop: 2 }}>{ch.channel}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#854d0e' }}>{(ch.points / 10000).toFixed(1)}<span style={{ fontSize: 9, fontWeight: 400 }}>w</span></div>
+                      <div style={{ marginTop: 2, height: 4, borderRadius: 2, background: '#e5e7eb', overflow: 'hidden' }}>
+                        <div style={{ width: ch.pct.toString() + '%', height: '100%', borderRadius: 2, background: ch.color }} />
+                      </div>
+                      <div style={{ fontSize: 9, color: '#9ca3af' }}>{ch.pct}%</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 潜在流失会员预警 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fef2f2', border: '1px solid #fecaca' }}>
+              <h4 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#991b1b' }}>⚠️ 潜在流失会员预警（近30天未活跃）</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {[
+                  { name: '刘萍', level: '银卡', days: 28, lastActivity: '兑换积分', points: 1200, risk: '高', score: 85 },
+                  { name: '周华', level: '金卡', days: 25, lastActivity: '游戏消费', points: 3800, risk: '中', score: 62 },
+                  { name: '吴静', level: '普通', days: 30, lastActivity: '注册', points: 50, risk: '高', score: 90 },
+                  { name: '郑明', level: '银卡', days: 22, lastActivity: '签到', points: 800, risk: '中', score: 58 },
+                  { name: '孙丽', level: '钻石', days: 20, lastActivity: '领取生日礼包', points: 12000, risk: '低', score: 35 },
+                ].map(function(m, i) {
+                  return (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #fecaca' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 600, color: '#374151' }}>{m.name}</span>
+                        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: m.level === '钻石' ? '#fffbeb' : m.level === '金卡' ? '#fef9c3' : '#f3f4f6', color: m.level === '钻石' ? '#b45309' : m.level === '金卡' ? '#854d0e' : '#6b7280' }}>{m.level}</span>
+                        <span style={{ color: '#6b7280' }}>未活跃 {m.days}天</span>
+                        <span style={{ color: '#9ca3af' }}>{m.lastActivity}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 10, color: '#9ca3af' }}>{m.points}分</span>
+                        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: m.risk === '高' ? '#fef2f2' : m.risk === '中' ? '#fff7ed' : '#f0fdf4', color: m.risk === '高' ? '#dc2626' : m.risk === '中' ? '#d97706' : '#16a34a' }}>{m.risk} ({m.score})</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
     <div style={{ display: 'flex', gap: 16, justifyContent: 'center', fontSize: 10, color: '#9ca3af', marginTop: 8 }}>
       <span>🏪 本月兑换: 345次</span>
       <span>👥 使用会员: 128人</span>
