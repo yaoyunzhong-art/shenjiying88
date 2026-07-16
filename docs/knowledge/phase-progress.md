@@ -150,3 +150,4 @@
 | 2026-07-16 | `#512` | admin-web/(storefront) | Base`✅` Service`✅` Controller`✅` CTest`⚠️` | 0🏆 · dispatch-510❌→P0 |
 | 2026-07-16 | `#513` | admin-web | Base`✅` Service`✅` Controller`✅` CTest`⚠️` | 0🏆 · dispatch-512-P0第3次❌·树哥0commit→🚨🚨P0危机 |
 | 2026-07-16 | `#514` | admin-web | Base`✅` Service`✅` Controller`✅` CTest`⚠️` | 0🏆 · dispatch-513-P0-force❌第4次·树哥0commit→🚨🚨🚨P0灾难·dispatch-514-P0-disaster签发 |
+| 2026-07-16 | **13:47 🦞手动干预** | marketing✅ | **P0闭环** · dispatch-514-P0-disaster手动修复 | ✅ 28/28 marketing test全绿 · commit 412c86fb5 · P0灾难解除 · `1🏆`(重启) |
