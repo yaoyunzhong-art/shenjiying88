@@ -29,63 +29,6 @@ import { useDetailActions } from '../../components/use-detail-actions';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../components/detail-workspace-registry';
 import type { Metadata, ResolvingMetadata } from 'next';
 
-// P-49 SEO/GEO 优化: 动态 generateMetadata
-export async function generateMetadata(
-  { params }: { params: Promise<{ id: string }> },
-  parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { id } = await params;
-  
-  // 获取门店数据（这里简化处理，实际应从 API 获取）
-  const store = getStoreById(id);
-  
-  // 动态 SEO 配置
-  return {
-    title: `${store.name} | 门店详情 | 神机营体育`,
-    description: `查看 ${store.name}(${store.code}) 的详细信息，包括运营状态、风险等级、关联租户和品牌等信息。`,
-    keywords: [store.name, '门店详情', '体育零售', store.marketCode, '神机营体育'],
-    
-    // Open Graph
-    openGraph: {
-      title: `${store.name} | 门店详情`,
-      description: `查看 ${store.name} 的详细信息 - 运营状态: ${store.status}, 风险等级: ${store.riskLevel}`,
-      url: `https://admin.shenjiying.com/stores/${id}`,
-      siteName: '神机营体育',
-      locale: 'zh_CN',
-      type: 'article',
-      images: [
-        {
-          url: `https://assets.shenjiying.com/stores/${id}/og-image.png`,
-          width: 1200,
-          height: 630,
-          alt: `${store.name} 门店预览`,
-        },
-      ],
-    },
-    
-    // Twitter Card
-    twitter: {
-      card: 'summary_large_image',
-      title: `${store.name} | 门店详情`,
-      description: `查看 ${store.name} 的详细信息 - 运营状态: ${store.status}`,
-      images: [`https://assets.shenjiying.com/stores/${id}/twitter-card.png`],
-    },
-    
-    // P-49 GEO: 地理定位元数据
-    other: {
-      'geo.region': store.marketCode.startsWith('cn') ? 'CN-11' : 'US-CA',
-      'geo.placename': store.address?.split('市')?.[0] || '北京',
-      'geo.position': '39.9042;116.4074',
-      'ICBM': '39.9042, 116.4074',
-    },
-    
-    // 结构化数据
-    alternates: {
-      canonical: `/stores/${id}`,
-    },
-  };
-}
-
 // ---- 类型 ----
 
 interface StoreDetail {

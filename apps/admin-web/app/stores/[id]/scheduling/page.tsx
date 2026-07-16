@@ -185,6 +185,194 @@ export default function SchedulingPage() {
     )},
   ];
 
+  // ============ 提取 Tab 配置（提升解析稳定性） ============
+  const TAB_ITEMS = [
+    {
+      key: 'list',
+      label: '排班列表',
+      children: (
+        <Card>
+          {/* 筛选栏 */}
+          <Space style={{ marginBottom: 12, gap: 8, width: '100%' }} wrap>
+            <span style={{ color: '#94a3b8', fontSize: 13 }}>班次:</span>
+            <Select
+              value={shiftFilter}
+              onChange={setShiftFilter}
+              style={{ width: 100 }}
+              options={[
+                { value: 'all', label: '全部' },
+                { value: '早班', label: '早班' },
+                { value: '中班', label: '中班' },
+                { value: '晚班', label: '晚班' },
+              ]}
+            />
+            <span style={{ color: '#94a3b8', fontSize: 13 }}>状态:</span>
+            <Select
+              value={statusFilter}
+              onChange={setStatusFilter}
+              style={{ width: 120 }}
+              options={[
+                { value: 'all', label: '全部' },
+                { value: 'scheduled', label: '待签到' },
+                { value: 'checked-in', label: '已签到' },
+                { value: 'completed', label: '已完成' },
+                { value: 'absent', label: '缺勤' },
+              ]}
+            />
+            <span style={{ color: '#94a3b8', fontSize: 13, marginLeft: 'auto' }}>
+              共 {filtered.length} 条
+            </span>
+          </Space>
+
+          {/* 表格 */}
+          {filtered.length === 0 ? (
+            <Empty description="暂无排班数据" />
+          ) : (
+            <Table
+              dataSource={filtered}
+              columns={COLUMNS as any}
+              rowKey="id"
+              pagination={{ pageSize: 10 }}
+            />
+          )}
+        </Card>
+      ),
+    },
+    {
+      key: 'schedule',
+      label: '班次视图',
+      children: (
+        <Row gutter={16}>
+          {['早班', '中班', '晚班'].map((shiftName) => {
+            const staffInShift = filtered.filter((s) => s.shift === shiftName);
+            return (
+              <Col key={shiftName} span={8}>
+                <Card
+                  title={
+                    <>
+                      <span style={{ color: SHIFT_COLORS[shiftName] }}>●</span>{' '}
+                      {shiftName}
+                    </>
+                  }
+                  extra={
+                    <span style={{ color: '#94a3b8' }}>{staffInShift.length}人</span>
+                  }
+                >
+                  {staffInShift.length === 0 ? (
+                    <Empty description="暂无排班" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  ) : (
+                    staffInShift.map((s) => (
+                      <div
+                        key={s.id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '6px 0',
+                          borderBottom: '1px solid rgba(148,163,184,0.08)',
+                        }}
+                      >
+                        <Space>
+                          <span style={{ color: '#e2e8f0' }}>{s.staffName}</span>
+                          <Tag size="small" color={ROLE_COLORS[s.role] || 'default'}>
+                            {s.role}
+                          </Tag>
+                        </Space>
+                        <Tag
+                          color={API_STATUS_MAP[s.status]?.color || 'default'}
+                          size="small"
+                        >
+                          {API_STATUS_MAP[s.status]?.label || s.status}
+                        </Tag>
+                      </div>
+                    ))
+                  )}
+                </Card>
+              </Col>
+            );
+          })}
+        </Row>
+      ),
+    },
+    {
+      key: 'stats',
+      label: '统计分析',
+      children: (
+        <Row gutter={16}>
+          <Col span={12}>
+            <Card title="角色分布">
+              {roleDist.length === 0 ? (
+                <Empty description="暂无数据" />
+              ) : (
+                roleDist.map(([role, count]) => (
+                  <div
+                    key={role}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0',
+                      borderBottom: '1px solid rgba(148,163,184,0.08)',
+                    }}
+                  >
+                    <Tag color={ROLE_COLORS[role] || 'default'}>{role}</Tag>
+                    <Space>
+                      <Progress
+                        percent={Math.round((count / schedules.length) * 100)}
+                        size="small"
+                        style={{ width: 120 }}
+                      />
+                      <span style={{ color: '#94a3b8', fontSize: 13 }}>{count}人</span>
+                    </Space>
+                  </div>
+                ))
+              )}
+            </Card>
+          </Col>
+          <Col span={12}>
+            <Card title="状态分布">
+              {schedules.length === 0 ? (
+                <Empty description="暂无数据" />
+              ) : (
+                Object.entries(API_STATUS_MAP).map(([k, cfg]) => {
+                  const cnt = schedules.filter((s) => s.status === k).length;
+                  return (
+                    <div
+                      key={k}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '8px 0',
+                        borderBottom: '1px solid rgba(148,163,184,0.08)',
+                      }}
+                    >
+                      <Tag color={cfg.color}>{cfg.label}</Tag>
+                      <span style={{ color: '#e2e8f0' }}>{cnt}人</span>
+                    </div>
+                  );
+                })
+              )}
+            </Card>
+          </Col>
+        </Row>
+      ),
+    },
+  ];
+
+  // ============ 主内容渲染 ============
+  function renderMainContent() {
+    if (error) {
+      return (
+        <Card>
+          <Empty description={error}>
+            <Button onClick={fetchSchedules}>重试</Button>
+          </Empty>
+        </Card>
+      );
+    }
+    return <Tabs activeKey={tabKey} onChange={setTabKey} items={TAB_ITEMS} />;
+  }
+
   // ============ 渲染 ============
   return (
     <PageShell>
@@ -253,186 +441,7 @@ export default function SchedulingPage() {
 
         {/* 主内容区 */}
         <Spin spinning={loading} tip="加载排班数据...">
-          {error ? (
-            <Card>
-              <Empty description={error}>
-                <Button onClick={fetchSchedules}>重试</Button>
-              </Empty>
-            </Card>
-          ) : (
-            <Tabs activeKey={tabKey} onChange={setTabKey} items={[
-              {
-                key: 'list',
-                label: '排班列表',
-                children: (
-                  <Card>
-                    {/* 筛选栏 */}
-                    <Space style={{ marginBottom: 12, gap: 8, width: '100%' }} wrap>
-                      <span style={{ color: '#94a3b8', fontSize: 13 }}>班次:</span>
-                      <Select
-                        value={shiftFilter}
-                        onChange={setShiftFilter}
-                        style={{ width: 100 }}
-                        options={[
-                          { value: 'all', label: '全部' },
-                          { value: '早班', label: '早班' },
-                          { value: '中班', label: '中班' },
-                          { value: '晚班', label: '晚班' },
-                        ]}
-                      />
-                      <span style={{ color: '#94a3b8', fontSize: 13 }}>状态:</span>
-                      <Select
-                        value={statusFilter}
-                        onChange={setStatusFilter}
-                        style={{ width: 120 }}
-                        options={[
-                          { value: 'all', label: '全部' },
-                          { value: 'scheduled', label: '待签到' },
-                          { value: 'checked-in', label: '已签到' },
-                          { value: 'completed', label: '已完成' },
-                          { value: 'absent', label: '缺勤' },
-                        ]}
-                      />
-                      <span style={{ color: '#94a3b8', fontSize: 13, marginLeft: 'auto' }}>
-                        共 {filtered.length} 条
-                      </span>
-                    </Space>
-
-                    {/* 表格 */}
-                    {filtered.length === 0 ? (
-                      <Empty description="暂无排班数据" />
-                    ) : (
-                      <Table
-                        dataSource={filtered}
-                        columns={COLUMNS as any}
-                        rowKey="id"
-                        pagination={{ pageSize: 10 }}
-                      />
-                    )}
-                  </Card>
-                ),
-              },
-              {
-                key: 'schedule',
-                label: '班次视图',
-                children: (
-                  <Row gutter={16}>
-                    {['早班', '中班', '晚班'].map((shiftName) => {
-                      const staffInShift = filtered.filter((s) => s.shift === shiftName);
-                      return (
-                        <Col key={shiftName} span={8}>
-                          <Card
-                            title={
-                              <>
-                                <span style={{ color: SHIFT_COLORS[shiftName] }}>●</span>{' '}
-                                {shiftName}
-                              </>
-                            }
-                            extra={
-                              <span style={{ color: '#94a3b8' }}>{staffInShift.length}人</span>
-                            }
-                          >
-                            {staffInShift.length === 0 ? (
-                              <Empty description="暂无排班" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                            ) : (
-                              staffInShift.map((s) => (
-                                <div
-                                  key={s.id}
-                                  style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    padding: '6px 0',
-                                    borderBottom: '1px solid rgba(148,163,184,0.08)',
-                                  }}
-                                >
-                                  <Space>
-                                    <span style={{ color: '#e2e8f0' }}>{s.staffName}</span>
-                                    <Tag size="small" color={ROLE_COLORS[s.role] || 'default'}>
-                                      {s.role}
-                                    </Tag>
-                                  </Space>
-                                  <Tag
-                                    color={API_STATUS_MAP[s.status]?.color || 'default'}
-                                    size="small"
-                                  >
-                                    {API_STATUS_MAP[s.status]?.label || s.status}
-                                  </Tag>
-                                </div>
-                              ))
-                            )}
-                          </Card>
-                        </Col>
-                      );
-                    })}
-                  </Row>
-                ),
-              },
-              {
-                key: 'stats',
-                label: '统计分析',
-                children: (
-                  <Row gutter={16}>
-                    <Col span={12}>
-                      <Card title="角色分布">
-                        {roleDist.length === 0 ? (
-                          <Empty description="暂无数据" />
-                        ) : (
-                          roleDist.map(([role, count]) => (
-                            <div
-                              key={role}
-                              style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                padding: '8px 0',
-                                borderBottom: '1px solid rgba(148,163,184,0.08)',
-                              }}
-                            >
-                              <Tag color={ROLE_COLORS[role] || 'default'}>{role}</Tag>
-                              <Space>
-                                <Progress
-                                  percent={Math.round((count / schedules.length) * 100)}
-                                  size="small"
-                                  style={{ width: 120 }}
-                                />
-                                <span style={{ color: '#94a3b8', fontSize: 13 }}>{count}人</span>
-                              </Space>
-                            </div>
-                          ))
-                        )}
-                      </Card>
-                    </Col>
-                    <Col span={12}>
-                      <Card title="状态分布">
-                        {schedules.length === 0 ? (
-                          <Empty description="暂无数据" />
-                        ) : (
-                          Object.entries(API_STATUS_MAP).map(([k, cfg]) => {
-                            const cnt = schedules.filter((s) => s.status === k).length;
-                            return (
-                              <div
-                                key={k}
-                                style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  padding: '8px 0',
-                                  borderBottom: '1px solid rgba(148,163,184,0.08)',
-                                }}
-                              >
-                                <Tag color={cfg.color}>{cfg.label}</Tag>
-                                <span style={{ color: '#e2e8f0' }}>{cnt}人</span>
-                              </div>
-                            );
-                          })
-                        )}
-                      </Card>
-                    </Col>
-                  </Row>
-                ),
-              },
-            ]}
-          />
+          {renderMainContent()}
         </Spin>
 
         {/* 底部操作栏 */}

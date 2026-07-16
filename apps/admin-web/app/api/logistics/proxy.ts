@@ -16,7 +16,7 @@ function ensureTrailingSlash(value: string): string {
   return value.endsWith('/') ? value : `${value}/`
 }
 
-export function resolveLogisticsApiBaseUrl(): string {
+export async function resolveLogisticsApiBaseUrl(): Promise<string> {
   const configured =
     process.env.M5_API_BASE_URL ??
     process.env.NEXT_PUBLIC_M5_API_BASE_URL ??
@@ -36,9 +36,9 @@ export function resolveLogisticsApiBaseUrl(): string {
   return ensureTrailingSlash(`${normalized.replace(/\/$/, '')}/api/v1`)
 }
 
-export function buildLogisticsUpstreamUrl(requestUrl: string, upstreamPath: string): string {
+export async function buildLogisticsUpstreamUrl(requestUrl: string, upstreamPath: string): Promise<string> {
   const request = new URL(requestUrl)
-  const upstream = new URL(`${upstreamPath}${request.search}`, resolveLogisticsApiBaseUrl())
+  const upstream = new URL(`${upstreamPath}${request.search}`, await resolveLogisticsApiBaseUrl())
   return upstream.toString()
 }
 
@@ -68,7 +68,7 @@ export async function proxyLogisticsRequest(
   upstreamPath: string,
   method: 'GET' | 'POST'
 ) {
-  const upstreamUrl = buildLogisticsUpstreamUrl(request.url, upstreamPath)
+  const upstreamUrl = await buildLogisticsUpstreamUrl(request.url, upstreamPath)
   const headers = copyContextHeaders(request)
 
   try {
