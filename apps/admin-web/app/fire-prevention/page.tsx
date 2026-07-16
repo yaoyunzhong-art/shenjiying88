@@ -147,6 +147,57 @@ function buildColumns(): DataTableColumn<InspectionItem>[] {
 
 // ==================== 主页面 ====================
 
+// 区域分布统计
+function AreaStats({ items }: { items: InspectionItem[] }) {
+  const areaCounts = useMemo(() => {
+    const map: Record<string, { total: number; passed: number; failed: number }> = {};
+    items.forEach((i) => {
+      if (!map[i.area]) map[i.area] = { total: 0, passed: 0, failed: 0 };
+      map[i.area].total++;
+      if (i.status === 'passed') map[i.area].passed++;
+      if (i.status === 'failed') map[i.area].failed++;
+    });
+    return map;
+  }, [items]);
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8, marginBottom: 16 }}>
+      {Object.entries(areaCounts).map(([area, st]) => (
+        <div key={area} style={{ padding: '8px 12px', borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 12 }}>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>{area}</div>
+          <div style={{ display: 'flex', gap: 8, color: '#64748b' }}>
+            <span>{st.total}项</span>
+            <span style={{ color: '#16a34a' }}>✓{st.passed}</span>
+            {st.failed > 0 && <span style={{ color: '#dc2626' }}>✗{st.failed}</span>}
+          </div>
+          <div style={{ height: 4, borderRadius: 2, background: '#e2e8f0', marginTop: 6 }}>
+            <div style={{ height: '100%', width: `${(st.passed / Math.max(st.total, 1)) * 100}%`, background: '#22c55e', borderRadius: 2 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 趋势数据
+function FireTrendChart() {
+  const months = ['1月','2月','3月','4月','5月','6月'];
+  const data = [85, 92, 78, 95, 88, 91];
+  const max = Math.max(...data);
+  return (
+    <div style={{ padding: 16, borderRadius: 12, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: '#1e293b' }}>📊 月度合规率趋势</div>
+      <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 100, paddingBottom: 20 }}>
+        {data.map((v, i) => (
+          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: '100%', height: `${(v / max) * 100}%`, background: v >= 90 ? '#22c55e' : v >= 80 ? '#eab308' : '#ef4444', borderRadius: '4px 4px 0 0', minHeight: 8 }} />
+            <div style={{ fontSize: 10, color: '#64748b' }}>{months[i]}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function FirePreventionPage() {
   const [items, setItems] = useState<InspectionItem[]>(generateMockData);
   const [statusFilter, setStatusFilter] = useState<InspectionStatus | 'ALL'>('ALL');
