@@ -754,6 +754,140 @@ export default function MemberChurnPage() {
           );
         }()}
 
+        {/* 面板1: 流失会员满意度回溯 */}
+        {function(s, i) {
+          var satisfactionData = [
+            { level: '非常满意', pct: 12, count: 60, bgColor: '#22c55e', reason: '搬家、换工作、消费习惯改变' },
+            { level: '满意', pct: 28, count: 140, bgColor: '#3b82f6', reason: '价格敏感、竞品促销、服务频率下降' },
+            { level: '一般', pct: 35, count: 175, bgColor: '#f59e0b', reason: '服务体验不突出、缺乏黏性活动、周边新店开业' },
+            { level: '不满意', pct: 25, count: 125, bgColor: '#ef4444', reason: '投诉处理不当、设备老化、服务态度差' },
+          ];
+          var totalCount = satisfactionData.reduce(function(a, b) { return a + b.count; }, 0);
+          return (
+            <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0369a1' }}>📋 流失会员满意度回溯</h3>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 10 }}>基于流失前最后一次评价数据 · 共 {totalCount} 人</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {satisfactionData.map(function(d, idx) {
+                  var barWidth = d.pct * 2.6;
+                  return (
+                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                        <span style={{ fontWeight: 600, color: '#374151', minWidth: 60 }}>{d.level}</span>
+                        <div style={{ flex: 1, height: 22, borderRadius: 6, background: '#f3f4f6', overflow: 'hidden', position: 'relative' }}>
+                          <div style={{ width: barWidth + '%', height: '100%', borderRadius: 6, background: d.bgColor, opacity: 0.75 }} />
+                          <span style={{ position: 'absolute', right: 8, top: 3, fontSize: 11, fontWeight: 700, color: '#374151' }}>{d.pct}% ({d.count}人)</span>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11, color: '#6b7280', marginLeft: 68, padding: '2px 8px', borderRadius: 4, background: '#f9fafb' }}>
+                        💡 流失原因: {d.reason}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 10, color: '#9ca3af', textAlign: 'center' }}>
+                📌 "一般" 和 "不满意" 合计占比 {60}% · "不满意"会员流失后回归率最低
+              </div>
+            </div>
+          );
+        }()}
+
+        {/* 面板2: 竞品流失对比分析 */}
+        {function(s, i) {
+          var comparisonData = [
+            { metric: '本店月度流失率', value: '8.2%', barColor: '#3b82f6', barWidth: 65.6 },
+            { metric: '同行业平均', value: '12.5%', barColor: '#6b7280', barWidth: 100 },
+            { metric: '行业最优', value: '5.8%', barColor: '#22c55e', barWidth: 46.4 },
+          ];
+          var advantageItems = [
+            { label: '本店优势', value: '+4.3%', desc: '优于同行业平均', color: '#059669' },
+            { label: '差距空间', value: '-2.4%', desc: '与行业最优的差距', color: '#d97706' },
+          ];
+          return (
+            <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fefce8', border: '1px solid #fde68a' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#854d0e' }}>🏪 竞品流失对比分析</h3>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 10 }}>与本市同行业相比的流失率表现</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+                {comparisonData.map(function(d, idx) {
+                  return (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                      <span style={{ fontWeight: 500, color: '#374151', minWidth: 120 }}>{d.metric}</span>
+                      <div style={{ flex: 1, height: 24, borderRadius: 6, background: '#f3f4f6', overflow: 'hidden', position: 'relative' }}>
+                        <div style={{ width: d.barWidth + '%', height: '100%', borderRadius: 6, background: d.barColor, opacity: 0.7 }} />
+                        <span style={{ position: 'absolute', right: 8, top: 4, fontSize: 12, fontWeight: 700, color: '#374151' }}>{d.value}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {advantageItems.map(function(a, idx) {
+                  return (
+                    <div key={idx} style={{ padding: '10px 14px', borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, color: '#6b7280' }}>{a.label}</div>
+                      <div style={{ fontSize: 22, fontWeight: 700, color: a.color }}>{a.value}</div>
+                      <div style={{ fontSize: 10, color: '#9ca3af' }}>{a.desc}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 10, color: '#9ca3af', textAlign: 'center' }}>
+                📊 与同行业平均相比，本店流失率控制优于行业水平
+              </div>
+            </div>
+          );
+        }()}
+
+        {/* 面板3: 流失会员回归情况统计 */}
+        {function(s, i) {
+          var returnData = [
+            { period: '3个月内回归', pct: 18, count: 90, color: '#22c55e' },
+            { period: '6个月内回归', pct: 32, count: 160, color: '#3b82f6' },
+            { period: '12个月内回归', pct: 45, count: 225, color: '#8b5cf6' },
+            { period: '未回归', pct: 55, count: 275, color: '#ef4444' },
+          ];
+          var totalReturn = returnData.reduce(function(a, b) { return a + b.count; }, 0);
+          return (
+            <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fdf2f8', border: '1px solid #fbcfe8' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9d174d' }}>🔄 流失会员回归情况统计</h3>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 10 }}>过去12个月 {totalReturn} 位流失会员回归趋势</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {returnData.map(function(d, idx) {
+                  var barWidth = d.pct * 1.6;
+                  return (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                      <span style={{ fontWeight: 600, color: '#374151', minWidth: 90 }}>{d.period}</span>
+                      <div style={{ flex: 1, height: 26, borderRadius: 6, background: '#f3f4f6', overflow: 'hidden', position: 'relative' }}>
+                        <div style={{ width: barWidth + '%', height: '100%', borderRadius: 6, background: d.color, opacity: 0.7 }} />
+                        <span style={{ position: 'absolute', right: 8, top: 4, fontSize: 12, fontWeight: 700, color: '#374151' }}>{d.pct}% ({d.count}人)</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8, marginTop: 10 }}>
+                {[
+                  { label: '平均回归周期', value: '85天', desc: '从流失到回归', color: '#8b5cf6' },
+                  { label: '回归会员月均消费', value: '¥186', desc: '回归后月均消费', color: '#059669' },
+                  { label: '回归后3月留存', value: '62%', desc: '回归会员留存率', color: '#3b82f6' },
+                ].map(function(k, idx) {
+                  return (
+                    <div key={idx} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fce7f3', textAlign: 'center' }}>
+                      <div style={{ fontSize: 10, color: '#6b7280' }}>{k.label}</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: k.color }}>{k.value}</div>
+                      <div style={{ fontSize: 10, color: '#9ca3af' }}>{k.desc}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 10, color: '#9ca3af', textAlign: 'center' }}>
+                📈 12个月内回归率 45% · 建议重点跟进6个月内高概率回归人群
+              </div>
+            </div>
+          );
+        }()}
+
         {/* 脚注 */}
         <div style={{ marginTop: 20, padding: '12px 18px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12, color: '#6b7280', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <span>🤖 AI 预测基于历史数据模型</span>
