@@ -493,6 +493,54 @@ export default function MaintenancePage() {
           </div>
         </div>
 
+        {/* 维护人员业绩排行 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9a3412' }}>🏆 维护人员业绩排行</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {[
+              { name: '王工', completed: 42, urgent: 8, score: 98, satisfaction: '4.9' },
+              { name: '李工', completed: 38, urgent: 5, score: 92, satisfaction: '4.7' },
+              { name: '张工', completed: 35, urgent: 6, score: 88, satisfaction: '4.5' },
+              { name: '赵工', completed: 30, urgent: 3, score: 82, satisfaction: '4.3' },
+              { name: '陈工', completed: 28, urgent: 10, score: 78, satisfaction: '4.1' },
+            ].map((p, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+                <span style={{ fontWeight: 700, color: i < 3 ? '#d97706' : '#6b7280', minWidth: 20 }}>#{i + 1}</span>
+                <span style={{ flex: 1, fontWeight: 500, fontSize: 13 }}>{p.name}</span>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>
+                  完成 {p.completed}单 · 紧急 {p.urgent}单
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#d97706' }}>{p.score}分</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af' }}>满意度 {p.satisfaction}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 维护成本分析 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#166534' }}>💰 维护成本分析 (本月)</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8 }}>
+            {[
+              { label: '配件采购', value: '¥3,850', percent: 42, color: '#22c55e' },
+              { label: '人工费用', value: '¥2,600', percent: 28, color: '#3b82f6' },
+              { label: '外包服务', value: '¥1,800', percent: 19, color: '#a855f7' },
+              { label: '其他', value: '¥1,000', percent: 11, color: '#f59e0b' },
+            ].map((c, i) => (
+              <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{c.label}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: c.color }}>{c.value}</div>
+                <div style={{ marginTop: 4, height: 4, borderRadius: 2, background: '#e5e7eb', overflow: 'hidden' }}>
+                  <div style={{ width: `${c.percent}%`, height: '100%', borderRadius: 2, background: c.color }} />
+                </div>
+                <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>{c.percent}%</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* 快速统计底部 */}
         <div style={{ marginTop: 20, padding: '12px 18px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 11, color: '#6b7280', display: 'flex', gap: 16, justifyContent: 'space-between' }}>
 

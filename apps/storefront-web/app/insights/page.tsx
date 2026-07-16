@@ -503,6 +503,53 @@ export default function DataInsights() {
         </div>
       </div>
 
+      {/* 设备维护告警 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>🔧 需要维护的设备 (TOP 5)</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {[
+            { name: 'POS机-03', type: '收银机', lastMaint: '60天前', daysLeft: 5, priority: '紧急', color: '#f87171' },
+            { name: '游戏主机-A05', type: '游戏机', lastMaint: '45天前', daysLeft: 12, priority: '高', color: '#fbbf24' },
+            { name: '空调-02', type: '空调', lastMaint: '90天前', daysLeft: 0, priority: '过期', color: '#f87171' },
+            { name: '打印机-01', type: '打印机', lastMaint: '30天前', daysLeft: 15, priority: '中', color: '#60a5fa' },
+            { name: '摄像头-08', type: '监控', lastMaint: '120天前', daysLeft: 7, priority: '高', color: '#fbbf24' },
+          ].map((d, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderRadius: 8, background: 'rgba(148,163,184,0.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: d.color }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>{d.name}</span>
+                <span style={{ fontSize: 11, color: '#64748b' }}>({d.type})</span>
+              </div>
+              <div style={{ fontSize: 11, color: '#64748b', display: 'flex', gap: 8 }}>
+                <span>上次: {d.lastMaint}</span>
+                <span>剩余: {d.daysLeft}天</span>
+                <span style={{ color: d.color, fontWeight: 600 }}>{d.priority}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 时段客流统计 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>👤 客流量统计</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8 }}>
+          {[
+            { label: '本周总客流', value: '2,350', change: '+12%', color: '#34d399' },
+            { label: '日均', value: '335', change: '+8%', color: '#60a5fa' },
+            { label: '周末日均', value: '520', change: '+15%', color: '#fbbf24' },
+            { label: '工作日均', value: '250', change: '+5%', color: '#a78bfa' },
+            { label: '新客占比', value: '28%', change: '+3%', color: '#f472b6' },
+          ].map((s, i) => (
+            <div key={i} style={{ padding: 12, borderRadius: 8, background: 'rgba(148,163,184,0.06)', textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: '#64748b' }}>{s.label}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: 10, color: s.change.startsWith('+') ? '#34d399' : '#f87171' }}>{s.change}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* 脚注 */}
       <div style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 24 }}>
         数据洞察系统 · 数据更新于 {new Date().toLocaleString('zh-CN')} · 共 {MOCK_DEVICES.length} 台设备 · {total} 位会员

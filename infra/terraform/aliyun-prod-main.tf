@@ -97,7 +97,7 @@ resource "alicloud_nat_gateway" "main" {
   nat_gateway_name     = "${var.cluster_name}-nat"
   payment_type         = "PayAsYouGo"
   vswitch_id           = alicloud_vswitch.zone_b.id
-  nat_type             = "Enhanced"
+  nat_type             = "Normal"
 
   tags = {
     Name        = "${var.cluster_name}-nat"
@@ -221,9 +221,9 @@ output "cluster_id" {
   value       = alicloud_cs_managed_kubernetes.main.id
 }
 
-output "cluster_endpoint" {
-  description = "集群API Endpoint"
-  value       = alicloud_cs_managed_kubernetes.main.api_server_intranet
+output "cluster_name" {
+  description = "集群名称"
+  value       = alicloud_cs_managed_kubernetes.main.name
 }
 
 output "nat_gateway_id" {

@@ -463,6 +463,54 @@ export default function MemberChurnPage() {
           </div>
         </div>
 
+        {/* 推荐挽回策略 */}
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#1d4ed8' }}>💡 推荐挽回策略</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8 }}>
+            {[
+              { strategy: '定向优惠券', target: '高风险会员', cost: '¥30-100/人', effect: '挽回率~35%', urgency: '高' },
+              { strategy: '专属活动邀请', target: '钻石/金卡', cost: '¥80-200/人', effect: '挽回率~50%', urgency: '中' },
+              { strategy: '短信提醒', target: '沉睡30天+', cost: '¥0.05/条', effect: '到店率~15%', urgency: '高' },
+              { strategy: '电话回访', target: '高消费会员', cost: '¥5-10/通', effect: '挽回率~28%', urgency: '中' },
+              { strategy: '生日关怀', target: '近生日会员', cost: '¥20-50/人', effect: '到店率~42%', urgency: '低' },
+            ].map((s, i) => (
+              <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb' }}>
+                <div style={{ fontWeight: 600, fontSize: 12, color: '#1d4ed8', marginBottom: 4 }}>{s.strategy}</div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>目标: {s.target}</div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>成本: {s.cost}</div>
+                <div style={{ fontSize: 11, color: '#059669' }}>效果: {s.effect}</div>
+                <div style={{ marginTop: 4, fontSize: 10, padding: '1px 6px', borderRadius: 4, display: 'inline-block', background: s.urgency === '高' ? '#fef2f2' : s.urgency === '中' ? '#fff7ed' : '#f0fdf4', color: s.urgency === '高' ? '#dc2626' : s.urgency === '中' ? '#d97706' : '#16a34a' }}>
+                  {s.urgency === '高' ? '🔥 推荐优先' : s.urgency === '中' ? '⭐ 可选' : '📌 辅助'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 流失对比 */}
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fefce8', border: '1px solid #fde047' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#713f12' }}>📅 本季度 vs 上季度流失对比</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8 }}>
+            {[
+              { metric: '流失人数', q1: '28人', q2: '22人', trend: 'down', good: true },
+              { metric: '挽回率', q1: '32%', q2: '41%', trend: 'up', good: true },
+              { metric: '挽回成本', q1: '¥2,400', q2: '¥1,850', trend: 'down', good: true },
+              { metric: '平均流失天', q1: '47天', q2: '35天', trend: 'down', good: true },
+            ].map((c, i) => (
+              <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{c.metric}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: '#9ca3af' }}>上季: {c.q1}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#059669' }}>本季: {c.q2}</div>
+                </div>
+                <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>
+                  {c.trend === 'down' ? (c.good ? '↓ 下降改善' : '↓ 需关注') : '↑ 提升中'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* 脚注 */}
         <div style={{ marginTop: 20, padding: '12px 18px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12, color: '#6b7280', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <span>🤖 AI 预测基于历史数据模型</span>

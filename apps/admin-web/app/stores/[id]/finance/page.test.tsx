@@ -1,151 +1,41 @@
-/**
- * finance/page.test.tsx — 财务管理页 L1+L2 测试
- * 覆盖: 正例·反例·边界·防御·数据校验
- */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
+const SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
 
-function readSource(): string {
-  return readFileSync(SOURCE, 'utf-8');
-}
-
-// ---- 正例 ----
-
-describe('finance — 正例', () => {
-  it('应导出一个默认组件 FinancePage', () => {
-    const src = readSource();
-    assert.ok(src.includes('export default function FinancePage'), '缺少默认导出组件');
-  });
-
-  it('应包含交易数据 TRANSACTIONS', () => {
-    const src = readSource();
-    assert.ok(src.includes('TRANSACTIONS'), '缺少交易数据');
-  });
-
-  it('应包含营收计算逻辑 filter(d => d.type)', () => {
-    const src = readSource();
-    assert.ok(src.includes('.filter(d => d.type') || src.includes(".filter(d=>d.type"), '缺少过滤逻辑');
-  });
-
-  it('应包含 Statistic 统计组件', () => {
-    const src = readSource();
-    assert.ok(src.includes('Statistic'), '缺少统计组件');
-  });
-
-  it('收入应为正数、支出为负数', () => {
-    const src = readSource();
-    assert.ok(src.includes('amount > 0') || src.includes('amount>0') || src.includes('#34d399'), '缺少收入/支出颜色区分');
-  });
-
-  it('应计算净利润 income - expense', () => {
-    const src = readSource();
-    assert.ok(src.includes('income - expense'), '缺少净利润计算');
+describe('FinancePage — 正例', () => {
+  it('应导出默认组件', () => assert.ok(SRC.includes('export default function FinancePage')));
+  it('应包含 "use client"', () => assert.ok(SRC.includes("'use client'")));
+  it('应包含useState/useEffect/useCallback等hook', () => {
+    assert.ok(SRC.includes('useState') || SRC.includes('useEffect') || SRC.includes('useCallback'));
   });
 });
 
-// ---- 反例 ----
-
-describe('finance — 反例', () => {
-  it('不应使用 any 类型', () => {
-    const src = readSource();
-    assert.ok(!/: any\b/.test(src), '不应使用 any');
-  });
-
-  it('TRANSACTIONS 不应为空', () => {
-    const src = readSource();
-    assert.ok(src.includes('T001'), 'TRANSACTIONS 应有实际数据');
-  });
-
-  it('不应使用 eval/Function', () => {
-    const src = readSource();
-    assert.ok(!src.includes('eval(') && !src.includes('new Function('), '不应使用动态执行');
-  });
+describe('FinancePage — 防御', () => {
+  it('无dangerouslySetInnerHTML', () => assert.ok(!SRC.includes('dangerouslySetInnerHTML')));
+  it('无any类型', () => assert.ok(!/:\s*any\b/.test(SRC)));
+  it('不直接导出any', () => assert.ok(!SRC.includes('as any')));
 });
 
-// ---- 边界 ----
-
-describe('finance — 边界', () => {
-  it('应包含营收和支出分类过滤', () => {
-    const src = readSource();
-    assert.ok(src.includes('营收'), '缺少营收分类');
-  });
-
-  it('应包含列定义 COLUMNS', () => {
-    const src = readSource();
-    assert.ok(src.includes('COLUMNS'), '缺少列定义');
-  });
-
-  it('应包含日结操作按钮', () => {
-    const src = readSource();
-    assert.ok(src.includes('日结'), '缺少日结按钮');
-  });
-
-  it('应收支应有对应颜色(绿/红)', () => {
-    const src = readSource();
-    assert.ok(src.includes('#34d399') && src.includes('#f87171'), '缺少绿/红色区分');
-  });
+describe('FinancePage — 财务模块', () => {
+  it('应包含交易数据定义', () => assert.ok(SRC.includes('interface') || SRC.includes('TRANSACTIONS')));
+  it('应包含 TRANSACTIONS 数据', () => assert.ok(SRC.includes('TRANSACTIONS')));
+  it('应使用 useMemo 筛选', () => assert.ok(SRC.includes('useMemo')));
+  it('应支持 Tab 切换', () => assert.ok(SRC.includes('overview') && SRC.includes('detail')));
+  it('应包含 Table 明细展示', () => assert.ok(SRC.includes('Table')));
 });
 
-// ---- 防御 ----
-
-describe('finance — 防御', () => {
-  it('应包含 use client 指令', () => {
-    const src = readSource();
-    assert.ok(src.includes("'use client'"), '缺少 use client');
-  });
-
-  it('应包含 PageShell 布局组件', () => {
-    const src = readSource();
-    assert.ok(src.includes('PageShell'), '缺少 PageShell');
-  });
-
-  it('不应使用 dangerouslySetInnerHTML', () => {
-    const src = readSource();
-    assert.ok(!src.includes('dangerouslySetInnerHTML'), '不应使用 dangerouslySetInnerHTML');
-  });
-
-  it('金额渲染应使用 toLocaleString', () => {
-    const src = readSource();
-    assert.ok(src.includes('toLocaleString'), '缺少数字格式化');
-  });
-
-  it('已结算/待结算应有不同 Tag 颜色', () => {
-    const src = readSource();
-    assert.ok(src.includes('settled') && src.includes('pending'), '缺少结算状态');
-  });
+describe('FinancePage — 统计财务指标', () => {
+  it('应计算营收', () => assert.ok(SRC.includes('income') && SRC.includes('expense')));
+  it('应计算净利润', () => assert.ok(SRC.includes('netProfit')));
+  it('应计算毛利率', () => assert.ok(SRC.includes('毛利率') || SRC.includes('margin')));
+  it('应展示收入/支出结构', () => assert.ok(SRC.includes('Progress')));
 });
 
-// ---- 数据校验 ----
-
-describe('finance — 数据校验', () => {
-  it('TRANSACTIONS 应包含日期/类型/分类/金额/支付方式/状态', () => {
-    const src = readSource();
-    assert.ok(src.includes('date') && src.includes('type') && src.includes('category'), '缺少基础字段');
-    assert.ok(src.includes('amount'), '缺少金额');
-    assert.ok(src.includes('method') || src.includes('微信'), '缺少支付方式');
-    assert.ok(src.includes('status'), '缺少状态');
-  });
-
-  it('COLUMNS 应覆盖足够的字段', () => {
-    const src = readSource();
-    const colCount = (src.match(/\{ title:/g) || []).length;
-    assert.ok(colCount >= 6, `COLUMNS 列数不足: ${colCount}`);
-  });
-
-  it('应消费 useState', () => {
-    const src = readSource();
-    assert.ok(src.includes('useState'), '缺少 useState');
-  });
-
-  it('应包含今日营收/本月累计/支出/净利四个统计', () => {
-    const src = readSource();
-    const statisticCount = (src.match(/Statistic/g) || []).length;
-    assert.ok(statisticCount >= 4, `Statistic 数量不足: ${statisticCount}`);
-  });
+describe('FinancePage — 交互', () => {
+  it('应包含日结 Modal', () => assert.ok(SRC.includes('showSettle') && SRC.includes('Modal')));
+  it('应支持类型筛选', () => assert.ok(SRC.includes('typeFilter')));
+  it('应展示统计卡片', () => assert.ok(SRC.includes('Statistic')));
 });

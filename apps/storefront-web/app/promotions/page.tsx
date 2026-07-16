@@ -454,6 +454,50 @@ export default function StorePromotionsPage() {
         </div>
       )}
 
+      {/* 活动类型分布 */}
+      {!showError && (
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#faf5ff', border: '1px solid #e9d5ff' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#7c3aed' }}>🏷️ 活动类型分布</h3>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {[
+              { type: '折扣', count: MOCK_DATA.filter(d => d.type === 'discount').length, icon: '🏷️', color: '#7c3aed' },
+              { type: '优惠券', count: MOCK_DATA.filter(d => d.type === 'coupon').length, icon: '🎫', color: '#2563eb' },
+              { type: '赠品', count: MOCK_DATA.filter(d => d.type === 'gift').length, icon: '🎁', color: '#059669' },
+              { type: '秒杀', count: MOCK_DATA.filter(d => d.type === 'flash-sale').length, icon: '⚡', color: '#dc2626' },
+            ].map(t => (
+              <div key={t.type} style={{ flex: '1 1 100px', padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                <div style={{ fontSize: 18 }}>{t.icon}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: t.color }}>{t.count}</div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{t.type}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* 活动渠道效果 */}
+      {!showError && (
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#ecfeff', border: '1px solid #a5f3fc' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0e7490' }}>📢 渠道效果对比</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
+            {[
+              { channel: '小程序', usage: 12800, rate: '38%', color: '#06b6d4' },
+              { channel: '公众号', usage: 9200, rate: '27%', color: '#6366f1' },
+              { channel: '短信', usage: 5800, rate: '17%', color: '#f59e0b' },
+              { channel: '门店扫码', usage: 4200, rate: '12%', color: '#10b981' },
+              { channel: '其他', usage: 2000, rate: '6%', color: '#94a3b8' },
+            ].map(c => (
+              <div key={c.channel} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{c.channel}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: c.color }}>{c.usage.toLocaleString()}</div>
+                <div style={{ fontSize: 10, color: '#9ca3af' }}>{c.rate}使用占比</div>
+                <div style={{ marginTop: 4, height: 4, borderRadius: 2, background: '#e5e7eb', overflow: 'hidden' }}>
+                  <div style={{ width: c.rate, height: '100%', borderRadius: 2, background: c.color }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {/* 门店活动排行 */}
       {!showError && (
         <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
@@ -495,6 +539,11 @@ export default function StorePromotionsPage() {
         </div>
       )}
         <div style={{ textAlign: "center", fontSize: 10, color: "#9ca3af", marginTop: 8 }}>💡 数据来源: 各门店活动执行系统 · 自动更新于每日 06:00</div>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", fontSize: 10, color: "#9ca3af", marginTop: 4 }}>
+          <span>📊 统计周期: 本月</span>
+          <span>🏪 参与门店: 8家</span>
+          <span>📈 平均使用率: {(MOCK_DATA.reduce((s,d) => s + d.usageCount, 0) / MOCK_DATA.length).toFixed(0)}次/活动</span>
+        </div>
 
     </PageShell>
   );
