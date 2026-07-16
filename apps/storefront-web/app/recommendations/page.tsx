@@ -72,6 +72,67 @@ const STATUS_COLORS: Record<string, TagVariant> = {
 //  页面组件
 // ============================================================
 
+// 推荐效果分析面板
+function RecommendationAnalytics() {
+  const stats = useMemo(() => {
+    const total = RECOMMENDATIONS.length;
+    const applied = RECOMMENDATIONS.filter(r => r.status === 'applied').length;
+    const dismissed = RECOMMENDATIONS.filter(r => r.status === 'dismissed').length;
+    const pending = RECOMMENDATIONS.filter(r => r.status === 'recommended').length;
+    const avgConfidence = Math.round((RECOMMENDATIONS.reduce((s, r) => s + r.confidence, 0) / total) * 100);
+    const avgScore = Math.round(RECOMMENDATIONS.reduce((s, r) => s + r.predictedScore, 0) / total);
+    const topCategory = [...new Set(RECOMMENDATIONS.map(r => r.category))]
+      .map(c => ({ category: c, count: RECOMMENDATIONS.filter(r => r.category === c).length }))
+      .sort((a, b) => b.count - a.count)[0];
+    const byCategory = [...new Set(RECOMMENDATIONS.map(r => r.category))]
+      .map(c => ({ category: c, count: RECOMMENDATIONS.filter(r => r.category === c).length }));
+    return { total, applied, dismissed, pending, avgConfidence, avgScore, topCategory, byCategory };
+  }, []);
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 15, fontWeight: 600, color: '#1e293b', marginBottom: 12 }}>📈 推荐效果分析</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
+        <div style={{ padding: 14, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+          <div style={{ fontSize: 11, color: '#64748b' }}>推荐采纳率</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#16a34a', marginTop: 4 }}>{Math.round((stats.applied / stats.total) * 100)}%</div>
+          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{stats.applied}/{stats.total} 已采纳</div>
+        </div>
+        <div style={{ padding: 14, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+          <div style={{ fontSize: 11, color: '#64748b' }}>平均置信度</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#2563eb', marginTop: 4 }}>{stats.avgConfidence}%</div>
+          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>最高 {Math.round(Math.max(...RECOMMENDATIONS.map(r => r.confidence)) * 100)}%</div>
+        </div>
+        <div style={{ padding: 14, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+          <div style={{ fontSize: 11, color: '#64748b' }}>平均推荐分</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#d97706', marginTop: 4 }}>{stats.avgScore}</div>
+          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>/100</div>
+        </div>
+        <div style={{ padding: 14, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+          <div style={{ fontSize: 11, color: '#64748b' }}>热门分类</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#7c3aed', marginTop: 4 }}>{stats.topCategory?.category ?? '—'}</div>
+          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{stats.topCategory?.count ?? 0} 条推荐</div>
+        </div>
+      </div>
+      {/* 分类分布仪表 */}
+      <div style={{ padding: 14, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>分类分布</div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 60 }}>
+          {stats.byCategory.map(({ category, count }) => {
+            const maxCount = Math.max(...stats.byCategory.map(b => b.count));
+            return (
+              <div key={category} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: '100%', height: `${(count / maxCount) * 100}%`, background: '#3b82f6', borderRadius: '4px 4px 0 0', minHeight: 8 }} />
+                <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', whiteSpace: 'nowrap' }}>{category}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function RecommendationsPage() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -120,6 +181,9 @@ export default function RecommendationsPage() {
       title="🤖 智能推荐"
       subtitle="AI 驱动的商品推荐 — 基于会员画像与行为分析"
     >
+      {/* 推荐效果分析 */}
+      <RecommendationAnalytics />
+
       {/* AI 总结卡片 */}
       <AISummaryCard
         title="今日推荐概览"
