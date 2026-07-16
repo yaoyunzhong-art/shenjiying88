@@ -469,6 +469,36 @@ export default function PointHistoryPage() {
               </div>
             </div>
 
+            {/* 今日积分提醒 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9a3412' }}>⏰ 今日积分提醒</h3>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                <div style={{ flex: 1, minWidth: 120, padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>60日内过期</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: '#c2410c' }}>3,280</div>
+                  <div style={{ fontSize: 10, color: '#d97706' }}>积分</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 120, padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>涉及会员</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: '#c2410c' }}>23</div>
+                  <div style={{ fontSize: 10, color: '#d97706' }}>人</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 120, padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>最近过期</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: '#c2410c' }}>7</div>
+                  <div style={{ fontSize: 10, color: '#d97706' }}>天后</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 120, padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>已发提醒</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: '#16a34a' }}>15</div>
+                  <div style={{ fontSize: 10, color: '#d97706' }}>次</div>
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: '#92400e', textAlign: 'center' }}>
+                🔔 建议立即对23位会员发送积分过期提醒短信
+              </div>
+            </div>
+
             {/* 积分小贴士 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
               <h3 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 600, color: '#16a34a' }}>💡 积分小贴士</h3>

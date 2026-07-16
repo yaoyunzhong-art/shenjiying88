@@ -30,6 +30,8 @@ interface Promotion {
   endDate: string;
   budget: number;
   usageCount: number;
+  usageGrowth: number;
+  roi: number;
 }
 
 // ---- 模拟数据 ----
@@ -87,6 +89,8 @@ function generateMockPromotions(count: number): Promotion[] {
       endDate: new Date(now + endOffset).toISOString().slice(0, 10),
       budget: Math.round(Math.random() * 100000) / 100,
       usageCount: Math.floor(Math.random() * 5000),
+      usageGrowth: Math.round((Math.random() * 50 - 10) * 10) / 10,
+      roi: Math.round((Math.random() * 5 + 0.5) * 10) / 10,
     };
     result.push(promo);
   }
@@ -469,6 +473,29 @@ export default function StorePromotionsPage() {
           </div>
         </div>
       )}
+      {/* 最近活动效果 */}
+      {!showError && (
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#166534' }}>📊 最近活动效果分析</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8 }}>
+            {MOCK_DATA.slice(0, 3).map(d => (
+              <div key={d.id} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #dcfce7' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#166534', marginBottom: 4 }}>{d.title}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                  <span style={{ color: '#059669' }}>{d.usageCount.toLocaleString()}次</span>
+                  <span style={{ color: '#d97706' }}>+{d.usageGrowth}%</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#9ca3af', marginTop: 2 }}>
+                  <span>预算: ¥{d.budget.toLocaleString()}</span>
+                  <span>ROI: {d.roi.toFixed(1)}x</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+        <div style={{ textAlign: "center", fontSize: 10, color: "#9ca3af", marginTop: 8 }}>💡 数据来源: 各门店活动执行系统 · 自动更新于每日 06:00</div>
+
     </PageShell>
   );
 }

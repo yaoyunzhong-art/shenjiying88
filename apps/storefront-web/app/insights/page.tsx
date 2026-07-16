@@ -417,9 +417,96 @@ export default function DataInsights() {
         </div>
       </div>
 
+      {/* 设备运行趋势 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>🕒 设备运行趋势（近7天）</h3>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 70, padding: '10px 0' }}>
+          {[
+            { day: '周一', active: 38, fault: 2 },
+            { day: '周二', active: 35, fault: 1 },
+            { day: '周三', active: 40, fault: 3 },
+            { day: '周四', active: 37, fault: 0 },
+            { day: '周五', active: 42, fault: 1 },
+            { day: '周六', active: 45, fault: 4 },
+            { day: '周日', active: 44, fault: 2 },
+          ].map((d, i) => (
+            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+              <div style={{ width: '100%', display: 'flex', gap: 2, alignItems: 'flex-end', justifyContent: 'center' }}>
+                <div style={{ width: 20, height: `${(d.active / 45) * 50}px`, borderRadius: '3px 3px 0 0', background: 'rgba(96,165,250,0.5)', transition: 'height 0.3s' }} />
+                <div style={{ width: 20, height: `${(d.fault / 4) * 50}px`, borderRadius: '3px 3px 0 0', background: 'rgba(248,113,113,0.5)', transition: 'height 0.3s' }} />
+              </div>
+              <div style={{ fontSize: 9, color: '#64748b', marginTop: 4, textAlign: 'center' }}>{d.day}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 16, fontSize: 11, color: '#64748b' }}>
+          <span><span style={{ color: 'rgba(96,165,250,0.7)' }}>■</span> 运行台数</span>
+          <span><span style={{ color: 'rgba(248,113,113,0.7)' }}>■</span> 故障台数</span>
+        </div>
+      </div>
+
+      {/* 销售时段分布 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>⏱ 销售时段热点</h3>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 80, padding: '10px 0' }}>
+          {[
+            { hour: '09', sales: 5 }, { hour: '10', sales: 15 }, { hour: '11', sales: 22 },
+            { hour: '12', sales: 18 }, { hour: '13', sales: 12 }, { hour: '14', sales: 20 },
+            { hour: '15', sales: 28 }, { hour: '16', sales: 25 }, { hour: '17', sales: 30 },
+            { hour: '18', sales: 35 }, { hour: '19', sales: 42 }, { hour: '20', sales: 38 },
+            { hour: '21', sales: 25 }, { hour: '22', sales: 15 },
+          ].map((d, i) => (
+            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+              <div style={{ width: '100%', height: `${(d.sales / 42) * 65}px`, borderRadius: '3px 3px 0 0', background: d.sales >= 30 ? 'rgba(251,191,36,0.6)' : d.sales >= 20 ? 'rgba(96,165,250,0.5)' : 'rgba(148,163,184,0.3)', transition: 'height 0.3s' }} />
+              <div style={{ fontSize: 9, color: '#64748b', marginTop: 2 }}>{d.hour}:00</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 10, color: '#64748b', textAlign: 'center' }}>
+          🌟 高峰时段: 18:00-20:00（建议加派人手）
+        </div>
+      </div>
+
+      {/* 会员消费力评级 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>💳 会员消费力评级</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8 }}>
+          {[
+            { label: '高价值', count: Math.round(total * 0.15), avgSpend: '¥320/次', color: '#fbbf24', desc: '月均≥3次消费' },
+            { label: '中等价值', count: Math.round(total * 0.35), avgSpend: '¥180/次', color: '#60a5fa', desc: '月均1-2次消费' },
+            { label: '低价值', count: Math.round(total * 0.30), avgSpend: '¥80/次', color: '#94a3b8', desc: '季度1次消费' },
+            { label: '沉睡激活', count: Math.round(total * 0.20), avgSpend: '¥0/次', color: '#f87171', desc: '60天未到店' },
+          ].map((t, i) => (
+            <div key={i} style={{ padding: 12, borderRadius: 8, background: 'rgba(148,163,184,0.06)', textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: t.color }}>{t.count.toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: '#64748b' }}>{t.label}</div>
+              <div style={{ fontSize: 10, color: '#475569', marginTop: 2 }}>{t.avgSpend} · {t.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 门店坪效对比 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>🏪 门店坪效对比 (本月)</h3>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {['旗舰店', '社区店', '商场店', '街边店'].map((type, i) => {
+            const colors = ['#a78bfa', '#60a5fa', '#34d399', '#fbbf24'];
+            return (
+              <div key={i} style={{ flex: '1 1 120px', padding: 12, borderRadius: 8, background: 'rgba(148,163,184,0.06)', textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: '#64748b' }}>{type}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: colors[i] }}>¥{(Math.random() * 500 + 200).toFixed(0)}</div>
+                <div style={{ fontSize: 10, color: '#475569' }}>元/㎡/月</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* 脚注 */}
       <div style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 24 }}>
         数据洞察系统 · 数据更新于 {new Date().toLocaleString('zh-CN')} · 共 {MOCK_DEVICES.length} 台设备 · {total} 位会员
+        <div style={{ marginTop: 6, fontSize: 10, color: '#475569' }}>💡 系统运行正常 · 建议关注高峰时段排班和会员沉睡率</div>
       </div>
     </div>
   );

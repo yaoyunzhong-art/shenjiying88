@@ -365,8 +365,137 @@ export default function MaintenancePage() {
           <div style={{ marginTop: 8, fontSize: 11, color: '#6b7280', textAlign: 'center' }}>基于设备运行数据和历史维护记录的AI预测 · 准确率约85%</div>
         </div>
 
+        {/* 设备分类统计 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>🔩 设备分类统计</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
+            {[
+              { name: '收银POS', active: 6, total: 8, faultRate: 12 },
+              { name: '游戏主机', active: 24, total: 30, faultRate: 8 },
+              { name: '打印机', active: 4, total: 6, faultRate: 15 },
+              { name: '网络设备', active: 3, total: 3, faultRate: 5 },
+              { name: '监控', active: 12, total: 14, faultRate: 3 },
+              { name: '空调', active: 5, total: 6, faultRate: 10 },
+            ].map((cat, i) => (
+              <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 4 }}>{cat.name}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6b7280' }}>
+                  <span>运行 {cat.active}/{cat.total}</span>
+                  <span style={{ color: cat.faultRate > 10 ? '#dc2626' : '#059669' }}>{cat.faultRate}%故障</span>
+                </div>
+                <div style={{ marginTop: 4, height: 4, borderRadius: 2, background: '#e5e7eb', overflow: 'hidden' }}>
+                  <div style={{ width: `${(cat.active / cat.total) * 100}%`, height: '100%', borderRadius: 2, background: cat.faultRate > 10 ? '#f87171' : '#34d399' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 维护周期设置 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9a3412' }}>⏰ 定期维护计划</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 8 }}>
+            {[
+              { name: '收银系统维护', type: '月度', nextDate: '2026-07-20', assignee: '王工', priority: '高' },
+              { name: '游戏机固件更新', type: '季度', nextDate: '2026-08-05', assignee: '李工', priority: '中' },
+              { name: '空调清洗保养', type: '月度', nextDate: '2026-07-25', assignee: '张工', priority: '中' },
+              { name: '网络设备巡检', type: '每周', nextDate: '2026-07-18', assignee: '赵工', priority: '高' },
+              { name: '消防设备检查', type: '季度', nextDate: '2026-09-01', assignee: '陈工', priority: '紧急' },
+              { name: '照明系统更换', type: '半年', nextDate: '2026-12-15', assignee: '周工', priority: '低' },
+            ].map((plan, i) => (
+              <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 4 }}>{plan.name}</div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{plan.type} · 负责人: {plan.assignee}</div>
+                <div style={{ fontSize: 11, color: plan.priority === '紧急' ? '#dc2626' : plan.priority === '高' ? '#d97706' : '#6b7280', marginTop: 2 }}>
+                  下次: {plan.nextDate} · {plan.priority}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 历史维护趋势 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#ecfeff', border: '1px solid #a5f3fc' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0e7490' }}>📈 月度维护趋势</h3>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 80, padding: '10px 0' }}>
+            {[
+              { month: '1月', completed: 18, urgent: 3 },
+              { month: '2月', completed: 22, urgent: 2 },
+              { month: '3月', completed: 15, urgent: 5 },
+              { month: '4月', completed: 25, urgent: 1 },
+              { month: '5月', completed: 20, urgent: 4 },
+              { month: '6月', completed: 28, urgent: 2 },
+            ].map((m, i) => {
+              const maxVal = 28;
+              const barH = (m.completed / maxVal) * 65;
+              const urgentH = (m.urgent / maxVal) * 65;
+              return (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                  <div style={{ width: '100%', display: 'flex', gap: 2, alignItems: 'flex-end', justifyContent: 'center' }}>
+                    <div style={{ width: 16, height: `${barH}px`, borderRadius: '3px 3px 0 0', background: 'rgba(6,182,212,0.5)' }} />
+                    <div style={{ width: 16, height: `${urgentH}px`, borderRadius: '3px 3px 0 0', background: 'rgba(248,113,113,0.5)' }} />
+                  </div>
+                  <div style={{ fontSize: 9, color: '#6b7280', marginTop: 4 }}>{m.month}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: 16, fontSize: 11, color: '#6b7280' }}>
+            <span><span style={{ color: 'rgba(6,182,212,0.7)' }}>■</span> 已完成</span>
+            <span><span style={{ color: 'rgba(248,113,113,0.7)' }}>■</span> 紧急</span>
+          </div>
+        </div>
+
+        {/* 备件库存告警 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fef2f2', border: '1px solid #fecaca' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#991b1b' }}>📦 备件库存告警</h3>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {[
+              { name: '打印机墨盒', current: 2, min: 10, unit: '个' },
+              { name: 'USB数据线', current: 5, min: 20, unit: '条' },
+              { name: '屏幕膜', current: 3, min: 15, unit: '张' },
+              { name: '电源适配器', current: 1, min: 5, unit: '个' },
+              { name: '鼠标键盘', current: 4, min: 10, unit: '套' },
+            ].map((item, i) => (
+              <div key={i} style={{ flex: '1 1 100px', padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fecaca', textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: '#374151', marginBottom: 2 }}>{item.name}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#dc2626' }}>{item.current}<span style={{ fontSize: 11, color: '#9ca3af' }}>/{item.min}{item.unit}</span></div>
+                <div style={{ fontSize: 10, color: '#dc2626' }}>需补货</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 最近维护工单记录 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#166534' }}>📋 最近维护工单 (5条)</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[
+              { id: 'WO-001', device: 'POS机-01', desc: '系统卡顿重启', status: '已完成', priority: '高', date: '07-15' },
+              { id: 'WO-002', device: '游戏机-03', desc: '投币器故障', status: '已完成', priority: '紧急', date: '07-15' },
+              { id: 'WO-003', device: '空调-02', desc: '制冷异常', status: '进行中', priority: '高', date: '07-16' },
+              { id: 'WO-004', device: '打印机-01', desc: '打印模糊', status: '待处理', priority: '中', date: '07-16' },
+              { id: 'WO-005', device: '摄像头-05', desc: '画面黑屏', status: '待处理', priority: '中', date: '07-16' },
+            ].map((wo, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#fff', borderRadius: 8, border: '1px solid #dcfce7', fontSize: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontWeight: 500, color: '#6b7280' }}>{wo.id}</span>
+                  <span style={{ fontWeight: 600 }}>{wo.device}</span>
+                  <span style={{ color: '#9ca3af' }}>{wo.desc}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ padding: '1px 6px', borderRadius: 4, fontSize: 10, background: wo.status === '已完成' ? '#f0fdf4' : wo.status === '进行中' ? '#fffbeb' : '#f3f4f6', color: wo.status === '已完成' ? '#16a34a' : wo.status === '进行中' ? '#d97706' : '#6b7280' }}>{wo.status}</span>
+                  <span style={{ padding: '1px 6px', borderRadius: 4, fontSize: 10, background: wo.priority === '紧急' ? '#fef2f2' : wo.priority === '高' ? '#fff7ed' : '#f3f4f6', color: wo.priority === '紧急' ? '#dc2626' : wo.priority === '高' ? '#d97706' : '#6b7280' }}>{wo.priority}</span>
+                  <span style={{ color: '#9ca3af' }}>{wo.date}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* 快速统计底部 */}
         <div style={{ marginTop: 20, padding: '12px 18px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 11, color: '#6b7280', display: 'flex', gap: 16, justifyContent: 'space-between' }}>
+
           <span>📋 总工单: {stats.total}单</span>
           <span>🔧 完成率: {stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%</span>
           <span>🚨 紧急: {stats.urgent}单</span>

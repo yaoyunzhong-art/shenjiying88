@@ -1,7 +1,7 @@
 # ═══════════════════════════════════════════════════════════════════════
-# M5 Platform - 阿里云生产环境基础设施 (无角色版)
+# M5 Platform - 阿里云ACK托管版K8s集群
 # 版本: v1.0.0
-# 说明: 使用ECS自建K8s，无需ACK服务角色
+# 说明: 全自动创建ACK托管版集群，需要RAM服务角色授权
 # ═══════════════════════════════════════════════════════════════════════
 
 terraform {
@@ -77,7 +77,7 @@ resource "alicloud_vswitch" "zone_c" {
 }
 
 # ═══════════════════════════════════════════════════════════════════════
-# 3. NAT 网关和弹性IP (用于节点访问公网)
+# 3. NAT 网关和弹性IP
 # ═══════════════════════════════════════════════════════════════════════
 
 resource "alicloud_eip_address" "nat" {
@@ -111,90 +111,77 @@ resource "alicloud_eip_association" "nat" {
 }
 
 # ═══════════════════════════════════════════════════════════════════════
-# 4. 安全组
+# 4. ACK托管版集群
 # ═══════════════════════════════════════════════════════════════════════
 
-resource "alicloud_security_group" "main" {
-  name   = "${var.cluster_name}-sg"
-  vpc_id = alicloud_vpc.main.id
-
+resource "alicloud_cs_managed_kubernetes" "main" {
+  name               = var.cluster_name
+  cluster_spec       = "ack.standard"
+  version            = "1.28.3-aliyun.1"
+  
+  # 网络配置
+  vswitch_ids        = [
+    alicloud_vswitch.zone_a.id,
+    alicloud_vswitch.zone_b.id,
+    alicloud_vswitch.zone_c.id
+  ]
+  pod_cidr           = "172.20.0.0/16"
+  service_cidr       = "172.21.0.0/20"
+  
+  # 访问配置
+  new_nat_gateway    = false
+  slb_internet_enabled = true
+  
+  # 标签
   tags = {
-    Name        = "${var.cluster_name}-sg"
+    Name        = var.cluster_name
     Environment = var.environment
+    ManagedBy   = "Terraform"
   }
-}
-
-# 安全组规则 - 允许内网访问
-resource "alicloud_security_group_rule" "allow_internal" {
-  type              = "ingress"
-  ip_protocol       = "all"
-  nic_type          = "intranet"
-  policy            = "accept"
-  port_range        = "1/65535"
-  priority          = 1
-  security_group_id = alicloud_security_group.main.id
-  cidr_ip           = "10.0.0.0/16"
+  
+  depends_on = [
+    alicloud_nat_gateway.main,
+    alicloud_eip_association.nat
+  ]
 }
 
 # ═══════════════════════════════════════════════════════════════════════
-# 5. ECS实例 - K8s Master节点 (3台)
+# 5. 节点池配置
 # ═══════════════════════════════════════════════════════════════════════
 
-resource "alicloud_instance" "master" {
-  count           = 3
-  image_id        = "centos_8_5_x64_20G_alibase_20240130.vhd"
-  instance_type   = "ecs.c7.2xlarge"  # 8C16G
-  security_groups = [alicloud_security_group.main.id]
-  vswitch_id      = alicloud_vswitch.zone_a.id
-  host_name       = "k8s-master-${count.index + 1}"
-  instance_name   = "${var.cluster_name}-master-${count.index + 1}"
+# 系统节点池
+resource "alicloud_cs_kubernetes_node_pool" "system" {
+  node_pool_name    = "system"
+  cluster_id        = alicloud_cs_managed_kubernetes.main.id
+  
+  vswitch_ids       = [alicloud_vswitch.zone_a.id]
+  instance_types    = ["ecs.c7.xlarge"]
+  
+  desired_size      = 2
 
   system_disk_category = "cloud_essd"
   system_disk_size     = 100
 
-  internet_charge_type       = "PayByTraffic"
-  internet_max_bandwidth_out = 10
-
-  user_data = <<-EOF
-#!/bin/bash
-# 安装Docker和K8s基础环境
-yum install -y docker
-systemctl enable docker && systemctl start docker
-
-# 安装kubeadm kubelet kubectl
-cat <<EOF2 > /etc/yum.repos.d/kubernetes.repo
-[kubernetes]
-name=Kubernetes
-baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
-enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-EOF2
-
-yum install -y kubelet kubeadm kubectl
-systemctl enable kubelet
-EOF
+  labels {
+    key   = "node-type"
+    value = "system"
+  }
 
   tags = {
-    Name        = "${var.cluster_name}-master-${count.index + 1}"
     Environment = var.environment
-    NodeType    = "master"
+    Name        = "${var.cluster_name}-system"
   }
 }
 
-# ═══════════════════════════════════════════════════════════════════════
-# 6. ECS实例 - K8s Worker节点 (4台)
-# ═══════════════════════════════════════════════════════════════════════
-
-resource "alicloud_instance" "worker" {
-  count           = 4
-  image_id        = "centos_8_5_x64_20G_alibase_20240130.vhd"
-  instance_type   = "ecs.c7.2xlarge"  # 8C16G
-  security_groups = [alicloud_security_group.main.id]
-  vswitch_id      = alicloud_vswitch.zone_b.id
-  host_name       = "k8s-worker-${count.index + 1}"
-  instance_name   = "${var.cluster_name}-worker-${count.index + 1}"
+# 应用节点池
+resource "alicloud_cs_kubernetes_node_pool" "application" {
+  node_pool_name    = "application"
+  cluster_id        = alicloud_cs_managed_kubernetes.main.id
+  
+  vswitch_ids       = [alicloud_vswitch.zone_b.id, alicloud_vswitch.zone_c.id]
+  instance_types    = ["ecs.c7.2xlarge"]
+  
+  desired_size      = 4
 
   system_disk_category = "cloud_essd"
   system_disk_size     = 100
@@ -204,78 +191,19 @@ resource "alicloud_instance" "worker" {
     size     = 200
   }
 
-  internet_charge_type       = "PayByTraffic"
-  internet_max_bandwidth_out = 10
-
-  user_data = <<-EOF
-#!/bin/bash
-# 安装Docker和K8s基础环境
-yum install -y docker
-systemctl enable docker && systemctl start docker
-
-# 安装kubeadm kubelet kubectl
-cat <<EOF2 > /etc/yum.repos.d/kubernetes.repo
-[kubernetes]
-name=Kubernetes
-baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
-enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-EOF2
-
-yum install -y kubelet kubeadm kubectl
-systemctl enable kubelet
-EOF
+  labels {
+    key   = "node-type"
+    value = "application"
+  }
 
   tags = {
-    Name        = "${var.cluster_name}-worker-${count.index + 1}"
     Environment = var.environment
-    NodeType    = "worker"
+    Name        = "${var.cluster_name}-application"
   }
 }
 
 # ═══════════════════════════════════════════════════════════════════════
-# 7. RDS PostgreSQL 数据库
-# ═══════════════════════════════════════════════════════════════════════
-
-resource "alicloud_db_instance" "postgres" {
-  engine           = "PostgreSQL"
-  engine_version   = "15.0"
-  instance_type    = "rds.pg.s1.large"  # 2C4G 入门级规格
-  instance_storage = "500"
-  vswitch_id       = alicloud_vswitch.zone_b.id
-  security_ips     = [alicloud_vpc.main.cidr_block]
-
-  instance_name = "${var.cluster_name}-postgres"
-
-  tags = {
-    Name        = "${var.cluster_name}-postgres"
-    Environment = var.environment
-  }
-}
-
-# ═══════════════════════════════════════════════════════════════════════
-# 8. Redis 缓存
-# ═══════════════════════════════════════════════════════════════════════
-
-resource "alicloud_kvstore_instance" "redis" {
-  instance_type  = "Redis"
-  engine_version = "5.0"
-  instance_name  = "${var.cluster_name}-redis"
-  vswitch_id     = alicloud_vswitch.zone_b.id
-  security_ips   = [alicloud_vpc.main.cidr_block]
-
-  instance_class = "redis.shard.small.2"  # 入门级规格
-
-  tags = {
-    Name        = "${var.cluster_name}-redis"
-    Environment = var.environment
-  }
-}
-
-# ═══════════════════════════════════════════════════════════════════════
-# 9. 输出
+# 6. 输出
 # ═══════════════════════════════════════════════════════════════════════
 
 output "vpc_id" {
@@ -288,22 +216,22 @@ output "vswitch_ids" {
   value       = [alicloud_vswitch.zone_a.id, alicloud_vswitch.zone_b.id, alicloud_vswitch.zone_c.id]
 }
 
-output "master_ips" {
-  description = "K8s Master节点IP"
-  value       = alicloud_instance.master[*].public_ip
+output "cluster_id" {
+  description = "ACK集群ID"
+  value       = alicloud_cs_managed_kubernetes.main.id
 }
 
-output "worker_ips" {
-  description = "K8s Worker节点IP"
-  value       = alicloud_instance.worker[*].public_ip
+output "cluster_endpoint" {
+  description = "集群API Endpoint"
+  value       = alicloud_cs_managed_kubernetes.main.api_server_intranet
 }
 
-output "postgres_endpoint" {
-  description = "PostgreSQL连接地址"
-  value       = alicloud_db_instance.postgres.connection_string
+output "nat_gateway_id" {
+  description = "NAT网关ID"
+  value       = alicloud_nat_gateway.main.id
 }
 
-output "redis_endpoint" {
-  description = "Redis连接地址"
-  value       = alicloud_kvstore_instance.redis.connection_domain
+output "eip_address" {
+  description = "弹性IP地址"
+  value       = alicloud_eip_address.nat.ip_address
 }
