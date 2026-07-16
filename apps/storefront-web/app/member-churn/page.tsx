@@ -874,6 +874,45 @@ export default function MemberChurnPage() {
           </div>
         </div>
 
+        {/* 流失会员复购分析 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#1e40af' }}>🔄 流失会员复购分析</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8, marginBottom: 12 }}>
+            {[
+              { label: '7天复购率', value: '35%', color: '#3b82f6' },
+              { label: '15天复购率', value: '52%', color: '#10b981' },
+              { label: '30天复购率', value: '68%', color: '#8b5cf6' },
+              { label: '平均复购间隔', value: '12天', color: '#f59e0b' },
+            ].map(function(s, i) {
+              return (
+                <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #dbeafe', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>{s.label}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: s.color }}>{s.value}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#1e40af', marginBottom: 6 }}>按活动渠道复购率</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { channel: '短信', pct: 35 },
+              { channel: '推送', pct: 42 },
+              { channel: '电话', pct: 48 },
+              { channel: '门店提醒', pct: 55 },
+            ].map(function(c, i) {
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 60, fontSize: 11, color: '#374151', fontWeight: 500 }}>{c.channel}</div>
+                  <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#dbeafe', overflow: 'hidden' }}>
+                    <div style={{ width: c.pct + '%', height: '100%', borderRadius: 4, background: '#3b82f6' }} />
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#1e40af', width: 30, textAlign: 'right' }}>{c.pct}%</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
       </div>
     </PageShell>
   );
