@@ -1,7 +1,7 @@
 /**
- * feedback/page.test.tsx — 意见反馈页面 L1 渲染测试
+ * feedback/page.test.tsx — 意见反馈页面 L1+L2 综合测试
  * 角色视角: 👤会员 / 👔店长
- * 覆盖: 正例(组件导出/渲染/数据) 反例(空反馈/错误状态) 边界(大量反馈/最小评分/悬停回复)
+ * 覆盖: 正例(组件/渲染/交互) 反例(空/错) 边界(全状态/评分/分类) 角色(提交/查看/管理)
  */
 const assert = require('node:assert/strict');
 const { describe, test } = require('node:test');
@@ -38,7 +38,7 @@ describe('FeedbackPage — 正例', () => {
     assert.ok(found.length >= 3, `should have at least 3 status types, found: ${found.join(',')}`);
   });
 
-  test('has green reply background', () => {
+  test('has green reply background for resolved feedback', () => {
     assert.ok(PAGE_SRC.includes('#f0fdf4'), 'should have reply section background');
   });
 
@@ -60,50 +60,55 @@ describe('FeedbackPage — 正例', () => {
     assert.ok(found.length >= 4, `should render most filter options, found: ${found.length}/6`);
   });
 
-  test('has Pagination component with page controls', () => {
-    assert.ok(PAGE_SRC.includes('上一页') && PAGE_SRC.includes('下一页'), 'should have pagination controls');
+  test('has pagination controls', () => {
+    assert.ok(PAGE_SRC.includes('上一页') && PAGE_SRC.includes('下一页'), 'should have pagination');
   });
 
-  test('should have empty state for no feedback', () => {
+  test('should have empty state for no matching feedback', () => {
     assert.ok(PAGE_SRC.includes('暂无反馈记录') || PAGE_SRC.includes('暂无'), 'should have empty state');
   });
 
-  test('should have error state for load failure', () => {
+  test('should have error state simulation', () => {
     assert.ok(PAGE_SRC.includes('模拟错误') || PAGE_SRC.includes('加载失败'), 'should have error simulation');
+  });
+
+  test('has star rating interaction', () => {
+    assert.ok(PAGE_SRC.includes('★'), 'should have star rating');
+  });
+
+  test('has new feedback form', () => {
+    assert.ok(PAGE_SRC.includes('NewFeedbackForm') || PAGE_SRC.includes('提交反馈'), 'should have new feedback form');
   });
 });
 
 describe('FeedbackPage — 反例', () => {
   test('should handle empty filtered results', () => {
-    assert.ok(PAGE_SRC.includes('.length === 0'), 'should handle empty results');
+    assert.ok(PAGE_SRC.includes('.length === 0') || PAGE_SRC.includes('暂无'), 'should handle empty results');
   });
 
   test('should handle error state rendering', () => {
-    assert.ok(PAGE_SRC.includes('showError') || PAGE_SRC.includes('加载异常'), 'should handle error state');
+    assert.ok(PAGE_SRC.includes('showError'), 'should handle error state toggle');
   });
 
   test('should handle missing reply gracefully', () => {
-    assert.ok(PAGE_SRC.includes('reply') || PAGE_SRC.includes('unshift'), 'should handle optional reply');
+    assert.ok(PAGE_SRC.includes('reply'), 'should handle optional reply field');
+  });
+
+  test('no eval or dangerous patterns', () => {
+    assert.ok(!PAGE_SRC.includes('eval('), 'no eval usage');
+    assert.ok(!PAGE_SRC.includes('dangerouslySetInnerHTML'), 'no dangerous HTML');
+  });
+
+  test('no hardcoded personal info', () => {
+    assert.ok(!PAGE_SRC.includes('13800138000'), 'no fake phone numbers');
   });
 });
 
 describe('FeedbackPage — 边界', () => {
-  test('feedback data array should be properly typed', () => {
-    const feedbackTypes = ['FeedbackStatus', 'FeedbackCategory', 'FeedbackRecord'];
-    const found = feedbackTypes.filter(t => PAGE_SRC.includes(t));
+  test('feedback types should be properly defined', () => {
+    const types = ['FeedbackStatus', 'FeedbackCategory', 'FeedbackRecord'];
+    const found = types.filter(t => PAGE_SRC.includes(t));
     assert.ok(found.length >= 2, `should define most types, found: ${found.length}/3`);
-  });
-
-  test('should support star rating click interaction', () => {
-    assert.ok(PAGE_SRC.includes('★') || PAGE_SRC.includes('rating'), 'should have rating stars');
-  });
-
-  test('has expand/collapse reply section', () => {
-    assert.ok(PAGE_SRC.includes('expanded') || PAGE_SRC.includes('onClick'), 'should have expand/collapse');
-  });
-
-  test('should handle new feedback submission', () => {
-    assert.ok(PAGE_SRC.includes('handleNewFeedback') || PAGE_SRC.includes('NewFeedbackForm'), 'should support new feedback');
   });
 
   test('status badges have appropriate colors', () => {
@@ -113,20 +118,40 @@ describe('FeedbackPage — 边界', () => {
   });
 
   test('category filter should have "全部" option', () => {
-    assert.ok(PAGE_SRC.includes("'全部'"), 'should have 全部 filter option');
+    assert.ok(PAGE_SRC.includes("'全部'"), 'should have 全部 option');
+  });
+
+  test('expand/collapse reply section', () => {
+    assert.ok(PAGE_SRC.includes('expanded'), 'should have expand/collapse for replies');
+  });
+
+  test('should handle new feedback submission callback', () => {
+    assert.ok(PAGE_SRC.includes('handleNewFeedback'), 'should pass submit handler');
+  });
+
+  test('simulated error state has retry button', () => {
+    assert.ok(PAGE_SRC.includes('重试'), 'should have retry button in error state');
   });
 });
 
 describe('FeedbackPage — 角色视角', () => {
-  test('provides view for member to submit feedback', () => {
-    assert.ok(PAGE_SRC.includes('提交反馈') || PAGE_SRC.includes('新反馈'), 'member can submit feedback');
+  test('member can submit feedback', () => {
+    assert.ok(PAGE_SRC.includes('提交反馈'), 'member can submit');
   });
 
-  test('provides view for member to check history', () => {
-    assert.ok(PAGE_SRC.includes('history') || PAGE_SRC.includes('date'), 'member can check history');
+  test('member can check history', () => {
+    assert.ok(PAGE_SRC.includes('反馈记录') || PAGE_SRC.includes('共') || PAGE_SRC.includes('条反馈'), 'member can view history');
   });
 
-  test('provides view for manager to see stats', () => {
-    assert.ok(PAGE_SRC.includes('已处理') || PAGE_SRC.includes('待处理'), 'manager can see processing stats');
+  test('manager can see processing stats', () => {
+    assert.ok(PAGE_SRC.includes('已处理') || PAGE_SRC.includes('待处理'), 'manager can see stats');
+  });
+
+  test('manager can filter by status', () => {
+    assert.ok(PAGE_SRC.includes('statusFilter'), 'manager can filter by status');
+  });
+
+  test('member can filter by category', () => {
+    assert.ok(PAGE_SRC.includes('categoryFilter'), 'member can filter by category');
   });
 });

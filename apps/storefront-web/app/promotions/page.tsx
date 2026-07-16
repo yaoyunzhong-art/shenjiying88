@@ -135,10 +135,23 @@ export default function StorePromotionsPage() {
 
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [typeFilter, setTypeFilter] = useState<string>('');
+  const [showError, setShowError] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   const { page, pageSize, setPage, setPageSize } = usePagination({ initialPageSize: 10 });
 
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null);
+
+  const stats = React.useMemo(() => {
+    const active = MOCK_DATA.filter(d => d.status === 'active').length;
+    const draft = MOCK_DATA.filter(d => d.status === 'draft').length;
+    const ended = MOCK_DATA.filter(d => d.status === 'ended').length;
+    const totalBudget = MOCK_DATA.reduce((s, d) => s + d.budget, 0);
+    const totalUsage = MOCK_DATA.reduce((s, d) => s + d.usageCount, 0);
+    const byStore: Record<string, number> = {};
+    MOCK_DATA.forEach(d => { byStore[d.storeName] = (byStore[d.storeName] || 0) + 1; });
+    return { active, draft, ended, totalBudget, totalUsage, total: MOCK_DATA.length, byStore };
+  }, []);
 
   // 应用过滤器
   const filtered = useMemo(() => {
@@ -252,16 +265,80 @@ export default function StorePromotionsPage() {
       title="促销活动"
       description="查看和管理门店所有促销活动"
       actions={
-        <button
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          onClick={() => {
-            window.location.href = '/promotions/new';
-          }}
-        >
-          创建活动
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => setShowStats(!showStats)}
+            style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: showStats ? '#2563eb' : '#374151', cursor: 'pointer', fontSize: 12 }}
+          >
+            {showStats ? '隐藏统计' : '📊 统计'}
+          </button>
+          <button
+            onClick={() => setShowError(!showError)}
+            style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: 12 }}
+          >
+            {showError ? '恢复' : '模拟错误'}
+          </button>
+          <button
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            onClick={() => {
+              window.location.href = '/promotions/new';
+            }}
+          >
+            创建活动
+          </button>
+        </div>
       }
     >
+      {/* 错误状态 */}
+      {showError && (
+        <div style={{ padding: 16, marginBottom: 16, borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca' }}>
+          <div style={{ color: '#dc2626', fontWeight: 600, marginBottom: 4 }}>⚠️ 加载失败</div>
+          <div style={{ color: '#fca5a5', fontSize: 13 }}>促销活动数据加载异常，请稍后刷新重试</div>
+          <button onClick={() => setShowError(false)}
+            style={{ marginTop: 8, padding: '4px 12px', borderRadius: 6, border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontSize: 12 }}>
+            重试
+          </button>
+        </div>
+      )}
+
+      {/* 统计面板 */}
+      {!showError && showStats && (
+        <div style={{ marginBottom: 16, padding: 16, borderRadius: 12, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 10 }}>
+            <div style={{ textAlign: 'center', padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#2563eb' }}>{stats.total}</div>
+              <div style={{ fontSize: 11, color: '#6b7280' }}>总活动</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#059669' }}>{stats.active}</div>
+              <div style={{ fontSize: 11, color: '#6b7280' }}>进行中</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#d97706' }}>{stats.draft}</div>
+              <div style={{ fontSize: 11, color: '#6b7280' }}>草稿</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#6b7280' }}>{stats.ended}</div>
+              <div style={{ fontSize: 11, color: '#6b7280' }}>已结束</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#6366f1' }}>¥{stats.totalBudget.toFixed(0)}</div>
+              <div style={{ fontSize: 11, color: '#6b7280' }}>总预算</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#f59e0b' }}>{stats.totalUsage.toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: '#6b7280' }}>总使用次数</div>
+            </div>
+          </div>
+          {/* 门店分布 */}
+          <div style={{ fontSize: 12, color: '#6b7280', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {Object.entries(stats.byStore).map(([store, count]) => (
+              <span key={store} style={{ padding: '2px 8px', borderRadius: 6, background: '#f3f4f6' }}>{store}: {count}个</span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 搜索与过滤条 */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchFilterInput
