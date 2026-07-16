@@ -627,6 +627,58 @@ export default function MaintenancePage() {
           }(MOCK_ORDERS)}
         </div>
 
+        {/* 设备故障类型TOP5 */}
+        {function(FaultTypePanel: void) {
+          /* 设备故障类型TOP5 — 故障类型/发生次数/平均修复时长/发生趋势 */
+          interface FaultType { name: string; icon: string; count: number; avgRepairMin: number; trend: string; trendDir: 'up' | 'down' | 'stable'; color: string; description: string; }
+          var faults: FaultType[] = [
+            { name: '打印头/墨盒故障', icon: '🖨️', count: 18, avgRepairMin: 45, trend: '+22%', trendDir: 'up', color: '#ef4444', description: '打印质量下降或卡纸，多为耗材老化' },
+            { name: '摄像头无信号', icon: '📹', count: 14, avgRepairMin: 30, trend: '+8%', trendDir: 'up', color: '#f97316', description: '画面黑屏或闪烁，线缆接触不良居多' },
+            { name: '收银系统卡顿', icon: '💳', count: 12, avgRepairMin: 20, trend: '-5%', trendDir: 'down', color: '#eab308', description: '系统响应慢，多为内存占用过高或缓存未清理' },
+            { name: '传感器漂移', icon: '🌡️', count: 8, avgRepairMin: 35, trend: '-12%', trendDir: 'down', color: '#22c55e', description: '温湿度、烟雾传感器读数不准，校准后可恢复' },
+            { name: '网络延迟/中断', icon: '🌐', count: 6, avgRepairMin: 55, trend: '+15%', trendDir: 'up', color: '#f59e0b', description: '网络波动或断连，交换机端口或线路故障' },
+          ];
+          var totalFaults = faults.reduce(function(acc, f) { return acc + f.count; }, 0);
+          var avgRepair = Math.round(faults.reduce(function(acc, f) { return acc + f.avgRepairMin; }, 0) / faults.length);
+          var maxCount = Math.max.apply(null, faults.map(function(f) { return f.count; }));
+          return (
+            <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fef2f2', border: '1px solid #fecaca' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#991b1b' }}>🔧 设备故障类型TOP5</h3>
+              <p style={{ margin: '0 0 12px', fontSize: 11, color: '#b91c1c' }}>
+                累计故障 <span style={{ fontWeight: 700 }}>{totalFaults}次</span> · 平均修复时长 <span style={{ fontWeight: 700 }}>{avgRepair}分钟</span> · 基于近期维护数据统计
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {faults.map(function(f, i) {
+                  var barPct = maxCount > 0 ? Math.round((f.count / maxCount) * 100) : 0;
+                  var trendIcon = f.trendDir === 'up' ? '↑' : f.trendDir === 'down' ? '↓' : '→';
+                  var trendColor = f.trendDir === 'up' ? '#ef4444' : f.trendDir === 'down' ? '#22c55e' : '#6b7280';
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #fecaca', fontSize: 12 }}>
+                      <span style={{ fontWeight: 700, color: i === 0 ? '#dc2626' : '#6b7280', minWidth: 20 }}>#{i + 1}</span>
+                      <span style={{ fontSize: 16 }}>{f.icon}</span>
+                      <span style={{ fontWeight: 600, color: '#374151', width: 100 }}>{f.name}</span>
+                      <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#fee2e2', overflow: 'hidden' }}>
+                        <div style={{ width: barPct + '%', height: '100%', borderRadius: 4, background: f.color, transition: 'width 0.4s' }} />
+                      </div>
+                      <span style={{ fontWeight: 700, color: f.color, minWidth: 28, textAlign: 'right' }}>{f.count}</span>
+                      <span style={{ color: '#6b7280', minWidth: 44, textAlign: 'center', fontSize: 11 }}>⏱ {f.avgRepairMin}min</span>
+                      <span style={{ color: trendColor, fontWeight: 600, fontSize: 11, minWidth: 50, textAlign: 'right' }}>
+                        {trendIcon} {f.trend}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 10, padding: '8px 14px', borderRadius: 6, background: '#fee2e2', fontSize: 11, color: '#7f1d1d', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>📊 故障总量 <span style={{ fontWeight: 700 }}>{totalFaults}次</span></span>
+                <span>⏱ 平均修复 <span style={{ fontWeight: 700 }}>{avgRepair}分钟</span></span>
+                <span>🔥 最高频: <span style={{ fontWeight: 700, color: '#dc2626' }}>{faults[0]!.name}</span> ({faults[0]!.count}次)</span>
+                <span>💡 建议优先排查打印头和网络设备</span>
+              </div>
+            </div>
+          );
+        }(void 0)}
+
         {/* 工单按门店分布 */}
         <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
           <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>🏪 各门店工单分布</h3>

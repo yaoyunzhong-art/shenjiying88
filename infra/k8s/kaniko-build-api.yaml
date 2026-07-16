@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-api
+  namespace: m5
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: kaniko
+          image: registry.cn-hangzhou.aliyuncs.com/acs-demo-ns/kaniko-executor:v1.8.1
+          args:
+            - --context=git://github.com/yaoyunzhong-art/shenjiying88.git#refs/heads/main
+            - --dockerfile=/workspace/Dockerfile
+            - --target=api-prod
+            - --destination=shenjiying88acr20260717-registry.cn-hangzhou.cr.aliyuncs.com/shenjiying88/m5-api:latest
+            - --cache=true
+            - --cache-repo=shenjiying88acr20260717-registry.cn-hangzhou.cr.aliyuncs.com/shenjiying88/kaniko-cache
+            - --verbosity=info
+          volumeMounts:
+            - name: docker-config
+              mountPath: /kaniko/.docker
+      volumes:
+        - name: docker-config
+          secret:
+            secretName: acr-regcred
+            items:
+              - key: .dockerconfigjson
+                path: config.json
