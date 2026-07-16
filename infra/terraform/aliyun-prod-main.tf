@@ -97,7 +97,7 @@ resource "alicloud_nat_gateway" "main" {
   nat_gateway_name     = "${var.cluster_name}-nat"
   payment_type         = "PayAsYouGo"
   vswitch_id           = alicloud_vswitch.zone_b.id
-  nat_type             = "Normal"
+  nat_type             = "Enhanced"
 
   tags = {
     Name        = "${var.cluster_name}-nat"

@@ -1,0 +1,22 @@
+═══════════════════════════════════════════════════════════════
+  ACK Pro 服务角色自动创建
+═══════════════════════════════════════════════════════════════
+
+📋 需要创建/检查的 RAM 服务角色:
+
+   • AliyunCSDefaultRole
+   • AliyunCSManagedLogRole
+   • AliyunCSManagedCmsRole
+   • AliyunCSManagedCsiRole
+   • AliyunCSManagedNetworkRole
+   • AliyunCSManagedKubernetesRole
+
+═══════════════════════════════════════════════════════════════
+  开始创建/检查服务角色
+═══════════════════════════════════════════════════════════════
+
+🔍 检查角色 AliyunCSDefaultRole... [0;32m✓ 已存在[0m
+🔍 检查角色 AliyunCSManagedLogRole... [0;32m✓ 已存在[0m
+🔍 检查角色 AliyunCSManagedCmsRole... [1;33m不存在，需要创建[0m
+[0;32m✓ 创建成功[0m
+./setup-ack-roles.sh: line 96: attach_system_policies: command not found

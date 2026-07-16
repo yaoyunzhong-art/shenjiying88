@@ -544,6 +544,63 @@ export default function MaintenancePage() {
         {/* 快速统计底部 */}
         <div style={{ marginTop: 20, padding: '12px 18px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 11, color: '#6b7280', display: 'flex', gap: 16, justifyContent: 'space-between' }}>
 
+        {/* 工单按门店分布 */}
+        <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>🏪 各门店工单分布</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {[
+              { store: '北京朝阳店', open: 3, inProgress: 5, completed: 18, total: 26 },
+              { store: '上海浦东店', open: 2, inProgress: 4, completed: 22, total: 28 },
+              { store: '广州天河店', open: 1, inProgress: 6, completed: 15, total: 22 },
+              { store: '深圳南山店', open: 4, inProgress: 3, completed: 12, total: 19 },
+              { store: '成都锦江店', open: 2, inProgress: 2, completed: 10, total: 14 },
+            ].map(function(st, i) {
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #e9d5ff', fontSize: 12 }}>
+                  <span style={{ fontWeight: 600, color: '#5b21b6', width: 90 }}>{st.store}</span>
+                  <div style={{ flex: 1, display: 'flex', gap: 4 }}>
+                    <span style={{ fontSize: 10, color: '#ef4444' }}>待处理 {st.open}</span>
+                    <span style={{ fontSize: 10, color: '#f59e0b' }}>进行中 {st.inProgress}</span>
+                    <span style={{ fontSize: 10, color: '#16a34a' }}>已完成 {st.completed}</span>
+                  </div>
+                  <span style={{ color: '#6b7280' }}>总计 {st.total}单</span>
+                  <div style={{ width: 50, height: 6, borderRadius: 3, background: '#e5e7eb', overflow: 'hidden' }}>
+                    <div style={{ width: Math.round(st.completed / st.total * 100) + '%', height: '100%', borderRadius: 3, background: '#7c3aed' }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 维护工单趋势 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0369a1' }}>📈 近半年工单趋势</h3>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 80, padding: '4px 0' }}>
+            {[
+              { month: '2月', total: 82, completed: 60, color: '#3b82f6' },
+              { month: '3月', total: 95, completed: 72, color: '#3b82f6' },
+              { month: '4月', total: 78, completed: 65, color: '#3b82f6' },
+              { month: '5月', total: 110, completed: 88, color: '#3b82f6' },
+              { month: '6月', total: 98, completed: 82, color: '#3b82f6' },
+            ].map(function(m, i) {
+              return (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 65 }}>
+                    <div style={{ width: 12, height: (m.total / 2) + 'px', borderRadius: '2px 2px 0 0', background: '#93c5fd' }} />
+                    <div style={{ width: 12, height: (m.completed / 2) + 'px', borderRadius: '2px 2px 0 0', background: '#3b82f6' }} />
+                  </div>
+                  <div style={{ fontSize: 9, color: '#6b7280', marginTop: 2 }}>{m.month}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+            <span><span style={{ color: '#93c5fd' }}>■</span> 总工单</span>
+            <span><span style={{ color: '#3b82f6' }}>■</span> 已完成</span>
+          </div>
+        </div>
+
           <span>📋 总工单: {stats.total}单</span>
           <span>🔧 完成率: {stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%</span>
           <span>🚨 紧急: {stats.urgent}单</span>
