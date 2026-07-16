@@ -34,7 +34,7 @@ export class CreateProcurementItemDto {
   @IsNumber()
   @Min(0)
   @IsOptional()
-  receivedQuantity?: number
+  receivedQuantity = 0
 }
 
 export class ProcurementItemDto {
@@ -58,7 +58,7 @@ export class ProcurementItemDto {
   @IsNumber()
   @Min(0)
   @IsOptional()
-  receivedQuantity?: number
+  receivedQuantity = 0
 }
 
 // ═══════════════════════════════════════════════════════════════════════
