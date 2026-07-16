@@ -1,0 +1,12 @@
+f45a7306db254c2010766e3ff597df1f9b01be62 commit	refs/heads/main
+49516d65e420b09d757b331dc9649cf3b49e5a5a commit	refs/remotes/origin/main
+d1a02e81f9e869a417ce920e3b7763e9ccd5b344 commit	refs/stash
+1486673081c6c14c7b79133c771727e0cf94a959 tag	refs/tags/v1.0.0-sprint1
+9e59c7dee5da128273c7ada10dad5f1d2c8cc8dc tag	refs/tags/v1.1.0-sprint2
+4ba059005f6cf3e01a6171fb152bf9e9694e8112 tag	refs/tags/v1.2.0-sprint3
+1ae3ed11a4c3dad3f5968a2d5b1b2d2fa1ea434c tag	refs/tags/v1.3.0-sprint3
+22b31422d05b75b29e2dd76b2066d16e94657127 tag	refs/tags/v1.4.0-sprint3-complete
+61486e229436951cb34d82b3e7e4ead12a0222d6 tag	refs/tags/v1.5.0-v12-sprint1-start
+c786f999f8896997ef4b0b5efa59a101fe820b5f tag	refs/tags/v2.0.0-v12-complete
+9e2bb8a30d1eb476f8dab94a083835281d3d86dd tag	refs/tags/v2.0.0-v13-v3-complete
+c14d92c4b59f666d6295ec58223c7c3754785cfd commit	refs/tags/v2.1.0-p0-security-2026-07-06
