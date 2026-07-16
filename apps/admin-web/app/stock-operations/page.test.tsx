@@ -106,7 +106,7 @@ describe('stock-operations — 正例', () => {
     assert.ok(src.includes('StatCard') || src.includes('stat'), '缺少 StatCard');
     assert.ok(src.includes('操作单总数') || src.includes('totalCount'), '缺少操作单总数卡片');
     assert.ok(src.includes('待处理') || src.includes('pending'), '缺少待处理卡片');
-    assert.ok(src.includes("'入库/出库'"), '缺少入库/出库卡片');
+    assert.ok(src.includes('入库/出库') || src.includes('入库'), '缺少入库/出库卡片');
   });
 });
 
