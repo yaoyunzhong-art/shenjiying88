@@ -1,7 +1,7 @@
 /**
  * 分类管理 — 列表页 (Next.js App Router)
  * 角色视角: 👤运营管理员 / 📊商品管理
- * 功能: 搜索 / 过滤 / 分页 / 状态切换
+ * 功能: 搜索 / 过滤 / 分页 / 状态切换 / 统计面板
  */
 'use client';
 
@@ -96,6 +96,53 @@ function buildColumns(
   ];
 }
 
+// 分类统计面板
+function CategoryStatsPanel({ data }: { data: CategoryItem[] }) {
+  const stats = useMemo(() => computeCategoryStats(data), [data]);
+  const active = data.filter(i => i.status === 'active').length;
+  const inactive = data.filter(i => i.status === 'inactive').length;
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+      <div style={{ padding: 16, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+        <div style={{ fontSize: 12, color: '#64748b' }}>全部分类</div>
+        <div style={{ fontSize: 28, fontWeight: 700, color: '#1e293b', marginTop: 4 }}>{stats.total}</div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 4, fontSize: 11 }}>
+          <span style={{ color: '#16a34a' }}>✓ {active} 启用</span>
+          <span style={{ color: '#94a3b8' }}>✗ {inactive} 停用</span>
+        </div>
+      </div>
+      <div style={{ padding: 16, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+        <div style={{ fontSize: 12, color: '#64748b' }}>一级分类</div>
+        <div style={{ fontSize: 28, fontWeight: 700, color: '#2563eb', marginTop: 4 }}>{stats.rootCount}</div>
+        <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>无上级分类</div>
+      </div>
+      <div style={{ padding: 16, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+        <div style={{ fontSize: 12, color: '#64748b' }}>子分类</div>
+        <div style={{ fontSize: 28, fontWeight: 700, color: '#d97706', marginTop: 4 }}>{stats.total - stats.rootCount}</div>
+        <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>关联父分类</div>
+      </div>
+      <div style={{ padding: 16, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+        <div style={{ fontSize: 12, color: '#64748b' }}>关联商品</div>
+        <div style={{ fontSize: 28, fontWeight: 700, color: '#7c3aed', marginTop: 4 }}>{stats.totalProducts.toLocaleString()}</div>
+        <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>全品类</div>
+      </div>
+      {/* 状态分布 */}
+      <div style={{ gridColumn: '1 / -1', padding: 16, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 12 }}>📊 启用 / 停用分布</div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ flex: active, height: 20, background: '#22c55e', borderRadius: 4, minWidth: active > 0 ? 10 : 0 }} />
+          <div style={{ flex: inactive, height: 20, background: '#e2e8f0', borderRadius: 4, minWidth: inactive > 0 ? 10 : 0 }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 11, color: '#64748b' }}>
+          <span>启用 {active} ({Math.round((active / stats.total) * 100)}%)</span>
+          <span>停用 {inactive} ({Math.round((inactive / stats.total) * 100)}%)</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CategoriesListPage() {
   const router = useRouter();
   const [data] = useState<CategoryItem[]>(MOCK_CATEGORIES);
@@ -134,13 +181,6 @@ export default function CategoriesListPage() {
     if (action === 'add') router.push(`${adminCategoryRoute.href}/new`);
   }, [router]);
 
-  const summaryCards = useMemo(() => [
-    { label: '全部分类', value: stats.total, variant: 'info' as const },
-    { label: '一级分类', value: stats.rootCount, variant: 'success' as const },
-    { label: '子分类', value: stats.total - stats.rootCount, variant: 'warning' as const },
-    { label: '关联商品', value: stats.totalProducts.toLocaleString(), variant: 'neutral' as const },
-  ], [stats]);
-
   return (
     <PageShell
       title="分类管理"
@@ -153,6 +193,9 @@ export default function CategoriesListPage() {
         />
       }
     >
+      {/* 统计面板 */}
+      <CategoryStatsPanel data={data} />
+
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="max-w-xs">
           <SearchFilterInput
