@@ -187,11 +187,7 @@ export class ReturnRequestService {
 
     ret.status = status
     if (remark !== undefined) ret.remark = remark
-    if (
-      status === ReturnStatus.Approved ||
-      status === ReturnStatus.Rejected ||
-      status === ReturnStatus.Refunded
-    ) {
+    if (status === ReturnStatus.Refunded || status === ReturnStatus.Rejected) {
       ret.resolvedAt = new Date().toISOString()
     }
     returnStore.set(returnId, ret)
@@ -230,17 +226,17 @@ export class ReturnRequestService {
   private requireReturn(returnId: string, tenantId: string): ReturnRequest {
     const ret = returnStore.get(returnId)
     if (!ret || ret.tenantId !== tenantId) {
-      throw new Error(`Return not found: ${returnId}`)
+      throw new Error(`Return request not found: ${returnId}`)
     }
     return ret
   }
 
   private assertValidStatusTransition(from: ReturnStatus, to: ReturnStatus): void {
     const validTransitions: Record<ReturnStatus, ReturnStatus[]> = {
-      [ReturnStatus.Pending]: [ReturnStatus.Inspecting, ReturnStatus.Rejected],
+      [ReturnStatus.Pending]: [ReturnStatus.Inspecting, ReturnStatus.Approved, ReturnStatus.Rejected],
       [ReturnStatus.Inspecting]: [ReturnStatus.Approved, ReturnStatus.Rejected],
       [ReturnStatus.Approved]: [ReturnStatus.Refunded],
-      [ReturnStatus.Rejected]: [],
+      [ReturnStatus.Rejected]: [ReturnStatus.Pending],
       [ReturnStatus.Refunded]: [],
     }
     if (!validTransitions[from].includes(to)) {

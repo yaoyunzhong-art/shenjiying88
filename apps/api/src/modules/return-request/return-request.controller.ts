@@ -64,7 +64,7 @@ export class ReturnRequestController {
   ) {
     const ret = this.returnService.getReturn(returnId, tenantContext.tenantId)
     if (!ret) {
-      throw new Error(`Return not found: ${returnId}`)
+      throw new Error(`Return request not found: ${returnId}`)
     }
     return ret
   }

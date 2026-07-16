@@ -131,8 +131,8 @@ resource "alicloud_eip_association" "nat" {
 # 创建 ACK 托管版集群
 resource "alicloud_cs_managed_kubernetes" "main" {
   name               = var.cluster_name
-  cluster_spec       = "ack.pro.small"  # 托管版Pro
-  version            = "1.28.3-aliyun.1"
+  cluster_spec       = "ack.standard"  # 托管版标准版
+  version            = "1.36.1-aliyun.1"
   
   # 网络配置
   vswitch_ids        = [

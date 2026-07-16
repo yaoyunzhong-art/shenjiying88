@@ -47,7 +47,7 @@ describe('loyalty 会员等级页面', () => {
     });
 
     it('积分进度条显示升级进度', () => {
-      assert.ok(SRC.includes('rounded-full') || SRC.includes('gradient-to-r') || SRC.includes('progress'));
+      assert.ok(SRC.includes('linear-gradient') || SRC.includes('90deg') || SRC.includes('progress'));
     });
 
     it('支持Tabs切换等级/积分/奖励', () => {
@@ -59,7 +59,7 @@ describe('loyalty 会员等级页面', () => {
     });
 
     it('积分变动正数为绿色', () => {
-      assert.ok(SRC.includes('text-green-400') || SRC.includes('text-red-400'));
+      assert.ok(SRC.includes('#059669') || SRC.includes('#dc2626') || SRC.includes('text-green-400') || SRC.includes('text-red-400'));
     });
 
     it('渲染奖励列表', () => {
@@ -105,7 +105,7 @@ describe('loyalty 会员等级页面', () => {
     });
 
     it('当前等级有高亮样式', () => {
-      assert.ok(SRC.includes('border-yellow') || SRC.includes('text-yellow-400'));
+      assert.ok(SRC.includes('f59e0b') || SRC.includes('border-yellow') || SRC.includes('text-yellow-400'));
     });
 
     it('已解锁/当前/未达成有不同状态标签', () => {

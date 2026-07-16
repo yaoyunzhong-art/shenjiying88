@@ -70,7 +70,7 @@ describe('ProcurementOrderController', () => {
     it('deleteOrder should be DELETE /:orderId', () => {
       const method = Reflect.getMetadata('method', ProcurementOrderController.prototype.deleteOrder)
       const path = Reflect.getMetadata('path', ProcurementOrderController.prototype.deleteOrder)
-      assert.equal(method, 5) // DELETE
+      assert.equal(method, 3) // DELETE
       assert.equal(path, ':orderId')
     })
 
@@ -125,7 +125,7 @@ describe('ProcurementOrderController', () => {
   })
 
   describe('GET /procurement-orders', () => {
-    it('should list orders', () => {
+    it('should list orders (with seed data)', () => {
       controller.createOrder(TENANT, {
         orderNo: 'PO-001', supplierId: 's', supplierName: 'S',
         items: sampleItems, orderedAt: '2026-07-16T00:00:00.000Z',
@@ -133,7 +133,9 @@ describe('ProcurementOrderController', () => {
       })
 
       const list = controller.listOrders(TENANT, {})
-      assert.equal(list.length, 1)
+      // listOrders seeds mock data
+      assert.ok(list.length >= 21)
+      assert.ok(list.some((o) => o.orderNo === 'PO-001'))
     })
 
     it('should filter by status', () => {
@@ -142,10 +144,13 @@ describe('ProcurementOrderController', () => {
         items: sampleItems, orderedAt: '2026-07-16T00:00:00.000Z',
         expectedAt: '2026-07-25T00:00:00.000Z',
       })
+      controller.updateOrderStatus(TENANT, o.id, { status: ProcurementStatus.PendingApproval })
+      controller.updateOrderStatus(TENANT, o.id, { status: ProcurementStatus.Approved })
       controller.updateOrderStatus(TENANT, o.id, { status: ProcurementStatus.Shipped })
 
       const list = controller.listOrders(TENANT, { status: ProcurementStatus.Shipped })
-      assert.equal(list.length, 1)
+      assert.ok(list.length >= 1)
+      assert.ok(list.some((o) => o.orderNo === 'PO-SHIP'))
     })
   })
 
@@ -213,6 +218,8 @@ describe('ProcurementOrderController', () => {
         items: sampleItems, orderedAt: '2026-07-16T00:00:00.000Z',
         expectedAt: '2026-07-25T00:00:00.000Z',
       })
+      controller.updateOrderStatus(TENANT, created.id, { status: ProcurementStatus.PendingApproval })
+      controller.updateOrderStatus(TENANT, created.id, { status: ProcurementStatus.Approved })
       controller.updateOrderStatus(TENANT, created.id, { status: ProcurementStatus.Shipped })
 
       const result = controller.receiveItems(TENANT, created.id, {

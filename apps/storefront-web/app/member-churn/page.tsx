@@ -365,6 +365,82 @@ export default function MemberChurnPage() {
           />
         )}
 
+        {/* 挽回历史记录 */}
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fefce8', border: '1px solid #fde68a' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#92400e' }}>📈 挽回历史记录</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[
+              { member: '张伟', date: '2026-07-14', action: '发放8折优惠券', cost: 200, result: '已到店消费' as const },
+              { member: '李芳', date: '2026-07-13', action: '充值满赠推送', cost: 0, result: '已转化' as const },
+              { member: '王强', date: '2026-07-12', action: '积分到期提醒', cost: 0, result: '未响应' as const },
+              { member: '陈浩', date: '2026-07-11', action: '致歉+体验券', cost: 150, result: '已到店消费' as const },
+              { member: '刘洋', date: '2026-07-10', action: '专属活动邀请', cost: 500, result: '已转化' as const },
+            ].map((h, i) => {
+              const color = h.result === '已到店消费' ? '#059669' : h.result === '已转化' ? '#2563eb' : '#dc2626';
+              const bg = h.result === '已到店消费' ? '#f0fdf4' : h.result === '已转化' ? '#eff6ff' : '#fef2f2';
+              return (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                    <span style={{ fontWeight: 600, minWidth: 50 }}>{h.member}</span>
+                    <span style={{ color: '#6b7280', fontSize: 12 }}>{h.date}</span>
+                    <span style={{ color: '#374151' }}>{h.action}</span>
+                    {h.cost > 0 && <span style={{ color: '#9ca3af', fontSize: 11 }}>¥{h.cost}</span>}
+                  </div>
+                  <span style={{ padding: '2px 8px', borderRadius: 6, background: bg, color, fontSize: 11, fontWeight: 600 }}>{h.result}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 挽回行动监控面板 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#16a34a' }}>📋 挽回行动监控</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+            {(() => {
+              const allActions = MOCK_CHURN_PREDICTIONS.flatMap(p => p.recommendedActions.map(a => ({
+                member: p.memberName,
+                ...a,
+                gender: p.memberTier === 'diamond' ? '💎' : p.memberTier === 'gold' ? '🥇' : '🥈',
+              })));
+              const successRate = allActions.reduce((s, a) => s + a.expectedRecoveryRate, 0) / allActions.length;
+              return (
+                <>
+                  <div style={{ padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+                    <div style={{ fontSize: 11, color: '#6b7280' }}>总挽回行动</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: '#16a34a' }}>{allActions.length}</div>
+                  </div>
+                  <div style={{ padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+                    <div style={{ fontSize: 11, color: '#6b7280' }}>平均挽回率</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: '#2563eb' }}>{Math.round(successRate)}%</div>
+                  </div>
+                  <div style={{ padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+                    <div style={{ fontSize: 11, color: '#6b7280' }}>渠道分布</div>
+                    <div style={{ fontSize: 14, color: '#374151' }}>
+                      {['coupon', 'phone', 'wechat', 'sms', 'app_push'].map(ch => {
+                        const cnt = allActions.filter(a => a.channel === ch).length;
+                        return cnt > 0 ? <span key={ch} style={{ margin: '0 4px' }}>{ch === 'coupon' ? '🎫' : ch === 'phone' ? '📞' : ch === 'wechat' ? '💬' : ch === 'sms' ? '📱' : '🔔'}{cnt}</span> : null;
+                      })}
+                    </div>
+                  </div>
+                  <div style={{ padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+                    <div style={{ fontSize: 11, color: '#6b7280' }}>行动列表</div>
+                    <div style={{ fontSize: 12, color: '#374151' }}>
+                      {allActions.slice(0, 4).map((a, i) => (
+                        <div key={i} style={{ padding: '2px 0', display: 'flex', gap: 4 }}>
+                          <span>{a.gender}</span>
+                          <span>{a.member}</span>
+                          <span style={{ color: '#059669' }}>{a.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+
         {/* 脚注 */}
         <div style={{ marginTop: 20, padding: '12px 18px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12, color: '#6b7280', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <span>🤖 AI 预测基于历史数据模型</span>

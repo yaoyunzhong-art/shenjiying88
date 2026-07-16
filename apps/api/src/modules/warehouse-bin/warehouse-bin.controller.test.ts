@@ -66,7 +66,7 @@ describe('WarehouseBinController', () => {
     it('deleteBin should be DELETE /:binId', () => {
       const method = Reflect.getMetadata('method', WarehouseBinController.prototype.deleteBin)
       const path = Reflect.getMetadata('path', WarehouseBinController.prototype.deleteBin)
-      assert.equal(method, 5) // DELETE
+      assert.equal(method, 3) // DELETE
       assert.equal(path, ':binId')
     })
 
