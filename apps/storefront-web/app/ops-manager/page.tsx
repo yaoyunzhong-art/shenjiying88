@@ -53,6 +53,17 @@ export default function OpsManagerPage() {
   const pendingCount = total - doneCount;
   const completionRate = total > 0 ? Math.round((doneCount / total) * 100) : 0;
 
+  // 新增: 类别统计
+  const categoryStats = useMemo(() => {
+    const map: Record<string, { total: number; done: number }> = {};
+    ALL_TASKS.forEach(t => {
+      if (!map[t.category]) map[t.category] = { total: 0, done: 0 };
+      map[t.category].total++;
+      if (t.done) map[t.category].done++;
+    });
+    return map;
+  }, []);
+
   /* ── 过滤 ── */
   const filteredTasks = useMemo(() => {
     switch (filter) {
@@ -147,6 +158,21 @@ export default function OpsManagerPage() {
             </div>
           ))}
         </div>
+
+        {/* ── 类别分布 ── */}
+        {Object.keys(categoryStats).length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>类别分布</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 6 }}>
+              {Object.entries(categoryStats).map(([cat, st]) => (
+                <div key={cat} style={{ padding: '8px 10px', borderRadius: 8, background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(148,163,184,0.08)', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>{cat}</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: st.done === st.total ? '#22c55e' : '#fbbf24', marginTop: 2 }}>{st.done}/{st.total}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── 进度条 ── */}
         <div style={{ marginBottom: 20 }}>
