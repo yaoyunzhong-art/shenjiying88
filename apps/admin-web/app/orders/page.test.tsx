@@ -179,7 +179,7 @@ describe('orders — 集成', () => {
 describe('orders — AI 安全审计', () => {
   it('订单金额不应浮点精度丢失', () => {
     const src = readSource();
-    assert.ok(!src.includes('toFixed') || src.includes('Math.round'), '金额精度处理');
+    assert.ok(src.includes('toFixed') || src.includes('Math.round'), '金额精度应使用toFixed或Math.round');
   });
 
   it('数据过滤不应修改原数组', () => {
