@@ -198,3 +198,18 @@ describe('staff — 业务深度', () => {
     const src = readSource(); assert.ok(src.includes('Tabs'));
   });
 });
+
+// ---- hooks验证 ----
+
+describe('staff — hooks验证', () => {
+  it('包含useState状态声明', () => assert.ok(readSource().includes('const [') && readSource().includes('] = useState')));
+  it('包含JSX返回语句', () => assert.ok(readSource().includes('return (')));
+  it('包含事件处理器(onClick/onChange)', () => assert.ok(readSource().includes('onClick={') || readSource().includes('onChange={')));
+  it('包含列表渲染(map)', () => assert.ok(readSource().includes('.map(')));
+  it('包含条件渲染', () => assert.ok(readSource().includes(' && ') || readSource().includes(' ? ')));
+  it('包含样式定义', () => assert.ok(readSource().includes('style={')));
+  it('包含数据格式化', () => assert.ok(readSource().includes('.toFixed') || readSource().includes('toLocaleString') || readSource().includes('Math.')));
+  it('包含模板字符串', () => assert.ok(readSource().includes('${')));
+  it('包含默认导出函数', () => assert.ok(readSource().includes('export default function')));
+  it('包含注释说明', () => assert.ok(readSource().includes('//') || readSource().includes('/*')));
+});

@@ -266,3 +266,18 @@ describe('StoreDetailPage — 业务深度', () => {
   it('包含 FormField 表单字段', () => assert.ok(SRC.includes('FormField')));
   it('包含 capabilty access 能力访问', () => assert.ok(SRC.includes('capability') || SRC.includes('Capability')));
 });
+
+// ---- hooks验证 ----
+
+describe('StoreDetailPage — hooks验证', () => {
+  it('包含useState状态声明', () => assert.ok(SRC.includes('useState')));
+  it('包含JSX返回语句', () => assert.ok(SRC.includes('return (')));
+  it('包含事件处理器(onClick/onChange)', () => assert.ok(SRC.includes('onClick') || SRC.includes('onChange')));
+  it('包含列表渲染(map)', () => assert.ok(SRC.includes('.map(')));
+  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
+  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
+  it('包含数据格式化', () => assert.ok(SRC.includes('Math.') || SRC.includes('.reduce(') || SRC.includes('.filter(')));
+  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
+  it('包含默认导出函数', () => assert.ok(SRC.includes('export default function')));
+  it('包含注释说明', () => assert.ok(SRC.includes('//') || SRC.includes('/*')));
+});

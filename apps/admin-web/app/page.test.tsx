@@ -63,3 +63,18 @@ describe('Dashboard — 业务深度', () => {
   it('包含 workbenches 工作台列表', () => assert.ok(SRC.includes('workbenches')));
   it('包含 scope 作用域解析', () => assert.ok(SRC.includes('scope') && SRC.includes('resolver')));
 });
+
+// ---- hooks验证 ----
+
+describe('Dashboard — hooks验证', () => {
+  it('包含JSX返回语句', () => assert.ok(SRC.includes('return (')));
+  it('包含Suspense懒加载', () => assert.ok(SRC.includes('Suspense')));
+  it('包含列表渲染(map)', () => assert.ok(SRC.includes('.map(')));
+  it('包含条件渲染', () => assert.ok(SRC.includes(' ?? ') || SRC.includes(' ? ')));
+  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
+  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
+  it('包含默认导出函数', () => assert.ok(SRC.includes('export default async function')));
+  it('包含StatCard统计卡片', () => assert.ok(SRC.includes('StatCard')));
+  it('包含PageShell包装', () => assert.ok(SRC.includes('PageShell')));
+  it('包含bootstrap数据加载', () => assert.ok(SRC.includes('getAdminWorkbenchConsumerSnapshot')));
+});

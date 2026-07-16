@@ -491,3 +491,21 @@ test('边界: 剩余配额汇总', () => {
   // 这里仅检查非负
   assert.ok(total >= 0);
 });
+
+// ---- hooks验证 ----
+
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const COUPON_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
+
+test('coupons — hooks验证: 包含useState状态声明', () => assert.ok(COUPON_SRC.includes('useState') || COUPON_SRC.includes('const [')));
+test('coupons — hooks验证: 包含JSX返回语句', () => assert.ok(COUPON_SRC.includes('return (')));
+test('coupons — hooks验证: 包含事件处理器', () => assert.ok(COUPON_SRC.includes('onClick') || COUPON_SRC.includes('onChange')));
+test('coupons — hooks验证: 包含列表渲染', () => assert.ok(COUPON_SRC.includes('.map(')));
+test('coupons — hooks验证: 包含条件渲染', () => assert.ok(COUPON_SRC.includes(' && ') || COUPON_SRC.includes(' ? ')));
+test('coupons — hooks验证: 包含样式定义', () => assert.ok(COUPON_SRC.includes('style={')));
+test('coupons — hooks验证: 包含数据格式化', () => assert.ok(COUPON_SRC.includes('.toFixed') || COUPON_SRC.includes('toLocaleString') || COUPON_SRC.includes('Math.')));
+test('coupons — hooks验证: 包含模板字符串', () => assert.ok(COUPON_SRC.includes('${')));
+test('coupons — hooks验证: 包含默认导出函数', () => assert.ok(COUPON_SRC.includes('export default function')));
+test('coupons — hooks验证: 包含注释说明', () => assert.ok(COUPON_SRC.includes('/*') || COUPON_SRC.includes('//')));

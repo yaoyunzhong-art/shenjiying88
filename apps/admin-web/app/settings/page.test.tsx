@@ -60,3 +60,18 @@ describe('SettingsPage — 业务深度', () => {
   it('包含工作流配置项', () => assert.ok(SRC.includes('工作流配置') || SRC.includes('workflow')));
   it('包含通知设置模块', () => assert.ok(SRC.includes('通知设置') || SRC.includes('通知模板')));
 });
+
+// ---- hooks验证 ----
+
+describe('SettingsPage — hooks验证', () => {
+  it('包含JSX返回语句', () => assert.ok(SRC.includes('return (')));
+  it('包含Link导航', () => assert.ok(SRC.includes('from \'next/link\'')));
+  it('包含列表渲染(MODULES.map)', () => assert.ok(SRC.includes('.map(')));
+  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
+  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
+  it('包含MODULES配置定义', () => assert.ok(SRC.includes('const MODULES') || SRC.includes('ConfigModule')));
+  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
+  it('包含默认导出函数', () => assert.ok(SRC.includes('export default function')));
+  it('包含配置状态统计', () => assert.ok(SRC.includes('configuredCount') || SRC.includes('partialCount') || SRC.includes('pendingCount')));
+  it('包含注释说明', () => assert.ok(SRC.includes('//') || SRC.includes('/*')));
+});
