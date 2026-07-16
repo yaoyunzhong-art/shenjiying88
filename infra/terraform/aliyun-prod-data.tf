@@ -51,8 +51,8 @@ resource "alicloud_kvstore_instance" "main" {
   security_ips     = ["10.0.0.0/8", "172.20.0.0/16"]
   
   instance_type    = "Redis"
-  engine_version   = "7.0"
-  instance_class   = "redis.master.small.default"
+  engine_version   = "5.0"
+  instance_class   = "redis.logic.sharding.1g.2db.0rodb.4proxy.default"
 
   tags = {
     Name        = "${var.cluster_name}-redis"

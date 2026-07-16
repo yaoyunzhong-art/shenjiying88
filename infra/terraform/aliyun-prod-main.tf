@@ -191,9 +191,9 @@ resource "alicloud_cs_kubernetes_node_pool" "application" {
   cluster_id        = alicloud_cs_managed_kubernetes.main.id
   
   vswitch_ids       = [alicloud_vswitch.zone_b.id, alicloud_vswitch.zone_c.id]
-  instance_types    = ["ecs.c7.2xlarge"]
+  instance_types    = ["ecs.c6.xlarge", "ecs.g6.xlarge", "ecs.c7.xlarge", "ecs.g7.xlarge"]
   
-  desired_size      = 4
+  desired_size      = 2
 
   system_disk_category = "cloud_essd"
   system_disk_size     = 100
