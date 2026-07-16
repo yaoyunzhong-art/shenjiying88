@@ -380,6 +380,43 @@ export default function DataInsights() {
         </div>
       </div>
 
+      {/* 设备类型分布 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>📊 设备类型分布</h3>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {(() => {
+            const byType: Record<string, number> = {};
+            MOCK_DEVICES.forEach(d => { byType[d.type] = (byType[d.type] || 0) + 1; });
+            const colors: Record<string, string> = { pos: '#60a5fa', printer: '#34d399', scanner: '#fbbf24', camera: '#f87171', display: '#a78bfa', network: '#f472b6', sensor: '#06b6d4' };
+            return Object.entries(byType).map(([type, count]) => (
+              <div key={type} style={{ flex: 1, minWidth: 100, padding: 10, borderRadius: 8, background: 'rgba(148,163,184,0.06)', textAlign: 'center' }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: colors[type] || '#94a3b8' }}>{count}</div>
+                <div style={{ fontSize: 11, color: '#64748b' }}>{type === 'pos' ? '收银机' : type === 'printer' ? '打印机' : type === 'scanner' ? '扫描枪' : type === 'camera' ? '摄像头' : type === 'display' ? '显示屏' : type === 'network' ? '网络' : '传感器'}</div>
+              </div>
+            ));
+          })()}
+        </div>
+      </div>
+
+      {/* 会员活跃度 */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>👥 会员活跃度</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+          {[
+            { label: '月活跃会员', value: Math.round(total * 0.72), color: '#4ade80', sub: '占比72%' },
+            { label: '周活跃会员', value: Math.round(total * 0.45), color: '#60a5fa', sub: '占比45%' },
+            { label: '日活跃会员', value: Math.round(total * 0.18), color: '#fbbf24', sub: '占比18%' },
+            { label: '沉睡会员', value: Math.round(total * 0.12), color: '#f87171', sub: '超过30天未到店' },
+          ].map((item, i) => (
+            <div key={i} style={{ padding: 12, borderRadius: 8, background: 'rgba(148,163,184,0.06)', textAlign: 'center' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: item.color }}>{item.value.toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: '#64748b' }}>{item.label}</div>
+              <div style={{ fontSize: 10, color: '#475569' }}>{item.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* 脚注 */}
       <div style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 24 }}>
         数据洞察系统 · 数据更新于 {new Date().toLocaleString('zh-CN')} · 共 {MOCK_DEVICES.length} 台设备 · {total} 位会员

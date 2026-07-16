@@ -441,6 +441,28 @@ export default function MemberChurnPage() {
           </div>
         </div>
 
+        {/* 流失挽回成本分析 */}
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fdf2f8', border: '1px solid #fbcfe8' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#be185d' }}>💰 流失挽回成本分析</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
+            {[
+              { metric: '平均挽回成本', value: '¥125/人', desc: '含优惠券、赠品、客服成本', alert: false },
+              { metric: '挽回成功成本', value: '¥85/人', desc: '已成功挽回会员的平均成本', alert: false },
+              { metric: '未挽回损失', value: '¥8,600/月', desc: '流失会员的潜在月度损失', alert: true },
+              { metric: 'ROI', value: '3.2x', desc: '挽回投入产出比', alert: false },
+            ].map((item, i) => (
+              <div key={i} style={{ padding: 12, borderRadius: 8, background: '#fff', border: item.alert ? '1px solid #fecaca' : '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{item.metric}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: item.alert ? '#dc2626' : '#374151' }}>{item.value}</div>
+                <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>{item.desc}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 11, color: '#6b7280', textAlign: 'center' }}>
+            基于{MOCK_CHURN_PREDICTIONS.length}位会员的数据分析 · 建议优先挽回高风险人群
+          </div>
+        </div>
+
         {/* 脚注 */}
         <div style={{ marginTop: 20, padding: '12px 18px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12, color: '#6b7280', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <span>🤖 AI 预测基于历史数据模型</span>

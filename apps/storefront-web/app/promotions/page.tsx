@@ -428,6 +428,28 @@ export default function StorePromotionsPage() {
         </div>
       )}
 
+      {/* 月度活动排期日历 */}
+      {!showError && (
+        <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f3e8ff', border: '1px solid #e9d5ff' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#7c3aed' }}>📅 活动排期概览</h3>
+          <div style={{ display: 'flex', gap: 14, overflow: 'auto', paddingBottom: 4 }}>
+            {['07-13', '07-14', '07-15', '07-16', '07-17', '07-18', '07-19', '07-20', '07-21'].map((date, i) => {
+              const activePromos = MOCK_DATA.filter(d => d.startDate <= `2026-${date}` && d.endDate >= `2026-${date}`);
+              const isToday = date === '07-16';
+              return (
+                <div key={i} style={{ minWidth: 100, padding: 10, borderRadius: 8, background: isToday ? '#fff' : '#faf5ff', border: isToday ? '2px solid #7c3aed' : '1px solid #e5e7eb', textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: isToday ? '#7c3aed' : '#374151' }}>{date}</div>
+                  <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>{activePromos.length}个活动</div>
+                  {activePromos.slice(0, 2).map(p => (
+                    <div key={p.id} style={{ fontSize: 10, color: '#059669', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* 门店活动排行 */}
       {!showError && (
         <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#eff6ff', border: '1px solid #bfdbfe' }}>

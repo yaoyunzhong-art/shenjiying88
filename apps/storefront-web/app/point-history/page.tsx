@@ -382,6 +382,25 @@ export default function PointHistoryPage() {
               </div>
             </div>
 
+            {/* 积分等级对照 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#faf5ff', border: '1px solid #e9d5ff' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#7c3aed' }}>🏆 会员等级与权益</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                {[
+                  { name: '银卡', min: 0, color: '#94a3b8', benefits: '基础累计·生日优惠' },
+                  { name: '金卡', min: 1000, color: '#f59e0b', benefits: '1.2x加速·优先排队' },
+                  { name: '钻石', min: 5000, color: '#06b6d4', benefits: '1.5x加速·专属活动·VIP' },
+                  { name: '至尊', min: 20000, color: '#a855f7', benefits: '2x加速·1v1客服·年度礼' },
+                ].map((tier, i) => (
+                  <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: tier.color }}>{tier.name}</div>
+                    <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>≥{tier.min.toLocaleString()}分</div>
+                    <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>{tier.benefits}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* 积分任务攻略 */}
             <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fefce8', border: '1px solid #fde68a' }}>
               <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#92400e' }}>🎯 积分任务攻略</h3>
