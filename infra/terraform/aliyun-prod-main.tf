@@ -303,4 +303,7 @@ output "postgres_endpoint" {
   value       = alicloud_db_instance.postgres.connection_string
 }
 
-output "redis_endpoint"
+output "redis_endpoint" {
+  description = "Redis连接地址"
+  value       = alicloud_kvstore_instance.redis.connection_domain
+}

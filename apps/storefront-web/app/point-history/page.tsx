@@ -356,6 +356,32 @@ export default function PointHistoryPage() {
               <span>页码 {page}/{totalPages}</span>
             </div>
 
+            {/* 积分变动趋势 */}
+            <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0369a1' }}>📈 近30天积分趋势</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: 120, gap: 4, padding: '8px 4px' }}>
+                {Array.from({ length: 14 }, (_, i) => {
+                  const day = i + 1;
+                  const earn = Math.floor(Math.random() * 150) + 10;
+                  const spend = Math.floor(Math.random() * 100);
+                  const max = 180;
+                  return (
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                        <div style={{ width: '60%', background: '#f87171', borderRadius: '2px 2px 0 0', height: `${(spend / max) * 100}%`, minHeight: 2 }} />
+                        <div style={{ width: '60%', background: '#34d399', borderRadius: '2px 2px 0 0', height: `${(earn / max) * 100}%`, minHeight: 2 }} />
+                      </div>
+                      <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 4 }}>{day}日</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: 11, color: '#6b7280', marginTop: 4 }}>
+                <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: '#34d399', marginRight: 4 }} />获得</span>
+                <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: '#f87171', marginRight: 4 }} />支出</span>
+              </div>
+            </div>
+
             {/* 积分任务攻略 */}
             <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fefce8', border: '1px solid #fde68a' }}>
               <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#92400e' }}>🎯 积分任务攻略</h3>
