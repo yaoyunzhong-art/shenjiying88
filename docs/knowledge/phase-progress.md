@@ -112,6 +112,8 @@
 | 2026-07-16 | #505 | storefront-web(✅5755/5756·1已知checkout偏差不变)×admin-web(61基线持平·8 TSC假阳第32次持平)×app(30🏆✅·全缓存)·无NEW fail·稳态维持 | ✅ | ⚠️ | ⚠️ | ✅ | 3🏆(续·稳态第3脉冲·无新fail注入) |
 | 2026-07-16 | #506 | admin-web(TSC 8→75🔴 NEW regression·f45a7306d wave3+finance 4658行触发StatCardProps/ButtonVariant/DataTable假阳)×storefront-web(✅5811/5812·58新测全绿·checkout偏差1不变)×admin-web(test 61→57✅改善4)·app(30🏆✅) | ✅ | ⚠️ | ⚠️ | ❌ | 0🏆(断裂·admin-web TSC回归·已派树哥)
 | 2026-07-16 | #507 | admin-web(TSC 0✅闭环·自修Duplicate React闭环✅)×storefront-web(✅5835/5836·checkout偏差1不变)×admin-web(test 57→76🔴 +19 NEW→已派dispatch-507-tree) | ✅ | ⚠️ | ⚠️ | ❌ | 0🏆(断裂·TSC已修但test+19 NEW回归)
+| 2026-07-16 | #508 | TSC全绿✅×admin-web(test76🔴agents/studio13已修)·storefront(1checkout⛔)×app(30🏆✅) | ✅ | ⚠️ | ⚠️ | ⚠️ | 0🏆(续·dispatch-507 Fix-1 agents/studio✅·平63baseline⛔)
+| 2026-07-16 | #509 | TSC全绿✅×admin-web(63baseline⛔dispatch-507 Fix-1✅闭环)×storefront(1checkout⛔)×app(30🏆✅) | ✅ | ⚠️ | ⚠️ | ⚠️ | 0🏆(续·无新fail注入·63baseline持平·dispatch-507 Fix-1✅闭环)
 
 ### 🐜 树哥派单 2026-07-16 08:30 (V18 Day1 · 熔断模式)
 

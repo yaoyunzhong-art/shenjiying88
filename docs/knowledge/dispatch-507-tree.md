@@ -10,6 +10,13 @@
 | agents/studio page.test.tsx | ✅ **31/31 全绿** |
 | 修复 commit | ✅ `9cce5c3cc` |
 
+## 闭环 #509 验证
+| 项目 | 结果 |
+|:----|:----:|
+| agents/studio page.test.tsx | ✅ **31/31 全绿·闭环确认** |
+| admin-web test总数 | **76→63⬇️13**✅ |
+| 状态 | ✅ **Fix-1闭环成功** |
+
 ## 修复内容
 ### agents/studio/page.tsx
 - `export default async function AgentStudioPage` — 匹配测试 async 断言
