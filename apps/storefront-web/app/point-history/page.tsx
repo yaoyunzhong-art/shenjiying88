@@ -693,6 +693,62 @@ export default function PointHistoryPage() {
               </div>
             </div>
 
+            {/* 积分过期策略说明 */}
+            {function ExpireStrategy() {
+              var expireRules = [
+                { icon: '📅', label: '积分有效期', desc: '获得日起 365 天' },
+                { icon: '📱', label: '过期前30天', desc: '短信提醒' },
+                { icon: '📲', label: '过期前7天', desc: 'APP推送提醒' },
+                { icon: '🪟', label: '过期当天', desc: '弹窗提醒' },
+                { icon: '🔄', label: '可续期条件', desc: '30天内任意消费可续期全部积分' },
+                { icon: '❌', label: '无法续期', desc: '过期超过60天的积分无法恢复' },
+              ];
+              var expireStats = [
+                { month: '4月', points: 2350, renewRate: 68 },
+                { month: '5月', points: 3120, renewRate: 72 },
+                { month: '6月', points: 4580, renewRate: 65 },
+              ];
+              return (
+                <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fff1f2', border: '1px solid #fecdd3' }}>
+                  <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9f1239' }}>🕐 积分过期策略说明</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8, marginBottom: 12 }}>
+                    {expireRules.map(function(r, i) {
+                      return (
+                        <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fecdd3', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 18 }}>{r.icon}</span>
+                          <div>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{r.label}</div>
+                            <div style={{ fontSize: 11, color: '#6b7280' }}>{r.desc}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ background: '#fff', borderRadius: 8, padding: 10, border: '1px solid #fecdd3' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#9f1239', marginBottom: 8 }}>📊 近3个月过期积分统计</div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {expireStats.map(function(s, i) {
+                        var barColor = s.renewRate >= 70 ? '#16a34a' : s.renewRate >= 65 ? '#d97706' : '#dc2626';
+                        return (
+                          <div key={i} style={{ flex: 1, padding: 10, borderRadius: 8, background: '#fff1f2', border: '1px solid #fecdd3', textAlign: 'center' }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#9f1239' }}>{s.month}</div>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: '#be123c', margin: '4px 0' }}>{s.points.toLocaleString()}<span style={{ fontSize: 10, fontWeight: 400, color: '#6b7280' }}> 分</span></div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                              <div style={{ width: 50, height: 6, borderRadius: 3, background: '#fecdd3', overflow: 'hidden' }}>
+                                <div style={{ width: s.renewRate + '%', height: '100%', borderRadius: 3, background: barColor }} />
+                              </div>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: barColor }}>{s.renewRate}%</span>
+                            </div>
+                            <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>续期率</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            }()}
+
             {/* 积分常见问题 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
               <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>❓ 积分常见问题</h3>
