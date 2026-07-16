@@ -146,6 +146,7 @@ import { TrainingModule } from './modules/training/training.module';
 import { StoreRevenueReportModule } from './modules/store-revenue-report/store-revenue-report.module';
 import { MemberSpendingAnalysisModule } from './modules/member-spending-analysis/member-spending-analysis.module';
 import { InventoryAlertModule } from './modules/inventory-alert/inventory-alert.module';
+import { EquipmentFaultReportModule } from './modules/equipment-fault-report/equipment-fault-report.module';
 
 @Module({
   imports: [
@@ -303,6 +304,7 @@ import { InventoryAlertModule } from './modules/inventory-alert/inventory-alert.
     StoreRevenueReportModule,
     MemberSpendingAnalysisModule,
     InventoryAlertModule,
+    EquipmentFaultReportModule,
     ModulesModule,
   ],
   providers: [
