@@ -18,6 +18,7 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV NODE_ENV=production
 
+RUN apk add --no-cache tini
 RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
 
 WORKDIR /workspace
