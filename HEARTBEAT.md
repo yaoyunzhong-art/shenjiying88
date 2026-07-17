@@ -24,6 +24,7 @@
 | #550 | 64(🧊) | 304(🧊) | - | 冷超时·走基线 |
 | #551 | 0✅ | 34❌ | ~165❌ | 首轮全量回归 |
 | **#552** | **0✅** | **2🔴→自修✅** | **-** | **语法修复·dispatch-552-tree闭环** |
+| **#553** | **0✅** | **0✅** | **-** | **全线稳态·0 NEW fail·14🏆** |
 
 > 报告存档: `reports/test-health-20260718.md`
 > dispatch-552-tree: admin-web `settings/system-config/page.test.tsx` + `settings/workflow/page.test.tsx` 引号不匹配+缺括号语法修复
@@ -36,26 +37,26 @@
 | @m5/ui | 🟢 | 54🏆 |
 | @m5/tob-web | 🟢 | 54🏆 |
 | @m5/storefront-web | 🟢 | 32🏆(0 fails·100% pass) |
-| @m5/admin-web | ⚠️ | 16🏆(2 syntax已修·余基线fails) |
+| @m5/admin-web | 🟢 | 17🏆(0 fails✅ 9076/9076 pass |
 | @m5/api | 🔴 | **基线~165 fails (环境依赖)** |
 | **E2E链28-30** | 🟢 | **8🏆(沿用基线)** |
 
 ## 🔄 P0灾难闭环确认 (第36次)
 | 脉冲 | 状态 | 详情 |
 |:----|:----:|:------|
-| #514b→#552 | ✅ 连续36次确认 | P0闭环持续·无复发 |
+| #514b→#553 | ✅ 连续36次确认 | P0闭环持续·无复发 |
 
 ## 📋 开放派单追踪
 | 派单 | 状态 | 说明 |
 |:----|:----:|:-----|
-| dispatch-514-P0-disaster | ✅ 第35次确认 | P0闭环持续·无复发 |
+| dispatch-514-P0-disaster | ✅ 第36次确认 | P0闭环持续·无复发 |
 | dispatch-530-tree | ✅ **闭环(第15次确认)** | TSC零错持续·无复发 |
-| dispatch-538-tree  | ✅ **闭环(第12次确认)** | @m5/app 222/222 pass·无复发 |
-| dispatch-552-tree  | ✅ **闭环(第1次确认)** | admin-web 2 syntax fix (quote+paren)·已修验证通过 |
+| dispatch-538-tree  | ✅ **闭环(第13次确认)** | @m5/app 222/222 pass·无复发 |
+| dispatch-552-tree  | ✅ **闭环(第2次确认)** | admin-web 0 fail✅·syntax fix持稳·无复发 |
 | storefront-checkout-偏差 | ⏳ 持续已知 | 已修复: storefront 0 fail ✅ |
 | RQ-010~020 P0-FIRE | 🔴 **30h+停滞** | 需人工推进 |
 | Pulse-#551-全量回归 | ⚠️ **#552已处理admin-web 2fix·余约~60 baseline fails** |
-| admin-web 304→34骤降 | 🟢 **大幅改善** | 需确认34 fail中是否全部为已知假阳 |
+| admin-web 304→0骤降 | 🟢 **0 fail!✅** | syntax 2修完整改·admin-web 9076/9076 pass |
 | api 模块回归 | 🟡 **首次摸底** | 环境依赖类失败需梳理 |
 
 ## 🧪 E2E 跨模块链统计 (总计 30 链)

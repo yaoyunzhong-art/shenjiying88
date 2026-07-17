@@ -16,10 +16,23 @@ Run locally before the production window:
 node scripts/generate-foundation-sql.mjs
 ```
 
+Dry-run the full bootstrap plan:
+
+```bash
+bash scripts/run-prod-db-bootstrap.sh
+```
+
+Dry-run the rollback draft:
+
+```bash
+bash scripts/rollback-prod-db-bootstrap-draft.sh
+```
+
 Review these files in order:
 
 ```bash
 ls infra/sql/prod-db
+ls infra/sql/prod-db/rollback
 ```
 
 ## Safe Execution Order
@@ -132,3 +145,25 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/sql/prod-db/remaining-verify.sq
 - If failure happens before business data is inserted, drop only objects created in the failed phase
 - If a failure occurs after a foreign key attach, remove the failing constraints before dropping dependent tables
 - Never mix rollback with additional forward changes in the same terminal session
+
+## Automation Entry Points
+
+- Forward dry-run or execution: `scripts/run-prod-db-bootstrap.sh`
+- Rollback dry-run or execution: `scripts/rollback-prod-db-bootstrap-draft.sh`
+- SQL generation: `scripts/generate-foundation-sql.mjs`
+
+## Rollback SQL Artifacts
+
+- `infra/sql/prod-db/rollback/rollback-foundation-wave2-wave3.sql`
+- `infra/sql/prod-db/rollback/rollback-foundation-wave1.sql`
+- `infra/sql/prod-db/rollback/rollback-foundation-wave0.sql`
+- `infra/sql/prod-db/rollback/rollback-phase-d.sql`
+- `infra/sql/prod-db/rollback/rollback-phase-c.sql`
+- `infra/sql/prod-db/rollback/rollback-phase-b.sql`
+- `infra/sql/prod-db/rollback/rollback-phase-a.sql`
+- `infra/sql/prod-db/rollback/rollback-remaining-wave0.sql`
+- `infra/sql/prod-db/rollback/rollback-all.sql`
+
+## Execution Record Template
+
+- Record every phase using `PROD-DB-EXECUTION-RECORD-TEMPLATE-20260718.md`

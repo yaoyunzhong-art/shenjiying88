@@ -4,6 +4,7 @@ import path from "node:path";
 const cwd = process.cwd();
 const baselinePath = "/tmp/m5-empty-to-schema.sql";
 const outDir = path.join(cwd, "infra/sql/prod-db");
+const rollbackDir = path.join(outDir, "rollback");
 
 const wave0Enums = [
   "FoundationScopeType",
@@ -155,6 +156,7 @@ function main() {
 
   const baseline = fs.readFileSync(baselinePath, "utf8");
   fs.mkdirSync(outDir, { recursive: true });
+  fs.mkdirSync(rollbackDir, { recursive: true });
 
   writeFile(
     "foundation-wave0.sql",
@@ -289,10 +291,125 @@ function main() {
     'select count(*) as audit_log_count from "AuditLog";',
   ]);
 
+  writeRollbackFile("rollback-phase-d.sql", [
+    "-- Rollback phase D",
+    "-- Empty-table rollback only",
+    ...buildDropTableSections(phaseDTables),
+  ]);
+
+  writeRollbackFile("rollback-phase-c.sql", [
+    "-- Rollback phase C",
+    "-- Empty-table rollback only",
+    ...buildDropTableSections(phaseCTables),
+  ]);
+
+  writeRollbackFile("rollback-phase-b.sql", [
+    "-- Rollback phase B",
+    "-- Drop foreign keys first, then tables",
+    ...buildDropConstraintSections("RegionalConfig", ["RegionalConfig_marketProfileId_fkey"]),
+    ...buildDropConstraintSections("RegionalConfigOverride", [
+      "RegionalConfigOverride_marketProfileId_fkey",
+      "RegionalConfigOverride_regionalConfigId_fkey",
+      "RegionalConfigOverride_tenantId_fkey",
+      "RegionalConfigOverride_brandId_fkey",
+      "RegionalConfigOverride_storeId_fkey",
+    ]),
+    ...buildDropConstraintSections("PortalSite", [
+      "PortalSite_marketProfileId_fkey",
+      "PortalSite_tenantId_fkey",
+      "PortalSite_brandId_fkey",
+      "PortalSite_storeId_fkey",
+    ]),
+    ...buildDropConstraintSections("EmailChannelConfig", ["EmailChannelConfig_marketProfileId_fkey"]),
+    ...buildDropConstraintSections("SocialChannelConfig", ["SocialChannelConfig_marketProfileId_fkey"]),
+    ...buildDropConstraintSections("TaxPolicyConfig", ["TaxPolicyConfig_marketProfileId_fkey"]),
+    ...buildDropTableSections([...phaseBTables].reverse()),
+  ]);
+
+  writeRollbackFile("rollback-phase-a.sql", [
+    "-- Rollback phase A",
+    "-- Drop foreign keys first, then tables",
+    ...buildDropConstraintSections("User", ["User_tenantId_fkey"]),
+    ...buildDropConstraintSections("Store", [
+      "Store_defaultMarketProfileId_fkey",
+      "Store_brandId_fkey",
+      "Store_tenantId_fkey",
+    ]),
+    ...buildDropConstraintSections("Brand", [
+      "Brand_defaultMarketProfileId_fkey",
+      "Brand_tenantId_fkey",
+    ]),
+    ...buildDropConstraintSections("Tenant", ["Tenant_defaultMarketProfileId_fkey"]),
+    ...buildDropTableSections([...phaseATables].reverse()),
+  ]);
+
+  writeRollbackFile("rollback-remaining-wave0.sql", [
+    "-- Rollback remaining wave 0 enums",
+    "-- Drop only if no dependent objects remain",
+    ...buildDropTypeSections([...remainingWave0Enums].reverse()),
+  ]);
+
+  writeRollbackFile("rollback-foundation-wave2-wave3.sql", [
+    "-- Rollback foundation wave 2 and wave 3",
+    "-- Drop foreign keys first, then dependent tables",
+    ...buildDropConstraintSections("AiExecutionRecord", [
+      "AiExecutionRecord_promptTemplateId_fkey",
+      "AiExecutionRecord_modelConfigId_fkey",
+    ]),
+    ...buildDropConstraintSections("AiPromptTemplate", ["AiPromptTemplate_modelConfigId_fkey"]),
+    ...buildDropConstraintSections("RestoreRun", ["RestoreRun_backupSnapshotId_fkey"]),
+    ...buildDropConstraintSections("QuotaLedger", ["QuotaLedger_rateLimitPolicyId_fkey"]),
+    ...buildDropConstraintSections("EdgeSyncTask", [
+      "EdgeSyncTask_eventId_fkey",
+      "EdgeSyncTask_edgeNodeId_fkey",
+    ]),
+    ...buildDropConstraintSections("NotificationDispatch", ["NotificationDispatch_templateId_fkey"]),
+    ...buildDropConstraintSections("WebhookDelivery", [
+      "WebhookDelivery_eventId_fkey",
+      "WebhookDelivery_subscriptionId_fkey",
+    ]),
+    ...buildDropConstraintSections("ConfigRevision", ["ConfigRevision_configEntryId_fkey"]),
+    ...buildDropConstraintSections("OrganizationMembership", [
+      "OrganizationMembership_organizationNodeId_fkey",
+      "OrganizationMembership_identityAccountId_fkey",
+    ]),
+    ...buildDropConstraintSections("OrganizationNode", ["OrganizationNode_parentId_fkey"]),
+    ...buildDropTableSections([...wave2Tables].reverse()),
+  ]);
+
+  writeRollbackFile("rollback-foundation-wave1.sql", [
+    "-- Rollback foundation wave 1",
+    "-- Empty-table rollback only",
+    ...buildDropTableSections([...wave1Tables].reverse()),
+  ]);
+
+  writeRollbackFile("rollback-foundation-wave0.sql", [
+    "-- Rollback foundation wave 0 enums",
+    "-- Drop only if no dependent objects remain",
+    ...buildDropTypeSections([...wave0Enums].reverse()),
+  ]);
+
+  writeRollbackFile("rollback-all.sql", [
+    "-- Rollback entire bootstrap plan",
+    "-- Empty-table rollback only; review before use",
+    ...readGeneratedRollbackSections([
+      "rollback-phase-d.sql",
+      "rollback-phase-c.sql",
+      "rollback-phase-b.sql",
+      "rollback-phase-a.sql",
+      "rollback-remaining-wave0.sql",
+      "rollback-foundation-wave2-wave3.sql",
+      "rollback-foundation-wave1.sql",
+      "rollback-foundation-wave0.sql",
+    ]),
+  ]);
+
   const summary = {
     baselinePath,
     outDir,
+    rollbackDir,
     files: fs.readdirSync(outDir).sort(),
+    rollbackFiles: fs.readdirSync(rollbackDir).sort(),
     wave0Enums: wave0Enums.length,
     wave1Tables: wave1Tables.length,
     wave1Indexes: wave1Tables.reduce((count, name) => count + extractIndexes(baseline, name).length, 0),
@@ -314,6 +431,11 @@ function main() {
 function writeFile(fileName, sections) {
   const contents = `${sections.filter(Boolean).join("\n\n")}\n`;
   fs.writeFileSync(path.join(outDir, fileName), contents);
+}
+
+function writeRollbackFile(fileName, sections) {
+  const contents = `${sections.filter(Boolean).join("\n\n")}\n`;
+  fs.writeFileSync(path.join(rollbackDir, fileName), contents);
 }
 
 function collectTableSections(baseline, tableName) {
@@ -356,6 +478,31 @@ function extractForeignKey(baseline, constraintName) {
     throw new Error(`Missing foreign key: ${constraintName}`);
   }
   return match[0];
+}
+
+function buildDropConstraintSections(tableName, constraints) {
+  return [
+    `-- Drop constraints for ${tableName}`,
+    constraints.map((name) => `ALTER TABLE IF EXISTS "${tableName}" DROP CONSTRAINT IF EXISTS "${name}";`).join("\n"),
+  ];
+}
+
+function buildDropTableSections(tableNames) {
+  return [
+    "-- Drop tables",
+    tableNames.map((name) => `DROP TABLE IF EXISTS "${name}";`).join("\n"),
+  ];
+}
+
+function buildDropTypeSections(typeNames) {
+  return [
+    "-- Drop enum types",
+    typeNames.map((name) => `DROP TYPE IF EXISTS "${name}";`).join("\n"),
+  ];
+}
+
+function readGeneratedRollbackSections(fileNames) {
+  return fileNames.map((fileName) => fs.readFileSync(path.join(rollbackDir, fileName), "utf8").trim());
 }
 
 main();

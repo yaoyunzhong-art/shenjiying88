@@ -9,10 +9,11 @@
 
 import assert from 'node:assert/strict';
 import { describe, it, test } from 'node:test';
+import fs from 'node:fs';
 
 // 直接从 page.tsx 导入纯日志/数据函数和常量
 // 注意: page.tsx 导出了 Category 等类型, 但我们这里测试核心逻辑
-import fs from 'node:fs';
+import {
   CATEGORY_LABELS,
   STATUS_LABELS,
   PRIORITY_LABELS,

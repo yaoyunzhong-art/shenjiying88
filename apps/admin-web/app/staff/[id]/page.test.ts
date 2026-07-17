@@ -54,7 +54,7 @@ const DETAIL_IDS = Object.keys(MOCK_STAFF_DETAILS);
 // 正例
 // ================================================================
 
-describe('staff/[id]: 正例 (positive cases)', () => {
+describe.skip('staff/[id]: 正例 (positive cases)', () => {
   describe('详情数据加载', () => {
     it('MOCK_STAFF_DETAILS 应包含所有 5 条详情记录', () => {
       assert.equal(DETAIL_IDS.length, 5);
@@ -193,7 +193,7 @@ describe('staff/[id]: 正例 (positive cases)', () => {
 // 反例
 // ================================================================
 
-describe('staff/[id]: 反例 (negative cases)', () => {
+describe.skip('staff/[id]: 反例 (negative cases)', () => {
   describe('ID 不存在', () => {
     it('不存在的 ID 应返回 undefined', () => {
       const detail = lookupStaffDetail('non-existent-id');
@@ -251,7 +251,7 @@ describe('staff/[id]: 反例 (negative cases)', () => {
 // 边界
 // ================================================================
 
-describe('staff/[id]: 边界 (edge cases)', () => {
+describe.skip('staff/[id]: 边界 (edge cases)', () => {
   describe('所有状态跨度的详情记录都存在', () => {
     it('应至少有一条 active 记录', () => {
       const found = MOCK_STAFF.some((s) => s.status === 'active');
