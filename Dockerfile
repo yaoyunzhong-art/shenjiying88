@@ -46,6 +46,8 @@ COPY packages/config-typescript/package.json packages/config-typescript/
 # API 特有的 prisma schema (用于 generate)
 COPY apps/api/prisma                apps/api/prisma
 
+RUN pnpm config set registry https://registry.npmmirror.com
+
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Prisma generate (需要 schema + client 依赖)
