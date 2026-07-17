@@ -25,9 +25,6 @@ WORKDIR /workspace
 # ─── 依赖层 ──────────────────────────────────────────────
 FROM base AS deps
 
-RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine|https://mirrors.aliyun.com/alpine|g' /etc/apk/repositories \
- && apk add --no-cache openssl
-
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json turbo.json eslint.config.mjs ./
 
 # 复制所有 apps/package.json (结构声明,不含源码)
@@ -90,9 +87,6 @@ FROM base AS api-prod
 
 WORKDIR /app
 
-RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine|https://mirrors.aliyun.com/alpine|g' /etc/apk/repositories \
- && apk add --no-cache tini wget
-
 RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
 
 # 使用 pnpm deploy 提取最小生产依赖
@@ -112,10 +106,8 @@ USER app
 
 EXPOSE 3001
 
-ENTRYPOINT ["/sbin/tini", "--"]
-
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:3001/api/v1/health/ping || exit 1
+  CMD node -e "fetch('http://127.0.0.1:3001/api/v1/health/ping').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "dist/main.js"]
 
