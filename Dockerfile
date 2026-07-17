@@ -12,7 +12,7 @@
 # ═══════════════════════════════════════════════════════════════
 
 # ─── 基础镜像 ─────────────────────────────────────────────
-FROM registry.cn-hangzhou.aliyuncs.com/library/node:22-alpine AS base
+FROM docker.m.daocloud.io/library/node:22-alpine AS base
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
