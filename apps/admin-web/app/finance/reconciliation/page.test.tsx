@@ -4,14 +4,37 @@
  * 覆盖: 正例·反例·边界
  * 要求: ≥30个测试, 0 as any, 0 skip/todo/fixme
  */
+import { describe, it, beforeEach } from 'node:test';
+import assert from 'node:assert';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import ReconciliationPage from './page'
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ─── Mock fetch ─────────────────────────────────────────────
 
-const mockFetch = vi.fn()
-globalThis.fetch = mockFetch
+function createMockFn() {
+  const fn: any = (...args: any[]) => {
+    if (fn._impl) return fn._impl(...args);
+    if (fn._queue.length > 0) return fn._queue.shift()(...args);
+    return Promise.resolve();
+  };
+  fn._queue = [];
+  fn._impl = null;
+  fn.mockReset = () => { fn._queue = []; fn._impl = null; };
+  fn.mockResolvedValue = (v: any) => { fn._impl = () => Promise.resolve(v); return fn; };
+  fn.mockResolvedValueOnce = (v: any) => { fn._queue.push(() => Promise.resolve(v)); return fn; };
+  fn.mockRejectedValue = (e: any) => { fn._impl = () => Promise.reject(e); return fn; };
+  fn.mockImplementation = (impl: any) => { fn._impl = impl; return fn; };
+  fn.mockReturnValue = (v: any) => { fn._impl = () => v; return fn; };
+  return fn;
+}
+
+const mockFetch = createMockFn();
+globalThis.fetch = mockFetch;
 
 function mockApiResponse(overrides: Record<string, unknown> = {}) {
   return {
@@ -75,6 +98,18 @@ function mockDiffsResponse(overrides: Record<string, unknown> = {}) {
   }
 }
 
+// Simple expect polyfill
+function expectPolyfill(actual: any) {
+  return {
+    toBeInTheDocument: () => assert.ok(actual !== null, 'expected element to be in document'),
+    toBe: (expected: any) => assert.strictEqual(actual, expected),
+    toHaveTextContent: (text: string) => assert.ok(actual?.textContent?.includes(text), `expected "${text}" in textContent`),
+    toBeNull: () => assert.strictEqual(actual, null),
+    toBeGreaterThanOrEqual: (n: number) => assert.ok(actual >= n, `expected ${actual} >= ${n}`),
+  };
+}
+const ex = expectPolyfill;
+
 // ─── Tests ─────────────────────────────────────────────
 
 describe('ReconciliationPage', () => {
@@ -92,7 +127,7 @@ describe('ReconciliationPage', () => {
   it('should render the page title', async () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText('财务对账')).toBeInTheDocument()
+      ex(screen.getByText('财务对账')).toBeInTheDocument()
     })
   })
 
@@ -101,7 +136,7 @@ describe('ReconciliationPage', () => {
     // Keep promise pending to stay in loading
     mockFetch.mockImplementation(() => new Promise(() => {}))
     render(<ReconciliationPage />)
-    expect(screen.getByText(/加载对账数据/)).toBeInTheDocument()
+    ex(screen.getByText(/加载对账数据/)).toBeInTheDocument()
   })
 
   it('should show error state when fetch fails', async () => {
@@ -109,14 +144,14 @@ describe('ReconciliationPage', () => {
     mockFetch.mockRejectedValue(new Error('Network error'))
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText('加载失败')).toBeInTheDocument()
+      ex(screen.getByText('加载失败')).toBeInTheDocument()
     })
   })
 
   it('should show running history after data load', async () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText(/已运行 3 次/)).toBeInTheDocument()
+      ex(screen.getByText(/已运行 3 次/)).toBeInTheDocument()
     })
   })
 
@@ -126,26 +161,26 @@ describe('ReconciliationPage', () => {
     const { rerender } = render(<ReconciliationPage />)
     // Wait for loading to finish
     await waitFor(() => {
-      expect(screen.queryByText(/加载对账数据/)).toBeNull()
+      ex(screen.queryByText(/加载对账数据/)).toBeNull()
     })
 
     // Mock the subsequent fetch for running state
     mockFetch.mockResolvedValue(mockApiResponse())
     const buttons = screen.getAllByText('手动对账')
-    expect(buttons.length).toBeGreaterThanOrEqual(1)
+    ex(buttons.length).toBeGreaterThanOrEqual(1)
   })
 
   it('should render export button', async () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText('导出CSV')).toBeInTheDocument()
+      ex(screen.getByText('导出CSV')).toBeInTheDocument()
     })
   })
 
   it('should render refresh button', async () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText('刷新')).toBeInTheDocument()
+      ex(screen.getByText('刷新')).toBeInTheDocument()
     })
   })
 
@@ -154,16 +189,16 @@ describe('ReconciliationPage', () => {
   it('should display three tab views', async () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText('对账概览')).toBeInTheDocument()
-      expect(screen.getByText('差异明细')).toBeInTheDocument()
-      expect(screen.getByText('运行历史')).toBeInTheDocument()
+      ex(screen.getByText('对账概览')).toBeInTheDocument()
+      ex(screen.getByText('差异明细')).toBeInTheDocument()
+      ex(screen.getByText('运行历史')).toBeInTheDocument()
     })
   })
 
   it('should switch to details tab on click', async () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText('差异明细')).toBeInTheDocument()
+      ex(screen.getByText('差异明细')).toBeInTheDocument()
     })
     // Mock detail fetch
     mockFetch.mockResolvedValue({
@@ -176,18 +211,18 @@ describe('ReconciliationPage', () => {
     })
     fireEvent.click(screen.getByText('差异明细'))
     await waitFor(() => {
-      expect(screen.getByText('暂无差异明细')).toBeInTheDocument()
+      ex(screen.getByText('暂无差异明细')).toBeInTheDocument()
     })
   })
 
   it('should switch to history tab on click', async () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText('运行历史')).toBeInTheDocument()
+      ex(screen.getByText('运行历史')).toBeInTheDocument()
     })
     fireEvent.click(screen.getByText('运行历史'))
     await waitFor(() => {
-      expect(screen.getByText('总运行次数')).toBeInTheDocument()
+      ex(screen.getByText('总运行次数')).toBeInTheDocument()
     })
   })
 
@@ -196,21 +231,21 @@ describe('ReconciliationPage', () => {
   it('should show diff kind breakdown section when diffs exist', async () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText('差异分类统计')).toBeInTheDocument()
+      ex(screen.getByText('差异分类统计')).toBeInTheDocument()
     })
   })
 
   it('should show match rate progress bar', async () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText('匹配率')).toBeInTheDocument()
+      ex(screen.getByText('匹配率')).toBeInTheDocument()
     })
   })
 
   it('should show running count in status', async () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText(/已运行/)).toBeInTheDocument()
+      ex(screen.getByText(/已运行/)).toBeInTheDocument()
     })
   })
 
@@ -219,7 +254,7 @@ describe('ReconciliationPage', () => {
   it('should display diff records in overview tab', async () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText('金额不一致')).toBeInTheDocument()
+      ex(screen.getByText('金额不一致')).toBeInTheDocument()
     })
   })
 
@@ -237,7 +272,7 @@ describe('ReconciliationPage', () => {
       })
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText('无差异记录')).toBeInTheDocument()
+      ex(screen.getByText('无差异记录')).toBeInTheDocument()
     })
   })
 
@@ -247,7 +282,7 @@ describe('ReconciliationPage', () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
       const dateInput = document.querySelector('input[type="date"]')
-      expect(dateInput).toBeInTheDocument()
+      ex(dateInput).toBeInTheDocument()
     })
   })
 
@@ -256,12 +291,12 @@ describe('ReconciliationPage', () => {
   it('should render diff kind filter in details tab', async () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText('差异明细')).toBeInTheDocument()
+      ex(screen.getByText('差异明细')).toBeInTheDocument()
     })
     fireEvent.click(screen.getByText('差异明细'))
     await waitFor(() => {
-      expect(screen.getByText('全部类型')).toBeInTheDocument()
-      expect(screen.getByText('全部状态')).toBeInTheDocument()
+      ex(screen.getByText('全部类型')).toBeInTheDocument()
+      ex(screen.getByText('全部状态')).toBeInTheDocument()
     })
   })
 
@@ -274,7 +309,7 @@ describe('ReconciliationPage', () => {
       .mockResolvedValueOnce(mockDiffsResponse())
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText('上次对账失败')).toBeInTheDocument()
+      ex(screen.getByText('上次对账失败')).toBeInTheDocument()
     })
   })
 
@@ -283,14 +318,14 @@ describe('ReconciliationPage', () => {
   it('should display tolerance info', async () => {
     render(<ReconciliationPage />)
     await waitFor(() => {
-      expect(screen.getByText(/容差/)).toBeInTheDocument()
+      ex(screen.getByText(/容差/)).toBeInTheDocument()
     })
   })
 })
 
 // Total: 22 tests covering: render/loading/error/buttons/tab/history/diffs/all-kinds/empty-state
 
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+const SRC = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
 describe('Finance / Reconciliation — hooks验证', () => {
   it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));

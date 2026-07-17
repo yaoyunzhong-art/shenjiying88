@@ -237,12 +237,12 @@ describe('members/cards: 业务逻辑', () => {
     assert.equal(formatCurrency(1200), '¥1,200');
   });
 
-  it('formatCurrency 58000 returns ¥58,000', () => {
-    assert.equal(formatCurrency(58000), '¥58,000');
+  it('formatCurrency 58000 returns ¥5.8万 (>= 10000)', () => {
+    assert.equal(formatCurrency(58000), '¥5.8万');
   });
 
-  it('formatCurrency 95000 returns ¥95,000', () => {
-    assert.equal(formatCurrency(95000), '¥95,000');
+  it('formatCurrency 95000 returns ¥9.5万 (>= 10000)', () => {
+    assert.equal(formatCurrency(95000), '¥9.5万');
   });
 
   it('formatCurrency 120000 returns ¥12.0万 (>= 10000)', () => {

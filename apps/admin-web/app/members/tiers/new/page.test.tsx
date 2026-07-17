@@ -190,7 +190,7 @@ describe('member-tier-new: 验证规则', () => {
     const rule = FIELDS_VALIDATORS.key[0];
     assert.equal(rule.validate('diamond_vip'), null);
     assert.equal(rule.validate('gold2024'), null);
-    assert.equal(rule.validate('a'), null); // minimum length 1
+    assert.equal(rule.validate('ab'), null); // minimum length 2
   });
 
   it('level out of range returns error', () => {

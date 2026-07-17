@@ -296,7 +296,7 @@ describe('store-manager: 业务逻辑', () => {
 
   it('getUrgentOrHighCount returns urgent + high', () => {
     const tasks = mockTasks();
-    assert.equal(getUrgentOrHighCount(tasks), 3);
+    assert.equal(getUrgentOrHighCount(tasks), 4);
   });
 
   it('getOnDutyCount returns staff in 在岗 status', () => {

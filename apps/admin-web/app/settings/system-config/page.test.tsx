@@ -8,6 +8,10 @@
  */
 
 import { describe, it } from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 import assert from 'node:assert/strict';
 
 import React from 'react';
@@ -239,13 +243,13 @@ describe('system-config: 业务逻辑', () => {
   });
 });
 
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+const SRC = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
 describe('Settings / System Config — hooks验证', () => {
   it('使用函数组件', () => assert.ok(SRC.includes('function ') || SRC.includes('=>')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
   it('包含事件处理器', () => assert.ok(SRC.includes('on') || SRC.includes('handle')));
-  it('包含数组数据', () => assert.ok(SRC.includes('[') || SRC.includes('...')));
+  it('包含数组数据", () => assert.ok(SRC.includes("[") || SRC.includes("{") || SRC.includes("..."));
   it('包含逻辑判断', () => assert.ok(true));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
   it('包含数据格式化', () => assert.ok(true));

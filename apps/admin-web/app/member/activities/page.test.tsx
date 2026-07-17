@@ -8,8 +8,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
-import {
 import fs from 'node:fs';
+import {
   type ActivityItem,
   type ActivityEventType,
   type ActivityStatus,
