@@ -1,0 +1,56 @@
+stages:
+  - build
+
+variables:
+  ACR_REGISTRY: "shenjiying88acr20260717-registry.cn-hangzhou.cr.aliyuncs.com"
+  ACR_NAMESPACE: "shenjiying88"
+  IMAGE_TAG: "latest"
+
+  KANIKO_IMAGE: "registry.cn-hangzhou.aliyuncs.com/acs-demo-ns/kaniko-executor:v1.8.1"
+  KANIKO_CACHE_REPO: "${ACR_REGISTRY}/${ACR_NAMESPACE}/kaniko-cache"
+
+  DOCKER_CONFIG: "/kaniko/.docker"
+
+build:api:
+  stage: build
+  image:
+    name: $KANIKO_IMAGE
+    entrypoint: [""]
+  script:
+    - mkdir -p "$DOCKER_CONFIG"
+    - AUTH="$(printf '%s:%s' "$ACR_USERNAME" "$ACR_PASSWORD" | base64 | tr -d '\n')"
+    - printf '{"auths":{"%s":{"auth":"%s"}}}\n' "$ACR_REGISTRY" "$AUTH" > "$DOCKER_CONFIG/config.json"
+    - /kaniko/executor --context "$CI_PROJECT_DIR" --dockerfile Dockerfile --target api-prod --destination "${ACR_REGISTRY}/${ACR_NAMESPACE}/m5-api:${IMAGE_TAG}" --cache=true --cache-repo "${KANIKO_CACHE_REPO}"
+
+build:admin:
+  stage: build
+  image:
+    name: $KANIKO_IMAGE
+    entrypoint: [""]
+  script:
+    - mkdir -p "$DOCKER_CONFIG"
+    - AUTH="$(printf '%s:%s' "$ACR_USERNAME" "$ACR_PASSWORD" | base64 | tr -d '\n')"
+    - printf '{"auths":{"%s":{"auth":"%s"}}}\n' "$ACR_REGISTRY" "$AUTH" > "$DOCKER_CONFIG/config.json"
+    - /kaniko/executor --context "$CI_PROJECT_DIR" --dockerfile Dockerfile --target admin-prod --destination "${ACR_REGISTRY}/${ACR_NAMESPACE}/m5-admin-web:${IMAGE_TAG}" --cache=true --cache-repo "${KANIKO_CACHE_REPO}"
+
+build:storefront:
+  stage: build
+  image:
+    name: $KANIKO_IMAGE
+    entrypoint: [""]
+  script:
+    - mkdir -p "$DOCKER_CONFIG"
+    - AUTH="$(printf '%s:%s' "$ACR_USERNAME" "$ACR_PASSWORD" | base64 | tr -d '\n')"
+    - printf '{"auths":{"%s":{"auth":"%s"}}}\n' "$ACR_REGISTRY" "$AUTH" > "$DOCKER_CONFIG/config.json"
+    - /kaniko/executor --context "$CI_PROJECT_DIR" --dockerfile Dockerfile --target storefront-prod --destination "${ACR_REGISTRY}/${ACR_NAMESPACE}/m5-storefront-web:${IMAGE_TAG}" --cache=true --cache-repo "${KANIKO_CACHE_REPO}"
+
+build:tob:
+  stage: build
+  image:
+    name: $KANIKO_IMAGE
+    entrypoint: [""]
+  script:
+    - mkdir -p "$DOCKER_CONFIG"
+    - AUTH="$(printf '%s:%s' "$ACR_USERNAME" "$ACR_PASSWORD" | base64 | tr -d '\n')"
+    - printf '{"auths":{"%s":{"auth":"%s"}}}\n' "$ACR_REGISTRY" "$AUTH" > "$DOCKER_CONFIG/config.json"
+    - /kaniko/executor --context "$CI_PROJECT_DIR" --dockerfile Dockerfile --target tob-prod --destination "${ACR_REGISTRY}/${ACR_NAMESPACE}/m5-tob-web:${IMAGE_TAG}" --cache=true --cache-repo "${KANIKO_CACHE_REPO}"
