@@ -1,5 +1,5 @@
 import { FoundationScopeType, IdentitySubjectType, Prisma, QuotaPeriod } from '@prisma/client'
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../../../prisma/prisma.service'
 import {
   cancelGovernanceApproval,
@@ -62,6 +62,18 @@ interface AiUsageInput {
 @Injectable()
 export class TrustGovernanceService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private readonly logger = new Logger(TrustGovernanceService.name)
+  private readonly auditFallbackRecords: Array<{
+    id: string
+    tenantId: string
+    action: string
+    operatorId: string
+    sourceChannel: string | null
+    metadata: unknown
+    createdAt: Date
+    payload: unknown
+  }> = []
 
   private readonly aiBudgets = {
     'tenant-demo': { monthlyBudgetTokens: 50_000, remainingTokens: 18_000 },
@@ -401,21 +413,57 @@ export class TrustGovernanceService {
           }
         : maskedDetails
 
-    const persisted = await this.prisma.auditLog.create({
-      data: {
-        tenantId: context?.tenantId ?? 'tenant-demo',
-        scopeType: FoundationScopeType.TENANT,
-        action: eventType,
-        operatorId: context?.actorId ?? 'foundation-system',
-        operatorType: IdentitySubjectType.SERVICE_ACCOUNT,
-        sourceChannel: context?.source,
-        purpose: eventType,
-        payload: this.toInputJsonValue(persistedPayload),
-        metadata: this.toInputJsonValue({
-          riskLevel: context?.riskLevel ?? 'medium'
-        })
-      }
+    const payload = this.toInputJsonValue(persistedPayload)
+    const metadata = this.toInputJsonValue({
+      riskLevel: context?.riskLevel ?? 'medium'
     })
+    const fallbackRecord: {
+      id: string
+      tenantId: string
+      action: string
+      operatorId: string
+      sourceChannel: string | null
+      metadata: unknown
+      createdAt: Date
+      payload: unknown
+    } = {
+      id: `audit-fallback-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+      tenantId: context?.tenantId ?? 'tenant-demo',
+      action: eventType,
+      operatorId: context?.actorId ?? 'foundation-system',
+      sourceChannel: context?.source ?? null,
+      metadata,
+      createdAt: new Date(),
+      payload,
+    }
+
+    let persisted = fallbackRecord
+    let retention: 'prisma' | 'memory' = 'memory'
+
+    try {
+      persisted = await this.prisma.auditLog.create({
+        data: {
+          tenantId: fallbackRecord.tenantId,
+          scopeType: FoundationScopeType.TENANT,
+          action: fallbackRecord.action,
+          operatorId: fallbackRecord.operatorId,
+          operatorType: IdentitySubjectType.SERVICE_ACCOUNT,
+          sourceChannel: fallbackRecord.sourceChannel,
+          purpose: eventType,
+          payload,
+          metadata
+        }
+      })
+      retention = 'prisma'
+    } catch (error) {
+      if (!this.shouldUseAuditFallback(error)) {
+        throw error
+      }
+      this.auditFallbackRecords.unshift(fallbackRecord)
+      this.logger.warn(
+        `[recordAudit] prisma unavailable, switched to in-memory fallback: ${this.describePrismaFallback(error)}`
+      )
+    }
 
     return {
       ...this.toAuditRecord({
@@ -428,7 +476,7 @@ export class TrustGovernanceService {
         createdAt: persisted.createdAt,
         payload: persisted.payload
       }),
-      retention: 'prisma'
+      retention
     }
   }
 
@@ -446,24 +494,45 @@ export class TrustGovernanceService {
   } = {}) {
     const from = this.getDate(filters.from)
     const to = this.getDate(filters.to)
-    const records = await this.prisma.auditLog.findMany({
-      where: {
-        tenantId: filters.tenantId,
-        action: filters.action,
-        sourceChannel: filters.source,
-        requestId: filters.requestId,
-        operatorId: filters.actorId,
-        createdAt:
-          from || to
-            ? {
-                ...(from ? { gte: from } : {}),
-                ...(to ? { lte: to } : {})
-              }
-            : undefined
-      },
-      orderBy: [{ createdAt: 'desc' }],
-      take: Math.max((filters.limit ?? 20) * 3, filters.limit ?? 20)
-    })
+    let records: Array<{
+      id: string
+      tenantId: string
+      action: string
+      operatorId: string
+      sourceChannel: string | null
+      metadata: unknown
+      createdAt: Date
+      payload: unknown
+    }>
+
+    try {
+      records = await this.prisma.auditLog.findMany({
+        where: {
+          tenantId: filters.tenantId,
+          action: filters.action,
+          sourceChannel: filters.source,
+          requestId: filters.requestId,
+          operatorId: filters.actorId,
+          createdAt:
+            from || to
+              ? {
+                  ...(from ? { gte: from } : {}),
+                  ...(to ? { lte: to } : {})
+                }
+              : undefined
+        },
+        orderBy: [{ createdAt: 'desc' }],
+        take: Math.max((filters.limit ?? 20) * 3, filters.limit ?? 20)
+      })
+    } catch (error) {
+      if (!this.shouldUseAuditFallback(error)) {
+        throw error
+      }
+      this.logger.warn(
+        `[getAuditRecords] prisma unavailable, served from in-memory fallback: ${this.describePrismaFallback(error)}`
+      )
+      records = [...this.auditFallbackRecords]
+    }
 
     const filtered = records
       .map((record) =>
@@ -1308,6 +1377,18 @@ export class TrustGovernanceService {
 
   private getRiskLevel(value: unknown): AuditRecord['riskLevel'] {
     return value === 'low' || value === 'medium' || value === 'high' ? value : 'medium'
+  }
+
+  private shouldUseAuditFallback(error: unknown) {
+    const code = typeof error === 'object' && error && 'code' in error ? (error as { code?: unknown }).code : undefined
+    return code === 'P2021' || code === 'P1010' || code === 'P1001'
+  }
+
+  private describePrismaFallback(error: unknown) {
+    if (typeof error === 'object' && error && 'code' in error) {
+      return String((error as { code?: unknown }).code ?? 'unknown')
+    }
+    return 'unknown'
   }
 
   private toRateLimitPolicyRecord(policy: {
