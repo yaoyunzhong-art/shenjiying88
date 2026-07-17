@@ -1,0 +1,14 @@
+updated_at=2026-07-18 04:48:34
+mode=online
+loop_index=1
+preflight_rc=0
+dry_run_rc=0
+verify_rc=35
+tls_rc=1
+cutover_candidate=false
+
+criteria:
+- preflight_rc=0
+- dry_run_rc=0
+- tls_rc=0
+- verify_rc=0

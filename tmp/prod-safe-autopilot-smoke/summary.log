@@ -1,0 +1,406 @@
+[2026-07-18 04:42:59] prod-safe-autopilot started
+[2026-07-18 04:42:59] env_file=/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/templates/m5-public-endpoints.env.example
+[2026-07-18 04:42:59] duration_hours=1 interval_seconds=1 iterations=3600
+[2026-07-18 04:42:59] output_dir=tmp/prod-safe-autopilot-smoke
+[2026-07-18 04:42:59] loop=1/3600 mode=online started
+[2026-07-18 04:43:06] loop=1/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:43:07] loop=2/3600 mode=online started
+[2026-07-18 04:43:14] loop=2/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:43:15] loop=3/3600 mode=online started
+[2026-07-18 04:43:22] loop=3/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:43:23] loop=4/3600 mode=online started
+[2026-07-18 04:43:29] loop=4/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:43:30] loop=5/3600 mode=online started
+[2026-07-18 04:43:37] loop=5/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:43:38] loop=6/3600 mode=online started
+[2026-07-18 04:43:44] loop=6/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:43:45] loop=7/3600 mode=online started
+[2026-07-18 04:43:52] loop=7/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:43:53] loop=8/3600 mode=online started
+[2026-07-18 04:44:02] loop=8/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:44:03] loop=9/3600 mode=online started
+[2026-07-18 04:44:11] loop=9/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:44:12] loop=10/3600 mode=online started
+[2026-07-18 04:44:19] loop=10/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:44:20] loop=11/3600 mode=online started
+[2026-07-18 04:44:28] loop=11/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:44:29] loop=12/3600 mode=online started
+[2026-07-18 04:44:37] loop=12/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:44:38] loop=13/3600 mode=online started
+[2026-07-18 04:44:46] loop=13/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:44:47] loop=14/3600 mode=online started
+[2026-07-18 04:44:55] loop=14/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:44:56] loop=15/3600 mode=online started
+[2026-07-18 04:45:03] loop=15/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:45:04] loop=16/3600 mode=online started
+[2026-07-18 04:45:13] loop=16/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:45:14] loop=17/3600 mode=online started
+[2026-07-18 04:45:21] loop=17/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:45:22] loop=18/3600 mode=online started
+[2026-07-18 04:45:30] loop=18/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:45:31] loop=19/3600 mode=online started
+[2026-07-18 04:45:39] loop=19/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:45:40] loop=20/3600 mode=online started
+[2026-07-18 04:45:48] loop=20/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:45:49] loop=21/3600 mode=online started
+[2026-07-18 04:45:55] loop=21/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:45:56] loop=22/3600 mode=online started
+[2026-07-18 04:46:03] loop=22/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:46:03] loop=23/3600 mode=online started
+[2026-07-18 04:46:10] loop=23/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:46:11] loop=24/3600 mode=online started
+[2026-07-18 04:46:17] loop=24/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:46:18] loop=25/3600 mode=online started
+[2026-07-18 04:46:25] loop=25/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:46:26] loop=26/3600 mode=online started
+[2026-07-18 04:46:32] loop=26/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:46:33] loop=27/3600 mode=online started
+[2026-07-18 04:46:40] loop=27/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:46:41] loop=28/3600 mode=online started
+[2026-07-18 04:46:48] loop=28/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:46:49] loop=29/3600 mode=online started
+[2026-07-18 04:46:55] loop=29/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:46:56] loop=30/3600 mode=online started
+[2026-07-18 04:47:03] loop=30/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:47:04] loop=31/3600 mode=online started
+[2026-07-18 04:47:10] loop=31/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:47:11] loop=32/3600 mode=online started
+[2026-07-18 04:47:18] loop=32/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:47:19] loop=33/3600 mode=online started
+[2026-07-18 04:47:26] loop=33/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:47:27] loop=34/3600 mode=online started
+[2026-07-18 04:47:33] loop=34/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:47:34] loop=35/3600 mode=online started
+[2026-07-18 04:47:41] loop=35/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:47:42] loop=36/3600 mode=online started
+[2026-07-18 04:47:48] loop=36/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:47:49] loop=37/3600 mode=online started
+[2026-07-18 04:47:56] loop=37/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:47:57] loop=38/3600 mode=online started
+[2026-07-18 04:48:03] loop=38/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:48:04] loop=39/3600 mode=online started
+[2026-07-18 04:48:11] loop=39/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:48:12] loop=40/3600 mode=online started
+[2026-07-18 04:48:19] loop=40/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:48:20] loop=41/3600 mode=online started
+[2026-07-18 04:48:26] loop=41/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:48:27] loop=42/3600 mode=online started
+[2026-07-18 04:48:33] loop=42/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:48:34] loop=43/3600 mode=online started
+[2026-07-18 04:48:41] loop=43/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:48:42] loop=44/3600 mode=online started
+[2026-07-18 04:48:48] loop=44/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:48:49] loop=45/3600 mode=online started
+[2026-07-18 04:48:56] loop=45/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:48:57] loop=46/3600 mode=online started
+[2026-07-18 04:49:03] loop=46/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:49:04] loop=47/3600 mode=online started
+[2026-07-18 04:49:11] loop=47/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:49:12] loop=48/3600 mode=online started
+[2026-07-18 04:49:18] loop=48/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:49:19] loop=49/3600 mode=online started
+[2026-07-18 04:49:26] loop=49/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:49:27] loop=50/3600 mode=online started
+[2026-07-18 04:49:34] loop=50/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:49:35] loop=51/3600 mode=online started
+[2026-07-18 04:49:41] loop=51/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:49:42] loop=52/3600 mode=online started
+[2026-07-18 04:49:49] loop=52/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:49:50] loop=53/3600 mode=online started
+[2026-07-18 04:49:56] loop=53/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:49:57] loop=54/3600 mode=online started
+[2026-07-18 04:50:04] loop=54/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:50:05] loop=55/3600 mode=online started
+[2026-07-18 04:50:11] loop=55/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:50:12] loop=56/3600 mode=online started
+[2026-07-18 04:50:19] loop=56/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:50:20] loop=57/3600 mode=online started
+[2026-07-18 04:50:26] loop=57/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:50:27] loop=58/3600 mode=online started
+[2026-07-18 04:50:34] loop=58/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:50:35] loop=59/3600 mode=online started
+[2026-07-18 04:50:41] loop=59/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:50:42] loop=60/3600 mode=online started
+[2026-07-18 04:50:49] loop=60/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:50:50] loop=61/3600 mode=online started
+[2026-07-18 04:50:56] loop=61/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:50:57] loop=62/3600 mode=online started
+[2026-07-18 04:51:04] loop=62/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:51:05] loop=63/3600 mode=online started
+[2026-07-18 04:51:11] loop=63/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:51:12] loop=64/3600 mode=online started
+[2026-07-18 04:51:19] loop=64/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:51:20] loop=65/3600 mode=online started
+[2026-07-18 04:51:26] loop=65/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:51:27] loop=66/3600 mode=online started
+[2026-07-18 04:51:34] loop=66/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:51:35] loop=67/3600 mode=online started
+[2026-07-18 04:51:41] loop=67/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:51:42] loop=68/3600 mode=online started
+[2026-07-18 04:51:49] loop=68/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:51:50] loop=69/3600 mode=online started
+[2026-07-18 04:51:56] loop=69/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:51:57] loop=70/3600 mode=online started
+[2026-07-18 04:52:04] loop=70/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:52:05] loop=71/3600 mode=online started
+[2026-07-18 04:52:11] loop=71/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:52:12] loop=72/3600 mode=online started
+[2026-07-18 04:52:19] loop=72/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:52:20] loop=73/3600 mode=online started
+[2026-07-18 04:52:27] loop=73/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:52:28] loop=74/3600 mode=online started
+[2026-07-18 04:52:34] loop=74/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:52:35] loop=75/3600 mode=online started
+[2026-07-18 04:52:41] loop=75/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:52:42] loop=76/3600 mode=online started
+[2026-07-18 04:52:49] loop=76/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:52:50] loop=77/3600 mode=online started
+[2026-07-18 04:52:56] loop=77/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:52:57] loop=78/3600 mode=online started
+[2026-07-18 04:53:04] loop=78/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:53:05] loop=79/3600 mode=online started
+[2026-07-18 04:53:11] loop=79/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:53:13] loop=80/3600 mode=online started
+[2026-07-18 04:53:19] loop=80/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:53:20] loop=81/3600 mode=online started
+[2026-07-18 04:53:27] loop=81/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:53:28] loop=82/3600 mode=online started
+[2026-07-18 04:53:34] loop=82/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:53:35] loop=83/3600 mode=online started
+[2026-07-18 04:53:42] loop=83/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:53:43] loop=84/3600 mode=online started
+[2026-07-18 04:53:49] loop=84/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:53:50] loop=85/3600 mode=online started
+[2026-07-18 04:53:57] loop=85/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:53:58] loop=86/3600 mode=online started
+[2026-07-18 04:54:05] loop=86/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:54:06] loop=87/3600 mode=online started
+[2026-07-18 04:54:12] loop=87/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:54:13] loop=88/3600 mode=online started
+[2026-07-18 04:54:21] loop=88/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:54:22] loop=89/3600 mode=online started
+[2026-07-18 04:54:30] loop=89/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:54:31] loop=90/3600 mode=online started
+[2026-07-18 04:54:38] loop=90/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:54:39] loop=91/3600 mode=online started
+[2026-07-18 04:54:47] loop=91/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:54:48] loop=92/3600 mode=online started
+[2026-07-18 04:54:55] loop=92/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:54:56] loop=93/3600 mode=online started
+[2026-07-18 04:55:02] loop=93/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:55:03] loop=94/3600 mode=online started
+[2026-07-18 04:55:10] loop=94/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:55:11] loop=95/3600 mode=online started
+[2026-07-18 04:55:18] loop=95/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:55:19] loop=96/3600 mode=online started
+[2026-07-18 04:55:25] loop=96/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:55:26] loop=97/3600 mode=online started
+[2026-07-18 04:55:33] loop=97/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:55:34] loop=98/3600 mode=online started
+[2026-07-18 04:55:41] loop=98/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:55:42] loop=99/3600 mode=online started
+[2026-07-18 04:55:48] loop=99/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:55:49] loop=100/3600 mode=online started
+[2026-07-18 04:55:56] loop=100/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:55:57] loop=101/3600 mode=online started
+[2026-07-18 04:56:03] loop=101/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:56:04] loop=102/3600 mode=online started
+[2026-07-18 04:56:11] loop=102/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:56:12] loop=103/3600 mode=online started
+[2026-07-18 04:56:18] loop=103/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:56:19] loop=104/3600 mode=online started
+[2026-07-18 04:56:26] loop=104/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:56:27] loop=105/3600 mode=online started
+[2026-07-18 04:56:33] loop=105/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:56:34] loop=106/3600 mode=online started
+[2026-07-18 04:56:41] loop=106/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:56:42] loop=107/3600 mode=online started
+[2026-07-18 04:56:48] loop=107/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:56:49] loop=108/3600 mode=online started
+[2026-07-18 04:56:56] loop=108/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:56:57] loop=109/3600 mode=online started
+[2026-07-18 04:57:03] loop=109/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:57:04] loop=110/3600 mode=online started
+[2026-07-18 04:57:11] loop=110/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:57:12] loop=111/3600 mode=online started
+[2026-07-18 04:57:19] loop=111/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:57:20] loop=112/3600 mode=online started
+[2026-07-18 04:57:26] loop=112/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:57:27] loop=113/3600 mode=online started
+[2026-07-18 04:57:34] loop=113/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:57:35] loop=114/3600 mode=online started
+[2026-07-18 04:57:42] loop=114/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:57:43] loop=115/3600 mode=online started
+[2026-07-18 04:57:50] loop=115/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:57:51] loop=116/3600 mode=online started
+[2026-07-18 04:57:57] loop=116/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:57:58] loop=117/3600 mode=online started
+[2026-07-18 04:58:05] loop=117/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:58:06] loop=118/3600 mode=online started
+[2026-07-18 04:58:15] loop=118/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:58:16] loop=119/3600 mode=online started
+[2026-07-18 04:58:24] loop=119/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:58:25] loop=120/3600 mode=online started
+[2026-07-18 04:58:32] loop=120/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:58:33] loop=121/3600 mode=online started
+[2026-07-18 04:58:41] loop=121/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:58:42] loop=122/3600 mode=online started
+[2026-07-18 04:58:50] loop=122/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:58:51] loop=123/3600 mode=online started
+[2026-07-18 04:58:59] loop=123/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:59:00] loop=124/3600 mode=online started
+[2026-07-18 04:59:06] loop=124/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:59:07] loop=125/3600 mode=online started
+[2026-07-18 04:59:14] loop=125/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:59:15] loop=126/3600 mode=online started
+[2026-07-18 04:59:21] loop=126/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:59:23] loop=127/3600 mode=online started
+[2026-07-18 04:59:29] loop=127/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:59:30] loop=128/3600 mode=online started
+[2026-07-18 04:59:37] loop=128/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:59:38] loop=129/3600 mode=online started
+[2026-07-18 04:59:44] loop=129/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:59:45] loop=130/3600 mode=online started
+[2026-07-18 04:59:52] loop=130/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 04:59:53] loop=131/3600 mode=online started
+[2026-07-18 05:00:00] loop=131/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:00:01] loop=132/3600 mode=online started
+[2026-07-18 05:00:09] loop=132/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:00:10] loop=133/3600 mode=online started
+[2026-07-18 05:00:17] loop=133/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:00:18] loop=134/3600 mode=online started
+[2026-07-18 05:00:26] loop=134/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:00:27] loop=135/3600 mode=online started
+[2026-07-18 05:00:35] loop=135/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:00:36] loop=136/3600 mode=online started
+[2026-07-18 05:00:44] loop=136/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:00:45] loop=137/3600 mode=online started
+[2026-07-18 05:00:53] loop=137/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:00:54] loop=138/3600 mode=online started
+[2026-07-18 05:01:02] loop=138/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:01:03] loop=139/3600 mode=online started
+[2026-07-18 05:01:10] loop=139/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:01:11] loop=140/3600 mode=online started
+[2026-07-18 05:01:18] loop=140/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:01:19] loop=141/3600 mode=online started
+[2026-07-18 05:01:25] loop=141/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:01:26] loop=142/3600 mode=online started
+[2026-07-18 05:01:33] loop=142/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:01:34] loop=143/3600 mode=online started
+[2026-07-18 05:01:40] loop=143/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:01:41] loop=144/3600 mode=online started
+[2026-07-18 05:01:48] loop=144/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:01:49] loop=145/3600 mode=online started
+[2026-07-18 05:01:56] loop=145/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:01:57] loop=146/3600 mode=online started
+[2026-07-18 05:02:03] loop=146/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:02:04] loop=147/3600 mode=online started
+[2026-07-18 05:02:11] loop=147/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:02:12] loop=148/3600 mode=online started
+[2026-07-18 05:02:18] loop=148/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:02:19] loop=149/3600 mode=online started
+[2026-07-18 05:02:26] loop=149/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:02:27] loop=150/3600 mode=online started
+[2026-07-18 05:02:33] loop=150/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:02:34] loop=151/3600 mode=online started
+[2026-07-18 05:02:41] loop=151/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:02:42] loop=152/3600 mode=online started
+[2026-07-18 05:02:49] loop=152/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:02:50] loop=153/3600 mode=online started
+[2026-07-18 05:02:57] loop=153/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:02:58] loop=154/3600 mode=online started
+[2026-07-18 05:03:04] loop=154/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:03:05] loop=155/3600 mode=online started
+[2026-07-18 05:03:12] loop=155/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:03:13] loop=156/3600 mode=online started
+[2026-07-18 05:03:19] loop=156/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:03:20] loop=157/3600 mode=online started
+[2026-07-18 05:03:27] loop=157/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:03:28] loop=158/3600 mode=online started
+[2026-07-18 05:03:35] loop=158/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:03:36] loop=159/3600 mode=online started
+[2026-07-18 05:03:43] loop=159/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:03:44] loop=160/3600 mode=online started
+[2026-07-18 05:03:50] loop=160/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:03:51] loop=161/3600 mode=online started
+[2026-07-18 05:03:57] loop=161/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:03:58] loop=162/3600 mode=online started
+[2026-07-18 05:04:06] loop=162/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:04:07] loop=163/3600 mode=online started
+[2026-07-18 05:04:15] loop=163/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:04:16] loop=164/3600 mode=online started
+[2026-07-18 05:04:24] loop=164/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:04:25] loop=165/3600 mode=online started
+[2026-07-18 05:04:32] loop=165/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:04:33] loop=166/3600 mode=online started
+[2026-07-18 05:04:41] loop=166/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:04:42] loop=167/3600 mode=online started
+[2026-07-18 05:04:49] loop=167/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:04:50] loop=168/3600 mode=online started
+[2026-07-18 05:04:58] loop=168/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:04:59] loop=169/3600 mode=online started
+[2026-07-18 05:05:07] loop=169/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:05:08] loop=170/3600 mode=online started
+[2026-07-18 05:05:16] loop=170/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:05:17] loop=171/3600 mode=online started
+[2026-07-18 05:05:24] loop=171/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:05:25] loop=172/3600 mode=online started
+[2026-07-18 05:05:32] loop=172/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:05:33] loop=173/3600 mode=online started
+[2026-07-18 05:05:40] loop=173/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:05:41] loop=174/3600 mode=online started
+[2026-07-18 05:05:47] loop=174/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:05:48] loop=175/3600 mode=online started
+[2026-07-18 05:05:56] loop=175/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:05:57] loop=176/3600 mode=online started
+[2026-07-18 05:06:04] loop=176/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:06:05] loop=177/3600 mode=online started
+[2026-07-18 05:06:12] loop=177/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:06:13] loop=178/3600 mode=online started
+[2026-07-18 05:06:20] loop=178/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:06:21] loop=179/3600 mode=online started
+[2026-07-18 05:06:27] loop=179/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:06:28] loop=180/3600 mode=online started
+[2026-07-18 05:06:35] loop=180/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:06:36] loop=181/3600 mode=online started
+[2026-07-18 05:06:42] loop=181/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:06:43] loop=182/3600 mode=online started
+[2026-07-18 05:06:50] loop=182/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:06:51] loop=183/3600 mode=online started
+[2026-07-18 05:06:57] loop=183/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:06:58] loop=184/3600 mode=online started
+[2026-07-18 05:07:05] loop=184/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:07:06] loop=185/3600 mode=online started
+[2026-07-18 05:07:12] loop=185/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:07:13] loop=186/3600 mode=online started
+[2026-07-18 05:07:20] loop=186/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:07:21] loop=187/3600 mode=online started
+[2026-07-18 05:07:27] loop=187/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:07:28] loop=188/3600 mode=online started
+[2026-07-18 05:07:35] loop=188/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:07:36] loop=189/3600 mode=online started
+[2026-07-18 05:07:42] loop=189/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:07:43] loop=190/3600 mode=online started
+[2026-07-18 05:07:50] loop=190/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:07:51] loop=191/3600 mode=online started
+[2026-07-18 05:07:58] loop=191/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:07:59] loop=192/3600 mode=online started
+[2026-07-18 05:08:05] loop=192/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:08:06] loop=193/3600 mode=online started
+[2026-07-18 05:08:13] loop=193/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:08:14] loop=194/3600 mode=online started
+[2026-07-18 05:08:20] loop=194/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:08:21] loop=195/3600 mode=online started
+[2026-07-18 05:08:28] loop=195/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:08:29] loop=196/3600 mode=online started
+[2026-07-18 05:08:35] loop=196/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:08:36] loop=197/3600 mode=online started
+[2026-07-18 05:08:44] loop=197/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:08:45] loop=198/3600 mode=online started
+[2026-07-18 05:08:53] loop=198/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:08:54] loop=199/3600 mode=online started
+[2026-07-18 05:09:02] loop=199/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:09:03] loop=200/3600 mode=online started
+[2026-07-18 05:09:10] loop=200/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35
+[2026-07-18 05:09:11] loop=201/3600 mode=online started
+[2026-07-18 05:09:20] loop=201/3600 finished preflight_rc=0 dry_run_rc=0 verify_rc=35

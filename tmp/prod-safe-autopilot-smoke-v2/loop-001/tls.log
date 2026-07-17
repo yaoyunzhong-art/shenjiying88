@@ -1,0 +1,8 @@
+=== verify tls secret ===
+timestamp=2026-07-18 04:48:34
+command=bash /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/verify-m5-tls-secret.sh --env-file /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/templates/m5-public-endpoints.env.example 
+
+bash: no job control in this shell
+==> Using kubeconfig: /Users/yaoyunzhong/.kube/m5-prod-config
+==> Checking TLS secret metadata
+Error from server (NotFound): secrets "m5-tls" not found
