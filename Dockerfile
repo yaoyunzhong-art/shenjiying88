@@ -49,6 +49,11 @@ COPY apps/api/prisma                apps/api/prisma
 RUN pnpm config set registry https://registry.npmmirror.com
 RUN pnpm config set node-linker hoisted
 
+# Prisma engines default to upstream binaries; pin to the mirror in CI/Kaniko
+# to avoid intermittent engine download resets in mainland regions.
+ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma/
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Prisma generate (需要 schema + client 依赖)
