@@ -13,6 +13,7 @@ data:
   API_PORT: "3001"
   NODE_ENV: "production"
   LOG_LEVEL: "info"
+  LYT_MODE: "mock"
   ENABLE_TRACING: "false"
   CORS_ORIGIN: "https://admin.m5.local,https://store.m5.local,https://tob.m5.local"
   LLM_DEFAULT_PROVIDER: "deepseek"

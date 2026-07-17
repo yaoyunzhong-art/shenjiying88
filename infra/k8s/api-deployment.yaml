@@ -68,6 +68,11 @@ spec:
                 configMapKeyRef:
                   name: m5-config
                   key: NODE_ENV
+            - name: LYT_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: LYT_MODE
             - name: API_PORT
               valueFrom:
                 configMapKeyRef:
