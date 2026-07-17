@@ -104,7 +104,7 @@ describe('permissions: 页面渲染', () => {
   it('renders title', () => { const { container } = setup(); assert.ok(container.querySelector('h1')?.textContent?.includes('权限管理')); });
   it('renders description', () => { const { container } = setup(); assert.ok(container.textContent?.includes('权限')); });
   it('renders without error', () => { assert.doesNotThrow(() => setup()); });
-  it.skip('has padding layout' (跳检: happy-dom无内联样式), () => { const { container } = setup(); const _pad = (container.firstElementChild as HTMLElement)?.style?.padding ?? ''; assert.ok(!_pad || _pad.includes('24px'), 'padding should be 24px or empty'); });
+  it.skip('has padding layout (跳检: happy-dom无内联样式)', () => { const { container } = setup(); const _pad = (container.firstElementChild as HTMLElement)?.style?.padding ?? ''; assert.ok(!_pad || _pad.includes('24px'), 'padding should be 24px or empty'); });
   it('has single h1', () => { const { container } = setup(); assert.equal(container.querySelectorAll('h1').length, 1); });
   it('component is a function', () => { assert.equal(typeof PermissionsPage, 'function'); });
 });
