@@ -145,7 +145,7 @@ export default function InventoryDetailPage() {
   /* ── Actions ── */
   const handleDelete = useCallback(async () => {
     const res = await submit();
-    if (res) {
+    if (res !== undefined) {
       setDeleteModalOpen(false);
       router.push('/inventory');
     }
