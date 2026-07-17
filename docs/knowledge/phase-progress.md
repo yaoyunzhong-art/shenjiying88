@@ -5,10 +5,10 @@
 ## Active Phase (Pulse-Nightly-16)
 
 ### 测试覆盖 (跨模块E2E)
-- **admin-web路径**: 27链 (链01-27) ✅
+- **admin-web路径**: 33链 (链01-33) ✅ 🆕
 - **api路径**: 43链 ✅
-- **总计**: 70链 / ~220+ subtests
-- **当前连续稳态**: 27🏆 (2026-07-16 05:34 @m5/app闭环222/222🟢·storefront回归稳态·admin-web基线40较54⬇️改善·无新fail注入)
+- **总计**: 76链 / ~250+ subtests
+- **当前连续稳态**: 13🏆 (#539→#551)
 
 ### V19 Day2 新增 (2026-07-17)
 
@@ -23,7 +23,17 @@
 - admin-web 测试补全: batch3~6 共36页面
 - 生产部署流水线: kaniko build + k8s + ACK RDS
 
-#### 🔴 P0 警告: P-31(RLS)/P-37(库存)/P-38(财务) 全天0 commit
+#### D段新增 E2E验收链 (链31~33) 🆕
+- **链31**: P-31 多租户RLS验收链 (9 test cases: P1~P3 + N1~N3 + B1~B3)
+- **链32**: P-37 库存采购验收链 (9 test cases: P1~P3 + N1~N3 + B1~B3)
+- **链33**: P-38 财务对账验收链 (9 test cases: P1~P3 + N1~N3 + B1~B3)
+
+#### 🎯 截止Phase E2E覆盖状态更新
+| Phase | 截止 | 后端代码 | admin-web UI | E2E验收链 | 状态 |
+|:------|:----:|:--------:|:------------:|:--------:|:----:|
+| P-31 RLS | 7/20 🚨 | 3,083行 (rls.module) | tenants页 1,133行 | ✅ 链31 | 🟡 基座完整，截止冲刺 |
+| P-37 库存 | 7/20 🚨 | inventory+procurement 768K | purchase 2,058行 | ✅ 链32 | 🟡 基座完整，截止冲刺 |
+| P-38 财务 | 7/22 🚨 | finance 1.0M | finance 4,271行 | ✅ 链33 | 🟡 基座完整，截止冲刺 |
 
 ### G→T 验收记录
 | 日期 | pulse# | 模块 | Base✅/⚠️ Service✅/⚠️ Controller✅/⚠️ CTest✅/⚠️ | 连续🏆 |
