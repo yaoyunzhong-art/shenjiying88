@@ -9,6 +9,10 @@ const document = window.document;
 
 // Some page components use 'use client' with automatic JSX transform but
 // the test environment needs React in scope for @testing-library/react renders
+// Polyfill React.use() for pages using React 19's use() hook
+if (!React.use) {
+  React.use = (p) => p; // Return as-is; if test passes plain object, destructuring works
+}
 globalThis.React = React;
 
 Object.assign(globalThis, {

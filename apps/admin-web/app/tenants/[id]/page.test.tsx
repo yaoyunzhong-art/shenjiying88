@@ -100,7 +100,9 @@ function getTenantById(id: string): TenantDetail {
 
 function setup() {
   cleanup();
-  return render(React.createElement(TenantDetailPage));
+  // Pass params as plain object (React.use polyfill returns as-is)
+  const params = { id: 't1' };
+  return render(React.createElement(TenantDetailPage, { params }));
 }
 
 /* ============================================================ */

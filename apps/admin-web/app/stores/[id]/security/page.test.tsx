@@ -20,31 +20,35 @@ describe('security / L1 冒烟', () => {
 // ===================== L2 结构验证 =====================
 describe('security / L2 结构验证', () => {
   it('应包含 PageShell 容器', () => { assert.ok(SRC.includes('PageShell')); });
-  it('应包含标题 "安全管理"', () => { assert.ok(SRC.includes('安全管理')); });
-  it('应包含检查数据 CHECKS 数组', () => { assert.ok(SRC.includes('ALERTS') || SRC.includes('CAMERA_STATUS') || SRC.includes('ALERTS') || SRC.includes('CAMERA_STATUS') || SRC.includes('CHECKS')); });
-  it('应包含列定义', () => { assert.ok(SRC.includes('cols') || SRC.includes('cols') || SRC.includes('cols') || SRC.includes('COLUMNS')); });
+  it('应包含标题 "安防管理"', () => { assert.ok(SRC.includes('安防管理')); });
+  it('应包含告警数据 ALERTS 或 CAMERA_STATUS', () => { assert.ok(SRC.includes('ALERTS') || SRC.includes('CAMERA_STATUS')); });
+  it('应包含列定义', () => { assert.ok(SRC.includes('cols') || SRC.includes('COLUMNS')); });
 
-  it('应定义完整列（检查项目/上次检查/结果/下次检查/检查人）', () => {
-    for (const c of ['检查项目', '上次检查', '结果', '下次检查', '检查人']) {
+  it('应包含告警列（告警类型/位置/时间/严重度/状态/处理人/操作）', () => {
+    for (const c of ['告警类型', '位置', '时间', '严重度', '状态', '处理人', '操作']) {
       assert.ok(SRC.includes(c), `缺少列: ${c}`);
     }
   });
 
-  it('应展示统计卡片：安全检查项/通过/不合格/连续安全天数', () => {
-    assert.ok(SRC.includes('安全检查项'));
-    assert.ok(SRC.includes('通过'));
-    assert.ok(SRC.includes('不合格'));
-    assert.ok(SRC.includes('连续安全天数'));
+  it('应展示统计卡片：待处理/严重告警/已处理/监控在线/高严重度%/处理率', () => {
+    assert.ok(SRC.includes('待处理'));
+    assert.ok(SRC.includes('严重告警'));
+    assert.ok(SRC.includes('已处理'));
+    assert.ok(SRC.includes('监控在线'));
+    assert.ok(SRC.includes('高严重度'));
+    assert.ok(SRC.includes('处理率'));
   });
 
-  it('应包含 "安全检查" 和 "报告模板" 按钮', () => {
-    assert.ok(SRC.includes('安全检查'));
-    assert.ok(SRC.includes('报告模板'));
+  it('应包含 "视频监控" / "门禁管理" / "告警规则" 按钮', () => {
+    assert.ok(SRC.includes('视频监控'));
+    assert.ok(SRC.includes('门禁管理'));
+    assert.ok(SRC.includes('告警规则'));
   });
 
-  it('结果列应渲染 "通过/不合格" Tag', () => {
-    assert.ok(SRC.includes('通过'));
-    assert.ok(SRC.includes('不合格'));
+  it('状态列应渲染 "待处理/已处理/忽略" Tag', () => {
+    assert.ok(SRC.includes('待处理'));
+    assert.ok(SRC.includes('已处理'));
+    assert.ok(SRC.includes('忽略'));
   });
 
   it('应使用 Row + Col 布局', () => {
@@ -54,7 +58,7 @@ describe('security / L2 结构验证', () => {
   it('应使用 useState', () => { assert.ok(SRC.includes('useState')); });
   it('Table 应有 rowKey', () => { assert.ok(SRC.includes('rowKey')); });
   it('应使用 Statistic', () => { assert.ok(SRC.includes('Statistic')); });
-  it('检查数据应包含 inspector 字段', () => { assert.ok(SRC.includes('inspector')); });
+  it('告警数据应包含 handler 字段', () => { assert.ok(SRC.includes('handler')); });
 });
 
 // ===================== L3 防御检查 =====================
@@ -91,8 +95,8 @@ describe('security / L3 防御检查', () => {
     assert.ok(SRC.includes('<PageShell') && SRC.includes('</PageShell>'));
   });
 
-  it('CHECKS 数据应有必填字段', () => {
-    const fields = ['id', 'item', 'last', 'result', 'next', 'inspector'];
+  it('ALERTS 数据应有必填字段', () => {
+    const fields = ['id', 'type', 'location', 'time', 'severity', 'status', 'category'];
     const match = SRC.match(/\{ id:\s*['"][^'"]+['"]/);
     if (match) {
       for (const f of fields) assert.ok(SRC.includes(`${f}:`), `字段 ${f} 应存在`);

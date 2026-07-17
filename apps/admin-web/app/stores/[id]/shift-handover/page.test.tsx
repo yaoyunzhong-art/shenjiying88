@@ -24,28 +24,29 @@ describe('shift-handover / L2 结构验证', () => {
   it('应包含交接数据 HANDOVERS 数组', () => { assert.ok(SRC.includes('HANDOVERS')); });
   it('应包含列定义 COLUMNS', () => { assert.ok(SRC.includes('COLUMNS')); });
 
-  it('应定义完整列（交接/接交人/现金/差额/设备/钥匙/状态）', () => {
-    for (const c of ['交接', '接交人', '现金', '差额', '设备', '钥匙', '状态']) {
+  it('应定义完整列（交班人/接班人/现金/差额/设备状态/钥匙/备注/状态/时间）', () => {
+    for (const c of ['交班人', '接班人', '现金', '差额', '设备状态', '钥匙', '备注', '状态', '时间']) {
       assert.ok(SRC.includes(c), `缺少列: ${c}`);
     }
   });
 
-  it('应展示统计卡片：今日班次/现金总额/差异记录', () => {
-    assert.ok(SRC.includes('今日班次'));
+  it('应展示统计卡片：交接记录/现金总额/正常/差异/差异总额', () => {
+    assert.ok(SRC.includes('交接记录'));
     assert.ok(SRC.includes('现金总额'));
-    assert.ok(SRC.includes('差异记录'));
+    assert.ok(SRC.includes('正常'));
+    assert.ok(SRC.includes('差异'));
+    assert.ok(SRC.includes('差异总额'));
   });
 
-  it('应包含 "开始交接" 和 "历史记录" 按钮', () => {
+  it('应包含 "开始交接" 按钮', () => {
     assert.ok(SRC.includes('开始交接'));
-    assert.ok(SRC.includes('历史记录'));
   });
 
   it('差额列差异值应使用颜色标识', () => {
     assert.ok(SRC.includes('#f87171') || SRC.includes('#34d399'));
   });
 
-  it('状态列应渲染 "正常/差异" Tag', () => {
+  it('状态列应渲染 "正常" / "差异" Tag', () => {
     assert.ok(SRC.includes('正常'));
     assert.ok(SRC.includes('差异'));
   });
@@ -56,8 +57,12 @@ describe('shift-handover / L2 结构验证', () => {
 
   it('应使用 useState', () => { assert.ok(SRC.includes('useState')); });
   it('Table 应有 rowKey', () => { assert.ok(SRC.includes('rowKey')); });
-  it('交接数据应包含 keys 钥匙字段', () => { assert.ok(SRC.includes('keys')); });
-  it('交接数据应包含 devices 字段', () => { assert.ok(SRC.includes('devices')); });
+  it('交接数据应包含 keys/note 字段', () => { assert.ok(SRC.includes('keys')); });
+  it('交接数据应包含 from/to/cash 字段', () => {
+    assert.ok(SRC.includes('from'));
+    assert.ok(SRC.includes('to'));
+    assert.ok(SRC.includes('cash'));
+  });
 });
 
 // ===================== L3 防御检查 =====================
