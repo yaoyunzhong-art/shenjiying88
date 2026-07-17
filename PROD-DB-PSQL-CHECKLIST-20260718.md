@@ -10,7 +10,7 @@
   - schema-level `CREATE` on `public`
 - Confirm the database is still empty or matches the expected pre-wave state
 - Confirm no business seed job or ingestion task will start during schema bootstrap
-- Current runtime `m5admin` does not satisfy the required DDL privileges and cannot execute this checklist as-is
+- If runtime `m5admin` still lacks DDL privileges, grant `DBOwner` on `m5platform` before executing this checklist
 
 ## Regenerate Artifacts
 
