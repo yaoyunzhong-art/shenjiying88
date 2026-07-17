@@ -67,7 +67,7 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter @m5/api prisma:generate
         env:
-          PRISMA_ENGINES_MIRROR: https://registry.npmmirror.com/-/binary/prisma/
+          PRISMA_ENGINES_MIRROR: https://registry.npmmirror.com/-/binary/prisma
           PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
 
       - name: Lint
@@ -101,7 +101,7 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter @m5/api prisma:generate
         env:
-          PRISMA_ENGINES_MIRROR: https://registry.npmmirror.com/-/binary/prisma/
+          PRISMA_ENGINES_MIRROR: https://registry.npmmirror.com/-/binary/prisma
           PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
 
       - name: Build
@@ -168,7 +168,7 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter @m5/api prisma:generate
         env:
-          PRISMA_ENGINES_MIRROR: https://registry.npmmirror.com/-/binary/prisma/
+          PRISMA_ENGINES_MIRROR: https://registry.npmmirror.com/-/binary/prisma
           PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
 
       - name: Run tests
