@@ -21,6 +21,15 @@
 
 ## 二、无Phase模块需要绑定
 
+### V19 Day2 D段新增页面绑定 (2026-07-17)
+| 页面 | 位置 | 代码✅ | 测试✅ | 审计✅ | PRD | 推荐Phase |
+|:-----|:----|:-----:|:-----:|:-----:|:----:|:---------|
+| Dashboard | admin-web/app/dashboard/ | 292行 | 42行 | 🆕 | 🔴 | P-Admin 指挥台 |
+| Analytics | admin-web/app/analytics/ | 281行 | 43行 | 🆕 | 🔴 | P-Admin 数据 |
+| Knowledge | admin-web/app/knowledge/ | 196行 | 32行 | 🆕 | 🔴 | P-Admin 知识 |
+| Users | admin-web/app/users/ | 158行 | 32行 | 🆕 | 🔴 | P-Admin 用户 |
+| Account | storefront-web/app/account/ | 498行 | 362行 | 🆕 | 🔴 | P-36会员 |
+
 ### 基础设施组（建议创建 Phase-P0 基础设施）
 | 模块 | 文件数 | 测试 | 推荐Phase |
 |:-----|:------:|:----:|:---------:|
