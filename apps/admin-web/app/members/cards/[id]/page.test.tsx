@@ -61,6 +61,7 @@ function formatDateShort(iso: string | null): string {
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
+  if (isNaN(Date.parse(iso))) return iso;
   try {
     return new Date(iso).toLocaleDateString('zh-CN', {
       year: 'numeric', month: '2-digit', day: '2-digit',
