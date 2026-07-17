@@ -138,6 +138,30 @@ describe('TRACING_CONFIG', () => {
     assert.equal(typeof cfg.otlpEndpoint, 'string');
   });
 
+  it('ENABLE_TRACING=false 时应禁用 exporter', async () => {
+    const previousEnableTracing = process.env.ENABLE_TRACING;
+    const previousExporter = process.env.OTEL_TRACES_EXPORTER;
+    vi.resetModules();
+    process.env.ENABLE_TRACING = 'false';
+    delete process.env.OTEL_TRACES_EXPORTER;
+
+    const mod = await import('./tracing');
+    assert.equal(mod.TRACING_CONFIG.exporter, 'none');
+
+    if (previousEnableTracing === undefined) {
+      delete process.env.ENABLE_TRACING;
+    } else {
+      process.env.ENABLE_TRACING = previousEnableTracing;
+    }
+
+    if (previousExporter === undefined) {
+      delete process.env.OTEL_TRACES_EXPORTER;
+    } else {
+      process.env.OTEL_TRACES_EXPORTER = previousExporter;
+    }
+    vi.resetModules();
+  });
+
   it('initTracing 幂等且不抛错', async () => {
     const mod = await import('./tracing');
     mod.initTracing();

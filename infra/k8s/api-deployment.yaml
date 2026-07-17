@@ -31,7 +31,7 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/name: api
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -53,10 +53,11 @@ spec:
     spec:
       serviceAccountName: m5-api
       imagePullSecrets:
+        - name: acr-regcred
         - name: ghcr-pull-secret
       containers:
         - name: api
-          image: ghcr.io/shenjiying88/m5-api:latest
+          image: shenjiying88acr20260717-registry.cn-hangzhou.cr.aliyuncs.com/shenjiying88/m5-api:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3001
@@ -273,7 +274,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: m5-api
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 10
   metrics:
     - type: Resource

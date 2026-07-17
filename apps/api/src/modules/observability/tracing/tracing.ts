@@ -31,8 +31,13 @@ import { NodeSDK, tracing, resources } from '@opentelemetry/sdk-node';
 const SERVICE_NAME = process.env.OTEL_SERVICE_NAME ?? process.env.SERVICE_NAME ?? 'm5-api';
 const SERVICE_VERSION = process.env.SERVICE_VERSION ?? '0.1.0';
 const DEPLOYMENT_ENV = process.env.NODE_ENV ?? 'development';
+const TRACING_ENABLED = !['false', '0', 'off', 'no'].includes(
+  (process.env.ENABLE_TRACING ?? 'true').toLowerCase(),
+);
 const TRACES_EXPORTER = (
-  process.env.OTEL_TRACES_EXPORTER ?? (DEPLOYMENT_ENV === 'production' ? 'otlp' : 'console')
+  TRACING_ENABLED
+    ? process.env.OTEL_TRACES_EXPORTER ?? (DEPLOYMENT_ENV === 'production' ? 'otlp' : 'console')
+    : 'none'
 ).toLowerCase();
 const OTLP_ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? 'http://localhost:4318';
 const LOG_LEVEL = (process.env.OTEL_LOG_LEVEL ?? 'error').toLowerCase();
