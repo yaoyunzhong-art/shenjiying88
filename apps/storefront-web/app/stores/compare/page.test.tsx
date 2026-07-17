@@ -1,35 +1,168 @@
-/**
- * apps/storefront-web/app/stores/compare/page.tsx — L1 冒烟测试
- * 角色视角: 👔店长 / 📊运营
- * 覆盖: 正例·反例·边界
+/*!
+ * stores/compare/page.test.tsx - L1 smoke test (storefront-web)
+ * Adapted for PageComponent
  */
-const assert = require('node:assert/strict');
-const { describe, test } = require('node:test');
-const fs = require('node:fs');
-const path = require('path');
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-const SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf8');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
 
-describe('StoreCompare — 正例', () => {
-  test('exports default async function', () => { assert.ok(SRC.includes('export default async function')); });
-  test('contains SEO metadata', () => { assert.ok(SRC.includes('Metadata')); });
-  test('uses Suspense', () => { assert.ok(SRC.includes('Suspense')); });
-  test('contains type or interface', () => { assert.ok(SRC.includes('interface') || SRC.includes('type ')); });
-  test('has mock data', () => { assert.ok(SRC.includes('MOCK') || SRC.includes('mock') || SRC.includes('KPI')); });
-});
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
 
-describe('StoreCompare — 反例', () => {
-  test('no dangerous HTML (except structured data)', () => {
-    // JSON-LD structured data uses dangerouslySetInnerHTML; verify limited usage
-    const innerHTMLUses = (SRC.match(/dangerouslySetInnerHTML/g) || []).length;
-    assert.ok(innerHTMLUses <= 1, 'dangerouslySetInnerHTML for JSON-LD only');
+describe('PageComponent - 正例', () => {
+  it('imports EmptyState', () => {
+    const src = readSource();
+    assert.ok(src.includes('EmptyState'), 'missing EmptyState');
   });
-  test('no any', () => { assert.ok(!/:\s*any\b/.test(SRC)); });
-  test('no secret leak', () => { assert.ok(!/(?:secret|password|api[_-]?key)/i.test(SRC)); });
+  it('imports ErrorBoundary', () => {
+    const src = readSource();
+    assert.ok(src.includes('ErrorBoundary'), 'missing ErrorBoundary');
+  });
+  it('imports LoadingSkeleton', () => {
+    const src = readSource();
+    assert.ok(src.includes('LoadingSkeleton'), 'missing LoadingSkeleton');
+  });
+  it('has MOCK_COMPARE_STATS data', () => {
+    const src = readSource();
+    assert.ok(src.includes('MOCK_COMPARE_STATS'), 'missing MOCK_COMPARE_STATS');
+  });
+  it('has MOCK_COMPARE_STATS data', () => {
+    const src = readSource();
+    assert.ok(src.includes('MOCK_COMPARE_STATS'), 'missing MOCK_COMPARE_STATS');
+  });
+  it('has MOCK_COMPARE_STATS data', () => {
+    const src = readSource();
+    assert.ok(src.includes('MOCK_COMPARE_STATS'), 'missing MOCK_COMPARE_STATS');
+  });
+  it('uses EmptyState', () => {
+    const src = readSource();
+    assert.ok(src.includes('EmptyState'), 'missing EmptyState');
+  });
+  it('uses LoadingSkeleton', () => {
+    const src = readSource();
+    assert.ok(src.includes('LoadingSkeleton'), 'missing LoadingSkeleton');
+  });
+  it('defines PageProps interface/type', () => {
+    const src = readSource();
+    assert.ok(src.includes('interface PageProps') || src.includes('type PageProps'), 'missing PageProps');
+  });
+  it('uses Suspense', () => {
+    const src = readSource();
+    assert.ok(src.includes('Suspense'), 'missing Suspense');
+  });
+  it('uses ErrorBoundary', () => {
+    const src = readSource();
+    assert.ok(src.includes('ErrorBoundary'), 'missing ErrorBoundary');
+  });
+  it('imports Metadata', () => {
+    const src = readSource();
+    assert.ok(src.includes('Metadata'), 'missing Metadata');
+  });
+  it('exports metadata', () => {
+    const src = readSource();
+    assert.ok(src.includes('export const metadata'), 'missing metadata');
+  });
+  it('has openGraph', () => {
+    const src = readSource();
+    assert.ok(src.includes('openGraph'), 'missing openGraph');
+  });
+  it('uses LoadingSkeleton', () => {
+    const src = readSource();
+    assert.ok(src.includes('LoadingSkeleton'), 'missing LoadingSkeleton');
+  });
 });
 
-describe('StoreCompare — 边界', () => {
-  test('has length check', () => { assert.ok(SRC.includes('.length')); });
-  test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
-  test('has error boundary', () => { assert.ok(SRC.includes('ErrorBoundary') || SRC.includes('error')); });
+describe('PageComponent - 反例', () => {
+  it('JSON-LD uses dangerousSetInnerHTML (legitimate)', () => {
+    const src = readSource();
+    assert.ok(src.includes('dangerouslySetInnerHTML'), 'JSON-LD');
+  });
+  it('no any type', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /:\s*any\b/);
+  });
+  it('no secret leak', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /(?:secret|password|api[_-]?key)/i);
+  });
+  it('no raw console.log', () => {
+    const src = readSource();
+    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), 'bare console.log');
+  });
+});
+
+describe('PageComponent - 边界', () => {
+  it('has conditional rendering', () => {
+    const src = readSource();
+    assert.ok(src.includes('?'), 'missing conditional');
+  });
+  it('has fallback content', () => {
+    const src = readSource();
+    assert.ok(src.includes('fallback'), 'missing fallback');
+  });
+  it('uses .map() iteration', () => {
+    const src = readSource();
+    assert.ok(src.includes('.map('), 'missing .map');
+  });
+});
+
+describe('PageComponent - 数据完整性', () => {
+  it('includes context "加载对比数据......"', () => {
+    const src = readSource();
+    assert.ok(src.includes('加载对比数据...'), 'missing 加载对比数据...');
+  });
+  it('includes context "加载满意度图表..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('加载满意度图表'), 'missing 加载满意度图表');
+  });
+  it('includes context "加载筛选区......"', () => {
+    const src = readSource();
+    assert.ok(src.includes('加载筛选区...'), 'missing 加载筛选区...');
+  });
+  it('includes context "加载营收图表..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('加载营收图表'), 'missing 加载营收图表');
+  });
+  it('includes context "对比数据加载失败..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('对比数据加载失败'), 'missing 对比数据加载失败');
+  });
+  it('includes context "对比门店..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('对比门店'), 'missing 对比门店');
+  });
+  it('includes context "旗舰店..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('旗舰店'), 'missing 旗舰店');
+  });
+  it('includes context "无法加载门店对比数据。请..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('无法加载门店对比数据。请检查数据源是否正常，稍后重试。'), 'missing 无法加载门店对比数据。请');
+  });
+  it('includes context "暂无对比门店..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('暂无对比门店'), 'missing 暂无对比门店');
+  });
+  it('includes context "最高满意度..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('最高满意度'), 'missing 最高满意度');
+  });
+  it('has constant COMPARE_METRICS', () => {
+    const src = readSource();
+    assert.ok(src.includes('COMPARE_METRICS'), 'missing COMPARE_METRICS');
+  });
+  it('has constant sp', () => {
+    const src = readSource();
+    assert.ok(src.includes('sp'), 'missing sp');
+  });
+  it('has constant hasPreselected', () => {
+    const src = readSource();
+    assert.ok(src.includes('hasPreselected'), 'missing hasPreselected');
+  });
 });

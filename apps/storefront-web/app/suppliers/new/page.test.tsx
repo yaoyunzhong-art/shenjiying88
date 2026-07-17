@@ -1,34 +1,168 @@
-/**
- * apps/storefront-web/app/suppliers/new/page.tsx — L1 冒烟测试
- * 角色视角: 👤会员 / 👔店长
- * 覆盖: 正例·反例·边界
+/*!
+ * suppliers/new/page.test.tsx - L1 smoke test (storefront-web)
+ * Adapted for NewSupplierPage
  */
-const assert = require('node:assert/strict');
-const { describe, test } = require('node:test');
-const fs = require('node:fs');
-const path = require('path');
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-const SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf8');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
 
-describe('SupplierNew — 正例', () => {
-  test('exports default function', () => { assert.ok(SRC.includes('export default function')); });
-  test('contains use client', () => { assert.ok(SRC.includes("'use client'")); });
-  test('uses useMemo or useState', () => { assert.ok(SRC.includes('useMemo') || SRC.includes('useState')); });
-  test('contains type or interface', () => { assert.ok(SRC.includes('interface') || SRC.includes('type ')); });
-  test('has form fields array', () => { assert.ok(SRC.includes('FIELDS')); });
-  test('uses FormPageScaffold', () => { assert.ok(SRC.includes('FormPageScaffold')); });
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
+
+describe('NewSupplierPage - 正例', () => {
+  it('exports default NewSupplierPage', () => {
+    const src = readSource();
+    assert.ok(src.includes('export default function NewSupplierPage'), 'missing export');
+  });
+  it('has use client', () => {
+    const src = readSource();
+    assert.ok(src.includes("'use client'"), 'missing use client');
+  });
+  it('uses useRouter', () => {
+    const src = readSource();
+    assert.ok(src.includes('useRouter'), 'missing useRouter');
+  });
+  it('imports FormPageField', () => {
+    const src = readSource();
+    assert.ok(src.includes('FormPageField'), 'missing FormPageField');
+  });
+  it('imports FormPageScaffold', () => {
+    const src = readSource();
+    assert.ok(src.includes('FormPageScaffold'), 'missing FormPageScaffold');
+  });
+  it('imports FormPageSubmitResult', () => {
+    const src = readSource();
+    assert.ok(src.includes('FormPageSubmitResult'), 'missing FormPageSubmitResult');
+  });
+  it('imports useToast', () => {
+    const src = readSource();
+    assert.ok(src.includes('useToast'), 'missing useToast');
+  });
+  it('uses useMemo', () => {
+    const src = readSource();
+    assert.ok(src.includes('useMemo'), 'missing useMemo');
+  });
+  it('uses useToast', () => {
+    const src = readSource();
+    assert.ok(src.includes('useToast'), 'missing useToast');
+  });
+  it('uses FormPageScaffold', () => {
+    const src = readSource();
+    assert.ok(src.includes('FormPageScaffold'), 'missing FormPageScaffold');
+  });
+  it('defines SupplierFormData interface/type', () => {
+    const src = readSource();
+    assert.ok(src.includes('interface SupplierFormData') || src.includes('type SupplierFormData'), 'missing SupplierFormData');
+  });
+  it('has FIELDS array', () => {
+    const src = readSource();
+    assert.ok(src.includes('FIELDS'), 'missing FIELDS');
+  });
+  it('has backUrl', () => {
+    const src = readSource();
+    assert.ok(src.includes('backUrl'), 'missing backUrl');
+  });
+  it('has submitLabel', () => {
+    const src = readSource();
+    assert.ok(src.includes('submitLabel'), 'missing submitLabel');
+  });
+  it('has onSubmit handler', () => {
+    const src = readSource();
+    assert.ok(src.includes('onSubmit'), 'missing onSubmit');
+  });
 });
 
-describe('SupplierNew — 反例', () => {
-  test('no dangerous HTML', () => { assert.ok(!SRC.includes('dangerouslySetInnerHTML')); });
-  test('no any', () => { assert.ok(!/:\s*any\b/.test(SRC)); });
-  test('no secret leak', () => { assert.ok(!/(?:secret|password|api[_-]?key)/i.test(SRC)); });
+describe('NewSupplierPage - 反例', () => {
+  it('no dangerousSetInnerHTML', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /dangerouslySetInnerHTML/);
+  });
+  it('no any type', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /:\s*any\b/);
+  });
+  it('no secret leak', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /(?:secret|password|api[_-]?key)/i);
+  });
+  it('no raw console.log', () => {
+    const src = readSource();
+    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), 'bare console.log');
+  });
 });
 
-describe('SupplierNew — 边界', () => {
-  test('has length check', () => { assert.ok(SRC.includes('.length')); });
-  test('has validation rules', () => { assert.ok(SRC.includes('rules')); });
-  test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
-  test('has async submit handler', () => { assert.ok(SRC.includes('async')); });
-  test('has error handling', () => { assert.ok(SRC.includes('throw') || SRC.includes('error') || SRC.includes('catch')); });
+describe('NewSupplierPage - 边界', () => {
+  it('has conditional rendering', () => {
+    const src = readSource();
+    assert.ok(src.includes('?'), 'missing conditional');
+  });
+});
+
+describe('NewSupplierPage - 数据完整性', () => {
+  it('includes context "交货周期 (天)..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('交货周期 (天)'), 'missing 交货周期 (天)');
+  });
+  it('includes context "交货周期不能超过365天..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('交货周期不能超过365天'), 'missing 交货周期不能超过365天');
+  });
+  it('includes context "交货周期必须大于0..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('交货周期必须大于0'), 'missing 交货周期必须大于0');
+  });
+  it('includes context "从下单到到货的平均天数..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('从下单到到货的平均天数'), 'missing 从下单到到货的平均天数');
+  });
+  it('includes context "付款条件..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('付款条件'), 'missing 付款条件');
+  });
+  it('includes context "例如：138001380..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('例如：13800138001'), 'missing 例如：138001380');
+  });
+  it('includes context "例如：3602 0001..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('例如：3602 0001 0123 4567 890'), 'missing 例如：3602 0001');
+  });
+  it('includes context "例如：7..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('例如：7'), 'missing 例如：7');
+  });
+  it('includes context "例如：contact@e..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('例如：contact@example.com'), 'missing 例如：contact@e');
+  });
+  it('includes context "例如：中国工商银行广州白..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('例如：中国工商银行广州白云支行'), 'missing 例如：中国工商银行广州白');
+  });
+  it('has constant CATEGORY_OPTIONS', () => {
+    const src = readSource();
+    assert.ok(src.includes('CATEGORY_OPTIONS'), 'missing CATEGORY_OPTIONS');
+  });
+  it('has constant PAYMENT_TERMS_OPTIONS', () => {
+    const src = readSource();
+    assert.ok(src.includes('PAYMENT_TERMS_OPTIONS'), 'missing PAYMENT_TERMS_OPTIONS');
+  });
+  it('has constant phone', () => {
+    const src = readSource();
+    assert.ok(src.includes('phone'), 'missing phone');
+  });
+  it('has constant license', () => {
+    const src = readSource();
+    assert.ok(src.includes('license'), 'missing license');
+  });
+  it('has constant acct', () => {
+    const src = readSource();
+    assert.ok(src.includes('acct'), 'missing acct');
+  });
 });

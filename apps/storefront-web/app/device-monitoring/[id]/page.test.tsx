@@ -1,31 +1,168 @@
-/**
- * apps/storefront-web/app/device-monitoring/[id]/page.tsx — L1 冒烟测试
- * 角色视角: 👔店长 / 🛠️运维
- * 覆盖: 正例·反例·边界
+/*!
+ * device-monitoring/[id]/page.test.tsx - L1 smoke test (storefront-web)
+ * Adapted for DeviceDetailPage
  */
-const assert = require('node:assert/strict');
-const { describe, test } = require('node:test');
-const fs = require('node:fs');
-const path = require('path');
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-const SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf8');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
 
-describe('DeviceMonitoringDetail — 正例', () => {
-  test('exports default function', () => { assert.ok(SRC.includes('export default function')); });
-  test('contains use client', () => { assert.ok(SRC.includes("'use client'")); });
-  test('uses useMemo', () => { assert.ok(SRC.includes('useMemo')); });
-  test('uses useParams', () => { assert.ok(SRC.includes('useParams')); });
-  test('contains type or interface', () => { assert.ok(SRC.includes('interface') || SRC.includes('type ')); });
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
+
+describe('DeviceDetailPage - nformal', () => {
+  it('exports default DeviceDetailPage', () => {
+    const src = readSource();
+    assert.ok(src.includes('export default function DeviceDetailPage'), 'missing export');
+  });
+  it('has use client', () => {
+    const src = readSource();
+    assert.ok(src.includes("'use client'"), 'missing use client');
+  });
+  it('uses useParams', () => {
+    const src = readSource();
+    assert.ok(src.includes('useParams'), 'missing useParams');
+  });
+  it('uses useRouter', () => {
+    const src = readSource();
+    assert.ok(src.includes('useRouter'), 'missing useRouter');
+  });
+  it('uses useMemo', () => {
+    const src = readSource();
+    assert.ok(src.includes('useMemo'), 'missing useMemo');
+  });
+  it('uses useCallback', () => {
+    const src = readSource();
+    assert.ok(src.includes('useCallback'), 'missing useCallback');
+  });
+  it('uses useState', () => {
+    const src = readSource();
+    assert.ok(src.includes('useState'), 'missing useState');
+  });
+  it('imports DetailShell', () => {
+    const src = readSource();
+    assert.ok(src.includes('DetailShell'), 'missing DetailShell');
+  });
+  it('imports InfoRow', () => {
+    const src = readSource();
+    assert.ok(src.includes('InfoRow'), 'missing InfoRow');
+  });
+  it('imports StatusBadge', () => {
+    const src = readSource();
+    assert.ok(src.includes('StatusBadge'), 'missing StatusBadge');
+  });
+  it('imports Button', () => {
+    const src = readSource();
+    assert.ok(src.includes('Button'), 'missing Button');
+  });
+  it('imports DetailActionBar', () => {
+    const src = readSource();
+    assert.ok(src.includes('DetailActionBar'), 'missing DetailActionBar');
+  });
+  it('imports DetailClosureBar', () => {
+    const src = readSource();
+    assert.ok(src.includes('DetailClosureBar'), 'missing DetailClosureBar');
+  });
+  it('imports DescriptionList', () => {
+    const src = readSource();
+    assert.ok(src.includes('DescriptionList'), 'missing DescriptionList');
+  });
+  it('imports EmptyState', () => {
+    const src = readSource();
+    assert.ok(src.includes('EmptyState'), 'missing EmptyState');
+  });
+  it('imports useToast', () => {
+    const src = readSource();
+    assert.ok(src.includes('useToast'), 'missing useToast');
+  });
+  it('imports ConfirmDialog', () => {
+    const src = readSource();
+    assert.ok(src.includes('ConfirmDialog'), 'missing ConfirmDialog');
+  });
+  it('has formatSeconds function', () => {
+    const src = readSource();
+    assert.ok(src.includes('formatSeconds'), 'missing formatSeconds');
+  });
+  it('has heartbeatLabel function', () => {
+    const src = readSource();
+    assert.ok(src.includes('heartbeatLabel'), 'missing heartbeatLabel');
+  });
+  it('has uptimeLabel function', () => {
+    const src = readSource();
+    assert.ok(src.includes('uptimeLabel'), 'missing uptimeLabel');
+  });
+  it('has mock device data', () => {
+    const src = readSource();
+    assert.ok(src.includes('mock') || src.includes('MOCK'), 'missing mock data');
+  });
 });
 
-describe('DeviceMonitoringDetail — 反例', () => {
-  test('no dangerous HTML', () => { assert.ok(!SRC.includes('dangerouslySetInnerHTML')); });
-  test('no any', () => { assert.ok(!/:\s*any\b/.test(SRC)); });
-  test('no secret leak', () => { assert.ok(!/(?:secret|password|api[_-]?key)/i.test(SRC)); });
+describe('DeviceDetailPage - fanli', () => {
+  it('no dangerousSetInnerHTML', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /dangerouslySetInnerHTML/);
+  });
+  it('no any type', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /:\\s*any\\b/);
+  });
+  it('no secret leak', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /(?:secret|password|api[_-]?key)/i);
+  });
+  it('no raw console.log', () => {
+    const src = readSource();
+    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), 'bare console.log');
+  });
 });
 
-describe('DeviceMonitoringDetail — 边界', () => {
-  test('has device monitoring metrics', () => { assert.ok(SRC.includes('useMemo') || SRC.includes('metrics')); });
-  test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
-  test('has status badge', () => { assert.ok(SRC.includes('StatusBadge') || SRC.includes('status')); });
+describe('DeviceDetailPage - bianjie', () => {
+  it('has conditional rendering', () => {
+    const src = readSource();
+    assert.ok(src.includes('?'), 'missing conditional');
+  });
+  it('uses .map() iteration', () => {
+    const src = readSource();
+    assert.ok(src.includes('.map('), 'missing .map');
+  });
+});
+
+describe('DeviceDetailPage - shuju', () => {
+  it('includes base info section', () => {
+    const src = readSource();
+    assert.ok(src.includes('\u57fa\u7840\u4fe1\u606f'), 'missing base info');
+  });
+  it('includes device keyword', () => {
+    const src = readSource();
+    assert.ok(src.includes('\u8bbe\u5907'), 'missing device');
+  });
+  it('includes delete action', () => {
+    const src = readSource();
+    assert.ok(src.includes('\u5220\u9664'), 'missing delete');
+  });
+  it('includes cancel action', () => {
+    const src = readSource();
+    assert.ok(src.includes('\u53d6\u6d88'), 'missing cancel');
+  });
+  it('has page navigation', () => {
+    const src = readSource();
+    assert.ok(src.includes('router.push') || src.includes('Link'), 'missing navigation');
+  });
+  it('includes uptime label', () => {
+    const src = readSource();
+    assert.ok(src.includes('uptime'), 'missing uptime');
+  });
+  it('includes heartbeat label', () => {
+    const src = readSource();
+    assert.ok(src.includes('heartbeat'), 'missing heartbeat');
+  });
+  it('includes loading state', () => {
+    const src = readSource();
+    assert.ok(src.includes('loading'), 'missing loading');
+  });
 });

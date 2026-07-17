@@ -1,31 +1,156 @@
-/**
- * apps/storefront-web/app/products/new/page.tsx — L1 冒烟测试
- * 角色视角: 👤会员 / 👔店长
- * 覆盖: 正例·反例·边界
+/*!
+ * products/new/page.test.tsx - L1 smoke test (storefront-web)
+ * Adapted for NewProductPage
  */
-const assert = require('node:assert/strict');
-const { describe, test } = require('node:test');
-const fs = require('node:fs');
-const path = require('path');
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-const SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf8');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
 
-describe('ProductNew — 正例', () => {
-  test('exports default function', () => { assert.ok(SRC.includes('export default function')); });
-  test('contains use client', () => { assert.ok(SRC.includes("'use client'")); });
-  test('has form validation rules', () => { assert.ok(SRC.includes('rules')); });
-  test('contains type or interface', () => { assert.ok(SRC.includes('interface') || SRC.includes('type ')); });
-  test('has form fields', () => { assert.ok(SRC.includes('FIELDS')); });
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
+
+describe('NewProductPage - 正例', () => {
+  it('exports default NewProductPage', () => {
+    const src = readSource();
+    assert.ok(src.includes('export default function NewProductPage'), 'missing export');
+  });
+  it('has use client', () => {
+    const src = readSource();
+    assert.ok(src.includes("'use client'"), 'missing use client');
+  });
+  it('imports FormPageField', () => {
+    const src = readSource();
+    assert.ok(src.includes('FormPageField'), 'missing FormPageField');
+  });
+  it('imports FormPageScaffold', () => {
+    const src = readSource();
+    assert.ok(src.includes('FormPageScaffold'), 'missing FormPageScaffold');
+  });
+  it('imports FormPageSubmitResult', () => {
+    const src = readSource();
+    assert.ok(src.includes('FormPageSubmitResult'), 'missing FormPageSubmitResult');
+  });
+  it('imports PageShell', () => {
+    const src = readSource();
+    assert.ok(src.includes('PageShell'), 'missing PageShell');
+  });
+  it('uses useCallback', () => {
+    const src = readSource();
+    assert.ok(src.includes('useCallback'), 'missing useCallback');
+  });
+  it('uses PageShell', () => {
+    const src = readSource();
+    assert.ok(src.includes('PageShell'), 'missing PageShell');
+  });
+  it('uses FormPageScaffold', () => {
+    const src = readSource();
+    assert.ok(src.includes('FormPageScaffold'), 'missing FormPageScaffold');
+  });
+  it('defines NewProductFormData interface/type', () => {
+    const src = readSource();
+    assert.ok(src.includes('interface NewProductFormData') || src.includes('type NewProductFormData'), 'missing NewProductFormData');
+  });
+  it('has FIELDS array', () => {
+    const src = readSource();
+    assert.ok(src.includes('FIELDS'), 'missing FIELDS');
+  });
+  it('has onSubmit handler', () => {
+    const src = readSource();
+    assert.ok(src.includes('onSubmit'), 'missing onSubmit');
+  });
 });
 
-describe('ProductNew — 反例', () => {
-  test('no dangerous HTML', () => { assert.ok(!SRC.includes('dangerouslySetInnerHTML')); });
-  test('no any', () => { assert.ok(!/:\s*any\b/.test(SRC)); });
-  test('no secret leak', () => { assert.ok(!/(?:secret|password|api[_-]?key)/i.test(SRC)); });
+describe('NewProductPage - 反例', () => {
+  it('no dangerousSetInnerHTML', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /dangerouslySetInnerHTML/);
+  });
+  it('no any type', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /:\s*any\b/);
+  });
+  it('no secret leak', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /(?:secret|password|api[_-]?key)/i);
+  });
+  it('no raw console.log', () => {
+    const src = readSource();
+    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), 'bare console.log');
+  });
 });
 
-describe('ProductNew — 边界', () => {
-  test('has length check', () => { assert.ok(SRC.includes('.length')); });
-  test('has async submit handler', () => { assert.ok(SRC.includes('async')); });
-  test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
+describe('NewProductPage - 边界', () => {
+  it('has conditional rendering', () => {
+    const src = readSource();
+    assert.ok(src.includes('?'), 'missing conditional');
+  });
+});
+
+describe('NewProductPage - 数据完整性', () => {
+  it('includes context "仅内部可见，用于利润分析..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('仅内部可见，用于利润分析'), 'missing 仅内部可见，用于利润分析');
+  });
+  it('includes context "作品/产品名称..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('作品/产品名称'), 'missing 作品/产品名称');
+  });
+  it('includes context "例如：每周六下午2点开课..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('例如：每周六下午2点开课'), 'missing 例如：每周六下午2点开课');
+  });
+  it('includes context "例如：花艺体验课 - 春..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('例如：花艺体验课 - 春日花篮'), 'missing 例如：花艺体验课 - 春');
+  });
+  it('includes context "例如：花艺旗舰店（北京朝..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('例如：花艺旗舰店（北京朝阳）'), 'missing 例如：花艺旗舰店（北京朝');
+  });
+  it('includes context "名称不超过60个字符..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('名称不超过60个字符'), 'missing 名称不超过60个字符');
+  });
+  it('includes context "名称至少2个字符..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('名称至少2个字符'), 'missing 名称至少2个字符');
+  });
+  it('includes context "品类..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('品类'), 'missing 品类');
+  });
+  it('includes context "售价 (元)..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('售价 (元)'), 'missing 售价 (元)');
+  });
+  it('includes context "售价不能为负数..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('售价不能为负数'), 'missing 售价不能为负数');
+  });
+  it('has constant CATEGORY_OPTIONS', () => {
+    const src = readSource();
+    assert.ok(src.includes('CATEGORY_OPTIONS'), 'missing CATEGORY_OPTIONS');
+  });
+  it('has constant n', () => {
+    const src = readSource();
+    assert.ok(src.includes('n'), 'missing n');
+  });
+  it('has constant n', () => {
+    const src = readSource();
+    assert.ok(src.includes('n'), 'missing n');
+  });
+  it('has constant n', () => {
+    const src = readSource();
+    assert.ok(src.includes('n'), 'missing n');
+  });
+  it('has constant handleSubmit', () => {
+    const src = readSource();
+    assert.ok(src.includes('handleSubmit'), 'missing handleSubmit');
+  });
 });

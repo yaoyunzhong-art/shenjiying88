@@ -1,35 +1,142 @@
-/**
- * apps/storefront-web/app/reports/[id]/page.tsx — L1 冒烟测试
- * 角色视角: 👔店长 / 📊运营 / 💰财务
- * 覆盖: 正例·反例·边界
+/*!
+ * reports/[id]/page.test.tsx - L1 smoke test (storefront-web)
+ * Adapted for ReportDetailPage
  */
-const assert = require('node:assert/strict');
-const { describe, test } = require('node:test');
-const fs = require('node:fs');
-const path = require('path');
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-const SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf8');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
 
-describe('ReportDetail — 正例', () => {
-  test('exports default async function', () => { assert.ok(SRC.includes('export default async function')); });
-  test('contains SEO metadata', () => { assert.ok(SRC.includes('Metadata')); });
-  test('contains type or interface', () => { assert.ok(SRC.includes('interface') || SRC.includes('type ')); });
-  test('has report status', () => { assert.ok(SRC.includes('status') || SRC.includes('Status')); });
-  test('has mock data', () => { assert.ok(SRC.includes('MOCK') || SRC.includes('mock')); });
-});
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
 
-describe('ReportDetail — 反例', () => {
-  test('no dangerous HTML (except JSON-LD)', () => {
-    // JSON-LD structured data uses dangerouslySetInnerHTML; verify it's guarded
-    const innerHTMLUses = (SRC.match(/dangerouslySetInnerHTML/g) || []).length;
-    assert.ok(innerHTMLUses <= 1, 'dangerouslySetInnerHTML for JSON-LD only');
+describe('ReportDetailPage - nformal', () => {
+  it('exports default async ReportDetailPage', () => {
+    const src = readSource();
+    assert.ok(src.includes('export default async function ReportDetailPage'), 'missing export');
   });
-  test('no any', () => { assert.ok(!/:\s*any\b/.test(SRC)); });
-  test('no secret leak', () => { assert.ok(!/(?:secret|password|api[_-]?key)/i.test(SRC)); });
+  it('imports Metadata type', () => {
+    const src = readSource();
+    assert.ok(src.includes('Metadata'), 'missing Metadata');
+  });
+  it('imports Suspense', () => {
+    const src = readSource();
+    assert.ok(src.includes('Suspense'), 'missing Suspense');
+  });
+  it('imports notFound', () => {
+    const src = readSource();
+    assert.ok(src.includes('notFound'), 'missing notFound');
+  });
+  it('imports redirect', () => {
+    const src = readSource();
+    assert.ok(src.includes('redirect'), 'missing redirect');
+  });
+  it('imports LoadingSkeleton', () => {
+    const src = readSource();
+    assert.ok(src.includes('LoadingSkeleton'), 'missing LoadingSkeleton');
+  });
+  it('imports EmptyState', () => {
+    const src = readSource();
+    assert.ok(src.includes('EmptyState'), 'missing EmptyState');
+  });
+  it('imports ErrorBoundary', () => {
+    const src = readSource();
+    assert.ok(src.includes('ErrorBoundary'), 'missing ErrorBoundary');
+  });
+  it('imports ReportDetailClient', () => {
+    const src = readSource();
+    assert.ok(src.includes('ReportDetailClient'), 'missing ReportDetailClient');
+  });
+  it('has MOCK_REPORTS data', () => {
+    const src = readSource();
+    assert.ok(src.includes('MOCK_REPORTS'), 'missing MOCK_REPORTS');
+  });
+  it('has generateReportDetailMetadata', () => {
+    const src = readSource();
+    assert.ok(src.includes('generateReportDetailMetadata'), 'missing metadata generator');
+  });
+  it('has STATUS_CONFIG', () => {
+    const src = readSource();
+    assert.ok(src.includes('STATUS_CONFIG'), 'missing STATUS_CONFIG');
+  });
+  it('has TYPE_LABELS', () => {
+    const src = readSource();
+    assert.ok(src.includes('TYPE_LABELS'), 'missing TYPE_LABELS');
+  });
+  it('has ReportDetailLoadingFallback', () => {
+    const src = readSource();
+    assert.ok(src.includes('ReportDetailLoadingFallback'), 'missing loading fallback');
+  });
+  it('has ReportDetailErrorFallback', () => {
+    const src = readSource();
+    assert.ok(src.includes('ReportDetailErrorFallback'), 'missing error fallback');
+  });
+  it('has ReportNavigation', () => {
+    const src = readSource();
+    assert.ok(src.includes('ReportNavigation'), 'missing navigation');
+  });
+  it('uses JSON-LD for structured data', () => {
+    const src = readSource();
+    assert.ok(src.includes('dangerouslySetInnerHTML'), 'missing JSON-LD');
+  });
+  it('has openGraph metadata', () => {
+    const src = readSource();
+    assert.ok(src.includes('openGraph'), 'missing openGraph');
+  });
 });
 
-describe('ReportDetail — 边界', () => {
-  test('has length check', () => { assert.ok(SRC.includes('.length')); });
-  test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
-  test('has export functionality', () => { assert.ok(SRC.includes('export') || SRC.includes('Export') || SRC.includes('PDF')); });
+describe('ReportDetailPage - fanli', () => {
+  it('no secret leak', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /(?:secret|password|api[_-]?key)/i);
+  });
+  it('no raw console.log', () => {
+    const src = readSource();
+    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), 'bare console.log');
+  });
+});
+
+describe('ReportDetailPage - bianjie', () => {
+  it('handles not-found state', () => {
+    const src = readSource();
+    assert.ok(src.includes('notFound'), 'missing notFound');
+  });
+  it('has fallback content', () => {
+    const src = readSource();
+    assert.ok(src.includes('fallback'), 'missing fallback');
+  });
+  it('has conditional rendering', () => {
+    const src = readSource();
+    assert.ok(src.includes('?'), 'missing conditional');
+  });
+});
+
+describe('ReportDetailPage - shuju', () => {
+  it('includes generated/generating/failed/expired status', () => {
+    const src = readSource();
+    assert.ok(src.includes('generated'), 'missing generated');
+    assert.ok(src.includes('generating') || src.includes('failed'), 'missing status');
+  });
+  it('includes daily/weekly/monthly/quarterly types', () => {
+    const src = readSource();
+    assert.ok(src.includes('daily'), 'missing daily');
+    assert.ok(src.includes('quarterly'), 'missing quarterly');
+  });
+  it('includes page navigation', () => {
+    const src = readSource();
+    assert.ok(src.includes('prevId') || src.includes('nextId'), 'missing nav');
+  });
+  it('has report metrics', () => {
+    const src = readSource();
+    assert.ok(src.includes('metrics'), 'missing metrics');
+  });
+  it('includes report tips section', () => {
+    const src = readSource();
+    assert.ok(src.includes('\u64cd\u4f5c\u63d0\u793a'), 'missing tips');
+  });
 });

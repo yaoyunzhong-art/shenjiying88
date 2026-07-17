@@ -1,31 +1,132 @@
-/**
- * apps/storefront-web/app/page.tsx — L1 冒烟测试
- * 角色视角: 👤所有访客/会员
- * 覆盖: 正例·反例·边界
+/*!
+ * ./page.test.tsx - L1 smoke test (storefront-web)
+ * Adapted for StorefrontHomePage
  */
-const assert = require('node:assert/strict');
-const { describe, test } = require('node:test');
-const fs = require('node:fs');
-const path = require('path');
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-const SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf8');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
 
-describe('StorefrontHome — 正例', () => {
-  test('exports default function', () => { assert.ok(SRC.includes('export default function')); });
-  test('contains use client', () => { assert.ok(SRC.includes("'use client'")); });
-  test('uses useState', () => { assert.ok(SRC.includes('useState')); });
-  test('contains type or interface', () => { assert.ok(SRC.includes('interface') || SRC.includes('type ')); });
-  test('has mock data', () => { assert.ok(SRC.includes('MOCK') || SRC.includes('mock') || SRC.includes('all')); });
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
+
+describe('StorefrontHomePage - 正例', () => {
+  it('exports default StorefrontHomePage', () => {
+    const src = readSource();
+    assert.ok(src.includes('export default function StorefrontHomePage'), 'missing export');
+  });
+  it('has use client', () => {
+    const src = readSource();
+    assert.ok(src.includes("'use client'"), 'missing use client');
+  });
+  it('imports Button', () => {
+    const src = readSource();
+    assert.ok(src.includes('Button'), 'missing Button');
+  });
+  it('imports Card', () => {
+    const src = readSource();
+    assert.ok(src.includes('Card'), 'missing Card');
+  });
+  it('imports PageShell', () => {
+    const src = readSource();
+    assert.ok(src.includes('PageShell'), 'missing PageShell');
+  });
+  it('imports Tag', () => {
+    const src = readSource();
+    assert.ok(src.includes('Tag'), 'missing Tag');
+  });
+  it('uses useEffect', () => {
+    const src = readSource();
+    assert.ok(src.includes('useEffect'), 'missing useEffect');
+  });
+  it('uses PageShell', () => {
+    const src = readSource();
+    assert.ok(src.includes('PageShell'), 'missing PageShell');
+  });
+  it('uses Button', () => {
+    const src = readSource();
+    assert.ok(src.includes('Button'), 'missing Button');
+  });
+  it('defines QuickEntry interface/type', () => {
+    const src = readSource();
+    assert.ok(src.includes('interface QuickEntry') || src.includes('type QuickEntry'), 'missing QuickEntry');
+  });
+  it('defines PromotionBanner interface/type', () => {
+    const src = readSource();
+    assert.ok(src.includes('interface PromotionBanner') || src.includes('type PromotionBanner'), 'missing PromotionBanner');
+  });
 });
 
-describe('StorefrontHome — 反例', () => {
-  test('no dangerous HTML', () => { assert.ok(!SRC.includes('dangerouslySetInnerHTML')); });
-  test('no any', () => { assert.ok(!/:\s*any\b/.test(SRC)); });
-  test('no secret leak', () => { assert.ok(!/(?:secret|password|api[_-]?key)/i.test(SRC)); });
+describe('StorefrontHomePage - 反例', () => {
+  it('no dangerousSetInnerHTML', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /dangerouslySetInnerHTML/);
+  });
+  it('no any type', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /:\s*any\b/);
+  });
+  it('no secret leak', () => {
+    const src = readSource();
+    assert.doesNotMatch(src, /(?:secret|password|api[_-]?key)/i);
+  });
+  it('no raw console.log', () => {
+    const src = readSource();
+    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), 'bare console.log');
+  });
 });
 
-describe('StorefrontHome — 边界', () => {
-  test('has length check', () => { assert.ok(SRC.includes('.length')); });
-  test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
-  test('has data iteration', () => { assert.ok(SRC.includes('.map(') || SRC.includes('.forEach(')); });
+describe('StorefrontHomePage - 边界', () => {
+  it('has conditional rendering', () => {
+    const src = readSource();
+    assert.ok(src.includes('?'), 'missing conditional');
+  });
+  it('uses .map() iteration', () => {
+    const src = readSource();
+    assert.ok(src.includes('.map('), 'missing .map');
+  });
+});
+
+describe('StorefrontHomePage - 数据完整性', () => {
+  it('includes context "24台最新街机..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('24台最新街机'), 'missing 24台最新街机');
+  });
+  it('includes context "¥20/时..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('¥20/时'), 'missing ¥20/时');
+  });
+  it('includes context "热推..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('热推'), 'missing 热推');
+  });
+  it('includes context "街机..."', () => {
+    const src = readSource();
+    assert.ok(src.includes('街机'), 'missing 街机');
+  });
+  it('has constant FEATURED_DEVICES', () => {
+    const src = readSource();
+    assert.ok(src.includes('FEATURED_DEVICES'), 'missing FEATURED_DEVICES');
+  });
+  it('has constant STORE_INFO', () => {
+    const src = readSource();
+    assert.ok(src.includes('STORE_INFO'), 'missing STORE_INFO');
+  });
+  it('has constant timer', () => {
+    const src = readSource();
+    assert.ok(src.includes('timer'), 'missing timer');
+  });
+  it('has constant _banner', () => {
+    const src = readSource();
+    assert.ok(src.includes('_banner'), 'missing _banner');
+  });
+  it('has constant _bannerColor', () => {
+    const src = readSource();
+    assert.ok(src.includes('_bannerColor'), 'missing _bannerColor');
+  });
 });
