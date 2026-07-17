@@ -86,6 +86,10 @@ function createState(): SimulationState {
 
 /** SQL-like 条件求值 */
 function evaluateCondition(qual: string, data: Record<string, unknown>): boolean {
+  // '1=1' → 永真（通过所有行）
+  if (/1\s*=\s*1/.test(qual)) return true;
+  // '1=0' → 永假（拒绝所有行）
+  if (/1\s*=\s*0/.test(qual)) return false;
   // 简化的 qual 解析: tenant_id = '$TENANT_ID' → tenant_id === id
   const tenantMatch = qual.match(/tenant_id\s*=\s*'([^']+)'/);
   if (tenantMatch) {
@@ -263,6 +267,20 @@ describe('L3 E2E 链31 · 多租户RLS验收链', () => {
       // 2. 启用 RLS
       const enabled = enableRls(state, tenantId, 'orders');
       assert.ok(enabled);
+
+      // 2b. 也为 tenant-002 创建策略，确保多租户隔离验证完备
+      createPolicy(state, 'tenant-002', {
+        policyName: 'tenant_isolation_policy',
+        tableName: 'orders',
+        schemaName: 'public',
+        roles: ['app_user'],
+        permissive: 'PERMISSIVE',
+        cmd: 'ALL',
+        qual: "tenant_id = 'tenant-002'",
+        withCheck: "tenant_id = 'tenant-002'",
+        enabled: true,
+      });
+      enableRls(state, 'tenant-002', 'orders');
 
       // 3. 填充测试数据
       state.records.push(

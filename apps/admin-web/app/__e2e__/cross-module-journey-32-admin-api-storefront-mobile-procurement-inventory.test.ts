@@ -150,8 +150,8 @@ function approveOrder(state: SimState, orderId: string, approver: string): boole
 function receiveGoods(state: SimState, orderId: string, receiptLines: ReceiptLine[]): void {
   const order = state.orders.find(o => o.id === orderId);
   if (!order) throw new Error('Order not found');
-  if (order.status !== 'approved' && order.status !== 'shipped') {
-    throw new Error('Order must be approved or shipped before receiving');
+  if (order.status !== 'approved' && order.status !== 'shipped' && order.status !== 'partially_received') {
+    throw new Error('Order must be approved, shipped, or partially_received before receiving');
   }
 
   for (const line of receiptLines) {
@@ -461,12 +461,13 @@ describe('L3 E2E 链32 · 库存采购验收链', () => {
       assert.equal(sim.inventory[0].quantity, 60);
       assert.equal(sim.inventory[1].quantity, 30);
 
-      // 第二次收货
+      // 第二次收货: A001 全部回收, A002 也回收剩余
       receiveGoods(sim, 'po-mix', [
         { purchaseOrderId: 'po-mix', sku: 'A001', expectedQty: 100, receivedQty: 40, damageQty: 0, returnedQty: 0, status: 'received' },
+        { purchaseOrderId: 'po-mix', sku: 'A002', expectedQty: 50, receivedQty: 20, damageQty: 0, returnedQty: 0, status: 'received' },
       ]);
 
-      assert.equal(sim.orders[0].status, 'received'); // A002 还有20未收，但逻辑上产品A全收了
+      assert.equal(sim.orders[0].status, 'received'); // 两个SKU全部收齐
     });
   });
 });

@@ -225,8 +225,8 @@ function processRefund(state: SimState, txId: string, refundAmount: number): Tra
 
   state.transactions.push(refundTx);
 
-  // 冲红分录
-  postJournalEntry(state, refundTx.id, '4000-revenue', 'credit', refundAmount, `冲红: 退款#${txId}`);
+  // 冲红分录: 收入是credit-normal, 冲减用debit
+  postJournalEntry(state, refundTx.id, '4000-revenue', 'debit', refundAmount, `冲红: 退款#${txId}`);
   postJournalEntry(state, refundTx.id, '1000-cash', 'credit', refundAmount, `退款支出: 关联#${txId}`);
 
   return refundTx;
@@ -365,7 +365,9 @@ describe('L3 E2E 链33 · 财务对账验收链', () => {
 
       // 外部报 99.99 (差1分)
       const batch = generateReconciliationBatch(sim, '2026-07-17', 's1', 99.99);
-      assert.equal(Math.abs(batch.difference), 0.01);
+      // 浮点精度处理: 四舍五入到分
+      const diffRounded = Number(Math.abs(batch.difference).toFixed(2));
+      assert.equal(diffRounded, 0.01);
 
       // 1分差异自动标记 pending_review
       assert.equal(batch.status, 'pending_review');
