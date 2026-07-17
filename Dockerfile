@@ -26,7 +26,7 @@ WORKDIR /workspace
 # ─── 依赖层 ──────────────────────────────────────────────
 FROM base AS deps
 
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json turbo.json ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json turbo.json eslint.config.mjs ./
 
 # 复制所有 apps/package.json (结构声明,不含源码)
 COPY apps/api/package.json         apps/api/
@@ -78,8 +78,8 @@ COPY apps/admin-web/               apps/admin-web/
 COPY apps/storefront-web/          apps/storefront-web/
 COPY apps/tob-web/                 apps/tob-web/
 
-# 构建全部 monorepo turbo 任务
-RUN pnpm build
+# 构建 API 及其依赖 (避免不必要的 Next 构建拖慢/阻断镜像产出)
+RUN pnpm turbo build --filter=@m5/api...
 
 # ──────────────────────────────────────────────────────────
 # 🎯 目标: api-prod
