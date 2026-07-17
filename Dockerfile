@@ -95,6 +95,8 @@ RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
 # 使用 pnpm deploy 提取最小生产依赖
 COPY --from=deps /workspace/node_modules ./node_modules
 COPY --from=deps /workspace/packages ./packages
+COPY --from=build /workspace/packages/domain/dist ./packages/domain/dist
+COPY --from=build /workspace/packages/types/dist ./packages/types/dist
 
 COPY --from=build /workspace/apps/api/dist ./dist
 COPY --from=build /workspace/apps/api/prisma ./prisma
