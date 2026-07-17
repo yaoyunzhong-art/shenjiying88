@@ -176,7 +176,7 @@ import { CustomerSatisfactionModule } from './modules/customer-satisfaction/cust
     }),
     CacheModule.forRootInMemory(),
     EventBusModule.forRootInMemory(),
-    ...(process.env.NODE_ENV === 'production' ? [] : [TypeOrmCompatModule]),
+    TypeOrmCompatModule,
     PrismaModule,
     TenantModule,
     BootstrapModule,
