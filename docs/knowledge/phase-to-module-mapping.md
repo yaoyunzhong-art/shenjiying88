@@ -30,6 +30,25 @@
 | Users | admin-web/app/users/ | 158行 | 32行 | 🆕 | 🔴 | P-Admin 用户 |
 | Account | storefront-web/app/account/ | 498行 | 362行 | 🆕 | 🔴 | P-36会员 |
 
+### V19 Day2 凌晨 storefront 薄页面补齐 (2026-07-18 02:25-03:10)
+| 页面 | 位置 | 代码 | 测试 | 审计 | PRD | 推荐Phase |
+|:-----|:----|:---:|:----:|:----:|:---:|:---------|
+| Alerts | storefront-web/app/alerts/[id]/ | 已有 | 171行🆕 | ✅V15 | 🟡已有 | P-36会员 |
+| Coupons/[id] | storefront-web/app/coupons/[id]/ | 已有 | 163行🆕 | ✅V15 | 🟡已有 | P-48联名券 |
+| Coupons/new | storefront-web/app/coupons/new/ | 已有 | 147行🆕 | ✅V15 | 🟡已有 | P-48联名券 |
+| Members/[id] | storefront-web/app/members/[id]/ | 已有 | 223行🆕 | ✅V15 | 🟡已有 | P-36会员 |
+| Members/new | storefront-web/app/members/new/ | 已有 | 191行🆕 | ✅V15 | 🟡已有 | P-36会员 |
+| Products/[id] | storefront-web/app/products/[id]/ | 已有 | 203行🆕 | ✅V15 | 🟡已有 | P-37库存 |
+| Products/new | storefront-web/app/products/new/ | 已有 | 155行🆕 | ✅V15 | 🟡已有 | P-37库存 |
+| Refunds/new | storefront-web/app/refunds/new/ | 已有 | 175行🆕 | ✅V15 | 🟡已有 | P-38财务 |
+| Reports/[id] | storefront-web/app/reports/[id]/ | 已有 | 142行🆕 | ✅V15 | 🟡已有 | P-39报表 |
+| Reports/new | storefront-web/app/reports/new/ | 已有 | 139行🆕 | ✅V15 | 🟡已有 | P-39报表 |
+| Stock/[id] | storefront-web/app/stock/[id]/ | 已有 | 215行🆕 | ✅V15 | 🟡已有 | P-37库存 |
+| Stock/new | storefront-web/app/stock/new/ | 已有 | 163行🆕 | ✅V15 | 🟡已有 | P-37库存 |
+| Suppliers/new | storefront-web/app/suppliers/new/ | 已有 | 170行🆕 | ✅V15 | 🟡已有 | P-37库存 |
+| Home page | storefront-web/app/ | 已有 | 131行🆕 | ✅V15 | 🟡已有 | — |
+| Campaigns/new | storefront-web/app/campaigns/new/ | 已有 | 163行🆕 | ✅V15 | 🟡已有 | P-47品牌 |
+
 ### 基础设施组（建议创建 Phase-P0 基础设施）
 | 模块 | 文件数 | 测试 | 推荐Phase |
 |:-----|:------:|:----:|:---------:|
