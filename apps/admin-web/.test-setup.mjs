@@ -2,9 +2,14 @@
 // Loaded via `node --import ./.test-setup.mjs` before tests
 
 import { Window } from 'happy-dom';
+import React from 'react';
 
 const window = new Window({ url: 'http://localhost' });
 const document = window.document;
+
+// Some page components use 'use client' with automatic JSX transform but
+// the test environment needs React in scope for @testing-library/react renders
+globalThis.React = React;
 
 Object.assign(globalThis, {
   window,

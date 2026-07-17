@@ -13,9 +13,10 @@ const SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf8');
 describe('SupplierNew — 正例', () => {
   test('exports default function', () => { assert.ok(SRC.includes('export default function')); });
   test('contains use client', () => { assert.ok(SRC.includes("'use client'")); });
-  test('uses useState', () => { assert.ok(SRC.includes('useState')); });
+  test('uses useMemo or useState', () => { assert.ok(SRC.includes('useMemo') || SRC.includes('useState')); });
   test('contains type or interface', () => { assert.ok(SRC.includes('interface') || SRC.includes('type ')); });
-  test('has mock data', () => { assert.ok(SRC.includes('MOCK') || SRC.includes('mock')); });
+  test('has form fields array', () => { assert.ok(SRC.includes('FIELDS')); });
+  test('uses FormPageScaffold', () => { assert.ok(SRC.includes('FormPageScaffold')); });
 });
 
 describe('SupplierNew — 反例', () => {
@@ -26,6 +27,8 @@ describe('SupplierNew — 反例', () => {
 
 describe('SupplierNew — 边界', () => {
   test('has length check', () => { assert.ok(SRC.includes('.length')); });
-  test('has filter or find', () => { assert.ok(SRC.includes('.filter(') || SRC.includes('.find(')); });
+  test('has validation rules', () => { assert.ok(SRC.includes('rules')); });
   test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
+  test('has async submit handler', () => { assert.ok(SRC.includes('async')); });
+  test('has error handling', () => { assert.ok(SRC.includes('throw') || SRC.includes('error') || SRC.includes('catch')); });
 });
