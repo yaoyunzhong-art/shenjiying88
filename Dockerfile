@@ -19,12 +19,14 @@ ENV PATH="$PNPM_HOME:$PATH"
 ENV NODE_ENV=production
 
 RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
-RUN apk add --no-cache openssl tini curl wget
 
 WORKDIR /workspace
 
 # ─── 依赖层 ──────────────────────────────────────────────
 FROM base AS deps
+
+RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine|https://mirrors.aliyun.com/alpine|g' /etc/apk/repositories \
+ && apk add --no-cache openssl
 
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json turbo.json eslint.config.mjs ./
 
@@ -87,6 +89,9 @@ RUN pnpm turbo build --filter=@m5/api...
 FROM base AS api-prod
 
 WORKDIR /app
+
+RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine|https://mirrors.aliyun.com/alpine|g' /etc/apk/repositories \
+ && apk add --no-cache tini wget
 
 RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
 
