@@ -203,8 +203,8 @@ export default function ReviewDetailPage() {
           saveState.isSubmitting || transitioning,
           () => {
             if (editing) {
-              handleSave().then((ok) => {
-                if (ok) {
+              handleSave().then((result) => {
+                if (result !== undefined) {
                   setEditing(false);
                   resetSave();
                 }
