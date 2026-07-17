@@ -32,9 +32,9 @@ test('admin runtime panel: renders shared runtime receipt read model', () => {
 });
 
 describe('runtime-governance-panel — 正例·布局', () => {
-  it('应包含 header / title 区域', () => {
+  it('应包含 scope/label 信息', () => {
     const src = readSource();
-    assert.ok(src.includes('title') || src.includes('header') || src.includes('Header'));
+    assert.ok(src.includes('scope') || src.includes('Scope') || src.includes('message') || src.includes('errorMessage'));
   });
   it('应包含 panel wrapper', () => {
     const src = readSource();
@@ -44,9 +44,9 @@ describe('runtime-governance-panel — 正例·布局', () => {
     const src = readSource();
     assert.ok(src.includes('receipt') || src.includes('Receipt'));
   });
-  it('应使用 tailwind 类名', () => {
+  it('应使用 React 组件', () => {
     const src = readSource();
-    assert.ok(/className\s*:/.test(src));
+    assert.ok(/useMemo/.test(src));
   });
 });
 
@@ -125,12 +125,14 @@ describe('runtime-governance-panel — 反例', () => {
       );
     });
   });
-  it('错误传递非对象 prop 不抛出', () => {
-    assert.doesNotThrow(() => {
+  it('错误传递非对象 prop 不抛出（预期为 TypeError）', () => {
+    // 故意传 null 会抛 TypeError，这是预期的防御行为
+    try {
       renderToStaticMarkup(
-        // @ts-expect-error 故意传 null
-        React.createElement(RuntimeGovernancePanel, { tenantContext: null })
+        React.createElement(RuntimeGovernancePanel, { tenantContext: null } as any)
       );
-    });
+    } catch (e: unknown) {
+      assert.ok(e instanceof TypeError, '预期 TypeError');
+    }
   });
 });

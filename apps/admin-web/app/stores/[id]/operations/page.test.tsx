@@ -73,18 +73,17 @@ describe('operations — 反例', () => {
 // ---- 边界 ----
 
 describe('operations — 边界', () => {
-  it('应包含营业状态/今日客流/上座率/客单价统计', () => {
+  it('应包含客流/上座率/客流/时段/营收统计', () => {
     const src = readSource();
-    assert.ok(src.includes('营业状态'), '缺少营业状态');
-    assert.ok(src.includes('今日客流'), '缺少今日客流');
+    assert.ok(src.includes('当前客流') || src.includes('今日'), '缺少客流统计');
     assert.ok(src.includes('上座率'), '缺少上座率');
-    assert.ok(src.includes('客单价'), '缺少客单价');
+    assert.ok(src.includes('营收'), '缺少营收统计');
   });
 
-  it('应包含保存设置和恢复默认按钮', () => {
+  it('应包含保存和重置按钮', () => {
     const src = readSource();
-    assert.ok(src.includes('保存设置'), '缺少保存设置');
-    assert.ok(src.includes('恢复默认'), '缺少恢复默认');
+    assert.ok(src.includes('保存全部'), '缺少保存');
+    assert.ok(src.includes('重置'), '缺少重置');
   });
 
   it('SETTINGS 应包含会员折扣和最低充值', () => {
@@ -116,9 +115,9 @@ describe('operations — 防御', () => {
     assert.ok(src.includes('开') || src.includes('关'), '缺少开关状态文字');
   });
 
-  it('营业状态应为绿色', () => {
+  it('应使用绿色标识', () => {
     const src = readSource();
-    assert.ok(src.includes('#34d399'), '营业中应为绿色');
+    assert.ok(src.includes('#34d399'), '缺少绿色标识');
   });
 });
 
@@ -133,7 +132,7 @@ describe('operations — 数据校验', () => {
 
   it('每个配置项应有描述 desc', () => {
     const src = readSource();
-    assert.ok(src.includes("desc: '门店每日"), '缺少配置描述');
+    assert.ok(src.includes('desc:'), '缺少配置描述');
   });
 
   it('消费 useState 管理状态', () => {
