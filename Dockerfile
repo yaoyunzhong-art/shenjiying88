@@ -90,14 +90,12 @@ WORKDIR /app
 RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
 
 # 使用 pnpm deploy 提取最小生产依赖
-RUN --mount=type=bind,from=deps,source=/workspace,target=/deps \
-    cp -r /deps/node_modules ./node_modules && \
-    cp -r /deps/packages ./packages
+COPY --from=deps /workspace/node_modules ./node_modules
+COPY --from=deps /workspace/packages ./packages
 
-RUN --mount=type=bind,from=build,source=/workspace,target=/build \
-    cp -r /build/apps/api/dist ./dist && \
-    cp -r /build/apps/api/prisma ./prisma && \
-    cp /build/apps/api/package.json ./
+COPY --from=build /workspace/apps/api/dist ./dist
+COPY --from=build /workspace/apps/api/prisma ./prisma
+COPY --from=build /workspace/apps/api/package.json ./
 
 ENV NODE_ENV=production
 ENV API_PORT=3001
