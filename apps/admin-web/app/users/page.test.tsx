@@ -1,6 +1,5 @@
 /**
- * users/page.test.tsx — 用户列表页 L1 冒烟测试
- * 覆盖: hooks验证
+ * users/page.test.tsx — 用户管理 L1 冒烟测试
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -8,18 +7,26 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
+const CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'users-client.tsx'), 'utf-8');
 
-// ---- hooks验证 ----
+describe('users — 服务端', () => {
+  it('async', () => assert.ok(SRC.includes('async function UsersPage')));
+  it('PageShell', () => assert.ok(SRC.includes('<PageShell')));
+  it('Suspense', () => assert.ok(SRC.includes('<Suspense')));
+  it('ErrorBoundary', () => assert.ok(SRC.includes('<ErrorBoundary')));
+  it('client', () => assert.ok(SRC.includes('users-client')));
+  it('dynamic', () => assert.ok(SRC.includes("export const dynamic = 'force-dynamic'")));
+});
 
-describe('users — hooks验证', () => {
-  it('包含useState状态声明', () => assert.ok(SRC.includes('const [') && SRC.includes('] = useState') || SRC.includes('useState')));
-  it('包含JSX返回语句', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器(onClick/onChange)', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染(map)', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString') || SRC.includes('Math.')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出函数', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**') || SRC.includes(' * 功能')));
+describe('users — 客户端', () => {
+  it('use client', () => assert.ok(CLIENT_SRC.includes("'use client'")));
+  it('useState', () => assert.ok(CLIENT_SRC.includes('useState')));
+  it('用户数据', () => assert.ok(CLIENT_SRC.includes('MOCK_USERS')));
+  it('map渲染', () => assert.ok(CLIENT_SRC.includes('.map(')));
+  it('条件渲染', () => assert.ok(CLIENT_SRC.includes(' && ') || CLIENT_SRC.includes(' ? ')));
+  it('DataTable', () => assert.ok(CLIENT_SRC.includes('<DataTable')));
+  it('StatusBadge', () => assert.ok(CLIENT_SRC.includes('StatusBadge')));
+  it('SearchFilterInput', () => assert.ok(CLIENT_SRC.includes('SearchFilterInput')));
+  it('角色筛选', () => assert.ok(CLIENT_SRC.includes('roleFilter')));
+  it('统计卡片', () => assert.ok(CLIENT_SRC.includes('总用户')));
 });
