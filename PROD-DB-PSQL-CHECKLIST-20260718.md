@@ -5,8 +5,12 @@
 - Confirm the production change window is approved
 - Confirm the operator, reviewer, and rollback owner are assigned
 - Confirm the target connection is the runtime `DATABASE_URL` for `m5platform`
+- Confirm the execution account has both:
+  - database-level `CREATE`
+  - schema-level `CREATE` on `public`
 - Confirm the database is still empty or matches the expected pre-wave state
 - Confirm no business seed job or ingestion task will start during schema bootstrap
+- Current runtime `m5admin` does not satisfy the required DDL privileges and cannot execute this checklist as-is
 
 ## Regenerate Artifacts
 
@@ -49,6 +53,9 @@ Expected:
 
 - current database is `m5platform`
 - no unexpected user tables exist in `public`
+- execution account privilege probe returns:
+  - `has_database_privilege(current_user, current_database(), 'CREATE') = true`
+  - `has_schema_privilege(current_user, 'public', 'CREATE') = true`
 
 ### Step 2
 

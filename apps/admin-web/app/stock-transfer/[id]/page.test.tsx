@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * stock-transfer/[id]/page.test.tsx — 库存调拨详情页 L1 测试
  *

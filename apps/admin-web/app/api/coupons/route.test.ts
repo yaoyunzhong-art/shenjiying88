@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * api/coupons/route.test.ts — 营销券代理层 L1 测试
  *

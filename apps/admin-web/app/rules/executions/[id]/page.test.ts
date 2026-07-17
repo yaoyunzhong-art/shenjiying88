@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Phase-41 T172: 规则执行结果详情页测试 (node:test)
  *

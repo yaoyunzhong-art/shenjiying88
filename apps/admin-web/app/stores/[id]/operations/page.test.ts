@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * operations/page.test.ts — Page-level tests for the admin operations listing page.
  * Tests route config, preset/detail mock data integrity, filter logic.

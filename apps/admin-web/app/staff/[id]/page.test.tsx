@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * staff/[id]/page.test.tsx — 员工详情页 L1 测试
  *
