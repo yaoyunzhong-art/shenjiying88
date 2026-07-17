@@ -270,14 +270,14 @@ describe('StoreDetailPage — 业务深度', () => {
 // ---- hooks验证 ----
 
 describe('StoreDetailPage — hooks验证', () => {
-  it('包含useState状态声明', () => assert.ok(SRC.includes('useState')));
-  it('包含JSX返回语句', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器(onClick/onChange)', () => assert.ok(SRC.includes('onClick') || SRC.includes('onChange')));
-  it('包含列表渲染(map)', () => assert.ok(SRC.includes('.map(')));
+  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
+  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
+  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
+  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
   it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('Math.') || SRC.includes('.reduce(') || SRC.includes('.filter(')));
+  it('包含数据格式化(toLocaleString)', () => assert.ok(SRC.includes('toLocaleString')));
   it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出函数', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('//') || SRC.includes('/*')));
+  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
+  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
 });

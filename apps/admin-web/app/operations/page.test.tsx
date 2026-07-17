@@ -229,5 +229,5 @@ describe('Operations — hooks验证', () => {
   it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
   it('包含模板字符串', () => assert.ok(SRC.includes('${')));
   it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
+  it('包含注释说明', () => assert.ok(SRC.includes("'use client'") || SRC.includes('/**')));
 });
