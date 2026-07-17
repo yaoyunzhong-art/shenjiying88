@@ -104,6 +104,7 @@ COPY --from=build /workspace/apps/api/package.json ./
 
 ENV NODE_ENV=production
 ENV API_PORT=3001
+ENV NODE_PATH=/app/node_modules/.pnpm/node_modules
 
 USER app
 
