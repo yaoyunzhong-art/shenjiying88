@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { LoadingSkeleton, PageShell } from '@m5/ui';
+import { LoadingSkeleton, PageShell, ErrorBoundary } from '@m5/ui';
 import { getAdminWorkbenchConsumerSnapshot } from '../bootstrap';
 import { loadIntegrationOrchestrationWorkspace } from '../integration-orchestration-view-model';
 import IntegrationOrchestrationWorkspaceClient from './integration-orchestration-workspace-client';
@@ -9,38 +9,48 @@ interface IntegrationOrchestrationPageProps {
 }
 
 function readQueryParam(value: string | string[] | undefined): string | undefined {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
+  if (Array.isArray(value)) return value[0];
   return value;
 }
 
+/**
+ * 集成编排页面
+ * - Webhook 来源目录、事件信封与幂等记录
+ * - 开放平台和回调编排链路管理
+ * - 并行加载 workspace + workbench snapshot
+ * - 错误边界保护 + 骨架屏加载态
+ */
 export default async function IntegrationOrchestrationPage({
-  searchParams
+  searchParams,
 }: IntegrationOrchestrationPageProps) {
   const params = await searchParams;
   const query = {
-    source: readQueryParam(params.source)
+    source: readQueryParam(params.source),
   };
 
   const [workspaceSnapshot, workbenchSnapshot] = await Promise.all([
     loadIntegrationOrchestrationWorkspace(query, { cache: 'no-store' }),
-    getAdminWorkbenchConsumerSnapshot()
+    getAdminWorkbenchConsumerSnapshot(),
   ]);
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="集成编排"
-        subtitle="统一查看 Webhook 来源目录、事件信封与幂等记录，收口开放平台和回调编排链路。"
-      >
-        <Suspense fallback={<LoadingSkeleton variant="card" rows={4} label="加载集成编排工作台..." />}>
-          <IntegrationOrchestrationWorkspaceClient
-            workspace={workspaceSnapshot.workspace}
-            foundationDependencies={workbenchSnapshot.foundationDependencies}
-          />
-        </Suspense>
-      </PageShell>
-    </main>
+    <ErrorBoundary>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell
+          title="集成编排"
+          subtitle="统一查看 Webhook 来源目录、事件信封与幂等记录，收口开放平台和回调编排链路。"
+        >
+          <Suspense fallback={<LoadingSkeleton variant="card" rows={4} label="加载集成编排工作台..." />}>
+            <IntegrationOrchestrationWorkspaceClient
+              workspace={workspaceSnapshot.workspace}
+              foundationDependencies={workbenchSnapshot.foundationDependencies}
+            />
+          </Suspense>
+        </PageShell>
+      </main>
+    </ErrorBoundary>
   );
 }
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
