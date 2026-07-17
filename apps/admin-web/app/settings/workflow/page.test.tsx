@@ -233,7 +233,7 @@ describe('workflow: 业务逻辑', () => {
 
 const SRC = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
-describe('Settings / Workflow — hooks验证', () => {
+describe('Settings / Workflow — hooks验证', { timeout: 3000 }, () => {
   it('使用函数组件', () => assert.ok(SRC.includes('function ') || SRC.includes('=>')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
   it('包含事件处理器', () => assert.ok(SRC.includes('on') || SRC.includes('handle')));
