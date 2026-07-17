@@ -294,7 +294,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
       <ReportNavigation currentId={id} />
 
       {/* 主内容 */}
-      <ErrorBoundary fallback={() => <ReportDetailErrorFallback />}>
+      <ErrorBoundary fallback={<ReportDetailErrorFallback />}>
         <Suspense fallback={<ReportDetailLoadingFallback />}>
           <ReportDetailClient report={report} />
         </Suspense>

@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react'
+import { useParams } from 'next/navigation'
 
 interface Announcement {
   id: string
@@ -67,8 +68,10 @@ const PRIORITY_LABELS: Record<string, string> = {
   low: '低', normal: '普通', high: '重要', urgent: '紧急',
 }
 
-export default function AnnouncementDetailPage({ params }: { params: { id: string } }) {
-  const announcement = MOCK_ANNOUNCEMENTS[params.id]
+export default function AnnouncementDetailPage() {
+  const params = useParams<{ id: string }>()
+  const announcementId = typeof params.id === 'string' ? params.id : ''
+  const announcement = MOCK_ANNOUNCEMENTS[announcementId]
   const [marked, setMarked] = useState(false)
 
   if (!announcement) {
@@ -76,7 +79,7 @@ export default function AnnouncementDetailPage({ params }: { params: { id: strin
       <div className="max-w-2xl mx-auto py-16 text-center">
         <div className="text-5xl mb-4">📢</div>
         <h2 className="text-lg font-semibold text-gray-900 mb-2">公告未找到</h2>
-        <p className="text-sm text-gray-500 mb-4">ID "{params.id}" 不存在或已下架</p>
+        <p className="text-sm text-gray-500 mb-4">ID "{announcementId}" 不存在或已下架</p>
         <a href="/announcements" className="text-blue-600 text-sm hover:underline">← 返回公告列表</a>
       </div>
     )

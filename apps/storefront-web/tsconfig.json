@@ -3,6 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+      "@m5/types": ["../../packages/types/src/index.ts"],
       "@m5/ui": ["../../packages/ui/src/index.tsx"],
       "@m5/sdk": ["../../packages/sdk/src/index.ts"]
     }

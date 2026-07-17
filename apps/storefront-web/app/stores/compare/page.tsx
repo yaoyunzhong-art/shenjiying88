@@ -295,7 +295,7 @@ export default async function CompareStoresPage({ searchParams }: PageProps) {
       </div>
 
       {/* 主对比内容 */}
-      <ErrorBoundary fallback={() => <CompareStoresErrorFallback />}>
+      <ErrorBoundary fallback={<CompareStoresErrorFallback />}>
         <Suspense fallback={<CompareStoresLoadingFallback />}>
           {hasPreselected ? (
             <CompareStoresClient preselectedIds={preselectedIds} baselineId={baselineId} />
