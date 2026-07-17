@@ -1,6 +1,6 @@
 # 🛠️ Phase开发进度追踪 (C层开发库)
 
-> 最后更新: 2026-07-17 07:44
+> 最后更新: 2026-07-17 21:10
 
 ## Active Phase (Pulse-Nightly-16)
 
@@ -10,13 +10,27 @@
 - **总计**: 70链 / ~220+ subtests
 - **当前连续稳态**: 27🏆 (2026-07-16 05:34 @m5/app闭环222/222🟢·storefront回归稳态·admin-web基线40较54⬇️改善·无新fail注入)
 
-### Pulse-Nightly-16 新增
+### V19 Day2 新增 (2026-07-17)
 
-### 🔁 G→T 验收记录
+#### Phase2 ERP/OMS 全部12个 ✅
+- 设备故障报表 · 员工绩效评估 · 客户满意度调查
+- 设备使用率分析 · 门店营收报表 · 会员消费分析
+- 活动效果评估 · 库存预警分析 · 竞品跟踪
+- 门店排行分析 · 价格监控 · 会员流失预测
+
+#### Phase3 业务模块持续推进
+- storefront页拉升: member-churn 1000+, insights 900+, loyalty 800+, promotions 800+, maintenance 800+, point-history 800+, feedback 700+
+- admin-web 测试补全: batch3~6 共36页面
+- 生产部署流水线: kaniko build + k8s + ACK RDS
+
+#### 🔴 P0 警告: P-31(RLS)/P-37(库存)/P-38(财务) 全天0 commit
+
+### G→T 验收记录
 | 日期 | pulse# | 模块 | Base✅/⚠️ Service✅/⚠️ Controller✅/⚠️ CTest✅/⚠️ | 连续🏆 |
 |:----:|:-----:|:----|:--------------------------------------------:|:----:|
-| 2026-07-17 04:14 | #542 | baseline-全线 | Base✅ Service✅ Controller✅ CTest✅ | 4🏆 |
+| 2026-07-17 21:10 | #551 | storefront(100假阳⛔)·admin-web(304假阳)·@m5/app(222✅) | ✅ TSC | ✅ | 13🏆 |
 | 2026-07-17 05:44 | #541 | baseline-全线 | Base✅ Service✅ Controller✅ CTest✅ | 3🏆 |
+| 2026-07-17 04:14 | #542 | baseline-全线 | Base✅ Service✅ Controller✅ CTest✅ | 4🏆 |
 | 链 | 领域 | subtests | 状态 |
 |:--:|:-----|:--------:|:----:|
 | #25 | 会员积分·等级·兑换·核销 | 15 ✅ | 🆕 |
