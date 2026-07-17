@@ -12,15 +12,15 @@ import assert from 'node:assert/strict';
 
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
+import fs from 'node:fs';
 
 import {
-import fs from 'node:fs';
   URGENCY_LABEL,
   URGENCY_LEVELS,
   TYPE_LABEL,
   TRANSFER_TYPES,
   URGENCY_VARIANT,
-} from '../../stock-transfer-data';
+} from '../stock-transfer-data';
 
 /* ── 类型 ── */
 
