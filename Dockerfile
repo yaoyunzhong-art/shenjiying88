@@ -47,6 +47,7 @@ COPY packages/config-typescript/package.json packages/config-typescript/
 COPY apps/api/prisma                apps/api/prisma
 
 RUN pnpm config set registry https://registry.npmmirror.com
+RUN pnpm config set node-linker hoisted
 
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
@@ -109,7 +110,7 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:3001/api/v1/health/ping').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/apps/api/src/main.js"]
 
 # ──────────────────────────────────────────────────────────
 # 🎯 目标: admin-prod
