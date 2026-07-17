@@ -115,9 +115,11 @@ Prepared templates:
 
 Prepared scripts:
 
+- `scripts/lib-m5-kubeconfig.sh`
 - `scripts/render-prod-public-cutover.sh`
 - `scripts/verify-prod-public-endpoints.sh`
 - `scripts/build-m5-tls-secret.sh`
+- `scripts/verify-m5-tls-secret.sh`
 - `scripts/preflight-prod-public-cutover.sh`
 - `scripts/apply-prod-public-cutover.sh`
 - `scripts/rollback-prod-public-cutover.sh`
@@ -193,6 +195,22 @@ scripts/build-m5-tls-secret.sh \
   --namespace m5
 ```
 
+After the TLS secret is applied, verify the live secret before any public cutover:
+
+```bash
+kubectl apply -f infra/k8s/rendered-public/m5-tls.yaml
+
+scripts/verify-m5-tls-secret.sh \
+  --env-file infra/k8s/templates/m5-public-endpoints.env.example
+```
+
+This verification checks:
+
+- secret exists in namespace `m5`
+- secret type is `kubernetes.io/tls`
+- certificate subject / issuer / validity
+- SAN coverage for `api/admin/storefront/tob`
+
 ## Apply Command
 
 When DNS, TLS and final hosts are all ready, use the one-shot apply script instead of patching live resources by hand:
@@ -244,6 +262,14 @@ This preflight will:
 - run `kubectl apply --dry-run=server` against rendered `ConfigMap` and `Ingress`
 - treat missing TLS as a warning when `--allow-missing-tls` is set
 
+The current scripts now auto-discover kubeconfig in this order:
+
+1. `KUBECONFIG`
+2. `~/.kube/m5-prod-config`
+3. `./.tmp/ack-kubeconfig.yaml`
+
+This removes the need to export `KUBECONFIG` manually in the common production path.
+
 If the current terminal does not have ACK kubeconfig/context, use offline mode first:
 
 ```bash
@@ -277,6 +303,61 @@ scripts/apply-prod-public-cutover.sh \
 ```
 
 This offline path renders the manifests and checks that no template placeholders remain, but it does not replace a later cluster-connected `server dry-run`.
+
+## Latest Evidence
+
+Latest cluster-connected verification in ACK has already been executed successfully:
+
+- live ingress hosts confirmed:
+  - `api.m5.local`
+  - `admin.m5.local`
+  - `store.m5.local`
+  - `tob.m5.local`
+- live runtime URLs confirmed:
+  - `NEXT_PUBLIC_API_URL=https://api.m5.local/api/v1`
+  - `NEXT_PUBLIC_WS_URL=wss://api.m5.local`
+  - `CORS_ORIGIN=https://admin.m5.local,https://store.m5.local,https://tob.m5.local`
+- live deployment readiness confirmed:
+  - `m5-api = 1/1`
+  - `m5-admin-web = 2/2`
+  - `m5-storefront-web = 2/2`
+  - `m5-tob-web = 1/1`
+- `scripts/preflight-prod-public-cutover.sh --allow-missing-tls` passed
+- `scripts/apply-prod-public-cutover.sh --kubectl-dry-run server --skip-tls-check` passed
+
+The only remaining hard blocker observed in the same verification window is:
+
+- `m5-tls` secret still does not exist in namespace `m5`
+- rendered TLS manifest is still absent until certificate material is provided
+
+## Certificate Hand-Off
+
+When certificate material is provided later, use this exact shortest path:
+
+```bash
+scripts/build-m5-tls-secret.sh \
+  --cert-file /path/to/fullchain.pem \
+  --key-file /path/to/privkey.pem \
+  --secret-name m5-tls \
+  --namespace m5 \
+  --output-file infra/k8s/rendered-public/m5-tls.yaml
+
+kubectl apply -f infra/k8s/rendered-public/m5-tls.yaml
+
+scripts/verify-m5-tls-secret.sh \
+  --env-file infra/k8s/templates/m5-public-endpoints.env.example
+
+scripts/apply-prod-public-cutover.sh \
+  --env-file infra/k8s/templates/m5-public-endpoints.env.example \
+  --kubectl-dry-run server
+```
+
+Only after the four steps above are green, execute the real apply:
+
+```bash
+scripts/apply-prod-public-cutover.sh \
+  --env-file infra/k8s/templates/m5-public-endpoints.env.example
+```
 
 ## Rollback Command
 

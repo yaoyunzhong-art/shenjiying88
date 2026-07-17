@@ -26,6 +26,7 @@ EOF
 }
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT_DIR/scripts/lib-m5-kubeconfig.sh"
 ENV_FILE=""
 NAMESPACE="m5"
 RENDERED_DIR="$ROOT_DIR/infra/k8s/rendered-public-preflight"
@@ -74,6 +75,10 @@ fi
 if ! command -v kubectl >/dev/null 2>&1; then
   echo "kubectl is required" >&2
   exit 1
+fi
+
+if [[ "$OFFLINE" != "true" ]]; then
+  ensure_m5_kubeconfig "$ROOT_DIR"
 fi
 
 # shellcheck disable=SC1090
