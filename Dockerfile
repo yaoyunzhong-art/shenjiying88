@@ -97,6 +97,7 @@ COPY --from=deps /workspace/node_modules ./node_modules
 COPY --from=deps /workspace/packages ./packages
 COPY --from=build /workspace/packages/domain/dist ./packages/domain/dist
 COPY --from=build /workspace/packages/types/dist ./packages/types/dist
+RUN mkdir -p node_modules/@m5 && ln -sf ../../packages/types node_modules/@m5/types && ln -sf ../../packages/domain node_modules/@m5/domain
 
 COPY --from=build /workspace/apps/api/dist ./dist
 COPY --from=build /workspace/apps/api/prisma ./prisma
@@ -104,7 +105,6 @@ COPY --from=build /workspace/apps/api/package.json ./
 
 ENV NODE_ENV=production
 ENV API_PORT=3001
-ENV NODE_PATH=/app/node_modules/.pnpm/node_modules
 
 USER app
 
