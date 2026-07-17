@@ -32,8 +32,8 @@ describe('AnnouncementDetailPage (storefront-web)', () => {
     assert.ok(pageSource.includes('marked'));
   });
 
-  test('页面接收 params 参数', () => {
-    assert.ok(pageSource.includes('params: { id: string }'));
+  test('使用 useParams 获取参数', () => {
+    assert.ok(pageSource.includes("useParams<{ id: string }>()"));
   });
 
   // ── Mock 数据完整性 ──

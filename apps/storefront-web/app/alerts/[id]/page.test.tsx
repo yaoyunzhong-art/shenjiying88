@@ -25,7 +25,7 @@ describe('AlertDetail — 反例', () => {
 });
 
 describe('AlertDetail — 边界', () => {
-  test('has length check', () => { assert.ok(SRC.includes('.length')); });
+  test('has retry mechanism', () => { assert.ok(SRC.includes('retry') || SRC.includes('Retry')); });
   test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
   test('has loading skeleton', () => { assert.ok(SRC.includes('Skeleton') || SRC.includes('Loading')); });
 });

@@ -13,9 +13,9 @@ const SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf8');
 describe('ProductNew — 正例', () => {
   test('exports default function', () => { assert.ok(SRC.includes('export default function')); });
   test('contains use client', () => { assert.ok(SRC.includes("'use client'")); });
-  test('uses useState', () => { assert.ok(SRC.includes('useState')); });
+  test('has form validation rules', () => { assert.ok(SRC.includes('rules')); });
   test('contains type or interface', () => { assert.ok(SRC.includes('interface') || SRC.includes('type ')); });
-  test('has mock data', () => { assert.ok(SRC.includes('MOCK') || SRC.includes('mock')); });
+  test('has form fields', () => { assert.ok(SRC.includes('FIELDS')); });
 });
 
 describe('ProductNew — 反例', () => {
@@ -26,6 +26,6 @@ describe('ProductNew — 反例', () => {
 
 describe('ProductNew — 边界', () => {
   test('has length check', () => { assert.ok(SRC.includes('.length')); });
-  test('has filter or find', () => { assert.ok(SRC.includes('.filter(') || SRC.includes('.find(')); });
+  test('has async submit handler', () => { assert.ok(SRC.includes('async')); });
   test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
 });

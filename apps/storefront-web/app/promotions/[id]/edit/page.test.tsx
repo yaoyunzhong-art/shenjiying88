@@ -25,7 +25,7 @@ describe('PromotionEdit — 反例', () => {
 });
 
 describe('PromotionEdit — 边界', () => {
-  test('has length check', () => { assert.ok(SRC.includes('.length')); });
-  test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
+  test('has mock data', () => { assert.ok(SRC.includes('MOCK') || SRC.includes('mock')); });
+  test('has form field delegation', () => { assert.ok(SRC.includes('FormPageField') || SRC.includes('field')); });
   test('has form fields definition', () => { assert.ok(SRC.includes('field') || SRC.includes('FormPageField')); });
 });

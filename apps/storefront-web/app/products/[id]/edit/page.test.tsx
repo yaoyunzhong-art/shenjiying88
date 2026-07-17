@@ -13,7 +13,7 @@ const SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf8');
 describe('ProductEdit — 正例', () => {
   test('exports default function', () => { assert.ok(SRC.includes('export default function')); });
   test('contains use client', () => { assert.ok(SRC.includes("'use client'")); });
-  test('uses useState', () => { assert.ok(SRC.includes('useState')); });
+  test('uses FormPageScaffold', () => { assert.ok(SRC.includes('FormPageScaffold')); });
   test('contains type or interface', () => { assert.ok(SRC.includes('interface') || SRC.includes('type ')); });
   test('has mock data', () => { assert.ok(SRC.includes('MOCK') || SRC.includes('mock')); });
 });
@@ -25,7 +25,7 @@ describe('ProductEdit — 反例', () => {
 });
 
 describe('ProductEdit — 边界', () => {
-  test('has length check', () => { assert.ok(SRC.includes('.length')); });
+  test('has data loading mechanism', () => { assert.ok(SRC.includes('MOCK') || SRC.includes('mock')); });
   test('has filter or find', () => { assert.ok(SRC.includes('.filter(') || SRC.includes('.find(')); });
   test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
 });

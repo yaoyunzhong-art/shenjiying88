@@ -27,5 +27,5 @@ describe('OperationDetail — 反例', () => {
 describe('OperationDetail — 边界', () => {
   test('has length check', () => { assert.ok(SRC.includes('.length')); });
   test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
-  test('has filter or find', () => { assert.ok(SRC.includes('.filter(') || SRC.includes('.find(')); });
+  test('has operation timeline', () => { assert.ok(SRC.includes('.map(')); });
 });

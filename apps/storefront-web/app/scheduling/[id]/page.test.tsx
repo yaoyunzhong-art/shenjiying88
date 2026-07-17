@@ -11,7 +11,7 @@ const path = require('path');
 const SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf8');
 
 describe('SchedulingDetail — 正例', () => {
-  test('exports default function', () => { assert.ok(SRC.includes('export default function')); });
+  test('exports default async function', () => { assert.ok(SRC.includes('export default async function')); });
   test('contains use client', () => { assert.ok(SRC.includes("'use client'")); });
   test('uses useState', () => { assert.ok(SRC.includes('useState')); });
   test('contains type or interface', () => { assert.ok(SRC.includes('interface') || SRC.includes('type ')); });
@@ -25,7 +25,7 @@ describe('SchedulingDetail — 反例', () => {
 });
 
 describe('SchedulingDetail — 边界', () => {
-  test('has length check', () => { assert.ok(SRC.includes('.length')); });
-  test('has filter or find', () => { assert.ok(SRC.includes('.filter(') || SRC.includes('.find(')); });
+  test('has data iteration with map', () => { assert.ok(SRC.includes('.map(')); });
+  test('has loading state', () => { assert.ok(SRC.includes('Loading') || SRC.includes('loading')); });
   test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
 });

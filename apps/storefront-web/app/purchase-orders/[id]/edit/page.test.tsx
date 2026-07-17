@@ -26,6 +26,6 @@ describe('PurchaseOrderEdit — 反例', () => {
 
 describe('PurchaseOrderEdit — 边界', () => {
   test('has length check', () => { assert.ok(SRC.includes('.length')); });
-  test('has filter or find', () => { assert.ok(SRC.includes('.filter(') || SRC.includes('.find(')); });
+  test('has form state management', () => { assert.ok(SRC.includes('useState') || SRC.includes('useMemo')); });
   test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
 });

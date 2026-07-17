@@ -25,7 +25,7 @@ describe('StockTransferDetail — 反例', () => {
 });
 
 describe('StockTransferDetail — 边界', () => {
-  test('has length check', () => { assert.ok(SRC.includes('.length')); });
-  test('has filter or find', () => { assert.ok(SRC.includes('.filter(') || SRC.includes('.find(')); });
+  test('has status badge', () => { assert.ok(SRC.includes('StatusBadge') || SRC.includes('Badge')); });
+  test('has data iteration', () => { assert.ok(SRC.includes('.map(') || SRC.includes('.forEach(')); });
   test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
 });

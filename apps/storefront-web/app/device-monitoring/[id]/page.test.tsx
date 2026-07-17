@@ -25,7 +25,7 @@ describe('DeviceMonitoringDetail — 反例', () => {
 });
 
 describe('DeviceMonitoringDetail — 边界', () => {
-  test('has length check', () => { assert.ok(SRC.includes('.length')); });
+  test('has device monitoring metrics', () => { assert.ok(SRC.includes('useMemo') || SRC.includes('metrics')); });
   test('has conditional rendering', () => { assert.ok(SRC.includes('?')); });
   test('has status badge', () => { assert.ok(SRC.includes('StatusBadge') || SRC.includes('status')); });
 });

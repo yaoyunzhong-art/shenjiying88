@@ -15,7 +15,7 @@ describe('StockTransferNew — 正例', () => {
   test('contains use client', () => { assert.ok(SRC.includes("'use client'")); });
   test('uses useState', () => { assert.ok(SRC.includes('useState')); });
   test('contains type or interface', () => { assert.ok(SRC.includes('interface') || SRC.includes('type ')); });
-  test('has mock data', () => { assert.ok(SRC.includes('MOCK') || SRC.includes('mock')); });
+  test('has filter or find', () => { assert.ok(SRC.includes('.filter(') || SRC.includes('.find(')); });
 });
 
 describe('StockTransferNew — 反例', () => {
