@@ -237,7 +237,7 @@ describe('Settings / Workflow — hooks验证', () => {
   it('使用函数组件', () => assert.ok(SRC.includes('function ') || SRC.includes('=>')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
   it('包含事件处理器', () => assert.ok(SRC.includes('on') || SRC.includes('handle')));
-  it('包含数组数据", () => assert.ok(SRC.includes("[") || SRC.includes("{") || SRC.includes("..."));
+  it('包含数组数据', () => assert.ok(SRC.includes("[") || SRC.includes("{") || SRC.includes("...")));
   it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
   it('包含模板字符串格式化', () => assert.ok(SRC.includes('${')));
