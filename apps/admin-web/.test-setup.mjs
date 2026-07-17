@@ -35,6 +35,24 @@ const navPath = Module._resolveFilename('next/navigation', {
   paths: Module._nodeModulePaths(process.cwd()),
 });
 
+// Also mock next/link — renders as a plain span
+const linkPath = Module._resolveFilename('next/link', {
+  id: '<preload>',
+  filename: '<preload>',
+  paths: Module._nodeModulePaths(process.cwd()),
+});
+
+const MockNextLink = ({ children, href, ...props }) => {
+  return React.createElement('a', { ...props, 'data-href': href, href }, children);
+};
+
+require.cache[linkPath] = {
+  id: linkPath,
+  filename: linkPath,
+  loaded: true,
+  exports: { default: MockNextLink, __esModule: true },
+};
+
 const mockNavModule = {
   __esModule: true,
   ReadonlyURLSearchParams: class {},
@@ -59,4 +77,22 @@ require.cache[navPath] = {
   exports: mockNavModule,
 };
 
-console.log('[test-setup] happy-dom initialized (ESM), next/navigation mocked');
+// Mock next/image
+const imagePath = Module._resolveFilename('next/image', {
+  id: '<preload>',
+  filename: '<preload>',
+  paths: Module._nodeModulePaths(process.cwd()),
+});
+
+const MockNextImage = ({ src, alt, ...props }) => {
+  return React.createElement('img', { ...props, src, alt });
+};
+
+require.cache[imagePath] = {
+  id: imagePath,
+  filename: imagePath,
+  loaded: true,
+  exports: { default: MockNextImage },
+};
+
+console.log('[test-setup] happy-dom initialized (ESM), next/navigation + next/link + next/image mocked');
