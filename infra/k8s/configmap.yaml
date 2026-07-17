@@ -30,10 +30,10 @@ data:
   EMBEDDING_PROVIDER: "text-embedding-3-small"
 
   # ─── Database ─────────────────────────────────────────
-  POSTGRES_HOST: "m5-prod-cluster-rds.pg.rds.aliyuncs.com"
+  POSTGRES_HOST: "pgm-bp1dp000v7y96z50.pg.rds.aliyuncs.com"
   POSTGRES_PORT: "5432"
   POSTGRES_DB: "m5platform"
-  DATABASE_URL: "postgresql://m5admin:M5Platform@2026!@m5-prod-cluster-rds.pg.rds.aliyuncs.com:5432/m5platform"
+  DATABASE_URL: "postgresql://m5admin:M5Platform@2026!@pgm-bp1dp000v7y96z50.pg.rds.aliyuncs.com:5432/m5platform"
 
   # ─── Redis ────────────────────────────────────────────
   REDIS_HOST: "r-bp1db6d2422ff374.redis.rds.aliyuncs.com"

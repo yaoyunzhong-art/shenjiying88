@@ -12,7 +12,7 @@ type: Opaque
 stringData:
   grafana-admin-user: admin
   grafana-admin-password: M5Grafana@2026!
-  postgres-dsn: "postgresql://m5admin:M5Platform@2026!@m5-prod-cluster-rds.pg.rds.aliyuncs.com:5432/m5platform?sslmode=disable"
+  postgres-dsn: "postgresql://m5admin:M5Platform@2026!@pgm-bp1dp000v7y96z50.pg.rds.aliyuncs.com:5432/m5platform?sslmode=disable"
   redis-addr: "redis://r-bp1db6d2422ff374.redis.rds.aliyuncs.com:6379"
 ---
 apiVersion: v1
