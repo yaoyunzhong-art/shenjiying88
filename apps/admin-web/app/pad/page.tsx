@@ -313,14 +313,6 @@ export default function PadIndexPage() {
                         display: 'flex',
                         flexDirection: 'column',
                       }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#3b82f6';
-                        e.currentTarget.style.boxShadow = '0 0 0 1px #3b82f6';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = '#334155';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}
                     >
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
                         <span style={{ fontSize: 28, lineHeight: 1 }}>{getRoleEmoji(wb.role)}</span>

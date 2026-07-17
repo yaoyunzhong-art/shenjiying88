@@ -235,6 +235,7 @@ export default function ShopAnalyticsPage() {
         <DataTable
           data={productsSorted}
           columns={productColumns}
+          rowKey={(row) => row.name}
           sortable
           emptyText="暂无商品数据"
         />

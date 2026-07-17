@@ -101,7 +101,7 @@ export default async function StockTransferDetailPage({ params }: PageProps) {
       />
 
       {/* 主内容 */}
-      <ErrorBoundary fallback={() => <StockTransferDetailErrorFallback />}>
+      <ErrorBoundary fallback={<StockTransferDetailErrorFallback />}>
         <Suspense fallback={<StockTransferDetailLoadingFallback />}>
           <StockTransferDetailClient transferId={id} />
         </Suspense>

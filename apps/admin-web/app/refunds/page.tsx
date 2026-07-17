@@ -132,7 +132,7 @@ export default function RefundsPage() {
       {refunds && refunds.length > 0 && <RefundSummaryCards refunds={refunds} />}
 
       {/* 主列表 */}
-      <ErrorBoundary fallback={() => <RefundListErrorFallback />}>
+      <ErrorBoundary fallback={<RefundListErrorFallback />}>
         <Suspense fallback={<RefundListLoadingFallback />}>
           {refunds && refunds.length > 0 ? (
             <RefundListClient refunds={refunds} />

@@ -80,8 +80,13 @@ COPY apps/admin-web/               apps/admin-web/
 COPY apps/storefront-web/          apps/storefront-web/
 COPY apps/tob-web/                 apps/tob-web/
 
-# 构建 API 及其依赖 (避免不必要的 Next 构建拖慢/阻断镜像产出)
+# 构建 API 及其依赖
 RUN pnpm turbo build --filter=@m5/api...
+
+# 分别构建三个前端，产出 Next standalone 目录供运行时镜像直接拷贝
+RUN pnpm --filter @m5/admin-web build
+RUN pnpm --filter @m5/storefront-web build
+RUN pnpm --filter @m5/tob-web build
 
 # ──────────────────────────────────────────────────────────
 # 🎯 目标: api-prod
@@ -124,23 +129,9 @@ WORKDIR /app
 
 RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
 
-RUN --mount=type=bind,from=build,source=/workspace/apps/admin-web,target=/src \
-    cp -r /src/.next ./.next && \
-    cp -r /src/public ./public 2>/dev/null || true && \
-    cp /src/package.json ./ && \
-    cp /src/next.config.mjs ./ && \
-    cp /src/next-env.d.ts ./ 2>/dev/null || true && \
-    mkdir -p .next/standalone
-
-# Next.js standalone output stitching
-RUN --mount=type=bind,from=build,source=/workspace,target=/ws \
-    if [ -d /ws/apps/admin-web/.next/standalone ]; then \
-      cp -r /ws/apps/admin-web/.next/standalone/. ./ ; \
-    fi && \
-    if [ -f /ws/apps/admin-web/.next/server/pages-manifest.json ]; then \
-      mkdir -p .next/server && \
-      cp /ws/apps/admin-web/.next/server/pages-manifest.json .next/server/ ; \
-    fi
+COPY --from=build /workspace/apps/admin-web/.next ./.next
+COPY --from=build /workspace/apps/admin-web/package.json ./
+COPY --from=build /workspace/apps/admin-web/next.config.mjs ./
 
 ENV NODE_ENV=production
 ENV PORT=3002
@@ -165,18 +156,9 @@ WORKDIR /app
 
 RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
 
-RUN --mount=type=bind,from=build,source=/workspace/apps/storefront-web,target=/src \
-    cp -r /src/.next ./.next && \
-    cp -r /src/public ./public 2>/dev/null || true && \
-    cp /src/package.json ./ && \
-    cp /src/next.config.mjs ./ && \
-    cp /src/next-env.d.ts ./ 2>/dev/null || true && \
-    mkdir -p .next/standalone
-
-RUN --mount=type=bind,from=build,source=/workspace,target=/ws \
-    if [ -d /ws/apps/storefront-web/.next/standalone ]; then \
-      cp -r /ws/apps/storefront-web/.next/standalone/. ./ ; \
-    fi
+COPY --from=build /workspace/apps/storefront-web/.next ./.next
+COPY --from=build /workspace/apps/storefront-web/package.json ./
+COPY --from=build /workspace/apps/storefront-web/next.config.mjs ./
 
 ENV NODE_ENV=production
 ENV PORT=3003
@@ -201,18 +183,9 @@ WORKDIR /app
 
 RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
 
-RUN --mount=type=bind,from=build,source=/workspace/apps/tob-web,target=/src \
-    cp -r /src/.next ./.next && \
-    cp -r /src/public ./public 2>/dev/null || true && \
-    cp /src/package.json ./ && \
-    cp /src/next.config.mjs ./ && \
-    cp /src/next-env.d.ts ./ 2>/dev/null || true && \
-    mkdir -p .next/standalone
-
-RUN --mount=type=bind,from=build,source=/workspace,target=/ws \
-    if [ -d /ws/apps/tob-web/.next/standalone ]; then \
-      cp -r /ws/apps/tob-web/.next/standalone/. ./ ; \
-    fi
+COPY --from=build /workspace/apps/tob-web/.next ./.next
+COPY --from=build /workspace/apps/tob-web/package.json ./
+COPY --from=build /workspace/apps/tob-web/next.config.mjs ./
 
 ENV NODE_ENV=production
 ENV PORT=3011

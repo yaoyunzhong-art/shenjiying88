@@ -127,7 +127,7 @@ export default async function AdminAlertsPage() {
       />
 
       {/* 数据面板 — 加载 / 空状态 / 错误各层级覆盖 */}
-      <ErrorBoundary fallback={() => <AlertsErrorFallback />}>
+      <ErrorBoundary fallback={<AlertsErrorFallback />}>
         <Suspense fallback={<AlertsLoadingFallback />}>
           <AdminAlertsClient initialGovernance={governance} />
         </Suspense>

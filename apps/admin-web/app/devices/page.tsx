@@ -133,7 +133,7 @@ export default function DevicesPage() {
       {devices && devices.length > 0 && <DeviceSummaryStats devices={devices} />}
 
       {/* 主列表 */}
-      <ErrorBoundary fallback={() => <DeviceListErrorFallback />}>
+      <ErrorBoundary fallback={<DeviceListErrorFallback />}>
         <Suspense fallback={<DeviceListLoadingFallback />}>
           {devices && devices.length > 0 ? (
             <DeviceListClient devices={devices} />

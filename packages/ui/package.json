@@ -9,6 +9,7 @@
   ],
   "dependencies": {
     "@m5/types": "workspace:*",
+    "antd": "^6.5.0",
     "react": "18.3.1"
   },
   "devDependencies": {

@@ -125,13 +125,6 @@ function AnomalySeverityFilter() {
             cursor: 'pointer',
             transition: 'all 0.2s',
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background =
-              s.color.replace(')', ',0.2)').replace('rgb', 'rgba');
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = s.bg;
-          }}
         >
           {s.label}
         </div>
@@ -224,7 +217,7 @@ export default async function AnomalyFrequencyPage() {
       <AnomalySeverityFilter />
 
       {/* 主内容区 */}
-      <ErrorBoundary fallback={() => <AnomalyFrequencyErrorFallback />}>
+      <ErrorBoundary fallback={<AnomalyFrequencyErrorFallback />}>
         <Suspense fallback={<AnomalyFrequencyLoadingFallback />}>
           {alertCount > 0 ? (
             <AnomalyFrequencyClient initialGovernance={governance} />

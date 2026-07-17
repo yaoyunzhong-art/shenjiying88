@@ -1,3 +1,4 @@
+export { Col, Descriptions, Form, Row, message } from 'antd';
 import * as React from 'react';
 import React__default, { ReactNode, InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
 import { FoundationAlertTimelineFilterState, FoundationAlertCode, FoundationAlertTimelineEntry, FoundationAlertDrilldownResponse, FoundationAlertCatalogItem, FoundationOperationsAlert, FoundationAlertMutationKind, FoundationAlertRuntimeCallbackStalledDetail, FoundationAlertTimelineMetrics as FoundationAlertTimelineMetrics$1, FoundationAlertTimelineDigest } from '@m5/types';
@@ -8714,7 +8715,7 @@ interface ErrorBoundaryProps {
     /** Visual severity */
     severity?: ErrorBoundarySeverity;
     /** Custom fallback renderer; receives error + reset callback */
-    fallback?: (args: ErrorBoundaryFallbackArgs) => React__default.ReactNode;
+    fallback?: React__default.ReactNode | ((args: ErrorBoundaryFallbackArgs) => React__default.ReactNode);
     /** Text for the reset/retry button (block / inline modes) */
     retryLabel?: string;
     /** Extra text shown below the error message (block mode) */

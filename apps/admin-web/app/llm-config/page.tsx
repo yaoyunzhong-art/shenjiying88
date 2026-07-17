@@ -85,14 +85,6 @@ function LLMConfigEmptyState() {
               cursor: 'pointer',
               transition: 'all 0.2s',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-              e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-              e.currentTarget.style.borderColor = 'rgba(148,163,184,0.12)';
-            }}
           >
             <div style={{ fontSize: 28, marginBottom: 8 }}>{p.icon}</div>
             <div style={{ color: '#f8fafc', fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{p.label}</div>
@@ -135,7 +127,7 @@ export default function LLMConfigPage() {
         }}
       />
 
-      <ErrorBoundary fallback={() => <LLMConfigErrorFallback />}>
+      <ErrorBoundary fallback={<LLMConfigErrorFallback />}>
         <Suspense fallback={<LLMConfigLoadingFallback />}>
           <LLMConfigClient />
         </Suspense>

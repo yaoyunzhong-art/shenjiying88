@@ -136,7 +136,7 @@ export default function ReturnsPage() {
       {returns && returns.length > 0 && <ReturnSummaryCards returns={returns} />}
 
       {/* 主列表 */}
-      <ErrorBoundary fallback={() => <ReturnListErrorFallback />}>
+      <ErrorBoundary fallback={<ReturnListErrorFallback />}>
         <Suspense fallback={<ReturnListLoadingFallback />}>
           {returns && returns.length > 0 ? (
             <ReturnListClient returns={returns} />

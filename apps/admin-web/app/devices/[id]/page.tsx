@@ -96,7 +96,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
       />
 
       {/* 主内容区 */}
-      <ErrorBoundary fallback={() => <DeviceDetailErrorFallback />}>
+      <ErrorBoundary fallback={<DeviceDetailErrorFallback />}>
         <Suspense fallback={<DeviceDetailLoadingFallback />}>
           <DeviceDetailClient deviceId={id} />
         </Suspense>

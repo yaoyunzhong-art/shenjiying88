@@ -118,7 +118,7 @@ export default async function SLAPage() {
           title="SLA 监控看板"
           subtitle="对标凤梨收银 30 秒响应承诺 · 运维 SLA 可视化 · 直接提升客户签约信心"
         >
-          <ErrorBoundary fallback={() => <SLAErrorFallback />}>
+          <ErrorBoundary fallback={<SLAErrorFallback />}>
             <Suspense fallback={<SLALoadingFallback />}>
               <SLADashboardClient snapshot={snapshot} />
             </Suspense>

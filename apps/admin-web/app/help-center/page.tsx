@@ -158,14 +158,6 @@ export default function HelpCenterPage() {
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(245,158,11,0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-                  e.currentTarget.style.borderColor = 'rgba(148,163,184,0.1)';
-                }}
               >
                 <span>{cat.icon}</span>
                 <span>{cat.label}</span>
@@ -177,7 +169,7 @@ export default function HelpCenterPage() {
       </div>
 
       {/* 主内容 */}
-      <ErrorBoundary fallback={() => <HelpCenterErrorFallback />}>
+      <ErrorBoundary fallback={<HelpCenterErrorFallback />}>
         <Suspense fallback={<HelpCenterLoadingFallback />}>
           {articleCount > 0 ? (
             <HelpCenterClient articles={articles} />

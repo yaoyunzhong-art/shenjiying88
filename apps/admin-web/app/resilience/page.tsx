@@ -180,7 +180,7 @@ export default async function ResiliencePage() {
           </div>
 
           {/* 错误边界 + 主体内容 */}
-          <ErrorBoundary fallback={() => <ResilienceErrorFallback />}>
+          <ErrorBoundary fallback={<ResilienceErrorFallback />}>
             <Suspense fallback={<ResilienceLoadingFallback />}>
               <ResilienceWorkspaceClient overview={overview} />
             </Suspense>

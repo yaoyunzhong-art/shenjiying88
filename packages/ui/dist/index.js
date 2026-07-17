@@ -107,6 +107,7 @@ __export(index_exports, {
   Chip: () => Chip,
   CoachDashboard: () => CoachDashboard,
   CodeBlock: () => CodeBlock,
+  Col: () => import_antd.Col,
   Collapse: () => Collapse,
   Collapsible: () => Collapsible,
   ColorPicker: () => ColorPicker,
@@ -138,6 +139,7 @@ __export(index_exports, {
   DecisionAuditTrail: () => DecisionAuditTrail,
   DeliveryPersonDashboard: () => DeliveryPersonDashboard,
   DescriptionList: () => DescriptionList,
+  Descriptions: () => import_antd.Descriptions,
   DetailActionBar: () => DetailActionBar,
   DetailClosureBar: () => DetailClosureBar,
   DetailShell: () => DetailShell,
@@ -163,6 +165,7 @@ __export(index_exports, {
   FilterChips: () => FilterChips,
   FinanceManagerDashboard: () => FinanceManagerDashboard,
   FloatingActionButton: () => FloatingActionButton,
+  Form: () => import_antd.Form,
   FormField: () => FormField,
   FormPageScaffold: () => FormPageScaffold,
   FormSubmitFeedback: () => FormSubmitFeedback,
@@ -278,6 +281,7 @@ __export(index_exports, {
   ReturnGoodsProcessingPanel: () => ReturnGoodsProcessingPanel,
   RichTextEditor: () => RichTextEditor,
   RolePadClient: () => RolePadClient,
+  Row: () => import_antd.Row,
   RuleRecommendationPanel: () => RuleRecommendationPanel,
   RuntimeGovernancePanelTemplate: () => RuntimeGovernancePanelTemplate,
   RuntimeOperationDateTimeReadout: () => RuntimeOperationDateTimeReadout,
@@ -420,6 +424,7 @@ __export(index_exports, {
   joinRuntimeScopeSummary: () => joinRuntimeScopeSummary,
   listPageStatCardStyle: () => listPageStatCardStyle,
   mapFoundationGovernanceAlertsToRecords: () => mapFoundationGovernanceAlertsToRecords,
+  message: () => import_antd.message,
   refreshFoundationAlertSelection: () => refreshFoundationAlertSelection,
   resolveBreakpoint: () => resolveBreakpoint,
   runtimeOperationDetailDemoPresets: () => runtimeOperationDetailDemoPresets,
@@ -458,6 +463,7 @@ __export(index_exports, {
   validateFormFields: () => validateFormFields
 });
 module.exports = __toCommonJS(index_exports);
+var import_antd = require("antd");
 
 // src/components/ArcadeRevenueCard.tsx
 var import_jsx_runtime = require("react/jsx-runtime");
@@ -4412,12 +4418,12 @@ function ToastContainer({
 var toastCounter = 0;
 function useToast() {
   const [toasts, setToasts] = (0, import_react13.useState)([]);
-  const addToast = (0, import_react13.useCallback)((message, options) => {
+  const addToast = (0, import_react13.useCallback)((message2, options) => {
     const variant = options?.variant ?? "info";
     const durationMs = options?.durationMs ?? 4e3;
     const entry = {
       id: `toast-${++toastCounter}-${Date.now()}`,
-      message,
+      message: message2,
       variant,
       durationMs,
       createdAt: Date.now()
@@ -4436,23 +4442,23 @@ function useToast() {
     setToasts([]);
   }, []);
   const toast = (0, import_react13.useCallback)(
-    (message, options) => addToast(message, options),
+    (message2, options) => addToast(message2, options),
     [addToast]
   );
   const success = (0, import_react13.useCallback)(
-    (message, options) => addToast(message, { ...options, variant: "success" }),
+    (message2, options) => addToast(message2, { ...options, variant: "success" }),
     [addToast]
   );
   const error = (0, import_react13.useCallback)(
-    (message, options) => addToast(message, { ...options, variant: "error" }),
+    (message2, options) => addToast(message2, { ...options, variant: "error" }),
     [addToast]
   );
   const warning = (0, import_react13.useCallback)(
-    (message, options) => addToast(message, { ...options, variant: "warning" }),
+    (message2, options) => addToast(message2, { ...options, variant: "warning" }),
     [addToast]
   );
   const info = (0, import_react13.useCallback)(
-    (message, options) => addToast(message, { ...options, variant: "info" }),
+    (message2, options) => addToast(message2, { ...options, variant: "info" }),
     [addToast]
   );
   return { toasts, success, error, warning, info, toast, dismiss, dismissAll };
@@ -4545,14 +4551,14 @@ function ActionButton({
     try {
       await action.onClick();
       if (onSuccess) {
-        const message = action.successToast?.message ?? DEFAULT_SUCCESS_MESSAGES[action.icon ?? "other"];
-        onSuccess(message, action.successToast);
+        const message2 = action.successToast?.message ?? DEFAULT_SUCCESS_MESSAGES[action.icon ?? "other"];
+        onSuccess(message2, action.successToast);
       }
     } catch (err) {
       if (onError) {
         const fallback = err instanceof Error ? err.message : DEFAULT_ERROR_MESSAGES[action.icon ?? "other"];
-        const message = action.errorToast?.message ?? fallback;
-        onError(message, action.errorToast);
+        const message2 = action.errorToast?.message ?? fallback;
+        onError(message2, action.errorToast);
       }
     } finally {
       setBusy(false);
@@ -8559,19 +8565,19 @@ function formatTime2(iso) {
   const d = new Date(iso);
   return d.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
 }
-function ChatBubble({ message, agentName, agentAvatar }) {
-  const isUser = message.role === "user";
-  const isSystem = message.role === "system";
+function ChatBubble({ message: message2, agentName, agentAvatar }) {
+  const isUser = message2.role === "user";
+  const isSystem = message2.role === "system";
   const statusIndicator = (() => {
     if (isSystem) return null;
-    if (message.status === "sending") return /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("span", { style: { fontSize: 11, color: "#94a3b8", marginLeft: 6 }, children: "\u53D1\u9001\u4E2D..." });
-    if (message.status === "error") return /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("span", { style: { fontSize: 11, color: "#f87171", marginLeft: 6 }, children: "\u53D1\u9001\u5931\u8D25" });
+    if (message2.status === "sending") return /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("span", { style: { fontSize: 11, color: "#94a3b8", marginLeft: 6 }, children: "\u53D1\u9001\u4E2D..." });
+    if (message2.status === "error") return /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("span", { style: { fontSize: 11, color: "#f87171", marginLeft: 6 }, children: "\u53D1\u9001\u5931\u8D25" });
     return null;
   })();
   return /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)(
     "div",
     {
-      "data-testid": `chat-message-${message.role}`,
+      "data-testid": `chat-message-${message2.role}`,
       style: {
         display: "flex",
         flexDirection: isUser || isSystem ? "row-reverse" : "row",
@@ -8615,7 +8621,7 @@ function ChatBubble({ message, agentName, agentAvatar }) {
                 borderBottomRightRadius: isUser ? 4 : 14,
                 borderBottomLeftRadius: isUser ? 14 : 4
               },
-              children: message.content
+              children: message2.content
             }
           ),
           /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)(
@@ -8632,13 +8638,13 @@ function ChatBubble({ message, agentName, agentAvatar }) {
                 justifyContent: isUser ? "flex-end" : "flex-start"
               },
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("span", { children: formatTime2(message.timestamp) }),
-                message.durationMs != null && /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)("span", { children: [
-                  message.durationMs,
+                /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("span", { children: formatTime2(message2.timestamp) }),
+                message2.durationMs != null && /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)("span", { children: [
+                  message2.durationMs,
                   "ms"
                 ] }),
-                message.tokenUsage != null && /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)("span", { children: [
-                  message.tokenUsage,
+                message2.tokenUsage != null && /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)("span", { children: [
+                  message2.tokenUsage,
                   " tokens"
                 ] }),
                 statusIndicator
@@ -24304,7 +24310,7 @@ function RuntimeOperationToolbar(props) {
   );
 }
 function RuntimePanelFeedback(props) {
-  const { message, receipt, actionError } = props;
+  const { message: message2, receipt, actionError } = props;
   return import_react58.default.createElement(
     "div",
     {
@@ -24317,7 +24323,7 @@ function RuntimePanelFeedback(props) {
         border: actionError ? "1px solid rgba(248,113,113,0.24)" : "1px solid rgba(148,163,184,0.14)"
       }
     },
-    message ? import_react58.default.createElement("p", { className: "feedback-message", style: { margin: 0, fontSize: 13, color: "#e2e8f0" } }, message) : null,
+    message2 ? import_react58.default.createElement("p", { className: "feedback-message", style: { margin: 0, fontSize: 13, color: "#e2e8f0" } }, message2) : null,
     receipt ? import_react58.default.createElement(
       "p",
       { className: "feedback-receipt", style: { margin: "8px 0 0", fontSize: 12, color: "#93c5fd" } },
@@ -24379,7 +24385,7 @@ function useRuntimePanelState(defaultMessage) {
   const [receipt, setReceipt] = import_react58.default.useState(null);
   const [pendingOperation, setPendingOperation] = import_react58.default.useState(null);
   const [actionError, setActionError] = import_react58.default.useState(null);
-  const [message, setMessage] = import_react58.default.useState(defaultMessage ?? null);
+  const [message2, setMessage] = import_react58.default.useState(defaultMessage ?? null);
   const runOperation = import_react58.default.useCallback(async (operation, fn) => {
     setPendingOperation(operation);
     setActionError(null);
@@ -24401,7 +24407,7 @@ function useRuntimePanelState(defaultMessage) {
     setPendingOperation,
     actionError,
     setActionError,
-    message,
+    message: message2,
     setMessage,
     runOperation
   };
@@ -25801,7 +25807,7 @@ function RuntimeGovernancePanelTemplate({
     () => presets.find((item) => item.action === selectedAction) ?? presets[0],
     [presets, selectedAction]
   );
-  const { receipt, pendingOperation, message, actionError, runOperation } = useRuntimePanelState(initialMessage);
+  const { receipt, pendingOperation, message: message2, actionError, runOperation } = useRuntimePanelState(initialMessage);
   const scopeLabel = getReceiptScopeLabel?.(receipt) ?? scopeSummary;
   const submitSelectedAction = import_react64.default.useCallback(async () => {
     if (!activePreset) {
@@ -25898,7 +25904,7 @@ function RuntimeGovernancePanelTemplate({
         })
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(RuntimePanelFeedback, { message, receipt, actionError })
+    /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(RuntimePanelFeedback, { message: message2, receipt, actionError })
   ] });
 }
 
@@ -26601,7 +26607,7 @@ function InfoRow({
 function ConfirmDialog({
   open,
   title,
-  message,
+  message: message2,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   variant = "default",
@@ -26640,7 +26646,7 @@ function ConfirmDialog({
           },
           children: [
             /* @__PURE__ */ (0, import_jsx_runtime111.jsx)("h3", { style: { fontSize: 16, fontWeight: 600, color: "#f8fafc", margin: "0 0 8px" }, children: title }),
-            /* @__PURE__ */ (0, import_jsx_runtime111.jsx)("p", { style: { fontSize: 14, color: "#94a3b8", margin: "0 0 20px", lineHeight: 1.5 }, children: message }),
+            /* @__PURE__ */ (0, import_jsx_runtime111.jsx)("p", { style: { fontSize: 14, color: "#94a3b8", margin: "0 0 20px", lineHeight: 1.5 }, children: message2 }),
             /* @__PURE__ */ (0, import_jsx_runtime111.jsxs)("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8 }, children: [
               /* @__PURE__ */ (0, import_jsx_runtime111.jsx)(
                 "button",
@@ -29165,7 +29171,7 @@ var TYPE_STYLES = {
 function InlineNotification({
   type = "info",
   title,
-  message,
+  message: message2,
   closable = false,
   onClose,
   action,
@@ -29221,7 +29227,7 @@ function InlineNotification({
         ),
         /* @__PURE__ */ (0, import_jsx_runtime116.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
           title && /* @__PURE__ */ (0, import_jsx_runtime116.jsx)("strong", { style: { display: "block", marginBottom: 2, fontSize: 14 }, children: title }),
-          /* @__PURE__ */ (0, import_jsx_runtime116.jsx)("span", { children: message }),
+          /* @__PURE__ */ (0, import_jsx_runtime116.jsx)("span", { children: message2 }),
           action && /* @__PURE__ */ (0, import_jsx_runtime116.jsx)("div", { style: { marginTop: 6 }, children: action })
         ] }),
         closable && /* @__PURE__ */ (0, import_jsx_runtime116.jsx)(
@@ -29384,18 +29390,18 @@ function Alert({
 }
 function useAlert(defaultOptions) {
   const [alert, setAlert] = (0, import_react72.useState)(null);
-  const show = (title, message, variant) => {
+  const show = (title, message2, variant) => {
     const resolvedVariant = variant ?? defaultOptions?.variant ?? "info";
-    setAlert({ visible: true, variant: resolvedVariant, title, message });
+    setAlert({ visible: true, variant: resolvedVariant, title, message: message2 });
     const dismissAfter = defaultOptions?.dismissAfterMs;
     if (dismissAfter && dismissAfter > 0) {
       setTimeout(() => setAlert(null), dismissAfter);
     }
   };
-  const info = (title, message) => show(title, message, "info");
-  const success = (title, message) => show(title, message, "success");
-  const warning = (title, message) => show(title, message, "warning");
-  const danger = (title, message) => show(title, message, "danger");
+  const info = (title, message2) => show(title, message2, "info");
+  const success = (title, message2) => show(title, message2, "success");
+  const warning = (title, message2) => show(title, message2, "warning");
+  const danger = (title, message2) => show(title, message2, "danger");
   const dismiss = () => setAlert(null);
   return { alert, show, info, success, warning, danger, dismiss };
 }
@@ -40942,7 +40948,10 @@ var ErrorBoundary = class extends import_react105.default.Component {
       style
     } = this.props;
     if (fallback) {
-      return fallback({ error: this.state.error, resetError: this.resetError });
+      if (typeof fallback === "function") {
+        return fallback({ error: this.state.error, resetError: this.resetError });
+      }
+      return fallback;
     }
     if (severity === "toast") {
       return null;
@@ -44650,7 +44659,7 @@ function LoadingSkeletonBlock() {
     )) })
   ] });
 }
-function ErrorBlock({ message }) {
+function ErrorBlock({ message: message2 }) {
   return /* @__PURE__ */ (0, import_jsx_runtime167.jsx)(
     "div",
     {
@@ -44663,7 +44672,7 @@ function ErrorBlock({ message }) {
         color: "#fca5a5",
         lineHeight: 1.5
       },
-      children: message
+      children: message2
     }
   );
 }
@@ -58514,7 +58523,7 @@ var import_jsx_runtime228 = require("react/jsx-runtime");
 function ConfirmActionDialog({
   open,
   title,
-  message,
+  message: message2,
   confirmLabel = "\u786E\u8BA4",
   cancelLabel = "\u53D6\u6D88",
   confirmVariant = "primary",
@@ -58546,7 +58555,7 @@ function ConfirmActionDialog({
           lineHeight: 1.6,
           color: "#475569"
         },
-        children: message
+        children: message2
       }
     ),
     /* @__PURE__ */ (0, import_jsx_runtime228.jsxs)("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" }, children: [
@@ -59740,7 +59749,7 @@ var SeverityColors = {
   }
 };
 function AnnouncementBanner({
-  message,
+  message: message2,
   severity = "info",
   variant = "banner",
   closable = true,
@@ -59812,7 +59821,7 @@ function AnnouncementBanner({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)("div", { style: { flex: 1, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { style: { color: colors.text }, children: message }),
+          /* @__PURE__ */ (0, import_jsx_runtime236.jsx)("span", { style: { color: colors.text }, children: message2 }),
           action ? /* @__PURE__ */ (0, import_jsx_runtime236.jsxs)(
             "a",
             {
@@ -73574,6 +73583,7 @@ function PrizeRedemptionCounter({
   Chip,
   CoachDashboard,
   CodeBlock,
+  Col,
   Collapse,
   Collapsible,
   ColorPicker,
@@ -73605,6 +73615,7 @@ function PrizeRedemptionCounter({
   DecisionAuditTrail,
   DeliveryPersonDashboard,
   DescriptionList,
+  Descriptions,
   DetailActionBar,
   DetailClosureBar,
   DetailShell,
@@ -73630,6 +73641,7 @@ function PrizeRedemptionCounter({
   FilterChips,
   FinanceManagerDashboard,
   FloatingActionButton,
+  Form,
   FormField,
   FormPageScaffold,
   FormSubmitFeedback,
@@ -73745,6 +73757,7 @@ function PrizeRedemptionCounter({
   ReturnGoodsProcessingPanel,
   RichTextEditor,
   RolePadClient,
+  Row,
   RuleRecommendationPanel,
   RuntimeGovernancePanelTemplate,
   RuntimeOperationDateTimeReadout,
@@ -73887,6 +73900,7 @@ function PrizeRedemptionCounter({
   joinRuntimeScopeSummary,
   listPageStatCardStyle,
   mapFoundationGovernanceAlertsToRecords,
+  message,
   refreshFoundationAlertSelection,
   resolveBreakpoint,
   runtimeOperationDetailDemoPresets,

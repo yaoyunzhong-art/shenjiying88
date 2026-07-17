@@ -620,7 +620,22 @@ function MailSection() {
                     size="sm"
                     dot
                   />
-                  <span style={tagStyle(provider.encryption === 'SSL' ? '#3b82f6' : '#8b5cf6', '#93c5fd')}>{provider.encryption}</span>
+                  <span
+                    style={{
+                      ...tagStyle,
+                      background:
+                        provider.encryption === 'SSL'
+                          ? 'rgba(59,130,246,0.15)'
+                          : 'rgba(139,92,246,0.15)',
+                      color: '#93c5fd',
+                      border:
+                        provider.encryption === 'SSL'
+                          ? '1px solid rgba(59,130,246,0.2)'
+                          : '1px solid rgba(139,92,246,0.2)',
+                    }}
+                  >
+                    {provider.encryption}
+                  </span>
                 </div>
                 <Switch
                   checked={provider.enabled}
