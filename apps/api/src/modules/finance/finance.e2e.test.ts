@@ -813,3 +813,223 @@ it('e2e: 跨租户隔离 — Tenant A 数据不被 Tenant B 看到', async () =>
     await app.close();
   }
 });
+
+it('e2e: invoices — 创建+查询+签发+取消 完整生命周期', async () => {
+  const { app } = await buildApp();
+  try {
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/invoices')
+      .set(TENANT_A)
+      .send({ orderId: 'inv-lifecycle', amount: 1500, type: 'SALE' });
+    const invId = createRes.body.data.id;
+    assert.ok(invId);
+    assert.equal(createRes.body.data.status, InvoiceStatus.Draft);
+
+    // 查询
+    const getRes = await request(app.getHttpServer())
+      .get(`/finance/invoices/${invId}`)
+      .set(TENANT_A);
+    assert.equal(getRes.body.data.orderId, 'inv-lifecycle');
+
+    // 签发
+    const issueRes = await request(app.getHttpServer())
+      .post(`/finance/invoices/${invId}/issue`)
+      .set(TENANT_A);
+    assert.equal(issueRes.body.data.status, InvoiceStatus.Issued);
+
+    // 取消
+    const cancelRes = await request(app.getHttpServer())
+      .post(`/finance/invoices/${invId}/cancel`)
+      .set(TENANT_A);
+    assert.equal(cancelRes.body.data.status, InvoiceStatus.Cancelled);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: settlements — 创建->确认流程', async () => {
+  const { app } = await buildApp();
+  try {
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({ startDate: '2026-07-01T00:00:00.000Z', endDate: '2026-07-15T23:59:59.999Z' });
+    const stlId = createRes.body.data.id;
+    assert.ok(stlId);
+    assert.equal(createRes.body.data.settlementStatus, SettlementStatus.Pending);
+
+    const confirmRes = await request(app.getHttpServer())
+      .post(`/finance/settlements/${stlId}/confirm`)
+      .set(TENANT_A);
+    assert.equal(confirmRes.body.data.settlementStatus, SettlementStatus.Confirmed);
+    assert.ok(confirmRes.body.data.settledAt);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: settlements — 创建->争议流程', async () => {
+  const { app } = await buildApp();
+  try {
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({ startDate: '2026-07-01T00:00:00.000Z', endDate: '2026-07-15T23:59:59.999Z' });
+    const stlId = createRes.body.data.id;
+    assert.ok(stlId);
+
+    // 直接争议（不先confirm）
+    const disputeRes = await request(app.getHttpServer())
+      .post(`/finance/settlements/${stlId}/dispute`)
+      .set(TENANT_A);
+    assert.equal(disputeRes.body.data.settlementStatus, SettlementStatus.Disputed);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: invoices — 跨tenant隔离', async () => {
+  const { app } = await buildApp();
+  try {
+    // Tenant A 创建发票
+    await request(app.getHttpServer())
+      .post('/finance/invoices')
+      .set(TENANT_A)
+      .send({ orderId: 'inv-isolated', amount: 800, type: 'SALE' });
+
+    // Tenant B 查列表应看不到
+    const listB = await request(app.getHttpServer())
+      .get('/finance/invoices')
+      .set(TENANT_B);
+    const foundInB = listB.body.data.find((i: any) => i.orderId === 'inv-isolated');
+    assert.equal(foundInB, undefined);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: accounts — 创建+查询+冻结+关闭+余额', async () => {
+  const { app } = await buildApp();
+  try {
+    // 创建
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/accounts')
+      .set(TENANT_A)
+      .send({ name: 'e2e-full-flow', type: 'BANK' });
+    const acctId = createRes.body.data.id;
+    assert.ok(acctId);
+
+    // 查询
+    const getRes = await request(app.getHttpServer())
+      .get(`/finance/accounts/${acctId}`)
+      .set(TENANT_A);
+    assert.equal(getRes.body.data.name, 'e2e-full-flow');
+
+    // 余额
+    const balRes = await request(app.getHttpServer())
+      .get(`/finance/accounts/${acctId}/balance`)
+      .set(TENANT_A);
+    assert.ok(balRes.body.data);
+
+    // 冻结
+    const freezeRes = await request(app.getHttpServer())
+      .post(`/finance/accounts/${acctId}/freeze`)
+      .set(TENANT_A);
+    assert.ok(freezeRes.body.data);
+
+    // 关闭
+    const closeRes = await request(app.getHttpServer())
+      .post(`/finance/accounts/${acctId}/close`)
+      .set(TENANT_A);
+    assert.ok(closeRes.body.data);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: ledgers — 多条记账后按描述过滤', async () => {
+  const { app } = await buildApp();
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 3000, description: 'e2e-filter-desc', category: 'other' });
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Expense, amount: 400, description: '办公用品', category: 'office' });
+
+    const listRes = await request(app.getHttpServer())
+      .get('/finance/ledgers')
+      .set(TENANT_A);
+    const matched = listRes.body.data.filter((l: any) => l.description === 'e2e-filter-desc');
+    assert.ok(matched.length >= 1);
+    assert.equal(matched[0].type, LedgerType.Revenue);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: revenue — 汇总和日报', async () => {
+  const { app } = await buildApp();
+  try {
+    // 先有几个流水
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 10000, description: '日报营收1', category: 'ticket' });
+
+    // 营收汇总
+    const sumRes = await request(app.getHttpServer())
+      .get('/finance/revenue/summary')
+      .set(TENANT_A);
+    assert.ok(sumRes.body.data);
+
+    // 日营收
+    const dailyRes = await request(app.getHttpServer())
+      .get('/finance/revenue/daily')
+      .set(TENANT_A);
+    assert.ok(dailyRes.body.data);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: transactions — 交易联动记账+退款', async () => {
+  const { app } = await buildApp();
+  try {
+    // 收入交易
+    const revRes = await request(app.getHttpServer())
+      .post('/finance/transactions/revenue')
+      .set(TENANT_A)
+      .send({ amount: 5000, description: '交易收入', orderId: 'tx-e2e-1' });
+    assert.ok(revRes.body);
+
+    // 退款
+    const refundRes = await request(app.getHttpServer())
+      .post('/finance/transactions/refund')
+      .set(TENANT_A)
+      .send({ amount: 500, description: '交易退款', orderId: 'tx-e2e-2', reason: '退货' });
+    assert.ok(refundRes.body);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: ledgers — 批量创建+全量列表', async () => {
+  const { app } = await buildApp();
+  try {
+    for (let i = 0; i < 5; i++) {
+      await request(app.getHttpServer())
+        .post('/finance/ledgers')
+        .set(TENANT_A)
+        .send({ type: LedgerType.Expense, amount: 100 * (i + 1), description: `e2e-bulk-${i}`, category: 'utility' });
+    }
+    const listRes = await request(app.getHttpServer())
+      .get('/finance/ledgers')
+      .set(TENANT_A);
+    assert.ok(listRes.body.data.length >= 5);
+  } finally {
+    await app.close();
+  }
+});
