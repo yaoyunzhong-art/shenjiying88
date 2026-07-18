@@ -7,13 +7,13 @@ import {
   type FoundationGovernanceReadModel
 } from '@m5/sdk';
 import {
+  buildDomainGovernanceWorkspaceHref,
   getFoundationAppBootstrapWiring,
   type AppBootstrapWiring,
   type FoundationConsumerDescriptor,
   type PortalDomainGovernanceSummaryContract,
   type PortalBootstrapResponse,
-  type StorePortalContract,
-  buildDomainGovernanceHref
+  type StorePortalContract
 } from '@m5/types';
 
 export const storefrontWebBootstrap = getFoundationAppBootstrapWiring('storefront-web');
@@ -62,25 +62,6 @@ function createFallbackDomainGovernanceSummary(): PortalDomainGovernanceSummaryC
     lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
     currentScopes: [],
   };
-}
-
-function resolveDomainGovernanceWorkspaceHref(
-  summary: PortalDomainGovernanceSummaryContract,
-  marketCode: string
-): string {
-  const scope =
-    summary.currentScopes.find((item) => item.missingPrimary) ??
-    summary.currentScopes.find((item) => item.scopeType === 'STORE') ??
-    summary.currentScopes.find((item) => item.scopeType === 'BRAND') ??
-    summary.currentScopes[0];
-
-  return buildDomainGovernanceHref({
-    tenantId: scope?.tenantId,
-    brandId: scope?.brandId,
-    storeId: scope?.storeId,
-    marketCode,
-    scopeType: scope?.scopeType,
-  });
 }
 
 function getFallbackDefaultLanguage(marketCode: string): string {
@@ -219,7 +200,7 @@ export async function getStorefrontConsumerSnapshot(
     ...snapshotBase,
     portal,
     domainGovernance,
-    domainGovernanceWorkspaceHref: resolveDomainGovernanceWorkspaceHref(domainGovernance, portal.marketCode),
+    domainGovernanceWorkspaceHref: buildDomainGovernanceWorkspaceHref(domainGovernance, portal.marketCode),
     scope: {
       scopePath: `${portal.marketCode} / ${portal.tenantCode} / ${portal.brandCode} / ${portal.storeCode}`,
       ...snapshotBase.scope

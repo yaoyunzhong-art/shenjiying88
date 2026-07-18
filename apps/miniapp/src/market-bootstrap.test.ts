@@ -118,6 +118,32 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
   };
 }
 
+function createDomainGovernanceFixture() {
+  return {
+    totalMissingPrimaryScopes: 1,
+    totalActiveWithoutPrimaryDomains: 2,
+    recommendedReadyScopes: 1,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 0,
+    storeMissingPrimaryScopes: 1,
+    requiresAttention: true,
+    lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+    currentScopes: [
+      {
+        scopeType: 'STORE',
+        tenantId: 'tenant-demo',
+        brandId: 'brand-demo',
+        storeId: 'store-001',
+        activeDomainCount: 2,
+        missingPrimary: true,
+        currentPrimaryDomain: null,
+        recommendedDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
+        recommendationReason: '优先选择 active_ssl'
+      }
+    ]
+  };
+}
+
 test('miniapp bootstrap: fallback snapshot stays aligned to store portal defaults', () => {
   assert.deepEqual(createMiniappFallbackSnapshot(), {
     deliveryMode: 'fallback',
@@ -129,12 +155,23 @@ test('miniapp bootstrap: fallback snapshot stays aligned to store portal default
     sharePolicy: 'DOMESTIC_SOCIAL_FIRST',
     primaryDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
     supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
-    domainSource: 'default'
+    domainSource: 'default',
+    domainGovernance: {
+      totalMissingPrimaryScopes: 0,
+      totalActiveWithoutPrimaryDomains: 0,
+      recommendedReadyScopes: 0,
+      tenantMissingPrimaryScopes: 0,
+      brandMissingPrimaryScopes: 0,
+      storeMissingPrimaryScopes: 0,
+      requiresAttention: false,
+      lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
+      currentScopes: []
+    }
   });
 });
 
 test('miniapp bootstrap: maps portal bootstrap into runtime snapshot', () => {
-  assert.deepEqual(toMiniappBootstrapSnapshot(createPortalBootstrapFixture()), {
+  assert.deepEqual(toMiniappBootstrapSnapshot(createPortalBootstrapFixture(), createDomainGovernanceFixture()), {
     deliveryMode: 'api',
     marketCode: 'cn-mainland',
     defaultLanguage: 'zh-CN',
@@ -144,7 +181,8 @@ test('miniapp bootstrap: maps portal bootstrap into runtime snapshot', () => {
     sharePolicy: 'DOMESTIC_SOCIAL_FIRST',
     primaryDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
     supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
-    domainSource: 'default'
+    domainSource: 'default',
+    domainGovernance: createDomainGovernanceFixture()
   });
 });
 
@@ -223,6 +261,17 @@ test('miniapp bootstrap: non-cn fallback snapshot uses global preset', () => {
       primaryDomain: 'store-global.brand-global.tenant-global.jp-tokyo.local',
       supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
       domainSource: 'default',
+      domainGovernance: {
+        totalMissingPrimaryScopes: 0,
+        totalActiveWithoutPrimaryDomains: 0,
+        recommendedReadyScopes: 0,
+        tenantMissingPrimaryScopes: 0,
+        brandMissingPrimaryScopes: 0,
+        storeMissingPrimaryScopes: 0,
+        requiresAttention: false,
+        lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
+        currentScopes: []
+      },
     },
   );
 });
@@ -253,6 +302,18 @@ test('miniapp bootstrap: loads real member runtime snapshot when member api is a
             }
           ],
           timestamp: '2026-06-14T00:00:00.000Z'
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    }
+
+    if (url.endsWith('/portals/domain-governance')) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: createDomainGovernanceFixture(),
+          timestamp: '2026-07-18T00:00:00.000Z'
         }),
         { status: 200, headers: { 'content-type': 'application/json' } }
       )

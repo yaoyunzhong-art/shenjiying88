@@ -2268,6 +2268,17 @@ export interface DomainGovernanceWorkspaceQuery {
   scopeType?: string;
 }
 
+export function selectDomainGovernanceFocusScope(
+  summary: PortalDomainGovernanceSummaryContract,
+): PortalDomainGovernanceScopeSummaryContract | undefined {
+  return (
+    summary.currentScopes.find((item) => item.missingPrimary) ??
+    summary.currentScopes.find((item) => item.scopeType === 'STORE') ??
+    summary.currentScopes.find((item) => item.scopeType === 'BRAND') ??
+    summary.currentScopes[0]
+  );
+}
+
 export function buildDomainGovernanceHref(query: DomainGovernanceWorkspaceQuery = {}): string {
   const params = new URLSearchParams();
 
@@ -2279,6 +2290,21 @@ export function buildDomainGovernanceHref(query: DomainGovernanceWorkspaceQuery 
 
   const queryString = params.toString();
   return queryString ? `/saas/domains?${queryString}` : '/saas/domains';
+}
+
+export function buildDomainGovernanceWorkspaceHref(
+  summary: PortalDomainGovernanceSummaryContract,
+  marketCode: string,
+): string {
+  const scope = selectDomainGovernanceFocusScope(summary);
+
+  return buildDomainGovernanceHref({
+    tenantId: scope?.tenantId,
+    brandId: scope?.brandId,
+    storeId: scope?.storeId,
+    marketCode,
+    scopeType: scope?.scopeType,
+  });
 }
 
 export interface WorkbenchNavItemContract {

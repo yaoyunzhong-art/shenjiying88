@@ -2,15 +2,7 @@ import React from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  ScrollView,
-  Switch,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { buildDomainGovernanceHref } from '@m5/types';
+import { buildDomainGovernanceWorkspaceHref } from '@m5/types';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { useAppContext } from '../../context/AppContext';
@@ -24,18 +16,10 @@ export function SettingsScreen() {
   const [offlineMode, setOfflineMode] = React.useState(state.isOfflineMode);
   const [pushNotifications, setPushNotifications] = React.useState(state.pushNotificationsEnabled);
   const [biometric, setBiometric] = React.useState(state.biometricEnabled);
-  const governanceScope =
-    state.bootstrap.domainGovernance.currentScopes.find((item) => item.missingPrimary) ??
-    state.bootstrap.domainGovernance.currentScopes.find((item) => item.scopeType === 'STORE') ??
-    state.bootstrap.domainGovernance.currentScopes.find((item) => item.scopeType === 'BRAND') ??
-    state.bootstrap.domainGovernance.currentScopes[0];
-  const governanceWorkspaceHref = buildDomainGovernanceHref({
-    tenantId: governanceScope?.tenantId,
-    brandId: governanceScope?.brandId,
-    storeId: governanceScope?.storeId,
-    marketCode: state.bootstrap.marketCode,
-    scopeType: governanceScope?.scopeType,
-  });
+  const governanceWorkspaceHref = buildDomainGovernanceWorkspaceHref(
+    state.bootstrap.domainGovernance,
+    state.bootstrap.marketCode,
+  );
 
   const handleOfflineModeChange = (value: boolean) => {
     setOfflineMode(value);

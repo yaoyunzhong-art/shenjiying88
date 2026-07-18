@@ -4,10 +4,9 @@ import type {
   FoundationAlertCatalogItem,
   FoundationAlertDrilldownResponse,
   FoundationAlertMutationResponse,
-  PortalDomainGovernanceSummaryContract,
   RuntimeGovernanceReceipt
 } from '@m5/types';
-import { buildDomainGovernanceHref } from '@m5/types';
+import { buildDomainGovernanceWorkspaceHref } from '@m5/types';
 import {
   appendMiniappSubmitHistory,
   buildMiniappAuthEnvelope,
@@ -46,25 +45,6 @@ import {
   type MiniappSubmitOutcome
 } from '../../market-bootstrap';
 
-function resolveDomainGovernanceWorkspaceHref(
-  summary: PortalDomainGovernanceSummaryContract,
-  marketCode: string
-) {
-  const scope =
-    summary.currentScopes.find((item) => item.missingPrimary) ??
-    summary.currentScopes.find((item) => item.scopeType === 'STORE') ??
-    summary.currentScopes.find((item) => item.scopeType === 'BRAND') ??
-    summary.currentScopes[0];
-
-  return buildDomainGovernanceHref({
-    tenantId: scope?.tenantId,
-    brandId: scope?.brandId,
-    storeId: scope?.storeId,
-    marketCode,
-    scopeType: scope?.scopeType,
-  });
-}
-
 export default function IndexPage() {
   const [consumerContract, setConsumerContract] = useState<MiniappRuntimeConsumerContract>(
     createMiniappRuntimeConsumerContract(miniappMarketBootstrap)
@@ -83,7 +63,7 @@ export default function IndexPage() {
   const [alertMutation, setAlertMutation] = useState<FoundationAlertMutationResponse | null>(null);
   const bootstrap = consumerContract.snapshot;
   const domainGovernance = bootstrap.domainGovernance;
-  const governanceWorkspaceHref = resolveDomainGovernanceWorkspaceHref(domainGovernance, bootstrap.marketCode);
+  const governanceWorkspaceHref = buildDomainGovernanceWorkspaceHref(domainGovernance, bootstrap.marketCode);
   const actionPlans = listMiniappActionPlans(bootstrap, session);
   const activePlan = actionPlans.find((plan) => plan.action === activeAction) ?? null;
   const decision = activePlan?.decision ?? null;

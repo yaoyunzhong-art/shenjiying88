@@ -145,6 +145,17 @@ describe('MemberPage 正例', () => {
     assert.ok(source.includes('挑战'), 'should show challenge');
   });
 
+  it('source 有 domainSource 与 domainGovernance 字段消费', () => {
+    assert.ok(source.includes('domainSource'), 'should reference domain source');
+    assert.ok(source.includes('domainGovernance'), 'should reference domain governance snapshot');
+  });
+
+  it('source 有域名治理摘要与治理后台入口', () => {
+    assert.ok(source.includes('域名治理'), 'should show domain governance summary');
+    assert.ok(source.includes('治理后台入口'), 'should show governance workspace href');
+    assert.ok(source.includes('buildDomainGovernanceWorkspaceHref'), 'should use shared governance href helper');
+  });
+
   it('runtime snapshot 初始 deliveryMode 为 fallback', () => {
     const snapshot = createMemberRuntimeSnapshot();
     assert.equal(snapshot.deliveryMode, 'fallback');

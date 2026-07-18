@@ -49,6 +49,7 @@ import {
   buildAuditTrailHref,
   buildAuditTrailRecordDetailHref,
   buildDomainGovernanceHref,
+  buildDomainGovernanceWorkspaceHref,
   readAuditTrailRecordDetailParam,
   normalizeFoundationAlertTimelineFilterState,
   buildRuntimeGovernanceCallbackStallDetail,
@@ -82,6 +83,7 @@ import {
   summarizeFoundationAlertTimelineDigest,
   summarizeFoundationAlertTimelineSources,
   summarizeFoundationAlertOwners,
+  selectDomainGovernanceFocusScope,
   resolveFoundationAlertFocusCode,
   resolveFoundationAlertSelectedCode,
   runtimeGovernanceActionKeys,
@@ -1669,6 +1671,91 @@ test('types: domain governance workspace href keeps shared query encoding stable
       marketCode: 'cn-mainland',
     }),
     '/saas/domains?tenantId=tenant+with+space&brandId=brand%2F1&marketCode=cn-mainland'
+  );
+});
+
+test('types: domain governance focus scope prefers missing primary over generic order', () => {
+  assert.deepEqual(
+    selectDomainGovernanceFocusScope({
+      totalMissingPrimaryScopes: 1,
+      totalActiveWithoutPrimaryDomains: 2,
+      recommendedReadyScopes: 1,
+      tenantMissingPrimaryScopes: 0,
+      brandMissingPrimaryScopes: 1,
+      storeMissingPrimaryScopes: 0,
+      requiresAttention: true,
+      lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+      currentScopes: [
+        {
+          scopeType: 'BRAND',
+          tenantId: 'tenant-1',
+          brandId: 'brand-1',
+          activeDomainCount: 2,
+          missingPrimary: false,
+        },
+        {
+          scopeType: 'STORE',
+          tenantId: 'tenant-1',
+          brandId: 'brand-1',
+          storeId: 'store-1',
+          activeDomainCount: 2,
+          missingPrimary: true,
+        },
+      ],
+    }),
+    {
+      scopeType: 'STORE',
+      tenantId: 'tenant-1',
+      brandId: 'brand-1',
+      storeId: 'store-1',
+      activeDomainCount: 2,
+      missingPrimary: true,
+    }
+  );
+});
+
+test('types: domain governance workspace href can be built directly from summary', () => {
+  assert.equal(
+    buildDomainGovernanceWorkspaceHref(
+      {
+        totalMissingPrimaryScopes: 0,
+        totalActiveWithoutPrimaryDomains: 1,
+        recommendedReadyScopes: 1,
+        tenantMissingPrimaryScopes: 0,
+        brandMissingPrimaryScopes: 1,
+        storeMissingPrimaryScopes: 0,
+        requiresAttention: true,
+        lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+        currentScopes: [
+          {
+            scopeType: 'BRAND',
+            tenantId: 'tenant-1',
+            brandId: 'brand-1',
+            activeDomainCount: 2,
+            missingPrimary: false,
+          },
+        ],
+      },
+      'cn-mainland'
+    ),
+    '/saas/domains?tenantId=tenant-1&brandId=brand-1&marketCode=cn-mainland&scopeType=BRAND'
+  );
+  assert.equal(
+    buildDomainGovernanceWorkspaceHref(
+      {
+        totalMissingPrimaryScopes: 0,
+        totalActiveWithoutPrimaryDomains: 0,
+        recommendedReadyScopes: 0,
+        tenantMissingPrimaryScopes: 0,
+        brandMissingPrimaryScopes: 0,
+        storeMissingPrimaryScopes: 0,
+        requiresAttention: false,
+        lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+        currentScopes: [],
+      },
+      'us-default'
+    ),
+    '/saas/domains?marketCode=us-default'
   );
 });
 

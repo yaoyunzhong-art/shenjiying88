@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import React from 'react';
 import { create } from 'react-test-renderer';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { Alert, Text, TouchableOpacity } from 'react-native';
 
 // Mock react-navigation before importing HomeScreen
 const mockNavigateCalls: Array<{ route: string }> = [];
@@ -15,6 +15,64 @@ const mockNavigation = {
   navigate: (route: string) => {
     mockNavigateCalls.push({ route });
   },
+};
+
+const alertCalls: Array<{ title: string; message: string }> = [];
+Alert.alert = ((title: string, message?: string) => {
+  alertCalls.push({ title, message: message ?? '' });
+}) as typeof Alert.alert;
+
+// @ts-expect-error mock
+globalThis.__mockAppContext = {
+  state: {
+    session: {
+      authenticated: true,
+      memberTier: 'MEMBER',
+      paymentReady: true,
+      memberId: 'member-001',
+      nickname: '测试会员',
+    },
+    bootstrap: {
+      deliveryMode: 'api',
+      marketCode: 'cn-mainland',
+      defaultLanguage: 'zh-CN',
+      timezone: 'Asia/Shanghai',
+      emailProvider: 'ALIYUN_DM',
+      socialPlatforms: ['WECHAT'],
+      primaryDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
+      supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP'],
+      domainSource: 'custom',
+      domainGovernance: {
+        totalMissingPrimaryScopes: 2,
+        totalActiveWithoutPrimaryDomains: 3,
+        recommendedReadyScopes: 1,
+        tenantMissingPrimaryScopes: 0,
+        brandMissingPrimaryScopes: 1,
+        storeMissingPrimaryScopes: 1,
+        requiresAttention: true,
+        lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+        currentScopes: [
+          {
+            scopeType: 'STORE',
+            tenantId: 'tenant-demo',
+            brandId: 'brand-demo',
+            storeId: 'store-001',
+            activeDomainCount: 2,
+            missingPrimary: true,
+            currentPrimaryDomain: null,
+            recommendedDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
+            recommendationReason: '优先选择 active_ssl',
+          },
+        ],
+      },
+    },
+    isOfflineMode: false,
+    pushNotificationsEnabled: true,
+    biometricEnabled: false,
+  },
+  dispatch: () => {},
+  login: () => {},
+  logout: () => {},
 };
 
 // @ts-expect-error mock
@@ -66,6 +124,7 @@ function findAllTouchables(root: ReturnType<typeof create>['root']) {
 
 test('HomeScreen: renders greeting and store name for shop_manager role', () => {
   mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
   const root = createHomeComponent();
 
   // 角色问候语
@@ -79,6 +138,7 @@ test('HomeScreen: renders greeting and store name for shop_manager role', () => 
 
 test('HomeScreen: renders stats cards for shop_manager role', () => {
   mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
   const root = createHomeComponent();
 
   // 店长角色显示4个统计卡：今日营收、订单数、新会员、待办任务
@@ -97,6 +157,7 @@ test('HomeScreen: renders stats cards for shop_manager role', () => {
 
 test('HomeScreen: renders revenue value formatted as currency', () => {
   mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
   const root = createHomeComponent();
 
   const revenueValue = findByText(root.root, '¥');
@@ -108,6 +169,7 @@ test('HomeScreen: renders revenue value formatted as currency', () => {
 
 test('HomeScreen: renders quick action buttons for shop_manager', () => {
   mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
   const root = createHomeComponent();
 
   // 店长6个快捷操作
@@ -132,6 +194,7 @@ test('HomeScreen: renders quick action buttons for shop_manager', () => {
 
 test('HomeScreen: tapping a quick action navigates to the correct route', () => {
   mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
   const root = createHomeComponent();
 
   const touchables = findAllTouchables(root.root);
@@ -151,6 +214,7 @@ test('HomeScreen: tapping a quick action navigates to the correct route', () => 
 
 test('HomeScreen: tapping 扫码 navigates to ScanTab', () => {
   mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
   const root = createHomeComponent();
 
   const touchables = findAllTouchables(root.root);
@@ -168,6 +232,7 @@ test('HomeScreen: tapping 扫码 navigates to ScanTab', () => {
 
 test('HomeScreen: renders pending tasks section', () => {
   mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
   const root = createHomeComponent();
 
   const sectionTitle = findByText(root.root, '待办任务');
@@ -189,6 +254,7 @@ test('HomeScreen: renders pending tasks section', () => {
 
 test('HomeScreen: renders announcement section', () => {
   mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
   const root = createHomeComponent();
 
   const sectionTitle = findByText(root.root, '门店公告');
@@ -203,6 +269,7 @@ test('HomeScreen: renders announcement section', () => {
 
 test('HomeScreen: renders sections in correct order', () => {
   mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
   const root = createHomeComponent();
 
   const allTexts = root.root.findAllByType(Text);
@@ -212,19 +279,24 @@ test('HomeScreen: renders sections in correct order', () => {
   });
   const sectionTexts = sectionTitles.map((item) => collectTextContent(item.props.children).join(''));
 
+  const governanceIndex = allTexts.findIndex((t) => collectTextContent(t.props.children).join('').includes('域名治理'));
+
+  assert.ok(governanceIndex >= 0, '应找到域名治理标题');
   assert.equal(sectionTitles.length, 3, '应找到3个 section title');
   assert.ok(sectionTexts[0]?.includes('快捷操作'), '第一个 section 应为快捷操作');
   assert.ok(sectionTexts[1]?.includes('待办任务'), '第二个 section 应为待办任务');
   assert.ok(sectionTexts[2]?.includes('门店公告'), '第三个 section 应为门店公告');
   assert.ok(
-    allTexts.indexOf(sectionTitles[0]) < allTexts.indexOf(sectionTitles[1]) &&
+    governanceIndex < allTexts.indexOf(sectionTitles[0]) &&
+      allTexts.indexOf(sectionTitles[0]) < allTexts.indexOf(sectionTitles[1]) &&
       allTexts.indexOf(sectionTitles[1]) < allTexts.indexOf(sectionTitles[2]),
-    '章节顺序应为：快捷操作 → 待办任务 → 门店公告',
+    '章节顺序应为：域名治理 → 快捷操作 → 待办任务 → 门店公告',
   );
 });
 
 test('HomeScreen: tapping a task item does not throw', () => {
   mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
   const root = createHomeComponent();
 
   const touchables = findAllTouchables(root.root);
@@ -244,8 +316,45 @@ test('HomeScreen: tapping a task item does not throw', () => {
 
 test('HomeScreen: renders avatar with correct first character', () => {
   mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
   const root = createHomeComponent();
 
   const avatarText = findByText(root.root, '张');
   assert.ok(avatarText, '头像应显示店长姓氏"张"');
+});
+
+test('HomeScreen: renders domain governance card with shared workspace href', () => {
+  mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
+  const root = createHomeComponent();
+
+  assert.ok(findByText(root.root, '域名治理'), '应显示域名治理卡片');
+  assert.ok(findByText(root.root, '缺主 scope 2'), '应显示缺主 scope 数');
+  assert.ok(findByText(root.root, '域名来源 custom'), '应显示域名来源');
+  assert.ok(
+    findByText(
+      root.root,
+      '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
+    ),
+    '应显示统一治理入口链接',
+  );
+});
+
+test('HomeScreen: tapping governance button opens alert with workspace href', () => {
+  mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
+  const root = createHomeComponent();
+
+  const touchables = findAllTouchables(root.root);
+  const governanceButton = touchables.find((t) =>
+    t.findAllByType(Text).some((txt) => collectTextContent(txt.props.children).join('').includes('打开治理入口')),
+  );
+
+  assert.ok(governanceButton, '应找到治理入口按钮');
+  governanceButton?.props.onPress();
+  assert.deepEqual(alertCalls[0], {
+    title: '域名治理工作台',
+    message:
+      '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
+  });
 });

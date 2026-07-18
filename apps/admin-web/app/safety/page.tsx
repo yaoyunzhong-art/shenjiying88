@@ -192,14 +192,20 @@ export default function SafetyPage() {
   const pageItems = pagination.paginate(sorted);
 
   // 统计
-  const stats = useMemo(() => ({
-    total: records.length,
-    open: records.filter((r) => r.status === 'open').length,
-    investigating: records.filter((r) => r.status === 'investigating').length,
-    resolved: records.filter((r) => r.status === 'resolved').length,
-    closed: records.filter((r) => r.status === 'closed').length,
-    critical: records.filter((r) => r.severity === 'critical').length,
-  }), [records]);
+  const stats = useMemo(() => {
+    const total = records.length;
+    const open = records.filter((r) => r.status === 'open').length;
+    const investigating = records.filter((r) => r.status === 'investigating').length;
+    const resolved = records.filter((r) => r.status === 'resolved').length;
+    const closed = records.filter((r) => r.status === 'closed').length;
+    const critical = records.filter((r) => r.severity === 'critical').length;
+    // 今日新增: reportedDate 为今天
+    const today = new Date().toISOString().split('T')[0];
+    const todayNew = records.filter((r) => r.reportedDate === today).length;
+    const processed = resolved + closed;
+    const unprocessed = open + investigating;
+    return { total, open, investigating, resolved, closed, critical, todayNew, processed, unprocessed };
+  }, [records]);
 
   // 表单校验
   const validateForm = useCallback((data: typeof DEFAULT_FORM): boolean => {
@@ -306,6 +312,14 @@ export default function SafetyPage() {
 
   return (
     <PageShell title="🛡️ 安全记录" subtitle="安全事件、隐患与整改跟踪">
+      {/* 统计摘要卡片 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
+        <StatCard label="已处理告警" value={stats.processed.toString()} variant="success" helper={`已解决 ${stats.resolved} · 已关闭 ${stats.closed}`} />
+        <StatCard label="未处理告警" value={stats.unprocessed.toString()} variant="warning" helper={`待处理 ${stats.open} · 调查中 ${stats.investigating}`} />
+        <StatCard label="总告警数" value={stats.total.toString()} helper={`严重 ${stats.critical}`} />
+        <StatCard label="今日新增" value={stats.todayNew.toString()} variant={stats.todayNew > 0 ? 'warning' : undefined} />
+      </div>
+
       {/* 统计面板 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
         <StatCard label="总记录" value={stats.total.toString()} helper={`严重 ${stats.critical}`} />

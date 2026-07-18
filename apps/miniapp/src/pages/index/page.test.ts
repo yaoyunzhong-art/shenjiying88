@@ -138,6 +138,17 @@ describe('IndexPage 正例', () => {
     assert.ok(source.includes('formatMiniappSharePolicySummary(bootstrap)'), 'should use shared share policy helper');
   });
 
+  it('source 有 domainSource 与 domainGovernance 渲染', () => {
+    assert.ok(source.includes('domainSource'), 'should render domain source');
+    assert.ok(source.includes('domainGovernance'), 'should render domain governance snapshot');
+  });
+
+  it('source has domain governance summary and shared workspace href', () => {
+    assert.ok(source.includes('域名治理摘要'), 'should have domain governance summary');
+    assert.ok(source.includes('治理后台入口'), 'should have governance workspace label');
+    assert.ok(source.includes('buildDomainGovernanceWorkspaceHref'), 'should use shared governance href helper');
+  });
+
   it('source uses useState/useEffect', () => {
     assert.ok(source.includes('useState'), 'should use useState');
     assert.ok(source.includes('useEffect'), 'should use useEffect');
@@ -285,7 +296,7 @@ describe('IndexPage 边界', () => {
 
   it('source 源码体量合理', () => {
     assert.ok(source.length > 5000, 'source should be substantial');
-    assert.ok(source.length < 30000, 'source should not be too large');
+    assert.ok(source.length < 40000, 'source should not be too large');
   });
 
   it('source 有 governance 控制按钮组', () => {

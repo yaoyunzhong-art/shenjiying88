@@ -35,6 +35,7 @@ __export(index_exports, {
   buildConfigurationOperationDetailHref: () => buildConfigurationOperationDetailHref,
   buildConfigurationSecretDetailHref: () => buildConfigurationSecretDetailHref,
   buildDomainGovernanceHref: () => buildDomainGovernanceHref,
+  buildDomainGovernanceWorkspaceHref: () => buildDomainGovernanceWorkspaceHref,
   buildFoundationAlertLinkedFocusContext: () => buildFoundationAlertLinkedFocusContext,
   buildFoundationAlertLinkedFocusSearchParams: () => buildFoundationAlertLinkedFocusSearchParams,
   buildFoundationAlertOptimisticReadState: () => buildFoundationAlertOptimisticReadState,
@@ -138,6 +139,7 @@ __export(index_exports, {
   runtimeGovernanceReplayEscalationActions: () => runtimeGovernanceReplayEscalationActions,
   runtimeGovernanceReplaySources: () => runtimeGovernanceReplaySources,
   runtimeGovernanceRiskLevels: () => runtimeGovernanceRiskLevels,
+  selectDomainGovernanceFocusScope: () => selectDomainGovernanceFocusScope,
   summarizeFoundationAlertOwners: () => summarizeFoundationAlertOwners,
   summarizeFoundationAlertTimelineDigest: () => summarizeFoundationAlertTimelineDigest,
   summarizeFoundationAlertTimelineFilters: () => summarizeFoundationAlertTimelineFilters,
@@ -1174,6 +1176,9 @@ var foundationAlertCatalogFallback = [
     unmutePath: "/foundation/overview/alerts/lyt-connection-governance-risk/unmute"
   }
 ];
+function selectDomainGovernanceFocusScope(summary) {
+  return summary.currentScopes.find((item) => item.missingPrimary) ?? summary.currentScopes.find((item) => item.scopeType === "STORE") ?? summary.currentScopes.find((item) => item.scopeType === "BRAND") ?? summary.currentScopes[0];
+}
 function buildDomainGovernanceHref(query = {}) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
@@ -1183,6 +1188,16 @@ function buildDomainGovernanceHref(query = {}) {
   }
   const queryString = params.toString();
   return queryString ? `/saas/domains?${queryString}` : "/saas/domains";
+}
+function buildDomainGovernanceWorkspaceHref(summary, marketCode) {
+  const scope = selectDomainGovernanceFocusScope(summary);
+  return buildDomainGovernanceHref({
+    tenantId: scope?.tenantId,
+    brandId: scope?.brandId,
+    storeId: scope?.storeId,
+    marketCode,
+    scopeType: scope?.scopeType
+  });
 }
 var defaultRoleWorkbenchContracts = [
   {
@@ -1952,6 +1967,7 @@ function buildIntegrationOrchestrationHref(query = {}) {
   buildConfigurationOperationDetailHref,
   buildConfigurationSecretDetailHref,
   buildDomainGovernanceHref,
+  buildDomainGovernanceWorkspaceHref,
   buildFoundationAlertLinkedFocusContext,
   buildFoundationAlertLinkedFocusSearchParams,
   buildFoundationAlertOptimisticReadState,
@@ -2055,6 +2071,7 @@ function buildIntegrationOrchestrationHref(query = {}) {
   runtimeGovernanceReplayEscalationActions,
   runtimeGovernanceReplaySources,
   runtimeGovernanceRiskLevels,
+  selectDomainGovernanceFocusScope,
   summarizeFoundationAlertOwners,
   summarizeFoundationAlertTimelineDigest,
   summarizeFoundationAlertTimelineFilters,

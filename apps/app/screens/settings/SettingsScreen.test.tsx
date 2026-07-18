@@ -37,11 +37,51 @@ globalThis.Alert = {
     }
   },
 };
+Alert.alert = globalThis.Alert.alert as typeof Alert.alert;
 
 // Mock AppContext
 let mockState = {
-  session: { id: 'test-session', role: 'shop_manager' },
-  bootstrap: {},
+  session: {
+    authenticated: true,
+    memberTier: 'MEMBER',
+    paymentReady: true,
+    memberId: 'member-001',
+    nickname: '测试会员',
+  },
+  bootstrap: {
+    deliveryMode: 'api',
+    marketCode: 'cn-mainland',
+    defaultLanguage: 'zh-CN',
+    timezone: 'Asia/Shanghai',
+    emailProvider: 'ALIYUN_DM',
+    socialPlatforms: ['WECHAT'],
+    primaryDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
+    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP'],
+    domainSource: 'custom',
+    domainGovernance: {
+      totalMissingPrimaryScopes: 2,
+      totalActiveWithoutPrimaryDomains: 3,
+      recommendedReadyScopes: 1,
+      tenantMissingPrimaryScopes: 0,
+      brandMissingPrimaryScopes: 1,
+      storeMissingPrimaryScopes: 1,
+      requiresAttention: true,
+      lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+      currentScopes: [
+        {
+          scopeType: 'STORE',
+          tenantId: 'tenant-demo',
+          brandId: 'brand-demo',
+          storeId: 'store-001',
+          activeDomainCount: 2,
+          missingPrimary: true,
+          currentPrimaryDomain: null,
+          recommendedDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
+          recommendationReason: '优先选择 active_ssl',
+        },
+      ],
+    },
+  },
   isOfflineMode: false,
   pushNotificationsEnabled: true,
   biometricEnabled: false,
@@ -193,6 +233,9 @@ test('SettingsScreen: renders biometric and notification navigation items', () =
 
   const languageTitle = findByText('语言');
   assert.ok(languageTitle, '应显示语言设置项');
+
+  const governanceTitle = findByText('域名治理工作台');
+  assert.ok(governanceTitle, '应显示域名治理工作台');
 });
 
 test('SettingsScreen: renders ToolRegistry navigation item', () => {
@@ -313,4 +356,45 @@ test('SettingsScreen: renders logout button', () => {
 
   const logoutButton = findByText('退出登录');
   assert.ok(logoutButton, '应显示退出登录按钮');
+});
+
+test('SettingsScreen: renders domain governance summary item', () => {
+  alertCalls.length = 0;
+  mockNavigateCalls.length = 0;
+  logoutCalled = false;
+
+  const root = create(<SettingsScreen />);
+
+  const findByText = (content: string) => {
+    const all = root.root.findAllByType(Text);
+    return all.find((t) => {
+      const txt = t.props.children;
+      return typeof txt === 'string' && txt.includes(content);
+    });
+  };
+
+  assert.ok(findByText('域名治理工作台'), '应显示域名治理工作台');
+  assert.ok(findByText('缺主 scope 2'), '应显示缺主 scope 数');
+  assert.ok(findByText('域名来源 custom'), '应显示域名来源');
+});
+
+test('SettingsScreen: tapping domain governance item opens workspace alert', () => {
+  alertCalls.length = 0;
+  mockNavigateCalls.length = 0;
+  logoutCalled = false;
+
+  const root = create(<SettingsScreen />);
+  const touchables = root.root.findAllByType(TouchableOpacity);
+  const governanceItem = touchables.find((item) =>
+    item.findAllByType(Text).some((t) => typeof t.props.children === 'string' && t.props.children.includes('域名治理工作台'))
+  );
+
+  assert.ok(governanceItem, '应找到域名治理工作台设置项');
+  governanceItem?.props.onPress();
+  assert.deepEqual(alertCalls[0], {
+    title: '域名治理工作台',
+    message:
+      '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
+    buttons: undefined,
+  });
 });

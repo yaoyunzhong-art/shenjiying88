@@ -967,7 +967,9 @@ export interface DomainGovernanceWorkspaceQuery {
     marketCode?: string;
     scopeType?: string;
 }
+export declare function selectDomainGovernanceFocusScope(summary: PortalDomainGovernanceSummaryContract): PortalDomainGovernanceScopeSummaryContract | undefined;
 export declare function buildDomainGovernanceHref(query?: DomainGovernanceWorkspaceQuery): string;
+export declare function buildDomainGovernanceWorkspaceHref(summary: PortalDomainGovernanceSummaryContract, marketCode: string): string;
 export interface WorkbenchNavItemContract {
     key: string;
     label: string;

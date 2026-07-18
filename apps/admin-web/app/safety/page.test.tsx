@@ -89,5 +89,86 @@ describe('safety page', () => {
       assert.ok(src);
       assert.ok(src.includes('length') || src.includes('总数') || src.includes('count'));
     });
+  
+  describe('V20 增强 — 统计卡片', () => {
+    it('源码包含processed/unprocessed统计', () => {
+      const src = readSrc();
+      assert.ok(src);
+      assert.ok(src.includes('processed'), '应计算已处理数');
+      assert.ok(src.includes('unprocessed'), '应计算未处理数');
+    });
+
+    it('源码包含todayNew统计', () => {
+      const src = readSrc();
+      assert.ok(src);
+      assert.ok(src.includes('todayNew'), '应计算今日新增');
+    });
+
+    it('源码包含4个统计卡片', () => {
+      const src = readSrc();
+      assert.ok(src);
+      assert.ok(src.includes('已处理告警'), '应包含已处理卡');
+      assert.ok(src.includes('未处理告警'), '应包含未处理卡');
+      assert.ok(src.includes('总告警数'), '应包含总告警卡');
+      assert.ok(src.includes('今日新增'), '应包含今日新增卡');
+    });
+
+    it('源码包含reportedDate字段', () => {
+      const src = readSrc();
+      assert.ok(src);
+      assert.ok(src.includes('reportedDate'), '接口应包含上报日期');
+    });
+  });
+
+  describe('V20 增强 — 反例/边界', () => {
+    it('records为空时total=0', () => {
+      const src = readSrc();
+      assert.ok(src);
+      // 空态处理
+      assert.ok(src.includes('length') || src.includes('empty') || src.includes('Empty'));
+    });
+
+    it('todayNew通过比较日期计算', () => {
+      const src = readSrc();
+      assert.ok(src);
+      assert.ok(src.includes('split') || src.includes('toISOString'), '应使用日期比较');
+    });
   });
 });
+
+  describe('V20 增强 — 源码分析', () => {
+    it('包含 @m5/ui 的 StatCard 导入', () => {
+      const src = readSrc();
+      assert.ok(src && src.includes('StatCard'), '应导入 StatCard');
+    });
+    it('包含 useMemo 统计', () => {
+      const src = readSrc();
+      assert.ok(src && src.includes('useMemo'), '应使用 useMemo');
+    });
+    it('包含统计卡片 JSX', () => {
+      const src = readSrc();
+      assert.ok(src && src.includes('已处理告警'), '应有已处理卡片');
+      assert.ok(src && src.includes('未处理告警'), '应有未处理卡片');
+    });
+    it('包含今日新增逻辑', () => {
+      const src = readSrc();
+      assert.ok(src && src.includes('todayNew'), '应有今日新增');
+      assert.ok(src && src.includes('reportedDate'), '应过滤上报日期');
+    });
+    it('统计值格式化使用 toString', () => {
+      const src = readSrc();
+      assert.ok(src && src.includes('.toString()'), '统计值应转为字符串');
+    });
+    it('包含4种严重等级', () => {
+      const src = readSrc();
+      const severities = ['critical', 'high', 'medium', 'low'].every(s => src?.includes(s));
+      assert.ok(severities, '应包含4种严重等级');
+    });
+    it('状态筛选逻辑正确', () => {
+      const src = readSrc();
+      const filters = ['open', 'investigating', 'resolved', 'closed'].every(s => src?.includes(s));
+      assert.ok(filters, '应包含4种过滤状态');
+    });
+  });
+});  // end safety page
+

@@ -1,6 +1,6 @@
 import { View, Text, Button } from '@tarojs/components';
 import { useEffect, useState } from 'react';
-import { buildDomainGovernanceHref, type PortalDomainGovernanceSummaryContract } from '@m5/types';
+import { buildDomainGovernanceWorkspaceHref } from '@m5/types';
 import {
   appendMiniappSubmitHistory,
   buildMiniappAuthEnvelope,
@@ -30,25 +30,6 @@ import {
   type MiniappSubmitOutcome
 } from '../../market-bootstrap';
 
-function resolveDomainGovernanceWorkspaceHref(
-  summary: PortalDomainGovernanceSummaryContract,
-  marketCode: string
-) {
-  const scope =
-    summary.currentScopes.find((item) => item.missingPrimary) ??
-    summary.currentScopes.find((item) => item.scopeType === 'STORE') ??
-    summary.currentScopes.find((item) => item.scopeType === 'BRAND') ??
-    summary.currentScopes[0];
-
-  return buildDomainGovernanceHref({
-    tenantId: scope?.tenantId,
-    brandId: scope?.brandId,
-    storeId: scope?.storeId,
-    marketCode,
-    scopeType: scope?.scopeType,
-  });
-}
-
 // 会员等级体系
 const MEMBER_TIERS = [
   { key: 'bronze', level: '铜牌会员', label: '铜牌会员', minPoints: 0, color: '#cd7f32' },
@@ -56,6 +37,8 @@ const MEMBER_TIERS = [
   { key: 'gold', level: '金牌会员', label: '金牌会员', minPoints: 10000, color: '#ffd700' },
   { key: 'platinum', level: '钻石会员', label: '钻石会员', minPoints: 50000, color: '#e5e4e2' },
 ];
+
+const DEFAULT_MEMBER_TIER = { key: 'bronze', level: '铜牌会员', label: '铜牌会员', minPoints: 0, color: '#cd7f32' };
 
 export default function MemberPage() {
   const [consumerContract, setConsumerContract] = useState<MiniappRuntimeConsumerContract>(
@@ -76,7 +59,10 @@ export default function MemberPage() {
   const [replayOutcome, setReplayOutcome] = useState<MiniappReplayOutcome | null>(null);
   const bootstrap = consumerContract.snapshot;
   const domainGovernance = bootstrap.domainGovernance;
-  const governanceWorkspaceHref = resolveDomainGovernanceWorkspaceHref(domainGovernance, bootstrap.marketCode);
+  const governanceWorkspaceHref = buildDomainGovernanceWorkspaceHref(domainGovernance, bootstrap.marketCode);
+  const currentTier =
+    MEMBER_TIERS.find((item) => item.key === (session.memberTier === 'SVIP' ? 'platinum' : session.memberTier.toLowerCase())) ??
+    DEFAULT_MEMBER_TIER;
   const actionPlans = listMiniappActionPlans(bootstrap, session);
   const visiblePlans = actionPlans.filter((plan) => plan.action !== 'booking-submit');
   const activePlan = visiblePlans.find((plan) => plan.action === activeAction) ?? null;
@@ -119,6 +105,9 @@ export default function MemberPage() {
         <Text>
           会员层级：{session.memberTier} / 积分：{session.points} / 券包：{session.couponCount} / 数据源：{memberRuntime.deliveryMode}
         </Text>
+      </View>
+      <View style={{ marginTop: '8px' }}>
+        <Text>等级权益：{currentTier.label} / 升级门槛 {currentTier.minPoints} / 标识色 {currentTier.color}</Text>
       </View>
       <View style={{ marginTop: '8px' }}>
         <Text>{memberRuntime.note}</Text>

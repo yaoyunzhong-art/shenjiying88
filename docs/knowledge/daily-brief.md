@@ -99,3 +99,5 @@
 ---
 
 > 🔬 自进化日志: evolution-log.md | V21白皮书: v21-evolution-science.md
+
+> 🚨 **安全门阻断（2026-07-19 00:01）** 安全扫描发现风险 — 🐜 [V17: security-gates]

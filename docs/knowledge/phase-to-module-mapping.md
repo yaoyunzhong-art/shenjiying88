@@ -48,7 +48,7 @@
 | Reports | admin-web/app/reports/ | ~300行 | 48测试 | 🆕 | 🔴 | P-38财务 报表中心 |
 | Rules | admin-web/app/rules/ | ~350行 | 40测试 | 🆕 | 🟡已发 | P-Admin 规则管理 |
 | Safety | admin-web/app/safety/ | ~400行 | 10测试 | 🆕 | 🔴 | P-Admin 安防管理 |
-| Settings | admin-web/app/settings/ | ~260行 | 13测试 | 🆕 | 🔴 | P-Admin 设置中心 |
+| Settings | admin-web/app/settings/ | ~280行 | 37测试 | 🆕 | 🔴 | P-Admin 设置中心 |
 | Account | storefront-web/app/account/ | 498行 | 362行 | 🆕 | 🔴 | P-36会员 |
 
 ### V19 Day2 凌晨 storefront 薄页面补齐 (2026-07-18 02:25-03:10)

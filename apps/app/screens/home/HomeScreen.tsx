@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { buildDomainGovernanceHref } from '@m5/types';
+import { buildDomainGovernanceWorkspaceHref } from '@m5/types';
 import { useBootstrap } from '../../context/AppContext';
 
 // 模拟数据
@@ -77,19 +77,10 @@ export function HomeScreen() {
   const role = roleConfig[currentRole];
   const actions = quickActions[currentRole];
 
-  const governanceScope =
-    bootstrap.domainGovernance.currentScopes.find((item) => item.missingPrimary) ??
-    bootstrap.domainGovernance.currentScopes.find((item) => item.scopeType === 'STORE') ??
-    bootstrap.domainGovernance.currentScopes.find((item) => item.scopeType === 'BRAND') ??
-    bootstrap.domainGovernance.currentScopes[0];
-
-  const governanceWorkspaceHref = buildDomainGovernanceHref({
-    tenantId: governanceScope?.tenantId,
-    brandId: governanceScope?.brandId,
-    storeId: governanceScope?.storeId,
-    marketCode: bootstrap.marketCode,
-    scopeType: governanceScope?.scopeType,
-  });
+  const governanceWorkspaceHref = buildDomainGovernanceWorkspaceHref(
+    bootstrap.domainGovernance,
+    bootstrap.marketCode,
+  );
 
   const getStatConfig = (type: string) => {
     const configs: Record<string, { value: string | number; label: string; bgColor: string }> = {
