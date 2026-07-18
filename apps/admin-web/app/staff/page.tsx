@@ -60,6 +60,22 @@ function filterStaffByTab(staff: StaffMember[], tab: string): StaffMember[] {
 // 样式
 // ============================================================
 
+const tabStyle = (active: boolean): React.CSSProperties => ({
+  padding: '6px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+  border: active ? '1px solid #3b82f6' : '1px solid rgba(148, 163, 184, 0.15)',
+  background: active ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+  color: active ? '#60a5fa' : '#94a3b8', fontWeight: active ? 600 : 400,
+});
+const statusTagStyle = (status: StaffStatus): React.CSSProperties => ({
+  fontSize: 11, display: 'inline-block', padding: '2px 8px', borderRadius: 6,
+  color: status === '在职' ? '#22c55e' : status === '休假' ? '#f59e0b' : '#ef4444',
+  background: status === '在职' ? 'rgba(34, 197, 94, 0.12)' : status === '休假' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+});
+const postTagStyle = (post: StaffPost): React.CSSProperties => ({
+  fontSize: 11, display: 'inline-block', padding: '2px 8px', borderRadius: 6,
+  color: '#94a3b8', background: 'rgba(148, 163, 184, 0.12)',
+});
+
 const styles: Record<string, React.CSSProperties> = {
   page: { padding: 32, maxWidth: 1060, margin: '0 auto' },
   title: { fontSize: 22, fontWeight: 700, color: '#f1f5f9', marginBottom: 4 },
@@ -70,12 +86,7 @@ const styles: Record<string, React.CSSProperties> = {
   statValue: { fontSize: 26, fontWeight: 700, color: '#e2e8f0' },
   statSubLabel: { fontSize: 12, color: '#94a3b8', marginTop: 4 },
   tabRow: { display: 'flex', gap: 8, marginBottom: 20 },
-  tab: (active: boolean) => ({
-    padding: '6px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer',
-    border: active ? '1px solid #3b82f6' : '1px solid rgba(148, 163, 184, 0.15)',
-    background: active ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
-    color: active ? '#60a5fa' : '#94a3b8', fontWeight: active ? 600 : 400,
-  }),
+
   toolBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   refreshBtn: {
     padding: '6px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer',
@@ -85,15 +96,8 @@ const styles: Record<string, React.CSSProperties> = {
   table: { width: '100%', borderCollapse: 'collapse' as const },
   th: { textAlign: 'left' as const, padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#64748b', borderBottom: '1px solid rgba(148, 163, 184, 0.1)' },
   td: { padding: '10px 12px', fontSize: 13, color: '#cbd5e1', borderBottom: '1px solid rgba(148, 163, 184, 0.06)' },
-  statusTag: (status: StaffStatus) => ({
-    fontSize: 11, display: 'inline-block', padding: '2px 8px', borderRadius: 6,
-    color: status === '在职' ? '#22c55e' : status === '休假' ? '#f59e0b' : '#ef4444',
-    background: status === '在职' ? 'rgba(34, 197, 94, 0.12)' : status === '休假' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-  }),
-  postTag: (post: StaffPost) => ({
-    fontSize: 11, display: 'inline-block', padding: '2px 8px', borderRadius: 6,
-    color: '#94a3b8', background: 'rgba(148, 163, 184, 0.12)',
-  }),
+
+
   emptyState: { textAlign: 'center' as const, padding: '60px 20px', color: '#64748b' },
   emptyIcon: { fontSize: 40, marginBottom: 12, opacity: 0.4 },
   emptyText: { fontSize: 14, color: '#64748b' },
@@ -147,7 +151,7 @@ export default function StaffPage() {
           {['全部', '在职', '休假'].map(tab => (
             <button
               key={tab}
-              style={styles.tab(activeTab === tab)}
+              style={tabStyle(activeTab === tab)}
               onClick={() => setActiveTab(tab)}
               data-testid={`tab-${tab}`}
             >
@@ -185,11 +189,11 @@ export default function StaffPage() {
             {filteredStaff.map(m => (
               <tr key={m.id}>
                 <td style={styles.td}>{m.name}</td>
-                <td style={styles.td}><span style={styles.postTag(m.post)}>{m.post}</span></td>
+                <td style={styles.td}><span style={postTagStyle(m.post)}>{m.post}</span></td>
                 <td style={styles.td}>{m.store}</td>
                 <td style={styles.td}>{m.phone}</td>
                 <td style={styles.td}>{m.entryDate}</td>
-                <td style={styles.td}><span style={styles.statusTag(m.status)}>● {m.status}</span></td>
+                <td style={styles.td}><span style={statusTagStyle(m.status)}>● {m.status}</span></td>
               </tr>
             ))}
           </tbody>
