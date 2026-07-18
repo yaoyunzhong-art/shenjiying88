@@ -51,6 +51,11 @@
 | Settings | admin-web/app/settings/ | ~280行 | 37测试 | 🆕 | 🔴 | P-Admin 设置中心 |
 | Account | storefront-web/app/account/ | 498行 | 362行 | 🆕 | 🔴 | P-36会员 |
 
+### V20 Day1 凌晨 purchase-orders/form 增强 (2026-07-19 00:47)
+| 页面 | 位置 | 代码 | 测试 | 审计 | PRD | 推荐Phase |
+|:-----|:----|:---:|:----:|:----:|:---:|:---------|
+| PurchaseOrderForm | admin-web/purchase-orders/form/ | 新增分类标签(采购类型) | 42测试🆕(从15↑) | ✅ | 🟡已有 | P-37库存 |
+
 ### V19 Day2 凌晨 storefront 薄页面补齐 (2026-07-18 02:25-03:10)
 | 页面 | 位置 | 代码 | 测试 | 审计 | PRD | 推荐Phase |
 |:-----|:----|:---:|:----:|:----:|:---:|:---------|
