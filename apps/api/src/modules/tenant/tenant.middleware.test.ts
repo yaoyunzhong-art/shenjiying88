@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+import { it } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { randomUUID } from 'node:crypto'
 import { TenantMiddleware } from './tenant.middleware'
 
 function makeReq(headers: Record<string, string> = {}): Record<string, any> {
@@ -53,6 +52,58 @@ it('TenantMiddleware use() reads tenantContext from headers', () => {
   assert.equal(req.tenantContext.brandId, 'brand-custom')
   assert.equal(req.tenantContext.storeId, 'store-custom')
   assert.equal(req.tenantContext.marketCode, 'zh-cn')
+})
+
+it('TenantMiddleware use() resolves tenantContext from host before headers', () => {
+  const middleware = new TenantMiddleware({
+    resolveHost(host: string) {
+      if (host === 'brand.example.com') {
+        return {
+          tenantId: 'tenant-host',
+          brandId: 'brand-host',
+          storeId: 'store-host',
+        }
+      }
+      return null
+    },
+  } as any)
+  const req = makeReq({
+    host: 'brand.example.com',
+    'x-tenant-id': 'tenant-header',
+    'x-brand-id': 'brand-header',
+    'x-store-id': 'store-header',
+  })
+  const res = {} as any
+
+  middleware.use(req, res, () => {})
+
+  assert.equal(req.tenantContext.tenantId, 'tenant-host')
+  assert.equal(req.tenantContext.brandId, 'brand-host')
+  assert.equal(req.tenantContext.storeId, 'store-host')
+})
+
+it('TenantMiddleware use() reads x-forwarded-host before host', () => {
+  const middleware = new TenantMiddleware({
+    resolveHost(host: string) {
+      if (host === 'forwarded.example.com') {
+        return {
+          tenantId: 'tenant-forwarded',
+          brandId: 'brand-forwarded',
+        }
+      }
+      return null
+    },
+  } as any)
+  const req = makeReq({
+    host: 'ignored.example.com',
+    'x-forwarded-host': 'forwarded.example.com',
+  })
+  const res = {} as any
+
+  middleware.use(req, res, () => {})
+
+  assert.equal(req.tenantContext.tenantId, 'tenant-forwarded')
+  assert.equal(req.tenantContext.brandId, 'brand-forwarded')
 })
 
 it('TenantMiddleware use() trims whitespace from header values', () => {

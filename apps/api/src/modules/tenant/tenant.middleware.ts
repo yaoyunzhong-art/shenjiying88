@@ -13,8 +13,9 @@
 //   - 缺省 actor headers 时 actorContext = undefined
 //   - x-role / x-permission 单数别名支持
 
-import { Injectable } from '@nestjs/common'
+import { Injectable, Optional } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
+import { DomainResolutionService } from '../saas-advanced/domain-resolution.service'
 
 const DEFAULT_TENANT_ID = 'tenant-demo'
 const DEFAULT_MARKET = 'us-default'
@@ -37,13 +38,21 @@ function parseActorHeader(value: string): Record<string, any> | string {
   return value
 }
 
+function readRequestHost(req: any): string | undefined {
+  return readHeader(req, 'x-forwarded-host') ?? readHeader(req, 'host')
+}
+
 @Injectable()
 export class TenantMiddleware {
+  constructor(@Optional() private readonly domainResolution?: DomainResolutionService) {}
+
   use(req: any, _res: any, next: () => void): void {
+    const resolvedByHost = this.domainResolution?.resolveHost(readRequestHost(req) ?? '')
+
     // tenantContext
-    const tenantId = readHeader(req, 'x-tenant-id') ?? DEFAULT_TENANT_ID
-    const brandId = readHeader(req, 'x-brand-id')
-    const storeId = readHeader(req, 'x-store-id')
+    const tenantId = resolvedByHost?.tenantId ?? readHeader(req, 'x-tenant-id') ?? DEFAULT_TENANT_ID
+    const brandId = resolvedByHost?.brandId ?? readHeader(req, 'x-brand-id')
+    const storeId = resolvedByHost?.storeId ?? readHeader(req, 'x-store-id')
     const marketCode = readHeader(req, 'x-market-code') ?? DEFAULT_MARKET
     req.tenantContext = { tenantId, brandId, storeId, marketCode }
 

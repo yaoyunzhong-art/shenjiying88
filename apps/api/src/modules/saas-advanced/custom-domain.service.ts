@@ -12,11 +12,14 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import { requireTenantContext } from '../../common/context/tenant-context'
+import { PrismaService } from '../../prisma/prisma.service'
 import {
   DomainMapping,
+  DomainScopeType,
   DomainStatus,
   generateVerificationToken,
   buildVerificationHost,
@@ -24,6 +27,7 @@ import {
   isValidDomain,
   computeSslFingerprint,
 } from './custom-domain.entity'
+import { DomainResolutionService } from './domain-resolution.service'
 
 /**
  * DNS 查询接口 (可注入 - 测试用 mock)
@@ -92,6 +96,11 @@ export class CustomDomainService {
   /** 注入 DNS TXT 记录 (测试用) */
   private dnsOverrides = new Map<string, string[]>()
 
+  constructor(
+    @Optional() private readonly prisma?: PrismaService,
+    @Optional() private readonly domainResolution?: DomainResolutionService,
+  ) {}
+
   // ============ 注入 (测试用) ============
   setDnsResolver(r: DnsResolver): void {
     this.dnsResolver = r
@@ -108,21 +117,50 @@ export class CustomDomainService {
 
   async addDomain(domain: string): Promise<DomainMapping> {
     const ctx = requireTenantContext()
-    const valid = isValidDomain(domain)
+    const normalizedDomain = normalizeDomain(domain)
+    const valid = isValidDomain(normalizedDomain)
     if (!valid.valid) {
       throw new BadRequestException(valid.error)
     }
+
+    const token = generateVerificationToken()
+    const host = buildVerificationHost(normalizedDomain)
+
+    if (this.canUsePersistence()) {
+      const existing = await this.customDomains().findUnique({
+        where: { domain: normalizedDomain },
+      })
+      if (existing) {
+        throw new BadRequestException(`Domain ${domain} already registered`)
+      }
+
+      const row = await this.customDomains().create({
+        data: {
+          domain: normalizedDomain,
+          scopeType: inferScopeType(ctx),
+          tenantId: ctx.tenantId,
+          brandId: ctx.brandId,
+          storeId: ctx.storeId,
+          verificationHost: host,
+          verificationToken: token,
+          createdBy: ctx.userId ?? 'system',
+        },
+      })
+      return this.rowToMapping(row)
+    }
+
     // 防止重复 (全平台唯一)
-    if (this.domainsByName.has(domain.toLowerCase())) {
+    if (this.domainsByName.has(normalizedDomain)) {
       throw new BadRequestException(`Domain ${domain} already registered`)
     }
 
-    const token = generateVerificationToken()
-    const host = buildVerificationHost(domain)
     const mapping: DomainMapping = {
       id: `dom-${randomUUID().slice(0, 8)}-${Date.now().toString(36)}`,
+      scopeType: inferScopeType(ctx),
       tenantId: ctx.tenantId,
-      domain: domain.toLowerCase(),
+      brandId: ctx.brandId,
+      storeId: ctx.storeId,
+      domain: normalizedDomain,
       verificationToken: token,
       verificationHost: host,
       status: 'pending_verification',
@@ -142,6 +180,13 @@ export class CustomDomainService {
 
   async list(): Promise<DomainMapping[]> {
     const ctx = requireTenantContext()
+    if (this.canUsePersistence()) {
+      const rows = await this.customDomains().findMany({
+        where: { tenantId: ctx.tenantId },
+        orderBy: { createdAt: 'desc' },
+      })
+      return rows.map((row: PersistedCustomDomainRow) => this.rowToMapping(row))
+    }
     const ids = this.domainsByTenant.get(ctx.tenantId) ?? new Set()
     return Array.from(ids)
       .map((id) => this.domains.get(id)!)
@@ -151,6 +196,18 @@ export class CustomDomainService {
 
   async getById(id: string): Promise<DomainMapping> {
     const ctx = requireTenantContext()
+    if (this.canUsePersistence()) {
+      const row = await this.customDomains().findFirst({
+        where: {
+          id,
+          tenantId: ctx.tenantId,
+        },
+      })
+      if (!row) {
+        throw new NotFoundException(`Domain ${id} not found`)
+      }
+      return this.rowToMapping(row)
+    }
     const m = this.domains.get(id)
     if (!m || m.tenantId !== ctx.tenantId) {
       throw new NotFoundException(`Domain ${id} not found`)
@@ -160,6 +217,23 @@ export class CustomDomainService {
 
   async remove(id: string): Promise<void> {
     const ctx = requireTenantContext()
+    if (this.canUsePersistence()) {
+      const row = await this.customDomains().findFirst({
+        where: {
+          id,
+          tenantId: ctx.tenantId,
+        },
+      })
+      if (!row) {
+        throw new NotFoundException(`Domain ${id} not found`)
+      }
+      await this.customDomains().delete({
+        where: { id },
+      })
+      this.domainResolution?.removeHost(row.domain)
+      return
+    }
+
     const m = this.domains.get(id)
     if (!m || m.tenantId !== ctx.tenantId) {
       throw new NotFoundException(`Domain ${id} not found`)
@@ -188,67 +262,299 @@ export class CustomDomainService {
     }
 
     if (txtRecords.includes(expectedValue)) {
-      m.status = 'active'
-      m.verificationFailCount = 0
-      m.lastVerifiedAt = new Date().toISOString()
-      m.updatedAt = m.lastVerifiedAt
+      const verifiedAt = new Date()
+      const updated = await this.persistStatusUpdate(m, {
+        status: 'active',
+        verificationFailCount: 0,
+        verifiedAt,
+        lastVerifiedAt: verifiedAt,
+        lastCheckedAt: verifiedAt,
+      })
+      this.domainResolution?.upsertFromMapping(updated)
+      return updated
     } else {
-      m.verificationFailCount++
-      if (m.verificationFailCount >= 3) {
-        m.status = 'disabled'
-      }
-      m.updatedAt = new Date().toISOString()
+      const verificationFailCount = m.verificationFailCount + 1
+      const updated = await this.persistStatusUpdate(m, {
+        status: verificationFailCount >= 3 ? 'disabled' : 'pending_verification',
+        verificationFailCount,
+        lastCheckedAt: new Date(),
+      })
+      this.domainResolution?.upsertFromMapping(updated)
       throw new BadRequestException(
-        `DNS TXT 校验失败 (${m.verificationFailCount}/3). 期望 ${m.verificationHost} = ${expectedValue}`,
+        `DNS TXT 校验失败 (${updated.verificationFailCount}/3). 期望 ${m.verificationHost} = ${expectedValue}`,
       )
     }
-    return m
   }
 
   // ============ 3. SSL 申请 ============
 
   async requestSsl(id: string): Promise<DomainMapping> {
-    const m = await this.getById(id)
-    if (m.status !== 'active') {
+    const current = await this.getById(id)
+    if (current.status !== 'active') {
       throw new BadRequestException(
-        `Domain must be active before SSL request. Current: ${m.status}`,
+        `Domain must be active before SSL request. Current: ${current.status}`,
       )
     }
-    m.status = 'ssl_issuing'
-    m.updatedAt = new Date().toISOString()
+
+    const issuing = await this.persistStatusUpdate(current, {
+      status: 'ssl_issuing',
+      lastCheckedAt: new Date(),
+    })
 
     try {
-      const cert = await this.sslProvider.issue(m.domain)
-      m.ssl = {
-        provider: 'letsencrypt',
-        expiresAt: cert.expiresAt,
-        fingerprint: cert.fingerprint,
-        lastRenewedAt: new Date().toISOString(),
-      }
-      m.status = 'active_ssl'
+      const cert = await this.sslProvider.issue(issuing.domain)
+      const updated = await this.persistStatusUpdate(issuing, {
+        status: 'active_ssl',
+        certificateProvider: 'letsencrypt',
+        certificateStatus: 'ACTIVE',
+        certificateNotAfter: new Date(cert.expiresAt),
+        certificateFingerprint: cert.fingerprint,
+        lastCheckedAt: new Date(),
+      })
+      this.domainResolution?.upsertFromMapping(updated)
+      return updated
     } catch (err: any) {
-      m.status = 'ssl_failed'
+      await this.persistStatusUpdate(issuing, {
+        status: 'ssl_failed',
+        certificateStatus: 'FAILED',
+        lastCheckedAt: new Date(),
+      })
       throw err
-    } finally {
-      m.updatedAt = new Date().toISOString()
     }
-    return m
   }
 
   // ============ 4. Host → tenantId 解析 (CDN/网关用) ============
 
   resolveTenantByHost(host: string): string | null {
-    const domain = host.toLowerCase().split(':')[0]
+    return this.resolveContextByHost(host)?.tenantId ?? null
+  }
+
+  resolveContextByHost(host: string): Pick<DomainMapping, 'tenantId' | 'brandId' | 'storeId'> | null {
+    const resolved = this.domainResolution?.resolveHost(host)
+    if (resolved) {
+      return {
+        tenantId: resolved.tenantId,
+        brandId: resolved.brandId,
+        storeId: resolved.storeId,
+      }
+    }
+
+    const domain = normalizeDomain(host)
     const mappingId = this.domainsByName.get(domain)
     if (!mappingId) return null
     const m = this.domains.get(mappingId)
     if (!m || m.status === 'disabled') return null
     if (m.status !== 'active' && m.status !== 'active_ssl') return null
-    return m.tenantId
+    return {
+      tenantId: m.tenantId,
+      brandId: m.brandId,
+      storeId: m.storeId,
+    }
   }
 
   // ============ 测试用 ============
   countDomains(): number {
     return this.domains.size
+  }
+
+  private async persistStatusUpdate(
+    mapping: DomainMapping,
+    patch: {
+      status: DomainStatus
+      verificationFailCount?: number
+      verifiedAt?: Date
+      lastVerifiedAt?: Date
+      lastCheckedAt?: Date
+      certificateProvider?: string
+      certificateStatus?: 'NOT_REQUESTED' | 'PENDING' | 'ACTIVE' | 'FAILED' | 'EXPIRED'
+      certificateNotAfter?: Date
+      certificateFingerprint?: string
+    },
+  ): Promise<DomainMapping> {
+    if (this.canUsePersistence()) {
+      const row = await this.customDomains().update({
+        where: { id: mapping.id },
+        data: {
+          status: toDbStatus(patch.status),
+          verificationFailCount: patch.verificationFailCount,
+          verifiedAt: patch.verifiedAt,
+          lastVerifiedAt: patch.lastVerifiedAt,
+          lastCheckedAt: patch.lastCheckedAt,
+          certificateProvider: patch.certificateProvider,
+          certificateStatus: patch.certificateStatus,
+          certificateNotAfter: patch.certificateNotAfter,
+          certificateFingerprint: patch.certificateFingerprint,
+        },
+      })
+      return this.rowToMapping(row)
+    }
+
+    mapping.status = patch.status
+    mapping.verificationFailCount = patch.verificationFailCount ?? mapping.verificationFailCount
+    mapping.lastVerifiedAt = patch.lastVerifiedAt?.toISOString() ?? mapping.lastVerifiedAt
+    mapping.updatedAt = new Date().toISOString()
+    if (patch.certificateProvider || patch.certificateNotAfter || patch.certificateFingerprint) {
+      mapping.ssl = {
+        provider: (patch.certificateProvider as 'letsencrypt' | 'custom') ?? 'letsencrypt',
+        expiresAt: patch.certificateNotAfter?.toISOString() ?? mapping.ssl?.expiresAt ?? new Date().toISOString(),
+        fingerprint: patch.certificateFingerprint ?? mapping.ssl?.fingerprint ?? '',
+        lastRenewedAt: new Date().toISOString(),
+      }
+    } else if (patch.status === 'ssl_failed') {
+      delete mapping.ssl
+    }
+    return mapping
+  }
+
+  private rowToMapping(row: PersistedCustomDomainRow): DomainMapping {
+    return {
+      id: row.id,
+      scopeType: row.scopeType as DomainScopeType,
+      tenantId: row.tenantId,
+      brandId: row.brandId ?? undefined,
+      storeId: row.storeId ?? undefined,
+      portalSiteId: row.portalSiteId ?? undefined,
+      isPrimary: row.isPrimary,
+      domain: row.domain,
+      verificationToken: row.verificationToken,
+      verificationHost: row.verificationHost,
+      status: fromDbStatus(row.status),
+      ssl: row.certificateProvider && row.certificateNotAfter && row.certificateFingerprint
+        ? {
+            provider: row.certificateProvider === 'custom' ? 'custom' : 'letsencrypt',
+            expiresAt: row.certificateNotAfter.toISOString(),
+            fingerprint: row.certificateFingerprint,
+            lastRenewedAt: row.updatedAt.toISOString(),
+          }
+        : undefined,
+      lastVerifiedAt: row.lastVerifiedAt?.toISOString(),
+      verificationFailCount: row.verificationFailCount,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      createdBy: row.createdBy,
+    }
+  }
+
+  private canUsePersistence(): boolean {
+    return Boolean(this.prisma) && process.env.NODE_ENV !== 'test'
+  }
+
+  private customDomains(): CustomDomainDelegate {
+    return (this.prisma as unknown as { customDomain: CustomDomainDelegate }).customDomain
+  }
+}
+
+type PersistedCustomDomainRow = {
+  id: string
+  scopeType: string
+  tenantId: string
+  brandId: string | null
+  storeId: string | null
+  portalSiteId: string | null
+  isPrimary: boolean
+  domain: string
+  verificationToken: string
+  verificationHost: string
+  status: string
+  certificateProvider: string | null
+  certificateNotAfter: Date | null
+  certificateFingerprint: string | null
+  lastVerifiedAt: Date | null
+  verificationFailCount: number
+  createdAt: Date
+  updatedAt: Date
+  createdBy: string
+}
+
+type CustomDomainDelegate = {
+  findUnique(args: { where: { domain: string } }): Promise<PersistedCustomDomainRow | null>
+  create(args: {
+    data: {
+      domain: string
+      scopeType: DomainScopeType
+      tenantId: string
+      brandId?: string
+      storeId?: string
+      verificationHost: string
+      verificationToken: string
+      createdBy: string
+    }
+  }): Promise<PersistedCustomDomainRow>
+  findMany(args: {
+    where?: { tenantId?: string; status?: { in: string[] } }
+    orderBy?: { createdAt: 'desc' | 'asc' }
+    select?: {
+      domain?: true
+      tenantId?: true
+      brandId?: true
+      storeId?: true
+    }
+  }): Promise<PersistedCustomDomainRow[]>
+  findFirst(args: {
+    where: {
+      id: string
+      tenantId: string
+    }
+  }): Promise<PersistedCustomDomainRow | null>
+  delete(args: { where: { id: string } }): Promise<PersistedCustomDomainRow>
+  update(args: {
+    where: { id: string }
+    data: {
+      status: string
+      verificationFailCount?: number
+      verifiedAt?: Date
+      lastVerifiedAt?: Date
+      lastCheckedAt?: Date
+      certificateProvider?: string
+      certificateStatus?: 'NOT_REQUESTED' | 'PENDING' | 'ACTIVE' | 'FAILED' | 'EXPIRED'
+      certificateNotAfter?: Date
+      certificateFingerprint?: string
+    }
+  }): Promise<PersistedCustomDomainRow>
+}
+
+function normalizeDomain(domain: string): string {
+  return domain.toLowerCase().trim().split(',')[0].split(':')[0]
+}
+
+function inferScopeType(ctx: { brandId?: string; storeId?: string }): DomainScopeType {
+  if (ctx.storeId) return 'STORE'
+  if (ctx.brandId) return 'BRAND'
+  return 'TENANT'
+}
+
+function toDbStatus(status: DomainStatus): PersistedCustomDomainRow['status'] {
+  switch (status) {
+    case 'pending_verification':
+      return 'PENDING_VERIFICATION'
+    case 'active':
+      return 'ACTIVE'
+    case 'ssl_issuing':
+      return 'SSL_ISSUING'
+    case 'active_ssl':
+      return 'ACTIVE_SSL'
+    case 'ssl_failed':
+      return 'SSL_FAILED'
+    case 'disabled':
+      return 'DISABLED'
+  }
+}
+
+function fromDbStatus(status: string): DomainStatus {
+  switch (status) {
+    case 'PENDING_VERIFICATION':
+      return 'pending_verification'
+    case 'ACTIVE':
+      return 'active'
+    case 'SSL_ISSUING':
+      return 'ssl_issuing'
+    case 'ACTIVE_SSL':
+      return 'active_ssl'
+    case 'SSL_FAILED':
+      return 'ssl_failed'
+    case 'DISABLED':
+      return 'disabled'
+    default:
+      return 'pending_verification'
   }
 }
