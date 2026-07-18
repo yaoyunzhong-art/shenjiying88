@@ -489,6 +489,92 @@ describe('CustomDomain HTTP E2E', () => {
     assert.equal(currentBrandScope?.activeCount >= 2, true)
   })
 
+  it('GET /saas/domain/governance/active-without-primary 支持 query 过滤', async () => {
+    const governance = await request(app.getHttpServer())
+      .get('/saas/domain/governance/active-without-primary')
+      .set({
+        'x-tenant-id': 'tenant-http-governance',
+        'x-brand-id': 'brand-http-governance',
+        'x-user-id': 'brand-http-governance-admin',
+        'x-role': 'brand_admin',
+      })
+      .query({
+        scopeType: 'BRAND',
+        brandId: 'brand-http-governance',
+      })
+      .expect(200)
+
+    assert.equal(
+      governance.body.data.items.every(
+        (item: { scopeType: string; brandId?: string }) =>
+          item.scopeType === 'BRAND' && item.brandId === 'brand-http-governance',
+      ),
+      true,
+    )
+  })
+
+  it('POST /saas/domain/governance/primary/recommend 会自动补选推荐主域名', async () => {
+    const headers = {
+      'x-tenant-id': 'tenant-http-recommend',
+      'x-brand-id': 'brand-http-recommend',
+      'x-user-id': 'brand-http-recommend-admin',
+      'x-role': 'brand_admin',
+    }
+
+    const first = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'recommend-http-a.example.io' })
+      .expect(201)
+    const second = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'recommend-http-b.example.io' })
+      .expect(201)
+
+    customDomainService.setDnsTxtOverride(first.body.data.verificationHost, [
+      buildVerificationValue(first.body.data.verificationToken),
+    ])
+    customDomainService.setDnsTxtOverride(second.body.data.verificationHost, [
+      buildVerificationValue(second.body.data.verificationToken),
+    ])
+
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${first.body.data.id}/verify`)
+      .set(headers)
+      .expect(200)
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${second.body.data.id}/verify`)
+      .set(headers)
+      .expect(200)
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${second.body.data.id}/ssl`)
+      .set(headers)
+      .expect(200)
+
+    const recommended = await request(app.getHttpServer())
+      .post('/saas/domain/governance/primary/recommend')
+      .set(headers)
+      .send({
+        scopeType: 'BRAND',
+        brandId: 'brand-http-recommend',
+      })
+      .expect(200)
+    const current = await request(app.getHttpServer())
+      .get('/saas/domain/primary/current')
+      .set(headers)
+      .query({
+        scopeType: 'BRAND',
+        brandId: 'brand-http-recommend',
+      })
+      .expect(200)
+
+    assert.equal(recommended.body.data.applied, true)
+    assert.equal(recommended.body.data.item.domain, 'recommend-http-b.example.io')
+    assert.equal(current.body.data.item.domain, 'recommend-http-b.example.io')
+    assert.equal(current.body.data.item.isPrimary, true)
+  })
+
   it('brand_admin 请求 STORE scope 批量主域名返回 403', async () => {
     const res = await request(app.getHttpServer())
       .post('/saas/domain/primary/batch/current')
@@ -502,6 +588,25 @@ describe('CustomDomain HTTP E2E', () => {
         items: [
           { scopeType: 'STORE', brandId: 'brand-http-forbidden', storeId: 'store-http-forbidden' },
         ],
+      })
+      .expect(403)
+
+    assert.ok(String(res.body.message).includes('brand_admin'))
+  })
+
+  it('brand_admin 为 STORE scope 执行推荐主域名返回 403', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/saas/domain/governance/primary/recommend')
+      .set({
+        'x-tenant-id': 'tenant-http-forbidden',
+        'x-brand-id': 'brand-http-forbidden',
+        'x-user-id': 'brand-http-forbidden-admin',
+        'x-role': 'brand_admin',
+      })
+      .send({
+        scopeType: 'STORE',
+        brandId: 'brand-http-forbidden',
+        storeId: 'store-http-forbidden',
       })
       .expect(403)
 

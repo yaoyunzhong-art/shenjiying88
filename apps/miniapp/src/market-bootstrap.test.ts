@@ -57,7 +57,7 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
       heroTitle: 'tenant-demo 企业级经营门户',
       heroSubtitle: 'demo',
       solutionTags: [],
-      loginEntry: { label: '进入租户后台', loginPath: '/cn-mainland/tenant-demo/login', ssoEnabled: true }
+      loginEntry: { label: '进入租户后台', loginPath: '/cn-mainland/tenant-demo/login', ssoEnabled: true }, domainSource: 'default'
     },
     brandPortal: {
       audience: 'TOB',
@@ -73,7 +73,7 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
       heroTitle: 'brand-demo 品牌经营官网',
       heroSubtitle: 'demo',
       solutionTags: [],
-      loginEntry: { label: '进入品牌后台', loginPath: '/cn-mainland/tenant-demo/brand-demo/login', ssoEnabled: true }
+      loginEntry: { label: '进入品牌后台', loginPath: '/cn-mainland/tenant-demo/brand-demo/login', ssoEnabled: true }, domainSource: 'default'
     },
     storePortal: {
       audience: 'TOC',
@@ -88,7 +88,7 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
       name: 'store-001 门店门户',
       primaryDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
       supportedLanguages: ['zh-CN'],
-      supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+      supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'], domainSource: 'default'
     },
     marketProfile: {
       marketCode: 'cn-mainland',
@@ -220,6 +220,7 @@ test('miniapp bootstrap: non-cn fallback snapshot uses global preset', () => {
       sharePolicy: 'GLOBAL_CONTENT_FIRST',
       primaryDomain: 'store-global.brand-global.tenant-global.jp-tokyo.local',
       supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+      domainSource: 'default',
     },
   );
 });

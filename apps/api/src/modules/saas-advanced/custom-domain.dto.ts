@@ -4,6 +4,7 @@ import {
   IsIn,
   IsInt,
   IsArray,
+  IsBoolean,
   IsOptional,
   IsString,
   Max,
@@ -273,6 +274,80 @@ export class ActiveWithoutPrimaryGovernanceResponse {
 
   @ApiProperty({ type: () => [ActiveWithoutPrimaryScopeItem] })
   items!: ActiveWithoutPrimaryScopeItem[]
+}
+
+export class ActiveWithoutPrimaryGovernanceQueryRequest {
+  @ApiPropertyOptional({
+    description: '按作用域类型筛选治理视图',
+    enum: DOMAIN_SCOPE_VALUES,
+    example: 'BRAND',
+  })
+  @IsIn(DOMAIN_SCOPE_VALUES)
+  @IsOptional()
+  scopeType?: (typeof DOMAIN_SCOPE_VALUES)[number]
+
+  @ApiPropertyOptional({ description: '按品牌作用域过滤', example: 'brand-001' })
+  @IsString()
+  @IsOptional()
+  brandId?: string
+
+  @ApiPropertyOptional({ description: '按门店作用域过滤', example: 'store-001' })
+  @IsString()
+  @IsOptional()
+  storeId?: string
+}
+
+export class RecommendPrimaryDomainRequest {
+  @ApiProperty({
+    description: '目标作用域类型',
+    enum: DOMAIN_SCOPE_VALUES,
+    example: 'BRAND',
+  })
+  @IsIn(DOMAIN_SCOPE_VALUES)
+  scopeType!: (typeof DOMAIN_SCOPE_VALUES)[number]
+
+  @ApiPropertyOptional({ description: '品牌作用域标识', example: 'brand-001' })
+  @IsString()
+  @IsOptional()
+  brandId?: string
+
+  @ApiPropertyOptional({ description: '门店作用域标识', example: 'store-001' })
+  @IsString()
+  @IsOptional()
+  storeId?: string
+
+  @ApiPropertyOptional({
+    description: '仅预览推荐结果，不真正执行主域名切换',
+    example: false,
+    default: false,
+  })
+  @Type(() => Boolean)
+  @IsBoolean()
+  @IsOptional()
+  dryRun?: boolean = false
+}
+
+export class RecommendPrimaryDomainResponse {
+  @ApiProperty({ example: 'BRAND' })
+  scopeType!: string
+
+  @ApiProperty({ example: 'tenant-abc' })
+  tenantId!: string
+
+  @ApiPropertyOptional({ example: 'brand-001' })
+  brandId?: string
+
+  @ApiPropertyOptional({ example: 'store-001' })
+  storeId?: string
+
+  @ApiProperty({ example: true })
+  applied!: boolean
+
+  @ApiProperty({ example: true })
+  resolved!: boolean
+
+  @ApiPropertyOptional({ type: () => DomainListItem, nullable: true })
+  item?: DomainListItem | null
 }
 
 export class DomainListQueryRequest {

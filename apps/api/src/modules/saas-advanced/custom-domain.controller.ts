@@ -22,15 +22,19 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
+import { requireTenantContext } from '../../common/context/tenant-context'
 import { CustomDomainService } from './custom-domain.service'
 import { isValidDomain, buildVerificationHost, buildVerificationValue } from './custom-domain.entity'
 import {
   AddDomainRequest,
+  ActiveWithoutPrimaryGovernanceQueryRequest,
   ActiveWithoutPrimaryGovernanceResponse,
   BatchCurrentPrimaryDomainRequest,
   BatchCurrentPrimaryDomainResponse,
   CurrentPrimaryDomainQueryRequest,
   CurrentPrimaryDomainResponse,
+  RecommendPrimaryDomainRequest,
+  RecommendPrimaryDomainResponse,
   DomainDetailResponse,
   DomainListQueryRequest,
   DomainListResponse,
@@ -89,7 +93,20 @@ export class CustomDomainController {
   async getCurrentPrimary(
     @Query() query: CurrentPrimaryDomainQueryRequest = new CurrentPrimaryDomainQueryRequest(),
   ) {
-    return this.service.getCurrentPrimaryBatch([query]).then((items) => items[0])
+    const ctx = requireTenantContext()
+    const scopeType =
+      query.scopeType ?? (ctx.storeId ? 'STORE' : ctx.brandId ? 'BRAND' : 'TENANT')
+    const brandId = query.brandId ?? ctx.brandId
+    const storeId = query.storeId ?? ctx.storeId
+    const item = await this.service.getCurrentPrimary(query)
+    return {
+      scopeType,
+      tenantId: ctx.tenantId,
+      brandId,
+      storeId,
+      resolved: item != null,
+      item,
+    }
   }
 
   /**
@@ -112,14 +129,33 @@ export class CustomDomainController {
    * GET /saas/domain/governance/active-without-primary
    */
   @ApiOperation({ summary: '查询 active 但尚未设置主域名的治理视图' })
+  @ApiQuery({ name: 'scopeType', type: String, required: false, description: '按作用域类型过滤治理视图' })
+  @ApiQuery({ name: 'brandId', type: String, required: false, description: '按品牌作用域过滤治理视图' })
+  @ApiQuery({ name: 'storeId', type: String, required: false, description: '按门店作用域过滤治理视图' })
   @Get('governance/active-without-primary')
   @ApiOkResponse({ type: ActiveWithoutPrimaryGovernanceResponse })
-  async listActiveWithoutPrimary() {
-    const items = await this.service.listActiveWithoutPrimary()
+  async listActiveWithoutPrimary(
+    @Query()
+    query: ActiveWithoutPrimaryGovernanceQueryRequest = new ActiveWithoutPrimaryGovernanceQueryRequest(),
+  ) {
+    const items = await this.service.listActiveWithoutPrimary(query)
     return {
       total: items.length,
       items,
     }
+  }
+
+  /**
+   * 为缺主域名作用域自动推荐并补选 primary
+   * POST /saas/domain/governance/primary/recommend
+   */
+  @ApiOperation({ summary: '为缺主域名作用域自动推荐并补选 primary' })
+  @Post('governance/primary/recommend')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: RecommendPrimaryDomainRequest })
+  @ApiOkResponse({ type: RecommendPrimaryDomainResponse })
+  async recommendPrimary(@Body() body: RecommendPrimaryDomainRequest) {
+    return this.service.recommendPrimary(body)
   }
 
   /**

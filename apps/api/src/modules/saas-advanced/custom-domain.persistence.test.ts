@@ -411,6 +411,44 @@ describe('CustomDomainService persistence branch', () => {
     assert.equal(governance[0].activeCount, 2)
   })
 
+  it('recommendPrimary 在 persistence 分支会为缺主域名 scope 自动补选主域名', async () => {
+    const rows = [
+      createRow({
+        id: 'dom-1',
+        scopeType: 'BRAND',
+        brandId: 'brand-persist',
+        domain: 'brand-recommend-a.example.io',
+        isPrimary: false,
+        status: 'ACTIVE',
+        updatedAt: new Date('2026-07-18T00:00:00.000Z'),
+      }),
+      createRow({
+        id: 'dom-2',
+        scopeType: 'BRAND',
+        brandId: 'brand-persist',
+        domain: 'brand-recommend-b.example.io',
+        isPrimary: false,
+        status: 'ACTIVE_SSL',
+        updatedAt: new Date('2026-07-18T02:00:00.000Z'),
+        certificateProvider: 'letsencrypt',
+        certificateNotAfter: new Date('2026-10-18T00:00:00.000Z'),
+        certificateFingerprint: 'fp-b',
+      }),
+    ]
+    const service = new CustomDomainService(createPrisma(rows))
+
+    const recommended = await runWithTenant(TENANT_CTX, () =>
+      service.recommendPrimary({
+        scopeType: 'BRAND',
+        brandId: 'brand-persist',
+      }),
+    )
+
+    assert.equal(recommended.applied, true)
+    assert.equal(recommended.item?.domain, 'brand-recommend-b.example.io')
+    assert.equal(rows.find((row) => row.id === 'dom-2')?.isPrimary, true)
+  })
+
   it('brand_admin 在 persistence 分支不可查询 STORE scope', async () => {
     const rows = [
       createRow({

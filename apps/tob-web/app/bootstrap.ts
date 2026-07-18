@@ -263,7 +263,8 @@ function getFallbackTenantPortal(marketCode: string, tenantCode: string): { port
       heroTitle: `${tenantCode} 企业级经营官网`,
       heroSubtitle: '统一承接租户解决方案、渠道合作、门店网络能力展示与后台登录入口。',
       solutionTags: ['多租户 SaaS', '全球化配置', '门店网络', '数据经营'],
-      loginEntry: buildLoginEntry('进入租户后台', `/${marketCode}/${tenantCode}/login`)
+      loginEntry: buildLoginEntry('进入租户后台', `/${marketCode}/${tenantCode}/login`),
+      domainSource: 'default'
     }
   };
 }
@@ -290,7 +291,8 @@ function getFallbackBrandPortal(
       heroTitle: `${brandCode} 品牌增长官网`,
       heroSubtitle: '面向招商加盟、品牌合作、联合营销、赛事活动和品牌后台登录的统一入口。',
       solutionTags: ['品牌招商', '品牌联营', '全球社媒', '品牌后台'],
-      loginEntry: buildLoginEntry('进入品牌后台', `/${marketCode}/${tenantCode}/${brandCode}/login`)
+      loginEntry: buildLoginEntry('进入品牌后台', `/${marketCode}/${tenantCode}/${brandCode}/login`),
+      domainSource: 'default'
     }
   };
 }

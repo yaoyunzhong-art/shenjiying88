@@ -307,6 +307,53 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
       assert.equal(currentBrandScope?.activeCount >= 2, true)
     })
 
+    it('治理视图支持按 scopeType 和 brandId 过滤', async () => {
+      const governance = await inTenant(BRAND_CTX, () =>
+        controller.listActiveWithoutPrimary({
+          scopeType: 'BRAND',
+          brandId: 'brand-governance',
+        }),
+      )
+
+      assert.equal(governance.items.every((item) => item.scopeType === 'BRAND'), true)
+      assert.equal(governance.items.every((item) => item.brandId === 'brand-governance'), true)
+    })
+
+    it('recommendPrimary 会为当前 scope 自动补选主域名', async () => {
+      const recommendCtx = {
+        tenantId: 'tenant-controller-recommend',
+        brandId: 'brand-controller-recommend',
+        userId: 'brand-controller-recommend-admin',
+        role: 'brand_admin' as const,
+      }
+      const first = await inTenant(recommendCtx, () =>
+        controller.addDomain({ domain: 'controller-recommend-a.example.io' }),
+      )
+      const second = await inTenant(recommendCtx, () =>
+        controller.addDomain({ domain: 'controller-recommend-b.example.io' }),
+      )
+      service.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      service.setDnsTxtOverride(second.verificationHost, [
+        buildVerificationValue(second.verificationToken),
+      ])
+      await inTenant(recommendCtx, () => controller.verify(first.id))
+      await inTenant(recommendCtx, () => controller.verify(second.id))
+      await inTenant(recommendCtx, () => controller.requestSsl(second.id))
+
+      const recommended = await inTenant(recommendCtx, () =>
+        controller.recommendPrimary({
+          scopeType: 'BRAND',
+          brandId: 'brand-controller-recommend',
+        }),
+      )
+
+      assert.equal(recommended.applied, true)
+      assert.equal(recommended.item?.domain, 'controller-recommend-b.example.io')
+      assert.equal(recommended.item?.isPrimary, true)
+    })
+
     it('brand_admin 查询 STORE scope 批量主域名会被拒绝', async () => {
       await assert.rejects(
         () =>
@@ -319,6 +366,20 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
                   storeId: 'store-governance',
                 },
               ],
+            }),
+          ),
+        /brand_admin can only query BRAND scope domains/,
+      )
+    })
+
+    it('brand_admin 为 STORE scope 执行推荐主域名会被拒绝', async () => {
+      await assert.rejects(
+        () =>
+          inTenant(BRAND_CTX, () =>
+            controller.recommendPrimary({
+              scopeType: 'STORE',
+              brandId: 'brand-governance',
+              storeId: 'store-governance',
             }),
           ),
         /brand_admin can only query BRAND scope domains/,

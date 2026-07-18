@@ -628,6 +628,84 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
       )
     })
 
+    it('listActiveWithoutPrimary 支持按 scope 和 brandId 过滤', async () => {
+      const isolatedService = new CustomDomainService()
+      const brandCtx = {
+        tenantId: 'tenant-governance-filter',
+        brandId: 'brand-governance-filter',
+        userId: 'brand-governance-filter-admin',
+        role: 'brand_admin' as const,
+      }
+      const first = await runWithTenant(brandCtx, async () =>
+        isolatedService.addDomain('governance-filter-a.example.io'),
+      )
+      const second = await runWithTenant(brandCtx, async () =>
+        isolatedService.addDomain('governance-filter-b.example.io'),
+      )
+      isolatedService.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      isolatedService.setDnsTxtOverride(second.verificationHost, [
+        buildVerificationValue(second.verificationToken),
+      ])
+      await runWithTenant(brandCtx, async () => isolatedService.verify(first.id))
+      await runWithTenant(brandCtx, async () => isolatedService.verify(second.id))
+
+      const governance = await runWithTenant(brandCtx, async () =>
+        isolatedService.listActiveWithoutPrimary({
+          scopeType: 'BRAND',
+          brandId: 'brand-governance-filter',
+        }),
+      )
+
+      assert.equal(governance.length, 1)
+      assert.equal(governance[0].brandId, 'brand-governance-filter')
+      assert.equal(governance[0].scopeType, 'BRAND')
+    })
+
+    it('recommendPrimary 会为缺主域名 scope 选择优先候选并补选 primary', async () => {
+      const isolatedService = new CustomDomainService()
+      const brandCtx = {
+        tenantId: 'tenant-recommend',
+        brandId: 'brand-recommend',
+        userId: 'brand-recommend-admin',
+        role: 'brand_admin' as const,
+      }
+      const first = await runWithTenant(brandCtx, async () =>
+        isolatedService.addDomain('recommend-active.example.io'),
+      )
+      const second = await runWithTenant(brandCtx, async () =>
+        isolatedService.addDomain('recommend-ssl.example.io'),
+      )
+      isolatedService.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      isolatedService.setDnsTxtOverride(second.verificationHost, [
+        buildVerificationValue(second.verificationToken),
+      ])
+      await runWithTenant(brandCtx, async () => isolatedService.verify(first.id))
+      await runWithTenant(brandCtx, async () => isolatedService.verify(second.id))
+      await runWithTenant(brandCtx, async () => isolatedService.requestSsl(second.id))
+
+      const recommended = await runWithTenant(brandCtx, async () =>
+        isolatedService.recommendPrimary({
+          scopeType: 'BRAND',
+          brandId: 'brand-recommend',
+        }),
+      )
+      const current = await runWithTenant(brandCtx, async () =>
+        isolatedService.getCurrentPrimary({
+          scopeType: 'BRAND',
+          brandId: 'brand-recommend',
+        }),
+      )
+
+      assert.equal(recommended.applied, true)
+      assert.equal(recommended.item?.domain, 'recommend-ssl.example.io')
+      assert.equal(current?.domain, 'recommend-ssl.example.io')
+      assert.equal(current?.isPrimary, true)
+    })
+
     it('brand_admin 不可查询 STORE scope 当前主域名', async () => {
       const isolatedService = new CustomDomainService()
 
@@ -684,6 +762,22 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
       assert.equal(governance.length, 1)
       assert.equal(governance[0].storeId, 'store-governance')
       assert.equal(governance[0].candidateDomains[0].domain, 'store-visible.example.io')
+    })
+
+    it('brand_admin 不可为 STORE scope 执行推荐主域名', async () => {
+      const isolatedService = new CustomDomainService()
+
+      await assert.rejects(
+        () =>
+          runWithTenant(BRAND_CTX, async () =>
+            isolatedService.recommendPrimary({
+              scopeType: 'STORE',
+              brandId: 'brand-governance',
+              storeId: 'store-governance',
+            }),
+          ),
+        /brand_admin can only query BRAND scope domains/,
+      )
     })
   })
 

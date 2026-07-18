@@ -19,10 +19,12 @@ import { randomUUID } from 'node:crypto'
 import { requireTenantContext, type TenantContext } from '../../common/context/tenant-context'
 import { PrismaService } from '../../prisma/prisma.service'
 import type {
+  ActiveWithoutPrimaryGovernanceQueryRequest,
   ActiveWithoutPrimaryScopeItem,
   BatchCurrentPrimaryDomainQueryItem,
   CurrentPrimaryDomainQueryRequest,
   DomainListQueryRequest,
+  RecommendPrimaryDomainRequest,
 } from './custom-domain.dto'
 import {
   DomainMapping,
@@ -288,7 +290,9 @@ export class CustomDomainService {
     return Promise.all(items.map((query) => this.buildCurrentPrimaryResponse(query)))
   }
 
-  async listActiveWithoutPrimary(): Promise<ActiveWithoutPrimaryScopeItem[]> {
+  async listActiveWithoutPrimary(
+    query: ActiveWithoutPrimaryGovernanceQueryRequest = {},
+  ): Promise<ActiveWithoutPrimaryScopeItem[]> {
     const activeMappings = (await this.listAccessibleMappings()).filter((mapping) =>
       this.isActiveMapping(mapping),
     )
@@ -314,6 +318,54 @@ export class CustomDomainService {
           candidateDomains: this.sortMappings(group, 'createdAt', 'desc'),
         }
       })
+      .filter((item) => this.matchesGovernanceFilter(item, query))
+  }
+
+  async recommendPrimary(
+    query: RecommendPrimaryDomainRequest,
+  ): Promise<{
+    scopeType: string
+    tenantId: string
+    brandId?: string
+    storeId?: string
+    applied: boolean
+    resolved: boolean
+    item: DomainMapping | null
+  }> {
+    const scope = this.resolveScopeSelection(query)
+    const current = await this.getCurrentPrimary(query)
+    if (current) {
+      throw new BadRequestException('Primary domain already configured for the selected scope')
+    }
+
+    const candidates = await this.pickRecommendationCandidates(scope)
+    const candidate = candidates[0] ?? null
+    if (!candidate) {
+      throw new NotFoundException('No active domains available for primary recommendation')
+    }
+
+    if (query.dryRun === true) {
+      return {
+        scopeType: scope.scopeType,
+        tenantId: scope.tenantId,
+        brandId: scope.brandId,
+        storeId: scope.storeId,
+        applied: false,
+        resolved: true,
+        item: candidate,
+      }
+    }
+
+    const applied = await this.setPrimary(candidate.id)
+    return {
+      scopeType: scope.scopeType,
+      tenantId: scope.tenantId,
+      brandId: scope.brandId,
+      storeId: scope.storeId,
+      applied: true,
+      resolved: true,
+      item: applied,
+    }
   }
 
   async remove(id: string): Promise<void> {
@@ -629,6 +681,14 @@ export class CustomDomainService {
     }
   }
 
+  private async pickRecommendationCandidates(
+    scope: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>,
+  ): Promise<DomainMapping[]> {
+    return (await this.loadScopeMappings(scope))
+      .filter((mapping) => this.isActiveMapping(mapping))
+      .sort((left, right) => this.compareRecommendationPriority(left, right))
+  }
+
   private async listAccessibleMappings(ctx = requireTenantContext()): Promise<DomainMapping[]> {
     return this.applyRoleVisibility(await this.listTenantMappings(ctx), ctx)
   }
@@ -720,6 +780,56 @@ export class CustomDomainService {
     return mapping.status === 'active' || mapping.status === 'active_ssl'
   }
 
+  private matchesGovernanceFilter(
+    item: Pick<ActiveWithoutPrimaryScopeItem, 'scopeType' | 'brandId' | 'storeId'>,
+    query: ActiveWithoutPrimaryGovernanceQueryRequest,
+  ): boolean {
+    const ctx = requireTenantContext()
+    this.assertRequestedScopeAccess(query.scopeType as DomainScopeType | undefined, ctx)
+
+    if (ctx.role === 'brand_admin' && query.brandId && query.brandId !== ctx.brandId) {
+      throw new ForbiddenException('brand_admin can only access the current brand scope')
+    }
+
+    if (
+      ctx.role === 'store_admin' &&
+      ((query.brandId && query.brandId !== ctx.brandId) || (query.storeId && query.storeId !== ctx.storeId))
+    ) {
+      throw new ForbiddenException('store_admin can only access the current store scope')
+    }
+
+    if (query.scopeType && item.scopeType !== query.scopeType) {
+      return false
+    }
+    if (query.brandId && (item.brandId ?? null) !== query.brandId) {
+      return false
+    }
+    if (query.storeId && (item.storeId ?? null) !== query.storeId) {
+      return false
+    }
+    return true
+  }
+
+  private compareRecommendationPriority(left: DomainMapping, right: DomainMapping): number {
+    const score = (mapping: DomainMapping) => (mapping.status === 'active_ssl' ? 2 : 1)
+    const scoreDiff = score(right) - score(left)
+    if (scoreDiff !== 0) {
+      return scoreDiff
+    }
+
+    const updatedDiff = new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+    if (updatedDiff !== 0) {
+      return updatedDiff
+    }
+
+    const createdDiff = new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+    if (createdDiff !== 0) {
+      return createdDiff
+    }
+
+    return left.domain.localeCompare(right.domain)
+  }
+
   private buildScopeKey(mapping: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>): string {
     return [mapping.scopeType, mapping.tenantId, mapping.brandId ?? '', mapping.storeId ?? ''].join(':')
   }
@@ -769,6 +879,20 @@ export class CustomDomainService {
       if ((mapping.storeId ?? null) !== (current.storeId ?? null)) return false
       return true
     })
+  }
+
+  private async loadScopeMappings(
+    current: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>,
+  ): Promise<DomainMapping[]> {
+    if (this.canUsePersistence()) {
+      const rows = await this.customDomains().findMany({
+        where: this.buildScopeWhere(current),
+        orderBy: { createdAt: 'desc' },
+      })
+      return rows.map((row) => this.rowToMapping(row))
+    }
+
+    return this.listScopeMappings(current)
   }
 
   private applyListQuery(items: DomainMapping[], query: DomainListQueryRequest): DomainMapping[] {

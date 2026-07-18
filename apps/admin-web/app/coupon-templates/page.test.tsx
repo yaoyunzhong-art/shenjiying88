@@ -336,3 +336,70 @@ describe('coupon-templates — hooks 验证', () => {
   it('包含默认导出', () => assert.ok(src.includes('export default function')));
   it('包含注释说明', () => assert.ok(src.includes('/**') || src.includes('//')));
 });
+
+// ══════════════════════════════════════════════════════════
+// React 渲染测试 (使用全局 @m5/ui mock + @testing-library/react)
+// ══════════════════════════════════════════════════════════
+
+import { render } from '@testing-library/react';
+
+let CouponTemplatesPage: React.ComponentType;
+let pageModule: any;
+
+describe('coupon-templates — React 渲染', () => {
+  before(async () => {
+    pageModule = await import('./page.tsx');
+    CouponTemplatesPage = pageModule.default;
+  });
+
+  it('R1. render 不报错，容器存在', () => {
+    const { container } = render(React.createElement(CouponTemplatesPage));
+    assert.ok(container, 'container 应存在');
+  });
+
+  it('R2. 页面标题包含模板管理', () => {
+    const { container } = render(React.createElement(CouponTemplatesPage));
+    const text = container.textContent || '';
+    assert.ok(text.includes('模板'), '应包含模板');
+  });
+
+  it('R3. 渲染统计卡片', () => {
+    const { container } = render(React.createElement(CouponTemplatesPage));
+    const articles = container.querySelectorAll('article');
+    assert.ok(articles.length >= 3, `应有≥3个统计卡片, 实际 ${articles.length}`);
+  });
+
+  it('R4. 渲染 Tabs', () => {
+    const { container } = render(React.createElement(CouponTemplatesPage));
+    const tabs = container.querySelectorAll('[data-mock="Tabs"]');
+    assert.ok(tabs.length >= 1, '应有 Tabs 组件');
+  });
+
+  it('R5. 渲染 DataTable', () => {
+    const { container } = render(React.createElement(CouponTemplatesPage));
+    const tables = container.querySelectorAll('[data-mock="DataTable"]');
+    assert.ok(tables.length >= 1, '应有 DataTable 组件');
+  });
+
+  it('R6. 渲染搜索输入框', () => {
+    const { container } = render(React.createElement(CouponTemplatesPage));
+    const inputs = container.querySelectorAll('input');
+    assert.ok(inputs.length >= 1, '应有输入框');
+  });
+
+  it('R7. 渲染分页器', () => {
+    const { container } = render(React.createElement(CouponTemplatesPage));
+    const pagination = container.querySelectorAll('[data-mock="Pagination"]');
+    assert.ok(pagination.length >= 1, '应有 Pagination 组件');
+  });
+
+  it('R8. 渲染刷新按钮', () => {
+    const { container } = render(React.createElement(CouponTemplatesPage));
+    const buttons = container.querySelectorAll('button');
+    assert.ok(buttons.length >= 1, '应有按钮');
+  });
+
+  it('R9. 组件(函数)可调用', () => {
+    assert.equal(typeof CouponTemplatesPage, 'function');
+  });
+});

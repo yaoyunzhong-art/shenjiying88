@@ -549,3 +549,79 @@ describe('AuditLogsPage — 组件结构', () => {
     assert.ok(SRC.includes('export') || SRC.includes('export type'));
   });
 });
+
+// ══════════════════════════════════════════════════════════
+// React 渲染测试
+// ══════════════════════════════════════════════════════════
+
+import { render, cleanup } from '@testing-library/react';
+
+let AuditLogsPage: React.ComponentType;
+let auditModule: any;
+
+describe('audit-logs — React 渲染', () => {
+  before(async () => {
+    auditModule = await import('./page.tsx');
+    AuditLogsPage = auditModule.default;
+  });
+
+  afterEach(() => { cleanup(); });
+
+  it('R1. render 不报错', () => {
+    const { container } = render(React.createElement(AuditLogsPage));
+    assert.ok(container, '容器存在');
+  });
+
+  it('R2. 渲染标题', () => {
+    const { container } = render(React.createElement(AuditLogsPage));
+    const h1 = container.querySelector('h1');
+    assert.ok(h1, '应有 h1');
+    assert.ok(h1!.textContent?.includes('日志审计'), '标题含日志审计');
+  });
+
+  it('R3. 渲染统计卡片', () => {
+    const { container } = render(React.createElement(AuditLogsPage));
+    const articles = container.querySelectorAll('article, [class*=card], [class*=stat]');
+    assert.ok(articles.length >= 2, `应有≥2个统计卡片, 实际 ${articles.length}`);
+  });
+
+  it('R4. 渲染搜索输入框', () => {
+    const { container } = render(React.createElement(AuditLogsPage));
+    const inputs = container.querySelectorAll('input');
+    assert.ok(inputs.length >= 1, '应有输入框');
+  });
+
+  it('R5. 渲染 Tab 筛选（全部/失败）', () => {
+    const { container } = render(React.createElement(AuditLogsPage));
+    const text = container.textContent || '';
+    assert.ok(text.includes('全部'), '应包含全部tab');
+    assert.ok(text.includes('失败'), '应包含失败tab');
+  });
+
+  it('R6. 渲染日志表格（表头含时间/操作人/操作类型/目标/IP/结果）', () => {
+    const { container } = render(React.createElement(AuditLogsPage));
+    const text = container.textContent || '';
+    assert.ok(text.includes('时间'), '表头含时间');
+    assert.ok(text.includes('操作人'), '表头含操作人');
+    assert.ok(text.includes('操作类型'), '表头含操作类型');
+    assert.ok(text.includes('目标'), '表头含目标');
+    assert.ok(text.includes('IP'), '表头含IP');
+    assert.ok(text.includes('结果'), '表头含结果');
+  });
+
+  it('R7. 渲染刷新按钮', () => {
+    const { container } = render(React.createElement(AuditLogsPage));
+    const buttons = container.querySelectorAll('button');
+    assert.ok(buttons.length >= 1, '应有按钮');
+  });
+
+  it('R8. 渲染日志条目（含示例用户名）', () => {
+    const { container } = render(React.createElement(AuditLogsPage));
+    const text = container.textContent || '';
+    assert.ok(text.includes('admin') || text.includes('张'), '应包含操作人');
+  });
+
+  it('R9. 组件(函数)可调用', () => {
+    assert.equal(typeof AuditLogsPage, 'function');
+  });
+});

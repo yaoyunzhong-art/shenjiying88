@@ -92,7 +92,8 @@ function getFallbackStorePortal(
     name: `${storeCode} 门店门户`,
     primaryDomain: `${storeCode}.${brandCode}.${tenantCode}.${marketCode}.local`,
     supportedLanguages,
-    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    domainSource: 'default'
   };
 }
 

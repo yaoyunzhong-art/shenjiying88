@@ -23,13 +23,14 @@ import {
 function createPortalBootstrapFixture(): PortalBootstrapResponse {
   return {
     tenantPortal: {
-      audience: 'TOB', scopeType: 'TENANT', scopeCode: 't', tenantCode: 't', marketCode: 'cn-mainland', channel: 'WEB', name: 't ToB', primaryDomain: 't.cn-mainland.b2b.local', supportedLanguages: ['zh-CN'], heroTitle: 'title', heroSubtitle: '', solutionTags: [], loginEntry: { label: '登录', loginPath: '/cn-mainland/t/login', ssoEnabled: true },
+      audience: 'TOB', scopeType: 'TENANT', scopeCode: 't', tenantCode: 't', marketCode: 'cn-mainland', channel: 'WEB', name: 't ToB', primaryDomain: 't.cn-mainland.b2b.local', supportedLanguages: ['zh-CN'], heroTitle: 'title', heroSubtitle: '', solutionTags: [], loginEntry: { label: '登录', loginPath: '/cn-mainland/t/login', ssoEnabled: true }, domainSource: 'default'
     },
     brandPortal: {
-      audience: 'TOB', scopeType: 'BRAND', scopeCode: 'b', tenantCode: 't', brandCode: 'b', marketCode: 'cn-mainland', channel: 'WEB', name: 'b ToB', primaryDomain: 'b.t.cn-mainland.b2b.local', supportedLanguages: ['zh-CN'], heroTitle: 'title', heroSubtitle: '', solutionTags: [], loginEntry: { label: '登录', loginPath: '/cn-mainland/t/b/login', ssoEnabled: true },
+      audience: 'TOB', scopeType: 'BRAND', scopeCode: 'b', tenantCode: 't', brandCode: 'b', marketCode: 'cn-mainland', channel: 'WEB', name: 'b ToB', primaryDomain: 'b.t.cn-mainland.b2b.local', supportedLanguages: ['zh-CN'], heroTitle: 'title', heroSubtitle: '', solutionTags: [], loginEntry: { label: '登录', loginPath: '/cn-mainland/t/b/login', ssoEnabled: true }, domainSource: 'default'
     },
     storePortal: {
       audience: 'TOC', scopeType: 'STORE', scopeCode: 'store-001', tenantCode: 't', brandCode: 'b', storeCode: 'store-001', storeName: 'store-001', marketCode: 'cn-mainland', channel: 'WEB', name: 'store-001', primaryDomain: 'store-001.b.t.cn-mainland.local', supportedLanguages: ['zh-CN'], supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+      domainSource: 'default',
     },
     marketProfile: {
       marketCode: 'cn-mainland', marketName: '中国大陆', countryCode: 'CN',

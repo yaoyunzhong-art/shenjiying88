@@ -258,6 +258,26 @@ const mockUiModule = {
       React.createElement('button', { onClick: onClose, 'data-testid': 'modal-close' }, 'Close'),
     );
   },
+  FormSubmitFeedback: ({ success, error, onDismissSuccess, onRetry, onDismissError }) => {
+    if (success) return React.createElement('div', { 'data-mock': 'FormSubmitFeedback', 'data-type': 'success' }, success);
+    if (error) return React.createElement('div', { 'data-mock': 'FormSubmitFeedback', 'data-type': 'error' },
+      error,
+      React.createElement('button', { onClick: onRetry, 'data-testid': 'retry-btn' }, '重试'),
+    );
+    return null;
+  },
+  SubmitButton: ({ children, variant, loading, type, onClick, disabled }) => {
+    return React.createElement('div', { 'data-mock': 'SubmitButton', 'data-variant': variant, 'data-loading': loading ? 'true' : 'false' },
+      loading ? '提交中…' : children
+    );
+  },
+  WorkspaceBreadcrumb: ({ workspaceLabel, workspaceHref, detailLabel }) => {
+    return React.createElement('nav', { 'data-mock': 'WorkspaceBreadcrumb' },
+      React.createElement('a', { href: workspaceHref }, workspaceLabel),
+      ' / ',
+      React.createElement('span', null, detailLabel)
+    );
+  },
   FormField: ({ label, error, children }) => React.createElement('div', { 'data-mock': 'FormField' },
     label ? React.createElement('label', null, label) : null,
     children,
