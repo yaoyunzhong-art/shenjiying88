@@ -227,17 +227,18 @@ describe('customer-tags — 页面结构', () => {
   it('47. 不包含 console.log', () => assert.ok(!readSource().includes('console.log')))
 })
 
-const SRC = readFileSync(require.resolve('./page'), 'utf-8');
+const SOURCE_CONTENT = readSource();
 
 describe('Customer Tags — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化(toLocaleString)', () => assert.ok(SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
-});
+  const src = SOURCE_CONTENT
+  it('包含useState声明', () => assert.ok(src.includes('const [') && src.includes('useState')))
+  it('包含JSX返回', () => assert.ok(src.includes('return (') || src.includes('return <')))
+  it('包含事件处理器', () => assert.ok(src.includes('onClick={') || src.includes('onChange={')))
+  it('包含列表渲染', () => assert.ok(src.includes('.map(')))
+  it('包含条件渲染', () => assert.ok(src.includes(' && ') || src.includes(' ? ')))
+  it('包含样式定义', () => assert.ok(src.includes('style={')))
+  it('包含数据格式化(toLocaleString)', () => assert.ok(src.includes('toLocaleString')))
+  it('包含模板字符串', () => assert.ok(src.includes('${')))
+  it('包含默认导出', () => assert.ok(src.includes('export default function')))
+  it('包含注释说明', () => assert.ok(src.includes("/**") || src.includes('//')))
+})
