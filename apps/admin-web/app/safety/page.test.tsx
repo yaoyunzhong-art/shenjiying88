@@ -169,6 +169,14 @@ describe('safety page', () => {
       const filters = ['open', 'investigating', 'resolved', 'closed'].every(s => src?.includes(s));
       assert.ok(filters, '应包含4种过滤状态');
     });
+    it('时间排序或格式化逻辑', () => {
+      const src = readSrc();
+      assert.ok(src && (src.includes('sort') || src.includes('formatDate') || src.includes('localeCompare')), '应有排序/格式化');
+    });
+    it('无硬编码 any 类型', () => {
+      const src = readSrc();
+      assert.ok(src && !src.includes(': any'),'不应有 any 类型');
+    });
   });
 });  // end safety page
 
