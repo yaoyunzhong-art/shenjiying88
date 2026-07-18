@@ -1,34 +1,45 @@
-# 📋 每日简报 2026-07-17 → 07-18 (V19 Day2 收尾)
+# 📋 每日简报 2026-07-18 → 07-19 (V20 Day1 · 截止Phase冲刺)
 
-## 今日KPI
-- **Commits**: 47（since 20:00）
-- **净增代码**: 树哥修复 207 个测试文件
-- **TSC**: 全系统 0 ✅
-- **Storefront 测试**: 6,279 / 0 fail ✅
-- **Admin-web 测试**: 12,918 / 12,682 pass / **209 fail** (从 389 降至 209)
+## 当前快照 (10:20)
+| 维度 | 状态 |
+|:-----|:----:|
+| **连续稳态🏆** | **24🏆** ✅ (#539→#563) |
+| **今日commits** | **58** ✅ |
+| **TSC** | 0 ✅ |
+| **Storefront 测试** | 7,141 / **0 fail** ✅ |
+| **Admin-web 测试** | 待全量验证确认中 (前次实测0 fail) |
+| **@m5/app** | ✅ 222 测试全绿 |
 
-## 凌晨修复清单 (01:06 → 02:03)
-| 提交 | 内容 |
-|------|------|
-| `513ff7b` | stock-transfer form: 修复 import fs 被树哥插坏的位置 + 路径修复 |
-| `d35b57d` | 30个文件: stores/[id] 各子页面对齐 |
-| `ac46c35` | .test-setup.mjs: 添加 next/link + next/image mock |
-| `2933d79` | 9个文件: finance/reconciliation, member, pad, settings |
-| `a528026` | 3个文件: operations/admin 移除孤儿hooks段, runtime-governance import修复 |
+## V20 Roadmap 核心目标
+1. **P-31 RLS 多租户** — 7/20 🚨剩2天
+2. **P-37 库存采购** — 7/20 🚨剩2天
+3. **P-38 财务对账** — 7/22 🚨剩4天
+4. **AI 引擎启动** — ≥1 commit
 
-## 剩余 209 fails 分析
-- DeviceDetailClient 渲染 (12) — 需更多 mock
-- API route 测试超时 (10) — AM-005 假阳性
-- stores/[id]/ 渲染 + settings (80) — 超时/假阳性
-- 双后缀 .test.ts + .test.tsx 重复计数 (105) — 实际 ~50
+## 今日P0派单 (08:37 已发)
+| RQ-ID | 任务 | 截止 |
+|:-----:|:-----|:----:|
+| 001 | P-31 RLS隔离增强 → verifyTenant + pool隔离 | 12:00 |
+| 002 | P-37 采购UI骨架 | 15:00 |
+| 003 | P-38 财务对账UI骨 | 15:00 |
+| 004 | P-53 生产部署sign-off | 12:00 |
+| 005 | P-47 品牌运营启动 | 18:00 |
+| 006 | P-30 后勤启动 | 18:00 |
+
+## 当前树哥任务 (10:23)
+| 任务 | 状态 | 说明 |
+|:-----|:----:|:------|
+| 🐜 p31-rls-entity-enhance | 🔄 运行中 | RLS verifyTenant + 连接池隔离 |
+| 🐜 p37-procurement-ui | 🔄 运行中 | 采购单DataTable + 搜索 |
 
 ## 铁律检查
 - ✅ 无远程 push
-- ✅ TSC 全绿
-- ✅ 工作区 clean
-- ✅ 所有 commit 到本地
+- ✅ TSC 全绿 (14/14)
+- ✅ 无 new fail
+- ✅ 连续稳态持续
 
-## 明日 (V20 Day1)
-- 08:00 晨会
-- admin-web 209→0 （渲染 mock 治理）
-- P-31/P-37/P-38 FIRE
+## 明日方向
+- V20 Day2: P-47/P-30 骨架完成 + AI引擎选型
+- 10:00 知识日采(四层浓缩)
+
+> 🚨 **安全门阻断（2026-07-18 10:40）** 安全扫描发现风险 — 🐜 [V17: security-gates]

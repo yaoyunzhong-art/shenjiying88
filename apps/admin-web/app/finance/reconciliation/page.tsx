@@ -14,7 +14,7 @@
 
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 // ─── 类型定义 ─────────────────────────────────────────────
 
@@ -192,34 +192,7 @@ export default function ReconciliationPage() {
   const [resolvedFilter, setResolvedFilter] = useState<string>('all')
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
 
-  const autoRefresh = useAutoRefresh(loadData, 30000)
-  const [timeline] = useState<TimelineEntry[]>([
-    { id: 'tl-1', action: '对账发起', operator: '系统', timestamp: new Date(Date.now() - 3600000).toISOString(), details: '自动对账 2026-07-15', status: 'success' },
-    { id: 'tl-2', action: '差异发现', operator: '系统', timestamp: new Date(Date.now() - 1800000).toISOString(), details: '发现 3 条差异', status: 'warning' },
-    { id: 'tl-3', action: '差异处理', operator: 'admin', timestamp: new Date(Date.now() - 600000).toISOString(), details: '已处理 2 条差异', status: 'success' },
-  ])
-
-  // ── 批量resolve ──
-
-  const handleBatchResolve = async () => {
-    if (selectedKeys.size === 0) return
-    setRunning(true)
-    try {
-      for (const key of selectedKeys) {
-        await apiFetch(`/api/finance/reconciliation/${encodeURIComponent(key)}/resolve`, {
-          method: 'POST',
-          body: JSON.stringify({ resolvedBy: 'admin' }),
-        })
-      }
-      setSelectedKeys(new Set())
-      await loadData()
-      if (tabView === 'details') await loadDetails()
-    } catch (err) {
-      setError((err as Error).message)
-    } finally {
-      setRunning(false)
-    }
-  }
+  // ── 数据加载 ──
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -247,6 +220,37 @@ export default function ReconciliationPage() {
       setLoading(false)
     }
   }, [])
+
+  const autoRefreshRef = useRef(loadData)
+  autoRefreshRef.current = loadData
+  const autoRefresh = useAutoRefresh(() => autoRefreshRef.current(), 30000)
+  const [timeline] = useState<TimelineEntry[]>([
+    { id: 'tl-1', action: '对账发起', operator: '系统', timestamp: new Date(Date.now() - 3600000).toISOString(), details: '自动对账 2026-07-15', status: 'success' },
+    { id: 'tl-2', action: '差异发现', operator: '系统', timestamp: new Date(Date.now() - 1800000).toISOString(), details: '发现 3 条差异', status: 'warning' },
+    { id: 'tl-3', action: '差异处理', operator: 'admin', timestamp: new Date(Date.now() - 600000).toISOString(), details: '已处理 2 条差异', status: 'success' },
+  ])
+
+  // ── 批量resolve ──
+
+  const handleBatchResolve = async () => {
+    if (selectedKeys.size === 0) return
+    setRunning(true)
+    try {
+      for (const key of selectedKeys) {
+        await apiFetch(`/api/finance/reconciliation/${encodeURIComponent(key)}/resolve`, {
+          method: 'POST',
+          body: JSON.stringify({ resolvedBy: 'admin' }),
+        })
+      }
+      setSelectedKeys(new Set())
+      await loadData()
+      if (tabView === 'details') await loadDetails()
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setRunning(false)
+    }
+  }
 
   useEffect(() => { loadData() }, [loadData])
 
