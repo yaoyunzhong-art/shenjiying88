@@ -11,6 +11,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Param,
   Query,
@@ -104,5 +105,18 @@ export class FinanceReportController {
     @TenantContext() tenantContext: RequestTenantContext
   ) {
     return this.reportService.getExportResult(exportId, tenantContext)
+  }
+
+  /**
+   * DELETE /api/finance/reports/:reportId
+   * 删除报表及关联导出
+   */
+  @Delete(':reportId')
+  deleteReport(
+    @Param('reportId') reportId: string,
+    @TenantContext() tenantContext: RequestTenantContext
+  ) {
+    this.reportService.deleteReport(reportId, tenantContext)
+    return { success: true, message: `Report ${reportId} deleted` }
   }
 }

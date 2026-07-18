@@ -165,6 +165,25 @@ export class FinanceReportService {
   }
 
   /**
+   * 删除报表
+   */
+  deleteReport(
+    reportId: string,
+    tenantContext: RequestTenantContext
+  ): boolean {
+    const report = reportStore.get(reportId)
+    if (!report || report.tenantId !== tenantContext.tenantId) {
+      throw new Error(`Report ${reportId} not found or access denied`)
+    }
+    reportStore.delete(reportId)
+    const exportIds = Array.from(exportStore.keys()).filter((k) => exportStore.get(k)?.reportId === reportId)
+    for (const eid of exportIds) {
+      exportStore.delete(eid)
+    }
+    return true
+  }
+
+  /**
    * 重新生成报表
    */
   regenerateReport(
