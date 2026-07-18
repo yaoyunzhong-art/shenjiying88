@@ -161,7 +161,7 @@ describe('KnowledgePage — 正例', () => {
 
     it('每个分类 icon 为 Emoji 字符', () => {
       for (const cat of SNAPSHOT.categories) {
-        const firstChar = cat.icon.charAt(0) || cat.icon;
+        const firstChar = Array.from(cat.icon)[0] || cat.icon;
         assert.ok(isEmoji(firstChar), `分类 ${cat.id} icon "${cat.icon}" 不是 Emoji`);
       }
     });
