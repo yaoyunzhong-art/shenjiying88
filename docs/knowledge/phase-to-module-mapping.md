@@ -27,7 +27,7 @@
 | Dashboard | admin-web/app/dashboard/ | 292行 | 42行 | 🆕 | 🔴 | P-Admin 指挥台 |
 | Analytics | admin-web/app/analytics/ | 281行 | 43行 | 🆕 | 🔴 | P-Admin 数据 |
 | Knowledge | admin-web/app/knowledge/ | 196行 | 32行 | 🆕 | 🔴 | P-Admin 知识 |
-| Users | admin-web/app/users/ | 158行 | 32行 | 🆕 | 🔴 | P-Admin 用户 |
+| Users | admin-web/app/users/ | ~360行 | 60测试 | 🆕 | 🟡已发 | P-Admin 用户 |
 | System Monitor | admin-web/app/system-monitor/ | 270行 | 18测试 | 🆕 | 🔴 | P-Admin 系统监控 |
 | Staff | admin-web/app/staff/ | ~300行 | 51测试 | 🆕 | 🔴 | P-36会员 员工管理 |
 | Equipment | admin-web/app/equipment/ | ~300行 | 56测试 | 🆕 | 🔴 | P-30后勤 设备管理 |
@@ -39,7 +39,7 @@
 | Tags | admin-web/app/tags/ | ~300行 | 57测试 | 🆕 | 🔴 | P-36会员 客户标签 |
 | Coupon Templates | admin-web/app/coupon-templates/ | ~300行 | 68测试 | 🆕 | 🔴 | P-35收银 优惠券模板 |
 | Alliances | admin-web/app/alliances/ | ~280行 | 38测试 | 🆕 | 🟡已发 | P-48联名 联盟管理 |
-| Analytics | admin-web/app/analytics/ | ~280行 | 12测试 | 🆕 | 🔴 | P-Admin 数据分析 |
+| Analytics | admin-web/app/analytics/ | ~300行 | 55测试 | 🆕 | 🟡已发 | P-Admin 数据分析 |
 | Coupons | admin-web/app/coupons/ | ~590行 | 65测试(7假阳) | 🆕 | 🟡已发 | P-48联名 优惠券发放 |
 | Customer Tags | admin-web/app/customer-tags/ | ~250行 | 57测试 | 🆕 | 🔴 | P-36会员 客户标签 |
 | Procurement | admin-web/app/procurement/ | ~460行 | 38测试 | 🆕 | 🟡已发 | P-Admin 采购管理 |
