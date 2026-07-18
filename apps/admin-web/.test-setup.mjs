@@ -263,20 +263,23 @@ const mockUiModule = {
   },
   Spinner: () => React.createElement('div', { 'data-mock': 'Spinner' }, 'Loading...'),
   Select: ({ value, onChange, options, placeholder, children }) => {
-    // The real @m5/ui Select calls onChange with opt.value, not an event.
-    // Mock renders a plain <select> whose onChange receives a React event.
-    // We need to extract the value from the event so the page handler works correctly.
-    const handleChange = (e) => {
-      // If onChange expects value directly (as @m5/ui does), pass e.target.value
-      // If onChange expects an event (native select behavior), pass the event
-      // We detect by checking if the page handler expects value or event
-      // @m5/ui Select always passes value: onChange = (v) => handleFieldChange('key', v)
-      if (onChange) {
-        // Simulate @m5/ui behavior by calling onChange with the value directly
-        onChange(e.target.value);
-      }
-    };
-    return React.createElement('select', { 'data-mock': 'Select', value, onChange: handleChange }, children);
+    // The real @m5/ui Select is a custom component that calls onChange(opt.value).
+    // Happy-dom doesn't attach React fibers to <select> elements, so we render
+    // a <div> with buttons to allow test interaction via fireEvent.click.
+    const optionsArr = options || [];
+    const selectedLabel = optionsArr.find(o => o.value === value)?.label || placeholder || '请选择';
+    return React.createElement('div', { 'data-mock': 'Select', 'data-selected': value || '' },
+      React.createElement('span', { 'data-testid': 'select-value' }, selectedLabel),
+      React.createElement('div', { style: { display: 'none' } },
+        ...optionsArr.map(opt =>
+          React.createElement('button', {
+            key: opt.value,
+            'data-option-value': opt.value,
+            onClick: () => { if (onChange) onChange(opt.value); },
+          }, opt.label)
+        )
+      )
+    );
   },
   Modal: ({ open, onClose, children, title }) => {
     if (!open) return null;

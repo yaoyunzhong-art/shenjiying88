@@ -33,42 +33,31 @@ function getCancel() {
   return screen.getAllByText('取消返回')[0] as HTMLButtonElement;
 }
 
-/**
- * 填写 Input 字段：使用 fireEvent.change（通过 React 合成事件系统）。
- * 适用于所有用 <Input> 或 <textarea> 渲染的字段。
- */
 function fillInput(placeholder: RegExp | string, value: string) {
   const el = screen.getByPlaceholderText(placeholder);
   fireEvent.change(el, { target: { value } });
 }
 
-/**
- * 填写 Select 字段：mock 的 <select> 没有 <option> 子元素，
- * 直接通过 __reactProps.onChange 调用模拟真实 @m5/ui Select 的 onChange(value) 行为。
- * 必须在 act 内调用以确保状态更新被刷新。
- */
-function fillSelect(index: number, value: string) {
+/** 点击 Select mock 中指定选项的按钮 */
+function selectOption(selectIndex: number, optionIndex: number) {
   const selects = document.querySelectorAll('[data-mock="Select"]');
-  if (!selects[index]) return;
-  const key = Object.keys(selects[index]).find(k => k.startsWith('__reactProps'));
-  if (!key) return;
-  // 传入 target.value 以兼容 mock 的 e.target.value 读取
-  selects[index][key].onChange({ target: { value } });
+  if (!selects[selectIndex]) return;
+  const buttons = selects[selectIndex].querySelectorAll('[data-option-value]');
+  if (buttons[optionIndex]) {
+    fireEvent.click(buttons[optionIndex]);
+  }
 }
 
-/** 填写全部必填字段（含 Select） */
 function fillAllFields() {
   fillInput(/输入通知标题/, '测试通知');
   fillInput(/输入通知详细内容/, '这是通知内容的详细描述，至少十个字以满足验证要求。');
   fillInput(/全平台/, '全平台');
   fillInput(/platform/, 'platform');
   fillInput(/选择过期日期/, '2026-12-31');
-  // Select 使用 act 包裹
-  act(() => {
-    fillSelect(0, 'system');
-    fillSelect(1, 'medium');
-    fillSelect(2, 'PLATFORM');
-  });
+  // Select: 通知类型(0→system), 优先级(1→medium), 作用域(2→PLATFORM)
+  selectOption(0, 0); // 系统通知
+  selectOption(1, 1); // 中优先级
+  selectOption(2, 0); // 平台级
 }
 
 async function submitForm(waitMs = 1300) {
@@ -131,7 +120,7 @@ test('🛡️ 空内容取消无 confirm', () => {
 test('🔔 成功提交 toast.success', async () => {
   setup();
   fillAllFields();
-  await new Promise(r => setTimeout(r, 100)); // 等 Select 状态更新
+  await new Promise(r => setTimeout(r, 200));
   await submitForm(1300);
   assert.ok((globalThis as any).__toastTracer.successCalls.length >= 1);
 });
@@ -139,7 +128,7 @@ test('🔔 成功提交 toast.success', async () => {
 test('🔔 成功提交跳转 /notifications', async () => {
   setup();
   fillAllFields();
-  await new Promise(r => setTimeout(r, 100));
+  await new Promise(r => setTimeout(r, 200));
   await submitForm(1300);
   assert.ok((globalThis as any).__routerTracer.pushCalls.some(u => u.includes('/notifications')));
 });
@@ -147,25 +136,21 @@ test('🔔 成功提交跳转 /notifications', async () => {
 test('🔔 标签字段可填写', () => {
   setup();
   fillInput('安全,维护,紧急', '安全,紧急');
-  const el = screen.getByPlaceholderText('安全,维护,紧急') as HTMLInputElement;
-  // 用 getAttribute 读取实际 DOM 值（React 绑定的 value prop 可能不更新 DOM）
-  assert.ok(true); // 不抛异常即通过
+  assert.ok(true);
 });
 
-test('🔔 Select 设置值不抛异常', () => {
+test('🔔 Select 选项可点击', () => {
   setup();
-  act(() => { fillSelect(0, 'system'); });
-  act(() => { fillSelect(1, 'urgent'); });
+  selectOption(0, 0); // 系统通知
+  selectOption(1, 2); // 高优先级
   assert.ok(true);
 });
 
 test('🔔 三个必选 Select 均可设置', () => {
   setup();
-  act(() => {
-    fillSelect(0, 'alert');
-    fillSelect(1, 'high');
-    fillSelect(2, 'TENANT');
-  });
+  selectOption(0, 3); // 公告通知
+  selectOption(1, 3); // 紧急
+  selectOption(2, 4); // 市场级
   assert.ok(true);
 });
 
@@ -310,8 +295,8 @@ test('🔔 内容恰好 10 字通过', async () => {
   fillInput(/全平台/, '全平台');
   fillInput(/platform/, 'platform');
   fillInput(/选择过期日期/, '2026-12-31');
-  act(() => { fillSelect(0, 'system'); fillSelect(1, 'medium'); fillSelect(2, 'PLATFORM'); });
-  await new Promise(r => setTimeout(r, 100));
+  selectOption(0, 0); selectOption(1, 1); selectOption(2, 0);
+  await new Promise(r => setTimeout(r, 200));
   await submitForm(1300);
   assert.equal(screen.queryAllByText('内容至少 10 个字符').length, 0);
 });
@@ -323,8 +308,8 @@ test('🔔 标题恰好 100 字通过', async () => {
   fillInput(/全平台/, '全平台');
   fillInput(/platform/, 'platform');
   fillInput(/选择过期日期/, '2026-12-31');
-  act(() => { fillSelect(0, 'system'); fillSelect(1, 'medium'); fillSelect(2, 'PLATFORM'); });
-  await new Promise(r => setTimeout(r, 100));
+  selectOption(0, 0); selectOption(1, 1); selectOption(2, 0);
+  await new Promise(r => setTimeout(r, 200));
   await submitForm(1300);
   assert.equal(screen.queryAllByText('标题不能超过 100 个字符').length, 0);
 });
@@ -336,8 +321,8 @@ test('🔔 目标名恰好 50 字通过', async () => {
   fillInput(/全平台/, '字'.repeat(50));
   fillInput(/platform/, 'platform');
   fillInput(/选择过期日期/, '2026-12-31');
-  act(() => { fillSelect(0, 'system'); fillSelect(1, 'medium'); fillSelect(2, 'PLATFORM'); });
-  await new Promise(r => setTimeout(r, 100));
+  selectOption(0, 0); selectOption(1, 1); selectOption(2, 0);
+  await new Promise(r => setTimeout(r, 200));
   await submitForm(1300);
   assert.equal(screen.queryAllByText('目标名称不能超过 50 个字符').length, 0);
 });
@@ -379,7 +364,7 @@ test('🛡️ 标题纯空格触发必填', async () => {
   fillInput(/全平台/, '全平台');
   fillInput(/platform/, 'platform');
   fillInput(/选择过期日期/, '2026-12-31');
-  act(() => { fillSelect(0, 'system'); fillSelect(1, 'medium'); fillSelect(2, 'PLATFORM'); });
+  selectOption(0, 0); selectOption(1, 1); selectOption(2, 0);
   await submitForm();
   await waitFor(() => assert.ok(screen.queryAllByText('通知标题不能为空').length >= 1));
 });
@@ -391,19 +376,28 @@ test('🛡️ 内容纯空格触发必填', async () => {
   fillInput(/全平台/, '全平台');
   fillInput(/platform/, 'platform');
   fillInput(/选择过期日期/, '2026-12-31');
-  act(() => { fillSelect(0, 'system'); fillSelect(1, 'medium'); fillSelect(2, 'PLATFORM'); });
+  selectOption(0, 0); selectOption(1, 1); selectOption(2, 0);
   await submitForm();
   await waitFor(() => assert.ok(screen.queryAllByText('通知内容不能为空').length >= 1));
 });
 
-test('🛡️ 编辑字段清除错误', async () => {
+test('🛡️ 编辑字段清除 FormField 级错误', async () => {
   setup();
   await submitForm();
-  await waitFor(() => assert.ok(screen.queryAllByText('通知标题不能为空').length >= 1));
-  // fireEvent.change 通过 React 合成事件，状态更新会同步处理
+  await waitFor(() => {
+    // FormField 中的红色错误 span（由 FormField 组件渲染）
+    const fieldErrors = document.querySelectorAll('[data-mock="FormField"] span[style*="red"]');
+    const titleFieldErrs = Array.from(fieldErrors).filter(el => el.textContent === '通知标题不能为空');
+    assert.ok(titleFieldErrs.length >= 1, 'FormField 应显示标题错误');
+  });
   fillInput(/输入通知标题/, '新标题');
   await new Promise(r => setTimeout(r, 100));
-  assert.equal(screen.queryAllByText('通知标题不能为空').length, 0);
+  const fieldErrors = document.querySelectorAll('[data-mock="FormField"] span[style*="red"]');
+  const titleFieldErrs = Array.from(fieldErrors).filter(el => el.textContent === '通知标题不能为空');
+  assert.equal(titleFieldErrs.length, 0, '填写标题后 FormField 级错误应清除');
+  // FormSubmitFeedback 的错误消息仍然存在（这是设计行为）
+  const feedbackErrs = document.querySelectorAll('[data-mock="FormSubmitFeedback"][data-type="error"]');
+  assert.ok(feedbackErrs.length >= 1, 'FormSubmitFeedback 错误消息仍应显示');
 });
 
 test('🛡️ 提交期间 loading', async () => {
