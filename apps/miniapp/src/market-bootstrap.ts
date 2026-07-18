@@ -1,6 +1,7 @@
 import { ApiClient, getDefaultApiBaseUrl, loadFoundationGovernanceReadModel } from '@m5/sdk';
 import {
   advanceRuntimeGovernanceReplayPolicy,
+  buildDomainGovernanceWorkspaceHref,
   type FoundationAlertDrilldownResponse,
   type FoundationAlertMutationResponse,
   foundationAlertCatalogFallback,
@@ -27,6 +28,7 @@ export interface MiniappBootstrapSnapshot {
   supportedSurfaces: string[];
   domainSource: string;
   domainGovernance: PortalDomainGovernanceSummaryContract;
+  domainGovernanceWorkspaceHref: string;
 }
 
 export interface MiniappBootstrapContext {
@@ -370,6 +372,10 @@ export function createMiniappFallbackSnapshot(
     supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
     domainSource: 'default',
     domainGovernance: createFallbackDomainGovernanceSummary(),
+    domainGovernanceWorkspaceHref: buildDomainGovernanceWorkspaceHref(
+      createFallbackDomainGovernanceSummary(),
+      resolvedContext.marketCode,
+    ),
   };
 }
 
@@ -392,6 +398,10 @@ export function toMiniappBootstrapSnapshot(
     supportedSurfaces: bootstrap.storePortal.supportedSurfaces,
     domainSource: bootstrap.storePortal.domainSource ?? 'default',
     domainGovernance,
+    domainGovernanceWorkspaceHref: buildDomainGovernanceWorkspaceHref(
+      domainGovernance,
+      bootstrap.marketProfile.marketCode,
+    ),
   };
 }
 

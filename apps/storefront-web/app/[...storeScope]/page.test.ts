@@ -359,8 +359,7 @@ describe('页面组件 — 导出与导入', () => {
   });
 
   it('域名治理卡片应展示 domainSource 与缺主 scope 摘要', () => {
-    assert.ok(PAGE_SRC.includes('portal.domainSource'), '页面应展示域名来源');
-    assert.ok(PAGE_SRC.includes('缺主 scope'), '页面应展示缺主 scope 摘要');
-    assert.ok(PAGE_SRC.includes('可直接补选'), '页面应展示推荐补选数量');
+    assert.ok(PAGE_SRC.includes('formatDomainGovernanceSourceSummary'), '页面应使用共享域名来源摘要 formatter');
+    assert.ok(PAGE_SRC.includes('formatDomainGovernanceCountsSummary'), '页面应使用共享域名治理计数 formatter');
   });
 });

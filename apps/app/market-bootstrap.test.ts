@@ -167,7 +167,8 @@ test('native app bootstrap: fallback snapshot stays aligned to app defaults', ()
       requiresAttention: false,
       lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
       currentScopes: []
-    }
+    },
+    domainGovernanceWorkspaceHref: '/saas/domains?marketCode=us-default'
   });
 });
 
@@ -182,7 +183,9 @@ test('native app bootstrap: maps portal bootstrap into runtime snapshot', () => 
     primaryDomain: 'store-001.brand-demo.tenant-demo.us-default.local',
     supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
     domainSource: 'default',
-    domainGovernance: createDomainGovernanceFixture()
+    domainGovernance: createDomainGovernanceFixture(),
+    domainGovernanceWorkspaceHref:
+      '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&marketCode=us-default&scopeType=BRAND'
   });
 });
 

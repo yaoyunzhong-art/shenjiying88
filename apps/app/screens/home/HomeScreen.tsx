@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { buildDomainGovernanceWorkspaceHref } from '@m5/types';
 import { useBootstrap } from '../../context/AppContext';
 
 // 模拟数据
@@ -76,11 +75,7 @@ export function HomeScreen() {
   const currentRole: Role = 'shop_manager';
   const role = roleConfig[currentRole];
   const actions = quickActions[currentRole];
-
-  const governanceWorkspaceHref = buildDomainGovernanceWorkspaceHref(
-    bootstrap.domainGovernance,
-    bootstrap.marketCode,
-  );
+  const governanceWorkspaceHref = bootstrap.domainGovernanceWorkspaceHref;
 
   const getStatConfig = (type: string) => {
     const configs: Record<string, { value: string | number; label: string; bgColor: string }> = {

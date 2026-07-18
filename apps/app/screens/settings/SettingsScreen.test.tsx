@@ -81,6 +81,8 @@ let mockState = {
         },
       ],
     },
+    domainGovernanceWorkspaceHref:
+      '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
   },
   isOfflineMode: false,
   pushNotificationsEnabled: true,

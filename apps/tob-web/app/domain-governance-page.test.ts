@@ -17,14 +17,16 @@ test('tob domain governance: bootstrap exposes summary and workspace href', () =
 
 test('tob domain governance: tenant portal page renders governance workspace entry', () => {
   assert.ok(TENANT_PAGE_SRC.includes('域名治理工作台'), 'tenant 页面应展示域名治理工作台');
-  assert.ok(TENANT_PAGE_SRC.includes('portal.domainSource'), 'tenant 页面应展示域名来源');
+  assert.ok(TENANT_PAGE_SRC.includes('formatDomainGovernanceSourceSummary'), 'tenant 页面应使用共享域名来源摘要 formatter');
+  assert.ok(TENANT_PAGE_SRC.includes('formatDomainGovernanceCountsSummary'), 'tenant 页面应使用共享域名治理计数 formatter');
   assert.ok(TENANT_PAGE_SRC.includes('domainGovernanceWorkspaceHref'), 'tenant 页面应展示统一治理入口链接');
   assert.ok(TENANT_PAGE_SRC.includes('打开域名治理工作台'), 'tenant 页面应提供治理 CTA');
 });
 
 test('tob domain governance: brand portal page renders governance workspace entry', () => {
   assert.ok(BRAND_PAGE_SRC.includes('域名治理工作台'), 'brand 页面应展示域名治理工作台');
-  assert.ok(BRAND_PAGE_SRC.includes('portal.domainSource'), 'brand 页面应展示域名来源');
+  assert.ok(BRAND_PAGE_SRC.includes('formatDomainGovernanceSourceSummary'), 'brand 页面应使用共享域名来源摘要 formatter');
+  assert.ok(BRAND_PAGE_SRC.includes('formatDomainGovernanceCountsSummary'), 'brand 页面应使用共享域名治理计数 formatter');
   assert.ok(BRAND_PAGE_SRC.includes('domainGovernanceWorkspaceHref'), 'brand 页面应展示统一治理入口链接');
   assert.ok(BRAND_PAGE_SRC.includes('打开域名治理工作台'), 'brand 页面应提供治理 CTA');
 });

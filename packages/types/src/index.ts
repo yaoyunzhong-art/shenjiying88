@@ -2307,6 +2307,25 @@ export function buildDomainGovernanceWorkspaceHref(
   });
 }
 
+export function getDomainGovernanceAttentionLabel(
+  summary: PortalDomainGovernanceSummaryContract,
+): '待治理' | '已对齐' {
+  return summary.requiresAttention ? '待治理' : '已对齐';
+}
+
+export function formatDomainGovernanceCountsSummary(
+  summary: PortalDomainGovernanceSummaryContract,
+): string {
+  return `缺主 scope ${summary.totalMissingPrimaryScopes} / 活跃未设主域名 ${summary.totalActiveWithoutPrimaryDomains}`;
+}
+
+export function formatDomainGovernanceSourceSummary(
+  domainSource: string,
+  summary: PortalDomainGovernanceSummaryContract,
+): string {
+  return `域名来源 ${domainSource} / 可直接补选 ${summary.recommendedReadyScopes}`;
+}
+
 export interface WorkbenchNavItemContract {
   key: string;
   label: string;

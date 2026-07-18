@@ -166,7 +166,8 @@ test('miniapp bootstrap: fallback snapshot stays aligned to store portal default
       requiresAttention: false,
       lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
       currentScopes: []
-    }
+    },
+    domainGovernanceWorkspaceHref: '/saas/domains?marketCode=cn-mainland'
   });
 });
 
@@ -182,7 +183,9 @@ test('miniapp bootstrap: maps portal bootstrap into runtime snapshot', () => {
     primaryDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
     supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
     domainSource: 'default',
-    domainGovernance: createDomainGovernanceFixture()
+    domainGovernance: createDomainGovernanceFixture(),
+    domainGovernanceWorkspaceHref:
+      '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE'
   });
 });
 
@@ -272,6 +275,7 @@ test('miniapp bootstrap: non-cn fallback snapshot uses global preset', () => {
         lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
         currentScopes: []
       },
+      domainGovernanceWorkspaceHref: '/saas/domains?marketCode=jp-tokyo',
     },
   );
 });
@@ -415,6 +419,18 @@ test('miniapp bootstrap: loads runtime consumer contract from api and governance
           message: 'OK',
           data: createPortalBootstrapFixture(),
           timestamp: '2026-06-12T00:00:00.000Z'
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
+    }
+
+    if (url.endsWith('/portals/domain-governance')) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: createDomainGovernanceFixture(),
+          timestamp: '2026-07-18T00:00:00.000Z'
         }),
         { status: 200, headers: { 'content-type': 'application/json' } }
       );

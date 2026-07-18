@@ -2,7 +2,14 @@ import React from 'react';
 import {
   View,
   Text,
-import { buildDomainGovernanceWorkspaceHref } from '@m5/types';
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Alert,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { useAppContext } from '../../context/AppContext';
@@ -16,10 +23,7 @@ export function SettingsScreen() {
   const [offlineMode, setOfflineMode] = React.useState(state.isOfflineMode);
   const [pushNotifications, setPushNotifications] = React.useState(state.pushNotificationsEnabled);
   const [biometric, setBiometric] = React.useState(state.biometricEnabled);
-  const governanceWorkspaceHref = buildDomainGovernanceWorkspaceHref(
-    state.bootstrap.domainGovernance,
-    state.bootstrap.marketCode,
-  );
+  const governanceWorkspaceHref = state.bootstrap.domainGovernanceWorkspaceHref;
 
   const handleOfflineModeChange = (value: boolean) => {
     setOfflineMode(value);

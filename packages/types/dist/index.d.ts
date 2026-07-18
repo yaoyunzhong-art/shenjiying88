@@ -970,6 +970,9 @@ export interface DomainGovernanceWorkspaceQuery {
 export declare function selectDomainGovernanceFocusScope(summary: PortalDomainGovernanceSummaryContract): PortalDomainGovernanceScopeSummaryContract | undefined;
 export declare function buildDomainGovernanceHref(query?: DomainGovernanceWorkspaceQuery): string;
 export declare function buildDomainGovernanceWorkspaceHref(summary: PortalDomainGovernanceSummaryContract, marketCode: string): string;
+export declare function getDomainGovernanceAttentionLabel(summary: PortalDomainGovernanceSummaryContract): '待治理' | '已对齐';
+export declare function formatDomainGovernanceCountsSummary(summary: PortalDomainGovernanceSummaryContract): string;
+export declare function formatDomainGovernanceSourceSummary(domainSource: string, summary: PortalDomainGovernanceSummaryContract): string;
 export interface WorkbenchNavItemContract {
     key: string;
     label: string;

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PortalConsumerGovernanceSection } from '@m5/ui';
+import { formatDomainGovernanceCountsSummary, formatDomainGovernanceSourceSummary } from '@m5/types';
 import { getTenantPortalConsumerSnapshot } from '../../bootstrap';
 import { GovernanceLinkedSection } from '../../components/governance-linked-overview';
 import { RuntimeGovernancePanel } from '../../components/runtime-governance-panel';
@@ -96,11 +97,10 @@ export default async function TenantPortalPage({
         >
           <div style={{ fontSize: 12, color: '#93c5fd' }}>域名治理工作台</div>
           <div style={{ marginTop: 8, fontSize: 16, fontWeight: 700 }}>
-            域名来源 {portal.domainSource} / 缺主 scope {snapshot.domainGovernance.totalMissingPrimaryScopes}
+            {formatDomainGovernanceSourceSummary(portal.domainSource, snapshot.domainGovernance)}
           </div>
           <div style={{ marginTop: 6, color: '#cbd5e1' }}>
-            活跃未设主域名 {snapshot.domainGovernance.totalActiveWithoutPrimaryDomains} / 可直接补选{' '}
-            {snapshot.domainGovernance.recommendedReadyScopes}
+            {formatDomainGovernanceCountsSummary(snapshot.domainGovernance)}
           </div>
           <div style={{ marginTop: 6, fontSize: 12, color: '#bae6fd' }}>
             治理入口 {snapshot.domainGovernanceWorkspaceHref}

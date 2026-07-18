@@ -1,6 +1,7 @@
 import { ApiClient, getDefaultApiBaseUrl, loadFoundationGovernanceReadModel } from '@m5/sdk';
 import {
   advanceRuntimeGovernanceReplayPolicy,
+  buildDomainGovernanceWorkspaceHref,
   type FoundationAlertDrilldownResponse,
   type FoundationAlertMutationResponse,
   foundationAlertCatalogFallback,
@@ -26,6 +27,7 @@ export interface NativeAppBootstrapSnapshot {
   supportedSurfaces: string[];
   domainSource: string;
   domainGovernance: PortalDomainGovernanceSummaryContract;
+  domainGovernanceWorkspaceHref: string;
 }
 
 export interface NativeAppBootstrapContext {
@@ -403,7 +405,11 @@ export function createNativeAppFallbackSnapshot(
     primaryDomain: `${resolvedContext.storeId}.${resolvedContext.brandId}.${resolvedContext.tenantId}.${resolvedContext.marketCode}.local`,
     supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
     domainSource: 'default',
-    domainGovernance: createFallbackDomainGovernanceSummary()
+    domainGovernance: createFallbackDomainGovernanceSummary(),
+    domainGovernanceWorkspaceHref: buildDomainGovernanceWorkspaceHref(
+      createFallbackDomainGovernanceSummary(),
+      resolvedContext.marketCode,
+    ),
   };
 }
 
@@ -421,7 +427,11 @@ export function toNativeAppBootstrapSnapshot(
     primaryDomain: bootstrap.storePortal.primaryDomain,
     supportedSurfaces: bootstrap.storePortal.supportedSurfaces,
     domainSource: bootstrap.storePortal.domainSource ?? 'default',
-    domainGovernance
+    domainGovernance,
+    domainGovernanceWorkspaceHref: buildDomainGovernanceWorkspaceHref(
+      domainGovernance,
+      bootstrap.marketProfile.marketCode,
+    ),
   };
 }
 

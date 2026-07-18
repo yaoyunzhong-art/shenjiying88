@@ -9,6 +9,7 @@
 | 2026-07-18 | #564 | 全线 | ✅ | ✅ | ✅ | ✅ | 25🏆
 | 2026-07-18 | #565 | 全线(自修27TSC+8test) | ✅ | ✅ | ✅ | ✅ | 27🏆 |
 | 2026-07-18 | #566 | 全线(自修1 miniapp domainSource) | ✅ | ✅ | ✅ | ✅ | 28🏆 |
+| 2026-07-19 | #567 | 全线(自修 SettingsScreen imports + stash domainGovernanceWorkspaceHref) | ✅ | ✅ | ✅ | ✅ | 29🏆 |
 
 ## Active Phase (Pulse-Nightly-16)
 

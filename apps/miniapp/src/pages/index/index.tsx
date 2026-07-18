@@ -6,7 +6,6 @@ import type {
   FoundationAlertMutationResponse,
   RuntimeGovernanceReceipt
 } from '@m5/types';
-import { buildDomainGovernanceWorkspaceHref } from '@m5/types';
 import {
   appendMiniappSubmitHistory,
   buildMiniappAuthEnvelope,
@@ -63,7 +62,7 @@ export default function IndexPage() {
   const [alertMutation, setAlertMutation] = useState<FoundationAlertMutationResponse | null>(null);
   const bootstrap = consumerContract.snapshot;
   const domainGovernance = bootstrap.domainGovernance;
-  const governanceWorkspaceHref = buildDomainGovernanceWorkspaceHref(domainGovernance, bootstrap.marketCode);
+  const governanceWorkspaceHref = bootstrap.domainGovernanceWorkspaceHref;
   const actionPlans = listMiniappActionPlans(bootstrap, session);
   const activePlan = actionPlans.find((plan) => plan.action === activeAction) ?? null;
   const decision = activePlan?.decision ?? null;

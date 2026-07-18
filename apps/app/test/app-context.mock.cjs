@@ -38,6 +38,7 @@ function useAppContext() {
           lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
           currentScopes: [],
         },
+        domainGovernanceWorkspaceHref: '/saas/domains?marketCode=cn-mainland',
       },
       isOfflineMode: false,
       pushNotificationsEnabled: true,

@@ -76,11 +76,14 @@ __export(index_exports, {
   filterFoundationAlertTimelineByOwner: () => filterFoundationAlertTimelineByOwner,
   filterFoundationAlertTimelineBySource: () => filterFoundationAlertTimelineBySource,
   findLatestFoundationAlertTimelineEntry: () => findLatestFoundationAlertTimelineEntry,
+  formatDomainGovernanceCountsSummary: () => formatDomainGovernanceCountsSummary,
+  formatDomainGovernanceSourceSummary: () => formatDomainGovernanceSourceSummary,
   foundationAlertCatalogFallback: () => foundationAlertCatalogFallback,
   foundationAppBootstrapProfiles: () => foundationAppBootstrapProfiles,
   foundationBootstrapCapabilityRules: () => foundationBootstrapCapabilityRules,
   foundationBootstrapContract: () => foundationBootstrapContract,
   foundationSupportedClients: () => foundationSupportedClients,
+  getDomainGovernanceAttentionLabel: () => getDomainGovernanceAttentionLabel,
   getFoundationAlertLytConnectionGovernanceRiskDetail: () => getFoundationAlertLytConnectionGovernanceRiskDetail,
   getFoundationAlertRuntimeCallbackStalledDetail: () => getFoundationAlertRuntimeCallbackStalledDetail,
   getFoundationAppBootstrapWiring: () => getFoundationAppBootstrapWiring,
@@ -1199,6 +1202,15 @@ function buildDomainGovernanceWorkspaceHref(summary, marketCode) {
     scopeType: scope?.scopeType
   });
 }
+function getDomainGovernanceAttentionLabel(summary) {
+  return summary.requiresAttention ? "\u5F85\u6CBB\u7406" : "\u5DF2\u5BF9\u9F50";
+}
+function formatDomainGovernanceCountsSummary(summary) {
+  return `\u7F3A\u4E3B scope ${summary.totalMissingPrimaryScopes} / \u6D3B\u8DC3\u672A\u8BBE\u4E3B\u57DF\u540D ${summary.totalActiveWithoutPrimaryDomains}`;
+}
+function formatDomainGovernanceSourceSummary(domainSource, summary) {
+  return `\u57DF\u540D\u6765\u6E90 ${domainSource} / \u53EF\u76F4\u63A5\u8865\u9009 ${summary.recommendedReadyScopes}`;
+}
 var defaultRoleWorkbenchContracts = [
   {
     role: "SUPER_ADMIN",
@@ -2008,11 +2020,14 @@ function buildIntegrationOrchestrationHref(query = {}) {
   filterFoundationAlertTimelineByOwner,
   filterFoundationAlertTimelineBySource,
   findLatestFoundationAlertTimelineEntry,
+  formatDomainGovernanceCountsSummary,
+  formatDomainGovernanceSourceSummary,
   foundationAlertCatalogFallback,
   foundationAppBootstrapProfiles,
   foundationBootstrapCapabilityRules,
   foundationBootstrapContract,
   foundationSupportedClients,
+  getDomainGovernanceAttentionLabel,
   getFoundationAlertLytConnectionGovernanceRiskDetail,
   getFoundationAlertRuntimeCallbackStalledDetail,
   getFoundationAppBootstrapWiring,

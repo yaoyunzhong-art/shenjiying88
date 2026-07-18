@@ -1,6 +1,5 @@
 import { View, Text, Button } from '@tarojs/components';
 import { useEffect, useState } from 'react';
-import { buildDomainGovernanceWorkspaceHref } from '@m5/types';
 import {
   appendMiniappSubmitHistory,
   buildMiniappAuthEnvelope,
@@ -59,7 +58,7 @@ export default function MemberPage() {
   const [replayOutcome, setReplayOutcome] = useState<MiniappReplayOutcome | null>(null);
   const bootstrap = consumerContract.snapshot;
   const domainGovernance = bootstrap.domainGovernance;
-  const governanceWorkspaceHref = buildDomainGovernanceWorkspaceHref(domainGovernance, bootstrap.marketCode);
+  const governanceWorkspaceHref = bootstrap.domainGovernanceWorkspaceHref;
   const currentTier =
     MEMBER_TIERS.find((item) => item.key === (session.memberTier === 'SVIP' ? 'platinum' : session.memberTier.toLowerCase())) ??
     DEFAULT_MEMBER_TIER;

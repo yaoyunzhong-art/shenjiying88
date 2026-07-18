@@ -50,6 +50,9 @@ import {
   buildAuditTrailRecordDetailHref,
   buildDomainGovernanceHref,
   buildDomainGovernanceWorkspaceHref,
+  formatDomainGovernanceCountsSummary,
+  formatDomainGovernanceSourceSummary,
+  getDomainGovernanceAttentionLabel,
   readAuditTrailRecordDetailParam,
   normalizeFoundationAlertTimelineFilterState,
   buildRuntimeGovernanceCallbackStallDetail,
@@ -1756,6 +1759,32 @@ test('types: domain governance workspace href can be built directly from summary
       'us-default'
     ),
     '/saas/domains?marketCode=us-default'
+  );
+});
+
+test('types: domain governance formatter helpers stay stable across consumers', () => {
+  const summary = {
+    totalMissingPrimaryScopes: 2,
+    totalActiveWithoutPrimaryDomains: 3,
+    recommendedReadyScopes: 1,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 1,
+    storeMissingPrimaryScopes: 1,
+    requiresAttention: true,
+    lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+    currentScopes: [],
+  };
+
+  assert.equal(getDomainGovernanceAttentionLabel(summary), '待治理');
+  assert.equal(formatDomainGovernanceCountsSummary(summary), '缺主 scope 2 / 活跃未设主域名 3');
+  assert.equal(formatDomainGovernanceSourceSummary('custom', summary), '域名来源 custom / 可直接补选 1');
+  assert.equal(
+    getDomainGovernanceAttentionLabel({
+      ...summary,
+      requiresAttention: false,
+      recommendedReadyScopes: 0,
+    }),
+    '已对齐',
   );
 });
 
