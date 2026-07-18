@@ -83,6 +83,45 @@ export default async function TenantPortalPage({
           </article>
         </div>
 
+        <div
+          style={{
+            marginTop: 20,
+            borderRadius: 16,
+            padding: 18,
+            background: snapshot.domainGovernance.requiresAttention
+              ? 'rgba(127, 29, 29, 0.28)'
+              : 'rgba(15, 23, 42, 0.35)',
+            border: '1px solid rgba(125, 211, 252, 0.16)',
+          }}
+        >
+          <div style={{ fontSize: 12, color: '#93c5fd' }}>域名治理工作台</div>
+          <div style={{ marginTop: 8, fontSize: 16, fontWeight: 700 }}>
+            域名来源 {portal.domainSource} / 缺主 scope {snapshot.domainGovernance.totalMissingPrimaryScopes}
+          </div>
+          <div style={{ marginTop: 6, color: '#cbd5e1' }}>
+            活跃未设主域名 {snapshot.domainGovernance.totalActiveWithoutPrimaryDomains} / 可直接补选{' '}
+            {snapshot.domainGovernance.recommendedReadyScopes}
+          </div>
+          <div style={{ marginTop: 6, fontSize: 12, color: '#bae6fd' }}>
+            治理入口 {snapshot.domainGovernanceWorkspaceHref}
+          </div>
+          <Link
+            href={snapshot.domainGovernanceWorkspaceHref}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              marginTop: 12,
+              borderRadius: 999,
+              padding: '10px 16px',
+              background: '#38bdf8',
+              color: '#082f49',
+              fontWeight: 700,
+            }}
+          >
+            打开域名治理工作台
+          </Link>
+        </div>
+
         <PortalConsumerGovernanceSection
           titleColor="#bae6fd"
           summaryTextColor="#bae6fd"

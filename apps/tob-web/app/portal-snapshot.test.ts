@@ -127,6 +127,38 @@ test('tob portal: tenant portal snapshot - api delivery', async () => {
       );
     }
 
+    if (url.endsWith('/portals/domain-governance')) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: {
+            totalMissingPrimaryScopes: 1,
+            totalActiveWithoutPrimaryDomains: 2,
+            recommendedReadyScopes: 1,
+            tenantMissingPrimaryScopes: 1,
+            brandMissingPrimaryScopes: 0,
+            storeMissingPrimaryScopes: 0,
+            requiresAttention: true,
+            lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+            currentScopes: [
+              {
+                scopeType: 'TENANT',
+                tenantId: 't-1',
+                activeDomainCount: 2,
+                missingPrimary: true,
+                currentPrimaryDomain: null,
+                recommendedDomain: 't-1.cn-mainland.b2b.local',
+                recommendationReason: '优先选择 active_ssl'
+              }
+            ]
+          },
+          timestamp: '2026-07-18T00:00:00.000Z'
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
+    }
+
     return new Response('boom', { status: 500 });
   }) as typeof fetch;
 
@@ -138,6 +170,8 @@ test('tob portal: tenant portal snapshot - api delivery', async () => {
   assert.equal(snapshot.portal.tenantCode, 't-1');
   assert.equal(snapshot.market.marketCode, 'cn-mainland');
   assert.equal(snapshot.consumerDescriptor.consumer, 'portal');
+  assert.equal(snapshot.domainGovernance.totalMissingPrimaryScopes, 1);
+  assert.equal(snapshot.domainGovernanceWorkspaceHref, '/saas/domains?tenantId=t-1&marketCode=cn-mainland&scopeType=TENANT');
 });
 
 test('tob portal: brand portal snapshot - api delivery with region overrides', async () => {
@@ -249,6 +283,39 @@ test('tob portal: brand portal snapshot - api delivery with region overrides', a
       );
     }
 
+    if (url.endsWith('/portals/domain-governance')) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: {
+            totalMissingPrimaryScopes: 1,
+            totalActiveWithoutPrimaryDomains: 2,
+            recommendedReadyScopes: 1,
+            tenantMissingPrimaryScopes: 0,
+            brandMissingPrimaryScopes: 1,
+            storeMissingPrimaryScopes: 0,
+            requiresAttention: true,
+            lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+            currentScopes: [
+              {
+                scopeType: 'BRAND',
+                tenantId: 't-1',
+                brandId: 'b-1',
+                activeDomainCount: 2,
+                missingPrimary: true,
+                currentPrimaryDomain: null,
+                recommendedDomain: 'b-1.t-1.us-default.b2b.local',
+                recommendationReason: '优先选择 active_ssl'
+              }
+            ]
+          },
+          timestamp: '2026-07-18T00:00:00.000Z'
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
+    }
+
     return new Response('boom', { status: 500 });
   }) as typeof fetch;
 
@@ -260,6 +327,8 @@ test('tob portal: brand portal snapshot - api delivery with region overrides', a
   assert.equal(snapshot.portal.brandCode, 'b-1');
   assert.equal(snapshot.market.marketCode, 'us-default');
   assert.equal(snapshot.regionalOverridesCount, 1);
+  assert.equal(snapshot.domainGovernance.totalMissingPrimaryScopes, 1);
+  assert.equal(snapshot.domainGovernanceWorkspaceHref, '/saas/domains?tenantId=t-1&brandId=b-1&marketCode=us-default&scopeType=BRAND');
 });
 
 test('tob portal: landing snapshot wires both tenant and brand', async () => {

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { PortalConsumerGovernanceSection } from '@m5/ui';
 import { getStorePortal, getStorefrontConsumerSnapshot } from '../market-bootstrap';
 import { GovernanceLinkedSection } from '../components/governance-linked-overview';
@@ -373,6 +374,47 @@ export default async function StoreSitePage({
             }}
           />
 
+          <div
+            style={{
+              marginBottom: 16,
+              borderRadius: 16,
+              padding: 16,
+              background: snapshot.domainGovernance.requiresAttention
+                ? 'rgba(127, 29, 29, 0.35)'
+                : 'rgba(15, 23, 42, 0.42)',
+              border: '1px solid rgba(148, 163, 184, 0.12)',
+            }}
+          >
+            <div style={{ fontSize: 12, color: '#93c5fd' }}>域名治理工作台</div>
+            <div style={{ marginTop: 8, fontSize: 15, fontWeight: 600 }}>
+              域名来源 {snapshot.portal.domainSource} / 缺主 scope {snapshot.domainGovernance.totalMissingPrimaryScopes}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 13, color: '#cbd5e1' }}>
+              活跃未设主域名 {snapshot.domainGovernance.totalActiveWithoutPrimaryDomains} / 可直接补选{' '}
+              {snapshot.domainGovernance.recommendedReadyScopes}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 12, color: '#93c5fd' }}>
+              治理入口 {snapshot.domainGovernanceWorkspaceHref}
+            </div>
+            <Link
+              href={snapshot.domainGovernanceWorkspaceHref}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                marginTop: 12,
+                borderRadius: 999,
+                padding: '8px 14px',
+                background: '#1d4ed8',
+                color: '#eff6ff',
+                textDecoration: 'none',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              打开域名治理工作台
+            </Link>
+          </div>
+
           <PortalConsumerGovernanceSection
             titleColor="#93c5fd"
             panelStyle={{ marginBottom: 16, background: 'rgba(15, 23, 42, 0.42)' }}
@@ -613,6 +655,47 @@ export default async function StoreSitePage({
             staleDrills: snapshot.governance.summary.staleDrills,
           }}
         />
+
+        <div
+          style={{
+            marginBottom: 16,
+            borderRadius: 16,
+            padding: 16,
+            background: snapshot.domainGovernance.requiresAttention
+              ? 'rgba(127, 29, 29, 0.28)'
+              : 'rgba(15, 23, 42, 0.45)',
+            border: '1px solid rgba(148, 163, 184, 0.1)',
+          }}
+        >
+          <div style={{ fontSize: 12, color: '#93c5fd' }}>域名治理工作台</div>
+          <div style={{ marginTop: 8, fontSize: 16, fontWeight: 700 }}>
+            域名来源 {portal.domainSource} / 缺主 scope {snapshot.domainGovernance.totalMissingPrimaryScopes}
+          </div>
+          <div style={{ marginTop: 6, fontSize: 13, color: '#cbd5e1' }}>
+            活跃未设主域名 {snapshot.domainGovernance.totalActiveWithoutPrimaryDomains} / 可直接补选{' '}
+            {snapshot.domainGovernance.recommendedReadyScopes}
+          </div>
+          <div style={{ marginTop: 6, fontSize: 12, color: '#93c5fd' }}>
+            治理入口 {snapshot.domainGovernanceWorkspaceHref}
+          </div>
+          <Link
+            href={snapshot.domainGovernanceWorkspaceHref}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              marginTop: 12,
+              borderRadius: 999,
+              padding: '8px 14px',
+              background: '#1d4ed8',
+              color: '#eff6ff',
+              textDecoration: 'none',
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            打开域名治理工作台
+          </Link>
+        </div>
 
         <PortalConsumerGovernanceSection
           titleColor="#93c5fd"

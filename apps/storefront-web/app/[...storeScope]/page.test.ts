@@ -241,6 +241,11 @@ describe('StorefrontConsumerSnapshot — 接口', () => {
     assert.ok(BOOTSTRAP_SRC.includes('governance'), '缺少 governance');
   });
 
+  it('应包含 domainGovernance 与 domainGovernanceWorkspaceHref 字段', () => {
+    assert.ok(BOOTSTRAP_SRC.includes('domainGovernance'), '缺少 domainGovernance');
+    assert.ok(BOOTSTRAP_SRC.includes('domainGovernanceWorkspaceHref'), '缺少 domainGovernanceWorkspaceHref');
+  });
+
   it('应包含 scope 字段', () => {
     assert.ok(BOOTSTRAP_SRC.includes('scope'), '缺少 scope');
   });
@@ -345,5 +350,17 @@ describe('页面组件 — 导出与导入', () => {
   it('门店官网语言卡片应使用“支持语言”而非“默认语言”文案', () => {
     assert.ok(PAGE_SRC.includes('支持语言'), '门店官网应展示支持语言文案');
     assert.ok(!PAGE_SRC.includes('>默认语言<'), '列表展示不应误标为默认语言');
+  });
+
+  it('完整路径与 H5 路径都应展示域名治理工作台入口', () => {
+    assert.ok(PAGE_SRC.includes('域名治理工作台'), '页面应展示域名治理工作台');
+    assert.ok(PAGE_SRC.includes('打开域名治理工作台'), '页面应展示治理工作台 CTA');
+    assert.ok(PAGE_SRC.includes('domainGovernanceWorkspaceHref'), '页面应消费统一治理入口链接');
+  });
+
+  it('域名治理卡片应展示 domainSource 与缺主 scope 摘要', () => {
+    assert.ok(PAGE_SRC.includes('portal.domainSource'), '页面应展示域名来源');
+    assert.ok(PAGE_SRC.includes('缺主 scope'), '页面应展示缺主 scope 摘要');
+    assert.ok(PAGE_SRC.includes('可直接补选'), '页面应展示推荐补选数量');
   });
 });

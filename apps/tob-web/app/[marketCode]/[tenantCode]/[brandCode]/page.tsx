@@ -74,6 +74,46 @@ export default async function BrandPortalPage({
           </article>
         </div>
 
+        <div
+          style={{
+            marginTop: 20,
+            borderRadius: 16,
+            padding: 18,
+            background: snapshot.domainGovernance.requiresAttention
+              ? 'rgba(127, 29, 29, 0.24)'
+              : 'rgba(15, 23, 42, 0.36)',
+            border: '1px solid rgba(240, 171, 252, 0.16)',
+          }}
+        >
+          <div style={{ fontSize: 12, color: '#e9d5ff' }}>域名治理工作台</div>
+          <div style={{ marginTop: 8, color: '#f5f3ff', fontSize: 16, fontWeight: 700 }}>
+            域名来源 {portal.domainSource} / 缺主 scope {snapshot.domainGovernance.totalMissingPrimaryScopes}
+          </div>
+          <div style={{ marginTop: 6, color: '#ddd6fe' }}>
+            活跃未设主域名 {snapshot.domainGovernance.totalActiveWithoutPrimaryDomains} / 可直接补选{' '}
+            {snapshot.domainGovernance.recommendedReadyScopes}
+          </div>
+          <div style={{ marginTop: 6, fontSize: 12, color: '#f0abfc' }}>
+            治理入口 {snapshot.domainGovernanceWorkspaceHref}
+          </div>
+          <Link
+            href={snapshot.domainGovernanceWorkspaceHref}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: 12,
+              borderRadius: 999,
+              padding: '10px 16px',
+              background: '#f0abfc',
+              color: '#3b0764',
+              fontWeight: 700,
+            }}
+          >
+            打开域名治理工作台
+          </Link>
+        </div>
+
         <PortalConsumerGovernanceSection
           titleColor="#f0abfc"
           primaryTextColor="#f5f3ff"

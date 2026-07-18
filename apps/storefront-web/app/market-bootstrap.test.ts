@@ -15,6 +15,32 @@ import {
   storefrontWebBootstrap,
 } from './market-bootstrap';
 
+function createDomainGovernanceFixture() {
+  return {
+    totalMissingPrimaryScopes: 1,
+    totalActiveWithoutPrimaryDomains: 2,
+    recommendedReadyScopes: 1,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 0,
+    storeMissingPrimaryScopes: 1,
+    requiresAttention: true,
+    lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+    currentScopes: [
+      {
+        scopeType: 'STORE',
+        tenantId: 'demo-tenant',
+        brandId: 'demo-brand',
+        storeId: 'store-001',
+        activeDomainCount: 2,
+        missingPrimary: true,
+        currentPrimaryDomain: null,
+        recommendedDomain: 'store-001.demo-brand.demo-tenant.cn-mainland.local',
+        recommendationReason: '优先选择 active_ssl',
+      },
+    ],
+  };
+}
+
 // ── 正例 ──
 
 test('market-bootstrap: 通过 API 加载 consumer descriptor', async () => {
@@ -94,6 +120,18 @@ test('market-bootstrap: 通过 API 加载 consumer descriptor', async () => {
       );
     }
 
+    if (url.endsWith('/portals/domain-governance')) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: createDomainGovernanceFixture(),
+          timestamp: '2026-07-18T00:00:00.000Z',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    }
+
     return new Response('boom', { status: 500 });
   }) as typeof fetch;
 
@@ -106,6 +144,8 @@ test('market-bootstrap: 通过 API 加载 consumer descriptor', async () => {
     '/api/v1/portals/bootstrap',
   ]);
   assert.equal(snapshot.wiring.app, 'storefront-web');
+  assert.equal(snapshot.domainGovernance.totalMissingPrimaryScopes, 1);
+  assert.equal(snapshot.domainGovernanceWorkspaceHref, '/saas/domains?tenantId=demo-tenant&brandId=demo-brand&storeId=store-001&marketCode=cn-mainland&scopeType=STORE');
 });
 
 test('market-bootstrap: 仅 overview 可用时 governance 汇报 fallback', async () => {
