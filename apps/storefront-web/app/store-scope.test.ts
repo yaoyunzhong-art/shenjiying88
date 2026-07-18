@@ -7,7 +7,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveStoreScope, type StoreScopeParams } from './store-scope';
+import { resolveStoreScope, type StoreScopeParams } from './store-scope.ts';
 
 describe('store-scope: 正例 — 正常解析', () => {
   it('应当解析 3 段路径并补齐默认 market (cn-mainland)', () => {
