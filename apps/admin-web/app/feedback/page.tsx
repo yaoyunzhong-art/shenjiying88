@@ -7,6 +7,7 @@ import { useState, useMemo, useCallback } from 'react';
 type FeedbackType = 'complaint' | 'suggestion' | 'praise' | 'inquiry';
 type FeedbackStatus = 'pending' | 'processing' | 'resolved';
 type FeedbackTab = 'all' | 'pending' | 'processing' | 'resolved';
+type ReplyTab = 'all' | 'unhandled' | 'handled' | 'replied';
 
 interface FeedbackItem {
   id: string;
@@ -22,6 +23,13 @@ interface FeedbackItem {
 }
 
 // ─── 常量映射 ──────────────────────────────────────────
+
+const REPLY_TABS: { key: ReplyTab; label: string }[] = [
+  { key: 'all', label: '全部' },
+  { key: 'unhandled', label: '未处理' },
+  { key: 'handled', label: '已处理' },
+  { key: 'replied', label: '已回复' },
+];
 
 const FEEDBACK_TABS: { key: FeedbackTab; label: string }[] = [
   { key: 'all', label: '全部' },
@@ -70,13 +78,32 @@ const MOCK_FEEDBACKS: FeedbackItem[] = [
 
 // ─── 筛选链 ──────────────────────────────────────────
 
+function applyReplyTab(items: FeedbackItem[], tab: ReplyTab): FeedbackItem[] {
+  if (tab === 'all') return items;
+  return items.filter(f => {
+    switch (tab) {
+      case 'unhandled': return f.status === 'pending';
+      case 'handled': return f.status === 'resolved' && !f.remark;
+      case 'replied': return f.status === 'processing' || (f.status === 'resolved' && !!f.remark);
+      default: return true;
+    }
+  });
+}
+
+function applyStatusTab(items: FeedbackItem[], tab: FeedbackTab): FeedbackItem[] {
+  if (tab === 'all') return items;
+  return items.filter(f => f.status === tab);
+}
+
 function fullFilterChain(
   items: FeedbackItem[],
+  replyTab: ReplyTab,
   tab: FeedbackTab,
   keyword: string,
   typeFilter: FeedbackType | 'all',
 ): FeedbackItem[] {
   let result = items;
+  result = applyReplyTab(result, replyTab);
   if (tab !== 'all') result = result.filter(f => f.status === tab);
   if (keyword.trim()) {
     const kw = keyword.toLowerCase();
@@ -92,7 +119,10 @@ function fullFilterChain(
 
 // ── 主组件 ──
 
+export { applyReplyTab };
+export type { ReplyTab };
 export default function FeedbackPage() {
+  const [replyTab, setReplyTab] = useState<ReplyTab>('all');
   const [tab, setTab] = useState<FeedbackTab>('all');
   const [keyword, setKeyword] = useState('');
   const [typeFilter, setTypeFilter] = useState<FeedbackType | 'all'>('all');
@@ -103,26 +133,30 @@ export default function FeedbackPage() {
     const pendingCount = allItems.filter((f) => f.status === 'pending').length;
     const processingCount = allItems.filter((f) => f.status === 'processing').length;
     const resolvedCount = allItems.filter((f) => f.status === 'resolved').length;
+    const unhandledCount = allItems.filter((f) => f.status === 'pending').length;
+    const handledCount = allItems.filter((f) => f.status === 'resolved' && !f.remark).length;
+    const repliedCount = allItems.filter((f) => f.status === 'processing' || (f.status === 'resolved' && !!f.remark)).length;
     const thisMonthItems = allItems.filter((f) => f.createdAt.startsWith('2026-07'));
     const totalRating = thisMonthItems.reduce((s, f) => s + f.rating, 0);
     const monthlyAvgRating = thisMonthItems.length > 0
       ? Math.round((totalRating / thisMonthItems.length) * 10) / 10
       : 0;
-    return { total, pendingCount, processingCount, resolvedCount, monthlyAvgRating };
+    return { total, pendingCount, processingCount, resolvedCount, unhandledCount, handledCount, repliedCount, monthlyAvgRating };
   }, [allItems]);
 
   const filtered = useMemo(
-    () => fullFilterChain(allItems, tab, keyword, typeFilter),
-    [allItems, tab, keyword, typeFilter],
+    () => fullFilterChain(allItems, replyTab, tab, keyword, typeFilter),
+    [allItems, replyTab, tab, keyword, typeFilter],
   );
 
   const handleRefresh = useCallback(() => {
+    setReplyTab('all');
     setTab('all');
     setKeyword('');
     setTypeFilter('all');
   }, []);
 
-  const isFiltered = tab !== 'all' || keyword !== '' || typeFilter !== 'all';
+  const isFiltered = replyTab !== 'all' || tab !== 'all' || keyword !== '' || typeFilter !== 'all';
   const showEmptyState = filtered.length === 0;
 
   return (
@@ -153,7 +187,34 @@ export default function FeedbackPage() {
         <StatCard label="本月平均评级" value={String(stats.monthlyAvgRating)} suffix="星" />
       </div>
 
-      {/* Tab 切换 */}
+      {/* 分类标签栏：未处理/已处理/已回复/全部 */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: 12, borderBottom: '2px solid #e5e7eb' }} data-testid="reply-tab-bar">
+        {REPLY_TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setReplyTab(t.key)}
+            data-testid={`reply-tab-${t.key}`}
+            style={{
+              padding: '10px 20px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 14,
+              fontWeight: replyTab === t.key ? 600 : 400, color: replyTab === t.key ? '#2563eb' : '#6b7280',
+              borderBottom: replyTab === t.key ? '2px solid #2563eb' : '2px solid transparent', marginBottom: -2,
+            }}
+          >
+            {t.label}
+            {t.key !== 'all' && (
+              <span style={{
+                marginLeft: 6, fontSize: 12, padding: '1px 6px', borderRadius: 10,
+                background: t.key === 'unhandled' ? '#fef2f2' : t.key === 'handled' ? '#fffbeb' : '#f0fdf4',
+                color: t.key === 'unhandled' ? '#dc2626' : t.key === 'handled' ? '#d97706' : '#16a34a',
+              }}>
+                {t.key === 'unhandled' ? stats.unhandledCount : t.key === 'handled' ? stats.handledCount : stats.repliedCount}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* 状态 Tab 切换 */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 16, borderBottom: '2px solid #e5e7eb' }}>
         {FEEDBACK_TABS.map((t) => (
           <button
