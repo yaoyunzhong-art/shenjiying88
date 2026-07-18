@@ -13,7 +13,7 @@
 | P-30 | SSE后勤 | ✅ | logistics(5), reservation(20), maintenance(2) | admin-web inspection(page) | 🟡部分 |
 | P-31 | 多租户隔离 | ✅ | tenant(45), tenant-config(23) | saas-advanced(25), saas-billing(18) | 🟡部分 |
 | P-37 | 库存采购 | ✅ | inventory(48) | — | 🟡完成 |
-| P-38 | 财务对账 | ✅ | finance(47), reports(29), audit(18), reconciliation-rules(2) | currency(19), transactions(18) | 🟡进行中 |
+| P-38 | 财务对账 | ✅ | finance(47), reports(29), audit(18), reconciliation-rules(2), profit-loss(2) | currency(19), transactions(18) | 🟡进行中 |
 | P-47 | 品牌运营 | ✅ | brand-custom(21), marketing(33), campaigns(2) | marketing-metrics(20), content(19), campaign(25) | 🟡部分 |
 | P-48 | 联名券 | ✅ | coupon(28), alliance(28), alliances(2) | referral(21), blindbox(23), loyalty(23) | 🟢完成 |
 | P-49 | 开放平台 | ✅ | open-api(18), openapi(47), tenant-llm(25) | agent(49), AI模块群(25模块) | 🟡部分 |

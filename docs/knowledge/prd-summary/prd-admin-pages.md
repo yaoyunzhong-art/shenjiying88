@@ -33,4 +33,5 @@
 | payment-channels | 1src | 15 |
 | points-rules | 1src | 15 |
 | system-monitor | 1src | 18 |
-| **合计** | **8src** | **116** |
+| profit-loss | 1src | 23 |
+| **合计** | **9src** | **139** |
