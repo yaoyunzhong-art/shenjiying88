@@ -17,6 +17,14 @@ import {
 
 // ---- 常量 ----
 
+/** 会员等级分类标签 */
+const TIER_CATEGORIES = [
+  { key: 'all', label: '全部' },
+  { key: 'regular', label: '普通会员' },
+  { key: 'advanced', label: '高级会员' },
+  { key: 'diamond', label: '钻石会员' },
+] as const;
+
 const TIER_OPTIONS = [
   { value: 'bronze', label: '青铜' },
   { value: 'silver', label: '白银' },
@@ -134,6 +142,7 @@ export default function TierBenefitsFormPage() {
   const [values, setValues] = useState<TierBenefitsFormValues>(DEFAULT_VALUES);
   const [fieldErrors, setFieldErrors] = useState<FieldError[]>([]);
   const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [tierCategory, setTierCategory] = useState<string>('all');
 
   const getFieldError = useCallback(
     (field: keyof TierBenefitsFormValues): string | undefined =>
@@ -223,6 +232,47 @@ export default function TierBenefitsFormPage() {
             onDismissError={resetSubmit}
           />
         )}
+
+        {/* 会员等级分类标签 */}
+        <section style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, color: '#e2e8f0', marginBottom: 12 }}>
+            会员等级分类
+          </h3>
+          <div
+            role="tablist"
+            aria-label="会员等级分类"
+            style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}
+          >
+            {TIER_CATEGORIES.map((cat) => {
+              const active = tierCategory === cat.key;
+              return (
+                <button
+                  key={cat.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  data-tier-category={cat.key}
+                  onClick={() => setTierCategory(cat.key)}
+                  disabled={isSubmitting}
+                  style={{
+                    padding: '8px 20px',
+                    fontSize: 14,
+                    fontWeight: active ? 700 : 500,
+                    borderRadius: 20,
+                    border: `2px solid ${active ? '#fbbf24' : '#334155'}`,
+                    background: active ? 'rgba(251, 191, 36, 0.15)' : 'transparent',
+                    color: active ? '#fbbf24' : '#94a3b8',
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {cat.label}
+                  {active && <span style={{ marginLeft: 4 }}>✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         {/* 表单主体 */}
         {submitState !== 'success' && (
