@@ -432,8 +432,8 @@ describe('notifications — React 渲染', () => {
   it('39. 渲染分页器，显示总条数', () => {
     render(React.createElement(NotificationsPage));
     // Pagination 渲染 "Total X items"
-    const totalText = screen.getByText(/Total 7 items/);
-    assert.ok(totalText, '应渲染分页器 Total 7 items');
+    const totalText = screen.getByText(/共 7 条/);
+    assert.ok(totalText, '应渲染分页器 共 7 条');
   });
 
   it('40. 渲染表格行包含通知类型标签', () => {

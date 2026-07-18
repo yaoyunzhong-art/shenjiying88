@@ -14,8 +14,11 @@ import {
   PortalScopeType,
   PortalChannel,
   StorefrontSurface,
-  LanguageCode
+  LanguageCode,
+  type PortalDomainSource,
 } from '@m5/domain'
+
+const PORTAL_DOMAIN_SOURCE_VALUES = ['custom', 'default'] as const
 
 /**
  * 门户登录入口 DTO
@@ -218,7 +221,14 @@ export class PortalQueryDto {
   marketCode?: string
 }
 
-export class PortalDto extends CreatePortalDto {}
+export class PortalDto extends CreatePortalDto {
+  @ApiProperty({
+    description: '主域名来源，custom 表示来自自定义主域名，default 表示平台默认域名回退',
+    enum: PORTAL_DOMAIN_SOURCE_VALUES,
+    example: 'custom',
+  })
+  domainSource!: PortalDomainSource
+}
 
 export class MarketProfileLocaleDto {
   @ApiProperty({ example: 'zh-CN' })

@@ -12,12 +12,18 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   Optional,
 } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
-import { requireTenantContext } from '../../common/context/tenant-context'
+import { requireTenantContext, type TenantContext } from '../../common/context/tenant-context'
 import { PrismaService } from '../../prisma/prisma.service'
-import type { CurrentPrimaryDomainQueryRequest, DomainListQueryRequest } from './custom-domain.dto'
+import type {
+  ActiveWithoutPrimaryScopeItem,
+  BatchCurrentPrimaryDomainQueryItem,
+  CurrentPrimaryDomainQueryRequest,
+  DomainListQueryRequest,
+} from './custom-domain.dto'
 import {
   DomainMapping,
   DomainScopeType,
@@ -195,25 +201,14 @@ export class CustomDomainService {
     sortOrder: DomainSortOrder
   }> {
     const ctx = requireTenantContext()
+    this.assertRequestedScopeAccess(query.scopeType, ctx)
     const page = Math.max(query.page ?? 1, 1)
     const pageSize = Math.max(query.pageSize ?? 10, 1)
     const sortBy = (query.sortBy ?? 'createdAt') as DomainSortField
     const sortOrder = (query.sortOrder ?? 'desc') as DomainSortOrder
     const offset = (page - 1) * pageSize
 
-    let items: DomainMapping[]
-    if (this.canUsePersistence()) {
-      const rows = await this.customDomains().findMany({
-        where: { tenantId: ctx.tenantId },
-        orderBy: { createdAt: 'desc' },
-      })
-      items = rows.map((row: PersistedCustomDomainRow) => this.rowToMapping(row))
-    } else {
-      const ids = this.domainsByTenant.get(ctx.tenantId) ?? new Set()
-      items = Array.from(ids)
-        .map((id) => this.domains.get(id)!)
-        .filter((d) => d != null)
-    }
+    const items = await this.listAccessibleMappings(ctx)
 
     const filtered = this.applyListQuery(items, query)
     const sorted = this.sortMappings(filtered, sortBy, sortOrder)
@@ -245,12 +240,15 @@ export class CustomDomainService {
       if (!row) {
         throw new NotFoundException(`Domain ${id} not found`)
       }
-      return this.rowToMapping(row)
+      const mapping = this.rowToMapping(row)
+      this.assertMappingAccess(mapping, ctx)
+      return mapping
     }
     const m = this.domains.get(id)
     if (!m || m.tenantId !== ctx.tenantId) {
       throw new NotFoundException(`Domain ${id} not found`)
     }
+    this.assertMappingAccess(m, ctx)
     return m
   }
 
@@ -275,6 +273,47 @@ export class CustomDomainService {
           (mapping.status === 'active' || mapping.status === 'active_ssl'),
       ) ?? null
     )
+  }
+
+  async getCurrentPrimaryBatch(
+    items: BatchCurrentPrimaryDomainQueryItem[] = [],
+  ): Promise<Array<{
+    scopeType: string
+    tenantId: string
+    brandId?: string
+    storeId?: string
+    resolved: boolean
+    item: DomainMapping | null
+  }>> {
+    return Promise.all(items.map((query) => this.buildCurrentPrimaryResponse(query)))
+  }
+
+  async listActiveWithoutPrimary(): Promise<ActiveWithoutPrimaryScopeItem[]> {
+    const activeMappings = (await this.listAccessibleMappings()).filter((mapping) =>
+      this.isActiveMapping(mapping),
+    )
+    const grouped = new Map<string, DomainMapping[]>()
+
+    for (const mapping of activeMappings) {
+      const key = this.buildScopeKey(mapping)
+      const group = grouped.get(key) ?? []
+      group.push(mapping)
+      grouped.set(key, group)
+    }
+
+    return Array.from(grouped.values())
+      .filter((group) => !group.some((mapping) => mapping.isPrimary === true))
+      .map((group) => {
+        const [first] = group
+        return {
+          scopeType: first.scopeType,
+          tenantId: first.tenantId,
+          brandId: first.brandId,
+          storeId: first.storeId,
+          activeCount: group.length,
+          candidateDomains: this.sortMappings(group, 'createdAt', 'desc'),
+        }
+      })
   }
 
   async remove(id: string): Promise<void> {
@@ -558,13 +597,131 @@ export class CustomDomainService {
     if (scopeType === 'STORE' && (!brandId || !storeId)) {
       throw new BadRequestException('brandId and storeId are required for STORE scope current primary lookup')
     }
-
-    return {
+    const scope = {
       scopeType,
       tenantId: ctx.tenantId,
       brandId,
       storeId,
     }
+    this.assertScopeSelectionAccess(scope, ctx)
+    return scope
+  }
+
+  private async buildCurrentPrimaryResponse(
+    query: CurrentPrimaryDomainQueryRequest,
+  ): Promise<{
+    scopeType: string
+    tenantId: string
+    brandId?: string
+    storeId?: string
+    resolved: boolean
+    item: DomainMapping | null
+  }> {
+    const scope = this.resolveScopeSelection(query)
+    const item = await this.getCurrentPrimary(query)
+    return {
+      scopeType: scope.scopeType,
+      tenantId: scope.tenantId,
+      brandId: scope.brandId,
+      storeId: scope.storeId,
+      resolved: item != null,
+      item,
+    }
+  }
+
+  private async listAccessibleMappings(ctx = requireTenantContext()): Promise<DomainMapping[]> {
+    return this.applyRoleVisibility(await this.listTenantMappings(ctx), ctx)
+  }
+
+  private async listTenantMappings(ctx: TenantContext): Promise<DomainMapping[]> {
+    if (this.canUsePersistence()) {
+      const rows = await this.customDomains().findMany({
+        where: { tenantId: ctx.tenantId },
+        orderBy: { createdAt: 'desc' },
+      })
+      return rows.map((row: PersistedCustomDomainRow) => this.rowToMapping(row))
+    }
+
+    const ids = this.domainsByTenant.get(ctx.tenantId) ?? new Set()
+    return Array.from(ids)
+      .map((id) => this.domains.get(id)!)
+      .filter((d) => d != null)
+  }
+
+  private applyRoleVisibility(items: DomainMapping[], ctx: TenantContext): DomainMapping[] {
+    if (ctx.role === 'brand_admin') {
+      return items.filter(
+        (item) => item.scopeType === 'BRAND' && (item.brandId ?? null) === (ctx.brandId ?? null),
+      )
+    }
+
+    if (ctx.role === 'store_admin') {
+      return items.filter(
+        (item) =>
+          item.scopeType === 'STORE' &&
+          (item.brandId ?? null) === (ctx.brandId ?? null) &&
+          (item.storeId ?? null) === (ctx.storeId ?? null),
+      )
+    }
+
+    return items
+  }
+
+  private assertRequestedScopeAccess(
+    scopeType: DomainScopeType | undefined,
+    ctx: TenantContext,
+  ): void {
+    if (!scopeType) return
+
+    if (ctx.role === 'brand_admin' && scopeType !== 'BRAND') {
+      throw new ForbiddenException('brand_admin can only query BRAND scope domains')
+    }
+
+    if (ctx.role === 'store_admin' && scopeType !== 'STORE') {
+      throw new ForbiddenException('store_admin can only query STORE scope domains')
+    }
+  }
+
+  private assertScopeSelectionAccess(
+    scope: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>,
+    ctx: TenantContext,
+  ): void {
+    this.assertRequestedScopeAccess(scope.scopeType, ctx)
+
+    if (ctx.role === 'brand_admin' && scope.brandId !== ctx.brandId) {
+      throw new ForbiddenException('brand_admin can only access the current brand scope')
+    }
+
+    if (
+      ctx.role === 'store_admin' &&
+      (scope.brandId !== ctx.brandId || scope.storeId !== ctx.storeId)
+    ) {
+      throw new ForbiddenException('store_admin can only access the current store scope')
+    }
+  }
+
+  private assertMappingAccess(mapping: DomainMapping, ctx: TenantContext): void {
+    if (mapping.tenantId !== ctx.tenantId) {
+      throw new NotFoundException(`Domain ${mapping.id} not found`)
+    }
+
+    this.assertScopeSelectionAccess(
+      {
+        scopeType: mapping.scopeType,
+        tenantId: mapping.tenantId,
+        brandId: mapping.brandId,
+        storeId: mapping.storeId,
+      },
+      ctx,
+    )
+  }
+
+  private isActiveMapping(mapping: DomainMapping): boolean {
+    return mapping.status === 'active' || mapping.status === 'active_ssl'
+  }
+
+  private buildScopeKey(mapping: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>): string {
+    return [mapping.scopeType, mapping.tenantId, mapping.brandId ?? '', mapping.storeId ?? ''].join(':')
   }
 
   private buildScopeWhere(mapping: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>): {

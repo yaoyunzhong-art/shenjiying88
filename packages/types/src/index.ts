@@ -2203,6 +2203,7 @@ export interface TobPortalContract {
   channel: string;
   name: string;
   primaryDomain: string;
+  domainSource: 'custom' | 'default';
   supportedLanguages: string[];
   heroTitle: string;
   heroSubtitle: string;
@@ -2222,6 +2223,7 @@ export interface StorePortalContract {
   channel: string;
   name: string;
   primaryDomain: string;
+  domainSource: 'custom' | 'default';
   supportedLanguages: string[];
   supportedSurfaces: string[];
 }

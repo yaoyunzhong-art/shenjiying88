@@ -140,12 +140,13 @@ const mockUiModule = {
     }, label);
   },
   Tabs: ({ items, activeKey, onChange, variant, size }) => {
-    return React.createElement('div', { 'data-mock': 'Tabs' },
+    return React.createElement('div', { 'data-mock': 'Tabs', role: 'tablist' },
       ...(items || []).map((item) =>
         React.createElement('button', {
           key: item.key,
+          role: 'tab',
           'data-tab-key': item.key,
-          'data-active': item.key === activeKey ? 'true' : 'false',
+          'aria-selected': item.key === activeKey ? 'true' : 'false',
           onClick: () => onChange?.(item.key),
         }, `${item.label}${item.count != null ? ` (${item.count})` : ''}`)
       )
@@ -187,8 +188,9 @@ const mockUiModule = {
     );
   },
   Pagination: ({ page, total, onPageChange, pageSize }) => {
+    const totalPages = Math.ceil(total / (pageSize || 10));
     return React.createElement('div', { 'data-mock': 'Pagination' },
-      `Page ${page} of ${Math.ceil(total / (pageSize || 10))} (${total} items)`
+      `共 ${total} 条，第 ${page}/${totalPages} 页`
     );
   },
   EmptyState: ({ title, description }) => {
@@ -234,7 +236,33 @@ const mockUiModule = {
     const [value, setValue] = React.useState(initialValue ?? '');
     return { value, debouncedValue: value, setValue };
   },
-  StatCard: makeMockComponent('StatCard'),
+  StatCard: ({ label, value, variant, suffix, icon }) => {
+    return React.createElement('div', { 'data-mock': 'StatCard', 'data-label': String(label ?? ''), 'data-value': String(value ?? '') },
+      label ? React.createElement('div', { 'data-testid': 'stat-label' }, String(label)) : null,
+      value !== undefined ? React.createElement('div', { 'data-testid': 'stat-value' }, String(value)) : null,
+      suffix ? React.createElement('span', null, suffix) : null,
+    );
+  },
+  Button: ({ children, onClick, variant, size }) => {
+    return React.createElement('button', { 'data-mock': 'Button', onClick }, children);
+  },
+  Spinner: () => React.createElement('div', { 'data-mock': 'Spinner' }, 'Loading...'),
+  Select: ({ value, onChange, options, placeholder, children }) => {
+    return React.createElement('select', { 'data-mock': 'Select', value, onChange }, children);
+  },
+  Modal: ({ open, onClose, children, title }) => {
+    if (!open) return null;
+    return React.createElement('div', { 'data-mock': 'Modal' },
+      title ? React.createElement('h2', null, title) : null,
+      children,
+      React.createElement('button', { onClick: onClose, 'data-testid': 'modal-close' }, 'Close'),
+    );
+  },
+  FormField: ({ label, error, children }) => React.createElement('div', { 'data-mock': 'FormField' },
+    label ? React.createElement('label', null, label) : null,
+    children,
+    error ? React.createElement('span', { style: { color: 'red' } }, error) : null,
+  ),
   // DataTableSortConfig type export not needed at runtime
 };
 

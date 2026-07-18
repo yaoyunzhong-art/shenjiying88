@@ -3,6 +3,7 @@ import { Type } from 'class-transformer'
 import {
   IsIn,
   IsInt,
+  IsArray,
   IsOptional,
   IsString,
   Max,
@@ -212,6 +213,66 @@ export class CurrentPrimaryDomainResponse {
 
   @ApiPropertyOptional({ type: () => DomainListItem, nullable: true })
   item?: DomainListItem | null
+}
+
+export class BatchCurrentPrimaryDomainQueryItem {
+  @ApiProperty({
+    description: '查询的作用域类型',
+    enum: DOMAIN_SCOPE_VALUES,
+    example: 'BRAND',
+  })
+  @IsIn(DOMAIN_SCOPE_VALUES)
+  scopeType!: (typeof DOMAIN_SCOPE_VALUES)[number]
+
+  @ApiPropertyOptional({ description: '品牌作用域标识', example: 'brand-001' })
+  @IsString()
+  @IsOptional()
+  brandId?: string
+
+  @ApiPropertyOptional({ description: '门店作用域标识', example: 'store-001' })
+  @IsString()
+  @IsOptional()
+  storeId?: string
+}
+
+export class BatchCurrentPrimaryDomainRequest {
+  @ApiProperty({ type: () => [BatchCurrentPrimaryDomainQueryItem] })
+  @IsArray()
+  @Type(() => BatchCurrentPrimaryDomainQueryItem)
+  items!: BatchCurrentPrimaryDomainQueryItem[]
+}
+
+export class BatchCurrentPrimaryDomainResponse {
+  @ApiProperty({ type: () => [CurrentPrimaryDomainResponse] })
+  items!: CurrentPrimaryDomainResponse[]
+}
+
+export class ActiveWithoutPrimaryScopeItem {
+  @ApiProperty({ example: 'BRAND' })
+  scopeType!: string
+
+  @ApiProperty({ example: 'tenant-abc' })
+  tenantId!: string
+
+  @ApiPropertyOptional({ example: 'brand-001' })
+  brandId?: string
+
+  @ApiPropertyOptional({ example: 'store-001' })
+  storeId?: string
+
+  @ApiProperty({ example: 2 })
+  activeCount!: number
+
+  @ApiProperty({ type: () => [DomainListItem] })
+  candidateDomains!: DomainListItem[]
+}
+
+export class ActiveWithoutPrimaryGovernanceResponse {
+  @ApiProperty({ example: 1 })
+  total!: number
+
+  @ApiProperty({ type: () => [ActiveWithoutPrimaryScopeItem] })
+  items!: ActiveWithoutPrimaryScopeItem[]
 }
 
 export class DomainListQueryRequest {
