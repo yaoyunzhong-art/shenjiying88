@@ -34,11 +34,11 @@
 | Approvals | admin-web/app/approvals/ | ~400行 | 53测试 | 🆕 | 🔴 | P-Admin 审批流程 |
 | Notifications | admin-web/app/notifications/ | ~300行 | 40测试 | 🆕 | 🔴 | P-Admin 通知管理 |
 | Training | admin-web/app/training/ | ~300行 | 49测试 | 🆕 | 🔴 | P-30后勤 培训管理 |
-| Feedback | admin-web/app/feedback/ | ~350行 | 18测试 | 🆕 | 🔴 | P-38财务 客户反馈 |
+| Feedback | admin-web/app/feedback/ | ~380行 | 48测试 | 🆕 | 🟡已发 | P-38财务 客户反馈 |
 | Audit Logs | admin-web/app/audit-logs/ | ~300行 | 63测试 | 🆕 | 🔴 | P-Admin 审计日志 |
 | Tags | admin-web/app/tags/ | ~300行 | 57测试 | 🆕 | 🔴 | P-36会员 客户标签 |
 | Coupon Templates | admin-web/app/coupon-templates/ | ~300行 | 68测试 | 🆕 | 🔴 | P-35收银 优惠券模板 |
-| Alliances | admin-web/app/alliances/ | ~240行 | 17测试 | 🆕 | 🔴 | P-48联名 联盟管理 |
+| Alliances | admin-web/app/alliances/ | ~280行 | 38测试 | 🆕 | 🟡已发 | P-48联名 联盟管理 |
 | Analytics | admin-web/app/analytics/ | ~280行 | 12测试 | 🆕 | 🔴 | P-Admin 数据分析 |
 | Coupons | admin-web/app/coupons/ | ~590行 | 65测试(7假阳) | 🆕 | 🟡已发 | P-48联名 优惠券发放 |
 | Customer Tags | admin-web/app/customer-tags/ | ~250行 | 57测试 | 🆕 | 🔴 | P-36会员 客户标签 |

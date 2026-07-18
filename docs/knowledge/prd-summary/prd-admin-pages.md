@@ -28,7 +28,7 @@
 |:-----|:----:|:----:|
 | campaigns | 1src | 19 |
 | maintenance | 1src | 16 |
-| alliances | 1src | 17 |
+| alliances | 1src | 38 V20✅ |
 | procurement | 1src | 38 V20✅ |
 | payment-channels | 1src | 15 |
 | points-rules | 1src | 15 |
@@ -40,11 +40,11 @@
 | notifications | 1src | 40 |
 | store-reports | 1src | 31 |
 | training | 1src | 49 |
-| feedback | 1src | 18 |
+| feedback | 1src | 48 V20✅ |
 | audit-logs | 1src | 63 |
 | tags | 1src | 57 |
 | coupon-templates | 1src | 68 |
-| alliances | 1src | 17 |
+| alliances | 1src | 38 V20✅ |
 | analytics | 1src | 12 |
 | coupons | 1src | 65(7假阳) V20✅ |
 | customer-tags | 1src | 57 |
