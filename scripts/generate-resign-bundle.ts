@@ -35,18 +35,21 @@ const materialFiles = [
   'docs/knowledge/acceptance/2026-07-19-c3-p49-signoff.md',
   'docs/knowledge/acceptance/2026-07-19-g2-sensitive-config-remediation.md',
   'docs/knowledge/acceptance/2026-07-19-g4-writeback-pilot-acceptance.md',
+  'docs/knowledge/acceptance/2026-07-19-g1-release-bundle-confirmation.md',
+  'docs/knowledge/acceptance/2026-07-19-g8-cutover-drill-acceptance.md',
 ]
 
 const gates: GateItem[] = [
   {
     id: 'G1',
     status: '🟡',
-    summary: '唯一生产交付口径与 runbook 已建立',
+    summary: '唯一生产交付口径、主计划与复签入口已统一',
     blocking: '待完成最终复签确认与外部资产落地',
     evidence: [
       'PRODUCTION-RELEASE-BUNDLE-POLICY.md',
       'PROD-INGRESS-CUTOVER-20260718.md',
       'PROD-BATCH-CHECKLIST-20260718.md',
+      'docs/knowledge/acceptance/2026-07-19-g1-release-bundle-confirmation.md',
     ],
   },
   {
@@ -108,9 +111,13 @@ const gates: GateItem[] = [
   {
     id: 'G8',
     status: '🟡',
-    summary: '升级路径与 runbook 已落表',
-    blocking: '待补 dry-run / apply / rollback 运行证据',
-    evidence: ['EXTERNAL-BLOCKERS-OWNER-BOARD.md', 'V7.2-RESIGN-CHECKLIST.md'],
+    summary: '离线 render / preflight / dry-run / verify 证据已补齐',
+    blocking: '待补 server dry-run 与正式窗口日志',
+    evidence: [
+      'EXTERNAL-BLOCKERS-OWNER-BOARD.md',
+      'docs/knowledge/acceptance/2026-07-19-g8-cutover-drill-acceptance.md',
+      'V7.2-RESIGN-CHECKLIST.md',
+    ],
   },
   {
     id: 'G9',
@@ -187,6 +194,8 @@ ${gates.map(renderGateRow).join('\n')}
 12. ${link('docs/knowledge/acceptance/2026-07-19-c3-p49-signoff.md')}
 13. ${link('docs/knowledge/acceptance/2026-07-19-g2-sensitive-config-remediation.md')}
 14. ${link('docs/knowledge/acceptance/2026-07-19-g4-writeback-pilot-acceptance.md')}
+15. ${link('docs/knowledge/acceptance/2026-07-19-g1-release-bundle-confirmation.md')}
+16. ${link('docs/knowledge/acceptance/2026-07-19-g8-cutover-drill-acceptance.md')}
 
 ## 发起复签前仍需补齐
 

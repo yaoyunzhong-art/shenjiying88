@@ -22,9 +22,11 @@
 |------|--------|--------|
 | `CORS_ORIGIN` | 本地域名组合 | `replace-admin/storefront/tob-host` |
 | `POSTGRES_HOST` | 具体 RDS 地址 | `replace-postgres-host` |
+| `DATABASE_URL` | `ConfigMap` 中明文连接串 | 从 `ConfigMap` 删除，仅保留 `Secret` 占位模板 |
 | `REDIS_HOST` | 具体 Redis 地址 | `replace-redis-host` |
 | `NEXT_PUBLIC_API_URL` | 具体 API host | `https://replace-api-host/api/v1` |
 | `NEXT_PUBLIC_WS_URL` | 具体 WS host | `wss://replace-api-host` |
+| `ghcr-pull-secret` | 旧 GHCR 拉取口径 | 清理 deployment 残留，统一为 `acr-regcred` |
 
 ---
 
@@ -39,6 +41,8 @@
 
 ```bash
 grep -n "CORS_ORIGIN\|POSTGRES_HOST\|REDIS_HOST\|NEXT_PUBLIC_API_URL\|NEXT_PUBLIC_WS_URL" infra/k8s/configmap.yaml
+grep -n "DATABASE_URL" infra/k8s/configmap.yaml || true
+grep -n "acr-regcred\|ghcr-pull-secret\|ghcr.io" infra/k8s/secret.yaml infra/k8s/*deployment.yaml
 ```
 
 ## 扫描结果
@@ -49,6 +53,7 @@ grep -n "CORS_ORIGIN\|POSTGRES_HOST\|REDIS_HOST\|NEXT_PUBLIC_API_URL\|NEXT_PUBLI
 38:  REDIS_HOST: "replace-redis-host"
 61:  NEXT_PUBLIC_API_URL: "https://replace-api-host/api/v1"
 62:  NEXT_PUBLIC_WS_URL: "wss://replace-api-host"
+53:  name: acr-regcred
 ```
 
 ---
@@ -58,7 +63,8 @@ grep -n "CORS_ORIGIN\|POSTGRES_HOST\|REDIS_HOST\|NEXT_PUBLIC_API_URL\|NEXT_PUBLI
 | 判定项 | 结果 | 说明 |
 |--------|:----:|------|
 | `infra/k8s` 保持模板口径 | ✅ | 已无具体数据库/Redis/API 域名耦合值 |
-| 敏感连接串未明文提交 | ✅ | `secret.yaml` 仍为占位模板 |
+| 敏感连接串未明文提交 | ✅ | `DATABASE_URL` 已移出 `ConfigMap`，`secret.yaml` 仍为占位模板 |
+| 旧 GHCR 拉取口径已清理 | ✅ | deployment 与 pull secret 均已切回 `acr-regcred` |
 | 复签证据可引用 | ✅ | 本文可直接作为 `G2` 证据 |
 
 ---

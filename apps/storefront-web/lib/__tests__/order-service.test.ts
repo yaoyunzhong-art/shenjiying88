@@ -11,7 +11,7 @@
 
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { OrderService, STATUS_CONFIG, type OrderStatus, type Order } from '../order-service';
+import { OrderService, STATUS_CONFIG, type OrderStatus, type Order } from '../order-service.ts';
 
 // ─── STATUS_CONFIG ──────────────────────────────────────
 

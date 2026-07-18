@@ -1,6 +1,6 @@
 # 📋 V7.2 执行态任务状态
 
-> 更新时间: 2026-07-19 03:35
+> 更新时间: 2026-07-19 04:05
 > 对齐文件: `DEVELOP-PLAN-v7.md` / `V7.2-RESIGN-CHECKLIST.md` / `WEEKLY-RYG-STATUS-BOARD.md`
 
 ---
@@ -22,23 +22,23 @@
 
 ## 本周 P0
 
-1. `DNS / TLS / 正式域名` 外部阻塞责任人化
-2. `release bundle` 成为唯一生产交付口径
-3. `POS/Pad` 一线经营链至少补 1 条
+1. `G1` 最终复签确认与 `DNS / TLS / 正式域名` 外部资产落地
+2. `G8` 正式窗口 `server dry-run / apply / rollback` 日志补齐
+3. `G6` 活动 / 营销 / 会员 / 门店联动验收链
 
 ## 本周 P1
 
-1. `税务 / 发票` 显式子任务流
-2. `checkout` 金额链切到 L3 浏览器验收
-3. `P-49` 指标/文档/签收标准写实
-4. `VRT` 视觉验收原型
-5. `Phase/PRD/Runbook` 自动回写试点
+1. `G7` miniapp 高频链聚焦到供应链 / 会员并补证据
+2. `finance` 发票持久化与管理页承接
+3. `members / products / events` 真实接口承接
+4. `VRT` 从 `cashier / checkout` 扩到更多核心页面
+5. `Phase/PRD/Runbook` 自动回写从试点扩到更多 Phase
 
 ## 本周 P2
 
-1. `活动 / 营销 / 会员 / 门店` 联动验收链
-2. `miniapp` 高频链聚焦到供应链/会员
-3. `finance` 发票持久化与管理页承接
+1. `POS/Pad` 退款与真实 API 接线闭环
+2. `checkout` 金额边界与更多优惠场景
+3. 备份目录与外部导出物模板纪律治理
 
 ---
 
@@ -53,14 +53,14 @@
 
 ### 当前判断
 
-- `G1`: 🟡 唯一交付口径已建立，待最终复签确认
+- `G1`: 🟡 唯一交付口径、主计划与复签总包已统一，待外部资产真实落地与最终复签确认
 - `G2`: 🟢 外部阻塞责任化与敏感配置整改证据均已完成
 - `G3`: 🟢 核心退回组已满足，`B1 + C1 + C2` 已完成，当前已满足 `3 项中的 3 项`
 - `G4`: 🟢 `P-49` 验收写实与 `Phase/PRD/Runbook` 自动回写试点均已完成
 - `G5`: 🟢 `POS/Pad` 与 `税务/发票` 两项已全部落地
 - `G6`: 🟡 待补联动验收链
 - `G7`: 🟡 待补 miniapp 高频链聚焦证据
-- `G8`: 🟡 外部依赖升级路径已落表，待后续执行证据
+- `G8`: 🟡 离线 `render / preflight / dry-run / verify` 证据已补齐，待正式窗口 `server dry-run / apply / rollback` 日志
 - `G9`: 🟢 红黄绿状态板已建立
 
 ---
@@ -69,10 +69,10 @@
 
 ### 未来 48 小时优先级
 
-1. 基于 [2026-07-19-v72-resign-bundle.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-v72-resign-bundle.md) 收 `G1 / G6 / G7 / G8` 最后一圈证据
-2. 补 `members/products/events` 真实接口承接
-3. 启动 `finance` 发票持久化与管理页承接
-4. 补 `活动/营销/会员/门店` 联动验收链
+1. 基于 [2026-07-19-v72-resign-bundle.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-v72-resign-bundle.md) 固化 `G1 / G8` 结论并继续收 `G6 / G7`
+2. 补正式窗口 `server dry-run / apply / rollback` 运行日志
+3. 补 `活动 / 营销 / 会员 / 门店` 联动验收链
+4. 启动 `miniapp` 供应链 / 会员高频链证据闭环
 
 ### 本状态页更新规则
 
@@ -99,4 +99,6 @@
 - `G2` 敏感配置整改: [2026-07-19-g2-sensitive-config-remediation.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g2-sensitive-config-remediation.md)
 - `G4` 自动回写试点: [2026-07-19-g4-writeback-pilot-acceptance.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g4-writeback-pilot-acceptance.md)
 - `G4` 自动回写生成结果: [2026-07-19-g4-writeback-pilot-generated.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g4-writeback-pilot-generated.md)
+- `G1` 唯一交付口径复签确认: [2026-07-19-g1-release-bundle-confirmation.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g1-release-bundle-confirmation.md)
+- `G8` 切流演练证据: [2026-07-19-g8-cutover-drill-acceptance.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g8-cutover-drill-acceptance.md)
 - `G1~G9` 复签总包: [2026-07-19-v72-resign-bundle.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-v72-resign-bundle.md)
