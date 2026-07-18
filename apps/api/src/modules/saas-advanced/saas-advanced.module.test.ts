@@ -11,6 +11,8 @@ import { CustomDomainService } from './custom-domain.service'
 import { CustomDomainController } from './custom-domain.controller'
 import { SsoService } from './sso.service'
 import { SsoController } from './sso.controller'
+import { DomainResolutionService } from './domain-resolution.service'
+import { PrismaModule } from '../../prisma/prisma.module'
 
 describe('SaasAdvancedModule', () => {
   it('should be defined', () => {
@@ -20,6 +22,11 @@ describe('SaasAdvancedModule', () => {
   it('should export CustomDomainService', () => {
     const exports = Reflect.getMetadata('exports', SaasAdvancedModule) ?? []
     assert.ok(exports.includes(CustomDomainService))
+  })
+
+  it('should export DomainResolutionService', () => {
+    const exports = Reflect.getMetadata('exports', SaasAdvancedModule) ?? []
+    assert.ok(exports.includes(DomainResolutionService))
   })
 
   it('should export SsoService', () => {
@@ -42,6 +49,11 @@ describe('SaasAdvancedModule', () => {
     assert.ok(providers.includes(CustomDomainService))
   })
 
+  it('should have DomainResolutionService in providers', () => {
+    const providers = Reflect.getMetadata('providers', SaasAdvancedModule) ?? []
+    assert.ok(providers.includes(DomainResolutionService))
+  })
+
   it('should have SsoService in providers', () => {
     const providers = Reflect.getMetadata('providers', SaasAdvancedModule) ?? []
     assert.ok(providers.includes(SsoService))
@@ -50,5 +62,10 @@ describe('SaasAdvancedModule', () => {
   it('should be @Global() decorated', () => {
     const isGlobal = Reflect.getMetadata('__module:global__', SaasAdvancedModule) ?? false
     assert.ok(isGlobal)
+  })
+
+  it('should import PrismaModule', () => {
+    const imports = Reflect.getMetadata('imports', SaasAdvancedModule) ?? []
+    assert.ok(imports.includes(PrismaModule))
   })
 })

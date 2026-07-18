@@ -677,7 +677,7 @@ type CustomDomainDelegate = {
   update(args: {
     where: { id: string }
     data: {
-      status: string
+      status?: string
       isPrimary?: boolean
       verificationFailCount?: number
       verifiedAt?: Date

@@ -138,6 +138,36 @@ describe('DomainResolutionService', () => {
     )
   })
 
+  it('同 scope 新 primary 会替换旧 primary', () => {
+    const service = new DomainResolutionService()
+    service.upsertFromMapping(
+      createMapping({
+        scopeType: 'BRAND',
+        brandId: 'brand-demo',
+        domain: 'brand-old.example.com',
+        isPrimary: true,
+      }),
+    )
+    service.upsertFromMapping(
+      createMapping({
+        id: 'dom-002',
+        scopeType: 'BRAND',
+        brandId: 'brand-demo',
+        domain: 'brand-new.example.com',
+        isPrimary: true,
+      }),
+    )
+
+    assert.equal(
+      service.findPrimaryDomain({
+        scopeType: 'BRAND',
+        tenantId: 'tenant-demo',
+        brandId: 'brand-demo',
+      }),
+      'brand-new.example.com',
+    )
+  })
+
   it('onModuleInit 从持久层加载 active 域名和主域名索引', async () => {
     process.env.NODE_ENV = 'development'
     const prisma = {

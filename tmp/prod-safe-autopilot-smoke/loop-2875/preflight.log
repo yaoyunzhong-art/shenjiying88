@@ -28,3 +28,24 @@ CORS_ORIGIN=https://admin.m5-platform.com,https://store.m5-platform.com,https://
 
 ==> Deployment readiness
 m5-api ready=1/1 available=1 updated=1
+m5-admin-web ready=2/2 available=2 updated=2
+m5-storefront-web ready=2/2 available=2 updated=2
+m5-tob-web ready=1/1 available=1 updated=1
+
+==> TLS status
+WARN: TLS secret is missing: m5-tls
+
+==> Rendering manifests to /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight
+Rendered files:
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-ingress-public.yaml
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-config-public.yaml
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-public-dns-records.csv
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-tls-secret.template.yaml
+==> Running kubectl server dry-run
+WARN: Rendered TLS manifest is absent; provide TLS_CERT_B64/TLS_KEY_B64 or existing live secret before real cutover
+==> Preflight finished
+Rendered dir: /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight
+
+Warnings:
+  - TLS secret is missing: m5-tls
+  - Rendered TLS manifest is absent; provide TLS_CERT_B64/TLS_KEY_B64 or existing live secret before real cutover

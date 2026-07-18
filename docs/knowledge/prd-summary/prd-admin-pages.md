@@ -44,4 +44,14 @@
 | audit-logs | 1src | 63 |
 | tags | 1src | 57 |
 | coupon-templates | 1src | 68 |
-| **合计** | **19src** | **625** |
+| alliances | 1src | 17 |
+| analytics | 1src | 12 |
+| coupons | 1src | 59 |
+| customer-tags | 1src | 57 |
+| knowledge | 1src | 30 |
+| member | 1src | 80 |
+| reports | 1src | 48 |
+| rules | 1src | 11 |
+| safety | 1src | 10 |
+| settings | 1src | 13 |
+| **合计** | **29src** | **962** |
