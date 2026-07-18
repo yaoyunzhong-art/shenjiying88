@@ -85,6 +85,15 @@
 | Home page | storefront-web/app/ | 已有 | 131行🆕 | ✅V15 | 🟡已有 | — |
 | Campaigns/new | storefront-web/app/campaigns/new/ | 已有 | 163行🆕 | ✅V15 | 🟡已有 | P-47品牌 |
 
+### V20 凌晨 storefront-web薄页拉升 第二批 (2026-07-19 02:29)
+| 页面 | 位置 | 代码 | 测试 | 审计 | PRD | 推荐Phase |
+|:-----|:----|:---:|:----:|:----:|:---:|:---------|
+| StoreManager | storefront-web/app/store-manager/ | 门店状态映射+统计+验证+过滤 | 38测试🆕(从12↑) | ✅ | 🟢新增 | P-37库存 |
+| Suppliers/[id] | storefront-web/app/suppliers/[id]/ | 供应商详情态流转(27测试已有) | 27测试✅(已有) | ✅V15 | 🟡已有 | P-37库存 |
+| Coupons/new | storefront-web/app/coupons/new/ | 优惠券类型映射+验证+金额格式化+日期校验 | 39测试🆕(从13↑) | ✅ | 🟡已有 | P-48联名券 |
+| Promotions/new | storefront-web/app/promotions/new/ | 促销类型映射+预算等级+验证+时长计算 | 36测试🆕(从13↑) | ✅ | 🟡已有 | P-47品牌 |
+| SalesForecast | storefront-web/app/sales-forecast/ | 预测数据生成+统计聚合+模型对比+趋势分析 | 51测试🆕(从9↑) | ✅ | 🟡已有 | P-62预测分析 |
+
 ### 基础设施组（建议创建 Phase-P0 基础设施）
 | 模块 | 文件数 | 测试 | 推荐Phase |
 |:-----|:------:|:----:|:---------:|
