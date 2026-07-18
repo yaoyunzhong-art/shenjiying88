@@ -2327,26 +2327,9 @@ export function formatDomainGovernanceSourceSummary(
 }
 
 export interface DomainGovernanceDisplayModel {
-  title: string;
-  subtitle: string;
-  statusLabel: '待治理' | '已对齐';
-  countsSummary: string;
-  sourceSummary: string;
-  statusSummary: string;
-  compactSummary: string;
-  workspaceSummary: string;
-  workspaceHref: string;
-  ctaLabel: string;
-  focusScopeLabel: string;
-  focusScopeSummary: string;
-  recommendationSummary: string;
-  lastEvaluatedSummary: string;
   headerSection: DomainGovernanceHeaderSection;
-  detailSectionTitle: string;
   detailGroups: DomainGovernanceDetailGroup[];
   footerSection: DomainGovernanceFooterSection;
-  workspaceSlot: DomainGovernanceDetailSlot;
-  detailLines: string[];
   requiresAttention: boolean;
 }
 
@@ -2376,6 +2359,12 @@ export interface DomainGovernanceHeaderSection {
 export interface DomainGovernanceFooterSection {
   workspaceSlot: DomainGovernanceDetailSlot;
   ctaLabel: string;
+}
+
+export interface DomainGovernanceRenderSection {
+  key: string;
+  title: string;
+  slots: DomainGovernanceDetailSlot[];
 }
 
 export type DomainGovernanceDisplayPresetKey =
@@ -2418,6 +2407,19 @@ export interface DomainGovernanceDisplayPreset {
   background: string;
   statusColor: string;
   statusBackground: string;
+}
+
+export function resolveDomainGovernanceDetailSlotColor(
+  preset: DomainGovernanceDisplayPreset,
+  tone: DomainGovernanceDetailSlotTone,
+): string {
+  if (tone === 'primary') {
+    return preset.titleColor;
+  }
+  if (tone === 'accent') {
+    return preset.accentColor;
+  }
+  return preset.summaryColor;
 }
 
 export const domainGovernanceDisplayPresetContractMap: Record<
@@ -2716,43 +2718,37 @@ export function buildDomainGovernanceFooterSection(
   };
 }
 
+export function buildDomainGovernanceRenderSections(
+  model: DomainGovernanceDisplayModel,
+): DomainGovernanceRenderSection[] {
+  return [
+    {
+      key: 'summary',
+      title: '治理概览',
+      slots: [model.headerSection.titleSlot, model.headerSection.statusBadge, ...model.headerSection.summarySlots],
+    },
+    ...model.detailGroups,
+    {
+      key: 'workspace',
+      title: model.footerSection.workspaceSlot.label,
+      slots: [model.footerSection.workspaceSlot],
+    },
+  ];
+}
+
 export function buildDomainGovernanceDisplayModel(
   domainSource: string,
   summary: PortalDomainGovernanceSummaryContract,
   workspaceHref: string,
 ): DomainGovernanceDisplayModel {
-  const focusScope = selectDomainGovernanceFocusScope(summary);
-  const statusLabel = getDomainGovernanceAttentionLabel(summary);
-  const countsSummary = formatDomainGovernanceCountsSummary(summary);
-  const sourceSummary = formatDomainGovernanceSourceSummary(domainSource, summary);
-  const focusScopeSummary = formatDomainGovernanceFocusScopeSummary(focusScope);
-  const recommendationSummary = formatDomainGovernanceRecommendationSummary(focusScope);
-  const lastEvaluatedSummary = formatDomainGovernanceLastEvaluatedSummary(summary);
   const headerSection = buildDomainGovernanceHeaderSection(domainSource, summary);
   const detailGroups = buildDomainGovernanceDetailGroups(summary);
   const footerSection = buildDomainGovernanceFooterSection(workspaceHref);
 
   return {
-    title: '域名治理工作台',
-    subtitle: '统一域名缺口、推荐补选和治理入口展示',
-    statusLabel,
-    countsSummary,
-    sourceSummary,
-    statusSummary: `治理状态：${statusLabel} / 可直接补选 ${summary.recommendedReadyScopes}`,
-    compactSummary: `缺主 scope ${summary.totalMissingPrimaryScopes} / 域名来源 ${domainSource}`,
-    workspaceSummary: `治理入口 ${workspaceHref}`,
-    workspaceHref,
-    ctaLabel: '打开域名治理工作台',
-    focusScopeLabel: formatDomainGovernanceFocusScopeLabel(focusScope),
-    focusScopeSummary,
-    recommendationSummary,
-    lastEvaluatedSummary,
     headerSection,
-    detailSectionTitle: '治理明细',
     detailGroups,
     footerSection,
-    workspaceSlot: footerSection.workspaceSlot,
-    detailLines: [focusScopeSummary, recommendationSummary, lastEvaluatedSummary],
     requiresAttention: summary.requiresAttention,
   };
 }

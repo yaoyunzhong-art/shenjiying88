@@ -53,6 +53,7 @@ import {
   buildDomainGovernanceFooterSection,
   buildDomainGovernanceHref,
   buildDomainGovernanceHeaderSection,
+  buildDomainGovernanceRenderSections,
   buildDomainGovernanceWorkspaceHref,
   domainGovernanceDisplayPresetContractMap,
   formatDomainGovernanceFocusScopeLabel,
@@ -62,6 +63,7 @@ import {
   formatDomainGovernanceFocusScopeSummary,
   formatDomainGovernanceSourceSummary,
   getDomainGovernanceAttentionLabel,
+  resolveDomainGovernanceDetailSlotColor,
   readAuditTrailRecordDetailParam,
   normalizeFoundationAlertTimelineFilterState,
   buildRuntimeGovernanceCallbackStallDetail,
@@ -1840,37 +1842,33 @@ test('types: domain governance display model exposes richer section contract', (
     '最近评估 2026-07-18T00:00:00.000Z',
   );
 
-  assert.deepEqual(
-    buildDomainGovernanceDisplayModel(
-      'custom',
-      summary,
-      '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
-    ),
+  const workspaceHref =
+    '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE';
+  const headerSection = buildDomainGovernanceHeaderSection('custom', summary);
+  const detailGroups = buildDomainGovernanceDetailGroups(summary);
+  const footerSection = buildDomainGovernanceFooterSection(workspaceHref);
+  const model = buildDomainGovernanceDisplayModel('custom', summary, workspaceHref);
+
+  assert.deepEqual(model, {
+    headerSection,
+    detailGroups,
+    footerSection,
+    requiresAttention: true,
+  });
+
+  assert.deepEqual(buildDomainGovernanceRenderSections(model), [
     {
-      title: '域名治理工作台',
-      subtitle: '统一域名缺口、推荐补选和治理入口展示',
-      statusLabel: '待治理',
-      countsSummary: '缺主 scope 2 / 活跃未设主域名 3',
-      sourceSummary: '域名来源 custom / 可直接补选 1',
-      statusSummary: '治理状态：待治理 / 可直接补选 1',
-      compactSummary: '缺主 scope 2 / 域名来源 custom',
-      workspaceSummary:
-        '治理入口 /saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
-      workspaceHref:
-        '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
-      ctaLabel: '打开域名治理工作台',
-      focusScopeLabel: '焦点 scope STORE / tenant-demo / brand-demo / store-001',
-      focusScopeSummary: '焦点 scope STORE / tenant-demo / brand-demo / store-001 / 激活域名 2 / 缺主域名',
-      recommendationSummary: '推荐主域名：store-001.brand-demo.tenant-demo.cn-mainland.local / 原因 优先选择 active_ssl',
-      lastEvaluatedSummary: '最近评估 2026-07-18T00:00:00.000Z',
-      detailLines: [
-        '焦点 scope STORE / tenant-demo / brand-demo / store-001 / 激活域名 2 / 缺主域名',
-        '推荐主域名：store-001.brand-demo.tenant-demo.cn-mainland.local / 原因 优先选择 active_ssl',
-        '最近评估 2026-07-18T00:00:00.000Z',
-      ],
-      requiresAttention: true,
+      key: 'summary',
+      title: '治理概览',
+      slots: [headerSection.titleSlot, headerSection.statusBadge, ...headerSection.summarySlots],
     },
-  );
+    ...detailGroups,
+    {
+      key: 'workspace',
+      title: footerSection.workspaceSlot.label,
+      slots: [footerSection.workspaceSlot],
+    },
+  ]);
 });
 
 test('types: domain governance display presets stay stable across web and native consumers', () => {
@@ -1913,6 +1911,11 @@ test('types: domain governance display presets stay stable across web and native
     statusColor: '#bbf7d0',
     statusBackground: 'rgba(20, 83, 45, 0.32)',
   });
+
+  const preset = resolveDomainGovernanceDisplayPreset('TOB_BRAND', true);
+  assert.equal(resolveDomainGovernanceDetailSlotColor(preset, 'primary'), preset.titleColor);
+  assert.equal(resolveDomainGovernanceDetailSlotColor(preset, 'accent'), preset.accentColor);
+  assert.equal(resolveDomainGovernanceDetailSlotColor(preset, 'summary'), preset.summaryColor);
 });
 
 test('types: buildAuditTrailRecordDetailHref encodes auditId safely', () => {

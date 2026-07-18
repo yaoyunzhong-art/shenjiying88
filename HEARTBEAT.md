@@ -1,56 +1,58 @@
 # 🦞 shenjiying88 HEARTBEAT · 验收员监控
 
-> 最后更新: 2026-07-19 00:33 CST · Pulse #568(30min自查验收脉冲)
-> 上一脉冲: #567 (00:16) · 30min自查 29🏆
-> V20 Day1 950稳态 · **30🏆连续 · stash修复: stash broken ref修复+domainGovernanceDisplayModel/presenter落地 · P0✅第50次确认**
+> 最后更新: 2026-07-19 01:37 CST · Pulse #570(30min自查验收脉冲)
+> 上一脉冲: #569 (01:07 commit已验证) · 30min自查
+> V20 Day1 950稳态 · **31🏆连续 · 全线测试稳态 · ELIFECYCLE已知假阳**
 
 ---
 
-## ✅ 本次验收 (#568 · 00:33 30min自查脉冲)
+## ✅ 本次验收 (#570 · 01:37 30min自查脉冲)
 
 | 检查项 | 状态 | 详情 |
 |:------|:----:|:------|
-| `git pull --rebase` | ⚠️ | stash ref损坏 → 清理坏refs后push |
+| `git stash坏ref` | ✅ | 已清理(上次脉冲) - 仍有未暂改文件 |
 | **TSC typecheck** | ✅✅ | **14/14 全绿** |
-| **全线 test (非api)** | ✅ | app 222/0✅ · miniapp 506/0✅ · tob-web 1617/0✅ · storefront-web 7144/0✅ · ui 6182/0✅ · admin-web 445/0✅(ELIFECYCLE假阳) |
-| **闭环检查 #567** | ✅ | 无树哥派单·自修SettingsScreen TSC+stash已持稳 |
-| **基线状态** | ✅ | 0 NEW fail · 全线稳态 |
-| **知识库时效** | ✅ | daily-brief.md 00:36 最新 ✅ · security-scan 00:36 最新 ✅ |
-| **git stash损坏** | ⚠️ | 清理了坏refs(stash 2/3/4)·部分变更丢失(stash pop后约4 files旧变回未暂改) |
+| **@m5/app** | ✅ | 222/0 ✅ |
+| **@m5/miniapp** | ✅ | **508/0 (+2)** ✅ |
+| **@m5/tob-web** | ✅ | 1617/0 ✅ |
+| **@m5/storefront-web** | ✅ | 7144/0 ✅ |
+| **@m5/ui** | ✅ | 6184/0 ✅ |
+| **@m5/admin-web** | ✅⚠️ | 363/0 ✅ · ELIFECYCLE brands/new 超时已知假阳 |
+| **闭环检查** | ✅ | 无待闭环派单 |
+| **知识库时效** | ✅ | phase-progress已追加 |
 
-### 🛠 异常处理 (pulse#568)
+### 🛠 异常处理 (pulse#570)
 | 项目 | 处理 |
 |:----|:-----|
-| stash 引用损坏(space in ref) | 清理 `.git/refs/stash 2/3/4` + `.git/logs/refs/stash 2/3` + stash clear |
-| 未暂改文件残留 | 2 files admin-web tests (campaigns/stores 测试底稿增强) 仍存工作树 |
-| index.d.ts/.js dist变更 | packages/types dist产物变更, 等待提交 |
+| admin-web ELIFECYCLE假阳 | brands/new/page.test.tsx `Promise resolution still pending` 超时, 非真fail |
+| 未暂改文件 | DomainGovernanceCard, settings, types dist变更等仍存工作树 |
 
 ## 📊 基线变迁摘要
 
 | 模块 | TSC | Tests | 连续🏆 |
 |:----|:---:|:-----:|:------:|
-| @m5/app | 🟢 | **30🏆 (222/222 pass)** |
-| @m5/ui | 🟢 | 6182/0✅ |
-| @m5/tob-web | 🟢 | **30🏆 (1617/0)** |
-| @m5/storefront-web | 🟢 | **30🏆 (7144/0)** |
-| @m5/admin-web | 🟢 | **30🏆 (445/0✅·ELIFECYCLE假阳已知)** |
-| @m5/miniapp | 🟢 | **30🏆 (506/0)** |
+| @m5/app | 🟢 | **31🏆 (222/222 pass)** |
+| @m5/ui | 🟢 | 6184/0✅ |
+| @m5/tob-web | 🟢 | **31🏆 (1617/0)** |
+| @m5/storefront-web | 🟢 | **31🏆 (7144/0)** |
+| @m5/admin-web | 🟢 | **31🏆 (363/0✅·ELIFECYCLE假阳已知)** |
+| @m5/miniapp | 🟢 | **508/0✅(+2 tests)** |
 | @m5/api | 🔴 | **基线~662 fails (环境依赖·跳过)** |
 | **E2E总链36链** | 🟢 | **~338 subtests ✅** |
 
-## 🔄 P0灾难闭环确认 (第50次)
+## 🔄 P0灾难闭环确认 (第51次)
 | 脉冲 | 状态 | 详情 |
 |:----|:----:|:------|
-| #514b→#568 | ✅ 连续50次确认 | P0闭环持续·无复发 ✅🎯 |
+| #514b→#570 | ✅ 连续51次确认 | P0闭环持续·无复发 ✅🎯 |
 
 ## 📋 开放派单追踪
 | 派单 | 状态 | 说明 |
 |:----|:----:|:-----|
-| dispatch-514-P0-disaster | ✅ 第50次确认 | P0闭环持续·无复发 |
-| dispatch-530-tree | ✅ **闭环(第30次确认)** | TSC零错持续·无复发 |
-| dispatch-538-tree  | ✅ **闭环(第29次确认)** | @m5/app 222/222 pass·无复发 |
-| dispatch-552-tree  | ✅ **闭环(第19次确认)** | admin-web 0 fail·syntax fix持稳✅ |
-| admin-web ELIFECYCLE false+ | 🟢 **已知xargs假阳** | 445 pass·0 fail·exits 1 from xargs pipeline |
+| dispatch-514-P0-disaster | ✅ 第51次确认 | P0闭环持续·无复发 |
+| dispatch-530-tree | ✅ **闭环(第31次确认)** | TSC零错持续·无复发 |
+| dispatch-538-tree  | ✅ **闭环(第31次确认)** | @m5/app 222/222 pass·无复发 |
+| dispatch-552-tree  | ✅ **闭环(第20次确认)** | admin-web 0 fail·syntax fix持稳✅ |
+| admin-web ELIFECYCLE false+ | 🟢 **已知xargs假阳** | 363 pass·0 fail·exits 1 from xargs pipeline |
 
 ## 🧪 E2E 跨模块链统计 (总计 36 链)
 

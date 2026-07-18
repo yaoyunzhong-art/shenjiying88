@@ -15,6 +15,9 @@ if (!React.use) {
 }
 globalThis.React = React;
 
+// happy-dom doesn't implement Window.confirm — polyfill it
+window.confirm = () => true;
+
 Object.assign(globalThis, {
   window,
   document,
@@ -66,7 +69,16 @@ const mockNavModule = {
   permanentRedirect: (url) => { throw new Error('permanentRedirect: ' + url); },
   useParams: () => ({}),
   usePathname: () => '/',
-  useRouter: () => ({ push: () => {}, back: () => {}, replace: () => {}, prefetch: () => {} }),
+  useRouter: () => {
+    const _routerTracer = (typeof globalThis !== 'undefined' && globalThis.__routerTracer) || { pushCalls: [] };
+    if (typeof globalThis !== 'undefined') globalThis.__routerTracer = _routerTracer;
+    return {
+      push: (url) => { _routerTracer.pushCalls.push(url); },
+      back: () => {},
+      replace: () => {},
+      prefetch: () => {},
+    };
+  },
   useSearchParams: () => new URLSearchParams(),
   useSelectedLayoutSegment: () => null,
   useSelectedLayoutSegments: () => [],
@@ -251,7 +263,20 @@ const mockUiModule = {
   },
   Spinner: () => React.createElement('div', { 'data-mock': 'Spinner' }, 'Loading...'),
   Select: ({ value, onChange, options, placeholder, children }) => {
-    return React.createElement('select', { 'data-mock': 'Select', value, onChange }, children);
+    // The real @m5/ui Select calls onChange with opt.value, not an event.
+    // Mock renders a plain <select> whose onChange receives a React event.
+    // We need to extract the value from the event so the page handler works correctly.
+    const handleChange = (e) => {
+      // If onChange expects value directly (as @m5/ui does), pass e.target.value
+      // If onChange expects an event (native select behavior), pass the event
+      // We detect by checking if the page handler expects value or event
+      // @m5/ui Select always passes value: onChange = (v) => handleFieldChange('key', v)
+      if (onChange) {
+        // Simulate @m5/ui behavior by calling onChange with the value directly
+        onChange(e.target.value);
+      }
+    };
+    return React.createElement('select', { 'data-mock': 'Select', value, onChange: handleChange }, children);
   },
   Modal: ({ open, onClose, children, title }) => {
     if (!open) return null;
@@ -474,7 +499,17 @@ const mockUiModule = {
   },
 
   /** Toast 钩子 mock */
-  useToast: () => ({ success: () => {}, error: () => {}, warning: () => {}, info: () => {} }),
+  // Shared toast tracer used by tests to verify calls
+  useToast: () => {
+    const _toastTracer = (typeof globalThis !== 'undefined' && globalThis.__toastTracer) || { successCalls: [], errorCalls: [] };
+    if (typeof globalThis !== 'undefined') globalThis.__toastTracer = _toastTracer;
+    return {
+      success: (msg) => { _toastTracer.successCalls.push(msg); },
+      error: (msg) => { _toastTracer.errorCalls.push(msg); },
+      warning: () => {},
+      info: () => {},
+    };
+  },
 
   // ── Platform page needed components ──
   Statistic: ({ label, value, variant, prefix, suffix }) => {

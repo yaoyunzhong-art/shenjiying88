@@ -974,22 +974,38 @@ export declare function getDomainGovernanceAttentionLabel(summary: PortalDomainG
 export declare function formatDomainGovernanceCountsSummary(summary: PortalDomainGovernanceSummaryContract): string;
 export declare function formatDomainGovernanceSourceSummary(domainSource: string, summary: PortalDomainGovernanceSummaryContract): string;
 export interface DomainGovernanceDisplayModel {
-    title: string;
-    subtitle: string;
-    statusLabel: '待治理' | '已对齐';
-    countsSummary: string;
-    sourceSummary: string;
-    statusSummary: string;
-    compactSummary: string;
-    workspaceSummary: string;
-    workspaceHref: string;
-    ctaLabel: string;
-    focusScopeLabel: string;
-    focusScopeSummary: string;
-    recommendationSummary: string;
-    lastEvaluatedSummary: string;
-    detailLines: string[];
+    headerSection: DomainGovernanceHeaderSection;
+    detailGroups: DomainGovernanceDetailGroup[];
+    footerSection: DomainGovernanceFooterSection;
     requiresAttention: boolean;
+}
+export type DomainGovernanceDetailSlotTone = 'primary' | 'summary' | 'accent';
+export interface DomainGovernanceDetailSlot {
+    key: string;
+    label: string;
+    value: string;
+    tone: DomainGovernanceDetailSlotTone;
+}
+export interface DomainGovernanceDetailGroup {
+    key: string;
+    title: string;
+    slots: DomainGovernanceDetailSlot[];
+}
+export interface DomainGovernanceHeaderSection {
+    eyebrow: string;
+    subtitle: string;
+    titleSlot: DomainGovernanceDetailSlot;
+    statusBadge: DomainGovernanceDetailSlot;
+    summarySlots: DomainGovernanceDetailSlot[];
+}
+export interface DomainGovernanceFooterSection {
+    workspaceSlot: DomainGovernanceDetailSlot;
+    ctaLabel: string;
+}
+export interface DomainGovernanceRenderSection {
+    key: string;
+    title: string;
+    slots: DomainGovernanceDetailSlot[];
 }
 export type DomainGovernanceDisplayPresetKey = 'STOREFRONT_H5' | 'STOREFRONT_PC' | 'TOB_TENANT' | 'TOB_BRAND' | 'APP_NATIVE' | 'MINIAPP_HOME' | 'MINIAPP_MEMBER';
 export interface DomainGovernanceDisplayPresetContract {
@@ -1023,12 +1039,17 @@ export interface DomainGovernanceDisplayPreset {
     statusColor: string;
     statusBackground: string;
 }
+export declare function resolveDomainGovernanceDetailSlotColor(preset: DomainGovernanceDisplayPreset, tone: DomainGovernanceDetailSlotTone): string;
 export declare const domainGovernanceDisplayPresetContractMap: Record<DomainGovernanceDisplayPresetKey, DomainGovernanceDisplayPresetContract>;
 export declare function resolveDomainGovernanceDisplayPreset(key: DomainGovernanceDisplayPresetKey, requiresAttention: boolean): DomainGovernanceDisplayPreset;
 export declare function formatDomainGovernanceFocusScopeLabel(scope?: PortalDomainGovernanceScopeSummaryContract): string;
 export declare function formatDomainGovernanceFocusScopeSummary(scope?: PortalDomainGovernanceScopeSummaryContract): string;
 export declare function formatDomainGovernanceRecommendationSummary(scope?: PortalDomainGovernanceScopeSummaryContract): string;
 export declare function formatDomainGovernanceLastEvaluatedSummary(summary: PortalDomainGovernanceSummaryContract): string;
+export declare function buildDomainGovernanceHeaderSection(domainSource: string, summary: PortalDomainGovernanceSummaryContract): DomainGovernanceHeaderSection;
+export declare function buildDomainGovernanceDetailGroups(summary: PortalDomainGovernanceSummaryContract): DomainGovernanceDetailGroup[];
+export declare function buildDomainGovernanceFooterSection(workspaceHref: string): DomainGovernanceFooterSection;
+export declare function buildDomainGovernanceRenderSections(model: DomainGovernanceDisplayModel): DomainGovernanceRenderSection[];
 export declare function buildDomainGovernanceDisplayModel(domainSource: string, summary: PortalDomainGovernanceSummaryContract, workspaceHref: string): DomainGovernanceDisplayModel;
 export interface WorkbenchNavItemContract {
     key: string;
