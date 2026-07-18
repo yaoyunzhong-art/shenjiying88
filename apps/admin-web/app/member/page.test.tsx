@@ -170,11 +170,12 @@ interface PageResult<T> {
 
 function paginate<T>(items: T[], page: number, pageSize: number): PageResult<T> {
   const total = items.length;
-  const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  const effectivePageSize = pageSize > 0 ? pageSize : total || 1;
+  const totalPages = Math.max(1, Math.ceil(total / effectivePageSize));
   const safePage = Math.max(1, Math.min(page, totalPages));
-  const start = (safePage - 1) * pageSize;
+  const start = (safePage - 1) * effectivePageSize;
   return {
-    items: items.slice(start, start + pageSize),
+    items: items.slice(start, start + effectivePageSize),
     total,
     page: safePage,
     pageSize,
