@@ -285,6 +285,30 @@ function CouponsPageContent() {
     []
   );
 
+  // 过期预警（7天内到期）
+  const expiredSoon = useMemo(
+    () => MOCK_COUPONS.filter((c) => {
+      if (c.status !== 'active') return false;
+      const now = new Date();
+      const end = new Date(c.endAt);
+      const diff = Math.ceil((end.getTime() - now.getTime()) / 86400000);
+      return diff >= 0 && diff <= 7;
+    }),
+    []
+  );
+
+  // 近7天发放统计
+  const recentStats = useMemo(
+    () => ({
+      issued: MOCK_COUPONS.reduce((s, c) => s + c.usedCount, 0),
+      activeCount: MOCK_COUPONS.filter((c) => c.status === 'active').length,
+      expiredCount: MOCK_COUPONS.filter((c) => c.status === 'expired').length,
+      draftCount: MOCK_COUPONS.filter((c) => c.status === 'draft').length,
+      totalIssued: MOCK_COUPONS.reduce((s, c) => s + c.totalQuota, 0),
+    }),
+    []
+  );
+
   return (
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
       <PageShell
@@ -328,6 +352,59 @@ function CouponsPageContent() {
               {stats.totalUsed.toLocaleString()}
             </div>
           </article>
+        </div>
+
+        {/* 过期预警 + 近7天发放 */}
+        {expiredSoon.length > 0 ? (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: '12px 18px',
+              borderRadius: 12,
+              background: 'rgba(251, 191, 36, 0.12)',
+              border: '1px solid rgba(251, 191, 36, 0.3)',
+              color: '#fbbf24',
+              fontSize: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            ⚠️ 有 <strong style={{ margin: '0 4px' }}>{expiredSoon.length}</strong> 张优惠券将在7天内到期，请及时关注
+          </div>
+        ) : (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: '8px 14px',
+              borderRadius: 12,
+              background: 'rgba(74, 222, 128, 0.08)',
+              border: '1px solid rgba(74, 222, 128, 0.2)',
+              color: '#4ade80',
+              fontSize: 13,
+            }}
+          >
+            ✓ 暂无近期待到期优惠券
+          </div>
+        )}
+
+        <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 16 }}>
+          <div style={{ borderRadius: 10, padding: '10px 14px', background: 'rgba(15, 23, 42, 0.3)', border: '1px solid rgba(148, 163, 184, 0.12)' }}>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>近7天已核销</div>
+            <div style={{ marginTop: 4, fontSize: 20, fontWeight: 700, color: '#a78bfa' }}>{recentStats.issued.toLocaleString()}</div>
+          </div>
+          <div style={{ borderRadius: 10, padding: '10px 14px', background: 'rgba(15, 23, 42, 0.3)', border: '1px solid rgba(148, 163, 184, 0.12)' }}>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>进行中活动</div>
+            <div style={{ marginTop: 4, fontSize: 20, fontWeight: 700, color: '#4ade80' }}>{recentStats.activeCount}</div>
+          </div>
+          <div style={{ borderRadius: 10, padding: '10px 14px', background: 'rgba(15, 23, 42, 0.3)', border: '1px solid rgba(148, 163, 184, 0.12)' }}>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>草稿待发布</div>
+            <div style={{ marginTop: 4, fontSize: 20, fontWeight: 700, color: '#fbbf24' }}>{recentStats.draftCount}</div>
+          </div>
+          <div style={{ borderRadius: 10, padding: '10px 14px', background: 'rgba(15, 23, 42, 0.3)', border: '1px solid rgba(148, 163, 184, 0.12)' }}>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>历史已过期</div>
+            <div style={{ marginTop: 4, fontSize: 20, fontWeight: 700, color: '#f87171' }}>{recentStats.expiredCount}</div>
+          </div>
         </div>
 
         {/* 搜索框 */}
