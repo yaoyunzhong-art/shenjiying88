@@ -210,7 +210,7 @@ services:
       cache_from:
         - m5-api:latest
         - m5-api:cache
-    image: m5-api:${BUILD_TAG:-latest}
+    image: ${API_IMAGE:-m5-api}:${BUILD_TAG:-latest}
     container_name: m5-api
     restart: unless-stopped
     networks:
@@ -275,7 +275,7 @@ services:
       cache_from:
         - m5-admin:latest
         - m5-admin:cache
-    image: m5-admin:${BUILD_TAG:-latest}
+    image: ${ADMIN_WEB_IMAGE:-m5-admin}:${BUILD_TAG:-latest}
     container_name: m5-admin-web
     restart: unless-stopped
     networks:
@@ -315,7 +315,7 @@ services:
       cache_from:
         - m5-storefront:latest
         - m5-storefront:cache
-    image: m5-storefront:${BUILD_TAG:-latest}
+    image: ${STOREFRONT_WEB_IMAGE:-m5-storefront}:${BUILD_TAG:-latest}
     container_name: m5-storefront-web
     restart: unless-stopped
     networks:
@@ -355,7 +355,7 @@ services:
       cache_from:
         - m5-tob:latest
         - m5-tob:cache
-    image: m5-tob:${BUILD_TAG:-latest}
+    image: ${TOB_WEB_IMAGE:-m5-tob}:${BUILD_TAG:-latest}
     container_name: m5-tob-web
     restart: unless-stopped
     profiles: ["full"]

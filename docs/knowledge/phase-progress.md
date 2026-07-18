@@ -284,3 +284,20 @@
 | 闭环检查 | ✅ 无待闭环 |
 | 知识库时效 | ✅ |
 
+### 🦞 脉冲#571 · 2026-07-19 02:03 CST
+| 检查项 | 状态 |
+|:-------|:----:|
+| TSC 14/14 | ✅ |
+| @m5/app 222/0 | ✅ |
+| @m5/miniapp 508/0 | ✅ |
+| @m5/tob-web 1617/0 | ✅ |
+| @m5/storefront-web 7144/0 | ✅ |
+| @m5/ui 6184/0 | ✅ |
+| @m5/admin-web 363/0 ELIFECYCLE已知 | ✅⚠️ |
+| 修复1: afterEach import补全(audit-logs+coupon-templates) | ✅ |
+| 修复2: FilterChips+Badge mock补齐 | ✅ |
+| 修复3: audit-logs R2/R3断言修正(文本+卡片选择器) | ✅ |
+| 149/149 React渲染测试✅ | ✅ |
+| 闭环检查 | ✅ 无待闭环 |
+| 知识库时效 | ✅ |
+

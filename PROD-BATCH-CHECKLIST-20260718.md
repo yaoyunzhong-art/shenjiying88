@@ -142,16 +142,24 @@ scripts/build-m5-tls-secret.sh \
 
 ## 6. 明确禁用口径
 
-- 当前生产环境禁止继续使用以下旧链路执行正式发布：
-  - `.github/workflows/deploy.yml`
+- 当前生产环境禁止继续使用以下旧链路执行正式公网发布：
   - `GHCR`
-  - `SSH + docker compose`
-- 当前正式生产链路以以下资产为准：
+  - 未做预检的 `SSH + docker compose`
+- `SSH + docker compose` 当前仅允许用于：
+  - `staging` 发布
+  - `production` 主机上的应急 compose 回退或临时验证
+- 当前正式生产公网链路以以下资产为准：
   - `PROD-DEPLOY-STATUS-20260717.md`
   - `PROD-INGRESS-CUTOVER-20260718.md`
   - `scripts/preflight-prod-public-cutover.sh`
   - `scripts/apply-prod-public-cutover.sh`
   - `scripts/rollback-prod-public-cutover.sh`
+- compose 链路入口以以下资产为准：
+  - `.github/workflows/deploy.yml`
+  - `docker-compose.yml`
+  - `docker-compose.staging.yml`
+  - `scripts/preflight-compose-deploy.sh`
+  - `COMPOSE-DEPLOY-RUNBOOK.md`
 
 ## 7. 成功判定
 

@@ -151,6 +151,7 @@ import { EquipmentFaultReportModule } from './modules/equipment-fault-report/equ
 import { DeviceUsageReportModule } from './modules/device-usage-report/device-usage-report.module';
 import { EmployeePerformanceReviewModule } from './modules/employee-performance-review/employee-performance-review.module';
 import { CustomerSatisfactionModule } from './modules/customer-satisfaction/customer-satisfaction.module';
+import { ProcurementOrderModule } from './modules/procurement-order/procurement-order.module';
 
 @Module({
   imports: [
@@ -313,6 +314,7 @@ import { CustomerSatisfactionModule } from './modules/customer-satisfaction/cust
     DeviceUsageReportModule,
     EmployeePerformanceReviewModule,
     CustomerSatisfactionModule,
+    ProcurementOrderModule,
     ModulesModule,
   ],
   providers: [

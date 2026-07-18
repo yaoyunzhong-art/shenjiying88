@@ -17,7 +17,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { describe, it, beforeEach, before } from 'node:test';
+import { describe, it, beforeEach, before, afterEach } from 'node:test';
 import fs from 'node:fs';
 
 // ===================== 类型定义 =====================
@@ -576,13 +576,16 @@ describe('audit-logs — React 渲染', () => {
     const { container } = render(React.createElement(AuditLogsPage));
     const h1 = container.querySelector('h1');
     assert.ok(h1, '应有 h1');
-    assert.ok(h1!.textContent?.includes('日志审计'), '标题含日志审计');
+    assert.ok(h1!.textContent?.includes('审计日志'), '标题含审计日志');
   });
 
   it('R3. 渲染统计卡片', () => {
     const { container } = render(React.createElement(AuditLogsPage));
-    const articles = container.querySelectorAll('article, [class*=card], [class*=stat]');
-    assert.ok(articles.length >= 2, `应有≥2个统计卡片, 实际 ${articles.length}`);
+    // 页面使用内联<div>无class, 通过文本内容定位统计卡片
+    const cardTexts = ['总日志数', '今日', '今日失败'];
+    const bodyText = container.textContent || '';
+    const found = cardTexts.filter(t => bodyText.includes(t)).length;
+    assert.ok(found >= 2, `应有≥2个统计卡片文本, 实际找到 ${found}: ${cardTexts.filter(t => bodyText.includes(t)).join(', ')}`);
   });
 
   it('R4. 渲染搜索输入框', () => {

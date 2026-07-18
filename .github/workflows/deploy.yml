@@ -3,8 +3,8 @@
 #
 # 触发条件: tag push (v*) 或手动 workflow_dispatch
 # 职责:
-#   - 构建 Docker 镜像并推送至 GHCR
-#   - 通过 SSH 部署至生产服务器
+#   - 构建 Docker 镜像并推送至 ACR
+#   - 通过 SSH 部署至 staging / 应急 compose 环境
 #   - 执行数据库迁移
 #   - 健康检查验证
 # ═══════════════════════════════════════════════════════════════
@@ -35,7 +35,8 @@ env:
   PNPM_VERSION: 10.14.0
   NODE_VERSION: 22
   TURBO_TELEMETRY_DISABLED: 1
-  REGISTRY: ghcr.io
+  REGISTRY: shenjiying88acr20260717-registry.cn-hangzhou.cr.aliyuncs.com
+  REGISTRY_NAMESPACE: shenjiying88
 
 jobs:
 
@@ -88,15 +89,19 @@ jobs:
       matrix:
         service:
           - name: api
+            image_name: m5-api
             target: api-prod
             port: 3001
           - name: admin-web
+            image_name: m5-admin-web
             target: admin-prod
             port: 3002
           - name: storefront-web
+            image_name: m5-storefront-web
             target: storefront-prod
             port: 3003
           - name: tob-web
+            image_name: m5-tob-web
             target: tob-prod
             port: 3011
 
@@ -106,16 +111,21 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to Alibaba Cloud Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Extract version from tag
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "VERSION=manual-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -124,8 +134,8 @@ jobs:
           target: ${{ matrix.service.target }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service.name }}:${{ steps.version.outputs.VERSION }}
-            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service.name }}:latest
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_NAMESPACE }}/${{ matrix.service.image_name }}:${{ steps.version.outputs.VERSION }}
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_NAMESPACE }}/${{ matrix.service.image_name }}:latest
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -133,9 +143,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ─── 3. 部署至目标环境 ────────────────────────────────
+  # ─── 3. 预迁移并部署至目标环境 ─────────────────────────
   deploy:
-    name: Deploy to ${{ github.event.inputs.environment || 'staging' }}
+    name: Migrate & Deploy to ${{ github.event.inputs.environment || 'staging' }}
     needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -146,7 +156,12 @@ jobs:
 
       - name: Extract version
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "VERSION=manual-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Configure deployment variables
         id: config
@@ -157,14 +172,62 @@ jobs:
             echo "SSH_USER=${{ secrets.PROD_SSH_USER }}" >> "$GITHUB_OUTPUT"
             echo "DEPLOY_DIR=/opt/m5" >> "$GITHUB_OUTPUT"
             echo "DOMAIN=api.m5.local" >> "$GITHUB_OUTPUT"
-            echo "COMPOSE_FILE=docker-compose.yml" >> "$GITHUB_OUTPUT"
+            echo "COMPOSE_ARGS=-f docker-compose.yml" >> "$GITHUB_OUTPUT"
+            echo "HEALTHCHECK_URL=http://localhost:3001/api/v1/health/ping" >> "$GITHUB_OUTPUT"
           else
             echo "SSH_HOST=${{ secrets.STAGING_SSH_HOST || secrets.PROD_SSH_HOST }}" >> "$GITHUB_OUTPUT"
             echo "SSH_PORT=${{ secrets.STAGING_SSH_PORT || 22 }}" >> "$GITHUB_OUTPUT"
             echo "SSH_USER=${{ secrets.STAGING_SSH_USER || secrets.PROD_SSH_USER }}" >> "$GITHUB_OUTPUT"
             echo "DEPLOY_DIR=/opt/m5-staging" >> "$GITHUB_OUTPUT"
             echo "DOMAIN=staging-api.m5.local" >> "$GITHUB_OUTPUT"
-            echo "COMPOSE_FILE=docker-compose.staging.yml" >> "$GITHUB_OUTPUT"
+            echo "COMPOSE_ARGS=-f docker-compose.yml -f docker-compose.staging.yml" >> "$GITHUB_OUTPUT"
+            echo "HEALTHCHECK_URL=http://localhost:3101/api/v1/health/ping" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate CI secrets
+        run: |
+          if [[ -z '${{ secrets.ACR_USERNAME }}' ]]; then
+            echo "::error::ACR_USERNAME is required for compose deploy"
+            exit 1
+          fi
+
+          if [[ -z '${{ secrets.ACR_PASSWORD }}' ]]; then
+            echo "::error::ACR_PASSWORD is required for compose deploy"
+            exit 1
+          fi
+
+          if [[ -z '${{ secrets.DEPLOY_SSH_KEY }}' ]]; then
+            echo "::error::DEPLOY_SSH_KEY is required for compose deploy"
+            exit 1
+          fi
+
+          if [[ -z '${{ steps.config.outputs.SSH_HOST }}' ]]; then
+            echo "::error::resolved SSH_HOST is empty"
+            exit 1
+          fi
+
+          if [[ -z '${{ steps.config.outputs.SSH_USER }}' ]]; then
+            echo "::error::resolved SSH_USER is empty"
+            exit 1
+          fi
+
+      - name: Preflight deployment bundle
+        run: |
+          if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+            bash scripts/preflight-compose-deploy.sh \
+              --environment production \
+              --registry "${{ env.REGISTRY }}" \
+              --registry-namespace "${{ env.REGISTRY_NAMESPACE }}" \
+              --deploy-dir "${{ steps.config.outputs.DEPLOY_DIR }}" \
+              --compose-file docker-compose.yml
+          else
+            bash scripts/preflight-compose-deploy.sh \
+              --environment staging \
+              --registry "${{ env.REGISTRY }}" \
+              --registry-namespace "${{ env.REGISTRY_NAMESPACE }}" \
+              --deploy-dir "${{ steps.config.outputs.DEPLOY_DIR }}" \
+              --compose-file docker-compose.yml \
+              --compose-file docker-compose.staging.yml
           fi
 
       - name: Install SSH key
@@ -183,7 +246,19 @@ jobs:
           scp -o StrictHostKeyChecking=no \
             -P ${{ steps.config.outputs.SSH_PORT }} \
             docker-compose.yml \
-            ${{ steps.config.outputs.SSH_USER }}@${{ steps.config.outputs.SSH_HOST }}:${{ steps.config.outputs.DEPLOY_DIR }}/${{ steps.config.outputs.COMPOSE_FILE }}
+            ${{ steps.config.outputs.SSH_USER }}@${{ steps.config.outputs.SSH_HOST }}:${{ steps.config.outputs.DEPLOY_DIR }}/docker-compose.yml
+
+          if [[ "${{ github.event.inputs.environment }}" == "staging" ]]; then
+            scp -o StrictHostKeyChecking=no \
+              -P ${{ steps.config.outputs.SSH_PORT }} \
+              docker-compose.staging.yml \
+              ${{ steps.config.outputs.SSH_USER }}@${{ steps.config.outputs.SSH_HOST }}:${{ steps.config.outputs.DEPLOY_DIR }}/docker-compose.staging.yml
+          fi
+
+          scp -o StrictHostKeyChecking=no \
+            -P ${{ steps.config.outputs.SSH_PORT }} \
+            infra/docker/compose.env.example \
+            ${{ steps.config.outputs.SSH_USER }}@${{ steps.config.outputs.SSH_HOST }}:${{ steps.config.outputs.DEPLOY_DIR }}/.env.compose.example
 
           scp -o StrictHostKeyChecking=no \
             -P ${{ steps.config.outputs.SSH_PORT }} \
@@ -200,40 +275,63 @@ jobs:
           SSH_DEST="${{ steps.config.outputs.SSH_USER }}@${{ steps.config.outputs.SSH_HOST }}"
           SSH_PORT="${{ steps.config.outputs.SSH_PORT }}"
           DEPLOY_DIR="${{ steps.config.outputs.DEPLOY_DIR }}"
-          COMPOSE_FILE="${{ steps.config.outputs.COMPOSE_FILE }}"
+          COMPOSE_ARGS="${{ steps.config.outputs.COMPOSE_ARGS }}"
+          HEALTHCHECK_URL="${{ steps.config.outputs.HEALTHCHECK_URL }}"
           VERSION="${{ steps.version.outputs.VERSION }}"
           REGISTRY="${{ env.REGISTRY }}"
 
           ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_DEST" "
             set -e
 
-            # 登录 GHCR
-            echo '${{ secrets.GITHUB_TOKEN }}' | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+            # 登录 ACR
+            echo '${{ secrets.ACR_PASSWORD }}' | docker login $REGISTRY -u '${{ secrets.ACR_USERNAME }}' --password-stdin
 
             cd $DEPLOY_DIR
 
             # 设置版本环境变量
             export BUILD_TAG=\${VERSION:-latest}
+            export API_IMAGE='${{ env.REGISTRY }}/${{ env.REGISTRY_NAMESPACE }}/m5-api'
+            export ADMIN_WEB_IMAGE='${{ env.REGISTRY }}/${{ env.REGISTRY_NAMESPACE }}/m5-admin-web'
+            export STOREFRONT_WEB_IMAGE='${{ env.REGISTRY }}/${{ env.REGISTRY_NAMESPACE }}/m5-storefront-web'
+            export TOB_WEB_IMAGE='${{ env.REGISTRY }}/${{ env.REGISTRY_NAMESPACE }}/m5-tob-web'
+
+            # 使用目标镜像执行预部署迁移，避免先切应用再补 schema
+            if [[ '${{ github.event.inputs.run_migration }}' != 'false' ]]; then
+              echo '执行预部署数据库迁移...'
+              docker compose \$COMPOSE_ARGS pull api
+              docker compose \$COMPOSE_ARGS run --rm --no-deps api \
+                npx prisma migrate deploy --schema ./prisma/schema.prisma
+              echo '数据库迁移完成'
+            else
+              echo '跳过数据库迁移'
+            fi
 
             # 拉取最新镜像
-            docker compose -f \$COMPOSE_FILE pull
+            docker compose \$COMPOSE_ARGS pull
 
             # 重启服务 (滚动更新)
-            docker compose -f \$COMPOSE_FILE up -d --no-deps --remove-orphans
+            docker compose \$COMPOSE_ARGS up -d --no-deps --remove-orphans
 
             # 等待服务健康
             echo '等待服务就绪...'
             sleep 15
 
             # 健康检查
+            HEALTHY=0
             for i in 1 2 3 4 5; do
-              if curl -sf http://localhost:3001/api/v1/health/ping; then
+              if curl -sf \$HEALTHCHECK_URL; then
                 echo 'API 健康检查通过'
+                HEALTHY=1
                 break
               fi
               echo \"等待 API 就绪 (attempt \$i/5)...\"
               sleep 5
             done
+
+            if [[ \"\$HEALTHY\" != \"1\" ]]; then
+              echo 'API 健康检查失败，停止部署流程'
+              exit 1
+            fi
 
             # 清理旧镜像
             docker image prune -f
@@ -241,41 +339,23 @@ jobs:
             echo '部署完成'
           "
 
-  # ─── 4. 数据库迁移 ──────────────────────────────────
-  migrate:
-    name: Database Migration
-    needs: [deploy]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    if: ${{ github.event.inputs.run_migration != 'false' }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run migration on server
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ github.event.inputs.environment == 'production' && secrets.PROD_SSH_HOST || secrets.STAGING_SSH_HOST }}
-          username: ${{ github.event.inputs.environment == 'production' && secrets.PROD_SSH_USER || secrets.STAGING_SSH_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ github.event.inputs.environment == 'production' && secrets.PROD_SSH_PORT || secrets.STAGING_SSH_PORT || 22 }}
-          script: |
-            DEPLOY_DIR="${{ github.event.inputs.environment == 'production' && '/opt/m5' || '/opt/m5-staging' }}"
-            cd "$DEPLOY_DIR"
-
-            # 在 API 容器内执行迁移
-            docker exec m5-api npx prisma migrate deploy --schema ./prisma/schema.prisma
-
-            echo '数据库迁移完成'
-
   # ─── 5. 健康检查通知 ────────────────────────────────
   notify:
     name: Deployment Notification
-    needs: [deploy, migrate]
+    needs: [deploy]
     runs-on: ubuntu-latest
     if: always()
 
     steps:
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "VERSION=manual-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Check deployment status
         id: status
         run: |
@@ -284,12 +364,10 @@ jobs:
           else
             echo "Deploy: ❌ Failed"
           fi
-          if [[ "${{ needs.migrate.result }}" == "success" ]]; then
-            echo "Migrate: ✅ Success"
-          elif [[ "${{ needs.migrate.result }}" == "skipped" ]]; then
+          if [[ "${{ github.event.inputs.run_migration }}" == "false" ]]; then
             echo "Migrate: ⏭️ Skipped"
           else
-            echo "Migrate: ❌ Failed"
+            echo "Migrate: ✅ Included in deploy gate"
           fi
 
       - name: Send notification (placeholder)

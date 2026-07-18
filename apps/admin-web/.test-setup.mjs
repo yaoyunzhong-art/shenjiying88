@@ -558,6 +558,29 @@ const mockUiModule = {
   Progress: ({ value, height, style }) => {
     return React.createElement('div', { 'data-mock': 'Progress', 'data-value': String(value ?? 0) });
   },
+  FilterChips: ({ items, activeKey, onChange }) => {
+    if (!items) return null;
+    return React.createElement('div', { 'data-mock': 'FilterChips' },
+      ...items.map((item) =>
+        React.createElement('button', {
+          key: item.key ?? item.value ?? item.label,
+          'data-chip-key': item.key ?? item.value,
+          'data-active': item.key === activeKey ? 'true' : 'false',
+          onClick: () => onChange?.(item.key ?? item.value),
+        }, item.label || '')
+      )
+    );
+  },
+  Badge: ({ children, variant, count, dot, overflowCount }) => {
+    if (dot) {
+      return React.createElement('span', { 'data-mock': 'Badge', 'data-dot': 'true' });
+    }
+    const displayCount = typeof count === 'number' ? String(count) : null;
+    return React.createElement('span', { 'data-mock': 'Badge', 'data-variant': variant || '' },
+      displayCount ? React.createElement('span', null, displayCount) : null,
+      children || null
+    );
+  },
   // DataTableSortConfig type export not needed at runtime
 };
 

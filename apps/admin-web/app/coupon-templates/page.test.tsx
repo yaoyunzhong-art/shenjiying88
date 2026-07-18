@@ -3,7 +3,7 @@
  * 覆盖: 正例·反例·边界·防御
  */
 import assert from 'node:assert/strict';
-import { describe, it, before } from 'node:test';
+import { describe, it, before, afterEach } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
