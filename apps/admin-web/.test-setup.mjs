@@ -261,17 +261,89 @@ const mockUiModule = {
       React.createElement('button', { onClick: onClose, 'data-testid': 'modal-close' }, 'Close'),
     );
   },
-  FormSubmitFeedback: ({ success, error, onDismissSuccess, onRetry, onDismissError }) => {
-    if (success) return React.createElement('div', { 'data-mock': 'FormSubmitFeedback', 'data-type': 'success' }, success);
-    if (error) return React.createElement('div', { 'data-mock': 'FormSubmitFeedback', 'data-type': 'error' },
-      error,
+  // useFormSubmit hook — needed by page.tsx creation form
+  // The real implementation catches errors and sets errorMessage state without re-throwing
+  useFormSubmit: ({ onSubmit, successMessage, defaultErrorMessage }) => {
+    const [state, setState] = React.useState({ isSubmitting: false });
+    const submit = React.useCallback(async () => {
+      setState({ isSubmitting: true });
+      try {
+        const result = await onSubmit();
+        const resolvedMsg = typeof successMessage === 'function'
+          ? successMessage(result)
+          : (successMessage ?? 'Saved successfully');
+        setState({ isSubmitting: false, result, successMessage: resolvedMsg });
+        return result;
+      } catch (e) {
+        setState({
+          isSubmitting: false,
+          errorMessage: e instanceof Error ? e.message : (defaultErrorMessage ?? 'An error occurred'),
+        });
+        return void 0; // Do not re-throw — matches real implementation
+      }
+    }, [onSubmit, successMessage, defaultErrorMessage]);
+    const clearError = React.useCallback(() => {
+      setState((s) => ({ ...s, errorMessage: undefined }));
+    }, []);
+    const clearSuccess = React.useCallback(() => {
+      setState((s) => ({ ...s, successMessage: undefined }));
+    }, []);
+    return { state, submit, clearError, clearSuccess };
+  },
+
+  FormSubmitFeedback: ({ state, success, error, onDismissSuccess, onRetry, onDismissError }) => {
+    // Support both direct props and state prop (used by page.tsx)
+    const effectiveSuccess = state?.successMessage ?? success;
+    const effectiveError = state?.errorMessage ?? error;
+    const effectiveLoading = state?.isSubmitting ?? false;
+
+    if (effectiveLoading) {
+      return React.createElement('div', { 'data-mock': 'FormSubmitFeedback', 'data-type': 'loading' }, '提交中…');
+    }
+    if (effectiveSuccess) return React.createElement('div', { 'data-mock': 'FormSubmitFeedback', 'data-type': 'success' }, effectiveSuccess);
+    if (effectiveError) return React.createElement('div', { 'data-mock': 'FormSubmitFeedback', 'data-type': 'error' },
+      effectiveError,
       React.createElement('button', { onClick: onRetry, 'data-testid': 'retry-btn' }, '重试'),
     );
     return null;
   },
   SubmitButton: ({ children, variant, loading, type, onClick, disabled }) => {
-    return React.createElement('div', { 'data-mock': 'SubmitButton', 'data-variant': variant, 'data-loading': loading ? 'true' : 'false' },
-      loading ? '提交中…' : children
+    return React.createElement('button', {
+      'data-mock': 'SubmitButton',
+      'data-variant': variant,
+      type: type || 'button',
+      disabled: disabled || loading || false,
+      onClick,
+    }, loading ? '提交中…' : children);
+  },
+  Breadcrumb: ({ items }) => {
+    if (!items) return null;
+    return React.createElement('nav', { 'data-mock': 'Breadcrumb' },
+      ...items.map((item, i) => {
+        if (item.href) {
+          return React.createElement('a', { key: i, href: item.href, 'data-label': item.label }, item.label);
+        }
+        return React.createElement('span', { key: i, 'data-label': item.label }, item.label);
+      })
+    );
+  },
+  DetailActionBar: ({ actions, heading, caption }) => {
+    return React.createElement('div', { 'data-mock': 'DetailActionBar' },
+      heading ? React.createElement('h4', null, heading) : null,
+      caption ? React.createElement('p', null, caption) : null,
+    );
+  },
+  DetailClosureBar: ({ links }) => {
+    return React.createElement('div', { 'data-mock': 'DetailClosureBar' },
+      ...(links || []).map((link, i) =>
+        React.createElement('div', { key: i, 'data-testid': 'closure-link' }, link.title || link.label || '')
+      )
+    );
+  },
+  InfoRow: ({ label, value }) => {
+    return React.createElement('div', { 'data-mock': 'InfoRow' },
+      label ? React.createElement('span', { 'data-testid': 'info-label' }, String(label)) : null,
+      value ? React.createElement('span', { 'data-testid': 'info-value' }, String(value)) : null,
     );
   },
   WorkspaceBreadcrumb: ({ workspaceLabel, workspaceHref, detailLabel }) => {
