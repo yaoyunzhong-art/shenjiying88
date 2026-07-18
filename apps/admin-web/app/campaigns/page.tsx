@@ -28,18 +28,18 @@ type CampaignTab = 'active' | 'draft' | 'completed' | 'all'
 
 // ── 工具 ──
 
-function fmtCents(cents: number): string {
+export function fmtCents(cents: number): string {
   const abs = Math.abs(cents)
   const sign = cents < 0 ? '-' : ''
   return `${sign}¥${(abs / 100).toFixed(2)}`
 }
 
-function fmtPercent(value: number, target: number): string {
+export function fmtPercent(value: number, target: number): string {
   if (target === 0) return '0%'
   return `${((value / target) * 100).toFixed(1)}%`
 }
 
-function statusLabel(status: Campaign['status']): string {
+export function statusLabel(status: Campaign['status']): string {
   const map: Record<string, string> = {
     draft: '草稿', active: '进行中', paused: '已暂停',
     completed: '已完成', cancelled: '已取消',
@@ -47,7 +47,7 @@ function statusLabel(status: Campaign['status']): string {
   return map[status] ?? status
 }
 
-function statusColor(status: Campaign['status']): string {
+export function statusColor(status: Campaign['status']): string {
   const map: Record<string, string> = {
     draft: 'bg-gray-100 text-gray-600',
     active: 'bg-green-100 text-green-700',
@@ -58,7 +58,7 @@ function statusColor(status: Campaign['status']): string {
   return map[status] ?? 'bg-gray-100 text-gray-600'
 }
 
-function typeLabel(type: Campaign['type']): string {
+export function typeLabel(type: Campaign['type']): string {
   const map: Record<string, string> = {
     promotion: '促销活动', 'new-member': '拉新活动',
     referral: '推荐有礼', seasonal: '季节活动', clearance: '清仓活动',
@@ -219,6 +219,32 @@ export default function CampaignsPage() {
         <div className="bg-white border rounded-lg p-4">
           <p className="text-sm text-gray-500">已花费</p>
           <p className="text-2xl font-bold mt-1 text-blue-600">{fmtCents(totalSpent)}</p>
+        </div>
+      </div>
+
+      {/* 活动状态统计 */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-white border rounded-lg p-4">
+          <p className="text-sm text-gray-500">总活动</p>
+          <p className="text-2xl font-bold mt-1">{campaigns.length}</p>
+        </div>
+        <div className="bg-white border rounded-lg p-4">
+          <p className="text-sm text-gray-500">未开始</p>
+          <p className="text-2xl font-bold mt-1 text-yellow-600">
+            {campaigns.filter(c => c.status === 'draft').length}
+          </p>
+        </div>
+        <div className="bg-white border rounded-lg p-4">
+          <p className="text-sm text-gray-500">进行中</p>
+          <p className="text-2xl font-bold mt-1 text-green-600">
+            {campaigns.filter(c => c.status === 'active' || c.status === 'paused').length}
+          </p>
+        </div>
+        <div className="bg-white border rounded-lg p-4">
+          <p className="text-sm text-gray-500">已结束</p>
+          <p className="text-2xl font-bold mt-1 text-gray-600">
+            {campaigns.filter(c => c.status === 'completed' || c.status === 'cancelled').length}
+          </p>
         </div>
       </div>
 

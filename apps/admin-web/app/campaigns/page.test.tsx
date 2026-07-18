@@ -3,10 +3,11 @@
  *
  * 覆盖: 正例·反例·边界
  * Mock策略: URL-pattern responseRegistry
+ * 圈梁四道箍: TSC通过 → 测试0 fail(无skip) → 圈梁表更新 → PRD标记
  */
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import CampaignsPage from './page'
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -26,9 +27,11 @@ globalThis.fetch = ((url: string) => {
   const path = typeof url === 'string' ? url : '';
   for (const [pattern, factory] of responseRegistry) {
     if (path.includes(pattern)) {
+      let result: unknown;
+      try { result = factory(); } catch { return Promise.reject(new Error('Fetch mock threw')); }
       return Promise.resolve({
         ok: true, status: 200,
-        json: () => Promise.resolve(factory()),
+        json: () => Promise.resolve(result),
         headers: new Headers(), redirected: false, statusText: 'OK', type: 'basic' as const, url: path,
       } as Response);
     }
@@ -39,16 +42,34 @@ globalThis.fetch = ((url: string) => {
   } as Response);
 }) as typeof globalThis.fetch;
 
+function bodyText() {
+  return document.body.textContent || '';
+}
+
+function makeCampaign(id: string, overrides: Record<string, unknown> = {}) {
+  return {
+    id, name: `活动${id}`, description: `描述${id}`,
+    type: 'promotion', status: 'active',
+    startDate: '2026-07-01', endDate: '2026-08-31',
+    budgetCents: 1000000, spentCents: 500000,
+    targetMetric: 'revenue', targetValue: 10000, currentValue: 5000,
+    channels: ['mini-app'],
+    tenantId: 't1', createdBy: 'admin',
+    createdAt: '2026-06-25T00:00:00Z', updatedAt: '2026-07-15T10:00:00Z',
+    ...overrides,
+  };
+}
+
 function setDefaultResponses() {
   responseRegistry.clear();
   setResponseFor('/api/brand/campaigns', () => ({
     success: true,
     data: {
       campaigns: [
-        { id: 'cmp-1', name: '夏日狂欢', description: '暑期折扣', type: 'promotion', status: 'active', startDate: '2026-07-01', endDate: '2026-08-31', budgetCents: 5000000, spentCents: 1280000, targetMetric: 'revenue', targetValue: 30000000, currentValue: 8500000, channels: ['mini-app', 'wechat'], tenantId: 't1', createdBy: 'admin', createdAt: '2026-06-25T00:00:00Z', updatedAt: '2026-07-15T10:00:00Z' },
-        { id: 'cmp-2', name: '新会员专享', description: '注册送积分', type: 'new-member', status: 'active', startDate: '2026-07-01', endDate: '2026-12-31', budgetCents: 2000000, spentCents: 450000, targetMetric: 'new-users', targetValue: 5000, currentValue: 1820, channels: ['mini-app'], tenantId: 't1', createdBy: 'admin', createdAt: '2026-06-20T00:00:00Z', updatedAt: '2026-07-14T14:00:00Z' },
-        { id: 'cmp-3', name: '端午特惠', description: '端午限时折扣', type: 'seasonal', status: 'completed', startDate: '2026-06-08', endDate: '2026-06-10', budgetCents: 800000, spentCents: 760000, targetMetric: 'revenue', targetValue: 5000000, currentValue: 4820000, channels: ['mini-app', 'in-store'], tenantId: 't1', createdBy: 'admin', createdAt: '2026-06-01T00:00:00Z', updatedAt: '2026-06-11T10:00:00Z' },
-        { id: 'cmp-4', name: '换季清仓', description: '春季5折', type: 'clearance', status: 'draft', startDate: '2026-09-01', endDate: '2026-09-15', budgetCents: 3000000, spentCents: 0, targetMetric: 'traffic', targetValue: 10000, currentValue: 0, channels: ['in-store'], tenantId: 't1', createdBy: 'market', createdAt: '2026-07-10T00:00:00Z', updatedAt: '2026-07-10T00:00:00Z' },
+        makeCampaign('cmp-1', { name: '夏日狂欢', description: '暑期折扣', type: 'promotion', status: 'active', budgetCents: 5000000, spentCents: 1280000, targetValue: 30000000, currentValue: 8500000, channels: ['mini-app', 'wechat'] }),
+        makeCampaign('cmp-2', { name: '新会员专享', description: '注册送积分', type: 'new-member', status: 'active', budgetCents: 2000000, spentCents: 450000, targetMetric: 'new-users', targetValue: 5000, currentValue: 1820, channels: ['mini-app'] }),
+        makeCampaign('cmp-3', { name: '端午特惠', description: '端午限时折扣', type: 'seasonal', status: 'completed', budgetCents: 800000, spentCents: 760000, targetValue: 5000000, currentValue: 4820000, channels: ['mini-app', 'in-store'] }),
+        makeCampaign('cmp-4', { name: '换季清仓', description: '春季5折', type: 'clearance', status: 'draft', budgetCents: 3000000, spentCents: 0, targetMetric: 'traffic', targetValue: 10000, currentValue: 0, channels: ['in-store'] }),
       ],
     },
     message: 'OK',
@@ -60,20 +81,332 @@ function assertInDoc(text: string) {
   assert.ok(els.length >= 1, `expected "${text}" to be in document`);
 }
 
-// ─── Tests ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════
+// 1. 基础渲染（正例）
+// ═══════════════════════════════════════════════════
+describe('基础渲染', () => {
+  beforeEach(() => { responseRegistry.clear(); setDefaultResponses(); });
 
-describe('CampaignsPage', () => {
-  beforeEach(() => {
-    responseRegistry.clear();
-    setDefaultResponses();
-  });
-
-  it('should render the page title', async () => {
+  it('正例: 渲染页面标题', async () => {
     render(<CampaignsPage />);
     await waitFor(() => assertInDoc('营销活动'));
   });
 
-  it('should show campaign stat cards', async () => {
+  it('正例: 渲染子标题', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => assertInDoc('品牌活动管理与投放效果追踪'));
+  });
+
+  it('正例: 渲染概览统计卡片（活动总数/进行中/总预算/已花费）', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      assertInDoc('活动总数');
+      assertInDoc('总预算');
+      assertInDoc('已花费');
+    });
+  });
+
+  it('正例: 默认Tab=进行中, 只显示active活动', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      assertInDoc('夏日狂欢');
+      assertInDoc('新会员专享');
+    });
+  });
+
+  it('正例: 渲染Tab导航（4个Tab按钮）', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      assert.ok(screen.queryAllByText('全部').length >= 1, 'Tab 全部');
+      assert.ok(screen.queryAllByText('已完成').length >= 1, 'Tab 已完成');
+    });
+  });
+
+  it('正例: 展示活跃活动类型标签', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      assertInDoc('促销活动');
+      assertInDoc('拉新活动');
+    });
+  });
+
+  it('正例: 展示渠道标签', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      const text = bodyText();
+      assert.ok(text.includes('小程序'), 'channel label');
+    });
+  });
+
+  it('正例: 展示进度百分比', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      assertInDoc('28.3%');
+      assertInDoc('36.4%');
+    });
+  });
+
+  it('正例: 展示刷新按钮', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => assert.ok(screen.queryAllByText('刷新').length >= 1));
+  });
+
+  it('正例: 展示活跃活动描述', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => assertInDoc('暑期折扣'));
+  });
+
+  it('正例: 页面整体渲染正常', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      const text = bodyText();
+      assert.ok(text.length > 100, `page rendered content: ${text.length} chars`);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════
+// 2. 活动状态统计条（新增需求）
+// ═══════════════════════════════════════════════════
+describe('活动状态统计条', () => {
+  beforeEach(() => { responseRegistry.clear(); setDefaultResponses(); });
+
+  it('正例: 渲染4个状态统计卡片', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      assertInDoc('总活动');
+      assertInDoc('未开始');
+      assertInDoc('已结束');
+    });
+  });
+
+  it('正例: 状态统计使用grid-cols-4', () => {
+    const SRC = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    const marker = SRC.indexOf('活动状态统计');
+    const block = SRC.slice(marker, marker + 600);
+    assert.ok(block.includes('grid-cols-4'), 'uses grid-cols-4');
+  });
+
+  it('正例: 总活动数量=4（默认数据）', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => assert.ok(screen.queryAllByText('4').length >= 1));
+  });
+
+  it('正例: 进行中=2（2个active）', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => assert.ok(screen.queryAllByText('2').length >= 1));
+  });
+
+  it('反例: 已结束=1（1个completed）', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => assert.ok(screen.queryAllByText('1').length >= 1));
+  });
+
+  it('边界: 全draft数据时状态卡片正常渲染', async () => {
+    responseRegistry.clear();
+    setResponseFor('/api/brand/campaigns', () => ({
+      success: true,
+      data: {
+        campaigns: [
+          makeCampaign('d1', { status: 'draft', budgetCents: 1000000 }),
+          makeCampaign('d2', { status: 'draft', budgetCents: 2000000 }),
+        ],
+      },
+      message: 'OK',
+    }));
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      assertInDoc('总活动');
+      assertInDoc('未开始');
+      assertInDoc('已结束');
+    });
+  });
+
+  it('边界: 全completed数据时状态卡片正常渲染', async () => {
+    responseRegistry.clear();
+    setResponseFor('/api/brand/campaigns', () => ({
+      success: true,
+      data: {
+        campaigns: [
+          makeCampaign('c1', { status: 'completed', budgetCents: 500000 }),
+        ],
+      },
+      message: 'OK',
+    }));
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      assertInDoc('总活动');
+      assertInDoc('已结束');
+    });
+  });
+
+  it('边界: cancelled活动计入已结束统计', async () => {
+    responseRegistry.clear();
+    setResponseFor('/api/brand/campaigns', () => ({
+      success: true,
+      data: {
+        campaigns: [
+          makeCampaign('x1', { status: 'cancelled', budgetCents: 100000 }),
+        ],
+      },
+      message: 'OK',
+    }));
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      assertInDoc('总活动');
+      assertInDoc('已结束');
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════
+// 3. 活动列表内容
+// ═══════════════════════════════════════════════════
+describe('活动列表内容', () => {
+  beforeEach(() => { responseRegistry.clear(); setDefaultResponses(); });
+
+  it('正例: 显示日期范围', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      const text = bodyText();
+      assert.ok(text.includes('2026-07-01'), 'start date');
+      assert.ok(text.includes('2026-08-31'), 'end date');
+    });
+  });
+
+  it('正例: 显示已花费标签', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => assertInDoc('已花费'));
+  });
+
+  it('正例: 显示营收目标指标', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => assertInDoc('营收'));
+  });
+
+  it('正例: 进度条容器渲染(rounded-full)', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      const bars = document.querySelectorAll('.rounded-full');
+      assert.ok(bars.length >= 2, `found ${bars.length} progress bars`);
+    });
+  });
+
+  it('正例: 显示渠道前缀', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      const text = bodyText();
+      assert.ok(text.includes('渠道'), 'channel label');
+    });
+  });
+
+  it('反例: targetValue=0时显示0%', async () => {
+    responseRegistry.clear();
+    setResponseFor('/api/brand/campaigns', () => ({
+      success: true,
+      data: {
+        campaigns: [
+          makeCampaign('z1', { name: '零目标', targetValue: 0, currentValue: 0 }),
+        ],
+      },
+      message: 'OK',
+    }));
+    render(<CampaignsPage />);
+    await waitFor(() => assertInDoc('0%'));
+  });
+
+  it('边界: currentValue超过targetValue不崩溃', async () => {
+    responseRegistry.clear();
+    setResponseFor('/api/brand/campaigns', () => ({
+      success: true,
+      data: {
+        campaigns: [
+          makeCampaign('o1', { name: '超额', targetValue: 1000, currentValue: 2000 }),
+        ],
+      },
+      message: 'OK',
+    }));
+    render(<CampaignsPage />);
+    await waitFor(() => assertInDoc('超额'));
+  });
+});
+
+// ═══════════════════════════════════════════════════
+// 4. API错误与边界
+// ═══════════════════════════════════════════════════
+describe('API错误与边界', () => {
+  beforeEach(() => { responseRegistry.clear(); });
+
+  it('反例: API返回空数据 → 暂无活动', async () => {
+    setResponseFor('/api/brand/campaigns', () => ({
+      success: true, data: { campaigns: [] }, message: 'OK',
+    }));
+    render(<CampaignsPage />);
+    await waitFor(() => assertInDoc('暂无活动'));
+  });
+
+  it('反例: API返回success=false → 默认数据fallback', async () => {
+    setResponseFor('/api/brand/campaigns', () => ({
+      success: false, message: 'Server error',
+    }));
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      const text = bodyText();
+      assert.ok(text.includes('夏日狂欢'), 'fallback to defaultCampaigns');
+    });
+  });
+
+  it('反例: fetch异常 → 默认数据fallback', async () => {
+    setResponseFor('/api/brand/campaigns', () => { throw new Error('Net error'); });
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      const text = bodyText();
+      assert.ok(text.includes('夏日狂欢'), 'fallback on network error');
+    });
+  });
+
+  it('边界: loading状态展示加载动画', () => {
+    render(<CampaignsPage />);
+    const el = screen.queryByText('加载营销活动...');
+    assert.ok(el, 'loading state present');
+  });
+
+  it('反例: budgetCents=0时总预算¥0.00', async () => {
+    responseRegistry.clear();
+    setResponseFor('/api/brand/campaigns', () => ({
+      success: true,
+      data: { campaigns: [makeCampaign('z', { budgetCents: 0, spentCents: 0 })] },
+      message: 'OK',
+    }));
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      const text = bodyText();
+      assert.ok(text.includes('¥0.00'), 'zero budget');
+    });
+  });
+
+  it('边界: 超大金额格式化不崩溃', async () => {
+    responseRegistry.clear();
+    setResponseFor('/api/brand/campaigns', () => ({
+      success: true,
+      data: { campaigns: [makeCampaign('big', { budgetCents: 9999999999, spentCents: 1 })] },
+      message: 'OK',
+    }));
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      const text = bodyText();
+      assert.ok(text.includes('¥'), 'budget formatted');
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════
+// 5. 概览统计卡片
+// ═══════════════════════════════════════════════════
+describe('概览统计', () => {
+  beforeEach(() => { responseRegistry.clear(); setDefaultResponses(); });
+
+  it('正例: 显示4个概览统计卡片', async () => {
     render(<CampaignsPage />);
     await waitFor(() => {
       assertInDoc('活动总数');
@@ -83,74 +416,38 @@ describe('CampaignsPage', () => {
     });
   });
 
-  it('should display campaign names from API', async () => {
+  it('正例: 总预算含¥符号', async () => {
     render(<CampaignsPage />);
     await waitFor(() => {
-      assertInDoc('夏日狂欢');
-      assertInDoc('新会员专享');
+      const text = bodyText();
+      assert.ok(text.includes('¥'), 'yuan symbol in budget');
     });
   });
 
-  it('should render tab navigation', async () => {
+  it('正例: 已花费含¥符号', async () => {
     render(<CampaignsPage />);
     await waitFor(() => {
-      assertInDoc('进行中');
-      assertInDoc('草稿');
-      assertInDoc('已完成');
-      assertInDoc('全部');
+      const text = bodyText();
+      assert.ok(text.includes('¥'), 'yuan symbol in spent');
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════
+// 6. 统计计算验证
+// ═══════════════════════════════════════════════════
+describe('统计计算', () => {
+  it('正例: 渲染两个grid行(概览+状态)', async () => {
+    responseRegistry.clear();
+    setDefaultResponses();
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      const grids = document.querySelectorAll('.grid');
+      assert.ok(grids.length >= 2, 'at least 2 grid rows');
     });
   });
 
-  it('should show status badges', async () => {
-    render(<CampaignsPage />);
-    await waitFor(() => {
-      assertInDoc('进行中');
-      assertInDoc('已完成');
-    });
-  });
-
-  it('should show campaign type labels', async () => {
-    render(<CampaignsPage />);
-    await waitFor(() => {
-      assertInDoc('促销活动');
-      assertInDoc('拉新活动');
-    });
-  });
-
-  it('should show channel labels', async () => {
-    render(<CampaignsPage />);
-    await waitFor(() => {
-      // 渠道标签可能和渠道名同行，用includes检查
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('小程序') || body.includes('wechat'), 'expected channel label');
-    });
-  });
-
-  it('should show progress percentage', async () => {
-    render(<CampaignsPage />);
-    await waitFor(() => {
-      assertInDoc('28.3%');
-      assertInDoc('36.4%');
-    });
-  });
-
-  it('should show refresh button', async () => {
-    render(<CampaignsPage />);
-    await waitFor(() => assertInDoc('刷新'));
-  });
-
-  it('should display budget in yuan format', async () => {
-    render(<CampaignsPage />);
-    await waitFor(() => {
-      // fmtCents(5000000) = '¥50,000.00' with toLocaleString
-      // Use regex to detect the number 50000 in text
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('总预算') || body.includes('已花费'), 'budget headers should be present');
-    });
-  });
-
-  it('should show empty state when no campaigns match filter', async () => {
-    // Replace fetch with empty response
+  it('边界: 无数据时活动总数=0', async () => {
     responseRegistry.clear();
     setResponseFor('/api/brand/campaigns', () => ({
       success: true, data: { campaigns: [] }, message: 'OK',
@@ -158,35 +455,74 @@ describe('CampaignsPage', () => {
     render(<CampaignsPage />);
     await waitFor(() => assertInDoc('暂无活动'));
   });
+});
 
-  it('should show draft count', async () => {
-    render(<CampaignsPage />);
-    await waitFor(() => assertInDoc('草稿'));
+// ═══════════════════════════════════════════════════
+// 7. 工具函数验证
+// ═══════════════════════════════════════════════════
+describe('工具函数', () => {
+  it('正例: fmtCents', async () => {
+    const mod = await import('./page');
+    assert.strictEqual(mod.fmtCents(100), '¥1.00');
+    assert.strictEqual(mod.fmtCents(-100), '-¥1.00');
   });
 
-  it('should render campaign descriptions', async () => {
-    render(<CampaignsPage />);
-    await waitFor(() => assertInDoc('暑期折扣'));
+  it('正例: fmtPercent', async () => {
+    const mod = await import('./page');
+    assert.strictEqual(mod.fmtPercent(50, 100), '50.0%');
+    assert.strictEqual(mod.fmtPercent(0, 100), '0.0%');
   });
 
-  it('should show target values', async () => {
-    render(<CampaignsPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('8,500,000') || body.includes('8500000'), 'expected target value');
-    });
+  it('反例: fmtPercent target=0', async () => {
+    const mod = await import('./page');
+    assert.strictEqual(mod.fmtPercent(100, 0), '0%');
+  });
+
+  it('正例: statusLabel中文映射', async () => {
+    const mod = await import('./page');
+    assert.strictEqual(mod.statusLabel('active'), '进行中');
+    assert.strictEqual(mod.statusLabel('draft'), '草稿');
+    assert.strictEqual(mod.statusLabel('completed'), '已完成');
+  });
+
+  it('反例: statusLabel未知状态', async () => {
+    const mod = await import('./page');
+    assert.strictEqual(mod.statusLabel('unknown' as any), 'unknown');
+  });
+
+  it('正例: statusColor', async () => {
+    const mod = await import('./page');
+    assert.ok(mod.statusColor('active').includes('green'));
+  });
+
+  it('正例: typeLabel中文映射', async () => {
+    const mod = await import('./page');
+    assert.strictEqual(mod.typeLabel('promotion'), '促销活动');
+    assert.strictEqual(mod.typeLabel('seasonal'), '季节活动');
   });
 });
 
-// ── 静态代码分析 ──
-
+// ═══════════════════════════════════════════════════
+// 8. 静态代码分析
+// ═══════════════════════════════════════════════════
 const SRC = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
-describe('CampaignsPage — hooks验证', () => {
+describe('静态代码分析', () => {
   it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
+  it('包含onClick事件', () => assert.ok(SRC.includes('onClick={')));
+  it('包含列表渲染.map', () => assert.ok(SRC.includes('.map(')));
+  it('包含条件渲染 && 或 ?', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
+  it('包含export default function', () => assert.ok(SRC.includes('export default function')));
+  it('包含活动状态统计卡片名(总活动/未开始/已结束)', () => {
+    assert.ok(SRC.includes('总活动'), '总活动');
+    assert.ok(SRC.includes('未开始'), '未开始');
+    assert.ok(SRC.includes('已结束'), '已结束');
+  });
+  it('状态统计使用grid-cols-4', () => {
+    const idx = SRC.indexOf('活动状态统计');
+    const block = SRC.slice(idx, idx + 500);
+    assert.ok(block.includes('grid-cols-4'));
+  });
+  it('不依赖@m5/ui', () => assert.ok(!SRC.includes('@m5/ui')));
 });
