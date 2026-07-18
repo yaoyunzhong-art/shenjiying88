@@ -12,19 +12,33 @@
  *   - IdentityAccessGuard 已经基于 actorContext 做基础隔离
  *   - service 层在读写数据前额外 assertSameTenant(actorTenantId, resourceTenantId)
  *   - 跨租户访问时抛 TenantIsolationViolation 异常
+ *
+ * P-31:
+ *   - 新增 getTenantDbPool() — 连接池隔离,根据 tenantId 返回专属 pool config
  */
 
-import { ForbiddenException } from '@nestjs/common'
+import { ForbiddenException } from '@nestjs/common';
+import type { ConnectionPoolConfig } from './tenant.entity';
 
 /**
  * 平台级 system actor (绕过多租户隔离)
  */
-export const SYSTEM_ACTOR_ID = 'system'
+export const SYSTEM_ACTOR_ID = 'system';
 
 /**
  * 平台级 admin role / permission
  */
-export const PLATFORM_ADMIN_PERMISSION = 'platform:admin'
+export const PLATFORM_ADMIN_PERMISSION = 'platform:admin';
+
+/**
+ * 默认连接池配置 (falback)
+ */
+const DEFAULT_POOL_CONFIG: ConnectionPoolConfig = {
+  min: 2,
+  max: 10,
+  idleTimeoutMs: 30_000,
+  acquireTimeoutMs: 5_000,
+};
 
 /**
  * 跨租户访问违规异常 (ForbiddenException 子类,带结构化字段)
@@ -38,8 +52,8 @@ export class TenantIsolationViolation extends ForbiddenException {
   ) {
     super(
       `Cross-tenant access denied: actor[${actorTenantId}] -> ${resourceKind}[${resourceTenantId ?? 'unknown'}]${resourceId ? `#${resourceId}` : ''}`
-    )
-    this.name = 'TenantIsolationViolation'
+    );
+    this.name = 'TenantIsolationViolation';
   }
 }
 
@@ -56,12 +70,12 @@ export function canAccessTenant(
   resourceTenantId: string | undefined,
   actorPermissions: readonly string[] = []
 ): boolean {
-  if (!actorTenantId) return false
-  if (!resourceTenantId) return false
-  if (actorTenantId === resourceTenantId) return true
+  if (!actorTenantId) return false;
+  if (!resourceTenantId) return false;
+  if (actorTenantId === resourceTenantId) return true;
   // platform admin 角色可跨租户
-  if (actorPermissions.includes(PLATFORM_ADMIN_PERMISSION)) return true
-  return false
+  if (actorPermissions.includes(PLATFORM_ADMIN_PERMISSION)) return true;
+  return false;
 }
 
 /**
@@ -79,7 +93,7 @@ export function assertSameTenant(
       resourceTenantId ?? 'unknown',
       resourceKind,
       resourceId
-    )
+    );
   }
 }
 
@@ -95,11 +109,11 @@ export function canAccessBrand(
   resourceBrandId: string | undefined,
   canAccessTenantResult: boolean
 ): boolean {
-  if (!canAccessTenantResult) return false
+  if (!canAccessTenantResult) return false;
   // brand 范围:undefined 表示 tenant-wide 资源,actor 任何 brand 都可访问
-  if (!resourceBrandId) return true
-  if (!actorBrandId) return true // actor 没指定 brand 时默认 tenant 范围
-  return actorBrandId === resourceBrandId
+  if (!resourceBrandId) return true;
+  if (!actorBrandId) return true; // actor 没指定 brand 时默认 tenant 范围
+  return actorBrandId === resourceBrandId;
 }
 
 /**
@@ -110,10 +124,10 @@ export function canAccessStore(
   resourceStoreId: string | undefined,
   canAccessBrandResult: boolean
 ): boolean {
-  if (!canAccessBrandResult) return false
-  if (!resourceStoreId) return true
-  if (!actorStoreId) return true
-  return actorStoreId === resourceStoreId
+  if (!canAccessBrandResult) return false;
+  if (!resourceStoreId) return true;
+  if (!actorStoreId) return true;
+  return actorStoreId === resourceStoreId;
 }
 
 /**
@@ -121,45 +135,45 @@ export function canAccessStore(
  */
 export function assertIsolation(
   actor: {
-    tenantId?: string
-    brandId?: string
-    storeId?: string
-    permissions?: readonly string[]
+    tenantId?: string;
+    brandId?: string;
+    storeId?: string;
+    permissions?: readonly string[];
   },
   resource: {
-    tenantId?: string
-    brandId?: string
-    storeId?: string
-    kind: string
-    id?: string
+    tenantId?: string;
+    brandId?: string;
+    storeId?: string;
+    kind: string;
+    id?: string;
   }
 ): void {
-  const tenantOk = canAccessTenant(actor.tenantId, resource.tenantId, actor.permissions)
+  const tenantOk = canAccessTenant(actor.tenantId, resource.tenantId, actor.permissions);
   if (!tenantOk) {
     throw new TenantIsolationViolation(
       actor.tenantId ?? 'anonymous',
       resource.tenantId ?? 'unknown',
       resource.kind,
       resource.id
-    )
+    );
   }
-  const brandOk = canAccessBrand(actor.brandId, resource.brandId, tenantOk)
+  const brandOk = canAccessBrand(actor.brandId, resource.brandId, tenantOk);
   if (!brandOk) {
     throw new TenantIsolationViolation(
       actor.tenantId ?? 'anonymous',
       resource.tenantId ?? 'unknown',
       `${resource.kind}.brand`,
       resource.brandId
-    )
+    );
   }
-  const storeOk = canAccessStore(actor.storeId, resource.storeId, brandOk)
+  const storeOk = canAccessStore(actor.storeId, resource.storeId, brandOk);
   if (!storeOk) {
     throw new TenantIsolationViolation(
       actor.tenantId ?? 'anonymous',
       resource.tenantId ?? 'unknown',
       `${resource.kind}.store`,
       resource.storeId
-    )
+    );
   }
 }
 
@@ -171,5 +185,31 @@ export function filterByTenantIsolation<T extends { tenantId?: string }>(
   resources: readonly T[],
   actorPermissions: readonly string[] = []
 ): T[] {
-  return resources.filter(r => canAccessTenant(actorTenantId, r.tenantId, actorPermissions))
+  return resources.filter(r => canAccessTenant(actorTenantId, r.tenantId, actorPermissions));
+}
+
+/**
+ * P-31: 根据 tenantId 获取数据库连接池配置 (连接池隔离)
+ *
+ * 每个 tenant 可获得独立 (或共享) 的 DB 连接池,实现数据库级资源隔离。
+ * 如果 tenantId 未在注册表中找到,返回默认配置。
+ *
+ * @param tenantId 目标租户 ID
+ * @param poolRegistry 租户 -> 连接池配置注册表
+ * @param defaultConfig 默认连接池配置 (fallback)
+ * @returns 该租户的连接池配置
+ */
+export function getTenantDbPool(
+  tenantId: string,
+  poolRegistry: ReadonlyMap<string, ConnectionPoolConfig> | undefined,
+  defaultConfig: ConnectionPoolConfig = DEFAULT_POOL_CONFIG,
+): ConnectionPoolConfig {
+  if (!tenantId) {
+    throw new Error('tenantId is required');
+  }
+  const registered = poolRegistry?.get(tenantId);
+  if (registered) {
+    return { ...registered };
+  }
+  return { ...defaultConfig };
 }

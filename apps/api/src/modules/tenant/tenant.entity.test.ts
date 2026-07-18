@@ -4,7 +4,12 @@ import assert from 'node:assert/strict'
 import {
   DEFAULT_TENANT_ID,
   DEFAULT_MARKET_CODE,
+  DEFAULT_POOL_CONFIG,
+  DEFAULT_RLS_POLICY_ID,
   ActorTypes,
+  ConnectionPoolConfig,
+  TenantConfig,
+  createDefaultTenantConfig,
   createDefaultTenantContext,
   createEmptyResolvedActorContext,
   resolveEffectiveTenantId,
@@ -28,6 +33,46 @@ describe('tenant.entity: constants', () => {
 
   it('DEFAULT_MARKET_CODE equals default', () => {
     assert.equal(DEFAULT_MARKET_CODE, 'default')
+  })
+
+  it('DEFAULT_RLS_POLICY_ID equals rls-tenant-v1', () => {
+    assert.equal(DEFAULT_RLS_POLICY_ID, 'rls-tenant-v1')
+  })
+
+  it('DEFAULT_POOL_CONFIG has correct shape', () => {
+    assert.equal(DEFAULT_POOL_CONFIG.min, 2)
+    assert.equal(DEFAULT_POOL_CONFIG.max, 10)
+    assert.equal(DEFAULT_POOL_CONFIG.idleTimeoutMs, 30_000)
+    assert.equal(DEFAULT_POOL_CONFIG.acquireTimeoutMs, 5_000)
+  })
+})
+
+describe('tenant.entity: ConnectionPoolConfig type', () => {
+  it('accepts optional database/host/port fields', () => {
+    const config: ConnectionPoolConfig = {
+      min: 1,
+      max: 5,
+      idleTimeoutMs: 10_000,
+      acquireTimeoutMs: 3_000,
+      database: 'custom_db',
+      host: 'db.custom.com',
+      port: 5432,
+    }
+    assert.equal(config.database, 'custom_db')
+    assert.equal(config.host, 'db.custom.com')
+    assert.equal(config.port, 5432)
+  })
+})
+
+describe('tenant.entity: TenantConfig type', () => {
+  it('accepts rlsPolicyId and connectionPoolConfig', () => {
+    const config: TenantConfig = {
+      tenantId: 't1',
+      rlsPolicyId: 'rls-custom-v2',
+      connectionPoolConfig: { min: 1, max: 3, idleTimeoutMs: 5_000, acquireTimeoutMs: 2_000 },
+    }
+    assert.equal(config.rlsPolicyId, 'rls-custom-v2')
+    assert.equal(config.connectionPoolConfig!.max, 3)
   })
 })
 
@@ -234,6 +279,49 @@ describe('tenant.entity: actorSummary', () => {
     const summary = actorSummary(actor)
     // type exists so it won't hit fallback
     assert.ok(summary !== null)
+  })
+})
+
+describe('tenant.entity: createDefaultTenantConfig (P-31)', () => {
+  it('正例: 返回默认配置包含 rlsPolicyId 和 connectionPoolConfig', () => {
+    const config = createDefaultTenantConfig()
+    assert.equal(config.tenantId, DEFAULT_TENANT_ID)
+    assert.equal(config.rlsPolicyId, DEFAULT_RLS_POLICY_ID)
+    assert.ok(config.connectionPoolConfig)
+    assert.equal(config.connectionPoolConfig!.min, 2)
+    assert.equal(config.connectionPoolConfig!.max, 10)
+  })
+
+  it('正例: 接受 tenantId 参数', () => {
+    const config = createDefaultTenantConfig('tenant-alpha')
+    assert.equal(config.tenantId, 'tenant-alpha')
+    assert.equal(config.rlsPolicyId, DEFAULT_RLS_POLICY_ID)
+  })
+
+  it('正例: overrides 可覆盖 rlsPolicyId', () => {
+    const config = createDefaultTenantConfig('t1', { rlsPolicyId: 'rls-custom-v3' })
+    assert.equal(config.rlsPolicyId, 'rls-custom-v3')
+  })
+
+  it('正例: overrides 可覆盖 connectionPoolConfig', () => {
+    const customPool = { min: 8, max: 64, idleTimeoutMs: 120_000, acquireTimeoutMs: 15_000 }
+    const config = createDefaultTenantConfig('t1', { connectionPoolConfig: customPool })
+    assert.equal(config.connectionPoolConfig!.min, 8)
+    assert.equal(config.connectionPoolConfig!.max, 64)
+  })
+
+  it('边界: connectionPoolConfig 为 undefined 时保持默认', () => {
+    // 显式传入 undefined 的字段应被忽略,保持默认值
+    const config = createDefaultTenantConfig('t1', { connectionPoolConfig: undefined })
+    assert.ok(config.connectionPoolConfig)
+    assert.equal(config.connectionPoolConfig!.min, 2)
+  })
+
+  it('边界: 不传参数使用全部默认值', () => {
+    const config = createDefaultTenantConfig()
+    assert.equal(config.tenantId, DEFAULT_TENANT_ID)
+    assert.equal(config.rlsPolicyId, DEFAULT_RLS_POLICY_ID)
+    assert.deepEqual(config.connectionPoolConfig, DEFAULT_POOL_CONFIG)
   })
 })
 

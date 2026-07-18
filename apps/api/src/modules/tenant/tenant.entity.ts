@@ -3,6 +3,10 @@
  *
  * 定义演员类型枚举、租户上下文实体接口，
  * 以及租户上下文构建与解析工具函数。
+ *
+ * 新增 (P-31):
+ *   - RlsPolicyId / ConnectionPoolConfig / TenantConfig 类型
+ *   - createDefaultTenantConfig() 默认租户配置工厂
  */
 import type {
   ResolvedActorContext,
@@ -23,6 +27,43 @@ export {
 }
 
 /**
+ * RLS 策略标识符：记录租户使用的行级安全策略版本
+ */
+export type RlsPolicyId = string
+
+/**
+ * 数据库连接池配置
+ */
+export interface ConnectionPoolConfig {
+  /** 最小连接数 */
+  min: number
+  /** 最大连接数 */
+  max: number
+  /** 空闲超时 (ms) */
+  idleTimeoutMs: number
+  /** 获取连接超时 (ms) */
+  acquireTimeoutMs: number
+  /** 可选：目标数据库名称 */
+  database?: string
+  /** 可选：主机地址 */
+  host?: string
+  /** 可选：端口号 */
+  port?: number
+}
+
+/**
+ * 租户持久化配置
+ */
+export interface TenantConfig {
+  /** 租户标识 */
+  tenantId: string
+  /** RLS 策略 ID（用于 pg 行级安全策略路由） */
+  rlsPolicyId?: RlsPolicyId
+  /** 连接池配置（数据库级隔离） */
+  connectionPoolConfig?: ConnectionPoolConfig
+}
+
+/**
  * 默认租户 ID
  */
 export const DEFAULT_TENANT_ID = 'tenant-demo'
@@ -31,6 +72,21 @@ export const DEFAULT_TENANT_ID = 'tenant-demo'
  * 默认市场代码
  */
 export const DEFAULT_MARKET_CODE = 'default'
+
+/**
+ * 默认连接池配置
+ */
+export const DEFAULT_POOL_CONFIG: ConnectionPoolConfig = {
+  min: 2,
+  max: 10,
+  idleTimeoutMs: 30_000,
+  acquireTimeoutMs: 5_000,
+}
+
+/**
+ * 默认 RLS 策略 ID
+ */
+export const DEFAULT_RLS_POLICY_ID: RlsPolicyId = 'rls-tenant-v1'
 
 /**
  * 演员类型枚举值
@@ -135,6 +191,32 @@ export function actorSummary(
   if (actorContext.actorType) parts.push(`[${actorContext.actorType}]`)
   if (actorContext.roles.length > 0) parts.push(`roles:${actorContext.roles.join(',')}`)
   return parts.join(' ') || actorContext.actorId
+}
+
+/**
+ * 构造默认的租户持久化配置
+ */
+export function createDefaultTenantConfig(
+  tenantId: string = DEFAULT_TENANT_ID,
+  overrides?: Partial<TenantConfig>,
+): TenantConfig {
+  const base: TenantConfig = {
+    tenantId,
+    rlsPolicyId: DEFAULT_RLS_POLICY_ID,
+    connectionPoolConfig: { ...DEFAULT_POOL_CONFIG },
+  }
+  if (overrides) {
+    if (overrides.rlsPolicyId !== undefined) {
+      base.rlsPolicyId = overrides.rlsPolicyId
+    }
+    if (overrides.connectionPoolConfig !== undefined) {
+      base.connectionPoolConfig = overrides.connectionPoolConfig
+    }
+    if (overrides.tenantId !== undefined) {
+      base.tenantId = overrides.tenantId
+    }
+  }
+  return base
 }
 
 /**

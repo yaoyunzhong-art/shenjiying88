@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
- * 单元测试: tenant-isolation.util (Phase-15 task 3)
+ * 单元测试: tenant-isolation.util (Phase-15 task 3 + P-31)
  *
  * 覆盖:
  *   - canAccessTenant 同 tenant 允许,跨 tenant 拒绝
@@ -10,6 +10,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  *   - canAccessStore: store 范围 + brand 范围 + tenant 范围
  *   - assertSameTenant / assertIsolation 抛 TenantIsolationViolation
  *   - filterByTenantIsolation 过滤
+ *   - getTenantDbPool (P-31): 连接池隔离
  */
 
 import assert from 'node:assert/strict'
@@ -20,9 +21,11 @@ import {
   canAccessStore,
   canAccessTenant,
   filterByTenantIsolation,
+  getTenantDbPool,
   PLATFORM_ADMIN_PERMISSION,
   TenantIsolationViolation
 } from './tenant-isolation.util'
+import type { ConnectionPoolConfig } from './tenant.entity'
 
 it('canAccessTenant: 同 tenant 允许', () => {
   assert.equal(canAccessTenant('t1', 't1'), true)
@@ -186,4 +189,74 @@ it('TenantIsolationViolation: name + message 结构', () => {
   assert.ok(err.message.includes('b'))
   assert.ok(err.message.includes('brand'))
   assert.ok(err.message.includes('b1'))
+})
+
+// ═══════════════════════════════════════════════
+// P-31: getTenantDbPool
+// ═══════════════════════════════════════════════
+
+describe('getTenantDbPool (P-31)', () => {
+  const defaultConfig: ConnectionPoolConfig = {
+    min: 2,
+    max: 10,
+    idleTimeoutMs: 30_000,
+    acquireTimeoutMs: 5_000,
+  }
+
+  it('正例: tenantId 在注册表中时返回对应配置', () => {
+    const registry = new Map<string, ConnectionPoolConfig>([
+      ['tenant-alpha', { min: 4, max: 20, idleTimeoutMs: 60_000, acquireTimeoutMs: 10_000 }],
+    ])
+    const config = getTenantDbPool('tenant-alpha', registry, defaultConfig)
+    assert.equal(config.min, 4)
+    assert.equal(config.max, 20)
+    assert.equal(config.idleTimeoutMs, 60_000)
+    assert.equal(config.acquireTimeoutMs, 10_000)
+  })
+
+  it('正例: 返回的配置是副本,修改不影响注册表', () => {
+    const registry = new Map<string, ConnectionPoolConfig>([
+      ['tenant-beta', { min: 4, max: 20, idleTimeoutMs: 60_000, acquireTimeoutMs: 10_000 }],
+    ])
+    const config = getTenantDbPool('tenant-beta', registry, defaultConfig)
+    config.min = 99
+    const original = registry.get('tenant-beta')!
+    assert.equal(original.min, 4) // 原注册表不受影响
+  })
+
+  it('反例: 不存在的 tenantId 返回 defaultConfig', () => {
+    const registry = new Map<string, ConnectionPoolConfig>([
+      ['existing', { min: 8, max: 32, idleTimeoutMs: 120_000, acquireTimeoutMs: 15_000 }],
+    ])
+    const config = getTenantDbPool('unknown-tenant', registry, defaultConfig)
+    assert.equal(config.min, defaultConfig.min)
+    assert.equal(config.max, defaultConfig.max)
+  })
+
+  it('反例: 空 registry 返回 defaultConfig', () => {
+    const registry = new Map<string, ConnectionPoolConfig>()
+    const config = getTenantDbPool('tenant-anything', registry, defaultConfig)
+    assert.equal(config.min, defaultConfig.min)
+  })
+
+  it('边界: 空字符串 tenantId 抛 Error', () => {
+    const registry = new Map<string, ConnectionPoolConfig>()
+    try {
+      getTenantDbPool('', registry, defaultConfig)
+      assert.fail('应该抛错')
+    } catch (err: unknown) {
+      const error = err as Error
+      assert.ok(error.message.includes('tenantId is required'))
+    }
+  })
+
+  it('边界: 注册表中包含 database/host/port 可选字段', () => {
+    const registry = new Map<string, ConnectionPoolConfig>([
+      ['tenant-gamma', { min: 2, max: 10, idleTimeoutMs: 30_000, acquireTimeoutMs: 5_000, database: 'tenant_gamma_db', host: 'db-gamma.internal', port: 5432 }],
+    ])
+    const config = getTenantDbPool('tenant-gamma', registry, defaultConfig)
+    assert.equal(config.database, 'tenant_gamma_db')
+    assert.equal(config.host, 'db-gamma.internal')
+    assert.equal(config.port, 5432)
+  })
 })
