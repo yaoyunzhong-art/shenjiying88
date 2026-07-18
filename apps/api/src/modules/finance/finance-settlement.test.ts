@@ -126,7 +126,7 @@ describe('FinanceSettlementCron', () => {
   // ── getStoreIds ──────────────────────────────────────────
 
   it('getStoreIds returns 4 store IDs', () => {
-    const ids = settlement.getStoreIds()
+    const ids = (settlement as unknown as { getStoreIds(): string[] }).getStoreIds()
     expect(ids).toHaveLength(4)
     expect(ids).toContain('store-A1')
     expect(ids).toContain('store-A2')
@@ -137,7 +137,7 @@ describe('FinanceSettlementCron', () => {
   // ── getPeriodKey ──────────────────────────────────────────
 
   it('getPeriodKey daily returns yesterday ISO date', () => {
-    const key = settlement.getPeriodKey('daily')
+    const key = (settlement as unknown as { getPeriodKey(p: string): string }).getPeriodKey('daily')
     // Yesterday in YYYY-MM-DD format
     const d = new Date()
     d.setDate(d.getDate() - 1)
@@ -146,12 +146,12 @@ describe('FinanceSettlementCron', () => {
   })
 
   it('getPeriodKey weekly returns ISO week key', () => {
-    const key = settlement.getPeriodKey('weekly')
+    const key = (settlement as unknown as { getPeriodKey(p: string): string }).getPeriodKey('weekly')
     expect(key).toMatch(/^\d{4}-W\d{2}$/)
   })
 
   it('getPeriodKey monthly returns YYYY-MM for last month', () => {
-    const key = settlement.getPeriodKey('monthly')
+    const key = (settlement as unknown as { getPeriodKey(p: string): string }).getPeriodKey('monthly')
     const d = new Date()
     d.setMonth(d.getMonth() - 1)
     const expected = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -161,20 +161,22 @@ describe('FinanceSettlementCron', () => {
   // ── simulateSettlementAmount ──────────────────────────────
 
   it('simulateSettlementAmount returns positive amount for any store', () => {
-    const amount = settlement.simulateSettlementAmount('store-A1', 'daily', '2026-07-01')
+    const amount = (settlement as unknown as { simulateSettlementAmount(s: string, p: string, k: string): number }).simulateSettlementAmount('store-A1', 'daily', '2026-07-01')
     expect(amount).toBeGreaterThan(0)
     expect(Number.isInteger(amount)).toBe(true)
   })
 
   it('simulateSettlementAmount is deterministic (same inputs = same output)', () => {
-    const a = settlement.simulateSettlementAmount('store-X', 'weekly', '2026-W28')
-    const b = settlement.simulateSettlementAmount('store-X', 'weekly', '2026-W28')
+    const sim = (settlement as unknown as { simulateSettlementAmount(s: string, p: string, k: string): number })
+    const a = sim.simulateSettlementAmount('store-X', 'weekly', '2026-W28')
+    const b = sim.simulateSettlementAmount('store-X', 'weekly', '2026-W28')
     expect(a).toBe(b)
   })
 
   it('simulateSettlementAmount different stores give different amounts', () => {
-    const a = settlement.simulateSettlementAmount('store-A1', 'daily', '2026-07-01')
-    const b = settlement.simulateSettlementAmount('store-A2', 'daily', '2026-07-01')
+    const sim = (settlement as unknown as { simulateSettlementAmount(s: string, p: string, k: string): number })
+    const a = sim.simulateSettlementAmount('store-A1', 'daily', '2026-07-01')
+    const b = sim.simulateSettlementAmount('store-A2', 'daily', '2026-07-01')
     expect(a).not.toBe(b)
   })
 
@@ -182,33 +184,37 @@ describe('FinanceSettlementCron', () => {
 
   it('dateStr(0) returns today', () => {
     const today = new Date().toISOString().slice(0, 10)
-    expect(settlement.dateStr(0)).toBe(today)
+    const svc = settlement as unknown as { dateStr(o: number): string }
+    expect(svc.dateStr(0)).toBe(today)
   })
 
   it('dateStr(-1) returns yesterday', () => {
     const d = new Date()
     d.setDate(d.getDate() - 1)
     const yesterday = d.toISOString().slice(0, 10)
-    expect(settlement.dateStr(-1)).toBe(yesterday)
+    const svc = settlement as unknown as { dateStr(o: number): string }
+    expect(svc.dateStr(-1)).toBe(yesterday)
   })
 
   it('dateStr(+7) returns 7 days later', () => {
     const d = new Date()
     d.setDate(d.getDate() + 7)
     const expected = d.toISOString().slice(0, 10)
-    expect(settlement.dateStr(7)).toBe(expected)
+    const svc = settlement as unknown as { dateStr(o: number): string }
+    expect(svc.dateStr(7)).toBe(expected)
   })
 
   // ── weekKey ──────────────────────────────────────────────
 
   it('weekKey(0) returns current ISO week', () => {
-    const key = settlement.weekKey(0)
+    const key = (settlement as unknown as { weekKey(o: number): string }).weekKey(0)
     expect(key).toMatch(/^\d{4}-W\d{2}$/)
   })
 
   it('weekKey(-1) returns last week', () => {
-    const k1 = settlement.weekKey(0).split('-W')[1]
-    const k2 = settlement.weekKey(-1).split('-W')[1]
+    const wk = (settlement as unknown as { weekKey(o: number): string })
+    const k1 = wk.weekKey(0).split('-W')[1]
+    const k2 = wk.weekKey(-1).split('-W')[1]
     const w1 = parseInt(k1, 10)
     const w2 = parseInt(k2, 10)
     // Last week's number is either w1-1 or wraps around year boundary
@@ -218,19 +224,21 @@ describe('FinanceSettlementCron', () => {
   // ── hashCode ──────────────────────────────────────────────
 
   it('hashCode returns consistent results', () => {
-    const h1 = settlement.hashCode('test-string')
-    const h2 = settlement.hashCode('test-string')
+    const h = (settlement as unknown as { hashCode(s: string): number }).hashCode
+    const h1 = h.call(settlement, 'test-string')
+    const h2 = h.call(settlement, 'test-string')
     expect(h1).toBe(h2)
   })
 
   it('hashCode different strings give different values', () => {
-    const a = settlement.hashCode('abc')
-    const b = settlement.hashCode('xyz')
+    const h = (settlement as unknown as { hashCode(s: string): number }).hashCode
+    const a = h.call(settlement, 'abc')
+    const b = h.call(settlement, 'xyz')
     expect(a).not.toBe(b)
   })
 
   it('hashCode empty string is a number', () => {
-    const h = settlement.hashCode('')
+    const h = (settlement as unknown as { hashCode(s: string): number }).hashCode.call(settlement, '')
     expect(typeof h).toBe('number')
     expect(Number.isFinite(h)).toBe(true)
   })
