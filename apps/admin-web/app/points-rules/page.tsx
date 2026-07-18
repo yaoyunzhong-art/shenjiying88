@@ -97,6 +97,14 @@ export default function PointsRulesPage() {
   const [error, setError] = useState<string | null>(null)
   const [tabView, setTabView] = useState<RuleTab>('earn')
 
+  // ── 规则状态统计 ──
+  const statusStats = {
+    total: rules.length,
+    enabled: rules.filter(r => r.enabled).length,
+    disabled: rules.filter(r => !r.enabled).length,
+    expired: rules.filter(r => !!r.endDate && new Date(r.endDate) < new Date()).length,
+  }
+
   const loadRules = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -167,6 +175,28 @@ export default function PointsRulesPage() {
             <p className="text-2xl font-bold mt-1">{fmtNum(summary.monthlyRedeemed)}</p>
           </div>
           <div className="bg-white border rounded-lg p-4">
+
+      {/* 规则状态统计条 */}
+      <div className="grid grid-cols-4 gap-4" data-testid="status-stats">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-600 font-medium">总规则</p>
+          <p className="text-2xl font-bold mt-1 text-blue-900">{statusStats.total}</p>
+        </div>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-sm text-green-600 font-medium">已启用</p>
+          <p className="text-2xl font-bold mt-1 text-green-900">{statusStats.enabled}</p>
+        </div>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <p className="text-sm text-gray-600 font-medium">已禁用</p>
+          <p className="text-2xl font-bold mt-1 text-gray-900">{statusStats.disabled}</p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-sm text-red-600 font-medium">已过期</p>
+          <p className="text-2xl font-bold mt-1 text-red-900">{statusStats.expired}</p>
+        </div>
+      </div>
+
+
             <p className="text-sm text-gray-500">平均赚取率</p>
             <p className="text-2xl font-bold mt-1">{summary.avgEarnRate}x</p>
             <p className="text-xs text-gray-400">{fmtNum(summary.totalMembers)} 人拥有积分</p>
