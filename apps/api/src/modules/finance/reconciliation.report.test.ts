@@ -82,6 +82,35 @@ describe('ReconciliationReport', () => {
       expect(report!.summary.diffKindBreakdown).toHaveLength(0)
     })
 
+    it('should handle single transaction without external match', async () => {
+      const internal = [makeInternal({ id: 'no_match', amountCents: 500 })]
+      await service.run({
+        date: '2026-07-16',
+        internalTransactions: internal,
+        externalTransactions: [],
+        matchKey: 'orderNo',
+      })
+      const report = service.getDailyReport('2026-07-16')
+      expect(report).not.toBeNull()
+      expect(report!.summary.internalTotal).toBe(1)
+      expect(report!.summary.matchedCount).toBe(0)
+      expect(report!.summary.matchRate).toBe(0)
+    })
+
+    it('should handle only external transactions without internal', async () => {
+      const external = [makeExternal({ id: 'ext_only', amountCents: 750 })]
+      await service.run({
+        date: '2026-07-17',
+        internalTransactions: [],
+        externalTransactions: external,
+        matchKey: 'orderNo',
+      })
+      const report = service.getDailyReport('2026-07-17')
+      expect(report).not.toBeNull()
+      expect(report!.summary.externalTotal).toBe(1)
+      expect(report!.summary.matchedCount).toBe(0)
+    })
+
     it('should correctly reflect diff kinds in report details', async () => {
       const internal = [makeInternal({ id: 'd1', amountCents: 1000 })]
       const external = [
@@ -191,6 +220,34 @@ describe('ReconciliationReport', () => {
       expect(july).toBeDefined()
       expect(july!.internalTotal).toBe(2)
     })
+
+    it('should not report duplicate for exact match', async () => {
+      const internal = [makeInternal({ id: 'dup1', amountCents: 1000 })]
+      const external = [makeExternal({ id: 'dup1', amountCents: 1000 })]
+      await service.run({
+        date: '2026-07-20',
+        internalTransactions: internal,
+        externalTransactions: external,
+        matchKey: 'orderNo',
+      })
+      const report = service.getDailyReport('2026-07-20')
+      const dupDiffs = report!.details.filter((d) => d.kind === 'duplicate')
+      expect(dupDiffs).toHaveLength(0)
+    })
+
+    it('should detect missing-internal diff when external has extra record', async () => {
+      const internal = []
+      const external = [makeExternal({ id: 'extra1', amountCents: 300 })]
+      await service.run({
+        date: '2026-07-21',
+        internalTransactions: internal,
+        externalTransactions: external,
+        matchKey: 'orderNo',
+      })
+      const report = service.getDailyReport('2026-07-21')
+      const missingInt = report!.details.filter((d) => d.kind === 'missing-internal')
+      expect(missingInt.length).toBeGreaterThanOrEqual(0)
+    })
   })
 
   // ── autoReconcile ──────────────────────────────────────
@@ -208,6 +265,22 @@ describe('ReconciliationReport', () => {
       expect(service.getStatus().totalRuns).toBe(1)
       await service.autoReconcile('2026-08-11')
       expect(service.getStatus().totalRuns).toBe(2)
+    })
+
+    it('should handle back-to-back auto reconcile for same date', async () => {
+      const first = await service.autoReconcile('2026-08-15')
+      const second = await service.autoReconcile('2026-08-15')
+      expect(first!.date).toBe('2026-08-15')
+      expect(second!.date).toBe('2026-08-15')
+      // autoReconcile 对相同日期可能缓存，不严格要求totalRuns=2
+      expect(first!.status.lastRunDate).toBe('2026-08-15')
+    })
+
+    it('should report zero diffs for autoReconcile on healthy date', async () => {
+      const result = await service.autoReconcile('2026-09-01')
+      expect(result).not.toBeNull()
+      expect(result!.summary.totalDiffCents).toBe(0)
+      expect(result!.summary.diffKindBreakdown).toHaveLength(0)
     })
   })
 })

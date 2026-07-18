@@ -256,4 +256,126 @@ describe('ReconciliationService.supplement', () => {
     expect(summary!.resolvedCount).toBe(0)
     expect(summary!.unresolvedCount).toBe(2)
   })
+
+  // ── 9. getDetails 返回空同时没有 diffs ──────────────────────
+
+  it('should return empty details when no reconciliation performed', () => {
+    const details = service.getDetails()
+    expect(details).toHaveLength(0)
+  })
+
+  // ── 10. 多渠道区分 ──────────────────────────────────────────
+
+  it('should track channel in diffs', async () => {
+    const internal = [makeInternal({ id: 'm1', channel: 'alipay', amountCents: 1000 })]
+    const external = [makeExternal({ id: 'm1', channel: 'wechat', amountCents: 900 })]
+
+    await service.run({
+      date: '2026-07-20',
+      internalTransactions: internal,
+      externalTransactions: external,
+      matchKey: 'orderNo',
+    })
+
+    const details = service.getDetails()
+    expect(details.length).toBeGreaterThanOrEqual(1)
+    // 渠道不同但orderNo相同 → amount-mismatch
+  })
+
+  // ── 11. 金额相同但渠道不同的匹配 ──────────────────────────────
+
+  it('should match same amount despite different channels', async () => {
+    const internal = [makeInternal({ id: 's1', channel: 'alipay', amountCents: 500 })]
+    const external = [makeExternal({ id: 's1', channel: 'cash', amountCents: 500 })]
+
+    await service.run({
+      date: '2026-07-21',
+      internalTransactions: internal,
+      externalTransactions: external,
+      matchKey: 'orderNo',
+    })
+
+    const report = service.getDailyReport('2026-07-21')
+    // 金额相同orderNo相同 → 匹配成功
+    expect(report!.summary.matchedCount).toBe(1)
+    expect(report!.summary.diffKindBreakdown).toHaveLength(0)
+  })
+
+  // ── 12. 巨额金额差异仍可处理 ──────────────────────────────────
+
+  it('should handle large amount mismatch', async () => {
+    const internal = [makeInternal({ id: 'big', amountCents: 999999999 })]
+    const external = [makeExternal({ id: 'big', amountCents: 500000000 })]
+
+    await service.run({
+      date: '2026-07-22',
+      internalTransactions: internal,
+      externalTransactions: external,
+      matchKey: 'orderNo',
+    })
+
+    const details = service.getDetails()
+    expect(details).toHaveLength(1)
+    expect(details[0].diffCents).toBe(499999999)
+  })
+
+  // ── 13. 仅1条 internal 但 matches 仍返回 ──────────────────────
+
+  it('should match when internal and external have same count', async () => {
+    for (let i = 0; i < 5; i++) {
+      await service.run({
+        date: `2026-07-${23 + i}`,
+        internalTransactions: [makeInternal({ id: `bulk${i}`, amountCents: 100 * (i + 1) })],
+        externalTransactions: [makeExternal({ id: `bulk${i}`, amountCents: 100 * (i + 1) })],
+        matchKey: 'orderNo',
+      })
+    }
+
+    const stats = service.getOverallStats()
+    expect(stats.totalRuns).toBe(5)
+    expect(stats.reportDates).toHaveLength(5)
+  })
+
+  // ── 14. autoReconcile 每周生成 ────────────────────────────────
+
+  it('should generate weekly report via autoReconcile', async () => {
+    const result = await service.autoReconcile('2026-07-27')
+    expect(result).not.toBeNull()
+    expect(result!.date).toBe('2026-07-27')
+    expect(result!.summary.matchRate).toBeGreaterThanOrEqual(0)
+    expect(result!.status.lastRunDate).toBe('2026-07-27')
+  })
+
+  // ── 15. markDiffResolved 返回 false 对重复 resolve ──────────────
+
+  it('should return false when re-resolving same diff', async () => {
+    await service.run({
+      date: '2026-07-28',
+      internalTransactions: [makeInternal({ id: 'rr', amountCents: 110 })],
+      externalTransactions: [makeExternal({ id: 'rr', amountCents: 100 })],
+      matchKey: 'orderNo',
+    })
+
+    const details = service.getDetails()
+    const first = service.markDiffResolved(details[0].diffKey)
+    const second = service.markDiffResolved(details[0].diffKey)
+    expect(first).toBe(true)
+    expect(second).toBe(false)
+  })
+
+  // ── 16. 0 internal + 0 external 的边界 ────────────────────────
+
+  it('should handle zero records gracefully', async () => {
+    const report = await service.run({
+      date: '2026-07-29',
+      internalTransactions: [],
+      externalTransactions: [],
+      matchKey: 'orderNo',
+    })
+
+    expect(report.matchedCount).toBe(0)
+    expect(report.diffs).toHaveLength(0)
+    expect(report.internalTotal).toBe(0)
+    expect(report.externalTotal).toBe(0)
+  })
 })

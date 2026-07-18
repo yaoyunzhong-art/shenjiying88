@@ -459,6 +459,38 @@ describe('ReconciliationController', () => {
       expect(result.data.totalCount).toBe(0)
       expect(result.data.unresolvedCount).toBe(0)
     })
+
+    it('should report resolved diffs correctly', async () => {
+      // Run reconciliation with mismatch to generate diffs
+      await mockService.run({
+        date: '2026-07-15',
+        internalTransactions: [
+          { id: 'i1', orderNo: 'ORD-1', amountCents: 1000, date: '2026-07-15' },
+          { id: 'i2', orderNo: 'ORD-2', amountCents: 2000, date: '2026-07-15' },
+        ],
+        externalTransactions: [
+          { id: 'e1', orderNo: 'ORD-1', amountCents: 1000, date: '2026-07-15' },
+          { id: 'e2', orderNo: 'ORD-2', amountCents: 1999, date: '2026-07-15' },
+        ],
+        matchKey: 'orderNo' as MatchKeyType,
+      })
+
+      const before = callGetDiffs()
+      expect(before.data.unresolvedCount).toBe(before.data.totalCount)
+
+      // Resolve one diff
+      callResolve('diff-0', { resolvedBy: 'admin' })
+
+      const after = callGetDiffs()
+      expect(after.data.resolvedCount).toBe(1)
+      expect(after.data.unresolvedCount).toBe(after.data.totalCount! - 1)
+    })
+
+    it('should report zero total count with no runs', () => {
+      const result = callGetDiffs()
+      expect(result.data.totalCount).toBe(0)
+      expect(result.data.diffs).toHaveLength(0)
+    })
   })
 
   // ── 路由 5: GET /finance/reconciliation/details ────────────
@@ -470,6 +502,23 @@ describe('ReconciliationController', () => {
       expect(result.data).toHaveProperty('details')
       expect(result.data).toHaveProperty('totalCount')
       expect(result.data).toHaveProperty('filteredCount')
+    })
+
+    it('should filter by kind parameter', () => {
+      const result = callGetDetails({ kind: 'amount-mismatch' })
+      expect(result.success).toBe(true)
+      expect(Array.isArray(result.data.details)).toBe(true)
+    })
+
+    it('should handle offset and limit pagination', () => {
+      const result = callGetDetails({ offset: '1', limit: '5' })
+      expect(result.success).toBe(true)
+      expect(result.data.filteredCount).toBeLessThanOrEqual(5)
+    })
+
+    it('should filter by orderNo', () => {
+      const result = callGetDetails({ orderNo: 'ORD-0' })
+      expect(result.success).toBe(true)
     })
   })
 
@@ -495,6 +544,17 @@ describe('ReconciliationController', () => {
     it('should handle empty diff key', () => {
       const result = callResolve('', {})
       expect(result.success).toBe(false)
+    })
+
+    it('should accept optional note and resolvedBy', () => {
+      const result = callResolve('diff-xyz', { resolvedBy: 'tester', note: '银行侧已调整' })
+      expect(result.success).toBe(true)
+      expect(result.data.diffKey).toBe('diff-xyz')
+    })
+
+    it('should still work with empty body', () => {
+      const result = callResolve('diff-empty-body', {})
+      expect(result.success).toBe(true)
     })
   })
 })
