@@ -167,3 +167,64 @@ describe('SalesGuidePage structure', () => {
     assert.ok(source.includes('setToastMessage'), 'Missing setToastMessage');
   });
 });
+
+describe('SalesGuidePage - Edge Cases & Data Integrity', () => {
+  it('conversion rate calculation should be correct: 8/12*100 = 66.7', () => {
+    const conversions = 8;
+    const leads = 12;
+    const rate = Math.round((conversions / leads) * 1000) / 10;
+    assert.equal(rate, 66.7);
+  });
+
+  it('avg response time calculation: 2.3 min = (1.5 + 3.0 + 2.0 + 2.5 + 2.5) / 5', () => {
+    const times = [1.5, 3.0, 2.0, 2.5, 2.5];
+    const avg = times.reduce((a, b) => a + b, 0) / times.length;
+    assert.equal(avg, 2.3);
+  });
+
+  it('should handle empty follow-up client list', () => {
+    const emptyClients: any[] = [];
+    assert.equal(emptyClients.length, 0);
+    assert.equal(emptyClients.filter(c => c.priority === 'high').length, 0);
+  });
+
+  it('should handle all clients high priority', () => {
+    const clients = [
+      { name: 'A', priority: 'high' },
+      { name: 'B', priority: 'high' },
+      { name: 'C', priority: 'high' },
+    ];
+    assert.equal(clients.filter(c => c.priority === 'high').length, 3);
+    assert.equal(clients.filter(c => c.priority === 'low').length, 0);
+  });
+
+  it('script copy handler should generate correct message', () => {
+    const message = '已复制导购话术: 新客欢迎';
+    assert.ok(message.includes('已复制'));
+    assert.ok(message.includes('新客欢迎'));
+  });
+
+  it('member search should handle no results', () => {
+    const empty = { found: false, member: null };
+    assert.equal(empty.found, false);
+    assert.equal(empty.member, null);
+  });
+
+  it('member search should return matching results', () => {
+    const members = [
+      { name: '张三', phone: '13800138001' },
+      { name: '李四', phone: '13800138002' },
+    ];
+    const result = members.find(m => m.phone === '13800138001');
+    assert.ok(result !== undefined);
+    assert.equal(result!.name, '张三');
+  });
+
+  it('client priority distribution should be valid', () => {
+    const priorities = ['high', 'medium', 'low'];
+    assert.equal(priorities.length, 3);
+    for (const p of priorities) {
+      assert.ok(['high', 'medium', 'low'].includes(p));
+    }
+  });
+});

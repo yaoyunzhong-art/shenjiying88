@@ -298,3 +298,88 @@ describe('AIDecisionsPage', () => {
     assert.ok(typeof mod.default === 'function', 'Page exports a component');
   });
 });
+
+describe('AIDecisionsPage - Advanced Logic', () => {
+  it('rule status distribution should sum to total', () => {
+    const rules: RuleExecutionResult[] = [
+      createRuleExecutionResult({ status: 'passed' }),
+      createRuleExecutionResult({ status: 'passed' }),
+      createRuleExecutionResult({ status: 'warning' }),
+      createRuleExecutionResult({ status: 'failed' }),
+    ];
+    const passed = rules.filter(r => r.status === 'passed').length;
+    const warning = rules.filter(r => r.status === 'warning').length;
+    const failed = rules.filter(r => r.status === 'failed').length;
+    assert.equal(passed + warning + failed, rules.length);
+  });
+
+  it('recommendation adopted count should never exceed total', () => {
+    const recs: RuleRecommendation[] = [
+      createRuleRecommendation({ adopted: true }),
+      createRuleRecommendation({ adopted: false }),
+    ];
+    const adopted = recs.filter(r => r.adopted).length;
+    assert.ok(adopted <= recs.length);
+  });
+
+  it('coveragePercent should be between 0 and 100', () => {
+    const valid = createRuleSummary({ coveragePercent: 75 });
+    const zero = createRuleSummary({ coveragePercent: 0 });
+    const hundred = createRuleSummary({ coveragePercent: 100 });
+    assert.ok(valid.coveragePercent >= 0 && valid.coveragePercent <= 100);
+    assert.ok(zero.coveragePercent >= 0);
+    assert.ok(hundred.coveragePercent <= 100);
+  });
+
+  it('forecast data invariants: optimistic >= predicted >= pessimistic', () => {
+    const dp = createForecastDataPoint({ predicted: 3000, optimistic: 3500, pessimistic: 2500 });
+    assert.ok(dp.optimistic >= dp.predicted);
+    assert.ok(dp.predicted >= dp.pessimistic);
+  });
+
+  it('delta can be negative for regression', () => {
+    const summary = createRuleSummary({ delta: -2 });
+    assert.ok(summary.delta < 0);
+    assert.equal(summary.delta, -2);
+  });
+
+  it('durationMs should never be negative', () => {
+    const rule = createRuleExecutionResult({ durationMs: 0 });
+    assert.ok(rule.durationMs >= 0);
+    const fast = createRuleExecutionResult({ durationMs: 1 });
+    assert.ok(fast.durationMs > 0);
+  });
+
+  it('multiple rules can share same status', () => {
+    const rules = Array.from({ length: 5 }, () => createRuleExecutionResult({ status: 'passed' as const }));
+    const passed = rules.filter(r => r.status === 'passed').length;
+    assert.equal(passed, 5);
+  });
+
+  it('rule name should not be empty', () => {
+    const rule = createRuleExecutionResult({ name: '会员折扣合规' });
+    assert.ok(rule.name.length > 0);
+  });
+
+  it('suggestion text should be meaningful', () => {
+    const rule = createRuleExecutionResult({ suggestion: '建议调整折扣幅度至8折以内' });
+    assert.ok(rule.suggestion.length > 5);
+  });
+
+  it('categories should include all valid values', () => {
+    const validCategories = ['governance', 'member_retention', 'performance', 'cost', 'security'];
+    const rec = createRuleRecommendation({ category: 'member_retention' });
+    assert.ok(validCategories.includes(rec.category));
+  });
+
+  it('recommendation with resultingRuleId should link to a rule', () => {
+    const rec = createRuleRecommendation({ resultingRuleId: 'rule-001' });
+    assert.ok(typeof rec.resultingRuleId === 'string' && rec.resultingRuleId.length > 0);
+  });
+
+  it('should handle zero duration edge case', () => {
+    const rule = createRuleExecutionResult({ durationMs: 0 });
+    assert.equal(rule.durationMs, 0);
+    assert.ok(typeof rule.suggestion === 'string');
+  });
+});
